@@ -181,15 +181,10 @@ operator <<
 
 
 
-void NaNCheck(Weight *w) {
-	if(*w!=*w)
-		*(int*)0=0;
+static void NaNCheck(Weight *w) {
+	w->NaNCheck();
 }
-#ifdef DEBUG
-#define NANCHECK(w) NaNCheck(&(w))
-#else
-#define NANCHECK(w)
-#endif
+
 
 void WFST::normalize(NormalizeMethod method)
 {
@@ -213,6 +208,7 @@ void WFST::normalize(NormalizeMethod method)
   // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight sum,locked_sum; // =0, sum of probability of all arcs that has this input
+		Assert(sum.isZero() && locked_sum.isZero());
     for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
       const Weight w=(*g)->weight;
       if (isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
@@ -230,6 +226,7 @@ void WFST::normalize(NormalizeMethod method)
       const Weight w=(*g)->weight;
       
         if ( isTied(pGroup = (*g)->groupId) ) {
+#if 0
 					Weight *pw;
 					if ((pw=groupArcTotal.find(pGroup)))
 						*pw += w;
@@ -239,6 +236,10 @@ void WFST::normalize(NormalizeMethod method)
 						*pw += sum;
 					else
 						groupStateTotal.add(pGroup,sum);
+#else
+					groupArcTotal[pGroup] += w; // default init is to 0          
+ 		      groupStateTotal[pGroup] += sum;
+#endif
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
@@ -258,7 +259,7 @@ void WFST::normalize(NormalizeMethod method)
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight normal_sum;//=0
     Weight reserved;// =0
-		Assert(reserved.isZero());
+		Assert(reserved.isZero()&&normal_sum.isZero());
     // pass 2a: assign tied (and locked) arcs their weights, taking 'reserved' weight from the normal arcs in their group
     // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
     // also, compute sum of normal arcs
@@ -267,13 +268,23 @@ void WFST::normalize(NormalizeMethod method)
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
             Weight groupNorm = *groupStateTotal.find(pGroup); // can be 0 if no counts at all for any states of group						
-            groupNorm /= (1. - groupMaxLockedSum[pGroup]); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
-						NANCHECK(groupNorm);
-						NANCHECK(*groupArcTotal.find(pGroup));
-						Weight groupTotal=*groupArcTotal.find(pGroup);
-						if (!groupTotal.isZero()) // then groupNorm non0 also
-							reserved += (*g)->weight = ( groupTotal/ groupNorm);
-						NANCHECK(reserved);
+						Weight gmax=*groupMaxLockedSum.find(pGroup);
+						NANCHECK(gmax);
+						Weight one(1.);
+						if ( gmax > one) {
+							(*g)->weight.setZero();
+							
+						} else {
+							if ( !gmax.isZero() )
+								groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
+							NANCHECK(groupNorm);
+							
+							Weight groupTotal=*groupArcTotal.find(pGroup);
+							NANCHECK(groupTotal);
+							if (!groupTotal.isZero()) // then groupNorm non0 also
+								reserved += (*g)->weight = ( groupTotal/ groupNorm);
+							NANCHECK(reserved);
+						}
 					} else { // locked:
             reserved += (*g)->weight;
 						NANCHECK(reserved);

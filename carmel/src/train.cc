@@ -429,8 +429,10 @@ Weight WFST::train_estimate(bool delete_bad_training)
          );
 
   List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
+#ifdef DEBUG
+	EACHDW(NANCHECK(dw->counts););
 
-
+#endif
   //#ifdef DEBUGTRAIN
   int train_example_no = 0 ; // Yaser 7-13-2000
   //#endif
@@ -556,6 +558,11 @@ Weight WFST::train_estimate(bool delete_bad_training)
            );
 
     ++seq;
+#ifdef DEBUG
+		EACHDW(NANCHECK(dw->counts);NANCHECK(dw->scratch););
+	
+#endif
+
   } // end of while(training examples)
 
   return root(prodModProb,trn->totalEmpiricalWeight).invert(); // ,trn->totalEmpiricalWeight); // return model perplexity = 1/Nth root of 2^entropy
@@ -605,6 +612,8 @@ int pGroup;
             dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
             //Weight &counts = dw->counts;
             dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
+						NANCHECK(dw->weight());
+						NANCHECK(dw->scratch);
           }
           );
 #ifdef DEBUGTRAINDETAIL
@@ -624,15 +633,16 @@ int pGroup;
   EACHDW(
          DWPair *d=&*dw;
          d->em_weight = d->weight();
+				 NANCHECK(d->em_weight); 
          if (delta_scale > 1.)
          if ( !isLocked((d->arc)->groupId) )
-         if ( d->scratch.isPositive() )
-         d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
+					 if ( d->scratch.isPositive() ) {
+						d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
+						NANCHECK(d->scratch);	NANCHECK(d->weight());
+
+					 }
          );
 
-#ifdef DEBUG
-				 Config::debug() << "Second normalization?  delta_scale="<<delta_scale<<std::endl;
-#endif
   Weight change, maxChange;
 
   // find maximum change for convergence
