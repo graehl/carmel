@@ -108,14 +108,14 @@ main(int argc, char *argv[]){
     else
       if ( labelFlag ) {
 	labelFlag = 0;
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> labelStart; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -N switch, (instead got \'" << argv[i] << "\' - as a number, " << labelStart << ").\n";
 	  return -11;
 	}
       } else if ( kPaths == -1 ) {
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> kPaths; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -k switch, (instead got \'" << argv[i] << "\' - as a number, " << kPaths << ").\n";
@@ -124,7 +124,7 @@ main(int argc, char *argv[]){
 	if ( kPaths < 1 )
 	  kPaths = 1;
       } else if ( nGenerate == -1 ) {
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> nGenerate; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -g switch, (instead got \'" << argv[i] << "\' - as a number, " << nGenerate << ").\n";
@@ -133,7 +133,7 @@ main(int argc, char *argv[]){
 	if ( nGenerate < 1 )
 	  nGenerate = 1;
       } else if ( maxTrainIter == -1 ) {
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> maxTrainIter; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -M switch, (instead got \'" << argv[i] << "\' - as a number, " << maxTrainIter << ").\n";
@@ -142,7 +142,7 @@ main(int argc, char *argv[]){
 	if ( maxTrainIter < 1 )
 	  maxTrainIter = 1;
       } else if ( minGenArcs == -1 ) {
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> minGenArcs; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -M switch, (instead got \'" << argv[i] << "\' - as a number, " << minGenArcs << ").\n";
@@ -151,7 +151,7 @@ main(int argc, char *argv[]){
 	if ( minGenArcs < 0 )
 	  minGenArcs = 0;
       } else if ( thresh == -1 ) {
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> thresh; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -T switch, (instead got \'" << argv[i] << "\' - as a number, " << thresh << ").\n";
@@ -161,7 +161,7 @@ main(int argc, char *argv[]){
 	  thresh = 0;
       } else if ( convergeFlag ) {
 	convergeFlag = 0;
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> converge; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -e switch, (instead got \'" << argv[i] << "\' - as a number, " << converge << ").\n";
@@ -169,7 +169,7 @@ main(int argc, char *argv[]){
 	}
       } else if ( floorFlag ) {
 	floorFlag = 0;
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> smoothFloor; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -f switch, (instead got \'" << argv[i] << "\' - as a number, " << smoothFloor << ").\n";
@@ -177,7 +177,7 @@ main(int argc, char *argv[]){
 	}
       } else if ( pruneFlag ) {
 	pruneFlag = 0;
-	istrstream is(argv[i]);
+	istringstream is(argv[i]);
 	is >> prune; 
 	if ( is.fail() ) {
 	  cerr << "Expected a number after -p switch, (instead got \'" << argv[i] << "\' - as a number, " << prune << ").\n";
@@ -525,7 +525,7 @@ main(int argc, char *argv[]){
 	  if ( !*pairStream )
 	    break;
 	  if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
-	    istrstream w(buf.c_str());
+	    istringstream w(buf.c_str());
 	    w >> weight;
 	    if ( w.fail() ) {
 	      cerr << "Bad weight: " << buf << '\n';

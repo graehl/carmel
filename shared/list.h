@@ -9,13 +9,13 @@
 #ifndef LIST_H 
 #define LIST_H 1
 
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
  #include <list>
  #define STL_LIST std::list
-#else
- #include <slist>
- #define STL_LIST std::slist
-#endif
+//#else
+// #include <slist>
+// #define STL_LIST std::slist
+//#endif
 
 #include <iostream>
 
@@ -47,8 +47,8 @@ public:
 template <typename T> std::ostream & operator << (std::ostream &out, const List<T> &list)
 {
   out << "(";
-  List<T>::const_iterator end = list.end();  
-  for( List<T>::const_iterator n = list.begin() ; n != end ;++n)
+  typename List<T>::const_iterator end = list.end();  
+  for( typename List<T>::const_iterator n = list.begin() ; n != end ;++n)
     out << *n << ' ';
   out << ")";
   return out;
