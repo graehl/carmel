@@ -507,10 +507,10 @@ void WFST::writeLegible(ostream &os)
     if (!onearc)
       os << "\n(" << stateName(i);
     for (List<Arc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
-      if (onearc)
-        os << "\n(" << stateName(i);
 
       if ( a->weight.isPositive() ) {
+        if (onearc)
+          os << "\n(" << stateName(i);
         destState = stateName(a->dest);
         os << " (" << destState;
         if ( !brief || a->in || a->out ) { // omit *e* *e* labels

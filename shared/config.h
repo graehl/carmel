@@ -1,7 +1,7 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
-#define VERSION "3.0.1" 
+#define VERSION "3.0.3" 
 
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
