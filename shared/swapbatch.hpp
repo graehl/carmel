@@ -117,13 +117,14 @@ struct SwapBatch {
     void read(ifstream &is) {
         DBP_VERBOSE(0);
         char *endspace=begin()+capacity();
-        batches.back().push_back();
         char *newtop;
         std::streampos pos;
-        pos=is.tellg();
         for (;;) {
             if (is.eof())
                 return;
+            pos=is.tellg();
+            batches.back().push_back();
+          again:
             BatchMember &newguy=batches.back().back();
             newtop=newguy.read(is,top,endspace);
 
@@ -140,13 +141,13 @@ struct SwapBatch {
             if (newtop) {
                 Assert(newtop <= endspace);
                 top=newtop;
-                pos=is.tellg();
             } else {
                 if (begin() == end()) // already had a completely empty batch but still not enough room
                     throw ios::failure("an entire swap space segment couldn't hold the object being read.");
                 is.seekg(pos);
                 batches.back().pop_back();
                 create_next_batch();
+                goto again;
             }
         }
     }
