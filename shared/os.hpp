@@ -21,6 +21,8 @@
 #ifdef BOOST_IO_WINDOWS
 # define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 # include <windows.h>
+# undef max
+// WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
  typedef DWORD Error;
 #else
 # include <errno.h>

@@ -50,6 +50,11 @@ struct NormalizeGroups {
     size_t num_params()  const {
         return total_size;
     }
+    size_t max_params() const
+    {
+        return total_size.maximum();
+    }
+
     typename Groups::iterator find_group_holding(value_type v) {
         typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();
         DBPC3("find group",v,norm_groups);
@@ -82,7 +87,7 @@ struct NormalizeGroups {
     void print_stats(std::ostream &out=std::cerr) const {
         unsigned npar=num_params();
         unsigned ng=num_groups();
-        out << ng << " normalization groups, "  << npar<<" parameters, "<<(float)npar/ng<<" average parameters/group";
+        out << ng << " normalization groups, "  << npar<<" parameters, "<<(float)npar/ng<<" average parameters/group, "<<max_params()<< "max.";
     }
     void operator ()(Group &i) {
         GIt end=i.end(), beg=i.begin();

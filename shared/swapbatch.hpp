@@ -407,6 +407,9 @@ struct SwapBatch {
         BACKTRACE;
         total_items=0;
         n_batch=0;
+        if (batchsize < sizeof(size_type))
+            batchsize=sizeof(size_type);
+
         create_next_batch();
     }
 

@@ -343,12 +343,23 @@ struct self_destruct {
 template <class Size=size_t>
 struct size_accum {
     Size size;
-    size_accum() : size(0) {}
+    Size max_size;
+    size_accum() : size(0),max_size(0) {}
     template <class T>
     void operator()(const T& t) {
         size += t.size();
+        if (max_size < size)
+            max_size = size;
     }
-    operator Size() const { return size; }
+    Size total() const
+    {
+        return size;
+    }
+    Size maximum() const
+    {
+        return max_size;
+    }
+    operator Size() const { return total(); }
 };
 
 template <class A,class B>
