@@ -19,6 +19,7 @@
 #include <boost/utility/enable_if.hpp>
 #include "genio.h"
 #include "byref.hpp"
+#include "backtrace.hpp"
 
 #ifdef DEBUG
 #define DEBUG_SEGFAULT Assert(0)
@@ -210,7 +211,6 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 */
 
 
-#ifdef DEBUG
 #include "threadlocal.hpp"
 
 
@@ -238,6 +238,10 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 
 #define DBPRE DBP::print_indent();DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
 
+#define BDBPW(a,w) do { if (DBPISON) { DBPS(" " #a "=_<");DBPSS(dbgstr(a,w));DBPS(">_");  }} while(0)
+#define DBPW(a,w) do { if (DBPISON) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
+
+#ifdef DEBUG
 #define DBP_IN ++DBP::depth
 #define DBP_OUT if (!DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
 #define DBP_SCOPE DBP::scopedepth DBP9423scopedepth
@@ -264,8 +268,6 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 
 //#define DBP2(a,p) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a,p));   }} while(0)
 //#define DBP(a) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a));  }} while(0)
-#define BDBPW(a,w) do { if (DBPISON) { DBPS(" " #a "=_<");DBPSS(dbgstr(a,w));DBPS(">_");  }} while(0)
-#define DBPW(a,w) do { if (DBPISON) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
 #define DBPC(msg) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); DBPOST;  }} while(0)
 #define DBPC2(msg,a) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST;  }} while(0)
@@ -274,9 +276,6 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBPC5(msg,a,b,c,d) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;  }} while(0)
 #define DBPC6(msg,a,b,c,d,e) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST;  }} while(0)
 #define DBPC4W(msg,a,b,c,w) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST;  }} while(0)
-
-
-
 
 #else
 #define DBP_IN
@@ -290,7 +289,6 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBP_VERBOSE(x)
 #define DBP_INC_VERBOSE
 #define DBP_ADD_VERBOSE(x)
-#define DBPS(x)
 
 #define DBP(a)
 #define DBP2(a,b)
@@ -306,14 +304,17 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBPC6(msg,a,b,c,d,e)
 #define DBPC4W(msg,a,b,c,w)
 
-#define BDBPW(a,w)
-#define DBPW(a,w)
-
 #define DBPENABLE(x)
 #define DBPOFF
 #define DBPON
 
 #endif
+
+#define RDBP(a) do { if (1) { DBPRE; BDBP(a);DBPOST;  }} while(0)
+#define RDBP2(a,b) do { if (1) { DBPRE; BDBP(a); BDBP(b);DBPOST;  }} while(0)
+#define RDBP3(a,b,c) do { if (1) { DBPRE; BDBP(a); BDBP(b); BDBP(c);DBPOST; }} while(0)
+#define RDBP4(a,b,c,d) do { if (1) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; }} while(0)
+#define RDBP5(a,b,c,d,e) do { if (1) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST; }} while(0)
 
 namespace DBP {
     extern unsigned depth;
