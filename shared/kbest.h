@@ -16,9 +16,6 @@ struct pGraphArc {
 int operator < (const pGraphArc l, const pGraphArc r) ;
 
 struct GraphHeap {
-  static List<GraphHeap *> usedBlocks;
-  static GraphHeap *freeList;
-  static const int newBlocksize;
   GraphHeap *left, *right;	// for balanced heap
   int nDescend;
   //  GraphHeap *cross;
@@ -26,6 +23,11 @@ struct GraphHeap {
   GraphArc *arc;		// data at each vertex
   pGraphArc *arcHeap;		// binary heap of sidetracks originating from a state
   int arcHeapSize;
+//#ifdef CUSTOM_NEW  
+  // not optional because of how freeAll works!
+  static GraphHeap *freeList;
+  static const int newBlocksize;
+  static List<GraphHeap *> usedBlocks;
   void *operator new(size_t s)
     {
       size_t dummy = s;
@@ -58,6 +60,7 @@ struct GraphHeap {
       }
       freeList = NULL;
     }
+//#endif
 };
 
 

@@ -16,7 +16,7 @@
 //#define DEBUGFB
 #define DEBUGCOMPOSE
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-4
-#undef MEMDEBUG // link to MSVCRT
+//#define MEMDEBUG // link to MSVCRT
 #endif
 
 // unless defined, Weight(0) will may give bad results when computed with, depending on math library behavior
@@ -24,12 +24,11 @@
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
 
 
-// bunch of small allocators wastes memory but faster new/delete
+// special-purpose allocators for hash tables - never reclaims memory for general pool, but faster (?)
 //#define CUSTOMNEW
-// crashes if not defined (??!)
 
 // allows WFST to be indexed in either direction?  not recommended.
-#undef BIDIRECTIONAL
+//#define BIDIRECTIONAL
 
 #include <iostream>
 namespace Config {
