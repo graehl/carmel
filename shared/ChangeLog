@@ -1,3 +1,7 @@
+2005-03-30  Jonathan Graehl  <graehl@isi.edu>
+
+	* weight.h: set 15 digits if double, 7 digits if float
+
 2005-03-29  Jonathan Graehl  <graehl@isi.edu>
 
 	* arc.h: had to change name of Arc to FSTArc for some insane
