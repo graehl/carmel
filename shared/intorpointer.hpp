@@ -2,6 +2,7 @@
 #define _INTORPOINTER_HPP
 
 #include "myassert.h"
+#include "genio.h"
 
 #ifdef TEST
 #include "test.hpp"
@@ -36,7 +37,7 @@ struct IntOrPointer {
     template <class C>
     void operator=(C j) { i = 2*(integer_type)j+1; }
     void operator=(value_type v) { p=v; }
-
+    IntOrPointer() {}
     IntOrPointer(const Self &s) : p(s.p) {}
     void operator=(const Self &s) { p=s.p; }
     template <class C>
@@ -47,7 +48,23 @@ struct IntOrPointer {
     bool operator ==(C j) { return integer() == j; }
     bool operator ==(Self s) { return p==s.p; }
     bool operator !=(Self s) { return p!=s.p; }
+    typedef void has_print_on;
+    GENIO_print_on {
+        if (is_integer())
+            o << integer();
+        else {
+            o << "0x" << hex << (size_t)pointer() << dec;
+        }
+    }
 };
+
+template <class charT, class Traits,class Pointed,class Int>
+std::basic_ostream<charT,Traits>&
+operator <<
+    (std::basic_ostream<charT,Traits>& os, const IntOrPointer<Pointed,Int> &arg)
+{
+  return gen_inserter(os,arg);
+}
 
 
 #ifdef TEST
