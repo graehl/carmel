@@ -167,8 +167,9 @@ struct Symbol {
 case '(':case ')':case ',':case '"':case '`':case '=':
 case '%':case '{':case '}':
 case '\t':case '\r':case '\n':case ' ':
-
+#ifndef GRAPHVIZ_SYMBOL
                   case '^':case ';':    //FIXME: think this breaks treeviz.cpp (but it's needed for transducer.hpp)
+#endif 
 //case '#':
     //case '$':
     //case ':':
