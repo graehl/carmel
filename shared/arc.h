@@ -10,6 +10,7 @@
 #define ARC_H 1
 
 #include "weight.h"
+#include "strhash.h"
 
 struct PathArc {
   const char *in;
@@ -30,11 +31,10 @@ struct Arc {
     in(i), out(o), dest(d), weight(w), groupId(g){}
 };
 
+std::ostream & operator << (std::ostream &out,const Arc &a); // Yaser 7-20-2000
+
 typedef Arc *HalfArc;
 
-void printArc(void *arc, std::ostream &out);
-
-std::ostream & operator << (std::ostream &out,const Arc &a); // Yaser 7-20-2000
 						  
 struct UnArc {
   int in;

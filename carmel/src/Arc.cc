@@ -16,12 +16,6 @@ ostream & operator << (ostream & o, const PathArc &p)
   return o;
 }
 
-void printArc(void *arc, ostream &out) {
-  Arc *a = (Arc *) arc;
-  out << '(' << a->dest << ' ' << a->in << ' ' << a->out << ' ' << a->weight << ')';
-}
-
-
 ostream & operator << (ostream &out,const Arc &a) { // Yaser 7-20-2000
   out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
   return(out); 
