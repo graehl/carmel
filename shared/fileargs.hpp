@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+//#include "fileheader.hpp"
 
 typedef boost::shared_ptr<std::istream> Infile;
 typedef boost::shared_ptr<std::ostream> Outfile;
@@ -96,7 +97,6 @@ void validate(boost::any& v,
 
     if (s == "-") {
         boost::shared_ptr<std::istream> r(&std::cin, null_deleter());
-        v = boost::any(r);
     } else {
         boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
         if (!*r) {
