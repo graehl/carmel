@@ -22,7 +22,8 @@ OBJ.solaris = ${DIR}/obj/solaris
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src
-IN = -I$(INC) -I- -I${DIR}/STLport
+IN = -I$(INC) -I-
+IN = -I${DIR}/src -I$(SHARED) -I- -I${BOOST} 
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
 CC.solaris = /nfs/topaz/graehl/isd/solaris/bin/g++3.2
@@ -31,7 +32,7 @@ CC.linux = g++
 CC.freebsd = g++31
 CC.macosx = g++
 
-CCFLAGS = -c -Wall -I../boost/boost
+CCFLAGS = -c -Wall 
 #-Wall 
 #-fno-exception
 LDFLAGS = -L$(LIB) -lm
