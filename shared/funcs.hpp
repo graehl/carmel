@@ -246,8 +246,7 @@ struct tick_writer
     template <class C>
     void operator()(const C& unused)
     {
-        if (pout)
-            *pout << tick;
+        return operator()();
     }
 };
 
@@ -277,13 +276,7 @@ struct periodic_wrapper : public C
     }
     template <class C2>
     result_type operator()(const C2& val) {
-        DBP2(period,left);
-        if (period) {
-            if (!--left) {
-                left=period;
-                return Imp::operator()(val);
-            }
-        }
+        return operator()();
     }
 };
 
@@ -315,21 +308,6 @@ struct progress_ticker {
 };
 */
 
-
-template <class Label,class F>
-struct ProgressReader
-{
-    F tick;
-    ProgressReader(const F &f) : tick(f) {}
-    ProgressReader(const ProgressReader &p) : tick(p.tick) {}
-    typedef Label value_type;
-    template <class charT, class Traits>
-    std::basic_istream<charT,Traits>&
-    operator()(std::basic_istream<charT,Traits>& in,Label &l) const {
-        deref(tick)();
-        return in >> l;
-    }
-};
 
 
 template <class Forest>
