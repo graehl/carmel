@@ -1,3 +1,7 @@
+Wed Aug 27 17:12:16 2003  Jonathan Graehl  <graehl@brahms.isi.edu>
+
+	* src/train.cc: -o 1.1 scales EM changes, new code to deal with anomoly that EM can worsen perplexity if tied arcs make normalization unstable/nonconvergent (e.g. span.spell.wfst).  related changes in several files.
+
 Tue May 20 17:14:36 2003  Jonathan Graehl  <graehl@enescu.isi.edu>
 
 	* marcu hide-the-transducer changes (if #define MARCU in finite.cc)
