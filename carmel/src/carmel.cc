@@ -101,6 +101,44 @@ void outWithoutQuotes(const char *str, ostream &out) {
 }
 
 
+struct wfst_paths_printer {
+    enum { SIDETRACKS_ONLY=0 };
+    unsigned n_paths;
+    Weight w;
+    WFST &wfst;
+    ostream &out;
+    bool *flags;
+    wfst_paths_printer(WFST &_wfst,ostream &_out=cout,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {}
+    void start_path(unsigned k,FLOAT_TYPE cost) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
+        ++n_paths;
+        w.setCost(cost);
+    }
+    void end_path() {
+        out << w << endl;
+    }
+    void visit_best_arc(const GraphArc &a) {
+        const char * outSym;
+        Arc &arc=*(Arc *)a.data;
+        if ( flags['O'] || flags['I'] ) {
+            if ( flags['O'] )
+                outSym = wfst.outLetter(arc.out);
+            else
+                outSym = wfst.inLetter(arc.in);
+            if ( !(flags['E'] && isSpecial(outSym)) ) {
+                if ( flags['Q'] )
+                    outWithoutQuotes(outSym, out);
+                else
+                    out << outSym;
+                out << " ";
+            }
+        } else {
+            wfst.printArc(arc,a.source,out);
+        }
+    }
+    void visit_sidetrack_arc(const GraphArc &a) { visit_best_arc(a); }
+
+};
+
 void printPath(bool *flags,const List<PathArc> *pli) {
   Weight w = 1.0;
   const char * outSym;
@@ -613,16 +651,13 @@ fail_ntarget:
         result->unTieGroups();
     }
     if ( kPaths > 0  ) {
-      int nGoodPaths = 0;
+        unsigned kPathsLeft=kPaths;
       if ( result->valid() ) {
-        List <List<PathArc> > *bestPaths = result->bestPaths(kPaths);
-        Assert(bestPaths);
-        for ( List<List<PathArc> >::const_iterator pli=bestPaths->const_begin(),end=bestPaths->const_end()  ; pli != end; ++pli, ++nGoodPaths )
-          printPath(flags,&*pli);
-
-        delete bestPaths;
+          wfst_paths_printer pp(*result,cout,flags);
+          result->bestPaths(kPaths,pp);
+          kPathsLeft -= pp.n_paths;
       }
-      for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
+      for ( int fill = 0 ; fill < kPathsLeft ; ++fill ) {
         if ( !flags['W'] )
           cout << 0;
         cout << "\n";

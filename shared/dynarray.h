@@ -284,6 +284,12 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   const T* end() const {
           return endspace;
   }
+        const T* const_begin() const {
+          return vec;
+        }
+  const T* const_end() const {
+          return endspace;
+  }
   T & at(unsigned int index) const { // run-time bounds-checked
         T *r=vec+index;
         if (!(r < end()) )

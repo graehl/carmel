@@ -28,7 +28,6 @@ struct Graph {
   int nStates;
 };
 
-
 Graph reverseGraph(Graph g) ;
 
 extern Graph dfsGraph;
@@ -117,6 +116,10 @@ void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **take
 
 
 Graph removeStates(Graph g, bool marked[]); // not tested
+
+inline void freeGraph(Graph graph) {
+    delete[] graph.states;
+}
 
 void printGraph(Graph g, std::ostream &out);
 

@@ -74,7 +74,7 @@ typedef float FLOAT_TYPE;
 //#define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
 //#define DEBUGNORMALIZE
-//#define DEBUGKBEST
+#define DEBUGKBEST
 //#define DEBUGPRUNE
 //#define DEBUGFB
 #define DEBUGCOMPOSE

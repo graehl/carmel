@@ -20,6 +20,8 @@
 #include "myassert.h"
 #include "compose.h"
 #include <iterator>
+#include "kbest.h"
+
 using namespace std;
 
 ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
@@ -253,7 +255,13 @@ class WFST {
   // list is dynamically allocated - delete it
   // yourself when you are done with it
 
-  List<List<PathArc> > *bestPaths(int k); // bestPaths(k) gives a list of the (up to ) k 
+  List<List<PathArc> > *bestPaths(int k); // bestPaths(k) gives a list of the (up to ) k
+  // Visitor needs to accept GraphArc (from makeGraph ... (Arc *)->data gives WFST Arc - see kbest.h for visitor description
+  template <class Visitor> void bestPaths(unsigned k,Visitor &v) {
+      Graph graph = makeGraph();
+      ::bestPaths(graph,0,final,k,v);
+      freeGraph(graph);
+  }
   // best paths to final
   // labels are pointers to names in WFST so do not
   // use the path after the WFST is deleted
