@@ -214,6 +214,12 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   Array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
   explicit Array(unsigned sp=4) { alloc(sp); }
   Array(unsigned sp, const Alloc &a): Alloc(a) { alloc(sp); }
+  template<class I>
+  Array(unsigned n,I begin) { // copy up to n
+    alloc(n);
+    std::uninitialized_copy_n(begin, n, vec);
+  }
+
   unsigned capacity() const { return (unsigned)(endspace-vec); }
   unsigned size() const { return capacity(); }
   T * begin() { return vec; }
@@ -272,7 +278,7 @@ public:
     destroy();
         //~Super(); // happens implicitly!
   }
-  FixedArray(FixedArray<T,Alloc> &a) : Super(a) {
+  FixedArray(FixedArray<T,Alloc> &a) : Super(a.capacity()) {
     std::uninitialized_copy(a.begin(),a.end(),begin());
     //memcpy(begin(),a.begin(),a.size());
   }

@@ -19,7 +19,7 @@ struct HeapKey {
   typedef typename W::value_type weight_type;
   K key;
   static THREADLOCAL L locmap;
-  static THREADLOCAL W weightmap;  
+  static THREADLOCAL W weightmap;
   struct SetLocWeight {
     L old_loc;
     W old_weight;
@@ -47,14 +47,14 @@ struct HeapKey {
   //operator K () const { return key; }
   void operator = (HeapKey<K,W,L> rhs) {
     //location()=NULL;
-    key=rhs.key;    
+    key=rhs.key;
     location() = this;
   }
 };
 
 //!! Assumes never adjusted after heapPop and loc initialized to 0 (NULL) until first heapAdd
 // this is really ok because only operator = sets loc; passing/constructing/copying doesn't
-template <typename Heap,class K,class W,class L> 
+template <typename Heap,class K,class W,class L>
 inline void heapAdjustOrAdd ( Heap &heap, HeapKey<K,W,L> k) {
   typename Heap::iterator heapLoc=k.location();
   if (heapLoc)
@@ -62,6 +62,13 @@ inline void heapAdjustOrAdd ( Heap &heap, HeapKey<K,W,L> k) {
   else
     heapAdd(heap,k);
 }
+
+template <typename Heap,class K,class W,class L>
+inline void heapSafeAdd ( Heap &heap, HeapKey<K,W,L> k) {
+  if (!k.location())
+    heap.push_back(k);
+}
+
 
 #ifdef MAIN
 template<class K,class W,class L>
