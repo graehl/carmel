@@ -157,15 +157,27 @@ void dbgout(ostream &o,const std::string &a) {
 
 #ifdef _MSC_VER
 #include <windows.h>
-#define DBPS(a) (OutputDebugString((const char *)(a)))
+#define DBPS(a) do { (OutputDebugString((const char *)(a))); Config::debug() << (a); } while(0)
 #else
 #define DBPS(a) (Config::debug() << (a))
 #endif
 
 #include <boost/preprocessor/stringize.hpp>
-#define DBPRE DBPS(__FILE__ "(" BOOST_PP_STRINGIZE(__LINE__) "):")
+#if 0
+#ifdef _MSV_VER
+#undef BOOST_PP_STRINGIZE
+#define STRINGIZE( L ) #L
+#define MAKESTRING( M, L ) M(L)
+#define BOOST_PP_STRINGIZE(L) MAKESTRING(STRINGIZE, L )
+#endif
+#endif
+#define LINESTR dbgstr(__LINE__)
+//BOOST_PP_STRINGIZE(__LINE__)
+
+#define DBPRE DBPS(__FILE__ "(");DBPS(LINESTR);DBPS("):")
+
 #define DBPOST DBPS("\n")
-#define BDBP(a) do { DBPS(" " #a "=_<");DBPS(dbgstr(a));DBPS(">_"); } while(0)
+#define BDBP(a) do { DBPS(" " #a "=_<");const char *s=dbgstr(a);DBPS(s);DBPS(">_"); } while(0)
 
 #define DBP(a) do { DBPRE; BDBP(a);DBPOST; } while(0)
 #define DBP2(a,b) do { DBPRE; BDBP(a); BDBP(b);DBPOST; } while(0)
