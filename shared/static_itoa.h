@@ -1,8 +1,10 @@
 #ifndef STATIC_ITOA_H
 #define STATIC_ITOA_H
 
+#include "threadlocal.hpp"
+
   static char *static_itoa(unsigned pos) {
-    static char buf[] = "01234567890123456789"; // to put end of string character at buf[20]
+    static THREADLOCAL char buf[] = "01234567890123456789"; // to put end of string character at buf[20]
 	static const unsigned bufsize=sizeof(buf);
 	//Assert(bufsize==21);    
     // decimal string for int

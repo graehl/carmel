@@ -61,24 +61,22 @@ Since 2654435761 and 2^32 has no common factors in common, the multiplication pr
 }
 
 
-#ifdef UNORDERED_MAP
 
+#ifdef UNORDERED_MAP
+//#error
 #include <boost/unordered_map.hpp>
 // no template typedef so ...
 #define HashTable boost::unordered_map
 #define HASHNS_B namespace boost {
 #define HASHNS_E }
 
+/*
 template <class K,class V,class H,class P,class A>
 inline typename HashTable<K,V,H,P,A>::iterator find_value(const HashTable<K,V,H,P,A>& ht,const K& first) {
   return ht.find(first);
 }
+*/
 
-template <class K,class V,class H,class P,class A>
-inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
-{
-  return ht.find_second(first);
-}
 
 template <class K,class V,class H,class P,class A>
 inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
@@ -86,7 +84,7 @@ inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
   return &(ht[k]=v);
 }
 
-#else // internal hash map
+#else // graehl hash map
 
 #define HASHNS_B 
 #define HASHNS_E 
@@ -102,7 +100,7 @@ template <class T> struct hash;
 #include "myassert.h"
 #include <utility>
 
-const float DEFAULTHASHLOAD = 0.8f;
+const float DEFAULTHASHLOAD = 0.9f;
 template <class K,class V,class H,class P,class A> class HashTable ;
 template <typename K, typename V> class HashIter ;
 //template <typename K, typename V> class HashConstIter ;
@@ -123,8 +121,8 @@ template <typename K, typename V> class HashEntry {
   //const 
 	K first;
   V second;
-typedef K first_type;
-typedef V second_type;
+  typedef K key_type;
+  typedef V mapped_type;
 //private:
    HashEntry<K,V> *next;
 public:
@@ -297,8 +295,17 @@ template <class A,class H,class P>
 #include <memory>
 template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A::rebind<HashEntry<K,V> >::other {
  public:
+ typedef K key_type;
+ typedef V mapped_type;
   typedef H hasher;
   typedef P key_equal;
+   typedef HashIter<K,V> iterator;
+   typedef HashIter<K,V> const_iterator;
+
+   typedef std::pair<const K,V> value_type;
+   typedef HashEntry<K,V> *find_return_type;
+   typedef std::pair<find_return_type,bool> insert_return_type;
+
   hasher hash_function() const { return get_hash(); }
   key_equal key_eq() const { return get_eq(); }
  protected:
@@ -333,41 +340,34 @@ template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to
       return hashVal & siz;
     }
 public:
-   typedef HashIter<K,V> iterator;
-   typedef HashIter<K,V> const_iterator;
-
+ class local_iterator : public std::iterator<std::forward_iterator_tag, std::pair<const K,V> > {
+   typedef HashEntry<K,V> *T;
+   T m_rep;
    typedef std::pair<const K,V> value_type;
-   typedef K key_type;	
-   typedef HashEntry<K,V> *find_return_type;
-   typedef V second_type;
-   typedef std::pair<find_return_type,bool> insert_return_type;
-   class local_iterator : public std::iterator<std::forward_iterator_tag, std::pair<const K,V> > {
-	 typedef HashEntry<K,V> *T;
-	 T m_rep;
-   public:
-	 	 
-	 local_iterator(T t) : m_rep(t) {}
+ public:
+     
+   local_iterator(T t) : m_rep(t) {}
 
-	   local_iterator& operator++()
-	{ 
-	  m_rep = m_rep->next; return *this; 
-	}
-      local_iterator operator++(int)
-	{ 
-	  local_iterator tmp(*this); m_rep = m_rep->next; return tmp; 
-	}
-	typename local_iterator::value_type &operator*() const { return *(typename local_iterator::value_type *)m_rep; }
-      typename local_iterator::value_type *operator->() const { return (typename local_iterator::value_type *)m_rep; }
-      bool operator==(const local_iterator& x) const
-	{
-	  return m_rep == x.m_rep; 
-	}
-      bool operator!=(const local_iterator& x) const
-	{
-	  return m_rep != x.m_rep; 
-	}
+     local_iterator& operator++()
+       { 
+	 m_rep = m_rep->next; return *this; 
+       }
+     local_iterator operator++(int)
+     { 
+       local_iterator tmp(*this); m_rep = m_rep->next; return tmp; 
+     }
+     value_type &operator*() const { return *(value_type *)m_rep; }
+     value_type *operator->() const { return (value_type *)m_rep; }
+     bool operator==(const local_iterator& x) const
+     {
+       return m_rep == x.m_rep; 
+     }
+     bool operator!=(const local_iterator& x) const
+     {
+       return m_rep != x.m_rep; 
+     }
 
-   };
+ };
    typedef local_iterator const_local_iterator;
    
    const_local_iterator begin(size_t i) const {
@@ -718,16 +718,21 @@ template <typename K, typename H=::hash<K>, typename P=std::equal_to<K>, typenam
 
 */
 
+/*
 template <class K,class V,class H,class P,class A>
 inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTable<K,V,H,P,A>& ht,const K& first) {
   return ht.find(first);
 }
+*/
 
 
-template <class K,class V,class H,class P,class A>
-inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
+#include "byref.hpp"
+template <class K,class V,class H,class P,class A,class F>
+void enumerate(const HashTable<K,V,H,P,A>& ht,const K& first,F f)
 {
-  return ht.find_second(first);
+  for (size_t i=0;i<ht.bucket_count();++i)
+    for (typename HashTable<K,V,H,P,A>::local_iterator j=ht.begin(i),e=ht.end(i);j!=e;++j)
+      deref(f)(*j);
 }
 
 template <class K,class V,class H,class P,class A>
@@ -744,6 +749,15 @@ struct hash<unsigned int>
 	return uint_hash(key);
   }
 };
+
+template<>
+struct hash<char>
+{
+  size_t operator()(char key) const {
+	return key;
+  }
+};
+
 
 template<>
 struct hash<int>
@@ -802,5 +816,17 @@ template<> struct hash<C> \
 };\
 HASHNS_E
 
+template <class K,class V,class H,class P,class A>
+inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
+{
+  return ht.find_second(first);
+}
+
+template <class K,class V,class H,class P,class A>
+inline
+  typename HashTable<K,V,H,P,A>::insert_return_type insert(HashTable<K,V,H,P,A>& ht,const K& first,const V &v=V())
+{
+  return ht.insert(first,v);
+}
 
 #endif

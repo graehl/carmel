@@ -1,3 +1,4 @@
+
 #ifndef DYNARRAY_H
 #define DYNARRAY_H 1
 // For MEMCPY-able-to-move types only!
@@ -303,13 +304,13 @@ public:
   //F=FixedArray<T,Alloc> 
   template <class F>
   FixedArray(const F &a) : Super(a.size()) {
-    DBPC("FixedArray copy",a);
+    //    DBPC("FixedArray copy",a);
     uninit_copy_from(a.begin(),a.end());
   }
 
     
   FixedArray(const FixedArray<T,Alloc>  &a) : Super(a.size()) {
-    DBPC("FixedArray copy",a);
+    //    DBPC("FixedArray copy",a);
     uninit_copy_from(a.begin(),a.end());
   }
 
@@ -332,12 +333,12 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   }
 
   // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { invariant(); }
+  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { Assert(invariant()); }
 
   // creates vector holding sp copies of t; does initialize
   explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endvec(endspace) {
         construct(t);
-        invariant();
+        Assert(invariant());
   }
 
   void construct() {
@@ -357,7 +358,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 //      memcpy(vec,a.vec,sizeof(T)*sz);
     std::uninitialized_copy(a.begin(),a.end(),begin());
         endvec=endspace;
-    invariant();
+    Assert(invariant());
   }
 
   // warning: stuff will still be destructed!
@@ -385,11 +386,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 
 
   const T* end() const { // Array code that uses vec+space for boundschecks is duplicated below
-    invariant();
+    Assert(invariant());
           return endvec;
   }
     T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
-    invariant();
+    Assert(invariant());
           return endvec;
   }
   T & at(unsigned int index) const { // run-time bounds-checked
@@ -399,7 +400,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
         return *r;
   }
   T & operator[] (unsigned int index) const {
-    invariant();
+    Assert(invariant());
     Assert(vec+index < end());
     return vec[index];
   }
@@ -444,18 +445,18 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   // default-construct version (not in STL vector)
   void push_back()
     {
-      invariant();
+      Assert(invariant());
       PLACEMENT_NEW(push_back_raw()) T();
-      invariant();
+      Assert(invariant());
     }
   void push_back(const T& val)
     {
-    invariant();
+    Assert(invariant());
       PLACEMENT_NEW(push_back_raw()) T(val);
-    invariant();
+    Assert(invariant());
     }
   void push_back(const T& val,unsigned n)
-  { invariant();
+  { Assert(invariant());
           T *newend=endvec+n;
       if (newend > endspace) {
                 reserve_at_least(size()+n);
@@ -465,7 +466,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
           for (T *p=endvec;p!=newend;++p)
             PLACEMENT_NEW(p) T(val);
       endvec=newend;
-    invariant();}
+    Assert(invariant());}
 
   // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
   T *push_back_raw()
@@ -636,14 +637,24 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   }
   unsigned int size() const { return (unsigned)(endvec-vec); }
   void set_size(unsigned int newSz) { endvec=vec+newSz; }
+  void reduce_size(unsigned int n) {
+    T *end=endvec;
+    reduce_size_nodestroy(n);
+    for (T *i=endvec;i<end;++i)
+      i->~T();
+  }
+  void reduce_size_nodestroy(unsigned int n) {
+    Assert(invariant() && n<=size());
+    endvec=vec+n;    
+  }
   void clear_nodestroy() {
         endvec=vec;
   }
   void clear() {
-    invariant();
+    Assert(invariant());
       for ( T *i=begin();i!=end();++i)
                 i->~T();
-    endvec=vec;
+    clear_nodestroy();
   }
   ~DynamicArray() {
     clear();

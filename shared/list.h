@@ -41,6 +41,9 @@ public:
   List(size_t sz,const T &it):STL_LIST<T>(sz,it) {  }
   int notEmpty() const { return !isEmpty(); }
   int isEmpty() const { return empty(); }
+  unsigned size() const { //WARNING: you might think this is constant time, but it's not unless using STL_LIST
+    return count_length();
+  }
   int count_length() const{ 
 #ifdef USE_SLIST
     int count=0;
