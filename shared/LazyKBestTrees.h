@@ -5,7 +5,6 @@
 #include <vector>
 #include "Debug.h"
 
-
 // supports binary weighted AND-labeled forests with alternating AND/OR
 // bipartite graph structure (essentially, a hypergraph)
 // cost_T should act like nonneg reals with addition
@@ -13,7 +12,7 @@
 // e.g.:
 /*
   struct result_F {
-     typedef int result_T;
+     typedef int R;
      typedef int label_T;
      typedef float cost_T;
      
@@ -27,12 +26,12 @@
      cost_T getCost(label_T label,cost_T left,cost_T right) const { return left+right+label;} // binary
      
 // optional (you can follow backpointers yourself)
-     result_T *buildResult(label_T label) const { return label;} // leaf
-     result_T *buildResult(label_T label,result_T *unary) const { return unary+label;} // unary
-     result_T *buildResult(label_T label,result_T *left,result_T *right) const { return left+right+label;} // binary
+     R *buildResult(label_T label) const { return label;} // leaf
+     R *buildResult(label_T label,R *unary) const { return unary+label;} // unary
+     R *buildResult(label_T label,R *left,R *right) const { return left+right+label;} // binary
   };
 
-    typedef typename F::result_T Result;
+    typedef typename F::R Result;
     F result;
     typedef typename F::label_T Label;
     struct OR;
@@ -106,13 +105,13 @@ struct DefaultPoolAlloc {
 
 
 /*
-  struct result_t {
+  struct R {
    result(result *prototype, result *old_child, result *new_child,unsigned which_child);
    bool operator < (const result &other) const; //  worse < better!
   };
 
   struct ResultAlloc {
-      result_t *allocate(); // won't ever be deallocated unless you keep track of allocations yourself
+      R *allocate(); // won't ever be deallocated unless you keep track of allocations yourself
   };
  */
 #ifdef GRAEHL_HEAP
@@ -121,66 +120,98 @@ struct DefaultPoolAlloc {
 #include <algorithm>
 #endif
 
-template <class result_t,class ResultAlloc=DefaultPoolAlloc<result_t> >
-struct LazyKBest {
-//    LazyKBest(const ResultAlloc &_result_alloc=ResultAlloc()) : result_alloc(_result_alloc) {}
-    typedef result_t Result;
-//    const Result *DONE=NULL;
-    enum {
-        PENDING=0x1
-    };
-    //    const result_t *PENDING=(result_t *)0x1;
-    struct Node;
+template <class R,class A >
+struct lazy_kbest;
+
+//template <class r,class a> std::ostream &operator <<(std::ostream &o,const typename lazy_kbest<r,a>::LazyKEntry &e);
+
+
+namespace lazy_kbest_impl {
+
+template <class R,class A>
+struct Node;
+
+template <class R,class A=DefaultPoolAlloc<R> >
     struct Entry {
-        typedef std::vector<result_t *> pq_t;
+        typedef std::vector<R *> pq_t;
         unsigned childbp[2];
-        Node *child[2];
-        result_t *result;
-        void set(result_t *r,Node *c0,Node *c1) {
+        Node<R,A> *child[2]; 
+        R *result;
+        void set(R *_result,Node<R,A> *c0,Node<R,A> *c1) {
             childbp[0]=childbp[1]=0;
             child[0]=c0;
             child[1]=c1;
-            result=r;
+            result=_result;
         }
-        // note: 2heap.h provides a max heap, so we want the same < as result_t
+        // note: 2heap.h provides a max heap, so we want the same < as R
         inline bool operator <(const Entry &o) const {
             assertlvl(19,result && o.result);
             return *result < *o.result;
         }
+        typedef Entry<R,A>Self;
+        typedef Self default_print_on;
+        typedef default_print_on has_print_on;
+
+        void print_on(std::ostream &o) const
+        {
+            o << '(' << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
+        }
+        //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
+        //FIXME: g++ barfs on nested class + externally defined operator/member ... unnest Entry?
     };
-    // to use: initialize pending with viterbi.
+
+template <class R,class A=DefaultPoolAlloc<R> >
     struct Node {
-        static ResultAlloc result_alloc;
-        typedef Entry QEntry; // fixme: make this indirect for faster heap ops
+        typedef R Result;        
+        enum {
+            PENDING=0x1
+        };
+
+        typedef Node<R,A> Self;
+        typedef Self default_print_on;
+        typedef default_print_on has_print_on;
+        void print_on(std::ostream &o) const
+        {
+            o << '{' << this << ": " << " pending=" << pending << " memo=" << memo << '}';
+        }
+        
+        static A result_alloc;
+        typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
         typedef std::vector<QEntry> pq_t;
         pq_t pq;
-        typedef std::vector<result_t *> memo_t;
+        typedef std::vector<R *> memo_t;
         memo_t memo;
         QEntry pending; // store top here so after pop, successors can be deferred until next top is needed
         Node() {
             make_done();
         }
-        result_t *get_best(unsigned n) {
+        R *get_best(unsigned n) {
+            INFOTEST("node=" << *this << " n=" << n); // // 
             if (n < memo.size()) {
-                assertlvl(11,memo[n] != (result_t *)PENDING);
+                assertlvl(11,memo[n] != (R *)PENDING);
                 return memo[n]; // may be DONE
             } else {
                 assertlvl(19,n==memo.size());
-                if (done())
+                if (done()) {
+                    memo.push_back(NULL);                    
                     return NULL;
-                memo.push_back((result_t *)PENDING); //FIXME: use dynarray.h?
+                }
+                memo.push_back((R *)PENDING); //FIXME: use dynarray.h?
 //                IF_ASSERT(11) memo[n].result=PENDING;
                 return (memo[n]=next());                
             }
         }
         // must be added from best to worst order
-        void add_sorted(Result *r,Node *left=NULL,Node *right=NULL) {            
+        void add_sorted(Result *r,Node<R,A> *left=NULL,Node<R,A> *right=NULL) {            
+            INFOTEST("add_sorted this=" << this << " result=" << *r << " left=" << left << " right=" << right);
             if (done()) {
                 pending.set(r,left,right);
+                INFOTEST("done (pending) " << pending);
             } else {
-                Entry e;
+                QEntry e;
                 e.set(r,left,right);
                 pq.push_back(e);
+                INFOTEST("done (heap) " << e);
             }            
         }
         void make_done() {
@@ -209,28 +240,42 @@ struct LazyKBest {
         const QEntry &top() const {
             return pq.front();
         }
+        // modifies pending heavily and pushes it (after you incremented childbp[i]
+        void BUILDSUCC(R *old_parent,unsigned i)  {
+            R *old_child=pending.child[i]->memo[pending.childbp[i]];     
+            //            R *new_child;
+            INFOTEST("BUILDSUCC " << this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1] << " old_child=" <<old_child);
+            if (R *new_child=(pending.child[i])->get_best(++pending.childbp[i])) {        
+                INFOTEST(this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
+                pending.result=result_alloc.allocate(); 
+                new(pending.result) R(old_parent,old_child,new_child,i);  
+                push(pending);
+            }              
+        }
         void push_pending_succ() {
             assertlvl(99,!done());
-            result_t *old_parent=pending.result;
-            result_t *new_child;
-#define BUILDSUCC(i) do { \
-                  if (new_child=pending.child[i]->get_best(++pending.childbp[i])) { \
+            R *old_parent=pending.result;
+            
+            /*#define BUILDSUCC(old_parent,i) do {                               \
+                    R *old_child=pending.child[i]->memo[pending.childbp[i]];     \
+                    INFOTEST("BUILDSUCC " << this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1] << " old_child=" <<old_child);        \
+                if (new_child=(pending.child[i])->get_best(++pending.childbp[i])) {        \
+                    INFOTEST(this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  \
                     pending.result=result_alloc.allocate(); \
-                    result_t *old_child=pending.child[i]->memo[pending.childbp[i]]; \
-                    new(pending.result) result_t(old_parent,old_child,new_child,i);  \
+                    new(pending.result) R(old_parent,old_child,new_child,i);  \
                     push(pending); }  \
-                  }while(0)
-            if (pending.child[0]) {                
-                BUILDSUCC(0);                
-                if (pending.child[1] && --pending.childbp[0]==0) { // only increment second if first is initial - one path to every double (a,b) // -- to undo ++ in BUILDSUCC
-                    BUILDSUCC(1);
+                    }while(0)*/
+            if (pending.child[0]) { // always increment first childbp
+                BUILDSUCC(old_parent,0);                
+                if (pending.child[1] && --pending.childbp[0]==0) { // only increment second childbp if first is initial - so one path to every pair (a,b) // -- to undo ++ in BUILDSUCC
+                    BUILDSUCC(old_parent,1);
                 }
             }
 #undef BUILDSUCC
         }
-        result_t *next() {
+        R *next() {
             assertlvl(11,!done());
-            result_t *ret=pending.result;
+            R *ret=pending.result;
             push_pending_succ();
             if (pq.empty())
                 make_done();
@@ -241,40 +286,98 @@ struct LazyKBest {
             return ret;            
         }
     };
+#ifdef MAIN
+template <class R,class A>
+A Node<R,A>::result_alloc;
+#endif
+template <class V>
+std::ostream & operator << (std::ostream &o,const std::vector<V> &v) 
+{
+    o << '[';
+    bool first=true;
+    for (typename std::vector<V>::const_iterator i=v.begin(),e=v.end();i!=e;++i) {
+        if (first)
+            first=false;
+        else
+            o << ',';
+        o << *i;
+    }
+    o << ']';
+    return o;
+}
+
+
+} //NAMESPACE lazy_kbest_impl
+
+
+
+template <class R,class A>
+std::ostream &operator <<(std::ostream &o,const lazy_kbest_impl::Entry<R,A> &e)
+{
+    e.print_on(o);
+    return o;
+}
+
+template <class R,class A>
+std::ostream &operator <<(std::ostream &o,const lazy_kbest_impl::Node<R,A> &e)
+{
+    e.print_on(o);
+    return o;
+}
+
+
+
+template <class R,class A=DefaultPoolAlloc<R> >
+struct lazy_kbest {
+    typedef lazy_kbest_impl::Entry<R,A> Entry;
+    typedef lazy_kbest_impl::Node<R,A> Node;
+//    lazy_kbest(const A &_result_alloc=A()) : result_alloc(_result_alloc) {}
+    typedef R Result;
+//    const Result *DONE=NULL;
+    //    const R *PENDING=(R *)0x1;
+    //    template <class r,class q> struct Node;
+    //    template <class r,class q>
+    // to use: initialize pending with viterbi.
     
-    // visit(result_t &result,unsigned rank) // rank 0...k-1 (or earlier if forest has fewer trees)
+    // visit(R &result,unsigned rank) // rank 0...k-1 (or earlier if forest has fewer trees)
     template <class Visitor>
     void enumerate_kbest(unsigned k,Node *goal,Visitor visit=Visitor()) {
         for (unsigned i=0;i<k;++i) {
-            result_t *ith=goal->get_best(i);
+            R *ith=goal->get_best(i);
             if (!ith) break;
             visit(*ith,i);
         }
     }
 };
 
-#ifdef MAIN
-template <class result_t,class ResultAlloc >
-ResultAlloc LazyKBest<result_t,ResultAlloc>::Node::result_alloc;
-#endif
+
+
 
 #ifdef TEST
+//# include "default_print_on.hpp"
+//FIXME: doesn't work
+
 # include "test.hpp"
 # include <iostream>
 using namespace std;
 
-
 struct Result {
-    unsigned val;
-    Result(unsigned v) : val(v) {}
+    char val;
+    Result(char v) : val(v) {}
     Result(Result *prototype, Result *old_child, Result *new_child,unsigned which_child) {
         cerr << "proto=" << prototype->val << " old_child=" << old_child->val << " new_child=" << new_child->val << " childid=" << which_child << endl;
     }
     bool operator < (const Result &other) const {
-        return true;
+        return val < other.val;
     } //  worse < better!
 
 };
+
+ostream & operator <<(ostream &o,const Result &v) 
+{
+    return o << "(val=" << v.val << ')';
+}
+
 
 struct ResultPrinter {
     void operator()(const Result &r,unsigned i) const {
@@ -282,21 +385,23 @@ struct ResultPrinter {
     }
 };
 
-BOOST_AUTO_UNIT_TEST(TEST_LazyKBest) {
-    typedef LazyKBest<Result> k;
+typedef lazy_kbest<Result> LK;
+
+BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
     //a(b[OR b f ()],c(b,f))
-    k::Node a,b,c,f;
-    Result ra(1),rb(2),rc(3),rf(6),rb2(0),rb3(10);
+    LK::Node a,b,c,f;
+    Result ra('a'),rb('b'),rc('c'),rf('d'),rb2('B'),rb3('D');
     a.add_sorted(&ra,&b,&c);
     b.add_sorted(&rb); // terminal
     b.add_sorted(&rb2,&f);
     b.add_sorted(&rb3,&b);
     c.add_sorted(&rc,&b,&f);
     f.add_sorted(&rf); // terminal
-    k().enumerate_kbest(5,&a,ResultPrinter());
+    LK().enumerate_kbest(5,&a,ResultPrinter());
     
     BOOST_CHECK(0);
 }
 #endif
+
 
 #endif
