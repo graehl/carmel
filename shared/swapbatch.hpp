@@ -164,7 +164,7 @@ struct SwapBatch {
         out << size() << " items in " << n_batches() << " batches of " << batchsize << " bytes, stored in " << basename << "N";
     }
     size_type *d_tail;
-    void read_one(std::ifstream &is)
+    BatchMember *read_one(std::ifstream &is)
     {
         BACKTRACE;
         DBP_ADD_VERBOSE(3);
@@ -173,10 +173,11 @@ struct SwapBatch {
         void *save;
     again:
         save=space.save_end();
+        BatchMember *newguy;
         try {
             space.alloc_end<size_type>(); // precautionary: ensure we can alloc new d_tail.
             DBP(space.remain());
-            BatchMember *newguy=space.aligned_alloc<BatchMember>();
+            newguy=space.aligned_alloc<BatchMember>();
             DBP2((void*)newguy,space.remain());
             read((std::istream&)is,*newguy,space);
             DBP2(newguy,space.remain());
@@ -192,7 +193,7 @@ struct SwapBatch {
         }
         if (!is) {
             if (is.eof()) {
-                return;
+                return NULL;
             }
             throw std::ios::failure("error reading item into swap batch.");
         }
@@ -208,12 +209,24 @@ struct SwapBatch {
         *d_tail=0; // indicates end of batch; will reset if read is succesful
         *d_last_tail=d_tail-d_last_tail;
         DBP((void*)space.top);
+        return newguy;
     }
 
     void read_all(std::ifstream &is) {
         BACKTRACE;
         while(is)
             read_one(is);
+    }
+
+    template <class F>
+    void read_all_enumerate(std::ifstream &is,F f) {
+        BACKTRACE;
+        while(is) {
+            BatchMember *newguy=read_one(is);
+            if (newguy)
+                deref(f)(*newguy);
+        }
+
     }
 
     template <class F>
