@@ -192,25 +192,25 @@ void dbgout(ostream &o,const std::string &a) {
 
 
 #else
-#define DBP(a) 
-#define DBP2(a,b) 
-#define DBP3(a,b,c) 
+#define DBP(a)
+#define DBP2(a,b)
+#define DBP3(a,b,c)
 
-#define DBPC(c,a) 
+#define DBPC(c,a)
 
-#define BDBPW(a,w) 
-#define DBPW(a,w) 
+#define BDBPW(a,w)
+#define DBPW(a,w)
 
 #endif
 
 
-static const string constEmptyString;
-extern THREADLOCAL ostringstream dbgbuf;
-extern THREADLOCAL string dbgstring;
+static const std::string constEmptyString;
+extern THREADLOCAL std::ostringstream dbgbuf;
+extern THREADLOCAL std::string dbgstring;
 
 #ifdef MAIN
-THREADLOCAL ostringstream dbgbuf;
-THREADLOCAL string dbgstring;
+THREADLOCAL std::ostringstream dbgbuf;
+THREADLOCAL std::string dbgstring;
 #endif
 
 
