@@ -1,5 +1,5 @@
-#ifndef _SEMIRING_HPP
-#define _SEMIRING_HPP
+#ifndef SEMIRING_HPP
+#define SEMIRING_HPP
 
 
 /*template <class C>

@@ -1,5 +1,5 @@
-#ifndef _STRING_HPP
-#define _STRING_HPP
+#ifndef STRING_HPP
+#define STRING_HPP
 
 #include "dynarray.h"
 

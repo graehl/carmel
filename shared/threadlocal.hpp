@@ -1,5 +1,5 @@
-#ifndef _THREADLOCAL_HPP
-#define _THREADLOCAL_HPP
+#ifndef THREADLOCAL_HPP
+#define THREADLOCAL_HPP
 
 //#include "ttconfig.hpp"
 

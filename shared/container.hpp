@@ -1,5 +1,5 @@
-#ifndef _CONTAINER_HPP
-#define _CONTAINER_HPP
+#ifndef CONTAINER_HPP
+#define CONTAINER_HPP
 
 #include "byref.hpp"
 

@@ -1,5 +1,5 @@
-#ifndef _FUNCS_HPP
-#define _FUNCS_HPP
+#ifndef FUNCS_HPP
+#define FUNCS_HPP
 
 #include "memleak.hpp"
 
@@ -324,16 +324,53 @@ struct self_destruct {
     ~self_destruct() { if (!safety) me->safe_destroy(); }
 };
 
+template <class Size=size_t>
 struct size_accum {
-    size_t size;
+    Size size;
     size_accum() : size(0) {}
     template <class T>
     void operator()(const T& t) {
         size += t.size();
     }
-    operator size_t() { return size; }
+    operator Size() const { return size; }
 };
 
+template <class A,class B>
+struct both_functors_byref {
+    A &a;
+    B &b;
+    both_functors_byref(A &a_,B &b_) : a(a_),b(b_) {}
+    both_functors_byref(const both_functors_byref<A,B> &self) : a(self.a),b(self.b) {}
+    template <class C>
+    void operator()(C &c)
+    {
+        a(c);
+        b(c);
+    }
+};
+
+template <class A,class B>
+both_functors_byref<A,B> make_both_functors_byref(A &a_,B &b_)
+{
+    return both_functors_byref<A,B>(a_,b_);
+}
+
+
+
+
+/*
+      template <class T>
+    struct max_accum {
+        T m;
+        max_accum() : m() {}
+        template <class T2>
+        void operator()(const T2& t) {
+            if (m < t)
+                m = t;
+        }
+        operator T &() { return m; }
+    };
+*/
 template <class T>
 struct max_accum {
     T max;
@@ -344,6 +381,21 @@ struct max_accum {
             max = t;
     }
     operator T &() { return max; }
+    operator const T &() const { return max; }
+};
+
+template <class T>
+struct max_in_accum {
+    T max;
+    max_in_accum() : max() {}
+    template <class F>
+    void operator()(const F& t) {
+        for (typename F::const_iterator i=t.begin(),e=t.end();i!=e;++i)
+            if (max < *i)
+                max = *i;
+    }
+    operator T &() { return max; }
+    operator const T &() const { return max; }
 };
 
 

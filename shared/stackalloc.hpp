@@ -1,5 +1,5 @@
-#ifndef _STACKALLOC_HPP
-#define _STACKALLOC_HPP
+#ifndef STACKALLOC_HPP
+#define STACKALLOC_HPP
 
 #include <stdexcept>
 #include "funcs.hpp"
@@ -9,6 +9,8 @@
 //alignment is 4 ... does that mean you need to increment pointer by 8?  or does
 //T* x; x++ inc by 8 for you?  I think so, because if that alignment was
 //required, then sizeof(T) would be 8, not 6.
+
+// i.e. T* x; ++x or --x always preserves alignment.
 
 struct StackAlloc
 {

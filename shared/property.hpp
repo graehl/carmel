@@ -1,5 +1,5 @@
-#ifndef _PROPERTY_HPP
-#define _PROPERTY_HPP
+#ifndef PROPERTY_HPP
+#define PROPERTY_HPP
 
 #include <boost/property_map.hpp>
 #include "byref.hpp"

@@ -1,5 +1,5 @@
-#ifndef _TEMPLATE_HPP
-#define _TEMPLATE_HPP
+#ifndef TEMPLATE_HPP
+#define TEMPLATE_HPP
 
 #ifdef TEST
 #include "test.hpp"

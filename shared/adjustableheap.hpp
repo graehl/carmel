@@ -1,5 +1,5 @@
-#ifndef _ADJUSTABLEHEAP_HPP
-#define _ADJUSTABLEHEAP_HPP
+#ifndef ADJUSTABLEHEAP_HPP
+#define ADJUSTABLEHEAP_HPP
 
 #include "2heap.h"
 #include "threadlocal.hpp"

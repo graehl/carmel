@@ -1,5 +1,5 @@
-#ifndef _COMMANDUTIL_HPP
-#define _COMMANDUTIL_HPP
+#ifndef COMMANDUTIL_HPP
+#define COMMANDUTIL_HPP
 
 #include <string>
 #include <fstream>

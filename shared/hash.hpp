@@ -1,5 +1,5 @@
-#ifndef _HASH_HPP
-#define _HASH_HPP
+#ifndef HASH_HPP
+#define HASH_HPP
 
 #ifdef __GNUC__
       #if __GNUC__ < 3
@@ -15,7 +15,7 @@
       #endif
 #else      // ...  there are other compilers, right?
 #include <hash_map>
-#if !(defined(_MSC_VER)) 
+#if !(defined(_MSC_VER))
 //&& _MSC_VER >= 1300)
 namespace stdext = std;
 #endif
@@ -37,9 +37,9 @@ template <class H,class K>
 typename H::value_type::second_type *find_second(const H& ht,const K& k)
 {
   if (h::iterator_type i=ht.find(k) != ht.end())
-	return &(h->second);
+    return &(h->second);
   else
-	return NULL;  
+    return NULL;
 }
 */
 
@@ -52,8 +52,8 @@ BOOST_AUTO_UNIT_TEST( hash)
 {
   stdext::hash_map<int,int> hm;
   hm[0]=1;
-  BOOST_CHECK(hm.find(0)!=hm.end());  
-  BOOST_CHECK(hm.find(1)==hm.end());  
+  BOOST_CHECK(hm.find(0)!=hm.end());
+  BOOST_CHECK(hm.find(1)==hm.end());
   StringKey s("no");
   stdext::hash_map<StringKey,int> sm;
   sm["yes"]=0;

@@ -1,5 +1,5 @@
-#ifndef _PACKEDALLOC_HPP
-#define _PACKEDALLOC_HPP
+#ifndef PACKEDALLOC_HPP
+#define PACKEDALLOC_HPP
 // no separate implementation for now, just #define MAIN in one source file that includes this
 
 #include "list.h"

@@ -1,5 +1,5 @@
-#ifndef _WEIGHT_H
-#define _WEIGHT_H
+#ifndef WEIGHT_H
+#define WEIGHT_H
 
 /*
 All these are legal input (and output) from Carmel, SuperCarmel?, and ForestEM?:
