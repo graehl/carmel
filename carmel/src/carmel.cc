@@ -160,7 +160,8 @@ main(int argc, char *argv[]){
   int floorFlag = 0;
   bool seedFlag = false;
   int max_states = WFST::UNLIMITED;
-  Weight keep_path_ratio = Weight::INFINITY;
+  Weight keep_path_ratio;
+  keep_path_ratio.setInfinity();
   bool wrFlag = false;
   bool msFlag = false;
   int nGenerate = 0;
