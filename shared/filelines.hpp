@@ -38,6 +38,7 @@ struct FileLines
             }*/
 
         file->clear(); // don't want EOF flag stopping reads.
+        line_begins.compact();
     }
     void load(std::string filename) {
         file.reset(new std::ifstream);

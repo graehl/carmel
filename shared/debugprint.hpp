@@ -19,7 +19,6 @@
 #include <boost/utility/enable_if.hpp>
 #include "genio.h"
 #include "byref.hpp"
-#include "backtrace.hpp"
 
 #ifdef DEBUG
 #define DEBUG_SEGFAULT Assert(0)
@@ -394,6 +393,5 @@ template<class A>
 const char * dbgstrw(const A &a) {
   return dbgstr(a);
 }
-
 
 #endif

@@ -3,37 +3,44 @@
 
 #include "dynarray.h"
 #include <exception>
+#include <iostream>
 
 class BackTrace
 {
-    typedef std::pair<char * const, unsigned> Loc;
+    typedef std::pair<const char *, unsigned> Loc;
     typedef DynamicArray<Loc> LocStack;
     static LocStack stack;
-    char * const fileName;
-    unsigned     line;
+    const char *file;
+    unsigned line;
+    struct LocWriter {
+        std::ostream & operator()(std::ostream &o,const Loc &loc) {
+            return o << loc.first << " line " << loc.second;
+        }
+    };
 public:
-    BackTrace(char * const f, unsigned l)
-        : file(f)
-        , line(l)
-        {}
-    ~BackTrace()
-        {
-            if (std::uncaught_exception())
-                {
-                    stack.push_back(Loc(file, line ));
-                }
-        }
-    static void print(std::ostream& o)
-        {
+    BackTrace(const char *f, unsigned l)  : file(f), line(l) {}
+    ~BackTrace() {
+        if (std::uncaught_exception())
+            stack.push_back(Loc(file, line ));
+    }
+    static void print_on(std::ostream& o=std::cerr) {
+        if (stack.size()) {
             o.clear();
-            o << "Backtrace (top = stack top):\n" << stack;
+            o << "Exception unwind sequence:\n";
+            stack.print_on(o,LocWriter(),LocStack::MULTILINE);
+            o << std::endl;
         }
+    }
 };
 
 #ifdef MAIN
-static BackTrace::LocStack BackTrace::stack;
+BackTrace::LocStack BackTrace::stack;
 #endif
 
-#define BACKTRACE StackTrace BackTrace72845389034(__FILE__,__LINE__)
+#if defined(DEBUG) || !defined(NO_BACKTRACE)
+#define BACKTRACE BackTrace BackTrace72845389034(__FILE__,__LINE__)
+#else
+#define BACKTRACE
+#endif
 
 #endif

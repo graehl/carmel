@@ -5,7 +5,7 @@
 
 
 #if defined(DEBUG) && defined(_MSC_VER)
-//#define MEMDEBUG // link to MSVCRT
+#define MEMDEBUG // link to MSVCRT
 #  define _CRTDBG_MAP_ALLOC
 #  include <stdlib.h>
 #  include <crtdbg.h>
