@@ -16,20 +16,24 @@ using namespace std;
   struct result_F {
      typedef int result_T;
      typedef int label_T;
-     static void set_end(result_T &result) { result=-1; }
-     static bool is_end(result_T result) { return result==-1; }
-     static void set_pending(result_T &result) { result=-2; }
-     static bool is_pending(result_T result) { return result==-2; }
-     result_T operator ()(label_T label) const { return label;} // leaf
-     result_T operator ()(label_T label,result_T unary) const { return unary+label;} // unary
-     result_T operator ()(label_T label,result_T left,result_T right) const { return left+right+label;} // binary
-     bool operator <(result_T a, result_T b) const { // < means cheaper/better
-        return a < b;
-     }
+     typedef float cost_T;
+     static void set_end(cost_T &cost) { cost=-1; }
+     static bool is_end(cost_T cost) { return cost==-1; }
+     static void set_pending(cost_T &cost) { cost=-2; }
+     static bool is_pending(cost_T cost) { return cost==-2; }
+     
+     cost_T getCost(label_T label) const { return label;} // leaf
+     cost_T getCost(label_T label,cost_T unary) const { return unary+label;} // unary
+     cost_T getCost(label_T label,cost_T left,cost_T right) const { return left+right+label;} // binary
+     
+// optional (you can follow backpointers yourself)
+     result_T *buildResult(label_T label) const { return label;} // leaf
+     result_T *buildResult(label_T label,result_T *unary) const { return unary+label;} // unary
+     result_T *buildResult(label_T label,result_T *left,result_T *right) const { return left+right+label;} // binary
   };
 */
 
-template <class cost_T,class result_F>
+template <class cost_T,class result_F,class Alloc>
 struct LazyKBest {
     typedef result_F F;
     typedef cost_T Cost;
@@ -38,9 +42,23 @@ struct LazyKBest {
     F result;
     struct OR;
     struct AND;
+    typedef std::pair<Cost,Result *> Tree;
 
     struct BestMemo {
-        vector<Result> kbest;        
+        vector<Tree> kbest;        
+    };
+    struct OrNode {
+        vector<BestMemo> memo; // index by kth best
+        struct AndNode {
+            Label label;
+            OrNode *first,*second;
+            AndNode(const Label &l) : label(l),first(NULL),second(NULL) {}
+            AndNode(const Label &l,OrNode *unary) : label(l),first(unary),second(NULL) {}
+            AndNode(const Label &l,OrNode *left,OrNode *right) : label(l),first(left),second(right) {}            
+        };
+        vector<AndNode> tails;
+        
+        typedef std::pair<cost_T
     };
     
     
