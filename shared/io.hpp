@@ -10,7 +10,7 @@ struct DefaultReader
   typedef Label value_type;
   template <class charT, class Traits>
         std::basic_istream<charT,Traits>&
-         operator()(std::basic_istream<charT,Traits>& in,Label &l) const {
+         operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
           return in >> l;
          }
 };
@@ -23,6 +23,19 @@ struct DefaultWriter
           return o << l;
          }
 };
+
+template <class Label>
+    struct max_reader {
+        typedef Label value_type;
+        value_type max; // default init = 0
+        template <class charT, class Traits>
+        std::basic_istream<charT,Traits>&
+        operator()(std::basic_istream<charT,Traits>& in,value_type &v) const {
+            in >> v;
+            if (max < v)
+                max = v;
+        }
+    };
 
 
 // can only be passed to class that itself reads things with a Reader get_from method.

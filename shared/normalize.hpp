@@ -18,14 +18,31 @@ template <class W>
 struct NormalizeGroups {
     typedef W weight_type;
     typedef PointerOffset<W> value_type; // pointer offsets
-    typedef FixedArray<value_type> Group;
-    typedef FixedArray<Group> Groups;
-    typedef typename value_type::template indirect_iterator<typename Group::iterator> indirect_iterator;
+    typedef Array<value_type> Group;
+    typedef SwapBatch<Group> Groups;
+    struct max_accum {
+        T max;
+
+        max_accum() : max() {}
+        template <class T>
+        void operator()(const T& t) {
+            if (max < t)
+                max = t;
+        }
+        operator T &() { return max; }
+    };
+    max_accum<value_type> max_offset;
+
+    NormalizeGroups(std::string basename,unsigned batchsize,value_type watch_value)  : norm_groups(basename,batchsize)
+    {
+        if (watch_value.get_offset())
+
+    }
+
     Groups norm_groups;
-//    value_type max_offset;
-    #ifdef NORMALIZE_SEEN
-    DynamicArray<bool> seen_index;
-    #endif
+
+
+    value_type max_offset;
     unsigned num_groups() const {
         return norm_groups.size();
     }
@@ -47,39 +64,11 @@ struct NormalizeGroups {
         }
         return NULL;
     }
-//    GENIO_get_from {
-//        IndirectReader<IndexToOffsetReader<W> > reader;
-//        norm_groups.get_from(in,reader);
-//    }
 
-#ifdef NORMALIZE_SEEN
-    struct seen_offset_p {
-        DynamicArray<bool> *seen_index;
-        void operator()(value_type v) {
-            (*seen_index)(v.get_index())=true; // default init of false when expanded
-        }
-        seen_offset_p(DynamicArray<bool> *a) : seen_index(a) {}
-        seen_offset_p(const seen_offset_p &o) : seen_index(o.seen_index) {}
-    };
-#endif
-    struct max_p {
-        value_type max; // default init = 0
-        void operator()(value_type v) {
-            if (max < v)
-                max = v;
-        }
-    };
-    size_t max_index() {
-#ifdef NORMALIZE_SEEN
-        nested_enumerate(norm_groups,seen_offset_p(&seen_index));
-        return seen_index.size();
-#else
-        max_p m;
-        nested_enumerate(norm_groups,ref(m));
-        return m.max.get_index();
-#endif
+    size_t max_index() const {
+        return max_offset.get_index();
     }
-    size_t required_size() {
+    size_t required_size() const {
         return max_index()+1;
     }
 
@@ -200,11 +189,16 @@ struct NormalizeGroups {
         normalize(array_base,array_base);
     }
     void normalize(W *array_base, W* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, ostream *_log=NULL) {
-//        SetLocal<W*> g1(base,array_base);
-//       SetLocal<W*> g2(dest,_dest);
+#ifdef 0
+        // don't need: no longer global
+        SetLocal<W*> g1(base,array_base);
+       SetLocal<W*> g2(dest,_dest);
+       SetLocal<W>g3(maxdiff,W(0));
+#else
         base=array_base;
         dest=_dest;
         maxdiff.setZero();
+#endif
 //        DBP(maxdiff);
         DBP_INC_VERBOSE;
 #ifdef DEBUG
@@ -224,8 +218,8 @@ std::basic_istream<charT,Traits>&
 operator >>
 (std::basic_istream<charT,Traits>& is, NormalizeGroups<C> &arg)
 {
-    return is >> arg.norm_groups;
-//    return gen_extractor(is,arg);
+    arg.norm_groups.read_all_enumerate(is,ref(arg.max_offset));
+    return is;
 }
 
 
@@ -250,7 +244,7 @@ BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
     w[1]=2;
     w[2]=3;
     w[3]=4;
-    NormalizeGroups<W> ng;
+    NormalizeGroups<W> ng("tmp.test.normalize",100);
     string s="((1) (2 3))";
     istringstream is(s);
     BOOST_CHECK(is >> ng);

@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include "funcs.hpp"
+#include "verbose_exception.hpp"
 
 // Iis it safe to align once then repeatedly alloc<T> if e.g. sizeof(T) is 6 and
 //alignment is 4 ... does that mean you need to increment pointer by 8?  or does
@@ -12,9 +13,10 @@
 struct StackAlloc
 {
     // throws when allocation fails (I don't let you check ahead of time)
-#if 0
-    struct Overflow //: public std::exception
+#if 1
+    struct Overflow : public VerboseException
     {
+        VERBOSE_EXCEPTION_WRAP(Overflow)
     };
 #else
     typedef std::exception Overflow;
