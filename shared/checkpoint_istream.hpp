@@ -1,0 +1,7 @@
+#ifndef CHECKPOINT_ISTREAM_HPP
+#define CHECKPOINT_ISTREAM_HPP
+
+
+
+
+#endif
