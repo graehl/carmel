@@ -21,7 +21,7 @@
 
 //using namespace boost::lambda;
 namespace lambda=boost::lambda;
-using namespace std;
+//using namespace std;
 
 //template <class L, class Alloc=std::allocator<L> > typedef Array<L,Alloc> String<L,Alloc>;
 

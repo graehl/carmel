@@ -12,13 +12,13 @@ struct InitRand {
 static InitRand _Weight_Init_Rand;
 
 */
-using namespace std;
+//using namespace std;
 
 // xalloc gives a unique global handle with per-ios space handled by the ios
 template <class Real>
-const int logweight<Real>::base_index = ios_base::xalloc();
+const int logweight<Real>::base_index = std::ios_base::xalloc();
 template <class Real>
-const int logweight<Real>::thresh_index = ios_base::xalloc();
+const int logweight<Real>::thresh_index = std::ios_base::xalloc();
 template <class Real>
 THREADLOCAL int logweight<Real>::default_base = logweight<Real>::EXP;
 template <class Real>

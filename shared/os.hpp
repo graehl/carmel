@@ -52,7 +52,7 @@ inline std::string get_current_dir() {
 #endif
 
 
-Error last_error() {
+inline Error last_error() {
 #ifdef MEMMAP_IO_WINDOWS
     return ::GetLastError();
 #else
@@ -60,7 +60,7 @@ Error last_error() {
 #endif
 }
 
-std::string error_string(Error err) {
+inline std::string error_string(Error err) {
 #ifdef MEMMAP_IO_WINDOWS
     LPVOID lpMsgBuf;
     if (::FormatMessage(
@@ -80,12 +80,12 @@ std::string error_string(Error err) {
 #endif
 }
 
-std::string last_error_string() {
+inline std::string last_error_string() {
     return error_string(last_error());
 }
 
 
-bool create_file(const std::string& path,std::size_t size) {
+inline bool create_file(const std::string& path,std::size_t size) {
 #ifdef _WIN32
 #if 0
     //VC++ only, unfortunately
@@ -110,7 +110,7 @@ bool create_file(const std::string& path,std::size_t size) {
 #endif
 }
 
-bool remove_file(const std::string &filename) {
+inline bool remove_file(const std::string &filename) {
     return 0==remove(filename.c_str());
 }
 

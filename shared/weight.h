@@ -227,7 +227,12 @@ struct logweight {                 // capable of representing nonnegative reals
     static const Real ln10 = log(10.f);
     weight=w*ln10;
   }
-
+    static logweight<Real> ZERO() {
+        return logweight<Real>();
+    }
+    static logweight<Real>  INF() {
+        return logweight<Real>(false,false);
+    }
   //  weight() : weight(-FLOAT_INF()) {}
   logweight() { setZero(); }
   logweight(bool,bool) { setInfinity(); }
@@ -625,6 +630,8 @@ WEIGHT_FORWARD_OP_RET(<,bool)
 WEIGHT_FORWARD_OP_RET(<=,bool)
 WEIGHT_FORWARD_OP_RET(>,bool)
 WEIGHT_FORWARD_OP_RET(>=,bool)
+WEIGHT_FORWARD_OP_RET(==,bool)
+WEIGHT_FORWARD_OP_RET(!=,bool)
     
 #ifdef _MSC_VER
 #pragma warning(pop)
