@@ -108,22 +108,6 @@ IndexedCopier<P1,P2> make_indexed_copier(P1 a,P2 b) {
   return IndexedCopier<P1,P2>(a,b);
 }
 
-template <class G,class P1,class P2>
-void copy_vertex_pmap(G &g,P1 a,P2 b) {
-  visit<typename graph_traits<G>::vertex_descriptor>(IndexedCopier(a,b));
-}
-
-template <class G,class P1,class P2>
-void copy_edge_pmap(G &g,P1 a,P2 b) {
-  visit<typename graph_traits<G>::edge_descriptor>(IndexedCopier(a,b));
-}
-
-template <class G,class P1,class P2>
-void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
-  visit<typename graph_traits<G>::hyperarc_descriptor>(IndexedCopier(a,b));
-}
-
-
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( PROPERTY )
 {
