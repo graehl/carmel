@@ -27,8 +27,8 @@ public:
       int newSpace = space;
       while ( index >= newSpace ) newSpace <<=1;
       resize(newSpace);
-      for ( T *v = vec + sz ; rv <= vec + index ; v++ )
-	PLACEMENT_NEW(v) T();
+      for ( T *v = vec + sz ; v <= vec + index ; v++ )
+		PLACEMENT_NEW(v) T();
       sz = ++index;
     }
     return vec[index];

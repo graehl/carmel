@@ -1,4 +1,5 @@
-// unused letters: -K -o
+// unused letters: o
+// -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
 // -w w = prune paths ratio (1 = keep only best path, 10 = keep paths up to 10 times worse)
 // -z n = keep at most n states
@@ -368,7 +369,7 @@ main(int argc, char *argv[]){
 
   for ( i = 0 ; i < nInputs ; ++i ) {
     if ( i != nTarget ) {
-      PLACEMENT_NEW (&chain[i]) WFST(*inputs[i]);
+      PLACEMENT_NEW (&chain[i]) WFST(*inputs[i],flags['K']);
       if ( !flags['m'] && nInputs > 1 )
         chain[i].unNameStates();
 	  if ( inputs[i] != &cin ) {
@@ -829,6 +830,7 @@ main(int argc, char *argv[]){
   cout << "\n-j\t\tPerform joint rather than conditional normalization";
   cout << "\n-Y\t\tWrite transducer to GraphViz .dot file\n\t\t(see http://www.research.att.com/sw/tools/graphviz/)";
   cout << "\n-q\t\tSuppress computation status messages (quiet!)";
+  cout << "\n-K\t\tDon't assume state names are indexes just because the final state is an integer";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
   cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";
