@@ -35,11 +35,19 @@ void WFST::trainBegin(WFST::NormalizeMethod method) {
   }
 
   Graph eGraph = makeEGraph();
-  trn->forETopo = topologicalSort(eGraph);
   Graph revEGraph = reverseGraph(eGraph);
-  trn->revETopo = topologicalSort(revEGraph);
-  delete[] revEGraph.states;
-  delete[] eGraph.states;
+  trn->forETopo = new List<int>;
+  { 
+	TopoSort t(eGraph,trn->forETopo);
+	t.order_crucial();
+	delete[] eGraph.states;
+  }
+  trn->revETopo = new List<int>;
+  { 
+	TopoSort t(revEGraph,trn->revETopo);
+	t.order_crucial();
+	delete[] revEGraph.states;
+  }  
 
   trn->f = trn->b = NULL;
   trn->maxIn = trn->maxOut = 0;
@@ -84,7 +92,7 @@ void WFST::trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter,WFST
 
   trn->smoothFloor = smoothFloor;
   int giveUp = 0;
-  Weight lastChange = 0;
+  Weight lastChange;
   Weight lastPerplexity(Weight::HUGE_FLOAT);
   for ( ; ; ) {
     ++giveUp;
@@ -135,7 +143,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
   for ( i = 0 ; i <= nIn ; ++i )
     for ( o = 0 ; o <= nOut ; ++o )
       for ( s = 0 ; s < nSt ; ++s )
-        w[i][o][s] = 0;
+        w[i][o][s].setZero();
 
   w[0][0][start] = 1;
 
@@ -189,7 +197,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
 #ifdef N_E_REPS
         w[i][o][s] = wNew[s];
 #endif
-        if ( w[i][o][s] == 0 )
+        if ( w[i][o][s].isZero() )
           continue;
         if ( o < nOut ) {
           IO.in = 0;
@@ -318,7 +326,7 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 		for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) {\
 		  a } } } while(0)
 
-EACHDW(dw->counts = 0;);
+EACHDW(dw->counts.setZero(););
 
 /*for ( s = 0 ; s < numStates() ; ++s )
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
@@ -375,7 +383,7 @@ EACHDW(dw->counts = 0;);
 #ifdef DEBUGTRAIN
         std::cerr<<"Forward prob = " << fin << std::endl;
 #endif
-    if ( !(fin > 0) ) {
+    if ( !(fin.isPositive()) ) {
       std::cerr << "No accepting path in transducer for input/output:\n";
       for ( i = 0 ; i < nIn ; ++i )
         std::cerr << (*in)[seq->i.let[i]] << ' ';
@@ -400,7 +408,7 @@ EACHDW(dw->counts = 0;);
     letIn = seq->i.let;
     letOut = seq->o.let;
 
-EACHDW(dw->scratch=0;);
+EACHDW(dw->scratch.setZero(););
     // initialize scratch counts to zero
 /*    for ( s = 0 ; s < numStates() ; ++s )
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
@@ -512,7 +520,7 @@ EACHDW(dw->scratch=0;);
   DUMPDW;
 #endif
   // find maximum change for convergence
-  Weight change, maxChange = 0;
+  Weight change, maxChange;
   for ( s = 0 ; s < numStates() ; ++s )
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       List<DWPair>::iterator end = ha.val().end();
@@ -565,9 +573,13 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
       pLDW->push(DW);
     }
   }
+  
+  List<int> eTopo;
+  {
   Graph eGraph = makeEGraph();
-  List<int> * eTopo = topologicalSort(eGraph);
+  TopoSort(eGraph,&eTopo).order_crucial();
   delete[] eGraph.states;
+  }
 
   Weight ***w = new Weight **[nIn+1];
   for ( i = 0 ; i <= nIn ; ++i ) {
@@ -575,9 +587,8 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
     for ( o = 0 ; o <= nOut ; ++o )
       w[i][o] = new Weight [numStates()];
   }
-  sumPaths(numStates(), 0, w, IOarcs, eTopo, nIn, inLet, nOut, outLet);
-
-  delete eTopo;
+  sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
+  
   delete[] IOarcs;
   delete[] inLet;
   delete[] outLet;

@@ -106,7 +106,9 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 
   Graph graph = makeGraph();
   float *dist = new float[nStates];
-  Graph shortPathGraph = shortestPathTree(graph, final, dist);
+  Graph shortPathGraph;
+  shortPathGraph.states = new GraphState[nStates];
+  shortestPathTree(graph, shortPathGraph.states, final, dist);
   shortPathTree = shortPathGraph.states;
 
   if ( shortPathTree[0].arcs.notEmpty() || final == 0 ) {

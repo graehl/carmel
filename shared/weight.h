@@ -30,6 +30,7 @@ static const int base_index; // handle to ostream iword for LogBase enum (initia
 static const int thresh_index; // handle for OutThresh
 
 public:	
+  static const Weight ZERO, INFINITY;
   static const float HUGE_FLOAT;
   float weight;
 
@@ -73,8 +74,18 @@ out_always_real(std::basic_ostream<A,B>& os);
   bool fitsInReal() const {
 	return isZero() || (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
   }
+  bool isInfinity() const {
+	  return weight == HUGE_FLOAT;
+  }
+  void setInfinity() {
+	  weight = HUGE_FLOAT;
+  }
+
   bool isZero() const {
 	  return weight == -HUGE_FLOAT;
+  }
+  bool isPositive() const {
+	  return weight > -HUGE_FLOAT;
   }
   void setZero() {
 	  weight = -HUGE_FLOAT;
@@ -95,6 +106,7 @@ out_always_real(std::basic_ostream<A,B>& os);
 
 //  Weight() : weight(-HUGE_FLOAT) {}
   Weight() { setZero(); }
+  Weight(bool,bool) { setInfinity(); }
   Weight(double f) {
 	setReal(f);
   }

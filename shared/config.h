@@ -24,9 +24,6 @@
 #define CUSTOMNEW
 // crashes if not defined (??!)
 
-// weak attempt at handling infinite sum of *e* paths with finite approximation.  not recommended, as the math is untested and suspect
-#undef N_E_REPS
-
 // allows WFST to be indexed in either direction?  not recommended.
 #undef BIDIRECTIONAL
 

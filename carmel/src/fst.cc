@@ -25,7 +25,7 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
   return fin;
 }
 
-void WFST::prune(Weight thresh)
+void WFST::pruneArcs(Weight thresh)
 {
   for ( int s = 0 ; s < numStates() ; ++s )
     states[s].prune(thresh);
@@ -47,7 +47,7 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
     for ( HashIter<IntKey, List<HalfArc> > ha(*states[s].index) ; ha ; ++ha )
       if ( !whichInput-- ) {
         Weight which = randomFloat();
-        Weight cum = 0;
+        Weight cum;
 
         List<HalfArc>::const_iterator a;
         List<HalfArc>::const_iterator end = ha.val().end();
@@ -56,7 +56,7 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
 			cum+=(*a)->weight;
 		}
 		which *= cum;
-		cum=0;
+		cum.setZero();
         for(a = ha.val().begin() ; a != end; ++a){
           if ( (cum += (*a)->weight) >= which ) {
             if ( (*a)->in )
@@ -250,7 +250,7 @@ for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
 	  } else // nothing left, sorry
 		  for ( g.beginArcs(); g.moreArcs(); g.nextArc())
 			  if (isNormal((*g)->groupId))
-				(*g)->weight = 0;
+				(*g)->weight.setZero();
   }
 
 #ifdef DEBUG_NORMALIZE

@@ -353,7 +353,7 @@ void WFST::writeLegible(ostream &os)
       if (onearc)
 		os << "\n(" << stateNames[i];
 
-      if ( a->weight > 0 ) {
+      if ( a->weight.isPositive() ) {
         destState = stateNames[a->dest];
         os << " (" << destState;
         if ( !brief || a->in || a->out ) { // omit *e* *e* labels
