@@ -25,31 +25,46 @@ struct DefaultWriter
          }
 };
 
-#define RAND_READ_TERMINATOR
-template <class Label
-#ifdef RAND_READ_TERMINATOR
-        ,char terminator=')'
-#endif
-          >
+template <class Label>
 struct RandomReader
 {
     typedef Label value_type;
     double prob_keep;
     RandomReader(double prob_keep_) : prob_keep(prob_keep_) {}
-    RandomReader(const RandomReader &r) : prob_keep(r.prob_keep) {}
+    RandomReader(const RandomReader<Label> &r) : prob_keep(r.prob_keep) {}
     template <class charT, class Traits>
     std::basic_istream<charT,Traits>&
     operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
             in >> l;
             while (in && random01() >= prob_keep) {
-#ifdef RAND_READ_TERMINATOR
+                in >> l;
+            }
+            return in;
+    }
+};
+
+//FIXME: need for this (really parsing outside context) indicates that readers
+//should return bool if they want a potential retry instead
+template <class Label
+        ,char terminator=')'
+          >
+struct RandomReaderTerm
+{
+    typedef Label value_type;
+    double prob_keep;
+    RandomReaderTerm(double prob_keep_) : prob_keep(prob_keep_) {}
+    RandomReaderTerm(const RandomReaderTerm<Label,terminator> &r) : prob_keep(r.prob_keep) {}
+    template <class charT, class Traits>
+    std::basic_istream<charT,Traits>&
+    operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
+            in >> l;
+            while (in && random01() >= prob_keep) {
                 char c;
                 if (!(in >> c))
                     break;
                 in.unget();
                 if (c==terminator)
                     break;
-#endif
                 in >> l;
             }
             return in;

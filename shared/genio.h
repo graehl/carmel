@@ -358,6 +358,7 @@ typedef std::ios_base::failure genio_exception;
 #define EXPECTI_FIRST(inop) do {  if (!(inop).good())  goto fail; } while(0)
 #define EXPECTI(inop) do {  if (!(inop).good()) { GENIO_THROW2("expected input failed: ",#inop); } } while(0)
 //#define EXPECTI_COMMENT(inop) do { if (!(inop).good()) { goto fail; } } while(0)
+#define I_COMMENT(inop) (skip_comment(in) && inop)
 #define EXPECTI_COMMENT_FIRST(inop) do { if ( !(skip_comment(in).good()&&(inop).good()) ) { goto fail; } } while(0)
 #define EXPECTI_COMMENT(inop) do { if (!(skip_comment(in).good()&&(inop).good())) { GENIO_THROW2("expected input failed: ",#inop); } } while(0)
 #define EXPECTCH(a) do { if (!in.get(c).good()) { GENIO_THROW2("expected input unavailable: ",#a); } if (c != a) { GENIO_THROW2("expected input failed: ",#a); } } while(0)
