@@ -1,9 +1,10 @@
-#ifndef DYNARRAY_H 
+#ifndef DYNARRAY_H
 #define DYNARRAY_H 1
 // For MEMCPY-able-to-move types only!
 // (MEMCPY copyable (i.e. no external resources owned, i.e. no real destructor) is not assumed although a is_pod template might be nice)
 // Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
 // DynamicArray extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
+// note that DynamicArray may have capacity()==0 (though using push_back and array(i) will allocate it as necessary)
 
 #include "config.h"
 
@@ -16,6 +17,10 @@
 #include "genio.h"
 #include "byref.hpp"
 #include <iterator>
+
+#ifdef TEST
+#include "../../tt/test.hpp"
+#endif
 //#include <boost/type_traits.hpp>
 
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
@@ -24,10 +29,10 @@ struct DefaultReader
 {
   typedef Label value_type;
   template <class charT, class Traits>
-	std::basic_istream<charT,Traits>&
-	 operator()(std::basic_istream<charT,Traits>& in,Label &l) const {
-	  return in >> l;
-	 }
+        std::basic_istream<charT,Traits>&
+         operator()(std::basic_istream<charT,Traits>& in,Label &l) const {
+          return in >> l;
+         }
 };
 
 template <class Label>
@@ -35,37 +40,37 @@ struct DefaultWriter
 {
   typedef Label value_type;
   template <class charT, class Traits>
-	std::basic_ostream<charT,Traits>&
-	 operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
-	  return o << l;
-	 }
+        std::basic_ostream<charT,Traits>&
+         operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
+          return o << l;
+         }
 };
 
 
   template <class charT, class Traits, class T,class Writer>
-	std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,Writer writer=Writer()) 
-  {	
-	o << '(';
-	if (multiline) {
+        std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,Writer writer=Writer())
+  {
+        o << '(';
+        if (multiline) {
 #define LONGSEP "\n "
-	  for (;begin!=end;++begin) {
-	   o << LONGSEP;
-	   deref(writer)(o,*begin);
-	  }
-	 o << "\n)";
+          for (;begin!=end;++begin) {
+           o << LONGSEP;
+           deref(writer)(o,*begin);
+          }
+         o << "\n)";
 
-	 o << std::endl;
-	} else {
-	  bool first=true;
-	  for (;begin!=end;++begin) {	  
-		if (first)
-		  first = false;
-		else
-			o << ' ';
-  		deref(writer)(o,*begin);
-	  }
-	 o << ')';
-	}
+         o << std::endl;
+        } else {
+          bool first=true;
+          for (;begin!=end;++begin) {
+                if (first)
+                  first = false;
+                else
+                        o << ' ';
+                deref(writer)(o,*begin);
+          }
+         o << ')';
+        }
   return GENIOGOOD;
 }
 
@@ -73,30 +78,30 @@ struct DefaultWriter
 template <class charT, class Traits, class Reader, class T>
 std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &out,Reader read)
 
-{  
+{
   char c;
-  
+
   EXPECTCH_SPACE_COMMENT('(');
   for(;;) {
     EXPECTI_COMMENT(in>>c);
-	  if (c==')') {	
-		break;
-	  }
-	  in.unget();
+          if (c==')') {
+                break;
+          }
+          in.unget();
 #if 1
-	  typename Reader::value_type temp;
-	  if (deref(read)(in,temp).good())
-		*out++=temp;
-	  else
-		goto fail;
+          typename Reader::value_type temp;
+          if (deref(read)(in,temp).good())
+                *out++=temp;
+          else
+                goto fail;
 #else
-	  // doesn't work for back inserter for some reason
-	  if (!deref(read)(in,*&(*out++)).good()) {
-		goto fail;
-	  }
+          // doesn't work for back inserter for some reason
+          if (!deref(read)(in,*&(*out++)).good()) {
+                goto fail;
+          }
 #endif
-	  EXPECTI_COMMENT(in>>c);
-	  if (c != ',') in.unget();
+          EXPECTI_COMMENT(in>>c);
+          if (c != ',') in.unget();
   }
   return GENIOGOOD;
 fail:
@@ -113,6 +118,10 @@ protected:
   T *vec;
   T *endspace;
 public:
+  bool invariant() const {
+    return vec >= endspace;
+  }
+
   typedef T value_type;
   typedef value_type *iterator;
   typedef const value_type *const_iterator;
@@ -120,33 +129,33 @@ public:
   typedef const T& const_reference;
 
   void construct() {
-	for (T *p=vec;p!=endspace;++p)
-	  PLACEMENT_NEW(p) T();
+        for (T *p=vec;p!=endspace;++p)
+          PLACEMENT_NEW(p) T();
   }
   void construct(const T& val) {
-	for (T *p=vec;p!=endspace;++p)
-	  PLACEMENT_NEW(p) T(val);
+        for (T *p=vec;p!=endspace;++p)
+          PLACEMENT_NEW(p) T(val);
   }
 
-	T& front() {
-	  Assert(size());
-	  return *begin();
-	}
-	T& back() {
-	  Assert(size());
-	  return *(end()-1);
-	}
+        T& front() {
+          Assert(size());
+          return *begin();
+        }
+        T& back() {
+          Assert(size());
+          return *(end()-1);
+        }
 
   template <class charT, class Traits>
-	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
-  {	
-	return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
+        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
+  {
+        return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
   }
 
   template <class charT, class Traits, class Writer >
-	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
-  {	
-	return range_print_on(o,begin(),end(),multiline,writer);
+        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+  {
+        return range_print_on(o,begin(),end(),multiline,writer);
   }
 
 
@@ -157,48 +166,49 @@ std::ios_base::iostate get_from_imp(Array<T2,Alloc2> *s,std::basic_istream<charT
 
 template <class charT, class Traits, class Reader>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
+  dealloc();
   return get_from_imp(this,in,read);
 }
 
   bool empty() const {
-	return vec==endspace;
+        return vec==endspace;
   }
   void dealloc() {
-	int cap=capacity();
-	if (cap) {
-	  Assert(vec);
-	  deallocate(vec,cap);	  
-	  Paranoid(vec=NULL;);
-	  endspace=vec;
-	}
+        int cap=capacity();
+        if (cap) {
+          Assert(vec);
+          deallocate(vec,cap);
+          Paranoid(vec=NULL;);
+          endspace=vec;
+        }
   }
   void destroy() {
       for ( T *i=begin();i!=end();++i)
-		i->~T();
+                i->~T();
   }
 
 
   void copyto(T *to,unsigned n) {
-	memcpy(to,vec,sizeof(T)*n);
+        memcpy(to,vec,sizeof(T)*n);
   }
 
   void copyto(T *to) {
-	copyto(to,capacity());
+        copyto(to,capacity());
   }
 
   // doesn't copy old elements like dynamicarray does
   void alloc(unsigned sp) {
-	if(sp) 
-	  vec=allocate(sp);
-	endspace=vec+sp;
+        if(sp)
+          vec=allocate(sp);
+        endspace=vec+sp;
   }
   void re_alloc(unsigned sp) {
-//	if (sp == space) return;
-	  dealloc();
-	  alloc(sp);
+//      if (sp == space) return;
+          dealloc();
+          alloc(sp);
   }
   explicit Array(const char *c) {
-	std::istringstream(c) >> *this;
+        std::istringstream(c) >> *this;
   }
   Array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
   Array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
@@ -207,32 +217,32 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   unsigned capacity() const { return (unsigned)(endspace-vec); }
   unsigned size() const { return capacity(); }
   T * begin() { return vec; }
-	T * end() {	  return endspace;	}
-	const T* begin() const {
-	  return vec;
-	}
+        T * end() {       return endspace;      }
+        const T* begin() const {
+          return vec;
+        }
   const T* end() const {
-	  return endspace;
+          return endspace;
   }
   T & at(unsigned int index) const { // run-time bounds-checked
-	T *r=vec+index;
-	if (!(r < end()) )
-	  throw std::out_of_range("dynarray");
-	return *r;
+        T *r=vec+index;
+        if (!(r < end()) )
+          throw std::out_of_range("dynarray");
+        return *r;
   }
   T & operator[] (unsigned int index) const {
     Assert(vec+index < end());
     return vec[index];
   }
   unsigned int index_of(T *t) const {
-	Assert(t>=begin() && t<end());
+        Assert(t>=begin() && t<end());
     return (unsigned int)(t-vec);
   }
   ///XXX: must always properly set_capacity AFTER set_begin since this invalidates capacity
-  void set_begin(T* buf) { 
-	//unsigned cap=capacity(); 
-	vec=buf; 
-	//set_capacity(cap); 
+  void set_begin(T* buf) {
+        //unsigned cap=capacity();
+        vec=buf;
+        //set_capacity(cap);
   }
   void set_capacity(unsigned int newCap) { endspace=vec+newCap; }
 };
@@ -243,31 +253,31 @@ public:
   typedef Array<T,Alloc> Super;
   explicit AutoArray(unsigned sp=4) : Super(sp) { }
   ~AutoArray() {
-	dealloc();
-  }  
-protected:
-  AutoArray(AutoArray<T,Alloc> &a) : Super(a.sp){        
+        dealloc();
   }
- 
+protected:
+  AutoArray(AutoArray<T,Alloc> &a) : Super(a.sp){
+  }
+
 };
 
 // frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
 template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public AutoArray<T,Alloc> {
 public:
   typedef AutoArray<T,Alloc> Super;
-  explicit FixedArray(unsigned sp=4) : Super(sp) { 
+  explicit FixedArray(unsigned sp=4) : Super(sp) {
     construct();
   }
   ~FixedArray() {
     destroy();
-	//~Super(); // happens implicitly!
+        //~Super(); // happens implicitly!
   }
   FixedArray(FixedArray<T,Alloc> &a) : Super(a) {
     std::uninitialized_copy(a.begin(),a.end(),begin());
     //memcpy(begin(),a.begin(),a.size());
   }
 private:
- 
+
 };
 
 
@@ -281,96 +291,106 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   enum { REPLACE=0, APPEND=1 };
   enum { BRIEF=0, MULTILINE=1 };
   explicit DynamicArray (const char *c) {
-	std::istringstream(c) >> *this;
+        std::istringstream(c) >> *this;
   }
 
   // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { }
+  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { invariant(); }
 
   // creates vector holding sp copies of t; does initialize
-  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endvec(endspace) { 
-	construct(t);
+  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endvec(endspace) {
+        construct(t);
+        invariant();
   }
 
   void construct() {
-	Assert(endvec=vec);
-	Array<T,Alloc>::construct();
-	endvec=endspace;
+        Assert(endvec=vec);
+        Array<T,Alloc>::construct();
+        endvec=endspace;
   }
   void construct(const T& t) {
-	Assert(endvec=vec);
-	Array<T,Alloc>::construct(t);
-	endvec=endspace;
+        Assert(endvec=vec);
+        Array<T,Alloc>::construct(t);
+        endvec=endspace;
   }
 
   DynamicArray(const DynamicArray &a) : Array<T,Alloc>(a.size()) {
-//	unsigned sz=a.size();
+//      unsigned sz=a.size();
     //alloc(sz);
-//	memcpy(vec,a.vec,sizeof(T)*sz);
+//      memcpy(vec,a.vec,sizeof(T)*sz);
     std::uninitialized_copy(a.begin(),a.end(),begin());
-	endvec=endspace;
+        endvec=endspace;
+    invariant();
   }
-  
+
   // warning: stuff will still be destructed!
   void copyto(T *to,T * from,unsigned n) {
-	memcpy(to,from,sizeof(T)*n);
+        memcpy(to,from,sizeof(T)*n);
   }
   void copyto(T *to,unsigned n) {
-	copyto(to,vec,n);
+        copyto(to,vec,n);
   }
   void copyto(T *to) {
-	copyto(to,size());
+        copyto(to,size());
   }
 
   void moveto(T *to) {
-	copyto(to);
-	clear_nodestroy();
+        copyto(to);
+        clear_nodestroy();
   }
 
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
   void move_rest_to(T *to,typename Array<T,Alloc>::iterator i) {
-	Assert(i >= begin() && i < end());
-	copyto(to,i,end()-i);
-	endvec=i;
+        Assert(i >= begin() && i < end());
+        copyto(to,i,end()-i);
+        endvec=i;
   }
 
 
   const T* end() const { // Array code that uses vec+space for boundschecks is duplicated below
-	  return endvec;
-  }							 
+    invariant();
+          return endvec;
+  }
     T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
-	  return endvec;
-  }							 
+    invariant();
+          return endvec;
+  }
   T & at(unsigned int index) const { // run-time bounds-checked
-	T *r=vec+index;
-	if (!(r < end()) )
-	  throw std::out_of_range("dynarray");
-	return *r;
+        T *r=vec+index;
+        if (!(r < end()) )
+          throw std::out_of_range("dynarray");
+        return *r;
   }
   T & operator[] (unsigned int index) const {
+    invariant();
     Assert(vec+index < end());
     return vec[index];
   }
   unsigned int index_of(T *t) const {
-	Assert(t>=begin() && t<end());
+        Assert(t>=begin() && t<end());
     return (unsigned int)(t-vec);
   }
 
   // NEW OPERATIONS:
   // like [], but bounds-safe: if past end, expands and default constructs elements between old max element and including new max index
-  T & operator() (unsigned int index) {    
+  T & operator() (unsigned int index) {
     if ( index >= size() ) {
       unsigned int newSpace = capacity();
-      while ( index >= newSpace ) newSpace *=2; //FIXME: overflow if newSpace > 2^31
-      resize(newSpace);
-	  T *v = end();
-	  endvec=vec+index+1;
+      if (index >= newSpace) {
+        if (newSpace==0)
+          newSpace = index+1;
+        else
+          do { newSpace *=2; } while ( index >= newSpace ) ; //FIXME: overflow if newSpace > 2^31
+        resize_up(newSpace);
+      }
+      T *v = end();
+      endvec=vec+index+1;
       while( v < endvec )
-		PLACEMENT_NEW(v++) T();
+        PLACEMENT_NEW(v++) T();
     }
     return vec[index];
   }
-   void push(const T &it) { 
+   void push(const T &it) {
     push_back(it);
   }
   T &top() {
@@ -387,199 +407,255 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   // default-construct version (not in STL vector)
   void push_back()
     {
+      invariant();
       PLACEMENT_NEW(push_back_raw()) T();
-    }    
+      invariant();
+    }
   void push_back(const T& val)
     {
+    invariant();
       PLACEMENT_NEW(push_back_raw()) T(val);
+    invariant();
     }
   void push_back(const T& val,unsigned n)
-    {	  
-	  T *newend=endvec+n;
+  { invariant();
+          T *newend=endvec+n;
       if (newend > endspace) {
-		reserve_at_least(size()+n);
+                reserve_at_least(size()+n);
         newend=endvec+n;
       }
-		
-	  for (T *p=endvec;p!=newend;++p)
-	    PLACEMENT_NEW(p) T(val);
+
+          for (T *p=endvec;p!=newend;++p)
+            PLACEMENT_NEW(p) T(val);
       endvec=newend;
-    }
+    invariant();}
 
   // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
   T *push_back_raw()
     {
       if ( endvec >= endspace )
-		resize(capacity() << 1); // FIXME: 2^31 problem
+        if (vec == endspace )
+          resize_up(4);
+        else
+          resize_up(capacity()*2); // FIXME: 2^31 problem
       return endvec++;
     }
-	void undo_push_back_raw() {
-	  --endvec;
-	}
+        void undo_push_back_raw() {
+          --endvec;
+        }
   T &at_grow(unsigned index) {
-	T *r=vec+index;
-	if (r >= end()) {
-	  if (r >= endspace) {
-		reserve_at_least(index+1); // doubles if it resizes at all
-		r=vec+index;
-	  }
-	  T *i=end();
-	  for (;i<=r;++i)
-		PLACEMENT_NEW(i) T();
-	  endvec=i;
-	}
-	return *r;
+        T *r=vec+index;
+        if (r >= end()) {
+          if (r >= endspace) {
+                reserve_at_least(index+1); // doubles if it resizes at all
+                r=vec+index;
+          }
+          T *i=end();
+          for (;i<=r;++i)
+                PLACEMENT_NEW(i) T();
+          endvec=i;
+        }
+        return *r;
   }
 
-	T& front()  {
-	  Assert(size());
-	  return *begin();
-	}
-	T& back() {
-	  Assert(size());
-	  return *(end()-1);
-	}
+        T& front()  {
+          Assert(size());
+          return *begin();
+        }
+        T& back() {
+          Assert(size());
+          return *(end()-1);
+        }
 
   void removeMarked(bool marked[]) {
-	unsigned sz=size();
+        unsigned sz=size();
     if ( !sz ) return;
     unsigned int f, i = 0;
     while ( i < sz && !marked[i] ) ++i;
-	  f = i; // find first marked (don't need to move anything below it)
+          f = i; // find first marked (don't need to move anything below it)
 #ifndef OLD_REMOVE_MARKED
-	  if (i<sz) {
-	    vec[i++].~T();
-		for(;;) {
-		  while(i<sz && marked[i]) 
-		    vec[i++].~T();
-		  if (i==sz)
-			break;
-		  unsigned i_base=i;
-		  while (i<sz && !marked[i]) ++i;
-		  if (i_base!=i) {
-			unsigned run=(i-i_base);
-//			DBP(f << i_base << run);
-			memmove(&vec[f],&vec[i_base],sizeof(T)*run);
-			f+=run;
-		  }
-		}
-	  }
-#else	  
+          if (i<sz) {
+            vec[i++].~T();
+                for(;;) {
+                  while(i<sz && marked[i])
+                    vec[i++].~T();
+                  if (i==sz)
+                        break;
+                  unsigned i_base=i;
+                  while (i<sz && !marked[i]) ++i;
+                  if (i_base!=i) {
+                        unsigned run=(i-i_base);
+//                      DBP(f << i_base << run);
+                        memmove(&vec[f],&vec[i_base],sizeof(T)*run);
+                        f+=run;
+                  }
+                }
+          }
+#else
     while ( i < sz )
       if ( !marked[i] )
-		memcpy(&vec[f++], &vec[i++], sizeof(T));
-      else 
-		vec[i++].~T();
+                memcpy(&vec[f++], &vec[i++], sizeof(T));
+      else
+                vec[i++].~T();
 #endif
     set_size(f);
   }
+  bool invariant() const {
+    return endvec >= vec && endvec <= endspace;
+    // && endspace > vec; //(compact of 0-size dynarray -> 0 capacity!)
+  }
 //  operator T *() { return vec; } // use at own risk (will not be valid after resize)
   // use begin() instead
-  void resize(unsigned int newSpace) {
-	unsigned sz=size();
-    if ( newSpace < sz ) 
-      newSpace = sz;
+  protected:
+  void resize_up(unsigned int newSpace) {
+    //     we are somehow allowing 0-capacity vectors now?, so add 1
+    //if (newSpace==0) newSpace=1;
+    Assert(newSpace > capacity());
+    // may be used when we've increased endvec past endspace, in order to fix things
+    unsigned sz=size();
     T *newVec = allocate(newSpace); // can throw but we've made no changes yet
     memcpy(newVec, vec, sz*sizeof(T));
-	deallocate(vec,capacity()); // can't throw
-	set_begin(newVec);set_capacity(newSpace);set_size(sz);
+    dealloc_safe();
+    set_begin(newVec);set_capacity(newSpace);set_size(sz);
+    // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
+  }
+  void dealloc_safe() {
+     unsigned oldcap=capacity();
+     if (oldcap)
+       deallocate(vec,oldcap); // can't throw
+  }
+  public:
+  void resize(unsigned int newSpace) {
+    Assert(invariant());
+    //    if (newSpace==0) newSpace=1;
+    if (endvec==endspace) return;
+    unsigned sz=size();
+    if ( newSpace < sz )
+      newSpace = sz;
+    if (newSpace) {
+      T *newVec = allocate(newSpace); // can throw but we've made no changes yet
+      memcpy(newVec, vec, sz*sizeof(T));
+      dealloc_safe();
+      set_begin(newVec);set_capacity(newSpace);set_size(sz);
+    } else {
+      dealloc_safe();
+      vec=endvec=endspace=0;
+    }
     // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
   }
   void compact() {
-	//equivalent to resize(size());
-	unsigned newSpace=size();
-    T *newVec = allocate(newSpace); // can throw but we've made no changes yet
-    memcpy(newVec, vec, newSpace*sizeof(T));
-	deallocate(vec,capacity()); // can't throw
-	set_begin(newVec);
-	//set_capacity(newSpace);set_size(sz);
-	endspace=endvec=vec+newSpace;
+    Assert(invariant());
+    if (endvec==endspace) return;
+        //equivalent to resize(size());
+    unsigned newSpace=size();
+
+    //    if (newSpace==0) newSpace=1; // have decided that 0-length dynarray is impossible
+    if(newSpace) {
+      T *newVec = allocate(newSpace); // can throw but we've made no changes yet
+      memcpy(newVec, vec, newSpace*sizeof(T));
+
+      dealloc_safe();
+                   //set_begin(newVec);
+        //set_capacity(newSpace);set_size(sz);
+      vec=newVec;
+      endspace=endvec=vec+newSpace;
+    } else {
+      dealloc_safe();
+      vec=endvec=endspace=0;
+    }
   }
 
-  // doesn't dealloc *into 
+  // doesn't dealloc *into
   void compact(Array<T,Alloc> *into) {
-	unsigned sz=size();
+        unsigned sz=size();
     into->alloc(sz);
-	copyto(into->begin());	
+        copyto(into->begin());
   }
 
   void reserve(unsigned int newSpace) {
-	if (newSpace > capacity())
-	  resize(newSpace);
+        if (newSpace > capacity())
+          resize(newSpace);
   }
   void reserve_at_least(unsigned req) {
-	unsigned newcap=capacity();
-	if (req > newcap) {
-	  do {
-		newcap *=2;
-	  } while (req > newcap); //FIXME: could loop forever if you have >= 2^31 capacity already
-	  resize(newcap);
-	}
+        unsigned newcap=capacity();
+        if (req > newcap) {
+          if (newcap==0)
+            resize_up(req);
+          else {
+            do {
+              newcap *=2;
+            } while (req > newcap); //FIXME: could loop forever if you have >= 2^31 capacity already
+            resize_up(newcap);
+          }
+        }
   }
   unsigned int size() const { return (unsigned)(endvec-vec); }
   void set_size(unsigned int newSz) { endvec=vec+newSz; }
   void clear_nodestroy() {
-	endvec=vec;
+        endvec=vec;
   }
   void clear() {
+    invariant();
       for ( T *i=begin();i!=end();++i)
-		i->~T();
+                i->~T();
     endvec=vec;
   }
-  ~DynamicArray() { 	
+  ~DynamicArray() {
     clear();
-//	if(vec) // to allow for exception in constructor
-	dealloc();
-	//vec = NULL;space=0; // don't really need but would be safer
+//      if(vec) // to allow for exception in constructor
+        dealloc();
+        //vec = NULL;space=0; // don't really need but would be safer
   }
 
   template <class charT, class Traits>
-	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
-  {	
-	return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
+        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
+  {
+        return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
   }
 
   template <class charT, class Traits, class Writer >
-	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
-  {	
-	return range_print_on(o,begin(),end(),multiline,writer);
+        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+  {
+        return range_print_on(o,begin(),end(),multiline,writer);
   }
 
+  // if any element read fails, whole array is clobbered (even if appending!)
   // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=REPLACE)
 
-{  
-  if (!append)
-	clear();
+{
+  if (append==REPLACE)
+        clear();
 
 #if 1
   // slight optimization from not needing temporary like general output iterator version.
-  char c;  
+  char c;
   EXPECTCH_SPACE_COMMENT('(');
   for(;;) {
     EXPECTI_COMMENT(in>>c);
-	  if (c==')') {	
-		break;
-	  }
-	  in.unget();
-	  push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
-	  if (!(deref(read)(in,back())).good()) {
-		//undo_push_back_raw();
-		goto fail;
-	  }
-	  EXPECTI_COMMENT(in>>c);
-	  if (c != ',') in.unget();
+          if (c==')') {
+                break;
+          }
+          in.unget();
+          push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
+          if (!(deref(read)(in,back())).good()) {
+                //undo_push_back_raw();
+                goto fail;
+          }
+          EXPECTI_COMMENT(in>>c);
+          if (c != ',') in.unget();
   }
+  Assert(invariant());
   return GENIOGOOD;
 fail:
   clear();
   return GENIOBAD;
 #else
   std::ios_base::iostate ret=
-	range_get_from(in,back_inserter(*this),read);
+        range_get_from(in,back_inserter(*this),read);
   if (ret == GENIOBAD)
-	clear();
+        clear();
   return ret;
 #endif
 }
@@ -593,7 +669,7 @@ template <class AB,class ABe,class O>
 unsigned new_indices(AB i, ABe end,O out) {
   int f=0;
   while (i!=end)
-	*out++ = *i++ ? -1 : f++;
+        *out++ = *i++ ? -1 : f++;
   return f;
 };
 
@@ -605,7 +681,7 @@ unsigned new_indices(AB remove,O out) {
 template <typename T,typename Alloc,class charT, class Traits, class Reader>
 //std::ios_base::iostate Array<T,Alloc>::get_from(std::basic_istream<charT,Traits>& in,Reader read)
 std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read)
-{  
+{
   DynamicArray<T,Alloc> s;
   std::ios_base::iostate ret=s.get_from(in,read);
   s.compact(a);
@@ -618,7 +694,7 @@ std::basic_istream<charT,Traits>&
 operator >>
  (std::basic_istream<charT,Traits>& is, Array<L,A> &arg)
 {
-	return gen_extractor(is,arg,DefaultReader<L>());
+        return gen_extractor(is,arg,DefaultReader<L>());
 }
 
 template <class charT, class Traits,class L,class A>
@@ -626,7 +702,7 @@ std::basic_istream<charT,Traits>&
 operator >>
  (std::basic_istream<charT,Traits>& is, DynamicArray<L,A> &arg)
 {
-	return gen_extractor(is,arg,DefaultReader<L>());
+        return gen_extractor(is,arg,DefaultReader<L>());
 }
 
 template <class charT, class Traits,class L,class A>
@@ -634,7 +710,7 @@ std::basic_ostream<charT,Traits>&
 operator <<
  (std::basic_ostream<charT,Traits>& os, const Array<L,A> &arg)
 {
-	return gen_inserter(os,arg);
+        return gen_inserter(os,arg);
 }
 
 
@@ -643,7 +719,7 @@ std::basic_ostream<charT,Traits>&
 operator <<
  (std::basic_ostream<charT,Traits>& os, const DynamicArray<L,A> &arg)
 {
-	return gen_inserter(os,arg);
+        return gen_inserter(os,arg);
 }
 
 #if 1
@@ -652,7 +728,7 @@ operator <<
   typename L::const_iterator il=l.begin(),iend=l.end(); \
   typename R::const_iterator ir=r.begin(); \
   while (il!=iend) \
-	if (!(*il++ == *ir++)) return false; \
+        if (!(*il++ == *ir++)) return false; \
   return true;
 
 #else
@@ -699,7 +775,6 @@ bool operator ==(const Array<Lt,A> &l, const Array<L2,A2> &r)
 
 
 #ifdef TEST
-#include "../../tt/test.hpp"
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };
 int a[] = { 1,2,3,4,5,6,7 };
@@ -710,12 +785,12 @@ int a2[] = {3,4,6,7};
 BOOST_AUTO_UNIT_TEST( dynarray )
 {
   {
-	DynamicArray<int> a;
-	a.at_grow(5)=1;
-	BOOST_CHECK(a.size()==5+1);
-	BOOST_CHECK(a[5]==1);
-	for (int i=0; i < 5; ++i)
-	  BOOST_CHECK(a.at(i)==0);
+        DynamicArray<int> a;
+        a.at_grow(5)=1;
+        BOOST_CHECK(a.size()==5+1);
+        BOOST_CHECK(a[5]==1);
+        for (int i=0; i < 5; ++i)
+          BOOST_CHECK(a.at(i)==0);
   }
   const int sz=7;
   {
@@ -725,7 +800,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   BOOST_CHECK(a.capacity() >= sz*3);
   BOOST_CHECK(a[sz]==sz);
   }
-  
+
   {
   DynamicArray<int> a(sz*3,sz);
   BOOST_CHECK(a.size() == sz*3);
@@ -745,14 +820,14 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   BOOST_CHECK(db.capacity() == sz); // shouldn't have grown
   BOOST_CHECK(search(a,a+sz,aa.begin(),aa.end())==a); // really just tests begin,end as proper iterators
   BOOST_CHECK(da.size() == sz);
-  BOOST_CHECK(da.capacity() >= sz);  
+  BOOST_CHECK(da.capacity() >= sz);
   BOOST_CHECK(search(a,a+sz,da.begin(),da.end())==a); // tests push_back
   BOOST_CHECK(search(a,a+sz,db.begin(),db.end())==a); // tests push_back
   BOOST_CHECK(search(da.begin(),da.end(),aa.begin(),aa.end())==da.begin());
   for (int i=0;i<sz;++i) {
     BOOST_CHECK(a[i]==aa.at(i));
-	BOOST_CHECK(a[i]==da.at(i));
-	BOOST_CHECK(a[i]==db(i));
+        BOOST_CHECK(a[i]==da.at(i));
+        BOOST_CHECK(a[i]==db(i));
   }
   BOOST_CHECK(da==aa);
   BOOST_CHECK(db==aa);
@@ -764,16 +839,16 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   db.removeMarked(rm2);
   BOOST_REQUIRE(db.size()==sz2);
   for (int i=0;i<sz2;++i)
-	BOOST_CHECK(a2[i]==db[i]);
+        BOOST_CHECK(a2[i]==db[i]);
   Array<int> d1map(sz),d2map(sz);
   BOOST_CHECK(3==new_indices(rm1,rm1+sz,d1map.begin()));
   BOOST_CHECK(4==new_indices(rm2,rm2+sz,d2map.begin()));
   int c=0;
   for (unsigned i=0;i<d1map.size();++i)
-	if (d1map[i]==-1)
-	  ++c;
-	else
-	  BOOST_CHECK(da[d1map[i]]==aa[i]);
+        if (d1map[i]==-1)
+          ++c;
+        else
+          BOOST_CHECK(da[d1map[i]]==aa[i]);
   BOOST_CHECK(c==4);
   db(10)=1;
   BOOST_CHECK(db.size()==11);
@@ -784,8 +859,8 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   string emptya=" ()";
   string emptyb="()";
   {
-	Array<int> a;
-	DynamicArray<int> b;
+        Array<int> a;
+        DynamicArray<int> b;
   istringstream iea(emptya);
   iea >> a;
   stringstream o;
@@ -796,7 +871,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   BOOST_CHECK(a.size()==0);
   BOOST_CHECK(b.size()==0);
   }
-  
+
   string sa="( 2 ,3 4\n \n\t 5,6)";
   string sb="(2 3 4 5 6)";
 
@@ -804,9 +879,9 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);}
 
   EQIOTEST(Array,Array)
-	EQIOTEST(Array,DynamicArray)
-	EQIOTEST(DynamicArray,Array)
-	EQIOTEST(DynamicArray,DynamicArray)
+        EQIOTEST(Array,DynamicArray)
+        EQIOTEST(DynamicArray,Array)
+        EQIOTEST(DynamicArray,DynamicArray)
 }
 #endif
 

@@ -232,7 +232,13 @@ inline std::basic_ostream<charT,Traits>& operator << \
 
 #define GENIO_print_on     template <class charT, class Traits> \
   std::ios_base::iostate \
-  print_on(std::basic_ostream<charT,Traits>& o) const
+  print_on(std::basic_ostream<charT,Traits>& o=std::cerr) const
+
+/*
+template <class charT, class Traits>
+  std::ios_base::iostate
+  print_on(std::basic_ostream<charT,Traits>& o=std::cerr) const
+*/
 
 #include <limits.h>
 

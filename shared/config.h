@@ -5,10 +5,18 @@
 
 //#define DEBUGNAN
 
-#define BOOST_DISABLE_THREADS
-#define BOOST_NO_MT
+//do this in Makefile for consistency with boost test lib src that don't include me:
+//#define BOOST_DISABLE_THREADS
+//#define BOOST_NO_MT
 
-#define DBP(a) do { Config::debug() << a; } while(0)
+
+#ifdef DEBUG
+#define DBP(a) do { dbp(a); } while(0)
+//#define DBP2(a,p) do { a.print_on(Config::debug(),p); } while(0)
+#else
+#define DBP(a)
+//#define DBP2(a,p)
+#endif
 
 //#define UNORDERED_MAP
 
@@ -100,6 +108,9 @@ typedef float FLOAT_TYPE;
 
 #include <iostream>
 namespace Config {
+  inline std::ostream &err() {
+    return std::cerr;
+  }
   inline std::ostream &message() {
     return std::cerr;
   }
@@ -113,5 +124,10 @@ namespace Config {
     return std::cerr;
   }
 };
+
+template<class A>
+static inline void dbp(const A &a) {
+  Config::debug() << a;
+}
 
 #endif //guard

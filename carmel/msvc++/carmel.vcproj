@@ -20,7 +20,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\..\tt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;DEBUG"
 				IgnoreStandardIncludePath="FALSE"
 				MinimalRebuild="TRUE"
@@ -72,7 +72,6 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
 				Optimization="3"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
@@ -81,7 +80,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\..\tt;..\..\boost"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
@@ -134,9 +133,8 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\..\tt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;DEBUG;TEST"
 				IgnoreStandardIncludePath="FALSE"
 				MinimalRebuild="TRUE"
@@ -188,7 +186,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt /Ob0"
+				AdditionalOptions=" /Ob0"
 				Optimization="3"
 				GlobalOptimizations="TRUE"
 				EnableIntrinsicFunctions="TRUE"
@@ -196,7 +194,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\..\tt"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;DEBUG"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
@@ -251,7 +249,6 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
 				Optimization="3"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
@@ -260,7 +257,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="3"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="..\..\tt"
 				PreprocessorDefinitions="WIN32;_CONSOLE;TEST;BOOST_DISABLE_WIN32"
 				IgnoreStandardIncludePath="FALSE"
 				MinimalRebuild="TRUE"
