@@ -56,6 +56,7 @@ CREATE_EXTRACTOR(C)
 #include <sstream>
 #include <string>
 #include <boost/lexical_cast.hpp>
+#include <stdexcept>
 
 //!< print before word.
 template <char sep=' '>
@@ -104,10 +105,10 @@ inline bool needs_shell_escape_in_quotes(C c) {
 }
 
 template <class C,class charT, class Traits>
-inline ostream & out_shell_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
     std::stringstream s;
     s << data;
-    string str=s.str();
+    std::string str=s.str();
 
     char c;
     if (find_if(str.begin(),str.end(),is_shell_special<char>)==str.end()) {
@@ -125,12 +126,12 @@ inline ostream & out_shell_quote(std::basic_ostream<charT,Traits> &out, const C&
 }
 
 template <class charT, class Traits>
-inline ostream & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[]) {
+inline std::basic_ostream<charT,Traits> & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[]) {
     WordSeparator<' '> sep;
     for (int i=0;i<argc;++i)
-        out_shell_quote(o << sep,argv[i]);
+        out_shell_quote(out << sep,argv[i]);
     out << std::endl;
-    return;
+    return out;
 }
 
 
@@ -192,6 +193,15 @@ inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream
     in.clear();
     in.get(context,ERROR_CONTEXT_CHARS,'\n');
     out << "... " << context << std::endl << "   ^" << std::endl;
+}
+
+template <class Ic,class It>
+void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const char *item="input",unsigned number=0) {
+    std::ostringstream err;            
+    err << "Error reading " << item << " # " << number << ": " << error << std::endl;
+    show_error_context(in,err);
+    err << "\n(file position " << std::streamoff(in.tellg()) << ")" << std::endl;
+    throw std::runtime_error(err.str());        
 }
 
 #define GEN_IO_(s,io,sentrytype) do {                                             \
