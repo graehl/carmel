@@ -666,6 +666,7 @@ public:
 #endif
 
 typedef logweight<FLOAT_TYPE> Weight;
+
 #undef WEIGHT_FORWARD_OP_RET
 #undef WEIGHT_FORWARD_OP
 #undef WEIGHT_DEFINE_OP
