@@ -1,6 +1,7 @@
 #ifndef DYNARRAY_H 
 #define DYNARRAY_H 1
 // For MEMCPY-able-to-move types only!
+// (MEMCPY copyable (i.e. no external resources owned, i.e. no real destructor) is not assumed although a is_pod template might be nice)
 // Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
 // DynamicArray extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
 
@@ -14,6 +15,7 @@
 #include <iostream>
 #include "genio.h"
 #include <iterator>
+//#include <boost/type_traits.hpp>
 
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
 template <class Label>
@@ -232,33 +234,43 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   void set_capacity(unsigned int newCap) { endspace=vec+newCap; }
 };
 
-// frees self automatically
+// frees self automatically - WARNING - doesn't copy contents!
 template <typename T,typename Alloc=std::allocator<T> > class AutoArray : public Array<T,Alloc> {
-  explicit AutoArray(unsigned sp=4) :Array(sp) { }
+  typedef Array<T,Alloc> Super;
+  explicit AutoArray(unsigned sp=4) : Super(sp) { }
   ~AutoArray() {
 	dealloc();
+  }  
+protected:
+  AutoArray(AutoArray<T,Alloc> &a) : Super(a.sp){        
   }
 private:
-  AutoArray(AutoArray<T,Alloc> &a) {}
+  
 };
 
-// frees self automatically
-template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public Array<T,Alloc> {
-  explicit FixedArray(unsigned sp=4) :Array(sp) { 
-    construct(); 
+// frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
+template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public AutoArray<T,Alloc> {
+  typedef AutoArray<T,Alloc> Super;
+  explicit FixedArray(unsigned sp=4) : Super(sp) { 
+    construct();
   }
   ~FixedArray() {
     destroy();
-	dealloc();
+	//~Super(); // happens implicitly!
+  }
+  FixedArray(FixedArray<T,Alloc> &a) : Super(a) {
+    std::uninitialized_copy(a.begin(),a.end(),begin());
+    //memcpy(begin(),a.begin(),a.size());
   }
 private:
- FixedArray(FixedArray<T,Alloc> &a) {}
+ 
 };
 
 
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : public Array<T,Alloc> {
+  enum { REPLACE=0, APPEND=1 };
   //unsigned int sz;
   T *endvec;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
@@ -281,10 +293,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 	endvec=endspace;
   }
 
-  DynamicArray(const DynamicArray &a) {
-	unsigned sz=a.size();
-    alloc(sz);
-	memcpy(vec,a.vec,sizeof(T)*sz);
+  DynamicArray(const DynamicArray &a) : Array(a.size()) {
+//	unsigned sz=a.size();
+    //alloc(sz);
+//	memcpy(vec,a.vec,sizeof(T)*sz);
+    std::uninitialized_copy(a.begin(),a.end(),begin());
 	endvec=endspace;
   }
   
@@ -353,8 +366,12 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   T &top() {
     return back();
   }
-  void pop() {
+  void pop_back() {
     (--endvec)->~T();;
+  }
+
+  void pop() {
+    pop_back();
   }
 
   // default-construct version (not in STL vector)
@@ -519,7 +536,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 
   // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
-std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=false)
+std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=REPLACE)
 
 {  
   if (!append)

@@ -44,11 +44,34 @@ CREATE_INSERTER(C)
 CREATE_EXTRACTOR(C)
 */
 
+// uses (template) charT, Traits
+// s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print_on)
+#define GEN_EXTRACTOR(s,io) do { \
+	if (!s.good()) return s; \
+	std::ios_base::iostate err = std::ios_base::goodbit; \
+	typename std::basic_istream<charT, Traits>::sentry sentry(s); \
+    if (sentry) { err = io; } \
+	if (err) s.setstate(err); \
+	return s; \
+} while(0)
+
+// only difference is ostream sentry not istream sentry
+#define GEN_INSERTER(s,print_on) do { \
+	if (!s.good()) return s; \
+	std::ios_base::iostate err = std::ios_base::goodbit; \
+	typename std::basic_ostream<charT, Traits>::sentry sentry(s); \
+    if (sentry) { print_on; } \
+	if (err) s.setstate(err); \
+	return s; \
+} while(0)
+
 template <class charT, class Traits, class Arg>
 std::basic_istream<charT, Traits>& 
 gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg)
 {
+  GEN_EXTRACTOR(s,arg.get_from(s));
+  /*
 	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;
 	typename std::basic_istream<charT, Traits>::sentry sentry(s);
@@ -57,30 +80,35 @@ gen_extractor
 	if (err)
 		s.setstate(err);
 	return s;
+    */
 }
 
 // exact same as above but with o instead of i
 template <class charT, class Traits, class Arg>
 std::basic_ostream<charT, Traits>& 
 gen_inserter
-	(std::basic_ostream<charT, Traits>& s, const Arg &arg)
+	(std::basic_ostream<charT, Traits>& s, Arg &arg)
 {
-	if (!s.good()) return s;
+    GEN_INSERTER(s,arg.print_on(s));
+
+/*	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;
 	typename std::basic_ostream<charT, Traits>::sentry sentry(s);
 	if (sentry)
 		err = arg.print_on(s);
 	if (err)
 		s.setstate(err);
-	return s;
+	return s;*/
 }
 
 
 template <class charT, class Traits, class Arg, class Reader>
 std::basic_istream<charT, Traits>& 
 gen_extractor
-(std::basic_istream<charT, Traits>& s, Arg &arg, Reader &read)
+(std::basic_istream<charT, Traits>& s, Arg &arg, Reader read)
 {
+  GEN_EXTRACTOR(s,arg.get_from(s,read));
+  /*
 	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;
 	typename std::basic_istream<charT, Traits>::sentry sentry(s);
@@ -89,13 +117,16 @@ gen_extractor
 	if (err)
 		s.setstate(err);
 	return s;
+    */
 }
 
 template <class charT, class Traits, class Arg, class Reader,class Flag>
 std::basic_istream<charT, Traits>& 
 gen_extractor
-(std::basic_istream<charT, Traits>& s, Arg &arg, Reader &read, Flag f)
+(std::basic_istream<charT, Traits>& s, Arg &arg, Reader read, Flag f)
 {
+  GEN_EXTRACTOR(s,arg.get_from(s,read,f));
+  /*
 	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;
 	typename std::basic_istream<charT, Traits>::sentry sentry(s);
@@ -104,6 +135,7 @@ gen_extractor
 	if (err)
 		s.setstate(err);
 	return s;
+    */
 }
 
 
@@ -111,8 +143,10 @@ gen_extractor
 template <class charT, class Traits, class Arg, class R>
 std::basic_ostream<charT, Traits>& 
 gen_inserter
-	(std::basic_ostream<charT, Traits>& s, const Arg &arg, const R &r)
+	(std::basic_ostream<charT, Traits>& s, Arg &arg, R r)
 {
+  GEN_INSERTER(s,arg.print_on(s,r));
+  /*
 	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;
 	typename std::basic_ostream<charT, Traits>::sentry sentry(s);
@@ -120,15 +154,17 @@ gen_inserter
 		err = arg.print_on(s,r);
 	if (err)
 		s.setstate(err);
-	return s;
+	return s;*/
 }
 
 // exact same as above but with o instead of i
 template <class charT, class Traits, class Arg, class Q,class R>
 std::basic_ostream<charT, Traits>& 
 gen_inserter
-	(std::basic_ostream<charT, Traits>& s, const Arg &arg, const Q &q,const R &r)
+	(std::basic_ostream<charT, Traits>& s, Arg &arg, Q q,R r)
 {
+  GEN_INSERTER(s,arg.print_on(s,q,r));
+  /*
 	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;
 	typename std::basic_ostream<charT, Traits>::sentry sentry(s);
@@ -137,6 +173,7 @@ gen_inserter
 	if (err)
 		s.setstate(err);
 	return s;
+    */
 }
 
 

@@ -1,23 +1,43 @@
 #ifndef _PROPERTY_HPP
 #define _PROPERTY_HPP
 
-//#include <boost/property_map.hpp>
-
+#include <boost/property_map.hpp>
 
 #ifdef TEST
 #include "test.hpp"
 #endif
 
-template<class C>
-struct property_factory {
 
+template <class K>
+struct OffsetMap {
+  K begin; // have to compute index anyhow because size of K might differ from size of V
+  //FixedArray<V> values;
+  unsigned index(K p) const {
+    Assert(p>=begin);
+    //Assert(p<begin+values.size());
+    return p-begin;
+  }
+  OffsetMap(K beg) : begin(beg) {
+  }
+  typedef boost::read_property_map_tag category;
+  typedef unsigned value_type;
+  typedef K key_type;
+  unsigned operator [](K p) const {
+    return index(p);
+  }
 };
+
+template <class K>
+unsigned get(OffsetMap k,K p) {
+  return k[p];
+}
+
 
 /* usage: 
  ArrayPMapImp<V,O> p;
  graph_algo(g,boost::ref(p));
  */
-template <class V,class O>
+template <class V,class O=boost::identity_property_map>
 struct ArrayPMapImp : public 
   boost::put_get_helper<typename D &,ArrayPMapImp<V,O> > 
 {
@@ -43,26 +63,46 @@ private:
   ArrayPMapImp(Self &s) {}
 };
 
+template <class V,class O=boost::identity_property_map>
+struct ArrayPMap {
+  ArrayPMapImp<V,O> Imp;
+  typedef boost::reference_wrapper<Imp> type;
+};
+
+/*
+template <class V,class O>
+struct ArrayPMap {
+  typedef boost::reference_type<ArrayPMapImp<V,O> > type;
+};
+*/
 
 /* usage:  
  Factory factory;
  typedef typename Factory::rebind<DataType> DFactory;
  typedef typename DFactory::implementation Imp;
  typedef typename DFactory::reference PMap;
- Imp imp(factory);
+ Imp imp(max_size,factory);
  PMap pmap(imp);
  ... use pmap
  */
 
-template <class offset_map>
+template <class offset_map=boost::identity_property_map>
 struct ArrayPMapFactory : public std::pair<unsigned,offset_map> {
   ArrayPMapFactory(unsigned s,offset_map o=offset_map()) : std::pair<unsigned,offset_map>(s,o) {}
+  ArrayPMapFactory(const ArrayPMapFactory &o) : std::pair<unsigned,offset_map>(o) {}
   template <class R>
   struct rebind {    
     typedef ArrayPMapImp<R,O> implementation;
     typedef boost::reference_wrapper<other> reference;
+    // reference(implementation &i) constructor exists
+    /*static reference pmap(implementation &i) {
+      return reference(i);
+    }*/
   };
 };
+
+template <class G,class ptag>
+struct property_factory;
 
 /*
 template<class V,class O>
@@ -106,6 +146,22 @@ struct IndexedCopier : public std::pair<P1,P2> {
 template <class P1,class P2>
 IndexedCopier<P1,P2> make_indexed_copier(P1 a,P2 b) {
   return IndexedCopier<P1,P2>(a,b);
+}
+
+template <class P1,class P2,class P3>
+struct IndexedPairCopier {
+  P1 a;P2 b;P3 c;  
+  IndexedCopier(P1 a_,const P2 b_,const P3 c_) : a(a_),b(b_),c(c_) {}
+  template<class I>
+    void operator()(I i) {
+      a[i].first = b[i];
+      a[i].second = c[i];
+    }
+};
+
+template <class P1,class P2,class P3>
+IndexedPairCopier<P1,P2,P3> make_indexed_pair_copier(const P1 a,const P2 b,const P3 c) {
+  return IndexedCopier<P1,P2,P3>(a,b,c);
 }
 
 #ifdef TEST

@@ -85,7 +85,8 @@ struct Weight {			// capable of representing nonnegative reals
   FLOAT_TYPE getLogImp() const {
     return weight;
   }
-  FLOAT_TYPE getCost() const {
+  typedef FLOAT_TYPE cost_type;
+  cost_type getCost() const {
 	return -weight;
   }
   void setCost(FLOAT_TYPE f) {
@@ -463,6 +464,13 @@ Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = A
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
+#include <limits>
+template <>
+class std::numeric_limits<Weight> {
+public:
+  static bool has_infinity() { return true; }
+  //FIXME: add rest
+};
 
 #ifdef DEBUGNAN
 #define NANCHECK(w) w.NaNCheck()

@@ -286,7 +286,7 @@ void delete_arg(C &c) {
 }
 
 template <class T,class F>
-bool tree_visit(T *tree,F &func)
+bool tree_visit(T *tree,F func)
 {
   if (!func.discover(tree))
      return false;
@@ -297,10 +297,10 @@ bool tree_visit(T *tree,F &func)
 }
 
 template <class T,class F>
-bool tree_leaf_visit(T *tree,F &func)
+bool tree_leaf_visit(T *tree,F func)
 {
   	 if (tree->size()) {
-	   foreach(T *child,*tree) {
+	   FOREACH(T *child,*tree) {
 		 tree_leaf_visit(child,f);
 	   }
 	 } else {
@@ -330,7 +330,7 @@ template <class T>
 };
 
 template <class T,class F>
-void postorder(T *tree,F &func)
+void postorder(T *tree,F func)
 {
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
@@ -338,7 +338,7 @@ void postorder(T *tree,F &func)
 }
 
 template <class T,class F>
-void postorder(const T *tree,F &func)
+void postorder(const T *tree,F func)
 {
   for (typename T::const_iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
@@ -440,11 +440,12 @@ struct TreeCount {
   TreeCount() : count(0) {}
 };
 
+#include <boost/ref.hpp>
 template <class T>
 size_t tree_count(const T *t)
 {
   TreeCount<T> n;
-  postorder(t,n);
+  postorder(t,boost::ref(n));
   return n.count;
 }
 
