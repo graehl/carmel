@@ -164,7 +164,7 @@ public:
                                readonly ? GENERIC_READ : GENERIC_ALL,
                                FILE_SHARE_DELETE, NULL, (create ? CREATE_ALWAYS : OPEN_EXISTING ), FILE_ATTRIBUTE_TEMPORARY, NULL );
             if (handle_ == INVALID_HANDLE_VALUE)
-                throw ios::failure(string("couldn't open: ").append(last_error_string()));
+                throw ios::failure(string("couldn't open ").append(path).append(": ").append(last_error_string()));
 
             //--------------Set file size (if create)---------------------------------//
 
@@ -193,7 +193,7 @@ public:
                                       0, 0, path.c_str() );
             if (mapped_handle_ == NULL) {
                 ::CloseHandle(handle_);
-                throw ios::failure(string("couldn't create file mapping: ").append(last_error_string()));
+                throw ios::failure(string("couldn't create file mapping ").append(path).append(": ").append(last_error_string()));
             }
 
             //--------------Access data-----------------------------------------------//
@@ -212,7 +212,7 @@ public:
                 }
                 ::CloseHandle(mapped_handle_);
                 ::CloseHandle(handle_);
-                throw ios::failure(string("couldn't map view of file: ").append(last_error_string()));
+                throw ios::failure(string("couldn't map view of file ").append(path).append(": ").append(last_error_string()));
             }
 
             //--------------Determine file size---------------------------------------//
@@ -229,7 +229,7 @@ public:
             } else {
                 ::CloseHandle(mapped_handle_);
                 ::CloseHandle(handle_);
-                throw ios::failure(string("couldn't determine file size: ").append(last_error_string()));
+                throw ios::failure(string("couldn't determine file size of ").append(path).append(": ").append(last_error_string()));
             }
 
             data_ = reinterpret_cast<char*>(data);
@@ -245,7 +245,7 @@ public:
             handle_ = ::open(path.c_str(),flags,S_IRWXU) ; //|
 
             if (handle_ == -1)
-                throw ios::failure(string("couldn't open: ").append(last_error_string()));
+                throw ios::failure(string(cCouldn't open ").append(path).append(": ").append(last_error_string()));
 
             //--------------Set file size (if create)---------------------------------//
 
@@ -266,7 +266,7 @@ public:
             }
             if (!success) {
                 ::close(handle_);
-                throw ios::failure(string("couldn't determine file size: ").append(last_error_string()));
+                throw ios::failure(string("couldn't determine file size of ").append(path).append(": ").append(last_error_string()));
             }
 
             //--------------Create mapping--------------------------------------------//

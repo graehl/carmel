@@ -54,10 +54,9 @@ template <typename T> static inline void heapify ( T *heap, size_t heapSize, siz
 template <typename T> void heapPop (T *heapStart, T *heapEnd)
 {
   T *heap = heapStart - 1;  // to start numbering of array at 1
-  size_t heapSize = heapSize(heapStart,heapEnd);
-  heap[1] = heap[heapSize--];
-  heapAdjustRootDown
-  heapify(heap, heapSize, 1);
+  size_t size = heapSize(heapStart,heapEnd);
+  heap[1] = heap[size--];
+  heapify(heap, size, 1);
 }
 
 template <typename T> inline T & heapTop (T *heapStart)

@@ -964,7 +964,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
 
     {
         FixedArray<FixedArray<int> > aa,ba;
-        std::string sa="() (1) (1 2 3) () (4)";
+        std::string sa="(() (1) (1 2 3) () (4))";
         BOOST_CHECK(test_extract_insert(sa,aa));
         IndirectReader<plus_one_reader> reader;
         istringstream ss(sa);
