@@ -83,7 +83,8 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
           }
           in.unget();
 #if 1
-          typename std::iterator_traits<T>::value_type temp;
+          //typename std::iterator_traits<T>::value_type
+           typename Reader::value_type   temp;
           if (deref(read)(in,temp).good())
                 *out++=temp;
           else

@@ -4,6 +4,11 @@
 #include <stdexcept>
 #include "funcs.hpp"
 
+// Iis it safe to align once then repeatedly alloc<T> if e.g. sizeof(T) is 6 and
+//alignment is 4 ... does that mean you need to increment pointer by 8?  or does
+//T* x; x++ inc by 8 for you?  I think so, because if that alignment was
+//required, then sizeof(T) would be 8, not 6.
+
 struct StackAlloc
 {
     // throws when allocation fails (I don't let you check ahead of time)
@@ -42,13 +47,22 @@ struct StackAlloc
     }
     bool overfull() const
     {
-        return top > end;  // important: different size T will be allocated, and
+        return top > end;
+    }
+    bool full() const
+    {
+        return top >= end;  // important: different size T will be allocated, and
                          // no guarantee that all T divide space equally (even
                          // for alloc(1)
     }
     template <class T>
     T* next() const {
         Assert(::is_aligned((T*)top));
+        return ((T*)top);
+    }
+    template <class T>
+    T* aligned_next() {
+        top=::align((T*)top);
         return ((T*)top);
     }
     template <class T>
@@ -97,32 +111,43 @@ struct StackAlloc
         else
             return 0;
     }
+    /// convenience: allocs and assigns (assumes aligned)
+    /// suggested use:  boost::make_function_output_iterator(ref(*this));
+    template <class T>
+    void operator()(const T& t)
+    {
+        T*& ttop(*(T**)&top);
+        Assert(::is_aligned(ttop));
+        if (full())
+            throw StackAlloc::Overflow();
+        *ttop++=t;
+    }
 };
 
 # ifdef TEST
 #  include "test.hpp"
 BOOST_AUTO_UNIT_TEST( TEST_STACKALLOC )
 {
-#  define N 100
+    const int N=100;
     int a[N];
     StackAlloc s;
     char *top=(char *)a;
     s.init(a,a+N);
-    CHECK_EQ(s.capacity<unsigned>(),N);
-    CHECK(s.top==a && s.end==a+N);
+    BOOST_CHECK_EQUAL(s.capacity<unsigned>(),N);
+    BOOST_CHECK(s.top==a && s.end==a+N);
     s.align<unsigned>();
-    CHECK(s.top==top);
-    CHECK(s.alloc<char>()==top && s.top==(top+=1));
+    BOOST_CHECK(s.top==top);
+    BOOST_CHECK(s.alloc<char>()==top && s.top==(top+=1));
     s.align<char>();
-    CHECK(s.top==top);
+    BOOST_CHECK(s.top==top);
     s.align<unsigned>();
-    CHECK_EQ(s.capacity<unsigned>()*sizeof(unsigned),s.capacity<char>());
+    BOOST_CHECK_EQUAL(s.capacity<unsigned>()*sizeof(unsigned),s.capacity<char>());
 
 //    DBP(s.top);
 
-    CHECK_EQ(s.top,(top=(char *)a+sizeof(unsigned)));
-    CHECK_EQ((void *)s.alloc<unsigned>(2),top);
-    CHECK_EQ(s.top,(top+=2*sizeof(unsigned)));
+    BOOST_CHECK_EQUAL(s.top,(top=(char *)a+sizeof(unsigned)));
+    BOOST_CHECK_EQUAL((void *)s.alloc<unsigned>(2),top);
+    BOOST_CHECK_EQUAL(s.top,(top+=2*sizeof(unsigned)));
 }
 
 # endif
