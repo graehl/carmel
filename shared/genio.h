@@ -1,3 +1,5 @@
+#ifndef GENIO_H
+#define GENIO_H 1
 // your class Arg must will provide Arg::get_from(is) ( is >> arg ) and Arg::print_to(os) (os << arg), 
 // returning std::ios_base::iostate (0,badbit,failbit ...)
 // usage:
@@ -43,3 +45,4 @@ gen_inserter
 		s.setstate(err);
 	return s;
 }
+#endif

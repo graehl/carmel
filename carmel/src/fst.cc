@@ -85,7 +85,9 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
 }
 
 namespace WFST_impl {
+
   class NormGroupIter {
+    WFST &wfst;
     State *state;
 	State *end;
 	typedef HashIter<IntKey, List<HalfArc> > Cit;
@@ -101,8 +103,18 @@ namespace WFST_impl {
 		}
 	}
   public:
-    NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst) : state((State *)wfst.states), end(state+wfst.numStates()), method(meth) { beginState(); }
+    NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state((State *)wfst_.states), end(state+wfst_.numStates()), method(meth) { beginState(); }
 	bool moreGroups() { return state != end; }
+	template <class charT, class Traits>
+		std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const {
+			if(method==WFST::CONDITIONAL) {
+				os << "(conditional normalization group for input=" << wfst.inLetter(Ci.key()) << " in "; 
+			} else {
+			    os << "(joint normalizaton group for ";
+			}
+			os << "state=" << wfst.stateName(wfst.states.index_of(state)) << ")";
+			return std::ios_base::goodbit;
+		}
 	void beginArcs() {
 		if(method==WFST::CONDITIONAL) {
 				Ci2 = Ci.val().begin();
@@ -152,59 +164,84 @@ namespace WFST_impl {
 
 };
 
+#include "genio.h"
+
+template <class charT, class Traits>
+std::basic_ostream<charT,Traits>&
+operator <<
+(std::basic_ostream<charT,Traits>& os, const WFST_impl::NormGroupIter &arg)
+{
+	return gen_inserter(os,arg);
+}
+
+
+
 void WFST::normalize(NormalizeMethod method)
 {
 	if (method==NONE)
 		return;
-if (method==CONDITIONAL)
-  indexInput();
+	if (method==CONDITIONAL)
+		indexInput();
+
+	// new plan:
+	// step 1: compute sum of counts for non-locked arcs, and divide it by (1-(sum of locked arcs)) to reserve appropriate counts for the locked arcs
+	// step 2: for tied arc groups, add these inferred counts to the group state counts total.  also sum group arc counts total.
+	// step 3: assign tied arc weights; trouble: tied arcs sharing space with inflexible tied arcs.  under- or over- allocation can result ...
+	//   ... alternative: give locked arcs implied counts in the tie group; norm-group having tie-group arcs, with highest locked arc sum R divides unscaled tie group state counts total by (1-R) instead of dividing individual state counts by (1-sum).  this ensures that tied arcs are kept small enough to make room for locked ones in ALL states and should leave some room for normal arcs as well
+	// step 4: give normal arcs their share of what's left, if anything
+
+
   int pGroup;
   HashTable<IntKey, Weight> groupArcTotal;
   HashTable<IntKey, Weight> groupStateTotal;
   // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
-      Weight sum = 0; // sum of probability of all arcs that has this input
+      Weight sum; // sum of probability of all arcs that has this input
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-        sum += (*g)->weight;
+	    //if (! isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
+			sum += (*g)->weight;
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-        if ( (pGroup = (*g)->groupId) > 0) { // -1 means no group, and group 0 is special - means the weights of any arc belonging to it are fixed, so the following is done with all arcs with group number different from zero.
-          groupArcTotal[pGroup] += (*g)->weight;
-          groupStateTotal[pGroup] += sum;
+		  if ( isTied(pGroup = (*g)->groupId) ) {
+           groupArcTotal[pGroup] += (*g)->weight; // default init is to 0
+           groupStateTotal[pGroup] += sum;
         }
   }
   
 
   // global pass 2: assign weights
 for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
-      Weight sum = 0;
-      Weight reserved = 0;
+      Weight normal_sum;
+      Weight reserved;
       
 	  // pass 2a: assign tied (and locked) arcs their weights, taking 'reserved' weight from the normal arcs in their group
 	  // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
 	  // also, compute sum of normal arcs
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+	   if (!(*g)->weight.isZero())
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) // tied or locked arc
-          if ( isTied(pGroup) )
-            reserved += (*g)->weight = *groupArcTotal.find(pGroup) / *groupStateTotal.find(pGroup);
-          else
+		  if ( isTied(pGroup) )
+            reserved += ((*g)->weight = *groupArcTotal.find(pGroup) / *groupStateTotal.find(pGroup)); // cannot fail to find; denom can't be 0 because g isn't 0
+		  else // locked:
             reserved += (*g)->weight;
         else // normal arc
-          sum += (*g)->weight;
+          normal_sum += (*g)->weight;
 #ifdef DEBUG_NORMAL
       if ( reserved > 1.0001 )
-        std::cerr << "Sum of locked arcs for input " << (*in)[int(hal.key())] << " in state " << stateNames[s] << " exceeds 1 (" << reserved << ") proceeding anyway.\n";
+        std::cerr << "Sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0; proceeding anyway.\n";
 #endif
 
 	  // pass 2b: give normal arcs their share of however much is left
-      Weight steal = 1.;
-	  steal -= reserved;
-	  if (steal > 0) { // something left
-		  sum /= steal;
+      Weight fraction_remain = 1.;
+	  fraction_remain -= reserved;
+	  if (!fraction_remain.isZero()) { // something left
+		  normal_sum /= fraction_remain; // total counts that would be needed to fairly give reserved weights out
 		  for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-			 (*g)->weight /= sum;
+			  if (isNormal((*g)->groupId))
+				(*g)->weight /= normal_sum;
 	  } else // nothing left, sorry
 		  for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-			 (*g)->weight = 0;
+			  if (isNormal((*g)->groupId))
+				(*g)->weight = 0;
   }
  
   if (method == CONDITIONAL)

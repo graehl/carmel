@@ -2,6 +2,8 @@
 #include "fst.h"
 #include "node.h"
 
+//#define DEBUGTRAIN
+
 void WFST::trainBegin(WFST::NormalizeMethod method) {
   consolidateArcs();
   normalize(method);
@@ -245,6 +247,8 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
 #endif
 }
 
+
+
 void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 {
   Assert(trn);
@@ -257,6 +261,8 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 #endif
   sumPaths(nSt, final, trn->b, trn->revArcs, trn->revETopo, s.i.n, s.i.rLet, s.o.n, s.o.rLet);
   int i;
+
+  // transpose b matrix on input, output position
   Weight ***w = trn->b;
   int nIn = s.i.n;
   int nOut = s.o.n;
@@ -309,8 +315,8 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
   #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
         List<DWPair>::iterator end = ha.val().end() ; \
-        for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) \
-                a } } while(0)
+		for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) {\
+		  a } } } while(0)
 
 EACHDW(dw->counts = 0;);
 
@@ -384,12 +390,10 @@ EACHDW(dw->counts = 0;);
 #ifdef DEBUGTRAIN
         std::cerr<<"\nProb2 = " << fin2 << std::endl;
 #endif
-    double ratio = (fin/fin2).getReal();
+	double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
     double e = ratio - 1;
-    if ( e < 0 )
-      e = -e;
     if ( e > ALLOWED_FORWARD_OVER_BACKWARD_EPSILON )
-      std::cerr << "Roundoff error of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << ".\n";
+		std::cerr << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
 #endif
 
     letIn = seq->i.let;

@@ -52,9 +52,6 @@ out_always_real(std::basic_ostream<A,B>& os);
 
   static Weight result;
   // default = operator:
-  Weight(double f) {
-	setReal(f);
-  }
 
   //double toFloat() const { 
     //return getReal();
@@ -98,6 +95,9 @@ out_always_real(std::basic_ostream<A,B>& os);
 
 //  Weight() : weight(-HUGE_FLOAT) {}
   Weight() { setZero(); }
+  Weight(double f) {
+	setReal(f);
+  }
   friend Weight operator + (Weight, Weight);
   friend Weight operator - (Weight, Weight);
   friend Weight operator * (Weight, Weight);
