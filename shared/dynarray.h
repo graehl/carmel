@@ -47,6 +47,10 @@ public:
             throw std::out_of_range(std::string("Array access out of bounds with index=").append(boost::lexical_cast<std::string>(index)));
         return *r;
     }
+    bool exists(unsigned index) const
+    {
+        return begin()+index < end();
+    }
     T & operator[] (unsigned int index) const {
         Assert(vec+index < end());
         return vec[index];
@@ -418,6 +422,11 @@ public:
             throw std::out_of_range("dynarray");
         return *r;
     }
+    bool exists(unsigned index) const
+    {
+        return this->begin()+index < end();
+    }
+
     T & operator[] (unsigned int index) const {
         Assert(this->invariant());
         Assert(this->vec+index < end());
