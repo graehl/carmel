@@ -424,7 +424,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
     } else
       //      ins.insert(*pI);
       //      ret->insert(ret->begin(),*pI);
-      ret->insert(ret->end(),*pI);
+      ret->push_back(*pI);
   }
   return ret;
 }
