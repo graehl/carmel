@@ -266,7 +266,11 @@ int WFST::readLegible(istream &istr)
       if ( d != '(' )
 	istr.putback(d);
       for ( ; ; ) {
-	DO(getString(istr, buf));
+		  buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
+		 DO(istr >> c);  // skip whitespace
+		 istr.putback(c);
+		 if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
+			DO(getString(istr, buf));
 	inL = in->indexOf(buf);
 	DO(istr >> c);  // skip whitespace
 	istr.putback(c);
@@ -279,10 +283,10 @@ int WFST::readLegible(istream &istr)
 	  DO(istr >> weight);
 	} else
 	  weight = 1.0;
-	if ( weight <= 1.0 && weight > 0.0 ) {
+	if ( weight > 0.0 ) {
 	  states[stateNumber].addArc(Arc(inL, outL, destState, weight));
 	} else if ( weight != 0.0 ) {
-	  cout << "Invalid weight (should be from 0.0 to 1.0): " << weight <<"\n";
+	  cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
 	  return 0;
 	}
 	DO(istr >> c);
@@ -328,19 +332,22 @@ void WFST::writeLegible(ostream &ostr)
   const char *inLet, *outLet, *destState;
 
   if ( !valid() ) return;
-
+  Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
   ostr << stateNames[final];
   for (i = 0 ; i < numStates() ; i++) {
     ostr << "\n(" << stateNames[i];
     List<Arc>::const_iterator end = states[i].arcs.end() ;
     for (List<Arc>::const_iterator a=states[i].arcs.begin() ; a !=end ; ++a ) {
       if ( a->weight > 0 ) {
-	inLet = (*in)[a->in];
-	outLet = (*out)[a->out];
 	destState = stateNames[a->dest];
-	ostr << " (" << destState << " " << inLet;
-	if ( strcmp(inLet, outLet) )
-	  ostr << " " << outLet;
+	ostr << " (" << destState;
+	if ( a->in || a->out ) { // omit *e* *e* labels
+		inLet = (*in)[a->in];
+		outLet = (*out)[a->out];
+		ostr << " " << inLet;
+		if ( strcmp(inLet, outLet) )
+			ostr << " " << outLet;
+	}
 	if ( a->weight != 1.0 )
 	  ostr << " " << a->weight;
 	//	int *pGroup;
