@@ -94,6 +94,26 @@ template <class G> struct graph_object<G,vertex_tag_t> {
 template <class Tag,class G,class E,class F>
 void visit(Tag t,G &g,F f);
 
+template <class Tag,class G,class E>
+inline
+typename graph_object<G,Tag>::iterator_pair begin_end(Tag t,G &g) {
+  return typename graph_object<G,Tag>::iterator_pair
+    (begin(t,g),end(t,g));
+}
+
+template <class Tag,class G,class E>
+inline
+typename graph_object<G,Tag>::iterator_pair begin_end(vertex_tag_t t,G &g) {
+  return vertices(g);
+}
+
+template <class Tag,class G,class E>
+inline
+typename graph_object<G,Tag>::iterator_pair begin_end(edge_tag_t t,G &g) {
+  return edges(g);
+}
+
+
 /*
 template <class G,class F>
 inline void visit(edge_tag_t unused,G &g,F f) {

@@ -34,7 +34,15 @@ unsigned &get_index(const C& c) {
   return c.phony_int();
 }
 
-
+/// pass by ref(array_mapper) to functors
+template <class V>
+struct array_mapper : public DynamicArray<V> {
+  typedef V mapped_type;
+  typedef unsigned key_type;
+  void operator()(key_type key,const mapped_type &val) {
+    (*this)(key)=val;
+  }
+};
 
 template <class MatchF> // MatchF is the functor for visiting trie vertices during matching
 struct tree_trie {
@@ -49,9 +57,12 @@ struct tree_trie {
   tree_trie() {}
 
   unsigned nextwhere;
+
+  /// creates a path through trie for pattern t, returning final state index
   /// note get_symbol returns Symbol::ZERO if the symbol is a wildcard
   /// (currently only supported for leaves in lhs, but works here generally
   /// F: (where,Tree *)
+  /// boost::reference<array_mapper<Tree<L> *> > works fine as an F
   template <class L,class F>
   V insert(Tree<L> *t, F f) {
     nextwhere=0; // root=0, children start at 1
@@ -156,9 +167,6 @@ struct tree_trie {
 #endif
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_treetrie )
-{
-}
 #endif
 
 #endif
