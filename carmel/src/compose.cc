@@ -50,7 +50,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   stateMap.add(trioID.tri, 0); // add the initial state
   states.pushBack();
   if ( namedStates ) {
-    makeTrioName(buf, a.stateNames[0], b.stateNames[0], 0);
+    makeTrioName(buf, a.stateName(0), b.stateName(0), 0);
     stateNames.add(buf);
     named_states=true;
   } else {
@@ -101,9 +101,9 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               states.pushBack();
               if ( namedStates ) {
                 char *p = buf;
-                const char *s = b.stateNames[mediate.source],
+                const char *s = b.stateName(mediate.source),
                   *l = (*a.out)[mediate.hiddenLetter],
-                  *d = a.stateNames[mediate.dest];
+                  *d = a.stateName(mediate.dest);
                 while ( *s )
                   *p++ = *s++;
                 *p++ = ',';
