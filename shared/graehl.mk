@@ -4,6 +4,7 @@
 #PROGS=a b   
 #a_OBJ=a.o ... a_SLIB=lib.o lib.a (static libraries e.g. a_SLIB=$(BOOST_OPT_LIB))
 #a_NOSTATIC=1 a_NOTEST=1 ...
+#NOSTATIC=1 (global setting)
 # CXXFLAGS CXXFLAGS_DEBUG CXXFLAGS_TEST
 # LIB = math thread ...
 # INC = . 
@@ -118,12 +119,14 @@ $(1): $$(BIN)/$(1)
 endif
 
 ifneq (${ARCH},macosx)
+ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) --static $$^ -o $$@
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
 $(1): $$(BIN)/$(1).static
+endif
 endif
 endif
 
