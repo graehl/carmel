@@ -3,9 +3,9 @@
 #include <ctime>
 
 struct InitRand {
-	InitRand() {
-		srand((unsigned int)time(NULL));
-	}
+        InitRand() {
+                srand((unsigned int)time(NULL));
+        }
 };
 
 static InitRand _Weight_Init_Rand;
@@ -15,6 +15,8 @@ using namespace std;
 // xalloc gives a unique global handle with per-ios space handled by the ios
 const int Weight::base_index = ios_base::xalloc();
 const int Weight::thresh_index = ios_base::xalloc();
+int Weight::default_base = Weight::LN;
+int Weight::default_thresh = Weight::SOMETIMES_LOG;
 const Weight Weight::ZERO;
 const Weight Weight::INF(false,false);
 //const FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);

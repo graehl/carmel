@@ -26,8 +26,8 @@ static FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 struct Weight {                 // capable of representing nonnegative reals
   // internal implementation note: by their base e logarithm
   private:
-  enum { LN=0,LOG10, };
-  enum { ALWAYS_LOG=1, VAR, ALWAYS_REAL };
+    enum { DEFAULT_BASE=0,LN=1,LOG10=2, };
+    enum { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
   // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
   // 32 * ln 10 =~ 73
   // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
@@ -35,7 +35,8 @@ struct Weight {                 // capable of representing nonnegative reals
 
   static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
   static const int thresh_index; // handle for OutThresh
-
+    static int default_base;
+    static int default_thresh;
   public:
   static const Weight ZERO, INF;
   // linux g++ 3.2 didn't like static self-class member
@@ -45,7 +46,40 @@ struct Weight {                 // capable of representing nonnegative reals
   FLOAT_TYPE weight;
 
   // output format manipulators: cout << Weight::out_log10;
+    static void default_log10() {
+        default_base=LOG10;
+    }
+    static void default_ln() {
+        default_base=LN;
+    }
+    static void default_sometimes_log() {
+        default_thresh=SOMETIMES_LOG;
+    }
+    static void default_always_log() {
+        default_thresh=ALWAYS_LOG;
+    }
+    static void default_never_log() {
+        default_thresh=NEVER_LOG;
+    }
 
+    template <class charT, class Traits>
+    static int get_log(std::basic_ostream<charT,Traits>& o) {
+        int thresh=o.iword(thresh_index);
+        if (thresh == Weight::DEFAULT_LOG)
+            thresh=Weight::default_thresh;
+        return thresh;
+    }
+
+    template <class charT, class Traits>
+    static int get_log_base(std::basic_ostream<charT,Traits>& o) {
+        int thresh=o.iword(base_index);
+        if (thresh == Weight::DEFAULT_BASE)
+            thresh=Weight::default_base;
+        return thresh;
+    }
+
+    template<class A,class B> static std::basic_ostream<A,B>&
+    out_default_base(std::basic_ostream<A,B>& os);
   template<class A,class B> static std::basic_ostream<A,B>&
     out_log10(std::basic_ostream<A,B>& os);
 
@@ -53,13 +87,17 @@ struct Weight {                 // capable of representing nonnegative reals
     out_ln(std::basic_ostream<A,B>& os);
 
   template<class A,class B> static std::basic_ostream<A,B>&
-    out_variable(std::basic_ostream<A,B>& os);
+    out_sometimes_log(std::basic_ostream<A,B>& os);
 
   template<class A,class B> static std::basic_ostream<A,B>&
     out_always_log(std::basic_ostream<A,B>& os);
 
   template<class A,class B> static std::basic_ostream<A,B>&
-    out_always_real(std::basic_ostream<A,B>& os);
+    out_never_log(std::basic_ostream<A,B>& os);
+
+    template<class A,class B> static std::basic_ostream<A,B>&
+    out_default_log(std::basic_ostream<A,B>& os);
+
 
   static Weight result;
   // default = operator:
@@ -276,14 +314,18 @@ std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) con
 {
         if ( isZero() )
                 o << "0";
-        else if ( (o.iword(thresh_index) == VAR && fitsInReal()) || o.iword(thresh_index) == ALWAYS_REAL ) {
+        else {
+            int log=Weight::get_log(o);
+
+            if ( (log == Weight::SOMETIMES_LOG && fitsInReal()) || log == Weight::NEVER_LOG ) {
                 o << getReal();
-        } else { // out of range or ALWAYS_LOG
-                if (o.iword(base_index) == LN) {
+            } else { // out of range or ALWAYS_LOG
+                if (Weight::get_log_base(o) == Weight::LN) {
                         o << getLn() << "ln";
                 } else { // LOG10
                         o << getLog10() << "log";
                 }
+            }
         }
         return GENIOGOOD;
 }
@@ -481,19 +523,26 @@ Weight::out_log10(std::basic_ostream<A,B>& os)
  { os.iword(base_index) = LOG10; return os; }
 
 template<class A,class B> std::basic_ostream<A,B>&
+Weight::out_default_base(std::basic_ostream<A,B>& os) { os.iword(base_index) = DEFAULT_BASE; return os; }
+
+template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
 
 template<class A,class B> std::basic_ostream<A,B>&
-Weight::out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; return os; }
+Weight::out_sometimes_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = SOMETIMES_LOG; return os; }
 
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; return os; }
 
 template<class A,class B> std::basic_ostream<A,B>&
-Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
+Weight::out_never_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = NEVER_LOG; return os; }
+
+template<class A,class B> std::basic_ostream<A,B>&
+Weight::out_default_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = DEFAULT_LOG; return os; }
+
 
 void inline dbgout(std::ostream &o,Weight w) {
-    Weight::out_always_real(o);
+    Weight::out_never_log(o);
     o << w;
 #ifdef VERBOSE_DEBUG
       o << '=';
