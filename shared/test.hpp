@@ -28,6 +28,17 @@ bool test_extract(S &s,C &c) {
   return is.good();
 }
 
+template <class S,class C> inline
+bool test_extract_insert(S &s,C &c) {
+  istringstream is(s);
+  is >> c;
+  ostringstream o;
+
+  if (!is.good())
+      return 0;
+}
+
+
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c)))
 
