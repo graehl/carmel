@@ -23,7 +23,7 @@ unsigned test_counter::n;
 
 template <class S,class C> inline
 bool test_extract(S &s,C &c) {
-  istringstream is(s);
+  std::istringstream is(s);
   is >> c;
   return !is.fail();
 }
@@ -31,11 +31,11 @@ bool test_extract(S &s,C &c) {
 //#include "debugprint.hpp"
 template <class S,class C> inline
 bool test_extract_insert(S &s,C &c) {
-  istringstream is(s);
+  std::istringstream is(s);
   is >> c;
-  ostringstream o;
+  std::ostringstream o;
   o << c;
-  ostringstream o2;
+  std::ostringstream o2;
   o2 << s;
   if (o.str() != o2.str()) {
 //      DBP(o.str());

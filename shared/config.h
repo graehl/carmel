@@ -1,7 +1,8 @@
 #ifndef CONFIG_H 
 #define CONFIG_H
 
-#define VERSION "3.0.10" 
+#define CARMEL_VERSION "3.0.10" 
+#define COPYRIGHT_YEAR 2004
 
 //#define DEBUGNAN
 

@@ -118,7 +118,7 @@ struct not_has_print_on<C,typename has_print_on_writer<C>::type> {
 };
 
 template <class C>
-struct not_has_print_on<C,typename enable_if<boost::is_pointer<C> >::type> {
+struct not_has_print_on<C,typename boost::enable_if<boost::is_pointer<C> >::type> {
 };
 
 
@@ -133,7 +133,7 @@ static const char * dbgstr(const A &a,Writer writer);
 */
 
 template <class A>
-void dbgout(ostream &o,const A a,typename enable_if<boost::is_pointer<A> >::type* dummy = 0) {
+void dbgout(ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
   if (a == NULL) {
     o << "NULL";
   } else {
@@ -185,7 +185,7 @@ void dbgout(ostream &o,const char *a) {
 
 /*
 template <class A>
-void dbgout(ostream &o,const A &a, typename enable_if<boost::is_arithmetic<A> >::type* dummy = 0) {
+void dbgout(ostream &o,const A &a, typename boost::enable_if<boost::is_arithmetic<A> >::type* dummy = 0) {
   o << a;
 }
 

@@ -69,6 +69,7 @@ struct IndexToOffsetReader {
 };
 */
 
+
 template <class C>
 struct PointerOffset {
     typedef C* value_type;
@@ -92,6 +93,62 @@ struct PointerOffset {
     void operator =(PointerOffset<C> c) { offset=c.offset; }
     bool operator ==(PointerOffset<C> c) { return offset==c.offset; }
     bool operator <(PointerOffset<C> c) { return offset<c.offset; }
+};
+
+
+// useful for sorting; could parameterize on predicate instead of just <=lt, >=gt
+template <class I, class B>
+struct indirect_lt {
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_lt(const B &b) : base(b) {}
+    indirect_lt(const indirect_lt<I,B> &o): base(o.base) {}
+
+    bool operator()(const I &a, const I &b) const {
+        return base[a] < base[b];
+    }
+};
+
+template <class C>
+struct indirect_lt<PointerOffset<C>,C*> {
+    typedef PointerOffset<C> I;
+    typedef C *B;
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_lt(B b) : base(b) {}
+    indirect_lt(const indirect_lt<I,B> &o): base(o.base) {}
+
+    bool operator()(I a, I b) const {
+        return a.add_base(base) < b.add_base(base);
+    }
+};
+
+template <class I, class B>
+struct indirect_gt {
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_gt(const B &b) : base(b) {}
+    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
+    bool operator()(const I &a, const I &b) const {
+        return base[a] > base[b];
+    }
+};
+
+template <class C>
+struct indirect_gt<PointerOffset<C>,C*> {
+    typedef PointerOffset<C> I;
+    typedef C *B;
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_gt(B b) : base(b) {}
+    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
+    bool operator()(I a, I b) const {
+        return a.add_base(base) > b.add_base(base);
+    }
 };
 
 template <class charT, class Traits,class C>
