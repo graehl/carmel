@@ -37,7 +37,9 @@ struct RandomReader
     operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
         while (in) {
             in >> l;
-            if (random_nonneg_lt_one() < prob_keep)
+            double r01=random01();
+            DBP2(r01,prob_keep);
+            if (r01 < prob_keep)
                 break;
         }
         return in;
@@ -57,7 +59,9 @@ struct RandomReaderReader : public R
     operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
         while (in) {
             R::operator()(in,l);
-            if (random_nonneg_lt_one() < prob_keep)
+            double r01=random01();
+            DBP2(r01,prob_keep);
+            if (r01 < prob_keep)
                 break;
         }
         return in;
