@@ -224,6 +224,8 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
   reduce();
 }
 
+static const char COMMENT_CHAR='#';
+
 // need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr)
 {
@@ -238,18 +240,31 @@ int WFST::readLegible(istream &istr)
   for ( ; ; ) {
     if ( !(istr >> c) )
       break;
+	// begin line:
+	if (c == COMMENT_CHAR) {
+		for(;;) {
+			if (!istr.get(c) )
+				break;
+			if (c == '\n')
+				break;
+		}
+		continue;
+	}
     DO(c == '(');
+	// start state:
     DO(getString(istr, buf));
     stateNumber = stateNames.indexOf(buf);
     if ( stateNumber >= states.count() ) {
       states.pushBack();
       Assert(stateNumber + 1 == states.count());
     }
+	// arcs:
     for ( ; ; ) {
       DO(istr >> c);
       if( c == ')' )
         break;
       DO(c == '(');
+	  // dest state:
       DO(getString(istr, buf));
       destState = stateNames.indexOf(buf);
       if ( destState >= states.count() ) {
@@ -260,7 +275,7 @@ int WFST::readLegible(istream &istr)
       if ( d != '(' )
         istr.putback(d);
       for ( ; ; ) {
-                  buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
+                 buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
                  DO(istr >> c);  // skip whitespace
                  istr.putback(c);
                  if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
