@@ -155,7 +155,7 @@ public:
   Graph makeGraph() const; // weights = -log, so path length is sum and best path 
                            // is the shortest; GraphArc::data is a pointer 
                            // to the Arc it corresponds to in the WFST
-  Graph makeEGraph() const; // same as makeGraph, but restricted to *e*/ *e* arcs
+  Graph makeEGraph() const; // same as makeGraph, but restricted to *e* / *e* arcs
   void ownAlphabet() {
     if ( !ownerInOut ) {
       in = new Alphabet(*in);

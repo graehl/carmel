@@ -67,9 +67,9 @@ public:
     freeList = e;
   }
 #endif
-  friend class ::HashTable<K,V>;
-  friend class ::HashIter<K,V>;
-  friend class ::HashConstIter<K,V>; // Yaser
+  friend class HashTable<K,V>;
+  friend class HashIter<K,V>;
+  friend class HashConstIter<K,V>; // Yaser
 #if __GNUC__== 2 && __GNUG__== 2  && __GNUC_MINOR__ <= 7
 // version 2.7.2 or older of gcc compiler does not understand '<>' so it will give
 // an error message if '<>' is present. However, it is required by newer versions
@@ -352,8 +352,8 @@ public:
     growAt = int((float(growAt) * (siz+1)) / (oldSiz+1));
     delete[] oldTable;
   }
-  friend HashIter<K,V>;
-  friend HashConstIter<K,V>;
+  friend class HashIter<K,V>;
+  friend class HashConstIter<K,V>;
 };
 
 

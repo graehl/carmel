@@ -81,7 +81,7 @@ main(int argc, char *argv[]){
   int labelFlag = 0;
   ostream *fstout = &cout;
   for ( i = 1 ; i < argc ; ++i ) {
-    if ((pc=argv[i])[0] == '-' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag)
+    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag)
       while ( *(++pc) ) {
 	if ( *pc == 'k' )
 	  kPaths = -1;
@@ -233,29 +233,35 @@ main(int argc, char *argv[]){
   istream *pairStream = NULL;
   if ( flags['t'] )
     flags['S'] = 1;
-  if ( nInputs < 1 || (flags['S'] || flags['A'])&& nInputs < 2) {
+  //(flags['S'] || 
+  if ( nInputs < 1 || flags['A'] && nInputs < 2) {
     cerr << "No inputs supplied.\n";
     return -12;
   }
   for ( i = 0 ; i < nParms ; ++i ) {
-    files[i] = new ifstream(parm[i]);
+//    if(parm[i][0]=='-' && parm[i][1] == '\0')
+//		files[i] = &cin;
+//	else
+		files[i] = new ifstream(parm[i]);
     if ( !*files[i] ) {
       cerr << "File " << parm[i] << " could not be opened for input.\n";
-      for ( j = 0 ; j < i ; ++j )
-	delete files[i];
+      //for ( j = 0 ; j < i ; ++j )
+		//delete files[i];
       return -9;
     }
   }
   if ( flags['S'] ) {
     flags['b'] = flags['x'] = flags['y'] = 0;
     kPaths = 0;
-    --nInputs;
+	if (nInputs > 1) {
+	--nInputs;
     if ( flags['r'] )
       pairStream = inputs[nInputs];
     else {
       pairStream = inputs[0];
       ++filenames;
       ++inputs;
+	}
     }
     if ( flags['s'] )
       ++files;
@@ -274,7 +280,7 @@ main(int argc, char *argv[]){
   for ( i = 0 ; i < nInputs ; ++i ) {
     if ( i != nTarget ) {
       new (&chain[i]) WFST(*inputs[i]);
-      if ( !flags['m'] )
+      if ( !flags['m'] && nInputs > 1 )
 	chain[i].unNameStates();
       if ( inputs[i] != &cin )
 	delete inputs[i];
@@ -482,7 +488,9 @@ main(int argc, char *argv[]){
       flags['S'] = 0;
     if ( !flags['b'] ) {
       if ( flags['S'] ) {
+		if (pairStream) {  
 	for ( ; ; ) {
+		
 	  getline(*pairStream,buf);	  
 	  if ( !*pairStream )
 	    break;
@@ -503,6 +511,11 @@ main(int argc, char *argv[]){
 	  delete inSeq;
 	  delete outSeq;
 	}
+		} else {
+			List<int> empty_list;
+			cerr << "Emptylistsumofallpaths:\n";
+			cout << result->sumOfAllPaths(empty_list, empty_list) << '\n';
+		}
       } else if ( flags['t'] ) {
 	float weight;
 	result->trainBegin();

@@ -26,7 +26,7 @@ INC = ${DIR}/src
 BIN = ${DIR}/bin
 CC.solaris = g++
 #/nfs/topaz/graehl/isd/solaris/bin/g++3.2
-CC.cygwin = g++
+CC.cygwin = 3.2g++
 CC.freebsd = g++31
 CC.macosx = g++
 
