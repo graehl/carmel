@@ -132,93 +132,139 @@ template <class R,class A>
 struct Node;
 
 template <class R,class A=DefaultPoolAlloc<R> >
-    struct Entry {
-        typedef std::vector<R *> pq_t;
-        unsigned childbp[2];
-        Node<R,A> *child[2]; 
-        R *result;
-        void set(R *_result,Node<R,A> *c0,Node<R,A> *c1) {
-            childbp[0]=childbp[1]=0;
-            child[0]=c0;
-            child[1]=c1;
-            result=_result;
-        }
-        // note: 2heap.h provides a max heap, so we want the same < as R
-        inline bool operator <(const Entry &o) const {
-            assertlvl(19,result && o.result);
-            return *result < *o.result;
-        }
-        typedef Entry<R,A>Self;
-        typedef Self default_print_on;
-        typedef default_print_on has_print_on;
+struct Entry {
+    typedef std::vector<R *> pq_t;
+    unsigned childbp[2];
+    Node<R,A> *child[2]; 
+    R *result;
+    void set(R *_result,Node<R,A> *c0,Node<R,A> *c1) {
+        childbp[0]=childbp[1]=0;
+        child[0]=c0;
+        child[1]=c1;
+        result=_result;
+    }
+    // note: 2heap.h provides a max heap, so we want the same < as R
+    inline bool operator <(const Entry &o) const {
+        assertlvl(19,result && o.result);
+        return *result < *o.result;
+    }
+    typedef Entry<R,A>Self;
+    typedef Self default_print_on;
+    typedef default_print_on has_print_on;
 
-        void print_on(std::ostream &o) const
-        {
-            o << '(' << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
-        }
-        //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
-        //FIXME: g++ barfs on nested class + externally defined operator/member ... unnest Entry?
-    };
+    void print_on(std::ostream &o) const
+    {
+        o << '(' << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
+    }
+    //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
+    //FIXME: g++ barfs on nested class + externally defined operator/member ... unnest Entry?
+};
 
 template <class R,class A=DefaultPoolAlloc<R> >
-    struct Node {
-        typedef R Result;        
-        enum {
-            PENDING=0x1
-        };
-
-        typedef Node<R,A> Self;
-        typedef Self default_print_on;
-        typedef default_print_on has_print_on;
-        void print_on(std::ostream &o) const
-        {
-            o << '{' << this << ": " << " pending=" << pending << " memo=" << memo << '}';
-        }
+struct Node {
+    typedef R Result;        
+    static R *PENDING() {
+        return (R *)0x1;        
+    }
+    typedef Node<R,A> Self;
+    typedef Self default_print_on;
+    typedef default_print_on has_print_on;
+    void print_on(std::ostream &o) const
+    {
+        o << '{' << this << ": " << " pq=" << pq << " memo=" << memo << '}';
+    }        
+    static A result_alloc;
+    typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
+    typedef std::vector<QEntry> pq_t;
+    pq_t pq;     // INVARIANT: pq[0] contains the last entry added to memo
+    typedef std::vector<R *> memo_t;
+    memo_t memo;
+    Node() {
+        //            make_done();
+    }
         
-        static A result_alloc;
-        typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
-        typedef std::vector<QEntry> pq_t;
-        pq_t pq;
-        typedef std::vector<R *> memo_t;
-        memo_t memo;
-        QEntry pending; // store top here so after pop, successors can be deferred until next top is needed
-        Node() {
-            make_done();
+    // IDEA: LAZY!!!
+    // only do the work of computing succesors to nth best when somebody ASKS for n+1thbest
+    // INVARIANT: pq[0] contains the last entry added to memo
+    // IF: a new n is asked for: must be 1 off the end of memo; push it as PENDING and go to work:
+    //// get succesors to pq[0] and heapify, storing memo[n]=top().  if no more left, memo[n]=NULL
+    // DONE when: pq is empty, or memo[n] = NULL
+    R *get_best(unsigned n) {
+        INFOTEST("node=" << *this << " n=" << n); // // 
+        if (n < memo.size()) {
+            assertlvl(11,memo[n] != PENDING());
+            return memo[n]; // may be DONE
+        } else {
+            assertlvl(19,n==memo.size());
+            if (this->done()) {
+                memo.push_back(NULL);                    
+                return NULL;
+            }
+            memo.push_back(PENDING()); //FIXME: use dynarray.h?
+            //                IF_ASSERT(11) memo[n].result=PENDING;
+            return (memo[n]=next_best());                
         }
-        R *get_best(unsigned n) {
-            INFOTEST("node=" << *this << " n=" << n); // // 
-            if (n < memo.size()) {
-                assertlvl(11,memo[n] != (R *)PENDING);
-                return memo[n]; // may be DONE
-            } else {
-                assertlvl(19,n==memo.size());
-                if (done()) {
-                    memo.push_back(NULL);                    
-                    return NULL;
-                }
-                memo.push_back((R *)PENDING); //FIXME: use dynarray.h?
-//                IF_ASSERT(11) memo[n].result=PENDING;
-                return (memo[n]=next());                
+    }
+        // returns essentially top().result
+    //// INVARIANT: top() contains the next best entry
+    // PRECONDITION: don't call if pq is empty. (if !done()).  memo ends with [old top result,PENDING].
+    R *next_best() {            
+        assertlvl(11,!done());
+        //            if (pq.empty()) return NULL;
+        QEntry pending=pq.front(); // creating a copy saves so many ugly complexities in trying to make pop_heap / push_heap efficient ...
+        pop(); // since we made a copy already into pending...
+            
+        R *old_parent=pending.result;
+        assertlvl(19,memo.size()>=2 && memo.back() == PENDING() && old_parent==memo[memo.size()-2]);
+        if (pending.child[0]) { // increment first
+            BUILDSUCC(pending,old_parent,0);
+            if (pending.child[1] && --pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
+                BUILDSUCC(pending,old_parent,1); // increments childbp[1]
             }
         }
-        // must be added from best to worst order
-        void add_sorted(Result *r,Node<R,A> *left=NULL,Node<R,A> *right=NULL) {            
-            INFOTEST("add_sorted this=" << this << " result=" << *r << " left=" << left << " right=" << right);
-            if (done()) {
-                pending.set(r,left,right);
-                INFOTEST("done (pending) " << pending);
-            } else {
-                QEntry e;
-                e.set(r,left,right);
-                pq.push_back(e);
-                INFOTEST("done (heap) " << e);
-            }            
+            
+        if (pq.empty())
+            return NULL;
+        else
+            return top().result;            
+    }
+
+    // PRE: unincremented pending
+    //POST: if pending succesor incrementing ith child exists, increment, create new result, and add to heap
+    void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
+        R *old_child=pending.child[i]->memo[pending.childbp[i]];     
+        //            R *new_child;
+        INFOTEST("BUILDSUCC " << this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1] << " old_child=" <<old_child);
+        if (R *new_child=(pending.child[i])->get_best(++pending.childbp[i])) {         // has child-succesor
+            INFOTEST("HAVE CHILD SUCCESOR TO " << this << ": @" << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
+            pending.result=result_alloc.allocate(); 
+            new(pending.result) R(old_parent,old_child,new_child,i);
+            INFOTEST("new result="<<*pending.result);
+            push(pending);  
         }
+    }
+
+    // must be added from best to worst order
+    void add_sorted(Result *r,Node<R,A> *left=NULL,Node<R,A> *right=NULL) {            
+        INFOTEST("add_sorted this=" << this << " result=" << *r << " left=" << left << " right=" << right);
+        QEntry e;
+        e.set(r,left,right);
+        if (pq.empty()) { // first added
+            assertlvl(29,memo.empty());
+            memo.push_back(r);                
+        }
+        pq.push_back(e);
+        INFOTEST("done (heap) " << e);
+    }
+
+
         void make_done() {
-            pending.result = NULL;
+            //            top().result = NULL;
+            assert("unsupported"==0);
         }
         bool done() const {
-            return pending.result == NULL;
+            //            return top().result == NULL;
+            return pq.empty();
         }
         void push(const QEntry &e) {
             pq.push_back(e);
@@ -227,6 +273,7 @@ template <class R,class A=DefaultPoolAlloc<R> >
             heapAdd(pq.begin(),pq.end(),e);
 #else
             push_heap(pq.begin(),pq.end());
+                        //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
 #endif 
         }
         void pop() {
@@ -234,58 +281,16 @@ template <class R,class A=DefaultPoolAlloc<R> >
             heapPop(pq.begin(),pq.end());
 #else
             pop_heap(pq.begin(),pq.end());
+            //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
 #endif 
             pq.pop_back();
         }
         const QEntry &top() const {
             return pq.front();
         }
-        // modifies pending heavily and pushes it (after you incremented childbp[i]
-        void BUILDSUCC(R *old_parent,unsigned i)  {
-            R *old_child=pending.child[i]->memo[pending.childbp[i]];     
-            //            R *new_child;
-            INFOTEST("BUILDSUCC " << this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1] << " old_child=" <<old_child);
-            if (R *new_child=(pending.child[i])->get_best(++pending.childbp[i])) {        
-                INFOTEST(this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
-                pending.result=result_alloc.allocate(); 
-                new(pending.result) R(old_parent,old_child,new_child,i);  
-                push(pending);
-            }              
-        }
-        void push_pending_succ() {
-            assertlvl(99,!done());
-            R *old_parent=pending.result;
-            
-            /*#define BUILDSUCC(old_parent,i) do {                               \
-                    R *old_child=pending.child[i]->memo[pending.childbp[i]];     \
-                    INFOTEST("BUILDSUCC " << this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1] << " old_child=" <<old_child);        \
-                if (new_child=(pending.child[i])->get_best(++pending.childbp[i])) {        \
-                    INFOTEST(this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  \
-                    pending.result=result_alloc.allocate(); \
-                    new(pending.result) R(old_parent,old_child,new_child,i);  \
-                    push(pending); }  \
-                    }while(0)*/
-            if (pending.child[0]) { // always increment first childbp
-                BUILDSUCC(old_parent,0);                
-                if (pending.child[1] && --pending.childbp[0]==0) { // only increment second childbp if first is initial - so one path to every pair (a,b) // -- to undo ++ in BUILDSUCC
-                    BUILDSUCC(old_parent,1);
-                }
-            }
-#undef BUILDSUCC
-        }
-        R *next() {
-            assertlvl(11,!done());
-            R *ret=pending.result;
-            push_pending_succ();
-            if (pq.empty())
-                make_done();
-            else {                
-                pending=top();
-                pop();
-            }
-            return ret;            
-        }
-    };
+
+};
+
 #ifdef MAIN
 template <class R,class A>
 A Node<R,A>::result_alloc;
