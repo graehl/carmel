@@ -148,37 +148,44 @@ public:
 	  //Assert(pos < count() && pos >= 0);
 	  return names[pos];
   }
-  const char * operator()(int pos) {
+  static char *itoa(int pos) {
     static char buf[10] = "012345678"; // to put end of string character at buf[9]
     int iNum = pos;
-    if (iNum >= count() || names[iNum] == StringKey::empty ) {
       // decimal string for int
       char *num;
-      if ( !pos ) {
-	buf[8] = '0';
-	num = buf + 8;
-      } else {
-	int rem, i = 9;
+    if ( !pos ) {
+		buf[8] = '0';
+		num = buf + 8;
+    } else {
+		int rem, i = 9;
 	while ( pos ) {
 	  rem = pos;
 	  pos /= 10;
 	  rem -= 10*pos;		// maybe this is faster than mod because we are already dividing
 	  buf[--i] = '0' + (char)rem;
 	}
+	
 	num = buf + i;
-      }
-      StringKey k(num);
+	}
+	return num;
+  }
+  const char * operator()(int pos) {
+    int iNum = pos;
+    if (iNum >= count() || names[iNum] == StringKey::empty ) {
+      // decimal string for int
+     
+      StringKey k;
+	  k.str = itoa(iNum);
       k = StringPool::borrow(k);
       if ( iNum < names.count() ) {
-	names[iNum] = k.str;
-	ht.add(k,iNum); // Yaser added this 8-3-2000: to fix what I think is a bug. Since the String key is never added to the hashtable ht.
-      }
-      else {
-	for ( int i = names.count() ; i < iNum ; ++i )
-	  names.pushBack(StringKey::empty);
-	names.pushBack(k.str);
-	ht.add(k,iNum ); // Yaser added this 8-3-2000: to fix what I think is a bug. Since the String key is never added to the hashtable ht.
-	Assert(names.count() == iNum+1);
+		names[iNum] = k.str;
+		ht.add(k,iNum); // Yaser added this 8-3-2000: to fix what I think is a bug. Since the String key is never added to the hashtable ht.
+      } else {
+		for ( int i = names.count() ; i < iNum ; ++i )
+			names.pushBack(StringKey::empty);
+		names.pushBack(k.str);
+		ht.add(k,iNum ); // Yaser added this 8-3-2000: to fix what I think is a bug. Since the String key is never added to the hashtable ht.
+		Assert(names.count() == iNum+1);
       }
     }
     return names[iNum];
