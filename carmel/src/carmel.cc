@@ -220,10 +220,12 @@ main(int argc, char *argv[]){
         readParam(&keep_path_ratio,argv[i],'w');
         if (keep_path_ratio < 1)
           keep_path_ratio = 1;
+		wrFlag=false;
       } else if ( msFlag ) {
         readParam(&max_states,argv[i],'z');
         if ( max_states < 1 )
           max_states = 1;
+		msFlag=false;
       } else if ( kPaths == -1 ) {
         readParam(&kPaths,argv[i],'k');
         if ( kPaths < 1 )

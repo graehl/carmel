@@ -81,7 +81,7 @@ public:
   }
   int size() const { return space; }
   int count() const { return sz; }
-  ~DynamicArray() {
+  void clear() {
     if (vec) {
       for ( int	i = 0 ; i < sz ; i++ )
 		vec[i].~T();
@@ -89,6 +89,9 @@ public:
     }
     vec = NULL;
     sz = 0;
+  }
+  ~DynamicArray() {
+	  clear();
   }
 };
 
