@@ -44,7 +44,7 @@ typedef float FLOAT_TYPE;
 #define DEBUG_ESTIMATE_PP
 //#define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
-#define DEBUGNORMALIZE
+//#define DEBUGNORMALIZE
 //#define DEBUGKBEST
 //#define DEBUGPRUNE
 //#define DEBUGFB

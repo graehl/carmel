@@ -195,7 +195,7 @@ while(1) { // random restarts
 	if (ran_restarts > 0) {
 		--ran_restarts;
 		randomSet();
-		Config::log() << "Random restart - " << ran_restarts << " remaining.\n";
+		Config::log() << "\nRandom restart - " << ran_restarts << " remaining.\n";
 	} else {
 		break;
 	}
