@@ -438,18 +438,16 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
   explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(Base::vec) { Assert(this->invariant()); }
 
   // creates vector holding sp copies of t; does initialize
-  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endv(Base::endspace) {
+  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp) {
         construct(t);
         Assert(invariant());
   }
 
   void construct() {
-        Assert(endv==this->vec);
         Array<T,Alloc>::construct();
         endv=this->endspace;
   }
   void construct(const T& t) {
-        Assert(endv==this->vec);
         Array<T,Alloc>::construct(t);
         endv=this->endspace;
   }
@@ -458,7 +456,7 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
         clear();
         reserve_at_least(sp);
         T *real_es=this->endspace;
-        end=this->endspace=sp;
+        endv=this->endspace=sp;
         Array<T,Alloc>::construct(t);
         this->endspace=real_es;
     }
