@@ -1,5 +1,14 @@
 2002-11-22  Jonathan Graehl  <graehl@isi.edu>
 
+	* src/graph.cc: changed mind.  split into two functions - one that
+	builds all-source->one dest tree, other does single-source
+	dijikstra and sets taken link pointers
+
+	* src/kbest.cc: changed mind.  moved kbest reverse code into
+	graph.cc function
+
+	* src/finite.cc: added command line description of -w, -z
+
 	* src/fst.h: added clear() and printArc()
 	
 	* src/config.h: added Config::debug() warn() and log() stream
@@ -10,13 +19,10 @@
 	have no effect.
 
 	* src/kbest.cc: because of change in graph.cc, reverse graph
-	before bestPathsTree.  changed mind.  moved code into graph.cc
-	function
+	before bestPathsTree.
 
 	* src/graph.cc: changed bestPathsTree to do single-source all-dest
-	instead of single-dest.  changed mind.  split into two functions -
-	one that builds all-source->one dest tree, other does
-	single-source dijikstra and sets taken link pointers
+	instead of single-dest.  
 
 	* src/finite.cc: added -w,-z max-state/path-cost-ratio pruning
 	options, restructured prune/minimize code (do not prune before
