@@ -22,9 +22,8 @@ OBJ.solaris = ${DIR}/obj/solaris
 OBJ.cygwin = ${DIR}/obj/cygwin
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
-INC = 
-#INC = ${DIR}/src
-IN = -I$(INC) -I- -I/home/graehl/isd/boost -I/home/graehl/isd/devel/tt 
+
+OBJ = $(OBJ.${ARCH})
 IN = -I${DIR}/src -I$(SHARED) -I- -I${BOOST} 
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
@@ -36,7 +35,7 @@ CC.freebsd = g++31
 CC.freebsd = g++
 CC.macosx = g++
 
-CCFLAGS = -c -Wno-deprecated 
+CCFLAGS = -c -Wno-deprecated ${INC}
 CCFLAGS = -c -Wno-deprecated -DBOOST_DISABLE_THREADS -DBOOST_NO_MT ${INC}
 #-Wall 
 # -frepo
@@ -139,7 +138,6 @@ $(OBJ)/purified/:
 	mkdir -p $@
 
 all: carmel.${ARCH}
-	
 
 clean:
 	rm -rf $(OBJ)

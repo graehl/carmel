@@ -464,12 +464,15 @@ Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = A
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
+
 #include <limits>
+namespace std {
 template <>
-class std::numeric_limits<Weight> {
+class numeric_limits<Weight> {
 public:
   static bool has_infinity() { return true; }
   //FIXME: add rest
+};
 };
 
 #ifdef DEBUGNAN
