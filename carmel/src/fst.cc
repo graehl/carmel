@@ -594,6 +594,11 @@ int WFST::indexThreshold = 128;
 int TrioKey::aMax = 0;
 int TrioKey::bMax = 0;
 
+#ifdef CUSTOMNEW
+
+const int Entry<IOPair,List<DWPair> >::newBlocksize = 64;
+Entry<IOPair,List<DWPair> > *Entry<IOPair,List<DWPair> >::freeList = NULL;
+
 const int Entry<StringKey, int>::newBlocksize = 64;
 Entry<StringKey, int> *Entry<StringKey, int>::freeList = NULL;
 
@@ -614,3 +619,5 @@ Entry<HalfArcState,int > *Entry<HalfArcState,int>::freeList = NULL;
 
 const int Entry<IntKey, Weight >::newBlocksize = 64;
 Entry<IntKey, Weight > *Entry<IntKey, Weight>::freeList = NULL;
+
+#endif

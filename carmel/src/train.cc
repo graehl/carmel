@@ -606,8 +606,6 @@ ostream & operator << (ostream &o, DWPair p)
   return o << *(p.arc)  ;
 }
 
-const int Entry<IOPair,List<DWPair> >::newBlocksize = 64;
-Entry<IOPair,List<DWPair> > *Entry<IOPair,List<DWPair> >::freeList = NULL;
 
 ostream & hashPrint(HashTable<IOPair, List<DWPair> > &h, ostream &o) {
   HashIter<IOPair,List<DWPair> > i(h);

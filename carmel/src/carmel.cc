@@ -1,7 +1,8 @@
-// unused letters: -K -Y -U -o -q
+// unused letters: -K -o -q
 // -w w = prune paths ratio (1 = keep only best path, 10 = keep paths up to 10 times worse)
 // -z n = keep at most n states
 // -U = treat pre-training weights as prior counts
+// -Y write graphviz
 
 #include <iostream>
 #include <fstream>
@@ -274,6 +275,8 @@ main(int argc, char *argv[]){
   WFST::setIndexThreshold(thresh);
   if ( flags['h'] ) {
     WFSTformatHelp();
+	cout << endl << endl;
+	usageHelp();
     return 0;
   }
   if (flags['V']){
@@ -661,7 +664,10 @@ main(int argc, char *argv[]){
 
 
       if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
-        *fstout << *result;
+	    if ( flags ['Y'] )
+			result->writeGraphViz(*fstout);
+		else
+			*fstout << *result;
       }
       break;
     }
@@ -797,8 +803,9 @@ cout << " the result as the arc in the transducer it\n\t\tcame from.  Thi";
 cout << "s will create more states, and possibly less\n\t\tarcs, than the";
 cout << " normal approach, but the transducer will have\n\t\tequivalent p";
 cout << "aths.\n-h\t\thelp on transducers, file formats\n";
-cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training;\n\t\ttry -tuM 1 to see forward-backward counts for arcs\n" ;
-cout << "-j\t\tPerform joint rather than conditional normalization";
+cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training;\n\t\ttry -tuM 1 to see forward-backward counts for arcs" ;
+cout << "\n-j\t\tPerform joint rather than conditional normalization";
+cout << "\n-Y\t\tWrite transducer to GraphViz .dot file\n\t\t(see http://www.research.att.com/sw/tools/graphviz/)";
 cout << "\n\n";
 cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
 cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";
@@ -813,6 +820,7 @@ cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";
 cout << "\n\nTransducer output format switches:";
 cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";
 cout << "\n\t-J\tDon't omit output=input or Weight=1";
+
 cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
 cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 }

@@ -32,9 +32,9 @@ public:
   Entry(const K & k, const V& v) : next(NULL), key(k), val(v) { }
   Entry(const K &k, const V& v, Entry<K,V> * const n) : next(n), key(k), val(v) { }
   Entry(const K &k, Entry<K,V> * const n) : next(n), key(k) { }
+#ifdef CUSTOMNEW
   static Entry<K,V> *freeList;
   static const int newBlocksize;
-#ifdef CUSTOMNEW
   void *operator new(size_t s)
   {
     size_t dummy = s;
