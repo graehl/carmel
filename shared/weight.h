@@ -9,26 +9,91 @@
 #ifndef WEIGHT_H 
 #define WEIGHT_H 1
 
+#pragma warning(push)
 #include <cmath>
 #include <iostream>
 
+// Microsoft C++: conversion from double to float:
+#pragma warning(disable:4244)
+
 struct Weight {			// capable of representing nonnegative reals 
+		// internal implementation note: by their base e logarithm
+private:
+enum { LOG10, LN } LogBase;
+enum { VAR, ALWAYS_LOG, ALWAYS_REAL } OutThresh;
+// IEE float safe till about 10^38, loses precision earlier (10^32?)
+// 32 * ln 10 =~ 73
+enum {LN_TILL_UNDERFLOW=73} ;
+
+static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
+static const int thresh_index; // handle for OutThresh
+
+public:	
   static const float HUGE_FLOAT;
-	// internal implementation note: by their base e logarithm
   float weight;
+
+// output format manipulators: cout << Weight::out_log10;
+
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_log10(std::basic_ostream<A,B>& os) { os.iword(base_index) = LOG10; }
+
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; }
+
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; }
+
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; }
+
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; }
+
   static Weight result;
+  // default = operator:
   Weight(double f) {
-    if ( f > 0 )
-      weight = (float)log(f);
-    else
-      weight = -HUGE_FLOAT;
+	setReal(f);
   }
 
-  double toFloat() { 
-    return exp(weight);
+  //double toFloat() const { 
+    //return getReal();
+  //}
+
+  double getReal() const {
+	  return exp(weight);
   }
+  float getLn() const {
+	  return weight;
+  }
+  float getLog10() const {
+	  static const float oo_ln10 = 1./log(10.f);
+	  return oo_ln10 * weight;
+  }
+  bool fitsInReal() const {
+	return (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
+  }
+  bool isZero() const {
+	  return weight == -HUGE_FLOAT;
+  }
+  void setZero() {
+	  weight = -HUGE_FLOAT;
+  }
+  void setReal(double f) {
+	  if (f > 0)
+		weight=(float)log(f);
+	  else
+	    setZero();
+  }
+  void setLn(float w) {
+	  weight=w;
+  }
+  void setLog10(float w) {
+	  static const float ln10 = log(10.f);
+	  weight=w*ln10;
+  }
+
 //  Weight() : weight(-HUGE_FLOAT) {}
-  Weight() { weight=-HUGE_FLOAT; }
+  Weight() { setZero(); }
   friend Weight operator + (Weight, Weight);
   friend Weight operator - (Weight, Weight);
   friend Weight operator * (Weight, Weight);
@@ -53,11 +118,78 @@ struct Weight {			// capable of representing nonnegative reals
     weight -= w.weight;
     return *this;
   }
+
+template <class charT, class Traits>
+std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const;
+template <class charT, class Traits>
+std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);
+
 };
 
-std::ostream& operator << (std::ostream &o, Weight weight);
+template <class charT, class Traits>
+std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) const
+{
+	if ( (o.iword(thresh_index) == VAR && fitsInReal()) || o.iword(thresh_index) == ALWAYS_REAL ) {
+		o << getReal();
+	} else { // out of range or ALWAYS_LOG
+		if (o.iword(base_index) == LN) {
+			o << getLn() << "ln";
+		} else { // LOG10
+			o << getLog10() << "log";
+		}
+	}
+	return 0;
+}
 
-std::istream& operator >> (std::istream &i, Weight &weight);
+template <class charT, class Traits>
+std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
+{
+  char c;
+  double f;
+  i >> f;
+  if ( i.eof() )
+    setReal(f);
+  else if ( (c = i.get()) == 'l' ) {
+   char n = i.get();  	
+   if ( n == 'n')
+    setLn((float)f);
+   else if ( n == 'o' && i.get() == 'g' )
+    setLog10(f);
+   else {
+    setReal(0);
+	return std::ios_base::badbit;
+   }
+  } else {
+    i.putback(c);
+    setReal(f);
+  }
+  return 0;
+}
+
+
+
+#include "genio.h"
+
+template <class charT, class Traits>
+std::basic_istream<charT,Traits>&
+operator >>
+ (std::basic_istream<charT,Traits>& is, Weight &arg)
+{
+	return gen_extractor(is,arg);
+}
+
+template <class charT, class Traits>
+std::basic_ostream<charT,Traits>&
+operator <<
+ (std::basic_ostream<charT,Traits>& os, const Weight &arg)
+{
+	return gen_inserter(os,arg);
+}
+
+
+//std::ostream& operator << (std::ostream &o, Weight weight);
+
+//std::istream& operator >> (std::istream &i, Weight &weight);
 
 /*
 bool operator == (Weight lhs, Weight rhs);
@@ -145,5 +277,7 @@ inline bool operator <(Weight lhs, Weight rhs) { return lhs.weight < rhs.weight;
 inline bool operator >(Weight lhs, Weight rhs) { return lhs.weight > rhs.weight; }
 inline bool operator <=(Weight lhs, Weight rhs) { return lhs.weight <= rhs.weight; }
 inline bool operator >=(Weight lhs, Weight rhs) { return lhs.weight >= rhs.weight; }
+
+#pragma warning(pop)
 
 #endif 

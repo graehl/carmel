@@ -6,7 +6,7 @@
 * with questions about the software or commercial licensing.  All software is  *
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
-#include <ctype.h>
+#include <cctype>
 #include "fst.h"
 #include "node.h"
 Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)

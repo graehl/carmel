@@ -6,14 +6,16 @@
 * with questions about the software or commercial licensing.  All software is  *
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
-
 #include "weight.h"
+
+using namespace std;
+
+// xalloc gives a unique global handle with per-ios space handled by the ios
+const int Weight::base_index = ios_base::xalloc();
+const int Weight::thresh_index = ios_base::xalloc();
 const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
 
-// IEE float safe till about 10^38, loses precision earlier (10^32?)
-// 32 * ln 10 =~ 73
-#define LN_TILL_UNDERFLOW 73
-
+/*
 std::ostream& operator << (std::ostream &o, Weight weight)
 {
   if ( weight == 0.0 )
@@ -24,7 +26,9 @@ std::ostream& operator << (std::ostream &o, Weight weight)
     o << weight.weight << "ln";
   return o;
 }
+*/
 
+/*
 std::istream& operator >> (std::istream &i, Weight &weight)
 {
   static const float ln10 = log(10.f);
@@ -48,3 +52,4 @@ std::istream& operator >> (std::istream &i, Weight &weight)
   }
   return i;
 }
+*/
