@@ -26,11 +26,13 @@ using namespace std;
 
 #define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
 
+
+
 #ifdef NO_INFO
 # define DBG_OP_F(lvl,pDbg,op,module,msg,file,line)
 #else
 # define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) do {        \
-  if (INFO_LEVEL >= lvl) { \
+        if (INFO_LEVEL >= lvl && pDbg->runtime_info_level >= lvl) {     \
    ostringstream os; \
    os << msg; \
    pDbg->op(module,os.str(),file,line);          \
@@ -65,7 +67,8 @@ namespace ns_decoder_global {
 
   class Debug {
   public:
-    Debug() : debugOS(cerr), infoOS(cout) {};
+      int runtime_info_level;
+      Debug() : debugOS(cerr), infoOS(cout),runtime_info_level(INFO_LEVEL) {};
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
       return debugOS;
@@ -96,7 +99,12 @@ namespace ns_decoder_global {
         getInfoOutput() << module << "(" << file << ":" << line << "): " << info << endl;
       }
     }
-
+      void set_info_level(int lvl) {
+          runtime_info_level=lvl;
+      }
+      int get_info_level() const {
+          return runtime_info_level;
+      }
   private:
 
     ostream &debugOS;                                      //!< output stream where error/WARNING messages are sent
