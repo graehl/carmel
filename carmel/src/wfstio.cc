@@ -288,16 +288,21 @@ int WFST::readLegible(istream &istr)
         outL = out->indexOf(buf);
         DO(istr >> c); // skip ws
         istr.putback(c);
+		weight.setZero();
         if (isdigit(c) || c == '.' || c == '-' ) {
           DO(istr >> weight);
+		  if ( istr.fail() ) {
+			cout << "Invalid weight: " << weight <<"\n";
+			return 0;
+		  }
         } else
           weight = 1.0;
-        if ( weight > 0.0 ) {
-          states[stateNumber].addArc(Arc(inL, outL, destState, weight));
-        } else if ( weight != 0.0 ) {
-          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
-          return 0;
-        }
+//        if ( weight > 0.0 ) {
+        states[stateNumber].addArc(Arc(inL, outL, destState, weight));
+        //} else if ( weight != 0.0 ) {
+//          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
+//          return 0;
+        //}
         DO(istr >> c);
         Arc *lastAdded = &states[stateNumber].arcs.top();
         if ( c == '!' ) { // lock weight
@@ -353,7 +358,7 @@ void WFST::writeLegible(ostream &os)
       if (onearc)
 		os << "\n(" << stateNames[i];
 
-      if ( a->weight.isPositive() ) {
+     if ( a->weight.isPositive() ) {
         destState = stateNames[a->dest];
         os << " (" << destState;
         if ( !brief || a->in || a->out ) { // omit *e* *e* labels
@@ -377,7 +382,7 @@ void WFST::writeLegible(ostream &os)
         os << ")";
 		if (onearc)
 		  os << ")";
-      }
+     }
     }
 	if (!onearc)
       os << ")";

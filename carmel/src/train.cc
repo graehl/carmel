@@ -6,7 +6,7 @@
 //#define DEBUGTRAIN
 
 void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, Weight smoothFloor) {
-  consolidateArcs();
+  //consolidateArcs();
   normalize(method);
   delete trn;
   trn = new trainInfo;

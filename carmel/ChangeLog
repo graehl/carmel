@@ -1,5 +1,7 @@
 2002-12-10  Jonathan Graehl  <graehl@isi.edu>
 
+	* src/wfstio.cc: allow zero-weight arcs on input - useful with -U prior counts
+
 	* src/train.cc: changed trainBegin to take parameters for -f and
 	-U.  new prior_counts attribute for each arc in training (Dirichlet prior)
 
