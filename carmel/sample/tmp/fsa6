@@ -1,0 +1,5 @@
+F
+(S (A "big"))
+(A (B "big"))
+(B (C "dog"))
+(C (F "big"))

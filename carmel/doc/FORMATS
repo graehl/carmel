@@ -1,0 +1,104 @@
+/*******************************************************************************
+* This software ("Carmel") is licensed for research use only, as described in  *
+* the LICENSE file in this distribution.  The software can be downloaded from  *
+* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
+* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
+* with questions about the software or commercial licensing.  All software is  *
+* copyrighted C 2000 by the University of Southern California.                 *
+*******************************************************************************/
+
+A weighted finite state transducer (WFST) is a directed graph with weighted
+arcs, and an input and output label on each arc.  Each vertex is called a
+"state", and one state is designated as the initial state and another as the
+final state.  Every path from the initial state to the final state represents
+a transduction from the concatenation of the input labels of arcs along the
+path, to the concatenation of the output labels, with a weight equal to the
+product of the weights of each transition taken.  The weight of a transduction
+may represent, for instance, the conditional probability of the output
+sequence given the input sequence.  The actual weight that should be assigned
+to a transduction is, more accurately, the sum of the weights of all possible
+paths which emit the input:output sequence, but it is more convenient to
+search for the best path, so that the sum is approximated by the maximum.  A
+special "empty" symbol, when used as an input or output label, disappears in
+the concatenations.
+
+Two transductions may be composed, meaning that the weight of any input:output
+pair is the sum over all intermediate possibilities of the product of the
+weight of input:intermediate in the first and the weight of
+intermediate:output in the second.  If the transductions represent conditional
+probabilities, and the intermediate possibilities represent a partition of
+events such that input and output are independent given the intermediate
+possibilities, then the conditional probability of output given input is given
+by the composition of the first transducer, which contains the probabilities
+p(input|intermediates) and the second transducer, which contains the
+probabilities p(intermediates|output).  Given two WFST representing
+transductions, another WFST representing the composition of the two
+transductions can be easily created (with up to the product of the number of
+states).
+
+This program accepts parenthesized lists of states and arcs in a variety of
+formats.  Whitespace can be used freely between symbols.  States are named by
+any string of characters (except parentheses) delimited by whitespace, or
+contained in bounding quotes or asterisks ("state 1" or *initial state*, for
+example).  Input/output symbols are of the same format, except they must not
+begin with a number, decimal point, or minus.  Input/output symbols bounded by
+asterisks are intended to be special symbols.  Only one, *e*, the empty
+symbol, is currently treated differently by the program.  Special symbols
+are not case sensitive (converted to lowercase on input).  Quoted symbol names
+may contain internal quotes so long as they are escaped by a backslash
+immediately preceding them (e.g. "\"hello\"").  Symbols should not be longer
+than 4000 characters.  Weights are floating point numbers, optionally followed
+immediately by the letters 'log', in which case the number is the base 10
+logarithm of the actual weight (logarithms are used internally to avoid
+underflow).
+
+Every transducer file begins with the name of the final state, and is followed
+by a list of arcs.  No explicit list of states is needed; if a state name
+occurs as the source or destination of an arc, it is created.  Each
+parenthesized expression of the form describes zero or more arcs (here the
+asterisk means zero or more repetitions of the parenthesized expression to the
+left) :
+
+(source-state (destination-state input output weight)*)
+(source-state (destination-state (input output weight)*)*)
+
+if right parentheses following "weight" is immediately preceded by an
+exclamation point ('!'), then that weight will be locked and unchanged by
+normalization or training (however, the arc may still be eliminated by
+reduction (absence of -d) or consolidation (-C) operations)
+
+The initial state is the source-state mentioned in the first such expression.
+"weight" can be omitted, for a default weight of one.  "output" can also be
+ommitted, in which case the output is the same as the input.  This program
+outputs transducers using the first option, giving only one expression per
+"source-state", and exhaustively listing every arc out of that state in no
+particular order, omitting "weight" and "output" whenever they are not
+needed.  However, inputs may even contain many of these expressions sharing
+the same "source-state", in which case the arcs are added to the existing
+state.
+
+When the -n or -b options are used, the input is instead sequences of
+space-separated symbols, from which a finite state automata accepting exactly
+that sequence with weight one (a FSA is simply a transducer where very arc has
+matching input and output, and a weight of one).  With the -b (batch) option,
+the input may consist of any number of such sequences, each on their own
+line.  Each input sequence must be no longer than 60000 characters.
+
+When the -m option is specified, meaningful names will be assigned to states
+created in the composition of two WFST, in the following format (otherwise
+state names are numbers assigned sequentially):
+
+lhs-WFST-state-name|filter-state|rhs-WFST-state-name
+
+"filter-state" is a number between 0 and 2, representing the state in an
+implicit intermediate transducer used to eliminate redundant paths using empty
+(*e*) transitions.
+
+When -k number-of-paths is used without limiting the output with -i or -o,
+paths are displayed as a list of space-separated, parenthesized arcs:
+
+(input-symbol : output-symbol / weight -> destination-state) 
+
+followed by the path weight (the product of the weights in the sequence) at
+the end of the line.
+

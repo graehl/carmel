@@ -1,0 +1,428 @@
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/2hash.o: /nfs/isd2/rewrite/carmel/src/2hash.cc \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/2heap.o: /nfs/isd2/rewrite/carmel/src/2heap.cc \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/Arc.o: /nfs/isd2/rewrite/carmel/src/Arc.cc \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/compose.o: /nfs/isd2/rewrite/carmel/src/compose.cc \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/finite.o: /nfs/isd2/rewrite/carmel/src/finite.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/fst.o: /nfs/isd2/rewrite/carmel/src/fst.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/graph.o: /nfs/isd2/rewrite/carmel/src/graph.cc \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/kbest.o: /nfs/isd2/rewrite/carmel/src/kbest.cc \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/strhash.o: /nfs/isd2/rewrite/carmel/src/strhash.cc \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/train.o: /nfs/isd2/rewrite/carmel/src/train.cc \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/weight.o: /nfs/isd2/rewrite/carmel/src/weight.cc \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/optimized/wfstio.o: /nfs/isd2/rewrite/carmel/src/wfstio.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/2hash.o: /nfs/isd2/rewrite/carmel/src/2hash.cc \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/2heap.o: /nfs/isd2/rewrite/carmel/src/2heap.cc \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/Arc.o: /nfs/isd2/rewrite/carmel/src/Arc.cc \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/compose.o: /nfs/isd2/rewrite/carmel/src/compose.cc \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/finite.o: /nfs/isd2/rewrite/carmel/src/finite.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/fst.o: /nfs/isd2/rewrite/carmel/src/fst.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/graph.o: /nfs/isd2/rewrite/carmel/src/graph.cc \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/kbest.o: /nfs/isd2/rewrite/carmel/src/kbest.cc \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/strhash.o: /nfs/isd2/rewrite/carmel/src/strhash.cc \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/train.o: /nfs/isd2/rewrite/carmel/src/train.cc \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/weight.o: /nfs/isd2/rewrite/carmel/src/weight.cc \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/profile/wfstio.o: /nfs/isd2/rewrite/carmel/src/wfstio.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/2hash.o: /nfs/isd2/rewrite/carmel/src/2hash.cc \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/2heap.o: /nfs/isd2/rewrite/carmel/src/2heap.cc \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/Arc.o: /nfs/isd2/rewrite/carmel/src/Arc.cc \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/compose.o: /nfs/isd2/rewrite/carmel/src/compose.cc \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/finite.o: /nfs/isd2/rewrite/carmel/src/finite.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/fst.o: /nfs/isd2/rewrite/carmel/src/fst.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/graph.o: /nfs/isd2/rewrite/carmel/src/graph.cc \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/kbest.o: /nfs/isd2/rewrite/carmel/src/kbest.cc \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/strhash.o: /nfs/isd2/rewrite/carmel/src/strhash.cc \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/train.o: /nfs/isd2/rewrite/carmel/src/train.cc \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/weight.o: /nfs/isd2/rewrite/carmel/src/weight.cc \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/debug/wfstio.o: /nfs/isd2/rewrite/carmel/src/wfstio.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/2hash.o: /nfs/isd2/rewrite/carmel/src/2hash.cc \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/2heap.o: /nfs/isd2/rewrite/carmel/src/2heap.cc \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/Arc.o: /nfs/isd2/rewrite/carmel/src/Arc.cc \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/compose.o: /nfs/isd2/rewrite/carmel/src/compose.cc \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/finite.o: /nfs/isd2/rewrite/carmel/src/finite.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/fst.o: /nfs/isd2/rewrite/carmel/src/fst.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/graph.o: /nfs/isd2/rewrite/carmel/src/graph.cc \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/kbest.o: /nfs/isd2/rewrite/carmel/src/kbest.cc \
+ /nfs/isd2/rewrite/carmel/src/kbest.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/strhash.o: /nfs/isd2/rewrite/carmel/src/strhash.cc \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/train.o: /nfs/isd2/rewrite/carmel/src/train.cc \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/assert.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h \
+ /nfs/isd2/rewrite/carmel/src/node.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/weight.o: /nfs/isd2/rewrite/carmel/src/weight.cc \
+ /nfs/isd2/rewrite/carmel/src/weight.h
+/nfs/isd2/rewrite/carmel/obj/sun4/purified/wfstio.o: /nfs/isd2/rewrite/carmel/src/wfstio.cc \
+ /nfs/isd2/rewrite/carmel/src/fst.h \
+ /nfs/isd2/rewrite/carmel/src/2hash.h \
+ /nfs/isd2/rewrite/carmel/src/list.h \
+ /nfs/isd2/rewrite/carmel/src/weight.h \
+ /nfs/isd2/rewrite/carmel/src/dynarray.h \
+ /nfs/isd2/rewrite/carmel/src/strhash.h \
+ /nfs/isd2/rewrite/carmel/src/graph.h \
+ /nfs/isd2/rewrite/carmel/src/2heap.h \
+ /nfs/isd2/rewrite/carmel/src/train.h \
+ /nfs/isd2/rewrite/carmel/src/Arc.h \
+ /nfs/isd2/rewrite/carmel/src/compose.h

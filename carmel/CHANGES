@@ -1,0 +1,52 @@
+/*******************************************************************************
+* This software ("Carmel") is licensed for research use only, as described in  *
+* the LICENSE file in this distribution.  The software can be downloaded from  *
+* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
+* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
+* with questions about the software or commercial licensing.  All software is  *
+* copyrighted C 2000 by the University of Southern California.                 *
+*******************************************************************************/
+
+Carmel Version 2.00b: Released on 10-26-2001
+
+Here is a list of the major changes from the original release:
+
+1. Files are restructured to allow compiling parts of the code
+separately. In the initial release, a change in any file will result
+in requiring the re-compilation of the entire code. This is not the
+case with this release where only the changed file and anything that
+depends on it are recompiled. This leads to faster compilation and
+more code readability.
+
+2. The initial release implements its own list and list iterators data
+structures. These have been replaced with their STL equivalents in
+this release.
+
+3. Memory leak bug fixed. When using batch mode composition (-b),
+temporary results are not deleted and hence the compositions end up
+consuming your entire  memory. This bug has been fixed in this
+release. The bug is in file finite.cc.
+
+4. Memory leak bug is method "buildSidetracksHeap()" fixed in
+file kbest.cc.
+
+5. Other memory clean up fixes, such as deleting arcs of a state from
+the tied arcs group, if that state is to be deleted.
+
+6. Added an additional option (-P) which is similar to (-i) except
+that instead of constructing a constructor for the input, a permutation 
+lattice is constructed.
+
+7. The initial version has a limit on the length of input line of
+64K bytes. This version no longer has this restriction, so the limit
+is the actual limits of string in the STL library.
+
+ 
+This release  has been tested extensively, however, this does not mean
+it is bug free. If you think you have found a bug, please let us know
+preferably with samples and explanation on how to recreate it.
+
+Enjoy!
+
+Yaser Al-Onaizan
+yaser@isi.edu
