@@ -15,7 +15,7 @@ void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*fu
   dfsVis = visited;
   dfsFunc = func;
   dfsExitFunc = NULL;
-  dfsRec(startState, -1);
+  dfsRec(startState, (unsigned)-1);
 }
 
 Graph reverseGraph(Graph g)
