@@ -20,9 +20,12 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree {
   explicit Tree(unsigned int _n_child,Alloc _alloc=Alloc()) : alloc(_alloc) {
 	set_size(_n_child);
   }
-  ~Tree() {
+  void free() {
 	if (n_child)
 	  alloc.deallocate(children,n_child);
+  }
+  ~Tree() {
+	free();
   }
 
   // STL container stuff
@@ -43,10 +46,10 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree {
   const_iterator const_end() const {
 	return children+n_child;
   }
-
+  unsigned int count_nodes() const;
 template <class charT, class Traits>
 std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const
-  {
+  {	
   o << label;
   if (n_child) {
 	o << '(';
@@ -67,7 +70,7 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const
 template <class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
 // doesn't free old children if any
-{
+{  
   char c;
   n_child=0;
   L l;
@@ -88,6 +91,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
 	  }
 	  if ((c = in.get()) != ',') in.putback(c);
 	}
+	free();
 	set_size(in_children.size());
 	copy(in_children.begin(),in_children.end(),begin());	
   } else {	
@@ -142,11 +146,58 @@ void postorder(T *tree,F func)
   func(tree);
 }
 
+template <class T,class F>
+void postorder(const T *tree,F func)
+{
+  for (T::iterator i=tree.begin(), end=tree.end(); i!=end; ++i)
+	postorder(*i,func);
+  func(tree);
+}
+
 template <class T>
 void delete_tree(T *tree)
 {
   postorder(tree,delete_arg<T *>);
 }
+
+template <class T>
+struct TreeCount {
+  unsigned int count;
+  void operator()(const T * tree) { 
+	++count;
+  }
+  TreeCount() : count(0) {}
+};
+
+template <class T>
+unsigned int count_nodes(const T *t)
+{
+  TreeCount<T> n;
+  postorder(t,n);
+  return n.count;
+}
+
+template <class T,class O>
+struct Emitter {
+  O out;
+  Emitter(O o) : out(o) {}
+  void operator()(T * tree) {
+	o << tree;
+  }
+};
+
+
+#include <boost/lambda/lambda.hpp>
+//using namespace boost::lambda;
+
+template <class T,class O>
+void emit_postorder(const T *t,O out)
+{
+  /*Emitter e(out);
+  postorder(t,e);*/
+  postorder(t,o << boost::lambda::_1);
+}
+
 
 template <class L>
 Tree<L> *new_tree(L &l) {
@@ -188,3 +239,15 @@ T *read_tree(std::basic_istream<charT,Traits>& in)
   }
   return ret;
 }
+
+#ifdef TEST
+#include "test.hpp"
+
+BOOST_AUTO_UNIT_TEST( tree )
+{
+  BOOST_CHECK( false );
+}
+
+
+
+#endif
