@@ -87,7 +87,7 @@ CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
 ifeq ($(ARCH),solaris)
-  CPPFLAGS += -DSOLARIS -Dsun
+  CPPFLAGS += -DSOLARIS -DUSE_STD_RAND
 #  DBOOST_PLATFORM_CONFIG=<boost/config/solaris.hpp>
 endif
 
