@@ -94,6 +94,7 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
   //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
   int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
+  int readLegible(const string& str, bool alwaysNamed=false);  
   void writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON=false);
   void writeLegible(ostream &);
   void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
@@ -187,6 +188,13 @@ WFST(istream & istr,bool alwaysNamed=false) {
     if (!this->readLegible(istr,alwaysNamed))
       final = -1;
   }
+
+  WFST(string str, bool alwaysNamed=false){
+    initAlphabet();
+    if (!this->readLegible(str,alwaysNamed))
+      final = -1;
+  }
+
   WFST(const char *buf); // make a simple transducer representing an input sequence
   WFST(const char *buf, int& length,bool permuteNumbers); // make a simple transducer representing an input sequence lattice - Yaser
   WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b

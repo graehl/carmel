@@ -4,6 +4,7 @@
 #include "assert.h"
 #include "fst.h"
 #include <iterator>
+#include <strstream>
 
 #define DO(x)  { if (!(x)) return 0; }
 
@@ -405,6 +406,13 @@ INVALID:
 		finalName.kill();
     invalidate();
     return 0;
+}
+
+
+int WFST::readLegible(const string& str,bool alwaysNamed)
+{
+  istrstream istr(str.c_str());
+  return(readLegible(istr,alwaysNamed));
 }
 
 static ostream & writeQuoted(ostream &os,const char *s) {
