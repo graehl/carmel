@@ -215,6 +215,7 @@ struct indirect_gt<PointerOffset<C>,C*> {
     }
 };
 
+
 template <class C>
 struct indirect_lt<PointerOffset<C>,C*> {
     typedef PointerOffset<C> I;
