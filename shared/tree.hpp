@@ -13,6 +13,7 @@ namespace lambda=boost::lambda;
 #endif
 #include <functional>
 #include "ttconfig.hpp"
+#include "graphviz.hpp"
 
 #include "byref.hpp"
 
@@ -354,28 +355,11 @@ struct SymbolLabeler : public DefaultNodeLabeler<Symbol> {
 };
 
 template <class Label,class Labeler=DefaultNodeLabeler<Label> >
-struct TreeVizPrinter {
+struct TreeVizPrinter : public GraphvizPrinter {
     Labeler labeler;
     typedef Tree<Label> T;
-    unsigned next_node;
-    std::ostream &o;
-    TreeVizPrinter(ostream &o_,const Labeler &labeler_=Labeler(),const char *treename="tree") : o(o_), labeler(labeler_){
-        prelude(treename);
-    }
-    void prelude(const char *treename) {
-        o << "digraph ";
-        out_quote(o,treename);
-        o << "{\n";
-        o << " node [shape=plaintext,width=.1,height=.1]\n";
-        o << " edge [arrowhead=none]\nranksep=.3;\nordering=out;\n";
-        next_node=0;
-    }
-    ~TreeVizPrinter() {
-        coda();
-    }
-    void coda() {
-        o << "}\n";
-    }
+
+    TreeVizPrinter(ostream &o_,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="forest") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_) {}
     void print(const T &t) {
         print(t,next_node++);
         o << std::endl;
