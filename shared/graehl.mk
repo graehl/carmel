@@ -38,8 +38,8 @@ OBJT:= $(OBJ)/test
 OBJB:= $(BASESHAREDOBJ)/$(ARCH)
 OBJD:= $(OBJ)/debug
 BIN:= $(BASEBIN)/$(ARCH)
-ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB)
-Dummy8758:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir $$f ; done)
+ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BASEBIN) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB)
+Dummy1783:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir $$f ; done)
 
 ifeq ($(CPP_EXT),)
 CPP_EXT=cpp
@@ -129,13 +129,13 @@ $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
 ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
-all: dirs $(ALL_PROGS)
+all: $(ALL_PROGS)
 
-debug: dirs $(OPT_PROGS)
+debug: $(OPT_PROGS)
 
-opt: dirs $(DEBUG_PROGS)
+opt: $(DEBUG_PROGS)
 
-depend: dirs $(ALL_DEPENDS)
+depend: $(ALL_DEPENDS)
 
 test: $(ALL_TESTS)
 	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done
@@ -180,7 +180,7 @@ $(OBJD)/%.o:: %.$(CPP_EXT) %.d
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
 
-dirs:
+#dirs:
 # $(addsuffix /.,$(ALL_DIRS))
 #	echo dirs: $^
 
@@ -191,10 +191,7 @@ distclean: clean
 	rm -rf $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
 
 allclean: distclean
-	rm -rf $(BASEOBJ)/* $(BASEBIN)/* $(BASESHAREDOBJ)/* $(ALL_DEPENDS)
-
-virgin: clean distclean
-	rm -rf $(ALL_PROGS)
+	rm -rf $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
