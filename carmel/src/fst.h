@@ -72,10 +72,8 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
 	 pArc->weight = a.weight;
   }
 
-void insertPathArc(GraphArc *gArc, List<PathArc>*,
-				   List<PathArc>::iterator &p);  
-void insertShortPath(int source, int dest, List<PathArc> *,
-					 List<PathArc>::iterator &p);
+void insertPathArc(GraphArc *gArc, List<PathArc>*);  
+void insertShortPath(int source, int dest, List<PathArc> *);
   static int indexThreshold;
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
   trainInfo *trn;

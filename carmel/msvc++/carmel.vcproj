@@ -35,7 +35,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/../../bin/carmel.win32.debug.exe"
-				LinkIncremental="1"
+				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/carmel.pdb"
 				SubSystem="1"

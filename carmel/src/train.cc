@@ -52,8 +52,8 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
   Assert(weight > 0);
   IOSymSeq s;
   s.init(inSeq, outSeq, weight);
-  //  trn->examples.push_back(s);
-  trn->examples.insert(trn->examples.end(),s);
+  trn->examples.push_back(s);
+  //trn->examples.insert(trn->examples.end(),s);
   if ( s.i.n > trn->maxIn )
     trn->maxIn = s.i.n;
   if ( s.o.n > trn->maxOut )

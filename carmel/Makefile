@@ -33,8 +33,8 @@ CC.macosx = g++
 CCFLAGS = -c -Wall -I../boost/boost
 #-Wall 
 #-fno-exception
-CCFLAGS_OPT    = $(CCFLAGS) -O3 -ffast-math
-CCFLAGS_DBG    = $(CCFLAGS) -g 
+LDFLAGS = -L$(LIB) -lm
+CCFLAGS_OPT    = $(CCFLAGS) -O3 -s -ffast-math
 CCFLAGS_TEST    = $(CCFLAGS) -DTEST -g -DDEBUG
 CCFLAGS_PRF    = $(CCFLAGS) -O3 -pg
 LDFLAGS_PRF    = -pg

@@ -8,6 +8,6 @@ external vocabulary files?
 code:
 command-line regression tests
 unit tests
-slist implementation
+slist implementation - can't use erase or insert; must use erase_after, insert_after instead!
 STL hash
 one filename per public class: Class.h Class.cc
