@@ -1,7 +1,7 @@
 #ifndef TRAIN_H
 #define TRAIN_H 1
 #include "config.h"
-#include "assert.h"
+#include "myassert.h"
 #include "2hash.h"
 #include "weight.h"
 #include "list.h"

@@ -13,6 +13,9 @@
 #define STATIC_HASHER
 
 #define STRINGPOOL 
+#ifndef STRINGPOOLCLASS
+#define STRINGPOOLCLASS StringPool
+#endif
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
 //#define DEBUG

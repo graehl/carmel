@@ -1,7 +1,7 @@
 #include "config.h"
 #include <string>
 #include <map>
-#include "assert.h"
+#include "myassert.h"
 #include "fst.h"
 #include <iterator>
 #include <strstream>
@@ -535,7 +535,7 @@ Assert( in->find(EPSILON_SYMBOL)->second==0 && out->find(EPSILON_SYMBOL)->second
 
 void WFST::listAlphabet(ostream &ostr, int output)
 {
-  Alphabet *alph;
+  Alphabet<> *alph;
   if ( output )
     alph = out;
   else
@@ -543,7 +543,7 @@ void WFST::listAlphabet(ostream &ostr, int output)
   ostr << *alph;
 }
 
-ostream & operator << (ostream &out, Alphabet &alph)
+ostream & operator << (ostream &out, Alphabet<> &alph)
 {
   for ( int i = 0 ; i < alph.names.size() ; ++i )
     out << alph.names[i] << '\n';
@@ -559,7 +559,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   //  ListIter<int> ins(*ret);
   istringstream line(buf);
   char symbol[4096];
-  Alphabet *alph;
+  Alphabet<> *alph;
   if ( output )
     alph = out;
   else

@@ -1,16 +1,10 @@
+#ifndef _STRHASH_CC
+#define _STRHASH_CC
+
 #define BOOST_AUTO_TEST_MAIN
 
 #include "strhash.h"
 
-std::ostream & operator << (std::ostream & out, const StringKey &s)
-{
-  out << (char *)(StringKey)s;
-  return out;
-}
-void Alphabet::dump()
- {
-	Config::debug() << ht;
-  }
 
 void dump_ht(HashTable<StringKey,int> &ht)
 {
@@ -52,8 +46,8 @@ void dump_ht(HT &ht)
 #include "../../tt/test.hpp"
 BOOST_AUTO_UNIT_TEST( strhash )
 {
-  Alphabet a;
-  Alphabet b;
+  Alphabet<StringPool> a;
+  Alphabet<StringPool> b;
   const char *s[]={"u","ul","mu","pi"};
   const int n=sizeof(s)/sizeof(s[0]);
   a.add("a");
@@ -63,12 +57,16 @@ BOOST_AUTO_UNIT_TEST( strhash )
   b.verify();
   
 }
+#ifdef BENCH
 #include <boost/progress.hpp>
+#endif
 
   static void hashtest(int n, int mask)
   {	
 	n *= 2;
+#ifdef BENCH
 	Config::log() << n << " with mask " << mask << "\n";
+#endif
 	collide_int hashfn;
 		typedef HashTable<int,int,collide_int> HT;
 #ifndef STATIC_HASHER
@@ -80,11 +78,19 @@ BOOST_AUTO_UNIT_TEST( strhash )
 #endif
 	BOOST_CHECK(ht.bucket_count() >= (unsigned)n/16);
 	bool *seen=new bool[n];
-	{ boost::progress_timer t;
+	{ 
+#ifdef BENCH
+	  boost::progress_timer t;
+#endif
 	int i;
 	// n must be even
-	Config::log() << "add "; { boost::progress_timer t;
-	for (i=0; i <n; ++i) {
+	{
+#ifdef BENCH
+	Config::log() << "add ";
+
+	  boost::progress_timer t;
+#endif
+	  for (i=0; i <n; ++i) {
 
 	  add(ht,i,i);
 	  BOOST_CHECK(ht.find(i) != ht.end());
@@ -92,14 +98,21 @@ BOOST_AUTO_UNIT_TEST( strhash )
 	}
 	bool first=true;
 again:
-	if (!first) {	  
+	if (!first) {
+#ifdef BENCH
 	  Config::log() << "total ";
+#endif
 	  return;
 	} else
 	  first=false;
 	BOOST_CHECK(ht.size() == n);
+	#ifdef BENCH
 	Config::log() << "find ";
-	{ boost::progress_timer t;
+#endif
+	{ 
+#ifdef BENCH
+	  boost::progress_timer t;
+#endif
 	for (i=0; i <n; ++i) {
 	  BOOST_CHECK(ht.find(i) != ht.end());
 	  BOOST_CHECK(ht.find(i)->first == i);
@@ -112,7 +125,11 @@ again:
 	}
 	for (i=0; i <n; ++i)
 	  seen[i]=false;
-	Config::log() << "it " << (unsigned)ht.bucket_count() << " "; { boost::progress_timer t;
+	 { 
+#ifdef BENCH
+	   Config::log() << "it " << (unsigned)ht.bucket_count() << " ";
+	  boost::progress_timer t;
+#endif
 	for (HT::iterator hit=ht.begin();hit!=ht.end();++hit) {
 	  int k=hit->first;
 	  BOOST_CHECK(hit->second==k);
@@ -139,8 +156,11 @@ again:
 	for (i=0; i <n; ++i)
 	  BOOST_CHECK(seen[i]=true);
 
+{ 
+#ifdef BENCH
 Config::log() << "erase ";	
-{ boost::progress_timer t; 
+  boost::progress_timer t; 
+#endif
 	BOOST_CHECK(ht.size() == n);
 	for (i=0; i <n; i+=2) {
 	  ht.erase(i);
@@ -177,11 +197,15 @@ Config::log() << "erase ";
 
   BOOST_AUTO_UNIT_TEST( hashtable )
 {
+#ifdef BENCH
     Config::log() << "sizeof hashtable = " << sizeof(HT) << "\n";
-  hashtest(0x10000,0xFFFF);
-  hashtest(0x1000,0);
-  hashtest(0x4000,0x7F);
+#endif
+  hashtest(0x100,0xFF);
+  hashtest(0x100,0);
+  hashtest(0x100,0x7F);
 
   }
+
+#endif
 
 #endif

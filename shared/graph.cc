@@ -1,6 +1,6 @@
 #include "config.h"
 #include "graph.h"
-#include "assert.h"
+#include "myassert.h"
 #include "Arc.h"
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a)

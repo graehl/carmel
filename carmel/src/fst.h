@@ -17,7 +17,7 @@
 #include "strhash.h"
 #include "graph.h"
 #include "train.h"
-#include "assert.h"
+#include "myassert.h"
 #include "compose.h"
 #include <iterator>
 using namespace std;
@@ -48,8 +48,8 @@ class WFST {
   void initAlphabet() {
     trn=NULL;
 #define EPSILON_SYMBOL "*e*"
-    in = NEW Alphabet(EPSILON_SYMBOL);
-    out = NEW Alphabet(EPSILON_SYMBOL);
+    in = NEW Alphabet<>(EPSILON_SYMBOL);
+    out = NEW Alphabet<>(EPSILON_SYMBOL);
     ownerIn=ownerOut=1;
   }
 	void train_prune(); // delete states with zero counts
@@ -84,9 +84,9 @@ class WFST {
   bool ownerIn;
   bool ownerOut;
   bool named_states;
-  Alphabet *in;
-  Alphabet *out;
-  Alphabet stateNames;
+  Alphabet<> *in;
+  Alphabet<> *out;
+  Alphabet<> stateNames;
   int final;	// final state number - initial state always number 0
   DynamicArray<State> states;
   	 
@@ -278,7 +278,7 @@ class WFST {
     if (named_states)
       return stateNames[i];
     else
-      return Alphabet::itoa(i);
+      return Alphabet<>::itoa(i);
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
@@ -367,13 +367,13 @@ class WFST {
   }
   void ownInAlphabet() {
     if ( !ownerIn ) {
-      in = NEW Alphabet(*in);
+      in = NEW Alphabet<>(*in);
       ownerIn = 1;
     }
   }
   void ownOutAlphabet() {
     if ( !ownerOut ) {
-      out = NEW Alphabet(*out);
+      out = NEW Alphabet<>(*out);
       ownerOut = 1;
     }
   }
@@ -381,7 +381,7 @@ class WFST {
     if (named_states) {
       stateNames.~Alphabet();
       named_states=false;
-      PLACEMENT_NEW (&stateNames) Alphabet();
+      PLACEMENT_NEW (&stateNames) Alphabet<>();
     }
   }
 

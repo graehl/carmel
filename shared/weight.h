@@ -1,7 +1,7 @@
 #ifndef WEIGHT_H 
 #define WEIGHT_H 1
 #include "config.h"
-#include "assert.h"
+#include "myassert.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
