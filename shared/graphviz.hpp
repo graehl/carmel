@@ -1,0 +1,40 @@
+#ifndef GRAPHVIZ_HPP
+#define GRAPHVIZ_HPP
+
+#include <iostream>
+#include <string>
+
+#define GRAPHVIZ_DEFAULT_PRELUDE "node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n ranksep=.3;\n ordering=out;\n center=1;\n concentrate=0;"
+
+struct GraphvizPrinter {
+    unsigned graph_no;
+    unsigned next_node;
+    std::string graphname, pre;
+    std::ostream &o;
+    GraphvizPrinter(std::ostream &o_,const std::string &prelude_,const char *graphname_="graph") : o(o_),graphname(graphname_),pre(prelude_),graph_no(0) {
+        prelude();
+    }
+    ~GraphvizPrinter() {
+        coda();
+    }
+    void prelude(const char *graphname_=NULL) {
+        if (!graphname_)
+            graphname_=graphname.c_str();
+        o << "digraph ";
+        out_quote(o,graphname_);
+        o << graph_no++;
+        o << "{\n";
+        o << ' ' << GRAPHVIZ_DEFAULT_PRELUDE << "\n";
+        o << ' ' << pre << "\n";
+        next_node=0;
+    }
+    void coda() {
+        o << "}\n\n";
+    }
+    void next() {
+        coda();
+        prelude();
+    }
+};
+
+#endif
