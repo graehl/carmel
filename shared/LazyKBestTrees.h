@@ -171,7 +171,7 @@ struct Node {
     typedef default_print_on has_print_on;
     void print_on(std::ostream &o) const
     {
-        o << "{NODE @" << this << ": " << " pq=" << pq << " memo=" << memo << '}';
+        o << "{NODE @" << this << ": " << " first=" << *first_best() << " last=" << *last_best() << " pq=" << pq << " memo=" << memo << '}';
     }        
     static A result_alloc;
     typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
@@ -205,6 +205,19 @@ struct Node {
             //                IF_ASSERT(11) memo[n].result=PENDING;
             return (memo[n]=next_best());                
         }
+    }
+    // returns last non-DONE result (must be one!)
+    R *last_best() const {
+        assertlvl(11,memo.size() && memo.front());
+        if (memo.back() && memo.back() != PENDING())
+            return memo.back();
+        assertlvl(11,memo.size()>1);
+        return *(memo.end()-2);
+    }
+    // returns best non-DONE result (must be one!)
+    R *first_best() const {
+        assertlvl(11,memo.size() && memo.front() && memo.front() != PENDING());
+        return memo.front();
     }
         // returns essentially top().result
     //// INVARIANT: top() contains the next best entry
@@ -371,27 +384,38 @@ struct lazy_kbest {
 # include <iostream>
 # include <string>
 using namespace std;
+namespace ns_TEST_lazy_kbest {
 
 struct Result {
     char val;
     string history;
+    float cost;
+    string tree;
     
-    Result(char v) : val(v), history(1,v) {}
+    Result(char v,float cost_=1) : val(v), history(1,v), cost(cost_) {}
+    friend ostream & operator <<(ostream &o,const Result &v);
     Result(Result *prototype, Result *old_child, Result *new_child,unsigned which_child) {
         NESTT;
-        INFOT("NEW RESULT proto=" << prototype->val << " old_child=" << old_child->val << " new_child=" << new_child->val << " childid=" << which_child);
-        history = history + " @" +  (which_child ? "RIGHT" : "LEFT") + ": - [" + string(1,old_child->val) + "] + (" + string(1,new_child->val) + ")";
+        INFOT("NEW RESULT proto=" << prototype->val << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child);
+        val = prototype->val;
+        std::ostringstream newhistory,newtree;
+        newhistory << prototype->history << ',' << (which_child ? "L" : "R") << '-' << old_child->cost << "+" << new_child->cost;
+        //<< '(' << new_child->history << ')';
+        history = newhistory.str();
+        newtree << val << '(' << new_child->tree << ')';
+        tree = newtree.str();
         
+        cost = prototype->cost + - old_child->cost + new_child->cost;
     }
     bool operator < (const Result &other) const {
-        return val < other.val;
+        return cost > other.cost;
     } //  worse < better!
 
 };
 
 ostream & operator <<(ostream &o,const Result &v) 
 {
-    return o << "(val=" << v.val << " history=" << v.history << ')';
+    return o << "{{{val=" << v.val << " cost=" << v.cost << " tree=" << v.tree  << " history=" << v.history << "}}}";
 }
 
 
@@ -399,18 +423,22 @@ struct ResultPrinter {
     void operator()(const Result &r,unsigned i) const {
         NESTT;        
         INFOT("Visiting result #" << i << r);
-        cerr << "\n\nRESULT #" << i << "=" << r.val << "\nhistory= " << r.history << "\n\n";
-        
+        INFOT('');
+        cout << "RESULT #" << i << "=" << r << "\n";
+        INFOT('');
     }
 };
 
 typedef lazy_kbest<Result> LK;
+}
 
 BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
-    //a(b[OR b f ()],c(b,f))
+    using namespace ns_TEST_lazy_kbest;
+    //a:6(b:5[OR b:10 f a ()],c:1(b:5,f:1))
     LK::Node a,b,c,f;
-    Result ra('a'),rb('b'),rc('c'),rf('d'),rb2('B'),rb3('D');
+    Result ra('a',6),rb('b',5),rc('c',1),rf('d',2),rb2('B',5),rb3('D',10),ra2('A',12);
     a.add_sorted(&ra,&b,&c);
+    a.add_sorted(&ra2,&a);
     b.add_sorted(&rb); // terminal
     b.add_sorted(&rb2,&f);
     b.add_sorted(&rb3,&b);
@@ -419,9 +447,8 @@ BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
     NESTT;
     LK().enumerate_kbest(1,&f,ResultPrinter());
     LK().enumerate_kbest(1,&b,ResultPrinter());
-    LK().enumerate_kbest(4,&a,ResultPrinter());
+    LK().enumerate_kbest(15,&a,ResultPrinter());
     
-    BOOST_CHECK(0);
 }
 #endif
 
