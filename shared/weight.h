@@ -2,6 +2,7 @@
 #define WEIGHT_H 1
 #include "config.h"
 #include "myassert.h"
+#include "genio.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -84,6 +85,13 @@ struct Weight {			// capable of representing nonnegative reals
   FLOAT_TYPE getLogImp() const {
     return weight;
   }
+  FLOAT_TYPE getCost() const {
+	return -weight;
+  }
+  void setCost(FLOAT_TYPE f) {
+	weight=-f;
+  }
+
   FLOAT_TYPE getLn() const {
     return weight;
   }
@@ -248,7 +256,7 @@ std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) con
 			o << getLog10() << "log";
 		}
 	}
-	return std::ios_base::goodbit;
+	return GENIOGOOD;
 }
 
 template <class charT, class Traits>
@@ -260,7 +268,7 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
   
   if ( i.fail() ) {
 	setZero();
-	return std::ios_base::badbit;
+	return GENIOBAD;
   } else if ( i.eof() ) {
     setReal(f);
   } else if ( (c = i.get()) == 'l' ) {
@@ -271,13 +279,13 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
     setLog10(f);
    else {
     setZero();
-	return std::ios_base::badbit;
+	return GENIOBAD;
    }
   } else {
     i.unget();
     setReal(f);
   }
-  return std::ios_base::goodbit;
+  return GENIOGOOD;
 }
 
 

@@ -105,8 +105,15 @@ private:
       add(a.names[i]);
 #endif
   }
-  void dump() { 	Config::debug() << ht; }
-  bool verify() {
+  template <class S,class StrP>
+  bool operator ==(const Alphabet<S,StrP> &r) const {
+	return r.symbols() == symbols();
+  }
+  void compact() {
+	names.compact();
+  }
+  void dump() const { 	Config::debug() << ht; }
+  bool verify() const {
 #ifdef DEBUG
 	for (unsigned i = 0 ; i < names.size(); ++i ) {
 	  static char buf[1000];
@@ -134,6 +141,9 @@ private:
 	//ht[name]=names.size();
 	::add(ht,name,names.size());
     names.push_back(name);
+  }
+  void reserve(unsigned n) {
+	names.reserve(n);
   }
   unsigned *find(Sym name) const {
     return find_second(ht,name);
