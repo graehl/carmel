@@ -35,16 +35,16 @@ template<class A,class B> static std::basic_ostream<A,B>&
 out_log10(std::basic_ostream<A,B>& os);
 
 template<class A,class B> static std::basic_ostream<A,B>&
-out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
+out_ln(std::basic_ostream<A,B>& os);
 
 template<class A,class B> static std::basic_ostream<A,B>&
-out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; return os; }
+out_variable(std::basic_ostream<A,B>& os);
 
 template<class A,class B> static std::basic_ostream<A,B>&
-out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; return os; }
+out_always_log(std::basic_ostream<A,B>& os);
 
 template<class A,class B> static std::basic_ostream<A,B>&
-out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
+out_always_real(std::basic_ostream<A,B>& os);
 
   static Weight result;
   // default = operator:
@@ -293,6 +293,19 @@ static std::basic_ostream<A,B>&
 Weight::out_log10(std::basic_ostream<A,B>& os)
 
  { os.iword(base_index) = LOG10; return os; }
+
+template<class A,class B> static std::basic_ostream<A,B>&
+Weight::out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
+
+template<class A,class B> static std::basic_ostream<A,B>&
+Weight::out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; return os; }
+
+template<class A,class B> static std::basic_ostream<A,B>&
+Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; return os; }
+
+template<class A,class B> static std::basic_ostream<A,B>&
+Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
+
 
 
 #endif 
