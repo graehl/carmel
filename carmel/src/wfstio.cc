@@ -4,7 +4,7 @@
 #include "myassert.h"
 #include "fst.h"
 #include <iterator>
-#include <stringstream>
+#include <sstream>
 
 #define DO(x)  { if (!(x)) return 0; }
 

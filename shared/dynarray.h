@@ -24,6 +24,23 @@
 #endif
 //#include <boost/type_traits.hpp>
 
+// bleh, std::construct also was nonstandard and removed
+template <class P,class V>
+void copy_construct(P *to,const V& from)
+{
+  PLACEMENT_NEW(to) P(from);
+}
+
+// uninitialized_copy_n was removed from std:: - we don't reuse the name because you might use namespace std; in an old compiler
+// plus our version doesn't return the updated iterators
+template <class I,class F>
+void uninit_copy_n(I from, unsigned n, F to)
+{
+  for ( ; n > 0 ; --n, ++from, ++to)
+    //PLACEMENT_NEW(&*to) iterator_traits<F>::value_type(*from);
+    copy_construct(&*to,*from);
+}
+
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
 template <class Label>
 struct DefaultReader
@@ -186,7 +203,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
         int cap=capacity();
         if (cap) {
           Assert(vec);
-          deallocate(vec,cap);
+          this->deallocate(vec,cap);
           Paranoid(vec=NULL;);
           endspace=vec;
         }
@@ -208,7 +225,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   // doesn't copy old elements like dynamicarray does
   void alloc(unsigned sp) {
         if(sp)
-          vec=allocate(sp);
+          vec=this->allocate(sp);
         endspace=vec+sp;
   }
   void re_alloc(unsigned sp) {
@@ -226,7 +243,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   template<class I>
   Array(unsigned n,I begin) { // copy up to n
     alloc(n);
-    std::uninitialized_copy_n(begin, n, vec);
+    uninit_copy_n(begin, n, vec);
   }
 
   unsigned capacity() const { return (unsigned)(endspace-vec); }
@@ -268,7 +285,7 @@ public:
   typedef Array<T,Alloc> Super;
   explicit AutoArray(unsigned sp=4) : Super(sp) { }
   ~AutoArray() {
-        dealloc();
+        this->dealloc();
   }
 protected:
   AutoArray(AutoArray<T,Alloc> &a) : Super(a.capacity()){
@@ -281,15 +298,15 @@ template <typename T,typename Alloc=std::allocator<T> > class FixedArray : publi
 public:
   typedef AutoArray<T,Alloc> Super;
   explicit FixedArray(unsigned sp=4) : Super(sp) {
-    construct();
+    this->construct();
   }
   ~FixedArray() {
-    destroy();
+    this->destroy();
         //~Super(); // happens implicitly!
   }
   void uninit_copy_from(const T* b,const T* e) {
-    Assert(e-b == capacity());
-    std::uninitialized_copy(b,e,begin());
+    Assert(e-b == this->capacity());
+    std::uninitialized_copy(b,e,this->begin());
     //memcpy(begin(),b,e-b);
   }
 /*  FixedArray(const Array<T,Alloc> &a) : Super(a.capacity()) {
@@ -323,7 +340,7 @@ private:
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : public Array<T,Alloc> {
   //unsigned int sz;
-  T *endvec;
+  T *endv;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
  public:
   enum { REPLACE=0, APPEND=1 };
@@ -333,32 +350,32 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   }
 
   // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { Assert(invariant()); }
+  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(this->vec) { Assert(this->invariant()); }
 
   // creates vector holding sp copies of t; does initialize
-  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endvec(endspace) {
+  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endv(this->endspace) {
         construct(t);
         Assert(invariant());
   }
 
   void construct() {
-        Assert(endvec=vec);
-        Array<T,Alloc>::construct();
-        endvec=endspace;
+        Assert(endv=this->vec);
+        this->construct();
+        endv=this->endspace;
   }
   void construct(const T& t) {
-        Assert(endvec=vec);
-        Array<T,Alloc>::construct(t);
-        endvec=endspace;
+        Assert(endv=this->vec);
+        this->construct(t);
+        endv=this->endspace;
   }
 
   DynamicArray(const DynamicArray &a) : Array<T,Alloc>(a.size()) {
 //      unsigned sz=a.size();
     //alloc(sz);
-//      memcpy(vec,a.vec,sizeof(T)*sz);
-    std::uninitialized_copy(a.begin(),a.end(),begin());
-        endvec=endspace;
-    Assert(invariant());
+//      memcpy(this->vec,a.vec,sizeof(T)*sz);
+    std::uninitialized_copy(a.begin(),a.end(),this->begin());
+        endv=this->endspace;
+    Assert(this->invariant());
   }
 
   // warning: stuff will still be destructed!
@@ -366,7 +383,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
         memcpy(to,from,sizeof(T)*n);
   }
   void copyto(T *to,unsigned n) {
-        copyto(to,vec,n);
+        copyto(to,this->vec,n);
   }
   void copyto(T *to) {
         copyto(to,size());
@@ -377,43 +394,44 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
         clear_nodestroy();
   }
 
-  // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
-  void move_rest_to(T *to,typename Array<T,Alloc>::iterator i) {
-        Assert(i >= begin() && i < end());
-        copyto(to,i,end()-i);
-        endvec=i;
-  }
-
-
   const T* end() const { // Array code that uses vec+space for boundschecks is duplicated below
     Assert(invariant());
-          return endvec;
+          return endv;
   }
     T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
     Assert(invariant());
-          return endvec;
+          return endv;
   }
+
+  // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
+  void move_rest_to(T *to,typename Array<T,Alloc>::iterator i) {
+        Assert(i >= this->begin() && i < end());
+        copyto(to,i,this->end()-i);
+        endv=i;
+  }
+
+
   T & at(unsigned int index) const { // run-time bounds-checked
-        T *r=vec+index;
+        T *r=this->vec+index;
         if (!(r < end()) )
           throw std::out_of_range("dynarray");
         return *r;
   }
   T & operator[] (unsigned int index) const {
     Assert(invariant());
-    Assert(vec+index < end());
-    return vec[index];
+    Assert(this->vec+index < end());
+    return (this->vec)[index];
   }
   unsigned int index_of(T *t) const {
-        Assert(t>=begin() && t<end());
-    return (unsigned int)(t-vec);
+        Assert(t>=this->begin() && t<end());
+    return (unsigned int)(t-this->vec);
   }
 
   // NEW OPERATIONS:
   // like [], but bounds-safe: if past end, expands and default constructs elements between old max element and including new max index
   T & operator() (unsigned int index) {
     if ( index >= size() ) {
-      unsigned int newSpace = capacity();
+      unsigned int newSpace = this->capacity();
       if (index >= newSpace) {
         if (newSpace==0)
           newSpace = index+1;
@@ -422,11 +440,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
         resize_up(newSpace);
       }
       T *v = end();
-      endvec=vec+index+1;
-      while( v < endvec )
+      endv=this->vec+index+1;
+      while( v < endv )
         PLACEMENT_NEW(v++) T();
     }
-    return vec[index];
+    return (this->vec)[index];
   }
    void push(const T &it) {
     push_back(it);
@@ -435,7 +453,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
     return back();
   }
   void pop_back() {
-    (--endvec)->~T();;
+    (--endv)->~T();;
   }
 
   void pop() {
@@ -457,47 +475,47 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
     }
   void push_back(const T& val,unsigned n)
   { Assert(invariant());
-          T *newend=endvec+n;
-      if (newend > endspace) {
+          T *newend=endv+n;
+      if (newend > this->endspace) {
                 reserve_at_least(size()+n);
-        newend=endvec+n;
+        newend=endv+n;
       }
 
-          for (T *p=endvec;p!=newend;++p)
+          for (T *p=endv;p!=newend;++p)
             PLACEMENT_NEW(p) T(val);
-      endvec=newend;
+      endv=newend;
     Assert(invariant());}
 
   // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
   T *push_back_raw()
     {
-      if ( endvec >= endspace )
-        if (vec == endspace )
+      if ( endv >= this->endspace )
+        if (this->vec == this->endspace )
           resize_up(4);
         else
-          resize_up(capacity()*2); // FIXME: 2^31 problem
-      return endvec++;
+          resize_up(this->capacity()*2); // FIXME: 2^31 problem
+      return endv++;
     }
         void undo_push_back_raw() {
-          --endvec;
+          --endv;
         }
   T &at_grow(unsigned index) {
-        T *r=vec+index;
+        T *r=this->vec+index;
         if (r >= end()) {
-          if (r >= endspace) {
+          if (r >= this->endspace) {
                 reserve_at_least(index+1); // doubles if it resizes at all
-                r=vec+index;
+                r=this->vec+index;
           }
           T *i=end();
           for (;i<=r;++i)
                 PLACEMENT_NEW(i) T();
-          endvec=i;
+          endv=i;
         }
         return *r;
   }
         const T& front()  const {
           Assert(size());
-          return *begin();
+          return *this->begin();
         }
         const T& back() const {
           Assert(size());
@@ -506,7 +524,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 
         T& front() {
           Assert(size());
-          return *begin();
+          return *this->begin();
         }
         T& back() {
           Assert(size());
@@ -521,10 +539,10 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
           f = i; // find first marked (don't need to move anything below it)
 #ifndef OLD_REMOVE_MARKED
           if (i<sz) {
-            vec[i++].~T();
+            (this->vec)[i++].~T();
                 for(;;) {
                   while(i<sz && marked[i])
-                    vec[i++].~T();
+                    (this->vec)[i++].~T();
                   if (i==sz)
                         break;
                   unsigned i_base=i;
@@ -532,7 +550,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
                   if (i_base!=i) {
                         unsigned run=(i-i_base);
 //                      DBP(f << i_base << run);
-                        memmove(&vec[f],&vec[i_base],sizeof(T)*run);
+                        memmove(&(this->vec)[f],&(this->vec)[i_base],sizeof(T)*run);
                         f+=run;
                   }
                 }
@@ -540,74 +558,74 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 #else
     while ( i < sz )
       if ( !marked[i] )
-                memcpy(&vec[f++], &vec[i++], sizeof(T));
+                memcpy(&(this->vec)[f++], &(this->vec)[i++], sizeof(T));
       else
-                vec[i++].~T();
+                (this->vec)[i++].~T();
 #endif
     set_size(f);
   }
   bool invariant() const {
-    return endvec >= vec && endvec <= endspace;
-    // && endspace > vec; //(compact of 0-size dynarray -> 0 capacity!)
+    return endv >= this->vec && endv <= this->endspace;
+    // && this->endspace > this->vec; //(compact of 0-size dynarray -> 0 capacity!)
   }
-//  operator T *() { return vec; } // use at own risk (will not be valid after resize)
+//  operator T *() { return this->vec; } // use at own risk (will not be valid after resize)
   // use begin() instead
   protected:
   void resize_up(unsigned int newSpace) {
     //     we are somehow allowing 0-capacity vectors now?, so add 1
     //if (newSpace==0) newSpace=1;
-    Assert(newSpace > capacity());
-    // may be used when we've increased endvec past endspace, in order to fix things
+    Assert(newSpace > this->capacity());
+    // may be used when we've increased endv past endspace, in order to fix things
     unsigned sz=size();
-    T *newVec = allocate(newSpace); // can throw but we've made no changes yet
-    memcpy(newVec, vec, sz*sizeof(T));
+    T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
+    memcpy(newVec, this->vec, sz*sizeof(T));
     dealloc_safe();
-    set_begin(newVec);set_capacity(newSpace);set_size(sz);
+    set_begin(newVec);this->set_capacity(newSpace);set_size(sz);
     // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
   }
   void dealloc_safe() {
-     unsigned oldcap=capacity();
+     unsigned oldcap=this->capacity();
      if (oldcap)
-       deallocate(vec,oldcap); // can't throw
+       this->deallocate(this->vec,oldcap); // can't throw
   }
   public:
   void resize(unsigned int newSpace) {
     Assert(invariant());
     //    if (newSpace==0) newSpace=1;
-    if (endvec==endspace) return;
+    if (endv==this->endspace) return;
     unsigned sz=size();
     if ( newSpace < sz )
       newSpace = sz;
     if (newSpace) {
-      T *newVec = allocate(newSpace); // can throw but we've made no changes yet
-      memcpy(newVec, vec, sz*sizeof(T));
+      T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
+      memcpy(newVec, this->vec, sz*sizeof(T));
       dealloc_safe();
-      set_begin(newVec);set_capacity(newSpace);set_size(sz);
+      set_begin(newVec);this->set_capacity(newSpace);set_size(sz);
     } else {
       dealloc_safe();
-      vec=endvec=endspace=0;
+      this->vec=endv=this->endspace=0;
     }
     // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
   }
   void compact() {
     Assert(invariant());
-    if (endvec==endspace) return;
+    if (endv==this->endspace) return;
         //equivalent to resize(size());
     unsigned newSpace=size();
 
     //    if (newSpace==0) newSpace=1; // have decided that 0-length dynarray is impossible
     if(newSpace) {
-      T *newVec = allocate(newSpace); // can throw but we've made no changes yet
-      memcpy(newVec, vec, newSpace*sizeof(T));
+      T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
+      memcpy(newVec, this->vec, newSpace*sizeof(T));
 
       dealloc_safe();
                    //set_begin(newVec);
         //set_capacity(newSpace);set_size(sz);
-      vec=newVec;
-      endspace=endvec=vec+newSpace;
+      this->vec=newVec;
+      this->endspace=endv=this->vec+newSpace;
     } else {
       dealloc_safe();
-      vec=endvec=endspace=0;
+      this->vec=endv=this->endspace=0;
     }
   }
 
@@ -619,11 +637,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   }
 
   void reserve(unsigned int newSpace) {
-        if (newSpace > capacity())
+        if (newSpace > this->capacity())
           resize(newSpace);
   }
   void reserve_at_least(unsigned req) {
-        unsigned newcap=capacity();
+        unsigned newcap=this->capacity();
         if (req > newcap) {
           if (newcap==0)
             resize_up(req);
@@ -635,31 +653,31 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
           }
         }
   }
-  unsigned int size() const { return (unsigned)(endvec-vec); }
-  void set_size(unsigned int newSz) { endvec=vec+newSz; }
+  unsigned int size() const { return (unsigned)(endv-this->vec); }
+  void set_size(unsigned int newSz) { endv=this->vec+newSz; }
   void reduce_size(unsigned int n) {
-    T *end=endvec;
+    T *end=endv;
     reduce_size_nodestroy(n);
-    for (T *i=endvec;i<end;++i)
+    for (T *i=endv;i<end;++i)
       i->~T();
   }
   void reduce_size_nodestroy(unsigned int n) {
     Assert(invariant() && n<=size());
-    endvec=vec+n;    
+    endv=this->vec+n;    
   }
   void clear_nodestroy() {
-        endvec=vec;
+        endv=this->vec;
   }
   void clear() {
     Assert(invariant());
-      for ( T *i=begin();i!=end();++i)
+      for ( T *i=this->begin();i!=end();++i)
                 i->~T();
     clear_nodestroy();
   }
   ~DynamicArray() {
     clear();
-//      if(vec) // to allow for exception in constructor
-        dealloc();
+//      if(this->vec) // to allow for exception in constructor
+        this->dealloc();
         //vec = NULL;space=0; // don't really need but would be safer
   }
 
@@ -667,13 +685,13 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   template <class charT, class Traits>
         std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
   {
-        return range_print_on(o,begin(),end(),DefaultWriter(),multiline);
+        return range_print_on(o,this->begin(),end(),DefaultWriter(),multiline);
   }
 
   template <class charT, class Traits, class Writer >
         std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
   {
-        return range_print_on(o,begin(),end(),writer,multiline);
+        return range_print_on(o,this->begin(),end(),writer,multiline);
   }
 
 

@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include <ostream>
+#include <memory>
 
 inline size_t cstr_hash (const char *p)
 {
@@ -293,7 +294,7 @@ template <class A,class H,class P>
 //= hash<K>
 #include <functional>
 #include <memory>
-template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A::rebind<HashEntry<K,V> >::other {
+template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A::template rebind<HashEntry<K,V> >::other {
  public:
  typedef K key_type;
  typedef V mapped_type;
@@ -332,7 +333,7 @@ template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to
 #endif
   }
   int growAt;
-  typedef typename A::rebind<HashEntry<K,V> >::other base_alloc;
+  typedef typename A::template rebind<HashEntry<K,V> >::other base_alloc;
   
   HashEntry<K,V> **table;
   size_t hashToPos(size_t hashVal) const
@@ -685,7 +686,7 @@ public:
 
   private:
 #ifndef _MSC_VER	
-	typedef typename A::rebind<HashEntry<K,V> * >::other table_alloc;
+	typedef typename A::template rebind<HashEntry<K,V> * >::other table_alloc;
 
 	void alloc_table(unsigned int _n) 
 	{  
@@ -704,8 +705,8 @@ public:
 	  delete[] t;
 	}
 #endif
-	HashEntry<K,V> *alloc_node() { return allocate(1); }
-	void free_node(HashEntry<K,V> *p) { return deallocate(p,1); }
+	HashEntry<K,V> *alloc_node() { return this->allocate(1); }
+	void free_node(HashEntry<K,V> *p) { return this->deallocate(p,1); }
 //		template <class _K,class _V,class _H,class _A>
 //friend _V *find_second(const HashTable<_K,_V,_H,_A>& ht,const _K& first);
 };
