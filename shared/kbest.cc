@@ -44,8 +44,8 @@ void buildSidetracksHeap(int state, int pred)
     prev = pathGraph[pred];
 
 
-  const List<GraphArc> &arcs=sidetracks.states[state].arcs;
-  List<GraphArc>::const_iterator s=arcs.const_begin(),end=arcs.const_end();
+  List<GraphArc> &arcs=sidetracks.states[state].arcs;
+  List<GraphArc>::val_iterator s=arcs.val_begin(),end=arcs.val_end();
   if ( s != end ) {
     int heapSize = 0;
     GraphArc *min;
@@ -64,7 +64,7 @@ void buildSidetracksHeap(int state, int pred)
       pGraphArc *heapI = heapStart;
 //      List<GraphArc>::iterator end = sidetracks.states[state].arcs.end()  ;
   //    for ( List<GraphArc>::iterator gArc=sidetracks.states[state].arcs.begin() ; gArc !=end ; ++gArc )
-	  for ( List<GraphArc>::const_iterator gArc=arcs.const_begin(),end=arcs.const_end();gArc !=end ; ++gArc )
+	  for ( List<GraphArc>::val_iterator gArc=arcs.val_begin(),end=arcs.val_end();gArc !=end ; ++gArc )
         if ( &(*gArc) != min )
           (heapI++)->p = &(*gArc);
       Assert(heapI == heapStart + heapSize);

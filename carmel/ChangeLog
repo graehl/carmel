@@ -1,3 +1,14 @@
+2002-12-13  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/slist.h: (and many other files) - when USE_SLIST defined in
+	config.h, use a singly linked list (memory efficient) in all
+	cases.  required some serious rework, but I was using a singly
+	linked list until Yaser tore it out in favor of STL list.  my
+	slist is largely STL compatible (not everything implemented) with
+	the addition of two types of iterators - one that uses an extra
+	level of indirection to allow insertion, and another that uses a
+	plain pointer for more efficiently examining values
+
 2002-12-10  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: allow zero-weight arcs on input - useful with -U prior counts

@@ -271,7 +271,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   int numArcs() const {
     int a = 0;
     for (int i = 0 ; i < numStates() ; ++i )
-      a += states[i].arcs.length();
+      a += states[i].size;
     return a;
   }
   Weight numNoCyclePaths() const {

@@ -53,7 +53,7 @@ index(NULL) { }
 	return;
 #endif
       index = new HashTable<IntKey, List<HalfArc> >(size);
-      for ( List<Arc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; 
+      for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
 	if ( !(list = index->find(l->out)) )
@@ -74,7 +74,7 @@ index(NULL) { }
       return;
 #endif
     index = new HashTable<IntKey, List<HalfArc> >(size);
-    for ( List<Arc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l != end ; ++l ) {
+    for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
       if ( !(list = index->find(l->in)) )
 	index->add(l->in, List<HalfArc>(&(*l)));
       else
@@ -199,8 +199,8 @@ struct IOSymSeq {
   symSeq o;
   float weight;
   void init(List<int> &inSeq, List<int> &outSeq, float w) {
-    i.n = inSeq.length();
-    o.n = outSeq.length();
+    i.n = inSeq.count_length();
+    o.n = outSeq.count_length();
     i.let = new int[i.n];
     o.let = new int[o.n];
     i.rLet = new int[i.n];
