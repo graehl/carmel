@@ -13,6 +13,8 @@ using namespace __gnu_cxx;
 #endif
 using namespace std;
 
+#define DBG_OP(pDbg,op,module,msg) pDbg->op(module,msg,__FILE__,__LINE__)
+
 namespace ns_decoder_global { 
   
   //! Debug: This is a class to print out debugging information
