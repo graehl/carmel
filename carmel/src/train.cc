@@ -1,6 +1,5 @@
 #include "train.h"
 #include "fst.h"
-#include "node.h"
 #include "weight.h"
 
 //#define DEBUGTRAIN
@@ -610,9 +609,6 @@ ostream & operator << (ostream &o, DWPair p)
 const int Entry<IOPair,List<DWPair> >::newBlocksize = 64;
 Entry<IOPair,List<DWPair> > *Entry<IOPair,List<DWPair> >::freeList = NULL;
 
-Node<DWPair> *Node<DWPair>::freeList = NULL;
-const int Node<DWPair>::newBlocksize = 64;
-
 ostream & hashPrint(HashTable<IOPair, List<DWPair> > &h, ostream &o) {
   HashIter<IOPair,List<DWPair> > i(h);
   if ( !i ) return o;
@@ -634,8 +630,4 @@ ostream & operator << (ostream & out , const IOSymSeq & s){   // Yaser 7-21-2000
   out << s.i << s.o ;
   return(out);
 }
-
-Node<IOSymSeq> *Node<IOSymSeq>::freeList = NULL;
-const int Node<IOSymSeq>::newBlocksize = 64;
-
 

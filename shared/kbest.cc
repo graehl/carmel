@@ -1,6 +1,5 @@
 #include <vector>
 #include "kbest.h"
-#include "node.h"
 #include "config.h"
 
 Graph sidetracks;
@@ -11,9 +10,6 @@ using namespace std;
 int operator < (const pGraphArc l, const pGraphArc r) {
   return l->weight > r->weight;
 }
-
-Node<GraphHeap *> *Node<GraphHeap *>::freeList = NULL;
-const int Node<GraphHeap *>::newBlocksize = 64;
 
 List<GraphHeap *> GraphHeap::usedBlocks;
 GraphHeap * GraphHeap::freeList = NULL;

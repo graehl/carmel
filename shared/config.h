@@ -5,7 +5,7 @@
 //#define DEBUG
 
 // use singly linked list
-//#define USE_SLIST
+#define USE_SLIST
 
 #ifdef DEBUG
 #define DEBUGTRAIN
@@ -25,7 +25,7 @@
 
 
 // bunch of small allocators wastes memory but faster new/delete
-#define CUSTOMNEW
+//#define CUSTOMNEW
 // crashes if not defined (??!)
 
 // allows WFST to be indexed in either direction?  not recommended.

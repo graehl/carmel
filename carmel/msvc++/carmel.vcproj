@@ -259,9 +259,6 @@
 				RelativePath="..\src\list.h">
 			</File>
 			<File
-				RelativePath="..\src\node.h">
-			</File>
-			<File
 				RelativePath="..\src\slist.h">
 			</File>
 			<File
