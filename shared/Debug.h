@@ -63,6 +63,29 @@ using namespace std;
 #define FATALQ(module,msg) DBG_OP_Q(dbg,fatalError,module,msg)
 #define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,info,module,msg)
 #define INFOL(lvl,module,msg) DBG_OP_L(lvl,dbg,info,module,msg)
+#if INFO_LEVEL >=9
+#define INF9(module,msg) INFOLQ(9,module,msg)
+#define INF9IN dbg->increase_depth()
+#define INF9OUT dbg->decrease_depth()
+#define INF9NEST NESTINFO_GUARD(dbg)
+#else
+#define INF9(module,msg)
+#define INF9IN
+#define INF9OUT
+#define INF9NEST
+#endif
+
+#if INFO_LEVEL >=99
+#define INF99(module,msg) INFOLQ(99,module,msg)
+#define INF99IN dbg->increase_depth()
+#define INF99OUT dbg->decrease_depth()
+#define INF99NEST NESTINFO_GUARD(dbg)
+#else
+#define INF99(module,msg)
+#define INF99IN
+#define INF99OUT
+#define INF99NEST
+#endif
 
 #if (defined(TEST) && !defined(QUIET_TEST) ) 
 #define INFOT(msg) DBG_OP(&test_dbg,info,"TEST",msg)
