@@ -100,7 +100,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
             } else {
 //                Weight pp_ratio=new_alp/last_alp;
 //                pp_ratio_scaled = root(pp_ratio,new_alp.getLogImp()); // EM delta=(L'-L)/abs(L')
-                logs << " (relative-avg-prob-ratio=" << exp(new_alp-last_alp) << "), max{d(weight)}=" << last_delta_param << std::endl;
+                logs << " (relative-avg-prob-ratio=" << exp(last_alp-new_alp) << "), max{d(weight)}=" << last_delta_param << std::endl;
             }
             if (!last_was_reset) {
                 if (  last_alp > new_alp + converge_alp ) {
