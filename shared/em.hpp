@@ -27,6 +27,22 @@ struct WeightAccum {
 };
 
 
+/*struct ParamDelta : public std::pair<double,unsigned> {
+  typedef std::pair<double,unsigned> P;
+    ParamDelta() {}
+    ParamDelta(double d,unsigned i) : P(d,i) {}
+    ParamDelta(const P &o) : P(o) {}
+};
+*/
+typedef std::pair<double,unsigned> ParamDelta;
+
+ostream & operator << (ostream &out,const ParamDelta &p) {
+    if (p.first > 0)
+        return out << "delta_weight["<<p.second<<"]="<<p.first;
+    else
+        return out << "unchanged";
+
+}
 
 /// overrelaxed EM with random restarts.
 /// RETURN: best perplexity
@@ -38,8 +54,8 @@ struct EM_executor {
     void randomize() {}
      // returns (weighted) average log prob over all examples given current parameters, and collects counts (performs count initialization itself).  first_time flag intended to allow you to drop examples that have 0 probability (training can't continue if they're kept)
     double estimate(bool first_time) {return 0;}
-    // assigns new parameters from countvs collected by estimate; learning_rate may be ignored, but is intended to magnify the delta from the previous parameter set to the normalized new parameter set.  should return largest absolute change to any parameter.  should also save the un-magnified (raw normalized counts) version for undo_maximize (if you only use learning_rate==1, then you don't need to do anything but normalize)
-    double maximize(double learning_rate) {return 0;}
+    // assigns new parameters from counts collected by estimate; learning_rate may be ignored, but is intended to magnify the delta from the previous parameter set to the normalized new parameter set.  should return largest absolute change to any parameter, and the index of that parameter.  should also save the un-magnified (raw normalized counts) version for undo_maximize (if you only use learning_rate==1, then you don't need to do anything but normalize)
+    ParamDelta maximize(double learning_rate) {return ParamDelta(0,0);}
     // for overrelaxed EM: if probability gets worse, reset learning rate to 1 and use the last improved weights.  or, you may wish to save a copy of the learning-rate-1 new weights that you extrapolate the overrelaxed ones from (compared to their previous value), and simply restore those, rather than backing off to the previous iteration and wasting another estimate.
     void undo_maximize() {}
 
@@ -48,22 +64,24 @@ struct EM_executor {
     void restore_best() {}
 };
 
+
 // note that your initial parameters will be left alone for the first iteration (this means you should initialize them to something that gives nonzero probs
 
-//    converge relative probability ratio ... 1 = total convergence before stopping, .999 = near exact
+//    converge relative logprobability epsilon ... 0 = total convergence before stopping, .0001 = near exact
 //    converge param delta ... 1 = converge if all changes less than 1, 0 = never stop as long as perplexity keeps improving
 //    learning_rate_growth_factor ... exponent for overrelaxed EM.  1 = normal EM, 1.1 = reasonable guess (what rate helps speed convergence depends on problem).  if rate/exponent gets too high and perplexity goes down, it's reset to the base guaranteed-to-improve-or-converge EM, similar to TCP slow restart on congestion
 //    ran_restarts = how many times to randomly initialize parameters (after doing one iteration with supplied parameters), keeping the best PP params of all runs
 // return best (greatest) average log prob
 template <class Exec>
-double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg_prob_ratio=.99999,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, ostream &logs=Config::log(),unsigned log_level=1)
+double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, ostream &logs=Config::log(),unsigned log_level=1)
 {
     double best_alp=-HUGE_VAL; // alp=average log prob = (logprob1 +...+ logprobn )/ n (negative means 0 probability, 0 = 1 probability)
-    double converge_alp=log(converge_relative_avg_prob_ratio); // negative absolute quantity.  if last_alp > new_alp + converge_alp, then converged.
+    double &rel_eps=converge_relative_avg_logprob_epsilon;
     bool very_first_time=true;
     while(1) { // random restarts
         int train_iter = 0;
-        double last_delta_param, last_alp;
+        ParamDelta max_delta_param;
+        double last_alp;
 
         last_alp=-HUGE_VAL;
         double learning_rate=1;
@@ -74,7 +92,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
             ++train_iter;
             DBP(train_iter);DBPSCOPE;
             if ( train_iter > max_iter ) {
-                logs << "Maximum number of iterations (" << max_iter << ") reached before convergence criteria was met - greatest param weight change was " << last_delta_param << "\n";
+                logs << "Maximum number of iterations (" << max_iter << ") reached before convergence criteria was met - greatest param weight change was " << max_delta_param << "\n";
                 break;
             }
 //            if (log_level > 0) logs << "Starting iteration: " << train_iter << '\n';
@@ -93,17 +111,20 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
             if (very_first_time)
                 very_first_time=false;
 
+            double dpp=new_alp-last_alp; // should be increasing, so diff is positive
+            double rel_dpp = dpp/fabs(last_alp); // COULD BE FASTER (last_alp always negative) but whatever :)
             if ( first_time ) {
+                rel_dpp=HUGE_VAL;
                 logs << std::endl;
                 first_time = false;
 //                pp_ratio_scaled.setZero();
             } else {
 //                Weight pp_ratio=new_alp/last_alp;
 //                pp_ratio_scaled = root(pp_ratio,new_alp.getLogImp()); // EM delta=(L'-L)/abs(L')
-                logs << " (relative-avg-prob-ratio=" << exp(last_alp-new_alp) << "), max{d(weight)}=" << last_delta_param << std::endl;
+                logs << " (relative-d-avg-logprob=" << rel_dpp << "), max " << max_delta_param << std::endl;
             }
             if (!last_was_reset) {
-                if (  last_alp > new_alp + converge_alp ) {
+                if ( rel_dpp < rel_eps ) {
                     if ( learning_rate > 1 ) {
                         logs << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
                         learning_rate=1;
@@ -111,7 +132,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
                         last_was_reset=true;
                         continue;
                     }
-                    logs << "Converged - per-example avg-prob ratio exceeds " << converge_relative_avg_prob_ratio << " after " << train_iter << " iterations.\n";
+                    logs << "Converged - relative per-example avg-logprob change less than " << rel_eps << " after " << train_iter << " iterations.\n";
                     break;
                 } else {
                     if (learning_rate < MAX_LEARNING_RATE_EXP)
@@ -120,9 +141,8 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
             } else
                 last_was_reset=false;
 
-            last_delta_param = exec.maximize(learning_rate);
-
-            if (last_delta_param < converge_param_delta ) {
+            max_delta_param = exec.maximize(learning_rate);
+            if (max_delta_param.first < converge_param_delta ) {
                 logs << "Converged - all weights changed less than " << converge_param_delta << " after " << train_iter << " iterations.\n";
                 break;
             }

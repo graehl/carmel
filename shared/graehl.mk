@@ -1,3 +1,5 @@
+BOOST_DIR=../boost
+
 .SUFFIXES:
 .PHONY = distclean all clean depend default dirs
 # always execute
@@ -18,20 +20,25 @@ ifeq ($(CPP_EXT),)
 CPP_EXT=cpp
 endif
 
-BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp  unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
+BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp \
+unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp	      \
+unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
 BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJ_BOOST)/%.o)
-BOOST_OPT_SRCS=positional_options.cpp cmdline.cpp variables_map.cpp config_file.cpp parsers.cpp value_semantic.cpp options_description.cpp
+BOOST_OPT_SRCS=cmdline.cpp convert.cpp parsers.cpp utf8_codecvt_facet.cpp variables_map.cpp config_file.cpp options_description.cpp positional_options.cpp value_semantic.cpp
+# winmain.cpp
 BOOST_OPT_OBJS=$(BOOST_OPT_SRCS:%.cpp=$(OBJ_BOOST)/%.o)
 BOOST_TEST_LIB=$(OBJ_BOOST)/libtest.a
 BOOST_OPT_LIB=$(OBJ_BOOST)/libprogram_options.a
-BOOST_DIR=/home/graehl/isd/boost
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 LDFLAGS += $(addprefix -l,$(LIB))
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJ_BOOST) -ltest
-CPPFLAGS += $(addprefix -I,$(INC)) -I- -I$(BOOST_DIR) -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
+CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
+# somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
+
 ifeq ($(ARCH),cygwin)
 CPPFLAGS += -DBOOST_NO_STD_WSTRING
+# somehow that is getting automatically set by boost now (for Boost CVS)
 endif
 
 define PROG_template
@@ -39,7 +46,7 @@ define PROG_template
 .PHONY += $(1)
 
 ifndef $(1)_NOOPT
-$$(BIN)/$(1): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $(BOOST_OPT_LIB)
+$$(BIN)/$(1): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
@@ -47,7 +54,7 @@ $(1): $$(BIN)/$(1)
 endif
 
 ifndef $(1)_NODEBUG
-$$(BIN)/$(1).debug: $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) $(BOOST_OPT_LIB)
+$$(BIN)/$(1).debug: $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 ALL_OBJS +=  $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) 
 $(1): $$(BIN)/$(1).debug

@@ -9,7 +9,7 @@ Use GNU make (unfortunately, version 3.81 or greater is required due to some
 bugs with earlier versions), and find the binaries in bin/$ARCH
 
 Also requires Boost (http://boost.org) in your standard include directory, or
-edit shared/graehl.mk BOOST= if you can't put it there
+edit shared/graehl.mk to set BOOST_DIR=/path/to/boost if you have located elsewhere
 
 You'll need to extract
 http://boost-sandbox.sourceforge.net/program_options/program_options_postreview.tar.gz

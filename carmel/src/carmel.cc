@@ -318,8 +318,8 @@ main(int argc, char *argv[]){
     return 0;
   }
   if (flags['V']){
-    std::cout << "Carmel Version: " << VERSION ;
-    std::cout << ". Copyright C 2000, the University of Southern California.\n";
+    std::cout << "Carmel Version: " << CARMEL_VERSION ;
+    std::cout << ". Copyright C " << COPYRIGHT_YEAR << ", the University of Southern California.\n";
     return 0 ;
   }
   if ( flags['b'] && kPaths < 1 )
@@ -466,18 +466,18 @@ main(int argc, char *argv[]){
 
   for ( ; ; ) { // input transducer from string line reading loop
     if (nTarget != -1) { // if to construct a finite state from input
-	  if ( !*line_in ) {
-fail_ntarget: 
-		Config::warn() << "No lines of input provided.\n";
-		PLACEMENT_NEW (&chain[nTarget])WFST(); break;
-	  }
-        
+          if ( !*line_in ) {
+fail_ntarget:
+                Config::warn() << "No lines of input provided.\n";
+                PLACEMENT_NEW (&chain[nTarget])WFST(); break;
+          }
+
       *line_in >> ws;
       getline(*line_in,buf);
 
-	  if ( !*line_in ) 		
-		goto fail_ntarget;
-			 
+          if ( !*line_in )
+                goto fail_ntarget;
+
       if ( input_lineno != 0 )
         chain[nTarget].~WFST();
       if (flags['P']){ // need a permutation lattice instead
