@@ -4,6 +4,7 @@
 #include "myassert.h"
 #include "genio.h"
 #include "funcs.hpp"
+#include "threadlocal.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -26,7 +27,7 @@ static FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 struct Weight {                 // capable of representing nonnegative reals
   // internal implementation note: by their base e logarithm
   private:
-    enum { DEFAULT_BASE=0,LN=1,LOG10=2, };
+    enum { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
     enum { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
   // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
   // 32 * ln 10 =~ 73
@@ -35,8 +36,8 @@ struct Weight {                 // capable of representing nonnegative reals
 
   static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
   static const int thresh_index; // handle for OutThresh
-    static int default_base;
-    static int default_thresh;
+    static THREADLOCAL int default_base;
+    static THREADLOCAL int default_thresh;
   public:
   static const Weight ZERO, INF;
   // linux g++ 3.2 didn't like static self-class member
@@ -51,6 +52,9 @@ struct Weight {                 // capable of representing nonnegative reals
     }
     static void default_ln() {
         default_base=LN;
+    }
+    static void default_exp() {
+        default_base=EXP;
     }
     static void default_sometimes_log() {
         default_thresh=SOMETIMES_LOG;
@@ -82,6 +86,8 @@ struct Weight {                 // capable of representing nonnegative reals
     out_default_base(std::basic_ostream<A,B>& os);
   template<class A,class B> static std::basic_ostream<A,B>&
     out_log10(std::basic_ostream<A,B>& os);
+  template<class A,class B> static std::basic_ostream<A,B>&
+    out_exp(std::basic_ostream<A,B>& os);
 
   template<class A,class B> static std::basic_ostream<A,B>&
     out_ln(std::basic_ostream<A,B>& os);
@@ -312,6 +318,7 @@ inline Weight operator ^(Weight base,FLOAT_TYPE exponent) {
 template <class charT, class Traits>
 std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) const
 {
+    int base=Weight::get_log_base(o);
         if ( isZero() )
                 o << "0";
         else {
@@ -320,10 +327,12 @@ std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) con
             if ( (log == Weight::SOMETIMES_LOG && fitsInReal()) || log == Weight::NEVER_LOG ) {
                 o << getReal();
             } else { // out of range or ALWAYS_LOG
-                if (Weight::get_log_base(o) == Weight::LN) {
+                if ( base == Weight::LN) {
                         o << getLn() << "ln";
-                } else { // LOG10
+                } else if (base == Weight::LOG10) {
                         o << getLog10() << "log";
+                } else {
+                    o << "e^" << getLn();
                 }
             }
         }
@@ -331,32 +340,43 @@ std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) con
 }
 
 template <class charT, class Traits>
-std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
+std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& in)
 {
   char c;
   double f=0;
-  i >> f;
+  EXPECTI(in >> c);
+  if (c != 'e')
+      in.unget();
+  else {
+      EXPECTCH('^');
+      EXPECTI(in >> f);
+      setLn((FLOAT_TYPE)f);
+      return GENIOGOOD;
+  }
+  in >> f;
 
-  if ( i.fail() ) {
-        setZero();
-        return GENIOBAD;
-  } else if ( i.eof() ) {
+  if ( in.fail() )
+      goto fail;
+  if ( in.eof() ) {
     setReal(f);
-  } else if ( (c = i.get()) == 'l' ) {
-   char n = i.get();
+  } else if ( (c = in.get()) == 'l' ) {
+   char n = in.get();
    if ( n == 'n')
     setLn((FLOAT_TYPE)f);
-   else if ( n == 'o' && i.get() == 'g' )
+   else if ( n == 'o' && in.get() == 'g' )
     setLog10(f);
    else {
     setZero();
         return GENIOBAD;
    }
   } else {
-    i.unget();
+    in.unget();
     setReal(f);
   }
   return GENIOGOOD;
+  fail:
+  setZero();
+  return GENIOBAD;
 }
 
 
@@ -527,6 +547,9 @@ Weight::out_default_base(std::basic_ostream<A,B>& os) { os.iword(base_index) = D
 
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
+
+template<class A,class B> std::basic_ostream<A,B>&
+Weight::out_exp(std::basic_ostream<A,B>& os) { os.iword(base_index) = EXP; return os; }
 
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_sometimes_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = SOMETIMES_LOG; return os; }
