@@ -62,12 +62,12 @@ template <typename K, typename V> class Entry {
   friend class HashTable<K,V>;
   friend class HashIter<K,V>;
   friend class HashConstIter<K,V>; // Yaser
-#if __GNUC__== 2 && __GNUG__== 2  && __GNUC_MINOR__ <= 7
+#if (__GNUC__== 2 && __GNUG__== 2  && __GNUC_MINOR__ <= 7) || defined(_MSC_VER)
   // version 2.7.2 or older of gcc compiler does not understand '<>' so it will give
   // an error message if '<>' is present. However, it is required by newer versions
   // of the compiler and if it is not present, a warning will be given 
   friend std::ostream & operator << (std::ostream &, const Entry<K,V> &);
-#else
+#else 
   friend std::ostream & operator << <> (std::ostream &, const Entry<K,V> &);
 #endif
 };

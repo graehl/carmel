@@ -1,7 +1,7 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
-#define VERSION "3.0.4" 
+#define VERSION "3.0.5" 
 
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
@@ -10,6 +10,10 @@
 
 // use singly linked list
 #define USE_SLIST
+
+
+// use old, slower string hash
+//#define OLD_HASH
 
 #ifdef DOUBLE_PRECISION
 typedef double FLOAT_TYPE;

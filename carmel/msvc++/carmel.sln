@@ -1,13 +1,13 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "carmel", "carmel.vcproj", "{0265F2EB-FB68-4CF6-9BBB-C857873A4FAE}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-		ConfigName.2 = test
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
+		Debug = Debug
+		Release = Release
+		test = test
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{0265F2EB-FB68-4CF6-9BBB-C857873A4FAE}.Debug.ActiveCfg = Debug|Win32

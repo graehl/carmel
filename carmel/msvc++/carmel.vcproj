@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="carmel"
 	ProjectGUID="{0265F2EB-FB68-4CF6-9BBB-C857873A4FAE}"
 	Keyword="Win32Proj">
@@ -55,7 +55,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -110,7 +116,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="test|Win32"
@@ -155,42 +167,70 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
 				RelativePath="..\src\2hash.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\2heap.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\Arc.cc">
-			</File>
-			<File
-				RelativePath="..\src\tests\Tweight.cc">
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					Name="Debug|Win32">
 					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
 				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\compose.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\finite.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 				<FileConfiguration
 					Name="test|Win32"
 					ExcludedFromBuild="TRUE">
@@ -200,24 +240,90 @@
 			</File>
 			<File
 				RelativePath="..\src\fst.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\graph.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\kbest.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\strhash.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\train.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\tests\Tweight.cc">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\weight.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\wfstio.cc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						BrowseInformation="0"
+						BrowseInformationFile=""/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
