@@ -79,6 +79,6 @@ int main(int argc, char *argv[])
   cin.tie(0);
   cout << "const char *" << textvar << " =\n" ;
   cpp_escape_string(cout,cin,max_line_length);
-  cout << "\n;";
+  cout << "\n;\n";
   return 0;
 }
