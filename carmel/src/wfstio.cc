@@ -296,7 +296,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
     finalName.clone();
   else
     final=getStateIndex(buf);
-Assert( in->find(EPSILON_SYMBOL)->second==0 && out->find(EPSILON_SYMBOL)->second==0 );
+Assert( in->find(EPSILON_SYMBOL)==0 && out->find(EPSILON_SYMBOL)==0 );
   for ( ; ; ) {
     if ( !(istr >> c) )
       break;
@@ -500,7 +500,7 @@ void WFST::writeLegible(ostream &os)
   const char *inLet, *outLet, *destState;
 
   if ( !valid() ) return;
-Assert( in->find(EPSILON_SYMBOL)->second==0 && out->find(EPSILON_SYMBOL)->second==0 );
+Assert( in->find(EPSILON_SYMBOL)==0 && out->find(EPSILON_SYMBOL)==0 );
   os << stateName(final);
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
@@ -541,13 +541,6 @@ void WFST::listAlphabet(ostream &ostr, int output)
   else
     alph = in;
   ostr << *alph;
-}
-
-ostream & operator << (ostream &out, Alphabet<> &alph)
-{
-  for ( int i = 0 ; i < alph.names.size() ; ++i )
-    out << alph.names[i] << '\n';
-  return out;
 }
 
 //XXX don't allocate then return list, take pointer to list
