@@ -5,7 +5,7 @@
 //#define DEBUG
 
 // use singly linked list
-//#define USE_SLIST
+#define USE_SLIST
 
 #ifdef DEBUG
 #define DEBUGTRAIN
