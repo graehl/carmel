@@ -23,11 +23,6 @@ LDFLAGS += $(addprefix -l,$(LIB))
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJ_BOOST) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I- -I$(BOOST_DIR) -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
 
-$(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
-	ar cr $@ $^
-	ranlib $@
-
-
 define PROG_template
 
 $$(BIN)/$(1): $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
@@ -58,6 +53,10 @@ test: $(ALL_TESTS)
 .PRECIOUS: %/.
 %/.:
 	mkdir -p $(@)
+
+$(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
+	ar cr $@ $^
+	ranlib $@
 
 .PRECIOUS: $(OBJ_BOOST)/%.o
 $(OBJ_BOOST)/%.o:: $(BOOST_TEST_SRC_DIR)/%.cpp

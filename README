@@ -3,4 +3,4 @@ carmel: weighted finite state transducer toolkit (and k-best graph paths)
 shared: generic routines used by both
 
 make sure the environment variable ARCH is set to something (cygwin,linux,solaris)
-use GNU make in either tt or carmel to build everything
+use GNU make (unfortunately, version 3.80 or greater is required), and find the binaries in bin/$ARCH
