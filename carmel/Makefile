@@ -7,7 +7,7 @@
 # copyrighted C 2000 by the University of Southern California.                 *
 #*******************************************************************************
 # Change the following to the directory where you install carmel
-DIR = /nfs/isd2/rewrite/carmel
+DIR = .
 
 # NOTE: some Linux machine assign i386 to the environment variable ARCH,
 # so change i686 to i386 in in this file.
@@ -24,6 +24,7 @@ INC = ${DIR}/src
 BIN = ${DIR}/bin
 CC.sun4 = g++
 CC.i686 = g++
+CC.cygwin = g++
 CC = $(CC.$(ARCH))
 CCFLAGS = -c -Wall
 LDFLAGS = -L$(LIB) -lm
