@@ -785,6 +785,10 @@ public:
     std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
         return get_from(in,DefaultReader<T>());
     }
+    template <class charT, class Traits>
+    std::ios_base::iostate append_from(std::basic_istream<charT,Traits>& in) {
+        return get_from(in,DefaultReader<T>(),Array<T,Alloc>::APPEND);
+    }
     Array<T,Alloc> substr(unsigned start) const
     {
         return substr(start,size());
