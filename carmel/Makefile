@@ -22,6 +22,7 @@ OBJ.solaris = ${DIR}/obj/solaris
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src
+IN = -I$(INC) -I- 
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
 CC.solaris = /nfs/topaz/graehl/isd/solaris/bin/g++3.2
@@ -80,19 +81,19 @@ carmel.${ARCH}.prf:  $(OBJ_PRF_DIR) $(OBJ_FILES_PRF)
 carmel.a: $(OBJ_LIB)
 	ar rv ${OBJ}/$@ $?
 
-	$(CC)  $(CCFLAGS_OPT) -I$(INC) $< -o $@
+$(OBJ)/optimized/%.o: $(SRC)/%.cc
 	$(CC)  $(CCFLAGS_OPT) $(IN) $< -o $@
 
-	$(CC)  $(CCFLAGS_PRF) -I$(INC) $< -o $@
+$(OBJ)/profile/%.o: $(SRC)/%.cc
 	$(CC)  $(CCFLAGS_PRF) $(IN) $< -o $@
 
-	$(CC)  $(CCFLAGS_DBG) -I$(INC) $< -o $@
+$(OBJ)/debug/%.o: $(SRC)/%.cc
 	$(CC)  $(CCFLAGS_DBG) $(IN) $< -o $@
 
-	$(CC)  $(CCFLAGS_DBG) -I$(INC) $< -o $@
+$(OBJ)/purified/%.o: $(SRC)/%.cc
 	$(CC)  $(CCFLAGS_DBG) $(IN) $< -o $@
 
-	$(CC)  $(CCFLAGS_DBG) -I$(INC) -I$(INC1) $< -o $@
+
 	$(CC)  $(CCFLAGS_DBG) $(IN) -I$(INC1) $< -o $@
 
 $(OBJ)/optimized/:
@@ -119,10 +120,10 @@ DEPS=$(DIR)/dependencies.${ARCH}
 depend: $(DEPS)
 
 $(DEPS): 
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/optimized\/\1?g;print;}' > $(DEPS)
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/profile\/\1?g;print;}' >> $(DEPS)
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/debug\/\1?g;print;}' >> $(DEPS)
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/purified\/\1?g;print;}' >> $(DEPS)
+	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/test\/\1?g;print;}' > $(DEPS)
+	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/optimized\/\1?g;print;}' > $(DEPS)
+	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/profile\/\1?g;print;}' >> $(DEPS)
+	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/debug\/\1?g;print;}' >> $(DEPS)
 	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/purified\/\1?g;print;}' >> $(DEPS)
 
 
