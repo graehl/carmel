@@ -104,6 +104,18 @@ struct SwapBatch {
             }
         }
     }
+
+    /// don't actually swap memory (can be useful for statistics that don't look at data)
+    template <class F>
+    void enumerate_noload(F f) {
+        for (unsigned i=0,end=batches.size();i!=end;++i) {
+            Batch &batch=batches[i];
+            for (typename Batch::iterator j=batch.begin(),e=batch.end();j!=end;++j) {
+                 deref(f)(*j);
+            }
+        }
+    }
+
     void readall(istream &in) {
         checkpoint_istream is(in);
         while(is)
