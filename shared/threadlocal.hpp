@@ -1,7 +1,7 @@
 #ifndef _THREADLOCAL_HPP
 #define _THREADLOCAL_HPP
 
-#include "ttconfig.hpp"
+//#include "ttconfig.hpp"
 
 #ifdef BOOST_NO_MT
 

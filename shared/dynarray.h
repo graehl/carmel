@@ -150,6 +150,9 @@ template <typename T,typename Alloc=std::allocator<T> > class Array : protected 
     T *vec;
     T *endspace;
     public:
+      enum { REPLACE=0, APPEND=1 };
+    enum { BRIEF=0, MULTILINE=1 };
+
 //    operator T*() const { return vec; }
   bool invariant() const {
     return vec >= endspace;
@@ -390,8 +393,6 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 void swap(Array<T,Alloc> &a) {Assert(0);}
   public:
  public:
-  enum { REPLACE=0, APPEND=1 };
-  enum { BRIEF=0, MULTILINE=1 };
   explicit DynamicArray (const char *c) {
         std::istringstream(c) >> *this;
   }
@@ -745,10 +746,10 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
   // if any element read fails, whole array is clobbered (even if appending!)
   // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
-std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=REPLACE)
+  std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=false)
 
 {
-  if (append==REPLACE)
+    if (!append)
         clear();
 
 #if 1

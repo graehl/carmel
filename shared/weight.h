@@ -220,10 +220,10 @@ inline FLOAT_TYPE log(Weight a) {
     return a.getLn();
 }
 
-template<class T> T exponential(FLOAT_TYPE exponent);
+template<class T> inline T exponential(FLOAT_TYPE exponent);
 
-//inline
 template <>
+inline
 Weight exponential<Weight>(FLOAT_TYPE exponent) {
     Weight r;
     r.setLn(exponent);
@@ -492,7 +492,7 @@ Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = A
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
-void dbgout(ostream &o,Weight w) {
+void inline dbgout(std::ostream &o,Weight w) {
     o << Weight::out_always_real << w
 #ifdef VERBOSE_DEBUG
       << '=' << Weight::out_always_log << w

@@ -1,0 +1,6 @@
+tt: tree transducer (and derivation forests EM training)
+carmel: weighted finite state transducer toolkit (and k-best graph paths)
+shared: generic routines used by both
+
+make sure the environment variable ARCH is set to something (cygwin,linux,solaris)
+use GNU make in either tt or carmel to build everything
