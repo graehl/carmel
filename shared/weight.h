@@ -557,6 +557,8 @@ template <>
 class numeric_limits<Weight> {
 public:
   static bool has_infinity() { return true; }
+    enum { is_specialized=1,digits10=std::numeric_limits<FLOAT_TYPE>::digits10 };
+
   //FIXME: add rest
 };
 };

@@ -164,8 +164,8 @@ struct Symbol {
           } else {
                 do {
                   switch(c) {
-case '(':case ')':case ',':case '"':case ' ':case '`':case '=':
-case '#':case '$':case ':':case '{':case '}':case '^':case ';':
+case '(':case ')':case ',':case '"':case ' ':case '`':case '=':case '#':
+case '%':case '$':case ':':case '{':case '}':case '^':case ';':
 case '\t':case '\r':case '\n':
   in.unget();
   goto donewhile;

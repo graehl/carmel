@@ -413,15 +413,31 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
   }
 
   void construct() {
-        Assert(endv=this->vec);
+        Assert(endv==this->vec);
         Array<T,Alloc>::construct();
         endv=this->endspace;
   }
   void construct(const T& t) {
-        Assert(endv=this->vec);
+        Assert(endv==this->vec);
         Array<T,Alloc>::construct(t);
         endv=this->endspace;
   }
+
+    void reinit(unsigned sp,const T& t=T()) {
+        clear();
+        reserve_at_least(sp);
+        T *real_es=this->endspace;
+        end=this->endspace=sp;
+        Array<T,Alloc>::construct(t);
+        this->endspace=real_es;
+    }
+    void reinit_nodestroy(unsigned sp,const T& t=T()) {
+        reserve_at_least(sp);
+        T *real_es=this->endspace;
+        endv=this->endspace=this->vec+sp;
+        Array<T,Alloc>::construct(t);
+        this->endspace=real_es;
+    }
 
   DynamicArray(const DynamicArray &a) : Array<T,Alloc>(a.size()) {
 //      unsigned sz=a.size();
@@ -711,7 +727,7 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
         }
   }
   unsigned int size() const { return (unsigned)(endv-this->vec); }
-  void set_size(unsigned int newSz) { endv=this->vec+newSz; }
+    void set_size(unsigned newSz) { endv=this->vec+newSz; Assert(invariant); }
   void reduce_size(unsigned int n) {
     T *end=endv;
     reduce_size_nodestroy(n);
