@@ -11,7 +11,7 @@ public:
 	char *str;
 	static char *empty;
 	StringKey() : str(empty) {}
-	StringKey(char *c) : str(c) {}
+	StringKey(const char *c) : str(const_cast<char *>(c)) {}
 	const char *clone()
 	{
 		char *old = str;
