@@ -48,21 +48,31 @@ This should create the main directory structure for carmel.
 Part III: Compiling Carmel:
 ----------------------------
 
+Carmel now requires GCC version 3 to compile.  You can download the source to GCC
+and install it into your home directory, and use it to compile carmel by editing the Makefile.
+
 A Makefile  is included in this distribution. The Makefile can be
-found in themain carmel directory. Follow these steps for
+found in the main carmel directory. Follow these steps for
 installation:
 
 1. create an empty file in the main carmel directory and call that
-file dependencies.ARCH (where ARCH is sun4 if you are using SUN
-machine, or i686 if you are using a Linux machine)
-NOTE: some Linux machine assign i386 to the environment variable ARCH,
-so change i686 to i386 in the dependecy file name and in the make
-file.
+file dependencies.ARCH
 
-To  do that you can:
+ARCH may be:
+solaris
+cygwin
+linux
+freebsd
 
-    % cat > dependencies.sun4
-    % Hit Ctrl+D
+(or others you create by editing the Makefile)
+
+you may need to set CC.$ARCH to point to your version 3 or greater g++
+(on some systems it will be called g++30 or similar)
+
+
+You should probably use GNU make.  If you are not using GNU make, you will need to
+
+    % echo > dependencies.$ARCH
 
 
 2. Create the dependency structure, to do that type:
@@ -76,24 +86,8 @@ To  do that you can:
 (Note: this will create an optimized version of carmel.For a
 debug/profile/purified version  % make debug (purify profile)
 
-The software has been successfuly compiled using gcc (or g++) versions
-2.95.2 with STL support under Solaris 2.5 and 2.6 with no problems one
-warning message is produced and should be ignored). It ws also
-compiled successfully using gcc version egcs-2.91.66 under Linux
-RedHat 6.2  with no warning messages.
-
-The compilation should have no known problems except for the following wanring
-message:
-
-dynarray.h: In method `DynamicArray<char *>::~DynamicArray()':
-strhash.h:111:   instantiated from here
-dynarray.h:87: warning: `void *' is not a pointer-to-object type
-dynarray.h: In method `void DynamicArray<char *>::resize(int)':
-dynarray.h:56:   instantiated from `DynamicArray<char *>::pushBack(char *const &)'
-src/strhash.h:137:   instantiated from here
-dynarray.h:78: warning: `void *' is not a pointer-to-object type
-
-Ignore the message, it should have no side effects.
+Carmel also compiles with the latest Microsoft Visual C++ (.NET currently).
+A project file is included in the msvc++ directory.
 
 Part IV: Carmel File Formats:
 ------------------------------
@@ -122,8 +116,8 @@ result to the standard output.
 		a space-separated sequence of symbols, and translated into a
 		transducer accepting only that sequence
 -P Similar to (-i) but instead of building an acceptor with a
-                single arc, construct a permutaion lattice that accepts the
-                input in all possible reorderings.
+		single arc, construct a permutaion lattice that accepts the
+		input in all possible reorderings.
 -k n		the n best paths through the resulting transducer are written
 		to the standard output in lieu of the transducer itself
 -b		batch compostion - reads the sequence of transducers into
@@ -162,8 +156,7 @@ result to the standard output.
 -x		list only the input alphabet of the transducer to stdout
 -y		list only the output alphabet of the transducer to stdout
 -c		list only statistics on the transducer to stdout
--F filename	write the final transducer to a file (and not stdout), except 
-		when -b is used
+-F filename	write the final transducer to a file (in lieu of stdout)
 -v		invert the resulting transducer by swapping the input and
 		output symbols 
 -d		do not eliminate dead-end states from all transducers created
@@ -172,12 +165,19 @@ result to the standard output.
 		maximum weight of one)
 -p w		prune (discard) all arcs with weight less than w
 -g n		stochastically generate n input/output pairs by following
-		random paths from the initial state to the final state
-		(assumes that the weights have been normalized with -n or -t)
-		output is in the same form accepted in -t and -S
--L n		while generating input/output pairs, stop traveling when in the
-		final state after at least n arcs have been traversed, so that
-		n <= (path length) <= (number of states) + n (default n is 0)
+		random paths (first choosing an input symbol with uniform
+		probability, then using the weights to choose an output symbol
+		and destination) from the initial state to the final state
+		output is in the same form accepted in -t and -S.
+		Training a transducer on its own -g output should be a no-op.
+-G n		stochastically generate n paths by randomly picking an arc
+		leaving the current state, by joint normalization
+		until the final state is reached.
+		same output format as -k best paths
+-R n		Use n as the random seed for repeatable -g and -G results
+		default seed = current time
+-L n		while generating input/output pairs with -g or -G, give up if
+		final state isn't reached after n steps (default n=1000)
 -T n		during composition, index arcs in a hash table when the
 		product of the number of arcs of two states is greater than n 
 		(by default, n = 128)
@@ -199,9 +199,10 @@ result to the standard output.
 		equivalent paths.
 -h		help on transducers, file formats
 -V		version number
+-u		Don't normalize outgoing arcs for each input during training
+-j		Perform joint rather than conditional normalization
 
-
-some formatting switches for displaying best paths:
+some formatting switches for paths from -k or -G:
 	-I	show input symbols only
 	-O	show output symbols only
 	-E	if -I or -O is specified, omit special symbols (beginning and
@@ -209,6 +210,16 @@ some formatting switches for displaying best paths:
 	-Q	if -I or -O is specified, omit outermost quotes of symbol names
 	-W	do not show weights for paths
 
-confused?  think you've found a bug?  if all else fails, e-mail
-yaser@isi.edu or knight@isi.edu
+Weight output format switches (by default, small/large weights are written as logarithms):
+	-B	Write weights as their base 10 log (default is ln, e.g.
+		'-5ln' signifies e^(-5))
+	-Z	Write weights in logarithm form always, e.g. '-10ln',
+		except for 0, which is written simply as '0'
+	-D	Write weights as reals always, e.g. '1.234e-200'
+
+Transducer output format switches:
+	-H	One arc per line (by default one state and all its arcs per line)
+	-J	Don't omit output=input or Weight=1
+
+Confused?  Think you've found a bug?  If all else fails, e-mail graehl@isi.edu or knight@isi.edu
 

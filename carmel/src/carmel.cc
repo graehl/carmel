@@ -14,33 +14,33 @@
 #define VERSION "2.01"  ;
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
-	    if ( flags['B'] ) 
-//			*fstout << Weight::out_log10;
-			Weight::out_log10(*fstout);
-		else
-			//*fstout << Weight::out_ln;
-			Weight::out_ln(*fstout);
-		if ( flags['Z'] ) 
-//			*fstout << Weight::out_always_log;
-			Weight::out_always_log(*fstout);
-		else
-			//*fstout << Weight::out_variable;
-			Weight::out_variable(*fstout);
-		if ( flags['D'] )
-//			*fstout << Weight::out_always_real;
-			Weight::out_always_real(*fstout);
-		if ( flags['J'] )
-			//*fstout << WFST::out_arc_full;
-			WFST::out_arc_full(*fstout);
-		else
-			//*fstout << WFST::out_arc_brief;
-			WFST::out_arc_brief(*fstout);
-		if ( flags['H'] )
-			//*fstout << WFST::out_arc_per_line;
-			WFST::out_arc_per_line(*fstout);
-		else
-			//*fstout << WFST::out_state_per_line;
-			WFST::out_state_per_line(*fstout);
+            if ( flags['B'] )
+//                      *fstout << Weight::out_log10;
+                        Weight::out_log10(*fstout);
+                else
+                        //*fstout << Weight::out_ln;
+                        Weight::out_ln(*fstout);
+                if ( flags['Z'] )
+//                      *fstout << Weight::out_always_log;
+                        Weight::out_always_log(*fstout);
+                else
+                        //*fstout << Weight::out_variable;
+                        Weight::out_variable(*fstout);
+                if ( flags['D'] )
+//                      *fstout << Weight::out_always_real;
+                        Weight::out_always_real(*fstout);
+                if ( flags['J'] )
+                        //*fstout << WFST::out_arc_full;
+                        WFST::out_arc_full(*fstout);
+                else
+                        //*fstout << WFST::out_arc_brief;
+                        WFST::out_arc_brief(*fstout);
+                if ( flags['H'] )
+                        //*fstout << WFST::out_arc_per_line;
+                        WFST::out_arc_per_line(*fstout);
+                else
+                        //*fstout << WFST::out_state_per_line;
+                        WFST::out_state_per_line(*fstout);
 
 }
 
@@ -627,10 +627,10 @@ main(int argc, char *argv[]){
           delete[] outSeq;
         }
       }
-	  if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
-		setOutputFormat(flags,fstout);
+          if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
+                setOutputFormat(flags,fstout);
         *fstout << *result;
-	  }
+          }
       break;
     }
   nextInput:
@@ -761,7 +761,7 @@ void usageHelp(void)
   cout << "s will create more states, and possibly less\n\t\tarcs, than the";
   cout << " normal approach, but the transducer will have\n\t\tequivalent p";
   cout << "aths.\n-h\t\thelp on transducers, file formats\n";
-  cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training\n" ;
+  cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training;\n\t\ttry -tuM 1 to see forward-backward counts for arcs\n" ;
   cout << "-j\t\tPerform joint rather than conditional normalization";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
@@ -772,7 +772,7 @@ void usageHelp(void)
   cout << "hs";
   cout << "\n\nWeight output format switches (by default, small/large weights are written as logarithms):";
   cout << "\n\t-B\tWrite weights as their base 10 log (default is ln, e.g.\n\t\t'-5ln' signifies e^(-5))";
-  cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln', except for 0, which is written simply as '0'";
+  cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln',\n\t\texcept for 0, which is written simply as '0'";
   cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";
   cout << "\n\nTransducer output format switches:";
   cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";

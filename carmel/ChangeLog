@@ -1,0 +1,19 @@
+2002-11-07  Jonathan Graehl  <graehl@isi.edu>
+
+	* Makefile: changes ARCH to linux/solaris/cygwin/freebsd, set CC.$ARCH to point to gcc version 3
+
+	* src/weight.h: default output base is now e (and output is -30ln instead of -10log)
+
+	* src/wfstio.cc: lines beginning with # (that aren't part of a quoted symbol) are ignored as comments
+
+	* src/finite.cc: new options:
+	-g no longer bounds number of arcs taken between min and min+#states, nor requires normalization.
+	-G randomly chooses arcs according to joint normalization and lists them like -k
+	-u blocks normalization entirely during e.g. training; can be used with -tuM 1 to give forward-backward counts for arcs
+	-j performs joint rather than conditional normalization
+	-B, -Z, -D options for output format of weights, -H,-J transducer output options:
+	may make reading carmel output more palatable to programs
+
+	* README (installation): 
+	(usage): 
+
