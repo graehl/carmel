@@ -63,7 +63,7 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
   //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
   int readLegible(istream &);	// returns 0 on failure (bad input)
-  void writeArc(ostream &, const Arc &);
+  void writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON=false);
   void writeLegible(ostream &);
   void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
   int numStates() const { return states.count(); }
@@ -102,14 +102,14 @@ void insertShortPath(GraphState *shortPathTree,int source, int dest, T &l)
     insertPathArc(taken,l);
   }
 }
-template <>
+/*template <>
   void insertPathArc(GraphArc *gArc, List<PathArc>*l) {
 	  insertPathArc(gArc,insert_iterator<List<PathArc> >(*l,l->erase_begin()));
   }
 template <>
   void insertShortPath(GraphState *shortPathTree,int source, int dest, List<PathArc> *l) {
 	  insertShortPath(shortPathTree,source,dest,insert_iterator<List<PathArc> >(*l,l->erase_begin()));
-  }
+  }*/
 
   static int indexThreshold;
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);

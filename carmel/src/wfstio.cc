@@ -383,7 +383,6 @@ void WFST::writeGraphViz(ostream &os)
 	const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
 	const char * const arrow = " -> ";
 	const char * const open = " [";
-	const char sep = ',';
 	const char close = ']';
 	const char * const label = "label=";
 
@@ -417,10 +416,10 @@ void WFST::writeGraphViz(ostream &os)
 	os << coda;
 }
 
-#define GREEK_EPSILON 0
+//#define GREEK_EPSILON 1
 
-void WFST::writeArc(ostream &os, const Arc &a) {
-	static const char * const epsilon = "&#949";
+void WFST::writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON) {
+	static const char * const epsilon = "&#949;";
 	os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
 			BOOLBRIEF;
 			OUTARCWEIGHT(os,&a);
