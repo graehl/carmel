@@ -243,6 +243,9 @@ DEPEND=1
 endif
 
 
+#                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
+#sed 's/\($*\)\.o[ :]*/DEPS_$@ := /g' $@.raw > $@ && echo $(basename $<).o : \\\$DEPS_$(basename $<) >> $@ \
+
 %.d: %.$(CPP_EXT)
 	@set -e; \
 	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
@@ -250,8 +253,9 @@ endif
 echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
-#                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
-sed 's/\($*\)\.o[ :]*/DEPS_$@ := /g' $@.raw > $@ && echo $(basename $<).o : \$DEPS_$(basename $<) >> $@ \
+                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && \
+sed 's/\($*\)\.o[ :]*/\nobj\/*\/\1.o : /g' $@.raw >> $@ && \
+sed 's/\($*\)\.o[ :]*/\nobj\/*\/*\/\1.o : /g' $@.raw >> $@ && \
  || rm -f $@ ); rm -f $@.raw ; fi
 #
 
