@@ -181,10 +181,10 @@ namespace ns_decoder_global {
       infoOS=&o;
     }
     void error(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error
-        getDebugOutput() << "\n::" << module;
+        getDebugOutput() << "\nERROR: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
-        getDebugOutput() << ": ERROR: " << info << endl;
+        getDebugOutput() << ": " << info << endl;
     }
 
     void fatalError(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error and dies
@@ -194,10 +194,10 @@ namespace ns_decoder_global {
     }
 
     void warning(const string &module, const string &info, const string &file="", const int line=0) { //!< prints a warning message
-        getDebugOutput() << "\n::" << module;
+        getDebugOutput() << "\nWARNING: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
-        getDebugOutput() << ": WARNING: " << info << endl;
+        getDebugOutput() << ": " << info << endl;
     }
 
       bool info_newline;
