@@ -46,6 +46,14 @@ CREATE_INSERTER(C)
 CREATE_EXTRACTOR(C)
 */
 
+#define ERROR_CONTEXT_CHARS 50
+inline void show_error_context(istream &in,ostream &out) {
+    char context[ERROR_CONTEXT_CHARS];
+    in.clear();
+    in.get(context,ERROR_CONTEXT_CHARS,'\n');
+    out << "... " << context << endl << "   ^" << endl;
+}
+
 // uses (template) charT, Traits
 // s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print_on)
 #define GEN_EXTRACTOR(s,io) do { \
