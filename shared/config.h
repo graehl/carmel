@@ -63,13 +63,7 @@ typedef float FLOAT_TYPE;
 #define DEBUGCOMPOSE
 #define DEBUG_ADAPTIVE_EM
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-3
-#else
-//#define DEBUG_ADAPTIVE_EM
-#define NEW new
-#define INITLEAK
-#define CHECKLEAK(i)
 #endif
-
 
 
 #ifdef DEBUGNORMALIZE

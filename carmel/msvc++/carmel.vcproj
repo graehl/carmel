@@ -832,6 +832,9 @@
 				RelativePath="..\..\shared\list.h">
 			</File>
 			<File
+				RelativePath="..\..\shared\memleak.hpp">
+			</File>
+			<File
 				RelativePath="..\src\models.h">
 			</File>
 			<File

@@ -1,5 +1,6 @@
-#ifndef ARC_H
-#define ARC_H 1
+#ifndef _ARC_H
+#define _ARC_H
+
 #include "config.h"
 #include "weight.h"
 #include "strhash.h"
