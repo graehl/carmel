@@ -61,6 +61,7 @@ bool test_extract_insert(S &s,C &c) {
 //included/
 //#include <boost/test/unit_test_framework.hpp>
 #include <boost/test/auto_unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif

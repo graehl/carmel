@@ -100,6 +100,7 @@ template <class C>
 struct has_print_on_plain<boost::reference_wrapper<C> > : public has_print_on_plain<C> {};
 
 
+// type is defined iff you're not a pointer type and you have no print_on(o) or print_on(o,writer)
 template <class C,class V=void>
 struct not_has_print_on;
 
@@ -114,6 +115,10 @@ struct not_has_print_on<C,typename has_print_on<C>::type> {
 
 template <class C>
 struct not_has_print_on<C,typename has_print_on_writer<C>::type> {
+};
+
+template <class C>
+struct not_has_print_on<C,typename enable_if<boost::is_pointer<C> >::type> {
 };
 
 
@@ -174,6 +179,9 @@ void dbgout(ostream &o,const A &a,W w,typename has_print_on_writer<A>::type* dum
   deref(a).print_on(o,w);
 }
 
+void dbgout(ostream &o,const char *a) {
+  o << a;
+}
 
 /*
 template <class A>
@@ -181,9 +189,6 @@ void dbgout(ostream &o,const A &a, typename enable_if<boost::is_arithmetic<A> >:
   o << a;
 }
 
-void dbgout(ostream &o,const char *a) {
-  o << a;
-}
 
 void dbgout(ostream &o,const std::string &a) {
   o << a;
@@ -192,6 +197,17 @@ void dbgout(ostream &o,const std::string &a) {
 
 
 #ifdef DEBUG
+
+namespace DBP {
+extern unsigned DBPdepth;
+    struct DBPscopedepth {
+        DBPscopedepth() { ++DBPdepth;}
+        ~DBPscopedepth() { --DBPdepth;}
+    };
+#ifdef MAIN
+unsigned DBPdepth;
+#endif
+};
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -212,7 +228,11 @@ void dbgout(ostream &o,const std::string &a) {
 #define LINESTR dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 
-#define DBPRE DBPS(__FILE__ "(");DBPS(LINESTR);DBPS("):")
+#define DBPRE for(unsigned DBPdepth_i=0;DBPdepth_i<DBP::DBPdepth;++DBPdepth_i) DBPS(" "); DBPS(__FILE__ "(");DBPS(LINESTR);DBPS("):")
+
+#define DBPIN ++DBP::DBPdepth
+#define DBPOUT if (!DBP::DBPdepth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
+#define DBPSCOPE DBP::DBPscopedepth DBPscopedepth
 
 #define DBPOST DBPS("\n")
 #define BDBP(a) do { DBPS(" " #a "=_<");DBPS(dbgstr(a));DBPS(">_"); } while(0)
@@ -220,21 +240,38 @@ void dbgout(ostream &o,const std::string &a) {
 #define DBP(a) do { DBPRE; BDBP(a);DBPOST; } while(0)
 #define DBP2(a,b) do { DBPRE; BDBP(a); BDBP(b);DBPOST; } while(0)
 #define DBP3(a,b,c) do { DBPRE; BDBP(a); BDBP(b); BDBP(c);DBPOST;} while(0)
+#define DBP4(a,b,c,d) do { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;} while(0)
+#define DBP5(a,b,c,d,e) do { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST;} while(0)
+
 //#define DBP2(a,p) do { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a,p));  } while(0)
 //#define DBP(a) do { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a)); } while(0)
 
-#define DBPC(c,a) do { DBPRE; DBPS(" (" c ")"); BDBP(a); DBPOST; } while(0)
+#define DBPC(msg) do { DBPRE; DBPS(" (" msg ")"); DBPOST; } while(0)
+#define DBPC2(msg,a) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST; } while(0)
+#define DBPC3(msg,a,b) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST; } while(0)
+#define DBPC4(msg,a,b,c) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST; } while(0)
+#define DBPC5(msg,a,b,c,d) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; } while(0)
 
 #define BDBPW(a,w) do { DBPS(" " #a "=_<");DBPS(dbgstr(a,w));DBPS(">_"); } while(0)
 #define DBPW(a,w) do { DBPRE; BDBPW(a,w) ;DBPOST; } while(0)
 
 
 #else
+#define DBPIN
+#define DBPOUT
+#define DBPSCOPE
+
 #define DBP(a)
 #define DBP2(a,b)
 #define DBP3(a,b,c)
+#define DBP4(a,b,c,d)
+#define DBP5(a,b,c,d,e)
 
-#define DBPC(c,a)
+#define DBPC(msg)
+#define DBPC2(msg,a)
+#define DBPC3(msg,a,b)
+#define DBPC4(msg,a,b,d)
+#define DBPC5(msg,a,b,c,d)
 
 #define BDBPW(a,w)
 #define DBPW(a,w)

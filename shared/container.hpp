@@ -8,7 +8,15 @@ template <class M,class F>
 void nested_enumerate(const M& m,F f) {
     typedef typename M::value_type Inner;
     for (typename M::const_iterator i=m.begin();i!=m.end();++i)
-        for (typename Inner::const_iterator j=i->begin();j!=i->end();++i)
+        for (typename Inner::const_iterator j=i->begin();j!=i->end();++j)
+            deref(f)(*j);
+}
+
+template <class M,class F>
+void nested_enumerate(M& m,F f) {
+    typedef typename M::value_type Inner;
+    for (typename M::iterator i=m.begin();i!=m.end();++i)
+        for (typename Inner::iterator j=i->begin();j!=i->end();++j)
             deref(f)(*j);
 }
 
