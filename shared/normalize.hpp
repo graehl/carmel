@@ -201,11 +201,11 @@ struct NormalizeGroups {
                 dest_t &w=sink(*i);                
                 w /= sum;
             }
-    }    
+    }
     template <class T>
     void init(dest_t *w,T tag) {
         dest=w;
-        enumerate(norm_groups,*this,tag);
+        enumerate(norm_groups,*this,tag); // calls visit(group,tag)
     }
     void init_uniform(dest_t *w) {
         init(w,set_one());
