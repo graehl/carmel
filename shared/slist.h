@@ -50,8 +50,8 @@ class slist
 	{ 
 	  val_iterator tmp(*this); m_rep = m_rep->m_next; return tmp; 
 	}
-      inline slist::reference operator*() const { return m_rep->m_data; }
-      inline slist::pointer operator->() const { return &m_rep->m_data; }
+      inline typename slist::reference operator*() const { return m_rep->m_data; }
+      inline typename slist::pointer operator->() const { return &m_rep->m_data; }
       inline bool operator==(const val_iterator& x) const
 	{
 	  return m_rep == x.m_rep; 
@@ -96,8 +96,8 @@ class slist
 	{ 
 	  erase_iterator tmp(*this); m_rep = &(*m_rep)->m_next; return tmp; 
 	}
-      inline slist::reference operator*() const { return (*m_rep)->m_data; }
-      inline slist::pointer operator->() const { return &((*m_rep)->m_data); }
+      inline typename slist::reference operator*() const { return (*m_rep)->m_data; }
+      inline typename slist::pointer operator->() const { return &((*m_rep)->m_data); }
       // special cases: end-of-list is indicated by == list.end(), but we don't know the address of the last node's next-pointer, so instead we just set list.end().m_rep == 0, which should be considered equal if we're currently pointing (*m_rep) == 0
       //XXX assumes you will never test list.end() == i (everyone writes ++i; i!=end() anyhow)
       inline bool operator==(const erase_iterator& x) const
@@ -143,8 +143,8 @@ class slist
 	{ 
 	  const_iterator tmp(*this); m_rep = m_rep->m_next; return tmp; 
 	}
-      inline slist::const_reference operator*() const { return m_rep->m_data; }
-      inline slist::const_pointer operator->() const { return &m_rep->m_data; }
+      inline typename slist::const_reference operator*() const { return m_rep->m_data; }
+      inline typename slist::const_pointer operator->() const { return &m_rep->m_data; }
       inline bool operator==(const const_iterator& x) const
 	{
 	  return m_rep == x.m_rep; 

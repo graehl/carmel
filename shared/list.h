@@ -15,17 +15,17 @@
 
 template <typename T> 
 class List: public STL_LIST<T> {
- public:
+public:
 #ifndef USE_SLIST
-  typedef iterator erase_iterator;
-  typedef iterator val_iterator;
-  const_iterator const_begin() const { return begin(); } //{ return const_cast<const List *>(this)->begin(); }
-  const_iterator const_end() const { return end(); } //{ return const_cast<const List *>(this)->end(); }
-  iterator val_begin() { return begin(); }
-  iterator val_end() { return end(); }
+	typedef typename List::iterator erase_iterator;
+	typedef typename List::iterator val_iterator;
+	typename List::const_iterator const_begin() const { return begin(); } //{ return const_cast<const List *>(this)->begin(); }
+	typename List::const_iterator const_end() const { return end(); } //{ return const_cast<const List *>(this)->end(); }
+	typename List::iterator val_begin() { return begin(); }
+	typename List::iterator val_end() { return end(); }
 #endif
-  iterator erase_begin() { return begin(); }
-  iterator erase_end() { return end(); }
+	typename List::iterator erase_begin() { return begin(); }
+	typename List::iterator erase_end() { return end(); }
 
   //constructors 
   List():STL_LIST<T>(){};
@@ -44,7 +44,7 @@ class List: public STL_LIST<T> {
   int count_length() const{ 
 #ifdef USE_SLIST
     int count=0;
-    for (const_iterator i=const_begin(),end=const_end();i!=end;++i)
+	for (typename List::const_iterator i=const_begin(),end=const_end();i!=end;++i)
       ++count;
     return count;
 #else
