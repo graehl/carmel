@@ -194,17 +194,24 @@ void WFST::normalize(NormalizeMethod method)
   int pGroup;
   HashTable<IntKey, Weight> groupArcTotal;
   HashTable<IntKey, Weight> groupStateTotal;
+  HashTable<IntKey, Weight> groupMaxLockedSum;
   // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
-      Weight sum; // sum of probability of all arcs that has this input
+      Weight sum,locked_sum; // sum of probability of all arcs that has this input
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-	    //if (! isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
+	    if (isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
+			locked_sum += (*g)->weight;
+		else
 			sum += (*g)->weight;
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+		 if (!(*g)->weight.isZero())
 		  if ( isTied(pGroup = (*g)->groupId) ) {
            groupArcTotal[pGroup] += (*g)->weight; // default init is to 0
            groupStateTotal[pGroup] += sum;
-        }
+		   Weight &m=groupMaxLockedSum[pGroup];
+		   if (locked_sum > m)
+			 m = locked_sum;
+          }
   }
   
 
@@ -218,16 +225,18 @@ for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
 	  // also, compute sum of normal arcs
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
 	   if (!(*g)->weight.isZero())
-        if ( isTiedOrLocked(pGroup = (*g)->groupId) ) // tied or locked arc
-		  if ( isTied(pGroup) )
-            reserved += ((*g)->weight = *groupArcTotal.find(pGroup) / *groupStateTotal.find(pGroup)); // cannot fail to find; denom can't be 0 because g isn't 0
-		  else // locked:
+		 if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
+		  if ( isTied(pGroup) ) { // tied:
+		    Weight groupNorm = *groupStateTotal.find(pGroup); // can't be 0
+			groupNorm /= (1. - groupMaxLockedSum[pGroup]); // as described in new plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
+            reserved += (*g)->weight = (*groupArcTotal.find(pGroup) / groupNorm);
+		  } else // locked:
             reserved += (*g)->weight;
-        else // normal arc
-          normal_sum += (*g)->weight;
-#ifdef DEBUG_NORMAL
-      if ( reserved > 1.0001 )
-        std::cerr << "Sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0; proceeding anyway.\n";
+		 }  else // normal arc
+             normal_sum += (*g)->weight;
+#ifdef DEBUG_NORMALIZE
+      if ( reserved > 1.001 )
+		  std::cerr << "Warning: sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0\n";
 #endif
 
 	  // pass 2b: give normal arcs their share of however much is left
@@ -243,7 +252,18 @@ for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
 			  if (isNormal((*g)->groupId))
 				(*g)->weight = 0;
   }
- 
+
+#ifdef DEBUG_NORMALIZE
+for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
+		Weight sum;
+		for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+			sum += (*g)->weight;
+      if ( sum > 1.001 )
+		  std::cerr << "Warning: sum of normalized arcs for " << g << " = " << sum << " - should not exceed 1.0\n"; 
+}
+#endif
+
+
   if (method == CONDITIONAL)
 	  indexFlush();
 }
