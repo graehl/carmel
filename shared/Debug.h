@@ -41,6 +41,8 @@ using namespace std;
 } } while(0)
 #endif
 
+//!< Q: no FILE/LINE included in output
+//!< L: specify verbosity level as first argument
 #define DBG_OP(pDbg,op,module,msg) DBG_OP_L(0,pDbg,op,module,msg)
 #define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(0,pDbg,op,module,msg)
 #define DBG_OP_L(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,__FILE__,__LINE__)
@@ -52,6 +54,8 @@ using namespace std;
 #define ERROR(module,msg) DBG_OP(dbg,error,module,msg)
 #define FATAL(module,msg) DBG_OP(dbg,fatalError,module,msg)
 #define INFOQ(module,msg) DBG_OP_Q(dbg,info,module,msg)
+#define WARNINGLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,warning,module,msg)
+#define WARNINGL(lvl,module,msg) DBG_OP_L(lvl,dbg,warning,module,msg)
 #define WARNINGQ(module,msg) DBG_OP_Q(dbg,warning,module,msg)
 #define ERRORQ(module,msg) DBG_OP_Q(dbg,error,module,msg)
 #define FATALQ(module,msg) DBG_OP_Q(dbg,fatalError,module,msg)
