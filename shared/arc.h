@@ -3,28 +3,27 @@
 
 #include "config.h"
 #include "weight.h"
-#include "strhash.h"
+#include "2hash.h"
 #include <iostream>
 
-struct Arc {
+struct FSTArc {
   int in;
   int out;
   int dest;
   Weight weight;
   int groupId;
-  Arc(int i, int o, int d, Weight w,int g = -1) :
-    in(i), out(o), dest(d), weight(w), groupId(g){}
+  FSTArc(int i, int o, int d, Weight w,int g = -1) :
+    in(i), out(o), dest(d), weight(w), groupId(g)
+    {}
 };
 
-
 inline
-std::ostream & operator << (std::ostream &out,const Arc &a) {
+std::ostream & operator << (std::ostream &out,const FSTArc &a) {
   out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
   return(out);
 }
 
-typedef Arc *HalfArc;
-
+typedef FSTArc *HalfArc;
 
 struct UnArc {
   int in;

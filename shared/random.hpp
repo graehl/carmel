@@ -28,7 +28,7 @@
 
 #include <ctime>
 #include "os.hpp"
-unsigned default_random_seed()
+inline unsigned default_random_seed()
 {
 //    long pid=get_process_id();
 # ifdef USE_NONDET_RANDOM

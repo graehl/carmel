@@ -1,5 +1,8 @@
 2005-03-29  Jonathan Graehl  <graehl@isi.edu>
 
+	* arc.h: had to change name of Arc to FSTArc for some insane
+	reason (i.e. I haven't a clue)
+
 	* normalize.hpp: typedefs WD (for inside/outside) count_t (counts)
 	prob_t (probs) ... intention to make prob_t float-based, count_t
 	double-based logweights - but will need a change to
