@@ -202,25 +202,25 @@ $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o
-$(OBJB)/%.o:: %.cpp
+$(OBJB)/%.o: %.cpp
 	@echo
 	@echo COMPILE\(boost\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJT)/%.o
-$(OBJT)/%.o:: %.$(CPP_EXT) %.d
+$(OBJT)/%.o: %.$(CPP_EXT) %.d 
 	@echo
 	@echo COMPILE\(test\) $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS_TEST) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
-$(OBJ)/%.o:: %.$(CPP_EXT) %.d
+$(OBJ)/%.o: %.$(CPP_EXT) %.d 
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
-$(OBJD)/%.o:: %.$(CPP_EXT) %.d
+$(OBJD)/%.o: %.$(CPP_EXT) %.d 
 	@echo
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS_DEBUG) $< -o $@
@@ -250,7 +250,8 @@ endif
 echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
-                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
+#                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
+sed 's/\($*\)\.o[ :]*/DEPS_$@ := /g' $@.raw > $@ && echo $(basename $<).o : \$DEPS_$(basename $<) >> $@ \
  || rm -f $@ ); rm -f $@.raw ; fi
 #
 

@@ -326,6 +326,7 @@ private:
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : public Array<T,Alloc> {
+    typedef DynamicArray<T,Alloc> Self;
     //unsigned int sz;
     T *endv;
     typedef Array<T,Alloc> Base;
@@ -728,7 +729,7 @@ public:
             if (!append)
                 clear();
 
-#if 0
+#if 1
             // slight optimization from not needing temporary like general output iterator version.
             char c;
             EXPECTI_COMMENT_FIRST(in>>c);
@@ -757,7 +758,7 @@ public:
                     push_back();
                 } while (deref(read)(in,back()));
                 if (in.eof()) {
-                    undo_push_back_raw();
+//                    undo_push_back_raw();
                     goto done;
                 }
                 goto fail;
@@ -771,8 +772,10 @@ public:
             clear();
             return GENIOBAD;
 #else
+            //FIXME:
+            std::back_insert_iterator<Self> appender(*this);            
             std::ios_base::iostate ret=
-                range_get_from(in,back_inserter(*this),read);
+                range_get_from(in,appender,read);
             if (ret == GENIOBAD)
                 clear();
             return ret;

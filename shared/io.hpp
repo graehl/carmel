@@ -201,7 +201,7 @@ struct IndirectReader
     IndirectReader() {}
     R reader;
     IndirectReader(const R& r) : reader(r) {}
-    typedef void value_type; // not really
+    typedef typename R::value_type value_type;
 
     template <class Target,class charT, class Traits>
         std::basic_istream<charT,Traits>&
@@ -216,15 +216,14 @@ struct IndirectReader
       if (parens)
           o << '(';
       if (multiline) {
-#define LONGSEP "\n "
+#define MULTILINE_SEP "\n"
+#define LONGSEP MULTILINE_SEP << " "
           for (;begin!=end;++begin) {
               o << LONGSEP;
-#undef LONGSEP
               deref(writer)(o,*begin);
           }
-          o << "\n";
 
-          o << std::endl;
+          o << MULTILINE_SEP;
       } else {
           bool first=true;
           for (;begin!=end;++begin) {
@@ -237,7 +236,10 @@ struct IndirectReader
       }
       if (parens)
           o << ')';
-
+      if (multiline)
+          o << MULTILINE_SEP;
+#undef LONGSEP
+#undef MULTILINE_SEP
       return GENIOGOOD;
 }
 
@@ -266,9 +268,11 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
                 *out++=temp;                    \
             else
 #else
+            //FIXME:
             // doesn't work for back inserter for some reason
-# define IFBADREAD                                  \
-            if (!deref(read)(in,*&(*out++)).good())
+# define IFBADREAD \
+                        if (!deref(read)(in,*&(*out++)).good())
+            
 #endif
             IFBADREAD goto fail;
             EXPECTI_COMMENT(in>>c);
