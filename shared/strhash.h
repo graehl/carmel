@@ -70,6 +70,8 @@ public:
 	static void giveBack(char * str) {
 	  StringKey s(str);
 #ifdef STRINGPOOL
+	  if (s.isGlobalEmpty())
+		return;
 		HashTable<StringKey, int>::find_return_type entryP;
 		if ( s.str != StringKey::empty && (entryP = counts.find(s))!= counts.end() ) {
 			Assert(entryP->second > 0);
@@ -95,10 +97,14 @@ public:
 
 template <class Sym=StringKey,class StrPool=STRINGPOOLCLASS>
 class Alphabet {
+public:
+  typedef DynamicArray<Sym> SymArray;
+private:
   DynamicArray<Sym> names;
   typedef HashTable<Sym, unsigned> SymIndex;
   SymIndex ht;
  public:
+   const DynamicArray<Sym> &symbols() const { return names; }
   Alphabet() { }
   Alphabet(Sym c) {
     add(c);
@@ -141,6 +147,12 @@ class Alphabet {
   }
   unsigned *find(Sym name) const {
     return find_second(ht,name);
+  }
+  bool is_index(unsigned pos) const {
+	return pos < names.size();
+  }
+  unsigned index_of(Sym s) {
+	return indexOf(s);
   }
   unsigned indexOf(Sym s) {
     //Assert(name);
@@ -196,6 +208,21 @@ class Alphabet {
       }
     names.removeMarked(marked);
   }
+  void giveBackAll() {
+#ifndef NODELETE
+	if (!StrPool::is_noop)
+	  for ( typename SymArray::iterator i=names.begin(),end=names.end();i!=end;++i)
+//	if ( *i != Sym::empty )	  
+		StrPool::giveBack(*i);
+#endif
+  }
+  void clear() {
+	if (size() > 0) {
+	giveBackAll();
+	names.clear();
+	ht.clear();
+	}
+  }
   void mapTo(const Alphabet &o, int *aMap) const
     // aMap will give which letter in Alphabet o the letters in a 
     // correspond to, or -1 if the letter is not in Alphabet o.    
@@ -207,12 +234,7 @@ class Alphabet {
    unsigned size() const { return names.size(); }
   ~Alphabet()
     {
-#ifndef NODELETE
-	 if (!StrPool::is_noop)
-      for ( unsigned int  i = 0; i < names.size() ; ++i )
-	if ( names[i] != Sym::empty )	  
-		StrPool::giveBack(names[i]);
-#endif
+	  giveBackAll();
     }
 	template<class T>  friend std::ostream & operator << (std::ostream &out, Alphabet<T> &alph);
 };
