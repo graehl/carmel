@@ -35,7 +35,10 @@ struct VerboseException : public std::exception
         mbuf << function << "() [" << file << ":" << line << "]: " << m1 << m2 << m3 << ".";
         message=mbuf.str();
     }
-    virtual const char* what() const throw()
+    ~VerboseException() throw()
+    {
+    }
+    const char* what() const throw()
     {
         return message.c_str();
     }
@@ -55,7 +58,7 @@ struct VerboseException : public std::exception
 #define VTHROW_2 VTHROW_A_2(VerboseException)
 
 #define VERBOSE_EXCEPTION_WRAP(type) \
-    type(const char *fun,const char *fil,unsigned lin,const M1 &m1) : VerboseException(fun,fil,lin,#type " ") {}                       \
+    type(const char *fun,const char *fil,unsigned lin) : VerboseException(fun,fil,lin,#type " ") {}                       \
     template <class M1> type(const char *fun,const char *fil,unsigned lin,const M1 &m1) : VerboseException(fun,fil,lin,#type " ",m1) {}                     \
     template <class M1,class M2> type(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2) : VerboseException(fun,fil,lin,#type " ",m1,m2) {}
 

@@ -25,8 +25,36 @@
 #include <algorithm>
 
 
+// requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
+// can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())
+template <class P>
+struct finder
+{
+    typedef typename P::return_type return_type;
+    typedef finder<P> Self;
 
-#define INDIRECT_STRUCT_COMMON(type,method)
+    P pred;
+    return_type ret;
+
+    finder(const P &pred_): pred(pred_),ret() {}
+    finder(const Self &o) : pred(o.pred),ret() {}
+
+    void operator()(const return_type& u)
+    {
+        if (!ret)
+            ret = pred(u);
+    }
+
+};
+
+template <class P>
+finder<P> make_finder(const P& pred)
+{
+    return finder<P>(pred);
+}
+
+
+#define INDIRECT_STRUCT_COMMON(type,method) \
     struct indirect_ ## type ## _ ## method                  \
     {                                         \
         typedef type indirect_type;           \
@@ -222,9 +250,8 @@ struct periodic_wrapper : public C
 {
     typedef C Imp;
     typedef typename Imp::result_type result_type;
-    typedef
     unsigned period,left;
-    periodic(unsigned period_=0,const Imp &imp_=Imp()) : period(period_), Imp(imp_)
+    periodic_wrapper(unsigned period_=0,const Imp &imp_=Imp()) : period(period_), Imp(imp_)
     {
         left=period;
     }
@@ -233,7 +260,7 @@ struct periodic_wrapper : public C
         left=period=period_;
     }
     result_type operator()() {
-        DBP4(period,left);
+        DBP2(period,left);
         if (period) {
             if (!--left) {
                 left=period;
@@ -276,8 +303,8 @@ template <class Label,class F>
 struct ProgressReader
 {
     F tick;
-    ProgressReader(const F &f) : ptick(f) {}
-    ProgressReader(const ProgressReader &p) : ptick(p.ptick) {}
+    ProgressReader(const F &f) : tick(f) {}
+    ProgressReader(const ProgressReader &p) : tick(p.tick) {}
     typedef Label value_type;
     template <class charT, class Traits>
     std::basic_istream<charT,Traits>&
@@ -311,8 +338,8 @@ template <class T>
 struct max_accum {
     T max;
     max_accum() : max() {}
-    template <class T>
-    void operator()(const T& t) {
+    template <class F>
+    void operator()(const F& t) {
         if (max < t)
             max = t;
     }
@@ -415,10 +442,12 @@ struct indirect_cmp : public C {
     typedef C Comp;
     typedef I Index;
     typedef B Base;
+    typedef indirect_cmp<I,B,C> Self;
+
     B base;
 
-    indirect_lt(const B &b,const Comp&comp=Comp()) : base(b), Comp(comp) {}
-    indirect_lt(const indirect_lt<I,B> &o): base(o.base), Comp((Comp &)o) {}
+    indirect_cmp(const B &b,const Comp&comp=Comp()) : base(b), Comp(comp) {}
+    indirect_cmp(const Self &o): base(o.base), Comp((Comp &)o) {}
 
     bool operator()(const I &a, const I &b) const {
         return Comp::operator()(base[a], base[b]);

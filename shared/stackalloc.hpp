@@ -75,7 +75,7 @@ struct StackAlloc
         T* ret=ttop;
         ttop+=n;
         if (overfull())
-            throw StackAlloc::Overflow();
+            VTHROW_A(StackAlloc::Overflow);
         return ret;
     }
     void *save_end()
@@ -91,7 +91,7 @@ struct StackAlloc
         end = ::align_down((T *)end);
         end = ((T*)end)-1;
         if (overfull())
-            throw StackAlloc::Overflow();
+            VTHROW_A(StackAlloc::Overflow);
         return (T*)end;
     }
     void restore_end(void *saved_end)
@@ -121,7 +121,7 @@ struct StackAlloc
         T*& ttop(*(T**)&top);
         Assert(::is_aligned(ttop));
         if (full())
-            throw StackAlloc::Overflow();
+            VTHROW_A(StackAlloc::Overflow);
         *ttop++=t;
     }
 };
