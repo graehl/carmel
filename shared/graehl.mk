@@ -91,13 +91,13 @@ distclean: clean
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
-endif
-
 %.d: %.cpp
 	echo CREATE DEPENDENCIES for $<
 	set -e; [ x$(DEPEND) != x ] && $(CXX) -c -MM $(TESTCXXFLAGS) $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
+endif
+
 
 ifneq ($(MAKECMDGOALS),depend)
 include $(ALL_DEPENDS)
