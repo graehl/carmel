@@ -11,30 +11,9 @@
 
 inline std::ostream & operator << (std::ostream & out, const StringKey &s)
 {
-  out << (char *)(StringKey)s;
+  out << s.c_str();
   return out;
 }
-
-  static char *static_itoa(unsigned pos) {
-    static char buf[] = "0123456789"; // to put end of string character at buf[10]
-	static const unsigned bufsize=sizeof(buf);
-	Assert(bufsize==11);    
-    // decimal string for int
-    char *num=buf+bufsize-1; // place at the '\0'
-    if ( !pos ) {      
-	  *--num='0';
-    } else {
-      char rem;
-	  // 3digit lookup table, divide by 1000 faster?
-      while ( pos ) {
-		rem = pos;
-		pos /= 10;
-		rem -= 10*pos;		// maybe this is faster than mod because we are already dividing
-		*--num = '0' + (char)rem;
-      }	
-    }
-    return num;
-  }
 
 
 class StringPool {
@@ -49,9 +28,8 @@ class StringPool {
 #endif
 public:
   enum {is_noop=0};
-	static StringKey borrow(char *str) {
-	  StringKey s(str);
-	  if (s.str == StringKey::empty)
+	static StringKey borrow(StringKey s) {
+	  if (s.isDefault())
 		return s;
 #ifdef STRINGPOOL
 	  HashTable<StringKey, int>::find_return_type entryP;
@@ -67,13 +45,12 @@ public:
 		return s;
 #endif
 	}
-	static void giveBack(char * str) {
-	  StringKey s(str);
+	static void giveBack(StringKey s) {
 #ifdef STRINGPOOL
-	  if (s.isGlobalEmpty())
+	  if (s.isDefault())
 		return;
 		HashTable<StringKey, int>::find_return_type entryP;
-		if ( s.str != StringKey::empty && (entryP = counts.find(s))!= counts.end() ) {
+		if ( !s.isDefault() && (entryP = counts.find(s))!= counts.end() ) {
 			Assert(entryP->second > 0);
 			Assert(s.str == entryP->first.str);
 			if ( !(--(entryP->second)) ) {
@@ -97,14 +74,15 @@ public:
 template <class Sym>
 struct NoStringPool {
   enum {is_noop=1};
-  static const char * borrow(const char *s) {
+  static Sym borrow(const Sym &s) {
     return s;
   }
-  static void giveBack(const char *s) {
+  static void giveBack(const Sym &s) {
   }
 };
 
 
+// Sym must be memcpy-moveable, char * initializable (for operator () only), define == and hash<Sym>, and default initialize to == Sym::empty
 template <class Sym=StringKey,class StrPool=NoStringPool<Sym> >
 class Alphabet {
 public:
@@ -132,9 +110,11 @@ private:
 #ifdef DEBUG
 	for (unsigned i = 0 ; i < names.size(); ++i ) {
 	  static char buf[1000];
+	  if (!names[i].isDefault()) {
 	  Assert(*find(names[i])==i);
-	  strcpy(buf,names[i]);
+	  strcpy(buf,names[i].c_str());
 	  Assert(find(buf));
+	  }
 	}
 #endif
 	return true;
@@ -181,17 +161,27 @@ private:
     //Assert(pos < size() && pos >= 0);
     return names[pos];
   }
-  Sym operator()(int pos) {
-    int iNum = pos;
-    if (iNum >= size() || names[iNum] == Sym::empty ) {
+  // (explicit named_states flag in WFST) but is used in int WFST::getStateIndex(const char *buf)
+  
+  Sym operator()(unsigned pos) {
+    unsigned iNum = pos;
+#ifdef OLD_ALPH_NUM
+	if (iNum >= size() || names[iNum] == Sym::empty ) {
+#else
+	if (names.at_grow(iNum) == Sym::empty) {
+#endif
       // decimal string for int
      
-      Sym k = static_itoa(iNum);
-	  if (!StrPool::is_noop)
-		k = StrPool::borrow(k);
+     Sym k = static_itoa(iNum);
+	 if (!StrPool::is_noop)
+	   k = StrPool::borrow(k);
+#ifdef OLD_ALPH_NUM
       if ( iNum < names.size() ) {
-		names[iNum] = k;
-		ht[k]=iNum;
+#endif
+	names[iNum] = k;
+	ht[k]=iNum;
+	Assert(names.size() > iNum);
+#ifdef OLD_ALPH_NUM
       } else {
 	for ( int i = names.size() ; i < iNum ; ++i )
 	  names.push_back(); //names.push_back(Sym::empty);
@@ -199,12 +189,16 @@ private:
 	ht[k]=iNum;
 	Assert(names.size() == iNum+1);
       }
+#endif
+	  return k;
     }
     return names[iNum];
   }
+
+  // syncs hashtable in preparation for deleting entries from names array
   void removeMarked(bool marked[], int* oldToNew) {
     for ( unsigned int i = 0 ; i < names.size() ; ++i )
-      if ( names[i] != Sym::empty ) {
+      if ( !names[i].isDefault() ) { // FIXME:why?
 	if ( marked[i] ) {
 	  ht.erase(names[i]);
 #ifndef NODELETE

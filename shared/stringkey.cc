@@ -1,3 +1,3 @@
 #include "stringkey.h"
 
-char *StringKey::empty = "";
+StringKey StringKey::empty("");

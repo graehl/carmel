@@ -1118,6 +1118,9 @@
 				RelativePath="..\src\slist.h">
 			</File>
 			<File
+				RelativePath="..\src\static_itoa.h">
+			</File>
+			<File
 				RelativePath="..\src\strhash.h">
 			</File>
 			<File

@@ -265,19 +265,19 @@ class WFST {
   const char *inLetter(int i) const {
     Assert ( i >= 0 );
     Assert ( i < in->size() );
-    return (*in)[i];
+    return (*in)[i].c_str();
   }
   const char *outLetter(int i) const {
     Assert ( i >= 0 );
     Assert ( i < out->size() );
-    return (*out)[i];
+    return (*out)[i].c_str();
   }
   //NB: uses static (must use or copy before next call) return string buffer if !named_states
   const char *stateName(int i) const {
     Assert ( i >= 0 );
     Assert ( i < numStates() );
     if (named_states)
-      return stateNames[i];
+      return stateNames[i].c_str();
     else
       return static_itoa(i);
   }
