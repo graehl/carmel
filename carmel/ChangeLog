@@ -1,3 +1,9 @@
+Thu Aug 28 14:15:46 2003  Jonathan Graehl  <graehl@brahms.isi.edu>
+
+	* src/config.h (CONFIG_H): define DOUBLE_PRECISION to use doubles
+ 	instead of floats (probably 25% more memory would be used in a
+ 	transducer, and 70% more in training)
+
 Wed Aug 27 17:12:16 2003  Jonathan Graehl  <graehl@brahms.isi.edu>
 
 	* src/train.cc: -o 1.1 scales EM changes, new code to deal with anomoly that EM can worsen perplexity if tied arcs make normalization unstable/nonconvergent (e.g. span.spell.wfst).  related changes in several files.
