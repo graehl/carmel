@@ -39,6 +39,13 @@
  typedef int Error;
 #endif
 
+inline std::string get_current_dir() {
+    char *malloced=::getcwd(NULL,0);
+    std::string ret(malloced);
+    free(malloced);
+    return ret;
+}
+
 
 #ifdef DBP_OS_HPP
 #include "debugprint.hpp"

@@ -5,13 +5,10 @@
 #include <locale>
 #include <iostream>
 
+#define MAIN_DECL int MAINDECL main(int argc, char *argv[])
+
 #ifdef _MSC_VER
 #define MAINDECL __cdecl
-#else
-#define MAINDECL
-#endif
-
-#define MAIN_DECL int MAINDECL main(int argc, char *argv[])
 
 #define MAIN_BEGIN MAIN_DECL { MainGuard _mg;
 
@@ -32,6 +29,14 @@ struct MainGuard {
     ~MainGuard() {
     }
 };
+#else
+#define MAINDECL
+#define MAIN_BEGIN MAIN_DECL { 
+
+#define MAIN_END }
+
+#endif
+
 
 
 #endif

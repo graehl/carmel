@@ -1,2 +1,2 @@
 default:
-	cd test && make
+	cd ../tt && make

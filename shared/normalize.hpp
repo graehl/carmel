@@ -3,8 +3,23 @@
 
 #include "dynarray.h"
 
-#include "pointeroffset.hpp"
-
+//#include "pointeroffset.hpp"
+/*
+  template <class C>
+struct indirect_gt<size_t,C*> {
+    typedef size_t I;
+    typedef C *B;
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_gt(B b) : base(b) {}
+    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
+    bool operator()(I a, I b) const {
+        return base[a] > base[b];
+    }
+};
+// HANDLED IN funcs.hpp
+*/
 #include "container.hpp"
 #include "byref.hpp"
 #include "genio.h"
@@ -16,18 +31,20 @@
 
 
 //FIXME: leave rules that don't occur in normalization groups alone (use some original/default value)
-template <class W>
+template <class Wsource,class Wdest=Wsource>
 struct NormalizeGroups {
-    typedef W weight_type;
-    typedef PointerOffset<W> value_type; // pointer offsets
-    typedef Array<value_type> Group;
+    typedef Wsource source_t;
+    typedef Wdest dest_t;
+//    typedef PointerOffset<W> index_type; // pointer offsets
+    typedef size_t index_type;
+    typedef Array<index_type> Group;
     typedef SwapBatch<Group> Groups;
-    max_in_accum<value_type> max_offset;
+    max_in_accum<index_type> max_offset;
     size_accum<size_t> total_size;
 
-    NormalizeGroups(std::string basename,unsigned batchsize,Weight add_k_smoothing_=0)  : norm_groups(basename,batchsize), add_k_smoothing(add_k_smoothing_)
+    NormalizeGroups(std::string basename,unsigned batchsize,source_t add_k_smoothing_=0)  : norm_groups(basename,batchsize), add_k_smoothing(add_k_smoothing_)
     {
-        //,value_type watch_value
+        //,index_type watch_value
 //        if (watch_value.get_offset())
 
     }
@@ -55,7 +72,7 @@ struct NormalizeGroups {
         return total_size.maximum();
     }
 
-    typename Groups::iterator find_group_holding(value_type v) {
+    typename Groups::iterator find_group_holding(index_type v) {
         typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();
         DBPC3("find group",v,norm_groups);
         for (;i!=e;++i) {
@@ -68,52 +85,60 @@ struct NormalizeGroups {
         }
         return e;
     }
-
+    static size_t get_index(index_type i) {
+        return i;
+    }
     size_t max_index() const {
-        return max_offset.max.get_index();
+        return get_index(max_offset);
     }
     size_t required_size() const {
         return max_index()+1;
     }
 
-    W *base;
-    W *dest;
-    W maxdiff;
-    W add_k_smoothing;
+    source_t *base;
+    dest_t *dest;
+    dest_t maxdiff;
+    source_t add_k_smoothing;
     std::ostream *log;
     enum { ZERO_ZEROCOUNTS=0,SKIP_ZEROCOUNTS=1,UNIFORM_ZEROCOUNTS=2};
     int zerocounts; // use enum vals
-    unsigned maxdiff_index;
+    size_t maxdiff_index;
     typedef typename Group::iterator GIt;
     void print_stats(std::ostream &out=std::cerr) const {
         unsigned npar=num_params();
         unsigned ng=num_groups();
         out << ng << " normalization groups, "  << npar<<" parameters, "<<(float)npar/ng<<" average parameters/group, "<<max_params()<< " max.";
     }
+    source_t &source(index_type index) const {
+        return base[index];
+    }
+    source_t &sink(index_type index) const {
+        return base[index];
+    }
     void operator ()(Group &i) {
         GIt end=i.end(), beg=i.begin();
-        weight_type sum=0;
+        source_t sum=0;
         for (GIt j=beg;j!=end;++j) {
-            weight_type &w=*(j->add_base(base));
+            source_t &w=source(*j);
             sum+=w;
         }
-#define DODIFF(d,w) do {weight_type diff = absdiff(d,w);if (maxdiff<diff) {maxdiff_index=j->get_index();DBP5(d,w,maxdiff,diff,maxdiff_index);maxdiff=diff;} } while(0)
+#define DODIFF(d,w) do {dest_t diff = absdiff(d,w);if (maxdiff<diff) {maxdiff_index=get_index(*j);DBP5(d,w,maxdiff,diff,maxdiff_index);maxdiff=diff;} } while(0)
         if (sum > 0) {
             sum+=add_k_smoothing; // add to denominator
             DBPC2("Normalization group with",sum);
             for (GIt j=beg;j!=end;++j) {
-                weight_type &w=*(j->add_base(base));
-                weight_type &d=*(j->add_base(dest));
-                DBP4(j->get_index(),d,w,w/sum);
-                weight_type prev=d;
+                source_t &w=source(*j);
+                dest_t &d=sink(*j);
+                DBP4(get_index(*j),d,w,w/sum);
+                dest_t prev=d;
                 d=w/sum;
                 DODIFF(d,prev);
             }
         } else {
             if(log)
-                *log << "Zero counts for normalization group #" << 1+(&i-norm_groups.begin())  << " with first parameter " << beg->get_index() << " (one of " << i.size() << " parameters)";
+                *log << "Zero counts for normalization group #" << 1+(&i-norm_groups.begin())  << " with first parameter " << get_index(*beg) << " (one of " << i.size() << " parameters)";
             if (zerocounts!=SKIP_ZEROCOUNTS) {
-                weight_type setto;
+                dest_t setto;
                 if (zerocounts == UNIFORM_ZEROCOUNTS) {
                     setto=1. / (end-beg);
                     if(log)
@@ -124,8 +149,8 @@ struct NormalizeGroups {
                         *log << " - setting to zero probability." << std::endl;
                 }
                 for (GIt j=beg;j!=end;++j) {
-                    weight_type &w=*(j->add_base(base));
-                    weight_type &d=*(j->add_base(dest));
+                    source_t &w=source(*j);
+                    dest_t &d=sink(*j);
                     DODIFF(d,setto);
                     d=setto;
                 }
@@ -161,40 +186,41 @@ struct NormalizeGroups {
         }
     }
 #endif
-    template <class T>
+    template <class T> // enumerate:
     void visit(Group &group, T tag) {
         GIt beg=group.begin(),end=group.end();
-        W sum=0;
+        source_t sum=0;
         for (GIt i=beg;i!=end;++i) {
-            W &w=*(i->add_base(base));
+            source_t &w=source(*i);
             tag(w);
             sum += w;
         }
         if (sum > 0)
             for (GIt i=beg;i!=end;++i) {
-                W &w=*(i->add_base(base));
+                source_t &w=source(*i);                
                 w /= sum;
             }
     }
+
     template <class T>
-    void init(W *w,T tag) {
+    void init(source_t *w,T tag) {
         base=w;
         enumerate(norm_groups,*this,tag);
     }
-    void init_uniform(W *w) {
+    void init_uniform(source_t *w) {
         init(w,set_one());
     }
-    void init_random(W *w) {
+    void init_random(source_t *w) {
         base=w;
         init(w,set_random_pos_fraction());
     }
 
 // array must have values for all max_index()+1 rules
-// returns maximum change
-    void normalize(W *array_base) {
+    //FIXME: only works if source_t = dest_t
+    void normalize(source_t *array_base) {
         normalize(array_base,array_base);
     }
-    void normalize(W *array_base, W* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, ostream *_log=NULL) {
+    void normalize(source_t *array_base, dest_t* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, ostream *_log=NULL) {
         base=array_base;
         dest=_dest;
         maxdiff.setZero();
@@ -203,12 +229,12 @@ struct NormalizeGroups {
 #ifdef DEBUG
         unsigned size=required_size();
 #endif
-        DBPC2("Before normalize from base->dest",Array<W>(base,base+size));
+        DBPC2("Before normalize from base->dest",Array<source_t>(base,base+size));
 
         zerocounts=_zerocounts;
         log=_log;
         enumerate(norm_groups,ref(*this));
-        DBPC2("After normalize:",Array<W>(dest,dest+size));
+        DBPC2("After normalize:",Array<dest_t>(dest,dest+size));
     }
     GENIO_print_on
     {
