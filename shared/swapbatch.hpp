@@ -478,9 +478,10 @@ BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
     using namespace std;
     const char *s1="string one\n2\n3 . \n abcdefghijklmopqrstuvwxyz\n4\nend\n\n";
     string t1=tmpnam(0);
-    DBP(t1);
     typedef SwapBatch<const char *> SB;
 
+    BOOST_CHECK(1);
+    
     SB b(t1,28+2*sizeof(size_t)+sizeof(char*)); // string is exactly 28 bytes counting \n
     tmp_fstream i1(s1);
     BOOST_CHECK_EQUAL(b.n_batches(),1);

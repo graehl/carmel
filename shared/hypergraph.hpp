@@ -168,7 +168,6 @@ void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
 
 template <class HD>
 struct HArcDest  {
-    typedef void has_print_on;
     HD harc; // hyperarc with this tail
     unsigned multiplicity; // tail multiplicity
     HArcDest(HD e) : harc(e), multiplicity(1) {}
