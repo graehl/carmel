@@ -175,7 +175,7 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
 	}
 	o << ')';
   }
-  return std::ios_base::goodbit;
+  return GENIOGOOD;
 }
 
 //template <class T, class charT, class Traits>  friend 
@@ -213,16 +213,15 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 // doesn't free old children if any
 {  
   char c;
-  rank=0;
-  
-  GENIO_CHECK(read(in,label));
-  DBTREEIO(label);  
+  rank=0;  
   DynamicArray<Self *> in_children;
-  GENIO_CHECK(in>>c);
+  EXPECTI_COMMENT(read(in,label));  
+  DBTREEIO(label);  
+  EXPECTI_COMMENT(in>>c);
   if (c == '(') {
 	DBTREEIO('(');  
 	for(;;) {
-	  GENIO_CHECK(in>>c);
+	  EXPECTI_COMMENT(in>>c);	  
 	  if (c==')') {
 		DBTREEIO(')');
 		break;
@@ -232,23 +231,25 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	  if (in_child) {
 		DBTREEIO('!');
 		in_children.push_back(in_child);
-	  } else {
-		for (typename DynamicArray<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
-		  delete_tree(*i);
-		return std::ios_base::badbit;
-	  }
-	  GENIO_CHECK(in>>c);
+	  } else 
+		goto fail;
+	  EXPECTI_COMMENT(in>>c);
 	  if (c != ',') in.unget();
 	}
 	dealloc();
 	alloc((rank_type)in_children.size());
 	//copy(in_children.begin(),in_children.end(),begin());	
-	in_children.moveto(begin());
-	
+	in_children.moveto(begin());	
   } else {	
 	in.unget();
   }
-  return std::ios_base::goodbit;
+  return GENIOGOOD;
+  
+fail:		
+  for (typename DynamicArray<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
+		  delete_tree(*i);
+  return GENIOBAD;
+
 }
 };
 
@@ -290,22 +291,36 @@ bool tree_visit(T *tree,F &func)
   if (!func.discover(tree))
      return false;
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)  
-	if (!postorder(*i,func))
+	if (!tree_visit(*i,func))
 		break;
   return func.finish(tree);
 }
 
-template <class T>
+template <class T,class F>
+bool tree_leaf_visit(T *tree,F &func)
+{
+  	 if (tree->size()) {
+	   foreach(T *child,*tree) {
+		 tree_leaf_visit(child,f);
+	   }
+	 } else {
+	   f(tree);
+	 }
+}
+
+
 struct TreePrinter {
   bool first;
   ostream &o;
   TreePrinter(ostream &o_):o(o_),first(true) {}
+template <class T>
   bool discover(T *t) { 
    if (!first) o<<' ';
    o<<t->label; 
    if (t->size()) { o << '('; first=true; }
    return true;
   }
+template <class T>
   bool finish(T *t) {
    if (t->size())
     o << ')';
@@ -514,7 +529,9 @@ template<class T> bool always_equal(const T& a,const T& b) { return true; }
 BOOST_AUTO_UNIT_TEST( tree )
 {
   Tree<int> a,b,*c,*d,*g=new_tree(1),*h;
-  string sa="1( 2 ,3 (4\n ()\n,\t 5,6))";
+  //string sa="#asdf\n1(#asdf\n 2 #asdf\n,#asdf\n3 (4\n ()\n,\t 5,6))";
+  string sa="#asdf\n1#asdf\n(#asdf\n 2 #asdf\n,#asdf\n3 (4\n ()\n,\t 5,6))";
+  //string sa="1(2 3(4 5 6))";
   string sb="1(2 3(4 5 6))";
   stringstream o;
   istringstream(sa) >> a;
@@ -523,7 +540,7 @@ BOOST_AUTO_UNIT_TEST( tree )
   o >> b;
   ostringstream o2;
   TreePrinter tp(o2);
-  tree_visit(a,tp);
+  tree_visit(&a,tp);
   BOOST_CHECK(o.str() == o2.str());
   c=new_tree(1,
 		new_tree(2),
