@@ -1,5 +1,6 @@
 #ifndef _CHARBUF_HPP
 #define _CHARBUF_HPP
+
 // no separate implementation for now, just #define MAIN in one source file that includes this
 #include "dynarray.h"
 #ifndef CHARBUF_INIT_SIZE
@@ -9,7 +10,7 @@
 
 typedef DynamicArray<char> CharBuf;
 
-// USAGE: clear() before you use, repeatedly push_back() characters.  reserve() if you know in advance how many you need (and then you can directly access elements g_buf[i] without push_back, but they will be overwritten by any push_back or resize operations.  
+// USAGE: clear() before you use, repeatedly push_back() characters.  reserve() if you know in advance how many you need (and then you can directly access elements g_buf[i] without push_back, but they will be overwritten by any push_back or resize operations.
 // of course, using this buffer is not thread-safe.
 //extern CharBuf g_buf;
 
@@ -49,7 +50,7 @@ CharBuf g_buf(CHARBUF_INIT_SIZE);
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( charbuf )
-{  
+{
   BOOST_CHECK((char_buf())().size() == 0);
   {
   char_buf b;
