@@ -1,25 +1,10 @@
-/*******************************************************************************
-* This software ("Carmel") is licensed for research use only, as described in  *
-* the LICENSE file in this distribution.  The software can be downloaded from  *
-* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
-* with questions about the software or commercial licensing.  All software is  *
-* copyrighted C 2000 by the University of Southern California.                 *
-*******************************************************************************/
 #ifndef ARC_H
 #define ARC_H 1
-
+#include "config.h"
 #include "weight.h"
 #include "strhash.h"
 
-struct PathArc {
-  const char *in;
-  const char *out;
-  const char *destState;
-  Weight weight;
-};
 
-std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 struct Arc {
   int in;
@@ -30,6 +15,7 @@ struct Arc {
   Arc(int i, int o, int d, Weight w,int g = -1) : 
     in(i), out(o), dest(d), weight(w), groupId(g){}
 };
+
 
 std::ostream & operator << (std::ostream &out,const Arc &a); // Yaser 7-20-2000
 
@@ -48,5 +34,16 @@ struct UnArc {
     return (in * 235479241 + out * 67913 + dest) * 2654435767U;
   }
 };
+
+struct PathArc {
+  const char *in;
+  const char *out;
+  const char *destState;
+  Weight weight;
+};
+
+std::ostream & operator << (std::ostream & o, const PathArc &p);
+
+
 
 #endif 

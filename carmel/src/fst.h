@@ -1,16 +1,7 @@
-/*******************************************************************************
-* This software ("Carmel") is licensed for research use only, as described in  *
-* the LICENSE file in this distribution.  The software can be downloaded from  *
-* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
-* with questions about the software or commercial licensing.  All software is  *
-* copyrighted C 2000 by the University of Southern California.                 *
-*******************************************************************************/
 #ifndef FST_H 
 #define FST_H 1
 
 
-#define CUSTOMNEW
 
 #include <vector>
 #include <cstring>
@@ -32,46 +23,75 @@ using namespace std;
 
 ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
 
+
+
 class WFST {
- //public:
+ public:
+ static inline float randomFloat()       // in range [0, 1)
+{
+  return rand() * (1.f / (RAND_MAX+1.f));
+}
+
   bool ownerInOut;
   Alphabet *in;
   Alphabet *out;
   Alphabet stateNames;
   int final;	// final state number - initial state always number 0
   DynamicArray<State> states;
+  	 
   //  HashTable<IntKey, int> tieGroup; // IntKey is Arc *; value in group number (0 means fixed weight)
 //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
 //  WFST & operator = (WFST &){return *this;} Yaser
-  //WFST & operator = (WFST &){cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
+  //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
   int readLegible(istream &);	// returns 0 on failure (bad input)
   void writeLegible(ostream &);
   int numStates() const { return states.count(); }
-#ifdef _MSC_VER
-typedef PathArc T;
-#else
-template <typename T>
-#endif   
-void insertPathArc(GraphArc *gArc, List<T>*,
-#ifndef _MSC_VER
-				   typename 
-#endif
-				   List<T>::iterator &p);  
-#ifndef _MSC_VER
-template <typename T>
-#endif    
-void insertShortPath(int source, int dest, List<T> *,
-#ifndef _MSC_VER
-					 typename 
-#endif
-					 List<T>::iterator &p);
+  
+  void setPathArc(PathArc *pArc,const Arc &a) {
+	  pArc->in = (*in)[a.in];
+	 pArc->out = (*out)[a.out];
+	  pArc->destState = stateNames[a.dest];
+	 pArc->weight = a.weight;
+  }
+
+void insertPathArc(GraphArc *gArc, List<PathArc>*,
+				   List<PathArc>::iterator &p);  
+void insertShortPath(int source, int dest, List<PathArc> *,
+					 List<PathArc>::iterator &p);
   static int indexThreshold;
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
   trainInfo *trn;
-  Weight train(const int iter); // returns max change in any arcs weight - Yaser 7-13-2000
+  enum NormalizeMethod { CONDITIONAL, // all arcs from a state with the same input will add to one
+	  JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
+	  NONE // 
+  } ;
+  Weight train(const int iter,NormalizeMethod method=CONDITIONAL); // returns max change in any arcs weight - Yaser 7-13-2000
   WFST(const WFST &a) {}
 public:
+	void index(int dir) {
+		 for ( int s = 0 ; s < numStates() ; ++s ) {
+			states[s].flush();
+			states[s].indexBy(dir);
+		 }
+	}
+	void indexInput() {
+		index(0);
+	}
+	void indexOutput() {
+		index(1);
+	}
+
+	void indexFlush() { // index on input symbol or output symbol depending on composition direction
+		for ( int s = 0 ; s < numStates() ; ++s ) {
+			states[s].flush();
+		}
+	}
+	void scaleArcs(Weight w) {
+		for ( int s = 0 ; s < numStates() ; ++s ) {
+			states[s].scaleArcs(w);
+		}
+	}
   WFST() : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) { }
 //  WFST(const WFST &a): 
     //ownerInOut(1), in(((a.in == 0)? 0:(new Alphabet(*a.in)))), out(((a.out == 0)? 0:(new Alphabet(*a.out)))), 
@@ -89,6 +109,57 @@ public:
   // if the original source of the alphabets must be deleted
   void listAlphabet(ostream &out, int output = 0);
   friend ostream & operator << (ostream &,  WFST &); // Yaser 7-20-2000
+  // I=PathArc output iterator; returns length of path or -1 on error
+  int randomPath(List<PathArc> *l,int max_len=-1) {
+	  return randomPath(back_insert_iterator<List<PathArc> > (*l), max_len);
+  }
+template <class I> int randomPath(I i,int max_len=-1)
+{
+	PathArc p;
+	int s=0;
+	unsigned int len=0;
+	unsigned int max=*(unsigned int *)&max_len;
+	for (;;) {
+		if (s == final)
+			return len;
+		if  ( len > max || states[s].arcs.isEmpty() )
+			return -1;
+		// choose random arc:
+		Weight arcsum=0;
+		typedef List<Arc> LA;
+		typedef LA::const_iterator LAit;
+		const LA& arcs=states[s].arcs;
+		LAit start=arcs.begin(),end=arcs.end();
+		for (LAit li = start; li!=end; ++li) {
+			arcsum+=li->weight;
+		}
+		Weight which_arc = arcsum * randomFloat();
+		arcsum.setZero();
+		for (LAit li = start; li!=end; ++li) {
+			if ( (arcsum += li->weight) >= which_arc) {
+				// add arc
+				setPathArc(&p,*li);
+				*i++ = p;
+				s=li->dest;
+				++len;
+//				if (!(i))
+//					return -1;
+				break;
+			}
+		}
+
+		++len;
+		
+	}
+}
+
+  List<List<PathArc> > * randomPaths(int k, int max_len=-1); // k) gives a list of k 
+                                            // random paths to final
+                                            // labels are pointers to names in WFST so do not
+                                            // use the path after the WFST is deleted
+                                            // list is dynamically allocated - delete it
+                                           // yourself when you are done with it
+
   List<List<PathArc> > *bestPaths(int k); // bestPaths(k) gives a list of the (up to ) k 
                                             // best paths to final
                                             // labels are pointers to names in WFST so do not
@@ -115,15 +186,19 @@ public:
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
-  void trainBegin();
+  void normalize(NormalizeMethod method=CONDITIONAL);
+  /*void normalizePerInput() {	
+	  normalize(CONDITIONAL);
+  }*/
+  void trainBegin(NormalizeMethod method=CONDITIONAL);
   void trainExample(List<int> &inSeq, List<int> &outSeq, float weight);
-  void trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter);
+  void trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
   void invert();		// switch input letters for output letters
   void reduce();		// eliminate all states not along a path from
                                 // initial state to final state
   void consolidateArcs();	// combine identical arcs, with combined weight = sum
   void prune(Weight thresh);	// remove all arcs with weight < thresh
-  void normalizePerInput();	// all arcs from a state with the same input will add to one
+  
   void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource
   void numberArcsFrom(int labelStart); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1
   void lockArcs();		// put all arcs in group 0 (weights are locked)
@@ -131,7 +206,7 @@ public:
   void unTieGroups();
   
   
-  int generate(int *inSeq, int *outSeq, int minArcs = 0);
+  int generate(int *inSeq, int *outSeq, int minArcs, int maxArcs);
   int valid() const { return ( final >= 0 ); }
   int count() const { if ( !valid() ) return 0; else return numStates(); }
   int numArcs() const {
@@ -179,11 +254,11 @@ public:
     }
     final = -1;
   }
+  void removeMarkedStates(bool marked[]);  // remove states and all arcs to
+                                             // states marked true
 private:
   //  static const int NOGROUP(-1);  
   static const int NOGROUP=-1;  
-  void removeMarkedStates(bool marked[]);  // remove states and all arcs to
-                                             // states marked true
   void invalidate() {		// make into empty/invalid transducer
     if ( valid() ) {
       stateNames.~Alphabet();	// safe to call these more than once
@@ -200,8 +275,7 @@ private:
 
 ostream & operator << (ostream &o, WFST &w);
 
-ostream & operator << (ostream &o, List<PathArc> &l);
-
+ostream & operator << (std::ostream &o, List<PathArc> &l);
 
 
 #endif

@@ -232,6 +232,9 @@
 				RelativePath="..\src\compose.h">
 			</File>
 			<File
+				RelativePath="..\src\config.h">
+			</File>
+			<File
 				RelativePath="..\src\dynarray.h">
 			</File>
 			<File
