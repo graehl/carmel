@@ -3,7 +3,7 @@
 #include "config.h"
 
 #ifdef USE_SLIST
-#include "jon_slist.h"
+#include "slist.h"
 #define STL_LIST slist
 #else
 #include <list>
