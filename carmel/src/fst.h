@@ -179,7 +179,7 @@ template <class I> int randomPath(I i,int max_len=-1)
 		typedef List<Arc> LA;
 		typedef LA::const_iterator LAit;
 		const LA& arcs=states[s].arcs;
-		LAit start=arcs.begin(),end=arcs.end();
+		LAit start=arcs.const_begin(),end=arcs.const_end();
 		for (LAit li = start; li!=end; ++li) {
 			arcsum+=li->weight;
 		}

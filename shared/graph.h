@@ -75,7 +75,7 @@ public:
 		}
 		begun[s]=true;
 		const List<GraphArc> &arcs = g.states[s].arcs;
-		for ( List<GraphArc>::const_iterator l=arcs.begin(),end=arcs.end() ; l !=end ; ++l ) {
+		for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l !=end ; ++l ) {
 			order_from(l->dest);
 		}
 		done[s]=true;

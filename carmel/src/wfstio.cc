@@ -354,8 +354,7 @@ void WFST::writeLegible(ostream &os)
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
 		os << "\n(" << stateNames[i];
-    List<Arc>::const_iterator end = states[i].arcs.end() ;
-    for (List<Arc>::const_iterator a=states[i].arcs.begin() ; a !=end ; ++a ) {
+    for (List<Arc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
       if (onearc)
 		os << "\n(" << stateNames[i];
 

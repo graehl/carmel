@@ -32,8 +32,8 @@ Graph reverseGraph(Graph g)
 {
   GraphState *rev = new GraphState[g.nStates];
   for ( int i  = 0 ; i < g.nStates ; ++i ){
-    List<GraphArc>::iterator end = g.states[i].arcs.end() ;
-    for ( List<GraphArc>::iterator l=g.states[i].arcs.begin() ; l !=end ; ++l ) {
+	const List<Arc> &arcs = g.states[i].arcs;
+    for ( List<Arc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); ; l != end; ++l ) {
       GraphArc r;
       r.data = &(*l);
       Assert(i == l->source);
@@ -63,8 +63,8 @@ void dfsRec(int state, int pred) {
   if ( dfsFunc )
     dfsFunc(state, pred);
 
-  List<GraphArc>::iterator end = dfsGraph.states[state].arcs.end() ;
-  for ( List<GraphArc>::iterator l=dfsGraph.states[state].arcs.begin() ; l !=end ; ++l ) {
+   const List<Arc> &arcs = dfsGraph.states[state].arcs;
+    for ( List<Arc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); ; l != end; ++l ) {
     int dest = l->dest;
     dfsRec(dest, state);
   }
@@ -87,10 +87,9 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
   for ( int i = 0 ; i < g.nStates; ++i )
     nPaths[i].setZero();
   nPaths[source] = 1;
-  List<int>::const_iterator end = topo.end();
-  for ( List<int>::const_iterator t=topo.begin()  ; t != end; ++t ){
-    List<GraphArc>::const_iterator end2 = g.states[*t].arcs.end() ;
-    for ( List<GraphArc>::const_iterator a=g.states[*t].arcs.begin() ; a !=end2; ++a )
+  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){    
+    const List<GraphArc> &arcs = g.states[*t].arcs;
+	for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
       nPaths[a->dest] += nPaths[(*t)];
   }
 }
@@ -200,7 +199,8 @@ void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
     int activeState = distQueue[0].state;
     //    dist[activeState] = (float)distQueue[0];
     heapPop(distQueue, distQueue + nUnknown--);
-    for ( List<GraphArc>::iterator a = st[activeState].arcs.begin(),end = st[activeState].arcs.end() ; a !=end ; ++a ) {
+	const List<GraphArc> &arcs=st[activeState].arcs
+    for ( List<GraphArc>::const_iterator a = arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a ) {
       // future: compare only best arc to any given state
       int targetState = a->dest;
       if ( (candidate = (a->weight + weights[activeState])) < weights[targetState] ) {
@@ -240,8 +240,8 @@ Graph removeStates(Graph g, bool marked[]) // not tested
   for ( i = 0 ; i < g.nStates ; ++i )
     if ( !marked[i] ) {
       List<GraphArc> &newArcs = reduced[oldToNew[i]].arcs;
-       List<GraphArc>::const_iterator end = g.states[i].arcs.end() ;
-      for ( List<GraphArc>::const_iterator oldArc=g.states[i].arcs.begin() ; oldArc !=end ; ++oldArc )
+	  const List<GraphArc> &arcs = g.states[i].arcs;
+      for ( List<GraphArc>::const_iterator oldArc=arcs.const_begin(),end=arcs.const_end() ; oldArc !=end ; ++oldArc )
         if ( !marked[oldArc->dest] ) {
           GraphArc newArc = *oldArc;
           newArc.dest = oldToNew[newArc.dest];
@@ -262,8 +262,8 @@ void printGraph(const Graph g, std::ostream &out)
 	out << "(Graph " << g.nStates << std::endl;
   for ( int i = 0 ; i < g.nStates ; ++i ) {
     out << i;
-    List<GraphArc>::const_iterator end = g.states[i].arcs.end();
-    for ( List<GraphArc>::const_iterator a=g.states[i].arcs.begin() ; a !=end ; ++a )
+	const List<GraphArc> &arcs = g.states[i].arcs;
+    for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
       out << ' ' << (*a);
 	out << std::endl;
   }

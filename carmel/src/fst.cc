@@ -49,15 +49,14 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
         Weight which = randomFloat();
         Weight cum;
 
-        List<HalfArc>::const_iterator a;
-        List<HalfArc>::const_iterator end = ha.val().end();
+        List<HalfArc>::const_iterator a,begin=ha.val().const_begin(),end = ha.val().const_end();
 
-		for(a = ha.val().begin() ; a != end; ++a) {
+		for(a = begin ; a != end; ++a) {
 			cum+=(*a)->weight;
 		}
 		which *= cum;
 		cum.setZero();
-        for(a = ha.val().begin() ; a != end; ++a){
+        for(a = begin ; a != end; ++a){
           if ( (cum += (*a)->weight) >= which ) {
             if ( (*a)->in )
               if ( i >= maxArcs )
@@ -117,11 +116,11 @@ namespace WFST_impl {
 		}
 	void beginArcs() {
 		if(method==WFST::CONDITIONAL) {
-				Ci2 = Ci.val().begin();
-				Cend = Ci.val().end();
+				Ci2 = Ci.val().const_begin();
+				Cend = Ci.val().const_end();
 		} else {
-				Ji = state->arcs.begin();
-				Jend = state->arcs.end();
+				Ji = state->arcs.val_begin();
+				Jend = state->arcs.val_end();
 		}
 	}
 	bool moreArcs() {
@@ -272,16 +271,16 @@ void WFST::assignWeights(const WFST &source)
 {
   HashTable<IntKey, Weight> groupWeight;
   int s, pGroup;
-  for ( s = 0 ; s < source.numStates() ; ++s ){
-    List<Arc>::const_iterator end = source.states[s].arcs.end() ;
-    for ( List<Arc>::const_iterator a=source.states[s].arcs.begin() ; a !=end ; ++a )
+  for ( s = 0 ; s < source.numStates() ; ++s ){    
+	const List<Arc> &arcs = source.states[s].arcs;
+    for ( List<Arc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
       if ( isTied(pGroup = a->groupId) )
         groupWeight[pGroup] = a->weight;
   }
   Weight *pWeight;
   for ( s = 0 ; s < numStates() ; ++s) {
-    List<Arc>::erase_iterator end = states[s].arcs.erase_end();
-    for ( List<Arc>::erase_iterator a=states[s].arcs.erase_begin(); a !=end ; ) {
+	const List<Arc> &arcs = source.states[s].arcs;    
+    for ( List<Arc>::erase_iterator a=arcs.erase_begin(),end=arcs.erase_end(); a !=end ; ) {
       if ( isTied(pGroup = a->groupId) )
         if ( (pWeight = groupWeight.find(pGroup)) )
           a->weight = *pWeight;
@@ -296,14 +295,14 @@ void WFST::assignWeights(const WFST &source)
 
 void WFST::unTieGroups() {
   for ( int s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )
+    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
       a->groupId = NOGROUP ;
   }
 }
 
 void WFST::lockArcs() {
   for ( int s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )
+    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
       a->groupId = 0 ;
   }
 }
@@ -311,7 +310,7 @@ void WFST::lockArcs() {
 void WFST::numberArcsFrom(int label) {
   Assert ( label > 0 );
   for ( int s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )
+    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
       a->groupId = label++;
   }
 }
@@ -323,7 +322,7 @@ void WFST::invert()
   int temp;
   in->swap(*out);
   for ( int i = 0 ; i < states.count(); ++i ) {
-	for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )    
+	for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )    
       //XXX should use SWAP here instead?
       temp = a->in;
       a->in = a->out;
@@ -344,8 +343,7 @@ Graph WFST::makeGraph() const
   GraphState *g = new GraphState[numStates()];
   GraphArc gArc;
   for ( int i = 0 ; i < numStates() ; ++i ){
-    List<Arc>::iterator end = states[i].arcs.end();
-    for ( List<Arc>::iterator l=states[i].arcs.begin() ; l != end; ++l ) {
+    for ( List<Arc>::const_iterator l=states[i].arcs.const_begin(),end = states[i].arcs.const_end(); ; l != end; ++l ) {
       gArc.source = i;
       gArc.dest = l->dest;
       gArc.weight = - l->weight.getLogImp(); // - log
@@ -372,9 +370,8 @@ Graph WFST::makeEGraph() const
   GraphState *g = new GraphState[numStates()];
   GraphArc gArc;
   for ( int i = 0 ; i < numStates() ; ++i ){
-    List<Arc>::iterator end = states[i].arcs.end() ;
-    for ( List<Arc>::iterator l= states[i].arcs.begin() ; l !=end; ++l )
-      if ( l->in == 0 && l->out == 0 ) {
+	for ( List<Arc>::const_iterator l=states[i].arcs.const_begin(),end = states[i].arcs.const_end(); ; l != end; ++l ) {
+	  if ( l->in == 0 && l->out == 0 ) {
         gArc.source = i;
         gArc.dest = l->dest;
         gArc.weight = - l->weight.weight; // - log
@@ -582,9 +579,8 @@ int WFST::abort() {
   return 0;
 }
 
-ostream & operator << (ostream &o, List<PathArc> &l) {
-  List<PathArc>::const_iterator end = l.end();
-  for (  List<PathArc>::const_iterator li=l.begin() ; li != end; ++li )
+ostream & operator << (ostream &o, List<PathArc> &l) {  
+  for (  List<PathArc>::const_iterator li=l.const_begin(),end = l.const_end(); ; li != end; ++li )
     o << *li << " ";
   return o;
 }

@@ -44,8 +44,8 @@ void buildSidetracksHeap(int state, int pred)
     prev = pathGraph[pred];
 
 
-  List<GraphArc>::iterator s=sidetracks.states[state].arcs.begin();
-  List<GraphArc>::iterator end = sidetracks.states[state].arcs.end();
+  const List<GraphArc> &arcs=sidetracks.states[state].arcs;
+  List<GraphArc>::const_iterator s=arcs.const_begin(),end=arcs.const_end();
   if ( s != end ) {
     int heapSize = 0;
     GraphArc *min;
@@ -62,8 +62,9 @@ void buildSidetracksHeap(int state, int pred)
       pGraphArc *heapStart = pathGraph[state]->arcHeap = new pGraphArc[heapSize];
       Repository.push_back(heapStart); // keep track of it so that we can delete it later
       pGraphArc *heapI = heapStart;
-      List<GraphArc>::iterator end = sidetracks.states[state].arcs.end()  ;
-      for ( List<GraphArc>::iterator gArc=sidetracks.states[state].arcs.begin() ; gArc !=end ; ++gArc )
+//      List<GraphArc>::iterator end = sidetracks.states[state].arcs.end()  ;
+  //    for ( List<GraphArc>::iterator gArc=sidetracks.states[state].arcs.begin() ; gArc !=end ; ++gArc )
+	  for ( List<GraphArc>::const_iterator gArc=arcs.const_begin(),end=arcs.const_end();gArc !=end ; ++gArc )
         if ( &(*gArc) != min )
           (heapI++)->p = &(*gArc);
       Assert(heapI == heapStart + heapSize);
@@ -192,7 +193,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
           
 		  int sourceState = 0; // pretend beginning state is end of last sidetrack
 
-          for ( List<GraphArc *>::const_iterator cut=shortPath.begin(),end = shortPath.end(); cut != end; ++cut ) {
+          for ( List<GraphArc *>::const_iterator cut=shortPath.const_begin(),end=shortPath.const_end(); cut != end; ++cut ) {
             insertShortPath(shortPathTree, sourceState, (*cut)->source, &temp); // stitch end of last sidetrack to beginning of this one
             sourceState = (*cut)->dest;
             insertPathArc(*cut, &temp); // append this sidetrack
@@ -310,12 +311,14 @@ Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
   GraphState *sub = new GraphState[nStates];
   for ( int i = 0 ; i < nStates ; ++i )
    if ( dist[i] != Weight::HUGE_FLOAT ){
-       List<GraphArc>::const_iterator end = lG.states[i].arcs.end();
-      for ( List<GraphArc>::const_iterator l=lG.states[i].arcs.begin() ; l != end; ++l ) {
+
+	  const List<GraphArc> &la=lG.states[i].arcs;
+      for ( List<GraphArc>::const_iterator l=la.const_begin(),end=la.const_end() ; l != end; ++l ) {
         Assert(i == l->source);
         int isShort = 0;
-        List<GraphArc>::const_iterator end2 = rG.states[i].arcs.end()  ;
-        for ( List<GraphArc>::const_iterator r=rG.states[i].arcs.begin() ; r !=end2  ; ++r )
+
+		const List<GraphArc> &ra=rG.states[i].arcs;
+        for ( List<GraphArc>::const_iterator r=ra.const_begin(),end=ra.const_end() ; r !=end ; ++r )
           if ( r->data == l->data ) {
             isShort = 1;
             break;
