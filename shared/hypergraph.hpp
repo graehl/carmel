@@ -108,6 +108,12 @@ template <class G> struct graph_object<G,hyperarc_tag_t> {
   typedef std::pair<iterator,iterator> iterator_pair;
 };
 
+template <class G,class E,class Tag>
+inline
+typename graph_object<G,Tag>::iterator_pair begin_end(hyperarc_tag_t t,G &g) {
+  return hyperarcs(g);
+}
+
 /*
   struct NoWeight {
   void setOne() {}
