@@ -881,3 +881,5 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 
 #include "wfstio.cc"
 
+#include "compose.cc"
+

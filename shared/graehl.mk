@@ -1,22 +1,45 @@
+#you provide:  
+# (the variables below)
+# ARCH (if macosx, static builds are blocked)
+#PROGS=a b   
+#a_OBJ=a.o ... a_SLIB=lib.o lib.a (static libraries e.g. a_SLIB=$(BOOST_OPT_LIB))
+#a_NOSTATIC=1 a_NOTEST=1 ...
+# CXXFLAGS CXXFLAGS_DEBUG CXXFLAGS_TEST
+# LIB = math thread ...
+# INC = . 
+###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
+ifndef SHARED
+SHARED=../shared
+endif
+ifndef BOOST_DIR
 BOOST_DIR=../boost
+endif
+ifndef BASEOBJ
+BASEOBJ=obj
+endif
+ifndef BASEBIN
+BASEBIN=bin
+endif
+ifndef BASESHAREDOBJ
+BASESHAREDOBJ=$(SHARED)/obj
+endif
 
 .SUFFIXES:
-.PHONY = distclean all clean depend default dirs
-# always execute
+.PHONY = distclean all clean depend default
 ifndef ARCH
   ARCH := $(shell print_arch)
   export ARCH
 endif
 
-###WARNING: don't set BASEOBJ or BASEBIN to directories including other important stuff or they will be nuked by allclean
-BASEOBJ=obj
-BASEBIN=bin
-OBJ = $(BASEOBJ)/$(ARCH)
-OBJT = $(OBJ)/test
-OBJB = $(OBJ)/boost
-OBJD = $(OBJ)/debug
-BIN = $(BASEBIN)/$(ARCH)
-ALL_DIRS = $(OBJ) $(BIN) $(OBJD) $(OBJT) $(OBJB)
+
+# workaround for eval line length limit: immediate substitution shorter?
+OBJ:= $(BASEOBJ)/$(ARCH)
+OBJT:= $(OBJ)/test
+OBJB:= $(BASESHAREDOBJ)/$(ARCH)
+OBJD:= $(OBJ)/debug
+BIN:= $(BASEBIN)/$(ARCH)
+ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB)
+Dummy8758:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir $$f ; done)
 
 ifeq ($(CPP_EXT),)
 CPP_EXT=cpp
@@ -122,55 +145,56 @@ test: $(ALL_TESTS)
 $(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
 	@echo
 	@echo creating Boost Test lib
-	ar cr $@ $^
-	ranlib $@
+	$(AR) cr $@ $^
+	$(RANLIB) $@
 
 $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 	@echo
 	@echo creating Boost Program Options lib
-	ar cr $@ $^
-	ranlib $@
+	$(AR) cr $@ $^
+	$(RANLIB) $@
 
 vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o
-$(OBJB)/%.o:: %.cpp dirs
+$(OBJB)/%.o:: %.cpp
 	@echo
 	@echo COMPILE\(boost\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJT)/%.o
-$(OBJT)/%.o:: %.$(CPP_EXT) %.d dirs
+$(OBJT)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(test\) $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
-$(OBJ)/%.o:: %.$(CPP_EXT) %.d dirs
+$(OBJ)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
-$(OBJD)/%.o:: %.$(CPP_EXT) %.d dirs
+$(OBJD)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
 
-dirs: $(addsuffix /.,$(ALL_DIRS))
-	echo dirs: $^
+dirs:
+# $(addsuffix /.,$(ALL_DIRS))
+#	echo dirs: $^
 
 clean:
-	rm -f $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
+	rm -rf $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
 
 distclean: clean
-	rm -f $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
+	rm -rf $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
 
 allclean: distclean
-	rm -rf $(BASEOBJ)/* $(BASEBIN)/* $(ALL_DEPENDS)
+	rm -rf $(BASEOBJ)/* $(BASEBIN)/* $(BASESHAREDOBJ)/* $(ALL_DEPENDS)
 
 virgin: clean distclean
-	rm -f $(ALL_PROGS)
+	rm -rf $(ALL_PROGS)
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
