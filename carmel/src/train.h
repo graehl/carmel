@@ -111,7 +111,7 @@ index(NULL) { }
     UnArc un;
     Weight **ppWt;
   for ( List<Arc>::iterator l=arcs.begin() ; l != arcs.end() ; ) {
-      if ( l->weight == 0 ) {
+      if ( l->weight.isZero() ) {
 	 List<Arc>::iterator temp = l++ ;	 
 	 arcs.erase(temp);
 	continue;

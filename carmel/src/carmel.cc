@@ -146,8 +146,8 @@ main(int argc, char *argv[]){
   int thresh = 128;
   Weight converge = 1E-5;
   int convergeFlag = 0;
-  Weight smoothFloor = 0;
-  Weight prune = 0;
+  Weight smoothFloor;
+  Weight prune;
   WFST::NormalizeMethod norm_method = WFST::CONDITIONAL;
   int pruneFlag = 0;
   int floorFlag = 0;
@@ -382,7 +382,7 @@ main(int argc, char *argv[]){
       if ( flags['C'] )
         result->consolidateArcs();
       if ( flags['p'] )
-        result->prune(prune);
+        result->pruneArcs(prune);
       if ( !flags['d'] )
         result->reduce();
 #ifdef  DEBUGCOMPOSE
@@ -427,7 +427,7 @@ main(int argc, char *argv[]){
         if ( flags['C'] )
           result->consolidateArcs();
         if ( flags['p'] )
-          result->prune(prune);
+          result->pruneArcs(prune);
         if ( !flags['d'] )
           result->reduce();
       }
@@ -440,7 +440,7 @@ main(int argc, char *argv[]){
       if ( flags['C'] )
         result->consolidateArcs();
       if ( flags['p'] )
-        result->prune(prune);
+        result->pruneArcs(prune);
       if ( !flags['d'] )
         result->reduce();
       for ( i = 1 ; i < nInputs && result->valid() ; ++i ) {
@@ -463,7 +463,7 @@ main(int argc, char *argv[]){
         if ( flags['C'] )
           result->consolidateArcs();
         if ( flags['p'] )
-          result->prune(prune);
+          result->pruneArcs(prune);
         if ( !flags['d'] )
           result->reduce();
       } // end of chain compositions - now result points to the final composition
@@ -583,7 +583,7 @@ main(int argc, char *argv[]){
         }
         result->trainFinish(converge, smoothFloor, maxTrainIter, norm_method);
         if ( flags['p'] ) {
-          result->prune(prune);
+          result->pruneArcs(prune);
           result->normalize(norm_method);
         }
         result->reduce();

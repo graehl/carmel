@@ -140,7 +140,7 @@ template <class I> int randomPath(I i,int max_len=-1)
 		if  ( len > max || states[s].arcs.isEmpty() )
 			return -1;
 		// choose random arc:
-		Weight arcsum=0;
+		Weight arcsum;
 		typedef List<Arc> LA;
 		typedef LA::const_iterator LAit;
 		const LA& arcs=states[s].arcs;
@@ -212,7 +212,11 @@ template <class I> int randomPath(I i,int max_len=-1)
   void reduce();		// eliminate all states not along a path from
                                 // initial state to final state
   void consolidateArcs();	// combine identical arcs, with combined weight = sum
-  void prune(Weight thresh);	// remove all arcs with weight < thresh
+  void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
+  enum {UNLIMITED=-1};
+  void prune(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INFINITY); 
+  // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
+  
   
   void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource
   void numberArcsFrom(int labelStart); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1
@@ -231,7 +235,7 @@ template <class I> int randomPath(I i,int max_len=-1)
     return a;
   }
   Weight numNoCyclePaths() const {
-    if ( !valid() ) return 0;
+	  if ( !valid() ) return Weight::ZERO;
     Weight *nPaths = new Weight[numStates()];
     Graph g = makeGraph();
     countNoCyclePaths(g, nPaths, 0);
