@@ -26,11 +26,11 @@ INC = ${DIR}/src
 BIN = ${DIR}/bin
 CC.solaris = g++
 #/nfs/topaz/graehl/isd/solaris/bin/g++3.2
-CC.cygwin = 3.2g++
+CC.linux = g++
 CC.freebsd = g++31
 CC.macosx = g++
 
-CCFLAGS = -c -Wall
+CCFLAGS = -c -Wall -I../boost/boost
 LDFLAGS = -L$(LIB) -lm
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -ffast-math
 CCFLAGS_DBG    = $(CCFLAGS) -g 
