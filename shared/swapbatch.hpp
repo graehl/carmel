@@ -1,12 +1,25 @@
 #ifndef SWAPBATCH_HPP
 #define SWAPBATCH_HPP
 
+
 #include "memmap.hpp"
 #include "checkpoint_istream.hpp"
 #include <string>
 #include "dynarray.h"
 #include <boost/lexical_cast.hpp>
 #include "backtrace.hpp"
+
+#ifdef HINT_SWAPBATCH_BASE
+#ifdef BOOST_IO_WINDOWS
+#define DEFAULT_SWAPBATCH_BASE_ADDRESS (void *)0x08000000U
+// 0x08000000U worked
+#else
+#define DEFAULT_SWAPBATCH_BASE_ADDRESS (void *)0x80000000U
+#endif
+// should be NULL but getting odd bad_alloc failure
+#else
+#define DEFAULT_SWAPBATCH_BASE_ADDRESS (void *)NULL
+#endif
 
 template <class B>
 struct SwapBatch {
@@ -54,11 +67,15 @@ struct SwapBatch {
 //        DBP_VERBOSE(0);
         unsigned batch_no = batches.size();
         DBPC2("creating batch",batch_no);
-        char *base=(batch_no ? begin() : NULL);
-        memmap.close();
-        memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,base); // creates new file and memmaps
-        if (base && base != begin())
-            throw ios::failure("couldn't reopen memmap at same base address");
+        if (batch_no==0) {
+            memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,DEFAULT_SWAPBATCH_BASE_ADDRESS,true); // creates new file and memmaps
+        } else {
+            char *old_base=begin();
+            memmap.close();
+            memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,old_base,false); // creates new file and memmaps
+            if (old_base != begin())
+                throw ios::failure("couldn't reopen memmap at same base address");
+        }
         loaded_batch=batch_no;
         top = begin();
         batches.push_back();
@@ -172,10 +189,12 @@ struct SwapBatch {
                     throw ios::failure("an entire swap space segment couldn't hold the object being read.");
                 is.seekg(pos);
                 batches.back().pop_back();
+                batches.back().compact();
                 create_next_batch();
                 goto again;
             }
         }
+        batches.back().compact();
         batches.compact();
     }
 

@@ -80,10 +80,10 @@ public:
     mapped_file() : data_(0) , size_(0), mode_(std::ios::openmode()) {}
     mapped_file( const std::string& path,std::ios::openmode mode=std::ios::in | std::ios::out,
                  size_type length = max_length,
-                 boost::intmax_t offset = 0,bool create=true,void *base_address=NULL)
+                 boost::intmax_t offset = 0,bool create=true,void *base_address=NULL,bool flexible_base=false)
         : data_(0) , size_(0), mode_(mode)
         {
-            open(path, mode, length, offset,create,base_address);
+            open(path, mode, length, offset,create,base_address,flexible_base);
         }
     ~mapped_file() {
         close();
@@ -127,7 +127,7 @@ public:
     void open( const std::string& path,
                std::ios::openmode mode=std::ios::in | std::ios::out,
                size_type length = max_length, boost::intmax_t offset =0,
-               bool create=true,void *base_address=NULL)
+               bool create=true,void *base_address=NULL,bool flexible_base=false)
         {
             BACKTRACE;
             DBPC6("memmap",path,mode,create,base_address,length);
@@ -183,7 +183,7 @@ public:
             }
 
             //--------------Access data-----------------------------------------------//
-
+          again:
             void* data =
                 ::MapViewOfFileEx( mapped_handle_,
                                    readonly ? FILE_MAP_READ : FILE_MAP_WRITE,
@@ -191,6 +191,11 @@ public:
                                    (DWORD) (offset & 0xffffffff),
                                    length != max_length ? length : 0, base_address );
             if (!data) {
+                if (base_address && flexible_base) {
+                    DBPC2("didn't get preferred base address, retrying at any",last_error_string());
+                    base_address=0;
+                    goto again;
+                }
                 ::CloseHandle(mapped_handle_);
                 ::CloseHandle(handle_);
                 throw ios::failure(string("couldn't map view of file: ").append(last_error_string()));
@@ -221,8 +226,8 @@ public:
             int flags = (readonly? O_RDONLY : O_RDWR);
             if (create)
                 flags |= (O_CREAT | O_TRUNC);
-    DBP2(path,flags);
-    handle_ = ::open(path.c_str(),flags,S_IRWXU) ; //|
+            DBP2(path,flags);
+            handle_ = ::open(path.c_str(),flags,S_IRWXU) ; //|
 
             if (handle_ == -1)
                 throw ios::failure(string("couldn't open: ").append(last_error_string()));
@@ -251,19 +256,23 @@ public:
 
             //--------------Create mapping--------------------------------------------//
             // readonly ? MAP_PRIVATE : MAP_SHARED,
-#ifdef MAP_FILE
-            const int map_flags=MAP_SHARED|MAP_FILE;
-#else
-            const int map_flags=MAP_SHARED;
-#endif
-
-            void* data = ::mmap( 0, size_,
+          again:
+            void* data = ::mmap( base_address, size_,
                                  readonly ? PROT_READ : (PROT_READ|PROT_WRITE),
-                                 map_flags,
+#ifdef MAP_FILE
+                                 MAP_FILE|
+#endif
+                                 MAP_SHARED|(base_address ? MAP_FIXED : 0),
                                  handle_, offset );
             if (data == MAP_FAILED) {
-                ::close(handle_);
-                throw ios::failure(string("couldn't mmap file:").append(last_error_string()));
+                if (base_address && flexible_base) {
+                    DBPC2("didn't get preferred base address, retrying at any",last_error_string());
+                    base_address=0;
+                    goto again;
+                } else {
+                    ::close(handle_);
+                    throw ios::failure(string("couldn't mmap file:").append(last_error_string()));
+                }
             }
             data_ = reinterpret_cast<char*>(data);
 
@@ -363,8 +372,7 @@ BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
     memmap.close();
     memmap.open(t2,std::ios::in,batchsize,0,false,base); // creates new file and memmaps
     BOOST_CHECK(memmap.begin()==base);
-    BOOST_CHECK(    base[0]=='y');
-
+    BOOST_CHECK(base[0]=='y');
 }
 
 #endif
