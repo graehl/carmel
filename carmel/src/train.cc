@@ -195,6 +195,7 @@ while(1) { // random restarts
 	if (ran_restarts > 0) {
 		--ran_restarts;
 		randomSet();
+		normalize(method);
 		Config::log() << "\nRandom restart - " << ran_restarts << " remaining.\n";
 	} else {
 		break;
@@ -390,7 +391,7 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
   reverseMatrix(w,nIn,nOut);
 #ifdef DEBUGTRAINDETAIL // Yaser 7-20-2000
   Config::debug() << "\nForwardProb/BackwardProb:\n";
-  for (i = 0 ;i<= nIn ; ++i){
+  for (int i = 0 ;i<= nIn ; ++i){
     for (int o = 0 ; o <= nOut ; ++o){
       Config::debug() << i << ':' << o << " (" ;
       for (int s = 0 ; s < nSt ; ++s){
@@ -562,7 +563,7 @@ Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
 {
   Assert(trn);
 
-#define DUMPDW  do { for ( s = 0 ; s < numStates() ; ++s ) \
+#define DUMPDW  do { for ( int s = 0 ; s < numStates() ; ++s ) \
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
       List<DWPair>::const_iterator end = ha.val().const_end() ; \
       for ( List<DWPair>::const_iterator dw=ha.val().const_begin() ; dw !=end; ++dw ){ \
@@ -571,9 +572,9 @@ Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
         Config::debug() << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
       } \
         } } while(0)
-
 #ifdef DEBUGTRAINDETAIL
-  Config::debug() << "\nWeights before prior smoothing\n";
+int pGroup;
+	Config::debug() << "\nWeights before prior smoothing\n";
   DUMPDW;
 #endif
   EACHDW (
