@@ -57,6 +57,84 @@ CREATE_EXTRACTOR(C)
 #include <string>
 #include <boost/lexical_cast.hpp>
 
+//!< print before word.
+template <char sep=' '>
+struct WordSeparator {
+    bool first;
+    WordSeparator() : first(true) {}
+    std::ostream & print(std::ostream &o) {
+        if (first) 
+            first=false;
+        else        
+            o << sep;
+        return o;
+    }
+};
+
+template <char sep>
+inline
+std::ostream & operator <<(std::ostream &o, WordSeparator<sep> &separator) {
+    return separator.print(o);
+}
+
+template <class C>
+inline bool is_shell_special(C c) {
+    switch(c) {
+    case ' ':case '\t':case '\n':
+    case '\\':
+    case '>':case '<':case '|':
+    case '&':case ';':
+    case '"':case '\'':case '`':
+    case '~':case '*':case '?':case '{':case '}':
+    case '$':case '!':case '(':case ')':
+        return true;
+    default:
+        return false;
+    }
+}
+
+template <class C>
+inline bool needs_shell_escape_in_quotes(C c) {
+    switch(c) {
+    case '\\':case '"':case '$':case '`':case '!':
+        return true;
+    default:
+        return false;
+    }
+}
+
+template <class C,class charT, class Traits>
+inline ostream & out_shell_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+    std::stringstream s;
+    s << data;
+    string str=s.str();
+
+    char c;
+    if (find_if(str.begin(),str.end(),is_shell_special<char>)==str.end()) {
+        out << str;
+    } else {
+        out << '"';
+        while (s.get(c)) {
+            if (needs_shell_escape_in_quotes(c))
+                out.put('\\');
+            out.put(c);
+        }
+        out << '"';        
+    }
+    return out;
+}
+
+template <class charT, class Traits>
+inline ostream & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[]) {
+    WordSeparator<' '> sep;
+    for (int i=0;i<argc;++i)
+        out_shell_quote(o << sep,argv[i]);
+    out << std::endl;
+    return;
+}
+
+
+
 template <class C,class charT, class Traits>
 inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
     std::stringstream s;
