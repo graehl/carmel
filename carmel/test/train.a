@@ -1,4 +1,4 @@
 fin
-(start (start *e* a) (1 *e* b) (fin))
+(start (start *e* a) (1 *e* b) (fin) (fin *e* c))
 (1 (start *e* b) (fin *e* a))
 (fin)

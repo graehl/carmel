@@ -5,11 +5,12 @@
 
 //#define DEBUGTRAIN
 
-void WFST::trainBegin(WFST::NormalizeMethod method) {
+void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, Weight smoothFloor) {
   consolidateArcs();
   normalize(method);
   delete trn;
   trn = new trainInfo;
+//  trn->smoothFloor = smoothFloor;
   IOPair IO;
   DWPair DW;
   List<DWPair> *pLDW;
@@ -27,7 +28,11 @@ void WFST::trainBegin(WFST::NormalizeMethod method) {
       DW.arc = &(*aI);
       if ( !(pLDW = IOarcs[s].find(IO)) )
         pLDW = IOarcs[s].add(IO);
-      pLDW->push(DW);
+	  DW.prior_counts = smoothFloor + weight_is_prior_count * aI->weight;	  
+	  // add in forward direction
+	  pLDW->push(DW);
+
+	  // reverse direction and add in reverse direction
       DW.dest = s;
       if ( !(pLDW = revIOarcs[d].find(IO)) )
         pLDW = revIOarcs[d].add(IO);
@@ -76,7 +81,14 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
     trn->maxOut = s.o.n;
 }
 
-void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, Weight smoothFloor, int maxTrainIter,NormalizeMethod method)
+  #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
+      for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
+        List<DWPair>::iterator end = ha.val().end() ; \
+		for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) {\
+		  a } } } while(0)
+
+
+void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,NormalizeMethod method)
 {
   Assert(trn);
   int i, o, nSt = numStates();
@@ -94,11 +106,16 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
     }
   }
 
-  trn->smoothFloor = smoothFloor;
+  
   int giveUp = 0;
   Weight lastChange;
   Weight lastPerplexity;
   lastPerplexity.setInfinity();
+
+  int s;
+  if ( trn->totalEmpiricalWeight > 0 ) {
+	EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
+  }
   for ( ; ; ) {
     Weight newPerplexity;
     ++giveUp;
@@ -339,13 +356,7 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 #ifdef DEBUGTRAIN
   Config::debug() << "Starting iteration: " << iter << '\n';
 #endif
-  #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
-      for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
-        List<DWPair>::iterator end = ha.val().end() ; \
-		for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) {\
-		  a } } } while(0)
-
-EACHDW(dw->counts.setZero(););
+  EACHDW(dw->counts.setZero(););
 
 List<IOSymSeq>::iterator seq=trn->examples.begin() ;
   List<IOSymSeq>::iterator lastExample=trn->examples.end() ;
@@ -490,7 +501,7 @@ EACHDW(dw->scratch.setZero(););
                   //Weight &w=dw->weight();
           dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
                   //Weight &counts = dw->counts;
-          dw->weight() = dw->counts + trn->smoothFloor; // new (unnormalized weight)
+		  dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
         }
     }
 #ifdef DEBUGTRAINDETAIL
