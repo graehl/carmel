@@ -560,6 +560,8 @@ public:
 	bool equal(const K& k, const K &k2) const {
 	  return get_eq()(k,k2);
 	}
+public:
+  // not part of standard!
 	insert_return_type insert(const K& first, const V& second=V()) {
 	  size_t hv=get_hash()(first);
 	  size_t bucket=hashToPos(hv);
@@ -579,7 +581,7 @@ public:
 		,true);
 	  
 	}
-public:
+
 	insert_return_type insert(const value_type &t) { 
 	  return insert(t.first,t.second);
 	}

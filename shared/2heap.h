@@ -110,4 +110,5 @@ template <typename T> T *newTreeHeapAdd(T *heapRoot, T *node)
   }
 }
 
+
 #endif

@@ -63,7 +63,7 @@ struct DefaultWriter
 	  }
 	 o << ')';
 	}
-  return std::ios_base::goodbit;
+  return GENIOGOOD;
 }
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
@@ -73,9 +73,9 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
 {  
   char c;
   
-  EXPECTCH_SPACE('(');
+  EXPECTCH_SPACE_COMMENT('(');
   for(;;) {
-    EXPECTI(in>>c);
+    EXPECTI_COMMENT(in>>c);
 	  if (c==')') {	
 		break;
 	  }
@@ -92,7 +92,7 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
 		goto fail;
 	  }
 #endif
-	  EXPECTI(in>>c);
+	  EXPECTI_COMMENT(in>>c);
 	  if (c != ',') in.unget();
   }
   return GENIOGOOD;
@@ -114,7 +114,15 @@ public:
   typedef value_type *iterator;
   typedef const value_type *const_iterator;
 
-  
+  void construct() {
+	for (T *p=vec;p!=endspace;++p)
+	  PLACEMENT_NEW(p) T();
+  }
+  void construct(const T& val) {
+	for (T *p=vec;p!=endspace;++p)
+	  PLACEMENT_NEW(p) T(val);
+  }
+
 	T& front() {
 	  Assert(size());
 	  return *begin();
@@ -224,6 +232,29 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   void set_capacity(unsigned int newCap) { endspace=vec+newCap; }
 };
 
+// frees self automatically
+template <typename T,typename Alloc=std::allocator<T> > class AutoArray : public Array<T,Alloc> {
+  explicit AutoArray(unsigned sp=4) :Array(sp) { }
+  ~AutoArray() {
+	dealloc();
+  }
+private:
+  AutoArray(AutoArray<T,Alloc> &a) {}
+};
+
+// frees self automatically
+template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public Array<T,Alloc> {
+  explicit FixedArray(unsigned sp=4) :Array(sp) { 
+    construct(); 
+  }
+  ~FixedArray() {
+    destroy();
+	dealloc();
+  }
+private:
+ FixedArray(FixedArray<T,Alloc> &a) {}
+};
+
 
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
@@ -236,7 +267,19 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 	std::istringstream(c) >> *this;
   }
 
+  // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
   explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { }
+
+  // creates vector holding sp copies of t; does initialize
+  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endvec(endspace) { 
+	construct(t);
+  }
+
+  void construct() {
+	Assert(endvec=vec);
+	Array<T,Alloc>::construct();
+	endvec=endspace;
+  }
 
   DynamicArray(const DynamicArray &a) {
 	unsigned sz=a.size();
@@ -304,6 +347,16 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
     }
     return vec[index];
   }
+   void push(const T &it) { 
+    push_back(it);
+  }
+  T &top() {
+    return back();
+  }
+  void pop() {
+    (--endvec)->~T();;
+  }
+
   // default-construct version (not in STL vector)
   void push_back()
     {
@@ -313,6 +366,18 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
     {
       PLACEMENT_NEW(push_back_raw()) T(val);
     }
+  void push_back(const T& val,unsigned n)
+    {
+	  T *oldend=endvec;
+	  endvec+=n;
+	  if (endvec > endspace)
+		reserve_at_least(size());	  
+		
+	for (T *p=oldend;p!=endvec;++p)
+	  PLACEMENT_NEW(p) T(val);
+
+    }
+
   // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
   T *push_back_raw()
     {
@@ -454,17 +519,18 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 
   // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
-std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read)
+std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=false)
 
 {  
+  if (!append)
+	clear();
+
 #if 1
   // slight optimization from not needing temporary like general output iterator version.
-  char c;
-  
-  EXPECTCH_SPACE('(');
-  clear();
+  char c;  
+  EXPECTCH_SPACE_COMMENT('(');
   for(;;) {
-    EXPECTI(in>>c);
+    EXPECTI_COMMENT(in>>c);
 	  if (c==')') {	
 		break;
 	  }
@@ -474,7 +540,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 		//undo_push_back_raw();
 		goto fail;
 	  }
-	  EXPECTI(in>>c);
+	  EXPECTI_COMMENT(in>>c);
 	  if (c != ',') in.unget();
   }
   return GENIOGOOD;
@@ -482,7 +548,6 @@ fail:
   clear();
   return GENIOBAD;
 #else
-  clear();
   std::ios_base::iostate ret=
 	range_get_from(in,back_inserter(*this),read);
   if (ret == GENIOBAD)
@@ -553,14 +618,20 @@ operator <<
 	return gen_inserter(os,arg);
 }
 
+#if 1
 #define ARRAYEQIMP \
   if (l.size() != r.size()) return false; \
   typename L::const_iterator il=l.begin(),iend=l.end(); \
   typename R::const_iterator ir=r.begin(); \
   while (il!=iend) \
-	if (*il++ != *ir++) return false; \
+	if (!(*il++ == *ir++)) return false; \
   return true;
 
+#else
+
+#define ARRAYEQIMP return std::equal(l.begin(),l.end(),r.begin());
+
+#endif
 
 template<class Lt,class A,class L2,class A2>
 bool operator ==(const DynamicArray<Lt,A> &l, const DynamicArray<L2,A2> &r)
@@ -619,6 +690,19 @@ BOOST_AUTO_UNIT_TEST( dynarray )
 	  BOOST_CHECK(a.at(i)==0);
   }
   const int sz=7;
+  {
+  DynamicArray<int> A(sz);
+  A.push_back(sz,sz*3);
+  BOOST_CHECK(a.size() == sz*3);
+  BOOST_CHECK(a.capacity() >= sz*3);
+  BOOST_CHECK(a[sz]==sz);
+  }
+  {
+  DynamicArray<int> A(sz*3,sz);
+  BOOST_CHECK(a.size() == sz*3);
+  BOOST_CHECK(a.capacity() == sz*3);
+  BOOST_CHECK(a[sz]==sz);
+  }
 
   using namespace std;
   Array<int> aa(sz);

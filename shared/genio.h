@@ -22,16 +22,16 @@
   std::ios_base::iostate 
   print_on(std::basic_ostream<charT,Traits>& o) const
   {	
-	return std::ios_base::goodbit;
+	return GENIOGOOD;
   }
 
   template <class charT, class Traits>
   std::ios_base::iostate 
   get_from(std::basic_istream<charT,Traits>& in)
   {
-	return std::ios_base::goodbit;
+	return GENIOGOOD;
   fail:
-	return std::ios_base::badbit;
+	return GENIOBAD;
 	
   }
 
@@ -90,6 +90,22 @@ gen_extractor
 		s.setstate(err);
 	return s;
 }
+
+template <class charT, class Traits, class Arg, class Reader,class Flag>
+std::basic_istream<charT, Traits>& 
+gen_extractor
+(std::basic_istream<charT, Traits>& s, Arg &arg, Reader &read, Flag f)
+{
+	if (!s.good()) return s;
+	std::ios_base::iostate err = std::ios_base::goodbit;
+	typename std::basic_istream<charT, Traits>::sentry sentry(s);
+	if (sentry)
+		err = arg.get_from(s,read,f);
+	if (err)
+		s.setstate(err);
+	return s;
+}
+
 
 // exact same as above but with o instead of i
 template <class charT, class Traits, class Arg, class R>
@@ -160,8 +176,10 @@ inline std::basic_ostream<charT,Traits>& operator << \
 
 #define GENIOSETBAD(in) do { in.setstate(GENIOBAD); } while(0)
 
-#define GENIO_CHECK(inop) do { ; if (!(inop).good()) return std::ios_base::badbit; } while(0)
-#define GENIO_CHECK_ELSE(inop,fail) do {  if (!(inop).good()) { fail; return std::ios_base::badbit; } } while(0)
+/*
+#define GENIO_CHECK(inop) do { ; if (!(inop).good()) return GENIOBAD; } while(0)
+#define GENIO_CHECK_ELSE(inop,fail) do {  if (!(inop).good()) { fail; return GENIOBAD; } } while(0)
+*/
 
 #define GENIO_get_from   template <class charT, class Traits> \
   std::ios_base::iostate \
@@ -171,10 +189,49 @@ inline std::basic_ostream<charT,Traits>& operator << \
   std::ios_base::iostate \
   print_on(std::basic_ostream<charT,Traits>& o) const
 
+#include <limits.h>
+
+/*
+template <class charT, class Traits>
+inline typename Traits::int_type getch_space_comment(std::basic_istream<charT,Traits>&in,charT comment_char='#',charT newline_char='\n') {
+  charT c;
+  for(;;) {
+	if (!(in >> c)) return Traits::eof();
+	if (c==comment_char)
+	  in.ignore(INT_MAX,newline_char);
+	else
+	  return c;
+  }  
+}
+*/
+
+template <class charT, class Traits>
+inline std::basic_istream<charT,Traits>& skip_comment(std::basic_istream<charT,Traits>&in,charT comment_char='#',charT newline_char='\n') {
+  charT c;
+  for(;;) {
+	if (!(in >> c).good()) break;
+	if (c==comment_char) {
+	  if (!(in.ignore(INT_MAX,newline_char)).good()) 
+		break;
+	} else {
+	  in.unget();
+	  break;
+	}
+  }  
+  return in;
+}
+
+
 #define EXPECTI(inop) do { ; if (!(inop).good()) goto fail; } while(0)
+//#define EXPECTI_COMMENT(inop) do { ; if (!(inop).good()) goto fail; } while(0)
+#define EXPECTI_COMMENT(inop) do { ; if (!(skip_comment(in).good()&&(inop).good())) goto fail; } while(0)
 #define EXPECTCH(a) do { if (!in.get(c).good()) goto fail; if (c != a) goto fail; } while(0)
 #define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
-#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
-#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
+//#define EXPECTCH_SPACE_COMMENT(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
+#define EXPECTCH_SPACE_COMMENT(a) do { if (!(skip_comment(in).good()&&(in>>c).good())) goto fail;if (c != a) goto fail; } while(0)
+//#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
+//#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
+//#define IFCH_SPACE_COMMENT(a) if (!(skip_comment(in).good()&&(in>>c).good())) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 
+#define GENIORET std::ios_base::iostate
 #endif
