@@ -58,6 +58,7 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
   typedef const const_value_type *const_iterator;
 
   value_type & operator [](size_t i) { return children[i]; }
+  value_type & child(size_t i) { return children[i]; }
 
   iterator begin() {
 	return children;
@@ -120,28 +121,43 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
 template <class T>
 friend void delete_tree(T *);
 
+#ifdef DEBUG_TREEIO
+#define DBTREEIO(a) DBP(a)
+#else
+#define DBTREEIO(a) 
+#endif
+
 template <class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
 // doesn't free old children if any
 {  
   char c;
   n_child=0;
-  in >> label;
-  if (!in.good()) return std::ios_base::badbit;
   
+  GENIO_CHECK(in>>label);
+  DBTREEIO(label);  
   vector<Self *> in_children;
-  if ((c = in.get()) == '(') {
-	while ((c = in.get()) != ')') {
+  GENIO_CHECK(in>>c);
+  if (c == '(') {
+	DBTREEIO('(');  
+	for(;;) {
+	  GENIO_CHECK(in>>c);
+	  if (c==')') {
+		DBTREEIO(')');
+		break;
+	  }
 	  in.putback(c);
 	  Self *in_child = read_tree(in);
-	  if (in_child)
+	  if (in_child) {
+		DBTREEIO('!');
 		in_children.push_back(in_child);
-	  else {
+	  } else {
 		for (typename vector<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
 		  delete_tree(*i);
 		return std::ios_base::badbit;
 	  }
-	  if ((c = in.get()) != ',') in.putback(c);
+	  GENIO_CHECK(in>>c);
+	  if (c != ',') in.putback(c);
 	}
 	dealloc();
 	alloc(in_children.size());
@@ -160,6 +176,7 @@ operator >>
  (std::basic_istream<charT,Traits>& is, Tree<L,A> &arg)
 {
 	return gen_extractor(is,arg);
+	DBTREEIO(std::endl);
 }
 
 template <class charT, class Traits,class L,class A>
@@ -367,7 +384,7 @@ template<class T> bool always_equal(const T& a,const T& b) { return true; }
 BOOST_AUTO_UNIT_TEST( tree )
 {
   Tree<int> a,b,*c,*d,*g=new_tree(1);
-  string sa="1(2,3(4(),5,6))";
+  string sa="1( 2 ,3 (4\n ()\n,\t 5,6))";
   string sb="1(2 3(4 5 6))";
   stringstream o;
   istringstream(sa) >> a;
