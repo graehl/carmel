@@ -9,7 +9,6 @@
 
 #ifdef TEST
 #include "test.hpp"
-#include <string>
 #endif
 
 //using namespace boost::lambda;
@@ -17,27 +16,26 @@ namespace lambda=boost::lambda;
 using namespace std;
 
 // Tree owns its own child pointers list but nothing else - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
-template <class Label, class Alloc=std::allocator<void *> > struct Tree {
-  typedef Tree<Label, Alloc> Self;
+template <class Label, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
+  typedef Tree Self;
   typedef Label label_type;
-  Alloc alloc;
   Label label;
   size_t n_child;
   Self **children;
   Tree() : n_child(0) {}
   Tree (const Label &l) : n_child(0),label(l) {  }
-  Tree (const Label &l,size_t n) : label(l) { allocate(n); }
-  void allocate(size_t _n_child) {
+  Tree (const Label &l,size_t n) : label(l) { alloc(n); }
+  void alloc(size_t _n_child) {
 	n_child=_n_child;
 	if (n_child)
-	  children = (Self **)alloc.allocate(n_child);
+	  children = (Self **)allocate(n_child);
   }
-  explicit Tree(size_t _n_child,Alloc _alloc=Alloc()) : alloc(_alloc) {
-	allocate(_n_child);
+  explicit Tree(size_t _n_child,Alloc _alloc=Alloc()) : Alloc(_alloc) {
+	alloc(_n_child);
   }
   void free() {
 	if (n_child)
-	  alloc.deallocate((void **)children,n_child);
+	  deallocate((void **)children,n_child);
 	n_child=0;
   }
   void free_recursive(); 
@@ -92,8 +90,18 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
   return std::ios_base::goodbit;
 }
 
-template <class charT, class Traits, class T>
-  friend T *read_tree(std::basic_istream<charT,Traits>&);
+//template <class T, class charT, class Traits>  friend 
+  template <class charT, class Traits>
+  static Self *read_tree(std::basic_istream<charT,Traits>&) {
+  Self *ret = new Self;
+  in >> *ret;
+  if (!in.good()) {
+	delete_tree(ret);
+	return NULL;
+  }
+  return ret;
+
+  }
 template <class T>
 friend void delete_tree(T *);
 
@@ -110,18 +118,18 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
   if ((c = in.get()) == '(') {
 	while ((c = in.get()) != ')') {
 	  in.putback(c);
-	  Self *in_child = read_tree<Self>(in);
+	  Self *in_child = read_tree(in);
 	  if (in_child)
 		in_children.push_back(in_child);
 	  else {
-		for (vector<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
+		for (typename vector<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
 		  delete_tree(*i);
 		return std::ios_base::badbit;
 	  }
 	  if ((c = in.get()) != ',') in.putback(c);
 	}
 	free();
-	allocate(in_children.size());
+	alloc(in_children.size());
 	copy(in_children.begin(),in_children.end(),begin());	
   } else {	
 	in.putback(c);
@@ -159,7 +167,7 @@ void delete_arg(C &c) {
 template <class T,class F>
 void postorder(T *tree,F func)
 {
-  for (T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
+  for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
   func(tree);
 }
@@ -167,7 +175,7 @@ void postorder(T *tree,F func)
 template <class T,class F>
 void postorder(const T *tree,F &func)
 {
-  for (T::const_iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
+  for (typename T::const_iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
   func(tree);
 }
@@ -192,7 +200,7 @@ bool tree_equal(const T& a,const T& b)
 {
   if (a.n_child != b.n_child || a.label != b.label) 
 	return false;
-  for (T::const_iterator a_i=a.begin(), a_end=a.end(), b_i=b.begin(); a_i!=a_end; ++a_i,++b_i)
+  for (typename T::const_iterator a_i=a.begin(), a_end=a.end(), b_i=b.begin(); a_i!=a_end; ++a_i,++b_i)
 	if (!(tree_equal(**a_i,**b_i)))
 	  return false;
   return true;
@@ -281,13 +289,7 @@ Tree<L> *new_tree(const L &l, Tree<L> *c1, Tree<L> *c2, Tree<L> *c3) {
 template <class T,class charT, class Traits>
 T *read_tree(std::basic_istream<charT,Traits>& in)
 {
-  T *ret = new T;
-  in >> *ret;
-  if (!in.good()) {
-	delete_tree(ret);
-	return NULL;
-  }
-  return ret;
+  return T::read_tree(in);
 }
 
 #ifdef TEST
@@ -310,7 +312,7 @@ BOOST_AUTO_UNIT_TEST( tree )
   BOOST_CHECK(a == a);
   BOOST_CHECK(a == b);
   BOOST_CHECK(a == *c);
-  BOOST_CHECK(a.count_nodes()==6);
+  BOOST_CHECK(a.count_nodes()==6);  
   a.free_recursive();
   b.free_recursive();
   delete_tree(c);
