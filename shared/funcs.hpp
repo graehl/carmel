@@ -276,6 +276,7 @@ struct Periodic {
         left=0;
     }
     bool check() {
+        DBP2(period,left);
         if (period && enabled) {
             if (!--left) {
                 left=period;
@@ -298,7 +299,6 @@ struct periodic_wrapper : public C
         period.set_period(period_);
     }
     result_type operator()() {
-        DBP2(period,left);
         if (period.check()) 
             return Imp::operator()();
         return result_type();
