@@ -7,6 +7,15 @@
 #define GRAPHVIZ_DEFAULT_PRELUDE "node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n graph [center=1];\n"
 //ordering=out;\n concentrate=0;\n\n ranksep=.3;
 
+template <class L>
+struct DefaultNodeLabeler {
+    typedef L Label;
+    void print(ostream &o,const Label &l) {
+        o << "label=";
+        out_ensure_quote(o,l);
+    }
+};
+
 struct GraphvizPrinter {
     unsigned graph_no;
     unsigned next_node;

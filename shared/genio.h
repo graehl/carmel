@@ -72,6 +72,24 @@ inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& dat
 }
 
 template <class C,class charT, class Traits>
+inline void out_ensure_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+    typedef std::basic_string<charT,Traits> String;
+    String s=boost::lexical_cast<String>(data);
+    if (s[0] == '"')
+        out << s;
+    else {
+        out << '"';
+        for (typename String::iterator i=s.begin(),e=s.end();i!=e;++i) {
+            char c=*i;
+            if (c == '"' || c== '\\')
+                out.put('\\');
+            out.put(c);
+        }
+        out << '"';
+    }
+}
+
+template <class C,class charT, class Traits>
 inline void out_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
     typedef std::basic_string<charT,Traits> String;
     String s=boost::lexical_cast<String>(data);

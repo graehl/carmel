@@ -241,7 +241,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   } else {
       in.unget();
       EXPECTI_COMMENT_FIRST(deref(read)(in,label));
-      EXPECTI_COMMENT_FIRST(in>>c);
+      EXPECTI_COMMENT_FIRST(in >> c);
       if (in.eof()) // since c!='(' before in>>c, can almost not test for this - but don't want to unget() if nothing was read.
           return GENIOGOOD;
       if (c!='(') {
@@ -253,6 +253,8 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   DBTREEIO('(');
   for(;;) {
       EXPECTI_COMMENT(in>>c);
+      if (c == ',')
+          EXPECTI_COMMENT(in>>c);
       if (c==')') {
           DBTREEIO(')');
           break;
@@ -264,8 +266,6 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
           in_children.push_back(in_child);
       } else
           goto fail;
-      EXPECTI_COMMENT(in>>c);
-      if (c != ',') in.unget();
   }
   dealloc();
   alloc((rank_type)in_children.size());
@@ -336,13 +336,6 @@ bool tree_leaf_visit(T *tree,F func)
          }
 }
 
-template <class L>
-struct DefaultNodeLabeler {
-    typedef L Label;
-    void print(ostream &o,const Label &l) {
-        o << "label=" << l;
-    }
-};
 
 template <class Label,class Labeler=DefaultNodeLabeler<Label> >
 struct TreeVizPrinter : public GraphvizPrinter {
