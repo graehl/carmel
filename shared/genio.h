@@ -3,6 +3,11 @@
 
 #include "debugprint.hpp"
 
+// important: if you want to allow the first EOF/fail in your read routine to be
+// fine (not an exception) don't use EXPECT... etc. or use EXPECT...FIRST
+
+// very important: make your get_from exception safe (use funcs.hpp self_destruct or other guards/automatically managed resources)
+
 // your class Arg must will provide Arg::get_from(is) ( is >> arg ) and Arg::print_to(os) (os << arg),
 // returning std::ios_base::iostate (0,badbit,failbit ...)
 // usage:
@@ -109,6 +114,9 @@ inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream
             if (sentry) { err = print_on; }                                   \
             if (err) s.setstate(err);                                   \
         } } while(0)
+
+
+#define GENIO_FAIL(s) do { s.setstate(GENIOBAD); }while(0)
 
 template <class charT, class Traits, class Arg>
 std::basic_istream<charT, Traits>&
@@ -343,14 +351,23 @@ inline std::basic_istream<charT,Traits>& skip_comment(std::basic_istream<charT,T
   return in;
 }
 
-#define EXPECTI_FIRST(inop) do { std::ios_base::iostate  flags=(inop).rdstate(); if (flags != std::ios_base::goodbit) return flags; } while(0)
-#define EXPECTI(inop) do { ; if (!(inop).good()) goto fail; } while(0)
+
+
+//#define GENIO_THROW2(a,b) DBPC2(a,b)
+#define GENIO_EOF_OK bool GENIO_eof_ok=true
+#define GENIO_EOF_BAD GENIO_eof_ok=false
+#define GENIO_THROW(a) do { DEBUG_SEGFAULT; throw ios_base::failure(a); } while(0)
+#define GENIO_THROW2(a,b) do { DEBUG_SEGFAULT; throw ios_base::failure(std::string(a).append(b)); } while(0)
+//#define EXPECTI_FIRST(inop) do { std::ios_base::iostate  flags=(inop).rdstate(); if (flags != std::ios_base::goodbit) return flags; } while(0)
+#define EXPECTI_FIRST(inop) do {  if (!(inop).good())  goto fail; } while(0)
+#define EXPECTI(inop) do {  if (!(inop).good()) { GENIO_THROW2("expected input failed: ",#inop); goto fail; } } while(0)
 //#define EXPECTI_COMMENT(inop) do { ; if (!(inop).good()) { goto fail; } } while(0)
-#define EXPECTI_COMMENT(inop) do { ; if (!(skip_comment(in).good()&&(inop).good())) { DBPC2("expected input failed:",#inop); goto fail; } } while(0)
-#define EXPECTCH(a) do { if (!in.get(c).good()) { DBPC2("expected input unavailable:",#a); goto fail; } if (c != a) { DBPC2("expected input failed:",#a); goto fail; } } while(0)
-#define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) { DBPC2("expected input unavailable:",#a); goto fail; } if (c != a) { DBPC2("expected input failed:",#a); goto fail; } } while(0)
+#define EXPECTI_COMMENT(inop) do { ; if (!(skip_comment(in).good()&&(inop).good())) { GENIO_THROW2("expected input failed: ",#inop); goto fail; } } while(0)
+#define EXPECTCH(a) do { if (!in.get(c).good()) { GENIO_THROW2("expected input unavailable: ",#a); goto fail; } if (c != a) { GENIO_THROW2("expected input failed: ",#a); goto fail; } } while(0)
+#define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) { GENIO_THROW2("expected input unavailable: ",#a); goto fail; } if (c != a) { GENIO_THROW2("expected input failed: ",#a); goto fail; } } while(0)
 //#define EXPECTCH_SPACE_COMMENT(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
-#define EXPECTCH_SPACE_COMMENT(a) do { if (!(skip_comment(in).good()&&(in>>c).good())) { DBPC2("expected input unavailable:",#a); goto fail; }if (c != a) { DBPC2("expected input failed:",#a); goto fail; } } while(0)
+#define EXPECTCH_SPACE_COMMENT_FIRST(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
+#define EXPECTCH_SPACE_COMMENT(a) do { if (!(skip_comment(in).good()&&(in>>c).good())) { GENIO_THROW2("expected input unavailable: ",#a); goto fail; }if (c != a) { GENIO_THROW2("expected input failed: ",#a); goto fail; } } while(0)
 //#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define IFCH_SPACE_COMMENT(a) if (!(skip_comment(in).good()&&(in>>c).good())) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)

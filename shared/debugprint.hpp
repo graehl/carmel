@@ -20,6 +20,11 @@
 #include "genio.h"
 #include "byref.hpp"
 
+#ifdef DEBUG
+#define DEBUG_SEGFAULT Assert(0)
+#else
+#define DEBUG_SEGFAULT
+#endif
 
 struct DebugWriter
 {
@@ -238,8 +243,8 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBP_SCOPE DBP::scopedepth DBP9423scopedepth
 
 #define DBP_ENABLE(x) SetLocal<bool> DBP78543enablescope(DBP::disable,!x)
-#define DBP_OFF DBPENABLE(false)
-#define DBP_ON DBPENABLE(true)
+#define DBP_OFF DBP_ENABLE(false)
+#define DBP_ON DBP_ENABLE(true)
 
 #define DBP_VERBOSE(x) SetLocal<int> DBP324245chattyscope(DBP::current_chat,(x))
 #define DBP_INC_VERBOSE SetLocal<int> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+1)

@@ -370,7 +370,7 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& in)
 {
   char c;
   double f=0;
-  EXPECTI(in >> c);
+  EXPECTI_FIRST(in >> c);
   if (c != 'e')
       in.unget();
   else {

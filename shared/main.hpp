@@ -20,7 +20,7 @@ struct MainGuard {
     MainGuard() {
         INITLEAK;
         std::cin.tie(0);
-        std::locale::global(std::locale(""));
+//        std::locale::global(std::locale(""));
     }
     ~MainGuard() {
         CHECKLEAK(0);

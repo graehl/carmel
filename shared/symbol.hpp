@@ -147,7 +147,7 @@ struct Symbol {
         g_buf.clear(); // FIXME: not threadsafe
         char c;
 //      GENIO_CHECK(in>>c);
-        EXPECTI_COMMENT(in>>c);
+        EXPECTI_COMMENT_FIRST(in>>c);
           if (c=='"') {
                 bool last_escape=false;
                 g_buf.push_back(c);

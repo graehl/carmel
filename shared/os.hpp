@@ -12,7 +12,6 @@
 # endif
 #endif
 
-#include <string>
 
 #ifdef BOOST_IO_WINDOWS
 # define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
@@ -23,6 +22,13 @@
 # include <string.h>
  typedef int Error;
 #endif
+
+#include <string>
+#include <cstdio>
+
+bool remove_file(const std::string &filename) {
+    return 0==remove(filename.c_str());
+}
 
 Error last_error() {
 #ifdef BOOST_IO_WINDOWS
