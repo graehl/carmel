@@ -164,7 +164,7 @@ namespace ns_decoder_global {
           }
       };
       
-      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_newline(true) {}
+      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
       return *debugOS;
@@ -200,20 +200,30 @@ namespace ns_decoder_global {
         getDebugOutput() << ": " << info << endl;
     }
 
-      bool info_newline;
+      bool info_atnewline; // at fresh newline if true, midline if false
+      
+      //post: state=midline
       inline ostream &info_sameline() {
-          info_newline=false;
+          info_atnewline=false;
           return *infoOS;
       }
+      
+      //post: state=midline, after printing a fresh newline (if weren't already at one)
       inline ostream &info_startline() {
-          if (!info_newline) {
+          if (!info_atnewline) {
               *infoOS << std::endl;
-              info_newline=true;
           }
-          return *infoOS;
+          info_atnewline=false;
+          return *infoOS;          
       }
+      
+      //post: state=newline (printing one out if weren't already)
+      // this would never be necessary to use if everyone always used info_startline() (except at the very end when closing stream)
       inline ostream &info_endline() {
-          info_newline=true;
+          if (!info_atnewline) {              
+              info_atnewline=true;
+              *infoOS << std::endl;
+          }
           return *infoOS;
       }
 
@@ -229,9 +239,8 @@ namespace ns_decoder_global {
       }
       getInfoOutput() << ": " << info;
 
-      info_newline=false;
       if (endline)
-          info_startline();
+          info_endline();
     }
 
       void set_info_level(int lvl) {

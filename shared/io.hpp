@@ -136,19 +136,94 @@ inline void out_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
     }
 }
 
+inline char hex_digit_char(unsigned char hex) {
+    //assert(hex <= 0xF);
+    if (hex <= 9)
+        return '0'+hex;
+// if (hex > 0xF)
+//    return '?';
+    return 'A'+(0xF & hex);
+}
+
+// prints 4 chars: \x1B
+// returns # of chars printed
+template <class charT, class Traits> 
+inline unsigned out_char_hex(std::basic_ostream<charT,Traits> &out, unsigned char c) {
+    char ls_hex=c & 0xF;
+    char ms_hex=c >> 4; // unsigned; no sign extension
+    out << "\\x" << hex_digit_char(ms_hex) << hex_digit_char(ls_hex);
+    return 4;
+}
+
+
+
+// prints ^@ through ^_ for 0x0->0x1F, ^? for DEL (0x7F) and \x9A for high chars (>0x7F)
+// returns number of chars print
+template <class charT, class Traits> 
+inline unsigned out_char_ascii(std::basic_ostream<charT,Traits> &out, unsigned char c) {
+    if (c < 0x20) {
+        out << '^' << (c+'@');
+        return 2;
+    } else if (c < 0x7F) {
+        out << c;
+        return 1;
+    } else if (c == 0x7F) {
+        out << "^?";
+        return 2;
+    } else {
+        return out_char_hex(out,c);
+    }
+}
+
+#ifndef ERROR_CONTEXT_CHARS
 #define ERROR_CONTEXT_CHARS 50
+#endif
+#ifndef ERROR_PRETEXT_CHARS
+#define ERROR_PRETEXT_CHARS 20
+#endif
+
 template <class Ic,class It,class Oc,class Ot>
 inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot> &out) {
-    char context[ERROR_CONTEXT_CHARS];
-    char *cp=context;    
     char c;
+    unsigned pretext_chars;
+    typedef std::basic_ifstream<Ic,It> fstrm;
+//    if (fstrm * fs = dynamic_cast<fstrm *>(&in)) {
     in.clear();
     in.unget();
-    if (in.get(*cp))
-        ++cp;
+     in.clear();
+     std::streamoff before(in.tellg());
+        in.seekg(-ERROR_PRETEXT_CHARS,std::ios_base::cur);
+        std::streamoff after(in.tellg());
+        if (!in) {
+            in.clear();
+            in.seekg(after=0);
+        }
+        pretext_chars=before-after;
+//    } else {
+//        pretext_chars=0;
+//    }
     in.clear();
-    in.get(cp,ERROR_CONTEXT_CHARS-2,'\n');
-    out << "..." << context << std::endl << "   ^" << std::endl;
+    out << "INPUT ERROR: ";
+    out << " reading byte #" << before+1;
+    out << " (^ marks the read position):\n...";
+    unsigned ip;
+    for(ip=0;ip<pretext_chars;++ip)
+        if (in.get(c))
+            out << c;
+        else
+            break;
+    if (ip!=pretext_chars)
+        out << "<<<WARNING: COULD NOT READ " << pretext_chars << " pre-error characters (wanted " << pretext_chars << ")>>>";
+    for(unsigned i=0;i<ERROR_CONTEXT_CHARS;++i)
+        if (in.get(c) && c!='\n')
+            out << c;
+        else
+            break;
+    
+    out << std::endl << "   ";
+    for(unsigned i=0;i<ip;++i)
+        out << ' ';    
+    out << '^' << std::endl;
 }
 
 template <class Ic,class It>
@@ -157,7 +232,7 @@ void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const
     err << "Error reading " << item << " # " << number << ": " << error << std::endl;
     std::streamoff where(in.tellg());
     show_error_context(in,err);
-    err << "\n(file position " <<  where << ")" << std::endl;
+//    err << "(file position " <<  where << ")" << std::endl;
     throw std::runtime_error(err.str());        
 }
 
