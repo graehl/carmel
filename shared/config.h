@@ -7,7 +7,7 @@
 #ifdef DEBUG
 #define DEBUGTRAIN
 #define DEBUGTRAINDETAIL
-#define DEBUG_NORMAL
+#define DEBUG_NORMALIZE
 #define DEBUGKBEST
 //#define DEBUGFB
 #define DEBUGCOMPOSE

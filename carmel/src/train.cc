@@ -93,7 +93,7 @@ void WFST::trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter,WFST
       break;
     }
     lastChange = train(giveUp,method,&lastPerplexity);
-    std::cerr << "Training iteration " << giveUp << ": largest change was " << lastChange << " with previous iteration perplexity = " << lastPerplexity << "\n";
+    std::cerr << "Training iteration " << giveUp << ": largest weight change was " << lastChange << " with previous iteration perplexity = " << lastPerplexity << " (" << root(lastPerplexity,trn->totalEmpiricalWeight) << " per observation)\n";
     if ( lastChange <= epsilon ) {
       std::cerr << "Convergence criteria of " << epsilon << " was met after " << giveUp << " iterations.\n";
       break;
@@ -277,21 +277,21 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
       w[i][o] = w[i][nOut - o];
       w[i][nOut - o] = temp;
     }
-#ifdef DEBUGTRAIN // Yaser 7-20-2000
+#ifdef DEBUGTRAINDETAIL // Yaser 7-20-2000
   std::cerr << "\nForwardProb/BackwardProb:\n";
   for (i = 0 ;i<= nIn ; ++i){
     for (int o = 0 ; o <= nOut ; ++o){
-      std::cerr << '(' ;
+		std::cerr << i << ':' << o << " (" ;
       for (int s = 0 ; s < nSt ; ++s){
         std::cerr << trn->f[i][o][s] <<'/'<<trn->b[i][o][s];
         if (s < nSt-1)
           std::cerr << ' ' ;
       }
-      std::cerr <<')';
+	  std::cerr <<')'<<std::endl;
       if(o < nOut-1)
         std::cerr <<' ' ;
     }
-    std::cerr <<'\n';
+	std::cerr <<std::endl;
   }
 #endif
 }
@@ -330,19 +330,20 @@ EACHDW(dw->counts = 0;);
   List<IOSymSeq>::iterator seq=trn->examples.begin() ;
   List<IOSymSeq>::iterator lastExample=trn->examples.end() ;
 
-#ifdef DEBUGTRAIN
+//#ifdef DEBUGTRAIN
   int train_example_no = 0 ; // Yaser 7-13-2000
-#endif
+//#endif
   while (seq != lastExample) { // loop over all training examples
 
-#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
+//#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
     ++train_example_no ;
-    std::cerr << '\n';
-    if (train_example_no % 100 == 0)
+#define EXAMPLES_PER_DOT 10
+#define EXAMPLES_PER_NUMBER (70*EXAMPLES_PER_DOT)
+    if (train_example_no % EXAMPLES_PER_DOT == 0)
       std::cerr << '.' ;
-    if (train_example_no % 7000 == 0)
+    if (train_example_no % EXAMPLES_PER_NUMBER == 0)
       std::cerr << train_example_no << '\n' ;
-#endif
+//#endif
     nIn = seq->i.n;
     nOut = seq->o.n;
     forwardBackward(*seq, trn, numStates(), final);
@@ -372,7 +373,7 @@ EACHDW(dw->counts = 0;);
 #endif
     Weight fin = f[nIn][nOut][final];
 #ifdef DEBUGTRAIN
-        std::cerr<<"\nProb = " << fin << std::endl;
+        std::cerr<<"Forward prob = " << fin << std::endl;
 #endif
     if ( !(fin > 0) ) {
       std::cerr << "No accepting path in transducer for input/output:\n";
@@ -388,7 +389,7 @@ EACHDW(dw->counts = 0;);
 #ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
     Weight fin2 = b[0][0][0];
 #ifdef DEBUGTRAIN
-        std::cerr<<"\nProb2 = " << fin2 << std::endl;
+        std::cerr<<"Backward prob = " << fin2 << std::endl;
 #endif
 	double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
     double e = ratio - 1;

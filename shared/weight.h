@@ -130,11 +130,14 @@ out_always_real(std::basic_ostream<A,B>& os);
     weight -= w.weight;
     return *this;
   }
-
-  Weight operator ^= (float power) { // raise Weight^power
-#ifdef WEIGHT_CORRECT_ZERO
+  void raisePower(float power) {
 	  weight *= power;
-#endif
+  }
+  void takeRoot(float nth) {
+	  weight /= nth;
+  }
+  Weight operator ^= (float power) { // raise Weight^power
+	  raisePower(power);
 	  return *this;
   }
 
@@ -144,6 +147,17 @@ template <class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);
 
 };
+
+inline Weight root(Weight w,float nth) {
+	w.takeRoot(nth);
+	return w;
+}
+
+inline Weight pow(Weight w,float nth) {
+	w.raisePower(nth);
+	return w;
+}
+
 
 inline Weight operator ^(Weight base,float exponent) {
 	Weight result = base;
