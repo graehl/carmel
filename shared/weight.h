@@ -246,6 +246,7 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
   
   if ( i.fail() ) {
 	setZero();
+	return std::ios_base::badbit;
   } else if ( i.eof() ) {
     setReal(f);
   } else if ( (c = i.get()) == 'l' ) {
