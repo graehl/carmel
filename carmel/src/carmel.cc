@@ -406,7 +406,7 @@ main(int argc, char *argv[]){
   }
   for ( i = 0 ; i < nInputs ; ++i ) {
     if ( i != nTarget ) {
-      PLACEMENT_NEW (&chain[i]) WFST(*inputs[i],flags['K']);
+      PLACEMENT_NEW (&chain[i]) WFST(*inputs[i],!flags['K']);
       if ( !flags['m'] && nInputs > 1 )
         chain[i].unNameStates();
       if ( inputs[i] != &cin ) {
@@ -448,7 +448,7 @@ main(int argc, char *argv[]){
   chain-=nModels;
   nTarget+=nModels;
   for (j=0;j<nModels;++j) {
-    PLACEMENT_NEW (&chain[j]) WFST(Models[j],flags['K']);
+    PLACEMENT_NEW (&chain[j]) WFST(Models[j],!flags['K']);
     filenames[j] = "Models.builtin";
   }
 #endif
@@ -897,7 +897,7 @@ void usageHelp(void)
   cout << "\n-j\t\tPerform joint rather than conditional normalization";
   cout << "\n-Y\t\tWrite transducer to GraphViz .dot file\n\t\t(see http://www.research.att.com/sw/tools/graphviz/)";
   cout << "\n-q\t\tSuppress computation status messages (quiet!)";
-  cout << "\n-K\t\tDon't assume state names are indexes just because the final state is an integer";
+  cout << "\n-K\t\tAssume state names are integer indexes (when the final state is an integer)";
   cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default=1)";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";

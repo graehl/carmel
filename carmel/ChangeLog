@@ -1,3 +1,8 @@
+2003-09-08  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/finite.cc: changed default to named-states and made -K
+	option enable integer-states
+
 Thu Aug 28 14:15:46 2003  Jonathan Graehl  <graehl@brahms.isi.edu>
 
 	* src/config.h (CONFIG_H): define DOUBLE_PRECISION to use doubles
