@@ -17,15 +17,6 @@
 
 #define MAIN_END }
 
-inline std::ostream & print_cmdline(std::ostream &o,int argc, char *argv[]) {
-    for (int i=0;i<argc;++i) {
-        if (i)
-            o << ' ';
-        o << argv[i];
-    }
-    return o;
-}
-
 struct MainGuard {
   INITLEAK_DECL
     unsigned i;

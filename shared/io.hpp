@@ -71,13 +71,16 @@ inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<cha
     return out;
 }
 
+// header=NULL gives just the string, no newline
 template <class charT, class Traits>
 inline std::basic_ostream<charT,Traits> & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
-    out << header;
+    if (header)
+        out << header;
     WordSeparator<' '> sep;
     for (int i=0;i<argc;++i)
         out_shell_quote(out << sep,argv[i]);
-    out << std::endl;
+    if (header)
+        out << std::endl;
     return out;
 }
 
