@@ -81,7 +81,7 @@ LDFLAGS += $(addprefix -l,$(LIB))
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
 CPPFLAGS_TEST += $(CPPFLAGS)
-CPPFLAGS_DEBUG += $(CPPFLAGS)
+CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
 #-DBOOST_DISABLE_THREADS 
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 

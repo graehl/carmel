@@ -6,6 +6,7 @@
 #include <string>
 #include "dynarray.h"
 #include <boost/lexical_cast.hpp>
+#include "backtrace.hpp"
 
 template <class B>
 struct SwapBatch {
@@ -49,6 +50,7 @@ struct SwapBatch {
         return memmap.size();
     }
     void create_next_batch() {
+        BACKTRACE;
 //        DBP_VERBOSE(0);
         unsigned batch_no = batches.size();
         DBPC2("creating batch",batch_no);
@@ -62,6 +64,7 @@ struct SwapBatch {
         batches.push_back();
     }
     void load_batch(unsigned i) {
+        BACKTRACE;
         if (loaded_batch == i)
             return;
         char *base=begin();
@@ -74,6 +77,7 @@ struct SwapBatch {
             throw ios::failure("couldn't load memmap at same base address");
     }
     void remove_batches() {
+        BACKTRACE;
         unsigned batch_no = batches.size();
         for (unsigned i=0;i<batch_no;++i) {
             remove_file(batch_name(i));
@@ -94,10 +98,17 @@ struct SwapBatch {
     }
     }; */
     size_t size() const {
+        BACKTRACE;
         size_t total_items=0;
         for (typename Batches::const_iterator i=batches.begin(),end=batches.end();i!=end;++i)
             total_items += i->size();
         return total_items;
+    }
+    size_t n_batches() const {
+        return batches.size();
+    }
+    void print_stats(std::ostream &out) const {
+        out << size() << " items in " << n_batches() << " batches of " << batchsize << " bytes, stored in " << basename << "N";
     }
     /*
     void read(istream &in) {
@@ -133,6 +144,7 @@ struct SwapBatch {
     }
     */
     void read(ifstream &is) {
+        BACKTRACE;
 //        DBP_VERBOSE(0);
         char *endspace=begin()+capacity();
         char *newtop;
@@ -164,10 +176,12 @@ struct SwapBatch {
                 goto again;
             }
         }
+        batches.compact();
     }
 
     template <class F>
     void enumerate(F f) {
+        BACKTRACE;
         //      DBP_VERBOSE(0);
         for (unsigned i=0,end=batches.size();i!=end;++i) {
             DBPC2("enumerate batch ",i);
@@ -181,6 +195,7 @@ struct SwapBatch {
 
     template <class F>
     void enumerate(F f) const {
+        BACKTRACE;
 //        DBP_VERBOSE(0);
         for (unsigned i=0,end=batches.size();i!=end;++i) {
             DBPC2("enumerate batch ",i);
@@ -195,6 +210,7 @@ struct SwapBatch {
     /// don't actually swap memory (can be useful for statistics that don't look at data)
     template <class F>
     void enumerate_noload(F f) {
+        BACKTRACE;
         for (unsigned i=0,end=batches.size();i!=end;++i) {
             Batch &batch=batches[i];
             for (typename Batch::iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
@@ -205,6 +221,7 @@ struct SwapBatch {
 
     template <class F>
     void enumerate_noload(F f) const {
+        BACKTRACE;
         for (unsigned i=0,end=batches.size();i!=end;++i) {
             const Batch &batch=batches[i];
             for (typename Batch::const_iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
@@ -214,9 +231,11 @@ struct SwapBatch {
     }
 
     SwapBatch(const std::string &basename_,size_type batch_bytesize) : basename(basename_),batchsize(batch_bytesize), autodelete(true) {
+        BACKTRACE;
         create_next_batch();
     }
     ~SwapBatch() {
+        BACKTRACE;
         if (autodelete)
             remove_batches();
     }

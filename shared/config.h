@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+//#define DEBUG
+
 #include "memleak.hpp"
 
 #define COPYRIGHT_YEAR 2004
@@ -24,7 +26,7 @@
 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
-//#define DEBUG
+
 
 // use singly linked list
 #define USE_SLIST

@@ -8,6 +8,8 @@
 #ifndef MEMMAP_HPP
 #define MEMMAP_HPP
 #include "debugprint.hpp"
+#include "backtrace.hpp"
+
 /*
   #include <stdexcept>
   struct memmap_exception : public std::runtime_error {
@@ -127,7 +129,7 @@ public:
                size_type length = max_length, boost::intmax_t offset =0,
                bool create=true,void *base_address=NULL)
         {
-            DBP_ON;
+            BACKTRACE;
             DBPC6("memmap",path,mode,create,base_address,length);
             if (((unsigned)base_address) & alignment()) {
                 DBP3(base_address,alignment(),((unsigned)base_address) & alignment());
@@ -271,6 +273,7 @@ public:
 
     bool close()
         {
+            BACKTRACE;
             bool status;
 #ifdef BOOST_IO_WINDOWS //----------------------------------------------------//
             if (!is_open()) return true;
@@ -306,6 +309,7 @@ public:
 
 
 bool create_file(const std::string& path,std::size_t size) {
+    BACKTRACE;
 #ifdef _WIN32
 #if 0
     //VC++ only, unfortunately

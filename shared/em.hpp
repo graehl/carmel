@@ -81,6 +81,7 @@ struct EM_executor {
 template <class Exec>
 double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, ostream &logs=Config::log(),unsigned log_level=1)
 {
+    DBP_INC_VERBOSE;
     double best_alp=-HUGE_VAL; // alp=average log prob = (logprob1 +...+ logprobn )/ n (negative means 0 probability, 0 = 1 probability)
     if (max_iter == 0)
         return best_alp;
@@ -108,7 +109,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
 
             double new_alp = exec.estimate(very_first_time);
 
-            logs << "i=" << train_iter << " (rate=" << learning_rate << "): perplexity= e^" << -new_alp;
+            logs << "\ni=" << train_iter << " (rate=" << learning_rate << "): perplexity= e^" << -new_alp;
 
             //FIXME: don't really need to do this so often, can move outside of for loop even ... but for sanity's sake (not much efficiency difference) leave it here
             if ( new_alp > best_alp || very_first_time ) {
@@ -134,18 +135,18 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
             } else {
 //                Weight pp_ratio=new_alp/last_alp;
 //                pp_ratio_scaled = root(pp_ratio,new_alp.getLogImp()); // EM delta=(L'-L)/abs(L')
-                logs << " (relative-d-avg-logprob=" << rel_dpp << "), max " << max_delta_param << std::endl;
+                logs << " (relative-d-avg-logprob=" << rel_dpp << "), max " << max_delta_param;
             }
             if (!last_was_reset) {
                 if ( rel_dpp < rel_eps ) {
                     if ( learning_rate > 1 ) {
-                        logs << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
+                        logs << "\nFailed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
                         learning_rate=1;
                         exec.undo_maximize(); // this is needed because you've just measured alp from corrupted (overscaled) parameters and collected corrupt counts
                         last_was_reset=true;
                         continue;
                     }
-                    logs << "Converged - relative per-example avg-logprob change less than " << rel_eps << " after " << train_iter << " iterations.\n";
+                    logs << "\nConverged - relative per-example avg-logprob change less than " << rel_eps << " after " << train_iter << " iterations.\n";
                     break;
                 } else {
                     if (learning_rate < MAX_LEARNING_RATE_EXP)
@@ -156,7 +157,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
 
             max_delta_param = exec.maximize(learning_rate);
             if (max_delta_param.first <= converge_param_delta ) {
-                logs << "Converged - all weights changed no more than " << converge_param_delta << " after " << train_iter << " iterations.\n";
+                logs << "\nConverged - all weights changed no more than " << converge_param_delta << " after " << train_iter << " iterations.\n";
                 break;
             }
 
@@ -171,7 +172,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
             break;
         }
     }
-    logs << "Setting weights to model with lowest avg-prob=" << best_alp << std::endl;
+    logs << "\nSetting weights to model with lowest avg-prob=" << best_alp << std::endl;
     exec.restore_best();
 
     return best_alp;
