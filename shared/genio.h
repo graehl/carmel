@@ -30,6 +30,9 @@
   get_from(std::basic_istream<charT,Traits>& in)
   {
 	return std::ios_base::goodbit;
+  fail:
+	return std::ios_base::badbit;
+	
   }
 
 */
@@ -37,8 +40,8 @@
 
 //PASTE THIS OUTSIDE CLASS C
 /*
-DEF_INSERTER(C)
-DEF_EXTRACTOR(C)
+CREATE_INSERTER(C)
+CREATE_EXTRACTOR(C)
 */
 
 template <class charT, class Traits, class Arg>
@@ -72,6 +75,25 @@ gen_inserter
 	return s;
 }
 
+
+template <class charT, class Traits, class Arg, class Reader>
+std::basic_istream<charT, Traits>& 
+gen_extractor
+(std::basic_istream<charT, Traits>& s, Arg &arg, Reader read)
+{
+	if (!s.good()) return s;
+	std::ios_base::iostate err = std::ios_base::goodbit;
+	typename std::basic_istream<charT, Traits>::sentry sentry(s);
+	if (sentry)
+		err = arg.get_from(s,read);
+	if (err)
+		s.setstate(err);
+	return s;
+}
+
+
+
+
 #define DEFINE_EXTRACTOR(C) \
   template <class charT, class Traits> \
 std::basic_istream<charT,Traits>& operator >> \
@@ -83,6 +105,13 @@ inline std::basic_istream<charT,Traits>& operator >> \
  (std::basic_istream<charT,Traits>& is, C &arg) { \
 	return gen_extractor(is,arg); }
 
+#define CREATE_EXTRACTOR_READER(C,R) \
+  template <class charT, class Traits> \
+inline std::basic_istream<charT,Traits>& operator >> \
+ (std::basic_istream<charT,Traits>& is, C &arg) { \
+	return gen_extractor(is,arg,R); }
+
+
 #define DEFINE_INSERTER(C) \
   template <class charT, class Traits> \
 std::basic_ostream<charT,Traits>& operator << \
@@ -93,6 +122,7 @@ std::basic_ostream<charT,Traits>& operator << \
 inline std::basic_ostream<charT,Traits>& operator << \
  (std::basic_ostream<charT,Traits>& os, const C arg) { \
 	return gen_inserter(os,arg); }
+
 
 
 #define GENIO_CHECK(inop) do { ; if (!(inop).good()) return std::ios_base::badbit; } while(0)
