@@ -1,5 +1,8 @@
 2005-03-30  Jonathan Graehl  <graehl@isi.edu>
 
+	* io.hpp: unget in show_error_context to show the last (failed) char
+	report file position before rading extra chars
+
 	* dynarray.h: for reading arrays terminated by EOF, forgot to
 	change undo_push_back_raw to pop_back (pop_back not being done
 	meant an extra 0 in sortpercent)
