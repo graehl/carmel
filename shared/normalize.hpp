@@ -7,6 +7,7 @@
 
 #include "container.hpp"
 #include "byref.hpp"
+#include "genio.h"
 
 template <class W>
 struct NormalizeGroups {
@@ -15,10 +16,10 @@ struct NormalizeGroups {
     typedef FixedArray<value_type> Inner;
     typedef FixedArray<Inner> Outer;
     Outer norm_groups;
-    GENIO_get_from {
-        IndirectReader<IndexToOffsetReader<W> > reader;
-        norm_groups.get_from(in,reader);
-    }
+//    GENIO_get_from {
+//        IndirectReader<IndexToOffsetReader<W> > reader;
+//        norm_groups.get_from(in,reader);
+//    }
     struct max_p {
         value_type max; // default init = 0
         void operator()(value_type v) {
@@ -28,8 +29,8 @@ struct NormalizeGroups {
     };
     size_t max_index() const {
         max_p m;
-        return nested_enumerate(*this,ref(m));
-        return m.max;
+        nested_enumerate(norm_groups,ref(m));
+        return m.max.get_index();
     }
     size_t required_size() const {
         return max_index()+1;
@@ -56,6 +57,24 @@ struct NormalizeGroups {
     }
 };
 
+template <class charT, class Traits,class C>
+std::basic_istream<charT,Traits>&
+operator >>
+  (std::basic_istream<charT,Traits>& is, NormalizeGroups<C> &arg)
+{
+    return is >> arg.norm_groups;
+//    return gen_extractor(is,arg);
+}
+
+
+template <class charT, class Traits,class C>
+std::basic_ostream<charT,Traits>&
+operator <<
+  (std::basic_ostream<charT,Traits>& os, const NormalizeGroups<C> &arg)
+{
+    return os << arg.norm_groups;
+}
+
 #ifdef TEST
 #include "test.hpp"
 #endif
@@ -63,18 +82,17 @@ struct NormalizeGroups {
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 {
-    FixedArray<Weight> w(3);
+    FixedArray<Weight> w(4u);
     w[0]=1;
     w[1]=2;
     w[2]=3;
     w[3]=4;
-    NormalizeGroups ng;
+    NormalizeGroups<Weight> ng;
     string s="((1) (2 3))";
     istringstream is(s);
     BOOST_CHECK(is >> ng);
     BOOST_CHECK(ng.max_index() == 3);
     DBP(ng);
-    string n
 }
 #endif
 
