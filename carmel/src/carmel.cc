@@ -191,17 +191,20 @@ main(int argc, char *argv[]){
   int maxGenArcs = 0;
   int labelStart = 0;
   int labelFlag = 0;
-	bool rrFlag=false;
-	int ranRestarts = 0;
+        bool rrFlag=false;
+        int ranRestarts = 0;
   bool isInChain;
   ostream *fstout = &cout;
+
+  std::ios_base::sync_with_stdio(false);
+
   for ( i = 1 ; i < argc ; ++i ) {
     if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
       while ( *(++pc) ) {
         if ( *pc == 'k' )
           kPaths = -1;
         else if ( *pc == '!' )
-				  rrFlag=true;
+                                  rrFlag=true;
         else if ( *pc == 'o' )
           learning_rate_growth_flag=true;
         else if ( *pc == 'X' )
@@ -587,8 +590,8 @@ main(int argc, char *argv[]){
 
     if ( flags['v'] )
       result->invert();
-	if ( flags['1'] )
-	  result->randomScale();
+        if ( flags['1'] )
+          result->randomScale();
     if ( flags['n'] )
       result->normalize(norm_method);
     if ( flags['A'] ) {
@@ -910,7 +913,7 @@ void usageHelp(void)
   cout << "\n-K\t\tAssume state names are integer indexes (when the final state is an integer)";
   cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default=1)";
   cout << "\n-1\t\trandomly scale weights (of unlocked arcs) after composition uniformly by (0..1]";
-	cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
+        cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
   cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";

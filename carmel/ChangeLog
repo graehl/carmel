@@ -1,3 +1,7 @@
+2003-12-12  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/finite.cc: fixed NaN training/normalization problem in debug mode
+
 2003-12-11  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/finite.cc: -! n = random training restarts

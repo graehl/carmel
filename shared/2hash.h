@@ -33,8 +33,8 @@ template <typename K, typename V> class Entry {
   Entry(const K &k, const V& v, Entry<K,V> * const n) : next(n), key(k), val(v) { }
   Entry(const K &k, Entry<K,V> * const n) : next(n), key(k), val() { }
 #ifdef CUSTOMNEW
-  static Entry<K,V> *freeList;
-  static const int newBlocksize;
+  static Entry<K,V> *freeList=NULL;
+  static const int newBlocksize=128;
   void *operator new(size_t s)
     {
       size_t dummy = s;
@@ -62,6 +62,7 @@ template <typename K, typename V> class Entry {
   friend class HashTable<K,V>;
   friend class HashIter<K,V>;
   friend class HashConstIter<K,V>; // Yaser
+#if 0
 #if (__GNUC__== 2 && __GNUG__== 2  && __GNUC_MINOR__ <= 7) || defined(_MSC_VER)
   // version 2.7.2 or older of gcc compiler does not understand '<>' so it will give
   // an error message if '<>' is present. However, it is required by newer versions
@@ -70,10 +71,13 @@ template <typename K, typename V> class Entry {
 #else 
   friend std::ostream & operator << <> (std::ostream &, const Entry<K,V> &);
 #endif
+#endif
 };
 
+#if 0
 template <typename K, typename V>
 				  std::ostream & operator << (std::ostream & o, const Entry<K,V> & e);
+#endif
 
 template <typename K, typename V> class HashIter {
   HashTable<K,V> *ht;
@@ -270,6 +274,9 @@ template <typename K, typename V> class HashTable {
       table[i] =  NEW Entry<K,V>(key, table[i]);
       return &table[i]->val;
     }
+  V * end() const {
+    return NULL;
+  }
   V * find(const K &key) const
     {
       for ( Entry<K,V> *p = table[hashToPos(key.hash())]; p ; p = p->next )
@@ -335,8 +342,8 @@ template <typename K, typename V> class HashTable {
       int hashVal, oldSiz = siz;
       Entry<K,V> *next, *p, **i, **oldTable = table;
       siz = pow2Bound(request);
+      table = NEW Entry<K,V>*[siz];
       siz--;  // actual size is siz + 1 (power of 2)
-      table = NEW Entry<K,V>*[siz+1];
       for ( i = table; i <= table + siz ; i++ )
 	*i = NULL;
       for ( i = oldTable ; i <= oldTable + oldSiz ; i++ )
