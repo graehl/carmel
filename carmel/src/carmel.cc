@@ -1,6 +1,6 @@
 //#define MARCU
 
-// unused letters: o
+// -o = learning rate growth factor (default 1.1)
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
 // -w w = prune paths ratio (1 = keep only best path, 10 = keep paths up to 10 times worse)
@@ -159,7 +159,7 @@ main(int argc, char *argv[]){
     usageHelp();
     return 0;
   }
-  int i,j;
+  int i;
   bool flags[256];
   for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
   char *pc, **parm = NEW char *[argc-1];
@@ -182,6 +182,8 @@ main(int argc, char *argv[]){
   keep_path_ratio.setInfinity();
   bool wrFlag = false;
   bool msFlag = false;
+  bool learning_rate_growth_flag = false;
+  float learning_rate_growth_factor=1.1;
   int nGenerate = 0;
   int maxTrainIter = 256;
 #define DEFAULT_MAX_GEN_ARCS 1000
@@ -191,10 +193,12 @@ main(int argc, char *argv[]){
   bool isInChain;	  
   ostream *fstout = &cout;
   for ( i = 1 ; i < argc ; ++i ) {
-    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
+    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
       while ( *(++pc) ) {
         if ( *pc == 'k' )
           kPaths = -1;
+        else if ( *pc == 'o' )
+          learning_rate_growth_flag=true;
         else if ( *pc == 'X' )
           converge_pp_flag=true;
         else if ( *pc == 'w' )
@@ -234,6 +238,11 @@ main(int argc, char *argv[]){
       } else if ( converge_pp_flag ) {
         converge_pp_flag = false;
         readParam(&converge_pp_ratio,argv[i],'X');
+      } else if ( learning_rate_growth_flag ) {
+        learning_rate_growth_flag = false;
+        readParam(&learning_rate_growth_factor,argv[i],'o');
+        if (learning_rate_growth_factor < 1)
+			learning_rate_growth_factor=1;
       } else if (seedFlag) {
         seedFlag=false;
         readParam(&seed,argv[i],'R');
@@ -678,7 +687,7 @@ main(int argc, char *argv[]){
             List<int> empty_list;
             result->trainExample(empty_list, empty_list, 1.0);
           }
-          result->trainFinish(converge, converge_pp_ratio, maxTrainIter, norm_method);
+          result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method);
         } else if ( nGenerate > 0 ) {
           MINIMIZE;
           //        if ( !flags['n'] )
@@ -838,7 +847,7 @@ main(int argc, char *argv[]){
   cout << "r to stdout\n-F filename\twrite the final transducer to a file (";
   cout << "in lieu of stdout)\n-v\t\tinvert the ";
   cout << "resulting transducer by swapping the input and\n\t\toutput symbo";
-  cout << "ls \n-d\t\tdo not eliminate dead-end states from all transducers";
+  cout << "ls \n-d\t\tdo not reduce (eliminate dead-end states)";
   cout << " created\n-C\t\tconsolidate arcs with same source, destination, ";
   cout << "input and\n\t\toutput, with a total weight equal to the sum (cla";
   cout << "mped to a\n\t\tmaximum weight of one)\n-p w\t\tprune (discard) a";
@@ -873,6 +882,7 @@ main(int argc, char *argv[]){
   cout << "\n-Y\t\tWrite transducer to GraphViz .dot file\n\t\t(see http://www.research.att.com/sw/tools/graphviz/)";
   cout << "\n-q\t\tSuppress computation status messages (quiet!)";
   cout << "\n-K\t\tDon't assume state names are indexes just because the final state is an integer";
+  cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default 1.1)";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
   cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";

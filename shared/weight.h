@@ -149,6 +149,9 @@ out_always_real(std::basic_ostream<A,B>& os);
   void raisePower(float power) {
 	  weight *= power;
   }
+  void invert() {
+	  weight = -weight;
+  }
   void takeRoot(float nth) {
 	  weight /= nth;
   }
@@ -164,6 +167,11 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);
 
 };
 
+inline Weight pow_logexponent(Weight a, Weight b) {
+	a.raisePower(b.weight);
+	return a;
+}
+
 inline Weight root(Weight w,float nth) {
 	w.takeRoot(nth);
 	return w;
@@ -176,9 +184,7 @@ inline Weight pow(Weight w,float nth) {
 
 
 inline Weight operator ^(Weight base,float exponent) {
-	Weight result = base;
-	result ^= exponent;
-	return result;
+	return pow(base,exponent);
 }
 
 
