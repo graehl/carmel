@@ -250,16 +250,23 @@ operator <<
 BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 {
     typedef Weight W;
-    FixedArray<W> w(4u);
+    FixedArray<W> w(10u);
     w[0]=1;
     w[1]=2;
     w[2]=3;
     w[3]=4;
-    NormalizeGroups<W> ng("tmp.test.normalize",100);
-    string s="((1) (2 3))";
+    w[4]=1;
+    w[5]=2;
+    w[6]=3;
+    w[7]=4;
+    w[8]=1;
+    w[9]=2;
+
+    NormalizeGroups<W> ng("tmp.test.normalize",32);
+    string s="((0 1) (2 3) (4 5 6) (7 8 9))";
     istringstream is(s);
     BOOST_CHECK(is >> ng);
-    BOOST_CHECK(ng.max_index() == 3);
+    BOOST_CHECK(ng.max_index() == 9);
 //    cerr << Weight::out_always_real;
 //    cout << Weight::out_variable;
 //    DBP(w);

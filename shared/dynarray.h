@@ -897,7 +897,9 @@ bool operator ==(const Array<Lt,A> &l, const Array<L2,A2> &r)
 
 
 template <class L,class A>
-void read(std::istream &in,Array<L,A> &x,StackAlloc &a) throw(genio_exception) {
+void read(std::istream &in,Array<L,A> &x,StackAlloc &a)
+// throw(genio_exception,StackAlloc::Overflow)
+{
     x.vec=a.aligned_next<L>();
     my::function_output_iterator<boost::reference_wrapper<StackAlloc> > out(boost::ref(a));
     range_get_from(in,out,DefaultReader<L>());
