@@ -248,8 +248,10 @@ class trainInfo {
 #endif
 
   trainInfo(){};
+private:
   trainInfo(const trainInfo& a){
-    if (a.forArcs == NULL)
+  }
+  /*  if (a.forArcs == NULL)
       forArcs = NULL ;
     else 
       forArcs=new HashTable<IOPair, List<DWPair> >(*a.forArcs);
@@ -275,7 +277,7 @@ class trainInfo {
 	}
       }
     }    
-  };
+  };*/
 };
 
 #endif

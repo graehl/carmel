@@ -33,7 +33,7 @@ using namespace std;
 ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
 
 class WFST {
- public:
+ //public:
   bool ownerInOut;
   Alphabet *in;
   Alphabet *out;
@@ -43,7 +43,7 @@ class WFST {
   //  HashTable<IntKey, int> tieGroup; // IntKey is Arc *; value in group number (0 means fixed weight)
 //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
 //  WFST & operator = (WFST &){return *this;} Yaser
-  WFST & operator = (WFST &){cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
+  //WFST & operator = (WFST &){cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
   int readLegible(istream &);	// returns 0 on failure (bad input)
   void writeLegible(ostream &);
@@ -70,12 +70,14 @@ void insertShortPath(int source, int dest, List<T> *,
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
   trainInfo *trn;
   Weight train(const int iter); // returns max change in any arcs weight - Yaser 7-13-2000
+  WFST(const WFST &a) {}
 public:
   WFST() : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) { }
-  WFST(const WFST &a): 
-    ownerInOut(1), in(((a.in == 0)? 0:(new Alphabet(*a.in)))), out(((a.out == 0)? 0:(new Alphabet(*a.out)))), 
-    stateNames(a.stateNames), final(a.final), states(a.states), 
-    trn(((a.trn ==0)? 0 : (new trainInfo(*a.trn)))){}; // Yaser added this 7-25-2000 copy constructor*/
+//  WFST(const WFST &a): 
+    //ownerInOut(1), in(((a.in == 0)? 0:(new Alphabet(*a.in)))), out(((a.out == 0)? 0:(new Alphabet(*a.out)))), 
+    //stateNames(a.stateNames), final(a.final), states(a.states), 
+    //trn(((a.trn ==0)? 0 : (new trainInfo(*a.trn)))){}; // Yaser added this 7-25-2000 copy constructor*/
+
   WFST(istream & istr) : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) {
     if (!this->readLegible(istr))
       final = -1;
