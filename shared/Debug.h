@@ -17,6 +17,14 @@ using namespace std;
 #ifndef INFO_LEVEL
 # define INFO_LEVEL 9999
 #endif
+#ifndef ASSERT_LEVEL
+# define INFO_LEVEL 9999
+#endif
+
+#define IF_INFO(level) if(INFO_LEVEL>level)
+#define IF_ASSERT(level) if(ASSERT_LEVEL>level)
+
+#define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
 
 #ifdef NO_INFO
 # define DBG_OP_F(pDbg,op,module,msg,file,line)
