@@ -126,6 +126,8 @@ inline std::basic_ostream<charT,Traits>& operator << \
 #define GENIOGOOD std::ios_base::goodbit
 #define GENIOBAD std::ios_base::badbit
 
+#define GENIOSETBAD(in) do { in.setstate(GENIOBAD); } while(0)
+
 #define GENIO_CHECK(inop) do { ; if (!(inop).good()) return std::ios_base::badbit; } while(0)
 #define GENIO_CHECK_ELSE(inop,fail) do {  if (!(inop).good()) { fail; return std::ios_base::badbit; } } while(0)
 
