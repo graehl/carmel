@@ -34,10 +34,10 @@ struct State {
 #ifdef BIDIRECTIONAL
     hitcount = s.hitcount;
 #endif
-    if (s.index == NULL)
+//    if (s.index == NULL)
       index = (HashTable<IntKey, List<HalfArc> > *) NULL ;
-    else
-      index = NEW HashTable<IntKey, List<HalfArc> >(*s.index);
+//    else
+//     index = NEW HashTable<IntKey, List<HalfArc> >(*s.index);
   } 
   ~State() { flush(); }
   void indexBy(int output = 0) {
@@ -56,7 +56,7 @@ struct State {
       for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
-	if ( !(list = index->find(l->out)) )
+	if ( !(list = index->find_second(l->out)) )
 	  index->add(l->out, 
 		     List<HalfArc>(&(*l)));
 	else
@@ -75,7 +75,7 @@ struct State {
 #endif
     index = NEW HashTable<IntKey, List<HalfArc> >(size);
     for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
-      if ( !(list = index->find(l->in)) )
+      if ( !(list = index->find_second(l->in)) )
 	index->add(l->in, List<HalfArc>(&(*l)));
       else
 	list->push(&(*l));
@@ -115,7 +115,7 @@ struct State {
       un.in = l->in;
       un.out = l->out;
       un.dest = l->dest;
-      if ( (ppWt = hWeights.find(un)) ) {
+      if ( (ppWt = hWeights.find_second(un)) ) {
 	**ppWt += l->weight;
 	if ( **ppWt > 1 )
 	  **ppWt = Weight((FLOAT_TYPE)1.);

@@ -1,7 +1,9 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
-#define VERSION "3.0.7" 
+#define VERSION "3.0.8" 
+
+//#define DEBUGNAN
 
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
@@ -29,7 +31,8 @@ typedef float FLOAT_TYPE;
 
 #define PLACEMENT_NEW new
 
-#ifdef DEBUG__
+#ifdef DEBUG
+
 #ifdef _MSC_VER
 //#define MEMDEBUG // link to MSVCRT
 #define _CRTDBG_MAP_ALLOC
@@ -38,13 +41,17 @@ typedef float FLOAT_TYPE;
 #define INITLEAK _CrtMemState s1, s2, s3; do { _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG|_CRTDBG_MODE_FILE );_CrtSetReportFile( _CRT_ERROR, _CRTDBG_FILE_STDERR ); _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );} while(0)
 #define CHECKLEAK(i) do {  _CrtMemCheckpoint( (((i)%2)?&s1:&s2) ); if ((i)>0) { _CrtMemDifference( &s3, (((i)%2)?&s2:&s1), (((i)%2)?&s1:&s2) ); _CrtMemDumpStatistics( &s3 );} } while(0)
 #define NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+
 #else
+
 #define NEW new
 #define INITLEAK
 #define CHECKLEAK(i)
 #endif
+
 #define DEBUGLEAK
 #define DEBUG_ESTIMATE_PP
+#define DEBUGNAN
 //#define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
 //#define DEBUGNORMALIZE
@@ -62,6 +69,7 @@ typedef float FLOAT_TYPE;
 #endif
 
 
+
 #ifdef DEBUGNORMALIZE
 #define CHECKNORMALIZE
 #endif
@@ -71,6 +79,7 @@ typedef float FLOAT_TYPE;
 // unless defined, Weight(0) will may give bad results when computed with, depending on math library behavior
 #define WEIGHT_CORRECT_ZERO
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
+// definitely needs to be defined for Microsoft (debug or release) now
 
 
 // special-purpose allocators for hash tables - never reclaims memory for general pool, but faster (?)
