@@ -7,7 +7,7 @@
 
 #else
 
-#ifdef _MSVC_VER
+#ifdef _MSC_VER
 //FIXME: doesn't work with DLLs ... use TLS apis instead (http://www.boost.org/libs/thread/doc/tss.html)
 #define THREADLOCAL __declspec(thread)
 #else
