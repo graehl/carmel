@@ -159,13 +159,36 @@ void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
 }
 
 
+template <class HD>
+struct HArcDest  {
+  typedef void has_print_on;
+  HD harc; // hyperarc with this tail
+  unsigned multiplicity; // tail multiplicity
+  HArcDest(HD e) : harc(e), multiplicity(1) {}
+  GENIO_print_on
+  {
+    o << '"';
+    harc->print_on(o);
+    o << "\"x"<<multiplicity;
+    return GENIOGOOD;
+  }
+};
+
+template <class charT, class Traits,class S>
+std::basic_ostream<charT,Traits>&
+operator <<
+  (std::basic_ostream<charT,Traits>& os, const HArcDest<S> &arg)
+{
+  return gen_inserter(os,arg);
+}
+
+
 
 template <class G,
           //class HyperarcLeftMap=typename ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_index_map>::type,
   class HyperarcMapFactory=property_factory<G,hyperarc_tag_t>,
           class VertMapFactory=property_factory<G,vertex_tag_t>,
           class ContS=VectorS >
-
 // phony vertex @ #V+1? for empty-tail-set harcs? - would require making vertmapfactory have a spot for null_vertex as well
 struct ReverseHyperGraph {
   typedef ReverseHyperGraph<G,HyperarcMapFactory,VertMapFactory,ContS> Self;
@@ -179,18 +202,7 @@ struct ReverseHyperGraph {
   typedef typename GT::hyperarc_descriptor HD;
   typedef typename GT::vertex_descriptor VD;
 
-  struct ArcDest  {
-    HD harc; // hyperarc with this tail
-    unsigned multiplicity; // tail multiplicity
-    ArcDest(HD e) : harc(e), multiplicity(1) {}
-    GENIO_print_on
-    {
-      harc.print_on(o);
-      o << " multiplicity="<<multiplicity;
-      return GENIOGOOD;
-    }
-  };
-
+  typedef HArcDest<HD> ArcDest;
   /*  struct Edge : public W {
       unsigned ntails;
       W &weight() { return *this; }
@@ -221,7 +233,7 @@ struct ReverseHyperGraph {
   typedef typename TailsFactory::reference RemainPMap;
   HyperarcLeftMap unique_tails;
   RemainPMap unique_tails_pmap() {
-    return RemainPMap(unique_tails);
+    return ref(unique_tails);
   }
 
 
@@ -238,7 +250,7 @@ struct ReverseHyperGraph {
    visit_all();
   }
   void visit_all() {
-     visit(hyperarc_tag,g,*this);
+     visit(hyperarc_tag,g,ref(*this));
   }
   Adj &operator[](VD v) {
     return adj[v];
@@ -303,14 +315,21 @@ struct ReverseHyperGraph {
     //typedef typename unwrap_reference<VertexCostMap>::type::value_type Cost;
     typedef typename unwrap_reference<EdgeCostMap>::type::value_type Cost;
     struct RemainInf : public std::pair<unsigned,Cost> {
+      unsigned remain() const { return first; }
+      Cost cost() const { return second; }
+
       unsigned & remain() { return first; }
       Cost & cost() { return second; }
+      GENIO_print_on {
+        o << "(" << remain() << "," << cost() << ")";
+        return GENIOGOOD;
+      }
     };
     typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostFact; // lower bound on edge costs
     typedef typename RemainInfCostFact::implementation RemainInfCosts;
     RemainInfCosts remain_infinum;
     typename RemainInfCostFact::reference hyperarc_remain_and_cost_map() {
-      return remain_infinum;
+      return ref(remain_infinum);
     }
 
     //TailsRemainMap tr;
@@ -490,7 +509,7 @@ struct ReverseHyperGraph {
 
     }
     RemainPMap tails_remain_pmap() {
-      return RemainPMap(tr);
+      return ref(tr);
     }
 
   };

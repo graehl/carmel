@@ -5,6 +5,7 @@
 #include "byref.hpp"
 #include "dynarray.h"
 #include <utility>
+#include "genio.h"
 
 #ifdef TEST
 #include "test.hpp"
@@ -20,8 +21,13 @@ struct OffsetMap {
     //Assert(p<begin+values.size());
     return (unsigned)(p-begin);
   }
-  OffsetMap(K beg) : begin(beg) {
+  explicit OffsetMap(K beg) : begin(beg) {
   }
+  /* // default constructor
+  OffsetMap(const OffsetMap<K> &o) : begin(o.begin) {
+    //DBPC("OffSetMap copy",begin);
+  }
+  */
   typedef boost::readable_property_map_tag category;
   typedef unsigned value_type;
   typedef K key_type;
@@ -67,16 +73,16 @@ struct ArrayPMapImp
   typedef V value_type;
   typedef V& reference;
   typedef std::pair<unsigned,offset_map> init_type;
-  offset_map ind;
+  offset_map ind; // should also be copyable
   typedef   FixedArray<value_type> Vals;
   Vals  vals; // copyable!
   //ArrayPMapImp(G &g) : ind(g), vals(num_hyperarcs(g)) { }
 
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
-  ArrayPMapImp(const init_type &init) : ind(init.second), vals(init.first) {}
-    operator Vals & ()  {
-      return vals;
-    }
+  explicit ArrayPMapImp(const init_type &init) : ind(init.second), vals(init.first) {}
+  operator Vals & ()  {
+    return vals;
+  }
   V & operator [](key_type k) const {
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -87,6 +93,22 @@ struct ArrayPMapImp
 #pragma warning( pop )
 #endif
   }
+  GENIO_print_on
+  {
+    o << vals;
+    return GENIOGOOD;
+  }
+  GENIO_print_on_writer
+  {
+    return vals.print_on(o,w);
+  }
+
+  /*
+  // default constructor
+  ArrayPMapImp(const Self &s) : vals(s.vals), ind(s.ind) {
+    //    DBPC("ArrayPMapImp copy",vals);
+  }
+  */
 private:
   //  ArrayPMapImp(Self &s) : vals(s.vals) {}
 };

@@ -264,7 +264,7 @@ inline std::ostream & operator << (std::ostream &out, Alphabet<T,P> &alph)
 
 #ifdef TEST
 #include "../../tt/test.hpp"
-BOOST_AUTO_UNIT_TEST( static_itoa )
+BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 {
   BOOST_CHECK(!strcmp(static_itoa(0),"0"));
   BOOST_CHECK(!strcmp(static_itoa(3),"3"));
@@ -275,10 +275,11 @@ BOOST_AUTO_UNIT_TEST( static_itoa )
   BOOST_CHECK(!strcmp(static_itoa(1534567890),"1534567890"));
 }
 
-BOOST_AUTO_UNIT_TEST( dummy )
-{
-BOOST_CHECK(true);  
-}
+#endif
+
+
+#ifdef MAIN
+#include "strhash.cc"
 #endif
 
 #endif

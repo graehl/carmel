@@ -35,11 +35,9 @@ struct DefaultReader
          }
 };
 
-template <class Label>
 struct DefaultWriter
 {
-  typedef Label value_type;
-  template <class charT, class Traits>
+  template <class charT, class Traits,class Label>
         std::basic_ostream<charT,Traits>&
          operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
           return o << l;
@@ -48,7 +46,7 @@ struct DefaultWriter
 
 
   template <class charT, class Traits, class T,class Writer>
-        std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,Writer writer=Writer())
+        std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false)
   {
         o << '(';
         if (multiline) {
@@ -158,13 +156,14 @@ public:
   template <class charT, class Traits>
         std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
   {
-        return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
+        return range_print_on(o,begin(),end(),DefaultWriter(),multiline);
   }
 
+  typedef void has_print_on_writer;
   template <class charT, class Traits, class Writer >
-        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer w,bool multiline=false) const
   {
-        return range_print_on(o,begin(),end(),multiline,writer);
+        return range_print_on(o,begin(),end(),w,multiline);
   }
 
 
@@ -271,7 +270,7 @@ public:
         dealloc();
   }
 protected:
-  AutoArray(AutoArray<T,Alloc> &a) : Super(a.sp){
+  AutoArray(AutoArray<T,Alloc> &a) : Super(a.capacity()){
   }
 
 };
@@ -287,10 +286,33 @@ public:
     destroy();
         //~Super(); // happens implicitly!
   }
-  FixedArray(FixedArray<T,Alloc> &a) : Super(a.capacity()) {
-    std::uninitialized_copy(a.begin(),a.end(),begin());
-    //memcpy(begin(),a.begin(),a.size());
+  void uninit_copy_from(const T* b,const T* e) {
+    Assert(e-b == capacity());
+    std::uninitialized_copy(b,e,begin());
+    //memcpy(begin(),b,e-b);
   }
+/*  FixedArray(const Array<T,Alloc> &a) : Super(a.capacity()) {
+    DBPC("FixedArray copy",a);
+    uninit_copy_from(a.begin(),a.end());
+  }
+  FixedArray(const AutoArray<T,Alloc> &a) : Super(a.capacity()) {
+    DBPC("FixedArray copy",a);
+    uninit_copy_from(a.begin(),a.end());
+  }
+*/
+  //F=FixedArray<T,Alloc> 
+  template <class F>
+  FixedArray(const F &a) : Super(a.size()) {
+    DBPC("FixedArray copy",a);
+    uninit_copy_from(a.begin(),a.end());
+  }
+
+    
+  FixedArray(const FixedArray<T,Alloc>  &a) : Super(a.size()) {
+    DBPC("FixedArray copy",a);
+    uninit_copy_from(a.begin(),a.end());
+  }
+
 private:
 
 };
@@ -630,17 +652,19 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
         //vec = NULL;space=0; // don't really need but would be safer
   }
 
+
   template <class charT, class Traits>
         std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
   {
-        return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
+        return range_print_on(o,begin(),end(),DefaultWriter(),multiline);
   }
 
   template <class charT, class Traits, class Writer >
         std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
   {
-        return range_print_on(o,begin(),end(),multiline,writer);
+        return range_print_on(o,begin(),end(),writer,multiline);
   }
+
 
   // if any element read fails, whole array is clobbered (even if appending!)
   // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)

@@ -4,6 +4,8 @@
 #include "2heap.h"
 #include "threadlocal.hpp"
 #include "byref.hpp"
+#include "dummy.hpp"
+
 //! NOTE: key to only SetLocWeight according to a stack discipline - cannot leave multiple instances around using heap allocation!
 
 //! NOTE: default comparison direction is reversed ... making max-heaps into min-heaps (as desired for best-tree) and vice versa
@@ -38,7 +40,7 @@ struct HeapKey {
   HeapKey(const Self &s) : key(s.key) {}
 
   Self *&location() {
-    return *(Self **)deref(locmap)[key];
+    return *(Self **)&(deref(locmap)[key]);
   }
   weight_type &weight() {
     return deref(weightmap)[key];
@@ -85,10 +87,11 @@ inline void heapSafeAdd ( Heap &heap, HeapKey<K,W,L> k) {
 
 #ifdef MAIN
 template<class K,class W,class L>
-THREADLOCAL W HeapKey<K,W,L>::weightmap(*(W*)NULL);
+THREADLOCAL W HeapKey<K,W,L>::weightmap(dummy<W>::var());
 
 template<class K,class W,class L>
-THREADLOCAL L HeapKey<K,W,L>::locmap(*(L*)NULL);
+THREADLOCAL L HeapKey<K,W,L>::locmap(dummy<L>::var());
+
 #endif
 
 template<class K,class W,class L>
@@ -103,7 +106,7 @@ inline bool operator < (HeapKey<K,W,L> lhs, HeapKey<K,W,L> rhs) {
 #endif
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( ADJUSTABLEHEAP )
+BOOST_AUTO_UNIT_TEST( TEST_ADJUSTABLEHEAP )
 {
 }
 #endif
