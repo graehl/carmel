@@ -36,14 +36,22 @@ using namespace std;
 
 
 #ifdef NO_INFO
+# define DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,newline)
 # define DBG_OP_F(lvl,pDbg,op,module,msg,file,line)
 #else
-# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) do {        \
+# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) do {               \
         if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \
    ostringstream os; \
    os << msg; \
-   (pDbg)->op(module,os.str(),file,line);       \
+   (pDbg)->op(module,os.str(),file,line);      \
 } } while(0)
+# define DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,newline) do {               \
+        if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \
+   ostringstream os; \
+   os << msg; \
+   (pDbg)->op(module,os.str(),file,line,newline);      \
+} } while(0)
+
 #endif
 
 //!< Q: no FILE/LINE included in output
@@ -51,6 +59,7 @@ using namespace std;
 #define DBG_OP(pDbg,op,module,msg) DBG_OP_L(0,pDbg,op,module,msg)
 #define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(0,pDbg,op,module,msg)
 #define DBG_OP_L(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,__FILE__,__LINE__)
+#define DBG_OP_LQ_NEWLINE(lvl,pDbg,op,module,msg,newline) DBG_OP_F_NL(lvl,pDbg,op,module,msg,"",0,newline)
 #define DBG_OP_LQ(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,"",0)
 #define NESTINFO_GUARD(pDbg) ns_decoder_global::Debug::Nest debug_nest_guard_ ## __LINE__ (pDbg)
 
@@ -61,6 +70,9 @@ using namespace std;
 #define ERROR(module,msg) DBG_OP(dbg,error,module,msg)
 #define FATAL(module,msg) DBG_OP(dbg,fatalError,module,msg)
 #define INFOQ(module,msg) DBG_OP_Q(dbg,info,module,msg)
+#define INFOQSAMELINE(module,msg) DBG_OP_LQ_NEWLINE(0,dbg,info,module,msg,false)
+#define INFOSTREAM dbg->info_sameline()
+#define INFOSTREAM_NL dbg->info_startline()
 #define WARNINGLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,warning,module,msg)
 #define WARNINGL(lvl,module,msg) DBG_OP_L(lvl,dbg,warning,module,msg)
 #define WARNINGQ(module,msg) DBG_OP_Q(dbg,warning,module,msg)
@@ -169,7 +181,7 @@ namespace ns_decoder_global {
       infoOS=&o;
     }
     void error(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error
-      getDebugOutput() << "::" << module << "(" << file << ":" << line << "): ERROR: " << info << endl;
+      getDebugOutput() << "\n::" << module << "(" << file << ":" << line << "): ERROR: " << info << endl;
     }
 
     void fatalError(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error and dies
@@ -179,7 +191,7 @@ namespace ns_decoder_global {
     }
 
     void warning(const string &module, const string &info, const string &file="", const int line=0) { //!< prints a warning message
-      getDebugOutput() << "::" << module << "(" << file << ":" << line << "): WARNING: " << info << endl;
+      getDebugOutput() << "\n::" << module << "(" << file << ":" << line << "): WARNING: " << info << endl;
     }
 
       bool info_newline;
@@ -201,12 +213,13 @@ namespace ns_decoder_global {
 
       void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
         const char OUTLINE_CHAR='*';
+        info_startline();
         for (unsigned depth=info_outline_depth;depth>0;--depth)
             getInfoOutput() << OUTLINE_CHAR;
       if (file=="") {
-          info_startline() << module << ": " << info;
+          getInfoOutput() << module << ": " << info;
       } else {
-          info_startline() << module << "(" << file << ":" << line << "): " << info;
+          getInfoOutput() << module << "(" << file << ":" << line << "): " << info;
       }
       info_newline=false;
       if (endline)
