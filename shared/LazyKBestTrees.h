@@ -217,12 +217,15 @@ struct Node {
     // PRE: unincremented pending
     //POST: if pending succesor incrementing ith child exists, increment, create new result, and add to heap
     void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
-        R *old_child=pending.child[i]->memo[pending.childbp[i]];
+        Node *child_node=pending.child[i];
+        R *old_child=child_node->memo[pending.childbp[i]];
+        assertlvl(99,old_child=child_node->get_best(pending.childbp[i]));
+        
         //            R *new_child;
         INFOT("BUILDSUCC #" << i << " @" << this << ": " << " old_child=" <<old_child << *this);
         NESTT;
 
-        if (R *new_child=(pending.child[i])->get_best(++pending.childbp[i])) {         // has child-succesor
+        if (R *new_child=(child_node->get_best(++pending.childbp[i]))) {         // has child-succesor
             INFOT("HAVE CHILD SUCCESOR TO " << *this << ": @" << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
             pending.result=result_alloc.allocate(); 
             new(pending.result) R(old_parent,old_child,new_child,i); // FIXME: ensure placement new is used - how?  ::operator new is bad ...
