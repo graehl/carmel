@@ -371,7 +371,11 @@ struct TreeVizPrinter : public GraphvizPrinter {
                 }
             child=child_start;
             for (typename T::const_iterator i=t.begin(),e=t.end();i!=e;++i,++child) {
-                o << " " << parent << " -> " << child << "\n";
+                o << " " << parent << " -> " << child;
+                if (samerank==ANY_ORDER) {
+                    //                    o << "[label=" << i-t.begin() << "]";
+                }
+                o << "\n";
             }
             child=child_start;
             for (typename T::const_iterator i=t.begin(),e=t.end();i!=e;++i,++child) {
