@@ -348,8 +348,9 @@ template <class Label,class Labeler=DefaultNodeLabeler<Label> >
 struct TreeVizPrinter : public GraphvizPrinter {
     Labeler labeler;
     typedef Tree<Label> T;
+    bool samerank;
 
-    TreeVizPrinter(ostream &o_,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_) {}
+    TreeVizPrinter(ostream &o_,bool samerank_=true,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_),samerank(samerank_) {}
     void print(const T &t) {
         print(t,next_node++);
         o << std::endl;
@@ -363,12 +364,13 @@ struct TreeVizPrinter : public GraphvizPrinter {
             next_node+=t.rank;
             unsigned child_end=next_node;
             unsigned child=child_start+1;
-            if (t.rank > 1) { // ensure left->right order
-                o << " {rank=same " << child_start;
-                for (;child != child_end;++child)
-                    o << " -> " << child;
-                o << " [style=invis]}\n";
-            }
+            if (samerank)
+                if (t.rank > 1) { // ensure left->right order
+                    o << " {rank=same " << child_start;
+                    for (;child != child_end;++child)
+                        o << " -> " << child;
+                    o << " [style=invis]}\n";
+                }
             child=child_start;
             for (typename T::const_iterator i=t.begin(),e=t.end();i!=e;++i,++child) {
                 o << " " << parent << " -> " << child << "\n";
