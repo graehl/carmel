@@ -168,7 +168,58 @@ T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
     return begin;
 #endif
   fail:
-    throw std::runtime_error("expected (a,b,c,d) or (a b c d) as range input");
+    throw std::runtime_error("expected e.g. ( a,b,c,d ) or (a b c d) as range input");
 }
+
+// hardcoded to look for input id=N so we don't need full boyer-moore algorithm
+// not chartraits sensitive - assumes 0...9 coded in order.
+template <class A,class I,class O>
+void insert_field_byid(const A& vals,I &in,O &out,const char *out_field)
+{
+    char c;
+    unsigned N;
+    enum {waiting_i,seen_i,seen_id,scan_number} state=waiting_i;
+    while (in.get(c)) {
+        switch(state) {
+        case waiting_i:
+            if (c=='i')
+                state=seen_i;
+            break;
+        case seen_i:
+            if (c=='d')
+                state=seen_id;
+            else
+                state=waiting_i;
+            break;
+        case seen_id:
+            if (c=='=') {
+                N=0;
+                state=scan_number;
+            } else
+                state=waiting_i;
+            break;
+        case scan_number:
+            switch (c) {
+            case '1':case '2':case '3':case '4':case '5':
+            case '6':case '7':case '8':case '9':case '0':
+                N*=10;
+                N+=(c-'0');
+
+                break;
+            default:
+                state=waiting_i;
+#define OUTN do { out << ' ' << out_field << '=' << vals.at(N); } while(0)
+                OUTN;
+            }
+        }
+        out << c;
+    }
+    if (state == scan_number) // file ends without newline.
+                OUTN;
+#undef OUTN
+}
+
+
+
 
 #endif

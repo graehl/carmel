@@ -242,6 +242,12 @@ struct tick_writer
         if (pout)
             *pout << tick;
     }
+    template <class C>
+    void operator()(const C& unused)
+    {
+        if (pout)
+            *pout << tick;
+    }
 };
 
 
@@ -265,6 +271,16 @@ struct periodic_wrapper : public C
             if (!--left) {
                 left=period;
                 return Imp::operator()();
+            }
+        }
+    }
+    template <class C2>
+    result_type operator()(const C2& val) {
+        DBP2(period,left);
+        if (period) {
+            if (!--left) {
+                left=period;
+                return Imp::operator()(val);
             }
         }
     }

@@ -231,9 +231,7 @@ DEPEND=1
 
 
 %.d: %.$(CPP_EXT)
-#	@echo
-#	@echo CREATE DEPENDENCIES for $<
-@set -e; \
+	@set -e; \
 	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
  ( \
 echo CREATE DEPENDENCIES for $< && \

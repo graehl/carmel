@@ -19,6 +19,7 @@
 #include "funcs.hpp"
 #include "io.hpp"
 #include "stackalloc.hpp"
+#include <boost/lexical_cast.hpp>
 
 #ifdef TEST
 #include "test.hpp"
@@ -37,6 +38,17 @@ public:
     enum { REPLACE=0, APPEND=1 };
     enum { BRIEF=0, MULTILINE=1 };
     enum { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print_on and bool 2nd arg ...
+
+    T & at(unsigned int index) const { // run-time bounds-checked
+        T *r=vec+index;
+        if (!(r < end()) )
+            throw std::out_of_range(std::string("Array access out of bounds with index=").append(boost::lexical_cast<std::string>(index)));
+        return *r;
+    }
+    T & operator[] (unsigned int index) const {
+        Assert(vec+index < end());
+        return vec[index];
+    }
 
 //    operator T*() const { return vec; }
     bool invariant() const {
@@ -184,16 +196,6 @@ public:
     }
     const T* const_end() const {
         return endspace;
-    }
-    T & at(unsigned int index) const { // run-time bounds-checked
-        T *r=vec+index;
-        if (!(r < end()) )
-            throw std::out_of_range("dynarray");
-        return *r;
-    }
-    T & operator[] (unsigned int index) const {
-        Assert(vec+index < end());
-        return vec[index];
     }
     unsigned int index_of(T *t) const {
         Assert(t>=begin() && t<end());
@@ -615,10 +617,18 @@ public:
     }
 
     // doesn't dealloc *into
-    void compact(Array<T,Alloc> *into) {
+    void compact(Array<T,Alloc> &into) {
         unsigned sz=size();
-        into->alloc(sz);
-        copyto(into->begin());
+        into.alloc(sz);
+        copyto(into.begin());
+    }
+
+    // doesn't dealloc *into
+    void compact_giving(Array<T,Alloc> &into) {
+        unsigned sz=size();
+        into.alloc(sz);
+        copyto(into.begin());
+        clear_nodestroy();
     }
 
     void reserve(unsigned int newSpace) {
@@ -756,8 +766,7 @@ std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,T
 {
     DynamicArray<T,Alloc> s;
     std::ios_base::iostate ret=s.get_from(in,read);
-    s.compact(a); // copies to a (without destroying old)
-    s.clear_nodestroy();
+    s.compact_giving(a); // transfers to a
     return ret;
 }
 
