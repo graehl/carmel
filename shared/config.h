@@ -15,7 +15,7 @@
 #endif
 
 // unless defined, Weight(0) will may give bad results when computed with, depending on math library behavior
-#undef WEIGHT_CORRECT_ZERO
+#define WEIGHT_CORRECT_ZERO
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
 
 // bunch of small allocators wastes memory but faster new/delete
