@@ -29,10 +29,10 @@ struct MemoIndex {
 	return find_second(memo,a);
   }
   Result & apply(const Arg &a) {
-	Table::insert_return_type i=memo.insert(a);
+	Table::insert_return_type i=memo.insert(a); // non-STL: =insert(pair<Arg,Result>(a,Result()))
 	Result &r=i.first->second;
 	if (i.second) { // new	  
-	  r.second=n++; // very important to do this before invoking functor (in case it recursively uses this Memo!)
+	  r.second=n++; // very important to do this before invoking functor (in case it recursively uses this Memo!).  note that result gets default constructed; if you care to distinguish between really-finished and in-progress, make sure default constructed is unique.
 	  f(a,r.first);
 	  // something to mark f(a) finished so we detect (semantically incorrect?) loops?
 	}
@@ -46,6 +46,7 @@ struct MemoIndex {
   }
 };
 
+// when you aren't going to share index-space with anyone else:
 template <class F>
 struct MemoIndexOwn : public MemoIndex<F> {
   unsigned next;

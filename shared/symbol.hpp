@@ -102,9 +102,9 @@ struct Symbol {
   print_on(std::basic_ostream<charT,Traits>& o) const
   {
 	if (isDefault())
-	  return std::ios_base::badbit;
+	  return GENIOBAD;
 	o << str;
-    return std::ios_base::goodbit;
+    return GENIOGOOD;
   }
 
   // either quoted strings (e.g. "a") with quotes in the string, and backslashes, escaped with a preceding backslash, e.g. "a\"\\\"b" (and the quotes and backslashes are considered part of the symbol, not equal to the unquoted version)
@@ -116,12 +116,13 @@ struct Symbol {
   {
 	g_buf.clear(); // FIXME: not threadsafe
 	char c;
-	GENIO_CHECK(in>>c);
+//	GENIO_CHECK(in>>c);
+	EXPECTI_COMMENT(in>>c);
 	  if (c=='"') {
 		bool last_escape=false;
 		g_buf.push_back(c);
 		for(;;) {
-		  GENIO_CHECK_ELSE(in.get(c),str=empty);
+		  EXPECTI(in.get(c));
 		  g_buf.push_back(c); // even though we allow escapes/quotes, we treat them as part of the literal string
 		  if (c=='"' && !last_escape)
 			break;
@@ -146,12 +147,13 @@ default:
 	
 donewhile:	
 	  if (g_buf.size()==0) {
+fail:
 		makeDefault();
-		return std::ios_base::badbit;
+		return GENIOBAD;
 	  }
 	g_buf.push_back(0);
 	str=intern(g_buf.begin());
-    return std::ios_base::goodbit;
+    return GENIOGOOD;
   }
 
 };
