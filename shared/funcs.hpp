@@ -456,7 +456,7 @@ unsigned default_random_seed()
     return boost::random_device().operator()();
 # else
         unsigned pid=get_process_id();
-    return std::time(0) + pid + (pid << 16);
+    return std::time(0) + pid + (pid << 17);
 # endif
 }
 
