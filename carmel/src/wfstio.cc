@@ -389,7 +389,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
   if ( !named_states)
       return 1;
   
-
+  {
   int *uip = stateNames.find(finalName);
   if ( uip  ) {
     final = *uip;
@@ -397,12 +397,14 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
     return 1;
   } else {
     cout << "\nFinal state named " << finalName << " not found.\n";
+	goto INVALID;
+  }
+  }
 INVALID:
 	if (named_states)
 		finalName.kill();
     invalidate();
     return 0;
-  }
 }
 
 static ostream & writeQuoted(ostream &os,const char *s) {
