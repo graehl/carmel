@@ -197,6 +197,7 @@ void dbgout(ostream &o,const std::string &a) {
 
 
 #ifdef DEBUG
+#include "threadlocal.hpp"
 
 namespace DBP {
 extern unsigned DBPdepth;
@@ -205,7 +206,8 @@ extern unsigned DBPdepth;
         ~DBPscopedepth() { --DBPdepth;}
     };
 #ifdef MAIN
-unsigned DBPdepth;
+    unsigned DBPdepth=0;
+    bool DBPdisable=false;
 #endif
 };
 
@@ -228,32 +230,36 @@ unsigned DBPdepth;
 #define LINESTR dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 
-#define DBPRE for(unsigned DBPdepth_i=0;DBPdepth_i<DBP::DBPdepth;++DBPdepth_i) DBPS(" "); DBPS(__FILE__ "(");DBPS(LINESTR);DBPS("):")
+#define DBPRE for(unsigned DBPdepth_i=0;DBPdepth_i<DBP::DBPdepth;++DBPdepth_i) DBPS(" "); DBPS(__FILE__ ":");DBPS(LINESTR);DBPS(":")
 
 #define DBPIN ++DBP::DBPdepth
 #define DBPOUT if (!DBP::DBPdepth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
 #define DBPSCOPE DBP::DBPscopedepth DBPscopedepth
 
+#define DBPENABLE(x) SetLocal<bool> DBPenablescope(DBP::DBPdisable,!x)
+#define DBPOFF DBPENABLE(false)
+#define DBPON DBPENABLE(true)
+
 #define DBPOST DBPS("\n")
-#define BDBP(a) do { DBPS(" " #a "=_<");DBPS(dbgstr(a));DBPS(">_"); } while(0)
+#define BDBP(a) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPS(dbgstr(a));DBPS(">_");  }} while(0)
 
-#define DBP(a) do { DBPRE; BDBP(a);DBPOST; } while(0)
-#define DBP2(a,b) do { DBPRE; BDBP(a); BDBP(b);DBPOST; } while(0)
-#define DBP3(a,b,c) do { DBPRE; BDBP(a); BDBP(b); BDBP(c);DBPOST;} while(0)
-#define DBP4(a,b,c,d) do { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;} while(0)
-#define DBP5(a,b,c,d,e) do { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST;} while(0)
+#define DBP(a) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a);DBPOST;  }} while(0)
+#define DBP2(a,b) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b);DBPOST;  }} while(0)
+#define DBP3(a,b,c) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c);DBPOST; }} while(0)
+#define DBP4(a,b,c,d) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; }} while(0)
+#define DBP5(a,b,c,d,e) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST; }} while(0)
 
-//#define DBP2(a,p) do { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a,p));  } while(0)
-//#define DBP(a) do { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a)); } while(0)
-#define BDBPW(a,w) do { DBPS(" " #a "=_<");DBPS(dbgstr(a,w));DBPS(">_"); } while(0)
-#define DBPW(a,w) do { DBPRE; BDBPW(a,w) ;DBPOST; } while(0)
+//#define DBP2(a,p) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a,p));   }} while(0)
+//#define DBP(a) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a));  }} while(0)
+#define BDBPW(a,w) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPS(dbgstr(a,w));DBPS(">_");  }} while(0)
+#define DBPW(a,w) do { if (!DBP::DBPdisable) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
-#define DBPC(msg) do { DBPRE; DBPS(" (" msg ")"); DBPOST; } while(0)
-#define DBPC2(msg,a) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST; } while(0)
-#define DBPC3(msg,a,b) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST; } while(0)
-#define DBPC4(msg,a,b,c) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST; } while(0)
-#define DBPC5(msg,a,b,c,d) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; } while(0)
-#define DBPC4W(msg,a,b,c,w) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST; } while(0)
+#define DBPC(msg) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); DBPOST;  }} while(0)
+#define DBPC2(msg,a) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST;  }} while(0)
+#define DBPC3(msg,a,b) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST;  }} while(0)
+#define DBPC4(msg,a,b,c) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST;  }} while(0)
+#define DBPC5(msg,a,b,c,d) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;  }} while(0)
+#define DBPC4W(msg,a,b,c,w) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST;  }} while(0)
 
 
 
@@ -277,6 +283,10 @@ unsigned DBPdepth;
 
 #define BDBPW(a,w)
 #define DBPW(a,w)
+
+#define DBPENABLE(x)
+#define DBPOFF
+#define DBPON
 
 #endif
 
