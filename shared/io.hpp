@@ -4,6 +4,35 @@
 #include "genio.h"
 #include "funcs.hpp"
 
+
+template <class Set,class charT, class Traits>
+inline bool parse_range(std::basic_istream<charT,Traits> &in,Set &set) {
+    char c;
+    unsigned a,b;
+    while(in) {
+        if(!(in>>a)) break;
+        set.insert(a);
+        if (!(in>>c)) break;
+        if (c=='-') {
+            if (!(in>>b)) break;
+            while(a<=b)
+                set.insert(++a);
+            if (!(in>>c)) break;
+        }
+    //post: c has a just gotten character that may be a , or the beginning of the next range
+        if (c!=',')
+            in.unget();
+    }
+    return in.eof(); // only ok if we get here after consuming whole input
+}
+
+template <class Set>
+inline bool parse_range(const std::string range,Set &set) {
+    istringstream is(range);
+    return parse_range(is,set);
+}
+
+
 //!< print before word.
 template <char sep=' '>
 struct WordSeparator {
