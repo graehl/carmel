@@ -339,14 +339,14 @@ public:
 
     void reinit(unsigned sp,const T& t=T()) {
         clear();
-        reserve_at_least(sp);
+        reserve(sp);
         T *real_es=this->endspace;
         endv=this->endspace=sp;
         Array<T,Alloc>::construct(t);
         this->endspace=real_es;
     }
     void reinit_nodestroy(unsigned sp,const T& t=T()) {
-        reserve_at_least(sp);
+        reserve(sp);
         T *real_es=this->endspace;
         endv=this->endspace=this->vec+sp;
         Array<T,Alloc>::construct(t);
