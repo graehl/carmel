@@ -29,8 +29,6 @@
 #include "assert.h"
 #include "compose.h"
 using namespace std;
-#define true 1
-#define false 0
 
 ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
 
