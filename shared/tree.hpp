@@ -17,8 +17,18 @@
 namespace lambda=boost::lambda;
 using namespace std;
 
-// Tree owns its own child pointers list but nothing else - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
+// if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
+template <class Label>
+struct DefaultReader
+{
+  template <class charT, class Traits>
+	std::basic_istream<charT,Traits>&
+	 operator()(std::basic_istream<charT,Traits>& in,Label &l) {
+	  return in >> l;
+	 }
+};
 
+// Tree owns its own child pointers list but nothing else - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
 template <class Label, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
   typedef Tree Self;
   typedef Label label_type;
@@ -27,10 +37,28 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
 private:
     Self **children;
 public:
-  void *leaf_data() const {
+  template<class T>
+  T &leaf_data() {
 	Assert(n_child==0);
-	return children;
+	Assert(sizeof(T) <= sizeof(children));
+	return *(reinterpret_cast<T*>(&children));
   }
+  template<class T>
+  T &leaf_data() const {
+	return const_cast<Self *>(this)->leaf_data<T>();
+  }
+/*
+  int &leaf_data_int() {
+	Assert(n_child==0);
+	return *(reinterpret_cast<int *>(&children));
+  }
+  void * leaf_data() const {
+	return const_cast<Self *>(this)->leaf_data();
+  }
+  int leaf_data_int() const {
+	return const_cast<Self *>(this)->leaf_data();
+  }
+  */
 
   size_t size() const {
 	return n_child;
@@ -101,10 +129,10 @@ public:
 	  return children+n_child;
   }
   const_iterator begin() const {
-	return ((Self *)this)->begin();
+	return const_cast<Self *>(this)->begin();
   }
   const_iterator end() const {
-	return ((Self *)this)->end();
+	return const_cast<Self *>(this)->end();
   }
   template <class T>
 friend size_t tree_count(const T *t);
@@ -141,10 +169,12 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
 }
 
 //template <class T, class charT, class Traits>  friend 
-  template <class charT, class Traits>
-  static Self *read_tree(std::basic_istream<charT,Traits>& in) {
+  template <class charT, class Traits, class Reader>
+  static Self *read_tree(std::basic_istream<charT,Traits>& in,Reader r) {
   Self *ret = new Self;
-  in >> *ret;
+  std::ios_base::iostate err = std::ios_base::goodbit;
+  if (ret->get_from(in,r))
+	in.setstate(err);
   if (!in.good()) {
 	delete_tree(ret);
 	return NULL;
@@ -152,6 +182,12 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
   return ret;
 
   }
+
+template <class charT, class Traits>
+  static Self *read_tree(std::basic_istream<charT,Traits>& in) {
+	return read_tree(in,DefaultReader<label_type>());
+  }
+
 template <class T>
 friend void delete_tree(T *);
 
@@ -161,14 +197,15 @@ friend void delete_tree(T *);
 #define DBTREEIO(a) 
 #endif
 
-template <class charT, class Traits>
-std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
+// not Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
+template <class charT, class Traits, class Reader>
+std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read)
 // doesn't free old children if any
 {  
   char c;
   n_child=0;
   
-  GENIO_CHECK(in>>label);
+  GENIO_CHECK(read(in,label));
   DBTREEIO(label);  
   vector<Self *> in_children;
   GENIO_CHECK(in>>c);
@@ -181,7 +218,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
 		break;
 	  }
 	  in.putback(c);
-	  Self *in_child = read_tree(in);
+	  Self *in_child = read_tree(in,read);
 	  if (in_child) {
 		DBTREEIO('!');
 		in_children.push_back(in_child);
@@ -210,7 +247,7 @@ std::basic_istream<charT,Traits>&
 operator >>
  (std::basic_istream<charT,Traits>& is, Tree<L,A> &arg)
 {
-	return gen_extractor(is,arg);
+	return gen_extractor(is,arg,DefaultReader<L>());
 	DBTREEIO(std::endl);
 }
 
@@ -281,7 +318,7 @@ bool tree_equal(const T1& a,const T2& b)
 template <class T1,class T2,class P>
 bool tree_equal(const T1& a,const T2& b,P equal)
 {
-  if ( (a.size()!=b.size()) || !equal(a.label,b.label) )
+  if ( (a.size()!=b.size()) || !equal(a,b) )
 	return false;
   typename T2::const_iterator b_i=b.begin();
   for (typename T1::const_iterator a_i=a.begin(), a_end=a.end(); a_i!=a_end; ++a_i,++b_i)
@@ -291,16 +328,23 @@ bool tree_equal(const T1& a,const T2& b,P equal)
 }
 
 template <class T1,class T2>
+struct label_equal_to {
+  bool operator()(const T1&a,const T2&b) const {
+	return a.label == b.label;
+  }
+};
+
+template <class T1,class T2>
 bool tree_contains(const T1& a,const T2& b)
 {
-  return tree_contains(a,b,std::equal_to<T1::label_type>());
+  return tree_contains(a,b,label_equal_to<T1,T2>());
 }
 
 template <class T1,class T2,class P>
 bool tree_contains(const T1& a,const T2& b,P equal)
 {
   
-  if ( !equal(a.label,b.label) )
+  if ( !equal(a,b) )
 	return false;
   // leaves of b can match interior nodes of a
   if (!b.size())
@@ -410,10 +454,11 @@ Tree<L> *new_tree(const L &l, Tree<L> *c1, Tree<L> *c2, Tree<L> *c3) {
   return ret;
 }
 
-template <class T,class charT, class Traits>
-T *read_tree(std::basic_istream<charT,Traits>& in)
+template <class L,class charT, class Traits>
+Tree<L> *read_tree(std::basic_istream<charT,Traits>& in)
 {
-  return T::read_tree(in);
+  //return Tree<L>::read_tree(in,DefaultReader<L>());
+  return Tree<L>::read_tree(in);
 }
 
 #ifdef TEST
@@ -422,7 +467,7 @@ template<class T> bool always_equal(const T& a,const T& b) { return true; }
 
 BOOST_AUTO_UNIT_TEST( tree )
 {
-  Tree<int> a,b,*c,*d,*g=new_tree(1);
+  Tree<int> a,b,*c,*d,*g=new_tree(1),*h;
   string sa="1( 2 ,3 (4\n ()\n,\t 5,6))";
   string sb="1(2 3(4 5 6))";
   stringstream o;
@@ -435,9 +480,12 @@ BOOST_AUTO_UNIT_TEST( tree )
 		new_tree(3,
 		  new_tree(4),new_tree(5),new_tree(6)));
   d=new_tree(1,new_tree(2),new_tree(3));
+  h=read_tree<int>(istringstream(sb));
+  //h=Tree<int>::read_tree(istringstream(sb),DefaultReader<int>());
   BOOST_CHECK(a == a);
   BOOST_CHECK(a == b);
   BOOST_CHECK(a == *c);
+  BOOST_CHECK(a == *h);
   BOOST_CHECK(a.count_nodes()==6);
   BOOST_CHECK(tree_equal(a,*c,always_equal<Tree<int> >));
   BOOST_CHECK(tree_contains(a,*c,always_equal<Tree<int> >));
@@ -463,6 +511,7 @@ BOOST_AUTO_UNIT_TEST( tree )
   delete_tree(c);
   delete_tree(d);
   delete_tree(g);
+  delete_tree(h);
 }
 
 
