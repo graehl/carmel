@@ -20,5 +20,9 @@ if [ -L $realprog ] ; then
 fi
 d=`dirname $realprog`
 
-exec $d/$ARCH/carmel.static
+if [ $ARCH = Darwin ]; then
+ exec $d/$ARCH/carmel.static
+else
+ exec $d/$ARCH/carmel
+fi
 
