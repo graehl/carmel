@@ -24,6 +24,7 @@
 #include <unistd.h>
 #endif
 
+
 bool create_file(const std::string& path,std::size_t size) {
 #ifdef _WIN32
 #ifdef 0
@@ -46,5 +47,7 @@ bool create_file(const std::string& path,std::size_t size) {
     return ::truncate(path.c_str(),size) != -1;
 #endif
 }
+
+
 
 #endif

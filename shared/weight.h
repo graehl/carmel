@@ -110,7 +110,7 @@ struct Weight {                 // capable of representing nonnegative reals
     return std::exp(weight);
   }
   void setRandomFraction() {
-        setReal(rand_pos_fraction());
+        setReal(random_pos_fraction());
   }
   FLOAT_TYPE getLog(FLOAT_TYPE base) const {
     return weight / log(base);
