@@ -81,9 +81,10 @@
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
+				BrowseInformation="1"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 				CallingConvention="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -91,7 +92,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/../../bin/carmel.win32.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="FALSE"
+				GenerateDebugInformation="TRUE"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
