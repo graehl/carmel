@@ -63,7 +63,8 @@ using namespace std;
 #define FATALQ(module,msg) DBG_OP_Q(dbg,fatalError,module,msg)
 #define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,info,module,msg)
 #define INFOL(lvl,module,msg) DBG_OP_L(lvl,dbg,info,module,msg)
-#ifdef TEST
+
+#if defined(TEST) && defined(NOISY_TEST)
 #define INFOT(msg) DBG_OP(&test_dbg,info,"TEST",msg)
 #define WARNT(msg) DBG_OP(&test_dbg,warning,"TEST",msg)
 #define NESTT NESTINFO_GUARD(&test_dbg)
