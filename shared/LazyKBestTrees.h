@@ -36,13 +36,13 @@ struct LazyKBest {
     // both OR/AND: the kbest vector always contains cached 1...n best, or
     // result.is_null(kbest[kbest.size()-1]) if no more can be generated
     struct OR {
-        typedef pair<unsigned> Instance; // index of OR-child to take next-best from
+        typedef pair<cost_T,unsigned> Instance; // index of OR-child to take next-best from
         vector<Instance> queue; // cheapest first
         vector<AND *> children;
         vector<Result> kbest;
     };
     struct AND {
-        typedef pair<unsigned,unsigned> Instance; // index of (left,right)-child to take next-best from
+        typedef pair<cost_T,pair<unsigned,unsigned> > Instance; // index of (left,right)-child to take next-best from
         vector<Instance> queue; // cheapest first        
         pair<OR *,OR *> children;
         vector<Result> kbest;
