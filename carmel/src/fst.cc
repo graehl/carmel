@@ -404,7 +404,7 @@ Graph WFST::makeGraph() const
     for ( List<Arc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l ) {
       gArc.source = i;
       gArc.dest = l->dest;
-      gArc.weight = - l->weight.getLogImp(); // - log
+      gArc.weight = l->weight.getCost();
       gArc.data = &(*l);
       Assert(gArc.dest < numStates() && gArc.source < numStates());
       g[i].arcs.push(gArc);
@@ -677,6 +677,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
   return paths;
 }
 
+/*
 List<List<PathArc> > *WFST::bestPaths(int k)
 {
   int nStates = numStates();
@@ -860,7 +861,6 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 
   return paths;
 }
-/*
   void WFST::insertPathArc(GraphArc *gArc,List<PathArc>* l)
   {
   PathArc pArc;

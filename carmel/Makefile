@@ -31,6 +31,7 @@ default: mydefault
 include ../shared/graehl.mk
 
 mydefault: all
+#all
 	cd test && ./runtests.sh ../$(BIN)/carmel
 
 #CCFLAGS_PRF    = $(CCFLAGS) -O3 -pg
