@@ -7,6 +7,7 @@
 // -z n = keep at most n states
 // -U = treat pre-training weights as prior counts
 // -Y write graphviz
+// -1 = randomly scale weights (of unlocked arcs) after composition uniformly by (0..1]
 
 #include "config.h"
 #include <iostream>
@@ -581,6 +582,8 @@ main(int argc, char *argv[]){
       result->invert();
     if ( flags['n'] )
       result->normalize(norm_method);
+	if ( flags['1'] )
+	  result->randomScale();
     if ( flags['A'] ) {
       Assert(weightSource);
       result->assignWeights(*weightSource);
@@ -899,6 +902,7 @@ void usageHelp(void)
   cout << "\n-q\t\tSuppress computation status messages (quiet!)";
   cout << "\n-K\t\tAssume state names are integer indexes (when the final state is an integer)";
   cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default=1)";
+  cout << "\n-1\t\trandomly scale weights (of unlocked arcs) after composition uniformly by (0..1]";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
   cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";
