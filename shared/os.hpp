@@ -35,6 +35,7 @@ Error last_error() {
 #endif
 }
 
+#include <stdexcept>
 std::string error_string(Error err) {
 #ifdef BOOST_IO_WINDOWS
     LPVOID lpMsgBuf;
@@ -91,6 +92,7 @@ bool remove_file(const std::string &filename) {
 
 //#include <stdio.h>
 
+#include <fstream>
 struct tmp_fstream
 {
     std::string filename;

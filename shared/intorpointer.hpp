@@ -59,7 +59,7 @@ struct IntOrPointer {
         if (is_integer())
             o << integer();
         else {
-            o << "0x" << hex << (size_t)pointer() << dec;
+            o << "0x" << std::hex << (size_t)pointer() << std::dec;
         }
         return GENIOGOOD;
     }
