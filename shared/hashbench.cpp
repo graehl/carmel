@@ -1,10 +1,10 @@
 #define BOOST_AUTO_TEST_MAIN
 #define MAIN
 
-#include "../carmel/src/config.h"
+#include "config.h"
 #include "ttconfig.hpp"
 
-#include "../carmel/src/2hash.h"
+#include "2hash.h"
 
 
 #include <boost/progress.hpp>

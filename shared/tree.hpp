@@ -2,54 +2,49 @@
 #define _TREE_HPP
 
 #include <iostream>
-#include "../carmel/src/myassert.h"
-#include "../carmel/src/genio.h"
-#include <vector>
+#include "myassert.h"
+#include "genio.h"
+//#include <vector>
+#include "dynarray.h"
 #include <algorithm>
+#ifdef USE_LAMBDA
 #include <boost/lambda/lambda.hpp>
+namespace lambda=boost::lambda;
+#endif
 #include <functional>
+#include "ttconfig.hpp"
 
 #ifdef TEST
 #include "test.hpp"
 #endif
 
-//using namespace boost::lambda;
-namespace lambda=boost::lambda;
 using namespace std;
 
-// if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
-template <class Label>
-struct DefaultReader
-{
-  template <class charT, class Traits>
-	std::basic_istream<charT,Traits>&
-	 operator()(std::basic_istream<charT,Traits>& in,Label &l) {
-	  return in >> l;
-	 }
-};
-
 // Tree owns its own child pointers list but nothing else - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
-template <class Label, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
+template <class L, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
   typedef Tree Self;
-  typedef Label label_type;
+  typedef L Label;
   Label label;
-  size_t n_child;
+  typedef rank_type Rank;
+  Rank rank;
 private:
-    Self **children;
+  Tree(const Self &t) : {}
+  Self **children;
+
 public:
   template<class T>
   T &leaf_data() {
-	Assert(n_child==0);
+	Assert(rank==0);
 	Assert(sizeof(T) <= sizeof(children));
 	return *(reinterpret_cast<T*>(&children));
   }
   template<class T>
-  T &leaf_data() const {
+  const T &leaf_data() const {
 	return const_cast<Self *>(this)->leaf_data<T>();
   }
 /*
   int &leaf_data_int() {
-	Assert(n_child==0);
+	Assert(rank==0);
 	return *(reinterpret_cast<int *>(&children));
   }
   void * leaf_data() const {
@@ -60,35 +55,35 @@ public:
   }
   */
 
-  size_t size() const {
-	return n_child;
+  Rank size() const {
+	return rank;
   }
-  Tree() : n_child(0) {}
-  Tree (const Label &l) : n_child(0),label(l) {  }
-  Tree (const Label &l,size_t n) : label(l) { alloc(n); }
+  Tree() : rank(0) {}
+  Tree (const Label &l) : rank(0),label(l) {  }
+  Tree (const Label &l,Rank n) : label(l) { alloc(n); }
   Tree (const char *c) {
 	std::istringstream(c) >> *this;
   }
-  void alloc(size_t _n_child) {
-	n_child=_n_child;
+  void alloc(Rank _rank) {
+	rank=_rank;
 #ifdef TREE_SINGLETON_OPT
-	if (n_child>1)
+	if (rank>1)
 #else
-	if (n_child)
+	if (rank)
 #endif
-	  children = (Self **)allocate(n_child);
+	  children = (Self **)allocate(rank);
   }
-  explicit Tree(size_t _n_child,Alloc _alloc=Alloc()) : Alloc(_alloc) {
-	alloc(_n_child);
+  explicit Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
+	alloc(_rank);
   }
   void dealloc() {
 #ifdef TREE_SINGLETON_OPT
-	if (n_child>1)
+	if (rank>1)
 #else
-	if (n_child)
+	if (rank)
 #endif
-	  deallocate((void **)children,n_child);
-	n_child=0;
+	  deallocate((void **)children,rank);
+	rank=0;
   }
   void dealloc_recursive(); 
   
@@ -102,19 +97,19 @@ public:
   typedef const Self *const_value_type;
   typedef const const_value_type *const_iterator;
 
-  value_type & child(size_t i) { 
+  value_type & child(Rank i) { 
 #ifdef TREE_SINGLETON_OPT
-	if (n_child == 1)
+	if (rank == 1)
 	  return *(value_type *)children;
 #endif
 	return children[i]; 
   }
-  value_type & operator [](size_t i) { return child(i); }
+  value_type & operator [](Rank i) { return child(i); }
   
 
   iterator begin() {
 #ifdef TREE_SINGLETON_OPT
-	if (n_child == 1)
+	if (rank == 1)
 	  return (iterator)&children;
 	else
 #endif
@@ -122,11 +117,11 @@ public:
   }
   iterator end() {
 #ifdef TREE_SINGLETON_OPT
-	if (n_child == 1)
+	if (rank == 1)
 	  return (iterator)&children + 1;
 	else
 #endif
-	  return children+n_child;
+	  return children+rank;
   }
   const_iterator begin() const {
 	return const_cast<Self *>(this)->begin();
@@ -153,7 +148,7 @@ template <class charT, class Traits>
 std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
   {	
   o << label;
-  if (n_child) {
+  if (rank) {
 	o << '(';
 	bool first=true;
 	for (const_iterator i=begin(),e=end();i!=e;++i) {
@@ -185,7 +180,7 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
 
 template <class charT, class Traits>
   static Self *read_tree(std::basic_istream<charT,Traits>& in) {
-	return read_tree(in,DefaultReader<label_type>());
+	return read_tree(in,DefaultReader<Label>());
   }
 
 template <class T>
@@ -197,17 +192,17 @@ friend void delete_tree(T *);
 #define DBTREEIO(a) 
 #endif
 
-// not Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
+// Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read)
 // doesn't free old children if any
 {  
   char c;
-  n_child=0;
+  rank=0;
   
   GENIO_CHECK(read(in,label));
   DBTREEIO(label);  
-  vector<Self *> in_children;
+  DynamicArray<Self *> in_children;
   GENIO_CHECK(in>>c);
   if (c == '(') {
 	DBTREEIO('(');  
@@ -223,16 +218,17 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 		DBTREEIO('!');
 		in_children.push_back(in_child);
 	  } else {
-		for (typename vector<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
+		for (typename DynamicArray<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
 		  delete_tree(*i);
 		return std::ios_base::badbit;
 	  }
 	  GENIO_CHECK(in>>c);
 	  if (c != ',') in.putback(c);
 	}
-	dealloc();
-	alloc(in_children.size());
-	copy(in_children.begin(),in_children.end(),begin());	
+	dealloc();	
+	alloc((rank_type)in_children.size());
+	//copy(in_children.begin(),in_children.end(),begin());	
+	in_children.copyto(begin());
   } else {	
 	in.putback(c);
   }
@@ -419,9 +415,12 @@ struct Emitter {
 template <class T,class O>
 void emit_postorder(const T *t,O out)
 {
-  /*Emitter e(out);
-  postorder(t,e);*/
-  postorder(t,o << lambda::_1);
+#ifndef USE_LAMBDA
+  Emitter e(out);
+  postorder(t,e);
+#else
+  postorder(t,o << boost::lambda::_1);
+#endif
 }
 
 

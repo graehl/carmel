@@ -1131,6 +1131,9 @@
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath="..\ChangeLog">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -2,12 +2,12 @@
 #define _SYMBOL_HPP
 // no separate implementation for now, just #define MAIN in one source file that includes this
 
-//#include "../carmel/src/weight.h"
-#include "../carmel/src/stringkey.h"
-#include "../carmel/src/list.h"
+//#include "weight.h"
+#include "stringkey.h"
+#include "list.h"
 #include "charbuf.hpp"
 #include <iostream>
-#include "../carmel/src/genio.h"
+#include "genio.h"
 
 #ifdef TEST
 #include "test.hpp"
@@ -67,14 +67,16 @@ struct Symbol {
   static char * borrow(char *s) {
     return intern(s);
   }
-  static char *giveBack(char *s) {
+  static void giveBack(char *s) {
     // technically, leaks memory.  we could use StringPool instead.
+
   }
   static char *empty;
   Symbol & operator=(Symbol r) {
     str=r.str;
     return *this;
   }
+  char *c_str() const { return str; }
   bool operator ==(Symbol r) const {
     return r.str==str;
   }
@@ -96,7 +98,7 @@ struct Symbol {
   std::ios_base::iostate
   get_from(std::basic_istream<charT,Traits>& in)
   {
-	g_buf.clear();
+	g_buf.clear(); // FIXME: not threadsafe
 	char c;
 	GENIO_CHECK(in>>c);
 	  if (c=='"') {
@@ -115,8 +117,8 @@ struct Symbol {
 	  } else {
 		do {
 		  switch(c) {
-case '(':case ')':case ',':case '"':case ' ':case '`':
-case '#':case '$':case ':':case '{':case '}':
+case '(':case ')':case ',':case '"':case ' ':case '`':case '=':
+case '#':case '$':case ':':case '{':case '}':case '^':
 case '\t':case '\r':case '\n':
   in.putback(c);
   goto donewhile;
@@ -128,7 +130,7 @@ default:
 	
 donewhile:	
 	g_buf.push_back(0);
-	str=intern(g_buf.begin()); // don't use vector but instead use DynamicArray where we can guarantee contiguous array
+	str=intern(g_buf.begin());
     return std::ios_base::goodbit;
   }
 

@@ -111,6 +111,12 @@ struct Weight {			// capable of representing nonnegative reals
   void setZero() {
     weight = -HUGE_FLOAT;
   }
+  bool isOne() const {
+	return weight==0;
+  }
+  void setOne() {
+	weight=0;
+  }
   void setReal(double f) {
     if (f > 0)
       weight=(FLOAT_TYPE)log(f);
