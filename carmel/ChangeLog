@@ -1,5 +1,25 @@
 2004-07-15  Jonathan Graehl  <graehl@isi.edu>
 
+	* src/list.h: two-phase name lookup gcc 3.4 problems also
+	everywhere, see C++ spec section 14.6.2 paragraph 3 and section
+	14.6.2.1. or
+	http://groups.google.com/groups?q=base+class+%22depend+on+a+template+parameter,+so%22&hl=en&lr=&ie=UTF-8&selm=MY3kc.28415%24Qc.1096675%40twister1.libero.it&rnum=2
+
+	> Replacing f() with A<T>::f() will fix it.
+
+	Sure, as the name is now qualified and dependent on T, it will be bound 
+	at the point of instantiation (phase two). In phase two, the compiler 
+	knows the exact type that replaces T and so it can select the right 
+	specialization of A<T> (specializing A<T> after this point makes the 
+	program ill-formed).
+
+	Another, more elegant, way to make the name dependent is by writing 
+	this->f().
+
+	
+	* src/2hash.h: isn't compiling in gcc 3.4 because
+	std::allocator::rebind isn't a template?
+
 	* Makefile: now requires checkout of the tt project in parent dir
 	(files should be in ../tt from here)
 

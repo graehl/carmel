@@ -12,7 +12,7 @@ template <class T>  struct _slist_Node
 
 
 template <class T,class Alloc=std::allocator<_slist_Node<T> > > 
-class slist : private Alloc::rebind<_slist_Node<T> >::other
+class slist : private Alloc::template rebind<_slist_Node<T> >::other
 {
   typedef _slist_Node<T> Node;
   Node* m_head;
@@ -159,7 +159,7 @@ class slist : private Alloc::rebind<_slist_Node<T> >::other
 	push_front(*i);
       reverse();
     }
-  slist(const T &it) : m_head(allocate(1)) {PLACEMENT_NEW(m_head) Node(it,0);}
+  slist(const T &it) : m_head(this->allocate(1)) {PLACEMENT_NEW(m_head) Node(it,0);}
   void reverse()
     {
       Node* p = 0; Node* i = m_head; Node* n;
@@ -191,7 +191,7 @@ class slist : private Alloc::rebind<_slist_Node<T> >::other
 
   inline void push_front(const T& x)
     {
-      Node* tmp = allocate(1);
+      Node* tmp = this->allocate(1);
 	  PLACEMENT_NEW(tmp)Node(x,m_head);      
       m_head = tmp;
     }
@@ -200,7 +200,7 @@ class slist : private Alloc::rebind<_slist_Node<T> >::other
       if (m_head)
 	{
 	  Node* newhead = m_head->m_next;
-	  deallocate(m_head,1);
+	  this->deallocate(m_head,1);
 	  m_head = newhead;
 	}
     }
@@ -226,12 +226,12 @@ class slist : private Alloc::rebind<_slist_Node<T> >::other
   inline erase_iterator& erase(erase_iterator &e) {
 	Node *killme = *e.m_rep;
 	*e.m_rep = killme->m_next;
-	deallocate(killme,1);
+	this->deallocate(killme,1);
 	return e;			
   }
 
   inline erase_iterator& insert(erase_iterator &e,const T& it) { // moves iterator back to inserted thing!
-	Node *prev=allocate(1);
+	Node *prev=this->allocate(1);
 	PLACEMENT_NEW (prev)Node(it,*e.m_rep);
 	*e.m_rep=prev;
 	return e;
@@ -242,12 +242,12 @@ class slist : private Alloc::rebind<_slist_Node<T> >::other
       Node* tmp = x.m_rep->m_next;
       if (x.m_rep->m_next) 
 	x.m_rep->m_next = x.m_rep->m_next->m_next;
-      deallocate(tmp,1);
+      this->deallocate(tmp,1);
     }
 
   void insert_after (iterator& x, const T& y)
     {
-      Node* tmp = allocate(1);
+      Node* tmp = this->allocate(1);
 	  PLACEMENT_NEW(tmp) Node(y,x.m_rep->m_next);
       x.m_rep->m_next = tmp;
     }

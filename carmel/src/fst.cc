@@ -109,7 +109,7 @@ namespace WFST_impl {
     template <class charT, class Traits>
     std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const {
       if(method==WFST::CONDITIONAL) {
-        os << "(conditional normalization group for input=" << wfst.inLetter(Ci.key()) << " in ";
+        os << "(conditional normalization group for input=" << wfst.inLetter(Ci->first) << " in ";
       } else {
         os << "(joint normalizaton group for ";
       }

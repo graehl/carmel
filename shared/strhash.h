@@ -159,7 +159,7 @@ private:
     //Sym s = const_cast<char *>(name);
 
 	typename SymIndex::insert_return_type it;
-	if ( (it = ht.insert(SymIndex::value_type(s,names.size()))).second ) {
+	if ( (it = ht.insert(typename SymIndex::value_type(s,names.size()))).second ) {
 	  if (StrPool::is_noop)
 		names.push_back(s);
 	  else

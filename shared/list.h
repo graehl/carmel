@@ -15,17 +15,18 @@
 
 template <typename T> 
 class List: public STL_LIST<T> {
+  //  typedef STL_LIST<T> S;
 public:
 #ifndef USE_SLIST
 	typedef typename List::iterator erase_iterator;
 	typedef typename List::iterator val_iterator;
-	typename List::const_iterator const_begin() const { return begin(); } //{ return const_cast<const List *>(this)->begin(); }
-	typename List::const_iterator const_end() const { return end(); } //{ return const_cast<const List *>(this)->end(); }
-	typename List::iterator val_begin() { return begin(); }
-	typename List::iterator val_end() { return end(); }
+	typename List::const_iterator const_begin() const { return this->begin(); } //{ return const_cast<const List *>(this)->begin(); }
+	typename List::const_iterator const_end() const { return this->end(); } //{ return const_cast<const List *>(this)->end(); }
+	typename List::iterator val_begin() { return this->begin(); }
+	typename List::iterator val_end() { return this->end(); }
 #endif
-	typename List::iterator erase_begin() { return begin(); }
-	typename List::iterator erase_end() { return end(); }
+	typename List::iterator erase_begin() { return this->begin(); }
+	typename List::iterator erase_end() { return this->end(); }
 
   //constructors 
   List():STL_LIST<T>(){};
@@ -40,28 +41,28 @@ public:
     {  }
   List(size_t sz,const T &it):STL_LIST<T>(sz,it) {  }
   int notEmpty() const { return !isEmpty(); }
-  int isEmpty() const { return empty(); }
+  int isEmpty() const { return this->empty(); }
   unsigned size() const { //WARNING: you might think this is constant time, but it's not unless using STL_LIST
     return count_length();
   }
   int count_length() const{ 
 #ifdef USE_SLIST
     int count=0;
-	for (typename List::const_iterator i=const_begin(),end=const_end();i!=end;++i)
+	for (typename List::const_iterator i=this->const_begin(),end=this->const_end();i!=end;++i)
       ++count;
     return count;
 #else
-	return static_cast<int>(STL_LIST<T>::size()); 
+	return static_cast<int>(this->size()); 
 #endif
   }
   void push(const T &it) { 
     push_front(it);
   }
   T &top() {
-    return front();
+    return this->front();
   }
   void pop() {
-    pop_front();
+    this->pop_front();
   }
 };  
 /*
