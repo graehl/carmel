@@ -51,7 +51,12 @@ struct test_counter {
 template <class S,class C> inline
 bool test_extract(S &s,C &c) {
   std::istringstream is(s);
-  is >> c;
+  try {      
+      is >> c;
+  } catch (std::ios_base::failure &e) {
+      cerr << "Exception: " << e.what() << "\n";
+      return 0;
+  }
   return !is.fail();
 }
 
@@ -59,17 +64,23 @@ bool test_extract(S &s,C &c) {
 template <class S,class C> inline
 bool test_extract_insert(S &s,C &c) {
   std::istringstream is(s);
-  is >> c; // string to var
-  std::ostringstream o;
-  o << c; // var to another string
+  try {
+      is >> c; // string to var
+      std::ostringstream o;
+      o << c; // var to another string
 //  std::ostringstream o2;
 //  o2 << s; // string back to another string?  why?
-  if (o.str() != s) {
+      if (o.str() != s) {
 //      DBP(o.str());
 //      DBP(o2.str());
-      std::cerr << "Output after writing and rereading: "<<o.str()<<std::endl<<" ... didn't match original: " << s << std::endl;
+          std::cerr << "Output after writing and rereading: "<<o.str()<<std::endl<<" ... didn't match original: " << s << std::endl;
+          return 0;
+      }
+  } catch (std::ios_base::failure &e) {
+      cerr << "Exception: " << e.what() << "\n";
       return 0;
   }
+
   if (is.fail()) {
       std::cerr << "Round trip write then read succeeded, but input stream is flagged as failing\n";
       return 0;

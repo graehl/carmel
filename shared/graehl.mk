@@ -208,19 +208,19 @@ $(OBJB)/%.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJT)/%.o
-$(OBJT)/%.o: %.$(CPP_EXT) %.d 
+$(OBJT)/%.o: %.$(CPP_EXT)
 	@echo
 	@echo COMPILE\(test\) $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS_TEST) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
-$(OBJ)/%.o: %.$(CPP_EXT) %.d 
+$(OBJ)/%.o: %.$(CPP_EXT)
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
-$(OBJD)/%.o: %.$(CPP_EXT) %.d 
+$(OBJD)/%.o: %.$(CPP_EXT)
 	@echo
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS_DEBUG) $< -o $@
@@ -254,9 +254,9 @@ echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
                  sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && \
-sed 's/\($*\)\.o[ :]*/\nobj\/*\/\1.o : /g' $@.raw >> $@ && \
-sed 's/\($*\)\.o[ :]*/\nobj\/*\/*\/\1.o : /g' $@.raw >> $@ && \
- || rm -f $@ ); rm -f $@.raw ; fi
+sed 's/\($*\)\.o[ :]*/obj\/*\/\1.o : /g' $@.raw >> $@ && \
+sed 's/\($*\)\.o[ :]*/obj\/*\/*\/\1.o : /g' $@.raw >> $@ \
+ || rm -f $@ ); rm -f $@.raw ; else touch $@ ; fi
 #
 
 ifneq ($(MAKECMDGOALS),depend)
