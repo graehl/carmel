@@ -1,6 +1,11 @@
 #ifndef OS_HPP
 #define OS_HPP
 
+#include <fstream>
+#include <string>
+#include <cstdio>
+#include <stdexcept>
+
 #if !defined( BOOST_IO_WINDOWS ) && !defined( BOOST_IO_POSIX )
 # if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
 #  define BOOST_IO_WINDOWS
@@ -23,9 +28,9 @@
  typedef int Error;
 #endif
 
-#include <string>
-#include <cstdio>
-
+#ifdef DBP_OS_HPP
+#include "debugprint.hpp"
+#endif
 
 Error last_error() {
 #ifdef BOOST_IO_WINDOWS
@@ -35,7 +40,6 @@ Error last_error() {
 #endif
 }
 
-#include <stdexcept>
 std::string error_string(Error err) {
 #ifdef BOOST_IO_WINDOWS
     LPVOID lpMsgBuf;
@@ -92,8 +96,6 @@ bool remove_file(const std::string &filename) {
 
 //#include <stdio.h>
 
-#include <fstream>
-#include "debugprint.hpp"
 struct tmp_fstream
 {
     std::string filename;
@@ -115,7 +117,9 @@ struct tmp_fstream
     void choose_name()
     {
         filename=std::tmpnam(NULL);
+#ifdef DBP_OS_HPP
         DBP(filename);
+#endif
     }
     void open(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc) {
         file.open(filename.c_str(),mode);
