@@ -77,12 +77,12 @@ BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPT_LIB=$(OBJB)/libprogram_options.a
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
-LDFLAGS += $(addprefix -l,$(LIB)) -lpthread
+LDFLAGS += $(addprefix -l,$(LIB))
+#-lpthread
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
 CPPFLAGS_TEST += $(CPPFLAGS)
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
-#-DBOOST_DISABLE_THREADS 
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
 ifeq ($(ARCH),solaris)
@@ -98,6 +98,8 @@ ifeq ($(ARCH),cygwin)
 CPPFLAGS += -DBOOST_POSIX -DCYGWIN
 #CPPFLAGS += -DBOOST_NO_STD_WSTRING
 # somehow that is getting automatically set by boost now (for Boost CVS)
+else
+CPPFLAGS += -DBOOST_DISABLE_THREADS 
 endif
 
 
