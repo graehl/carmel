@@ -89,4 +89,55 @@ bool remove_file(const std::string &filename) {
     return 0==remove(filename.c_str());
 }
 
+//#include <stdio.h>
+
+struct tmp_fstream
+{
+    std::string filename;
+    std::fstream file;
+    bool exists;
+    explicit tmp_fstream(const char *c)
+    {
+        choose_name();
+        open();
+        file << c;
+        reopen();
+    }
+    tmp_fstream(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc )
+    {
+        choose_name();
+        open(mode);
+    }
+    void choose_name()
+    {
+        filename=std::tmpnam(NULL);
+    }
+    void open(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc) {
+        file.open(filename.c_str(),mode);
+        if (!file)
+            throw std::ios::failure(std::string("couldn't open temporary file ").append(filename));
+    }
+    void reopen()
+    {
+        file.flush();
+        file.seekg(0);
+    }
+    void close()
+    {
+        file.close();
+    }
+    void remove()
+    {
+        remove_file(filename);
+    }
+
+    ~tmp_fstream()
+    {
+        close();
+        remove();
+    }
+};
+
+
+
 #endif

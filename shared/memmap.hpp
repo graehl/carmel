@@ -75,6 +75,7 @@ private:
 public:
     typedef std::size_t  size_type;
     typedef char*  iterator;
+    typedef const char*  const_iterator;
     BOOST_STATIC_CONSTANT(size_type, max_length = static_cast<size_type>(-1));
 
     mapped_file() : data_(0) , size_(0), mode_(std::ios::openmode()) {}
@@ -100,8 +101,11 @@ public:
 
     size_type size() const { return size_; }
     char* data() { return data_; }
+    const char* data() const { return data_; }
     iterator begin() { return data(); }
     iterator end() { return data() + size(); }
+    const_iterator begin() const { return data(); }
+    const_iterator end() const { return data() + size(); }
 
 private:
 
@@ -132,7 +136,7 @@ public:
                bool create=true,void *base_address=NULL,bool flexible_base=false)
         {
             using std::ios;
-
+            DBP_ADD_VERBOSE(1);
             DBPC6("memmap",path,mode,create,base_address,length);
             if (((unsigned)base_address) & alignment()) {
 //                DBP3(base_address,alignment(),((unsigned)base_address) & alignment());
@@ -347,12 +351,10 @@ BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
     memmap.open(t1,std::ios::out,batchsize,0,true); // creates new file and memmaps
     base=memmap.begin();
     base[0]='z';
-    memmap.close();
-    memmap.open(t2,std::ios::out,batchsize,0,true,base); // creates new file and memmaps
+    memmap.reopen(t2,std::ios::out,batchsize,0,true); // creates new file and memmaps
     BOOST_CHECK(memmap.begin()==base);
     base[0]='y';
-    memmap.close();
-    memmap.open(t1,std::ios::in,batchsize,0,false,base); // creates new file and memmaps
+    memmap.reopen(t1,std::ios::in,batchsize,0,false); // opens old
     BOOST_CHECK(memmap.begin()==base);
     BOOST_CHECK(    base[0]=='z');
     memmap.close();

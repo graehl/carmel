@@ -1,13 +1,13 @@
 #ifndef SWAPBATCH_HPP
 #define SWAPBATCH_HPP
 
-
-#include "memmap.hpp"
 #include "checkpoint_istream.hpp"
+#include "memmap.hpp"
 #include <string>
 #include "dynarray.h"
 #include <boost/lexical_cast.hpp>
 #include "backtrace.hpp"
+#include "stackalloc.hpp"
 
 #ifdef HINT_SWAPBATCH_BASE
 # ifdef BOOST_IO_WINDOWS
@@ -66,106 +66,14 @@
  * a different base address; you can't assure a fixed mmap unless you're
  * replacing an old one.
  *
- * StackAlloc requires you to explicitly align<T>() before alloc<T>().
+ * StackAlloc requires you to explicitly align<T>() before alloc<T>(). (or use
+ * aligned_alloc<T>())
  *
- * void B::read(istream &in,StackAlloc &alloc) ... which sets !in (or throws)
+ * void read(ifstream &in,B &b,StackAlloc &alloc) ... which sets !in (or throws)
  * if input fails, and uses alloc.alloc<T>(n) as space to store an input, returning the
  * new beg - [ret,end) is the new unused range
  */
-#include <stdexcept>
 
-
-struct StackAlloc
-{
-    // throws when allocation fails (I don't let you check ahead of time)
-    struct Overflow //: public std::exception
-    {
-    };
-    void *top;
-    void *end;
-    template <class T>
-    void align()
-    {
-/*        unsigned & ttop(*(unsigned *)&top); //FIXME: do we need to warn compiler about aliasing here?
-        const unsigned align=boost::alignment_of<T>::value;
-        const unsigned align_mask=(align-1);
-        unsigned diff=align_mask & ttop; //= align-(ttop&align_mask)
-        if (diff) {
-            ttop |= align_mask; // = ttop + diff - 1
-            ++ttop;
-            }*/
-        top=align((T*)top);
-    }
-    template <class T>
-    T* alloc()
-    {
-        return alloc<T>(1); // can't really get much out of explicit specialization (++ vs += 1?)
-    }
-    template <class T>
-    T* aligned_alloc()
-    {
-        align<T>();
-        return alloc<T>(1); // can't really get much out of explicit specialization (++ vs += 1?)
-    }
-    template <class T>
-    T* aligned_alloc(unsigned n)
-    {
-        align<T>();
-        return alloc<T>(n);
-    }
-    bool full() const
-    {
-        return top >= end;  // important: different size T will be allocated, and
-                         // no guarantee that all T divide space equally (even
-                         // for alloc(1)
-    }
-    template <class T>
-    T* alloc(unsigned n)
-    {
-        T*& ttop(*(T**)&top);
-        Assert(is_aligned(ttop));
-        T* ret=ttop;
-        ttop+=n;
-        if (full())
-            throw Overflow();
-        return ret;
-    }
-    void save_end(unsigned n)
-    {
-        end -= n;
-    }
-    void restore_end(unsigned n)
-    {
-        end += n;
-    }
-    void init(void *begin_, void *end_)
-    {
-        top=begin_;
-        end=end_;
-    }
-};
-
-#ifdef TEST
-#include "test.hpp"
-BOOST_AUTO_UNIT_TEST( TEST_STACKALLOC )
-{
-#define N 100
-    int a[N];
-    StackAlloc s;
-    char *top=(char *)a;
-    s.init(a,a+N);
-    BOOST_CHECK(s.top==a && s.end==a+N);
-    s.align<unsigned>();
-    BOOST_CHECK(s.top==top);
-    BOOST_CHECK(s.alloc<char>()==top && s.top==(top+=1));
-    s.align<char>();
-    BOOST_CHECK(s.top==top);
-    s.align<unsigned>();
-    BOOST_CHECK(s.top==(top=(char *)a+sizeof(unsigned)));
-    BOOST_CHECK((void *)s.alloc<unsigned>(2)==top && s.top==(top+=2*sizeof(unsigned)));
-}
-
-#endif
 
 template <class B>
 struct SwapBatch {
@@ -184,17 +92,17 @@ struct SwapBatch {
     void autodelete_swap() {
         autodelete=true;
     }
-    std::string batch_name(unsigned n) {
+    std::string batch_name(unsigned n) const {
         return basename+boost::lexical_cast<std::string>(n);
     }
     void *end() {
-        return top;
+        return memmap.end();
     }
     void *begin() {
         return memmap.data();
     }
     const void *end() const {
-        return top;
+        return memmap.end();
     }
     const void *begin() const {
         return memmap.data();
@@ -205,10 +113,9 @@ struct SwapBatch {
     void create_next_batch() {
         BACKTRACE;
 //        DBP_VERBOSE(0);
-        unsigned n_batch = batches.size();
         DBPC2("creating batch",n_batch);
         if (n_batch==0) {
-            void *base=DEFAULT_SWAPBATCH_BASE_ADDRESS;
+            char *base=(char *)DEFAULT_SWAPBATCH_BASE_ADDRESS;
             if (base) {
                 const unsigned mask=0x0FFFFFU;
 //                DBP4((void *)base,(void*)~mask,(void*)(mask+1),batchsize&(~mask));
@@ -224,9 +131,9 @@ struct SwapBatch {
             memmap.reopen(batch_name(n_batch),std::ios::out,batchsize,0,true); // creates new file and memmaps
         }
         loaded_batch=n_batch++;
-        top = begin();
-        batches.push_back();
         space.init(begin(),end());
+        d_tail=space.alloc<size_type>(); // guarantee already aligned
+        *d_tail=0; // class invariant: each batch has a chain of d_tail diffs ending in 0.
     }
     void load_batch(unsigned i) {
         BACKTRACE;
@@ -245,7 +152,7 @@ struct SwapBatch {
         }
         n_batch=0; // could loop from n_batch ... 0 but it might confuse :)
     }
-    size_t total_items=0;
+    size_t total_items;
     size_t size() const {
         BACKTRACE;
         return total_items;
@@ -256,278 +163,155 @@ struct SwapBatch {
     void print_stats(std::ostream &out) const {
         out << size() << " items in " << n_batches() << " batches of " << batchsize << " bytes, stored in " << basename << "N";
     }
-    bool fresh_batch() const
+    size_type *d_tail;
+    void read_one(std::ifstream &is)
     {
-        return space.top==begin();
-    }
-    void read(ifstream &is) {
         BACKTRACE;
-        DBP_VERBOSE(0);
-        std::streampos pos;
-        const unsigned safety=2*sizeof(size_type); // leave room for final d_next header (2* to fudge for alignment overhead)
-        size_type *d_next=space.alloc<size_type>(); // guarantee that already aligned
-        for (;;) {
-            pos=is.tellg();
-          again:
-            try {
-                space.save_end(safety);
-                BatchMember *newguy=space.aligned_alloc<size_type>();
-                newtop=newguy->read(is,space);
-            }
-            catch (StackAlloc::Overflow &o) {
-                if (fresh_batch())
-                    throw ios::failure("an entire swap space segment couldn't hold the object being read.");
-                //ELSE:
-                is.seekg(pos);
-                create_next_batch();
-                goto again;
-            }
+        DBP_ADD_VERBOSE(3);
+        std::streampos pos=is.tellg();
+        bool first=true;
+        void *save;
+    again:
+        save=space.save_end();
+        try {
+            space.alloc_end<size_type>(); // precautionary: ensure we can alloc new d_tail.
+            DBP(space.remain());
+            BatchMember *newguy=space.aligned_alloc<BatchMember>();
+            DBP2((void*)newguy,space.remain());
+            read(is,*newguy,space);
+            DBP2(newguy,space.remain());
+        }
+        catch (StackAlloc::Overflow &o) {
+            if (!first)
+                throw std::ios::failure("an entire swap space segment couldn't hold the object being read.");
+            //ELSE:
+            is.seekg(pos);
+            create_next_batch();
+            first=false;
+            goto again;
+        }
+        if (!is) {
             if (is.eof()) {
                 return;
             }
-            if (!is) {
-                throw ios::failure("error reading item into swap batch.");
-            }
-            // ELSE: read was success!
-            ++total_items;
-            space.align<size_type>();
-            space.restore_end(safety);
-            size_type *last_d_next=*d_next;
-            *d_next=space.aligned_alloc<size_type>(); // can't fail because of sfaety
-            *d_next=0; // indicates end of batch; will reset if read is succesful
-            *last_d_next=d_next-last_d_next;
-            DBP((void*)space.top);
+            throw std::ios::failure("error reading item into swap batch.");
         }
+        // ELSE: read was success!
+        ++total_items;
+        space.align<size_type>();
+        DBP2(save,space.end);
+        space.restore_end(save);
+        DBP2(space.top,space.end);
+        size_type *d_last_tail=d_tail;
+        Assert(space.capacity<size_type>());
+        d_tail=space.aligned_alloc<size_type>(); // can't fail, because of safety
+        *d_tail=0; // indicates end of batch; will reset if read is succesful
+        *d_last_tail=d_tail-d_last_tail;
+        DBP((void*)space.top);
+    }
+
+    void read_all(std::ifstream &is) {
+        BACKTRACE;
+        while(is)
+            read_one(is);
     }
 
     template <class F>
-    void enumerate(F f) {
+    void enumerate(F f)  {
         BACKTRACE;
         //      DBP_VERBOSE(0);
 
-        for (unsigned i=0;i<=n_batch;++i) {
+        for (unsigned i=0;i<n_batch;++i) {
             DBPC2("enumerate batch ",i);
             load_batch(i);
-                //=align((size_type *)begin()); // can guarantee alignment implicitly
-            for(size_type *d_next=(size_type *)begin();*d_next;d_next+=*d_next) {
+            //=align((size_type *)begin()); // can guarantee first alignment implicitly
+            for(const size_type *d_next=(size_type *)begin();*d_next;d_next+=*d_next) {
                 BatchMember *b=(BatchMember*)(d_next+1);
-                b=align(b);
+                b=::align(b);
                 deref(f)(*b);
-            }
-    }
-
-  SwapBatch(const std::string &basename_,size_type batch_bytesize) : basename(basename_),batchsize(batch_bytesize), autodelete(true) {
-        BACKTRACE;
-        total_items=0;
-        create_next_batch();
-    }
-    ~SwapBatch() {
-        BACKTRACE;
-        if (autodelete)
-            remove_batches();
-    }
-};
-
-/* OLD
-
-
-template <class B>
-struct SwapBatch {
-    typedef B BatchMember;
-
-    typedef DynamicArray<B> Batch;
-    typedef DynamicArray<Batch> Batches;
-    Batches batches;
-    typedef std::size_t size_type; // boost::intmax_t
-    std::string basename;
-    mapped_file memmap;
-    size_type batchsize;
-    unsigned loaded_batch;
-    char *top; // used only when adding to batches
-    bool autodelete;
-    void preserve_swap() {
-        autodelete=false;
-    }
-    void autodelete_swap() {
-        autodelete=true;
-    }
-    std::string batch_name(unsigned n) {
-        return basename+boost::lexical_cast<std::string>(n);
-    }
-    char *end() {
-        return top;
-    }
-    char *begin() {
-        return memmap.data();
-    }
-    const char *end() const {
-        return top;
-    }
-    const char *begin() const {
-        return memmap.data();
-    }
-    size_type capacity() const {
-        return memmap.size();
-    }
-    void create_next_batch() {
-        BACKTRACE;
-//        DBP_VERBOSE(0);
-        unsigned batch_no = batches.size();
-        DBPC2("creating batch",batch_no);
-        if (batch_no==0) {
-            char *base=DEFAULT_SWAPBATCH_BASE_ADDRESS;
-            if (base) {
-                const unsigned mask=0x0FFFFFU;
-//                DBP4((void *)base,(void*)~mask,(void*)(mask+1),batchsize&(~mask));
-                unsigned batchsize_rounded_up=(batchsize&(~mask));
-//                DBP2((void*)batchsize_rounded_up,(void*)(mask+1));
-                batchsize_rounded_up+=(mask+1);
-//                DBP((void*)batchsize_rounded_up);
-//                DBP3((void *)base,(void *)batchsize_rounded_up,(void *)(base-batchsize_rounded_up));
-                base -= batchsize_rounded_up;
-            }
-            memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,base,true); // creates new file and memmaps
-        } else {
-            char *old_base=begin();
-            memmap.reopen(batch_name(batch_no),std::ios::out,batchsize,0,true); // creates new file and memmaps
-            if (old_base != begin())
-                throw ios::failure("couldn't reopen memmap at same base address");
-        }
-        loaded_batch=batch_no;
-        top = begin();
-        batches.push_back();
-    }
-    void load_batch(unsigned i) {
-        BACKTRACE;
-        if (loaded_batch == i)
-            return;
-        char *base=begin();
-        if (i >= batches.size())
-            throw std::range_error("batch swapfile index too large");
-        memmap.reopen(batch_name(i),std::ios::in,batchsize,0,false); // creates new file and memmaps
-        loaded_batch=(unsigned)-1;
-        if (!base || base != begin())
-            throw ios::failure("couldn't load memmap at same base address");
-        loaded_batch=i;
-    }
-    void remove_batches() {
-        BACKTRACE;
-        unsigned batch_no = batches.size();
-        for (unsigned i=0;i<=batch_no;++i) { // delete next file too in case exception came during create_next_batch
-            remove_file(batch_name(i));
-        }
-    }
-    size_t size() const {
-        BACKTRACE;
-        size_t total_items=0;
-        for (typename Batches::const_iterator i=batches.begin(),end=batches.end();i!=end;++i)
-            total_items += i->size();
-        return total_items;
-    }
-    size_t n_batches() const {
-        return batches.size();
-    }
-    void print_stats(std::ostream &out) const {
-        out << size() << " items in " << n_batches() << " batches of " << batchsize << " bytes, stored in " << basename << "N";
-    }
-    void read(ifstream &is) {
-        BACKTRACE;
-//        DBP_VERBOSE(0);
-        char *endspace=begin()+capacity();
-        char *newtop;
-        std::streampos pos;
-        for (;;) {
-            pos=is.tellg();
-          again:
-            batches.back().push_back();
-            BatchMember &newguy=batches.back().back();
-            newtop=newguy.read(is,top,endspace);
-            if (is.eof()) {
-                batches.back().pop_back();
-                return;
-            }
-
-//            DBP((void*)newtop);
-            if (!is) {
-                throw ios::failure("error reading item into swap batch.");
-            }
-            if (newtop) {
-                Assert(newtop <= endspace);
-                top=newtop;
-            } else {
-                if (begin() == end()) // already had a completely empty batch but still not enough room
-                    throw ios::failure("an entire swap space segment couldn't hold the object being read.");
-                is.seekg(pos);
-                batches.back().pop_back();
-                batches.back().compact();
-                create_next_batch();
-                goto again;
-            }
-        }
-        batches.back().compact();
-        batches.compact();
-    }
-
-    template <class F>
-    void enumerate(F f) {
-        BACKTRACE;
-        //      DBP_VERBOSE(0);
-        for (unsigned i=0,end=batches.size();i!=end;++i) {
-            DBPC2("enumerate batch ",i);
-            load_batch(i);
-            Batch &batch=batches[i];
-            for (typename Batch::iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
-                 deref(f)(*j);
-            }
-        }
-    }
-
-    template <class F>
-    void enumerate(F f) const {
-        BACKTRACE;
-//        DBP_VERBOSE(0);
-        for (unsigned i=0,end=batches.size();i!=end;++i) {
-            DBPC2("enumerate batch ",i);
-            load_batch(i);
-            const Batch &batch=batches[i];
-            for (typename Batch::const_iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
-                 deref(f)(*j);
-            }
-        }
-    }
-
-    /// don't actually swap memory (can be useful for statistics that don't look at data)
-    template <class F>
-    void enumerate_noload(F f) {
-        BACKTRACE;
-        for (unsigned i=0,end=batches.size();i!=end;++i) {
-            Batch &batch=batches[i];
-            for (typename Batch::iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
-                 deref(f)(*j);
-            }
-        }
-    }
-
-    template <class F>
-    void enumerate_noload(F f) const {
-        BACKTRACE;
-        for (unsigned i=0,end=batches.size();i!=end;++i) {
-            const Batch &batch=batches[i];
-            for (typename Batch::const_iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
-                 deref(f)(*j);
             }
         }
     }
 
     SwapBatch(const std::string &basename_,size_type batch_bytesize) : basename(basename_),batchsize(batch_bytesize), autodelete(true) {
         BACKTRACE;
+        total_items=0;
+        n_batch=0;
         create_next_batch();
     }
+
+
     ~SwapBatch() {
         BACKTRACE;
         if (autodelete)
             remove_batches();
     }
 };
+
+/*
+template <class B>
+void read(std::istream &in,B &b,StackAlloc &a) {
+    in >> b;
+}
 */
+
+void read(std::ifstream &in,const char * &b,StackAlloc &a) {
+    char c;
+    std::istream::sentry s(in,true); //noskipws!
+    char *p=a.alloc<char>(); // space for the final 0
+    b=p;
+    if (s) {
+        while (in.get(c) && c!='\n'){
+            a.alloc<char>(); // space for this char (actually, the next)
+            *p++=c;
+        }
+
+    }
+    *p=0;
+    // # alloc<char> = # p increments, + 1.  good.
+}
+
+# ifdef TEST
+#  include "stdio.h"
+#  include "string.h"
+
+const char *swapbatch_test_expect[] = {
+    "string one",//10+8
+    "2",//2+8
+    "3 .",//4+8
+    " abcdefghijklmopqrstuvwxyz",
+    "4",
+    "end",
+    ""
+};
+
+
+void swapbatch_test_do(const char *c) {
+    static unsigned swapbatch_test_i=0;
+    const char *o=swapbatch_test_expect[swapbatch_test_i++];
+    DBP2(o,c);
+    BOOST_CHECK(!strcmp(c,o));
+}
+
+#  include <sstream>
+#  include "os.hpp"
+
+BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
+{
+    using namespace std;
+    const char *s1="string one\n2\n3 .\n abcdefghijklmopqrstuvwxyz\n4\nend\n\n";
+    string t1=tmpnam(0);
+    DBP(t1);
+    SwapBatch<const char *> b(t1,28+2*sizeof(size_t)+sizeof(char*)); // string is exactly 28 bytes counting \n
+    tmp_fstream i1(s1);
+    BOOST_CHECK_EQUAL(b.n_batches(),1);
+    BOOST_CHECK_EQUAL(b.size(),0);
+    b.read_all((ifstream&)i1.file);
+    BOOST_CHECK_EQUAL(b.n_batches(),5);
+    BOOST_CHECK_EQUAL(b.size(),sizeof(swapbatch_test_expect)/sizeof(const char *));
+    b.enumerate(swapbatch_test_do);
+}
+
+# endif
+
 #endif

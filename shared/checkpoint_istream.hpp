@@ -2,7 +2,7 @@
 #define CHECKPOINT_ISTREAM_HPP
 
 #include <iostream>
-//#include <fstream>
+#include <fstream>
 #include "byref.hpp"
 
 template <class C>
