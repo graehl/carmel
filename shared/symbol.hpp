@@ -59,21 +59,13 @@ public:
 
 // uses interned char *
 struct Symbol {
-  enum {is_noop=1};
   static StringInterner<> intern;
   char *str;
-  Symbol() : str(empty) {}
+  Symbol() : str(empty.str) {}
   Symbol(const char *s) : str(intern(s)) {}
   Symbol(const Symbol &s) : str(s.str) {}
-  static char * borrow(const char *s) {
-    return intern(s);
-  }
   operator char * () { return str; }
-  static void giveBack(const char *s) {
-    // technically, leaks memory.  we could use StringPool instead.
-
-  }
-  static char *empty;
+  static Symbol empty;
   Symbol & operator=(Symbol r) {
     str=r.str;
     return *this;
@@ -150,7 +142,8 @@ CREATE_EXTRACTOR(Symbol)
 
 #ifdef MAIN
 StringInterner<> Symbol::intern;
-char * Symbol::empty = Symbol::intern("");
+//const char * Symbol::str_empty=Symbol::intern("");
+Symbol Symbol::empty("");
 #endif
 
 BEGIN_HASH_VAL(Symbol) {
@@ -176,7 +169,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   buf[1]=0;
   char *s="a";
 //  DBP(Symbol(s)<<endl);
-  BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
+//  BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
@@ -186,7 +179,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   buf[1]=0;
   char *s="b";
   //DBP(Symbol(s)<<endl);
-  BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
+//  BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
@@ -196,7 +189,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   buf[1]=0;
   char *s="a";
 //  DBP(Symbol(s)<<endl);
-  BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
+//  BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
@@ -206,8 +199,8 @@ BOOST_AUTO_UNIT_TEST( symbol )
   for(char **i=symbol_test_strs;*i;++i) {
     char *a=*i;
     strcpy(buf,a);
-    char *c=Symbol::borrow(a);
-    char *d=Symbol::borrow(buf);
+    char *c=Symbol(a);
+    char *d=Symbol(buf);
     BOOST_CHECK(!strcmp(a,c));
     BOOST_CHECK(!strcmp(a,d));
     BOOST_CHECK(!strcmp(a,c));

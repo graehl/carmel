@@ -535,7 +535,7 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
 
 void WFST::listAlphabet(ostream &ostr, int output)
 {
-  Alphabet<> *alph;
+  Alphabet<StringKey,StringPool> *alph;
   if ( output )
     alph = out;
   else
@@ -552,7 +552,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   //  ListIter<int> ins(*ret);
   istringstream line(buf);
   char symbol[4096];
-  Alphabet<> *alph;
+  Alphabet<StringKey,StringPool> *alph;
   if ( output )
     alph = out;
   else
