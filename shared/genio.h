@@ -62,11 +62,13 @@ inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& dat
     std::stringstream s;
     s << data;
     char c;
+    out << '"';
     while (s.get(c)) {
         if (c == '"' || c== '\\')
             out.put('\\');
         out.put(c);
     }
+    out << '"';
 }
 
 template <class C,class charT, class Traits>
