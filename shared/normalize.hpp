@@ -37,9 +37,10 @@ struct NormalizeGroups {
     typedef Wdest dest_t;
 //    typedef PointerOffset<W> index_type; // pointer offsets
     typedef size_t index_type;
-    typedef Array<index_type> Group;
+    typedef index_type offset_type;
+    typedef Array<offset_type> Group;
     typedef SwapBatch<Group> Groups;
-    max_in_accum<index_type> max_offset;
+    max_in_accum<offset_type> max_offset;
     size_accum<size_t> total_size;
 
     NormalizeGroups(std::string basename,unsigned batchsize,source_t add_k_smoothing_=0)  : norm_groups(basename,batchsize), add_k_smoothing(add_k_smoothing_)
@@ -72,7 +73,7 @@ struct NormalizeGroups {
         return total_size.maximum();
     }
 
-    typename Groups::iterator find_group_holding(index_type v) {
+    typename Groups::iterator find_group_holding(offset_type v) {
         typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();
         DBPC3("find group",v,norm_groups);
         for (;i!=e;++i) {
@@ -85,7 +86,7 @@ struct NormalizeGroups {
         }
         return e;
     }
-    static size_t get_index(index_type i) {
+    static size_t get_index(offset_type i) {
         return i;
     }
     size_t max_index() const {
@@ -109,10 +110,10 @@ struct NormalizeGroups {
         unsigned ng=num_groups();
         out << ng << " normalization groups, "  << npar<<" parameters, "<<(float)npar/ng<<" average parameters/group, "<<max_params()<< " max.";
     }
-    source_t &source(index_type index) const {
+    source_t &source(offset_type index) const {
         return base[index];
     }
-    source_t &sink(index_type index) const {
+    source_t &sink(offset_type index) const {
         return base[index];
     }
     void operator ()(Group &i) {
