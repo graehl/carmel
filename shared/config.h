@@ -47,7 +47,7 @@ typedef float FLOAT_TYPE;
 #define PLACEMENT_NEW new
 
 #ifdef _MSC_VER
-#pragma warning( disable : C4355 )
+#pragma warning( disable : 4355 )
 #endif
 
 #ifdef DEBUG

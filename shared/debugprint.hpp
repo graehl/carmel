@@ -213,8 +213,11 @@ extern unsigned DBPdepth;
 
 #ifdef _MSC_VER
 #include <windows.h>
+#define DBPSS(a) do { (OutputDebugString((const char *)((a).c_str()))); Config::debug() << (a); } while(0)
 #define DBPS(a) do { (OutputDebugString((const char *)(a))); Config::debug() << (a); } while(0)
+
 #else
+#define DBPSS(a) (Config::debug() << (a))
 #define DBPS(a) (Config::debug() << (a))
 #endif
 
@@ -230,7 +233,7 @@ extern unsigned DBPdepth;
 #define LINESTR dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 
-#define DBPRE for(unsigned DBPdepth_i=0;DBPdepth_i<DBP::DBPdepth;++DBPdepth_i) DBPS(" "); DBPS(__FILE__ ":");DBPS(LINESTR);DBPS(":")
+#define DBPRE for(unsigned DBPdepth_i=0;DBPdepth_i<DBP::DBPdepth;++DBPdepth_i) DBPS(" "); DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
 
 #define DBPIN ++DBP::DBPdepth
 #define DBPOUT if (!DBP::DBPdepth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
@@ -241,7 +244,7 @@ extern unsigned DBPdepth;
 #define DBPON DBPENABLE(true)
 
 #define DBPOST DBPS("\n")
-#define BDBP(a) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPS(dbgstr(a));DBPS(">_");  }} while(0)
+#define BDBP(a) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPSS(dbgstr(a));DBPS(">_");  }} while(0)
 
 #define DBP(a) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a);DBPOST;  }} while(0)
 #define DBP2(a,b) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b);DBPOST;  }} while(0)
@@ -249,9 +252,9 @@ extern unsigned DBPdepth;
 #define DBP4(a,b,c,d) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; }} while(0)
 #define DBP5(a,b,c,d,e) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST; }} while(0)
 
-//#define DBP2(a,p) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a,p));   }} while(0)
-//#define DBP(a) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a));  }} while(0)
-#define BDBPW(a,w) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPS(dbgstr(a,w));DBPS(">_");  }} while(0)
+//#define DBP2(a,p) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a,p));   }} while(0)
+//#define DBP(a) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a));  }} while(0)
+#define BDBPW(a,w) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPSS(dbgstr(a,w));DBPS(">_");  }} while(0)
 #define DBPW(a,w) do { if (!DBP::DBPdisable) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
 #define DBPC(msg) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); DBPOST;  }} while(0)
@@ -290,7 +293,7 @@ extern unsigned DBPdepth;
 
 #endif
 
-
+#if 0
 static const std::string constEmptyString;
 extern THREADLOCAL std::ostringstream dbgbuf;
 extern THREADLOCAL std::string dbgstring;
@@ -299,29 +302,30 @@ extern THREADLOCAL std::string dbgstring;
 THREADLOCAL std::ostringstream dbgbuf;
 THREADLOCAL std::string dbgstring;
 #endif
-
+#endif
 
 #define constEmptyString ""
 template<class A>
-const char * dbgstr(const A &a) {
+std::string dbgstr(const A &a) {
 //    std::ostringstream dbgbuf;
-  dbgbuf.str(constEmptyString);
+  //dbgbuf.str(constEmptyString);
   //dbgbuf.clear(); // error flags
+  std::ostringstream dbgbuf;
   dbgout(dbgbuf,a);
   Assert(dbgbuf.good());
-  dbgstring=dbgbuf.str();
-  return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
+  return dbgbuf.str();
+  //return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
 }
 
 template<class A,class W>
-const char * dbgstr(const A &a,W w) {
-//      std::ostringstream dbgbuf;
-  dbgbuf.str(constEmptyString);
+std::string dbgstr(const A &a,W w) {
+      std::ostringstream dbgbuf;
+  //dbgbuf.str(constEmptyString);
   //dbgbuf.clear(); // error flags
   dbgout(dbgbuf,a,w);
   Assert(dbgbuf.good());
-  dbgstring=dbgbuf.str();
-  return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
+  return dbgbuf.str();
+  //return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
 }
 
 #undef constEmptyString

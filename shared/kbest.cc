@@ -48,7 +48,7 @@ void buildSidetracksHeap(int state, int pred)
         min = &(*s);
       ++heapSize;
     }
-    pathGraph[state] = NEW GraphHeap;
+    pathGraph[state] = new GraphHeap;
     pathGraph[state]->arc = min;
     pathGraph[state]->arcHeapSize = heapSize;
     if ( heapSize ) {

@@ -71,7 +71,7 @@ struct IndirectReader
     R reader;
     IndirectReader(const R& r) : reader(r) {}
     typedef void value_type; // not really
-    
+
     template <class Target,class charT, class Traits>
         std::basic_istream<charT,Traits>&
          operator()(std::basic_istream<charT,Traits>& in,Target &l) const {
@@ -377,7 +377,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
     //    DBPC("FixedArray copy",a);
     uninit_copy_from(a.begin(),a.end());
   }
-    
+
   FixedArray(const FixedArray<T,Alloc>  &a) : Super(a.size()) {
     //    DBPC("FixedArray copy",a);
     uninit_copy_from(a.begin(),a.end());
@@ -398,7 +398,6 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   private:
 void swap(Array<T,Alloc> &a) {Assert(0);}
   public:
- public:
   explicit DynamicArray (const char *c) {
         std::istringstream(c) >> *this;
   }
@@ -455,6 +454,9 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
     T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
     Assert(invariant());
           return endv;
+  }
+  const T* const_end() const {
+      return endv;
   }
 
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
@@ -717,7 +719,7 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
   }
   void reduce_size_nodestroy(unsigned int n) {
     Assert(invariant() && n<=size());
-    endv=this->vec+n;    
+    endv=this->vec+n;
   }
   void clear_nodestroy() {
         endv=this->vec;
@@ -939,7 +941,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
         BOOST_REQUIRE(aa.size()==5);
         BOOST_CHECK(aa[2].size()==3);
         BOOST_REQUIRE(ba.size()==5);
-        BOOST_CHECK(ba[2].size()==3);        
+        BOOST_CHECK(ba[2].size()==3);
         BOOST_CHECK(aa[1][0]==1);
         BOOST_CHECK(ba[1][0]==2);
     }

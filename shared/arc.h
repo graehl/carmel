@@ -16,7 +16,8 @@ struct Arc {
 };
 
 
-inline std::ostream & operator << (std::ostream &out,const Arc &a) {
+inline 
+std::ostream & operator << (std::ostream &out,const Arc &a) {
   out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
   return(out);
 }
