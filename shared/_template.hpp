@@ -6,7 +6,7 @@
 #endif
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_template )
+BOOST_AUTO_UNIT_TEST( TEST_TEMPLATE )
 {
 }
 #endif
