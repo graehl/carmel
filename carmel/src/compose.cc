@@ -226,8 +226,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
               if ( triSource.filter == 0 )
                 if ( (matches = aState->index->find(EMPTY)) ) {
                   triDest.filter = 0;
-                  List<HalfArc>::const_iterator end = matches->end();
-                  for ( List<HalfArc>::const_iterator l=matches->begin() ; l != end ; ++l ) {
+                  for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                     Assert((*l)->out == EMPTY);
                     in = (*l)->in;
                     weight = (*l)->weight * r->weight;
@@ -238,9 +237,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
             } else {
               triDest.filter = 0;
               if ( (matches = aState->index->find(revMap[r->in])) ) {
-                List<HalfArc>::const_iterator end =  matches->end() ;
-
-                for ( List<HalfArc>::const_iterator l=matches->begin() ; l !=end; ++l ) {
+                for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                   Assert ( map[(*l)->out] == r->in );
                   in = (*l)->in;
                   weight = (*l)->weight * r->weight;
@@ -254,10 +251,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
             out = EMPTY;
             triDest.bState = triSource.bState;
             triDest.filter = 1;
-            List<HalfArc>::const_iterator  end=matches->end();
-
-            for ( List<HalfArc>::const_iterator l=matches->begin() ; l !=end; ++l ) {
-              Assert ( (*l)->out == EMPTY );
+	for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
+	Assert ( (*l)->out == EMPTY );
               in = (*l)->in;
               weight = (*l)->weight;
               triDest.aState = (*l)->dest;
@@ -266,9 +261,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
           }
         }
       } else {                  // both states too small to bother hashing
-        List<Arc>::const_iterator end = aState->arcs.end() ;
-
-        for ( List<Arc>::const_iterator l=aState->arcs.begin() ; l !=end  ; ++l) {
+        for ( List<Arc>::const_iterator l=aState->arcs.const_begin(),end = aState->arcs.const_end() ; l !=end  ; ++l) {
           in = l->in;
           triDest.aState = l->dest;
           if ( l->out == EMPTY ) {
@@ -279,9 +272,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
               triDest.bState = triSource.bState;
               COMPOSEARC;
             }
-            if ( triSource.filter == 0 ){
-              List<Arc>::const_iterator end = bState->arcs.end() ;
-              for ( List<Arc>::const_iterator r=bState->arcs.begin() ; r !=end ; ++r ) {
+            if ( triSource.filter == 0 ){             
+              for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
                 if ( r->in == EMPTY ) {
                   out = r->out;
                   weight = l->weight * r->weight;
@@ -294,8 +286,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
 
           } else {
             triDest.filter = 0;
-            List<Arc>::const_iterator end =  bState->arcs.end() ;
-            for ( List<Arc>::const_iterator r=bState->arcs.begin() ; r!= end ; ++r ) {
+            for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
               if ( map[l->out] == r->in ) {
                 out = r->out;
                 weight = l->weight * r->weight;
@@ -309,8 +300,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
           in = EMPTY;
           triDest.aState = triSource.aState;
           triDest.filter = 2;
-          List<Arc>::const_iterator end = bState->arcs.end() ;
-          for ( List<Arc>::const_iterator r=bState->arcs.begin() ; r != end ; ++r ) {
+		    for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
             if ( r->in == EMPTY ) {
               out = r->out;
               weight = r->weight;
