@@ -21,11 +21,13 @@ using namespace std;
 # define ASSERT_LEVEL 9999
 #endif
 
+#define COND_INFO(level,op) (INFO_LEVEL op level)
 #define COND_INFO_RUNTIME(level,op) (INFO_LEVEL op level && dbg->runtime_info_level op level)
+#define COND_INFO_RUNTIME_EQUAL(level) (COND_INFO(level,>=) && dbg->runtime_info_level == level)
 #define IF_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,>=))
 #define UNLESS_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,<))
-#define IF_INFO(level) if(INFO_LEVEL>=level)
-#define UNLESS_INFO(level) if(INFO_LEVEL<level)
+#define IF_INFO(level) if(COND_INFO(level,>=))
+#define UNLESS_INFO(level) if(COND_INFO(level,<))
 #define IF_ASSERT(level) if(ASSERT_LEVEL>=level)
 #define UNLESS_ASSERT(level) if(ASSERT_LEVEL<level)
 
