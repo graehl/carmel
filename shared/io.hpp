@@ -273,13 +273,13 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
             EXPECTI_COMMENT(in>>c);
             if (c != ',') in.unget();
         }
-        return GENIOGOOD;
+        goto done;
     } else {
         in.unget();
         for(;;) {
             IFBADREAD {
                 if (in.eof())
-                    return GENIOGOOD;
+                    goto done;
                 else
                     goto fail;
             }
@@ -287,6 +287,8 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
     }
 fail:
   return GENIOBAD;
+done:
+  return GENIOGOOD;
 }
 #undef IFBADREAD
 
