@@ -93,6 +93,7 @@ bool remove_file(const std::string &filename) {
 //#include <stdio.h>
 
 #include <fstream>
+#include "debugprint.hpp"
 struct tmp_fstream
 {
     std::string filename;
@@ -103,6 +104,7 @@ struct tmp_fstream
         choose_name();
         open();
         file << c;
+//        DBP(c);
         reopen();
     }
     tmp_fstream(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc )
@@ -113,6 +115,7 @@ struct tmp_fstream
     void choose_name()
     {
         filename=std::tmpnam(NULL);
+        DBP(filename);
     }
     void open(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc) {
         file.open(filename.c_str(),mode);
