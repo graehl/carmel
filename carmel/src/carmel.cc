@@ -14,12 +14,17 @@
 #include "fst.h"
 #include "assert.h"
 
+#include "models.h"
+
 #ifdef _MSC_VER    // Microsoft VISUAL C++
 //#include <crtdbg.h>
 //#define MEMDEBUG              // checks heap at every allocation ; slow
 #endif
 
 #define VERSION "2.2"  ;
+extern vector<string> Models ;
+void initModels();
+
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
   if ( flags['B'] )
@@ -143,10 +148,22 @@ main(int argc, char *argv[]){
 
 #endif
 #endif
+  /*
   if ( argc == 1 ) {
     usageHelp();
     return 0;
   }
+  */
+  if( argc == 1){
+    argc = 3;
+    string a("-IEsriqk"), b("1");
+    argv = new char *[argc-1];
+    argv[1] = new char(7);
+    argv[2] = new char(1);
+    argv[1] = (char *)a.c_str();
+    argv[2] = (char *)b.c_str();
+  }
+
   int i;
   bool flags[256];
   for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
@@ -217,7 +234,13 @@ main(int argc, char *argv[]){
     else
       if ( labelFlag ) {
         labelFlag = 0;
-        readParam(&labelStart,argv[i],'N');
+	istringstream is(argv[i]);
+	is >> labelStart; 
+	if ( is.fail() ) {
+	  cerr << "Expected a number after -N switch, (instead got \'" << argv[i] << "\' - as a number, " << labelStart << ").\n";
+	  return -11;
+	}
+        // readParam(&labelStart,argv[i],'N');
       } else if ( converge_pp_flag ) {
         converge_pp_flag = false;
         readParam(&converge_pp_ratio,argv[i],'X');
@@ -235,15 +258,33 @@ main(int argc, char *argv[]){
           max_states = 1;
         msFlag=false;
       } else if ( kPaths == -1 ) {
-        readParam(&kPaths,argv[i],'k');
+	istringstream is(argv[i]);
+	is >> kPaths; 
+	if ( is.fail() ) {
+	  cerr << "Expected a number after -k switch, (instead got \'" << argv[i] << "\' - as a number, " << kPaths << ").\n";
+	  return -11;
+	}
+        //readParam(&kPaths,argv[i],'k');
         if ( kPaths < 1 )
           kPaths = 1;
       } else if ( nGenerate == -1 ) {
-        readParam(&nGenerate,argv[i],'g');
+	istringstream is(argv[i]);
+	is >> nGenerate;
+	if( is.fail() ){
+	  cerr << "Expected a number after -g switch, (instead got \'" << argv[i] << "\' - as a number, " << nGenerate << ").\n";
+          return -11;
+        }
+	// readParam(&nGenerate,argv[i],'g');
         if ( nGenerate < 1 )
           nGenerate = 1;
       } else if ( maxTrainIter == -1 ) {
-        readParam(&maxTrainIter,argv[i],'M');
+	istringstream is(argv[i]);
+	is >> maxTrainIter; 
+	if ( is.fail() ) {
+	  cerr << "Expected a number after -M switch, (instead got \'" << argv[i] << "\' - as a number, " << maxTrainIter << ").\n";
+	  return -11;
+	}
+        //readParam(&maxTrainIter,argv[i],'M');
         if ( maxTrainIter < 1 )
           maxTrainIter = 1;
       } else if ( maxGenArcs == -1 ) {
@@ -275,8 +316,8 @@ main(int argc, char *argv[]){
   }
   bool prunePath = flags['w'] || flags['z'];
   srand(seed);
-  setOutputFormat(flags,&cout);
-  setOutputFormat(flags,&cerr);
+  //setOutputFormat(flags,&cout);
+  //setOutputFormat(flags,&cerr);
   WFST::setIndexThreshold(thresh);
   if ( flags['h'] ) {
     WFSTformatHelp();
@@ -360,6 +401,10 @@ main(int argc, char *argv[]){
   }
   WFST *chainMemory = (WFST*)::operator new(nInputs * sizeof(WFST));
   WFST *chain = chainMemory;
+  initModels() ;  
+  WFST *modelsChain = (WFST*)::operator new(Models.size() * sizeof(WFST));
+  for(unsigned int j = 0 ; j < Models.size() ;j++)
+    new (&modelsChain[j]) WFST(Models[j]); 
   int nTarget = -1; // chain[nTarget] is the linear acceptor built from input sequences
   if ( flags['i'] || flags['b']||flags['P']) // flags['P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
     if ( flags['r'] )
