@@ -26,23 +26,23 @@ struct MemoIndex {
   explicit MemoIndex(unsigned &n_,F &f_): n(n_),f(f_) {f.set_memo(this);}
 
   Result *find(const Arg &a) {
-	return find_second(memo,a);
+        return find_second(memo,a);
   }
   Result & apply(const Arg &a) {
-	Table::insert_return_type i=memo.insert(a); // non-STL: =insert(pair<Arg,Result>(a,Result()))
-	Result &r=i.first->second;
-	if (i.second) { // new	  
-	  r.second=n++; // very important to do this before invoking functor (in case it recursively uses this Memo!).  note that result gets default constructed; if you care to distinguish between really-finished and in-progress, make sure default constructed is unique.
-	  f(a,r.first);
-	  // something to mark f(a) finished so we detect (semantically incorrect?) loops?
-	}
-	return r;
-	/*
-	Result *f=find_second(memo,a);
-	if (f)
-	  return *f;
-	Result &r=memo[a];
-	*/
+        typename Table::insert_return_type i=memo.insert(a); // non-STL: =insert(pair<Arg,Result>(a,Result()))
+        Result &r=i.first->second;
+        if (i.second) { // new
+          r.second=n++; // very important to do this before invoking functor (in case it recursively uses this Memo!).  note that result gets default constructed; if you care to distinguish between really-finished and in-progress, make sure default constructed is unique.
+          f(a,r.first);
+          // something to mark f(a) finished so we detect (semantically incorrect?) loops?
+        }
+        return r;
+        /*
+        Result *f=find_second(memo,a);
+        if (f)
+          return *f;
+        Result &r=memo[a];
+        */
   }
 };
 
@@ -75,16 +75,16 @@ struct ExampleF : public MemoFn<int,int> {
   int n;
   ExampleF() : n(0) { }
   void operator()(const argument_type &a,return_type &ret) {
-	++n;
-//	DBP("\nn="<<n<<" arg="<<a<<std::endl);
-	if (a%3)
-	  ret=memo->apply(a-1).first;
-	else
+        ++n;
+//      DBP("\nn="<<n<<" arg="<<a<<std::endl);
+        if (a%3)
+          ret=memo->apply(a-1).first;
+        else
       ret=(a%2);
 
   }
   void set_memo(MemoIndex<ExampleF> *memo_) {
-	memo=memo_;
+        memo=memo_;
   }
 };
 BOOST_AUTO_UNIT_TEST( memoindex )
@@ -108,7 +108,7 @@ BOOST_AUTO_UNIT_TEST( memoindex )
   BOOST_CHECK(start == 3);
   BOOST_CHECK(m.f.n == 3);
   }
-  {  
+  {
   ExampleF f;
   MemoIndexOwn<ExampleF> m(f);
   BOOST_CHECK(m.apply(1).first==0);
