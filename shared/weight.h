@@ -9,12 +9,16 @@
 #ifndef WEIGHT_H 
 #define WEIGHT_H 1
 
+#ifdef _MSC_VER
 #pragma warning(push)
+#endif
 #include <cmath>
 #include <iostream>
 
+#ifdef _MSC_VER
 // Microsoft C++: conversion from double to float:
 #pragma warning(disable:4244)
+#endif
 
 struct Weight {			// capable of representing nonnegative reals 
 		// internal implementation note: by their base e logarithm
@@ -138,7 +142,7 @@ std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) con
 			o << getLog10() << "log";
 		}
 	}
-	return 0;
+	return std::ios_base::goodbit;
 }
 
 template <class charT, class Traits>
@@ -163,7 +167,7 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
     i.putback(c);
     setReal(f);
   }
-  return 0;
+  return std::ios_base::goodbit;
 }
 
 
@@ -278,6 +282,8 @@ inline bool operator >(Weight lhs, Weight rhs) { return lhs.weight > rhs.weight;
 inline bool operator <=(Weight lhs, Weight rhs) { return lhs.weight <= rhs.weight; }
 inline bool operator >=(Weight lhs, Weight rhs) { return lhs.weight >= rhs.weight; }
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #endif 

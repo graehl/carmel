@@ -16,6 +16,11 @@
 
 #define DO(x)  { if (!(x)) return 0; }
 
+static int pow2(int exp)
+{
+	return 1 << exp;
+}
+
 static int getString(istream &in, char *buf)
 {
   int l;
@@ -152,14 +157,14 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
   }
   if (permuteNumbers){					   
     states.pushBack();			/* final state*/
-    final = int(pow(2,symbols.size())-1) ;
+    final = pow2((int)symbols.size())-1;
     for (int k=0; k < final; k++){
       states.pushBack();
       vector<bool> taken(maxSymbolNumber+1);
       for (int i = 0 ; i <= maxSymbolNumber ;++i)
 	taken[i] = false ;
       for (int l=0; l < int(symbols.size()); l++){
-	int temp = (int) pow(2,l);
+	int temp = pow2(l);
 	if (((int(k / temp) % 2) == 0) && (!taken[unsigned(symbols[l])])){
 	  states[k].addArc(Arc(symbols[l], symbols[l], k+temp, 1.0));
 	  taken[symbols[l]] = true ;
@@ -168,7 +173,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
     }
   }
   else{
-    final = int(pow(2,strSymbols.size())-1) ;
+    final = pow2((int)strSymbols.size())-1 ;
     for (int k=0; k <= final; k++){
       states.pushBack();
     }
@@ -184,7 +189,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
 	for (unsigned int i = 0 ; i < strSymbols.size() ;++i)
 	  taken[strSymbols[i].c_str()] = false ;
 	for (int l=0; l < int(strSymbols.size()); l++){
-	  int temp = (int) pow(2,l);
+	  int temp = pow2(l);
 	  if (((int(k / temp) % 2) == 0) && (!taken[strSymbols[l].c_str()])){
 	    if (isNumber(strSymbols[l].c_str())){
 	      int from_state,to_state ;

@@ -11,9 +11,6 @@
 
 
 #define CUSTOMNEW
-#ifdef _MSC_VER
-//#pragma includealias (<strstream.h>, <strstrea.h>)
-#endif
 
 #include <vector>
 #include <cstring>
@@ -58,12 +55,19 @@ typedef PathArc T;
 #else
 template <typename T>
 #endif   
-void insertPathArc(GraphArc *gArc, List<T>*,List<T>::iterator &p);  
-#ifdef _MSC_VER
-#else
+void insertPathArc(GraphArc *gArc, List<T>*,
+#ifndef _MSC_VER
+				   typename 
+#endif
+				   List<T>::iterator &p);  
+#ifndef _MSC_VER
 template <typename T>
 #endif    
-void insertShortPath(int source, int dest, List<T> *,List<T>::iterator &p);
+void insertShortPath(int source, int dest, List<T> *,
+#ifndef _MSC_VER
+					 typename 
+#endif
+					 List<T>::iterator &p);
   static int indexThreshold;
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
   trainInfo *trn;
