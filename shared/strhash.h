@@ -94,8 +94,18 @@ public:
 	}
 };
 
+template <class Sym>
+struct NoStringPool {
+  enum {is_noop=1};
+  static const char * borrow(const char *s) {
+    return s;
+  }
+  static void giveBack(const char *s) {
+  }
+};
 
-template <class Sym=StringKey,class StrPool=STRINGPOOLCLASS>
+
+template <class Sym=StringKey,class StrPool=NoStringPool<Sym> >
 class Alphabet {
 public:
   typedef DynamicArray<Sym> SymArray;
@@ -184,7 +194,7 @@ private:
 		ht[k]=iNum;
       } else {
 	for ( int i = names.size() ; i < iNum ; ++i )
-	  names.push_back(Sym::empty);
+	  names.push_back(); //names.push_back(Sym::empty);
 	names.push_back(k);
 	ht[k]=iNum;
 	Assert(names.size() == iNum+1);
@@ -236,12 +246,12 @@ private:
     {
 	  giveBackAll();
     }
-	template<class T>  friend std::ostream & operator << (std::ostream &out, Alphabet<T> &alph);
+	template<class T,class P>  friend std::ostream & operator << (std::ostream &out, Alphabet<T,P> &alph);
 };
 
 
-template<class T>
-inline std::ostream & operator << (std::ostream &out, Alphabet<T> &alph)
+template<class T,class P>
+inline std::ostream & operator << (std::ostream &out, Alphabet<T,P> &alph)
 {
   for ( unsigned int i = 0 ; i < alph.names.size() ; ++i )
     out << alph.names[i] << '\n';

@@ -295,7 +295,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   T & operator() (unsigned int index) {    
     if ( index >= size() ) {
       unsigned int newSpace = capacity();
-      while ( index >= newSpace ) newSpace <<=1;
+      while ( index >= newSpace ) newSpace *=2; //FIXME: overflow if newSpace > 2^31
       resize(newSpace);
 	  T *v = end();
 	  endvec=vec+index+1;
@@ -317,12 +317,27 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   T *push_back_raw()
     {
       if ( endvec >= endspace )
-		resize(capacity() << 1);
+		resize(capacity() << 1); // FIXME: 2^31 problem
       return endvec++;
     }
 	void undo_push_back_raw() {
 	  --endvec;
 	}
+  T &at_grow(unsigned index) {
+	T *r=vec+index;
+	if (r >= end()) {
+	  if (r >= endspace) {
+		reserve_at_least(index+1); // doubles if it resizes at all
+		r=vec+index;
+	  }
+	  T *i=end();
+	  for (;i<=r;++i)
+		PLACEMENT_NEW(i) T();
+	  endvec=i;
+	}
+	return *r;
+  }
+
 	T& front()  {
 	  Assert(size());
 	  return *begin();
@@ -399,7 +414,15 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 	if (newSpace > capacity())
 	  resize(newSpace);
   }
-
+  void reserve_at_least(unsigned req) {
+	unsigned newcap=capacity();
+	if (req > newcap) {
+	  do {
+		newcap *=2;
+	  } while (req > newcap); //FIXME: could loop forever if you have >= 2^31 capacity already
+	  resize(newcap);
+	}
+  }
   unsigned int size() const { return (unsigned)(endvec-vec); }
   void set_size(unsigned int newSz) { endvec=vec+newSz; }
   void clear_nodestroy() {
@@ -587,6 +610,14 @@ int a2[] = {3,4,6,7};
 #include <iterator>
 BOOST_AUTO_UNIT_TEST( dynarray )
 {
+  {
+	DynamicArray<int> a;
+	a.at_grow(5)=1;
+	BOOST_CHECK(a.size()==5+1);
+	BOOST_CHECK(a[5]==1);
+	for (int i=0; i < 5; ++i)
+	  BOOST_CHECK(a.at(i)==0);
+  }
   const int sz=7;
 
   using namespace std;

@@ -58,7 +58,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
 
 }
 
-static void printSeq(Alphabet<> *a,int *seq,int maxSize) {
+static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
 
   for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
     if (i>0)
