@@ -719,7 +719,6 @@ public:
             return range_print_on(o,this->begin(),end(),writer,multiline);
         }
 
-
     // if any element read fails, whole array is clobbered (even if appending!)
     // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class charT, class Traits, class Reader>
@@ -732,21 +731,37 @@ public:
 #if 1
             // slight optimization from not needing temporary like general output iterator version.
             char c;
-            EXPECTCH_SPACE_COMMENT_FIRST('(');
-            for(;;) {
-                EXPECTI_COMMENT(in>>c);
-                if (c==')') {
-                    break;
+            EXPECTI_COMMENT_FIRST(in>>c);
+            if (c=='(') {
+                for(;;) {
+                    EXPECTI_COMMENT(in>>c);
+                    if (c==')') {
+                        break;
+                    }
+                    in.unget();
+                    push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
+                    if (!(deref(read)(in,back()))) {
+                        //undo_push_back_raw();
+                        goto fail;
+                    }
+                    EXPECTI_COMMENT(in>>c);
+                    if (c != ',') in.unget();
+
                 }
+            } else {
                 in.unget();
-                push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
-                if (!(deref(read)(in,back())).good()) {
-                    //undo_push_back_raw();
-                    goto fail;
+                do {
+                    push_back();
+                } while (deref(read)(in,back()));
+                if (in.eof()) {
+                    undo_push_back_raw();
+                    goto done;
                 }
-                EXPECTI_COMMENT(in>>c);
-                if (c != ',') in.unget();
+                goto fail;
             }
+
+            //EXPECTCH_SPACE_COMMENT_FIRST('(');
+        done:
             Assert(invariant());
             return GENIOGOOD;
           fail:
@@ -944,6 +959,23 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     BOOST_CHECK(al.top=aspace+4);
     }
 
+    {
+        FixedArray<FixedArray<int> > aa,ba;
+        std::string sa="() (1) (1 2 3) () (4)";
+        BOOST_CHECK(test_extract_insert(sa,aa));
+        IndirectReader<plus_one_reader> reader;
+        istringstream ss(sa);
+
+        ba.get_from(ss,reader);
+
+//        DBP(ba);
+        BOOST_REQUIRE(aa.size()==5);
+        BOOST_CHECK(aa[2].size()==3);
+        BOOST_REQUIRE(ba.size()==5);
+        BOOST_CHECK(ba[2].size()==3);
+        BOOST_CHECK(aa[1][0]==1);
+        BOOST_CHECK(ba[1][0]==2);
+    }
 
     {
         FixedArray<FixedArray<int> > aa,ba;

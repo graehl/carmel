@@ -110,35 +110,48 @@ template <class charT, class Traits, class Reader, class T>
 std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &out,Reader read)
 
 {
-  char c;
 
-  EXPECTCH_SPACE_COMMENT_FIRST('(');
-  for(;;) {
-    EXPECTI_COMMENT(in>>c);
-          if (c==')') {
+    char c;
+    EXPECTI_COMMENT_FIRST(in>>c);
+    if (c=='(') {
+        for(;;) {
+            EXPECTI_COMMENT(in>>c);
+            if (c==')') {
                 break;
-          }
-          in.unget();
+            }
+            in.unget();
 #if 1
-          //typename std::iterator_traits<T>::value_type
-           typename Reader::value_type   temp;
-          if (deref(read)(in,temp).good())
-                *out++=temp;
-          else
-                goto fail;
+            //typename std::iterator_traits<T>::value_type
+# define IFBADREAD                              \
+            typename Reader::value_type   temp; \
+            if (deref(read)(in,temp).good())    \
+                *out++=temp;                    \
+            else
 #else
-          // doesn't work for back inserter for some reason
-          if (!deref(read)(in,*&(*out++)).good()) {
-                goto fail;
-          }
+            // doesn't work for back inserter for some reason
+# define IFBADREAD                                  \
+            if (!deref(read)(in,*&(*out++)).good())
 #endif
-          EXPECTI_COMMENT(in>>c);
-          if (c != ',') in.unget();
-  }
-  return GENIOGOOD;
+            IFBADREAD goto fail;
+            EXPECTI_COMMENT(in>>c);
+            if (c != ',') in.unget();
+        }
+        return GENIOGOOD;
+    } else {
+        in.unget();
+        for(;;) {
+            IFBADREAD {
+                if (in.eof())
+                    return GENIOGOOD;
+                else
+                    goto fail;
+            }
+        }
+    }
 fail:
   return GENIOBAD;
 }
+#undef IFBADREAD
 
 // note: may attempt to read MORE than [begin,end) - looks for closing paren, fails if not found after no more than end-begin elements (throwing an exception on failure)
 template <class charT, class Traits,class T>
@@ -219,8 +232,6 @@ void insert_byid(const A& vals,I &in,O &out)
                 OUTN;
 #undef OUTN
 }
-
-
 
 
 #endif
