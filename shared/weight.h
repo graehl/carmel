@@ -1,6 +1,7 @@
 #ifndef WEIGHT_H 
 #define WEIGHT_H 1
 #include "config.h"
+#include "assert.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -110,6 +111,14 @@ struct Weight {			// capable of representing nonnegative reals
     else
       setZero();
   }
+	void NaNCheck() {
+#ifdef DEBUG
+	if(weight!=weight)
+		*(int*)0=0;
+#else
+		assert(weight==weight);
+#endif
+	}
   void setLn(FLOAT_TYPE w) {
     weight=w;
   }
@@ -148,10 +157,15 @@ struct Weight {			// capable of representing nonnegative reals
   }
   Weight operator /= (Weight w)
   {
+				Assert(!w.isZero());
 #ifdef WEIGHT_CORRECT_ZERO
-    if (!isZero())
+//		if (w.isZero())
+		//	weight = HUGE_FLOAT;
+    //else 
+			if (!isZero())
 #endif
 	    weight -= w.weight;
+
     return *this;
   }
   Weight raisePower(FLOAT_TYPE power) {
@@ -403,6 +417,12 @@ Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = A
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
+
+#ifdef DEBUG
+#define NANCHECK(w) w.NaNCheck()
+#else
+#define NANCHECK(w)
+#endif
 
 
 #endif 
