@@ -1,3 +1,9 @@
+Wed Nov  5 15:46:03 2003  Jonathan Graehl  <graehl@brahms.isi.edu>
+
+	* src/fst.cc: normalization fix for zero-count tied arcs - count
+ 	their competititors against their group and set them to their
+ 	teammates' value
+
 2003-10-16  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: fixed bug in one-arc per line output of

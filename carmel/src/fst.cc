@@ -215,10 +215,12 @@ void WFST::normalize(NormalizeMethod method)
 #endif
     for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
       const Weight w=(*g)->weight;
-      if (!w.isZero())
+      
         if ( isTied(pGroup = (*g)->groupId) ) {
-          groupArcTotal[pGroup] += w; // default init is to 0
-          groupStateTotal[pGroup] += sum;
+		  if (!w.isZero())
+			groupArcTotal[pGroup] += w; // default init is to 0
+          //if (!sum.isZero())
+			groupStateTotal[pGroup] += sum;
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
@@ -240,7 +242,7 @@ void WFST::normalize(NormalizeMethod method)
     // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
     // also, compute sum of normal arcs
     for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-      if (!(*g)->weight.isZero())
+      
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
             Weight groupNorm = *groupStateTotal.find(pGroup); // can't be 0
@@ -248,7 +250,7 @@ void WFST::normalize(NormalizeMethod method)
             reserved += (*g)->weight = (*groupArcTotal.find(pGroup) / groupNorm);
           } else // locked:
             reserved += (*g)->weight;
-        }  else // normal arc
+        }  else if (!(*g)->weight.isZero()) // normal arc
           normal_sum += (*g)->weight;
 #ifdef DEBUGNORMALIZE
     if ( reserved > 1.001 )
