@@ -20,9 +20,9 @@ struct null_deleter {
     void operator()(void*) {}
 };
 
-static Infile default_in(&cin,null_deleter());
-static Outfile default_log(&cerr,null_deleter());
-static Outfile default_out(&cout,null_deleter());
+static Infile default_in(&std::cin,null_deleter());
+static Outfile default_log(&std::cerr,null_deleter());
+static Outfile default_out(&std::cout,null_deleter());
 static Infile default_in_none;
 static Outfile default_out_none;
 
