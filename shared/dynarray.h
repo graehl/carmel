@@ -24,9 +24,11 @@
 #endif
 //#include <boost/type_traits.hpp>
 
+namespace nonstd {
+
 // bleh, std::construct also was nonstandard and removed
 template <class P,class V>
-void copy_construct(P *to,const V& from)
+void construct(P *to,const V& from)
 {
   PLACEMENT_NEW(to) P(from);
 }
@@ -34,13 +36,13 @@ void copy_construct(P *to,const V& from)
 // uninitialized_copy_n was removed from std:: - we don't reuse the name because you might use namespace std; in an old compiler
 // plus our version doesn't return the updated iterators
 template <class I,class F>
-void uninit_copy_n(I from, unsigned n, F to)
+void uninitialized_copy_n(I from, unsigned n, F to)
 {
   for ( ; n > 0 ; --n, ++from, ++to)
     //PLACEMENT_NEW(&*to) iterator_traits<F>::value_type(*from);
-    copy_construct(&*to,*from);
+    construct(&*to,*from);
 }
-
+};
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
 template <class Label>
 struct DefaultReader
@@ -243,7 +245,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   template<class I>
   Array(unsigned n,I begin) { // copy up to n
     alloc(n);
-    uninit_copy_n(begin, n, vec);
+    nonstd::uninitialized_copy_n(begin, n, vec);
   }
 
   unsigned capacity() const { return (unsigned)(endspace-vec); }
