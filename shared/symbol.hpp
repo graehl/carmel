@@ -93,16 +93,23 @@ struct Symbol {
   bool isDefault() const {
 	return *this == empty;
   }
+  void makeDefault() {
+	*this = empty;
+  }
+  // empty symbol (isDefault()) is considered an io failure
   template <class charT, class Traits>
   std::ios_base::iostate
   print_on(std::basic_ostream<charT,Traits>& o) const
   {
+	if (isDefault())
+	  return std::ios_base::badbit;
 	o << str;
     return std::ios_base::goodbit;
   }
 
   // either quoted strings (e.g. "a") with quotes in the string, and backslashes, escaped with a preceding backslash, e.g. "a\"\\\"b" (and the quotes and backslashes are considered part of the symbol, not equal to the unquoted version)
-  // or sequences of characters except for space,tab,newline,comma,",`,(,),#,$,:,{,}
+  // or sequences of characters except for space,tab,newline,comma,",`,(,),#,$,:,{,},;,... (see the switch stmt)
+  // empty symbol (isDefault()) is considered an io failure
   template <class charT, class Traits>
   std::ios_base::iostate
   get_from(std::basic_istream<charT,Traits>& in)
@@ -138,6 +145,10 @@ default:
 	  }
 	
 donewhile:	
+	  if (g_buf.size()==0) {
+		makeDefault();
+		return std::ios_base::badbit;
+	  }
 	g_buf.push_back(0);
 	str=intern(g_buf.begin());
     return std::ios_base::goodbit;

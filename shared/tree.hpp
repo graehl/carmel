@@ -285,6 +285,36 @@ void delete_arg(C &c) {
 }
 
 template <class T,class F>
+bool tree_visit(T *tree,F &func)
+{
+  if (!func.discover(tree))
+     return false;
+  for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)  
+	if (!postorder(*i,func))
+		break;
+  return func.finish(tree);
+}
+
+template <class T>
+struct TreePrinter {
+  bool first;
+  ostream &o;
+  TreePrinter(ostream &o_):o(o_),first(true) {}
+  bool discover(T *t) { 
+   if (!first) o<<' ';
+   o<<t->label; 
+   if (t->size()) { o << '('; first=true; }
+   return true;
+  }
+  bool finish(T *t) {
+   if (t->size())
+    o << ')';
+   first=false;
+   return true;
+  }
+};
+
+template <class T,class F>
 void postorder(T *tree,F &func)
 {
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
@@ -491,6 +521,10 @@ BOOST_AUTO_UNIT_TEST( tree )
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
+  ostringstream o2;
+  TreePrinter tp(o2);
+  tree_visit(a,tp);
+  BOOST_CHECK(o.str() == o2.str());
   c=new_tree(1,
 		new_tree(2),
 		new_tree(3,
