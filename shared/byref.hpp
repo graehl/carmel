@@ -58,7 +58,7 @@ deref(const T& t) {
 #include "test.hpp"
 #endif
 
-#ifdef TEST
+#ifdef TEST_MAIN
 template<class C>
 void f(C c) {
   deref(c)=1;

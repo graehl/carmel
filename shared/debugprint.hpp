@@ -133,7 +133,7 @@ static const char * dbgstr(const A &a,Writer writer);
 */
 
 template <class A>
-void dbgout(ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
   if (a == NULL) {
     o << "NULL";
   } else {
@@ -142,7 +142,7 @@ void dbgout(ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> 
 #pragma warning( push )
 #pragma warning( disable : 4267 )
 #endif
-  o << "0x" << hex << (size_t)a << dec << "=&((";
+      o << "0x" << std::hex << (size_t)a << std::dec << "=&((";
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
@@ -154,43 +154,43 @@ void dbgout(ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> 
 
 // what follows relies on SFINAE (google) to identify whether an object supports print_on (with or without a Writer param)
 template<class A>
-void dbgout(ostream &o,const A &a, typename has_print_on_plain<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename has_print_on_plain<A>::type* dummy = 0) {
   deref(a).print_on(o);
 }
 
 template<class A>
-void dbgout(ostream &o,const A &a, typename has_print_on_writer<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename has_print_on_writer<A>::type* dummy = 0) {
   deref(a).print_on(o,DebugWriter());
 }
 
 template<class A>
-void dbgout(ostream &o,const A &a, typename not_has_print_on<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename not_has_print_on<A>::type* dummy = 0) {
     o << deref(a);
 }
 
 
 template<class A,class W>
-void dbgout(ostream &o,const A &a,W w,typename has_print_on_plain<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_on_plain<A>::type* dummy = 0) {
   deref(a).print_on(o);
 }
 
 template<class A,class W>
-void dbgout(ostream &o,const A &a,W w,typename has_print_on_writer<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_on_writer<A>::type* dummy = 0) {
   deref(a).print_on(o,w);
 }
 
-void dbgout(ostream &o,const char *a) {
+inline void dbgout(std::ostream &o,const char *a) {
   o << a;
 }
 
 /*
 template <class A>
-void dbgout(ostream &o,const A &a, typename boost::enable_if<boost::is_arithmetic<A> >::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename boost::enable_if<boost::is_arithmetic<A> >::type* dummy = 0) {
   o << a;
 }
 
 
-void dbgout(ostream &o,const std::string &a) {
+inline void dbgout(std::ostream &o,const std::string &a) {
   o << a;
 }
 */

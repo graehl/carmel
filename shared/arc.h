@@ -3,7 +3,7 @@
 #include "config.h"
 #include "weight.h"
 #include "strhash.h"
-
+#include <iostream>
 
 struct Arc {
   int in;
@@ -16,7 +16,7 @@ struct Arc {
 };
 
 
-inline ostream & operator << (ostream &out,const Arc &a) {
+inline std::ostream & operator << (std::ostream &out,const Arc &a) {
   out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
   return(out);
 }
