@@ -19,6 +19,7 @@ BOOST=/home/graehl/isd/boost
 
 OBJ.linux = ${DIR}/obj/linux
 OBJ.solaris = ${DIR}/obj/solaris
+OBJ.cygwin = ${DIR}/obj/cygwin
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src
@@ -30,6 +31,7 @@ CC.solaris = /nfs/topaz/graehl/isd/solaris/bin/g++3.2
 #/nfs/topaz/graehl/isd/solaris/bin/g++3.2
 CC.linux = g++
 CC.freebsd = g++31
+CC.freebsd = g++
 CC.macosx = g++
 
 CCFLAGS = -c 
@@ -57,7 +59,11 @@ OBJ_OPT_DIR = $(OBJ)/optimized/
 OBJ_PUR_DIR = $(OBJ)/purified/
 OBJ_PRF_DIR = $(OBJ)/profiled/
 OBJ_TEST_DIR = $(OBJ)/test/
+
 ifneq (${ARCH},macosx)
+carmel: carmel.${ARCH} carmel.${ARCH}.dbg carmel.${ARCH}.static
+else
+carmel: carmel.${ARCH} carmel.${ARCH}.dbg
 endif
 carmel.${ARCH}:	$(OBJ_OPT_DIR) $(OBJ_FILES_OPT)
 	$(CC) $(OBJ_FILES_OPT) $(LDFLAGS) -o $(BIN)/$@
