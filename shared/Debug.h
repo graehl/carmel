@@ -68,7 +68,7 @@ namespace ns_decoder_global {
   class Debug {
   public:
       int runtime_info_level;
-      Debug() : debugOS(cerr), infoOS(cout),runtime_info_level(INFO_LEVEL) {};
+      Debug() : runtime_info_level(INFO_LEVEL), debugOS(cerr), infoOS(cout) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
       return debugOS;
