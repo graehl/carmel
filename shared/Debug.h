@@ -152,7 +152,7 @@ namespace ns_decoder_global {
           }
       };
       
-      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0) {}
+      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_newline(true) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
       return *debugOS;
@@ -182,17 +182,37 @@ namespace ns_decoder_global {
       getDebugOutput() << "::" << module << "(" << file << ":" << line << "): WARNING: " << info << endl;
     }
 
-    void info(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an informational message
+      bool info_newline;
+      inline ostream &info_sameline() {
+          info_newline=false;
+          return *infoOS;
+      }
+      inline ostream &info_startline() {
+          if (!info_newline) {
+              *infoOS << std::endl;
+              info_newline=true;
+          }
+          return *infoOS;
+      }
+      inline ostream &info_endline() {
+          info_newline=true;
+          return *infoOS;
+      }
+
+      void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
         const char OUTLINE_CHAR='*';
         for (unsigned depth=info_outline_depth;depth>0;--depth)
             getInfoOutput() << OUTLINE_CHAR;
       if (file=="") {
-        getInfoOutput() << module << ": " << info << endl;
+          info_startline() << module << ": " << info;
       } else {
-        getInfoOutput() << module << "(" << file << ":" << line << "): " << info << endl;
+          info_startline() << module << "(" << file << ":" << line << "): " << info;
       }
+      info_newline=false;
+      if (endline)
+          info_startline();
     }
-      
+
       void set_info_level(int lvl) {
           runtime_info_level=lvl;
       }
