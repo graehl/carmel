@@ -180,18 +180,6 @@ operator <<
 }
 
 
-void WFST::randomScale()
-{
-	Weight random;
-	for ( int s = 0 ; s < numStates() ; ++s )
-		for ( List<Arc>::val_iterator aI=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); aI != end; ++aI )
-			if ( !isLocked(aI->groupId) ) {
-				random.setRandomFraction();
-				aI->weight *= random;
-			}
-}
-
-
 void WFST::normalize(NormalizeMethod method)
 {
   if (method==NONE)

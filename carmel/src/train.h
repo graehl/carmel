@@ -89,11 +89,7 @@ struct State {
     hitcount = 0;
 #endif
   }
-  void scaleArcs(Weight w)
-  {
-    for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l)
-      l->weight *= w;
-  }
+  
   void addArc(const Arc &arc)
   {
     arcs.push(arc);
