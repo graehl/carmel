@@ -363,7 +363,7 @@ typedef std::ios_base::failure genio_exception;
 #define EXPECTCH(a) do { if (!in.get(c).good()) { GENIO_THROW2("expected input unavailable: ",#a); } if (c != a) { GENIO_THROW2("expected input failed: ",#a); } } while(0)
 #define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) { GENIO_THROW2("expected input unavailable: ",#a); } if (c != a) { GENIO_THROW2("expected input failed: ",#a); } } while(0)
 //#define EXPECTCH_SPACE_COMMENT(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
-#define EXPECTCH_SPACE_COMMENT_FIRST(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
+#define EXPECTCH_SPACE_COMMENT_FIRST(a) do { if (!(skip_comment(in) && (in>>c))) goto fail; if (c != a) goto fail; } while(0)
 #define EXPECTCH_SPACE_COMMENT(a) do { if (!(skip_comment(in).good()&&(in>>c).good())) { GENIO_THROW2("expected input unavailable: ",#a); }if (c != a) { GENIO_THROW2("expected input failed: ",#a); } } while(0)
 //#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
