@@ -118,7 +118,8 @@ List<List<PathArc> > *WFST::bestPaths(int k)
     List<PathArc> temp;
     //List<PathArc>::iterator path=temp.begin();	
     //paths->push_back(temp);
-	insertShortPath(shortPathTree, 0, final, &temp);
+	insert_iterator<List<PathArc> > here(temp,temp.erase_begin());
+ 	insertShortPath(shortPathTree, 0, final, here);
 	*path_adder++ = temp; //XXX unnecessary copy because of output iterator not giving reference to added item =(
 	
 
@@ -185,16 +186,16 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 #endif
           List<PathArc> temp;
           //List<PathArc>::iterator fullPath=temp.begin();
-          
+          insert_iterator<List<PathArc> > path_cursor(temp,temp.erase_begin());
           
 		  int sourceState = 0; // pretend beginning state is end of last sidetrack
 
           for ( List<GraphArc *>::const_iterator cut=shortPath.const_begin(),end=shortPath.const_end(); cut != end; ++cut ) {
-            insertShortPath(shortPathTree, sourceState, (*cut)->source, &temp); // stitch end of last sidetrack to beginning of this one
+            insertShortPath(shortPathTree, sourceState, (*cut)->source, path_cursor); // stitch end of last sidetrack to beginning of this one
             sourceState = (*cut)->dest;
-            insertPathArc(*cut, &temp); // append this sidetrack
+            insertPathArc(*cut, path_cursor); // append this sidetrack
           }
-          insertShortPath(shortPathTree, sourceState, final, &temp); // connect end of last sidetrack to final state
+          insertShortPath(shortPathTree, sourceState, final, path_cursor); // connect end of last sidetrack to final state
 
           //paths->push_back(temp);
 		  *path_adder++ = temp;
