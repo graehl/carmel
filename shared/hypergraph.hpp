@@ -95,6 +95,7 @@ struct SourceEdges {
   Adjs adj;
   typedef G graph;
   graph &g;
+  operator graph &() { return g; }
   VertexIndexer vi;
   SourceEdges(Graph &g_,VertexIndexer vert_index=VertexIndexer()) : adj(g_.num_vertices()),g(g_), vi(vert_index) {	
 	visit_edges<E>(g,*this);
@@ -121,19 +122,19 @@ struct SourceEdges {
 
 #include <boost/counting_iterator.hpp>
 template <class G,E,C,V>
-struct graph_traits<SourceEdges<G,E,C,V> > {
+struct graph_traits<SourceEdges<G,E,C,V> > : public graph_traits<G> {
 {
   typedef SourceEdges<G,E,C,V> graph;
-  typedef typename graph::vertex_descriptor vertex_descriptor;
-  typedef typename graph::edge_descriptor edge_descriptor;
-  typedef boost::counting_iterator_generator<edge_desciptor> edge_iterator;
+  //typedef typename graph::vertex_descriptor vertex_descriptor;
+  //typedef typename graph::edge_descriptor edge_descriptor;
+  typedef boost::counting_iterator_generator<graph::edge_desciptor> out_edge_iterator;
     typedef std::pair<
-    typename graph_traits<Treexdcr<R> >::edge_iterator,
-    typename graph_traits<Treexdcr<R> >::edge_iterator> pair_edge_it;    
+    typename graph_traits<Treexdcr<R> >::out_edge_iterator,
+    typename graph_traits<Treexdcr<R> >::out_edge_iterator> pair_out_edge_it;    
 };
 
 template <class G,E,C,V>
-inline typename SourceEdges<G,E,C,V>::pair_edge_it
+inline typename SourceEdges<G,E,C,V>::pair_out_edge_it
 out_edges(	  
           typename graph_traits<G>::vertex_descriptor v,
 	      const SourceEdges<G,E,C,V> &g
@@ -141,13 +142,28 @@ out_edges(
 {
   typedef typename SourceEdges<G,E,C,V> Self;
   typename Self::Adj &adj=g[v];
-  return typename Self::pair_edge_it(adj.begin(),adj.end());
+  return typename Self::pair_out_edge_it(adj.begin(),adj.end());
 }
 
 template <class G,E,C,V>
 unsigned out_degree(typename SourceEdges<G,E,C,V>::vertex_descriptor v,SourceEdges<G,E,C,V> &g) {
   return g[v].size();
 }
+
+template <class G,E,C,V,F>
+inline void
+visit<E>(	  
+          typename graph_traits<G>::vertex_descriptor v,
+	      const SourceEdges<G,E,C,V> &g, 
+          F f
+	   )
+{
+  typedef typename SourceEdges<G,E,C,V> Self;
+  typename Self::Adj &adj=g[v];
+  for (typename Self::out_edge_iterator i=adj.begin(),e=adj.end();i!=e;++i)
+    f(*i);  
+}
+
 
 /*
 struct NoWeight {
@@ -269,6 +285,14 @@ struct ArrayPMap {
   PMapImp arc_remain(num_hyperarcs(g),HaIndex(g));
   ReverseHypergraph<G,PMap> r(g,arc_remain);
 */
+
+template <class G,class P1,class P2>
+void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
+  visit<typename graph_traits<G>::hyperarc_descriptor>(IndexedCopier(a,b));
+}
+
+
+
 template <class G,class HyperarcLeftMap=ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_offset_map>,class VertexIndexer=typename graph_traits<G>::vertex_offset_map,class ContS=VectorS >
 struct ReverseHyperGraph {
   typedef ReverseHyperGraph<G,HyperarcLeftMap,VertexIndexer,ContS> Self;
