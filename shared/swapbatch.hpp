@@ -23,7 +23,7 @@ struct SwapBatch {
     checkpoint_istream in;
     size_type batchsize;
     char *top; // used only when adding to batches
-    static std::string batch_name(unsigned n) {
+    std::string batch_name(unsigned n) {
         return basename+boost::lexical_cast<std::string>(n);
     }
     char *end() const {
@@ -99,7 +99,7 @@ struct SwapBatch {
         for (unsigned i=0,end=batches.size();i!=end;++i) {
             load_batch(i);
             Batch &batch=batches[i];
-            for (Batch::iterator j=batch.begin(),e=batch.end();j!=end;++j) {
+            for (typename Batch::iterator j=batch.begin(),e=batch.end();j!=end;++j) {
                  deref(f)(*j);
             }
         }
@@ -109,7 +109,7 @@ struct SwapBatch {
         while(is)
             read(is);
     }
-    SwapBatch(istream &instd::string basename_,size_type batchsize_) : basename(basename_),batchsize(batchsize_),batch_no(0) {
+    SwapBatch(istream &in, std::string basename_,size_type batchsize_) : basename(basename_),batchsize(batchsize_) {
         create_next_batch();
     }
 };
