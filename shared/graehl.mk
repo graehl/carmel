@@ -163,9 +163,9 @@ ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
 all: $(ALL_PROGS)
 
-debug: $(OPT_PROGS)
+opt: $(OPT_PROGS)
 
-opt: $(DEBUG_PROGS)
+debug: $(DEBUG_PROGS)
 
 depend: $(ALL_DEPENDS)
 

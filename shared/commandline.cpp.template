@@ -1,0 +1,85 @@
+#define MAIN
+#define SINGLE_PRECISION
+//#define HINT_SWAPBATCH_BASE
+#include "config.h"
+#include "main.hpp"
+#include "weight.h"
+
+#define VERSION "0.5"
+
+#ifndef TEST
+#include <boost/program_options.hpp>
+#include "fileargs.hpp"
+#include "filelines.hpp"
+#include "debugprint.hpp"
+#include "backtrace.hpp"
+
+using namespace boost;
+using namespace std;
+using namespace boost::program_options;
+
+MAIN_BEGIN
+{
+    DBP_INC_VERBOSE;
+#ifdef DEBUG
+    DBP::set_logstream(&cerr);
+#endif
+//DBP_OFF;
+
+    Outfile outfile;
+    bool help,version;
+    int log_level;
+
+    options_description general("General options");
+    general.add_options()
+        ("help,h", bool_switch(&help), "show usage/documentation")
+        ("version,v", bool_switch(&version), "print the version number")
+        ("outfile,o",value<Outfile>(&outfile)->default_value(default_out,"STDOUT"),"Write result here")
+        ;
+    options_description cosmetic("Cosmetic options");
+    cosmetic.add_options()
+        ("log-level,L",value<int>(&log_level)->default_value(1),"Higher log-level => more status messages to logfile (0 means absolutely quiet except for final statistics)")
+        ;
+
+
+    options_description all("Allowed options");
+    all.add(general).add(cosmetic);
+
+    const char *progname=argv[0];
+    try {
+        variables_map vm;
+        store(parse_command_line(argc, argv, all), vm);
+        notify(vm);
+#ifdef DEBUG
+        DBP::set_logstream(&cerr);
+        DBP::set_loglevel(log_level);
+#endif
+
+        if (help) {
+            cerr << progname << ":\n";
+            cerr << all << "\n";
+            return 0;
+        }
+        if (version) {
+            cerr << progname << ' ' << "version " << VERSION << std::endl;
+            return 0;
+        }
+
+        *outfile << "test.\n";
+    }
+    catch(exception& e) {
+        cerr << "ERROR: " << e.what() << "\n\n";
+        cerr << "Try '" << progname << " -h' for documentation\n";
+        BackTrace::print_on(cerr);
+        return 1;
+    }
+    catch(...) {
+        cerr << "FATAL: Exception of unknown type!\n\n";
+        return 2;
+    }
+    return 0;
+}
+MAIN_END
+
+#endif
+
