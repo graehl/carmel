@@ -44,7 +44,7 @@ void validate(boost::any& v,
     // Make sure no previous assignment to 'a' was made.
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
-    std::stringstream i(po::validators::get_single_string(values));
+    std::istringstream i(po::validators::get_single_string(values));
     v=boost::any(parse_size<value_type>(i));
     char c;
     if (i >> c)
