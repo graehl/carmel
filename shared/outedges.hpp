@@ -19,7 +19,7 @@ struct OutEdges {
   typedef OutEdges<G,T,ContS,VertMapFactory> Self;
   typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
   typedef typename graph_object<G,T>::descriptor edge_descriptor;
-  typedef typename ContS::container<edge_descriptor>::type Adj;
+  typedef typename ContS::template container<edge_descriptor>::type Adj;
   //typedef FixedArray<Adj> Adjs;
 
 
@@ -27,7 +27,7 @@ struct OutEdges {
   graph_type &g;
   graph_type &graph() { return g; }
   operator graph_type &() { return g; }
-  typedef typename VertMapFactory::rebind<Adj>::implementation Adjs;
+  typedef typename VertMapFactory::template rebind<Adj>::implementation Adjs;
   Adjs adj;
   OutEdges(graph_type &g_) :
   g(g_),adj(VertMapFactory(g_))

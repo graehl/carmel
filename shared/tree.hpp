@@ -76,7 +76,7 @@ public:
 #else
         if (rank)
 #endif
-          children = (Self **)allocate(rank);
+          children = (Self **)this->allocate(rank);
   }
   Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
         alloc(_rank);
@@ -97,7 +97,7 @@ public:
 #else
         if (rank)
 #endif
-          deallocate((void **)children,rank);
+          this->deallocate((void **)children,rank);
         rank=0;
   }
   void dealloc_recursive();
@@ -475,7 +475,7 @@ struct Emitter {
   O out;
   Emitter(O o) : out(o) {}
   void operator()(T * tree) {
-        o << tree;
+        out << tree;
   }
 };
 

@@ -219,7 +219,7 @@ struct ReverseHyperGraph {
   //  Edges edge;
   //  Vertices vertex;
 
-  typedef typename ContS::container<HD>::type TerminalArcs;
+  typedef typename ContS::template container<HD>::type TerminalArcs;
   TerminalArcs terminal_arcs;
 
   /*  typedef typename HyperarcMapFactory::rebind<HD> BestTerminalFactory;
@@ -230,11 +230,11 @@ struct ReverseHyperGraph {
       return RemainPMap(unique_tails);
       }*/
 
-  typedef typename ContS::container<ArcDest>::type Adj;
+  typedef typename ContS::template container<ArcDest>::type Adj;
   //typedef FixedArray<Adj> Adjs;
-  typedef typename VertMapFactory::rebind<Adj>::implementation Adjs;
+  typedef typename VertMapFactory::template rebind<Adj>::implementation Adjs;
   Adjs adj;
-  typedef typename HyperarcMapFactory::rebind<unsigned> TailsFactory;
+  typedef typename HyperarcMapFactory::template rebind<unsigned> TailsFactory;
   typedef typename TailsFactory::implementation HyperarcLeftMap;
   typedef typename TailsFactory::reference RemainPMap;
   HyperarcLeftMap unique_tails;
@@ -299,20 +299,20 @@ struct ReverseHyperGraph {
   // pi (predecessor map) must also be initialized (to hypergraph_traits<G>::null_hyperarc()?) if you want to detect unreached vertices ... although mu=infty can do as well
   // edgecostmap should be initialized to edge costs
   template <
-    class VertexCostMap=typename VertMapFactory::rebind<typename property_map<graph,edge_weight_t>::cost_type>::reference,
-    //class VertexPredMap=property_factory<graph,VD>::rebind<HD>::reference
-    class VertexPredMap=typename VertMapFactory::rebind<HD>::reference,
+    class VertexCostMap=typename VertMapFactory::template rebind<typename property_map<graph,edge_weight_t>::cost_type>::reference,
+    //class VertexPredMap=property_factory<graph,VD>::template rebind<HD>::reference
+    class VertexPredMap=typename VertMapFactory::template rebind<HD>::reference,
       //dummy_property_map
 
     class EdgeCostMap=property_map<graph,edge_weight_t>
   >
   struct BestTree {
-    typedef typename VertMapFactory::rebind<HD>::implementation DefaultPi;
-    typedef typename VertMapFactory::rebind<typename property_map<graph,edge_weight_t>::cost_type>::implementation DefaultMu;
+    typedef typename VertMapFactory::template rebind<HD>::implementation DefaultPi;
+    typedef typename VertMapFactory::template rebind<typename property_map<graph,edge_weight_t>::cost_type>::implementation DefaultMu;
     Self &rev;
     VertexCostMap mu;
     VertexPredMap pi;
-    typedef typename VertMapFactory::rebind<void *> LocFact;
+    typedef typename VertMapFactory::template rebind<void *> LocFact;
     typedef typename LocFact::implementation Locs;
 
 
@@ -321,17 +321,17 @@ struct ReverseHyperGraph {
     //typedef typename unwrap_reference<VertexCostMap>::type::value_type Cost;
     typedef typename unwrap_reference<EdgeCostMap>::type::value_type Cost;
     struct RemainInf : public std::pair<unsigned,Cost> {
-      unsigned remain() const { return first; }
-      Cost cost() const { return second; }
+      unsigned remain() const { return this->first; }
+      Cost cost() const { return this->second; }
 
-      unsigned & remain() { return first; }
-      Cost & cost() { return second; }
+      unsigned & remain() { return this->first; }
+      Cost & cost() { return this->second; }
       GENIO_print_on {
         o << "(" << remain() << "," << cost() << ")";
         return GENIOGOOD;
       }
     };
-    typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostFact; // lower bound on edge costs
+    typedef typename HyperarcMapFactory::template rebind<RemainInf> RemainInfCostFact; // lower bound on edge costs
     typedef typename RemainInfCostFact::implementation RemainInfCosts;
     RemainInfCosts remain_infinum;
     typename RemainInfCostFact::reference hyperarc_remain_and_cost_map() {
@@ -421,7 +421,7 @@ struct ReverseHyperGraph {
     template<class I>
     void queue(I begin, I end) {
       //typename Key::SetLocWeight save(ref(loc),mu);
-      std::foreach(begin,end,ref(*this));
+      std::for_each(begin,end,ref(*this));
     }
     void safe_queue(VD v) {
       if (!was_queued(v))
@@ -467,10 +467,10 @@ struct ReverseHyperGraph {
 
   // reachmap must be initialized to false by user
   template <
-    class VertexReachMap=typename VertMapFactory::rebind<bool>::reference
+    class VertexReachMap=typename VertMapFactory::template rebind<bool>::reference
   >
   struct Reach {
-    typedef typename VertMapFactory::rebind<bool>::implementation DefaultReach;
+    typedef typename VertMapFactory::template rebind<bool>::implementation DefaultReach;
     Self &rev;
     VertexReachMap vr;
     HyperarcLeftMap tr;

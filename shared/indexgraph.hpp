@@ -41,7 +41,7 @@ struct index_graph {
   typedef K key_type;
   typedef vertex_descriptor data_type;
   //  typedef VertexData vertex_data_type;
-  typedef typename MapSelector::map<key_type,vertex_descriptor>::type map_type;
+  typedef typename MapSelector::template map<key_type,vertex_descriptor>::type map_type;
   typedef typename map_type::iterator map_it;
   //  typedef typename map_traits<map_type>::find_type find_type;
   typedef typename map_type::value_type value_type;

@@ -50,22 +50,22 @@ CharBuf g_buf(CHARBUF_INIT_SIZE);
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( charbuf )
 {  
-  BOOST_CHECK(char_buf()().size() == 0);
+  BOOST_CHECK((char_buf())().size() == 0);
   {
   char_buf b;
   BOOST_CHECK(b().size()==0);
   b().push_back('a');
   BOOST_CHECK(b()[0]=='a');
-  BOOST_CHECK(char_buf()().size() == 0);
+  BOOST_CHECK((char_buf())().size() == 0);
   }
 
-    BOOST_CHECK(char_buf()().size() == 0);
+    BOOST_CHECK((char_buf())().size() == 0);
   {
   char_buf b;
   BOOST_CHECK(b().size()==0);
   b().push_back('a');
   BOOST_CHECK(b()[0]=='a');
-  BOOST_CHECK(char_buf()().size() == 0);
+  BOOST_CHECK((char_buf())().size() == 0);
   }
 
 }
