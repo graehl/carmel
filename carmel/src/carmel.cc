@@ -15,23 +15,32 @@
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
 	    if ( flags['B'] ) 
-			*fstout << Weight::out_log10;
+//			*fstout << Weight::out_log10;
+			Weight::out_log10(*fstout);
 		else
-			*fstout << Weight::out_ln;
+			//*fstout << Weight::out_ln;
+			Weight::out_ln(*fstout);
 		if ( flags['Z'] ) 
-			*fstout << Weight::out_always_log;
+//			*fstout << Weight::out_always_log;
+			Weight::out_always_log(*fstout);
 		else
-			*fstout << Weight::out_variable;
+			//*fstout << Weight::out_variable;
+			Weight::out_variable(*fstout);
 		if ( flags['D'] )
-			*fstout << Weight::out_always_real;
+//			*fstout << Weight::out_always_real;
+			Weight::out_always_real(*fstout);
 		if ( flags['J'] )
-			*fstout << WFST::out_arc_full;
+			//*fstout << WFST::out_arc_full;
+			WFST::out_arc_full(*fstout);
 		else
-			*fstout << WFST::out_arc_brief;
+			//*fstout << WFST::out_arc_brief;
+			WFST::out_arc_brief(*fstout);
 		if ( flags['H'] )
-			*fstout << WFST::out_arc_per_line;
+			//*fstout << WFST::out_arc_per_line;
+			WFST::out_arc_per_line(*fstout);
 		else
-			*fstout << WFST::out_state_per_line;
+			//*fstout << WFST::out_state_per_line;
+			WFST::out_state_per_line(*fstout);
 
 }
 

@@ -31,19 +31,19 @@ public:
 
 // output format manipulators: cout << Weight::out_log10;
 
-template<class A,class B> static inline std::basic_ostream<A,B>&
-out_log10(std::basic_ostream<A,B>& os) { os.iword(base_index) = LOG10; return os; }
+template<class A,class B> static std::basic_ostream<A,B>&
+out_log10(std::basic_ostream<A,B>& os);
 
-template<class A,class B> static inline std::basic_ostream<A,B>&
+template<class A,class B> static std::basic_ostream<A,B>&
 out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
 
-template<class A,class B> static inline std::basic_ostream<A,B>&
+template<class A,class B> static std::basic_ostream<A,B>&
 out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; return os; }
 
-template<class A,class B> static inline std::basic_ostream<A,B>&
+template<class A,class B> static std::basic_ostream<A,B>&
 out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; return os; }
 
-template<class A,class B> static inline std::basic_ostream<A,B>&
+template<class A,class B> static std::basic_ostream<A,B>&
 out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
   static Weight result;
@@ -282,6 +282,17 @@ inline bool operator >=(Weight lhs, Weight rhs) { return lhs.weight >= rhs.weigh
 
 #ifdef _MSC_VER
 #pragma warning(pop)
+
+//template<class A,class B> std::basic_ostream<A,B>& operator <<(std::basic_ostream<A,B>& os, std::basic_ostream<A,B>& (*manip)(std::basic_ostream<A,B>&)) { return manip(os);}
+// in MSVC++ release optimization mode, manipulators don't work by os << manip, must do manip(os) =(
 #endif
+
+template<class A,class B> 
+//__declspec(noinline) 
+static std::basic_ostream<A,B>&
+Weight::out_log10(std::basic_ostream<A,B>& os)
+
+ { os.iword(base_index) = LOG10; return os; }
+
 
 #endif 
