@@ -5,6 +5,7 @@
 #include "genio.h"
 #include "functors.hpp"
 #include <iterator>
+#include "debugprint.hpp"
 
 #ifdef TEST
 #include "test.hpp"
@@ -78,8 +79,11 @@ struct PointerOffset {
     typedef C pointed_type;
     C *offset;
     PointerOffset() : offset(0) {}
-    PointerOffset(size_t i) : offset(index_to_offset<C>(i)) {}
-    PointerOffset(const PointerOffset &o) : offset(o.offset) {}
+    PointerOffset(size_t i) : offset(index_to_offset<C>(i)) {
+//        DBP2(i,get_index());
+        Assert(i==get_index());
+    }
+    PointerOffset(const PointerOffset<C> &o) : offset(o.offset) {}
     void set_ptrdiff(const C*a,const C*b) {
         offset=offset_ptrdiff(a,b);
     }
@@ -108,13 +112,14 @@ struct PointerOffset {
         Base base;
         explicit indirect_iterator(Base _base) : base(_base) {}
         indirect_iterator() {}
-        template <class C2>
-        indirect_iterator(const C2 &_i) : i(_i) {}
+/*        template <class C2>
+          indirect_iterator(const C2 &_i) : i(_i) {}*/
         indirect_iterator(Base _base, It _i) : i(_i),base(_base) {}
-        indirect_iterator(const Self &o) : i(o.i) {}
-        void operator =(const Self &o) {
+        indirect_iterator(const Self &o) : i(o.i),base(o.base) {}
+        Self & operator =(const Self &o) {
             base=o.base;
             i=o.i;
+            return *this;
         }
         typedef typename std::iterator_traits<It>::difference_type Diff;
         Self & operator +=(Diff d) {
@@ -180,7 +185,7 @@ struct indirect_gt<PointerOffset<C>,C*> {
     indirect_gt(B b) : base(b) {}
     indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
     bool operator()(I a, I b) const {
-        return a.add_base(base) > b.add_base(base);
+        return *a.add_base(base) > *b.add_base(base);
     }
 };
 

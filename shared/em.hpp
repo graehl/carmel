@@ -5,6 +5,11 @@
 #include "weight.h"
 #include "debugprint.hpp"
 #include <cmath>
+#include <limits>
+
+#ifndef LOGPROB_EPSILON
+#define LOGPROB_EPSILON numeric_limits<double>::epsilon()
+#endif
 
 struct WeightAccum {
         Weight sum;
@@ -61,7 +66,7 @@ struct EM_executor {
 
      // if you're doing random restarts, transfer the current parameters to safekeeping
     void save_best() {}
-    void restore_best() {}
+    void restore_best() {} // called when EM is (completely) finished
 };
 
 
@@ -112,7 +117,10 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
                 very_first_time=false;
 
             double dpp=new_alp-last_alp; // should be increasing, so diff is positive
-            double rel_dpp = dpp/fabs(last_alp); // COULD BE FASTER (last_alp always negative) but whatever :)
+            double last_abs=fabs(last_alp);  // COULD BE FASTER (last_alp always negative) but whatever :)
+            double rel_dpp = dpp;
+            if ( last_abs >= LOGPROB_EPSILON )
+                rel_dpp /= last_abs;
             if ( first_time ) {
                 rel_dpp=HUGE_VAL;
                 logs << std::endl;
@@ -149,10 +157,11 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
 
             last_alp=new_alp;
         } // for
+        exec.converge_em();
         if (ran_restarts > 0) {
             --ran_restarts;
-            exec.randomize();
             logs << "\nRandom restart - " << ran_restarts << " remaining.\n";
+            exec.randomize();
         } else {
             break;
         }

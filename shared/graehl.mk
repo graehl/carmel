@@ -73,6 +73,8 @@ BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 LDFLAGS += $(addprefix -l,$(LIB))
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
+CPPFLAGS_TEST += $(CPPFLAGS)
+CPPFLAGS_DEBUG += $(CPPFLAGS)
 #-DBOOST_DISABLE_THREADS 
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
@@ -177,7 +179,7 @@ $(OBJB)/%.o:: %.cpp
 $(OBJT)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(test\) $< into $@
-	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS_TEST) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
 $(OBJ)/%.o:: %.$(CPP_EXT) %.d
@@ -189,25 +191,36 @@ $(OBJ)/%.o:: %.$(CPP_EXT) %.d
 $(OBJD)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(debug\) $< into $@
-	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS_DEBUG) $< -o $@
 
 #dirs:
 # $(addsuffix /.,$(ALL_DIRS))
 #	echo dirs: $^
 
 clean:
-	rm -rf $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
+	-rm -rf $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
 
 distclean: clean
-	rm -rf $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
+	-rm -rf $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
 
 allclean: distclean
-	rm -rf $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
+	-rm -rf $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
 
 ifeq ($(MAKECMDGOALS),depend)
-DEPEND=1
 endif
+DEPEND=1
 
+
+%.d: %.$(CPP_EXT)
+#	@echo
+#	@echo CREATE DEPENDENCIES for $<
+	-@set -e; if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
+( echo CREATE DEPENDENCIES for $< && \
+		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
+		[ -s $@.raw ] && \
+                sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/%\/\1.o : /g' $@.raw >> $@ \
+|| rm -f $@ ); rm -f $@.raw ; fi
+#
 
 ifneq ($(MAKECMDGOALS),depend)
 ifneq ($(MAKECMDGOALS),distclean)
@@ -216,12 +229,3 @@ include $(ALL_DEPENDS)
 endif
 endif
 endif
-
-%.d: %.$(CPP_EXT)
-#	@echo
-#	@echo CREATE DEPENDENCIES for $<
-	@set -e; [ x$(DEPEND) != x -o ! -f $@ ] && echo CREATE DEPENDENCIES for $< && \
-		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS) $< -MF $@.raw && \
-		[ -s $@.raw ] && \
-                sed 's/\($*\)\.o[ :]*/%\/\1.o : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw >> $@ \
-		|| rm -f $@; rm -f $@.raw
