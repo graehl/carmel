@@ -3,7 +3,7 @@
 
 #include "myassert.h"
 #include "genio.h"
-#include "functors.hpp"
+#include "funcs.hpp"
 #include <iterator>
 #include "debugprint.hpp"
 

@@ -306,7 +306,7 @@ namespace DBP {
     extern bool disable;
     extern unsigned current_chat;
     extern unsigned chat_level;
-    extern ostream *logstream;
+    extern std::ostream *logstream;
     struct scopedepth {
         scopedepth() { ++depth;}
         ~scopedepth() { --depth;}
@@ -316,11 +316,11 @@ namespace DBP {
     }
     void print_indent();
     void set_loglevel(unsigned loglevel=0);
-    void set_logstream(ostream &o=std::cerr);
+    void set_logstream(std::ostream &o=std::cerr);
 #ifdef MAIN
     unsigned current_chat;
     unsigned chat_level;
-    ostream *logstream=&std::cerr;
+    std::ostream *logstream=&std::cerr;
     void print_indent() {
         for(unsigned i=0;i<depth;++i)
             DBPS(" ");
@@ -328,7 +328,7 @@ namespace DBP {
     void set_loglevel(unsigned loglevel){
         chat_level=loglevel;
     }
-    void set_logstream(ostream *o) {
+    void set_logstream(std::ostream *o) {
         logstream=o;
     }
 

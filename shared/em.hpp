@@ -77,10 +77,14 @@ struct EM_executor {
 //    learning_rate_growth_factor ... exponent for overrelaxed EM.  1 = normal EM, 1.1 = reasonable guess (what rate helps speed convergence depends on problem).  if rate/exponent gets too high and perplexity goes down, it's reset to the base guaranteed-to-improve-or-converge EM, similar to TCP slow restart on congestion
 //    ran_restarts = how many times to randomly initialize parameters (after doing one iteration with supplied parameters), keeping the best PP params of all runs
 // return best (greatest) average log prob
+// note: logs are base e (ln) (well, really, they're whatever your estimate method returns ... note that convergence is based on relative change so the base doesn't matter, unless you care to report an entropy to the user (entropy is always base 2).  or you can report perplexity, just doing base^(avg log prob), using the same base, e.g. e^(average ln prob)
 template <class Exec>
-double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, ostream &logs=Config::log(),unsigned log_level=1)
+double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, ostream &logs=Config::log(),unsigned log_level=1)
 {
     double best_alp=-HUGE_VAL; // alp=average log prob = (logprob1 +...+ logprobn )/ n (negative means 0 probability, 0 = 1 probability)
+    if (max_iter == 0)
+        return best_alp;
+
     double &rel_eps=converge_relative_avg_logprob_epsilon;
     bool very_first_time=true;
     while(1) { // random restarts
