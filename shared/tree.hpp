@@ -318,7 +318,8 @@ void Tree<L,A>::dealloc_recursive() {
 template <class T1,class T2>
 bool tree_equal(const T1& a,const T2& b)
 {
-  if (a.size() != b.size() || a.label != b.label) 
+  if (a.size() != b.size() || 
+	!(a.label == b.label)) 
 	return false;
   typename T2::const_iterator b_i=b.begin();
   for (typename T1::const_iterator a_i=a.begin(), a_end=a.end(); a_i!=a_end; ++a_i,++b_i)
