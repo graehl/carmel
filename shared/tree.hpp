@@ -20,7 +20,7 @@ namespace lambda=boost::lambda;
 
 using namespace std;
 
-// Tree owns its own child pointers list but nothing else - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
+// Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
 template <class L, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
   typedef Tree Self;
   typedef L Label;
@@ -28,7 +28,7 @@ template <class L, class Alloc=std::allocator<void *> > struct Tree : private Al
   typedef rank_type Rank;
   Rank rank;
 private:
-  Tree(const Self &t) : {}
+  //Tree(const Self &t) : {}
   Self **children;
 
 public:
@@ -76,6 +76,16 @@ public:
   explicit Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
 	alloc(_rank);
   }
+  void dump_children() {
+	dealloc();
+  }
+  void create_children(unsigned n) {
+	alloc(n);
+  }
+  void set_rank(unsigned n) {
+	dealloc();
+	alloc(n);
+  }
   void dealloc() {
 #ifdef TREE_SINGLETON_OPT
 	if (rank>1)
@@ -118,7 +128,7 @@ public:
   iterator end() {
 #ifdef TREE_SINGLETON_OPT
 	if (rank == 1)
-	  return (iterator)&children + 1;
+	  return ((iterator)&children) + 1;
 	else
 #endif
 	  return children+rank;
@@ -225,10 +235,11 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	  GENIO_CHECK(in>>c);
 	  if (c != ',') in.putback(c);
 	}
-	dealloc();	
+	dealloc();
 	alloc((rank_type)in_children.size());
 	//copy(in_children.begin(),in_children.end(),begin());	
 	in_children.copyto(begin());
+	
   } else {	
 	in.putback(c);
   }
@@ -511,6 +522,14 @@ BOOST_AUTO_UNIT_TEST( tree )
   delete_tree(d);
   delete_tree(g);
   delete_tree(h);
+  Tree<int> k="1",l="1()";
+  BOOST_CHECK(tree_equal(k,l));
+  BOOST_CHECK(k.rank==0);
+  BOOST_CHECK(l.rank==0);
+  BOOST_CHECK(l.label==1);
+  k.dealloc_recursive();
+  l.dealloc_recursive();
+
 }
 
 

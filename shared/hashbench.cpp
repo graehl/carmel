@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   {
   boost::progress_timer t;
   i=0;for (j=0;j<N;++j) { i=i*S+j;
-        H::iterator f=ht.find(MASK(i));
+        typename H::iterator f=ht.find(MASK(i));
         if (f != ht.end())
           ++f->second;
   }
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
   {
   boost::progress_timer t;
   i=0;for (j=0;j<N;++j) { i=i*S+j;
-        H::iterator f=ht.find(MASK(i));
+        typename H::iterator f=ht.find(MASK(i));
         if (f != ht.end())
           ++f->second;
   }
