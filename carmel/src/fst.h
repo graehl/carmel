@@ -81,7 +81,7 @@ void insertShortPath(int source, int dest, List<PathArc> *);
 	  JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
 	  NONE // 
   } ;
-  Weight train(const int iter,NormalizeMethod method=CONDITIONAL); // returns max change in any arcs weight - Yaser 7-13-2000
+  Weight train(const int iter,NormalizeMethod method=CONDITIONAL,Weight *oldPerplexity = NULL); // returns max change in any arcs weight - Yaser 7-13-2000, oldPerplexity gives perplexity of training set = Nth root of product of model probabilities of N-weight training examples
   WFST(const WFST &a) {}
 public:
 	void index(int dir) {
