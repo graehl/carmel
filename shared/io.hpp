@@ -37,7 +37,7 @@ struct RandomReader
     operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
         while (in) {
             in >> l;
-            if (random_pos_fraction() <= prob_keep)
+            if (random_nonneg_lt_one() < prob_keep)
                 break;
         }
         return in;
