@@ -217,10 +217,8 @@ void WFST::normalize(NormalizeMethod method)
       const Weight w=(*g)->weight;
       
         if ( isTied(pGroup = (*g)->groupId) ) {
-		  if (!w.isZero())
-			groupArcTotal[pGroup] += w; // default init is to 0
-          //if (!sum.isZero())
-			groupStateTotal[pGroup] += sum;
+		  groupArcTotal[pGroup] += w; // default init is to 0          
+		  groupStateTotal[pGroup] += sum;
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
