@@ -810,58 +810,6 @@
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath="..\src\wfstio.cc"
-				FileType="0">
-				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						DebugInformationFormat="3"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="test|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						PreprocessorDefinitions="TEST"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						GlobalOptimizations="FALSE"
-						EnableIntrinsicFunctions="FALSE"
-						OmitFramePointers="FALSE"
-						PreprocessorDefinitions="DEBUG"
-						BasicRuntimeChecks="3"
-						SmallerTypeCheck="TRUE"
-						RuntimeLibrary="5"
-						BufferSecurityCheck="TRUE"
-						DebugInformationFormat="3"
-						CallingConvention="2"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="test_opt|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						PreprocessorDefinitions="TEST"/>
-				</FileConfiguration>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

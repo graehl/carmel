@@ -12,11 +12,11 @@ endif
 BASEOBJ=obj
 BASEBIN=bin
 OBJ = $(BASEOBJ)/$(ARCH)
-OBJ_TEST = $(OBJ)/test
-OBJ_BOOST = $(OBJ)/boost
-OBJ_DEBUG = $(OBJ)/debug
+OBJT = $(OBJ)/test
+OBJB = $(OBJ)/boost
+OBJD = $(OBJ)/debug
 BIN = $(BASEBIN)/$(ARCH)
-ALL_DIRS = $(OBJ) $(BIN) $(OBJ_DEBUG) $(OBJ_TEST) $(OBJ_BOOST)
+ALL_DIRS = $(OBJ) $(BIN) $(OBJD) $(OBJT) $(OBJB)
 
 ifeq ($(CPP_EXT),)
 CPP_EXT=cpp
@@ -25,16 +25,16 @@ endif
 BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp \
 unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp	      \
 unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
-BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJ_BOOST)/%.o)
+BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_OPT_SRCS=cmdline.cpp convert.cpp parsers.cpp utf8_codecvt_facet.cpp variables_map.cpp config_file.cpp options_description.cpp positional_options.cpp value_semantic.cpp
 # winmain.cpp
-BOOST_OPT_OBJS=$(BOOST_OPT_SRCS:%.cpp=$(OBJ_BOOST)/%.o)
-BOOST_TEST_LIB=$(OBJ_BOOST)/libtest.a
-BOOST_OPT_LIB=$(OBJ_BOOST)/libprogram_options.a
+BOOST_OPT_OBJS=$(BOOST_OPT_SRCS:%.cpp=$(OBJB)/%.o)
+BOOST_TEST_LIB=$(OBJB)/libtest.a
+BOOST_OPT_LIB=$(OBJB)/libprogram_options.a
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 LDFLAGS += $(addprefix -l,$(LIB))
-LDFLAGS_TEST = $(LDFLAGS) -L$(OBJ_BOOST) -ltest
+LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
@@ -49,7 +49,9 @@ define PROG_template
 .PHONY += $(1)
 
 ifndef $(1)_NOOPT
-$$(BIN)/$(1): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
+$$(BIN)/$(1):\
+ $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
+ $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
@@ -57,7 +59,9 @@ $(1): $$(BIN)/$(1)
 endif
 
 ifndef $(1)_NOSTATIC
-$$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
+$$(BIN)/$(1).static:\
+ $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
+ $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) --static $$^ -o $$@
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
@@ -65,18 +69,22 @@ $(1): $$(BIN)/$(1).static
 endif
 
 ifndef $(1)_NODEBUG
-$$(BIN)/$(1).debug: $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
+$$(BIN)/$(1).debug:\
+ $$(addprefix $$(OBJD)/,$$($(1)_OBJ))\
+ $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
-ALL_OBJS +=  $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) 
+ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
-$$(BIN)/$(1).test: $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)
+$$(BIN)/$(1).test:\
+ $$(addprefix $$(OBJT)/,$$($(1)_OBJ))\
+ $$(BOOST_TEST_LIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 #	$$@ --catch_system_errors=no
-ALL_OBJS += $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ))
+ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ))
 ALL_TESTS += $$(BIN)/$(1).test
 TEST_PROGS += $$(BIN)/$(1).test
 $(1): $$(BIN)/$(1).test
@@ -123,14 +131,14 @@ $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 
 vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.
-.PRECIOUS: $(OBJ_BOOST)/%.o
-$(OBJ_BOOST)/%.o:: %.cpp
+.PRECIOUS: $(OBJB)/%.o
+$(OBJB)/%.o:: %.cpp
 	@echo
 	@echo COMPILE\(boost\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
-.PRECIOUS: $(OBJ_TEST)/%.o
-$(OBJ_TEST)/%.o:: %.$(CPP_EXT) %.d
+.PRECIOUS: $(OBJT)/%.o
+$(OBJT)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(test\) $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
@@ -141,8 +149,8 @@ $(OBJ)/%.o:: %.$(CPP_EXT) %.d
 	@echo COMPILE\(optimized\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
-.PRECIOUS: $(OBJ_DEBUG)/%.o
-$(OBJ_DEBUG)/%.o:: %.$(CPP_EXT) %.d
+.PRECIOUS: $(OBJD)/%.o
+$(OBJD)/%.o:: %.$(CPP_EXT) %.d
 	@echo
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
@@ -150,13 +158,13 @@ $(OBJ_DEBUG)/%.o:: %.$(CPP_EXT) %.d
 dirs: $(addsufix /.,$(ALL_DIRS))
 
 clean:
-	rm -f $(ALL_OBJS) $(ALL_CLEAN)
+	rm -f $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
 
 distclean: clean
-	rm -f $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS)
+	rm -f $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
 
-allclean:
-	rm -rf $(BASEOBJ) $(BASEBIN) $(ALL_DEPENDS)
+allclean: distclean
+	rm -rf $(BASEOBJ)/* $(BASEBIN)/* $(ALL_DEPENDS)
 
 virgin: clean distclean
 	rm -f $(ALL_PROGS)
