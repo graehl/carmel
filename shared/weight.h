@@ -289,21 +289,21 @@ inline bool operator >=(Weight lhs, Weight rhs) { return lhs.weight >= rhs.weigh
 
 template<class A,class B> 
 //__declspec(noinline) 
-static std::basic_ostream<A,B>&
+std::basic_ostream<A,B>&
 Weight::out_log10(std::basic_ostream<A,B>& os)
 
  { os.iword(base_index) = LOG10; return os; }
 
-template<class A,class B> static std::basic_ostream<A,B>&
+template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
 
-template<class A,class B> static std::basic_ostream<A,B>&
+template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; return os; }
 
-template<class A,class B> static std::basic_ostream<A,B>&
+template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; return os; }
 
-template<class A,class B> static std::basic_ostream<A,B>&
+template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
 
