@@ -308,7 +308,6 @@ struct SwapBatch {
             newguy=space.aligned_alloc<BatchMember>();
             DBP2((void*)newguy,space.remain());
             read((std::istream&)is,*newguy,space);
-            DBP2(newguy,space.remain());
         }
         catch (StackAlloc::Overflow &o) {
             if (!first)
@@ -324,7 +323,10 @@ struct SwapBatch {
                 return NULL;
             }
             throw std::ios::failure("error reading item into swap batch.");
+        } else {
+            DBP2(newguy,space.remain());
         }
+
         // ELSE: read was success!
         ++total_items;
         DBP2(save,space.end);

@@ -245,7 +245,8 @@ operator >>
 {
     ptrdiff_t i;
     in >> i;
-    arg = i;
+    if (in)
+        arg = i;
     return in;
 }
 
