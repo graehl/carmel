@@ -44,9 +44,9 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 #endif
 
 #ifdef DOUBLE_PRECISION
-typedef double FLOAT_TYPE;
+# define FLOAT_TYPE double
 #else
-typedef float FLOAT_TYPE;
+# define FLOAT_TYPE float
 #endif
 
 
