@@ -73,6 +73,7 @@ operator <<
 }
 
 
+
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_INTORPOINTER )
 {
