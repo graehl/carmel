@@ -91,9 +91,7 @@ public:
 
     //--------------Stream interface------------------------------------------//
 
-//    void open( const std::string& pathname,               size_type length, boost::intmax_t offset=0,std::ios::openmode=std::ios::in | std::ios::out, bool create=true,);
     bool is_open() const { return data_ != 0; }
-//    bool close();
 
     operator safe_bool() const { return is_open() ? &safe_bool_helper::x : 0; }
     bool operator!() const { return !is_open(); }
@@ -105,11 +103,6 @@ public:
     iterator begin() { return data(); }
     iterator end() { return data() + size(); }
 
-    //--------------Query admissible offsets----------------------------------//
-
-    // Returns the allocation granularity for virtual memory. Values passed
-    // as offsets must be multiples of this value.
-//    static int alignment();
 private:
 
     char*               data_;
@@ -129,10 +122,9 @@ public:
                size_type length = max_length, boost::intmax_t offset =0,
                bool create=true,void *base_address=NULL,bool flexible_base=false)
         {
-            BACKTRACE;
             DBPC6("memmap",path,mode,create,base_address,length);
             if (((unsigned)base_address) & alignment()) {
-                DBP3(base_address,alignment(),((unsigned)base_address) & alignment());
+//                DBP3(base_address,alignment(),((unsigned)base_address) & alignment());
 //                throw ios::failure("requested base address for memmap not page-aligned");
                 // can't really do this because when we memmap with NULL (OS chooses), it gives us things that aren't aligned (alignment() is buggy)
             }
@@ -162,8 +154,15 @@ public:
             //--------------Set file size (if create)---------------------------------//
 
             if (create) {
+#ifdef _MSC_VER
+# pragma( push )
+# pragma warning (disable : 4244 )
+#endif
                 LONG sizehigh=(filesize >> (sizeof(LONG) * 8));
                 LONG sizelow=(filesize & 0xffffffff);
+#ifdef _MSC_VER
+# pragma( pop )
+#endif
 
                 if (length == max_length ||
                     (::SetFilePointer(handle_,sizelow,&sizehigh,FILE_BEGIN) == INVALID_SET_FILE_POINTER && ::GetLastError!=NO_ERROR)  ||
@@ -219,6 +218,7 @@ public:
             }
 
             data_ = reinterpret_cast<char*>(data);
+
 #else // #ifdef BOOST_IO_WINDOWS //-------------------------------------------//
 
             //--------------Open underlying file--------------------------------------//
@@ -226,7 +226,7 @@ public:
             int flags = (readonly? O_RDONLY : O_RDWR);
             if (create)
                 flags |= (O_CREAT | O_TRUNC);
-            DBP2(path,flags);
+//            DBP2(path,flags);
             handle_ = ::open(path.c_str(),flags,S_IRWXU) ; //|
 
             if (handle_ == -1)
@@ -275,14 +275,13 @@ public:
                 }
             }
             data_ = reinterpret_cast<char*>(data);
-
 #endif
+            DBP((void*)data_);
         }
 
 
     bool close()
         {
-            BACKTRACE;
             bool status;
 #ifdef BOOST_IO_WINDOWS //----------------------------------------------------//
             if (!is_open()) return true;
@@ -301,8 +300,12 @@ public:
             data_ = 0;
             return status;
         }
+    //--------------Query admissible offsets----------------------------------//
 
+    // Returns the allocation granularity for virtual memory. Values passed
+    // as offsets must be multiples of this value.
     //FIXME: buggy both on windows and unix (too pessimistic, gets in the way of remapping to same base as OS gave you before with NULL)
+
     unsigned alignment()
         {
 #ifdef BOOST_IO_WINDOWS //----------------------------------------------------//
@@ -316,37 +319,9 @@ public:
 
 };
 
-
-bool create_file(const std::string& path,std::size_t size) {
-    BACKTRACE;
-#ifdef _WIN32
-#if 0
-    //VC++ only, unfortunately
-    int fd=::_open(path.c_str(),_O_CREAT|_O_SHORT_LIVED);
-    if (fd == -1)
-        return false;
-    if (::_chsize(fd,size) == -1)
-        return false;
-    return ::_close(fd) != -1;
-#else
-    HANDLE fh=::CreateFileA( path.c_str(),GENERIC_WRITE,FILE_SHARE_DELETE,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,NULL);
-    if (fh == INVALID_HANDLE_VALUE)
-        return false;
-    if(::SetFilePointer(fh,size,NULL,FILE_BEGIN) != size)
-        return false;
-    if (!::SetEndOfFile(fh))
-        return false;
-    return ::CloseHandle(fh);
-#endif
-#else
-    return ::truncate(path.c_str(),size) != -1;
-#endif
-}
-
 #ifdef TEST
 #include "test.hpp"
 #include "stdio.h"
-#include "debugprint.hpp"
 
 BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
 {
@@ -354,7 +329,7 @@ BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
     mapped_file memmap;
     string t1=tmpnam(0);
     string t2=tmpnam(0);
-    DBP2(t1,t2);
+//    DBP2(t1,t2);
     unsigned batchsize=1;
     char *base;
     memmap.close();

@@ -1,6 +1,8 @@
 #ifndef FILELINES_HPP
 #define FILELINES_HPP
 
+//TODO: * parsing of id=N rules files (instead of assuming line # = N)
+
 #include <iostream>
 #include <fstream>
 #include <limits>
@@ -11,7 +13,7 @@
 #include <boost/lexical_cast.hpp>
 
 typedef boost::shared_ptr<std::ifstream> InSeekFile;
-
+#undef max
 struct FileLines
 {
     static const char linesep='\n';

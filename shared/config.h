@@ -35,7 +35,9 @@
 // use old, slower string hash
 //#define OLD_HASH
 
+#ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION
+#endif
 
 #ifdef DOUBLE_PRECISION
 typedef double FLOAT_TYPE;
