@@ -707,7 +707,7 @@ main(int argc, char *argv[]){
           List<int> empty_list;
           result->trainExample(empty_list, empty_list, 1.0);
         }
-        result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method);
+        result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method, ranRestarts);
       } else if ( nGenerate > 0 ) {
         MINIMIZE;
         //        if ( !flags['n'] )
