@@ -14,7 +14,7 @@
 
 struct Weight {			// capable of representing nonnegative reals 
   static const float HUGE_FLOAT;
-	// internal implementation note: by their base 10 logarithm (subject to change, of course)
+	// internal implementation note: by their base e logarithm
   float weight;
   static Weight result;
   Weight(double f) {
