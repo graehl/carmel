@@ -236,6 +236,7 @@ struct SwapBatch {
     void create_next_batch() {
         BACKTRACE;
 //        DBP_VERBOSE(0);
+        DBP_INC_VERBOSE;
         DBPC2("creating batch",n_batch);
         if (n_batch==0) {
             char *base=(char *)DEFAULT_SWAPBATCH_BASE_ADDRESS;
@@ -260,6 +261,7 @@ struct SwapBatch {
     }
     void load_batch(unsigned i) {
         BACKTRACE;
+        DBP_INC_VERBOSE;
         DBPC2("load batch",i);
         if (loaded_batch == i)
             return;
@@ -337,8 +339,28 @@ struct SwapBatch {
         return newguy;
     }
 
-    // reads until eof or delim (which is consumed if it occurs)
-    void read_all(std::istream &in,char delim=')') {
+
+    void read_all(std::istream &in) {
+        BACKTRACE;
+        char c;
+        while(in) {
+            read_one(in);
+        }
+    }
+
+    template <class F>
+    void read_all_enumerate(std::istream &in,F f) {
+        BACKTRACE;
+        char c;
+        while(in) {
+            BatchMember *newguy=read_one(in);
+            if (newguy)
+                deref(f)(*newguy);
+        }
+    }
+
+// reads until eof or delim (which is consumed if it occurs)
+    void read_all(std::istream &in,char delim) {
         BACKTRACE;
         char c;
         while(in) {
@@ -348,7 +370,7 @@ struct SwapBatch {
     }
 
     template <class F>
-    void read_all_enumerate(std::istream &in,F f,char delim=')') {
+    void read_all_enumerate(std::istream &in,F f,char delim) {
         BACKTRACE;
         char c;
         while(in) {
@@ -369,7 +391,7 @@ struct SwapBatch {
     template <class F>
     void enumerate(F f)  {
         BACKTRACE;
-        //      DBP_VERBOSE(0);
+        DBP_INC_VERBOSE;
 
         for (unsigned i=0;i<n_batch;++i) {
             DBPC2("enumerate batch ",i);
@@ -406,6 +428,8 @@ void read(std::istream &in,B &b,StackAlloc &a) {
 void read(std::istream &in,const char * &b,StackAlloc &a) {
     char c;
     std::istream::sentry s(in,true); //noskipws!
+//    bool s=true;
+
     char *p=a.alloc<char>(); // space for the final 0
     b=p;
     if (s) {
@@ -426,7 +450,7 @@ void read(std::istream &in,const char * &b,StackAlloc &a) {
 const char *swapbatch_test_expect[] = {
     "string one",//10+8
     "2",//2+8
-    "3 .",//4+8
+    "3 . ",//4+8
     " abcdefghijklmopqrstuvwxyz",
     "4",
     "end",
@@ -437,7 +461,7 @@ static unsigned swapbatch_test_i=0;
 
 void swapbatch_test_do(const char *c) {
     const char *o=swapbatch_test_expect[swapbatch_test_i++];
-    DBP2(o,c);
+//    DBP2(o,c);
     BOOST_CHECK(!strcmp(c,o));
 }
 
@@ -447,7 +471,7 @@ void swapbatch_test_do(const char *c) {
 BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
 {
     using namespace std;
-    const char *s1="string one\n2\n3 .\n abcdefghijklmopqrstuvwxyz\n4\nend\n\n";
+    const char *s1="string one\n2\n3 . \n abcdefghijklmopqrstuvwxyz\n4\nend\n\n";
     string t1=tmpnam(0);
     DBP(t1);
     typedef SwapBatch<const char *> SB;
@@ -460,6 +484,7 @@ BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
     BOOST_CHECK_EQUAL(b.n_batches(),5);
     BOOST_CHECK_EQUAL(b.size(),sizeof(swapbatch_test_expect)/sizeof(const char *));
     b.enumerate(swapbatch_test_do);
+    BOOST_CHECK_EQUAL(swapbatch_test_i,b.size());
     swapbatch_test_i=0;
     typedef SB::iterator I;
     for (I i=b.begin(),e=b.end();i!=e;++i) {
