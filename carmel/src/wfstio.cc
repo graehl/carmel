@@ -341,6 +341,11 @@ int WFST::readLegible(istream &istr)
   }
 }
 
+void WFST::writeGraphViz(ostream &os)
+{
+	os << "digraph\n";
+}
+
 void WFST::writeLegible(ostream &os)
 {
   bool brief = (os.iword(arcformat_index) == BRIEF);

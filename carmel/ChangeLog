@@ -1,4 +1,13 @@
+2002-12-16  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/2hash.h: moved static pool allocator stuff into #ifdef
+	CUSTOMNEW and tested with/without it defined
+
+	* src/finite.cc: added -Y option for output of GraphViz .dot files
+
 2002-12-13  Jonathan Graehl  <graehl@isi.edu>
+
+	removed leftover node.h (old homegrown list) from CVS
 
 	* src/slist.h: (and many other files) - when USE_SLIST defined in
 	config.h, use a singly linked list (memory efficient) in all
