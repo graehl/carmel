@@ -1,6 +1,5 @@
 #include "graph.h"
 #include "assert.h"
-#include "node.h"
 #include "config.h"
 #include "Arc.h"
 
@@ -19,9 +18,6 @@ void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(i
   dfsExitFunc = NULL;
   dfsRec(startState, -1);
 }
-
-Node<GraphArc> *Node<GraphArc>::freeList = NULL;
-const int Node<GraphArc>::newBlocksize = 64;
 
 Graph reverseGraph(Graph g)
 // Comment by Yaser: This function creates new GraphState[] and because the

@@ -1,6 +1,5 @@
 #include <cctype>
 #include "fst.h"
-#include "node.h"
 
 const int WFST::perline_index = ios_base::xalloc();
 const int WFST::arcformat_index = ios_base::xalloc();
@@ -604,12 +603,6 @@ Entry<TrioKey,int> *Entry<TrioKey,int>::freeList = NULL;
 const int Entry<UnArc,Weight *>::newBlocksize = 64;
 Entry<UnArc,Weight *> *Entry<UnArc,Weight *>::freeList = NULL;
 
-Node<HalfArc> *Node<HalfArc>::freeList = NULL;
-const int Node<HalfArc>::newBlocksize = 64;
-
-Node<int> *Node<int>::freeList = NULL;
-const int Node<int>::newBlocksize = 64;
-
 const int Entry<IntKey,List<HalfArc> >::newBlocksize = 64;
 Entry<IntKey,List<HalfArc> > *Entry<IntKey,List<HalfArc> >::freeList = NULL;
 
@@ -621,21 +614,3 @@ Entry<HalfArcState,int > *Entry<HalfArcState,int>::freeList = NULL;
 
 const int Entry<IntKey, Weight >::newBlocksize = 64;
 Entry<IntKey, Weight > *Entry<IntKey, Weight>::freeList = NULL;
-
-Node<PathArc> *Node<PathArc>::freeList = NULL;
-const int Node<PathArc>::newBlocksize = 64;
-
-Node<TrioID> *Node<TrioID>::freeList = NULL;
-const int Node<TrioID>::newBlocksize = 64;
-
-Node<Arc> *Node<Arc>::freeList = NULL;
-const int Node<Arc>::newBlocksize = 64;
-
-Node<List<PathArc> > *Node<List<PathArc> >::freeList = NULL;
-const int Node<List<PathArc> >::newBlocksize = 64;
-
-Node<List<GraphArc *> > *Node<List<GraphArc *> >::freeList = NULL;
-const int Node<List<GraphArc *> >::newBlocksize = 64;
-
-Node<GraphArc *> *Node<GraphArc *>::freeList = NULL;
-const int Node<GraphArc *>::newBlocksize = 64;
