@@ -1,3 +1,4 @@
+#include "config.h"
 #include "fst.h"
 using namespace std;
 
