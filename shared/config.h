@@ -1,7 +1,7 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
-#define VERSION "3.0.8" 
+#define VERSION "3.0.9" 
 
 //#define DEBUGNAN
 
