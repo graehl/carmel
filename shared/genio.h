@@ -123,9 +123,18 @@ inline std::basic_ostream<charT,Traits>& operator << \
  (std::basic_ostream<charT,Traits>& os, const C arg) { \
 	return gen_inserter(os,arg); }
 
-
+#define GENIOGOOD std::ios_base::goodbit
+#define GENIOBAD std::ios_base::badbit
 
 #define GENIO_CHECK(inop) do { ; if (!(inop).good()) return std::ios_base::badbit; } while(0)
 #define GENIO_CHECK_ELSE(inop,fail) do {  if (!(inop).good()) { fail; return std::ios_base::badbit; } } while(0)
+
+#define GENIO_get_from   template <class charT, class Traits> \
+  std::ios_base::iostate \
+  get_from(std::basic_istream<charT,Traits>& in)
+
+#define GENIO_print_on     template <class charT, class Traits> \
+  std::ios_base::iostate \
+  print_on(std::basic_ostream<charT,Traits>& o) const
 
 #endif
