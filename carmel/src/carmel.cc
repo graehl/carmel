@@ -1,3 +1,5 @@
+//#define MARCU
+
 // unused letters: o
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
@@ -5,6 +7,7 @@
 // -z n = keep at most n states
 // -U = treat pre-training weights as prior counts
 // -Y write graphviz
+
 #include "config.h"
 #include <iostream>
 #include <fstream>
@@ -14,17 +17,16 @@
 #include "fst.h"
 #include "assert.h"
 
+#ifdef MARCU
 #include "models.h"
-
-#ifdef _MSC_VER    // Microsoft VISUAL C++
-//#include <crtdbg.h>
-//#define MEMDEBUG              // checks heap at every allocation ; slow
+char *MarcuArgs[]={
+			"marcu-carmel",
+			"-IEsriqk",
+			"1"
+};
 #endif
 
-#define VERSION "2.2"  ;
-extern vector<string> Models ;
-void initModels();
-
+#define VERSION "2.3"  ;
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
   if ( flags['B'] )
@@ -105,7 +107,7 @@ void printPath(bool *flags,const List<PathArc> *pli) {
   const char * outSym;
 
   for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li ) {
-	const WFST *f=li->wfst;
+        const WFST *f=li->wfst;
     if ( flags['O'] || flags['I'] ) {
       if ( flags['O'] )
         outSym = f->outLetter(li->out);
@@ -134,6 +136,7 @@ void printPath(bool *flags,const List<PathArc> *pli) {
 void usageHelp(void);
 void WFSTformatHelp(void);
 
+
 int
 #ifdef _MSC_VER
 __cdecl
@@ -148,23 +151,15 @@ main(int argc, char *argv[]){
 
 #endif
 #endif
-  /*
+#ifdef MARCU
+        argc=sizeof(MarcuArgs)/sizeof(char *);
+        argv=MarcuArgs;
+#endif
   if ( argc == 1 ) {
     usageHelp();
     return 0;
   }
-  */
-  if( argc == 1){
-    argc = 3;
-    string a("-IEsriqk"), b("1");
-    argv = new char *[argc-1];
-    argv[1] = new char(7);
-    argv[2] = new char(1);
-    argv[1] = (char *)a.c_str();
-    argv[2] = (char *)b.c_str();
-  }
-
-  int i;
+  int i,j;
   bool flags[256];
   for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
   char *pc, **parm = NEW char *[argc-1];
@@ -193,6 +188,7 @@ main(int argc, char *argv[]){
   int maxGenArcs = 0;
   int labelStart = 0;
   int labelFlag = 0;
+  bool isInChain;	  
   ostream *fstout = &cout;
   for ( i = 1 ; i < argc ; ++i ) {
     if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
@@ -234,13 +230,7 @@ main(int argc, char *argv[]){
     else
       if ( labelFlag ) {
         labelFlag = 0;
-	istringstream is(argv[i]);
-	is >> labelStart; 
-	if ( is.fail() ) {
-	  cerr << "Expected a number after -N switch, (instead got \'" << argv[i] << "\' - as a number, " << labelStart << ").\n";
-	  return -11;
-	}
-        // readParam(&labelStart,argv[i],'N');
+        readParam(&labelStart,argv[i],'N');
       } else if ( converge_pp_flag ) {
         converge_pp_flag = false;
         readParam(&converge_pp_ratio,argv[i],'X');
@@ -258,33 +248,15 @@ main(int argc, char *argv[]){
           max_states = 1;
         msFlag=false;
       } else if ( kPaths == -1 ) {
-	istringstream is(argv[i]);
-	is >> kPaths; 
-	if ( is.fail() ) {
-	  cerr << "Expected a number after -k switch, (instead got \'" << argv[i] << "\' - as a number, " << kPaths << ").\n";
-	  return -11;
-	}
-        //readParam(&kPaths,argv[i],'k');
+        readParam(&kPaths,argv[i],'k');
         if ( kPaths < 1 )
           kPaths = 1;
       } else if ( nGenerate == -1 ) {
-	istringstream is(argv[i]);
-	is >> nGenerate;
-	if( is.fail() ){
-	  cerr << "Expected a number after -g switch, (instead got \'" << argv[i] << "\' - as a number, " << nGenerate << ").\n";
-          return -11;
-        }
-	// readParam(&nGenerate,argv[i],'g');
+        readParam(&nGenerate,argv[i],'g');
         if ( nGenerate < 1 )
           nGenerate = 1;
       } else if ( maxTrainIter == -1 ) {
-	istringstream is(argv[i]);
-	is >> maxTrainIter; 
-	if ( is.fail() ) {
-	  cerr << "Expected a number after -M switch, (instead got \'" << argv[i] << "\' - as a number, " << maxTrainIter << ").\n";
-	  return -11;
-	}
-        //readParam(&maxTrainIter,argv[i],'M');
+        readParam(&maxTrainIter,argv[i],'M');
         if ( maxTrainIter < 1 )
           maxTrainIter = 1;
       } else if ( maxGenArcs == -1 ) {
@@ -316,8 +288,8 @@ main(int argc, char *argv[]){
   }
   bool prunePath = flags['w'] || flags['z'];
   srand(seed);
-  //setOutputFormat(flags,&cout);
-  //setOutputFormat(flags,&cerr);
+  setOutputFormat(flags,&cout);
+  setOutputFormat(flags,&cerr);
   WFST::setIndexThreshold(thresh);
   if ( flags['h'] ) {
     WFSTformatHelp();
@@ -334,11 +306,18 @@ main(int argc, char *argv[]){
     kPaths = 1;
   istream **inputs, **files;
   char **filenames;
-  int nInputs;
+  int nInputs,nChain;
+#ifdef MARCU
+  initModels();
+  int nModels=(int)Models.size();
+#endif
   if ( flags['s'] ) {
-    nInputs = nParms + 1;
+    nChain=nInputs = nParms + 1;
+#ifdef MARCU
+	nChain+=(int)Models.size();
+#endif
     inputs = NEW istream *[nInputs];
-    filenames = NEW char *[nInputs];
+    filenames = NEW char *[nChain];
     if ( flags['r'] ) {
       inputs[nParms] = &cin;
       filenames[nParms] = "stdin";
@@ -353,7 +332,7 @@ main(int argc, char *argv[]){
       files = inputs + 1;
     }
   } else {
-    nInputs = nParms;
+    nChain=nInputs = nParms;
     inputs = NEW istream *[nInputs];
     files = inputs;
     filenames = parm;
@@ -362,7 +341,7 @@ main(int argc, char *argv[]){
   if ( flags['t'] )
     flags['S'] = 1;
   //(flags['S'] ||
-  if ( nInputs < 1 || flags['A'] && nInputs < 2) {
+  if ( nChain < 1 || flags['A'] && nInputs < 2) {
     Config::warn() << "No inputs supplied.\n";
     return -12;
   }
@@ -372,7 +351,7 @@ main(int argc, char *argv[]){
     //      else
     files[i] = NEW ifstream(parm[i]);
 #ifdef DEBUG
-	//Config::debug() << "Created file " << i << " from " << parm[i] << " & " << files[i] <<"\n";
+        //Config::debug() << "Created file " << i << " from " << parm[i] << " & " << files[i] <<"\n";
 #endif
     if ( !*files[i] ) {
       Config::warn() << "File " << parm[i] << " could not be opened for input.\n";
@@ -386,6 +365,7 @@ main(int argc, char *argv[]){
     kPaths = 0;
     if (nInputs > 1) {
       --nInputs;
+	  --nChain;
       if ( flags['r'] )
         pairStream = inputs[nInputs];
       else {
@@ -399,31 +379,32 @@ main(int argc, char *argv[]){
     else
       --nParms;
   }
-  WFST *chainMemory = (WFST*)::operator new(nInputs * sizeof(WFST));
+  WFST *chainMemory = (WFST*)::operator new(nChain * sizeof(WFST));
   WFST *chain = chainMemory;
-  initModels() ;  
-  WFST *modelsChain = (WFST*)::operator new(Models.size() * sizeof(WFST));
-  for(unsigned int j = 0 ; j < Models.size() ;j++)
-    new (&modelsChain[j]) WFST(Models[j]); 
+#ifdef MARCU
+  chain+=nModels;
+#endif
   int nTarget = -1; // chain[nTarget] is the linear acceptor built from input sequences
-  if ( flags['i'] || flags['b']||flags['P']) // flags['P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
+  istream *line_in=NULL;
+  if ( flags['i'] || flags['b']||flags['P']) {// flags['P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
     if ( flags['r'] )
       nTarget = nInputs-1;
     else
       nTarget = 0;
-
+	line_in=inputs[nTarget];
+  }
   for ( i = 0 ; i < nInputs ; ++i ) {
     if ( i != nTarget ) {
       PLACEMENT_NEW (&chain[i]) WFST(*inputs[i],flags['K']);
       if ( !flags['m'] && nInputs > 1 )
         chain[i].unNameStates();
-	  if ( inputs[i] != &cin ) {
-	  #ifdef DEBUG
-		//Config::debug() << "Deleting file " << i << " & " << inputs[i] <<"\n";
-	#endif
+          if ( inputs[i] != &cin ) {
+          #ifdef DEBUG
+                //Config::debug() << "Deleting file " << i << " & " << inputs[i] <<"\n";
+        #endif
 
         delete inputs[i];
-	  }
+          }
       if ( !(chain[i].valid()) ) {
         Config::warn() << "Bad format of transducer file: " << filenames[i] << "\n";
         //        for ( j = i+1 ; j < nInputs ; ++j )
@@ -440,6 +421,7 @@ main(int argc, char *argv[]){
   WFST *weightSource = NULL; // assign waits from this transducer to result by tie groups
   if ( flags['A'] ) {
     --nInputs;
+	--nChain;
     if ( !flags['r'] ) {
       weightSource = chain;
       ++chain;
@@ -447,15 +429,30 @@ main(int argc, char *argv[]){
       weightSource = chain + nInputs;
   }
   int input_lineno=0;
+
+#ifdef MARCU
+  //chain,inputs,filenames,nTarget,nInputs
+  for (i=0,j=nModels;i<nInputs;++i,++j)
+	filenames[j]=filenames[i];
+  chain-=nModels;
+  nTarget+=nModels;
+  for (j=0;j<nModels;++j) {
+	PLACEMENT_NEW (&chain[j]) WFST(Models[j],flags['K']);
+	filenames[j] = "Models.builtin";
+  }
+#endif
+
   for ( ; ; ) {
     if (nTarget != -1) { // if to construct a finite state from input
-      if ( !*inputs[nTarget] )
+      if ( !*line_in )
         break;
-      *inputs[nTarget] >> ws;
-      getline(*(inputs[nTarget]),buf);
+      *line_in >> ws;
+      getline(*line_in,buf);
 
-      if ( !*inputs[nTarget] )
+      if ( !*line_in )
         break;
+	  if ( input_lineno != 0 )
+		chain[nTarget].~WFST();
       if (flags['P']){ // need a permutation lattice instead
         int length ;
         PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
@@ -490,25 +487,27 @@ main(int argc, char *argv[]){
        } while(0)
 
     bool r=flags['r'];
-    result = (r ? &chain[nInputs-1] :&chain[0]);
+    result = (r ? &chain[nChain-1] :&chain[0]);
     bool first=true;
     MINIMIZE;
+    if (nInputs < 2)
+      PRUNE;
 #ifdef  DEBUGCOMPOSE
     Config::debug() << "\nStarting composition chain: result is chain[" << (int)(result-chain) <<"]\n";
 #endif
-    for ( i = (r ? nInputs-2 : 1); (r ? i >= 0 : i < nInputs) && result->valid() ; (r ? --i : ++i),first=false ) {
+    for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
-	  // composition happens here:
+          // composition happens here:
       WFST *next = NEW WFST((r ? chain[i] : *result), (r ? *result : chain[i]), flags['m'], flags['a']);
 #ifndef NODELETE
-      if (nTarget != -1) {
-        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
+//      if (nTarget != -1) {
+//        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
 #ifdef  DEBUGCOMPOSE
-        Config::debug() << "result will be going away - take its alphabet\n";
+//        Config::debug() << "result will be going away - take its alphabet\n";
 #endif
-      }
+//      }
 
       //      if (nTarget != -1) {
         // &&(result !=  &chain[nTarget]) ){
@@ -516,9 +515,7 @@ main(int argc, char *argv[]){
 #ifdef DEBUGCOMPOSE
       Config::debug() << "deleting result and replacing it with next\n";
 #endif
-      if (result ==  &chain[nTarget]) // will free memory as part of array but need to deconstruct:
-        result->~WFST();
-      else if (!first)
+	 if (!first)
         delete result;
         //      }
 #endif
@@ -546,22 +543,22 @@ main(int argc, char *argv[]){
         }
         goto nextInput;
       }
-	  bool finalcompose = i == (r ? 0 : nInputs-1);
+      bool finalcompose = i == (r ? 0 : nChain-1);
       MINIMIZE;
       if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
         Config::log()  << " reduce-> " << result->count() << "/" << result->numArcs();
-	  if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
-	      q_states=result->count();
-		q_arcs=result->numArcs();
-		PRUNE;
-		if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
-	        Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
-	  }
+          if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
+              q_states=result->count();
+                q_arcs=result->numArcs();
+                PRUNE;
+                if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
+                Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
+          }
       if (!flags['q'])
         Config::log() << ")";
     }
       if (!flags['q'])
-		  Config::log() << std::endl;
+                  Config::log() << std::endl;
 
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "done chain of compositions  .. now processing result\n";
@@ -722,32 +719,34 @@ main(int argc, char *argv[]){
           }
         }
 
-        PRUNE;
-        if ( flags['t'] )
-          if (flags['p'] || prunePath) {
-            result->normalize(norm_method);
-          }
-        MINIMIZE;
 
 
 
         if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
+          PRUNE;
+          if ( flags['t'] )
+            if (flags['p'] || prunePath) {
+              result->normalize(norm_method);
+            }
+          MINIMIZE;
+
           if ( flags ['Y'] )
             result->writeGraphViz(*fstout);
           else
             *fstout << *result;
         }
-        break;
       }
     nextInput:
+
 #ifndef NODELETE
+	  
       // Now delete the compostion result to free up memory, this is important
       // when you are doing batch compostions (option -b).
       // But make sure  first that you are not deleting one of the main
       // WFSTs. That is why we check if the result is one of them and if it is
       // we don't delete it.
-      bool isInChain = false ;
-      for (int i = 0 ; i < nInputs ; i++){
+      isInChain = false ;
+      for (int i = 0 ; i < nChain ; i++){
         if (result == &chain[i])
           isInChain = true ;
       }
@@ -766,22 +765,20 @@ main(int argc, char *argv[]){
         break;
     } // end of all input
 #ifndef NODELETE
-    for ( i = 0 ; i < nInputs ; ++i )
-      if ( i != nTarget )
+    for ( i = 0 ; i < nChain ; ++i )
         chainMemory[i].~WFST();
     //  if ( flags['A'] )
     //    chainMemory[i].~WFST();
 #endif
     ::operator delete(chainMemory);
     delete[] parm; // alias filenames unless -s
-	if(flags['s'])
-		delete[] filenames;
-	if(nTarget != -1) {
-		if(inputs[nTarget] != &cin)
-			delete inputs[nTarget]; // rest were deleted after transducers were read
-	}
-	delete[] inputs; // alias files
-
+        if(flags['s'])
+                delete[] filenames;
+        if(nTarget != -1) {
+                if(line_in != &cin)
+                        delete line_in; // rest were deleted after transducers were read
+        }
+        delete[] inputs; // alias files
     if ( fstout != &cout )
       delete fstout;
     return 0;

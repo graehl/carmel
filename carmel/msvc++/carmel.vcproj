@@ -259,6 +259,9 @@
 				RelativePath="..\src\list.h">
 			</File>
 			<File
+				RelativePath="..\src\models.h">
+			</File>
+			<File
 				RelativePath="..\src\slist.h">
 			</File>
 			<File
