@@ -17,6 +17,7 @@
 #include "genio.h"
 #include "byref.hpp"
 #include "funcs.hpp"
+#include "io.hpp"
 
 #ifdef TEST
 #include "test.hpp"

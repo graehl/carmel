@@ -79,7 +79,7 @@ struct SwapBatch {
             remove_file(batch_name(i));
         }
     }
-    /// uses void *B::read(istream &in,void *beg,void *end) ... which sets in.bad() if input fails, and uses [beg,end) as space to store an input, returning the new beg - [ret,end) is the new unused range ... if ret = NULL, then not enough space was available, and should retry; object remaining on failed read should be safe to destroy
+    /// uses void *B::read(istream &in,void *beg,void *end) ... which sets !in if input fails, and uses [beg,end) as space to store an input, returning the new beg - [ret,end) is the new unused range ... if ret = NULL, then not enough space was available, and should retry; object remaining on failed read should be safe to destroy
     /*
       e.g. struct B{
       template <class I>

@@ -356,12 +356,13 @@ inline std::basic_istream<charT,Traits>& skip_comment(std::basic_istream<charT,T
 //#define GENIO_THROW2(a,b) DBPC2(a,b)
 #define GENIO_EOF_OK bool GENIO_eof_ok=true
 #define GENIO_EOF_BAD GENIO_eof_ok=false
-#define GENIO_THROW(a) do { DEBUG_SEGFAULT; throw ios_base::failure(a); } while(0)
-#define GENIO_THROW2(a,b) do { DEBUG_SEGFAULT; throw ios_base::failure(std::string(a).append(b)); } while(0)
+#define GENIO_THROW(a) do { DEBUG_SEGFAULT; throw std::ios_base::failure(a); } while(0)
+#define GENIO_THROW2(a,b) do { DEBUG_SEGFAULT; throw std::ios_base::failure(std::string(a).append(b)); } while(0)
 //#define EXPECTI_FIRST(inop) do { std::ios_base::iostate  flags=(inop).rdstate(); if (flags != std::ios_base::goodbit) return flags; } while(0)
 #define EXPECTI_FIRST(inop) do {  if (!(inop).good())  goto fail; } while(0)
 #define EXPECTI(inop) do {  if (!(inop).good()) { GENIO_THROW2("expected input failed: ",#inop); goto fail; } } while(0)
 //#define EXPECTI_COMMENT(inop) do { ; if (!(inop).good()) { goto fail; } } while(0)
+#define EXPECTI_COMMENT_FIRST(inop) do { ; if (!(inop).good()) { goto fail; } } while(0)
 #define EXPECTI_COMMENT(inop) do { ; if (!(skip_comment(in).good()&&(inop).good())) { GENIO_THROW2("expected input failed: ",#inop); goto fail; } } while(0)
 #define EXPECTCH(a) do { if (!in.get(c).good()) { GENIO_THROW2("expected input unavailable: ",#a); goto fail; } if (c != a) { GENIO_THROW2("expected input failed: ",#a); goto fail; } } while(0)
 #define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) { GENIO_THROW2("expected input unavailable: ",#a); goto fail; } if (c != a) { GENIO_THROW2("expected input failed: ",#a); goto fail; } } while(0)
