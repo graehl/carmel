@@ -267,7 +267,6 @@ BOOST_AUTO_UNIT_TEST( TEST_indexgraph )
   //  DBP(c.n);
   BOOST_CHECK(c.n==2);
 
-  //  BOOST_CHECK(false);
 }
 #endif
 
