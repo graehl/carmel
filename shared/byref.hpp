@@ -7,6 +7,20 @@
 
 #include <boost/ref.hpp>
 
+#include "dummy.hpp"
+
+template <class C>
+struct dummy<boost::reference_wrapper<C> > {
+  //  static C dummy_imp;
+  static boost::reference_wrapper<C> var();
+};
+
+template <class C>
+boost::reference_wrapper<C> dummy<boost::reference_wrapper<C> >::var() {
+  static boost::reference_wrapper<C> var(*(C*)NULL);
+  return var;
+}
+
 /*
 template <class C>
 struct ByRef {
@@ -59,16 +73,16 @@ void h(C c) {
   g(c);
 }
 
-BOOST_AUTO_UNIT_TEST( byref )
+BOOST_AUTO_UNIT_TEST( TEST_byref )
 {
-  int t=0;  
+  int t=0;
   f(t);
   BOOST_CHECK(t==0);
-  f(ref(t));
+  f(boost::ref(t));
   BOOST_CHECK(t==1);
   h(t);
   BOOST_CHECK(t==1);
-  h(ref(t));
+  h(boost::ref(t));
   BOOST_CHECK(t==2);
 }
 #endif

@@ -135,7 +135,7 @@ void printPath(bool *flags,const List<PathArc> *pli) {
 void usageHelp(void);
 void WFSTformatHelp(void);
 
-
+#ifndef TEST
 int
 #ifdef _MSC_VER
 __cdecl
@@ -827,6 +827,7 @@ fail_ntarget:
     delete fstout;
   return 0;
 }
+#endif
 
 void usageHelp(void)
 {

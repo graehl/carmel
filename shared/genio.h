@@ -1,5 +1,7 @@
 #ifndef GENIO_H
 #define GENIO_H 1
+
+
 // your class Arg must will provide Arg::get_from(is) ( is >> arg ) and Arg::print_to(os) (os << arg), 
 // returning std::ios_base::iostate (0,badbit,failbit ...)
 // usage:
@@ -230,9 +232,16 @@ inline std::basic_ostream<charT,Traits>& operator << \
   std::ios_base::iostate \
   get_from(std::basic_istream<charT,Traits>& in)
 
-#define GENIO_print_on     template <class charT, class Traits> \
+#define GENIO_print_on     typedef void has_print_on; \
+ template <class charT, class Traits> \
   std::ios_base::iostate \
-  print_on(std::basic_ostream<charT,Traits>& o=std::cerr) const
+  print_on(std::basic_ostream<charT,Traits>& o) const
+
+#define GENIO_print_on_writer     typedef void has_print_on_writer; \
+ template <class charT, class Traits, class Writer> \
+  std::ios_base::iostate \
+  print_on(std::basic_ostream<charT,Traits>& o,Writer w) const
+
 
 /*
 template <class charT, class Traits>

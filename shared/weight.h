@@ -31,8 +31,8 @@ inline double randposfraction() // returns uniform random number on (0..1]
 struct Weight {			// capable of representing nonnegative reals 
   // internal implementation note: by their base e logarithm
   private:
-  enum { LOG10=0, LN };
-  enum { VAR=0, ALWAYS_LOG, ALWAYS_REAL };
+  enum { LN=0,LOG10, };
+  enum { ALWAYS_LOG=1, VAR, ALWAYS_REAL };
   // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
   // 32 * ln 10 =~ 73
   // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
@@ -479,6 +479,10 @@ public:
 #define NANCHECK(w) w.NaNCheck()
 #else
 #define NANCHECK(w)
+#endif
+
+#ifdef MAIN
+#include "weight.cc"
 #endif
 
 #endif 
