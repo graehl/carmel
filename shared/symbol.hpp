@@ -164,14 +164,15 @@ struct Symbol {
           } else {
                 do {
                   switch(c) {
-case '(':case ')':case ',':case '"':case ' ':case '`':case '=':
+case '(':case ')':case ',':case '"':case '`':case '=':
 case '%':case '{':case '}':
-case '\t':case '\r':case '\n':
-case '^':    //FIXME: think this breaks treeviz.cpp (but it's needed for transducer.hpp)
+case '\t':case '\r':case '\n':case ' ':
+
+                  case '^':case ';':    //FIXME: think this breaks treeviz.cpp (but it's needed for transducer.hpp)
 //case '#':
     //case '$':
     //case ':':
-    //case ';':
+    //
   in.unget();
   goto donewhile;
 default:
