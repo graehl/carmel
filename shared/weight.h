@@ -316,10 +316,19 @@ struct logweight {                 // capable of representing nonnegative reals
   }
 
   template<class charT, class Traits>
-std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const {
+inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o) {
+      return o.precision(sizeof(Real) > 4 ? 15 : 7);
+  }
+    
+    template<class charT, class Traits>
+    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const {
+        std::streamsize old_precision=set_precision(o);
+      
+        old_precision=o.precision(15);
+            
         int base=logweight<Real>::get_log_base(o);
         if ( isZero() )
-                o << "0";
+            o << "0";
         else {
             int log=logweight<Real>::get_log(o);
 
@@ -327,17 +336,17 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const {
                 o << getReal();
             } else { // out of range or ALWAYS_LOG
                 if ( base == logweight<Real>::LN) {
-                        o << getLn() << "ln";
+                    o << getLn() << "ln";
                 } else if (base == logweight<Real>::LOG10) {
-                        o << getLog10() << "log";
+                    o << getLog10() << "log";
                 } else {
                     o << "e^" << getLn();
                 }
             }
         }
-        return GENIOGOOD;
-  
-  }
+        o.precision(old_precision);
+        return GENIOGOOD;  
+    }
 template<class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
   char c;

@@ -1,2 +1,2 @@
 default:
-	cd ../carmel && make
+	cd ../tt && make

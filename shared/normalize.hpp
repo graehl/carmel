@@ -113,8 +113,8 @@ struct NormalizeGroups {
     source_t &source(offset_type index) const {
         return base[index];
     }
-    source_t &sink(offset_type index) const {
-        return base[index];
+    dest_t &sink(offset_type index) const {
+        return dest[index];
     }
     void operator ()(Group &i) {
         GIt end=i.end(), beg=i.begin();
@@ -190,28 +190,27 @@ struct NormalizeGroups {
     template <class T> // enumerate:
     void visit(Group &group, T tag) {
         GIt beg=group.begin(),end=group.end();
-        source_t sum=0;
+        dest_t sum=0;
         for (GIt i=beg;i!=end;++i) {
-            source_t &w=source(*i);
+            dest_t &w=sink(*i);
             tag(w);
             sum += w;
         }
         if (sum > 0)
             for (GIt i=beg;i!=end;++i) {
-                source_t &w=source(*i);                
+                dest_t &w=sink(*i);                
                 w /= sum;
             }
-    }
-
+    }    
     template <class T>
-    void init(source_t *w,T tag) {
-        base=w;
+    void init(dest_t *w,T tag) {
+        dest=w;
         enumerate(norm_groups,*this,tag);
     }
-    void init_uniform(source_t *w) {
+    void init_uniform(dest_t *w) {
         init(w,set_one());
     }
-    void init_random(source_t *w) {
+    void init_random(dest_t *w) {
         base=w;
         init(w,set_random_pos_fraction());
     }
@@ -244,20 +243,20 @@ struct NormalizeGroups {
 
 };
 
-template <class charT, class Traits,class C>
+template <class charT, class Traits,class W1,class W2>
 std::basic_istream<charT,Traits>&
 operator >>
-(std::basic_istream<charT,Traits>& is, NormalizeGroups<C> &arg)
+(std::basic_istream<charT,Traits>& is, NormalizeGroups<W1,W2> &arg)
 {
     arg.get_from(is);
     return is;
 }
 
 
-template <class charT, class Traits,class C>
+template <class charT, class Traits,class W1,class W2>
 std::basic_ostream<charT,Traits>&
 operator <<
-    (std::basic_ostream<charT,Traits>& o, const NormalizeGroups<C> &arg)
+              (std::basic_ostream<charT,Traits>& o, const NormalizeGroups<W1,W2> &arg)
 {
 //    return os << arg.norm_groups;
 /*    os << "(\n";
