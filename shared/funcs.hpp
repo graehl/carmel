@@ -331,6 +331,7 @@ template <class Size=size_t>
 struct size_accum {
     Size size;
     Size max_size;
+
     size_accum() : size(0),max_size(0) {}
     template <class T>
     void operator()(const T& t) {
@@ -396,6 +397,28 @@ struct max_accum {
     }
     operator T &() { return max; }
     operator const T &() const { return max; }
+};
+
+template <class T>
+struct min_max_accum {
+    T max;
+    T min;
+    bool seen;
+    min_max_accum() : seen(false) {}
+    template <class F>
+    void operator()(const F& t) {
+//        DBP3(min,max,t);
+        if (seen) {
+            if (max < t)
+                max = t;
+            else if (min > t)
+                min = t;
+        } else {
+            min=max=t;
+            seen=true;
+        }
+//        DBP2(min,max);
+    }
 };
 
 template <class T>
