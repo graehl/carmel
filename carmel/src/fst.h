@@ -87,7 +87,7 @@ class WFST {
   Alphabet<> *in;
   Alphabet<> *out;
   Alphabet<> stateNames;
-  int final;	// final state number - initial state always number 0
+  unsigned int final;	// final state number - initial state always number 0
   DynamicArray<State> states;
   	 
   //  HashTable<IntKey, int> tieGroup; // IntKey is Arc *; value in group number (0 means fixed weight)
@@ -186,13 +186,13 @@ class WFST {
   WFST(istream & istr,bool alwaysNamed=false) {
     initAlphabet();
     if (!this->readLegible(istr,alwaysNamed))
-      final = -1;
+      final = (unsigned)INVALID;
   }
 
   WFST(const string &str, bool alwaysNamed){
     initAlphabet();
     if (!this->readLegible(str,alwaysNamed))
-      final = -1;
+      final = (unsigned)INVALID;
   }
 
   WFST(const char *buf); // make a simple transducer representing an input sequence
@@ -319,8 +319,9 @@ class WFST {
   
   
   int generate(int *inSeq, int *outSeq, int minArcs, int maxArcs);
-  int valid() const { return ( final >= 0 ); }
-  int size() const { if ( !valid() ) return 0; else return numStates(); }
+  enum{INVALID=-1};
+  int valid() const { return ( final != (unsigned)INVALID ); }
+  unsigned int size() const { if ( !valid() ) return 0; else return numStates(); }
   int numArcs() const {
     int a = 0;
     for (int i = 0 ; i < numStates() ; ++i )
@@ -389,7 +390,7 @@ class WFST {
     unNameStates();
     states.clear();
     deleteAlphabet();
-    final = -1;
+    final = (unsigned)INVALID;
   }
   ~WFST() {
     clear();

@@ -11,22 +11,14 @@
 
 struct IntKey {
   int i;
-  int hash() const { return i * 2654435767U; }
+  size_t hash() const { return uint_hash(i); }
   IntKey() {}
   IntKey(int a) : i(a) {}
   operator int() const { return i; }
 };
 
-HASHNS_B
-//template <> struct hash<IntKey> { size_t operator()(IntKey i) const { return i.hash(); } };
-template<>
-struct hash<IntKey>
-{
-  size_t operator()(IntKey i) const {
-	return i.hash();
-  }
-};
-HASHNS_E
+BEGIN_HASH_VAL(IntKey) {	return x.hash(); } END_HASH
+
 struct State {
   List<Arc> arcs;
   int size;
@@ -181,21 +173,14 @@ std::ostream& operator << (std::ostream &out, struct State &s); // Yaser 7-20-20
 struct IOPair {
   int in;
   int out;
-  int hash() const
+  size_t hash() const
   {
-    return (67913 * out + in) * 2654435767U;
+    return uint_hash(1543 * out + in);
   }
 };
 
-HASHNS_B
-template<>
-struct hash<IOPair>
-{
-  size_t operator()(const IOPair &x) const {
-	return x.hash();
-  }
-};
-HASHNS_E
+BEGIN_HASH_VAL(IOPair) {	return x.hash(); } END_HASH
+
 std::ostream & operator << (std::ostream &o, IOPair p);
 
 inline bool operator == (const IOPair l, const IOPair r) { 

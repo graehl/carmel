@@ -8,10 +8,10 @@
 #define EMPTY 0
 
 struct TrioKey {
-  static int aMax;
-  static int bMax;
-  int aState;
-  int bState;
+  static unsigned int aMax;
+  static unsigned int bMax;
+  unsigned int aState;
+  unsigned int bState;
   char filter;
   bool operator == (const TrioKey &t) const 
   {
@@ -21,21 +21,17 @@ struct TrioKey {
   TrioKey() {}
   TrioKey(int a, int b, char c) : 
     aState(a), bState(b), filter(c) {}
-  int hash() const
+  size_t hash() const
   {
     Assert ( aState < aMax && bState < bMax);
-    return (bMax * (filter*aMax + aState) + bState) * 2654435767U;
+	return uint_hash((bMax * (filter*aMax + aState) + bState));
   }
 };
-HASHNS_B
-template<>
-struct hash<TrioKey>
-{
-  size_t operator()(const TrioKey &x) const {
-	return x.hash();
-  }
-};
-HASHNS_E
+
+BEGIN_HASH(TrioKey) {
+  return x.hash();
+  } END_HASH
+
 struct HalfArcState {
   int dest;			// in unshared (lhs) transducer
   int source;			// in (rhs) transducer with the shared arcs
@@ -49,20 +45,15 @@ struct HalfArcState {
   HalfArcState() {}
   HalfArcState(int a, int b, int c) :
     dest(a), source(b), hiddenLetter(c) {}
-  int hash() const
+  size_t hash() const
   {
-    return (TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source) * 2654435767U;
+    return uint_hash(TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source);
   }
 };
-HASHNS_B
-template<>
-struct hash<HalfArcState>
-{
-  size_t operator()(const HalfArcState &x) const {
-	return x.hash();
-  }
-};
-HASHNS_E
+
+BEGIN_HASH(HalfArcState) {
+  return x.hash(); } END_HASH
+  
 
 struct TrioID {
   int num;

@@ -27,7 +27,8 @@ class StringPool {
 	static HashTable<StringKey, int> counts;
 #endif
 public:
-	static StringKey borrow(StringKey s) {
+	static StringKey borrow(char *str) {
+	  StringKey s(str);
 	  if (s.str == StringKey::empty)
 		return s;
 #ifdef STRINGPOOL
@@ -44,7 +45,8 @@ public:
 		return s;
 #endif
 	}
-	static void giveBack(StringKey s) {
+	static void giveBack(char * str) {
+	  StringKey s(str);
 #ifdef STRINGPOOL
 		HashTable<StringKey, int>::find_return_type entryP;
 		if ( s.str != StringKey::empty && (entryP = counts.find(s))!= counts.end() ) {
@@ -69,10 +71,10 @@ public:
 };
 
 
-template <class StrPool=STRINGPOOLCLASS>
+template <class Sym=StringKey,class StrPool=STRINGPOOLCLASS>
 class Alphabet {
   DynamicArray<char *> names;
-  HashTable<StringKey, int> ht;
+  HashTable<Sym, int> ht;
  public:
   Alphabet() { }
   Alphabet(char * c) {
@@ -82,14 +84,14 @@ class Alphabet {
 #ifdef NODELETE
     memcpy(this, &a, sizeof(Alphabet));
 #else
-    for ( int i = 0 ; i < a.names.size(); ++i )
+    for ( unsigned int i = 0 ; i < a.names.size(); ++i )
       add(a.names[i]);
 #endif
   }
   void dump() { 	Config::debug() << ht; }
   bool verify() {
 #ifdef DEBUG
-	for (int i = 0 ; i < names.size(); ++i ) {
+	for (unsigned int i = 0 ; i < names.size(); ++i ) {
 	  static char buf[1000];
 	  Assert(*find(names[i])==i);
 	  strcpy(buf,names[i]);
@@ -108,34 +110,21 @@ class Alphabet {
     }
   void add(char *name) { 
 	Assert(find(name) == NULL);
-    StringKey s = StrPool::borrow(StringKey(name));;
+    Sym s = StrPool::borrow(name);
 	ht[s]=names.size();
     names.push_back(s.str);
   }
   int *find(char *name) const {
-    return find_second(ht,(StringKey)name);
+    return find_second(ht,(Sym)name);
   }
   int indexOf(const char *name) {
     Assert(name);
-    StringKey s = const_cast<char *>(name);
-//#define OLD_INDEXOF
-#ifdef OLD_INDEXOF
-  int *it;  
-	if ( (it = find_second(ht,s)) )
-      return *it;
-    else {
-      StringKey k = StrPool::borrow(s);
-      int ret = names.size();
-      add(ht,k,ret);
-      names.push_back(k.str);
-      return ret;
-    }
-#else
-	HashTable<StringKey,int>::insert_return_type it;
-	if ( (it = ht.insert(HashTable<StringKey,int>::value_type(s,names.size()))).second )
-	  names.push_back(*const_cast<StringKey*>(&(it.first->first)) = StrPool::borrow(s)); // might seem naughty, (can't change hash table keys) but it's still equal.		
+    Sym s = const_cast<char *>(name);
+
+	typename HashTable<Sym,int>::insert_return_type it;
+	if ( (it = ht.insert(HashTable<Sym,int>::value_type(s,names.size()))).second )
+	  names.push_back(*const_cast<Sym*>(&(it.first->first)) = StrPool::borrow(s)); // might seem naughty, (can't change hash table keys) but it's still equal.		
     return it.first->second;	
-#endif
   }
   const char * operator[](int pos) const {
     //Assert(pos < size() && pos >= 0);
@@ -164,10 +153,10 @@ class Alphabet {
   }
   const char * operator()(int pos) {
     int iNum = pos;
-    if (iNum >= size() || names[iNum] == StringKey::empty ) {
+    if (iNum >= size() || names[iNum] == Sym::empty ) {
       // decimal string for int
      
-      StringKey k;
+      Sym k;
       k.str = itoa(iNum);
       k = StrPool::borrow(k);
       if ( iNum < names.size() ) {
@@ -175,7 +164,7 @@ class Alphabet {
 		ht[k]=iNum;
       } else {
 	for ( int i = names.size() ; i < iNum ; ++i )
-	  names.push_back(StringKey::empty);
+	  names.push_back(Sym::empty);
 	names.push_back(k.str);
 	ht[k]=iNum;
 	Assert(names.size() == iNum+1);
@@ -184,8 +173,8 @@ class Alphabet {
     return names[iNum];
   }
   void removeMarked(bool marked[], int* oldToNew) {
-    for ( int i = 0 ; i < names.size() ; ++i )
-      if ( names[i] != StringKey::empty ) {
+    for ( unsigned int i = 0 ; i < names.size() ; ++i )
+      if ( names[i] != Sym::empty ) {
 	if ( marked[i] ) {
 	  ht.erase(names[i]);
 #ifndef NODELETE
@@ -202,16 +191,16 @@ class Alphabet {
     // aMap will give which letter in Alphabet o the letters in a 
     // correspond to, or -1 if the letter is not in Alphabet o.    
   {
-      int i, *ip;
-      for ( i = 0 ; i < size() ; ++i )
+      int  *ip;
+      for ( unsigned int i = 0 ; i < size() ; ++i )
 	aMap[i] = (( ip = o.find(names[i])) ? (*ip) : -1 );
     }
-  int size() const { return names.size(); }
+  unsigned int size() const { return names.size(); }
   ~Alphabet()
     {
 #ifndef NODELETE
-      for ( int  i = 0; i < names.size() ; ++i )
-	if ( names[i] != StringKey::empty )
+      for ( unsigned int  i = 0; i < names.size() ; ++i )
+	if ( names[i] != Sym::empty )
 	  StrPool::giveBack(names[i]);
 #endif
     }
@@ -222,7 +211,7 @@ class Alphabet {
 template<class T>
 inline std::ostream & operator << (std::ostream &out, Alphabet<T> &alph)
 {
-  for ( int i = 0 ; i < alph.names.size() ; ++i )
+  for ( unsigned int i = 0 ; i < alph.names.size() ; ++i )
     out << alph.names[i] << '\n';
   return out;
 }

@@ -1,6 +1,8 @@
 #ifndef TWO_HASH_H 
 #define TWO_HASH_H
 
+#define GOLDEN_MEAN_FRACTION 2654435769U
+
 #include "config.h"
 #include <ostream>
 
@@ -21,6 +23,41 @@ inline size_t cstr_hash (const char *p)
 		h = 31 * h + *p++; // should optimize to ( h << 5 ) - h if faster
 	return h;
 #endif
+}
+
+inline size_t uint_hash(unsigned int key)
+{
+  /*
+In Knuth's "The Art of Computer Programming", section 6.4, a multiplicative hashing scheme is introduced as a way to write hash function. The key is multiplied by the golden ratio of 2^32 (2654435761) to produce a hash result.
+
+Since 2654435761 and 2^32 has no common factors in common, the multiplication produces a complete mapping of the key to hash result with no overlap. This method works pretty well if the keys have small values. Bad hash results are produced if the keys vary in the upper bits. As is true in all multiplications, variations of upper digits do not influence the lower digits of the multiplication result. 
+*/
+// (sqrt(5)-1)/2 = .6180339887.., * 2^32=~2654435769.4972302964775847707926
+
+// HOWEVER (not in Knuth) ... the higher order bits after multiplication are determined by all the bits below it as well.  the "good" part of the hash is lost in the higher bits if you are using power-of-2 buckets (prime # buckets is fine), therefore, shift some of those good bits over and combine them with the lower (by using xor instead of addition, this should continue to make the function reversible)
+//	return key * 2654435767U;
+//	return key * 2654435761U;
+	//return key*GOLDEN_MEAN_FRACTION;
+
+// feel free to define TRIVIAL_INT_HASH if you're hashing into prime-numbers of buckets
+// but first FIXME: we're using the same primes that are in boost::unordered_map bucketlist for multiplying out int-pair hashvals
+#ifndef TRIVIAL_INT_HASH
+	key *= 2654435769U; // mixes the lower bits into the upper bits, reversible
+	key ^= (key >> 16); // gets some of the goodness back into the lower bits, reversible
+	return (int)key;
+#else
+	return (int)key;
+#endif
+	/*
+		  key -= (key << 15);
+  key ^=  (key >> 10);
+  key +=  (key << 3);
+  key ^=  (key >> 6);
+  key -= (key << 11);
+  key ^=  (key >> 16);
+  return key;
+  */
+
 }
 
 
@@ -65,7 +102,7 @@ template <class T> struct hash;
 #include "myassert.h"
 #include <utility>
 
-const float DEFAULTHASHLOAD = 1.0f;
+const float DEFAULTHASHLOAD = 0.8f;
 template <class K,class V,class H,class P,class A> class HashTable ;
 template <typename K, typename V> class HashIter ;
 //template <typename K, typename V> class HashConstIter ;
@@ -96,33 +133,6 @@ public:
   HashEntry(const K &k, const V& v, HashEntry<K,V> * const n) : next(n), first(k), second(v) { }
   HashEntry(const K &k, HashEntry<K,V> * const n) : next(n), first(k), second() { }
 //  HashEntry(const HashEntry &h) : next(h.next), first(h.first), second(h.second) { }
-#ifdef CUSTOMNEW
-  static HashEntry<K,V> *freeList=NULL;
-  static const int newBlocksize=128;
-  void *operator new(size_t s)
-    {
-      size_t dummy = s;
-      dummy = dummy;
-      HashEntry<K,V> *ret, *max;
-      if (freeList) {
-	ret = freeList;
-	freeList = freeList->next;
-	return ret;
-      }
-      freeList = (HashEntry<K,V> *)::operator new(newBlocksize * sizeof(HashEntry<K,V>));
-      freeList->next = NULL;
-      max = freeList + newBlocksize -1;
-      for ( ret = freeList++; freeList < max ; ret = freeList++ )
-	freeList->next = ret;
-      return freeList--;
-    }
-  void operator delete(void *p) 
-    {
-      HashEntry<K,V> *e = (HashEntry<K,V> *)p;
-      e->next = freeList;
-      freeList = e;
-    }
-#endif	
   //friend class HashTable<K,V>;
   //friend class HashIter<K,V>;
   //friend class HashConstIter<K,V>; // Yaser
@@ -284,6 +294,7 @@ template <class A,class H,class P>
 //
 //= hash<K>
 #include <functional>
+#include <memory>
 template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A::rebind<HashEntry<K,V> >::other {
  public:
   typedef H hasher;
@@ -378,7 +389,7 @@ public:
 	iterator begin()  {
 	  return *this;
 	}
-   HashEntry<K,V> *end() const {
+   find_return_type end() const {
 	 return NULL;
    }
    
@@ -581,8 +592,15 @@ public:
 	  return reinterpret_cast<find_return_type>(p);
       return NULL;
     }
+  V *find_second(const K& first) const
+	{
+      for ( HashEntry<K,V> *p = table[bucket(first)]; p ; p = p->next )
+   	if ( equal(p->first,first) )
+	  return &(p->second);
+      return NULL;
 
-//	value_type * find_value(const K &first) const { return (value_type *)find(first); }
+	}
+	value_type * find_value(const K &first) const { return (value_type *)find(first); }
 
 /*  V * findOrAdd(const K &first)
     {
@@ -659,14 +677,7 @@ public:
 	  void rehash(int request) { rehash_pow2(pow2Bound(request)); }
   friend class HashIter<K,V>;
   //friend class HashConstIter<K,V>;
-  V *find_second(const K& first) const
-	{
-      for ( HashEntry<K,V> *p = table[bucket(first)]; p ; p = p->next )
-   	if ( equal(p->first,first) )
-	  return &(p->second);
-      return NULL;
 
-	}
 	public:
 
 
@@ -696,11 +707,20 @@ public:
 //		template <class _K,class _V,class _H,class _A>
 //friend _V *find_second(const HashTable<_K,_V,_H,_A>& ht,const _K& first);
 };
+/*
+struct EmptyStruct {
+};
+
+template <typename K, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashSet : public HashTable<K,V,H,P,A> {
+};
+
+*/
 
 template <class K,class V,class H,class P,class A>
 inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTable<K,V,H,P,A>& ht,const K& first) {
   return ht.find(first);
 }
+
 
 template <class K,class V,class H,class P,class A>
 inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
@@ -716,10 +736,18 @@ inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
 
 
 template<>
+struct hash<unsigned int>
+{
+  size_t operator()(unsigned int key) const {
+	return uint_hash(key);
+  }
+};
+
+template<>
 struct hash<int>
 {
-  size_t operator()(int i) const {
-	return i * 2654435767U;
+  size_t operator()(int key) const {
+	return uint_hash(key);
   }
 };
 
@@ -730,10 +758,6 @@ struct hash<const char *>
 	return cstr_hash(s);
   }
 };
-
-#ifdef CUSTOMNEW
-#define HASHCUSTOMNEW
-#endif
 
 #endif
 

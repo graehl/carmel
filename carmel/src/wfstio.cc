@@ -19,7 +19,7 @@
                 } } while(0)
 
 
-static int pow2(int exp)
+static inline unsigned int pow2(int exp)
 {
   return 1 << exp;
 }
@@ -169,7 +169,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
   if (permuteNumbers){
     states.push_back();                  /* final state*/
     final = pow2((int)symbols.size())-1;
-    for (int k=0; k < final; k++){
+    for (unsigned int k=0; k < final; k++){
       states.push_back();
       vector<bool> taken(maxSymbolNumber+1);
       for (int i = 0 ; i <= maxSymbolNumber ;++i)
@@ -185,16 +185,16 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
   }
   else{
     final = pow2((int)strSymbols.size())-1 ;
-    for (int k=0; k <= final; k++){
+    for (unsigned int k=0; k <= final; k++){
       states.push_back();
     }
     int temp_final = final ;
     //    vector<bool> visited(final,false);
     vector<bool> visited(final);
-    for (int k=0; k < final; k++)
+    for (unsigned int k=0; k < final; k++)
       visited[k] = false ;
     visited[0] = true ;
-    for (int k=0; k < final; k++){
+    for (unsigned int k=0; k < final; k++){
       if (visited[k]){
         map<const char*, bool, ltstr> taken ;
         for (unsigned int i = 0 ; i < strSymbols.size() ;++i)
@@ -203,7 +203,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
           int temp = pow2(l);
           if (((int(k / temp) % 2) == 0) && (!taken[strSymbols[l].c_str()])){
             if (isNumber(strSymbols[l].c_str())){
-              int from_state,to_state ;
+              unsigned int from_state,to_state ;
               from_state = k ;
               for(unsigned int i =1 ; i < strSymbols[l].length()-1 ; i++){
                 string s("\"\"\"");
@@ -249,7 +249,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
 
 int WFST::getStateIndex(const char *buf) {
   char *scanend;
-  int st;
+  unsigned int st;
   if (!named_states) {
     st=strtol(buf,&scanend,10);
     if (*scanend != '\0') {

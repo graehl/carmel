@@ -46,8 +46,8 @@ void dump_ht(HT &ht)
 #include "../../tt/test.hpp"
 BOOST_AUTO_UNIT_TEST( strhash )
 {
-  Alphabet<StringPool> a;
-  Alphabet<StringPool> b;
+  Alphabet<> a;
+  Alphabet<> b;
   const char *s[]={"u","ul","mu","pi"};
   const int n=sizeof(s)/sizeof(s[0]);
   a.add("a");

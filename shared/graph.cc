@@ -225,7 +225,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
   //
 
 {
-  int *oldToNew = NEW int[g.nStates];
+  unsigned int *oldToNew = NEW unsigned int[g.nStates];
   int i = 0, f = 0;
   while ( i < g.nStates )
     if (marked[i])

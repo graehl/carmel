@@ -1,11 +1,11 @@
 #ifndef CONFIG_H 
-#define CONFIG_H 1
+#define CONFIG_H
 
 #define VERSION "3.0.9" 
 
 //#define DEBUGNAN
 
-#define BOOST_NO_MT
+#define DBP(a) do { Config::debug() << a; } while(0)
 
 //#define UNORDERED_MAP
 
@@ -16,6 +16,7 @@
 #ifndef STRINGPOOLCLASS
 #define STRINGPOOLCLASS StringPool
 #endif
+
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
 //#define DEBUG
@@ -90,10 +91,6 @@ typedef float FLOAT_TYPE;
 #define WEIGHT_CORRECT_ZERO
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
 // definitely needs to be defined for Microsoft (debug or release) now
-
-
-// special-purpose allocators for hash tables - never reclaims memory for general pool, but faster (?)
-//#define CUSTOMNEW
 
 // allows WFST to be indexed in either direction?  not recommended.
 //#define BIDIRECTIONAL

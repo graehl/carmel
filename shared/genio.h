@@ -15,6 +15,32 @@
 // this is necessary because of incomplete support for partial explicit template instantiation
 // a more complete version could catch exceptions and set ios error
 
+//PASTE THIS INTO CLASS
+/*
+
+  template <class charT, class Traits>
+  std::ios_base::iostate 
+  print_on(std::basic_ostream<charT,Traits>& o) const
+  {	
+	return std::ios_base::goodbit;
+  }
+
+  template <class charT, class Traits>
+  std::ios_base::iostate 
+  get_from(std::basic_istream<charT,Traits>& in)
+  {
+	return std::ios_base::goodbit;
+  }
+
+*/
+
+
+//PASTE THIS OUTSIDE CLASS C
+/*
+DEF_INSERTER(C)
+DEF_EXTRACTOR(C)
+*/
+
 template <class charT, class Traits, class Arg>
 std::basic_istream<charT, Traits>& 
 gen_extractor
@@ -45,5 +71,31 @@ gen_inserter
 		s.setstate(err);
 	return s;
 }
+
+#define DEFINE_EXTRACTOR(C) \
+  template <class charT, class Traits> \
+std::basic_istream<charT,Traits>& operator >> \
+ (std::basic_istream<charT,Traits>& is, C &arg);
+
+#define CREATE_EXTRACTOR(C) \
+  template <class charT, class Traits> \
+inline std::basic_istream<charT,Traits>& operator >> \
+ (std::basic_istream<charT,Traits>& is, C &arg) { \
+	return gen_extractor(is,arg); }
+
+#define DEFINE_INSERTER(C) \
+  template <class charT, class Traits> \
+std::basic_ostream<charT,Traits>& operator << \
+ (std::basic_ostream<charT,Traits>& os, const C arg);
+
+#define CREATE_INSERTER(C) \
+  template <class charT, class Traits> \
+inline std::basic_ostream<charT,Traits>& operator << \
+ (std::basic_ostream<charT,Traits>& os, const C arg) { \
+	return gen_inserter(os,arg); }
+
+
+#define GENIO_CHECK(inop) do { ; if (!(inop).good()) return std::ios_base::badbit; } while(0)
+#define GENIO_CHECK_ELSE(inop,fail) do {  if (!(inop).good()) { fail; return std::ios_base::badbit; } } while(0)
 
 #endif
