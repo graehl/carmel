@@ -1,6 +1,6 @@
+#include "config.h"
 #include <vector>
 #include "kbest.h"
-#include "config.h"
 
 Graph sidetracks;
 GraphHeap **pathGraph;
@@ -27,7 +27,7 @@ vector<pGraphArc *> Repository ;
 
 void buildSidetracksHeap(int state, int pred)
 {
-  // IMPORTANT NOTE: Yaser 6-25-2001 This function create new memory
+  // IMPORTANT NOTE: Yaser 6-25-2001 This function create NEW memory
   // of type (pGraphArc *). This memory is not deleted inside the function
   // because it is used else where. For this reason addresses for
   // the memory created is kept in a global variable "Repsitory" so that
@@ -55,7 +55,7 @@ void buildSidetracksHeap(int state, int pred)
     pathGraph[state]->arc = min;
     pathGraph[state]->arcHeapSize = heapSize;
     if ( heapSize ) {
-      pGraphArc *heapStart = pathGraph[state]->arcHeap = new pGraphArc[heapSize];
+      pGraphArc *heapStart = pathGraph[state]->arcHeap = NEW pGraphArc[heapSize];
       Repository.push_back(heapStart); // keep track of it so that we can delete it later
       pGraphArc *heapI = heapStart;
 //      List<GraphArc>::iterator end = sidetracks.states[state].arcs.end()  ;
@@ -75,7 +75,7 @@ void buildSidetracksHeap(int state, int pred)
 List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
 {
   Assert(valid());
-  List<List<PathArc> > *paths = new List<List<PathArc> >;
+  List<List<PathArc> > *paths = NEW List<List<PathArc> >;
   if (!valid()) {
   //List<List<PathArc> >::iterator insertHere=paths->begin();
   for (int i=0;i<k;) {
@@ -97,7 +97,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   Assert(valid());
 
   typedef List<List<PathArc> > LLP;
-  LLP *paths = new List<List<PathArc> >;
+  LLP *paths = NEW List<List<PathArc> >;
   insert_iterator<LLP> path_adder(*paths,paths->erase_begin());
   //List<List<PathArc> >::iterator insertHere=paths->begin();
 
@@ -106,7 +106,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   Config::debug() << "Calling KBest on WFST with k: "<<k<<'\n' << graph;
 #endif
   
-  float *dist = new float[nStates];
+  float *dist = NEW float[nStates];
   Graph shortPathGraph = shortestPathTreeTo(graph, final,dist);
   #ifdef DEBUGKBEST
   Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
@@ -127,9 +127,9 @@ List<List<PathArc> > *WFST::bestPaths(int k)
     if ( k > 1 ) {
       GraphHeap::freeAll();
       Graph revPathTree = reverseGraph(shortPathGraph);
-      pathGraph = new GraphHeap *[nStates];
+      pathGraph = NEW GraphHeap *[nStates];
       sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
-      bool *visited = new bool[nStates];
+      bool *visited = NEW bool[nStates];
       for ( int i = 0 ; i < nStates ; ++i ) visited[i] = false;
       // IMPORTANT NOTE: depthFirstSearch recursively calls the function
       // passed as the last argument (in this  case "buildSidetracksHeap")
@@ -142,9 +142,9 @@ List<List<PathArc> > *WFST::bestPaths(int k)
           printTree(pathGraph[i], 0);
         cout << "done printing trees\n\n";
 #endif
-        EdgePath *pathQueue = new EdgePath[4 * (k+1)];  // out-degree is at most 4
+        EdgePath *pathQueue = NEW EdgePath[4 * (k+1)];  // out-degree is at most 4
         EdgePath *endQueue = pathQueue;
-        EdgePath *retired = new EdgePath[k+1];
+        EdgePath *retired = NEW EdgePath[k+1];
         EdgePath *endRetired = retired;
         EdgePath newPath;
         newPath.weight = pathGraph[0]->arc->weight;
@@ -296,7 +296,7 @@ void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
 */
 
 Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
-// Comment by Yaser: This function creates new GraphState[] and because the
+// Comment by Yaser: This function creates NEW GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 //  the caller function is responsible for deleting this data.
 // It is not a good programming practice but it will be messy to clean it up.
@@ -305,7 +305,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
 {
   Assert(lG.nStates == rG.nStates);
   int nStates = lG.nStates;
-  GraphState *sub = new GraphState[nStates];
+  GraphState *sub = NEW GraphState[nStates];
   for ( int i = 0 ; i < nStates ; ++i )
    if ( dist[i] != Weight::HUGE_FLOAT ){
 

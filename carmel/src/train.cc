@@ -1,3 +1,4 @@
+#include "config.h"
 #include "train.h"
 #include "fst.h"
 #include "weight.h"
@@ -8,15 +9,15 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
   //consolidateArcs();
   normalize(method);
   delete trn;
-  trn = new trainInfo;
+  trn = NEW trainInfo;
   //  trn->smoothFloor = smoothFloor;
   IOPair IO;
   DWPair DW;
   List<DWPair> *pLDW;
   HashTable<IOPair, List<DWPair> > *IOarcs =
-    trn->forArcs = new HashTable<IOPair, List<DWPair> >[numStates()];
+    trn->forArcs = NEW HashTable<IOPair, List<DWPair> >[numStates()];
   HashTable<IOPair, List<DWPair> > *revIOarcs =
-    trn->revArcs = new HashTable<IOPair, List<DWPair> >[numStates()];
+    trn->revArcs = NEW HashTable<IOPair, List<DWPair> >[numStates()];
   int s;
   for ( s = 0 ; s < numStates() ; ++s ){
     for ( List<Arc>::val_iterator aI=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); aI != end; ++aI ) {
@@ -40,7 +41,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
 
   Graph eGraph = makeEGraph();
   Graph revEGraph = reverseGraph(eGraph);
-  trn->forETopo = new List<int>;
+  trn->forETopo = NEW List<int>;
   {
     TopoSort t(eGraph,trn->forETopo);
     t.order_crucial();
@@ -49,7 +50,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
       Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
     delete[] eGraph.states;
   }
-  trn->revETopo = new List<int>;
+  trn->revETopo = NEW List<int>;
   {
     TopoSort t(revEGraph,trn->revETopo);
     t.order_crucial();
@@ -92,15 +93,15 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   int i, o, nSt = numStates();
   int maxIn = trn->maxIn;
   int maxOut = trn->maxOut;
-  Weight ***f = trn->f = new Weight **[maxIn+1];
-  Weight ***b = trn->b = new Weight **[maxIn+1];
+  Weight ***f = trn->f = NEW Weight **[maxIn+1];
+  Weight ***b = trn->b = NEW Weight **[maxIn+1];
   trn->nStates = nSt ; // Yaser - added for supporting a copy constrcutor for trainInfo this 7-26-2000
   for ( i = 0 ; i <= maxIn ; ++i ) {
-    f[i] = new Weight *[maxOut+1];
-    b[i] = new Weight *[maxOut+1];
+    f[i] = NEW Weight *[maxOut+1];
+    b[i] = NEW Weight *[maxOut+1];
     for ( o = 0 ; o <= maxOut ; ++o ) {
-      f[i][o] = new Weight [nSt];
-      b[i][o] = new Weight [nSt];
+      f[i][o] = NEW Weight [nSt];
+      b[i][o] = NEW Weight [nSt];
     }
   }
 
@@ -170,8 +171,8 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
 {
   int i, o, s;
 #ifdef N_E_REPS
-  Weight *wNew = new Weight [nSt];
-  Weight *wOld = new Weight [nSt];
+  Weight *wNew = NEW Weight [nSt];
+  Weight *wOld = NEW Weight [nSt];
 #endif
   for ( i = 0 ; i <= nIn ; ++i )
     for ( o = 0 ; o <= nOut ; ++o )
@@ -487,7 +488,7 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
           //Weight &w=dw->weight();
           dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
           //Weight &counts = dw->counts;
-          dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
+          dw->weight() = dw->counts + dw->prior_counts; // PLACEMENT_NEW (unnormalized weight)
         }
     }
 #ifdef DEBUGTRAINDETAIL
@@ -521,8 +522,8 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   int i, o, s;
   int nIn = inSeq.count_length();
   int nOut = outSeq.count_length();
-  int *inLet = new int[nIn];
-  int *outLet = new int[nOut];
+  int *inLet = NEW int[nIn];
+  int *outLet = NEW int[nOut];
   int *pi;
 
   pi = inLet;
@@ -534,7 +535,7 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
     *pi++ = *outL;
 
   HashTable<IOPair, List<DWPair> > *IOarcs =
-    new HashTable<IOPair, List<DWPair> >[numStates()];
+    NEW HashTable<IOPair, List<DWPair> >[numStates()];
 
   IOPair IO;
   DWPair DW;
@@ -563,11 +564,11 @@ List<int> eTopo;
   delete[] eGraph.states;
 }
 
-Weight ***w = new Weight **[nIn+1];
+Weight ***w = NEW Weight **[nIn+1];
 for ( i = 0 ; i <= nIn ; ++i ) {
-  w[i] = new Weight *[nOut+1];
+  w[i] = NEW Weight *[nOut+1];
   for ( o = 0 ; o <= nOut ; ++o )
-    w[i][o] = new Weight [numStates()];
+    w[i][o] = NEW Weight [numStates()];
 }
 sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
 

@@ -35,6 +35,7 @@ CC.macosx = g++
 CCFLAGS = -c 
 CCFLAGS = -c -Wno-deprecated -DBOOST_DISABLE_THREADS -DBOOST_NO_MT ${INC}
 #-Wall 
+# -frepo
 #-fno-exception
 LDFLAGS = -L$(LIB) -lm
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -s -ffast-math
@@ -66,7 +67,8 @@ carmel.${ARCH}.static:	$(OBJ_OPT_DIR) $(OBJ_FILES_OPT)
 
 debug: carmel.${ARCH}.dbg
 
-	$(CC) $(OBJ_FILES_DBG) $(LDFLAGS) --static -o $(BIN)/$@
+carmel.${ARCH}.dbg:	 $(OBJ_DBG_DIR) $(OBJ_FILES_DBG)
+	$(CC) $(OBJ_FILES_DBG) $(LDFLAGS) -o $(BIN)/$@
 #--static
 
 pure: carmel.${ARCH}.pure

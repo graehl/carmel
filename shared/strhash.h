@@ -1,5 +1,6 @@
 #ifndef STRHASH_H
 #define STRHASH_H 1
+#include "config.h"
 #include <iostream>
 
 #include "assert.h"
@@ -15,7 +16,7 @@ public:
   const char *clone()
   {
     char *old = str;
-    str = strcpy(new char[strlen(str)+1], str);
+    str = strcpy(NEW char[strlen(str)+1], str);
     return old;
   }
   void kill()
@@ -91,9 +92,6 @@ public:
   }
 };
 
-#ifdef STRINGPOOL
-HashTable<StringKey, int> StringPool::counts;
-#endif
 
 class Alphabet {
   DynamicArray<char *> names;

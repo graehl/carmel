@@ -32,6 +32,23 @@ private:
  enum { BRIEF,FULL } ArcFormat;
 static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
 static const int arcformat_index; // handle for OutThresh
+void initAlphabet() {
+  trn=NULL;
+#define EPSILON_SYMBOL "*e*"
+  in = NEW Alphabet(EPSILON_SYMBOL);
+  out = NEW Alphabet(EPSILON_SYMBOL);
+  ownerIn=ownerOut=1;
+}
+void deleteAlphabet() {
+    if ( ownerIn ) {
+      delete in;
+      ownerIn = 0;
+    }
+    if ( ownerOut ) {
+      delete out;
+      ownerOut = 0;
+    }
+}
 
 public:
 
@@ -50,7 +67,8 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
   return rand() * (1.f / (RAND_MAX+1.f));
 }
 
-  bool ownerInOut;
+  bool ownerIn;
+  bool ownerOut;
   Alphabet *in;
   Alphabet *out;
   Alphabet stateNames;
@@ -144,13 +162,14 @@ public:
 			states[s].scaleArcs(w);
 		}
 	}
-  WFST() : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) { }
+  WFST() { initAlphabet(); }
 //  WFST(const WFST &a): 
-    //ownerInOut(1), in(((a.in == 0)? 0:(new Alphabet(*a.in)))), out(((a.out == 0)? 0:(new Alphabet(*a.out)))), 
+    //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))), 
     //stateNames(a.stateNames), final(a.final), states(a.states), 
-    //trn(((a.trn ==0)? 0 : (new trainInfo(*a.trn)))){}; // Yaser added this 7-25-2000 copy constructor*/
+    //trn(((a.trn ==0)? 0 : (NEW trainInfo(*a.trn)))){}; // Yaser added this 7-25-2000 copy constructor*/
 
-  WFST(istream & istr) : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) {
+WFST(istream & istr) {
+  initAlphabet();
     if (!this->readLegible(istr))
       final = -1;
   }
@@ -244,7 +263,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   }*/
 
   // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
-  // new weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
+  // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
   void trainBegin(NormalizeMethod method=CONDITIONAL,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
   void trainExample(List<int> &inSeq, List<int> &outSeq, float weight);
   void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
@@ -263,7 +282,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource
   void numberArcsFrom(int labelStart); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1
   void lockArcs();		// put all arcs in group 0 (weights are locked)
-  //  void unTieGroups() { tieGroup.~HashTable(); new (&tieGroup) HashTable<IntKey, int>; }
+  //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<IntKey, int>; }
   void unTieGroups();
   
   
@@ -278,7 +297,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   }
   Weight numNoCyclePaths() const {
 	  if ( !valid() ) return Weight::ZERO;
-    Weight *nPaths = new Weight[numStates()];
+    Weight *nPaths = NEW Weight[numStates()];
     Graph g = makeGraph();
     countNoCyclePaths(g, nPaths, 0);
     delete[] g.states;
@@ -297,24 +316,44 @@ template <class I> int randomPath(I i,int max_len=-1)
                            // to the Arc it corresponds to in the WFST
   Graph makeEGraph() const; // same as makeGraph, but restricted to *e* / *e* arcs
   void ownAlphabet() {
-    if ( !ownerInOut ) {
-      in = new Alphabet(*in);
-      out = new Alphabet(*out);
-      ownerInOut = 1;
+    ownInAlphabet();
+    ownOutAlphabet();
+  }
+  void stealInAlphabet(WFST &from) {
+  if (from.ownerIn && from.in == in) {
+    from.ownerIn=0;
+    ownerIn=1;
+  } else
+    ownInAlphabet();
+  }
+  void stealOutAlphabet(WFST &from) {
+    if (from.ownerOut && from.out == out) {
+      from.ownerOut=0;
+      ownerOut=1;
+    } else
+      ownOutAlphabet();
+  }
+  void ownInAlphabet() {
+    if ( !ownerIn ) {
+      in = NEW Alphabet(*in);
+      ownerIn = 1;
+    }
+  }
+  void ownOutAlphabet() {
+    if ( !ownerOut ) {
+      out = NEW Alphabet(*out);
+      ownerOut = 1;
     }
   }
   void unNameStates() {
     stateNames.~Alphabet();
-    new (&stateNames) Alphabet();
+    PLACEMENT_NEW (&stateNames) Alphabet();
   }
+
   void clear() {
 	unNameStates();
 	states.clear();
-    if ( ownerInOut ) {
-      delete in;
-      delete out;
-      ownerInOut = 0;
-    }
+	deleteAlphabet();
     final = -1;
   }
   ~WFST() {

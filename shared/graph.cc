@@ -1,6 +1,6 @@
+#include "config.h"
 #include "graph.h"
 #include "assert.h"
-#include "config.h"
 #include "Arc.h"
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
@@ -20,14 +20,14 @@ void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(i
 }
 
 Graph reverseGraph(Graph g)
-// Comment by Yaser: This function creates new GraphState[] and because the
+// Comment by Yaser: This function creates NEW GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 // whatever the caller function is responsible for deleting this data.
 // It is not a good programming practice but it will be messy to clean it up.
 //
 
 {
-  GraphState *rev = new GraphState[g.nStates];
+  GraphState *rev = NEW GraphState[g.nStates];
   for ( int i  = 0 ; i < g.nStates ; ++i ){
 	List<GraphArc> &arcs = g.states[i].arcs;
     for ( List<GraphArc>::val_iterator l=arcs.val_begin(),end = arcs.val_end(); l != end; ++l ) {
@@ -114,11 +114,11 @@ Graph shortestPathTreeTo(Graph g, int dest, float *dist)
 {
 	int i;
 
-	   GraphArc **taken = new  /*const*/ GraphArc *[g.nStates];
+	   GraphArc **taken = NEW  /*const*/ GraphArc *[g.nStates];
 	    
 	Graph pg;
 	pg.nStates = g.nStates;
-	pg.states = new GraphState[pg.nStates];
+	pg.states = NEW GraphState[pg.nStates];
   
 	Graph rev_graph = reverseGraph(g);
 	#ifdef DEBUGKBEST
@@ -162,16 +162,16 @@ void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
 
   int nUnknown = nStates;
 
-  DistToState *distQueue = new DistToState[nStates];
+  DistToState *distQueue = NEW DistToState[nStates];
 
-  //  float *weights = new float[nStates];
+  //  float *weights = NEW float[nStates];
   float *weights = dist;
   
   for ( i = 0 ; i < nStates ; ++i ) {
           weights[i] = Weight::HUGE_FLOAT;
   }
 
-  DistToState **stateLocations = new DistToState *[nStates];
+  DistToState **stateLocations = NEW DistToState *[nStates];
   DistToState::weights = weights;
   DistToState::stateLocations = stateLocations;
 
@@ -218,14 +218,14 @@ void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
 }
 
 Graph removeStates(Graph g, bool marked[]) // not tested
-// Comment by Yaser: This function creates new GraphState[] and because the
+// Comment by Yaser: This function creates NEW GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 // whatever the caller function is responsible for deleting this data.
 // It is not a good programming practice but it will be messy to clean it up.
 //
 
 {
-  int *oldToNew = new int[g.nStates];
+  int *oldToNew = NEW int[g.nStates];
   int i = 0, f = 0;
   while ( i < g.nStates )
     if (marked[i])
@@ -233,7 +233,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
     else
       oldToNew[i++] = f++;
 
-  GraphState *reduced = new GraphState[f];
+  GraphState *reduced = NEW GraphState[f];
 
   for ( i = 0 ; i < g.nStates ; ++i )
     if ( !marked[i] ) {

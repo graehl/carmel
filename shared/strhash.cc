@@ -7,3 +7,7 @@ std::ostream & operator << (std::ostream & out, const StringKey &s)
 }
 
 char *StringKey::empty = "";
+
+#ifdef STRINGPOOL
+HashTable<StringKey, int> StringPool::counts;
+#endif
