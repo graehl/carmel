@@ -137,6 +137,15 @@ public:
           PLACEMENT_NEW(p) T(val);
   }
 
+        const T& front()  const {
+          Assert(size());
+          return *begin();
+        }
+        const T& back() const {
+          Assert(size());
+          return *(end()-1);
+        }
+
         T& front() {
           Assert(size());
           return *begin();
@@ -463,8 +472,16 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
         }
         return *r;
   }
+        const T& front()  const {
+          Assert(size());
+          return *begin();
+        }
+        const T& back() const {
+          Assert(size());
+          return *(end()-1);
+        }
 
-        T& front()  {
+        T& front() {
           Assert(size());
           return *begin();
         }
