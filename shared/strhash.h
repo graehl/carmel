@@ -54,7 +54,7 @@ public:
   }
 };
 
-ostream & operator << (ostream & out, const StringKey &s);
+std::ostream & operator << (std::ostream & out, const StringKey &s);
 
 
 class StringPool {
@@ -222,7 +222,7 @@ public:
 	StringPool::giveBack(names[i]);
 #endif
   }
-  friend ostream & operator << (ostream &out, Alphabet &alph);
+  friend std::ostream & operator << (std::ostream &out, Alphabet &alph);
 };
 
 #endif

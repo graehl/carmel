@@ -23,7 +23,7 @@ struct GraphArc {
   void *data;
 };
 
-ostream & operator << (ostream &out, const GraphArc &a);
+std::ostream & operator << (std::ostream &out, const GraphArc &a);
 
 struct GraphState {
   List<GraphArc> arcs;
@@ -76,6 +76,6 @@ Graph shortestPathTree(Graph g, int dest, float *dist);
 
 Graph removeStates(Graph g, bool marked[]); // not tested
 
-void printGraph(Graph g, ostream &out);
+void printGraph(Graph g, std::ostream &out);
 
 #endif

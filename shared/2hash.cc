@@ -9,15 +9,8 @@
 
 #include "2hash.h"
 
-int pow2Bound(int request) {
-  Assert(request < (2 << 29));
-  int mask = 2;
-  for ( ; mask < request ; mask <<= 1 ) ;
-  return mask;
-}
-
-template <class K, class V>
-ostream & operator << (ostream & o, const Entry<K,V> & e)
+template <typename K, typename V>
+std::ostream & operator << (std::ostream & o, const Entry<K,V> & e)
 {
   o << "Next: " << (e.next ? "Yes" : "No") << "\tKey: " << e.key << "\tVal: " << e.val;
   return o;

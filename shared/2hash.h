@@ -10,19 +10,26 @@
 #define HASH_H
 
 
-#include <iostream.h>
-#include <stdlib.h>
-#include <new.h>
+#include <iostream>
+#include <cstdlib>
+#include <new>
 #include "assert.h"
 
-const float DEFAULTHASHLOAD = .8;
-template <class K, class V> class HashTable ;
-template <class K, class V> class HashIter ;
-template <class K, class V> class HashConstIter ;
+const float DEFAULTHASHLOAD = .8f;
+template <typename K, typename V> class HashTable ;
+template <typename K, typename V> class HashIter ;
+template <typename K, typename V> class HashConstIter ;
 
 int pow2Bound(int request);
 
-template <class K, class V> class Entry {
+inline int pow2Bound(int request) {
+  Assert(request < (2 << 29));
+  int mask = 2;
+  for ( ; mask < request ; mask <<= 1 ) ;
+  return mask;
+}
+
+template <typename K, typename V> class Entry {
   Entry<K,V> *next;
   Entry operator =(Entry &);	//disallow
   //operator =(Entry &);	//disallow
@@ -67,16 +74,16 @@ public:
 // version 2.7.2 or older of gcc compiler does not understand '<>' so it will give
 // an error message if '<>' is present. However, it is required by newer versions
 // of the compiler and if it is not present, a warning will be given 
-  friend ostream & operator << (ostream &, const Entry<K,V> &);
+  friend std::ostream & operator << (std::ostream &, const Entry<K,V> &);
 #else
-  friend ostream & operator << <> (ostream &, const Entry<K,V> &);
+  friend std::ostream & operator << <> (std::ostream &, const Entry<K,V> &);
 #endif
 };
 
-template <class K, class V>
-ostream & operator << (ostream & o, const Entry<K,V> & e);
+template <typename K, typename V>
+std::ostream & operator << (std::ostream & o, const Entry<K,V> & e);
 
-template <class K, class V> class HashIter {
+template <typename K, typename V> class HashIter {
   HashTable<K,V> &ht;
   Entry<K,V> **bucket;
   Entry<K,V> *entry;
@@ -127,7 +134,7 @@ public:
   }
 };
 
-template <class K, class V> class HashConstIter { // Yaser added this - 7-27-2000
+template <typename K, typename V> class HashConstIter { // Yaser added this - 7-27-2000
   const HashTable<K,V> &ht;
   Entry<K,V> ** bucket;
   const Entry<K,V> *entry;
@@ -173,7 +180,7 @@ public:
   const V & val() const { return entry->val; }
 };
 
-template <class K, class V> class HashTable {
+template <typename K, typename V> class HashTable {
 protected:
   int siz;  // always a power of 2, stored as 1 less than actual for fast mod operator (implemented as and)
   int cnt;

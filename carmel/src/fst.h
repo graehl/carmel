@@ -12,15 +12,16 @@
 
 #define CUSTOMNEW
 #ifdef _MSC_VER
-#pragma includealias (<strstream.h>, <strstrea.h>)
+//#pragma includealias (<strstream.h>, <strstrea.h>)
 #endif
 
 #include <vector>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <strstream.h>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <strstream>
+#include <iostream>
 #include "2hash.h"
 #include "list.h"
 #include "weight.h"
@@ -30,7 +31,7 @@
 #include "train.h"
 #include "assert.h"
 #include "compose.h"
-
+using namespace std;
 #define true 1
 #define false 0
 
@@ -52,10 +53,17 @@ class WFST {
   int readLegible(istream &);	// returns 0 on failure (bad input)
   void writeLegible(ostream &);
   int numStates() const { return states.count(); }
-  template <typename T>
-    void insertPathArc(GraphArc *gArc, List<T>*,List<T>::iterator &p);  
-  template <typename T>
-    void insertShortPath(int source, int dest, List<T> *,List<T>::iterator &p);
+#ifdef _MSC_VER
+typedef PathArc T;
+#else
+template <typename T>
+#endif   
+void insertPathArc(GraphArc *gArc, List<T>*,List<T>::iterator &p);  
+#ifdef _MSC_VER
+#else
+template <typename T>
+#endif    
+void insertShortPath(int source, int dest, List<T> *,List<T>::iterator &p);
   static int indexThreshold;
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
   trainInfo *trn;

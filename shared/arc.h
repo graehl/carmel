@@ -18,7 +18,7 @@ struct PathArc {
   Weight weight;
 };
 
-ostream & operator << (ostream & o, const PathArc &p);
+std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 struct Arc {
   int in;
@@ -32,9 +32,9 @@ struct Arc {
 
 typedef Arc *HalfArc;
 
-void printArc(void *arc, ostream &out);
+void printArc(void *arc, std::ostream &out);
 
-ostream & operator << (ostream &out,const Arc &a); // Yaser 7-20-2000
+std::ostream & operator << (std::ostream &out,const Arc &a); // Yaser 7-20-2000
 						  
 struct UnArc {
   int in;

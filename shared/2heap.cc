@@ -10,8 +10,7 @@
 #include "2heap.h"
 #include "kbest.h"
 
-
-template <class T> void heapSort (T *heapStart, T *heapEnd)
+template <typename T> void heapSort (T *heapStart, T *heapEnd)
 {
   heapBuild(heapStart, heapEnd);
   T *heap = heapStart - 1;	// to start numbering of array at 1
@@ -26,7 +25,7 @@ template <class T> void heapSort (T *heapStart, T *heapEnd)
 }
 
 
-template <class T> void treeHeapAdd(T *&heapRoot, T *node)
+template <typename T> void treeHeapAdd(T *&heapRoot, T *node)
 {
   T *oldRoot = heapRoot;
   if ( !oldRoot ) {

@@ -8,7 +8,7 @@
 *******************************************************************************/
 #include "strhash.h"
 
-ostream & operator << (ostream & out, const StringKey &s)
+std::ostream & operator << (std::ostream & out, const StringKey &s)
 {
   out << (char *)(StringKey)s;
   return out;

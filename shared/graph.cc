@@ -12,7 +12,7 @@
 #include "assert.h"
 #include "node.h"
 
-ostream & operator << (ostream &out, const GraphArc &a)
+std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
   return out << '(' << a.source << ' ' << a.dest << ' ' << a.weight << ')';
 }
@@ -126,7 +126,7 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
 
 float *DistToState::weights = NULL;
 DistToState **DistToState::stateLocations = NULL;
-float DistToState::unreachable = HUGE_VAL;
+float DistToState::unreachable = HUGE_FLOAT;
 
 inline bool operator < (DistToState lhs, DistToState rhs) {
   return DistToState::weights[lhs.state] > DistToState::weights[rhs.state];
@@ -162,7 +162,7 @@ Graph shortestPathTree(Graph g, int dest, float *dist)
   float *weights = dist;
   int i;
   for ( i = 0 ; i < nStates ; ++i ) {
-    weights[i] = HUGE_VAL;
+    weights[i] = HUGE_FLOAT;
   }
   
   DistToState **stateLocations = new DistToState *[nStates];
@@ -187,7 +187,7 @@ Graph shortestPathTree(Graph g, int dest, float *dist)
 
   float candidate;
   for ( ; ; ) {
-    if ( (float)distQueue[0] == HUGE_VAL || nUnknown == 0 ) {
+    if ( (float)distQueue[0] == HUGE_FLOAT || nUnknown == 0 ) {
       break;
     }
     int targetState, activeState = distQueue[0].state;
@@ -260,7 +260,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
   return ret;
 }
 
-void printGraph(const Graph g, ostream &out)
+void printGraph(const Graph g, std::ostream &out)
 {
   for ( int i = 0 ; i < g.nStates ; ++i ) {
     out << i;
