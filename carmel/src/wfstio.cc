@@ -296,7 +296,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
     finalName.clone();
   else
     final=getStateIndex(buf);
-Assert( in->find(EPSILON_SYMBOL)==0 && out->find(EPSILON_SYMBOL)==0 );
+Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
   for ( ; ; ) {
     if ( !(istr >> c) )
       break;
@@ -500,7 +500,7 @@ void WFST::writeLegible(ostream &os)
   const char *inLet, *outLet, *destState;
 
   if ( !valid() ) return;
-Assert( in->find(EPSILON_SYMBOL)==0 && out->find(EPSILON_SYMBOL)==0 );
+Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
   os << stateName(final);
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
