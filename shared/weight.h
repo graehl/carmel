@@ -116,7 +116,7 @@ out_always_real(std::basic_ostream<A,B>& os);
   {
 #ifdef WEIGHT_CORRECT_ZERO
 	  if (isZero())
-		return;
+		return *this;
 #endif
     weight += w.weight;
     return *this;
@@ -125,7 +125,7 @@ out_always_real(std::basic_ostream<A,B>& os);
   {
 #ifdef WEIGHT_CORRECT_ZERO
 	  if (isZero())
-		return;
+		return *this;
 #endif
     weight -= w.weight;
     return *this;
