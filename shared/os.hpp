@@ -30,6 +30,7 @@
  }
 
 #else
+# include <unistd.h>
  inline long get_process_id() {
      return getpid();
  }

@@ -449,10 +449,11 @@ inline std::string concat(const S &s,const T& suffix) {
 
 #include <ctime>
 #include "os.hpp"
-unsigned default_random_seed() {
+unsigned default_random_seed()
+{
 //    long pid=get_process_id();
 # ifdef USE_NONDET_RANDOM
-    return boost::random_device().operator()()
+    return boost::random_device().operator()();
 # else
         unsigned pid=get_process_id();
     return std::time(0) + pid + (pid << 16);
