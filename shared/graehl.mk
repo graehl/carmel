@@ -226,8 +226,8 @@ allclean: distclean
 	-rm -rf $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
 
 ifeq ($(MAKECMDGOALS),depend)
-endif
 DEPEND=1
+endif
 
 
 %.d: %.$(CPP_EXT)
