@@ -1,4 +1,4 @@
-#.SUFFIXES:
+.SUFFIXES:
 .PHONY = distclean all clean depend default dirs
 # always execute
 ifndef ARCH
@@ -14,8 +14,12 @@ OBJ_BOOST = $(OBJ)/boost
 OBJ_DEBUG = $(OBJ)/debug
 BIN = $(BASEBIN)/$(ARCH)
 
+ifeq ($(CPP_EXT),)
+CPP_EXT=cpp
+endif
+
 BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp  unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
-BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJ_BOOST)/%.o)
+BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.$(CPP_EXT)=$(OBJ_BOOST)/%.o)
 BOOST_TEST_LIB=$(OBJ_BOOST)/libtest.a
 BOOST_DIR=/home/graehl/isd/boost
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
@@ -59,22 +63,22 @@ $(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
 	ranlib $@
 
 .PRECIOUS: $(OBJ_BOOST)/%.o
-$(OBJ_BOOST)/%.o:: $(BOOST_TEST_SRC_DIR)/%.cpp
+$(OBJ_BOOST)/%.o:: $(BOOST_TEST_SRC_DIR)/%.$(CPP_EXT)
 	echo COMPILE boost $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ_TEST)/%.o
-$(OBJ_TEST)/%.o:: %.cpp %.d
+$(OBJ_TEST)/%.o:: %.$(CPP_EXT) %.d
 	echo COMPILE test $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
-$(OBJ)/%.o:: %.cpp %.d
+$(OBJ)/%.o:: %.$(CPP_EXT) %.d
 	echo COMPILE $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ_DEBUG)/%.o
-$(OBJ_DEBUG)/%.o:: %.cpp %.d
+$(OBJ_DEBUG)/%.o:: %.$(CPP_EXT) %.d
 	echo COMPILE debug $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
 
@@ -90,7 +94,7 @@ distclean: clean
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
-%.d: %.cpp
+%.d: %.$(CPP_EXT)
 	echo CREATE DEPENDENCIES for $<
 	set -e; [ x$(DEPEND) != x ] && $(CXX) -c -MM $(TESTCXXFLAGS) $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
