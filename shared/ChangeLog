@@ -1,3 +1,8 @@
+2005-01-27  Jonathan Graehl  <graehl@isi.edu>
+
+	* normalize.hpp: add-k-smoothing (denominator) (set directly or in
+	constructor)
+
 2004-09-23  Jonathan Graehl  <graehl@isi.edu>
 
 	* weight.h: e^-2.68116e+11 -2.68116e+11ln 
