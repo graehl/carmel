@@ -1,5 +1,5 @@
-#ifndef _GRAPH_HPP
-#define _GRAPH_HPP
+#ifndef GRAPH_HPP
+#define GRAPH_HPP
 
 // graph_object<G,(vertex|edge|hyperarc)_t>, visit(edge_tag,g) ...
 

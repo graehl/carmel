@@ -1,5 +1,5 @@
-#ifndef _TREE_HPP
-#define _TREE_HPP
+#ifndef TREE_HPP
+#define TREE_HPP
 
 #include <iostream>
 #include "myassert.h"

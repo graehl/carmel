@@ -1,5 +1,5 @@
-#ifndef _IO_HPP
-#define _IO_HPP
+#ifndef IO_HPP
+#define IO_HPP
 
 #include "genio.h"
 
@@ -23,6 +23,30 @@ struct DefaultWriter
           return o << l;
          }
 };
+
+struct LineWriter
+{
+  template <class charT, class Traits,class Label>
+        std::basic_ostream<charT,Traits>&
+         operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
+      return o << l << std::endl;
+         }
+};
+
+template <class W,class O=std::ostream>
+struct BindWriter : public W
+{
+    O &o;
+    BindWriter(O &o_,const W &w_=W()) : o(o_),W(w_) {}
+    BindWriter(const BindWriter<O,W> &r) :o(r.o),W(r) {}
+    template <class L>
+    O &
+    operator()(const L &l) const
+    {
+        return ((W*)this)->operator()(o,l);
+    }
+};
+
 
 template <class Label>
     struct max_reader {

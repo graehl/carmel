@@ -1,5 +1,5 @@
-#ifndef _INDEXGRAPH_HPP
-#define _INDEXGRAPH_HPP
+#ifndef INDEXGRAPH_HPP
+#define INDEXGRAPH_HPP
 
 #include "container.hpp"
 

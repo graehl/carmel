@@ -1,5 +1,5 @@
-#ifndef _INTORPOINTER_HPP
-#define _INTORPOINTER_HPP
+#ifndef INTORPOINTER_HPP
+#define INTORPOINTER_HPP
 
 #include "myassert.h"
 #include "genio.h"

@@ -1,5 +1,5 @@
-#ifndef _NORMALIZE_HPP
-#define _NORMALIZE_HPP
+#ifndef NORMALIZE_HPP
+#define NORMALIZE_HPP
 
 #include "dynarray.h"
 
@@ -12,6 +12,8 @@
 #include "funcs.hpp"
 #include <algorithm>
 #include "debugprint.hpp"
+#include "swapbatch.hpp"
+
 
 //FIXME: leave rules that don't occur in normalization groups alone (use some original/default value)
 template <class W>
@@ -20,53 +22,48 @@ struct NormalizeGroups {
     typedef PointerOffset<W> value_type; // pointer offsets
     typedef Array<value_type> Group;
     typedef SwapBatch<Group> Groups;
-    struct max_accum {
-        T max;
+    max_in_accum<value_type> max_offset;
+    size_accum<size_t> total_size;
 
-        max_accum() : max() {}
-        template <class T>
-        void operator()(const T& t) {
-            if (max < t)
-                max = t;
-        }
-        operator T &() { return max; }
-    };
-    max_accum<value_type> max_offset;
-
-    NormalizeGroups(std::string basename,unsigned batchsize,value_type watch_value)  : norm_groups(basename,batchsize)
+    NormalizeGroups(std::string basename,unsigned batchsize)  : norm_groups(basename,batchsize)
     {
-        if (watch_value.get_offset())
+        //,value_type watch_value
+//        if (watch_value.get_offset())
 
     }
 
     Groups norm_groups;
 
+    template <class charT, class Traits>
+    void
+    get_from(std::basic_ifstream<charT,Traits>& in)
+    {
+        norm_groups.read_all_enumerate(in,make_both_functors_byref(max_offset,total_size));
+    }
 
-    value_type max_offset;
     unsigned num_groups() const {
         return norm_groups.size();
     }
-    unsigned num_params() const {
-        unsigned sum=0;
-        for (typename Groups::const_iterator i=norm_groups.begin(),e=norm_groups.end();i!=e;++i)
-            sum+=i->size();
-        return sum;
+    //FIXME: accumulate on read
+    size_t num_params()  const {
+        return total_size;
     }
-    Group *find_group_holding(value_type v) {
+    typename Groups::iterator find_group_holding(value_type v) {
         typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();
         DBPC3("find group",v,norm_groups);
         for (;i!=e;++i) {
             DBP_ADD_VERBOSE(2);
-            DBP2(i,v);
-            typename Group::iterator e2=i->end();
-            if (std::find(i->begin(),e2,v) != e2)
-                return &(*i);
+            DBP2(*i,v);
+            Group &gi=*i;
+            typename Group::iterator e2=gi.end();
+            if (std::find(gi.begin(),e2,v) != e2)
+                return i;
         }
-        return NULL;
+        return e;
     }
 
     size_t max_index() const {
-        return max_offset.get_index();
+        return max_offset.max.get_index();
     }
     size_t required_size() const {
         return max_index()+1;
@@ -189,7 +186,7 @@ struct NormalizeGroups {
         normalize(array_base,array_base);
     }
     void normalize(W *array_base, W* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, ostream *_log=NULL) {
-#ifdef 0
+#if 0
         // don't need: no longer global
         SetLocal<W*> g1(base,array_base);
        SetLocal<W*> g2(dest,_dest);
@@ -211,14 +208,19 @@ struct NormalizeGroups {
         enumerate(norm_groups,ref(*this));
         DBPC2("After normalize:",Array<W>(dest,dest+size));
     }
+    GENIO_print_on
+    {
+        return norm_groups.print_on(o);
+    }
+
 };
 
 template <class charT, class Traits,class C>
-std::basic_istream<charT,Traits>&
+std::basic_ifstream<charT,Traits>&
 operator >>
-(std::basic_istream<charT,Traits>& is, NormalizeGroups<C> &arg)
+(std::basic_ifstream<charT,Traits>& is, NormalizeGroups<C> &arg)
 {
-    arg.norm_groups.read_all_enumerate(is,ref(arg.max_offset));
+    arg.get_from(is);
     return is;
 }
 
@@ -226,9 +228,16 @@ operator >>
 template <class charT, class Traits,class C>
 std::basic_ostream<charT,Traits>&
 operator <<
-    (std::basic_ostream<charT,Traits>& os, const NormalizeGroups<C> &arg)
+    (std::basic_ostream<charT,Traits>& o, const NormalizeGroups<C> &arg)
 {
-    return os << arg.norm_groups;
+//    return os << arg.norm_groups;
+/*    os << "(\n";
+    arg.norm_groups.enumerate(LineWriter());
+    os << ")\n";
+*/
+    arg.print_on(o);
+    return o;
+
 }
 
 #ifdef TEST

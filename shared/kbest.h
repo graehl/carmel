@@ -1,5 +1,5 @@
 #ifndef KBEST_H
-#define KBEST_H 1
+#define KBEST_H
 
 #include "graph.h"
 #include "myassert.h"

@@ -1,5 +1,5 @@
-#ifndef _BYREF_HPP
-#define _BYREF_HPP
+#ifndef BYREF_HPP
+#define BYREF_HPP
 
 //boost::ref and boost::cref that return instances of boost::reference_wrapper<T>
 // boost::unwrap_reference<T>::type = T

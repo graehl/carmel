@@ -1,5 +1,5 @@
-#ifndef _OUTEDGES_HPP
-#define _OUTEDGES_HPP
+#ifndef OUTEDGES_HPP
+#define OUTEDGES_HPP
 
 #include <boost/graph/graph_traits.hpp>
 #include "hypergraph.hpp"

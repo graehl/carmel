@@ -1,5 +1,5 @@
-#ifndef _EM_HPP
-#define _EM_HPP
+#ifndef EM_HPP
+#define EM_HPP
 
 #include "config.h"
 #include "weight.h"

@@ -1,5 +1,5 @@
-#ifndef _DUMMY_HPP
-#define _DUMMY_HPP
+#ifndef DUMMY_HPP
+#define DUMMY_HPP
 
 template <class C>
 struct dummy {

@@ -1,5 +1,5 @@
-#ifndef _SYMBOL_HPP
-#define _SYMBOL_HPP
+#ifndef SYMBOL_HPP
+#define SYMBOL_HPP
 // no separate implementation for now, just #define MAIN in one source file that includes this
 
 //#include "weight.h"

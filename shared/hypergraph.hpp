@@ -1,5 +1,5 @@
-#ifndef _HYPERGRAPH_HPP
-#define _HYPERGRAPH_HPP
+#ifndef HYPERGRAPH_HPP
+#define HYPERGRAPH_HPP
 
 // adjacency lists (rules or var+rule leaving state) - should be able to use boost dijkstra
 // reverse var+rule index allowing djikstra-ish best-tree and completely-derivable detection

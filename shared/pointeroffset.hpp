@@ -1,5 +1,5 @@
-#ifndef _POINTEROFFSET_HPP
-#define _POINTEROFFSET_HPP
+#ifndef POINTEROFFSET_HPP
+#define POINTEROFFSET_HPP
 
 #include "myassert.h"
 #include "genio.h"
@@ -103,10 +103,13 @@ struct PointerOffset {
         return offset_ptradd(base,offset);
     }
     void operator =(PointerOffset<C> c) { offset=c.offset; }
-    bool operator ==(PointerOffset<C> c) { return offset==c.offset; }
-    bool operator <(PointerOffset<C> c) { return offset<c.offset; }
-    bool operator !=(PointerOffset<C> c) { return offset!=c.offset; }
 
+    bool operator ==(PointerOffset<C> c) const { return offset==c.offset; }
+    bool operator <(PointerOffset<C> c) const { return offset<c.offset; }
+    bool operator <=(PointerOffset<C> c) const { return offset<=c.offset; }
+    bool operator !=(PointerOffset<C> c) const { return offset!=c.offset; }
+
+/*
 //    operator value_type &() { return offset; }
     template <class It>
     struct indirect_iterator : public std::iterator_traits<It> {
@@ -118,8 +121,6 @@ struct PointerOffset {
         Base base;
         explicit indirect_iterator(Base _base) : base(_base) {}
         indirect_iterator() {}
-/*        template <class C2>
-          indirect_iterator(const C2 &_i) : i(_i) {}*/
         indirect_iterator(Base _base, It _i) : i(_i),base(_base) {}
         indirect_iterator(const Self &o) : i(o.i),base(o.base) {}
         Self & operator =(const Self &o) {
@@ -179,6 +180,7 @@ struct PointerOffset {
         value_type & operator *() { return get_value(); }
         value_type * operator ->() { return &get_value(); }
     };
+*/
 };
 
 template <class T>

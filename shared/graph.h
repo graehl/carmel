@@ -1,5 +1,5 @@
 #ifndef GRAPH_H
-#define GRAPH_H 1
+#define GRAPH_H
 #include "config.h"
 
 #include <iostream>
@@ -47,11 +47,11 @@ class TopoSort {
   IntPusher o;
   int n_back_edges;
  public:
-	
-  TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) { 
-    done = NEW bool[g.nStates]; 
+
+  TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) {
+    done = NEW bool[g.nStates];
     begun = NEW bool[g.nStates];
-    for (unsigned i=0;i<g.nStates;++i) 
+    for (unsigned i=0;i<g.nStates;++i)
       done[i]=begun[i]=false;
   }
   void order_all() {
@@ -63,7 +63,7 @@ class TopoSort {
   void order(bool all=true) {
     for ( unsigned i = 0 ; i < g.nStates ; ++i )
       if ( all || !g.states[i].arcs.empty() )
-	order_from(i);
+    order_from(i);
   }
   int get_n_back_edges() const { return n_back_edges; }
   void order_from(int s) {
@@ -92,7 +92,7 @@ struct DistToState {
   static FLOAT_TYPE *weights;
   static FLOAT_TYPE unreachable;
   operator FLOAT_TYPE() const { return weights[state]; }
-  void operator = (DistToState rhs) { 
+  void operator = (DistToState rhs) {
     stateLocations[rhs.state] = this;
     state = rhs.state;
   }

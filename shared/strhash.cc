@@ -1,5 +1,5 @@
-#ifndef _STRHASH_CC
-#define _STRHASH_CC
+#ifndef STRHASH_CC
+#define STRHASH_CC
 
 #define BOOST_AUTO_TEST_MAIN
 

@@ -1,5 +1,5 @@
-#ifndef _CHARBUF_HPP
-#define _CHARBUF_HPP
+#ifndef CHARBUF_HPP
+#define CHARBUF_HPP
 
 // no separate implementation for now, just #define MAIN in one source file that includes this
 #include "dynarray.h"

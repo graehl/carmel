@@ -1,5 +1,5 @@
 #ifndef TWO_HEAP_H
-#define TWO_HEAP_H 1
+#define TWO_HEAP_H
 
 #include <cstdlib>
 using std::size_t;
@@ -12,8 +12,8 @@ template <typename T> size_t heapSize ( T *s, T *e )
   return e - s;
 }
 
-template <typename T> void heapAdd ( T *heapStart, T *heapEnd, const T& elt ) 
-     // caller is responsbile for ensuring that *heapEnd is allocated and 
+template <typename T> void heapAdd ( T *heapStart, T *heapEnd, const T& elt )
+     // caller is responsbile for ensuring that *heapEnd is allocated and
      // safe to store the element in (and keeping track of increased size)
 {
   T *heap = heapStart - 1;
@@ -48,7 +48,7 @@ template <typename T> static void heapify ( T *heap, size_t heapSize, size_t i) 
 
 template <typename T> void heapPop (T *heapStart, T *heapEnd)
 {
-  T *heap = heapStart - 1;	// to start numbering of array at 1
+  T *heap = heapStart - 1;  // to start numbering of array at 1
   size_t heapSize = heapEnd - heapStart;
   heap[1] = heap[heapSize--];
   heapify(heap, heapSize, 1);
@@ -143,13 +143,13 @@ template <typename T> T *newTreeHeapAdd(T *heapRoot, T *node)
     node->right = newRoot->right;
     node->nDescend = newRoot->nDescend;
     if ( goLeft )
-      node->left = newTreeHeapAdd(node->left, newRoot);      
+      node->left = newTreeHeapAdd(node->left, newRoot);
     else
       node->right = newTreeHeapAdd(node->right, newRoot);
     return node;
   } else {
     if (goLeft)
-      newRoot->left = newTreeHeapAdd(newRoot->left, node);    
+      newRoot->left = newTreeHeapAdd(newRoot->left, node);
     else
       newRoot->right = newTreeHeapAdd(newRoot->right, node);
     return newRoot;
@@ -168,23 +168,23 @@ inline void heapPop (C & heap) {
   heap.pop_back();
 }
 
-template <typename C> 
+template <typename C>
 inline void heapAdd ( C &heap, const typename C::value_type& elt ) {
   heap.push_back();
   heapAdd(heap.begin(),heap.end()-1,elt);
 }
 
-template <typename C> 
+template <typename C>
 inline void heapBuild ( C &heap ) {
   heapBuild(heap.begin(),heap.end());
 }
 
-template <typename C> 
+template <typename C>
 inline void heapAdjustUp ( C &heap, typename C::iterator element) {
   heapAdjustUp(heap.begin(),element);
 }
 
-template <typename C> 
+template <typename C>
 inline void heapSort ( C &heap ) {
   heapBuild(heap.begin(),heap.end());
 }

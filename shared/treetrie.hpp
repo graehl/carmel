@@ -1,5 +1,5 @@
-#ifndef _TREETRIE_HPP
-#define _TREETRIE_HPP
+#ifndef TREETRIE_HPP
+#define TREETRIE_HPP
 
 #include "symbol.hpp"
 #include "tree.hpp"

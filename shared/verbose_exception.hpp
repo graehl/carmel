@@ -1,5 +1,5 @@
-#ifndef _VERBOSE_EXCEPTION_HPP
-#define _VERBOSE_EXCEPTION_HPP
+#ifndef VERBOSE_EXCEPTION_HPP
+#define VERBOSE_EXCEPTION_HPP
 
 #include <exception>
 #include <iostream>

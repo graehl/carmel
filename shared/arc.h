@@ -1,5 +1,5 @@
-#ifndef _ARC_H
-#define _ARC_H
+#ifndef ARC_H
+#define ARC_H
 
 #include "config.h"
 #include "weight.h"
@@ -11,13 +11,13 @@ struct Arc {
   int out;
   int dest;
   Weight weight;
-  int groupId;  
-  Arc(int i, int o, int d, Weight w,int g = -1) : 
+  int groupId;
+  Arc(int i, int o, int d, Weight w,int g = -1) :
     in(i), out(o), dest(d), weight(w), groupId(g){}
 };
 
 
-inline 
+inline
 std::ostream & operator << (std::ostream &out,const Arc &a) {
   out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
   return(out);
@@ -25,7 +25,7 @@ std::ostream & operator << (std::ostream &out,const Arc &a) {
 
 typedef Arc *HalfArc;
 
-						  
+
 struct UnArc {
   int in;
   int out;
@@ -45,7 +45,7 @@ template<>
 struct hash<UnArc>
 {
   size_t operator()(const UnArc &x) const {
-	return x.hash();
+    return x.hash();
   }
 };
 HASHNS_E
@@ -54,4 +54,4 @@ HASHNS_E
 BEGIN_HASH(UnArc) {
   return x.hash();
 } END_HASH
-#endif 
+#endif

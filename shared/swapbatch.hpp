@@ -8,6 +8,8 @@
 #include <boost/lexical_cast.hpp>
 #include "backtrace.hpp"
 #include "stackalloc.hpp"
+#include "genio.h"
+#include "debugprint.hpp"
 
 #ifdef HINT_SWAPBATCH_BASE
 # ifdef BOOST_IO_WINDOWS
@@ -77,6 +79,8 @@
 
 template <class B>
 struct SwapBatch {
+    typedef SwapBatch<B> Self;
+
     typedef B BatchMember;
     typedef std::size_t size_type; // boost::intmax_t
 
@@ -92,7 +96,7 @@ struct SwapBatch {
         Cont *cthis;
         unsigned batch;
         size_type *header;
-        reference operator *()
+        reference operator *() const
         {
             Assert(batch < cthis->n_batch);
             cthis->load_batch(batch);
@@ -144,7 +148,32 @@ struct SwapBatch {
         {
             return ! operator==(o);
         }
+        operator bool () const  // safe bool
+        {
+            return !is_end();
+        }
+
+        GENIO_print_on
+        {
+            if (is_end())
+                o << "end";
+            else {
+                SDBP4(o,cthis,batch,header,operator*());
+            }
+        }
+
     };
+
+    GENIO_print_on
+    {
+//        SDBP5(o,basename,n_batch,batchsize,loaded_batch,autodelete);
+        o << "(\n";
+        ((Self *)this)->enumerate(BindWriter<LineWriter,std::basic_ostream<charT,Traits> >(o));
+        o << ")\n";
+        return GENIOGOOD;
+    }
+
+
 
     iterator begin()
     {

@@ -1,5 +1,5 @@
 #ifndef GENIO_H
-#define GENIO_H 1
+#define GENIO_H
 
 #include "debugprint.hpp"
 
@@ -367,4 +367,6 @@ typedef std::ios_base::failure genio_exception;
 //#define IFCH_SPACE_COMMENT(a) if (!(skip_comment(in).good()&&(in>>c).good())) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 
 #define GENIORET std::ios_base::iostate
+
+
 #endif

@@ -1,5 +1,5 @@
-#ifndef _MEMLEAK_HPP
-#define _MEMLEAK_HPP
+#ifndef MEMLEAK_HPP
+#define MEMLEAK_HPP
 
 #define PLACEMENT_NEW new
 

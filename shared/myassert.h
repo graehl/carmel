@@ -1,5 +1,5 @@
 #ifndef ASSERT_H
-#define ASSERT_H 1
+#define ASSERT_H
 #include "config.h"
 #include <cassert>
 

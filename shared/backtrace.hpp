@@ -1,5 +1,5 @@
-#ifndef _BACKTRACE_HPP
-#define _BACKTRACE_HPP
+#ifndef BACKTRACE_HPP
+#define BACKTRACE_HPP
 
 #include "dynarray.h"
 #include <exception>
