@@ -25,7 +25,12 @@ struct DefaultWriter
          }
 };
 
-template <class Label>
+#define RAND_READ_TERMINATOR
+template <class Label
+#ifdef RAND_READ_TERMINATOR
+        ,char terminator=')'
+#endif
+          >
 struct RandomReader
 {
     typedef Label value_type;
@@ -35,36 +40,19 @@ struct RandomReader
     template <class charT, class Traits>
     std::basic_istream<charT,Traits>&
     operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
-        while (in) {
             in >> l;
-            double r01=random01();
-            DBP2(r01,prob_keep);
-            if (r01 < prob_keep)
-                break;
-        }
-        return in;
-    }
-};
-
-template <class R>
-struct RandomReaderReader : public R
-{
-    typedef typename R::Label value_type;
-    double prob_keep;
-    RandomReaderReader(double prob_keep_,const R &r=R()) : R(r) {}
-    RandomReaderReader(const RandomReaderReader<R> &r=R()) : prob_keep(r.prob_keep), R((const R&)r) {}
-
-    template <class charT, class Traits>
-    std::basic_istream<charT,Traits>&
-    operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
-        while (in) {
-            R::operator()(in,l);
-            double r01=random01();
-            DBP2(r01,prob_keep);
-            if (r01 < prob_keep)
-                break;
-        }
-        return in;
+            while (in && random01() >= prob_keep) {
+#ifdef RAND_READ_TERMINATOR
+                char c;
+                if (!(in >> c))
+                    break;
+                in.unget();
+                if (c==terminator)
+                    break;
+#endif
+                in >> l;
+            }
+            return in;
     }
 };
 
@@ -193,7 +181,9 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
     EXPECTI_COMMENT_FIRST(in>>c);
     if (c=='(') {
         for(;;) {
-            EXPECTI_COMMENT(in>>c);
+//            EXPECTI_COMMENT(in>>c);
+            if (!(in >> c))
+                goto done;
             if (c==')') {
                 break;
             }

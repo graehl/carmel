@@ -734,7 +734,9 @@ public:
             EXPECTI_COMMENT_FIRST(in>>c);
             if (c=='(') {
                 for(;;) {
-                    EXPECTI_COMMENT(in>>c);
+//                    EXPECTI_COMMENT(in>>c);
+                    if (!(in >> c))
+                        goto done;
                     if (c==')') {
                         break;
                     }
