@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <boost/random.hpp>
 #ifdef USE_NONDET_RANDOM
-# ifdef __CYGWIN__
+# ifndef LINUX_
 #  undef USE_NONDET_RANDOM
 # else 
 #  include <boost/nondet_random.hpp>
