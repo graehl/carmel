@@ -66,19 +66,6 @@ struct SetLocal {
     }
 };
 
-/*
-template <class D>
-struct LocalGlobal : public boost::noncopyable {
-  typedef D value_type;
-  LocalGlobal() : value() {}
-  explicit LocalGlobal(const D& new_value) : value(new_value) {}
-  operator D&() { return value; }
-  //friend struct SetLocal<D>;
-private:
-  D value;
-};
-*/
-
 #ifdef TEST
 #include "test.hpp"
 #endif
