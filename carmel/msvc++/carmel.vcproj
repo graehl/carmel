@@ -34,8 +34,8 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/carmel.exe"
-				LinkIncremental="2"
+				OutputFile="$(OutDir)/../../bin/carmel.win32.debug.exe"
+				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/carmel.pdb"
 				SubSystem="1"
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/carmel.exe"
+				OutputFile="$(OutDir)/../../bin/carmel.win32.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="FALSE"
 				SubSystem="1"
