@@ -63,10 +63,11 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
   //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
   int readLegible(istream &);	// returns 0 on failure (bad input)
+  void writeArc(ostream &, const Arc &);
   void writeLegible(ostream &);
   void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
   int numStates() const { return states.count(); }
-  
+  bool isFinal(int s) { return s==final; }
   void setPathArc(PathArc *pArc,const Arc &a) {
 	  pArc->in = inLetter(a.in);
 	 pArc->out = outLetter(a.out);
