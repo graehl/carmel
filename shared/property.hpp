@@ -2,7 +2,7 @@
 #define _PROPERTY_HPP
 
 #include <boost/property_map.hpp>
-#include <boost/ref.hpp>
+#include "byref.hpp"
 #include "dynarray.h"
 #include <utility>
 
@@ -18,7 +18,7 @@ struct OffsetMap {
   unsigned index(K p) const {
     Assert(p>=begin);
     //Assert(p<begin+values.size());
-    return (unsigned)p-begin;
+    return (unsigned)(p-begin);
   }
   OffsetMap(K beg) : begin(beg) {
   }
@@ -36,15 +36,29 @@ unsigned get(OffsetMap<K> k,K p) {
 }
 
 
+
+template <class P>
+typename P::value_type get(reference_wrapper<P> p,typename P::key_type k) {
+  return get(deref(p),k);
+}
+
+template <class P>
+void put(reference_wrapper<P> p,typename P::key_type k,typename P::value_type v) {
+  return put(deref(p),k,v);
+}
+
+
+
 /* usage:
  ArrayPMapImp<V,O> p;
  graph_algo(g,boost::ref(p));
  */
 template <class V,class O=boost::identity_property_map>
-struct ArrayPMapImp : public
-  boost::put_get_helper<V &,ArrayPMapImp<V,O> >
+struct ArrayPMapImp
+//: public  boost::put_get_helper<V &,ArrayPMapImp<V,O> >
 {
   typedef ArrayPMapImp<V,O> Self;
+  typedef reference_wrapper<Self> PropertyMap;
   //typedef typename graph_traits<G>::hyperarc_descriptor key_type;
 //  typedef ArrayPMap<V,O> property_map;
   typedef O offset_map;
@@ -60,10 +74,10 @@ struct ArrayPMapImp : public
 
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
   ArrayPMapImp(const init_type &init) : ind(init.second), vals(init.first) {}
-  V & operator [](key_type k) const {
     operator Vals & ()  {
       return vals;
     }
+  V & operator [](key_type k) const {
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4267 )
@@ -76,6 +90,20 @@ struct ArrayPMapImp : public
 private:
   //  ArrayPMapImp(Self &s) : vals(s.vals) {}
 };
+
+
+
+
+template <class V,class O>
+V get(const ArrayPMapImp<V,O> &p,typename ArrayPMapImp<V,O>::key_type k) {
+  return p[k];
+}
+
+template <class V,class O>
+void put(ArrayPMapImp<V,O> &p,typename ArrayPMapImp<V,O>::key_type k,V v) {
+  p[k]=v;
+}
+
 
 /*
 template <class V,class O=boost::identity_property_map>
@@ -171,8 +199,8 @@ struct IndexedPairCopier {
   IndexedPairCopier(P1 a_,const P2 b_,const P3 c_) : a(a_),b(b_),c(c_) {}
   template<class I>
     void operator()(I i) {
-      a[i].first = b[i];
-      a[i].second = c[i];
+      deref(a)[i].first = deref(b)[i];
+      deref(a)[i].second = deref(c)[i];
     }
 };
 

@@ -281,70 +281,94 @@ struct ReverseHyperGraph {
   // pi (predecessor map) must also be initialized (to hypergraph_traits<G>::null_hyperarc()?) if you want to detect unreached vertices ... although mu=infty can do as well
   // edgecostmap should be initialized to edge costs
   template <
-    class VertexPredMap=typename property_factory<G,VD>::rebind<HD>::reference,
+    class VertexCostMap=typename VertMapFactory::rebind<typename property_map<graph,edge_weight_t>::cost_type>::reference,
+    //class VertexPredMap=property_factory<graph,VD>::rebind<HD>::reference
+    class VertexPredMap=typename VertMapFactory::rebind<HD>::reference,
       //dummy_property_map
-    class VertexCostMap=typename property_factory<G,VD>::rebind<float>::reference,
-    //class VertexPredMap=property_factory<G,VD>::rebind<HD>::reference
-    
-    class EdgeCostMap=property_map<G,edge_weight_t>
+
+    class EdgeCostMap=property_map<graph,edge_weight_t>
   >
   struct BestTree {
-    typedef typename property_factory<G,VD>::rebind<HD>::implementation DefaultPi;
-    typedef typename property_factory<G,VD>::rebind<float>::implementation DefaultMu;
-    BestTree(Self &rev_,VertexCostMap mu_,VertexPredMap pi_=VertexPredMap(),
-             EdgeCostMap ec=get(edge_weight,rev_.g))
-      :
-      rev(rev_),mu(mu_),pi(pi_),loc(rev_.g),remain_infinum(rev_.g),heap(num_vertices(rev_.g)) {
-        //copy_hyperarc_pmap(rev.g,rev.tails_remain_pmap(),tr);      //already copied above.
-        //copy_hyperarc_pmap(rev.g,ec_,infinum); // can't rely on copying implementation since no API for it
-        visit(hyperarc_tag,
-              make_indexed_pair_copier(ref(remain_infinum),rev.tails_remain_pmap(),ec)); // pair(rem)<-(tr,ev)
-      }   // semi-tricky: loc should be default initialized (void *) to 0
-
+    typedef typename VertMapFactory::rebind<HD>::implementation DefaultPi;
+    typedef typename VertMapFactory::rebind<typename property_map<graph,edge_weight_t>::cost_type>::implementation DefaultMu;
     Self &rev;
     VertexCostMap mu;
     VertexPredMap pi;
-    typedef typename VertMapFactory::rebind<void *> LocMap;
-    typedef typename LocMap::implementation Locs;
+    typedef typename VertMapFactory::rebind<void *> LocFact;
+    typedef typename LocFact::implementation Locs;
 
 
     Locs loc;
 
-    typedef typename VertexCostMap::value_type Cost;
+    //typedef typename unwrap_reference<VertexCostMap>::type::value_type Cost;
+    typedef typename unwrap_reference<EdgeCostMap>::type::value_type Cost;
     struct RemainInf : public std::pair<unsigned,Cost> {
       unsigned & remain() { return first; }
       Cost & cost() { return second; }
     };
-    typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostMap; // lower bound on edge costs
-    typedef typename RemainInfCostMap::implementation RemainInfCosts;
+    typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostFact; // lower bound on edge costs
+    typedef typename RemainInfCostFact::implementation RemainInfCosts;
     RemainInfCosts remain_infinum;
-    typename RemainInfCostMap::reference hyperarc_remain_and_cost_map() {
+    typename RemainInfCostFact::reference hyperarc_remain_and_cost_map() {
       return remain_infinum;
     }
 
     //TailsRemainMap tr;
-    HyperarcLeftMap tr;
+    //HyperarcLeftMap tr;
 
-    typedef HeapKey<VD,VertexCostMap,typename LocMap::reference> Key;
+    typedef HeapKey<VD,VertexCostMap,typename LocFact::reference> Key;
     typedef DynamicArray<Key> Heap;
     Heap heap;
 
+        BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_=VertexPredMap())
+      :
+      rev(r),
+      mu(mu_),
+      pi(pi_),
+      loc(rev.vert_fact),
+      remain_infinum(rev.h_fact),
+      heap(num_vertices(rev.g))
+    {
+      visit(hyperarc_tag,
+            rev.g,
+            make_indexed_pair_copier(ref(remain_infinum),rev.unique_tails_pmap(),get(edge_weight,r.g))); // pair(rem)<-(tr,ev)
+            }
+   // semi-tricky: loc should be default initialized (void *) to 0
+    BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec)
+      :
+      rev(r),
+      mu(mu_),
+      pi(pi_),
+      loc(rev.vert_fact),
+      remain_infinum(rev.h_fact),
+      heap(num_vertices(rev.g))
+    {
+      visit(hyperarc_tag,
+            rev.g,
+            make_indexed_pair_copier(ref(remain_infinum),rev.unique_tails_pmap(),ec)); // pair(rem)<-(tr,ev)
+    }
+
+
     static Cost infinity() {
-      return numeric_limits<Cost>::infinity;
+      return numeric_limits<Cost>::infinity();
     }
     void init_costs(Cost cinit=infinity()) {
       typename GT::pair_vertex_it i=vertices(rev.g);
       for (;i.first!=i.second;++i.first) {
-        put(mu,i.first,cinit);
+        put(mu,*i.first,cinit);
       }
+    }
+    Cost get_inf(HD h) const {
+      return get(remain_infinum,h).cost();
     }
     void init() {
       init_costs();
       for (typename TerminalArcs::iterator i=rev.terminal_arcs.begin(),end=rev.terminal_arcs.end();i!=end;++i) {
         HD h=*i;
         VD v=source(h,rev.g);
-        Cost hc=get(ec,h);
-        Cost &mc=mu[v];
+        Cost hc=get_inf(h);
+        //        typename unwrap_reference<VertexCostMap>::type &dmu(mu);
+        Cost &mc=deref(mu)[v];
         if (hc < mc) {
           mc=hc;
           put(pi,v,h);
@@ -381,22 +405,23 @@ struct ReverseHyperGraph {
     bool was_queued(VD v) {
       return get(loc,v) != NULL;
     }
-    void relax(VD v,HD h,Cost &m) {
+    void relax(VD v,HD h,Cost c) {
+      Cost &m=deref(mu)[v];
       if (c < m) {
         m=c;
-        heapAdjustOrAdd(heap,v);
+        heapAdjustOrAdd(heap,Key(v));
         put(pi,v,h);
       }
     }
     void reach(VD v) {
       Cost cv=get(mu,v);
-      const Adj &a=adj[top.key];
+      const Adj &a=rev[v];
       FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
-        HD h=a.harc;
+        HD h=ad.harc;
         VD head=source(h,rev.g);
         RemainInf &ri=remain_infinum[h];
         Assert(ri.cost() >= 0);
-        ri.cost() += (a.multiplicity*cv);  // assess the cost of reaching v
+        ri.cost() += (ad.multiplicity*cv);  // assess the cost of reaching v
         Assert(ri.remain() > 0);
         if (--ri.remain() == 0) // if v completes the hyperarc, attempt to use it to reach head (more cheaply)
           relax(head,h,ri.cost());
@@ -407,9 +432,9 @@ struct ReverseHyperGraph {
       typename Key::SetLocWeight save(ref(loc),mu);
       heapBuild(heap);
       while(heap.size()) {
-        Key top=heapTop(heap);
+        VD top=heap.front().key;
         heapPop(heap);
-        reach(top.key);
+        reach(top);
       }
     }
   };
@@ -417,23 +442,25 @@ struct ReverseHyperGraph {
 
   // reachmap must be initialized to false by user
   template <
-    class VertexReachMap=typename property_factory<G,VD>::rebind<bool>::reference
+    class VertexReachMap=typename VertMapFactory::rebind<bool>::reference
   >
   struct Reach {
-    typedef typename property_factory<G,VD>::rebind<bool>::implementation DefaultReach;
+    typedef typename VertMapFactory::rebind<bool>::implementation DefaultReach;
     Self &rev;
     VertexReachMap vr;
     HyperarcLeftMap tr;
     unsigned n;
     Reach(Self &r,VertexReachMap v) : rev(r),vr(v),tr(r.unique_tails),n(0) {
-      //copy_hyperarc_pmap(rev.g,rev.tails_remain_pmap(),tr);
+      //copy_hyperarc_pmap(rev.g,rev.unique_tails_pmap(),tr);
       //relying on implementation same type (copy ctor)
     }
 
     void init_unreach() {
       typename GT::pair_vertex_it i=vertices(rev.g);
       for (;i.first!=i.second;++i.first) {
-        put(vr,false);
+                put(vr,*i.first,false);
+        //        deref(vr)[*i.first]=false;
+        //        put(deref(vr),*i.first,false);
       }
     }
     void init() {
@@ -448,16 +475,16 @@ struct ReverseHyperGraph {
     }
     void operator()(VD v) {
       if (get(vr,v))
-      return;
+        return;
       ++n;
       put(vr,v,true); // mark reached
       Adj &a=rev[v];
       for(typename Adj::iterator i=a.begin(),end=a.end(); i!=end; ++i) {
         HD harc=i->harc;
-        VD tail=target(harc,g);
-        if (!get(vr,tail)) { // not reached yet
+        VD head=source(harc,rev.g);
+        if (!get(vr,head)) { // not reached yet
           if (--tr[harc]==0)
-            (*this)(source(harc,g)); // reach head
+            (*this)(head); // reach head
         }
       }
 
@@ -499,7 +526,7 @@ struct ReverseHyperGraph {
      alg.finish();
 
      also
-     typename RemainInfCostMap::reference hyperarc_remain_and_cost_map()
+     typename RemainInfCostFact::reference hyperarc_remain_and_cost_map()
      returns pmap with pmap[hyperarc].remain() == 0 if the arc was usable from the final tail set
      and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
   */
