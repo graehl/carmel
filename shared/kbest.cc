@@ -79,6 +79,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
 {
   Assert(valid());
   List<List<PathArc> > *paths = new List<List<PathArc> >;
+  if (!valid()) {
   //List<List<PathArc> >::iterator insertHere=paths->begin();
   for (int i=0;i<k;) {
 	  paths->push_front(List<PathArc>());
@@ -88,6 +89,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
 		  ++i;
 	  }
 
+  }
   }
   return paths;
 }

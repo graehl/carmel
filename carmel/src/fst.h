@@ -66,10 +66,18 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
   int numStates() const { return states.count(); }
   
   void setPathArc(PathArc *pArc,const Arc &a) {
-	  pArc->in = (*in)[a.in];
-	 pArc->out = (*out)[a.out];
-	  pArc->destState = stateNames[a.dest];
+	  pArc->in = inLetter(a.in);
+	 pArc->out = outLetter(a.out);
+	  pArc->destState = stateName(a.dest);
 	 pArc->weight = a.weight;
+  }
+  std::ostream & printArc(const Arc &a,std::ostream &o) {
+    PathArc p;
+	setPathArc(&p,a);
+	return o << p;
+  }
+  std::ostream & printArc(const Arc &a,int source,std::ostream &o) {
+	return o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out) << " / " << a.weight << ")";
   }
 
 void insertPathArc(GraphArc *gArc, List<PathArc>*);  
@@ -267,13 +275,18 @@ template <class I> int randomPath(I i,int max_len=-1)
     stateNames.~Alphabet();
     new (&stateNames) Alphabet();
   }
-  ~WFST() {
+  void clear() {
+	unNameStates();
+	states.clear();
     if ( ownerInOut ) {
       delete in;
       delete out;
       ownerInOut = 0;
     }
     final = -1;
+  }
+  ~WFST() {
+	  clear();
   }
   void removeMarkedStates(bool marked[]);  // remove states and all arcs to
     // states marked true
@@ -295,16 +308,7 @@ template <class I> int randomPath(I i,int max_len=-1)
 private:
   //  static const int NOGROUP(-1);  
   void invalidate() {		// make into empty/invalid transducer
-    if ( valid() ) {
-      stateNames.~Alphabet();	// safe to call these more than once
-      states.~DynamicArray();
-      if ( ownerInOut ) {
-	delete in;
-	delete out;
-	ownerInOut = 0;
-      }
-      final = -1;
-    }
+	clear();
   }
 };
 

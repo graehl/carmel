@@ -406,8 +406,11 @@ inline bool lesscost(const PFI &l, const PFI &r) {
 
 void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
 {
-	int i;
 	  Assert(valid());
+#ifdef DEBUGPRUNE
+	Config::debug() << "Prune - keep up to " << max_states << " states, and paths within " << keep_paths_within_ratio << std::endl;
+#endif
+	int i;
 	  bool all_paths = keep_paths_within_ratio.isInfinity();
 	  if (max_states == UNLIMITED && all_paths)
 		  return;
@@ -424,9 +427,9 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
 	PFI *best_path_cost = new PFI[n_states];
 	shortestDistancesFrom(for_graph,0, for_dist,NULL);
 	shortestDistancesFrom(rev_graph,final, rev_dist,NULL);
-	float best_path = for_dist[0];
+	float best_path = for_dist[final];
 	float worst_path = best_path + worst_d_dist;
-	Assert(best_path == rev_dist[final]);
+	Assert(best_path == rev_dist[0]);
 	for (i=0;i<n_states;++i) {
 		best_path_cost[i].first = for_dist[i] + rev_dist[i];
 		best_path_cost[i].second = i;
@@ -434,24 +437,34 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
 	
 	std::sort(best_path_cost,best_path_cost+n_states,lesscost);
 	// now we have a list of states in order of increasing cost (poorness)
-	
+#ifdef DEBUGPRUNE
+	Config::debug() << "Best path cost = " << best_path << "; worst path allowed = " << worst_path << std::endl;
+	Config::debug() << "BEST PATH THROUGH STATE:" << std::endl;
+	for (i=0;i<n_states;++i) {
+		Config::debug() << best_path_cost[i].first << ' ' << stateName(best_path_cost[i].second) << std::endl;
+	}
+#endif
 	
 	int allowed = max_states;
-	if ( max_states == UNLIMITED )
+	if ( max_states == UNLIMITED || max_states > n_states )
 		allowed = n_states;
 	
-	for (i=0;i<allowed;++i) {
+	for (i=0;i<allowed;++i) {		
 		int st=best_path_cost[i].second;
 		if (all_paths)
 			remove[st] = false;
-		else {
+		else {			
 			if (best_path_cost[i].first > worst_path)
 				remove[st] = true;
 			else {
 				remove[st] = false;
 				State &s=states[st];
 				for ( List<Arc>::iterator a(s.arcs.begin()), end = s.arcs.end() ; a !=end  ;  ) {
-					float best_path_this_arc = a->weight.getLogImp()+for_dist[st]+rev_dist[a->dest];
+					float best_path_this_arc = (-a->weight.getLogImp())+for_dist[st]+rev_dist[a->dest];
+#ifdef DEBUGPRUNE
+					Config::debug() << "Arc " << st << ": ";
+					printArc(*a,st,Config::debug()) << " best path cost = " << best_path_this_arc << std::endl;
+#endif
 					if (best_path_this_arc > worst_path)
 						s.erase(a++);
 					else
@@ -477,9 +490,13 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
 
 void WFST::reduce()
 {
-  Assert(valid());
-  int nStates = numStates();
+	int nStates = numStates();
 
+	if (!valid()) {
+		clear();
+		return;
+	}
+  
   Graph g = makeGraph();
   GraphState *graph = g.states;
   Graph revG = reverseGraph(g);
