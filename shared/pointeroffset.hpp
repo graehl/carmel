@@ -36,6 +36,12 @@ T* offset_ptradd(const T *a, const T *b) {
     return (T*)((char *)a + (ptrdiff_t)b);
 }
 
+// forall T*a,T*b: ptradd_offset(a,ptrdiff_offset(b,a)) == b
+template <class T>
+T* offset_ptradd(const T *a, size_t b) {
+    return a + b;
+}
+
 // equivalent to a+offset_to_index(b)
 template <class T, class U>
 T* offset_ptradd_rescale(const T *a, const U *b) {
@@ -174,6 +180,24 @@ struct PointerOffset {
         value_type * operator ->() { return &get_value(); }
     };
 };
+
+template <class T>
+struct OffsetBase
+{
+    typedef T value_type;
+    typedef OffsetBase<T> Self;
+
+    T *base;
+    OffsetBase(T *base_) : base(base_) {}
+    OffsetBase(const Self &o) : base(o.base) {}
+
+    template <class I>
+    T& operator [](const I& i) const
+    {
+        return offset_ptradd(base,i);
+    }
+};
+
 
 template <class C>
 struct indirect_gt<PointerOffset<C>,C*> {

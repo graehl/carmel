@@ -87,7 +87,7 @@ struct SwapBatch {
         typedef B &reference;
         typedef B *pointer;
         typedef void difference_type; // not implemented but could be unsigned
-        typedef forward_iterator_tag iterator_category;
+        typedef std::forward_iterator_tag iterator_category;
 
         Cont *cthis;
         unsigned batch;
@@ -95,8 +95,8 @@ struct SwapBatch {
         reference operator *()
         {
             Assert(batch < cthis->n_batch);
-            load_batch(batch);
-            return Cont::data_for_header(&header);
+            cthis->load_batch(batch);
+            return *Cont::data_for_header(header);
         }
         pointer operator ->()
         {
@@ -106,32 +106,39 @@ struct SwapBatch {
         {
             cthis=NULL;
         }
-        void is_end() const
+        bool is_end() const
         {
             return cthis==NULL;
         }
         void operator ++()
         {
+//            DBP3(header,batch,cthis->n_batch-1);
             if (*header) {
                 header += *header;
-                if (!*header && batch == cthis->nbatch-1)
-                    set_end();
             } else {
-                ++batch;
-                Assert (batch < cthis->nbatch)
-                cthis->load_batch(batch);
-                header=cthis->memmap.begin();
+                if (batch == cthis->n_batch-1) { // equivalently: header == cthis->memmap.begin();
+                    set_end();
+                    return;
+                } else {
+                    ++batch;
+                    Assert (batch < cthis->n_batch);
+                    cthis->load_batch(batch);
+                    header=(size_type *)cthis->memmap.begin();
+                }
             }
+            if (!*header)
+                operator++();
         }
         bool operator ==(const iterator &o) const
         {
+//            DBPC3("it==",(void *)cthis,(void *)o.cthis);
             Assert (!cthis || !o.cthis || cthis==o.cthis);
             if (o.is_end()  && is_end())
                 return true;
             if (!o.is_end() && !is_end())
                 return  o.batch==batch && o.header == o.header; // cthis=o.cthis &&
             return false;
-//                return cthis==NULL; //!*header && batch = cthis->nbatch-1; // now checked in operator ++
+//                return cthis==NULL; //!*header && batch = cthis->n_batch-1; // now checked in operator ++
         }
         bool operator !=(const iterator &o) const
         {
@@ -145,7 +152,7 @@ struct SwapBatch {
         if (total_items) {
             ret.cthis=this;
             ret.batch=0;
-            ret.header=memmap.begin();
+            ret.header=(size_type*)memmap.begin();
         } else
             return end();
         return ret;
@@ -217,6 +224,7 @@ struct SwapBatch {
     }
     void load_batch(unsigned i) {
         BACKTRACE;
+        DBPC2("load batch",i);
         if (loaded_batch == i)
             return;
         if (i >= n_batch)
@@ -308,9 +316,9 @@ struct SwapBatch {
 
     }
 
-    static BatchMember *data_for_header(size_type *header)
+    static BatchMember *data_for_header(const size_type *header)
     {
-        BatchMember *b=(BatchMember*)(d_next+1);
+        BatchMember *b=(BatchMember*)(header+1);
         b=::align(b);
         return b;
     }
@@ -382,9 +390,9 @@ const char *swapbatch_test_expect[] = {
     ""
 };
 
+static unsigned swapbatch_test_i=0;
 
 void swapbatch_test_do(const char *c) {
-    static unsigned swapbatch_test_i=0;
     const char *o=swapbatch_test_expect[swapbatch_test_i++];
     DBP2(o,c);
     BOOST_CHECK(!strcmp(c,o));
@@ -399,7 +407,9 @@ BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
     const char *s1="string one\n2\n3 .\n abcdefghijklmopqrstuvwxyz\n4\nend\n\n";
     string t1=tmpnam(0);
     DBP(t1);
-    SwapBatch<const char *> b(t1,28+2*sizeof(size_t)+sizeof(char*)); // string is exactly 28 bytes counting \n
+    typedef SwapBatch<const char *> SB;
+
+    SB b(t1,28+2*sizeof(size_t)+sizeof(char*)); // string is exactly 28 bytes counting \n
     tmp_fstream i1(s1);
     BOOST_CHECK_EQUAL(b.n_batches(),1);
     BOOST_CHECK_EQUAL(b.size(),0);
@@ -407,6 +417,12 @@ BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
     BOOST_CHECK_EQUAL(b.n_batches(),5);
     BOOST_CHECK_EQUAL(b.size(),sizeof(swapbatch_test_expect)/sizeof(const char *));
     b.enumerate(swapbatch_test_do);
+    swapbatch_test_i=0;
+    typedef SB::iterator I;
+    for (I i=b.begin(),e=b.end();i!=e;++i) {
+        swapbatch_test_do(*i);
+    }
+
 }
 
 # endif
