@@ -35,7 +35,7 @@ struct WeightAccum {
 //    converge param delta ... 1 = converge if all changes less than 1, 0 = never stop as long as perplexity keeps improving
 //    learning_rate_growth_factor ... exponent for overrelaxed EM.  1 = normal EM, 1.1 = reasonable guess (what rate helps speed convergence depends on problem).  if rate/exponent gets too high and perplexity goes down, it's reset to the base guaranteed-to-improve-or-converge EM, similar to TCP slow restart on congestion
 //    ran_restarts = how many times to randomly initialize parameters (after doing one iteration with supplied parameters), keeping the best PP params of all runs
-
+//FIXME: EACHDW visitor or iterator?
 template <class Estimate,class Maximize,class Normalize>
 Weight overrelaxed_em(Estimate &estimate,Maximize &maximize, Normalize &normalize,Weight converge_perplexity_ratio=.999,Weight converge_param_delta=0,int max_iter=10000, FLOAT_TYPE learning_rate_growth_factor=1, int ran_restarts=0,ostream &log=Config::log())
 {
