@@ -4,7 +4,6 @@
 #include "config.h"
 #include "weight.h"
 
-
 struct WeightAccum {
         Weight sum;
         int n_nonzero;

@@ -3,6 +3,16 @@
 
 #include "byref.hpp"
 
+// for containers of containers where you want to visit every element
+template <class M,class F>
+void nested_enumerate(const M& m,F f) {
+    typedef typename M::value_type Inner;
+    for (typename M::const_iterator i=m.begin();i!=m.end();++i)
+        for (typename Inner::const_iterator j=i->begin();j!=i->end();++i)
+            deref(f)(*i);
+}
+
+
 template <class M,class F>
 void enumerate(const M& m,F f) {
   for (typename M::const_iterator i=m.begin();i!=m.end();++i)

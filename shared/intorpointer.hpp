@@ -8,24 +8,7 @@
 #include "test.hpp"
 #endif
 
-template <class T>
-inline size_t offset_to_index(const T *a) {
-//    return ((unsigned)a)/sizeof(T);
-    return (unsigned)(a-(T *)0);
-}
-
-// returns difference in bytes rather than #of T.
-// forall T *a,T *b: offset_to_index(ptrdiff_offset(a,b)) == a-b
-template <class T>
-T* offset_ptrdiff(const T *a,const T *b) {
-    return (T*)((char *)a - (char *)b);
-}
-
-// forall T*a,T*b: ptradd_offset(a,ptrdiff_offset(b,a)) == b
-template <class T>
-T* offset_ptradd(const T *a, const T *b) {
-    return (T*)((char *)a + (ptrdiff_t)b);
-}
+#include "pointeroffset.hpp"
 
 template <class Pointed=void,class Int=size_t>
 struct IntOrPointer {
