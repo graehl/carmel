@@ -39,7 +39,7 @@ struct NormalizeGroups {
     get_from(std::basic_istream<charT,Traits>& in)
     {
         char c;
-        EXPECTCH_SPACE('(');
+        EXPECTCH_SPACE('('); //FIXME: rationalize w/ dynarray input w/ optional '('->eof?  not possible?
         norm_groups.read_all_enumerate(in,make_both_functors_byref(max_offset,total_size),')');
     }
 
@@ -193,16 +193,9 @@ struct NormalizeGroups {
         normalize(array_base,array_base);
     }
     void normalize(W *array_base, W* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, ostream *_log=NULL) {
-#if 0
-        // don't need: no longer global
-        SetLocal<W*> g1(base,array_base);
-       SetLocal<W*> g2(dest,_dest);
-       SetLocal<W>g3(maxdiff,W(0));
-#else
         base=array_base;
         dest=_dest;
         maxdiff.setZero();
-#endif
 //        DBP(maxdiff);
         DBP_INC_VERBOSE;
 #ifdef DEBUG
