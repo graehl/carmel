@@ -1,4 +1,3 @@
-
 #ifndef DYNARRAY_H
 #define DYNARRAY_H 1
 // For MEMCPY-able-to-move types only!
@@ -64,6 +63,21 @@ struct DefaultWriter
          }
 };
 
+// can only be passed to class that itself reads things with a Reader get_from method.
+template <class R>
+struct IndirectReader
+{
+    IndirectReader() {}
+    R reader;
+    IndirectReader(const R& r) : reader(r) {}
+    typedef void value_type; // not really
+    
+    template <class Target,class charT, class Traits>
+        std::basic_istream<charT,Traits>&
+         operator()(std::basic_istream<charT,Traits>& in,Target &l) const {
+        return gen_extractor(in,l,reader);
+    }
+};
 
   template <class charT, class Traits, class T,class Writer>
         std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false)
@@ -131,14 +145,23 @@ fail:
 // doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length allowed.
 // you must construct and deconstruct elements yourself.  raw dynamic uninitialized (classed) storage array
 template <typename T,typename Alloc=std::allocator<T> > class Array : protected Alloc {
-protected:
-  //unsigned int space;
-  T *vec;
-  T *endspace;
-public:
+    protected:
+    //unsigned int space;
+    T *vec;
+    T *endspace;
+    public:
+//    operator T*() const { return vec; }
   bool invariant() const {
     return vec >= endspace;
   }
+//!FIXME: does this swap allocator base?
+void swap(Array<T,Alloc> &a) {
+    typedef Array<T,Alloc> Self;
+    Self t;
+    memcpy(&t,this,sizeof(Self));
+    memcpy(this,&a,sizeof(Self));
+    memcpy(&a,&t,sizeof(Self));
+}
 
   typedef T value_type;
   typedef value_type *iterator;
@@ -289,23 +312,36 @@ public:
   ~AutoArray() {
         this->dealloc();
   }
+//!FIXME: doesn't swap allocator base
+void swap(AutoArray<T,Alloc> &a) {
+    Array<T,Alloc>::swap(a);
+}
 protected:
   AutoArray(AutoArray<T,Alloc> &a) : Super(a.capacity()){
   }
-
+private:
+void swap(Array<T,Alloc> &a) {Assert(0);}
 };
 
+// FIXME: drop template copy constructor since it screws with one arg size constructor
 // frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
 template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public AutoArray<T,Alloc> {
 public:
   typedef AutoArray<T,Alloc> Super;
-  explicit FixedArray(unsigned sp=4) : Super(sp) {
+  explicit FixedArray(unsigned sp=0) : Super(sp) {
     this->construct();
   }
   ~FixedArray() {
     this->destroy();
         //~Super(); // happens implicitly!
   }
+template <class charT, class Traits, class Reader>
+std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
+    this->destroy();
+    this->dealloc();
+    return get_from_imp(this,in,read);
+}
+
   void uninit_copy_from(const T* b,const T* e) {
     Assert(e-b == this->capacity());
     std::uninitialized_copy(b,e,this->begin());
@@ -319,14 +355,19 @@ public:
     DBPC("FixedArray copy",a);
     uninit_copy_from(a.begin(),a.end());
   }
+  FixedArray(const DynamicArray<T,Alloc> &a) : Super(a.capacity()) {
+    DBPC("FixedArray copy",a);
+    uninit_copy_from(a.begin(),a.end());
+  }
 */
-  //F=FixedArray<T,Alloc> 
+  //F=FixedArray<T,Alloc>
+
+// having problems with ambiguous constructor?  make sure you pass an *unsigned* int if you want to specify # of elements.  I don't know how to make this constructor exclude integral types, well, I could do it with type traits and a second param is_container<F> *dummy=0
   template <class F>
   FixedArray(const F &a) : Super(a.size()) {
     //    DBPC("FixedArray copy",a);
     uninit_copy_from(a.begin(),a.end());
   }
-
     
   FixedArray(const FixedArray<T,Alloc>  &a) : Super(a.size()) {
     //    DBPC("FixedArray copy",a);
@@ -345,6 +386,9 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   T *endv;
   typedef Array<T,Alloc> Base;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
+  private:
+void swap(Array<T,Alloc> &a) {Assert(0);}
+  public:
  public:
   enum { REPLACE=0, APPEND=1 };
   enum { BRIEF=0, MULTILINE=1 };
@@ -861,8 +905,35 @@ int a1[] = { 1, 4, 5 };
 int a2[] = {3,4,6,7};
 #include <algorithm>
 #include <iterator>
+struct plus_one_reader {
+    typedef int value_type;
+      template <class charT, class Traits>
+        std::basic_istream<charT,Traits>&
+         operator()(std::basic_istream<charT,Traits>& in,int &l) const {
+          in >> l;
+          ++l;
+          return in;
+         }
+};
 BOOST_AUTO_UNIT_TEST( dynarray )
 {
+    {
+        FixedArray<FixedArray<int> > aa,ba;
+        string sa="(() (1) (1 2 3) () (4))";
+        BOOST_CHECK(test_extract_insert(sa,aa));
+        IndirectReader<plus_one_reader> reader;
+        istringstream ss(sa);
+
+        ba.get_from(ss,reader);
+
+//        DBP(ba);
+        BOOST_REQUIRE(aa.size()==5);
+        BOOST_CHECK(aa[2].size()==3);
+        BOOST_REQUIRE(ba.size()==5);
+        BOOST_CHECK(ba[2].size()==3);        
+        BOOST_CHECK(aa[1][0]==1);
+        BOOST_CHECK(ba[1][0]==2);
+    }
   {
         DynamicArray<int> a;
         a.at_grow(5)=1;

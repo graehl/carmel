@@ -21,12 +21,7 @@ static FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 // Weight(0) will may give bad results when computed with, depending on math library behavior
 // defining WEIGHT_CORRECT_ZERO will incur a performance penalty
 
-inline double randposfraction() // returns uniform random number on (0..1]
-{
-	return ((double)rand()+1.) /
-		    ((double)RAND_MAX+1.);
-}
-
+#include "functors.hpp"
 
 struct Weight {			// capable of representing nonnegative reals 
   // internal implementation note: by their base e logarithm
@@ -77,7 +72,7 @@ struct Weight {			// capable of representing nonnegative reals
     return std::exp(weight);
   }
   void setRandomFraction() {
-	setReal(randposfraction());
+	setReal(rand_pos_fraction());
   }
   FLOAT_TYPE getLog(FLOAT_TYPE base) const {
     return weight / log(base);
@@ -220,6 +215,39 @@ template <class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);
 
 };
+
+inline FLOAT_TYPE log(Weight a) {
+    return a.getLn();
+}
+
+template<class T> T exponential(FLOAT_TYPE exponent);
+
+//inline
+template <>
+Weight exponential<Weight>(FLOAT_TYPE exponent) {
+    Weight r;
+    r.setLn(exponent);
+    return r;
+}
+
+/*
+#include "semiring.hpp"
+template <>
+struct semiring_traits<Weight> {
+    typedef Weight value_type;
+    static inline value_type exponential(FLOAT_TYPE exponent) {            
+        return exponential<C>(exponent);
+    }
+    static inline void set_one(Weight &w) { w.setOne(); }
+    static inline void set_zero(Weight &w) { w.setZero(); }
+    static inline bool is_one(const Weight &w) { w.isOne(); }
+    static inline bool is_zero(const Weight &w) { w.isZero(); }
+    static inline void addto(Weight &w,Weight p) {
+        w += p;
+    }
+    
+};
+*/
 
 inline Weight pow_logexponent(Weight a, Weight b) {
 	a.raisePower(b.weight);
@@ -464,6 +492,13 @@ Weight::out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = A
 template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
+void dbgout(ostream &o,Weight w) {
+    o << Weight::out_always_real << w
+#ifdef VERBOSE_DEBUG
+      << '=' << Weight::out_always_log << w
+#endif
+        ;
+}
 
 #include <limits>
 namespace std {
