@@ -6,6 +6,7 @@
 #include <iterator>
 
 #include <cmath>
+#include <ctime>
 #include <string>
 #include <boost/scoped_array.hpp>
 #include <boost/lexical_cast.hpp>
@@ -416,6 +417,41 @@ inline std::string concat(const S &s,const T& suffix) {
 }
 
 
+
+typedef boost::uniform_01<boost::lagged_fibonacci607> G_rdist;
+#ifdef MAIN
+boost::lagged_fibonacci607 g_rng(std::time(0));
+G_rdist g_random01(boost::lagged_fibonacci607(std::time(0)));
+//boost::variate_generator<boost::lagged_fibonacci607,G_rdist > g_rangen01(g_rng,g_random01);
+#else
+extern boost::lagged_fibonacci607 g_rng;
+extern G_rdist g_random01;
+//extern boost::variate_generator<boost::lagged_fibonacci607,boost::uniform_01> g_rangen01;
+#endif
+
+inline double random_seed(uint32_t value=std::time(0))
+{
+    g_random01.base().seed(value);
+}
+
+
+//FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
+inline double random_nonneg_lt_one() // returns uniform random number on [0..1)
+{
+//    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
+    return g_random01();
+}
+
+inline double random_pos_fraction() // returns uniform random number on (0..1]
+{
+#ifdef  USE_STD_RAND
+    return ((double)std::rand()+1.) *
+        (1. / ((double)RAND_MAX+1.));
+#else
+    return 1.-random_nonneg_lt_one();
+#endif
+}
+
 inline unsigned random_less_than(unsigned limit) {
     Assert(limit!=0);
     if (limit <= 1)
@@ -427,9 +463,9 @@ inline unsigned random_less_than(unsigned limit) {
     return r % limit;
 }
 
+
 #define NLETTERS 26
 // works for only if a-z A-Z and 0-9 are contiguous
-
 inline char random_alpha() {
     unsigned r=random_less_than(NLETTERS*2);
     return (r < NLETTERS) ? 'a'+r : ('A'-NLETTERS)+r;
@@ -450,33 +486,6 @@ inline std::string random_alpha_string(unsigned len) {
     return s.get();
 }
 
-typedef boost::uniform_01<boost::lagged_fibonacci607> G_rdist;
-#ifdef MAIN
-boost::lagged_fibonacci607 g_rng;
-G_rdist g_r01(g_rng);
-//boost::variate_generator<boost::lagged_fibonacci607,G_rdist > g_rangen01(g_rng,g_r01);
-#else
-extern boost::lagged_fibonacci607 g_rng;
-extern G_rdist g_r01;
-//extern boost::variate_generator<boost::lagged_fibonacci607,boost::uniform_01> g_rangen01;
-#endif
-
-//FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
-inline double random_nonneg_lt_one() // returns uniform random number on [0..1)
-{
-//    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
-    return g_r01();
-}
-
-inline double random_pos_fraction() // returns uniform random number on (0..1]
-{
-#ifdef  USE_STD_RAND
-    return ((double)std::rand()+1.) *
-        (1. / ((double)RAND_MAX+1.));
-#else
-    return 1.-random_nonneg_lt_one();
-#endif
-}
 
 struct set_one {
     template <class C>
