@@ -360,12 +360,12 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 
   void construct() {
         Assert(endv=this->vec);
-        this->construct();
+        Array<T,Alloc>::construct();
         endv=this->endspace;
   }
   void construct(const T& t) {
         Assert(endv=this->vec);
-        this->construct(t);
+        Array<T,Alloc>::construct(t);
         endv=this->endspace;
   }
 

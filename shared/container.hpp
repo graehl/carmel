@@ -115,7 +115,7 @@ struct ListS {
 #ifdef TEST
 template <class S>
 void maptest() {
-  typedef typename S::map<int,int>::type map;
+  typedef typename S::template map<int,int>::type map;
   map m;
   BOOST_CHECK(  insert(m,1,0).second);
   BOOST_CHECK(find_second(m,1)!=NULL);
@@ -136,7 +136,7 @@ void maptest() {
 
 template <class S>
 void containertest() {
-  typedef typename S::container<unsigned>::type cont;
+  typedef typename S::template container<unsigned>::type cont;
   cont c;
   BOOST_CHECK(c.size()==0);
   c.push(10);

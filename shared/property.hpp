@@ -206,7 +206,7 @@ struct IndexedCopier : public std::pair<P1,P2> {
   IndexedCopier(P1 a_,P2 b_) : std::pair<P1,P2>(a_,b_) {}
   template<class I>
     void operator()(I i) {
-      first[i] = second[i];
+      (this->first)[i] = (this->second)[i];
     }
 };
 

@@ -127,7 +127,7 @@ struct tree_trie {
     V *np;
     MTree *t=where_subtrees[where];
     unsigned rank=t->rank();
-    L &lab=t->label;
+    MTree::Label &lab=t->label;
     typedef MTree::iterator child_it;
     child_it beg=t->begin(),e=t->end();
     // expand @where

@@ -28,7 +28,7 @@ IN = -I${DIR}/src -I$(SHARED) -I- -I${BOOST}
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
 
-CC.solaris = g++
+
 CC.solaris = g++
 #/nfs/topaz/graehl/isd/solaris/bin/g++3.2
 CC.linux = g++
