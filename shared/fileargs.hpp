@@ -71,6 +71,9 @@ void validate(boost::any& v,
     if (i.get(c))
         goto fail;
     v=boost::any((value_type)number);
+    if (number - (value_type)number > 1)
+        throw std::runtime_error(std::string("Overflow - size too big for size_t: ").append(boost::lexical_cast<std::string>(number)));
+
     return;
 fail:
     throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (2^10,2^20,2^30)suffix but got: ").append(i.str()));
