@@ -1,7 +1,7 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
-#define VERSION "3.0.5" 
+#define VERSION "3.0.6" 
 
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
@@ -15,18 +15,21 @@
 // use old, slower string hash
 //#define OLD_HASH
 
+#define DOUBLE_PRECISION
+
 #ifdef DOUBLE_PRECISION
 typedef double FLOAT_TYPE;
 #else
 typedef float FLOAT_TYPE;
 #endif
 
+
 // for meaningful compose state names
 #define MAX_STATENAME_LEN 15000
 
 #define PLACEMENT_NEW new
 
-#ifdef DEBUG
+#ifdef DEBUG__
 #ifdef _MSC_VER
 //#define MEMDEBUG // link to MSVCRT
 #define _CRTDBG_MAP_ALLOC

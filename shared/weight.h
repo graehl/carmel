@@ -24,6 +24,7 @@ inline double randposfraction() // returns uniform random number on (0..1]
 		    ((double)RAND_MAX+1.);
 }
 
+
 struct Weight {			// capable of representing nonnegative reals 
   // internal implementation note: by their base e logarithm
   private:
@@ -97,7 +98,8 @@ struct Weight {			// capable of representing nonnegative reals
   }
 
   bool isZero() const {
-    return weight == -HUGE_FLOAT;
+//    return weight == -HUGE_FLOAT;
+	return !isPositive();
   }
   bool isPositive() const {
     return weight > -HUGE_FLOAT;
@@ -334,6 +336,7 @@ inline Weight operator /(Weight lhs, Weight rhs) {
 // fixme: if you use 64-bit doubles instead of floats, 52 binary digits
 // so define as 36.f instead
 
+
 inline Weight operator +(Weight lhs, Weight rhs) {
   //fixme: below test is needed with glibc without -ffast-math to compute 0+0 properly (?)
   //  if (lhs == 0.0)
@@ -370,7 +373,8 @@ inline Weight operator -(Weight lhs, Weight rhs) {
 #endif
 
   Weight result; 
-  if ( lhs.weight <= rhs.weight )	   // lhs <= rhs 
+	FLOAT_TYPE rdiff=rhs.weight-lhs.weight;
+  if ( rdiff >= 0 )	   // lhs <= rhs 
 	  // clamp to zero as minimum without giving exception (not mathematically correct!)
   {
     //result.weight = -Weight::HUGE_FLOAT; // default constructed to this already
@@ -378,13 +382,34 @@ inline Weight operator -(Weight lhs, Weight rhs) {
   }
 
 
-  if ( lhs.weight - rhs.weight > MUCH_BIGGER_LN ) // lhs >> rhs
+  if ( rdiff < -MUCH_BIGGER_LN ) // lhs >> rhs
 	  return lhs;
 
   // lhs > rhs
   
-  result.weight = (FLOAT_TYPE)(lhs.weight + log(1 - std::exp(rhs.weight-lhs.weight)));
+  result.weight = (FLOAT_TYPE)(lhs.weight + log(1 - std::exp(rdiff)));
   return result;
+}
+
+inline Weight absdiff(Weight lhs, Weight rhs) {
+#if 0
+	// UNTESTED
+	FLOAT_TYPE diff=lhs.weight-rhs.weight;
+	if ( diff > MUCH_BIGGER_LN )
+		return lhs;
+	if ( diff < -MUCH_BIGGER_LN )
+		return rhs;
+	Weight result;
+	if ( diff < 0 )
+		result.weight = (FLOAT_TYPE)(rhs.weight + log(1 - std::exp(diff)));
+	else
+		result.weight = (FLOAT_TYPE)(lhs.weight + log(1 - std::exp(-diff)));
+#else
+	if (lhs.weight > rhs.weight)
+		return lhs-rhs;
+	else
+		return rhs-lhs;
+#endif
 }
 
 inline bool operator <(Weight lhs, Weight rhs) { return lhs.weight < rhs.weight; }

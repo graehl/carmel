@@ -223,10 +223,11 @@ void WFST::normalize(NormalizeMethod method)
     Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
 #endif
     for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-      const Weight w=(*g)->weight;
+      
       
         if ( isTied(pGroup = (*g)->groupId) ) {
 #if 0
+	  const Weight w=(*g)->weight;
 					Weight *pw;
 					if ((pw=groupArcTotal.find(pGroup)))
 						*pw += w;
@@ -237,7 +238,7 @@ void WFST::normalize(NormalizeMethod method)
 					else
 						groupStateTotal.add(pGroup,sum);
 #else
-					groupArcTotal[pGroup] += w; // default init is to 0          
+					groupArcTotal[pGroup] += (*g)->weight; // default init is to 0          
  		      groupStateTotal[pGroup] += sum;
 #endif
           Weight &m=groupMaxLockedSum[pGroup];
@@ -272,8 +273,7 @@ void WFST::normalize(NormalizeMethod method)
 						NANCHECK(gmax);
 						Weight one(1.);
 						if ( gmax > one) {
-							(*g)->weight.setZero();
-							
+							(*g)->weight.setZero();							
 						} else {
 							if ( !gmax.isZero() )
 								groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
@@ -283,6 +283,8 @@ void WFST::normalize(NormalizeMethod method)
 							NANCHECK(groupTotal);
 							if (!groupTotal.isZero()) // then groupNorm non0 also
 								reserved += (*g)->weight = ( groupTotal/ groupNorm);
+							else
+								(*g)->weight.setZero();
 							NANCHECK(reserved);
 						}
 					} else { // locked:
@@ -304,8 +306,10 @@ void WFST::normalize(NormalizeMethod method)
       normal_sum /= fraction_remain; // total counts that would be needed to fairly give reserved weights out
 			NANCHECK(normal_sum);
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-        if (isNormal((*g)->groupId))
+				if (isNormal((*g)->groupId)) {
           (*g)->weight /= normal_sum;
+					NANCHECK((*g)->weight);
+				}
     } else // nothing left, sorry
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
         if (isNormal((*g)->groupId))

@@ -45,4 +45,5 @@ gen_inserter
 		s.setstate(err);
 	return s;
 }
+
 #endif
