@@ -219,6 +219,7 @@ struct IndirectReader
 #define LONGSEP "\n "
           for (;begin!=end;++begin) {
               o << LONGSEP;
+#undef LONGSEP
               deref(writer)(o,*begin);
           }
           o << "\n";
