@@ -261,7 +261,11 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 #else
 template <typename T>
 #endif
-void WFST::insertPathArc(GraphArc *gArc,List<T>* l, List<T>::iterator &path)
+void WFST::insertPathArc(GraphArc *gArc,List<T>* l, 
+#ifndef _MSC_VER
+						 typename 
+#endif
+						 List<T>::iterator &path)
 {
   PathArc pArc;
   Arc *taken = (Arc *)gArc->data;
@@ -276,7 +280,11 @@ void WFST::insertPathArc(GraphArc *gArc,List<T>* l, List<T>::iterator &path)
 #else
 template <typename T>
 #endif
-void WFST::insertShortPath(int source, int dest, List<T>*l, List<T>::iterator &path)
+void WFST::insertShortPath(int source, int dest, List<T>*l, 
+#ifndef _MSC_VER
+						   typename 
+#endif
+						   List<T>::iterator &path)
 {
   GraphArc *taken;
   for ( int iState = source ; iState != dest; iState = taken->dest ) {
