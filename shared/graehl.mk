@@ -23,7 +23,7 @@ endif
 endif
 
 ifndef INSTALL_PREFIX
-INSTALL_PREFIX=/home/graehl/isd/$(ARCH)
+INSTALL_PREFIX=~/isd/$(ARCH)
 endif
 ifndef BIN_PREFIX
 BIN_PREFIX=$(INSTALL_PREFIX)/bin
@@ -175,8 +175,7 @@ else
 CYGEXE=
 endif
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
-	@echo cp $^ $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
-	cp $^ $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
+	cp $(STATIC_PROGS) $(DEBUG_PROGS) $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
 
 test: $(ALL_TESTS)
 	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done
