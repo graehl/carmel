@@ -173,6 +173,9 @@
 				RelativePath="..\src\fst.h">
 			</File>
 			<File
+				RelativePath="..\src\genio.h">
+			</File>
+			<File
 				RelativePath="..\src\graph.h">
 			</File>
 			<File
