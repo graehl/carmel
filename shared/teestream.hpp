@@ -11,8 +11,8 @@
       m_sb2(sb2)
     {}
     int_type overflow(int_type c) {
-      if (m_sb1->sputc(c) == traits_type::eof()
-          || m_sb2->sputc(c) == traits_type::eof())
+        if ((m_sb1 && m_sb1->sputc(c) == traits_type::eof())
+            || (m_sb2 &&m_sb2->sputc(c) == traits_type::eof()))
         return traits_type::eof();
       return c;
     }
