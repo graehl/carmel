@@ -22,6 +22,13 @@ ifeq ($(UNAME),Darwin)
 endif
 endif
 
+ifndef INSTALL_PREFIX
+INSTALL_PREFIX=/home/graehl/isd/$(ARCH)
+endif
+ifndef BIN_PREFIX
+BIN_PREFIX=$(INSTALL_PREFIX)/bin
+endif
+
 ifndef SHARED
 SHARED=../shared
 endif
@@ -136,7 +143,7 @@ endef
 
 .PRECIOUS: %/.
 %/.:
-	mkdir -p $(@)
+	mkdir -p $@
 
 $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
@@ -149,6 +156,9 @@ debug: $(OPT_PROGS)
 opt: $(DEBUG_PROGS)
 
 depend: $(ALL_DEPENDS)
+
+install: $(OPT_PROGS) $(STATIC_PROGS)
+	cp $^ $(BIN_PREFIX)
 
 test: $(ALL_TESTS)
 	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done

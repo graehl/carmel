@@ -465,11 +465,11 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
   }
 
   const T* end() const { // Array code that uses vec+space for boundschecks is duplicated below
-    Assert(invariant());
+    Assert(this->invariant());
           return endv;
   }
     T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
-    Assert(invariant());
+    Assert(this->invariant());
           return endv;
   }
   const T* const_end() const {
@@ -491,7 +491,7 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
         return *r;
   }
   T & operator[] (unsigned int index) const {
-    Assert(invariant());
+    Assert(this->invariant());
     Assert(this->vec+index < end());
     return (this->vec)[index];
   }
@@ -727,7 +727,7 @@ void swap(Array<T,Alloc> &a) {Assert(0);}
         }
   }
   unsigned int size() const { return (unsigned)(endv-this->vec); }
-    void set_size(unsigned newSz) { endv=this->vec+newSz; Assert(invariant); }
+    void set_size(unsigned newSz) { endv=this->vec+newSz; Assert(this->invariant()); }
   void reduce_size(unsigned int n) {
     T *end=endv;
     reduce_size_nodestroy(n);

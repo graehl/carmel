@@ -4,7 +4,8 @@
 #include <iostream>
 #include <string>
 
-#define GRAPHVIZ_DEFAULT_PRELUDE "node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n ranksep=.3;\n ordering=out;\n center=1;\n concentrate=0;"
+#define GRAPHVIZ_DEFAULT_PRELUDE "node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n graph [center=1];\n"
+//ordering=out;\n concentrate=0;\n\n ranksep=.3;
 
 struct GraphvizPrinter {
     unsigned graph_no;

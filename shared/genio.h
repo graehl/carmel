@@ -53,7 +53,7 @@ CREATE_EXTRACTOR(C)
 
 template <class C,class charT, class Traits>
 inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
-    stringstream s;
+    std::stringstream s;
     s << data;
     char c;
     while (s.get(c)) {
