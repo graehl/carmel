@@ -1,3 +1,7 @@
+2002-12-17  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/wfstio.cc: ignore/strip CR char (so unix carmel can process DOS-text output)
+
 2002-12-16  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: implemented -Y (GraphViz)
