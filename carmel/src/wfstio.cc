@@ -243,19 +243,57 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
   reduce();
 }
 
+
+int WFST::getStateIndex(const char *buf) {
+	char *scanend;
+	int st;
+	if (!named_states) {
+		st=strtol(buf,&scanend,10);
+		if (*scanend != '\0') {
+			Config::warn() << "expected an integer state index, but got: " << buf << std::endl;
+			return -1;
+		} else {
+			states(st); // expands dynarray
+			return st;
+		}
+	} else {
+		st = stateNames.indexOf((char *)buf);
+		if ( st >= states.count() ) {
+			states.pushBack();
+			Assert(st + 1 == states.count());
+		}
+		return st;
+	}
+}
+
 static const char COMMENT_CHAR='#';
 
 // need to destroy old data or switch this to a constructor
-int WFST::readLegible(istream &istr)
+int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
-		named_states=1;
+  
   int stateNumber, destState, inL, outL;
   Weight weight;
   char c, d, buf[4096];
   StringKey finalName;
   DO(getString(istr, buf));
   finalName = buf;
-  finalName.clone();
+
+  named_states=1;
+  if (!alwaysNamed) {
+	named_states=0;
+	for (char *p=finalName.str;*p;++p)
+	  if (!isdigit(*p)) {
+		  named_states=1;
+		  break;
+	  }
+  }
+
+  if (named_states)
+	  finalName.clone();
+  else
+	  final=getStateIndex(buf);
+
   Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
   for ( ; ; ) {
     if ( !(istr >> c) )
@@ -273,11 +311,11 @@ int WFST::readLegible(istream &istr)
     DO(c == '(');
         // start state:
     DO(getString(istr, buf));
-    stateNumber = stateNames.indexOf(buf);
-    if ( stateNumber >= states.count() ) {
-      states.pushBack();
-      Assert(stateNumber + 1 == states.count());
-    }
+	
+  	stateNumber=getStateIndex(buf);
+	if (stateNumber == -1)
+		  goto INVALID;
+
         // arcs:
     for ( ; ; ) {
       DO(istr >> c);
@@ -286,12 +324,11 @@ int WFST::readLegible(istream &istr)
       DO(c == '(');
           // dest state:
       DO(getString(istr, buf));
-      destState = stateNames.indexOf(buf);
-      if ( destState >= states.count() ) {
-        states.pushBack();
-        Assert(destState + 1 == states.count());
-      }
-      DO(istr >> d);
+	  
+	  destState=getStateIndex(buf);
+	  if (destState == -1)
+		  goto INVALID;
+	  DO(istr >> d);
       if ( d != '(' )
         istr.putback(d);
       for ( ; ; ) {
@@ -349,6 +386,10 @@ int WFST::readLegible(istream &istr)
       }
     }
   }
+  if ( !named_states)
+      return 1;
+  
+
   int *uip = stateNames.find(finalName);
   if ( uip  ) {
     final = *uip;
@@ -356,7 +397,9 @@ int WFST::readLegible(istream &istr)
     return 1;
   } else {
     cout << "\nFinal state named " << finalName << " not found.\n";
-	finalName.kill();
+INVALID:
+	if (named_states)
+		finalName.kill();
     invalidate();
     return 0;
   }

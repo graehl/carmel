@@ -61,7 +61,7 @@ void deleteAlphabet() {
       ownerOut = 0;
     }
 }
-
+int getStateIndex(const char *buf); // creates the state according to named_states, returns -1 on failure
 public:
 
 template<class A,class B> static inline std::basic_ostream<A,B>&
@@ -93,7 +93,7 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
 //  WFST & operator = (WFST &){return *this;} Yaser
   //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
-  int readLegible(istream &);	// returns 0 on failure (bad input)
+  int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
   void writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON=false);
   void writeLegible(ostream &);
   void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
@@ -182,9 +182,9 @@ public:
     //stateNames(a.stateNames), final(a.final), states(a.states), 
     //trn(((a.trn ==0)? 0 : (NEW trainInfo(*a.trn)))){}; // Yaser added this 7-25-2000 copy constructor*/
 
-WFST(istream & istr) {
+WFST(istream & istr,bool alwaysNamed=false) {
   initAlphabet();
-    if (!this->readLegible(istr))
+    if (!this->readLegible(istr,alwaysNamed))
       final = -1;
   }
   WFST(const char *buf); // make a simple transducer representing an input sequence
