@@ -50,9 +50,21 @@ BOOST_AUTO_UNIT_TEST( alphabet )
   Alphabet<StringKey,StringPool> b;
   const char *s[]={"u","ul","mu","pi"};
   const int n=sizeof(s)/sizeof(s[0]);
+  BOOST_CHECK(n==4);
   a.add("a");
+  for (int i=0;i<n;++i) {
+	BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
+	BOOST_CHECK(a[*a.find(s[i])] == s[i]);
+	BOOST_CHECK(b(*b.find(s[i])) == s[i]);
+  }
+  BOOST_CHECK(a.size()==5 && b.size()==4);
   for (int i=0;i<n;++i)
-	BOOST_CHECK(a.indexOf(s[i]) == b.indexOf(s[i])+1);
+	BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
+  BOOST_CHECK(a.size()==5 && b.size()==4);
+  BOOST_CHECK(a(4)=="pi");
+  BOOST_CHECK(a(77)=="77");
+  BOOST_CHECK(a.index_of("77")==77);
+  BOOST_CHECK(a.size()==78);
   a.verify();
   b.verify();
   

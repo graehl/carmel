@@ -147,7 +147,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 char *p = buf;
 				char *limit=namer.limit;
                 const char *s = b.stateName(mediate.source),
-                  *l = (*a.out)[mediate.hiddenLetter];
+                  *l = (*a.out)[mediate.hiddenLetter].c_str();
                 while ( *s && p < limit)
                   *p++ = *s++;
                 *p++ = ',';

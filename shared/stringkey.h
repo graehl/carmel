@@ -2,29 +2,31 @@
 #define STRINGKEY_H
 
 #include "config.h"
-
-#include "string.h"
+#include <string>
+#include "static_itoa.h"
 #include "2hash.h"
 
 class StringKey {
 public:
 	char *str;
-	static char *empty;
-	StringKey() : str(empty) {}
+	const char *c_str() const { return str; }
+	static StringKey empty;
+	StringKey() : str(empty.str) {}
+	explicit StringKey(unsigned i) : str(static_itoa(i)) {}
 	StringKey(const char *c) : str(const_cast<char *>(c)) {}
 	const char *clone()
 	{
 		char *old = str;
-		str = strcpy(NEW char[strlen(str)+1], str);
+		str = std::strcpy(NEW char[strlen(str)+1], str);
 		return old;
 	}
 	void kill()
 	{
-		if (str != empty)
+		if (str != empty.str)
 			delete str;
-		str = empty;
+		str = empty.str;
 	}
-	operator char * () { return str; }
+	//operator char * () { return str; }
 	//	char * operator =(char * c) { char *t = str; str = c; return t; } // returns old value: why?
 	char * operator=(char *c) { return str=c; }
 	bool operator < ( const StringKey &a) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
@@ -40,7 +42,7 @@ public:
 		return strcmp(str, a.str);
 	}
 
-	bool isGlobalEmpty() const { return str == empty; }
+	bool isDefault() const { return str == empty.str; }
 	size_t hash() const
 	{
 		return cstr_hash(str);	

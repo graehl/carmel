@@ -5,6 +5,9 @@
 
 //#define DEBUGNAN
 
+#define BOOST_DISABLE_THREADS
+#define BOOST_NO_MT
+
 #define DBP(a) do { Config::debug() << a; } while(0)
 
 //#define UNORDERED_MAP

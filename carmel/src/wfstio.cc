@@ -251,8 +251,8 @@ int WFST::getStateIndex(const char *buf) {
   char *scanend;
   unsigned int st;
   if (!named_states) {
-    st=strtol(buf,&scanend,10);
-    if (*scanend != '\0') {
+    st=strtol(buf,&scanend,10); // base 10, potential buffer overflow?? not really, read only
+    if (*buf && *scanend != '\0') {
 		Config::warn() << "Since intial state was a number, expected an integer state index, but got: " << buf << std::endl << "\t(-K command line option should not be used if states are named)" << std::endl;
       return -1;
     } else {
@@ -285,7 +285,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
   named_states=1;
   if (!alwaysNamed) {
     named_states=0;
-    for (char *p=finalName.str;*p;++p)
+    for (const char *p=finalName.c_str();*p;++p)
       if (!isdigit(*p)) {
         named_states=1;
         break;
@@ -513,8 +513,8 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
         destState = stateName(a->dest);
         os << " (" << destState;
         if ( !brief || a->in || a->out ) { // omit *e* *e* labels
-          inLet = (*in)[a->in];
-          outLet = (*out)[a->out];
+          inLet = (*in)[a->in].c_str();
+          outLet = (*out)[a->out].c_str();
           os << " " << inLet;
           if ( !brief || strcmp(inLet, outLet) )
             os << " " << outLet;
