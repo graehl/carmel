@@ -75,7 +75,7 @@
  * StackAlloc requires you to explicitly align<T>() before alloc<T>(). (or use
  * aligned_alloc<T>())
  *
- * void read(ifstream &in,B &b,StackAlloc &alloc) ... which sets !in (or throws)
+ * void read(istream &in,B &b,StackAlloc &alloc) ... which sets !in (or throws)
  * if input fails, and uses alloc.alloc<T>(n) as space to store an input, returning the
  * new beg - [ret,end) is the new unused range
  */
@@ -290,7 +290,7 @@ struct SwapBatch {
         out << size() << " items in " << n_batches() << " batches of " << batchsize << " bytes, stored in " << basename << "N";
     }
     size_type *d_tail;
-    BatchMember *read_one(std::ifstream &is)
+    BatchMember *read_one(std::istream &is)
     {
         BACKTRACE;
         DBP_ADD_VERBOSE(3);
@@ -338,7 +338,7 @@ struct SwapBatch {
     }
 
     // reads until eof or delim (which is consumed if it occurs)
-    void read_all(std::ifstream &in,char delim=')') {
+    void read_all(std::istream &in,char delim=')') {
         BACKTRACE;
         char c;
         while(in) {
@@ -348,7 +348,7 @@ struct SwapBatch {
     }
 
     template <class F>
-    void read_all_enumerate(std::ifstream &in,F f,char delim=')') {
+    void read_all_enumerate(std::istream &in,F f,char delim=')') {
         BACKTRACE;
         char c;
         while(in) {
@@ -456,7 +456,7 @@ BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
     tmp_fstream i1(s1);
     BOOST_CHECK_EQUAL(b.n_batches(),1);
     BOOST_CHECK_EQUAL(b.size(),0);
-    b.read_all((ifstream&)i1.file);
+    b.read_all((istream&)i1.file);
     BOOST_CHECK_EQUAL(b.n_batches(),5);
     BOOST_CHECK_EQUAL(b.size(),sizeof(swapbatch_test_expect)/sizeof(const char *));
     b.enumerate(swapbatch_test_do);

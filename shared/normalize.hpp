@@ -36,7 +36,7 @@ struct NormalizeGroups {
 
     template <class charT, class Traits>
     void
-    get_from(std::basic_ifstream<charT,Traits>& in)
+    get_from(std::basic_istream<charT,Traits>& in)
     {
         char c;
         EXPECTCH_SPACE('(');
@@ -218,9 +218,9 @@ struct NormalizeGroups {
 };
 
 template <class charT, class Traits,class C>
-std::basic_ifstream<charT,Traits>&
+std::basic_istream<charT,Traits>&
 operator >>
-(std::basic_ifstream<charT,Traits>& is, NormalizeGroups<C> &arg)
+(std::basic_istream<charT,Traits>& is, NormalizeGroups<C> &arg)
 {
     arg.get_from(is);
     return is;
