@@ -15,6 +15,9 @@ DIR = .
 # 
 SRC = ${DIR}/src
 SHARED = ${DIR}/../shared
+
+vpath %.cc $(SRC):$(SHARED)
+
 BOOST=/home/graehl/isd/boost
 
 OBJ.linux = ${DIR}/obj/linux
@@ -51,17 +54,17 @@ LDFLAGS_PRF    = -pg
 BD = /home/graehl/isd/boost/libs/test/src
 BOOST_TEST_SRC =  $(BD)/test_tools.cpp $(BD)/unit_test_parameters.cpp $(BD)/execution_monitor.cpp  $(BD)/unit_test_log.cpp $(BD)/unit_test_result.cpp $(BD)/supplied_log_formatters.cpp $(BD)/unit_test_main.cpp $(BD)/unit_test_suite.cpp $(BD)/unit_test_monitor.cpp
 
-SRC_FILES_NO_MAIN = $(SRC)/Arc.cc $(SRC)/strhash.cc $(SRC)/weight.cc $(SRC)/wfstio.cc $(SRC)/2heap.cc $(SRC)/2hash.cc $(SRC)/compose.cc $(SRC)/fst.cc $(SRC)/graph.cc $(SRC)/kbest.cc $(SRC)/train.cc 
-SRC_FILES = $(SRC_FILES_NO_MAIN) $(SRC)/finite.cc
-SRC_MAIN = $(SRC)/finite.cc
-
-OBJ_FILES_OPT = ${SRC_FILES:${SRC}/%.cc=${OBJ}/optimized/%.o}
-OBJ_LIB = ${SRC_FILES_NO_MAIN:${SRC}/%.cc=${OBJ}/optimized/%.o}
-OBJ_FILES_PRF = ${SRC_FILES:${SRC}/%.cc=${OBJ}/profile/%.o}
-OBJ_FILES_DBG = ${SRC_FILES:${SRC}/%.cc=${OBJ}/debug/%.o}
-OBJ_FILES_PUR = ${SRC_FILES:${SRC}/%.cc=${OBJ}/purified/%.o}
+SRC_FILES_NO_MAIN = Arc.cc strhash.cc weight.cc wfstio.cc 2heap.cc 2hash.cc compose.cc fst.cc graph.cc kbest.cc train.cc 
+SRC_FILES = $(SRC_FILES_NO_MAIN) finite.cc
+SRC_MAIN = finite.cc
+DEP_FILES = $(SRC_FILES:%.cc=%.d)
+OBJ_FILES_OPT = ${SRC_FILES:%.cc=${OBJ}/optimized/%.o}
+OBJ_LIB = ${SRC_FILES_NO_MAIN:%.cc=${OBJ}/optimized/%.o}
+OBJ_FILES_PRF = ${SRC_FILES:%.cc=${OBJ}/profile/%.o}
+OBJ_FILES_DBG = ${SRC_FILES:%.cc=${OBJ}/debug/%.o}
+OBJ_FILES_PUR = ${SRC_FILES:%.cc=${OBJ}/purified/%.o}
 OBJ_FILES_TEST = ${OBJ}/test/strhash.o 
-#${SRC_FILES:${SRC}/%.cc=${OBJ}/test/%.o}
+#${SRC_FILES:%.cc=${OBJ}/test/%.o}
 OBJ_OPT_DIR = $(OBJ)/optimized/
 OBJ_PUR_DIR = $(OBJ)/purified/
 OBJ_PRF_DIR = $(OBJ)/profiled/
@@ -105,19 +108,19 @@ carmel.${ARCH}.prf:  $(OBJ_PRF_DIR) $(OBJ_FILES_PRF)
 carmel.a: $(OBJ_LIB)
 	ar rv ${OBJ}/$@ $?
 
-$(OBJ)/test/%.o: $(SRC)/%.cc
+$(OBJ)/test/%.o: %.cc %.o
 	$(CC)  $(CCFLAGS_TEST) $(IN) $< -o $@
 
-$(OBJ)/optimized/%.o: $(SRC)/%.cc
+$(OBJ)/optimized/%.o: %.cc %.o
 	$(CC)  $(CCFLAGS_OPT) $(IN) $< -o $@
 
-$(OBJ)/profile/%.o: $(SRC)/%.cc
+$(OBJ)/profile/%.o: %.cc %.o
 	$(CC)  $(CCFLAGS_PRF) $(IN) $< -o $@
 
-$(OBJ)/debug/%.o: $(SRC)/%.cc
+$(OBJ)/debug/%.o: %.cc %.o
 	$(CC)  $(CCFLAGS_DBG) $(IN) $< -o $@
 
-$(OBJ)/purified/%.o: $(SRC)/%.cc
+$(OBJ)/purified/%.o: %.cc %.o
 	$(CC)  $(CCFLAGS_DBG) $(IN) $< -o $@
 
 
@@ -146,17 +149,16 @@ clean:
 cleanall:
 	rm -rf $(OBJ) $(SRC)/*~
 
-DEPS=$(DIR)/dependencies.${ARCH}
 
-depend: $(DEPS)
+ifeq ($(MAKECMDGOALS),depend)
+%.d: %.cc
+	$(CC) -MM $< $(IN) | sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
+		[ -s $@ ] || rm -f $@
+endif
 
-$(DEPS): 
-	rm -rf $(DEPS)
-	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/test\/\1?g;print;}' > $(DEPS)
-	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/optimized\/\1?g;print;}' > $(DEPS)
-	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/profile\/\1?g;print;}' >> $(DEPS)
-	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/debug\/\1?g;print;}' >> $(DEPS)
-	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/purified\/\1?g;print;}' >> $(DEPS)
+ifneq ($(MAKECMDGOALS),depend)
+include $(DEP_FILES)
+endif
 
-
-include $(DEPS)
+depend: $(DEP_FILES)
+#dddd	rm -rf $(DEP_FILES)
