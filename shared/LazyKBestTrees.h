@@ -109,7 +109,17 @@ struct Entry {
 
     void print_on(std::ostream &o) const
     {
-        o << "{Entry: " << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
+        
+        o << "{Entry(";
+        if ( child[0]) {
+            o << child[0] << '[' << childbp[0] << ']';
+            if (child[1])
+                o << "," << child[1] << '[' << childbp[1] << ']';
+        }
+        
+        o << ")=" << *result;
+        o << '}';
+        
     }
     //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
 };
@@ -125,7 +135,10 @@ struct Node {
     typedef default_print_on has_print_on;
     void print_on(std::ostream &o) const
     {
-        o << "{NODE @" << this << ": " << " first=" << *first_best() << " last=" << *last_best() << " pq=" << pq << " memo=" << memo << '}';
+        o << "{NODE @" << this << '[' << memo.size() << ']';
+        if (memo.size())
+            o << ": " << " first=" << *first_best() << " last=" << *last_best() << " pq=" << pq; // "  << memo=" << memo
+        o << '}';
     }        
     static A result_alloc;
     typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
