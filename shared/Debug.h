@@ -21,8 +21,10 @@ using namespace std;
 # define ASSERT_LEVEL 9999
 #endif
 
-#define IF_INFO(level) if(INFO_LEVEL>level)
-#define IF_ASSERT(level) if(ASSERT_LEVEL>level)
+#define IF_INFO(level) if(INFO_LEVEL>=level)
+#define IF_ASSERT(level) if(ASSERT_LEVEL>=level)
+#define UNLESS_INFO(level) if(INFO_LEVEL<level)
+#define UNLESS_ASSERT(level) if(ASSERT_LEVEL<level)
 
 #define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
 
