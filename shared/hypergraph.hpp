@@ -12,9 +12,9 @@ view a transducer or other ordered multi-hypergraph as:
 directed graph of outside edges (from each tail to head, i.e. rhs states to lhs state)
 
 
-G 	A type that is a model of Graph.
-g 	An object of type G.
-v 	An object of type boost::graph_traits<G>::vertex_descriptor.
+G       A type that is a model of Graph.
+g       An object of type G.
+v       An object of type boost::graph_traits<G>::vertex_descriptor.
 Associated Types
 boost::graph_traits<G>::traversal_category
 
@@ -24,7 +24,7 @@ boost::graph_traits<G>::adjacency_iterator
 
 An adjacency iterator for a vertex v provides access to the vertices adjacent to v. As such, the value type of an adjacency iterator is the vertex descriptor type of its graph. An adjacency iterator must meet the requirements of MultiPassInputIterator.
 Valid Expressions
-adjacent_vertices(v, g) 	Returns an iterator-range providing access to the vertices adjacent to vertex v in graph g.[1]
+adjacent_vertices(v, g)         Returns an iterator-range providing access to the vertices adjacent to vertex v in graph g.[1]
 Return type: std::pair<adjacency_iterator, adjacency_iterator>
 
 
@@ -57,10 +57,10 @@ struct NoWeight {
 // usually: K = key *, you have array of key at key *: vec ... vec+size
 // construct OffsetArrayPmap(vec,vec+size) and get an array of size Vs (default constructed)
 
-/*Iterator 	Must be a model of Random Access Iterator. 	 
-OffsetMap 	Must be a model of Readable Property Map and the value type must be convertible to the difference type of the iterator. 	 
-T 	The value type of the iterator. 	std::iterator_traits<RandomAccessIterator>::value_type
-R 	The reference type of the iterator. 	std::iterator_traits<RandomAccessIterator>::reference
+/*Iterator      Must be a model of Random Access Iterator.       
+OffsetMap       Must be a model of Readable Property Map and the value type must be convertible to the difference type of the iterator.          
+T       The value type of the iterator.         std::iterator_traits<RandomAccessIterator>::value_type
+R       The reference type of the iterator.     std::iterator_traits<RandomAccessIterator>::reference
 
 iterator_property_map(Iterator i, OffsetMap m)*/
 
@@ -84,10 +84,10 @@ struct ArrayPMap;
 */
 
 // HyperarcLeftMap = count of unique tails for each edge, should be initialized to 0 by user
-// e.g. 
+// e.g.
 /*
   typedef typename graph_traits<G>::hyperarc_index_map HaIndex;
-  typedef ArrayPMap<unsigned,HaIndex> PMap;  
+  typedef ArrayPMap<unsigned,HaIndex> PMap;
   typename PMap::Imp arc_remain(num_hyperarcs(g),HaIndex(g));
   ReverseHypergraph<G,PMap> r(g,PMap(arc_remain));
 */
@@ -101,33 +101,33 @@ void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
 
 template <class G,
 //class HyperarcLeftMap=typename ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_index_map>::type,
-class HyperarcMapFactory=typename property_factory<G,typename graph_traits<G>::hyperarc_descriptor>,
-  class VertMapFactory=typename property_factory<G,typename graph_traits<G>::vertex_descriptor>,
+class HyperarcMapFactory=property_factory<G,hyperarc_tag_t>,
+  class VertMapFactory=property_factory<G,vertex_tag_t>,
 class ContS=VectorS >
 
 struct ReverseHyperGraph {
   typedef ReverseHyperGraph<G,HyperarcMapFactory,VertMapFactory,ContS> Self;
   typedef G graph;
   typedef graph_traits<graph> GT;
-  typedef typename GT::hyperarc_descriptor HD;    
-  typedef typename GT::vertex_descriptor VD;    
+  typedef typename GT::hyperarc_descriptor HD;
+  typedef typename GT::vertex_descriptor VD;
 
   struct ArcDest  {
-	HD harc; // hyperarc with this tail
-	unsigned multiplicity; // tail multiplicity
-	ArcDest(HD e) : harc(e), multiplicity(1) {}
+        HD harc; // hyperarc with this tail
+        unsigned multiplicity; // tail multiplicity
+        ArcDest(HD e) : harc(e), multiplicity(1) {}
   };
 
-/*  struct Edge : public W { 
-	unsigned ntails;
-	W &weight() { return *this; }
+/*  struct Edge : public W {
+        unsigned ntails;
+        W &weight() { return *this; }
   };
   typedef FixedArray<Edge> Edges;
   */
 //  typedef DynamicArray<Vertex> Vertices;
 //  Edges edge;
 //  Vertices vertex;
-  
+
   typedef typename ContS::container<ArcDest>::type Adj;
   //typedef FixedArray<Adj> Adjs;
   typedef typename VertMapFactory::rebind<Adj>::implementation Adjs;
@@ -137,21 +137,21 @@ struct ReverseHyperGraph {
   typedef typename TailsFactory::implementation HyperarcLeftMap;
   typedef typename TailsFactory::reference RemainPMap;
   HyperarcMapFactory h_fact;
-  HyperarcLeftMap unique_tails;  
+  HyperarcLeftMap unique_tails;
   RemainPMap unique_tails_pmap() {
     return RemainPMap(unique_tails);
   }
   VertMapFactory vert_fact;
-  
-  
+
+
   ReverseHyperGraph(const G& g_,
     VertMapFactory vert_fact_=VertMapFactory(g_),
     HyperarcMapFactory h_fact_=HyperarcMapFactory(g_)) : adj(vert_fact_), g(g_), unique_tails(unique_tails_pmap), vert_fact(vert_fact_), h_fact(h_fact_), unique_tails(h_fact_)
     //num_hyperarcs(g_)
-  {		
-	visit<HD>(g,*this);
+  {
+        visit<HD>(g,*this);
   }
-  
+
   Adj &operator[](VD v) {
     return adj[v];
   }
@@ -163,15 +163,15 @@ struct ReverseHyperGraph {
         Adj &a=adj[target(*(pti.first),g)];
         if (a.size()&&a.top().harc == harc) {
           // last hyperarc with same tail = same hyperarc
-	      ++a.top().multiplicity;
-        } else {	  // new (unique) tail
-	      a.push(harc); // default multiplicity=1
-	      ++ut; 
-	    }
+              ++a.top().multiplicity;
+        } else {          // new (unique) tail
+              a.push(harc); // default multiplicity=1
+              ++ut;
+            }
       }
     put(unique_tails,harc,ut);
-  }  
-  
+  }
+
   // user must init to 0
   template <class EdgePMap>
   void count_unique_tails(EdgePMap e) {
@@ -179,7 +179,7 @@ struct ReverseHyperGraph {
       FOREACH(const ArcDest &ad,a) {
         ++e[ad.harc];
       }
-    }    
+    }
   }
 
 // NONNEGATIVE COSTS ONLY!  otherwise may try to adjust the cost of something on heap that was already popped (memory corruption ensues)
@@ -228,7 +228,7 @@ struct ReverseHyperGraph {
   typedef HeapKey<VD,VertexCostMap,typename LocMap::reference> Key;
   typedef DynamicArray<Key> Heap;
   Heap heap;
-  
+
 
   void init_costs(Cost cinit=numeric_limits<Cost>::infinity) {
     typename GT::pair_vertex_it i=vertices(rev.g);
@@ -241,8 +241,8 @@ struct ReverseHyperGraph {
     //typename Key::SetLocWeight save(ref(loc),mu);
     heap.push_back(v);
   }
- private:      
-  void operator()(VD v) {    
+ private:
+  void operator()(VD v) {
     if (get(mu,v) != numeric_limits<Cost>::infinity)
       heap.push_back(v);
   }
@@ -272,12 +272,12 @@ struct ReverseHyperGraph {
     FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
       HD h=a.harc;
       VD head=source(h,rev.g);
-      RemainInf &ri=remain_infinum[h];      
+      RemainInf &ri=remain_infinum[h];
         Assert(ri.cost() >= 0);
       ri.cost() += (a.multiplicity*cv);  // assess the cost of reaching v
         Assert(ri.remain() > 0);
       if (--ri.remain() == 0) // if v completes the hyperarc, attempt to use it to reach head (more cheaply)
-        relax(head,h,ri.cost());            
+        relax(head,h,ri.cost());
     }
 
   }
@@ -289,7 +289,7 @@ struct ReverseHyperGraph {
       heapPop(heap);
       reach(top.key);
     }
-  }  
+  }
  };
 
 
@@ -312,7 +312,7 @@ struct ReverseHyperGraph {
     ++n;
     put(vr,v,true); // mark reached
     Adj &a=rev[v];
-    for(Adj::iterator i=a.begin(),end=a.end();i!=end;++i) {
+    for(typename Adj::iterator i=a.begin(),end=a.end(); i!=end; ++i) {
       HD harc=i->harc;
       VD tail=target(harc,g);
       if (!get(vr,tail)) { // not reached yet
@@ -331,18 +331,18 @@ struct ReverseHyperGraph {
  template <class P>
    unsigned reach(VD start,P p) {
      HyperGraphReach<P> alg(*this,p);
-     alg(start);    
+     alg(start);
      return alg.n;
    }
   template <class B,class E,class VertexReachMap>
    unsigned reach(B begin,E end,VertexReachMap p) {
      HyperGraphReach<VertexReachMap> alg(*this,p);
-     for_each(begin,end,ref(alg));    
+     std::for_each(begin,end,ref(alg));
      return alg.n;
    }
-  
 
-/* usage: 
+
+/* usage:
 BestTree alg(g,mu,pi);
 alg.init_costs();
 for each final (tail) vertex v with final cost f:
@@ -354,7 +354,7 @@ alg.prepare(); // adds non-infinity cost only
 alg.finish();
 
 also
-typename RemainInfCostMap::reference hyperarc_remain_and_cost_map() 
+typename RemainInfCostMap::reference hyperarc_remain_and_cost_map()
 returns pmap with pmap[hyperarc].remain() == 0 if the arc was usable from the final tail set
 and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
 */
@@ -364,15 +364,6 @@ and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
 
 };
 
-
-#ifdef TEST
-#include "test.hpp"
-#endif
-
-#ifdef TEST
-BOOST_AUTO_UNIT_TEST( hypergraph )
-{
-}
-#endif
+//! TESTS in transducergraph.hpp
 
 #endif
