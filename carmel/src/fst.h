@@ -154,7 +154,7 @@ class WFST {
   } ;
   //     newPerplexity = train_estimate();
   //	lastChange = train_maximize(method);
-  Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns per-example perplexity of training set = Nth root of product of model probabilities of N-weight training examples  - optionally deletes training examples that have no accepting path
+  Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
   Weight train_maximize(NormalizeMethod method=CONDITIONAL,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
   WFST(const WFST &a) {}
  public:

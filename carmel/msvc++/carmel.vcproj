@@ -28,7 +28,7 @@
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="0"
 				BrowseInformation="1"
-				BrowseInformationFile=""
+				BrowseInformationFile="browse"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
