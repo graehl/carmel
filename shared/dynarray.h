@@ -898,7 +898,8 @@ bool operator ==(const Array<Lt,A> &l, const Array<L2,A2> &r)
 
 
 
-#ifdef TEST
+#ifdef TEST_MAIN
+
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };
 int a[] = { 1,2,3,4,5,6,7 };
@@ -918,9 +919,10 @@ struct plus_one_reader {
 };
 BOOST_AUTO_UNIT_TEST( dynarray )
 {
+    using namespace std;
     {
         FixedArray<FixedArray<int> > aa,ba;
-        string sa="(() (1) (1 2 3) () (4))";
+        std::string sa="(() (1) (1 2 3) () (4))";
         BOOST_CHECK(test_extract_insert(sa,aa));
         IndirectReader<plus_one_reader> reader;
         istringstream ss(sa);
@@ -1007,8 +1009,8 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   BOOST_CHECK(db[10]==1);
   aa.dealloc();
 
-  string emptya=" ()";
-  string emptyb="()";
+  std::string emptya=" ()";
+  std::string emptyb="()";
   {
         Array<int> a;
         DynamicArray<int> b;
