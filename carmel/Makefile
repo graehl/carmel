@@ -15,17 +15,20 @@ DIR = .
 # 
 SHARED = ${DIR}/../shared
 SRC = ${DIR}/src
-OBJ.i686 = ${DIR}/obj/i686
-OBJ.sun4 = ${DIR}/obj/sun4
+BOOST=/home/graehl/isd/boost
+
 OBJ.linux = ${DIR}/obj/linux
+OBJ.solaris = ${DIR}/obj/solaris
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
-CC.sun4 = g++
-CC.i686 = g++
+CC.solaris = g++
+#/nfs/topaz/graehl/isd/solaris/bin/g++3.2
 CC.cygwin = g++
+CC.freebsd = g++31
+CC.macosx = g++
 CC = $(CC.$(ARCH))
 CCFLAGS = -c -Wall
 LDFLAGS = -L$(LIB) -lm
