@@ -1,0 +1,5 @@
+#!/bin/sh
+#. /home/graehl/isd/env.sh
+. `dirname $0`/../../env.sh
+`dirname $0`/carmel.$ARCH $*
+
