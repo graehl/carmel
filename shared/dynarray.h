@@ -79,7 +79,7 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
 	  if (c==')') {	
 		break;
 	  }
-	  in.putback(c);
+	  in.unget();
 #if 1
 	  typename Reader::value_type temp;
 	  if (read(in,temp).good())
@@ -93,7 +93,7 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
 	  }
 #endif
 	  EXPECTI(in>>c);
-	  if (c != ',') in.putback(c);
+	  if (c != ',') in.unget();
   }
   return GENIOGOOD;
 fail:
@@ -445,14 +445,14 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	  if (c==')') {	
 		break;
 	  }
-	  in.putback(c);
+	  in.unget();
 	  push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
 	  if (!read(in,back()).good()) {
 		//undo_push_back_raw();
 		goto fail;
 	  }
 	  EXPECTI(in>>c);
-	  if (c != ',') in.putback(c);
+	  if (c != ',') in.unget();
   }
   return GENIOGOOD;
 fail:

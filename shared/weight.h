@@ -274,7 +274,7 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
 	return std::ios_base::badbit;
    }
   } else {
-    i.putback(c);
+    i.unget();
     setReal(f);
   }
   return std::ios_base::goodbit;

@@ -51,7 +51,7 @@ const Weight Weight::INF(false,false);
   else
   weight = 0;
   } else {
-  i.putback(c);
+  i.unget();
   weight = f;
   }
   return i;

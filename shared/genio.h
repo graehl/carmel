@@ -174,7 +174,7 @@ inline std::basic_ostream<charT,Traits>& operator << \
 #define EXPECTI(inop) do { ; if (!(inop).good()) goto fail; } while(0)
 #define EXPECTCH(a) do { if (!in.get(c).good()) goto fail; if (c != a) goto fail; } while(0)
 #define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
-#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.putback(c); e } } while(0)
-#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.putback(c); e } } while(0)
+#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
+#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 
 #endif
