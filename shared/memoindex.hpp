@@ -102,7 +102,8 @@ BOOST_AUTO_UNIT_TEST( memoindex )
   BOOST_CHECK(m.find(0)==&m.apply(0));
   BOOST_CHECK(m.find(1)==&m.apply(1));
   BOOST_CHECK(m.apply(0).second==1);
-  BOOST_CHECK(m.find(3)==&m.apply(3));
+  MemoIndex<ExampleF>::Result *p3=&m.apply(3);
+  BOOST_CHECK(m.find(3)==p3);
   BOOST_CHECK(m.apply(3).first==1);
   BOOST_CHECK(!m.find(2));
   BOOST_CHECK(start == 3);
@@ -120,7 +121,8 @@ BOOST_AUTO_UNIT_TEST( memoindex )
   BOOST_CHECK(m.find(0)==&m.apply(0));
   BOOST_CHECK(m.find(1)==&m.apply(1));
   BOOST_CHECK(m.apply(0).second==1);
-  BOOST_CHECK(m.find(3)==&m.apply(3));
+  MemoIndexOwn<ExampleF>::Result *p3=&m.apply(3);
+  BOOST_CHECK(m.find(3)==p3);
   BOOST_CHECK(m.apply(3).first==1);
   BOOST_CHECK(!m.find(2));
   BOOST_CHECK(m.f.n == 3);

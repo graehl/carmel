@@ -4,6 +4,16 @@
 #include <string>
 #include <sstream>
 
+template <class S,class C> inline
+bool test_extract(S &s,C &c) {
+  istringstream is(s);
+  is >> c;
+  return is.good();
+}
+
+#define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
+#define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c)))
+
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4267 4535 )
@@ -14,13 +24,13 @@
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
-#ifdef BOOST_AUTO_TEST_MAIN 
+#ifdef BOOST_AUTO_TEST_MAIN
 #ifdef BOOST_NO_EXCEPTIONS
 #include <cstdlib>
 namespace boost
 {
   void throw_exception(std::exception const & e) {
-	std::exit(-1);
+        std::exit(-1);
   }// user defined
 #endif
 #endif
