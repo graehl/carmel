@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 
 typedef boost::shared_ptr<std::istream> Infile;
@@ -20,7 +21,8 @@ struct null_deleter {
 static Infile default_in(&cin,null_deleter());
 static Outfile default_log(&cerr,null_deleter());
 static Outfile default_out(&cout,null_deleter());
-static Infile default_none;
+static Infile default_in_none;
+static Outfile default_out_none;
 
 //using namespace boost;
 //using namespace boost::program_options;
@@ -29,11 +31,54 @@ using boost::shared_ptr;
 
 //using namespace std;
 
+namespace boost {    namespace program_options {
+void validate(boost::any& v,
+              const std::vector<std::string>& values,
+              size_t* target_type, int)
+{
+    typedef size_t value_type;
+    value_type size;
+    double number;
+
+    //using namespace boost::program_options;
+
+    // Make sure no previous assignment to 'a' was made.
+    po::validators::check_first_occurrence(v);
+    // Extract the first std::string from 'values'. If there is more than
+    // one std::string, it's an error, and exception will be thrown.
+    std::stringstream i(po::validators::get_single_string(values));
+    if (!(i >> number))
+        goto fail;
+    char c;
+    if (i.get(c)) {
+        switch(c) {
+        case 'g':case 'G':
+            number *= (1024*1024*1024);
+            break;
+
+        case 'm':case 'M':
+            number *= (1024*1024);
+            break;
+
+        case 'k':case 'K':
+            number *=(1024);
+            break;
+
+        default:
+            goto fail;
+        }
+    }
+    if (i.get(c))
+        goto fail;
+    v=boost::any((value_type)number);
+    return;
+fail:
+    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (2^10,2^20,2^30)suffix but got: ").append(i.str()));
+}
 
 /* Overload the 'validate' function for shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
-namespace boost {    namespace program_options {
 void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::istream>* target_type, int)

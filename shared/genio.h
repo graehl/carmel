@@ -352,6 +352,9 @@ typedef std::ios_base::failure genio_exception;
 #define GENIO_EOF_BAD GENIO_eof_ok=false
 #define GENIO_THROW(a) do {  throw genio_exception(a); } while(0)
 #define GENIO_THROW2(a,b) do { throw genio_exception(std::string(a).append(b)); } while(0)
+#define BREAK_ONCH_SPACE(a) if (!(in>>c)) break;    \
+                            if (c==a) break; \
+                            in.unget()
 #define EXPECTI_FIRST(inop) do {  if (!(inop).good())  goto fail; } while(0)
 #define EXPECTI(inop) do {  if (!(inop).good()) { GENIO_THROW2("expected input failed: ",#inop); } } while(0)
 //#define EXPECTI_COMMENT(inop) do { if (!(inop).good()) { goto fail; } } while(0)

@@ -328,21 +328,26 @@ struct SwapBatch {
         return newguy;
     }
 
-    void read_all(std::ifstream &is) {
+    // reads until eof or delim (which is consumed if it occurs)
+    void read_all(std::ifstream &in,char delim=')') {
         BACKTRACE;
-        while(is)
-            read_one(is);
+        char c;
+        while(in) {
+            BREAK_ONCH_SPACE(delim);
+            read_one(in);
+        }
     }
 
     template <class F>
-    void read_all_enumerate(std::ifstream &is,F f) {
+    void read_all_enumerate(std::ifstream &in,F f,char delim=')') {
         BACKTRACE;
-        while(is) {
-            BatchMember *newguy=read_one(is);
+        char c;
+        while(in) {
+            BREAK_ONCH_SPACE(delim);
+            BatchMember *newguy=read_one(in);
             if (newguy)
                 deref(f)(*newguy);
         }
-
     }
 
     static BatchMember *data_for_header(const size_type *header)

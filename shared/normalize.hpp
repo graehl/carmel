@@ -38,7 +38,9 @@ struct NormalizeGroups {
     void
     get_from(std::basic_ifstream<charT,Traits>& in)
     {
-        norm_groups.read_all_enumerate(in,make_both_functors_byref(max_offset,total_size));
+        char c;
+        EXPECTCH_SPACE('(');
+        norm_groups.read_all_enumerate(in,make_both_functors_byref(max_offset,total_size),')');
     }
 
     unsigned num_groups() const {
