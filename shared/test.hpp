@@ -25,9 +25,10 @@ template <class S,class C> inline
 bool test_extract(S &s,C &c) {
   istringstream is(s);
   is >> c;
-  return is.good();
+  return !is.fail();
 }
 
+//#include "debugprint.hpp"
 template <class S,class C> inline
 bool test_extract_insert(S &s,C &c) {
   istringstream is(s);
@@ -36,10 +37,16 @@ bool test_extract_insert(S &s,C &c) {
   o << c;
   ostringstream o2;
   o2 << s;
-  if (o.str() != o2.str())
+  if (o.str() != o2.str()) {
+//      DBP(o.str());
+//      DBP(o2.str());
+      std::cerr << "Output after writing and rereading: "<<o2.str()<<std::endl<<" ... didn't match original: " << o.str() << std::endl;
       return 0;
-  if (!is.good())
+  }
+  if (is.fail()) {
+      std::cerr << "Round trip write then read succeeded, but input stream is flagged as failing\n";
       return 0;
+  }
   return 1;
 }
 

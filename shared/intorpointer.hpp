@@ -9,19 +9,32 @@
 #endif
 
 template <class T>
-inline unsigned offset_to_index(const T *a) {
+inline size_t offset_to_index(const T *a) {
 //    return ((unsigned)a)/sizeof(T);
     return (unsigned)(a-(T *)0);
 }
 
-template <class Pointed=void,class Int=unsigned>
+// returns difference in bytes rather than #of T.
+// forall T *a,T *b: offset_to_index(ptrdiff_offset(a,b)) == a-b
+template <class T>
+T* offset_ptrdiff(const T *a,const T *b) {
+    return (T*)((char *)a - (char *)b);
+}
+
+// forall T*a,T*b: ptradd_offset(a,ptrdiff_offset(b,a)) == b
+template <class T>
+T* offset_ptradd(const T *a, const T *b) {
+    return (T*)((char *)a + (ptrdiff_t)b);
+}
+
+template <class Pointed=void,class Int=size_t>
 struct IntOrPointer {
     typedef Pointed pointed_type;
     typedef Int integer_type;
     typedef Pointed *value_type;
     typedef IntOrPointer<Pointed> Self;
     IntOrPointer(int j) { *this=j; }
-    IntOrPointer(unsigned j) { *this=j; }
+    IntOrPointer(size_t j) { *this=j; }
     IntOrPointer(value_type v) { *this=v; }
     union {
         value_type p; // must be even (guaranteed unless you're pointing at packed chars)
@@ -55,6 +68,7 @@ struct IntOrPointer {
         else {
             o << "0x" << hex << (size_t)pointer() << dec;
         }
+        return GENIOGOOD;
     }
 };
 
