@@ -1,14 +1,6 @@
-/*******************************************************************************
-* This software ("Carmel") is licensed for research use only, as described in  *
-* the LICENSE file in this distribution.  The software can be downloaded from  *
-* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
-* with questions about the software or commercial licensing.  All software is  *
-* copyrighted C 2000 by the University of Southern California.                 *
-*******************************************************************************/
 #ifndef HASH_H 
 #define HASH_H
-
+#include "config.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -84,22 +76,30 @@ template <typename K, typename V>
 std::ostream & operator << (std::ostream & o, const Entry<K,V> & e);
 
 template <typename K, typename V> class HashIter {
-  HashTable<K,V> &ht;
+  HashTable<K,V> *ht;
   Entry<K,V> **bucket;
   Entry<K,V> *entry;
   Entry<K,V> *next;
-  HashIter operator = ( HashIter & );		// disable
-//     operator = ( HashIter & );		// disable
+  HashIter operator = ( HashIter & );
+  Entry<K,V> * operator & () const { return entry; }
+  //     operator = ( HashIter & );		// disable
 public:
-  HashIter( HashTable<K,V> &t) : ht(t)
+	HashIter( ) : ht(0) {}
+	void init(HashTable<K,V> &t) {
+		ht=&t;
+	    if ( ht->count() > 0 ) {
+		  bucket = ht->table;
+		while ( !*bucket ) bucket++;
+		  entry = *bucket++;
+	     next = entry->next;
+		} else 
+			entry = NULL;
+
+	}
+
+  HashIter( HashTable<K,V> &t)
   {
-    if ( ht.count() > 0 ) {
-      bucket = ht.table;
-      while ( !*bucket ) bucket++;
-      entry = *bucket++;
-      next = entry->next;
-    } else 
-      entry = NULL;
+	  init(t);
   }
   int operator++()
   {
@@ -111,7 +111,7 @@ public:
       return 1;
     }
     for ( ; ; ) {
-      if ( bucket >= ht.table + ht.size() ) {
+      if ( bucket >= ht->table + ht->size() ) {
 	entry = NULL;
 	return 0;
       }
@@ -121,16 +121,16 @@ public:
       }
     }
   }
-  int bucketNum() const { return int(bucket - ht.table - 1); }
-  operator int() const { return ( entry != NULL ); }
+  int bucketNum() const { return int(bucket - ht->table - 1); }
+  operator bool() const { return ( entry != NULL ); }
   Entry<K,V> & operator ()() const { return *entry; }
-  Entry<K,V> * operator & () const { return entry; }
+
   const K & key() const { return entry->key; }
   V & val() const { return entry->val; }
   void remove() {	/* could be more efficient */
     const K &k = key();
     this->operator++();
-    ht.remove(k);
+    ht->remove(k);
   }
 };
 
@@ -197,9 +197,9 @@ public:
 				// tables from being copied, and this message
 				// will warn if they are 
     
-	//    cerr << "Unauthorized hash table copy " << &ht << " to " << this << "\n";
+	//    std::cerr << "Unauthorized hash table copy " << &ht << " to " << this << "\n";
     // This  code is added by Yaser to Allow copy contructors for hash tables - ignore comments above
-//    cerr << "copying a hash table \n";
+//    std::cerr << "copying a hash table \n";
     siz = 4; 
     cnt = 0;
     growAt = (int)(DEFAULTHASHLOAD * siz);
@@ -211,7 +211,7 @@ public:
       table[i] = NULL;
     for(HashConstIter<K,V> k(ht) ; k ; ++k)
       add(k.key(),k.val());
-//    cerr <<"done\n";
+//    std::cerr <<"done\n";
   } 
   void swap(HashTable<K,V> &h)
   {
@@ -238,10 +238,10 @@ public:
   }
   ~HashTable()
   {
-    //    cerr << "HashTable destructor called\n"; // Yaser
+    //    std::cerr << "HashTable destructor called\n"; // Yaser
     if ( table ) {
       for ( HashIter<K,V> i(*this); i ; ++i )
-	delete &i;
+	    delete &(i());
       delete[] table;
       table = NULL;
       siz = 0;

@@ -1,13 +1,6 @@
-/*******************************************************************************
-* This software ("Carmel") is licensed for research use only, as described in  *
-* the LICENSE file in this distribution.  The software can be downloaded from  *
-* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
-* with questions about the software or commercial licensing.  All software is  *
-* copyrighted C 2000 by the University of Southern California.                 *
-*******************************************************************************/
 #ifndef DYNARRAY_H 
 #define DYNARRAY_H 1
+#include "config.h"
 
 #include <string>
 #include <new>
@@ -18,7 +11,7 @@ template <typename T> class DynamicArray {
   int space;
   int sz;
   T *vec;
-  DynamicArray& operator = (const DynamicArray &a){cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
+  DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
 public:
   DynamicArray(unsigned sp = 4) : space(sp), sz(0), vec((T*)::operator new ((size_t)sizeof(T)*sp)) {}
   DynamicArray(const DynamicArray &a): space(a.space),sz(0){ // added by Yaser 7-27-2000

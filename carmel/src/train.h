@@ -1,14 +1,6 @@
-/*******************************************************************************
-* This software ("Carmel") is licensed for research use only, as described in  *
-* the LICENSE file in this distribution.  The software can be downloaded from  *
-* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
-* with questions about the software or commercial licensing.  All software is  *
-* copyrighted C 2000 by the University of Southern California.                 *
-*******************************************************************************/
-
 #ifndef TRAIN_H
 #define TRAIN_H 1
+#include "config.h"
 #include "assert.h"
 #include "2hash.h"
 #include "weight.h"
@@ -96,6 +88,11 @@ index(NULL) { }
     hitcount = 0;
 #endif
   }
+  void scaleArcs(Weight w)
+  {
+	for ( List<Arc>::iterator l=arcs.begin() ; l != arcs.end() ; ++l)
+		l->weight *= w;
+  }
   void addArc(const Arc &arc)
   {
     arcs.push(arc);
@@ -103,7 +100,7 @@ index(NULL) { }
     Assert(!index);
 #ifdef DEBUG
     if (index) {
-      cerr << "Warning: adding arc to indexed state.\n";
+		std::cerr << "Warning: adding arc to indexed state.\n";
       delete index;
       index = NULL;
     }
@@ -115,7 +112,6 @@ index(NULL) { }
     Weight **ppWt;
   for ( List<Arc>::iterator l=arcs.begin() ; l != arcs.end() ; ) {
       if ( l->weight == 0 ) {
-	// remove as originally implemented by John in ListIter deletes current and jumbs to next
 	 List<Arc>::iterator temp = l++ ;	 
 	 arcs.erase(temp);
 	continue;
@@ -182,7 +178,7 @@ struct DWPair {
   Arc *arc;
   Weight scratch;
   Weight counts;
-  Weight &weight() { return arc->weight; }
+  Weight &weight() const { return arc->weight; }
 };
 
 std::ostream & operator << (std::ostream &o, DWPair p);
@@ -247,7 +243,7 @@ class trainInfo {
   Weight *wOld;
 #endif
 
-  trainInfo(){};
+  trainInfo() {};
 private:
   trainInfo(const trainInfo& a){
   }

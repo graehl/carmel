@@ -24,14 +24,14 @@ OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
-CC.solaris = g++
+CC.solaris = /nfs/topaz/graehl/isd/solaris/bin/g++3.2
 #/nfs/topaz/graehl/isd/solaris/bin/g++3.2
 CC.linux = g++
 CC.freebsd = g++31
 CC.macosx = g++
 
 CCFLAGS = -c -Wall -I../boost/boost
-LDFLAGS = -L$(LIB) -lm
+LDFLAGS = -L$(LIB) -lm --static
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -ffast-math
 CCFLAGS_DBG    = $(CCFLAGS) -g 
 CCFLAGS_TEST    = $(CCFLAGS) -DTEST -g -DDEBUG

@@ -1,14 +1,3 @@
-/*******************************************************************************
-* This software ("Carmel") is licensed for research use only, as described in  *
-* the LICENSE file in this distribution.  The software can be downloaded from  *
-* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
-* with questions about the software or commercial licensing.  All software is  *
-* copyrighted C 2000 by the University of Southern California.                 *
-*******************************************************************************/
-#ifndef WFSTIO_H
-#define WFSTIO_H 1
-
 #include <string>
 #include <map>
 #include "assert.h"
@@ -18,7 +7,7 @@
 
 static int pow2(int exp)
 {
-	return 1 << exp;
+        return 1 << exp;
 }
 
 static int getString(istream &in, char *buf)
@@ -32,34 +21,34 @@ static int getString(istream &in, char *buf)
     for ( s = buf+1 ; s < buf+4094 ; ++s ) {
       if ( !in.get(*s) ) return 0;
       if ( *s == '"' )
-	if ( !l )
-	  break;
+        if ( !l )
+          break;
       if ( *s == '\\' )
-	l = l ^ 1;		// toggle escape state
+        l = l ^ 1;              // toggle escape state
       else
-	l = 0;
+        l = 0;
     }
     *++s = '\0';
     if ( s >= buf+4094 ) {
-      cerr << "Symbol too long (over 4000 characters): " << buf;
+      std::cerr << "Symbol too long (over 4000 characters): " << buf;
       return 0;
     }
     break;
-  case '*':			// all strings delimited by * are special symbols
+  case '*':                     // all strings delimited by * are special symbols
     for ( s = buf+1 ; s < buf+4094 ; ++s ) {
       if ( !in.get(*s) ) return 0;
       if ( *s == '*' )
-	break;
+        break;
       else
-	*s = tolower(*s);
+        *s = tolower(*s);
     }
     *++s = '\0';
     if ( s >= buf+4094 ) {
-      cerr << "Symbol too long (over 4000 characters): " << buf;
+      std::cerr << "Symbol too long (over 4000 characters): " << buf;
       return 0;
     }
     break;
-  case '(': 
+  case '(':
   case ')':
     return 0;
     break;
@@ -94,7 +83,7 @@ WFST::WFST(const char *buf) : ownerInOut(1), in(new Alphabet("*e*")),  out(new A
     states[final].addArc(Arc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
     ++final;
   }
-  states.pushBack();			// final state
+  states.pushBack();                    // final state
 }
 
 struct ltstr // Yaser 8-3-200
@@ -105,7 +94,7 @@ struct ltstr // Yaser 8-3-200
   }
 };
 
-bool isNumber(const char * p){  
+bool isNumber(const char * p){
   const char *q = p++ + strlen(p) ;
   while((p < q ) && isdigit(*p)){p++;}
   return(p==q);
@@ -113,7 +102,7 @@ bool isNumber(const char * p){
 
 
 WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) // Yaser 7-25-2000
-// Generate a permutation lattice for a given string 
+// Generate a permutation lattice for a given string
 {
   length = 0 ;
   istringstream line(buf);
@@ -126,7 +115,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
   while ( line ) {
     if ( !getString(line, symbol) ){
       if(!permuteNumbers && currSym != ""){
-	strSymbols.push_back("\"" + currSym + "\"");
+        strSymbols.push_back("\"" + currSym + "\"");
       }
       break;
     }
@@ -135,18 +124,18 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
       invalidate();
       return;
     }
-    if (!permuteNumbers){      
-      if (isNumber(symbol)){ /*it is alphanumeric symbol*/	
-	string temp(symbol+1);	
-	currSym += temp.substr(0,temp.length()-1)  ;
+    if (!permuteNumbers){
+      if (isNumber(symbol)){ /*it is alphanumeric symbol*/
+        string temp(symbol+1);
+        currSym += temp.substr(0,temp.length()-1)  ;
       }
       else{
-	if(currSym != ""){
-	  strSymbols.push_back("\"" + currSym + "\"");
-	}
-	strSymbols.push_back(symbol);
-	currSym="";
-      }            
+        if(currSym != ""){
+          strSymbols.push_back("\"" + currSym + "\"");
+        }
+        strSymbols.push_back(symbol);
+        currSym="";
+      }
     }
     symbolInNumber = in->indexOf(symbol);
     symbolOutNumber = out->indexOf(symbol);
@@ -155,20 +144,20 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
     if (maxSymbolNumber < symbolInNumber)
       maxSymbolNumber = symbolInNumber ;
   }
-  if (permuteNumbers){					   
-    states.pushBack();			/* final state*/
+  if (permuteNumbers){
+    states.pushBack();                  /* final state*/
     final = pow2((int)symbols.size())-1;
     for (int k=0; k < final; k++){
       states.pushBack();
       vector<bool> taken(maxSymbolNumber+1);
       for (int i = 0 ; i <= maxSymbolNumber ;++i)
-	taken[i] = false ;
+        taken[i] = false ;
       for (int l=0; l < int(symbols.size()); l++){
-	int temp = pow2(l);
-	if (((int(k / temp) % 2) == 0) && (!taken[unsigned(symbols[l])])){
-	  states[k].addArc(Arc(symbols[l], symbols[l], k+temp, 1.0));
-	  taken[symbols[l]] = true ;
-	}
+        int temp = pow2(l);
+        if (((int(k / temp) % 2) == 0) && (!taken[unsigned(symbols[l])])){
+          states[k].addArc(Arc(symbols[l], symbols[l], k+temp, 1.0));
+          taken[symbols[l]] = true ;
+        }
       }
     }
   }
@@ -185,50 +174,50 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
     visited[0] = true ;
     for (int k=0; k < final; k++){
       if (visited[k]){
-	map<const char*, bool, ltstr> taken ;
-	for (unsigned int i = 0 ; i < strSymbols.size() ;++i)
-	  taken[strSymbols[i].c_str()] = false ;
-	for (int l=0; l < int(strSymbols.size()); l++){
-	  int temp = pow2(l);
-	  if (((int(k / temp) % 2) == 0) && (!taken[strSymbols[l].c_str()])){
-	    if (isNumber(strSymbols[l].c_str())){
-	      int from_state,to_state ;
-	      from_state = k ;
-	      for(unsigned int i =1 ; i < strSymbols[l].length()-1 ; i++){
-		string s("\"\"\"");
-		s[1] = strSymbols[l][i];
-		if (NULL == in->find(const_cast<char *>(s.c_str())) || NULL == out->find(const_cast<char *>(s.c_str()))){
-		  cerr << "problem! didn't find "<< s << '\n';
-		}
-		else {
-		  while (from_state >= states.count()) // (from_state >= numStates()
-		    states.pushBack();
-		  if (i == strSymbols[l].length()-2)
-		    to_state = k+temp ;
-		  else 
-		    to_state =  ++temp_final ;
-		  if (from_state >= states.count())
-		    states.resize(from_state);
-		  //		  cerr << "adding arc (from:" << from_state << ", to:"<<to_state <<", in/out:"<<s <<"("<<in->indexOf(const_cast<char *>(s.c_str()))<<"))\n";
-		  states[from_state].addArc(Arc(in->indexOf(const_cast<char *>(s.c_str())),in->indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
-		  from_state=to_state ;
-		}
-	      }
-	    }
-	    else{
-	      if (NULL == in->find(const_cast<char *>(strSymbols[l].c_str())) || NULL == out->find(const_cast<char *>(strSymbols[l].c_str()))){
-		cerr << "Error in constructing a permutation lattice!! didn't find symbol in the alphabet "<< strSymbols[l] << '\n';
-	      }
-	      else {
-		//		cerr << "adding arc (from:" << k << ", to:"<<k+temp <<", in/out:"<<strSymbols[l].c_str() << '\n';
-		states[k].addArc(Arc(in->indexOf(const_cast<char *>(strSymbols[l].c_str())),out->indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
-	      }
-	    }
-	    /*symbols[l], symbols[l], k+temp, 1.0));*/
-	    taken[strSymbols[l].c_str()] = true ;
-	    visited[k+temp] = true ;
-	  }
-	}
+        map<const char*, bool, ltstr> taken ;
+        for (unsigned int i = 0 ; i < strSymbols.size() ;++i)
+          taken[strSymbols[i].c_str()] = false ;
+        for (int l=0; l < int(strSymbols.size()); l++){
+          int temp = pow2(l);
+          if (((int(k / temp) % 2) == 0) && (!taken[strSymbols[l].c_str()])){
+            if (isNumber(strSymbols[l].c_str())){
+              int from_state,to_state ;
+              from_state = k ;
+              for(unsigned int i =1 ; i < strSymbols[l].length()-1 ; i++){
+                string s("\"\"\"");
+                s[1] = strSymbols[l][i];
+                if (NULL == in->find(const_cast<char *>(s.c_str())) || NULL == out->find(const_cast<char *>(s.c_str()))){
+                  std::cerr << "problem! didn't find "<< s << '\n';
+                }
+                else {
+                  while (from_state >= states.count()) // (from_state >= numStates()
+                    states.pushBack();
+                  if (i == strSymbols[l].length()-2)
+                    to_state = k+temp ;
+                  else
+                    to_state =  ++temp_final ;
+                  if (from_state >= states.count())
+                    states.resize(from_state);
+                  //              std::cerr << "adding arc (from:" << from_state << ", to:"<<to_state <<", in/out:"<<s <<"("<<in->indexOf(const_cast<char *>(s.c_str()))<<"))\n";
+                  states[from_state].addArc(Arc(in->indexOf(const_cast<char *>(s.c_str())),in->indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
+                  from_state=to_state ;
+                }
+              }
+            }
+            else{
+              if (NULL == in->find(const_cast<char *>(strSymbols[l].c_str())) || NULL == out->find(const_cast<char *>(strSymbols[l].c_str()))){
+                std::cerr << "Error in constructing a permutation lattice!! didn't find symbol in the alphabet "<< strSymbols[l] << '\n';
+              }
+              else {
+                //              std::cerr << "adding arc (from:" << k << ", to:"<<k+temp <<", in/out:"<<strSymbols[l].c_str() << '\n';
+                states[k].addArc(Arc(in->indexOf(const_cast<char *>(strSymbols[l].c_str())),out->indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
+              }
+            }
+            /*symbols[l], symbols[l], k+temp, 1.0));*/
+            taken[strSymbols[l].c_str()] = true ;
+            visited[k+temp] = true ;
+          }
+        }
       }
     }
   }
@@ -254,69 +243,69 @@ int WFST::readLegible(istream &istr)
     stateNumber = stateNames.indexOf(buf);
     if ( stateNumber >= states.count() ) {
       states.pushBack();
-      Assert(stateNumber + 1 == states.count());	
+      Assert(stateNumber + 1 == states.count());
     }
     for ( ; ; ) {
       DO(istr >> c);
       if( c == ')' )
-	break;
+        break;
       DO(c == '(');
       DO(getString(istr, buf));
       destState = stateNames.indexOf(buf);
       if ( destState >= states.count() ) {
-	states.pushBack();
-	Assert(destState + 1 == states.count());
+        states.pushBack();
+        Assert(destState + 1 == states.count());
       }
       DO(istr >> d);
       if ( d != '(' )
-	istr.putback(d);
+        istr.putback(d);
       for ( ; ; ) {
-		  buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
-		 DO(istr >> c);  // skip whitespace
-		 istr.putback(c);
-		 if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-			DO(getString(istr, buf));
-	inL = in->indexOf(buf);
-	DO(istr >> c);  // skip whitespace
-	istr.putback(c);
-	if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-	  DO(getString(istr, buf));
-	outL = out->indexOf(buf);
-	DO(istr >> c); // skip ws
-	istr.putback(c);
-	if (isdigit(c) || c == '.' || c == '-' ) {
-	  DO(istr >> weight);
-	} else
-	  weight = 1.0;
-	if ( weight > 0.0 ) {
-	  states[stateNumber].addArc(Arc(inL, outL, destState, weight));
-	} else if ( weight != 0.0 ) {
-	  cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
-	  return 0;
-	}
-	DO(istr >> c);
-	Arc *lastAdded = &states[stateNumber].arcs.top();
-	if ( c == '!' ) { // lock weight
-	  DO(istr >> c); // skip ws
-	  istr.putback(c);
-	  int group = 0;
-	  if( isdigit(c) )
-	    DO(istr >> group);
-	  //	  tieGroup.add(IntKey(int(lastAdded)), group);
-	  lastAdded->groupId = group;
-	} else
-	  istr.putback(c);
-	if ( d != '(' ) {
-	  DO(istr >> c);
-	  DO(c == ')');
-	  break;
-	}
-	DO(istr >> c);
-	DO(c == ')');
-	DO(istr >> c);
-	if ( c == ')' )
-	  break;
-	DO(c == '(');
+                  buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
+                 DO(istr >> c);  // skip whitespace
+                 istr.putback(c);
+                 if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
+                        DO(getString(istr, buf));
+        inL = in->indexOf(buf);
+        DO(istr >> c);  // skip whitespace
+        istr.putback(c);
+        if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
+          DO(getString(istr, buf));
+        outL = out->indexOf(buf);
+        DO(istr >> c); // skip ws
+        istr.putback(c);
+        if (isdigit(c) || c == '.' || c == '-' ) {
+          DO(istr >> weight);
+        } else
+          weight = 1.0;
+        if ( weight > 0.0 ) {
+          states[stateNumber].addArc(Arc(inL, outL, destState, weight));
+        } else if ( weight != 0.0 ) {
+          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
+          return 0;
+        }
+        DO(istr >> c);
+        Arc *lastAdded = &states[stateNumber].arcs.top();
+        if ( c == '!' ) { // lock weight
+          DO(istr >> c); // skip ws
+          istr.putback(c);
+          int group = 0;
+          if( isdigit(c) )
+            DO(istr >> group);
+          //      tieGroup.add(IntKey(int(lastAdded)), group);
+          lastAdded->groupId = group;
+        } else
+          istr.putback(c);
+        if ( d != '(' ) {
+          DO(istr >> c);
+          DO(c == ')');
+          break;
+        }
+        DO(istr >> c);
+        DO(c == ')');
+        DO(istr >> c);
+        if ( c == ')' )
+          break;
+        DO(c == '(');
       }
     }
   }
@@ -344,28 +333,28 @@ void WFST::writeLegible(ostream &ostr)
     List<Arc>::const_iterator end = states[i].arcs.end() ;
     for (List<Arc>::const_iterator a=states[i].arcs.begin() ; a !=end ; ++a ) {
       if ( a->weight > 0 ) {
-	destState = stateNames[a->dest];
-	ostr << " (" << destState;
-	if ( a->in || a->out ) { // omit *e* *e* labels
-		inLet = (*in)[a->in];
-		outLet = (*out)[a->out];
-		ostr << " " << inLet;
-		if ( strcmp(inLet, outLet) )
-			ostr << " " << outLet;
-	}
-	if ( a->weight != 1.0 )
-	  ostr << " " << a->weight;
-	//	int *pGroup;
-	int pGroup;
-	//	if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
-	if ( (pGroup = a->groupId) >= 0 ) {
-	  if ( a->weight == 1.0 )
-	    ostr << " 1";
-	  ostr << '!';
-	  if ( pGroup > 0)
-	    ostr << pGroup;
-	}
-	ostr << ")";
+        destState = stateNames[a->dest];
+        ostr << " (" << destState;
+        if ( a->in || a->out ) { // omit *e* *e* labels
+                inLet = (*in)[a->in];
+                outLet = (*out)[a->out];
+                ostr << " " << inLet;
+                if ( strcmp(inLet, outLet) )
+                        ostr << " " << outLet;
+        }
+        if ( a->weight != 1.0 )
+          ostr << " " << a->weight;
+        //      int *pGroup;
+        int pGroup;
+        //      if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
+        if ( (pGroup = a->groupId) >= 0 ) {
+          if ( a->weight == 1.0 )
+            ostr << " 1";
+          ostr << '!';
+          if ( pGroup > 0)
+            ostr << pGroup;
+        }
+        ostr << ")";
       }
     }
     ostr << ")";
@@ -416,5 +405,3 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   }
   return ret;
 }
-
-#endif
