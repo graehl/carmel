@@ -15,6 +15,12 @@
 
 #include "packedalloc.hpp"
 
+#ifndef MIN_LEGAL_ADDRESS
+//FIXME: portability issue:
+// for debugging purposes - printing union of pointer/small int - output will be WRONG if any heap memory is allocated below this:
+#define MIN_LEGAL_ADDRESS ((void *)0x1000)
+#endif
+
 template <class Alloc=StaticPackedAlloc<char> >
 class StringInterner {
   Alloc alloc;
@@ -34,6 +40,7 @@ public:
     typename Table::insert_return_type it;
     if ( (it = interns.insert(typename Table::value_type(s,Empty()))).second ) {
       char *s=alloc.allocate(strlen(string)+1);
+      Assert(s >= MIN_LEGAL_ADDRESS);
       strcpy(s,string);
       (const_cast<StringKey*>(&(it.first->first)))->str = s; // doesn't change hashval so ok
       return s;
@@ -64,10 +71,14 @@ struct Symbol {
   static StringInterner<> intern;
   char *str;
   static Symbol empty;
+  static Symbol ZERO;
   Symbol() : str(empty.str) {}
   explicit Symbol(unsigned i) : str(intern(static_itoa(i)))
   {
         //str=intern(static_itoa(i));
+  }
+  Symbol(unsigned i, bool dummy) {
+    phony_int()=i;
   }
   Symbol(const char *s) : str(intern(s)) {}
   Symbol(const Symbol &s) : str(s.str) {}
@@ -76,6 +87,20 @@ struct Symbol {
     str=r.str;
     return *this;
   }
+  enum { PHONYINT };
+  /*  static Symbol make_phony_int(unsigned i) {
+    static Symbol s;
+    s.phony_int() = i;
+    return s;
+    }*/
+  /// just conversion between int and str ... phony ints can't be printed or read.  really just implements a union; hash and sort should work as long as you don't mix with non-phony Symbol
+  unsigned &phony_int() {
+    return *(unsigned *)&str;
+  }
+  unsigned phony_int() const {
+    return *(const unsigned *)str;
+  }
+
   char *c_str() const { return str; }
         bool operator < (const Symbol r) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
         {
@@ -101,9 +126,14 @@ struct Symbol {
   std::ios_base::iostate
   print_on(std::basic_ostream<charT,Traits>& o) const
   {
+    if (str < MIN_LEGAL_ADDRESS) {
+      o << "symbolint_" << phony_int();
+    } else {
+
         if (isDefault())
           return GENIOBAD;
         o << str;
+    }
     return GENIOGOOD;
   }
 
@@ -165,13 +195,37 @@ bool operator ==(const char *c,const Symbol s) {
   return s.operator==(c);
 }
 
+#include "dynarray.h"
+template <unsigned upto=32>
+struct SmallIntSymbols {
+  AutoArray<Symbol> cache;
+  SmallIntSymbols() : cache(upto) {
+    for (unsigned i=0;i<upto;++i)
+      new(cache.begin()+i) Symbol(i);
+  }
+  Symbol operator()(unsigned i) {
+    if (i<upto)
+      return cache[i];
+    else
+      return Symbol(i);
+  }
+};
+
+
+
+#define SMALLINT 100
+
+//extern SmallIntSymbols<SMALLINT> g_smallint;
+
 CREATE_INSERTER(Symbol)
 CREATE_EXTRACTOR(Symbol)
 
 #ifdef MAIN
+//SmallIntSymbols<SMALLINT> g_smallint;
 StringInterner<> Symbol::intern;
 //const char * Symbol::str_empty=Symbol::intern("");
 Symbol Symbol::empty("");
+Symbol Symbol::ZERO(0,Symbol::PHONYINT);
 #endif
 
 BEGIN_HASH_VAL(Symbol) {

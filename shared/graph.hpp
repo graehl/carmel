@@ -9,21 +9,8 @@
 #include "byref.hpp"
 
 #include "property.hpp"
-#include "dynarray.h"
-#include "list.h"
+#include "container.hpp"
 
-
-struct VectorS {
-  template <class T> struct container {
-        typedef DynamicArray<T> type;
-  };
-};
-
-struct ListS {
-  template <class T> struct container {
-        typedef List<T> type;
-  };
-};
 
 
 

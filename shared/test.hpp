@@ -4,6 +4,23 @@
 #include <string>
 #include <sstream>
 
+struct test_counter {
+  static unsigned n;
+  test_counter() { n=0; }
+  void  operator()() { ++n;  }
+  template <class A1>
+  void  operator()(const A1 &a) { ++n;  }
+  template <class A1,class A2>
+  void  operator()(const A1 &a,const A2 &a2) { ++n;  }
+  template <class A1,class A2,class A3>
+  void  operator()(const A1 &a,const A2 &a2,const A3 &a3) { ++n;  }
+};
+
+#ifdef MAIN
+unsigned test_counter::n;
+#endif
+
+
 template <class S,class C> inline
 bool test_extract(S &s,C &c) {
   istringstream is(s);
