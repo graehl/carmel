@@ -270,10 +270,25 @@ template <class I> int randomPath(I i,int max_len=-1)
     final = -1;
   }
   void removeMarkedStates(bool marked[]);  // remove states and all arcs to
-                                             // states marked true
+    // states marked true
+  static inline bool isNormal(int groupId) {
+	  //return groupId == WFST::NOGROUP;
+	  return groupId < 0;
+  }
+  static inline bool isLocked(int groupId) {
+	  return groupId == WFST::LOCKEDGROUP;
+  }
+  static inline bool isTied(int groupId) {
+	  return groupId > 0;
+  }
+  static inline bool isTiedOrLocked(int groupId) {
+	  return groupId >= 0;
+  }
+  static const int NOGROUP=-1;  
+  static const int LOCKEDGROUP=0;
+
 private:
   //  static const int NOGROUP(-1);  
-  static const int NOGROUP=-1;  
   void invalidate() {		// make into empty/invalid transducer
     if ( valid() ) {
       stateNames.~Alphabet();	// safe to call these more than once

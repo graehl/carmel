@@ -167,7 +167,7 @@ if (method==CONDITIONAL)
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
         sum += (*g)->weight;
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-        if ( (pGroup = (*g)->groupId) > 0) { // group 0 is special - means the weights of any arc belonging to it are fixed, so the following is done with all arcs with group number different from zero.
+        if ( (pGroup = (*g)->groupId) > 0) { // -1 means no group, and group 0 is special - means the weights of any arc belonging to it are fixed, so the following is done with all arcs with group number different from zero.
           groupArcTotal[pGroup] += (*g)->weight;
           groupStateTotal[pGroup] += sum;
         }
@@ -183,8 +183,8 @@ for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
 	  // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
 	  // also, compute sum of normal arcs
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-        if ( (pGroup = (*g)->groupId) >= 0) // tied or locked arc
-          if ( pGroup > 0)
+        if ( isTiedOrLocked(pGroup = (*g)->groupId) ) // tied or locked arc
+          if ( isTied(pGroup) )
             reserved += (*g)->weight = *groupArcTotal.find(pGroup) / *groupStateTotal.find(pGroup);
           else
             reserved += (*g)->weight;
@@ -198,14 +198,13 @@ for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
 	  // pass 2b: give normal arcs their share of however much is left
       Weight steal = 1.;
 	  steal -= reserved;
-      sum /= steal;
-      for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-		if ( (*g)->groupId < 0) {
-          if ( sum > 0 )
-            (*g)->weight /= sum;
-          else
-            (*g)->weight = 0;
-        }
+	  if (steal > 0) { // something left
+		  sum /= steal;
+		  for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+			 (*g)->weight /= sum;
+	  } else // nothing left, sorry
+		  for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+			 (*g)->weight = 0;
   }
  
   if (method == CONDITIONAL)
@@ -219,14 +218,14 @@ void WFST::assignWeights(const WFST &source)
   for ( s = 0 ; s < source.numStates() ; ++s ){
     List<Arc>::const_iterator end = source.states[s].arcs.end() ;
     for ( List<Arc>::const_iterator a=source.states[s].arcs.begin() ; a !=end ; ++a )
-      if ( (pGroup = a->groupId) > 0)
+      if ( isTied(pGroup = a->groupId) )
         groupWeight[pGroup] = a->weight;
   }
   Weight *pWeight;
   for ( s = 0 ; s < numStates() ; ++s) {
     List<Arc>::iterator end = states[s].arcs.end();
     for ( List<Arc>::iterator a=states[s].arcs.begin(); a !=end ; ) {
-      if ( (pGroup = a->groupId) > 0)
+      if ( isTied(pGroup = a->groupId) )
         if ( (pWeight = groupWeight.find(pGroup)) )
           a->weight = *pWeight;
         else {

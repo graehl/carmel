@@ -13,6 +13,10 @@
 #pragma warning(disable:4244)
 #endif
 
+//! warning: unless #ifdef WEIGHT_CORRECT_ZERO
+// Weight(0) will may give bad results when computed with, depending on math library behavior
+// defining WEIGHT_CORRECT_ZERO will incur a performance penalty
+
 struct Weight {			// capable of representing nonnegative reals 
 		// internal implementation note: by their base e logarithm
 private:
@@ -62,10 +66,6 @@ out_always_real(std::basic_ostream<A,B>& os);
   float getLog(float base) const {
 	  return weight / log(base);
   }
-  Weight operator ^= (float power) { // raise Weight^power
-	  weight *= power;
-	  return *this;
-  }
   float getLn() const {
 	  return weight;
   }
@@ -114,13 +114,28 @@ out_always_real(std::basic_ostream<A,B>& os);
   }
   Weight operator *= (Weight w)
   {
+#ifdef WEIGHT_CORRECT_ZERO
+	  if (isZero())
+		return;
+#endif
     weight += w.weight;
     return *this;
   }
   Weight operator /= (Weight w)
   {
+#ifdef WEIGHT_CORRECT_ZERO
+	  if (isZero())
+		return;
+#endif
     weight -= w.weight;
     return *this;
+  }
+
+  Weight operator ^= (float power) { // raise Weight^power
+#ifdef WEIGHT_CORRECT_ZERO
+	  weight *= power;
+#endif
+	  return *this;
   }
 
 template <class charT, class Traits>
@@ -255,6 +270,13 @@ inline Weight operator +(Weight lhs, Weight rhs) {
   //fixme: below test is needed with glibc without -ffast-math to compute 0+0 properly (?)
   //  if (lhs == 0.0)
   //  return rhs;
+#ifdef WEIGHT_CORRECT_ZERO
+	if (lhs.isZero())
+		return rhs;
+	if (rhs.isZero())
+		return lhs;
+#endif
+
   float diff = lhs.weight - rhs.weight;
   if ( diff > MUCH_BIGGER_LN )
     return lhs;
@@ -274,13 +296,21 @@ inline Weight operator +(Weight lhs, Weight rhs) {
 
 inline Weight operator -(Weight lhs, Weight rhs) {
   Weight result; 
+
+
   if ( lhs.weight <= rhs.weight )	   // lhs <= rhs 
 	  // clamp to zero as minimum without giving exception (not mathematically correct!)
   {
     //result.weight = -Weight::HUGE_FLOAT; // default constructed to this already
     return result;
   }
-  
+
+#ifdef WEIGHT_CORRECT_ZERO
+	if (rhs.isZero())
+		return lhs;
+#endif
+
+
   if ( lhs.weight - rhs.weight > MUCH_BIGGER_LN ) // lhs >> rhs
 	  return lhs;
 

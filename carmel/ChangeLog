@@ -1,5 +1,7 @@
 2002-11-07  Jonathan Graehl  <graehl@isi.edu>
 
+	* src/train.cc: added perplexity measurement to training (-t)
+
 	* Makefile: changes ARCH to linux/solaris/cygwin/freebsd, set CC.$ARCH to point to gcc version 3
 
 	* src/weight.h: default output base is now e (and output is -30ln instead of -10log)
