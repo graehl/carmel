@@ -728,7 +728,7 @@ public:
             if (!append)
                 clear();
 
-#if 1
+#if 0
             // slight optimization from not needing temporary like general output iterator version.
             char c;
             EXPECTI_COMMENT_FIRST(in>>c);
