@@ -92,7 +92,7 @@ namespace WFST_impl {
 	State *end;
 	typedef HashIter<IntKey, List<HalfArc> > Cit;
 	typedef List<HalfArc>::const_iterator Cit2;
-	typedef List<Arc>::iterator Jit;
+	typedef List<Arc>::val_iterator Jit;
 	Cit Ci;
 	Cit2 Ci2,Cend;
 	Jit Ji,Jend;
@@ -280,13 +280,13 @@ void WFST::assignWeights(const WFST &source)
   }
   Weight *pWeight;
   for ( s = 0 ; s < numStates() ; ++s) {
-    List<Arc>::iterator end = states[s].arcs.end();
-    for ( List<Arc>::iterator a=states[s].arcs.begin(); a !=end ; ) {
+    List<Arc>::erase_iterator end = states[s].arcs.erase_end();
+    for ( List<Arc>::erase_iterator a=states[s].arcs.erase_begin(); a !=end ; ) {
       if ( isTied(pGroup = a->groupId) )
         if ( (pWeight = groupWeight.find(pGroup)) )
           a->weight = *pWeight;
         else {
-          states[s].arcs.erase(a++);
+          a=states[s].arcs.erase(a);
           continue;
         }
       ++a;
@@ -296,16 +296,14 @@ void WFST::assignWeights(const WFST &source)
 
 void WFST::unTieGroups() {
   for ( int s = 0 ; s < numStates() ; ++s ){
-    List<Arc>::iterator end = states[s].arcs.end();
-    for ( List<Arc>::iterator a=states[s].arcs.begin() ; a != end ; ++a )
+    for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )
       a->groupId = NOGROUP ;
   }
 }
 
 void WFST::lockArcs() {
   for ( int s = 0 ; s < numStates() ; ++s ){
-    List<Arc>::iterator end = states[s].arcs.end();
-    for ( List<Arc>::iterator a=states[s].arcs.begin() ; a != end ; ++a )
+    for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )
       a->groupId = 0 ;
   }
 }
@@ -313,8 +311,7 @@ void WFST::lockArcs() {
 void WFST::numberArcsFrom(int label) {
   Assert ( label > 0 );
   for ( int s = 0 ; s < numStates() ; ++s ){
-    List<Arc>::iterator end = states[s].arcs.end() ;
-    for ( List<Arc>::iterator a=states[s].arcs.begin() ; a != end ; ++a )
+    for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )
       a->groupId = label++;
   }
 }
@@ -326,12 +323,11 @@ void WFST::invert()
   int temp;
   in->swap(*out);
   for ( int i = 0 ; i < states.count(); ++i ) {
-    List<Arc>::iterator end = states[i].arcs.end() ;
-    for ( List<Arc>::iterator h=states[i].arcs.begin() ; h !=end ; ++h) {
-      // shoould use SWAP here instead
-      temp = h->in;
-      h->in = h->out;
-      h->out = temp;
+	for ( List<Arc>::val_iterator a=states[s].arcs.begin(),end = states[s].arcs.end(); a != end ; ++a )    
+      //XXX should use SWAP here instead?
+      temp = a->in;
+      a->in = a->out;
+      a->out = temp;
     }
     states[i].flush();
   }
@@ -459,14 +455,14 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
 			else {
 				remove[st] = false;
 				State &s=states[st];
-				for ( List<Arc>::iterator a(s.arcs.begin()), end = s.arcs.end() ; a !=end  ;  ) {
+				for ( List<Arc>::erase_iterator a(s.arcs.erase_begin()), end = s.arcs.erase_end() ; a !=end  ;  ) {
 					float best_path_this_arc = (-a->weight.getLogImp())+for_dist[st]+rev_dist[a->dest];
 #ifdef DEBUGPRUNE
 					Config::debug() << "Arc " << st << ": ";
 					printArc(*a,st,Config::debug()) << " best path cost = " << best_path_this_arc << std::endl;
 #endif
 					if (best_path_this_arc > worst_path)
-						s.erase(a++);
+						a=s.remove(a);
 					else
 						++a;
 				}
@@ -538,10 +534,9 @@ void WFST::reduce()
 
   for ( i = 0 ; i < numStates() ; ++i ) {
     states[i].flush();
-    List<Arc>::iterator end = states[i].arcs.end();
-    for ( List<Arc>::iterator a=states[i].arcs.begin() ; a != end; )
+    for ( List<Arc>::erase_iterator a=states[i].arcs.erase_begin(),end = states[i].arcs.erase_end() ; a != end; )
       if ( a->in == 0 && a->out == 0 && a->dest == i ) // erase empty loops
-        states[i].arcs.erase(a++);
+        a=states[i].arcs.erase(a);
       else
         ++a;
   }

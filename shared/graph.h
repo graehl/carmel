@@ -63,7 +63,7 @@ public:
 	}
 	void order(bool all=true) {
 		for ( int i = 0 ; i < g.nStates ; ++i )
-			if ( all || g.states[i].arcs.size() )
+			if ( all || !g.states[i].arcs.empty() )
 				order_from(i);
 	}
 	int get_n_back_edges() const { return n_back_edges; }

@@ -73,7 +73,7 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
   IOSymSeq s;
   s.init(inSeq, outSeq, weight);
   trn->totalEmpiricalWeight += weight;
-  trn->examples.push_back(s);
+  trn->examples.push_front(s);
   //trn->examples.insert(trn->examples.end(),s);
   if ( s.i.n > trn->maxIn )
     trn->maxIn = s.i.n;
@@ -358,8 +358,8 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 #endif
   EACHDW(dw->counts.setZero(););
 
-List<IOSymSeq>::iterator seq=trn->examples.begin() ;
-  List<IOSymSeq>::iterator lastExample=trn->examples.end() ;
+List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
+
 
 //#ifdef DEBUGTRAIN
   int train_example_no = 0 ; // Yaser 7-13-2000
@@ -414,7 +414,7 @@ List<IOSymSeq>::iterator seq=trn->examples.begin() ;
       for ( o = 0 ; o < nOut ; ++o )
         Config::warn() << (*out)[seq->o.let[o]] << ' ';
       Config::warn() << '\n';
-      trn->examples.erase(seq++); // should be ok because ++ is evaluated before erase is called
+      seq=trn->examples.erase(seq); // should be ok because ++ is evaluated before erase is called
       continue;
     }
 #ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
@@ -465,8 +465,7 @@ EACHDW(dw->scratch.setZero(););
           }
           io.out = 0; // input and output are epsilon
           if ( (pLDW = IOarcs->find(io)) ){
-            List<DWPair>::iterator end = pLDW->end() ;
-            for ( List<DWPair>::iterator dw=pLDW->begin() ; dw !=end ; ++dw )
+            for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
               dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
           }
         }
@@ -491,9 +490,8 @@ EACHDW(dw->scratch.setZero(););
   DUMPDW;
 #endif
   for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
-      List<DWPair>::iterator end = ha.val().end();
-      for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end; ++dw )
+    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){      
+      for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),ha.val().val_end() ; dw !=end; ++dw )
         if ( !isLocked(pGroup = (dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
 #ifdef DEBUGTRAINDETAIL
           Config::debug() << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
@@ -516,9 +514,8 @@ EACHDW(dw->scratch.setZero(););
   // find maximum change for convergence
   Weight change, maxChange;
   for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
-      List<DWPair>::iterator end = ha.val().end();
-      for ( List<DWPair>::iterator dw=ha.val().begin() ; dw != end; ++dw )
+    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){      
+      for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),end = ha.val().val_end() ; dw != end; ++dw )
         if (!isLocked(pGroup = (dw->arc)->groupId) ) {
           if ( dw->scratch > dw->weight() )
             change = dw->scratch - dw->weight();
@@ -540,12 +537,12 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   int *outLet = new int[nOut];
   int *pi;
   pi = inLet;
-  List<int>::const_iterator end = inSeq.end();
-  for ( List<int>::const_iterator inL=inSeq.begin() ; inL != end; ++inL )
+  
+  for ( List<int>::const_iterator inL=inSeq.begin(), end = inSeq.end() ; inL != end; ++inL )
     *pi++ = *inL;
   pi = outLet;
-  end = outSeq.end();
-  for ( List<int>::const_iterator outL=outSeq.begin() ; outL != end; ++outL )
+  
+  for ( List<int>::const_iterator outL=outSeq.begin(),end = outSeq.end() ; outL != end; ++outL )
     *pi++ = *outL;
 
   HashTable<IOPair, List<DWPair> > *IOarcs =
@@ -556,12 +553,11 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   List<DWPair> *pLDW;
 
   for ( s = 0 ; s < numStates() ; ++s ){
-    List<Arc>::iterator end = states[s].arcs.end();
-    for ( List<Arc>::iterator aI=states[s].arcs.begin() ; aI!=end; ++aI ) {
-      IO.in = aI->in;
-      IO.out = aI->out;
-      DW.dest = aI->dest;
-      DW.arc = &(*aI);
+    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
+      IO.in = a->in;
+      IO.out = a->out;
+      DW.dest = a->dest;
+      DW.arc = &(*a);
       if ( !(pLDW = IOarcs[s].find(IO)) )
         pLDW = IOarcs[s].add(IO);
       pLDW->push(DW);

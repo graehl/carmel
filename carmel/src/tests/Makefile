@@ -1,3 +1,3 @@
 #include ../../Makefile
 all:
-	g++ -ffast-math -O2 Tweight.cc ../weight.cc
+	g++ -ffast-math -ggdb Tweight.cc ../weight.cc

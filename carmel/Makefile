@@ -22,7 +22,7 @@ OBJ.solaris = ${DIR}/obj/solaris
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src
-IN = -I$(INC) -I- 
+IN = -I$(INC) -I- -I${DIR}/STLport
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
 CC.solaris = /nfs/topaz/graehl/isd/solaris/bin/g++3.2

@@ -4,6 +4,9 @@
 // options affecting a bunch of code:
 //#define DEBUG
 
+// use singly linked list
+#define USE_SLIST
+
 #ifdef DEBUG
 #define DEBUGTRAIN
 #define DEBUGTRAINDETAIL
