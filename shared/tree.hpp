@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
+#include <functional>
 
 #ifdef TEST
 #include "test.hpp"
@@ -21,10 +22,16 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
   typedef Label label_type;
   Label label;
   size_t n_child;
+  size_t size() const {
+	return n_child;
+  }
   Self **children;
   Tree() : n_child(0) {}
   Tree (const Label &l) : n_child(0),label(l) {  }
   Tree (const Label &l,size_t n) : label(l) { alloc(n); }
+  Tree (const char *c) {
+	std::istringstream(c) >> *this;
+  }
   void alloc(size_t _n_child) {
 	n_child=_n_child;
 	if (n_child)
@@ -33,15 +40,15 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
   explicit Tree(size_t _n_child,Alloc _alloc=Alloc()) : Alloc(_alloc) {
 	alloc(_n_child);
   }
-  void free() {
+  void dealloc() {
 	if (n_child)
 	  deallocate((void **)children,n_child);
 	n_child=0;
   }
-  void free_recursive(); 
+  void dealloc_recursive(); 
   
   ~Tree() {
-	free();
+	dealloc();
   }
   // STL container stuff
   typedef Self *value_type;
@@ -66,6 +73,14 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
   }
   template <class T>
 friend size_t tree_count(const T *t);
+  template <class T>
+friend size_t tree_height(const T *t);
+
+  //height = maximum length path from root
+  size_t height() const
+{
+  return tree_height(this);
+}
 
 	size_t count_nodes() const
 	{
@@ -92,7 +107,7 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
 
 //template <class T, class charT, class Traits>  friend 
   template <class charT, class Traits>
-  static Self *read_tree(std::basic_istream<charT,Traits>&) {
+  static Self *read_tree(std::basic_istream<charT,Traits>& in) {
   Self *ret = new Self;
   in >> *ret;
   if (!in.good()) {
@@ -128,7 +143,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
 	  }
 	  if ((c = in.get()) != ',') in.putback(c);
 	}
-	free();
+	dealloc();
 	alloc(in_children.size());
 	copy(in_children.begin(),in_children.end(),begin());	
   } else {	
@@ -165,7 +180,7 @@ void delete_arg(C &c) {
 }
 
 template <class T,class F>
-void postorder(T *tree,F func)
+void postorder(T *tree,F &func)
 {
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
@@ -188,23 +203,61 @@ void delete_tree(T *tree)
 }
 
 template <class L,class A> 
-void Tree<L,A>::free_recursive() {
+void Tree<L,A>::dealloc_recursive() {
 	for(iterator i=begin(),e=end();i!=e;++i)
 	  delete_tree(*i);
 	//foreach(begin(),end(),delete_tree<Self>);
-	free();
+	dealloc();
   }
 
-template <class T>
-bool tree_equal(const T& a,const T& b)
+template <class T1,class T2>
+bool tree_equal(const T1& a,const T2& b)
 {
-  if (a.n_child != b.n_child || a.label != b.label) 
+  if (a.size() != b.size() || a.label != b.label) 
 	return false;
-  for (typename T::const_iterator a_i=a.begin(), a_end=a.end(), b_i=b.begin(); a_i!=a_end; ++a_i,++b_i)
+  typename T2::const_iterator b_i=b.begin();
+  for (typename T1::const_iterator a_i=a.begin(), a_end=a.end(); a_i!=a_end; ++a_i,++b_i)
 	if (!(tree_equal(**a_i,**b_i)))
 	  return false;
   return true;
 }
+
+template <class T1,class T2,class P>
+bool tree_equal(const T1& a,const T2& b,P equal)
+{
+  if ( (a.size()!=b.size()) || !equal(a.label,b.label) )
+	return false;
+  typename T2::const_iterator b_i=b.begin();
+  for (typename T1::const_iterator a_i=a.begin(), a_end=a.end(); a_i!=a_end; ++a_i,++b_i)
+	if (!(tree_equal(**a_i,**b_i,equal)))
+	  return false;
+  return true;
+}
+
+template <class T1,class T2>
+bool tree_contains(const T1& a,const T2& b)
+{
+  return tree_contains(a,b,std::equal_to<T1::label_type>());
+}
+
+template <class T1,class T2,class P>
+bool tree_contains(const T1& a,const T2& b,P equal)
+{
+  
+  if ( !equal(a.label,b.label) )
+	return false;
+  // leaves of b can match interior nodes of a
+  if (!b.size())
+	return true;
+  if( a.size()!=b.size())
+	return false;
+  typename T1::const_iterator a_i=a.begin();
+  for (typename T2::const_iterator b_end=b.end(), b_i=b.begin(); b_i!=b_end; ++a_i,++b_i)
+	if (!(tree_contains(**a_i,**b_i,equal)))
+	  return false;
+  return true;
+}
+
 
 template <class L,class A> 
 inline bool operator !=(const Tree<L,A> &a,const Tree<L,A> &b)
@@ -235,6 +288,21 @@ size_t tree_count(const T *t)
   TreeCount<T> n;
   postorder(t,n);
   return n.count;
+}
+
+//height = maximum length path from root
+template <class T>
+size_t tree_height(const T *tree)
+{
+  if (!tree->size())
+	return 0;
+  size_t max_h=0;
+  for (typename T::const_iterator i=tree->begin(), end=tree->end(); i!=end; ++i) {
+	size_t h=tree_height(*i);
+	if (h>=max_h)
+	  max_h=h;
+  }
+  return max_h+1;
 }
 
 template <class T,class O>
@@ -294,11 +362,12 @@ T *read_tree(std::basic_istream<charT,Traits>& in)
 
 #ifdef TEST
 
+template<class T> bool always_equal(const T& a,const T& b) { return true; }
 
 BOOST_AUTO_UNIT_TEST( tree )
 {
-  Tree<int> a,b,*c;
-  string sa="1(2,3(4,5,6))";
+  Tree<int> a,b,*c,*d,*g=new_tree(1);
+  string sa="1(2,3(4(),5,6))";
   string sb="1(2 3(4 5 6))";
   stringstream o;
   istringstream(sa) >> a;
@@ -309,13 +378,35 @@ BOOST_AUTO_UNIT_TEST( tree )
 		new_tree(2),
 		new_tree(3,
 		  new_tree(4),new_tree(5),new_tree(6)));
+  d=new_tree(1,new_tree(2),new_tree(3));
   BOOST_CHECK(a == a);
   BOOST_CHECK(a == b);
   BOOST_CHECK(a == *c);
-  BOOST_CHECK(a.count_nodes()==6);  
-  a.free_recursive();
-  b.free_recursive();
+  BOOST_CHECK(a.count_nodes()==6);
+  BOOST_CHECK(tree_equal(a,*c,always_equal<Tree<int> >));
+  BOOST_CHECK(tree_contains(a,*c,always_equal<Tree<int> >));
+  BOOST_CHECK(tree_contains(a,*d,always_equal<Tree<int> >));
+  BOOST_CHECK(tree_contains(a,*d));
+  BOOST_CHECK(tree_contains(a,b));
+  BOOST_CHECK(!tree_contains(*d,a));
+  Tree<int> e="1(1(1) 1(1,1,1))", 
+	        f="1(1(1()),1)";
+  BOOST_CHECK(!tree_contains(a,e,always_equal<Tree<int> >));
+  BOOST_CHECK(tree_contains(e,a,always_equal<Tree<int> >));
+  BOOST_CHECK(!tree_contains(f,e));
+  BOOST_CHECK(tree_contains(e,f));
+  BOOST_CHECK(tree_contains(a,*g));
+  BOOST_CHECK(e.height()==2);
+  BOOST_CHECK(f.height()==2);
+  BOOST_CHECK(a.height()==2);
+  BOOST_CHECK(g->height()==0);
+  a.dealloc_recursive();
+  b.dealloc_recursive();
+  e.dealloc_recursive();
+  f.dealloc_recursive();
   delete_tree(c);
+  delete_tree(d);
+  delete_tree(g);
 }
 
 
