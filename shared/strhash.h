@@ -87,7 +87,7 @@ class Alphabet {
 #endif
   }
   void dump() { 	Config::debug() << ht; }
-  void verify() {
+  bool verify() {
 #ifdef DEBUG
 	for (int i = 0 ; i < names.size(); ++i ) {
 	  static char buf[1000];
@@ -96,6 +96,7 @@ class Alphabet {
 	  Assert(find(buf));
 	}
 #endif
+	return true;
   }
   void swap(Alphabet &a)
     {
@@ -214,8 +215,17 @@ class Alphabet {
 	  StrPool::giveBack(names[i]);
 #endif
     }
-  friend std::ostream & operator << (std::ostream &out, Alphabet &alph);
+	template<class T>  friend std::ostream & operator << (std::ostream &out, Alphabet<T> &alph);
 };
+
+
+template<class T>
+inline std::ostream & operator << (std::ostream &out, Alphabet<T> &alph)
+{
+  for ( int i = 0 ; i < alph.names.size() ; ++i )
+    out << alph.names[i] << '\n';
+  return out;
+}
 
 
 #endif

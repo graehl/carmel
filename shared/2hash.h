@@ -330,28 +330,28 @@ public:
    typedef HashEntry<K,V> *find_return_type;
    typedef V second_type;
    typedef std::pair<find_return_type,bool> insert_return_type;
-   class local_iterator : public std::iterator<std::forward_iterator_tag, value_type> {
+   class local_iterator : public std::iterator<std::forward_iterator_tag, std::pair<const K,V> > {
 	 typedef HashEntry<K,V> *T;
 	 T m_rep;
    public:
 	 	 
 	 local_iterator(T t) : m_rep(t) {}
 
-	   inline local_iterator& operator++()
+	   local_iterator& operator++()
 	{ 
 	  m_rep = m_rep->next; return *this; 
 	}
-      inline const_iterator operator++(int)
+      local_iterator operator++(int)
 	{ 
 	  local_iterator tmp(*this); m_rep = m_rep->next; return tmp; 
 	}
-      inline typename value_type operator*() const { return *(value_type *)m_rep; }
-      inline typename value_type *operator->() const { return (value_type *)m_rep; }
-      inline bool operator==(const local_iterator& x) const
+	typename local_iterator::value_type &operator*() const { return *(typename local_iterator::value_type *)m_rep; }
+      typename local_iterator::value_type *operator->() const { return (typename local_iterator::value_type *)m_rep; }
+      bool operator==(const local_iterator& x) const
 	{
 	  return m_rep == x.m_rep; 
 	}
-      inline bool operator!=(const local_iterator& x) const
+      bool operator!=(const local_iterator& x) const
 	{
 	  return m_rep != x.m_rep; 
 	}
@@ -436,13 +436,13 @@ public:
 	  init(sz);
 	}	
 	HashTable(int sz, const hasher &hf,const key_equal &eq_) 
-	  #if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+	  #if !(defined(STATIC_HASHER) && defined(STATIC_HASH_EQUAL))
 	  :
 #endif
 	#ifndef STATIC_HASHER
 	hash(hf)
 	#endif
-#if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+#if !(defined(STATIC_HASHER) && defined(STATIC_HASH_EQUAL))
 	  ,
 #endif
 	  #ifndef STATIC_HASH_EQUAL
@@ -455,7 +455,7 @@ public:
 		#ifndef STATIC_HASHER
 	hash(hf)
 	#endif
-#if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+#if !(defined(STATIC_HASHER) && defined(STATIC_HASH_EQUAL))
 	  ,
 #endif
 	  #ifndef STATIC_HASH_EQUAL
@@ -468,7 +468,7 @@ public:
 		#ifndef STATIC_HASHER
 	hash(ht.hash)
 	#endif
-#if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+#if !(defined(STATIC_HASHER) && defined(STATIC_HASH_EQUAL))
 	  ,
 #endif
 	  #ifndef STATIC_HASH_EQUAL
@@ -489,7 +489,7 @@ public:
 	  if (!p)
 		return p;
 	  HashEntry<K,V> *ret=alloc_node();
-	  new(ret)(p->first,p->second,clone_bucket(p->next));
+	  PLACEMENT_NEW(ret)HashEntry<K,V>(p->first,p->second,clone_bucket(p->next));
 	  return ret;
 	}
   void init(int sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD)
@@ -741,7 +741,7 @@ template<class T1,class T2,class T3,class T4,class T5,class A,class B>
 inline 
 std::basic_ostream<A,B>&
 	 operator<< (std::basic_ostream<A,B> &out, const HashTable<T1,T2,T3,T4,T5>& t) {
-  HashTable<T1,T2,T3,T4,T5>::const_iterator i=t.begin();
+  typename HashTable<T1,T2,T3,T4,T5>::const_iterator i=t.begin();
   out << "begin" << std::endl;
   for (;i!=t.end();++i) {
 	out << *i << std::endl;
