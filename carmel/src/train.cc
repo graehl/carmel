@@ -84,27 +84,27 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
   HashTable<IOPair, List<DWPair> >&hashref=trn->forArcs[s]; \
   for ( HashTable<IOPair, List<DWPair> >::iterator ha=hashref.begin(); ha!=hashref.end() ; ++ha ){ \
                 for ( List<DWPair>::val_iterator dw=ha->second.val_begin(),dend = ha->second.val_end() ; dw !=dend ; ++dw ) {\
-				  a } } } } while(0)
+                                  a } } } } while(0)
 
 
 struct WeightAccum {
-	Weight sum;
-	int n_nonzero;
-	int n;
-	void operator ()(Weight *w) {
-		w->NaNCheck();
-		sum += *w;
-		++n;
-		if (w->isPositive())
-			++n_nonzero;
-	}
-	WeightAccum() {
-		reset();
-	}
-	void reset() {
-		n=n_nonzero=0;
-		sum.setZero();
-	}
+        Weight sum;
+        int n_nonzero;
+        int n;
+        void operator ()(Weight *w) {
+                w->NaNCheck();
+                sum += *w;
+                ++n;
+                if (w->isPositive())
+                        ++n_nonzero;
+        }
+        WeightAccum() {
+                reset();
+        }
+        void reset() {
+                n=n_nonzero=0;
+                sum.setZero();
+        }
 };
 
 Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod method, int ran_restarts)
@@ -135,7 +135,7 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
   bestPerplexity.setInfinity();
 bool very_first_time=true;
 while(1) { // random restarts
-	int train_iter = 0;
+        int train_iter = 0;
   Weight lastChange;
   Weight lastPerplexity;
   lastPerplexity.setInfinity();
@@ -151,24 +151,24 @@ while(1) { // random restarts
 #ifdef DEBUGTRAIN
     Config::debug() << "Starting iteration: " << train_iter << '\n';
 #endif
-//#ifdef DEBUG
+#ifdef DEBUG
 #define DWSTAT(a) \
-	do {Config::debug() << a; \
-		    WeightAccum a_w;\
-				 WeightAccum a_c;\
-				 EACHDW(\
-					a_w(&(dw->weight()));\
-				  a_c(&(dw->counts));\
-					);\
-					Config::debug() << "(sum,n,nonzero): weights=("<<a_w.sum<<","<<a_w.n<<","<<a_w.n_nonzero<<")" << " counts=("<<a_c.sum<<","<<a_c.n<<","<<a_c.n_nonzero<<")\n";\
-				} while(0)
-//#else
-//#define DWSTAT
-//#endif
+        do {Config::debug() << a; \
+                    WeightAccum a_w;\
+                                 WeightAccum a_c;\
+                                 EACHDW(\
+                                        a_w(&(dw->weight()));\
+                                  a_c(&(dw->counts));\
+                                        );\
+                                        Config::debug() << "(sum,n,nonzero): weights=("<<a_w.sum<<","<<a_w.n<<","<<a_w.n_nonzero<<")" << " counts=("<<a_c.sum<<","<<a_c.n<<","<<a_c.n_nonzero<<")\n";\
+                                } while(0)
+#else
+#define DWSTAT
+#endif
 
-		DWSTAT("Before estimate");
+                DWSTAT("Before estimate");
     Weight newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
-		DWSTAT("After estimate");
+                DWSTAT("After estimate");
     Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): model-perplexity=" << newPerplexity;
     if ( newPerplexity < bestPerplexity ) {
       Config::log() << " (new best)";
@@ -183,13 +183,13 @@ while(1) { // random restarts
       pp_ratio_scaled.setZero();
     } else {
       Weight pp_ratio=newPerplexity/lastPerplexity;
-      pp_ratio_scaled = root(pp_ratio,newPerplexity.getLogImp()); // EM delta=(L'-L)/abs(L')      
+      pp_ratio_scaled = root(pp_ratio,newPerplexity.getLogImp()); // EM delta=(L'-L)/abs(L')
       Config::log() << " (relative-perplexity-ratio=" << pp_ratio_scaled << "), max{d(weight)}=" << lastChange;
 #ifdef DEBUG_ADAPTIVE_EM
       Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
       if ( learning_rate > 1) {
         EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap EM/scaled
-				Weight em_pp=train_estimate();
+                                Weight em_pp=train_estimate();
 
         Config::log() << "unscaled-EM-perplexity=" << em_pp;
         EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap back
@@ -218,13 +218,13 @@ while(1) { // random restarts
     } else
       last_was_reset=false;
 
-		if (very_first_time) {
-			train_prune();
-			very_first_time=false;
-		}
-		DWSTAT("Before maximize");
+                if (very_first_time) {
+                        train_prune();
+                        very_first_time=false;
+                }
+                DWSTAT("Before maximize");
     lastChange = train_maximize(method,learning_rate);
-		DWSTAT("After maximize");
+                DWSTAT("After maximize");
     if (lastChange <= converge_arc_delta ) {
       Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << train_iter << " iterations.\n";
       break;
@@ -232,26 +232,26 @@ while(1) { // random restarts
 
     lastPerplexity=newPerplexity;
   }
-	if (ran_restarts > 0) {
-		--ran_restarts;
-		randomSet();
-		normalize(method);
-		Config::log() << "\nRandom restart - " << ran_restarts << " remaining.\n";
-	} else {
-		break;
-	}
+        if (ran_restarts > 0) {
+                --ran_restarts;
+                randomSet();
+                normalize(method);
+                Config::log() << "\nRandom restart - " << ran_restarts << " remaining.\n";
+        } else {
+                break;
+        }
 }
   Config::log() << "Setting weights to model with lowest perplexity=" << bestPerplexity << std::endl;
   EACHDW(dw->weight()=dw->best_weight;);
 
-	return bestPerplexity;
+        return bestPerplexity;
   delete[] trn->forArcs;
   delete[] trn->revArcs;
   delete trn->forETopo;
   delete trn->revETopo;
 
-	
-	for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
+
+        for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
     seq->kill();
 
   for ( i = 0 ; i <= maxIn ; ++i ) {
@@ -467,7 +467,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
 
   List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
 #ifdef DEBUG
-	EACHDW(NANCHECK(dw->counts););
+        EACHDW(NANCHECK(dw->counts););
 
 #endif
   //#ifdef DEBUGTRAIN
@@ -596,8 +596,8 @@ Weight WFST::train_estimate(bool delete_bad_training)
 
     ++seq;
 #ifdef DEBUG
-		EACHDW(NANCHECK(dw->counts);NANCHECK(dw->scratch););
-	
+                EACHDW(NANCHECK(dw->counts);NANCHECK(dw->scratch););
+
 #endif
 
   } // end of while(training examples)
@@ -607,21 +607,21 @@ Weight WFST::train_estimate(bool delete_bad_training)
 }
 
 void WFST::train_prune() {
-			Assert(trn);
-			/*
-			int n_states=numStates();
-			bool *dead_states=NEW bool[n_states]; // blah: won't really work unless we also delete stuff from trn, so postponing
-			for (int i=0;i<n_states;++i) {
-				Weight sum=0;
-				for ( HashTable<IOPair, List<DWPair> >::iterator ha(trn->forArcs[s]) ; ha ; ++ha ){ \
+                        Assert(trn);
+                        /*
+                        int n_states=numStates();
+                        bool *dead_states=NEW bool[n_states]; // blah: won't really work unless we also delete stuff from trn, so postponing
+                        for (int i=0;i<n_states;++i) {
+                                Weight sum=0;
+                                for ( HashTable<IOPair, List<DWPair> >::iterator ha(trn->forArcs[s]) ; ha ; ++ha ){ \
         List<DWPair>::val_iterator end = ha.val().val_end() ; \
                 for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
-				dead_states[i]=false;
-				dead_states[i]=true;
+                                dead_states[i]=false;
+                                dead_states[i]=true;
 
-			}
-			delete[] dead_states;
-			*/
+                        }
+                        delete[] dead_states;
+                        */
 
 }
 
@@ -640,7 +640,7 @@ Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
       } \
         } } while(0)
 int pGroup;
-	Config::debug() << "\nWeights before prior smoothing\n";
+        Config::debug() << "\nWeights before prior smoothing\n";
   DUMPDW;
 #endif
   EACHDW (
@@ -648,20 +648,20 @@ int pGroup;
             //Weight &w=dw->weight();
             dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
             //Weight &counts = dw->counts;
-						NANCHECK(dw->counts);
-						NANCHECK(dw->prior_counts);
+                                                NANCHECK(dw->counts);
+                                                NANCHECK(dw->prior_counts);
             dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
-						NANCHECK(dw->weight());
-						NANCHECK(dw->scratch);
+                                                NANCHECK(dw->weight());
+                                                NANCHECK(dw->scratch);
           }
           );
 #ifdef DEBUGTRAINDETAIL
   Config::debug() << "\nWeights before normalization\n";
   DUMPDW;
 #endif
-	DWSTAT("Before normalize");
+        DWSTAT("Before normalize");
   normalize(method);
-	DWSTAT("After normalize");
+        DWSTAT("After normalize");
 #ifdef DEBUG_ADAPTIVE_EM
   //normalize(method);
 #endif
@@ -674,14 +674,14 @@ int pGroup;
   EACHDW(
          DWPair *d=&*dw;
          d->em_weight = d->weight();
-				 NANCHECK(d->em_weight); 
+                                 NANCHECK(d->em_weight);
          if (delta_scale > 1.)
          if ( !isLocked((d->arc)->groupId) )
-					 if ( d->scratch.isPositive() ) {
-						d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
-						NANCHECK(d->scratch);	NANCHECK(d->weight());
+                                         if ( d->scratch.isPositive() ) {
+                                                d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
+                                                NANCHECK(d->scratch);   NANCHECK(d->weight());
 
-					 }
+                                         }
          );
 
   Weight change, maxChange;
@@ -694,7 +694,7 @@ int pGroup;
 
   EACHDW(
          if (!isLocked((dw->arc)->groupId)) {
-           change = absdiff(dw->weight(),dw->scratch);           
+           change = absdiff(dw->weight(),dw->scratch);
            if ( change > maxChange )
              maxChange = change;
          }
@@ -791,12 +791,12 @@ ostream & operator << (ostream &o, DWPair p)
 }
 
 
-ostream & hashPrint(const HashTable<IOPair, List<DWPair> > &h, ostream &o) {  
+ostream & hashPrint(const HashTable<IOPair, List<DWPair> > &h, ostream &o) {
   HashTable<IOPair,List<DWPair> >::const_iterator i=h.begin();
   if ( i==h.end() ) return o;
 goto FIRST;
   while ( ++i,i!=h.end() ) {
-	o << ' ';
+        o << ' ';
 FIRST:
     o << '(' << i->first << ' ' << i->second << ')';
   }

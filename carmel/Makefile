@@ -26,9 +26,12 @@ CXXFLAGS= $(BASECXXFLAGS) -O3 -s
 CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST
 
+default: mydefault
+
 include ../shared/graehl.mk
 
 mydefault: all
+	cd test && ./runtests.sh ../$(BIN)/carmel
 
 #CCFLAGS_PRF    = $(CCFLAGS) -O3 -pg
 #LDFLAGS_PRF    = -pg

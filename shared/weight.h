@@ -493,11 +493,13 @@ template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
 void inline dbgout(std::ostream &o,Weight w) {
-    o << Weight::out_always_real << w
+    Weight::out_always_real(o);
+    o << w;
 #ifdef VERBOSE_DEBUG
-      << '=' << Weight::out_always_log << w
-#endif
-        ;
+      o << '=';
+      Weight::out_always_log(o)
+        o << w;
+#endif        
 }
 
 #include <limits>
