@@ -25,6 +25,14 @@
 #include <functional>
 #include <algorithm>
 #include <boost/random.hpp>
+#ifdef __linux__
+# ifndef USE_NONDET_RANDOM
+#  define USE_NONDET_RANDOM
+# endif
+#endif
+#ifdef USE_NONDET_RANDOM
+#include <boost/random/nondet_random.hpp>
+#endif
 
 
 // requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
@@ -416,27 +424,33 @@ inline std::string concat(const S &s,const T& suffix) {
     return boost::lexical_cast<std::string>(s)+boost::lexical_cast<std::string>(suffix);
 }
 
-
-
+#ifndef USE_STD_RAND
 typedef boost::uniform_01<boost::lagged_fibonacci607> G_rdist;
 #ifdef MAIN
-boost::lagged_fibonacci607 g_rng(std::time(0));
-G_rdist g_random01(boost::lagged_fibonacci607(std::time(0)));
-//boost::variate_generator<boost::lagged_fibonacci607,G_rdist > g_rangen01(g_rng,g_random01);
+G_rdist g_random01(boost::lagged_fibonacci607(
+# ifdef USE_NONDET_RANDOM
+    boost::random_device()()
+# else
+    std::time(0)
+# endif
+                   ));
 #else
-extern boost::lagged_fibonacci607 g_rng;
 extern G_rdist g_random01;
-//extern boost::variate_generator<boost::lagged_fibonacci607,boost::uniform_01> g_rangen01;
+#endif
 #endif
 
 inline double random_seed(uint32_t value=std::time(0))
 {
+#ifdef USE_STD_RAND
+    srand(value);
+#else
     g_random01.base().seed(value);
+#endif
 }
 
 
 //FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
-inline double random_nonneg_lt_one() // returns uniform random number on [0..1)
+inline double random01() // returns uniform random number on [0..1)
 {
 //    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
     return g_random01();
@@ -448,7 +462,7 @@ inline double random_pos_fraction() // returns uniform random number on (0..1]
     return ((double)std::rand()+1.) *
         (1. / ((double)RAND_MAX+1.));
 #else
-    return 1.-random_nonneg_lt_one();
+    return 1.-random01();
 #endif
 }
 
@@ -456,11 +470,15 @@ inline unsigned random_less_than(unsigned limit) {
     Assert(limit!=0);
     if (limit <= 1)
         return 0;
+#ifdef USE_STD_RAND
 // correct against bias (which is worse when limit is almost RAND_MAX)
     const unsigned randlimit=(RAND_MAX / limit)*limit;
     unsigned r;
     while ((r=std::rand()) >= randlimit) ;
     return r % limit;
+#else
+    return (unsigned)random01()*limit;
+#endif
 }
 
 
