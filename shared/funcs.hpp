@@ -25,13 +25,12 @@
 #include <functional>
 #include <algorithm>
 #include <boost/random.hpp>
-#ifdef __linux__
-# ifndef USE_NONDET_RANDOM
-#  define USE_NONDET_RANDOM
-# endif
-#endif
 #ifdef USE_NONDET_RANDOM
-#include <boost/nondet_random.hpp>
+# ifdef __linux__
+#  include <boost/nondet_random.hpp>
+# else
+#  undef USE_NONDET_RANDOM
+# endif
 #endif
 
 
@@ -431,7 +430,7 @@ typedef boost::uniform_01<G_rgen> G_rdist;
 #ifdef MAIN
 G_rdist g_random01(G_rgen(
 # ifdef USE_NONDET_RANDOM
-    boost::random_device()()
+                       boost::random_device().operator()()
 # else
     std::time(0)
 # endif
