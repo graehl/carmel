@@ -27,9 +27,9 @@ using namespace std;
 #define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
 
 #ifdef NO_INFO
-# define DBG_OP_F(pDbg,op,module,msg,file,line,lvl)
+# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line)
 #else
-# define DBG_OP_F(pDbg,op,module,msg,file,line,lvl) do {   \
+# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) do {        \
   if (INFO_LEVEL >= lvl) { \
    ostringstream os; \
    os << msg; \
@@ -37,10 +37,22 @@ using namespace std;
 } } while(0)
 #endif
 
-#define DBG_OP(pDbg,op,module,msg) DBG_OP_L(pDbg,op,module,msg,0)
-#define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(pDbg,op,module,msg,0)
-#define DBG_OP_L(pDbg,op,module,msg,lvl) DBG_OP_F(pDbg,op,module,msg,__FILE__,__LINE__,lvl)
-#define DBG_OP_LQ(pDbg,op,module,msg,lvl) DBG_OP_F(pDbg,op,module,msg,"",0,lvl)
+#define DBG_OP(pDbg,op,module,msg) DBG_OP_L(0,pDbg,op,module,msg)
+#define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(0,pDbg,op,module,msg)
+#define DBG_OP_L(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,__FILE__,__LINE__)
+#define DBG_OP_LQ(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,"",0)
+
+// some of these names might be used, e.g. in windows.h, but seems ok on linux.  compilation will fail/warn if they are in conflict.
+#define INFO(module,msg) DBG_OP(dbg,info,module,msg)
+#define WARNING(module,msg) DBG_OP(dbg,warning,module,msg)
+#define ERROR(module,msg) DBG_OP(dbg,error,module,msg)
+#define FATAL(module,msg) DBG_OP(dbg,fatalError,module,msg)
+#define INFOQ(module,msg) DBG_OP_Q(dbg,info,module,msg)
+#define WARNINGQ(module,msg) DBG_OP_Q(dbg,warning,module,msg)
+#define ERRORQ(module,msg) DBG_OP_Q(dbg,error,module,msg)
+#define FATALQ(module,msg) DBG_OP_Q(dbg,fatalError,module,msg)
+#define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,info,module,msg)
+#define INFOL(lvl,module,msg) DBG_OP_L(lvl,dbg,info,module,msg)
 
 namespace ns_decoder_global {
 
