@@ -25,7 +25,7 @@ struct NormalizeGroups {
     max_in_accum<value_type> max_offset;
     size_accum<size_t> total_size;
 
-    NormalizeGroups(std::string basename,unsigned batchsize)  : norm_groups(basename,batchsize)
+    NormalizeGroups(std::string basename,unsigned batchsize,Weight add_k_smoothing_=0)  : norm_groups(basename,batchsize), add_k_smoothing(add_k_smoothing_)
     {
         //,value_type watch_value
 //        if (watch_value.get_offset())
@@ -79,6 +79,7 @@ struct NormalizeGroups {
     W *base;
     W *dest;
     W maxdiff;
+    W add_k_smoothing;
     std::ostream *log;
     enum { ZERO_ZEROCOUNTS=0,SKIP_ZEROCOUNTS=1,UNIFORM_ZEROCOUNTS=2};
     int zerocounts; // use enum vals
@@ -98,6 +99,7 @@ struct NormalizeGroups {
         }
 #define DODIFF(d,w) do {weight_type diff = absdiff(d,w);if (maxdiff<diff) {maxdiff_index=j->get_index();DBP5(d,w,maxdiff,diff,maxdiff_index);maxdiff=diff;} } while(0)
         if (sum > 0) {
+            sum+=add_k_smoothing; // add to denominator
             DBPC2("Normalization group with",sum);
             for (GIt j=beg;j!=end;++j) {
                 weight_type &w=*(j->add_base(base));
