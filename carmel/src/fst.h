@@ -286,6 +286,7 @@ class WFST {
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
+  void randomScale(); // randomly scale weights (of unlocked arcs) before training by (0..1]
   void normalize(NormalizeMethod method=CONDITIONAL);
   /*void normalizePerInput() {	
     normalize(CONDITIONAL);

@@ -17,6 +17,12 @@
 // Weight(0) will may give bad results when computed with, depending on math library behavior
 // defining WEIGHT_CORRECT_ZERO will incur a performance penalty
 
+inline double randposfraction() // returns uniform random number on (0..1]
+{
+	return ((double)rand()+1.) /
+		    ((double)RAND_MAX+1.);
+}
+
 struct Weight {			// capable of representing nonnegative reals 
   // internal implementation note: by their base e logarithm
   private:
@@ -62,6 +68,9 @@ struct Weight {			// capable of representing nonnegative reals
 
   double getReal() const {
     return std::exp(weight);
+  }
+  void setRandomFraction() {
+	setReal(randposfraction());
   }
   FLOAT_TYPE getLog(FLOAT_TYPE base) const {
     return weight / log(base);

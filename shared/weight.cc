@@ -1,4 +1,14 @@
 #include "weight.h"
+#include <cstdlib>
+#include <ctime>
+
+struct InitRand {
+	InitRand() {
+		srand((unsigned int)time(NULL));
+	}
+};
+
+static InitRand _Weight_Init_Rand;
 
 using namespace std;
 
@@ -8,6 +18,7 @@ const int Weight::thresh_index = ios_base::xalloc();
 const FLOAT_TYPE Weight::HUGE_FLOAT = (FLOAT_TYPE)HUGE_VAL;
 const Weight Weight::ZERO;
 const Weight Weight::INF(false,false);
+
 /*
   std::ostream& operator << (std::ostream &o, Weight weight)
   {
