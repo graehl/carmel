@@ -143,7 +143,10 @@ char * Symbol::empty = Symbol::intern("");
 #endif
 
 BEGIN_HASH_VAL(Symbol) {
+#pragma warning( push )
+#pragma warning( disable : 4311 )
   return uint_hash(reinterpret_cast<unsigned int>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
+#pragma warning( pop )
 } END_HASH
 
 
