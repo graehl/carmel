@@ -27,18 +27,20 @@ using namespace std;
 #define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
 
 #ifdef NO_INFO
-# define DBG_OP_F(pDbg,op,module,msg,file,line)
+# define DBG_OP_F(pDbg,op,module,msg,file,line,lvl)
 #else
-# define DBG_OP_F(pDbg,op,module,msg,file,line) do { \
-  if (INFO_LEVEL > 0) { \
+# define DBG_OP_F(pDbg,op,module,msg,file,line,lvl) do {   \
+  if (INFO_LEVEL >= lvl) { \
    ostringstream os; \
    os << msg; \
    pDbg->op(module,os.str(),file,line);          \
 } } while(0)
 #endif
 
-#define DBG_OP(pDbg,op,module,msg) DBG_OP_F(pDbg,op,module,msg,__FILE__,__LINE__)
-#define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_F(pDbg,op,module,msg,"",0)
+#define DBG_OP(pDbg,op,module,msg) DBG_OP_L(pDbg,op,module,msg,0)
+#define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(pDbg,op,module,msg,0)
+#define DBG_OP_L(pDbg,op,module,msg,lvl) DBG_OP_F(pDbg,op,module,msg,__FILE__,__LINE__,lvl)
+#define DBG_OP_LQ(pDbg,op,module,msg,lvl) DBG_OP_F(pDbg,op,module,msg,"",0,lvl)
 
 namespace ns_decoder_global {
 
