@@ -87,7 +87,7 @@ gen_extractor
 template <class charT, class Traits, class Arg>
 std::basic_ostream<charT, Traits>& 
 gen_inserter
-	(std::basic_ostream<charT, Traits>& s, Arg &arg)
+	(std::basic_ostream<charT, Traits>& s, const Arg &arg)
 {
     GEN_INSERTER(s,arg.print_on(s));
 
@@ -143,7 +143,7 @@ gen_extractor
 template <class charT, class Traits, class Arg, class R>
 std::basic_ostream<charT, Traits>& 
 gen_inserter
-	(std::basic_ostream<charT, Traits>& s, Arg &arg, R r)
+	(std::basic_ostream<charT, Traits>& s, const Arg &arg, R r)
 {
   GEN_INSERTER(s,arg.print_on(s,r));
   /*
@@ -161,9 +161,17 @@ gen_inserter
 template <class charT, class Traits, class Arg, class Q,class R>
 std::basic_ostream<charT, Traits>& 
 gen_inserter
-	(std::basic_ostream<charT, Traits>& s, Arg &arg, Q q,R r)
+	(std::basic_ostream<charT, Traits>& s, const Arg &arg, Q q,R r)
 {
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4800 )
+#endif
+
   GEN_INSERTER(s,arg.print_on(s,q,r));
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
   /*
 	if (!s.good()) return s;
 	std::ios_base::iostate err = std::ios_base::goodbit;

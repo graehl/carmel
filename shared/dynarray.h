@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "genio.h"
+#include "byref.hpp"
 #include <iterator>
 //#include <boost/type_traits.hpp>
 
@@ -49,7 +50,7 @@ struct DefaultWriter
 #define LONGSEP "\n "
 	  for (;begin!=end;++begin) {
 	   o << LONGSEP;
-	   writer(o,*begin);
+	   deref(writer)(o,*begin);
 	  }
 	 o << "\n)";
 
@@ -61,7 +62,7 @@ struct DefaultWriter
 		  first = false;
 		else
 			o << ' ';
-  		writer(o,*begin);
+  		deref(writer)(o,*begin);
 	  }
 	 o << ')';
 	}
@@ -84,13 +85,13 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
 	  in.unget();
 #if 1
 	  typename Reader::value_type temp;
-	  if (read(in,temp).good())
+	  if (deref(read)(in,temp).good())
 		*out++=temp;
 	  else
 		goto fail;
 #else
 	  // doesn't work for back inserter for some reason
-	  if (!read(in,*&(*out++)).good()) {
+	  if (!deref(read)(in,*&(*out++)).good()) {
 		goto fail;
 	  }
 #endif
@@ -270,11 +271,12 @@ private:
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : public Array<T,Alloc> {
-  enum { REPLACE=0, APPEND=1 };
   //unsigned int sz;
   T *endvec;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
  public:
+  enum { REPLACE=0, APPEND=1 };
+  enum { BRIEF=0, MULTILINE=1 };
   explicit DynamicArray (const char *c) {
 	std::istringstream(c) >> *this;
   }
@@ -290,6 +292,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   void construct() {
 	Assert(endvec=vec);
 	Array<T,Alloc>::construct();
+	endvec=endspace;
+  }
+  void construct(const T& t) {
+	Assert(endvec=vec);
+	Array<T,Alloc>::construct(t);
 	endvec=endspace;
   }
 
@@ -384,15 +391,16 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
       PLACEMENT_NEW(push_back_raw()) T(val);
     }
   void push_back(const T& val,unsigned n)
-    {
-	  T *oldend=endvec;
-	  endvec+=n;
-	  if (endvec > endspace)
-		reserve_at_least(size());	  
+    {	  
+	  T *newend=endvec+n;
+      if (newend > endspace) {
+		reserve_at_least(size()+n);
+        newend=endvec+n;
+      }
 		
-	for (T *p=oldend;p!=endvec;++p)
-	  PLACEMENT_NEW(p) T(val);
-
+	  for (T *p=endvec;p!=newend;++p)
+	    PLACEMENT_NEW(p) T(val);
+      endvec=newend;
     }
 
   // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
@@ -553,7 +561,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	  }
 	  in.unget();
 	  push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
-	  if (!read(in,back()).good()) {
+	  if (!(deref(read)(in,back())).good()) {
 		//undo_push_back_raw();
 		goto fail;
 	  }
@@ -708,14 +716,15 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   }
   const int sz=7;
   {
-  DynamicArray<int> A(sz);
-  A.push_back(sz,sz*3);
+  DynamicArray<int> a(sz);
+  a.push_back(sz,sz*3);
   BOOST_CHECK(a.size() == sz*3);
   BOOST_CHECK(a.capacity() >= sz*3);
   BOOST_CHECK(a[sz]==sz);
   }
+  
   {
-  DynamicArray<int> A(sz*3,sz);
+  DynamicArray<int> a(sz*3,sz);
   BOOST_CHECK(a.size() == sz*3);
   BOOST_CHECK(a.capacity() == sz*3);
   BOOST_CHECK(a[sz]==sz);
