@@ -336,17 +336,17 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
       for ( ; ; ) {
         buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
         DO(istr >> c);  // skip whitespace
-        istr.putback(c);
+        istr.unget();
         if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
           DO(getString(istr, buf));
         inL = in->indexOf(buf);
         DO(istr >> c);  // skip whitespace
-        istr.putback(c);
+        istr.unget();
         if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
           DO(getString(istr, buf));
         outL = out->indexOf(buf);
         DO(istr >> c); // skip ws
-        istr.putback(c);
+        istr.unget();
         weight.setZero();
         if (isdigit(c) || c == '.' || c == '-' ) {
           DO(istr >> weight);
@@ -366,14 +366,14 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
         Arc *lastAdded = &states[stateNumber].arcs.top();
         if ( c == '!' ) { // lock weight
           DO(istr >> c); // skip ws
-          istr.putback(c);
+          istr.unget();
           int group = 0;
           if( isdigit(c) )
             DO(istr >> group);
           //      tieGroup.insert(IntKey(int(lastAdded)), group);
           lastAdded->groupId = group;
         } else
-          istr.putback(c);
+          istr.unget();
         if ( d != '(' ) {
           DO(istr >> c);
           DO(c == ')');

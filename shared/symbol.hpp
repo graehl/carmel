@@ -129,7 +129,7 @@ struct Symbol {
 case '(':case ')':case ',':case '"':case ' ':case '`':case '=':
 case '#':case '$':case ':':case '{':case '}':case '^':
 case '\t':case '\r':case '\n':
-  in.putback(c);
+  in.unget();
   goto donewhile;
 default:
   g_buf.push_back(c);

@@ -227,7 +227,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 		DBTREEIO(')');
 		break;
 	  }
-	  in.putback(c);
+	  in.unget();
 	  Self *in_child = read_tree(in,read);
 	  if (in_child) {
 		DBTREEIO('!');
@@ -238,7 +238,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 		return std::ios_base::badbit;
 	  }
 	  GENIO_CHECK(in>>c);
-	  if (c != ',') in.putback(c);
+	  if (c != ',') in.unget();
 	}
 	dealloc();
 	alloc((rank_type)in_children.size());
@@ -246,7 +246,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	in_children.moveto(begin());
 	
   } else {	
-	in.putback(c);
+	in.unget();
   }
   return std::ios_base::goodbit;
 }
