@@ -79,11 +79,91 @@ template <class B>
 struct SwapBatch {
     typedef B BatchMember;
     typedef std::size_t size_type; // boost::intmax_t
+
+    struct iterator
+    {
+        typedef SwapBatch<B> Cont;
+        typedef B value_type;
+        typedef B &reference;
+        typedef B *pointer;
+        typedef void difference_type; // not implemented but could be unsigned
+        typedef forward_iterator_tag iterator_category;
+
+        Cont *cthis;
+        unsigned batch;
+        size_type *header;
+        reference operator *()
+        {
+            Assert(batch < cthis->n_batch);
+            load_batch(batch);
+            return Cont::data_for_header(&header);
+        }
+        pointer operator ->()
+        {
+            return &operator *();
+        }
+        void set_end()
+        {
+            cthis=NULL;
+        }
+        void is_end() const
+        {
+            return cthis==NULL;
+        }
+        void operator ++()
+        {
+            if (*header) {
+                header += *header;
+                if (!*header && batch == cthis->nbatch-1)
+                    set_end();
+            } else {
+                ++batch;
+                Assert (batch < cthis->nbatch)
+                cthis->load_batch(batch);
+                header=cthis->memmap.begin();
+            }
+        }
+        bool operator ==(const iterator &o) const
+        {
+            Assert (!cthis || !o.cthis || cthis==o.cthis);
+            if (o.is_end()  && is_end())
+                return true;
+            if (!o.is_end() && !is_end())
+                return  o.batch==batch && o.header == o.header; // cthis=o.cthis &&
+            return false;
+//                return cthis==NULL; //!*header && batch = cthis->nbatch-1; // now checked in operator ++
+        }
+        bool operator !=(const iterator &o) const
+        {
+            return ! operator==(o);
+        }
+    };
+
+    iterator begin()
+    {
+        iterator ret;
+        if (total_items) {
+            ret.cthis=this;
+            ret.batch=0;
+            ret.header=memmap.begin();
+        } else
+            return end();
+        return ret;
+    }
+
+    iterator end()
+    {
+        iterator ret;
+        ret.set_end();
+        return ret;
+    }
+
+
     size_type n_batch;
     std::string basename;
     mapped_file memmap;
     size_type batchsize;
-    unsigned loaded_batch;
+    unsigned loaded_batch; // may have to go if we allow memmap sharing between differently-typed batches.
     StackAlloc space;
     bool autodelete;
     void preserve_swap() {
@@ -95,7 +175,7 @@ struct SwapBatch {
     std::string batch_name(unsigned n) const {
         return basename+boost::lexical_cast<std::string>(n);
     }
-    void *end() {
+/*    void *end() {
         return memmap.end();
     }
     void *begin() {
@@ -106,7 +186,7 @@ struct SwapBatch {
     }
     const void *begin() const {
         return memmap.data();
-    }
+        }*/
     size_type capacity() const {
         return memmap.size();
     }
@@ -131,7 +211,7 @@ struct SwapBatch {
             memmap.reopen(batch_name(n_batch),std::ios::out,batchsize,0,true); // creates new file and memmaps
         }
         loaded_batch=n_batch++;
-        space.init(begin(),end());
+        space.init(memmap.begin(),memmap.end());
         d_tail=space.alloc<size_type>(); // guarantee already aligned
         *d_tail=0; // class invariant: each batch has a chain of d_tail diffs ending in 0.
     }
@@ -199,7 +279,6 @@ struct SwapBatch {
         }
         // ELSE: read was success!
         ++total_items;
-        space.align<size_type>();
         DBP2(save,space.end);
         space.restore_end(save);
         DBP2(space.top,space.end);
@@ -229,6 +308,13 @@ struct SwapBatch {
 
     }
 
+    static BatchMember *data_for_header(size_type *header)
+    {
+        BatchMember *b=(BatchMember*)(d_next+1);
+        b=::align(b);
+        return b;
+    }
+
     template <class F>
     void enumerate(F f)  {
         BACKTRACE;
@@ -238,10 +324,8 @@ struct SwapBatch {
             DBPC2("enumerate batch ",i);
             load_batch(i);
             //=align((size_type *)begin()); // can guarantee first alignment implicitly
-            for(const size_type *d_next=(size_type *)begin();*d_next;d_next+=*d_next) {
-                BatchMember *b=(BatchMember*)(d_next+1);
-                b=::align(b);
-                deref(f)(*b);
+            for(const size_type *d_next=(size_type *)memmap.begin();*d_next;d_next+=*d_next) {
+                deref(f)(*data_for_header(d_next));
             }
         }
     }

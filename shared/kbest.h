@@ -27,10 +27,10 @@ struct GraphHeap {
     pGraphArc *arcHeap;           // binary heap of sidetracks originating from a state
     int arcHeapSize;
 
-    // custom allocator not optional because of how freeAll works!
     static GraphHeap *freeList;
     static const int newBlocksize;
     static List<GraphHeap *> usedBlocks;
+    // custom new is mandatory, because of how freeAll works!
     void *operator new(size_t s)
         {
             size_t dummy = s;
@@ -270,14 +270,8 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                 delete[] pathQueue;
                 delete[] retired;
             } // end of if (pathGraph[0])
-            GraphHeap::freeAll();
-
-            //Yaser 6-26-2001:  The following repository was filled using the
-            // "buildSidetracksHeap" method which is called recursively by the
-            // "depthFirstSearch()" method and it was never deleted because
-            // we needed it here in bestPaths(). Hence we have to delete it here
-            // since we are done with it.
-            freeAllSidetracks();
+            GraphHeap::freeAll(); // FIXME: global
+            freeAllSidetracks(); // FIXME: global
 
             delete[] pathGraph;
             delete[] visited;

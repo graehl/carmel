@@ -21,6 +21,57 @@
 
 #include "myassert.h"
 
+#include <functional>
+#include <algorithm>
+
+
+
+#define INDIRECT_STRUCT_COMMON(type,method)
+    struct indirect_ ## type ## _ ## method                  \
+    {                                         \
+        typedef type indirect_type;           \
+        indirect_ ## type ## _ ## method *pimp;              \
+        indirect_ ## type ## _ ## method(type &t) : pimp(&t) {} \
+        indirect_ ## type ## _ ## method(const indirect_ ## type ## _ ## method &t) : pimp(t.pimp) {} \
+
+#define INDIRECT_STRUCT(type,method)                         \
+    INDIRECT_STRUCT_COMMON(type,method) \
+            void operator()() const         \
+            {                                   \
+                pimp->method();               \
+            }                                   \
+    };
+
+#define INDIRECT_STRUCT1(type,method,t1,v1)      \
+    INDIRECT_STRUCT_COMMON(type,method) \
+            void operator()(t1 v1) const         \
+            {                                   \
+                pimp->method(v1);               \
+            }                                   \
+    };
+
+
+#define INDIRECT_STRUCT1(type,method,t1,v1)      \
+    INDIRECT_STRUCT_COMMON(type,method) \
+            void operator()(t1 v1) const         \
+            {                                   \
+                pimp->method(v1);               \
+            }                                   \
+    };
+
+
+
+#define INDIRECT_PROTO(type,method) INDIRECT_STRUCT(type,method)    \
+        void method()
+
+#define INDIRECT_PROTO1(type,method,t1,v1) INDIRECT_STRUCT1(type,method,t1,v1)    \
+        void method(t1 v1)
+
+#define INDIRECT_PROTO2(type,method,t1,v1,t2,v2) INDIRECT_STRUCT2(type,method,t2,v2)   \
+        void method(t1 v1,t2 v2)
+
+
+
 template <class T>
 T *align(T *p)
 {
@@ -145,6 +196,56 @@ struct dummy_nullary_func {
     void operator()() {}
 };
 
+struct tick_writer
+{
+    typedef void result_type;
+    std::ostream *pout;
+    std::string tick;
+    tick_writer() {}
+    tick_writer(const tick_writer &t) : pout(t.pout),tick(t.tick) {}
+    tick_writer(std::ostream *o_,const std::string &tick_=".") { init(o_,tick_); }
+    void init(std::ostream *o_,const std::string &tick_=".")
+    {
+        pout=o_;
+        tick=tick_;
+    }
+    void operator()()
+    {
+        if (pout)
+            *pout << tick;
+    }
+};
+
+
+template <class C>
+struct periodic_wrapper : public C
+{
+    typedef C Imp;
+    typedef typename Imp::result_type result_type;
+    typedef
+    unsigned period,left;
+    periodic(unsigned period_=0,const Imp &imp_=Imp()) : period(period_), Imp(imp_)
+    {
+        left=period;
+    }
+    void set_period(unsigned period_=0)
+    {
+        left=period=period_;
+    }
+    result_type operator()() {
+        DBP4(period,left);
+        if (period) {
+            if (!--left) {
+                left=period;
+                return Imp::operator()();
+            }
+        }
+    }
+};
+
+
+// deprecated: use periodic_wrapper<tick_writer> instead
+/*
 struct progress_ticker {
     typedef void result_type;
     std::ostream *pout;
@@ -168,17 +269,20 @@ struct progress_ticker {
         }
     }
 };
+*/
 
 
-template <class Label>
+template <class Label,class F>
 struct ProgressReader
 {
-    progress_ticker *ptick;
+    F tick;
+    ProgressReader(const F &f) : ptick(f) {}
+    ProgressReader(const ProgressReader &p) : ptick(p.ptick) {}
     typedef Label value_type;
     template <class charT, class Traits>
     std::basic_istream<charT,Traits>&
     operator()(std::basic_istream<charT,Traits>& in,Label &l) const {
-        (*ptick)();
+        deref(tick)();
         return in >> l;
     }
 };
@@ -201,6 +305,18 @@ struct size_accum {
         size += t.size();
     }
     operator size_t() { return size; }
+};
+
+template <class T>
+struct max_accum {
+    T max;
+    max_accum() : max() {}
+    template <class T>
+    void operator()(const T& t) {
+        if (max < t)
+            max = t;
+    }
+    operator T &() { return max; }
 };
 
 
@@ -293,6 +409,33 @@ struct set_random_pos_fraction {
 };
 
 
+
+template <class I, class B,class C>
+struct indirect_cmp : public C {
+    typedef C Comp;
+    typedef I Index;
+    typedef B Base;
+    B base;
+
+    indirect_lt(const B &b,const Comp&comp=Comp()) : base(b), Comp(comp) {}
+    indirect_lt(const indirect_lt<I,B> &o): base(o.base), Comp((Comp &)o) {}
+
+    bool operator()(const I &a, const I &b) const {
+        return Comp::operator()(base[a], base[b]);
+    }
+};
+
+template <class I,class B,class C>
+void top_n(unsigned n,I begin,I end,const B &base,const C& comp)
+{
+    indirect_cmp<I,B,C> icmp(base,comp);
+    I mid=begin+n;
+    if (mid >= end)
+        sort(begin,end,icmp);
+    else
+        partial_sort(begin,mid,end,icmp);
+}
+
 // useful for sorting; could parameterize on predicate instead of just <=lt, >=gt
 template <class I, class B>
 struct indirect_lt {
@@ -306,7 +449,6 @@ struct indirect_lt {
         return base[a] < base[b];
     }
 };
-
 
 template <class I, class B>
 struct indirect_gt {
