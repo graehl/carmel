@@ -57,15 +57,21 @@ public:
   }
 };
 
+#include "static_itoa.h"
+
 // uses interned char *
 struct Symbol {
   static StringInterner<> intern;
   char *str;
+  static Symbol empty;
   Symbol() : str(empty.str) {}
+  explicit Symbol(unsigned i) : str(intern(static_itoa(i))) 
+  {
+	//str=intern(static_itoa(i));
+  }
   Symbol(const char *s) : str(intern(s)) {}
   Symbol(const Symbol &s) : str(s.str) {}
   operator char * () { return str; }
-  static Symbol empty;
   Symbol & operator=(Symbol r) {
     str=r.str;
     return *this;
@@ -84,7 +90,9 @@ struct Symbol {
   bool operator !=(const Symbol r) const {
     return r.str!=str;
   }
-
+  bool isDefault() const {
+	return *this == empty;
+  }
   template <class charT, class Traits>
   std::ios_base::iostate
   print_on(std::basic_ostream<charT,Traits>& o) const
@@ -136,6 +144,13 @@ donewhile:
   }
 
 };
+
+bool operator ==(const Symbol s,const char *c) {
+  return s.operator==(c);
+}
+bool operator ==(const char *c,const Symbol s) {
+  return s.operator==(c);
+}
 
 CREATE_INSERTER(Symbol)
 CREATE_EXTRACTOR(Symbol)
@@ -285,6 +300,8 @@ BOOST_AUTO_UNIT_TEST( symbol )
   BOOST_REQUIRE(a.child(1)->size() > 1);
   BOOST_CHECK(a.child(1)->child(0)->label == Symbol("aa"));
  }
+ BOOST_CHECK(Symbol(1)==Symbol("1"));
+ BOOST_CHECK(Symbol(91)=="91");
 }
 #endif
 
