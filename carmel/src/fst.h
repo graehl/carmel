@@ -265,13 +265,12 @@ template <class I> int randomPath(I i,int max_len=-1)
     return (*out)[i];
   }
   const char *stateName(int i) const {
-    static char ibuf[30];
     Assert ( i >= 0 );
     Assert ( i < numStates() );
 	if (named_states)
 		return stateNames[i];
 	else
-		return itoa(i,ibuf,20);
+		return Alphabet::itoa(i);
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
