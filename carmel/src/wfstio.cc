@@ -3,6 +3,10 @@
 #include "assert.h"
 #include "fst.h"
 
+std::ostream * WFST::warn = &std::cerr;
+std::ostream * WFST::log = &std::cerr;
+std::ostream * WFST::debug = &std::cerr;
+
 #define DO(x)  { if (!(x)) return 0; }
 
 static int pow2(int exp)
