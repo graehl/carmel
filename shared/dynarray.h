@@ -634,7 +634,7 @@ public:
 
     void reserve(unsigned int newSpace) {
         if (newSpace > this->capacity())
-            resize(newSpace);
+            resize_up(newSpace);
     }
     void reserve_at_least(unsigned req) {
         unsigned newcap=this->capacity();
