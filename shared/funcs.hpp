@@ -31,7 +31,7 @@
 # endif
 #endif
 #ifdef USE_NONDET_RANDOM
-#include <boost/random/nondet_random.hpp>
+#include <boost/nondet_random.hpp>
 #endif
 
 
