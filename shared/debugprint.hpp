@@ -100,6 +100,26 @@ template <class C>
 struct has_print_on_plain<boost::reference_wrapper<C> > : public has_print_on_plain<C> {};
 
 
+template <class C,class V=void>
+struct not_has_print_on;
+
+template <class C,class V>
+struct not_has_print_on {
+  typedef void type;
+};
+
+template <class C>
+struct not_has_print_on<C,typename has_print_on<C>::type> {
+};
+
+template <class C>
+struct not_has_print_on<C,typename has_print_on_writer<C>::type> {
+};
+
+
+template <class C>
+struct not_has_print_on<boost::reference_wrapper<C> > : public not_has_print_on<C> {};
+
 /*template<class A>
 static const char * dbgstr(const A &a);
 
@@ -138,6 +158,11 @@ void dbgout(ostream &o,const A &a, typename has_print_on_writer<A>::type* dummy 
   deref(a).print_on(o,DebugWriter());
 }
 
+template<class A>
+void dbgout(ostream &o,const A &a, typename not_has_print_on<A>::type* dummy = 0) {
+    o << deref(a);
+}
+
 
 template<class A,class W>
 void dbgout(ostream &o,const A &a,W w,typename has_print_on_plain<A>::type* dummy = 0) {
@@ -150,7 +175,7 @@ void dbgout(ostream &o,const A &a,W w,typename has_print_on_writer<A>::type* dum
 }
 
 
-
+/*
 template <class A>
 void dbgout(ostream &o,const A &a, typename enable_if<boost::is_arithmetic<A> >::type* dummy = 0) {
   o << a;
@@ -163,7 +188,7 @@ void dbgout(ostream &o,const char *a) {
 void dbgout(ostream &o,const std::string &a) {
   o << a;
 }
-
+*/
 
 
 #ifdef DEBUG
