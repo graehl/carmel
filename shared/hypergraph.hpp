@@ -1,6 +1,9 @@
 #ifndef _HYPERGRAPH_HPP
 #define _HYPERGRAPH_HPP
 
+// adjacency lists (rules or var+rule leaving state) - should be able to use boost dijkstra
+// reverse var+rule index allowing djikstra-ish best-tree and completely-derivable detection
+
 /*
 using Boost Graph Library
 
@@ -35,134 +38,10 @@ http://www.boost.org/libs/graph/doc/adjacency_list.html
 #include "list.h"
 #include "dynarray.h"
 #include "weight.h"
-#include "byref.hpp"
-#include "threadlocal.hpp"
-#include "2heap.h"
+//#include "byref.hpp"
+#include <boost/ref.hpp>
+#include "adjustableheap.hpp"
 
-struct VectorS {
-  template <class T> struct container {
-	typedef DynamicArray<T> type;
-  }
-};
-
-struct ListS {
-  template <class T> struct container {
-	typedef List<T> type;
-  }
-};
-
-
-template <class G,E,C,V>
-struct SourceEdges;
-
-template <class G,E,C,V>
-struct graph_traits<SourceEdges<G,E,C,V> > : public graph_traits<G> {
-  typedef E edge_descriptor;  
-};
-
-
-// for simplicity, requires vertex index ... could allow user to specify property map type instead, but would have to allocate it themself
-
-template <class E,class G,class F>
-void visit(G &g,F &f);
-
-
-template <class G,class F>
-void visit<typename graph_traits<G>::edge_descriptor>(G &g,F &f) {
-  typedef typename graph_traits<G>::edge_iterator ei;
-  std::pair<ei,ei> eis=edges(g);
-  for (ei i=eis.first;i!=eis.second;++i)
-  	f(*i);
-}
-
-template <class G,class F>
-void visit<typename graph_traits<G>::vertex_descriptor>(G &g,F &f) {
-  typedef typename graph_traits<G>::vertex_iterator ei;
-  std::pair<ei,ei> eis=vertices(g);
-  for (ei i=eis.first;i!=eis.second;++i)
-  	f(*i);
-}
-
-
-// must define visit_edges (although default above should be ok)
-template <class G,class E=typename graph_traits<G>::edge_descriptor,class ContS=VectorS,class VertexIndexer=typename graph_traits<G>::vertex_offset_map >
-struct SourceEdges {    
-  typedef SourceEdges<G,E,ContS,VertexIndexer> Self;
-  typedef ContS::container<E>::type Adj;
-  typedef FixedArray<Adj> Adjs;  
-  typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
-  typedef typename E edge_descriptor;
-  Adjs adj;
-  typedef G graph;
-  graph &g;
-  operator graph &() { return g; }
-  VertexIndexer vi;
-  SourceEdges(Graph &g_,VertexIndexer vert_index=VertexIndexer()) : adj(g_.num_vertices()),g(g_), vi(vert_index) {	
-	visit_edges<E>(g,*this);
-  }
-  unsigned index(vertex_descriptor v) {
-    return get(vi,v);
-  }
-  Adj &operator[](vertex_descriptor v) {
-    return adj[index(v)];
-  }
-  const Adj &operator[](vertex_descriptor v) const {
-    return *(const_cast<Self *>(this))[v];
-  }
-/*  template <class I>
-  populate(I beg,I end) {
-	for (I i=beg;i!=end;++i)
-	  (*this)(*i);
-  }*/
-  void operator()(E e) {
-	unsigned i=get(vi,source(e,g));
-	adj[i].push(e);
-  }
-};
-
-#include <boost/counting_iterator.hpp>
-template <class G,E,C,V>
-struct graph_traits<SourceEdges<G,E,C,V> > : public graph_traits<G> {
-{
-  typedef SourceEdges<G,E,C,V> graph;
-  //typedef typename graph::vertex_descriptor vertex_descriptor;
-  //typedef typename graph::edge_descriptor edge_descriptor;
-  typedef boost::counting_iterator_generator<graph::edge_desciptor> out_edge_iterator;
-    typedef std::pair<
-    typename graph_traits<Treexdcr<R> >::out_edge_iterator,
-    typename graph_traits<Treexdcr<R> >::out_edge_iterator> pair_out_edge_it;    
-};
-
-template <class G,E,C,V>
-inline typename SourceEdges<G,E,C,V>::pair_out_edge_it
-out_edges(	  
-          typename graph_traits<G>::vertex_descriptor v,
-	      const SourceEdges<G,E,C,V> &g
-	   )
-{
-  typedef typename SourceEdges<G,E,C,V> Self;
-  typename Self::Adj &adj=g[v];
-  return typename Self::pair_out_edge_it(adj.begin(),adj.end());
-}
-
-template <class G,E,C,V>
-unsigned out_degree(typename SourceEdges<G,E,C,V>::vertex_descriptor v,SourceEdges<G,E,C,V> &g) {
-  return g[v].size();
-}
-
-template <class G,E,C,V,F>
-inline void
-visit<E>(	  
-          typename graph_traits<G>::vertex_descriptor v,
-	      const SourceEdges<G,E,C,V> &g, 
-          F f
-	   )
-{
-  typedef typename SourceEdges<G,E,C,V> Self;
-  typename Self::Adj &adj=g[v];
-  for (typename Self::out_edge_iterator i=adj.begin(),e=adj.end();i!=e;++i)
-    f(*i);  
-}
 
 
 /*
@@ -190,82 +69,7 @@ struct ArrayPMap;
 
 
 
-//! NOTE: default comparison direction is reversed ... making max-heaps into min-heaps (as desired for best-tree) and vice versa
-// loc[key] = void * (or DistToState<K,W,L> *)
-// weight[key] = some weight class
-template <class K,class W,class L>
-struct HeapKey {
-  typedef K value_type;
-  typedef W weightmap_type;
-  typedef L locmap_type;
-  typedef DistToState<K,W,L> Self;
-  typedef Self *Loc;
-  typedef typename W::value_type weight_type;
-  K key;
-  static THREADLOCAL L loc;
-  static THREADLOCAL W weight;
-  struct SetLocWeight {
-    L old_loc;
-    W old_weight;
-    SetLocWeight(L l,W w) : old_loc(loc),old_weight(weight) {
-      loc=l;
-      weight=w;
-    }
-    ~SetLocWeight() {
-      loc=old_loc;
-      weight=old_weight;
-    }
-  };
-  HeapKey() : key() {}
-  HeapKey(K k) : key(k) {}
-  HeapKey(Self s) : key(s.k) {}
 
-  void *loc() const {
-    return loc[key];
-  }
-  weight_type weight() const {
-    return weight[key];
-  }
-//  static FLOAT_TYPE unreachable;
-  //operator weight_type() const { return weight[key]; }
-  //operator K () const { return key; }
-  void operator = (HeapKey<K,W,L> rhs) { 
-    loc[rhs.key] = this;
-    loc = rhs.loc;
-  }
-};
-
-#ifdef MAIN
-template<class K,W,L>
-THREADLOCAL typename HeapKey<K,W,L>::weightmap_type HeapKey<K,W,L>::weight;
-
-template<class K,W,L>
-THREADLOCAL typename HeapKey<K,W,L>::locmap_type HeapKey<K,W,L>::loc;
-#endif
-
-template<class K,W,L>
-inline bool operator < (HeapKey<K,W,L> lhs, HeapKey<K,W,L> rhs) {
-  return lhs.weight() > rhs.weight();
-}
-
-/*
-template<class K,W,L>
- inline bool operator == (HeapKey<K,W,L> lhs, HeapKey<K,W,L> rhs) {
-  return HeapKey<K,W,L>::weight[lhs.key] == HeapKey<K,W,L>::weight[rhs.key];
-}
-
-template<class K,W,L>
-inline bool operator == (HeapKey<K,W,L> lhs, K rhs) {
-  return HeapKey<K,W,L>::weight[lhs.key] == rhs;
-}
-*/
-
-/*
-template <class V,class O>
-struct ArrayPMap {
-  typedef boost::reference_type<ArrayPMapImp<V,O> > type;
-};
-*/
 /*: public ByRef<ArrayPMapImp<V,O> >
 {
   typedef ArrayPMapImp<V,O> Imp;
@@ -280,29 +84,34 @@ struct ArrayPMap {
 // e.g. 
 /*
   typedef typename graph_traits<G>::hyperarc_offset_map HaIndex;
-  typedef ArrayPMapImp<unsigned,HaIndex> PMapImp;
-  typedef typename PMapImp::property_map PMap;
-  PMapImp arc_remain(num_hyperarcs(g),HaIndex(g));
-  ReverseHypergraph<G,PMap> r(g,arc_remain);
+  typedef ArrayPMap<unsigned,HaIndex> PMap;  
+  typename PMap::Imp arc_remain(num_hyperarcs(g),HaIndex(g));
+  ReverseHypergraph<G,PMap> r(g,PMap(arc_remain));
 */
 
 template <class G,class P1,class P2>
 void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
-  visit<typename graph_traits<G>::hyperarc_descriptor>(IndexedCopier(a,b));
+  visit<typename graph_traits<G>::hyperarc_descriptor>(make_indexed_copier(a,b));
 }
 
 
 
-template <class G,class HyperarcLeftMap=ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_offset_map>,class VertexIndexer=typename graph_traits<G>::vertex_offset_map,class ContS=VectorS >
+template <class G,
+//class HyperarcLeftMap=typename ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_offset_map>::type,
+  class HyperarcMapFactory=property_factory<G,typename graph_traits<G>:hyperarc_descriptor>,
+  class VertMapFactory=property_factory<G,typename graph_traits<G>::vertex_descriptor>,
+class ContS=VectorS >
 struct ReverseHyperGraph {
-  typedef ReverseHyperGraph<G,HyperarcLeftMap,VertexIndexer,ContS> Self;
+  typedef ReverseHyperGraph<G,HyperarcMapFactory,VertMapFactory,ContS> Self;
   typedef G graph;
-  typedef typename graph_traits<graph>::hyperarc_descriptor hd;    
+  typedef typename graph_traits<graph> GT;
+  typedef typename GT::hyperarc_descriptor HD;    
+  typedef typename GT::vertex_descriptor VD;    
 
   struct ArcDest  {
-	hd harc; // hyperarc with this tail
+	HD harc; // hyperarc with this tail
 	unsigned multiplicity; // tail multiplicity
-	ArcDest(hd e) : harc(e), multiplicity(1) {}
+	ArcDest(HD e) : harc(e), multiplicity(1) {}
   };
 
 /*  struct Edge : public W { 
@@ -316,32 +125,38 @@ struct ReverseHyperGraph {
 //  Vertices vertex;
   
   typedef ContS::container<ArcDest>::type Adj;
-  typedef FixedArray<Adj> Adjs;
-  Adjs adj;  
-  VertexIndexer vi;
-  unsigned vertindex(vertex_descriptor v) const {
-    return get(vi,v);
-  }
-  HyperarcLeftMap unique_tails;
-  
-    
+  //typedef FixedArray<Adj> Adjs;
+  typedef typename VertMapFactory::rebind<Adj>::implementation Adjs;
   graph &g;
-  ReverseHyperGraph(const G& g_,HyperarcLeftMap unique_tails_pmap,VertexIndexer vert_index=VertexIndexer()) : adj(num_vertices(g)), g(g_), vi(vert_index), unique_tails(unique_tails_pmap)
+  Adjs adj;
+  typedef typename HyperarcMapFactory::rebind<unsigned> TailsFactory;
+  typedef typename TailsFactory::implementation HyperarcLeftMap;
+  typedef typename TailsFactory::reference RemainPMap;
+  HyperarcMapFactory h_fact;
+  HyperarcLeftMap unique_tails;  
+  RemainPMap unique_tails_pmap() {
+    return RemainPMap(unique_tails);
+  }
+  VertMapFactory vert_fact;
+  
+  
+  ReverseHyperGraph(const G& g_,VertMapFactory vert_fact_=VertMapFactory(g_),
+    HyperarcMapFactory h_fact_=HyperarcMapFactory(g_) : adj(vert_fact_), g(g_), unique_tails(unique_tails_pmap), vert_fact(vert_fact_), h_fact(h_fact_), unique_tails(h_fact_)
     //num_hyperarcs(g_)
   {		
-	visit_edges<hd>(g,*this);
+	visit_edges<HD>(g,*this);
   }
-  typedef typename graph_traits::vertex_descriptor vertex_descriptor;
-  Adj &operator[](vertex_descriptor v) {
-    return adj[get(vi,index(v)];
+  
+  Adj &operator[](VD v) {
+    return adj[v];
   }
-  void operator()(hd harc) {
+  void operator()(HD harc) {
     unsigned ut=0;
     for (typename graph_traits<graph>::pair_tail_iterator pti=tails(harc,g);
       pti.first!=pti.second; ++pti.first) {
         //Adj &a=adj[get(vi,target(*(pti.first),g))]; // adjacency list for tail
-        Adj &a=(*this)[target(*(pti.first),g)];
-        if (a.size()&&a.top().harc == ha) {
+        Adj &a=adj[target(*(pti.first),g)];
+        if (a.size()&&a.top().harc == harc) {
           // last hyperarc with same tail = same hyperarc
 	      ++a.top().multiplicity;
         } else {	  // new (unique) tail
@@ -351,62 +166,53 @@ struct ReverseHyperGraph {
       }
     put(unique_tails,harc,ut);
   }  
-  /*
-  template <class E>
-  struct CountTails {
-    E tails_rem;
-    CountTails(E tails_rem_) : tails_rem(tails_rem_) {}
-    operator()(hd harc) {
-          unsigned ut=0;
-    for (typename graph_traits<graph>::pair_tail_iterator pti=tails(harc,g); pti.first!=pti.second; ++pti.first) {
-    }
-
-    }
-  };
-  template <class E>
-  void count_unique_tails(E e) {
-    visit_edges<hd>(g,CountTails<E>(e));
-  }
-  */
+  
   // user must init to 0
-  template <class E>
-  void count_unique_tails(E e) {
+  template <class EdgePMap>
+  void count_unique_tails(EdgePMap e) {
     FOREACH(const Adj &a,adj) {
       FOREACH(const ArcDest &ad,a) {
         ++e[ad.harc];
       }
     }    
   }
-  //FIXME:destroys unique_tails instead of making copy.
+  
   // reachmap must be initialized to false by user
- template <class VertexReachMap,class TailsRemainMap>
+ template <
+   class VertexReachMap=property_factory<G,VD>::rebind<bool>::reference,
+ >
  struct HyperGraphReach {
   Self &rev;
   VertexReachMap vr;
-  TailsRemainMap tr;
+  HyperarcLeftMap tr;
   unsigned n;
-  HyperGraphReach(Self &r,VertexReachMap v,TailsRemainMap t) : rev(r),vr(v),tr(t),n(0) {
-    copy_hyperarc_pmap(rev.g,rev.unique_tails,tr);
+  HyperGraphReach(Self &r,VertexReachMap v) : rev(r),vr(v),tr(r.unique_tails),n(0) {
+    //copy_hyperarc_pmap(rev.g,rev.tails_remain_pmap(),tr);
+    //relying on implementation same type (copy ctor)
   }
-  void operator()(vertex_descriptor v) {
+  void operator()(VD v) {
     if (get(vr,v))
       return;
     ++n;
     put(vr,v,true); // mark reached
     Adj &a=rev[v];
     for(Adj::iterator i=a.begin(),end=a.end();i!=end;++i) {
-      hd harc=i->harc;
-      vertex_descriptor tail=target(harc,g);
+      HD harc=i->harc;
+      VD tail=target(harc,g);
       if (!get(vr,tail)) { // not reached yet
         if (--tr[harc]==0)
           (*this)(source(harc,g)); // reach head
       }
     }
+
+  }
+  RemainPMap tails_remain_pmap() {
+    return RemainPMap(tr);
   }
 
  };
  template <class P>
-   unsigned reach(vertex_descriptor start,P p) {
+   unsigned reach(VD start,P p) {
      HyperGraphReach<P> alg(*this,p);
      alg(start);    
      return alg.n;
@@ -414,61 +220,131 @@ struct ReverseHyperGraph {
   template <class B,class E,class VertexReachMap>
    unsigned reach(B begin,E end,VertexReachMap p) {
      HyperGraphReach<VertexReachMap> alg(*this,p);
-     for_each(begin,end,boost::ref(alg));    
+     for_each(begin,end,ref(alg));    
      return alg.n;
    }
   
+typedef 
 
-//FIXME:destroys unique_tails instead of making copy.
+/* usage: 
+BestTree alg(g,mu,pi);
+alg.init_costs();
+for each final (tail) vertex v with final cost f:
+  alg(v,f);
+alg.finish();
+
+or ... assign to mu final costs yourself and then
+alg.prepare(); // adds non-infinity cost only
+alg.finish();
+
+also
+typename RemainInfCostMap::reference hyperarc_remain_and_cost_map() 
+returns pmap with pmap[hyperarc].remain() == 0 if the arc was usable from the final tail set
+and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
+*/
+
+
+
+// NONNEGATIVE COSTS ONLY!  otherwise may try to adjust the cost of something on heap that was already popped (memory corruption ensues)
  // costmap must be initialized to initial costs (for start vertices) or infinity (otherwise) by user
  // edgecostmap should be initialized to edge costs
- template <class VertexCostMap,class PredMap>
+ template <
+   class VertexCostMap=property_factory<G,VD>::rebind<float>::reference,
+   //class VertexPredMap=property_factory<G,VD>::rebind<HD>::reference
+   class VertexPredMap=dummy_property_map,
+   class EdgeCostMap=property_map<G,edge_weight_t>
+ >
  struct BestTree {
   Self &rev;
   VertexCostMap mu;
-  TailsRemainMap tr;
-  
-  PredMap pi;
-  LocMap loc;
-  typedef HeapKey<vertex_descriptor,VertexCostMap,LocMap> Key;
-  FixedArray<Key *> Locs;
+  VertexPredMap pi;
+  //TailsRemainMap tr;
+  HyperarcLeftMap tr;
+  typedef typename VertMapFactory::rebind<void *> LocMap;
+  typedef typename LocMap::implementation Locs;
+  typedef HeapKey<VD,VertexCostMap,typename LocMap::reference> Key;
+//  FixedArray<Key *> Locs;
   Locs loc;
+
+  typedef typename VertexCostMap::value_type Cost;
+  struct RemainInf : public std::pair<unsigned,Cost> {
+    unsigned & remain() { return first; }
+    Cost & cost() { return second; }
+  };
+  typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostMap; // lower bound on edge costs
+  typedef typename InfCostMap::implementation RemainInfCosts;
+  RemainInfCosts remain_infinum;
+  typename RemainInfCostMap::reference hyperarc_remain_and_cost_map() {
+    return remain_infinum;
+  }
 
   typedef DynamicArray<Key> Heap;
   Heap heap;
   
-  BestTree(Self &rev_,VertexCostMap mu_,EdgeCostMap PredMap pi_,LocMap lc_,TailsRemainMap t) :
-    rev(rev_),mu(mu_),pi(pi_),tr(t),loc(lc_),heap(num_vertices(rev.g)) {
-      copy_hyperarc_pmap(rev.g,rev.unique_tails,tr);      
-    }   
-  void operator()(vertex_descriptor v) {
+  BestTree(Self &rev_,VertexCostMap mu_,PredMap pi_=PredMap(),EdgeCostMap ec_=get(edge_weight,rev_.g), dummy_EdgeCostMap()) :
+    rev(rev_),mu(mu_),pi(pi_),loc(rev_.g),remain_infinum(rev_.g),heap(num_vertices(rev_.g)), {
+      //copy_hyperarc_pmap(rev.g,rev.tails_remain_pmap(),tr);      //already copied above.
+      //copy_hyperarc_pmap(rev.g,ec_,infinum); // can't rely on copying implementation since no API for it
+      visit<typename GT::hyperarc_descriptor>(
+        make_indexed_pair_copier(ref(remain_infinum),rev.tails_remain_pmap(),ec));
+    }   // semi-tricky: loc should be default initialized (void *) to 0
+
+  void init_costs(Cost cinit=numeric_limits<Cost>::infinity) {
+    typename GT::pair_vertex_it i=vertices(rev.g);
+    for (;i.first!=i.second;++i.first) {
+      put(mu,i.first,cinit);
+    }
+  }
+  void operator()(VD v,Cost c) {
+    put(mu,v,c);
     heap.push_back(v);
   }
+      
+  void operator()(VD v) {
+    if (get(mu,v) != numeric_limits<Cost>::infinity)
+      heap.push_back(v);
+  }
   void prepare() {
-    visit<typename graph_traits<G>::vertex_descriptor>(rev.g,boost::ref(*this));
+    visit<VD>(rev.g,ref(*this));
   }
   template<class I>
   void prepare(I begin, I end) {
-    std::foreach(begin,end,boost::ref(*this));
+    std::foreach(begin,end,ref(*this));
   }
-  void finish() {
-    typename Key::SetLocWeight save(loc,mu);
-    typedef typename Key::SetLocWeight::weight_type Cost;
-    heapBuild(heap.begin(),heap.end());
-    while(heap.size()) {
-      Key top=heapTop(heap.begin());
-      heapPop(heap.begin(),heap.end());
-      heap.pop_back();
-      Adj &a=adj[rev.vertindex(top.key)];
-      FOREACH(const ArcDest &ad,a) {        
-        Cost &c=mu[a.harc];
-        vertex_descriptor head=source(a.harc,rev.g);
-        if (c < 
-
-      }
+  bool was_queued(VD v) {
+    return get(loc,v) != NULL;
+  }
+  void relax(VD v,HD h,Cost &m) {
+    if (c < m) {
+      m=c;
+      heapAdjustOrAdd(heap,v);
+      put(pi,v,h);
     }
   }
-  
+  void reach(VD v) {
+    Cost cv=get(mu,v);
+    const Adj &a=adj[top.key];
+    FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
+      HD h=a.harc;
+      VD head=source(h,rev.g);
+      RemainInf &ri=remain_infinum[h];      
+        Assert(ri.cost() >= 0);
+      ri.cost() += (a.multiplicity*cv);  // assess the cost of reaching v
+        Assert(ri.remain() > 0);
+      if (--ri.remain() == 0) // if v completes the hyperarc, attempt to use it to reach head (more cheaply)
+        relax(head,h,ri.cost());            
+    }
+
+  }
+  void finish() {
+    typename Key::SetLocWeight save(ref(loc),mu);    
+    heapBuild(heap);
+    while(heap.size()) {
+      Key top=heapTop(heap);
+      heapPop(heap);
+      reach(top.key);
+    }
+  }  
  };
 
 };

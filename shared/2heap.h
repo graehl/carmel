@@ -54,6 +54,12 @@ template <typename T> void heapPop (T *heapStart, T *heapEnd)
   heapify(heap, heapSize, 1);
 }
 
+template <typename T> inline T & heapTop (T *heapStart)
+{
+  return *heapStart;
+}
+
+
 template <typename T> void heapBuild ( T *heapStart, T *heapEnd )
 {
   T *heap = heapStart - 1;
@@ -78,9 +84,49 @@ template <typename T> void heapAdjustUp ( T *heapStart, T *element)
   heap[current] = temp;
 }
 
-template <typename T> void treeHeapAdd(T *&heapRoot, T *node);
+template <typename T> void heapSort (T *heapStart, T *heapEnd)
+{
+  heapBuild(heapStart, heapEnd);
+  T *heap = heapStart - 1;      // to start numbering of array at 1
+  T temp;
+  int heapSize = heapEnd - heapStart;
+  for ( int i = heapSize ; i != 1 ; --i ) {
+    temp = heap[1];
+    heap[1] = heap[i];
+    heap[i] = temp;
+    heapify(heap, i-1, 1);
+  }
+}
 
-template <typename T> void heapSort (T *heapStart, T *heapEnd);
+
+template <typename T> void treeHeapAdd(T *&heapRoot, T *node)
+{
+  T *oldRoot = heapRoot;
+  if ( !oldRoot ) {
+    heapRoot = node;
+    node->left = node->right = NULL;
+    node->nDescend = 0;
+    return;
+  }
+  ++oldRoot->nDescend;
+  int goLeft = !oldRoot->left || (oldRoot->right && oldRoot->right->nDescend > oldRoot->left->nDescend);
+  if ( *oldRoot < *node ) {
+    node->left = oldRoot->left;
+    node->right = oldRoot->right;
+    node->nDescend = oldRoot->nDescend;
+    heapRoot = node;
+    if ( goLeft )
+      treeHeapAdd(node->left, oldRoot);
+    else
+      treeHeapAdd(node->right, oldRoot);
+  } else {
+    if (goLeft)
+      treeHeapAdd(oldRoot->left, node);
+    else
+      treeHeapAdd(oldRoot->right, node);
+  }
+}
+
 
 template <typename T> T *newTreeHeapAdd(T *heapRoot, T *node)
 {
@@ -110,5 +156,37 @@ template <typename T> T *newTreeHeapAdd(T *heapRoot, T *node)
   }
 }
 
+// (vector) container versions (require that begin and end be C::value_type *)
+template <typename C>
+inline C & heapTop (const C & heap) {
+  return heap.front();
+}
+
+template <typename C>
+inline void heapPop (C & heap) {
+  heapPop(heap.begin(),heap.end());
+  heap.pop_back();
+}
+
+template <typename C> 
+inline void heapAdd ( C &heap, const typename C::value_type& elt ) {
+  heap.push_back();
+  heapAdd(heap.begin(),heap.end()-1,elt);
+}
+
+template <typename C> 
+inline void heapBuild ( C &heap ) {
+  heapBuild(heap.begin(),heap.end());
+}
+
+template <typename C> 
+inline void heapAdjustUp ( C &heap, typename C::iterator element) {
+  heapAdjustUp(heap.begin(),element);
+}
+
+template <typename C> 
+inline void heapSort ( C &heap ) {
+  heapBuild(heap.begin(),heap.end());
+}
 
 #endif

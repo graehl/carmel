@@ -81,7 +81,7 @@ typedef int Gint;
 Gint g_n=1;
 
 
-BOOST_AUTO_UNIT_TEST( byref )
+BOOST_AUTO_UNIT_TEST( threadlocal )
 {
   BOOST_CHECK(g_n==1);  
   {
