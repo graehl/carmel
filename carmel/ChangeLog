@@ -1,3 +1,8 @@
+2004-07-16  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/dynarray.h: nonstd namespace for reimp of stuff that used to
+	be std (construct, uninitialized_copy)
+
 2004-07-15  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/list.h: two-phase name lookup gcc 3.4 problems also
