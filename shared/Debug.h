@@ -5,6 +5,7 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
 
+#include <string>
 #include <iostream>
 
 #ifndef __NO_GNU_NAMESPACE__
