@@ -111,7 +111,7 @@ BOOST_AUTO_UNIT_TEST( TEST_STACKALLOC )
     s.align<char>();
     CHECK(s.top==top);
     s.align<unsigned>();
-    CHECK_EQ(s.capacity<unsigned>(),s.capacity<char>()*sizeof(unsigned));
+    CHECK_EQ(s.capacity<unsigned>()*sizeof(unsigned),s.capacity<char>());
 
     DBP(s.top);
 
