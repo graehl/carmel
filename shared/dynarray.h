@@ -1,6 +1,9 @@
 #ifndef DYNARRAY_H 
 #define DYNARRAY_H 1
 // For MEMCPY-able-to-move types only!
+// Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
+// DynamicArray extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
+
 #include "config.h"
 
 #include <string>
@@ -10,6 +13,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "genio.h"
+#include <iterator>
 
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
 template <class Label>
@@ -23,15 +27,28 @@ struct DefaultReader
 	 }
 };
 
+template <class Label>
+struct DefaultWriter
+{
+  typedef Label value_type;
+  template <class charT, class Traits>
+	std::basic_ostream<charT,Traits>&
+	 operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
+	  return o << l;
+	 }
+};
 
-  template <class charT, class Traits, class T>
-std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false) 
+
+  template <class charT, class Traits, class T,class Writer>
+	std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,Writer writer=Writer()) 
   {	
 	o << '(';
 	if (multiline) {
 #define LONGSEP "\n "
-	 for (;begin!=end;++begin)
-	  o << LONGSEP << *begin;
+	  for (;begin!=end;++begin) {
+	   o << LONGSEP;
+	   writer(o,*begin);
+	  }
 	 o << "\n)";
 
 	 o << std::endl;
@@ -42,7 +59,7 @@ std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begi
 		  first = false;
 		else
 			o << ' ';
-  		o << *begin;
+  		writer(o,*begin);
 	  }
 	 o << ')';
 	}
@@ -84,6 +101,7 @@ fail:
 }
 
 
+
 // doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length allowed.
 // you must construct and deconstruct elements yourself.  raw dynamic uninitialized (classed) storage array
 template <typename T,typename Alloc=std::allocator<T> > class Array : protected Alloc {
@@ -96,9 +114,7 @@ public:
   typedef value_type *iterator;
   typedef const value_type *const_iterator;
 
-  Array(const char *c) {
-	std::istringstream(c) >> *this;
-  }
+  
 	T& front() {
 	  Assert(size());
 	  return *begin();
@@ -109,33 +125,16 @@ public:
 	}
 
   template <class charT, class Traits>
-std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
+	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
   {	
-#if 0
-	o << '(';
-	if (multiline) {
-#define LONGSEP "\n "
-	 for (const_iterator i=begin(),e=end();i!=e;++i)
-	  o << LONGSEP << *i;
-	 o << "\n)";
+	return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
+  }
 
-	 o << std::endl;
-	} else {
-	  bool first=true;
-	  for (const_iterator i=begin(),e=end();i!=e;++i) {
-		if (first)
-		  first = false;
-		else
-			o << ' ';
-  		o << *i;
-	  }
-	 o << ')';
-	}
-  return std::ios_base::goodbit;
-#else
-	return range_print_on(o,begin(),end(),multiline);
-#endif
-}
+  template <class charT, class Traits, class Writer >
+	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+  {	
+	return range_print_on(o,begin(),end(),multiline,writer);
+  }
 
 
 
@@ -160,6 +159,12 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	  endspace=vec;
 	}
   }
+  void destroy() {
+      for ( T *i=begin();i!=end();++i)
+		i->~T();
+  }
+
+
   void copyto(T *to,unsigned n) {
 	memcpy(to,vec,sizeof(T)*n);
   }
@@ -169,19 +174,23 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   }
 
   // doesn't copy old elements like dynamicarray does
-  void alloc_fresh(unsigned sp) {
+  void alloc(unsigned sp) {
 	if(sp) 
 	  vec=allocate(sp);
 	endspace=vec+sp;
   }
-  void alloc(unsigned sp) {
+  void re_alloc(unsigned sp) {
 //	if (sp == space) return;
 	  dealloc();
-	  alloc_fresh(sp);
+	  alloc(sp);
   }
-  explicit Array(T* buf,unsigned sz) : vec(buf), endspace(buf+sz) {}
-  explicit Array(unsigned sp=4) { alloc_fresh(sp); }
-  Array(unsigned sp, const Alloc &a): Alloc(a) { alloc_fresh(sp); }
+  explicit Array(const char *c) {
+	std::istringstream(c) >> *this;
+  }
+  Array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
+  Array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
+  explicit Array(unsigned sp=4) { alloc(sp); }
+  Array(unsigned sp, const Alloc &a): Alloc(a) { alloc(sp); }
   unsigned capacity() const { return (unsigned)(endspace-vec); }
   unsigned size() const { return capacity(); }
   T * begin() { return vec; }
@@ -223,24 +232,40 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   T *endvec;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
  public:
-  DynamicArray (const char *c) {
+  explicit DynamicArray (const char *c) {
 	std::istringstream(c) >> *this;
   }
 
-  DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { }
+  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endvec(vec) { }
 
   DynamicArray(const DynamicArray &a) {
 	unsigned sz=a.size();
-    alloc_fresh(sz);
+    alloc(sz);
 	memcpy(vec,a.vec,sizeof(T)*sz);
 	endvec=endspace;
   }
   
+  // warning: stuff will still be destructed!
+  void copyto(T *to,T * from,unsigned n) {
+	memcpy(to,from,sizeof(T)*n);
+  }
   void copyto(T *to,unsigned n) {
-	memcpy(to,vec,sizeof(T)*n);
+	copyto(to,vec,n);
   }
   void copyto(T *to) {
 	copyto(to,size());
+  }
+
+  void moveto(T *to) {
+	copyto(to);
+	clear_nodestroy();
+  }
+
+  // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
+  void move_rest_to(T *to,iterator i) {
+	Assert(i >= begin() && i < end());
+	copyto(to,i,end()-i)
+	endvec=i;
   }
 
 
@@ -362,9 +387,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 	//set_capacity(newSpace);set_size(sz);
 	endspace=endvec=vec+newSpace;
   }
+
+  // doesn't dealloc *into 
   void compact(Array<T,Alloc> *into) {
 	unsigned sz=size();
-    into->alloc_fresh(sz);
+    into->alloc(sz);
 	copyto(into->begin());	
   }
 
@@ -375,8 +402,11 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 
   unsigned int size() const { return (unsigned)(endvec-vec); }
   void set_size(unsigned int newSz) { endvec=vec+newSz; }
+  void clear_nodestroy() {
+	endvec=vec;
+  }
   void clear() {
-      for ( T *i=begin();i<end();++i)
+      for ( T *i=begin();i!=end();++i)
 		i->~T();
     endvec=vec;
   }
@@ -386,26 +416,18 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 	dealloc();
 	//vec = NULL;space=0; // don't really need but would be safer
   }
-template <class charT, class Traits>
-std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
+
+  template <class charT, class Traits>
+	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
   {	
-#if 0
-	o << '(';
-	bool first=true;
-	for (const_iterator i=begin(),e=end();i!=e;++i) {
-	  if (first)
-		first = false;
-	  else
-		o << ' ';
-	  o << *i;
-	}
-	o << ')';
-  
-  return std::ios_base::goodbit;
-#else
-   return range_print_on(o,begin(),end(),multiline);
-#endif
-}
+	return range_print_on(o,begin(),end(),multiline,DefaultWriter<T>());
+  }
+
+  template <class charT, class Traits, class Writer >
+	std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+  {	
+	return range_print_on(o,begin(),end(),multiline,writer);
+  }
 
   // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
@@ -424,9 +446,9 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 		break;
 	  }
 	  in.putback(c);
-	  push_back_raw();
+	  push_back(); // was doing push_back_raw, but that's bad - need to default construct some types where reader assumes constructedness.
 	  if (!read(in,back()).good()) {
-		undo_push_back_raw();
+		//undo_push_back_raw();
 		goto fail;
 	  }
 	  EXPECTI(in>>c);
@@ -438,7 +460,8 @@ fail:
   return GENIOBAD;
 #else
   clear();
-  std::ios_base::iostate ret=range_get_from(in,back_inserter(*this),read);
+  std::ios_base::iostate ret=
+	range_get_from(in,back_inserter(*this),read);
   if (ret == GENIOBAD)
 	clear();
   return ret;
@@ -470,6 +493,7 @@ std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,T
   DynamicArray<T,Alloc> s;
   std::ios_base::iostate ret=s.get_from(in,read);
   s.compact(a);
+  s.clear_nodestroy();
   return ret;
 }
 
@@ -613,6 +637,21 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   BOOST_CHECK(db[10]==1);
   aa.dealloc();
 
+  string emptya=" ()";
+  string emptyb="()";
+  {
+	Array<int> a;
+	DynamicArray<int> b;
+  istringstream(emptya) >> a;
+  stringstream o;
+  o << a;
+  BOOST_CHECK(o.str()==emptyb);
+  o >> b;
+  BOOST_CHECK(a==b);
+  BOOST_CHECK(a.size()==0);
+  BOOST_CHECK(b.size()==0);
+  }
+  
   string sa="( 2 ,3 4\n \n\t 5,6)";
   string sb="(2 3 4 5 6)";
 

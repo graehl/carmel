@@ -20,7 +20,10 @@ namespace lambda=boost::lambda;
 
 using namespace std;
 
+//template <class L, class A> struct Tree;
+
 // Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
+// FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting Self
 template <class L, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
   typedef Tree Self;
   typedef L Label;
@@ -59,9 +62,9 @@ public:
 	return rank;
   }
   Tree() : rank(0) {}
-  Tree (const Label &l) : rank(0),label(l) {  }
+  explicit Tree (const Label &l) : rank(0),label(l) {  }
   Tree (const Label &l,Rank n) : label(l) { alloc(n); }
-  Tree (const char *c) {
+  explicit Tree (const char *c) {
 	std::istringstream(c) >> *this;
   }
   void alloc(Rank _rank) {
@@ -73,7 +76,7 @@ public:
 #endif
 	  children = (Self **)allocate(rank);
   }
-  explicit Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
+  Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
 	alloc(_rank);
   }
   void dump_children() {
@@ -109,8 +112,10 @@ public:
 
   value_type & child(Rank i) { 
 #ifdef TREE_SINGLETON_OPT
-	if (rank == 1)
+	if (rank == 1) {
+	  Assert(i==0);
 	  return *(value_type *)children;
+	}
 #endif
 	return children[i]; 
   }
@@ -238,7 +243,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 	dealloc();
 	alloc((rank_type)in_children.size());
 	//copy(in_children.begin(),in_children.end(),begin());	
-	in_children.copyto(begin());
+	in_children.moveto(begin());
 	
   } else {	
 	in.putback(c);
@@ -437,7 +442,7 @@ void emit_postorder(const T *t,O out)
 
 template <class L>
 Tree<L> *new_tree(const L &l) {
-  return new Tree<L> (l);
+  return new Tree<L> (l,0);
 }
 
 template <class L>
@@ -503,8 +508,8 @@ BOOST_AUTO_UNIT_TEST( tree )
   BOOST_CHECK(tree_contains(a,*d));
   BOOST_CHECK(tree_contains(a,b));
   BOOST_CHECK(!tree_contains(*d,a));
-  Tree<int> e="1(1(1) 1(1,1,1))", 
-	        f="1(1(1()),1)";
+  Tree<int> e("1(1(1) 1(1,1,1))"), 
+	        f("1(1(1()),1)");
   BOOST_CHECK(!tree_contains(a,e,always_equal<Tree<int> >));
   BOOST_CHECK(tree_contains(e,a,always_equal<Tree<int> >));
   BOOST_CHECK(!tree_contains(f,e));
@@ -522,7 +527,7 @@ BOOST_AUTO_UNIT_TEST( tree )
   delete_tree(d);
   delete_tree(g);
   delete_tree(h);
-  Tree<int> k="1",l="1()";
+  Tree<int> k("1"),l("1()");
   BOOST_CHECK(tree_equal(k,l));
   BOOST_CHECK(k.rank==0);
   BOOST_CHECK(l.rank==0);
