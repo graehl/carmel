@@ -34,10 +34,10 @@ using namespace std;
 # define DBG_OP_F(lvl,pDbg,op,module,msg,file,line)
 #else
 # define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) do {        \
-        if (INFO_LEVEL >= lvl && pDbg->runtime_info_level >= lvl) {     \
+        if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \
    ostringstream os; \
    os << msg; \
-   pDbg->op(module,os.str(),file,line);          \
+   (pDbg)->op(module,os.str(),file,line);       \
 } } while(0)
 #endif
 
@@ -47,8 +47,10 @@ using namespace std;
 #define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(0,pDbg,op,module,msg)
 #define DBG_OP_L(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,__FILE__,__LINE__)
 #define DBG_OP_LQ(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,"",0)
+#define NESTINFO_GUARD(pDbg) ns_decoder_global::Debug::Nest debug_nest_guard_ ## __LINE__ (pDbg)
 
 // some of these names might be used, e.g. in windows.h, but seems ok on linux.  compilation will fail/warn if they are in conflict.
+#define NESTINFO NESTINFO_GUARD(dbg)
 #define INFO(module,msg) DBG_OP(dbg,info,module,msg)
 #define WARNING(module,msg) DBG_OP(dbg,warning,module,msg)
 #define ERROR(module,msg) DBG_OP(dbg,error,module,msg)
@@ -61,6 +63,15 @@ using namespace std;
 #define FATALQ(module,msg) DBG_OP_Q(dbg,fatalError,module,msg)
 #define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,info,module,msg)
 #define INFOL(lvl,module,msg) DBG_OP_L(lvl,dbg,info,module,msg)
+#ifdef TEST
+#define INFOT(msg) DBG_OP(&test_dbg,info,"TEST",msg)
+#define WARNT(msg) DBG_OP(&test_dbg,warning,"TEST",msg)
+#define NESTT NESTINFO_GUARD(&test_dbg)
+#else
+#define INFOT(msg) 
+#define WARNT(msg) 
+#define NESTT
+#endif
 
 namespace ns_decoder_global {
 
@@ -74,16 +85,45 @@ namespace ns_decoder_global {
   class Debug {
   public:
       int runtime_info_level;
-      Debug() : runtime_info_level(INFO_LEVEL), debugOS(cerr), infoOS(cout) {}
+      unsigned info_outline_depth;
+      void increase_depth() {
+          ++info_outline_depth;
+      }
+      void decrease_depth() {
+          if (info_outline_depth == 0)
+              warning("Debug","decrease_depth called more times than increase_depth - clamping at 0");
+          else
+              --info_outline_depth;          
+      }
+      struct Nest {
+          Debug *dbg;
+          Nest(Debug *_dbg) : dbg(_dbg) {
+              dbg->increase_depth();
+          }
+          Nest(const Nest &o) : dbg(o.dbg) {
+              dbg->increase_depth();
+          }
+          ~Nest() {
+              dbg->decrease_depth();
+          }
+      };
+      
+      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
-      return debugOS;
+      return *debugOS;
     }
 
     inline ostream &getInfoOutput() {                      //!< Get the stream to which informational output is written
-      return infoOS;
+      return *infoOS;
+    }
+    inline void setDebugOutput(ostream &o) {                     //!< Set the strream to which debugging output is written
+      debugOS=&o;
     }
 
+    inline void setInfoOutput(ostream &o) {                      //!< Set the stream to which informational output is written
+      infoOS=&o;
+    }
     void error(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error
       getDebugOutput() << "::" << module << "(" << file << ":" << line << "): ERROR: " << info << endl;
     }
@@ -99,6 +139,9 @@ namespace ns_decoder_global {
     }
 
     void info(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an informational message
+        const char OUTLINE_CHAR='*';
+        for (unsigned depth=info_outline_depth;depth>0;--depth)
+            getInfoOutput() << OUTLINE_CHAR;
       if (file=="") {
         getInfoOutput() << module << ": " << info << endl;
       } else {
@@ -113,10 +156,17 @@ namespace ns_decoder_global {
       }
   private:
 
-    ostream &debugOS;                                      //!< output stream where error/WARNING messages are sent
-    ostream &infoOS;                                       //!< output stream where debugging information is sent
+    ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
+    ostream *infoOS;                                       //!< output stream where debugging information is sent
   };
 }
+
+#ifdef TEST
+# ifdef MAIN
+ns_decoder_global::Debug test_dbg;
+# endif 
+#endif 
+
 
 #endif
 
