@@ -58,6 +58,44 @@ struct indirect_gt {
     }
 };
 
+  template <class ForwardIterator>
+  bool is_sorted(ForwardIterator begin, ForwardIterator end)
+  {
+    if (begin == end) return true;
+
+    ForwardIterator next = begin ;
+    ++next ;
+    for ( ; next != end; ++begin , ++next) {
+      if (*next < *begin) return false;
+    }
+
+    return true;
+  }
+
+  template <class ForwardIterator, class StrictWeakOrdering>
+  bool is_sorted(ForwardIterator begin, ForwardIterator end,
+                 StrictWeakOrdering comp)
+  {
+    if (begin == end) return true;
+
+    ForwardIterator next = begin ;
+    ++next ;
+    for ( ; next != end ; ++begin, ++next) {
+      if ( comp(*next, *begin) ) return false;
+    }
+
+    return true;
+  }
+
+  template <class ForwardIterator, class ValueType >
+  void iota(ForwardIterator begin, ForwardIterator end, ValueType value)
+  {
+    while ( begin != end ) {
+      *begin = value ;
+      ++begin ;
+      ++value ;
+    }
+  }
 
 #ifdef TEST
 #include "test.hpp"

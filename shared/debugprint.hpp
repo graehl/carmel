@@ -258,14 +258,25 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBPC3(msg,a,b) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST;  }} while(0)
 #define DBPC4(msg,a,b,c) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST;  }} while(0)
 #define DBPC5(msg,a,b,c,d) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;  }} while(0)
+#define DBPC6(msg,a,b,c,d,e) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST;  }} while(0)
 #define DBPC4W(msg,a,b,c,w) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST;  }} while(0)
 
 
 
+
 #else
-#define DBPIN
-#define DBPOUT
-#define DBPSCOPE
+#define DBP_IN
+#define DBP_OUT
+#define DBP_SCOPE
+
+#define DBP_ENABLE(x)
+#define DBP_OFF
+#define DBP_ON
+
+#define DBP_VERBOSE(x)
+#define DBP_INC_VERBOSE
+#define DBP_ADD_VERBOSE(x)
+#define DBPS(x)
 
 #define DBP(a)
 #define DBP2(a,b)
@@ -278,6 +289,7 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBPC3(msg,a,b)
 #define DBPC4(msg,a,b,d)
 #define DBPC5(msg,a,b,c,d)
+#define DBPC6(msg,a,b,c,d,e)
 #define DBPC4W(msg,a,b,c,w)
 
 #define BDBPW(a,w)
@@ -288,6 +300,43 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBPON
 
 #endif
+
+namespace DBP {
+    extern unsigned depth;
+    extern bool disable;
+    extern unsigned current_chat;
+    extern unsigned chat_level;
+    extern ostream *logstream;
+    struct scopedepth {
+        scopedepth() { ++depth;}
+        ~scopedepth() { --depth;}
+    };
+    inline bool is_enabled() {
+        return (!disable && current_chat <= chat_level && logstream);
+    }
+    void print_indent();
+    void set_loglevel(unsigned loglevel=0);
+    void set_logstream(ostream &o=std::cerr);
+#ifdef MAIN
+    unsigned current_chat;
+    unsigned chat_level;
+    ostream *logstream=&std::cerr;
+    void print_indent() {
+        for(unsigned i=0;i<depth;++i)
+            DBPS(" ");
+    }
+    void set_loglevel(unsigned loglevel){
+        chat_level=loglevel;
+    }
+    void set_logstream(ostream *o) {
+        logstream=o;
+    }
+
+    unsigned depth=0;
+    bool disable=false;
+#endif
+};
+
 
 #if 0
 static const std::string constEmptyString;
@@ -331,40 +380,5 @@ const char * dbgstrw(const A &a) {
   return dbgstr(a);
 }
 
-namespace DBP {
-    extern unsigned depth;
-    extern bool disable;
-    extern unsigned current_chat;
-    extern unsigned chat_level;
-    extern ostream *logstream;
-    struct scopedepth {
-        scopedepth() { ++depth;}
-        ~scopedepth() { --depth;}
-    };
-    inline bool is_enabled() {
-        return (!disable && current_chat <= chat_level && logstream);
-    }
-    void print_indent();
-    void set_loglevel(unsigned loglevel=0);
-    void set_logstream(ostream &o=std::cerr);
-#ifdef MAIN
-    unsigned current_chat;
-    unsigned chat_level;
-    ostream *logstream=&std::cerr;
-    void print_indent() {
-        for(unsigned i=0;i<depth;++i)
-            DBPS(" ");
-    }
-    void set_loglevel(unsigned loglevel){
-        chat_level=loglevel;
-    }
-    void set_logstream(ostream *o) {
-        logstream=o;
-    }
-
-    unsigned depth=0;
-    bool disable=false;
-#endif
-};
 
 #endif

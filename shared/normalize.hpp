@@ -36,9 +36,14 @@ struct NormalizeGroups {
         return sum;
     }
     Group *find_group_holding(value_type v) {
-        for (typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();i!=e;++i)
-            if (std::find(i->begin(),i->end(),value_type(v)))
+        typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();
+        DBPC3("find group",v,norm_groups);
+        for (;i!=e;++i) {
+            DBP2(i,v);
+            typename Group::iterator e2=i->end();
+            if (std::find(i->begin(),e2,v) != e2)
                 return &(*i);
+        }
         return NULL;
     }
 //    GENIO_get_from {
@@ -197,10 +202,17 @@ struct NormalizeGroups {
         base=array_base;
         dest=_dest;
         maxdiff.setZero();
-        DBP(maxdiff);
+//        DBP(maxdiff);
+        DBP_INC_VERBOSE;
+#ifdef DEBUG
+        unsigned size=required_size();
+#endif
+        DBPC2("Before normalize from base->dest",Array<W>(base,base+size));
+
         zerocounts=_zerocounts;
         log=_log;
         enumerate(norm_groups,ref(*this));
+        DBPC2("After normalize:",Array<W>(dest,dest+size));
     }
 };
 

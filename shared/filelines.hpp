@@ -26,29 +26,42 @@ struct FileLines
         line_begins.push_back(file->tellg());
         while (!file->eof()) {
             file->ignore(std::numeric_limits<std::streamsize>::max(),linesep); //FIXME: does setting max unsigned really work here?  not if you have very very long lines ;)  but those don't fit into memory.
-            line_begins.push_back(file->tellg());
+            pos end=file->tellg();
+            if (end > line_begins.back())
+                line_begins.push_back(end);
         }
-        pos eof=file->tellg();
-        if (eof > line_begins.back())
+//        should never be needed!
+        Assert(file->tellg() == line_begins.back());
+/*        pos eof=file->tellg();
+        if (eof > line_begins.back()) { // only necessary to handle lack of trailing newline in a friendly way
             line_begins.push_back(eof);
+            }*/
+
+        file->clear(); // don't want EOF flag stopping reads.
     }
     void load(std::string filename) {
         file.reset(new std::ifstream);
         file->open(filename.c_str(),std::ios::in | std::ios::binary);
         index();
     }
-    std::string operator [](unsigned i) {
+    // 0-indexed, of course
+    std::string getline(unsigned i,bool chop_newline=true) {
         if (!file) {
             return boost::lexical_cast<std::string>(i);
         }
-        Assert(i>0 && i+1 < line_begins.size());
+        Assert(i>=0 && i+1 < line_begins.size());
         pos start=line_begins[i];
         pos end=line_begins[i+1];
         unsigned len=end-start;
+        if (chop_newline && len > 0)
+            --len; // don't want to include newline char
         AutoArray<char> buf(len); // FIXME: could just return a shared_ptr or use string = getline(blah,sep) ... or return expression object that can convert to string or be printed
         file->seekg(start);
         file->read(buf.begin(),len);
         return std::string(buf.begin(),len);
+    }
+    std::string operator [](unsigned i) {
+        return getline(i);
     }
     bool exists() const {
         return file;
