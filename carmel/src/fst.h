@@ -216,7 +216,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   void consolidateArcs();	// combine identical arcs, with combined weight = sum
   void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
   enum {UNLIMITED=-1};
-  void prune(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INFINITY); 
+  void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INFINITY); 
   // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
   
   
@@ -292,9 +292,6 @@ template <class I> int randomPath(I i,int max_len=-1)
   }
   static const int NOGROUP=-1;  
   static const int LOCKEDGROUP=0;
-  static std::ostream *warn;
-  static std::ostream *log;
-  static std::ostream *debug;
 private:
   //  static const int NOGROUP(-1);  
   void invalidate() {		// make into empty/invalid transducer

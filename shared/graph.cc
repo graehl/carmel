@@ -1,11 +1,11 @@
 #include "graph.h"
 #include "assert.h"
 #include "node.h"
-
+#include "config.h"
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
-  return out << '(' << a.source << ' ' << a.dest << ' ' << a.weight << ')';
+  return out << '(' << a.source << ' ' << a.dest << ' ' << a.weight << ' ' << a.data << ' ' << ')';
 }
 
 void (*dfsFunc)(int, int) = NULL;
@@ -112,25 +112,57 @@ inline bool operator == (DistToState lhs, float rhs) {
   return DistToState::weights[lhs.state] == rhs;
 }
 
-void shortestPathTree(Graph g, GraphState *pathTree,int dest, float *dist)
-// computes best paths from each state to a single destination
-// if pathTree == NULL, only compute weights (stored in dist)
-//  otherwise, store arc used for state s in pathTree[s]
+Graph shortestPathTreeTo(Graph g, int dest, float *dist)
+	// returns graph (need to delete[] ret.states yourself)
+	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
+{
+	int i;
+	   GraphArc **taken = new GraphArc *[g.nStates];
+	    
+	Graph pg;
+	pg.nStates = g.nStates;
+	pg.states = new GraphState[pg.nStates];
+  
+	Graph rev_graph = reverseGraph(g);
+	#ifdef DEBUGKBEST
+				Config::debug() << "rev_graph = \n" << rev_graph << "\n\nTaken\n";
+	#endif
+	shortestDistancesFrom(rev_graph,dest,dist,taken);
 
+	for ( i = 0 ; i < g.nStates ; ++i )
+		if ( taken[i] ) {
+			GraphArc * rev_taken = (GraphArc *)taken[i]->data;
+			#ifdef DEBUGKBEST
+				Config::debug() << ' ' << i << ' ' << rev_taken;
+			#endif
+
+			pg.states[i].arcs.push(*rev_taken);
+		}
+
+
+#ifdef DEBUGKBEST
+	Config::debug() << "shortestpathtree graph:\n" << pg;
+#endif
+
+	delete[] rev_graph.states;
+	delete[] taken;
+	return pg;
+}
+
+void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
+// computes best paths from single source to all other states
+// if taken == NULL, only compute weights (stored in dist)
+//  otherwise, store pointer to arc taken to get to state s in taken[s]
 {
   int nStates = g.nStates;
-  GraphArc **best = NULL;
   int i;
-  if (pathTree) {
-	   best = new GraphArc *[nStates];
-	    for ( i = 0 ; i < nStates ; ++i )
-		    best[i] = NULL;
-  }
 
+  if (taken)
+	 for ( i = 0 ; i < g.nStates ; ++i )
+		taken[i] = NULL;
 
-  GraphState *rev = reverseGraph(g).states;
+  GraphState *st = g.states;
 
-  //GraphState *pathTree = new GraphState[nStates];
   int nUnknown = nStates;
 
   DistToState *distQueue = new DistToState[nStates];
@@ -146,53 +178,45 @@ void shortestPathTree(Graph g, GraphState *pathTree,int dest, float *dist)
   DistToState::weights = weights;
   DistToState::stateLocations = stateLocations;
 
-  weights[dest] = 0;
+  weights[source] = 0;
   for ( i = 1; i < nStates ; ++i ) {
     int fillWith;
-    if ( i <= dest )
+    if ( i <= source )
       fillWith = i-1;
     else
       fillWith = i;
     distQueue[i].state = fillWith;
     stateLocations[fillWith] = &distQueue[i];
   }
-  distQueue[0].state = dest;
-  stateLocations[dest] = &distQueue[0];
+  distQueue[0].state = source;
+  stateLocations[source] = &distQueue[0];
 
 
   float candidate;
   for ( ; ; ) {
-          if ( (float)distQueue[0] == Weight::HUGE_FLOAT || nUnknown == 0 ) {
+    if ( (float)distQueue[0] == Weight::HUGE_FLOAT || nUnknown == 0 ) {
       break;
     }
-    int targetState, activeState = distQueue[0].state;
+    int activeState = distQueue[0].state;
     //    dist[activeState] = (float)distQueue[0];
     heapPop(distQueue, distQueue + nUnknown--);
-    List<GraphArc>::const_iterator end = rev[activeState].arcs.end()  ;
-    for ( List<GraphArc>::const_iterator a = rev[activeState].arcs.begin() ; a !=end ; ++a ) {
+    for ( List<GraphArc>::iterator a = st[activeState].arcs.begin(),end = st[activeState].arcs.end() ; a !=end ; ++a ) {
       // future: compare only best arc to any given state
-      targetState = a->dest;
-      if ( (candidate = a->weight + weights[activeState] )
-           < weights[targetState] ) {
-
+      int targetState = a->dest;
+      if ( (candidate = (a->weight + weights[activeState])) < weights[targetState] ) {
         weights[targetState] = candidate;
-		if (best)
-			best[targetState] = (GraphArc *)a->data;
+		if (taken)
+			taken[targetState] = &(*a);
         heapAdjustUp(distQueue, stateLocations[targetState]);
       }
     }
   }
 
-  if (pathTree)
-	for ( i = 0 ; i < nStates ; ++i )
-		if ( best[i] )
-			pathTree[i].arcs.push(*best[i]);
-
+  
   delete[] stateLocations;
   delete[] distQueue;
-  delete[] rev;
-  if (best)
-	delete[] best;
+  //delete[] rev;
+  
 }
 
 Graph removeStates(Graph g, bool marked[]) // not tested
@@ -235,11 +259,13 @@ Graph removeStates(Graph g, bool marked[]) // not tested
 
 void printGraph(const Graph g, std::ostream &out)
 {
+	out << "(Graph " << g.nStates << std::endl;
   for ( int i = 0 ; i < g.nStates ; ++i ) {
     out << i;
     List<GraphArc>::const_iterator end = g.states[i].arcs.end();
     for ( List<GraphArc>::const_iterator a=g.states[i].arcs.begin() ; a !=end ; ++a )
-      out << (*a);
-    out << '\n';
+      out << ' ' << (*a);
+	out << std::endl;
   }
+  out << ")" << std::endl;
 }

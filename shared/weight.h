@@ -20,8 +20,8 @@
 struct Weight {			// capable of representing nonnegative reals 
 		// internal implementation note: by their base e logarithm
 private:
-enum { LOG10, LN } LogBase;
-enum { VAR, ALWAYS_LOG, ALWAYS_REAL } OutThresh;
+enum { LOG10=0, LN };
+enum { VAR=0, ALWAYS_LOG, ALWAYS_REAL };
 // IEE float safe till about 10^38, loses precision earlier (10^32?)
 // 32 * ln 10 =~ 73
 enum {LN_TILL_UNDERFLOW=73} ;
@@ -63,6 +63,9 @@ out_always_real(std::basic_ostream<A,B>& os);
   }
   float getLog(float base) const {
 	  return weight / log(base);
+  }
+  float getLogImp() const {
+	  return weight;
   }
   float getLn() const {
 	  return weight;

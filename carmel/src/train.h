@@ -142,17 +142,20 @@ index(NULL) { }
       	++l;
     }
   }
+  template <class T> void erase(T t) {
+	  --size;
+	  arcs.erase(t);
+  }
   void renumberDestinations(int *oldToNew) { // negative means remove transition
     Assert(!index);
     List<Arc>::iterator l=arcs.begin();
     while ( l != arcs.end() ) {
       int &dest = (int &)l->dest;
       if ( oldToNew[dest] < 0 ) {
-	--size;
-	arcs.erase(l++); 
+		erase(l++); 
       } else {
-	dest = oldToNew[dest];
-	++l;
+		dest = oldToNew[dest];
+		++l;
       }
     }
   }

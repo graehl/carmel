@@ -352,7 +352,7 @@ Graph WFST::makeGraph() const
     for ( List<Arc>::iterator l=states[i].arcs.begin() ; l != end; ++l ) {
       gArc.source = i;
       gArc.dest = l->dest;
-      gArc.weight = - l->weight.weight; // - log
+      gArc.weight = - l->weight.getLogImp(); // - log
       gArc.data = &(*l);
       Assert(gArc.dest < numStates() && gArc.source < numStates());
       g[i].arcs.push(gArc);
@@ -393,6 +393,88 @@ Graph WFST::makeEGraph() const
   return ret;
 }
 
+#include <algorithm>
+// for std::sort
+
+typedef pair<float,int> PFI;
+
+// isn't there some projectfirst template?
+inline bool lesscost(const PFI &l, const PFI &r) {
+	return l.first < r.first;
+}
+
+
+void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
+{
+	int i;
+	  Assert(valid());
+	  bool all_paths = keep_paths_within_ratio.isInfinity();
+	  if (max_states == UNLIMITED && all_paths)
+		  return;
+	  int n_states = numStates();
+
+	Graph for_graph = makeGraph();
+	Graph rev_graph = reverseGraph(for_graph);
+
+	bool *remove = new bool[n_states];
+	float worst_d_dist = keep_paths_within_ratio.getLogImp();
+	float *for_dist = new float[n_states];
+	float *rev_dist = new float[n_states];
+	// todo: efficiency: could use indirected compare on array of integers, instead of moving around float+integer
+	PFI *best_path_cost = new PFI[n_states];
+	shortestDistancesFrom(for_graph,0, for_dist,NULL);
+	shortestDistancesFrom(rev_graph,final, rev_dist,NULL);
+	float best_path = for_dist[0];
+	float worst_path = best_path + worst_d_dist;
+	Assert(best_path == rev_dist[final]);
+	for (i=0;i<n_states;++i) {
+		best_path_cost[i].first = for_dist[i] + rev_dist[i];
+		best_path_cost[i].second = i;
+	}
+	
+	std::sort(best_path_cost,best_path_cost+n_states,lesscost);
+	// now we have a list of states in order of increasing cost (poorness)
+	
+	
+	int allowed = max_states;
+	if ( max_states == UNLIMITED )
+		allowed = n_states;
+	
+	for (i=0;i<allowed;++i) {
+		int st=best_path_cost[i].second;
+		if (all_paths)
+			remove[st] = false;
+		else {
+			if (best_path_cost[i].first > worst_path)
+				remove[st] = true;
+			else {
+				remove[st] = false;
+				State &s=states[st];
+				for ( List<Arc>::iterator a(s.arcs.begin()), end = s.arcs.end() ; a !=end  ;  ) {
+					float best_path_this_arc = a->weight.getLogImp()+for_dist[st]+rev_dist[a->dest];
+					if (best_path_this_arc > worst_path)
+						s.erase(a++);
+					else
+						++a;
+				}
+			}
+		}
+	}
+	for (;i<n_states;++i) { // over allotted state limit
+		int st=best_path_cost[i].second;
+		remove[st] = true; 
+	}
+	
+	removeMarkedStates(remove);
+	//n_states = numStates();
+
+  delete[] for_dist;
+  delete[] rev_dist;
+  delete[] remove;
+  delete[] rev_graph.states;
+  delete[] for_graph.states;
+}
+
 void WFST::reduce()
 {
   Assert(valid());
@@ -406,7 +488,7 @@ void WFST::reduce()
 
   bool *visitedForward = new bool[nStates];
   bool *visitedBackward = new bool[nStates];
-  bool *discard = new bool[nStates];
+  //bool *discard = new bool[nStates];
   int i;
   for ( i = 0 ; i < nStates ; ++i ){
     visitedForward[i] = false;
@@ -416,16 +498,17 @@ void WFST::reduce()
   depthFirstSearch(g, 0, visitedForward, NULL);
   depthFirstSearch(revG, final, visitedBackward, NULL);
 
-  /*  This commented our for efficiency reasons - Yaser -
-      bool *discard = visitedForward;
-      for ( i = 0 ; i < nStates ; ++i )
-      discard[i] = !(visitedForward[i] && visitedBackward[i]);*/
+  
+   //bool *discard = visitedForward;
+   for ( i = 0 ; i < nStates ; ++i )
+      visitedForward[i] = !(visitedForward[i] && visitedBackward[i]);
+
   // Begin additions by Yaser to fix a bug where when a state is discarded, the tieGroup is not updated
   // when  states are discarded, their repsective arcs must be removed from tieGroup
+  /* jon: the below by yaser makes no sense.  tie groups are not explicit lists
   for ( i = 0 ; i < nStates ; ++i ){
     discard[i] = !(visitedForward[i] && visitedBackward[i]);
-    List<Arc>::iterator end = states[i].arcs.end();
-    for ( List<Arc>::iterator a(states[i].arcs.begin()) ; a !=end  ; ++a ){
+    for ( List<Arc>::iterator a(states[i].arcs.begin()), end = states[i].arcs.end() ; a !=end  ; ++a ){
       if ((discard[i])
           || !(visitedForward[a->dest] && visitedBackward[(a->dest)])){ // if a state should be discarded remove its arcs from tie group, also an Arc must be removed if its destination state is discarded.
         a->groupId = NOGROUP ;
@@ -433,13 +516,14 @@ void WFST::reduce()
     }
   }
   // end of Yaser's additions - Oct. 12 2000
-  removeMarkedStates(discard);
+  */
+  removeMarkedStates(visitedForward);
 
   for ( i = 0 ; i < numStates() ; ++i ) {
     states[i].flush();
     List<Arc>::iterator end = states[i].arcs.end();
     for ( List<Arc>::iterator a=states[i].arcs.begin() ; a != end; )
-      if ( a->in == 0 && a->out == 0 && a->dest == i ) // eerase empty loops
+      if ( a->in == 0 && a->out == 0 && a->dest == i ) // erase empty loops
         states[i].arcs.erase(a++);
       else
         ++a;
@@ -447,7 +531,7 @@ void WFST::reduce()
 
   delete[] visitedBackward;
   delete[] visitedForward;
-  delete[] discard;
+ // delete[] discard;
   delete[] revGraph;
   delete[] graph;
 }

@@ -27,4 +27,17 @@
 // allows WFST to be indexed in either direction?  not recommended.
 #undef BIDIRECTIONAL
 
+#include <iostream>
+namespace Config {
+	inline std::ostream &log() {
+		return std::cerr;
+	}
+	inline std::ostream &debug() {
+		return std::cerr;
+	}
+	inline std::ostream &warn() {
+		return std::cerr;
+	}
+};
+
 #endif //guard
