@@ -63,12 +63,12 @@
 #include <cstddef>                         // size_t.
 #include <ios>                             // ios_base::openmode.
 #include <boost/cstdint.hpp>               // intmax_t.
-#include <boost/io/detail/config.hpp>      // BOOST_IO_DECL, etc.
+//#include <boost/io/detail/config.hpp>      // BOOST_IO_DECL, etc.
 #include <boost/noncopyable.hpp>
 #include <boost/config/abi_prefix.hpp>     // Must be the last header.
 
 
-struct BOOST_IO_DECL mapped_file : boost::noncopyable {
+struct mapped_file : boost::noncopyable {
 private:
     struct safe_bool_helper { int x; };         // From Bronek Kozicki.
     typedef int safe_bool_helper::* safe_bool;
