@@ -2,6 +2,7 @@
 #define IO_HPP
 
 #include "genio.h"
+#include "funcs.hpp"
 
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
 template <class Label>
@@ -22,6 +23,25 @@ struct DefaultWriter
          operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
           return o << l;
          }
+};
+
+template <class Label>
+struct RandomReader
+{
+    typedef Label value_type;
+    double prob_keep;
+    RandomReader(double prob_keep_) : prob_keep(prob_keep_) {}
+    RandomReader(const RandomReader &r) : prob_keep(r.prob_keep) {}
+    template <class charT, class Traits>
+    std::basic_istream<charT,Traits>&
+    operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
+        while (in) {
+            in >> l;
+            if (random_pos_fraction() <= prob_keep)
+                break;
+        }
+        return in;
+    }
 };
 
 struct LineWriter
@@ -79,30 +99,33 @@ struct IndirectReader
 };
 
   template <class charT, class Traits, class T,class Writer>
-        std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false)
+  std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
   {
-        o << '(';
-        if (multiline) {
+      if (parens)
+          o << '(';
+      if (multiline) {
 #define LONGSEP "\n "
           for (;begin!=end;++begin) {
-           o << LONGSEP;
-           deref(writer)(o,*begin);
+              o << LONGSEP;
+              deref(writer)(o,*begin);
           }
-         o << "\n)";
+          o << "\n";
 
-         o << std::endl;
-        } else {
+          o << std::endl;
+      } else {
           bool first=true;
           for (;begin!=end;++begin) {
-                if (first)
+              if (first)
                   first = false;
-                else
-                        o << ' ';
-                deref(writer)(o,*begin);
+              else
+                  o << ' ';
+              deref(writer)(o,*begin);
           }
-         o << ')';
-        }
-  return GENIOGOOD;
+      }
+      if (parens)
+          o << ')';
+
+      return GENIOGOOD;
 }
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
