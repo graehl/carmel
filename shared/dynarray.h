@@ -734,9 +734,8 @@ public:
             EXPECTI_COMMENT_FIRST(in>>c);
             if (c=='(') {
                 for(;;) {
-//                    EXPECTI_COMMENT(in>>c);
-                    if (!(in >> c))
-                        goto done;
+                    EXPECTI_COMMENT(in>>c);
+//                    if (!I_COMMENT(in >> c))                       goto done;
                     if (c==')') {
                         break;
                     }
@@ -746,6 +745,8 @@ public:
                         //undo_push_back_raw();
                         goto fail;
                     }
+//                    if (!I_COMMENT(in >> c))                        goto done;
+
                     EXPECTI_COMMENT(in>>c);
                     if (c != ',') in.unget();
 
