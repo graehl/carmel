@@ -113,7 +113,7 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
 
   Weight bestPerplexity;
   bestPerplexity.setInfinity();
-
+bool very_first_time=true;
 while(1) { // random restarts
 	int train_iter = 0;
   Weight lastChange;
@@ -182,7 +182,10 @@ while(1) { // random restarts
     } else
       last_was_reset=false;
 
-
+		if (very_first_time) {
+			train_prune();
+			very_first_time=false;
+		}
     lastChange = train_maximize(method,learning_rate);
 
     if (lastChange <= converge_arc_delta ) {
@@ -559,10 +562,30 @@ Weight WFST::train_estimate(bool delete_bad_training)
 
 }
 
+void WFST::train_prune() {
+			Assert(trn);
+			/*
+			int n_states=numStates();
+			bool *dead_states=NEW bool[n_states]; // blah: won't really work unless we also delete stuff from trn, so postponing
+			for (int i=0;i<n_states;++i) {
+				Weight sum=0;
+				for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
+        List<DWPair>::val_iterator end = ha.val().val_end() ; \
+                for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
+				dead_states[i]=false;
+				dead_states[i]=true;
+
+			}
+			delete[] dead_states;
+			*/
+
+}
+
 Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
 {
   Assert(trn);
 
+#ifdef DEBUGTRAINDETAIL
 #define DUMPDW  do { for ( int s = 0 ; s < numStates() ; ++s ) \
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
       List<DWPair>::const_iterator end = ha.val().const_end() ; \
@@ -572,7 +595,6 @@ Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
         Config::debug() << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
       } \
         } } while(0)
-#ifdef DEBUGTRAINDETAIL
 int pGroup;
 	Config::debug() << "\nWeights before prior smoothing\n";
   DUMPDW;
@@ -602,19 +624,23 @@ int pGroup;
   EACHDW(
          DWPair *d=&*dw;
          d->em_weight = d->weight();
-         if (delta_scale != 1)
+         if (delta_scale > 1.)
          if ( !isLocked((d->arc)->groupId) )
          if ( d->scratch.isPositive() )
          d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
          );
 
-  if (delta_scale != 1)
-    normalize(method);
-
+#ifdef DEBUG
+				 Config::debug() << "Second normalization?  delta_scale="<<delta_scale<<std::endl;
+#endif
   Weight change, maxChange;
 
   // find maximum change for convergence
-  maxChange.setZero();
+  //maxChange.setZero(); // default constructor
+
+  if (delta_scale > 1.)
+    normalize(method);
+
   EACHDW(
          if (!isLocked((dw->arc)->groupId)) {
            if (dw->weight() > dw->scratch) {

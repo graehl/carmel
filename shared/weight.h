@@ -141,23 +141,24 @@ struct Weight {			// capable of representing nonnegative reals
   Weight operator *= (Weight w)
   {
 #ifdef WEIGHT_CORRECT_ZERO
-    if (isZero())
-      return *this;
+    if (!isZero())
 #endif
-    weight += w.weight;
+			weight += w.weight;
     return *this;
   }
   Weight operator /= (Weight w)
   {
 #ifdef WEIGHT_CORRECT_ZERO
-    if (isZero())
-      return *this;
+    if (!isZero())
 #endif
-    weight -= w.weight;
+	    weight -= w.weight;
     return *this;
   }
   Weight raisePower(FLOAT_TYPE power) {
-    weight *= power;
+#ifdef WEIGHT_CORRECT_ZERO
+		if (!isZero())
+#endif
+			weight *= power;
     return *this;
   }
   Weight invert() {
@@ -165,7 +166,10 @@ struct Weight {			// capable of representing nonnegative reals
     return *this;
   }
   Weight takeRoot(FLOAT_TYPE nth) {
-    weight /= nth;
+#ifdef WEIGHT_CORRECT_ZERO
+		if (!isZero())
+#endif
+			weight /= nth;
     return *this;
   }
   Weight operator ^= (FLOAT_TYPE power) { // raise Weight^power
@@ -344,20 +348,19 @@ inline Weight operator +(Weight lhs, Weight rhs) {
 }
 
 inline Weight operator -(Weight lhs, Weight rhs) {
+
+#ifdef WEIGHT_CORRECT_ZERO
+	if (rhs.isZero())
+		return lhs;
+#endif
+
   Weight result; 
-
-
   if ( lhs.weight <= rhs.weight )	   // lhs <= rhs 
 	  // clamp to zero as minimum without giving exception (not mathematically correct!)
   {
     //result.weight = -Weight::HUGE_FLOAT; // default constructed to this already
     return result;
   }
-
-#ifdef WEIGHT_CORRECT_ZERO
-	if (rhs.isZero())
-		return lhs;
-#endif
 
 
   if ( lhs.weight - rhs.weight > MUCH_BIGGER_LN ) // lhs >> rhs

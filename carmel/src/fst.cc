@@ -180,6 +180,17 @@ operator <<
 }
 
 
+
+void NaNCheck(Weight *w) {
+	if(*w!=*w)
+		*(int*)0=0;
+}
+#ifdef DEBUG
+#define NANCHECK(w) NaNCheck(&(w))
+#else
+#define NANCHECK(w)
+#endif
+
 void WFST::normalize(NormalizeMethod method)
 {
   if (method==NONE)
@@ -209,6 +220,9 @@ void WFST::normalize(NormalizeMethod method)
       else
         sum += w;
     }
+#ifdef DEBUG
+				eachParameter(NaNCheck);
+#endif
 #ifdef DEBUGNORMALIZE
     Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
 #endif
@@ -216,11 +230,21 @@ void WFST::normalize(NormalizeMethod method)
       const Weight w=(*g)->weight;
       
         if ( isTied(pGroup = (*g)->groupId) ) {
-		  groupArcTotal[pGroup] += w; // default init is to 0          
-		  groupStateTotal[pGroup] += sum;
+					Weight *pw;
+					if ((pw=groupArcTotal.find(pGroup)))
+						*pw += w;
+					else
+						groupArcTotal.add(pGroup,w);
+					if ((pw=groupStateTotal.find(pGroup)))
+						*pw += sum;
+					else
+						groupStateTotal.add(pGroup,sum);
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
+					NANCHECK(groupStateTotal[pGroup]);
+					NANCHECK(groupStateTotal[pGroup]);
+					NANCHECK(groupMaxLockedSum[pGroup]);
 #ifdef DEBUGNORMALIZE
           Config::debug() << "Tiegroup=" << pGroup << " Normgroup=" << g << " tie_weight=" << groupArcTotal[pGroup] << " sum_state_weight=" << groupStateTotal[pGroup] << " max_locked=" << m << std::endl;
 #endif
@@ -234,7 +258,7 @@ void WFST::normalize(NormalizeMethod method)
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight normal_sum;//=0
     Weight reserved;// =0
-
+		Assert(reserved.isZero());
     // pass 2a: assign tied (and locked) arcs their weights, taking 'reserved' weight from the normal arcs in their group
     // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
     // also, compute sum of normal arcs
@@ -242,11 +266,18 @@ void WFST::normalize(NormalizeMethod method)
       
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
-            Weight groupNorm = *groupStateTotal.find(pGroup); // can't be 0
+            Weight groupNorm = *groupStateTotal.find(pGroup); // can be 0 if no counts at all for any states of group						
             groupNorm /= (1. - groupMaxLockedSum[pGroup]); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
-            reserved += (*g)->weight = (*groupArcTotal.find(pGroup) / groupNorm);
-          } else // locked:
+						NANCHECK(groupNorm);
+						NANCHECK(*groupArcTotal.find(pGroup));
+						Weight groupTotal=*groupArcTotal.find(pGroup);
+						if (!groupTotal.isZero()) // then groupNorm non0 also
+							reserved += (*g)->weight = ( groupTotal/ groupNorm);
+						NANCHECK(reserved);
+					} else { // locked:
             reserved += (*g)->weight;
+						NANCHECK(reserved);
+					}
         }  else if (!(*g)->weight.isZero()) // normal arc
           normal_sum += (*g)->weight;
 #ifdef DEBUGNORMALIZE
@@ -257,8 +288,10 @@ void WFST::normalize(NormalizeMethod method)
     // pass 2b: give normal arcs their share of however much is left
     Weight fraction_remain = 1.;
     fraction_remain -= reserved;
+	NANCHECK(fraction_remain);
     if (!fraction_remain.isZero()) { // something left
       normal_sum /= fraction_remain; // total counts that would be needed to fairly give reserved weights out
+			NANCHECK(normal_sum);
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
         if (isNormal((*g)->groupId))
           (*g)->weight /= normal_sum;
@@ -280,9 +313,12 @@ void WFST::normalize(NormalizeMethod method)
   }
 #endif
 
+#ifdef DEBUG
+	eachParameter(NaNCheck);
+#endif
 
   if (method == CONDITIONAL)
-    indexFlush();
+    indexFlush(); // free up by-input index we created at start
 }
 
 void WFST::assignWeights(const WFST &source)
