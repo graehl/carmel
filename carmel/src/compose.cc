@@ -52,12 +52,13 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   }
   int *map = NEW int[a.out->size()];
   int *revMap = NEW int[b.in->size()];
-  Assert(map[0]==revMap[0]==0); // *e* always 0
   Assert(a.out->verify());
   Assert(b.in->verify());
   char buf[MAX_STATENAME_LEN+1];
   a.out->mapTo(*b.in, map);     // find matching symbols in interfacing alphabet
   b.in->mapTo(*a.out, revMap);
+  Assert(map[0]==0);
+  Assert(revMap[0]==0); // *e* always 0
   TrioKey::aMax = a.numStates(); // used in hash function
   TrioKey::bMax = b.numStates();
 
