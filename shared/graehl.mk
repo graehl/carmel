@@ -8,6 +8,7 @@ ifndef ARCH
   export ARCH
 endif
 
+###WARNING: don't set BASEOBJ or BASEBIN to directories including other important stuff or they will be nuked by allclean
 BASEOBJ=obj
 BASEBIN=bin
 OBJ = $(BASEOBJ)/$(ARCH)
@@ -15,6 +16,7 @@ OBJ_TEST = $(OBJ)/test
 OBJ_BOOST = $(OBJ)/boost
 OBJ_DEBUG = $(OBJ)/debug
 BIN = $(BASEBIN)/$(ARCH)
+ALL_DIRS = $(OBJ) $(BIN) $(OBJ_DEBUG) $(OBJ_TEST) $(OBJ_BOOST)
 
 ifeq ($(CPP_EXT),)
 CPP_EXT=cpp
@@ -41,6 +43,7 @@ CPPFLAGS += -DBOOST_NO_STD_WSTRING
 # somehow that is getting automatically set by boost now (for Boost CVS)
 endif
 
+
 define PROG_template
 
 .PHONY += $(1)
@@ -53,12 +56,20 @@ OPT_PROGS += $$(BIN)/$(1)
 $(1): $$(BIN)/$(1)
 endif
 
+ifndef $(1)_NOSTATIC
+$$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
+	$$(CXX) $$(LDFLAGS) --static $$^ -o $$@
+ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
+STATIC_PROGS += $$(BIN)/$(1).static
+$(1): $$(BIN)/$(1).static
+endif
+
 ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug: $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) $$($(1)_STATICLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 ALL_OBJS +=  $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) 
-$(1): $$(BIN)/$(1).debug
 DEBUG_PROGS += $$(BIN)/$(1).debug
+$(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
@@ -67,9 +78,8 @@ $$(BIN)/$(1).test: $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ))
 ALL_TESTS += $$(BIN)/$(1).test
-$(1): $$(BIN)/$(1).test
 TEST_PROGS += $$(BIN)/$(1).test
-
+$(1): $$(BIN)/$(1).test
 endif
 
 #$(1): $(addprefix $$(BIN)/, $(1) $(1).debug $(1).test)
@@ -84,7 +94,7 @@ endef
 
 $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
-ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS)
+ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
 all: dirs $(ALL_PROGS)
 
@@ -137,16 +147,19 @@ $(OBJ_DEBUG)/%.o:: %.$(CPP_EXT) %.d
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
 
-dirs: $(OBJ)/. $(BIN)/. $(OBJ_DEBUG)/. $(OBJ_TEST)/. $(OBJ_BOOST)/. 
+dirs: $(addsufix /.,$(ALL_DIRS))
 
 clean:
-	rm -f $(ALL_OBJS)
-	rm -f $(ALL_PROGS)
-	rm -f $(ALL_CLEAN)
+	rm -f $(ALL_OBJS) $(ALL_CLEAN)
 
 distclean: clean
-	rm -f $(ALL_DEPENDS)
-	rm -f $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS)
+	rm -f $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS)
+
+allclean:
+	rm -rf $(BASEOBJ) $(BASEBIN) $(ALL_DEPENDS)
+
+virgin: clean distclean
+	rm -f $(ALL_PROGS)
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
