@@ -65,9 +65,9 @@ struct Symbol {
   char *str;
   static Symbol empty;
   Symbol() : str(empty.str) {}
-  explicit Symbol(unsigned i) : str(intern(static_itoa(i))) 
+  explicit Symbol(unsigned i) : str(intern(static_itoa(i)))
   {
-	//str=intern(static_itoa(i));
+        //str=intern(static_itoa(i));
   }
   Symbol(const char *s) : str(intern(s)) {}
   Symbol(const Symbol &s) : str(s.str) {}
@@ -77,13 +77,13 @@ struct Symbol {
     return *this;
   }
   char *c_str() const { return str; }
-  	bool operator < (const Symbol r) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
-	{
-	  return str<r.str;//strcmp(str,r.str)<0;
-	}
-	ptrdiff_t cmp(const Symbol r) const {
-	  return r.str-str;
-	}
+        bool operator < (const Symbol r) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
+        {
+          return str<r.str;//strcmp(str,r.str)<0;
+        }
+        ptrdiff_t cmp(const Symbol r) const {
+          return r.str-str;
+        }
   bool operator ==(const Symbol r) const {
     return r.str==str;
   }
@@ -91,19 +91,19 @@ struct Symbol {
     return r.str!=str;
   }
   bool isDefault() const {
-	return *this == empty;
+        return *this == empty;
   }
   void makeDefault() {
-	*this = empty;
+        *this = empty;
   }
   // empty symbol (isDefault()) is considered an io failure
   template <class charT, class Traits>
   std::ios_base::iostate
   print_on(std::basic_ostream<charT,Traits>& o) const
   {
-	if (isDefault())
-	  return GENIOBAD;
-	o << str;
+        if (isDefault())
+          return GENIOBAD;
+        o << str;
     return GENIOGOOD;
   }
 
@@ -114,26 +114,26 @@ struct Symbol {
   std::ios_base::iostate
   get_from(std::basic_istream<charT,Traits>& in)
   {
-	g_buf.clear(); // FIXME: not threadsafe
-	char c;
-//	GENIO_CHECK(in>>c);
-	EXPECTI_COMMENT(in>>c);
-	  if (c=='"') {
-		bool last_escape=false;
-		g_buf.push_back(c);
-		for(;;) {
-		  EXPECTI(in.get(c));
-		  g_buf.push_back(c); // even though we allow escapes/quotes, we treat them as part of the literal string
-		  if (c=='"' && !last_escape)
-			break;
-		  if(c=='\\')
-			last_escape=!last_escape;
-		  else
-		    last_escape=false;
-		}
-	  } else {
-		do {
-		  switch(c) {
+        g_buf.clear(); // FIXME: not threadsafe
+        char c;
+//      GENIO_CHECK(in>>c);
+        EXPECTI_COMMENT(in>>c);
+          if (c=='"') {
+                bool last_escape=false;
+                g_buf.push_back(c);
+                for(;;) {
+                  EXPECTI(in.get(c));
+                  g_buf.push_back(c); // even though we allow escapes/quotes, we treat them as part of the literal string
+                  if (c=='"' && !last_escape)
+                        break;
+                  if(c=='\\')
+                        last_escape=!last_escape;
+                  else
+                    last_escape=false;
+                }
+          } else {
+                do {
+                  switch(c) {
 case '(':case ')':case ',':case '"':case ' ':case '`':case '=':
 case '#':case '$':case ':':case '{':case '}':case '^':case ';':
 case '\t':case '\r':case '\n':
@@ -141,18 +141,18 @@ case '\t':case '\r':case '\n':
   goto donewhile;
 default:
   g_buf.push_back(c);
-		  }
-		} while (in.get(c));
-	  }
-	
-donewhile:	
-	  if (g_buf.size()==0) {
+                  }
+                } while (in.get(c));
+          }
+
+donewhile:
+          if (g_buf.size()==0) {
 fail:
-		makeDefault();
-		return GENIOBAD;
-	  }
-	g_buf.push_back(0);
-	str=intern(g_buf.begin());
+                makeDefault();
+                return GENIOBAD;
+          }
+        g_buf.push_back(0);
+        str=intern(g_buf.begin());
     return GENIOGOOD;
   }
 
@@ -213,7 +213,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
   }
-	  {buf[0]='a';
+          {buf[0]='a';
   buf[1]=0;
   char *s="a";
 //  DBP(Symbol(s)<<endl);
@@ -248,29 +248,29 @@ BOOST_AUTO_UNIT_TEST( symbol )
     last=d;
   }
   {
-	Symbol a;
-	string sa=" 1a  ";
-	char *sb="1a";
-	istringstream(sa) >> a;
-	BOOST_CHECK(!strcmp(a.str,sb));
-//	DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
-	BOOST_CHECK(a==Symbol(sb));
+        Symbol a;
+        string sa=" 1a  ";
+        char *sb="1a";
+        istringstream isa(sa);isa >> a;
+        BOOST_CHECK(!strcmp(a.str,sb));
+//      DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
+        BOOST_CHECK(a==Symbol(sb));
   }
    {
-	Symbol a;
-	string sa=" \"\\\"a\"  ";
-	char *sb="\"\\\"a\"";
-	istringstream(sa) >> a;
-	BOOST_CHECK(!strcmp(a.str,sb));
-	//DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
-	BOOST_CHECK(a==Symbol(sb));
+        Symbol a;
+        string sa=" \"\\\"a\"  ";
+        char *sb="\"\\\"a\"";
+        istringstream isa(sa); isa >> a;
+        BOOST_CHECK(!strcmp(a.str,sb));
+        //DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
+        BOOST_CHECK(a==Symbol(sb));
   }
  {
   Tree<Symbol> a,b;
   string sa="1(2,3(aa,5,6))";
   string sb="1(2 3(aa 5 6))";
   stringstream o;
-  istringstream(sa) >> a;
+  istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
@@ -286,7 +286,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   string sa="1 ( 2 , 3 ( aa , 5 , 6 ) )";
   string sb="1(2 3(aa 5 6))";
   stringstream o;
-  istringstream(sa) >> a;
+  istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
@@ -302,7 +302,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   string sa="1as(\"2\\\"\",3(aa(),5,6))";
   string sb="1as(\"2\\\"\" 3(aa 5 6))";
   stringstream o;
-  istringstream(sa) >> a;
+  istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;

@@ -67,7 +67,7 @@ public:
   explicit Tree (const Label &l) : rank(0),label(l) {  }
   Tree (const Label &l,Rank n) : label(l) { alloc(n); }
   explicit Tree (const char *c) {
-        std::istringstream(c) >> *this;
+        std::istringstream ic(c);ic >> *this;
   }
   void alloc(Rank _rank) {
         rank=_rank;
@@ -334,6 +334,7 @@ template <class T>
 template <class T,class F>
 void postorder(T *tree,F func)
 {
+  Assert(tree);
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
         postorder(*i,func);
   deref(func)(tree);
@@ -342,6 +343,7 @@ void postorder(T *tree,F func)
 template <class T,class F>
 void postorder(const T *tree,F func)
 {
+  Assert(tree);
   for (typename T::const_iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
         postorder(*i,func);
   deref(func)(tree);
@@ -351,6 +353,7 @@ void postorder(const T *tree,F func)
 template <class T>
 void delete_tree(T *tree)
 {
+  Assert(tree);
   postorder(tree,delete_arg<T *>);
 }
 
@@ -455,6 +458,7 @@ size_t tree_count(const T *t)
 template <class T>
 size_t tree_height(const T *tree)
 {
+    Assert(tree);
   if (!tree->size())
         return 0;
   size_t max_h=0;
@@ -537,7 +541,7 @@ BOOST_AUTO_UNIT_TEST( tree )
   //string sa="1(2 3(4 5 6))";
   string sb="1(2 3(4 5 6))";
   stringstream o;
-  istringstream(sa) >> a;
+  istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
@@ -550,7 +554,8 @@ BOOST_AUTO_UNIT_TEST( tree )
                 new_tree(3,
                   new_tree(4),new_tree(5),new_tree(6)));
   d=new_tree(1,new_tree(2),new_tree(3));
-  h=read_tree<int>(istringstream(sb));
+  istringstream isb(sb);
+  h=read_tree<int>(isb);
   //h=Tree<int>::read_tree(istringstream(sb),DefaultReader<int>());
   BOOST_CHECK(a == a);
   BOOST_CHECK(a == b);
