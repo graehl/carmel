@@ -34,7 +34,7 @@ CC.freebsd = g++31
 CC.freebsd = g++
 CC.macosx = g++
 
-CCFLAGS = -c 
+CCFLAGS = -c -Wno-deprecated
 CCFLAGS = -c -Wno-deprecated -DBOOST_DISABLE_THREADS -DBOOST_NO_MT ${INC}
 #-Wall 
 # -frepo
