@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "weight.h"
+#include "debugprint.hpp"
 #include <cmath>
 
 struct WeightAccum {
@@ -45,11 +46,10 @@ struct EM_executor {
      // if you're doing random restarts, transfer the current parameters to safekeeping
     void save_best() {}
     void restore_best() {}
-     // assigns estimated counts to current parameters
-    void transfer_counts() {}
+     // switches estimated counts for current parameters (thus last iteration parameters are available before counts are reestimated)
+    void swap_counts() {}
 };
 
-*/
 // note that your initial parameters will be left alone for the first iteration (this means you should initialize them to something that gives nonzero probs
 
 //    converge relative probability ratio ... 1 = total convergence before stopping, .999 = near exact
@@ -58,62 +58,63 @@ struct EM_executor {
 //    ran_restarts = how many times to randomly initialize parameters (after doing one iteration with supplied parameters), keeping the best PP params of all runs
 // return best (greatest) average log prob
 template <class Exec>
-double overrelaxed_em(Exec &exec,int max_iter=10000,Weight converge_relative_avg_prob_ratio=.9999,Weight converge_param_delta=0, double learning_rate_growth_factor=1, int ran_restarts=0,ostream &log=Config::log(),unsigned log_level=1)
+double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg_prob_ratio=.9999,double converge_param_delta=0, double learning_rate_growth_factor=1, int ran_restarts=0,ostream &logs=Config::log(),unsigned log_level=1)
 {
     double best_alp=-HUGE_VAL; // alp=average log prob = (logprob1 +...+ logprobn )/ n (negative means 0 probability, 0 = 1 probability)
     double converge_alp=log(converge_relative_avg_prob_ratio); // negative absolute quantity.  if last_alp > new_alp + converge_alp, then converged.
     bool very_first_time=true;
     while(1) { // random restarts
         int train_iter = 0;
-        double last_delta_param;
-        Weight last_alp;
+        double last_delta_param, last_alp;
 
         last_alp=-HUGE_VAL;
         double learning_rate=1;
         bool first_time=true;
         bool last_was_reset=false;
-        maximize(1); // may not be desireable if you wanted just 1 iteration to compute counts = inside*outside but you should do that outside this framework
+        exec.maximize(1); // may not be desireable if you wanted just 1 iteration to compute counts = inside*outside but you should do that outside this framework
         for ( ; ; ) {
             ++train_iter;
+            DBP(train_iter);DBPSCOPE;
             if ( train_iter > max_iter ) {
-                log  << "Maximum number of iterations (" << max_iter << ") reached before convergence criteria was met - greatest param weight change was " << last_delta_param << "\n";
+                logs << "Maximum number of iterations (" << max_iter << ") reached before convergence criteria was met - greatest param weight change was " << last_delta_param << "\n";
                 break;
             }
             if (log_level > 0)
-                log << "Starting iteration: " << train_iter << '\n';
+                logs << "Starting iteration: " << train_iter << '\n';
 
             double new_alp = exec.estimate(very_first_time);
-            if (very_first_time)
-                very_first_time=false;
 
-            log << "i=" << train_iter << " (rate=" << learning_rate << "): model-avg-log-prob=" << new_alp;
+            logs << "i=" << train_iter << " (rate=" << learning_rate << "): model-avg-log-prob=" << new_alp;
 
             //FIXME: don't really need to do this so often, can move outside of for loop even ... but for sanity's sake (not much efficiency difference) leave it here
-            if ( new_alp > best_alp ) {
-                log << " (new best)";
+            if ( new_alp > best_alp || very_first_time ) {
+                logs << " (new best)";
                 best_alp=new_alp;
                 exec.save_best();
             }
 
+            if (very_first_time)
+                very_first_time=false;
+
             if ( first_time ) {
-                log << std::endl;
+                logs << std::endl;
                 first_time = false;
 //                pp_ratio_scaled.setZero();
             } else {
 //                Weight pp_ratio=new_alp/last_alp;
 //                pp_ratio_scaled = root(pp_ratio,new_alp.getLogImp()); // EM delta=(L'-L)/abs(L')
-                log << " (relative-avg-prob-ratio=" << exp(new_alp-last_alp) << "), max{d(weight)}=" << last_delta_param << std::endl;
+                logs << " (relative-avg-prob-ratio=" << exp(new_alp-last_alp) << "), max{d(weight)}=" << last_delta_param << std::endl;
             }
             if (!last_was_reset) {
                 if (  last_alp > new_alp + converge_alp ) {
                     if ( learning_rate > 1 ) {
-                        log << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
+                        logs << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
                         learning_rate=1;
                         exec.undo_maximize();
                         last_was_reset=true;
                         continue;
                     }
-                    log << "Converged - per-example avg-prob ratio exceeds " << converge_relative_avg_prob_ratio << " after " << train_iter << " iterations.\n";
+                    logs << "Converged - per-example avg-prob ratio exceeds " << converge_relative_avg_prob_ratio << " after " << train_iter << " iterations.\n";
                     break;
                 } else {
                     if (learning_rate < MAX_LEARNING_RATE_EXP)
@@ -122,11 +123,11 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,Weight converge_relative_avg
             } else
                 last_was_reset=false;
 
-            exec.transfer_counts();
+            exec.swap_counts();
             last_delta_param = exec.maximize(learning_rate);
 
-            if (last_delta_param <= converge_param_delta ) {
-                log << "Converged - no weight change greater than " << converge_param_delta << " after " << train_iter << " iterations.\n";
+            if (last_delta_param < converge_param_delta ) {
+                logs << "Converged - all weights changed less than " << converge_param_delta << " after " << train_iter << " iterations.\n";
                 break;
             }
 
@@ -135,12 +136,12 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,Weight converge_relative_avg
         if (ran_restarts > 0) {
             --ran_restarts;
             exec.randomize();
-            log << "\nRandom restart - " << ran_restarts << " remaining.\n";
+            logs << "\nRandom restart - " << ran_restarts << " remaining.\n";
         } else {
             break;
         }
     }
-    log << "Setting weights to model with lowest avg-prob=" << best_alp << std::endl;
+    logs << "Setting weights to model with lowest avg-prob=" << best_alp << std::endl;
     exec.restore_best();
 
     return best_alp;

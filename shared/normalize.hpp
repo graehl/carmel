@@ -9,6 +9,7 @@
 #include "byref.hpp"
 #include "genio.h"
 
+//FIXME: leave rules that don't occur in normalization groups alone (use some original/default value)
 template <class W>
 struct NormalizeGroups {
     typedef W weight_type;
@@ -16,10 +17,20 @@ struct NormalizeGroups {
     typedef FixedArray<value_type> Inner;
     typedef FixedArray<Inner> Outer;
     Outer norm_groups;
+//    value_type max_offset;
+    DynamicArray<bool> seen_index;
 //    GENIO_get_from {
 //        IndirectReader<IndexToOffsetReader<W> > reader;
 //        norm_groups.get_from(in,reader);
 //    }
+    struct seen_offset_p {
+        DynamicArray<bool> *seen_index;
+        void operator()(value_type v) {
+            (*seen_index)(v.get_index())=true; // default init of false when expanded
+        }
+        seen_offset_p(DynamicArray<bool> *a) : seen_index(a) {}
+        seen_offset_p(const seen_offset_p &o) : seen_index(o.seen_index) {}
+    };
     struct max_p {
         value_type max; // default init = 0
         void operator()(value_type v) {
@@ -27,12 +38,15 @@ struct NormalizeGroups {
                 max = v;
         }
     };
-    size_t max_index() const {
-        max_p m;
+    size_t max_index() {
+        nested_enumerate(norm_groups,seen_offset_p(&seen_index));
+        return seen_index.size();
+//        return max_offset.get_index();
+/*        max_p m;
         nested_enumerate(norm_groups,ref(m));
-        return m.max.get_index();
+        return m.max.get_index();*/
     }
-    size_t required_size() const {
+    size_t required_size() {
         return max_index()+1;
     }
     W *base;
@@ -50,6 +64,32 @@ struct NormalizeGroups {
                 w /= sum;
             }
     }
+    void copy_unseen(W *src, W *to) {
+        for (unsigned i=0,e=seen_index.size();i!=e;++i) {
+            if (!seen_index[i])
+                to[i]=src[i];
+        }
+    }
+    void set_unseen_to(W src, W *to) {
+        for (unsigned i=0,e=seen_index.size();i!=e;++i) {
+            if (!seen_index[i])
+                to[i]=src;
+        }
+    }
+    /*
+    template <class F>
+    void enumerate_seen(F f) {
+        for (unsigned i=0,e=seen_index.size();i!=e;++i) {
+            if (seen_index[i])
+                f(i);
+    }
+    template <class F>
+    void enumerate_unseen(F f) {
+        for (unsigned i=0,e=seen_index.size();i!=e;++i) {
+            if (!seen_index[i])
+                f(i);
+    }
+    */
     // array must have values for all max_index()+1 rules
     void normalize(W *array_base) {
         base=array_base;
