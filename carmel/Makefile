@@ -29,7 +29,7 @@ CC.solaris = g++
 CC.cygwin = g++
 CC.freebsd = g++31
 CC.macosx = g++
-CC = $(CC.$(ARCH))
+
 CCFLAGS = -c -Wall
 LDFLAGS = -L$(LIB) -lm
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -ffast-math
@@ -108,13 +108,18 @@ clean:
 	rm -rf $(OBJ)
 
 cleanall:
-depend: 
-	rm -rf $(DIR)/dependencies.${ARCH}
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/optimized\/\1?g;print;}' > $(DIR)/dependencies.${ARCH}
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/profile\/\1?g;print;}' >> $(DIR)/dependencies.${ARCH}
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/debug\/\1?g;print;}' >> $(DIR)/dependencies.${ARCH}
-	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/purified\/\1?g;print;}' >> $(DIR)/dependencies.${ARCH}
 	rm -rf $(OBJ) $(SRC)/*~
-include $(DIR)/dependencies.${ARCH}
+
 DEPS=$(DIR)/dependencies.${ARCH}
+
+depend: $(DEPS)
+
+$(DEPS): 
+	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/optimized\/\1?g;print;}' > $(DEPS)
+	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/profile\/\1?g;print;}' >> $(DEPS)
+	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/debug\/\1?g;print;}' >> $(DEPS)
+	$(CC) -MM $(SRC)/*.cc -I$(INC) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/purified\/\1?g;print;}' >> $(DEPS)
+	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/purified\/\1?g;print;}' >> $(DEPS)
+
+
 include $(DEPS)
