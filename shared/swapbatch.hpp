@@ -31,6 +31,10 @@
 # define DEFAULT_SWAPBATCH_BASE_ADDRESS ((void *)NULL)
 #endif
 
+//FIXME: lifetime mgmt (destructor/constructor?) for contained objects - right now no destructor, and special read() constructor
+
+//FIXME: sometimes .swap.n files left around even though supposed to be deleted.
+
 /*
  * given an input file, a class B with a read method, a batch size (in bytes), and a pathname prefix:
  *
@@ -92,6 +96,9 @@ struct SwapBatch {
         typedef B *pointer;
         typedef void difference_type; // not implemented but could be unsigned
         typedef std::forward_iterator_tag iterator_category;
+        iterator() : cthis(NULL)
+        {
+        }
 
         Cont *cthis;
         unsigned batch;
@@ -264,7 +271,9 @@ struct SwapBatch {
     }
     void remove_batches() {
         BACKTRACE;
+        memmap.close(); // otherwise windows won't let us delete files
         for (unsigned i=0;i<=n_batch;++i) { // delete next file too in case exception came during create_next_batch
+//            DBP2(i,batch_name(i));
             remove_file(batch_name(i));
         }
         n_batch=0; // could loop from n_batch ... 0 but it might confuse :)
