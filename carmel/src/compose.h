@@ -23,7 +23,7 @@ struct TrioKey {
   int hash() const
   {
     Assert ( aState < aMax && bState < bMax);
-    return (bMax * (filter*aMax + aState) + bState) * 265443576;
+    return (bMax * (filter*aMax + aState) + bState) * 2654435767U;
   }
 };
 
@@ -42,7 +42,7 @@ struct HalfArcState {
     dest(a), source(b), hiddenLetter(c) {}
   int hash() const
   {
-    return (TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source) * 26544376;
+    return (TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source) * 2654435767U;
   }
 };
 

@@ -167,6 +167,18 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   trn = NULL;
 }
 
+// possible speedups:
+// * exclude states that are definitely not on any path start->finish matching i:o
+// ** quick check: exclude if none of the outgoing transitions are (input|*e*):(output|*e*) for some input, output in sequence
+/*
+// ** complete check: integrate search and summation of paths - search state: (s,i,o)
+ constraint: can't visit (dequeue) (s,i,o) until already for all t (t,i-1,o-1),(t,i,o-1),(t,i-1,o) and all u (u,i,o) s.t. u->*e*->s
+ easy to meet first 3 using for i: for o: loop; add state to agenda for next (i|i+1,o|o+1)
+ when you have an *e* leaving something on the agenda, you need to add the dest to the head of the agenda, and, you must preorder the agenda so that if a->*e*->b, a cannot occur after b in the agenda.  you could sort the agenda by reverse dfs finishing times (dfs on the whole e graph though)
+
+*/
+// ** in order for excluding states to be worthwhile in O(s*i*o) terms, have to take as input a 0-initialized w matrix and clear each non-0 entry after it is no longer in play.  ouch - that means all the lists (of nonzero values) need to be kept around until after people are done playing with the w
+
 void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > *IOarcs, List<int> * eTopo, int nIn, int *inLet, int nOut, int *outLet)
 {
   int i, o, s;
@@ -283,7 +295,21 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
 #endif
 }
 
-
+// similar to transposition but not quite: instead of replacing w.ij with w.ji, replace w.ij with w.(I-i)(J-j) ... matrix has the same dimensions.  it's a 180 degree rotation, not a reflection about the identity line
+void reverseMatrix(Weight ***w,int nIn, int nOut) {
+  int i;
+  for ( i = 0 ; i <= nIn/2 ; ++i ) {
+    Weight **temp = w[i];
+    w[i] = w[nIn - i];
+    w[nIn - i] = temp;
+  }
+  for ( i = 0 ; i <= nIn ; ++i )
+    for ( int o = 0 ; o <= nOut/2 ; ++o ) {
+      Weight *temp = w[i][o];
+      w[i][o] = w[i][nOut - o];
+      w[i][nOut - o] = temp;
+    }
+}
 
 void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 {
@@ -296,23 +322,12 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
   Config::debug() << "\nBackward\n";
 #endif
   sumPaths(nSt, final, trn->b, trn->revArcs, trn->revETopo, s.i.n, s.i.rLet, s.o.n, s.o.rLet);
-  int i;
-
-  // transpose b matrix on input, output position
+  
   Weight ***w = trn->b;
   int nIn = s.i.n;
   int nOut = s.o.n;
-  for ( i = 0 ; i <= nIn/2 ; ++i ) {
-    Weight **temp = w[i];
-    w[i] = w[nIn - i];
-    w[nIn - i] = temp;
-  }
-  for ( i = 0 ; i <= nIn ; ++i )
-    for ( int o = 0 ; o <= nOut/2 ; ++o ) {
-      Weight *temp = w[i][o];
-      w[i][o] = w[i][nOut - o];
-      w[i][nOut - o] = temp;
-    }
+  // since the backward paths were obtained on the reverseed input/output, reverse them back
+  reverseMatrix(w,nIn,nOut);
 #ifdef DEBUGTRAINDETAIL // Yaser 7-20-2000
   Config::debug() << "\nForwardProb/BackwardProb:\n";
   for (i = 0 ;i<= nIn ; ++i){
@@ -431,28 +446,28 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
           IOarcs = trn->forArcs + s;
           if ( i < nIn ) { // input is not epsilon
             io.in = letIn[i];
-            if ( o < nOut ) { // output is not epsilon
+            if ( o < nOut ) { // output is also not epsilon
               io.out = letOut[o];
               if ( (pLDW = IOarcs->find(io)) ){
                 for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                   dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o+1][dw->dest];
               }
             }
-            io.out = 0; // output only is epsilon
+            io.out = 0; // output is epsilon, input is not
             if ( (pLDW = IOarcs->find(io)) ){
               for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                 dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
             }
           }
           io.in = 0; // input is epsilon
-          if ( o < nOut ) { // input only is epsilon
+          if ( o < nOut ) { // input is epsilon, output is not
             io.out = letOut[o];
             if ( (pLDW = IOarcs->find(io)) ){
               for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                 dw->scratch += f[i][o][s] * dw->weight() * b[i][o+1][dw->dest];
             }
           }
-          io.out = 0; // input and output are epsilon
+          io.out = 0; // input and output are both epsilon
           if ( (pLDW = IOarcs->find(io)) ){
             for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
               dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
