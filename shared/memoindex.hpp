@@ -15,15 +15,15 @@ or ... Alphabet: index_of:ArgType-><bool,index> (bool=false) ? data[index]=funct
 // note that it would be just as good to leave storing of results up to f itself, i.e. we only give the index as Result instead of pair<ret,index> (f would have to keep a dynamic array and check if it needs to push_back, sorta like Alphabet)
 template <class F>
 struct MemoIndex {
+  unsigned &n; // # of entries, also next index for new Arg
   F &f;
   typedef typename F::argument_type Arg;
   typedef typename F::return_type Ret;
 
-  unsigned n; // # of entries, also next index for new Arg
   typedef std::pair<Ret,unsigned> Result;
   typedef HashTable<Arg,Result>  Table;
   Table memo;
-  MemoIndex(F &f_=F()): f(f_),n(0) {f.set_memo(this);}
+  explicit MemoIndex(unsigned &n_,F &f_): n(n_),f(f_) {f.set_memo(this);}
 
   Result *find(const Arg &a) {
 	return find_second(memo,a);
@@ -44,6 +44,12 @@ struct MemoIndex {
 	Result &r=memo[a];
 	*/
   }
+};
+
+template <class F>
+struct MemoIndexOwn : public MemoIndex<F> {
+  unsigned next;
+  explicit MemoIndexOwn(F &f_): MemoIndex<F>(next,f_),next(0) {}
 };
 
 // inherit from this and overload
@@ -82,7 +88,10 @@ struct ExampleF : public MemoFn<int,int> {
 };
 BOOST_AUTO_UNIT_TEST( memoindex )
 {
-  MemoIndex<ExampleF> m;
+  {
+  unsigned start=0;
+  ExampleF f;
+  MemoIndex<ExampleF> m(start,f);
   BOOST_CHECK(m.apply(1).first==0);
   BOOST_CHECK(m.apply(1).second==0);
   BOOST_CHECK(m.find(1)!=0);
@@ -94,8 +103,27 @@ BOOST_AUTO_UNIT_TEST( memoindex )
   BOOST_CHECK(m.apply(0).second==1);
   BOOST_CHECK(m.find(3)==&m.apply(3));
   BOOST_CHECK(m.apply(3).first==1);
-  BOOST_CHECK(!m.find(2));  
+  BOOST_CHECK(!m.find(2));
+  BOOST_CHECK(start == 3);
   BOOST_CHECK(m.f.n == 3);
+  }
+  {  
+  ExampleF f;
+  MemoIndexOwn<ExampleF> m(f);
+  BOOST_CHECK(m.apply(1).first==0);
+  BOOST_CHECK(m.apply(1).second==0);
+  BOOST_CHECK(m.find(1)!=0);
+  BOOST_CHECK(m.find(0)!=0);
+  BOOST_CHECK(m.find(1)==&m.apply(1));
+
+  BOOST_CHECK(m.find(0)==&m.apply(0));
+  BOOST_CHECK(m.find(1)==&m.apply(1));
+  BOOST_CHECK(m.apply(0).second==1);
+  BOOST_CHECK(m.find(3)==&m.apply(3));
+  BOOST_CHECK(m.apply(3).first==1);
+  BOOST_CHECK(!m.find(2));
+  BOOST_CHECK(m.f.n == 3);
+  }
 }
 #endif
 
