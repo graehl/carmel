@@ -471,11 +471,23 @@ inline std::string random_alpha_string(unsigned len) {
     return s.get();
 }
 
-
+//FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
 inline double random_pos_fraction() // returns uniform random number on (0..1]
 {
-    return ((double)std::rand()+1.) /
-        ((double)RAND_MAX+1.);
+    return ((double)std::rand()+1.) *
+        (1. / ((double)RAND_MAX+1.));
+}
+
+inline double random_nonneg_lt_one() // returns uniform random number on [0..1)
+{
+    return ((double)std::rand()) *
+        (1. /((double)RAND_MAX+1.));
+}
+
+inline double random_nonneg_lteq_one() // returns uniform random number on [0..1]
+{
+    return ((double)std::rand()) *
+        (1. / ((double)RAND_MAX));
 }
 
 struct set_one {
