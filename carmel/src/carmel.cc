@@ -45,7 +45,11 @@ void outWithoutQuotes(const char *str, ostream &out) {
 void usageHelp(void);
 void WFSTformatHelp(void);
 
-int __cdecl main(int argc, char *argv[]){
+int
+#ifdef MSCVER
+__cdecl 
+#endif
+main(int argc, char *argv[]){
 #ifdef MSCVER 
 #ifdef MEMDEBUG
   int tmpFlag = CrtSetDbgFlag(CRTDBGREPORTFLAG);
@@ -612,7 +616,7 @@ int __cdecl main(int argc, char *argv[]){
   //  if ( flags['A'] )
   //    chainMemory[i].~WFST();
 #endif
-  delete (void *) chainMemory;
+  ::operator delete(chainMemory);
   delete[] parm;
   if ( fstout != &cout )
     delete fstout;
