@@ -9,14 +9,16 @@
 
 #include "weight.h"
 const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
-// ~6 * ln 10 
-#define LN_6_DECIMAL_DIGITS 13
+
+// IEE float safe till about 10^38, loses precision earlier (10^32?)
+// 32 * ln 10 =~ 73
+#define LN_TILL_UNDERFLOW 73
 
 std::ostream& operator << (std::ostream &o, Weight weight)
 {
   if ( weight == 0.0 )
     o << 0;
-  else if ( weight.weight < LN_6_DECIMAL_DIGITS && weight.weight > -LN_6_DECIMAL_DIGITS )
+  else if ( weight.weight < LN_TILL_UNDERFLOW && weight.weight > -LN_TILL_UNDERFLOW )
     o << exp(weight.weight);
   else
     o << weight.weight << "ln";
