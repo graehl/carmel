@@ -38,16 +38,14 @@ struct EM_executor {
     void randomize() {}
      // returns (weighted) average log prob over all examples given current parameters, and collects counts (performs count initialization itself).  first_time flag intended to allow you to drop examples that have 0 probability (training can't continue if they're kept)
     double estimate(bool first_time) {return 0;}
-    // renormalizes parameters; learning_rate may be ignored, but is intended to magnify the delta from the previous parameter set to the normalized new parameter set.  should return largest absolute change to any parameter.  should also save the un-magnified (raw normalized counts) version for undo_maximize (if you only use learning_rate==1, then you don't need to do anything but normalize)
+    // assigns new parameters from countvs collected by estimate; learning_rate may be ignored, but is intended to magnify the delta from the previous parameter set to the normalized new parameter set.  should return largest absolute change to any parameter.  should also save the un-magnified (raw normalized counts) version for undo_maximize (if you only use learning_rate==1, then you don't need to do anything but normalize)
     double maximize(double learning_rate) {return 0;}
-    // for overrelaxed EM: if probability gets worse, reset learning rate to 1 and use the last improved weights
+    // for overrelaxed EM: if probability gets worse, reset learning rate to 1 and use the last improved weights.  or, you may wish to save a copy of the learning-rate-1 new weights that you extrapolate the overrelaxed ones from (compared to their previous value), and simply restore those, rather than backing off to the previous iteration and wasting another estimate.
     void undo_maximize() {}
 
      // if you're doing random restarts, transfer the current parameters to safekeeping
     void save_best() {}
     void restore_best() {}
-     // switches estimated counts for current parameters (thus last iteration parameters are available before counts are reestimated)
-    void swap_counts() {}
 };
 
 // note that your initial parameters will be left alone for the first iteration (this means you should initialize them to something that gives nonzero probs
@@ -71,7 +69,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
         double learning_rate=1;
         bool first_time=true;
         bool last_was_reset=false;
-        exec.maximize(1); // may not be desireable if you wanted just 1 iteration to compute counts = inside*outside but you should do that outside this framework
+//        exec.maximize(1); // may not be desireable if you wanted just 1 iteration to compute counts = inside*outside but you should do that outside this framework
         for ( ; ; ) {
             ++train_iter;
             DBP(train_iter);DBPSCOPE;
@@ -110,7 +108,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
                     if ( learning_rate > 1 ) {
                         logs << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
                         learning_rate=1;
-                        exec.undo_maximize();
+                        exec.undo_maximize(); // this is needed because you've just measured alp from corrupted (overscaled) parameters and collected corrupt counts
                         last_was_reset=true;
                         continue;
                     }
@@ -123,7 +121,6 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
             } else
                 last_was_reset=false;
 
-            exec.swap_counts();
             last_delta_param = exec.maximize(learning_rate);
 
             if (last_delta_param < converge_param_delta ) {

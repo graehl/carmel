@@ -3,6 +3,20 @@
 
 #include "byref.hpp"
 
+template <class Tag,class M,class F>
+void nested_enumerate(M& m,F &f,Tag t) {
+    for (typename M::iterator i=m.begin();i!=m.end();++i)
+        for (typename M::value_type::iterator j=i->begin();j!=i->end();++j)
+            f.visit(*j,t);
+}
+
+template <class Tag,class M,class F>
+void enumerate(M& m,F &f,Tag t) {
+    for (typename M::iterator i=m.begin();i!=m.end();++i)
+        f.visit(*i,t);
+}
+
+
 // for containers of containers where you want to visit every element
 template <class M,class F>
 void nested_enumerate(const M& m,F f) {
