@@ -3,26 +3,8 @@
 
 #include "config.h"
 
-inline unsigned int cstr_hash (const char *p)
-{
-	unsigned int h=0;
-#ifdef OLD_HASH
-	unsigned int g;
-	while (*p != 0) {
-		h = (h << 4) + *p++;
-		if ((g = h & 0xf0000000) != 0)
-			h = (h ^ (g >> 24)) ^ g;
-	}
-	return (h >> 4);
-#else
-	// google for g_str_hash X31_HASH to see why this is better (less collisions, good performance for short strings, faster)
-	while (*p != '\0')
-		h = 31 * h + *p++; // should optimize to ( h << 5 ) - h if faster
-	return h;
-#endif
-}
-
 #include "string.h"
+#include "2hash.h"
 
 class StringKey {
 public:
@@ -45,22 +27,29 @@ public:
 	operator char * () { return str; }
 	//	char * operator =(char * c) { char *t = str; str = c; return t; } // returns old value: why?
 	void operator=(char *c) { str=c; }
-	bool operator < ( const StringKey &a) const
+	bool operator < ( const StringKey &a) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
 	{
 	  return strcmp(str,a.str)<0;
 	}
-	bool operator == ( const StringKey &a ) const
+	bool operator == ( const StringKey &a ) const // for cool STL / graehl unsorted-buckets hash table
 	{
 		return strcmp(str, a.str)==0;
 	}
 	bool isGlobalEmpty() const { return str == empty; }
-	unsigned int hash() const
+	size_t hash() const
 	{
 		return cstr_hash(str);	
 	}
 };
-
-inline unsigned int hash_value(StringKey s) { return s.hash(); }
-inline unsigned int hash(StringKey s) { return s.hash(); }
+HASHNS_B
+template<> struct hash<StringKey>
+{
+  size_t operator()(StringKey s) const {
+	return s.hash();
+  }
+};
+HASHNS_E
+inline size_t hash_value(StringKey s) { return s.hash(); }
+//inline size_t hash(StringKey s) { return s.hash(); }
 
 #endif

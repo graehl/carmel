@@ -22,6 +22,48 @@ class slist
   //  typedef int difference_type;
   //  typedef forward_iterator_tag _Iterator_category;
 
+  class const_iterator 
+    : public std::iterator<std::forward_iterator_tag, const T> 
+    {
+	  friend class val_iterator;
+      const Node* m_rep;
+    public:
+      friend class iterator;
+      friend class slist;
+
+      inline const_iterator(const Node* x=0):m_rep(x){}
+      inline const_iterator(const const_iterator& x):m_rep(x.m_rep) {}
+      inline const_iterator(const val_iterator& x):m_rep(x.m_rep){}
+      inline const_iterator& operator=(const const_iterator& x)
+	{ 
+	  m_rep=x.m_rep; return *this; 
+	}
+      inline const_iterator& operator=(const iterator& x)
+	{ 
+	  m_rep=x.m_rep; return *this; 
+	}		
+      inline const_iterator& operator++()
+	{ 
+	  m_rep = m_rep->m_next; return *this; 
+	}
+      inline const_iterator operator++(int)
+	{ 
+	  const_iterator tmp(*this); m_rep = m_rep->m_next; return tmp; 
+	}
+      inline typename slist::const_reference operator*() const { return m_rep->m_data; }
+      inline typename slist::const_pointer operator->() const { return &m_rep->m_data; }
+      inline bool operator==(const const_iterator& x) const
+	{
+	  return m_rep == x.m_rep; 
+	}
+      inline bool operator!=(const const_iterator& x) const
+	{
+	  return m_rep != x.m_rep; 
+	}
+
+
+
+    };
 
 
 
@@ -38,6 +80,7 @@ class slist
 
       inline val_iterator(Node* x=0):m_rep(x){}
       inline val_iterator(const val_iterator& x):m_rep(x.m_rep) {}
+	  inline val_iterator(const const_iterator& x):m_rep(x.m_rep) {}
       inline val_iterator& operator=(const val_iterator& x)
 	{ 
 	  m_rep=x.m_rep; return *this; 
@@ -116,47 +159,6 @@ class slist
 
   typedef erase_iterator iterator;
 
-  class const_iterator 
-    : public std::iterator<std::forward_iterator_tag, const T> 
-    {
-      const Node* m_rep;
-    public:
-      friend class iterator;
-      friend class slist;
-
-      inline const_iterator(const Node* x=0):m_rep(x){}
-      inline const_iterator(const const_iterator& x):m_rep(x.m_rep) {}
-      inline const_iterator(const val_iterator& x):m_rep(x.m_rep){}
-      inline const_iterator& operator=(const const_iterator& x)
-	{ 
-	  m_rep=x.m_rep; return *this; 
-	}
-      inline const_iterator& operator=(const iterator& x)
-	{ 
-	  m_rep=x.m_rep; return *this; 
-	}		
-      inline const_iterator& operator++()
-	{ 
-	  m_rep = m_rep->m_next; return *this; 
-	}
-      inline const_iterator operator++(int)
-	{ 
-	  const_iterator tmp(*this); m_rep = m_rep->m_next; return tmp; 
-	}
-      inline typename slist::const_reference operator*() const { return m_rep->m_data; }
-      inline typename slist::const_pointer operator->() const { return &m_rep->m_data; }
-      inline bool operator==(const const_iterator& x) const
-	{
-	  return m_rep == x.m_rep; 
-	}
-      inline bool operator!=(const const_iterator& x) const
-	{
-	  return m_rep != x.m_rep; 
-	}
-
-
-
-    };
 
 
   slist() : m_head(0) {}

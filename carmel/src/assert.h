@@ -1,7 +1,7 @@
 #ifndef ASSERT_H
 #define ASSERT_H 1
 #include "config.h"
-#include <assert.h>
+#include <cassert>
 #ifdef DEBUG
 #define Assert(a) assert(a)
 #else

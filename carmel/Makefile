@@ -22,8 +22,9 @@ OBJ.solaris = ${DIR}/obj/solaris
 OBJ.cygwin = ${DIR}/obj/cygwin
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
-INC = ${DIR}/src
-IN = -I$(INC) -I-
+INC = 
+#INC = ${DIR}/src
+IN = -I$(INC) -I- -I/home/graehl/isd/boost -I/home/graehl/isd/devel/tt 
 IN = -I${DIR}/src -I$(SHARED) -I- -I${BOOST} 
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
@@ -42,11 +43,14 @@ CCFLAGS = -c -Wno-deprecated -DBOOST_DISABLE_THREADS -DBOOST_NO_MT ${INC}
 #-fno-exception
 LDFLAGS = -L$(LIB) -lm
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -s -ffast-math
+CCFLAGS_DBG    = $(CCFLAGS) -g -DDEBUG
 CCFLAGS_TEST    = $(CCFLAGS) -DTEST -g -DDEBUG
 CCFLAGS_PRF    = $(CCFLAGS) -O3 -pg
 LDFLAGS_PRF    = -pg
+
+BD = /home/graehl/isd/boost/libs/test/src
 BOOST_TEST_SRC =  $(BD)/test_tools.cpp $(BD)/unit_test_parameters.cpp $(BD)/execution_monitor.cpp  $(BD)/unit_test_log.cpp $(BD)/unit_test_result.cpp $(BD)/supplied_log_formatters.cpp $(BD)/unit_test_main.cpp $(BD)/unit_test_suite.cpp $(BD)/unit_test_monitor.cpp
-SRC_FILES_NO_MAIN = $(SRC)/Arc.cc $(SRC)/strhash.cc $(SRC)/stringkey.cc $(SRC)/weight.cc $(SRC)/wfstio.cc $(SRC)/2heap.cc $(SRC)/2hash.cc $(SRC)/compose.cc $(SRC)/fst.cc $(SRC)/graph.cc $(SRC)/kbest.cc $(SRC)/train.cc 
+
 SRC_FILES_NO_MAIN = $(SRC)/Arc.cc $(SRC)/strhash.cc $(SRC)/weight.cc $(SRC)/wfstio.cc $(SRC)/2heap.cc $(SRC)/2hash.cc $(SRC)/compose.cc $(SRC)/fst.cc $(SRC)/graph.cc $(SRC)/kbest.cc $(SRC)/train.cc 
 SRC_FILES = $(SRC_FILES_NO_MAIN) $(SRC)/finite.cc
 SRC_MAIN = $(SRC)/finite.cc
@@ -55,10 +59,13 @@ OBJ_FILES_OPT = ${SRC_FILES:${SRC}/%.cc=${OBJ}/optimized/%.o}
 OBJ_LIB = ${SRC_FILES_NO_MAIN:${SRC}/%.cc=${OBJ}/optimized/%.o}
 OBJ_FILES_PRF = ${SRC_FILES:${SRC}/%.cc=${OBJ}/profile/%.o}
 OBJ_FILES_DBG = ${SRC_FILES:${SRC}/%.cc=${OBJ}/debug/%.o}
+OBJ_FILES_PUR = ${SRC_FILES:${SRC}/%.cc=${OBJ}/purified/%.o}
+OBJ_FILES_TEST = ${OBJ}/test/strhash.o 
 #${SRC_FILES:${SRC}/%.cc=${OBJ}/test/%.o}
 OBJ_OPT_DIR = $(OBJ)/optimized/
 OBJ_PUR_DIR = $(OBJ)/purified/
 OBJ_PRF_DIR = $(OBJ)/profiled/
+OBJ_DBG_DIR = $(OBJ)/debug/
 OBJ_TEST_DIR = $(OBJ)/test/
 
 ifneq (${ARCH},macosx)
@@ -78,7 +85,13 @@ carmel.${ARCH}.dbg:	 $(OBJ_DBG_DIR) $(OBJ_FILES_DBG)
 	$(CC) $(OBJ_FILES_DBG) $(LDFLAGS) -o $(BIN)/$@
 #--static
 
+test: carmel.${ARCH}.test
+
 pure: carmel.${ARCH}.pure
+
+carmel.${ARCH}.test:	$(OBJ_TEST_DIR) $(OBJ_FILES_TEST)
+	$(CC) $(BOOST_TEST_SRC} $(OBJ_FILES_TEST) $(LDFLAGS) -o $(BIN)/$@
+
 
 carmel.${ARCH}.pure:	$(OBJ_PUR_DIR) $(OBJ_FILES_PUR)
 	purify $(CC) $(OBJ_FILES_PUR) $(LDFLAGS) -o $(BIN)/$@
@@ -91,6 +104,9 @@ carmel.${ARCH}.prf:  $(OBJ_PRF_DIR) $(OBJ_FILES_PRF)
 
 carmel.a: $(OBJ_LIB)
 	ar rv ${OBJ}/$@ $?
+
+$(OBJ)/test/%.o: $(SRC)/%.cc
+	$(CC)  $(CCFLAGS_TEST) $(IN) $< -o $@
 
 $(OBJ)/optimized/%.o: $(SRC)/%.cc
 	$(CC)  $(CCFLAGS_OPT) $(IN) $< -o $@
@@ -106,6 +122,9 @@ $(OBJ)/purified/%.o: $(SRC)/%.cc
 
 
 	$(CC)  $(CCFLAGS_DBG) $(IN) -I$(INC1) $< -o $@
+
+$(OBJ)/test/:
+	mkdir -p $@
 
 $(OBJ)/optimized/:
 	mkdir -p $@
@@ -133,6 +152,7 @@ DEPS=$(DIR)/dependencies.${ARCH}
 depend: $(DEPS)
 
 $(DEPS): 
+	rm -rf $(DEPS)
 	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/test\/\1?g;print;}' > $(DEPS)
 	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/optimized\/\1?g;print;}' > $(DEPS)
 	$(CC) -MM $(SRC)/*.cc $(IN) | perl -e 'while(<>){s?^([^\:]+\.o:)?$(OBJ)\/profile\/\1?g;print;}' >> $(DEPS)

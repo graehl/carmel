@@ -17,7 +17,16 @@ struct IntKey {
   operator int() const { return i; }
 };
 
-
+HASHNS_B
+//template <> struct hash<IntKey> { size_t operator()(IntKey i) const { return i.hash(); } };
+template<>
+struct hash<IntKey>
+{
+  size_t operator()(IntKey i) const {
+	return i.hash();
+  }
+};
+HASHNS_E
 struct State {
   List<Arc> arcs;
   int size;
@@ -56,11 +65,17 @@ struct State {
       for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
-	if ( !(list = index->find_second(l->out)) )
-	  index->add(l->out, 
-		     List<HalfArc>(&(*l)));
+#define QUEERINDEX
+#ifdef QUEERINDEX
+ 	if ( !(list = find_second(*index,(IntKey)l->out)) )
+	  index->insert(HashTable<IntKey, List<HalfArc> >::value_type((IntKey)l->out, 
+		     List<HalfArc>(&(*l))));
 	else
 	  list->push_front(&(*l));
+#else
+	list=&(*index)[l->out];
+	list->push_front(&(*l));
+#endif
       }
       return;
     }
@@ -75,10 +90,16 @@ struct State {
 #endif
     index = NEW HashTable<IntKey, List<HalfArc> >(size);
     for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
-      if ( !(list = index->find_second(l->in)) )
-	index->add(l->in, List<HalfArc>(&(*l)));
+#ifdef QUEERINDEX
+	  if ( !(list = find_second(*index,(IntKey)l->in)) )
+	index->insert(HashTable<IntKey, List<HalfArc> >::value_type(l->in, List<HalfArc>(&(*l))));
       else
-	list->push(&(*l));
+	list->push_front(&(*l));
+#else
+	list=&(*index)[l->in];
+	list->push_front(&(*l));
+#endif
+
     }
   }
   void flush() {
@@ -115,14 +136,14 @@ struct State {
       un.in = l->in;
       un.out = l->out;
       un.dest = l->dest;
-      if ( (ppWt = hWeights.find_second(un)) ) {
+      if ( (ppWt = find_second(hWeights,un)) ) {
 	**ppWt += l->weight;
 	if ( **ppWt > 1 )
 	  **ppWt = Weight((FLOAT_TYPE)1.);
 	
 	l=remove(l);
       } else {
-	hWeights.add(un, &l->weight);
+	hWeights[un]= &l->weight; // add?
 	++l;
       }
     }
@@ -165,9 +186,19 @@ struct IOPair {
   }
 };
 
+HASHNS_B
+template<>
+struct hash<IOPair>
+{
+  size_t operator()(const IOPair &x) const {
+	return x.hash();
+  }
+};
+HASHNS_E
 std::ostream & operator << (std::ostream &o, IOPair p);
 
-int operator == (IOPair l, IOPair r);
+inline bool operator == (const IOPair l, const IOPair r) { 
+  return l.in == r.in && l.out == r.out; }
 
 struct DWPair {
   int dest;

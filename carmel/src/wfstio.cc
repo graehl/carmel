@@ -99,11 +99,11 @@ WFST::WFST(const char *buf)
     symbolInNumber = in->indexOf(symbol);
     symbolOutNumber = out->indexOf(symbol);
     Assert (symbolInNumber == symbolOutNumber);
-    states.pushBack();
+    states.push_back();
     states[final].addArc(Arc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
     ++final;
   }
-  states.pushBack();                    // final state
+  states.push_back();                    // final state
 }
 
 struct ltstr // Yaser 8-3-200
@@ -167,10 +167,10 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
       maxSymbolNumber = symbolInNumber ;
   }
   if (permuteNumbers){
-    states.pushBack();                  /* final state*/
+    states.push_back();                  /* final state*/
     final = pow2((int)symbols.size())-1;
     for (int k=0; k < final; k++){
-      states.pushBack();
+      states.push_back();
       vector<bool> taken(maxSymbolNumber+1);
       for (int i = 0 ; i <= maxSymbolNumber ;++i)
         taken[i] = false ;
@@ -186,7 +186,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
   else{
     final = pow2((int)strSymbols.size())-1 ;
     for (int k=0; k <= final; k++){
-      states.pushBack();
+      states.push_back();
     }
     int temp_final = final ;
     //    vector<bool> visited(final,false);
@@ -212,13 +212,13 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                   std::cerr << "problem! didn't find "<< s << '\n';
                 }
                 else {
-                  while (from_state >= states.count()) // (from_state >= numStates()
-                    states.pushBack();
+                  while (from_state >= states.size()) // (from_state >= numStates()
+                    states.push_back();
                   if (i == strSymbols[l].length()-2)
                     to_state = k+temp ;
                   else
                     to_state =  ++temp_final ;
-                  if (from_state >= states.count())
+                  if (from_state >= states.size())
                     states.resize(from_state);
                   //              std::cerr << "adding arc (from:" << from_state << ", to:"<<to_state <<", in/out:"<<s <<"("<<in->indexOf(const_cast<char *>(s.c_str()))<<"))\n";
                   states[from_state].addArc(Arc(in->indexOf(const_cast<char *>(s.c_str())),in->indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
@@ -261,9 +261,9 @@ int WFST::getStateIndex(const char *buf) {
     }
   } else {
     st = stateNames.indexOf((char *)buf);
-    if ( st >= states.count() ) {
-      states.pushBack();
-      Assert(st + 1 == states.count());
+    if ( st >= states.size() ) {
+      states.push_back();
+      Assert(st + 1 == states.size());
     }
     return st;
   }
@@ -296,8 +296,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
     finalName.clone();
   else
     final=getStateIndex(buf);
-
-  Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
+Assert( in->find(EPSILON_SYMBOL)->second==0 && out->find(EPSILON_SYMBOL)->second==0 );
   for ( ; ; ) {
     if ( !(istr >> c) )
       break;
@@ -371,7 +370,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
           int group = 0;
           if( isdigit(c) )
             DO(istr >> group);
-          //      tieGroup.add(IntKey(int(lastAdded)), group);
+          //      tieGroup.insert(IntKey(int(lastAdded)), group);
           lastAdded->groupId = group;
         } else
           istr.putback(c);
@@ -390,7 +389,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
     }
   }
   if ( !named_states) {
-    if (!(final < count())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
+    if (!(final < size())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
 
     return 1;
   }
@@ -501,7 +500,7 @@ void WFST::writeLegible(ostream &os)
   const char *inLet, *outLet, *destState;
 
   if ( !valid() ) return;
-  Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
+Assert( in->find(EPSILON_SYMBOL)->second==0 && out->find(EPSILON_SYMBOL)->second==0 );
   os << stateName(final);
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
@@ -546,7 +545,7 @@ void WFST::listAlphabet(ostream &ostr, int output)
 
 ostream & operator << (ostream &out, Alphabet &alph)
 {
-  for ( int i = 0 ; i < alph.names.count() ; ++i )
+  for ( int i = 0 ; i < alph.names.size() ; ++i )
     out << alph.names[i] << '\n';
   return out;
 }

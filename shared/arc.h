@@ -25,7 +25,7 @@ struct UnArc {
   int in;
   int out;
   int dest;
-  int operator == (const UnArc& r) const {
+  bool operator == (const UnArc& r) const {
     return in == r.in && out == r.out && dest == r.dest;
   }
   int hash() const
@@ -33,6 +33,13 @@ struct UnArc {
     return (in * 235479241 + out * 67913 + dest) * 2654435767U;
   }
 };
-
-
+HASHNS_B
+template<>
+struct hash<UnArc>
+{
+  size_t operator()(const UnArc &x) const {
+	return x.hash();
+  }
+};
+HASHNS_E
 #endif 

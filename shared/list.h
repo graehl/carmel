@@ -48,7 +48,7 @@ public:
       ++count;
     return count;
 #else
-    return static_cast<int>(size()); 
+	return static_cast<int>(STL_LIST<T>::size()); 
 #endif
   }
   void push(const T &it) { 

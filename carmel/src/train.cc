@@ -25,16 +25,16 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
       IO.out = aI->out;
       int d = DW.dest = aI->dest;
       DW.arc = &(*aI);
-      if ( !(pLDW = IOarcs[s].find_second(IO)) )
-        pLDW = IOarcs[s].add(IO);
+      if ( !(pLDW = find_second(IOarcs[s],IO)) )
+        pLDW = &IOarcs[s][IO];
       DW.prior_counts = smoothFloor + weight_is_prior_count * aI->weight;
       // add in forward direction
       pLDW->push(DW);
 
       // reverse direction and add in reverse direction
       DW.dest = s;
-      if ( !(pLDW = revIOarcs[d].find_second(IO)) )
-        pLDW = revIOarcs[d].add(IO);
+      if ( !(pLDW = find_second(revIOarcs[d],IO)) )
+        pLDW = &revIOarcs[d][IO];
       pLDW->push(DW);
     }
   }
@@ -80,10 +80,11 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
     trn->maxOut = s.o.n;
 }
 
-#define EACHDW(a)   do {  for ( int s = 0 ; s < numStates() ; ++s ) \
-  for ( HashTable<IOPair, List<DWPair> >::const_iterator ha=trn->forArcs[s].begin(); ha!=trn->forArcs[s].end() ; ++ha ){ \
+#define EACHDW(a)   do {  for ( int s = 0 ; s < numStates() ; ++s ) {\
+  HashTable<IOPair, List<DWPair> >&hashref=trn->forArcs[s]; \
+  for ( HashTable<IOPair, List<DWPair> >::iterator ha=hashref.begin(); ha!=hashref.end() ; ++ha ){ \
                 for ( List<DWPair>::val_iterator dw=ha->second.val_begin(),dend = ha->second.val_end() ; dw !=dend ; ++dw ) {\
-                  a } } } while(0)
+				  a } } } } while(0)
 
 
 struct WeightAccum {
@@ -309,7 +310,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
 #endif
       for ( List<int>::const_iterator topI=eTopo->const_begin(),end=eTopo->const_end() ; topI != end; ++topI ) {
         s = *topI;
-        if ( (pLDW = IOarcs[s].find_second(IO)) ){
+        if ( (pLDW = find_second(IOarcs[s],IO)) ){
           for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end2 = pLDW->const_end() ; dw !=end2; ++dw ){
 #ifdef DEBUGFB
             Config::debug() << "w["<<i<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< w[i][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
@@ -329,7 +330,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
         for ( s = 0 ; s < nSt; ++s )
           wNew[s] = w[i][o][s];
         for ( s = 0 ; s < nSt; ++s ) {
-          if ( (pLDW = IOarcs[s].find_second(IO)) ){
+          if ( (pLDW = find_second(IOarcs[s],IO)) ){
             for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw )
               wNew[dw->dest] += wOld[s] * dw->weight();
           }
@@ -345,7 +346,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
         if ( o < nOut ) {
           IO.in = 0;
           IO.out = outLet[o];
-          if ( (pLDW = IOarcs[s].find_second(IO)) ){
+          if ( (pLDW = find_second(IOarcs[s],IO)) ){
             for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
               Config::debug() << "w["<<i<<"]["<<o+1<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw<<") ="<< w[i][o+1][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i][o+1][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
@@ -359,7 +360,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
           if ( i < nIn ) {
             IO.in = inLet[i];
             IO.out = outLet[o];
-            if ( (pLDW = IOarcs[s].find_second(IO)) ){
+            if ( (pLDW = find_second(IOarcs[s],IO)) ){
               for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
                 Config::debug() << "w["<<i+1<<"]["<<o+1<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw<<") ="<< w[i+1][o+1][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o+1][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
@@ -375,7 +376,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
         if ( i < nIn ) {
           IO.in = inLet[i];
           IO.out = 0;
-          if ( (pLDW = IOarcs[s].find_second(IO)) ){
+          if ( (pLDW = find_second(IOarcs[s],IO)) ){
             for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
               Config::debug() << "w["<<i+1<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw <<") ="<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
@@ -563,13 +564,13 @@ Weight WFST::train_estimate(bool delete_bad_training)
             io.in = letIn[i];
             if ( o < nOut ) { // output is also not epsilon
               io.out = letOut[o];
-              if ( (pLDW = IOarcs->find_second(io)) ){
+              if ( (pLDW = find_second(*IOarcs,io)) ){
                 for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                   dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o+1][dw->dest];
               }
             }
             io.out = epsilon_index; // output is epsilon, input is not
-            if ( (pLDW = IOarcs->find_second(io)) ){
+            if ( (pLDW = find_second(*IOarcs,io)) ){
               for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                 dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
             }
@@ -577,13 +578,13 @@ Weight WFST::train_estimate(bool delete_bad_training)
           io.in = epsilon_index; // input is epsilon
           if ( o < nOut ) { // input is epsilon, output is not
             io.out = letOut[o];
-            if ( (pLDW = IOarcs->find_second(io)) ){
+            if ( (pLDW = find_second(*IOarcs,io)) ){
               for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                 dw->scratch += f[i][o][s] * dw->weight() * b[i][o+1][dw->dest];
             }
           }
           io.out = epsilon_index; // input and output are both epsilon
-          if ( (pLDW = IOarcs->find_second(io)) ){
+          if ( (pLDW = find_second(*IOarcs,io)) ){
             for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
               dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
           }
@@ -612,7 +613,7 @@ void WFST::train_prune() {
 			bool *dead_states=NEW bool[n_states]; // blah: won't really work unless we also delete stuff from trn, so postponing
 			for (int i=0;i<n_states;++i) {
 				Weight sum=0;
-				for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
+				for ( HashTable<IOPair, List<DWPair> >::iterator ha(trn->forArcs[s]) ; ha ; ++ha ){ \
         List<DWPair>::val_iterator end = ha.val().val_end() ; \
                 for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
 				dead_states[i]=false;
@@ -731,8 +732,8 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
       IO.out = a->out;
       DW.dest = a->dest;
       DW.arc = &*a;
-      if ( !(pLDW = IOarcs[s].find_second(IO)) )
-        pLDW = IOarcs[s].add(IO);
+      if ( !(pLDW = find_second(IOarcs[s],IO)) )
+        pLDW = &IOarcs[s][IO];
       pLDW->push(DW);
     }
   }
@@ -784,15 +785,13 @@ ostream & operator << (ostream &o, IOPair p)
   return o << '(' << p.in << ' ' << p.out << ')';
 }
 
-int operator == (IOPair l, IOPair r) { return l.in == r.in && l.out == r.out; }
-
 ostream & operator << (ostream &o, DWPair p)
 {
   return o << *(p.arc)  ;
 }
 
 
-ostream & hashPrint(HashTable<IOPair, List<DWPair> > &h, ostream &o) {
+ostream & hashPrint(const HashTable<IOPair, List<DWPair> > &h, ostream &o) {  
   HashTable<IOPair,List<DWPair> >::const_iterator i=h.begin();
   if ( i==h.end() ) return o;
 goto FIRST;

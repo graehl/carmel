@@ -100,7 +100,7 @@ class WFST {
   void writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON=false);
   void writeLegible(ostream &);
   void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
-  int numStates() const { return states.count(); }
+  int numStates() const { return states.size(); }
   bool isFinal(int s) { return s==final; }
   void setPathArc(PathArc *pArc,const Arc &a) {
     pArc->in = a.in;
@@ -264,12 +264,12 @@ class WFST {
   // input or output alphabet
   const char *inLetter(int i) const {
     Assert ( i >= 0 );
-    Assert ( i < in->count() );
+    Assert ( i < in->size() );
     return (*in)[i];
   }
   const char *outLetter(int i) const {
     Assert ( i >= 0 );
-    Assert ( i < out->count() );
+    Assert ( i < out->size() );
     return (*out)[i];
   }
   const char *stateName(int i) const {
@@ -320,7 +320,7 @@ class WFST {
   
   int generate(int *inSeq, int *outSeq, int minArcs, int maxArcs);
   int valid() const { return ( final >= 0 ); }
-  int count() const { if ( !valid() ) return 0; else return numStates(); }
+  int size() const { if ( !valid() ) return 0; else return numStates(); }
   int numArcs() const {
     int a = 0;
     for (int i = 0 ; i < numStates() ; ++i )
@@ -410,7 +410,7 @@ class WFST {
 		  for ( int s = 0 ; s < numStates() ; ++s )
 				for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
 				  int group=a->groupId;
-				  if (isNormal(group) || isTied(group) && seenGroups.insert(group).second)
+				  if (isNormal(group) || isTied(group) && seenGroups.insert(HashTable<IntKey, bool>::value_type(group,true)).second)
 					f((const Weight *)&(a->weight));
 			 }
 		}
@@ -425,15 +425,15 @@ class WFST {
 //#define OLD_EACH_PARAM
 #ifdef OLD_EACH_PARAM
 						Weight *pw;
-						if (pw=tiedWeights.find_second(group))
+						if (pw=find_second(tiedWeights,group))
 							a->weight=*pw;
 						else {
 							f(&(a->weight));
 							tiedWeights.add(group,a->weight);
 						}
 #else
-	  					HashTable<IntKey, Weight>::insert_pair it;
-						if ((it=tiedWeights.insert(group)).second) {
+	  					HashTable<IntKey, Weight>::insert_return_type it;
+						if ((it=tiedWeights.insert(HashTable<IntKey, Weight>::value_type(group,0))).second) {
 						  f(&(a->weight));
 						  it.first->second = a->weight;
 						} else

@@ -43,8 +43,9 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
       indexFlush();
       return 1;
     }
-    int whichInput = (int)(states[s].index->count() * randomFloat());
-    for ( HashTable<IntKey, List<HalfArc> >::const_iterator ha = states[s].index->begin() ; ha != states[s].index->end(); ++ha )
+    int whichInput = (int)(states[s].index->size() * randomFloat());
+	const HashTable<IntKey, List<HalfArc> > &hat=*states[s].index;
+    for ( HashTable<IntKey, List<HalfArc> >::const_iterator ha = hat.begin() ; ha != hat.end(); ++ha )
       if ( !whichInput-- ) {
         Weight which = randomFloat();
         Weight cum;
@@ -89,7 +90,7 @@ namespace WFST_impl {
     WFST &wfst;
     State *state;
     State *end;
-    typedef HashTable<IntKey, List<HalfArc> >::const_iterator Cit;
+    typedef HashTable<IntKey, List<HalfArc> >::iterator Cit;
     typedef List<HalfArc>::const_iterator Cit2;
     typedef List<Arc>::val_iterator Jit;
     Cit Ci;
@@ -229,14 +230,14 @@ void WFST::normalize(NormalizeMethod method)
 #if 0
 	  const Weight w=(*g)->weight;
 					Weight *pw;
-					if ((pw=groupArcTotal.find_second(pGroup)))
+					if ((pw=find_second(groupArcTotal,pGroup)))
 						*pw += w;
 					else
-						groupArcTotal.add(pGroup,w);
-					if ((pw=groupStateTotal.find_second(pGroup)))
+						groupArcTotal[pGroup]=w;
+					if ((pw=find_second(groupStateTotal,pGroup)))
 						*pw += sum;
 					else
-						groupStateTotal.add(pGroup,sum);
+						groupStateTotal.insert[pGroup]=sum;
 #else
 					groupArcTotal[pGroup] += (*g)->weight; // default init is to 0          
  		      groupStateTotal[pGroup] += sum;
@@ -268,8 +269,8 @@ void WFST::normalize(NormalizeMethod method)
       
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
-            Weight groupNorm = *groupStateTotal.find_second(pGroup); // can be 0 if no counts at all for any states of group						
-						Weight gmax=*groupMaxLockedSum.find_second(pGroup);
+            Weight groupNorm = *find_second(groupStateTotal,(IntKey)pGroup); // can be 0 if no counts at all for any states of group						
+						Weight gmax=*find_second(groupMaxLockedSum,(IntKey)pGroup);
 						NANCHECK(gmax);
 						Weight one(1.);
 						if ( gmax > one) {
@@ -279,7 +280,7 @@ void WFST::normalize(NormalizeMethod method)
 								groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
 							NANCHECK(groupNorm);
 							
-							Weight groupTotal=*groupArcTotal.find_second(pGroup);
+							Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
 							NANCHECK(groupTotal);
 							if (!groupTotal.isZero()) // then groupNorm non0 also
 								reserved += (*g)->weight = ( groupTotal/ groupNorm);
@@ -351,7 +352,7 @@ void WFST::assignWeights(const WFST &source)
     List<Arc> &arcs = source.states[s].arcs;
     for ( List<Arc>::erase_iterator a=arcs.erase_begin(),end=arcs.erase_end(); a !=end ; ) {
       if ( isTied(pGroup = a->groupId) )
-        if ( (pWeight = groupWeight.find_second(pGroup)) )
+        if ( (pWeight = find_second(groupWeight,(IntKey)pGroup)) )
           a->weight = *pWeight;
         else {
           a=states[s].arcs.erase(a);
@@ -390,7 +391,7 @@ void WFST::invert()
   Assert(valid());
   int temp;
   in->swap(*out);
-  for ( int s = 0 ; s < states.count(); ++s ) {
+  for ( int s = 0 ; s < states.size(); ++s ) {
     for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
       //XXX should use SWAP here instead?
       temp = a->in;
@@ -638,7 +639,7 @@ void WFST::removeMarkedStates(bool marked[])
   }
   stateNames.removeMarked(marked, oldToNew);
   states.removeMarked(marked);
-  for ( i = 0 ; i < states.count() ; ++i ) {
+  for ( i = 0 ; i < states.size() ; ++i ) {
     states[i].flush();
     states[i].renumberDestinations(oldToNew);
   }
@@ -662,11 +663,11 @@ ostream & operator << (ostream &o, WFST &w) {
 }
 
 
-int WFST::indexThreshold = 128;
+int WFST::indexThreshold = 32;
 int TrioKey::aMax = 0;
 int TrioKey::bMax = 0;
 
-#ifdef CUSTOMNEW
+#ifdef HASHCUSTOMNEW
 
 const int HashEntry<IOPair,List<DWPair> >::newBlocksize = 64;
 HashEntry<IOPair,List<DWPair> > *HashEntry<IOPair,List<DWPair> >::freeList = NULL;
