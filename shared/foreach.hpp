@@ -35,6 +35,7 @@
 #include <boost/range/end.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/result_iterator.hpp>
+#include <boost/type_traits/is_const.hpp>
 #include <boost/iterator/iterator_traits.hpp>
 
 #ifndef BOOST_FOREACH_NO_CONST_RVALUE_DETECTION
@@ -128,6 +129,8 @@ struct container
     typedef BOOST_DEDUCED_TYPENAME mpl::eval_if<C,range_const_iterator<T>,range_iterator<T> >::type iterator;
 };
 
+#ifndef BOOST_FOREACH_NO_RVALUE_DETECTION
+
 template<typename T>
 inline container<T,mpl::false_> wrap(T &)
 {
@@ -139,6 +142,16 @@ inline container<T,mpl::true_> wrap(T const &)
 {
     return container<T,mpl::true_>();
 }
+
+#else
+
+template<typename T>
+inline container<T,mpl::bool_<is_const<T>::value> > wrap(T &)
+{
+    return container<T,mpl::bool_<is_const<T>::value> >();
+}
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // convert
