@@ -24,6 +24,18 @@ using namespace std;
 
 ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
 
+class WFST;
+struct PathArc {
+  //const char *in;
+  //const char *out;
+  //const char *destState;
+  int in,out,destState;
+  const WFST *wfst;
+  Weight weight;
+};
+
+std::ostream & operator << (std::ostream & o, const PathArc &p);
+
 
 
 class WFST {
@@ -69,6 +81,7 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
 
   bool ownerIn;
   bool ownerOut;
+  bool named_states;
   Alphabet *in;
   Alphabet *out;
   Alphabet stateNames;
@@ -87,10 +100,11 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
   int numStates() const { return states.count(); }
   bool isFinal(int s) { return s==final; }
   void setPathArc(PathArc *pArc,const Arc &a) {
-	  pArc->in = inLetter(a.in);
-	 pArc->out = outLetter(a.out);
-	  pArc->destState = stateName(a.dest);
+	  pArc->in = a.in;
+	 pArc->out = a.out;
+	  pArc->destState = a.dest;
 	 pArc->weight = a.weight;
+	 pArc->wfst=this;
   }
   std::ostream & printArc(const Arc &a,std::ostream &o) {
     PathArc p;
@@ -162,7 +176,7 @@ public:
 			states[s].scaleArcs(w);
 		}
 	}
-  WFST() { initAlphabet(); }
+  WFST() { initAlphabet(); named_states=0;}
 //  WFST(const WFST &a): 
     //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))), 
     //stateNames(a.stateNames), final(a.final), states(a.states), 
@@ -240,20 +254,24 @@ template <class I> int randomPath(I i,int max_len=-1)
   List<int> *symbolList(const char *buf, int output=0) const;   
   // takes space-separated symbols and returns a list of symbol numbers in the
   // input or output alphabet
-  const char *inLetter(int i) {
+  const char *inLetter(int i) const {
     Assert ( i >= 0 );
     Assert ( i < in->count() );
     return (*in)[i];
   }
-  const char *outLetter(int i) {
+  const char *outLetter(int i) const {
     Assert ( i >= 0 );
     Assert ( i < out->count() );
     return (*out)[i];
   }
-  const char *stateName(int i) {
+  const char *stateName(int i) const {
+    static char ibuf[30];
     Assert ( i >= 0 );
     Assert ( i < numStates() );
-    return stateNames[i];
+	if (named_states)
+		return stateNames[i];
+	else
+		return itoa(i,ibuf,20);
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
@@ -346,8 +364,11 @@ template <class I> int randomPath(I i,int max_len=-1)
     }
   }
   void unNameStates() {
-    stateNames.~Alphabet();
-    PLACEMENT_NEW (&stateNames) Alphabet();
+	  if (named_states) {
+		stateNames.~Alphabet();
+		named_states=false;
+		PLACEMENT_NEW (&stateNames) Alphabet();
+	  }
   }
 
   void clear() {

@@ -2,7 +2,7 @@ features:
 training with conditional normalization - option to leave alone or assign uniform weights to arcs with zero counts for some input leaving some state (but often people like zeroing out unused arcs for pruning?)
 attach and preserve arbitrary labels to arcs (states already have their arbitrary names)
 'wildcard', 'except-state' and 'except-global' label for arcs - for input or output not seen leaving the state, or at all
-external vocabulary files?
+external dictionary files?  numbered state file format?  binary format?
 option to iteratively sum paths with e-cycles for -S and -t.  use matrix math (e-paths of length 0,1,2,3... = 1+A^1+A^2+ ...)
 
 code:

@@ -1,9 +1,9 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
-//#define STRINGPOOL //share strings (refcount) globally - buggy
+#define STRINGPOOL 
+// reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
-// options affecting a bunch of code:
 //#define DEBUG
 
 // use singly linked list
@@ -20,7 +20,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
-#define INITLEAK _CrtMemState s1, s2, s3; do { _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG|_CRTDBG_MODE_FILE );_CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR ); _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );} while(0)
+#define INITLEAK _CrtMemState s1, s2, s3; do { _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG|_CRTDBG_MODE_FILE );_CrtSetReportFile( _CRT_ERROR, _CRTDBG_FILE_STDERR ); _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );} while(0)
 #define CHECKLEAK(i) do {  _CrtMemCheckpoint( (((i)%2)?&s1:&s2) ); if ((i)>0) { _CrtMemDifference( &s3, (((i)%2)?&s2:&s1), (((i)%2)?&s1:&s2) ); _CrtMemDumpStatistics( &s3 );} } while(0)
 #define NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #else
@@ -31,11 +31,11 @@
 #define DEBUGLEAK
 #define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
-//#define DEBUGNORMALIZE
+#define DEBUGNORMALIZE
 //#define DEBUGKBEST
-//#define DEBUGPRUNE
+#define DEBUGPRUNE
 //#define DEBUGFB
-//#define DEBUGCOMPOSE
+#define DEBUGCOMPOSE
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-4
 #else
 #define NEW new

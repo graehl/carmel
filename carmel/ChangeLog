@@ -1,3 +1,8 @@
+2003-03-28  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/strhash.h: fixed STRINGPOOL, added named_states flag
+	(stateName not thread-safe if unnamed states)
+
 2003-03-27  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/finite.cc: ownalphabet in compose chain - copies (rather

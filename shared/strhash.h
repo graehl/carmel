@@ -26,11 +26,12 @@ public:
     str = empty;
   }
   operator char * () { return str; }
-  char * operator =(char * c) { char *t = str; str = c; return t; }
+  char * operator =(char * c) { char *t = str; str = c; return t; } // returns old value: why?
   int operator == ( const StringKey &a ) const
   {
     return !strcmp(str, a.str);
   }
+  bool isGlobalEmpty() const { return str == empty; }
   int hash() const
   {
     char *x = str;
@@ -74,9 +75,10 @@ public:
     Entry<StringKey, int> *entryP;
     if ( s.str != StringKey::empty && (entryP = counts.findEntry(s)) ) {
       Assert(entryP->val > 0);
+	  Assert(s.str == entryP->key.str);
       if ( !(--(entryP->val)) ) {
-	((StringKey &)(entryP->key)).kill();
-	counts.remove(s);
+		counts.remove(s);
+		s.kill();
       }
     }
 #else
@@ -142,7 +144,11 @@ public:
       return ret;
     }
   }
-  const char * operator[](int pos) {
+  const char * operator[](int pos) const {
+	  //Assert(pos < count() && pos >= 0);
+	  return names[pos];
+  }
+  const char * operator()(int pos) {
     static char buf[10] = "012345678"; // to put end of string character at buf[9]
     int iNum = pos;
     if (iNum >= count() || names[iNum] == StringKey::empty ) {

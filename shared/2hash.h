@@ -45,7 +45,7 @@ public:
       freeList = freeList->next;
       return ret;
     }
-    freeList = (Entry<K,V> *)::operator NEW(newBlocksize * sizeof(Entry<K,V>));
+    freeList = (Entry<K,V> *)::operator new(newBlocksize * sizeof(Entry<K,V>));
     freeList->next = NULL;
     max = freeList + newBlocksize -1;
     for ( ret = freeList++; freeList < max ; ret = freeList++ )

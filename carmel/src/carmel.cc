@@ -18,7 +18,7 @@
 //#define MEMDEBUG              // checks heap at every allocation ; slow
 #endif
 
-#define VERSION "2.1"  ;
+#define VERSION "2.2"  ;
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
   if ( flags['B'] )
@@ -97,13 +97,14 @@ void outWithoutQuotes(const char *str, ostream &out) {
 void printPath(bool *flags,const List<PathArc> *pli) {
   Weight w = 1.0;
   const char * outSym;
-  for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li ) {
 
+  for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li ) {
+	const WFST *f=li->wfst;
     if ( flags['O'] || flags['I'] ) {
       if ( flags['O'] )
-        outSym = li->out;
+        outSym = f->outLetter(li->out);
       else
-        outSym = li->in;
+        outSym = f->inLetter(li->in);
       if ( !(flags['E'] && isSpecial(outSym)) ) {
         if ( flags['Q'] )
           outWithoutQuotes(outSym, cout);
@@ -418,7 +419,7 @@ main(int argc, char *argv[]){
       ++input_lineno;
 
       if (!flags['q'])
-        Config::log() << "Input line " << input_lineno << ": " << buf.c_str() << " - ";
+        Config::log() << "Input line " << input_lineno << ": " << buf.c_str();
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "\nprocessing input line " << input_lineno << ": " << buf.c_str() << " storing in chain[" << nTarget << "]\n";
 #endif
@@ -453,6 +454,7 @@ main(int argc, char *argv[]){
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
+	  // composition happens here:
       WFST *next = NEW WFST((r ? chain[i] : *result), (r ? *result : chain[i]), flags['m'], flags['a']);
 #ifndef NODELETE
       if (nTarget != -1) {
@@ -479,7 +481,7 @@ main(int argc, char *argv[]){
       int q_states=result->count();
       int q_arcs=result->numArcs();
       if (!flags['q'])
-        Config::log() << "(" << result->count() << " states / " << result->numArcs() << " arcs";
+        Config::log() << "\n\t(" << result->count() << " states / " << result->numArcs() << " arcs";
 #ifdef  DEBUGCOMPOSE
       Config::debug() <<"stats for the resulting composition for chain[" << i << "]\n";
       Config::debug() << "Number of states in result: " << result->count() << '\n';
@@ -498,20 +500,26 @@ main(int argc, char *argv[]){
         }
         goto nextInput;
       }
+	  bool finalcompose = i == (r ? 0 : nInputs-1);
       MINIMIZE;
       if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
         Config::log()  << " reduce-> " << result->count() << "/" << result->numArcs();
-      q_states=result->count();
-      q_arcs=result->numArcs();
-      PRUNE;
-      if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
-        Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
+	  if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
+	      q_states=result->count();
+		q_arcs=result->numArcs();
+		PRUNE;
+		if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
+	        Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
+	  }
+      if (!flags['q'])
+        Config::log() << ")";
     }
+      if (!flags['q'])
+		  Config::log() << std::endl;
+
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
-      if (!flags['q'])
-        Config::log() << ")"<< std::endl;
 
       if ( flags['v'] )
         result->invert();
