@@ -76,7 +76,7 @@ static int getString(istream &in, char *buf)
 
 WFST::WFST(const char *buf) : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL)
 {
-  istrstream line(buf);
+  istringstream line(buf);
   char symbol[4096];
   int symbolInNumber, symbolOutNumber;
   final = 0;
@@ -116,7 +116,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in
 // Generate a permutation lattice for a given string 
 {
   length = 0 ;
-  istrstream line(buf);
+  istringstream line(buf);
   char symbol[4096];
   vector<int> symbols;
   vector<string> strSymbols;
@@ -395,7 +395,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
 {
   List<int> *ret = new List<int>;
   //  ListIter<int> ins(*ret);
-  istrstream line(buf);
+  istringstream line(buf);
   char symbol[4096];
   Alphabet *alph;
   if ( output )
