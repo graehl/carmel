@@ -17,7 +17,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
-#include <strstream>
+#include <sstream>
 #include <iostream>
 #include "2hash.h"
 #include "list.h"
