@@ -151,7 +151,11 @@ template <>
 	  JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
 	  NONE // 
   } ;
-  Weight train(const int iter,NormalizeMethod method=CONDITIONAL,Weight *oldPerplexity = NULL); // returns max change in any arcs weight - Yaser 7-13-2000, oldPerplexity gives perplexity of training set = Nth root of product of model probabilities of N-weight training examples
+//     newPerplexity = train_estimate();
+//	lastChange = train_maximize(method);
+  Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns per-example perplexity of training set = Nth root of product of model probabilities of N-weight training examples  - optionally deletes training examples that have no accepting path
+  void undo_train_scale(void); // undoes the previous delta_scale, restoring weights to what they would be under standard EM
+  Weight train_maximize(NormalizeMethod method=CONDITIONAL,Weight delta_scale=1); // normalize and apply delta*delta_scale (then normalize again), returning maximum change
   WFST(const WFST &a) {}
 public:
 	void index(int dir) {
@@ -291,7 +295,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
   void trainBegin(NormalizeMethod method=CONDITIONAL,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
   void trainExample(List<int> &inSeq, List<int> &outSeq, float weight);
-  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
+  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,float learning_rate_growth_factor,NormalizeMethod method=CONDITIONAL);
   // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
 
   void invert();		// switch input letters for output letters

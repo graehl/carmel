@@ -177,6 +177,7 @@ struct DWPair {
   int dest;
   Arc *arc;
   Weight scratch;
+  Weight em_weight;
   Weight counts;
   Weight prior_counts;
   Weight &weight() const { return arc->weight; }

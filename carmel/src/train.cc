@@ -80,14 +80,14 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
     trn->maxOut = s.o.n;
 }
 
-#define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
+#define EACHDW(a)   do {  for ( int s = 0 ; s < numStates() ; ++s ) \
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
         List<DWPair>::val_iterator end = ha.val().val_end() ; \
                 for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
                   a } } } while(0)
 
 
-void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,NormalizeMethod method)
+void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, float learning_rate_growth_factor, NormalizeMethod method)
 {
   Assert(trn);
   int i, o, nSt = numStates();
@@ -111,10 +111,13 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   Weight lastPerplexity;
   lastPerplexity.setInfinity();
 
-  int s;
   if ( trn->totalEmpiricalWeight > 0 ) {
     EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
   }
+
+  float learning_rate=1;
+  Weight pp_ratio;
+  lastChange.setInfinity();
   for ( ; ; ) {
     Weight newPerplexity;
     ++giveUp;
@@ -122,26 +125,48 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
       Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << converge_arc_delta << " was met - greatest arc weight change was " << lastChange << "\n";
       break;
     }
-    lastChange = train(giveUp,method,&newPerplexity);
+#ifdef DEBUGTRAIN
+  Config::debug() << "Starting iteration: " << giveUp << '\n';
+#endif
 
+    newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
 
-    Config::log() << "Training iteration " << giveUp << ": largest weight change was " << lastChange << " with per-observation perplexity = " << newPerplexity ;
+    Config::log() << "i=" << giveUp << " (scale=" << learning_rate << "): per-observation perplexity = " << newPerplexity ;
+	
     if ( lastPerplexity.isInfinity() ) {
       Config::log() << std::endl;
+	  pp_ratio.setZero();
     } else {
-      Weight pp_ratio = newPerplexity/lastPerplexity;
-      Config::log() << " (perplexity ratio = " << pp_ratio << ")" << std::endl;
-      if (  pp_ratio >= converge_perplexity_ratio ) {
-        Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << giveUp << " iterations.\n";
+      pp_ratio = newPerplexity/lastPerplexity; //TODO: take 1/log(newPerplexity)th root? i.e. from EM delta=(L'-L)/abs(L')
+														// we already scale for L' by dividing by #observations.  could go either way.
+	  Config::log() << " (perplexity ratio = " << pp_ratio << "), max{d(weight)}=" << lastChange << std::endl;
+	}
+
+    if (  pp_ratio >= converge_perplexity_ratio ) {
+	    if ( learning_rate > 1 )
+			goto RESET_RATE;
+		Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << giveUp << " iterations.\n";
         break;
-      }
-    }
-    lastPerplexity = newPerplexity;
-    if ( lastChange <= converge_arc_delta ) {
-      Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << giveUp << " iterations.\n";
-      break;
+	} else {
+		#define MAX_LEARNING_RATE_EXP 20
+		if (learning_rate < MAX_LEARNING_RATE_EXP)
+			learning_rate *= learning_rate_growth_factor;
     }
 
+	lastChange = train_maximize(method,learning_rate);
+
+	if (lastChange <= converge_arc_delta ) {
+			Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << giveUp << " iterations.\n";
+			break;
+	}
+
+    lastPerplexity=newPerplexity;
+
+	continue;
+RESET_RATE:
+	Config::log() << "Failed to improve; reset learning rate to 1 and undid last iteration" << std::endl;
+	learning_rate=1;
+	undo_train_scale();
   }
 
   delete[] trn->forArcs;
@@ -347,12 +372,17 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 #endif
 }
 
-Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
+void WFST::undo_train_scale(void)
+{
+	EACHDW(dw->weight() = dw->em_weight;);
+}
+
+Weight WFST::train_estimate(bool delete_bad_training)
 {
   Assert(trn);
   int i, o, s, nIn, nOut, *letIn, *letOut;
 
-  // for perplex
+  // for perplexity
   Weight prodModProb = 1;
 
   Weight ***f = trn->f;
@@ -360,9 +390,6 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
   HashTable <IOPair, List<DWPair> > *IOarcs;
   List<DWPair> * pLDW;
   IOPair io;
-#ifdef DEBUGTRAIN
-  Config::debug() << "Starting iteration: " << iter << '\n';
-#endif
   EACHDW(dw->counts.setZero(););
 
   List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
@@ -413,17 +440,18 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 #ifdef DEBUGTRAIN
     Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif
-    if ( !(fin.isPositive()) ) {
-      Config::warn() << "No accepting path in transducer for input/output:\n";
-      for ( i = 0 ; i < nIn ; ++i )
-        Config::warn() << (*in)[seq->i.let[i]] << ' ';
-      Config::warn() << '\n';
-      for ( o = 0 ; o < nOut ; ++o )
-        Config::warn() << (*out)[seq->o.let[o]] << ' ';
-      Config::warn() << '\n';
-      seq=trn->examples.erase(seq); // should be ok because ++ is evaluated before erase is called
-      continue;
-    }
+	if (delete_bad_training)
+		if ( !(fin.isPositive()) ) {
+		Config::warn() << "No accepting path in transducer for input/output:\n";
+		for ( i = 0 ; i < nIn ; ++i )
+			Config::warn() << (*in)[seq->i.let[i]] << ' ';
+		Config::warn() << '\n';
+		for ( o = 0 ; o < nOut ; ++o )
+			Config::warn() << (*out)[seq->o.let[o]] << ' ';
+		Config::warn() << '\n';
+		seq=trn->examples.erase(seq);
+		continue;
+		}
 #ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
     Weight fin2 = b[0][0][0];
 #ifdef DEBUGTRAIN
@@ -477,9 +505,17 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
     prodModProb *= (fin^seq->weight); // since perplexity = 2^((-1/n)*sum(log2 prob)), we can take prod(prob)^(1/n) instead
     ++seq;
   } // end of while(training examples)
-  if (perplex)
-    *perplex = root(prodModProb ^ (-1 / trn->totalEmpiricalWeight),trn->totalEmpiricalWeight); // return per-symbol perplexity.  simplify to root(prodModProb,-trn->totalEmpiricalWeight * trn->totalEmpiricalWeight) ?
+  
+    return root(prodModProb ^ (-1 / trn->totalEmpiricalWeight),trn->totalEmpiricalWeight); // return per-symbol perplexity.  simplify to root(prodModProb,-trn->totalEmpiricalWeight * trn->totalEmpiricalWeight) ?
+	
+}
+
+Weight WFST::train_maximize(WFST::NormalizeMethod method,Weight delta_scale)
+{
+ Assert(trn);
+
   int pGroup;
+
 #define DUMPDW  do { for ( s = 0 ; s < numStates() ; ++s ) \
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
       List<DWPair>::const_iterator end = ha.val().const_end() ; \
@@ -489,23 +525,19 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
         Config::debug() << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
       } \
         } } while(0)
+  
 #ifdef DEBUGTRAINDETAIL
-  Config::debug() << "\nWeights before tied groups\n";
+  Config::debug() << "\nWeights before prior smoothing\n";
   DUMPDW;
 #endif
-  for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
-      for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),end=ha.val().val_end() ; dw !=end; ++dw )
-        if ( !isLocked(pGroup = (dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
-#ifdef DEBUGTRAINDETAIL
-          Config::debug() << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
-#endif
+EACHDW (
+  if ( !isLocked(pGroup = (dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
           //Weight &w=dw->weight();
           dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
           //Weight &counts = dw->counts;
           dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
         }
-    }
+ );
 #ifdef DEBUGTRAINDETAIL
   Config::debug() << "\nWeights before normalization\n";
   DUMPDW;
@@ -515,21 +547,32 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
   Config::debug() << "\nWeights after normalization\n";
   DUMPDW;
 #endif
-  // find maximum change for convergence
+  // find maximum change for convergence (and scale change by delta_scale)
   Weight change, maxChange;
-  for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
-      for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),end = ha.val().val_end() ; dw != end; ++dw )
-        if (!isLocked(pGroup = (dw->arc)->groupId) ) {
-          if ( dw->scratch > dw->weight() )
-            change = dw->scratch - dw->weight();
-          else
-            change = dw->weight() - dw->scratch;
-          if ( change > maxChange )
-            maxChange = change;
-        }
-    }
-  return maxChange;
+  EACHDW(
+	   dw->em_weight = dw->weight();
+       if ( !isLocked((dw->arc)->groupId) )
+   	      dw->weight() = dw->scratch * (
+				(dw->weight() / dw->scratch) ^ delta_scale.getReal());
+  );
+    
+  if (delta_scale != 1)
+	  normalize(method);
+
+  EACHDW(
+	  if (!isLocked(pGroup = (dw->arc)->groupId) ) {
+  	  	    if (dw->weight() > dw->scratch) {
+				change = dw->weight() - dw->scratch;
+			//	dw->weight() = dw->scratch + delta_scale*change;
+			} else {
+				change = dw->scratch - dw->weight();
+				//dw->weight() = dw->scratch - delta_scale*change;
+			}
+			if ( change > maxChange )
+				maxChange = change;			
+	  }
+  );
+  return maxChange; // TODO: recompute change after delta_scale/normalize?
 }
 
 Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
