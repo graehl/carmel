@@ -1,3 +1,7 @@
+// unused letters: -K -Y -U -o -q
+// -w w = prune paths ratio (1 = keep only best path, 10 = keep paths up to 10 times worse)
+// -z n = keep at most n states
+
 #include <iostream>
 #include <fstream>
 #include <cctype>
@@ -154,6 +158,10 @@ main(int argc, char *argv[]){
   int pruneFlag = 0;
   int floorFlag = 0;
   bool seedFlag = false;
+  int max_states = WFST::UNLIMITED;
+  Weight keep_path_ratio = Weight::INFINITY;
+  bool wrFlag = false;
+  bool msFlag = false;
   int nGenerate = 0;
   int maxTrainIter = 256;
 #define DEFAULT_MAX_GEN_ARCS 1000
@@ -162,12 +170,16 @@ main(int argc, char *argv[]){
   int labelFlag = 0;
   ostream *fstout = &cout;
   for ( i = 1 ; i < argc ; ++i ) {
-    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag)
+    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
       while ( *(++pc) ) {
         if ( *pc == 'k' )
           kPaths = -1;
-                else if ( *pc == 'X' )
+        else if ( *pc == 'X' )
           converge_pp_flag=true;
+		else if ( *pc == 'w' )
+			wrFlag=true;
+		else if ( *pc == 'z' )
+			msFlag=true;
         else if ( *pc == 'R' )
           seedFlag=true;
         else if ( *pc == 'F' )
@@ -204,6 +216,14 @@ main(int argc, char *argv[]){
           } else if (seedFlag) {
         seedFlag=false;
         readParam(&seed,argv[i],'R');
+      } else if ( wrFlag ) {
+        readParam(&keep_path_ratio,argv[i],'w');
+		if (keep_path_ratio < 1)
+			keep_path_ratio = 1;
+      } else if ( msFlag ) {
+        readParam(&max_states,argv[i],'z');
+        if ( max_states < 1 )
+          max_states = 1;
       } else if ( kPaths == -1 ) {
         readParam(&kPaths,argv[i],'k');
         if ( kPaths < 1 )
@@ -235,6 +255,7 @@ main(int argc, char *argv[]){
         readParam(&prune,argv[i],'p');
       } else if ( fstout == NULL ) {
         fstout = new ofstream(argv[i]);
+		setOutputFormat(flags,fstout);
         if ( !*fstout ) {
           std::cerr << "Could not create file " << argv[i] << ".\n";
           return -8;
@@ -242,8 +263,10 @@ main(int argc, char *argv[]){
       } else
         parm[nParms++] = argv[i];
   }
+  bool prune = flags['w'] || flags['z'];
   srand(seed);
   setOutputFormat(flags,&cout);
+  setOutputFormat(flags,&cerr);
   WFST::setIndexThreshold(thresh);
   if ( flags['h'] ) {
     WFSTformatHelp();
@@ -322,7 +345,7 @@ main(int argc, char *argv[]){
   }
   WFST *chainMemory = (WFST*)::operator new(nInputs * sizeof(WFST));
   WFST *chain = chainMemory;
-  int nTarget = -1;
+  int nTarget = -1; // input sequence assigned to this transducer in chain
   if ( flags['i'] || flags['b']||flags['P']) // flags['P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
     if ( flags['r'] )
       nTarget = nInputs-1;
@@ -349,7 +372,7 @@ main(int argc, char *argv[]){
   string buf ;
 
   WFST *result = NULL;
-  WFST *weightSource = NULL;
+  WFST *weightSource = NULL; // assign waits from this transducer to result by tie groups
   if ( flags['A'] ) {
     --nInputs;
     if ( !flags['r'] ) {
@@ -382,15 +405,26 @@ main(int argc, char *argv[]){
         std::cerr << "Couldn't handle input line: " << buf << "\n";
         return -3;
       }
-    }
+	}
+
+#define PRUNE do { \
+        if ( flags['p'] ) \
+          result->pruneArcs(prune); \
+		if ( prune ) \
+		  result->prunePaths(max_states,keep_path_ratio); \
+       } while(0)
+
+#define MINIMIZE do { \
+		if ( flags['C'] ) \
+          result->consolidateArcs(); \
+        if ( !flags['d'] ) \
+		result->reduce(); \
+       } while(0)
+
+	result = chain;
     if ( flags['r'] ) {
       result = &chain[nInputs-1];
-      if ( flags['C'] )
-        result->consolidateArcs();
-      if ( flags['p'] )
-        result->pruneArcs(prune);
-      if ( !flags['d'] )
-        result->reduce();
+		MINIMIZE;
 #ifdef  DEBUGCOMPOSE
       std::cerr << "result is chain[" << nTarget <<"]\n";
 #endif
@@ -402,14 +436,11 @@ main(int argc, char *argv[]){
 #ifndef NODELETE
         next->ownAlphabet();
         if (nTarget != -1 &&  (result !=  &chain[nTarget]) ){
-#ifdef DEBUFCOMPOSE
+#ifdef DEBUGCOMPOSE
           std::cerr << "deleting result\n";
 #endif
           delete result;
         }
-#ifdef DEBUGCOMPOSE
-        std::cerr << "copying next into result\n";
-#endif
 #endif
         result = next;
 #ifdef  DEBUGCOMPOSE
@@ -430,25 +461,16 @@ main(int argc, char *argv[]){
           }
           goto nextInput;
         }
-        if ( flags['C'] )
-          result->consolidateArcs();
-        if ( flags['p'] )
-          result->pruneArcs(prune);
-        if ( !flags['d'] )
-          result->reduce();
-      }
+	MINIMIZE;
+	PRUNE;
+	  }
 #ifdef  DEBUGCOMPOSE
       std::cerr << "done chain of compositions  .. now processing result\n";
 #endif
     }  // end of flag['r'] - right-to-left composition
     else { // left-to-right composition
       result = &chain[0];
-      if ( flags['C'] )
-        result->consolidateArcs();
-      if ( flags['p'] )
-        result->pruneArcs(prune);
-      if ( !flags['d'] )
-        result->reduce();
+	MINIMIZE;
       for ( i = 1 ; i < nInputs && result->valid() ; ++i ) {
         WFST *next = new WFST(*result, chain[i], flags['m'], flags['a']);
 #ifndef NODELETE
@@ -466,14 +488,11 @@ main(int argc, char *argv[]){
           }
           goto nextInput;
         }
-        if ( flags['C'] )
-          result->consolidateArcs();
-        if ( flags['p'] )
-          result->pruneArcs(prune);
-        if ( !flags['d'] )
-          result->reduce();
+	MINIMIZE;
+	PRUNE;
       } // end of chain compositions - now result points to the final composition
     } // end of left to right composition
+	}
     if ( flags['v'] )
       result->invert();
     if ( flags['n'] )
@@ -588,14 +607,8 @@ main(int argc, char *argv[]){
           result->trainExample(empty_list, empty_list, 1.0);
         }
                 result->trainFinish(converge, converge_pp_ratio, smoothFloor, maxTrainIter, norm_method);
-        if ( flags['p'] ) {
-          result->pruneArcs(prune);
-          result->normalize(norm_method);
-        }
-        result->reduce();
       } else if ( nGenerate > 0 ) {
-        if ( flags['d'] )
-          result->reduce();
+        MINIMIZE;
         //        if ( !flags['n'] )
         //        result->normalize(norm_method);
         if ( maxGenArcs == 0 )
@@ -633,9 +646,18 @@ main(int argc, char *argv[]){
           delete[] outSeq;
         }
       }
+		
+		PRUNE;
+		if ( flags['t'] )
+			if (flags['p'] || prune) ) {
+				result->normalize(norm_method);
+			}
+		  MINIMIZE;
+        }
+        
+
           if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
-                setOutputFormat(flags,fstout);
-        *fstout << *result;
+				*fstout << *result;
           }
       break;
     }
@@ -873,7 +895,7 @@ void WFSTformatHelp(void)
   cout << "\" is a number between 0 and 2, representing the state in an\nim";
   cout << "plicit intermediate transducer used to eliminate redundant paths";
   cout << " using empty\n(*e*) transitions.\n\nWhen -k number-of-paths is u";
-  cout << "sed without limiting the output with -i or -o,\npaths are displa";
+  cout << "sed without limiting the output with -I or -O,\npaths are displa";
   cout << "yed as a list of space-separated, parenthesized arcs:\n\n(input-";
   cout << "symbol : output-symbol / weight -> destination-state) \n\nfollow";
   cout << "ed by the path weight (the product of the weights in the sequenc";
