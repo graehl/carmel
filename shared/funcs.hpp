@@ -23,6 +23,7 @@
 
 #include <functional>
 #include <algorithm>
+#include <boost/random.hpp>
 
 
 // requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
@@ -471,23 +472,32 @@ inline std::string random_alpha_string(unsigned len) {
     return s.get();
 }
 
-//FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
-inline double random_pos_fraction() // returns uniform random number on (0..1]
-{
-    return ((double)std::rand()+1.) *
-        (1. / ((double)RAND_MAX+1.));
-}
+typedef boost::uniform_01<boost::lagged_fibonacci607> G_rdist;
+#ifdef MAIN
+boost::lagged_fibonacci607 g_rng;
+G_rdist g_r01(g_rng);
+//boost::variate_generator<boost::lagged_fibonacci607,G_rdist > g_rangen01(g_rng,g_r01);
+#else
+extern boost::lagged_fibonacci607 g_rng;
+extern G_rdist g_r01;
+//extern boost::variate_generator<boost::lagged_fibonacci607,boost::uniform_01> g_rangen01;
+#endif
 
+//FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
 inline double random_nonneg_lt_one() // returns uniform random number on [0..1)
 {
-    return ((double)std::rand()) *
-        (1. /((double)RAND_MAX+1.));
+//    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
+    return g_r01();
 }
 
-inline double random_nonneg_lteq_one() // returns uniform random number on [0..1]
+inline double random_pos_fraction() // returns uniform random number on (0..1]
 {
-    return ((double)std::rand()) *
-        (1. / ((double)RAND_MAX));
+#ifdef  USE_STD_RAND
+    return ((double)std::rand()+1.) *
+        (1. / ((double)RAND_MAX+1.));
+#else
+    return 1.-random_nonneg_lt_one();
+#endif
 }
 
 struct set_one {
