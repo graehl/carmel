@@ -20,6 +20,7 @@ struct NormalizeGroups {
     typedef PointerOffset<W> value_type; // pointer offsets
     typedef FixedArray<value_type> Group;
     typedef FixedArray<Group> Groups;
+    typedef typename value_type::template indirect_iterator<typename Group::iterator> indirect_iterator;
     Groups norm_groups;
 //    value_type max_offset;
     #ifdef NORMALIZE_SEEN
@@ -36,7 +37,7 @@ struct NormalizeGroups {
     }
     Group *find_group_holding(value_type v) {
         for (typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();i!=e;++i)
-            if (std::find(i->begin(),i->end(),v))
+            if (std::find(i->begin(),i->end(),value_type(v)))
                 return &(*i);
         return NULL;
     }

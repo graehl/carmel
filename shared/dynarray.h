@@ -152,6 +152,7 @@ template <typename T,typename Alloc=std::allocator<T> > class Array : protected 
     public:
       enum { REPLACE=0, APPEND=1 };
     enum { BRIEF=0, MULTILINE=1 };
+    enum { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print_on and bool 2nd arg ...
 
 //    operator T*() const { return vec; }
   bool invariant() const {
@@ -200,7 +201,7 @@ void swap(Array<T,Alloc> &a) {
         }
 
   template <class charT, class Traits>
-        std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
+  std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false) const
   {
         return range_print_on(o,begin(),end(),DefaultWriter(),multiline);
   }

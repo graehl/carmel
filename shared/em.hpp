@@ -90,7 +90,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
 //        exec.maximize(1); // may not be desireable if you wanted just 1 iteration to compute counts = inside*outside but you should do that outside this framework
         for ( ; ; ) {
             ++train_iter;
-            DBP(train_iter);DBPSCOPE;
+            DBP(train_iter);DBP_SCOPE;
             if ( train_iter > max_iter ) {
                 logs << "Maximum number of iterations (" << max_iter << ") reached before convergence criteria was met - greatest param weight change was " << max_delta_param << "\n";
                 break;
