@@ -335,9 +335,10 @@ struct size_accum {
     size_accum() : size(0),max_size(0) {}
     template <class T>
     void operator()(const T& t) {
-        size += t.size();
-        if (max_size < size)
-            max_size = size;
+        Size tsize=t.size();
+        size += tsize
+        if (max_size < tsize)
+            max_size = tsize;
     }
     Size total() const
     {

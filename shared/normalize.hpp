@@ -87,7 +87,7 @@ struct NormalizeGroups {
     void print_stats(std::ostream &out=std::cerr) const {
         unsigned npar=num_params();
         unsigned ng=num_groups();
-        out << ng << " normalization groups, "  << npar<<" parameters, "<<(float)npar/ng<<" average parameters/group, "<<max_params()<< "max.";
+        out << ng << " normalization groups, "  << npar<<" parameters, "<<(float)npar/ng<<" average parameters/group, "<<max_params()<< " max.";
     }
     void operator ()(Group &i) {
         GIt end=i.end(), beg=i.begin();
