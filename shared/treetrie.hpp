@@ -61,7 +61,7 @@ struct tree_trie {
   /// creates a path through trie for pattern t, returning final state index
   /// note get_symbol returns Symbol::ZERO if the symbol is a wildcard
   /// (currently only supported for leaves in lhs, but works here generally
-  /// F: (where,Tree *)
+  /// F: (where,Tree *) - should be like F[where] = Tree *
   /// boost::reference<array_mapper<Tree<L> *> > works fine as an F
   template <class L,class F>
   V insert(Tree<L> *t, F f) {
@@ -78,7 +78,7 @@ struct tree_trie {
   V insert_expand(Tree<L> *t,V node, F f) {
     unsigned where=nextwhere++;
     deref(f)(where,t);
-    unsigned rank=t->rank();
+    unsigned rank=t->rank;
     L &lab=t->label;
     typedef typename Tree<L>::iterator child_it;
     if (rank) { // rule internal node
@@ -93,7 +93,7 @@ struct tree_trie {
       // recursively expand children:
       V subtree_end_state;
       for(child_it i=t->begin(),e=t->end();i!=e;++i) {
-        subtree_end_state=insert_expand(*i,node);
+          subtree_end_state=insert_expand(*i,node,f);
       }
       return subtree_end_state;
     } else { // leaf:
@@ -108,7 +108,9 @@ struct tree_trie {
   MatchF match_functor;
 
   ///FIXME: haven't implemented any_symbol lookups
-  // visits match_functor(node,where_subtrees.begin()) at every trie node.  F should keep track of lists of matching rules at each node
+
+  // visits match_functor(node,where_subtrees.begin()) at every trie node.  f
+  // should keep track of lists of matching rules at each node
   void match(MTree *t, MatchF f) {
     V *np=index.find(index.begin(),t->label);
     if (np) {
