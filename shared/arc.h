@@ -16,7 +16,10 @@ struct Arc {
 };
 
 
-std::ostream & operator << (std::ostream &out,const Arc &a); // Yaser 7-20-2000
+inline ostream & operator << (ostream &out,const Arc &a) {
+  out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
+  return(out);
+}
 
 typedef Arc *HalfArc;
 
