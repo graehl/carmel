@@ -83,6 +83,7 @@ static int getString(istream &in, char *buf)
 
 WFST::WFST(const char *buf)
 {
+  named_states=0;
   initAlphabet();
   istringstream line(buf);
   char symbol[4096];
@@ -123,6 +124,7 @@ bool isNumber(const char * p){
 WFST::WFST(const char *buf, int &length,bool permuteNumbers)
 // Generate a permutation lattice for a given string
 {
+  named_states=0;
   initAlphabet();
   length = 0 ;
   istringstream line(buf);

@@ -189,7 +189,7 @@ WFST(istream & istr,bool alwaysNamed=false) {
       final = -1;
   }
 
-  WFST(string str, bool alwaysNamed=false){
+  WFST(const string &str, bool alwaysNamed){
     initAlphabet();
     if (!this->readLegible(str,alwaysNamed))
       final = -1;
