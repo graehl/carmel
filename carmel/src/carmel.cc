@@ -95,7 +95,7 @@ void outWithoutQuotes(const char *str, ostream &out) {
 void printPath(bool *flags,const List<PathArc> *pli) {
   Weight w = 1.0;
   const char * outSym;
-  for (List<PathArc>::const_iterator li=pli->begin(); li != pli->end(); ++li ) {
+  for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li ) {
 
     if ( flags['O'] || flags['I'] ) {
       if ( flags['O'] )
@@ -518,7 +518,7 @@ main(int argc, char *argv[]){
       if ( result->valid() ) {
         List <List<PathArc> > *bestPaths = result->bestPaths(kPaths);
         Assert(bestPaths);
-        for ( List<List<PathArc> >::const_iterator pli=bestPaths->begin()  ; pli != bestPaths->end(); ++pli, ++nGoodPaths )
+        for ( List<List<PathArc> >::const_iterator pli=bestPaths->const_begin(),end=bestPaths->const_end()  ; pli != end; ++pli, ++nGoodPaths )
           printPath(flags,&*pli);
         delete bestPaths;
       }

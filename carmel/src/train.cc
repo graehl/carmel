@@ -20,8 +20,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
     trn->revArcs = new HashTable<IOPair, List<DWPair> >[numStates()];
   int s;
   for ( s = 0 ; s < numStates() ; ++s ){
-    List<Arc>::iterator end = states[s].arcs.end();
-    for ( List<Arc>::iterator aI=states[s].arcs.begin() ; aI != end; ++aI ) {
+    for ( List<Arc>::const_iterator aI=states[s].arcs.const_begin(),end=states[s].arcs.const_end(); ; aI != end; ++aI ) {
       IO.in = aI->in;
       IO.out = aI->out;
       int d = DW.dest = aI->dest;
@@ -83,8 +82,8 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
 
   #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
-        List<DWPair>::iterator end = ha.val().end() ; \
-		for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) {\
+        List<DWPair>::iterator end = ha.val().val_end() ; \
+		for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
 		  a } } } while(0)
 
 
@@ -151,8 +150,8 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   delete trn->revETopo;
 #ifdef N_E_REPS
 #endif
-  List<IOSymSeq>::iterator end = trn->examples.end() ;
-  for ( List<IOSymSeq>::iterator seq=trn->examples.begin() ; seq !=end ; ++seq )
+  List<IOSymSeq>::iterator end = trn->examples.val_end() ;
+  for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin() ; seq !=end ; ++seq )
     seq->kill();
 
   for ( i = 0 ; i <= maxIn ; ++i ) {
@@ -197,18 +196,16 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
       for ( s = 0 ; s < nSt; ++s )
         wNew[s] = w[i][o][s];
 #endif
-      List<int>::const_iterator end = eTopo->end();
-      for ( List<int>::const_iterator topI=eTopo->begin() ; topI != end; ++topI ) {
+      for ( List<int>::const_iterator topI=eTopo->const_begin(),end=eTopo->const_end() ; topI != end; ++topI ) {
         s = *topI;
         if ( (pLDW = IOarcs[s].find(IO)) ){
-          List<DWPair>::iterator end2 = pLDW->end();
-          for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW !=end2; ++iDW ){
+          for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end2 = pLDW->const_end() ; dw !=end2; ++dw ){
 #ifdef DEBUGFB
-            Config::debug() << "w["<<i<<"]["<<o<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *iDW<<") ="<< w[i][o][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i][o][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+            Config::debug() << "w["<<i<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< w[i][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
 #endif
-            w[i][o][iDW->dest] += w[i][o][s] * iDW->weight();
+            w[i][o][dw->dest] += w[i][o][s] * dw->weight();
 #ifdef DEBUGFB
-            Config::debug() << w[i][o][iDW->dest] << '\n';
+            Config::debug() << w[i][o][dw->dest] << '\n';
 #endif
           }
         }
@@ -221,10 +218,9 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
         for ( s = 0 ; s < nSt; ++s )
           wNew[s] = w[i][o][s];
         for ( s = 0 ; s < nSt; ++s ) {
-          if ( (pLDW = IOarcs[s].find(IO)) ){
-            List<DWPair>::const_iterator end = pLDW->end();
-            for ( List<DWPair>::const_iterator iDW=pLDW->begin() ; iDW != end; ++iDW )
-              wNew[iDW->dest] += wOld[s] * iDW->weight();
+          if ( (pLDW = IOarcs[s].find(IO)) ){            
+            for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw )
+              wNew[dw->dest] += wOld[s] * dw->weight();
           }
         }
       }
@@ -239,14 +235,13 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
           IO.in = 0;
           IO.out = outLet[o];
           if ( (pLDW = IOarcs[s].find(IO)) ){
-            List<DWPair>::iterator end = pLDW->end();
-            for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW != end; ++iDW ){
+            for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
-              Config::debug() << "w["<<i<<"]["<<o+1<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW<<") ="<< w[i][o+1][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i][o+1][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+              Config::debug() << "w["<<i<<"]["<<o+1<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw<<") ="<< w[i][o+1][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i][o+1][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
 #endif
-              w[i][o+1][iDW->dest] += w[i][o][s] * iDW->weight();
+              w[i][o+1][dw->dest] += w[i][o][s] * dw->weight();
 #ifdef DEBUGFB
-              Config::debug() << w[i][o+1][iDW->dest] << '\n';
+              Config::debug() << w[i][o+1][dw->dest] << '\n';
 #endif
             }
           }
@@ -254,14 +249,13 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
             IO.in = inLet[i];
             IO.out = outLet[o];
             if ( (pLDW = IOarcs[s].find(IO)) ){
-              List<DWPair>::iterator end = pLDW->end();
-              for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW != end; ++iDW ){
+              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
-                Config::debug() << "w["<<i+1<<"]["<<o+1<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW<<") ="<< w[i+1][o+1][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i+1][o+1][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+                Config::debug() << "w["<<i+1<<"]["<<o+1<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw<<") ="<< w[i+1][o+1][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o+1][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
 #endif
-                w[i+1][o+1][iDW->dest] += w[i][o][s] * iDW->weight();
+                w[i+1][o+1][dw->dest] += w[i][o][s] * dw->weight();
 #ifdef DEBUGFB
-                Config::debug() << w[i+1][o+1][iDW->dest] << '\n';
+                Config::debug() << w[i+1][o+1][dw->dest] << '\n';
 #endif
               }
             }
@@ -271,14 +265,13 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
           IO.in = inLet[i];
           IO.out = 0;
           if ( (pLDW = IOarcs[s].find(IO)) ){
-            List<DWPair>::iterator end = pLDW->end();
-            for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW !=end; ++iDW ){
+              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
-              Config::debug() << "w["<<i+1<<"]["<<o<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW <<") ="<< w[i+1][o][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i+1][o][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+              Config::debug() << "w["<<i+1<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw <<") ="<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
 #endif
-              w[i+1][o][iDW->dest] += w[i][o][s] * iDW->weight();
+              w[i+1][o][dw->dest] += w[i][o][s] * dw->weight();
 #ifdef DEBUGFB
-              Config::debug() << w[i+1][o][iDW->dest] << '\n';
+              Config::debug() << w[i+1][o][dw->dest] << '\n';
 #endif
             }
           }
@@ -442,24 +435,21 @@ EACHDW(dw->scratch.setZero(););
             if ( o < nOut ) { // output is not epsilon
               io.out = letOut[o];
               if ( (pLDW = IOarcs->find(io)) ){
-                List<DWPair>::iterator end =  pLDW->end();
-                for ( List<DWPair>::iterator dw=pLDW->begin() ; dw !=end; ++dw )
+                for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
                   dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o+1][dw->dest];
               }
             }
             io.out = 0; // output only is epsilon
             if ( (pLDW = IOarcs->find(io)) ){
-              List<DWPair>::iterator end = pLDW->end()  ;
-              for ( List<DWPair>::iterator dw= pLDW->begin() ; dw !=end; ++dw )
-                dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
+              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
+				  dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
             }
           }
           io.in = 0; // input is epsilon
           if ( o < nOut ) { // input only is epsilon
             io.out = letOut[o];
             if ( (pLDW = IOarcs->find(io)) ){
-              List<DWPair>::iterator end = pLDW->end()  ;
-              for ( List<DWPair>::iterator dw=pLDW->begin() ; dw !=end ; ++dw )
+              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
                 dw->scratch += f[i][o][s] * dw->weight() * b[i][o+1][dw->dest];
             }
           }
@@ -478,8 +468,8 @@ EACHDW(dw->scratch.setZero(););
   int pGroup;
 #define DUMPDW  do { for ( s = 0 ; s < numStates() ; ++s ) \
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
-      List<DWPair>::const_iterator end = ha.val().end() ; \
-      for ( List<DWPair>::const_iterator dw=ha.val().begin() ; dw !=end; ++dw ){ \
+      List<DWPair>::const_iterator end = ha.val().const_end() ; \
+      for ( List<DWPair>::const_iterator dw=ha.val().const_begin() ; dw !=end; ++dw ){ \
         if ( isTiedOrLocked(pGroup = (dw->arc)->groupId) ) \
           Config::debug() << pGroup << ' ' ; \
         Config::debug() << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
@@ -538,11 +528,11 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   int *pi;
   pi = inLet;
   
-  for ( List<int>::const_iterator inL=inSeq.begin(), end = inSeq.end() ; inL != end; ++inL )
+  for ( List<int>::const_iterator inL=inSeq.const_begin(), end = inSeq.const_end() ; inL != end; ++inL )
     *pi++ = *inL;
   pi = outLet;
   
-  for ( List<int>::const_iterator outL=outSeq.begin(),end = outSeq.end() ; outL != end; ++outL )
+  for ( List<int>::const_iterator outL=outSeq.const_begin(),end = outSeq.const_end() ; outL != end; ++outL )
     *pi++ = *outL;
 
   HashTable<IOPair, List<DWPair> > *IOarcs =

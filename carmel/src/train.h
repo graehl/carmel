@@ -53,8 +53,8 @@ index(NULL) { }
 	return;
 #endif
       index = new HashTable<IntKey, List<HalfArc> >(size);
-      for ( List<Arc>::const_iterator l=arcs.begin() ; 
-	    l != arcs.end() ; 
+      for ( List<Arc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; 
+	    l != end  ; 
 	    ++l ) {
 	if ( !(list = index->find(l->out)) )
 	  index->add(l->out, 
@@ -74,7 +74,7 @@ index(NULL) { }
       return;
 #endif
     index = new HashTable<IntKey, List<HalfArc> >(size);
-    for ( List<Arc>::const_iterator l=arcs.begin(),end=arcs.end() ; l != end ; ++l ) {
+    for ( List<Arc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l != end ; ++l ) {
       if ( !(list = index->find(l->in)) )
 	index->add(l->in, List<HalfArc>(&(*l)));
       else
@@ -145,8 +145,7 @@ index(NULL) { }
 	  }
   void renumberDestinations(int *oldToNew) { // negative means remove transition
     Assert(!index);
-    List<Arc>::iterator l=arcs.begin();
-    while ( l != arcs.end() ) {
+    for (List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
       int &dest = (int &)l->dest;
       if ( oldToNew[dest] < 0 ) {
 		l=remove(l); 
@@ -209,11 +208,11 @@ struct IOSymSeq {
     int *pi, *rpi;
     pi = i.let;
     rpi = i.rLet + i.n;
-    for ( List<int>::const_iterator inL=inSeq.begin() ; inL != inSeq.end() ; ++inL )
+    for ( List<int>::const_iterator inL=inSeq.const_begin(),end=inSeq.const_end() ; inL != end ; ++inL )
       *pi++ = *--rpi = *inL;
     pi = o.let;
     rpi = o.rLet + o.n;
-    for ( List<int>::const_iterator outL=outSeq.begin() ; outL != outSeq.end() ; ++outL )
+    for ( List<int>::const_iterator outL=outSeq.const_begin(),end=outSeq.const_end() ; outL != end ; ++outL )
       *pi++ = *--rpi = *outL;
     weight = w;
   }
