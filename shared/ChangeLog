@@ -1,5 +1,9 @@
 2005-03-30  Jonathan Graehl  <graehl@isi.edu>
 
+	* dynarray.h: for reading arrays terminated by EOF, forgot to
+	change undo_push_back_raw to pop_back (pop_back not being done
+	meant an extra 0 in sortpercent)
+
 	* weight.h: set 15 digits if double, 7 digits if float
 
 2005-03-29  Jonathan Graehl  <graehl@isi.edu>
