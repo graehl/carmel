@@ -8,7 +8,7 @@
 *******************************************************************************/
 
 #include "weight.h"
-
+const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
 // ~6 * ln 10 
 #define LN_6_DECIMAL_DIGITS 13
 

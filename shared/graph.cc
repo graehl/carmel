@@ -126,7 +126,7 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
 
 float *DistToState::weights = NULL;
 DistToState **DistToState::stateLocations = NULL;
-float DistToState::unreachable = HUGE_FLOAT;
+float DistToState::unreachable = Weight::HUGE_FLOAT;
 
 inline bool operator < (DistToState lhs, DistToState rhs) {
   return DistToState::weights[lhs.state] > DistToState::weights[rhs.state];
@@ -162,7 +162,7 @@ Graph shortestPathTree(Graph g, int dest, float *dist)
   float *weights = dist;
   int i;
   for ( i = 0 ; i < nStates ; ++i ) {
-    weights[i] = HUGE_FLOAT;
+	  weights[i] = Weight::HUGE_FLOAT;
   }
   
   DistToState **stateLocations = new DistToState *[nStates];
@@ -187,7 +187,7 @@ Graph shortestPathTree(Graph g, int dest, float *dist)
 
   float candidate;
   for ( ; ; ) {
-    if ( (float)distQueue[0] == HUGE_FLOAT || nUnknown == 0 ) {
+	  if ( (float)distQueue[0] == Weight::HUGE_FLOAT || nUnknown == 0 ) {
       break;
     }
     int targetState, activeState = distQueue[0].state;

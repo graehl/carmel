@@ -296,7 +296,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
   int nStates = lG.nStates;
   GraphState *sub = new GraphState[nStates];
   for ( int i = 0 ; i < nStates ; ++i )
-    if ( dist[i] != HUGE_FLOAT ){
+   if ( dist[i] != Weight::HUGE_FLOAT ){
        List<GraphArc>::const_iterator end = lG.states[i].arcs.end();
       for ( List<GraphArc>::const_iterator l=lG.states[i].arcs.begin() ; l != end; ++l ) {
 	Assert(i == l->source);
@@ -308,7 +308,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
 	    break;
 	  }
 	if ( !isShort )
-	  if ( dist[l->dest] != HUGE_FLOAT ) {
+	 if ( dist[l->dest] != Weight::HUGE_FLOAT ) {
 	    GraphArc w = *l;
 	    w.weight = w.weight - (dist[i] - dist[w.dest]);
 	    sub[i].arcs.push(w);

@@ -55,8 +55,6 @@ struct Weight {			// capable of representing nonnegative reals
   }
 };
 
-const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
-
 std::ostream& operator << (std::ostream &o, Weight weight);
 
 std::istream& operator >> (std::istream &i, Weight &weight);
