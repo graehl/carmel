@@ -1,6 +1,7 @@
 #include <vector>
 #include "kbest.h"
 #include "node.h"
+#include "config.h"
 
 Graph sidetracks;
 GraphHeap **pathGraph;
@@ -97,18 +98,20 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   int nStates = numStates();
   Assert(valid());
 
-#ifdef DEBUGKBEST
-  cout << "Calling KBest on WFST with k: "<<k<<'\n';
-#endif
 
   List<List<PathArc> > *paths = new List<List<PathArc> >;
   //List<List<PathArc> >::iterator insertHere=paths->begin();
 
   Graph graph = makeGraph();
+#ifdef DEBUGKBEST
+  Config::debug() << "Calling KBest on WFST with k: "<<k<<'\n' << graph;
+#endif
+  
   float *dist = new float[nStates];
-  Graph shortPathGraph;
-  shortPathGraph.states = new GraphState[nStates];
-  shortestPathTree(graph, shortPathGraph.states, final, dist);
+  Graph shortPathGraph = shortestPathTreeTo(graph, final,dist);
+  #ifdef DEBUGKBEST
+  Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
+#endif
   shortPathTree = shortPathGraph.states;
 
   if ( shortPathTree[0].arcs.notEmpty() || final == 0 ) {
@@ -134,7 +137,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
         cout << "printing trees\n";
         for ( int i = 0 ; i < nStates ; ++i )
           printTree(pathGraph[i], 0);
-        cout << "done printing trees\n";
+        cout << "done printing trees\n\n";
 #endif
         EdgePath *pathQueue = new EdgePath[4 * (k+1)];  // out-degree is at most 4
         EdgePath *endQueue = pathQueue;
@@ -176,7 +179,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
             top = last;
           }
 #ifdef DEBUGKBEST
-          cout << '\n';
+          cout << "\n\n";
 #endif
           List<PathArc> temp;
           //List<PathArc>::iterator fullPath=temp.begin();

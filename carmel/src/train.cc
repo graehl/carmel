@@ -43,7 +43,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method) {
 	t.order_crucial();
 	int b = t.get_n_back_edges();
 	if ( b > 0 )
-		*WFST::warn << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
+		Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
 	delete[] eGraph.states;
   }
   trn->revETopo = new List<int>;
@@ -57,7 +57,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method) {
   trn->maxIn = trn->maxOut = 0;
   trn->totalEmpiricalWeight = 0;
 #ifdef DEBUGTRAIN
-  *WFST::debug << "Just after training setup "<< *this ;
+  Config::debug() << "Just after training setup "<< *this ;
 #endif
 }
 
@@ -103,26 +103,26 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
     Weight newPerplexity;
     ++giveUp;
     if ( giveUp > maxTrainIter ) {
-      *WFST::log  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << converge_arc_delta << " was met - greatest arc weight change was " << lastChange << "\n";
+      Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << converge_arc_delta << " was met - greatest arc weight change was " << lastChange << "\n";
       break;
     }
     lastChange = train(giveUp,method,&newPerplexity);
 	
 	
-	*WFST::log << "Training iteration " << giveUp << ": largest weight change was " << lastChange << " with per-observation perplexity = " << newPerplexity ;
+	Config::log() << "Training iteration " << giveUp << ": largest weight change was " << lastChange << " with per-observation perplexity = " << newPerplexity ;
 	if ( lastPerplexity.isInfinity() ) {
-		*WFST::log << std::endl;
+		Config::log() << std::endl;
 	} else {
 		Weight pp_ratio = newPerplexity/lastPerplexity;
-		*WFST::log << " (perplexity ratio = " << pp_ratio << ")" << std::endl;
+		Config::log() << " (perplexity ratio = " << pp_ratio << ")" << std::endl;
 	 if (  pp_ratio >= converge_perplexity_ratio ) {
-      *WFST::log << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << giveUp << " iterations.\n";
+      Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << giveUp << " iterations.\n";
       break;
       }
 	}
 	lastPerplexity = newPerplexity;
     if ( lastChange <= converge_arc_delta ) {
-      *WFST::log << "Converged - maximum weight change less than " << converge_arc_delta << " after " << giveUp << " iterations.\n";
+      Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << giveUp << " iterations.\n";
       break;
     }
 
@@ -172,7 +172,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
   for ( i = 0 ; i <= nIn ; ++i )
     for ( o = 0 ; o <= nOut ; ++o ) {
 #ifdef DEBUGFB
-      *WFST::debug <<"("<<i<<","<<o<<")\n";
+      Config::debug() <<"("<<i<<","<<o<<")\n";
 #endif
       IO.in = 0;
       IO.out = 0;
@@ -187,11 +187,11 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
           List<DWPair>::iterator end2 = pLDW->end();
           for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW !=end2; ++iDW ){
 #ifdef DEBUGFB
-            *WFST::debug << "w["<<i<<"]["<<o<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *iDW<<") ="<< w[i][o][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i][o][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+            Config::debug() << "w["<<i<<"]["<<o<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *iDW<<") ="<< w[i][o][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i][o][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
 #endif
             w[i][o][iDW->dest] += w[i][o][s] * iDW->weight();
 #ifdef DEBUGFB
-            *WFST::debug << w[i][o][iDW->dest] << '\n';
+            Config::debug() << w[i][o][iDW->dest] << '\n';
 #endif
           }
         }
@@ -225,11 +225,11 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
             List<DWPair>::iterator end = pLDW->end();
             for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW != end; ++iDW ){
 #ifdef DEBUGFB
-              *WFST::debug << "w["<<i<<"]["<<o+1<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW<<") ="<< w[i][o+1][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i][o+1][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+              Config::debug() << "w["<<i<<"]["<<o+1<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW<<") ="<< w[i][o+1][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i][o+1][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
 #endif
               w[i][o+1][iDW->dest] += w[i][o][s] * iDW->weight();
 #ifdef DEBUGFB
-              *WFST::debug << w[i][o+1][iDW->dest] << '\n';
+              Config::debug() << w[i][o+1][iDW->dest] << '\n';
 #endif
             }
           }
@@ -240,11 +240,11 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
               List<DWPair>::iterator end = pLDW->end();
               for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW != end; ++iDW ){
 #ifdef DEBUGFB
-                *WFST::debug << "w["<<i+1<<"]["<<o+1<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW<<") ="<< w[i+1][o+1][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i+1][o+1][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+                Config::debug() << "w["<<i+1<<"]["<<o+1<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW<<") ="<< w[i+1][o+1][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i+1][o+1][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
 #endif
                 w[i+1][o+1][iDW->dest] += w[i][o][s] * iDW->weight();
 #ifdef DEBUGFB
-                *WFST::debug << w[i+1][o+1][iDW->dest] << '\n';
+                Config::debug() << w[i+1][o+1][iDW->dest] << '\n';
 #endif
               }
             }
@@ -257,11 +257,11 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
             List<DWPair>::iterator end = pLDW->end();
             for ( List<DWPair>::iterator iDW=pLDW->begin() ; iDW !=end; ++iDW ){
 #ifdef DEBUGFB
-              *WFST::debug << "w["<<i+1<<"]["<<o<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW <<") ="<< w[i+1][o][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i+1][o][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
+              Config::debug() << "w["<<i+1<<"]["<<o<<"]["<<iDW->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *iDW <<") ="<< w[i+1][o][iDW->dest] <<" + " << w[i][o][s] <<" * "<< iDW->weight() <<" = "<< w[i+1][o][iDW->dest] <<" + " << w[i][o][s] * iDW->weight() <<" = ";
 #endif
               w[i+1][o][iDW->dest] += w[i][o][s] * iDW->weight();
 #ifdef DEBUGFB
-              *WFST::debug << w[i+1][o][iDW->dest] << '\n';
+              Config::debug() << w[i+1][o][iDW->dest] << '\n';
 #endif
             }
           }
@@ -280,11 +280,11 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 {
   Assert(trn);
 #ifdef DEBUGFB
-  *WFST::debug << "training example: \n"<<s << "\nForward\n" ;
+  Config::debug() << "training example: \n"<<s << "\nForward\n" ;
 #endif
   sumPaths(nSt, 0, trn->f, trn->forArcs, trn->forETopo, s.i.n, s.i.let, s.o.n, s.o.let);
 #ifdef DEBUGFB
-  *WFST::debug << "\nBackward\n";
+  Config::debug() << "\nBackward\n";
 #endif
   sumPaths(nSt, final, trn->b, trn->revArcs, trn->revETopo, s.i.n, s.i.rLet, s.o.n, s.o.rLet);
   int i;
@@ -305,20 +305,20 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
       w[i][nOut - o] = temp;
     }
 #ifdef DEBUGTRAINDETAIL // Yaser 7-20-2000
-  *WFST::debug << "\nForwardProb/BackwardProb:\n";
+  Config::debug() << "\nForwardProb/BackwardProb:\n";
   for (i = 0 ;i<= nIn ; ++i){
     for (int o = 0 ; o <= nOut ; ++o){
-		*WFST::debug << i << ':' << o << " (" ;
+		Config::debug() << i << ':' << o << " (" ;
       for (int s = 0 ; s < nSt ; ++s){
-        *WFST::debug << trn->f[i][o][s] <<'/'<<trn->b[i][o][s];
+        Config::debug() << trn->f[i][o][s] <<'/'<<trn->b[i][o][s];
         if (s < nSt-1)
-          *WFST::debug << ' ' ;
+          Config::debug() << ' ' ;
       }
-	  *WFST::debug <<')'<<std::endl;
+	  Config::debug() <<')'<<std::endl;
       if(o < nOut-1)
-        *WFST::debug <<' ' ;
+        Config::debug() <<' ' ;
     }
-	*WFST::debug <<std::endl;
+	Config::debug() <<std::endl;
   }
 #endif
 }
@@ -337,7 +337,7 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
   List<DWPair> * pLDW;
   IOPair io;
 #ifdef DEBUGTRAIN
-  *WFST::debug << "Starting iteration: " << iter << '\n';
+  Config::debug() << "Starting iteration: " << iter << '\n';
 #endif
   #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
@@ -360,61 +360,61 @@ List<IOSymSeq>::iterator seq=trn->examples.begin() ;
 #define EXAMPLES_PER_DOT 10
 #define EXAMPLES_PER_NUMBER (70*EXAMPLES_PER_DOT)
     if (train_example_no % EXAMPLES_PER_DOT == 0)
-      *WFST::log << '.' ;
+      Config::log() << '.' ;
     if (train_example_no % EXAMPLES_PER_NUMBER == 0)
-      *WFST::debug << train_example_no << '\n' ;
+      Config::debug() << train_example_no << '\n' ;
 //#endif
     nIn = seq->i.n;
     nOut = seq->o.n;
     forwardBackward(*seq, trn, numStates(), final);
 #ifdef DEBUGTRAIN
-    *WFST::debug << '\n';
+    Config::debug() << '\n';
     for ( i = 0 ; i < nIn ; ++i ) {
-      *WFST::debug << (*in)[seq->i.let[i]] << ' ' ;
+      Config::debug() << (*in)[seq->i.let[i]] << ' ' ;
       for ( o = 0 ; o < nOut ; ++o ) {
-        *WFST::debug << (*out)[seq->o.let[o]] << ' ' ;
-        *WFST::debug << '(' << f[i][o][0];
+        Config::debug() << (*out)[seq->o.let[o]] << ' ' ;
+        Config::debug() << '(' << f[i][o][0];
         for ( s = 1 ; s < numStates() ; ++s ) {
-          *WFST::debug << ' ' << f[i][o][s];
+          Config::debug() << ' ' << f[i][o][s];
         }
-        *WFST::debug << ") ";
+        Config::debug() << ") ";
       }
-      *WFST::debug << "\t\t";
+      Config::debug() << "\t\t";
       for ( o = 0 ; o < nOut ; ++o ) {
-        *WFST::debug << (*out)[seq->o.let[o]] << ' ' ;
-        *WFST::debug << '(' << b[i][o][0];
+        Config::debug() << (*out)[seq->o.let[o]] << ' ' ;
+        Config::debug() << '(' << b[i][o][0];
         for ( s = 1 ; s < numStates() ; ++s ) {
-          *WFST::debug << ' ' << b[i][o][s];
+          Config::debug() << ' ' << b[i][o][s];
         }
-        *WFST::debug << ") ";
+        Config::debug() << ") ";
       }
-      *WFST::debug << '\n';
+      Config::debug() << '\n';
     }
 #endif
     Weight fin = f[nIn][nOut][final];
 #ifdef DEBUGTRAIN
-        *WFST::debug<<"Forward prob = " << fin << std::endl;
+        Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif
     if ( !(fin.isPositive()) ) {
-      *WFST::warn << "No accepting path in transducer for input/output:\n";
+      Config::warn() << "No accepting path in transducer for input/output:\n";
       for ( i = 0 ; i < nIn ; ++i )
-        *WFST::warn << (*in)[seq->i.let[i]] << ' ';
-      *WFST::warn << '\n';
+        Config::warn() << (*in)[seq->i.let[i]] << ' ';
+      Config::warn() << '\n';
       for ( o = 0 ; o < nOut ; ++o )
-        *WFST::warn << (*out)[seq->o.let[o]] << ' ';
-      *WFST::warn << '\n';
+        Config::warn() << (*out)[seq->o.let[o]] << ' ';
+      Config::warn() << '\n';
       trn->examples.erase(seq++); // should be ok because ++ is evaluated before erase is called
       continue;
     }
 #ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
     Weight fin2 = b[0][0][0];
 #ifdef DEBUGTRAIN
-        *WFST::debug<<"Backward prob = " << fin2 << std::endl;
+        Config::debug()<<"Backward prob = " << fin2 << std::endl;
 #endif
 	double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
     double e = ratio - 1;
     if ( e > ALLOWED_FORWARD_OVER_BACKWARD_EPSILON )
-		*WFST::warn << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
+		Config::warn() << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
 #endif
 
     letIn = seq->i.let;
@@ -471,12 +471,12 @@ EACHDW(dw->scratch.setZero(););
       List<DWPair>::const_iterator end = ha.val().end() ; \
       for ( List<DWPair>::const_iterator dw=ha.val().begin() ; dw !=end; ++dw ){ \
         if ( isTiedOrLocked(pGroup = (dw->arc)->groupId) ) \
-          *WFST::debug << pGroup << ' ' ; \
-        *WFST::debug << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
+          Config::debug() << pGroup << ' ' ; \
+        Config::debug() << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
       } \
         } } while(0)
 #ifdef DEBUGTRAINDETAIL
-  *WFST::debug << "\nWeights before tied groups\n";
+  Config::debug() << "\nWeights before tied groups\n";
   DUMPDW;
 #endif
   for ( s = 0 ; s < numStates() ; ++s )
@@ -485,7 +485,7 @@ EACHDW(dw->scratch.setZero(););
       for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end; ++dw )
         if ( !isLocked(pGroup = (dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
 #ifdef DEBUGTRAINDETAIL
-          *WFST::debug << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
+          Config::debug() << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
 #endif
                   //Weight &w=dw->weight();
           dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
@@ -494,12 +494,12 @@ EACHDW(dw->scratch.setZero(););
         }
     }
 #ifdef DEBUGTRAINDETAIL
-  *WFST::debug << "\nWeights before normalization\n";
+  Config::debug() << "\nWeights before normalization\n";
   DUMPDW;
 #endif
   normalize(method);
 #ifdef DEBUGTRAINDETAIL
-  *WFST::debug << "\nWeights after normalization\n";
+  Config::debug() << "\nWeights after normalization\n";
   DUMPDW;
 #endif
   // find maximum change for convergence
@@ -564,7 +564,7 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   t.order_crucial();
   int b = t.get_n_back_edges();
 	if ( b > 0 )
-		*WFST::warn << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
+		Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
     delete[] eGraph.states;
   }
 

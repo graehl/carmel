@@ -106,13 +106,23 @@ inline bool operator == (DistToState lhs, DistToState rhs);
 
 inline bool operator == (DistToState lhs, float rhs);
 
-void shortestPathTree(Graph g, GraphState *pathTree,int dest, float *dist);
-// computes best paths from each state to a single destination
-// if pathTree == NULL, only compute weights (stored in dist)
-//  otherwise, store arc used for state s in pathTree[s]
+Graph shortestPathTreeTo(Graph g, int dest, float *dist);
+	// returns graph (need to delete[] ret.states yourself)
+	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
+
+void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken=NULL);
+// computes best paths from single source to all other states
+// if taken == NULL, only compute weights (stored in dist)
+//  otherwise, store pointer to arc taken to get to state s in taken[s]
+
 
 Graph removeStates(Graph g, bool marked[]); // not tested
 
 void printGraph(Graph g, std::ostream &out);
+
+inline std::ostream & operator << (std::ostream &out, const Graph &g) {
+	printGraph(g,out);
+	return out;
+}
 
 #endif
