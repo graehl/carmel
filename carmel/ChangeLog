@@ -1,5 +1,7 @@
 2002-12-16  Jonathan Graehl  <graehl@isi.edu>
 
+	* src/wfstio.cc: implemented -Y (GraphViz)
+
 	* src/2hash.h: moved static pool allocator stuff into #ifdef
 	CUSTOMNEW and tested with/without it defined
 

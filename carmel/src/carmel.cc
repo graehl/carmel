@@ -521,17 +521,18 @@ main(int argc, char *argv[]){
       if ( result->valid() ) {
         List <List<PathArc> > *bestPaths = result->bestPaths(kPaths);
         Assert(bestPaths);
-        for ( List<List<PathArc> >::const_iterator pli=bestPaths->const_begin(),end=bestPaths->const_end()  ; pli != end; ++pli, ++nGoodPaths )
-          printPath(flags,&*pli);
+		for ( List<List<PathArc> >::const_iterator pli=bestPaths->const_begin(),end=bestPaths->const_end()  ; pli != end; ++pli, ++nGoodPaths )
+          printPath(flags,&*pli);		  
+		
         delete bestPaths;
       }
-      /*      for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
-              if ( !flags['W'] )
+            for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
+             if ( !flags['W'] )
               cout << 0;
-              cout << "\n";
+             cout << "\n";
 
-              }
-      */
+            }
+      
     } else if ( flags['x'] ) {
       result->listAlphabet(cout, 0);
     } else if ( flags['y'] ) {

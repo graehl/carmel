@@ -6,6 +6,17 @@
 
 #define DO(x)  { if (!(x)) return 0; }
 
+#define BOOLBRIEF bool brief = (os.iword(arcformat_index) == BRIEF)
+#define OUTARCWEIGHT(os,a) 		do { int pGroup = (a)->groupId; \
+        if ( !brief || pGroup >= 0 || (a)->weight != 1.0 ) \
+          os << " " << (a)->weight; \
+        if ( pGroup >= 0 ) { \
+          os << '!'; \
+          if ( pGroup > 0) \
+            os << pGroup; \
+		} } while(0)
+
+
 static int pow2(int exp)
 {
         return 1 << exp;
@@ -341,14 +352,83 @@ int WFST::readLegible(istream &istr)
   }
 }
 
+static ostream & writeQuoted(ostream &os,const char *s) {
+	os << '"';
+	for (;*s;++s) {
+		if (*s == '\\')
+			os << '\\' << '\\';
+		else {
+			if (*s == '"')
+				os << '\\';
+			os << *s;
+		}
+	}
+	os << '"';
+	return os;
+}
+
+/*
+Uppercase Epsilon is:  &#917;
+Lowercase epsilon is:  &#949;
+*/
 void WFST::writeGraphViz(ostream &os)
 {
-	os << "digraph\n";
+	if ( !valid() ) return;
+	const char *newl = ";\n\t";
+	const char * const invis_start="invis_start [shape=plaintext,label=\"\"]";
+	const char * const invis_start_name="invis_start";
+	const char * const prelude="digraph G {\n";
+	const char * const coda = ";\n}\n";
+	const char * const final_border = "peripheries=2";
+	const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
+	const char * const arrow = " -> ";
+	const char * const open = " [";
+	const char sep = ',';
+	const char close = ']';
+	const char * const label = "label=";
+
+	os << prelude;
+	os << invis_start;
+	os << newl << state_shape;
+
+	// make sure final state gets double circle
+	os << newl;
+	writeQuoted(os,stateName(final));
+	os << open << final_border << close;
+
+	// arc from invisible start to real start
+	os << newl << invis_start_name << arrow;
+	writeQuoted(os,stateName(0));
+
+	for (int s = 0 ; s < numStates() ; s++) {
+	    for (List<Arc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
+			os << newl;
+			writeQuoted(os,stateName(s));
+			os << arrow;
+			writeQuoted(os,stateName(a->dest));
+			os << open << label;
+			ostringstream arclabel;
+			writeArc(arclabel,*a);
+			writeQuoted(os,arclabel.str().c_str());
+			os << close;
+		}
+	}
+
+	os << coda;
+}
+
+#define GREEK_EPSILON 0
+
+void WFST::writeArc(ostream &os, const Arc &a) {
+	static const char * const epsilon = "&#949";
+	os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
+			BOOLBRIEF;
+			OUTARCWEIGHT(os,&a);
 }
 
 void WFST::writeLegible(ostream &os)
 {
-  bool brief = (os.iword(arcformat_index) == BRIEF);
+  BOOLBRIEF;
   bool onearc = (os.iword(perline_index) == ARC);
   int i;
   const char *inLet, *outLet, *destState;
@@ -373,17 +453,9 @@ void WFST::writeLegible(ostream &os)
                 if ( !brief || strcmp(inLet, outLet) )
                         os << " " << outLet;
         }
-		int pGroup = a->groupId;
-        if ( !brief || pGroup >= 0 || a->weight != 1.0 )
-          os << " " << a->weight;
-        //      int *pGroup;
-        
+        //      int *pGroup;        
         //      if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
-        if ( pGroup >= 0 ) {
-          os << '!';
-          if ( pGroup > 0)
-            os << pGroup;
-        }
+		OUTARCWEIGHT(os,a);
         os << ")";
 		if (onearc)
 		  os << ")";
