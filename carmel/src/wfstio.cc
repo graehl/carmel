@@ -381,7 +381,9 @@ void WFST::writeGraphViz(ostream &os)
 	const char *newl = ";\n\t";
 	const char * const invis_start="invis_start [shape=plaintext,label=\"\"]";
 	const char * const invis_start_name="invis_start";
-	const char * const prelude="digraph G {\n";
+	const char * const prelude="digraph G {";
+	//size=\"7.5,10\",
+	const char * const format="graph[page=\"8.5,11\",center=1,orientation=landscape]";
 	const char * const coda = ";\n}\n";
 	const char * const final_border = "peripheries=2";
 	const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
@@ -390,9 +392,8 @@ void WFST::writeGraphViz(ostream &os)
 	const char close = ']';
 	const char * const label = "label=";
 
-	os << prelude;
-	os << invis_start;
-	os << newl << state_shape;
+	os << prelude << endl;
+	os << format << newl << invis_start << newl << state_shape;
 
 	// make sure final state gets double circle
 	os << newl;
