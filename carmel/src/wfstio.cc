@@ -1,3 +1,4 @@
+#include "config.h"
 #include <string>
 #include <map>
 #include "assert.h"
@@ -7,14 +8,14 @@
 #define DO(x)  { if (!(x)) return 0; }
 
 #define BOOLBRIEF bool brief = (os.iword(arcformat_index) == BRIEF)
-#define OUTARCWEIGHT(os,a) 		do { int pGroup = (a)->groupId; \
+#define OUTARCWEIGHT(os,a)              do { int pGroup = (a)->groupId; \
         if ( !brief || pGroup >= 0 || (a)->weight != 1.0 ) \
           os << " " << (a)->weight; \
         if ( pGroup >= 0 ) { \
           os << '!'; \
           if ( pGroup > 0) \
             os << pGroup; \
-		} } while(0)
+                } } while(0)
 
 
 static int pow2(int exp)
@@ -72,15 +73,16 @@ static int getString(istream &in, char *buf)
     if ( *buf == ')' )
       in.putback( ')' );
     *buf = 0;
-	if (buf[-1] == DOS_CR_CHAR)
-		buf[-1] = 0;
+        if (buf[-1] == DOS_CR_CHAR)
+                buf[-1] = 0;
     break;
   }
   return 1;
 }
 
-WFST::WFST(const char *buf) : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL)
+WFST::WFST(const char *buf)
 {
+  initAlphabet();
   istringstream line(buf);
   char symbol[4096];
   int symbolInNumber, symbolOutNumber;
@@ -117,9 +119,10 @@ bool isNumber(const char * p){
 }
 
 
-WFST::WFST(const char *buf, int &length,bool permuteNumbers) : ownerInOut(1), in(new Alphabet("*e*")),  out(new Alphabet("*e*")), trn(NULL) // Yaser 7-25-2000
+WFST::WFST(const char *buf, int &length,bool permuteNumbers)
 // Generate a permutation lattice for a given string
 {
+  initAlphabet();
   length = 0 ;
   istringstream line(buf);
   char symbol[4096];
@@ -256,31 +259,31 @@ int WFST::readLegible(istream &istr)
   for ( ; ; ) {
     if ( !(istr >> c) )
       break;
-	// begin line:
-	if (c == COMMENT_CHAR) {
-		for(;;) {
-			if (!istr.get(c) )
-				break;
-			if (c == '\n')
-				break;
-		}
-		continue;
-	}
+        // begin line:
+        if (c == COMMENT_CHAR) {
+                for(;;) {
+                        if (!istr.get(c) )
+                                break;
+                        if (c == '\n')
+                                break;
+                }
+                continue;
+        }
     DO(c == '(');
-	// start state:
+        // start state:
     DO(getString(istr, buf));
     stateNumber = stateNames.indexOf(buf);
     if ( stateNumber >= states.count() ) {
       states.pushBack();
       Assert(stateNumber + 1 == states.count());
     }
-	// arcs:
+        // arcs:
     for ( ; ; ) {
       DO(istr >> c);
       if( c == ')' )
         break;
       DO(c == '(');
-	  // dest state:
+          // dest state:
       DO(getString(istr, buf));
       destState = stateNames.indexOf(buf);
       if ( destState >= states.count() ) {
@@ -304,13 +307,13 @@ int WFST::readLegible(istream &istr)
         outL = out->indexOf(buf);
         DO(istr >> c); // skip ws
         istr.putback(c);
-		weight.setZero();
+                weight.setZero();
         if (isdigit(c) || c == '.' || c == '-' ) {
           DO(istr >> weight);
-		  if ( istr.fail() ) {
-			cout << "Invalid weight: " << weight <<"\n";
-			return 0;
-		  }
+                  if ( istr.fail() ) {
+                        cout << "Invalid weight: " << weight <<"\n";
+                        return 0;
+                  }
         } else
           weight = 1.0;
 //        if ( weight > 0.0 ) {
@@ -345,30 +348,32 @@ int WFST::readLegible(istream &istr)
       }
     }
   }
-  int *uip;
-  if ( (uip = stateNames.find(finalName)) ) {
+  int *uip = stateNames.find(finalName);
+  if ( uip  ) {
     final = *uip;
+	finalName.kill();
     return 1;
   } else {
     cout << "\nFinal state named " << finalName << " not found.\n";
+	finalName.kill();
     invalidate();
     return 0;
   }
 }
 
 static ostream & writeQuoted(ostream &os,const char *s) {
-	os << '"';
-	for (;*s;++s) {
-		if (*s == '\\')
-			os << '\\' << '\\';
-		else {
-			if (*s == '"')
-				os << '\\';
-			os << *s;
-		}
-	}
-	os << '"';
-	return os;
+        os << '"';
+        for (;*s;++s) {
+                if (*s == '\\')
+                        os << '\\' << '\\';
+                else {
+                        if (*s == '"')
+                                os << '\\';
+                        os << *s;
+                }
+        }
+        os << '"';
+        return os;
 }
 
 /*
@@ -377,57 +382,57 @@ Lowercase epsilon is:  &#949;
 */
 void WFST::writeGraphViz(ostream &os)
 {
-	if ( !valid() ) return;
-	const char *newl = ";\n\t";
-	const char * const invis_start="invis_start [shape=plaintext,label=\"\"]";
-	const char * const invis_start_name="invis_start";
-	const char * const prelude="digraph G {";
-	//size=\"7.5,10\",
-	const char * const format="graph[page=\"8.5,11\",center=1,orientation=landscape]";
-	const char * const coda = ";\n}\n";
-	const char * const final_border = "peripheries=2";
-	const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
-	const char * const arrow = " -> ";
-	const char * const open = " [";
-	const char close = ']';
-	const char * const label = "label=";
+        if ( !valid() ) return;
+        const char *newl = ";\n\t";
+        const char * const invis_start="invis_start [shape=plaintext,label=\"\"]";
+        const char * const invis_start_name="invis_start";
+        const char * const prelude="digraph G {";
+        //size=\"7.5,10\",
+        const char * const format="graph[page=\"8.5,11\",center=1,orientation=landscape]";
+        const char * const coda = ";\n}\n";
+        const char * const final_border = "peripheries=2";
+        const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
+        const char * const arrow = " -> ";
+        const char * const open = " [";
+        const char close = ']';
+        const char * const label = "label=";
 
-	os << prelude << endl;
-	os << format << newl << invis_start << newl << state_shape;
+        os << prelude << endl;
+        os << format << newl << invis_start << newl << state_shape;
 
-	// make sure final state gets double circle
-	os << newl;
-	writeQuoted(os,stateName(final));
-	os << open << final_border << close;
+        // make sure final state gets double circle
+        os << newl;
+        writeQuoted(os,stateName(final));
+        os << open << final_border << close;
 
-	// arc from invisible start to real start
-	os << newl << invis_start_name << arrow;
-	writeQuoted(os,stateName(0));
+        // arc from invisible start to real start
+        os << newl << invis_start_name << arrow;
+        writeQuoted(os,stateName(0));
 
-	for (int s = 0 ; s < numStates() ; s++) {
-	    for (List<Arc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
-			os << newl;
-			writeQuoted(os,stateName(s));
-			os << arrow;
-			writeQuoted(os,stateName(a->dest));
-			os << open << label;
-			ostringstream arclabel;
-			writeArc(arclabel,*a);
-			writeQuoted(os,arclabel.str().c_str());
-			os << close;
-		}
-	}
+        for (int s = 0 ; s < numStates() ; s++) {
+            for (List<Arc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
+                        os << newl;
+                        writeQuoted(os,stateName(s));
+                        os << arrow;
+                        writeQuoted(os,stateName(a->dest));
+                        os << open << label;
+                        ostringstream arclabel;
+                        writeArc(arclabel,*a);
+                        writeQuoted(os,arclabel.str().c_str());
+                        os << close;
+                }
+        }
 
-	os << coda;
+        os << coda;
 }
 
 //#define GREEK_EPSILON 1
 
 void WFST::writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON) {
-	static const char * const epsilon = "&#949;";
-	os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
-			BOOLBRIEF;
-			OUTARCWEIGHT(os,&a);
+        static const char * const epsilon = "&#949;";
+        os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
+                        BOOLBRIEF;
+                        OUTARCWEIGHT(os,&a);
 }
 
 void WFST::writeLegible(ostream &os)
@@ -442,10 +447,10 @@ void WFST::writeLegible(ostream &os)
   os << stateNames[final];
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
-		os << "\n(" << stateNames[i];
+                os << "\n(" << stateNames[i];
     for (List<Arc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
       if (onearc)
-		os << "\n(" << stateNames[i];
+                os << "\n(" << stateNames[i];
 
      if ( a->weight.isPositive() ) {
         destState = stateNames[a->dest];
@@ -457,15 +462,15 @@ void WFST::writeLegible(ostream &os)
                 if ( !brief || strcmp(inLet, outLet) )
                         os << " " << outLet;
         }
-        //      int *pGroup;        
+        //      int *pGroup;
         //      if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
-		OUTARCWEIGHT(os,a);
+                OUTARCWEIGHT(os,a);
         os << ")";
-		if (onearc)
-		  os << ")";
+                if (onearc)
+                  os << ")";
      }
     }
-	if (!onearc)
+        if (!onearc)
       os << ")";
   }
   os << "\n";
@@ -491,7 +496,7 @@ ostream & operator << (ostream &out, Alphabet &alph)
 //XXX don't allocate then return list, take pointer to list
 List<int> *WFST::symbolList(const char *buf, int output) const
 {
-  List<int> *ret = new List<int>;
+  List<int> *ret = NEW List<int>;
   //LIST_BACK_INSERTER<List<int> > cursor(*ret);
   insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
   //  ListIter<int> ins(*ret);

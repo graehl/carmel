@@ -50,8 +50,8 @@ class TopoSort {
 public:
 	
 	TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) { 
-		done = new bool[g.nStates]; 
-		begun = new bool[g.nStates];
+		done = NEW bool[g.nStates]; 
+		begun = NEW bool[g.nStates];
 		for (int i=0;i<g.nStates;++i) 
 			done[i]=begun[i]=false;
 	}

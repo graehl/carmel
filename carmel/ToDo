@@ -8,8 +8,11 @@ option to iteratively sum paths with e-cycles for -S and -t.  use matrix math (e
 code:
 List::count_length for input sequences - use iterators instead?
 unnecessary copying of path lists due to lameness of output iterator / insert_iterator
-STL allocator - get rid of CUSTOMNEW mess
+STL allocator - get rid of CUSTOMNEW mess (is it faster?)
 command-line regression tests
 unit tests
 STL hash
 one filename per public class: Class.h Class.cc
+
+bugs:
+#define STRINGPOOL crashes

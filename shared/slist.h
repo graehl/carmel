@@ -85,7 +85,7 @@ public:
 			return *this;			
 		}
 		inline erase_iterator& insert(const T& it) {		
-			*m_rep = new Node(it,*m_rep);
+			*m_rep = NEW Node(it,*m_rep);
 			return *this;
 		}
 		inline erase_iterator& operator++()
@@ -167,7 +167,7 @@ public:
 			push_front(*i);
 		reverse();
 	}
-	slist(const T &it) : m_head(new Node(it,0)) {}
+	slist(const T &it) : m_head(NEW Node(it,0)) {}
 	void reverse()
 	{
 		Node* p = 0; Node* i = m_head; Node* n;
@@ -199,7 +199,7 @@ public:
 
 	inline void push_front(const T&x)
 	{
-		Node* tmp = new Node(x);
+		Node* tmp = NEW Node(x);
 		tmp->m_next = m_head;
 		m_head = tmp;
 	}
@@ -250,7 +250,7 @@ public:
 
 	void insert_after (iterator& x, const T& y)
 	{
-		Node* tmp = new Node(y,x.m_rep->m_next);
+		Node* tmp = NEW Node(y,x.m_rep->m_next);
 		x.m_rep->m_next = tmp;
 	}
 };

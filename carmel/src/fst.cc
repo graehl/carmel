@@ -1,3 +1,4 @@
+#include "config.h"
 #include <cctype>
 #include "fst.h"
 
@@ -181,7 +182,7 @@ void WFST::normalize(NormalizeMethod method)
   if (method==CONDITIONAL)
     indexInput();
 
-  // new plan:
+  // NEW plan:
   // step 1: compute sum of counts for non-locked arcs, and divide it by (1-(sum of locked arcs)) to reserve appropriate counts for the locked arcs
   // step 2: for tied arc groups, add these inferred counts to the group state counts total.  also sum group arc counts total.
   // step 3: assign tied arc weights; trouble: tied arcs sharing space with inflexible tied arcs.  under- or over- allocation can result ...
@@ -226,15 +227,15 @@ void WFST::normalize(NormalizeMethod method)
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
             Weight groupNorm = *groupStateTotal.find(pGroup); // can't be 0
-            groupNorm /= (1. - groupMaxLockedSum[pGroup]); // as described in new plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
+            groupNorm /= (1. - groupMaxLockedSum[pGroup]); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
             reserved += (*g)->weight = (*groupArcTotal.find(pGroup) / groupNorm);
           } else // locked:
             reserved += (*g)->weight;
         }  else // normal arc
           normal_sum += (*g)->weight;
-#ifdef DEBUG_NORMALIZE
+#ifdef DEBUGNORMALIZE
     if ( reserved > 1.001 )
-      std::cerr << "Warning: sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0\n";
+      Config::warn() << "Warning: sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0\n";
 #endif
 
     // pass 2b: give normal arcs their share of however much is left
@@ -251,13 +252,13 @@ void WFST::normalize(NormalizeMethod method)
           (*g)->weight.setZero();
   }
 
-#ifdef DEBUG_NORMALIZE
+#ifdef DEBUGNORMALIZE
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight sum;
     for ( g.beginArcs(); g.moreArcs(); g.nextArc())
       sum += (*g)->weight;
     if ( sum > 1.001 )
-      std::cerr << "Warning: sum of normalized arcs for " << g << " = " << sum << " - should not exceed 1.0\n";
+      Config::warn() << "Warning: sum of normalized arcs for " << g << " = " << sum << " - should not exceed 1.0\n";
   }
 #endif
 
@@ -332,14 +333,14 @@ void WFST::invert()
 }
 
 Graph WFST::makeGraph() const
-  // Comment by Yaser: This function creates new GraphState[] and because the
+  // Comment by Yaser: This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
   // It is not a good programming practice but it will be messy to clean it up.
   //
 {
   Assert(valid());
-  GraphState *g = new GraphState[numStates()];
+  GraphState *g = NEW GraphState[numStates()];
   GraphArc gArc;
   for ( int i = 0 ; i < numStates() ; ++i ){
     for ( List<Arc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l ) {
@@ -358,7 +359,7 @@ Graph WFST::makeGraph() const
 }
 
 Graph WFST::makeEGraph() const
-  // Comment by Yaser: This function creates new GraphState[] and because the
+  // Comment by Yaser: This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
   // It is not a good programming practice but it will be messy to clean it up.
@@ -366,7 +367,7 @@ Graph WFST::makeEGraph() const
 
 {
   Assert(valid());
-  GraphState *g = new GraphState[numStates()];
+  GraphState *g = NEW GraphState[numStates()];
   GraphArc gArc;
   for ( int i = 0 ; i < numStates() ; ++i )
     for ( List<Arc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l )
@@ -411,17 +412,18 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
   Graph for_graph = makeGraph();
   Graph rev_graph = reverseGraph(for_graph);
 
-  bool *remove = new bool[n_states];
+  bool *remove = NEW bool[n_states];
   float worst_d_dist = keep_paths_within_ratio.getLogImp();
-  float *for_dist = new float[n_states];
-  float *rev_dist = new float[n_states];
+  float *for_dist = NEW float[n_states];
+  float *rev_dist = NEW float[n_states];
   // todo: efficiency: could use indirected compare on array of integers, instead of moving around float+integer
-  PFI *best_path_cost = new PFI[n_states];
+  PFI *best_path_cost = NEW PFI[n_states];
   shortestDistancesFrom(for_graph,0, for_dist,NULL);
   shortestDistancesFrom(rev_graph,final, rev_dist,NULL);
   float best_path = for_dist[final];
   float worst_path = best_path + worst_d_dist;
-  Assert(best_path == rev_dist[0]);
+  Assert(fabs(best_path - rev_dist[0]) < 1e-5);
+
   for (i=0;i<n_states;++i) {
     best_path_cost[i].first = for_dist[i] + rev_dist[i];
     best_path_cost[i].second = i;
@@ -430,11 +432,11 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
   std::sort(best_path_cost,best_path_cost+n_states,lesscost);
   // now we have a list of states in order of increasing cost (poorness)
 #ifdef DEBUGPRUNE
-  Config::debug() << "Best path cost = " << best_path << "; worst path allowed = " << worst_path << std::endl;
-  Config::debug() << "BEST PATH THROUGH STATE:" << std::endl;
+  Config::debug() << "Best path cost = " << best_path << "(reverse best path = " << rev_dist[0] << "); worst path allowed = " << worst_path << std::endl;
+  /*  Config::debug() << "BEST PATH THROUGH STATE:" << std::endl;
   for (i=0;i<n_states;++i) {
     Config::debug() << best_path_cost[i].first << ' ' << stateName(best_path_cost[i].second) << std::endl;
-  }
+    }*/
 #endif
 
   int allowed = max_states;
@@ -469,6 +471,7 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
     int st=best_path_cost[i].second;
     remove[st] = true;
   }
+  delete[] best_path_cost;
 
   removeMarkedStates(remove);
   //n_states = numStates();
@@ -495,9 +498,9 @@ void WFST::reduce()
   GraphState *revGraph = revG.states;
   Assert(nStates == g.nStates && g.nStates == revG.nStates);
 
-  bool *visitedForward = new bool[nStates];
-  bool *visitedBackward = new bool[nStates];
-  //bool *discard = new bool[nStates];
+  bool *visitedForward = NEW bool[nStates];
+  bool *visitedBackward = NEW bool[nStates];
+  //bool *discard = NEW bool[nStates];
   int i;
   for ( i = 0 ; i < nStates ; ++i ){
     visitedForward[i] = false;
@@ -553,7 +556,7 @@ void WFST::consolidateArcs()
 void WFST::removeMarkedStates(bool marked[])
 {
   Assert(valid());
-  int *oldToNew = new int[numStates()];
+  int *oldToNew = NEW int[numStates()];
   int i = 0, f = 0;
   while ( i < numStates() )
     if (marked[i])

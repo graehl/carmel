@@ -1,5 +1,5 @@
-#ifndef HASH_H 
-#define HASH_H
+#ifndef TWO_HASH_H 
+#define TWO_HASH_H
 #include "config.h"
 
 #include <iostream>
@@ -45,7 +45,7 @@ public:
       freeList = freeList->next;
       return ret;
     }
-    freeList = (Entry<K,V> *)::operator new(newBlocksize * sizeof(Entry<K,V>));
+    freeList = (Entry<K,V> *)::operator NEW(newBlocksize * sizeof(Entry<K,V>));
     freeList->next = NULL;
     max = freeList + newBlocksize -1;
     for ( ret = freeList++; freeList < max ; ret = freeList++ )
@@ -206,7 +206,7 @@ public:
     if ( growAt < 2 )
       growAt = 2;
     siz--;   // size is actually siz + 1
-    table = new Entry<K,V>*[siz+1];
+    table = NEW Entry<K,V>*[siz+1];
     for ( int i = 0 ; i <= siz ; i++ ) 
       table[i] = NULL;
     for(HashConstIter<K,V> k(ht) ; k ; ++k)
@@ -232,7 +232,7 @@ public:
     if ( growAt < 2 )
       growAt = 2;
     siz--;   // size is actually siz + 1
-    table = new Entry<K,V>*[siz+1];
+    table = NEW Entry<K,V>*[siz+1];
     for ( int i = 0 ; i <= siz ; i++ ) 
       table[i] = NULL;
   }
@@ -259,7 +259,7 @@ public:
     if ( ++cnt >= growAt )
       resize(2 * siz);
     int i = hashToPos(key.hash());
-    table[i] =  new Entry<K,V>(key, val, table[i]);
+    table[i] =  NEW Entry<K,V>(key, val, table[i]);
     return &table[i]->val;
   }
   V * add(const K& key)
@@ -267,7 +267,7 @@ public:
     if ( ++cnt >= growAt )
       resize(2 * siz);
     int i = hashToPos(key.hash());
-    table[i] =  new Entry<K,V>(key, table[i]);
+    table[i] =  NEW Entry<K,V>(key, table[i]);
     return &table[i]->val;
   }
   V * find(const K &key) const
@@ -336,7 +336,7 @@ public:
     Entry<K,V> *next, *p, **i, **oldTable = table;
     siz = pow2Bound(request);
     siz--;  // actual size is siz + 1 (power of 2)
-    table = new Entry<K,V>*[siz+1];
+    table = NEW Entry<K,V>*[siz+1];
     for ( i = table; i <= table + siz ; i++ )
       *i = NULL;
     for ( i = oldTable ; i <= oldTable + oldSiz ; i++ )

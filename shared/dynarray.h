@@ -13,9 +13,9 @@ template <typename T> class DynamicArray {
   T *vec;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
 public:
-  DynamicArray(unsigned sp = 4) : space(sp), sz(0), vec((T*)::operator new ((size_t)sizeof(T)*sp)) {}
+  DynamicArray(unsigned sp = 4) : space(sp), sz(0), vec((T*)::operator PLACEMENT_NEW ((size_t)sizeof(T)*sp)) {}
   DynamicArray(const DynamicArray &a): space(a.space),sz(0){ // added by Yaser 7-27-2000
-     vec = (T*)::operator new((size_t)a.space*sizeof(T));
+     vec = (T*)::operator NEW((size_t)a.space*sizeof(T));
      for (int i = 0 ; i < a.sz ; i++)
         pushBack(a.vec[i]) ;
      Assert(sz==a.sz);
@@ -28,7 +28,7 @@ public:
       while ( index >= newSpace ) newSpace <<=1;
       resize(newSpace);
       for ( T *v = vec + sz ; rv <= vec + index ; v++ )
-	new(v) T();
+	NEW(v) T();
       sz = ++index;
     }
     return vec[index];
@@ -44,11 +44,11 @@ public:
   {
     if ( sz >= space )
       resize(space << 1);
-    new(vec+(sz++)) T();
+    PLACEMENT_NEW(vec+(sz++)) T();
   }    
   void pushBack(const T& val)
   {
-    new(pushBackRaw()) T(val);
+    PLACEMENT_NEW(pushBackRaw()) T(val);
   }
   T *pushBackRaw()
   {

@@ -37,7 +37,7 @@ index(NULL) { }
     if (s.index == NULL)
       index = (HashTable<IntKey, List<HalfArc> > *) NULL ;
     else
-      index = new HashTable<IntKey, List<HalfArc> >(*s.index);
+      index = NEW HashTable<IntKey, List<HalfArc> >(*s.index);
      } 
   ~State() { flush(); }
   void indexBy(int output = 0) {
@@ -52,7 +52,7 @@ index(NULL) { }
       if ( index )
 	return;
 #endif
-      index = new HashTable<IntKey, List<HalfArc> >(size);
+      index = NEW HashTable<IntKey, List<HalfArc> >(size);
       for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
@@ -73,7 +73,7 @@ index(NULL) { }
     if ( index )
       return;
 #endif
-    index = new HashTable<IntKey, List<HalfArc> >(size);
+    index = NEW HashTable<IntKey, List<HalfArc> >(size);
     for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
       if ( !(list = index->find(l->in)) )
 	index->add(l->in, List<HalfArc>(&(*l)));
@@ -82,7 +82,8 @@ index(NULL) { }
     }
   }
   void flush() {
-    delete index;
+    if (index)
+      delete index;
     index = NULL;
 #ifdef BIDIRECTIONAL
     hitcount = 0;
@@ -201,10 +202,10 @@ struct IOSymSeq {
   void init(List<int> &inSeq, List<int> &outSeq, float w) {
     i.n = inSeq.count_length();
     o.n = outSeq.count_length();
-    i.let = new int[i.n];
-    o.let = new int[o.n];
-    i.rLet = new int[i.n];
-    o.rLet = new int[o.n];
+    i.let = NEW int[i.n];
+    o.let = NEW int[o.n];
+    i.rLet = NEW int[i.n];
+    o.rLet = NEW int[o.n];
     int *pi, *rpi;
     pi = i.let;
     rpi = i.rLet + i.n;
@@ -251,23 +252,23 @@ private:
   /*  if (a.forArcs == NULL)
       forArcs = NULL ;
     else 
-      forArcs=new HashTable<IOPair, List<DWPair> >(*a.forArcs);
-    revArcs=new HashTable<IOPair, List<DWPair> >(*a.revArcs);
-    forETopo=new List<int>(*a.forETopo);
-    revETopo=new List<int>(*a.revETopo);
+      forArcs=NEW HashTable<IOPair, List<DWPair> >(*a.forArcs);
+    revArcs=NEW HashTable<IOPair, List<DWPair> >(*a.revArcs);
+    forETopo=NEW List<int>(*a.forETopo);
+    revETopo=NEW List<int>(*a.revETopo);
     maxIn=(a.maxIn);
     maxOut=(a.maxOut);
     examples=(a.examples);
     smoothFloor =(a.smoothFloor);
     nStates=a.nStates;
-    f = new Weight **[maxIn+1];
-    b = new Weight **[maxIn+1];
+    f = NEW Weight **[maxIn+1];
+    b = NEW Weight **[maxIn+1];
     for ( int i = 0 ; i <= maxIn ; ++i ) {
-      f[i] = new Weight *[maxOut+1];
-      b[i] = new Weight *[maxOut+1];
+      f[i] = NEW Weight *[maxOut+1];
+      b[i] = NEW Weight *[maxOut+1];
       for ( int o = 0 ; o <= maxOut ; ++o ) {
-	f[i][o] = new Weight [nStates];
-	b[i][o] = new Weight [nStates];
+	f[i][o] = NEW Weight [nStates];
+	b[i][o] = NEW Weight [nStates];
 	for (int s = 0 ; s < nStates ; s++){
 	  f[i][o][s] = a.f[i][o][s] ;
 	  b[i][o][s] = a.b[i][o][s] ;

@@ -1,7 +1,15 @@
+2003-03-27  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/finite.cc: ownalphabet in compose chain - copies (rather
+	than transfers) alphabet ... performance ...  unify code for -l
+	and -r (loops have start, end, direction +1 or -1; or, reverse
+	list and use same loop (but switch order of arguments if you do))
+	-q = quiet (added some default logging)
+
 2002-12-17  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: ignore/strip CR char (so unix carmel can process
-	DOS-text output)
+	DOS-text output); added graphvis 8.5x11 landscape formatting
 
 2002-12-16  Jonathan Graehl  <graehl@isi.edu>
 
