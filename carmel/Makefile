@@ -64,7 +64,7 @@ carmel.${ARCH}.static:	$(OBJ_OPT_DIR) $(OBJ_FILES_OPT)
 
 debug: carmel.${ARCH}.dbg
 
-	$(CC) $(OBJ_FILES_DBG) $(LDFLAGS) -o $(BIN)/$@
+	$(CC) $(OBJ_FILES_DBG) $(LDFLAGS) --static -o $(BIN)/$@
 #--static
 
 pure: carmel.${ARCH}.pure
