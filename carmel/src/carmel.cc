@@ -141,7 +141,7 @@ main(int argc, char *argv[]){
     usageHelp();
     return 0;
   }
-  int i, j;
+  int i;
   bool flags[256];
   for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
   char *pc, **parm = new char *[argc-1];
@@ -365,9 +365,9 @@ main(int argc, char *argv[]){
         delete inputs[i];
       if ( !(chain[i].valid()) ) {
         std::cerr << "Bad format of transducer file: " << filenames[i] << "\n";
-        for ( j = i+1 ; j < nInputs ; ++j )
-          if ( inputs[i] != &cin )
-            delete inputs[i];
+//        for ( j = i+1 ; j < nInputs ; ++j )
+//          if ( inputs[i] != &cin )
+//            delete inputs[i];
         return -2;
       }
     }
@@ -582,7 +582,7 @@ main(int argc, char *argv[]){
               istringstream w(buf.c_str());
               w >> weight;
               if ( w.fail() ) {
-                std::cerr << "Bad weight: " << buf << '\n';
+                std::cerr << "Bad training example weight: " << buf << '\n';
                 continue;
               }
               getline(*pairStream,buf);

@@ -30,7 +30,7 @@ static const int base_index; // handle to ostream iword for LogBase enum (initia
 static const int thresh_index; // handle for OutThresh
 
 public:	
-  //static const Weight ZERO, INFINITY;
+  static const Weight ZERO, INF;
 	// linux g++ 3.2 didn't like static self-class member
   static const float HUGE_FLOAT;
   float weight;
