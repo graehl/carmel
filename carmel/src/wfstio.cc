@@ -253,7 +253,7 @@ int WFST::getStateIndex(const char *buf) {
   if (!named_states) {
     st=strtol(buf,&scanend,10);
     if (*scanend != '\0') {
-		Config::warn() << "Since intial state was a number, expected an integer state index, but got: " << buf << std::endl << "\t(use the -K command line option to force named states)" << std::endl;
+		Config::warn() << "Since intial state was a number, expected an integer state index, but got: " << buf << std::endl << "\t(-K command line option should not be used if states are named)" << std::endl;
       return -1;
     } else {
       states(st); // expands dynarray
