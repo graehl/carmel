@@ -1,7 +1,7 @@
 #ifndef _CHARBUF_HPP
 #define _CHARBUF_HPP
 // no separate implementation for now, just #define MAIN in one source file that includes this
-#include "../carmel/src/dynarray.h"
+#include "dynarray.h"
 #ifndef CHARBUF_INIT_SIZE
 #define CHARBUF_INIT_SIZE 4096
 #endif
