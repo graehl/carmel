@@ -1,3 +1,7 @@
+Tue May 20 17:14:36 2003  Jonathan Graehl  <graehl@enescu.isi.edu>
+
+	* marcu hide-the-transducer changes (if #define MARCU in finite.cc)
+
 2003-03-28  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/strhash.h: fixed STRINGPOOL, added named_states flag
