@@ -18,33 +18,33 @@
 #define VERSION "2.1"  ;
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
-            if ( flags['B'] )
-//                      *fstout << Weight::out_log10;
-                        Weight::out_log10(*fstout);
-                else
-                        //*fstout << Weight::out_ln;
-                        Weight::out_ln(*fstout);
-                if ( flags['Z'] )
-//                      *fstout << Weight::out_always_log;
-                        Weight::out_always_log(*fstout);
-                else
-                        //*fstout << Weight::out_variable;
-                        Weight::out_variable(*fstout);
-                if ( flags['D'] )
-//                      *fstout << Weight::out_always_real;
-                        Weight::out_always_real(*fstout);
-                if ( flags['J'] )
-                        //*fstout << WFST::out_arc_full;
-                        WFST::out_arc_full(*fstout);
-                else
-                        //*fstout << WFST::out_arc_brief;
-                        WFST::out_arc_brief(*fstout);
-                if ( flags['H'] )
-                        //*fstout << WFST::out_arc_per_line;
-                        WFST::out_arc_per_line(*fstout);
-                else
-                        //*fstout << WFST::out_state_per_line;
-                        WFST::out_state_per_line(*fstout);
+  if ( flags['B'] )
+    //                      *fstout << Weight::out_log10;
+    Weight::out_log10(*fstout);
+  else
+    //*fstout << Weight::out_ln;
+  Weight::out_ln(*fstout);
+  if ( flags['Z'] )
+    //                      *fstout << Weight::out_always_log;
+    Weight::out_always_log(*fstout);
+  else
+    //*fstout << Weight::out_variable;
+  Weight::out_variable(*fstout);
+  if ( flags['D'] )
+    //                      *fstout << Weight::out_always_real;
+    Weight::out_always_real(*fstout);
+  if ( flags['J'] )
+    //*fstout << WFST::out_arc_full;
+  WFST::out_arc_full(*fstout);
+  else
+    //*fstout << WFST::out_arc_brief;
+  WFST::out_arc_brief(*fstout);
+  if ( flags['H'] )
+    //*fstout << WFST::out_arc_per_line;
+  WFST::out_arc_per_line(*fstout);
+  else
+    //*fstout << WFST::out_state_per_line;
+  WFST::out_state_per_line(*fstout);
 
 }
 
@@ -176,10 +176,10 @@ main(int argc, char *argv[]){
           kPaths = -1;
         else if ( *pc == 'X' )
           converge_pp_flag=true;
-		else if ( *pc == 'w' )
-			wrFlag=true;
-		else if ( *pc == 'z' )
-			msFlag=true;
+        else if ( *pc == 'w' )
+          wrFlag=true;
+        else if ( *pc == 'z' )
+          msFlag=true;
         else if ( *pc == 'R' )
           seedFlag=true;
         else if ( *pc == 'F' )
@@ -210,16 +210,16 @@ main(int argc, char *argv[]){
       if ( labelFlag ) {
         labelFlag = 0;
         readParam(&labelStart,argv[i],'N');
-          } else if ( converge_pp_flag ) {
-                converge_pp_flag = false;
-                readParam(&converge_pp_ratio,argv[i],'X');
-          } else if (seedFlag) {
+      } else if ( converge_pp_flag ) {
+        converge_pp_flag = false;
+        readParam(&converge_pp_ratio,argv[i],'X');
+      } else if (seedFlag) {
         seedFlag=false;
         readParam(&seed,argv[i],'R');
       } else if ( wrFlag ) {
         readParam(&keep_path_ratio,argv[i],'w');
-		if (keep_path_ratio < 1)
-			keep_path_ratio = 1;
+        if (keep_path_ratio < 1)
+          keep_path_ratio = 1;
       } else if ( msFlag ) {
         readParam(&max_states,argv[i],'z');
         if ( max_states < 1 )
@@ -255,7 +255,7 @@ main(int argc, char *argv[]){
         readParam(&prune,argv[i],'p');
       } else if ( fstout == NULL ) {
         fstout = new ofstream(argv[i]);
-		setOutputFormat(flags,fstout);
+        setOutputFormat(flags,fstout);
         if ( !*fstout ) {
           std::cerr << "Could not create file " << argv[i] << ".\n";
           return -8;
@@ -263,7 +263,7 @@ main(int argc, char *argv[]){
       } else
         parm[nParms++] = argv[i];
   }
-  bool prune = flags['w'] || flags['z'];
+  bool prunePath = flags['w'] || flags['z'];
   srand(seed);
   setOutputFormat(flags,&cout);
   setOutputFormat(flags,&cerr);
@@ -405,26 +405,26 @@ main(int argc, char *argv[]){
         std::cerr << "Couldn't handle input line: " << buf << "\n";
         return -3;
       }
-	}
+    }
 
 #define PRUNE do { \
         if ( flags['p'] ) \
           result->pruneArcs(prune); \
-		if ( prune ) \
-		  result->prunePaths(max_states,keep_path_ratio); \
+                if ( prunePath ) \
+                  result->prunePaths(max_states,keep_path_ratio); \
        } while(0)
 
 #define MINIMIZE do { \
-		if ( flags['C'] ) \
+                if ( flags['C'] ) \
           result->consolidateArcs(); \
         if ( !flags['d'] ) \
-		result->reduce(); \
+                result->reduce(); \
        } while(0)
 
-	result = chain;
+    result = chain;
     if ( flags['r'] ) {
       result = &chain[nInputs-1];
-		MINIMIZE;
+      MINIMIZE;
 #ifdef  DEBUGCOMPOSE
       std::cerr << "result is chain[" << nTarget <<"]\n";
 #endif
@@ -461,16 +461,16 @@ main(int argc, char *argv[]){
           }
           goto nextInput;
         }
-	MINIMIZE;
-	PRUNE;
-	  }
+        MINIMIZE;
+        PRUNE;
+      }
 #ifdef  DEBUGCOMPOSE
       std::cerr << "done chain of compositions  .. now processing result\n";
 #endif
     }  // end of flag['r'] - right-to-left composition
     else { // left-to-right composition
       result = &chain[0];
-	MINIMIZE;
+      MINIMIZE;
       for ( i = 1 ; i < nInputs && result->valid() ; ++i ) {
         WFST *next = new WFST(*result, chain[i], flags['m'], flags['a']);
 #ifndef NODELETE
@@ -488,11 +488,11 @@ main(int argc, char *argv[]){
           }
           goto nextInput;
         }
-	MINIMIZE;
-	PRUNE;
+        MINIMIZE;
+        PRUNE;
       } // end of chain compositions - now result points to the final composition
     } // end of left to right composition
-	}
+
     if ( flags['v'] )
       result->invert();
     if ( flags['n'] )
@@ -606,7 +606,7 @@ main(int argc, char *argv[]){
           List<int> empty_list;
           result->trainExample(empty_list, empty_list, 1.0);
         }
-                result->trainFinish(converge, converge_pp_ratio, smoothFloor, maxTrainIter, norm_method);
+        result->trainFinish(converge, converge_pp_ratio, smoothFloor, maxTrainIter, norm_method);
       } else if ( nGenerate > 0 ) {
         MINIMIZE;
         //        if ( !flags['n'] )
@@ -646,19 +646,19 @@ main(int argc, char *argv[]){
           delete[] outSeq;
         }
       }
-		
-		PRUNE;
-		if ( flags['t'] )
-			if (flags['p'] || prune) ) {
-				result->normalize(norm_method);
-			}
-		  MINIMIZE;
-        }
-        
 
-          if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
-				*fstout << *result;
-          }
+      PRUNE;
+      if ( flags['t'] )
+        if (flags['p'] || prunePath) {
+          result->normalize(norm_method);
+        }
+      MINIMIZE;
+
+
+
+      if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
+        *fstout << *result;
+      }
       break;
     }
   nextInput:
@@ -711,102 +711,102 @@ main(int argc, char *argv[]){
 
 void usageHelp(void)
 {
-  cout << "usage: carmel [switches] [file1 file2 ... filen]\n\ncomposes a seq";
-  cout << "uence of weighted finite state transducers and writes the\nresul";
-  cout << "t to the standard output.\n\n-l (default)\tleft associative comp";
-  cout << "osition ((file1*file2) * file3 ... )\n-r\t\tright associative co";
-  cout << "mposition (file1 * (file2*file3) ... )\n-s\t\tthe standard input";
-  cout << " is prepended to the sequence of files (for\n\t\tleft associativ";
-  cout << "e composition), or appended (if right\n\t\tassociative)\n-i\t\tt";
-  cout << "he first input (depending on associativity) is interpreted as\n\t";
-  cout << "\ta space-separated sequence of symbols, and translated into a\n";
-  cout << "\t\ttransducer accepting only that sequence\n";
-  cout << "-P Similar to (-i) but instead of building an acceptor with a\n\t\t";
-  cout << "single arc, construct a permutaion lattice that accepts the\n\t\t";
-  cout << "input in all possible reorderings.\n-k n\t\tthe n best ";
-  cout << "paths through the resulting transducer are written\n\t\tto the s";
-  cout << "tandard output in lieu of the transducer itself\n-b\t\tbatch com";
-  cout << "postion - reads the sequence of transducers into\n\t\tmemory, ex";
-  cout << "cept the first input (depending on associativity),\n\t\twhich co";
-  cout << "nsists of sequences of space-separated input symbols\n\t\t(as in";
-  cout << " -i) separated by newlines.  The best path(s) through\n\t\tthe r";
-  cout << "esult of each composition are written to the standard\n\t\toutpu";
-  cout << "t, one per line, in the same order as the inputs that\n\t\tgener";
-  cout << "ated them\n-S\t\tas in -b, the input (file or stdin) is a newlin";
-  cout << "e separated\n\t\tlist of symbol sequences, except that now the o";
-  cout << "dd lines are\n\t\tinput sequences, with the subsequent sequence ";
-  cout << "being the\n\t\tcorresponding output sequence\n\t\tthis command s";
-  cout << "cores the input / output pairs by adding the sum\n\t\tof the wei";
-  cout << "ghts of all possible paths producing them, printing\n\t\tthe wei";
-  cout << "ghts one per line if -i is used, it will apply to the\n\t\tsecon";
-  cout << "d input, as -i consumes the first\n-n\t\tnormalize the weights o";
-  cout << "f arcs so that for each state, the\n\t\tweights all of the arcs ";
-  cout << "with the same input symbol add to one\n-t\t\tgiven pairs of inpu";
-  cout << "t/output sequences, as in -S, adjust the\n\t\tweights of the tra";
-  cout << "nsducer so as to approximate the conditional\n\t\tdistribution o";
-  cout << "f the output sequences given the input sequences\n\t\toptionally";
-  cout << ", an extra line preceeding an input/output pair may\n\t\tcontain";
-  cout << " a floating point number for how many times the \n\t\tinput/outp";
-  cout << "ut pair should count in training (default is 1)\n-e w\t\tw is th";
-  cout << "e convergence criteria for training (the minimum\n\t\tchange in ";
-  cout << "an arc\'s weight to trigger another iteration) - \n\t\tdefault w";
-  cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a floor weight used for train";
-  cout << "ing, which is added to the\n\t\tcounts for all arcs, immediately";
-  cout << " before normalization - if\n\t\tnonzero, it ensures that no arc ";
-  cout << "will be given zero weight -\n\t\tdefault w is 0\n-M n\t\tn is th";
-  cout << "e maximum number of training iterations that will be\n\t\tperfor";
-  cout << "med, regardless of whether the convergence criteria is\n\t\tmet ";
-  cout << "- default n is 256\n-x\t\tlist only the input alphabet of the tr";
-  cout << "ansducer to stdout\n-y\t\tlist only the output alphabet of the t";
-  cout << "ransducer to stdout\n-c\t\tlist only statistics on the transduce";
-  cout << "r to stdout\n-F filename\twrite the final transducer to a file (";
-  cout << "in lieu of stdout)\n-v\t\tinvert the ";
-  cout << "resulting transducer by swapping the input and\n\t\toutput symbo";
-  cout << "ls \n-d\t\tdo not eliminate dead-end states from all transducers";
-  cout << " created\n-C\t\tconsolidate arcs with same source, destination, ";
-  cout << "input and\n\t\toutput, with a total weight equal to the sum (cla";
-  cout << "mped to a\n\t\tmaximum weight of one)\n-p w\t\tprune (discard) a";
-  cout << "ll arcs with weight less than w\n-g n\t\tstochastically generate";
-  cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
-  cout << "itial state to the final state\n\t\toutput is in the same for";
-  cout << "m accepted in -t and -S.\n\t\tTraining a transducer on its own -g output should be a no-op.\n-G n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
-  cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
-  cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
-  cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
-  cout << " = 128)\n-N n\t\tassign each arc in the result transducer a uniq";
-  cout << "ue group number\n\t\tstarting at n and counting up.  If n is 0 (";
-  cout << "the special group\n\t\tfor unchangeable arcs), all the arcs are ";
-  cout << "assigned to group 0\n\t\tif n is negative, all group numbers are";
-  cout << " removed\n-A\t\tthe weights in the first transducer (depending o";
-  cout << "n -l or -r, as\n\t\twith -b, -S, and -t) are assigned to the res";
-  cout << "ult, by arc group\n\t\tnumber.  Arcs with group numbers for whic";
-  cout << "h there is no\n\t\tcorresponding group in the first transducer a";
-  cout << "re removed\n-m\t\tgive meaningful names to states created in com";
-  cout << "position\n\t\trather than just numbers\n-a\t\tduring composition";
-  cout << ", keep the identity of matching arcs from\n\t\tthe two transduce";
-  cout << "rs separate, assigning the same arc group\n\t\tnumber to arcs in";
-  cout << " the result as the arc in the transducer it\n\t\tcame from.  Thi";
-  cout << "s will create more states, and possibly less\n\t\tarcs, than the";
-  cout << " normal approach, but the transducer will have\n\t\tequivalent p";
-  cout << "aths.\n-h\t\thelp on transducers, file formats\n";
-  cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training;\n\t\ttry -tuM 1 to see forward-backward counts for arcs\n" ;
-  cout << "-j\t\tPerform joint rather than conditional normalization";
-  cout << "\n\n";
-  cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
-  cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";
-  cout << "fied, omit special symbols (beginning and\n\t\tending with an as";
-  cout << "terisk (e.g. \"*e*\"))\n\t-Q\tif -I or -O is specified, omit out";
-  cout << "ermost quotes of symbol names\n\t-W\tdo not show weights for pat";
-  cout << "hs";
-  cout << "\n\nWeight output format switches\n\t\t(by default, small/large weights are written as logarithms):";
-  cout << "\n\t-B\tWrite weights as their base 10 log (default is ln, e.g.\n\t\t'-5ln' signifies e^(-5))";
-  cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln',\n\t\texcept for 0, which is written simply as '0'";
-  cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";
-  cout << "\n\nTransducer output format switches:";
-  cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";
-  cout << "\n\t-J\tDon't omit output=input or Weight=1";
-  cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
-  cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
+cout << "usage: carmel [switches] [file1 file2 ... filen]\n\ncomposes a seq";
+cout << "uence of weighted finite state transducers and writes the\nresul";
+cout << "t to the standard output.\n\n-l (default)\tleft associative comp";
+cout << "osition ((file1*file2) * file3 ... )\n-r\t\tright associative co";
+cout << "mposition (file1 * (file2*file3) ... )\n-s\t\tthe standard input";
+cout << " is prepended to the sequence of files (for\n\t\tleft associativ";
+cout << "e composition), or appended (if right\n\t\tassociative)\n-i\t\tt";
+cout << "he first input (depending on associativity) is interpreted as\n\t";
+cout << "\ta space-separated sequence of symbols, and translated into a\n";
+cout << "\t\ttransducer accepting only that sequence\n";
+cout << "-P Similar to (-i) but instead of building an acceptor with a\n\t\t";
+cout << "single arc, construct a permutaion lattice that accepts the\n\t\t";
+cout << "input in all possible reorderings.\n-k n\t\tthe n best ";
+cout << "paths through the resulting transducer are written\n\t\tto the s";
+cout << "tandard output in lieu of the transducer itself\n-b\t\tbatch com";
+cout << "postion - reads the sequence of transducers into\n\t\tmemory, ex";
+cout << "cept the first input (depending on associativity),\n\t\twhich co";
+cout << "nsists of sequences of space-separated input symbols\n\t\t(as in";
+cout << " -i) separated by newlines.  The best path(s) through\n\t\tthe r";
+cout << "esult of each composition are written to the standard\n\t\toutpu";
+cout << "t, one per line, in the same order as the inputs that\n\t\tgener";
+cout << "ated them\n-S\t\tas in -b, the input (file or stdin) is a newlin";
+cout << "e separated\n\t\tlist of symbol sequences, except that now the o";
+cout << "dd lines are\n\t\tinput sequences, with the subsequent sequence ";
+cout << "being the\n\t\tcorresponding output sequence\n\t\tthis command s";
+cout << "cores the input / output pairs by adding the sum\n\t\tof the wei";
+cout << "ghts of all possible paths producing them, printing\n\t\tthe wei";
+cout << "ghts one per line if -i is used, it will apply to the\n\t\tsecon";
+cout << "d input, as -i consumes the first\n-n\t\tnormalize the weights o";
+cout << "f arcs so that for each state, the\n\t\tweights all of the arcs ";
+cout << "with the same input symbol add to one\n-t\t\tgiven pairs of inpu";
+cout << "t/output sequences, as in -S, adjust the\n\t\tweights of the tra";
+cout << "nsducer so as to approximate the conditional\n\t\tdistribution o";
+cout << "f the output sequences given the input sequences\n\t\toptionally";
+cout << ", an extra line preceeding an input/output pair may\n\t\tcontain";
+cout << " a floating point number for how many times the \n\t\tinput/outp";
+cout << "ut pair should count in training (default is 1)\n-e w\t\tw is th";
+cout << "e convergence criteria for training (the minimum\n\t\tchange in ";
+cout << "an arc\'s weight to trigger another iteration) - \n\t\tdefault w";
+cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a floor weight used for train";
+cout << "ing, which is added to the\n\t\tcounts for all arcs, immediately";
+cout << " before normalization - if\n\t\tnonzero, it ensures that no arc ";
+cout << "will be given zero weight -\n\t\tdefault w is 0\n-M n\t\tn is th";
+cout << "e maximum number of training iterations that will be\n\t\tperfor";
+cout << "med, regardless of whether the convergence criteria is\n\t\tmet ";
+cout << "- default n is 256\n-x\t\tlist only the input alphabet of the tr";
+cout << "ansducer to stdout\n-y\t\tlist only the output alphabet of the t";
+cout << "ransducer to stdout\n-c\t\tlist only statistics on the transduce";
+cout << "r to stdout\n-F filename\twrite the final transducer to a file (";
+cout << "in lieu of stdout)\n-v\t\tinvert the ";
+cout << "resulting transducer by swapping the input and\n\t\toutput symbo";
+cout << "ls \n-d\t\tdo not eliminate dead-end states from all transducers";
+cout << " created\n-C\t\tconsolidate arcs with same source, destination, ";
+cout << "input and\n\t\toutput, with a total weight equal to the sum (cla";
+cout << "mped to a\n\t\tmaximum weight of one)\n-p w\t\tprune (discard) a";
+cout << "ll arcs with weight less than w\n-g n\t\tstochastically generate";
+cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
+cout << "itial state to the final state\n\t\toutput is in the same for";
+cout << "m accepted in -t and -S.\n\t\tTraining a transducer on its own -g output should be a no-op.\n-G n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
+cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
+cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
+cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
+cout << " = 128)\n-N n\t\tassign each arc in the result transducer a uniq";
+cout << "ue group number\n\t\tstarting at n and counting up.  If n is 0 (";
+cout << "the special group\n\t\tfor unchangeable arcs), all the arcs are ";
+cout << "assigned to group 0\n\t\tif n is negative, all group numbers are";
+cout << " removed\n-A\t\tthe weights in the first transducer (depending o";
+cout << "n -l or -r, as\n\t\twith -b, -S, and -t) are assigned to the res";
+cout << "ult, by arc group\n\t\tnumber.  Arcs with group numbers for whic";
+cout << "h there is no\n\t\tcorresponding group in the first transducer a";
+cout << "re removed\n-m\t\tgive meaningful names to states created in com";
+cout << "position\n\t\trather than just numbers\n-a\t\tduring composition";
+cout << ", keep the identity of matching arcs from\n\t\tthe two transduce";
+cout << "rs separate, assigning the same arc group\n\t\tnumber to arcs in";
+cout << " the result as the arc in the transducer it\n\t\tcame from.  Thi";
+cout << "s will create more states, and possibly less\n\t\tarcs, than the";
+cout << " normal approach, but the transducer will have\n\t\tequivalent p";
+cout << "aths.\n-h\t\thelp on transducers, file formats\n";
+cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training;\n\t\ttry -tuM 1 to see forward-backward counts for arcs\n" ;
+cout << "-j\t\tPerform joint rather than conditional normalization";
+cout << "\n\n";
+cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
+cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";
+cout << "fied, omit special symbols (beginning and\n\t\tending with an as";
+cout << "terisk (e.g. \"*e*\"))\n\t-Q\tif -I or -O is specified, omit out";
+cout << "ermost quotes of symbol names\n\t-W\tdo not show weights for pat";
+cout << "hs";
+cout << "\n\nWeight output format switches\n\t\t(by default, small/large weights are written as logarithms):";
+cout << "\n\t-B\tWrite weights as their base 10 log (default is ln, e.g.\n\t\t'-5ln' signifies e^(-5))";
+cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln',\n\t\texcept for 0, which is written simply as '0'";
+cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";
+cout << "\n\nTransducer output format switches:";
+cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";
+cout << "\n\t-J\tDon't omit output=input or Weight=1";
+cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
+cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 }
 
 void WFSTformatHelp(void)
