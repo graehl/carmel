@@ -15,8 +15,8 @@ struct StackAlloc
     typedef std::exception Overflow;
 #endif
 
-    void *top;
-    void *end;
+    void *top; // assuming alignment, next thing to be allocated starts here
+    void *end; // if top reaches or exceeds end, alloc fails
     int remain() const
     {
         return ((char *)end)-((char*)top);
@@ -47,10 +47,15 @@ struct StackAlloc
                          // for alloc(1)
     }
     template <class T>
+    T* next() const {
+        Assert(::is_aligned((T*)top));
+        return ((T*)top);
+    }
+    template <class T>
     T* alloc(unsigned n=1) throw(StackAlloc::Overflow)
     {
         T*& ttop(*(T**)&top);
-//        Assert(is_aligned(ttop));
+        Assert(::is_aligned(ttop));
         T* ret=ttop;
         ttop+=n;
         if (overfull())
@@ -113,7 +118,7 @@ BOOST_AUTO_UNIT_TEST( TEST_STACKALLOC )
     s.align<unsigned>();
     CHECK_EQ(s.capacity<unsigned>()*sizeof(unsigned),s.capacity<char>());
 
-    DBP(s.top);
+//    DBP(s.top);
 
     CHECK_EQ(s.top,(top=(char *)a+sizeof(unsigned)));
     CHECK_EQ((void *)s.alloc<unsigned>(2),top);
