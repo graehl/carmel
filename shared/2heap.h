@@ -6,6 +6,10 @@ using std::size_t;
 
 // binary maximum-heap with elements packed in [heapStart, heapEnd) - heap-sorted on > (*heapStart is the maximum element)
 
+// note: internally, a T* heap is actually one before heapStart so that
+// indices 1...heapSize can be used, so that 2*i is the left child of i, and
+// 2*i+1 is the right child.
+
 // heapEnd - heapStart = number of elements
 template <typename T> inline size_t heapSize ( T *s, T *e )
 {
