@@ -759,6 +759,7 @@ public:
                 } while (deref(read)(in,back()));
                 if (in.eof()) {
 //                    undo_push_back_raw();
+                    pop_back();
                     goto done;
                 }
                 goto fail;
