@@ -32,7 +32,8 @@ CC.linux = g++
 CC.freebsd = g++31
 CC.macosx = g++
 
-CCFLAGS = -c -Wall 
+CCFLAGS = -c 
+CCFLAGS = -c -Wno-deprecated -DBOOST_DISABLE_THREADS -DBOOST_NO_MT ${INC}
 #-Wall 
 #-fno-exception
 LDFLAGS = -L$(LIB) -lm
