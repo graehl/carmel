@@ -3,6 +3,8 @@
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+#include "byref.hpp"
+
 #include "property.hpp"
 #include "dynarray.h"
 #include "list.h"
@@ -22,20 +24,6 @@ struct ListS {
 
 template <class G,class E,class C,class V>
 struct SourceEdges;
-
-namespace boost {
-template <class G,class E,class C,class V>
-struct graph_traits<SourceEdges<G,E,C,V> > : public graph_traits<G> {
-  typedef G parent_graph;
-  typedef graph_traits<parent_graph> GT;
-  typedef SourceEdges<G,E,C,V> graph;
-  typedef E edge_descriptor;
-  typedef boost::counting_iterator<edge_descriptor> out_edge_iterator;
-    typedef std::pair<
-    typename GT::out_edge_iterator,
-    typename GT::out_edge_iterator> pair_out_edge_it;
-};
-};
 
 // for simplicity, requires vertex index ... could allow user to specify property map type instead, but would have to allocate it themself
 
@@ -153,7 +141,7 @@ inline void visit(T unused_type_tag,G &g,F f) {
     vertices(g);
    pi.first!=pi.second;
    ++pi.first)
-        f(*(pi.first));
+        deref(f)(*(pi.first));
 }
 
 
@@ -168,17 +156,23 @@ struct SourceEdges {
   typedef typename graph_object<G,T>::descriptor edge_descriptor;
   typedef typename ContS::container<edge_descriptor>::type Adj;
   //typedef FixedArray<Adj> Adjs;
-;
 
-  typedef G graph;
-  graph &g;
-  operator graph &() { return g; }
+
+  typedef G graph_type;
+  graph_type &g;
+  graph_type &graph() { return g; }
+  operator graph_type &() { return g; }
   typedef typename VertMapFactory::rebind<Adj>::implementation Adjs;
   Adjs adj;
-  SourceEdges(graph &g_,VertMapFactory vert_fact=VertMapFactory(g_)) :
+  SourceEdges(graph_type &g_) :
+  g(g_),adj(VertMapFactory(g_))
+  {
+        visit(T(),g,ref(*this));
+  }
+  SourceEdges(graph_type &g_,VertMapFactory vert_fact) :
   g(g_),adj(vert_fact)
   {
-        visit(T(),g,*this);
+        visit(T(),g,ref(*this));
   }
   Adj &operator[](vertex_descriptor v) {
     return adj[v];
@@ -196,16 +190,31 @@ struct SourceEdges {
   }
 };
 
+namespace boost {
 template <class G,class E,class C,class V>
-inline typename SourceEdges<G,E,C,V>::pair_out_edge_it
+struct graph_traits<SourceEdges<G,E,C,V> > : public graph_traits<G> {
+  typedef G parent_graph;
+  typedef graph_traits<parent_graph> GT;
+  typedef SourceEdges<G,E,C,V> graph;
+  typedef typename graph::edge_descriptor edge_descriptor;
+  //typedef boost::counting_iterator<edge_descriptor *> out_edge_iterator;
+  typedef typename graph::Adj::iterator out_edge_iterator;
+    typedef std::pair<out_edge_iterator,out_edge_iterator> pair_out_edge_it;
+};
+};
+
+
+
+template <class G,class E,class C,class V>
+inline typename graph_traits<SourceEdges<G,E,C,V> >::pair_out_edge_it
 out_edges(
-          typename graph_traits<G>::vertex_descriptor v,
-              const SourceEdges<G,E,C,V> &g
+          typename graph_traits<SourceEdges<G,E,C,V> >::vertex_descriptor v,
+              SourceEdges<G,E,C,V> &g
            )
 {
   typedef SourceEdges<G,E,C,V> Self;
   typename Self::Adj &adj=g[v];
-  return typename Self::pair_out_edge_it(adj.begin(),adj.end());
+  return typename graph_traits<Self>::pair_out_edge_it(adj.begin(),adj.end());
 }
 
 template <class G,class E,class C,class V>

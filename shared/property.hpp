@@ -41,7 +41,7 @@ unsigned get(OffsetMap<K> k,K p) {
  graph_algo(g,boost::ref(p));
  */
 template <class V,class O=boost::identity_property_map>
-struct ArrayPMapImp : public 
+struct ArrayPMapImp : public
   boost::put_get_helper<V &,ArrayPMapImp<V,O> >
 {
   typedef ArrayPMapImp<V,O> Self;
@@ -54,7 +54,8 @@ struct ArrayPMapImp : public
   typedef V& reference;
   typedef std::pair<unsigned,offset_map> init_type;
   offset_map ind;
-  FixedArray<value_type> vals; // not copyable!
+  typedef   FixedArray<value_type> Vals;
+  Vals  vals; // copyable!
   //ArrayPMapImp(G &g) : ind(g), vals(num_hyperarcs(g)) { }
 
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
@@ -63,7 +64,7 @@ struct ArrayPMapImp : public
     return vals[get(ind,k)];
   }
 private:
-  ArrayPMapImp(Self &s) {}
+  //  ArrayPMapImp(Self &s) : vals(s.vals) {}
 };
 
 /*
