@@ -44,6 +44,8 @@
 #define CHECKLEAK(i)
 #endif
 
+#define MAX_LEARNING_RATE_EXP 20
+
 // unless defined, Weight(0) will may give bad results when computed with, depending on math library behavior
 #define WEIGHT_CORRECT_ZERO
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this

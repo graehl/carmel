@@ -117,8 +117,8 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   lastPerplexity.setInfinity();
   float learning_rate=1;
   bool first_time=true;
+  bool last_was_reset=false;
   for ( ; ; ) {
-    Weight newPerplexity;
     ++train_iter;
     if ( train_iter > maxTrainIter ) {
       Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << converge_arc_delta << " was met - greatest arc weight change was " << lastChange << "\n";
@@ -128,9 +128,9 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   Config::debug() << "Starting iteration: " << train_iter << '\n';
 #endif
 
-    newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
+    Weight newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
 
-    Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): per-observation perplexity = " << newPerplexity ;
+    Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): per-observation-perplexity=" << newPerplexity;
 	
 	Weight pp_ratio;
     if ( first_time ) {
@@ -140,23 +140,27 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
     } else {
       pp_ratio = newPerplexity/lastPerplexity; //TODO: take 1/log(newPerplexity)th root? i.e. from EM delta=(L'-L)/abs(L')
 														// we already scale for L' by dividing by #observations.  could go either way.
-	  Config::log() << " (perplexity ratio = " << pp_ratio << "), max{d(weight)}=" << lastChange << std::endl;
+	  Config::log() << " (perplexity-ratio=" << pp_ratio << "), max{d(weight)}=" << lastChange << std::endl;
 	}
 
-    if (  pp_ratio >= converge_perplexity_ratio ) {
-		if ( learning_rate > 1 ) {
-			Config::log() << "Failed to improve (rate too high); starting again at learning exponent 1" << std::endl;
-			learning_rate=1;
-			undo_train_scale();
-			continue;
+	if (!last_was_reset) {
+		if (  pp_ratio >= converge_perplexity_ratio ) {
+			if ( learning_rate > 1 ) {
+				Config::log() << "Failed to improve (rate too high); starting again at learning rate 1" << std::endl;
+				learning_rate=1;
+				undo_train_scale();
+				last_was_reset=true;
+				continue;
+			}
+			Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << train_iter << " iterations.\n";
+			break;
+		} else {
+			if (learning_rate < MAX_LEARNING_RATE_EXP)
+				learning_rate *= learning_rate_growth_factor;
 		}
-		Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << train_iter << " iterations.\n";
-        break;
-	} else {
-#define MAX_LEARNING_RATE_EXP 20
-		if (learning_rate < MAX_LEARNING_RATE_EXP)
-			learning_rate *= learning_rate_growth_factor;
-    }
+	} else
+		last_was_reset=false;
+
 
 	lastChange = train_maximize(method,learning_rate);
 
@@ -520,8 +524,6 @@ Weight WFST::train_maximize(WFST::NormalizeMethod method,float delta_scale)
 {
  Assert(trn);
 
-  int pGroup;
-
 #define DUMPDW  do { for ( s = 0 ; s < numStates() ; ++s ) \
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
       List<DWPair>::const_iterator end = ha.val().const_end() ; \
@@ -554,26 +556,16 @@ EACHDW (
   DUMPDW;
 #endif
   // find maximum change for convergence (and scale change by delta_scale)
-//  EACHDW(
-  for ( int s = 0 ; s < numStates() ; ++s ) 
-      for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ 
-        List<DWPair>::val_iterator end = ha.val().val_end() ; 
-                for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {
+  
+  EACHDW(
 	   DWPair *d=&*dw;
 	   d->em_weight = d->weight();
        if ( !isLocked((d->arc)->groupId) )
 		   if (delta_scale != 1)
 		      if ( d->scratch.isPositive() )
-   				d->weight() = d->scratch * ((d->weight() / d->scratch) ^ delta_scale);
-#ifdef DEBUG_ADAPTIVE_EM
-  	   Config::debug() << " (" << d->scratch << "," << d->em_weight << "," << d->weight() << ")";
-#endif
-	}}
-//  );
+   				d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
+  );
 
-#ifdef DEBUG_ADAPTIVE_EM
-	  Config::debug() << std::endl;
-#endif
   if (delta_scale != 1)
 	  normalize(method);
 
@@ -581,7 +573,7 @@ EACHDW (
 
   maxChange.setZero();
   EACHDW(
-	  if (!isLocked(pGroup = (dw->arc)->groupId) ) {
+	  if (!isLocked((dw->arc)->groupId)) {
   	  	    if (dw->weight() > dw->scratch) {
 				change = dw->weight() - dw->scratch;
 			//	dw->weight() = dw->scratch + delta_scale*change;
