@@ -278,10 +278,10 @@ template <class A,class H,class P>
     }
 //  int bucketNum() const { return int(bucket - ht.table - 1); }
 //  operator int() const { return ( entry != NULL ); }
-        bool operator == (void *nocare) {
+        bool operator == (void *nocare) const {
         return entry == NULL;
   }
-  const HashEntry<K,V> * operator != (void *nocare) {
+  const HashEntry<K,V> * operator != (void *nocare) const {
         return entry;
   }
 
@@ -385,7 +385,7 @@ public:
    }
 
     const_iterator begin() const {
-         return *(HashTable<K,V,H,P,A> *)this;
+        return ((HashTable<K,V,H,P,A> *)this)->begin();
         }
         iterator begin()  {
           return *this;
@@ -744,7 +744,7 @@ inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
 
 
 template<>
-struct hash<unsigned int>
+struct hash<unsigned>
 {
   size_t operator()(unsigned int key) const {
         return uint_hash(key);

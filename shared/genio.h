@@ -371,18 +371,18 @@ inline std::basic_istream<charT,Traits>& operator >> \
 #define FRIEND_INSERTER(C) \
 template <class charT, class Traits> \
 friend std::basic_ostream<charT,Traits>& operator << \
- (std::basic_ostream<charT,Traits>& os, const C arg);
+ (std::basic_ostream<charT,Traits>& os, const C &arg);
 
 
 #define DEFINE_INSERTER(C) \
   template <class charT, class Traits> \
 std::basic_ostream<charT,Traits>& operator << \
- (std::basic_ostream<charT,Traits>& os, const C arg);
+ (std::basic_ostream<charT,Traits>& os, const C &arg);
 
 #define CREATE_INSERTER(C) \
   template <class charT, class Traits> \
 inline std::basic_ostream<charT,Traits>& operator << \
- (std::basic_ostream<charT,Traits>& os, const C arg) { \
+ (std::basic_ostream<charT,Traits>& os, const C &arg) { \
     return gen_inserter(os,arg); }
 
 #define GENIOGOOD std::ios_base::goodbit
