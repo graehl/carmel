@@ -37,6 +37,9 @@ public:
     Assert(index < sz);
     return vec[index];
   }
+  int index_of(T *t) const {
+	  return (int)(t-vec);
+  }
   void pushBack()
   {
     if ( sz >= space )

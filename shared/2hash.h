@@ -286,10 +286,7 @@ public:
   }
   V & operator[](const K &key)
   {
-    V *ret;
-    if ( (ret = find(key)) )
-      return *ret;
-    return *add(key);
+    return *findOrAdd(key);
   }
   Entry<K,V> * findEntry(const K &key) const
   {
