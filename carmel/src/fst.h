@@ -176,11 +176,6 @@ class WFST {
       states[s].flush();
     }
   }
-  void scaleArcs(Weight w) {
-    for ( int s = 0 ; s < numStates() ; ++s ) {
-      states[s].scaleArcs(w);
-    }
-  }
   WFST() { initAlphabet(); named_states=0;}
   //  WFST(const WFST &a): 
   //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))), 
@@ -286,7 +281,12 @@ class WFST {
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
-  void randomScale(); // randomly scale weights (of unlocked arcs) before training by (0..1]
+	void randomScale() {  // randomly scale weights (of unlocked arcs) before training by (0..1]
+		eachParameter(scaleRandom);
+	}
+	void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
+		eachParameter(setRandom);
+	}
   void normalize(NormalizeMethod method=CONDITIONAL);
   /*void normalizePerInput() {	
     normalize(CONDITIONAL);
@@ -296,8 +296,9 @@ class WFST {
   // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
   void trainBegin(NormalizeMethod method=CONDITIONAL,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
   void trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight);
-  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod method=CONDITIONAL);
+  Weight trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod method=CONDITIONAL, int ran_restarts=0);
   // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
+	// returns per-example perplexity achieved
 
   void invert();		// switch input letters for output letters
   void reduce();		// eliminate all states not along a path from
@@ -392,6 +393,35 @@ class WFST {
   ~WFST() {
     clear();
   }
+	typedef void (*WeightChanger)(Weight *w);
+	static void setRandom(Weight *w) {
+		Weight random;
+		random.setRandomFraction();
+		*w = random;
+	}
+	static void scaleRandom(Weight *w) {
+		Weight random;
+		random.setRandomFraction();
+		*w *= random;
+	}
+	template <class F> void eachParameter(F f) {
+			HashTable<IntKey, Weight> tiedWeights;
+		  for ( int s = 0 ; s < numStates() ; ++s )
+				for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
+					int group=a->groupId;
+					if (isNormal(group))
+						f(&(a->weight));
+					if (isTied(group)) {
+						Weight *pw;
+						if (pw=tiedWeights.find(group))
+							a->weight=*pw;
+						else {
+							f(&(a->weight));
+							tiedWeights.add(group,a->weight);
+						}
+					}
+				}
+	}
   void removeMarkedStates(bool marked[]);  // remove states and all arcs to
   // states marked true
   static inline bool isNormal(int groupId) {

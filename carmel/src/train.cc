@@ -87,7 +87,7 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
                   a } } } while(0)
 
 
-void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod method)
+Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod method, int ran_restarts)
 {
   Assert(trn);
   int i, o, nSt = numStates();
@@ -111,15 +111,17 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
     EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
   }
 
-  int train_iter = 0;
+  Weight bestPerplexity;
+  bestPerplexity.setInfinity();
+
+while(1) { // random restarts
+	int train_iter = 0;
   Weight lastChange;
   Weight lastPerplexity;
   lastPerplexity.setInfinity();
   FLOAT_TYPE learning_rate=1;
   bool first_time=true;
   bool last_was_reset=false;
-  Weight bestPerplexity;
-  bestPerplexity.setInfinity();
   for ( ; ; ) {
     ++train_iter;
     if ( train_iter > maxTrainIter ) {
@@ -190,15 +192,25 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
 
     lastPerplexity=newPerplexity;
   }
+	if (ran_restarts > 0) {
+		--ran_restarts;
+		randomSet();
+		Config::log() << "Random restart - " << ran_restarts << " remaining.\n";
+	} else {
+		break;
+	}
+}
   Config::log() << "Setting weights to model with lowest perplexity=" << bestPerplexity << std::endl;
   EACHDW(dw->weight()=dw->best_weight;);
+
+	return bestPerplexity;
   delete[] trn->forArcs;
   delete[] trn->revArcs;
   delete trn->forETopo;
   delete trn->revETopo;
-#ifdef N_E_REPS
-#endif
-  for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
+
+	
+	for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
     seq->kill();
 
   for ( i = 0 ; i <= maxIn ; ++i ) {
