@@ -4,7 +4,6 @@ attach and preserve arbitrary labels to arcs (states already have their arbitrar
 'wildcard', 'except-state' and 'except-global' label for arcs - for input or output not seen leaving the state, or at all
 external vocabulary files?
 option to iteratively sum paths with e-cycles for -S and -t.  use matrix math (e-paths of length 0,1,2,3... = 1+A^1+A^2+ ...)
-prune state/arc not used in any paths within $ratio of best path (get distance of each state from start and to final with Dijikstra)
 
 code:
 command-line regression tests

@@ -181,6 +181,7 @@ struct DWPair {
   Arc *arc;
   Weight scratch;
   Weight counts;
+  Weight prior_counts;
   Weight &weight() const { return arc->weight; }
 };
 
@@ -239,7 +240,7 @@ class trainInfo {
   Weight ***b;
   int maxIn, maxOut;
   List <IOSymSeq> examples;
-  Weight smoothFloor;
+  //Weight smoothFloor;
   float totalEmpiricalWeight;
   int nStates; // Yaser added this . number of States 
 #ifdef N_E_REPS // Yaser : the following variables need to be taken care of in the copy constructor

@@ -1,6 +1,7 @@
 // unused letters: -K -Y -U -o -q
 // -w w = prune paths ratio (1 = keep only best path, 10 = keep paths up to 10 times worse)
 // -z n = keep at most n states
+// -U = treat pre-training weights as prior counts
 
 #include <iostream>
 #include <fstream>
@@ -569,7 +570,7 @@ main(int argc, char *argv[]){
         }
       } else if ( flags['t'] ) {
         float weight;
-        result->trainBegin(norm_method);
+        result->trainBegin(norm_method,flags['U'],smoothFloor);
         if (pairStream) {
           for ( ; ; ) {
             weight = 1;
@@ -608,7 +609,7 @@ main(int argc, char *argv[]){
           List<int> empty_list;
           result->trainExample(empty_list, empty_list, 1.0);
         }
-        result->trainFinish(converge, converge_pp_ratio, smoothFloor, maxTrainIter, norm_method);
+        result->trainFinish(converge, converge_pp_ratio, maxTrainIter, norm_method);
       } else if ( nGenerate > 0 ) {
         MINIMIZE;
         //        if ( !flags['n'] )
@@ -752,10 +753,11 @@ cout << " a floating point number for how many times the \n\t\tinput/outp";
 cout << "ut pair should count in training (default is 1)\n-e w\t\tw is th";
 cout << "e convergence criteria for training (the minimum\n\t\tchange in ";
 cout << "an arc\'s weight to trigger another iteration) - \n\t\tdefault w";
-cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a floor weight used for train";
-cout << "ing, which is added to the\n\t\tcounts for all arcs, immediately";
-cout << " before normalization - if\n\t\tnonzero, it ensures that no arc ";
-cout << "will be given zero weight -\n\t\tdefault w is 0\n-M n\t\tn is th";
+cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a per-training example floor weight used for train";
+cout << "ing,\n\t\tadded to the counts for all arcs, immediately";
+cout << " before normalization -\n\t\t(this implements so-called \"Dirichlet prior\" smoothing)";
+cout << "\n-U\t\tuse the initial weights of non-locked arcs as per-example prior counts\n\t\t(in the same way as, and in addition to, -f)";
+cout << "\n-M n\t\tn is th";
 cout << "e maximum number of training iterations that will be\n\t\tperfor";
 cout << "med, regardless of whether the convergence criteria is\n\t\tmet ";
 cout << "- default n is 256\n-x\t\tlist only the input alphabet of the tr";

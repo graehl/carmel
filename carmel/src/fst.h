@@ -213,10 +213,13 @@ template <class I> int randomPath(I i,int max_len=-1)
   /*void normalizePerInput() {	
 	  normalize(CONDITIONAL);
   }*/
-  void trainBegin(NormalizeMethod method=CONDITIONAL);
+
+  // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
+  // new weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
+  void trainBegin(NormalizeMethod method=CONDITIONAL,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
   void trainExample(List<int> &inSeq, List<int> &outSeq, float weight);
-  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, Weight smoothFloor, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
-  // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  smoothFloor counts are added to all arcs
+  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
+  // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
 
   void invert();		// switch input letters for output letters
   void reduce();		// eliminate all states not along a path from

@@ -1,3 +1,10 @@
+2002-12-10  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/train.cc: changed trainBegin to take parameters for -f and
+	-U.  new prior_counts attribute for each arc in training (Dirichlet prior)
+
+	* src/finite.cc: added -U option: initial weights as prior counts for training
+
 2002-11-22  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/graph.cc: changed mind.  split into two functions - one that
