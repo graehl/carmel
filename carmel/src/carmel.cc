@@ -326,7 +326,7 @@ main(int argc, char *argv[]){
   for ( i = 0 ; i < nInputs ; ++i ) {
     if ( i != nTarget ) {
       new (&chain[i]) WFST(*inputs[i]);
-      if ( !flags['m'] && nInputs > 1) )
+      if ( !flags['m'] && nInputs > 1 )
         chain[i].unNameStates();
       if ( inputs[i] != &cin )
         delete inputs[i];
