@@ -30,9 +30,9 @@ struct collide_int {
   //collide_int(int m) : mask(m) {}
   size_t operator()(int i) const {
 #ifndef STATIC_HASHER
-	return i&mask;
+        return i&mask;
 #else
-	return i;
+        return i;
 #endif
   }
 };
@@ -43,7 +43,7 @@ void dump_ht(HT &ht)
   Config::debug() << ht;
 }
 
-#include "../../tt/test.hpp"
+#include "test.hpp"
 BOOST_AUTO_UNIT_TEST( alphabet )
 {
   Alphabet<StringKey,StringPool> a;
@@ -53,13 +53,13 @@ BOOST_AUTO_UNIT_TEST( alphabet )
   BOOST_CHECK(n==4);
   a.add("a");
   for (int i=0;i<n;++i) {
-	BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
-	BOOST_CHECK(a[*a.find(s[i])] == s[i]);
-	BOOST_CHECK(b(*b.find(s[i])) == s[i]);
+        BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
+        BOOST_CHECK(a[*a.find(s[i])] == s[i]);
+        BOOST_CHECK(b(*b.find(s[i])) == s[i]);
   }
   BOOST_CHECK(a.size()==5 && b.size()==4);
   for (int i=0;i<n;++i)
-	BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
+        BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
   BOOST_CHECK(a.size()==5 && b.size()==4);
   BOOST_CHECK(a(4)=="pi");
   BOOST_CHECK(a(77)=="77");
@@ -67,144 +67,144 @@ BOOST_AUTO_UNIT_TEST( alphabet )
   BOOST_CHECK(a.size()==78);
   a.verify();
   b.verify();
-  
+
 }
 #ifdef BENCH
 #include <boost/progress.hpp>
 #endif
 
   static void hashtest(int n, int mask)
-  {	
-	n *= 2;
+  {
+        n *= 2;
 #ifdef BENCH
-	Config::log() << n << " with mask " << mask << "\n";
+        Config::log() << n << " with mask " << mask << "\n";
 #endif
-	collide_int hashfn;
-		typedef HashTable<int,int,collide_int> HT;
+        collide_int hashfn;
+                typedef HashTable<int,int,collide_int> HT;
 #ifndef STATIC_HASHER
-	hashfn.mask=mask;
+        hashfn.mask=mask;
 #endif
-	HT ht(n/16,hashfn);
+        HT ht(n/16,hashfn);
 #ifndef STATIC_HASHER
-	BOOST_CHECK(ht.hash_function().mask == hashfn.mask);
+        BOOST_CHECK(ht.hash_function().mask == hashfn.mask);
 #endif
-	BOOST_CHECK(ht.bucket_count() >= (unsigned)n/16);
-	bool *seen=new bool[n];
-	{ 
+        BOOST_CHECK(ht.bucket_count() >= (unsigned)n/16);
+        bool *seen=new bool[n];
+        {
 #ifdef BENCH
-	  boost::progress_timer t;
+          boost::progress_timer t;
 #endif
-	int i;
-	// n must be even
-	{
+        int i;
+        // n must be even
+        {
 #ifdef BENCH
-	Config::log() << "add ";
+        Config::log() << "add ";
 
-	  boost::progress_timer t;
+          boost::progress_timer t;
 #endif
-	  for (i=0; i <n; ++i) {
+          for (i=0; i <n; ++i) {
 
-	  add(ht,i,i);
-	  BOOST_CHECK(ht.find(i) != ht.end());
-	}
-	}
-	bool first=true;
+          add(ht,i,i);
+          BOOST_CHECK(ht.find(i) != ht.end());
+        }
+        }
+        bool first=true;
 again:
-	if (!first) {
+        if (!first) {
 #ifdef BENCH
-	  Config::log() << "total ";
+          Config::log() << "total ";
 #endif
-	  return;
-	} else
-	  first=false;
-	BOOST_CHECK(ht.size() == n);
-	#ifdef BENCH
-	Config::log() << "find ";
+          return;
+        } else
+          first=false;
+        BOOST_CHECK(ht.size() == n);
+        #ifdef BENCH
+        Config::log() << "find ";
 #endif
-	{ 
+        {
 #ifdef BENCH
-	  boost::progress_timer t;
+          boost::progress_timer t;
 #endif
-	for (i=0; i <n; ++i) {
-	  BOOST_CHECK(ht.find(i) != ht.end());
-	  BOOST_CHECK(ht.find(i)->first == i);
-	  BOOST_CHECK(ht.find(i)->second == i);
-	  BOOST_CHECK(ht.insert(std::pair<int,int>(i,0)).second == false);	  
-	  BOOST_CHECK(*find_second(ht,i) == i);
-	  
-	  BOOST_CHECK(ht[i] == i);
-	}
-	}
-	for (i=0; i <n; ++i)
-	  seen[i]=false;
-	 { 
-#ifdef BENCH
-	   Config::log() << "it " << (unsigned)ht.bucket_count() << " ";
-	  boost::progress_timer t;
-#endif
-	for (HT::iterator hit=ht.begin();hit!=ht.end();++hit) {
-	  int k=hit->first;
-	  BOOST_CHECK(hit->second==k);
-	  BOOST_CHECK(k<n && k>=0);
-	  seen[k]=true;
-	}
-	}
-	for (i=0; i <n; ++i)
-	  BOOST_CHECK(seen[i]=true);
+        for (i=0; i <n; ++i) {
+          BOOST_CHECK(ht.find(i) != ht.end());
+          BOOST_CHECK(ht.find(i)->first == i);
+          BOOST_CHECK(ht.find(i)->second == i);
+          BOOST_CHECK(ht.insert(std::pair<int,int>(i,0)).second == false);
+          BOOST_CHECK(*find_second(ht,i) == i);
 
-	for (i=0; i <n; ++i)
-	  seen[i]=false;
-	size_t total=0;
-	for (i=0;i<(int)ht.bucket_count();++i) {
-	  total += ht.bucket_size(i);
-	  for (HT::local_iterator hit=ht.begin(i),end=ht.end(i);hit!=ht.end(i);++hit) {
-		int k=hit->first;
-		BOOST_CHECK(hit->second==k);
-		BOOST_CHECK(k<n && k>=0);
-		seen[k]=true;
-	  }
-	}
-	BOOST_CHECK(ht.size()==total);
-	for (i=0; i <n; ++i)
-	  BOOST_CHECK(seen[i]=true);
-
-{ 
+          BOOST_CHECK(ht[i] == i);
+        }
+        }
+        for (i=0; i <n; ++i)
+          seen[i]=false;
+         {
 #ifdef BENCH
-Config::log() << "erase ";	
-  boost::progress_timer t; 
+           Config::log() << "it " << (unsigned)ht.bucket_count() << " ";
+          boost::progress_timer t;
 #endif
-	BOOST_CHECK(ht.size() == n);
-	for (i=0; i <n; i+=2) {
-	  ht.erase(i);
-	  BOOST_CHECK(ht.find(i) == ht.end());
-	}
+        for (HT::iterator hit=ht.begin();hit!=ht.end();++hit) {
+          int k=hit->first;
+          BOOST_CHECK(hit->second==k);
+          BOOST_CHECK(k<n && k>=0);
+          seen[k]=true;
+        }
+        }
+        for (i=0; i <n; ++i)
+          BOOST_CHECK(seen[i]=true);
+
+        for (i=0; i <n; ++i)
+          seen[i]=false;
+        size_t total=0;
+        for (i=0;i<(int)ht.bucket_count();++i) {
+          total += ht.bucket_size(i);
+          for (HT::local_iterator hit=ht.begin(i),end=ht.end(i);hit!=ht.end(i);++hit) {
+                int k=hit->first;
+                BOOST_CHECK(hit->second==k);
+                BOOST_CHECK(k<n && k>=0);
+                seen[k]=true;
+          }
+        }
+        BOOST_CHECK(ht.size()==total);
+        for (i=0; i <n; ++i)
+          BOOST_CHECK(seen[i]=true);
+
+{
+#ifdef BENCH
+Config::log() << "erase ";
+  boost::progress_timer t;
+#endif
+        BOOST_CHECK(ht.size() == n);
+        for (i=0; i <n; i+=2) {
+          ht.erase(i);
+          BOOST_CHECK(ht.find(i) == ht.end());
+        }
 }
-	BOOST_CHECK(ht.size() == n/2);
-	for (i=0; i <n; i++) {
-	  if ( i % 2)
-		BOOST_CHECK(ht.find(i) != ht.end());
-	  else
-		BOOST_CHECK(ht.find(i) == ht.end());
-	}
-	ht.clear();
-	BOOST_CHECK(ht.size() == 0);
+        BOOST_CHECK(ht.size() == n/2);
+        for (i=0; i <n; i++) {
+          if ( i % 2)
+                BOOST_CHECK(ht.find(i) != ht.end());
+          else
+                BOOST_CHECK(ht.find(i) == ht.end());
+        }
+        ht.clear();
+        BOOST_CHECK(ht.size() == 0);
 
-	for (i=0; i <n; ++i) {
-	  BOOST_CHECK(ht.find(i) == ht.end());
-	  BOOST_CHECK(find_second(ht,i) == NULL);
-	  if ( i % 2) {
-	  HT::insert_return_type insr=ht.insert(std::pair<int,int>(i,i));	  
-	  BOOST_CHECK(insr.second == true);
-	  BOOST_CHECK(insr.first->first == i);
-	  BOOST_CHECK(insr.first->second == i);
-	  } else
-		ht[i]=i;
-	  BOOST_CHECK(ht.find(i) != ht.end());
-	}
+        for (i=0; i <n; ++i) {
+          BOOST_CHECK(ht.find(i) == ht.end());
+          BOOST_CHECK(find_second(ht,i) == NULL);
+          if ( i % 2) {
+          HT::insert_return_type insr=ht.insert(std::pair<int,int>(i,i));
+          BOOST_CHECK(insr.second == true);
+          BOOST_CHECK(insr.first->first == i);
+          BOOST_CHECK(insr.first->second == i);
+          } else
+                ht[i]=i;
+          BOOST_CHECK(ht.find(i) != ht.end());
+        }
 
-	goto again;	
+        goto again;
   }
-	delete[] seen;
+        delete[] seen;
   }
 
   BOOST_AUTO_UNIT_TEST( hashtable )
