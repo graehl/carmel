@@ -237,6 +237,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 
 // frees self automatically - WARNING - doesn't copy contents!
 template <typename T,typename Alloc=std::allocator<T> > class AutoArray : public Array<T,Alloc> {
+public:
   typedef Array<T,Alloc> Super;
   explicit AutoArray(unsigned sp=4) : Super(sp) { }
   ~AutoArray() {
@@ -251,6 +252,7 @@ private:
 
 // frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
 template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public AutoArray<T,Alloc> {
+public:
   typedef AutoArray<T,Alloc> Super;
   explicit FixedArray(unsigned sp=4) : Super(sp) { 
     construct();
@@ -300,7 +302,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
 	endvec=endspace;
   }
 
-  DynamicArray(const DynamicArray &a) : Array(a.size()) {
+  DynamicArray(const DynamicArray &a) : Array<T,Alloc>(a.size()) {
 //	unsigned sz=a.size();
     //alloc(sz);
 //	memcpy(vec,a.vec,sizeof(T)*sz);
@@ -327,7 +329,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
   void move_rest_to(T *to,iterator i) {
 	Assert(i >= begin() && i < end());
-	copyto(to,i,end()-i)
+	copyto(to,i,end()-i);
 	endvec=i;
   }
 
