@@ -1,82 +1,43 @@
 #ifndef LAZYKBESTTREES_H
 #define LAZYKBESTTREES_H
 
-
+#include <new> // placement ::operator new(address) T()
 #include <vector>
 #include "Debug.h"
 
-// supports binary weighted AND-labeled forests with alternating AND/OR
-// bipartite graph structure (essentially, a hypergraph)
-// cost_T should act like nonneg reals with addition
-// result_F should be a functor for bottom-up combination of binary/unary ANDs as a function of AND labels:
-// e.g.:
+// TODO: implement deletion of all the lazykbest results (currently relies on pool/batch deletion)
+//TODO:  MIGHT IT BE MORE FLEXIBLE TO PASS RESULT BY VALUE?
+
+//USAGE:
+
+template <class R,class A >
+struct lazy_kbest;
+
 /*
-  struct result_F {
-     typedef int R;
-     typedef int label_T;
-     typedef float cost_T;
-     
-     static void set_end(cost_T &cost) { cost=-1; }
-     static bool is_end(cost_T cost) { return cost==-1; }
-     static void set_pending(cost_T &cost) { cost=-2; }
-     static bool is_pending(cost_T cost) { return cost==-2; }
-     
-     cost_T getCost(label_T label) const { return label;} // leaf
-     cost_T getCost(label_T label,cost_T unary) const { return unary+label;} // unary
-     cost_T getCost(label_T label,cost_T left,cost_T right) const { return left+right+label;} // binary
-     
-// optional (you can follow backpointers yourself)
-     R *buildResult(label_T label) const { return label;} // leaf
-     R *buildResult(label_T label,R *unary) const { return unary+label;} // unary
-     R *buildResult(label_T label,R *left,R *right) const { return left+right+label;} // binary
+  struct R {
+   result(result *prototype, result *old_child, result *new_child,unsigned which_child);
+   bool operator < (const result &other) const; //  worse < better!
   };
 
-    typedef typename F::R Result;
-    F result;
-    typedef typename F::label_T Label;
-    struct OR;
-    struct AND;
-    typedef std::pair<Cost,Result *> Tree;
+  struct ResultAlloc {
+      R *allocate(); // won't ever be deallocated unless you keep track of allocations yourself
+  };
+ */
 
-    struct BestMemo {
-        std::vector<Tree> kbest;        
-    };
-    struct OrNode {
-        std::vector<BestMemo> memo; // index by kth best
-        struct AndNode {
-            Label label;
-            OrNode *first,*second;
-            AndNode(const Label &l) : label(l),first(NULL),second(NULL) {}
-            AndNode(const Label &l,OrNode *unary) : label(l),first(unary),second(NULL) {}
-            AndNode(const Label &l,OrNode *left,OrNode *right) : label(l),first(left),second(right) {}            
-        };
-        std::vector<AndNode> tails;
-        
-        typedef std::pair<cost_T
-    };
+
+
+// your operator new must be able to log and recover allocations or this will leak;  also double-initializes :(
+template <class T>
+struct DefaultNewAlloc {
+    typedef T allocated_type;
+    T *allocate() const {
+        return new T(); 
+    }
+    void deallocate(T *p) const {
+        delete p;
+    }
+};
     
-    
-    // both OR/AND: the kbest std::vector always contains cached 1...n best, or
-    // result.is_null(kbest[kbest.size()-1]) if no more can be generated
-    struct OR {
-        typedef pair<cost_T,unsigned> Instance; // index of OR-child to take next-best from
-        std::vector<Instance> queue; // cheapest first
-        std::vector<AND *> children;
-        std::vector<Result> kbest;        
-    };
-    struct AND { // unary doesn't use queue.  leaf doesn't use anything except label
-        Label label;
-        typedef pair<cost_T,pair<unsigned,unsigned> > Instance; // index of (left,right)-child to take next-best from
-        std::vector<Instance> queue; // cheapest first
-        pair<OR *,OR *> children;
-        std::vector<Result> kbest;
-        bool isUnary() const {
-            return children.second==NULL;
-        }
-    };    
-
-*/
-
 
 template <class T,bool destruct=true>
 struct DefaultPoolAlloc {
@@ -91,11 +52,17 @@ struct DefaultPoolAlloc {
         assert(other.allocated.empty());
     }
     ~DefaultPoolAlloc() {
+        deallocate_all();
+    }
+    void deallocate_all() {
         for (typename std::vector<T*>::const_iterator i=allocated.begin(),e=allocated.end();i!=e;++i)
             if (destruct)
                 delete *i;
             else
                 ::operator delete((void *)*i);
+    }
+    void deallocate(T *p) const {
+        // can only deallocate_all()
     }
     T *allocate() {
         allocated.push_back((T *)::operator new(sizeof(T)));
@@ -104,24 +71,12 @@ struct DefaultPoolAlloc {
 };
 
 
-/*
-  struct R {
-   result(result *prototype, result *old_child, result *new_child,unsigned which_child);
-   bool operator < (const result &other) const; //  worse < better!
-  };
-
-  struct ResultAlloc {
-      R *allocate(); // won't ever be deallocated unless you keep track of allocations yourself
-  };
- */
 #ifdef GRAEHL_HEAP
 #include "2heap.h"
 #else
 #include <algorithm>
 #endif
 
-template <class R,class A >
-struct lazy_kbest;
 
 //template <class r,class a> std::ostream &operator <<(std::ostream &o,const typename lazy_kbest<r,a>::LazyKEntry &e);
 
@@ -176,9 +131,13 @@ struct Node {
     static A result_alloc;
     typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
     typedef std::vector<QEntry> pq_t;
-    pq_t pq;     // INVARIANT: pq[0] contains the last entry added to memo
     typedef std::vector<R *> memo_t;
+
+    //MEMBERS:    
+    pq_t pq;     // INVARIANT: pq[0] contains the last entry added to memo
     memo_t memo;
+
+    
     Node() {
         //            make_done();
     }
@@ -254,7 +213,7 @@ struct Node {
         if (R *new_child=(pending.child[i])->get_best(++pending.childbp[i])) {         // has child-succesor
             INFOT("HAVE CHILD SUCCESOR TO " << *this << ": @" << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
             pending.result=result_alloc.allocate(); 
-            new(pending.result) R(old_parent,old_child,new_child,i);
+            new(pending.result) R(old_parent,old_child,new_child,i); // FIXME: ensure placement new is used - how?  ::operator new is bad ...
             INFOT("new result="<<*pending.result);
             push(pending);  
         }
@@ -307,10 +266,9 @@ struct Node {
 
 };
 
-#ifdef MAIN
 template <class R,class A>
 A Node<R,A>::result_alloc;
-#endif
+
 template <class V>
 std::ostream & operator << (std::ostream &o,const std::vector<V> &v) 
 {
@@ -327,11 +285,25 @@ std::ostream & operator << (std::ostream &o,const std::vector<V> &v)
     return o;
 }
 
+template <class R,class A>
+std::ostream &operator <<(std::ostream &o,const Entry<R,A> &e)
+{
+    e.print_on(o);
+    return o;
+}
+
+template <class R,class A>
+std::ostream &operator <<(std::ostream &o,const Node<R,A> &e)
+{
+    e.print_on(o);
+    return o;
+}
 
 } //NAMESPACE lazy_kbest_impl
 
 
 
+/*
 template <class R,class A>
 std::ostream &operator <<(std::ostream &o,const lazy_kbest_impl::Entry<R,A> &e)
 {
@@ -345,15 +317,13 @@ std::ostream &operator <<(std::ostream &o,const lazy_kbest_impl::Node<R,A> &e)
     e.print_on(o);
     return o;
 }
+*/
 
 
-
+// MAIN DRIVER CLASS:
 template <class R,class A=DefaultPoolAlloc<R> >
 struct lazy_kbest {
-    typedef lazy_kbest_impl::Entry<R,A> Entry;
-    typedef lazy_kbest_impl::Node<R,A> Node;
 //    lazy_kbest(const A &_result_alloc=A()) : result_alloc(_result_alloc) {}
-    typedef R Result;
 //    const Result *DONE=NULL;
     //    const R *PENDING=(R *)0x1;
     //    template <class r,class q> struct Node;
@@ -361,8 +331,11 @@ struct lazy_kbest {
     // to use: initialize pending with viterbi.
     
     // visit(R &result,unsigned rank) // rank 0...k-1 (or earlier if forest has fewer trees)
+    
+    typedef lazy_kbest_impl::Node<R,A> Node;
     template <class Visitor>
-    void enumerate_kbest(unsigned k,Node *goal,Visitor visit=Visitor()) {
+    static void enumerate_kbest(unsigned k,Node *goal,Visitor visit=Visitor()) {
+    typedef R Result;
         INFOT("COMPUTING BEST " << k << " for node " << *goal);
         NESTT;
         for (unsigned i=0;i<k;++i) {
@@ -371,6 +344,11 @@ struct lazy_kbest {
             visit(*ith,i);
         }
     }
+    /*
+    void deallocate_all() {
+        Node::result_alloc.deallocate_all();
+    }
+    */
 };
 
 
@@ -423,9 +401,9 @@ struct ResultPrinter {
     void operator()(const Result &r,unsigned i) const {
         NESTT;        
         INFOT("Visiting result #" << i << r);
-        INFOT('');
+        INFOT("");
         cout << "RESULT #" << i << "=" << r << "\n";
-        INFOT('');
+        INFOT("");
     }
 };
 
@@ -445,9 +423,9 @@ BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
     c.add_sorted(&rc,&b,&f);
     f.add_sorted(&rf); // terminal
     NESTT;
-    LK().enumerate_kbest(1,&f,ResultPrinter());
-    LK().enumerate_kbest(1,&b,ResultPrinter());
-    LK().enumerate_kbest(15,&a,ResultPrinter());
+    LK::enumerate_kbest(1,&f,ResultPrinter());
+    LK::enumerate_kbest(1,&b,ResultPrinter());
+    LK::enumerate_kbest(15,&a,ResultPrinter());
     
 }
 #endif

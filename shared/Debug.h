@@ -64,14 +64,19 @@ using namespace std;
 #define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,info,module,msg)
 #define INFOL(lvl,module,msg) DBG_OP_L(lvl,dbg,info,module,msg)
 
-#if defined(TEST) && defined(NOISY_TEST)
+#if (defined(TEST) && !defined(QUIET_TEST) ) 
 #define INFOT(msg) DBG_OP(&test_dbg,info,"TEST",msg)
 #define WARNT(msg) DBG_OP(&test_dbg,warning,"TEST",msg)
 #define NESTT NESTINFO_GUARD(&test_dbg)
 #else
-#define INFOT(msg) 
-#define WARNT(msg) 
+#define INFOT(msg) DBG_OP_L(99,dbg,info,"TEST",msg)
+#define WARNT(msg) DBG_OP_L(99,dbg,warning,"TEST",msg)
+#if INFO_LEVEL >= 99
+#define NESTT NESTINFO_GUARD(dbg)
+#else
 #define NESTT
+#endif 
+    
 #endif
 
 namespace ns_decoder_global {
@@ -87,6 +92,7 @@ namespace ns_decoder_global {
   public:
       int runtime_info_level;
       unsigned info_outline_depth;
+      unsigned debug_outline_depth;
       void increase_depth() {
           ++info_outline_depth;
       }
@@ -95,6 +101,15 @@ namespace ns_decoder_global {
               warning("Debug","decrease_depth called more times than increase_depth - clamping at 0");
           else
               --info_outline_depth;          
+      }
+      void increase_debug_depth() {
+          ++debug_outline_depth;
+      }
+      void decrease_debug_depth() {
+          if (debug_outline_depth == 0)
+              warning("Debug","decrease_debug_depth called more times than increase_debug_depth - clamping at 0");
+          else
+              --debug_outline_depth;          
       }
       struct Nest {
           Debug *dbg;
@@ -109,7 +124,7 @@ namespace ns_decoder_global {
           }
       };
       
-      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr) {}
+      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
       return *debugOS;
