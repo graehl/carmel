@@ -3,13 +3,17 @@
 #include "config.h"
 #include <iostream>
 
-#include "assert.h"
+#include "myassert.h"
 #include "dynarray.h"
 #include "2hash.h"
 
 #include "stringkey.h"
 
-std::ostream & operator << (std::ostream & out, const StringKey &s);
+inline std::ostream & operator << (std::ostream & out, const StringKey &s)
+{
+  out << (char *)(StringKey)s;
+  return out;
+}
 
 
 class StringPool {
@@ -65,6 +69,7 @@ public:
 };
 
 
+template <class StrPool=STRINGPOOLCLASS>
 class Alphabet {
   DynamicArray<char *> names;
   HashTable<StringKey, int> ht;
@@ -81,7 +86,7 @@ class Alphabet {
       add(a.names[i]);
 #endif
   }
-  void dump();
+  void dump() { 	Config::debug() << ht; }
   void verify() {
 #ifdef DEBUG
 	for (int i = 0 ; i < names.size(); ++i ) {
@@ -102,7 +107,7 @@ class Alphabet {
     }
   void add(char *name) { 
 	Assert(find(name) == NULL);
-    StringKey s = StringPool::borrow(StringKey(name));;
+    StringKey s = StrPool::borrow(StringKey(name));;
 	ht[s]=names.size();
     names.push_back(s.str);
   }
@@ -118,7 +123,7 @@ class Alphabet {
 	if ( (it = find_second(ht,s)) )
       return *it;
     else {
-      StringKey k = StringPool::borrow(s);
+      StringKey k = StrPool::borrow(s);
       int ret = names.size();
       add(ht,k,ret);
       names.push_back(k.str);
@@ -127,7 +132,7 @@ class Alphabet {
 #else
 	HashTable<StringKey,int>::insert_return_type it;
 	if ( (it = ht.insert(HashTable<StringKey,int>::value_type(s,names.size()))).second )
-	  names.push_back(*const_cast<StringKey*>(&(it.first->first)) = StringPool::borrow(s)); // might seem naughty, (can't change hash table keys) but it's still equal.		
+	  names.push_back(*const_cast<StringKey*>(&(it.first->first)) = StrPool::borrow(s)); // might seem naughty, (can't change hash table keys) but it's still equal.		
     return it.first->second;	
 #endif
   }
@@ -163,7 +168,7 @@ class Alphabet {
      
       StringKey k;
       k.str = itoa(iNum);
-      k = StringPool::borrow(k);
+      k = StrPool::borrow(k);
       if ( iNum < names.size() ) {
 		names[iNum] = k.str;
 		ht[k]=iNum;
@@ -183,7 +188,7 @@ class Alphabet {
 	if ( marked[i] ) {
 	  ht.erase(names[i]);
 #ifndef NODELETE
-	  StringPool::giveBack(names[i]);
+	  StrPool::giveBack(names[i]);
 #endif
 	} else {
 	  int &rI = ht.find(names[i])->second;
@@ -206,7 +211,7 @@ class Alphabet {
 #ifndef NODELETE
       for ( int  i = 0; i < names.size() ; ++i )
 	if ( names[i] != StringKey::empty )
-	  StringPool::giveBack(names[i]);
+	  StrPool::giveBack(names[i]);
 #endif
     }
   friend std::ostream & operator << (std::ostream &out, Alphabet &alph);

@@ -1,6 +1,6 @@
 #ifndef COMPOSE_H
 #define COMPOSE_H 1
-#include "assert.h"
+#include "myassert.h"
 
 #include "2hash.h"
 

@@ -4,9 +4,9 @@
 
 #include <string>
 #include <new>
-#include "assert.h"
+#include "myassert.h"
 
-
+// caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
 template <typename T> class DynamicArray {
   int space;
   int sz;
@@ -56,6 +56,15 @@ template <typename T> class DynamicArray {
 	resize(space << 1);
       return vec + (sz++);
     }
+	T * begin() { return vec; }
+	//T * end() {	  return vec+sz;	}
+	const T* begin() const {
+	  return vec;
+	}
+  const T* end() const {
+	  return vec+sz;
+  }
+	
   void removeMarked(bool marked[]) {
     if ( !sz ) return;
     int f, i = 0;

@@ -16,7 +16,7 @@
 #include <string>
 #include <ctime>
 #include "fst.h"
-#include "assert.h"
+#include "myassert.h"
 
 #ifdef MARCU
 #include "models.h"
@@ -58,7 +58,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
 
 }
 
-static void printSeq(Alphabet *a,int *seq,int maxSize) {
+static void printSeq(Alphabet<> *a,int *seq,int maxSize) {
 
   for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
     if (i>0)

@@ -62,7 +62,7 @@ template <class T> struct hash;
 #include <iostream>
 #include <cstdlib>
 #include <new>
-#include "assert.h"
+#include "myassert.h"
 #include <utility>
 
 const float DEFAULTHASHLOAD = 1.0f;
@@ -757,5 +757,24 @@ std::basic_ostream<A,B>&
 {
   return out << '(' << p.first << ',' << p.second << ')';  
 }
+
+#define BEGIN_HASH_VAL(C) \
+HASHNS_B \
+template<> struct hash<C> \
+{ \
+  size_t operator()(const C x) const
+
+
+
+#define BEGIN_HASH(C) \
+HASHNS_B \
+template<> struct hash<C> \
+{ \
+  size_t operator()(const C& x) const
+
+#define END_HASH	\
+};\
+HASHNS_E
+
 
 #endif

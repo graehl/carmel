@@ -35,21 +35,21 @@ public:
 	{
 		return strcmp(str, a.str)==0;
 	}
+	int cmp( const StringKey &a ) const 
+	{
+		return strcmp(str, a.str);
+	}
+
 	bool isGlobalEmpty() const { return str == empty; }
 	size_t hash() const
 	{
 		return cstr_hash(str);	
 	}
 };
-HASHNS_B
-template<> struct hash<StringKey>
-{
-  size_t operator()(StringKey s) const {
-	return s.hash();
-  }
-};
-HASHNS_E
-inline size_t hash_value(StringKey s) { return s.hash(); }
+BEGIN_HASH_VAL(StringKey) {
+	return x.hash();
+} END_HASH
+//inline size_t hash_value(StringKey s) { return s.hash(); }
 //inline size_t hash(StringKey s) { return s.hash(); }
 
 #endif

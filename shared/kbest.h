@@ -2,7 +2,7 @@
 #define KBEST_H 1
 
 #include "graph.h"
-#include "assert.h"
+#include "myassert.h"
 #include "train.h"
 #include "list.h"
 #include "fst.h"

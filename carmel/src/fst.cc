@@ -394,7 +394,6 @@ Graph WFST::makeGraph() const
   // Comment by Yaser: This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
-  // It is not a good programming practice but it will be messy to clean it up.
   //
 {
   Assert(valid());
@@ -420,7 +419,6 @@ Graph WFST::makeEGraph() const
   // Comment by Yaser: This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
-  // It is not a good programming practice but it will be messy to clean it up.
   //
 
 {
