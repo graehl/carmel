@@ -69,12 +69,12 @@ struct EdgePath {
   GraphHeap *node;
   int heapPos;			// -1 if arc is GraphHeap.arc
   EdgePath *last;
-  float weight;
+  FLOAT_TYPE weight;
 };
 
 int operator < (const EdgePath &l, const EdgePath &r);
 
-Graph sidetrackGraph(Graph lG, Graph rG, float *dist); 
+Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist); 
 void buildSidetracksHeap(int state, int pred); 
 void printTree(GraphHeap *t, int n) ; 
 void shortPrintTree(GraphHeap *t);

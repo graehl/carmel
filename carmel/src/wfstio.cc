@@ -358,7 +358,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         } else
           weight = 1.0;
 //        if ( weight > 0.0 ) {
-        states[stateNumber].addArc(Arc(inL, outL, destState, weight));
+        states[stateNumber].addArc(Arc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
         //} else if ( weight != 0.0 ) {
 //          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
 //          return 0;
@@ -389,19 +389,21 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
       }
     }
   }
-  if ( !named_states)
+  if ( !named_states) {
+	  if (!(final < count())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
+		  
       return 1;
-  
-  {
-  int *uip = stateNames.find(finalName);
-  if ( uip  ) {
-    final = *uip;
-	finalName.kill();
-    return 1;
-  } else {
-    cout << "\nFinal state named " << finalName << " not found.\n";
-	goto INVALID;
   }
+  {
+	int *uip = stateNames.find(finalName);
+	if ( uip  ) {
+	final = *uip;
+	finalName.kill();
+	return 1;
+	} else {
+	cout << "\nFinal state named " << finalName << " not found.\n";
+	goto INVALID;
+	}
   }
 INVALID:
 	if (named_states)

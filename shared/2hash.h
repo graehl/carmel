@@ -7,7 +7,7 @@
 #include <new>
 #include "assert.h"
 
-const float DEFAULTHASHLOAD = .8f;
+const FLOAT_TYPE DEFAULTHASHLOAD = .8f;
 template <typename K, typename V> class HashTable ;
 template <typename K, typename V> class HashIter ;
 template <typename K, typename V> class HashConstIter ;
@@ -31,7 +31,7 @@ public:
   /*  Entry() : next(NULL) { }*/
   Entry(const K & k, const V& v) : next(NULL), key(k), val(v) { }
   Entry(const K &k, const V& v, Entry<K,V> * const n) : next(n), key(k), val(v) { }
-  Entry(const K &k, Entry<K,V> * const n) : next(n), key(k) { }
+  Entry(const K &k, Entry<K,V> * const n) : next(n), key(k), val() { }
 #ifdef CUSTOMNEW
   static Entry<K,V> *freeList;
   static const int newBlocksize;
@@ -221,7 +221,7 @@ public:
     memcpy(this, &h, s);
     memcpy(&h, temp, s);
   }
-  HashTable(int sz = 4, float mLoad = DEFAULTHASHLOAD)
+  HashTable(int sz = 4, FLOAT_TYPE mLoad = DEFAULTHASHLOAD)
   {
     if ( sz < 4 )
       siz = 4;
@@ -323,8 +323,8 @@ public:
   int size() const { return siz + 1; }
   int count() const { return cnt; } 
   int growWhen() const { return growAt; }
-  float threshold() const { return (float)growAt / (float)(siz + 1); }
-  void changeThreshold(float mLoad) 
+  FLOAT_TYPE threshold() const { return (FLOAT_TYPE)growAt / (FLOAT_TYPE)(siz + 1); }
+  void changeThreshold(FLOAT_TYPE mLoad) 
   {
     growAt = (int)(mLoad * (siz+1));
     if ( growAt < 2 )
@@ -346,7 +346,7 @@ public:
 	p->next = table[hashVal];
 	table[hashVal] = p;
       }
-    growAt = int((float(growAt) * (siz+1)) / (oldSiz+1));
+    growAt = int((FLOAT_TYPE(growAt) * (siz+1)) / (oldSiz+1));
     delete[] oldTable;
   }
   friend class HashIter<K,V>;

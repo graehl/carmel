@@ -5,7 +5,7 @@ using namespace std;
 // xalloc gives a unique global handle with per-ios space handled by the ios
 const int Weight::base_index = ios_base::xalloc();
 const int Weight::thresh_index = ios_base::xalloc();
-const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
+const FLOAT_TYPE Weight::HUGE_FLOAT = (FLOAT_TYPE)HUGE_VAL;
 const Weight Weight::ZERO;
 const Weight Weight::INF(false,false);
 /*
@@ -24,7 +24,7 @@ std::ostream& operator << (std::ostream &o, Weight weight)
 /*
 std::istream& operator >> (std::istream &i, Weight &weight)
 {
-  static const float ln10 = log(10.f);
+  static const FLOAT_TYPE ln10 = log(10.f);
 
   char c;
   double f;
@@ -34,9 +34,9 @@ std::istream& operator >> (std::istream &i, Weight &weight)
   else if ( (c = i.get()) == 'l' ) {
    char n = i.get();
    if ( n == 'n')
-    weight.weight = (float)f;
+    weight.weight = (FLOAT_TYPE)f;
    else if ( n == 'o' && i.get() == 'g' )
-    weight.weight = (float)f * ln10;
+    weight.weight = (FLOAT_TYPE)f * ln10;
    else
     weight = 0;
   } else {

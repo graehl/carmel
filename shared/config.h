@@ -9,6 +9,8 @@
 // use singly linked list
 #define USE_SLIST
 
+typedef double FLOAT_TYPE;
+
 // for meaningful compose state names
 #define MAX_STATENAME_LEN 15000
 
@@ -29,19 +31,26 @@
 #define CHECKLEAK(i)
 #endif
 #define DEBUGLEAK
-#define DEBUGTRAIN
+#define DEBUG_ESTIMATE_PP
+//#define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
 #define DEBUGNORMALIZE
 //#define DEBUGKBEST
 //#define DEBUGPRUNE
 //#define DEBUGFB
-#define DEBUGCOMPOSE
-//#define DEBUG_ADAPTIVE_EM
+//#define DEBUGCOMPOSE
+#define DEBUG_ADAPTIVE_EM
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-3
 #else
+//#define DEBUG_ADAPTIVE_EM
 #define NEW new
 #define INITLEAK
 #define CHECKLEAK(i)
+#endif
+
+
+#ifdef DEBUGNORMALIZE
+#define CHECKNORMALIZE
 #endif
 
 #define MAX_LEARNING_RATE_EXP 20

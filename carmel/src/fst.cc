@@ -96,10 +96,11 @@ namespace WFST_impl {
     Cit2 Ci2,Cend;
     Jit Ji,Jend;
     const WFST::NormalizeMethod method;
+	bool empty_state() { return state->size == 0; }
     void beginState() {
-      if(method==WFST::CONDITIONAL) {
-        Ci.init(*state->index);
-      }
+		if(method==WFST::CONDITIONAL)
+		  if (!empty_state())
+			  Ci.init(*state->index); 
     }
   public:
     NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state((State *)wfst_.states), end(state+wfst_.numStates()), method(meth) { beginState(); }
@@ -116,6 +117,8 @@ namespace WFST_impl {
     }
     void beginArcs() {
       if(method==WFST::CONDITIONAL) {
+    	if (empty_state())
+			return;
         Ci2 = Ci.val().const_begin();
         Cend = Ci.val().const_end();
       } else {
@@ -125,6 +128,8 @@ namespace WFST_impl {
     }
     bool moreArcs() {
       if(method==WFST::CONDITIONAL) {
+      	if (empty_state())
+			return false;
         return Ci2 != Cend;
       } else {
         return Ji != Jend;
@@ -146,8 +151,9 @@ namespace WFST_impl {
     }
     void nextGroup() {
       if(method==WFST::CONDITIONAL) {
-        ++Ci;
-        while (!Ci) {
+	    if ( !empty_state() )
+			++Ci;
+        while (empty_state() || !Ci) {
           ++state;
           if (moreGroups())
             beginState();
@@ -196,28 +202,39 @@ void WFST::normalize(NormalizeMethod method)
   HashTable<IntKey, Weight> groupMaxLockedSum;
   // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
-    Weight sum,locked_sum; // sum of probability of all arcs that has this input
-    for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+    Weight sum,locked_sum; // =0, sum of probability of all arcs that has this input
+	for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+	  const Weight w=(*g)->weight;
       if (isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
-        locked_sum += (*g)->weight;
+        locked_sum += w;
       else
-        sum += (*g)->weight;
-    for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-      if (!(*g)->weight.isZero())
+        sum += w;
+	}
+#ifdef DEBUGNORMALIZE
+	Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
+#endif
+	for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+	  const Weight w=(*g)->weight;
+      if (!w.isZero())
         if ( isTied(pGroup = (*g)->groupId) ) {
-          groupArcTotal[pGroup] += (*g)->weight; // default init is to 0
+          groupArcTotal[pGroup] += w; // default init is to 0
           groupStateTotal[pGroup] += sum;
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
+#ifdef DEBUGNORMALIZE
+	Config::debug() << "Tiegroup=" << pGroup << " Normgroup=" << g << " tie_weight=" << groupArcTotal[pGroup] << " sum_state_weight=" << groupStateTotal[pGroup] << " max_locked=" << m << std::endl;
+#endif
+
         }
+	}
   }
 
 
   // global pass 2: assign weights
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
-    Weight normal_sum;
-    Weight reserved;
+    Weight normal_sum;//=0
+    Weight reserved;// =0
 
     // pass 2a: assign tied (and locked) arcs their weights, taking 'reserved' weight from the normal arcs in their group
     // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
@@ -252,13 +269,15 @@ void WFST::normalize(NormalizeMethod method)
           (*g)->weight.setZero();
   }
 
-#ifdef DEBUGNORMALIZE
+#ifdef CHECKNORMALIZE
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
+	  
     Weight sum;
     for ( g.beginArcs(); g.moreArcs(); g.nextArc())
       sum += (*g)->weight;
-    if ( sum > 1.001 )
-      Config::warn() << "Warning: sum of normalized arcs for " << g << " = " << sum << " - should not exceed 1.0\n";
+#define NORM_EPSILON .01
+    if ( sum > 1+NORM_EPSILON || sum < 1-NORM_EPSILON)
+      Config::warn() << "Warning: sum of normalized arcs for " << g << " = " << sum << " - should equal 1.0\n";
   }
 #endif
 
@@ -389,7 +408,7 @@ Graph WFST::makeEGraph() const
 #include <algorithm>
 // for std::sort
 
-typedef pair<float,int> PFI;
+typedef pair<FLOAT_TYPE,int> PFI;
 
 // isn't there some projectfirst template?
 inline bool lesscost(const PFI &l, const PFI &r) {
@@ -413,15 +432,15 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
   Graph rev_graph = reverseGraph(for_graph);
 
   bool *remove = NEW bool[n_states];
-  float worst_d_dist = keep_paths_within_ratio.getLogImp();
-  float *for_dist = NEW float[n_states];
-  float *rev_dist = NEW float[n_states];
-  // todo: efficiency: could use indirected compare on array of integers, instead of moving around float+integer
+  FLOAT_TYPE worst_d_dist = keep_paths_within_ratio.getLogImp();
+  FLOAT_TYPE *for_dist = NEW FLOAT_TYPE[n_states];
+  FLOAT_TYPE *rev_dist = NEW FLOAT_TYPE[n_states];
+  // todo: efficiency: could use indirected compare on array of integers, instead of moving around FLOAT_TYPE+integer
   PFI *best_path_cost = NEW PFI[n_states];
   shortestDistancesFrom(for_graph,0, for_dist,NULL);
   shortestDistancesFrom(rev_graph,final, rev_dist,NULL);
-  float best_path = for_dist[final];
-  float worst_path = best_path + worst_d_dist;
+  FLOAT_TYPE best_path = for_dist[final];
+  FLOAT_TYPE worst_path = best_path + worst_d_dist;
   Assert(fabs(best_path - rev_dist[0]) < 1e-5);
 
   for (i=0;i<n_states;++i) {
@@ -454,7 +473,7 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
         remove[st] = false;
         State &s=states[st];
         for ( List<Arc>::erase_iterator a(s.arcs.erase_begin()), end = s.arcs.erase_end() ; a !=end  ;  ) {
-          float best_path_this_arc = (-a->weight.getLogImp())+for_dist[st]+rev_dist[a->dest];
+          FLOAT_TYPE best_path_this_arc = (-a->weight.getLogImp())+for_dist[st]+rev_dist[a->dest];
 #ifdef DEBUGPRUNE
           Config::debug() << "Arc " << st << ": ";
           printArc(*a,st,Config::debug()) << " best path cost = " << best_path_this_arc << std::endl;
