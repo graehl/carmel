@@ -65,16 +65,16 @@ struct Weight {                 // capable of representing nonnegative reals
     template <class charT, class Traits>
     static int get_log(std::basic_ostream<charT,Traits>& o) {
         int thresh=o.iword(thresh_index);
-        if (thresh == Weight::DEFAULT_LOG)
-            thresh=Weight::default_thresh;
+        if (thresh == DEFAULT_LOG)
+            thresh=default_thresh;
         return thresh;
     }
 
     template <class charT, class Traits>
     static int get_log_base(std::basic_ostream<charT,Traits>& o) {
         int thresh=o.iword(base_index);
-        if (thresh == Weight::DEFAULT_BASE)
-            thresh=Weight::default_base;
+        if (thresh == DEFAULT_BASE)
+            thresh=default_base;
         return thresh;
     }
 
