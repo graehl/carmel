@@ -4,15 +4,15 @@
 #include <cstdlib>
 using std::size_t;
 
-// binary max heap with elements packed in [heapStart, heapEnd)
-// heapEnd - heapStart = number of elements
+// binary maximum-heap with elements packed in [heapStart, heapEnd) - heap-sorted on > (*heapStart is the maximum element)
 
-template <typename T> size_t heapSize ( T *s, T *e )
+// heapEnd - heapStart = number of elements
+template <typename T> inline size_t heapSize ( T *s, T *e )
 {
   return e - s;
 }
 
-template <typename T> void heapAdd ( T *heapStart, T *heapEnd, const T& elt )
+template <typename T> inline void heapAdd ( T *heapStart, T *heapEnd, const T& elt )
      // caller is responsbile for ensuring that *heapEnd is allocated and
      // safe to store the element in (and keeping track of increased size)
 {
@@ -26,7 +26,8 @@ template <typename T> void heapAdd ( T *heapStart, T *heapEnd, const T& elt )
   heap[last] = elt;
 }
 
-template <typename T> static void heapify ( T *heap, size_t heapSize, size_t i) // internal routine
+// internal routine: repair sub-heap condition given a violation at root element i (heap[i=1]==root)
+template <typename T> static inline void heapify ( T *heap, size_t heapSize, size_t i)
 {
   T temp = heap[i];
   size_t parent = i, child = 2*i;
@@ -49,8 +50,9 @@ template <typename T> static void heapify ( T *heap, size_t heapSize, size_t i) 
 template <typename T> void heapPop (T *heapStart, T *heapEnd)
 {
   T *heap = heapStart - 1;  // to start numbering of array at 1
-  size_t heapSize = heapEnd - heapStart;
+  size_t heapSize = heapSize(heapStart,heapEnd);
   heap[1] = heap[heapSize--];
+  heapAdjustRootDown
   heapify(heap, heapSize, 1);
 }
 
@@ -68,8 +70,8 @@ template <typename T> void heapBuild ( T *heapStart, T *heapEnd )
     heapify(heap, size, i);
 }
 
-
-template <typename T> void heapAdjustUp ( T *heapStart, T *element)
+// *element may need to be moved up toward the root of the heap.  fix.
+template <typename T> inline void heapAdjustUp ( T *heapStart, T *element)
 {
   T *heap = heapStart - 1;
   size_t parent, current = element - heap;
@@ -82,6 +84,20 @@ template <typename T> void heapAdjustUp ( T *heapStart, T *element)
     current = parent;
   }
   heap[current] = temp;
+}
+
+// *heapStart may need to be moved up toward the bottom of the heap.  fix.
+template <typename T> inline void heapAdjustRootDown ( T *heapStart, T *heapEnd)
+{    
+  T *heap = heapStart - 1;
+  heapify(heap,heapSize(heapStart,heapEnd),1);
+}
+
+// *heapStart may need to be moved up toward the bottom of the heap.  fix.
+template <typename T> inline void heapAdjustDown ( T *heapStart, T *heapEnd, T *element)
+{    
+  T *heap = heapStart - 1;
+  heapify(heap,heapSize(heapStart,heapEnd),element-heap);
 }
 
 template <typename T> void heapSort (T *heapStart, T *heapEnd)
@@ -186,7 +202,7 @@ inline void heapAdjustUp ( C &heap, typename C::iterator element) {
 
 template <typename C>
 inline void heapSort ( C &heap ) {
-  heapBuild(heap.begin(),heap.end());
+  heapSort(heap.begin(),heap.end());
 }
 
 #endif
