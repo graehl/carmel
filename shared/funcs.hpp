@@ -27,6 +27,42 @@
 #include <algorithm>
 #include <iostream>
 
+template <class size_type,class inputstream>
+size_type parse_size(inputstream &i) {    
+    size_type size;
+    double number;
+
+    if (!(i >> number))
+        goto fail;
+    char c;
+    if (i.get(c)) {
+        switch(c) {
+        case 't':case 'T':
+            number *= (1024.*1024.*1024.*1024.);
+            break;
+
+        case 'g':case 'G':
+            number *= (1024*1024*1024);
+            break;
+
+        case 'm':case 'M':
+            number *= (1024*1024);
+            break;
+
+        case 'k':case 'K':
+            number *=(1024);
+            break;
+
+        default:
+            goto fail;
+        }
+    }
+    if (number - (size_type)number > 1)
+        throw std::runtime_error(std::string("Overflow - size too big to fit: ").append(boost::lexical_cast<std::string>(number)));
+    return (size_type)number;
+fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (2^10,2^20,2^30) suffix."));
+}
+
 // requires Val::operator += as well as copy ctor.  TODO: version that takes InPlaceFold functor.
 template <class AssocContainer,class Key,class Val>
 inline void accumulate(AssocContainer *table,const Key &key,const Val &val) {

@@ -1,3 +1,8 @@
+2005-03-26  Jonathan Graehl  <graehl@isi.edu>
+
+	* io.hpp: moved everything from genio.h except what's used for
+	get_from print_on macros
+
 2005-03-21  Jonathan Graehl  <graehl@isi.edu>
 
 	* genio.h (FRIEND_INSERTER): const C arg -> const C &arg

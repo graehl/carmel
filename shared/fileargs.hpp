@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 //#include "fileheader.hpp"
+#include "funcs.hpp"
 
 typedef boost::shared_ptr<std::istream> Infile;
 typedef boost::shared_ptr<std::ostream> Outfile;
@@ -38,46 +39,17 @@ void validate(boost::any& v,
               size_t* target_type, int)
 {
     typedef size_t value_type;
-    value_type size;
-    double number;
-
     //using namespace boost::program_options;
 
     // Make sure no previous assignment to 'a' was made.
-    po::validators::check_first_occurrence(v);
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
     std::stringstream i(po::validators::get_single_string(values));
-    if (!(i >> number))
-        goto fail;
+    v=boost::any(parse_size<value_type>(i));
     char c;
-    if (i.get(c)) {
-        switch(c) {
-        case 'g':case 'G':
-            number *= (1024*1024*1024);
-            break;
-
-        case 'm':case 'M':
-            number *= (1024*1024);
-            break;
-
-        case 'k':case 'K':
-            number *=(1024);
-            break;
-
-        default:
-            goto fail;
-        }
-    }
-    if (i.get(c))
-        goto fail;
-    v=boost::any((value_type)number);
-    if (number - (value_type)number > 1)
-        throw std::runtime_error(std::string("Overflow - size too big for size_t: ").append(boost::lexical_cast<std::string>(number)));
-
+    if (i >> c)
+        throw std::runtime_error(std::string("Succesfully read a nonnegative size, but read extra characters after."));
     return;
-fail:
-    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (2^10,2^20,2^30)suffix but got: ").append(i.str()));
 }
 
 /* Overload the 'validate' function for shared_ptr<std::istream>. We use shared ptr

@@ -4,6 +4,153 @@
 #include "genio.h"
 #include "funcs.hpp"
 
+//!< print before word.
+template <char sep=' '>
+struct WordSeparator {
+    bool first;
+    WordSeparator() : first(true) {}
+    std::ostream & print(std::ostream &o) {
+        if (first) 
+            first=false;
+        else        
+            o << sep;
+        return o;
+    }
+};
+
+template <char sep>
+inline
+std::ostream & operator <<(std::ostream &o, WordSeparator<sep> &separator) {
+    return separator.print(o);
+}
+
+template <class C>
+inline bool is_shell_special(C c) {
+    switch(c) {
+    case ' ':case '\t':case '\n':
+    case '\\':
+    case '>':case '<':case '|':
+    case '&':case ';':
+    case '"':case '\'':case '`':
+    case '~':case '*':case '?':case '{':case '}':
+    case '$':case '!':case '(':case ')':
+        return true;
+    default:
+        return false;
+    }
+}
+
+template <class C>
+inline bool needs_shell_escape_in_quotes(C c) {
+    switch(c) {
+    case '\\':case '"':case '$':case '`':case '!':
+        return true;
+    default:
+        return false;
+    }
+}
+
+template <class C,class charT, class Traits>
+inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+    std::stringstream s;
+    s << data;
+    std::string str=s.str();
+
+    char c;
+    if (find_if(str.begin(),str.end(),is_shell_special<char>)==str.end()) {
+        out << str;
+    } else {
+        out << '"';
+        while (s.get(c)) {
+            if (needs_shell_escape_in_quotes(c))
+                out.put('\\');
+            out.put(c);
+        }
+        out << '"';        
+    }
+    return out;
+}
+
+template <class charT, class Traits>
+inline std::basic_ostream<charT,Traits> & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
+    out << header;
+    WordSeparator<' '> sep;
+    for (int i=0;i<argc;++i)
+        out_shell_quote(out << sep,argv[i]);
+    out << std::endl;
+    return out;
+}
+
+
+
+template <class C,class charT, class Traits>
+inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+    std::stringstream s;
+    s << data;
+    char c;
+    out << '"';
+    while (s.get(c)) {
+        if (c == '"' || c== '\\')
+            out.put('\\');
+        out.put(c);
+    }
+    out << '"';
+}
+
+template <class C,class charT, class Traits>
+inline void out_ensure_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+    typedef std::basic_string<charT,Traits> String;
+    String s=boost::lexical_cast<String>(data);
+    if (s[0] == '"')
+        out << s;
+    else {
+        out << '"';
+        for (typename String::iterator i=s.begin(),e=s.end();i!=e;++i) {
+            char c=*i;
+            if (c == '"' || c== '\\')
+                out.put('\\');
+            out.put(c);
+        }
+        out << '"';
+    }
+}
+
+template <class C,class charT, class Traits>
+inline void out_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+    typedef std::basic_string<charT,Traits> String;
+    String s=boost::lexical_cast<String>(data);
+    if (s.find('"') == s.find('\\')) // == String::npos
+        out << s;
+    else {
+        out << '"';
+        for (typename String::iterator i=s.begin(),e=s.end();i!=e;++i) {
+            char c=*i;
+            if (c == '"' || c== '\\')
+                out.put('\\');
+            out.put(c);
+        }
+        out << '"';
+    }
+}
+
+#define ERROR_CONTEXT_CHARS 50
+template <class Ic,class It,class Oc,class Ot>
+inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot> &out) {
+    char context[ERROR_CONTEXT_CHARS];
+    in.clear();
+    in.get(context,ERROR_CONTEXT_CHARS,'\n');
+    out << "... " << context << std::endl << "   ^" << std::endl;
+}
+
+template <class Ic,class It>
+void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const char *item="input",unsigned number=0) {
+    std::ostringstream err;            
+    err << "Error reading " << item << " # " << number << ": " << error << std::endl;
+    show_error_context(in,err);
+    err << "\n(file position " << std::streamoff(in.tellg()) << ")" << std::endl;
+    throw std::runtime_error(err.str());        
+}
+
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
 template <class Label>
 struct DefaultReader
@@ -213,33 +360,33 @@ struct IndirectReader
   template <class charT, class Traits, class T,class Writer>
   std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
   {
-      if (parens)
+      static const char *const MULTILINE_SEP="\n";
+      const char space=' ';
+      if (parens) {          
           o << '(';
+          if (multiline)
+              o << MULTILINE_SEP;
+      }           
       if (multiline) {
-#define MULTILINE_SEP "\n"
-#define LONGSEP MULTILINE_SEP << " "
           for (;begin!=end;++begin) {
-              o << LONGSEP;
+              o << space;              
               deref(writer)(o,*begin);
-          }
-
-          o << MULTILINE_SEP;
+              o << MULTILINE_SEP;
+          }          
       } else {
           bool first=true;
+          WordSeparator<space> sep;
           for (;begin!=end;++begin) {
-              if (first)
-                  first = false;
-              else
-                  o << ' ';
+              o << sep;
               deref(writer)(o,*begin);
           }
       }
-      if (parens)
+      if (parens) {          
           o << ')';
-      if (multiline)
-          o << MULTILINE_SEP;
-#undef LONGSEP
-#undef MULTILINE_SEP
+          if (multiline)
+              o << MULTILINE_SEP;
+      }
+      
       return GENIOGOOD;
 }
 
