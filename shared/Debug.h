@@ -18,7 +18,7 @@ using namespace std;
 # define INFO_LEVEL 9999
 #endif
 #ifndef ASSERT_LEVEL
-# define INFO_LEVEL 9999
+# define ASSERT_LEVEL 9999
 #endif
 
 #define IF_INFO(level) if(INFO_LEVEL>level)
