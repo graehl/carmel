@@ -7,10 +7,10 @@
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
 
-Carmel Version 2.00:
+Carmel Version 2.01:
 
-This version of carmel is released on 10-26-2001. For changes and
-additions to the initial realease of Carmel, see CHANGES.
+This version of carmel is released on 2002-11-07. For changes and
+additions to Carmel, see ChangeLog.
 
 Table of Contents:
 --------------------
@@ -27,7 +27,7 @@ includes the following directories and files:
 
 	src/	include the C++ source files
 	doc/	include the documentation files (FORMATS + tutorial).
-	bin/	Carmel executable.
+	bin/	Carmel executables.
 	sample/	The examples for Carmel tutorial. The tutorial can be
 		found  in the doc/ directory.
 	LICENSE	The license agreement for this software.
@@ -199,7 +199,8 @@ result to the standard output.
 		equivalent paths.
 -h		help on transducers, file formats
 -V		version number
--u		Don't normalize outgoing arcs for each input during training
+-u		Don't normalize outgoing arcs for each input during training;
+		try -tuM 1 to see forward-backward counts for arcs
 -j		Perform joint rather than conditional normalization
 
 some formatting switches for paths from -k or -G:

@@ -6,7 +6,10 @@
 
 	* src/wfstio.cc: lines beginning with # (that aren't part of a quoted symbol) are ignored as comments
 
-	* src/finite.cc: new options:
+	* src/finite.cc: state names are no longer removed and replaced with numbers by default except in composition;
+	this should help people who are only using carmel for -k best paths and don't understand why their state numbers change
+
+	new options:
 	-g no longer bounds number of arcs taken between min and min+#states, nor requires normalization.
 	-G randomly chooses arcs according to joint normalization and lists them like -k
 	-u blocks normalization entirely during e.g. training; can be used with -tuM 1 to give forward-backward counts for arcs
