@@ -145,14 +145,14 @@ test: $(ALL_TESTS)
 $(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
 	@echo
 	@echo creating Boost Test lib
-	$(AR) cr $@ $^
-	$(RANLIB) $@
+	$(AR) -rc $@ $^
+#	$(RANLIB) $@
 
 $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 	@echo
 	@echo creating Boost Program Options lib
-	$(AR) cr $@ $^
-	$(RANLIB) $@
+	$(AR) -rc $@ $^
+#	$(RANLIB) $@
 
 vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.

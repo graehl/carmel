@@ -1,3 +1,13 @@
+2004-08-27  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/fst.cc: changed kbest interface to visitor vs. returning
+	list of paths; included wfstio.cc and compose.cc since they'll
+	never be used without fst.cc (and to reduce the number of
+	compilation units due to a GNU Make bug with long eval lines
+
+	* Makefile: merged build system for tree transducer and Carmel
+	toolkits (../shared/graehl.mk)
+
 2004-07-16  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/dynarray.h: nonstd namespace for reimp of stuff that used to
