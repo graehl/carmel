@@ -62,7 +62,7 @@ struct Symbol {
   static StringInterner<> intern;
   char *str;
   Symbol() : str(empty) {}
-  Symbol(char *s) : str(intern(s)) {}
+  Symbol(const char *s) : str(intern(s)) {}
   Symbol(const Symbol &s) : str(s.str) {}
   static char * borrow(char *s) {
     return intern(s);
@@ -161,6 +161,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
   {buf[0]='a';
   buf[1]=0;
   char *s="a";
+//  DBP(Symbol(s)<<endl);
   BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
@@ -170,6 +171,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
     {buf[0]='b';
   buf[1]=0;
   char *s="b";
+  //DBP(Symbol(s)<<endl);
   BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
@@ -179,6 +181,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
 	  {buf[0]='a';
   buf[1]=0;
   char *s="a";
+//  DBP(Symbol(s)<<endl);
   BOOST_CHECK(Symbol::borrow(s)==Symbol::borrow(buf));
   BOOST_CHECK(Symbol(s)==Symbol(buf));
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
@@ -215,8 +218,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
 	char *sb="1a";
 	istringstream(sa) >> a;
 	BOOST_CHECK(!strcmp(a.str,sb));
-	BOOST_CHECK(a==Symbol(sa));
-	DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
+//	DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
 	BOOST_CHECK(a==Symbol(sb));
   }
    {
@@ -225,7 +227,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
 	char *sb="\"\\\"a\"";
 	istringstream(sa) >> a;
 	BOOST_CHECK(!strcmp(a.str,sb));
-	DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
+	//DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
 	BOOST_CHECK(a==Symbol(sb));
   }
  {

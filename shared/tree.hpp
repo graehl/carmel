@@ -2,6 +2,7 @@
 #define _TREE_HPP
 
 #include <iostream>
+#include "../carmel/src/myassert.h"
 #include "../carmel/src/genio.h"
 #include <vector>
 #include <algorithm>
@@ -17,15 +18,23 @@ namespace lambda=boost::lambda;
 using namespace std;
 
 // Tree owns its own child pointers list but nothing else - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
+
 template <class Label, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
   typedef Tree Self;
   typedef Label label_type;
   Label label;
   size_t n_child;
+private:
+    Self **children;
+public:
+  void *leaf_data() const {
+	Assert(n_child==0);
+	return children;
+  }
+
   size_t size() const {
 	return n_child;
   }
-  Self **children;
   Tree() : n_child(0) {}
   Tree (const Label &l) : n_child(0),label(l) {  }
   Tree (const Label &l,size_t n) : label(l) { alloc(n); }
@@ -34,14 +43,22 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
   }
   void alloc(size_t _n_child) {
 	n_child=_n_child;
+#ifdef TREE_SINGLETON_OPT
+	if (n_child>1)
+#else
 	if (n_child)
+#endif
 	  children = (Self **)allocate(n_child);
   }
   explicit Tree(size_t _n_child,Alloc _alloc=Alloc()) : Alloc(_alloc) {
 	alloc(_n_child);
   }
   void dealloc() {
+#ifdef TREE_SINGLETON_OPT
+	if (n_child>1)
+#else
 	if (n_child)
+#endif
 	  deallocate((void **)children,n_child);
 	n_child=0;
   }
@@ -57,20 +74,37 @@ template <class Label, class Alloc=std::allocator<void *> > struct Tree : privat
   typedef const Self *const_value_type;
   typedef const const_value_type *const_iterator;
 
-  value_type & operator [](size_t i) { return children[i]; }
-  value_type & child(size_t i) { return children[i]; }
+  value_type & child(size_t i) { 
+#ifdef TREE_SINGLETON_OPT
+	if (n_child == 1)
+	  return *(value_type *)children;
+#endif
+	return children[i]; 
+  }
+  value_type & operator [](size_t i) { return child(i); }
+  
 
   iterator begin() {
-	return children;
+#ifdef TREE_SINGLETON_OPT
+	if (n_child == 1)
+	  return (iterator)&children;
+	else
+#endif
+	  return children;
   }
   iterator end() {
-	return children+n_child;
+#ifdef TREE_SINGLETON_OPT
+	if (n_child == 1)
+	  return (iterator)&children + 1;
+	else
+#endif
+	  return children+n_child;
   }
   const_iterator begin() const {
-	return children;
+	return ((Self *)this)->begin();
   }
   const_iterator end() const {
-	return children+n_child;
+	return ((Self *)this)->end();
   }
   template <class T>
 friend size_t tree_count(const T *t);
@@ -170,6 +204,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in)
 };
 
 
+
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
@@ -186,6 +221,10 @@ operator <<
 {
 	return gen_inserter(os,arg);
 }
+
+
+
+
 
 
 template <class C>
