@@ -23,16 +23,16 @@
 */
 
 
-// Define BOOST_IO_SOURCE so that <boost/io/detail/config.hpp> knows that we are
+// Define MEMMAP_IO_SOURCE so that <boost/io/detail/config.hpp> knows that we are
 // building the library (possibly exporting code), rather than using it
 // (possibly importing code).
-#define BOOST_IO_SOURCE
+#define MEMMAP_IO_SOURCE
 
 #include <cassert>
 
 #include "os.hpp"
 
-#ifdef BOOST_IO_WINDOWS
+#ifdef MEMMAP_IO_WINDOWS
 #else
 # include <fcntl.h>
 # include <sys/mman.h>      // mmap, munmap.
@@ -112,7 +112,7 @@ private:
     char*               data_;
     std::size_t         size_;
     std::ios::openmode  mode_;
-#ifdef BOOST_IO_WINDOWS
+#ifdef MEMMAP_IO_WINDOWS
     HANDLE  handle_;
     HANDLE  mapped_handle_;
 #else
@@ -154,7 +154,7 @@ public:
 
             boost::intmax_t filesize=offset+length;
 
-#ifdef BOOST_IO_WINDOWS //----------------------------------------------------//
+#ifdef MEMMAP_IO_WINDOWS //----------------------------------------------------//
 
 
             //--------------Open underlying file--------------------------------------//
@@ -234,7 +234,7 @@ public:
 
             data_ = reinterpret_cast<char*>(data);
 
-#else // #ifdef BOOST_IO_WINDOWS //-------------------------------------------//
+#else // #ifdef MEMMAP_IO_WINDOWS //-------------------------------------------//
 
             //--------------Open underlying file--------------------------------------//
 
@@ -298,7 +298,7 @@ public:
     bool close()
         {
             bool status;
-#ifdef BOOST_IO_WINDOWS //----------------------------------------------------//
+#ifdef MEMMAP_IO_WINDOWS //----------------------------------------------------//
             if (!is_open()) return true;
             ::SetLastError(0);
             ::UnmapViewOfFile(data_);
@@ -323,7 +323,7 @@ public:
 
     unsigned alignment()
         {
-#ifdef BOOST_IO_WINDOWS //----------------------------------------------------//
+#ifdef MEMMAP_IO_WINDOWS //----------------------------------------------------//
             SYSTEM_INFO info;
             ::GetSystemInfo(&info);
             return static_cast<unsigned>(info.dwAllocationGranularity);

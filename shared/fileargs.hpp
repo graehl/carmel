@@ -122,6 +122,9 @@ void validate(boost::any& v,
     if (s == "-") {
         boost::shared_ptr<std::ostream> w(&std::cout, null_deleter());
         v = boost::any(w);
+    } else if ( s== "-2") {
+        boost::shared_ptr<std::ostream> w(&std::cerr, null_deleter());
+        v = boost::any(w);
     } else {
         boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
         if (!*r) {

@@ -6,36 +6,46 @@
 #include <cstdio>
 #include <stdexcept>
 
-#if !defined( BOOST_IO_WINDOWS ) && !defined( BOOST_IO_POSIX )
+#if !defined( MEMMAP_IO_WINDOWS ) && !defined( MEMMAP_IO_POSIX )
 # if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
-#  define BOOST_IO_WINDOWS
+#  define MEMMAP_IO_WINDOWS
 #  ifndef _WIN32_WINNT
 #   define _WIN32_WINNT 0x0500
 #  endif
 # else
-#  define BOOST_IO_POSIX
+#  define MEMMAP_IO_POSIX
 # endif
 #endif
 
 
-#ifdef BOOST_IO_WINDOWS
+#ifdef MEMMAP_IO_WINDOWS
 # define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 # include <windows.h>
 # undef max
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
  typedef DWORD Error;
+
+ inline long get_process_id() {
+     return GetCurrentProcessId();
+ }
+
 #else
+ inline long get_process_id() {
+     return getpid();
+ }
 # include <errno.h>
 # include <string.h>
  typedef int Error;
 #endif
 
+
 #ifdef DBP_OS_HPP
 #include "debugprint.hpp"
 #endif
 
+
 Error last_error() {
-#ifdef BOOST_IO_WINDOWS
+#ifdef MEMMAP_IO_WINDOWS
     return ::GetLastError();
 #else
     return errno;
@@ -43,7 +53,7 @@ Error last_error() {
 }
 
 std::string error_string(Error err) {
-#ifdef BOOST_IO_WINDOWS
+#ifdef MEMMAP_IO_WINDOWS
     LPVOID lpMsgBuf;
     if (::FormatMessage(
             FORMAT_MESSAGE_ALLOCATE_BUFFER |
