@@ -44,6 +44,26 @@ struct RandomReader
     }
 };
 
+template <class R>
+struct RandomReaderReader : public R
+{
+    typedef typename R::Label value_type;
+    double prob_keep;
+    RandomReaderReader(double prob_keep_,const R &r=R()) : R(r) {}
+    RandomReaderReader(const RandomReaderReader<R> &r=R()) : prob_keep(r.prob_keep), R((const R&)r) {}
+
+    template <class charT, class Traits>
+    std::basic_istream<charT,Traits>&
+    operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
+        while (in) {
+            R::operator()(in,l);
+            if (random_nonneg_lt_one() < prob_keep)
+                break;
+        }
+        return in;
+    }
+};
+
 struct LineWriter
 {
   template <class charT, class Traits,class Label>
@@ -52,6 +72,37 @@ struct LineWriter
       return o << l << std::endl;
          }
 };
+
+template <class F,class R>
+struct ReaderCallback : public R
+{
+    F f;
+    ReaderCallback(const R& reader,const F &func) : f(func),R(reader) {}
+   template <class charT, class Traits>
+    std::basic_istream<charT,Traits>&
+   operator()(std::basic_istream<charT,Traits>& in,typename R::value_type &l) const {
+       deref(f)();
+       std::basic_istream<charT,Traits>& ret=R::operator()(in,l);
+       return ret;
+   }
+ };
+
+template <class Label,class F>
+struct ProgressReader
+{
+    F tick;
+    ProgressReader(const F &f) : tick(f) {}
+    ProgressReader(const ProgressReader &p) : tick(p.tick) {}
+    typedef Label value_type;
+    template <class charT, class Traits>
+    std::basic_istream<charT,Traits>&
+    operator()(std::basic_istream<charT,Traits>& in,Label &l) const {
+        deref(tick)();
+        return in >> l;
+    }
+};
+
+
 
 template <class W,class O=std::ostream>
 struct BindWriter : public W
