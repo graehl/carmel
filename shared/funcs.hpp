@@ -26,10 +26,14 @@
 #include <algorithm>
 #include <boost/random.hpp>
 #ifdef USE_NONDET_RANDOM
+# ifdef __CYGWIN__
+#  undef USE_NONDET_RANDOM
+# else 
 #  include <boost/nondet_random.hpp>
 # ifdef MAIN
 #  include "nondet_random.cpp"
 # endif
+#endif 
 //#  undef USE_NONDET_RANDOM
 #endif
 
@@ -514,7 +518,7 @@ inline unsigned random_less_than(unsigned limit) {
     while ((r=std::rand()) >= randlimit) ;
     return r % limit;
 #else
-    return (unsigned)random01()*limit;
+    return (unsigned)(random01()*limit);
 #endif
 }
 
