@@ -36,47 +36,71 @@ endif
 
 define PROG_template
 
+.PHONY += $(1)
+
+ifndef $(1)_NOOPT
 $$(BIN)/$(1): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $(BOOST_OPT_LIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
+ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
+OPT_PROGS += $$(BIN)/$(1)
+$(1): $$(BIN)/$(1)
+endif
 
-$$(BIN)/$(1).test: $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)
-	$$(CXX) $$(LDFLAGS) $$^ -o $$@
-	$$@ --catch_system_errors=no
-
+ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug: $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) $(BOOST_OPT_LIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
+ALL_OBJS +=  $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) 
+$(1): $$(BIN)/$(1).debug
+DEBUG_PROGS += $$(BIN)/$(1).debug
+endif
 
-.PHONY += $(1)
-$(1): $(addprefix $$(BIN)/, $(1) $(1).debug $(1).test)
-
-ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$(addprefix $$(OBJ_DEBUG)/,$$($(1)_OBJ)) $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ))
-ALL_PROGS  += $(addprefix $$(BIN)/, $(1) $(1).debug $(1).test)
+ifndef $(1)_NOTEST
+$$(BIN)/$(1).test: $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)
+	$$(CXX) $$(LDFLAGS) $$^ -o $$@
+#	$$@ --catch_system_errors=no
+ALL_OBJS += $$(addprefix $$(OBJ_TEST)/,$$($(1)_OBJ))
 ALL_TESTS += $$(BIN)/$(1).test
+$(1): $$(BIN)/$(1).test
+TEST_PROGS += $$(BIN)/$(1).test
+
+endif
+
+#$(1): $(addprefix $$(BIN)/, $(1) $(1).debug $(1).test)
+
 ALL_DEPENDS += $$($(1)_OBJ:%.o=%.d)
 
 endef
-
-$(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
-
-all: dirs $(ALL_PROGS)
-
-depend: dirs $(ALL_DEPENDS)
-
-test: $(ALL_TESTS)
 
 .PRECIOUS: %/.
 %/.:
 	mkdir -p $(@)
 
+$(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
+
+ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS)
+
+all: dirs $(ALL_PROGS)
+
+debug: dirs $(OPT_PROGS)
+
+opt: dirs $(DEBUG_PROGS)
+
+depend: dirs $(ALL_DEPENDS)
+
+test: $(ALL_TESTS)
+	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done
+#	$(foreach test,$(ALL_TESTS),$(shell $(test) --catch_system_errors=no))
+
+
 $(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
-	echo
-	echo creating Boost Test lib
+	@echo
+	@echo creating Boost Test lib
 	ar cr $@ $^
 	ranlib $@
 
 $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
-	echo
-	echo creating Boost Program Options lib
+	@echo
+	@echo creating Boost Program Options lib
 	ar cr $@ $^
 	ranlib $@
 
@@ -84,29 +108,29 @@ vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.
 .PRECIOUS: $(OBJ_BOOST)/%.o
 $(OBJ_BOOST)/%.o:: %.cpp
-	echo
-	echo COMPILE(boost) $< into $@
+	@echo
+	@echo COMPILE\(boost\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ_TEST)/%.o
 $(OBJ_TEST)/%.o:: %.$(CPP_EXT) %.d
-	echo
-	echo COMPILE(test) $< into $@
+	@echo
+	@echo COMPILE\(test\) $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
 $(OBJ)/%.o:: %.$(CPP_EXT) %.d
-	echo
-	echo COMPILE(optimized) $< into $@
+	@echo
+	@echo COMPILE\(optimized\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ_DEBUG)/%.o
 $(OBJ_DEBUG)/%.o:: %.$(CPP_EXT) %.d
-	echo
-	echo COMPILE(debug) $< into $@
+	@echo
+	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
 
-dirs: $(BIN)/. $(OBJ_DEBUG)/. $(OBJ_TEST)/. $(OBJ_BOOST)/. $(OBJ)/.
+dirs: $(OBJ)/. $(BIN)/. $(OBJ_DEBUG)/. $(OBJ_TEST)/. $(OBJ_BOOST)/. 
 
 clean:
 	rm -f $(ALL_OBJS)
@@ -122,9 +146,9 @@ DEPEND=1
 endif
 
 %.d: %.$(CPP_EXT)
-	echo
-	echo CREATE DEPENDENCIES for $<
-	set -e; [ x$(DEPEND) != x -o ! -f $@ ] && $(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS) $< \
+#	@echo
+#	@echo CREATE DEPENDENCIES for $<
+	@set -e; [ x$(DEPEND) != x -o ! -f $@ ] && echo CREATE DEPENDENCIES for $< && $(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
 
