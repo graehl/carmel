@@ -22,7 +22,7 @@ void freeAllSidetracks()
     Repository.clear();
 }
 
-void buildSidetracksHeap(int state, int pred)
+void buildSidetracksHeap(unsigned state, unsigned pred)
 {
   // IMPORTANT NOTE: Yaser 6-25-2001 This function create NEW memory
   // of type (pGraphArc *). This memory is not deleted inside the function

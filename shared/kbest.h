@@ -82,7 +82,7 @@ inline int operator < (const EdgePath &l, const EdgePath &r) {
 
 
 Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist);
-void buildSidetracksHeap(int state, int pred); // call depthfirstsearch with this; see usage in kbest.cc
+void buildSidetracksHeap(unsigned state, unsigned pred); // call depthfirstsearch with this; see usage in kbest.cc
 void freeAllSidetracks(); // must be called after you buildSidetracksHeap
 void printTree(GraphHeap *t, int n) ;
 void shortPrintTree(GraphHeap *t);
@@ -114,7 +114,7 @@ struct BestPathsVisitor {
 
 template <class Visitor>
 void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v) {
-    int nStates=graph.nStates;
+    unsigned nStates=graph.nStates;
     Assert(nStates > 0 && graph.states);
     Assert(source >= 0 && source < nStates);
     Assert(dest >= 0 && dest < nStates);
@@ -144,7 +144,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
             pathGraph = NEW GraphHeap *[nStates];
             sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
             bool *visited = NEW bool[nStates];
-            for ( int i = 0 ; i < nStates ; ++i ) visited[i] = false;
+            for ( unsigned i = 0 ; i < nStates ; ++i ) visited[i] = false;
             // IMPORTANT NOTE: depthFirstSearch recursively calls the function
             // passed as the last argument (in this  case "buildSidetracksHeap")
             //
@@ -153,7 +153,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
             if ( pathGraph[source] ) {
 #ifdef DEBUGKBEST
                 Config::debug() << "printing trees\n";
-                for ( int i = 0 ; i < nStates ; ++i )
+                for ( unsigned i = 0 ; i < nStates ; ++i )
                     printTree(pathGraph[i], 0);
                 Config::debug() << "done printing trees\n\n";
 #endif

@@ -119,8 +119,9 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
             double dpp=new_alp-last_alp; // should be increasing, so diff is positive
             double last_abs=fabs(last_alp);  // COULD BE FASTER (last_alp always negative) but whatever :)
             double rel_dpp = dpp;
-            if ( last_abs >= LOGPROB_EPSILON )
-                rel_dpp /= last_abs;
+            if (last_abs < LOGPROB_EPSILON)
+                last_abs = LOGPROB_EPSILON;
+            rel_dpp /= last_abs;
             if ( first_time ) {
                 rel_dpp=HUGE_VAL;
                 logs << std::endl;
@@ -150,8 +151,8 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
                 last_was_reset=false;
 
             max_delta_param = exec.maximize(learning_rate);
-            if (max_delta_param.first < converge_param_delta ) {
-                logs << "Converged - all weights changed less than " << converge_param_delta << " after " << train_iter << " iterations.\n";
+            if (max_delta_param.first <= converge_param_delta ) {
+                logs << "Converged - all weights changed no more than " << converge_param_delta << " after " << train_iter << " iterations.\n";
                 break;
             }
 

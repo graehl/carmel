@@ -270,12 +270,12 @@ class WFST {
   List<int> *symbolList(const char *buf, int output=0) const;   
   // takes space-separated symbols and returns a list of symbol numbers in the
   // input or output alphabet
-  const char *inLetter(int i) const {
+  const char *inLetter(unsigned i) const {
     Assert ( i >= 0 );
     Assert ( i < in->size() );
     return (*in)[i].c_str();
   }
-  const char *outLetter(int i) const {
+  const char *outLetter(unsigned i) const {
     Assert ( i >= 0 );
     Assert ( i < out->size() );
     return (*out)[i].c_str();

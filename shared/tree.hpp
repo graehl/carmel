@@ -180,6 +180,23 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
   return GENIOGOOD;
 }
 
+    /*
+    template <class charT, class Traits, class Writer>
+    std::ios_base::iostate print_graphviz(std::basic_ostream<charT,Traits>& o,Writer writer, const char *treename="T") const {
+        o << "digraph ";
+        out_quote(o,treename);
+        o << " {\n";
+        print_graphviz_rec(o,writer,0);
+        o << "}\n";
+        return GENIOGOOD;
+    }
+    template <class charT, class Traits, class Writer>
+    void print_graphviz_rec(std::basic_ostream<charT,Traits>& o,Writer writer,unsigned node_no) const {
+        for (const_iterator i=begin(),e=end();i!=e;++i) {
+            i->print_graphviz_rec(o,writer,++node_no);
+        }
+    }
+    */
 //template <class T, class charT, class Traits>  friend
   template <class charT, class Traits, class Reader>
   static Self *read_tree(std::basic_istream<charT,Traits>& in,Reader r) {
@@ -217,9 +234,14 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   char c;
   rank=0;
   DynamicArray<Self *> in_children;
+  EXPECTI_COMMENT(in>>c);
+  if (c != '(')
+      in.unget();
   EXPECTI_COMMENT(deref(read)(in,label));
   DBTREEIO(label);
-  EXPECTI_COMMENT(in>>c);
+  if (c != '(') {
+      EXPECTI_COMMENT(in>>c);
+  }
   if (c == '(') {
         DBTREEIO('(');
         for(;;) {
@@ -310,6 +332,80 @@ bool tree_leaf_visit(T *tree,F func)
          }
 }
 
+template <class L>
+struct DefaultNodeLabeler {
+    typedef L Label;
+    void print(ostream &o,const Label &l) {
+        o << "label=" << l;
+    }
+};
+
+struct SymbolLabeler : public DefaultNodeLabeler<Symbol> {
+    typedef DefaultNodeLabeler<Symbol> Parent;
+    void print(ostream &o,const Label &l) {
+        if (l.c_str()[0] == '\\')
+            o << l.c_str();
+        else {
+            Parent::print(o,l);
+            if (l == Symbol("OR"))
+                o << ",shape=box";
+        }
+    }
+};
+
+template <class Label,class Labeler=DefaultNodeLabeler<Label> >
+struct TreeVizPrinter {
+    Labeler labeler;
+    typedef Tree<Label> T;
+    unsigned next_node;
+    std::ostream &o;
+    TreeVizPrinter(ostream &o_,const Labeler &labeler_=Labeler(),const char *treename="tree") : o(o_), labeler(labeler_){
+        prelude(treename);
+    }
+    void prelude(const char *treename) {
+        o << "digraph ";
+        out_quote(o,treename);
+        o << "{\n";
+        o << " node [shape=plaintext,width=.1,height=.1]\n";
+        o << " edge [arrowhead=none]\nranksep=.3;\nordering=out;\n";
+        next_node=0;
+    }
+    ~TreeVizPrinter() {
+        coda();
+    }
+    void coda() {
+        o << "}\n";
+    }
+    void print(const T &t) {
+        print(t,next_node++);
+        o << std::endl;
+    }
+    void print(const T &t,unsigned parent) {
+        o << " " << parent << " [";
+        labeler.print(o,t.label);
+        o << "]\n";
+        if (t.rank) {
+            unsigned child_start=next_node;
+            next_node+=t.rank;
+            unsigned child_end=next_node;
+            unsigned child=child_start+1;
+            if (t.rank > 1) { // ensure left->right order
+                o << " {rank=same " << child_start;
+                for (;child != child_end;++child)
+                    o << " -> " << child;
+                o << " [style=invis]}\n";
+            }
+            child=child_start;
+            for (typename T::const_iterator i=t.begin(),e=t.end();i!=e;++i,++child) {
+                o << " " << parent << " -> " << child << "\n";
+            }
+            child=child_start;
+            for (typename T::const_iterator i=t.begin(),e=t.end();i!=e;++i,++child) {
+                print(**i,child);
+            }
+        }
+    }
+};
 
 struct TreePrinter {
   bool first;

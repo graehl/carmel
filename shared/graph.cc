@@ -7,10 +7,10 @@ std::ostream & operator << (std::ostream &out, const GraphArc &a)
   return out << '(' << a.source << ' ' << a.dest << ' ' << a.weight << ' ' << a.data << ' ' << ')';
 }
 
-void (*dfsFunc)(int, int) = NULL;
-void (*dfsExitFunc)(int, int) = NULL;
+void (*dfsFunc)(unsigned, unsigned) = NULL;
+void (*dfsExitFunc)(unsigned, unsigned) = NULL;
 
-void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(int state, int pred)) {
+void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*func)(unsigned state, unsigned pred)) {
   dfsGraph = graph;
   dfsVis = visited;
   dfsFunc = func;
@@ -27,7 +27,7 @@ Graph reverseGraph(Graph g)
 
 {
   GraphState *rev = NEW GraphState[g.nStates];
-  for ( int i  = 0 ; i < g.nStates ; ++i ){
+  for ( unsigned i  = 0 ; i < g.nStates ; ++i ){
     List<GraphArc> &arcs = g.states[i].arcs;
     for ( List<GraphArc>::val_iterator l=arcs.val_begin(),end = arcs.val_end(); l != end; ++l ) {
       GraphArc r;
@@ -49,7 +49,7 @@ Graph dfsGraph;
 bool *dfsVis;
 
 
-void dfsRec(int state, int pred) {
+void dfsRec(unsigned state, unsigned pred) {
 
   if ( dfsVis[state] )
     return;
@@ -80,7 +80,7 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
   sort.order_from(source);
 
 
-  for ( int i = 0 ; i < g.nStates; ++i )
+  for ( unsigned i = 0 ; i < g.nStates; ++i )
     nPaths[i].setZero();
   nPaths[source] = 1;
   for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
@@ -107,11 +107,11 @@ inline bool operator == (DistToState lhs, FLOAT_TYPE rhs) {
   return DistToState::weights[lhs.state] == rhs;
 }
 
-Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist)
+Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist)
   // returns graph (need to delete[] ret.states yourself)
   // computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 {
-  int i;
+  unsigned i;
 
   GraphArc **taken = NEW  /*const*/ GraphArc *[g.nStates];
 
@@ -145,13 +145,13 @@ Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist)
   return pg;
 }
 
-void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **taken)
+void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc **taken)
   // computes best paths from single source to all other states
   // if taken == NULL, only compute weights (stored in dist)
   //  otherwise, store pointer to arc taken to get to state s in taken[s]
 {
-  int nStates = g.nStates;
-  int i;
+  unsigned nStates = g.nStates;
+  unsigned i;
 
   if (taken)
     for ( i = 0 ; i < g.nStates ; ++i )
@@ -225,7 +225,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
 
 {
   unsigned *oldToNew = NEW unsigned[g.nStates];
-  int i = 0, f = 0;
+  unsigned i = 0, f = 0;
   while ( i < g.nStates )
     if (!marked[i])
       oldToNew[i++] = f++;
@@ -255,7 +255,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
 void printGraph(const Graph g, std::ostream &out)
 {
   out << "(Graph " << g.nStates << std::endl;
-  for ( int i = 0 ; i < g.nStates ; ++i ) {
+  for ( unsigned i = 0 ; i < g.nStates ; ++i ) {
     out << i;
     const List<GraphArc> &arcs = g.states[i].arcs;
     for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )

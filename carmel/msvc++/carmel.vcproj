@@ -361,58 +361,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\compose.cc"
-				FileType="0">
-				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						DebugInformationFormat="3"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="test|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						PreprocessorDefinitions="TEST"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						GlobalOptimizations="FALSE"
-						EnableIntrinsicFunctions="FALSE"
-						OmitFramePointers="FALSE"
-						PreprocessorDefinitions="DEBUG"
-						BasicRuntimeChecks="3"
-						SmallerTypeCheck="TRUE"
-						RuntimeLibrary="5"
-						BufferSecurityCheck="TRUE"
-						DebugInformationFormat="3"
-						CallingConvention="2"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="test_opt|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						PreprocessorDefinitions="TEST"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\..\boost\libs\test\src\execution_monitor.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
@@ -824,6 +772,39 @@
 				RelativePath="..\..\shared\arc.h">
 			</File>
 			<File
+				RelativePath="..\src\compose.cc">
+				<FileConfiguration
+					Name="Debug_Broken|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\src\compose.h">
 			</File>
 			<File
@@ -863,6 +844,39 @@
 				RelativePath="..\..\shared\static_itoa.h">
 			</File>
 			<File
+				RelativePath="..\..\shared\strhash.cc">
+				<FileConfiguration
+					Name="Debug_Broken|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\shared\strhash.h">
 			</File>
 			<File
@@ -878,7 +892,73 @@
 				RelativePath="..\src\train.h">
 			</File>
 			<File
+				RelativePath="..\..\shared\weight.cc">
+				<FileConfiguration
+					Name="Debug_Broken|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\shared\weight.h">
+			</File>
+			<File
+				RelativePath="..\src\wfstio.cc">
+				<FileConfiguration
+					Name="Debug_Broken|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

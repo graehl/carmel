@@ -25,7 +25,7 @@ struct GraphState {
 
 struct Graph {
   GraphState *states;
-  int nStates;
+  unsigned nStates;
 };
 
 Graph reverseGraph(Graph g) ;
@@ -33,9 +33,9 @@ Graph reverseGraph(Graph g) ;
 extern Graph dfsGraph;
 extern bool *dfsVis;
 
-void dfsRec(int state, int pred);
+void dfsRec(unsigned state, unsigned pred);
 
-void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(int state, int pred));
+void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*func)(unsigned state, unsigned pred));
 
 void countNoCyclePaths(Graph g, Weight *nPaths, int source);
 
@@ -51,7 +51,7 @@ class TopoSort {
   TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) { 
     done = NEW bool[g.nStates]; 
     begun = NEW bool[g.nStates];
-    for (int i=0;i<g.nStates;++i) 
+    for (unsigned i=0;i<g.nStates;++i) 
       done[i]=begun[i]=false;
   }
   void order_all() {
@@ -61,7 +61,7 @@ class TopoSort {
     order(false);
   }
   void order(bool all=true) {
-    for ( int i = 0 ; i < g.nStates ; ++i )
+    for ( unsigned i = 0 ; i < g.nStates ; ++i )
       if ( all || !g.states[i].arcs.empty() )
 	order_from(i);
   }
@@ -105,11 +105,11 @@ inline bool operator == (DistToState lhs, DistToState rhs);
 
 inline bool operator == (DistToState lhs, FLOAT_TYPE rhs);
 
-Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist);
+Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist);
 // returns graph (need to delete[] ret.states yourself)
 // computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 
-void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **taken=NULL);
+void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc **taken=NULL);
 // computes best paths from single source to all other states
 // if taken == NULL, only compute weights (stored in dist)
 //  otherwise, store pointer to arc taken to get to state s in taken[s]

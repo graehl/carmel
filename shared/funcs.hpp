@@ -23,6 +23,21 @@ struct set_zero {
     }
 };
 
+template <class V>
+struct set_value {
+    V v;
+    set_value(const V& init_value) : v(init_value) {}
+    template <class C>
+    void operator()(C &c) {
+        c=v;
+    }
+};
+
+template <class V>
+set_value<V> value_setter(V &init_value) {
+    return set_value<V>(init_value);
+}
+
 struct set_rand_pos_fraction {
     template <class C>
     void operator()(C &c) {
