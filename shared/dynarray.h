@@ -52,9 +52,13 @@ public:
   }    
   void pushBack(const T& val)
   {
+    new(pushBackRaw()) T(val);
+  }
+  T *pushBackRaw()
+  {
     if ( sz >= space )
       resize(space << 1);
-    new(vec+(sz++)) T(val);
+	return vec + (sz++);
   }
   void removeMarked(bool marked[]) {
     if ( !sz ) return;
@@ -75,9 +79,8 @@ public:
       newSz = sz;
     vec = (T*)::operator new((size_t)newSz*sizeof(T));
     // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
-    // also, gcc complains about delete (void *)
     memcpy(vec, oldVec, sz*sizeof(T));
-    delete (void *)oldVec;
+	::operator delete(oldVec);
     space = newSz;
   }
   int size() const { return space; }
@@ -85,8 +88,8 @@ public:
   ~DynamicArray() {
     if (vec) {
       for ( int	i = 0 ; i < sz ; i++ )
-	vec[i].~T();
-      delete (void *)vec;
+		vec[i].~T();
+      ::operator delete(vec);
     }
     vec = NULL;
     sz = 0;

@@ -95,8 +95,10 @@ inline Weight operator /(Weight lhs, Weight rhs) {
   return result;
 }
 
-#define MUCH_BIGGER_LOG 10.f
-// represents 10^10 - if X > 10^10*Y, then X+Y =~ X - float can represent about 7-8 decimal digits only
+#define MUCH_BIGGER_LOG 8.f
+// represents BIG=10^MUCH_BIGGER_LOG - if X > BIG*Y, then X+Y =~ X -
+// float can represent about 7-8 decimal digits only so I chose 8
+// fixme: this changes if we decide to move to doubles instead of floats
 
 inline Weight operator +(Weight lhs, Weight rhs) {
 	float diff = lhs.weight - rhs.weight;
