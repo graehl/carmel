@@ -1,3 +1,9 @@
+2004-04-16  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/dynarray.h: optimization on push_back and end(): store vector 
+	end instead of size.  removeMarked uses memmove on larger blocks.
+	new Array class is base for DynamicArray.  unit test.
+
 2004-02-27  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/2hash.h: made find_second, add global template functions,
