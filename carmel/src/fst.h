@@ -155,7 +155,7 @@ template <>
 //	lastChange = train_maximize(method);
   Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns per-example perplexity of training set = Nth root of product of model probabilities of N-weight training examples  - optionally deletes training examples that have no accepting path
   void undo_train_scale(void); // undoes the previous delta_scale, restoring weights to what they would be under standard EM
-  Weight train_maximize(NormalizeMethod method=CONDITIONAL,Weight delta_scale=1); // normalize and apply delta*delta_scale (then normalize again), returning maximum change
+  Weight train_maximize(NormalizeMethod method=CONDITIONAL,float delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
   WFST(const WFST &a) {}
 public:
 	void index(int dir) {

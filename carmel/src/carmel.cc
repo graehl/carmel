@@ -183,7 +183,7 @@ main(int argc, char *argv[]){
   bool wrFlag = false;
   bool msFlag = false;
   bool learning_rate_growth_flag = false;
-  float learning_rate_growth_factor=1.1;
+  float learning_rate_growth_factor=(float)1.1;
   int nGenerate = 0;
   int maxTrainIter = 256;
 #define DEFAULT_MAX_GEN_ARCS 1000
