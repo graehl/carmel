@@ -306,12 +306,20 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 #ifdef DEBUGTRAIN
   std::cerr << "Starting iteration: " << iter << '\n';
 #endif
-  for ( s = 0 ; s < numStates() ; ++s )
+  #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
+      for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
+        List<DWPair>::iterator end = ha.val().end() ; \
+        for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw ) \
+		a } } while(0)
+
+EACHDW(dw->counts = 0;);
+
+/*for ( s = 0 ; s < numStates() ; ++s )
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       List<DWPair>::iterator end = ha.val().end() ;
       for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw )
         dw->counts = 0;
-    }
+    }*/
 
   List<IOSymSeq>::iterator seq=trn->examples.begin() ;
   List<IOSymSeq>::iterator lastExample=trn->examples.end() ;
@@ -357,7 +365,10 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
     }
 #endif
     Weight fin = f[nIn][nOut][final];
-    if ( fin == 0 ) {
+#ifdef DEBUGTRAIN
+	std::cerr<<"\nProb = " << fin << std::endl;
+#endif
+    if ( !(fin > 0) ) {
       std::cerr << "No accepting path in transducer for input/output:\n";
       for ( i = 0 ; i < nIn ; ++i )
         std::cerr << (*in)[seq->i.let[i]] << ' ';
@@ -365,11 +376,14 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
       for ( o = 0 ; o < nOut ; ++o )
         std::cerr << (*out)[seq->o.let[o]] << ' ';
       std::cerr << '\n';
-      trn->examples.erase(seq++);
+      trn->examples.erase(seq++); // should be ok because ++ is evaluated before erase is called
       continue;
     }
 #ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
     Weight fin2 = b[0][0][0];
+#ifdef DEBUGTRAIN
+	std::cerr<<"\nProb2 = " << fin2 << std::endl;
+#endif
     double ratio = (fin/fin2).getReal();
     double e = ratio - 1;
     if ( e < 0 )
@@ -380,13 +394,15 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 
     letIn = seq->i.let;
     letOut = seq->o.let;
+
+EACHDW(dw->scratch=0;);
     // initialize scratch counts to zero
-    for ( s = 0 ; s < numStates() ; ++s )
+/*    for ( s = 0 ; s < numStates() ; ++s )
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
         List<DWPair>::iterator end = ha.val().end() ;
         for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end ; ++dw )
           dw->scratch = 0;
-      }
+      }*/
 
     for ( i = 0 ; i <= nIn ; ++i ) // go over all symbols in input in the training pair
       for ( o = 0 ; o <= nOut ; ++o ) // go over all symbols in the output pair
@@ -425,66 +441,70 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
               dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
           }
         }
-    for ( s = 0 ; s < numStates() ; ++s )
+    /*for ( s = 0 ; s < numStates() ; ++s )
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
         List<DWPair>::iterator end = ha.val().end();
         for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end; ++dw ) {
           dw->counts += (dw->scratch / fin) * (Weight)seq->weight;
         }
-      }
+      }*/
+	EACHDW(if (!dw->counts.isZero()) dw->counts += (dw->scratch / fin) * (Weight)seq->weight;);
 	prodModProb *= (fin^seq->weight);
     ++seq;
   } // end of while(training examples)
   if (perplex)
 	  *perplex = prodModProb ^ (1 / trn->totalEmpiricalWeight);
   int pGroup;
+#define DUMPDW  do { for ( s = 0 ; s < numStates() ; ++s ) \
+    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
+      List<DWPair>::const_iterator end = ha.val().end() ; \
+      for ( List<DWPair>::const_iterator dw=ha.val().begin() ; dw !=end; ++dw ){ \
+        if ( isTiedOrLocked(pGroup = (dw->arc)->groupId) ) \
+          std::cerr << pGroup << ' ' ; \
+        std::cerr << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n'; \
+      } \
+	} } while(0)
 #ifdef DEBUGTRAINDETAIL
   std::cerr << "\nWeights before tied groups\n";
-  for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
-      List<DWPair>::const_iterator end = ha.val().end() ;
-      for ( List<DWPair>::const_iterator dw=ha.val().begin() ; dw !=end; ++dw ){
-        if ((pGroup = (dw->arc)->groupId) >= 0)
-          std::cerr << pGroup << ' ' ;
-        std::cerr << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n';
-      }
-    }
-
+  DUMPDW;
 #endif
   for ( s = 0 ; s < numStates() ; ++s )
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       List<DWPair>::iterator end = ha.val().end();
       for ( List<DWPair>::iterator dw=ha.val().begin() ; dw !=end; ++dw )
-        if ((pGroup = (dw->arc)->groupId) != 0) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
+        if ( !isLocked(pGroup = (dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
 #ifdef DEBUGTRAINDETAIL
           std::cerr << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
 #endif
-          dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
-          dw->weight() = dw->counts + trn->smoothFloor; // new (unnormalized weight)
+		  Weight &w=dw->weight();
+          dw->scratch = w;   // old weight - Yaser: this is needed only to calculate change in weight later on ..
+		  Weight &counts = dw->counts;
+          w = counts + trn->smoothFloor; // new (unnormalized weight)
         }
     }
 #ifdef DEBUGTRAINDETAIL
   std::cerr << "\nWeights before normalization\n";
-  for ( s = 0 ; s < numStates() ; ++s )
+  /*for ( s = 0 ; s < numStates() ; ++s )
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       List<DWPair>::const_iterator end = ha.val().end() ;
       for ( List<DWPair>::const_iterator dw=ha.val().begin() ; dw !=end; ++dw ){
-        if ((pGroup = (dw->arc)->groupId) >= 0)
+        if (isTiedOrLocked(pGroup = (dw->arc)->groupId) )
           std::cerr << pGroup << ' ' ;
         std::cerr << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n';
       }
-    }
+    }*/
+  DUMPDW;
 #endif
   normalize(method);
 #ifdef DEBUGTRAINDETAIL
   std::cerr << "\nWeights after normalization\n";
-  for ( s = 0 ; s < numStates() ; ++s )
+/*  for ( s = 0 ; s < numStates() ; ++s )
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       List<DWPair>::const_iterator end = ha.val().end() ;
       for ( List<DWPair>::const_iterator dw=ha.val().begin() ; dw !=end; ++dw )
         std::cerr << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n';
-    }
-
+    }*/
+  DUMPDW;
 #endif
   // find maximum change for convergence
   Weight change, maxChange = 0;
@@ -492,7 +512,7 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       List<DWPair>::iterator end = ha.val().end();
       for ( List<DWPair>::iterator dw=ha.val().begin() ; dw != end; ++dw )
-        if ((pGroup = (dw->arc)->groupId)!=0 ) {
+        if (!isLocked(pGroup = (dw->arc)->groupId) ) {
           if ( dw->scratch > dw->weight() )
             change = dw->scratch - dw->weight();
           else
