@@ -18,7 +18,7 @@ struct OffsetMap {
   unsigned index(K p) const {
     Assert(p>=begin);
     //Assert(p<begin+values.size());
-    return p-begin;
+    return (unsigned)p-begin;
   }
   OffsetMap(K beg) : begin(beg) {
   }
@@ -60,8 +60,18 @@ struct ArrayPMapImp : public
 
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
   ArrayPMapImp(const init_type &init) : ind(init.second), vals(init.first) {}
-  V & operator [](key_type k) {
+  V & operator [](key_type k) const {
+    operator Vals & ()  {
+      return vals;
+    }
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4267 )
+#endif
     return vals[get(ind,k)];
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
   }
 private:
   //  ArrayPMapImp(Self &s) : vals(s.vals) {}

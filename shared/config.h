@@ -10,14 +10,6 @@
 //#define BOOST_NO_MT
 
 
-#ifdef DEBUG
-#define DBP(a) do { dbp(a); } while(0)
-//#define DBP2(a,p) do { a.print_on(Config::debug(),p); } while(0)
-#else
-#define DBP(a)
-//#define DBP2(a,p)
-#endif
-
 //#define UNORDERED_MAP
 
 #define STATIC_HASH_EQUAL
@@ -124,10 +116,5 @@ namespace Config {
     return std::cerr;
   }
 };
-
-template<class A>
-static inline void dbp(const A &a) {
-  Config::debug() << a;
-}
 
 #endif //guard

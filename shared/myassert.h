@@ -6,8 +6,8 @@
 #ifdef DEBUG
 //#define Assert(a) assert(a)
 
-#ifdef _MSVC_VER
-#define BREAKPOINT assert(false)
+#ifdef _MSC_VER
+#define BREAKPOINT __asm int 3
 #else
 
 #define BREAKPOINT asm("   int $3")
