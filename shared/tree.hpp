@@ -341,9 +341,11 @@ template <class Label,class Labeler=DefaultNodeLabeler<Label> >
 struct TreeVizPrinter : public GraphvizPrinter {
     Labeler labeler;
     typedef Tree<Label> T;
-    bool samerank;
+    unsigned samerank;
+    enum {ANY_ORDER=0,CHILD_ORDER=1,CHILD_SAMERANK=2};
 
-    TreeVizPrinter(ostream &o_,bool samerank_=true,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_),samerank(samerank_) {}
+
+    TreeVizPrinter(ostream &o_,unsigned samerank_=CHILD_SAMERANK,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_),samerank(samerank_) {}
     void print(const T &t) {
         print(t,next_node++);
         o << std::endl;
@@ -357,12 +359,15 @@ struct TreeVizPrinter : public GraphvizPrinter {
             next_node+=t.rank;
             unsigned child_end=next_node;
             unsigned child=child_start+1;
-            if (samerank)
+            if (samerank!=ANY_ORDER)
                 if (t.rank > 1) { // ensure left->right order
-                    o << " {rank=same " << child_start;
+                    o << " {";
+                    if (samerank==CHILD_SAMERANK)
+                        o << "rank=same ";
+                    o << child_start;
                     for (;child != child_end;++child)
                         o << " -> " << child;
-                    o << " [style=invis]}\n";
+                    o << " [style=invis,weight=0.01]}\n";
                 }
             child=child_start;
             for (typename T::const_iterator i=t.begin(),e=t.end();i!=e;++i,++child) {

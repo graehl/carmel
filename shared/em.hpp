@@ -172,7 +172,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
             break;
         }
     }
-    logs << "\nSetting weights to model with lowest avg-prob=" << best_alp << std::endl;
+    logs << "\nSetting weights to model with lowest avg-logprob=" << best_alp << std::endl;
     exec.restore_best();
 
     return best_alp;
