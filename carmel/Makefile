@@ -31,7 +31,7 @@ CC.freebsd = g++31
 CC.macosx = g++
 
 CCFLAGS = -c -Wall -I../boost/boost
-LDFLAGS = -L$(LIB) -lm --static
+#-fno-exception
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -ffast-math
 CCFLAGS_DBG    = $(CCFLAGS) -g 
 CCFLAGS_TEST    = $(CCFLAGS) -DTEST -g -DDEBUG
@@ -52,9 +52,12 @@ OBJ_OPT_DIR = $(OBJ)/optimized/
 OBJ_PUR_DIR = $(OBJ)/purified/
 OBJ_PRF_DIR = $(OBJ)/profiled/
 OBJ_TEST_DIR = $(OBJ)/test/
-carmel: carmel.${ARCH}
+ifneq (${ARCH},macosx)
 endif
 carmel.${ARCH}:	$(OBJ_OPT_DIR) $(OBJ_FILES_OPT)
+	$(CC) $(OBJ_FILES_OPT) $(LDFLAGS) -o $(BIN)/$@
+
+carmel.${ARCH}.static:	$(OBJ_OPT_DIR) $(OBJ_FILES_OPT)
 	$(CC) $(OBJ_FILES_OPT) $(LDFLAGS) --static -o $(BIN)/$@
 
 debug: carmel.${ARCH}.dbg
