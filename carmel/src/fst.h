@@ -19,6 +19,7 @@
 #include "train.h"
 #include "assert.h"
 #include "compose.h"
+#include <iterator>
 using namespace std;
 
 ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
@@ -80,8 +81,34 @@ out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; re
 	return o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out) << " / " << a.weight << ")";
   }
 
-void insertPathArc(GraphArc *gArc, List<PathArc>*);  
-void insertShortPath(int source, int dest, List<PathArc> *);
+/*void insertPathArc(GraphArc *gArc, List<PathArc>*);  
+void insertShortPath(int source, int dest, List<PathArc> *);*/
+template <class T>
+void insertPathArc(GraphArc *gArc,T &l)
+{
+  PathArc pArc;
+  Arc *taken = (Arc *)gArc->data;
+  setPathArc(&pArc,*taken);
+  *(l++) = pArc;
+}
+template <class T>
+void insertShortPath(GraphState *shortPathTree,int source, int dest, T &l)
+{
+  GraphArc *taken;
+  for ( int iState = source ; iState != dest; iState = taken->dest ) {
+    taken = &shortPathTree[iState].arcs.top();
+    insertPathArc(taken,l);
+  }
+}
+template <>
+  void insertPathArc(GraphArc *gArc, List<PathArc>*l) {
+	  insertPathArc(gArc,insert_iterator<List<PathArc> >(*l,l->erase_begin()));
+  }
+template <>
+  void insertShortPath(GraphState *shortPathTree,int source, int dest, List<PathArc> *l) {
+	  insertShortPath(shortPathTree,source,dest,insert_iterator<List<PathArc> >(*l,l->erase_begin()));
+  }
+
   static int indexThreshold;
   Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
   trainInfo *trn;
@@ -134,7 +161,7 @@ public:
   friend ostream & operator << (ostream &,  WFST &); // Yaser 7-20-2000
   // I=PathArc output iterator; returns length of path or -1 on error
   int randomPath(List<PathArc> *l,int max_len=-1) {
-	  return randomPath(back_insert_iterator<List<PathArc> > (*l), max_len);
+	  return randomPath(insert_iterator<List<PathArc> >(*l,l->erase_begin()), max_len);
   }
 template <class I> int randomPath(I i,int max_len=-1)
 {

@@ -28,6 +28,7 @@
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="0"
 				BrowseInformation="1"
+				BrowseInformationFile=""
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
@@ -72,6 +73,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
@@ -258,6 +260,9 @@
 			</File>
 			<File
 				RelativePath="..\src\node.h">
+			</File>
+			<File
+				RelativePath="..\src\slist.h">
 			</File>
 			<File
 				RelativePath="..\src\strhash.h">

@@ -73,8 +73,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
             out = EMPTY;
             triDest.filter = 0;
             triDest.bState = triSource.bState;
-            List<HalfArc>::const_iterator end = ll.val().end() ;
-            for ( List<HalfArc>::const_iterator l =ll.val().begin() ; l != end ; ++l ) {
+            for ( List<HalfArc>::const_iterator l =ll.val().const_begin(),end=ll.val().const_end() ; l != end ; ++l ) {
               weight = (*l)->weight;
               triDest.aState = (*l)->dest;
               in = (*l)->in;
@@ -85,9 +84,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
             }
           }
         } else if ( (matches = bState->index->find(map[mediate.hiddenLetter])) ) {
-          List<HalfArc>::const_iterator end = ll.val().end() ;
-
-          for ( List<HalfArc>::const_iterator l =ll.val().begin() ;l!=end  ; ++l ) {
+          for ( List<HalfArc>::const_iterator l =ll.val().const_begin(),end=ll.val().const_end() ; l != end ; ++l ) {
             mediate.dest = (*l)->dest;
             int mediateState;
             if ( (pDest = arcStateMap.find(mediate)) ) {
@@ -116,8 +113,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
               triDest.aState = mediate.dest;
               in = EMPTY;
               triDest.filter = 0;
-              List<HalfArc>::const_iterator end = matches->end();
-              for ( List<HalfArc>::const_iterator r=matches->begin() ; r!=end ; ++r ) {
+              List<HalfArc>::const_iterator 
+              for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); ; r!=end ; ++r ) {
                 Assert ( map[(*l)->out] == (*r)->in );
                 out = (*r)->out;
                 triDest.bState = (*r)->dest;
@@ -139,8 +136,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
         in = EMPTY;
         triDest.aState = triSource.aState;
         triDest.filter = 1;
-        List<HalfArc>::const_iterator end = matches->end() ;
-        for ( List<HalfArc>::const_iterator r=matches->begin() ; r != end; ++r ) {
+        for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); ; r!=end ; ++r ) {
           Assert ( (*r)->in == EMPTY );
           out = (*r)->out;
           weight = (*r)->weight;
@@ -167,9 +163,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
       }
       if ( larger->size * smaller->size > WFST::indexThreshold ) {
         larger->indexBy( larger == aState ); // create hash table
-        if ( larger == bState ) {       // bState (rhs transducer) is larger
-          List<Arc>::const_iterator end = aState->arcs.end() ;
-          for ( List<Arc>::const_iterator l=aState->arcs.begin() ; l !=end ; ++l) {
+        if ( larger == bState ) {       // bState (rhs transducer) is larger          
+          for ( List<Arc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end() ; l !=end ; ++l) {
             in = l->in;
             triDest.aState = l->dest;
             if ( l->out == EMPTY ) {
@@ -183,9 +178,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
               if ( triSource.filter == 0 )
                 if ( (matches = bState->index->find(EMPTY)) ) {
                   triDest.filter = 0;
-                  List<HalfArc>::const_iterator end = matches->end();
-
-                  for ( List<HalfArc>::const_iterator r= matches->begin() ; r != end ; ++r ) {
+                  for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); ; r!=end ; ++r ) {
                     Assert((*r)->in == EMPTY);
                     out = (*r)->out;
                     weight = l->weight * (*r)->weight;
@@ -196,9 +189,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
             } else {
               if ( (matches = bState->index->find(map[l->out])) ) {
                 triDest.filter = 0;
-                List<HalfArc>::const_iterator end = matches->end();
-
-                for ( List<HalfArc>::const_iterator r = matches->begin() ; r !=end ; ++r ) {
+                for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); ; r!=end ; ++r ) {
                   Assert ( map[l->out] == (*r)->in );
                   out = (*r)->out;
                   weight = l->weight * (*r)->weight;
@@ -212,9 +203,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
             in = EMPTY;
             triDest.aState = triSource.aState;
             triDest.filter = 2;
-            List<HalfArc>::const_iterator end = matches->end() ;
-
-            for ( List<HalfArc>::const_iterator r=matches->begin() ; r != end ; ++r ) {
+		    for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); ; r!=end ; ++r ) {
               Assert ( (*r)->in == EMPTY );
               out = (*r)->out;
               weight = (*r)->weight;
@@ -222,9 +211,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerInOut
               COMPOSEARC;
             }
           }
-        } else {                        // aState (lhs transducer) is larger
-          List<Arc>::const_iterator end = bState->arcs.end() ;
-          for ( List<Arc>::const_iterator r=bState->arcs.begin() ; r!=end  ; ++r) {
+        } else {                        // aState (lhs transducer) is larger          
+          for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r!=end  ; ++r) {
             out = r->out;
             triDest.bState = r->dest;
             if ( r->in == EMPTY ) {

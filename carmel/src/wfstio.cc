@@ -2,6 +2,7 @@
 #include <map>
 #include "assert.h"
 #include "fst.h"
+#include <iterator>
 
 #define DO(x)  { if (!(x)) return 0; }
 
@@ -407,10 +408,12 @@ ostream & operator << (ostream &out, Alphabet &alph)
   return out;
 }
 
-
+//XXX don't allocate then return list, take pointer to list
 List<int> *WFST::symbolList(const char *buf, int output) const
 {
   List<int> *ret = new List<int>;
+  //LIST_BACK_INSERTER<List<int> > cursor(*ret);
+  insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
   //  ListIter<int> ins(*ret);
   istringstream line(buf);
   char symbol[4096];
@@ -429,7 +432,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
     } else
       //      ins.insert(*pI);
       //      ret->insert(ret->begin(),*pI);
-      ret->push_back(*pI);
+      *cursor++ = *pI;
   }
   return ret;
 }

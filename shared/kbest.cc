@@ -83,7 +83,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
   //List<List<PathArc> >::iterator insertHere=paths->begin();
   for (int i=0;i<k;) {
 	  paths->push_front(List<PathArc>());
-	  if ( randomPath(back_insert_iterator<List<PathArc> > (paths->front()),max_len) == -1 ) {
+	  if ( randomPath(insert_iterator<List<PathArc> >(paths->front(),paths->front().erase_begin()),max_len) == -1 ) {
 		  paths->pop_front();
 	  } else {
 		  ++i;
@@ -94,14 +94,14 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
   return paths;
 }
 
-
 List<List<PathArc> > *WFST::bestPaths(int k)
 {
   int nStates = numStates();
   Assert(valid());
 
-
-  List<List<PathArc> > *paths = new List<List<PathArc> >;
+  typedef List<List<PathArc> > LLP;
+  LLP *paths = new List<List<PathArc> >;
+  insert_iterator<LLP> path_adder(*paths,paths->erase_begin());
   //List<List<PathArc> >::iterator insertHere=paths->begin();
 
   Graph graph = makeGraph();
@@ -119,9 +119,12 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   if ( shortPathTree[0].arcs.notEmpty() || final == 0 ) {
 
     List<PathArc> temp;
-    //List<PathArc>::iterator path=temp.begin();
-    insertShortPath(0, final, &temp);
-    paths->push_back(temp);
+    //List<PathArc>::iterator path=temp.begin();	
+    //paths->push_back(temp);
+	insertShortPath(shortPathTree, 0, final, &temp);
+	*path_adder++ = temp; //XXX unnecessary copy because of output iterator not giving reference to added item =(
+	
+
 
     if ( k > 1 ) {
       GraphHeap::freeAll();
@@ -185,15 +188,19 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 #endif
           List<PathArc> temp;
           //List<PathArc>::iterator fullPath=temp.begin();
-          int sourceState = 0;
-          List<GraphArc *>::const_iterator end = shortPath.end();
-          for ( List<GraphArc *>::const_iterator cut=shortPath.begin() ; cut != end; ++cut ) {
-            insertShortPath(sourceState, (*cut)->source, &temp);
+          
+          
+		  int sourceState = 0; // pretend beginning state is end of last sidetrack
+
+          for ( List<GraphArc *>::const_iterator cut=shortPath.begin(),end = shortPath.end(); cut != end; ++cut ) {
+            insertShortPath(shortPathTree, sourceState, (*cut)->source, &temp); // stitch end of last sidetrack to beginning of this one
             sourceState = (*cut)->dest;
-            insertPathArc(*cut, &temp);
+            insertPathArc(*cut, &temp); // append this sidetrack
           }
-          insertShortPath(sourceState, final, &temp);
-          paths->push_back(temp);
+          insertShortPath(shortPathTree, sourceState, final, &temp); // connect end of last sidetrack to final state
+
+          //paths->push_back(temp);
+		  *path_adder++ = temp;
           *endRetired = pathQueue[0];
           newPath.last = endRetired++;
           heapPop(pathQueue, endQueue--);
@@ -271,7 +278,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 
   return paths;
 }
-
+/*
 void WFST::insertPathArc(GraphArc *gArc,List<PathArc>* l)
 {
   PathArc pArc;
@@ -288,6 +295,7 @@ void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
     insertPathArc(taken,l);
   }
 }
+*/
 
 Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
 // Comment by Yaser: This function creates new GraphState[] and because the

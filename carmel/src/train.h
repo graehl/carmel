@@ -53,14 +53,14 @@ index(NULL) { }
 	return;
 #endif
       index = new HashTable<IntKey, List<HalfArc> >(size);
-      for ( List<Arc>::iterator l=arcs.begin() ; 
+      for ( List<Arc>::const_iterator l=arcs.begin() ; 
 	    l != arcs.end() ; 
 	    ++l ) {
 	if ( !(list = index->find(l->out)) )
 	  index->add(l->out, 
-		     List<HalfArc>(static_cast<size_t>(1),&(*l)));
+		     List<HalfArc>(&(*l)));
 	else
-	  list->push(&(*l));
+	  list->push_front(&(*l));
       }
       return;
     }
@@ -74,9 +74,9 @@ index(NULL) { }
       return;
 #endif
     index = new HashTable<IntKey, List<HalfArc> >(size);
-    for ( List<Arc>::iterator l=arcs.begin() ; l != arcs.end() ; ++l ) {
+    for ( List<Arc>::const_iterator l=arcs.begin(),end=arcs.end() ; l != end ; ++l ) {
       if ( !(list = index->find(l->in)) )
-	index->add(l->in, List<HalfArc>(1,&(*l)));
+	index->add(l->in, List<HalfArc>(&(*l)));
       else
 	list->push(&(*l));
     }
@@ -90,7 +90,7 @@ index(NULL) { }
   }
   void scaleArcs(Weight w)
   {
-	for ( List<Arc>::iterator l=arcs.begin() ; l != arcs.end() ; ++l)
+	for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l)
 		l->weight *= w;
   }
   void addArc(const Arc &arc)
@@ -110,11 +110,10 @@ index(NULL) { }
     HashTable<UnArc, Weight *> hWeights;
     UnArc un;
     Weight **ppWt;
-  for ( List<Arc>::iterator l=arcs.begin() ; l != arcs.end() ; ) {
+  for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
       if ( l->weight.isZero() ) {
-	 List<Arc>::iterator temp = l++ ;	 
-	 arcs.erase(temp);
-	continue;
+		l=remove(l);
+		continue;
       }
       un.in = l->in;
       un.out = l->out;
@@ -123,8 +122,8 @@ index(NULL) { }
 	**ppWt += l->weight;
 	if ( **ppWt > 1 )
 	  **ppWt = Weight((float)1.);
-	 List<Arc>::iterator temp = l++ ;
-	 arcs.erase(temp);
+	
+	 l=remove(l);
       } else {
 	hWeights.add(un, &l->weight);
 	++l;
@@ -132,27 +131,25 @@ index(NULL) { }
     }
   }
   void prune(Weight thresh) {
-      List<Arc>::iterator end = arcs.end();      
-    for ( List<Arc>::iterator l=arcs.begin() ; l!= end; ){
-      if ( l->weight < thresh ){
-	List<Arc>::iterator temp = l++ ;
-	arcs.erase(temp);
-      }
-      else
+    for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
+	if ( l->weight < thresh ) {
+		l=remove(l);
+	} else
       	++l;
     }
   }
-  template <class T> void erase(T t) {
-	  --size;
-	  arcs.erase(t);
-  }
+  template <class T>
+	  T remove(T t) {
+		  --size;
+		  return arcs.erase(t);
+	  }
   void renumberDestinations(int *oldToNew) { // negative means remove transition
     Assert(!index);
     List<Arc>::iterator l=arcs.begin();
     while ( l != arcs.end() ) {
       int &dest = (int &)l->dest;
       if ( oldToNew[dest] < 0 ) {
-		erase(l++); 
+		l=remove(l); 
       } else {
 		dest = oldToNew[dest];
 		++l;
