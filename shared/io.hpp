@@ -140,17 +140,24 @@ inline void out_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
 template <class Ic,class It,class Oc,class Ot>
 inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot> &out) {
     char context[ERROR_CONTEXT_CHARS];
+    char *cp=context;    
+    char c;
     in.clear();
-    in.get(context,ERROR_CONTEXT_CHARS,'\n');
-    out << "... " << context << std::endl << "   ^" << std::endl;
+    in.unget();
+    if (in.get(*cp))
+        ++cp;
+    in.clear();
+    in.get(cp,ERROR_CONTEXT_CHARS-2,'\n');
+    out << "..." << context << std::endl << "   ^" << std::endl;
 }
 
 template <class Ic,class It>
 void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const char *item="input",unsigned number=0) {
     std::ostringstream err;            
     err << "Error reading " << item << " # " << number << ": " << error << std::endl;
+    std::streamoff where(in.tellg());
     show_error_context(in,err);
-    err << "\n(file position " << std::streamoff(in.tellg()) << ")" << std::endl;
+    err << "\n(file position " <<  where << ")" << std::endl;
     throw std::runtime_error(err.str());        
 }
 
