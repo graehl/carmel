@@ -8,12 +8,13 @@ shared: generic routines used by both
 Make sure the environment variable ARCH is set to something
 (cygwin,linux,solaris)
 
-Use GNU make (unfortunately, version 3.81 or greater is required due to some
-bugs with earlier versions), and find the binaries in bin/$ARCH
+Requires GNU make (unfortunately, version 3.80 or greater is required due to
+some bugs with earlier versions' $(eval)), and a modern standards-complaint C++
+compiler (gcc 3.4 is known good, as is Microsoft Visual C++ 7.1)
 
 Also requires Boost (http://boost.org) in your standard include directory (you
-can just use the boost directory in this distribution) - edit shared/graehl.mk
-to set BOOST_DIR=/path/to/boost if you have located your Boost elsewhere.
+can just use the boost directory in this distribution) - set
+BOOST_DIR=/path/to/boost if you have located your Boost elsewhere.
 
 cd carmel
 ARCH=linux 
