@@ -56,7 +56,7 @@ struct EM_executor {
 //    ran_restarts = how many times to randomly initialize parameters (after doing one iteration with supplied parameters), keeping the best PP params of all runs
 // return best (greatest) average log prob
 template <class Exec>
-double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg_prob_ratio=.9999,double converge_param_delta=0, double learning_rate_growth_factor=1, int ran_restarts=0,ostream &logs=Config::log(),unsigned log_level=1)
+double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg_prob_ratio=.99999,double converge_param_delta=0, double learning_rate_growth_factor=1, int ran_restarts=0,ostream &logs=Config::log(),unsigned log_level=1)
 {
     double best_alp=-HUGE_VAL; // alp=average log prob = (logprob1 +...+ logprobn )/ n (negative means 0 probability, 0 = 1 probability)
     double converge_alp=log(converge_relative_avg_prob_ratio); // negative absolute quantity.  if last_alp > new_alp + converge_alp, then converged.
