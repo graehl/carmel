@@ -183,12 +183,12 @@ for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
 	  // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
 	  // also, compute sum of normal arcs
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-        if ( (pGroup = (*g)->groupId) >= 0)
+        if ( (pGroup = (*g)->groupId) >= 0) // tied or locked arc
           if ( pGroup > 0)
             reserved += (*g)->weight = *groupArcTotal.find(pGroup) / *groupStateTotal.find(pGroup);
           else
             reserved += (*g)->weight;
-        else
+        else // normal arc
           sum += (*g)->weight;
 #ifdef DEBUG_NORMAL
       if ( reserved > 1.0001 )

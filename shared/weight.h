@@ -57,7 +57,14 @@ out_always_real(std::basic_ostream<A,B>& os);
   //}
 
   double getReal() const {
-	  return exp(weight);
+	  return std::exp(weight);
+  }
+  float getLog(float base) const {
+	  return weight / log(base);
+  }
+  Weight operator ^= (float power) { // raise Weight^power
+	  weight *= power;
+	  return *this;
   }
   float getLn() const {
 	  return weight;
@@ -122,6 +129,14 @@ template <class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);
 
 };
+
+inline Weight operator ^(Weight base,float exponent) {
+	Weight result = base;
+	result ^= exponent;
+	return result;
+}
+
+
 
 template <class charT, class Traits>
 std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) const
@@ -249,11 +264,11 @@ inline Weight operator +(Weight lhs, Weight rhs) {
   Weight result; 
 
   if ( diff < 0 ) { // rhs is bigger
-    result.weight = (float)(rhs.weight + log(1 + exp(lhs.weight-rhs.weight)));
+	  result.weight = (float)(rhs.weight + log(1 + std::exp(lhs.weight-rhs.weight)));
     return result;
   }
   // lhs is bigger
-  result.weight = (float)( lhs.weight + log(1 + exp(rhs.weight-lhs.weight)));
+  result.weight = (float)( lhs.weight + log(1 + std::exp(rhs.weight-lhs.weight)));
   return result;
 }
 
@@ -271,7 +286,7 @@ inline Weight operator -(Weight lhs, Weight rhs) {
 
   // lhs > rhs
   
-  result.weight = (float)(lhs.weight + log(1 - exp(rhs.weight-lhs.weight)));
+  result.weight = (float)(lhs.weight + log(1 - std::exp(rhs.weight-lhs.weight)));
   return result;
 }
 

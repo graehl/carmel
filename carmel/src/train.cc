@@ -41,6 +41,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method) {
 
   trn->f = trn->b = NULL;
   trn->maxIn = trn->maxOut = 0;
+  trn->totalEmpiricalWeight = 0;
 #ifdef DEBUGTRAIN
   std::cerr << "Just after training setup "<< *this ;
 #endif
@@ -52,6 +53,7 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
   Assert(weight > 0);
   IOSymSeq s;
   s.init(inSeq, outSeq, weight);
+  trn->totalEmpiricalWeight += weight;
   trn->examples.push_back(s);
   //trn->examples.insert(trn->examples.end(),s);
   if ( s.i.n > trn->maxIn )
@@ -88,8 +90,8 @@ void WFST::trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter,WFST
       std::cerr << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << epsilon << " was met - last change was " << lastChange << "\n";
       break;
     }
-    lastChange = train(giveUp,method);
-    std::cerr << "Training iteration " << giveUp << ": largest change was " << lastChange << "\n";
+    lastChange = train(giveUp,method,&lastPerplexity);
+    std::cerr << "Training iteration " << giveUp << ": largest change was " << lastChange << " with previous iteration perplexity = " << lastPerplexity << "\n";
     if ( lastChange <= epsilon ) {
       std::cerr << "Convergence criteria of " << epsilon << " was met after " << giveUp << " iterations.\n";
       break;
@@ -288,10 +290,14 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 #endif
 }
 
-Weight WFST::train(const int iter,WFST::NormalizeMethod method)
+Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 {
   Assert(trn);
   int i, o, s, nIn, nOut, *letIn, *letOut;
+  
+  // for perplex
+  Weight prodModProb = 1;
+  
   Weight ***f = trn->f;
   Weight ***b = trn->b;
   HashTable <IOPair, List<DWPair> > *IOarcs;
@@ -426,8 +432,11 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method)
           dw->counts += (dw->scratch / fin) * (Weight)seq->weight;
         }
       }
+	prodModProb *= (fin^seq->weight);
     ++seq;
-  } // end of while(seq)
+  } // end of while(training examples)
+  if (perplex)
+	  *perplex = prodModProb ^ (1 / trn->totalEmpiricalWeight);
   int pGroup;
 #ifdef DEBUGTRAINDETAIL
   std::cerr << "\nWeights before tied groups\n";

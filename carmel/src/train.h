@@ -237,6 +237,7 @@ class trainInfo {
   int maxIn, maxOut;
   List <IOSymSeq> examples;
   Weight smoothFloor;
+  float totalEmpiricalWeight;
   int nStates; // Yaser added this . number of States 
 #ifdef N_E_REPS // Yaser : the following variables need to be taken care of in the copy constructor
   Weight *wNew;
