@@ -245,15 +245,16 @@ unsigned DBPdepth;
 
 //#define DBP2(a,p) do { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a,p));  } while(0)
 //#define DBP(a) do { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPS(dbgstr(a)); } while(0)
+#define BDBPW(a,w) do { DBPS(" " #a "=_<");DBPS(dbgstr(a,w));DBPS(">_"); } while(0)
+#define DBPW(a,w) do { DBPRE; BDBPW(a,w) ;DBPOST; } while(0)
 
 #define DBPC(msg) do { DBPRE; DBPS(" (" msg ")"); DBPOST; } while(0)
 #define DBPC2(msg,a) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST; } while(0)
 #define DBPC3(msg,a,b) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST; } while(0)
 #define DBPC4(msg,a,b,c) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST; } while(0)
 #define DBPC5(msg,a,b,c,d) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; } while(0)
+#define DBPC4W(msg,a,b,c,w) do { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST; } while(0)
 
-#define BDBPW(a,w) do { DBPS(" " #a "=_<");DBPS(dbgstr(a,w));DBPS(">_"); } while(0)
-#define DBPW(a,w) do { DBPRE; BDBPW(a,w) ;DBPOST; } while(0)
 
 
 #else
@@ -272,6 +273,7 @@ unsigned DBPdepth;
 #define DBPC3(msg,a,b)
 #define DBPC4(msg,a,b,d)
 #define DBPC5(msg,a,b,c,d)
+#define DBPC4W(msg,a,b,c,w)
 
 #define BDBPW(a,w)
 #define DBPW(a,w)
