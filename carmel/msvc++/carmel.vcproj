@@ -429,7 +429,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\finite.cc"
+				RelativePath="..\src\carmel.cc"
 				FileType="0">
 				<FileConfiguration
 					Name="Debug_Broken|Win32">
@@ -533,7 +533,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\graph.cc"
+				RelativePath="..\..\shared\graph.cc"
 				FileType="0">
 				<FileConfiguration
 					Name="Debug_Broken|Win32">
@@ -585,7 +585,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\kbest.cc"
+				RelativePath="..\..\shared\kbest.cc"
 				FileType="0">
 				<FileConfiguration
 					Name="Debug_Broken|Win32">
@@ -637,7 +637,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\strhash.cc"
+				RelativePath="..\..\shared\strhash.cc"
 				FileType="0">
 				<FileConfiguration
 					Name="Debug_Broken|Win32">
@@ -914,7 +914,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\weight.cc"
+				RelativePath="..\..\shared\weight.cc"
 				FileType="0">
 				<FileConfiguration
 					Name="Debug_Broken|Win32">
@@ -1020,10 +1020,10 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
-				RelativePath="..\src\2hash.h">
+				RelativePath="..\..\shared\2hash.h">
 			</File>
 			<File
-				RelativePath="..\src\2heap.h">
+				RelativePath="..\..\shared\2heap.h">
 			</File>
 			<File
 				RelativePath="..\src\Arc.h">
@@ -1032,46 +1032,43 @@
 				RelativePath="..\src\compose.h">
 			</File>
 			<File
-				RelativePath="..\src\config.h">
+				RelativePath="..\..\shared\config.h">
 			</File>
 			<File
-				RelativePath="..\src\dynarray.h">
+				RelativePath="..\..\shared\dynarray.h">
 			</File>
 			<File
 				RelativePath="..\src\fst.h">
 			</File>
 			<File
-				RelativePath="..\src\genio.h">
+				RelativePath="..\..\shared\genio.h">
 			</File>
 			<File
-				RelativePath="..\src\graph.h">
+				RelativePath="..\..\shared\graph.h">
 			</File>
 			<File
-				RelativePath="..\..\tt\boost\detail\hash_table.hpp">
+				RelativePath="..\..\shared\kbest.h">
 			</File>
 			<File
-				RelativePath="..\src\kbest.h">
-			</File>
-			<File
-				RelativePath="..\src\list.h">
+				RelativePath="..\..\shared\list.h">
 			</File>
 			<File
 				RelativePath="..\src\models.h">
 			</File>
 			<File
-				RelativePath="..\src\myassert.h">
+				RelativePath="..\..\shared\myassert.h">
 			</File>
 			<File
-				RelativePath="..\src\slist.h">
+				RelativePath="..\..\shared\slist.h">
 			</File>
 			<File
-				RelativePath="..\src\static_itoa.h">
+				RelativePath="..\..\shared\static_itoa.h">
 			</File>
 			<File
-				RelativePath="..\src\strhash.h">
+				RelativePath="..\..\shared\strhash.h">
 			</File>
 			<File
-				RelativePath="..\src\stringkey.h">
+				RelativePath="..\..\shared\stringkey.h">
 			</File>
 			<File
 				RelativePath="..\..\tt\test.hpp">
@@ -1080,10 +1077,7 @@
 				RelativePath="..\src\train.h">
 			</File>
 			<File
-				RelativePath="..\..\tt\boost\unordered_map.hpp">
-			</File>
-			<File
-				RelativePath="..\src\weight.h">
+				RelativePath="..\..\shared\weight.h">
 			</File>
 		</Filter>
 		<Filter
