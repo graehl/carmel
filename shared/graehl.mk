@@ -133,8 +133,8 @@ $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 
 vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.
-.PRECIOUS: $(OBJB)/%.o dirs
-$(OBJB)/%.o:: %.cpp
+.PRECIOUS: $(OBJB)/%.o
+$(OBJB)/%.o:: %.cpp dirs
 	@echo
 	@echo COMPILE\(boost\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
@@ -157,7 +157,8 @@ $(OBJD)/%.o:: %.$(CPP_EXT) %.d dirs
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@
 
-dirs: $(addsufix /.,$(ALL_DIRS))
+dirs: $(addsuffix /.,$(ALL_DIRS))
+	echo dirs: $^
 
 clean:
 	rm -f $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
