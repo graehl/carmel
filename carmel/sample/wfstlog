@@ -1,0 +1,6 @@
+S
+(S (S "PRO" "they" -20log))
+(S (S "AUX" "can" -20ln))
+(S (S "VERB" "can" 200log))
+(S (S "NOUN" "fish" 0.0001))
+(S (S "VERB" "fish" 0.0001))
