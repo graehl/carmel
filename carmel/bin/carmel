@@ -13,16 +13,21 @@ if [ $u = Darwin ] ; then
 fi
 fi
 realprog=$0
+d=`dirname $realprog`
 if [ -L $realprog ] ; then
  if [ -x "`which readlink`" ] ; then
     realprog=`readlink $0`
+    if [ ${realprog:0:1} = / ] ; then #absolute path
+     d=`dirname $realprog`
+    else
+     d=$d/`dirname $realprog`
+    fi     
  fi
 fi
-d=`dirname $realprog`
 
 if [ $ARCH = Darwin ]; then
- exec $d/$ARCH/carmel.static
+ exec $d/$ARCH/carmel $*
 else
- exec $d/$ARCH/carmel
+ exec $d/$ARCH/carmel.static $*
 fi
 
