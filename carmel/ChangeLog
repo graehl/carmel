@@ -1,3 +1,8 @@
+2004-09-23  Jonathan Graehl  <graehl@isi.edu>
+
+	* ../shared/ChangeLog SEE ALSO (split source files into
+	carmel-specific vs. general)
+	
 2004-08-27  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/fst.cc: changed kbest interface to visitor vs. returning

@@ -122,7 +122,7 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
           }
           in.unget();
 #if 1
-          typename iterator_traits<T>::value_type temp;
+          typename std::iterator_traits<T>::value_type temp;
           if (deref(read)(in,temp).good())
                 *out++=temp;
           else
@@ -146,7 +146,7 @@ template <class charT, class Traits,class T>
 T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
 #if 1
     bounded_iterator<T> o(begin,end);
-    if (range_get_from(in,o,DefaultReader<typename iterator_traits<T>::value_type >()) != GENIOGOOD)
+    if (range_get_from(in,o,DefaultReader<typename std::iterator_traits<T>::value_type >()) != GENIOGOOD)
         goto fail;
     return o.base();
 #else
@@ -232,7 +232,7 @@ void swap(Array<T,Alloc> &a) {
         }
 
   template <class charT, class Traits>
-  std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false) const
+  std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
   {
         return range_print_on(o,begin(),end(),DefaultWriter(),multiline);
   }

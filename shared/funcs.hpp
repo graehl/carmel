@@ -11,6 +11,16 @@
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/utility/enable_if.hpp>
 
+struct size_accum {
+    size_t size;
+    size_accum() : size(0) {}
+    template <class T>
+    void operator()(const T& t) {
+        size += t.size();
+    }
+    operator size_t() { return size; }
+};
+
 template <class T>
 struct bounded_iterator : public boost::iterator_adaptor<bounded_iterator<T>,T> {
 private:

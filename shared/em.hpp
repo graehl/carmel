@@ -88,7 +88,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
     double &rel_eps=converge_relative_avg_logprob_epsilon;
     bool very_first_time=true;
     while(1) { // random restarts
-        int train_iter = 0;
+        unsigned train_iter = 0;
         ParamDelta max_delta_param;
         double last_alp;
 
