@@ -112,7 +112,6 @@ struct Entry {
         o << "{Entry: " << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
     }
     //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
-    //FIXME: g++ barfs on nested class + externally defined operator/member ... unnest Entry?
 };
 
 template <class R,class A=DefaultPoolAlloc<R> >
@@ -160,7 +159,7 @@ struct Node {
                 memo.push_back(NULL);                    
                 return NULL;
             }
-            memo.push_back(PENDING()); //FIXME: use dynarray.h?
+            memo.push_back(PENDING()); //FIXME: use dynarray.h and push back without init?
             //                IF_ASSERT(11) memo[n].result=PENDING;
             return (memo[n]=next_best());                
         }
@@ -343,6 +342,11 @@ struct lazy_kbest {
             if (!ith) break;
             visit(*ith,i);
         }
+    }
+    
+    // for best effect, do this before enumerate_kbest
+    static void print_forest_rec(Node *top) {
+        
     }
     /*
     void deallocate_all() {
