@@ -116,6 +116,8 @@ public:
   typedef T value_type;
   typedef value_type *iterator;
   typedef const value_type *const_iterator;
+  typedef T &reference;
+  typedef const T& const_reference;
 
   void construct() {
 	for (T *p=vec;p!=endspace;++p)
@@ -150,8 +152,8 @@ public:
 
 
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
-template <class charT, class Traits, class Reader> friend
-std::ios_base::iostate get_from_imp(Array<T,Alloc> *s,std::basic_istream<charT,Traits>& in,Reader read);
+template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
+std::ios_base::iostate get_from_imp(Array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
 
 template <class charT, class Traits, class Reader>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
@@ -246,8 +248,7 @@ public:
 protected:
   AutoArray(AutoArray<T,Alloc> &a) : Super(a.sp){        
   }
-private:
-  
+ 
 };
 
 // frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
@@ -327,7 +328,7 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   }
 
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
-  void move_rest_to(T *to,iterator i) {
+  void move_rest_to(T *to,typename Array<T,Alloc>::iterator i) {
 	Assert(i >= begin() && i < end());
 	copyto(to,i,end()-i);
 	endvec=i;
@@ -785,7 +786,8 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   {
 	Array<int> a;
 	DynamicArray<int> b;
-  istringstream(emptya) >> a;
+  istringstream iea(emptya);
+  iea >> a;
   stringstream o;
   o << a;
   BOOST_CHECK(o.str()==emptyb);
@@ -798,7 +800,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
   string sa="( 2 ,3 4\n \n\t 5,6)";
   string sb="(2 3 4 5 6)";
 
-#define EQIOTEST(A,B)  { A<int> a;B<int> b;stringstream o;istringstream(sa) >> a;\
+#define EQIOTEST(A,B)  { A<int> a;B<int> b;stringstream o;istringstream isa(sa);isa >> a;\
   o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);}
 
   EQIOTEST(Array,Array)
