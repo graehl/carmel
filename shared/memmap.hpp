@@ -116,12 +116,23 @@ private:
 #endif
 
 public:
+    // atomic convenience routine: create or open same-size, same-base address mapping after closing old one
+    void reopen( const std::string& path, std::ios::openmode mode=std::ios::in | std::ios::out,
+               size_type length = max_length, boost::intmax_t offset =0,
+                 bool create=true)
+    {
+        void *old_base=data();
+        close();
+        open(path,mode,length,offset,create,old_base,false);
+    }
 
     void open( const std::string& path,
                std::ios::openmode mode=std::ios::in | std::ios::out,
                size_type length = max_length, boost::intmax_t offset =0,
                bool create=true,void *base_address=NULL,bool flexible_base=false)
         {
+            using std::ios;
+
             DBPC6("memmap",path,mode,create,base_address,length);
             if (((unsigned)base_address) & alignment()) {
 //                DBP3(base_address,alignment(),((unsigned)base_address) & alignment());

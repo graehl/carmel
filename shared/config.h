@@ -5,6 +5,10 @@
 
 #include "memleak.hpp"
 
+#define TREE_SINGLETON_OPT
+typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
+typedef int rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (can't be unsigned type)
+
 #define COPYRIGHT_YEAR 2004
 
 //#define DEBUGNAN

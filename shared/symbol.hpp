@@ -303,28 +303,28 @@ BOOST_AUTO_UNIT_TEST( symbol )
   }
   {
         Symbol a;
-        string sa=" 1a  ";
+        std::string sa=" 1a  ";
         char *sb="1a";
-        istringstream isa(sa);isa >> a;
+        std::istringstream isa(sa);isa >> a;
         BOOST_CHECK(!strcmp(a.str,sb));
 //      DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
         BOOST_CHECK(a==Symbol(sb));
   }
    {
         Symbol a;
-        string sa=" \"\\\"a\"  ";
+        std::string sa=" \"\\\"a\"  ";
         char *sb="\"\\\"a\"";
-        istringstream isa(sa); isa >> a;
+        std::istringstream isa(sa); isa >> a;
         BOOST_CHECK(!strcmp(a.str,sb));
         //DBP('|'<<sa<<'|'<<a<<'|'<<sb<< '|'<<endl);
         BOOST_CHECK(a==Symbol(sb));
   }
  {
   Tree<Symbol> a,b;
-  string sa="1(2,3(aa,5,6))";
-  string sb="1(2 3(aa 5 6))";
-  stringstream o;
-  istringstream isa(sa);isa >> a;
+  std::string sa="1(2,3(aa,5,6))";
+  std::string sb="1(2 3(aa 5 6))";
+  std::stringstream o;
+  std::istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
@@ -337,10 +337,10 @@ BOOST_AUTO_UNIT_TEST( symbol )
  }
  {
   Tree<Symbol> a,b;
-  string sa="1 ( 2 , 3 ( aa , 5 , 6 ) )";
-  string sb="1(2 3(aa 5 6))";
-  stringstream o;
-  istringstream isa(sa);isa >> a;
+  std::string sa="1 ( 2 , 3 ( aa , 5 , 6 ) )";
+  std::string sb="1(2 3(aa 5 6))";
+  std::stringstream o;
+  std::istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
@@ -353,10 +353,10 @@ BOOST_AUTO_UNIT_TEST( symbol )
  }
  {
   Tree<Symbol> a,b;
-  string sa="1as(\"2\\\"\",3(aa(),5,6))";
-  string sb="1as(\"2\\\"\" 3(aa 5 6))";
-  stringstream o;
-  istringstream isa(sa);isa >> a;
+  std::string sa="1as(\"2\\\"\",3(aa(),5,6))";
+  std::string sb="1as(\"2\\\"\" 3(aa 5 6))";
+  std::stringstream o;
+  std::istringstream isa(sa);isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
