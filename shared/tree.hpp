@@ -14,6 +14,8 @@ namespace lambda=boost::lambda;
 #include <functional>
 #include "ttconfig.hpp"
 
+#include "byref.hpp"
+
 #ifdef TEST
 #include "test.hpp"
 #endif
@@ -215,7 +217,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   char c;
   rank=0;  
   DynamicArray<Self *> in_children;
-  EXPECTI_COMMENT(read(in,label));  
+  EXPECTI_COMMENT(deref(read)(in,label));  
   DBTREEIO(label);  
   EXPECTI_COMMENT(in>>c);
   if (c == '(') {
@@ -288,12 +290,12 @@ void delete_arg(C &c) {
 template <class T,class F>
 bool tree_visit(T *tree,F func)
 {
-  if (!func.discover(tree))
+  if (!deref(func).discover(tree))
      return false;
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)  
 	if (!tree_visit(*i,func))
 		break;
-  return func.finish(tree);
+  return deref(func).finish(tree);
 }
 
 template <class T,class F>
@@ -301,10 +303,10 @@ bool tree_leaf_visit(T *tree,F func)
 {
   	 if (tree->size()) {
 	   FOREACH(T *child,*tree) {
-		 tree_leaf_visit(child,f);
+		 tree_leaf_visit(child,func);
 	   }
 	 } else {
-	   f(tree);
+	   deref(func)(tree);
 	 }
 }
 
@@ -334,7 +336,7 @@ void postorder(T *tree,F func)
 {
   for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
-  func(tree);
+  deref(func)(tree);
 }
 
 template <class T,class F>
@@ -342,7 +344,7 @@ void postorder(const T *tree,F func)
 {
   for (typename T::const_iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
 	postorder(*i,func);
-  func(tree);
+  deref(func)(tree);
 }
 
 
@@ -541,7 +543,7 @@ BOOST_AUTO_UNIT_TEST( tree )
   o >> b;
   ostringstream o2;
   TreePrinter tp(o2);
-  tree_visit(&a,tp);
+  tree_visit(&a,ref(tp));
   BOOST_CHECK(o.str() == o2.str());
   c=new_tree(1,
 		new_tree(2),

@@ -8,6 +8,7 @@
 //! NOTE: default comparison direction is reversed ... making max-heaps into min-heaps (as desired for best-tree) and vice versa
 // loc[key] = void * (or DistToState<K,W,L> *)
 // weight[key] = some weight class
+// ok to copy/construct HeapKey without SetLocWeight initializing maps, but when you go to compare,assign, they need to be set.
 template <class K,class W,class L>
 struct HeapKey {
   typedef K value_type;
@@ -17,44 +18,45 @@ struct HeapKey {
   typedef Self *Loc;
   typedef typename W::value_type weight_type;
   K key;
-  static THREADLOCAL L loc;
-  static THREADLOCAL W weight;
+  static THREADLOCAL L locmap;
+  static THREADLOCAL W weightmap;  
   struct SetLocWeight {
     L old_loc;
     W old_weight;
-    SetLocWeight(L l,W w) : old_loc(loc),old_weight(weight) {
-      loc=l;
-      weight=w;
+    SetLocWeight(L l,W w) : old_loc(locmap),old_weight(weightmap) {
+      locmap=l;
+      weightmap=w;
     }
     ~SetLocWeight() {
-      loc=old_loc;
-      weight=old_weight;
+      locmap=old_loc;
+      weightmap=old_weight;
     }
   };
   HeapKey() : key() {}
   HeapKey(K k) : key(k) {}
-  HeapKey(Self s) : key(s.k) {}
+  HeapKey(Self &s) : key(s.k) {}
 
-  Self *loc() const {
-    return loc[key];
+  Self *&location() {
+    return locmap[key];
   }
   weight_type &weight() {
-    return weight[key];
+    return weightmap[key];
   }
 //  static FLOAT_TYPE unreachable;
   //operator weight_type() const { return weight[key]; }
   //operator K () const { return key; }
-  void operator = (HeapKey<K,W,L> rhs) { 
-    loc[rhs.key] = this;
-    loc = rhs.loc;
+  void operator = (HeapKey<K,W,L> rhs) {
+    //location()=NULL;
+    key=rhs.key;    
+    location() = this;
   }
 };
 
 //!! Assumes never adjusted after heapPop and loc initialized to 0 (NULL) until first heapAdd
 // this is really ok because only operator = sets loc; passing/constructing/copying doesn't
-template <typename Heap,K,W,L> 
+template <typename Heap,class K,class W,class L> 
 inline void heapAdjustOrAdd ( Heap &heap, HeapKey<K,W,L> k) {
-  typename Heap::iterator heapLoc=k.loc();
+  typename Heap::iterator heapLoc=k.location();
   if (heapLoc)
     heapAdjustUp(heap.begin(),heapLoc);
   else
@@ -62,14 +64,14 @@ inline void heapAdjustOrAdd ( Heap &heap, HeapKey<K,W,L> k) {
 }
 
 #ifdef MAIN
-template<class K,W,L>
-THREADLOCAL typename HeapKey<K,W,L>::weightmap_type HeapKey<K,W,L>::weight;
+template<class K,class W,class L>
+THREADLOCAL W HeapKey<K,W,L>::weightmap;
 
-template<class K,W,L>
-THREADLOCAL typename HeapKey<K,W,L>::locmap_type HeapKey<K,W,L>::loc;
+template<class K,class W,class L>
+THREADLOCAL L HeapKey<K,W,L>::locmap;
 #endif
 
-template<class K,W,L>
+template<class K,class W,class L>
 inline bool operator < (HeapKey<K,W,L> lhs, HeapKey<K,W,L> rhs) {
   return lhs.weight() > rhs.weight();
 }

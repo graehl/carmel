@@ -32,7 +32,9 @@ http://www.boost.org/libs/graph/doc/adjacency_list.html
 
 */
 
+
 #include "ttconfig.hpp"
+#include "graph.hpp"
 #include "property.hpp"
 #include "transducer.hpp"
 #include "list.h"
@@ -40,6 +42,7 @@ http://www.boost.org/libs/graph/doc/adjacency_list.html
 #include "weight.h"
 //#include "byref.hpp"
 #include <boost/ref.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include "adjustableheap.hpp"
 
 
@@ -83,7 +86,7 @@ struct ArrayPMap;
 // HyperarcLeftMap = count of unique tails for each edge, should be initialized to 0 by user
 // e.g. 
 /*
-  typedef typename graph_traits<G>::hyperarc_offset_map HaIndex;
+  typedef typename graph_traits<G>::hyperarc_index_map HaIndex;
   typedef ArrayPMap<unsigned,HaIndex> PMap;  
   typename PMap::Imp arc_remain(num_hyperarcs(g),HaIndex(g));
   ReverseHypergraph<G,PMap> r(g,PMap(arc_remain));
@@ -97,14 +100,15 @@ void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
 
 
 template <class G,
-//class HyperarcLeftMap=typename ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_offset_map>::type,
-  class HyperarcMapFactory=property_factory<G,typename graph_traits<G>:hyperarc_descriptor>,
-  class VertMapFactory=property_factory<G,typename graph_traits<G>::vertex_descriptor>,
+//class HyperarcLeftMap=typename ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_index_map>::type,
+class HyperarcMapFactory=typename property_factory<G,typename graph_traits<G>::hyperarc_descriptor>,
+  class VertMapFactory=typename property_factory<G,typename graph_traits<G>::vertex_descriptor>,
 class ContS=VectorS >
+
 struct ReverseHyperGraph {
   typedef ReverseHyperGraph<G,HyperarcMapFactory,VertMapFactory,ContS> Self;
   typedef G graph;
-  typedef typename graph_traits<graph> GT;
+  typedef graph_traits<graph> GT;
   typedef typename GT::hyperarc_descriptor HD;    
   typedef typename GT::vertex_descriptor VD;    
 
@@ -124,7 +128,7 @@ struct ReverseHyperGraph {
 //  Edges edge;
 //  Vertices vertex;
   
-  typedef ContS::container<ArcDest>::type Adj;
+  typedef typename ContS::container<ArcDest>::type Adj;
   //typedef FixedArray<Adj> Adjs;
   typedef typename VertMapFactory::rebind<Adj>::implementation Adjs;
   graph &g;
@@ -140,11 +144,12 @@ struct ReverseHyperGraph {
   VertMapFactory vert_fact;
   
   
-  ReverseHyperGraph(const G& g_,VertMapFactory vert_fact_=VertMapFactory(g_),
-    HyperarcMapFactory h_fact_=HyperarcMapFactory(g_) : adj(vert_fact_), g(g_), unique_tails(unique_tails_pmap), vert_fact(vert_fact_), h_fact(h_fact_), unique_tails(h_fact_)
+  ReverseHyperGraph(const G& g_,
+    VertMapFactory vert_fact_=VertMapFactory(g_),
+    HyperarcMapFactory h_fact_=HyperarcMapFactory(g_)) : adj(vert_fact_), g(g_), unique_tails(unique_tails_pmap), vert_fact(vert_fact_), h_fact(h_fact_), unique_tails(h_fact_)
     //num_hyperarcs(g_)
   {		
-	visit_edges<HD>(g,*this);
+	visit<HD>(g,*this);
   }
   
   Adj &operator[](VD v) {
@@ -176,10 +181,121 @@ struct ReverseHyperGraph {
       }
     }    
   }
+
+// NONNEGATIVE COSTS ONLY!  otherwise may try to adjust the cost of something on heap that was already popped (memory corruption ensues)
+ // costmap must be initialized to initial costs (for start vertices) or infinity (otherwise) by user
+ // edgecostmap should be initialized to edge costs
+ template <
+   class VertexCostMap=typename property_factory<G,VD>::rebind<float>::reference,
+   //class VertexPredMap=property_factory<G,VD>::rebind<HD>::reference
+   class VertexPredMap=dummy_property_map,
+   class EdgeCostMap=property_map<G,edge_weight_t>
+ >
+ struct BestTree {
+  BestTree(Self &rev_,VertexCostMap mu_,VertexPredMap pi_=PredMap(),
+    EdgeCostMap ec=get(edge_weight,rev_.g))
+    :
+    rev(rev_),mu(mu_),pi(pi_),loc(rev_.g),remain_infinum(rev_.g),heap(num_vertices(rev_.g)) {
+      //copy_hyperarc_pmap(rev.g,rev.tails_remain_pmap(),tr);      //already copied above.
+      //copy_hyperarc_pmap(rev.g,ec_,infinum); // can't rely on copying implementation since no API for it
+      visit<typename GT::hyperarc_descriptor>(
+        make_indexed_pair_copier(ref(remain_infinum),rev.tails_remain_pmap(),ec));
+    }   // semi-tricky: loc should be default initialized (void *) to 0
+
+   Self &rev;
+  VertexCostMap mu;
+  VertexPredMap pi;
+  //TailsRemainMap tr;
+  HyperarcLeftMap tr;
+  typedef typename VertMapFactory::rebind<void *> LocMap;
+  typedef typename LocMap::implementation Locs;
+
+
+  Locs loc;
+
+  typedef typename VertexCostMap::value_type Cost;
+  struct RemainInf : public std::pair<unsigned,Cost> {
+    unsigned & remain() { return first; }
+    Cost & cost() { return second; }
+  };
+  typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostMap; // lower bound on edge costs
+  typedef typename RemainInfCostMap::implementation RemainInfCosts;
+  RemainInfCosts remain_infinum;
+  typename RemainInfCostMap::reference hyperarc_remain_and_cost_map() {
+    return remain_infinum;
+  }
+
+  typedef HeapKey<VD,VertexCostMap,typename LocMap::reference> Key;
+  typedef DynamicArray<Key> Heap;
+  Heap heap;
   
+
+  void init_costs(Cost cinit=numeric_limits<Cost>::infinity) {
+    typename GT::pair_vertex_it i=vertices(rev.g);
+    for (;i.first!=i.second;++i.first) {
+      put(mu,i.first,cinit);
+    }
+  }
+  void operator()(VD v,Cost c) {
+    put(mu,v,c);
+    //typename Key::SetLocWeight save(ref(loc),mu);
+    heap.push_back(v);
+  }
+ private:      
+  void operator()(VD v) {    
+    if (get(mu,v) != numeric_limits<Cost>::infinity)
+      heap.push_back(v);
+  }
+ public:
+  void prepare() {
+    //typename Key::SetLocWeight save(ref(loc),mu);
+    visit<VD>(rev.g,ref(*this));
+  }
+  template<class I>
+  void prepare(I begin, I end) {
+    //typename Key::SetLocWeight save(ref(loc),mu);
+    std::foreach(begin,end,ref(*this));
+  }
+  bool was_queued(VD v) {
+    return get(loc,v) != NULL;
+  }
+  void relax(VD v,HD h,Cost &m) {
+    if (c < m) {
+      m=c;
+      heapAdjustOrAdd(heap,v);
+      put(pi,v,h);
+    }
+  }
+  void reach(VD v) {
+    Cost cv=get(mu,v);
+    const Adj &a=adj[top.key];
+    FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
+      HD h=a.harc;
+      VD head=source(h,rev.g);
+      RemainInf &ri=remain_infinum[h];      
+        Assert(ri.cost() >= 0);
+      ri.cost() += (a.multiplicity*cv);  // assess the cost of reaching v
+        Assert(ri.remain() > 0);
+      if (--ri.remain() == 0) // if v completes the hyperarc, attempt to use it to reach head (more cheaply)
+        relax(head,h,ri.cost());            
+    }
+
+  }
+  void finish() {
+    typename Key::SetLocWeight save(ref(loc),mu);
+    heapBuild(heap);
+    while(heap.size()) {
+      Key top=heapTop(heap);
+      heapPop(heap);
+      reach(top.key);
+    }
+  }  
+ };
+
+
   // reachmap must be initialized to false by user
  template <
-   class VertexReachMap=property_factory<G,VD>::rebind<bool>::reference,
+   class VertexReachMap=typename property_factory<G,VD>::rebind<bool>::reference
  >
  struct HyperGraphReach {
   Self &rev;
@@ -211,6 +327,7 @@ struct ReverseHyperGraph {
   }
 
  };
+
  template <class P>
    unsigned reach(VD start,P p) {
      HyperGraphReach<P> alg(*this,p);
@@ -224,7 +341,6 @@ struct ReverseHyperGraph {
      return alg.n;
    }
   
-typedef 
 
 /* usage: 
 BestTree alg(g,mu,pi);
@@ -245,107 +361,6 @@ and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
 
 
 
-// NONNEGATIVE COSTS ONLY!  otherwise may try to adjust the cost of something on heap that was already popped (memory corruption ensues)
- // costmap must be initialized to initial costs (for start vertices) or infinity (otherwise) by user
- // edgecostmap should be initialized to edge costs
- template <
-   class VertexCostMap=property_factory<G,VD>::rebind<float>::reference,
-   //class VertexPredMap=property_factory<G,VD>::rebind<HD>::reference
-   class VertexPredMap=dummy_property_map,
-   class EdgeCostMap=property_map<G,edge_weight_t>
- >
- struct BestTree {
-  Self &rev;
-  VertexCostMap mu;
-  VertexPredMap pi;
-  //TailsRemainMap tr;
-  HyperarcLeftMap tr;
-  typedef typename VertMapFactory::rebind<void *> LocMap;
-  typedef typename LocMap::implementation Locs;
-  typedef HeapKey<VD,VertexCostMap,typename LocMap::reference> Key;
-//  FixedArray<Key *> Locs;
-  Locs loc;
-
-  typedef typename VertexCostMap::value_type Cost;
-  struct RemainInf : public std::pair<unsigned,Cost> {
-    unsigned & remain() { return first; }
-    Cost & cost() { return second; }
-  };
-  typedef typename HyperarcMapFactory::rebind<RemainInf> RemainInfCostMap; // lower bound on edge costs
-  typedef typename InfCostMap::implementation RemainInfCosts;
-  RemainInfCosts remain_infinum;
-  typename RemainInfCostMap::reference hyperarc_remain_and_cost_map() {
-    return remain_infinum;
-  }
-
-  typedef DynamicArray<Key> Heap;
-  Heap heap;
-  
-  BestTree(Self &rev_,VertexCostMap mu_,PredMap pi_=PredMap(),EdgeCostMap ec_=get(edge_weight,rev_.g), dummy_EdgeCostMap()) :
-    rev(rev_),mu(mu_),pi(pi_),loc(rev_.g),remain_infinum(rev_.g),heap(num_vertices(rev_.g)), {
-      //copy_hyperarc_pmap(rev.g,rev.tails_remain_pmap(),tr);      //already copied above.
-      //copy_hyperarc_pmap(rev.g,ec_,infinum); // can't rely on copying implementation since no API for it
-      visit<typename GT::hyperarc_descriptor>(
-        make_indexed_pair_copier(ref(remain_infinum),rev.tails_remain_pmap(),ec));
-    }   // semi-tricky: loc should be default initialized (void *) to 0
-
-  void init_costs(Cost cinit=numeric_limits<Cost>::infinity) {
-    typename GT::pair_vertex_it i=vertices(rev.g);
-    for (;i.first!=i.second;++i.first) {
-      put(mu,i.first,cinit);
-    }
-  }
-  void operator()(VD v,Cost c) {
-    put(mu,v,c);
-    heap.push_back(v);
-  }
-      
-  void operator()(VD v) {
-    if (get(mu,v) != numeric_limits<Cost>::infinity)
-      heap.push_back(v);
-  }
-  void prepare() {
-    visit<VD>(rev.g,ref(*this));
-  }
-  template<class I>
-  void prepare(I begin, I end) {
-    std::foreach(begin,end,ref(*this));
-  }
-  bool was_queued(VD v) {
-    return get(loc,v) != NULL;
-  }
-  void relax(VD v,HD h,Cost &m) {
-    if (c < m) {
-      m=c;
-      heapAdjustOrAdd(heap,v);
-      put(pi,v,h);
-    }
-  }
-  void reach(VD v) {
-    Cost cv=get(mu,v);
-    const Adj &a=adj[top.key];
-    FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
-      HD h=a.harc;
-      VD head=source(h,rev.g);
-      RemainInf &ri=remain_infinum[h];      
-        Assert(ri.cost() >= 0);
-      ri.cost() += (a.multiplicity*cv);  // assess the cost of reaching v
-        Assert(ri.remain() > 0);
-      if (--ri.remain() == 0) // if v completes the hyperarc, attempt to use it to reach head (more cheaply)
-        relax(head,h,ri.cost());            
-    }
-
-  }
-  void finish() {
-    typename Key::SetLocWeight save(ref(loc),mu);    
-    heapBuild(heap);
-    while(heap.size()) {
-      Key top=heapTop(heap);
-      heapPop(heap);
-      reach(top.key);
-    }
-  }  
- };
 
 };
 

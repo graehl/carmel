@@ -2,6 +2,8 @@
 #define _PROPERTY_HPP
 
 #include <boost/property_map.hpp>
+#include <boost/ref.hpp>
+#include "dynarray.h"
 
 #ifdef TEST
 #include "test.hpp"
@@ -19,7 +21,7 @@ struct OffsetMap {
   }
   OffsetMap(K beg) : begin(beg) {
   }
-  typedef boost::read_property_map_tag category;
+  typedef boost::readable_property_map_tag category;
   typedef unsigned value_type;
   typedef K key_type;
   unsigned operator [](K p) const {
@@ -28,7 +30,7 @@ struct OffsetMap {
 };
 
 template <class K>
-unsigned get(OffsetMap k,K p) {
+unsigned get(OffsetMap<K> k,K p) {
   return k[p];
 }
 
@@ -39,7 +41,7 @@ unsigned get(OffsetMap k,K p) {
  */
 template <class V,class O=boost::identity_property_map>
 struct ArrayPMapImp : public 
-  boost::put_get_helper<typename D &,ArrayPMapImp<V,O> > 
+  boost::put_get_helper<V &,ArrayPMapImp<V,O> > 
 {
   typedef ArrayPMapImp<V,O> Self;
   //typedef typename graph_traits<G>::hyperarc_descriptor key_type;
@@ -56,18 +58,20 @@ struct ArrayPMapImp : public
   
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
   ArrayPMapImp(const init_type &init) : ind(init.second), vals(init.first) {}
-  D & operator [](key_type k) {
+  V & operator [](key_type k) {
     return vals[get(ind,k)];
   }
 private:
   ArrayPMapImp(Self &s) {}
 };
 
+/*
 template <class V,class O=boost::identity_property_map>
 struct ArrayPMap {
-  ArrayPMapImp<V,O> Imp;
+  typedef ArrayPMapImp<V,O> Imp;
   typedef boost::reference_wrapper<Imp> type;
 };
+*/
 
 /*
 template <class V,class O>
@@ -92,8 +96,8 @@ struct ArrayPMapFactory : public std::pair<unsigned,offset_map> {
   ArrayPMapFactory(const ArrayPMapFactory &o) : std::pair<unsigned,offset_map>(o) {}
   template <class R>
   struct rebind {    
-    typedef ArrayPMapImp<R,O> implementation;
-    typedef boost::reference_wrapper<other> reference;
+    typedef ArrayPMapImp<R,offset_map> implementation;
+    typedef boost::reference_wrapper<implementation> reference;
     // reference(implementation &i) constructor exists
     /*static reference pmap(implementation &i) {
       return reference(i);
@@ -151,7 +155,7 @@ IndexedCopier<P1,P2> make_indexed_copier(P1 a,P2 b) {
 template <class P1,class P2,class P3>
 struct IndexedPairCopier {
   P1 a;P2 b;P3 c;  
-  IndexedCopier(P1 a_,const P2 b_,const P3 c_) : a(a_),b(b_),c(c_) {}
+  IndexedPairCopier(P1 a_,const P2 b_,const P3 c_) : a(a_),b(b_),c(c_) {}
   template<class I>
     void operator()(I i) {
       a[i].first = b[i];
