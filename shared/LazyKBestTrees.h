@@ -217,7 +217,7 @@ struct Node {
     // PRE: unincremented pending
     //POST: if pending succesor incrementing ith child exists, increment, create new result, and add to heap
     void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
-        R *old_child=pending.child[i]->memo[pending.childbp[i]];     
+        R *old_child=pending.child[i]->memo[pending.childbp[i]];
         //            R *new_child;
         INFOT("BUILDSUCC #" << i << " @" << this << ": " << " old_child=" <<old_child << *this);
         NESTT;
