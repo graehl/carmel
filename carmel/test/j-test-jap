@@ -1,0 +1,47 @@
+. env.sh
+echo 'a n ji ra na i to' |
+sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' | \
+$B -lsi -k 1 -OEW asciikana-katakana.transducer >test.katakana
+sed 's/ //g' test.katakana | sed 's/"//g' >test.kana
+
+rm -f test.asciikana test.jpron test.jpron3 test.jpron2 test.epron test.word test.final
+
+echo ""
+echo "Katakana:                      " 
+echo ""
+$B -siIEQ -k 1 < test.katakana
+echo ""
+
+$B -rsi jpron.transducer vowel-separator.transducer \
+        jpron-asciikana.transducer asciikana-katakana.transducer \
+  < test.katakana > test.jpron2
+
+echo "Japanese pronunciation:        " 
+echo ""
+$B -IEQ -k 2 test.jpron2
+echo ""
+
+$B -rs epron-jpron.1.transducer < test.jpron2 > test.epron
+
+echo "Top English pronunciations:         "
+echo ""
+$B -IEQ -k 5 test.epron
+echo "  ..."
+echo ""
+
+$B -rs word-epron.names.55000wds.transducer < test.epron > test.word
+
+echo "Top English word sequences:         "
+echo ""
+$B -IEQ -k 5 test.word
+echo "  ..."
+echo ""
+
+$B -rs word.names.50000wds.transducer < test.word  > test.final
+
+echo "Top Re-scored English word sequence:  " 
+echo ""
+$B -IEQ -k 5 test.final
+echo "  ..."
+echo ""
+
