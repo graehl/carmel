@@ -75,7 +75,8 @@ BackTrace::LocStack BackTrace::stack;
 bool BackTrace::first=true;
 #endif
 
-#if defined(DEBUG) || !defined(NO_BACKTRACE)
+//defined(DEBUG) ||
+#if !defined(NO_BACKTRACE)
 #define BACKTRACE BackTrace BackTrace72845389034(__FUNCTION__,__FILE__,__LINE__)
 #else
 #define BACKTRACE
