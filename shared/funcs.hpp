@@ -24,18 +24,29 @@
 template <class T>
 T *align(T *p)
 {
-    //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
     const unsigned align=boost::alignment_of<T>::value;
     const unsigned align_mask=(align-1);
-    Assert(align_mask & align == 0); // only works for power-of-2 alignments.
 
+    Assert2((align_mask & align), ==0); // only works for power-of-2 alignments.
+    char *cp=(char *)p;
+    cp += align-1;
+    cp -= (align_mask & (unsigned)cp);
+//    DBP4(sizeof(T),align,(void*)p,(void*)cp);
+    return (T*)cp;
+}
+
+template <class T>
+T *align_down(T *p)
+{
+    const unsigned align=boost::alignment_of<T>::value;
+    const unsigned align_mask=(align-1);
+//    DBP3(align,align_mask,align_mask & align);
+    //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
+//            ttop &= ~align_mask;
+    //return p;
+    Assert2((align_mask & align), == 0); // only works for power-of-2 alignments.
     unsigned diff=align_mask & (unsigned)p; //= align-(ttop&align_mask)
-    if (diff) {
-//            ttop |= align_mask; // = ttop + diff - 1
-//            ++ttop;
-        return (char *)p + diff + 1;
-    }
-    return p;
+    return (T*)((char *)p - diff);
 }
 
 template <class T>
@@ -44,9 +55,39 @@ bool is_aligned(T *p)
     //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
     const unsigned align=boost::alignment_of<T>::value;
     const unsigned align_mask=(align-1);
-    return align_mask & (unsigned)p;
+    return !(align_mask & (unsigned)p);
 }
 
+
+#ifdef TEST
+#include "test.hpp"
+BOOST_AUTO_UNIT_TEST( TEST_FUNC_ALIGN )
+{
+    unsigned *p;
+    p=(unsigned *)0x15;
+    BOOST_CHECK_EQUAL(align(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
+    BOOST_CHECK(!is_aligned(p));
+
+    p=(unsigned *)0x16;
+    BOOST_CHECK_EQUAL(align(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
+    BOOST_CHECK(!is_aligned(p));
+
+    p=(unsigned *)0x17;
+    BOOST_CHECK_EQUAL(align(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
+    BOOST_CHECK(!is_aligned(p));
+
+    p=(unsigned *)0x28;
+    BOOST_CHECK_EQUAL(align(p),p);
+    BOOST_CHECK_EQUAL(align_down(p),p);
+    BOOST_CHECK(is_aligned(p));
+
+
+}
+
+#endif
 
 /*
 template <typename T,size_t n>

@@ -78,5 +78,11 @@ namespace boost
   }// user defined
 #endif
 #endif
+
+#define CHECK(a) BOOST_CHECK(a)
+#define REQUIRE(a) BOOST_REQUIRE(a)
+#define CHECK_EQ(a,b) BOOST_CHECK_EQUAL(a,b)
+
 #include "debugprint.hpp"
+
 #endif
