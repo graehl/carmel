@@ -154,7 +154,7 @@ struct Entry {
 
     void print_on(std::ostream &o) const
     {
-        o << '(' << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
+        o << "{Entry: " << child[0] << '[' << childbp[0] << "]," << child[1] << '[' << childbp[1] << "])=" << *result;
     }
     //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
     //FIXME: g++ barfs on nested class + externally defined operator/member ... unnest Entry?
@@ -171,7 +171,7 @@ struct Node {
     typedef default_print_on has_print_on;
     void print_on(std::ostream &o) const
     {
-        o << '{' << this << ": " << " pq=" << pq << " memo=" << memo << '}';
+        o << "{NODE @" << this << ": " << " pq=" << pq << " memo=" << memo << '}';
     }        
     static A result_alloc;
     typedef Entry<R,A> QEntry; // fixme: make this indirect for faster heap ops
@@ -190,7 +190,8 @@ struct Node {
     //// get succesors to pq[0] and heapify, storing memo[n]=top().  if no more left, memo[n]=NULL
     // DONE when: pq is empty, or memo[n] = NULL
     R *get_best(unsigned n) {
-        INFOTEST("node=" << *this << " n=" << n); // // 
+        INFOT("GET_BEST n=" << n << " node=" << *this); // //
+        NESTT;
         if (n < memo.size()) {
             assertlvl(11,memo[n] != PENDING());
             return memo[n]; // may be DONE
@@ -234,19 +235,21 @@ struct Node {
     void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
         R *old_child=pending.child[i]->memo[pending.childbp[i]];     
         //            R *new_child;
-        INFOTEST("BUILDSUCC " << this << ": " << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1] << " old_child=" <<old_child);
+        INFOT("BUILDSUCC #" << i << " @" << this << ": " << " old_child=" <<old_child << *this);
+        NESTT;
+
         if (R *new_child=(pending.child[i])->get_best(++pending.childbp[i])) {         // has child-succesor
-            INFOTEST("HAVE CHILD SUCCESOR TO " << this << ": @" << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
+            INFOT("HAVE CHILD SUCCESOR TO " << *this << ": @" << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);  
             pending.result=result_alloc.allocate(); 
             new(pending.result) R(old_parent,old_child,new_child,i);
-            INFOTEST("new result="<<*pending.result);
+            INFOT("new result="<<*pending.result);
             push(pending);  
         }
     }
 
     // must be added from best to worst order
     void add_sorted(Result *r,Node<R,A> *left=NULL,Node<R,A> *right=NULL) {            
-        INFOTEST("add_sorted this=" << this << " result=" << *r << " left=" << left << " right=" << right);
+        INFOT("add_sorted this=" << this << " result=" << *r << " left=" << left << " right=" << right);
         QEntry e;
         e.set(r,left,right);
         if (pq.empty()) { // first added
@@ -254,7 +257,7 @@ struct Node {
             memo.push_back(r);                
         }
         pq.push_back(e);
-        INFOTEST("done (heap) " << e);
+        INFOT("done (heap) " << e);
     }
 
 
@@ -347,6 +350,8 @@ struct lazy_kbest {
     // visit(R &result,unsigned rank) // rank 0...k-1 (or earlier if forest has fewer trees)
     template <class Visitor>
     void enumerate_kbest(unsigned k,Node *goal,Visitor visit=Visitor()) {
+        INFOT("COMPUTING BEST " << k << " for node " << *goal);
+        NESTT;
         for (unsigned i=0;i<k;++i) {
             R *ith=goal->get_best(i);
             if (!ith) break;
@@ -364,13 +369,19 @@ struct lazy_kbest {
 
 # include "test.hpp"
 # include <iostream>
+# include <string>
 using namespace std;
 
 struct Result {
     char val;
-    Result(char v) : val(v) {}
+    string history;
+    
+    Result(char v) : val(v), history(1,v) {}
     Result(Result *prototype, Result *old_child, Result *new_child,unsigned which_child) {
-        cerr << "proto=" << prototype->val << " old_child=" << old_child->val << " new_child=" << new_child->val << " childid=" << which_child << endl;
+        NESTT;
+        INFOT("NEW RESULT proto=" << prototype->val << " old_child=" << old_child->val << " new_child=" << new_child->val << " childid=" << which_child);
+        history = history + " @" +  (which_child ? "RIGHT" : "LEFT") + ": - [" + string(1,old_child->val) + "] + (" + string(1,new_child->val) + ")";
+        
     }
     bool operator < (const Result &other) const {
         return val < other.val;
@@ -380,13 +391,16 @@ struct Result {
 
 ostream & operator <<(ostream &o,const Result &v) 
 {
-    return o << "(val=" << v.val << ')';
+    return o << "(val=" << v.val << " history=" << v.history << ')';
 }
 
 
 struct ResultPrinter {
     void operator()(const Result &r,unsigned i) const {
-        cerr << "Visiting result #" << i << " val=" << r.val << endl;
+        NESTT;        
+        INFOT("Visiting result #" << i << r);
+        cerr << "\n\nRESULT #" << i << "=" << r.val << "\nhistory= " << r.history << "\n\n";
+        
     }
 };
 
@@ -402,7 +416,10 @@ BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
     b.add_sorted(&rb3,&b);
     c.add_sorted(&rc,&b,&f);
     f.add_sorted(&rf); // terminal
-    LK().enumerate_kbest(5,&a,ResultPrinter());
+    NESTT;
+    LK().enumerate_kbest(1,&f,ResultPrinter());
+    LK().enumerate_kbest(1,&b,ResultPrinter());
+    LK().enumerate_kbest(4,&a,ResultPrinter());
     
     BOOST_CHECK(0);
 }
