@@ -59,15 +59,17 @@ public:
 
 // uses interned char *
 struct Symbol {
+  enum {is_noop=1};
   static StringInterner<> intern;
   char *str;
   Symbol() : str(empty) {}
   Symbol(const char *s) : str(intern(s)) {}
   Symbol(const Symbol &s) : str(s.str) {}
-  static char * borrow(char *s) {
+  static char * borrow(const char *s) {
     return intern(s);
   }
-  static void giveBack(char *s) {
+  operator char * () { return str; }
+  static void giveBack(const char *s) {
     // technically, leaks memory.  we could use StringPool instead.
 
   }
@@ -77,10 +79,17 @@ struct Symbol {
     return *this;
   }
   char *c_str() const { return str; }
-  bool operator ==(Symbol r) const {
+  	bool operator < (const Symbol r) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
+	{
+	  return str<r.str;//strcmp(str,r.str)<0;
+	}
+	ptrdiff_t cmp(const Symbol r) const {
+	  return r.str-str;
+	}
+  bool operator ==(const Symbol r) const {
     return r.str==str;
   }
-  bool operator !=(Symbol r) const {
+  bool operator !=(const Symbol r) const {
     return r.str!=str;
   }
 

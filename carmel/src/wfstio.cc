@@ -394,7 +394,7 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
     return 1;
   }
   {
-    int *uip = stateNames.find(finalName);
+    unsigned *uip = stateNames.find(finalName);
     if ( uip  ) {
       final = *uip;
       finalName.kill();
@@ -560,7 +560,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   while ( line ) {
     if ( !getString(line, symbol) )
       break;
-    int *pI = alph->find(symbol);
+    unsigned *pI = alph->find(symbol);
     if ( !pI) {
       delete ret;
       return NULL;

@@ -160,7 +160,9 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="tests"
+				CommandLine="&quot;$(TargetDir)\$(TargetName).exe&quot; --result_code=no --report_level=no"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -1098,6 +1100,9 @@
 				RelativePath="..\src\graph.h">
 			</File>
 			<File
+				RelativePath="..\..\tt\boost\detail\hash_table.hpp">
+			</File>
+			<File
 				RelativePath="..\src\kbest.h">
 			</File>
 			<File
@@ -1123,6 +1128,9 @@
 			</File>
 			<File
 				RelativePath="..\src\train.h">
+			</File>
+			<File
+				RelativePath="..\..\tt\boost\unordered_map.hpp">
 			</File>
 			<File
 				RelativePath="..\src\weight.h">

@@ -225,12 +225,10 @@ Graph removeStates(Graph g, bool marked[]) // not tested
   //
 
 {
-  unsigned int *oldToNew = NEW unsigned int[g.nStates];
+  unsigned *oldToNew = NEW unsigned[g.nStates];
   int i = 0, f = 0;
   while ( i < g.nStates )
-    if (marked[i])
-      oldToNew[i++] = -1;
-    else
+    if (!marked[i])
       oldToNew[i++] = f++;
 
   GraphState *reduced = NEW GraphState[f];

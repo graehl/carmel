@@ -272,13 +272,14 @@ class WFST {
     Assert ( i < out->size() );
     return (*out)[i];
   }
+  //NB: uses static (must use or copy before next call) return string buffer if !named_states
   const char *stateName(int i) const {
     Assert ( i >= 0 );
     Assert ( i < numStates() );
     if (named_states)
       return stateNames[i];
     else
-      return Alphabet<>::itoa(i);
+      return static_itoa(i);
   }
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)

@@ -6,18 +6,29 @@ int WFST::indexThreshold = 32;
 unsigned int TrioKey::aMax = 0;
 unsigned int TrioKey::bMax = 0;
 
-static void makeTrioName(char *bufP, const char *aName, const char *bName, int filter)
-{
-  char *limit=bufP+MAX_STATENAME_LEN;
-  while ( *aName )
-    *bufP++ = *aName++;
-  *bufP++ = '|';
-  *bufP++ = filter + '0';
-  *bufP++ = '|';
-  while ( *bName && bufP < limit)
-    *bufP++ = *bName++;
-  *bufP = 0;
-}
+struct TrioNamer {
+  char *buf;
+  const WFST &a;
+  const WFST &b;
+  char *limit;
+  TrioNamer(char *buf_,unsigned capacity,const WFST &a_,const WFST &b_) : buf(buf_),a(a_),b(b_) {
+	limit=buf+capacity-5;
+	Assert(limit>buf);
+  }
+  void make(unsigned aState,unsigned bState,char filter) {
+	char *bufP=buf;
+	const char *aName=a.stateName(aState);
+    while ( *aName && buf<limit )
+	  *bufP++ = *aName++;
+	*bufP++ = '|';
+	*bufP++ = filter + '0';
+	*bufP++ = '|';
+	const char *bName=b.stateName(bState);
+    while ( *bName && bufP < limit)
+	  *bufP++ = *bName++;
+	*bufP = 0;
+  }
+};
 
 //#define OLDCOMPOSEARC
 #ifdef DEBUGCOMPOSE
@@ -32,7 +43,7 @@ if ( (pDest = find_second(stateMap,triDest)) ) \
  { states[sourceState].addArc(Arc(in, out, *pDest, weight)); \
 } else { \
   add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.push_back();    \
-  if ( namedStates ) {      makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);      stateNames.add(buf);   \
+  if ( namedStates ) {      namer.make(triDest.aState, triDest.bState, triDest.filter);      stateNames.add(buf);   \
   }  }} while(0)
 #else
 
@@ -40,7 +51,7 @@ if ( (pDest = find_second(stateMap,triDest)) ) \
   HashTable<TrioKey,int>::insert_return_type i; \
   if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
 	trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);states.push_back();\
-	if ( namedStates ) { makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);\
+	if ( namedStates ) { namer.make(triDest.aState, triDest.bState, triDest.filter);\
 	  stateNames.add(buf);   \
 	}} else trioID.num=i.first->second; \
   states[sourceState].addArc(Arc(in, out, trioID.num, weight)); DUMPARC(in, out, trioID.num, weight);} while(0)
@@ -58,6 +69,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   Assert(a.out->verify());
   Assert(b.in->verify());
   char buf[MAX_STATENAME_LEN+1];
+  TrioNamer namer(buf,MAX_STATENAME_LEN+1,a,b);
   a.out->mapTo(*b.in, map);     // find matching symbols in interfacing alphabet
   b.in->mapTo(*a.out, revMap);
   Assert(map[0]==0);
@@ -83,7 +95,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   stateMap[trioID.tri]=0; // add the initial state
   states.push_back();
   if ( namedStates ) {
-    makeTrioName(buf, a.stateName(0), b.stateName(0), 0);
+    namer.make(0,0,0);
     stateNames.add(buf);
     named_states=true;
   } else {
@@ -127,52 +139,29 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
             mediate.dest = (*l)->dest;
             int mediateState;
-#ifdef OLDMEDIATE
-            if ( (pDest = find_second(arcStateMap,mediate)) ) {
-              mediateState = *pDest;
-            } else {
-              mediateState = numStates();
-              add(arcStateMap,mediate,mediateState);
-              states.push_back();
-              if ( namedStates ) {
-                char *p = buf;
-                const char *s = b.stateName(mediate.source),
-                  *l = (*a.out)[mediate.hiddenLetter],
-                  *d = a.stateName(mediate.dest);
-                while ( *s )
-                  *p++ = *s++;
-                *p++ = ',';
-                while ( *l )
-                  *p++ = *l++;
-                *p++ = '-';
-                *p++ = '>';
-                while ( (*p++ = *d++) ) ;
-                stateNames.add(buf);
-              }
-#else
 			HashTable<HalfArcState, int>::insert_return_type ins;
             if ( (ins = arcStateMap.insert(HashTable<HalfArcState, int>::value_type(mediate,numStates()))).second ) {			  
 			  mediateState = numStates();
               states.push_back();
               if ( namedStates ) {
                 char *p = buf;
+				char *limit=namer.limit;
                 const char *s = b.stateName(mediate.source),
-                  *l = (*a.out)[mediate.hiddenLetter],
-                  *d = a.stateName(mediate.dest);
-                while ( *s )
+                  *l = (*a.out)[mediate.hiddenLetter];
+                while ( *s && p < limit)
                   *p++ = *s++;
                 *p++ = ',';
-                while ( *l )
+                while ( *l && p < limit)
                   *p++ = *l++;
                 *p++ = '-';
                 *p++ = '>';
-                while ( (*p++ = *d++) ) ;
+				const char *d= a.stateName(mediate.dest);
+                while ( (*p++ = *d++) && p < limit) ;
                 stateNames.add(buf);
             } else {
               mediateState = ins.first->second;
             }
 
-#endif
               int temp = sourceState;
               sourceState = mediateState;
               triDest.aState = mediate.dest;

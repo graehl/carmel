@@ -141,7 +141,7 @@ std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multili
 
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader> friend
-get_from_imp(Array<T,Alloc> *s,std::basic_istream<charT,Traits>& in,Reader read);
+std::ios_base::iostate get_from_imp(Array<T,Alloc> *s,std::basic_istream<charT,Traits>& in,Reader read);
 
 template <class charT, class Traits, class Reader>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
@@ -515,36 +515,36 @@ operator <<
   return true;
 
 
-template<class L,class A,class L2,class A2>
-bool operator ==(const DynamicArray<L,A> &l, const DynamicArray<L2,A2> &r)
+template<class Lt,class A,class L2,class A2>
+bool operator ==(const DynamicArray<Lt,A> &l, const DynamicArray<L2,A2> &r)
 {
-  typedef DynamicArray<L,A> L;
+  typedef DynamicArray<Lt,A> L;
   typedef DynamicArray<L2,A2> R;
 ARRAYEQIMP
 }
 
 
-template<class L,class A,class L2,class A2>
-bool operator ==(const DynamicArray<L,A> &l, const Array<L2,A2> &r)
+template<class Lt,class A,class L2,class A2>
+bool operator ==(const DynamicArray<Lt,A> &l, const Array<L2,A2> &r)
 {
-  typedef DynamicArray<L,A> L;
+  typedef DynamicArray<Lt,A> L;
   typedef Array<L2,A2> R;
 ARRAYEQIMP
 }
 
-template<class L,class A,class L2,class A2>
-bool operator ==(const Array<L,A> &l, const DynamicArray<L2,A2> &r)
+template<class Lt,class A,class L2,class A2>
+bool operator ==(const Array<Lt,A> &l, const DynamicArray<L2,A2> &r)
 {
-  typedef Array<L,A> L;
+  typedef Array<Lt,A> L;
   typedef DynamicArray<L2,A2> R;
 ARRAYEQIMP
 }
 
 
-template<class L,class A,class L2,class A2>
-bool operator ==(const Array<L,A> &l, const Array<L2,A2> &r)
+template<class Lt,class A,class L2,class A2>
+bool operator ==(const Array<Lt,A> &l, const Array<L2,A2> &r)
 {
-  typedef Array<L,A> L;
+  typedef Array<Lt,A> L;
   typedef Array<L2,A2> R;
   ARRAYEQIMP
 }

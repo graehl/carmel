@@ -1,3 +1,12 @@
+2004-04-21  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/strhash.h: tidied up templatization of Alphabet and added
+	more tests
+
+	* src/compose.cc: removed incorrect double-usage of static_itoa
+	when naming composition of (unnamed) transducers, although that
+	could never happen from the command line
+
 2004-04-16  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/dynarray.h: optimization on push_back and end(): store vector 

@@ -44,10 +44,10 @@ void dump_ht(HT &ht)
 }
 
 #include "../../tt/test.hpp"
-BOOST_AUTO_UNIT_TEST( strhash )
+BOOST_AUTO_UNIT_TEST( alphabet )
 {
-  Alphabet<> a;
-  Alphabet<> b;
+  Alphabet<StringKey,StringPool> a;
+  Alphabet<StringKey,StringPool> b;
   const char *s[]={"u","ul","mu","pi"};
   const int n=sizeof(s)/sizeof(s[0]);
   a.add("a");
