@@ -1,3 +1,7 @@
+Mon Oct 13 15:40:05 2003  Jonathan Graehl  <graehl@brahms.isi.edu>
+
+	* src/train.cc: fixed scaling of relative log-likelihood convergence
+
 2003-09-10  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/compose.cc: fixed bug when -i and -m used together (referencing state names array when -i doesn't name states)
