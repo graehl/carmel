@@ -17,6 +17,8 @@
 #include "fst.h"
 #include "myassert.h"
 
+#define CARMEL_VERSION "3.0.11"
+
 #ifdef MARCU
 #include "models.h"
 char *MarcuArgs[]={
@@ -841,7 +843,7 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     if ( flags['S'] && input_lineno > 0) {
-        Config::log() << "Corpus probability=" << prod_prob << " ; Model perplexity(N=" << n_pairs <<")=" << root(prod_prob,(FLOAT_TYPE)n_pairs).invert() << std::endl;
+        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=" << root(prod_prob,(FLOAT_TYPE)n_pairs).invert() << std::endl;
     }
 
 #ifndef NODELETE

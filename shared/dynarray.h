@@ -17,6 +17,7 @@
 #include "genio.h"
 #include "byref.hpp"
 #include <iterator>
+#include "funcs.hpp"
 
 #ifdef TEST
 #include "test.hpp"
@@ -121,7 +122,7 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
           }
           in.unget();
 #if 1
-          typename Reader::value_type temp;
+          typename iterator_traits<T>::value_type temp;
           if (deref(read)(in,temp).good())
                 *out++=temp;
           else
@@ -138,6 +139,37 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
   return GENIOGOOD;
 fail:
   return GENIOBAD;
+}
+
+// note: may attempt to read MORE than [begin,end) - looks for closing paren, fails if not found after no more than end-begin elements (throwing out_of_range if it doesn't)
+template <class charT, class Traits,class T>
+T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
+#if 1
+    bounded_iterator<T> o(begin,end);
+    if (range_get_from(in,o,DefaultReader<typename iterator_traits<T>::value_type >()) != GENIOGOOD)
+        goto fail;
+    return o.base();
+#else
+    char c;
+
+    EXPECTCH_SPACE_COMMENT('(');
+    for(;;) {
+        EXPECTI_COMMENT(in>>c);
+        if (c==')') {
+            break;
+        }
+        in.unget();
+        if (begin == end)
+            throw std::out_of_range("read_range exceeded provided storage");
+        in >> *begin;
+        ++begin;
+        EXPECTI_COMMENT(in>>c);
+        if (c != ',') in.unget();
+    }
+    return begin;
+#endif
+  fail:
+    throw std::runtime_error("expected (a,b,c,d) or (a b c d) as range input");
 }
 
 
@@ -166,7 +198,6 @@ void swap(Array<T,Alloc> &a) {
     memcpy(this,&a,sizeof(Self));
     memcpy(&a,&t,sizeof(Self));
 }
-
   typedef T value_type;
   typedef value_type *iterator;
   typedef const value_type *const_iterator;

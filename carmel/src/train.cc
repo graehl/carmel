@@ -169,7 +169,7 @@ while(1) { // random restarts
                 DWSTAT("Before estimate");
     Weight newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
                 DWSTAT("After estimate");
-    Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): model-perplexity=" << newPerplexity;
+    Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): per-example-perplexity=" << newPerplexity;
     if ( newPerplexity < bestPerplexity ) {
       Config::log() << " (new best)";
       bestPerplexity=newPerplexity;
@@ -241,7 +241,7 @@ while(1) { // random restarts
                 break;
         }
 }
-  Config::log() << "Setting weights to model with lowest perplexity=" << bestPerplexity << std::endl;
+  Config::log() << "Setting weights to model with lowest per-example-perplexity (=prod[modelprob(example)]^(-1/num_examples))=" << bestPerplexity << std::endl;
   EACHDW(dw->weight()=dw->best_weight;);
 
         return bestPerplexity;
@@ -520,7 +520,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
 #ifdef DEBUG_ESTIMATE_PP
     Config::debug() << ',' << fin;
 #endif
-    prodModProb *= (fin^seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
+    prodModProb *= (fin ^ seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
 
 #ifdef DEBUGTRAIN
     Config::debug()<<"Forward prob = " << fin << std::endl;
@@ -602,7 +602,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
 
   } // end of while(training examples)
 
-  return root(prodModProb,trn->totalEmpiricalWeight).invert(); // ,trn->totalEmpiricalWeight); // return model perplexity = 1/Nth root of 2^entropy
+  return root(prodModProb,trn->totalEmpiricalWeight).invert(); // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
 
 }
 

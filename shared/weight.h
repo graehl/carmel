@@ -3,6 +3,7 @@
 #include "config.h"
 #include "myassert.h"
 #include "genio.h"
+#include "funcs.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -21,7 +22,6 @@ static FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 // Weight(0) will may give bad results when computed with, depending on math library behavior
 // defining WEIGHT_CORRECT_ZERO will incur a performance penalty
 
-#include "functors.hpp"
 
 struct Weight {                 // capable of representing nonnegative reals
   // internal implementation note: by their base e logarithm

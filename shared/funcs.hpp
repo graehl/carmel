@@ -1,29 +1,74 @@
-#ifndef _FUNCTORS_HPP
-#define _FUNCTORS_HPP
+#ifndef _FUNCS_HPP
+#define _FUNCS_HPP
 
 #include <cmath>
 #include <string>
-#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include <boost/iterator/iterator_adaptor.hpp>
+#include <stdexcept>
+#include <boost/type_traits/is_convertible.hpp>
+#include <boost/utility/enable_if.hpp>
+
+template <class T>
+struct bounded_iterator : public boost::iterator_adaptor<bounded_iterator<T>,T> {
+private:
+    struct enabler {};
+    typedef boost::iterator_adaptor<bounded_iterator<T>,T> Super;
+    friend class boost::iterator_core_access;
+    void increment() { if (this->base() == end) throw std::out_of_range("bounded iterator incremented past end"); ++this->base_reference(); }
+    T end;
+public:
+    bounded_iterator(const T& begin,const T &end_) : Super(begin), end(end_) {}
+/*    template <class O>
+    bounded_iterator(bounded_iter<O> const& other, typename boost::enable_if<boost::is_convertible<O*,T*>, enabler>::type = enabler())
+    ) : Super(other.base()) {}*/
+    bounded_iterator(bounded_iterator<T> const &other) : Super(other),end(other.end) {}
+};
+
+template <class T>
+inline std::string concat(const std::string &s,const T& suffix) {
+    return s+boost::lexical_cast<std::string>(suffix);
+}
+
+template <class S,class T>
+inline std::string concat(const S &s,const T& suffix) {
+    return boost::lexical_cast<std::string>(s)+boost::lexical_cast<std::string>(suffix);
+}
+
 
 inline unsigned random_less_than(unsigned limit) {
+    Assert(limit!=0);
+    if (limit <= 1)
+        return 0;
 // correct against bias (which is worse when limit is almost RAND_MAX)
-    const unsigned limit=(RAND_MAX / limit)*limit;
+    const unsigned randlimit=(RAND_MAX / limit)*limit;
     unsigned r;
-    while ((r=std::rand()) >= limit) ;
+    while ((r=std::rand()) >= randlimit) ;
     return r % limit;
 }
 
-// works for ASCII only
+#define NLETTERS 26
+// works for only if a-z A-Z and 0-9 are contiguous
+
 inline char random_alpha() {
-    return 'A' + rand_less_than(26*2);
+    unsigned r=random_less_than(NLETTERS*2);
+    return (r < NLETTERS) ? 'a'+r : ('A'-NLETTERS)+r;
 }
 
+inline char random_alphanum() {
+    unsigned r=random_less_than(NLETTERS*2+10);
+    return r < NLETTERS*2 ? ((r < NLETTERS) ? 'a'+r : ('A'-NLETTERS)+r) : ('0'-NLETTERS*2)+r;
+}
+#undef NLETTERS
+
 inline std::string random_alpha_string(unsigned len) {
-    boost::scoped_array s(new char[len+1]);
+    boost::scoped_array<char> s(new char[len+1]);
     char *e=s.get()+len;
     *e='\0';
     while(s.get() < e--)
-        *e=random_alpha;
+        *e=random_alpha();
     return s.get();
 }
 
@@ -66,7 +111,7 @@ set_value<V> value_setter(V &init_value) {
 struct set_random_pos_fraction {
     template <class C>
     void operator()(C &c) {
-        c=rand_pos_fraction();
+        c=random_pos_fraction();
     }
 };
 
@@ -139,18 +184,21 @@ struct indirect_gt {
 
 #ifdef TEST
 #include "test.hpp"
-#include <cctypes>
+#include <cctype>
+#include "debugprint.hpp"
 #endif
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_FUNCTORS )
+BOOST_AUTO_UNIT_TEST( TEST_FUNCS )
 {
     using namespace std;
     const int NREP=10000;
-    for (int i=0;i<NREP;++i) {
-        unsigned ran_lt_i=randdom_less_than(i);
+    for (int i=1;i<NREP;++i) {
+        unsigned ran_lt_i=random_less_than(i);
         BOOST_CHECK(0 <= ran_lt_i && ran_lt_i < i);
         BOOST_CHECK(isalpha(random_alpha()));
+        char r_alphanum=random_alphanum();
+        BOOST_CHECK(isalpha(r_alphanum) || isdigit(r_alphanum));
     }
 }
 #endif

@@ -1,7 +1,6 @@
-#ifndef CONFIG_H 
+#ifndef CONFIG_H
 #define CONFIG_H
 
-#define CARMEL_VERSION "3.0.10" 
 #define COPYRIGHT_YEAR 2004
 
 //#define DEBUGNAN
@@ -16,7 +15,7 @@
 #define STATIC_HASH_EQUAL
 #define STATIC_HASHER
 
-#define STRINGPOOL 
+#define STRINGPOOL
 #ifndef STRINGPOOLCLASS
 #define STRINGPOOLCLASS StringPool
 #endif

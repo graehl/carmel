@@ -9,7 +9,7 @@
 #include "byref.hpp"
 #include "genio.h"
 #include "threadlocal.hpp"
-#include "functors.hpp"
+#include "funcs.hpp"
 #include <algorithm>
 #include "debugprint.hpp"
 
@@ -103,15 +103,17 @@ struct NormalizeGroups {
             sum+=w;
         }
 #define DODIFF(d,w) do {weight_type diff = absdiff(d,w);if (maxdiff<diff) {maxdiff_index=j->get_index();DBP5(d,w,maxdiff,diff,maxdiff_index);maxdiff=diff;} } while(0)
-        if (sum > 0)
+        if (sum > 0) {
+            DBPC2("Normalization group with",sum);
             for (GIt j=beg;j!=end;++j) {
                 weight_type &w=*(j->add_base(base));
                 weight_type &d=*(j->add_base(dest));
+                DBP4(j->get_index(),d,w,w/sum);
                 weight_type prev=d;
                 d=w/sum;
                 DODIFF(d,prev);
             }
-        else {
+        } else {
             if(log)
                 *log << "Zero counts for normalization group #" << 1+(&i-norm_groups.begin())  << " with first parameter " << beg->get_index() << " (one of " << i.size() << " parameters)";
             if (zerocounts!=SKIP_ZEROCOUNTS) {
