@@ -767,7 +767,7 @@ std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,T
 {
     DynamicArray<T,Alloc> s;
     std::ios_base::iostate ret=s.get_from(in,read);
-    s.compact_giving(a); // transfers to a
+    s.compact_giving(*a); // transfers to a
     return ret;
 }
 

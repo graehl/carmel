@@ -156,6 +156,7 @@ endef
 
 $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
+
 ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
 all: $(ALL_PROGS)
@@ -166,8 +167,14 @@ opt: $(DEBUG_PROGS)
 
 depend: $(ALL_DEPENDS)
 
+ifeq ($(ARCH),cygwin)
+CYGEXE=.exe
+else
+CYGEXE=
+endif
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
-	cp $^ $(BIN_PREFIX)
+	@echo cp $^ $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
+	cp $^ $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
 
 test: $(ALL_TESTS)
 	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done
