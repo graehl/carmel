@@ -527,13 +527,14 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   List<DWPair> *pLDW;
   
   for ( s = 0 ; s < numStates() ; ++s ){
-    List<Arc>::const_iterator end = states[s].arcs.end();    
-    for ( List<Arc>::const_iterator aI=states[s].arcs.begin() ; aI!=end; ++aI ) {
+    List<Arc>::iterator end = states[s].arcs.end();    
+    for ( List<Arc>::iterator aI=states[s].arcs.begin() ; aI!=end; ++aI ) {
       IO.in = aI->in;
       IO.out = aI->out;
       DW.dest = aI->dest;
+	  DW.arc = &(*aI);
       if ( !(pLDW = IOarcs[s].find(IO)) )
-	pLDW = IOarcs[s].add(IO);
+		pLDW = IOarcs[s].add(IO);
       pLDW->push(DW);
     }
   }  

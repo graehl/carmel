@@ -39,19 +39,19 @@ public:
 // output format manipulators: cout << Weight::out_log10;
 
 template<class A,class B> static inline std::basic_ostream<A,B>&
-out_log10(std::basic_ostream<A,B>& os) { os.iword(base_index) = LOG10; }
+out_log10(std::basic_ostream<A,B>& os) { os.iword(base_index) = LOG10; return os; }
 
 template<class A,class B> static inline std::basic_ostream<A,B>&
-out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; }
+out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
 
 template<class A,class B> static inline std::basic_ostream<A,B>&
-out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; }
+out_variable(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = VAR; return os; }
 
 template<class A,class B> static inline std::basic_ostream<A,B>&
-out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; }
+out_always_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_LOG; return os; }
 
 template<class A,class B> static inline std::basic_ostream<A,B>&
-out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; }
+out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
   static Weight result;
   // default = operator:
@@ -74,7 +74,7 @@ out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_R
 	  return oo_ln10 * weight;
   }
   bool fitsInReal() const {
-	return (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
+	return isZero() || (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
   }
   bool isZero() const {
 	  return weight == -HUGE_FLOAT;
@@ -133,7 +133,9 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);
 template <class charT, class Traits>
 std::ios_base::iostate Weight::print_on(std::basic_ostream<charT,Traits>& o) const
 {
-	if ( (o.iword(thresh_index) == VAR && fitsInReal()) || o.iword(thresh_index) == ALWAYS_REAL ) {
+	if ( isZero() )
+		o << "0";
+	else if ( (o.iword(thresh_index) == VAR && fitsInReal()) || o.iword(thresh_index) == ALWAYS_REAL ) {
 		o << getReal();
 	} else { // out of range or ALWAYS_LOG
 		if (o.iword(base_index) == LN) {
@@ -149,18 +151,21 @@ template <class charT, class Traits>
 std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
 {
   char c;
-  double f;
+  double f=0;
   i >> f;
-  if ( i.eof() )
+  
+  if ( i.fail() ) {
+	setZero();
+  } else if ( i.eof() ) {
     setReal(f);
-  else if ( (c = i.get()) == 'l' ) {
+  } else if ( (c = i.get()) == 'l' ) {
    char n = i.get();  	
    if ( n == 'n')
     setLn((float)f);
    else if ( n == 'o' && i.get() == 'g' )
     setLog10(f);
    else {
-    setReal(0);
+    setZero();
 	return std::ios_base::badbit;
    }
   } else {

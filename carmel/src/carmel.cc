@@ -513,7 +513,6 @@ main(int argc, char *argv[]){
 	}
 		} else {
 			List<int> empty_list;
-			cerr << "Emptylistsumofallpaths:\n";
 			cout << result->sumOfAllPaths(empty_list, empty_list) << '\n';
 		}
       } else if ( flags['t'] ) {
