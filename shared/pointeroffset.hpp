@@ -3,6 +3,8 @@
 
 #include "myassert.h"
 #include "genio.h"
+#include "functors.hpp"
+#include <iterator>
 
 #ifdef TEST
 #include "test.hpp"
@@ -93,20 +95,92 @@ struct PointerOffset {
     void operator =(PointerOffset<C> c) { offset=c.offset; }
     bool operator ==(PointerOffset<C> c) { return offset==c.offset; }
     bool operator <(PointerOffset<C> c) { return offset<c.offset; }
+    bool operator !=(PointerOffset<C> c) { return offset!=c.offset; }
+
+//    operator value_type &() { return offset; }
+    template <class It>
+    struct indirect_iterator : public std::iterator_traits<It> {
+        typedef C value_type;
+        typedef It iterator_type;
+        typedef C *Base;
+        typedef indirect_iterator<It> Self;
+        It i;
+        Base base;
+        explicit indirect_iterator(Base _base) : base(_base) {}
+        indirect_iterator() {}
+        template <class C2>
+        indirect_iterator(const C2 &_i) : i(_i) {}
+        indirect_iterator(Base _base, It _i) : i(_i),base(_base) {}
+        indirect_iterator(const Self &o) : i(o.i) {}
+        void operator =(const Self &o) {
+            base=o.base;
+            i=o.i;
+        }
+        typedef typename std::iterator_traits<It>::difference_type Diff;
+        Self & operator +=(Diff d) {
+            i+=d;
+            return *this;
+        }
+        Self & operator -=(Diff d) {
+            i-=d;
+            return *this;
+
+        }
+        Self operator +(Diff d) const {
+            Self result(*this);
+            return result += d;
+        }
+        Self operator -(Diff d) const {
+            Self result(*this);
+            return result -= d;
+        }
+
+        Diff operator -(const Self &o) const {
+            return i-o.i;
+        }
+
+        bool operator <(const Self &o) const { Assert(base==o.base);
+            return i < o.i;
+        }
+        bool operator <=(const Self &o) const { Assert(base==o.base);
+            return i <= o.i;
+        }
+        bool operator >=(const Self &o) const { Assert(base==o.base);
+            return i >= o.i;
+        }
+        bool operator ==(const Self &o) const { Assert(base==o.base);
+            return i == o.i;
+        }
+        bool operator !=(const Self &o) const { Assert(base==o.base);
+            return i != o.i;
+        }
+        bool operator >(const Self &o) const { Assert(base==o.base);
+            return i > o.i;
+        }
+
+//        operator It & () { return i; }
+        Self & operator ++() { ++i; return *this;}
+        Self & operator --() { --i; return *this;}
+        Self operator --(int) { Self ret=*this;return --ret; }
+        Self operator ++(int) { Self ret=*this;return ++ret; }
+        value_type & get_value() { return *(i->add_base(base)); }
+        ptrdiff_t get_index() { return i->get_index(); }
+        value_type & operator *() { return get_value(); }
+        value_type * operator ->() { return &get_value(); }
+    };
 };
 
-
-// useful for sorting; could parameterize on predicate instead of just <=lt, >=gt
-template <class I, class B>
-struct indirect_lt {
+template <class C>
+struct indirect_gt<PointerOffset<C>,C*> {
+    typedef PointerOffset<C> I;
+    typedef C *B;
     typedef I Index;
     typedef B Base;
     B base;
-    indirect_lt(const B &b) : base(b) {}
-    indirect_lt(const indirect_lt<I,B> &o): base(o.base) {}
-
-    bool operator()(const I &a, const I &b) const {
-        return base[a] < base[b];
+    indirect_gt(B b) : base(b) {}
+    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
+    bool operator()(I a, I b) const {
+        return a.add_base(base) > b.add_base(base);
     }
 };
 
@@ -122,32 +196,6 @@ struct indirect_lt<PointerOffset<C>,C*> {
 
     bool operator()(I a, I b) const {
         return a.add_base(base) < b.add_base(base);
-    }
-};
-
-template <class I, class B>
-struct indirect_gt {
-    typedef I Index;
-    typedef B Base;
-    B base;
-    indirect_gt(const B &b) : base(b) {}
-    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
-    bool operator()(const I &a, const I &b) const {
-        return base[a] > base[b];
-    }
-};
-
-template <class C>
-struct indirect_gt<PointerOffset<C>,C*> {
-    typedef PointerOffset<C> I;
-    typedef C *B;
-    typedef I Index;
-    typedef B Base;
-    B base;
-    indirect_gt(B b) : base(b) {}
-    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
-    bool operator()(I a, I b) const {
-        return a.add_base(base) > b.add_base(base);
     }
 };
 

@@ -31,6 +31,33 @@ struct set_rand_pos_fraction {
 };
 
 
+// useful for sorting; could parameterize on predicate instead of just <=lt, >=gt
+template <class I, class B>
+struct indirect_lt {
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_lt(const B &b) : base(b) {}
+    indirect_lt(const indirect_lt<I,B> &o): base(o.base) {}
+
+    bool operator()(const I &a, const I &b) const {
+        return base[a] < base[b];
+    }
+};
+
+
+template <class I, class B>
+struct indirect_gt {
+    typedef I Index;
+    typedef B Base;
+    B base;
+    indirect_gt(const B &b) : base(b) {}
+    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
+    bool operator()(const I &a, const I &b) const {
+        return base[a] > base[b];
+    }
+};
+
 
 #ifdef TEST
 #include "test.hpp"

@@ -199,26 +199,15 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #ifdef DEBUG
 #include "threadlocal.hpp"
 
-namespace DBP {
-extern unsigned DBPdepth;
-    struct DBPscopedepth {
-        DBPscopedepth() { ++DBPdepth;}
-        ~DBPscopedepth() { --DBPdepth;}
-    };
-#ifdef MAIN
-    unsigned DBPdepth=0;
-    bool DBPdisable=false;
-#endif
-};
 
 #ifdef _MSC_VER
 #include <windows.h>
-#define DBPSS(a) do { (OutputDebugString((const char *)((a).c_str()))); Config::debug() << (a); } while(0)
-#define DBPS(a) do { (OutputDebugString((const char *)(a))); Config::debug() << (a); } while(0)
+#define DBPSS(a) do { (OutputDebugString((const char *)((a).c_str()))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
+#define DBPS(a) do { (OutputDebugString((const char *)(a))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
 
 #else
-#define DBPSS(a) (Config::debug() << (a))
-#define DBPS(a) (Config::debug() << (a))
+#define DBPSS(a) do { if (DBP::logstream) *DBP::logstream << (a); } while(0)
+#define DBPS(a) do { if (DBP::logstream) *DBP::logstream << (a); } while(0)
 #endif
 
 #include <boost/preprocessor/stringize.hpp>
@@ -233,36 +222,43 @@ extern unsigned DBPdepth;
 #define LINESTR dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 
-#define DBPRE for(unsigned DBPdepth_i=0;DBPdepth_i<DBP::DBPdepth;++DBPdepth_i) DBPS(" "); DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
+#define DBPRE DBP::print_indent();DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
 
-#define DBPIN ++DBP::DBPdepth
-#define DBPOUT if (!DBP::DBPdepth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
-#define DBPSCOPE DBP::DBPscopedepth DBPscopedepth
+#define DBP_IN ++DBP::depth
+#define DBP_OUT if (!DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
+#define DBP_SCOPE DBP::scopedepth DBP9423scopedepth
 
-#define DBPENABLE(x) SetLocal<bool> DBPenablescope(DBP::DBPdisable,!x)
-#define DBPOFF DBPENABLE(false)
-#define DBPON DBPENABLE(true)
+#define DBP_ENABLE(x) SetLocal<bool> DBP78543enablescope(DBP::disable,!x)
+#define DBP_OFF DBPENABLE(false)
+#define DBP_ON DBPENABLE(true)
+
+#define DBP_VERBOSE(x) SetLocal<unsigned> DBP324245chattyscope(DBP::current_chat,(x))
+#define DBP_INC_VERBOSE SetLocal<unsigned> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+1)
+#define DBP_ADD_VERBOSE(x) SetLocal<unsigned> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+(x))
+
+
+#define DBPISON DBP::is_enabled()
 
 #define DBPOST DBPS("\n")
-#define BDBP(a) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPSS(dbgstr(a));DBPS(">_");  }} while(0)
+#define BDBP(a) do { if (DBPISON) { DBPS(" " #a "=_<");DBPSS(dbgstr(a));DBPS(">_");  }} while(0)
 
-#define DBP(a) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a);DBPOST;  }} while(0)
-#define DBP2(a,b) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b);DBPOST;  }} while(0)
-#define DBP3(a,b,c) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c);DBPOST; }} while(0)
-#define DBP4(a,b,c,d) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; }} while(0)
-#define DBP5(a,b,c,d,e) do { if (!DBP::DBPdisable) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST; }} while(0)
+#define DBP(a) do { if (DBPISON) { DBPRE; BDBP(a);DBPOST;  }} while(0)
+#define DBP2(a,b) do { if (DBPISON) { DBPRE; BDBP(a); BDBP(b);DBPOST;  }} while(0)
+#define DBP3(a,b,c) do { if (DBPISON) { DBPRE; BDBP(a); BDBP(b); BDBP(c);DBPOST; }} while(0)
+#define DBP4(a,b,c,d) do { if (DBPISON) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; }} while(0)
+#define DBP5(a,b,c,d,e) do { if (DBPISON) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST; }} while(0)
 
-//#define DBP2(a,p) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a,p));   }} while(0)
-//#define DBP(a) do { if (!DBP::DBPdisable) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a));  }} while(0)
-#define BDBPW(a,w) do { if (!DBP::DBPdisable) { DBPS(" " #a "=_<");DBPSS(dbgstr(a,w));DBPS(">_");  }} while(0)
-#define DBPW(a,w) do { if (!DBP::DBPdisable) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
+//#define DBP2(a,p) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a,p));   }} while(0)
+//#define DBP(a) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a));  }} while(0)
+#define BDBPW(a,w) do { if (DBPISON) { DBPS(" " #a "=_<");DBPSS(dbgstr(a,w));DBPS(">_");  }} while(0)
+#define DBPW(a,w) do { if (DBPISON) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
-#define DBPC(msg) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); DBPOST;  }} while(0)
-#define DBPC2(msg,a) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST;  }} while(0)
-#define DBPC3(msg,a,b) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST;  }} while(0)
-#define DBPC4(msg,a,b,c) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST;  }} while(0)
-#define DBPC5(msg,a,b,c,d) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;  }} while(0)
-#define DBPC4W(msg,a,b,c,w) do { if (!DBP::DBPdisable) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST;  }} while(0)
+#define DBPC(msg) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); DBPOST;  }} while(0)
+#define DBPC2(msg,a) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST;  }} while(0)
+#define DBPC3(msg,a,b) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); DBPOST;  }} while(0)
+#define DBPC4(msg,a,b,c) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); DBPOST;  }} while(0)
+#define DBPC5(msg,a,b,c,d) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST;  }} while(0)
+#define DBPC4W(msg,a,b,c,w) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); BDBP(b); BDBPW(c,w); DBPOST;  }} while(0)
 
 
 
@@ -334,5 +330,41 @@ template<class A>
 const char * dbgstrw(const A &a) {
   return dbgstr(a);
 }
+
+namespace DBP {
+    extern unsigned depth;
+    extern bool disable;
+    extern unsigned current_chat;
+    extern unsigned chat_level;
+    extern ostream *logstream;
+    struct scopedepth {
+        scopedepth() { ++depth;}
+        ~scopedepth() { --depth;}
+    };
+    inline bool is_enabled() {
+        return (!disable && current_chat <= chat_level && logstream);
+    }
+    void print_indent();
+    void set_loglevel(unsigned loglevel=0);
+    void set_logstream(ostream &o=std::cerr);
+#ifdef MAIN
+    unsigned current_chat;
+    unsigned chat_level;
+    ostream *logstream=&std::cerr;
+    void print_indent() {
+        for(unsigned i=0;i<depth;++i)
+            DBPS(" ");
+    }
+    void set_loglevel(unsigned loglevel){
+        chat_level=loglevel;
+    }
+    void set_logstream(ostream *o) {
+        logstream=o;
+    }
+
+    unsigned depth=0;
+    bool disable=false;
+#endif
+};
 
 #endif

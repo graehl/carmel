@@ -72,11 +72,13 @@ BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 LDFLAGS += $(addprefix -l,$(LIB))
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
-CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
+CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
+#-DBOOST_DISABLE_THREADS 
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
 ifeq ($(ARCH),cygwin)
-CPPFLAGS += -DBOOST_NO_STD_WSTRING
+CPPFLAGS += -DBOOST_POSIX
+#CPPFLAGS += -DBOOST_NO_STD_WSTRING
 # somehow that is getting automatically set by boost now (for Boost CVS)
 endif
 
@@ -97,9 +99,7 @@ endif
 
 ifneq (${ARCH},macosx)
 ifndef $(1)_NOSTATIC
-$$(BIN)/$(1).static:\
- $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
- $$($(1)_SLIB)
+$$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) --static $$^ -o $$@
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
@@ -109,8 +109,7 @@ endif
 
 ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug:\
- $$(addprefix $$(OBJD)/,$$($(1)_OBJ))\
- $$($(1)_SLIB)
+ $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
@@ -118,9 +117,7 @@ $(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
-$$(BIN)/$(1).test:\
- $$(addprefix $$(OBJT)/,$$($(1)_OBJ))\
- $$(BOOST_TEST_LIB)
+$$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
 	$$(CXX) $$(LDFLAGS) $$^ -o $$@
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ))
@@ -211,12 +208,6 @@ ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
 endif
 
-%.d: %.$(CPP_EXT)
-#	@echo
-#	@echo CREATE DEPENDENCIES for $<
-	@set -e; [ x$(DEPEND) != x -o ! -f $@ ] && echo CREATE DEPENDENCIES for $< && $(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS) $< \
-		| sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
-		[ -s $@ ] || rm -f $@
 
 ifneq ($(MAKECMDGOALS),depend)
 ifneq ($(MAKECMDGOALS),distclean)
@@ -225,3 +216,12 @@ include $(ALL_DEPENDS)
 endif
 endif
 endif
+
+%.d: %.$(CPP_EXT)
+#	@echo
+#	@echo CREATE DEPENDENCIES for $<
+	@set -e; [ x$(DEPEND) != x -o ! -f $@ ] && echo CREATE DEPENDENCIES for $< && \
+		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS) $< -MF $@.raw && \
+		[ -s $@.raw ] && \
+                sed 's/\($*\)\.o[ :]*/%\/\1.o : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw >> $@ \
+		|| rm -f $@; rm -f $@.raw
