@@ -97,6 +97,7 @@ ifeq ($(ARCH),linux)
 endif
 
 ifeq ($(ARCH),cygwin)
+NOSTATIC=1
 CPPFLAGS += -DBOOST_POSIX -DCYGWIN
 #CPPFLAGS += -DBOOST_NO_STD_WSTRING
 # somehow that is getting automatically set by boost now (for Boost CVS)
