@@ -248,6 +248,7 @@ static const char COMMENT_CHAR='#';
 // need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr)
 {
+		named_states=1;
   int stateNumber, destState, inL, outL;
   Weight weight;
   char c, d, buf[4096];
@@ -444,16 +445,16 @@ void WFST::writeLegible(ostream &os)
 
   if ( !valid() ) return;
   Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
-  os << stateNames[final];
+  os << stateName(final);
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
-                os << "\n(" << stateNames[i];
+                os << "\n(" << stateName(i);
     for (List<Arc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
       if (onearc)
-                os << "\n(" << stateNames[i];
+                os << "\n(" << stateName(i);
 
      if ( a->weight.isPositive() ) {
-        destState = stateNames[a->dest];
+        destState = stateName(a->dest);
         os << " (" << destState;
         if ( !brief || a->in || a->out ) { // omit *e* *e* labels
                 inLet = (*in)[a->in];

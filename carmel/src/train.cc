@@ -488,7 +488,7 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
           //Weight &w=dw->weight();
           dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
           //Weight &counts = dw->counts;
-          dw->weight() = dw->counts + dw->prior_counts; // PLACEMENT_NEW (unnormalized weight)
+          dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
         }
     }
 #ifdef DEBUGTRAINDETAIL

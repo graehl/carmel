@@ -5,7 +5,6 @@
 #include "strhash.h"
 
 
-
 struct Arc {
   int in;
   int out;
@@ -34,16 +33,6 @@ struct UnArc {
     return (in * 235479241 + out * 67913 + dest) * 2654435767U;
   }
 };
-
-struct PathArc {
-  const char *in;
-  const char *out;
-  const char *destState;
-  Weight weight;
-};
-
-std::ostream & operator << (std::ostream & o, const PathArc &p);
-
 
 
 #endif 

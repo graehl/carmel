@@ -296,7 +296,7 @@ void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
 */
 
 Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
-// Comment by Yaser: This function creates NEW GraphState[] and because the
+// Comment by Yaser: This function creates new GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 //  the caller function is responsible for deleting this data.
 // It is not a good programming practice but it will be messy to clean it up.

@@ -1,9 +1,10 @@
-#include "Arc.h"
+#include "fst.h"
 using namespace std;
 
 ostream & operator << (ostream & o, const PathArc &p)
 {
-  o << "(" << p.in << " : " << p.out << " / " << p.weight << " -> " << p.destState << ")";
+  const WFST *w=p.wfst;
+  o << "(" << w->inLetter(p.in) << " : " << w->outLetter(p.out) << " / " << p.weight << " -> " << w->stateName(p.destState) << ")";
   return o;
 }
 

@@ -16,7 +16,7 @@ static void makeTrioName(char *bufP, const char *aName, const char *bName, int f
   *bufP = 0;
 }
 
-#define COMPOSEARC { if ( (pDest = stateMap.find(triDest)) ) { states[sourceState].addArc(Arc(in, out, *pDest, weight)); } else { stateMap.add(triDest, numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.pushBack();    if ( namedStates ) {      makeTrioName(buf, a.stateNames[triDest.aState], b.stateNames[triDest.bState], triDest.filter);      stateNames.add(buf);    }  }}
+#define COMPOSEARC { if ( (pDest = stateMap.find(triDest)) ) { states[sourceState].addArc(Arc(in, out, *pDest, weight)); } else { stateMap.add(triDest, numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.pushBack();    if ( namedStates ) {      makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);      stateNames.add(buf);    }  }}
 
 
 
@@ -52,6 +52,9 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   if ( namedStates ) {
     makeTrioName(buf, a.stateNames[0], b.stateNames[0], 0);
     stateNames.add(buf);
+	named_states=true;
+  } else {
+	  named_states=false;
   }
   queue.push(trioID);
 
