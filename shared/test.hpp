@@ -49,12 +49,13 @@ struct test_counter {
 #endif
 
 template <class S,class C> inline
-bool test_extract(S &s,C &c) {
+bool test_extract(S &s,C &c,bool whine=true) {
   std::istringstream is(s);
   try {      
       is >> c;
   } catch (std::ios_base::failure &e) {
-      cerr << "Exception: " << e.what() << "\n";
+      if (whine)
+          cerr << "Exception: " << e.what() << "\n";
       return 0;
   }
   return !is.fail();
@@ -90,7 +91,7 @@ bool test_extract_insert(S &s,C &c) {
 
 
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
-#define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c)))
+#define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
 
 
 
