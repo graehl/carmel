@@ -24,6 +24,8 @@ public:
 	typedef iterator val_iterator;
 	const_iterator const_begin() const { return begin(); } //{ return const_cast<const List *>(this)->begin(); }
 	const_iterator const_end() const { return end(); } //{ return const_cast<const List *>(this)->end(); }
+	iterator val_begin() { return begin(); }
+	iterator val_end() { return end(); }
 #endif
 	iterator erase_begin() { return begin(); }
 	iterator erase_end() { return end(); }
@@ -32,7 +34,13 @@ public:
   List():STL_LIST<T>(){};
   List(const List &l):STL_LIST<T> (l){};
   ~List(){};
-  List(const T &it):STL_LIST<T>(it) {  }
+  List(const T &it): 
+#ifdef USE_SLIST
+  STL_LIST<T>(it)
+#else
+  STL_LIST<T>(1,it)
+#endif
+  {  }
   List(size_t sz,const T &it):STL_LIST<T>(sz,it) {  }
   int notEmpty() const { return !isEmpty(); }
   int isEmpty() const { return empty(); }
