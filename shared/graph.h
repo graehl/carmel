@@ -41,49 +41,49 @@ void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(i
 void countNoCyclePaths(Graph g, Weight *nPaths, int source);
 
 class TopoSort {
-	typedef std::front_insert_iterator<List<int> > IntPusher;
-	Graph g;
-	bool *done;
-	bool *begun;
-	IntPusher o;
-	int n_back_edges;
-public:
+  typedef std::front_insert_iterator<List<int> > IntPusher;
+  Graph g;
+  bool *done;
+  bool *begun;
+  IntPusher o;
+  int n_back_edges;
+ public:
 	
-	TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) { 
-		done = NEW bool[g.nStates]; 
-		begun = NEW bool[g.nStates];
-		for (int i=0;i<g.nStates;++i) 
-			done[i]=begun[i]=false;
-	}
-	void order_all() {
-		order(true);
-	}
-	void order_crucial() {
-		order(false);
-	}
-	void order(bool all=true) {
-		for ( int i = 0 ; i < g.nStates ; ++i )
-			if ( all || !g.states[i].arcs.empty() )
-				order_from(i);
-	}
-	int get_n_back_edges() const { return n_back_edges; }
-	void order_from(int s) {
-		if (done[s]) return;
-		if (begun[s]) { // this state previously started but not finished already = back edge/cycle!
-			++n_back_edges;
-			return;
-		}
-		begun[s]=true;
-		const List<GraphArc> &arcs = g.states[s].arcs;
-		for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l !=end ; ++l ) {
-			order_from(l->dest);
-		}
-		done[s]=true;
+  TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) { 
+    done = NEW bool[g.nStates]; 
+    begun = NEW bool[g.nStates];
+    for (int i=0;i<g.nStates;++i) 
+      done[i]=begun[i]=false;
+  }
+  void order_all() {
+    order(true);
+  }
+  void order_crucial() {
+    order(false);
+  }
+  void order(bool all=true) {
+    for ( int i = 0 ; i < g.nStates ; ++i )
+      if ( all || !g.states[i].arcs.empty() )
+	order_from(i);
+  }
+  int get_n_back_edges() const { return n_back_edges; }
+  void order_from(int s) {
+    if (done[s]) return;
+    if (begun[s]) { // this state previously started but not finished already = back edge/cycle!
+      ++n_back_edges;
+      return;
+    }
+    begun[s]=true;
+    const List<GraphArc> &arcs = g.states[s].arcs;
+    for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l !=end ; ++l ) {
+      order_from(l->dest);
+    }
+    done[s]=true;
 
-		// insert at beginning of sorted list (we must come before anything reachable by us!)
-		*o++ = s;
-	}
-	~TopoSort() { delete[] done; delete[] begun; }
+    // insert at beginning of sorted list (we must come before anything reachable by us!)
+    *o++ = s;
+  }
+  ~TopoSort() { delete[] done; delete[] begun; }
 };
 
 
@@ -107,8 +107,8 @@ inline bool operator == (DistToState lhs, DistToState rhs);
 inline bool operator == (DistToState lhs, FLOAT_TYPE rhs);
 
 Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist);
-	// returns graph (need to delete[] ret.states yourself)
-	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
+// returns graph (need to delete[] ret.states yourself)
+// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 
 void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **taken=NULL);
 // computes best paths from single source to all other states
@@ -121,8 +121,8 @@ Graph removeStates(Graph g, bool marked[]); // not tested
 void printGraph(Graph g, std::ostream &out);
 
 inline std::ostream & operator << (std::ostream &out, const Graph &g) {
-	printGraph(g,out);
-	return out;
+  printGraph(g,out);
+  return out;
 }
 
 #endif

@@ -4,13 +4,13 @@
 // returning std::ios_base::iostate (0,badbit,failbit ...)
 // usage:
 /*
-template <class charT, class Traits>
-std::basic_istream<class charT, class Traits>&
-operator >>
- (std::basic_istream<class charT, class Traits>& is, Arg &arg)
-{
-	return gen_extractor(is,arg);
-}
+  template <class charT, class Traits>
+  std::basic_istream<class charT, class Traits>&
+  operator >>
+  (std::basic_istream<class charT, class Traits>& is, Arg &arg)
+  {
+  return gen_extractor(is,arg);
+  }
 */
 // this is necessary because of incomplete support for partial explicit template instantiation
 // a more complete version could catch exceptions and set ios error

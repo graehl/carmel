@@ -8,6 +8,10 @@ Tue May 20 17:14:36 2003  Jonathan Graehl  <graehl@enescu.isi.edu>
 
 2003-03-28  Jonathan Graehl  <graehl@isi.edu>
 
+	* src/wfstio.cc: added option (-K) to force state names, otherwise
+	assume if finalstate is an integer, that states are unnamed
+	(non-sparse integer indices)
+
 	* src/strhash.h: fixed STRINGPOOL, added named_states flag
 	(stateName not thread-safe if unnamed states)
 

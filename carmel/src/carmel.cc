@@ -20,13 +20,11 @@
 #ifdef MARCU
 #include "models.h"
 char *MarcuArgs[]={
-			"marcu-carmel",
-			"-IEsriqk",
-			"1"
+  "marcu-carmel",
+  "-IEsriqk",
+  "1"
 };
 #endif
-
-#define VERSION "2.3"  ;
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
   if ( flags['B'] )
@@ -107,7 +105,7 @@ void printPath(bool *flags,const List<PathArc> *pli) {
   const char * outSym;
 
   for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li ) {
-        const WFST *f=li->wfst;
+    const WFST *f=li->wfst;
     if ( flags['O'] || flags['I'] ) {
       if ( flags['O'] )
         outSym = f->outLetter(li->out);
@@ -142,7 +140,7 @@ int
 __cdecl
 #endif
 main(int argc, char *argv[]){
-        INITLEAK;
+  INITLEAK;
 #ifdef _MSC_VER
 #ifdef MEMDEBUG
   //int tmpFlag = CrtSetDbgFlag(CRTDBGREPORTFLAG);
@@ -152,8 +150,8 @@ main(int argc, char *argv[]){
 #endif
 #endif
 #ifdef MARCU
-        argc=sizeof(MarcuArgs)/sizeof(char *);
-        argv=MarcuArgs;
+  argc=sizeof(MarcuArgs)/sizeof(char *);
+  argv=MarcuArgs;
 #endif
   if ( argc == 1 ) {
     usageHelp();
@@ -192,7 +190,7 @@ main(int argc, char *argv[]){
   int maxGenArcs = 0;
   int labelStart = 0;
   int labelFlag = 0;
-  bool isInChain;	  
+  bool isInChain;
   ostream *fstout = &cout;
   for ( i = 1 ; i < argc ; ++i ) {
     if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
@@ -244,7 +242,7 @@ main(int argc, char *argv[]){
         learning_rate_growth_flag = false;
         readParam(&learning_rate_growth_factor,argv[i],'o');
         if (learning_rate_growth_factor < 1)
-			learning_rate_growth_factor=1;
+          learning_rate_growth_factor=1;
       } else if (seedFlag) {
         seedFlag=false;
         readParam(&seed,argv[i],'R');
@@ -325,7 +323,7 @@ main(int argc, char *argv[]){
   if ( flags['s'] ) {
     nChain=nInputs = nParms + 1;
 #ifdef MARCU
-	nChain+=(int)Models.size();
+    nChain+=(int)Models.size();
 #endif
     newed_inputs = inputs = NEW istream *[nInputs];
     filenames = NEW char *[nChain];
@@ -362,14 +360,14 @@ main(int argc, char *argv[]){
     //      else
     files[i] = NEW ifstream(parm[i]);
 #ifdef DEBUG
-        //Config::debug() << "Created file " << i << " from " << parm[i] << " & " << files[i] <<"\n";
+    //Config::debug() << "Created file " << i << " from " << parm[i] << " & " << files[i] <<"\n";
 #endif
     if ( !*files[i] ) {
       Config::warn() << "File " << parm[i] << " could not be opened for input.\n";
       for ( int j = 0 ; j <=i ; ++j )
         delete files[j];
-	  delete[] parm;
-	  delete[] inputs;
+      delete[] parm;
+      delete[] inputs;
       return -9;
     }
   }
@@ -378,7 +376,7 @@ main(int argc, char *argv[]){
     kPaths = 0;
     if (nInputs > 1) {
       --nInputs;
-	  --nChain;
+      --nChain;
       if ( flags['r'] )
         pairStream = inputs[nInputs];
       else {
@@ -404,20 +402,20 @@ main(int argc, char *argv[]){
       nTarget = nInputs-1;
     else
       nTarget = 0;
-	line_in=inputs[nTarget];
+    line_in=inputs[nTarget];
   }
   for ( i = 0 ; i < nInputs ; ++i ) {
     if ( i != nTarget ) {
       PLACEMENT_NEW (&chain[i]) WFST(*inputs[i],flags['K']);
       if ( !flags['m'] && nInputs > 1 )
         chain[i].unNameStates();
-          if ( inputs[i] != &cin ) {
-          #ifdef DEBUG
-                //Config::debug() << "Deleting file " << i << " & " << inputs[i] <<"\n";
-        #endif
+      if ( inputs[i] != &cin ) {
+#ifdef DEBUG
+        //Config::debug() << "Deleting file " << i << " & " << inputs[i] <<"\n";
+#endif
 
         delete inputs[i];
-          }
+      }
       if ( !(chain[i].valid()) ) {
         Config::warn() << "Bad format of transducer file: " << filenames[i] << "\n";
         //        for ( j = i+1 ; j < nInputs ; ++j )
@@ -434,7 +432,7 @@ main(int argc, char *argv[]){
   WFST *weightSource = NULL; // assign waits from this transducer to result by tie groups
   if ( flags['A'] ) {
     --nInputs;
-	--nChain;
+    --nChain;
     if ( !flags['r'] ) {
       weightSource = chain;
       ++chain;
@@ -446,12 +444,12 @@ main(int argc, char *argv[]){
 #ifdef MARCU
   //chain,inputs,filenames,nTarget,nInputs
   for (i=0,j=nModels;i<nInputs;++i,++j)
-	filenames[j]=filenames[i];
+    filenames[j]=filenames[i];
   chain-=nModels;
   nTarget+=nModels;
   for (j=0;j<nModels;++j) {
-	PLACEMENT_NEW (&chain[j]) WFST(Models[j],flags['K']);
-	filenames[j] = "Models.builtin";
+    PLACEMENT_NEW (&chain[j]) WFST(Models[j],flags['K']);
+    filenames[j] = "Models.builtin";
   }
 #endif
 
@@ -464,14 +462,14 @@ main(int argc, char *argv[]){
 
       if ( !*line_in )
         break;
-	  if ( input_lineno != 0 )
-		chain[nTarget].~WFST();
+      if ( input_lineno != 0 )
+        chain[nTarget].~WFST();
       if (flags['P']){ // need a permutation lattice instead
         int length ;
         PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
       } else // no permutation, just need input acceptor
         PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str());
-                CHECKLEAK(input_lineno);
+      CHECKLEAK(input_lineno);
       ++input_lineno;
 
       if (!flags['q'])
@@ -514,25 +512,25 @@ main(int argc, char *argv[]){
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
-          // composition happens here:
+      // composition happens here:
       WFST *next = NEW WFST((r ? chain[i] : *result), (r ? *result : chain[i]), flags['m'], flags['a']);
 #ifndef NODELETE
-//      if (nTarget != -1) {
-//        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
+      //      if (nTarget != -1) {
+      //        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
 #ifdef  DEBUGCOMPOSE
-//        Config::debug() << "result will be going away - take its alphabet\n";
+      //        Config::debug() << "result will be going away - take its alphabet\n";
 #endif
-//      }
+      //      }
 
       //      if (nTarget != -1) {
-        // &&(result !=  &chain[nTarget]) ){
-        // the above condition was removed - why?  because in -i -P or -b mode, the input transducer needs to be deleted.  was a memory leak.  we protect against deleting the chain twice at the end of main by checking nTarget
+      // &&(result !=  &chain[nTarget]) ){
+      // the above condition was removed - why?  because in -i -P or -b mode, the input transducer needs to be deleted.  was a memory leak.  we protect against deleting the chain twice at the end of main by checking nTarget
 #ifdef DEBUGCOMPOSE
       Config::debug() << "deleting result and replacing it with next\n";
 #endif
-	 if (!first)
+      if (!first)
         delete result;
-        //      }
+      //      }
 #endif
       result = next;
 
@@ -562,256 +560,256 @@ main(int argc, char *argv[]){
       MINIMIZE;
       if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
         Config::log()  << " reduce-> " << result->count() << "/" << result->numArcs();
-          if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
-              q_states=result->count();
-                q_arcs=result->numArcs();
-                PRUNE;
-                if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
-                Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
-          }
+      if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
+        q_states=result->count();
+        q_arcs=result->numArcs();
+        PRUNE;
+        if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
+          Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
+      }
       if (!flags['q'])
         Config::log() << ")";
     }
-      if (!flags['q'] && nChain > 1 ) 
-		  Config::log() << std::endl;
+    if (!flags['q'] && nChain > 1 )
+      Config::log() << std::endl;
 
 #ifdef  DEBUGCOMPOSE
-      Config::debug() << "done chain of compositions  .. now processing result\n";
+    Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
 
-      if ( flags['v'] )
-        result->invert();
-      if ( flags['n'] )
-        result->normalize(norm_method);
-      if ( flags['A'] ) {
-        Assert(weightSource);
-        result->assignWeights(*weightSource);
-      }
-      if ( flags['N'] ) {
-        if (labelStart > 0)
-          result->numberArcsFrom(labelStart);
-        else if ( labelStart == 0 )
-          result->lockArcs();
-        else
-          result->unTieGroups();
-      }
-      if ( kPaths > 0  ) {
-        int nGoodPaths = 0;
-        if ( result->valid() ) {
-          List <List<PathArc> > *bestPaths = result->bestPaths(kPaths);
-          Assert(bestPaths);
-          for ( List<List<PathArc> >::const_iterator pli=bestPaths->const_begin(),end=bestPaths->const_end()  ; pli != end; ++pli, ++nGoodPaths )
-            printPath(flags,&*pli);
-
-          delete bestPaths;
-        }
-        for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
-          if ( !flags['W'] )
-            cout << 0;
-          cout << "\n";
-
-        }
-
-      } else if ( flags['x'] ) {
-        result->listAlphabet(cout, 0);
-      } else if ( flags['y'] ) {
-        result->listAlphabet(cout, 1);
-      } else if ( flags['c'] ) {
-        cout << "Number of states in result: " << result->count() << std::endl;
-        cout << "Number of arcs in result: " << result->numArcs() << std::endl;
-        cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
-      }
-      if ( flags['t'] )
-        flags['S'] = 0;
-      if ( !flags['b'] ) {
-        if ( flags['S'] ) {
-		  n_pairs=0;
-          if (pairStream) {
-            for ( ; ; ) {
-              getline(*pairStream,buf);
-              if ( !*pairStream )
-                break;
-  			  ++input_lineno;
-              List<int> *inSeq = result->symbolList(buf.c_str(), 0);
-              if ( !inSeq ) {
-                Config::warn() << "Input sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
-                return -22;
-              }
-              getline(*pairStream,buf);
-  			  ++input_lineno;
-              if ( !*pairStream )
-                break;
-              List<int> *outSeq = result->symbolList(buf.c_str(), 1);
-              if ( !outSeq ) {
-                Config::warn() << "Output sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
-                return -21;
-              }
-              Weight prob=result->sumOfAllPaths(*inSeq, *outSeq);
-			  ++n_pairs;
-			  prod_prob*=prob;
-			  cout << prob << std::endl;
-              delete inSeq;
-              delete outSeq;
-            }
-          } else {
-            List<int> empty_list;
-			n_pairs=1;
-            cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
-          }
-        } else if ( flags['t'] ) {
-          FLOAT_TYPE weight;
-          result->trainBegin(norm_method,flags['U'],smoothFloor);
-          if (pairStream) {
-            for ( ; ; ) {
-              weight = 1;
-              getline(*pairStream,buf);
-              if ( !*pairStream )
-                break;
-              if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
-                istringstream w(buf.c_str());
-                w >> weight;
-                if ( w.fail() ) {
-                  Config::warn() << "Bad training example weight: " << buf << std::endl;
-                  continue;
-                }
-                getline(*pairStream,buf);
-                if ( !*pairStream )
-                  break;
-              }
-              List<int> *inSeq = result->symbolList(buf.c_str(), 0);
-              if ( !inSeq ) {
-                Config::warn() << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
-                return -22;
-              }
-              getline(*pairStream,buf);
-              if ( !*pairStream )
-                break;
-              List<int> *outSeq = result->symbolList(buf.c_str(), 1);
-              if ( !outSeq ) {
-                Config::warn() << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
-                return -21;
-              }
-              result->trainExample(*inSeq, *outSeq, weight);
-              delete inSeq;
-              delete outSeq;
-            }
-          } else {
-            List<int> empty_list;
-            result->trainExample(empty_list, empty_list, 1.0);
-          }
-          result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method);
-        } else if ( nGenerate > 0 ) {
-          MINIMIZE;
-          //        if ( !flags['n'] )
-          //        result->normalize(norm_method);
-          if ( maxGenArcs == 0 )
-            maxGenArcs = DEFAULT_MAX_GEN_ARCS;
-          if ( flags['G'] ) {
-            for (int i=0; i<nGenerate; ) {
-              List<PathArc> l;
-              if (result->randomPath(&l) != -1) {
-                printPath(flags,&l);
-                ++i;
-              }
-            }
-          } else {
-            int maxSize = maxGenArcs+1;
-            int *inSeq = NEW int[maxSize];
-            int *outSeq = NEW int[maxSize];
-            for ( int s = 0 ; s < nGenerate ; ++s ) {
-
-              while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
-              printSeq(result->in,inSeq,maxGenArcs);
-              cout << std::endl;
-              printSeq(result->out,outSeq,maxGenArcs);
-              cout << std::endl;
-              /*for ( i = 0 ; i < maxSize ; ) {
-                if (outSeq[i] > 0)
-                cout << result->outLetter(outSeq[i]);
-                ++i;
-                if ( i < maxSize && outSeq[i] > 0 )
-                cout << ' ';
-                }
-                cout << std::endl;
-              */
-            }
-            delete[] inSeq;
-            delete[] outSeq;
-          }
-        }
-
-
-
-
-        if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
-          PRUNE;
-          if ( flags['t'] )
-            if (flags['p'] || prunePath) {
-              result->normalize(norm_method);
-            }
-          MINIMIZE;
-
-          if ( flags ['Y'] )
-            result->writeGraphViz(*fstout);
-          else
-            *fstout << *result;
-        }
-      }
-    nextInput:
-
-#ifndef NODELETE
-	  
-      // Now delete the compostion result to free up memory, this is important
-      // when you are doing batch compostions (option -b).
-      // But make sure  first that you are not deleting one of the main
-      // WFSTs. That is why we check if the result is one of them and if it is
-      // we don't delete it.
-      isInChain = false ;
-      for (int i = 0 ; i < nChain ; i++){
-        if (result == &chain[i])
-          isInChain = true ;
-      }
-      if (!isInChain){
-#ifdef  DEBUGCOMPOSE
-        Config::debug() << "deleting result at end of processing\n";
-#endif
-        delete result ;
-      }
-#ifdef  DEBUGCOMPOSE
+    if ( flags['v'] )
+      result->invert();
+    if ( flags['n'] )
+      result->normalize(norm_method);
+    if ( flags['A'] ) {
+      Assert(weightSource);
+      result->assignWeights(*weightSource);
+    }
+    if ( flags['N'] ) {
+      if (labelStart > 0)
+        result->numberArcsFrom(labelStart);
+      else if ( labelStart == 0 )
+        result->lockArcs();
       else
-        Config::debug() << "can't delete result because it is part of chain .. \n";
-#endif
-#endif
-      if ( !flags['b'] )
-        break;
-    } // end of all input
-     if ( flags['S'] && input_lineno > 0) {
-		 Config::log() << "Corpus probability=" << prod_prob << " ; Model perplexity(N=" << n_pairs <<")=" << root(prod_prob,n_pairs).invert() << std::endl;
-	 }
+        result->unTieGroups();
+    }
+    if ( kPaths > 0  ) {
+      int nGoodPaths = 0;
+      if ( result->valid() ) {
+        List <List<PathArc> > *bestPaths = result->bestPaths(kPaths);
+        Assert(bestPaths);
+        for ( List<List<PathArc> >::const_iterator pli=bestPaths->const_begin(),end=bestPaths->const_end()  ; pli != end; ++pli, ++nGoodPaths )
+          printPath(flags,&*pli);
+
+        delete bestPaths;
+      }
+      for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
+        if ( !flags['W'] )
+          cout << 0;
+        cout << "\n";
+
+      }
+
+    } else if ( flags['x'] ) {
+      result->listAlphabet(cout, 0);
+    } else if ( flags['y'] ) {
+      result->listAlphabet(cout, 1);
+    } else if ( flags['c'] ) {
+      cout << "Number of states in result: " << result->count() << std::endl;
+      cout << "Number of arcs in result: " << result->numArcs() << std::endl;
+      cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
+    }
+    if ( flags['t'] )
+      flags['S'] = 0;
+    if ( !flags['b'] ) {
+      if ( flags['S'] ) {
+        n_pairs=0;
+        if (pairStream) {
+          for ( ; ; ) {
+            getline(*pairStream,buf);
+            if ( !*pairStream )
+              break;
+            ++input_lineno;
+            List<int> *inSeq = result->symbolList(buf.c_str(), 0);
+            if ( !inSeq ) {
+              Config::warn() << "Input sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
+              return -22;
+            }
+            getline(*pairStream,buf);
+            ++input_lineno;
+            if ( !*pairStream )
+              break;
+            List<int> *outSeq = result->symbolList(buf.c_str(), 1);
+            if ( !outSeq ) {
+              Config::warn() << "Output sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
+              return -21;
+            }
+            Weight prob=result->sumOfAllPaths(*inSeq, *outSeq);
+            ++n_pairs;
+            prod_prob*=prob;
+            cout << prob << std::endl;
+            delete inSeq;
+            delete outSeq;
+          }
+        } else {
+          List<int> empty_list;
+          n_pairs=1;
+          cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
+        }
+      } else if ( flags['t'] ) {
+        FLOAT_TYPE weight;
+        result->trainBegin(norm_method,flags['U'],smoothFloor);
+        if (pairStream) {
+          for ( ; ; ) {
+            weight = 1;
+            getline(*pairStream,buf);
+            if ( !*pairStream )
+              break;
+            if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
+              istringstream w(buf.c_str());
+              w >> weight;
+              if ( w.fail() ) {
+                Config::warn() << "Bad training example weight: " << buf << std::endl;
+                continue;
+              }
+              getline(*pairStream,buf);
+              if ( !*pairStream )
+                break;
+            }
+            List<int> *inSeq = result->symbolList(buf.c_str(), 0);
+            if ( !inSeq ) {
+              Config::warn() << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
+              return -22;
+            }
+            getline(*pairStream,buf);
+            if ( !*pairStream )
+              break;
+            List<int> *outSeq = result->symbolList(buf.c_str(), 1);
+            if ( !outSeq ) {
+              Config::warn() << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
+              return -21;
+            }
+            result->trainExample(*inSeq, *outSeq, weight);
+            delete inSeq;
+            delete outSeq;
+          }
+        } else {
+          List<int> empty_list;
+          result->trainExample(empty_list, empty_list, 1.0);
+        }
+        result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method);
+      } else if ( nGenerate > 0 ) {
+        MINIMIZE;
+        //        if ( !flags['n'] )
+        //        result->normalize(norm_method);
+        if ( maxGenArcs == 0 )
+          maxGenArcs = DEFAULT_MAX_GEN_ARCS;
+        if ( flags['G'] ) {
+          for (int i=0; i<nGenerate; ) {
+            List<PathArc> l;
+            if (result->randomPath(&l) != -1) {
+              printPath(flags,&l);
+              ++i;
+            }
+          }
+        } else {
+          int maxSize = maxGenArcs+1;
+          int *inSeq = NEW int[maxSize];
+          int *outSeq = NEW int[maxSize];
+          for ( int s = 0 ; s < nGenerate ; ++s ) {
+
+            while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
+            printSeq(result->in,inSeq,maxGenArcs);
+            cout << std::endl;
+            printSeq(result->out,outSeq,maxGenArcs);
+            cout << std::endl;
+            /*for ( i = 0 ; i < maxSize ; ) {
+              if (outSeq[i] > 0)
+              cout << result->outLetter(outSeq[i]);
+              ++i;
+              if ( i < maxSize && outSeq[i] > 0 )
+              cout << ' ';
+              }
+              cout << std::endl;
+            */
+          }
+          delete[] inSeq;
+          delete[] outSeq;
+        }
+      }
+
+
+
+
+      if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
+        PRUNE;
+        if ( flags['t'] )
+          if (flags['p'] || prunePath) {
+            result->normalize(norm_method);
+          }
+        MINIMIZE;
+
+        if ( flags ['Y'] )
+          result->writeGraphViz(*fstout);
+        else
+          *fstout << *result;
+      }
+    }
+  nextInput:
 
 #ifndef NODELETE
-    for ( i = 0 ; i < nChain ; ++i )
-        chainMemory[i].~WFST();
-    //  if ( flags['A'] )
-    //    chainMemory[i].~WFST();
+
+    // Now delete the compostion result to free up memory, this is important
+    // when you are doing batch compostions (option -b).
+    // But make sure  first that you are not deleting one of the main
+    // WFSTs. That is why we check if the result is one of them and if it is
+    // we don't delete it.
+    isInChain = false ;
+    for (int i = 0 ; i < nChain ; i++){
+      if (result == &chain[i])
+        isInChain = true ;
+    }
+    if (!isInChain){
+#ifdef  DEBUGCOMPOSE
+      Config::debug() << "deleting result at end of processing\n";
 #endif
-    ::operator delete(chainMemory);
-    delete[] parm; // alias filenames unless -s
-        if(flags['s'])
-                delete[] filenames;
-        if(nTarget != -1) {
-                if(line_in != &cin)
-                        delete line_in; // rest were deleted after transducers were read
-        }
-		if (pairStream != &cin)
-			delete pairStream;
-        delete[] newed_inputs;
-    if ( fstout != &cout )
-      delete fstout;
-    return 0;
+      delete result ;
+    }
+#ifdef  DEBUGCOMPOSE
+    else
+      Config::debug() << "can't delete result because it is part of chain .. \n";
+#endif
+#endif
+    if ( !flags['b'] )
+      break;
+  } // end of all input
+  if ( flags['S'] && input_lineno > 0) {
+    Config::log() << "Corpus probability=" << prod_prob << " ; Model perplexity(N=" << n_pairs <<")=" << root(prod_prob,(FLOAT_TYPE)n_pairs).invert() << std::endl;
   }
 
-  void usageHelp(void)
+#ifndef NODELETE
+  for ( i = 0 ; i < nChain ; ++i )
+    chainMemory[i].~WFST();
+  //  if ( flags['A'] )
+  //    chainMemory[i].~WFST();
+#endif
+  ::operator delete(chainMemory);
+  delete[] parm; // alias filenames unless -s
+  if(flags['s'])
+    delete[] filenames;
+  if(nTarget != -1) {
+    if(line_in != &cin)
+      delete line_in; // rest were deleted after transducers were read
+  }
+  if (pairStream != &cin)
+    delete pairStream;
+  delete[] newed_inputs;
+  if ( fstout != &cout )
+    delete fstout;
+  return 0;
+}
+
+void usageHelp(void)
 {
   cout << "usage: carmel [switches] [file1 file2 ... filen]\n\ncomposes a seq";
   cout << "uence of weighted finite state transducers and writes the\nresul";

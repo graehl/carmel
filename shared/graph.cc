@@ -20,16 +20,16 @@ void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(i
 }
 
 Graph reverseGraph(Graph g)
-// Comment by Yaser: This function creates NEW GraphState[] and because the
-// return Graph points to this newly created Graph, it is NOT deleted. Therefore
-// whatever the caller function is responsible for deleting this data.
-// It is not a good programming practice but it will be messy to clean it up.
-//
+  // Comment by Yaser: This function creates NEW GraphState[] and because the
+  // return Graph points to this newly created Graph, it is NOT deleted. Therefore
+  // whatever the caller function is responsible for deleting this data.
+  // It is not a good programming practice but it will be messy to clean it up.
+  //
 
 {
   GraphState *rev = NEW GraphState[g.nStates];
   for ( int i  = 0 ; i < g.nStates ; ++i ){
-	List<GraphArc> &arcs = g.states[i].arcs;
+    List<GraphArc> &arcs = g.states[i].arcs;
     for ( List<GraphArc>::val_iterator l=arcs.val_begin(),end = arcs.val_end(); l != end; ++l ) {
       GraphArc r;
       r.data = &(*l);
@@ -60,8 +60,8 @@ void dfsRec(int state, int pred) {
   if ( dfsFunc )
     dfsFunc(state, pred);
 
-   const List<GraphArc> &arcs = dfsGraph.states[state].arcs;
-   for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); l != end; ++l ) {
+  const List<GraphArc> &arcs = dfsGraph.states[state].arcs;
+  for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); l != end; ++l ) {
     int dest = l->dest;
     dfsRec(dest, state);
   }
@@ -76,17 +76,17 @@ void dfsRec(int state, int pred) {
 void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
   List<int> topo;
   //front_insert_iterator<List<int> > o(topo);
-  
-	  TopoSort sort(g,&topo);
-	  sort.order_from(source);
-  
+
+  TopoSort sort(g,&topo);
+  sort.order_from(source);
+
 
   for ( int i = 0 ; i < g.nStates; ++i )
     nPaths[i].setZero();
   nPaths[source] = 1;
-  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){    
+  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
     const List<GraphArc> &arcs = g.states[*t].arcs;
-	for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
+    for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
       nPaths[a->dest] += nPaths[(*t)];
   }
 }
@@ -109,54 +109,54 @@ inline bool operator == (DistToState lhs, FLOAT_TYPE rhs) {
 }
 
 Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist)
-	// returns graph (need to delete[] ret.states yourself)
-	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
+  // returns graph (need to delete[] ret.states yourself)
+  // computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 {
-	int i;
+  int i;
 
-	   GraphArc **taken = NEW  /*const*/ GraphArc *[g.nStates];
-	    
-	Graph pg;
-	pg.nStates = g.nStates;
-	pg.states = NEW GraphState[pg.nStates];
-  
-	Graph rev_graph = reverseGraph(g);
-	#ifdef DEBUGKBEST
-				Config::debug() << "rev_graph = \n" << rev_graph << "\n\nTaken\n";
-	#endif
-	shortestDistancesFrom(rev_graph,dest,dist,taken);
+  GraphArc **taken = NEW  /*const*/ GraphArc *[g.nStates];
 
-	for ( i = 0 ; i < g.nStates ; ++i )
-		if ( taken[i] ) {
-			GraphArc * rev_taken = (GraphArc *)taken[i]->data;
-			#ifdef DEBUGKBEST
-				Config::debug() << ' ' << i << ' ' << rev_taken;
-			#endif
+  Graph pg;
+  pg.nStates = g.nStates;
+  pg.states = NEW GraphState[pg.nStates];
 
-			pg.states[i].arcs.push(*rev_taken);
-		}
+  Graph rev_graph = reverseGraph(g);
+#ifdef DEBUGKBEST
+  Config::debug() << "rev_graph = \n" << rev_graph << "\n\nTaken\n";
+#endif
+  shortestDistancesFrom(rev_graph,dest,dist,taken);
+
+  for ( i = 0 ; i < g.nStates ; ++i )
+    if ( taken[i] ) {
+      GraphArc * rev_taken = (GraphArc *)taken[i]->data;
+#ifdef DEBUGKBEST
+      Config::debug() << ' ' << i << ' ' << rev_taken;
+#endif
+
+      pg.states[i].arcs.push(*rev_taken);
+    }
 
 
 #ifdef DEBUGKBEST
-	Config::debug() << "shortestpathtree graph:\n" << pg;
+  Config::debug() << "shortestpathtree graph:\n" << pg;
 #endif
 
-	delete[] rev_graph.states;
-	delete[] taken;
-	return pg;
+  delete[] rev_graph.states;
+  delete[] taken;
+  return pg;
 }
 
 void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **taken)
-// computes best paths from single source to all other states
-// if taken == NULL, only compute weights (stored in dist)
-//  otherwise, store pointer to arc taken to get to state s in taken[s]
+  // computes best paths from single source to all other states
+  // if taken == NULL, only compute weights (stored in dist)
+  //  otherwise, store pointer to arc taken to get to state s in taken[s]
 {
   int nStates = g.nStates;
   int i;
 
   if (taken)
-	 for ( i = 0 ; i < g.nStates ; ++i )
-		taken[i] = NULL;
+    for ( i = 0 ; i < g.nStates ; ++i )
+      taken[i] = NULL;
 
   GraphState *st = g.states;
 
@@ -166,9 +166,9 @@ void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **take
 
   //  FLOAT_TYPE *weights = NEW FLOAT_TYPE[nStates];
   FLOAT_TYPE *weights = dist;
-  
+
   for ( i = 0 ; i < nStates ; ++i ) {
-          weights[i] = Weight::HUGE_FLOAT;
+    weights[i] = Weight::HUGE_FLOAT;
   }
 
   DistToState **stateLocations = NEW DistToState *[nStates];
@@ -197,32 +197,32 @@ void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **take
     int activeState = distQueue[0].state;
     //    dist[activeState] = (FLOAT_TYPE)distQueue[0];
     heapPop(distQueue, distQueue + nUnknown--);
-	List<GraphArc> &arcs=st[activeState].arcs;
+    List<GraphArc> &arcs=st[activeState].arcs;
     for ( List<GraphArc>::val_iterator a = arcs.val_begin(),end=arcs.val_end() ; a !=end ; ++a ) {
       // future: compare only best arc to any given state
       int targetState = a->dest;
       if ( (candidate = (a->weight + weights[activeState])) < weights[targetState] ) {
         weights[targetState] = candidate;
-		if (taken)
-			taken[targetState] = &(*a);
+        if (taken)
+          taken[targetState] = &(*a);
         heapAdjustUp(distQueue, stateLocations[targetState]);
       }
     }
   }
 
-  
+
   delete[] stateLocations;
   delete[] distQueue;
   //delete[] rev;
-  
+
 }
 
 Graph removeStates(Graph g, bool marked[]) // not tested
-// Comment by Yaser: This function creates NEW GraphState[] and because the
-// return Graph points to this newly created Graph, it is NOT deleted. Therefore
-// whatever the caller function is responsible for deleting this data.
-// It is not a good programming practice but it will be messy to clean it up.
-//
+  // Comment by Yaser: This function creates NEW GraphState[] and because the
+  // return Graph points to this newly created Graph, it is NOT deleted. Therefore
+  // whatever the caller function is responsible for deleting this data.
+  // It is not a good programming practice but it will be messy to clean it up.
+  //
 
 {
   int *oldToNew = NEW int[g.nStates];
@@ -238,7 +238,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
   for ( i = 0 ; i < g.nStates ; ++i )
     if ( !marked[i] ) {
       List<GraphArc> &newArcs = reduced[oldToNew[i]].arcs;
-	  const List<GraphArc> &arcs = g.states[i].arcs;
+      const List<GraphArc> &arcs = g.states[i].arcs;
       for ( List<GraphArc>::const_iterator oldArc=arcs.const_begin(),end=arcs.const_end() ; oldArc !=end ; ++oldArc )
         if ( !marked[oldArc->dest] ) {
           GraphArc newArc = *oldArc;
@@ -257,13 +257,13 @@ Graph removeStates(Graph g, bool marked[]) // not tested
 
 void printGraph(const Graph g, std::ostream &out)
 {
-	out << "(Graph " << g.nStates << std::endl;
+  out << "(Graph " << g.nStates << std::endl;
   for ( int i = 0 ; i < g.nStates ; ++i ) {
     out << i;
-	const List<GraphArc> &arcs = g.states[i].arcs;
+    const List<GraphArc> &arcs = g.states[i].arcs;
     for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
       out << ' ' << (*a);
-	out << std::endl;
+    out << std::endl;
   }
   out << ")" << std::endl;
 }

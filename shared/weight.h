@@ -18,102 +18,102 @@
 // defining WEIGHT_CORRECT_ZERO will incur a performance penalty
 
 struct Weight {			// capable of representing nonnegative reals 
-		// internal implementation note: by their base e logarithm
-private:
-enum { LOG10=0, LN };
-enum { VAR=0, ALWAYS_LOG, ALWAYS_REAL };
-// IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
-// 32 * ln 10 =~ 73
-// double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
-enum {LN_TILL_UNDERFLOW=(sizeof(FLOAT_TYPE)==4? 73 : 82)} ;
+  // internal implementation note: by their base e logarithm
+  private:
+  enum { LOG10=0, LN };
+  enum { VAR=0, ALWAYS_LOG, ALWAYS_REAL };
+  // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
+  // 32 * ln 10 =~ 73
+  // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
+  enum {LN_TILL_UNDERFLOW=(sizeof(FLOAT_TYPE)==4? 73 : 82)} ;
 
-static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
-static const int thresh_index; // handle for OutThresh
+  static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
+  static const int thresh_index; // handle for OutThresh
 
-public:	
+  public:	
   static const Weight ZERO, INF;
-	// linux g++ 3.2 didn't like static self-class member
+  // linux g++ 3.2 didn't like static self-class member
   static const FLOAT_TYPE HUGE_FLOAT;
   FLOAT_TYPE weight;
 
-// output format manipulators: cout << Weight::out_log10;
+  // output format manipulators: cout << Weight::out_log10;
 
-template<class A,class B> static std::basic_ostream<A,B>&
-out_log10(std::basic_ostream<A,B>& os);
+  template<class A,class B> static std::basic_ostream<A,B>&
+    out_log10(std::basic_ostream<A,B>& os);
 
-template<class A,class B> static std::basic_ostream<A,B>&
-out_ln(std::basic_ostream<A,B>& os);
+  template<class A,class B> static std::basic_ostream<A,B>&
+    out_ln(std::basic_ostream<A,B>& os);
 
-template<class A,class B> static std::basic_ostream<A,B>&
-out_variable(std::basic_ostream<A,B>& os);
+  template<class A,class B> static std::basic_ostream<A,B>&
+    out_variable(std::basic_ostream<A,B>& os);
 
-template<class A,class B> static std::basic_ostream<A,B>&
-out_always_log(std::basic_ostream<A,B>& os);
+  template<class A,class B> static std::basic_ostream<A,B>&
+    out_always_log(std::basic_ostream<A,B>& os);
 
-template<class A,class B> static std::basic_ostream<A,B>&
-out_always_real(std::basic_ostream<A,B>& os);
+  template<class A,class B> static std::basic_ostream<A,B>&
+    out_always_real(std::basic_ostream<A,B>& os);
 
   static Weight result;
   // default = operator:
 
   //double toFloat() const { 
-    //return getReal();
+  //return getReal();
   //}
 
   double getReal() const {
-	  return std::exp(weight);
+    return std::exp(weight);
   }
   FLOAT_TYPE getLog(FLOAT_TYPE base) const {
-	  return weight / log(base);
+    return weight / log(base);
   }
   FLOAT_TYPE getLogImp() const {
-	  return weight;
+    return weight;
   }
   FLOAT_TYPE getLn() const {
-	  return weight;
+    return weight;
   }
   FLOAT_TYPE getLog10() const {
-	  static const FLOAT_TYPE oo_ln10 = 1./log(10.f);
-	  return oo_ln10 * weight;
+    static const FLOAT_TYPE oo_ln10 = 1./log(10.f);
+    return oo_ln10 * weight;
   }
   bool fitsInReal() const {
-	return isZero() || (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
+    return isZero() || (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
   }
   bool isInfinity() const {
-	  return weight == HUGE_FLOAT;
+    return weight == HUGE_FLOAT;
   }
   void setInfinity() {
-	  weight = HUGE_FLOAT;
+    weight = HUGE_FLOAT;
   }
 
   bool isZero() const {
-	  return weight == -HUGE_FLOAT;
+    return weight == -HUGE_FLOAT;
   }
   bool isPositive() const {
-	  return weight > -HUGE_FLOAT;
+    return weight > -HUGE_FLOAT;
   }
   void setZero() {
-	  weight = -HUGE_FLOAT;
+    weight = -HUGE_FLOAT;
   }
   void setReal(double f) {
-	  if (f > 0)
-		weight=(FLOAT_TYPE)log(f);
-	  else
-	    setZero();
+    if (f > 0)
+      weight=(FLOAT_TYPE)log(f);
+    else
+      setZero();
   }
   void setLn(FLOAT_TYPE w) {
-	  weight=w;
+    weight=w;
   }
   void setLog10(FLOAT_TYPE w) {
-	  static const FLOAT_TYPE ln10 = log(10.f);
-	  weight=w*ln10;
+    static const FLOAT_TYPE ln10 = log(10.f);
+    weight=w*ln10;
   }
 
-//  Weight() : weight(-HUGE_FLOAT) {}
+  //  Weight() : weight(-HUGE_FLOAT) {}
   Weight() { setZero(); }
   Weight(bool,bool) { setInfinity(); }
   Weight(double f) {
-	setReal(f);
+    setReal(f);
   }
   friend Weight operator + (Weight, Weight);
   friend Weight operator - (Weight, Weight);
@@ -132,8 +132,8 @@ out_always_real(std::basic_ostream<A,B>& os);
   Weight operator *= (Weight w)
   {
 #ifdef WEIGHT_CORRECT_ZERO
-	  if (isZero())
-		return *this;
+    if (isZero())
+      return *this;
 #endif
     weight += w.weight;
     return *this;
@@ -141,30 +141,30 @@ out_always_real(std::basic_ostream<A,B>& os);
   Weight operator /= (Weight w)
   {
 #ifdef WEIGHT_CORRECT_ZERO
-	  if (isZero())
-		return *this;
+    if (isZero())
+      return *this;
 #endif
     weight -= w.weight;
     return *this;
   }
   Weight raisePower(FLOAT_TYPE power) {
-	  weight *= power;
-	  return *this;
+    weight *= power;
+    return *this;
   }
   Weight invert() {
-	  weight = -weight;
-	  return *this;
+    weight = -weight;
+    return *this;
   }
   Weight takeRoot(FLOAT_TYPE nth) {
-	  weight /= nth;
-	  return *this;
+    weight /= nth;
+    return *this;
   }
   Weight operator ^= (FLOAT_TYPE power) { // raise Weight^power
-	  raisePower(power);
-	  return *this;
+    raisePower(power);
+    return *this;
   }
 
-template <class charT, class Traits>
+  template <class charT, class Traits>
 std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const;
 template <class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& os);

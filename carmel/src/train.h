@@ -27,9 +27,9 @@ struct State {
   HashTable<IntKey, List<HalfArc> > *index;
   State() : arcs(), size(0), 
 #ifdef BIDIRECTIONAL
-hitcount(0), 
+       hitcount(0), 
 #endif
-index(NULL) { }
+       index(NULL) { }
   State(const State &s): arcs(s.arcs),size(s.size) {
 #ifdef BIDIRECTIONAL
     hitcount = s.hitcount;
@@ -38,7 +38,7 @@ index(NULL) { }
       index = (HashTable<IntKey, List<HalfArc> > *) NULL ;
     else
       index = NEW HashTable<IntKey, List<HalfArc> >(*s.index);
-     } 
+  } 
   ~State() { flush(); }
   void indexBy(int output = 0) {
     List<HalfArc> *list;
@@ -91,8 +91,8 @@ index(NULL) { }
   }
   void scaleArcs(Weight w)
   {
-	for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l)
-		l->weight *= w;
+    for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l)
+      l->weight *= w;
   }
   void addArc(const Arc &arc)
   {
@@ -101,7 +101,7 @@ index(NULL) { }
     Assert(!index);
 #ifdef DEBUG
     if (index) {
-		std::cerr << "Warning: adding arc to indexed state.\n";
+      std::cerr << "Warning: adding arc to indexed state.\n";
       delete index;
       index = NULL;
     }
@@ -111,10 +111,10 @@ index(NULL) { }
     HashTable<UnArc, Weight *> hWeights;
     UnArc un;
     Weight **ppWt;
-  for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
+    for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
       if ( l->weight.isZero() ) {
-		l=remove(l);
-		continue;
+	l=remove(l);
+	continue;
       }
       un.in = l->in;
       un.out = l->out;
@@ -124,7 +124,7 @@ index(NULL) { }
 	if ( **ppWt > 1 )
 	  **ppWt = Weight((FLOAT_TYPE)1.);
 	
-	 l=remove(l);
+	l=remove(l);
       } else {
 	hWeights.add(un, &l->weight);
 	++l;
@@ -133,26 +133,26 @@ index(NULL) { }
   }
   void prune(Weight thresh) {
     for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
-	if ( l->weight < thresh ) {
-		l=remove(l);
-	} else
+      if ( l->weight < thresh ) {
+	l=remove(l);
+      } else
       	++l;
     }
   }
   template <class T>
-	  T remove(T t) {
-		  --size;
-		  return arcs.erase(t);
-	  }
+  T remove(T t) {
+    --size;
+    return arcs.erase(t);
+  }
   void renumberDestinations(int *oldToNew) { // negative means remove transition
     Assert(!index);
     for (List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
       int &dest = (int &)l->dest;
       if ( oldToNew[dest] < 0 ) {
-		l=remove(l); 
+	l=remove(l); 
       } else {
-		dest = oldToNew[dest];
-		++l;
+	dest = oldToNew[dest];
+	++l;
       }
     }
   }
@@ -248,36 +248,36 @@ class trainInfo {
 #endif
 
   trainInfo() {};
-private:
+ private:
   trainInfo(const trainInfo& a){
   }
   /*  if (a.forArcs == NULL)
       forArcs = NULL ;
-    else 
+      else 
       forArcs=NEW HashTable<IOPair, List<DWPair> >(*a.forArcs);
-    revArcs=NEW HashTable<IOPair, List<DWPair> >(*a.revArcs);
-    forETopo=NEW List<int>(*a.forETopo);
-    revETopo=NEW List<int>(*a.revETopo);
-    maxIn=(a.maxIn);
-    maxOut=(a.maxOut);
-    examples=(a.examples);
-    smoothFloor =(a.smoothFloor);
-    nStates=a.nStates;
-    f = NEW Weight **[maxIn+1];
-    b = NEW Weight **[maxIn+1];
-    for ( int i = 0 ; i <= maxIn ; ++i ) {
+      revArcs=NEW HashTable<IOPair, List<DWPair> >(*a.revArcs);
+      forETopo=NEW List<int>(*a.forETopo);
+      revETopo=NEW List<int>(*a.revETopo);
+      maxIn=(a.maxIn);
+      maxOut=(a.maxOut);
+      examples=(a.examples);
+      smoothFloor =(a.smoothFloor);
+      nStates=a.nStates;
+      f = NEW Weight **[maxIn+1];
+      b = NEW Weight **[maxIn+1];
+      for ( int i = 0 ; i <= maxIn ; ++i ) {
       f[i] = NEW Weight *[maxOut+1];
       b[i] = NEW Weight *[maxOut+1];
       for ( int o = 0 ; o <= maxOut ; ++o ) {
-	f[i][o] = NEW Weight [nStates];
-	b[i][o] = NEW Weight [nStates];
-	for (int s = 0 ; s < nStates ; s++){
-	  f[i][o][s] = a.f[i][o][s] ;
-	  b[i][o][s] = a.b[i][o][s] ;
-	}
+      f[i][o] = NEW Weight [nStates];
+      b[i][o] = NEW Weight [nStates];
+      for (int s = 0 ; s < nStates ; s++){
+      f[i][o][s] = a.f[i][o][s] ;
+      b[i][o][s] = a.b[i][o][s] ;
       }
-    }    
-  };*/
+      }
+      }    
+      };*/
 };
 
 #endif
