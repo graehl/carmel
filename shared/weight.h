@@ -1,10 +1,36 @@
 #ifndef WEIGHT_H
 #define WEIGHT_H 1
+
+/*
+All these are legal input (and output) from Carmel, SuperCarmel?, and ForestEM?:
+
+0
+e^-2.68116e+11
+-2.68116e+11ln
+0.0952381
+e^-4086.42
+-4086.42ln
+0.047619
+1
+
+UPDATE: so that nobody has to be confused about what the "ln" suffix means, the new default output shall be "e^n" (except in case of zero, which is just "0" and not "e^-INF", since "-INF" doesn't read/write properly using the standard I/O libraries). I suggest everyone only produce such outputs, but be prepared to read arbitrary real numbers, as well as those starting with "e^".
+
+That is: either a number in the form supported by C/C++ i/o of double floating point numbers, OR such a number (call it N) written "e^N", OR (deprecated) written "Nln", indicating that the number is actually e^N. e.g. e^0=1.
+
+\forall N,Nln=eN
+
+There is well-tested log-rep addition/subtraction code in GraehlCVS (graehl/shared/weight.h).
+
+Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but that is no longer tolerated - e is the only natural base (and "log" sometimes means base 2, like in information theory, so it's confusing).
+*/
+
 #include "config.h"
 #include "myassert.h"
 #include "genio.h"
 #include "funcs.hpp"
 #include "threadlocal.hpp"
+
+
 
 #ifdef _MSC_VER
 #pragma warning(push)

@@ -17,7 +17,7 @@
 #include "fst.h"
 #include "myassert.h"
 
-#define CARMEL_VERSION "3.0.11"
+#define CARMEL_VERSION "3.1.0"
 
 #ifdef MARCU
 #include "models.h"
@@ -30,32 +30,25 @@ char *MarcuArgs[]={
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
     if ( flags['B'] )
-        //                      *fstout << Weight::out_log10;
         Weight::out_log10(*fstout);
+    else if (flags['2'])
+        Weight::out_ln(*fstout);
     else
-        //*fstout << Weight::out_ln;
-    Weight::out_ln(*fstout);
+        Weight::out_exp(*fstout);
     if ( flags['Z'] )
-        //                      *fstout << Weight::out_always_log;
         Weight::out_always_log(*fstout);
     else
-        //*fstout << Weight::out_variable;
-    Weight::out_sometimes_log(*fstout);
+        Weight::out_sometimes_log(*fstout);
     if ( flags['D'] )
-        //                      *fstout << Weight::out_always_real;
         Weight::out_never_log(*fstout);
     if ( flags['J'] )
-        //*fstout << WFST::out_arc_full;
-    WFST::out_arc_full(*fstout);
+        WFST::out_arc_full(*fstout);
     else
-        //*fstout << WFST::out_arc_brief;
-    WFST::out_arc_brief(*fstout);
+        WFST::out_arc_brief(*fstout);
     if ( flags['H'] )
-        //*fstout << WFST::out_arc_per_line;
-    WFST::out_arc_per_line(*fstout);
+        WFST::out_arc_per_line(*fstout);
     else
-        //*fstout << WFST::out_state_per_line;
-    WFST::out_state_per_line(*fstout);
+        WFST::out_state_per_line(*fstout);
 }
 
 static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
@@ -969,8 +962,9 @@ void usageHelp(void)
     cout << "ermost quotes of symbol names\n\t-W\tdo not show weights for pat";
     cout << "hs";
     cout << "\n\nWeight output format switches\n\t\t(by default, small/large weights are written as logarithms):";
-    cout << "\n\t-B\tWrite weights as their base 10 log (default is ln, e.g.\n\t\t'-5ln' signifies e^(-5))";
-    cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln',\n\t\texcept for 0, which is written simply as '0'";
+    cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. 'e^-10',\n\t\texcept for 0, which is written simply as '0'";
+    cout << "\n\t-B\tWrite weights as their base 10 log (e.g. -1log == 0.1)";
+    cout << "\n\t-2\tInstead of e^K, output Kln (deprecated)";
     cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";
     cout << "\n\nTransducer output format switches:";
     cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";

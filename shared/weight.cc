@@ -15,8 +15,8 @@ using namespace std;
 // xalloc gives a unique global handle with per-ios space handled by the ios
 const int Weight::base_index = ios_base::xalloc();
 const int Weight::thresh_index = ios_base::xalloc();
-THREADLOCAL int Weight::default_base = Weight::LN;
-THREADLOCAL int Weight::default_thresh = Weight::SOMETIMES_LOG;
+THREADLOCAL int Weight::default_base = Weight::EXP;
+THREADLOCAL int Weight::default_thresh = Weight::ALWAYS_LOG;
 const Weight Weight::ZERO;
 const Weight Weight::INF(false,false);
 //const FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);

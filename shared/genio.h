@@ -1,6 +1,7 @@
 #ifndef GENIO_H
 #define GENIO_H 1
 
+#include "debugprint.hpp"
 
 // your class Arg must will provide Arg::get_from(is) ( is >> arg ) and Arg::print_to(os) (os << arg),
 // returning std::ios_base::iostate (0,badbit,failbit ...)
@@ -93,23 +94,21 @@ inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream
 // uses (template) charT, Traits
 // s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print_on)
 #define GEN_EXTRACTOR(s,io) do { \
-    if (!s.good()) return s; \
-    std::ios_base::iostate err = std::ios_base::goodbit; \
-    typename std::basic_istream<charT, Traits>::sentry sentry(s); \
-    if (sentry) { err = io; } \
-    if (err) s.setstate(err); \
-    return s; \
-} while(0)
+        if (s.good()) {                                                 \
+            std::ios_base::iostate err = std::ios_base::goodbit;        \
+            typename std::basic_istream<charT, Traits>::sentry sentry(s); \
+            if (sentry) { err = io; }                                   \
+            if (err) s.setstate(err);                                   \
+        } } while(0)
 
 // only difference is ostream sentry not istream sentry
 #define GEN_INSERTER(s,print_on) do { \
-    if (!s.good()) return s; \
-    std::ios_base::iostate err = std::ios_base::goodbit; \
-    typename std::basic_ostream<charT, Traits>::sentry sentry(s); \
-    if (sentry) { print_on; } \
-    if (err) s.setstate(err); \
-    return s; \
-} while(0)
+        if (s.good()) {                                                 \
+            std::ios_base::iostate err = std::ios_base::goodbit;        \
+            typename std::basic_ostream<charT, Traits>::sentry sentry(s); \
+            if (sentry) { err = print_on; }                                   \
+            if (err) s.setstate(err);                                   \
+        } } while(0)
 
 template <class charT, class Traits, class Arg>
 std::basic_istream<charT, Traits>&
@@ -117,6 +116,7 @@ gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg)
 {
   GEN_EXTRACTOR(s,arg.get_from(s));
+  return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
@@ -136,6 +136,7 @@ gen_inserter
     (std::basic_ostream<charT, Traits>& s, const Arg &arg)
 {
     GEN_INSERTER(s,arg.print_on(s));
+    return s;
 
 /*  if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
@@ -154,6 +155,7 @@ gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg, Reader read)
 {
   GEN_EXTRACTOR(s,arg.get_from(s,read));
+  return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
@@ -172,6 +174,7 @@ gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg, Reader read, Flag f)
 {
   GEN_EXTRACTOR(s,arg.get_from(s,read,f));
+  return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
@@ -192,6 +195,7 @@ gen_inserter
     (std::basic_ostream<charT, Traits>& s, const Arg &arg, R r)
 {
   GEN_INSERTER(s,arg.print_on(s,r));
+  return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
@@ -215,6 +219,7 @@ gen_inserter
 #endif
 
   GEN_INSERTER(s,arg.print_on(s,q,r));
+  return s;
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
@@ -231,6 +236,10 @@ gen_inserter
 }
 
 
+#define FRIEND_EXTRACTOR(C) \
+template <class charT, class Traits> \
+friend  std::basic_istream<charT,Traits>& operator >> \
+ (std::basic_istream<charT,Traits>& is, C &arg);
 
 
 #define DEFINE_EXTRACTOR(C) \
@@ -250,6 +259,11 @@ inline std::basic_istream<charT,Traits>& operator >> \
  (std::basic_istream<charT,Traits>& is, C &arg) { \
     return gen_extractor(is,arg,R); }
 
+#define FRIEND_INSERTER(C) \
+template <class charT, class Traits> \
+friend std::basic_ostream<charT,Traits>& operator << \
+ (std::basic_ostream<charT,Traits>& os, const C arg);
+
 
 #define DEFINE_INSERTER(C) \
   template <class charT, class Traits> \
@@ -263,7 +277,7 @@ inline std::basic_ostream<charT,Traits>& operator << \
     return gen_inserter(os,arg); }
 
 #define GENIOGOOD std::ios_base::goodbit
-#define GENIOBAD std::ios_base::badbit
+#define GENIOBAD std::ios_base::failbit
 
 #define GENIOSETBAD(in) do { in.setstate(GENIOBAD); } while(0)
 
@@ -285,6 +299,10 @@ inline std::basic_ostream<charT,Traits>& operator << \
  template <class charT, class Traits, class Writer> \
   std::ios_base::iostate \
   print_on(std::basic_ostream<charT,Traits>& o,Writer w) const
+
+#define GENIO_get_from_any   template <class T> \
+  std::ios_base::iostate \
+    get_from(T& in)
 
 
 /*
@@ -325,14 +343,14 @@ inline std::basic_istream<charT,Traits>& skip_comment(std::basic_istream<charT,T
   return in;
 }
 
-
+#define EXPECTI_FIRST(inop) do { std::ios_base::iostate  flags=(inop).rdstate(); if (flags != std::ios_base::goodbit) return flags; } while(0)
 #define EXPECTI(inop) do { ; if (!(inop).good()) goto fail; } while(0)
-//#define EXPECTI_COMMENT(inop) do { ; if (!(inop).good()) goto fail; } while(0)
-#define EXPECTI_COMMENT(inop) do { ; if (!(skip_comment(in).good()&&(inop).good())) goto fail; } while(0)
-#define EXPECTCH(a) do { if (!in.get(c).good()) goto fail; if (c != a) goto fail; } while(0)
-#define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
+//#define EXPECTI_COMMENT(inop) do { ; if (!(inop).good()) { goto fail; } } while(0)
+#define EXPECTI_COMMENT(inop) do { ; if (!(skip_comment(in).good()&&(inop).good())) { DBPC2("expected input failed:",#inop); goto fail; } } while(0)
+#define EXPECTCH(a) do { if (!in.get(c).good()) { DBPC2("expected input unavailable:",#a); goto fail; } if (c != a) { DBPC2("expected input failed:",#a); goto fail; } } while(0)
+#define EXPECTCH_SPACE(a) do { if (!(in>>c).good()) { DBPC2("expected input unavailable:",#a); goto fail; } if (c != a) { DBPC2("expected input failed:",#a); goto fail; } } while(0)
 //#define EXPECTCH_SPACE_COMMENT(a) do { if (!(in>>c).good()) goto fail; if (c != a) goto fail; } while(0)
-#define EXPECTCH_SPACE_COMMENT(a) do { if (!(skip_comment(in).good()&&(in>>c).good())) goto fail;if (c != a) goto fail; } while(0)
+#define EXPECTCH_SPACE_COMMENT(a) do { if (!(skip_comment(in).good()&&(in>>c).good())) { DBPC2("expected input unavailable:",#a); goto fail; }if (c != a) { DBPC2("expected input failed:",#a); goto fail; } } while(0)
 //#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define IFCH_SPACE_COMMENT(a) if (!(skip_comment(in).good()&&(in>>c).good())) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)

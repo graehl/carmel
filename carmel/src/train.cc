@@ -241,7 +241,7 @@ while(1) { // random restarts
                 break;
         }
 }
-  Config::log() << "Setting weights to model with lowest per-example-perplexity (=prod[modelprob(example)]^(-1/num_examples))=" << bestPerplexity << std::endl;
+  Config::log() << "Setting weights to model with lowest per-example-perplexity ( = prod[modelprob(example)]^(-1/num_examples) = 2^(-log_2(p_model(corpus))/N) = " << bestPerplexity << std::endl;
   EACHDW(dw->weight()=dw->best_weight;);
 
         return bestPerplexity;

@@ -132,22 +132,31 @@ template<class A,class Writer>
 static const char * dbgstr(const A &a,Writer writer);
 */
 
+inline void dbgout(std::ostream &o,const void *a) {
+    #ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4267 )
+#endif
+    o << "0x" << std::hex << (size_t)a << std::dec;;
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
+}
+
+inline void dbgout(std::ostream &o,void *a) {
+    dbgout(o,(const void *)a);
+}
+
+
 template <class A>
 inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
   if (a == NULL) {
     o << "NULL";
   } else {
-
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4267 )
-#endif
-      o << "0x" << std::hex << (size_t)a << std::dec << "=&((";
-#ifdef _MSC_VER
-#pragma warning( pop )
-#endif
-  dbgout(o,*a);
-  o << "))";
+      dbgout(o,(void *)a);
+      o << "=&((";
+      dbgout(o,*a);
+      o << "))";
   }
 }
 
@@ -232,9 +241,9 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 #define DBP_OFF DBPENABLE(false)
 #define DBP_ON DBPENABLE(true)
 
-#define DBP_VERBOSE(x) SetLocal<unsigned> DBP324245chattyscope(DBP::current_chat,(x))
-#define DBP_INC_VERBOSE SetLocal<unsigned> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+1)
-#define DBP_ADD_VERBOSE(x) SetLocal<unsigned> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+(x))
+#define DBP_VERBOSE(x) SetLocal<int> DBP324245chattyscope(DBP::current_chat,(x))
+#define DBP_INC_VERBOSE SetLocal<int> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+1)
+#define DBP_ADD_VERBOSE(x) SetLocal<int> DBP324245chattyscope(DBP::current_chat,DBP::current_chat+(x))
 
 
 #define DBPISON DBP::is_enabled()
@@ -304,8 +313,8 @@ inline void dbgout(std::ostream &o,const std::string &a) {
 namespace DBP {
     extern unsigned depth;
     extern bool disable;
-    extern unsigned current_chat;
-    extern unsigned chat_level;
+    extern int current_chat;
+    extern int chat_level;
     extern std::ostream *logstream;
     struct scopedepth {
         scopedepth() { ++depth;}
@@ -315,17 +324,17 @@ namespace DBP {
         return (!disable && current_chat <= chat_level && logstream);
     }
     void print_indent();
-    void set_loglevel(unsigned loglevel=0);
+    void set_loglevel(int loglevel=0);
     void set_logstream(std::ostream &o=std::cerr);
 #ifdef MAIN
-    unsigned current_chat;
-    unsigned chat_level;
+    int current_chat;
+    int chat_level;
     std::ostream *logstream=&std::cerr;
     void print_indent() {
         for(unsigned i=0;i<depth;++i)
             DBPS(" ");
     }
-    void set_loglevel(unsigned loglevel){
+    void set_loglevel(int loglevel){
         chat_level=loglevel;
     }
     void set_logstream(std::ostream *o) {

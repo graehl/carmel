@@ -1,0 +1,12 @@
+2004-09-23  Jonathan Graehl  <graehl@isi.edu>
+
+	* weight.h: e^-2.68116e+11 -2.68116e+11ln 
+
+	UPDATE: so that nobody has to be confused about what the "ln"
+	suffix means, the new default output shall be "e^n" (except in
+	case of zero, which is just "0" and not "e^-INF", since "-INF"
+	doesn't read/write properly using the standard I/O libraries). I
+	suggest everyone only produce such outputs, but be prepared to
+	read arbitrary real numbers, as well as those starting with "e^".
+
+

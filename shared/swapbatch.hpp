@@ -20,29 +20,36 @@ struct SwapBatch {
     typedef std::size_t size_type; // boost::intmax_t
     std::string basename;
     mapped_file memmap;
-    checkpoint_istream in;
     size_type batchsize;
     char *top; // used only when adding to batches
     std::string batch_name(unsigned n) {
         return basename+boost::lexical_cast<std::string>(n);
     }
-    char *end() const {
+    char *end() {
         return top;
     }
-    char *begin() const {
+    char *begin() {
+        return memmap.data();
+    }
+    const char *end() const {
+        return top;
+    }
+    const char *begin() const {
         return memmap.data();
     }
     size_type capacity() const {
         return memmap.size();
     }
     void create_next_batch() {
+        DBP_VERBOSE(0);
         unsigned batch_no = batches.size();
+        DBPC2("creating batch",batch_no);
         char *base=(batch_no ? begin() : NULL);
         memmap.close();
         memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,base); // creates new file and memmaps
         if (base && base != begin())
             throw ios::failure("couldn't reopen memmap at same base address");
-        top = base;
+        top = begin();
         batches.push_back();
     }
     void load_batch(unsigned i) {
@@ -68,38 +75,103 @@ struct SwapBatch {
             return end;
     }
     }; */
-    void read(istream &in) {
-        checkpoint_istream is(in);
-        read(is);
+    size_t size() const {
+        size_t total_items=0;
+        for (typename Batches::const_iterator i=batches.begin(),end=batches.end();i!=end;++i)
+            total_items += i->size();
+        return total_items;
     }
-    void read(checkpoint_istream &is) {
+    /*
+    void read(istream &in) {
+        checkpoint_istream_control<fstream> transact;
+        typename checkpoint_istream_control<fstream>::istream_wrapper fin(*(fstream *)&in);
+        read(fin,transact);
+    }
+
+    template <class In,class InTransactor>
+    void read(In &is,InTransactor &transact) {
         char *endspace=begin()+capacity();
         batches.back().push_back();
         char *newtop;
+        transact.commit(deref(is));
         for (;;) {
-            newtop=batches.back().back().read(is,top,endspace);
-            if (!is) {
+            newtop=batches.back().back().read(deref(is),top,endspace);
+            if (!deref(is)) {
                 batches.back().pop_back();
                 return;
             }
             if (newtop) {
                 Assert(newtop <= endspace);
                 top=newtop;
-                break;
+                transact.commit(deref(is));
             } else {
-                if (begin() == end()) // already had a fresh batch but still failed
-                    throw ios::failure("an entire swap space couldn't hold the object being read.");
+                if (begin() == end()) // already had a completely empty batch but still not enough room
+                    throw ios::failure("an entire swap space segment couldn't hold the object being read.");
+                transact.revert(deref(is));
                 batches.back().pop_back();
                 create_next_batch();
             }
         }
     }
+    */
+    void read(ifstream &is) {
+        DBP_VERBOSE(0);
+        char *endspace=begin()+capacity();
+        batches.back().push_back();
+        char *newtop;
+        std::streampos pos;
+        pos=is.tellg();
+        for (;;) {
+            if (is.eof())
+                return;
+            BatchMember &newguy=batches.back().back();
+            newtop=newguy.read(is,top,endspace);
+
+            DBP((void*)newtop);
+            if (is.bad() || is.fail()) {
+                throw ios::failure("error reading item into swap batch.");
+            }
+            if (is.eof()) {
+                batches.back().pop_back();
+                return;
+            }
+            if (newtop)
+              DBP(newguy);
+            if (newtop) {
+                Assert(newtop <= endspace);
+                top=newtop;
+                pos=is.tellg();
+            } else {
+                if (begin() == end()) // already had a completely empty batch but still not enough room
+                    throw ios::failure("an entire swap space segment couldn't hold the object being read.");
+                is.seekg(pos);
+                batches.back().pop_back();
+                create_next_batch();
+            }
+        }
+    }
+
     template <class F>
     void enumerate(F f) {
+        DBP_VERBOSE(0);
         for (unsigned i=0,end=batches.size();i!=end;++i) {
+            DBPC2("enumerate batch ",i);
             load_batch(i);
             Batch &batch=batches[i];
-            for (typename Batch::iterator j=batch.begin(),e=batch.end();j!=end;++j) {
+            for (typename Batch::iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
+                 deref(f)(*j);
+            }
+        }
+    }
+
+    template <class F>
+    void enumerate(F f) const {
+        DBP_VERBOSE(0);
+        for (unsigned i=0,end=batches.size();i!=end;++i) {
+            DBPC2("enumerate batch ",i);
+            load_batch(i);
+            const Batch &batch=batches[i];
+            for (typename Batch::const_iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
                  deref(f)(*j);
             }
         }
@@ -110,20 +182,26 @@ struct SwapBatch {
     void enumerate_noload(F f) {
         for (unsigned i=0,end=batches.size();i!=end;++i) {
             Batch &batch=batches[i];
-            for (typename Batch::iterator j=batch.begin(),e=batch.end();j!=end;++j) {
+            for (typename Batch::iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
                  deref(f)(*j);
             }
         }
     }
 
-    void readall(istream &in) {
-        checkpoint_istream is(in);
-        while(is)
-            read(is);
+    template <class F>
+    void enumerate_noload(F f) const {
+        for (unsigned i=0,end=batches.size();i!=end;++i) {
+            const Batch &batch=batches[i];
+            for (typename Batch::const_iterator j=batch.begin(),endj=batch.end();j!=endj;++j) {
+                 deref(f)(*j);
+            }
+        }
     }
-    SwapBatch(istream &in, std::string basename_,size_type batchsize_) : basename(basename_),batchsize(batchsize_) {
+
+    SwapBatch(std::string basename_,size_type batchsize_) : basename(basename_),batchsize(batchsize_*sizeof(B)) {
         create_next_batch();
     }
+    ~SwapBatch() {}
 };
 
 #endif
