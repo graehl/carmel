@@ -33,9 +33,14 @@ bool test_extract_insert(S &s,C &c) {
   istringstream is(s);
   is >> c;
   ostringstream o;
-
+  o << c;
+  ostringstream o2;
+  o2 << s;
+  if (o.str() != o2.str())
+      return 0;
   if (!is.good())
       return 0;
+  return 1;
 }
 
 

@@ -1,6 +1,15 @@
 #ifndef _DEBUGPRINT_HPP
 #define _DEBUGPRINT_HPP
 
+/// In your clase, define a type: if you defined a
+///  print_on(ostream &) const
+///   method like genio.h: GENIO_print_on
+///  typedef void has_print_on;
+/// or if has two arg print_on(ostream &, Writer &w)
+///   typedef void has_print_on_writer;
+/// if you inherit from a class that has defined one of these, override it with some other type than void: typedef bool has_print_on_writer would disable
+
+
 #include "threadlocal.hpp"
 #include "myassert.h"
 #include <sstream>
@@ -22,6 +31,8 @@ struct DebugWriter
   }
 };
 
+
+// how this works: has_print_on<C>::type is either defined (iff C::has_print_on was typedefed to void), or undefined.  this allows us to exploit SFINAE (google) for function overloads depending on whether C::has_print_on was typedefed void ;)
 
 template <class C,class V=void>
 struct has_print_on;
@@ -115,6 +126,8 @@ void dbgout(ostream &o,const A a,typename enable_if<boost::is_pointer<A> >::type
   }
 }
 
+
+// what follows relies on SFINAE (google) to identify whether an object supports print_on (with or without a Writer param)
 template<class A>
 void dbgout(ostream &o,const A &a, typename has_print_on_plain<A>::type* dummy = 0) {
   deref(a).print_on(o);
@@ -177,7 +190,7 @@ void dbgout(ostream &o,const std::string &a) {
 #define DBPRE DBPS(__FILE__ "(");DBPS(LINESTR);DBPS("):")
 
 #define DBPOST DBPS("\n")
-#define BDBP(a) do { DBPS(" " #a "=_<");const char *s=dbgstr(a);DBPS(s);DBPS(">_"); } while(0)
+#define BDBP(a) do { DBPS(" " #a "=_<");DBPS(dbgstr(a));DBPS(">_"); } while(0)
 
 #define DBP(a) do { DBPRE; BDBP(a);DBPOST; } while(0)
 #define DBP2(a,b) do { DBPRE; BDBP(a); BDBP(b);DBPOST; } while(0)
@@ -214,9 +227,10 @@ THREADLOCAL std::string dbgstring;
 #endif
 
 
-
+#define constEmptyString ""
 template<class A>
 const char * dbgstr(const A &a) {
+//    std::ostringstream dbgbuf;
   dbgbuf.str(constEmptyString);
   //dbgbuf.clear(); // error flags
   dbgout(dbgbuf,a);
@@ -227,6 +241,7 @@ const char * dbgstr(const A &a) {
 
 template<class A,class W>
 const char * dbgstr(const A &a,W w) {
+//      std::ostringstream dbgbuf;
   dbgbuf.str(constEmptyString);
   //dbgbuf.clear(); // error flags
   dbgout(dbgbuf,a,w);
@@ -234,6 +249,8 @@ const char * dbgstr(const A &a,W w) {
   dbgstring=dbgbuf.str();
   return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
 }
+
+#undef constEmptyString
 
 template<class A>
 const char * dbgstrw(const A &a) {
