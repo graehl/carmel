@@ -2,6 +2,9 @@
 #include "fst.h"
 #include "node.h"
 
+const int WFST::perline_index = ios_base::xalloc();
+const int WFST::arcformat_index = ios_base::xalloc();
+
 Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
 {
   Assert(valid());

@@ -320,46 +320,54 @@ int WFST::readLegible(istream &istr)
   }
 }
 
-void WFST::writeLegible(ostream &ostr)
+void WFST::writeLegible(ostream &os)
 {
+  bool brief = (os.iword(arcformat_index) == BRIEF);
+  bool onearc = (os.iword(perline_index) == ARC);
   int i;
   const char *inLet, *outLet, *destState;
 
   if ( !valid() ) return;
   Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
-  ostr << stateNames[final];
+  os << stateNames[final];
   for (i = 0 ; i < numStates() ; i++) {
-    ostr << "\n(" << stateNames[i];
+    if (!onearc)
+		os << "\n(" << stateNames[i];
     List<Arc>::const_iterator end = states[i].arcs.end() ;
     for (List<Arc>::const_iterator a=states[i].arcs.begin() ; a !=end ; ++a ) {
+      if (onearc)
+		os << "\n(" << stateNames[i];
+
       if ( a->weight > 0 ) {
         destState = stateNames[a->dest];
-        ostr << " (" << destState;
-        if ( a->in || a->out ) { // omit *e* *e* labels
+        os << " (" << destState;
+        if ( !brief || a->in || a->out ) { // omit *e* *e* labels
                 inLet = (*in)[a->in];
                 outLet = (*out)[a->out];
-                ostr << " " << inLet;
-                if ( strcmp(inLet, outLet) )
-                        ostr << " " << outLet;
+                os << " " << inLet;
+                if ( !brief || strcmp(inLet, outLet) )
+                        os << " " << outLet;
         }
-        if ( a->weight != 1.0 )
-          ostr << " " << a->weight;
+		int pGroup = a->groupId;
+        if ( !brief || pGroup >= 0 || a->weight != 1.0 )
+          os << " " << a->weight;
         //      int *pGroup;
-        int pGroup;
+        
         //      if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
-        if ( (pGroup = a->groupId) >= 0 ) {
-          if ( a->weight == 1.0 )
-            ostr << " 1";
-          ostr << '!';
+        if ( pGroup >= 0 ) {
+          os << '!';
           if ( pGroup > 0)
-            ostr << pGroup;
+            os << pGroup;
         }
-        ostr << ")";
+        os << ")";
+		if (onearc)
+		  os << ")";
       }
     }
-    ostr << ")";
+	if (!onearc)
+      os << ")";
   }
-  ostr << "\n";
+  os << "\n";
 }
 
 void WFST::listAlphabet(ostream &ostr, int output)

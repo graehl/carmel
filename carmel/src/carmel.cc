@@ -13,25 +13,47 @@
 
 #define VERSION "2.01"  ;
 
-		  static void printSeq(Alphabet *a,int *seq,int maxSize) {
-			
-			for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
-			if (i>0)
-				cout << ' ';
-				  
-					cout << (*a)[seq[i]];
-				 
-			}
-		  }
+static void setOutputFormat(bool *flags,ostream *fstout) {
+	    if ( flags['B'] ) 
+			*fstout << Weight::out_log10;
+		else
+			*fstout << Weight::out_ln;
+		if ( flags['Z'] ) 
+			*fstout << Weight::out_always_log;
+		else
+			*fstout << Weight::out_variable;
+		if ( flags['D'] )
+			*fstout << Weight::out_always_real;
+		if ( flags['J'] )
+			*fstout << WFST::out_arc_full;
+		else
+			*fstout << WFST::out_arc_brief;
+		if ( flags['H'] )
+			*fstout << WFST::out_arc_per_line;
+		else
+			*fstout << WFST::out_state_per_line;
 
-template <class T> 
+}
+
+static void printSeq(Alphabet *a,int *seq,int maxSize) {
+
+  for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
+    if (i>0)
+      cout << ' ';
+
+    cout << (*a)[seq[i]];
+
+  }
+}
+
+template <class T>
 void readParam(T *t, char *from, char sw) {
-        istringstream is(from);
-        is >> *t;
-        if ( is.fail() ) {
-          std::cerr << "Expected a number after -" << sw << " switch, (instead got \'" << from << "\' - as a number, " << *t << ").\n";
-          exit(-1);		 
-		}
+  istringstream is(from);
+  is >> *t;
+  if ( is.fail() ) {
+    std::cerr << "Expected a number after -" << sw << " switch, (instead got \'" << from << "\' - as a number, " << *t << ").\n";
+    exit(-1);
+  }
 }
 
 int isSpecial(const char* psz) {
@@ -56,33 +78,33 @@ void outWithoutQuotes(const char *str, ostream &out) {
 }
 
 
- void printPath(bool *flags,const List<PathArc> *pli) {
-		  Weight w = 1.0;
-          const char * outSym;
-          for (List<PathArc>::const_iterator li=pli->begin(); li != pli->end(); ++li ) {
+void printPath(bool *flags,const List<PathArc> *pli) {
+  Weight w = 1.0;
+  const char * outSym;
+  for (List<PathArc>::const_iterator li=pli->begin(); li != pli->end(); ++li ) {
 
-            if ( flags['O'] || flags['I'] ) {
-              if ( flags['O'] )
-                outSym = li->out;
-              else
-                outSym = li->in;
-              if ( !(flags['E'] && isSpecial(outSym)) ) {
-                if ( flags['Q'] )
-                  outWithoutQuotes(outSym, cout);
-                else
-                  cout << outSym;
-                cout << " ";
-              }
-            } else {
-              cout << *li << " ";
-            }
-            w = w * li->weight;
-          }
-          if ( !flags['W'] )
-            cout << w;
-          cout << "\n";
-        
- }
+    if ( flags['O'] || flags['I'] ) {
+      if ( flags['O'] )
+        outSym = li->out;
+      else
+        outSym = li->in;
+      if ( !(flags['E'] && isSpecial(outSym)) ) {
+        if ( flags['Q'] )
+          outWithoutQuotes(outSym, cout);
+        else
+          cout << outSym;
+        cout << " ";
+      }
+    } else {
+      cout << *li << " ";
+    }
+    w = w * li->weight;
+  }
+  if ( !flags['W'] )
+    cout << w;
+  cout << "\n";
+
+}
 
 
 
@@ -133,8 +155,8 @@ main(int argc, char *argv[]){
       while ( *(++pc) ) {
         if ( *pc == 'k' )
           kPaths = -1;
-		else if ( *pc == 'R' )
-			seedFlag=true;
+        else if ( *pc == 'R' )
+          seedFlag=true;
         else if ( *pc == 'F' )
           fstout = NULL;
         else if ( *pc == 'T' )
@@ -153,49 +175,49 @@ main(int argc, char *argv[]){
           maxGenArcs = -1;
         else if ( *pc == 'N' )
           labelFlag = 1;
-		else if ( *pc == 'j' )
-			norm_method = WFST::JOINT;
-		else if ( *pc == 'u' )
-			norm_method = WFST::NONE;
+        else if ( *pc == 'j' )
+          norm_method = WFST::JOINT;
+        else if ( *pc == 'u' )
+          norm_method = WFST::NONE;
         flags[*pc] = 1;
-		
+
       }
     else
       if ( labelFlag ) {
         labelFlag = 0;
-		readParam(&labelStart,argv[i],'N');
-	  } else if (seedFlag) {
-		  seedFlag=false;
-		readParam(&seed,argv[i],'R');
-	  } else if ( kPaths == -1 ) {
-		readParam(&kPaths,argv[i],'k');
+        readParam(&labelStart,argv[i],'N');
+      } else if (seedFlag) {
+        seedFlag=false;
+        readParam(&seed,argv[i],'R');
+      } else if ( kPaths == -1 ) {
+        readParam(&kPaths,argv[i],'k');
         if ( kPaths < 1 )
           kPaths = 1;
       } else if ( nGenerate == -1 ) {
-		readParam(&nGenerate,argv[i],'g');
+        readParam(&nGenerate,argv[i],'g');
         if ( nGenerate < 1 )
           nGenerate = 1;
       } else if ( maxTrainIter == -1 ) {
-		readParam(&maxTrainIter,argv[i],'M');
+        readParam(&maxTrainIter,argv[i],'M');
         if ( maxTrainIter < 1 )
           maxTrainIter = 1;
       } else if ( maxGenArcs == -1 ) {
-		readParam(&maxGenArcs,argv[i],'L');
+        readParam(&maxGenArcs,argv[i],'L');
         if ( maxGenArcs < 0 )
           maxGenArcs = 0;
       } else if ( thresh == -1 ) {
-		readParam(&thresh,argv[i],'T');
+        readParam(&thresh,argv[i],'T');
         if ( thresh < 0 )
           thresh = 0;
       } else if ( convergeFlag ) {
         convergeFlag = 0;
-		readParam(&converge,argv[i],'e');
+        readParam(&converge,argv[i],'e');
       } else if ( floorFlag ) {
         floorFlag = 0;
-		readParam(&smoothFloor,argv[i],'f');
+        readParam(&smoothFloor,argv[i],'f');
       } else if ( pruneFlag ) {
         pruneFlag = 0;
-		readParam(&prune,argv[i],'p');
+        readParam(&prune,argv[i],'p');
       } else if ( fstout == NULL ) {
         fstout = new ofstream(argv[i]);
         if ( !*fstout ) {
@@ -206,6 +228,7 @@ main(int argc, char *argv[]){
         parm[nParms++] = argv[i];
   }
   srand(seed);
+  setOutputFormat(flags,&cout);
   WFST::setIndexThreshold(thresh);
   if ( flags['h'] ) {
     WFSTformatHelp();
@@ -253,29 +276,29 @@ main(int argc, char *argv[]){
     return -12;
   }
   for ( i = 0 ; i < nParms ; ++i ) {
-//    if(parm[i][0]=='-' && parm[i][1] == '\0')
-//              files[i] = &cin;
-//      else
-                files[i] = new ifstream(parm[i]);
+    //    if(parm[i][0]=='-' && parm[i][1] == '\0')
+    //              files[i] = &cin;
+    //      else
+    files[i] = new ifstream(parm[i]);
     if ( !*files[i] ) {
       std::cerr << "File " << parm[i] << " could not be opened for input.\n";
       //for ( j = 0 ; j < i ; ++j )
-                //delete files[i];
+      //delete files[i];
       return -9;
     }
   }
   if ( flags['S'] ) {
     flags['b'] = flags['x'] = flags['y'] = 0;
     kPaths = 0;
-        if (nInputs > 1) {
-        --nInputs;
-    if ( flags['r'] )
-      pairStream = inputs[nInputs];
-    else {
-      pairStream = inputs[0];
-      ++filenames;
-      ++inputs;
-        }
+    if (nInputs > 1) {
+      --nInputs;
+      if ( flags['r'] )
+        pairStream = inputs[nInputs];
+      else {
+        pairStream = inputs[0];
+        ++filenames;
+        ++inputs;
+      }
     }
     if ( flags['s'] )
       ++files;
@@ -322,7 +345,7 @@ main(int argc, char *argv[]){
   }
 
   for ( ; ; ) {
-      if (nTarget != -1) { // if to construct a finite state from input
+    if (nTarget != -1) { // if to construct a finite state from input
       if ( !*inputs[nTarget] )
         break;
       *inputs[nTarget] >> ws;
@@ -458,16 +481,16 @@ main(int argc, char *argv[]){
         List <List<PathArc> > *bestPaths = result->bestPaths(kPaths);
         Assert(bestPaths);
         for ( List<List<PathArc> >::const_iterator pli=bestPaths->begin()  ; pli != bestPaths->end(); ++pli, ++nGoodPaths )
-			printPath(flags,&*pli);
+          printPath(flags,&*pli);
         delete bestPaths;
       }
-/*      for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
-        if ( !flags['W'] )
-          cout << 0;
-        cout << "\n";
-		
-      }
-	  */
+      /*      for ( int fill = 0 ; fill < kPaths - nGoodPaths ; ++fill ) {
+              if ( !flags['W'] )
+              cout << 0;
+              cout << "\n";
+
+              }
+      */
     } else if ( flags['x'] ) {
       result->listAlphabet(cout, 0);
     } else if ( flags['y'] ) {
@@ -481,73 +504,73 @@ main(int argc, char *argv[]){
       flags['S'] = 0;
     if ( !flags['b'] ) {
       if ( flags['S'] ) {
-                if (pairStream) {
-        for ( ; ; ) {
-
-          getline(*pairStream,buf);
-          if ( !*pairStream )
-            break;
-          List<int> *inSeq = result->symbolList(buf.c_str(), 0);
-          if ( !inSeq ) {
-            std::cerr << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
-            return -22;
-          }
-          getline(*pairStream,buf);
-          if ( !*pairStream )
-            break;
-          List<int> *outSeq = result->symbolList(buf.c_str(), 1);
-          if ( !outSeq ) {
-            std::cerr << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
-            return -21;
-          }
-          cout << result->sumOfAllPaths(*inSeq, *outSeq) << '\n';
-          delete inSeq;
-          delete outSeq;
-        }
-                } else {
-                        List<int> empty_list;
-                        cout << result->sumOfAllPaths(empty_list, empty_list) << '\n';
-                }
-      } else if ( flags['t'] ) {
-        float weight;
-        result->trainBegin(norm_method);
         if (pairStream) {
-        for ( ; ; ) {
-          weight = 1;
-          getline(*pairStream,buf);
-          if ( !*pairStream )
-            break;
-          if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
-            istringstream w(buf.c_str());
-            w >> weight;
-            if ( w.fail() ) {
-              std::cerr << "Bad weight: " << buf << '\n';
-              continue;
+          for ( ; ; ) {
+
+            getline(*pairStream,buf);
+            if ( !*pairStream )
+              break;
+            List<int> *inSeq = result->symbolList(buf.c_str(), 0);
+            if ( !inSeq ) {
+              std::cerr << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
+              return -22;
             }
             getline(*pairStream,buf);
             if ( !*pairStream )
               break;
+            List<int> *outSeq = result->symbolList(buf.c_str(), 1);
+            if ( !outSeq ) {
+              std::cerr << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
+              return -21;
+            }
+            cout << result->sumOfAllPaths(*inSeq, *outSeq) << '\n';
+            delete inSeq;
+            delete outSeq;
           }
-          List<int> *inSeq = result->symbolList(buf.c_str(), 0);
-          if ( !inSeq ) {
-            std::cerr << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
-            return -22;
-          }
-          getline(*pairStream,buf);
-          if ( !*pairStream )
-            break;
-          List<int> *outSeq = result->symbolList(buf.c_str(), 1);
-          if ( !outSeq ) {
-            std::cerr << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
-            return -21;
-          }
-          result->trainExample(*inSeq, *outSeq, weight);
-          delete inSeq;
-          delete outSeq;
-        }
         } else {
-                List<int> empty_list;
-                result->trainExample(empty_list, empty_list, 1.0);
+          List<int> empty_list;
+          cout << result->sumOfAllPaths(empty_list, empty_list) << '\n';
+        }
+      } else if ( flags['t'] ) {
+        float weight;
+        result->trainBegin(norm_method);
+        if (pairStream) {
+          for ( ; ; ) {
+            weight = 1;
+            getline(*pairStream,buf);
+            if ( !*pairStream )
+              break;
+            if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
+              istringstream w(buf.c_str());
+              w >> weight;
+              if ( w.fail() ) {
+                std::cerr << "Bad weight: " << buf << '\n';
+                continue;
+              }
+              getline(*pairStream,buf);
+              if ( !*pairStream )
+                break;
+            }
+            List<int> *inSeq = result->symbolList(buf.c_str(), 0);
+            if ( !inSeq ) {
+              std::cerr << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
+              return -22;
+            }
+            getline(*pairStream,buf);
+            if ( !*pairStream )
+              break;
+            List<int> *outSeq = result->symbolList(buf.c_str(), 1);
+            if ( !outSeq ) {
+              std::cerr << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
+              return -21;
+            }
+            result->trainExample(*inSeq, *outSeq, weight);
+            delete inSeq;
+            delete outSeq;
+          }
+        } else {
+          List<int> empty_list;
+          result->trainExample(empty_list, empty_list, 1.0);
         }
         result->trainFinish(converge, smoothFloor, maxTrainIter, norm_method);
         if ( flags['p'] ) {
@@ -558,45 +581,47 @@ main(int argc, char *argv[]){
       } else if ( nGenerate > 0 ) {
         if ( flags['d'] )
           result->reduce();
-//        if ( !flags['n'] )
-  //        result->normalize(norm_method);
-		if ( maxGenArcs == 0 )
-			maxGenArcs = DEFAULT_MAX_GEN_ARCS;
-		if ( flags['G'] ) {
-			for (int i=0; i<nGenerate; ) {
-				List<PathArc> l;
-				if (result->randomPath(&l) != -1) {
-					printPath(flags,&l);
-					++i;
-				}
-			}
-		} else {
-        int maxSize = maxGenArcs+1;
-        int *inSeq = new int[maxSize];
-        int *outSeq = new int[maxSize];
-        for ( int s = 0 ; s < nGenerate ; ++s ) {
-			
-          while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
-		  printSeq(result->in,inSeq,maxGenArcs);
-		  cout << '\n';
-		  printSeq(result->out,outSeq,maxGenArcs);
-		  cout << '\n';
-          /*for ( i = 0 ; i < maxSize ; ) {
-            if (outSeq[i] > 0)
-				cout << result->outLetter(outSeq[i]);
-			++i;
-            if ( i < maxSize && outSeq[i] > 0 )
-              cout << ' ';
+        //        if ( !flags['n'] )
+        //        result->normalize(norm_method);
+        if ( maxGenArcs == 0 )
+          maxGenArcs = DEFAULT_MAX_GEN_ARCS;
+        if ( flags['G'] ) {
+          for (int i=0; i<nGenerate; ) {
+            List<PathArc> l;
+            if (result->randomPath(&l) != -1) {
+              printPath(flags,&l);
+              ++i;
+            }
           }
-          cout << '\n';
-		  */
+        } else {
+          int maxSize = maxGenArcs+1;
+          int *inSeq = new int[maxSize];
+          int *outSeq = new int[maxSize];
+          for ( int s = 0 ; s < nGenerate ; ++s ) {
+
+            while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
+            printSeq(result->in,inSeq,maxGenArcs);
+            cout << '\n';
+            printSeq(result->out,outSeq,maxGenArcs);
+            cout << '\n';
+            /*for ( i = 0 ; i < maxSize ; ) {
+              if (outSeq[i] > 0)
+              cout << result->outLetter(outSeq[i]);
+              ++i;
+              if ( i < maxSize && outSeq[i] > 0 )
+              cout << ' ';
+              }
+              cout << '\n';
+            */
+          }
+          delete[] inSeq;
+          delete[] outSeq;
         }
-        delete[] inSeq;
-        delete[] outSeq;
-		}
       }
-      if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] )
+	  if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
+		setOutputFormat(flags,fstout);
         *fstout << *result;
+	  }
       break;
     }
   nextInput:
@@ -698,17 +723,17 @@ void usageHelp(void)
   cout << "ansducer to stdout\n-y\t\tlist only the output alphabet of the t";
   cout << "ransducer to stdout\n-c\t\tlist only statistics on the transduce";
   cout << "r to stdout\n-F filename\twrite the final transducer to a file (";
-  cout << "and not stdout), except \n\t\twhen -b is used\n-v\t\tinvert the ";
+  cout << "in lieu of stdout)\n-v\t\tinvert the ";
   cout << "resulting transducer by swapping the input and\n\t\toutput symbo";
   cout << "ls \n-d\t\tdo not eliminate dead-end states from all transducers";
   cout << " created\n-C\t\tconsolidate arcs with same source, destination, ";
   cout << "input and\n\t\toutput, with a total weight equal to the sum (cla";
   cout << "mped to a\n\t\tmaximum weight of one)\n-p w\t\tprune (discard) a";
   cout << "ll arcs with weight less than w\n-g n\t\tstochastically generate";
-  cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform probability, then using the weights to choose an output symbol and destination) from the in";
+  cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
   cout << "itial state to the final state\n\t\toutput is in the same for";
-  cout << "m accepted in -t and -S\n-G n\t\tstochastically generate n paths by randomly picking an arc leaving each state\n\t\tuntil the final state is reached.  same output format as -k best paths\n\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
-  cout << "airs with -g or -G, give up if final state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
+  cout << "m accepted in -t and -S.\n\t\tTraining a transducer on its own -g output should be a no-op.\n-G n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
+  cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
   cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
   cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
   cout << " = 128)\n-N n\t\tassign each arc in the result transducer a uniq";
@@ -735,7 +760,15 @@ void usageHelp(void)
   cout << "fied, omit special symbols (beginning and\n\t\tending with an as";
   cout << "terisk (e.g. \"*e*\"))\n\t-Q\tif -I or -O is specified, omit out";
   cout << "ermost quotes of symbol names\n\t-W\tdo not show weights for pat";
-  cout << "hs\n\nconfused?  think you\'ve found a bug?  if all else fails, ";
+  cout << "hs";
+  cout << "\n\nWeight output format switches (by default, small/large weights are written as logarithms):";
+  cout << "\n\t-B\tWrite weights as their base 10 log (default is ln, e.g.\n\t\t'-5ln' signifies e^(-5))";
+  cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln', except for 0, which is written simply as '0'";
+  cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";
+  cout << "\n\nTransducer output format switches:";
+  cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";
+  cout << "\n\t-J\tDon't omit output=input or Weight=1";
+  cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
   cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 }
 
