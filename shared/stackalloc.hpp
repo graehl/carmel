@@ -15,14 +15,10 @@
 struct StackAlloc
 {
     // throws when allocation fails (I don't let you check ahead of time)
-#if 1
     struct Overflow : public VerboseException
     {
         VERBOSE_EXCEPTION_WRAP(Overflow)
     };
-#else
-    typedef std::exception Overflow;
-#endif
 
     void *top; // assuming alignment, next thing to be allocated starts here
     void *end; // if top reaches or exceeds end, alloc fails
