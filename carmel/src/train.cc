@@ -81,15 +81,16 @@ void WFST::trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter,WFST
   trn->smoothFloor = smoothFloor;
   int giveUp = 0;
   Weight lastChange = 0;
+  Weight lastPerplexity(Weight::HUGE_FLOAT);
   for ( ; ; ) {
     ++giveUp;
     if ( giveUp > maxTrainIter ) {
       std::cerr << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << epsilon << " was met - last change was " << lastChange << "\n";
       break;
     }
-	lastChange = train(giveUp,method);
+    lastChange = train(giveUp,method);
     std::cerr << "Training iteration " << giveUp << ": largest change was " << lastChange << "\n";
-	if ( lastChange <= epsilon ) {
+    if ( lastChange <= epsilon ) {
       std::cerr << "Convergence criteria of " << epsilon << " was met after " << giveUp << " iterations.\n";
       break;
     }

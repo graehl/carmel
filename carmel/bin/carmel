@@ -1,4 +1,8 @@
 #!/bin/sh
 . /home/graehl/isd/env.sh
-`dirname $0`/carmel.$ARCH $*
+c=`dirname $0`/carmel.$ARCH
+#if [ $ARCH = linux ]; then
+c=$c.static
+#fi
+$c $*
 
