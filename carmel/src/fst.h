@@ -26,7 +26,24 @@ ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
 
 
 class WFST {
- public:
+private:
+ enum { STATE,ARC } PerLine;
+ enum { BRIEF,FULL } ArcFormat;
+static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
+static const int arcformat_index; // handle for OutThresh
+
+public:
+
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_state_per_line(std::basic_ostream<A,B>& os) { os.iword(perline_index) = STATE; return os; }
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_arc_per_line(std::basic_ostream<A,B>& os) { os.iword(perline_index) = ARC; return os; }
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_arc_brief(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = BRIEF; return os; }
+template<class A,class B> static inline std::basic_ostream<A,B>&
+out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; return os; }
+
+
  static inline float randomFloat()       // in range [0, 1)
 {
   return rand() * (1.f / (RAND_MAX+1.f));
