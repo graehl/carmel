@@ -96,25 +96,18 @@ inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream
     out << "... " << context << std::endl << "   ^" << std::endl;
 }
 
+#define GEN_IO_(s,io,sentrytype) do {                                             \
+        typename sentrytype,Traits>::sentry sentry(s);                        \
+        if (sentry) {                                                 \
+            std::ios_base::iostate err = io; \
+            if (err) s.setstate(err);        \
+        } } while(0)
+
 // uses (template) charT, Traits
 // s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print_on)
-#define GEN_EXTRACTOR(s,io) do { \
-        if (s.good()) {                                                 \
-            std::ios_base::iostate err = std::ios_base::goodbit;        \
-            typename std::basic_istream<charT, Traits>::sentry sentry(s); \
-            if (sentry) { err = io; }                                   \
-            if (err) s.setstate(err);                                   \
-        } } while(0)
-
+#define GEN_EXTRACTOR(s,io) GEN_IO_(s,io,std::basic_istream<charT)
+#define GEN_INSERTER(s,io) GEN_IO_(s,io,std::basic_ostream<charT)
 // only difference is ostream sentry not istream sentry
-#define GEN_INSERTER(s,print_on) do { \
-        if (s.good()) {                                                 \
-            std::ios_base::iostate err = std::ios_base::goodbit;        \
-            typename std::basic_ostream<charT, Traits>::sentry sentry(s); \
-            if (sentry) { err = print_on; }                                   \
-            if (err) s.setstate(err);                                   \
-        } } while(0)
-
 
 #define GENIO_FAIL(s) do { s.setstate(GENIOBAD); }while(0)
 

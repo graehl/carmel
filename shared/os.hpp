@@ -50,7 +50,7 @@ std::string error_string(Error err) {
             (LPTSTR) &lpMsgBuf,
             0, NULL ) == 0)
         throw std::runtime_error("couldn't generate Windows error message string");
-    std::string ret((LPTSTR) &lpMsgBuf);
+    std::string ret((LPTSTR) lpMsgBuf);
     ::LocalFree(lpMsgBuf);
     return ret;
 #else
