@@ -245,7 +245,7 @@ public:
             handle_ = ::open(path.c_str(),flags,S_IRWXU) ; //|
 
             if (handle_ == -1)
-                throw ios::failure(string(cCouldn't open ").append(path).append(": ").append(last_error_string()));
+                throw ios::failure(string("couldn't open ").append(path).append(": ").append(last_error_string()));
 
             //--------------Set file size (if create)---------------------------------//
 
