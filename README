@@ -2,5 +2,22 @@ tt: tree transducer (and derivation forests EM training)
 carmel: weighted finite state transducer toolkit (and k-best graph paths)
 shared: generic routines used by both
 
-make sure the environment variable ARCH is set to something (cygwin,linux,solaris)
-use GNU make (unfortunately, version 3.80 or greater is required), and find the binaries in bin/$ARCH
+Make sure the environment variable ARCH is set to something
+(cygwin,linux,solaris)
+
+Use GNU make (unfortunately, version 3.81 or greater is required due to some
+bugs with earlier versions), and find the binaries in bin/$ARCH
+
+Also requires Boost (http://boost.org) in your standard include directory, or
+edit shared/graehl.mk BOOST= if you can't put it there
+
+You'll need to extract
+http://boost-sandbox.sourceforge.net/program_options/program_options_postreview.tar.gz
+into your boost directory as well (although it will be included in future
+versions of Boost.)
+
+cd tt (or cd carmel)
+export ARCH=linux (or macosx, or cygwin, or linux, or whatever)
+make depend
+make all
+
