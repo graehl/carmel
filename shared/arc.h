@@ -28,11 +28,13 @@ struct UnArc {
   bool operator == (const UnArc& r) const {
     return in == r.in && out == r.out && dest == r.dest;
   }
-  int hash() const
+  size_t hash() const
   {
-    return (in * 235479241 + out * 67913 + dest) * 2654435767U;
+    return uint_hash((in * 193 + out * 6151 + dest));
   }
 };
+
+/*
 HASHNS_B
 template<>
 struct hash<UnArc>
@@ -42,4 +44,9 @@ struct hash<UnArc>
   }
 };
 HASHNS_E
+*/
+
+BEGIN_HASH(UnArc) {
+  return x.hash();
+} END_HASH
 #endif 

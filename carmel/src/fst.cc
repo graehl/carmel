@@ -104,7 +104,7 @@ namespace WFST_impl {
           Ci = state->index->begin();
     }
   public:
-    NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state((State *)wfst_.states), end(state+wfst_.numStates()), method(meth) { beginState(); }
+    NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state(wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
     bool moreGroups() { return state != end; }
     template <class charT, class Traits>
     std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const {
@@ -379,7 +379,7 @@ void WFST::invert()
   Assert(valid());
   int temp;
   in->swap(*out);
-  for ( int s = 0 ; s < states.size(); ++s ) {
+  for ( unsigned int s = 0 ; s < states.size(); ++s ) {
     for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
       //XXX should use SWAP here instead?
       temp = a->in;
@@ -625,7 +625,7 @@ void WFST::removeMarkedStates(bool marked[])
   }
   stateNames.removeMarked(marked, oldToNew);
   states.removeMarked(marked);
-  for ( i = 0 ; i < states.size() ; ++i ) {
+  for ( unsigned i = 0 ; i < states.size() ; ++i ) {
     states[i].flush();
     states[i].renumberDestinations(oldToNew);
   }
@@ -647,36 +647,3 @@ ostream & operator << (ostream &o, WFST &w) {
   w.writeLegible(o); //- Yaser  07-20-2000
   return o;
 }
-
-
-int WFST::indexThreshold = 32;
-int TrioKey::aMax = 0;
-int TrioKey::bMax = 0;
-
-#ifdef HASHCUSTOMNEW
-
-const int HashEntry<IOPair,List<DWPair> >::newBlocksize = 64;
-HashEntry<IOPair,List<DWPair> > *HashEntry<IOPair,List<DWPair> >::freeList = NULL;
-
-const int HashEntry<StringKey, int>::newBlocksize = 64;
-HashEntry<StringKey, int> *HashEntry<StringKey, int>::freeList = NULL;
-
-const int HashEntry<TrioKey,int>::newBlocksize = 64;
-HashEntry<TrioKey,int> *HashEntry<TrioKey,int>::freeList = NULL;
-
-const int HashEntry<UnArc,Weight *>::newBlocksize = 64;
-HashEntry<UnArc,Weight *> *HashEntry<UnArc,Weight *>::freeList = NULL;
-
-const int HashEntry<IntKey,List<HalfArc> >::newBlocksize = 64;
-HashEntry<IntKey,List<HalfArc> > *HashEntry<IntKey,List<HalfArc> >::freeList = NULL;
-
-const int HashEntry<IntKey, int >::newBlocksize = 64;
-HashEntry<IntKey,int > *HashEntry<IntKey,int>::freeList = NULL;
-
-const int HashEntry<HalfArcState, int >::newBlocksize = 64;
-HashEntry<HalfArcState,int > *HashEntry<HalfArcState,int>::freeList = NULL;
-
-const int HashEntry<IntKey, Weight >::newBlocksize = 64;
-HashEntry<IntKey, Weight > *HashEntry<IntKey, Weight>::freeList = NULL;
-
-#endif

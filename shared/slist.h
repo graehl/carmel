@@ -1,16 +1,20 @@
 // originally from http://pegasus.rutgers.edu/~elflord/cpp/list_howto/ erase_iterator changes to allow insert and erase (not just _after) by Jonathan
 
 #include <iterator>
-template <class T>
-class slist
-{
-  struct Node
+#include <memory>
+
+template <class T>  struct _slist_Node
   {
-    Node(const T& x,Node* y = 0):m_data(x),m_next(y){}
+    _slist_Node(const T& x,_slist_Node* y = 0):m_data(x),m_next(y){}
     T m_data;
-    Node* m_next;
+    _slist_Node* m_next;
   };
 
+
+template <class T,class Alloc=std::allocator<_slist_Node<T> > > 
+class slist : private Alloc::rebind<_slist_Node<T> >::other
+{
+  typedef _slist_Node<T> Node;
   Node* m_head;
  public:
   typedef T value_type;
@@ -118,16 +122,6 @@ class slist
 	{ 
 	  m_rep=x.m_rep; return *this; 
 	}
-      inline erase_iterator& erase_and_advance() {
-	Node *killme = *m_rep;
-	*m_rep = killme->m_next;
-	delete killme;
-	return *this;			
-      }
-      inline erase_iterator& insert(const T& it) {		
-	*m_rep = NEW Node(it,*m_rep);
-	return *this;
-      }
       inline erase_iterator& operator++()
 	{ 
 	  m_rep = &(*m_rep)->m_next; return *this; 
@@ -165,7 +159,7 @@ class slist
 	push_front(*i);
       reverse();
     }
-  slist(const T &it) : m_head(NEW Node(it,0)) {}
+  slist(const T &it) : m_head(allocate(1)) {PLACEMENT_NEW(m_head) Node(it,0);}
   void reverse()
     {
       Node* p = 0; Node* i = m_head; Node* n;
@@ -195,10 +189,10 @@ class slist
 
 
 
-  inline void push_front(const T&x)
+  inline void push_front(const T& x)
     {
-      Node* tmp = NEW Node(x);
-      tmp->m_next = m_head;
+      Node* tmp = allocate(1);
+	  PLACEMENT_NEW(tmp)Node(x,m_head);      
       m_head = tmp;
     }
   inline void pop_front()
@@ -206,7 +200,7 @@ class slist
       if (m_head)
 	{
 	  Node* newhead = m_head->m_next;
-	  delete m_head;
+	  deallocate(m_head,1);
 	  m_head = newhead;
 	}
     }
@@ -218,7 +212,8 @@ class slist
   inline val_iterator val_begin() { return val_iterator(m_head); }
   inline val_iterator val_end() { return val_iterator(); }
 
-  //	inline iterator erase_begin() { return begin(); }
+  // defined in list.h instead
+  	//inline iterator erase_begin() { return begin(); }
   //inline iterator erase_end() { return end(); }
   inline erase_iterator begin() { return erase_iterator(&m_head); }
   inline erase_iterator end() { return erase_iterator(); }
@@ -229,26 +224,31 @@ class slist
 
 
   inline erase_iterator& erase(erase_iterator &e) {
-    e.erase_and_advance();
-    return e;
+	Node *killme = *e.m_rep;
+	*e.m_rep = killme->m_next;
+	deallocate(killme,1);
+	return e;			
   }
 
-  inline erase_iterator& insert(erase_iterator &e,const T& it) {
-    return e.insert(it);
-    return e;
-  }
+  inline erase_iterator& insert(erase_iterator &e,const T& it) { // moves iterator back to inserted thing!
+	Node *prev=allocate(1);
+	PLACEMENT_NEW (prev)Node(it,*e.m_rep);
+	*e.m_rep=prev;
+	return e;
+   }
 
   void erase_after (iterator& x)
     {
       Node* tmp = x.m_rep->m_next;
       if (x.m_rep->m_next) 
 	x.m_rep->m_next = x.m_rep->m_next->m_next;
-      delete tmp;
+      deallocate(tmp,1);
     }
 
   void insert_after (iterator& x, const T& y)
     {
-      Node* tmp = NEW Node(y,x.m_rep->m_next);
+      Node* tmp = allocate(1);
+	  PLACEMENT_NEW(tmp) Node(y,x.m_rep->m_next);
       x.m_rep->m_next = tmp;
     }
 };

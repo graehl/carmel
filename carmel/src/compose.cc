@@ -2,6 +2,9 @@
 #include "compose.h"
 #include "fst.h"
 
+int WFST::indexThreshold = 32;
+unsigned int TrioKey::aMax = 0;
+unsigned int TrioKey::bMax = 0;
 
 static void makeTrioName(char *bufP, const char *aName, const char *bName, int filter)
 {
