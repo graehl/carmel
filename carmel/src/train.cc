@@ -87,6 +87,26 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
                   a } } } while(0)
 
 
+struct WeightAccum {
+	Weight sum;
+	int n_nonzero;
+	int n;
+	void operator ()(Weight *w) {
+		w->NaNCheck();
+		sum += *w;
+		++n;
+		if (w->isPositive())
+			++n_nonzero;
+	}
+	WeightAccum() {
+		reset();
+	}
+	void reset() {
+		n=n_nonzero=0;
+		sum.setZero();
+	}
+};
+
 Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod method, int ran_restarts)
 {
   Assert(trn);
@@ -131,8 +151,24 @@ while(1) { // random restarts
 #ifdef DEBUGTRAIN
     Config::debug() << "Starting iteration: " << train_iter << '\n';
 #endif
+//#ifdef DEBUG
+#define DWSTAT(a) \
+	do {Config::debug() << a; \
+		    WeightAccum a_w;\
+				 WeightAccum a_c;\
+				 EACHDW(\
+					a_w(&(dw->weight()));\
+				  a_c(&(dw->counts));\
+					);\
+					Config::debug() << "(sum,n,nonzero): weights=("<<a_w.sum<<","<<a_w.n<<","<<a_w.n_nonzero<<")" << " counts=("<<a_c.sum<<","<<a_c.n<<","<<a_c.n_nonzero<<")\n";\
+				} while(0)
+//#else
+//#define DWSTAT
+//#endif
 
+		DWSTAT("Before estimate");
     Weight newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
+		DWSTAT("After estimate");
     Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): model-perplexity=" << newPerplexity;
     if ( newPerplexity < bestPerplexity ) {
       Config::log() << " (new best)";
@@ -153,7 +189,7 @@ while(1) { // random restarts
       Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
       if ( learning_rate > 1) {
         EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap EM/scaled
-        Weight em_pp=train_estimate();
+				Weight em_pp=train_estimate();
 
         Config::log() << "unscaled-EM-perplexity=" << em_pp;
         EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap back
@@ -186,8 +222,9 @@ while(1) { // random restarts
 			train_prune();
 			very_first_time=false;
 		}
+		DWSTAT("Before maximize");
     lastChange = train_maximize(method,learning_rate);
-
+		DWSTAT("After maximize");
     if (lastChange <= converge_arc_delta ) {
       Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << train_iter << " iterations.\n";
       break;
@@ -607,10 +644,12 @@ int pGroup;
   DUMPDW;
 #endif
   EACHDW (
-          if ( !isLocked((dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
+          if ( !isLocked((dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight does not change. Otherwise update as follows
             //Weight &w=dw->weight();
             dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
             //Weight &counts = dw->counts;
+						NANCHECK(dw->counts);
+						NANCHECK(dw->prior_counts);
             dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
 						NANCHECK(dw->weight());
 						NANCHECK(dw->scratch);
@@ -620,7 +659,9 @@ int pGroup;
   Config::debug() << "\nWeights before normalization\n";
   DUMPDW;
 #endif
+	DWSTAT("Before normalize");
   normalize(method);
+	DWSTAT("After normalize");
 #ifdef DEBUG_ADAPTIVE_EM
   //normalize(method);
 #endif
@@ -653,13 +694,7 @@ int pGroup;
 
   EACHDW(
          if (!isLocked((dw->arc)->groupId)) {
-           if (dw->weight() > dw->scratch) {
-             change = dw->weight() - dw->scratch;
-             // dw->weight() = dw->scratch + delta_scale*change;
-           } else {
-             change = dw->scratch - dw->weight();
-             //dw->weight() = dw->scratch - delta_scale*change;
-           }
+           change = absdiff(dw->weight(),dw->scratch);           
            if ( change > maxChange )
              maxChange = change;
          }
