@@ -2,8 +2,33 @@
 #define _FUNCTORS_HPP
 
 #include <cmath>
+#include <string>
+#include <boost/scoped_ptr.hpp>
 
-inline double rand_pos_fraction() // returns uniform random number on (0..1]
+inline unsigned random_less_than(unsigned limit) {
+// correct against bias (which is worse when limit is almost RAND_MAX)
+    const unsigned limit=(RAND_MAX / limit)*limit;
+    unsigned r;
+    while ((r=std::rand()) >= limit) ;
+    return r % limit;
+}
+
+// works for ASCII only
+inline char random_alpha() {
+    return 'A' + rand_less_than(26*2);
+}
+
+inline std::string random_alpha_string(unsigned len) {
+    boost::scoped_array s(new char[len+1]);
+    char *e=s.get()+len;
+    *e='\0';
+    while(s.get() < e--)
+        *e=random_alpha;
+    return s.get();
+}
+
+
+inline double random_pos_fraction() // returns uniform random number on (0..1]
 {
     return ((double)std::rand()+1.) /
         ((double)RAND_MAX+1.);
@@ -38,7 +63,7 @@ set_value<V> value_setter(V &init_value) {
     return set_value<V>(init_value);
 }
 
-struct set_rand_pos_fraction {
+struct set_random_pos_fraction {
     template <class C>
     void operator()(C &c) {
         c=rand_pos_fraction();
@@ -114,11 +139,19 @@ struct indirect_gt {
 
 #ifdef TEST
 #include "test.hpp"
+#include <cctypes>
 #endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_FUNCTORS )
 {
+    using namespace std;
+    const int NREP=10000;
+    for (int i=0;i<NREP;++i) {
+        unsigned ran_lt_i=randdom_less_than(i);
+        BOOST_CHECK(0 <= ran_lt_i && ran_lt_i < i);
+        BOOST_CHECK(isalpha(random_alpha()));
+    }
 }
 #endif
 

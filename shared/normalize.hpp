@@ -188,7 +188,7 @@ struct NormalizeGroups {
     }
     void init_random(W *w) {
         base=w;
-        init(w,set_rand_pos_fraction());
+        init(w,set_random_pos_fraction());
     }
 
 // array must have values for all max_index()+1 rules
