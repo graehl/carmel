@@ -12,20 +12,20 @@
 #include <cmath>
 #include <iostream>
 
-const float HUGE_FLOAT = (float)HUGE_VAL;
-
 struct Weight {			// capable of representing nonnegative reals 
+  static const float HUGE_FLOAT;
 	// internal implementation note: by their base 10 logarithm (subject to change, of course)
   float weight;
   static Weight result;
   Weight(double f) {
     if ( f > 0 )
-      weight = (float)log10(f);
+      weight = (float)log(f);
     else
       weight = -HUGE_FLOAT;
   }
+
   double toFloat() { 
-    return pow((double)10, (double)weight);
+    return exp(weight);
   }
 //  Weight() : weight(-HUGE_FLOAT) {}
   Weight() { weight=-HUGE_FLOAT; }
@@ -54,6 +54,8 @@ struct Weight {			// capable of representing nonnegative reals
     return *this;
   }
 };
+
+const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
 
 std::ostream& operator << (std::ostream &o, Weight weight);
 
@@ -95,40 +97,49 @@ inline Weight operator /(Weight lhs, Weight rhs) {
   return result;
 }
 
-#define MUCH_BIGGER_LOG 8.f
-// represents BIG=10^MUCH_BIGGER_LOG - if X > BIG*Y, then X+Y =~ X -
-// float can represent about 7-8 decimal digits only so I chose 8
-// fixme: this changes if we decide to move to doubles instead of floats
+#define MUCH_BIGGER_LN 16.f
+// represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X
+// 32 bit float IEEE float has 23 binary digit mantissa, so 
+// can represent about 16 base E digits only
+// fixme: if you use 64-bit doubles instead of floats, 52 binary digits
+// so define as 36.f instead
 
 inline Weight operator +(Weight lhs, Weight rhs) {
-	float diff = lhs.weight - rhs.weight;
-	if ( diff > MUCH_BIGGER_LOG )
-	  return lhs;
-	if ( diff < MUCH_BIGGER_LOG )
-	  return rhs;
+  //fixme: below test is needed with glibc without -ffast-math to compute 0+0 properly (?)
+  //  if (lhs == 0.0)
+  //  return rhs;
+  float diff = lhs.weight - rhs.weight;
+  if ( diff > MUCH_BIGGER_LN )
+    return lhs;
+  if ( diff < -MUCH_BIGGER_LN )
+    return rhs;
 
   Weight result; 
 
   if ( diff < 0 ) { // rhs is bigger
-    result.weight = (float)(rhs.weight + log10(1 + pow((double)10, (double)lhs.weight-rhs.weight)));
+    result.weight = (float)(rhs.weight + log(1 + exp(lhs.weight-rhs.weight)));
     return result;
   }
   // lhs is bigger
-  result.weight = (float)( lhs.weight + log10(1 + pow((double)10, (double)rhs.weight-lhs.weight)));
+  result.weight = (float)( lhs.weight + log(1 + exp(rhs.weight-lhs.weight)));
   return result;
 }
 
 inline Weight operator -(Weight lhs, Weight rhs) {
-  if ( lhs.weight < rhs.weight )	   // lhs < rhs 
+  Weight result; 
+  if ( lhs.weight <= rhs.weight )	   // lhs <= rhs 
 	  // clamp to zero as minimum without giving exception (not mathematically correct!)
-    return 0.f;
-
-  if ( lhs.weight - rhs.weight > MUCH_BIGGER_LOG ) // lhs >> rhs
+  {
+    //result.weight = -Weight::HUGE_FLOAT; // default constructed to this already
+    return result;
+  }
+  
+  if ( lhs.weight - rhs.weight > MUCH_BIGGER_LN ) // lhs >> rhs
 	  return lhs;
 
   // lhs > rhs
-  Weight result; 
-  result.weight = (float)(lhs.weight + log10(1 - pow((double)10, (double)rhs.weight-lhs.weight)));
+  
+  result.weight = (float)(lhs.weight + log(1 - exp(rhs.weight-lhs.weight)));
   return result;
 }
 
