@@ -19,7 +19,7 @@
 #include <iterator>
 
 #ifdef TEST
-#include "../../tt/test.hpp"
+#include "test.hpp"
 #endif
 //#include <boost/type_traits.hpp>
 
