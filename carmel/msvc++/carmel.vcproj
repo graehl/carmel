@@ -186,17 +186,16 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt /Ob0"
 				Optimization="3"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;DEBUG"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
 				RuntimeLibrary="4"
@@ -220,6 +219,68 @@
 				SubSystem="1"
 				OptimizeReferences="1"
 				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="test_opt|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+				Optimization="3"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="3"
+				OptimizeForWindowsApplication="TRUE"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="WIN32;_CONSOLE;TEST;BOOST_DISABLE_WIN32"
+				IgnoreStandardIncludePath="FALSE"
+				MinimalRebuild="TRUE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="4"
+				BufferSecurityCheck="FALSE"
+				EnableEnhancedInstructionSet="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CallingConvention="1"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/../../bin/carmel.win32.test.opt.exe"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/carmel.pdb"
+				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -291,6 +352,13 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\Arc.cc"
@@ -335,6 +403,14 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\compose.cc"
@@ -378,6 +454,14 @@
 						BufferSecurityCheck="TRUE"
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -438,6 +522,14 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\fst.cc"
@@ -481,6 +573,14 @@
 						BufferSecurityCheck="TRUE"
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -526,6 +626,14 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\kbest.cc"
@@ -570,6 +678,14 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\strhash.cc"
@@ -612,6 +728,13 @@
 						BufferSecurityCheck="TRUE"
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -687,6 +810,14 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\tests\Tweight.cc"
@@ -733,6 +864,14 @@
 						BufferSecurityCheck="TRUE"
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -867,6 +1006,13 @@
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\src\wfstio.cc"
@@ -910,6 +1056,14 @@
 						BufferSecurityCheck="TRUE"
 						DebugInformationFormat="3"
 						CallingConvention="2"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="test_opt|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
+						PreprocessorDefinitions="TEST"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
@@ -963,6 +1117,9 @@
 			</File>
 			<File
 				RelativePath="..\src\stringkey.h">
+			</File>
+			<File
+				RelativePath="..\..\tt\test.hpp">
 			</File>
 			<File
 				RelativePath="..\src\train.h">

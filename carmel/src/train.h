@@ -68,8 +68,8 @@ struct State {
 #define QUEERINDEX
 #ifdef QUEERINDEX
  	if ( !(list = find_second(*index,(IntKey)l->out)) )
-	  index->insert(HashTable<IntKey, List<HalfArc> >::value_type((IntKey)l->out, 
-		     List<HalfArc>(&(*l))));
+	  add(*index,(IntKey)l->out, 
+		     List<HalfArc>(&(*l)));
 	else
 	  list->push_front(&(*l));
 #else
@@ -92,7 +92,8 @@ struct State {
     for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
 #ifdef QUEERINDEX
 	  if ( !(list = find_second(*index,(IntKey)l->in)) )
-	index->insert(HashTable<IntKey, List<HalfArc> >::value_type(l->in, List<HalfArc>(&(*l))));
+			  add(*index,(IntKey)l->in, 
+		     List<HalfArc>(&(*l)));	
       else
 	list->push_front(&(*l));
 #else

@@ -16,7 +16,7 @@ class StringPool {
   static char * clone(const char *str) {
 	return strcpy(NEW char[strlen(str)+1], str);
   }
-  void kill(const char *str) {
+  static void kill(const char *str) {
 	delete str;
   }
 #ifdef STRINGPOOL
@@ -24,6 +24,8 @@ class StringPool {
 #endif
 public:
 	static StringKey borrow(StringKey s) {
+	  if (s.str == StringKey::empty)
+		return s;
 #ifdef STRINGPOOL
 	  HashTable<StringKey, int>::find_return_type entryP;
 		if ( (entryP = counts.find(s)) != counts.end() ) {
@@ -99,7 +101,7 @@ class Alphabet {
       memcpy(&a, swapTemp, s);
     }
   void add(char *name) { 
-	Assert(ht.find(name) == ht.end());
+	Assert(find(name) == NULL);
     StringKey s = StringPool::borrow(StringKey(name));;
 	ht[s]=names.size();
     names.push_back(s.str);
@@ -118,21 +120,15 @@ class Alphabet {
     else {
       StringKey k = StringPool::borrow(s);
       int ret = names.size();
-      ht[k]=ret;
+      add(ht,k,ret);
       names.push_back(k.str);
       return ret;
     }
 #else
 	HashTable<StringKey,int>::insert_return_type it;
-	if ( (it = ht.insert(HashTable<StringKey,int>::value_type(s,0))).second ) {
-	  *const_cast<StringKey*>(&(it.first->first)) = StringPool::borrow(s); // might seem naughty, (can't change hash table keys) but it's still equal.
-	  int ret = names.size();
-	  it.first->second=ret;
-	  names.push_back(const_cast<char *>(it.first->first.str));
-	  return ret;
-	} else {
-	  return it.first->second;
-	}
+	if ( (it = ht.insert(HashTable<StringKey,int>::value_type(s,names.size()))).second )
+	  names.push_back(*const_cast<StringKey*>(&(it.first->first)) = StringPool::borrow(s)); // might seem naughty, (can't change hash table keys) but it's still equal.		
+    return it.first->second;	
 #endif
   }
   const char * operator[](int pos) const {

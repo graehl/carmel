@@ -429,7 +429,7 @@ class WFST {
 							a->weight=*pw;
 						else {
 							f(&(a->weight));
-							tiedWeights.add(group,a->weight);
+							add(tiedWeights,group,a->weight);
 						}
 #else
 	  					HashTable<IntKey, Weight>::insert_return_type it;

@@ -7,7 +7,10 @@
 
 #define BOOST_NO_MT
 
-#define UNORDERED_MAP
+//#define UNORDERED_MAP
+
+#define STATIC_HASH_EQUAL
+#define STATIC_HASHER
 
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
