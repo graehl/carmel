@@ -227,21 +227,8 @@ void WFST::normalize(NormalizeMethod method)
       
       
         if ( isTied(pGroup = (*g)->groupId) ) {
-#if 0
-	  const Weight w=(*g)->weight;
-					Weight *pw;
-					if ((pw=find_second(groupArcTotal,pGroup)))
-						*pw += w;
-					else
-						groupArcTotal[pGroup]=w;
-					if ((pw=find_second(groupStateTotal,pGroup)))
-						*pw += sum;
-					else
-						groupStateTotal.insert[pGroup]=sum;
-#else
-					groupArcTotal[pGroup] += (*g)->weight; // default init is to 0          
+  			groupArcTotal[pGroup] += (*g)->weight; // default init is to 0          
  		      groupStateTotal[pGroup] += sum;
-#endif
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
@@ -349,7 +336,8 @@ void WFST::assignWeights(const WFST &source)
   }
   Weight *pWeight;
   for ( s = 0 ; s < numStates() ; ++s) {
-    List<Arc> &arcs = source.states[s].arcs;
+	source.states[s].flush();
+    List<Arc> &arcs = source.states[s].arcs;	
     for ( List<Arc>::erase_iterator a=arcs.erase_begin(),end=arcs.erase_end(); a !=end ; ) {
       if ( isTied(pGroup = a->groupId) )
         if ( (pWeight = find_second(groupWeight,(IntKey)pGroup)) )

@@ -26,7 +26,7 @@ public:
 	}
 	operator char * () { return str; }
 	//	char * operator =(char * c) { char *t = str; str = c; return t; } // returns old value: why?
-	void operator=(char *c) { str=c; }
+	char * operator=(char *c) { return str=c; }
 	bool operator < ( const StringKey &a) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
 	{
 	  return strcmp(str,a.str)<0;

@@ -28,7 +28,7 @@ static void makeTrioName(char *bufP, const char *aName, const char *bName, int f
 if ( (pDest = find_second(stateMap,triDest)) ) \
  { states[sourceState].addArc(Arc(in, out, *pDest, weight)); \
 } else { \
-  stateMap[triDest]=numStates(); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.push_back();    \
+  add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.push_back();    \
   if ( namedStates ) {      makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);      stateNames.add(buf);   \
   }  }} while(0)
 #else
@@ -52,6 +52,9 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   }
   int *map = NEW int[a.out->size()];
   int *revMap = NEW int[b.in->size()];
+  Assert(map[0]==revMap[0]==0); // *e* always 0
+  Assert(a.out->verify());
+  Assert(b.in->verify());
   char buf[MAX_STATENAME_LEN+1];
   a.out->mapTo(*b.in, map);     // find matching symbols in interfacing alphabet
   b.in->mapTo(*a.out, revMap);
@@ -125,7 +128,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               mediateState = *pDest;
             } else {
               mediateState = numStates();
-              arcStateMap[mediate]=mediateState;
+              add(arcStateMap,mediate,mediateState);
               states.push_back();
               if ( namedStates ) {
                 char *p = buf;

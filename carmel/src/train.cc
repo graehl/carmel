@@ -25,7 +25,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
       IO.out = aI->out;
       int d = DW.dest = aI->dest;
       DW.arc = &(*aI);
-      if ( !(pLDW = find_second(IOarcs[s],IO)) )
+      //if ( !(pLDW = find_second(IOarcs[s],IO)) )
         pLDW = &IOarcs[s][IO];
       DW.prior_counts = smoothFloor + weight_is_prior_count * aI->weight;
       // add in forward direction
@@ -33,7 +33,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
 
       // reverse direction and add in reverse direction
       DW.dest = s;
-      if ( !(pLDW = find_second(revIOarcs[d],IO)) )
+      //if ( !(pLDW = find_second(revIOarcs[d],IO)) )
         pLDW = &revIOarcs[d][IO];
       pLDW->push(DW);
     }
@@ -732,7 +732,7 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
       IO.out = a->out;
       DW.dest = a->dest;
       DW.arc = &*a;
-      if ( !(pLDW = find_second(IOarcs[s],IO)) )
+      //if ( !(pLDW = find_second(IOarcs[s],IO)) )
         pLDW = &IOarcs[s][IO];
       pLDW->push(DW);
     }

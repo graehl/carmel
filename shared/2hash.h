@@ -43,6 +43,12 @@ inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
   return ht.find_second(first);
 }
 
+template <class K,class V,class H,class P,class A>
+inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
+{
+  return &(ht[k]=v);
+}
+
 #else // internal hash map
 
 #define HASHNS_B 
@@ -59,12 +65,12 @@ template <class T> struct hash;
 #include "assert.h"
 #include <utility>
 
-const float DEFAULTHASHLOAD = .8f;
-template <typename K, typename V,typename H,typename A> class HashTable ;
+const float DEFAULTHASHLOAD = 1.0f;
+template <class K,class V,class H,class P,class A> class HashTable ;
 template <typename K, typename V> class HashIter ;
 //template <typename K, typename V> class HashConstIter ;
 
-int pow2Bound(int request);
+//int pow2Bound(int request);
 
 inline int pow2Bound(int request) {
   Assert(request < (2 << 29));
@@ -89,6 +95,7 @@ public:
   HashEntry(const K & k, const V& v) : next(NULL), first(k), second(v) { }
   HashEntry(const K &k, const V& v, HashEntry<K,V> * const n) : next(n), first(k), second(v) { }
   HashEntry(const K &k, HashEntry<K,V> * const n) : next(n), first(k), second() { }
+//  HashEntry(const HashEntry &h) : next(h.next), first(h.first), second(h.second) { }
 #ifdef CUSTOMNEW
   static HashEntry<K,V> *freeList=NULL;
   static const int newBlocksize=128;
@@ -131,8 +138,7 @@ public:
 #endif
 };
 
-template <typename K, typename V>
-template<class T,class A,class B> 
+template <typename K, typename V,class A,class B> 
 inline 
 std::basic_ostream<A,B>&
 	 operator<< (std::basic_ostream<A,B> &out, const HashEntry<K,V> & e) {
@@ -214,11 +220,11 @@ template <typename K, typename V> class HashIter { // Yaser added this - 7-27-20
   //     operator = ( HashIter & );		// disable
  public:
    //  HashConstIter operator = ( HashConstIter & );		// disable
-template <class A,class H>
-     void init(HashTable<K,V,H,A> &t) {
+template <class A,class H,class P>
+     void init(HashTable<K,V,H,P,A> &t) {
     
 	if ( t.size() > 0 ) {
-	  end_bucket = t.table + t.capacity();    
+	  end_bucket = t.table + t.bucket_count();    
       bucket = t.table;
       while ( !*bucket ) bucket++;
       entry = *bucket++;      
@@ -228,8 +234,8 @@ template <class A,class H>
 	}
   }
 
-template <class A,class H>
-  HashIter( HashTable<K,V,H,A> &t)
+template <class A,class H,class P>
+  HashIter( HashTable<K,V,H,P,A> &t)
     {
       init(t);
     }
@@ -237,7 +243,7 @@ template <class A,class H>
 /*
   HashIter( const HashTable<K,V> &t) : ht(t)
     {
-      if ( ht.capacity() > 0 ) {
+      if ( ht.bucket_count() > 0 ) {
 	bucket = ht.table;
 	while ( !*bucket ) bucket++;
 	entry = *bucket++;	
@@ -277,31 +283,97 @@ template <class A,class H>
 };
 //
 //= hash<K>
-template <typename K, typename V, typename H=::hash<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A {
+#include <functional>
+template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A::rebind<HashEntry<K,V> >::other {
+ public:
+  typedef H hasher;
+  typedef P key_equal;
+  hasher hash_function() const { return get_hash(); }
+  key_equal key_eq() const { return get_eq(); }
  protected:
   int siz;  // always a power of 2, stored as 1 less than actual for fast mod operator (implemented as and)
   int cnt;
-  typedef H hasher;
-  hasher hash;
+#ifndef STATIC_HASHER
+  H hash;
+#endif
+#ifndef STATIC_HASH_EQUAL
+  P m_eq;
+#endif
+  const P& get_eq() const { 
+#ifdef STATIC_HASH_EQUAL
+	static P p;return p; 
+#else
+	return m_eq;
+#endif
+  }
+  const H& get_hash() const { 
+#ifdef STATIC_HASHER
+	static H h;return h;
+#else
+	return hash; 
+#endif
+  }
   int growAt;
+  typedef typename A::rebind<HashEntry<K,V> >::other base_alloc;
   
   HashEntry<K,V> **table;
   size_t hashToPos(size_t hashVal) const
     {
       return hashVal & siz;
     }
- public:
+public:
    typedef HashIter<K,V> iterator;
    typedef HashIter<K,V> const_iterator;
 
-   typedef std::pair<K,V> value_type;
+   typedef std::pair<const K,V> value_type;
    typedef K key_type;	
    typedef HashEntry<K,V> *find_return_type;
    typedef V second_type;
    typedef std::pair<find_return_type,bool> insert_return_type;
+   class local_iterator : public std::iterator<std::forward_iterator_tag, value_type> {
+	 typedef HashEntry<K,V> *T;
+	 T m_rep;
+   public:
+	 	 
+	 local_iterator(T t) : m_rep(t) {}
+
+	   inline local_iterator& operator++()
+	{ 
+	  m_rep = m_rep->next; return *this; 
+	}
+      inline const_iterator operator++(int)
+	{ 
+	  local_iterator tmp(*this); m_rep = m_rep->next; return tmp; 
+	}
+      inline typename value_type operator*() const { return *(value_type *)m_rep; }
+      inline typename value_type *operator->() const { return (value_type *)m_rep; }
+      inline bool operator==(const local_iterator& x) const
+	{
+	  return m_rep == x.m_rep; 
+	}
+      inline bool operator!=(const local_iterator& x) const
+	{
+	  return m_rep != x.m_rep; 
+	}
+
+   };
+   typedef local_iterator const_local_iterator;
+   
+   const_local_iterator begin(size_t i) const {
+	 return const_cast<HashEntry<K,V> *>(table[i]);	 
+   }
+   const_local_iterator end(size_t i) const {	 
+	 return NULL;
+   }
+   local_iterator begin(size_t i) {	 
+	 return table[i];
+   }
+   local_iterator end(size_t i) {
+	 return NULL;
+   }
 
     const_iterator begin() const {
-	 return *(HashTable<K,V,H,A> *)this;
+	 return *(HashTable<K,V,H,P,A> *)this;
 	}
 	iterator begin()  {
 	  return *this;
@@ -309,8 +381,19 @@ template <typename K, typename V, typename H=::hash<K>, typename A=std::allocato
    HashEntry<K,V> *end() const {
 	 return NULL;
    }
+   
+   size_t bucket(const K& first) const {
+	 return hashToPos(get_hash()(first));
+   }
+   size_t bucket_size(size_t i) {
+	 size_t ret=0;
+	 for (local_iterator l=begin(i),e=end(i);l!=e;++l)
+	   ++ret;
+	 return ret;
+   }
 private:
-  HashTable(const HashTable<K,V,H,A> &ht)
+  /*
+  HashTable(const HashTable<K,V,H,P,A> &ht)
     {
       // making this private will probably prevent
       // tables from being copied, and this message
@@ -331,9 +414,12 @@ private:
       for(const_iterator k=ht.begin() ; k != ht.end() ; ++k)
 	add(k->first,k->second);
       //    std::cerr <<"done\n";
-    } 
+    }
+	*/
 public:
-  void swap(HashTable<K,V,H,A> &h)
+  static const int DEFAULTHASHSIZE=8;
+  static const int MINHASHSIZE=4;
+  void swap(HashTable<K,V,H,P,A> &h)
     {
       const size_t s = sizeof(HashTable<K,V>)/sizeof(char) + 1;
       char temp[s];
@@ -341,10 +427,75 @@ public:
       memcpy(this, &h, s);
       memcpy(&h, temp, s);
     }
-  HashTable(int sz = 4, float mLoad = DEFAULTHASHLOAD)
+
+	HashTable(int sz, const hasher &hf) 
+#ifndef STATIC_HASHER
+	  : hash(hf) 
+#endif
+	{
+	  init(sz);
+	}	
+	HashTable(int sz, const hasher &hf,const key_equal &eq_) 
+	  #if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+	  :
+#endif
+	#ifndef STATIC_HASHER
+	hash(hf)
+	#endif
+#if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+	  ,
+#endif
+	  #ifndef STATIC_HASH_EQUAL
+	   m_eq(eq_) 
+	  #endif
+	{
+	  init(sz);
+	}	
+	HashTable(int sz, const hasher &hf,const key_equal &eq_,const A &a) : 
+		#ifndef STATIC_HASHER
+	hash(hf)
+	#endif
+#if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+	  ,
+#endif
+	  #ifndef STATIC_HASH_EQUAL
+	   m_eq(eq_),
+	  #endif
+    base_alloc(a) {
+	  init(sz);
+	}	
+  HashTable(const HashTable<K,V,H,P,A> &ht) : siz(ht.siz), growAt(ht.growAt), 
+		#ifndef STATIC_HASHER
+	hash(ht.hash)
+	#endif
+#if !(defined(STATIC_HASHER) && defined(STATIC_EQUAL))
+	  ,
+#endif
+	  #ifndef STATIC_HASH_EQUAL
+	   m_eq(ht.m_eq) 
+	  #endif
+  base_alloc(*(base_alloc *)this){
+	table = alloc_table(siz+1);
+	for (int i=0; i <= siz; ++i)
+	  table[i] = clone_bucket(ht.table[i]);
+  }
+  
+
+	explicit HashTable(int sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD) {
+	  init(sz,mLoad);
+	}
+  protected:
+	HashEntry<K,V> *clone_bucket(HashEntry<K,V> *p) {
+	  if (!p)
+		return p;
+	  HashEntry<K,V> *ret=alloc_node();
+	  new(ret)(p->first,p->second,clone_bucket(p->next));
+	  return ret;
+	}
+  void init(int sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD)
     {
-      if ( sz < 4 )
-	siz = 4;
+      if ( sz < MINHASHSIZE )
+	siz = MINHASHSIZE;
       else
 	siz = pow2Bound(sz);
       cnt = 0;
@@ -356,16 +507,22 @@ public:
       for ( int i = 0 ; i <= siz ; i++ ) 
 	table[i] = NULL;
     }
+	public:
+	  void clear() {
+		for (int i=0;i<=siz;i++) {
+		  for(HashEntry<K,V> *entry=table[i],*next;entry;entry=next) {
+			next=entry->next;
+			free_node(entry);
+		  }
+		  table[i]=NULL;
+		}
+  		cnt = 0;
+	  }
   ~HashTable()
     {
       //    std::cerr << "HashTable destructor called\n"; // Yaser
       if ( table ) {
-
-		for ( iterator i=begin(); i!=end() ; ) {// const_iterator would delete the next pointer before we use it
-		  HashEntry<K,V> *entry=&*i;
-		  ++i;
-		  free_node(entry);
-		}
+		clear();
 	free_table(table,siz);
 	table = NULL;
 	siz = 0;
@@ -373,13 +530,13 @@ public:
     }
 
 	
-private:
+public:
   	// use insert instead
   V *add(const K &first, const V &second=V())
     {
       if ( ++cnt >= growAt )
 		rehash(2 * siz);
-      size_t i = hashToPos(hash(first));
+      size_t i = bucket(first);
 	  HashEntry<K,V> *next=table[i];
       table[i] = alloc_node();
 		PLACEMENT_NEW (table[i]) HashEntry<K,V>(first, second, next);
@@ -389,11 +546,14 @@ public:
 
 	// bool is true if insertion was performed, false if key already existed.  pointer to the key/val pair in the table is returned
   private:
+	bool equal(const K& k, const K &k2) const {
+	  return get_eq()(k,k2);
+	}
 	insert_return_type insert(const K& first, const V& second=V()) {
-	  size_t hv=hash(first);
+	  size_t hv=get_hash()(first);
 	  size_t bucket=hashToPos(hv);
 	  for ( HashEntry<K,V> *p = table[bucket]; p ; p = p->next )
-		if ( p->first == first )
+		if ( equal(p->first,first) )
 		  return std::pair<find_return_type,bool>((find_return_type)p,false);
  
 	  if ( ++cnt >= growAt ) {
@@ -416,8 +576,8 @@ public:
 
   find_return_type find(const K &first) const
     {
-      for ( HashEntry<K,V> *p = table[hashToPos(hash(first))]; p ; p = p->next )
-	if ( p->first == first )
+      for ( HashEntry<K,V> *p = table[bucket(first)]; p ; p = p->next )
+	if ( equal(p->first,first) )
 	  return reinterpret_cast<find_return_type>(p);
       return NULL;
     }
@@ -439,11 +599,11 @@ public:
 
   int erase(const K &first)
     {
-      size_t i = hashToPos(hash(first));
+      size_t i = bucket(first);
       HashEntry<K,V> *prev = NULL, *p = table[i];
       if ( !p ) 
 	return 0;
-      else if ( p->first == first ) {
+      else if ( equal(p->first,first) ) {
 	table[i] = p->next;
 	free_node(p);
 	--cnt;
@@ -453,7 +613,7 @@ public:
 	prev = p;    
 	p = p->next;
 	if ( !p ) break;
-	if ( p->first == first ) {
+	if ( equal(p->first,first) ) {
 	  prev->next = p->next;
 	  free_node(p);
 	  --cnt;
@@ -462,7 +622,8 @@ public:
       }
       return 0;
     }
-  int capacity() const { return siz + 1; }
+  size_t bucket_count() const { return siz + 1; }
+  size_t max_bucket_count() const { return 0x7FFFFFFF; }
   int size() const { return cnt; } 
   int growWhen() const { return growAt; }
   float load_factor() const { return (float)cnt / (float)(siz + 1); }
@@ -473,12 +634,13 @@ public:
       if ( growAt < 2 )
 	growAt = 2;
     }
-  void rehash(int request)
+	protected:
+  void rehash_pow2(int request)
     {
       size_t hashVal;
 	  int oldSiz = siz;
       HashEntry<K,V> *next, *p, **i, **oldTable = table;
-      siz = pow2Bound(request);
+      siz = request;
       alloc_table(siz);
       siz--;  // actual size is siz + 1 (power of 2)
       for ( i = table; i <= table + siz ; i++ )
@@ -486,23 +648,27 @@ public:
       for ( i = oldTable ; i <= oldTable + oldSiz ; i++ )
 	for ( p = *i ; p ; p = next ) {
 	  next = p->next;
-	  hashVal = hashToPos(hash(p->first));
+	  hashVal = bucket(p->first);
 	  p->next = table[hashVal];
 	  table[hashVal] = p;
 	}
-      growAt = int((float(growAt) * (siz+1)) / (oldSiz+1));
+      growAt = int((float(growAt) * (siz+1)) / (oldSiz+1))+1;
       free_table(oldTable,oldSiz);
     }
+	public:
+	  void rehash(int request) { rehash_pow2(pow2Bound(request)); }
   friend class HashIter<K,V>;
   //friend class HashConstIter<K,V>;
   V *find_second(const K& first) const
 	{
-      for ( HashEntry<K,V> *p = table[hashToPos(hash(first))]; p ; p = p->next )
-   	if ( p->first == first )
+      for ( HashEntry<K,V> *p = table[bucket(first)]; p ; p = p->next )
+   	if ( equal(p->first,first) )
 	  return &(p->second);
       return NULL;
 
 	}
+	public:
+
 
   private:
 #ifndef _MSC_VER	
@@ -531,33 +697,29 @@ public:
 //friend _V *find_second(const HashTable<_K,_V,_H,_A>& ht,const _K& first);
 };
 
-template <class K,class V,class H,class A>
-inline HashTable<K,V,H,A>::find_value_type *find_value(const HashTable<K,V,H,A>& ht,const K& first) {
+template <class K,class V,class H,class P,class A>
+inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTable<K,V,H,P,A>& ht,const K& first) {
   return ht.find(first);
 }
 
-template <class K,class V,class H,class A>
-inline V *find_second(const HashTable<K,V,H,A>& ht,const K& first)
+template <class K,class V,class H,class P,class A>
+inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
 {
   return ht.find_second(first);
 }
-/*
-template <class K,class V,class H,class A>
-inline V *find_second(const HashTable<K,V,H,A>& ht,const K& first)
-	{
-      for ( HashEntry<K,V> *p = ht.table[ht.hashToPos(ht.hash(first))]; p ; p = p->next )
-   	if ( p->first == first )
-	  return &(p->second);
-      return NULL;
 
-	}
-*/
+template <class K,class V,class H,class P,class A>
+inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
+{
+  return ht.add(k,v);
+}
+
 
 template<>
 struct hash<int>
 {
   size_t operator()(int i) const {
-	return i * 2654435767U;;
+	return i * 2654435767U;
   }
 };
 
@@ -585,6 +747,7 @@ std::basic_ostream<A,B>&
 	out << *i << std::endl;
   }
   out << "end" << std::endl;
+  return out;
 }
 
 template<class C1,class C2,class A,class B> 

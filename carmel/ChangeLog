@@ -1,3 +1,11 @@
+2004-02-27  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/2hash.h: made find_second, add global template functions,
+	can use unordered_map (had to fix bugs in it though, and it takes
+	36 bytes for an empty table compared to 24 for mine) if you
+	#define UNORDERED_MAP in config.h.  My size goes down to 16 if you
+	define STATIC_HASHER and STATIC_HASH_EQUAL
+
 2004-02-12  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/finite.cc: finally hunted down problem with post-training
