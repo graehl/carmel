@@ -32,8 +32,8 @@ Graph reverseGraph(Graph g)
 {
   GraphState *rev = new GraphState[g.nStates];
   for ( int i  = 0 ; i < g.nStates ; ++i ){
-    GAIT end = g.states[i].arcs.end() ;
-    for ( GAIT l=g.states[i].arcs.begin() ; l !=end ; ++l ) {
+    List<GraphArc>::iterator end = g.states[i].arcs.end() ;
+    for ( List<GraphArc>::iterator l=g.states[i].arcs.begin() ; l !=end ; ++l ) {
       GraphArc r;
       r.data = &(*l);
       Assert(i == l->source);
@@ -63,8 +63,8 @@ void dfsRec(int state, int pred) {
   if ( dfsFunc )
     dfsFunc(state, pred);
 
-  GAIT end = dfsGraph.states[state].arcs.end() ;
-  for ( GAIT l=dfsGraph.states[state].arcs.begin() ; l !=end ; ++l ) {
+  List<GraphArc>::iterator end = dfsGraph.states[state].arcs.end() ;
+  for ( List<GraphArc>::iterator l=dfsGraph.states[state].arcs.begin() ; l !=end ; ++l ) {
     int dest = l->dest;
     dfsRec(dest, state);
   }

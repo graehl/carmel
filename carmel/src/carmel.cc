@@ -11,7 +11,7 @@
 //#define MEMDEBUG              // checks heap at every allocation ; slow
 #endif
 
-#define VERSION "2.01"  ;
+#define VERSION "2.1"  ;
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
             if ( flags['B'] )
@@ -144,7 +144,9 @@ main(int argc, char *argv[]){
   int nParms = 0;
   int kPaths = 0;
   int thresh = 128;
-  Weight converge = 1E-5;
+  Weight converge = 1E-4;
+  Weight converge_pp_ratio = .999;
+  bool converge_pp_flag = false;
   int convergeFlag = 0;
   Weight smoothFloor;
   Weight prune;
@@ -160,10 +162,12 @@ main(int argc, char *argv[]){
   int labelFlag = 0;
   ostream *fstout = &cout;
   for ( i = 1 ; i < argc ; ++i ) {
-    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag)
+    if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag)
       while ( *(++pc) ) {
         if ( *pc == 'k' )
           kPaths = -1;
+                else if ( *pc == 'X' )
+          converge_pp_flag=true;
         else if ( *pc == 'R' )
           seedFlag=true;
         else if ( *pc == 'F' )
@@ -189,13 +193,15 @@ main(int argc, char *argv[]){
         else if ( *pc == 'u' )
           norm_method = WFST::NONE;
         flags[*pc] = 1;
-
       }
     else
       if ( labelFlag ) {
         labelFlag = 0;
         readParam(&labelStart,argv[i],'N');
-      } else if (seedFlag) {
+          } else if ( converge_pp_flag ) {
+                converge_pp_flag = false;
+                readParam(&converge_pp_ratio,argv[i],'X');
+          } else if (seedFlag) {
         seedFlag=false;
         readParam(&seed,argv[i],'R');
       } else if ( kPaths == -1 ) {
@@ -581,7 +587,7 @@ main(int argc, char *argv[]){
           List<int> empty_list;
           result->trainExample(empty_list, empty_list, 1.0);
         }
-        result->trainFinish(converge, smoothFloor, maxTrainIter, norm_method);
+                result->trainFinish(converge, converge_pp_ratio, smoothFloor, maxTrainIter, norm_method);
         if ( flags['p'] ) {
           result->pruneArcs(prune);
           result->normalize(norm_method);
@@ -722,7 +728,7 @@ void usageHelp(void)
   cout << "ut pair should count in training (default is 1)\n-e w\t\tw is th";
   cout << "e convergence criteria for training (the minimum\n\t\tchange in ";
   cout << "an arc\'s weight to trigger another iteration) - \n\t\tdefault w";
-  cout << " is 1E-5 (or, -5log)\n-f w\t\tw is a floor weight used for train";
+  cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a floor weight used for train";
   cout << "ing, which is added to the\n\t\tcounts for all arcs, immediately";
   cout << " before normalization - if\n\t\tnonzero, it ensures that no arc ";
   cout << "will be given zero weight -\n\t\tdefault w is 0\n-M n\t\tn is th";
@@ -770,7 +776,7 @@ void usageHelp(void)
   cout << "terisk (e.g. \"*e*\"))\n\t-Q\tif -I or -O is specified, omit out";
   cout << "ermost quotes of symbol names\n\t-W\tdo not show weights for pat";
   cout << "hs";
-  cout << "\n\nWeight output format switches (by default, small/large weights are written as logarithms):";
+  cout << "\n\nWeight output format switches\n\t\t(by default, small/large weights are written as logarithms):";
   cout << "\n\t-B\tWrite weights as their base 10 log (default is ln, e.g.\n\t\t'-5ln' signifies e^(-5))";
   cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. '-10ln',\n\t\texcept for 0, which is written simply as '0'";
   cout << "\n\t-D\tWrite weights as reals always, e.g. '1.234e-200'";

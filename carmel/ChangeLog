@@ -1,3 +1,16 @@
+2002-11-21  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/weight.h: added pow, root, {set|Is}Infinity
+
+	* src/fst.h: added WFST::log, warn, debug output streams
+
+	* src/finite.cc: added -X option to set perplexity convergence ratio.  bumped version.
+
+	* src/graph.cc: reworked topological sort to detect cycles.  put state and code in TopoSort class.
+
+	* src/train.cc: changed perplexity measurement to per-symbol.  added ppx ratio convergence option
+
+
 2002-11-07  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/train.cc: added perplexity measurement to training (-t)

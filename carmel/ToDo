@@ -3,7 +3,8 @@ training with conditional normalization - option to leave alone or assign unifor
 attach and preserve arbitrary labels to arcs (states already have their arbitrary names)
 'wildcard', 'except-state' and 'except-global' label for arcs - for input or output not seen leaving the state, or at all
 external vocabulary files?
-
+option to iteratively sum paths with e-cycles for -S and -t.  use matrix math (e-paths of length 0,1,2,3... = 1+A^1+A^2+ ...)
+prune state/arc not used in any paths within $ratio of best path (get distance of each state from start and to final with Dijikstra)
 
 code:
 command-line regression tests
@@ -11,3 +12,4 @@ unit tests
 slist implementation - can't use erase or insert; must use erase_after, insert_after instead!
 STL hash
 one filename per public class: Class.h Class.cc
+CUSTOMNEW allocator - a mess, doesn't work without #define CUSTOMNEW

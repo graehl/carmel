@@ -40,8 +40,6 @@ void depthFirstSearch(Graph graph, int startState, bool* visited, void (*func)(i
 
 void countNoCyclePaths(Graph g, Weight *nPaths, int source);
 
-typedef List<GraphArc>::iterator GAIT;
-
 class TopoSort {
 	typedef std::front_insert_iterator<List<int> > IntPusher;
 	Graph g;
@@ -76,8 +74,8 @@ public:
 			return;
 		}
 		begun[s]=true;
-	    GAIT end = dfsGraph.states[s].arcs.end();
-		for ( GAIT l=dfsGraph.states[s].arcs.begin() ; l !=end ; ++l ) {
+		const List<GraphArc> &arcs = g.states[s].arcs;
+		for ( List<GraphArc>::const_iterator l=arcs.begin(),end=arcs.end() ; l !=end ; ++l ) {
 			order_from(l->dest);
 		}
 		done[s]=true;

@@ -207,7 +207,9 @@ template <class I> int randomPath(I i,int max_len=-1)
   }*/
   void trainBegin(NormalizeMethod method=CONDITIONAL);
   void trainExample(List<int> &inSeq, List<int> &outSeq, float weight);
-  void trainFinish(Weight epsilon, Weight smoothFloor, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
+  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, Weight smoothFloor, int maxTrainIter,NormalizeMethod method=CONDITIONAL);
+  // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  smoothFloor counts are added to all arcs
+
   void invert();		// switch input letters for output letters
   void reduce();		// eliminate all states not along a path from
                                 // initial state to final state
@@ -290,7 +292,9 @@ template <class I> int randomPath(I i,int max_len=-1)
   }
   static const int NOGROUP=-1;  
   static const int LOCKEDGROUP=0;
-
+  static std::ostream *warn;
+  static std::ostream *log;
+  static std::ostream *debug;
 private:
   //  static const int NOGROUP(-1);  
   void invalidate() {		// make into empty/invalid transducer
