@@ -2,6 +2,7 @@
 
 #define MAIN
 //#define SINGLE_PRECISION
+#define DOUBLE_PRECISION
 
 #include "weight.h"
 
@@ -9,7 +10,7 @@ int main(int argc, char *argv[])
 {
     Weight delta=1,sum=0,lastsum;
     Weight::default_never_log();
-    double max=23456789,EPSILON=1e-7;
+    double max=23456789,EPS=1e-7;
     unsigned period=1000000;
     std::cout.precision(12);
     unsigned quiet=0;
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
             absworstdiff=fabs(diff);
 //            std::cout << "\nNew worst difference between log and real accumulation: " << diff << " at i=" << i <<  "\n";
         }
-        if (absdiff(sum,i) > EPSILON)
+        if (absdiff(sum,Weight(i)) > EPS)
             if (p.check())
                 std::cout << "Log space addition of ones: " << sum << " differs from normal addition of ones: " << i << " by " << diff
                     //<< " or " << 100*(diff)/i << "%"
