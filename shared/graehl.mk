@@ -58,6 +58,7 @@ OPT_PROGS += $$(BIN)/$(1)
 $(1): $$(BIN)/$(1)
 endif
 
+ifneq (${ARCH},macosx)
 ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static:\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
@@ -66,6 +67,7 @@ $$(BIN)/$(1).static:\
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
 $(1): $$(BIN)/$(1).static
+endif
 endif
 
 ifndef $(1)_NODEBUG
@@ -131,26 +133,26 @@ $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 
 vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
 #:$(SHARED):.
-.PRECIOUS: $(OBJB)/%.o
+.PRECIOUS: $(OBJB)/%.o dirs
 $(OBJB)/%.o:: %.cpp
 	@echo
 	@echo COMPILE\(boost\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJT)/%.o
-$(OBJT)/%.o:: %.$(CPP_EXT) %.d
+$(OBJT)/%.o:: %.$(CPP_EXT) %.d dirs
 	@echo
 	@echo COMPILE\(test\) $< into $@
 	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
-$(OBJ)/%.o:: %.$(CPP_EXT) %.d
+$(OBJ)/%.o:: %.$(CPP_EXT) %.d dirs
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
-$(OBJD)/%.o:: %.$(CPP_EXT) %.d
+$(OBJD)/%.o:: %.$(CPP_EXT) %.d dirs
 	@echo
 	@echo COMPILE\(debug\) $< into $@
 	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS) $< -o $@

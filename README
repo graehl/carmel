@@ -1,5 +1,8 @@
-tt: tree transducer (and derivation forests EM training)
-carmel: weighted finite state transducer toolkit (and k-best graph paths)
+tt: tree transducer toolkit (and derivation forests EM training)
+
+carmel: finite state transducer toolkit (and k-best graph paths)
+ (see carmel/README)
+
 shared: generic routines used by both
 
 Make sure the environment variable ARCH is set to something
@@ -8,16 +11,16 @@ Make sure the environment variable ARCH is set to something
 Use GNU make (unfortunately, version 3.81 or greater is required due to some
 bugs with earlier versions), and find the binaries in bin/$ARCH
 
-Also requires Boost (http://boost.org) in your standard include directory, or
-edit shared/graehl.mk to set BOOST_DIR=/path/to/boost if you have located elsewhere
+Also requires Boost (http://boost.org) in your standard include directory (you
+can just use the boost directory in this distribution) - edit shared/graehl.mk
+to set BOOST_DIR=/path/to/boost if you have located your Boost elsewhere.
 
-You'll need to extract
-http://boost-sandbox.sourceforge.net/program_options/program_options_postreview.tar.gz
-into your boost directory as well (although it will be included in future
-versions of Boost.)
+cd carmel
+ARCH=linux 
+export ARCH
+make
 
-cd tt (or cd carmel)
-export ARCH=linux (or macosx, or cygwin, or linux, or whatever)
-make depend
-make all
+ARCH can be whatever you like - it's not used for anything except to keep object
+files and binaries segregated.  (exception: if you build with ARCH=macosx, no
+static binaries will be built, since the platform doesn't seem to support it).
 
