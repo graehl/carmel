@@ -20,11 +20,25 @@ struct ByRef {
 */
 
 //#define ByRef boost::reference_wrapper
+/*
 template <class C>
 struct ByRef : public boost::reference_wrapper<C> {
   explicit ByRef(C &c_) : boost::reference_wrapper<C>(c_) {}
 };
+*/
 
+template <class T> inline
+typename boost::unwrap_reference<T>::type &
+deref(T& t) {
+  return t;
+}
+
+template <class T> inline
+const typename boost::unwrap_reference<T>::type &
+deref(const T& t) {
+  return t;
+}
+  //return *const_cast<boost::unwrap_reference<T>::type *>&(t);
 
 #ifdef TEST
 #include "test.hpp"
@@ -33,14 +47,29 @@ struct ByRef : public boost::reference_wrapper<C> {
 #ifdef TEST
 template<class C>
 void f(C c) {
-  c=1;
+  deref(c)=1;
+}
+
+void g(int &p) {
+  p=2;
+}
+
+template<class C>
+void h(C c) {
+  g(c);
 }
 
 BOOST_AUTO_UNIT_TEST( byref )
 {
-  int t=0;
-  f(ByRef<int>(t));
+  int t=0;  
+  f(t);
+  BOOST_CHECK(t==0);
+  f(ref(t));
   BOOST_CHECK(t==1);
+  h(t);
+  BOOST_CHECK(t==1);
+  h(ref(t));
+  BOOST_CHECK(t==2);
 }
 #endif
 

@@ -16,7 +16,7 @@
 
 #endif
 
-#include <boost/utility.h>
+#include <boost/utility.hpp>
 
 template <class D>
 struct SaveLocal {
@@ -102,4 +102,4 @@ BOOST_AUTO_UNIT_TEST( threadlocal )
 #endif
 
 
-#endif
+
