@@ -425,9 +425,11 @@ inline std::string concat(const S &s,const T& suffix) {
 }
 
 #ifndef USE_STD_RAND
-typedef boost::uniform_01<boost::lagged_fibonacci607> G_rdist;
+typedef boost::lagged_fibonacci607 G_rgen;
+
+typedef boost::uniform_01<G_rgen> G_rdist;
 #ifdef MAIN
-G_rdist g_random01(boost::lagged_fibonacci607(
+G_rdist g_random01(G_rgen(
 # ifdef USE_NONDET_RANDOM
     boost::random_device()()
 # else
