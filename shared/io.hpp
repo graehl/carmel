@@ -28,7 +28,7 @@ inline bool parse_range(std::basic_istream<charT,Traits> &in,Set &set) {
 
 template <class Set>
 inline bool parse_range(const std::string range,Set &set) {
-    istringstream is(range);
+    std::istringstream is(range);
     return parse_range(is,set);
 }
 
