@@ -1,0 +1,8 @@
+S
+(S (S "they" "PRO" 1.0))
+(S (S "she" "PRO" 1.0))
+(S (S "can" "AUX" 0.99))
+(S (S "may" "AUX" 0.99))
+(S (S "can" "VERB" 0.01))
+(S (S "dance" "NOUN" 0.7))
+(S (S "fish" "VERB" 0.3))

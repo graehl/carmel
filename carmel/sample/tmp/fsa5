@@ -1,0 +1,6 @@
+F
+(S (A "the"))
+(S (A *e*))
+(A (B "big"))
+(B (C "big"))
+(C (F "dog"))

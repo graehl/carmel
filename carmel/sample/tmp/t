@@ -1,0 +1,6 @@
+S
+(S (1 "she" "PRO" 1.0))
+(1 (2 "can" "AUX" 0.99))
+(1 (2 "can" "VERB" 0.01))
+(2 (S "swing" "NOUN" 0.7))
+(2 (S "swing" "VERB" 0.3))

@@ -1,0 +1,214 @@
+/*******************************************************************************
+* This software ("Carmel") is licensed for research use only, as described in  *
+* the LICENSE file in this distribution.  The software can be downloaded from  *
+* http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
+* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
+* with questions about the software or commercial licensing.  All software is  *
+* copyrighted C 2000 by the University of Southern California.                 *
+*******************************************************************************/
+
+Carmel Version 2.00:
+
+This version of carmel is released on 10-26-2001. For changes and
+additions to the initial realease of Carmel, see CHANGES.
+
+Table of Contents:
+--------------------
+	I	What's In This Distribution:
+	II	Installation:
+	III	Compiling Carmel:
+	IV	Carmel File Formats:
+	V	Running Carmel:
+--------------------------------------------------------------------------------
+Part I: What's In This Distribution:
+-------------------------------------
+The distribution (after being installed - see Part II for details)
+includes the following directories and files:
+
+	src/	include the C++ source files
+	doc/	include the documentation files (FORMATS + tutorial).
+	bin/	Carmel executable.
+	sample/	The examples for Carmel tutorial. The tutorial can be
+		found  in the doc/ directory.
+	LICENSE	The license agreement for this software.
+	README	This file.
+
+
+Part II: Installation:
+----------------------
+
+1. Rename the file carmel-tar-gz.pl as carmel.tar.gz (% mv carmel-tar-gz.pl carmel.tar.gz)
+
+2. Gunzip the software (% gunzip carmel.tar.gz)
+
+3. Un-tar the software (% tar -xvf carmel.tar).
+
+This should create the main directory structure for carmel.
+
+Part III: Compiling Carmel:
+----------------------------
+
+A Makefile  is included in this distribution. The Makefile can be
+found in themain carmel directory. Follow these steps for
+installation:
+
+1. create an empty file in the main carmel directory and call that
+file dependencies.ARCH (where ARCH is sun4 if you are using SUN
+machine, or i686 if you are using a Linux machine)
+NOTE: some Linux machine assign i386 to the environment variable ARCH,
+so change i686 to i386 in the dependecy file name and in the make
+file.
+
+To  do that you can:
+
+    % cat > dependencies.sun4
+    % Hit Ctrl+D
+
+
+2. Create the dependency structure, to do that type:
+
+   % make depend
+
+3. Compile carmel
+
+   % make 
+
+(Note: this will create an optimized version of carmel.For a
+debug/profile/purified version  % make debug (purify profile)
+
+The software has been successfuly compiled using gcc (or g++) versions
+2.95.2 with STL support under Solaris 2.5 and 2.6 with no problems one
+warning message is produced and should be ignored). It ws also
+compiled successfully using gcc version egcs-2.91.66 under Linux
+RedHat 6.2  with no warning messages.
+
+The compilation should have no known problems except for the following wanring
+message:
+
+dynarray.h: In method `DynamicArray<char *>::~DynamicArray()':
+strhash.h:111:   instantiated from here
+dynarray.h:87: warning: `void *' is not a pointer-to-object type
+dynarray.h: In method `void DynamicArray<char *>::resize(int)':
+dynarray.h:56:   instantiated from `DynamicArray<char *>::pushBack(char *const &)'
+src/strhash.h:137:   instantiated from here
+dynarray.h:78: warning: `void *' is not a pointer-to-object type
+
+Ignore the message, it should have no side effects.
+
+Part IV: Carmel File Formats:
+------------------------------
+
+The input file formats for Carmel are explained in the file FORMATS in
+the documentation directory doc/ .
+
+Part V: Running Carmel:
+------------------------
+Carmel take its options on the command line. The list of valid options
+can be obtained by typing "carmel" with no command line options.
+The valid options are explained below:
+
+
+usage: carmel [switches] [file1 file2 ... filen]
+
+composes a sequence of weighted finite state transducers and writes the
+result to the standard output.
+
+-l (default)	left associative composition ((file1*file2) * file3 ... )
+-r		right associative composition (file1 * (file2*file3) ... )
+-s		the standard input is prepended to the sequence of files (for
+		left associative composition), or appended (if right
+		associative)
+-i		the first input (depending on associativity) is interpreted as
+		a space-separated sequence of symbols, and translated into a
+		transducer accepting only that sequence
+-P Similar to (-i) but instead of building an acceptor with a
+                single arc, construct a permutaion lattice that accepts the
+                input in all possible reorderings.
+-k n		the n best paths through the resulting transducer are written
+		to the standard output in lieu of the transducer itself
+-b		batch compostion - reads the sequence of transducers into
+		memory, except the first input (depending on associativity),
+		which consists of sequences of space-separated input symbols
+		(as in -i) separated by newlines.  The best path(s) through
+		the result of each composition are written to the standard
+		output, one per line, in the same order as the inputs that
+		generated them
+-S		as in -b, the input (file or stdin) is a newline separated
+		list of symbol sequences, except that now the odd lines are
+		input sequences, with the subsequent sequence being the
+		corresponding output sequence
+		this command scores the input / output pairs by adding the sum
+		of the weights of all possible paths producing them, printing
+		the weights one per line if -i is used, it will apply to the
+		second input, as -i consumes the first
+-n		normalize the weights of arcs so that for each state, the
+		weights all of the arcs with the same input symbol add to one
+-t		given pairs of input/output sequences, as in -S, adjust the
+		weights of the transducer so as to approximate the conditional
+		distribution of the output sequences given the input sequences
+		optionally, an extra line preceeding an input/output pair may
+		contain a floating point number for how many times the 
+		input/output pair should count in training (default is 1)
+-e w		w is the convergence criteria for training (the minimum
+		change in an arc's weight to trigger another iteration) - 
+		default w is 1E-5 (or, -5log)
+-f w		w is a floor weight used for training, which is added to the
+		counts for all arcs, immediately before normalization - if
+		nonzero, it ensures that no arc will be given zero weight -
+		default w is 0
+-M n		n is the maximum number of training iterations that will be
+		performed, regardless of whether the convergence criteria is
+		met - default n is 256
+-x		list only the input alphabet of the transducer to stdout
+-y		list only the output alphabet of the transducer to stdout
+-c		list only statistics on the transducer to stdout
+-F filename	write the final transducer to a file (and not stdout), except 
+		when -b is used
+-v		invert the resulting transducer by swapping the input and
+		output symbols 
+-d		do not eliminate dead-end states from all transducers created
+-C		consolidate arcs with same source, destination, input and
+		output, with a total weight equal to the sum (clamped to a
+		maximum weight of one)
+-p w		prune (discard) all arcs with weight less than w
+-g n		stochastically generate n input/output pairs by following
+		random paths from the initial state to the final state
+		(assumes that the weights have been normalized with -n or -t)
+		output is in the same form accepted in -t and -S
+-L n		while generating input/output pairs, stop traveling when in the
+		final state after at least n arcs have been traversed, so that
+		n <= (path length) <= (number of states) + n (default n is 0)
+-T n		during composition, index arcs in a hash table when the
+		product of the number of arcs of two states is greater than n 
+		(by default, n = 128)
+-N n		assign each arc in the result transducer a unique group number
+		starting at n and counting up.  If n is 0 (the special group
+		for unchangeable arcs), all the arcs are assigned to group 0
+		if n is negative, all group numbers are removed
+-A		the weights in the first transducer (depending on -l or -r, as
+		with -b, -S, and -t) are assigned to the result, by arc group
+		number.  Arcs with group numbers for which there is no
+		corresponding group in the first transducer are removed
+-m		give meaningful names to states created in composition
+		rather than just numbers
+-a		during composition, keep the identity of matching arcs from
+		the two transducers separate, assigning the same arc group
+		number to arcs in the result as the arc in the transducer it
+		came from.  This will create more states, and possibly less
+		arcs, than the normal approach, but the transducer will have
+		equivalent paths.
+-h		help on transducers, file formats
+-V		version number
+
+
+some formatting switches for displaying best paths:
+	-I	show input symbols only
+	-O	show output symbols only
+	-E	if -I or -O is specified, omit special symbols (beginning and
+		ending with an asterisk (e.g. "*e*"))
+	-Q	if -I or -O is specified, omit outermost quotes of symbol names
+	-W	do not show weights for paths
+
+confused?  think you've found a bug?  if all else fails, e-mail
+yaser@isi.edu or knight@isi.edu
+
