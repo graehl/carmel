@@ -31,6 +31,7 @@ CC.freebsd = g++31
 CC.macosx = g++
 
 CCFLAGS = -c -Wall -I../boost/boost
+#-Wall 
 #-fno-exception
 CCFLAGS_OPT    = $(CCFLAGS) -O3 -ffast-math
 CCFLAGS_DBG    = $(CCFLAGS) -g 
