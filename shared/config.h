@@ -5,6 +5,10 @@
 
 //#define DEBUGNAN
 
+#define BOOST_NO_MT
+
+#define UNORDERED_MAP
+
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
@@ -58,7 +62,7 @@ typedef float FLOAT_TYPE;
 //#define DEBUGKBEST
 //#define DEBUGPRUNE
 //#define DEBUGFB
-//#define DEBUGCOMPOSE
+#define DEBUGCOMPOSE
 #define DEBUG_ADAPTIVE_EM
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-3
 #else

@@ -165,7 +165,7 @@ main(int argc, char *argv[]){
   unsigned int seed = (unsigned int )std::time(NULL);
   int nParms = 0;
   int kPaths = 0;
-  int thresh = 128;
+  int thresh = 32;
   Weight converge = 1E-4;
   Weight converge_pp_ratio = .999;
   bool converge_pp_flag = false;
@@ -466,13 +466,18 @@ main(int argc, char *argv[]){
 
   for ( ; ; ) { // input transducer from string line reading loop
     if (nTarget != -1) { // if to construct a finite state from input
-      if ( !*line_in )
-        break;
+	  if ( !*line_in ) {
+fail_ntarget: 
+		Config::warn() << "No lines of input provided.\n";
+		PLACEMENT_NEW (&chain[nTarget])WFST(); break;
+	  }
+        
       *line_in >> ws;
       getline(*line_in,buf);
 
-      if ( !*line_in )
-        break;
+	  if ( !*line_in ) 		
+		goto fail_ntarget;
+			 
       if ( input_lineno != 0 )
         chain[nTarget].~WFST();
       if (flags['P']){ // need a permutation lattice instead
@@ -545,13 +550,13 @@ main(int argc, char *argv[]){
 #endif
       result = next;
 
-      int q_states=result->count();
+      int q_states=result->size();
       int q_arcs=result->numArcs();
       if (!flags['q'])
-        Config::log() << "\n\t(" << result->count() << " states / " << result->numArcs() << " arcs";
+        Config::log() << "\n\t(" << result->size() << " states / " << result->numArcs() << " arcs";
 #ifdef  DEBUGCOMPOSE
       Config::debug() <<"stats for the resulting composition for chain[" << i << "]\n";
-      Config::debug() << "Number of states in result: " << result->count() << std::endl;
+      Config::debug() << "Number of states in result: " << result->size() << std::endl;
       Config::debug() << "Number of arcs in result: " << result->numArcs() << std::endl;
       //      Config::debug() << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
       //sleep(100);
@@ -559,24 +564,25 @@ main(int argc, char *argv[]){
 #endif
 
       if ( !result->valid() ) {
-        Config::warn() << "Empty or invalid result of composition with transducer " << filenames[i] << ".\n";
+        Config::warn() << ")\nEmpty or invalid result of composition with transducer " << filenames[i] << ".\n";
         for ( i = 0 ; i < kPaths ; ++i ) {
           if ( !flags['W'] )
             cout << 0;
           cout << "\n";
         }
+
         goto nextInput;
       }
       bool finalcompose = i == (r ? 0 : nChain-1);
       MINIMIZE;
-      if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
-        Config::log()  << " reduce-> " << result->count() << "/" << result->numArcs();
+      if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
+        Config::log()  << " reduce-> " << result->size() << "/" << result->numArcs();
       if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
-        q_states=result->count();
+        q_states=result->size();
         q_arcs=result->numArcs();
         PRUNE;
-        if (!flags['q'] && (q_states != result->count() || q_arcs !=result->numArcs()))
-          Config::log()  << " prune-> " << result->count() << "/" << result->numArcs();
+        if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
+          Config::log()  << " prune-> " << result->size() << "/" << result->numArcs();
       }
       if (!flags['q'])
         Config::log() << ")";
@@ -628,7 +634,7 @@ main(int argc, char *argv[]){
     } else if ( flags['y'] ) {
       result->listAlphabet(cout, 1);
     } else if ( flags['c'] ) {
-      cout << "Number of states in result: " << result->count() << std::endl;
+      cout << "Number of states in result: " << result->size() << std::endl;
       cout << "Number of arcs in result: " << result->numArcs() << std::endl;
       cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
     }
@@ -890,7 +896,7 @@ void usageHelp(void)
   cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
   cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
   cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
-  cout << " = 128)\n-N n\t\tassign each arc in the result transducer a uniq";
+  cout << " = 32)\n-N n\t\tassign each arc in the result transducer a uniq";
   cout << "ue group number\n\t\tstarting at n and counting up.  If n is 0 (";
   cout << "the special group\n\t\tfor unchangeable arcs), all the arcs are ";
   cout << "assigned to group 0\n\t\tif n is negative, all group numbers are";

@@ -15,9 +15,9 @@ using namespace std;
 // xalloc gives a unique global handle with per-ios space handled by the ios
 const int Weight::base_index = ios_base::xalloc();
 const int Weight::thresh_index = ios_base::xalloc();
-const FLOAT_TYPE Weight::HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 const Weight Weight::ZERO;
 const Weight Weight::INF(false,false);
+//const FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 
 /*
   std::ostream& operator << (std::ostream &o, Weight weight)

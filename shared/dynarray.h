@@ -17,7 +17,7 @@ template <typename T> class DynamicArray {
   DynamicArray(const DynamicArray &a): space(a.space),sz(0){ // added by Yaser 7-27-2000
     vec = (T*)::operator new((size_t)a.space*sizeof(T));
     for (int i = 0 ; i < a.sz ; i++)
-      pushBack(a.vec[i]) ;
+      push_back(a.vec[i]) ;
     Assert(sz==a.sz);
   }
 							 
@@ -40,17 +40,17 @@ template <typename T> class DynamicArray {
   int index_of(T *t) const {
     return (int)(t-vec);
   }
-  void pushBack()
+  void push_back()
     {
       if ( sz >= space )
 	resize(space << 1);
       PLACEMENT_NEW(vec+(sz++)) T();
     }    
-  void pushBack(const T& val)
+  void push_back(const T& val)
     {
-      PLACEMENT_NEW(pushBackRaw()) T(val);
+      PLACEMENT_NEW(push_backRaw()) T(val);
     }
-  T *pushBackRaw()
+  T *push_backRaw()
     {
       if ( sz >= space )
 	resize(space << 1);
@@ -79,8 +79,8 @@ template <typename T> class DynamicArray {
     ::operator delete(oldVec);
     space = newSz;
   }
-  int size() const { return space; }
-  int count() const { return sz; }
+  int capacity() const { return space; }
+  int size() const { return sz; }
   void clear() {
     if (vec) {
       for ( int	i = 0 ; i < sz ; i++ )

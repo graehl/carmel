@@ -16,14 +16,32 @@ static void makeTrioName(char *bufP, const char *aName, const char *bName, int f
   *bufP = 0;
 }
 
-#define COMPOSEARC { \
-if ( (pDest = stateMap.find_second(triDest)) ) \
+//#define OLDCOMPOSEARC
+#ifdef DEBUGCOMPOSE
+#define DUMPARC(a,b,c,d) Config::debug() << "arc" << Arc(a,b,c,d)
+#else
+#define DUMPARC(a,b,c,d)
+#endif
+
+#ifdef OLDCOMPOSEARC
+#define COMPOSEARC do { \
+if ( (pDest = find_second(stateMap,triDest)) ) \
  { states[sourceState].addArc(Arc(in, out, *pDest, weight)); \
 } else { \
-  stateMap.add(triDest, numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.pushBack();    \
+  stateMap[triDest]=numStates(); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.push_back();    \
   if ( namedStates ) {      makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);      stateNames.add(buf);   \
-  }  }}
+  }  }} while(0)
+#else
 
+#define COMPOSEARC do { \
+  HashTable<TrioKey,int>::insert_return_type i; \
+  if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
+	trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);states.push_back();\
+	if ( namedStates ) { makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);\
+	  stateNames.add(buf);   \
+	}} else trioID.num=i.first->second; \
+  states[sourceState].addArc(Arc(in, out, trioID.num, weight)); DUMPARC(in, out, trioID.num, weight);} while(0)
+#endif
 
 
 WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0), ownerOut(0), in(a.in), out(b.out), states((a.numStates() + b.numStates())), trn(NULL)
@@ -32,8 +50,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     invalidate();
     return;
   }
-  int *map = NEW int[a.out->count()];
-  int *revMap = NEW int[b.in->count()];
+  int *map = NEW int[a.out->size()];
+  int *revMap = NEW int[b.in->size()];
   char buf[MAX_STATENAME_LEN+1];
   a.out->mapTo(*b.in, map);     // find matching symbols in interfacing alphabet
   b.in->mapTo(*a.out, revMap);
@@ -45,7 +63,9 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
 
   List<TrioID> queue;
   int sourceState = -1;
+#ifdef OLDCOMPOSEARC
   int *pDest;
+#endif
   int in, out;
   Weight weight;
   TrioKey triSource, triDest;
@@ -53,8 +73,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   trioID.num = 0;
   trioID.tri = TrioKey(0,0,0);
 
-  stateMap.add(trioID.tri, 0); // add the initial state
-  states.pushBack();
+  stateMap[trioID.tri]=0; // add the initial state
+  states.push_back();
   if ( namedStates ) {
     makeTrioName(buf, a.stateName(0), b.stateName(0), 0);
     stateNames.add(buf);
@@ -76,7 +96,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
       aState->indexBy(1);
       bState->indexBy(0);
       int group;
-	  for ( HashTable<IntKey, List<HalfArc> >::const_iterator ll=aState->index->begin() ; ll != aState->index->end(); ++ll ) {
+	  const HashTable<IntKey, List<HalfArc> > &aindex=*aState->index;
+	  for ( HashTable<IntKey, List<HalfArc> >::const_iterator ll=aindex.begin() ; ll != aindex.end(); ++ll ) {
         HalfArcState mediate;
         mediate.hiddenLetter = ll->first;
         mediate.source = triSource.bState;
@@ -91,20 +112,21 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               in = (*l)->in;
               COMPOSEARC;
               //!danger: should probably use IsTiedOrLocked() in Arc.h.
-              if ( (group = (*l)->groupId) >= 0 )
+              if ( isTiedOrLocked(group = (*l)->groupId) )
                 states[sourceState].arcs.top().groupId = group;
             }
           }
-        } else if ( (matches = bState->index->find_second(map[mediate.hiddenLetter])) ) {
+        } else if ( (matches = find_second(*bState->index,(IntKey)map[mediate.hiddenLetter])) ) {
           for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
             mediate.dest = (*l)->dest;
             int mediateState;
-            if ( (pDest = arcStateMap.find_second(mediate)) ) {
+#ifdef OLDMEDIATE
+            if ( (pDest = find_second(arcStateMap,mediate)) ) {
               mediateState = *pDest;
             } else {
               mediateState = numStates();
-              arcStateMap.add(mediate, mediateState);
-              states.pushBack();
+              arcStateMap[mediate]=mediateState;
+              states.push_back();
               if ( namedStates ) {
                 char *p = buf;
                 const char *s = b.stateName(mediate.source),
@@ -120,6 +142,30 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 while ( (*p++ = *d++) ) ;
                 stateNames.add(buf);
               }
+#else
+			HashTable<HalfArcState, int>::insert_return_type ins;
+            if ( (ins = arcStateMap.insert(HashTable<HalfArcState, int>::value_type(mediate,numStates()))).second ) {			  
+			  mediateState = numStates();
+              states.push_back();
+              if ( namedStates ) {
+                char *p = buf;
+                const char *s = b.stateName(mediate.source),
+                  *l = (*a.out)[mediate.hiddenLetter],
+                  *d = a.stateName(mediate.dest);
+                while ( *s )
+                  *p++ = *s++;
+                *p++ = ',';
+                while ( *l )
+                  *p++ = *l++;
+                *p++ = '-';
+                *p++ = '>';
+                while ( (*p++ = *d++) ) ;
+                stateNames.add(buf);
+            } else {
+              mediateState = ins.first->second;
+            }
+
+#endif
               int temp = sourceState;
               sourceState = mediateState;
               triDest.aState = mediate.dest;
@@ -131,7 +177,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 triDest.bState = (*r)->dest;
                 weight = (*r)->weight;
                 COMPOSEARC;
-                if ( (group = (*r)->groupId)>= 0)
+                if ( isTiedOrLocked(group = (*r)->groupId) )
                   states[sourceState].arcs.top().groupId = group;
               }
               sourceState = temp;
@@ -143,7 +189,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           }
         }
       }
-      if ( (matches = bState->index->find_second(EMPTY)) ) {
+      if ( (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
         in = EMPTY;
         triDest.aState = triSource.aState;
         triDest.filter = 1;
@@ -172,7 +218,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
         larger = bState;
         smaller = aState;
       }
-      if ( larger->size * smaller->size > WFST::indexThreshold ) {
+      if ( larger->size > WFST::indexThreshold ) {
         larger->indexBy( larger == aState ); // create hash table
         if ( larger == bState ) {       // bState (rhs transducer) is larger
           for ( List<Arc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end() ; l !=end ; ++l) {
@@ -187,7 +233,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 COMPOSEARC;
               }
               if ( triSource.filter == 0 )
-                if ( (matches = bState->index->find_second(EMPTY)) ) {
+                if ( (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
                   triDest.filter = 0;
                   for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                     Assert((*r)->in == EMPTY);
@@ -198,7 +244,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                   }
                 }
             } else {
-              if ( (matches = bState->index->find_second(map[l->out])) ) {
+              if ( (matches = find_second(*bState->index,(IntKey)map[l->out])) ) {
                 triDest.filter = 0;
                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                   Assert ( map[l->out] == (*r)->in );
@@ -210,7 +256,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               }
             }
           }
-          if ( triSource.filter != 1 && (matches = bState->index->find_second(EMPTY)) ) {
+          if ( triSource.filter != 1 && (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
             in = EMPTY;
             triDest.aState = triSource.aState;
             triDest.filter = 2;
@@ -235,7 +281,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 COMPOSEARC;
               }
               if ( triSource.filter == 0 )
-                if ( (matches = aState->index->find_second(EMPTY)) ) {
+                if ( (matches = find_second(*aState->index,(IntKey)EMPTY)) ) {
                   triDest.filter = 0;
                   for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                     Assert((*l)->out == EMPTY);
@@ -247,7 +293,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 }
             } else {
               triDest.filter = 0;
-              if ( (matches = aState->index->find_second(revMap[r->in])) ) {
+              if ( (matches = find_second(*aState->index,(IntKey)revMap[r->in])) ) {
                 for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                   Assert ( map[(*l)->out] == r->in );
                   in = (*l)->in;
@@ -258,7 +304,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               }
             }
           }
-          if ( triSource.filter != 2 && (matches = aState->index->find_second(EMPTY)) ) {
+          if ( triSource.filter != 2 && (matches = find_second(*aState->index,(IntKey)EMPTY)) ) {
             out = EMPTY;
             triDest.bState = triSource.bState;
             triDest.filter = 1;
@@ -333,7 +379,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   int i;
   for ( i = 0 ; i < 3 ; ++i ) {
     triDest.filter = i;
-    if ( (pFinal[i] = stateMap.find_second(triDest)) ) {
+    if ( (pFinal[i] = find_second(stateMap,triDest)) ) {
       ++nFinal;
       final = *pFinal[i];
     }
@@ -344,7 +390,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   }
   if ( nFinal > 1 ) {
     final = numStates();
-    states.pushBack();
+    states.push_back();
     if ( namedStates )
       stateNames.add("final");
     for ( i = 0 ; i < 3 ; ++i )
@@ -353,5 +399,5 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
         states[*pFinal[i]].arcs.top().groupId = WFST::LOCKEDGROUP; // prevent weight from changing in training
       }
   }
-  states.resize(states.count());
+  states.resize(states.size());
 }

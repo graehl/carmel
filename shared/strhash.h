@@ -13,19 +13,25 @@ std::ostream & operator << (std::ostream & out, const StringKey &s);
 
 
 class StringPool {
+  static char * clone(const char *str) {
+	return strcpy(NEW char[strlen(str)+1], str);
+  }
+  void kill(const char *str) {
+	delete str;
+  }
 #ifdef STRINGPOOL
 	static HashTable<StringKey, int> counts;
 #endif
 public:
 	static StringKey borrow(StringKey s) {
 #ifdef STRINGPOOL
-		HashEntry<StringKey, int> *entryP;
-		if ( (entryP = counts.find(s)) ) {
+	  HashTable<StringKey, int>::find_return_type entryP;
+		if ( (entryP = counts.find(s)) != counts.end() ) {
 			(entryP->second)++;
 			return (entryP->first);
 		}
 		s.clone();
-		counts.add(s, 1);
+		counts[s]=1;
 		return s;
 #else
 		s.clone();
@@ -34,8 +40,8 @@ public:
 	}
 	static void giveBack(StringKey s) {
 #ifdef STRINGPOOL
-		HashEntry<StringKey, int> *entryP;
-		if ( s.str != StringKey::empty && (entryP = counts.find(s)) ) {
+		HashTable<StringKey, int>::find_return_type entryP;
+		if ( s.str != StringKey::empty && (entryP = counts.find(s))!= counts.end() ) {
 			Assert(entryP->second > 0);
 			Assert(s.str == entryP->first.str);
 			if ( !(--(entryP->second)) ) {
@@ -50,7 +56,7 @@ public:
 	~StringPool()
 	{
 #ifdef STRINGPOOL
-	  for ( HashTable<StringKey, int>::const_iterator i=counts.begin(); i!=counts.end() ; ++i )
+	  for ( HashTable<StringKey, int>::iterator i=counts.begin(); i!=counts.end() ; ++i )
 			((StringKey &)i->first).kill();
 #endif
 	}
@@ -65,15 +71,23 @@ class Alphabet {
   Alphabet(char * c) {
     add(c);
   }
-  int  size() const{ // returns size of the alphabet ... added by Yaser - 7-13-2000
-    return names.count();
-  }
   Alphabet(const Alphabet &a) {
 #ifdef NODELETE
     memcpy(this, &a, sizeof(Alphabet));
 #else
-    for ( int i = 0 ; i < a.names.count(); ++i )
+    for ( int i = 0 ; i < a.names.size(); ++i )
       add(a.names[i]);
+#endif
+  }
+  void dump();
+  void verify() {
+#ifdef DEBUG
+	for (int i = 0 ; i < names.size(); ++i ) {
+	  static char buf[1000];
+	  Assert(*find(names[i])==i);
+	  strcpy(buf,names[i]);
+	  Assert(find(buf));
+	}
 #endif
   }
   void swap(Alphabet &a)
@@ -85,36 +99,36 @@ class Alphabet {
       memcpy(&a, swapTemp, s);
     }
   void add(char *name) { 
+	Assert(ht.find(name) == ht.end());
     StringKey s = StringPool::borrow(StringKey(name));;
-    ht.add(s, names.count());
-    names.pushBack(s.str);
+	ht[s]=names.size();
+    names.push_back(s.str);
   }
   int *find(char *name) const {
-    return ht.find_second(StringKey(name));
+    return find_second(ht,(StringKey)name);
   }
-  int indexOf(char *name) {
+  int indexOf(const char *name) {
     Assert(name);
-    StringKey s = name;
+    StringKey s = const_cast<char *>(name);
 //#define OLD_INDEXOF
 #ifdef OLD_INDEXOF
-  int *it;
-  
-	if ( (it = ht.find_second(s)) )
+  int *it;  
+	if ( (it = find_second(ht,s)) )
       return *it;
     else {
       StringKey k = StringPool::borrow(s);
-      int ret = names.count();
-      ht.add(k, ret);
-      names.pushBack(k.str);
+      int ret = names.size();
+      ht[k]=ret;
+      names.push_back(k.str);
       return ret;
     }
 #else
-	HashTable<StringKey,int>::insert_pair it;
-	if ( (it = ht.insert(s)).second ) {
-	  *const_cast<StringKey*>(&(it.first->first)) = StringPool::borrow(s);
-	  int ret = names.count();
+	HashTable<StringKey,int>::insert_return_type it;
+	if ( (it = ht.insert(HashTable<StringKey,int>::value_type(s,0))).second ) {
+	  *const_cast<StringKey*>(&(it.first->first)) = StringPool::borrow(s); // might seem naughty, (can't change hash table keys) but it's still equal.
+	  int ret = names.size();
 	  it.first->second=ret;
-	  names.pushBack(it.first->first);
+	  names.push_back(const_cast<char *>(it.first->first.str));
 	  return ret;
 	} else {
 	  return it.first->second;
@@ -122,7 +136,7 @@ class Alphabet {
 #endif
   }
   const char * operator[](int pos) const {
-    //Assert(pos < count() && pos >= 0);
+    //Assert(pos < size() && pos >= 0);
     return names[pos];
   }
   static char *itoa(int pos) {
@@ -148,27 +162,27 @@ class Alphabet {
   }
   const char * operator()(int pos) {
     int iNum = pos;
-    if (iNum >= count() || names[iNum] == StringKey::empty ) {
+    if (iNum >= size() || names[iNum] == StringKey::empty ) {
       // decimal string for int
      
       StringKey k;
       k.str = itoa(iNum);
       k = StringPool::borrow(k);
-      if ( iNum < names.count() ) {
-	names[iNum] = k.str;
-	ht.add(k,iNum); // Yaser added this 8-3-2000: to fix what I think is a bug. Since the String key is never added to the hashtable ht.
+      if ( iNum < names.size() ) {
+		names[iNum] = k.str;
+		ht[k]=iNum;
       } else {
-	for ( int i = names.count() ; i < iNum ; ++i )
-	  names.pushBack(StringKey::empty);
-	names.pushBack(k.str);
-	ht.add(k,iNum ); // Yaser added this 8-3-2000: to fix what I think is a bug. Since the String key is never added to the hashtable ht.
-	Assert(names.count() == iNum+1);
+	for ( int i = names.size() ; i < iNum ; ++i )
+	  names.push_back(StringKey::empty);
+	names.push_back(k.str);
+	ht[k]=iNum;
+	Assert(names.size() == iNum+1);
       }
     }
     return names[iNum];
   }
   void removeMarked(bool marked[], int* oldToNew) {
-    for ( int i = 0 ; i < names.count() ; ++i )
+    for ( int i = 0 ; i < names.size() ; ++i )
       if ( names[i] != StringKey::empty ) {
 	if ( marked[i] ) {
 	  ht.erase(names[i]);
@@ -184,24 +198,23 @@ class Alphabet {
   }
   void mapTo(const Alphabet &o, int *aMap) const
     // aMap will give which letter in Alphabet o the letters in a 
-    // correspond to, or -1 if the letter is not in Alphabet o.
-    // aMap should have space for size+1 ints
-    // the first (unused) slot is reserved for *e*, the empty character
-    {
+    // correspond to, or -1 if the letter is not in Alphabet o.    
+  {
       int i, *ip;
-      for ( i = 0 ; i < count() ; ++i )
+      for ( i = 0 ; i < size() ; ++i )
 	aMap[i] = (( ip = o.find(names[i])) ? (*ip) : -1 );
     }
-  int count() const { return names.count(); }
+  int size() const { return names.size(); }
   ~Alphabet()
     {
 #ifndef NODELETE
-      for ( int  i = 0; i < names.count() ; ++i )
+      for ( int  i = 0; i < names.size() ; ++i )
 	if ( names[i] != StringKey::empty )
 	  StringPool::giveBack(names[i]);
 #endif
     }
   friend std::ostream & operator << (std::ostream &out, Alphabet &alph);
 };
+
 
 #endif

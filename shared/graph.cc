@@ -94,7 +94,7 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
 
 FLOAT_TYPE *DistToState::weights = NULL;
 DistToState **DistToState::stateLocations = NULL;
-FLOAT_TYPE DistToState::unreachable = Weight::HUGE_FLOAT;
+FLOAT_TYPE DistToState::unreachable = HUGE_FLOAT;
 
 inline bool operator < (DistToState lhs, DistToState rhs) {
   return DistToState::weights[lhs.state] > DistToState::weights[rhs.state];
@@ -168,7 +168,7 @@ void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **take
   FLOAT_TYPE *weights = dist;
 
   for ( i = 0 ; i < nStates ; ++i ) {
-    weights[i] = Weight::HUGE_FLOAT;
+    weights[i] = HUGE_FLOAT;
   }
 
   DistToState **stateLocations = NEW DistToState *[nStates];
@@ -191,7 +191,7 @@ void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **take
 
   FLOAT_TYPE candidate;
   for ( ; ; ) {
-    if ( (FLOAT_TYPE)distQueue[0] == Weight::HUGE_FLOAT || nUnknown == 0 ) {
+    if ( (FLOAT_TYPE)distQueue[0] == HUGE_FLOAT || nUnknown == 0 ) {
       break;
     }
     int activeState = distQueue[0].state;

@@ -2,6 +2,7 @@
 #define COMPOSE_H 1
 #include "assert.h"
 
+#include "2hash.h"
 
 
 #define EMPTY 0
@@ -12,7 +13,7 @@ struct TrioKey {
   int aState;
   int bState;
   char filter;
-  int operator == (const TrioKey &t) const 
+  bool operator == (const TrioKey &t) const 
   {
     return (aState == t.aState) && (bState == t.bState)
       && (filter == t.filter);
@@ -26,12 +27,20 @@ struct TrioKey {
     return (bMax * (filter*aMax + aState) + bState) * 2654435767U;
   }
 };
-
+HASHNS_B
+template<>
+struct hash<TrioKey>
+{
+  size_t operator()(const TrioKey &x) const {
+	return x.hash();
+  }
+};
+HASHNS_E
 struct HalfArcState {
   int dest;			// in unshared (lhs) transducer
   int source;			// in (rhs) transducer with the shared arcs
   int hiddenLetter;		// the matching letter that disappears in composition (index into lhs transducer's output alphabet)
-  int operator == ( const HalfArcState &s ) const
+  bool operator == ( const HalfArcState &s ) const
   {
     return ( dest == s.dest )
       && ( source == s.source )
@@ -45,7 +54,15 @@ struct HalfArcState {
     return (TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source) * 2654435767U;
   }
 };
-
+HASHNS_B
+template<>
+struct hash<HalfArcState>
+{
+  size_t operator()(const HalfArcState &x) const {
+	return x.hash();
+  }
+};
+HASHNS_E
 
 struct TrioID {
   int num;

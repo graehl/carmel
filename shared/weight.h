@@ -14,6 +14,8 @@
 #pragma warning(disable:4244)
 #endif
 
+static FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
+
 //! warning: unless #ifdef WEIGHT_CORRECT_ZERO
 // Weight(0) will may give bad results when computed with, depending on math library behavior
 // defining WEIGHT_CORRECT_ZERO will incur a performance penalty
@@ -41,7 +43,9 @@ struct Weight {			// capable of representing nonnegative reals
   public:	
   static const Weight ZERO, INF;
   // linux g++ 3.2 didn't like static self-class member
-  static const FLOAT_TYPE HUGE_FLOAT;
+  static const FLOAT_TYPE FLOAT_INF() {
+	return HUGE_FLOAT;
+  }
   FLOAT_TYPE weight;
 
   // output format manipulators: cout << Weight::out_log10;
@@ -117,7 +121,7 @@ struct Weight {			// capable of representing nonnegative reals
 #ifdef DEBUG
 	  if(weight!=weight) {
 		*(int*)0=0;
-		assert(weight==weight);
+		Assert(weight==weight);
 	  }
 #else
 		assert(weight==weight);
@@ -379,7 +383,7 @@ inline Weight operator -(Weight lhs, Weight rhs) {
   if ( rdiff >= 0 )	   // lhs <= rhs 
 	  // clamp to zero as minimum without giving exception (not mathematically correct!)
   {
-    //result.weight = -Weight::HUGE_FLOAT; // default constructed to this already
+    //result.weight = -HUGE_FLOAT; // default constructed to this already
     return result;
   }
 
@@ -451,6 +455,5 @@ Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = 
 #else
 #define NANCHECK(w)
 #endif
-
 
 #endif 

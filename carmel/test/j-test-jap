@@ -1,10 +1,9 @@
-. env.sh
 echo 'a n ji ra na i to' |
-sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' | \
-$B -lsi -k 1 -OEW asciikana-katakana.transducer >test.katakana
+sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' > test.asciikana
+$B -li -k 1 -OEW test.asciikana asciikana-katakana.transducer >test.katakana
 sed 's/ //g' test.katakana | sed 's/"//g' >test.kana
 
-rm -f test.asciikana test.jpron test.jpron3 test.jpron2 test.epron test.word test.final
+#rm -f test.asciikana test.jpron test.jpron3 test.jpron2 test.epron test.word test.final
 
 echo ""
 echo "Katakana:                      " 
