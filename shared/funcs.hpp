@@ -26,11 +26,11 @@
 #include <algorithm>
 #include <boost/random.hpp>
 #ifdef USE_NONDET_RANDOM
-# ifdef __linux__
 #  include <boost/nondet_random.hpp>
-# else
-#  undef USE_NONDET_RANDOM
+# ifdef MAIN
+#  include "nondet_random.cpp"
 # endif
+//#  undef USE_NONDET_RANDOM
 #endif
 
 
@@ -472,7 +472,7 @@ extern G_rdist g_random01;
 #endif
 #endif
 
-inline void random_seed(uint32_t value=default_random_seed())
+inline void set_random_seed(uint32_t value=default_random_seed())
 {
 #ifdef USE_STD_RAND
     srand(value);
