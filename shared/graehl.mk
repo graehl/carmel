@@ -226,14 +226,15 @@ allclean: distclean
 	-rm -rf $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
 
 ifeq ($(MAKECMDGOALS),depend)
-DEPEND=1
 endif
+DEPEND=1
 
 
 %.d: %.$(CPP_EXT)
 #	@echo
 #	@echo CREATE DEPENDENCIES for $<
-	@set -e; if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
+#@set -e;
+	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
  ( \
 echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \

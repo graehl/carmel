@@ -178,7 +178,7 @@ struct SwapBatch {
             DBP(space.remain());
             BatchMember *newguy=space.aligned_alloc<BatchMember>();
             DBP2((void*)newguy,space.remain());
-            read(is,*newguy,space);
+            read((std::istream&)is,*newguy,space);
             DBP2(newguy,space.remain());
         }
         catch (StackAlloc::Overflow &o) {
@@ -255,7 +255,7 @@ void read(std::istream &in,B &b,StackAlloc &a) {
 }
 */
 
-void read(std::ifstream &in,const char * &b,StackAlloc &a) {
+void read(std::istream &in,const char * &b,StackAlloc &a) {
     char c;
     std::istream::sentry s(in,true); //noskipws!
     char *p=a.alloc<char>(); // space for the final 0

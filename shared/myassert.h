@@ -46,6 +46,7 @@ inline static void _my_assert(const char *file,unsigned line,const T&t,const cha
 #else
 #define BREAKPOINT
 #define Assert(a)
+#define Assert2(a,b)
 #define Paranoid(a)
 
 #endif

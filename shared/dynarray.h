@@ -18,6 +18,7 @@
 #include "byref.hpp"
 #include "funcs.hpp"
 #include "io.hpp"
+#include "stackalloc.hpp"
 
 #ifdef TEST
 #include "test.hpp"
@@ -100,6 +101,9 @@ public:
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
     std::ios_base::iostate get_from_imp(Array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
+    template <class L,class A> friend
+    void read(std::istream &in,Array<L,A> &x,StackAlloc &a) throw(genio_exception);
+
 
 
     template <class charT, class Traits, class Reader>
@@ -856,6 +860,15 @@ bool operator ==(const Array<Lt,A> &l, const Array<L2,A2> &r)
 }
 
 
+template <class L,class A>
+void read(std::istream &in,Array<L,A> &x,StackAlloc &a) throw(genio_exception) {
+    x.vec=a.aligned_next<L>();
+    my::function_output_iterator<boost::reference_wrapper<StackAlloc> > out(boost::ref(a));
+    range_get_from(in,out,DefaultReader<L>());
+    x.endspace=a.next<L>();
+}
+
+
 
 #ifdef TEST_MAIN
 
@@ -879,6 +892,21 @@ struct plus_one_reader {
 BOOST_AUTO_UNIT_TEST( dynarray )
 {
     using namespace std;
+    {
+        const int N=10;
+
+    StackAlloc al;
+    int aspace[N];
+    al.init(aspace,aspace+N);
+    istringstream ina("(1 2 3 4)");
+    Array<int> aint;
+    read(ina,aint,al);
+    BOOST_CHECK(aint.size()==4);
+    BOOST_CHECK(aint[3]==4);
+    BOOST_CHECK(al.top=aspace+4);
+    }
+
+
     {
         FixedArray<FixedArray<int> > aa,ba;
         std::string sa="(() (1) (1 2 3) () (4))";
