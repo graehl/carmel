@@ -1,3 +1,18 @@
+2004-02-12  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/finite.cc: finally hunted down problem with post-training
+	estimate/normalize in debug mode - total sum is the same, but
+	number of nonzero weight arcs is too low.  cause was eachParameter
+	being called before normalization to check for NaN; tied groups
+	get assigned to the value of whichever arc in that group is
+	visited first (ok after normalization, but not before)
+
+	* src/2hash.h: many changes (to all files) moving interface closer
+	to proposed STL standard unordered_map - new insert returns
+	whether key existed before as well as pointer to the new (or old)
+	entry.  ultimately will require a proxy object to use STL hash
+	(find_second)
+
 2003-12-12  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/finite.cc: fixed NaN training/normalization problem in debug mode

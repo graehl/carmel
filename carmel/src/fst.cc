@@ -44,12 +44,12 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
       return 1;
     }
     int whichInput = (int)(states[s].index->count() * randomFloat());
-    for ( HashIter<IntKey, List<HalfArc> > ha(*states[s].index) ; ha ; ++ha )
+    for ( HashTable<IntKey, List<HalfArc> >::const_iterator ha = states[s].index->begin() ; ha != states[s].index->end(); ++ha )
       if ( !whichInput-- ) {
         Weight which = randomFloat();
         Weight cum;
 
-        List<HalfArc>::const_iterator a,begin=ha.val().const_begin(),end = ha.val().const_end();
+        List<HalfArc>::const_iterator a,begin=ha->second.const_begin(),end = ha->second.const_end();
 
         for(a = begin ; a != end; ++a) {
           cum+=(*a)->weight;
@@ -89,7 +89,7 @@ namespace WFST_impl {
     WFST &wfst;
     State *state;
     State *end;
-    typedef HashIter<IntKey, List<HalfArc> > Cit;
+    typedef HashTable<IntKey, List<HalfArc> >::const_iterator Cit;
     typedef List<HalfArc>::const_iterator Cit2;
     typedef List<Arc>::val_iterator Jit;
     Cit Ci;
@@ -100,7 +100,7 @@ namespace WFST_impl {
     void beginState() {
       if(method==WFST::CONDITIONAL)
         if (!empty_state())
-          Ci.init(*state->index);
+          Ci = state->index->begin();
     }
   public:
     NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state((State *)wfst_.states), end(state+wfst_.numStates()), method(meth) { beginState(); }
@@ -119,8 +119,8 @@ namespace WFST_impl {
       if(method==WFST::CONDITIONAL) {
         if (empty_state())
           return;
-        Ci2 = Ci.val().const_begin();
-        Cend = Ci.val().const_end();
+        Ci2 = Ci->second.const_begin();
+        Cend = Ci->second.const_end();
       } else {
         Ji = state->arcs.val_begin();
         Jend = state->arcs.val_end();
@@ -153,7 +153,7 @@ namespace WFST_impl {
       if(method==WFST::CONDITIONAL) {
         if ( !empty_state() )
           ++Ci;
-        while (empty_state() || !Ci) {
+        while (empty_state() || Ci == state->index->end()) {
           ++state;
           if (moreGroups())
             beginState();
@@ -181,7 +181,7 @@ operator <<
 
 
 
-static void NaNCheck(Weight *w) {
+static void NaNCheck(const Weight *w) {
 	w->NaNCheck();
 }
 
@@ -216,8 +216,8 @@ void WFST::normalize(NormalizeMethod method)
       else
         sum += w;
     }
-#ifdef DEBUG
-				eachParameter(NaNCheck);
+#ifdef DEBUGNAN
+				readEachParameter(NaNCheck);
 #endif
 #ifdef DEBUGNORMALIZE
     Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
@@ -229,11 +229,11 @@ void WFST::normalize(NormalizeMethod method)
 #if 0
 	  const Weight w=(*g)->weight;
 					Weight *pw;
-					if ((pw=groupArcTotal.find(pGroup)))
+					if ((pw=groupArcTotal.find_second(pGroup)))
 						*pw += w;
 					else
 						groupArcTotal.add(pGroup,w);
-					if ((pw=groupStateTotal.find(pGroup)))
+					if ((pw=groupStateTotal.find_second(pGroup)))
 						*pw += sum;
 					else
 						groupStateTotal.add(pGroup,sum);
@@ -268,8 +268,8 @@ void WFST::normalize(NormalizeMethod method)
       
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
-            Weight groupNorm = *groupStateTotal.find(pGroup); // can be 0 if no counts at all for any states of group						
-						Weight gmax=*groupMaxLockedSum.find(pGroup);
+            Weight groupNorm = *groupStateTotal.find_second(pGroup); // can be 0 if no counts at all for any states of group						
+						Weight gmax=*groupMaxLockedSum.find_second(pGroup);
 						NANCHECK(gmax);
 						Weight one(1.);
 						if ( gmax > one) {
@@ -279,7 +279,7 @@ void WFST::normalize(NormalizeMethod method)
 								groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
 							NANCHECK(groupNorm);
 							
-							Weight groupTotal=*groupArcTotal.find(pGroup);
+							Weight groupTotal=*groupArcTotal.find_second(pGroup);
 							NANCHECK(groupTotal);
 							if (!groupTotal.isZero()) // then groupNorm non0 also
 								reserved += (*g)->weight = ( groupTotal/ groupNorm);
@@ -328,8 +328,8 @@ void WFST::normalize(NormalizeMethod method)
   }
 #endif
 
-#ifdef DEBUG
-	eachParameter(NaNCheck);
+#ifdef DEBUGNAN
+	readEachParameter(NaNCheck);
 #endif
 
   if (method == CONDITIONAL)
@@ -351,7 +351,7 @@ void WFST::assignWeights(const WFST &source)
     List<Arc> &arcs = source.states[s].arcs;
     for ( List<Arc>::erase_iterator a=arcs.erase_begin(),end=arcs.erase_end(); a !=end ; ) {
       if ( isTied(pGroup = a->groupId) )
-        if ( (pWeight = groupWeight.find(pGroup)) )
+        if ( (pWeight = groupWeight.find_second(pGroup)) )
           a->weight = *pWeight;
         else {
           a=states[s].arcs.erase(a);
@@ -668,28 +668,28 @@ int TrioKey::bMax = 0;
 
 #ifdef CUSTOMNEW
 
-const int Entry<IOPair,List<DWPair> >::newBlocksize = 64;
-Entry<IOPair,List<DWPair> > *Entry<IOPair,List<DWPair> >::freeList = NULL;
+const int HashEntry<IOPair,List<DWPair> >::newBlocksize = 64;
+HashEntry<IOPair,List<DWPair> > *HashEntry<IOPair,List<DWPair> >::freeList = NULL;
 
-const int Entry<StringKey, int>::newBlocksize = 64;
-Entry<StringKey, int> *Entry<StringKey, int>::freeList = NULL;
+const int HashEntry<StringKey, int>::newBlocksize = 64;
+HashEntry<StringKey, int> *HashEntry<StringKey, int>::freeList = NULL;
 
-const int Entry<TrioKey,int>::newBlocksize = 64;
-Entry<TrioKey,int> *Entry<TrioKey,int>::freeList = NULL;
+const int HashEntry<TrioKey,int>::newBlocksize = 64;
+HashEntry<TrioKey,int> *HashEntry<TrioKey,int>::freeList = NULL;
 
-const int Entry<UnArc,Weight *>::newBlocksize = 64;
-Entry<UnArc,Weight *> *Entry<UnArc,Weight *>::freeList = NULL;
+const int HashEntry<UnArc,Weight *>::newBlocksize = 64;
+HashEntry<UnArc,Weight *> *HashEntry<UnArc,Weight *>::freeList = NULL;
 
-const int Entry<IntKey,List<HalfArc> >::newBlocksize = 64;
-Entry<IntKey,List<HalfArc> > *Entry<IntKey,List<HalfArc> >::freeList = NULL;
+const int HashEntry<IntKey,List<HalfArc> >::newBlocksize = 64;
+HashEntry<IntKey,List<HalfArc> > *HashEntry<IntKey,List<HalfArc> >::freeList = NULL;
 
-const int Entry<IntKey, int >::newBlocksize = 64;
-Entry<IntKey,int > *Entry<IntKey,int>::freeList = NULL;
+const int HashEntry<IntKey, int >::newBlocksize = 64;
+HashEntry<IntKey,int > *HashEntry<IntKey,int>::freeList = NULL;
 
-const int Entry<HalfArcState, int >::newBlocksize = 64;
-Entry<HalfArcState,int > *Entry<HalfArcState,int>::freeList = NULL;
+const int HashEntry<HalfArcState, int >::newBlocksize = 64;
+HashEntry<HalfArcState,int > *HashEntry<HalfArcState,int>::freeList = NULL;
 
-const int Entry<IntKey, Weight >::newBlocksize = 64;
-Entry<IntKey, Weight > *Entry<IntKey, Weight>::freeList = NULL;
+const int HashEntry<IntKey, Weight >::newBlocksize = 64;
+HashEntry<IntKey, Weight > *HashEntry<IntKey, Weight>::freeList = NULL;
 
 #endif

@@ -283,10 +283,10 @@ class WFST {
   Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
 	void randomScale() {  // randomly scale weights (of unlocked arcs) before training by (0..1]
-		eachParameter(scaleRandom);
+		changeEachParameter(scaleRandom);
 	}
 	void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
-		eachParameter(setRandom);
+		changeEachParameter(setRandom);
 	}
   void normalize(NormalizeMethod method=CONDITIONAL);
   /*void normalizePerInput() {	
@@ -405,21 +405,40 @@ class WFST {
 		random.setRandomFraction();
 		*w *= random;
 	}
-	template <class F> void eachParameter(F f) {
+		template <class F> void readEachParameter(F f) {
+		  HashTable<IntKey, bool> seenGroups;
+		  for ( int s = 0 ; s < numStates() ; ++s )
+				for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
+				  int group=a->groupId;
+				  if (isNormal(group) || isTied(group) && seenGroups.insert(group).second)
+					f((const Weight *)&(a->weight));
+			 }
+		}
+	template <class F> void changeEachParameter(F f) {
 			HashTable<IntKey, Weight> tiedWeights;
 		  for ( int s = 0 ; s < numStates() ; ++s )
 				for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
 					int group=a->groupId;
 					if (isNormal(group))
 						f(&(a->weight));
-					if (isTied(group)) {
+					if (isTied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
+//#define OLD_EACH_PARAM
+#ifdef OLD_EACH_PARAM
 						Weight *pw;
-						if (pw=tiedWeights.find(group))
+						if (pw=tiedWeights.find_second(group))
 							a->weight=*pw;
 						else {
 							f(&(a->weight));
 							tiedWeights.add(group,a->weight);
 						}
+#else
+	  					HashTable<IntKey, Weight>::insert_pair it;
+						if ((it=tiedWeights.insert(group)).second) {
+						  f(&(a->weight));
+						  it.first->second = a->weight;
+						} else
+						  a->weight = it.first->second;
+#endif
 					}
 				}
 	}

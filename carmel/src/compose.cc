@@ -16,7 +16,13 @@ static void makeTrioName(char *bufP, const char *aName, const char *bName, int f
   *bufP = 0;
 }
 
-#define COMPOSEARC { if ( (pDest = stateMap.find(triDest)) ) { states[sourceState].addArc(Arc(in, out, *pDest, weight)); } else { stateMap.add(triDest, numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.pushBack();    if ( namedStates ) {      makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);      stateNames.add(buf);    }  }}
+#define COMPOSEARC { \
+if ( (pDest = stateMap.find_second(triDest)) ) \
+ { states[sourceState].addArc(Arc(in, out, *pDest, weight)); \
+} else { \
+  stateMap.add(triDest, numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.pushBack();    \
+  if ( namedStates ) {      makeTrioName(buf, a.stateName(triDest.aState), b.stateName(triDest.bState), triDest.filter);      stateNames.add(buf);   \
+  }  }}
 
 
 
@@ -70,16 +76,16 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
       aState->indexBy(1);
       bState->indexBy(0);
       int group;
-      for ( HashIter<IntKey, List<HalfArc> > ll(*aState->index) ; ll ; ++ll ) {
+	  for ( HashTable<IntKey, List<HalfArc> >::const_iterator ll=aState->index->begin() ; ll != aState->index->end(); ++ll ) {
         HalfArcState mediate;
-        mediate.hiddenLetter = ll.key();
+        mediate.hiddenLetter = ll->first;
         mediate.source = triSource.bState;
-        if (  ll.key() == EMPTY ) {
+        if (  ll->first == EMPTY ) {
           if ( triSource.filter == 0 ) {
             out = EMPTY;
             triDest.filter = 0;
             triDest.bState = triSource.bState;
-            for ( List<HalfArc>::const_iterator l =ll.val().const_begin(),end=ll.val().const_end() ; l != end ; ++l ) {
+            for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
               weight = (*l)->weight;
               triDest.aState = (*l)->dest;
               in = (*l)->in;
@@ -89,11 +95,11 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 states[sourceState].arcs.top().groupId = group;
             }
           }
-        } else if ( (matches = bState->index->find(map[mediate.hiddenLetter])) ) {
-          for ( List<HalfArc>::const_iterator l =ll.val().const_begin(),end=ll.val().const_end() ; l != end ; ++l ) {
+        } else if ( (matches = bState->index->find_second(map[mediate.hiddenLetter])) ) {
+          for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
             mediate.dest = (*l)->dest;
             int mediateState;
-            if ( (pDest = arcStateMap.find(mediate)) ) {
+            if ( (pDest = arcStateMap.find_second(mediate)) ) {
               mediateState = *pDest;
             } else {
               mediateState = numStates();
@@ -137,7 +143,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           }
         }
       }
-      if ( (matches = bState->index->find(EMPTY)) ) {
+      if ( (matches = bState->index->find_second(EMPTY)) ) {
         in = EMPTY;
         triDest.aState = triSource.aState;
         triDest.filter = 1;
@@ -181,7 +187,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 COMPOSEARC;
               }
               if ( triSource.filter == 0 )
-                if ( (matches = bState->index->find(EMPTY)) ) {
+                if ( (matches = bState->index->find_second(EMPTY)) ) {
                   triDest.filter = 0;
                   for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                     Assert((*r)->in == EMPTY);
@@ -192,7 +198,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                   }
                 }
             } else {
-              if ( (matches = bState->index->find(map[l->out])) ) {
+              if ( (matches = bState->index->find_second(map[l->out])) ) {
                 triDest.filter = 0;
                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                   Assert ( map[l->out] == (*r)->in );
@@ -204,7 +210,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               }
             }
           }
-          if ( triSource.filter != 1 && (matches = bState->index->find(EMPTY)) ) {
+          if ( triSource.filter != 1 && (matches = bState->index->find_second(EMPTY)) ) {
             in = EMPTY;
             triDest.aState = triSource.aState;
             triDest.filter = 2;
@@ -229,7 +235,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 COMPOSEARC;
               }
               if ( triSource.filter == 0 )
-                if ( (matches = aState->index->find(EMPTY)) ) {
+                if ( (matches = aState->index->find_second(EMPTY)) ) {
                   triDest.filter = 0;
                   for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                     Assert((*l)->out == EMPTY);
@@ -241,7 +247,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 }
             } else {
               triDest.filter = 0;
-              if ( (matches = aState->index->find(revMap[r->in])) ) {
+              if ( (matches = aState->index->find_second(revMap[r->in])) ) {
                 for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                   Assert ( map[(*l)->out] == r->in );
                   in = (*l)->in;
@@ -252,7 +258,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               }
             }
           }
-          if ( triSource.filter != 2 && (matches = aState->index->find(EMPTY)) ) {
+          if ( triSource.filter != 2 && (matches = aState->index->find_second(EMPTY)) ) {
             out = EMPTY;
             triDest.bState = triSource.bState;
             triDest.filter = 1;
@@ -327,7 +333,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   int i;
   for ( i = 0 ; i < 3 ; ++i ) {
     triDest.filter = i;
-    if ( (pFinal[i] = stateMap.find(triDest)) ) {
+    if ( (pFinal[i] = stateMap.find_second(triDest)) ) {
       ++nFinal;
       final = *pFinal[i];
     }

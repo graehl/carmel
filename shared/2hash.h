@@ -6,11 +6,12 @@
 #include <cstdlib>
 #include <new>
 #include "assert.h"
+#include <utility>
 
-const FLOAT_TYPE DEFAULTHASHLOAD = .8f;
+const float DEFAULTHASHLOAD = .8f;
 template <typename K, typename V> class HashTable ;
 template <typename K, typename V> class HashIter ;
-template <typename K, typename V> class HashConstIter ;
+//template <typename K, typename V> class HashConstIter ;
 
 int pow2Bound(int request);
 
@@ -21,31 +22,34 @@ inline int pow2Bound(int request) {
   return mask;
 }
 
-template <typename K, typename V> class Entry {
-  Entry<K,V> *next;
-  Entry operator =(Entry &);	//disallow
-  //operator =(Entry &);	//disallow
+template <typename K, typename V> class HashEntry {
+  HashEntry operator =(HashEntry &);	//disallow
+  //operator =(HashEntry &);	//disallow
  public:
-  const K key;
-  V val;
-  /*  Entry() : next(NULL) { }*/
-  Entry(const K & k, const V& v) : next(NULL), key(k), val(v) { }
-  Entry(const K &k, const V& v, Entry<K,V> * const n) : next(n), key(k), val(v) { }
-  Entry(const K &k, Entry<K,V> * const n) : next(n), key(k), val() { }
+  //const 
+	K first;
+  V second;
+private:
+   HashEntry<K,V> *next;
+public:
+  /*  HashEntry() : next(NULL) { }*/
+  HashEntry(const K & k, const V& v) : next(NULL), first(k), second(v) { }
+  HashEntry(const K &k, const V& v, HashEntry<K,V> * const n) : next(n), first(k), second(v) { }
+  HashEntry(const K &k, HashEntry<K,V> * const n) : next(n), first(k), second() { }
 #ifdef CUSTOMNEW
-  static Entry<K,V> *freeList=NULL;
+  static HashEntry<K,V> *freeList=NULL;
   static const int newBlocksize=128;
   void *operator new(size_t s)
     {
       size_t dummy = s;
       dummy = dummy;
-      Entry<K,V> *ret, *max;
+      HashEntry<K,V> *ret, *max;
       if (freeList) {
 	ret = freeList;
 	freeList = freeList->next;
 	return ret;
       }
-      freeList = (Entry<K,V> *)::operator new(newBlocksize * sizeof(Entry<K,V>));
+      freeList = (HashEntry<K,V> *)::operator new(newBlocksize * sizeof(HashEntry<K,V>));
       freeList->next = NULL;
       max = freeList + newBlocksize -1;
       for ( ret = freeList++; freeList < max ; ret = freeList++ )
@@ -54,40 +58,42 @@ template <typename K, typename V> class Entry {
     }
   void operator delete(void *p) 
     {
-      Entry<K,V> *e = (Entry<K,V> *)p;
+      HashEntry<K,V> *e = (HashEntry<K,V> *)p;
       e->next = freeList;
       freeList = e;
     }
 #endif
   friend class HashTable<K,V>;
   friend class HashIter<K,V>;
-  friend class HashConstIter<K,V>; // Yaser
+  //friend class HashConstIter<K,V>; // Yaser
 #if 0
 #if (__GNUC__== 2 && __GNUG__== 2  && __GNUC_MINOR__ <= 7) || defined(_MSC_VER)
   // version 2.7.2 or older of gcc compiler does not understand '<>' so it will give
   // an error message if '<>' is present. However, it is required by newer versions
   // of the compiler and if it is not present, a warning will be given 
-  friend std::ostream & operator << (std::ostream &, const Entry<K,V> &);
+  friend std::ostream & operator << (std::ostream &, const HashEntry<K,V> &);
 #else 
-  friend std::ostream & operator << <> (std::ostream &, const Entry<K,V> &);
+  friend std::ostream & operator << <> (std::ostream &, const HashEntry<K,V> &);
 #endif
 #endif
 };
 
 #if 0
 template <typename K, typename V>
-				  std::ostream & operator << (std::ostream & o, const Entry<K,V> & e);
+				  std::ostream & operator << (std::ostream & o, const HashEntry<K,V> & e);
 #endif
 
-template <typename K, typename V> class HashIter {
+/*
+template <typename K, typename V> class HashRemoveIter {
   HashTable<K,V> *ht;
-  Entry<K,V> **bucket;
-  Entry<K,V> *entry;
-  Entry<K,V> *next;
-  HashIter operator = ( HashIter & );
-  Entry<K,V> * operator & () const { return entry; }
+  HashEntry<K,V> **bucket;
+  HashEntry<K,V> *entry;
+  HashEntry<K,V> *next;
+  HashEntry<K,V> * operator & () const { return entry; }
   //     operator = ( HashIter & );		// disable
  public:
+//  HashIter operator = ( HashIter & );
+
   HashIter( ) : ht(0) {}
   void init(HashTable<K,V> &t) {
     ht=&t;
@@ -105,83 +111,111 @@ template <typename K, typename V> class HashIter {
     {
       init(t);
     }
-  int operator++()
+  void operator++()
     {
       if ( entry == NULL )
-	return 0;
+	return;
       if ( next ) {
 	entry = next;
 	next = entry->next;
-	return 1;
+	return;
       }
       for ( ; ; ) {
 	if ( bucket >= ht->table + ht->size() ) {
 	  entry = NULL;
-	  return 0;
+	  return;
 	}
 	if ( (entry = *bucket++) ) {
 	  next = entry->next;
-	  return 1;
+	  return;
 	}
       }
     }
-  int bucketNum() const { return int(bucket - ht->table - 1); }
-  operator bool() const { return ( entry != NULL ); }
-  Entry<K,V> & operator ()() const { return *entry; }
-
-  const K & key() const { return entry->key; }
-  V & val() const { return entry->val; }
-  void remove() {	/* could be more efficient */
-    const K &k = key();
+//  int bucketNum() const { return int(bucket - ht->table - 1); }
+//  operator bool() const { return ( entry != NULL ); }
+  bool operator == (void *nocare) {
+	return entry == NULL;
+  }
+  HashEntry<K,V> * operator != (void *nocare) {
+	return entry;
+  }
+  HashEntry<K,V> & operator *() const { return *entry; }
+  HashEntry<K,V> * operator ->() const { return entry; }
+  void remove() { // remove_next could be very efficient
+    const K &k = (*this)->first;
     this->operator++();
     ht->remove(k);
   }
 };
+*/
 
-template <typename K, typename V> class HashConstIter { // Yaser added this - 7-27-2000
-  const HashTable<K,V> &ht;
-  Entry<K,V> ** bucket;
-  const Entry<K,V> *entry;
-  const Entry<K,V> *next;
-  HashConstIter operator = ( HashConstIter & );		// disable
+template <typename K, typename V> class HashIter { // Yaser added this - 7-27-2000
+  //const HashTable<K,V> *ht;
+  HashEntry<K,V> ** bucket;
+  HashEntry<K,V> ** end_bucket;
+  const HashEntry<K,V> *entry;
   //     operator = ( HashIter & );		// disable
  public:
-  HashConstIter( const HashTable<K,V> &t) : ht(t)
+   //  HashConstIter operator = ( HashConstIter & );		// disable
+
+     void init(HashTable<K,V> &t) {
+    
+	end_bucket = t.table + t.size();
+    if ( t.count() > 0 ) {
+      bucket = t.table;
+      while ( !*bucket ) bucket++;
+      entry = *bucket++;      
+	} else  {
+	  bucket=end_bucket=NULL;
+      entry = NULL;
+	}
+  }
+
+  HashIter( HashTable<K,V> &t)
+    {
+      init(t);
+    }
+   HashIter( )  {}
+/*
+  HashIter( const HashTable<K,V> &t) : ht(t)
     {
       if ( ht.count() > 0 ) {
 	bucket = ht.table;
 	while ( !*bucket ) bucket++;
-	entry = *bucket++;
-	next = entry->next;
+	entry = *bucket++;	
       } else 
 	entry = NULL;
-    }
-  int operator++()
+    }*/
+  void operator++()
     {
       if ( entry == NULL )
-	return 0;
-      if ( next ) {
-	entry = next;
-	next = entry->next;
-	return 1;
-      }
+	return ;
+	  entry = entry->next;
+      if ( entry )	   
+		return;
+	  
       for ( ; ; ) {
-	if ( bucket >= ht.table + ht.size() ) {
+	if ( bucket >= end_bucket ) {
 	  entry = NULL;
-	  return 0;
+	  return;
 	}
-	if ( (entry = *bucket++) ) {
-	  next = entry->next;
-	  return 1;
-	}
+	if ( (entry = *bucket++) )
+	  return;
       }
     }
-  int bucketNum() const { return int(bucket - ht.table - 1); }
-  operator int() const { return ( entry != NULL ); }
-  const Entry<K,V> & operator ()() const { return *entry; }
-  const Entry<K,V> * operator & () const { return entry; }
-  const K & key() const { return entry->key; }
-  const V & val() const { return entry->val; }
+//  int bucketNum() const { return int(bucket - ht.table - 1); }
+//  operator int() const { return ( entry != NULL ); }
+	bool operator == (void *nocare) {
+	return entry == NULL;
+  }
+  const HashEntry<K,V> * operator != (void *nocare) {
+	return entry;
+  }
+
+  HashEntry<K,V> & operator *() const { return *(HashEntry<K,V> *)entry; }
+  HashEntry<K,V> * operator -> () const { return (HashEntry<K,V> *)entry; }
+//  const K & first() const { return entry->first; }
+//  const V & second() const { return entry->second; }
 };
 
 template <typename K, typename V> class HashTable {
@@ -189,12 +223,31 @@ template <typename K, typename V> class HashTable {
   int siz;  // always a power of 2, stored as 1 less than actual for fast mod operator (implemented as and)
   int cnt;
   int growAt;
-  Entry<K,V> **table;
+  HashEntry<K,V> **table;
   int hashToPos(int hashVal) const
     {
       return hashVal & siz;
     }
  public:
+   typedef HashIter<K,V> iterator;
+   typedef HashIter<K,V> const_iterator;
+
+   typedef std::pair<K,V> value_type;
+   typedef K key_type;	
+   typedef HashEntry<K,V> *pair_pointer;
+   typedef V second_type;
+   typedef std::pair<pair_pointer,bool> insert_pair;
+
+    const_iterator begin() const {
+	 return *(HashTable<K,V> *)this;
+	}
+	iterator begin()  {
+	  return *this;
+	}
+   HashEntry<K,V> *end() const {
+	 return NULL;
+   }
+private:
   HashTable(const HashTable<K,V> &ht)
     {
       // making this private will probably prevent
@@ -210,13 +263,14 @@ template <typename K, typename V> class HashTable {
       if ( growAt < 2 )
 	growAt = 2;
       siz--;   // size is actually siz + 1
-      table = NEW Entry<K,V>*[siz+1];
+      table = NEW HashEntry<K,V>*[siz+1];
       for ( int i = 0 ; i <= siz ; i++ ) 
 	table[i] = NULL;
-      for(HashConstIter<K,V> k(ht) ; k ; ++k)
-	add(k.key(),k.val());
+      for(const_iterator k=ht.begin() ; k != ht.end() ; ++k)
+	add(k->first,k->second);
       //    std::cerr <<"done\n";
     } 
+public:
   void swap(HashTable<K,V> &h)
     {
       const size_t s = sizeof(HashTable<K,V>)/sizeof(char) + 1;
@@ -225,7 +279,7 @@ template <typename K, typename V> class HashTable {
       memcpy(this, &h, s);
       memcpy(&h, temp, s);
     }
-  HashTable(int sz = 4, FLOAT_TYPE mLoad = DEFAULTHASHLOAD)
+  HashTable(int sz = 4, float mLoad = DEFAULTHASHLOAD)
     {
       if ( sz < 4 )
 	siz = 4;
@@ -236,7 +290,7 @@ template <typename K, typename V> class HashTable {
       if ( growAt < 2 )
 	growAt = 2;
       siz--;   // size is actually siz + 1
-      table = NEW Entry<K,V>*[siz+1];
+      table = NEW HashEntry<K,V>*[siz+1];
       for ( int i = 0 ; i <= siz ; i++ ) 
 	table[i] = NULL;
     }
@@ -244,71 +298,105 @@ template <typename K, typename V> class HashTable {
     {
       //    std::cerr << "HashTable destructor called\n"; // Yaser
       if ( table ) {
-	for ( HashIter<K,V> i(*this); i ; ++i )
-	  delete &(i());
+
+		for ( iterator i=begin(); i!=end() ; ) {// const_iterator would delete the next pointer before we use it
+		  HashEntry<K,V> *entry=&*i;
+		  ++i;
+		  delete entry;
+		}
 	delete[] table;
 	table = NULL;
 	siz = 0;
       }
     }
-  int safeAdd(const K &key, const V &val)
-    {
-      if ( find(key) )
-	return 0;
-      add(key, val);
-      return 1;
-    }
-  V *add(const K &key, const V &val)
+  V *add(const K &first, const V &second=V())
     {
       if ( ++cnt >= growAt )
-	resize(2 * siz);
-      int i = hashToPos(key.hash());
-      table[i] =  NEW Entry<K,V>(key, val, table[i]);
-      return &table[i]->val;
-    }
-  V * add(const K& key)
+		rehash(2 * siz);
+      int i = hashToPos(first.hash());
+      table[i] =  NEW HashEntry<K,V>(first, second, table[i]);
+      return &table[i]->second;
+    }	
+	/*
+  V * add(const K& first)
     {
       if ( ++cnt >= growAt )
-	resize(2 * siz);
-      int i = hashToPos(key.hash());
-      table[i] =  NEW Entry<K,V>(key, table[i]);
-      return &table[i]->val;
+	rehash(2 * siz);
+      int i = hashToPos(first.hash());
+      table[i] =  NEW HashEntry<K,V>(first, table[i]);
+      return &table[i]->second;
     }
-  V * end() const {
-    return NULL;
-  }
-  V * find(const K &key) const
+	*/
+	// bool is true if insertion was performed, false if key already existed.  pointer to the key/val pair in the table is returned
+	insert_pair insert(const K& first, const V& second=V()) {
+	  int hash=first.hash();
+	  int bucket=hashToPos(hash);
+	  for ( HashEntry<K,V> *p = table[bucket]; p ; p = p->next )
+		if ( p->first == first )
+		  return std::pair<pair_pointer,bool>((pair_pointer)p,false);
+ 
+	  if ( ++cnt >= growAt ) {
+		rehash(2 * siz);
+		bucket=hashToPos(hash);
+	  }
+	  
+	  return std::pair<pair_pointer,bool>(
+		reinterpret_cast<pair_pointer>(table[bucket] =  NEW HashEntry<K,V>(first, second, table[bucket]))
+		,true);
+	  
+	}
+	insert_pair insert(const value_type &t) { 
+	  return insert(t.first,t.second);
+	}
+
+  pair_pointer find(const K &first) const
     {
-      for ( Entry<K,V> *p = table[hashToPos(key.hash())]; p ; p = p->next )
-	if ( p->key == key )
-	  return &p->val;
+      for ( HashEntry<K,V> *p = table[hashToPos(first.hash())]; p ; p = p->next )
+	if ( p->first == first )
+	  return reinterpret_cast<pair_pointer>(p);
       return NULL;
     }
-  V * findOrAdd(const K &key)
+	second_type * find_second(const K &first) const
+	{
+      for ( HashEntry<K,V> *p = table[hashToPos(first.hash())]; p ; p = p->next )
+   	if ( p->first == first )
+	  return &(p->second);
+      return NULL;
+	  /* alt:
+	  pair_pointer p=find(first);
+	  if (p)
+		return &(p->second);
+	  return p;
+	  */
+
+	}
+/*  V * findOrAdd(const K &first)
     {
       V *ret;
-      if ( (ret = find(key)) )
+      if ( (ret = find(first)) )
 	return ret;
-      return add(key);
-    }
-  V & operator[](const K &key)
+      return add(first);
+    }*/
+  V & operator[](const K &first)
     {
-      return *findOrAdd(key);
-    }
-  Entry<K,V> * findEntry(const K &key) const
+      //return *findOrAdd(first);
+	  return insert(first).first->second;
+    }/*
+  HashEntry<K,V> * findEntry(const K &first) const
     {
-      for ( Entry<K,V> *p = table[hashToPos(key.hash())]; p ; p = p->next )
-	if ( p->key == key )
+      for ( HashEntry<K,V> *p = table[hashToPos(first.hash())]; p ; p = p->next )
+	if ( p->first == first )
 	  return p;
       return NULL;
     } 
-  int remove(const K &key)
+	*/
+  int erase(const K &first)
     {
-      int i = hashToPos(key.hash());
-      Entry<K,V> *prev = NULL, *p = table[i];
+      int i = hashToPos(first.hash());
+      HashEntry<K,V> *prev = NULL, *p = table[i];
       if ( !p ) 
 	return 0;
-      else if ( p->key == key ) {
+      else if ( p->first == first ) {
 	table[i] = p->next;
 	delete p;
 	--cnt;
@@ -318,7 +406,7 @@ template <typename K, typename V> class HashTable {
 	prev = p;    
 	p = p->next;
 	if ( !p ) break;
-	if ( p->key == key ) {
+	if ( p->first == first ) {
 	  prev->next = p->next;
 	  delete p;
 	  --cnt;
@@ -330,34 +418,35 @@ template <typename K, typename V> class HashTable {
   int size() const { return siz + 1; }
   int count() const { return cnt; } 
   int growWhen() const { return growAt; }
-  FLOAT_TYPE threshold() const { return (FLOAT_TYPE)growAt / (FLOAT_TYPE)(siz + 1); }
-  void changeThreshold(FLOAT_TYPE mLoad) 
+  float load_factor() const { return (float)cnt / (float)(siz + 1); }
+  float max_load_factor() const { return (float)growAt / (float)(siz + 1); }
+  void max_load_factor(float mLoad) 
     {
       growAt = (int)(mLoad * (siz+1));
       if ( growAt < 2 )
 	growAt = 2;
     }
-  void resize(int request)
+  void rehash(int request)
     {
       int hashVal, oldSiz = siz;
-      Entry<K,V> *next, *p, **i, **oldTable = table;
+      HashEntry<K,V> *next, *p, **i, **oldTable = table;
       siz = pow2Bound(request);
-      table = NEW Entry<K,V>*[siz];
+      table = NEW HashEntry<K,V>*[siz];
       siz--;  // actual size is siz + 1 (power of 2)
       for ( i = table; i <= table + siz ; i++ )
 	*i = NULL;
       for ( i = oldTable ; i <= oldTable + oldSiz ; i++ )
 	for ( p = *i ; p ; p = next ) {
 	  next = p->next;
-	  hashVal = hashToPos(p->key.hash());
+	  hashVal = hashToPos(p->first.hash());
 	  p->next = table[hashVal];
 	  table[hashVal] = p;
 	}
-      growAt = int((FLOAT_TYPE(growAt) * (siz+1)) / (oldSiz+1));
+      growAt = int((float(growAt) * (siz+1)) / (oldSiz+1));
       delete[] oldTable;
     }
   friend class HashIter<K,V>;
-  friend class HashConstIter<K,V>;
+  //friend class HashConstIter<K,V>;
 };
 
 

@@ -521,7 +521,7 @@ void WFST::writeLegible(ostream &os)
             os << " " << outLet;
         }
         //      int *pGroup;
-        //      if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
+        //      if ( (pGroup = tieGroup.find_second(IntKey(int(&(*a))))) ) {
         OUTARCWEIGHT(os,a);
         os << ")";
         if (onearc)

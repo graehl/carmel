@@ -19,10 +19,10 @@ class StringPool {
 public:
 	static StringKey borrow(StringKey s) {
 #ifdef STRINGPOOL
-		Entry<StringKey, int> *entryP;
-		if ( (entryP = counts.findEntry(s)) ) {
-			(entryP->val)++;
-			return (entryP->key);
+		HashEntry<StringKey, int> *entryP;
+		if ( (entryP = counts.find(s)) ) {
+			(entryP->second)++;
+			return (entryP->first);
 		}
 		s.clone();
 		counts.add(s, 1);
@@ -34,12 +34,12 @@ public:
 	}
 	static void giveBack(StringKey s) {
 #ifdef STRINGPOOL
-		Entry<StringKey, int> *entryP;
-		if ( s.str != StringKey::empty && (entryP = counts.findEntry(s)) ) {
-			Assert(entryP->val > 0);
-			Assert(s.str == entryP->key.str);
-			if ( !(--(entryP->val)) ) {
-				counts.remove(s);
+		HashEntry<StringKey, int> *entryP;
+		if ( s.str != StringKey::empty && (entryP = counts.find(s)) ) {
+			Assert(entryP->second > 0);
+			Assert(s.str == entryP->first.str);
+			if ( !(--(entryP->second)) ) {
+				counts.erase(s);
 				s.kill();
 			}
 		}
@@ -50,8 +50,8 @@ public:
 	~StringPool()
 	{
 #ifdef STRINGPOOL
-		for ( HashIter<StringKey, int> i(counts); i ; ++i )
-			((StringKey &)i().key).kill();
+	  for ( HashTable<StringKey, int>::const_iterator i=counts.begin(); i!=counts.end() ; ++i )
+			((StringKey &)i->first).kill();
 #endif
 	}
 };
@@ -90,13 +90,16 @@ class Alphabet {
     names.pushBack(s.str);
   }
   int *find(char *name) const {
-    return ht.find(StringKey(name));
+    return ht.find_second(StringKey(name));
   }
   int indexOf(char *name) {
     Assert(name);
-    int *it;
     StringKey s = name;
-    if ( (it = ht.find(s)) )
+//#define OLD_INDEXOF
+#ifdef OLD_INDEXOF
+  int *it;
+  
+	if ( (it = ht.find_second(s)) )
       return *it;
     else {
       StringKey k = StringPool::borrow(s);
@@ -105,6 +108,18 @@ class Alphabet {
       names.pushBack(k.str);
       return ret;
     }
+#else
+	HashTable<StringKey,int>::insert_pair it;
+	if ( (it = ht.insert(s)).second ) {
+	  *const_cast<StringKey*>(&(it.first->first)) = StringPool::borrow(s);
+	  int ret = names.count();
+	  it.first->second=ret;
+	  names.pushBack(it.first->first);
+	  return ret;
+	} else {
+	  return it.first->second;
+	}
+#endif
   }
   const char * operator[](int pos) const {
     //Assert(pos < count() && pos >= 0);
@@ -156,13 +171,13 @@ class Alphabet {
     for ( int i = 0 ; i < names.count() ; ++i )
       if ( names[i] != StringKey::empty ) {
 	if ( marked[i] ) {
-	  ht.remove(names[i]);
+	  ht.erase(names[i]);
 #ifndef NODELETE
 	  StringPool::giveBack(names[i]);
 #endif
 	} else {
-	  int *pI = ht.find(names[i]);
-	  *pI = oldToNew[*pI];
+	  int &rI = ht.find(names[i])->second;
+	  rI = oldToNew[rI];
 	}
       }
     names.removeMarked(marked);

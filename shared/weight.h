@@ -113,10 +113,12 @@ struct Weight {			// capable of representing nonnegative reals
     else
       setZero();
   }
-	void NaNCheck() {
+	void NaNCheck() const {
 #ifdef DEBUG
-	if(weight!=weight)
+	  if(weight!=weight) {
 		*(int*)0=0;
+		assert(weight==weight);
+	  }
 #else
 		assert(weight==weight);
 #endif
@@ -444,7 +446,7 @@ template<class A,class B> std::basic_ostream<A,B>&
 Weight::out_always_real(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = ALWAYS_REAL; return os; }
 
 
-#ifdef DEBUG
+#ifdef DEBUGNAN
 #define NANCHECK(w) w.NaNCheck()
 #else
 #define NANCHECK(w)
