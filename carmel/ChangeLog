@@ -1,3 +1,8 @@
+2004-07-15  Jonathan Graehl  <graehl@isi.edu>
+
+	* Makefile: now requires checkout of the tt project in parent dir
+	(files should be in ../tt from here)
+
 2004-04-21  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/strhash.h: tidied up templatization of Alphabet and added

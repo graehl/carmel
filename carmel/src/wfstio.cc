@@ -4,7 +4,7 @@
 #include "myassert.h"
 #include "fst.h"
 #include <iterator>
-#include <strstream>
+#include <stringstream>
 
 #define DO(x)  { if (!(x)) return 0; }
 
@@ -414,7 +414,7 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
 
 int WFST::readLegible(const string& str,bool alwaysNamed)
 {
-  istrstream istr(str.c_str());
+  istringstream istr(str);
   return(readLegible(istr,alwaysNamed));
 }
 
