@@ -25,6 +25,14 @@ int operator < (const EdgePath &l, const EdgePath &r) {
 
 vector<pGraphArc *> Repository ;
 
+void freeAllSidetracks()
+{
+    for (unsigned int i = 0 ; i < Repository.size() ;i++)
+        if (Repository[i])
+            delete (pGraphArc *) Repository[i] ;
+    Repository.clear();
+}
+
 void buildSidetracksHeap(int state, int pred)
 {
   // IMPORTANT NOTE: Yaser 6-25-2001 This function create NEW memory
@@ -51,7 +59,7 @@ void buildSidetracksHeap(int state, int pred)
         min = &(*s);
       ++heapSize;
     }
-    pathGraph[state] = new GraphHeap;
+    pathGraph[state] = NEW GraphHeap;
     pathGraph[state]->arc = min;
     pathGraph[state]->arcHeapSize = heapSize;
     if ( heapSize ) {
@@ -72,70 +80,48 @@ void buildSidetracksHeap(int state, int pred)
     pathGraph[state] = prev;
 } // end of buildSidetracksHeap()
 
-List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
-{
-  Assert(valid());
-  List<List<PathArc> > *paths = NEW List<List<PathArc> >;
-  if (!valid()) {
-    //List<List<PathArc> >::iterator insertHere=paths->begin();
-    for (int i=0;i<k;) {
-      paths->push_front(List<PathArc>());
-      if ( randomPath(insert_iterator<List<PathArc> >(paths->front(),paths->front().erase_begin()),max_len) == -1 ) {
-        paths->pop_front();
-      } else {
-        ++i;
-      }
 
-    }
+
+/*
+void insertShortPath(int source, int dest, ListIter<GraphArc *> &path)
+{
+  GraphArc *taken;
+  for ( int iState = source ; iState != dest; iState = taken->dest ) {
+    taken = &shortPathTree[iState].arcs.top();
+    path.insert((GraphArc *)taken->data);
   }
-  return paths;
 }
-
-List<List<PathArc> > *WFST::bestPaths(int k)
+List<List<GraphArc *> > *bestPaths(Graph graph, int source, int dest, int k)
 {
-  int nStates = numStates();
-  Assert(valid());
+  int nStates = graph.nStates;
+  assert(nStates > 0 && graph.states);
+  assert(source >= 0 && source < nStates);
+  assert(dest >= 0 && dest < nStates);
 
-  typedef List<List<PathArc> > LLP;
-  LLP *paths = NEW List<List<PathArc> >;
+  List<List<GraphArc *> > *paths = NEW List<List<GraphArc *> >;
   insert_iterator<LLP> path_adder(*paths,paths->erase_begin());
-  //List<List<PathArc> >::iterator insertHere=paths->begin();
 
-  Graph graph = makeGraph();
-#ifdef DEBUGKBEST
-  Config::debug() << "Calling KBest on WFST with k: "<<k<<'\n' << graph;
-#endif
+  ListIter<List<GraphArc *> > insertHere(*paths); // append rather than push so best path comes first in list
 
   FLOAT_TYPE *dist = NEW FLOAT_TYPE[nStates];
-  Graph shortPathGraph = shortestPathTreeTo(graph, final,dist);
-#ifdef DEBUGKBEST
-  Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
-#endif
+  Graph shortPathGraph = shortestPathTree(graph, dest, dist);
   shortPathTree = shortPathGraph.states;
 
-  if ( shortPathTree[0].arcs.notEmpty() || final == 0 ) {
+  if ( shortPathTree[source].arcs.notEmpty() || source == dest ) {
 
-    List<PathArc> temp;
-    //List<PathArc>::iterator path=temp.begin();
-    //paths->push_back(temp);
-    insert_iterator<List<PathArc> > here(temp,temp.erase_begin());
-    insertShortPath(shortPathTree, 0, final, here);
-    *path_adder++ = temp; //XXX unnecessary copy because of output iterator not giving reference to added item =(
-
-
+    ListIter<GraphArc *> path(insertHere.insert(List<GraphArc *>()));
+    insertShortPath(source, dest, path);
 
     if ( k > 1 ) {
       GraphHeap::freeAll();
+      List<List<GraphArc *> > graphPaths;
       Graph revPathTree = reverseGraph(shortPathGraph);
-      pathGraph = NEW GraphHeap *[nStates];
+      pathGraph = new GraphHeap *[nStates];
       sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
-      bool *visited = NEW bool[nStates];
-      for ( int i = 0 ; i < nStates ; ++i ) visited[i] = false;
-      // IMPORTANT NOTE: depthFirstSearch recursively calls the function
-      // passed as the last argument (in this  case "buildSidetracksHeap")
-      //
-      depthFirstSearch(revPathTree, final, visited, buildSidetracksHeap);
-      if ( pathGraph[0] ) {
+      bool *visited = new bool[nStates];
+      for ( int i = 0 ; i < nStates ; ++i ) visited[i] = 0;
+      depthFirstSearch(revPathTree, dest, visited, buildSidetracksHeap);
+      if ( pathGraph[source] ) {
 #ifdef DEBUGKBEST
         cout << "printing trees\n";
         for ( int i = 0 ; i < nStates ; ++i )
@@ -258,10 +244,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
       // "depthFirstSearch()" method and it was never deleted because
       // we needed it here in bestPaths(). Hence we have to delete it here
       // since we are done with it.
-      for (unsigned int i = 0 ; i < Repository.size() ;i++)
-        if (Repository[i])
-          delete (pGraphArc *) Repository[i] ;
-      Repository.clear();
+      freeAllSidetracks();
 
       delete[] pathGraph;
       delete[] visited;
@@ -276,23 +259,6 @@ List<List<PathArc> > *WFST::bestPaths(int k)
 
   return paths;
 }
-/*
-  void WFST::insertPathArc(GraphArc *gArc,List<PathArc>* l)
-  {
-  PathArc pArc;
-  Arc *taken = (Arc *)gArc->data;
-  setPathArc(&pArc,*taken);
-  l->push_back(pArc);
-  }
-
-  void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
-  {
-  GraphArc *taken;
-  for ( int iState = source ; iState != dest; iState = taken->dest ) {
-  taken = &shortPathTree[iState].arcs.top();
-  insertPathArc(taken,l);
-  }
-  }
 */
 
 Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist)

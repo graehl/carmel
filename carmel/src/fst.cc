@@ -1,6 +1,7 @@
 #include "config.h"
 #include <cctype>
 #include "fst.h"
+#include "kbest.h"
 
 const int WFST::perline_index = ios_base::xalloc();
 const int WFST::arcformat_index = ios_base::xalloc();
@@ -44,7 +45,7 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
       return 1;
     }
     int whichInput = (int)(states[s].index->size() * randomFloat());
-	const HashTable<IntKey, List<HalfArc> > &hat=*states[s].index;
+        const HashTable<IntKey, List<HalfArc> > &hat=*states[s].index;
     for ( HashTable<IntKey, List<HalfArc> >::const_iterator ha = hat.begin() ; ha != hat.end(); ++ha )
       if ( !whichInput-- ) {
         Weight which = randomFloat();
@@ -183,7 +184,7 @@ operator <<
 
 
 static void NaNCheck(const Weight *w) {
-	w->NaNCheck();
+        w->NaNCheck();
 }
 
 
@@ -209,7 +210,7 @@ void WFST::normalize(NormalizeMethod method)
   // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight sum,locked_sum; // =0, sum of probability of all arcs that has this input
-		Assert(sum.isZero() && locked_sum.isZero());
+                Assert(sum.isZero() && locked_sum.isZero());
     for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
       const Weight w=(*g)->weight;
       if (isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
@@ -218,23 +219,23 @@ void WFST::normalize(NormalizeMethod method)
         sum += w;
     }
 #ifdef DEBUGNAN
-				readEachParameter(NaNCheck);
+                                readEachParameter(NaNCheck);
 #endif
 #ifdef DEBUGNORMALIZE
     Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
 #endif
     for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-      
-      
+
+
         if ( isTied(pGroup = (*g)->groupId) ) {
-  			groupArcTotal[pGroup] += (*g)->weight; // default init is to 0          
- 		      groupStateTotal[pGroup] += sum;
+                        groupArcTotal[pGroup] += (*g)->weight; // default init is to 0          
+                      groupStateTotal[pGroup] += sum;
           Weight &m=groupMaxLockedSum[pGroup];
           if (locked_sum > m)
             m = locked_sum;
-					NANCHECK(groupStateTotal[pGroup]);
-					NANCHECK(groupStateTotal[pGroup]);
-					NANCHECK(groupMaxLockedSum[pGroup]);
+                                        NANCHECK(groupStateTotal[pGroup]);
+                                        NANCHECK(groupStateTotal[pGroup]);
+                                        NANCHECK(groupMaxLockedSum[pGroup]);
 #ifdef DEBUGNORMALIZE
           Config::debug() << "Tiegroup=" << pGroup << " Normgroup=" << g << " tie_weight=" << groupArcTotal[pGroup] << " sum_state_weight=" << groupStateTotal[pGroup] << " max_locked=" << m << std::endl;
 #endif
@@ -248,37 +249,37 @@ void WFST::normalize(NormalizeMethod method)
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight normal_sum;//=0
     Weight reserved;// =0
-		Assert(reserved.isZero()&&normal_sum.isZero());
+                Assert(reserved.isZero()&&normal_sum.isZero());
     // pass 2a: assign tied (and locked) arcs their weights, taking 'reserved' weight from the normal arcs in their group
     // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
     // also, compute sum of normal arcs
     for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-      
+
         if ( isTiedOrLocked(pGroup = (*g)->groupId) ) { // tied or locked arc
           if ( isTied(pGroup) ) { // tied:
-            Weight groupNorm = *find_second(groupStateTotal,(IntKey)pGroup); // can be 0 if no counts at all for any states of group						
-						Weight gmax=*find_second(groupMaxLockedSum,(IntKey)pGroup);
-						NANCHECK(gmax);
-						Weight one(1.);
-						if ( gmax > one) {
-							(*g)->weight.setZero();							
-						} else {
-							if ( !gmax.isZero() )
-								groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
-							NANCHECK(groupNorm);
-							
-							Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
-							NANCHECK(groupTotal);
-							if (!groupTotal.isZero()) // then groupNorm non0 also
-								reserved += (*g)->weight = ( groupTotal/ groupNorm);
-							else
-								(*g)->weight.setZero();
-							NANCHECK(reserved);
-						}
-					} else { // locked:
+            Weight groupNorm = *find_second(groupStateTotal,(IntKey)pGroup); // can be 0 if no counts at all for any states of group
+                                                Weight gmax=*find_second(groupMaxLockedSum,(IntKey)pGroup);
+                                                NANCHECK(gmax);
+                                                Weight one(1.);
+                                                if ( gmax > one) {
+                                                        (*g)->weight.setZero();
+                                                } else {
+                                                        if ( !gmax.isZero() )
+                                                                groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
+                                                        NANCHECK(groupNorm);
+
+                                                        Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
+                                                        NANCHECK(groupTotal);
+                                                        if (!groupTotal.isZero()) // then groupNorm non0 also
+                                                                reserved += (*g)->weight = ( groupTotal/ groupNorm);
+                                                        else
+                                                                (*g)->weight.setZero();
+                                                        NANCHECK(reserved);
+                                                }
+                                        } else { // locked:
             reserved += (*g)->weight;
-						NANCHECK(reserved);
-					}
+                                                NANCHECK(reserved);
+                                        }
         }  else if (!(*g)->weight.isZero()) // normal arc
           normal_sum += (*g)->weight;
 #ifdef DEBUGNORMALIZE
@@ -289,15 +290,15 @@ void WFST::normalize(NormalizeMethod method)
     // pass 2b: give normal arcs their share of however much is left
     Weight fraction_remain = 1.;
     fraction_remain -= reserved;
-	NANCHECK(fraction_remain);
+        NANCHECK(fraction_remain);
     if (!fraction_remain.isZero()) { // something left
       normal_sum /= fraction_remain; // total counts that would be needed to fairly give reserved weights out
-			NANCHECK(normal_sum);
+                        NANCHECK(normal_sum);
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-				if (isNormal((*g)->groupId)) {
+                                if (isNormal((*g)->groupId)) {
           (*g)->weight /= normal_sum;
-					NANCHECK((*g)->weight);
-				}
+                                        NANCHECK((*g)->weight);
+                                }
     } else // nothing left, sorry
       for ( g.beginArcs(); g.moreArcs(); g.nextArc())
         if (isNormal((*g)->groupId))
@@ -317,7 +318,7 @@ void WFST::normalize(NormalizeMethod method)
 #endif
 
 #ifdef DEBUGNAN
-	readEachParameter(NaNCheck);
+        readEachParameter(NaNCheck);
 #endif
 
   if (method == CONDITIONAL)
@@ -336,8 +337,8 @@ void WFST::assignWeights(const WFST &source)
   }
   Weight *pWeight;
   for ( s = 0 ; s < numStates() ; ++s) {
-	source.states[s].flush();
-    List<Arc> &arcs = source.states[s].arcs;	
+        source.states[s].flush();
+    List<Arc> &arcs = source.states[s].arcs;
     for ( List<Arc>::erase_iterator a=arcs.erase_begin(),end=arcs.erase_end(); a !=end ; ) {
       if ( isTied(pGroup = a->groupId) )
         if ( (pWeight = find_second(groupWeight,(IntKey)pGroup)) )
@@ -655,4 +656,226 @@ ostream & operator << (ostream &o, WFST &w) {
   return o;
 }
 
+
+
+List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
+{
+  Assert(valid());
+  List<List<PathArc> > *paths = NEW List<List<PathArc> >;
+  if (!valid()) {
+    //List<List<PathArc> >::iterator insertHere=paths->begin();
+    for (int i=0;i<k;) {
+      paths->push_front(List<PathArc>());
+      if ( randomPath(insert_iterator<List<PathArc> >(paths->front(),paths->front().erase_begin()),max_len) == -1 ) {
+        paths->pop_front();
+      } else {
+        ++i;
+      }
+
+    }
+  }
+  return paths;
+}
+
+List<List<PathArc> > *WFST::bestPaths(int k)
+{
+  int nStates = numStates();
+  Assert(valid());
+
+  typedef List<List<PathArc> > LLP;
+  LLP *paths = NEW List<List<PathArc> >;
+  insert_iterator<LLP> path_adder(*paths,paths->erase_begin());
+  //List<List<PathArc> >::iterator insertHere=paths->begin();
+
+  Graph graph = makeGraph();
+#ifdef DEBUGKBEST
+  Config::debug() << "Calling KBest on WFST with k: "<<k<<'\n' << graph;
+#endif
+
+  FLOAT_TYPE *dist = NEW FLOAT_TYPE[nStates];
+  Graph shortPathGraph = shortestPathTreeTo(graph, final,dist);
+#ifdef DEBUGKBEST
+  Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
+#endif
+  shortPathTree = shortPathGraph.states;
+
+  if ( shortPathTree[0].arcs.notEmpty() || final == 0 ) {
+
+    List<PathArc> temp;
+    //List<PathArc>::iterator path=temp.begin();
+    //paths->push_back(temp);
+    insert_iterator<List<PathArc> > here(temp,temp.erase_begin());
+    insertShortPath(shortPathTree, 0, final, here);
+    *path_adder++ = temp; //XXX unnecessary copy because of output iterator not giving reference to added item =(
+
+
+
+    if ( k > 1 ) {
+      GraphHeap::freeAll();
+      Graph revPathTree = reverseGraph(shortPathGraph);
+      pathGraph = NEW GraphHeap *[nStates];
+      sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
+      bool *visited = NEW bool[nStates];
+      for ( int i = 0 ; i < nStates ; ++i ) visited[i] = false;
+      // IMPORTANT NOTE: depthFirstSearch recursively calls the function
+      // passed as the last argument (in this  case "buildSidetracksHeap")
+      //
+      freeAllSidetracks();
+      depthFirstSearch(revPathTree, final, visited, buildSidetracksHeap);
+      if ( pathGraph[0] ) {
+#ifdef DEBUGKBEST
+        cout << "printing trees\n";
+        for ( int i = 0 ; i < nStates ; ++i )
+          printTree(pathGraph[i], 0);
+        cout << "done printing trees\n\n";
+#endif
+        EdgePath *pathQueue = NEW EdgePath[4 * (k+1)];  // out-degree is at most 4
+        EdgePath *endQueue = pathQueue;
+        EdgePath *retired = NEW EdgePath[k+1];
+        EdgePath *endRetired = retired;
+        EdgePath newPath;
+        newPath.weight = pathGraph[0]->arc->weight;
+        newPath.heapPos = -1;
+        newPath.node = pathGraph[0];
+        newPath.last = NULL;
+        heapAdd(pathQueue, endQueue++, newPath);
+        while ( heapSize(pathQueue, endQueue) && --k ) {
+          EdgePath *top = pathQueue;
+          GraphArc *cutArc;
+          List<GraphArc *> shortPath;
+#ifdef DEBUGKBEST
+          cout << top->weight;
+#endif
+          if ( top->heapPos == -1 )
+            cutArc = top->node->arc;
+          else
+            cutArc = top->node->arcHeap[top->heapPos];
+          shortPath.push( cutArc);
+#ifdef DEBUGKBEST
+          cout << ' ' << *cutArc;
+#endif
+          EdgePath *last;
+          while ( (last = top->last) ) {
+            if ( !((last->heapPos == -1 && (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right )) || (last->heapPos >= 0 && top->heapPos != -1 )) ) { // got to p on a cross edge
+              if ( last->heapPos == -1 )
+                cutArc = last->node->arc;
+              else
+                cutArc = last->node->arcHeap[last->heapPos];
+              shortPath.push(cutArc);
+#ifdef DEBUGKBEST
+              cout << ' ' << *cutArc;
+#endif
+            }
+            top = last;
+          }
+#ifdef DEBUGKBEST
+          cout << "\n\n";
+#endif
+          List<PathArc> temp;
+          //List<PathArc>::iterator fullPath=temp.begin();
+          insert_iterator<List<PathArc> > path_cursor(temp,temp.erase_begin());
+
+          int sourceState = 0; // pretend beginning state is end of last sidetrack
+
+          for ( List<GraphArc *>::const_iterator cut=shortPath.const_begin(),end=shortPath.const_end(); cut != end; ++cut ) {
+            insertShortPath(shortPathTree, sourceState, (*cut)->source, path_cursor); // stitch end of last sidetrack to beginning of this one
+            sourceState = (*cut)->dest;
+            insertPathArc(*cut, path_cursor); // append this sidetrack
+          }
+          insertShortPath(shortPathTree, sourceState, final, path_cursor); // connect end of last sidetrack to final state
+
+          //paths->push_back(temp);
+          *path_adder++ = temp;
+          *endRetired = pathQueue[0];
+          newPath.last = endRetired++;
+          heapPop(pathQueue, endQueue--);
+          int lastHeapPos = newPath.last->heapPos;
+          GraphArc *spawnVertex;
+          GraphHeap *from = newPath.last->node;
+          FLOAT_TYPE lastWeight = newPath.last->weight;
+          if ( lastHeapPos == -1 ) {
+            spawnVertex = from->arc;
+            newPath.heapPos = -1;
+            if ( from->left ) {
+              newPath.node = from->left;
+              newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
+              heapAdd(pathQueue, endQueue++, newPath);
+            }
+            if ( from->right ) {
+              newPath.node = from->right;
+              newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
+              heapAdd(pathQueue, endQueue++, newPath);
+            }
+            if ( from->arcHeapSize ) {
+              newPath.heapPos = 0;
+              newPath.node = from;
+              newPath.weight = lastWeight + (newPath.node->arcHeap[0]->weight - spawnVertex->weight);
+              heapAdd(pathQueue, endQueue++, newPath);
+            }
+          } else {
+            spawnVertex = from->arcHeap[lastHeapPos];
+            newPath.node = from;
+            int iChild = 2 * lastHeapPos + 1;
+            if ( from->arcHeapSize > iChild  ) {
+              newPath.heapPos = iChild;
+              newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
+              heapAdd(pathQueue, endQueue++, newPath);
+              if ( from->arcHeapSize > ++iChild ) {
+                newPath.heapPos = iChild;
+                newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
+                heapAdd(pathQueue, endQueue++, newPath);
+              }
+            }
+          }
+          if ( pathGraph[spawnVertex->dest] ) {
+            newPath.heapPos = -1;
+            newPath.node = pathGraph[spawnVertex->dest];
+            newPath.heapPos = -1;
+            newPath.weight = lastWeight + newPath.node->arc->weight;
+            heapAdd(pathQueue, endQueue++, newPath);
+          }
+        } // end of while
+        delete[] pathQueue;
+        delete[] retired;
+      } // end of if (pathGraph[0])
+      GraphHeap::freeAll();
+
+      //Yaser 6-26-2001:  The following repository was filled using the
+      // "buildSidetracksHeap" method which is called recursively by the
+      // "depthFirstSearch()" method and it was never deleted because
+      // we needed it here in bestPaths(). Hence we have to delete it here
+      // since we are done with it.
+      freeAllSidetracks();
+
+      delete[] pathGraph;
+      delete[] visited;
+      delete[] revPathTree.states;
+      delete[] sidetracks.states;
+    } // end of if (k > 1)
+  }
+
+  delete[] graph.states;
+  delete[] shortPathGraph.states;
+  delete[] dist;
+
+  return paths;
+}
+/*
+  void WFST::insertPathArc(GraphArc *gArc,List<PathArc>* l)
+  {
+  PathArc pArc;
+  Arc *taken = (Arc *)gArc->data;
+  setPathArc(&pArc,*taken);
+  l->push_back(pArc);
+  }
+
+  void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
+  {
+  GraphArc *taken;
+  for ( int iState = source ; iState != dest; iState = taken->dest ) {
+  taken = &shortPathTree[iState].arcs.top();
+  insertPathArc(taken,l);
+  }
+  }
+*/
 

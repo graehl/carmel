@@ -6,7 +6,7 @@
 #include "weight.h"
 #include "list.h"
 #include "2hash.h"
-#include "Arc.h"
+#include "arc.h"
 #include <iostream>
 
 struct IntKey {

@@ -19,6 +19,7 @@ struct test_counter {
 #ifdef MAIN
 unsigned test_counter::n;
 #define TEST_MAIN
+#define BOOST_AUTO_TEST_MAIN
 #endif
 
 

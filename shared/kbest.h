@@ -3,9 +3,8 @@
 
 #include "graph.h"
 #include "myassert.h"
-#include "train.h"
 #include "list.h"
-#include "fst.h"
+//#include "arc.h"
 
 struct pGraphArc {
   GraphArc *p;
@@ -74,7 +73,25 @@ struct EdgePath {
 int operator < (const EdgePath &l, const EdgePath &r);
 
 Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist); 
-void buildSidetracksHeap(int state, int pred); 
+void buildSidetracksHeap(int state, int pred); // call depthfirstsearch with this; see usage in kbest.cc
+void freeAllSidetracks(); // must be called after you buildSidetracksHeap
 void printTree(GraphHeap *t, int n) ; 
 void shortPrintTree(GraphHeap *t);
+
+extern Graph sidetracks;
+extern GraphHeap **pathGraph;
+extern GraphState *shortPathTree;
+
+
+// you can inherit from this or just provide the same interface
+struct BestPathsVisitor {
+    enum { SIDETRACKS_ONLY=0 };
+    void start_path(unsigned k,FLOAT_TYPE cost) {} // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
+    void visit_best_arc(const GraphArc &a) {}
+    void visit_sidetrack_arc(const GraphArc &a) { visit_best_arc(a); }
+};
+
+template <class Visitor>
+void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v) {
+}
 #endif

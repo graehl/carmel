@@ -1,5 +1,4 @@
 //#define MARCU
-#define BOOST_AUTO_TEST_MAIN
 #define MAIN
 // -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
