@@ -637,6 +637,13 @@ int WFST::abort() {
   return 0;
 }
 
+ostream & operator << (ostream & o, const PathArc &p)
+{
+  const WFST *w=p.wfst;
+  o << "(" << w->inLetter(p.in) << " : " << w->outLetter(p.out) << " / " << p.weight << " -> " << w->stateName(p.destState) << ")";
+  return o;
+}
+
 ostream & operator << (ostream &o, List<PathArc> &l) {
   for (  List<PathArc>::const_iterator li=l.const_begin(),end = l.const_end(); li != end; ++li )
     o << *li << " ";
@@ -647,3 +654,5 @@ ostream & operator << (ostream &o, WFST &w) {
   w.writeLegible(o); //- Yaser  07-20-2000
   return o;
 }
+
+

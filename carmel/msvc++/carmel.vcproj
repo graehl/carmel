@@ -79,7 +79,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="..\..\tt;..\..\boost"
+				AdditionalIncludeDirectories="..\..\shared;..\..\boost"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
@@ -133,7 +133,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\tt;..\..\boost"
+				AdditionalIncludeDirectories="..\..\shared;..\..\boost"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;DEBUG;TEST"
 				IgnoreStandardIncludePath="FALSE"
 				MinimalRebuild="TRUE"
@@ -193,7 +193,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="..\..\tt;..\..\boost"
+				AdditionalIncludeDirectories="..\..\shared;..\..\boost"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;DEBUG"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
@@ -256,7 +256,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="3"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="..\..\tt;..\..\boost"
+				AdditionalIncludeDirectories="..\..\shared;..\..\boost"
 				PreprocessorDefinitions="WIN32;_CONSOLE;TEST;BOOST_DISABLE_WIN32"
 				IgnoreStandardIncludePath="FALSE"
 				MinimalRebuild="TRUE"
@@ -1070,7 +1070,7 @@
 				RelativePath="..\..\shared\stringkey.h">
 			</File>
 			<File
-				RelativePath="..\..\tt\test.hpp">
+				RelativePath="..\..\shared\test.hpp">
 			</File>
 			<File
 				RelativePath="..\src\train.h">
