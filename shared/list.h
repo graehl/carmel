@@ -7,7 +7,6 @@
 #define STL_LIST slist
 #else
 #include <list>
-#define ERASE_ITERATOR iterator
 #define STL_LIST std::list
 #endif
 
