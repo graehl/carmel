@@ -7,9 +7,8 @@
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
 
-#include <iostream>
-
 #include "Arc.h"
+using namespace std;
 
 ostream & operator << (ostream & o, const PathArc &p)
 {

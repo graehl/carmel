@@ -6,11 +6,11 @@
 * with questions about the software or commercial licensing.  All software is  *
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
-#include <iostream.h>
-#include <fstream.h>
-#include <ctype.h>
+#include <iostream>
+#include <fstream>
+#include <cctype>
 #include <string>
-#include <time.h>
+#include <ctime>
 #include "fst.h"
 #include "assert.h"
 
@@ -45,7 +45,7 @@ void outWithoutQuotes(const char *str, ostream &out) {
 void usageHelp(void);
 void WFSTformatHelp(void);
 
-int main(int argc, char *argv[]){
+int __cdecl main(int argc, char *argv[]){
 #ifdef MSCVER 
 #ifdef MEMDEBUG
   int tmpFlag = CrtSetDbgFlag(CRTDBGREPORTFLAG);

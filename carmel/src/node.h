@@ -10,7 +10,7 @@
 #ifndef NODE_H
 #define NODE_H
 
-template <class T> struct Node {
+template <typename T> struct Node {
   T data;
   Node<T> *next;
   Node(const T &it) : data(it), next(NULL) { }

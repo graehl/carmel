@@ -17,6 +17,7 @@ SHARED = ${DIR}/../shared
 SRC = ${DIR}/src
 OBJ.i686 = ${DIR}/obj/i686
 OBJ.sun4 = ${DIR}/obj/sun4
+OBJ.linux = ${DIR}/obj/linux
 OBJ.freebsd = ${DIR}/obj/freebsd
 OBJ.macosx = ${DIR}/obj/macosx
 INC = ${DIR}/src

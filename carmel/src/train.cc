@@ -172,6 +172,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
 	}	
       }
 #ifdef N_E_REPS
+	  // caveat: this method is wrong, although it will converge as N_E_REPS -> inf assuming the null transitions are normalized per source state, it can converge higher than it should by counting the same paths multiple times.  thus, N_E_REPS is not enabled =D
       for ( int rep = 0 ; rep < N_E_REPS ; ++rep ) {
 	for ( s = 0 ; s < nSt; ++s )
 	  wOld[s] = wNew[s];

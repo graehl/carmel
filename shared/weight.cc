@@ -9,13 +9,7 @@
 
 #include "weight.h"
 
-Weight Weight::wTmp;
-
-bool operator == (Weight lhs, Weight rhs) { return lhs.weight == rhs.weight; }
-bool operator != (Weight lhs, Weight rhs) { return lhs.weight != rhs.weight; }
-
-
-ostream& operator << (ostream &o, Weight weight)
+std::ostream& operator << (std::ostream &o, Weight weight)
 {
   if ( weight == 0.0 )
     o << 0;
@@ -26,7 +20,7 @@ ostream& operator << (ostream &o, Weight weight)
   return o;
 }
 
-istream& operator >> (istream &i, Weight &weight)
+std::istream& operator >> (std::istream &i, Weight &weight)
 {
   char c;
   float f;
@@ -41,42 +35,3 @@ istream& operator >> (istream &i, Weight &weight)
   }
   return i;
 }
-
-Weight operator *(Weight lhs, Weight rhs) { 
-  Weight::wTmp.weight = lhs.weight + rhs.weight; 
-  return Weight::wTmp;
-}
-
-
-Weight operator /(Weight lhs, Weight rhs) { 
-  Weight::wTmp.weight = lhs.weight - rhs.weight; 
-  return Weight::wTmp;
-}
-
-Weight operator +(Weight lhs, Weight rhs) {
-  if ( lhs == 0.f )
-    return rhs;
-  if ( rhs == 0.f )
-    return lhs;
-  if ( rhs.weight > lhs.weight ) {
-    Weight::wTmp.weight = rhs.weight + log10(1 + pow((double)10, (double)lhs.weight-rhs.weight));
-    return Weight::wTmp;
-  }
-  Weight::wTmp.weight = lhs.weight + log10(1 + pow((double)10, (double)rhs.weight-lhs.weight));
-  return Weight::wTmp;
-}
-
-Weight operator -(Weight lhs, Weight rhs) {
-  if ( rhs.weight > lhs.weight )	   // clamp to zero as minimum
-    return 0.f;
-  if ( rhs == 0.f )
-    return lhs;
-  Weight::wTmp.weight = lhs.weight + log10(1 - pow((double)10, (double)rhs.weight-lhs.weight));
-  return Weight::wTmp;
-}
-
-
-bool operator <(Weight lhs, Weight rhs) { return lhs.weight < rhs.weight; }
-bool operator >(Weight lhs, Weight rhs) { return lhs.weight > rhs.weight; }
-bool operator <=(Weight lhs, Weight rhs) { return lhs.weight <= rhs.weight; }
-bool operator >=(Weight lhs, Weight rhs) { return lhs.weight >= rhs.weight; }

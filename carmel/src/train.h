@@ -15,6 +15,7 @@
 #include "list.h"
 #include "2hash.h"
 #include "Arc.h"
+#include <iostream>
 
 struct IntKey {
   int i;
@@ -161,7 +162,7 @@ index(NULL) { }
   }
 };
 
-ostream& operator << (ostream &out, struct State &s); // Yaser 7-20-2000
+std::ostream& operator << (std::ostream &out, struct State &s); // Yaser 7-20-2000
 
 struct IOPair {
   int in;
@@ -172,7 +173,7 @@ struct IOPair {
   }
 };
 
-ostream & operator << (ostream &o, IOPair p);
+std::ostream & operator << (std::ostream &o, IOPair p);
 
 int operator == (IOPair l, IOPair r);
 
@@ -184,10 +185,10 @@ struct DWPair {
   Weight &weight() { return arc->weight; }
 };
 
-ostream & operator << (ostream &o, DWPair p);
+std::ostream & operator << (std::ostream &o, DWPair p);
 
 
-ostream & hashPrint(HashTable<IOPair, List<DWPair> > &h, ostream &o);
+std::ostream & hashPrint(HashTable<IOPair, List<DWPair> > &h, std::ostream &o);
 
 struct symSeq {
   int n;
@@ -195,7 +196,7 @@ struct symSeq {
   int *rLet;
 };
 
-ostream & operator << (ostream & out , const symSeq & s);
+std::ostream & operator << (std::ostream & out , const symSeq & s);
 
 struct IOSymSeq {
   symSeq i;
@@ -227,7 +228,7 @@ struct IOSymSeq {
   }
 };
 
-ostream & operator << (ostream & out , const IOSymSeq & s);   // Yaser 7-21-2000
+std::ostream & operator << (std::ostream & out , const IOSymSeq & s);   // Yaser 7-21-2000
 
 class trainInfo {
  public:

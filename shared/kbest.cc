@@ -115,7 +115,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
       sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
       bool *visited = new bool[nStates];
       for ( int i = 0 ; i < nStates ; ++i ) visited[i] = false;
-      // IMPORTANT NOTE: septhFirstSearch recursively calls the function 
+      // IMPORTANT NOTE: depthFirstSearch recursively calls the function 
       // passed as the last argument (in this  case "buildSidetracksHeap")
       // 
       depthFirstSearch(revPathTree, final, visited, buildSidetracksHeap);      
@@ -257,7 +257,10 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   return paths;
 }
 
+#ifdef _MSC_VER
+#else
 template <typename T>
+#endif
 void WFST::insertPathArc(GraphArc *gArc,List<T>* l, List<T>::iterator &path)
 {
   PathArc pArc;
@@ -269,8 +272,10 @@ void WFST::insertPathArc(GraphArc *gArc,List<T>* l, List<T>::iterator &path)
   l->insert(path,pArc);
 }
 
-
+#ifdef _MSC_VER
+#else
 template <typename T>
+#endif
 void WFST::insertShortPath(int source, int dest, List<T>*l, List<T>::iterator &path)
 {
   GraphArc *taken;
@@ -291,7 +296,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
   int nStates = lG.nStates;
   GraphState *sub = new GraphState[nStates];
   for ( int i = 0 ; i < nStates ; ++i )
-    if ( dist[i] != HUGE_VAL ){
+    if ( dist[i] != HUGE_FLOAT ){
        List<GraphArc>::const_iterator end = lG.states[i].arcs.end();
       for ( List<GraphArc>::const_iterator l=lG.states[i].arcs.begin() ; l != end; ++l ) {
 	Assert(i == l->source);
@@ -303,7 +308,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
 	    break;
 	  }
 	if ( !isShort )
-	  if ( dist[l->dest] != HUGE_VAL ) {
+	  if ( dist[l->dest] != HUGE_FLOAT ) {
 	    GraphArc w = *l;
 	    w.weight = w.weight - (dist[i] - dist[w.dest]);
 	    sub[i].arcs.push(w);

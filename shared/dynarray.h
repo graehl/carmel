@@ -14,7 +14,7 @@
 #include "assert.h"
 
 
-template <class T> class DynamicArray {
+template <typename T> class DynamicArray {
   int space;
   int sz;
   T *vec;
@@ -74,6 +74,8 @@ public:
     if ( newSz < sz ) 
       newSz = sz;
     vec = (T*)::operator new((size_t)newSz*sizeof(T));
+    // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
+    // also, gcc complains about delete (void *)
     memcpy(vec, oldVec, sz*sizeof(T));
     delete (void *)oldVec;
     space = newSz;
