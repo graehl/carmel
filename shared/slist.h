@@ -13,11 +13,11 @@ class slist
 
   Node* m_head;
  public:
-  typedef T value_type;
-  typedef value_type* pointer;
-  typedef const value_type* const_pointer;
-  typedef value_type& reference;
-  typedef const value_type& const_reference;
+  typedef typename T value_type;
+  typedef typename value_type* pointer;
+  typedef const typename value_type* const_pointer;
+  typedef typename value_type& reference;
+  typedef const typename value_type& const_reference;
   //  typedef unsigned int size_type;
   //  typedef int difference_type;
   //  typedef forward_iterator_tag _Iterator_category;

@@ -13,8 +13,8 @@ DIR = .
 # so change i686 to i386 in in this file.
 # Otherwise, you probably do not need to change anything beyond this line
 # 
-SHARED = ${DIR}/../shared
 SRC = ${DIR}/src
+SHARED = ${DIR}/../shared
 BOOST=/home/graehl/isd/boost
 
 OBJ.linux = ${DIR}/obj/linux
@@ -27,6 +27,7 @@ IN = -I$(INC) -I-
 IN = -I${DIR}/src -I$(SHARED) -I- -I${BOOST} 
 #-I${DIR}/STLport
 BIN = ${DIR}/bin
+
 CC.solaris = /nfs/topaz/graehl/isd/solaris/bin/g++3.2
 #/nfs/topaz/graehl/isd/solaris/bin/g++3.2
 CC.linux = g++
@@ -34,7 +35,7 @@ CC.freebsd = g++31
 CC.freebsd = g++
 CC.macosx = g++
 
-CCFLAGS = -c -Wno-deprecated
+CCFLAGS = -c -Wno-deprecated 
 CCFLAGS = -c -Wno-deprecated -DBOOST_DISABLE_THREADS -DBOOST_NO_MT ${INC}
 #-Wall 
 # -frepo
@@ -117,7 +118,9 @@ $(OBJ)/debug/:
 
 $(OBJ)/purified/:
 	mkdir -p $@
+
 all: carmel.${ARCH}
+	
 
 clean:
 	rm -rf $(OBJ)
