@@ -448,7 +448,7 @@ EACHDW(dw->scratch=0;);
           dw->counts += (dw->scratch / fin) * (Weight)seq->weight;
         }
       }*/
-        EACHDW(if (!dw->counts.isZero()) dw->counts += (dw->scratch / fin) * (Weight)seq->weight;);
+        EACHDW(if (!dw->scratch.isZero()) dw->counts += (dw->scratch / fin) * (Weight)seq->weight;);
         prodModProb *= (fin^seq->weight); // since perplexity = 2^((-1/n)*sum(log2 prob)), we can take prod(prob)^(1/n) instead
     ++seq;
   } // end of while(training examples)
@@ -476,10 +476,10 @@ EACHDW(dw->scratch=0;);
 #ifdef DEBUGTRAINDETAIL
           std::cerr << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
 #endif
-                  Weight &w=dw->weight();
-          dw->scratch = w;   // old weight - Yaser: this is needed only to calculate change in weight later on ..
-                  Weight &counts = dw->counts;
-          w = counts + trn->smoothFloor; // new (unnormalized weight)
+                  //Weight &w=dw->weight();
+          dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
+                  //Weight &counts = dw->counts;
+          dw->weight() = dw->counts + trn->smoothFloor; // new (unnormalized weight)
         }
     }
 #ifdef DEBUGTRAINDETAIL
