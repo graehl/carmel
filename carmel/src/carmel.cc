@@ -38,10 +38,10 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
         Weight::out_always_log(*fstout);
     else
         //*fstout << Weight::out_variable;
-    Weight::out_variable(*fstout);
+    Weight::out_sometimes_log(*fstout);
     if ( flags['D'] )
         //                      *fstout << Weight::out_always_real;
-        Weight::out_always_real(*fstout);
+        Weight::out_never_log(*fstout);
     if ( flags['J'] )
         //*fstout << WFST::out_arc_full;
     WFST::out_arc_full(*fstout);
