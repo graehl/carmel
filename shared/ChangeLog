@@ -1,3 +1,10 @@
+2005-03-29  Jonathan Graehl  <graehl@isi.edu>
+
+	* weight.h: Weight = logweight<FLOAT_TYPE> - not tested with
+	carmel or tt
+
+	* funcs.hpp: lowercase k m g = base10. upper=base2
+
 2005-03-26  Jonathan Graehl  <graehl@isi.edu>
 
 	* io.hpp: moved everything from genio.h except what's used for

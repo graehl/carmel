@@ -40,17 +40,23 @@ size_type parse_size(inputstream &i) {
         case 't':case 'T':
             number *= (1024.*1024.*1024.*1024.);
             break;
-
-        case 'g':case 'G':
+        case 'g':
+            number *= (1000*1000*1000);
+            break;
+        case 'G':
             number *= (1024*1024*1024);
             break;
-
-        case 'm':case 'M':
+        case 'm':
+            number *= (1000*1000);
+            break;
+        case 'M':
             number *= (1024*1024);
             break;
-
-        case 'k':case 'K':
-            number *=(1024);
+        case 'k':
+            number *=1000;
+            break;
+        case 'K':
+            number *= 1024;
             break;
 
         default:
@@ -114,10 +120,13 @@ inline void maybe_decrease_min(To &to,const From &from) {
 }
 
 #ifndef ONE_PLUS_EPSILON
-# ifndef EPSILON
-#  define EPSILON .00001
-# endif 
-#define ONE_PLUS_EPSILON (1+EPSILON)
+# ifndef FLOAT_EPSILON
+#  define FLOAT_EPSILON .00001
+# endif
+static const double EPSILON=FLOAT_EPSILON;
+static const double ONE_PLUS_EPSILON=1+EPSILON;
+
+//#define ONE_PLUS_EPSILON (1+EPSILON)
 #endif
 
 /*
