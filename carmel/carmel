@@ -1,0 +1,33 @@
+#!/bin/bash
+if [ -z "$ARCH" ] ; then
+u=`uname`
+ARCH=cygwin
+if [ $u = Linux ] ; then
+ ARCH=linux
+fi
+if [ $u = SunOS ] ; then
+ ARCH=solaris
+fi
+if [ $u = Darwin ] ; then
+ ARCH=macosx
+fi
+fi
+realprog=$0
+d=`dirname $realprog`
+if [ -L $realprog ] ; then
+ if [ -x "`which readlink`" ] ; then
+    realprog=`readlink $0`
+    if [ ${realprog:0:1} = / ] ; then #absolute path
+     d=`dirname $realprog`
+    else
+     d=$d/`dirname $realprog`
+    fi     
+ fi
+fi
+
+if [ $ARCH = Darwin ]; then
+ exec $d/$ARCH/carmel $*
+else
+ exec $d/$ARCH/carmel.static $*
+fi
+

@@ -12,9 +12,9 @@
 namespace lambda=boost::lambda;
 #endif
 #include <functional>
-#include "ttconfig.hpp"
+#include "config.h"
 #include "graphviz.hpp"
-
+//#include "symbol.hpp"
 #include "byref.hpp"
 
 #ifdef TEST
@@ -236,38 +236,41 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   rank=0;
   DynamicArray<Self *> in_children;
   EXPECTI_COMMENT_FIRST(in>>c);
-  if (c != '(')
-      in.unget();
-  EXPECTI_COMMENT(deref(read)(in,label));
-  DBTREEIO(label);
-  if (c != '(') {
-      EXPECTI_COMMENT(in>>c);
-  }
   if (c == '(') {
-        DBTREEIO('(');
-        for(;;) {
-          EXPECTI_COMMENT(in>>c);
-          if (c==')') {
-                DBTREEIO(')');
-                break;
-          }
-          in.unget();
-          Self *in_child = read_tree(in,read);
-          if (in_child) {
-                DBTREEIO('!');
-                in_children.push_back(in_child);
-          } else
-                goto fail;
-          EXPECTI_COMMENT(in>>c);
-          if (c != ',') in.unget();
-        }
-        dealloc();
-        alloc((rank_type)in_children.size());
-        //copy(in_children.begin(),in_children.end(),begin());
-        in_children.moveto(begin());
+      EXPECTI_COMMENT(deref(read)(in,label));
   } else {
-        in.unget();
+      in.unget();
+      EXPECTI_COMMENT_FIRST(deref(read)(in,label));
+      EXPECTI_COMMENT_FIRST(in>>c);
+      if (in.eof()) // since c!='(' before in>>c, can almost not test for this - but don't want to unget() if nothing was read.
+          return GENIOGOOD;
+      if (c!='(') {
+          in.unget();
+          return GENIOGOOD;
+      }
+  } //POST: read a '(' and a label (in either order)
+  DBTREEIO(label);
+  DBTREEIO('(');
+  for(;;) {
+      EXPECTI_COMMENT(in>>c);
+      if (c==')') {
+          DBTREEIO(')');
+          break;
+      }
+      in.unget();
+      Self *in_child = read_tree(in,read);
+      if (in_child) {
+          DBTREEIO('!');
+          in_children.push_back(in_child);
+      } else
+          goto fail;
+      EXPECTI_COMMENT(in>>c);
+      if (c != ',') in.unget();
   }
+  dealloc();
+  alloc((rank_type)in_children.size());
+  //copy(in_children.begin(),in_children.end(),begin());
+  in_children.moveto(begin());
   return GENIOGOOD;
 
 fail:
@@ -325,9 +328,9 @@ template <class T,class F>
 bool tree_leaf_visit(T *tree,F func)
 {
          if (tree->size()) {
-           FOREACH(T *child,*tree) {
+             for (T *child=tree->begin(), *end=tree->end();child!=end;++child) {
                  tree_leaf_visit(child,func);
-           }
+             }
          } else {
            deref(func)(tree);
          }
@@ -338,19 +341,6 @@ struct DefaultNodeLabeler {
     typedef L Label;
     void print(ostream &o,const Label &l) {
         o << "label=" << l;
-    }
-};
-
-struct SymbolLabeler : public DefaultNodeLabeler<Symbol> {
-    typedef DefaultNodeLabeler<Symbol> Parent;
-    void print(ostream &o,const Label &l) {
-        if (l.c_str()[0] == '\\')
-            o << l.c_str();
-        else {
-            Parent::print(o,l);
-            if (l == Symbol("OR"))
-                o << ",shape=box";
-        }
     }
 };
 
@@ -616,18 +606,19 @@ template<class T> bool always_equal(const T& a,const T& b) { return true; }
 BOOST_AUTO_UNIT_TEST( tree )
 {
   Tree<int> a,b,*c,*d,*g=new_tree(1),*h;
-  //string sa="#asdf\n1(#asdf\n 2 #asdf\n,#asdf\n3 (4\n ()\n,\t 5,6))";
-  string sa="#asdf\n1#asdf\n(#asdf\n 2 #asdf\n,#asdf\n3 (4\n ()\n,\t 5,6))";
+  //string sa="%asdf\n1(%asdf\n 2 %asdf\n,%asdf\n3 (4\n ()\n,\t 5,6))";
+  string sa="%asdf\n1%asdf\n(%asdf\n 2 %asdf\n,%asdf\n3 (4\n ()\n,\t 5,6))";
   //string sa="1(2 3(4 5 6))";
   string sb="1(2 3(4 5 6))";
   stringstream o;
-  istringstream isa(sa);isa >> a;
+  istringstream isa(sa);
+  isa >> a;
   o << a;
   BOOST_CHECK(o.str() == sb);
   o >> b;
   ostringstream o2;
   TreePrinter tp(o2);
-  tree_visit(&a,ref(tp));
+  tree_visit(&a,boost::ref(tp));
   BOOST_CHECK(o.str() == o2.str());
   c=new_tree(1,
                 new_tree(2),
@@ -667,7 +658,8 @@ BOOST_AUTO_UNIT_TEST( tree )
   delete_tree(d);
   delete_tree(g);
   delete_tree(h);
-  Tree<int> k("1"),l("1()");
+  Tree<int> k("1");
+  Tree<int> l("1()");
   BOOST_CHECK(tree_equal(k,l));
   BOOST_CHECK(k.rank==0);
   BOOST_CHECK(l.rank==0);

@@ -17,6 +17,38 @@
 
 #include "debugprint.hpp"
 
+#include <boost/type_traits/alignment_traits.hpp>
+
+#include "myassert.h"
+
+template <class T>
+T *align(T *p)
+{
+    //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
+    const unsigned align=boost::alignment_of<T>::value;
+    const unsigned align_mask=(align-1);
+    Assert(align_mask & align == 0); // only works for power-of-2 alignments.
+
+    unsigned diff=align_mask & (unsigned)p; //= align-(ttop&align_mask)
+    if (diff) {
+//            ttop |= align_mask; // = ttop + diff - 1
+//            ++ttop;
+        return (char *)p + diff + 1;
+    }
+    return p;
+}
+
+template <class T>
+bool is_aligned(T *p)
+{
+    //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
+    const unsigned align=boost::alignment_of<T>::value;
+    const unsigned align_mask=(align-1);
+    return align_mask & (unsigned)p;
+}
+
+
+/*
 template <typename T,size_t n>
 struct fixed_single_allocator {
 //    enum { size = n };
@@ -29,6 +61,7 @@ struct fixed_single_allocator {
         Assert(n==_n && tp == space);
     }
 };
+*/
 
 template <class T>
 struct bounded_iterator : public boost::iterator_adaptor<bounded_iterator<T>,T> {
