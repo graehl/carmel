@@ -2,6 +2,7 @@
 #include "assert.h"
 #include "node.h"
 #include "config.h"
+#include "Arc.h"
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
@@ -32,8 +33,8 @@ Graph reverseGraph(Graph g)
 {
   GraphState *rev = new GraphState[g.nStates];
   for ( int i  = 0 ; i < g.nStates ; ++i ){
-	const List<Arc> &arcs = g.states[i].arcs;
-    for ( List<Arc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); ; l != end; ++l ) {
+	List<GraphArc> &arcs = g.states[i].arcs;
+    for ( List<GraphArc>::val_iterator l=arcs.val_begin(),end = arcs.val_end(); l != end; ++l ) {
       GraphArc r;
       r.data = &(*l);
       Assert(i == l->source);
@@ -63,8 +64,8 @@ void dfsRec(int state, int pred) {
   if ( dfsFunc )
     dfsFunc(state, pred);
 
-   const List<Arc> &arcs = dfsGraph.states[state].arcs;
-    for ( List<Arc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); ; l != end; ++l ) {
+   const List<GraphArc> &arcs = dfsGraph.states[state].arcs;
+   for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end = arcs.const_end(); l != end; ++l ) {
     int dest = l->dest;
     dfsRec(dest, state);
   }
@@ -116,7 +117,8 @@ Graph shortestPathTreeTo(Graph g, int dest, float *dist)
 	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 {
 	int i;
-	   GraphArc **taken = new GraphArc *[g.nStates];
+
+	   GraphArc **taken = new  /*const*/ GraphArc *[g.nStates];
 	    
 	Graph pg;
 	pg.nStates = g.nStates;
@@ -199,8 +201,8 @@ void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
     int activeState = distQueue[0].state;
     //    dist[activeState] = (float)distQueue[0];
     heapPop(distQueue, distQueue + nUnknown--);
-	const List<GraphArc> &arcs=st[activeState].arcs
-    for ( List<GraphArc>::const_iterator a = arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a ) {
+	List<GraphArc> &arcs=st[activeState].arcs;
+    for ( List<GraphArc>::val_iterator a = arcs.val_begin(),end=arcs.val_end() ; a !=end ; ++a ) {
       // future: compare only best arc to any given state
       int targetState = a->dest;
       if ( (candidate = (a->weight + weights[activeState])) < weights[targetState] ) {

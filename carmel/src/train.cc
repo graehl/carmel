@@ -10,7 +10,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
   normalize(method);
   delete trn;
   trn = new trainInfo;
-//  trn->smoothFloor = smoothFloor;
+  //  trn->smoothFloor = smoothFloor;
   IOPair IO;
   DWPair DW;
   List<DWPair> *pLDW;
@@ -20,18 +20,18 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
     trn->revArcs = new HashTable<IOPair, List<DWPair> >[numStates()];
   int s;
   for ( s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::const_iterator aI=states[s].arcs.const_begin(),end=states[s].arcs.const_end(); ; aI != end; ++aI ) {
+    for ( List<Arc>::val_iterator aI=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); aI != end; ++aI ) {
       IO.in = aI->in;
       IO.out = aI->out;
       int d = DW.dest = aI->dest;
       DW.arc = &(*aI);
       if ( !(pLDW = IOarcs[s].find(IO)) )
         pLDW = IOarcs[s].add(IO);
-	  DW.prior_counts = smoothFloor + weight_is_prior_count * aI->weight;	  
-	  // add in forward direction
-	  pLDW->push(DW);
+      DW.prior_counts = smoothFloor + weight_is_prior_count * aI->weight;
+      // add in forward direction
+      pLDW->push(DW);
 
-	  // reverse direction and add in reverse direction
+      // reverse direction and add in reverse direction
       DW.dest = s;
       if ( !(pLDW = revIOarcs[d].find(IO)) )
         pLDW = revIOarcs[d].add(IO);
@@ -42,20 +42,20 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
   Graph eGraph = makeEGraph();
   Graph revEGraph = reverseGraph(eGraph);
   trn->forETopo = new List<int>;
-  { 
-	TopoSort t(eGraph,trn->forETopo);
-	t.order_crucial();
-	int b = t.get_n_back_edges();
-	if ( b > 0 )
-		Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
-	delete[] eGraph.states;
+  {
+    TopoSort t(eGraph,trn->forETopo);
+    t.order_crucial();
+    int b = t.get_n_back_edges();
+    if ( b > 0 )
+      Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
+    delete[] eGraph.states;
   }
   trn->revETopo = new List<int>;
-  { 
-	TopoSort t(revEGraph,trn->revETopo);
-	t.order_crucial();
-	delete[] revEGraph.states;
-  }  
+  {
+    TopoSort t(revEGraph,trn->revETopo);
+    t.order_crucial();
+    delete[] revEGraph.states;
+  }
 
   trn->f = trn->b = NULL;
   trn->maxIn = trn->maxOut = 0;
@@ -80,11 +80,11 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
     trn->maxOut = s.o.n;
 }
 
-  #define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
+#define EACHDW(a)   do {  for ( s = 0 ; s < numStates() ; ++s ) \
       for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
-        List<DWPair>::iterator end = ha.val().val_end() ; \
-		for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
-		  a } } } while(0)
+        List<DWPair>::val_iterator end = ha.val().val_end() ; \
+                for ( List<DWPair>::val_iterator dw=ha.val().val_begin() ; dw !=end ; ++dw ) {\
+                  a } } } while(0)
 
 
 void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,NormalizeMethod method)
@@ -105,7 +105,7 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
     }
   }
 
-  
+
   int giveUp = 0;
   Weight lastChange;
   Weight lastPerplexity;
@@ -113,7 +113,7 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
 
   int s;
   if ( trn->totalEmpiricalWeight > 0 ) {
-	EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
+    EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
   }
   for ( ; ; ) {
     Weight newPerplexity;
@@ -123,20 +123,20 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
       break;
     }
     lastChange = train(giveUp,method,&newPerplexity);
-	
-	
-	Config::log() << "Training iteration " << giveUp << ": largest weight change was " << lastChange << " with per-observation perplexity = " << newPerplexity ;
-	if ( lastPerplexity.isInfinity() ) {
-		Config::log() << std::endl;
-	} else {
-		Weight pp_ratio = newPerplexity/lastPerplexity;
-		Config::log() << " (perplexity ratio = " << pp_ratio << ")" << std::endl;
-	 if (  pp_ratio >= converge_perplexity_ratio ) {
-      Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << giveUp << " iterations.\n";
-      break;
+
+
+    Config::log() << "Training iteration " << giveUp << ": largest weight change was " << lastChange << " with per-observation perplexity = " << newPerplexity ;
+    if ( lastPerplexity.isInfinity() ) {
+      Config::log() << std::endl;
+    } else {
+      Weight pp_ratio = newPerplexity/lastPerplexity;
+      Config::log() << " (perplexity ratio = " << pp_ratio << ")" << std::endl;
+      if (  pp_ratio >= converge_perplexity_ratio ) {
+        Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << giveUp << " iterations.\n";
+        break;
       }
-	}
-	lastPerplexity = newPerplexity;
+    }
+    lastPerplexity = newPerplexity;
     if ( lastChange <= converge_arc_delta ) {
       Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << giveUp << " iterations.\n";
       break;
@@ -150,8 +150,7 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   delete trn->revETopo;
 #ifdef N_E_REPS
 #endif
-  List<IOSymSeq>::iterator end = trn->examples.val_end() ;
-  for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin() ; seq !=end ; ++seq )
+  for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
     seq->kill();
 
   for ( i = 0 ; i <= maxIn ; ++i ) {
@@ -218,7 +217,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
         for ( s = 0 ; s < nSt; ++s )
           wNew[s] = w[i][o][s];
         for ( s = 0 ; s < nSt; ++s ) {
-          if ( (pLDW = IOarcs[s].find(IO)) ){            
+          if ( (pLDW = IOarcs[s].find(IO)) ){
             for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw )
               wNew[dw->dest] += wOld[s] * dw->weight();
           }
@@ -265,7 +264,7 @@ void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > 
           IO.in = inLet[i];
           IO.out = 0;
           if ( (pLDW = IOarcs[s].find(IO)) ){
-              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
+            for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
 #ifdef DEBUGFB
               Config::debug() << "w["<<i+1<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw <<") ="<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
 #endif
@@ -318,17 +317,17 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
   Config::debug() << "\nForwardProb/BackwardProb:\n";
   for (i = 0 ;i<= nIn ; ++i){
     for (int o = 0 ; o <= nOut ; ++o){
-		Config::debug() << i << ':' << o << " (" ;
+      Config::debug() << i << ':' << o << " (" ;
       for (int s = 0 ; s < nSt ; ++s){
         Config::debug() << trn->f[i][o][s] <<'/'<<trn->b[i][o][s];
         if (s < nSt-1)
           Config::debug() << ' ' ;
       }
-	  Config::debug() <<')'<<std::endl;
+      Config::debug() <<')'<<std::endl;
       if(o < nOut-1)
         Config::debug() <<' ' ;
     }
-	Config::debug() <<std::endl;
+    Config::debug() <<std::endl;
   }
 #endif
 }
@@ -351,15 +350,15 @@ Weight WFST::train(const int iter,WFST::NormalizeMethod method,Weight *perplex)
 #endif
   EACHDW(dw->counts.setZero(););
 
-List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
+  List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
 
 
-//#ifdef DEBUGTRAIN
+  //#ifdef DEBUGTRAIN
   int train_example_no = 0 ; // Yaser 7-13-2000
-//#endif
+  //#endif
   while (seq != lastExample) { // loop over all training examples
 
-//#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
+    //#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
     ++train_example_no ;
 #define EXAMPLES_PER_DOT 10
 #define EXAMPLES_PER_NUMBER (70*EXAMPLES_PER_DOT)
@@ -367,7 +366,7 @@ List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->
       Config::log() << '.' ;
     if (train_example_no % EXAMPLES_PER_NUMBER == 0)
       Config::debug() << train_example_no << '\n' ;
-//#endif
+    //#endif
     nIn = seq->i.n;
     nOut = seq->o.n;
     forwardBackward(*seq, trn, numStates(), final);
@@ -397,7 +396,7 @@ List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->
 #endif
     Weight fin = f[nIn][nOut][final];
 #ifdef DEBUGTRAIN
-        Config::debug()<<"Forward prob = " << fin << std::endl;
+    Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif
     if ( !(fin.isPositive()) ) {
       Config::warn() << "No accepting path in transducer for input/output:\n";
@@ -413,18 +412,18 @@ List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->
 #ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
     Weight fin2 = b[0][0][0];
 #ifdef DEBUGTRAIN
-        Config::debug()<<"Backward prob = " << fin2 << std::endl;
+    Config::debug()<<"Backward prob = " << fin2 << std::endl;
 #endif
-	double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
+    double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
     double e = ratio - 1;
     if ( e > ALLOWED_FORWARD_OVER_BACKWARD_EPSILON )
-		Config::warn() << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
+      Config::warn() << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
 #endif
 
     letIn = seq->i.let;
     letOut = seq->o.let;
 
-EACHDW(dw->scratch.setZero(););
+    EACHDW(dw->scratch.setZero(););
 
     for ( i = 0 ; i <= nIn ; ++i ) // go over all symbols in input in the training pair
       for ( o = 0 ; o <= nOut ; ++o ) // go over all symbols in the output pair
@@ -435,21 +434,21 @@ EACHDW(dw->scratch.setZero(););
             if ( o < nOut ) { // output is not epsilon
               io.out = letOut[o];
               if ( (pLDW = IOarcs->find(io)) ){
-                for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
+                for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                   dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o+1][dw->dest];
               }
             }
             io.out = 0; // output only is epsilon
             if ( (pLDW = IOarcs->find(io)) ){
-              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
-				  dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
+              for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
+                dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
             }
           }
           io.in = 0; // input is epsilon
           if ( o < nOut ) { // input only is epsilon
             io.out = letOut[o];
             if ( (pLDW = IOarcs->find(io)) ){
-              for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
+              for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                 dw->scratch += f[i][o][s] * dw->weight() * b[i][o+1][dw->dest];
             }
           }
@@ -459,12 +458,12 @@ EACHDW(dw->scratch.setZero(););
               dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
           }
         }
-        EACHDW(if (!dw->scratch.isZero()) dw->counts += (dw->scratch / fin) * (Weight)seq->weight;);
-        prodModProb *= (fin^seq->weight); // since perplexity = 2^((-1/n)*sum(log2 prob)), we can take prod(prob)^(1/n) instead
+    EACHDW(if (!dw->scratch.isZero()) dw->counts += (dw->scratch / fin) * (Weight)seq->weight;);
+    prodModProb *= (fin^seq->weight); // since perplexity = 2^((-1/n)*sum(log2 prob)), we can take prod(prob)^(1/n) instead
     ++seq;
   } // end of while(training examples)
   if (perplex)
-          *perplex = root(prodModProb ^ (-1 / trn->totalEmpiricalWeight),trn->totalEmpiricalWeight); // return per-symbol perplexity.  simplify to root(prodModProb,-trn->totalEmpiricalWeight * trn->totalEmpiricalWeight) ?
+    *perplex = root(prodModProb ^ (-1 / trn->totalEmpiricalWeight),trn->totalEmpiricalWeight); // return per-symbol perplexity.  simplify to root(prodModProb,-trn->totalEmpiricalWeight * trn->totalEmpiricalWeight) ?
   int pGroup;
 #define DUMPDW  do { for ( s = 0 ; s < numStates() ; ++s ) \
     for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){ \
@@ -480,16 +479,16 @@ EACHDW(dw->scratch.setZero(););
   DUMPDW;
 #endif
   for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){      
-      for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),ha.val().val_end() ; dw !=end; ++dw )
+    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
+      for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),end=ha.val().val_end() ; dw !=end; ++dw )
         if ( !isLocked(pGroup = (dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight doe not change. Otherwise update as follows
 #ifdef DEBUGTRAINDETAIL
           Config::debug() << "Arc " <<*dw->arc <<  " in tied group " << pGroup <<'\n';
 #endif
-                  //Weight &w=dw->weight();
+          //Weight &w=dw->weight();
           dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
-                  //Weight &counts = dw->counts;
-		  dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
+          //Weight &counts = dw->counts;
+          dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
         }
     }
 #ifdef DEBUGTRAINDETAIL
@@ -504,7 +503,7 @@ EACHDW(dw->scratch.setZero(););
   // find maximum change for convergence
   Weight change, maxChange;
   for ( s = 0 ; s < numStates() ; ++s )
-    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){      
+    for ( HashIter<IOPair, List<DWPair> > ha(trn->forArcs[s]) ; ha ; ++ha ){
       for ( List<DWPair>::val_iterator dw=ha.val().val_begin(),end = ha.val().val_end() ; dw != end; ++dw )
         if (!isLocked(pGroup = (dw->arc)->groupId) ) {
           if ( dw->scratch > dw->weight() )
@@ -521,17 +520,17 @@ EACHDW(dw->scratch.setZero(););
 Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
 {
   int i, o, s;
-  int nIn = inSeq.length();
-  int nOut = outSeq.length();
+  int nIn = inSeq.count_length();
+  int nOut = outSeq.count_length();
   int *inLet = new int[nIn];
   int *outLet = new int[nOut];
   int *pi;
+
   pi = inLet;
-  
   for ( List<int>::const_iterator inL=inSeq.const_begin(), end = inSeq.const_end() ; inL != end; ++inL )
     *pi++ = *inL;
+
   pi = outLet;
-  
   for ( List<int>::const_iterator outL=outSeq.const_begin(),end = outSeq.const_end() ; outL != end; ++outL )
     *pi++ = *outL;
 
@@ -543,40 +542,40 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   List<DWPair> *pLDW;
 
   for ( s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
+   for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
       IO.in = a->in;
-      IO.out = a->out;
-      DW.dest = a->dest;
-      DW.arc = &(*a);
-      if ( !(pLDW = IOarcs[s].find(IO)) )
-        pLDW = IOarcs[s].add(IO);
-      pLDW->push(DW);
-    }
+    IO.out = a->out;
+    DW.dest = a->dest;
+    DW.arc = &(*a);
+    if ( !(pLDW = IOarcs[s].find(IO)) )
+      pLDW = IOarcs[s].add(IO);
+    pLDW->push(DW);
   }
-  
-  List<int> eTopo;
-  {
+}
+
+List<int> eTopo;
+{
   Graph eGraph = makeEGraph();
   TopoSort t(eGraph,&eTopo);
   t.order_crucial();
   int b = t.get_n_back_edges();
-	if ( b > 0 )
-		Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
-    delete[] eGraph.states;
-  }
+  if ( b > 0 )
+    Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
+  delete[] eGraph.states;
+}
 
-  Weight ***w = new Weight **[nIn+1];
-  for ( i = 0 ; i <= nIn ; ++i ) {
-    w[i] = new Weight *[nOut+1];
-    for ( o = 0 ; o <= nOut ; ++o )
-      w[i][o] = new Weight [numStates()];
-  }
-  sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
-  
-  delete[] IOarcs;
-  delete[] inLet;
-  delete[] outLet;
-  return w;
+Weight ***w = new Weight **[nIn+1];
+for ( i = 0 ; i <= nIn ; ++i ) {
+  w[i] = new Weight *[nOut+1];
+  for ( o = 0 ; o <= nOut ; ++o )
+    w[i][o] = new Weight [numStates()];
+}
+sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
+
+delete[] IOarcs;
+delete[] inLet;
+delete[] outLet;
+return w;
 }
 
 
@@ -638,4 +637,5 @@ ostream & operator << (ostream & out , const IOSymSeq & s){   // Yaser 7-21-2000
 
 Node<IOSymSeq> *Node<IOSymSeq>::freeList = NULL;
 const int Node<IOSymSeq>::newBlocksize = 64;
+
 

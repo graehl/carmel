@@ -36,7 +36,16 @@ public:
   List(size_t sz,const T &it):STL_LIST<T>(sz,it) {  }
   int notEmpty() const { return !isEmpty(); }
   int isEmpty() const { return empty(); }
-  int length() const{ return static_cast<int>(size()); }
+  int count_length() const{ 
+#ifdef USE_SLIST
+	  int count=0;
+	  for (const_iterator i=const_begin(),end=const_end();i!=end;++i)
+		  ++count;
+	  return count;
+#else
+	  return static_cast<int>(size()); 
+#endif
+  }
   void push(const T &it) { 
     push_front(it);
   }
