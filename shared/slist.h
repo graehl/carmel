@@ -22,14 +22,13 @@ class slist
   //  typedef int difference_type;
   //  typedef forward_iterator_tag _Iterator_category;
 
-  class const_iterator 
+  struct val_iterator;
+  struct erase_iterator;
+  typedef erase_iterator iterator;
+  struct const_iterator 
     : public std::iterator<std::forward_iterator_tag, const T> 
     {
-	  friend class val_iterator;
       const Node* m_rep;
-    public:
-      friend class iterator;
-      friend class slist;
 
       inline const_iterator(const Node* x=0):m_rep(x){}
       inline const_iterator(const const_iterator& x):m_rep(x.m_rep) {}
@@ -67,11 +66,10 @@ class slist
 
 
 
-  class val_iterator 
+  struct val_iterator 
     : public std::iterator<std::forward_iterator_tag, T>
     {
 		
-    public:
       //XXX should be private but can't get friend working
       Node* m_rep;
       //		friend class const_iterator;
@@ -106,11 +104,10 @@ class slist
 
     };
 
-  class erase_iterator 
+  struct erase_iterator 
     : public std::iterator<std::forward_iterator_tag, T>
     {
       Node** m_rep; // points to previous node's next pointer (or list's first-node pointer)
-    public:
       //friend class const_iterator;
       //		friend class slist;
       //		operator iterator () { return *m_rep; }
@@ -157,7 +154,6 @@ class slist
 	}
     };
 
-  typedef erase_iterator iterator;
 
 
 
