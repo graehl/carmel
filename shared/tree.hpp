@@ -349,7 +349,7 @@ struct TreeVizPrinter : public GraphvizPrinter {
     Labeler labeler;
     typedef Tree<Label> T;
 
-    TreeVizPrinter(ostream &o_,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="forest") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_) {}
+    TreeVizPrinter(ostream &o_,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_) {}
     void print(const T &t) {
         print(t,next_node++);
         o << std::endl;

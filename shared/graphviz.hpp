@@ -29,6 +29,12 @@ struct GraphvizPrinter {
         o << ' ' << pre << "\n";
         next_node=0;
     }
+    void caption(const std::string &caption)
+    {
+        o << " graph [labelfontsize=24,label=";
+        out_quote(o,caption);
+        o << "]\n";
+    }
     void coda() {
         o << "}\n\n";
     }
