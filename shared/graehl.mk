@@ -8,6 +8,20 @@
 # LIB = math thread ...
 # INC = . 
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
+ifndef ARCH
+UNAME=$(shell uname)
+ARCH=cygwin
+ifeq ($(UNAME),Linux)
+ ARCH=linux
+endif
+ifeq ($(UNAME),SunOS)
+ ARCH=solaris
+endif
+ifeq ($(UNAME),Darwin)
+ ARCH=macosx
+endif
+endif
+
 ifndef SHARED
 SHARED=../shared
 endif
