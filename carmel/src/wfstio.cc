@@ -22,6 +22,8 @@ static int pow2(int exp)
         return 1 << exp;
 }
 
+
+#define DOS_CR_CHAR '\r'
 static int getString(istream &in, char *buf)
 {
   int l;
@@ -70,6 +72,8 @@ static int getString(istream &in, char *buf)
     if ( *buf == ')' )
       in.putback( ')' );
     *buf = 0;
+	if (buf[-1] == DOS_CR_CHAR)
+		buf[-1] = 0;
     break;
   }
   return 1;
@@ -346,7 +350,7 @@ int WFST::readLegible(istream &istr)
     final = *uip;
     return 1;
   } else {
-    cout << "Final state named " << finalName << " not found.\n";
+    cout << "\nFinal state named " << finalName << " not found.\n";
     invalidate();
     return 0;
   }
