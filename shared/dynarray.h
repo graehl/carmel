@@ -232,9 +232,11 @@ public:
     }
 
 //!FIXME: doesn't swap allocator base
-    void swap(AutoArray<T,Alloc> &a) {
+    //    void swap(Array<T,Alloc> &a) {Assert(0);}
+//FIXME: should only work for dynarray,fixedarray,autoarray
+/*    void swap(Array<T,Alloc> &a) {
         Array<T,Alloc>::swap(a);
-    }
+        }*/
 protected:
     AutoArray(AutoArray<T,Alloc> &a) : Super(a.capacity()){
     }
@@ -242,7 +244,6 @@ private:
     void operator=(const Array<T,Alloc> &a) {
         Assert(0);
     }
-    void swap(Array<T,Alloc> &a) {Assert(0);}
 };
 
 // FIXME: drop template copy constructor since it screws with one arg size constructor
