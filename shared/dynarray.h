@@ -341,6 +341,7 @@ private:
 template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : public Array<T,Alloc> {
   //unsigned int sz;
   T *endv;
+  typedef Array<T,Alloc> Base;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
  public:
   enum { REPLACE=0, APPEND=1 };
@@ -350,10 +351,10 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
   }
 
   // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(this->vec) { Assert(this->invariant()); }
+  explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(Base::vec) { Assert(this->invariant()); }
 
   // creates vector holding sp copies of t; does initialize
-  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endv(this->endspace) {
+  explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp), endv(Base::endspace) {
         construct(t);
         Assert(invariant());
   }
