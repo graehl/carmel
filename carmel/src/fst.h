@@ -227,7 +227,7 @@ template <class I> int randomPath(I i,int max_len=-1)
   void consolidateArcs();	// combine identical arcs, with combined weight = sum
   void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
   enum {UNLIMITED=-1};
-  void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INFINITY); 
+  void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight(false,false)); //Weight::INFINITY); 
   // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
   
   
@@ -248,7 +248,7 @@ template <class I> int randomPath(I i,int max_len=-1)
     return a;
   }
   Weight numNoCyclePaths() const {
-	  if ( !valid() ) return Weight::ZERO;
+	  if ( !valid() ) return Weight(); // Weight::ZERO
     Weight *nPaths = new Weight[numStates()];
     Graph g = makeGraph();
     countNoCyclePaths(g, nPaths, 0);

@@ -6,8 +6,8 @@ using namespace std;
 const int Weight::base_index = ios_base::xalloc();
 const int Weight::thresh_index = ios_base::xalloc();
 const float Weight::HUGE_FLOAT = (float)HUGE_VAL;
-const Weight Weight::ZERO;
-const Weight Weight::INFINITY(false,false);
+//const Weight Weight::ZERO;
+//const Weight Weight::INFINITY(false,false);
 /*
 std::ostream& operator << (std::ostream &o, Weight weight)
 {
