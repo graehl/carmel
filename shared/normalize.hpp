@@ -36,16 +36,16 @@ struct NormalizeGroups {
         return max_index()+1;
     }
     W *base;
-    void operator ()(const Inner &i) {
-        typedef typename Inner::const_iterator It;
-        It end=i->end;
+    void operator ()(Inner &i) {
+        typedef typename Inner::iterator It;
+        It end=i.end(), beg=i.begin();
         weight_type sum=0;
-        for (It j=i->begin();j!=end;++i) {
+        for (It j=beg;j!=end;++j) {
             weight_type &w=*(j->add_base(base));
             sum+=w;
         }
         if (sum > 0)
-            for (It j=i->begin();j!=end;++i) {
+            for (It j=beg;j!=end;++j) {
                 weight_type &w=*(j->add_base(base));
                 w /= sum;
             }
@@ -82,17 +82,26 @@ operator <<
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 {
-    FixedArray<Weight> w(4u);
+    typedef Weight W;
+    FixedArray<W> w(4u);
     w[0]=1;
     w[1]=2;
     w[2]=3;
     w[3]=4;
-    NormalizeGroups<Weight> ng;
+    NormalizeGroups<W> ng;
     string s="((1) (2 3))";
     istringstream is(s);
     BOOST_CHECK(is >> ng);
     BOOST_CHECK(ng.max_index() == 3);
-    DBP(ng);
+//    cerr << Weight::out_always_real;
+//    cout << Weight::out_variable;
+//    DBP(w);
+//    DBP(ng);
+    ng.normalize(w.begin());
+//    BOOST_CHECK_CLOSE(w[2].getReal()+w[3].getReal(),1,1e-6);
+//    BOOST_CHECK_CLOSE(w[2].getReal()*4,w[3].getReal()*3,1e-6);
+
+//    DBP(w);
 }
 #endif
 
