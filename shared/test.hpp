@@ -50,20 +50,20 @@ struct test_counter {
 
 template <class S,class C> inline
 bool test_extract(S &s,C &c,bool whine=true) {
-  std::istringstream is(s);
-  try {      
-      is >> c;
-  } catch (std::ios_base::failure &e) {
-      if (whine)
-          cerr << "Exception: " << e.what() << "\n";
-      return 0;
-  }
-  return !is.fail();
+    std::istringstream is(s);
+    try {      
+        is >> c;
+    } catch (std::ios_base::failure &e) {
+        if (whine)
+            cerr << "Exception: " << e.what() << "\n";
+        return 0;
+    }
+    return !is.fail();
 }
 
 //#include "debugprint.hpp"
 template <class S,class C> inline
-bool test_extract_insert(S &s,C &c) {
+bool test_extract_insert(S &s,C &c,bool whine=true) {
   std::istringstream is(s);
   try {
       is >> c; // string to var
@@ -78,7 +78,10 @@ bool test_extract_insert(S &s,C &c) {
           return 0;
       }
   } catch (std::ios_base::failure &e) {
-      cerr << "Exception: " << e.what() << "\n";
+      if (whine)
+          cerr << "Exception: " << e.what() << "\n";
+      else
+          throw e;
       return 0;
   }
 
