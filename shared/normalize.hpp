@@ -39,6 +39,7 @@ struct NormalizeGroups {
         typename Groups::iterator i=norm_groups.begin(),e=norm_groups.end();
         DBPC3("find group",v,norm_groups);
         for (;i!=e;++i) {
+            DBP_ADD_VERBOSE(2);
             DBP2(i,v);
             typename Group::iterator e2=i->end();
             if (std::find(i->begin(),e2,v) != e2)

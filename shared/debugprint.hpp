@@ -138,7 +138,7 @@ static const char * dbgstr(const A &a,Writer writer);
 */
 
 inline void dbgout(std::ostream &o,const void *a) {
-    #ifdef _MSC_VER
+#ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4267 )
 #endif
@@ -198,16 +198,32 @@ inline void dbgout(std::ostream &o,const char *a) {
 }
 
 /*
+#define HEX_THRESHOLD 100
 template <class A>
 inline void dbgout(std::ostream &o,const A &a, typename boost::enable_if<boost::is_arithmetic<A> >::type* dummy = 0) {
-  o << a;
+    if (a > HEX_THRESHOLD)
+        o << a << "(=0x" << std::hex << (size_t)a << std::dec << ")";
+;
 }
 
-
-inline void dbgout(std::ostream &o,const std::string &a) {
-  o << a;
-}
 */
+
+template <class A>
+inline void dbgout_hex(std::ostream &o,const A &a) {
+    o << a << "(=0x" << std::hex << (size_t)a << std::dec << ")";
+}
+
+inline void dbgout(std::ostream &o,unsigned a) {
+    dbgout_hex(o,a);
+}
+
+inline void dbgout(std::ostream &o,unsigned char a) {
+    dbgout_hex(o,a);
+}
+
+inline void dbgout(std::ostream &o,unsigned short a) {
+    dbgout_hex(o,a);
+}
 
 
 #include "threadlocal.hpp"

@@ -10,20 +10,29 @@
 #define MAINDECL
 #endif
 
-#define MAIN int MAINDECL main(int argc, char *argv[])
+#define MAIN_DECL int MAINDECL main(int argc, char *argv[])
 
-#define MAIN_BEGIN MAIN { MainGuard _mg;
+#define MAIN_BEGIN MAIN_DECL { MainGuard _mg;
 
 #define MAIN_END }
 
+#ifdef MAIN
+#define BOOST_AUTO_TEST_MAIN
+#endif
+
 struct MainGuard {
-    MainGuard() {
-        INITLEAK;
+  INITLEAK_DECL
+    unsigned i;
+  MainGuard() : i(0) {
+        INITLEAK_DO;
         std::cin.tie(0);
 //        std::locale::global(std::locale(""));
     }
+  void checkpoint_memleak() {
+    CHECKLEAK(i);
+    ++i;
+  }
     ~MainGuard() {
-        CHECKLEAK(0);
     }
 };
 

@@ -26,9 +26,6 @@
 #include <string>
 #include <cstdio>
 
-bool remove_file(const std::string &filename) {
-    return 0==remove(filename.c_str());
-}
 
 Error last_error() {
 #ifdef BOOST_IO_WINDOWS
@@ -60,6 +57,36 @@ std::string error_string(Error err) {
 
 std::string last_error_string() {
     return error_string(last_error());
+}
+
+
+bool create_file(const std::string& path,std::size_t size) {
+#ifdef _WIN32
+#if 0
+    //VC++ only, unfortunately
+    int fd=::_open(path.c_str(),_O_CREAT|_O_SHORT_LIVED);
+    if (fd == -1)
+        return false;
+    if (::_chsize(fd,size) == -1)
+        return false;
+    return ::_close(fd) != -1;
+#else
+    HANDLE fh=::CreateFileA( path.c_str(),GENERIC_WRITE,FILE_SHARE_DELETE,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,NULL);
+    if (fh == INVALID_HANDLE_VALUE)
+        return false;
+    if(::SetFilePointer(fh,size,NULL,FILE_BEGIN) != size)
+        return false;
+    if (!::SetEndOfFile(fh))
+        return false;
+    return ::CloseHandle(fh);
+#endif
+#else
+    return ::truncate(path.c_str(),size) != -1;
+#endif
+}
+
+bool remove_file(const std::string &filename) {
+    return 0==remove(filename.c_str());
 }
 
 #endif

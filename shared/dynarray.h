@@ -101,10 +101,15 @@ public:
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
     std::ios_base::iostate get_from_imp(Array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
 
+
     template <class charT, class Traits, class Reader>
     std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
-        dealloc();
         return get_from_imp(this,in,read);
+    }
+
+    template <class charT, class Traits>
+    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
+        return get_from(in,DefaultReader<T>());
     }
 
     bool empty() const {
@@ -210,6 +215,16 @@ public:
     void alloc(unsigned sp) {
         Super::re_alloc(sp);
     }
+    template <class charT, class Traits, class Reader>
+    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
+        this->dealloc();
+        return get_from_imp(this,in,read);
+    }
+    template <class charT, class Traits>
+    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
+        return get_from(in,DefaultReader<T>());
+    }
+
 //!FIXME: doesn't swap allocator base
     void swap(AutoArray<T,Alloc> &a) {
         Array<T,Alloc>::swap(a);
@@ -218,6 +233,9 @@ protected:
     AutoArray(AutoArray<T,Alloc> &a) : Super(a.capacity()){
     }
 private:
+    void operator=(const Array<T,Alloc> &a) {
+        Assert(0);
+    }
     void swap(Array<T,Alloc> &a) {Assert(0);}
 };
 
@@ -238,6 +256,10 @@ public:
         this->destroy();
         this->dealloc();
         return get_from_imp(this,in,read);
+    }
+    template <class charT, class Traits>
+    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
+        return get_from(in,DefaultReader<T>());
     }
 
     void uninit_copy_from(const T* b,const T* e) {
@@ -701,6 +723,10 @@ public:
             return ret;
 #endif
         }
+    template <class charT, class Traits>
+    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
+        return get_from(in,DefaultReader<T>());
+    }
 
 };
 
@@ -726,7 +752,7 @@ std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,T
 {
     DynamicArray<T,Alloc> s;
     std::ios_base::iostate ret=s.get_from(in,read);
-    s.compact(a);
+    s.compact(a); // copies to a (without destroying old)
     s.clear_nodestroy();
     return ret;
 }
@@ -736,7 +762,23 @@ std::basic_istream<charT,Traits>&
 operator >>
 (std::basic_istream<charT,Traits>& is, Array<L,A> &arg)
 {
-    return gen_extractor(is,arg,DefaultReader<L>());
+    return gen_extractor(is,arg);
+}
+
+template <class charT, class Traits,class L,class A>
+std::basic_istream<charT,Traits>&
+operator >>
+(std::basic_istream<charT,Traits>& is, AutoArray<L,A> &arg)
+{
+    return gen_extractor(is,arg);
+}
+
+template <class charT, class Traits,class L,class A>
+std::basic_istream<charT,Traits>&
+operator >>
+(std::basic_istream<charT,Traits>& is, FixedArray<L,A> &arg)
+{
+    return gen_extractor(is,arg);
 }
 
 template <class charT, class Traits,class L,class A>
@@ -744,7 +786,7 @@ std::basic_istream<charT,Traits>&
 operator >>
 (std::basic_istream<charT,Traits>& is, DynamicArray<L,A> &arg)
 {
-    return gen_extractor(is,arg,DefaultReader<L>());
+    return gen_extractor(is,arg);
 }
 
 template <class charT, class Traits,class L,class A>

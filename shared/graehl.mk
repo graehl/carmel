@@ -85,8 +85,17 @@ CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
 #-DBOOST_DISABLE_THREADS 
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
+ifeq ($(ARCH),solaris)
+  CPPFLAGS += -DSOLARIS 
+endif
+
+ifeq ($(ARCH),linux)
+ CPPFLAGS += -DLINUX_BACKTRACE -DLINUX  -rdynamic
+#-rdynamic: forces global symbol table (could remove for optimized build)
+endif
+
 ifeq ($(ARCH),cygwin)
-CPPFLAGS += -DBOOST_POSIX
+CPPFLAGS += -DBOOST_POSIX -DCYGWIN
 #CPPFLAGS += -DBOOST_NO_STD_WSTRING
 # somehow that is getting automatically set by boost now (for Boost CVS)
 endif
@@ -157,7 +166,7 @@ opt: $(DEBUG_PROGS)
 
 depend: $(ALL_DEPENDS)
 
-install: $(OPT_PROGS) $(STATIC_PROGS)
+install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
 	cp $^ $(BIN_PREFIX)
 
 test: $(ALL_TESTS)
@@ -224,12 +233,13 @@ DEPEND=1
 %.d: %.$(CPP_EXT)
 #	@echo
 #	@echo CREATE DEPENDENCIES for $<
-	-@set -e; if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
-( echo CREATE DEPENDENCIES for $< && \
+	@set -e; if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
+ ( \
+echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
-                sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/%\/\1.o : /g' $@.raw >> $@ \
-|| rm -f $@ ); rm -f $@.raw ; fi
+                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/%\/\1.o : /g' $@.raw >> $@ \
+ || rm -f $@ ); rm -f $@.raw ; fi
 #
 
 ifneq ($(MAKECMDGOALS),depend)

@@ -10,15 +10,24 @@
 #include "backtrace.hpp"
 
 #ifdef HINT_SWAPBATCH_BASE
-#ifdef BOOST_IO_WINDOWS
-#define DEFAULT_SWAPBATCH_BASE_ADDRESS (void *)0x08000000U
+# ifdef BOOST_IO_WINDOWS
+#  ifdef CYGWIN
+#   define VIRTUAL_MEMORY_USER_HEAP_TOP ((char *)0x0A000000U)
+#  else
+#   define VIRTUAL_MEMORY_USER_HEAP_TOP ((char *)0x78000000U)
+#  endif
 // 0x08000000U worked
-#else
-#define DEFAULT_SWAPBATCH_BASE_ADDRESS (void *)0x80000000U
-#endif
+# else
+#  ifdef SOLARIS
+#   define VIRTUAL_MEMORY_USER_HEAP_TOP ((char *)0xE0000000U)
+#  else
+#   define VIRTUAL_MEMORY_USER_HEAP_TOP ((char *)0xA0000000U)
+#  endif
+# endif
+# define DEFAULT_SWAPBATCH_BASE_ADDRESS VIRTUAL_MEMORY_USER_HEAP_TOP
 // should be NULL but getting odd bad_alloc failure
 #else
-#define DEFAULT_SWAPBATCH_BASE_ADDRESS (void *)NULL
+# define DEFAULT_SWAPBATCH_BASE_ADDRESS ((char *)NULL)
 #endif
 
 template <class B>
@@ -68,7 +77,18 @@ struct SwapBatch {
         unsigned batch_no = batches.size();
         DBPC2("creating batch",batch_no);
         if (batch_no==0) {
-            memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,DEFAULT_SWAPBATCH_BASE_ADDRESS,true); // creates new file and memmaps
+            char *base=DEFAULT_SWAPBATCH_BASE_ADDRESS;
+            if (base) {
+                const unsigned mask=0x0FFFFFU;
+//                DBP4((void *)base,(void*)~mask,(void*)(mask+1),batchsize&(~mask));
+                unsigned batchsize_rounded_up=(batchsize&(~mask));
+//                DBP2((void*)batchsize_rounded_up,(void*)(mask+1));
+                batchsize_rounded_up+=(mask+1);
+//                DBP((void*)batchsize_rounded_up);
+//                DBP3((void *)base,(void *)batchsize_rounded_up,(void *)(base-batchsize_rounded_up));
+                base -= batchsize_rounded_up;
+            }
+            memmap.open(batch_name(batch_no),std::ios::out,batchsize,0,true,base,true); // creates new file and memmaps
         } else {
             char *old_base=begin();
             memmap.close();
@@ -96,7 +116,7 @@ struct SwapBatch {
     void remove_batches() {
         BACKTRACE;
         unsigned batch_no = batches.size();
-        for (unsigned i=0;i<batch_no;++i) {
+        for (unsigned i=0;i<=batch_no;++i) { // delete next file too in case exception came during create_next_batch
             remove_file(batch_name(i));
         }
     }
@@ -177,7 +197,7 @@ struct SwapBatch {
                 return;
             }
 
-            DBP((void*)newtop);
+//            DBP((void*)newtop);
             if (!is) {
                 throw ios::failure("error reading item into swap batch.");
             }
