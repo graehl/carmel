@@ -39,7 +39,7 @@ std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 
 class WFST {
- private:
+ private:	 
   enum { STATE,ARC } PerLine;
   enum { BRIEF,FULL } ArcFormat;
   enum { epsilon_index=0 };
@@ -52,6 +52,7 @@ class WFST {
     out = NEW Alphabet(EPSILON_SYMBOL);
     ownerIn=ownerOut=1;
   }
+	void train_prune(); // delete states with zero counts
   void deleteAlphabet() {
     if ( ownerIn ) {
       delete in;
