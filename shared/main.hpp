@@ -17,10 +17,6 @@
 
 #define MAIN_END }
 
-#ifdef MAIN
-#define BOOST_AUTO_TEST_MAIN
-#endif
-
 inline std::ostream & print_cmdline(std::ostream &o,int argc, char *argv[]) {
     for (int i=0;i<argc;++i) {
         if (i)

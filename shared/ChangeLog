@@ -1,3 +1,13 @@
+2005-03-21  Jonathan Graehl  <graehl@isi.edu>
+
+	* genio.h (FRIEND_INSERTER): const C arg -> const C &arg
+
+2005-03-17  Jonathan Graehl  <graehl@isi.edu>
+
+	* funcs.hpp: added maybe_{decrease,increase}_{min,max} and
+	accumulate for assoc containers, and ONE_PLUS_EPSILON,
+	slightly_{smaller,larger} (also used in SyntaxDecoder)
+
 2005-02-28  Jonathan Graehl  <graehl@isi.edu>
 
 	* memmap.hpp: added filename to exceptions

@@ -27,6 +27,96 @@
 #include <algorithm>
 #include <iostream>
 
+// requires Val::operator += as well as copy ctor.  TODO: version that takes InPlaceFold functor.
+template <class AssocContainer,class Key,class Val>
+inline void accumulate(AssocContainer *table,const Key &key,const Val &val) {
+    std::pair<typename AssocContainer::iterator,bool> was_inserted=table->insert(typename AssocContainer::value_type(key,val));
+    if (!was_inserted.second) {
+        typename AssocContainer::value_type::second_type &old_val=was_inserted.first->second;
+        old_val += val;
+    }
+}
+
+
+template <class AssocContainer,class Key,class Val>
+inline void maybe_decrease_min(AssocContainer *table,const Key &key,const Val &val) {
+    std::pair<typename AssocContainer::iterator,bool> was_inserted=table->insert(typename AssocContainer::value_type(key,val));
+    if (!was_inserted.second) {
+        typename AssocContainer::value_type::second_type &old_val=was_inserted.first->second;
+//        INFOL(29,"maybe_decrease_min",key << " val=" << val << " oldval=" << old_val);
+        if (val < old_val)
+            old_val=val;
+    } else {
+//                INFOL(30,"maybe_decrease_min",key << " val=" << val);
+    }
+}
+
+template <class AssocContainer,class Key,class Val>
+inline void maybe_increase_max(AssocContainer *table,const Key &key,const Val &val) {
+    std::pair<typename AssocContainer::iterator,bool> was_inserted=table->insert(typename AssocContainer::value_type(key,val));
+    if (!was_inserted.second) {
+        typename AssocContainer::value_type::second_type &old_val=was_inserted.first->second;
+//        INFOL(29,"maybe_increase_max",key << " val=" << val << " oldval=" << old_val);
+        //!FIXME: no idea how to get this << to use ns_Syntax::operator <<
+        if (old_val < val)
+            old_val=val;
+    } else {
+//                INFOL(30,"maybe_increase_max",key << " val=" << val);
+    }
+}
+
+template <class To,class From>
+inline void maybe_increase_max(To &to,const From &from) {
+    if (to < from)
+        to=from;    
+}
+
+template <class To,class From>
+inline void maybe_decrease_min(To &to,const From &from) {
+    if (from < to)
+        to=from;    
+}
+
+#ifndef ONE_PLUS_EPSILON
+# ifndef EPSILON
+#  define EPSILON .00001
+# endif 
+#define ONE_PLUS_EPSILON (1+EPSILON)
+#endif
+
+/*
+  The simple solution like abs(f1-f2) <= e does not work for very small or very big values. This floating-point comparison algorithm is based on the more confident solution presented by Knuth in [1]. For a given floating point values u and v and a tolerance e:
+
+| u - v | <= e * |u| and | u - v | <= e * |v|
+defines a "very close with tolerance e" relationship between u and v
+	(1)
+
+| u - v | <= e * |u| or   | u - v | <= e * |v|
+defines a "close enough with tolerance e" relationship between u and v
+	(2)
+
+Both relationships are commutative but are not transitive. The relationship defined by inequations (1) is stronger that the relationship defined by inequations (2) (i.e. (1) => (2) ). Because of the multiplication in the right side of inequations, that could cause an unwanted underflow condition, the implementation is using modified version of the inequations (1) and (2) where all underflow, overflow conditions could be guarded safely:
+
+| u - v | / |u| <= e and | u - v | / |v| <= e
+| u - v | / |u| <= e or   | u - v | / |v| <= e
+	(1`)
+(2`)
+*/
+
+
+  //intent: if you want to be conservative about an assert of a<b, test a<(slightly smaller b)
+  // if you want a<=b to succeed when a is == b but there were rounding errors so that a+epsilon=b, test a<(slightly larger b)
+template <class Float>
+inline Float slightly_larger(Float target) {
+    return target * ONE_PLUS_EPSILON;
+}
+
+template <class Float>
+inline Float slightly_smaller(Float target) {
+    return target * (1. / ONE_PLUS_EPSILON);
+}
+
+
 // requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
 // can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())
 template <class P>

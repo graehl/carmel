@@ -55,7 +55,7 @@ bool test_extract(S &s,C &c,bool whine=true) {
         is >> c;
     } catch (std::ios_base::failure &e) {
         if (whine)
-            cerr << "Exception: " << e.what() << "\n";
+            std::cerr << "Exception: " << e.what() << "\n";
         return 0;
     }
     return !is.fail();
@@ -79,7 +79,7 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
       }
   } catch (std::ios_base::failure &e) {
       if (whine)
-          cerr << "Exception: " << e.what() << "\n";
+          std::cerr << "Exception: " << e.what() << "\n";
       else
           throw e;
       return 0;
