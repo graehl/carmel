@@ -1,5 +1,7 @@
 #ifndef DYNARRAY_H
 #define DYNARRAY_H
+//FIXME: const safeness for contents e.g. a[1] a.at(1) return const ref if a const?
+
 // For MEMCPY-able-to-move types only!
 // (MEMCPY copyable (i.e. no external resources owned, i.e. no real destructor) is not assumed although a is_pod template might be nice)
 // Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
@@ -62,6 +64,17 @@ public:
         memcpy(this,&a,sizeof(Self));
         memcpy(&a,&t,sizeof(Self));
     }
+    Array<T,Alloc> substr(unsigned start) const
+    {
+        return substr(start,size());
+    }
+
+    Array<T,Alloc> substr(unsigned start,unsigned end) const
+    {
+        Assert(begin()+start <= endspace && begin()+end <= endspace);
+        return Array<T,Alloc>(begin()+start,begin()+end);
+    }
+
     typedef T value_type;
     typedef value_type *iterator;
     typedef const value_type *const_iterator;
@@ -741,6 +754,10 @@ public:
     template <class charT, class Traits>
     std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
         return get_from(in,DefaultReader<T>());
+    }
+    Array<T,Alloc> substr(unsigned start) const
+    {
+        return substr(start,size());
     }
 
 };

@@ -23,7 +23,7 @@ endif
 endif
 
 ifndef INSTALL_PREFIX
-INSTALL_PREFIX=~/isd/$(ARCH)
+INSTALL_PREFIX=$(HOME)/isd/$(ARCH)
 endif
 ifndef BIN_PREFIX
 BIN_PREFIX=$(INSTALL_PREFIX)/bin

@@ -77,7 +77,7 @@ bool BackTrace::first=true;
 
 //defined(DEBUG) ||
 #if !defined(NO_BACKTRACE)
-#define BACKTRACE BackTrace BackTrace72845389034(__FUNCTION__,__FILE__,__LINE__)
+#define BACKTRACE BackTrace BackTrace_line_ ## __LINE__(__FUNCTION__,__FILE__,__LINE__)
 #else
 #define BACKTRACE
 #endif

@@ -171,10 +171,11 @@ T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
     throw std::runtime_error("expected e.g. ( a,b,c,d ) or (a b c d) as range input");
 }
 
+
 // hardcoded to look for input id=N so we don't need full boyer-moore algorithm
 // not chartraits sensitive - assumes 0...9 coded in order.
 template <class A,class I,class O>
-void insert_field_byid(const A& vals,I &in,O &out,const char *out_field)
+void insert_byid(const A& vals,I &in,O &out)
 {
     char c;
     unsigned N;
@@ -208,7 +209,7 @@ void insert_field_byid(const A& vals,I &in,O &out,const char *out_field)
                 break;
             default:
                 state=waiting_i;
-#define OUTN do { out << ' ' << out_field << '=' << vals.at(N); } while(0)
+#define OUTN do { deref(vals)(out,N); } while(0)
                 OUTN;
             }
         }
