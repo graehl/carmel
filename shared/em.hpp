@@ -77,8 +77,7 @@ double overrelaxed_em(Exec &exec,int max_iter=10000,double converge_relative_avg
                 logs << "Maximum number of iterations (" << max_iter << ") reached before convergence criteria was met - greatest param weight change was " << last_delta_param << "\n";
                 break;
             }
-            if (log_level > 0)
-                logs << "Starting iteration: " << train_iter << '\n';
+//            if (log_level > 0) logs << "Starting iteration: " << train_iter << '\n';
 
             double new_alp = exec.estimate(very_first_time);
 
