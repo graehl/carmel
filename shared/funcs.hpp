@@ -6,7 +6,6 @@
 #include <iterator>
 
 #include <cmath>
-#include <ctime>
 #include <string>
 #include <boost/scoped_array.hpp>
 #include <boost/lexical_cast.hpp>
@@ -21,6 +20,7 @@
 #include <boost/type_traits/alignment_traits.hpp>
 
 #include "myassert.h"
+//#include "os.hpp"
 
 #include <functional>
 #include <algorithm>
@@ -447,24 +447,31 @@ inline std::string concat(const S &s,const T& suffix) {
     return boost::lexical_cast<std::string>(s)+boost::lexical_cast<std::string>(suffix);
 }
 
+#include <ctime>
+#include "os.hpp"
+unsigned default_random_seed() {
+//    long pid=get_process_id();
+# ifdef USE_NONDET_RANDOM
+    return boost::random_device().operator()()
+# else
+        unsigned pid=get_process_id();
+    return std::time(0) + pid + (pid << 16);
+# endif
+}
+
 #ifndef USE_STD_RAND
 typedef boost::lagged_fibonacci607 G_rgen;
 
 typedef boost::uniform_01<G_rgen> G_rdist;
 #ifdef MAIN
-G_rdist g_random01(G_rgen(
-# ifdef USE_NONDET_RANDOM
-                       boost::random_device().operator()()
-# else
-    std::time(0)
-# endif
-                   ));
+static G_rgen g_random_gen(default_random_seed());
+G_rdist g_random01(g_random_gen);
 #else
 extern G_rdist g_random01;
 #endif
 #endif
 
-inline double random_seed(uint32_t value=std::time(0))
+inline void random_seed(uint32_t value=default_random_seed())
 {
 #ifdef USE_STD_RAND
     srand(value);
@@ -477,8 +484,12 @@ inline double random_seed(uint32_t value=std::time(0))
 //FIXME: use boost random?  and can't necessarily port executable across platforms with different rand syscall :(
 inline double random01() // returns uniform random number on [0..1)
 {
-//    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
+# ifdef USE_STD_RAND
+
+    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
+# else
     return g_random01();
+# endif
 }
 
 inline double random_pos_fraction() // returns uniform random number on (0..1]
