@@ -9,6 +9,7 @@
 # LIB = math thread ...
 # INC = . 
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
+CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
 UNAME=$(shell uname)
 ARCH=cygwin

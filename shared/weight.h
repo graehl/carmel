@@ -45,6 +45,10 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 
 static FLOAT_TYPE HUGE_FLOAT = (FLOAT_TYPE)(HUGE_VAL*HUGE_VAL);
 
+#ifndef FLOAT_TYPE
+# define FLOAT_TYPE double
+#endif
+
 //! warning: unless #ifdef WEIGHT_CORRECT_ZERO
 // Weight(0) will may give bad results when computed with, depending on math library behavior
 // defining WEIGHT_CORRECT_ZERO will incur a performance penalty
@@ -466,7 +470,8 @@ inline Weight operator /(Weight lhs, Weight rhs) {
   return result;
 }
 
-#define MUCH_BIGGER_LN 16.f
+#define MUCH_BIGGER_LN (sizeof(FLOAT_TYPE)==4? 16.f : 36.)
+    
 // represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X
 // 32 bit FLOAT_TYPE IEEE FLOAT_TYPE has 23 binary digit mantissa, so
 // can represent about 16 base E digits only
