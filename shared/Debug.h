@@ -14,6 +14,7 @@ using namespace __gnu_cxx;
 using namespace std;
 
 #define DBG_OP(pDbg,op,module,msg) pDbg->op(module,msg,__FILE__,__LINE__)
+#define DBG_OP_Q(pDbg,op,module,msg) pDbg->op(module,msg)
 
 namespace ns_decoder_global { 
   
