@@ -92,9 +92,9 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
 }
 
 
-float *DistToState::weights = NULL;
+FLOAT_TYPE *DistToState::weights = NULL;
 DistToState **DistToState::stateLocations = NULL;
-float DistToState::unreachable = Weight::HUGE_FLOAT;
+FLOAT_TYPE DistToState::unreachable = Weight::HUGE_FLOAT;
 
 inline bool operator < (DistToState lhs, DistToState rhs) {
   return DistToState::weights[lhs.state] > DistToState::weights[rhs.state];
@@ -104,11 +104,11 @@ inline bool operator == (DistToState lhs, DistToState rhs) {
   return DistToState::weights[lhs.state] == DistToState::weights[rhs.state];
 }
 
-inline bool operator == (DistToState lhs, float rhs) {
+inline bool operator == (DistToState lhs, FLOAT_TYPE rhs) {
   return DistToState::weights[lhs.state] == rhs;
 }
 
-Graph shortestPathTreeTo(Graph g, int dest, float *dist)
+Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist)
 	// returns graph (need to delete[] ret.states yourself)
 	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 {
@@ -146,7 +146,7 @@ Graph shortestPathTreeTo(Graph g, int dest, float *dist)
 	return pg;
 }
 
-void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
+void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **taken)
 // computes best paths from single source to all other states
 // if taken == NULL, only compute weights (stored in dist)
 //  otherwise, store pointer to arc taken to get to state s in taken[s]
@@ -164,8 +164,8 @@ void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
 
   DistToState *distQueue = NEW DistToState[nStates];
 
-  //  float *weights = NEW float[nStates];
-  float *weights = dist;
+  //  FLOAT_TYPE *weights = NEW FLOAT_TYPE[nStates];
+  FLOAT_TYPE *weights = dist;
   
   for ( i = 0 ; i < nStates ; ++i ) {
           weights[i] = Weight::HUGE_FLOAT;
@@ -189,13 +189,13 @@ void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken)
   stateLocations[source] = &distQueue[0];
 
 
-  float candidate;
+  FLOAT_TYPE candidate;
   for ( ; ; ) {
-    if ( (float)distQueue[0] == Weight::HUGE_FLOAT || nUnknown == 0 ) {
+    if ( (FLOAT_TYPE)distQueue[0] == Weight::HUGE_FLOAT || nUnknown == 0 ) {
       break;
     }
     int activeState = distQueue[0].state;
-    //    dist[activeState] = (float)distQueue[0];
+    //    dist[activeState] = (FLOAT_TYPE)distQueue[0];
     heapPop(distQueue, distQueue + nUnknown--);
 	List<GraphArc> &arcs=st[activeState].arcs;
     for ( List<GraphArc>::val_iterator a = arcs.val_begin(),end=arcs.val_end() ; a !=end ; ++a ) {

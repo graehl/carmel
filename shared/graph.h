@@ -13,7 +13,7 @@
 struct GraphArc {
   int source;
   int dest;
-  float weight;
+  FLOAT_TYPE weight;
   void *data;
 };
 
@@ -90,9 +90,9 @@ public:
 struct DistToState {
   int state;
   static DistToState **stateLocations;
-  static float *weights;
-  static float unreachable;
-  operator float() const { return weights[state]; }
+  static FLOAT_TYPE *weights;
+  static FLOAT_TYPE unreachable;
+  operator FLOAT_TYPE() const { return weights[state]; }
   void operator = (DistToState rhs) { 
     stateLocations[rhs.state] = this;
     state = rhs.state;
@@ -104,13 +104,13 @@ inline bool operator < (DistToState lhs, DistToState rhs);
 
 inline bool operator == (DistToState lhs, DistToState rhs);
 
-inline bool operator == (DistToState lhs, float rhs);
+inline bool operator == (DistToState lhs, FLOAT_TYPE rhs);
 
-Graph shortestPathTreeTo(Graph g, int dest, float *dist);
+Graph shortestPathTreeTo(Graph g, int dest, FLOAT_TYPE *dist);
 	// returns graph (need to delete[] ret.states yourself)
 	// computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 
-void shortestDistancesFrom(Graph g, int source, float *dist,GraphArc **taken=NULL);
+void shortestDistancesFrom(Graph g, int source, FLOAT_TYPE *dist,GraphArc **taken=NULL);
 // computes best paths from single source to all other states
 // if taken == NULL, only compute weights (stored in dist)
 //  otherwise, store pointer to arc taken to get to state s in taken[s]

@@ -122,7 +122,7 @@ index(NULL) { }
       if ( (ppWt = hWeights.find(un)) ) {
 	**ppWt += l->weight;
 	if ( **ppWt > 1 )
-	  **ppWt = Weight((float)1.);
+	  **ppWt = Weight((FLOAT_TYPE)1.);
 	
 	 l=remove(l);
       } else {
@@ -178,6 +178,7 @@ struct DWPair {
   Arc *arc;
   Weight scratch;
   Weight em_weight;
+  Weight best_weight;
   Weight counts;
   Weight prior_counts;
   Weight &weight() const { return arc->weight; }
@@ -199,8 +200,8 @@ std::ostream & operator << (std::ostream & out , const symSeq & s);
 struct IOSymSeq {
   symSeq i;
   symSeq o;
-  float weight;
-  void init(List<int> &inSeq, List<int> &outSeq, float w) {
+  FLOAT_TYPE weight;
+  void init(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE w) {
     i.n = inSeq.count_length();
     o.n = outSeq.count_length();
     i.let = NEW int[i.n];
@@ -239,7 +240,7 @@ class trainInfo {
   int maxIn, maxOut;
   List <IOSymSeq> examples;
   //Weight smoothFloor;
-  float totalEmpiricalWeight;
+  FLOAT_TYPE totalEmpiricalWeight;
   int nStates; // Yaser added this . number of States 
 #ifdef N_E_REPS // Yaser : the following variables need to be taken care of in the copy constructor
   Weight *wNew;

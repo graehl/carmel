@@ -65,7 +65,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
 #endif
 }
 
-void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
+void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
 {
   Assert(trn);
   Assert(weight > 0);
@@ -87,7 +87,7 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, float weight)
                   a } } } while(0)
 
 
-void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, float learning_rate_growth_factor, NormalizeMethod method)
+void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod method)
 {
   Assert(trn);
   int i, o, nSt = numStates();
@@ -115,13 +115,15 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
   Weight lastChange;
   Weight lastPerplexity;
   lastPerplexity.setInfinity();
-  float learning_rate=1;
+  FLOAT_TYPE learning_rate=1;
   bool first_time=true;
   bool last_was_reset=false;
+  Weight bestPerplexity;
+  bestPerplexity.setInfinity();
   for ( ; ; ) {
     ++train_iter;
     if ( train_iter > maxTrainIter ) {
-      Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria of " << converge_arc_delta << " was met - greatest arc weight change was " << lastChange << "\n";
+      Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
       break;
     }
 #ifdef DEBUGTRAIN
@@ -129,26 +131,44 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
 #endif
 
     Weight newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
-
-    Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): per-observation-perplexity=" << newPerplexity;
+    Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): model-perplexity=" << newPerplexity;
+	if ( newPerplexity < bestPerplexity ) {
+		Config::log() << " (new best)";
+		bestPerplexity=newPerplexity;
+		EACHDW(dw->best_weight=dw->weight(););
+	}
 	
-	Weight pp_ratio;
+	Weight pp_ratio_scaled;
     if ( first_time ) {
       Config::log() << std::endl;
 	  first_time = false;
-	  pp_ratio.setZero();
+	  pp_ratio_scaled.setZero();
     } else {
-      pp_ratio = newPerplexity/lastPerplexity; //TODO: take 1/log(newPerplexity)th root? i.e. from EM delta=(L'-L)/abs(L')
+	  Weight pp_ratio=newPerplexity/lastPerplexity;
+      pp_ratio_scaled = root(pp_ratio,trn->totalEmpiricalWeight); // EM delta=(L'-L)/abs(L')
 														// we already scale for L' by dividing by #observations.  could go either way.
-	  Config::log() << " (perplexity-ratio=" << pp_ratio << "), max{d(weight)}=" << lastChange << std::endl;
-	}
+	  Config::log() << " (relative-perplexity-ratio=" << pp_ratio_scaled << "), max{d(weight)}=" << lastChange;
+#ifdef DEBUG_ADAPTIVE_EM
+      Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
+	  if ( learning_rate > 1) {
+		EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);	  // swap EM/scaled
+		Weight em_pp=train_estimate();
+		
+		Config::log() << "unscaled-EM-perplexity=" << em_pp;
+		EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);	  // swap back
+		if (em_pp > lastPerplexity)
+			Config::warn() << " - last EM worsened perplexity, from " << lastPerplexity << " to " << em_pp << ", which is theoretically impossible." << std::endl;		
+	  }
+#endif
+		Config::log() << std::endl;
 
+	}
 	if (!last_was_reset) {
-		if (  pp_ratio >= converge_perplexity_ratio ) {
+		if (  pp_ratio_scaled >= converge_perplexity_ratio ) {
 			if ( learning_rate > 1 ) {
-				Config::log() << "Failed to improve (rate too high); starting again at learning rate 1" << std::endl;
+				Config::log() << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;				
 				learning_rate=1;
-				undo_train_scale();
+				EACHDW(dw->weight() = dw->em_weight;);
 				last_was_reset=true;
 				continue;
 			}
@@ -171,7 +191,8 @@ void WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_rat
 
     lastPerplexity=newPerplexity;
   }
-
+  Config::log() << "Setting weights to model with lowest perplexity=" << bestPerplexity << std::endl;
+  EACHDW(dw->weight()=dw->best_weight;);
   delete[] trn->forArcs;
   delete[] trn->revArcs;
   delete trn->forETopo;
@@ -354,7 +375,7 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
   Weight ***w = trn->b;
   int nIn = s.i.n;
   int nOut = s.o.n;
-  // since the backward paths were obtained on the reverseed input/output, reverse them back
+  // since the backward paths were obtained on the reversed input/output, reverse them back
   reverseMatrix(w,nIn,nOut);
 #ifdef DEBUGTRAINDETAIL // Yaser 7-20-2000
   Config::debug() << "\nForwardProb/BackwardProb:\n";
@@ -373,11 +394,6 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
     Config::debug() <<std::endl;
   }
 #endif
-}
-
-void WFST::undo_train_scale(void)
-{
-	EACHDW(dw->weight() = dw->em_weight;);
 }
 
 Weight WFST::train_estimate(bool delete_bad_training)
@@ -403,6 +419,11 @@ Weight WFST::train_estimate(bool delete_bad_training)
   //#ifdef DEBUGTRAIN
   int train_example_no = 0 ; // Yaser 7-13-2000
   //#endif
+
+  #ifdef DEBUG_ESTIMATE_PP
+	Config::debug() << " Exampleprobs:";
+  #endif
+
   while (seq != lastExample) { // loop over all training examples
 
     //#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
@@ -442,6 +463,11 @@ Weight WFST::train_estimate(bool delete_bad_training)
     }
 #endif
     Weight fin = f[nIn][nOut][final];
+#ifdef DEBUG_ESTIMATE_PP
+	Config::debug() << ',' << fin;
+#endif
+	prodModProb *= (fin^seq->weight); // since perplexity = 2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
+
 #ifdef DEBUGTRAIN
     Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif
@@ -475,6 +501,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
 		dw->scratch.setZero();
 	);
 
+	// accumulate counts for each arc's contribution throughout all uses it has in explaining the training
     for ( i = 0 ; i <= nIn ; ++i ) // go over all symbols in input in the training pair
       for ( o = 0 ; o <= nOut ; ++o ) // go over all symbols in the output pair
         for ( s = 0 ; s < numStates() ; ++s ) {
@@ -488,13 +515,13 @@ Weight WFST::train_estimate(bool delete_bad_training)
                   dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o+1][dw->dest];
               }
             }
-            io.out = 0; // output is epsilon, input is not
+            io.out = epsilon_index; // output is epsilon, input is not
             if ( (pLDW = IOarcs->find(io)) ){
               for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
                 dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
             }
           }
-          io.in = 0; // input is epsilon
+          io.in = epsilon_index; // input is epsilon
           if ( o < nOut ) { // input is epsilon, output is not
             io.out = letOut[o];
             if ( (pLDW = IOarcs->find(io)) ){
@@ -502,7 +529,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
                 dw->scratch += f[i][o][s] * dw->weight() * b[i][o+1][dw->dest];
             }
           }
-          io.out = 0; // input and output are both epsilon
+          io.out = epsilon_index; // input and output are both epsilon
           if ( (pLDW = IOarcs->find(io)) ){
             for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
               dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
@@ -512,15 +539,15 @@ Weight WFST::train_estimate(bool delete_bad_training)
 		if (!dw->scratch.isZero()) 
 			dw->counts += (dw->scratch / fin) * (Weight)seq->weight;
 	);
-    prodModProb *= (fin^seq->weight); // since perplexity = 2^((-1/n)*sum(log2 prob)), we can take prod(prob)^(1/n) instead
+	
     ++seq;
   } // end of while(training examples)
   
-    return root(prodModProb ^ (-1 / trn->totalEmpiricalWeight),trn->totalEmpiricalWeight); // return per-symbol perplexity.  simplify to root(prodModProb,-trn->totalEmpiricalWeight * trn->totalEmpiricalWeight) ?
+    return root(prodModProb,trn->totalEmpiricalWeight).invert(); // ,trn->totalEmpiricalWeight); // return model perplexity = Nth root of 2^entropy
 	
 }
 
-Weight WFST::train_maximize(WFST::NormalizeMethod method,float delta_scale)
+Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
 {
  Assert(trn);
 
@@ -551,17 +578,20 @@ EACHDW (
   DUMPDW;
 #endif
   normalize(method);
+#ifdef DEBUG_ADAPTIVE_EM
+  //normalize(method);
+#endif
 #ifdef DEBUGTRAINDETAIL
   Config::debug() << "\nWeights after normalization\n";
   DUMPDW;
 #endif
-  // find maximum change for convergence (and scale change by delta_scale)
-  
+   
+  // overrelax weight() and store raw EM weight in em_weight
   EACHDW(
 	   DWPair *d=&*dw;
 	   d->em_weight = d->weight();
-       if ( !isLocked((d->arc)->groupId) )
-		   if (delta_scale != 1)
+	   if (delta_scale != 1)
+	       if ( !isLocked((d->arc)->groupId) )
 		      if ( d->scratch.isPositive() )
    				d->weight() = d->scratch * ((d->em_weight / d->scratch) ^ delta_scale);
   );
@@ -571,6 +601,7 @@ EACHDW (
 
   Weight change, maxChange;
 
+  // find maximum change for convergence
   maxChange.setZero();
   EACHDW(
 	  if (!isLocked((dw->arc)->groupId)) {
@@ -593,8 +624,8 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   int i, o, s;
   int nIn = inSeq.count_length();
   int nOut = outSeq.count_length();
-  int *inLet = NEW int[nIn];
-  int *outLet = NEW int[nOut];
+  int *inLet = (nIn > 0 ? NEW int[nIn] : NULL);
+  int *outLet = (nOut > 0 ? NEW int[nOut] : NULL);
   int *pi;
 
   pi = inLet;
@@ -614,39 +645,39 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
 
   for ( s = 0 ; s < numStates() ; ++s ){
    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
-      IO.in = a->in;
+    IO.in = a->in;
     IO.out = a->out;
     DW.dest = a->dest;
-    DW.arc = &(*a);
+    DW.arc = &*a;
     if ( !(pLDW = IOarcs[s].find(IO)) )
       pLDW = IOarcs[s].add(IO);
     pLDW->push(DW);
   }
 }
 
-List<int> eTopo;
-{
-  Graph eGraph = makeEGraph();
-  TopoSort t(eGraph,&eTopo);
-  t.order_crucial();
-  int b = t.get_n_back_edges();
-  if ( b > 0 )
-    Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
-  delete[] eGraph.states;
-}
+	List<int> eTopo;
+	{
+	Graph eGraph = makeEGraph();
+	TopoSort t(eGraph,&eTopo);
+	t.order_crucial();
+	int b = t.get_n_back_edges();
+	if ( b > 0 )
+		Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
+	delete[] eGraph.states;
+	}
 
-Weight ***w = NEW Weight **[nIn+1];
-for ( i = 0 ; i <= nIn ; ++i ) {
-  w[i] = NEW Weight *[nOut+1];
-  for ( o = 0 ; o <= nOut ; ++o )
-    w[i][o] = NEW Weight [numStates()];
-}
-sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
+	Weight ***w = NEW Weight **[nIn+1];
+	for ( i = 0 ; i <= nIn ; ++i ) {
+	w[i] = NEW Weight *[nOut+1];
+	for ( o = 0 ; o <= nOut ; ++o )
+		w[i][o] = NEW Weight [numStates()];
+	}
+	sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
 
-delete[] IOarcs;
-delete[] inLet;
-delete[] outLet;
-return w;
+	delete[] IOarcs;
+	delete[] inLet;
+	delete[] outLet;
+	return w;
 }
 
 

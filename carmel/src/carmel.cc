@@ -1,6 +1,6 @@
 //#define MARCU
 
-// -o = learning rate growth factor (default 1.1)
+// -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
 // -w w = prune paths ratio (1 = keep only best path, 10 = keep paths up to 10 times worse)
@@ -173,6 +173,8 @@ main(int argc, char *argv[]){
   int convergeFlag = 0;
   Weight smoothFloor;
   Weight prune;
+  Weight prod_prob=1;
+  int n_pairs=0;
   WFST::NormalizeMethod norm_method = WFST::CONDITIONAL;
   int pruneFlag = 0;
   int floorFlag = 0;
@@ -183,7 +185,7 @@ main(int argc, char *argv[]){
   bool wrFlag = false;
   bool msFlag = false;
   bool learning_rate_growth_flag = false;
-  float learning_rate_growth_factor=(float)1.1;
+  FLOAT_TYPE learning_rate_growth_factor=(FLOAT_TYPE)1.;
   int nGenerate = 0;
   int maxTrainIter = 256;
 #define DEFAULT_MAX_GEN_ARCS 1000
@@ -313,7 +315,7 @@ main(int argc, char *argv[]){
   }
   if ( flags['b'] && kPaths < 1 )
     kPaths = 1;
-  istream **inputs, **files;
+  istream **inputs, **files, **newed_inputs;
   char **filenames;
   int nInputs,nChain;
 #ifdef MARCU
@@ -325,7 +327,7 @@ main(int argc, char *argv[]){
 #ifdef MARCU
 	nChain+=(int)Models.size();
 #endif
-    inputs = NEW istream *[nInputs];
+    newed_inputs = inputs = NEW istream *[nInputs];
     filenames = NEW char *[nChain];
     if ( flags['r'] ) {
       inputs[nParms] = &cin;
@@ -342,7 +344,7 @@ main(int argc, char *argv[]){
     }
   } else {
     nChain=nInputs = nParms;
-    inputs = NEW istream *[nInputs];
+    newed_inputs = inputs = NEW istream *[nInputs];
     files = inputs;
     filenames = parm;
   }
@@ -364,8 +366,10 @@ main(int argc, char *argv[]){
 #endif
     if ( !*files[i] ) {
       Config::warn() << "File " << parm[i] << " could not be opened for input.\n";
-      //for ( j = 0 ; j < i ; ++j )
-      //delete files[i];
+      for ( int j = 0 ; j <=i ; ++j )
+        delete files[j];
+	  delete[] parm;
+	  delete[] inputs;
       return -9;
     }
   }
@@ -451,7 +455,7 @@ main(int argc, char *argv[]){
   }
 #endif
 
-  for ( ; ; ) {
+  for ( ; ; ) { // input transducer from string line reading loop
     if (nTarget != -1) { // if to construct a finite state from input
       if ( !*line_in )
         break;
@@ -504,7 +508,9 @@ main(int argc, char *argv[]){
 #ifdef  DEBUGCOMPOSE
     Config::debug() << "\nStarting composition chain: result is chain[" << (int)(result-chain) <<"]\n";
 #endif
-    for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
+
+    for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) { // composition loop
+
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
@@ -536,9 +542,9 @@ main(int argc, char *argv[]){
         Config::log() << "\n\t(" << result->count() << " states / " << result->numArcs() << " arcs";
 #ifdef  DEBUGCOMPOSE
       Config::debug() <<"stats for the resulting composition for chain[" << i << "]\n";
-      Config::debug() << "Number of states in result: " << result->count() << '\n';
-      Config::debug() << "Number of arcs in result: " << result->numArcs() << '\n';
-      //      Config::debug() << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << '\n';
+      Config::debug() << "Number of states in result: " << result->count() << std::endl;
+      Config::debug() << "Number of arcs in result: " << result->numArcs() << std::endl;
+      //      Config::debug() << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
       //sleep(100);
       // Config::debug() << "woke up\n";
 #endif
@@ -566,8 +572,8 @@ main(int argc, char *argv[]){
       if (!flags['q'])
         Config::log() << ")";
     }
-      if (!flags['q'])
-                  Config::log() << std::endl;
+      if (!flags['q'] && nChain > 1 ) 
+		  Config::log() << std::endl;
 
 #ifdef  DEBUGCOMPOSE
       Config::debug() << "done chain of compositions  .. now processing result\n";
@@ -611,43 +617,49 @@ main(int argc, char *argv[]){
       } else if ( flags['y'] ) {
         result->listAlphabet(cout, 1);
       } else if ( flags['c'] ) {
-        cout << "Number of states in result: " << result->count() << '\n';
-        cout << "Number of arcs in result: " << result->numArcs() << '\n';
-        cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << '\n';
+        cout << "Number of states in result: " << result->count() << std::endl;
+        cout << "Number of arcs in result: " << result->numArcs() << std::endl;
+        cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
       }
       if ( flags['t'] )
         flags['S'] = 0;
       if ( !flags['b'] ) {
         if ( flags['S'] ) {
+		  n_pairs=0;
           if (pairStream) {
             for ( ; ; ) {
-
               getline(*pairStream,buf);
               if ( !*pairStream )
                 break;
+  			  ++input_lineno;
               List<int> *inSeq = result->symbolList(buf.c_str(), 0);
               if ( !inSeq ) {
-                Config::warn() << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
+                Config::warn() << "Input sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
                 return -22;
               }
               getline(*pairStream,buf);
+  			  ++input_lineno;
               if ( !*pairStream )
                 break;
               List<int> *outSeq = result->symbolList(buf.c_str(), 1);
               if ( !outSeq ) {
-                Config::warn() << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
+                Config::warn() << "Output sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
                 return -21;
               }
-              cout << result->sumOfAllPaths(*inSeq, *outSeq) << '\n';
+              Weight prob=result->sumOfAllPaths(*inSeq, *outSeq);
+			  ++n_pairs;
+			  prod_prob*=prob;
+			  cout << prob << std::endl;
               delete inSeq;
               delete outSeq;
             }
           } else {
             List<int> empty_list;
-            cout << result->sumOfAllPaths(empty_list, empty_list) << '\n';
+			n_pairs=1;
+            cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
           }
         } else if ( flags['t'] ) {
-          float weight;
+          FLOAT_TYPE weight;
           result->trainBegin(norm_method,flags['U'],smoothFloor);
           if (pairStream) {
             for ( ; ; ) {
@@ -659,7 +671,7 @@ main(int argc, char *argv[]){
                 istringstream w(buf.c_str());
                 w >> weight;
                 if ( w.fail() ) {
-                  Config::warn() << "Bad training example weight: " << buf << '\n';
+                  Config::warn() << "Bad training example weight: " << buf << std::endl;
                   continue;
                 }
                 getline(*pairStream,buf);
@@ -710,9 +722,9 @@ main(int argc, char *argv[]){
 
               while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
               printSeq(result->in,inSeq,maxGenArcs);
-              cout << '\n';
+              cout << std::endl;
               printSeq(result->out,outSeq,maxGenArcs);
-              cout << '\n';
+              cout << std::endl;
               /*for ( i = 0 ; i < maxSize ; ) {
                 if (outSeq[i] > 0)
                 cout << result->outLetter(outSeq[i]);
@@ -720,7 +732,7 @@ main(int argc, char *argv[]){
                 if ( i < maxSize && outSeq[i] > 0 )
                 cout << ' ';
                 }
-                cout << '\n';
+                cout << std::endl;
               */
             }
             delete[] inSeq;
@@ -773,6 +785,10 @@ main(int argc, char *argv[]){
       if ( !flags['b'] )
         break;
     } // end of all input
+     if ( flags['S'] && input_lineno > 0) {
+		 Config::log() << "Corpus probability=" << prod_prob << " ; Model perplexity(N=" << n_pairs <<")=" << root(prod_prob,n_pairs).invert() << std::endl;
+	 }
+
 #ifndef NODELETE
     for ( i = 0 ; i < nChain ; ++i )
         chainMemory[i].~WFST();
@@ -787,7 +803,9 @@ main(int argc, char *argv[]){
                 if(line_in != &cin)
                         delete line_in; // rest were deleted after transducers were read
         }
-        delete[] inputs; // alias files
+		if (pairStream != &cin)
+			delete pairStream;
+        delete[] newed_inputs;
     if ( fstout != &cout )
       delete fstout;
     return 0;
@@ -882,7 +900,7 @@ main(int argc, char *argv[]){
   cout << "\n-Y\t\tWrite transducer to GraphViz .dot file\n\t\t(see http://www.research.att.com/sw/tools/graphviz/)";
   cout << "\n-q\t\tSuppress computation status messages (quiet!)";
   cout << "\n-K\t\tDon't assume state names are indexes just because the final state is an integer";
-  cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default 1.1)";
+  cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default=1)";
   cout << "\n\n";
   cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
   cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";

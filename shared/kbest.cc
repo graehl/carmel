@@ -106,7 +106,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   Config::debug() << "Calling KBest on WFST with k: "<<k<<'\n' << graph;
 #endif
   
-  float *dist = NEW float[nStates];
+  FLOAT_TYPE *dist = NEW FLOAT_TYPE[nStates];
   Graph shortPathGraph = shortestPathTreeTo(graph, final,dist);
   #ifdef DEBUGKBEST
   Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
@@ -205,7 +205,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
           int lastHeapPos = newPath.last->heapPos;
           GraphArc *spawnVertex;
           GraphHeap *from = newPath.last->node;
-          float lastWeight = newPath.last->weight;
+          FLOAT_TYPE lastWeight = newPath.last->weight;
           if ( lastHeapPos == -1 ) {
             spawnVertex = from->arc;
             newPath.heapPos = -1;
@@ -295,7 +295,7 @@ void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
 }
 */
 
-Graph sidetrackGraph(Graph lG, Graph rG, float *dist)
+Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist)
 // Comment by Yaser: This function creates new GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 //  the caller function is responsible for deleting this data.

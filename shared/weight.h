@@ -9,7 +9,7 @@
 #include <iostream>
 
 #ifdef _MSC_VER
-// Microsoft C++: conversion from double to float:
+// Microsoft C++: conversion from double to FLOAT_TYPE:
 #pragma warning(disable:4244)
 #endif
 
@@ -22,9 +22,10 @@ struct Weight {			// capable of representing nonnegative reals
 private:
 enum { LOG10=0, LN };
 enum { VAR=0, ALWAYS_LOG, ALWAYS_REAL };
-// IEE float safe till about 10^38, loses precision earlier (10^32?)
+// IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
 // 32 * ln 10 =~ 73
-enum {LN_TILL_UNDERFLOW=73} ;
+// double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
+enum {LN_TILL_UNDERFLOW=(sizeof(FLOAT_TYPE)==4? 73 : 82)} ;
 
 static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
 static const int thresh_index; // handle for OutThresh
@@ -32,8 +33,8 @@ static const int thresh_index; // handle for OutThresh
 public:	
   static const Weight ZERO, INF;
 	// linux g++ 3.2 didn't like static self-class member
-  static const float HUGE_FLOAT;
-  float weight;
+  static const FLOAT_TYPE HUGE_FLOAT;
+  FLOAT_TYPE weight;
 
 // output format manipulators: cout << Weight::out_log10;
 
@@ -62,17 +63,17 @@ out_always_real(std::basic_ostream<A,B>& os);
   double getReal() const {
 	  return std::exp(weight);
   }
-  float getLog(float base) const {
+  FLOAT_TYPE getLog(FLOAT_TYPE base) const {
 	  return weight / log(base);
   }
-  float getLogImp() const {
+  FLOAT_TYPE getLogImp() const {
 	  return weight;
   }
-  float getLn() const {
+  FLOAT_TYPE getLn() const {
 	  return weight;
   }
-  float getLog10() const {
-	  static const float oo_ln10 = 1./log(10.f);
+  FLOAT_TYPE getLog10() const {
+	  static const FLOAT_TYPE oo_ln10 = 1./log(10.f);
 	  return oo_ln10 * weight;
   }
   bool fitsInReal() const {
@@ -96,15 +97,15 @@ out_always_real(std::basic_ostream<A,B>& os);
   }
   void setReal(double f) {
 	  if (f > 0)
-		weight=(float)log(f);
+		weight=(FLOAT_TYPE)log(f);
 	  else
 	    setZero();
   }
-  void setLn(float w) {
+  void setLn(FLOAT_TYPE w) {
 	  weight=w;
   }
-  void setLog10(float w) {
-	  static const float ln10 = log(10.f);
+  void setLog10(FLOAT_TYPE w) {
+	  static const FLOAT_TYPE ln10 = log(10.f);
 	  weight=w*ln10;
   }
 
@@ -146,16 +147,19 @@ out_always_real(std::basic_ostream<A,B>& os);
     weight -= w.weight;
     return *this;
   }
-  void raisePower(float power) {
+  Weight raisePower(FLOAT_TYPE power) {
 	  weight *= power;
+	  return *this;
   }
-  void invert() {
+  Weight invert() {
 	  weight = -weight;
+	  return *this;
   }
-  void takeRoot(float nth) {
+  Weight takeRoot(FLOAT_TYPE nth) {
 	  weight /= nth;
+	  return *this;
   }
-  Weight operator ^= (float power) { // raise Weight^power
+  Weight operator ^= (FLOAT_TYPE power) { // raise Weight^power
 	  raisePower(power);
 	  return *this;
   }
@@ -172,18 +176,18 @@ inline Weight pow_logexponent(Weight a, Weight b) {
 	return a;
 }
 
-inline Weight root(Weight w,float nth) {
+inline Weight root(Weight w,FLOAT_TYPE nth) {
 	w.takeRoot(nth);
 	return w;
 }
 
-inline Weight pow(Weight w,float nth) {
+inline Weight pow(Weight w,FLOAT_TYPE nth) {
 	w.raisePower(nth);
 	return w;
 }
 
 
-inline Weight operator ^(Weight base,float exponent) {
+inline Weight operator ^(Weight base,FLOAT_TYPE exponent) {
 	return pow(base,exponent);
 }
 
@@ -220,7 +224,7 @@ std::ios_base::iostate Weight::get_from(std::basic_istream<charT,Traits>& i)
   } else if ( (c = i.get()) == 'l' ) {
    char n = i.get();  	
    if ( n == 'n')
-    setLn((float)f);
+    setLn((FLOAT_TYPE)f);
    else if ( n == 'o' && i.get() == 'g' )
     setLog10(f);
    else {
@@ -297,7 +301,7 @@ inline Weight operator /(Weight lhs, Weight rhs) {
 
 #define MUCH_BIGGER_LN 16.f
 // represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X
-// 32 bit float IEEE float has 23 binary digit mantissa, so 
+// 32 bit FLOAT_TYPE IEEE FLOAT_TYPE has 23 binary digit mantissa, so 
 // can represent about 16 base E digits only
 // fixme: if you use 64-bit doubles instead of floats, 52 binary digits
 // so define as 36.f instead
@@ -313,7 +317,7 @@ inline Weight operator +(Weight lhs, Weight rhs) {
 		return lhs;
 #endif
 
-  float diff = lhs.weight - rhs.weight;
+  FLOAT_TYPE diff = lhs.weight - rhs.weight;
   if ( diff > MUCH_BIGGER_LN )
     return lhs;
   if ( diff < -MUCH_BIGGER_LN )
@@ -322,11 +326,11 @@ inline Weight operator +(Weight lhs, Weight rhs) {
   Weight result; 
 
   if ( diff < 0 ) { // rhs is bigger
-	  result.weight = (float)(rhs.weight + log(1 + std::exp(lhs.weight-rhs.weight)));
+	  result.weight = (FLOAT_TYPE)(rhs.weight + log(1 + std::exp(lhs.weight-rhs.weight)));
     return result;
   }
   // lhs is bigger
-  result.weight = (float)( lhs.weight + log(1 + std::exp(rhs.weight-lhs.weight)));
+  result.weight = (FLOAT_TYPE)( lhs.weight + log(1 + std::exp(rhs.weight-lhs.weight)));
   return result;
 }
 
@@ -352,7 +356,7 @@ inline Weight operator -(Weight lhs, Weight rhs) {
 
   // lhs > rhs
   
-  result.weight = (float)(lhs.weight + log(1 - std::exp(rhs.weight-lhs.weight)));
+  result.weight = (FLOAT_TYPE)(lhs.weight + log(1 - std::exp(rhs.weight-lhs.weight)));
   return result;
 }
 

@@ -42,6 +42,7 @@ class WFST {
 private:
  enum { STATE,ARC } PerLine;
  enum { BRIEF,FULL } ArcFormat;
+ enum { epsilon_index=0 };
 static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
 static const int arcformat_index; // handle for OutThresh
 void initAlphabet() {
@@ -74,7 +75,7 @@ template<class A,class B> static inline std::basic_ostream<A,B>&
 out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; return os; }
 
 
- static inline float randomFloat()       // in range [0, 1)
+ static inline FLOAT_TYPE randomFloat()       // in range [0, 1)
 {
   return rand() * (1.f / (RAND_MAX+1.f));
 }
@@ -154,8 +155,7 @@ template <>
 //     newPerplexity = train_estimate();
 //	lastChange = train_maximize(method);
   Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns per-example perplexity of training set = Nth root of product of model probabilities of N-weight training examples  - optionally deletes training examples that have no accepting path
-  void undo_train_scale(void); // undoes the previous delta_scale, restoring weights to what they would be under standard EM
-  Weight train_maximize(NormalizeMethod method=CONDITIONAL,float delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
+  Weight train_maximize(NormalizeMethod method=CONDITIONAL,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
   WFST(const WFST &a) {}
 public:
 	void index(int dir) {
@@ -294,8 +294,8 @@ template <class I> int randomPath(I i,int max_len=-1)
   // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
   // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
   void trainBegin(NormalizeMethod method=CONDITIONAL,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
-  void trainExample(List<int> &inSeq, List<int> &outSeq, float weight);
-  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,float learning_rate_growth_factor,NormalizeMethod method=CONDITIONAL);
+  void trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight);
+  void trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod method=CONDITIONAL);
   // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
 
   void invert();		// switch input letters for output letters
