@@ -108,7 +108,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
 
             double new_alp = exec.estimate(very_first_time);
 
-            logs << "i=" << train_iter << " (rate=" << learning_rate << "): model-avg-log-prob=" << new_alp;
+            logs << "i=" << train_iter << " (rate=" << learning_rate << "): perplexity= e^" << -new_alp;
 
             //FIXME: don't really need to do this so often, can move outside of for loop even ... but for sanity's sake (not much efficiency difference) leave it here
             if ( new_alp > best_alp || very_first_time ) {

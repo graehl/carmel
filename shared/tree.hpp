@@ -235,7 +235,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   char c;
   rank=0;
   DynamicArray<Self *> in_children;
-  EXPECTI_COMMENT(in>>c);
+  EXPECTI_COMMENT_FIRST(in>>c);
   if (c != '(')
       in.unget();
   EXPECTI_COMMENT(deref(read)(in,label));
