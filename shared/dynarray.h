@@ -9,8 +9,8 @@
 #ifndef DYNARRAY_H 
 #define DYNARRAY_H 1
 
-#include <string.h>
-#include <new.h>
+#include <string>
+#include <new>
 #include "assert.h"
 
 

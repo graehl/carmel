@@ -46,11 +46,11 @@ void usageHelp(void);
 void WFSTformatHelp(void);
 
 int
-#ifdef MSCVER
+#ifdef _MSC_VER
 __cdecl 
 #endif
 main(int argc, char *argv[]){
-#ifdef MSCVER 
+#ifdef _MSC_VER 
 #ifdef MEMDEBUG
   int tmpFlag = CrtSetDbgFlag(CRTDBGREPORTFLAG);
   tmpFlag |= CRTDBGCHECKALWAYSDF;
