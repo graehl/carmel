@@ -26,6 +26,9 @@ BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 LDFLAGS += $(addprefix -l,$(LIB))
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJ_BOOST) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I- -I$(BOOST_DIR) -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
+ifeq ($(ARCH),cygwin)
+CPPFLAGS += -DBOOST_NO_STD_WSTRING
+endif
 
 define PROG_template
 
