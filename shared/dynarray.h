@@ -12,13 +12,13 @@ template <typename T> class DynamicArray {
   int sz;
   T *vec;
   DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
-public:
+ public:
   DynamicArray(unsigned sp = 4) : space(sp), sz(0), vec((T*)::operator new ((size_t)sizeof(T)*sp)) {}
   DynamicArray(const DynamicArray &a): space(a.space),sz(0){ // added by Yaser 7-27-2000
-     vec = (T*)::operator new((size_t)a.space*sizeof(T));
-     for (int i = 0 ; i < a.sz ; i++)
-        pushBack(a.vec[i]) ;
-     Assert(sz==a.sz);
+    vec = (T*)::operator new((size_t)a.space*sizeof(T));
+    for (int i = 0 ; i < a.sz ; i++)
+      pushBack(a.vec[i]) ;
+    Assert(sz==a.sz);
   }
 							 
   T & operator() (int index) {
@@ -28,7 +28,7 @@ public:
       while ( index >= newSpace ) newSpace <<=1;
       resize(newSpace);
       for ( T *v = vec + sz ; v <= vec + index ; v++ )
-		PLACEMENT_NEW(v) T();
+	PLACEMENT_NEW(v) T();
       sz = ++index;
     }
     return vec[index];
@@ -38,24 +38,24 @@ public:
     return vec[index];
   }
   int index_of(T *t) const {
-	  return (int)(t-vec);
+    return (int)(t-vec);
   }
   void pushBack()
-  {
-    if ( sz >= space )
-      resize(space << 1);
-    PLACEMENT_NEW(vec+(sz++)) T();
-  }    
+    {
+      if ( sz >= space )
+	resize(space << 1);
+      PLACEMENT_NEW(vec+(sz++)) T();
+    }    
   void pushBack(const T& val)
-  {
-    PLACEMENT_NEW(pushBackRaw()) T(val);
-  }
+    {
+      PLACEMENT_NEW(pushBackRaw()) T(val);
+    }
   T *pushBackRaw()
-  {
-    if ( sz >= space )
-      resize(space << 1);
-	return vec + (sz++);
-  }
+    {
+      if ( sz >= space )
+	resize(space << 1);
+      return vec + (sz++);
+    }
   void removeMarked(bool marked[]) {
     if ( !sz ) return;
     int f, i = 0;
@@ -76,7 +76,7 @@ public:
     vec = (T*)::operator new((size_t)newSz*sizeof(T));
     // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
     memcpy(vec, oldVec, sz*sizeof(T));
-	::operator delete(oldVec);
+    ::operator delete(oldVec);
     space = newSz;
   }
   int size() const { return space; }
@@ -84,14 +84,14 @@ public:
   void clear() {
     if (vec) {
       for ( int	i = 0 ; i < sz ; i++ )
-		vec[i].~T();
+	vec[i].~T();
       ::operator delete(vec);
     }
     vec = NULL;
     sz = 0;
   }
   ~DynamicArray() {
-	  clear();
+    clear();
   }
 };
 

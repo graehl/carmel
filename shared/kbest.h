@@ -23,44 +23,44 @@ struct GraphHeap {
   GraphArc *arc;		// data at each vertex
   pGraphArc *arcHeap;		// binary heap of sidetracks originating from a state
   int arcHeapSize;
-//#ifdef CUSTOM_NEW  
+  //#ifdef CUSTOM_NEW  
   // not optional because of how freeAll works!
   static GraphHeap *freeList;
   static const int newBlocksize;
   static List<GraphHeap *> usedBlocks;
   void *operator new(size_t s)
-    {
-      size_t dummy = s;
-      dummy = dummy;
-      GraphHeap *ret, *max;
-      if (freeList) {
-	ret = freeList;
-	freeList = freeList->left;
-	return ret;
-      }
-      freeList = (GraphHeap *)::operator new(newBlocksize * sizeof(GraphHeap));
-      usedBlocks.push(freeList);
-      freeList->left = NULL;
-      max = freeList + newBlocksize -1;
-      for ( ret = freeList++; freeList < max ; ret = freeList++ )
-	freeList->left = ret;
-      return freeList--;
+  {
+    size_t dummy = s;
+    dummy = dummy;
+    GraphHeap *ret, *max;
+    if (freeList) {
+      ret = freeList;
+      freeList = freeList->left;
+      return ret;
     }
+    freeList = (GraphHeap *)::operator new(newBlocksize * sizeof(GraphHeap));
+    usedBlocks.push(freeList);
+    freeList->left = NULL;
+    max = freeList + newBlocksize -1;
+    for ( ret = freeList++; freeList < max ; ret = freeList++ )
+      freeList->left = ret;
+    return freeList--;
+  }
   void operator delete(void *p) 
-    {
-      GraphHeap *e = (GraphHeap *)p;
-      e->left = freeList;
-      freeList = e;
-    }
+  {
+    GraphHeap *e = (GraphHeap *)p;
+    e->left = freeList;
+    freeList = e;
+  }
   static void freeAll()
-    {
-      while ( usedBlocks.notEmpty() ) {
-	::operator delete((void *)usedBlocks.top());
-	usedBlocks.pop();
-      }
-      freeList = NULL;
+  {
+    while ( usedBlocks.notEmpty() ) {
+      ::operator delete((void *)usedBlocks.top());
+      usedBlocks.pop();
     }
-//#endif
+    freeList = NULL;
+  }
+  //#endif
 };
 
 

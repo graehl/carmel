@@ -96,11 +96,11 @@ namespace WFST_impl {
     Cit2 Ci2,Cend;
     Jit Ji,Jend;
     const WFST::NormalizeMethod method;
-	bool empty_state() { return state->size == 0; }
+    bool empty_state() { return state->size == 0; }
     void beginState() {
-		if(method==WFST::CONDITIONAL)
-		  if (!empty_state())
-			  Ci.init(*state->index); 
+      if(method==WFST::CONDITIONAL)
+        if (!empty_state())
+          Ci.init(*state->index);
     }
   public:
     NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state((State *)wfst_.states), end(state+wfst_.numStates()), method(meth) { beginState(); }
@@ -117,8 +117,8 @@ namespace WFST_impl {
     }
     void beginArcs() {
       if(method==WFST::CONDITIONAL) {
-    	if (empty_state())
-			return;
+        if (empty_state())
+          return;
         Ci2 = Ci.val().const_begin();
         Cend = Ci.val().const_end();
       } else {
@@ -128,8 +128,8 @@ namespace WFST_impl {
     }
     bool moreArcs() {
       if(method==WFST::CONDITIONAL) {
-      	if (empty_state())
-			return false;
+        if (empty_state())
+          return false;
         return Ci2 != Cend;
       } else {
         return Ji != Jend;
@@ -151,8 +151,8 @@ namespace WFST_impl {
     }
     void nextGroup() {
       if(method==WFST::CONDITIONAL) {
-	    if ( !empty_state() )
-			++Ci;
+        if ( !empty_state() )
+          ++Ci;
         while (empty_state() || !Ci) {
           ++state;
           if (moreGroups())
@@ -203,18 +203,18 @@ void WFST::normalize(NormalizeMethod method)
   // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
     Weight sum,locked_sum; // =0, sum of probability of all arcs that has this input
-	for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-	  const Weight w=(*g)->weight;
+    for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+      const Weight w=(*g)->weight;
       if (isLocked((*g)->groupId)) //FIXME: how does training handle counts for locked arcs?
         locked_sum += w;
       else
         sum += w;
-	}
+    }
 #ifdef DEBUGNORMALIZE
-	Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
+    Config::debug() << "Normgroup=" << g << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
 #endif
-	for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-	  const Weight w=(*g)->weight;
+    for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+      const Weight w=(*g)->weight;
       if (!w.isZero())
         if ( isTied(pGroup = (*g)->groupId) ) {
           groupArcTotal[pGroup] += w; // default init is to 0
@@ -223,11 +223,11 @@ void WFST::normalize(NormalizeMethod method)
           if (locked_sum > m)
             m = locked_sum;
 #ifdef DEBUGNORMALIZE
-	Config::debug() << "Tiegroup=" << pGroup << " Normgroup=" << g << " tie_weight=" << groupArcTotal[pGroup] << " sum_state_weight=" << groupStateTotal[pGroup] << " max_locked=" << m << std::endl;
+          Config::debug() << "Tiegroup=" << pGroup << " Normgroup=" << g << " tie_weight=" << groupArcTotal[pGroup] << " sum_state_weight=" << groupStateTotal[pGroup] << " max_locked=" << m << std::endl;
 #endif
 
         }
-	}
+    }
   }
 
 
@@ -271,7 +271,7 @@ void WFST::normalize(NormalizeMethod method)
 
 #ifdef CHECKNORMALIZE
   for (WFST_impl::NormGroupIter g(method,*this); g.moreGroups(); g.nextGroup()) {
-	  
+
     Weight sum;
     for ( g.beginArcs(); g.moreArcs(); g.nextArc())
       sum += (*g)->weight;
@@ -453,9 +453,9 @@ void WFST::prunePaths(int max_states,Weight keep_paths_within_ratio)
 #ifdef DEBUGPRUNE
   Config::debug() << "Best path cost = " << best_path << "(reverse best path = " << rev_dist[0] << "); worst path allowed = " << worst_path << std::endl;
   /*  Config::debug() << "BEST PATH THROUGH STATE:" << std::endl;
-  for (i=0;i<n_states;++i) {
-    Config::debug() << best_path_cost[i].first << ' ' << stateName(best_path_cost[i].second) << std::endl;
-    }*/
+      for (i=0;i<n_states;++i) {
+      Config::debug() << best_path_cost[i].first << ' ' << stateName(best_path_cost[i].second) << std::endl;
+      }*/
 #endif
 
   int allowed = max_states;

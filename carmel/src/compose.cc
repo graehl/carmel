@@ -52,9 +52,9 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   if ( namedStates ) {
     makeTrioName(buf, a.stateNames[0], b.stateNames[0], 0);
     stateNames.add(buf);
-	named_states=true;
+    named_states=true;
   } else {
-	  named_states=false;
+    named_states=false;
   }
   queue.push(trioID);
 
@@ -84,7 +84,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               triDest.aState = (*l)->dest;
               in = (*l)->in;
               COMPOSEARC;
-                          //!danger: should probably use IsTiedOrLocked() in Arc.h.
+              //!danger: should probably use IsTiedOrLocked() in Arc.h.
               if ( (group = (*l)->groupId) >= 0 )
                 states[sourceState].arcs.top().groupId = group;
             }
@@ -208,7 +208,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
             in = EMPTY;
             triDest.aState = triSource.aState;
             triDest.filter = 2;
-                    for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
+            for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
               Assert ( (*r)->in == EMPTY );
               out = (*r)->out;
               weight = (*r)->weight;
@@ -256,8 +256,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
             out = EMPTY;
             triDest.bState = triSource.bState;
             triDest.filter = 1;
-        for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
-        Assert ( (*l)->out == EMPTY );
+            for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
+              Assert ( (*l)->out == EMPTY );
               in = (*l)->in;
               weight = (*l)->weight;
               triDest.aState = (*l)->dest;
@@ -305,7 +305,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           in = EMPTY;
           triDest.aState = triSource.aState;
           triDest.filter = 2;
-                    for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+          for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
             if ( r->in == EMPTY ) {
               out = r->out;
               weight = r->weight;
@@ -344,7 +344,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     for ( i = 0 ; i < 3 ; ++i )
       if ( pFinal[i] ) {
         states[*pFinal[i]].addArc(Arc(EMPTY, EMPTY, final, 1.0));
-                states[*pFinal[i]].arcs.top().groupId = WFST::LOCKEDGROUP; // prevent weight from changing in training
+        states[*pFinal[i]].arcs.top().groupId = WFST::LOCKEDGROUP; // prevent weight from changing in training
       }
   }
   states.resize(states.count());

@@ -1,6 +1,8 @@
 #ifndef CONFIG_H 
 #define CONFIG_H 1
 
+#define VERSION "3.0" 
+
 #define STRINGPOOL 
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
@@ -9,7 +11,11 @@
 // use singly linked list
 #define USE_SLIST
 
+#ifdef DOUBLE_PRECISION
 typedef double FLOAT_TYPE;
+#else
+typedef float FLOAT_TYPE;
+#endif
 
 // for meaningful compose state names
 #define MAX_STATENAME_LEN 15000
@@ -68,18 +74,18 @@ typedef double FLOAT_TYPE;
 
 #include <iostream>
 namespace Config {
-	inline std::ostream &message() {
-		return std::cerr;
-	}
-	inline std::ostream &log() {
-		return std::cerr;
-	}
-	inline std::ostream &debug() {
-		return std::cerr;
-	}
-	inline std::ostream &warn() {
-		return std::cerr;
-	}
+  inline std::ostream &message() {
+    return std::cerr;
+  }
+  inline std::ostream &log() {
+    return std::cerr;
+  }
+  inline std::ostream &debug() {
+    return std::cerr;
+  }
+  inline std::ostream &warn() {
+    return std::cerr;
+  }
 };
 
 #endif //guard

@@ -21,7 +21,7 @@
 
 static int pow2(int exp)
 {
-        return 1 << exp;
+  return 1 << exp;
 }
 
 
@@ -74,8 +74,8 @@ static int getString(istream &in, char *buf)
     if ( *buf == ')' )
       in.putback( ')' );
     *buf = 0;
-        if (buf[-1] == DOS_CR_CHAR)
-                buf[-1] = 0;
+    if (buf[-1] == DOS_CR_CHAR)
+      buf[-1] = 0;
     break;
   }
   return 1;
@@ -122,7 +122,7 @@ bool isNumber(const char * p){
 
 
 WFST::WFST(const char *buf, int &length,bool permuteNumbers)
-// Generate a permutation lattice for a given string
+  // Generate a permutation lattice for a given string
 {
   named_states=0;
   initAlphabet();
@@ -248,25 +248,25 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
 
 
 int WFST::getStateIndex(const char *buf) {
-	char *scanend;
-	int st;
-	if (!named_states) {
-		st=strtol(buf,&scanend,10);
-		if (*scanend != '\0') {
-			Config::warn() << "expected an integer state index, but got: " << buf << std::endl;
-			return -1;
-		} else {
-			states(st); // expands dynarray
-			return st;
-		}
-	} else {
-		st = stateNames.indexOf((char *)buf);
-		if ( st >= states.count() ) {
-			states.pushBack();
-			Assert(st + 1 == states.count());
-		}
-		return st;
-	}
+  char *scanend;
+  int st;
+  if (!named_states) {
+    st=strtol(buf,&scanend,10);
+    if (*scanend != '\0') {
+      Config::warn() << "expected an integer state index, but got: " << buf << std::endl;
+      return -1;
+    } else {
+      states(st); // expands dynarray
+      return st;
+    }
+  } else {
+    st = stateNames.indexOf((char *)buf);
+    if ( st >= states.count() ) {
+      states.pushBack();
+      Assert(st + 1 == states.count());
+    }
+    return st;
+  }
 }
 
 static const char COMMENT_CHAR='#';
@@ -274,7 +274,7 @@ static const char COMMENT_CHAR='#';
 // need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
-  
+
   int stateNumber, destState, inL, outL;
   Weight weight;
   char c, d, buf[4096];
@@ -284,62 +284,62 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
 
   named_states=1;
   if (!alwaysNamed) {
-	named_states=0;
-	for (char *p=finalName.str;*p;++p)
-	  if (!isdigit(*p)) {
-		  named_states=1;
-		  break;
-	  }
+    named_states=0;
+    for (char *p=finalName.str;*p;++p)
+      if (!isdigit(*p)) {
+        named_states=1;
+        break;
+      }
   }
 
   if (named_states)
-	  finalName.clone();
+    finalName.clone();
   else
-	  final=getStateIndex(buf);
+    final=getStateIndex(buf);
 
   Assert( in->find("*e*") && out->find("*e*") && !in->indexOf("*e*") && !out->indexOf("*e*") );
   for ( ; ; ) {
     if ( !(istr >> c) )
       break;
-        // begin line:
-        if (c == COMMENT_CHAR) {
-                for(;;) {
-                        if (!istr.get(c) )
-                                break;
-                        if (c == '\n')
-                                break;
-                }
-                continue;
-        }
+    // begin line:
+    if (c == COMMENT_CHAR) {
+      for(;;) {
+        if (!istr.get(c) )
+          break;
+        if (c == '\n')
+          break;
+      }
+      continue;
+    }
     DO(c == '(');
-        // start state:
+    // start state:
     DO(getString(istr, buf));
-	
-  	stateNumber=getStateIndex(buf);
-	if (stateNumber == -1)
-		  goto INVALID;
 
-        // arcs:
+    stateNumber=getStateIndex(buf);
+    if (stateNumber == -1)
+      goto INVALID;
+
+    // arcs:
     for ( ; ; ) {
       DO(istr >> c);
       if( c == ')' )
         break;
       DO(c == '(');
-          // dest state:
+      // dest state:
       DO(getString(istr, buf));
-	  
-	  destState=getStateIndex(buf);
-	  if (destState == -1)
-		  goto INVALID;
-	  DO(istr >> d);
+
+      destState=getStateIndex(buf);
+      if (destState == -1)
+        goto INVALID;
+      DO(istr >> d);
       if ( d != '(' )
         istr.putback(d);
       for ( ; ; ) {
-                 buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
-                 DO(istr >> c);  // skip whitespace
-                 istr.putback(c);
-                 if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-                        DO(getString(istr, buf));
+        buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
+        DO(istr >> c);  // skip whitespace
+        istr.putback(c);
+        if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
+          DO(getString(istr, buf));
         inL = in->indexOf(buf);
         DO(istr >> c);  // skip whitespace
         istr.putback(c);
@@ -348,20 +348,20 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         outL = out->indexOf(buf);
         DO(istr >> c); // skip ws
         istr.putback(c);
-                weight.setZero();
+        weight.setZero();
         if (isdigit(c) || c == '.' || c == '-' ) {
           DO(istr >> weight);
-                  if ( istr.fail() ) {
-                        cout << "Invalid weight: " << weight <<"\n";
-                        return 0;
-                  }
+          if ( istr.fail() ) {
+            cout << "Invalid weight: " << weight <<"\n";
+            return 0;
+          }
         } else
           weight = 1.0;
-//        if ( weight > 0.0 ) {
+        //        if ( weight > 0.0 ) {
         states[stateNumber].addArc(Arc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
         //} else if ( weight != 0.0 ) {
-//          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
-//          return 0;
+        //          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
+        //          return 0;
         //}
         DO(istr >> c);
         Arc *lastAdded = &states[stateNumber].arcs.top();
@@ -390,26 +390,26 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
     }
   }
   if ( !named_states) {
-	  if (!(final < count())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
-		  
-      return 1;
+    if (!(final < count())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
+
+    return 1;
   }
   {
-	int *uip = stateNames.find(finalName);
-	if ( uip  ) {
-	final = *uip;
-	finalName.kill();
-	return 1;
-	} else {
-	cout << "\nFinal state named " << finalName << " not found.\n";
-	goto INVALID;
-	}
+    int *uip = stateNames.find(finalName);
+    if ( uip  ) {
+      final = *uip;
+      finalName.kill();
+      return 1;
+    } else {
+      cout << "\nFinal state named " << finalName << " not found.\n";
+      goto INVALID;
+    }
   }
-INVALID:
-	if (named_states)
-		finalName.kill();
-    invalidate();
-    return 0;
+ INVALID:
+  if (named_states)
+    finalName.kill();
+  invalidate();
+  return 0;
 }
 
 
@@ -420,77 +420,77 @@ int WFST::readLegible(const string& str,bool alwaysNamed)
 }
 
 static ostream & writeQuoted(ostream &os,const char *s) {
-        os << '"';
-        for (;*s;++s) {
-                if (*s == '\\')
-                        os << '\\' << '\\';
-                else {
-                        if (*s == '"')
-                                os << '\\';
-                        os << *s;
-                }
-        }
-        os << '"';
-        return os;
+  os << '"';
+  for (;*s;++s) {
+    if (*s == '\\')
+      os << '\\' << '\\';
+    else {
+      if (*s == '"')
+        os << '\\';
+      os << *s;
+    }
+  }
+  os << '"';
+  return os;
 }
 
 /*
-Uppercase Epsilon is:  &#917;
-Lowercase epsilon is:  &#949;
+  Uppercase Epsilon is:  &#917;
+  Lowercase epsilon is:  &#949;
 */
 void WFST::writeGraphViz(ostream &os)
 {
-        if ( !valid() ) return;
-        const char *newl = ";\n\t";
-        const char * const invis_start="invis_start [shape=plaintext,label=\"\"]";
-        const char * const invis_start_name="invis_start";
-        const char * const prelude="digraph G {";
-        //size=\"7.5,10\",
-        const char * const format="graph[page=\"8.5,11\",center=1,orientation=landscape]";
-        const char * const coda = ";\n}\n";
-        const char * const final_border = "peripheries=2";
-        const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
-        const char * const arrow = " -> ";
-        const char * const open = " [";
-        const char close = ']';
-        const char * const label = "label=";
+  if ( !valid() ) return;
+  const char *newl = ";\n\t";
+  const char * const invis_start="invis_start [shape=plaintext,label=\"\"]";
+  const char * const invis_start_name="invis_start";
+  const char * const prelude="digraph G {";
+  //size=\"7.5,10\",
+  const char * const format="graph[page=\"8.5,11\",center=1,orientation=landscape]";
+  const char * const coda = ";\n}\n";
+  const char * const final_border = "peripheries=2";
+  const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
+  const char * const arrow = " -> ";
+  const char * const open = " [";
+  const char close = ']';
+  const char * const label = "label=";
 
-        os << prelude << endl;
-        os << format << newl << invis_start << newl << state_shape;
+  os << prelude << endl;
+  os << format << newl << invis_start << newl << state_shape;
 
-        // make sure final state gets double circle
-        os << newl;
-        writeQuoted(os,stateName(final));
-        os << open << final_border << close;
+  // make sure final state gets double circle
+  os << newl;
+  writeQuoted(os,stateName(final));
+  os << open << final_border << close;
 
-        // arc from invisible start to real start
-        os << newl << invis_start_name << arrow;
-        writeQuoted(os,stateName(0));
+  // arc from invisible start to real start
+  os << newl << invis_start_name << arrow;
+  writeQuoted(os,stateName(0));
 
-        for (int s = 0 ; s < numStates() ; s++) {
-            for (List<Arc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
-                        os << newl;
-                        writeQuoted(os,stateName(s));
-                        os << arrow;
-                        writeQuoted(os,stateName(a->dest));
-                        os << open << label;
-                        ostringstream arclabel;
-                        writeArc(arclabel,*a);
-                        writeQuoted(os,arclabel.str().c_str());
-                        os << close;
-                }
-        }
+  for (int s = 0 ; s < numStates() ; s++) {
+    for (List<Arc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
+      os << newl;
+      writeQuoted(os,stateName(s));
+      os << arrow;
+      writeQuoted(os,stateName(a->dest));
+      os << open << label;
+      ostringstream arclabel;
+      writeArc(arclabel,*a);
+      writeQuoted(os,arclabel.str().c_str());
+      os << close;
+    }
+  }
 
-        os << coda;
+  os << coda;
 }
 
 //#define GREEK_EPSILON 1
 
 void WFST::writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON) {
-        static const char * const epsilon = "&#949;";
-        os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
-                        BOOLBRIEF;
-                        OUTARCWEIGHT(os,&a);
+  static const char * const epsilon = "&#949;";
+  os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
+  BOOLBRIEF;
+  OUTARCWEIGHT(os,&a);
 }
 
 void WFST::writeLegible(ostream &os)
@@ -505,30 +505,30 @@ void WFST::writeLegible(ostream &os)
   os << stateName(final);
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
-                os << "\n(" << stateName(i);
+      os << "\n(" << stateName(i);
     for (List<Arc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
       if (onearc)
-                os << "\n(" << stateName(i);
+        os << "\n(" << stateName(i);
 
-     if ( a->weight.isPositive() ) {
+      if ( a->weight.isPositive() ) {
         destState = stateName(a->dest);
         os << " (" << destState;
         if ( !brief || a->in || a->out ) { // omit *e* *e* labels
-                inLet = (*in)[a->in];
-                outLet = (*out)[a->out];
-                os << " " << inLet;
-                if ( !brief || strcmp(inLet, outLet) )
-                        os << " " << outLet;
+          inLet = (*in)[a->in];
+          outLet = (*out)[a->out];
+          os << " " << inLet;
+          if ( !brief || strcmp(inLet, outLet) )
+            os << " " << outLet;
         }
         //      int *pGroup;
         //      if ( (pGroup = tieGroup.find(IntKey(int(&(*a))))) ) {
-                OUTARCWEIGHT(os,a);
+        OUTARCWEIGHT(os,a);
         os << ")";
-                if (onearc)
-                  os << ")";
-     }
+        if (onearc)
+          os << ")";
+      }
     }
-        if (!onearc)
+    if (!onearc)
       os << ")";
   }
   os << "\n";
