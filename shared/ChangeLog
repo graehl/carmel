@@ -1,3 +1,7 @@
+2005-02-28  Jonathan Graehl  <graehl@isi.edu>
+
+	* memmap.hpp: added filename to exceptions
+
 2005-01-27  Jonathan Graehl  <graehl@isi.edu>
 
 	* normalize.hpp: add-k-smoothing (denominator) (set directly or in

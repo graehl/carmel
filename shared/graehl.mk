@@ -250,7 +250,7 @@ endif
 echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
-                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/%\/\1.o : /g' $@.raw >> $@ \
+                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
  || rm -f $@ ); rm -f $@.raw ; fi
 #
 
