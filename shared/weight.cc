@@ -9,27 +9,38 @@
 
 #include "weight.h"
 
+// ~6 * ln 10 
+#define LN_6_DECIMAL_DIGITS 13
+
 std::ostream& operator << (std::ostream &o, Weight weight)
 {
   if ( weight == 0.0 )
     o << 0;
-  else if ( weight.weight < 20 && weight.weight > -20 )
-    o << pow((double)10, (double)weight.weight);
+  else if ( weight.weight < LN_6_DECIMAL_DIGITS && weight.weight > -LN_6_DECIMAL_DIGITS )
+    o << exp(weight.weight);
   else
-    o << weight.weight << "log";
+    o << weight.weight << "ln";
   return o;
 }
 
 std::istream& operator >> (std::istream &i, Weight &weight)
 {
+  static const float ln10 = log(10.f);
+
   char c;
-  float f;
+  double f;
   i >> f;
   if ( i.eof() )
     weight = f;
-  else if ( (c = i.get()) == 'l' && i.get() == 'o' && i.get() == 'g' )
-    weight.weight = f;
-  else {
+  else if ( (c = i.get()) == 'l' ) {
+   char n = i.get();  	
+   if ( n == 'n')
+    weight.weight = (float)f;
+   else if ( n == 'o' && i.get() == 'g' )
+    weight.weight = (float)f * ln10;
+   else
+    weight = 0;
+  } else {
     i.putback(c);
     weight = f;
   }
