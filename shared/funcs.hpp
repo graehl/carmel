@@ -25,6 +25,7 @@
 
 #include <functional>
 #include <algorithm>
+#include <iostream>
 
 // requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
 // can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())
