@@ -252,28 +252,56 @@ struct tick_writer
 };
 
 
+struct Periodic {
+    unsigned period,left;
+    bool enabled;
+    Periodic(unsigned period_) {
+        set_period(period_);        
+    }
+    void enable() {
+        enabled=true;
+    }
+    void disable() {
+        enabled=false;
+    }
+    void set_period(unsigned period_=0) {
+        enabled=true;
+        period=period_;
+        trigger_reset();
+    }
+    void trigger_reset() {
+        left=period;
+    }
+    void trigger_next() {
+        left=0;
+    }
+    bool check() {
+        if (period && enabled) {
+            if (!--left) {
+                left=period;
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
 template <class C>
 struct periodic_wrapper : public C
 {
     typedef C Imp;
     typedef typename Imp::result_type result_type;
-    unsigned period,left;
-    periodic_wrapper(unsigned period_=0,const Imp &imp_=Imp()) : period(period_), Imp(imp_)
-    {
-        left=period;
-    }
+    Periodic period;
+    periodic_wrapper(unsigned period_=0,const Imp &imp_=Imp()) : period(period_), Imp(imp_) {}
     void set_period(unsigned period_=0)
     {
-        left=period=period_;
+        period.set_period(period_);
     }
     result_type operator()() {
         DBP2(period,left);
-        if (period) {
-            if (!--left) {
-                left=period;
-                return Imp::operator()();
-            }
-        }
+        if (period.check()) 
+            return Imp::operator()();
+        return result_type();
     }
     template <class C2>
     result_type operator()(const C2& val) {
