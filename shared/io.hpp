@@ -4,7 +4,78 @@
 #include "genio.h"
 #include "funcs.hpp"
 
+#include <locale>
+#include <algorithm>
+#include <iostream>
+#include <string>
 
+
+class ctype_mod_ws: public std::ctype<char>
+{
+ public:
+    enum {
+        ADD,REPLACE,REMOVE
+    };
+    template <class CharPred>
+    ctype_mod_ws(CharPred pred,int mode=REMOVE): std::ctype<char>(get_table(pred,mode)) {}    
+ private:
+    static inline void clear_space(std::ctype_base::mask& c) { c &= ~space; }
+    static inline void set_space(std::ctype_base::mask& c) { c &= ~space; }    
+    template <class CharPred>
+    static std::ctype_base::mask* get_table(CharPred pred,int mode) {
+        static std::ctype_base::mask rc[table_size];
+        std::copy(classic_table(), classic_table() + table_size, rc);
+        if (mode == REPLACE)
+            std::for_each(rc, rc + table_size, clear_space);
+        for(unsigned i=0;i<table_size;++i) {
+            std::ctype_base::mask &m=rc[i];
+            if (pred(i)) {
+                if (mode==REMOVE)
+                    clear_space(m);
+                else
+                    set_space(m);
+            } else {
+                if (mode==REPLACE)
+                    clear_space(m);                    
+            }
+        }
+        return rc;
+    }
+    
+};
+
+template <char C>
+struct true_for_char {
+    bool operator()(char c) const {
+        return c == C;
+    }
+};
+
+//note: you must free the new in locale's ctype! (or minor memory leak)
+template <class CharPred,class charT, class Traits>
+inline void change_ws(std::basic_istream<charT,Traits> &in, CharPred pred, int mode=ctype_mod_ws::ADD)
+{
+    std::locale l;
+    ctype_mod_ws *new_traits=new ctype_mod_ws(pred,mode);    
+    std::locale new_l(l, new_traits);
+    in.imbue(new_l);
+}
+template <char C,class charT, class Traits>
+inline void add_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_ws::ADD)
+{
+    change_ws(in,true_for_char<C>(),mode);
+}
+template <char C,class charT, class Traits>
+inline void replace_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_ws::REPLACE)
+{
+    change_ws(in,true_for_char<C>(),mode);
+}
+template <char C,class charT, class Traits>
+inline void remove_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_ws::REMOVE)
+{
+    change_ws(in,true_for_char<C>(),mode);
+}
+    
 template <class Set,class charT, class Traits>
 inline bool parse_range(std::basic_istream<charT,Traits> &in,Set &set) {
     char c;
@@ -503,6 +574,11 @@ struct IndirectReader
       
       return GENIOGOOD;
 }
+
+  template <class charT, class Traits, class T>
+inline  std::ios_base::iostate print_range(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,bool parens=true) {
+      return range_print_on(o,begin,end,DefaultWriter(),multiline,parens);
+  }
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
 template <class charT, class Traits, class Reader, class T>
