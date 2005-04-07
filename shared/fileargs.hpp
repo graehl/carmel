@@ -1,5 +1,6 @@
 #ifndef FILEARGS_HPP
 #define FILEARGS_HPP
+//TODO: support linking to gzstream
 
 #include <string>
 #include <boost/program_options.hpp>

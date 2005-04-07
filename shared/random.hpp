@@ -1,6 +1,8 @@
 #ifndef RANDOM_HPP
 #define RANDOM_HPP
 
+#include "myassert.h"
+
 #ifdef SOLARIS
 //# include <sys/int_types.h>
 //FIXME: needed for boost/random - report bug to boost.org? (actually no, had uint32_t, just bug in pass_through_engine.hpp trying to get uint32_t::base_type

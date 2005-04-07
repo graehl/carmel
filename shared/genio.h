@@ -1,6 +1,17 @@
 #ifndef GENIO_H
 #define GENIO_H
 
+/*
+  Dietmar says:
+  It is faster to use the stream buffer directly, ie. in the form of
+'std::streambuf::sgetc()'. An equivalent use which I prefer over use of
+'std::streambuf::sgetc()' is the use of
+'std::istreambuf_iterator<char>' which gives an iterator interface to
+stream buffers.
+*/
+
+// TODO: also: check out ipfx and opfx (std proposal, in libstdc++, replacement for sentry stuff)
+
 #include "debugprint.hpp"
 
 // important: if you want to allow the first EOF/fail in your read routine to be
