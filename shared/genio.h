@@ -61,6 +61,7 @@ stream buffers.
 /*
 CREATE_INSERTER(C)
 CREATE_EXTRACTOR(C)
+CREATE_INSERTER_T1(C) // for classes with 1 template arg.
 */
 
 #include <iostream>
@@ -227,6 +228,12 @@ inline std::basic_istream<charT,Traits>& operator >> \
  (std::basic_istream<charT,Traits>& is, C &arg) { \
     return gen_extractor(is,arg); }
 
+#define CREATE_EXTRACTOR_T1(C) \
+    template <class charT, class Traits,class T1>            \
+inline std::basic_istream<charT,Traits>& operator >> \
+    (std::basic_istream<charT,Traits>& is, C<T1> &arg) {        \
+    return gen_extractor(is,arg); }
+
 #define CREATE_EXTRACTOR_READER(C,R) \
   template <class charT, class Traits> \
 inline std::basic_istream<charT,Traits>& operator >> \
@@ -248,6 +255,12 @@ std::basic_ostream<charT,Traits>& operator << \
   template <class charT, class Traits> \
 inline std::basic_ostream<charT,Traits>& operator << \
  (std::basic_ostream<charT,Traits>& os, const C &arg) { \
+    return gen_inserter(os,arg); }
+
+#define CREATE_INSERTER_T1(C)          \
+    template <class charT, class Traits,class T1>            \
+inline std::basic_ostream<charT,Traits>& operator << \
+                                                     (std::basic_ostream<charT,Traits>& os, const C<T1> &arg) {  \
     return gen_inserter(os,arg); }
 
 #define GENIOGOOD std::ios_base::goodbit
