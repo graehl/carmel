@@ -21,11 +21,33 @@ struct null_deleter {
     void operator()(void*) {}
 };
 
-static Infile default_in(&std::cin,null_deleter());
-static Outfile default_log(&std::cerr,null_deleter());
-static Outfile default_out(&std::cout,null_deleter());
+#ifndef DEFAULT_IN_P
+#define DEFAULT_IN_P &std::cin
+#endif
+
+#ifndef DEFAULT_OUT_P
+#define DEFAULT_OUT_P &std::cout
+#endif
+
+#ifndef DEFAULT_LOG_P
+#define DEFAULT_LOG_P &std::cerr
+#endif
+
+static Infile default_in(DEFAULT_IN_P,null_deleter());
+static Outfile default_log(DEFAULT_LOG_P,null_deleter());
+static Outfile default_out(DEFAULT_OUT_P,null_deleter());
 static Infile default_in_none;
 static Outfile default_out_none;
+
+inline bool is_default_in(const Infile &i) {
+    return i.get() == DEFAULT_IN_P;
+}
+inline bool is_default_out(const Outfile &o) {
+    return o.get() == DEFAULT_OUT_P;
+}
+inline bool is_default_log(const Outfile &o) {
+    return o.get() == DEFAULT_LOG_P;
+}
 
 //using namespace boost;
 //using namespace boost::program_options;
@@ -69,7 +91,7 @@ void validate(boost::any& v,
     const std::string& s = po::validators::get_single_string(values);
 
     if (s == "-") {
-        boost::shared_ptr<std::istream> r(&std::cin, null_deleter());
+        boost::shared_ptr<std::istream> r(DEFAULT_IN_P, null_deleter());
         v = boost::any(r);        
     } else {
         boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
@@ -94,10 +116,10 @@ void validate(boost::any& v,
     const std::string& s = po::validators::get_single_string(values);
 
     if (s == "-") {
-        boost::shared_ptr<std::ostream> w(&std::cout, null_deleter());
+        boost::shared_ptr<std::ostream> w(DEFAULT_OUT_P, null_deleter());
         v = boost::any(w);
     } else if ( s== "-2") {
-        boost::shared_ptr<std::ostream> w(&std::cerr, null_deleter());
+        boost::shared_ptr<std::ostream> w(DEFAULT_LOG_P, null_deleter());
         v = boost::any(w);
     } else {
         boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
