@@ -1,3 +1,7 @@
+2005-04-07  Jonathan Graehl  <graehl@isi.edu>
+
+	* genio.h (CREATE_INSERTER_T1): for classes with 1 template arg.
+
 2005-03-30  Jonathan Graehl  <graehl@isi.edu>
 
 	* io.hpp: unget in show_error_context to show the last (failed) char
