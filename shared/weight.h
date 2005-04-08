@@ -56,6 +56,14 @@ static const double HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 template<class Real>
 struct logweight;
 
+#define MUCH_BIGGER_LN (sizeof(Real)==4? 16.f : 36.)
+// represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X 32 bit Real
+// IEEE Real has 23 binary digit mantissa, so can represent about 16 base E
+// digits only if you use 64-bit doubles instead of floats, 52 binary digits
+// note that you'll start to see underflow slightly earlier - this is a
+// conservative value.  subtract one if you *want* the result of addition to be
+// not lose tons of information
+
 template<class Real>
 struct logweight {                 // capable of representing nonnegative reals
   // internal implementation note: by their base e logarithm
@@ -195,6 +203,14 @@ struct logweight {                 // capable of representing nonnegative reals
   bool isPositive() const {
     return weight > -FLOAT_INF();
   }
+
+    template <class Real2>
+    bool isMuchLargerThan(const logweight<Real2> &o) const {
+        return weight-o.weight > MUCH_BIGGER_LN;
+    }
+    bool isNearAddOneLimit() const {
+        return weight > (MUCH_BIGGER_LN - 2);
+    }
   void setZero() {
     weight = -FLOAT_INF();
   }
@@ -525,13 +541,7 @@ inline logweight<Real> operator /(logweight<Real> lhs, logweight<Real> rhs) {
 }
 */
     
-#define MUCH_BIGGER_LN (sizeof(Real)==4? 16.f : 36.)
     
-// represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X
-// 32 bit Real IEEE Real has 23 binary digit mantissa, so
-// can represent about 16 base E digits only
-// fixme: if you use 64-bit doubles instead of floats, 52 binary digits
-// so define as 36.f instead
 
 
 template<class Real>
