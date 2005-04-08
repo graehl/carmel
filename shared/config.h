@@ -43,12 +43,13 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 #define DOUBLE_PRECISION
 #endif
 
+#ifndef FLOAT_TYPE
 #ifdef DOUBLE_PRECISION
 # define FLOAT_TYPE double
 #else
 # define FLOAT_TYPE float
 #endif
-
+#endif
 
 // for meaningful compose state names
 #define MAX_STATENAME_LEN 15000

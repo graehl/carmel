@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <sstream>
 
 
 class ctype_mod_ws: public std::ctype<char>
@@ -171,6 +172,7 @@ inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<cha
     return out;
 }
 
+
 // header=NULL gives just the string, no newline
 template <class charT, class Traits>
 inline std::basic_ostream<charT,Traits> & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
@@ -184,6 +186,11 @@ inline std::basic_ostream<charT,Traits> & print_command_line(std::basic_ostream<
     return out;
 }
 
+inline std::string get_command_line( int argc, char *argv[], const char *header="COMMAND LINE:\n") {
+    std::ostringstream os;
+    print_command_line(os,argc,argv,header);
+    return os.str();
+}
 
 
 template <class C,class charT, class Traits>
