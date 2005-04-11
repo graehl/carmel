@@ -33,22 +33,31 @@ using namespace std;
 
 #define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
 
+// from makestr.hpp (GraehlCVS)
+#define MAKESTR_STRINGIZE(str) #str
+#define MAKESTR_EXPAND_STRINGIZE(expr) MAKESTR_STRINGIZE(expr)
+#define MAKESTR_FILE_LINE "(" __FILE__  ":" MAKESTR_EXPAND_STRINGIZE(__LINE__)  ")"
+#define MAKESTR_DATE __DATE__ " " __TIME__
+// __FILE__  ":"  __LINE__  "): failed to write " #expr
+// usage: MAKESTRS(str,os << 1;os << 2) => str="12"
+#define MAKESTRS(string,expr) do {std::ostringstream os;expr;if (!os) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write" #expr);string=os.str();}while(0)
+// usage: MAKESTR(str,1 << 2) => str="12"
+#define MAKESTR(string,expr) MAKESTRS(string,os << expr)
+#define MAKESTRFL(string,expr) MAKESTR(string,MAKESTR_FILE_LINE << expr)
 
 
 #ifdef NO_INFO
 # define DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,newline)
 # define DBG_OP_F(lvl,pDbg,op,module,msg,file,line)
 #else
-# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) do {               \
-        if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \
-   ostringstream os; \
-   os << msg; \
-   (pDbg)->op(module,os.str(),file,line);      \
-} } while(0)
+
+# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line) DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,true)
+
 # define DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,newline) do {               \
         if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \
    ostringstream os; \
    os << msg; \
+   if(!os) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write " #module " : " #msg); \
    (pDbg)->op(module,os.str(),file,line,newline);      \
 } } while(0)
 
@@ -70,6 +79,13 @@ using namespace std;
 #define ERROR(module,msg) DBG_OP(dbg,error,module,msg)
 #define FATAL(module,msg) DBG_OP(dbg,fatalError,module,msg)
 #define INFOQ(module,msg) DBG_OP_Q(dbg,info,module,msg)
+#define INFOB(module) dbg->info_begin(module,__FILE__,__LINE__)
+#define WARNINGB(module) dbg->warning_begin(module,__FILE__,__LINE__)
+#define ERRORB(module) dbg->info_begin(module,__FILE__,__LINE__)
+#define INFOBQ(module) dbg->error_begin(module,__FILE__,0)
+#define WARNINGBQ(module) dbg->warning_begin(module,__FILE__,0)
+#define ERRORBQ(module) dbg->error_begin(module,__FILE__,0)
+
 #define INFOQSAMELINE(module,msg) DBG_OP_LQ_NEWLINE(0,dbg,info,module,msg,false)
 #define INFOSTREAM dbg->info_sameline()
 #define INFOSTREAM_NL dbg->info_startline()
@@ -121,139 +137,164 @@ using namespace std;
 
 namespace ns_decoder_global {
 
-  //! Debug: This is a class to print out debugging information
-  /*! This should be used for most communication to the user. The reason for this
-    is to make sure that all of our debugging messages are consistent (esp
-    important for perl readability), and that if for some reason we want to
-    redirect error/warning messages to different files, this can be done easily.
-  */
+//! Debug: This is a class to print out debugging information
+/*! This should be used for most communication to the user. The reason for this
+  is to make sure that all of our debugging messages are consistent (esp
+  important for perl readability), and that if for some reason we want to
+  redirect error/warning messages to different files, this can be done easily.
+*/
 
-  class Debug {
-  public:
-      int runtime_info_level;
-      unsigned info_outline_depth;
-      unsigned debug_outline_depth;
-      void increase_depth() {
-          ++info_outline_depth;
-      }
-      void decrease_depth() {
-          if (info_outline_depth == 0)
-              warning("Debug","decrease_depth called more times than increase_depth - clamping at 0");
-          else
-              --info_outline_depth;          
-      }
-      void increase_debug_depth() {
-          ++debug_outline_depth;
-      }
-      void decrease_debug_depth() {
-          if (debug_outline_depth == 0)
-              warning("Debug","decrease_debug_depth called more times than increase_debug_depth - clamping at 0");
-          else
-              --debug_outline_depth;          
-      }
-      struct Nest {
-          Debug *dbg;
-          Nest(Debug *_dbg) : dbg(_dbg) {
-              dbg->increase_depth();
-          }
-          Nest(const Nest &o) : dbg(o.dbg) {
-              dbg->increase_depth();
-          }
-          ~Nest() {
-              dbg->decrease_depth();
-          }
-      };
+class Debug {
+ public:
+    int runtime_info_level;
+    unsigned info_outline_depth;
+    unsigned debug_outline_depth;
+    void increase_depth() {
+        ++info_outline_depth;
+    }
+    void decrease_depth() {
+        if (info_outline_depth == 0)
+            warning("Debug","decrease_depth called more times than increase_depth - clamping at 0");
+        else
+            --info_outline_depth;          
+    }
+    void increase_debug_depth() {
+        ++debug_outline_depth;
+    }
+    void decrease_debug_depth() {
+        if (debug_outline_depth == 0)
+            warning("Debug","decrease_debug_depth called more times than increase_debug_depth - clamping at 0");
+        else
+            --debug_outline_depth;          
+    }
+    struct Nest {
+        Debug *dbg;
+        Nest(Debug *_dbg) : dbg(_dbg) {
+            dbg->increase_depth();
+        }
+        Nest(const Nest &o) : dbg(o.dbg) {
+            dbg->increase_depth();
+        }
+        ~Nest() {
+            dbg->decrease_depth();
+        }
+    };
       
-      Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
+    Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
-      return *debugOS;
+        return *debugOS;
     }
 
     inline ostream &getInfoOutput() {                      //!< Get the stream to which informational output is written
-      return *infoOS;
+        return *infoOS;
     }
     inline void setDebugOutput(ostream &o) {                     //!< Set the strream to which debugging output is written
-      debugOS=&o;
+        debugOS=&o;
     }
 
     inline void setInfoOutput(ostream &o) {                      //!< Set the stream to which informational output is written
-      infoOS=&o;
+        infoOS=&o;
     }
-    void error(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error
-        getDebugOutput() << "\nERROR: " << module;
-        if (line)
-            getDebugOutput() << "(" << file << ":" << line << ")";
-        getDebugOutput() << ": " << info << endl;
+    void error(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error
+        error_begin(module, file, line) << info << endl;
     }
-
-    void fatalError(const string &module, const string &info, const string &file="", const int line=0) { //!< prints an error and dies
-      error(module, info, file, line);
-      assert(0);
-      exit(-1);
-    }
-
-    void warning(const string &module, const string &info, const string &file="", const int line=0) { //!< prints a warning message
+    
+    ostream & error_begin(const string &module, const string &file="", const int line=0) 
+    {
         getDebugOutput() << "\nWARNING: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
-        getDebugOutput() << ": " << info << endl;
+        return getDebugOutput() << ": ";
     }
 
-      bool info_atnewline; // at fresh newline if true, midline if false
-      
-      //post: state=midline
-      inline ostream &info_sameline() {
-          info_atnewline=false;
-          return *infoOS;
-      }
-      
-      //post: state=midline, after printing a fresh newline (if weren't already at one)
-      inline ostream &info_startline() {
-          if (!info_atnewline) {
-              *infoOS << std::endl;
-          }
-          info_atnewline=false;
-          return *infoOS;          
-      }
-      
-      //post: state=newline (printing one out if weren't already)
-      // this would never be necessary to use if everyone always used info_startline() (except at the very end when closing stream)
-      inline ostream &info_endline() {
-          if (!info_atnewline) {              
-              info_atnewline=true;
-              *infoOS << std::endl;
-          }
-          return *infoOS;
-      }
+    void fatalError(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error and dies
+        error(module,info,file,line,endline);
+        assert(0);
+        exit(-1);
+    }
 
-      void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
+    ostream & warning_begin(const string &module, const string &file="", const int line=0) 
+    {
+        sync();
+        getDebugOutput() << "\nWARNING: " << module;
+        if (line)
+            getDebugOutput() << "(" << file << ":" << line << ")";
+        return getDebugOutput() << ": ";
+    }
+    
+    void warning(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints a warning message
+        warning_begin(module,file,line) << info << endl;
+    }
+
+    bool info_atnewline; // at fresh newline if true, midline if false
+
+    void sync() const 
+    {
+        std::cout.flush();
+    }
+    
+    inline void info_endl() 
+    {        
+        *infoOS << std::endl;
+        info_atnewline=true;        
+    }
+      
+    //post: state=midline
+    inline ostream &info_sameline() {
+        info_atnewline=false;
+        return *infoOS;
+    }
+      
+    //post: state=midline, after printing a fresh newline (if weren't already at one)
+    inline ostream &info_startline() {
+        sync();
+        if (!info_atnewline) {
+            info_endl();              
+        }
+        info_atnewline=false;
+        return *infoOS;          
+    }
+      
+    //post: state=newline (printing one out if weren't already)
+    // this would never be necessary to use if everyone always used info_startline() (except at the very end when closing stream)
+    inline ostream &info_endline() {
+        if (!info_atnewline) {        
+            info_endl();
+        }
+        return *infoOS;
+    }
+
+    ostream & info_begin(const string &module, const string &file="", const int line=0) { //!< prints an informational message
         const char OUTLINE_CHAR='*';
         info_startline();
         for (unsigned depth=info_outline_depth;depth>0;--depth)
             getInfoOutput() << OUTLINE_CHAR;
         getInfoOutput() << module;
         
-      if (line) {
-          getInfoOutput() << "(" << file << ":" << line << ")";
-      }
-      getInfoOutput() << ": " << info;
-
-      if (endline)
-          info_endline();
+        if (line) {
+            getInfoOutput() << "(" << file << ":" << line << ")";
+        }
+        return getInfoOutput() << ": ";    
+    }
+    
+    void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
+        info_begin(module,file,line) << info;
+        if (endline)
+            info_endl();
     }
 
-      void set_info_level(int lvl) {
-          runtime_info_level=lvl;
-      }
-      int get_info_level() const {
-          return runtime_info_level;
-      }
-  private:
+    void set_info_level(int lvl) {
+        runtime_info_level=lvl;
+    }
+    int get_info_level() const {
+        return runtime_info_level;
+    }
+ private:
 
     ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
     ostream *infoOS;                                       //!< output stream where debugging information is sent
-  };
+};
 }
 
 #ifdef TEST
