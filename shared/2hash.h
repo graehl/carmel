@@ -334,13 +334,23 @@ template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to
   }
   int growAt;
   typedef typename A::template rebind<HashEntry<K,V> >::other base_alloc;
-
   HashEntry<K,V> **table;
   size_t hashToPos(size_t hashVal) const
     {
       return hashVal & siz;
     }
 public:
+    template <class F>
+    void visit_key_val(F &f) const {
+        typedef HashEntry<K,V> *bucket_chain;
+        typedef bucket_chain *buckets_iterator;
+
+        for (buckets_iterator i=const_cast<HashEntry<K,V> **>(table),e=const_cast<HashEntry<K,V> **>(table+siz);i<=e;++e) { // <= because siz = #buckets-1
+            for (bucket_chain p=*i;p;p=p->next) {
+                f.visit(p->first,p->second);
+            }
+        }
+    }
  class local_iterator : public std::iterator<std::forward_iterator_tag, std::pair<const K,V> > {
    typedef HashEntry<K,V> *T;
    T m_rep;
