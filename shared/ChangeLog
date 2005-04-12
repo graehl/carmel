@@ -1,3 +1,7 @@
+2005-04-12  Jonathan Graehl  <graehl@isi.edu>
+
+	* 2hash.h: visit_key_val
+
 2005-04-07  Jonathan Graehl  <graehl@isi.edu>
 
 	* genio.h (CREATE_INSERTER_T1): for classes with 1 template arg.
