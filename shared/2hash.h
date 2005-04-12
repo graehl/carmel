@@ -6,7 +6,13 @@
 #include "config.h"
 #include <ostream>
 #include <memory>
-
+#include "byref.hpp"
+#ifdef DEBUG
+//# define SUPERDEBUG
+# endif
+#ifdef SUPERDEBUG
+#include "debugprint.hpp"
+#endif
 inline size_t cstr_hash (const char *p)
 {
         size_t h=0;
@@ -341,12 +347,19 @@ template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to
     }
 public:
     template <class F>
-    void visit_key_val(F &f) const {
+    void visit_key_val(F &f) {
         typedef HashEntry<K,V> *bucket_chain;
         typedef bucket_chain *buckets_iterator;
-
-        for (buckets_iterator i=const_cast<HashEntry<K,V> **>(table),e=const_cast<HashEntry<K,V> **>(table+siz);i<=e;++e) { // <= because siz = #buckets-1
+#ifdef SUPERDEBUG
+        DBP_VERBOSE(0);
+        DBP_ON;
+        DBPC3("visit_key_val",*this,table);
+# endif
+        for (buckets_iterator i=const_cast<HashEntry<K,V> **>(table),e=const_cast<HashEntry<K,V> **>(table+siz);i<=e;++i) { // <= because siz = #buckets-1
             for (bucket_chain p=*i;p;p=p->next) {
+#ifdef SUPERDEBUG
+                DBPC5("visit_key_val",p,i,p->first,p->second);
+# endif
                 f.visit(p->first,p->second);
             }
         }

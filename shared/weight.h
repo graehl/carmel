@@ -203,13 +203,22 @@ struct logweight {                 // capable of representing nonnegative reals
   bool isPositive() const {
     return weight > -FLOAT_INF();
   }
-
+    static logweight<Real> much_larger(const logweight<Real> o=1.) {
+        return MUCH_BIGGER_LN + o.weight;
+    }
     template <class Real2>
     bool isMuchLargerThan(const logweight<Real2> &o) const {
         return weight-o.weight > MUCH_BIGGER_LN;
     }
+#ifndef NEAR_LN_PROXIMITY
+# define NEAR_LN_PROXIMITY 2
+# endif
     bool isNearAddOneLimit() const {
-        return weight > (MUCH_BIGGER_LN - 2);
+# ifdef TEST_ADD_ONE_LIMIT
+        return weight > .0001;
+#  else
+        return weight > (MUCH_BIGGER_LN - NEAR_LN_PROXIMITY);
+#  endif
     }
   void setZero() {
     weight = -FLOAT_INF();
@@ -260,7 +269,7 @@ struct logweight {                 // capable of representing nonnegative reals
     logweight(numeric n) {
         setReal(n);
     }
-#else 
+#else
   logweight(double f) {
     setReal(f);
   }
@@ -273,7 +282,7 @@ struct logweight {                 // capable of representing nonnegative reals
   logweight(int f) {
     setReal(f);
   }
-#endif 
+#endif
   logweight<Real> &operator += (logweight<Real> w)
   {
     *this = *this + w;
@@ -335,13 +344,13 @@ struct logweight {                 // capable of representing nonnegative reals
 inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o) {
       return o.precision(sizeof(Real) > 4 ? 15 : 7);
   }
-    
+
     template<class charT, class Traits>
     std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const {
         std::streamsize old_precision=set_precision(o);
-      
+
         old_precision=o.precision(15);
-            
+
         int base=logweight<Real>::get_log_base(o);
         if ( isZero() )
             o << "0";
@@ -361,7 +370,7 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
             }
         }
         o.precision(old_precision);
-        return GENIOGOOD;  
+        return GENIOGOOD;
     }
 template<class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
@@ -400,7 +409,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
   fail:
   setZero();
   return GENIOBAD;
-    
+
 }
 
 };
@@ -413,7 +422,7 @@ inline Real log(logweight<Real> a) {
 template<class T> inline T exponential(typename T::float_type exponent) {
     T r;
     r.setLn(exponent);
-    return r;    
+    return r;
 }
 
 template<class Real>
@@ -540,8 +549,8 @@ inline logweight<Real> operator /(logweight<Real> lhs, logweight<Real> rhs) {
   return result;
 }
 */
-    
-    
+
+
 
 
 template<class Real>
@@ -651,7 +660,7 @@ WEIGHT_FORWARD_OP_RET(>,bool)
 WEIGHT_FORWARD_OP_RET(>=,bool)
 WEIGHT_FORWARD_OP_RET(==,bool)
 WEIGHT_FORWARD_OP_RET(!=,bool)
-    
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
