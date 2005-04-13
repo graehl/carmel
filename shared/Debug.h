@@ -120,7 +120,7 @@ using namespace std;
 #define INF99NEST
 #endif
 
-#if (defined(TEST) && !defined(QUIET_TEST) ) 
+#if (defined(TEST) && !defined(QUIET_TEST) )
 #define INFOT(msg) DBG_OP(&test_dbg,info,"TEST",msg)
 #define WARNT(msg) DBG_OP(&test_dbg,warning,"TEST",msg)
 #define NESTT NESTINFO_GUARD(&test_dbg)
@@ -131,8 +131,8 @@ using namespace std;
 #define NESTT NESTINFO_GUARD(dbg)
 #else
 #define NESTT
-#endif 
-    
+#endif
+
 #endif
 
 namespace ns_decoder_global {
@@ -156,7 +156,7 @@ class Debug {
         if (info_outline_depth == 0)
             warning("Debug","decrease_depth called more times than increase_depth - clamping at 0");
         else
-            --info_outline_depth;          
+            --info_outline_depth;
     }
     void increase_debug_depth() {
         ++debug_outline_depth;
@@ -165,7 +165,7 @@ class Debug {
         if (debug_outline_depth == 0)
             warning("Debug","decrease_debug_depth called more times than increase_debug_depth - clamping at 0");
         else
-            --debug_outline_depth;          
+            --debug_outline_depth;
     }
     struct Nest {
         Debug *dbg;
@@ -179,7 +179,7 @@ class Debug {
             dbg->decrease_depth();
         }
     };
-      
+
     Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
@@ -199,10 +199,10 @@ class Debug {
     void error(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error
         error_begin(module, file, line) << info << endl;
     }
-    
-    ostream & error_begin(const string &module, const string &file="", const int line=0) 
+
+    ostream & error_begin(const string &module, const string &file="", const int line=0)
     {
-        getDebugOutput() << "\nWARNING: " << module;
+        getDebugOutput() << "ERROR: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
         return getDebugOutput() << ": ";
@@ -214,70 +214,71 @@ class Debug {
         exit(-1);
     }
 
-    ostream & warning_begin(const string &module, const string &file="", const int line=0) 
+    ostream & warning_begin(const string &module, const string &file="", const int line=0)
     {
         sync();
-        getDebugOutput() << "\nWARNING: " << module;
+        getDebugOutput() << "WARNING: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
         return getDebugOutput() << ": ";
     }
-    
+
     void warning(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints a warning message
         warning_begin(module,file,line) << info << endl;
     }
 
     bool info_atnewline; // at fresh newline if true, midline if false
 
-    void sync() const 
+    void sync() const
     {
         std::cout.flush();
     }
-    
-    inline void info_endl() 
-    {        
+
+    inline void info_endl()
+    {
         *infoOS << std::endl;
-        info_atnewline=true;        
+        info_atnewline=true;
     }
-      
+
     //post: state=midline
     inline ostream &info_sameline() {
         info_atnewline=false;
         return *infoOS;
     }
-      
+
     //post: state=midline, after printing a fresh newline (if weren't already at one)
     inline ostream &info_startline() {
         sync();
         if (!info_atnewline) {
-            info_endl();              
+            info_endl();
         }
         info_atnewline=false;
-        return *infoOS;          
+        return *infoOS;
     }
-      
+
     //post: state=newline (printing one out if weren't already)
     // this would never be necessary to use if everyone always used info_startline() (except at the very end when closing stream)
     inline ostream &info_endline() {
-        if (!info_atnewline) {        
+        if (!info_atnewline) {
             info_endl();
         }
         return *infoOS;
     }
 
+    //!< note: should close this with info_endl() and not just "\n" or endl
     ostream & info_begin(const string &module, const string &file="", const int line=0) { //!< prints an informational message
         const char OUTLINE_CHAR='*';
         info_startline();
         for (unsigned depth=info_outline_depth;depth>0;--depth)
             getInfoOutput() << OUTLINE_CHAR;
         getInfoOutput() << module;
-        
+
         if (line) {
             getInfoOutput() << "(" << file << ":" << line << ")";
         }
-        return getInfoOutput() << ": ";    
+        return getInfoOutput() << ": ";
     }
-    
+
     void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
         info_begin(module,file,line) << info;
         if (endline)
@@ -300,8 +301,8 @@ class Debug {
 #ifdef TEST
 # ifdef MAIN
 ns_decoder_global::Debug test_dbg;
-# endif 
-#endif 
+# endif
+#endif
 
 
 #endif
