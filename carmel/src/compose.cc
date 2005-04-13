@@ -32,7 +32,7 @@ struct TrioNamer {
 
 //#define OLDCOMPOSEARC
 #ifdef DEBUGCOMPOSE
-#define DUMPARC(a,b,c,d) Config::debug() << "arc" << Arc(a,b,c,d)
+#define DUMPARC(a,b,c,d) Config::debug() << "arc" << FSTArc(a,b,c,d)
 #else
 #define DUMPARC(a,b,c,d)
 #endif
@@ -40,9 +40,9 @@ struct TrioNamer {
 #ifdef OLDCOMPOSEARC
 #define COMPOSEARC do { \
 if ( (pDest = find_second(stateMap,triDest)) ) \
- { states[sourceState].addArc(Arc(in, out, *pDest, weight)); \
+ { states[sourceState].addArc(FSTArc(in, out, *pDest, weight)); \
 } else { \
-  add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(Arc(in, out, trioID.num, weight));    states.push_back();    \
+  add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    states.push_back();    \
   if ( namedStates ) {      namer.make(triDest.aState, triDest.bState, triDest.filter);      stateNames.add(buf);   \
   }  }} while(0)
 #else
@@ -54,7 +54,7 @@ if ( (pDest = find_second(stateMap,triDest)) ) \
 	if ( namedStates ) { namer.make(triDest.aState, triDest.bState, triDest.filter);\
 	  stateNames.add(buf);   \
 	}} else trioID.num=i.first->second; \
-  states[sourceState].addArc(Arc(in, out, trioID.num, weight)); DUMPARC(in, out, trioID.num, weight);} while(0)
+  states[sourceState].addArc(FSTArc(in, out, trioID.num, weight)); DUMPARC(in, out, trioID.num, weight);} while(0)
 #endif
 
 
@@ -130,7 +130,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               triDest.aState = (*l)->dest;
               in = (*l)->in;
               COMPOSEARC;
-              //!danger: should probably use IsTiedOrLocked() in Arc.h.
+              //!danger: should probably use IsTiedOrLocked() in FSTArc.h.
               if ( isTiedOrLocked(group = (*l)->groupId) )
                 states[sourceState].arcs.top().groupId = group;
             }
@@ -178,7 +178,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               }
               sourceState = temp;
             }
-            states[sourceState].addArc(Arc((*l)->in, EMPTY, mediateState, (*l)->weight));
+            states[sourceState].addArc(FSTArc((*l)->in, EMPTY, mediateState, (*l)->weight));
             if ( (group = (*l)->groupId)>=0)
               states[sourceState].arcs.top().groupId = group;
 
@@ -217,7 +217,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
       if ( larger->size > WFST::indexThreshold ) {
         larger->indexBy( larger == aState ); // create hash table
         if ( larger == bState ) {       // bState (rhs transducer) is larger
-          for ( List<Arc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end() ; l !=end ; ++l) {
+          for ( List<FSTArc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end() ; l !=end ; ++l) {
             in = l->in;
             triDest.aState = l->dest;
             if ( l->out == EMPTY ) {
@@ -265,7 +265,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
             }
           }
         } else {                        // aState (lhs transducer) is larger
-          for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r!=end  ; ++r) {
+          for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r!=end  ; ++r) {
             out = r->out;
             triDest.bState = r->dest;
             if ( r->in == EMPTY ) {
@@ -314,7 +314,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           }
         }
       } else {                  // both states too small to bother hashing
-        for ( List<Arc>::const_iterator l=aState->arcs.const_begin(),end = aState->arcs.const_end() ; l !=end  ; ++l) {
+        for ( List<FSTArc>::const_iterator l=aState->arcs.const_begin(),end = aState->arcs.const_end() ; l !=end  ; ++l) {
           in = l->in;
           triDest.aState = l->dest;
           if ( l->out == EMPTY ) {
@@ -326,7 +326,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
               COMPOSEARC;
             }
             if ( triSource.filter == 0 ){
-              for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+              for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
                 if ( r->in == EMPTY ) {
                   out = r->out;
                   weight = l->weight * r->weight;
@@ -339,7 +339,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
 
           } else {
             triDest.filter = 0;
-            for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+            for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
               if ( map[l->out] == r->in ) {
                 out = r->out;
                 weight = l->weight * r->weight;
@@ -353,7 +353,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           in = EMPTY;
           triDest.aState = triSource.aState;
           triDest.filter = 2;
-          for ( List<Arc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+          for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
             if ( r->in == EMPTY ) {
               out = r->out;
               weight = r->weight;
@@ -391,7 +391,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
       stateNames.add("final");
     for ( i = 0 ; i < 3 ; ++i )
       if ( pFinal[i] ) {
-        states[*pFinal[i]].addArc(Arc(EMPTY, EMPTY, final, 1.0));
+        states[*pFinal[i]].addArc(FSTArc(EMPTY, EMPTY, final, 1.0));
         states[*pFinal[i]].arcs.top().groupId = WFST::LOCKEDGROUP; // prevent weight from changing in training
       }
   }

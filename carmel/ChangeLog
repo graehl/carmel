@@ -1,3 +1,7 @@
+2005-03-29  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/carmel.cc: 
+
 2004-09-23  Jonathan Graehl  <graehl@isi.edu>
 
 	* ../shared/ChangeLog SEE ALSO (split source files into
