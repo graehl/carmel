@@ -20,7 +20,7 @@ void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, W
     trn->revArcs = NEW HashTable<IOPair, List<DWPair> >[numStates()];
   int s;
   for ( s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::val_iterator aI=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); aI != end; ++aI ) {
+    for ( List<FSTArc>::val_iterator aI=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); aI != end; ++aI ) {
       IO.in = aI->in;
       IO.out = aI->out;
       int d = DW.dest = aI->dest;
@@ -727,7 +727,7 @@ Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
   List<DWPair> *pLDW;
 
   for ( s = 0 ; s < numStates() ; ++s ){
-    for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
+    for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
       IO.in = a->in;
       IO.out = a->out;
       DW.dest = a->dest;

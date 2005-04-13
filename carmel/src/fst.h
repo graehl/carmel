@@ -1,5 +1,5 @@
 #ifndef FST_H 
-#define FST_H 1
+#define FST_H
 
 
 
@@ -92,31 +92,31 @@ class WFST {
   unsigned int final;	// final state number - initial state always number 0
   DynamicArray<State> states;
   	 
-  //  HashTable<IntKey, int> tieGroup; // IntKey is Arc *; value in group number (0 means fixed weight)
+  //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
   //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
   //  WFST & operator = (WFST &){return *this;} Yaser
   //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
   int abort();			// called on a bad read
   int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
   int readLegible(const string& str, bool alwaysNamed=false);  
-  void writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON=false);
+  void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false);
   void writeLegible(ostream &);
   void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
   int numStates() const { return states.size(); }
   bool isFinal(int s) { return s==final; }
-  void setPathArc(PathArc *pArc,const Arc &a) {
+  void setPathArc(PathArc *pArc,const FSTArc &a) {
     pArc->in = a.in;
     pArc->out = a.out;
     pArc->destState = a.dest;
     pArc->weight = a.weight;
     pArc->wfst=this;
   }
-  std::ostream & printArc(const Arc &a,std::ostream &o) {
+  std::ostream & printArc(const FSTArc &a,std::ostream &o) {
     PathArc p;
     setPathArc(&p,a);
     return o << p;
   }
-  std::ostream & printArc(const Arc &a,int source,std::ostream &o) {
+  std::ostream & printArc(const FSTArc &a,int source,std::ostream &o) {
     return o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out) << " / " << a.weight << ")";
   }
 
@@ -126,7 +126,7 @@ class WFST {
     void insertPathArc(GraphArc *gArc,T &l)
     {
       PathArc pArc;
-      Arc *taken = (Arc *)gArc->data;
+      FSTArc *taken = (FSTArc *)gArc->data;
       setPathArc(&pArc,*taken);
       *(l++) = pArc;
     }
@@ -221,7 +221,7 @@ class WFST {
 	  return -1;
 	// choose random arc:
 	Weight arcsum;
-	typedef List<Arc> LA;
+	typedef List<FSTArc> LA;
 	typedef LA::const_iterator LAit;
 	const LA& arcs=states[s].arcs;
 	LAit start=arcs.const_begin(),end=arcs.const_end();
@@ -256,7 +256,7 @@ class WFST {
   // yourself when you are done with it
 
   List<List<PathArc> > *bestPaths(int k); // bestPaths(k) gives a list of the (up to ) k
-  // Visitor needs to accept GraphArc (from makeGraph ... (Arc *)->data gives WFST Arc - see kbest.h for visitor description
+  // Visitor needs to accept GraphArc (from makeGraph ... (FSTArc *)->data gives WFST FSTArc - see kbest.h for visitor description
   template <class Visitor> void bestPaths(unsigned k,Visitor &v) {
       Graph graph = makeGraph();
       ::bestPaths(graph,0,final,k,v);
@@ -316,7 +316,7 @@ class WFST {
   void consolidateArcs();	// combine identical arcs, with combined weight = sum
   void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
   enum {UNLIMITED=-1};
-  void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INF); 
+    void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INF()); 
   // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
   
   
@@ -338,7 +338,7 @@ class WFST {
     return a;
   }
   Weight numNoCyclePaths() const {
-    if ( !valid() ) return Weight::ZERO;
+      if ( !valid() ) return Weight();
     Weight *nPaths = NEW Weight[numStates()];
     Graph g = makeGraph();
     countNoCyclePaths(g, nPaths, 0);
@@ -355,7 +355,7 @@ class WFST {
   }
   Graph makeGraph() const; // weights = -log, so path length is sum and best path 
                            // is the shortest; GraphArc::data is a pointer 
-                           // to the Arc it corresponds to in the WFST
+                           // to the FSTArc it corresponds to in the WFST
   Graph makeEGraph() const; // same as makeGraph, but restricted to *e* / *e* arcs
   void ownAlphabet() {
     ownInAlphabet();
@@ -418,7 +418,7 @@ class WFST {
 		template <class F> void readEachParameter(F f) {
 		  HashTable<IntKey, bool> seenGroups;
 		  for ( int s = 0 ; s < numStates() ; ++s )
-				for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
+				for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
 				  int group=a->groupId;
 				  if (isNormal(group) || isTied(group) && seenGroups.insert(HashTable<IntKey, bool>::value_type(group,true)).second)
 					f((const Weight *)&(a->weight));
@@ -427,7 +427,7 @@ class WFST {
 	template <class F> void changeEachParameter(F f) {
 			HashTable<IntKey, Weight> tiedWeights;
 		  for ( int s = 0 ; s < numStates() ; ++s )
-				for ( List<Arc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
+				for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
 					int group=a->groupId;
 					if (isNormal(group))
 						f(&(a->weight));

@@ -20,7 +20,7 @@ struct IntKey {
 BEGIN_HASH_VAL(IntKey) {	return x.hash(); } END_HASH
 
 struct State {
-  List<Arc> arcs;
+  List<FSTArc> arcs;
   int size;
 #ifdef BIDIRECTIONAL
   int hitcount;			// how many times index is used, negative for index on input, positive for index on output
@@ -54,7 +54,7 @@ struct State {
 	return;
 #endif
       index = NEW HashTable<IntKey, List<HalfArc> >(size);
-      for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
+      for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
 #define QUEERINDEX
@@ -81,7 +81,7 @@ struct State {
       return;
 #endif
     index = NEW HashTable<IntKey, List<HalfArc> >(size);
-    for ( List<Arc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
+    for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
 #ifdef QUEERINDEX
 	  if ( !(list = find_second(*index,(IntKey)l->in)) )
 			  add(*index,(IntKey)l->in, 
@@ -104,7 +104,7 @@ struct State {
 #endif
   }
   
-  void addArc(const Arc &arc)
+  void addArc(const FSTArc &arc)
   {
     arcs.push(arc);
     ++size;
@@ -121,7 +121,7 @@ struct State {
     HashTable<UnArc, Weight *> hWeights;
     UnArc un;
     Weight **ppWt;
-    for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
+    for ( List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
       if ( l->weight.isZero() ) {
 	l=remove(l);
 	continue;
@@ -142,7 +142,7 @@ struct State {
     }
   }
   void prune(Weight thresh) {
-    for ( List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
+    for ( List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
       if ( l->weight < thresh ) {
 	l=remove(l);
       } else
@@ -156,7 +156,7 @@ struct State {
   }
   void renumberDestinations(int *oldToNew) { // negative means remove transition
     Assert(!index);
-    for (List<Arc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
+    for (List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
       int &dest = (int &)l->dest;
       if ( oldToNew[dest] < 0 ) {
 	l=remove(l); 
@@ -188,7 +188,7 @@ inline bool operator == (const IOPair l, const IOPair r) {
 
 struct DWPair {
   int dest;
-  Arc *arc;
+  FSTArc *arc;
   Weight scratch;
   Weight em_weight;
   Weight best_weight;

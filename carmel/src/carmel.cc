@@ -113,7 +113,7 @@ struct wfst_paths_printer {
     }
     void visit_best_arc(const GraphArc &a) {
         const char * outSym;
-        Arc &arc=*(Arc *)a.data;
+        FSTArc &arc=*(FSTArc *)a.data;
         if ( flags['O'] || flags['I'] ) {
             if ( flags['O'] )
                 outSym = wfst.outLetter(arc.out);

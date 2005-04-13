@@ -100,7 +100,7 @@ WFST::WFST(const char *buf)
     symbolOutNumber = out->indexOf(symbol);
     Assert (symbolInNumber == symbolOutNumber);
     states.push_back();
-    states[final].addArc(Arc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
+    states[final].addArc(FSTArc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
     ++final;
   }
   states.push_back();                    // final state
@@ -177,7 +177,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
       for (int l=0; l < int(symbols.size()); l++){
         int temp = pow2(l);
         if (((int(k / temp) % 2) == 0) && (!taken[unsigned(symbols[l])])){
-          states[k].addArc(Arc(symbols[l], symbols[l], k+temp, 1.0));
+          states[k].addArc(FSTArc(symbols[l], symbols[l], k+temp, 1.0));
           taken[symbols[l]] = true ;
         }
       }
@@ -221,7 +221,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                   if (from_state >= states.size())
                     states.resize(from_state);
                   //              std::cerr << "adding arc (from:" << from_state << ", to:"<<to_state <<", in/out:"<<s <<"("<<in->indexOf(const_cast<char *>(s.c_str()))<<"))\n";
-                  states[from_state].addArc(Arc(in->indexOf(const_cast<char *>(s.c_str())),in->indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
+                  states[from_state].addArc(FSTArc(in->indexOf(const_cast<char *>(s.c_str())),in->indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
                   from_state=to_state ;
                 }
               }
@@ -232,7 +232,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
               }
               else {
                 //              std::cerr << "adding arc (from:" << k << ", to:"<<k+temp <<", in/out:"<<strSymbols[l].c_str() << '\n';
-                states[k].addArc(Arc(in->indexOf(const_cast<char *>(strSymbols[l].c_str())),out->indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
+                states[k].addArc(FSTArc(in->indexOf(const_cast<char *>(strSymbols[l].c_str())),out->indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
               }
             }
             /*symbols[l], symbols[l], k+temp, 1.0));*/
@@ -357,13 +357,13 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
         } else
           weight = 1.0;
         //        if ( weight > 0.0 ) {
-        states[stateNumber].addArc(Arc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
+        states[stateNumber].addArc(FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
         //} else if ( weight != 0.0 ) {
         //          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
         //          return 0;
         //}
         DO(istr >> c);
-        Arc *lastAdded = &states[stateNumber].arcs.top();
+        FSTArc *lastAdded = &states[stateNumber].arcs.top();
         if ( c == '!' ) { // lock weight
           DO(istr >> c); // skip ws
           istr.unget();
@@ -467,7 +467,7 @@ void WFST::writeGraphViz(ostream &os)
   writeQuoted(os,stateName(0));
 
   for (int s = 0 ; s < numStates() ; s++) {
-    for (List<Arc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
+    for (List<FSTArc>::const_iterator a=states[s].arcs.const_begin(),end = states[s].arcs.const_end() ; a !=end ; ++a ) {
       os << newl;
       writeQuoted(os,stateName(s));
       os << arrow;
@@ -485,7 +485,7 @@ void WFST::writeGraphViz(ostream &os)
 
 //#define GREEK_EPSILON 1
 
-void WFST::writeArc(ostream &os, const Arc &a,bool GREEK_EPSILON) {
+void WFST::writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON) {
   static const char * const epsilon = "&#949;";
   os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
   BOOLBRIEF;
@@ -505,7 +505,7 @@ Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
   for (i = 0 ; i < numStates() ; i++) {
     if (!onearc)
       os << "\n(" << stateName(i);
-    for (List<Arc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
+    for (List<FSTArc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
 
       if ( a->weight.isPositive() ) {
         if (onearc)
