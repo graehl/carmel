@@ -81,8 +81,9 @@ using namespace std;
 #define INFOQ(module,msg) DBG_OP_Q(dbg,info,module,msg)
 #define INFOB(module) dbg->info_begin(module,__FILE__,__LINE__)
 #define WARNINGB(module) dbg->warning_begin(module,__FILE__,__LINE__)
-#define ERRORB(module) dbg->info_begin(module,__FILE__,__LINE__)
-#define INFOBQ(module) dbg->error_begin(module,__FILE__,0)
+#define ERRORB(module) dbg->error_begin(module,__FILE__,__LINE__)
+#define INFOBQ(module) dbg->info_begin(module,__FILE__,0)
+#define INFOENDL dbg->info_endl()
 #define WARNINGBQ(module) dbg->warning_begin(module,__FILE__,0)
 #define ERRORBQ(module) dbg->error_begin(module,__FILE__,0)
 
