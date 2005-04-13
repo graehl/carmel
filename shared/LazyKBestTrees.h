@@ -165,8 +165,8 @@ struct Node {
         NESTT;
         if (n < memo.size()) {
             if (memo[n] == PENDING()) {
-                WARNINGQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning n-1 instead ... " << memo[n-1]);
-                return memo[n-1];
+                ERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning DONE instead (this means that the caller's nbest will be filled without using me)... n-1th best=" << memo[n-1]);
+                memo[n] = NULL;
             }
             assertlvl(99,memo[n] != PENDING());
             return memo[n]; // may be DONE
