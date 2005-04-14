@@ -1,3 +1,10 @@
+2005-04-13  Jonathan Graehl  <graehl@isi.edu>
+
+	* fileargs.hpp (validate): added "-0" to stand for NULL
+	input/output files (as distinct from /dev/null, you'll need to
+	test them for NULL and not dereference)
+	 (i.e. default_in_none and default_out_none)
+
 2005-04-12  Jonathan Graehl  <graehl@isi.edu>
 
 	* 2hash.h: visit_key_val
