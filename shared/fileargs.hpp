@@ -89,10 +89,11 @@ void validate(boost::any& v,
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
-
     if (s == "-") {
         boost::shared_ptr<std::istream> r(DEFAULT_IN_P, null_deleter());
-        v = boost::any(r);        
+        v = boost::any(r);
+    } else if (s == "-0") {
+        v = default_in_none;
     } else {
         boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
         if (!*r) {
@@ -121,6 +122,8 @@ void validate(boost::any& v,
     } else if ( s== "-2") {
         boost::shared_ptr<std::ostream> w(DEFAULT_LOG_P, null_deleter());
         v = boost::any(w);
+    } else if (s == "-0") {
+        v = default_out_none;
     } else {
         boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
         if (!*r) {
@@ -142,13 +145,15 @@ void validate(boost::any& v,
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
-
-    boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
-    if (!*r) {
-        throw std::runtime_error(std::string("Could not create output file ").append(s));
+    if (s == "-0") {
+        v = default_out_none;
+    } else {
+        boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
+        if (!*r) {
+            throw std::runtime_error(std::string("Could not create output file ").append(s));
+        }
+        v = boost::any(r);
     }
-    v = boost::any(r);
-
 }
 
 void validate(boost::any& v,
@@ -163,11 +168,15 @@ void validate(boost::any& v,
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
 
-    boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
-    if (!*r) {
-        throw std::runtime_error(std::string("Could not open input file ").append(s));
+    if (s == "-0") {
+        v = default_in_none;
+    } else {
+        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
+        if (!*r) {
+            throw std::runtime_error(std::string("Could not open input file ").append(s));
+        }
+        v = boost::any(r);
     }
-    v = boost::any(r);
 }
 
 
