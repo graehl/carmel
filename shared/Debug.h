@@ -8,6 +8,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
@@ -298,6 +299,8 @@ class Debug {
     ostream *infoOS;                                       //!< output stream where debugging information is sent
 };
 }
+
+extern ns_decoder_global::Debug *dbg;        //!< interface for debugging output
 
 #ifdef TEST
 # ifdef MAIN
