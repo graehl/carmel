@@ -14,7 +14,9 @@
 
 typedef struct mallinfo malloc_info;
 
-struct memory_stats : public malloc_info {
+struct memory_stats  {
+    malloc_info info;
+
   //   struct mallinfo {
 //   int arena;    /* total space allocated from system */
 //   int ordblks;  /* number of non-inuse chunks */
@@ -28,7 +30,15 @@ struct memory_stats : public malloc_info {
 //   int keepcost; /* top-most, releasable (via malloc_trim) space */
 // };
 //
-    memory_stats() : malloc_info(mallinfo()) {}
+    memory_stats()  {
+        refresh();
+    }
+    void refresh() {
+        info=mallinfo();
+    }
+    operator const malloc_info & () const {
+        return info;
+    }
 };
 
 inline std::ostream &operator << (std::ostream &o, const malloc_info &s) {
