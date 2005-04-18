@@ -10,6 +10,34 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "malloc.h"
+
+typedef struct mallinfo malloc_info;
+
+struct memory_stats : public malloc_info {
+  //   struct mallinfo {
+//   int arena;    /* total space allocated from system */
+//   int ordblks;  /* number of non-inuse chunks */
+//   int smblks;   /* unused -- always zero */
+//   int hblks;    /* number of mmapped regions */
+//   int hblkhd;   /* total space in mmapped regions */
+//   int usmblks;  /* unused -- always zero */
+//   int fsmblks;  /* unused -- always zero */
+//   int uordblks; /* total allocated space */
+//   int fordblks; /* total non-inuse space */
+//   int keepcost; /* top-most, releasable (via malloc_trim) space */
+// };
+//
+    memory_stats() : malloc_info(mallinfo()) {}
+};
+
+inline std::ostream &operator << (std::ostream &o, const malloc_info &s) {
+    return o << "("<<"Memory usage: "<<s.ordblks<<"/"<<s.uordblks<<" used/allocated, " << s.arena << " total allocated from system, "<<s.hblkhd<<" memory mapped)";
+}
+
+
+
+
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
 #endif
