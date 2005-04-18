@@ -42,7 +42,7 @@ struct memory_stats  {
 };
 
 inline std::ostream &operator << (std::ostream &o, const malloc_info &s) {
-    return o << "("<<"Memory usage: "<<s.ordblks<<"/"<<s.uordblks<<" used/allocated, " << s.arena << " total allocated from system, "<<s.hblkhd<<" memory mapped)";
+    return o << "("<<"Memory usage: "<<s.uordblks<<" allocated, " << s.arena << " total allocated from system, "<<s.hblkhd<<" memory mapped)";
 }
 
 
