@@ -242,6 +242,10 @@ class Debug {
 
     ostream & error_begin(const string &module, const string &file="", const int line=0)
     {
+        if (debugOS==infoOS)
+            info_startline();
+        else
+            sync();
         getDebugOutput() << "ERROR: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
@@ -256,7 +260,10 @@ class Debug {
 
     ostream & warning_begin(const string &module, const string &file="", const int line=0)
     {
-        sync();
+        if (debugOS==infoOS)
+            info_startline();
+        else
+            sync();
         getDebugOutput() << "WARNING: " << module;
         if (line)
             getDebugOutput() << "(" << file << ":" << line << ")";
@@ -290,7 +297,7 @@ class Debug {
     inline ostream &info_startline() {
         sync();
         if (!info_atnewline) {
-            info_endl();
+            *infoOS << std::endl;
         }
         info_atnewline=false;
         return *infoOS;
