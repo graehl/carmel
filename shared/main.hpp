@@ -19,6 +19,7 @@ struct MainGuard {
     unsigned i;
   MainGuard() : i(0) {
         INITLEAK_DO;
+        std::ios::sync_with_stdio(false);
         std::cin.tie(0);
 //        std::locale::global(std::locale(""));
     }
@@ -31,7 +32,7 @@ struct MainGuard {
 };
 #else
 #define MAINDECL
-#define MAIN_BEGIN MAIN_DECL { 
+#define MAIN_BEGIN MAIN_DECL {
 
 #define MAIN_END }
 

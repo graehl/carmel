@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-
+#include <vector>
 
 class ctype_mod_ws: public std::ctype<char>
 {
@@ -18,10 +18,10 @@ class ctype_mod_ws: public std::ctype<char>
         ADD,REPLACE,REMOVE
     };
     template <class CharPred>
-    ctype_mod_ws(CharPred pred,int mode=REMOVE): std::ctype<char>(get_table(pred,mode)) {}    
+    ctype_mod_ws(CharPred pred,int mode=REMOVE): std::ctype<char>(get_table(pred,mode)) {}
  private:
     static inline void clear_space(std::ctype_base::mask& c) { c &= ~space; }
-    static inline void set_space(std::ctype_base::mask& c) { c &= ~space; }    
+    static inline void set_space(std::ctype_base::mask& c) { c &= ~space; }
     template <class CharPred>
     static std::ctype_base::mask* get_table(CharPred pred,int mode) {
         static std::ctype_base::mask rc[table_size];
@@ -37,12 +37,12 @@ class ctype_mod_ws: public std::ctype<char>
                     set_space(m);
             } else {
                 if (mode==REPLACE)
-                    clear_space(m);                    
+                    clear_space(m);
             }
         }
         return rc;
     }
-    
+
 };
 
 template <char C>
@@ -57,7 +57,7 @@ template <class CharPred,class charT, class Traits>
 inline void change_ws(std::basic_istream<charT,Traits> &in, CharPred pred, int mode=ctype_mod_ws::ADD)
 {
     std::locale l;
-    ctype_mod_ws *new_traits=new ctype_mod_ws(pred,mode);    
+    ctype_mod_ws *new_traits=new ctype_mod_ws(pred,mode);
     std::locale new_l(l, new_traits);
     in.imbue(new_l);
 }
@@ -76,7 +76,7 @@ inline void remove_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_w
 {
     change_ws(in,true_for_char<C>(),mode);
 }
-    
+
 template <class Set,class charT, class Traits>
 inline bool parse_range(std::basic_istream<charT,Traits> &in,Set &set) {
     char c;
@@ -111,9 +111,9 @@ struct WordSeparator {
     bool first;
     WordSeparator() : first(true) {}
     std::ostream & print(std::ostream &o) {
-        if (first) 
+        if (first)
             first=false;
-        else        
+        else
             o << sep;
         return o;
     }
@@ -124,6 +124,23 @@ inline
 std::ostream & operator <<(std::ostream &o, WordSeparator<sep> &separator) {
     return separator.print(o);
 }
+
+// why not template?  because i think that we may conflict with other overrides
+#define MAKE_CONTAINER_PRINT_FOR(C,T)                                           \
+    inline std::ostream & operator <<(std::ostream &o,const C<T>& t) {     \
+        WordSeparator<> sep; \
+        o << '(';                                                                                               \
+        for (C<T>::const_iterator i=t.begin(),e=t.end();i!=e;++i) \
+            o << sep << *i;                                            \
+        return o << ')'; \
+    }
+
+#define MAKE_VECTOR_PRINT_FOR(T) MAKE_CONTAINER_PRINT_FOR(std::vector,T)
+
+MAKE_VECTOR_PRINT_FOR(int)
+MAKE_VECTOR_PRINT_FOR(unsigned)
+MAKE_VECTOR_PRINT_FOR(std::string)
+
 
 template <class C>
 inline bool is_shell_special(C c) {
@@ -167,7 +184,7 @@ inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<cha
                 out.put('\\');
             out.put(c);
         }
-        out << '"';        
+        out << '"';
     }
     return out;
 }
@@ -254,7 +271,7 @@ inline char hex_digit_char(unsigned char hex) {
 
 // prints 4 chars: \x1B
 // returns # of chars printed
-template <class charT, class Traits> 
+template <class charT, class Traits>
 inline unsigned out_char_hex(std::basic_ostream<charT,Traits> &out, unsigned char c) {
     char ls_hex=c & 0xF;
     char ms_hex=c >> 4; // unsigned; no sign extension
@@ -266,7 +283,7 @@ inline unsigned out_char_hex(std::basic_ostream<charT,Traits> &out, unsigned cha
 
 // prints ^@ through ^_ for 0x0->0x1F, ^? for DEL (0x7F) and \x9A for high chars (>0x7F)
 // returns number of chars print
-template <class charT, class Traits> 
+template <class charT, class Traits>
 inline unsigned out_char_ascii(std::basic_ostream<charT,Traits> &out, unsigned char c) {
     if (c < 0x20) {
         out << '^' << (c+'@');
@@ -326,21 +343,21 @@ inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream
             out << c;
         else
             break;
-    
+
     out << std::endl << "   ";
     for(unsigned i=0;i<ip;++i)
-        out << ' ';    
+        out << ' ';
     out << '^' << std::endl;
 }
 
 template <class Ic,class It>
 void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const char *item="input",unsigned number=0) {
-    std::ostringstream err;            
+    std::ostringstream err;
     err << "Error reading " << item << " # " << number << ": " << error << std::endl;
     std::streamoff where(in.tellg());
     show_error_context(in,err);
 //    err << "(file position " <<  where << ")" << std::endl;
-    throw std::runtime_error(err.str());        
+    throw std::runtime_error(err.str());
 }
 
 // if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
@@ -554,17 +571,17 @@ struct IndirectReader
   {
       static const char *const MULTILINE_SEP="\n";
       const char space=' ';
-      if (parens) {          
+      if (parens) {
           o << '(';
           if (multiline)
               o << MULTILINE_SEP;
-      }           
+      }
       if (multiline) {
           for (;begin!=end;++begin) {
-              o << space;              
+              o << space;
               deref(writer)(o,*begin);
               o << MULTILINE_SEP;
-          }          
+          }
       } else {
           bool first=true;
           WordSeparator<space> sep;
@@ -573,12 +590,12 @@ struct IndirectReader
               deref(writer)(o,*begin);
           }
       }
-      if (parens) {          
+      if (parens) {
           o << ')';
           if (multiline)
               o << MULTILINE_SEP;
       }
-      
+
       return GENIOGOOD;
 }
 
@@ -616,7 +633,7 @@ std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &ou
             // doesn't work for back inserter for some reason
 # define IFBADREAD \
                         if (!deref(read)(in,*&(*out++)).good())
-            
+
 #endif
             IFBADREAD goto fail;
             EXPECTI_COMMENT(in>>c);

@@ -27,8 +27,49 @@
 #include <algorithm>
 #include <iostream>
 
+#include <vector>
+
+// I hope you have an efficient swap :)
+template <class Container>
+inline void compact(Container &c) {
+    Container(c).swap(c); // copy (-> temp), swap, temp destructed = old destructed
+}
+
+template <class c,class t,class a>
+inline void compact(std::basic_string<c,t,a> &s) {
+    s.reserve(0); // suggested by std to shrink size to actual amount used.
+}
+
+#include <string>
+
+template <typename Container>
+void stringtok (Container &container, std::string const &in, const char * const delimiters = " \t\n")
+{
+    const std::string::size_type len = in.length();
+    std::string::size_type i = 0;
+    while ( i < len )
+    {
+        // eat leading whitespace
+        i = in.find_first_not_of (delimiters, i);
+        if (i == std::string::npos)
+            return;
+
+        // find the end of the token
+        std::string::size_type j = in.find_first_of (delimiters, i);
+
+        // push token
+        if (j == std::string::npos) {
+            container.push_back (in.substr(i));
+            return;
+        } else
+            container.push_back (in.substr(i, j-i));
+        i = j + 1;
+    }
+}
+
+
 template <class size_type,class inputstream>
-size_type parse_size(inputstream &i) {    
+size_type parse_size(inputstream &i) {
     size_type size;
     double number;
 
@@ -110,13 +151,13 @@ inline void maybe_increase_max(AssocContainer *table,const Key &key,const Val &v
 template <class To,class From>
 inline void maybe_increase_max(To &to,const From &from) {
     if (to < from)
-        to=from;    
+        to=from;
 }
 
 template <class To,class From>
 inline void maybe_decrease_min(To &to,const From &from) {
     if (from < to)
-        to=from;    
+        to=from;
 }
 
 #ifndef ONE_PLUS_EPSILON
@@ -134,17 +175,17 @@ static const double ONE_PLUS_EPSILON=1+EPSILON;
 
 | u - v | <= e * |u| and | u - v | <= e * |v|
 defines a "very close with tolerance e" relationship between u and v
-	(1)
+        (1)
 
 | u - v | <= e * |u| or   | u - v | <= e * |v|
 defines a "close enough with tolerance e" relationship between u and v
-	(2)
+        (2)
 
 Both relationships are commutative but are not transitive. The relationship defined by inequations (1) is stronger that the relationship defined by inequations (2) (i.e. (1) => (2) ). Because of the multiplication in the right side of inequations, that could cause an unwanted underflow condition, the implementation is using modified version of the inequations (1) and (2) where all underflow, overflow conditions could be guarded safely:
 
 | u - v | / |u| <= e and | u - v | / |v| <= e
 | u - v | / |u| <= e or   | u - v | / |v| <= e
-	(1`)
+        (1`)
 (2`)
 */
 
@@ -391,7 +432,7 @@ struct Periodic {
     unsigned period,left;
     bool enabled;
     Periodic(unsigned period_) {
-        set_period(period_);        
+        set_period(period_);
     }
     void enable() {
         enabled=true;
@@ -434,7 +475,7 @@ struct periodic_wrapper : public C
         period.set_period(period_);
     }
     result_type operator()() {
-        if (period.check()) 
+        if (period.check())
             return Imp::operator()();
         return result_type();
     }

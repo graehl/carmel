@@ -106,6 +106,6 @@ namespace Config {
   inline std::ostream &warn() {
     return std::cerr;
   }
-};
+}
 
 #endif //guard
