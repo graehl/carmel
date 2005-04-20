@@ -83,10 +83,17 @@ LDFLAGS += $(addprefix -l,$(LIB))
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
+ifdef PEDANTIC
+CPPFLAGS +=  -pedantic
+endif
 CPPFLAGS_TEST += $(CPPFLAGS)
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
 #-fno-var-tracking
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
+
+ifndef USE_THREADS
+CPPFLAGS +=  -DBOOST_DISABLE_THREADS 
+endif
 
 ifeq ($(ARCH),solaris)
   CPPFLAGS += -DSOLARIS -DUSE_STD_RAND
@@ -103,8 +110,6 @@ NOSTATIC=1
 CPPFLAGS += -DBOOST_POSIX -DCYGWIN
 #CPPFLAGS += -DBOOST_NO_STD_WSTRING
 # somehow that is getting automatically set by boost now (for Boost CVS)
-else
-CPPFLAGS += -DBOOST_DISABLE_THREADS 
 endif
 
 
