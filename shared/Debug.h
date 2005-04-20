@@ -185,6 +185,10 @@ namespace ns_decoder_global {
 */
 
 class Debug {
+ private:
+
+    ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
+    ostream *infoOS;                                       //!< output stream where debugging information is sent
  public:
     int runtime_info_level;
     unsigned info_outline_depth;
@@ -220,7 +224,9 @@ class Debug {
         }
     };
 
-    Debug() : runtime_info_level(INFO_LEVEL), debugOS(&cerr), infoOS(&cerr),info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
+    Debug() : debugOS(&cerr), infoOS(&cerr),
+              runtime_info_level(INFO_LEVEL),
+              info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
         return *debugOS;
@@ -338,10 +344,6 @@ class Debug {
     int get_info_level() const {
         return runtime_info_level;
     }
- private:
-
-    ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
-    ostream *infoOS;                                       //!< output stream where debugging information is sent
 };
 }
 
