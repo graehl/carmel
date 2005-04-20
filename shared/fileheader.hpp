@@ -39,7 +39,7 @@ inline std::ostream & write_header(std::ostream &o,const std::string &header_str
 //!< if i starts with the first character of the header string, copy rest of
 //line (but not newline) to o; otherwise, write the header string to o
 //if header not matched at all, restore i (unget), otherwise, return partially matched portion.
-inline string copy_header(std::istream &i, std::ostream &o,
+inline std::string copy_header(std::istream &i, std::ostream &o,
                           const std::string & print_if_new_header,
                           const std::string &header_string=default_file_header_prefix) {
     std::string::const_iterator matched_until=match_input(i,header_string);
