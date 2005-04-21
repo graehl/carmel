@@ -109,10 +109,10 @@ using namespace std;
 #define DBG_OP_L(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,__FILE__,__LINE__)
 #define DBG_OP_LQ_NEWLINE(lvl,pDbg,op,module,msg,newline) DBG_OP_F_NL(lvl,pDbg,op,module,msg,"",0,newline)
 #define DBG_OP_LQ(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,"",0)
-#define NESTINFO_GUARD(pDbg) ns_decoder_global::Debug::Nest debug_nest_guard_ ## __LINE__ (pDbg)
+#define NESTINFO_GUARD(pDbg,lvl) ns_decoder_global::Debug::Nest debug_nest_guard_ ## __LINE__ (pDbg,lvl)
 
 // some of these names might be used, e.g. in windows.h, but seems ok on linux.  compilation will fail/warn if they are in conflict.
-#define NESTINFO NESTINFO_GUARD(dbg)
+#define NESTINFO NESTINFO_GUARD(dbg,1)
 #define INFO(module,msg) DBG_OP(dbg,info,module,msg)
 #define WARNING(module,msg) DBG_OP(dbg,warning,module,msg)
 #define ERROR(module,msg) DBG_OP(dbg,error,module,msg)
@@ -140,7 +140,7 @@ using namespace std;
 #define INF9(module,msg) INFOLQ(9,module,msg)
 #define INF9IN dbg->increase_depth()
 #define INF9OUT dbg->decrease_depth()
-#define INF9NEST NESTINFO_GUARD(dbg)
+#define INF9NEST NESTINFO_GUARD(dbg,9)
 #else
 #define INF9(module,msg)
 #define INF9IN
@@ -152,7 +152,7 @@ using namespace std;
 #define INF99(module,msg) INFOLQ(99,module,msg)
 #define INF99IN dbg->increase_depth()
 #define INF99OUT dbg->decrease_depth()
-#define INF99NEST NESTINFO_GUARD(dbg)
+#define INF99NEST NESTINFO_GUARD(dbg,99)
 #else
 #define INF99(module,msg)
 #define INF99IN
@@ -168,7 +168,7 @@ using namespace std;
 #define INFOT(msg) DBG_OP_L(99,dbg,info,"TEST",msg)
 #define WARNT(msg) DBG_OP_L(99,dbg,warning,"TEST",msg)
 #if INFO_LEVEL >= 99
-#define NESTT NESTINFO_GUARD(dbg)
+#define NESTT NESTINFO_GUARD(dbg,99)
 #else
 #define NESTT
 #endif
@@ -213,14 +213,22 @@ class Debug {
     }
     struct Nest {
         Debug *dbg;
-        Nest(Debug *_dbg) : dbg(_dbg) {
-            dbg->increase_depth();
+        unsigned info_req;
+        bool active() const {
+            return info_req < dbg->runtime_info_level;
         }
-        Nest(const Nest &o) : dbg(o.dbg) {
-            dbg->increase_depth();
+        Nest(Debug *_dbg,unsigned info_lvl_required=0) : dbg(_dbg),info_req(info_lvl_required) {
+            if (active())
+                dbg->increase_depth();
         }
+/*        Nest(const Nest &o) : dbg(o.dbg) {
+            if (active())
+                dbg->increase_depth();
+        }
+*/
         ~Nest() {
-            dbg->decrease_depth();
+            if (active())
+                dbg->decrease_depth();
         }
     };
 
