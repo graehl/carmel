@@ -41,6 +41,35 @@ struct memory_stats  {
     }
 };
 
+template <class V>
+struct difference_f 
+{
+    V operator()(const V&l,const V&r) const
+    {
+        return l-r;
+    }    
+};
+
+template <class V,class S,class F>
+S transform2_array_coerce(const S&l,const S&r,F f) 
+{
+    const unsigned N=sizeof(S)/sizeof(V);
+    S ret;
+    const V *pl=(V*)&l;
+    const V *pr=(V*)&r;
+    V *pret=(V*)&ret;
+    for (unsigned i=0;i<N;++i)
+        pret[i]=f(pl[i],pr[i]);
+    return ret;
+}
+
+
+
+malloc_info operator - (malloc_info after,malloc_info before) 
+{
+    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
+}
+
 inline std::ostream &operator << (std::ostream &o, const malloc_info &s) {
     return o << "("<<"Memory usage: "<<s.uordblks<<" allocated, " << s.arena << " total allocated from system, "<<s.hblkhd<<" memory mapped)";
 }
