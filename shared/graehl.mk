@@ -9,6 +9,7 @@
 # LIB = math thread ...
 # INC = . 
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
+LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
 UNAME=$(shell uname)
@@ -121,7 +122,7 @@ ifndef $(1)_NOOPT
 $$(BIN)/$(1):\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
  $$($(1)_SLIB)
-	$$(CXX) $$(LDFLAGS) $$^ -o $$@
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
 $(1): $$(BIN)/$(1)
@@ -131,7 +132,7 @@ ifneq (${ARCH},macosx)
 ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
-	$$(CXX) $$(LDFLAGS) --static $$^ -o $$@
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
 $(1): $$(BIN)/$(1).static
@@ -142,7 +143,7 @@ endif
 ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
-	$$(CXX) $$(LDFLAGS) $$^ -o $$@
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug
@@ -150,7 +151,7 @@ endif
 
 ifndef $(1)_NOTEST
 $$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
-	$$(CXX) $$(LDFLAGS) $$^ -o $$@
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ))
 ALL_TESTS += $$(BIN)/$(1).test
@@ -237,13 +238,13 @@ $(OBJD)/%.o: %.$(CPP_EXT) %.d
 #	echo dirs: $^
 
 clean:
-	-rm -rf $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
+	-rm -rf -- $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
 
 distclean: clean
-	-rm -rf $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
+	-rm -rf -- $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
 
 allclean: distclean
-	-rm -rf $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
+	-rm -rf -- $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1

@@ -1,3 +1,10 @@
+2005-04-27  Jonathan Graehl  <graehl@isi.edu>
+
+	* graehl.mk (ALL_OBJS): $LIB e.g. -lz put in proper place in g++
+	commandline (after objects)
+
+	* fileargs.hpp (validate): open Infile as gzstream if ends in ".gz"
+
 2005-04-13  Jonathan Graehl  <graehl@isi.edu>
 
 	* fileargs.hpp (validate): added "-0" to stand for NULL

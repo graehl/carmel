@@ -67,6 +67,29 @@ void stringtok (Container &container, std::string const &in, const char * const 
     }
 }
 
+template <class Istr, class Isubstr>
+bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
+{
+    while (bsub != esub) {
+        if (bstr == estr)
+            return false;
+        if (*bsub++ != *bstr++)
+            return false;
+    }
+    return true;
+}
+
+template <class Istr, class Isubstr>
+bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
+{
+    while (bsub != esub) {
+        if (bstr == estr)
+            return false;
+        if (*--esub != *--estr)
+            return false;
+    }
+    return true;
+}
 
 template <class size_type,class inputstream>
 size_type parse_size(inputstream &i) {

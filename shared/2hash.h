@@ -13,6 +13,7 @@
 #ifdef SUPERDEBUG
 #include "debugprint.hpp"
 #endif
+
 inline size_t cstr_hash (const char *p)
 {
         size_t h=0;
@@ -32,6 +33,9 @@ inline size_t cstr_hash (const char *p)
 #endif
 }
 
+#ifndef GOLDEN_MEAN_FRACTION
+#define GOLDEN_MEAN_FRACTION=2654435769U;
+#endif
 inline size_t uint_hash(unsigned int key)
 {
   /*
@@ -48,28 +52,87 @@ Since 2654435761 and 2^32 has no common factors in common, the multiplication pr
 
 // feel free to define TRIVIAL_INT_HASH if you're hashing into prime-numbers of buckets
 // but first FIXME: we're using the same primes that are in boost::unordered_map bucketlist for multiplying out int-pair hashvals
+    #ifdef EXPENSIVE_INT_HASH
+  int tmp = key;
+
+  if (key&0x1) {
+    tmp^= 1798151309;
+  }
+
+  tmp += ~(tmp << 15);
+  tmp ^=  ((unsigned)tmp >> 10);
+  tmp +=  (tmp << 3);
+  tmp ^=  ((unsigned)tmp >> 6);
+  tmp += ~(tmp << 11);
+  tmp ^=  ((unsigned)tmp >> 16);
+  tmp +=  (tmp << 7);
+  tmp ^= ((unsigned)tmp>> 22);
+  return (size_t)tmp;
+# else
+
 #ifndef TRIVIAL_INT_HASH
-        key *= 2654435769U; // mixes the lower bits into the upper bits, reversible
-        key ^= (key >> 16); // gets some of the goodness back into the lower bits, reversible
-        return (int)key;
+  key *= GOLDEN_MEAN_FRACTION; // mixes the lower bits into the upper bits, reversible
+  key ^= (key >> 16); // gets some of the goodness back into the lower bits, reversible
+  return (size_t)key;
 #else
-        return (int)key;
+  return (size_t)key;
 #endif
-        /*
-                  key -= (key << 15);
-  key ^=  (key >> 10);
-  key +=  (key << 3);
-  key ^=  (key >> 6);
-  key -= (key << 11);
-  key ^=  (key >> 16);
-  return key;
+#endif
+  /*
+    key -= (key << 15);
+    key ^=  (key >> 10);
+    key +=  (key << 3);
+    key ^=  (key >> 6);
+    key -= (key << 11);
+    key ^=  (key >> 16);
+    return key;
   */
 
 }
 
+inline size_t mix_hash(size_t a, size_t b)
+{
+    size_t tmp;
+    tmp = a;
+    tmp ^= (b<<1);
+    if (sizeof(size_t) ==4)
+        tmp ^= (b>>31 & 0x1); // you could just not do this and lose the MSB of b.
+        // faster and probably not more collisions.  I
+        // suppose with multiple mixhash it becomes an issue
+    return tmp;
 
+//     size_t tmp;
+//     tmp = a;
+//     tmp ^= (b<<1);
+// #if sizeof(size_t)==4
+//         tmp ^= (b>>31 & 0x1); // you could just not do this and lose the MSB of b.
+//         // faster and probably not more collisions.  I
+//         // suppose with multiple mixhash it becomes an issue
+// # else
+// #  if sizeof(size_t)!=8
+// #   error please adjust bit rotation for size_t (which is not 4 or 8 bytes)
+// #  endif
+// //    else if (sizeof(size_t)==8)
+//         tmp ^= (b>>63 & 0x1);
+// #  endif
+//     return tmp;
+}
+
+
+
+#ifdef GNU_HASH_MAP
+# define USE_HASH_MAP
+# ifndef __NO_GNU_NAMESPACE__
+//using namespace __gnu_cxx;
+# endif
+# include <ext/hash_map>
+# define HashTable __gnu_cxx::hash_map
+# define HASHNS_B namespace __gnu_cxx {
+# define HASHNS_E }
+#endif
 
 #ifdef UNORDERED_MAP
+# define USE_HASH_MAP
 //#error
 #include <boost/unordered_map.hpp>
 // no template typedef so ...
@@ -90,8 +153,10 @@ inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
 {
   return &(ht[k]=v);
 }
+#endif
 
-#else // graehl hash map
+
+#ifndef USE_HASH_MAP // graehl hash map
 
 #define HASHNS_B
 #define HASHNS_E
@@ -799,7 +864,7 @@ struct hash<const char *>
   }
 };
 
-#endif
+#endif // graehl HashTable
 
 template<class T1,class T2,class T3,class T4,class T5,class A,class B>
 inline
@@ -838,6 +903,17 @@ template<> struct hash<C> \
 
 #define END_HASH        \
 };\
+HASHNS_E
+
+HASHNS_B
+  template<class P> struct hash<P *>
+  {
+    const size_t operator()( const P *x ) const
+    {
+//      const unsigned GOLDEN_MEAN_FRACTION=2654435769U;
+      return ((size_t)x / sizeof(P))*GOLDEN_MEAN_FRACTION;
+    }
+  };
 HASHNS_E
 
 template <class K,class V,class H,class P,class A>
