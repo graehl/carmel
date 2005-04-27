@@ -101,15 +101,15 @@ struct Symbol {
     return *(const unsigned *)str;
   }
 
-  char *c_str() const { return str; }
-        bool operator < (const Symbol r) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
-        {
-          return str<r.str;//strcmp(str,r.str)<0;
-        }
-        ptrdiff_t cmp(const Symbol r) const {
-          return r.str-str;
-        }
-  bool operator ==(const Symbol r) const {
+    char *c_str() const { return str; }
+    bool operator < (const Symbol r) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
+    {
+        return str<r.str;//strcmp(str,r.str)<0;
+    }
+    ptrdiff_t cmp(const Symbol r) const {
+        return r.str-str;
+    }
+    bool operator ==(const Symbol r) const {
     return r.str==str;
   }
   bool operator !=(const Symbol r) const {
