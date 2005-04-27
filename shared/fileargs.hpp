@@ -11,6 +11,16 @@
 #include <stdexcept>
 //#include "fileheader.hpp"
 #include "funcs.hpp"
+#ifndef GZSTREAM_NAMESPACE
+# define USE_GZSTREAM_NAMESPACE
+//ns_gzstream
+#endif
+#include "gzstream.h"
+#ifdef MAIN
+# include "gzstream.C"
+#endif
+
+static const char gz_ext[]=".gz";
 
 typedef boost::shared_ptr<std::istream> Infile;
 typedef boost::shared_ptr<std::ostream> Outfile;
@@ -38,6 +48,8 @@ static Outfile default_log(DEFAULT_LOG_P,null_deleter());
 static Outfile default_out(DEFAULT_OUT_P,null_deleter());
 static Infile default_in_none;
 static Outfile default_out_none;
+static InDiskfile default_in_disk_none;
+static OutDiskfile default_out_disk_none;
 
 inline bool is_default_in(const Infile &i) {
     return i.get() == DEFAULT_IN_P;
@@ -49,6 +61,85 @@ inline bool is_default_log(const Outfile &o) {
     return o.get() == DEFAULT_LOG_P;
 }
 
+inline Infile infile(const std::string &s) 
+{
+        if (s == "-") {
+        boost::shared_ptr<std::istream> r(DEFAULT_IN_P, null_deleter());
+        return (r);
+    } else if (s == "-0") {
+        return default_in_none;
+    } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
+        typedef USE_GZSTREAM_NAMESPACE::igzstream igzs;
+        boost::shared_ptr<igzs> r(new igzs(s.c_str()));
+        if (!*r) 
+            throw std::runtime_error(std::string("Could not open compressed input file ").append(s));
+        boost::shared_ptr<std::istream> r2(r);
+        return (r2);
+    } else {   
+        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
+        if (!*r)
+            throw std::runtime_error(std::string("Could not open input file ").append(s));        
+        boost::shared_ptr<std::istream> r2(r);
+        return (r2);
+    }
+
+}
+
+inline InDiskfile indiskfile(const std::string &s)
+{
+
+    if (s == "-0") {
+        return default_in_disk_none;
+    } else {
+        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
+        if (!*r) {
+            throw std::runtime_error(std::string("Could not open input file ").append(s));
+        }
+        return (r);
+    }
+}
+
+inline Outfile outfile(const std::string &s) 
+{
+    if (s == "-") {
+        boost::shared_ptr<std::ostream> w(DEFAULT_OUT_P, null_deleter());
+        return (w);
+    } else if ( s== "-2") {
+        boost::shared_ptr<std::ostream> w(DEFAULT_LOG_P, null_deleter());
+        return (w);
+    } else if (s == "-0") {
+        return default_out_none;
+    } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
+        typedef USE_GZSTREAM_NAMESPACE::ogzstream ogzs;
+        boost::shared_ptr<ogzs> w(new ogzs(s.c_str()));
+        if (!*w) 
+            throw std::runtime_error(std::string("Could not create compressed output file ").append(s));
+        boost::shared_ptr<std::ostream> w2(w);
+        return (w2);
+    } else {
+        boost::shared_ptr<std::ofstream> w(new std::ofstream(s.c_str()));
+        if (!*w) {
+            throw std::runtime_error(std::string("Could not create output file ").append(s));
+        }
+        boost::shared_ptr<std::ostream> w2(w);
+        return (w2);
+    }
+}
+
+inline OutDiskfile outdiskfile(const std::string &s)
+{
+    if (s == "-0") {
+        return default_out_disk_none;
+    } else {
+        boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
+        if (!*r) {
+            throw std::runtime_error(std::string("Could not create output file ").append(s));
+        }
+        return (r);
+    }
+}
+
+
 //using namespace boost;
 //using namespace boost::program_options;
 namespace po=boost::program_options;
@@ -57,7 +148,7 @@ using boost::shared_ptr;
 //using namespace std;
 
 namespace boost {    namespace program_options {
-void validate(boost::any& v,
+inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               size_t* target_type, int)
 {
@@ -78,7 +169,7 @@ void validate(boost::any& v,
 /* Overload the 'validate' function for shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
-void validate(boost::any& v,
+inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::istream>* target_type, int)
 {
@@ -89,22 +180,11 @@ void validate(boost::any& v,
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
-    if (s == "-") {
-        boost::shared_ptr<std::istream> r(DEFAULT_IN_P, null_deleter());
-        v = boost::any(r);
-    } else if (s == "-0") {
-        v = default_in_none;
-    } else {
-        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
-        if (!*r) {
-            throw std::runtime_error(std::string("Could not open input file ").append(s));
-        }
-        boost::shared_ptr<std::istream> r2(r);
-        v = boost::any(r2);
-    }
+    
+    v=boost::any(infile(s));
 }
 
-void validate(boost::any& v,
+inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::ostream>* target_type, int)
 {
@@ -115,26 +195,11 @@ void validate(boost::any& v,
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
-
-    if (s == "-") {
-        boost::shared_ptr<std::ostream> w(DEFAULT_OUT_P, null_deleter());
-        v = boost::any(w);
-    } else if ( s== "-2") {
-        boost::shared_ptr<std::ostream> w(DEFAULT_LOG_P, null_deleter());
-        v = boost::any(w);
-    } else if (s == "-0") {
-        v = default_out_none;
-    } else {
-        boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
-        if (!*r) {
-            throw std::runtime_error(std::string("Could not create output file ").append(s));
-        }
-        boost::shared_ptr<std::ostream> w2(r);
-        v = boost::any(w2);
-    }
+    
+    v=boost::any(outfile(s));
 }
 
-void validate(boost::any& v,
+inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::ofstream>* target_type, int)
 {
@@ -145,18 +210,11 @@ void validate(boost::any& v,
     // Extract the first std::string from 'values'. If there is more than
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
-    if (s == "-0") {
-        v = default_out_none;
-    } else {
-        boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
-        if (!*r) {
-            throw std::runtime_error(std::string("Could not create output file ").append(s));
-        }
-        v = boost::any(r);
-    }
+
+    v=boost::any(outdiskfile(s));
 }
 
-void validate(boost::any& v,
+inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::ifstream>* target_type, int)
 {
@@ -168,15 +226,7 @@ void validate(boost::any& v,
     // one std::string, it's an error, and exception will be thrown.
     const std::string& s = po::validators::get_single_string(values);
 
-    if (s == "-0") {
-        v = default_in_none;
-    } else {
-        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
-        if (!*r) {
-            throw std::runtime_error(std::string("Could not open input file ").append(s));
-        }
-        v = boost::any(r);
-    }
+    v=boost::any(indiskfile(s));
 }
 
 
