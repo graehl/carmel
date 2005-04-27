@@ -1,5 +1,7 @@
 2005-04-27  Jonathan Graehl  <graehl@isi.edu>
 
+	* charbuf.hpp (getline_chomped): getline_chomped
+
 	* graehl.mk (ALL_OBJS): $LIB e.g. -lz put in proper place in g++
 	commandline (after objects)
 

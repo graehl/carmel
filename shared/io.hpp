@@ -731,7 +731,7 @@ void insert_byid(const A& vals,I &in,O &out)
                 OUTN;
             }
         }
-        out << c;
+        out.put(c);
     }
     if (state == scan_number) // file ends without newline.
                 OUTN;

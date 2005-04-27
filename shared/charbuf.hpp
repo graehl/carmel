@@ -37,6 +37,23 @@ struct static_buf {
 
 typedef static_buf<char> char_buf;
 
+extern CharBuf g_buf;
+
+#include <istream>
+
+// doesn't include newline terminator - returns true if was terminated, false otherwise (check in.status)
+template <char NL>
+inline bool & getline_chomped(std::istream &in,CharBuf &buf=g_buf) 
+{
+    char c;
+    while (in.get(c)) {
+        if (c==NL)
+            return true;
+        buf.push_back(c);
+    }
+    return false;        
+}
+
 #ifdef MAIN
 template<class T>
 typename static_buf<T>::Buf static_buf<T>::buf(default_bufsize<T>::BUFSIZE);
