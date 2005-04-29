@@ -56,7 +56,8 @@ static const double HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 template<class Real>
 struct logweight;
 
-#define MUCH_BIGGER_LN (sizeof(Real)==4? 16.f : 36.)
+#define MUCH_BIGGER_LN (sizeof(Real)==4? (Real)16. : (Real)36.)
+#define UNDERFLOW_LN (sizeof(Real)==4? (Real)73. : (Real)82.)
 // represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X 32 bit Real
 // IEEE Real has 23 binary digit mantissa, so can represent about 16 base E
 // digits only if you use 64-bit doubles instead of floats, 52 binary digits
@@ -75,8 +76,15 @@ struct logweight {                 // capable of representing nonnegative reals
   // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
   // 32 * ln 10 =~ 73
   // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
-  enum {LN_TILL_UNDERFLOW=(sizeof(Real)==4? 73 : 82)} ;
-
+//  enum {LN_TILL_UNDERFLOW=} ;
+    static inline Real LN_TILL_UNDERFLOW() 
+    {
+        return UNDERFLOW_LN;
+    }
+    static inline Real LN_MUCH_LARGER()
+    {
+        return MUCH_BIGGER_LN;
+    }
   static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
   static const int thresh_index; // handle for OutThresh
     static THREADLOCAL int default_base;
@@ -187,7 +195,7 @@ struct logweight {                 // capable of representing nonnegative reals
     return oo_ln10 * weight;
   }
   bool fitsInReal() const {
-    return isZero() || (getLn() < LN_TILL_UNDERFLOW && getLn() > -LN_TILL_UNDERFLOW);
+      return isZero() || (getLn() < LN_TILL_UNDERFLOW() && getLn() > -LN_TILL_UNDERFLOW());
   }
   bool isInfinity() const {
     return weight == FLOAT_INF();
