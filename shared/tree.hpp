@@ -342,7 +342,7 @@ struct TreeVizPrinter : public GraphvizPrinter {
     Labeler labeler;
     typedef Tree<Label> T;
     unsigned samerank;
-    enum {ANY_ORDER=0,CHILD_ORDER=1,CHILD_SAMERANK=2};
+    enum make_not_anon_24 {ANY_ORDER=0,CHILD_ORDER=1,CHILD_SAMERANK=2};
 
 
     TreeVizPrinter(ostream &o_,unsigned samerank_=CHILD_SAMERANK,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_),samerank(samerank_) {}

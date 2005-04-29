@@ -27,7 +27,7 @@ class StringPool {
     static HashTable<StringKey, int> counts;
 #endif
 public:
-  enum {is_noop=0};
+  enum make_not_anon_19 {is_noop=0};
     static StringKey borrow(StringKey s) {
       if (s.isDefault())
         return s;
@@ -73,7 +73,7 @@ public:
 
 template <class Sym>
 struct NoStringPool {
-  enum {is_noop=1};
+  enum make_not_anon_20 {is_noop=1};
   static Sym borrow(const Sym &s) {
     return s;
   }

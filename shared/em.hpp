@@ -54,7 +54,7 @@ ostream & operator << (ostream &out,const ParamDelta &p) {
 //  YOU SUPPLY (something that implements/extends):
 struct EM_executor {
     // define =1 if you do anything with learning_rate
-//    enum {LEARNING_RATE=0};
+//    enum make_not_anon_11 {LEARNING_RATE=0};
      // assigns random parameter values - not called unless random_restarts > 0
     void randomize() {}
      // returns (weighted) average log prob over all examples given current parameters, and collects counts (performs count initialization itself).  first_time flag intended to allow you to drop examples that have 0 probability (training can't continue if they're kept)

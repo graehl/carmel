@@ -46,7 +46,7 @@ struct array_mapper : public DynamicArray<V> {
 
 template <class MatchF> // MatchF is the functor for visiting trie vertices during matching
 struct tree_trie {
-  enum {TYPICAL_TREE_NODES=64};
+  enum make_not_anon_25 {TYPICAL_TREE_NODES=64};
   typedef Symbol key_type; // some explicit refs to Symbol below, needs work to genericize (get_symbol<key_type>?)
   typedef index_graph<key_type> Index;
   typedef Index::vertex_descriptor V;

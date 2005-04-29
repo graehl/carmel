@@ -17,12 +17,12 @@ typedef DynamicArray<char> CharBuf;
 // FIXME: use thread-local storage instead of static ... reentrance stack?
 template <class T>
 struct default_bufsize {
-  enum { BUFSIZE=16 };
+  enum make_not_anon_1 { BUFSIZE=16 };
 };
 
 template <>
 struct default_bufsize<char> {
-  enum { BUFSIZE=CHARBUF_INIT_SIZE };
+  enum make_not_anon_2 { BUFSIZE=CHARBUF_INIT_SIZE };
 };
 
 template <class T>

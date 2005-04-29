@@ -382,7 +382,7 @@ BOOST_AUTO_UNIT_TEST( TEST_FUNC_ALIGN )
 /*
 template <typename T,size_t n>
 struct fixed_single_allocator {
-//    enum { size = n };
+//    enum make_not_anon_13 { size = n };
     T space[n];
     T *allocate(size_t _n) {
         Assert(n==_n);

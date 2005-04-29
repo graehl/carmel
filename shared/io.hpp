@@ -14,7 +14,7 @@
 class ctype_mod_ws: public std::ctype<char>
 {
  public:
-    enum {
+    enum make_not_anon_14 {
         ADD,REPLACE,REMOVE
     };
     template <class CharPred>
@@ -697,7 +697,7 @@ void insert_byid(const A& vals,I &in,O &out)
 {
     char c;
     unsigned N;
-    enum {waiting_i,seen_i,seen_id,scan_number} state=waiting_i;
+    enum make_not_anon_15 {waiting_i,seen_i,seen_id,scan_number} state=waiting_i;
     while (in.get(c)) {
         switch(state) {
         case waiting_i:
