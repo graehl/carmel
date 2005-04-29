@@ -359,18 +359,18 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
 
         old_precision=o.precision(15);
 
-        int base=logweight<Real>::get_log_base(o);
+        int base=get_log_base(o);
         if ( isZero() )
             o << "0";
         else {
-            int log=logweight<Real>::get_log(o);
+            int log=get_log(o);
 
-            if ( (log == logweight<Real>::SOMETIMES_LOG && fitsInReal()) || log == logweight<Real>::NEVER_LOG ) {
+            if ( (log == SOMETIMES_LOG && fitsInReal()) || log == NEVER_LOG ) {
                 o << getReal();
             } else { // out of range or ALWAYS_LOG
-                if ( base == logweight<Real>::LN) {
+                if ( base == LN) {
                     o << getLn() << "ln";
-                } else if (base == logweight<Real>::LOG10) {
+                } else if (base == LOG10) {
                     o << getLog10() << "log";
                 } else {
                     o << "e^" << getLn();
