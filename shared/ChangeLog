@@ -1,3 +1,8 @@
+2005-04-28  Jonathan Graehl  <graehl@isi.edu>
+
+	* main.hpp (MAIN_BEGIN): by default (unless SYNC_STDIO) unsync
+	stdio and cerr for better performance.
+
 2005-04-27  Jonathan Graehl  <graehl@isi.edu>
 
 	* charbuf.hpp (getline_chomped): getline_chomped
