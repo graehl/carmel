@@ -697,7 +697,7 @@ void insert_byid(const A& vals,I &in,O &out)
 {
     char c;
     unsigned N;
-    enum make_not_anon_15 {waiting_i,seen_i,seen_id,scan_number} state=waiting_i;
+    enum {waiting_i,seen_i,seen_id,scan_number} state=waiting_i;
     while (in.get(c)) {
         switch(state) {
         case waiting_i:
