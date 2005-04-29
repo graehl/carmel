@@ -71,8 +71,8 @@ struct logweight {                 // capable of representing nonnegative reals
   Real weight;
     typedef Real float_type;
   private:
-    enum { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
-    enum { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
+    enum name1 { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
+    enum name2 { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
   // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
   // 32 * ln 10 =~ 73
   // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
@@ -692,7 +692,7 @@ template<class Real>
 class numeric_limits<logweight<Real> > {
 public:
   static bool has_infinity() { return true; }
-    enum { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
+    enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
 
   //FIXME: add rest
 };
