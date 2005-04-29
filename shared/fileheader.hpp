@@ -2,8 +2,14 @@
 #define FILEHEADER_HPP
 
 #include <string>
+#include "funcs.hpp"
 
 const std::string default_file_header_prefix="$$$";
+
+template <class String> bool is_file_header(const String &s) 
+{
+    return match_begin(s.begin(),s.end(),default_file_header_prefix.begin(),default_file_header_prefix.end());
+}
 
 // consumes input from i.  and compares it to s.
 // return iterator to last char matched (s.end if all matched)

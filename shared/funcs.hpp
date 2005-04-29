@@ -29,6 +29,16 @@
 
 #include <vector>
 
+// note: incomplete - see boost::iterator_facade
+template <class P>
+struct null_terminated_iterator
+{
+    P *me;
+    
+};
+
+    
+
 // I hope you have an efficient swap :)
 template <class Container>
 inline void compact(Container &c) {
