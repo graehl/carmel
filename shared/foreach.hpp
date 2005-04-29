@@ -248,7 +248,7 @@ struct simple_variant
     }
 
 private:
-    enum { size = sizeof(T) > sizeof(T*) ? sizeof(T) : sizeof(T*) };
+    enum make_not_anon_12 { size = sizeof(T) > sizeof(T*) ? sizeof(T) : sizeof(T*) };
     bool const                      rvalue;
     mutable aligned_storage<size>   data;
 };

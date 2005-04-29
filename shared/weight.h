@@ -65,18 +65,19 @@ struct logweight;
 // conservative value.  subtract one if you *want* the result of addition to be
 // not lose tons of information
 
+//#define MAKENOTANON name ## __LINE__
 template<class Real>
 struct logweight {                 // capable of representing nonnegative reals
   // internal implementation note: by their base e logarithm
   Real weight;
     typedef Real float_type;
   private:
-    enum name1 { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
+    enum MAKENOTANON  { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
     enum name2 { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
   // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
   // 32 * ln 10 =~ 73
   // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
-//  enum {LN_TILL_UNDERFLOW=} ;
+//  enum make_not_anon_26 {LN_TILL_UNDERFLOW=} ;
     static inline Real LN_TILL_UNDERFLOW() 
     {
         return UNDERFLOW_LN;

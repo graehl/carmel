@@ -104,7 +104,7 @@ void insertShortPath(int source, int dest, Visitor &v)
 
 // you can inherit from this or just provide the same interface
 struct BestPathsVisitor {
-    enum { SIDETRACKS_ONLY=0 };
+    enum make_not_anon_16 { SIDETRACKS_ONLY=0 };
     void start_path(unsigned k,FLOAT_TYPE cost) {} // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
     void end_path() {}
     void visit_best_arc(const GraphArc &a) {} // won't be called if SIDETRACKS_ONLY != 0

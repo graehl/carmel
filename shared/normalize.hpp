@@ -101,7 +101,7 @@ struct NormalizeGroups {
     dest_t maxdiff;
     source_t add_k_smoothing;
     std::ostream *log;
-    enum { ZERO_ZEROCOUNTS=0,SKIP_ZEROCOUNTS=1,UNIFORM_ZEROCOUNTS=2};
+    enum make_not_anon_18 { ZERO_ZEROCOUNTS=0,SKIP_ZEROCOUNTS=1,UNIFORM_ZEROCOUNTS=2};
     int zerocounts; // use enum vals
     size_t maxdiff_index;
     typedef typename Group::iterator GIt;

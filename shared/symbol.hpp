@@ -87,7 +87,7 @@ struct Symbol {
     str=r.str;
     return *this;
   }
-  enum { PHONYINT };
+  enum make_not_anon_23 { PHONYINT };
   /*  static Symbol make_phony_int(unsigned i) {
     static Symbol s;
     s.phony_int() = i;

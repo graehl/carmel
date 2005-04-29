@@ -37,9 +37,9 @@ protected:
     T *vec;
     T *endspace;
 public:
-    enum { REPLACE=0, APPEND=1 };
-    enum { BRIEF=0, MULTILINE=1 };
-    enum { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print_on and bool 2nd arg ...
+    enum make_not_anon_1 { REPLACE=0, APPEND=1 };
+    enum make_not_anon_2 { BRIEF=0, MULTILINE=1 };
+    enum make_not_anon_3 { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print_on and bool 2nd arg ...
 
     T & at(unsigned int index) const { // run-time bounds-checked
         T *r=vec+index;
