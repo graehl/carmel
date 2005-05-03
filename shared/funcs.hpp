@@ -29,6 +29,15 @@
 
 #include <vector>
 
+
+template <class C>
+void resize_up_for_index(C &c,size_t i) 
+{
+    const size_t newsize=i+1;
+    if (newsize > c.size())
+        c.resize(newsize);
+}
+
 // note: incomplete - see boost::iterator_facade
 template <class P>
 struct null_terminated_iterator
