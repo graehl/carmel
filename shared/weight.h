@@ -357,9 +357,6 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
     template<class charT, class Traits>
     std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const {
         std::streamsize old_precision=set_precision(o);
-
-        old_precision=o.precision(15);
-
         int base=get_log_base(o);
         if ( isZero() )
             o << "0";
