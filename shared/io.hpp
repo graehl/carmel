@@ -77,31 +77,52 @@ inline void remove_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_w
     change_ws(in,true_for_char<C>(),mode);
 }
 
-template <class Set,class charT, class Traits>
-inline bool parse_range(std::basic_istream<charT,Traits> &in,Set &set) {
+template <class Value,class Set,class charT, class Traits>
+inline bool parse_range_as(std::basic_istream<charT,Traits> &in,Set &set) {
     char c;
-    unsigned a,b;
+//    typedef typename Set::value_type Value;    
+    Value a,b;
     while(in) {
-        if(!(in>>a)) break;
-        set.insert(a);
         if (!(in>>c)) break;
+        bool remove=false;
+        if (c!='^') {            
+            if (c!='\\')
+                in.unget();
+        } else
+            remove=true;
+        if(!(in>>a)) break;
+        if (remove)
+            set.erase(a);
+        else
+            set.insert(a);
+        if (!(in>>c)) break;        
         if (c=='-') {
             if (!(in>>b)) break;
-            while(a<=b)
-                set.insert(++a);
+            for(;a<=b;++a)
+                if (remove)
+                    set.erase(a);
+                else
+                    set.insert(a);
             if (!(in>>c)) break;
         }
-    //post: c has a just gotten character that may be a , or the beginning of the next range
+    //post: c has a just gotten character that may be a , or the beginning of the next range (or a backslash)
         if (c!=',')
             in.unget();
     }
     return in.eof(); // only ok if we get here after consuming whole input
 }
 
+template <class Value,class Set,class charT, class Traits>
+inline bool parse_range_as(const std::basic_string<charT,Traits> &in,Set &set) {
+    std::basic_istringstream<charT,Traits> instream(in);
+    return parse_range_as<Value>(instream,set);
+}
+
+
 template <class Set>
-inline bool parse_range(const std::string range,Set &set) {
+inline bool parse_range(const std::string &range,Set &set) {
     std::istringstream is(range);
-    return parse_range(is,set);
+    return parse_range_as<typename Set::value_type>(is,set);
 }
 
 

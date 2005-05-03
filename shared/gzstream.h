@@ -44,8 +44,8 @@ namespace GZSTREAM_NAMESPACE {
 
 class gzstreambuf : public std::streambuf {
 private:
-    static const int bufferSize = 47+256;    // size of data buff
-    // totals 512 bytes under g++ for igzstream at the end.
+    static const int bufferSize = 47+4096;    // size of data buff
+    // 47 totals 256 bytes under g++ for igzstream at the end.
 
     gzFile           file;               // file handle for compressed file
     char             buffer[bufferSize]; // data buffer
@@ -53,6 +53,7 @@ private:
     int              mode;               // I/O mode
 
     int flush_buffer();
+    void handle_gzerror(); // throws exception
 public:
     gzstreambuf() : opened(0) {
         setp( buffer, buffer + (bufferSize-1));

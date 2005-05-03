@@ -29,10 +29,12 @@
 #include <gzstream.h>
 #include <iostream>
 #include <string.h>  // for memcpy
+#include <stdexcept>
 
 #ifdef GZSTREAM_NAMESPACE
 namespace GZSTREAM_NAMESPACE {
 #endif
+using namespace std;
 
 // ----------------------------------------------------------------------------
 // Internal classes to implement gzstream. See header file for user classes.
@@ -60,7 +62,8 @@ gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
     *fmodeptr = '\0';
     file = gzopen( name, fmode);
     if (file == 0)
-        return (gzstreambuf*)0;
+        handle_gzerror();    
+    //    return (gzstreambuf*)0;
     opened = 1;
     return this;
 }
@@ -71,9 +74,19 @@ gzstreambuf * gzstreambuf::close() {
         opened = 0;
         if ( gzclose( file) == Z_OK)
             return this;
+        else
+            handle_gzerror();
     }
     return (gzstreambuf*)0;
 }
+
+void gzstreambuf::handle_gzerror() {
+    int errnum;
+    const char *errmsg=gzerror(file,&errnum);
+    throw runtime_error(errmsg);    
+//    if (errnum==Z_DATA_ERROR) throw runtime_error("CRC error reading gzip");
+}
+
 
 int gzstreambuf::underflow() { // used for input buffer only
     if ( gptr() && ( gptr() < egptr()))
@@ -89,8 +102,12 @@ int gzstreambuf::underflow() { // used for input buffer only
 
     int num = gzread( file, buffer+4, bufferSize-4);
     if (num <= 0) // ERROR or EOF
-        return EOF;
-
+    {
+        if (gzeof(file))
+            return EOF;
+        handle_gzerror();
+    }
+    
     // reset buffer pointers
     setg( buffer + (4 - n_putback),   // beginning of putback area
           buffer + 4,                 // read position
@@ -105,7 +122,7 @@ int gzstreambuf::flush_buffer() {
     // sync() operation.
     int w = pptr() - pbase();
     if ( gzwrite( file, pbase(), w) != w)
-        return EOF;
+        handle_gzerror();
     pbump( -w);
     return w;
 }
