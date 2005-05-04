@@ -120,7 +120,7 @@ inline std::string output_name_like_cp(const std::string &source,const std::stri
     fs::path full_source=full_path(source);
     
     if (directory_exists(full_dest))
-        full_dest = full_dest / fs::basename(source);        
+        full_dest /= full_source.leaf();
     if (dest_exists && fs::exists(full_dest))
         *dest_exists=1;
         
