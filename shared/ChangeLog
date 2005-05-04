@@ -1,3 +1,8 @@
+2005-05-03  Jonathan Graehl  <graehl@isi.edu>
+
+	* gzstream.C: throw exceptions when things fail (e.g. bad checksum
+	on input, input file not found)
+
 2005-04-28  Jonathan Graehl  <graehl@isi.edu>
 
 	* main.hpp (MAIN_BEGIN): by default (unless SYNC_STDIO) unsync

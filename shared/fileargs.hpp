@@ -19,6 +19,9 @@
 #ifdef MAIN
 # include "gzstream.C"
 #endif
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
+#include "boost/filesystem/convenience.hpp"
 
 static const char gz_ext[]=".gz";
 
@@ -87,7 +90,6 @@ inline Infile infile(const std::string &s)
 
 inline InDiskfile indiskfile(const std::string &s)
 {
-
     if (s == "-0") {
         return default_in_disk_none;
     } else {
@@ -97,6 +99,39 @@ inline InDiskfile indiskfile(const std::string &s)
         }
         return (r);
     }
+}
+
+namespace fs = boost::filesystem;
+
+inline fs::path full_path(const std::string &relative) 
+{
+    return fs::system_complete( fs::path( relative, fs::native ) );
+}
+
+inline bool directory_exists(const fs::path &possible_dir)
+{
+    return fs::exists(possible_dir) && fs::is_directory(possible_dir);
+}
+
+
+inline std::string output_name_like_cp(const std::string &source,const std::string &dest,bool *dest_exists=NULL) 
+{
+    fs::path full_dest=full_path(dest);
+    fs::path full_source=full_path(source);
+    
+    if (directory_exists(full_dest))
+        full_dest = full_dest / fs::basename(source);        
+    if (dest_exists && fs::exists(full_dest))
+        *dest_exists=1;
+        
+
+    full_dest.normalize();
+    full_source.normalize();
+    
+    if (fs::equivalent(full_dest,full_source))
+        throw std::runtime_error("Destination file is same as source!");
+    
+    return full_dest.native_file_string();
 }
 
 inline Outfile outfile(const std::string &s) 

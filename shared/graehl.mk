@@ -72,14 +72,22 @@ endif
 BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp \
 unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp	      \
 unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
-BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_OPT_SRCS=cmdline.cpp convert.cpp parsers.cpp utf8_codecvt_facet.cpp variables_map.cpp config_file.cpp options_description.cpp positional_options.cpp value_semantic.cpp
 # winmain.cpp
+BOOST_FS_SRCS=convenience.cpp operations_posix_windows.cpp exception.cpp path_posix_windows.cpp
+
+BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_OPT_OBJS=$(BOOST_OPT_SRCS:%.cpp=$(OBJB)/%.o)
+BOOST_FS_OBJS=$(BOOST_FS_SRCS:%.cpp=$(OBJB)/%.o)
+
 BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPT_LIB=$(OBJB)/libprogram_options.a
+BOOST_FS_LIB=$(OBJB)/libfilesystem.a
+
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
+BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
+
 LDFLAGS += $(addprefix -l,$(LIB))
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
@@ -195,6 +203,12 @@ test: $(ALL_TESTS)
 #	$(foreach test,$(ALL_TESTS),$(shell $(test) --catch_system_errors=no))
 
 
+$(BOOST_FS_LIB): $(BOOST_FS_OBJS)
+	@echo
+	@echo creating Boost Filesystem lib
+	$(AR) -rc $@ $^
+#	$(RANLIB) $@
+
 $(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
 	@echo
 	@echo creating Boost Test lib
@@ -207,7 +221,7 @@ $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 	$(AR) -rc $@ $^
 #	$(RANLIB) $@
 
-vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR)
+vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR):$(BOOST_FS_SRC_DIR)
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o
 $(OBJB)/%.o: %.cpp
