@@ -66,7 +66,7 @@ template <class C,class Alloc=std::allocator<C>,size_t block_size=PACKED_ALLOC_B
   void deallocate(C *p, size_t n) {alloc.deallocate(p,n);}
 };
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 template <class C,class Alloc,size_t block_size> PackedAlloc<C,Alloc,block_size> StaticPackedAlloc<C,Alloc,block_size>::alloc;
 #endif
 

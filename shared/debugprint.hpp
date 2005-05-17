@@ -63,6 +63,7 @@ inline void dbgout(std::ostream &o,void *a) {
 
 template <class A>
 inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
+  (void)dummy;
   if (a == NULL) {
     o << "NULL";
   } else {
@@ -77,28 +78,33 @@ inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is
 // what follows relies on SFINAE (google) to identify whether an object supports print_on (with or without a Writer param)
 template<class A>
 inline void dbgout(std::ostream &o,const A &a, typename has_print_on_plain<A>::type* dummy = 0) {
-  deref(a).print_on(o);
+    (void)dummy;
+    deref(a).print_on(o);
 }
 
 template<class A>
 inline void dbgout(std::ostream &o,const A &a, typename has_print_on_writer<A>::type* dummy = 0) {
-  deref(a).print_on(o,DebugWriter());
+    (void)dummy;
+    deref(a).print_on(o,DebugWriter());
 }
 
 template<class A>
 inline void dbgout(std::ostream &o,const A &a, typename not_has_print_on<A>::type* dummy = 0) {
+    (void)dummy;
     o << deref(a);
 }
 
 
 template<class A,class W>
 inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_on_plain<A>::type* dummy = 0) {
-  deref(a).print_on(o);
+    (void)dummy;
+    deref(a).print_on(o);
 }
 
 template<class A,class W>
 inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_on_writer<A>::type* dummy = 0) {
-  deref(a).print_on(o,w);
+    (void)dummy;
+    deref(a).print_on(o,w);
 }
 
 inline void dbgout(std::ostream &o,const char *a) {
@@ -267,7 +273,7 @@ namespace DBP {
     void print_indent(std::ostream &o);
     void set_loglevel(int loglevel=0);
     void set_logstream(std::ostream &o=std::cerr);
-#ifdef MAIN
+#ifdef SINGLE_MAIN
     int current_chat;
     int chat_level;
     std::ostream *logstream=&std::cerr;
@@ -297,7 +303,7 @@ static const std::string constEmptyString;
 extern THREADLOCAL std::ostringstream dbgbuf;
 extern THREADLOCAL std::string dbgstring;
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 THREADLOCAL std::ostringstream dbgbuf;
 THREADLOCAL std::string dbgstring;
 #endif

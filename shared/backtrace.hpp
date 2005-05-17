@@ -70,7 +70,7 @@ std::ostream &operator <<(std::ostream &o,const BackTrace::Loc &l)
 }
 
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 BackTrace::LocStack BackTrace::stack;
 bool BackTrace::first=true;
 #endif

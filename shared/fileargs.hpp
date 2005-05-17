@@ -16,7 +16,7 @@
 //ns_gzstream
 #endif
 #include "gzstream.h"
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 # include "gzstream.C"
 #endif
 #include "boost/filesystem/operations.hpp"

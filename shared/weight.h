@@ -702,7 +702,7 @@ public:
 #define NANCHECK(w)
 #endif
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 #include "weight.cc"
 #endif
 

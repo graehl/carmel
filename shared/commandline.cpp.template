@@ -1,4 +1,4 @@
-#define MAIN
+#define SINGLE_MAIN
 #define SINGLE_PRECISION
 //#define HINT_SWAPBATCH_BASE
 #include "config.h"

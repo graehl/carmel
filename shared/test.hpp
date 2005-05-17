@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iostream>
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 #define TEST_MAIN
 #define BOOST_AUTO_TEST_MAIN
 #endif
@@ -44,7 +44,7 @@ struct test_counter {
   void  operator()(const A1 &a,const A2 &a2,const A3 &a3) { ++n;  }
 };
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
   unsigned test_counter::n;
 #endif
 

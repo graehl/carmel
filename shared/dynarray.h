@@ -8,7 +8,7 @@
 // DynamicArray extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
 // note that DynamicArray may have capacity()==0 (though using push_back and array(i) will allocate it as necessary)
 
-#include "config.h"
+//#include "config.h"
 
 #include <string>
 #include <new>
@@ -22,6 +22,7 @@
 #include "io.hpp"
 #include "stackalloc.hpp"
 #include <boost/lexical_cast.hpp>
+#include <algorithm>
 
 #ifdef TEST
 #include "test.hpp"
@@ -188,6 +189,16 @@ public:
     explicit Array(const char *c) {
         std::istringstream(c) >> *this;
     }
+    
+    //FIXME: unsafe: etc. I'm relying on contiguousness of std::vector storage
+    template <class A2>
+    Array(std::vector<T,A2> &source,unsigned starti,unsigned endi) 
+    {
+        assert(endi <= source.size());
+        vec=&(source[starti]);
+        vec=&(source[endi]);
+    }
+    
     Array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
     Array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
     explicit Array(unsigned sp=4) { alloc(sp); }
@@ -262,6 +273,13 @@ private:
         Assert(0);
     }
 };
+
+template <class T,class Alloc>
+inline bool operator < (Array<T,Alloc> &a,Array<T,Alloc> &b) 
+{
+    return std::lexicographical_compare(a.begin(),a.end(),b.begin(),b.end());
+}
+
 
 // FIXME: drop template copy constructor since it screws with one arg size constructor
 // frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
