@@ -16,7 +16,7 @@
 #  undef USE_NONDET_RANDOM
 # else 
 #  include <boost/nondet_random.hpp>
-# ifdef MAIN
+# ifdef SINGLE_MAIN
 #  include "nondet_random.cpp"
 # endif
 #endif 
@@ -45,7 +45,7 @@ inline unsigned default_random_seed()
 typedef boost::lagged_fibonacci607 G_rgen;
 
 typedef boost::uniform_01<G_rgen> G_rdist;
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 static G_rgen g_random_gen(default_random_seed());
 G_rdist g_random01(g_random_gen);
 #else

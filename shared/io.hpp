@@ -446,7 +446,7 @@ struct RandomReaderTerm
                     break; \
                 }
             END_IF_TERMINATOR(terminator);
-//                    in.setstate(std::ios::failbit );   \
+//                    in.setstate(std::ios::failbit );  
 
             in >> l;
         }

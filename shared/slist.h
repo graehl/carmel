@@ -4,6 +4,7 @@
 
 #include <iterator>
 #include <memory>
+#include "memleak.hpp"
 
 template <class T>  struct _slist_Node
   {

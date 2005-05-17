@@ -278,7 +278,7 @@ BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 #endif
 
 
-#ifdef MAIN
+#ifdef SINGLE_MAIN
 #include "strhash.cc"
 #endif
 

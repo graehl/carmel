@@ -1,4 +1,4 @@
-#define MAIN
+#define SINGLE_MAIN
 #include "main.hpp"
 #include "makestr.hpp"
 
