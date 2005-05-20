@@ -180,7 +180,7 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 #ifdef DEBUG
 #define DBP_IN ++DBP::depth
 #define DBP_OUT if (!DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
-#define DBP_SCOPE DBP::scopedepth DBP9423scopedepth
+#define DBP_SCOPE DBP::scopedepth DBP9423scopedepth ## __LINE__
 
 #define DBP_ENABLE(x) SetLocal<bool> DBPenablescope_line_## __LINE__(DBP::disable,!x)
 #define DBP_OFF DBP_ENABLE(false)
