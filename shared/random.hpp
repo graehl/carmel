@@ -84,6 +84,13 @@ inline double random_pos_fraction() // returns uniform random number on (0..1]
 #endif
 }
 
+struct set_random_pos_fraction {
+    template <class C>
+    void operator()(C &c) {
+        c=random_pos_fraction();
+    }
+};
+
 inline unsigned random_less_than(unsigned limit) {
     Assert(limit!=0);
     if (limit <= 1)
