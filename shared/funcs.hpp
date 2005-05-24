@@ -1,8 +1,6 @@
 #ifndef FUNCS_HPP
 #define FUNCS_HPP
 
-#include "random.hpp"
-
 #include "memleak.hpp"
 
 #include <iterator>
@@ -38,12 +36,11 @@ void resize_up_for_index(C &c,size_t i)
         c.resize(newsize);
 }
 
-// note: incomplete - see boost::iterator_facade
+// note: not finished - see boost::iterator_facade
 template <class P>
 struct null_terminated_iterator
 {
-    P *me;
-    
+    P *me;    
 };
 
     
@@ -659,7 +656,70 @@ struct min_max_accum {
         }
 //        DBP2(min,max);
     }
+    bool anyseen() const 
+    {
+        return seen;
+    }
+    T maxdiff() const
+    {
+        return this->anyseen()?max-min:T();
+    }    
 };
+
+template <class T>
+struct avg_accum {
+    T sum;
+    size_t N;
+    avg_accum() : N(0),sum() {}
+    template <class F>
+    void operator()(const F& t) {
+        ++N;
+        sum+=t;
+    }
+    bool anyseen() const
+    {
+        return N;
+    }
+    T avg() const
+    {
+        return sum/(double)N;
+    }
+    operator T() const 
+    {
+        return avg();
+    }
+    void operator +=(const avg_accum &o)
+    {
+        sum+=o.sum;
+        N+=o.N;
+    }
+    
+};
+
+template <class T>
+struct min_avg_max_accum : public avg_accum<T> {
+    T max;
+    typedef avg_accum<T> Avg;
+    T min;
+    min_avg_max_accum() : Avg() {}
+    template <class F>
+    void operator()(const F& t) {
+        if (this->anyseen()) {
+            if (max < t)
+                max = t;
+            else if (min > t)
+                min = t;
+        } else {
+            min=max=t;
+        }
+        ((Avg &)*this)(t);
+    }
+    T maxdiff() const
+    {
+        return this->anyseen()?max-min:T();
+    }
+};
+
 
 template <class T>
 struct max_in_accum {
@@ -716,14 +776,6 @@ template <class V>
 set_value<V> value_setter(V &init_value) {
     return set_value<V>(init_value);
 }
-
-struct set_random_pos_fraction {
-    template <class C>
-    void operator()(C &c) {
-        c=random_pos_fraction();
-    }
-};
-
 
 
 template <class I, class B,class C>
