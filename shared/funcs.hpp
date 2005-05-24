@@ -27,6 +27,34 @@
 
 #include <vector>
 
+template <class T,class Comp>
+struct compare_indirect_array : public Comp
+{
+    const T *base;
+    typedef compare_indirect_array<T,Comp> Self;
+    compare_indirect_array(T *base_=NULL,const Comp &comp=Comp()) : base(base_),Comp(comp) {}
+    compare_indirect_array(const Self &s) : base(s.base),Comp(s) {}
+    template <class Vec,class VecTo>
+    compare_indirect_array(const Vec &from,VecTo &to,const Comp &comp=Comp()) : Comp(comp) 
+    {
+        init(from,to);
+    }
+    template <class Vec,class VecTo>
+    void init(const Vec &from,VecTo &to)
+    {
+        base=&*from.begin();
+        to.clear();
+        for (unsigned i=0,e=from.size();i<e;++i)
+            to.push_back(i);
+    }    
+    bool operator()(unsigned a,unsigned b) const
+    {
+        return Comp::operator()(base[a],base[b]);
+    }
+};
+
+    
+
 template <class FloatVec>
 typename FloatVec::value_type
 norm(const FloatVec &vec) 
