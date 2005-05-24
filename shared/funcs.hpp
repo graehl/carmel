@@ -27,6 +27,86 @@
 
 #include <vector>
 
+template <class FloatVec>
+typename FloatVec::value_type
+norm(const FloatVec &vec) 
+{
+    typedef typename FloatVec::const_iterator Iter;
+    typedef typename FloatVec::value_type Float;
+    Float sumsq=0;
+    for (Iter i=vec.begin(),e=vec.end();i!=e;++i) {
+        Float v=*i;
+        sumsq+=v*v;        
+    }
+    return sqrt(sumsq);
+}
+
+template <class FloatVec,class Scalar>
+void
+scale(FloatVec &vec,const Scalar &scale) 
+{
+    typedef typename FloatVec::iterator Iter;
+    for (Iter i=vec.begin(),e=vec.end();i!=e;++i)
+        *i*=scale;
+}
+
+template <class FloatVec,class Scalar>
+void
+unscale(FloatVec &vec,const Scalar &scale) 
+{
+    typedef typename FloatVec::iterator Iter;
+    for (Iter i=vec.begin(),e=vec.end();i!=e;++i)
+        *i/=scale;
+}
+
+template <class FloatVec>
+typename FloatVec::value_type
+normalize(FloatVec &vec) 
+{
+    typedef typename FloatVec::iterator Iter;
+    typedef typename FloatVec::value_type Float;
+    Float n=norm(vec);
+    if (n > 0)
+        unscale(vec,n);
+    return n;
+}
+
+template <class FloatVec,class V2>
+typename FloatVec::value_type
+norm_of_inner_product(const FloatVec &vec,const V2 &v2)
+{
+    typedef typename FloatVec::const_iterator Iter;
+    typedef typename V2::const_iterator Iter2;
+    typedef typename FloatVec::value_type Float;
+    Float sumsq=0;
+    Iter2 i2=v2.begin();
+    assert(vec.size()==v2.size());
+    for (Iter i=vec.begin(),e=vec.end();i!=e;++i,++i2) {
+        Float v=*i * *i2;
+        sumsq+=v*v;   
+    }
+    return sqrt(sumsq);
+}
+
+template <class V1,class V2,class Vout>
+void inner_product(const V1 &v1,const V2 &v2,Vout &vout) 
+{
+    vout.clear();
+    vout.reserve(v1.size());
+    assert(v1.size()==v2.size());
+    typename V1::const_iterator iv1=v1.begin(),ev1=v1.end();
+    typename V2::const_iterator iv2=v2.begin();//,ev=V.end();    
+    for(;iv1<ev1;++iv1,++iv2)
+        vout.push_back(*iv1 * *iv2);
+}
+
+template <class V1,class V2,class Vout>
+std::vector<typename V1::value_type> inner_product(const V1 &v1,const V2 &v2) 
+{
+    std::vector<typename V1::value_type> ret;
+    inner_product(v1,v2,ret);
+    return ret;
+}
 
 template <class C>
 void resize_up_for_index(C &c,size_t i) 
@@ -696,6 +776,7 @@ struct avg_accum {
     
 };
 
+/*
 template <class T>
 struct min_avg_max_accum : public avg_accum<T> {
     T max;
@@ -719,6 +800,34 @@ struct min_avg_max_accum : public avg_accum<T> {
         return this->anyseen()?max-min:T();
     }
 };
+*/
+
+template <class T>
+struct min_avg_max_accum : public avg_accum<T>,min_max_accum<T> {
+    typedef avg_accum<T> Avg;
+    typedef min_max_accum<T> MinMax;
+    template <class F>
+    void operator()(const F& t) {
+        Avg::operator()(t); //        ((Avg &)*this)(t);
+        MinMax::operator()(t);
+    }
+    operator T() const 
+    {
+        return this->maxdiff();
+    }
+};
+
+    
+
+template <class c,class t,class T>
+std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const min_avg_max_accum<T> &v) 
+{
+    if (v.anyseen())
+        return o <<"{{{"<<v.min<<'/'<<v.avg()<<'/'<<v.max<<"}}}";
+    else
+        return o <<"<<<?/?/?>>>";
+}
+
 
 
 template <class T>
