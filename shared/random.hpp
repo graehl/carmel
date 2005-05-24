@@ -143,19 +143,20 @@ inline std::string random_alpha_string(unsigned len) {
 template <class It>
 void randomly_permute(It begin,It end) 
 {
+    using std::swap;
     size_t N=end-begin;
     for (size_t i=0;i<N;++i) {
-        std::swap(begin[i],begin[random_up_to(i)]);
-    }    
+        swap(*(begin+i),*(begin+random_up_to(i)));
+    }
 }
 
 template <class V>
 void randomly_permute(V &vec)
 {
+    using std::swap;
     size_t N=vec.size();
-    for (size_t i=0;i<N;) {
-        ++i;
-        std::swap(vec[i],vec[random_up_to(i)]);
+    for (size_t i=0;i<N;++i) {        
+        swap(vec[i],vec[random_up_to(i)]);
     }
 }
 
