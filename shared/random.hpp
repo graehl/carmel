@@ -16,7 +16,7 @@
 #  undef USE_NONDET_RANDOM
 # else 
 #  include <boost/nondet_random.hpp>
-# ifdef SINGLE_MAIN
+# if defined(SINGLE_MAIN) || defined (RANDOM_SINGLE_MAIN)
 #  include "nondet_random.cpp"
 # endif
 #endif 
@@ -84,6 +84,12 @@ inline double random_pos_fraction() // returns uniform random number on (0..1]
 #endif
 }
 
+template <class V1,class V2>
+inline V1 random_half_open(const V1 &v1, const V2 &v2) 
+{
+    return v1+random01()*(v2-v1);
+}
+
 struct set_random_pos_fraction {
     template <class C>
     void operator()(C &c) {
@@ -91,20 +97,25 @@ struct set_random_pos_fraction {
     }
 };
 
-inline unsigned random_less_than(unsigned limit) {
+inline size_t random_less_than(size_t limit) {
     Assert(limit!=0);
     if (limit <= 1)
         return 0;
 #ifdef USE_STD_RAND
 // correct against bias (which is worse when limit is almost RAND_MAX)
-    const unsigned randlimit=(RAND_MAX / limit)*limit;
-    unsigned r;
+    const size_t randlimit=(RAND_MAX / limit)*limit;
+    size_t r;
     while ((r=std::rand()) >= randlimit) ;
     return r % limit;
 #else
-    return (unsigned)(random01()*limit);
+    return (size_t)(random01()*limit);
 #endif
 }
+
+inline size_t random_up_to(size_t limit) {
+    return random_less_than(limit+1);
+}
+
 
 
 #define NLETTERS 26
@@ -129,5 +140,23 @@ inline std::string random_alpha_string(unsigned len) {
     return s.get();
 }
 
+template <class It>
+void randomly_permute(It begin,It end) 
+{
+    size_t N=end-begin;
+    for (size_t i=0;i<N;++i) {
+        std::swap(begin[i],begin[random_up_to(i)]);
+    }    
+}
+
+template <class V>
+void randomly_permute(V &vec)
+{
+    size_t N=vec.size();
+    for (size_t i=0;i<N;) {
+        ++i;
+        std::swap(vec[i],vec[random_up_to(i)]);
+    }
+}
 
 #endif
