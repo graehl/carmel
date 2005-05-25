@@ -146,17 +146,23 @@ std::ostream & operator <<(std::ostream &o, WordSeparator<sep> &separator) {
     return separator.print(o);
 }
 
-template <class Ck,class Cv>
+template <char equal,char comma,class Ck,class Cv>
 std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V) 
 {
     typename Ck::const_iterator ik=K.begin(),ek=K.end();
     typename Cv::const_iterator iv=V.begin(),ev=V.end();
     o << '(';
-    WordSeparator<','> sep;
+    WordSeparator<comma> sep;
     for(;ik<ek && iv<ev;++ik,++iv) {
-        o << sep << *ik << '=' << *iv;        
+        o << sep << *ik << equal << *iv;        
     }
     return o << ')';
+}
+
+template <class Ck,class Cv>
+std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V) 
+{
+    return print_parallel_key_val<'=',',',Ck,Cv>(o,K,V);
 }
 
 
