@@ -675,8 +675,22 @@ template <class Size=size_t>
 struct size_accum {
     Size size;
     Size max_size;
-
-    size_accum() : size(0),max_size(0) {}
+    struct ref
+    {
+        size_accum<Size> *p;
+        template <class T>
+        void operator()(const T& t) {
+            (*p)(t);
+        }
+        ref(const size_accum<Size> &r) : p(&r) {}        
+    };
+    
+        
+    size_accum() { reset(); }
+    void reset() 
+    {
+        size=max_size=0;
+    }    
     template <class T>
     void operator()(const T& t) {
         Size tsize=t.size();
