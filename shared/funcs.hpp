@@ -27,6 +27,48 @@
 
 #include <vector>
 
+template <class Ck,class Cv,class Cr>
+void zip_lists_to_pairlist(const Ck &K,const Cv &V,Cr &result)
+{
+    result.clear();
+    typename Ck::const_iterator ik=K.begin(),ek=K.end();
+    typename Cv::const_iterator iv=V.begin(),ev=V.end();
+    for(;ik<ek && iv<ev;++ik,++iv)
+        result.push_back(typename Cr::value_type(*ik,*iv));    
+    assert(ik==ek && iv==ev);
+}
+
+template <class Ck,class Cv,class Cr>
+std::vector<std::pair<typename Ck::value_type,typename Cv::value_type> > zip_lists(const Ck &K,const Cv &V)
+{
+    std::vector<std::pair<typename Ck::value_type,typename Cv::value_type> > result;
+    zip_lists_to_pairlist(K,V,result);
+    return result;
+}
+
+template <bool descending=false>
+struct compare_fabs 
+{
+    template <class T1,class T2>
+    bool operator()(const T1&a,const T2&b) const 
+    {
+        return (descending) ?
+            fabs(b) < fabs(a)
+            :
+            fabs(a) < fabs(b);
+    }    
+};
+
+template <class compare=compare_fabs<true> >
+struct select1st_compare : public compare
+{
+    template <class T1,class T2>
+    bool operator()(const T1&a,const T2&b) const 
+    {
+        return compare::operator()(a.first,b.first);
+    }
+};
+
 template <class T,class Comp>
 struct compare_indirect_array : public Comp
 {
