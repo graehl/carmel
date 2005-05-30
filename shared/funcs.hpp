@@ -830,6 +830,34 @@ struct min_max_accum {
     }    
 };
 
+//(unbiased) sample variance
+template <class T,class U>
+inline T variance(T sumsq, T sum, U N) 
+{
+    if (N<2)
+        return 0;
+    T mean=sum/N;
+    T diff=(sumsq-sum*mean);
+    return diff > 0 ? diff/(N-1) : 0;
+}
+
+template <class T,class U>
+inline T stddev(T sumsq, T sum, U N) 
+{
+    using std::sqrt;
+    return sqrt(variance(sumsq,sum,N));    
+}
+
+template <class T,class U>
+inline T stderror(T sumsq, T sum, U N) 
+{
+    using std::sqrt;
+    if (N<2)
+        return 0;
+    return stddev(sumsq,sum,N)/sqrt(N);
+}
+
+
 template <class T>
 struct avg_accum {
     T sum;
@@ -856,44 +884,59 @@ struct avg_accum {
     {
         sum+=o.sum;
         N+=o.N;
-    }
-    
+    }    
 };
 
-/*
 template <class T>
-struct min_avg_max_accum : public avg_accum<T> {
-    T max;
-    typedef avg_accum<T> Avg;
-    T min;
-    min_avg_max_accum() : Avg() {}
-    template <class F>
-    void operator()(const F& t) {
-        if (this->anyseen()) {
-            if (max < t)
-                max = t;
-            else if (min > t)
-                min = t;
-        } else {
-            min=max=t;
-        }
-        ((Avg &)*this)(t);
-    }
-    T maxdiff() const
+struct stddev_accum {
+    T sum;
+    T sumsq;
+    size_t N;
+    stddev_accum() : N(0),sum(),sumsq() {}
+    bool anyseen() const
     {
-        return this->anyseen()?max-min:T();
+        return N;
     }
-};
-*/
-
-template <class T>
-struct min_avg_max_accum : public avg_accum<T>,min_max_accum<T> {
-    typedef avg_accum<T> Avg;
-    typedef min_max_accum<T> MinMax;
+    T avg() const
+    {
+        return sum/(double)N;
+    }
+    T variance() const 
+    {
+        return ::variance(sumsq,sum,N);
+    }
+    T stddev() const
+    {
+        return ::stddev(sumsq,sum,N);
+    }
+    T stderror() const
+    {
+        return ::stderror(sumsq,sum,N);
+    }
+    operator T() const 
+    {
+        return avg();
+    }
+    void operator +=(const stddev_accum &o)
+    {
+        sum+=o.sum;
+        sumsq+=o.sumsq;
+        N+=o.N;
+    }
     template <class F>
     void operator()(const F& t) {
-        Avg::operator()(t); //        ((Avg &)*this)(t);
-        MinMax::operator()(t);
+        ++N;
+        sum+=t;
+        sumsq+=t*t;
+    }
+};
+
+template <class T>
+struct stat_accum : public stddev_accum<T>,min_max_accum<T> {
+    template <class F>
+    void operator()(const F& t) {
+        stddev_accum<T>::operator()(t); //        ((Avg &)*this)(t);
+        min_max_accum<T>::operator()(t);
     }
     operator T() const 
     {
@@ -904,10 +947,10 @@ struct min_avg_max_accum : public avg_accum<T>,min_max_accum<T> {
     
 
 template <class c,class t,class T>
-std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const min_avg_max_accum<T> &v) 
+std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const stat_accum<T> &v) 
 {
     if (v.anyseen())
-        return o <<"{{{"<<v.min<<'/'<<v.avg()<<'/'<<v.max<<"}}}";
+        return o <<"{{{"<<v.min<<'/'<<v.avg()<<"(~"<<v.stddev()<<")/"<<v.max<<"}}}";
     else
         return o <<"<<<?/?/?>>>";
 }
