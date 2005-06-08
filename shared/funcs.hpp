@@ -27,6 +27,29 @@
 
 #include <vector>
 
+template <class Vector>
+void reconstruct(Vector &v,size_t n,const typename Vector::value_type &val)
+{
+    /*
+    v.clear();
+    v.insert(v.end(),n,val);
+    */
+    v.~Vector();
+    new(&v)Vector(n,val);
+}
+
+template <class Vector>
+void reconstruct(Vector &v,size_t n)
+{
+    /*
+    v.clear();
+    v.insert(v.end(),n,val);
+    */
+    v.~Vector();
+    new(&v)Vector(n);
+}
+
+
 template <class Ck,class Cv,class Cr>
 void zip_lists_to_pairlist(const Ck &K,const Cv &V,Cr &result)
 {

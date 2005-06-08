@@ -42,6 +42,7 @@ inline unsigned default_random_seed()
 }
 
 #ifndef USE_STD_RAND
+//FIXME: maybe use faster integer type rng?  then maybe faster random ints
 typedef boost::lagged_fibonacci607 G_rgen;
 
 typedef boost::uniform_01<G_rgen> G_rdist;
