@@ -29,7 +29,7 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 #include "genio.h"
 #include "funcs.hpp"
 #include "threadlocal.hpp"
-
+#include "random.hpp"
 
 
 #ifdef _MSC_VER
