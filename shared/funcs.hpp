@@ -1139,15 +1139,6 @@ struct indirect_gt {
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_FUNCS )
 {
-    using namespace std;
-    const int NREP=10000;
-    for (int i=1;i<NREP;++i) {
-        unsigned ran_lt_i=random_less_than(i);
-        BOOST_CHECK(0 <= ran_lt_i && ran_lt_i < i);
-        BOOST_CHECK(isalpha(random_alpha()));
-        char r_alphanum=random_alphanum();
-        BOOST_CHECK(isalpha(r_alphanum) || isdigit(r_alphanum));
-    }
 }
 #endif
 
