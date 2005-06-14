@@ -6,11 +6,11 @@ carmel: finite state transducer toolkit (and k-best graph paths)
 shared: generic routines used by both
 
 Make sure the environment variable ARCH is set to something
-(cygwin,linux,solaris)
+(e.g. cygwin,linux,solaris)
 
 Requires GNU make (unfortunately, version 3.80 or greater is required due to
-some bugs with earlier versions' $(eval)), and a modern standards-complaint C++
-compiler (gcc 3.4 is known good, as is Microsoft Visual C++ 7.1)
+some bugs with earlier versions' $(eval)), and a recent C++ compiler (gcc 3.4 is
+known good, as is Microsoft Visual C++ 7.1)
 
 Also requires Boost (http://boost.org) in your standard include directory (you
 can just use the boost directory in this distribution) - set
