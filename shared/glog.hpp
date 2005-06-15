@@ -1,3 +1,4 @@
+// global logging facility
 #ifndef G_LOG_HPP
 #define G_LOG_HPP
 //GLOBAL LOGGING

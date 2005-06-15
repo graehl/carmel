@@ -1,3 +1,4 @@
+//you create a fix-sized "stack" and allocate objects by a stack-like discipline without any bookkeeping.  used by swapbatch.hpp
 #ifndef STACKALLOC_HPP
 #define STACKALLOC_HPP
 

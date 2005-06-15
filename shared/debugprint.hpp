@@ -1,3 +1,4 @@
+// dbgout(out,var) function with default implementation; DB* convenience macros.  nested debug dumps.
 #ifndef DEBUGPRINT_HPP
 #define DEBUGPRINT_HPP
 

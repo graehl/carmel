@@ -1,3 +1,4 @@
+// helpful template functions related to input/output.  important concept: Reader and Writer-two argument functors read(in,val) and write(out,val)
 #ifndef IO_HPP
 #define IO_HPP
 
@@ -6,10 +7,20 @@
 
 #include <locale>
 #include <algorithm>
-#include <iostream>
+#include <fstream>
 #include <string>
 #include <sstream>
 #include <vector>
+
+template <class T>
+void extract_from_filename(const char *filename,T &to) {
+    std::ifstream in(filename);
+    if (!in)
+        throw std::string("Couldn't read file ") + filename;
+    else {
+        in >> to;
+    }
+}
 
 class ctype_mod_ws: public std::ctype<char>
 {

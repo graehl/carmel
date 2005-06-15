@@ -1,3 +1,4 @@
+// visit and begin_end for Boost Graph Library graphs (for consistency with hypergraph.hpp)
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
 

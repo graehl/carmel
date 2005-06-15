@@ -1,3 +1,4 @@
+// used by swapbatch.hpp (originally planned on providing unbounded since-last-checkpoint putback buffer to obviate seek())
 #ifndef CHECKPOINT_ISTREAM_HPP
 #define CHECKPOINT_ISTREAM_HPP
 

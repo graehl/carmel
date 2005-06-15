@@ -1,3 +1,4 @@
+// wraps Boost or regular random number generators
 #ifndef RANDOM_HPP
 #define RANDOM_HPP
 

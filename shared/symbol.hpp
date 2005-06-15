@@ -1,3 +1,4 @@
+//two things, really: parsing for Tree Transducer symbols, and an intern (that is, canonical pointer for all equivalent strings) facility
 #ifndef SYMBOL_HPP
 #define SYMBOL_HPP
 // no separate implementation for now, just #define MAIN in one source file that includes this

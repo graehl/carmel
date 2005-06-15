@@ -1,3 +1,4 @@
+//workaround for difficulties I've had getting a debugger breakpoint from a failed assert
 #ifndef ASSERT_H
 #define ASSERT_H
 #include "config.h"

@@ -1,3 +1,4 @@
+// string: as opposed to a tree.
 #ifndef STRING_HPP
 #define STRING_HPP
 

@@ -1,3 +1,4 @@
+// wraps misc. POSIX vs. Windows facilities
 #ifndef OS_HPP
 #define OS_HPP
 

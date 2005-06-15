@@ -1,3 +1,4 @@
+// normalization to 1 for each group in a disjoint partition of indices
 #ifndef NORMALIZE_HPP
 #define NORMALIZE_HPP
 

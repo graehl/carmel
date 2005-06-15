@@ -1,3 +1,4 @@
+//Operators << and >> are generated from members get_from(in) and print_on(out).  Also, convenience macros for reading/validating
 #ifndef GENIO_H
 #define GENIO_H
 

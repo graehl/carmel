@@ -1,3 +1,4 @@
+// top-down matching of a tree-trie of patterns(tree prefixes) against a subtree.  see jonathan@graehl.org for explanation.
 #ifndef TREETRIE_HPP
 #define TREETRIE_HPP
 

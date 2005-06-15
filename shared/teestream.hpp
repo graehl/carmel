@@ -1,3 +1,4 @@
+// like unix "tee" for ostreams
 #ifndef TEESTREAM_HPP
 #define TEESTREAM_HPP
 #include <iostream>

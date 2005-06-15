@@ -1,3 +1,4 @@
+// input stream that tracks the current line number
 #ifndef LINENOSTREAM_HPP
 #define LINENOSTREAM_HPP
 #include <steambuf>

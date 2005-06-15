@@ -1,3 +1,5 @@
+//power-of-two hash table.  alternatively (defined USE_STD_HASH_MAP) uses the vendor's.  also gives a more convenient Value *find_second(key)
+//original rationale: lack of STL support in gcc - and hash_map still isn't officially in STL.
 #ifndef TWO_HASH_H
 #define TWO_HASH_H
 

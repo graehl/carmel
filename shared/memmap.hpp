@@ -1,3 +1,4 @@
+//wraps memory mapping (supports POSIX and Windows)
 // (C) Copyright Jonathan Graehl 2004.
 // (C) Copyright Jonathan Turkanis 2004.
 // (C) Copyright Craig Henderson 2002.   'boost/memmap.hpp' from sandbox

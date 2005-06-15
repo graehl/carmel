@@ -1,3 +1,4 @@
+//provides access to a collection of objects larger than virtual memory allows, by explicitly mapping a region to disk files which are (re)mapped on demand.  objects must provide a read method that constructs the object to contiguous memory.  input must support seek() to handle out-of-space retries.
 #ifndef SWAPBATCH_HPP
 #define SWAPBATCH_HPP
 

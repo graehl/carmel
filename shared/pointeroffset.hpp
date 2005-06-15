@@ -1,3 +1,4 @@
+// idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.
 #ifndef POINTEROFFSET_HPP
 #define POINTEROFFSET_HPP
 

@@ -1,3 +1,4 @@
+// for sources defining hash functions but not using hash tables themselves
 #ifndef HASHTABLE_FWD_H
 #define HASHTABLE_FWD_H
 

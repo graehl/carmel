@@ -1,3 +1,4 @@
+// select random subsequences of input (without storing the whole thing)
 #ifndef RANDOMREADER_HPP
 #define RANDOMREADER_HPP
 

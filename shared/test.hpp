@@ -1,3 +1,4 @@
+// helps me use the Boost Unit Test library
 #ifndef TEST_HPP
 #define TEST_HPP
 

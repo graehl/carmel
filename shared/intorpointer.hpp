@@ -1,3 +1,4 @@
+// if you ever wanted to store a discriminated union of pointer/integer without an extra boolean flag, this will do it, assuming your pointers are never odd.
 #ifndef INTORPOINTER_HPP
 #define INTORPOINTER_HPP
 

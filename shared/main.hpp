@@ -1,3 +1,4 @@
+// some main() boilerplate
 #ifndef MAIN_HPP
 #define MAIN_HPP
 

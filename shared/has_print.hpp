@@ -1,3 +1,4 @@
+// determine whether a class has specified a print_on or print_on with writer method
 #ifndef PRINT_ON_HPP
 #define PRINT_ON_HPP
 

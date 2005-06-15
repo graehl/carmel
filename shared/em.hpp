@@ -1,3 +1,4 @@
+// generic EM: the parts of the EM training loop that are always the same.  probably would work fine for other objective functions (than likelihood) too
 #ifndef EM_HPP
 #define EM_HPP
 

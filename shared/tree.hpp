@@ -1,3 +1,4 @@
+// the usual recursive label+list of children trees
 #ifndef TREE_HPP
 #define TREE_HPP
 
