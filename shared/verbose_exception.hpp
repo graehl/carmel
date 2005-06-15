@@ -1,3 +1,4 @@
+// throw exceptions holding a message, and function/file/line info
 #ifndef VERBOSE_EXCEPTION_HPP
 #define VERBOSE_EXCEPTION_HPP
 

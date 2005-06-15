@@ -1,3 +1,4 @@
+// given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library 
 #ifndef FILEARGS_HPP
 #define FILEARGS_HPP
 //TODO: support linking to gzstream

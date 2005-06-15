@@ -1,3 +1,5 @@
+// like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).  now also includes fixed size arrays.
+// historical justification: when Carmel was first written, STL wasn't supported by gcc.
 #ifndef DYNARRAY_H
 #define DYNARRAY_H
 //FIXME: const safeness for contents e.g. a[1] a.at(1) return const ref if a const?
@@ -21,6 +23,7 @@
 #include "funcs.hpp"
 #include "io.hpp"
 #include "stackalloc.hpp"
+#include "function_output_iterator.hpp"
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 

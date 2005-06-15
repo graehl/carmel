@@ -1,3 +1,4 @@
+// robustly handle the ISI file header (first line of file="$$$...")
 #ifndef FILEHEADER_HPP
 #define FILEHEADER_HPP
 

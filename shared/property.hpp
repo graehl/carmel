@@ -1,3 +1,4 @@
+// some Boost Graph Library property maps
 #ifndef PROPERTY_HPP
 #define PROPERTY_HPP
 

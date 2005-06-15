@@ -1,3 +1,4 @@
+// (unused) wrapper for the (non-STL-standard) vendor hash_map
 #ifndef HASH_HPP
 #define HASH_HPP
 

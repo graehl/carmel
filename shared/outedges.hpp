@@ -1,3 +1,4 @@
+// (regular) graph of the edges in a (hyper)graph with the same head.
 #ifndef OUTEDGES_HPP
 #define OUTEDGES_HPP
 

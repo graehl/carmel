@@ -1,3 +1,4 @@
+// wraps some memory-leak-detection facilities of Microsoft C++.  you're better off just using valgrind.
 #ifndef MEMLEAK_HPP
 #define MEMLEAK_HPP
 

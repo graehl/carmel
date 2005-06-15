@@ -1,3 +1,4 @@
+//encapsulates the thread-unsafe trick of saving/restoring globals/statics so that functions using them are reentrant (sometimes I prefer to use globals instead of recursively passing the same constant arguments)
 #ifndef THREADLOCAL_HPP
 #define THREADLOCAL_HPP
 

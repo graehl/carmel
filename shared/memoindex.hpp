@@ -1,10 +1,6 @@
+// generic memoization
 #ifndef MEMOINDEX_HPP
 #define MEMOINDEX_HPP
-/*on memoization = alphabet with data: or, a hashtable mapping key to some data that is default-initialized with consecutive indices starting from 0.  static count var that must be pushed/popped off stack?  int oldD = Data::reset();  ... (new Data objects) ... Data::restore(oldD); ?  or, complicated interface that doesn't default construct?
-
-IndexedMemo : functor:ArgType->ResultType, apply:ArgType->index, getResult:index->ResultType, getArg:index->ArgType
-or ... Alphabet: index_of:ArgType-><bool,index> (bool=false) ? data[index]=functor(ArgType) : data[index]
-*/
 
 #include "2hash.h"
 

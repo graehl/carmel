@@ -1,3 +1,4 @@
+// preprocessor macros for building strings out of ostream << "a" << v << "b" - type expressions
 #ifndef MAKESTRING_HPP
 #define MAKESTRING_HPP
 

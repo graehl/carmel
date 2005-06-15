@@ -1,3 +1,4 @@
+// broken attempt to supply default oeprator << if A::default_print_on
 #ifndef DEFAULT_PRINT_ON_HPP
 #define DEFAULT_PRINT_ON_HPP
 #include <iostream>

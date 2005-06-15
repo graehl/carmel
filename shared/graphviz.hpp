@@ -1,3 +1,4 @@
+// some details of writing Dot files for AT&T GraphViz
 #ifndef GRAPHVIZ_HPP
 #define GRAPHVIZ_HPP
 

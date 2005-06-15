@@ -1,3 +1,4 @@
+// misc. helpful template functions (TODO: categorize them)
 #ifndef FUNCS_HPP
 #define FUNCS_HPP
 

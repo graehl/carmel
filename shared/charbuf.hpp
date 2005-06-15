@@ -1,3 +1,4 @@
+// use the same (resized as necessary) buffer for holding strings read in character-by-character.   better than a fixed size maximum symbol or line length, and faster than a stringbuf
 #ifndef CHARBUF_HPP
 #define CHARBUF_HPP
 

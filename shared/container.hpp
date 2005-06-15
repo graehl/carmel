@@ -1,3 +1,4 @@
+// visitor-style enumerate for generic containers (and nested_enumerate for nested containers).  also, conatiner selectors (HashS and MapS for lookup tables, VectorS and ListS for sequences) usable as template arguments
 #ifndef CONTAINER_HPP
 #define CONTAINER_HPP
 

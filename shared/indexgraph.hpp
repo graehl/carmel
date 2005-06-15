@@ -1,3 +1,4 @@
+// Deterministic-FSA-like graph.  given a state and a key, what's the next state (if any?) - used by treetrie.hpp.  implemeneted a space-efficient bsearch/sorted-array map but didn't test it yet.
 #ifndef INDEXGRAPH_HPP
 #define INDEXGRAPH_HPP
 
@@ -23,7 +24,9 @@ inline R binary_search(R l, R u, const K &k) {
 }
 
 
-// adjacency graph with map-keyed edges vertices indexed by [0,num_vertices())
+// adjacency graph with map-keyed edges on vertices, which are indexed by
+// [0,num_vertices())
+
 // - no provision to attach data to or identify edges.  can add later (would
 // return edge_descriptor instead from find and force).  data could be attached
 // by defining key type appropriately.  would then get at the data by

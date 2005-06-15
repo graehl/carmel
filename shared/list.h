@@ -1,3 +1,4 @@
+// linked list wrapper (uses default STL list instead unless -DUSE_SLIST)
 #ifndef LIST_H
 #define LIST_H
 #include "config.h"

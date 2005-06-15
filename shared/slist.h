@@ -1,4 +1,6 @@
-// originally from http://pegasus.rutgers.edu/~elflord/cpp/list_howto/ erase_iterator changes to allow insert and erase (not just _after) by Jonathan
+// singly linked list
+// originally from http://pegasus.rutgers.edu/~elflord/cpp/list_howto/
+// erase_iterator changes to allow insert and erase (not just _after) by Jonathan
 #ifndef SLIST_H
 # define SLIST_H
 

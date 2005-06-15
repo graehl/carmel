@@ -1,0 +1,194 @@
+You'll need Boost, a recent C++ compiler, and GNU Make 3.80 or later (because of
+some tricks in graehl.mk)
+
+I've been compiling everything as a single unit, since most of my libraries are
+so template-heavy as to make separate compilation difficult.  Static (global)
+variable declarations are wrapped in #ifdef SINGLE_MAIN, so if you wanted to
+compile separately, you could.
+
+In some cases, the libraries are unnecessarily entangled (because I couldn't
+figure out the right forward declarations)
+
+Much of the functionality has only been used/tested in the context of unit tests
+(Boost has a nice facility for them) - grep for BOOST_AUTO_UNIT_TEST to find
+them.  Run the ".test" executable to execute them - or, to run just the test for
+a particular header:
+
+function gtest {
+    dev=..
+    g++ -ggdb -fno-inline-functions -c -x c++ -DDEBUG -DTEST -DMAIN \
+        -I$dev/shared -I$dev/boost $1 -o $1.o && \
+    g++ $1.o $dev/shared/obj/$ARCH/libtest.a -o $1.test && \
+    ./$1.test --catch_system_errors=no
+}    
+
+
+Here are some techniques I've used which you might find confusing:
+
+I define I/O for classes as member functions get_from(in) and print_on(out).
+Operators << and >> are generated on top of them with genio.h
+
+I use the "template typedef" technique of Typedef::rebind<arg> (see the STL
+allocator class for the reason this is necessary over Typedef<arg>).
+
+Any macro beginning with "DB" is a debugging macro.  You'll see those outputs if
+you run the ".debug" versions.
+
+If you see deref(f)(arg) anywhere, it's equivalent to f(arg) except that it
+works for boost reference wrappers (generally, it's nice to specify template
+functions as accepting simple values, not references; a reference wrapper saves
+you from writing a pointer wrapper when you *do* want reference semantics).
+
+I do define STL-style iterators, but also enumerate routines that take function
+objects.  Iterators are inherently less efficient for some data structures, and
+lead to ugly boilerplate for loops.  On the other hand, C++ doesn't allow
+anonymous inline function objects, so I do use both styles.
+
+In some places I've made use of the BOOST_FOREACH macro, which simplifies
+iterating over collections using the usual begin() and end() iterators.
+
+I've also at times used a template-based version of the Factory pattern.
+
+==> adjustableheap.hpp <==
+// binary heap allowing adjusting the cost of a node not at the top
+
+==> backtrace.hpp <==
+// sprinkle "BACKTRACE;" (macro) in strategic locations, and BackTrace::print_on() inside exception handler.
+
+==> byref.hpp <==
+// when you write a template that takes an argument by value, pass a ref(obj) if you don't want a copy of obj made.  tries to autoconvert back to obj's type but can't do that for operators, so e.g. deref(f)(arg) is necessary in your template function.
+
+==> charbuf.hpp <==
+// use the same (resized as necessary) buffer for holding strings read in character-by-character.   better than a fixed size maximum symbol or line length, and faster than a stringbuf
+
+==> checkpoint_istream.hpp <==
+// used by swapbatch.hpp (originally planned on providing unbounded since-last-checkpoint putback buffer to obviate seek())
+
+==> container.hpp <==
+// visitor-style enumerate for generic containers (and nested_enumerate for nested containers).  also, HashS and MapS usable as template arguments choosing either a hash table or a binary search tree.
+
+==> debugprint.hpp <==
+// dbgout(out,var) function with default implementation; DB* convenience macros.  nested debug dumps.
+
+==> em.hpp <==
+// generic EM: the parts of the EM training loop that are always the same.  probably would work fine for other objective functions (than likelihood) too
+
+==> fileargs.hpp <==
+// given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library 
+
+==> fileheader.hpp <==
+// robustly handle the ISI file header (first line of file="$$$...")
+
+==> filelines.hpp <==
+// store in memory only the file positions necessary to quickly extract line #N from a large file
+
+==> foreach.hpp <==
+// BOOST_FOREACH - not part of Boost yet.
+
+==> funcs.hpp <==
+// misc. helpful template functions (TODO: categorize them)
+
+==> function_output_iterator.hpp <==
+// treat a function object as an output iterator
+
+==> glog.hpp <==
+// global logging facility
+
+==> graph.hpp <==
+// visit and begin_end for Boost Graph Library graphs (for consistency with hypergraph.hpp)
+
+==> graphviz.hpp <==
+// some details of writing Dot files for AT&T GraphViz
+
+==> hash.hpp <==
+// (unused) wrapper for the (non-STL-standard) vendor hash_map
+
+==> hashtable_fwd.hpp <==
+// for sources defining hash functions but not using hash tables themselves
+
+==> hypergraph.hpp <==
+// like Boost Graph Library, but for hypergraphs (one head, multiple tails).  includes algorithms for best B-hypertree (nonnegative costs) and B-reachability.
+
+==> ilinenostream.hpp <==
+// input stream that tracks the current line number
+
+==> indexgraph.hpp <==
+// Deterministic-FSA-like graph.  given a state and a key, what's the next state (if any?) - used by treetrie.hpp.  implemeneted a space-efficient bsearch/sorted-array map but didn't test it yet.
+
+==> intorpointer.hpp <==
+// if you ever wanted to store a discriminated union of pointer/integer without an extra boolean flag, this will do it, assuming your pointers are never odd.
+
+==> io.hpp <==
+// helpful template functions related to input/output.  important concept: Reader and Writer-two argument functors read(in,val) and write(out,val)
+
+==> main.hpp <==
+// some main() boilerplate
+
+==> makestr.hpp <==
+// preprocessor macros for building strings out of ostream << "a" << v << "b" - type expressions
+
+==> memleak.hpp <==
+// wraps some memory-leak-detection facilities of Microsoft C++.  you're better off just using valgrind.
+
+==> memmap.hpp <==
+//wraps memory mapping (supports POSIX and Windows)
+
+==> memoindex.hpp <==
+// generic memoization
+
+==> normalize.hpp <==
+// normalization to 1 for each group in a disjoint partition of indices
+
+==> os.hpp <==
+// wraps misc. POSIX vs. Windows facilities
+
+==> outedges.hpp <==
+// (regular) graph of the edges in a (hyper)graph with the same head.
+
+==> packedalloc.hpp <==
+// allocate objects within a block contiguously.  memory isn't released to the heap until the block is released.  provides deallocate_all() - good for locally shared sets of objects without needing reference counting/GC
+
+==> pointeroffset.hpp <==
+// idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.
+
+==> print_on.hpp <==
+// determine whether a class has specified a print_on or print_on with writer method
+
+==> property.hpp <==
+// some Boost Graph Library property maps
+
+==> random.hpp <==
+// wraps Boost or regular random number generators
+
+==> randomreader.hpp <==
+// select random subsequences of input (without storing the whole thing)
+
+==> stackalloc.hpp <==
+//you create a fix-sized "stack" and allocate objects by a stack-like discipline without any bookkeeping.  used by swapbatch.hpp
+
+==> string.hpp <==
+// string: as opposed to a tree.
+
+==> swapbatch.hpp <==
+//provides access to a collection of objects larger than virtual memory allows, by explicitly mapping a region to disk files which are (re)mapped on demand.  objects must provide a read method that constructs the object to contiguous memory.  input must support seek() to handle out-of-space retries.
+
+==> symbol.hpp <==
+//two things, really: parsing for Tree Transducer symbols, and an intern (that is, canonical pointer for all equivalent strings) facility
+
+==> teestream.hpp <==
+// like unix "tee" for ostreams
+
+==> test.hpp <==
+// helps me use the Boost Unit Test library
+
+==> threadlocal.hpp <==
+//encapsulates the thread-unsafe trick of saving/restoring globals/statics so that functions using them are reentrant (sometimes I prefer to use globals instead of recursively passing the same constant arguments)
+
+==> tree.hpp <==
+// the usual recursive label+list of children trees
+
+==> treetrie.hpp <==
+// top-down matching of a tree-trie of patterns(tree prefixes) against a subtree.  see jonathan@graehl.org for explanation.
+
+==> verbose_exception.hpp <==
+// throw exceptions holding a message, and function/file/line info

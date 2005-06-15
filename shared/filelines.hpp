@@ -1,3 +1,4 @@
+// store in memory only the file positions necessary to quickly extract line #N from a large file
 #ifndef FILELINES_HPP
 #define FILELINES_HPP
 

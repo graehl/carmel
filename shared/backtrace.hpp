@@ -1,3 +1,4 @@
+// sprinkle "BACKTRACE;" (macro) in strategic locations, and BackTrace::print_on() inside exception handler.
 #ifndef BACKTRACE_HPP
 #define BACKTRACE_HPP
 

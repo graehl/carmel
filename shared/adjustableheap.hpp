@@ -1,3 +1,4 @@
+// binary heap allowing adjusting the cost of a node not at the top
 #ifndef ADJUSTABLEHEAP_HPP
 #define ADJUSTABLEHEAP_HPP
 

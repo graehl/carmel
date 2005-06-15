@@ -1,6 +1,6 @@
+// allocate objects within a block contiguously.  memory isn't released to the heap until the block is released.  provides deallocate_all() - good for locally shared sets of objects without needing reference counting/GC
 #ifndef PACKEDALLOC_HPP
 #define PACKEDALLOC_HPP
-// no separate implementation for now, just #define MAIN in one source file that includes this
 
 #include "list.h"
 #include <memory>
