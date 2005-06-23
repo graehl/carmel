@@ -1,5 +1,8 @@
+// (bottom-up) best hypertrees and reachability, using the bottom up [vertex]->[arcs with that tail/rules with that vertex in rhs] index: TailsUpHypergraph
 #ifndef TAILS_UP_HYPERGRAPH_HPP
 #define TAILS_UP_HYPERGRAPH_HPP
+
+// decoder ring: HD = hyperarc descriptor, VD = vertex descriptor
 
 #include "hypergraph.hpp"
 
@@ -27,8 +30,38 @@ operator <<
 
 
 
+// g: ref to original hypergraph
+// terminal_arcs: those with empty tails (already reachable)
+// adj: per-vertex list of HArcDest (hyperarc descriptor in g, # of times this vertex appears in tail/rhs) - built with VertMapFactory
+// unique_tails: for each hyperarc in g, gives the number of unique tail vertices (used for bottom-up reachability/best-tree) - built with HyperarcMapFactory
+// nested class BestTree and Reach are algorithm objects:
+    /* usage:
+       BestTree alg(g,mu,pi);
+       alg.init_costs();
+       for each final (tail) vertex v with final cost f:
+       alg(v,f);
+       alg.finish();
+
+       or:
+
+       alg.init();
+       alg.finish(); // same as above but also sets pi for terminal arcs
+
+       or:
+
+       alg.go(); // does init() and finish()
+
+       or ... assign to mu final costs yourself and then
+       alg.queue_all(); // adds non-infinity cost only
+       alg.finish();
+
+       also
+       typename RemainInfCostFact::reference hyperarc_remain_and_cost_map()
+       returns pmap with pmap[hyperarc].remain() == 0 if the arc was usable from the final tail set
+       and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
+    */
+
 template <class G,
-          //class HyperarcLeftMap=typename ArrayPMap<unsigned,typename graph_traits<G>::hyperarc_index_map>::type,
           class HyperarcMapFactory=property_factory<G,hyperarc_tag_t>,
           class VertMapFactory=property_factory<G,vertex_tag_t>,
           class ContS=VectorS >
@@ -300,6 +333,12 @@ struct TailsUpHypergraph {
               reach(top);
           }
         }
+        void go() 
+        {
+            init();
+            finish();
+        }
+
     };
 
 
@@ -335,6 +374,11 @@ struct TailsUpHypergraph {
           }
         }
         void finish() {
+        }
+        void go() 
+        {
+            init();
+            finish();
         }
         void operator()(VD v) {
           if (get(vr,v))
@@ -372,34 +416,12 @@ struct TailsUpHypergraph {
     }
 
 
-    /* usage:
-       BestTree alg(g,mu,pi);
-       alg.init_costs();
-       for each final (tail) vertex v with final cost f:
-       alg(v,f);
-       alg.finish();
-
-       or:
-
-       alg.init();
-       alg.finish(); // same as above but also sets pi for terminal arcs
-
-       or ... assign to mu final costs yourself and then
-       alg.queue_all(); // adds non-infinity cost only
-       alg.finish();
-
-       also
-       typename RemainInfCostFact::reference hyperarc_remain_and_cost_map()
-       returns pmap with pmap[hyperarc].remain() == 0 if the arc was usable from the final tail set
-       and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
-    */
-
 
 
 
 };
 
-//! TESTS in transducergraph.hpp
+//! TESTS in ../tt/transducergraph.hpp
 
 
 #endif
