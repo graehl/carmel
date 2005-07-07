@@ -4,8 +4,7 @@
 #include "graph.h"
 #include "myassert.h"
 #include "list.h"
-#include "dynarray.h"
-//#include "arc.h"
+//#include "dynarray.h"
 
 struct pGraphArc {
     GraphArc *p;
@@ -30,7 +29,7 @@ struct GraphHeap {
     static GraphHeap *freeList;
     static const int newBlocksize;
     static List<GraphHeap *> usedBlocks;
-    // custom new is mandatory, because of how freeAll works!
+    // custom new is mandatory, because of how freeAll works (and we do rely on freeAll)!
     void *operator new(size_t s)
         {
             size_t dummy = s;
@@ -71,7 +70,15 @@ inline int operator < (const GraphHeap &l, const GraphHeap &r) {
 
 struct EdgePath {
     GraphHeap *node;
-    int heapPos;                  // -1 if arc is GraphHeap.arc
+    int heapPos;                  // <0 if arc is node->arc - otherwise arc is node->arcHeap[heapPos]
+    GraphArc *get_cut_arc()  const
+    {
+        if (heapPos<0)
+            return node->arc;
+        else
+            return node->arcHeap[heapPos];
+    }
+    
     EdgePath *last;
     FLOAT_TYPE weight;
 };
@@ -87,21 +94,6 @@ void freeAllSidetracks(); // must be called after you buildSidetracksHeap
 void printTree(GraphHeap *t, int n) ;
 void shortPrintTree(GraphHeap *t);
 
-extern Graph sidetracks;
-extern GraphHeap **pathGraph;
-extern GraphState *shortPathTree;
-
-
-template <class Visitor>
-void insertShortPath(int source, int dest, Visitor &v)
-{
-    GraphArc *taken;
-    for ( int iState = source ; iState != dest; iState = taken->dest ) {
-        taken = &shortPathTree[iState].arcs.top();
-        v.visit_best_arc(*taken);
-    }
-}
-
 // you can inherit from this or just provide the same interface
 struct BestPathsVisitor {
     enum make_not_anon_16 { SIDETRACKS_ONLY=0 };
@@ -111,6 +103,58 @@ struct BestPathsVisitor {
     void visit_sidetrack_arc(const GraphArc &a) { visit_best_arc(a); }
 };
 
+// you can inherit from this or just provide the same interface
+template <bool sidetracks_only=false>
+struct BestPathsPrinter {
+    std::ostream *pout;
+    BestPathsPrinter(std::ostream &o) : pout(&o) {}
+    enum make_not_anon_17 { SIDETRACKS_ONLY=sidetracks_only };
+    void start_path(unsigned k,FLOAT_TYPE cost) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
+        *pout<<cost;
+    }
+    
+    void end_path() {
+        *pout<<'\n';
+    }
+    void visit_best_arc(const GraphArc &a) { // won't be called if SIDETRACKS_ONLY != 0
+        *pout<<' '<<a;
+    }
+    void visit_sidetrack_arc(const GraphArc &a) {
+        visit_best_arc(a);
+        *pout<<'!';
+    }
+};
+
+static inline void telescope_cost(GraphArc &w,FLOAT_TYPE *dist)
+{    
+    w.weight = w.weight - (dist[w.source] - dist[w.dest]);
+}
+
+static inline void untelescope_cost(GraphArc &w,FLOAT_TYPE *dist)
+{    
+    w.weight = w.weight + (dist[w.source] - dist[w.dest]);
+}
+
+#ifdef SINGLE_MAIN
+# include "kbest.cc"
+#else
+extern Graph sidetracks;
+extern GraphHeap **pathGraph;
+extern GraphState *shortPathTree;
+#endif
+
+
+template <class Visitor>
+void insertShortPath(int source, int dest, Visitor &v)
+{
+    if (!Visitor::SIDETRACKS_ONLY) {        
+        GraphArc *taken;
+        for ( int iState = source ; iState != dest; iState = taken->dest ) {
+            taken = &shortPathTree[iState].arcs.top();
+            v.visit_best_arc(*taken);
+        }
+    }
+}
 
 template <class Visitor>
 void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v) {
@@ -140,16 +184,13 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
 
         if ( k > 1 ) {
             GraphHeap::freeAll();
-            Graph revPathTree = reverseGraph(shortPathGraph);
             pathGraph = NEW GraphHeap *[nStates];
             sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
             bool *visited = NEW bool[nStates];
             for ( unsigned i = 0 ; i < nStates ; ++i ) visited[i] = false;
-            // IMPORTANT NOTE: depthFirstSearch recursively calls the function
-            // passed as the last argument (in this  case "buildSidetracksHeap")
-            //
 //      freeAllSidetracks();
-            depthFirstSearch(revPathTree, dest, visited, buildSidetracksHeap);
+            Graph revPathTree = reverseGraph(shortPathGraph);
+            depthFirstSearch(revPathTree, dest, visited, buildSidetracksHeap); // depthFirstSearch recursively calls the function passed as the last argument (in this  case "buildSidetracksHeap")
             if ( pathGraph[source] ) {
 #ifdef DEBUGKBEST
                 Config::debug() << "printing trees\n";
@@ -169,18 +210,19 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                 heapAdd(pathQueue, endQueue++, newPath);
                 while ( heapSize(pathQueue, endQueue) && ++path_no <= k ) {
                     EdgePath *top = pathQueue;
-                    GraphArc *cutArc;
+                    GraphArc *cutArc = top->get_cut_arc(); /* replaced:
+                                          if ( top->heapPos < 0 )
+                        cutArc = top->node->arc;
+                    else
+                        cutArc = top->node->arcHeap[top->heapPos];
+                    */
                     typedef List<GraphArc *> Sidetracks;
                     Sidetracks shortPath;
 #ifdef DEBUGKBEST
                     Config::debug() << top->weight;
 #endif
-                    if ( top->heapPos == -1 )
-                        cutArc = top->node->arc;
-                    else
-                        cutArc = top->node->arcHeap[top->heapPos];
                     path_cost=base_path_cost;
-                    shortPath.push( cutArc);
+                    shortPath.push(cutArc);
                     path_cost += cutArc->weight;
 #ifdef DEBUGKBEST
                     Config::debug() << ' ' << *cutArc;
@@ -188,10 +230,12 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                     EdgePath *last;
                     while ( (last = top->last) ) {
                         if ( !((last->heapPos == -1 && (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right )) || (last->heapPos >= 0 && top->heapPos != -1 )) ) { // got to p on a cross edge
+                            cutArc=last->get_cut_arc(); /* replaced:
                             if ( last->heapPos == -1 )
                                 cutArc = last->node->arc;
                             else
                                 cutArc = last->node->arcHeap[last->heapPos];
+                            */
                             shortPath.push( cutArc);
                             path_cost += cutArc->weight;
 #ifdef DEBUGKBEST
@@ -211,7 +255,11 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                         GraphArc *cutarc=*cut;
                         insertShortPath(sourceState, cutarc->source, v); // stitch end of last sidetrack to beginning of this one
                         sourceState = cutarc->dest;
+                        if (!Visitor::SIDETRACKS_ONLY)
+                            untelescope_cost(*cutarc,dist);
                         v.visit_sidetrack_arc(*cutarc);
+                        if (!Visitor::SIDETRACKS_ONLY)
+                            telescope_cost(*cutarc,dist);                        
                     }
 
                     insertShortPath(sourceState, dest, v); // connect end of last sidetrack to dest state
@@ -282,7 +330,8 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
 
     freeGraph(shortPathGraph);
     delete[] dist;
-
-
+    
 }
+
+
 #endif

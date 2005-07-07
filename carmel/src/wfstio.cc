@@ -5,9 +5,13 @@
 #include "fst.h"
 #include <iterator>
 #include <sstream>
+#include "io.hpp"
+#include "debugprint.hpp"
 
-#define DO(x)  { if (!(x)) return 0; }
+#define DEFAULTSTRBUFSIZE 4096
 
+#define REQUIRE(x)  do { if (!(x)) { goto INVALID; } } while(0)
+#define PEEKC  do { REQUIRE(istr>>c); istr.unget(); } while(0)
 #define BOOLBRIEF bool brief = (os.iword(arcformat_index) == BRIEF)
 #define OUTARCWEIGHT(os,a)              do { int pGroup = (a)->groupId; \
         if ( !brief || pGroup >= 0 || (a)->weight != 1.0 ) \
@@ -26,15 +30,20 @@ static inline unsigned int pow2(int exp)
 
 
 #define DOS_CR_CHAR '\r'
-static int getString(istream &in, char *buf)
+static char *getString(istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTSTRBUFSIZE)
 {
+#define CHECKBUFOVERFLOW do { \
+    if (buf >= bufend) \
+        goto bufoverflow; \
+    } while(0)
+    
   int l;
-  char *s;
+  char *s,*bufend=buf+STRBUFSIZE-2;
   if ( !(in >> buf[0]) ) return 0;
   switch ( buf[0] ) {
   case '"':
     l = 0;                      // 1 if backslash was last character
-    for ( s = buf+1 ; s < buf+4094 ; ++s ) {
+    for ( s = buf+1 ; s < bufend ; ++s ) {
       if ( !in.get(*s) ) return 0;
       if ( *s == '"' )
         if ( !l )
@@ -45,13 +54,10 @@ static int getString(istream &in, char *buf)
         l = 0;
     }
     *++s = '\0';
-    if ( s >= buf+4094 ) {
-      std::cerr << "Symbol too long (over 4000 characters): " << buf;
-      return 0;
-    }
+    CHECKBUFOVERFLOW;
     break;
   case '*':                     // all strings delimited by * are special symbols
-    for ( s = buf+1 ; s < buf+4094 ; ++s ) {
+    for ( s = buf+1 ; s < bufend ; ++s ) {
       if ( !in.get(*s) ) return 0;
       if ( *s == '*' )
         break;
@@ -59,26 +65,28 @@ static int getString(istream &in, char *buf)
         *s = tolower(*s);
     }
     *++s = '\0';
-    if ( s >= buf+4094 ) {
-      std::cerr << "Symbol too long (over 4000 characters): " << buf;
-      return 0;
-    }
+    CHECKBUFOVERFLOW;
     break;
   case '(':
   case ')':
     return 0;
     break;
   default:
-    while ( in.get(*++buf) && *buf != '\n' && *buf != '\t' && *buf != ' ' && *buf != ')' )
-      ;
+    while ( in.get(*++buf) && *buf != '\n' && *buf != '\t' && *buf != ' ' && *buf != '!' && *buf != ')' )
+        CHECKBUFOVERFLOW;
     if ( *buf == ')' )
-      in.putback( ')' );
+        in.unget();
     *buf = 0;
     if (buf[-1] == DOS_CR_CHAR)
-      buf[-1] = 0;
+      *--buf = 0;
     break;
   }
-  return 1;
+  return buf;
+bufoverflow:
+  *bufend=0;
+  std::cerr << "Symbol too long (over "<<bufend-buf<<" characters): " << buf;
+  return 0;
+#undef CHECKBUFOVERFLOW
 }
 
 WFST::WFST(const char *buf)
@@ -86,7 +94,7 @@ WFST::WFST(const char *buf)
   named_states=0;
   initAlphabet();
   istringstream line(buf);
-  char symbol[4096];
+  char symbol[DEFAULTSTRBUFSIZE];
   int symbolInNumber, symbolOutNumber;
   final = 0;
   while ( line ) {
@@ -114,8 +122,9 @@ struct ltstr // Yaser 8-3-200
   }
 };
 
-bool isNumber(const char * p){
-  const char *q = p++ + strlen(p) ;
+bool isNonNegInt(const char * p){
+    //FIXME: was p+1 and not p++ intended??? would be ignoring 1st char ...
+  const char *q = p++ + strlen(p);
   while((p < q ) && isdigit(*p)){p++;}
   return(p==q);
 }
@@ -128,7 +137,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
   initAlphabet();
   length = 0 ;
   istringstream line(buf);
-  char symbol[4096];
+  char symbol[DEFAULTSTRBUFSIZE];
   vector<int> symbols;
   vector<string> strSymbols;
   string currSym("") ;
@@ -147,7 +156,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
       return;
     }
     if (!permuteNumbers){
-      if (isNumber(symbol)){ /*it is alphanumeric symbol*/
+      if (isNonNegInt(symbol)){ /*it is alphanumeric symbol*/
         string temp(symbol+1);
         currSym += temp.substr(0,temp.length()-1)  ;
       }
@@ -202,7 +211,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
         for (int l=0; l < int(strSymbols.size()); l++){
           int temp = pow2(l);
           if (((int(k / temp) % 2) == 0) && (!taken[strSymbols[l].c_str()])){
-            if (isNumber(strSymbols[l].c_str())){
+            if (isNonNegInt(strSymbols[l].c_str())){
               unsigned int from_state,to_state ;
               from_state = k ;
               for(unsigned int i =1 ; i < strSymbols[l].length()-1 ; i++){
@@ -271,145 +280,203 @@ int WFST::getStateIndex(const char *buf) {
 
 static const char COMMENT_CHAR='#';
 
-// need to destroy old data or switch this to a constructor
+//FIXME: need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
+    StringKey finalName;
+    try {        
+        int stateNumber, destState, inL, outL;
+        Weight weight;
+        char c, d, buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
+        REQUIRE(getString(istr, buf));
+        finalName = buf;
 
-  int stateNumber, destState, inL, outL;
-  Weight weight;
-  char c, d, buf[4096];
-  StringKey finalName;
-  DO(getString(istr, buf));
-  finalName = buf;
-
-  named_states=1;
-  if (!alwaysNamed) {
-    named_states=0;
-    for (const char *p=finalName.c_str();*p;++p)
-      if (!isdigit(*p)) {
         named_states=1;
-        break;
-      }
-  }
+        if (!alwaysNamed) {
+            named_states=0;
+            for (const char *p=finalName.c_str();*p;++p)
+                if (!isdigit(*p)) {
+                    named_states=1;
+                    break;
+                }
+        }
 
-  if (named_states)
-    finalName.clone();
-  else
-    final=getStateIndex(buf);
-Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
-  for ( ; ; ) {
-    if ( !(istr >> c) )
-      break;
-    // begin line:
-    if (c == COMMENT_CHAR) {
-      for(;;) {
-        if (!istr.get(c) )
-          break;
-        if (c == '\n')
-          break;
-      }
-      continue;
+        if (named_states)
+            finalName.clone();
+        else
+            final=getStateIndex(buf);
+        Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
+        while ( istr >> c ) {
+            // begin line:
+            if (c == COMMENT_CHAR) {
+                for(;;) {
+                    if (!istr.get(c) )
+                        break;
+                    if (c == '\n')
+                        break;
+                }
+                continue;
+            }
+            REQUIRE(c == '(');
+            // start state:
+            REQUIRE(getString(istr, buf));
+
+            stateNumber=getStateIndex(buf);
+            if (stateNumber == -1)
+                goto INVALID;
+            
+            // PRE: read: '(' source
+            // expecting: {[destparen(] dest ... [destparen)]}* ')'
+            for (;;) {
+                REQUIRE(istr >> c);
+                bool destparen=(c=='(');
+                if (!destparen)
+                    istr.unget();
+                if( c == ')' )
+                    break;
+      
+                // dest state:
+                REQUIRE(getString(istr, buf));
+                destState=getStateIndex(buf);
+                if (destState == -1)
+                    goto INVALID;
+
+                // (iow!g)*
+                for(;;) {
+                    REQUIRE(istr >> c);
+                    bool iowparen=(c=='(');
+                    if (!iowparen)
+                        istr.unget();
+                    if ( c== ')' )
+                        break;
+                    //PRE: read: '(' source [destparen(] dest [iowparen(]
+                    //expecting: if iowparen, repetitions of: [[input [output]] weight] [![group]] ')'
+                    //             reps separated by '('/REPEAT OR ')'/END 
+                    //   else, single repetition
+//                    PEEKC;
+#define ENDIOW (c==')'||c=='!')                    
+                    if (ENDIOW) { // ...)
+                        inL=outL=EPSILON_INDEX;
+                        weight=1.0;
+                    } else {
+                        char *e;
+#define GETBUF(buf) REQUIRE(e=getString(istr,buf))
+                        GETBUF(buf);
+                        PEEKC;
+                        if (ENDIOW) {  // ... weight) or ... symbol)
+                            if (weight.setString(buf)) { // ... weight)
+                                inL=outL=EPSILON_INDEX;
+                            } else { // ... symbol)
+                                inL = in->indexOf(buf);
+                                outL = out->indexOf(buf);
+                                weight=1.0;
+                            }              
+                        } else {
+                            inL = in->indexOf(buf);
+                            GETBUF(buf2);
+                            PEEKC;
+                            if (ENDIOW) {  // ... iosymbol weight) or ... isymbol osymbol)
+                                if (weight.setString(buf2)) { // ... iosymbol weight)
+                                    outL = out->indexOf(buf);
+                                } else { // ... iosymbol osymbol) 
+                                    outL = out->indexOf(buf2);
+                                    weight=1.0;
+                                }        
+                            } else { // ... isymbol osymbol weight)
+                                outL = out->indexOf(buf2);
+                                REQUIRE(istr >> weight);
+                                PEEKC;
+                                REQUIRE(ENDIOW);
+                            } 
+                        }
+                    }
+                    
+                    // POST: read iow sequence
+                    // expecting: [ '!' [groupid]]
+#undef GETBUF
+//                    DBP5(stateNumber,destState,inL,outL,weight);                    
+                    states[stateNumber].addArc(FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
+                    REQUIRE(istr >> c);
+                    if ( c == '!' ) { // lock weight
+                        FSTArc *lastAdded = &states[stateNumber].arcs.top();
+                        PEEKC;
+                        if( isdigit(c) ) {
+                            int group;
+                            REQUIRE(istr >> group);
+                            //      tieGroup.insert(IntKey(int(lastAdded)), group);
+                            lastAdded->setGroup(group);
+                        } else {
+                            lastAdded->setLocked();
+                        }                        
+                    } else
+                        istr.unget();
+                    // POST: finished reading: iow!g)
+                    if (!iowparen)
+                        break;
+                    REQUIRE(istr >> c && c== ')');
+                }
+                if (!destparen)
+                    break;            
+                REQUIRE(istr >> c && c== ')');
+            }
+            REQUIRE(istr >> c && c== ')');
+            // POST: finished with (dest (iow!g)*)* (done with "line")
+        }        
+        // POST: no more input
+        if ( !named_states) {
+            if (!(final < size())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
+
+            return 1;
+        }
+        {
+            unsigned *uip = stateNames.find(finalName);
+            if ( uip  ) {
+                final = *uip;
+                finalName.kill();
+                return 1;
+            } else {
+                cout << "\nFinal state named " << finalName << " not found.\n";
+                goto INVALID;
+            }
+        }
+    } catch (std::exception &e) {
+        goto INVALID;        
     }
-    DO(c == '(');
-    // start state:
-    DO(getString(istr, buf));
-
-    stateNumber=getStateIndex(buf);
-    if (stateNumber == -1)
-      goto INVALID;
-
-    // arcs:
-    for ( ; ; ) {
-      DO(istr >> c);
-      if( c == ')' )
-        break;
-      DO(c == '(');
-      // dest state:
-      DO(getString(istr, buf));
-
-      destState=getStateIndex(buf);
-      if (destState == -1)
-        goto INVALID;
-      DO(istr >> d);
-      if ( d != '(' )
-        istr.putback(d);
-      for ( ; ; ) {
-        buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
-        DO(istr >> c);  // skip whitespace
-        istr.unget();
-        if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-          DO(getString(istr, buf));
-        inL = in->indexOf(buf);
-        DO(istr >> c);  // skip whitespace
-        istr.unget();
-        if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-          DO(getString(istr, buf));
-        outL = out->indexOf(buf);
-        DO(istr >> c); // skip ws
-        istr.unget();
-        weight.setZero();
-        if (isdigit(c) || c == '.' || c == '-' ) {
-          DO(istr >> weight);
-          if ( istr.fail() ) {
+INVALID:
+    show_error_context(istr,cerr);
+    if (named_states)
+        finalName.kill();
+    invalidate();
+    return 0;
+}
+/*          
+            buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
+            REQUIRE(istr >> c);  // skip whitespace
+            istr.unget();
+            if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
+            REQUIRE(getString(istr, buf));
+            REQUIRE(istr >> c);  // skip whitespace
+            istr.unget();
+            if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
+            REQUIRE(getString(istr, buf));
+            outL = out->indexOf(buf);
+            REQUIRE(istr >> c); // skip ws
+            istr.unget();
+            weight.setZero();
+            if (isdigit(c) || c == '.' || c == '-' ) {
+            REQUIRE(istr >> weight);
+            if ( istr.fail() ) {
             cout << "Invalid weight: " << weight <<"\n";
             return 0;
-          }
-        } else
-          weight = 1.0;
-        //        if ( weight > 0.0 ) {
-        states[stateNumber].addArc(FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
-        //} else if ( weight != 0.0 ) {
-        //          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
-        //          return 0;
-        //}
-        DO(istr >> c);
-        FSTArc *lastAdded = &states[stateNumber].arcs.top();
-        if ( c == '!' ) { // lock weight
-          DO(istr >> c); // skip ws
-          istr.unget();
-          int group = 0;
-          if( isdigit(c) )
-            DO(istr >> group);
-          //      tieGroup.insert(IntKey(int(lastAdded)), group);
-          lastAdded->groupId = group;
-        } else
-          istr.unget();
-        if ( d != '(' ) {
-          DO(istr >> c);
-          DO(c == ')');
-          break;
-        }
-        DO(istr >> c);
-        DO(c == ')');
-        DO(istr >> c);
-        if ( c == ')' )
-          break;
-        DO(c == '(');
-      }
-    }
-  }
-  if ( !named_states) {
-    if (!(final < size())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
-
-    return 1;
-  }
-  {
-    unsigned *uip = stateNames.find(finalName);
-    if ( uip  ) {
-      final = *uip;
-      finalName.kill();
-      return 1;
-    } else {
-      cout << "\nFinal state named " << finalName << " not found.\n";
-      goto INVALID;
-    }
-  }
- INVALID:
-  if (named_states)
-    finalName.kill();
-  invalidate();
-  return 0;
-}
+            }
+            } else
+            weight = 1.0;
+            //        if ( weight > 0.0 ) {
+            */
+    //} else if ( weight != 0.0 ) {
+    //          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
+    //          return 0;
+    //}
 
 
 int WFST::readLegible(const string& str,bool alwaysNamed)
@@ -551,7 +618,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
   //  ListIter<int> ins(*ret);
   istringstream line(buf);
-  char symbol[4096];
+  char symbol[DEFAULTSTRBUFSIZE];
   Alphabet<StringKey,StringPool> *alph;
   if ( output )
     alph = out;
@@ -571,3 +638,9 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   }
   return ret;
 }
+
+#undef REQUIRE
+#undef PEEKC
+#undef OUTARCWEIGHT
+#undef BOOLBRIEF
+#undef DOS_CR_CHAR

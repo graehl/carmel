@@ -6,7 +6,6 @@
 
 #include <iterator>
 #include <memory>
-#include "memleak.hpp"
 
 template <class T>  struct _slist_Node
   {
@@ -252,11 +251,12 @@ class slist : private Alloc::template rebind<_slist_Node<T> >::other
       this->deallocate(tmp,1);
     }
 
-  void insert_after (iterator& x, const T& y)
+  iterator insert_after (iterator& x, const T& y)
     {
       Node* tmp = this->allocate(1);
       PLACEMENT_NEW(tmp) Node(y,x.m_rep->next);
       x.m_rep->next = tmp;
+      return iterator(tmp);
     }
 };
 

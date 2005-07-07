@@ -2,7 +2,7 @@
 #define WEIGHT_H
 
 /*
-All these are legal input (and output) from Carmel, SuperCarmel?, and ForestEM?:
+All these are legal input (and output) from Carmel, and ForestEM:
 
 0
 e^-2.68116e+11
@@ -30,7 +30,7 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 #include "funcs.hpp"
 #include "threadlocal.hpp"
 #include "random.hpp"
-
+#include <cstdlib>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -378,6 +378,73 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
         o.precision(old_precision);
         return GENIOGOOD;
     }
+    void throwbadweight() 
+    {
+        throw "bad logweight";            
+    }
+    
+    logweight(const std::string &str) 
+    {
+        /*
+        std::istringstream is(str);
+        if (get_from(is) == GENIOBAD) {
+            throwbadweight();
+        }
+        */
+        if (!setString(str))
+            throwbadweight();
+    }
+    logweight(const char *str) 
+    {
+        if (!setString(str))
+            throwbadweight();
+    }
+    logweight(const char *begin, const char *end)
+    {
+        if (!setString(begin,end))
+            throwbadweight();    
+    }
+    bool setString(const std::string &str) 
+    {
+        const char *beg=str.c_str(), *end=beg+str.length();
+        return setStringPartial(beg,end)==end;
+    }
+    bool setString(const char *str) 
+    {
+        const char *end = str+std::strlen(str);
+        return setStringPartial(str,end)==end;
+    }
+    bool setString(const char *str, const char *end) 
+    {
+        return setStringPartial(str,end)==end;
+    }    
+    // reads from b up to as much as end, returning one past last read character, or NULL if error
+    char *setStringPartial(const char *b, const char *end) 
+    {
+        char *e;
+        if (b+1<end && b[0]=='e' && b[1] == '^') {
+            weight=std::strtod(b+2,&e);
+            return e;
+       } else {
+            double d=std::strtod(b,&e);
+            if (e[0]=='l') {
+                if (e[1]=='n') {
+                    setLn(d);
+                    return e+2;
+                } else if (e[1]=='o' && e[2]=='g') {
+                    setLog10(d);
+                    return e+3;
+                } else                
+                    return 0;
+            } else {
+                setReal(d);
+                return e;
+            }            
+        }
+        return 0;
+    }
+    
+    
 template<class charT, class Traits>
 std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
   char c;
@@ -711,6 +778,25 @@ typedef logweight<FLOAT_TYPE> Weight;
 #undef WEIGHT_FORWARD_OP_RET
 #undef WEIGHT_FORWARD_OP
 #undef WEIGHT_DEFINE_OP
+
+#ifdef TEST
+#include "test.hpp"
+#include <cctype>
+#include "debugprint.hpp"
+#endif
+
+#ifdef TEST
+BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
+{
+    typedef logweight<float> W;
+    W a(1),b("1"),c("e^0"),d("0ln"),e("0log");
+    MUST(a==b);
+    MUST(a==c);
+    MUST(a==d);
+    MUST(a==e);    
+}
+#endif
+
 #endif
 /*
 #include "semiring.hpp"
@@ -730,3 +816,5 @@ struct semiring_traits<Weight> {
 
 };
 */
+
+

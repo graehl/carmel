@@ -50,6 +50,7 @@ class WFST {
   void initAlphabet() {
     trn=NULL;
 #define EPSILON_SYMBOL "*e*"
+#define EPSILON_INDEX 0
     in = NEW Alphabet<StringKey,StringPool>(EPSILON_SYMBOL);
     out = NEW Alphabet<StringKey,StringPool>(EPSILON_SYMBOL);
     ownerIn=ownerOut=1;

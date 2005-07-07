@@ -358,46 +358,83 @@ inline unsigned out_char_ascii(std::basic_ostream<charT,Traits> &out, unsigned c
 #define ERROR_PRETEXT_CHARS 20
 #endif
 
+template <class C>
+inline C scrunch_char(C c,char with='/') 
+{
+    switch(c) {
+    case '\n':case '\t':
+        return with;
+    default:
+        return c;
+    }   
+}
+
+template <class O,class C>
+inline void output_n(O &o,const C &c,unsigned n) 
+{
+    for (unsigned i=0;i<n;++i)
+        o << c;
+}
+
 template <class Ic,class It,class Oc,class Ot>
-inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot> &out) {
+inline void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot> &out,unsigned prechars=ERROR_PRETEXT_CHARS,unsigned postchars=ERROR_CONTEXT_CHARS) {
     char c;
-    unsigned pretext_chars;
+    unsigned actual_pretext_chars=0;
     typedef std::basic_ifstream<Ic,It> fstrm;
 //    if (fstrm * fs = dynamic_cast<fstrm *>(&in)) {
+    bool ineof=in.eof();
     in.clear();
     in.unget();
-     in.clear();
-     std::streamoff before(in.tellg());
-        in.seekg(-ERROR_PRETEXT_CHARS,std::ios_base::cur);
+    in.clear();
+    std::streamoff before(in.tellg());
+//    DBP(before);
+    if (before>0) {        
+        in.seekg(-(int)prechars,std::ios_base::cur);
         std::streamoff after(in.tellg());
         if (!in) {
             in.clear();
             in.seekg(after=0);
         }
-        pretext_chars=before-after;
+        actual_pretext_chars=before-after;
+    } 
+        
+    
 //    } else {
-//        pretext_chars=0;
+//        actual_pretext_chars=0;
 //    }
     in.clear();
     out << "INPUT ERROR: ";
     out << " reading byte #" << before+1;
-    out << " (^ marks the read position):\n...";
-    unsigned ip;
-    for(ip=0;ip<pretext_chars;++ip)
-        if (in.get(c))
-            out << c;
-        else
+    if (ineof)
+        out << " (at EOF)";
+    out << " (^ marks the read position):\n";
+    const unsigned indent=3;
+    output_n(out,'.',indent);
+    unsigned ip,ip_lastline=0;
+    for(ip=0;ip<actual_pretext_chars;++ip) {
+        if (in.get(c)) {
+            ++ip_lastline;
+            out << scrunch_char(c);
+/*        out << c;
+            if (c=='\n') {
+                ip_lastline=0;
+            }
+*/
+        } else
             break;
-    if (ip!=pretext_chars)
-        out << "<<<WARNING: COULD NOT READ " << pretext_chars << " pre-error characters (wanted " << pretext_chars << ")>>>";
+    }
+    
+    if (ip!=actual_pretext_chars)
+        out << "<<<WARNING: COULD NOT READ " << prechars << " pre-error characters (only got " << ip << ")>>>";
     for(unsigned i=0;i<ERROR_CONTEXT_CHARS;++i)
-        if (in.get(c) && c!='\n')
-            out << c;
+        if (in.get(c))
+            out << scrunch_char(c);
         else
             break;
 
-    out << std::endl << "   ";
-    for(unsigned i=0;i<ip;++i)
+    out << std::endl;
+    output_n(out,' ',indent);
+    for(unsigned i=0;i<ip_lastline;++i)
         out << ' ';
     out << '^' << std::endl;
 }
