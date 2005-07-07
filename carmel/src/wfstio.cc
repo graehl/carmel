@@ -11,6 +11,7 @@
 #define DEFAULTSTRBUFSIZE 4096
 
 #define REQUIRE(x)  do { if (!(x)) { goto INVALID; } } while(0)
+#define GETC do { REQUIRE(istr >> c); } while(0)
 #define PEEKC  do { REQUIRE(istr>>c); istr.unget(); } while(0)
 #define BOOLBRIEF bool brief = (os.iword(arcformat_index) == BRIEF)
 #define OUTARCWEIGHT(os,a)              do { int pGroup = (a)->groupId; \
@@ -288,6 +289,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         int stateNumber, destState, inL, outL;
         Weight weight;
         char c, d, buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
+        skip_comment(istr);
         REQUIRE(getString(istr, buf));
         finalName = buf;
 
@@ -308,15 +310,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
         while ( istr >> c ) {
             // begin line:
-            if (c == COMMENT_CHAR) {
-                for(;;) {
-                    if (!istr.get(c) )
-                        break;
-                    if (c == '\n')
-                        break;
-                }
-                continue;
-            }
+            skip_comment(istr);
             REQUIRE(c == '(');
             // start state:
             REQUIRE(getString(istr, buf));
@@ -328,7 +322,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
             // PRE: read: '(' source
             // expecting: {[destparen(] dest ... [destparen)]}* ')'
             for (;;) {
-                REQUIRE(istr >> c);
+                GETC;
                 bool destparen=(c=='(');
                 if (!destparen)
                     istr.unget();
@@ -343,17 +337,16 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
 
                 // (iow!g)*
                 for(;;) {
-                    REQUIRE(istr >> c);
+                    GETC;
                     bool iowparen=(c=='(');
                     if (!iowparen)
                         istr.unget();
-                    if ( c== ')' )
-                        break;
+                    else
+                        PEEKC;
                     //PRE: read: '(' source [destparen(] dest [iowparen(]
                     //expecting: if iowparen, repetitions of: [[input [output]] weight] [![group]] ')'
                     //             reps separated by '('/REPEAT OR ')'/END 
                     //   else, single repetition
-//                    PEEKC;
 #define ENDIOW (c==')'||c=='!')                    
                     if (ENDIOW) { // ...)
                         inL=outL=EPSILON_INDEX;
@@ -396,7 +389,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
 #undef GETBUF
 //                    DBP5(stateNumber,destState,inL,outL,weight);                    
                     states[stateNumber].addArc(FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
-                    REQUIRE(istr >> c);
+                    GETC;
                     if ( c == '!' ) { // lock weight
                         FSTArc *lastAdded = &states[stateNumber].arcs.top();
                         PEEKC;
@@ -414,9 +407,12 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                     if (!iowparen)
                         break;
                     REQUIRE(istr >> c && c== ')');
+                    PEEKC;
+                    if (c==')')
+                        break;                        
                 }
                 if (!destparen)
-                    break;            
+                    break;       
                 REQUIRE(istr >> c && c== ')');
             }
             REQUIRE(istr >> c && c== ')');
@@ -451,16 +447,16 @@ INVALID:
 }
 /*          
             buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
-            REQUIRE(istr >> c);  // skip whitespace
+            GETC;  // skip whitespace
             istr.unget();
             if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
             REQUIRE(getString(istr, buf));
-            REQUIRE(istr >> c);  // skip whitespace
+            GETC;  // skip whitespace
             istr.unget();
             if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
             REQUIRE(getString(istr, buf));
             outL = out->indexOf(buf);
-            REQUIRE(istr >> c); // skip ws
+            GETC; // skip ws
             istr.unget();
             weight.setZero();
             if (isdigit(c) || c == '.' || c == '-' ) {

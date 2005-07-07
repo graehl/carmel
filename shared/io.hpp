@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 
+
 template <class T>
 void extract_from_filename(const char *filename,T &to) {
     std::ifstream in(filename);
