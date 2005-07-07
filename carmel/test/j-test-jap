@@ -10,7 +10,6 @@ echo "Katakana:                      "
 echo ""
 $B -iIEQ -k 1 test.katakana
 echo ""
-set -x
 $B -ri jpron.transducer vowel-separator.transducer \
         jpron-asciikana.transducer asciikana-katakana.transducer \
   test.katakana > test.jpron2
