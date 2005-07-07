@@ -1,13 +1,13 @@
+// simple adjacency graph with path-additive weight/cost (lower is better, 0 is no cost, +INF is infinite cost)
+
 #ifndef GRAPH_H
 #define GRAPH_H
-#include "config.h"
 
 #include <iostream>
 #include <vector>
 
 #include "2heap.h"
 #include "list.h"
-#include "weight.h"
 #include <iterator>
 
 struct GraphArc {
@@ -37,6 +37,7 @@ void dfsRec(unsigned state, unsigned pred);
 
 void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*func)(unsigned state, unsigned pred));
 
+template <class Weight>
 void countNoCyclePaths(Graph g, Weight *nPaths, int source);
 
 class TopoSort {
@@ -86,6 +87,7 @@ class TopoSort {
 };
 
 
+// serves as adjustable heap (tracks where each state is, and its weight)
 struct DistToState {
   int state;
   static DistToState **stateLocations;
@@ -97,13 +99,6 @@ struct DistToState {
     state = rhs.state;
   }
 };
-
-
-inline bool operator < (DistToState lhs, DistToState rhs);
-
-inline bool operator == (DistToState lhs, DistToState rhs);
-
-inline bool operator == (DistToState lhs, FLOAT_TYPE rhs);
 
 Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist);
 // returns graph (need to delete[] ret.states yourself)
@@ -128,4 +123,35 @@ inline std::ostream & operator << (std::ostream &out, const Graph &g) {
   return out;
 }
 
+template <class Weight>
+void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
+  List<int> topo;
+
+  TopoSort sort(g,&topo);
+  sort.order_from(source);
+
+  for ( unsigned i = 0 ; i < g.nStates; ++i )
+    nPaths[i]=0;
+  nPaths[source] = 1;
+  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
+    const List<GraphArc> &arcs = g.states[*t].arcs;
+    for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
+      nPaths[a->dest] += nPaths[(*t)];
+  }
+}
+
+template <class Weight>
+Weight countNoCyclePaths(Graph g, int source, int dest) 
+{
+    Weight *w=new Weight[g.nStates];
+    countNoCyclePaths(g,w,source);
+    Weight wd=w[dest];
+    delete w;
+    return wd;    
+}
+
+
+#ifdef SINGLE_MAIN
+# include "graph.cc"
+#endif
 #endif

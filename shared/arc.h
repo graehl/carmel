@@ -12,9 +12,32 @@ struct FSTArc {
   int dest;
   Weight weight;
   int groupId;
-  FSTArc(int i, int o, int d, Weight w,int g = -1) :
+  static const int NOGROUP=-1;  
+  static const int LOCKEDGROUP=0;
+  FSTArc(int i, int o, int d, Weight w,int g = NOGROUP) :
     in(i), out(o), dest(d), weight(w), groupId(g)
     {}
+    bool isNormal() const {
+        //return groupId == NOGROUP;
+        return groupId < 0;
+    }
+    bool isLocked() const {
+        return groupId == LOCKEDGROUP;
+    }
+    bool isTied() const {
+        return groupId > 0;
+    }
+    bool isTiedOrLocked() const {
+        return groupId >= 0;
+    }
+    void setLocked() 
+    {
+        setGroup(LOCKEDGROUP);
+    }
+    void setGroup(int group) 
+    {
+        groupId = group;
+    }
 };
 
 inline

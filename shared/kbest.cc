@@ -1,6 +1,7 @@
 #include "config.h"
 #include <vector>
 #include "kbest.h"
+#include <cmath>
 
 Graph sidetracks;
 GraphHeap **pathGraph;
@@ -24,7 +25,7 @@ void freeAllSidetracks()
 
 void buildSidetracksHeap(unsigned state, unsigned pred)
 {
-  // IMPORTANT NOTE: Yaser 6-25-2001 This function create NEW memory
+  // IMPORTANT NOTE: This function create NEW memory
   // of type (pGraphArc *). This memory is not deleted inside the function
   // because it is used else where. For this reason addresses for
   // the memory created is kept in a global variable "Repsitory" so that
@@ -69,45 +70,42 @@ void buildSidetracksHeap(unsigned state, unsigned pred)
     pathGraph[state] = prev;
 } // end of buildSidetracksHeap()
 
+//lG: regular graph
+//rG: shortest path tree -> dest
+//dist: array mapping vertex # -> cost to reach dest
 Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist)
-  // Comment by Yaser: This function creates new GraphState[] and because the
+  // This function creates new GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   //  the caller function is responsible for deleting this data.
-  // It is not a good programming practice but it will be messy to clean it up.
   //
 
 {
-  Assert(lG.nStates == rG.nStates);
-  int nStates = lG.nStates;
-  GraphState *sub = NEW GraphState[nStates];
-  for ( int i = 0 ; i < nStates ; ++i )
-    if ( dist[i] != HUGE_FLOAT ){
+    Assert(lG.nStates == rG.nStates);
+    int nStates = lG.nStates;
+    GraphState *sub = NEW GraphState[nStates];
+    for ( int i = 0 ; i < nStates ; ++i )
+        if ( dist[i] != HUGE_VAL ){
+            const List<GraphArc> &la=lG.states[i].arcs;
+            for ( List<GraphArc>::const_iterator l=la.const_begin(),end=la.const_end() ; l != end; ++l ) {
+                Assert(i == l->source);
 
-      const List<GraphArc> &la=lG.states[i].arcs;
-      for ( List<GraphArc>::const_iterator l=la.const_begin(),end=la.const_end() ; l != end; ++l ) {
-        Assert(i == l->source);
-        int isShort = 0;
-
-        const List<GraphArc> &ra=rG.states[i].arcs;
-        for ( List<GraphArc>::const_iterator r=ra.const_begin(),end=ra.const_end() ; r !=end ; ++r )
-          if ( r->data == l->data ) {
-            isShort = 1;
-            break;
-          }
-        if ( !isShort )
-          if ( dist[l->dest] != HUGE_FLOAT ) {
-            GraphArc w = *l;
-            w.weight = w.weight - (dist[i] - dist[w.dest]);
-            sub[i].arcs.push(w);
-          }
-      }
-    }
-  Graph ret;
-  ret.nStates = lG.nStates;
-  ret.states = sub;
-  return ret;
+                const List<GraphArc> &ra=rG.states[i].arcs;
+                for ( List<GraphArc>::const_iterator r=ra.const_begin(),end=ra.const_end() ; r !=end ; ++r )
+                    if ( r->data == l->data )
+                        goto short_done;              
+                if ( dist[l->dest] != HUGE_VAL ) {
+                    GraphArc w = *l;
+                    telescope_cost(w,dist);                    //w.weight = w.weight - (dist[i] - dist[w.dest]);
+                    sub[i].arcs.push(w);
+                }
+            short_done:;
+            }
+        }
+    Graph ret;
+    ret.nStates = lG.nStates;
+    ret.states = sub;
+    return ret;
 }
-
 
 void printTree(GraphHeap *t, int n)
 {

@@ -13,7 +13,7 @@ DIR=.
 SRC=$(DIR)/src
 SHARED=$(DIR)/../shared
 PROGS=carmel
-carmel_OBJ=carmel.o fst.o graph.o kbest.o train.o
+carmel_OBJ=carmel.o fst.o train.o
 vpath %.cc $(SRC):$(SHARED)
 VPATH=$(SRC):$(SHARED)
 INC=$(SRC) $(SHARED)

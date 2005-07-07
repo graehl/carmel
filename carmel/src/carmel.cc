@@ -17,7 +17,7 @@
 #include "fst.h"
 #include "myassert.h"
 
-#define CARMEL_VERSION "3.1.0"
+#define CARMEL_VERSION "3.1.1"
 
 #ifdef MARCU
 #include "models.h"

@@ -96,7 +96,7 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
 
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
-
+#define MUST(s) BOOST_CHECK(s)
 
 
 #endif

@@ -1,3 +1,8 @@
+2005-06-23  Jonathan Graehl  <graehl@isi.edu>
+
+	* tails_up_hypergraph.hpp: added comments (TailsUpHypergraph used
+	to be RevHyperGraph in hypergraph.hpp)
+
 2005-05-03  Jonathan Graehl  <graehl@isi.edu>
 
 	* gzstream.C: throw exceptions when things fail (e.g. bad checksum

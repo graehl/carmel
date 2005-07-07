@@ -1,6 +1,40 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+// use singly linked list
+#define USE_SLIST
+
+#ifndef SINGLE_PRECISION
+#define DOUBLE_PRECISION
+#endif
+
+#include <iostream>
+namespace Config {
+  inline std::ostream &err() {
+    return std::cerr;
+  }
+  inline std::ostream &message() {
+    return std::cerr;
+  }
+  inline std::ostream &log() {
+    return std::cerr;
+  }
+  inline std::ostream &debug() {
+    return std::cerr;
+  }
+  inline std::ostream &warn() {
+    return std::cerr;
+  }
+}
+
+#ifndef FLOAT_TYPE
+#ifdef DOUBLE_PRECISION
+# define FLOAT_TYPE double
+#else
+# define FLOAT_TYPE float
+#endif
+#endif
+
 //#define DEBUG
 
 #include "memleak.hpp"
@@ -9,7 +43,7 @@
 typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
 typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (can't be unsigned type)
 
-#define COPYRIGHT_YEAR 2004
+#define COPYRIGHT_YEAR 2005
 
 //#define DEBUGNAN
 
@@ -32,24 +66,10 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 
 
 
-// use singly linked list
-#define USE_SLIST
 
 
 // use old, slower string hash
 //#define OLD_HASH
-
-#ifndef SINGLE_PRECISION
-#define DOUBLE_PRECISION
-#endif
-
-#ifndef FLOAT_TYPE
-#ifdef DOUBLE_PRECISION
-# define FLOAT_TYPE double
-#else
-# define FLOAT_TYPE float
-#endif
-#endif
 
 // for meaningful compose state names
 #define MAX_STATENAME_LEN 15000
@@ -89,23 +109,5 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 // allows WFST to be indexed in either direction?  not recommended.
 //#define BIDIRECTIONAL
 
-#include <iostream>
-namespace Config {
-  inline std::ostream &err() {
-    return std::cerr;
-  }
-  inline std::ostream &message() {
-    return std::cerr;
-  }
-  inline std::ostream &log() {
-    return std::cerr;
-  }
-  inline std::ostream &debug() {
-    return std::cerr;
-  }
-  inline std::ostream &warn() {
-    return std::cerr;
-  }
-}
 
 #endif //guard

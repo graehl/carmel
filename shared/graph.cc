@@ -1,10 +1,13 @@
-#include "config.h"
+#include <cmath>
+//static const FLOAT_TYPE HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 #include "graph.h"
 #include "myassert.h"
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
-  return out << '(' << a.source << ' ' << a.dest << ' ' << a.weight << ' ' << a.data << ' ' << ')';
+    out << '(' << a.source <<"->"<< a.dest << ' ' << a.weight;
+    //out << ' ' << a.data;    
+    return out << ')';
 }
 
 void (*dfsFunc)(unsigned, unsigned) = NULL;
@@ -19,10 +22,9 @@ void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*fu
 }
 
 Graph reverseGraph(Graph g)
-  // Comment by Yaser: This function creates NEW GraphState[] and because the
+  // This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
-  // It is not a good programming practice but it will be messy to clean it up.
   //
 
 {
@@ -72,28 +74,11 @@ void dfsRec(unsigned state, unsigned pred) {
 
 
 
-void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
-  List<int> topo;
-  //front_insert_iterator<List<int> > o(topo);
-
-  TopoSort sort(g,&topo);
-  sort.order_from(source);
-
-
-  for ( unsigned i = 0 ; i < g.nStates; ++i )
-    nPaths[i].setZero();
-  nPaths[source] = 1;
-  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
-    const List<GraphArc> &arcs = g.states[*t].arcs;
-    for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
-      nPaths[a->dest] += nPaths[(*t)];
-  }
-}
 
 
 FLOAT_TYPE *DistToState::weights = NULL;
 DistToState **DistToState::stateLocations = NULL;
-FLOAT_TYPE DistToState::unreachable = HUGE_FLOAT;
+FLOAT_TYPE DistToState::unreachable = HUGE_VAL;
 
 inline bool operator < (DistToState lhs, DistToState rhs) {
   return DistToState::weights[lhs.state] > DistToState::weights[rhs.state];
@@ -137,7 +122,7 @@ Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist)
 
 
 #ifdef DEBUGKBEST
-  Config::debug() << "shortestpathtree graph:\n" << pg;
+  Config::debug() << "\nshortestpathtree graph:\n" << pg;
 #endif
 
   delete[] rev_graph.states;
@@ -167,7 +152,7 @@ void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc *
   FLOAT_TYPE *weights = dist;
 
   for ( i = 0 ; i < nStates ; ++i ) {
-    weights[i] = HUGE_FLOAT;
+    weights[i] = HUGE_VAL;
   }
 
   DistToState **stateLocations = NEW DistToState *[nStates];
@@ -190,7 +175,7 @@ void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc *
 
   FLOAT_TYPE candidate;
   for ( ; ; ) {
-    if ( (FLOAT_TYPE)distQueue[0] == HUGE_FLOAT || nUnknown == 0 ) {
+    if ( (FLOAT_TYPE)distQueue[0] == HUGE_VAL || nUnknown == 0 ) {
       break;
     }
     int activeState = distQueue[0].state;
@@ -217,10 +202,9 @@ void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc *
 }
 
 Graph removeStates(Graph g, bool marked[]) // not tested
-  // Comment by Yaser: This function creates NEW GraphState[] and because the
+  // This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
-  // It is not a good programming practice but it will be messy to clean it up.
   //
 
 {
@@ -254,7 +238,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
 
 void printGraph(const Graph g, std::ostream &out)
 {
-  out << "(Graph " << g.nStates << std::endl;
+  out << "(Graph #V=" << g.nStates << std::endl;
   for ( unsigned i = 0 ; i < g.nStates ; ++i ) {
     out << i;
     const List<GraphArc> &arcs = g.states[i].arcs;
@@ -263,4 +247,45 @@ void printGraph(const Graph g, std::ostream &out)
     out << std::endl;
   }
   out << ")" << std::endl;
+}
+
+std::istream & operator >> (std::istream &istr, GraphArc &a)
+{
+  char c;
+  int i;
+  istr >> c;			// open paren
+  istr >> a.source;
+  istr >> a.dest;
+  istr >> a.weight;
+  istr >> c;			// close paren
+  a.data = NULL;
+  return istr;
+}
+
+std::istream & operator >> (std::istream &istr, GraphState &s)
+{
+  char c;
+  return istr;
+}
+
+std::istream & operator >> (std::istream &istr, Graph &g)
+{
+  char c;
+  GraphArc a;
+  istr >> g.nStates;
+  if ( istr && g.nStates > 0 )
+    g.states = new GraphState[g.nStates];
+  else
+    g.states = NULL;
+  for ( ; ; ) {
+    istr >> c;
+    if ( !istr || c != '(')
+      break;
+    istr.putback(c);
+    istr >> a;
+    if ( !(istr && a.source >= 0 && a.source < g.nStates) )
+      break;
+    g.states[a.source].arcs.push(a);
+  }
+  return istr;
 }

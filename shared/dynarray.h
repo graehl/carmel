@@ -351,8 +351,8 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
     //unsigned int sz;
     T *endv;
     typedef Array<T,Alloc> Base;
-    DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";}; // Yaser
 private:
+    DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";assert(0);}
     void swap(Array<T,Alloc> &a) {Assert(0);}
 public:
     explicit DynamicArray (const char *c) {
