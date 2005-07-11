@@ -181,7 +181,7 @@ struct Node {
             return (memo[n]=next_best());
         }
     }
-    // returns last non-DONE result (must be one!)
+    // returns last non-DONE result (one must exist!)
     R *last_best() const {
         assertlvl(11,memo.size() && memo.front());
         if (memo.back() && memo.back() != PENDING())
@@ -189,7 +189,7 @@ struct Node {
         assertlvl(11,memo.size()>1);
         return *(memo.end()-2);
     }
-    // returns best non-DONE result (must be one!)
+    // returns best non-DONE result (one must exist!)
     R *first_best() const {
         assertlvl(11,memo.size() && memo.front() && memo.front() != PENDING());
         return memo.front();
