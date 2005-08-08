@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <assert.h>
 
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
@@ -325,6 +326,58 @@ ns_decoder_global::Debug test_dbg;
 # endif
 #endif
 
+// added by Wei Wang.
+/*
+ * Here is the typical usage for this mixin class.
+ * First, include it in the parents of some class FOO
+ *
+ * class FOO: public OTHER_PARENT, public FOO { ... }
+ *
+ * Inside FOO's methods use code such as
+ *
+ *	if (debug(3)) {
+ *	   dout() << "I'm feeling sick today\n";
+ *	}
+ *
+ * Finally, use that code, after setting the debugging level
+ * of the object and/or redirecting the debugging output.
+ *
+ *      FOO foo;
+ *	foo.debugme(4); foo.dout(cout);
+ *
+ * LiBEDebugging can also be set globally (to affect all objects of
+ * all classes.
+ *
+ *	foo.debugall(1);
+ *
+ */
+class Debugger
+{
+public:
+    Debugger(unsigned level = 0)
+      : nodebug(false), debugLevel(level), debugStream(&cerr) {};
+
+    bool debug(unsigned level)  const  /* true if debugging */
+	{ return (!nodebug && (debugAll >= level || debugLevel >= level)); };
+    virtual void debugme(unsigned level) { debugLevel = level; };
+				    /* set object's debugging level */
+    void debugall(unsigned level) { debugAll = level; };
+				    /* set global debugging level */
+    unsigned debuglevel() { return debugLevel; };
+
+    virtual ostream &dout() const { return *debugStream; };
+				    /* output stream for use with << */
+    virtual ostream &dout(ostream &stream)  /* redirect debugging output */
+	{ debugStream = &stream; return stream; };
+
+    static unsigned debugall() { return debugAll;}
+
+    bool nodebug;		    /* temporarily disable debugging */
+private:
+    static unsigned debugAll;	    /* global debugging level */
+    unsigned debugLevel;	    /* level of output -- the higher the more*/
+    ostream *debugStream;	    /* current debug output stream */
+};
 
 #endif
 
