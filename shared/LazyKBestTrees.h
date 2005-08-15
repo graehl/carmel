@@ -349,7 +349,7 @@ struct lazy_kbest {
     //    template <class r,class q>
     // to use: initialize pending with viterbi.
 
-    // visit(R &result,unsigned rank) // rank 0...k-1 (or earlier if forest has fewer trees)
+    // bool visit(R &result,unsigned rank) // rank 0...k-1 (or earlier if forest has fewer trees) - stop early if returns false
 
     typedef lazy_kbest_impl::Node<R,A> Node;
     template <class Visitor>
@@ -360,7 +360,7 @@ struct lazy_kbest {
         for (unsigned i=0;i<k;++i) {
             R *ith=goal->get_best(i);
             if (!ith) break;
-            visit(*ith,i);
+            if (!visit(*ith,i)) break;
         }
     }
 
