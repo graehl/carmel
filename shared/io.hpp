@@ -143,6 +143,10 @@ template <char sep=' '>
 struct WordSeparator {
     bool first;
     WordSeparator() : first(true) {}
+    void reset() 
+    {
+        first=true;
+    }
     std::ostream & print(std::ostream &o) {
         if (first)
             first=false;
