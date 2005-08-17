@@ -158,6 +158,39 @@ std::ostream & operator <<(std::ostream &o, WordSeparator<sep> &separator) {
     return separator.print(o);
 }
 
+template <char sep=' '>
+struct IndentLevel {
+    unsigned indent;
+    IndentLevel() { reset(); }
+    void reset() 
+    {
+        indent=0;
+    }
+    void in() 
+    {
+        ++indent;
+    }
+    void out()
+    {
+        //assert(indent!=0);
+        --indent;
+    }
+    void operator ++() 
+    {
+        in();
+    }
+    void operator --()
+    {
+        out();
+    }    
+    std::ostream & newline(std::ostream &o) {
+        o << std::endl;
+        for (unsigned i=0;i<indent;++i)
+            o << sep;
+        return o;
+    }
+};
+
 template <char equal,char comma,class Ck,class Cv>
 std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V) 
 {
@@ -261,6 +294,52 @@ inline std::string get_command_line( int argc, char *argv[], const char *header=
     print_command_line(os,argc,argv,header);
     return os.str();
 }
+
+struct argc_argv : private std::stringbuf
+{
+    std::vector<char *> argvptrs;
+    int argc() const
+    {
+        return argvptrs.size();
+    }
+    char **argv() const
+    {
+        return argc() ? (char**)&(argvptrs[0]) : NULL;
+    }    
+    void parse(const std::string &cmdline) 
+    {
+        argvptrs.clear();
+        argvptrs.push_back("ARGV");
+        str(cmdline);
+        sputc((char)' '); // we'll need space for terminating final arg.
+        char *i=gptr(),*end=egptr();
+        char *o=i;
+        char terminator;
+    next_arg:
+        while(i!=end && *i==' ')
+            ++i;
+        if (i==end) return;
+        terminator=' ';
+        if (*i=='"' || *i=='\'')
+            terminator=*i;
+        argvptrs.push_back(o);
+        ++i;
+        while(i!=end) {
+            if (*i=='\\') {
+                ++i;
+            } else if (*i==terminator) {
+                *o++=0;
+                goto next_arg;
+            }
+            *o++=*i++;
+        }
+        *o++=0;
+    }
+    argc_argv(const std::string &cmdline) 
+    {
+        parse(cmdline);
+    }
+};
 
 
 template <class C,class charT, class Traits>

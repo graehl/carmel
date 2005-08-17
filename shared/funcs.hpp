@@ -283,7 +283,6 @@ bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 
 template <class size_type,class inputstream>
 size_type parse_size(inputstream &i) {
-    size_type size;
     double number;
 
     if (!(i >> number))
