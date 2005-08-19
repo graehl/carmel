@@ -93,7 +93,7 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
   return 1;
 }
 
-
+#define CHECK_EQUAL_STRING(a,b) BOOST_CHECK_EQUAL(std::string(a),std::string(b))
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
 #define MUST(s) BOOST_CHECK(s)
