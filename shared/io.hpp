@@ -856,6 +856,10 @@ BOOST_AUTO_UNIT_TEST( TEST_io )
             CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
         }    
     }
+    {
+        argc_argv args("");
+        BOOST_CHECK_EQUAL(args.argc(),1);
+    }
     
 }
 #endif
