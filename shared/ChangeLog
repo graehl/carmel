@@ -1,3 +1,7 @@
+2005-08-19  Jonathan Graehl  <graehl@TRUE>
+
+	* align.hpp: split from funcs.hpp
+
 2005-08-18  Jonathan Graehl  <graehl@TRUE>
 
 	* io.hpp (stringbuf): argc_argv (tested)
