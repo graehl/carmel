@@ -1,3 +1,7 @@
+2005-08-18  Jonathan Graehl  <graehl@TRUE>
+
+	* io.hpp (stringbuf): argc_argv (tested)
+
 2005-06-23  Jonathan Graehl  <graehl@isi.edu>
 
 	* tails_up_hypergraph.hpp: added comments (TailsUpHypergraph used

@@ -301,45 +301,60 @@ inline std::string get_command_line( int argc, char *argv[], const char *header=
 
 struct argc_argv : private std::stringbuf
 {
+    typedef char *arg_t;
+    typedef arg_t *argv_t;
+    
     std::vector<char *> argvptrs;
     int argc() const
     {
         return argvptrs.size();
     }
-    char **argv() const
+    argv_t argv() const
     {
         return argc() ? (char**)&(argvptrs[0]) : NULL;
-    }    
+    }
     void parse(const std::string &cmdline) 
     {
         argvptrs.clear();
         argvptrs.push_back("ARGV");
+#if 1
+        str(cmdline+" ");  // we'll need space for terminating final arg.
+#else
         str(cmdline);
-        sputc((char)' '); // we'll need space for terminating final arg.
+        seekoff(0,ios_base::end,ios_base::out);        
+        sputc((char)' ');
+#endif
         char *i=gptr(),*end=egptr();
+
         char *o=i;
         char terminator;
     next_arg:
-        while(i!=end && *i==' ')
-            ++i;
+        while(i!=end && *i==' ') ++i;  // [ ]*
         if (i==end) return;
-        terminator=' ';
-        if (*i=='"' || *i=='\'')
+
+        if (*i=='"' || *i=='\'') {
             terminator=*i;
+            ++i;
+        } else {
+            terminator=' ';
+        }
+        
         argvptrs.push_back(o);
-        ++i;
+
         while(i!=end) {
             if (*i=='\\') {
                 ++i;
             } else if (*i==terminator) {
                 *o++=0;
+                ++i;
                 goto next_arg;
             }
             *o++=*i++;
         }
         *o++=0;
     }
-    argc_argv(const std::string &cmdline) 
+    argc_argv() {}
+    explicit argc_argv(const std::string &cmdline) 
     {
         parse(cmdline);
     }
@@ -812,5 +827,37 @@ void insert_byid(const A& vals,I &in,O &out)
 #undef OUTN
 }
 
+
+#ifdef TEST
+#include "test.hpp"
+#include <cstring>
+#endif
+
+#ifdef TEST
+char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0
+};
+
+BOOST_AUTO_UNIT_TEST( TEST_io )
+{
+    using namespace std;
+    {        
+        string opts="ba a \"b c\" 'd' ' e f ' 123";
+        argc_argv args(opts);
+        BOOST_CHECK_EQUAL(args.argc(),7);        
+        for (unsigned i=1;i<args.argc();++i) {
+            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
+        }    
+    }
+    {        
+        string opts=" ba a \"\\b c\" 'd' ' e f '123 ";
+        argc_argv args(opts);
+        BOOST_CHECK_EQUAL(args.argc(),7);
+        for (unsigned i=1;i<args.argc();++i) {
+            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
+        }    
+    }
+    
+}
+#endif
 
 #endif
