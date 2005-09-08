@@ -1,6 +1,19 @@
 #ifndef LAZYKBESTTREES_H
 #define LAZYKBESTTREES_H
 
+// top-down (goal-first) lazy (max-#tails-2)
+/*
+  struct R {
+   result(result *prototype, result *old_child, result *new_child,unsigned which_child);
+   bool operator < (const result &other) const; //  worse < better!
+  };
+
+  struct ResultAlloc {
+      R *allocate(); // won't ever be deallocated unless you keep track of allocations yourself
+  };
+ */
+
+
 #include <new> // placement ::operator new(address) T()
 #include <vector>
 #include "Debug.h"
@@ -13,16 +26,6 @@
 template <class R,class A >
 struct lazy_kbest;
 
-/*
-  struct R {
-   result(result *prototype, result *old_child, result *new_child,unsigned which_child);
-   bool operator < (const result &other) const; //  worse < better!
-  };
-
-  struct ResultAlloc {
-      R *allocate(); // won't ever be deallocated unless you keep track of allocations yourself
-  };
- */
 
 
 

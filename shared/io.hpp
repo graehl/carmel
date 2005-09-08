@@ -827,6 +827,34 @@ void insert_byid(const A& vals,I &in,O &out)
 #undef OUTN
 }
 
+inline std::string subspan(const std::string &s,std::string::size_type begin,std::string::size_type end) 
+{
+    return std::string(s,begin,end-begin);
+}
+
+    
+template <class Func>
+inline void     split_noquote(
+    const std::string &csv,
+    Func f,
+    const std::string &delim=","
+    )
+{
+    using namespace std;
+    string::size_type pos=0,nextpos;
+    string::size_type delim_len=delim.length();
+//    DBP2(delim,delim_len);
+    while((nextpos=csv.find(delim,pos)) != string::npos) {
+//        DBP4(csv,pos,nextpos,string(csv,pos,nextpos-pos));        
+        if (! f(string(csv,pos,nextpos-pos)) )
+            return;
+        pos=nextpos+delim_len;
+    }
+    if (pos!=0) {
+//        DBP4(csv,pos,csv.length(),string(csv,pos,csv.length()-pos));
+        f(string(csv,pos,csv.length()-pos));
+    }    
+}
 
 #ifdef TEST
 #include "test.hpp"
@@ -834,8 +862,9 @@ void insert_byid(const A& vals,I &in,O &out)
 #endif
 
 #ifdef TEST
-char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0
-};
+char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
+char *split_strs[]={"",",a","",0};
+char *seps[]={";",";;",",,","   ","=,",",=",0};
 
 BOOST_AUTO_UNIT_TEST( TEST_io )
 {
@@ -859,6 +888,15 @@ BOOST_AUTO_UNIT_TEST( TEST_io )
     {
         argc_argv args("");
         BOOST_CHECK_EQUAL(args.argc(),1);
+    }
+    {
+        split_noquote(";,a;",make_expect_visitor(split_strs),";");
+        for (char **p=seps;*p;++p) {
+            string s;
+            for (char **q=split_strs;*q;++q)
+                s.append(*q);
+            split_noquote(s,make_expect_visitor(split_strs),*p);
+        }
     }
     
 }

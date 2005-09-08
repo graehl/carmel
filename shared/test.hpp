@@ -62,7 +62,6 @@ bool test_extract(S &s,C &c,bool whine=true) {
     return !is.fail();
 }
 
-//#include "debugprint.hpp"
 template <class S,class C> inline
 bool test_extract_insert(S &s,C &c,bool whine=true) {
   std::istringstream is(s);
@@ -93,6 +92,34 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
   return 1;
 }
 
+  
+  template <class C>
+  struct expect_visitor 
+  {
+      unsigned next;
+      const C *array_expected;
+      expect_visitor(const C * e) : array_expected(e),next(0) {}
+      expect_visitor(const expect_visitor &o) : array_expected(o.array_expected),next(o.next) {}
+      template <class D>
+      bool operator()(const D& d)
+      {
+          BOOST_CHECK_EQUAL(array_expected[next],d);
+          ++next;
+          return true;
+      }
+      unsigned n_visited() const 
+      {
+          return next;
+      }
+  };
+
+  template <class C>
+  expect_visitor<C> make_expect_visitor(const C *exp) 
+  {
+      return expect_visitor<C>(exp);
+  }
+  
+      
 #define CHECK_EQUAL_STRING(a,b) BOOST_CHECK_EQUAL(std::string(a),std::string(b))
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))

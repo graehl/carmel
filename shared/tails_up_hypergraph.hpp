@@ -133,7 +133,6 @@ struct TailsUpHypergraph {
       return adj[v];
     }
     void operator()(HD harc) {
-
       typename GT::pair_tail_it pti=tails(harc,g);
       if (pti.first==pti.second) {
           terminal_arcs.push(harc);
