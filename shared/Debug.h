@@ -2,8 +2,8 @@
 // ;;
 // ignacio
 
-#ifndef __DEBUG_H__
-#define __DEBUG_H__
+#ifndef DEBUG_H_inc
+#define DEBUG_H_inc
 
 #include <string>
 #include <iostream>
