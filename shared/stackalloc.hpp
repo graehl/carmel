@@ -3,7 +3,7 @@
 #define STACKALLOC_HPP
 
 #include <stdexcept>
-#include "funcs.hpp"
+#include "align.hpp"
 #include "verbose_exception.hpp"
 
 // Iis it safe to align once then repeatedly alloc<T> if e.g. sizeof(T) is 6 and
