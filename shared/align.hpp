@@ -1,5 +1,5 @@
-#ifndef ALIGN_HPP
-#define ALIGN_HPP
+#ifndef ALIGN_HPP_inc
+#define ALIGN_HPP_inc
 
 #include <boost/type_traits/alignment_traits.hpp>
 #include "myassert.h"
@@ -9,7 +9,7 @@
 #endif
 
 template <class T>
-T *align(T *p)
+T *align_up(T *p)
 {
     const unsigned align=boost::alignment_of<T>::value;
     const unsigned align_mask=(align-1);
@@ -52,22 +52,22 @@ BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
 {
     unsigned *p;
     p=(unsigned *)0x15;
-    BOOST_CHECK_EQUAL(::align(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(::align_up(p),(unsigned *)0x18);
     BOOST_CHECK_EQUAL(::align_down(p),(unsigned *)0x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x16;
-    BOOST_CHECK_EQUAL(::align(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(::align_up(p),(unsigned *)0x18);
     BOOST_CHECK_EQUAL(::align_down(p),(unsigned *)0x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x17;
-    BOOST_CHECK_EQUAL(::align(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(::align_up(p),(unsigned *)0x18);
     BOOST_CHECK_EQUAL(::align_down(p),(unsigned *)0x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x28;
-    BOOST_CHECK_EQUAL(::align(p),p);
+    BOOST_CHECK_EQUAL(::align_up(p),p);
     BOOST_CHECK_EQUAL(::align_down(p),p);
     BOOST_CHECK(is_aligned(p));
 
@@ -77,9 +77,9 @@ BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
         unsigned word=i/J;
         unsigned wordup=((i%J) ? word+1 : word);
         int *p0=0;
-        BOOST_CHECK_EQUAL(align((int *)i),p0+wordup);
+        BOOST_CHECK_EQUAL(align_up((int *)i),p0+wordup);
         BOOST_CHECK_EQUAL(align_down((int *)i),p0+word);
-        BOOST_CHECK_EQUAL(align((char*)i),(char*)i);
+        BOOST_CHECK_EQUAL(align_up((char*)i),(char*)i);
         BOOST_CHECK_EQUAL(align_down((char*)i),(char*)i);        
     }
 

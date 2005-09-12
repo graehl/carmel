@@ -1,3 +1,12 @@
+2005-09-12  Jonathan Graehl  <graehl@isi.edu>
+
+	* align.hpp: renamed ::align to ::align_up (some conflict with a
+	gcc preprocessor macro?)
+
+	* stackalloc.hpp: use align.hpp
+
+	* swapbatch.hpp: use align.hpp
+
 2005-08-19  Jonathan Graehl  <graehl@TRUE>
 
 	* align.hpp: split from funcs.hpp
