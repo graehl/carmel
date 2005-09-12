@@ -387,7 +387,7 @@ struct SwapBatch {
     static BatchMember *data_for_header(const size_type *header)
     {
         BatchMember *b=(BatchMember*)(header+1);
-        b=::align(b);
+        b=::align_up(b);
         return b;
     }
 

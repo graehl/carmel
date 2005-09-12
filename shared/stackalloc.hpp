@@ -38,7 +38,7 @@ struct StackAlloc
             ttop |= align_mask; // = ttop + diff - 1
             ++ttop;
             }*/
-        top=::align((T*)top);
+        top=::align_up((T*)top);
     }
     template <class T>
     T* aligned_alloc(unsigned n=1) throw(StackAlloc::Overflow)
@@ -63,7 +63,7 @@ struct StackAlloc
     }
     template <class T>
     T* aligned_next() {
-        top=::align((T*)top);
+        top=::align_up((T*)top);
         return ((T*)top);
     }
     template <class T>
@@ -106,7 +106,7 @@ struct StackAlloc
     unsigned capacity() const
     {
         T *cend=(T*)end;
-        T *ctop=::align((T*)top);
+        T *ctop=::align_up((T*)top);
         if (cend > ctop)
             return cend-ctop;
         else
