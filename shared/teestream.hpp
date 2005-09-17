@@ -21,7 +21,7 @@
     std::streambuf* m_sb1;
     std::streambuf* m_sb2;
   };
- #ifdef TEST
+ #ifdef TEST_MANUAL
  #include <fstream>
   int main() {
     std::ofstream  logfile("/tmp/logfile.txt");
