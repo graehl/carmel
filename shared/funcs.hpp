@@ -26,6 +26,16 @@
 
 #include <vector>
 
+struct delete_anything
+{
+    template <class P>
+    void operator()(P *p) 
+    {
+        delete p;
+    }    
+};
+    
+
 template <class Vector>
 void reconstruct(Vector &v,size_t n,const typename Vector::value_type &val)
 {

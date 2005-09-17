@@ -17,7 +17,7 @@
 //ns_gzstream
 #endif
 #include "gzstream.h"
-#ifdef SINGLE_MAIN
+#if defined(SINGLE_MAIN) || defined(SINGLE_MAIN_GZSTREAM)
 # include "gzstream.C"
 #endif
 #include "boost/filesystem/operations.hpp"
@@ -114,7 +114,21 @@ inline bool directory_exists(const fs::path &possible_dir)
     return fs::exists(possible_dir) && fs::is_directory(possible_dir);
 }
 
+// works on .gz files!
+inline size_t count_newlines(const std::string &filename) 
+{
+    Infile i=infile(filename);
+    char c;
+    size_t n_newlines=0;
+    while (i->get(c)) {
+        if (c=='\n')
+            ++n_newlines;
+    }
+    return n_newlines;    
+}
 
+
+// return the absolute filename that would result from "cp source dest" (and write to *dest_exists whether dest exists) - throws error if source is the same as dest
 inline std::string output_name_like_cp(const std::string &source,const std::string &dest,bool *dest_exists=NULL) 
 {
     fs::path full_dest=full_path(dest);

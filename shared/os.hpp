@@ -6,6 +6,7 @@
 #include <string>
 #include <cstdio>
 #include <stdexcept>
+#include <stdlib.h>
 
 #if !defined( MEMMAP_IO_WINDOWS ) && !defined( MEMMAP_IO_POSIX )
 # if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
@@ -39,6 +40,24 @@
 # include <string.h>
  typedef int Error;
 #endif
+
+inline void system_safe(const std::string &cmd) 
+{
+    if (system(cmd.c_str()))
+        throw std::runtime_error(cmd);
+}
+
+inline void copy_file(const std::string &source, const std::string &dest)
+{
+    system_safe("cp "+source+" "+dest);
+}
+
+inline void mkdir_parents(const std::string &dirname)
+{
+    system_safe("mkdir -p "+dirname);
+}
+
+
 
 inline std::string get_current_dir() {
     char *malloced=::getcwd(NULL,0);

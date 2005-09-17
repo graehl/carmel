@@ -25,6 +25,14 @@ ifeq ($(UNAME),Darwin)
 endif
 endif
 
+ifeq ($(ARCH),linux64)
+ARCH_FLAGS = -march=athlon64
+else
+ ifeq ($(ARCH),linux)
+  ARCH_FLAGS = -m32 -march=pentium4
+ endif
+endif
+
 ifndef INSTALL_PREFIX
 INSTALL_PREFIX=$(HOME)/isd/$(ARCH)
 endif
@@ -54,7 +62,6 @@ ifndef ARCH
   ARCH := $(shell print_arch)
   export ARCH
 endif
-
 
 # workaround for eval line length limit: immediate substitution shorter?
 OBJ:= $(BASEOBJ)/$(ARCH)
@@ -88,7 +95,8 @@ BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 
-LDFLAGS += $(addprefix -l,$(LIB))
+CXXFLAGS += $(ARCH_FLAGS)
+LDFLAGS += $(addprefix -l,$(LIB)) $(ARCH_FLAGS)
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
