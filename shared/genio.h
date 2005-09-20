@@ -1,4 +1,4 @@
-//Operators << and >> are generated from members get_from(in) and print_on(out).  Also, convenience macros for reading/validating
+//Operators << and >> are generated from members get_from(in) and print(out).  Also, convenience macros for reading/validating
 #ifndef GENIO_H
 #define GENIO_H
 
@@ -40,7 +40,7 @@ stream buffers.
 
   template <class charT, class Traits>
   std::ios_base::iostate
-  print_on(std::basic_ostream<charT,Traits>& o) const
+  print(std::basic_ostream<charT,Traits>& o) const
   {
     return GENIOGOOD;
   }
@@ -79,7 +79,7 @@ CREATE_INSERTER_T1(C) // for classes with 1 template arg.
         } } while(0)
 
 // uses (template) charT, Traits
-// s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print_on)
+// s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print)
 #define GEN_EXTRACTOR(s,io) GEN_IO_(s,io,std::basic_istream<charT)
 #define GEN_INSERTER(s,io) GEN_IO_(s,io,std::basic_ostream<charT)
 // only difference is ostream sentry not istream sentry
@@ -111,14 +111,14 @@ std::basic_ostream<charT, Traits>&
 gen_inserter
     (std::basic_ostream<charT, Traits>& s, const Arg &arg)
 {
-    GEN_INSERTER(s,arg.print_on(s));
+    GEN_INSERTER(s,arg.print(s));
     return s;
 
 /*  if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_ostream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.print_on(s);
+        err = arg.print(s);
     if (err)
         s.setstate(err);
     return s;*/
@@ -170,14 +170,14 @@ std::basic_ostream<charT, Traits>&
 gen_inserter
     (std::basic_ostream<charT, Traits>& s, const Arg &arg, R r)
 {
-  GEN_INSERTER(s,arg.print_on(s,r));
+  GEN_INSERTER(s,arg.print(s,r));
   return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_ostream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.print_on(s,r);
+        err = arg.print(s,r);
     if (err)
         s.setstate(err);
     return s;*/
@@ -194,7 +194,7 @@ gen_inserter
 #pragma warning( disable : 4800 )
 #endif
 
-  GEN_INSERTER(s,arg.print_on(s,q,r));
+  GEN_INSERTER(s,arg.print(s,q,r));
   return s;
 #ifdef _MSC_VER
 #pragma warning( pop )
@@ -204,7 +204,7 @@ gen_inserter
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_ostream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.print_on(s,q,r);
+        err = arg.print(s,q,r);
     if (err)
         s.setstate(err);
     return s;
@@ -278,15 +278,15 @@ inline std::basic_ostream<charT,Traits>& operator << \
   std::ios_base::iostate \
   get_from(std::basic_istream<charT,Traits>& in)
 
-#define GENIO_print_on     typedef void has_print_on; \
+#define GENIO_print     typedef void has_print; \
  template <class charT, class Traits> \
   std::ios_base::iostate \
-  print_on(std::basic_ostream<charT,Traits>& o) const
+  print(std::basic_ostream<charT,Traits>& o) const
 
-#define GENIO_print_on_writer     typedef void has_print_on_writer; \
+#define GENIO_print_writer     typedef void has_print_writer; \
  template <class charT, class Traits, class Writer> \
   std::ios_base::iostate \
-  print_on(std::basic_ostream<charT,Traits>& o,Writer w) const
+  print(std::basic_ostream<charT,Traits>& o,Writer w) const
 
 #define GENIO_get_from_any   template <class T> \
   std::ios_base::iostate \
@@ -296,7 +296,7 @@ inline std::basic_ostream<charT,Traits>& operator << \
 /*
 template <class charT, class Traits>
   std::ios_base::iostate
-  print_on(std::basic_ostream<charT,Traits>& o=std::cerr) const
+  print(std::basic_ostream<charT,Traits>& o=std::cerr) const
 */
 
 #include <limits.h>

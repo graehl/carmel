@@ -94,14 +94,14 @@ struct ArrayPMapImp
 #pragma warning( pop )
 #endif
   }
-  GENIO_print_on
+  GENIO_print
   {
     o << vals;
     return GENIOGOOD;
   }
-  GENIO_print_on_writer
+  GENIO_print_writer
   {
-    return vals.print_on(o,w);
+    return vals.print(o,w);
   }
 
   /*

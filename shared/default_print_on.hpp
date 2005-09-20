@@ -1,4 +1,4 @@
-// broken attempt to supply default oeprator << if A::default_print_on
+// broken attempt to supply default oeprator << if A::default_print
 #ifndef DEFAULT_PRINT_ON_HPP
 #define DEFAULT_PRINT_ON_HPP
 #include <iostream>
@@ -22,33 +22,33 @@ std::basic_ostream<charT,Traits> & operator << (std::basic_ostream<charT,Traits>
 }
 
 
-//# include "print_on.hpp"
+//# include "print.hpp"
 
 /*
 template <class C,class V=void>
-struct default_print_on;
+struct default_print;
 
 template <class C,class V>
-struct default_print_on {
+struct default_print {
 };
 
 template <class C> 
-struct default_print_on<C,typename C::default_print_on> {
+struct default_print<C,typename C::default_print> {
   typedef void type;
 };
 */
 
-//USAGE: typedef Self default_print_on
+//USAGE: typedef Self default_print
 //FIXME: doesn't work
 template <class A,class charT, class Traits>
 inline std::basic_ostream<charT,Traits>&
-operator << (std::basic_ostream<charT,Traits>& s, const typename A::default_print_on &arg)
+operator << (std::basic_ostream<charT,Traits>& s, const typename A::default_print &arg)
 {
  if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_ostream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.print_on(s);
+        err = arg.print(s);
     if (err)
         s.setstate(err);
     return s;

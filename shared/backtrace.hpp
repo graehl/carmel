@@ -1,4 +1,4 @@
-// sprinkle "BACKTRACE;" (macro) in strategic locations, and BackTrace::print_on() inside exception handler.
+// sprinkle "BACKTRACE;" (macro) in strategic locations, and BackTrace::print() inside exception handler.
 #ifndef BACKTRACE_HPP
 #define BACKTRACE_HPP
 
@@ -37,7 +37,7 @@ public:
         const char *function;
         unsigned line;
         Loc(const char *fun,const char *fil,unsigned lin) : file(fil),function(fun),line(lin) {}
-        void print_on(std::ostream &o) const {
+        void print(std::ostream &o) const {
             o << function << "() [" << file << ":" << line << "]";
         }
         friend std::ostream &operator <<(std::ostream &o,const Loc &l);
@@ -54,11 +54,11 @@ public:
             }
         }
     }
-    static void print_on(std::ostream& o=std::cerr) {
+    static void print(std::ostream& o=std::cerr) {
         if (stack.size()) {
             o.clear();
             o << "Exception unwind sequence:\n";
-            stack.print_on_multiline(o);
+            stack.print_multiline(o);
             o << std::endl;
         }
     }
@@ -66,7 +66,7 @@ public:
 
 std::ostream &operator <<(std::ostream &o,const BackTrace::Loc &l)
 {
-    l.print_on(o);
+    l.print(o);
     return o;
 }
 

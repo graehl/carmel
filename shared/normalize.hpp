@@ -237,9 +237,9 @@ struct NormalizeGroups {
         enumerate(norm_groups,ref(*this));
         DBPC2("After normalize:",Array<dest_t>(dest,dest+size));
     }
-    GENIO_print_on
+    GENIO_print
     {
-        return norm_groups.print_on(o);
+        return norm_groups.print(o);
     }
 
 };
@@ -264,7 +264,7 @@ operator <<
     arg.norm_groups.enumerate(LineWriter());
     os << ")\n";
 */
-    arg.print_on(o);
+    arg.print(o);
     return o;
 
 }

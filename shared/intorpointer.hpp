@@ -55,7 +55,7 @@ struct IntOrPointer {
     bool operator ==(C j) { return integer() == j; }
     bool operator ==(Self s) { return p==s.p; }
     bool operator !=(Self s) { return p!=s.p; }
-    GENIO_print_on {
+    GENIO_print {
         if (is_integer())
             o << integer();
         else {

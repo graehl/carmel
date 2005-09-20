@@ -355,7 +355,7 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
   }
 
     template<class charT, class Traits>
-    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const {
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o) const {
         std::streamsize old_precision=set_precision(o);
         int base=get_log_base(o);
         if ( isZero() )
@@ -524,7 +524,7 @@ inline logweight<Real> operator ^(logweight<Real> base,Real exponent) {
 
 /*
 template<class Real,class charT, class Traits>
-std::ios_base::iostate logweight<Real>::print_on(std::basic_ostream<charT,Traits>& o) const
+std::ios_base::iostate logweight<Real>::print(std::basic_ostream<charT,Traits>& o) const
 {
 }
 

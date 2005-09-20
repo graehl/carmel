@@ -84,7 +84,7 @@
 2005-03-26  Jonathan Graehl  <graehl@isi.edu>
 
 	* io.hpp: moved everything from genio.h except what's used for
-	get_from print_on macros
+	get_from print macros
 
 2005-03-21  Jonathan Graehl  <graehl@isi.edu>
 

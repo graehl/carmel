@@ -85,7 +85,7 @@ MAIN_BEGIN
     catch(exception& e) {
         cerr << "ERROR: " << e.what() << "\n\n";
         cerr << "Try '" << progname << " -h' for documentation\n";
-        BackTrace::print_on(cerr);
+        BackTrace::print(cerr);
         return 1;
     }
     catch(...) {

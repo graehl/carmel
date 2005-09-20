@@ -655,7 +655,7 @@ struct IndirectReader
 };
 
   template <class charT, class Traits, class T,class Writer>
-  std::ios_base::iostate range_print_on(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
+  std::ios_base::iostate range_print(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
   {
       static const char *const MULTILINE_SEP="\n";
       const char space=' ';
@@ -689,7 +689,7 @@ struct IndirectReader
 
   template <class charT, class Traits, class T>
 inline  std::ios_base::iostate print_range(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,bool parens=true) {
-      return range_print_on(o,begin,end,DefaultWriter(),multiline,parens);
+      return range_print(o,begin,end,DefaultWriter(),multiline,parens);
   }
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)

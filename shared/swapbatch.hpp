@@ -161,7 +161,7 @@ struct SwapBatch {
             return !is_end();
         }
 
-        GENIO_print_on
+        GENIO_print
         {
             if (is_end())
                 o << "end";
@@ -172,7 +172,7 @@ struct SwapBatch {
 
     };
 
-    GENIO_print_on
+    GENIO_print
     {
 //        SDBP5(o,basename,n_batch,batchsize,loaded_batch,autodelete);
         o << "(\n";
