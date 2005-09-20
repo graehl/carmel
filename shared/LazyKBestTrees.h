@@ -107,10 +107,10 @@ struct Entry {
         return *result < *o.result;
     }
     typedef Entry<R,A>Self;
-    typedef Self default_print_on;
-    typedef default_print_on has_print_on;
+    typedef Self default_print;
+    typedef default_print has_print;
 
-    void print_on(std::ostream &o) const
+    void print(std::ostream &o) const
     {
 
         o << "{Entry(";
@@ -134,9 +134,9 @@ struct Node {
         return (R *)0x1;
     }
     typedef Node<R,A> Self;
-    typedef Self default_print_on;
-    typedef default_print_on has_print_on;
-    void print_on(std::ostream &o) const
+    typedef Self default_print;
+    typedef default_print has_print;
+    void print(std::ostream &o) const
     {
         o << "{NODE @" << this << '[' << memo.size() << ']';
         if (memo.size())
@@ -310,14 +310,14 @@ std::ostream & operator << (std::ostream &o,const std::vector<V> &v)
 template <class R,class A>
 std::ostream &operator <<(std::ostream &o,const Entry<R,A> &e)
 {
-    e.print_on(o);
+    e.print(o);
     return o;
 }
 
 template <class R,class A>
 std::ostream &operator <<(std::ostream &o,const Node<R,A> &e)
 {
-    e.print_on(o);
+    e.print(o);
     return o;
 }
 
@@ -329,14 +329,14 @@ std::ostream &operator <<(std::ostream &o,const Node<R,A> &e)
 template <class R,class A>
 std::ostream &operator <<(std::ostream &o,const lazy_kbest_impl::Entry<R,A> &e)
 {
-    e.print_on(o);
+    e.print(o);
     return o;
 }
 
 template <class R,class A>
 std::ostream &operator <<(std::ostream &o,const lazy_kbest_impl::Node<R,A> &e)
 {
-    e.print_on(o);
+    e.print(o);
     return o;
 }
 */
@@ -382,7 +382,7 @@ struct lazy_kbest {
 
 
 #ifdef TEST
-//# include "default_print_on.hpp"
+//# include "default_print.hpp"
 //FIXME: doesn't work
 
 # include "test.hpp"

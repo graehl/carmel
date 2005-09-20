@@ -25,7 +25,7 @@ function gtest {
 
 Here are some techniques I've used which you might find confusing:
 
-I define I/O for classes as member functions get_from(in) and print_on(out).
+I define I/O for classes as member functions get_from(in) and print(out).
 Operators << and >> are generated on top of them with genio.h
 
 I use the "template typedef" technique of Typedef::rebind<arg> (see the STL
@@ -53,7 +53,7 @@ I've also at times used a template-based version of the Factory pattern.
 // binary heap allowing adjusting the cost of a node not at the top
 
 ==> backtrace.hpp <==
-// sprinkle "BACKTRACE;" (macro) in strategic locations, and BackTrace::print_on() inside exception handler.
+// sprinkle "BACKTRACE;" (macro) in strategic locations, and BackTrace::print() inside exception handler.
 
 ==> byref.hpp <==
 // when you write a template that takes an argument by value, pass a ref(obj) if you don't want a copy of obj made.  tries to autoconvert back to obj's type but can't do that for operators, so e.g. deref(f)(arg) is necessary in your template function.
@@ -151,8 +151,8 @@ I've also at times used a template-based version of the Factory pattern.
 ==> pointeroffset.hpp <==
 // idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.
 
-==> print_on.hpp <==
-// determine whether a class has specified a print_on or print_on with writer method
+==> print.hpp <==
+// determine whether a class has specified a print or print with writer method
 
 ==> property.hpp <==
 // some Boost Graph Library property maps

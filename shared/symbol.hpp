@@ -125,7 +125,7 @@ struct Symbol {
   // empty symbol (isDefault()) is considered an io failure
   template <class charT, class Traits>
   std::ios_base::iostate
-  print_on(std::basic_ostream<charT,Traits>& o) const
+  print(std::basic_ostream<charT,Traits>& o) const
   {
     if (str < MIN_LEGAL_ADDRESS) {
       o << "symbolint_" << phony_int();

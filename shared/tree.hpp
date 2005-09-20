@@ -164,7 +164,7 @@ friend size_t tree_height(const T *t);
           return tree_count(this);
         }
 template <class charT, class Traits>
-std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o) const
+std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o) const
   {
   o << label;
   if (rank) {

@@ -43,7 +43,7 @@ protected:
 public:
     enum make_not_anon_1 { REPLACE=0, APPEND=1 };
     enum make_not_anon_2 { BRIEF=0, MULTILINE=1 };
-    enum make_not_anon_3 { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print_on and bool 2nd arg ...
+    enum make_not_anon_3 { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print and bool 2nd arg ...
 
     T & at(unsigned int index) const { // run-time bounds-checked
         T *r=vec+index;
@@ -117,16 +117,16 @@ public:
     }
 
     template <class charT, class Traits>
-    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
         {
-            return range_print_on(o,begin(),end(),DefaultWriter(),multiline);
+            return range_print(o,begin(),end(),DefaultWriter(),multiline);
         }
 
-    typedef void has_print_on_writer;
+    typedef void has_print_writer;
     template <class charT, class Traits, class Writer >
-    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer w,bool multiline=false) const
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,Writer w,bool multiline=false) const
         {
-            return range_print_on(o,begin(),end(),w,multiline);
+            return range_print(o,begin(),end(),w,multiline);
         }
 
 
@@ -723,22 +723,22 @@ public:
 
 
     template <class charT, class Traits>
-    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
         {
-            return range_print_on(o,this->begin(),end(),DefaultWriter(),multiline);
+            return range_print(o,this->begin(),end(),DefaultWriter(),multiline);
         }
 
     template <class charT, class Traits>
-    std::ios_base::iostate print_on_multiline(std::basic_ostream<charT,Traits>& o) const
+    std::ios_base::iostate print_multiline(std::basic_ostream<charT,Traits>& o) const
         {
-            return range_print_on(o,this->begin(),end(),DefaultWriter(),true);
+            return range_print(o,this->begin(),end(),DefaultWriter(),true);
         }
 
 
     template <class charT, class Traits, class Writer >
-    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
         {
-            return range_print_on(o,this->begin(),end(),writer,multiline);
+            return range_print(o,this->begin(),end(),writer,multiline);
         }
 
     // if any element read fails, whole array is clobbered (even if appending!)

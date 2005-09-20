@@ -108,7 +108,7 @@ namespace WFST_impl {
     NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state(wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
     bool moreGroups() { return state != end; }
     template <class charT, class Traits>
-    std::ios_base::iostate print_on(std::basic_ostream<charT,Traits>& os) const {
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& os) const {
       if(method==WFST::CONDITIONAL) {
         os << "(conditional normalization group for input=" << wfst.inLetter(Ci->first) << " in ";
       } else {

@@ -3,12 +3,12 @@
 #define DEBUGPRINT_HPP
 
 /// In your clase, define a type: if you defined a
-///  print_on(ostream &) const
-///   method like genio.h: GENIO_print_on
-///  typedef void has_print_on;
-/// or if has two arg print_on(ostream &, Writer &w)
-///   typedef void has_print_on_writer;
-/// if you inherit from a class that has defined one of these, override it with some other type than void: typedef bool has_print_on_writer would disable
+///  print(ostream &) const
+///   method like genio.h: GENIO_print
+///  typedef void has_print;
+/// or if has two arg print(ostream &, Writer &w)
+///   typedef void has_print_writer;
+/// if you inherit from a class that has defined one of these, override it with some other type than void: typedef bool has_print_writer would disable
 
 
 #include "threadlocal.hpp"
@@ -18,7 +18,7 @@
 #include <iostream>
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "print_on.hpp"
+#include "print.hpp"
 #include "byref.hpp"
 
 #ifdef DEBUG
@@ -76,36 +76,36 @@ inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is
 }
 
 
-// what follows relies on SFINAE (google) to identify whether an object supports print_on (with or without a Writer param)
+// what follows relies on SFINAE (google) to identify whether an object supports print (with or without a Writer param)
 template<class A>
-inline void dbgout(std::ostream &o,const A &a, typename has_print_on_plain<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename has_print_plain<A>::type* dummy = 0) {
     (void)dummy;
-    deref(a).print_on(o);
+    deref(a).print(o);
 }
 
 template<class A>
-inline void dbgout(std::ostream &o,const A &a, typename has_print_on_writer<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename has_print_writer<A>::type* dummy = 0) {
     (void)dummy;
-    deref(a).print_on(o,DebugWriter());
+    deref(a).print(o,DebugWriter());
 }
 
 template<class A>
-inline void dbgout(std::ostream &o,const A &a, typename not_has_print_on<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a, typename not_has_print<A>::type* dummy = 0) {
     (void)dummy;
     o << deref(a);
 }
 
 
 template<class A,class W>
-inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_on_plain<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_plain<A>::type* dummy = 0) {
     (void)dummy;
-    deref(a).print_on(o);
+    deref(a).print(o);
 }
 
 template<class A,class W>
-inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_on_writer<A>::type* dummy = 0) {
+inline void dbgout(std::ostream &o,const A &a,W w,typename has_print_writer<A>::type* dummy = 0) {
     (void)dummy;
-    deref(a).print_on(o,w);
+    deref(a).print(o,w);
 }
 
 inline void dbgout(std::ostream &o,const char *a) {

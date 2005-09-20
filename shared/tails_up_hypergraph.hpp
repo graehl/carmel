@@ -11,10 +11,10 @@ struct HArcDest  {
     HD harc; // hyperarc with this tail
     unsigned multiplicity; // tail multiplicity
     HArcDest(HD e) : harc(e), multiplicity(1) {}
-    GENIO_print_on
+    GENIO_print
         {
           o << '"';
-          harc->print_on(o);
+          harc->print(o);
           o << "\"x"<<multiplicity;
           return GENIOGOOD;
         }
@@ -196,7 +196,7 @@ struct TailsUpHypergraph {
 
             unsigned & remain() { return this->first; }
             Cost & cost() { return this->second; }
-            GENIO_print_on {
+            GENIO_print {
               o << "(" << remain() << "," << cost() << ")";
               return GENIOGOOD;
             }
