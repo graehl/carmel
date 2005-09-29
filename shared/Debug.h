@@ -53,11 +53,11 @@ using namespace std;
 #include "makestr.hpp"
 
 #ifdef NO_INFO
-# define DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,newline)
-# define DBG_OP_F(lvl,pDbg,op,module,msg,file,line)
+# define DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,newline)
+# define DBG_OP_F(lvl,pDbg,op,module,oexp,file,line)
 #else
 
-# define DBG_OP_F(lvl,pDbg,op,module,oexp,file,line) DBG_OP_F_NL(lvl,pDbg,op,module,msg,file,line,true)
+# define DBG_OP_F(lvl,pDbg,op,module,oexp,file,line) DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,true)
 
 # define DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,newline) do {     \
         if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \

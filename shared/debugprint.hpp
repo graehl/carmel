@@ -18,7 +18,7 @@
 #include <iostream>
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "print.hpp"
+#include "has_print.hpp"
 #include "byref.hpp"
 
 #ifdef DEBUG
