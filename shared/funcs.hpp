@@ -352,6 +352,7 @@ inline void maybe_decrease_min(AssocContainer *table,const Key &key,const Val &v
     } else {
 //                INFOL(30,"maybe_decrease_min",key << " val=" << val);
     }
+    //    return was_inserted->first->second;
 }
 
 template <class AssocContainer,class Key,class Val>
@@ -366,6 +367,8 @@ inline void maybe_increase_max(AssocContainer *table,const Key &key,const Val &v
     } else {
 //                INFOL(30,"maybe_increase_max",key << " val=" << val);
     }
+//    return was_inserted->first->second;
+    
 }
 
 template <class To,class From>
