@@ -24,8 +24,8 @@ using namespace std;
 #endif
 
 #define COND_INFO(level,op) (INFO_LEVEL op level)
-#define COND_INFO_RUNTIME(level,op) (INFO_LEVEL op level && dbg->runtime_info_level op level)
-#define COND_INFO_RUNTIME_EQUAL(level) (COND_INFO(level,>=) && dbg->runtime_info_level == level)
+#define COND_INFO_RUNTIME(level,op) (INFO_LEVEL op level && debug.runtime_info_level op level)
+#define COND_INFO_RUNTIME_EQUAL(level) (COND_INFO(level,>=) && debug.runtime_info_level == level)
 #define IF_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,>=))
 #define UNLESS_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,<))
 #define IF_INFO(level) if(COND_INFO(level,>=))
@@ -60,11 +60,11 @@ using namespace std;
 # define DBG_OP_F(lvl,pDbg,op,module,oexp,file,line) DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,true)
 
 # define DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,newline) do {     \
-        if (INFO_LEVEL >= lvl && (pDbg)->runtime_info_level >= lvl) {   \
+        if (INFO_LEVEL >= lvl && (pDbg).runtime_info_level >= lvl) {   \
    ostringstream os; \
    oexp; \
    if(!os) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write " #module " : " #oexp); \
-   (pDbg)->op(module,os.str(),file,line,newline);      \
+   (pDbg).op(module,os.str(),file,line,newline);      \
 } } while(0)
 #endif
 
@@ -80,36 +80,36 @@ using namespace std;
 #define O_INSERT(msg) os << msg
 
 // some of these names might be used, e.g. in windows.h, but seems ok on linux.  compilation will fail/warn if they are in conflict.
-#define NESTINFO NESTINFO_GUARD(dbg,1)
-#define INFO(module,msg) DBG_OP(dbg,info,module,O_INSERT(msg))
-#define WARNING(module,msg) DBG_OP(dbg,warning,module,O_INSERT(msg))
-#define ERROR(module,msg) DBG_OP(dbg,error,module,O_INSERT(msg))
-#define FATAL(module,msg) DBG_OP(dbg,fatalError,module,O_INSERT(msg))
-#define INFOQ(module,msg) DBG_OP_Q(dbg,info,module,O_INSERT(msg))
-#define INFOB(module) dbg->info_begin(module,__FILE__,__LINE__)
-#define WARNINGB(module) dbg->warning_begin(module,__FILE__,__LINE__)
-#define ERRORB(module) dbg->error_begin(module,__FILE__,__LINE__)
-#define INFOBQ(module) dbg->info_begin(module,__FILE__,0)
-#define INFOENDL dbg->info_endl()
-#define WARNINGBQ(module) dbg->warning_begin(module,__FILE__,0)
-#define ERRORBQ(module) dbg->error_begin(module,__FILE__,0)
+#define NESTINFO NESTINFO_GUARD(debug,1)
+#define INFO(module,msg) DBG_OP(debug,info,module,O_INSERT(msg))
+#define WARNING(module,msg) DBG_OP(debug,warning,module,O_INSERT(msg))
+#define ERROR(module,msg) DBG_OP(debug,error,module,O_INSERT(msg))
+#define FATAL(module,msg) DBG_OP(debug,fatalError,module,O_INSERT(msg))
+#define INFOQ(module,msg) DBG_OP_Q(debug,info,module,O_INSERT(msg))
+#define INFOB(module) debug.info_begin(module,__FILE__,__LINE__)
+#define WARNINGB(module) debug.warning_begin(module,__FILE__,__LINE__)
+#define ERRORB(module) debug.error_begin(module,__FILE__,__LINE__)
+#define INFOBQ(module) debug.info_begin(module,__FILE__,0)
+#define INFOENDL debug.info_endl()
+#define WARNINGBQ(module) debug.warning_begin(module,__FILE__,0)
+#define ERRORBQ(module) debug.error_begin(module,__FILE__,0)
 
-#define INFOQSAMELINE(module,msg) DBG_OP_LQ_NEWLINE(0,dbg,info,module,O_INSERT(msg),false)
-#define INFOSTREAM dbg->info_sameline()
-#define INFOSTREAM_NL dbg->info_startline()
-#define WARNINGLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,warning,module,O_INSERT(msg))
-#define WARNINGL(lvl,module,msg) DBG_OP_L(lvl,dbg,warning,module,O_INSERT(msg))
-#define WARNINGQ(module,msg) DBG_OP_Q(dbg,warning,module,O_INSERT(msg))
-#define ERRORQ(module,msg) DBG_OP_Q(dbg,error,module,O_INSERT(msg))
-#define FATALQ(module,msg) DBG_OP_Q(dbg,fatalError,module,O_INSERT(msg))
-#define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,dbg,info,module,O_INSERT(msg))
-#define INFOLQE(lvl,module,oexp) DBG_OP_LQ(lvl,dbg,info,module,oexp)
-#define INFOL(lvl,module,msg) DBG_OP_L(lvl,dbg,info,module,O_INSERT(msg))
+#define INFOQSAMELINE(module,msg) DBG_OP_LQ_NEWLINE(0,debug,info,module,O_INSERT(msg),false)
+#define INFOSTREAM debug.info_sameline()
+#define INFOSTREAM_NL debug.info_startline()
+#define WARNINGLQ(lvl,module,msg) DBG_OP_LQ(lvl,debug,warning,module,O_INSERT(msg))
+#define WARNINGL(lvl,module,msg) DBG_OP_L(lvl,debug,warning,module,O_INSERT(msg))
+#define WARNINGQ(module,msg) DBG_OP_Q(debug,warning,module,O_INSERT(msg))
+#define ERRORQ(module,msg) DBG_OP_Q(debug,error,module,O_INSERT(msg))
+#define FATALQ(module,msg) DBG_OP_Q(debug,fatalError,module,O_INSERT(msg))
+#define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,debug,info,module,O_INSERT(msg))
+#define INFOLQE(lvl,module,oexp) DBG_OP_LQ(lvl,debug,info,module,oexp)
+#define INFOL(lvl,module,msg) DBG_OP_L(lvl,debug,info,module,O_INSERT(msg))
 #if INFO_LEVEL >=9
 #define INF9(module,msg) INFOLQ(9,module,O_INSERT(msg))
-#define INF9IN dbg->increase_depth()
-#define INF9OUT dbg->decrease_depth()
-#define INF9NEST NESTINFO_GUARD(dbg,9)
+#define INF9IN debug.increase_depth()
+#define INF9OUT debug.decrease_depth()
+#define INF9NEST NESTINFO_GUARD(debug,9)
 #else
 #define INF9(module,msg)
 #define INF9IN
@@ -119,9 +119,9 @@ using namespace std;
 
 #if INFO_LEVEL >=99
 #define INF99(module,msg) INFOLQ(99,module,O_INSERT(msg))
-#define INF99IN dbg->increase_depth()
-#define INF99OUT dbg->decrease_depth()
-#define INF99NEST NESTINFO_GUARD(dbg,99)
+#define INF99IN debug.increase_depth()
+#define INF99OUT debug.decrease_depth()
+#define INF99NEST NESTINFO_GUARD(debug,99)
 #else
 #define INF99(module,msg)
 #define INF99IN
@@ -134,10 +134,10 @@ using namespace std;
 #define WARNT(msg) DBG_OP(&test_dbg,warning,"TEST",O_INSERT(msg))
 #define NESTT NESTINFO_GUARD(&test_dbg)
 #else
-#define INFOT(msg) DBG_OP_L(99,dbg,info,"TEST",O_INSERT(msg))
-#define WARNT(msg) DBG_OP_L(99,dbg,warning,"TEST",O_INSERT(msg))
+#define INFOT(msg) DBG_OP_L(99,debug,info,"TEST",O_INSERT(msg))
+#define WARNT(msg) DBG_OP_L(99,debug,warning,"TEST",O_INSERT(msg))
 #if INFO_LEVEL >= 99
-#define NESTT NESTINFO_GUARD(dbg,99)
+#define NESTT NESTINFO_GUARD(debug,99)
 #else
 #define NESTT
 #endif
@@ -181,23 +181,23 @@ class Debug {
             --debug_outline_depth;
     }
     struct Nest {
-        Debug *dbg;
+        Debug *pdebug;
         unsigned info_req;
         bool active() const {
-            return info_req < dbg->runtime_info_level;
+            return info_req < pdebug->runtime_info_level;
         }
-        Nest(Debug *_dbg,unsigned info_lvl_required=0) : dbg(_dbg),info_req(info_lvl_required) {
+        Nest(Debug &debug,unsigned info_lvl_required=0) : pdebug(&debug),info_req(info_lvl_required) {
             if (active())
-                dbg->increase_depth();
+                pdebug->increase_depth();
         }
-/*        Nest(const Nest &o) : dbg(o.dbg) {
+/*        Nest(const Nest &o) : pdebug(o.pdebug) {
             if (active())
-                dbg->increase_depth();
+                pdebug->increase_depth();
         }
 */
         ~Nest() {
             if (active())
-                dbg->decrease_depth();
+                pdebug->decrease_depth();
         }
     };
 
@@ -324,14 +324,17 @@ class Debug {
 };
 }
 
-extern ns_decoder_global::Debug *dbg;        //!< interface for debugging output
+extern ns_decoder_global::Debug debug;        //!< interface for debugging output
+
+#ifdef SINGLE_MAIN
+ns_decoder_global::Debug debug;
+#endif
 
 #ifdef TEST
 # ifdef MAIN
 ns_decoder_global::Debug test_dbg;
 # endif
 #endif
-
 // added by Wei Wang.
 /*
  * Here is the typical usage for this mixin class.
@@ -367,7 +370,7 @@ public:
 	{ return (!nodebug && (debugAll >= level || debugLevel >= level)); };
     virtual void debugme(unsigned level) { debugLevel = level; };
 				    /* set object's debugging level */
-    void debugall(unsigned level) { debugAll = level; };
+    static void debugall(unsigned level) { debugAll = level; };
 				    /* set global debugging level */
     unsigned debuglevel() { return debugLevel; };
 
