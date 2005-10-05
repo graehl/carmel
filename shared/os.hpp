@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <stdexcept>
 #include <stdlib.h>
+#include <unistd.h>
+#include <cstring>
 
 #if !defined( MEMMAP_IO_WINDOWS ) && !defined( MEMMAP_IO_POSIX )
 # if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
@@ -41,10 +43,14 @@
  typedef int Error;
 #endif
 
-inline void system_safe(const std::string &cmd) 
+
+inline int system_safe(const std::string &cmd) 
 {
-    if (system(cmd.c_str()))
+    int ret=::system(cmd.c_str());
+    
+    if (ret==-1)
         throw std::runtime_error(cmd);
+    return ret;
 }
 
 inline void copy_file(const std::string &source, const std::string &dest)
@@ -56,8 +62,6 @@ inline void mkdir_parents(const std::string &dirname)
 {
     system_safe("mkdir -p "+dirname);
 }
-
-
 
 inline std::string get_current_dir() {
     char *malloced=::getcwd(NULL,0);
@@ -188,5 +192,62 @@ struct tmp_fstream
 };
 
 
+inline void throw_last_error(const std::string &module="ERROR")
+{
+    throw std::runtime_error(module+": "+last_error_string());    
+}
+
+#define TMPNAM_SUFFIX "XXXXXX"
+#define TMPNAM_SUFFIX_LEN 6
+
+inline bool is_tmpnam_template(const std::string &filename_template) 
+{
+    unsigned len=filename_template.length();
+    return !(len<TMPNAM_SUFFIX_LEN || filename_template.substr(len-TMPNAM_SUFFIX_LEN,TMPNAM_SUFFIX_LEN)!=TMPNAM_SUFFIX);
+}
+
+
+//!< file is removed if keepfile==false (dangerous: another program could grab the filename first!).  returns filename created.  if template is missing XXXXXX, it's appended first.
+inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true) 
+{
+    const unsigned MAX_PATH=1024;
+    char tmp[MAX_PATH+1];
+    strncpy(tmp, filename_template.c_str(),MAX_PATH-TMPNAM_SUFFIX_LEN);
+    
+    if (!is_tmpnam_template(filename_template))
+        strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
+    
+    int fd=::mkstemp(tmp);
+
+    if (fd==-1)
+        throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
+
+    ::close(fd);
+    
+    if (!keepfile)
+        ::unlink(tmp);
+    
+    return tmp;
+}
+
+
+
+inline void safe_unlink(const std::string &file,bool must_succeed=true) 
+{
+    if (::unlink(file.c_str()) == -1 && must_succeed)
+        throw_last_error(std::string("couldn't remove ").append(file));
+}
+
+//!< returns dir/name unless dir is empty (just name, then).  if name begins with / then just returns name.
+inline std::string joined_dir_file(const std::string &basedir,const std::string &name="",char pathsep='/') 
+{
+    if (!name.empty() && name[0]==pathsep) //absolute name
+        return name;
+    if (basedir.empty()) // relative base dir
+        return name;
+    if (basedir[basedir.length()-1]!=pathsep) // base dir doesn't already end in pathsep
+        return basedir+pathsep+name;
+    return basedir+name;
+}
 
 #endif
