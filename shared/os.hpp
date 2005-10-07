@@ -230,6 +230,12 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_t
     return tmp;
 }
 
+inline std::string maybe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true)
+{
+    return is_tmpnam_template(filename_template) ?
+        safe_tmpnam(filename_template) :
+        filename_template;
+}
 
 
 inline void safe_unlink(const std::string &file,bool must_succeed=true) 

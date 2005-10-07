@@ -2,7 +2,7 @@
 #define FIXEDBUFFER_H
 
 #include <stdexcept>
-#include <stddef.h>
+#include <cstddef>
 
 #ifdef DEBUG
 # include <cstring>
