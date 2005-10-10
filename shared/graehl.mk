@@ -76,6 +76,12 @@ ifeq ($(CPP_EXT),)
 CPP_EXT=cpp
 endif
 
+BOOST_SERIALIZATION_SRC_DIR = $(BOOST_DIR)/libs/serialization/src
+BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
+BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
+BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
+
+BOOST_SERIALIZATION_SRCS=$(basename $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))
 BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp \
 unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp	      \
 unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
@@ -83,17 +89,15 @@ BOOST_OPT_SRCS=cmdline.cpp convert.cpp parsers.cpp utf8_codecvt_facet.cpp variab
 # winmain.cpp
 BOOST_FS_SRCS=convenience.cpp operations_posix_windows.cpp exception.cpp path_posix_windows.cpp
 
+BOOST_SERIALIZATION_OBJS=$(BOOST_SERIALIZATION_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_OPT_OBJS=$(BOOST_OPT_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_FS_OBJS=$(BOOST_FS_SRCS:%.cpp=$(OBJB)/%.o)
 
+BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPT_LIB=$(OBJB)/libprogram_options.a
 BOOST_FS_LIB=$(OBJB)/libfilesystem.a
-
-BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
-BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
-BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 
 CXXFLAGS += $(ARCH_FLAGS)
 LDFLAGS += $(addprefix -l,$(LIB)) $(ARCH_FLAGS)
@@ -229,7 +233,14 @@ $(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
 	$(AR) -rc $@ $^
 #	$(RANLIB) $@
 
-vpath %.cpp $(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR):$(BOOST_FS_SRC_DIR)
+$(BOOST_SERIALIZATION_LIB): $(BOOST_SERIALIZATION_OBJS)
+	@echo
+	@echo creating Boost Program Serialization lib
+	$(AR) -rc $@ $^
+#	$(RANLIB) $@
+
+vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR):$(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR):$(BOOST_FS_SRC_DIR)
+
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o
 $(OBJB)/%.o: %.cpp
