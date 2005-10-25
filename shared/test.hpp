@@ -7,8 +7,15 @@
 #include <iostream>
 
 #ifdef SINGLE_MAIN
-#define TEST_MAIN
-#define BOOST_AUTO_TEST_MAIN
+
+# define TEST_MAIN
+/*
+int cpp_main( int, char* [] )
+{
+    return 0;
+}
+*/
+# define BOOST_AUTO_TEST_MAIN
 #endif
 
 #ifdef _MSC_VER

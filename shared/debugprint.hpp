@@ -156,13 +156,13 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 
 #include <boost/preprocessor/stringize.hpp>
 #if 0
-#ifdef _MSV_VER
-#undef BOOST_PP_STRINGIZE
-#define STRINGIZE( L ) #L
-#define MAKESTRING( M, L ) M(L)
-#define BOOST_PP_STRINGIZE(L) MAKESTRING(STRINGIZE, L )
-#endif
-#endif
+# ifdef _MSV_VER
+#  undef BOOST_PP_STRINGIZE
+#  define STRINGIZE( L ) #L
+#  define MAKESTRING( M, L ) M(L)
+#  define BOOST_PP_STRINGIZE(L) MAKESTRING(STRINGIZE, L )
+# endif
+# endif
 #define LINESTR dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 

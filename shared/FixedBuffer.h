@@ -7,6 +7,7 @@
 #ifdef DEBUG
 # include <cstring>
 # endif
+
 template <class T,bool PlainData=false>
 // no bounds checking or growing ...
 struct FixedBuffer {
@@ -18,6 +19,10 @@ struct FixedBuffer {
         std::memset(m_begin,0x77,sizeof(T)*sz);
 #  endif
     }
+    void resize(size_t sz) 
+    {
+        throw std::runtime_error("tried to resize a fixed-sized buffer (shoulda made it bigger to start with)!");
+    }    
     operator T *() {
         return m_begin;
     }
@@ -86,6 +91,10 @@ struct ConstSizeBuffer {
         std::memset(m_begin,0x77,sizeof(T)*sz);
 # endif
     }
+    void resize(size_t /*size*/) 
+    {
+        throw std::runtime_error("tried to resize a fixed-sized buffer (shoulda made it bigger to start with)!");
+    }    
     operator T *() {
         return (T*)m_begin;
     }
