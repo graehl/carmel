@@ -310,7 +310,7 @@ class Debug {
     }
 
     void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
-        info_begin(module,file,line) << info;
+        info_begin(module,file,line) << info;        
         if (endline)
             info_endl();
     }

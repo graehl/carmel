@@ -79,8 +79,8 @@ BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
         int *p0=0;
         BOOST_CHECK_EQUAL(align_up((int *)i),p0+wordup);
         BOOST_CHECK_EQUAL(align_down((int *)i),p0+word);
-        BOOST_CHECK_EQUAL(align_up((char*)i),(char*)i);
-        BOOST_CHECK_EQUAL(align_down((char*)i),(char*)i);        
+        BOOST_CHECK_EQUAL((void*)align_up((char*)i),(void*)(char*)i);
+        BOOST_CHECK_EQUAL((void*)align_down((char*)i),(void*)(char*)i);        
     }
 
 }

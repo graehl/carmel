@@ -14,8 +14,9 @@
 
 #include <string>
 #include <new>
-#include "myassert.h"
+#include <cassert>
 #include <memory>
+#include <cstddef>
 #include <stdexcept>
 #include <iostream>
 #include "genio.h"
@@ -26,6 +27,7 @@
 #include "function_output_iterator.hpp"
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
+#include <iterator>
 
 #ifdef TEST
 #include "test.hpp"
@@ -56,7 +58,7 @@ public:
         return begin()+index < end();
     }
     T & operator[] (unsigned int index) const {
-        Assert(vec+index < end());
+        assert(vec+index < end());
         return vec[index];
     }
 
@@ -79,7 +81,7 @@ public:
 
     Array<T,Alloc> substr(unsigned start,unsigned end) const
     {
-        Assert(begin()+start <= endspace && begin()+end <= endspace);
+        assert(begin()+start <= endspace && begin()+end <= endspace);
         return Array<T,Alloc>(begin()+start,begin()+end);
     }
 
@@ -99,20 +101,20 @@ public:
     }
 
     const T& front()  const {
-        Assert(size());
+        assert(size());
         return *begin();
     }
     const T& back() const {
-        Assert(size());
+        assert(size());
         return *(end()-1);
     }
 
     T& front() {
-        Assert(size());
+        assert(size());
         return *begin();
     }
     T& back() {
-        Assert(size());
+        assert(size());
         return *(end()-1);
     }
 
@@ -155,7 +157,7 @@ public:
     void dealloc() {
         int cap=capacity();
         if (cap) {
-            Assert(vec);
+            assert(vec);
             this->deallocate(vec,cap);
             Paranoid(vec=NULL;);
             endspace=vec;
@@ -165,7 +167,6 @@ public:
         for ( T *i=begin();i!=end();++i)
             i->~T();
     }
-
 
     void copyto(T *to,unsigned n) {
         memcpy(to,vec,sizeof(T)*n);
@@ -229,7 +230,7 @@ public:
         return endspace;
     }
     unsigned int index_of(T *t) const {
-        Assert(t>=begin() && t<end());
+        assert(t>=begin() && t<end());
         return (unsigned int)(t-vec);
     }
     ///XXX: must always properly set_capacity AFTER set_begin since this invalidates capacity
@@ -263,7 +264,7 @@ public:
     }
 
 //!FIXME: doesn't swap allocator base
-    //    void swap(Array<T,Alloc> &a) {Assert(0);}
+    //    void swap(Array<T,Alloc> &a) {assert(0);}
 //FIXME: should only work for dynarray,fixedarray,autoarray
 /*    void swap(Array<T,Alloc> &a) {
         Array<T,Alloc>::swap(a);
@@ -273,7 +274,7 @@ protected:
     }
 private:
     void operator=(const Array<T,Alloc> &a) {
-        Assert(0);
+        assert(0);
     }
 };
 
@@ -308,7 +309,7 @@ public:
     }
 
     void uninit_copy_from(const T* b,const T* e) {
-        Assert(e-b == this->capacity());
+        assert(e-b == this->capacity());
         std::uninitialized_copy(b,e,this->begin());
         //memcpy(begin(),b,e-b);
     }
@@ -353,19 +354,19 @@ template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : pub
     typedef Array<T,Alloc> Base;
 private:
     DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";assert(0);}
-    void swap(Array<T,Alloc> &a) {Assert(0);}
+    void swap(Array<T,Alloc> &a) {assert(0);}
 public:
     explicit DynamicArray (const char *c) {
         std::istringstream(c) >> *this;
     }
 
     // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-    explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(Base::vec) { Assert(this->invariant()); }
+    explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(Base::vec) { assert(this->invariant()); }
 
     // creates vector holding sp copies of t; does initialize
     explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp) {
         construct(t);
-        Assert(invariant());
+        assert(invariant());
     }
 
     void construct() {
@@ -399,7 +400,7 @@ public:
 //      memcpy(this->vec,a.vec,sizeof(T)*sz);
         std::uninitialized_copy(a.begin(),a.end(),this->begin());
         endv=this->endspace;
-        Assert(this->invariant());
+        assert(this->invariant());
     }
 
     // warning: stuff will still be destructed!
@@ -419,20 +420,20 @@ public:
     }
 
     const T* end() const { // Array code that uses vec+space for boundschecks is duplicated below
-        Assert(this->invariant());
+        assert(this->invariant());
         return endv;
     }
     T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
-        Assert(this->invariant());
+        assert(this->invariant());
         return endv;
     }
     const T* const_end() const {
         return endv;
     }
-
+    typedef typename Array<T,Alloc>::iterator iterator;
     // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
-    void move_rest_to(T *to,typename Array<T,Alloc>::iterator i) {
-        Assert(i >= this->begin() && i < end());
+    void move_rest_to(T *to,iterator i) {
+        assert(i >= this->begin() && i < end());
         copyto(to,i,this->end()-i);
         endv=i;
     }
@@ -450,12 +451,12 @@ public:
     }
 
     T & operator[] (unsigned int index) const {
-        Assert(this->invariant());
-        Assert(this->vec+index < end());
+        assert(this->invariant());
+        assert(this->vec+index < end());
         return (this->vec)[index];
     }
     unsigned int index_of(T *t) const {
-        Assert(t>=this->begin() && t<end());
+        assert(t>=this->begin() && t<end());
         return (unsigned int)(t-this->vec);
     }
 
@@ -495,18 +496,18 @@ public:
     // default-construct version (not in STL vector)
     void push_back()
         {
-            Assert(invariant());
+            assert(invariant());
             PLACEMENT_NEW(push_back_raw()) T();
-            Assert(invariant());
+            assert(invariant());
         }
     void push_back(const T& val)
         {
-            Assert(invariant());
+            assert(invariant());
             PLACEMENT_NEW(push_back_raw()) T(val);
-            Assert(invariant());
+            assert(invariant());
         }
     void push_back(const T& val,unsigned n)
-        { Assert(invariant());
+        { assert(invariant());
             T *newend=endv+n;
             if (newend > this->endspace) {
                 reserve_at_least(size()+n);
@@ -516,7 +517,7 @@ public:
             for (T *p=endv;p!=newend;++p)
                 PLACEMENT_NEW(p) T(val);
             endv=newend;
-            Assert(invariant());}
+            assert(invariant());}
 
     // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
     T *push_back_raw()
@@ -546,20 +547,20 @@ public:
         return *r;
     }
     const T& front()  const {
-        Assert(size());
+        assert(size());
         return *this->begin();
     }
     const T& back() const {
-        Assert(size());
+        assert(size());
         return *(end()-1);
     }
 
     T& front() {
-        Assert(size());
+        assert(size());
         return *this->begin();
     }
     T& back() {
-        Assert(size());
+        assert(size());
         return *(end()-1);
     }
 
@@ -606,7 +607,7 @@ protected:
     void resize_up(unsigned int newSpace) {
         //     we are somehow allowing 0-capacity vectors now?, so add 1
         //if (newSpace==0) newSpace=1;
-        Assert(newSpace > this->capacity());
+        assert(newSpace > this->capacity());
         // may be used when we've increased endv past endspace, in order to fix things
         unsigned sz=size();
         T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
@@ -622,7 +623,7 @@ protected:
     }
 public:
     void resize(unsigned int newSpace) {
-        Assert(invariant());
+        assert(invariant());
         //    if (newSpace==0) newSpace=1;
         if (endv==this->endspace) return;
         unsigned sz=size();
@@ -639,12 +640,59 @@ public:
         }
         // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
     }
+    //iterator_tags<Input> == random_access_iterator_tag
+    template <class Input>
+    void insert(iterator pos,Input from,Input to) 
+    {
+        if (pos==end()) {
+            append(from,to);
+        } else {
+            std::size_t n_new=from-to;
+            reserve(size()+n_new);
+            //FIXME: untested
+            assert(!"untested");
+            T *pfrom=endv;
+            endv+=n_new;
+            T *pto=endv;
+            while (pfrom!=pos)
+                *--pto=*--pfrom;
+            // now [pfrom,endv) have been shifted right by n_new
+            while(pto!=pos) { // this should now happen n_new times
+#if ASSERT_LVL > 50
+                assert(to!=from);
+#endif
+                *--pto=*--to;
+            }            
+        }
+    }
+
+    //iterator_tags<Input> == random_access_iterator_tag    
+    template <class Input>
+    void append(Input from,Input to) 
+    {
+        std::size_t n_new=from-to;
+        reserve(size()+n_new);
+        while (from!=to)
+            PLACEMENT_NEW(endv++) T(*from++);
+//            *endv++=*from++;
+#if ASSERT_LVL > 50
+        assert(invariant());
+#endif
+    }
+
+    // could just use copy, back_inserter
+    template <class Input>
+    void append_push_back(Input from,Input to) 
+    {
+        while (from!=to)
+            push_back(*from++);
+    }
+    
     void compact() {
-        Assert(invariant());
+        assert(invariant());
         if (endv==this->endspace) return;
         //equivalent to resize(size());
         unsigned newSpace=size();
-
         //    if (newSpace==0) newSpace=1; // have decided that 0-length dynarray is impossible
         if(newSpace) {
             T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
@@ -694,7 +742,7 @@ public:
         }
     }
     unsigned int size() const { return (unsigned)(endv-this->vec); }
-    void set_size(unsigned newSz) { endv=this->vec+newSz; Assert(this->invariant()); }
+    void set_size(unsigned newSz) { endv=this->vec+newSz; assert(this->invariant()); }
     void reduce_size(unsigned int n) {
         T *end=endv;
         reduce_size_nodestroy(n);
@@ -702,14 +750,14 @@ public:
             i->~T();
     }
     void reduce_size_nodestroy(unsigned int n) {
-        Assert(invariant() && n<=size());
+        assert(invariant() && n<=size());
         endv=this->vec+n;
     }
     void clear_nodestroy() {
         endv=this->vec;
     }
     void clear() {
-        Assert(invariant());
+        assert(invariant());
         for ( T *i=this->begin();i!=end();++i)
             i->~T();
         clear_nodestroy();
@@ -788,7 +836,7 @@ public:
 
             //EXPECTCH_SPACE_COMMENT_FIRST('(');
         done:
-            Assert(invariant());
+            assert(invariant());
             return GENIOGOOD;
           fail:
             clear();

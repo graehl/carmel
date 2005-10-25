@@ -81,13 +81,10 @@ BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 
-BOOST_SERIALIZATION_SRCS=$(basename $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))
-BOOST_TEST_SRCS=test_tools.cpp unit_test_parameters.cpp execution_monitor.cpp \
-unit_test_log.cpp unit_test_result.cpp supplied_log_formatters.cpp	      \
-unit_test_main.cpp unit_test_suite.cpp unit_test_monitor.cpp
-BOOST_OPT_SRCS=cmdline.cpp convert.cpp parsers.cpp utf8_codecvt_facet.cpp variables_map.cpp config_file.cpp options_description.cpp positional_options.cpp value_semantic.cpp
-# winmain.cpp
-BOOST_FS_SRCS=convenience.cpp operations_posix_windows.cpp exception.cpp path_posix_windows.cpp
+BOOST_SERIALIZATION_SRCS=$(notdir $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))
+BOOST_TEST_SRCS=$(filter-out cpp_main.cpp,$(notdir $(wildcard $(BOOST_TEST_SRC_DIR)/*.cpp)))
+BOOST_OPT_SRCS=$(filter-out winmain.cpp,$(notdir $(wildcard $(BOOST_OPT_SRC_DIR)/*.cpp)))
+BOOST_FS_SRCS=$(notdir $(wildcard $(BOOST_FS_SRC_DIR)/*.cpp))
 
 BOOST_SERIALIZATION_OBJS=$(BOOST_SERIALIZATION_SRCS:%.cpp=$(OBJB)/%.o)
 BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJB)/%.o)

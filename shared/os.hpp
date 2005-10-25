@@ -27,20 +27,20 @@
 # include <windows.h>
 # undef max
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
- typedef DWORD Error;
+typedef DWORD Error;
 
- inline long get_process_id() {
-     return GetCurrentProcessId();
- }
+inline long get_process_id() {
+    return GetCurrentProcessId();
+}
 
 #else
 # include <unistd.h>
- inline long get_process_id() {
-     return getpid();
- }
+inline long get_process_id() {
+    return getpid();
+}
 # include <errno.h>
 # include <string.h>
- typedef int Error;
+typedef int Error;
 #endif
 
 
@@ -210,12 +210,12 @@ inline bool is_tmpnam_template(const std::string &filename_template)
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!).  returns filename created.  if template is missing XXXXXX, it's appended first.
 inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true) 
 {
-    const unsigned MAX_PATH=1024;
-    char tmp[MAX_PATH+1];
-    strncpy(tmp, filename_template.c_str(),MAX_PATH-TMPNAM_SUFFIX_LEN);
+    const unsigned MY_MAX_PATH=1024;
+    char tmp[MY_MAX_PATH+1];
+    std::strncpy(tmp, filename_template.c_str(),MY_MAX_PATH-TMPNAM_SUFFIX_LEN);
     
     if (!is_tmpnam_template(filename_template))
-        strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
+        std::strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
     
     int fd=::mkstemp(tmp);
 
