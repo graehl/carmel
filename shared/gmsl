@@ -1,0 +1,54 @@
+# ----------------------------------------------------------------------------
+#
+# GNU Make Standard Library (GMSL)
+#
+# A library of functions to be used with GNU Make's $(call) that
+# provides functionality not available in standard GNU Make.
+#
+# Copyright (c) 2005 John Graham-Cumming
+#
+#   This file is part of GMSL
+#
+#   GMSL is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   GMSL is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with GMSL; if not, write to the Free Software
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+# ----------------------------------------------------------------------------
+
+# Determine if the library has already been included and if so don't
+# bother including it again
+
+ifndef __gmsl_included
+
+# Standard definitions for true and false.  true is any non-empty
+# string, false is an empty string. These are intended for use with
+# $(if).
+
+true  := T
+false :=
+
+# ----------------------------------------------------------------------------
+# Function:  not
+# Arguments: 1: A boolean value
+# Returns:   Returns the opposite of the arg. (true -> false, false -> true)
+# ----------------------------------------------------------------------------
+not = $(if $1,$(false),$(true))
+
+# Prevent reinclusion of the library
+
+__gmsl_included := $(true)
+
+include $(SHARED)/__gmsl
+
+endif # __gmsl_included
+

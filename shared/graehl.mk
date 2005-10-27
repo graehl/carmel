@@ -9,6 +9,7 @@
 # LIB = math thread ...
 # INC = . 
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
+DEPSPRE=deps/
 LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
@@ -69,12 +70,8 @@ OBJT:= $(OBJ)/test
 OBJB:= $(BASESHAREDOBJ)/$(ARCH)
 OBJD:= $(OBJ)/debug
 BIN:= $(BASEBIN)/$(ARCH)
-ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BASEBIN) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB)
+ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BASEBIN) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB) $(DEPSPRE)
 Dummy1783:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir $$f ; done)
-
-ifeq ($(CPP_EXT),)
-CPP_EXT=cpp
-endif
 
 BOOST_SERIALIZATION_SRC_DIR = $(BOOST_DIR)/libs/serialization/src
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
@@ -96,10 +93,12 @@ BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPT_LIB=$(OBJB)/libprogram_options.a
 BOOST_FS_LIB=$(OBJB)/libfilesystem.a
 
-CXXFLAGS += $(ARCH_FLAGS)
-LDFLAGS += $(addprefix -l,$(LIB)) $(ARCH_FLAGS)
+libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPT_LIB) $(BOOST_FS_LIB)
+
+CXXFLAGS_COMMON += $(ARCH_FLAGS)
+LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS)
 #-lpthread
-LDFLAGS_TEST = $(LDFLAGS) -L$(OBJB) -ltest
+LDFLAGS_TEST = $(LDFLAGS)  -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
 ifdef PEDANTIC
 CPPFLAGS +=  -pedantic
@@ -134,6 +133,8 @@ endif
 define PROG_template
 
 .PHONY += $(1)
+
+$(1)_OBJ=$$(addsuffix .o,$$($(1)_SRC))
 
 ifndef $(1)_NOOPT
 $$(BIN)/$(1):\
@@ -178,7 +179,7 @@ endif
 
 #$(1): $(addprefix $$(BIN)/, $(1) $(1).debug $(1).test)
 
-ALL_DEPENDS += $$($(1)_OBJ:%.o=%.d)
+ALL_DEPENDS_REL += $$(addsuffix .d,$$($(1)_SRC))
 
 endef
 
@@ -188,7 +189,6 @@ endef
 
 $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
-
 ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
 all: $(ALL_PROGS)
@@ -196,6 +196,8 @@ all: $(ALL_PROGS)
 opt: $(OPT_PROGS)
 
 debug: $(DEBUG_PROGS)
+
+ALL_DEPENDS=$(addprefix $(DEPSPRE),$(ALL_DEPENDS_REL))
 
 depend: $(ALL_DEPENDS)
 
@@ -205,7 +207,7 @@ else
 CYGEXE=
 endif
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
-	cp $(STATIC_PROGS) $(DEBUG_PROGS) $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
+	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
 
 test: $(ALL_TESTS)
 	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done
@@ -236,32 +238,33 @@ $(BOOST_SERIALIZATION_LIB): $(BOOST_SERIALIZATION_OBJS)
 	$(AR) -rc $@ $^
 #	$(RANLIB) $@
 
-vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR):$(BOOST_TEST_SRC_DIR):$(BOOST_OPT_SRC_DIR):$(BOOST_FS_SRC_DIR)
+vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPT_SRC_DIR) $(BOOST_FS_SRC_DIR)
+vpath %.d $(DEPSPRE)
 
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o
-$(OBJB)/%.o: %.cpp
+$(OBJB)/%.o: %
 	@echo
 	@echo COMPILE\(boost\) $< into $@
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJT)/%.o
-$(OBJT)/%.o: %.$(CPP_EXT) %.d
+$(OBJT)/%.o: % %.d
 	@echo
 	@echo COMPILE\(test\) $< into $@
-	$(CXX) -c $(CXXFLAGS_TEST) $(CPPFLAGS_TEST) $< -o $@
+	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS_TEST) $(CPPFLAGS_TEST) $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
-$(OBJ)/%.o: %.$(CPP_EXT) %.d
+$(OBJ)/%.o: % %.d
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
-$(OBJD)/%.o: %.$(CPP_EXT) %.d
+$(OBJD)/%.o: % %.d
 	@echo
 	@echo COMPILE\(debug\) $< into $@
-	$(CXX) -c $(CXXFLAGS_DEBUG) $(CPPFLAGS_DEBUG) $< -o $@
+	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS_DEBUG) $(CPPFLAGS_DEBUG) $< -o $@
 
 #dirs:
 # $(addsuffix /.,$(ALL_DIRS))
@@ -274,7 +277,7 @@ distclean: clean
 	-rm -rf -- $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
 
 allclean: distclean
-	-rm -rf -- $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ) $(ALL_DEPENDS)
+	-rm -rf -- $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ)
 
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
@@ -284,12 +287,12 @@ endif
 #                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
 #sed 's/\($*\)\.o[ :]*/DEPS_$@ := /g' $@.raw > $@ && echo $(basename $<).o : \\\$DEPS_$(basename $<) >> $@ \
 
-%.d: %.$(CPP_EXT)
+$(DEPSPRE)%.d: %
 	@set -e; \
 	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
  ( \
 echo CREATE DEPENDENCIES for $< && \
-		$(CXX) -c -MM -MG -MP $(TESTCXXFLAGS) $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
+		$(CXX) -c -MM -MG -MP $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
                  perl -pe 's|($*)\.o[ :]*|$@ : |g' $@.raw > $@ && \
 perl -pe 's|($*)\.o[ :]*|$(OBJ)/\1.o : |g' $@.raw >>$@  && \

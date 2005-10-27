@@ -27,10 +27,6 @@
 
 #ifdef TEST
 #include "test.hpp"
-#endif
-
-#ifdef TEST_MAIN
-
 
 BOOST_AUTO_UNIT_TEST( makestring )
 {
@@ -52,10 +48,7 @@ BOOST_AUTO_UNIT_TEST( makestring )
 //     BOOST_CHECK(MAKESTRE("12")==e);
 //     BOOST_CHECK(MAKESTRE(1 << 2)==e);
 //     BOOST_CHECK(MAKECSTRE('1' << '2')==e);
-//     BOOST_CHECK(MAKECSTRE(1 << 2)==e);
-    
-
-    
+//     BOOST_CHECK(MAKECSTRE(1 << 2)==e);    
 }
 #endif
 

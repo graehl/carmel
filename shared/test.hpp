@@ -6,15 +6,8 @@
 #include <sstream>
 #include <iostream>
 
-#ifdef SINGLE_MAIN
-
+#if defined(SINGLE_MAIN) or defined(TEST_MAIN)
 # define TEST_MAIN
-/*
-int cpp_main( int, char* [] )
-{
-    return 0;
-}
-*/
 # define BOOST_AUTO_TEST_MAIN
 #endif
 

@@ -42,6 +42,10 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
     {
         set_ppos(sz);
     }
+    inline void rewind() 
+    {
+        set_gpos(0);
+    }
     
     inline std::ptrdiff_t bufsize() 
     {
@@ -206,6 +210,15 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     {
         return m_sbuf.clear();
     }
+    void set_size(size_type N=0)
+    {
+        return m_sbuf.set_size(N);
+    }
+    void rewind()
+    {
+        return m_sbuf.rewind();
+    }
+
     
     typedef typename traits::char_type char_type;
     typedef std::streamsize size_type;
