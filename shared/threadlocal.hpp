@@ -67,9 +67,7 @@ struct SetLocal {
 
 #ifdef TEST
 #include "test.hpp"
-#endif
 
-#ifdef TEST_MAIN
 //typedef LocalGlobal<int> Gint;
 typedef int Gint;
 Gint g_n=1;

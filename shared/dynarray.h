@@ -29,9 +29,6 @@
 #include <algorithm>
 #include <iterator>
 
-#ifdef TEST
-#include "test.hpp"
-#endif
 //#include <boost/type_traits.hpp>
 
 
@@ -1003,7 +1000,9 @@ void read(std::istream &in,Array<L,A> &x,StackAlloc &a)
 
 
 
-#ifdef TEST_MAIN
+#ifdef TEST
+
+#include "test.hpp"
 
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };

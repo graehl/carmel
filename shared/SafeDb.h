@@ -47,9 +47,10 @@ class SafeDb
     SafeDb(Db *db_) {
         init(db_);
     }
-    void init(Db *db) 
+    void init(Db *db_) 
     {
         init_default_data();
+        db=db_;
     }
     operator Db *() const
     {
@@ -80,25 +81,37 @@ class SafeDb
     {
         open(filename,DB_CREATE | DB_TRUNCATE,db_type);
     }
-    void close(Db_flags flags=DB_NOSYNC) 
-    {
-        db->close(flags);
-    }
     void close_and_delete()
     {
         close(0);
-        db->remove(db_filename.c_str(),NULL,0);
-        delete db;
-        db=NULL;
+        /* from API doc:
+           The Db::remove method may not be called after calling the Db::open method on any Db handle. If the Db::open method has already been called on a Db handle, close the existing handle and create a new one before calling Db::remove.
+        */            
+        delete(db_filename);
     }
-    void close_forever()
+    static delete(const std::string db_file) 
+    {
+        Db Db(NULL,0);
+        db.remove(db_file.c_str(),NULL,0);
+    }
+    
+    void close(Db_flags flags=DB_NOSYNC)
     {
         if (db) {
-            close(0);
+            db->close(flags);
             delete db;
             db=NULL;
         }        
     }
+
+    // use this to keep the Db object around past SafeDb's lifetime
+    Db *disown_db_handle() 
+    {
+        Db *ret=db;
+        db=NULL;
+        return ret;
+    }
+    
     //!< returns number of records removed (all of them)
     Db_size truncate() 
     {
@@ -109,7 +122,7 @@ class SafeDb
     
     ~SafeDb()
     {
-        close_forever();
+        close(0);
     }
     
     DB_BTREE_STAT stats(bool try_fast=true) 
@@ -211,7 +224,6 @@ class SafeDb
     }
 
 
-
 // DIRECT: for plain old data only (no Archive overhead)
     template <class Key,class Data>    
     inline void get_direct(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
@@ -270,7 +282,8 @@ class SafeDb
     {
         return _default_data.get_size();
     }
-    SafeDb(const SafeDb &c) { // since destructor deletes db, this wouldn't be safe
+    template <DBTYPE a,u_int32_t b,size_t c>
+    SafeDb(const SafeDb<a,b,c> &c) { // since destructor deletes db, this wouldn't be safe
         init(c.db);
         db_filename=c.db_filename;
     }
@@ -286,7 +299,7 @@ class SafeDb
     // pre: astream.set_array(data,N)
     template <class Data>
     inline void from_astream_to_data(Data *d)
-    {
+    {        
         default_iarchive a(astream);
         a >> *d;
     }
@@ -312,7 +325,6 @@ class SafeDb
         return true;
     }
 
-
 };
 
 #ifdef TEST
@@ -324,6 +336,7 @@ BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
         SafeDb<> db;
     }
     {
+# warning "dbtest"
         const unsigned buflen=10;
         char buf[buflen];
         SafeDb<> db;
@@ -337,7 +350,7 @@ BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
         db.put_using_to_buf(k,v);
         db.get_using_from_buf(k,&v2);
         BOOST_CHECK(v2==v);
-        db.close_forever();
+        db.close();
         db.open_read(dbname);
         v2=0;
         db.get_using_from_buf(k,&v2);

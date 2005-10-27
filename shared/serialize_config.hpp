@@ -18,9 +18,10 @@
 # include <boost/archive/binary_iarchive.hpp>
 # include <boost/archive/binary_oarchive.hpp>
 # define ARCHIVE_PREFIX_DEFAULT(x) boost::archive::binary ## x
-#endif 
-# define OARCHIVE_DEFAULT ARCHIVE_PREFIX_DEFAULT(_oarchive)
-# define IARCHIVE_DEFAULT ARCHIVE_PREFIX_DEFAULT(_iarchive)
+#endif
+
+#define OARCHIVE_DEFAULT ARCHIVE_PREFIX_DEFAULT(_oarchive)
+#define IARCHIVE_DEFAULT ARCHIVE_PREFIX_DEFAULT(_iarchive)
 typedef OARCHIVE_DEFAULT default_oarchive;
 typedef IARCHIVE_DEFAULT default_iarchive;
 
@@ -29,7 +30,6 @@ typedef IARCHIVE_DEFAULT default_iarchive;
 #include <boost/serialization/level.hpp>
 
 namespace serial = boost::serialization;
-
 
 #define SERIALIZE_NOVERSION(myclass) BOOST_CLASS_IMPLEMENTATION(myclass, serial::object_serializable)
 
@@ -49,13 +49,11 @@ namespace serial = boost::serialization;
 #ifdef SERIALIZE_TRACK_POINTERS_ALWAYS
 # define SERIALIZE_MAKE_UNSHARED(myclass) BOOST_CLASS_TRACKING(myclass, serial::track_never)
 #else
-#define SERIALIZE_MAKE_UNSHARED(myclass)
+# define SERIALIZE_MAKE_UNSHARED(myclass)
 //BOOST_CLASS_TRACKING(SyntaxRuleTree, serial::track_always)
 #endif
 
 #define SERIALIZE_CLASS(myclass) SERIALIZE_DEFAULT_VERSION(myclass)
 #define SERIALIZE_UNSHARED(myclass) SERIALIZE_CLASS(myclass) SERIALIZE_MAKE_UNSHARED(myclass)
-
-
 
 #endif
