@@ -9,7 +9,7 @@
 # LIB = math thread ...
 # INC = . 
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
-DEPSPRE=deps/
+
 LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
@@ -25,6 +25,8 @@ ifeq ($(UNAME),Darwin)
  ARCH=macosx
 endif
 endif
+
+DEPSPRE=deps/$(ARCH)/
 
 ifeq ($(ARCH),linux64)
 ARCH_FLAGS = -march=athlon64
@@ -67,11 +69,13 @@ endif
 # workaround for eval line length limit: immediate substitution shorter?
 OBJ:= $(BASEOBJ)/$(ARCH)
 OBJT:= $(OBJ)/test
+ifndef OBJB
 OBJB:= $(BASESHAREDOBJ)/$(ARCH)
+endif
 OBJD:= $(OBJ)/debug
 BIN:= $(BASEBIN)/$(ARCH)
 ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BASEBIN) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB) $(DEPSPRE)
-Dummy1783:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir $$f ; done)
+Dummy1783uio42:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir -p $$f ; done)
 
 BOOST_SERIALIZATION_SRC_DIR = $(BOOST_DIR)/libs/serialization/src
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
@@ -83,10 +87,10 @@ BOOST_TEST_SRCS=$(filter-out cpp_main.cpp,$(notdir $(wildcard $(BOOST_TEST_SRC_D
 BOOST_OPT_SRCS=$(filter-out winmain.cpp,$(notdir $(wildcard $(BOOST_OPT_SRC_DIR)/*.cpp)))
 BOOST_FS_SRCS=$(notdir $(wildcard $(BOOST_FS_SRC_DIR)/*.cpp))
 
-BOOST_SERIALIZATION_OBJS=$(BOOST_SERIALIZATION_SRCS:%.cpp=$(OBJB)/%.o)
-BOOST_TEST_OBJS=$(BOOST_TEST_SRCS:%.cpp=$(OBJB)/%.o)
-BOOST_OPT_OBJS=$(BOOST_OPT_SRCS:%.cpp=$(OBJB)/%.o)
-BOOST_FS_OBJS=$(BOOST_FS_SRCS:%.cpp=$(OBJB)/%.o)
+BOOST_SERIALIZATION_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_SERIALIZATION_SRCS)))
+BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
+BOOST_OPT_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPT_SRCS)))
+BOOST_FS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FS_SRCS)))
 
 BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
@@ -150,6 +154,8 @@ ifneq (${ARCH},macosx)
 ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
+	@echo
+	@echo LINK\(static\) $$< into $$@
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
@@ -161,6 +167,8 @@ endif
 ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
+	@echo
+	@echo LINK\(debug\) $$< into $$@
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
@@ -169,6 +177,8 @@ endif
 
 ifndef $(1)_NOTEST
 $$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
+	@echo
+	@echo LINK\(test\) $$< into $$@
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ))
@@ -294,10 +304,10 @@ $(DEPSPRE)%.d: %
 echo CREATE DEPENDENCIES for $< && \
 		$(CXX) -c -MM -MG -MP $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
-                 perl -pe 's|($*)\.o[ :]*|$@ : |g' $@.raw > $@ && \
-perl -pe 's|($*)\.o[ :]*|$(OBJ)/\1.o : |g' $@.raw >>$@  && \
-perl -pe 's|($*)\.o[ :]*|$(OBJD)/\1.o : |g' $@.raw >> $@ && \
-perl -pe 's|($*)\.o[ :]*|$(OBJT)/\1.o : |g' $@.raw >> $@  \
+                 perl -pe 's|([^:]*)\.o[ :]*|$@ : |g' $@.raw > $@ && \
+perl -pe 's|([^:]*)\.o[ :]*|$(OBJ)/\1.o : |g' $@.raw >>$@  && \
+perl -pe 's|([^:]*)\.o[ :]*|$(OBJD)/\1.o : |g' $@.raw >> $@ && \
+perl -pe 's|([^:]*)\.o[ :]*|$(OBJT)/\1.o : |g' $@.raw >> $@  \
  || rm -f $@ ); rm -f $@.raw ; fi
 #; else touch $@ 
 
