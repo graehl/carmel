@@ -44,7 +44,7 @@ class SafeDb
     {
         init(NULL);
     }
-    SafeDb(Db *db_) {
+    explicit SafeDb(Db *db_) {
         init(db_);
     }
     void init(Db *db_) 
@@ -81,17 +81,24 @@ class SafeDb
     {
         open(filename,DB_CREATE | DB_TRUNCATE,db_type);
     }
-    void close_and_delete()
+    void close_and_remove()
     {
         close(0);
         /* from API doc:
            The Db::remove method may not be called after calling the Db::open method on any Db handle. If the Db::open method has already been called on a Db handle, close the existing handle and create a new one before calling Db::remove.
         */            
-        delete(db_filename);
+        remove();
     }
-    static delete(const std::string db_file) 
+    //pre: must have closed db
+    void remove()
     {
-        Db Db(NULL,0);
+        assert(db==NULL);
+        remove(db_filename);
+    }
+    
+    static void remove(const std::string db_file) 
+    {
+        Db db(NULL,0);
         db.remove(db_file.c_str(),NULL,0);
     }
     
@@ -151,26 +158,56 @@ class SafeDb
     
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
-    inline void put(const Key &key,const Data &data,const char *description="SafeDb::put") 
+    inline void put(const Key &key,const Data &data,const char *description="SafeDb::put",Db_flags flags=put_flags_default) 
     {
-        from_data_to_astream(data);
-        put_astream(key,description);
+        to_astr(data);
+        put_astr(key,description,flags);
     }
     template <class Key,class Data>    
     inline void get(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
     {
-        maybe_get(key,data,descriptions,false);
+        maybe_get(key,data,description,false);
     }
     // returns false if key wasn't found (or fails if allow_notfound was false)
     template <class Key,class Data>    
     inline bool maybe_get(const Key &key,Data *data,const char *description="SafeDb::maybe_get_direct",bool allow_notfound=true) 
     {
         if (!allow_notfound)
-            maybe_get_astream(key,description,false);
+            maybe_get_astr(key,description,false);
         else
-            if (!maybe_get_astream(key,description,true))
+            if (!maybe_get_astr(key,description,true))
                 return false;
-        from_astream_to_data(data);
+        from_astr(data);
+        return true;
+    }
+
+    /////// (PREFERRED) BOOST SERIALIZE STYLE:
+    template <class Key,class Data>
+    inline void put_via_to_buf(const Key &key,const Data &data,const char *description="SafeDb::put",Db_flags flags=put_flags_default) 
+    {
+        Dbt db_key;
+        blob_from_key<Key> bk(key,db_key);
+        Dbt db_data((void*)buf_default,to_buf(data,(void*)buf_default,(Db_size)capacity_default));
+        db_try(
+            db->put(NULL,&db_key,&db_data,flags),
+            description);
+    }
+    template <class Key,class Data>    
+    inline void get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
+    {
+        maybe_get_via_from_buf(key,data,description,false);
+    }
+    // returns false if key wasn't found (or fails if allow_notfound was false)
+    template <class Key,class Data>    
+    inline bool maybe_get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::maybe_get_direct",bool allow_notfound=true) 
+    {
+        Dbt db_key;
+        blob_from_key<Key> bk(key,db_key);
+        int ret=db->get(NULL,&db_key,data_for_getting(),0);
+        if (allow_notfound && ret==DB_NOTFOUND)
+            return false;
+        db_try(ret,description);        
+        from_buf(data,data_buf(),data_size());
         return true;
     }
     
@@ -178,7 +215,7 @@ class SafeDb
     inline void put_bytes(const Key &key,const void *buf, Db_size buflen,const char *description="SafeDb::put_bytes",Db_flags flags=put_flags_default) 
     {
         Dbt db_key;
-        key_to_blob(key,db_key);        
+        blob_from_key<Key> bk(key,db_key);        
         Dbt db_data((void*)buf,buflen);
         db_try(
             db->put(NULL,&db_key,&db_data,flags),
@@ -195,47 +232,26 @@ class SafeDb
     inline Db_size maybe_get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="SafeDb::maybe_get",bool allow_notfound=true)
     {
         Dbt db_key;
-        key_to_blob(key,db_key);
-        int ret=db->get(NULL,&db_key,default_get_data(),0);
+        blob_from_key<Key> bk(key,db_key);
+        int ret=db->get(NULL,&db_key,data_for_getting(),0);
         if (allow_notfound && ret==DB_NOTFOUND)
             return 0;
         db_try(ret,description);
-        return default_get_size();
+        return data_size();
     }
-
-// TO_FROM_BUF:
-// Data must support: void from_buf(void *data,Db_size datalen)
-    template <class Key,class Data>
-    inline void get_using_from_buf(const Key &key,Data *data,const char *description="SafeDb::get_using_from_buf",Db_flags flags=put_flags_default) 
-    {
-        Dbt db_key;
-        key_to_blob(key,db_key);
-        db_try(
-            db->put(NULL,&db_key,default_get_data(),flags),
-            description);
-        from_buf(data,buf_default,db_get_data.get_size());
-    }
-//Data must support: Db_size to_buf(void *&data,Db_size maxdatalen)
-    template <class Key,class Data>
-    inline void put_using_to_buf(const Key &key,const Data &data,const char *description="SafeDb::put_using_to_buf") 
-    {
-        Db_size size=to_buf(data,buf_default,capacity_default);
-        put(key,buf_default,size,description);
-    }
-
 
 // DIRECT: for plain old data only (no Archive overhead)
     template <class Key,class Data>    
     inline void get_direct(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
     {
-        maybe_get(key,data,descriptions,false);
+        maybe_get(key,data,description,false);
     }
 // returns false if key wasn't found
     template <class Key,class Data>    
     inline bool maybe_get_direct(const Key &key,Data *data,const char *description="SafeDb::maybe_get_direct",bool allow_notfound=true) 
     {
         Dbt db_key;
-        key_to_blob(key,db_key);
+        blob_from_key<Key> bk(key,db_key);
         Dbt db_data;
         db_data.set_data(data);
         db_data.set_ulen(sizeof(Data));
@@ -244,43 +260,47 @@ class SafeDb
         if (allow_notfound && ret==DB_NOTFOUND)
             return false;
         db_try(ret,description);
-        assert(default_get_size()==sizeof(Data));
+        assert(data_size()==sizeof(Data));
         return true;
     }
 //Data must support: Db_size to_buf(void *&data,Db_size maxdatalen)
     template <class Key,class Data>
-    inline void put_direct(const Key &key,const Data &data,const char *description="SafeDb::put_direct") 
+    inline void put_direct(const Key &key,const Data &data,const char *description="SafeDb::put_direct",Db_flags flags=put_flags_default) 
     {        
-        put_bytes(key,&data,sizeof(data),description);
+        put_bytes(key,&data,sizeof(data),description,flags);
     }
 
     
  private:
     std::string db_filename;
     char buf_default[capacity_default];
-    array_stream astream;
+    array_stream astr;
     Db *db;
     Dbt _default_data;
     void init_default_data() 
     {
-        astream.set_array(buf_default,capacity_default);
+        astr.set_array(buf_default,capacity_default);
         _default_data.set_data(buf_default);
         _default_data.set_flags(DB_DBT_USERMEM);
     }
-    Dbt * default_get_data()
+    Dbt * data_for_getting()
     {
         _default_data.set_ulen(capacity_default);
         return &_default_data;
     }
-    Dbt * default_put_data(Db_size size)
+    Dbt * data_for_putting(Db_size size)
     {
         assert(size <= capacity_default);
         _default_data.set_ulen(size);
         return &_default_data;
     }
-    Db_size default_get_size() const 
+    Db_size data_size() const 
     {
         return _default_data.get_size();
+    }
+    void *data_buf() const
+    {
+        return (void *)buf_default;
     }
     template <DBTYPE a,u_int32_t b,size_t c>
     SafeDb(const SafeDb<a,b,c> &c) { // since destructor deletes db, this wouldn't be safe
@@ -288,40 +308,41 @@ class SafeDb
         db_filename=c.db_filename;
     }
 
-    //post: astream.begin(),astream.end() holds bytes
+    //post: astr.begin(),astr.end() holds bytes
     template <class Data>
-    inline void from_data_to_astream(const Data &d)
+    inline void to_astr(const Data &d)
     {
-        astream.clear();
-        default_oarchive a(astream);
+        astr.clear();
+        default_oarchive a(astr);
         a << d;
     }
-    // pre: astream.set_array(data,N)
+    // pre: astr.set_array(data,N)
     template <class Data>
-    inline void from_astream_to_data(Data *d)
+    inline void from_astr(Data *d)
     {        
-        default_iarchive a(astream);
+        default_iarchive a(astr);
         a >> *d;
     }
+
     template <class Key>
-    inline void put_astream(const Key &key,const char *description="SafeDb::put_astream",Db_flags flags=put_flags_default) 
+    inline void put_astr(const Key &key,const char *description="SafeDb::put_astr",Db_flags flags=put_flags_default) 
     {
         Dbt db_key;
-        key_to_blob(key,db_key);        
+        blob_from_key<Key> bk(key,db_key);        
         db_try(
-            db->put(NULL,&db_key,default_put_data(astream.size()),flags),
+            db->put(NULL,&db_key,data_for_putting(astr.size()),flags),
             description);
     }
     template <class Key>
-    inline bool maybe_get_astream(const Key &key,const char *description="SafeDb::maybe_get_astream",bool allow_notfound=true)
+    inline bool maybe_get_astr(const Key &key,const char *description="SafeDb::maybe_get_astr",bool allow_notfound=true)
     {
         Dbt db_key;
-        key_to_blob(key,db_key);
-        int ret=db->get(NULL,&db_key,default_get_data(),0);
+        blob_from_key<Key> bk(key,db_key);
+        int ret=db->get(NULL,&db_key,data_for_getting(),0);
         if (allow_notfound && ret==DB_NOTFOUND)
             return false;
         db_try(ret,description);
-        astream.set_size(default_get_size());
+        astr.init_read_size(data_size());
         return true;
     }
 
@@ -336,30 +357,34 @@ BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
         SafeDb<> db;
     }
     {
-# warning "dbtest"
         const unsigned buflen=10;
         char buf[buflen];
         SafeDb<> db;
         db.open_create("tmpdb");
-        db.close_and_delete();
+        db.close();
+        db.remove();
         const char *dbname="tmpdb2";
         
         db.open_create(dbname);
         int k=4;
         int v=10,v2=0;
-        db.put_using_to_buf(k,v);
-        db.get_using_from_buf(k,&v2);
+        db.put_via_to_buf(k,v);
+        db.get_via_from_buf(k,&v2);
         BOOST_CHECK(v2==v);
         db.close();
+        
         db.open_read(dbname);
         v2=0;
-        db.get_using_from_buf(k,&v2);
+        db.get_via_from_buf(k,&v2);
         BOOST_CHECK(v2==v);
-        BOOST_CHECK(db.maybe_get(k,buf,buflen));
+        v2=0;
+        db.get(k,&v2);
+        BOOST_CHECK(v2==v);
+        BOOST_CHECK(db.maybe_get_bytes(k,buf,buflen));
         int k2=5;
-        BOOST_CHECK(!db.maybe_get(k2,buf,buflen));
+        BOOST_CHECK(!db.maybe_get_bytes(k2,buf,buflen));
         db.close();
-        db.open(dbname);
+        db.open_maybe_create(dbname);
         v2=5;
         db.put_direct(k2,v2);
         int v3=0;

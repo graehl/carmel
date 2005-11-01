@@ -3,7 +3,7 @@
 
 #include "serialize_config.hpp"
 #include "array_stream.hpp"
-#include <stddef>
+//#include <cstddef>
 
 template <class T>
 inline void set_randomly(T &v,unsigned n)
@@ -17,7 +17,7 @@ inline void set_randomly(std::string &v,unsigned n)
     v.assign(n,'s');
 }
 
-const char *example_random_strings[] = {
+static const char *example_random_strings[] = {
     "a",
     "",
     "jeff \n",
@@ -29,14 +29,14 @@ const char *example_random_strings[] = {
 };
 
     
-inline void set_randomly(char *&v,unsigned n)
+inline void set_randomly(const char *&v,unsigned n)
 {
-    const unsigned n_possible=sizeof(example_random_strings/sizeof(example_random_strings[0]));
+    const unsigned n_possible=sizeof(example_random_strings)/sizeof(example_random_strings[0]);
     v=example_random_strings[n%n_possible];
 }
 
 
-template <class As>
+template <class As,class Data>
 inline void array_save(As &a,const Data &d)
 {
     a.clear();
@@ -44,8 +44,8 @@ inline void array_save(As &a,const Data &d)
     o << d;
 }
 
-template <class As>
-inline void array_load(const As &a,Data &d)
+template <class As,class Data>
+inline void array_load(As &a,Data &d)
 {
     default_iarchive i(a);
     i >> d;
@@ -65,7 +65,7 @@ inline void test_serialize_type(const T *dummy=0)
     for (unsigned i=0;i<N;++i) {
         set_randomly(t1,i);
         array_save(as,t1);
-        as.rewind();
+        as.init_read_written();
         array_load(as,t2);
         BOOST_CHECK_EQUAL(t1,t2);
     }

@@ -425,12 +425,13 @@ ostream & operator <<(ostream &o,const Result &v)
 
 
 struct ResultPrinter {
-    void operator()(const Result &r,unsigned i) const {
+    bool operator()(const Result &r,unsigned i) const {
         NESTT;
         INFOT("Visiting result #" << i << r);
         INFOT("");
         cout << "RESULT #" << i << "=" << r << "\n";
         INFOT("");
+        return true;
     }
 };
 

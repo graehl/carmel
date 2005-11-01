@@ -10,6 +10,9 @@
 # INC = . 
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
 
+#include $(SHARED)/debugger.mk
+#$(__BREAKPOINT)
+
 LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
@@ -138,7 +141,15 @@ define PROG_template
 
 .PHONY += $(1)
 
+ifndef $(1)_SRC_TEST
+$(1)_SRC_TEST=$$($(1)_SRC)
+else
+ALL_SRCS_REL+=$$($(1)_SRC_TEST)
+endif
+ALL_SRCS_REL += $$($(1)_SRC)
+
 $(1)_OBJ=$$(addsuffix .o,$$($(1)_SRC))
+$(1)_OBJ_TEST=$$(addsuffix .o,$$($(1)_SRC_TEST))
 
 ifndef $(1)_NOOPT
 $$(BIN)/$(1):\
@@ -176,20 +187,18 @@ $(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
-$$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
+$$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(test\) $$< into $$@
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 #	$$@ --catch_system_errors=no
-ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ))
+ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))
 ALL_TESTS += $$(BIN)/$(1).test
 TEST_PROGS += $$(BIN)/$(1).test
 $(1): $$(BIN)/$(1).test
 endif
 
 #$(1): $(addprefix $$(BIN)/, $(1) $(1).debug $(1).test)
-
-ALL_DEPENDS_REL += $$(addsuffix .d,$$($(1)_SRC))
 
 endef
 
@@ -199,6 +208,7 @@ endef
 
 $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
+
 ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
 all: $(ALL_PROGS)
@@ -207,7 +217,11 @@ opt: $(OPT_PROGS)
 
 debug: $(DEBUG_PROGS)
 
-ALL_DEPENDS=$(addprefix $(DEPSPRE),$(ALL_DEPENDS_REL))
+ALL_DEPENDS=$(addprefix $(DEPSPRE),$(addsuffix .d,$(ALL_SRCS_REL)))
+
+redepend:
+	rm -f $(ALL_DEPENDS)
+	make depend
 
 depend: $(ALL_DEPENDS)
 
@@ -297,17 +311,21 @@ endif
 #                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
 #sed 's/\($*\)\.o[ :]*/DEPS_$@ := /g' $@.raw > $@ && echo $(basename $<).o : \\\$DEPS_$(basename $<) >> $@ \
 
+#phony: -MP 
 $(DEPSPRE)%.d: %
 	@set -e; \
 	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
  ( \
-echo CREATE DEPENDENCIES for $< && \
-		$(CXX) -c -MM -MG -MP $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
+echo CREATE DEPENDENCIES for $< \(object=$(*F).o\) && \
+		$(CXX) -c -MM -MG $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
                  perl -pe 's|([^:]*)\.o[ :]*|$@ : |g' $@.raw > $@ && \
-perl -pe 's|([^:]*)\.o[ :]*|$(OBJ)/\1.o : |g' $@.raw >>$@  && \
-perl -pe 's|([^:]*)\.o[ :]*|$(OBJD)/\1.o : |g' $@.raw >> $@ && \
-perl -pe 's|([^:]*)\.o[ :]*|$(OBJT)/\1.o : |g' $@.raw >> $@  \
+echo >> $@ && \
+perl -pe 's|([^:]*)\.o[ :]*|$(OBJ)/$(*F).o : |g' $@.raw >>$@  && \
+echo >> $@ && \
+perl -pe 's|([^:]*)\.o[ :]*|$(OBJD)/$(*F).o : |g' $@.raw >> $@ && \
+echo >> $@ && \
+perl -pe 's|([^:]*)\.o[ :]*|$(OBJT)/$(*F).o : |g' $@.raw >> $@  \
  || rm -f $@ ); rm -f $@.raw ; fi
 #; else touch $@ 
 

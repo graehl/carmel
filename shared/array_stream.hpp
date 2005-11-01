@@ -13,6 +13,7 @@
 #include <cstddef>
 #include "debugprint.hpp"
 
+// doesn't quite work like a streambuf: end of readable area isn't increased when you write, without explicit init_read_size(size())
 template<class cT, class Traits = std::char_traits<cT> >
 class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
 {
@@ -38,13 +39,13 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
         setp(buf, bufend);
 //        setp(0,0); //fixme: should probably set this for const - on your honor, don't write to const buffers
     }
-    inline void set_size(size_type sz=0)
+    inline void init_read_size(size_type sz=0)
     {
-        set_ppos(sz);
+        setg(buf,buf,buf+sz);
     }
-    inline void rewind() 
+    inline void init_read_written()
     {
-        set_gpos(0);
+        setg(buf,buf,end());
     }
     
     inline std::ptrdiff_t bufsize() 
@@ -65,7 +66,8 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
     // default base::overflow(c) - always fails
     int_type overflow(int_type c) {
         if (out_avail()==0 && !traits::eq_int_type(c, traits::eof()))
-            return traits::eof();  // FAIL      
+            return traits::eof();  // FAIL
+        return traits::not_eof(c);
     }
 
     /*
@@ -208,25 +210,25 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     }
     void clear()
     {
-        return m_sbuf.clear();
+        m_sbuf.clear();
     }
-    void set_size(size_type N=0)
+    void init_read_size(size_type N=0)
     {
-        return m_sbuf.set_size(N);
+        m_sbuf.init_read_size(N);
     }
-    void rewind()
+    void init_read_written()
     {
-        return m_sbuf.rewind();
+        m_sbuf.init_read_written();
     }
 
     
     typedef typename traits::char_type char_type;
     typedef std::streamsize size_type;
-    basic_array_stream() : base()
+    basic_array_stream() : base(&m_sbuf)
     {}
     explicit
-    basic_array_stream(const char_type * p = 0, size_type size = 0)
-        :	base(NULL)
+    basic_array_stream(const char_type * p, size_type size)
+        :	base(&m_sbuf)
     {
         set_array(p,size);
         rdbuf(&m_sbuf);
@@ -235,7 +237,7 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     template <class C>
     explicit
     basic_array_stream(const C& c)
-        :	base(NULL)
+        :	base(&m_sbuf)
     {
         set_array(c);
         rdbuf(&m_sbuf);

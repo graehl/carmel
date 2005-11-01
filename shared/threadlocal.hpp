@@ -70,24 +70,24 @@ struct SetLocal {
 
 //typedef LocalGlobal<int> Gint;
 typedef int Gint;
-Gint g_n=1;
+static Gint savelocal_n=1;
 
 
 BOOST_AUTO_UNIT_TEST( threadlocal )
 {
-  BOOST_CHECK(g_n==1);
+  BOOST_CHECK(savelocal_n==1);
   {
-    SaveLocal<int> a(g_n);
-    g_n=2;
-    BOOST_CHECK(g_n==2);
+    SaveLocal<int> a(savelocal_n);
+    savelocal_n=2;
+    BOOST_CHECK(savelocal_n==2);
     {
-      SetLocal<int> a(g_n,3);
-      BOOST_CHECK(g_n==3);
+      SetLocal<int> a(savelocal_n,3);
+      BOOST_CHECK(savelocal_n==3);
     }
-    BOOST_CHECK(g_n==2);
+    BOOST_CHECK(savelocal_n==2);
 
   }
-  BOOST_CHECK(g_n==1);
+  BOOST_CHECK(savelocal_n==1);
 }
 #endif
 

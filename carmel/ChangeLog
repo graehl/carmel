@@ -1,3 +1,18 @@
+2005-07-08  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/wfstio.cc: I changed nothing about the output of transducers (keeping the new e^ default instead of "ln"), but carmel now can properly identify e^-n weights in the presence of omitted input or output symbols.  Also, the following formats are now accepted:
+
+(source dest weight)  (epsilon i/o)
+(source dest input weight) (fsa)
+(source dest input output weight) (fst)
+
+and also variants like:
+
+(source (dest weight) (dest input weight) (dest weight) (dest () (weight) (input weight)))
+
+although I'm not sure what the use is of such flexibility ;)
+
+
 2005-07-06  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: revamped wfst-reading code to handle ambiguity in
