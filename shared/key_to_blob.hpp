@@ -30,5 +30,18 @@ inline void key_to_blob(const char *key,Dbthang &dbt)
     dbt.set_size(std::strlen(key));
 }
 
+template <class Key>
+struct blob_from_key 
+{
+    //specializations can hold temporary buffer here
+    template <class Dbthang>
+    blob_from_key(const Key &key,Dbthang &dbt) 
+    {
+        key_to_blob(key,dbt);
+    }
+};
+
+    
+
 
 #endif

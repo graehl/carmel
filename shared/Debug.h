@@ -1,7 +1,3 @@
-// ;; -*- mode: C++; fill-column: 80; comment-column: 59; -*-
-// ;;
-// ignacio
-
 #ifndef DEBUG_H_inc
 #define DEBUG_H_inc
 
@@ -130,9 +126,9 @@ using namespace std;
 #endif
 
 #if (defined(TEST) && !defined(QUIET_TEST) )
-#define INFOT(msg) DBG_OP(&test_dbg,info,"TEST",O_INSERT(msg))
-#define WARNT(msg) DBG_OP(&test_dbg,warning,"TEST",O_INSERT(msg))
-#define NESTT NESTINFO_GUARD(&test_dbg)
+#define INFOT(msg) DBG_OP(test_dbg,info,"TEST",O_INSERT(msg))
+#define WARNT(msg) DBG_OP(test_dbg,warning,"TEST",O_INSERT(msg))
+#define NESTT NESTINFO_GUARD(test_dbg,1)
 #else
 #define INFOT(msg) DBG_OP_L(99,debug,info,"TEST",O_INSERT(msg))
 #define WARNT(msg) DBG_OP_L(99,debug,warning,"TEST",O_INSERT(msg))
@@ -331,9 +327,11 @@ ns_decoder_global::Debug debug;
 #endif
 
 #ifdef TEST
-# ifdef MAIN
+# ifdef TEST_MAIN
 ns_decoder_global::Debug test_dbg;
-# endif
+# else
+extern ns_decoder_global::Debug test_dbg;
+# endif 
 #endif
 // added by Wei Wang.
 /*
