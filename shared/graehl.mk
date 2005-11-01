@@ -103,7 +103,7 @@ BOOST_FS_LIB=$(OBJB)/libfilesystem.a
 libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPT_LIB) $(BOOST_FS_LIB)
 
 CXXFLAGS_COMMON += $(ARCH_FLAGS)
-LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS)
+LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR))
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
 CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
