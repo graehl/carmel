@@ -85,7 +85,8 @@ BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 
-BOOST_SERIALIZATION_SRCS=$(notdir $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))
+#wide char archive streams not supported on cygwin so remove *_w*.cpp
+BOOST_SERIALIZATION_SRCS=$(filter-out utf8_codecvt_facet.cpp,$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))))
 BOOST_TEST_SRCS=$(filter-out cpp_main.cpp,$(notdir $(wildcard $(BOOST_TEST_SRC_DIR)/*.cpp)))
 BOOST_OPT_SRCS=$(filter-out winmain.cpp,$(notdir $(wildcard $(BOOST_OPT_SRC_DIR)/*.cpp)))
 BOOST_FS_SRCS=$(notdir $(wildcard $(BOOST_FS_SRC_DIR)/*.cpp))
@@ -103,6 +104,9 @@ BOOST_FS_LIB=$(OBJB)/libfilesystem.a
 libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPT_LIB) $(BOOST_FS_LIB)
 
 CXXFLAGS_COMMON += $(ARCH_FLAGS)
+CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
+
+CPPFLAGS += $(CPPNOWIDECHAR)
 LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR))
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
