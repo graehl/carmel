@@ -28,7 +28,7 @@ template <DBTYPE DB_TYPE=DB_RECNO,u_int32_t PUT_FLAGS=DB_NOOVERWRITE,size_t MAXB
 class SafeDb 
 {
  public:
-    enum {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS };
+    enum {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE };
     static const DBTYPE db_type_default=DB_TYPE;
     
     DBTYPE db_type_actual() 
@@ -158,10 +158,10 @@ class SafeDb
     
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
-    inline void put(const Key &key,const Data &data,const char *description="SafeDb::put",Db_flags flags=put_flags_default) 
+    inline void put(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put") 
     {
         to_astr(data);
-        put_astr(key,description,flags);
+        put_astr(key,flags,description);
     }
     template <class Key,class Data>    
     inline void get(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
@@ -183,7 +183,7 @@ class SafeDb
 
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
-    inline void put_via_to_buf(const Key &key,const Data &data,const char *description="SafeDb::put",Db_flags flags=put_flags_default) 
+    inline void put_via_to_buf(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put") 
     {
         Dbt db_key;
         blob_from_key<Key> bk(key,db_key);
@@ -212,7 +212,7 @@ class SafeDb
     }
     
     template <class Key>
-    inline void put_bytes(const Key &key,const void *buf, Db_size buflen,const char *description="SafeDb::put_bytes",Db_flags flags=put_flags_default) 
+    inline void put_bytes(const Key &key,const void *buf, Db_size buflen,Db_flags flags=put_flags_default,const char *description="SafeDb::put_bytes") 
     {
         Dbt db_key;
         blob_from_key<Key> bk(key,db_key);        
@@ -265,9 +265,9 @@ class SafeDb
     }
 //Data must support: Db_size to_buf(void *&data,Db_size maxdatalen)
     template <class Key,class Data>
-    inline void put_direct(const Key &key,const Data &data,const char *description="SafeDb::put_direct",Db_flags flags=put_flags_default) 
+    inline void put_direct(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put_direct") 
     {        
-        put_bytes(key,&data,sizeof(data),description,flags);
+        put_bytes(key,&data,sizeof(data),flags,description);
     }
 
     
@@ -325,7 +325,7 @@ class SafeDb
     }
 
     template <class Key>
-    inline void put_astr(const Key &key,const char *description="SafeDb::put_astr",Db_flags flags=put_flags_default) 
+    inline void put_astr(const Key &key,Db_flags flags=put_flags_default,const char *description="SafeDb::put_astr") 
     {
         Dbt db_key;
         blob_from_key<Key> bk(key,db_key);        
@@ -378,6 +378,8 @@ BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
         db.get_via_from_buf(k,&v2);
         BOOST_CHECK(v2==v);
         v2=0;
+//        int k3=6;
+        db.put(k,v,SafeDb<>::overwrite);
         db.get(k,&v2);
         BOOST_CHECK(v2==v);
         BOOST_CHECK(db.maybe_get_bytes(k,buf,buflen));
