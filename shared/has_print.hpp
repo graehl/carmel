@@ -2,8 +2,13 @@
 #ifndef PRINT_ON_HPP
 #define PRINT_ON_HPP
 
+#include <boost/utility/enable_if.hpp>
+
+// usage: template <class A> void func(A &a,typename has_print_plain<A>::type* dummy = 0)
+
 // how this works: has_print<C>::type is either defined (iff C::has_print was typedefed to void), or undefined.  this allows us to exploit SFINAE (google) for function overloads depending on whether C::has_print was typedefed void ;)
 
+// ok - actually, as long as C::has_print is *any* type ...
 
 template <class C,class V=void>
 struct has_print;
@@ -109,25 +114,59 @@ struct isa_pointer<C * const volatile> {
 };
 
 template <class C>
+struct true_value 
+{
+    static const bool value=true;
+};
+
+template <class C>
 struct not_has_print<C,typename isa_pointer<C>::type> {
 };
 
 
+template <class C,class V=void>
+struct has_const_iterator 
+{
+    static const bool value=false;
+};
+
+template <class C>
+struct has_const_iterator<C,typename boost::enable_if<true_value<typename C::const_iterator> > > {
+    typedef void type;
+    static const bool value=true;
+};
+
+
+template <class C,class V=void>
+struct not_has_const_iterator 
+{    
+    typedef void type;
+    static const bool value=true;
+};
+
+template <class C>
+struct not_has_const_iterator<C,typename boost::enable_if<true_value<typename C::const_iterator> > > {
+    static const bool value=false;
+};
 
 
 #  ifndef DEFAULT_PRINT_ON_NO_REFERENCE_WRAPPER
 
-
 template <class C>
 struct has_print<boost::reference_wrapper<C> > : public has_print<C> {};
 template <class C>
-struct has_print_writer<boost::reference_wrapper<C> > : public has_print_writer<C> {};
-template <class C>
 struct not_has_print<boost::reference_wrapper<C> > : public not_has_print<C> {};
+template <class C>
+struct has_print_writer<boost::reference_wrapper<C> > : public has_print_writer<C> {};
 template <class C>
 struct has_print_plain<boost::reference_wrapper<C> > : public has_print_plain<C> {};
 template <class C>
 struct not_has_print_writer<boost::reference_wrapper<C> > : public not_has_print_writer<C> {};
+
+template <class C>
+struct has_const_iterator<boost::reference_wrapper<C> > : public has_const_iterator<C> {};
+template <class C>
+struct not_has_const_iterator<boost::reference_wrapper<C> > : public not_has_const_iterator<C> {};
 
 #  endif 
 

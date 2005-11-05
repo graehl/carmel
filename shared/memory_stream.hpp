@@ -78,7 +78,7 @@ class basic_memory_streambuf:
         }
         return begin();
     }
-    void clear()
+    void reset()
     {
         setp(buffer,epptr());
     }
@@ -129,6 +129,7 @@ class basic_memory_stream:
     public std::basic_ostream<cT, traits> {
     typedef basic_memory_streambuf<cT, traits> Sbuf;
  public:
+    typedef std::basic_ostream<cT, traits> Base;
     typedef std::streamsize size_type;
     basic_memory_stream():
         std::basic_ostream<cT, traits>(&m_sbuf) {
@@ -151,11 +152,15 @@ class basic_memory_stream:
     {
         return m_sbuf.size();
     }
-    void clear()
+    void reset()
     {
-        return m_sbuf.clear();
+        return m_sbuf.reset();
+        Base::clear();
     }
-    
+    Sbuf &buf() 
+    {
+        return m_sbuf;
+    }
  private:
     Sbuf m_sbuf;
 };
@@ -170,7 +175,7 @@ BOOST_AUTO_UNIT_TEST( TEST_memory_stream )
     const unsigned N=memory_streambuf::DEFAULT_BUFSIZE*2+4;
     char buf[N];
     memory_stream o1;
-    TEST_check_memory_stream(o1,buf,N);    
+//    TEST_check_memory_stream(o1,buf,N);    
 }
 
 #endif 

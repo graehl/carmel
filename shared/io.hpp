@@ -11,6 +11,124 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <iterator>
+#include "has_print.hpp"
+#include <streambuf>
+
+template <class Ch, class Tr,class Alloc>
+inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
+{
+    ss.clear();
+    ss.seekg(0,std::ios::beg);
+}
+
+struct false_for_all_chars 
+{
+    bool operator()(char c) const {
+        return false;
+    }    
+};
+    
+template <class F>
+struct or_true_for_char : public F {
+    typedef or_true_for_char<F> self;
+    char C;
+    or_true_for_char(char thischar,const F &f=F()) : F(f), C(thischar) {}
+    or_true_for_char(const self &s) : F(s),C(s.C) {}
+    bool operator()(char c) const {
+        return c == C || F::operator()(c);
+    }
+};
+
+template <class F>
+struct or_true_for_chars : public F {
+    typedef or_true_for_chars<F> self;
+    char C1,C2;
+    or_true_for_chars(char c1,char c2,const F &f=F()) : F(f),C1(c1),C2(c2) {}
+    or_true_for_chars(const self &s) : F(s),C1(s.C1),C2(s.C2) {}
+    bool operator()(char c) const {
+        return c == C1 || c == C2 || F::operator()(c);
+    }
+};
+
+// SpecialChar(c) == true or c == escape_char -> escape
+template <class SpecialChar,class Input,class Output>
+inline Output copy_escaping(Input in,Input in_end,Output out,SpecialChar is_special,char escape_char='\\')
+{
+    or_true_for_char<SpecialChar> need_quote(escape_char,is_special);
+    for (;in!=in_end;++in) {
+        char c=*in;
+        if (need_quote(c))
+            *out++=escape_char;
+        *out++=c;
+    }
+    return out;
+}
+
+//todo: template traits - but shouldn't matter for output!
+template <class Ch,class Tr=std::char_traits<Ch> >
+struct printed_stringstream : public std::basic_stringstream<Ch,Tr>
+{
+    typedef std::basic_stringstream<Ch,Tr> stream;
+    typedef std::istreambuf_iterator<Ch,Tr> iterator;    
+    stream& as_stream() 
+    {
+        return *(stream *)this;
+    }
+    const stream& as_stream() const
+    {
+        return *(const stream *)this;
+    }
+    // note: only one begin() can be iterated concurrently (each begin() destroys all current iterators)
+    iterator begin()
+    {
+        rewind(as_stream());
+        return as_stream();
+    }
+    static iterator end()
+    {
+        return iterator();
+    }    
+    template <class Data>
+    printed_stringstream(const Data &data)
+    {
+        as_stream() << data;
+    }
+    template <class CharP>
+    bool has_char(CharP p)  const
+    {
+        return find_if(begin(),end(),p) != end();
+    }
+};
+    
+template <class Data, class Output, class SpecialChar>
+inline Output print_escaping(const Data &data,Output out,SpecialChar is_special=SpecialChar(),char escape_char='\\')
+{
+    printed_stringstream<typename Output::value_type> pr(data);
+    copy_escaping(pr.begin(),pr.end(),out,is_special,escape_char);
+}
+
+// escape_char and quote_char automatically added to escape_inside_quotes
+template <class Data, class Output, class QuoteProtChar,class SpecialChar>
+inline Output print_quoting_if(QuoteProtChar quote_if,const Data &data,Output out,char quote_char='"',SpecialChar escape_inside_quotes=SpecialChar(),char escape_char='\\')
+{
+    printed_stringstream<typename Output::value_type> pr(data);
+    if (pr.has_char(quote_if)) {
+        or_true_for_char<SpecialChar> quote_or_special(quote_char,escape_inside_quotes);
+        *out++=quote_char;
+        out=copy_escaping(pr.begin(),pr.end(),out,quote_or_special,escape_char);
+        *out++=quote_char;
+        return out;
+    } else
+        return std::copy(pr.begin(),pr.end(),out);
+}
+
+// escape_char and quote_char automatically added to is_special
+template <class Data, class Output, class SpecialChar>
+inline Output print_maybe_quoting(const Data &data,Output out,char quote_char='"',SpecialChar is_special=SpecialChar(),char escape_char='\\')
+{
+    return print_quoting_if(or_true_for_chars<SpecialChar>(escape_char,quote_char,is_special),data,out,quote_char,is_special,escape_char);
+}
 
 
 template <class T>
@@ -65,32 +183,32 @@ struct true_for_char {
 };
 
 //note: you must free the new in locale's ctype! (or minor memory leak)
-template <class CharPred,class charT, class Traits>
-inline void change_ws(std::basic_istream<charT,Traits> &in, CharPred pred, int mode=ctype_mod_ws::ADD)
+template <class CharPred,class Ch, class Tr>
+inline void change_ws(std::basic_istream<Ch,Tr> &in, CharPred pred, int mode=ctype_mod_ws::ADD)
 {
     std::locale l;
     ctype_mod_ws *new_traits=new ctype_mod_ws(pred,mode);
     std::locale new_l(l, new_traits);
     in.imbue(new_l);
 }
-template <char C,class charT, class Traits>
-inline void add_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_ws::ADD)
+template <char C,class Ch, class Tr>
+inline void add_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::ADD)
 {
     change_ws(in,true_for_char<C>(),mode);
 }
-template <char C,class charT, class Traits>
-inline void replace_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_ws::REPLACE)
+template <char C,class Ch, class Tr>
+inline void replace_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::REPLACE)
 {
     change_ws(in,true_for_char<C>(),mode);
 }
-template <char C,class charT, class Traits>
-inline void remove_ws(std::basic_istream<charT,Traits> &in, int mode=ctype_mod_ws::REMOVE)
+template <char C,class Ch, class Tr>
+inline void remove_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::REMOVE)
 {
     change_ws(in,true_for_char<C>(),mode);
 }
 
-template <class Value,class Set,class charT, class Traits>
-inline bool parse_range_as(std::basic_istream<charT,Traits> &in,Set &set) {
+template <class Value,class Set,class Ch, class Tr>
+inline bool parse_range_as(std::basic_istream<Ch,Tr> &in,Set &set) {
     char c;
 //    typedef typename Set::value_type Value;    
     Value a,b;
@@ -124,9 +242,9 @@ inline bool parse_range_as(std::basic_istream<charT,Traits> &in,Set &set) {
     return in.eof(); // only ok if we get here after consuming whole input
 }
 
-template <class Value,class Set,class charT, class Traits>
-inline bool parse_range_as(const std::basic_string<charT,Traits> &in,Set &set) {
-    std::basic_istringstream<charT,Traits> instream(in);
+template <class Value,class Set,class Ch, class Tr>
+inline bool parse_range_as(const std::basic_string<Ch,Tr> &in,Set &set) {
+    std::basic_istringstream<Ch,Tr> instream(in);
     return parse_range_as<Value>(instream,set);
 }
 
@@ -138,6 +256,16 @@ inline bool parse_range(const std::string &range,Set &set) {
 }
 
 
+
+
+#define O_INSERTER(decl) std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o, decl)
+
+#define FREE_O_INSERTER(decl) template <class Ch,class Tr> inline O_INSERTER(decl)
+
+#define FRIEND_O_INSERTER(decl) template <class Ch,class Tr> friend O_INSERTER(decl)
+
+#define O_print  template <class Ch,class Tr> std::basic_ostream<Ch,Tr> & print(std::basic_ostream<Ch,Tr> & o)
+
 //!< print before word.
 template <char sep=' '>
 struct WordSeparator {
@@ -147,20 +275,21 @@ struct WordSeparator {
     {
         first=true;
     }
-    std::ostream & print(std::ostream &o) {
+    O_print 
+    {
         if (first)
             first=false;
         else
             o << sep;
         return o;
     }
+    typedef WordSeparator<sep> Self;
+    static const char seperator=sep;
+    FRIEND_O_INSERTER(Self &me) 
+    {
+        return me.print(o);
+    }
 };
-
-template <char sep>
-inline
-std::ostream & operator <<(std::ostream &o, WordSeparator<sep> &separator) {
-    return separator.print(o);
-}
 
 template <char sep=' '>
 struct IndentLevel {
@@ -215,22 +344,63 @@ std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V)
 }
 
 
+template <class Cont,class Ch,class Tr>
+inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,const Cont &thing,typename
+                                                 has_const_iterator<Cont>::type *SFINAE=0)
+{
+    WordSeparator<' '> sep;
+    o << "[";
+    for (typename Cont::const_iterator i=thing.begin(),e=thing.end();i!=e;++i) {
+        o << sep << *i;
+    }    
+    return o << "]";
+}
+
+template <class Cont,class Ch,class Tr>
+inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,const Cont &thing,typename
+                                                 not_has_const_iterator<Cont>::type *SFINAE=0) 
+{
+    return o << thing;
+}
+
+template <class V,class Ch,class Tr>
+inline typename boost::enable_if<has_const_iterator<V>, std::basic_ostream<Ch,Tr> & >::type
+operator <<(std::basic_ostream<Ch,Tr> & o,const V &thing)
+{
+    return print_default(o,thing);
+}
+
+#define USE_PRINT_DEFAULT(C) \
+template <class Ch,class Tr> \
+inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,const C &thing) \
+{ \
+    return print_default(o,thing); \
+}
+
+#define USE_PRINT_DEFAULT_TEMPLATE(C) \
+template <class V,class Ch,class Tr>                                                         \
+inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,const C<V> &thing) \
+{ \
+    return print_default(o,thing); \
+}
+
 // why not template?  because i think that we may conflict with other overrides
-#define MAKE_CONTAINER_PRINT_FOR(C,T)                                           \
+#define OLD_MAKE_CONTAINER_PRINT_FOR(C,T)                                           \
     inline std::ostream & operator <<(std::ostream &o,const C<T>& t) {     \
         WordSeparator<> sep; \
-        o << '(';                                                                                               \
+        o << '[';                                                                                               \
         for (C<T>::const_iterator i=t.begin(),e=t.end();i!=e;++i) \
             o << sep << *i;                                            \
-        return o << ')'; \
+        return o << ']'; \
     }
 
-#define MAKE_VECTOR_PRINT_FOR(T) MAKE_CONTAINER_PRINT_FOR(std::vector,T)
+//#define MAKE_VECTOR_PRINT_FOR(T) MAKE_CONTAINER_PRINT_FOR(std::vector,T)
 
-MAKE_VECTOR_PRINT_FOR(int)
-MAKE_VECTOR_PRINT_FOR(unsigned)
-MAKE_VECTOR_PRINT_FOR(std::string)
+//MAKE_VECTOR_PRINT_FOR(int)
+//MAKE_VECTOR_PRINT_FOR(unsigned)
+//MAKE_VECTOR_PRINT_FOR(std::string)
 
+USE_PRINT_DEFAULT_TEMPLATE(std::vector)
 
 template <class C>
 inline bool is_shell_special(C c) {
@@ -258,17 +428,19 @@ inline bool needs_shell_escape_in_quotes(C c) {
     }
 }
 
-template <class C,class charT, class Traits>
-inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+
+template <class C,class Ch, class Tr>
+inline std::basic_ostream<Ch,Tr> & out_shell_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
     std::stringstream s;
     s << data;
-    std::string str=s.str();
-
     char c;
-    if (find_if(str.begin(),str.end(),is_shell_special<char>)==str.end()) {
-        out << str;
+    std::istreambuf_iterator<Ch,Tr> i(s),end;
+    if (find_if(i,end,is_shell_special<char>)==end) {
+        rewind(s);
+        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,std::ostreambuf_iterator<Ch,Tr>(out));
     } else {
         out << '"';
+        rewind(s);
         while (s.get(c)) {
             if (needs_shell_escape_in_quotes(c))
                 out.put('\\');
@@ -281,8 +453,8 @@ inline std::basic_ostream<charT,Traits> & out_shell_quote(std::basic_ostream<cha
 
 
 // header=NULL gives just the string, no newline
-template <class charT, class Traits>
-inline std::basic_ostream<charT,Traits> & print_command_line(std::basic_ostream<charT,Traits> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
+template <class Ch, class Tr>
+inline std::basic_ostream<Ch,Tr> & print_command_line(std::basic_ostream<Ch,Tr> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
     if (header)
         out << header;
     WordSeparator<' '> sep;
@@ -361,8 +533,8 @@ struct argc_argv : private std::stringbuf
 };
 
 
-template <class C,class charT, class Traits>
-inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
+template <class C,class Ch, class Tr>
+inline void out_always_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
     std::stringstream s;
     s << data;
     char c;
@@ -375,9 +547,9 @@ inline void out_always_quote(std::basic_ostream<charT,Traits> &out, const C& dat
     out << '"';
 }
 
-template <class C,class charT, class Traits>
-inline void out_ensure_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
-    typedef std::basic_string<charT,Traits> String;
+template <class C,class Ch, class Tr>
+inline void out_ensure_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
+    typedef std::basic_string<Ch,Tr> String;
     String s=boost::lexical_cast<String>(data);
     if (s[0] == '"')
         out << s;
@@ -393,37 +565,42 @@ inline void out_ensure_quote(std::basic_ostream<charT,Traits> &out, const C& dat
     }
 }
 
-template <class C,class charT, class Traits>
-inline void out_quote(std::basic_ostream<charT,Traits> &out, const C& data) {
-    typedef std::basic_string<charT,Traits> String;
-    String s=boost::lexical_cast<String>(data);
-    if (s.find('"') == s.find('\\')) // == String::npos
-        out << s;
-    else {
+template <class C,class Ch, class Tr>
+inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
+    std::basic_stringstream<Ch,Tr> s;
+    s << data;
+    or_true_for_char<true_for_char<'\\'> > special('"');
+    std::istreambuf_iterator<Ch,Tr> i(s),end;
+    bool quote=(std::find_if(i,end,special) != end);
+    rewind(s);
+    if (quote) {
         out << '"';
-        for (typename String::iterator i=s.begin(),e=s.end();i!=e;++i) {
+        for (std::istreambuf_iterator<Ch,Tr> i(s),end;i!=end;++i) {
             char c=*i;
             if (c == '"' || c== '\\')
                 out.put('\\');
             out.put(c);
         }
-        out << '"';
+        out << '"';        
+    } else {
+        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,out);
     }
 }
 
 inline char hex_digit_char(unsigned char hex) {
     //assert(hex <= 0xF);
+    // allowed to work for 0...36
     if (hex <= 9)
         return '0'+hex;
 // if (hex > 0xF)
 //    return '?';
-    return 'A'+(0xF & hex);
+    return 'A'+(hex-10);
 }
 
 // prints 4 chars: \x1B
 // returns # of chars printed
-template <class charT, class Traits>
-inline unsigned out_char_hex(std::basic_ostream<charT,Traits> &out, unsigned char c) {
+template <class Ch, class Tr>
+inline unsigned out_char_hex(std::basic_ostream<Ch,Tr> &out, unsigned char c) {
     char ls_hex=c & 0xF;
     char ms_hex=c >> 4; // unsigned; no sign extension
     out << "\\x" << hex_digit_char(ms_hex) << hex_digit_char(ls_hex);
@@ -434,8 +611,8 @@ inline unsigned out_char_hex(std::basic_ostream<charT,Traits> &out, unsigned cha
 
 // prints ^@ through ^_ for 0x0->0x1F, ^? for DEL (0x7F) and \x9A for high chars (>0x7F)
 // returns number of chars print
-template <class charT, class Traits>
-inline unsigned out_char_ascii(std::basic_ostream<charT,Traits> &out, unsigned char c) {
+template <class Ch, class Tr>
+inline unsigned out_char_ascii(std::basic_ostream<Ch,Tr> &out, unsigned char c) {
     if (c < 0x20) {
         out << '^' << (c+'@');
         return 2;
@@ -553,27 +730,27 @@ template <class Label>
 struct DefaultReader
 {
   typedef Label value_type;
-  template <class charT, class Traits>
-        std::basic_istream<charT,Traits>&
-         operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
+  template <class Ch, class Tr>
+        std::basic_istream<Ch,Tr>&
+         operator()(std::basic_istream<Ch,Tr>& in,value_type &l) const {
           return in >> l;
          }
 };
 
 struct DefaultWriter
 {
-  template <class charT, class Traits,class value_type>
-        std::basic_ostream<charT,Traits>&
-         operator()(std::basic_ostream<charT,Traits>& o,const value_type &l) const {
+  template <class Ch, class Tr,class value_type>
+        std::basic_ostream<Ch,Tr>&
+         operator()(std::basic_ostream<Ch,Tr>& o,const value_type &l) const {
           return o << l;
          }
 };
 
 struct LineWriter
 {
-  template <class charT, class Traits,class Label>
-        std::basic_ostream<charT,Traits>&
-         operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
+  template <class Ch, class Tr,class Label>
+        std::basic_ostream<Ch,Tr>&
+         operator()(std::basic_ostream<Ch,Tr>& o,const Label &l) const {
       return o << l << std::endl;
          }
 };
@@ -583,11 +760,11 @@ struct ReaderCallback : public R
 {
     F f;
     ReaderCallback(const R& reader,const F &func) : f(func),R(reader) {}
-   template <class charT, class Traits>
-    std::basic_istream<charT,Traits>&
-   operator()(std::basic_istream<charT,Traits>& in,typename R::value_type &l) const {
+   template <class Ch, class Tr>
+    std::basic_istream<Ch,Tr>&
+   operator()(std::basic_istream<Ch,Tr>& in,typename R::value_type &l) const {
        deref(f)();
-       std::basic_istream<charT,Traits>& ret=R::operator()(in,l);
+       std::basic_istream<Ch,Tr>& ret=R::operator()(in,l);
        return ret;
    }
  };
@@ -599,9 +776,9 @@ struct ProgressReader
     ProgressReader(const F &f) : tick(f) {}
     ProgressReader(const ProgressReader &p) : tick(p.tick) {}
     typedef Label value_type;
-    template <class charT, class Traits>
-    std::basic_istream<charT,Traits>&
-    operator()(std::basic_istream<charT,Traits>& in,value_type &l) const {
+    template <class Ch, class Tr>
+    std::basic_istream<Ch,Tr>&
+    operator()(std::basic_istream<Ch,Tr>& in,value_type &l) const {
         deref(tick)();
         return in >> l;
     }
@@ -628,9 +805,9 @@ template <class Label>
     struct max_reader {
         typedef Label value_type;
         value_type max; // default init = 0
-        template <class charT, class Traits>
-        std::basic_istream<charT,Traits>&
-        operator()(std::basic_istream<charT,Traits>& in,value_type &v) const {
+        template <class Ch, class Tr>
+        std::basic_istream<Ch,Tr>&
+        operator()(std::basic_istream<Ch,Tr>& in,value_type &v) const {
             in >> v;
             if (max < v)
                 max = v;
@@ -647,15 +824,15 @@ struct IndirectReader
     IndirectReader(const R& r) : reader(r) {}
     typedef typename R::value_type value_type;
 
-    template <class Target,class charT, class Traits>
-        std::basic_istream<charT,Traits>&
-         operator()(std::basic_istream<charT,Traits>& in,Target &l) const {
+    template <class Target,class Ch, class Tr>
+        std::basic_istream<Ch,Tr>&
+         operator()(std::basic_istream<Ch,Tr>& in,Target &l) const {
         return gen_extractor(in,l,reader);
     }
 };
 
-  template <class charT, class Traits, class T,class Writer>
-  std::ios_base::iostate range_print(std::basic_ostream<charT,Traits>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
+  template <class Ch, class Tr, class T,class Writer>
+  std::ios_base::iostate range_print(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
   {
       static const char *const MULTILINE_SEP="\n";
       const char space=' ';
@@ -683,21 +860,18 @@ struct IndirectReader
           if (multiline)
               o << MULTILINE_SEP;
       }
-
       return GENIOGOOD;
 }
 
-  template <class charT, class Traits, class T>
-inline  std::ios_base::iostate print_range(std::basic_ostream<charT,Traits>& o,T begin, T end,bool multiline=false,bool parens=true) {
-      return range_print(o,begin,end,DefaultWriter(),multiline,parens);
-  }
+template <class Ch, class Tr, class T>
+inline  std::ios_base::iostate print_range(std::basic_ostream<Ch,Tr>& o,T begin, T end,bool multiline=false,bool parens=true) {
+    return range_print(o,begin,end,DefaultWriter(),multiline,parens);
+}
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
-template <class charT, class Traits, class Reader, class T>
-std::ios_base::iostate range_get_from(std::basic_istream<charT,Traits>& in,T &out,Reader read)
-
+template <class Ch, class Tr, class Reader, class T>
+std::ios_base::iostate range_get_from(std::basic_istream<Ch,Tr>& in,T &out,Reader read)
 {
-
     char c;
     EXPECTI_COMMENT_FIRST(in>>c);
     if (c=='(') {
@@ -747,8 +921,8 @@ done:
 #undef IFBADREAD
 
 // note: may attempt to read MORE than [begin,end) - looks for closing paren, fails if not found after no more than end-begin elements (throwing an exception on failure)
-template <class charT, class Traits,class T>
-T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
+template <class Ch, class Tr,class T>
+T read_range(std::basic_istream<Ch,Tr>& in,T begin,T end) {
 #if 1
     bounded_iterator<T> o(begin,end);
     if (range_get_from(in,o,DefaultReader<typename std::iterator_traits<T>::value_type >()) != GENIOGOOD)
@@ -756,7 +930,6 @@ T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
     return o.base();
 #else
     char c;
-
     EXPECTCH_SPACE_COMMENT_FIRST('(');
     for(;;) {
         EXPECTI_COMMENT(in>>c);
@@ -776,7 +949,6 @@ T read_range(std::basic_istream<charT,Traits>& in,T begin,T end) {
   fail:
     throw std::runtime_error("expected e.g. ( a,b,c,d ) or (a b c d) as range input");
 }
-
 
 // hardcoded to look for input id=N so we don't need full boyer-moore algorithm
 // not chartraits sensitive - assumes 0...9 coded in order.
