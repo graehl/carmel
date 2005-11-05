@@ -13,7 +13,7 @@
 #include <cstddef>
 #include "debugprint.hpp"
 
-// doesn't quite work like a streambuf: end of readable area isn't increased when you write, without explicit init_read_size(size())
+// doesn't quite work like a streambuf: end of readable area isn't increased when you write, without explicit reset_read(size())
 template<class cT, class Traits = std::char_traits<cT> >
 class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
 {
@@ -26,6 +26,24 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
     typedef typename base::off_type off_type;
     typedef typename base::int_type int_type;
     typedef std::streamsize size_type;
+
+    typedef cT value_type;
+    typedef value_type *iterator;     //NOTE: you can count on iterator being a pointer
+    typedef std::basic_streambuf<cT, traits> base;
+    typedef typename base::int_type int_type;
+
+    // shows what's been written
+    template <class C1,class T1>
+    friend std::basic_ostream<C1,T1> & operator <<(std::basic_ostream<C1,T1> &o,const self &my) 
+    {
+        o << "array_streambuf[" << my.capacity() << "]=[";
+        for (typename self::iterator i=my.begin(),e=my.end();i!=e;++i)
+            o.put(*i);
+        o << "]";
+        return o;
+    }
+    
+
     explicit
     basic_array_streambuf(const char_type * p = 0, size_type sz = 0)
     {
@@ -39,25 +57,60 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
         setp(buf, bufend);
 //        setp(0,0); //fixme: should probably set this for const - on your honor, don't write to const buffers
     }
-    inline void init_read_size(size_type sz=0)
+    inline void reset_read(size_type sz)
     {
         setg(buf,buf,buf+sz);
     }
-    inline void init_read_written()
+    // default: read what was written.
+    inline void reset_read()
     {
         setg(buf,buf,end());
     }
+
+    void reset() 
+    {
+        set_gpos(0);
+        set_ppos(0);
+    }
+    // doesn't adjust readable end (read_size)
+    void set_gpos(pos_type pos) 
+    {
+        setg(buf, buf+pos, egptr());
+    }
+    void set_end(iterator end_)
+    {
+        setp(end_,bufend);
+    }   
+    void set_ppos(pos_type pos) 
+    {
+        setp(buf+pos, bufend);
+    }
+    // doesn't adjust current read pos - danger if past end
+    inline void set_read_size(size_type sz)
+    {
+        setg(buf,gptr(),buf+sz);
+    }
+    inline void set_write_size(size_type sz)
+    {
+        set_ppos(sz);
+    }
     
-    inline std::ptrdiff_t bufsize() 
+// set both read and write size
+    inline void set_size(size_type sz)
+    {
+        set_read_size(sz);
+        set_write_size(sz);
+    }
+    
+    inline std::ptrdiff_t bufsize() const
+    {
+        return capacity();
+    }
+    inline std::ptrdiff_t capacity() const
     {
         return bufend-buf;
     }
     using base::in_avail;
-    using base::pptr;
-    using base::pbump;
-    using base::epptr;
-    using base::gptr;
-    using base::gbump;
     // default base::in_avail()
     inline std::ptrdiff_t out_avail() 
     {
@@ -102,7 +155,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
         if(dir == std::ios_base::cur)
             pos += ((which&std::ios_base::out) ? pptr():gptr()) - buf;
         else if(dir == std::ios_base::end)
-            pos += bufsize();
+            pos += ((which&std::ios_base::out) ? epptr() : egptr()) - buf;
         // else ios_base::beg
         return seekpos(pos, which);
     }
@@ -117,24 +170,6 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
             set_gpos(pos);
         return pos;
     }
-    void clear() 
-    {
-        set_gpos(0);
-        set_ppos(0);
-    }
-    void set_gpos(pos_type pos) 
-    {
-        setg(buf, buf+pos, bufend);
-    }
-    void set_ppos(pos_type pos) 
-    {
-        setp(buf+pos, bufend);
-    }
-    typedef cT value_type;
-    typedef value_type *iterator;     //NOTE: you can count on iterator being a pointer
-    typedef std::basic_streambuf<cT, traits> base;
-    typedef typename base::int_type int_type;
-    typedef std::streamsize size_type;
     
     iterator begin() const 
     {
@@ -173,6 +208,12 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
         return begin();
     }
  private:
+    using base::pptr;
+    using base::pbump;
+    using base::epptr;
+    using base::gptr;
+    using base::egptr;
+    using base::gbump;
     basic_array_streambuf(const basic_array_streambuf&);
     basic_array_streambuf& operator=(const basic_array_streambuf&);
  protected:
@@ -196,32 +237,12 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     typedef std::streamsize size_type;    
     typedef cT value_type;
     typedef value_type *iterator; //NOTE: you can count on iterator being a pointer
-    iterator begin() const 
+    typedef basic_array_stream<cT,traits> self;
+    template <class C1,class T1>
+    friend std::basic_ostream<C1,T1> & operator <<(std::basic_ostream<C1,T1> &o,const self &my) 
     {
-        return m_sbuf.begin();
+        return o << my.m_sbuf;
     }
-    iterator end() const
-    {
-        return m_sbuf.end();
-    }
-    size_type size() const 
-    {
-        return m_sbuf.size();
-    }
-    void clear()
-    {
-        m_sbuf.clear();
-    }
-    void init_read_size(size_type N=0)
-    {
-        m_sbuf.init_read_size(N);
-    }
-    void init_read_written()
-    {
-        m_sbuf.init_read_written();
-    }
-
-    
     typedef typename traits::char_type char_type;
     typedef std::streamsize size_type;
     basic_array_stream() : base(&m_sbuf)
@@ -233,7 +254,6 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
         set_array(p,size);
         rdbuf(&m_sbuf);
     }
-
     template <class C>
     explicit
     basic_array_stream(const C& c)
@@ -241,8 +261,7 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     {
         set_array(c);
         rdbuf(&m_sbuf);
-    }
-    
+    }    
     inline void set_array(const char_type * p)
     {
         m_sbuf.set_array(p, traits::length(p));
@@ -259,8 +278,45 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     {
         return m_sbuf.tellg();    
     }
+    Sbuf &buf() 
+    {
+        return m_sbuf;
+    }
+    void reset()
+    {
+        m_sbuf.reset();
+        base::clear();
+    }
+    // allows what was written to be read.
+    void reset_read()
+    {
+        m_sbuf.reset_read();
+    }
+    // restart reading at the beginning, and hit eof after N read chars
+    void reset_read(size_type N)
+    {
+        m_sbuf.reset_read(N);
+    }
+
+    // access to the underlying character array
+     iterator begin() const 
+    {
+        return m_sbuf.begin();
+    }
+    iterator end() const
+    {
+        return m_sbuf.end();
+    }
+    size_type size() const 
+    {
+        return m_sbuf.size();
+    }    
  private:
     Sbuf m_sbuf;
+    /*
+
+    
+    */
 };
 
 
@@ -361,7 +417,7 @@ template <class C>
 inline void TEST_check_memory_stream(C &o,char *buf,unsigned n) 
 {
     TEST_check_memory_stream1(o,buf,n);
-    o.clear();
+    o.reset();
     TEST_check_memory_stream2(o,buf,n);
 }
 

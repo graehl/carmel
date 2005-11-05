@@ -121,6 +121,18 @@ typename map_traits<std::map<K,V> >::insert_return_type insert(std::map<K,V>& ht
   return ht.insert(std::pair<K,V>(first,v));
 }
 
+template <class T>
+inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator *SFINAE=0) 
+{
+    if (v1.size()!=v2.size())
+        return false;
+    for (typename T::const_iterator i1=v1.begin(),i2=v2.begin(),e1=v1.end();
+         i1!=e1;++i1,++i2)
+        if (!(*i1 == *i2))
+            return false;
+    return true;
+}
+
 
 // Containers:
 

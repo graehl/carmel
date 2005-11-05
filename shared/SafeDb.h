@@ -10,6 +10,7 @@
 #include "to_from_buf.hpp"
 #include "key_to_blob.hpp"
 #include "memory_archive.hpp"
+//#define DEBUG_SAFEDB
 
 //TODO: use DbEnv (static?) object to allow setting directory for temporary backing files (default is /tmp?)
 
@@ -20,15 +21,19 @@ data type is assumed to support serialize method (see Boost.Serialization)
    
 NOTE: not finding a key triggers an error/exception unless you call maybe_get
 ALSO NOTE: db isn't closed when exception thrown
+
+NOT SUPPORTED: DB_QUEUE
 */
 
 typedef u_int32_t Db_size;
+typedef db_recno_t Db_recno;
 
+//TODO: single archive for get() put(), with header stored in key:0 (means users don't get to use that key!)
 template <DBTYPE DB_TYPE=DB_RECNO,u_int32_t PUT_FLAGS=DB_NOOVERWRITE,size_t MAXBUF=1024*256>
 class SafeDb 
 {
  public:
-    enum {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE };
+    enum {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE, not_found=DB_NOTFOUND,key_empty=DB_KEYEMPTY };
     static const DBTYPE db_type_default=DB_TYPE;
     
     DBTYPE db_type_actual() 
@@ -51,24 +56,76 @@ class SafeDb
     {
         init_default_data();
         db=db_;
+        state=db ? read_and_write : closed;
     }
     operator Db *() const
     {
         return db;
     }    
     inline void db_try(int ret,const char *description="db_try") {
-        if (ret!=0)
+        if (ret!=0) {            
+#ifdef DEBUG_SAFEDB
+            DBPC4("failure",description,ret,DbEnv::strerror(ret));
+#endif 
             throw DbException(description,ret);
+        } else {
+#ifdef DEBUG_SAFEDB
+            DBPC2("success",description);
+#endif 
+        }        
+    }
+    void sync() 
+    {
+        db_try(db->sync(0),"SafeDb::sync");
+    }
+    int state;
+    enum {
+        closed=0,read_only=1,write=2,read_and_write=read_only&write
+    };
+    void ok_to_write()
+    {
+        return db && state!=read_only;
+    }    
+    void before_write() 
+    {
+        assert(state!=read_only);
     }
 
-    // default: open existing for read/write
-    void open(const std::string &filename,Db_flags flags=0,DBTYPE db_type=db_type_default) 
+    // must be a DB_RECNO db.  returns recno of appended value
+    template <class Val>
+    Db_recno append_direct(const Val &val,const char *description="SafeDb::append_direct") 
     {
+        return append_bytes(&val,sizeof(val),description);
+    }
+    // must be a DB_RECNO db.  returns recno of appended value
+    Db_recno append_bytes(const void *buf, Db_size buflen,const char *description="SafeDb::append_bytes") 
+    {
+        Dbt db_key;
+        Dbt db_data((void*)buf,buflen);
+        db_try(
+            db->put(NULL,&db_key,&db_data,DB_APPEND),
+            description);
+        return *(Db_recno *)db_key.get_data();
+    }
+    
+    // default: open existing for read/write
+    /* db_flags: http://pybsddb.sourceforge.net/api_c/db_set_flags.html#DB_RECNUM
+       (DB_DUP, DB_DUPSORT) */
+    void open(const std::string &filename,Db_flags open_flags=0,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
+    {
+        assert(db_type!=DB_QUEUE);
+        state=(open_flags & DB_RDONLY) ? read_only : read_and_write;
         if (!db)
-            db=new Db(NULL,0);
+            db=new Db(NULL,0);        
+        if (db_flags)
+            db->set_flags(db_flags);
         db_filename=filename;
-        db_try(db->open(NULL, db_filename.c_str(),NULL,db_type,flags,0),"SafeDb::open");
-    }    
+        db_try(db->open(NULL, db_filename.c_str(),NULL,db_type,open_flags,0),"SafeDb::open");
+    }
+    void reopen_read() 
+    {
+        open_read(db_filename,DB_UNKNOWN);
+    }
     void open_read(const std::string &filename,DBTYPE db_type=db_type_default) 
     {
         open(filename,DB_RDONLY,db_type);
@@ -81,16 +138,19 @@ class SafeDb
     {
         open(filename,DB_CREATE | DB_TRUNCATE,db_type);
     }
-    void close_and_remove()
+    void close_and_delete_dbfile()
     {
-        close(0);
-        /* from API doc:
-           The Db::remove method may not be called after calling the Db::open method on any Db handle. If the Db::open method has already been called on a Db handle, close the existing handle and create a new one before calling Db::remove.
-        */            
-        remove();
+        if (db) {            
+            close(0);
+            /* from API doc:
+               The Db::remove method may not be called after calling the Db::open method on any Db handle. If the Db::open method has already been called on a Db handle, close the existing handle and create a new one before calling Db::remove.
+            */            
+            delete_dbfile();
+        }
+        
     }
     //pre: must have closed db
-    void remove()
+    void delete_dbfile()
     {
         assert(db==NULL);
         remove(db_filename);
@@ -107,7 +167,7 @@ class SafeDb
         if (db) {
             db->close(flags);
             delete db;
-            db=NULL;
+            init(NULL);
         }        
     }
 
@@ -115,13 +175,14 @@ class SafeDb
     Db *disown_db_handle() 
     {
         Db *ret=db;
-        db=NULL;
+        init(NULL);
         return ret;
     }
     
-    //!< returns number of records removed (all of them)
+    //!< deletes all records and returns the number so deleted
     Db_size truncate() 
     {
+        before_write();
         Db_size ret;
         db->truncate(NULL,&ret,0);
         return ret;
@@ -131,78 +192,163 @@ class SafeDb
     {
         close(0);
     }
-    
-    DB_BTREE_STAT stats(bool try_fast=true) 
+
+    DB_BTREE_STAT btree_stats(bool try_fast=true) 
     {
-        DB_BTREE_STAT btree_stat;
+        DB_BTREE_STAT *btree_stat,ret;
         DBTYPE db_type=db_type_actual();
         if (!(db_type==DB_RECNO || db_type==DB_BTREE))
             throw DbException("wrong db type to get DB_BTREE_STAT");
         bool fast=(try_fast && db_type==DB_RECNO);
-        db_try(db->stat(NULL,&stats,fast?DB_FAST_STAT:0),"SafeDb::stats");
-        return stats;
+        db_try(db->stat(NULL,&btree_stat,fast?DB_FAST_STAT:0),"SafeDb::stats");
+        ret=*btree_stat;
+        std::free(btree_stat);
+        return ret;
     }
+
+    DB_HASH_STAT hash_stats(bool try_fast=false)
+    {
+        DB_HASH_STAT *hash_stat,ret;
+        DBTYPE db_type=db_type_actual();
+        if (db_type!=DB_HASH)
+            throw DbException("wrong db type to get DB_HASH_STAT");
+        db_try(db->stat(NULL,&hash_stat,try_fast?DB_FAST_STAT:0),"SafeDb::hash_stats");
+        ret=*hash_stat;
+        std::free(hash_stat);
+        return ret;
+    }
+    
+
+    Db_size get_stat(ptrdiff_t offset_btree=-1,ptrdiff_t offset_hash=-1,bool try_fast_recno=false,bool try_fast_btree=false,bool try_fast_hash=false)
+    {
+        char *statp;
+        Db_size ret;
+        DBTYPE db_type=db_type_actual();
+        bool fast = false;
+        switch(db_type) {
+        case DB_BTREE: fast=try_fast_btree;
+            break;
+        case DB_HASH: fast=try_fast_hash;
+            break;
+        case DB_RECNO: fast=try_fast_recno;
+            break;
+        default:
+            throw DbException("unsupported DB type (try btree,hash, or recno)");
+        }
+        db_try(db->stat(NULL,(void*)&statp,(fast?DB_FAST_STAT:0)),"SafeDb::n_keys_fast");
+        if (db_type==DB_HASH) {
+            if (offset_hash<0)
+                throw DbException("wrong offset for hash db stats");
+            ret=*(Db_size *)(statp+offset_hash);
+        } else {
+            if (offset_hash<0)
+                throw DbException("wrong offset for btree/recno db stats");
+            ret=*(Db_size *)(statp+offset_btree);
+        }
+        std::free(statp);
+        return ret;
+    }
+
+#define SAFEDB_OFFSETOF(TYPE,FIELD) ((ptrdiff_t)&((TYPE*)0)->FIELD)
 
     // if you added contiguously without duplicates, should be #of records - fast for RECNO, slow for BTREE
     Db_size n_keys_fast()
     {
-        return stats().bt_nkeys;
+        return get_stat(SAFEDB_OFFSETOF(DB_BTREE_STAT,bt_nkeys),
+                        SAFEDB_OFFSETOF(DB_HASH_STAT,hash_nkeys),
+                        false, // docs say you can use true to make fast for RECNO
+                        false,
+                        false);
     }
-
+    
     // total number of (key,value) items - always performs full (slow) count
     Db_size n_data_slow()
     {
-        return stats(false).bt_ndata;
+        return get_stat(SAFEDB_OFFSETOF(DB_BTREE_STAT,bt_ndata),
+                        SAFEDB_OFFSETOF(DB_HASH_STAT,hash_ndata),
+                        false,
+                        false,
+                        false);
     }
 
+    // is it an error if you del a nonexistant key?
+    template <class Key>
+    void del(const Key &key)
+    {
+        db_try(del_retcode(key),"SafeDb::del");
+    }
+
+    // returns true if key existed (and was deleted)
+    template <class Key>
+    bool maybe_del(const Key &key)
+    {
+        int ret=del_retcode(key);
+        if (ret == key_empty || ret == not_found)
+            return false;
+        db_try(ret,"SafeDb::maybe_del");
+        return true;
+    }
+    
+#define  MAKE_db_key(key) Dbt db_key;blob_from_key<Key> bk(key,db_key)
+
+    /* The DB->del method will return not_found if the specified key is not in
+     * the database. The DB->del method will return key_empty if the database
+     * is a Queue or Recno database and the specified key exists */
+    template <class Key>
+    int del_retcode(const Key &key)
+    {
+        before_write();
+        MAKE_db_key(key);
+        return db->del(NULL,&db_key,0);
+    }
     
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
     inline void put(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put") 
     {
-        to_astr(data);
+        before_write();
+        array_save(astr,data);
         put_astr(key,flags,description);
     }
     template <class Key,class Data>    
-    inline void get(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
+    inline void get(const Key &key,Data *data,const char *description="SafeDb::get") 
     {
         maybe_get(key,data,description,false);
     }
     // returns false if key wasn't found (or fails if allow_notfound was false)
     template <class Key,class Data>    
-    inline bool maybe_get(const Key &key,Data *data,const char *description="SafeDb::maybe_get_direct",bool allow_notfound=true) 
+    inline bool maybe_get(const Key &key,Data *data,const char *description="SafeDb::maybe_get",bool allow_notfound=true) 
     {
         if (!allow_notfound)
             maybe_get_astr(key,description,false);
         else
             if (!maybe_get_astr(key,description,true))
                 return false;
-        from_astr(data);
+        array_load(astr,*data);
         return true;
     }
-
+    
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
-    inline void put_via_to_buf(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put") 
+    inline void put_via_to_buf(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put_via_to_buf") 
     {
-        Dbt db_key;
-        blob_from_key<Key> bk(key,db_key);
+        before_write();
+        MAKE_db_key(key);
         Dbt db_data((void*)buf_default,to_buf(data,(void*)buf_default,(Db_size)capacity_default));
         db_try(
             db->put(NULL,&db_key,&db_data,flags),
             description);
     }
     template <class Key,class Data>    
-    inline void get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
+    inline void get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::get_via_from_buf") 
     {
         maybe_get_via_from_buf(key,data,description,false);
     }
     // returns false if key wasn't found (or fails if allow_notfound was false)
     template <class Key,class Data>    
-    inline bool maybe_get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::maybe_get_direct",bool allow_notfound=true) 
+    inline bool maybe_get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::maybe_get_via_from_buf",bool allow_notfound=true) 
     {
-        Dbt db_key;
-        blob_from_key<Key> bk(key,db_key);
+        MAKE_db_key(key);
         int ret=db->get(NULL,&db_key,data_for_getting(),0);
         if (allow_notfound && ret==DB_NOTFOUND)
             return false;
@@ -214,8 +360,8 @@ class SafeDb
     template <class Key>
     inline void put_bytes(const Key &key,const void *buf, Db_size buflen,Db_flags flags=put_flags_default,const char *description="SafeDb::put_bytes") 
     {
-        Dbt db_key;
-        blob_from_key<Key> bk(key,db_key);        
+        before_write();
+        MAKE_db_key(key);
         Dbt db_data((void*)buf,buflen);
         db_try(
             db->put(NULL,&db_key,&db_data,flags),
@@ -229,7 +375,7 @@ class SafeDb
     }
     // returns size of 0 if key wasn't found, size read if found
     template <class Key>
-    inline Db_size maybe_get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="SafeDb::maybe_get",bool allow_notfound=true)
+    inline Db_size maybe_get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="SafeDb::maybe_get_bytes",bool allow_notfound=true)
     {
         Dbt db_key;
         blob_from_key<Key> bk(key,db_key);
@@ -244,7 +390,7 @@ class SafeDb
     template <class Key,class Data>    
     inline void get_direct(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
     {
-        maybe_get(key,data,description,false);
+        maybe_get_direct(key,data,description,false);
     }
 // returns false if key wasn't found
     template <class Key,class Data>    
@@ -260,7 +406,7 @@ class SafeDb
         if (allow_notfound && ret==DB_NOTFOUND)
             return false;
         db_try(ret,description);
-        assert(data_size()==sizeof(Data));
+        assert(db_data.get_size()==sizeof(Data));
         return true;
     }
 //Data must support: Db_size to_buf(void *&data,Db_size maxdatalen)
@@ -269,7 +415,10 @@ class SafeDb
     {        
         put_bytes(key,&data,sizeof(data),flags,description);
     }
-
+    const std::string &filename() 
+    {
+        return db_filename;
+    }
     
  private:
     std::string db_filename;
@@ -291,7 +440,7 @@ class SafeDb
     Dbt * data_for_putting(Db_size size)
     {
         assert(size <= capacity_default);
-        _default_data.set_ulen(size);
+        _default_data.set_size(size);
         return &_default_data;
     }
     Db_size data_size() const 
@@ -312,63 +461,75 @@ class SafeDb
     template <class Data>
     inline void to_astr(const Data &d)
     {
-        astr.clear();
-        default_oarchive a(astr);
-        a << d;
-    }
-    // pre: astr.set_array(data,N)
-    template <class Data>
-    inline void from_astr(Data *d)
-    {        
-        default_iarchive a(astr);
-        a >> *d;
+        astr.reset();
+        default_oarchive a(astr,ARCHIVE_FLAGS_DEFAULT);
+        a & d;
+#ifdef DEBUG_SAFEDB
+/*        ostringstream os;
+        default_oarchive dbg_archive(os,ARCHIVE_FLAGS_DEFAULT);
+        dbg_archive & d;
+        DBP2(os.str(),astr);
+*/
+        DBPC2("writing",astr);
+#endif        
     }
 
     template <class Key>
     inline void put_astr(const Key &key,Db_flags flags=put_flags_default,const char *description="SafeDb::put_astr") 
     {
-        Dbt db_key;
-        blob_from_key<Key> bk(key,db_key);        
+        before_write();
+        MAKE_db_key(key);
+#ifdef DEBUG_SAFEDB
+        DBP(astr.buf().size());
+#endif
         db_try(
-            db->put(NULL,&db_key,data_for_putting(astr.size()),flags),
+            db->put(NULL,&db_key,data_for_putting(astr.buf().size()),flags),
             description);
     }
     template <class Key>
     inline bool maybe_get_astr(const Key &key,const char *description="SafeDb::maybe_get_astr",bool allow_notfound=true)
     {
-        Dbt db_key;
-        blob_from_key<Key> bk(key,db_key);
+        MAKE_db_key(key);
         int ret=db->get(NULL,&db_key,data_for_getting(),0);
         if (allow_notfound && ret==DB_NOTFOUND)
             return false;
         db_try(ret,description);
-        astr.init_read_size(data_size());
+        astr.reset_read(data_size());
+#ifdef DEBUG_SAFEDB
+        astr.buf().set_write_size(data_size());
+        DBPC2("read",astr);
+#endif 
         return true;
     }
-
+#undef MAKE_db_key
 };
 
 #ifdef TEST
 # include "test.hpp"
-
-BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
+# include "debugprint.hpp"
+# define CHECKNDATA  BOOST_CHECK_EQUAL(db.n_keys_fast(),n_data);BOOST_CHECK_EQUAL(db.n_keys_fast(),db.n_data_slow())
+template <class SDB>
+void test_safedb_type()
 {
     {
-        SafeDb<> db;
+        SDB db;
     }
     {
+        unsigned n_data=0;
         const unsigned buflen=10;
         char buf[buflen];
-        SafeDb<> db;
+        SDB db;
         db.open_create("tmpdb");
         db.close();
-        db.remove();
+        db.delete_dbfile();
         const char *dbname="tmpdb2";
         
         db.open_create(dbname);
         int k=4;
         int v=10,v2=0;
         db.put_via_to_buf(k,v);
+        ++n_data;        CHECKNDATA;
+        
         db.get_via_from_buf(k,&v2);
         BOOST_CHECK(v2==v);
         db.close();
@@ -377,11 +538,44 @@ BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
         v2=0;
         db.get_via_from_buf(k,&v2);
         BOOST_CHECK(v2==v);
+        db.close();
+        db.open(dbname);
         v2=0;
-//        int k3=6;
-        db.put(k,v,SafeDb<>::overwrite);
-        db.get(k,&v2);
+        BOOST_CHECK(db.maybe_del(k));
+        --n_data;CHECKNDATA;
+        
+        BOOST_CHECK(!db.maybe_del(k));
+        int delret=db.del_retcode(k);
+        BOOST_CHECK(delret==SDB::key_empty || delret==SDB::not_found);
+        CHECKNDATA;
+
+        db.put_direct(k,v,SDB::no_overwrite);
+        ++n_data;
+        CHECKNDATA;
+        db.get_direct(k,&v2);
         BOOST_CHECK(v2==v);
+        v2=0;
+        db.put_direct(k,v,SDB::overwrite);
+        db.get_direct(k,&v2);
+        BOOST_CHECK(v2==v);
+        v2=0;
+        for (unsigned i=0;i<2;++i) {
+            std::vector<std::string> ss,scopy;
+            ss.push_back("a");
+            ss.push_back("string - next will be empty");
+            ss.push_back("");
+            ss.push_back("b");
+            
+            db.put(k,ss,SDB::overwrite);
+            db.get(k,&scopy);
+            BOOST_CHECK(ss==scopy);
+        }        
+        if (1) {
+            db.put(k,v,SDB::overwrite);
+            db.get(k,&v2);
+            BOOST_CHECK(v2==v);
+        }
+        CHECKNDATA;
         BOOST_CHECK(db.maybe_get_bytes(k,buf,buflen));
         int k2=5;
         BOOST_CHECK(!db.maybe_get_bytes(k2,buf,buflen));
@@ -389,10 +583,19 @@ BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
         db.open_maybe_create(dbname);
         v2=5;
         db.put_direct(k2,v2);
+        ++n_data;
+        
+        CHECKNDATA;
         int v3=0;
         db.get_direct(k2,&v3);
         BOOST_CHECK(v2==v3);
     }
+}
+
+BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
+{
+    test_safedb_type<SafeDb<DB_HASH> >();
+    test_safedb_type<SafeDb<DB_RECNO> >();
 }
 #endif
 #endif

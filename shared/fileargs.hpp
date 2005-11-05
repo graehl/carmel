@@ -82,7 +82,7 @@ inline Infile infile(const std::string &s)
     } else {   
         boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
         if (!*r)
-            throw std::runtime_error(std::string("Could not open input file ").append(s));        
+            throw std::runtime_error(std::string("Could not open input file ").append(s));
         boost::shared_ptr<std::istream> r2(r);
         return (r2);
     }

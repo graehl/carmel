@@ -291,6 +291,7 @@ struct Node {
 template <class R,class A>
 A Node<R,A>::result_alloc;
 
+/*
 template <class V>
 std::ostream & operator << (std::ostream &o,const std::vector<V> &v)
 {
@@ -306,6 +307,7 @@ std::ostream & operator << (std::ostream &o,const std::vector<V> &v)
     o << ']';
     return o;
 }
+*/
 
 template <class R,class A>
 std::ostream &operator <<(std::ostream &o,const Entry<R,A> &e)
