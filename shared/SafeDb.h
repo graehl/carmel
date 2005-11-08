@@ -72,8 +72,15 @@ class SafeDb
 #ifdef DEBUG_SAFEDB
             DBPC2("success",description);
 #endif 
-        }        
+        }
     }
+
+    // synonym to make replacing DiskVector easier
+    void seal() 
+    {
+        sync();
+    }
+    
     void sync() 
     {
         db_try(db->sync(0),"SafeDb::sync");
@@ -309,6 +316,11 @@ class SafeDb
         before_write();
         array_save(astr,data);
         put_astr(key,flags,description);
+    }
+    
+    template <class Key,class Data>
+    inline void release(const Key &key,Data &data) 
+    {
     }
     template <class Key,class Data>    
     inline void get(const Key &key,Data *data,const char *description="SafeDb::get") 

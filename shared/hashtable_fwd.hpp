@@ -1,6 +1,6 @@
 // for sources defining hash functions but not using hash tables themselves
-#ifndef HASHTABLE_FWD_H
-#define HASHTABLE_FWD_H
+#ifndef HASHTABLE_FWD_HPP
+#define HASHTABLE_FWD_HPP
 
 #define GOLDEN_MEAN_FRACTION 2654435769U
 
