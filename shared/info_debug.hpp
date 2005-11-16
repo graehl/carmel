@@ -307,10 +307,6 @@ class info_debug {
 
 extern ns_decoder_global::info_debug debug;        //!< interface for debugging output
 
-#ifdef SINGLE_MAIN
-ns_decoder_global::info_debug debug;
-#endif
-
 #ifdef TEST
 # ifdef TEST_MAIN
 ns_decoder_global::info_debug test_dbg;
@@ -371,6 +367,11 @@ private:
     unsigned debugLevel;	    /* level of output -- the higher the more*/
     ostream *debugStream;	    /* current debug output stream */
 };
+
+#ifdef SINGLE_MAIN
+ns_decoder_global::info_debug debug;
+unsigned Debugger::debugAll = 0;
+#endif
 
 #endif
 
