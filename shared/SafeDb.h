@@ -50,8 +50,8 @@ class SafeDb
         init(NULL);
     }
     // open_flags:
-    enum {readonly=DB_READONLY,readwrite=0,create=DB_CREATE,truncate=DB_TRUNCATE,create_new=create & truncate};
-    SafeDb(const std::string &filename,Db_flags open_flags=readwrite,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
+    enum {READONLY=DB_RDONLY,READWRITE=0,MAYBE_CREATE=DB_CREATE,TRUNCATE=DB_TRUNCATE,CREATE=MAYBE_CREATE & TRUNCATE};
+    SafeDb(const std::string &filename,Db_flags open_flags=READWRITE,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
     {
         init(NULL);
         open(filename,open_flags,db_type_default,db_flags);
@@ -125,12 +125,12 @@ class SafeDb
     // default: open existing for read/write
     /* db_flags: http://pybsddb.sourceforge.net/api_c/db_set_flags.html#DB_RECNUM
        (DB_DUP, DB_DUPSORT) */
-    void open(const std::string &filename,Db_flags open_flags=readwrite,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
+    void open(const std::string &filename,Db_flags open_flags=READWRITE,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
     {
         assert(db_type!=DB_QUEUE);
-        state=(open_flags & DB_RDONLY) ? read_only : read_and_write;
+        state=(open_flags & READONLY) ? read_only : read_and_write;
         if (!db)
-            db=new Db(NULL,0);        
+            db=new Db(NULL,0);
         if (db_flags)
             db->set_flags(db_flags);
         db_filename=filename;
@@ -140,17 +140,21 @@ class SafeDb
     {
         open_read(db_filename,DB_UNKNOWN);
     }
-    void open_read(const std::string &filename,DBTYPE db_type=db_type_default) 
+    void open_read(const std::string &filename,DBTYPE db_type=db_type_default,Db_flags db_flags=0)  
     {
-        open(filename,DB_RDONLY,db_type);
+        open(filename,READONLY,db_type,db_flags);
     }
-    void open_maybe_create(const std::string &filename,DBTYPE db_type=db_type_default)
+    void open_readwrite(const std::string &filename,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
     {
-        open(filename,DB_CREATE,db_type);
+        open(filename,READWRITE,db_type,db_flags);
     }
-    void open_create(const std::string &filename,DBTYPE db_type=db_type_default)
+    void open_maybe_create(const std::string &filename,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
     {
-        open(filename,DB_CREATE | DB_TRUNCATE,db_type);
+        open(filename,MAYBE_CREATE,db_type,db_flags);
+    }
+    void open_create(const std::string &filename,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
+    {
+        open(filename,CREATE,db_type,db_flags);
     }
     void close_and_delete_dbfile()
     {
