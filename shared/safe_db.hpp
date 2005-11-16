@@ -10,6 +10,8 @@
 #include "to_from_buf.hpp"
 #include "key_to_blob.hpp"
 #include "memory_archive.hpp"
+#include <boost/config.hpp>
+
 //#define DEBUG_SAFEDB
 
 //TODO: use DbEnv (static?) object to allow setting directory for temporary backing files (default is /tmp?)
@@ -29,12 +31,33 @@ typedef u_int32_t Db_size;
 typedef db_recno_t Db_recno;
 
 //TODO: single archive for get() put(), with header stored in key:0 (means users don't get to use that key!)
-template <DBTYPE DB_TYPE=DB_RECNO,u_int32_t PUT_FLAGS=DB_NOOVERWRITE,size_t MAXBUF=1024*256>
+template <DBTYPE DB_TYPE_DEFAULT=DB_RECNO,Db_size PUT_FLAGS=DB_NOOVERWRITE,Db_size MAXBUF=1024*256>
 class safe_db 
 {
  public:
-    enum make_not_anon_646774880 {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE, not_found=DB_NOTFOUND,key_empty=DB_KEYEMPTY };
-    static const DBTYPE db_type_default=DB_TYPE;
+    typedef u_int32_t Db_flags;
+    BOOST_STATIC_CONSTANT(Db_size,capacity_default=MAXBUF);
+
+    // put/get flags
+    BOOST_STATIC_CONSTANT(Db_flags,put_flags_default=PUT_FLAGS);
+    BOOST_STATIC_CONSTANT(Db_flags,overwrite=0);
+    BOOST_STATIC_CONSTANT(Db_flags,no_overwrite=DB_NOOVERWRITE);
+
+    // del_retcode returns
+    BOOST_STATIC_CONSTANT(Db_flags,not_found=DB_NOTFOUND);    
+    BOOST_STATIC_CONSTANT(Db_flags,key_empty=DB_KEYEMPTY);
+
+    BOOST_STATIC_CONSTANT(DBTYPE,db_type_default=DB_TYPE_DEFAULT);
+    BOOST_STATIC_CONSTANT(DBTYPE,RECNO=DB_RECNO);
+    BOOST_STATIC_CONSTANT(DBTYPE,HASH=DB_HASH);
+    BOOST_STATIC_CONSTANT(DBTYPE,BTREE=DB_BTREE);
+
+    // open_flags:
+    BOOST_STATIC_CONSTANT(Db_flags,READONLY=DB_RDONLY);
+    BOOST_STATIC_CONSTANT(Db_flags,READWRITE=0);
+    BOOST_STATIC_CONSTANT(Db_flags,MAYBE_CREATE=DB_CREATE);
+    BOOST_STATIC_CONSTANT(Db_flags,TRUNCATE=DB_TRUNCATE);
+    BOOST_STATIC_CONSTANT(Db_flags,CREATE=MAYBE_CREATE & TRUNCATE);
     
     DBTYPE db_type_actual() 
     {
@@ -43,14 +66,12 @@ class safe_db
         return ret;
     }
     
-    typedef u_int32_t Db_flags;
+
 
     safe_db() 
     {
         init(NULL);
     }
-    // open_flags:
-    enum make_not_anon_923260484 {READONLY=DB_RDONLY,READWRITE=0,MAYBE_CREATE=DB_CREATE,TRUNCATE=DB_TRUNCATE,CREATE=MAYBE_CREATE & TRUNCATE};
     safe_db(const std::string &filename,Db_flags open_flags=READWRITE,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
     {
         init(NULL);
