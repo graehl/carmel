@@ -387,7 +387,7 @@ inline void TEST_check_memory_stream1(C &o,char *buf,unsigned n)
     }
     o.write(buf,n);
     BOOST_REQUIRE(o);
-    BOOST_CHECK_EQUAL_COLLECTIONS(buf,buf+n,o.begin(),o.end());
+    //    BOOST_CHECK_EQUAL_COLLECTIONS(buf,buf+n,o.begin(),o.end());
     for(unsigned i=0;i<n;++i)
         buf[i]=0;
     /*
