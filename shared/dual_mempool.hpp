@@ -104,8 +104,8 @@ class dual_mempool
 
     
 /*
-    struct first { enum { DIRECTION=1 }; };    
-    struct second { enum { DIRECTION=-1 }; };
+    struct first { enum make_not_anon_483272012 { DIRECTION=1 }; };    
+    struct second { enum make_not_anon_490088557 { DIRECTION=-1 }; };
     
     template <class Type>
     size_t element_size() const;    
