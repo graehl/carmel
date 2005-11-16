@@ -1,11 +1,11 @@
-#ifndef DEBUG_H_inc
-#define DEBUG_H_inc
+#ifndef INFO_DEBUG_H_inc
+#define INFO_DEBUG_H_inc
 
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <assert.h>
+#include "assertlvl.hpp"
 
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
@@ -15,9 +15,6 @@ using namespace std;
 #ifndef INFO_LEVEL
 # define INFO_LEVEL 9999
 #endif
-#ifndef ASSERT_LEVEL
-# define ASSERT_LEVEL 9999
-#endif
 
 #define COND_INFO(level,op) (INFO_LEVEL op level)
 #define COND_INFO_RUNTIME(level,op) (INFO_LEVEL op level && debug.runtime_info_level op level)
@@ -26,52 +23,41 @@ using namespace std;
 #define UNLESS_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,<))
 #define IF_INFO(level) if(COND_INFO(level,>=))
 #define UNLESS_INFO(level) if(COND_INFO(level,<))
-#define IF_ASSERT(level) if(ASSERT_LEVEL>=level)
-#define UNLESS_ASSERT(level) if(ASSERT_LEVEL<level)
-
-#define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
-
-// from makestr.hpp (GraehlCVS)
-#if 0
-#define MAKESTR_STRINGIZE(str) #str
-#define MAKESTR_EXPAND_STRINGIZE(expr) MAKESTR_STRINGIZE(expr)
-#define MAKESTR_FILE_LINE "(" __FILE__  ":" MAKESTR_EXPAND_STRINGIZE(__LINE__)  ")"
-#define MAKESTR_DATE __DATE__ " " __TIME__
-// __FILE__  ":"  __LINE__  "): failed to write " #expr
-// usage: MAKESTRS(str,os << 1;os << 2) => str="12"
-#define MAKESTRS(string,expr) do {std::ostringstream os;expr;if (!os) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write" #expr);string=os.str();}while(0)
-// usage: MAKESTR(str,1 << 2) => str="12"
-#define MAKESTR(string,expr) MAKESTRS(string,os << expr)
-#define MAKESTRFL(string,expr) MAKESTR(string,MAKESTR_FILE_LINE << expr)
-#define 
-#endif
 
 #include "makestr.hpp"
 
+/* GUIDE TO NAMES:
+   NL: newline
+   B: begin (returns stream)
+   Q: no file/line (quick/quiet)
+   L: level (conditioned on INFO_LEVEL and runtime --verbose being at least that level
+   E: expression involving os: i.e. MACRO(os << "hi") not MACRO("hi")
+*/
+
 #ifdef NO_INFO
-# define DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,newline)
-# define DBG_OP_F(lvl,pDbg,op,module,oexp,file,line)
+# define DBG_OP_F_NL(lvl,Dbg,op,module,oexp,file,line,newline)
+# define DBG_OP_F(lvl,Dbg,op,module,oexp,file,line)
 #else
 
-# define DBG_OP_F(lvl,pDbg,op,module,oexp,file,line) DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,true)
+# define DBG_OP_F(lvl,Dbg,op,module,oexp,file,line) DBG_OP_F_NL(lvl,Dbg,op,module,oexp,file,line,true)
 
-# define DBG_OP_F_NL(lvl,pDbg,op,module,oexp,file,line,newline) do {     \
-        if (INFO_LEVEL >= lvl && (pDbg).runtime_info_level >= lvl) {   \
+# define DBG_OP_F_NL(lvl,Dbg,op,module,oexp,file,line,newline) do {     \
+        if (INFO_LEVEL >= lvl && (Dbg).runtime_info_level >= lvl) {   \
    ostringstream os; \
    oexp; \
    if(!os) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write " #module " : " #oexp); \
-   (pDbg).op(module,os.str(),file,line,newline);      \
+   (Dbg).op(module,os.str(),file,line,newline);      \
 } } while(0)
 #endif
 
 //!< Q: no FILE/LINE included in output
 //!< L: specify verbosity level as first argument
-#define DBG_OP(pDbg,op,module,msg) DBG_OP_L(0,pDbg,op,module,msg)
-#define DBG_OP_Q(pDbg,op,module,msg) DBG_OP_LQ(0,pDbg,op,module,msg)
-#define DBG_OP_L(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,__FILE__,__LINE__)
-#define DBG_OP_LQ_NEWLINE(lvl,pDbg,op,module,msg,newline) DBG_OP_F_NL(lvl,pDbg,op,module,msg,"",0,newline)
-#define DBG_OP_LQ(lvl,pDbg,op,module,msg) DBG_OP_F(lvl,pDbg,op,module,msg,"",0)
-#define NESTINFO_GUARD(pDbg,lvl) ns_decoder_global::Debug::Nest debug_nest_guard_ ## __LINE__ (pDbg,lvl)
+#define DBG_OP(Dbg,op,module,msg) DBG_OP_L(0,Dbg,op,module,msg)
+#define DBG_OP_Q(Dbg,op,module,msg) DBG_OP_LQ(0,Dbg,op,module,msg)
+#define DBG_OP_L(lvl,Dbg,op,module,msg) DBG_OP_F(lvl,Dbg,op,module,msg,__FILE__,__LINE__)
+#define DBG_OP_LQ_NEWLINE(lvl,Dbg,op,module,msg,newline) DBG_OP_F_NL(lvl,Dbg,op,module,msg,"",0,newline)
+#define DBG_OP_LQ(lvl,Dbg,op,module,msg) DBG_OP_F(lvl,Dbg,op,module,msg,"",0)
+#define NESTINFO_GUARD(Dbg,lvl) ns_decoder_global::info_debug::Nest debug_nest_guard_ ## __LINE__ (Dbg,lvl)
 
 #define O_INSERT(msg) os << msg
 
@@ -142,16 +128,15 @@ using namespace std;
 
 namespace ns_decoder_global {
 
-//! Debug: This is a class to print out debugging information
+//! info_debug: This is a class to print out debugging information
 /*! This should be used for most communication to the user. The reason for this
   is to make sure that all of our debugging messages are consistent (esp
   important for perl readability), and that if for some reason we want to
   redirect error/warning messages to different files, this can be done easily.
 */
 
-class Debug {
+class info_debug {
  private:
-
     ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
     ostream *infoOS;                                       //!< output stream where debugging information is sent
  public:
@@ -163,7 +148,7 @@ class Debug {
     }
     void decrease_depth() {
         if (info_outline_depth == 0)
-            warning("Debug","decrease_depth called more times than increase_depth - clamping at 0");
+            warning("info_debug","decrease_depth called more times than increase_depth - clamping at 0");
         else
             --info_outline_depth;
     }
@@ -172,17 +157,17 @@ class Debug {
     }
     void decrease_debug_depth() {
         if (debug_outline_depth == 0)
-            warning("Debug","decrease_debug_depth called more times than increase_debug_depth - clamping at 0");
+            warning("info_debug","decrease_debug_depth called more times than increase_debug_depth - clamping at 0");
         else
             --debug_outline_depth;
     }
     struct Nest {
-        Debug *pdebug;
+        info_debug *pdebug;
         unsigned info_req;
         bool active() const {
             return info_req < pdebug->runtime_info_level;
         }
-        Nest(Debug &debug,unsigned info_lvl_required=0) : pdebug(&debug),info_req(info_lvl_required) {
+        Nest(info_debug &debug,unsigned info_lvl_required=0) : pdebug(&debug),info_req(info_lvl_required) {
             if (active())
                 pdebug->increase_depth();
         }
@@ -197,7 +182,7 @@ class Debug {
         }
     };
 
-    Debug() : debugOS(&cerr), infoOS(&cerr),
+    info_debug() : debugOS(&cerr), infoOS(&cerr),
               runtime_info_level(INFO_LEVEL),
               info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
 
@@ -320,19 +305,20 @@ class Debug {
 };
 }
 
-extern ns_decoder_global::Debug debug;        //!< interface for debugging output
+extern ns_decoder_global::info_debug debug;        //!< interface for debugging output
 
 #ifdef SINGLE_MAIN
-ns_decoder_global::Debug debug;
+ns_decoder_global::info_debug debug;
 #endif
 
 #ifdef TEST
 # ifdef TEST_MAIN
-ns_decoder_global::Debug test_dbg;
+ns_decoder_global::info_debug test_dbg;
 # else
-extern ns_decoder_global::Debug test_dbg;
+extern ns_decoder_global::info_debug test_dbg;
 # endif 
 #endif
+
 // added by Wei Wang.
 /*
  * Here is the typical usage for this mixin class.
