@@ -1,5 +1,5 @@
-#ifndef SAFE_DB_H
-#define SAFE_DB_H
+#ifndef SAFE_DB_HPP
+#define SAFE_DB_HPP
 
 #include <db_cxx.h>
 #include <stdexcept>
@@ -30,7 +30,7 @@ typedef db_recno_t Db_recno;
 
 //TODO: single archive for get() put(), with header stored in key:0 (means users don't get to use that key!)
 template <DBTYPE DB_TYPE=DB_RECNO,u_int32_t PUT_FLAGS=DB_NOOVERWRITE,size_t MAXBUF=1024*256>
-class SafeDb 
+class safe_db 
 {
  public:
     enum make_not_anon_646774880 {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE, not_found=DB_NOTFOUND,key_empty=DB_KEYEMPTY };
@@ -39,24 +39,24 @@ class SafeDb
     DBTYPE db_type_actual() 
     {
         DBTYPE ret;
-        db_try(db->get_type(&ret),"SafeDb::db_type_actual");
+        db_try(db->get_type(&ret),"safe_db::db_type_actual");
         return ret;
     }
     
     typedef u_int32_t Db_flags;
 
-    SafeDb() 
+    safe_db() 
     {
         init(NULL);
     }
     // open_flags:
     enum make_not_anon_923260484 {READONLY=DB_RDONLY,READWRITE=0,MAYBE_CREATE=DB_CREATE,TRUNCATE=DB_TRUNCATE,CREATE=MAYBE_CREATE & TRUNCATE};
-    SafeDb(const std::string &filename,Db_flags open_flags=READWRITE,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
+    safe_db(const std::string &filename,Db_flags open_flags=READWRITE,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
     {
         init(NULL);
         open(filename,open_flags,db_type_default,db_flags);
     }
-    explicit SafeDb(Db *db_) {
+    explicit safe_db(Db *db_) {
         init(db_);
     }
     void init(Db *db_) 
@@ -90,7 +90,7 @@ class SafeDb
     
     void sync() 
     {
-        db_try(db->sync(0),"SafeDb::sync");
+        db_try(db->sync(0),"safe_db::sync");
     }
     int state;
     enum make_not_anon_808636420 {
@@ -107,12 +107,12 @@ class SafeDb
 
     // must be a DB_RECNO db.  returns recno of appended value
     template <class Val>
-    Db_recno append_direct(const Val &val,const char *description="SafeDb::append_direct") 
+    Db_recno append_direct(const Val &val,const char *description="safe_db::append_direct") 
     {
         return append_bytes(&val,sizeof(val),description);
     }
     // must be a DB_RECNO db.  returns recno of appended value
-    Db_recno append_bytes(const void *buf, Db_size buflen,const char *description="SafeDb::append_bytes") 
+    Db_recno append_bytes(const void *buf, Db_size buflen,const char *description="safe_db::append_bytes") 
     {
         Dbt db_key;
         Dbt db_data((void*)buf,buflen);
@@ -134,7 +134,7 @@ class SafeDb
         if (db_flags)
             db->set_flags(db_flags);
         db_filename=filename;
-        db_try(db->open(NULL, db_filename.c_str(),NULL,db_type,open_flags,0),"SafeDb::open");
+        db_try(db->open(NULL, db_filename.c_str(),NULL,db_type,open_flags,0),"safe_db::open");
     }
     void reopen_read() 
     {
@@ -189,7 +189,7 @@ class SafeDb
         }        
     }
 
-    // use this to keep the Db object around past SafeDb's lifetime
+    // use this to keep the Db object around past safe_db's lifetime
     Db *disown_db_handle() 
     {
         Db *ret=db;
@@ -206,7 +206,7 @@ class SafeDb
         return ret;
     }
     
-    ~SafeDb()
+    ~safe_db()
     {
         close(0);
     }
@@ -218,7 +218,7 @@ class SafeDb
         if (!(db_type==DB_RECNO || db_type==DB_BTREE))
             throw DbException("wrong db type to get DB_BTREE_STAT");
         bool fast=(try_fast && db_type==DB_RECNO);
-        db_try(db->stat(NULL,&btree_stat,fast?DB_FAST_STAT:0),"SafeDb::stats");
+        db_try(db->stat(NULL,&btree_stat,fast?DB_FAST_STAT:0),"safe_db::stats");
         ret=*btree_stat;
         std::free(btree_stat);
         return ret;
@@ -230,7 +230,7 @@ class SafeDb
         DBTYPE db_type=db_type_actual();
         if (db_type!=DB_HASH)
             throw DbException("wrong db type to get DB_HASH_STAT");
-        db_try(db->stat(NULL,&hash_stat,try_fast?DB_FAST_STAT:0),"SafeDb::hash_stats");
+        db_try(db->stat(NULL,&hash_stat,try_fast?DB_FAST_STAT:0),"safe_db::hash_stats");
         ret=*hash_stat;
         std::free(hash_stat);
         return ret;
@@ -253,7 +253,7 @@ class SafeDb
         default:
             throw DbException("unsupported DB type (try btree,hash, or recno)");
         }
-        db_try(db->stat(NULL,(void*)&statp,(fast?DB_FAST_STAT:0)),"SafeDb::n_keys_fast");
+        db_try(db->stat(NULL,(void*)&statp,(fast?DB_FAST_STAT:0)),"safe_db::n_keys_fast");
         if (db_type==DB_HASH) {
             if (offset_hash<0)
                 throw DbException("wrong offset for hash db stats");
@@ -293,7 +293,7 @@ class SafeDb
     template <class Key>
     void del(const Key &key)
     {
-        db_try(del_retcode(key),"SafeDb::del");
+        db_try(del_retcode(key),"safe_db::del");
     }
 
     // returns true if key existed (and was deleted)
@@ -303,7 +303,7 @@ class SafeDb
         int ret=del_retcode(key);
         if (ret == key_empty || ret == not_found)
             return false;
-        db_try(ret,"SafeDb::maybe_del");
+        db_try(ret,"safe_db::maybe_del");
         return true;
     }
     
@@ -322,7 +322,7 @@ class SafeDb
     
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
-    inline void put(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put") 
+    inline void put(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="safe_db::put") 
     {
         before_write();
         array_save(astr,data);
@@ -334,13 +334,13 @@ class SafeDb
     {
     }
     template <class Key,class Data>    
-    inline void get(const Key &key,Data *data,const char *description="SafeDb::get") 
+    inline void get(const Key &key,Data *data,const char *description="safe_db::get") 
     {
         maybe_get(key,data,description,false);
     }
     // returns false if key wasn't found (or fails if allow_notfound was false)
     template <class Key,class Data>    
-    inline bool maybe_get(const Key &key,Data *data,const char *description="SafeDb::maybe_get",bool allow_notfound=true) 
+    inline bool maybe_get(const Key &key,Data *data,const char *description="safe_db::maybe_get",bool allow_notfound=true) 
     {
         if (!allow_notfound)
             maybe_get_astr(key,description,false);
@@ -353,7 +353,7 @@ class SafeDb
     
     /////// (PREFERRED) BOOST SERIALIZE STYLE:
     template <class Key,class Data>
-    inline void put_via_to_buf(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put_via_to_buf") 
+    inline void put_via_to_buf(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="safe_db::put_via_to_buf") 
     {
         before_write();
         MAKE_db_key(key);
@@ -363,13 +363,13 @@ class SafeDb
             description);
     }
     template <class Key,class Data>    
-    inline void get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::get_via_from_buf") 
+    inline void get_via_from_buf(const Key &key,Data *data,const char *description="safe_db::get_via_from_buf") 
     {
         maybe_get_via_from_buf(key,data,description,false);
     }
     // returns false if key wasn't found (or fails if allow_notfound was false)
     template <class Key,class Data>    
-    inline bool maybe_get_via_from_buf(const Key &key,Data *data,const char *description="SafeDb::maybe_get_via_from_buf",bool allow_notfound=true) 
+    inline bool maybe_get_via_from_buf(const Key &key,Data *data,const char *description="safe_db::maybe_get_via_from_buf",bool allow_notfound=true) 
     {
         MAKE_db_key(key);
         int ret=db->get(NULL,&db_key,data_for_getting(),0);
@@ -381,7 +381,7 @@ class SafeDb
     }
     
     template <class Key>
-    inline void put_bytes(const Key &key,const void *buf, Db_size buflen,Db_flags flags=put_flags_default,const char *description="SafeDb::put_bytes") 
+    inline void put_bytes(const Key &key,const void *buf, Db_size buflen,Db_flags flags=put_flags_default,const char *description="safe_db::put_bytes") 
     {
         before_write();
         MAKE_db_key(key);
@@ -392,13 +392,13 @@ class SafeDb
     }
     // returns size actually read
     template <class Key>
-    inline Db_size get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="SafeDb::get_bytes") 
+    inline Db_size get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="safe_db::get_bytes") 
     {
         return maybe_get_bytes(key,buf,buflen,description,false);
     }
     // returns size of 0 if key wasn't found, size read if found
     template <class Key>
-    inline Db_size maybe_get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="SafeDb::maybe_get_bytes",bool allow_notfound=true)
+    inline Db_size maybe_get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="safe_db::maybe_get_bytes",bool allow_notfound=true)
     {
         Dbt db_key;
         blob_from_key<Key> bk(key,db_key);
@@ -411,13 +411,13 @@ class SafeDb
 
 // DIRECT: for plain old data only (no Archive overhead)
     template <class Key,class Data>    
-    inline void get_direct(const Key &key,Data *data,const char *description="SafeDb::get_direct") 
+    inline void get_direct(const Key &key,Data *data,const char *description="safe_db::get_direct") 
     {
         maybe_get_direct(key,data,description,false);
     }
 // returns false if key wasn't found
     template <class Key,class Data>    
-    inline bool maybe_get_direct(const Key &key,Data *data,const char *description="SafeDb::maybe_get_direct",bool allow_notfound=true) 
+    inline bool maybe_get_direct(const Key &key,Data *data,const char *description="safe_db::maybe_get_direct",bool allow_notfound=true) 
     {
         Dbt db_key;
         blob_from_key<Key> bk(key,db_key);
@@ -434,7 +434,7 @@ class SafeDb
     }
 //Data must support: Db_size to_buf(void *&data,Db_size maxdatalen)
     template <class Key,class Data>
-    inline void put_direct(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="SafeDb::put_direct") 
+    inline void put_direct(const Key &key,const Data &data,Db_flags flags=put_flags_default,const char *description="safe_db::put_direct") 
     {        
         put_bytes(key,&data,sizeof(data),flags,description);
     }
@@ -475,7 +475,7 @@ class SafeDb
         return (void *)buf_default;
     }
     template <DBTYPE a,u_int32_t b,size_t c>
-    SafeDb(const SafeDb<a,b,c> &c) { // since destructor deletes db, this wouldn't be safe
+    safe_db(const safe_db<a,b,c> &c) { // since destructor deletes db, this wouldn't be safe
         init(c.db);
         db_filename=c.db_filename;
     }
@@ -498,7 +498,7 @@ class SafeDb
     }
 
     template <class Key>
-    inline void put_astr(const Key &key,Db_flags flags=put_flags_default,const char *description="SafeDb::put_astr") 
+    inline void put_astr(const Key &key,Db_flags flags=put_flags_default,const char *description="safe_db::put_astr") 
     {
         before_write();
         MAKE_db_key(key);
@@ -510,7 +510,7 @@ class SafeDb
             description);
     }
     template <class Key>
-    inline bool maybe_get_astr(const Key &key,const char *description="SafeDb::maybe_get_astr",bool allow_notfound=true)
+    inline bool maybe_get_astr(const Key &key,const char *description="safe_db::maybe_get_astr",bool allow_notfound=true)
     {
         MAKE_db_key(key);
         int ret=db->get(NULL,&db_key,data_for_getting(),0);
@@ -615,10 +615,10 @@ void test_safedb_type()
     }
 }
 
-BOOST_AUTO_UNIT_TEST( TEST_SafeDb )
+BOOST_AUTO_UNIT_TEST( TEST_safe_db )
 {
-    test_safedb_type<SafeDb<DB_HASH> >();
-    test_safedb_type<SafeDb<DB_RECNO> >();
+    test_safedb_type<safe_db<DB_HASH> >();
+    test_safedb_type<safe_db<DB_RECNO> >();
 }
 #endif
 #endif
