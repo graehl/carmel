@@ -32,8 +32,11 @@
 //#include <boost/type_traits.hpp>
 
 
-// doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length allowed.
-// you must construct and deconstruct elements yourself.  raw dynamic uninitialized (classed) storage array
+// doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length
+// allowed.  you must construct and deconstruct elements yourself.  raw dynamic
+// uninitialized (classed) storage array copy constructor is very fast, of
+// course.  as long as you don't use any allocation, you can think of this as an
+// array-substring (for contiguous things)
 template <typename T,typename Alloc=std::allocator<T> > class Array : protected Alloc {
 protected:
     //unsigned int space;
@@ -63,9 +66,9 @@ public:
     bool invariant() const {
         return vec >= endspace;
     }
+    typedef Array<T,Alloc> Self;
 //!FIXME: does this swap allocator base?
     void swap(Array<T,Alloc> &a) {
-        typedef Array<T,Alloc> Self;
         Self t;
         memcpy(&t,this,sizeof(Self));
         memcpy(this,&a,sizeof(Self));
@@ -187,9 +190,33 @@ public:
         dealloc();
         alloc(sp);
     }
+
+    // okay to shallow copy since we don't automatically destroy anything
+    template <class Alloc2>
+    Array(const Array<T,Alloc2>&o) : vec(o.vec),endspace(o.endspace) {}
+    
+    template <class Alloc2>
+    const Self & operator =(const Array<T,Alloc2>&o) {
+        vec=o.vec;
+        endspace=o.endspace;
+        return *this;
+    }
+    
     explicit Array(const char *c) {
         std::istringstream(c) >> *this;
     }
+    
+    // create Array reference to a STL vector - note: I *believe* stdc++ requires storage be contiguous, i.e. iterators be pointers ... if not, nonportable
+    explicit Array(std::vector<T> &vec) 
+    {
+        init(vec);
+    }
+    void init(std::vector<T> &vec) 
+    {
+        vec=&(vec.front());
+        set_capacity(vec.size());
+    }
+    
     
     //FIXME: unsafe: etc. I'm relying on contiguousness of std::vector storage
     template <class A2>

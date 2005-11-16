@@ -20,7 +20,10 @@
 
 //DOESN'T WORK!
 //#define MAKESTRE(expr) static_cast<std::ostringstream &>((*(std::ostringstream *)&std::ostringstream()) << "" <<  expr).str()
-//#define MAKECSTRE(expr) MAKESTRE(expr).c_str()
+//TEST THIS BEFORE USING (note: MAKECSTRE is from a temporary object, so probably shouldn't even be used as a function argument)
+#define MAKESTRE(expr) ( ((std::ostringstream&)(std::ostringstream() << expr)).str() )
+#define MAKECSTRE(expr) MAKESTRE(expr).c_str()
+
 
 // (obviously, no comma/newlines allowed in expr)
 

@@ -16,7 +16,7 @@
 
 #include <new> // placement ::operator new(address) T()
 #include <vector>
-#include "Debug.h"
+#include "info_debug.h"
 
 // TODO: implement deletion of all the lazykbest results (currently relies on pool/batch deletion)
 //TODO:  MIGHT IT BE MORE FLEXIBLE TO PASS RESULT BY VALUE?
