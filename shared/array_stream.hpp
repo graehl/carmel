@@ -29,8 +29,6 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
 
     typedef cT value_type;
     typedef value_type *iterator;     //NOTE: you can count on iterator being a pointer
-    typedef std::basic_streambuf<cT, traits> base;
-    typedef typename base::int_type int_type;
 
     // shows what's been written
     template <class C1,class T1>
@@ -243,8 +241,6 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     {
         return o << my.m_sbuf;
     }
-    typedef typename traits::char_type char_type;
-    typedef std::streamsize size_type;
     basic_array_stream() : base(&m_sbuf)
     {}
     explicit
