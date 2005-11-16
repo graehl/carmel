@@ -244,7 +244,7 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     basic_array_stream() : base(&m_sbuf)
     {}
     explicit
-    basic_array_stream(const char_type * p, size_type size)
+    basic_array_stream(const value_type * p, size_type size)
         :	base(&m_sbuf)
     {
         set_array(p,size);
@@ -258,15 +258,15 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
         set_array(c);
         rdbuf(&m_sbuf);
     }    
-    inline void set_array(const char_type * p)
+    inline void set_array(const value_type * p)
     {
         m_sbuf.set_array(p, traits::length(p));
     }
-    inline void set_array(const char_type * p, size_type size)
+    inline void set_array(const value_type * p, size_type size)
     {
         m_sbuf.set_array(p, size);
     }
-    inline void set_array(const std::basic_string<cT>& s)
+    inline void set_array(const std::basic_string<value_type>& s)
     {
         m_sbuf.set_array(s.c_str(), s.size());
     }
