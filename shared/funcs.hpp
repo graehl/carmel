@@ -26,6 +26,12 @@
 
 #include <vector>
 
+template <class pointed_to>
+void delete_now(std::auto_ptr<pointed_to> &p) {
+//    std::auto_ptr<pointed_to> take_ownership_and_kill(p);
+        delete p.release();
+}
+
 // all this for: (lambda (x y) (= x y))
 struct equal_to_typeless 
 {
@@ -317,6 +323,7 @@ void push_back_until(const std::string &term,In &in,Cont & cont)
 }
 
 
+// note: google groups on "vector clear deallocate" - you'll see that clear() doesn't free up memory - not so helpful when you hit an OOM exception and want to use a singleton vector instead
 template <class Vector> inline
 void reconstruct(Vector &v,size_t n,const typename Vector::value_type &val)
 {
@@ -337,6 +344,12 @@ void reconstruct(Vector &v,size_t n)
     */
     v.~Vector();
     new(&v)Vector(n);
+}
+
+template <class V>
+void reconstruct(V &v) {
+    v.~V();
+    new (&v)V();
 }
 
 
@@ -684,6 +697,11 @@ inline Float slightly_smaller(Float target) {
     return target * (1. / ONE_PLUS_EPSILON);
 }
 
+// note, more meaningful tests exist for values near 0, see Knuth
+// (but for logs, near 0 should be absolute-compared)
+inline bool same_within_abs_epsilon(double a,double b,double epsilon=1e-4) {
+    return fabs(a-b) < epsilon;
+}
 
 // requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
 // can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())

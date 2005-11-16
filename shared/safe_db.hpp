@@ -413,12 +413,19 @@ class safe_db
             db->put(NULL,&db_key,&db_data,flags),
             description);
     }
-    // returns size actually read
+    template <class Key>
+    inline void get_bytes_exact_size(const Key &key,void *buf, Db_size buflen,const char *description="safe_db::get_bytes_exact_size") 
+    {
+        require_size_equal(buflen,get_bytes(key,buf,buflen,description));            
+    }
+    
+    // returns size actually read (note: if key didn't exist, that's an exception - a 0 size payload is legit)
     template <class Key>
     inline Db_size get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="safe_db::get_bytes") 
     {
         return maybe_get_bytes(key,buf,buflen,description,false);
     }
+    
     // returns size of 0 if key wasn't found, size read if found
     template <class Key>
     inline Db_size maybe_get_bytes(const Key &key,void *buf, Db_size buflen,const char *description="safe_db::maybe_get_bytes",bool allow_notfound=true)
@@ -438,6 +445,14 @@ class safe_db
     {
         maybe_get_direct(key,data,description,false);
     }
+    
+    inline static void require_size_equal(Db_size expect,Db_size got,const char *description="safe_db::require_size_equal")
+    {
+        std::ostringstream o;
+        o << description << ": expected " << expect << " bytes, but got " << got;
+        throw DbException(o.str());
+    }
+    
 // returns false if key wasn't found
     template <class Key,class Data>    
     inline bool maybe_get_direct(const Key &key,Data *data,const char *description="safe_db::maybe_get_direct",bool allow_notfound=true) 
@@ -452,7 +467,7 @@ class safe_db
         if (allow_notfound && ret==DB_NOTFOUND)
             return false;
         db_try(ret,description);
-        assert(db_data.get_size()==sizeof(Data));
+        require_size_equal(sizeof(Data),db_data.get_size());
         return true;
     }
 //Data must support: Db_size to_buf(void *&data,Db_size maxdatalen)
