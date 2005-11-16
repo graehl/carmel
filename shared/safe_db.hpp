@@ -36,28 +36,30 @@ class safe_db
 {
  public:
     typedef u_int32_t Db_flags;
-    BOOST_STATIC_CONSTANT(Db_size,capacity_default=MAXBUF);
+#define SCON(a,b) BOOST_STATIC_CONSTANT(a,b)
+    SCON ( Db_size, capacity_default=MAXBUF);
 
     // put/get flags
-    BOOST_STATIC_CONSTANT(Db_flags,put_flags_default=PUT_FLAGS);
-    BOOST_STATIC_CONSTANT(Db_flags,overwrite=0);
-    BOOST_STATIC_CONSTANT(Db_flags,no_overwrite=DB_NOOVERWRITE);
+    SCON ( Db_flags, put_flags_default = PUT_FLAGS);
+    SCON ( Db_flags, overwrite = 0);
+    SCON ( Db_flags, no_overwrite = DB_NOOVERWRITE);
 
     // del_retcode returns
-    BOOST_STATIC_CONSTANT(Db_flags,not_found=DB_NOTFOUND);    
-    BOOST_STATIC_CONSTANT(Db_flags,key_empty=DB_KEYEMPTY);
+    SCON ( Db_flags, not_found = DB_NOTFOUND);    
+    SCON ( Db_flags, key_empty = DB_KEYEMPTY);
 
-    BOOST_STATIC_CONSTANT(DBTYPE,db_type_default=DB_TYPE_DEFAULT);
-    BOOST_STATIC_CONSTANT(DBTYPE,RECNO=DB_RECNO);
-    BOOST_STATIC_CONSTANT(DBTYPE,HASH=DB_HASH);
-    BOOST_STATIC_CONSTANT(DBTYPE,BTREE=DB_BTREE);
+    SCON ( DBTYPE, db_type_default = DB_TYPE_DEFAULT);
+    SCON ( DBTYPE, RECNO = DB_RECNO);
+    SCON ( DBTYPE, HASH = DB_HASH);
+    SCON ( DBTYPE, BTREE = DB_BTREE);
 
     // open_flags:
-    BOOST_STATIC_CONSTANT(Db_flags,READONLY=DB_RDONLY);
-    BOOST_STATIC_CONSTANT(Db_flags,READWRITE=0);
-    BOOST_STATIC_CONSTANT(Db_flags,MAYBE_CREATE=DB_CREATE);
-    BOOST_STATIC_CONSTANT(Db_flags,TRUNCATE=DB_TRUNCATE);
-    BOOST_STATIC_CONSTANT(Db_flags,CREATE=MAYBE_CREATE | TRUNCATE);
+    SCON ( Db_flags, READONLY = DB_RDONLY);
+    SCON ( Db_flags, READWRITE = 0);
+    SCON ( Db_flags, MAYBE_CREATE = DB_CREATE);
+    SCON ( Db_flags, TRUNCATE = DB_TRUNCATE);
+    SCON ( Db_flags, CREATE = MAYBE_CREATE | TRUNCATE);
+#undef SCON
     
     DBTYPE db_type_actual() 
     {
