@@ -349,8 +349,8 @@ inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,
 {
     WordSeparator<' '> sep;
     o << "[";
-    for (;i!=e;++i)
-        o << sep << *i;
+    for (;begin!=end;++begin)
+        o << sep << *begin;
     return o << "]";
 }
 
