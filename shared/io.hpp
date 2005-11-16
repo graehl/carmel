@@ -344,16 +344,21 @@ std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V)
 }
 
 
+template <class It,class Ch,class Tr>
+inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,It begin,It end) 
+{
+    WordSeparator<' '> sep;
+    o << "[";
+    for (;i!=e;++i)
+        o << sep << *i;
+    return o << "]";
+}
+
 template <class Cont,class Ch,class Tr>
 inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,const Cont &thing,typename
                                                  has_const_iterator<Cont>::type *SFINAE=0)
 {
-    WordSeparator<' '> sep;
-    o << "[";
-    for (typename Cont::const_iterator i=thing.begin(),e=thing.end();i!=e;++i) {
-        o << sep << *i;
-    }    
-    return o << "]";
+    return print_sequence(o,thing.begin(),thing.end());
 }
 
 template <class Cont,class Ch,class Tr>

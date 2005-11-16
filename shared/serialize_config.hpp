@@ -85,37 +85,41 @@ namespace serial = boost::serialization;
 #include <stdexcept>
 #include <fstream>
 
-template <class Data,class Ch,class Tr>
-inline void save_to_stream(std::basic_ostream<Ch,Tr> &o,const Data &d) 
+template <class Archive,class Data,class Ch,class Tr>
+inline void save_to_stream(std::basic_ostream<Ch,Tr> &o,const Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
 {
-    default_oarchive oa(o,ARCHIVE_FLAGS_DEFAULT);
+    Archive oa(o,flags);
     oa & d;
 }
 
-template <class Data,class Ch,class Tr>
-inline void load_from_stream(std::basic_istream<Ch,Tr> &i,Data &d) 
+template <class Archive,class Data,class Ch,class Tr>
+inline void load_from_stream(std::basic_istream<Ch,Tr> &i,Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
 {
-    default_iarchive ia(i,ARCHIVE_FLAGS_DEFAULT);
+    Archive ia(i,flags);
     ia & d;
 }
 
-template <class Data>
-inline void save_to_file(const std::string &fname,const Data &d) 
+template <class Archive,class Data>
+inline void save_to_file(const std::string &fname,const Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
 {
     std::ofstream o(fname.c_str());
     if (!o)
         throw std::runtime_error(std::string("Couldn't create output serialization file ").append(fname));
-    save_to_stream(o,d);
+    save_to_stream<Archive>(o,d,flags);
 }
 
-template <class Data>
-inline void load_from_file(const std::string &fname,Data &d) 
+template <class Archive,class Data>
+inline void load_from_file(const std::string &fname,Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
 {
     std::ifstream i(fname.c_str());
     if (!i)
         throw std::runtime_error(std::string("Couldn't read input serialization file ").append(fname));
-    load_from_stream(i,d);
+    load_from_stream<Archive>(i,d,flags);
 }
 
+#define load_from_file_default load_from_file<default_iarchive>
+#define save_from_file_default save_to_file<default_oarchive>
+#define load_from_stream_default load_from_stream<default_iarchive>
+#define save_from_stream_default save_to_stream<default_oarchive>
 
 #endif

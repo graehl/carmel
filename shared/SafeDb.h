@@ -49,6 +49,13 @@ class SafeDb
     {
         init(NULL);
     }
+    // open_flags:
+    enum {readonly=DB_READONLY,readwrite=0,create=DB_CREATE,truncate=DB_TRUNCATE,create_new=create & truncate};
+    SafeDb(const std::string &filename,Db_flags open_flags=readwrite,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
+    {
+        init(NULL);
+        open(filename,open_flags,db_type_default,db_flags);
+    }
     explicit SafeDb(Db *db_) {
         init(db_);
     }
@@ -118,7 +125,7 @@ class SafeDb
     // default: open existing for read/write
     /* db_flags: http://pybsddb.sourceforge.net/api_c/db_set_flags.html#DB_RECNUM
        (DB_DUP, DB_DUPSORT) */
-    void open(const std::string &filename,Db_flags open_flags=0,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
+    void open(const std::string &filename,Db_flags open_flags=readwrite,DBTYPE db_type=db_type_default,Db_flags db_flags=0) 
     {
         assert(db_type!=DB_QUEUE);
         state=(open_flags & DB_RDONLY) ? read_only : read_and_write;

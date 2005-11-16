@@ -26,6 +26,36 @@
 
 #include <vector>
 
+// all this for: (lambda (x y) (= x y))
+struct equal_to_typeless 
+{
+    equal_to_typeless() {}
+    equal_to_typeless(const equal_to_typeless &o) {}
+    template <class T1,class T2>
+    bool operator()(const T1 &x,const T2 &y) const
+    {
+        return x==y;
+    }
+};
+
+template <class Cont>
+struct push_backer
+{
+    Cont *cont;
+    typedef void result_type;
+    typedef typename Cont::value_type argument_type;
+    push_backer(Cont &container) : cont(&container) {}
+    template <class V>
+    void operator()(const V&v) const
+    {
+        cont->push_back(v);
+    }
+    void operator()() const
+    {
+        cont->push_back(argument_type());
+    }
+};
+
 struct delete_anything
 {
     template <class P>
@@ -34,9 +64,260 @@ struct delete_anything
         delete p;
     }    
 };
-    
 
-template <class Vector>
+template <class Cont> inline
+push_backer<Cont> make_push_backer(Cont &container) 
+{
+    return push_backer<Cont>(container);
+}
+
+// returns true if brackets found
+template <class Str,class size_type> inline
+bool
+substring_inside_pos(const Str &s,const Str &leftbracket,const Str &rightbracket,size_type &pos,size_type &n)
+{
+    size_type rightpos;
+    const size_type npos=Str::npos;
+    if (npos==(pos=s.find(leftbracket,0))) return false;
+    pos+=leftbracket.length();
+    if (npos==(rightpos=s.find(rightbracket,pos))) return false;
+    n=rightpos-pos;
+    return true;
+}
+
+// first is first substring (left->right) between leftbracket and rightbracket in s.
+// second is true if found, false if none found
+template <class Str> inline
+std::pair <Str,bool>
+substring_inside(const Str &s,const Str &leftbracket,const Str &rightbracket)
+{
+    typedef std::pair <Str,bool> Ret;
+    typename Str::size_type pos,n;
+    if (substring_inside_pos(s,leftbracket,rightbracket,pos,n))
+        return Ret(Str(s,pos,n),true);
+    else
+        return Ret(Str(),false);
+}
+
+// parse both streams as a sequence of ParseAs, comparing for equality
+template <class ParseAs,class Istream> inline
+bool
+equal_streams_as_seq(Istream &i1,Istream &i2)
+{
+    /* could almost write as istream_iterator<ParseAs>, std::equal - except that
+     doesn't check both iterators' end
+    */
+    ParseAs v1,v2;
+    for (;;) {
+        bool got1=i1>>v1;
+        bool got2=i2>>v2;
+        if (got1) {
+            if (!got2) return false; //2 ended first
+        } else {
+            if (!got2) return true; // both ended together
+            return false; // 1 ended first
+        }
+        if (!(v1==v2)) return false; // value mismatch
+    }
+    //unreachable!
+    assert(0);
+}
+
+template <class ParseAs,class Ch,class Tr> inline
+bool
+equal_strings_as_seq(const std::basic_string<Ch,Tr> &s1,const std::basic_string<Ch,Tr> &s2)
+{
+    std::basic_stringstream<Ch,Tr> i1(s1),i2(s2);
+    return equal_streams_as_seq<ParseAs>(i1,i2);
+}
+
+//std::equal can only be called if sequences are same length!
+template <class I1,class I2,class Equal> inline
+bool equal_safe(I1 b1,I1 e1,I2 b2,I2 e2,Equal eq)
+{
+    while (b1 != e1) {
+        if (b2 == e2) return false;
+        if (*b2++ != *e2++)
+            return false;
+    }
+    // now b1 == e1
+    return b2==e2;
+}
+
+template <class I1,class I2> inline
+bool equal_safe(I1 b1,I1 e1,I2 b2,I2 e2)
+{
+    return equal_safe(b1,e1,b2,e2,equal_to_typeless());
+}
+
+//oops: didn't notice that I'd already implemented this before starts_with.  two implementations for testing anyway ;)
+template <class Istr, class Isubstr> inline
+bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
+{
+    while (bsub != esub) {
+        if (bstr == estr)
+            return false;
+        if (*bsub++ != *bstr++)
+            return false;
+    }
+    return true;
+}
+
+template <class Istr, class Isubstr> inline
+bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
+{
+    while (bsub != esub) {
+        if (bstr == estr)
+            return false;
+        if (*--esub != *--estr)
+            return false;
+    }
+    return true;
+}
+
+template <class It1,class It2,class Pred> inline
+bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end,Pred equals)
+{
+    for(;;) {
+        if (prefix==prefix_end) return true;
+        if (str==str_end) return false;
+        if (!equals(*prefix,*str)) return false;
+        ++prefix;++str;
+    }
+    //unreachable
+    assert(0);
+}
+
+template <class It1,class It2> inline
+bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end)
+{
+    return starts_with(str,str_end,prefix,prefix_end,equal_to_typeless());
+}
+
+template <class Ch,class Tr,class CharIt> inline
+bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end) 
+{
+    typedef std::istream_iterator<Ch> II;
+    II ibeg(i),iend;
+    return match_begin(ibeg,iend,begin,end);
+}
+
+template <class Ch,class Tr,class Str> inline
+bool expect_consuming(std::basic_istream<Ch,Tr> &i,const Str &str)
+{
+    return expect_consuming(i,str.begin(),str.end());
+}
+
+
+template <class Str>
+inline
+bool starts_with(const Str &str,const Str &prefix) 
+{
+    return starts_with(str.begin(),str.end(),prefix.begin(),prefix.end());
+}
+
+template <class Str>
+inline
+bool ends_with(const Str &str,const Str &suffix) 
+{
+//        return starts_with(str.rbegin(),str.rend(),suffix.rbegin(),suffix.rend());
+        return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
+
+}
+
+
+#if 0
+inline
+bool starts_with(const std::string &str,const std::string &prefix) 
+{
+    return match_begin(str.begin(),str.end(),prefix.begin(),prefix.end());
+//    return (str.find(prefix)==0);
+}
+
+inline
+bool ends_with(const std::string &str,const std::string &suffix) 
+{
+    return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
+//        return starts_with(str.rbegin(),str.rend(),suffix.rbegin(),suffix.rend());
+/*
+  const std::string::size_type slen=str.length();
+    return (str.rfind(suffix)==len-suffix.length());
+*/    
+}
+#endif 
+
+template <class Str,class Data> inline
+void string_into(const Str &str,Data *data) 
+{
+    std::istringstream i(str);
+    if (!(i>>*data))
+        throw std::runtime_error("Couldn't convert (string_into): "+str);
+}
+
+template <class Str,class Data,class size_type> inline
+void substring_into(const Str &str,size_type pos,size_type n,Data *data) 
+{
+    std::istringstream i(str,pos,n);
+    if (!(i>>*data))
+        throw std::runtime_error("Couldn't convert (string_into): "+str);
+}
+
+template <class Data,class Str,class size_type> inline
+Data string_to(const Str &str,size_type pos,size_type n)
+{
+    Data ret;
+    substring_into(str,pos,n&ret);
+    return ret;
+}
+
+template <class Str> inline
+void erase_begin(Str &s,unsigned n) 
+{
+    s.erase(0,n);
+}
+
+template <class Str> inline
+void erase_end(Str &s,unsigned n) 
+{
+    s.erase(s.length()-n,n);
+}
+
+template <class Map,class Key> inline
+typename Map::data_type *find_second(const Map &map,const Key &key)
+{
+    typename Map::const_iterator find_it=map.find(key);
+    if (find_it == map.end())
+        return NULL;
+    return &find_it->second;
+}
+
+// func(const Func::argument_type &val) - assumes val can be parsed from string tokenization (no whitespace)
+template <class In,class Func> inline
+void parse_until(const std::string &term,In &in,Func func)
+{
+    std::string s;
+    bool last=false;
+    while(!last && (in>>s) ) {
+        if (!term.empty() && ends_with(s,term)) {
+            last=true;
+            erase_end(s,term.length());
+        }
+        if (s.empty())
+            break;
+        typename Func::argument_type val;
+        string_into(s,&val);
+        func(val);
+    }
+};
+
+template <class In,class Cont> inline
+void push_back_until(const std::string &term,In &in,Cont & cont) 
+{
+    parse_until(term,in,make_push_backer(cont));
+}
+
+
+template <class Vector> inline
 void reconstruct(Vector &v,size_t n,const typename Vector::value_type &val)
 {
     /*
@@ -47,7 +328,7 @@ void reconstruct(Vector &v,size_t n,const typename Vector::value_type &val)
     new(&v)Vector(n,val);
 }
 
-template <class Vector>
+template <class Vector> inline
 void reconstruct(Vector &v,size_t n)
 {
     /*
@@ -59,7 +340,7 @@ void reconstruct(Vector &v,size_t n)
 }
 
 
-template <class Ck,class Cv,class Cr>
+template <class Ck,class Cv,class Cr> inline
 void zip_lists_to_pairlist(const Ck &K,const Cv &V,Cr &result)
 {
     result.clear();
@@ -70,7 +351,7 @@ void zip_lists_to_pairlist(const Ck &K,const Cv &V,Cr &result)
     assert(ik==ek && iv==ev);
 }
 
-template <class Ck,class Cv,class Cr>
+template <class Ck,class Cv,class Cr> inline
 std::vector<std::pair<typename Ck::value_type,typename Cv::value_type> > zip_lists(const Ck &K,const Cv &V)
 {
     std::vector<std::pair<typename Ck::value_type,typename Cv::value_type> > result;
@@ -128,8 +409,7 @@ struct compare_indirect_array : public Comp
 };
 
     
-
-template <class FloatVec>
+template <class FloatVec> inline
 typename FloatVec::value_type
 norm(const FloatVec &vec) 
 {
@@ -143,7 +423,7 @@ norm(const FloatVec &vec)
     return sqrt(sumsq);
 }
 
-template <class FloatVec,class Scalar>
+template <class FloatVec,class Scalar> inline
 void
 scale(FloatVec &vec,const Scalar &scale) 
 {
@@ -152,7 +432,7 @@ scale(FloatVec &vec,const Scalar &scale)
         *i*=scale;
 }
 
-template <class FloatVec,class Scalar>
+template <class FloatVec,class Scalar> inline
 void
 unscale(FloatVec &vec,const Scalar &scale) 
 {
@@ -161,7 +441,7 @@ unscale(FloatVec &vec,const Scalar &scale)
         *i/=scale;
 }
 
-template <class FloatVec>
+template <class FloatVec> inline
 typename FloatVec::value_type
 normalize(FloatVec &vec) 
 {
@@ -173,7 +453,7 @@ normalize(FloatVec &vec)
     return n;
 }
 
-template <class FloatVec,class V2>
+template <class FloatVec,class V2> inline
 typename FloatVec::value_type
 norm_of_inner_product(const FloatVec &vec,const V2 &v2)
 {
@@ -190,7 +470,7 @@ norm_of_inner_product(const FloatVec &vec,const V2 &v2)
     return sqrt(sumsq);
 }
 
-template <class V1,class V2,class Vout>
+template <class V1,class V2,class Vout> inline
 void inner_product(const V1 &v1,const V2 &v2,Vout &vout) 
 {
     vout.clear();
@@ -202,7 +482,7 @@ void inner_product(const V1 &v1,const V2 &v2,Vout &vout)
         vout.push_back(*iv1 * *iv2);
 }
 
-template <class V1,class V2,class Vout>
+template <class V1,class V2,class Vout> inline
 std::vector<typename V1::value_type> inner_product(const V1 &v1,const V2 &v2) 
 {
     std::vector<typename V1::value_type> ret;
@@ -210,7 +490,7 @@ std::vector<typename V1::value_type> inner_product(const V1 &v1,const V2 &v2)
     return ret;
 }
 
-template <class C>
+template <class C> inline
 void resize_up_for_index(C &c,size_t i) 
 {
     const size_t newsize=i+1;
@@ -228,19 +508,19 @@ struct null_terminated_iterator
     
 
 // I hope you have an efficient swap :)
-template <class Container>
-inline void compact(Container &c) {
+template <class Container> inline
+void compact(Container &c) {
     Container(c).swap(c); // copy (-> temp), swap, temp destructed = old destructed
 }
 
-template <class c,class t,class a>
-inline void compact(std::basic_string<c,t,a> &s) {
+template <class c,class t,class a> inline
+void compact(std::basic_string<c,t,a> &s) {
     s.reserve(0); // suggested by std to shrink size to actual amount used.
 }
 
 #include <string>
 
-template <typename Container>
+template <typename Container> inline
 void stringtok (Container &container, std::string const &in, const char * const delimiters = " \t\n")
 {
     const std::string::size_type len = in.length();
@@ -263,30 +543,6 @@ void stringtok (Container &container, std::string const &in, const char * const 
             container.push_back (in.substr(i, j-i));
         i = j + 1;
     }
-}
-
-template <class Istr, class Isubstr>
-bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
-{
-    while (bsub != esub) {
-        if (bstr == estr)
-            return false;
-        if (*bsub++ != *bstr++)
-            return false;
-    }
-    return true;
-}
-
-template <class Istr, class Isubstr>
-bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
-{
-    while (bsub != esub) {
-        if (bstr == estr)
-            return false;
-        if (*--esub != *--estr)
-            return false;
-    }
-    return true;
 }
 
 template <class size_type,class inputstream>
@@ -387,8 +643,11 @@ inline void maybe_decrease_min(To &to,const From &from) {
 # ifndef FLOAT_EPSILON
 #  define FLOAT_EPSILON .00001
 # endif
+# ifndef EPSILON
 static const double EPSILON=FLOAT_EPSILON;
+# endif 
 static const double ONE_PLUS_EPSILON=1+EPSILON;
+#endif
 
 //#define ONE_PLUS_EPSILON (1+EPSILON)
 
@@ -498,11 +757,6 @@ finder<P> make_finder(const P& pred)
 
 #define INDIRECT_PROTO2(type,method,t1,v1,t2,v2) INDIRECT_STRUCT2(type,method,t2,v2)   \
         void method(t1 v1,t2 v2)
-
-
-
-
-#endif
 
 /*
 template <typename T,size_t n>
@@ -739,8 +993,6 @@ both_functors_byref<A,B> make_both_functors_byref(A &a_,B &b_)
 {
     return both_functors_byref<A,B>(a_,b_);
 }
-
-
 
 
 /*
@@ -1037,44 +1289,44 @@ struct indirect_gt {
     }
 };
 
-  template <class ForwardIterator>
-  bool is_sorted(ForwardIterator begin, ForwardIterator end)
-  {
+template <class ForwardIterator>
+bool is_sorted(ForwardIterator begin, ForwardIterator end)
+{
     if (begin == end) return true;
 
     ForwardIterator next = begin ;
     ++next ;
     for ( ; next != end; ++begin , ++next) {
-      if (*next < *begin) return false;
+        if (*next < *begin) return false;
     }
 
     return true;
-  }
+}
 
-  template <class ForwardIterator, class StrictWeakOrdering>
-  bool is_sorted(ForwardIterator begin, ForwardIterator end,
-                 StrictWeakOrdering comp)
-  {
+template <class ForwardIterator, class StrictWeakOrdering>
+bool is_sorted(ForwardIterator begin, ForwardIterator end,
+               StrictWeakOrdering comp)
+{
     if (begin == end) return true;
 
     ForwardIterator next = begin ;
     ++next ;
     for ( ; next != end ; ++begin, ++next) {
-      if ( comp(*next, *begin) ) return false;
+        if ( comp(*next, *begin) ) return false;
     }
 
     return true;
-  }
+}
 
-  template <class ForwardIterator, class ValueType >
-  void iota(ForwardIterator begin, ForwardIterator end, ValueType value)
-  {
+template <class ForwardIterator, class ValueType >
+void iota(ForwardIterator begin, ForwardIterator end, ValueType value)
+{
     while ( begin != end ) {
-      *begin = value ;
-      ++begin ;
-      ++value ;
+        *begin = value ;
+        ++begin ;
+        ++value ;
     }
-  }
+}
 
 #ifdef TEST
 #include "test.hpp"
@@ -1083,13 +1335,60 @@ struct indirect_gt {
 #endif
 
 #ifdef TEST
+const char *TEST_starts_with[]={
+    "s",
+    "st",
+    "str",
+    "str1"
+};
+
+const char *TEST_ends_with[]={
+    "1",
+    "r1",
+    "tr1",
+    "str1"
+};
+// NOTE: could use substring but that's more bug-prone ;D
 
 BOOST_AUTO_UNIT_TEST( TEST_FUNCS )
 {
+    using namespace std;
+    string s1("str1"),emptystr;
+    BOOST_CHECK(starts_with(s1,emptystr));
+    BOOST_CHECK(starts_with(emptystr,emptystr));
+    BOOST_CHECK(ends_with(s1,emptystr));
+    BOOST_CHECK(ends_with(emptystr,emptystr));
+    BOOST_CHECK(!starts_with(s1,string("str11")));
+    BOOST_CHECK(!ends_with(s1,string("sstr1")));
+    BOOST_CHECK(!starts_with(s1,string("str*")));
+    BOOST_CHECK(!ends_with(s1,string("*tr1")));
+    BOOST_CHECK(!ends_with(s1,string("str*")));
+    BOOST_CHECK(!starts_with(s1,string("*tr1")));
+    for (unsigned i=0;i<4;++i) {
+        string starts(TEST_starts_with[i]),ends(TEST_ends_with[i]);        
+        BOOST_CHECK(starts_with(s1,starts));
+        BOOST_CHECK(ends_with(s1,ends));
+        BOOST_CHECK(match_begin(s1.begin(),s1.end(),starts.begin(),starts.end()));
+        BOOST_CHECK(match_end(s1.begin(),s1.end(),ends.begin(),ends.end()));
+        if (i!=3) {            
+            BOOST_CHECK(!starts_with(s1,ends));
+            BOOST_CHECK(!ends_with(s1,starts));        
+            BOOST_CHECK(!match_end(s1.begin(),s1.end(),starts.begin(),starts.end()));
+            BOOST_CHECK(!match_begin(s1.begin(),s1.end(),ends.begin(),ends.end()));
+        }        
+    }
+    string s2(" s t  r1");
+    BOOST_CHECK(equal_strings_as_seq<char>(s1,s2));
+    BOOST_CHECK(!equal_strings_as_seq<string>(s1,s2));
+    string s3(" s \nt  \tr1 ");
+    BOOST_CHECK(equal_strings_as_seq<char>(s2,s3));
+    BOOST_CHECK(equal_strings_as_seq<string>(s2,s3));
+    string s4("str1a");
+    BOOST_CHECK(!equal_strings_as_seq<string>(s1,s4));
+    BOOST_CHECK(!equal_strings_as_seq<char>(s1,s4));
+    BOOST_CHECK(!equal_strings_as_seq<char>(s4,s1));    
 }
 
 #endif
 
-
 #endif
-
