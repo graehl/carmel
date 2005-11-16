@@ -33,7 +33,7 @@ template <DBTYPE DB_TYPE=DB_RECNO,u_int32_t PUT_FLAGS=DB_NOOVERWRITE,size_t MAXB
 class SafeDb 
 {
  public:
-    enum {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE, not_found=DB_NOTFOUND,key_empty=DB_KEYEMPTY };
+    enum make_not_anon_646774880 {capacity_default=MAXBUF, put_flags_default=PUT_FLAGS, overwrite=0, no_overwrite=DB_NOOVERWRITE, not_found=DB_NOTFOUND,key_empty=DB_KEYEMPTY };
     static const DBTYPE db_type_default=DB_TYPE;
     
     DBTYPE db_type_actual() 
@@ -50,7 +50,7 @@ class SafeDb
         init(NULL);
     }
     // open_flags:
-    enum {READONLY=DB_RDONLY,READWRITE=0,MAYBE_CREATE=DB_CREATE,TRUNCATE=DB_TRUNCATE,CREATE=MAYBE_CREATE & TRUNCATE};
+    enum make_not_anon_923260484 {READONLY=DB_RDONLY,READWRITE=0,MAYBE_CREATE=DB_CREATE,TRUNCATE=DB_TRUNCATE,CREATE=MAYBE_CREATE & TRUNCATE};
     SafeDb(const std::string &filename,Db_flags open_flags=READWRITE,DBTYPE db_type=db_type_default,Db_flags db_flags=0)
     {
         init(NULL);
@@ -93,7 +93,7 @@ class SafeDb
         db_try(db->sync(0),"SafeDb::sync");
     }
     int state;
-    enum {
+    enum make_not_anon_808636420 {
         closed=0,read_only=1,write=2,read_and_write=read_only&write
     };
     void ok_to_write()
