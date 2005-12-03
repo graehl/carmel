@@ -28,6 +28,7 @@
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <iterator>
+#include <boost/config.hpp>
 
 //#include <boost/type_traits.hpp>
 
@@ -38,14 +39,26 @@
 // course.  as long as you don't use any allocation, you can think of this as an
 // array-substring (for contiguous things)
 template <typename T,typename Alloc=std::allocator<T> > class Array : protected Alloc {
+ public:
+    typedef T value_type;
+    typedef value_type *iterator;
+    typedef const value_type *const_iterator;
+    typedef T &reference;
+    typedef const T& const_reference;
+    typedef unsigned size_type;
+    
 protected:
     //unsigned int space;
     T *vec;
     T *endspace;
 public:
-    enum make_not_anon_1 { REPLACE=0, APPEND=1 };
-    enum make_not_anon_2 { BRIEF=0, MULTILINE=1 };
-    enum make_not_anon_3 { DUMMY=0 }; // msvc++ insists on amibuity between template Writer print and bool 2nd arg ...
+    BOOST_STATIC_CONSTANT(bool,REPLACE=0);
+    BOOST_STATIC_CONSTANT(bool,APPEND=1);
+    
+    BOOST_STATIC_CONSTANT(bool,BRIEF=0);
+    BOOST_STATIC_CONSTANT(bool, MULTILINE=1);
+
+//    BOOST_STATIC_CONSTANT(bool,DUMMY=0); // msvc++ insists on amibuity between template Writer print and bool 2nd arg ...
 
     T & at(unsigned int index) const { // run-time bounds-checked
         T *r=vec+index;
@@ -85,12 +98,6 @@ public:
         return Array<T,Alloc>(begin()+start,begin()+end);
     }
 
-    typedef T value_type;
-    typedef value_type *iterator;
-    typedef const value_type *const_iterator;
-    typedef T &reference;
-    typedef const T& const_reference;
-
     void construct() {
         for (T *p=vec;p!=endspace;++p)
             PLACEMENT_NEW(p) T();
@@ -119,14 +126,14 @@ public:
     }
 
     template <class charT, class Traits>
-    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
+    std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
         {
             return range_print(o,begin(),end(),DefaultWriter(),multiline);
         }
 
     typedef void has_print_writer;
     template <class charT, class Traits, class Writer >
-    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,Writer w,bool multiline=false) const
+    std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,Writer w,bool multiline=false) const
         {
             return range_print(o,begin(),end(),w,multiline);
         }
@@ -224,8 +231,11 @@ public:
     {
         assert(endi <= source.size());
         vec=&(source[starti]);
-        vec=&(source[endi]);
+        endspace=&(source[endi]);
     }
+
+    template <class A2>
+    Array(typename std::vector<T,A2>::const_iterator begin,typename std::vector<T,A2>::const_iterator end) : vec(const_cast<T *>(&*begin)), endspace(const_cast<T *>(&*end)) { }
     
     Array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
     Array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
@@ -795,20 +805,20 @@ public:
 
 
     template <class charT, class Traits>
-    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
+    std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
         {
             return range_print(o,this->begin(),end(),DefaultWriter(),multiline);
         }
 
     template <class charT, class Traits>
-    std::ios_base::iostate print_multiline(std::basic_ostream<charT,Traits>& o) const
+    std::basic_ostream<charT,Traits>& print_multiline(std::basic_ostream<charT,Traits>& o) const
         {
             return range_print(o,this->begin(),end(),DefaultWriter(),true);
         }
 
 
     template <class charT, class Traits, class Writer >
-    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
+    std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,Writer writer,bool multiline=false) const
         {
             return range_print(o,this->begin(),end(),writer,multiline);
         }

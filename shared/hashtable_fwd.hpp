@@ -2,11 +2,17 @@
 #ifndef HASHTABLE_FWD_HPP
 #define HASHTABLE_FWD_HPP
 
+#ifndef USE_GRAEHL_HASH_MAP
+# define USE_GNU_HASH_MAP
+#endif
+
+#include <cstddef>
+
 #define GOLDEN_MEAN_FRACTION 2654435769U
 
-inline size_t cstr_hash (const char *p)
+inline std::size_t cstr_hash (const char *p)
 {
-        size_t h=0;
+        std::size_t h=0;
 #ifdef OLD_HASH
         unsigned int g;
         while (*p != 0) {
@@ -23,10 +29,26 @@ inline size_t cstr_hash (const char *p)
 #endif
 }
 
+#define FUNCTION_OBJECT_FROM_FUNCTION(funcname,return_type)         \
+struct funcname ## _t \
+{ \
+    typedef return_type result_type; \
+    template <class T1> \
+    result_type operator()(const T1 &x) const \
+    { \
+        return funcname(x);                     \
+    } \
+}
+
+#define HASH_FROM_FUNCTION(funcname) FUNCTION_OBJECT_FROM_FUNCTION(funcname,std::size_t)
+
+HASH_FROM_FUNCTION(cstr_hash);
+
+
 #ifndef GOLDEN_MEAN_FRACTION
 #define GOLDEN_MEAN_FRACTION=2654435769U;
 #endif
-inline size_t uint_hash(unsigned int key)
+inline std::size_t uint_hash(unsigned int key)
 {
   /*
 In Knuth's "The Art of Computer Programming", section 6.4, a multiplicative hashing scheme is introduced as a way to write hash function. The key is multiplied by the golden ratio of 2^32 (2654435761) to produce a hash result.
@@ -57,15 +79,15 @@ Since 2654435761 and 2^32 has no common factors in common, the multiplication pr
   tmp ^=  ((unsigned)tmp >> 16);
   tmp +=  (tmp << 7);
   tmp ^= ((unsigned)tmp>> 22);
-  return (size_t)tmp;
+  return (std::size_t)tmp;
 # else
 
 #ifndef TRIVIAL_INT_HASH
   key *= GOLDEN_MEAN_FRACTION; // mixes the lower bits into the upper bits, reversible
   key ^= (key >> 16); // gets some of the goodness back into the lower bits, reversible
-  return (size_t)key;
+  return (std::size_t)key;
 #else
-  return (size_t)key;
+  return (std::size_t)key;
 #endif
 #endif
   /*
@@ -77,39 +99,40 @@ Since 2654435761 and 2^32 has no common factors in common, the multiplication pr
     key ^=  (key >> 16);
     return key;
   */
-
 }
 
-inline size_t mix_hash(size_t a, size_t b)
+HASH_FROM_FUNCTION(uint_hash);
+
+inline std::size_t mix_hash(std::size_t a, std::size_t b)
 {
     a ^= (b<<1);
-    if (sizeof(size_t) ==4)
+    if (sizeof(std::size_t) == 4)
         a ^= (b>>31 & 0x1); // you could just not do this and lose the MSB of b.
         // faster and probably not more collisions.  I
         // suppose with multiple mixhash it becomes an issue
     return a;
 
-//     size_t tmp;
+//     std::size_t tmp;
 //     tmp = a;
 //     tmp ^= (b<<1);
-// #if sizeof(size_t)==4
+// #if sizeof(std::size_t)==4
 //         tmp ^= (b>>31 & 0x1); // you could just not do this and lose the MSB of b.
 //         // faster and probably not more collisions.  I
 //         // suppose with multiple mixhash it becomes an issue
 // # else
-// #  if sizeof(size_t)!=8
-// #   error please adjust bit rotation for size_t (which is not 4 or 8 bytes)
+// #  if sizeof(std::size_t)!=8
+// #   error please adjust bit rotation for std::size_t (which is not 4 or 8 bytes)
 // #  endif
-// //    else if (sizeof(size_t)==8)
+// //    else if (sizeof(std::size_t)==8)
 //         tmp ^= (b>>63 & 0x1);
 // #  endif
 //     return tmp;
 }
 
 template <class I1,class I2,class Hval>
-inline size_t hash_range(I1 i,I2 end,Hval h) 
+inline std::size_t hash_range(I1 i,I2 end,Hval h) 
 {
-    size_t hashed=0;
+    std::size_t hashed=0;
     for (;i!=end;++i) {
         hashed=mix_hash(hashed,h(*i));
     }
@@ -117,7 +140,7 @@ inline size_t hash_range(I1 i,I2 end,Hval h)
 }
 
 
-#ifdef GNU_HASH_MAP
+#ifdef USE_GNU_HASH_MAP
 # define USE_STD_HASH_MAP
 # ifndef __NO_GNU_NAMESPACE__
 //using namespace __gnu_cxx;
@@ -133,14 +156,13 @@ template <class Char,class T,class A>
 struct hash<std::basic_string<Char,T,A> > 
 {
     typedef std::basic_string<Char,T,A> arg_type;
-    const size_t operator()( const  arg_type &s ) const 
+    const std::size_t operator()( const  arg_type &s ) const 
     {
-                size_t h=0;
+                std::size_t h=0;
 //        return cstr_hash(s.c_str());
                 for (typename arg_type::const_iterator i=s.begin(),e=s.end();i!=e;++i)
                 h = 31 * h + *i; // should optimize to ( h << 5 ) - h if faster
         return h;
-        
     }
 };
 HASHNS_E
@@ -167,16 +189,41 @@ inline typename HashTable<K,V,H,P,A>::iterator find_value(const HashTable<K,V,H,
 #endif
 
 
-#ifdef USE_STD_HASH_MAP
+#ifndef USE_GRAEHL_HASH_MAP
 template <class K,class V,class H,class P,class A>
 inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
 {
   return &(ht[k]=v);
 }
+
+template <class Map,class Key> inline
+const typename Map::data_type *find_second(const Map &map,const Key &key)
+{
+    typename Map::const_iterator find_it=map.find(key);
+    if (find_it == map.end())
+        return NULL;
+    return &find_it->second;
+}
+
+template <class Map,class Key> inline
+typename Map::data_type *find_second(Map &map,const Key &key)
+{
+    typename Map::iterator find_it=map.find(key);
+    if (find_it == map.end())
+        return NULL;
+    return &find_it->second;
+}
+
 #else
 // graehl hash map
 
 template <class K,class V,class H,class P,class A> class HashTable ;
+
+template <class K,class V,class H,class P,class A>
+inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
+{
+  return ht.find_second(first);
+}
 
 #define HASHNS
 #define HASHNS_B
@@ -185,7 +232,7 @@ template <class K,class V,class H,class P,class A> class HashTable ;
 template <class T> struct hash;
 
   template <class C>
-  struct hash { size_t operator()(const C &c) const { return c.hash(); } };
+  struct hash { std::size_t operator()(const C &c) const { return c.hash(); } };
 #endif
 
 template<class T1,class T2,class T3,class T4,class T5,class A,class B>
@@ -213,7 +260,7 @@ std::basic_ostream<A,B>&
 HASHNS_B \
 template<> struct hash<C> \
 { \
-  size_t operator()(const C x) const
+  std::size_t operator()(const C x) const
 
 
 
@@ -221,7 +268,7 @@ template<> struct hash<C> \
 HASHNS_B \
 template<> struct hash<C> \
 { \
-  size_t operator()(const C& x) const
+  std::size_t operator()(const C& x) const
 
 #define END_HASH        \
 };\
@@ -230,10 +277,10 @@ HASHNS_E
 HASHNS_B
   template<class P> struct hash<P *>
   {
-    const size_t operator()( const P *x ) const
+    const std::size_t operator()( const P *x ) const
     {
 //      const unsigned GOLDEN_MEAN_FRACTION=2654435769U;
-      return ((size_t)x / sizeof(P))*GOLDEN_MEAN_FRACTION;
+      return ((std::size_t)x / sizeof(P))*GOLDEN_MEAN_FRACTION;
     }
   };
 HASHNS_E
@@ -243,24 +290,23 @@ template <class C,class H=
 >
 struct hash_container
 {
-    const size_t operator()(const C& c) const 
+    const std::size_t operator()(const C& c) const 
     {
         return hash_range(c.begin(),c.end(),H());
     }
 };
-
-
-template <class K,class V,class H,class P,class A>
-inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
-{
-  return ht.find_second(first);
-}
 
 template <class K,class V,class H,class P,class A>
 inline
   typename HashTable<K,V,H,P,A>::insert_return_type insert(HashTable<K,V,H,P,A>& ht,const K& first,const V &v=V())
 {
   return ht.insert(first,v);
+}
+
+template <class InsertRet>
+inline bool was_inserted(const InsertRet &insert_ret) 
+{
+    return insert_ret.second;
 }
 
 #endif
