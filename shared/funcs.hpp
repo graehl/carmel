@@ -23,26 +23,225 @@
 #include <functional>
 #include <algorithm>
 #include <iostream>
+#include <cstddef>
 
 #include <vector>
+
+//#define TOKENIZE_KEY_VAL_DEBUG
+
+#ifdef TOKENIZE_KEY_VAL_DEBUG
+# define TOKENIZE_KEY_VAL_IF_DBG(a) a
+#else
+# define TOKENIZE_KEY_VAL_IF_DBG(a)
+#endif 
+
+template <class F>
+void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':') 
+{
+    typedef typename F::key_type Key;
+    typedef typename F::data_type Data;
+    using namespace std;    
+    typedef pair<Key,Data> Component;
+    typedef pair<Key,Data> Component;
+    typedef string::size_type Pos;
+    typedef string::const_iterator It;
+    Component to_add;
+    for (It i=s.begin(),e=s.end();;) {
+        for(It key_beg=i; ;++i) {
+            if (i==e) return;
+            TOKENIZE_KEY_VAL_IF_DBG(DBP2(*i,i-s.begin()););
+            if (*i == key_val_sep) { // [last,i) is key
+                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("key",string(key_beg,i)););
+                string_into(string(key_beg,i),to_add.first);
+                break; // done key, expect val
+            }
+        }
+        for (It val_beg=++i; ;++i) {
+            TOKENIZE_KEY_VAL_IF_DBG(
+                if (i==e) DBPC2("<END>",i-s.begin());                    
+                DBP2(*i,i-s.begin());
+                );
+            if (i == e || *i == pair_sep) {
+                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("val",string(val_beg,i)););
+                string_into(string(val_beg,i),to_add.second);
+                f(to_add);
+                if (i==e) return;
+                ++i;
+                break; // next key/val
+            }
+        }
+    }
+}
+
+
+template <class T1, class T2>
+T1 at_least(const T1 &val,const T2 &ensure_min) 
+{
+    return (val < ensure_min) ? ensure_min : val;
+}
+
+template <class T1, class T2>
+T1 at_most(const T1 &val,const T2 &ensure_max) 
+{
+    return (val > ensure_max) ? ensure_max : val;
+}
+
+
+template <class Set>
+struct not_in_set 
+{
+    const Set *set;
+    not_in_set(const Set *set_) : set(set_) {}
+    not_in_set(const not_in_set<Set> &o) : set(o.set) {}
+    typedef bool result_type;
+    template <class V>
+    bool operator()(const V& v) const
+    {
+        return set->find(v)==set->end();
+    }
+};
+
+template <class Set>
+not_in_set<Set> make_not_in_set(Set *s) 
+{
+    return not_in_set<Set>(s);
+}
+
+template <class Container,class Predicate>
+void remove_if(Container &cont,Predicate pred)
+{
+    cont.erase(std::remove_if(cont.begin(),cont.end(),pred),cont.end());
+}
+
+template <class Container,class Predicate>
+void remove_if_stable(Container &cont,Predicate pred)
+{
+    cont.erase(std::remove_copy_if(cont.begin(),cont.end(),pred),cont.end());
+}
+
+template <class Container> inline
+void trim(Container &cont,std::size_t size)
+{
+    if (size < cont.size())
+        cont.resize(size); //        cont.erase(cont.begin()+size,cont.end());
+
+}
+
+template <class Container> inline
+void grow(Container &cont,std::size_t size,const typename Container::value_type &default_value=typename Container::value_type())
+{
+    std::size_t contsz=cont.size();    
+    if (size > contsz)
+        cont.resize(size,default_value); //       cont.insert(cont.end()+size,size-contsz,default_value);
+}
+
+template <class Container,class Iter> inline
+void append(Container &cont,Iter beg,Iter end) 
+{
+    cont.insert(cont.end(),beg,end);
+}
+
+template <class Container> inline
+typename Container::value_type &at_expand(Container &vec,std::size_t index,const typename Container::value_type &default_value=typename Container::value_type()) 
+{
+    std::size_t sz=vec.size();
+    if (index>=sz)
+        vec.resize(index+1,default_value); //     vec.insert(vec.end(),(index-sz)+1,default_value);
+    return vec[index];
+}
+
+template <class Container> inline
+void maybe_decrease_min_at(Container &vec,unsigned index,const typename Container::value_type &decrease_to,const typename Container::value_type &infinity=HUGE_VAL) 
+{
+    typename Container::value_type &f=at_expand(vec,index,infinity);
+    if (f > decrease_to)
+        f = decrease_to;
+}
+
+#define FUNCTION_OBJ_X(name,return_type,expr)        \
+struct name \
+{ \
+    typedef return_type result_type; \
+    template <class T1> \
+    result_type operator()(const T1 &x) const \
+    { \
+        return expr; \
+    } \
+}
+
+
+#define FUNCTION_OBJ_X_Y(name,return_type,expr)        \
+struct name \
+{ \
+    typedef return_type result_type; \
+    template <class T1,class T2> \
+    result_type operator()(const T1 &x,const T2 &y) const \
+    { \
+        return expr; \
+    } \
+}
+
+#define PREDICATE_OBJ_X_Y(name,expr) FUNCTION_OBJ_X_Y(name,bool,expr)
+
+PREDICATE_OBJ_X_Y(less_typeless,x<y);
+PREDICATE_OBJ_X_Y(greater_typeless,x>y);
+PREDICATE_OBJ_X_Y(equal_typeless,x==y);
+
+// Order e.g. less_typeless
+template <class Cont,class Order> inline
+void sort(Cont &cont,Order order) 
+{
+    std::sort(cont.begin(),cont.end(),order);
+}
+
+template <class Cont,class Order> inline
+void unique(Cont &cont,Order order)
+{
+    cont.erase(
+        std::unique(cont.begin(),cont.end(),order),
+        cont.end());
+}
+        
+template <class Cont,class Order> inline
+void sort_unique(Cont &cont,Order order) 
+{
+    sort(cont,order);
+    unique(cont,order);
+}
+
+template <class Cont> inline
+void sort(Cont &cont) 
+{
+    std::sort(cont.begin(),cont.end());
+}
+
+template <class Cont,class Func> inline
+void for_each(Cont &cont,Func func)
+{
+    std::for_each(cont.begin(),cont.end(),func);
+}
+
+template <class Cont> inline
+void unique(Cont &cont)
+{
+    cont.erase(
+        std::unique(cont.begin(),cont.end()),
+        cont.end());
+}
+        
+template <class Cont> inline
+void sort_unique(Cont &cont) 
+{
+    sort(cont);
+    unique(cont);
+}
+
 
 template <class pointed_to>
 void delete_now(std::auto_ptr<pointed_to> &p) {
 //    std::auto_ptr<pointed_to> take_ownership_and_kill(p);
         delete p.release();
 }
-
-// all this for: (lambda (x y) (= x y))
-struct equal_to_typeless 
-{
-    equal_to_typeless() {}
-    equal_to_typeless(const equal_to_typeless &o) {}
-    template <class T1,class T2>
-    bool operator()(const T1 &x,const T2 &y) const
-    {
-        return x==y;
-    }
-};
 
 template <class Cont>
 struct push_backer
@@ -77,10 +276,10 @@ push_backer<Cont> make_push_backer(Cont &container)
     return push_backer<Cont>(container);
 }
 
-// returns true if brackets found
+// returns true and writes pos,n for substring between left-right brackets.  or false if brackets not found.
 template <class Str,class size_type> inline
 bool
-substring_inside_pos(const Str &s,const Str &leftbracket,const Str &rightbracket,size_type &pos,size_type &n)
+substring_inside_pos_n(const Str &s,const Str &leftbracket,const Str &rightbracket,size_type &pos,size_type &n)
 {
     size_type rightpos;
     const size_type npos=Str::npos;
@@ -99,7 +298,7 @@ substring_inside(const Str &s,const Str &leftbracket,const Str &rightbracket)
 {
     typedef std::pair <Str,bool> Ret;
     typename Str::size_type pos,n;
-    if (substring_inside_pos(s,leftbracket,rightbracket,pos,n))
+    if (substring_inside_pos_n(s,leftbracket,rightbracket,pos,n))
         return Ret(Str(s,pos,n),true);
     else
         return Ret(Str(),false);
@@ -153,7 +352,7 @@ bool equal_safe(I1 b1,I1 e1,I2 b2,I2 e2,Equal eq)
 template <class I1,class I2> inline
 bool equal_safe(I1 b1,I1 e1,I2 b2,I2 e2)
 {
-    return equal_safe(b1,e1,b2,e2,equal_to_typeless());
+    return equal_safe(b1,e1,b2,e2,equal_typeless());
 }
 
 //oops: didn't notice that I'd already implemented this before starts_with.  two implementations for testing anyway ;)
@@ -197,9 +396,11 @@ bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end,Pred equals)
 template <class It1,class It2> inline
 bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end)
 {
-    return starts_with(str,str_end,prefix,prefix_end,equal_to_typeless());
+    return starts_with(str,str_end,prefix,prefix_end,equal_typeless());
 }
 
+
+//FIXME: provide skip-first-whitespace or skip-no-whitespace iterators.
 template <class Ch,class Tr,class CharIt> inline
 bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end) 
 {
@@ -208,10 +409,34 @@ bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end)
     return match_begin(ibeg,iend,begin,end);
 }
 
-template <class Ch,class Tr,class Str> inline
-bool expect_consuming(std::basic_istream<Ch,Tr> &i,const Str &str)
+template <class Ch,class Tr,class CharIt> inline
+bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end,bool skip_first_ws=true) 
 {
-    return expect_consuming(i,str.begin(),str.end());
+    if (begin==end) return true;
+    Ch c;
+    if (skip_first_ws)
+        i>>c;
+    else
+        i.get(c);
+    if (!i) return false;
+    while (begin!=end) {
+        if (!i.get(c))
+            return false;
+        if (c!=*begin)
+            return false;
+    }
+    return true;  
+/* //NOTE: whitespace will be ignored!  so don't include space in expectation ...    
+    typedef std::istream_iterator<Ch> II;
+    II ibeg(i),iend;
+    return match_begin(ibeg,iend,begin,end);
+*/
+}
+
+template <class Ch,class Tr,class Str> inline
+bool expect_consuming(std::basic_istream<Ch,Tr> &i,const Str &str,bool skip_first_ws=true)
+{
+    return expect_consuming(i,str.begin(),str.end(),skip_first_ws);
 }
 
 
@@ -229,6 +454,20 @@ bool ends_with(const Str &str,const Str &suffix)
 //        return starts_with(str.rbegin(),str.rend(),suffix.rbegin(),suffix.rend());
         return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
 
+}
+
+template <class Str>
+inline
+bool starts_with(const Str &str,char *prefix) 
+{
+    return starts_with(str,std::string(prefix));
+}
+
+template <class Str>
+inline
+bool ends_with(const Str &str,char *suffix) 
+{
+    return ends_with(str,std::string(suffix));
 }
 
 
@@ -253,17 +492,28 @@ bool ends_with(const std::string &str,const std::string &suffix)
 #endif 
 
 template <class Str,class Data> inline
-void string_into(const Str &str,Data *data) 
+void string_into(const Str &str,Data &data) 
 {
     std::istringstream i(str);
-    if (!(i>>*data))
+    if (!(i>>data))
         throw std::runtime_error("Couldn't convert (string_into): "+str);
 }
 
-template <class Str,class Data,class size_type> inline
-void substring_into(const Str &str,size_type pos,size_type n,Data *data) 
+
+template <class Data,class Str,class size_type> inline
+Data string_to(const Str &str)
 {
-    std::istringstream i(str,pos,n);
+    Data ret;
+    string_into(str,ret);
+    return ret;
+}
+/*
+
+template <class Str,class Data,class size_type> inline
+void substring_into(const Str &str,size_type pos,size_type n,Data &data) 
+{
+//    std::istringstream i(str,pos,n); // doesn't exist!
+    std::istringstream i(str.substr(pos,n));
     if (!(i>>*data))
         throw std::runtime_error("Couldn't convert (string_into): "+str);
 }
@@ -272,9 +522,11 @@ template <class Data,class Str,class size_type> inline
 Data string_to(const Str &str,size_type pos,size_type n)
 {
     Data ret;
-    substring_into(str,pos,n&ret);
+    substring_into(str,pos,n,ret);
     return ret;
 }
+
+*/
 
 template <class Str> inline
 void erase_begin(Str &s,unsigned n) 
@@ -286,15 +538,6 @@ template <class Str> inline
 void erase_end(Str &s,unsigned n) 
 {
     s.erase(s.length()-n,n);
-}
-
-template <class Map,class Key> inline
-typename Map::data_type *find_second(const Map &map,const Key &key)
-{
-    typename Map::const_iterator find_it=map.find(key);
-    if (find_it == map.end())
-        return NULL;
-    return &find_it->second;
 }
 
 // func(const Func::argument_type &val) - assumes val can be parsed from string tokenization (no whitespace)
@@ -311,7 +554,7 @@ void parse_until(const std::string &term,In &in,Func func)
         if (s.empty())
             break;
         typename Func::argument_type val;
-        string_into(s,&val);
+        string_into(s,val);
         func(val);
     }
 };
@@ -324,26 +567,26 @@ void push_back_until(const std::string &term,In &in,Cont & cont)
 
 
 // note: google groups on "vector clear deallocate" - you'll see that clear() doesn't free up memory - not so helpful when you hit an OOM exception and want to use a singleton vector instead
-template <class Vector> inline
-void reconstruct(Vector &v,size_t n,const typename Vector::value_type &val)
+template <class Container> inline
+void reconstruct(Container &v,size_t n,const typename Container::value_type &val)
 {
     /*
     v.clear();
     v.insert(v.end(),n,val);
     */
-    v.~Vector();
-    new(&v)Vector(n,val);
+    v.~Container();
+    new(&v)Container(n,val);
 }
 
-template <class Vector> inline
-void reconstruct(Vector &v,size_t n)
+template <class Container> inline
+void reconstruct(Container &v,size_t n)
 {
     /*
     v.clear();
     v.insert(v.end(),n,val);
     */
-    v.~Vector();
-    new(&v)Vector(n);
+    v.~Container();
+    new(&v)Container(n);
 }
 
 template <class V>
@@ -608,7 +851,6 @@ inline void accumulate(AssocContainer *table,const Key &key,const Val &val) {
         old_val += val;
     }
 }
-
 
 template <class AssocContainer,class Key,class Val>
 inline void maybe_decrease_min(AssocContainer *table,const Key &key,const Val &val) {

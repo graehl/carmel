@@ -9,10 +9,10 @@
 /* *Hash is a stateless functor:
        size_t Hash::operator()(const Key &key) const
        
-    *Backing copies by value and supports:
+    *Backing class is stored by value, and must provide:
        void Backing::get(const Key &key,Val *val)
 
-     *Key supports equality,assignment
+     *Key must provide equality,assignment
 */
 template <class Key,class Val,class Backing,class Hash=::hash<Key>, size_t default_cache_size=7919 >
 struct hash_cache 

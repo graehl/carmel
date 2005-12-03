@@ -11,6 +11,7 @@
 #include "key_to_blob.hpp"
 #include "memory_archive.hpp"
 #include <boost/config.hpp>
+#include "makestr.hpp"
 
 //#define DEBUG_SAFEDB
 
@@ -380,7 +381,8 @@ class safe_db
     {
         before_write();
         MAKE_db_key(key);
-        Dbt db_data((void*)buf_default,to_buf(data,(void*)buf_default,(Db_size)capacity_default));
+        Dbt db_data((void*)buf_default,
+                    to_buf(data,(void*)buf_default,(Db_size)capacity_default));
         db_try(
             db->put(NULL,&db_key,&db_data,flags),
             description);
@@ -448,9 +450,11 @@ class safe_db
     
     inline static void require_size_equal(Db_size expect,Db_size got,const char *description="safe_db::require_size_equal")
     {
-        std::ostringstream o;
-        o << description << ": expected " << expect << " bytes, but got " << got;
-        throw DbException(o.str());
+        if (expect == got)
+            return;
+        std::string s;
+        MAKESTR(s,description << ": expected " << expect << " bytes, but got " << got);
+        throw DbException(s.c_str());
     }
     
 // returns false if key wasn't found

@@ -2,6 +2,7 @@
 #ifndef GENIO_H
 #define GENIO_H
 
+// CHANGE: void print(ostream &) is fine.  we assume output never fails
 /*
   Dietmar says:
   It is faster to use the stream buffer directly, ie. in the form of
@@ -81,7 +82,14 @@ CREATE_INSERTER_T1(C) // for classes with 1 template arg.
 // uses (template) charT, Traits
 // s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print)
 #define GEN_EXTRACTOR(s,io) GEN_IO_(s,io,std::basic_istream<charT)
-#define GEN_INSERTER(s,io) GEN_IO_(s,io,std::basic_ostream<charT)
+#define GEN_INSERTER(s,io)  do {                                             \
+        typename std::basic_ostream<charT,Traits>::sentry sentry(s);                        \
+        if (sentry) {                                                 \
+            io; \
+        } else throw std::runtime_error("Tried to print to invalid stream"); \
+    } while(0)
+
+//GEN_IO_(s,io,std::basic_ostream<charT)
 // only difference is ostream sentry not istream sentry
 
 #define GENIO_FAIL(s) do { s.setstate(GENIOBAD); }while(0)
