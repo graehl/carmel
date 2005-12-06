@@ -91,7 +91,7 @@ class WFST {
   Alphabet<StringKey,StringPool> *out;
   Alphabet<StringKey,StringPool> stateNames;
   unsigned int final;	// final state number - initial state always number 0
-  DynamicArray<State> states;
+  dynamic_array<State> states;
   	 
   //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
   //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
@@ -243,9 +243,7 @@ class WFST {
 	    break;
 	  }
 	}
-
 	++len;
-		
       }
     }
 

@@ -21,8 +21,6 @@ struct OutEdges {
   typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
   typedef typename graph_object<G,T>::descriptor edge_descriptor;
   typedef typename ContS::template container<edge_descriptor>::type Adj;
-  //typedef FixedArray<Adj> Adjs;
-
 
   typedef G graph_type;
   graph_type &g;

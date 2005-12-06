@@ -20,7 +20,7 @@ struct FileLines
     static const char linesep='\n';
     InDiskfile file;
     typedef std::streampos pos;
-    DynamicArray<pos> line_begins; // line i ranges from [line_begins[i],line_begins[i+1])
+    dynamic_array<pos> line_begins; // line i ranges from [line_begins[i],line_begins[i+1])
     FileLines(std::string filename) { load(filename); }
     FileLines(InDiskfile _file) : file(_file) { if (file) index(); }
     void index() {
@@ -59,7 +59,7 @@ struct FileLines
         unsigned len=end-start;
         if (chop_newline && len > 0)
             --len; // don't want to include newline char
-        AutoArray<char> buf(len); // FIXME: could just return a shared_ptr or use string = getline(blah,sep) ... or return expression object that can convert to string or be printed
+        auto_array<char> buf(len); // FIXME: could just return a shared_ptr or use string = getline(blah,sep) ... or return expression object that can convert to string or be printed
         file->seekg(start);
         file->read(buf.begin(),len);
         return std::string(buf.begin(),len);

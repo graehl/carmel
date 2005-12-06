@@ -7,8 +7,8 @@
 // For MEMCPY-able-to-move types only!
 // (MEMCPY copyable (i.e. no external resources owned, i.e. no real destructor) is not assumed although a is_pod template might be nice)
 // Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
-// DynamicArray extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
-// note that DynamicArray may have capacity()==0 (though using push_back and array(i) will allocate it as necessary)
+// dynamic_array extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
+// note that dynamic_array may have capacity()==0 (though using push_back and array(i) will allocate it as necessary)
 
 //#include "config.h"
 
@@ -38,7 +38,7 @@
 // uninitialized (classed) storage array copy constructor is very fast, of
 // course.  as long as you don't use any allocation, you can think of this as an
 // array-substring (for contiguous things)
-template <typename T,typename Alloc=std::allocator<T> > class Array : protected Alloc {
+template <typename T,typename Alloc=std::allocator<T> > class array : protected Alloc {
  public:
     typedef T value_type;
     typedef value_type *iterator;
@@ -63,7 +63,7 @@ public:
     T & at(unsigned int index) const { // run-time bounds-checked
         T *r=vec+index;
         if (!(r < end()) )
-            throw std::out_of_range(std::string("Array access out of bounds with index=").append(boost::lexical_cast<std::string>(index)));
+            throw std::out_of_range(std::string("array access out of bounds with index=").append(boost::lexical_cast<std::string>(index)));
         return *r;
     }
     bool exists(unsigned index) const
@@ -79,23 +79,23 @@ public:
     bool invariant() const {
         return vec >= endspace;
     }
-    typedef Array<T,Alloc> Self;
+    typedef array<T,Alloc> Self;
 //!FIXME: does this swap allocator base?
-    void swap(Array<T,Alloc> &a) {
+    void swap(array<T,Alloc> &a) {
         Self t;
         memcpy(&t,this,sizeof(Self));
         memcpy(this,&a,sizeof(Self));
         memcpy(&a,&t,sizeof(Self));
     }
-    Array<T,Alloc> substr(unsigned start) const
+    array<T,Alloc> substr(unsigned start) const
     {
         return substr(start,size());
     }
 
-    Array<T,Alloc> substr(unsigned start,unsigned end) const
+    array<T,Alloc> substr(unsigned start,unsigned end) const
     {
         assert(begin()+start <= endspace && begin()+end <= endspace);
-        return Array<T,Alloc>(begin()+start,begin()+end);
+        return array<T,Alloc>(begin()+start,begin()+end);
     }
 
     void construct() {
@@ -142,9 +142,9 @@ public:
 
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
-    std::ios_base::iostate get_from_imp(Array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
+    std::ios_base::iostate get_from_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
     template <class L,class A> friend
-    void read(std::istream &in,Array<L,A> &x,StackAlloc &a) throw(genio_exception);
+    void read(std::istream &in,array<L,A> &x,StackAlloc &a) throw(genio_exception);
 
 
 
@@ -200,34 +200,34 @@ public:
 
     // okay to shallow copy since we don't automatically destroy anything
     template <class Alloc2>
-    Array(const Array<T,Alloc2>&o) : vec(o.vec),endspace(o.endspace) {}
+    array(const array<T,Alloc2>&o) : vec(o.vec),endspace(o.endspace) {}
     
     template <class Alloc2>
-    const Self & operator =(const Array<T,Alloc2>&o) {
+    const Self & operator =(const array<T,Alloc2>&o) {
         vec=o.vec;
         endspace=o.endspace;
         return *this;
     }
     
-    explicit Array(const char *c) {
+    explicit array(const char *c) {
         std::istringstream(c) >> *this;
     }
     
-    // create Array reference to a STL vector - note: I *believe* stdc++ requires storage be contiguous, i.e. iterators be pointers ... if not, nonportable
-    explicit Array(std::vector<T> &vec) 
+    // create array reference to a STL vector - note: I *believe* stdc++ requires storage be contiguous, i.e. iterators be pointers ... if not, nonportable
+    explicit array(std::vector<T> &vec) 
     {
         init(vec);
     }
-    void init(std::vector<T> &vec) 
+    void init(std::vector<T> &vector) 
     {
-        vec=&(vec.front());
-        set_capacity(vec.size());
+        vec=&(vector.front());
+        set_capacity(vector.size());
     }
     
     
     //FIXME: unsafe: etc. I'm relying on contiguousness of std::vector storage
     template <class A2>
-    Array(std::vector<T,A2> &source,unsigned starti,unsigned endi) 
+    array(std::vector<T,A2> &source,unsigned starti,unsigned endi) 
     {
         assert(endi <= source.size());
         vec=&(source[starti]);
@@ -235,14 +235,14 @@ public:
     }
 
     template <class A2>
-    Array(typename std::vector<T,A2>::const_iterator begin,typename std::vector<T,A2>::const_iterator end) : vec(const_cast<T *>(&*begin)), endspace(const_cast<T *>(&*end)) { }
+    array(typename std::vector<T,A2>::const_iterator begin,typename std::vector<T,A2>::const_iterator end) : vec(const_cast<T *>(&*begin)), endspace(const_cast<T *>(&*end)) { }
     
-    Array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
-    Array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
-    explicit Array(unsigned sp=4) { alloc(sp); }
-    Array(unsigned sp, const Alloc &a): Alloc(a) { alloc(sp); }
+    array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
+    array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
+    explicit array(unsigned sp=4) { alloc(sp); }
+    array(unsigned sp, const Alloc &a): Alloc(a) { alloc(sp); }
     template<class I>
-    Array(unsigned n,I begin) { // copy up to n
+    array(unsigned n,I begin) { // copy up to n
         alloc(n);
         nonstd::uninitialized_copy_n(begin, n, vec);
     }
@@ -277,11 +277,11 @@ public:
 };
 
 // frees self automatically - WARNING - doesn't copy contents!
-template <typename T,typename Alloc=std::allocator<T> > class AutoArray : public Array<T,Alloc> {
+template <typename T,typename Alloc=std::allocator<T> > class auto_array : public array<T,Alloc> {
 public:
-    typedef Array<T,Alloc> Super;
-    explicit AutoArray(unsigned sp=0) : Super(sp) { }
-    ~AutoArray() {
+    typedef array<T,Alloc> Super;
+    explicit auto_array(unsigned sp=0) : Super(sp) { }
+    ~auto_array() {
         this->dealloc();
     }
     void alloc(unsigned sp) {
@@ -298,36 +298,36 @@ public:
     }
 
 //!FIXME: doesn't swap allocator base
-    //    void swap(Array<T,Alloc> &a) {assert(0);}
+    //    void swap(array<T,Alloc> &a) {assert(0);}
 //FIXME: should only work for dynarray,fixedarray,autoarray
-/*    void swap(Array<T,Alloc> &a) {
-        Array<T,Alloc>::swap(a);
+/*    void swap(array<T,Alloc> &a) {
+        array<T,Alloc>::swap(a);
         }*/
 protected:
-    AutoArray(AutoArray<T,Alloc> &a) : Super(a.capacity()){
+    auto_array(auto_array<T,Alloc> &a) : Super(a.capacity()){
     }
 private:
-    void operator=(const Array<T,Alloc> &a) {
+    void operator=(const array<T,Alloc> &a) {
         assert(0);
     }
 };
 
 template <class T,class Alloc>
-inline bool operator < (Array<T,Alloc> &a,Array<T,Alloc> &b) 
+inline bool operator < (array<T,Alloc> &a,array<T,Alloc> &b) 
 {
     return std::lexicographical_compare(a.begin(),a.end(),b.begin(),b.end());
 }
 
 
 // FIXME: drop template copy constructor since it screws with one arg size constructor
-// frees self automatically; inits/destroys/copies just like DynamicArray but can't be resized.
-template <typename T,typename Alloc=std::allocator<T> > class FixedArray : public AutoArray<T,Alloc> {
+// frees self automatically; inits/destroys/copies just like dynamic_array but can't be resized.
+template <typename T,typename Alloc=std::allocator<T> > class fixed_array : public auto_array<T,Alloc> {
 public:
-    typedef AutoArray<T,Alloc> Super;
-    explicit FixedArray(unsigned sp=0) : Super(sp) {
+    typedef auto_array<T,Alloc> Super;
+    explicit fixed_array(unsigned sp=0) : Super(sp) {
         this->construct();
     }
-    ~FixedArray() {
+    ~fixed_array() {
         this->destroy();
         //~Super(); // happens implicitly!
     }
@@ -347,30 +347,30 @@ public:
         std::uninitialized_copy(b,e,this->begin());
         //memcpy(begin(),b,e-b);
     }
-/*  FixedArray(const Array<T,Alloc> &a) : Super(a.capacity()) {
-    DBPC("FixedArray copy",a);
+/*  fixed_array(const array<T,Alloc> &a) : Super(a.capacity()) {
+    DBPC("fixed_array copy",a);
     uninit_copy_from(a.begin(),a.end());
     }
-    FixedArray(const AutoArray<T,Alloc> &a) : Super(a.capacity()) {
-    DBPC("FixedArray copy",a);
+    fixed_array(const auto_array<T,Alloc> &a) : Super(a.capacity()) {
+    DBPC("fixed_array copy",a);
     uninit_copy_from(a.begin(),a.end());
     }
-    FixedArray(const DynamicArray<T,Alloc> &a) : Super(a.capacity()) {
-    DBPC("FixedArray copy",a);
+    fixed_array(const dynamic_array<T,Alloc> &a) : Super(a.capacity()) {
+    DBPC("fixed_array copy",a);
     uninit_copy_from(a.begin(),a.end());
     }
 */
-    //F=FixedArray<T,Alloc>
+    //F=fixed_array<T,Alloc>
 
 // having problems with ambiguous constructor?  make sure you pass an *unsigned* int if you want to specify # of elements.  I don't know how to make this constructor exclude integral types, well, I could do it with type traits and a second param is_container<F> *dummy=0
     template <class F>
-    FixedArray(const F &a) : Super(a.size()) {
-        //    DBPC("FixedArray copy",a);
+    fixed_array(const F &a) : Super(a.size()) {
+        //    DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());
     }
 
-    FixedArray(const FixedArray<T,Alloc>  &a) : Super(a.size()) {
-        //    DBPC("FixedArray copy",a);
+    fixed_array(const fixed_array<T,Alloc>  &a) : Super(a.size()) {
+        //    DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());
     }
 
@@ -381,34 +381,34 @@ private:
 
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
-template <typename T,typename Alloc=std::allocator<T> > class DynamicArray : public Array<T,Alloc> {
-    typedef DynamicArray<T,Alloc> Self;
+template <typename T,typename Alloc=std::allocator<T> > class dynamic_array : public array<T,Alloc> {
+    typedef dynamic_array<T,Alloc> Self;
     //unsigned int sz;
     T *endv;
-    typedef Array<T,Alloc> Base;
+    typedef array<T,Alloc> Base;
 private:
-    DynamicArray& operator = (const DynamicArray &a){std::cerr << "unauthorized assignment of a dynamic array\n";assert(0);}
-    void swap(Array<T,Alloc> &a) {assert(0);}
+    dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";assert(0);}
+    void swap(array<T,Alloc> &a) {assert(0);}
 public:
-    explicit DynamicArray (const char *c) {
+    explicit dynamic_array (const char *c) {
         std::istringstream(c) >> *this;
     }
 
     // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-    explicit DynamicArray(unsigned sp = 4) : Array<T,Alloc>(sp), endv(Base::vec) { assert(this->invariant()); }
+    explicit dynamic_array(unsigned sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { assert(this->invariant()); }
 
     // creates vector holding sp copies of t; does initialize
-    explicit DynamicArray(unsigned sp,const T& t) : Array<T,Alloc>(sp) {
+    explicit dynamic_array(unsigned sp,const T& t) : array<T,Alloc>(sp) {
         construct(t);
         assert(invariant());
     }
 
     void construct() {
-        Array<T,Alloc>::construct();
+        array<T,Alloc>::construct();
         endv=this->endspace;
     }
     void construct(const T& t) {
-        Array<T,Alloc>::construct(t);
+        array<T,Alloc>::construct(t);
         endv=this->endspace;
     }
 
@@ -417,18 +417,18 @@ public:
         reserve(sp);
         T *real_es=this->endspace;
         endv=this->endspace=sp;
-        Array<T,Alloc>::construct(t);
+        array<T,Alloc>::construct(t);
         this->endspace=real_es;
     }
     void reinit_nodestroy(unsigned sp,const T& t=T()) {
         reserve(sp);
         T *real_es=this->endspace;
         endv=this->endspace=this->vec+sp;
-        Array<T,Alloc>::construct(t);
+        array<T,Alloc>::construct(t);
         this->endspace=real_es;
     }
 
-    DynamicArray(const DynamicArray &a) : Array<T,Alloc>(a.size()) {
+    dynamic_array(const dynamic_array &a) : array<T,Alloc>(a.size()) {
 //      unsigned sz=a.size();
         //alloc(sz);
 //      memcpy(this->vec,a.vec,sizeof(T)*sz);
@@ -453,18 +453,18 @@ public:
         clear_nodestroy();
     }
 
-    const T* end() const { // Array code that uses vec+space for boundschecks is duplicated below
+    const T* end() const { // array code that uses vec+space for boundschecks is duplicated below
         assert(this->invariant());
         return endv;
     }
-    T* end()  { // Array code that uses vec+space for boundschecks is duplicated below
+    T* end()  { // array code that uses vec+space for boundschecks is duplicated below
         assert(this->invariant());
         return endv;
     }
     const T* const_end() const {
         return endv;
     }
-    typedef typename Array<T,Alloc>::iterator iterator;
+    typedef typename array<T,Alloc>::iterator iterator;
     // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
     void move_rest_to(T *to,iterator i) {
         assert(i >= this->begin() && i < end());
@@ -744,14 +744,14 @@ public:
     }
 
     // doesn't dealloc *into
-    void compact(Array<T,Alloc> &into) {
+    void compact(array<T,Alloc> &into) {
         unsigned sz=size();
         into.alloc(sz);
         copyto(into.begin());
     }
 
     // doesn't dealloc *into
-    void compact_giving(Array<T,Alloc> &into) {
+    void compact_giving(array<T,Alloc> &into) {
         unsigned sz=size();
         into.alloc(sz);
         copyto(into.begin());
@@ -796,7 +796,7 @@ public:
             i->~T();
         clear_nodestroy();
     }
-    ~DynamicArray() {
+    ~dynamic_array() {
         clear();
 //      if(this->vec) // to allow for exception in constructor
         this->dealloc();
@@ -891,9 +891,9 @@ public:
     }
     template <class charT, class Traits>
     std::ios_base::iostate append_from(std::basic_istream<charT,Traits>& in) {
-        return get_from(in,DefaultReader<T>(),Array<T,Alloc>::APPEND);
+        return get_from(in,DefaultReader<T>(),array<T,Alloc>::APPEND);
     }
-    Array<T,Alloc> substr(unsigned start) const
+    array<T,Alloc> substr(unsigned start) const
     {
         return substr(start,size());
     }
@@ -917,10 +917,10 @@ unsigned new_indices(AB remove,O out) {
 }
 
 template <typename T,typename Alloc,class charT, class Traits, class Reader>
-//std::ios_base::iostate Array<T,Alloc>::get_from(std::basic_istream<charT,Traits>& in,Reader read)
-std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read)
+//std::ios_base::iostate array<T,Alloc>::get_from(std::basic_istream<charT,Traits>& in,Reader read)
+std::ios_base::iostate get_from_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read)
 {
-    DynamicArray<T,Alloc> s;
+    dynamic_array<T,Alloc> s;
     std::ios_base::iostate ret=s.get_from(in,read);
     s.compact_giving(*a); // transfers to a
     return ret;
@@ -929,7 +929,7 @@ std::ios_base::iostate get_from_imp(Array<T,Alloc> *a,std::basic_istream<charT,T
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
-(std::basic_istream<charT,Traits>& is, Array<L,A> &arg)
+(std::basic_istream<charT,Traits>& is, array<L,A> &arg)
 {
     return gen_extractor(is,arg);
 }
@@ -937,7 +937,7 @@ operator >>
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
-(std::basic_istream<charT,Traits>& is, AutoArray<L,A> &arg)
+(std::basic_istream<charT,Traits>& is, auto_array<L,A> &arg)
 {
     return gen_extractor(is,arg);
 }
@@ -945,7 +945,7 @@ operator >>
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
-(std::basic_istream<charT,Traits>& is, FixedArray<L,A> &arg)
+(std::basic_istream<charT,Traits>& is, fixed_array<L,A> &arg)
 {
     return gen_extractor(is,arg);
 }
@@ -953,7 +953,7 @@ operator >>
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
-(std::basic_istream<charT,Traits>& is, DynamicArray<L,A> &arg)
+(std::basic_istream<charT,Traits>& is, dynamic_array<L,A> &arg)
 {
     return gen_extractor(is,arg);
 }
@@ -961,7 +961,7 @@ operator >>
 template <class charT, class Traits,class L,class A>
 std::basic_ostream<charT,Traits>&
 operator <<
-    (std::basic_ostream<charT,Traits>& os, const Array<L,A> &arg)
+    (std::basic_ostream<charT,Traits>& os, const array<L,A> &arg)
 {
     return gen_inserter(os,arg);
 }
@@ -970,7 +970,7 @@ operator <<
 template <class charT, class Traits,class L,class A>
 std::basic_ostream<charT,Traits>&
 operator <<
-    (std::basic_ostream<charT,Traits>& os, const DynamicArray<L,A> &arg)
+    (std::basic_ostream<charT,Traits>& os, const dynamic_array<L,A> &arg)
 {
     return gen_inserter(os,arg);
 }
@@ -991,42 +991,42 @@ operator <<
 #endif
 
 template<class Lt,class A,class L2,class A2>
-bool operator ==(const DynamicArray<Lt,A> &l, const DynamicArray<L2,A2> &r)
+bool operator ==(const dynamic_array<Lt,A> &l, const dynamic_array<L2,A2> &r)
 {
-    typedef DynamicArray<Lt,A> L;
-    typedef DynamicArray<L2,A2> R;
+    typedef dynamic_array<Lt,A> L;
+    typedef dynamic_array<L2,A2> R;
     ARRAYEQIMP;
 }
 
 
 template<class Lt,class A,class L2,class A2>
-bool operator ==(const DynamicArray<Lt,A> &l, const Array<L2,A2> &r)
+bool operator ==(const dynamic_array<Lt,A> &l, const array<L2,A2> &r)
 {
-    typedef DynamicArray<Lt,A> L;
-    typedef Array<L2,A2> R;
+    typedef dynamic_array<Lt,A> L;
+    typedef array<L2,A2> R;
     ARRAYEQIMP;
 }
 
 template<class Lt,class A,class L2,class A2>
-bool operator ==(const Array<Lt,A> &l, const DynamicArray<L2,A2> &r)
+bool operator ==(const array<Lt,A> &l, const dynamic_array<L2,A2> &r)
 {
-    typedef Array<Lt,A> L;
-    typedef DynamicArray<L2,A2> R;
+    typedef array<Lt,A> L;
+    typedef dynamic_array<L2,A2> R;
     ARRAYEQIMP;
 }
 
 
 template<class Lt,class A,class L2,class A2>
-bool operator ==(const Array<Lt,A> &l, const Array<L2,A2> &r)
+bool operator ==(const array<Lt,A> &l, const array<L2,A2> &r)
 {
-    typedef Array<Lt,A> L;
-    typedef Array<L2,A2> R;
+    typedef array<Lt,A> L;
+    typedef array<L2,A2> R;
     ARRAYEQIMP;
 }
 
 
 template <class L,class A>
-void read(std::istream &in,Array<L,A> &x,StackAlloc &a)
+void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 // throw(genio_exception,StackAlloc::Overflow)
 {
     x.vec=a.aligned_next<L>();
@@ -1068,7 +1068,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     int aspace[N];
     al.init(aspace,aspace+N);
     istringstream ina("(1 2 3 4)");
-    Array<int> aint;
+    array<int> aint;
     read(ina,aint,al);
     BOOST_CHECK(aint.size()==4);
     BOOST_CHECK(aint[3]==4);
@@ -1076,7 +1076,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     }
 
     {
-        FixedArray<FixedArray<int> > aa,ba;
+        fixed_array<fixed_array<int> > aa,ba;
         std::string sa="(() (1) (1 2 3) () (4))";
         BOOST_CHECK(test_extract_insert(sa,aa));
         IndirectReader<plus_one_reader> reader;
@@ -1094,7 +1094,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     }
 
     {
-        FixedArray<FixedArray<int> > aa,ba;
+        fixed_array<fixed_array<int> > aa,ba;
         std::string sa="(() (1) (1 2 3) () (4))";
         BOOST_CHECK(test_extract_insert(sa,aa));
         IndirectReader<plus_one_reader> reader;
@@ -1111,7 +1111,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
         BOOST_CHECK(ba[1][0]==2);
     }
     {
-        DynamicArray<int> a;
+        dynamic_array<int> a;
         a.at_grow(5)=1;
         BOOST_CHECK(a.size()==5+1);
         BOOST_CHECK(a[5]==1);
@@ -1120,7 +1120,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     }
     const int sz=7;
     {
-        DynamicArray<int> a(sz);
+        dynamic_array<int> a(sz);
         a.push_back(sz,sz*3);
         BOOST_CHECK(a.size() == sz*3);
         BOOST_CHECK(a.capacity() >= sz*3);
@@ -1128,17 +1128,17 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     }
 
     {
-        DynamicArray<int> a(sz*3,sz);
+        dynamic_array<int> a(sz*3,sz);
         BOOST_CHECK(a.size() == sz*3);
         BOOST_CHECK(a.capacity() == sz*3);
         BOOST_CHECK(a[sz]==sz);
     }
 
     using namespace std;
-    Array<int> aa(sz);
+    array<int> aa(sz);
     BOOST_CHECK(aa.capacity() == sz);
-    DynamicArray<int> da;
-    DynamicArray<int> db(sz);
+    dynamic_array<int> da;
+    dynamic_array<int> db(sz);
     BOOST_CHECK(db.capacity() == sz);
     copy(a,a+sz,aa.begin());
     copy(a,a+sz,back_inserter(da));
@@ -1166,7 +1166,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     BOOST_REQUIRE(db.size()==sz2);
     for (int i=0;i<sz2;++i)
         BOOST_CHECK(a2[i]==db[i]);
-    Array<int> d1map(sz),d2map(sz);
+    array<int> d1map(sz),d2map(sz);
     BOOST_CHECK(3==new_indices(rm1,rm1+sz,d1map.begin()));
     BOOST_CHECK(4==new_indices(rm2,rm2+sz,d2map.begin()));
     int c=0;
@@ -1185,8 +1185,8 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     std::string emptya=" ()";
     std::string emptyb="()";
     {
-        Array<int> a;
-        DynamicArray<int> b;
+        array<int> a;
+        dynamic_array<int> b;
         istringstream iea(emptya);
         iea >> a;
         stringstream o;
@@ -1204,10 +1204,10 @@ BOOST_AUTO_UNIT_TEST( dynarray )
 #define EQIOTEST(A,B)  do { A<int> a;B<int> b;stringstream o;istringstream isa(sa);isa >> a; \
         o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);} while(0)
 
-    EQIOTEST(Array,Array);
-    EQIOTEST(Array,DynamicArray);
-    EQIOTEST(DynamicArray,Array);
-    EQIOTEST(DynamicArray,DynamicArray);
+    EQIOTEST(array,array);
+    EQIOTEST(array,dynamic_array);
+    EQIOTEST(dynamic_array,array);
+    EQIOTEST(dynamic_array,dynamic_array);
 }
 #endif
 
