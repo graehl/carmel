@@ -16,7 +16,6 @@
 template <class K>
 struct OffsetMap {
   K begin; // have to compute index anyhow because size of K might differ from size of V
-  //FixedArray<V> values;
   unsigned index(K p) const {
     Assert(p>=begin);
     //Assert(p<begin+values.size());
@@ -75,7 +74,7 @@ struct ArrayPMapImp
   typedef V& reference;
   typedef std::pair<unsigned,offset_map> init_type;
   offset_map ind; // should also be copyable
-  typedef   FixedArray<value_type> Vals;
+  typedef fixed_array<value_type> Vals;
   Vals  vals; // copyable!
   //ArrayPMapImp(G &g) : ind(g), vals(num_hyperarcs(g)) { }
 

@@ -27,7 +27,7 @@ namespace lambda=boost::lambda;
 //template <class L, class Alloc=std::allocator<L> > typedef Array<L,Alloc> String<L,Alloc>;
 
 
-template <class L, class Alloc=std::allocator<L> > struct String : public Array<L,Alloc> {
+template <class L, class Alloc=std::allocator<L> > struct String : public array<L,Alloc> {
   typedef L Label;
 };
 

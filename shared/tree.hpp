@@ -235,7 +235,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
 {
   char c;
   rank=0;
-  DynamicArray<Self *> in_children;
+  dynamic_array<Self *> in_children;
   EXPECTI_COMMENT_FIRST(in>>c);
   if (c == '(') {
       EXPECTI_COMMENT(deref(read)(in,label));
@@ -275,10 +275,9 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   return GENIOGOOD;
 
 fail:
-  for (typename DynamicArray<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
-                  delete_tree(*i);
+  for (typename dynamic_array<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
+      delete_tree(*i);
   return GENIOBAD;
-
 }
 };
 

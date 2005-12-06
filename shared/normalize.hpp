@@ -39,7 +39,7 @@ struct NormalizeGroups {
 //    typedef PointerOffset<W> index_type; // pointer offsets
     typedef size_t index_type;
     typedef index_type offset_type;
-    typedef Array<offset_type> Group;
+    typedef array<offset_type> Group;
     typedef SwapBatch<Group> Groups;
     max_in_accum<offset_type> max_offset;
     size_accum<size_t> total_size;
@@ -230,12 +230,12 @@ struct NormalizeGroups {
 #ifdef DEBUG
         unsigned size=required_size();
 #endif
-        DBPC2("Before normalize from base->dest",Array<source_t>(base,base+size));
+        DBPC2("Before normalize from base->dest",array<source_t>(base,base+size));
 
         zerocounts=_zerocounts;
         log=_log;
         enumerate(norm_groups,ref(*this));
-        DBPC2("After normalize:",Array<dest_t>(dest,dest+size));
+        DBPC2("After normalize:",array<dest_t>(dest,dest+size));
     }
     GENIO_print
     {
@@ -277,7 +277,7 @@ operator <<
 BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 {
     typedef Weight W;
-    FixedArray<W> w(10u);
+    fixed_array<W> w(10u);
     w[0]=1;
     w[1]=2;
     w[2]=3;

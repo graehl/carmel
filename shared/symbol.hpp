@@ -206,7 +206,7 @@ bool operator ==(const char *c,const Symbol s) {
 #include "dynarray.h"
 template <unsigned upto=32>
 struct SmallIntSymbols {
-  AutoArray<Symbol> cache;
+  auto_array<Symbol> cache;
   SmallIntSymbols() : cache(upto) {
     for (unsigned i=0;i<upto;++i)
       new(cache.begin()+i) Symbol(i);

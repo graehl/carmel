@@ -49,7 +49,7 @@ struct index_graph {
   //  typedef typename map_traits<map_type>::find_type find_type;
   typedef typename map_type::value_type value_type;
   //  typedef std::pair<vertex_descriptor,key> bkey;
-  typedef DynamicArray<map_type> Vertices;
+  typedef dynamic_array<map_type> Vertices;
 
   bool invariant() {
     return verts.size() > 0; // always have start node=0.
@@ -195,9 +195,9 @@ struct index_graph<K,BSearchS> {
   typedef K key_type;
   typedef vertex_descriptor data_type;
   typedef std::pair<key_type,data_type> value_type;
-  typedef   AutoArray<value_type> Table;
+  typedef   auto_array<value_type> Table;
   typedef Table::iterator EntryP;
-  typedef   AutoArray<EntryP> Bounds;
+  typedef   auto_array<EntryP> Bounds;
 
   Table sorted;
   Bounds bounds; // for source i, [*bounds[i],...,*bounds[i+1]) are sorted on .first (key)

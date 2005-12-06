@@ -37,7 +37,7 @@ unsigned &get_index(const C& c) {
 
 /// pass by ref(array_mapper) to functors
 template <class V>
-struct array_mapper : public DynamicArray<V> {
+struct array_mapper : public dynamic_array<V> {
   typedef V mapped_type;
   typedef unsigned key_type;
   void operator()(key_type key,const mapped_type &val) {
@@ -52,9 +52,9 @@ struct tree_trie {
   typedef index_graph<key_type> Index;
   typedef Index::vertex_descriptor V;
   Index index;
-  //  DynamicArray<List<void *> matches;
+  //  dynamic_array<List<void *> matches;
   typedef Tree<key_type> MTree;
-  DynamicArray<MTree *> where_subtrees; // where (see NOTES) -> subtree with that where
+  dynamic_array<MTree *> where_subtrees; // where (see NOTES) -> subtree with that where
   tree_trie() {}
 
   unsigned nextwhere;

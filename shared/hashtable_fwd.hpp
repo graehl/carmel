@@ -214,6 +214,12 @@ typename Map::data_type *find_second(Map &map,const Key &key)
     return &find_it->second;
 }
 
+template <class Map,class Key> inline
+bool has_key(const Map &map,const Key &key)
+{
+    return map.find(key)!=map.end();
+}
+
 #else
 // graehl hash map
 

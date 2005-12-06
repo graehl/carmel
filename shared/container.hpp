@@ -140,7 +140,7 @@ inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator 
 
 struct VectorS {
   template <class T> struct container {
-        typedef DynamicArray<T> type;
+        typedef dynamic_array<T> type;
   };
 };
 

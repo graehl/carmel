@@ -9,7 +9,7 @@
 #endif
 
 
-typedef DynamicArray<char> CharBuf;
+typedef dynamic_array<char> CharBuf;
 
 // USAGE: clear() before you use, repeatedly push_back() characters.  reserve() if you know in advance how many you need (and then you can directly access elements g_buf[i] without push_back, but they will be overwritten by any push_back or resize operations.
 // of course, using this buffer is not thread-safe.
@@ -28,7 +28,7 @@ struct default_bufsize<char> {
 
 template <class T>
 struct static_buf {
-  typedef DynamicArray<T> Buf;
+  typedef dynamic_array<T> Buf;
   static Buf buf;
   //operator Buf &() { return buf; }
   Buf & operator ()() const { return buf; }

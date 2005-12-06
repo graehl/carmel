@@ -42,7 +42,7 @@ public:
         }
         friend std::ostream &operator <<(std::ostream &o,const Loc &l);
     };
-    typedef DynamicArray<Loc> LocStack;
+    typedef dynamic_array<Loc> LocStack;
     static LocStack stack;
     BackTrace(const char *fun,const char *fil, unsigned l)  : function(fun),file(fil), line(l) {}
     ~BackTrace() {

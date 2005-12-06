@@ -82,9 +82,9 @@ struct TailsUpHypergraph {
         unsigned ntails;
         W &weight() { return *this; }
         };
-        typedef FixedArray<Edge> Edges;
+        typedef fixed_array<Edge> Edges;
     */
-    //  typedef DynamicArray<Vertex> Vertices;
+    //  typedef dynamic_array<Vertex> Vertices;
     //  Edges edge;
     //  Vertices vertex;
 
@@ -101,7 +101,7 @@ struct TailsUpHypergraph {
         }*/
 
     typedef typename ContS::template container<ArcDest>::type Adj;
-    //typedef FixedArray<Adj> Adjs;
+    //typedef fixed_array<Adj> Adjs;
     typedef typename VertMapFactory::template rebind<Adj>::implementation Adjs;
 /// index of arcs having a tail
     Adjs adj;
@@ -212,7 +212,7 @@ struct TailsUpHypergraph {
         //HyperarcLeftMap tr;
 
         typedef HeapKey<VD,VertexCostMap,typename LocFact::reference> Key;
-        typedef DynamicArray<Key> Heap;
+        typedef dynamic_array<Key> Heap;
         Heap heap;
 
         BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_=VertexPredMap())

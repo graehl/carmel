@@ -86,13 +86,13 @@ struct NoStringPool {
 template <class Sym=StringKey,class StrPool=NoStringPool<Sym> >
 class Alphabet {
 public:
-  typedef DynamicArray<Sym> SymArray;
+  typedef dynamic_array<Sym> SymArray;
 private:
-  DynamicArray<Sym> names;
+  dynamic_array<Sym> names;
   typedef HashTable<Sym, unsigned> SymIndex;
   SymIndex ht;
  public:
-   const DynamicArray<Sym> &symbols() const { return names; }
+   const dynamic_array<Sym> &symbols() const { return names; }
   Alphabet() { }
   Alphabet(Sym c) {
     add(c);
