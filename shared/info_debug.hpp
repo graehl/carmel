@@ -6,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 #include "assertlvl.hpp"
+#include "breakpoint.hpp"
 
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
@@ -65,7 +66,10 @@ using namespace std;
 #define NESTINFO NESTINFO_GUARD(debug,1)
 #define INFO(module,msg) DBG_OP(debug,info,module,O_INSERT(msg))
 #define WARNING(module,msg) DBG_OP(debug,warning,module,O_INSERT(msg))
-#define ERROR(module,msg) DBG_OP(debug,error,module,O_INSERT(msg))
+
+//#define ERROR(module,msg) DBG_OP(debug,error,module,O_INSERT(msg))
+//too common a name - conflicts?
+
 #define FATAL(module,msg) DBG_OP(debug,fatalError,module,O_INSERT(msg))
 #define INFOQ(module,msg) DBG_OP_Q(debug,info,module,O_INSERT(msg))
 #define INFOB(module) debug.info_begin(module,__FILE__,__LINE__)
@@ -218,6 +222,7 @@ class info_debug {
 
     void fatalError(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error and dies
         error(module,info,file,line,endline);
+        DEBUG_BREAKPOINT;
         assert(0);
         exit(-1);
     }

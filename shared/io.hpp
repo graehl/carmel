@@ -588,7 +588,7 @@ inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
         }
         out << '"';        
     } else {
-        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,out);
+        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,std::ostream_iterator<Ch,Tr>(out));
     }
 }
 

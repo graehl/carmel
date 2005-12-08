@@ -268,6 +268,7 @@ $(BOOST_SERIALIZATION_LIB): $(BOOST_SERIALIZATION_OBJS)
 
 vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPT_SRC_DIR) $(BOOST_FS_SRC_DIR)
 vpath %.d $(DEPSPRE)
+vpath %.hpp $(BOOST_DIR)
 
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o
@@ -321,7 +322,7 @@ $(DEPSPRE)%.d: %
 	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
  ( \
 echo CREATE DEPENDENCIES for $< \(object=$(*F).o\) && \
-		$(CXX) -c -MM -MG $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
+		$(CXX) -c -MP -MM -MG $(CPPFLAGS_DEBUG) $< -MF $@.raw && \
 		[ -s $@.raw ] && \
                  perl -pe 's|([^:]*)\.o[ :]*|$@ : |g' $@.raw > $@ && \
 echo >> $@ && \
