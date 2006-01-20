@@ -2,7 +2,11 @@
 #ifndef HASHTABLE_FWD_HPP
 #define HASHTABLE_FWD_HPP
 
-#ifndef USE_GRAEHL_HASH_MAP
+#ifdef USE_GRAEHL_HASH_MAP
+#  ifdef USE_GNU_HASH_MAP
+#   undef USE_GRAEHL_HASH_MAP
+#  endif 
+#else 
 # define USE_GNU_HASH_MAP
 #endif
 
@@ -53,7 +57,7 @@ inline std::size_t uint_hash(unsigned int key)
   /*
 In Knuth's "The Art of Computer Programming", section 6.4, a multiplicative hashing scheme is introduced as a way to write hash function. The key is multiplied by the golden ratio of 2^32 (2654435761) to produce a hash result.
 
-Since 2654435761 and 2^32 has no common factors in common, the multiplication produces a complete mapping of the key to hash result with no overlap. This method works pretty well if the keys have small values. Bad hash results are produced if the keys vary in the upper bits. As is true in all multiplications, variations of upper digits do not influence the lower digits of the multiplication result.
+Since 2654435761 and 2^32 have no common factors in common, the multiplication produces a complete mapping of the key to hash result with no overlap. This method works pretty well if the keys have small values. Bad hash results are produced if the keys vary mostly in the upper bits. As is true in all multiplications, variations of upper digits do not influence the lower digits of the multiplication result.
 */
 // (sqrt(5)-1)/2 = .6180339887.., * 2^32=~2654435769.4972302964775847707926
 

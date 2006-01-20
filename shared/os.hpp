@@ -7,11 +7,16 @@
 #include <cstdio>
 #include <stdexcept>
 #include <stdlib.h>
-#include <unistd.h>
 #include <cstring>
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+# define OS_WINDOWS
+#else
+#include <unistd.h>
+#endif
+
 #if !defined( MEMMAP_IO_WINDOWS ) && !defined( MEMMAP_IO_POSIX )
-# if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__)
+# if defined(OS_WINDOWS) || defined(__CYGWIN__)
 #  define MEMMAP_IO_WINDOWS
 #  ifndef _WIN32_WINNT
 #   define _WIN32_WINNT 0x0500
@@ -63,8 +68,16 @@ inline void mkdir_parents(const std::string &dirname)
     system_safe("mkdir -p "+dirname);
 }
 
+#ifdef OS_WINDOWS
+# include <direct.h>
+#endif
+
 inline std::string get_current_dir() {
+#ifdef OS_WINDOWS
+  char *malloced=_getcwd(NULL,0);
+#else
     char *malloced=::getcwd(NULL,0);
+#endif
     std::string ret(malloced);
     free(malloced);
     return ret;
@@ -207,6 +220,9 @@ inline bool is_tmpnam_template(const std::string &filename_template)
 }
 
 
+#ifndef OS_WINDOWS
+//FIXME: provide win32 implementations
+
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!).  returns filename created.  if template is missing XXXXXX, it's appended first.
 inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true) 
 {
@@ -243,6 +259,7 @@ inline void safe_unlink(const std::string &file,bool must_succeed=true)
     if (::unlink(file.c_str()) == -1 && must_succeed)
         throw_last_error(std::string("couldn't remove ").append(file));
 }
+#endif
 
 //!< returns dir/name unless dir is empty (just name, then).  if name begins with / then just returns name.
 inline std::string joined_dir_file(const std::string &basedir,const std::string &name="",char pathsep='/') 
@@ -255,5 +272,14 @@ inline std::string joined_dir_file(const std::string &basedir,const std::string 
         return basedir+pathsep+name;
     return basedir+name;
 }
+
+#ifdef OS_WINDOWS
+# ifdef max
+#  undef max
+# endif
+# ifdef min
+#  undef min
+# endif
+#endif
 
 #endif

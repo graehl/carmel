@@ -31,6 +31,7 @@
 
 #include <ctime>
 #include "os.hpp"
+
 inline unsigned default_random_seed()
 {
 //    long pid=get_process_id();
@@ -55,7 +56,7 @@ extern G_rdist g_random01;
 #endif
 #endif
 
-inline void set_random_seed(uint32_t value=default_random_seed())
+inline void set_random_seed(boost::uint32_t value=default_random_seed())
 {
 #ifdef USE_STD_RAND
     srand(value);

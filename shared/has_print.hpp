@@ -85,7 +85,7 @@ struct not_has_print<C,typename has_print_writer<C>::type> {
 };
 
 namespace boost {
-template <class C> struct reference_wrapper;
+template <class C> class reference_wrapper;
 }
 
 template <class C>

@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define USE_GRAEHL_HASH_MAP
+
 // use singly linked list
 #define USE_SLIST
 
