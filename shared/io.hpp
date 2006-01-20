@@ -463,8 +463,10 @@ inline std::basic_ostream<Ch,Tr> & print_command_line(std::basic_ostream<Ch,Tr> 
     if (header)
         out << header;
     WordSeparator<' '> sep;
-    for (int i=0;i<argc;++i)
-        out_shell_quote(out << sep,argv[i]);
+    for (int i=0;i<argc;++i) {
+        out << sep;
+        out_shell_quote(out,argv[i]);
+    }
     if (header)
         out << std::endl;
     return out;

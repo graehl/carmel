@@ -1270,36 +1270,36 @@ both_functors_byref<A,B> make_both_functors_byref(A &a_,B &b_)
 */
 template <class T>
 struct max_accum {
-    T max;
-    max_accum() : max() {}
+    T maximum;
+    max_accum() : maximum() {}
     template <class F>
     void operator()(const F& t) {
-        if (max < t)
-            max = t;
+        if (maximum < t)
+            maximum = t;
     }
-    operator T &() { return max; }
-    operator const T &() const { return max; }
+    operator T &() { return maximum; }
+    operator const T &() const { return maximum; }
 };
 
 template <class T>
 struct min_max_accum {
-    T max;
-    T min;
+    T maximum;
+    T minimum;
     bool seen;
     min_max_accum() : seen(false) {}
     template <class F>
     void operator()(const F& t) {
-//        DBP3(min,max,t);
+//        DBP3(minimum,maximum,t);
         if (seen) {
-            if (max < t)
-                max = t;
-            else if (min > t)
-                min = t;
+            if (maximum < t)
+                maximum = t;
+            else if (minimum > t)
+                minimum = t;
         } else {
-            min=max=t;
+            minimum=maximum=t;
             seen=true;
         }
-//        DBP2(min,max);
+//        DBP2(minimum,maximum);
     }
     bool anyseen() const 
     {
@@ -1307,7 +1307,7 @@ struct min_max_accum {
     }
     T maxdiff() const
     {
-        return this->anyseen()?max-min:T();
+        return this->anyseen()?maximum-minimum:T();
     }    
 };
 
@@ -1431,7 +1431,7 @@ template <class c,class t,class T>
 std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const stat_accum<T> &v) 
 {
     if (v.anyseen())
-        return o <<"{{{"<<v.min<<'/'<<v.avg()<<"(~"<<v.stddev()<<")/"<<v.max<<"}}}";
+        return o <<"{{{"<<v.minimum<<'/'<<v.avg()<<"(~"<<v.stddev()<<")/"<<v.maximum<<"}}}";
     else
         return o <<"<<<?/?/?>>>";
 }
@@ -1440,16 +1440,16 @@ std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const stat_accu
 
 template <class T>
 struct max_in_accum {
-    T max;
-    max_in_accum() : max() {}
+    T maximum;
+    max_in_accum() : maximum() {}
     template <class F>
     void operator()(const F& t) {
         for (typename F::const_iterator i=t.begin(),e=t.end();i!=e;++i)
-            if (max < *i)
-                max = *i;
+            if (maximum < *i)
+                maximum = *i;
     }
-    operator T &() { return max; }
-    operator const T &() const { return max; }
+    operator T &() { return maximum; }
+    operator const T &() const { return maximum; }
 };
 
 

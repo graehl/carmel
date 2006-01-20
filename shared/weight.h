@@ -270,7 +270,7 @@ struct logweight {                 // capable of representing nonnegative reals
   //  weight() : weight(-FLOAT_INF()) {}
   logweight() { setZero(); }
   logweight(bool,bool) { setInfinity(); }
-    logweight(Real logweight,bool dummy) : weight(logweight) {}
+    logweight(Real log_weight,bool dummy) : weight(log_weight) {}
     template <class Real2>
     logweight(const logweight<Real2> &o) : weight(o.weight) {}
 #if 0
