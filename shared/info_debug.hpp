@@ -13,13 +13,14 @@ using namespace __gnu_cxx;
 #endif
 using namespace std;
 
+//#undef INFO_LEVEL
 #ifndef INFO_LEVEL
 # define INFO_LEVEL 9999
 #endif
 
 #define COND_INFO(level,op) (INFO_LEVEL op level)
-#define COND_INFO_RUNTIME(level,op) (INFO_LEVEL op level && debug.runtime_info_level op level)
-#define COND_INFO_RUNTIME_EQUAL(level) (COND_INFO(level,>=) && debug.runtime_info_level == level)
+#define COND_INFO_RUNTIME(level,op) (INFO_LEVEL op level && ns_info_debug::debug.runtime_info_level op level)
+#define COND_INFO_RUNTIME_EQUAL(level) (COND_INFO(level,>=) && ns_info_debug::debug.runtime_info_level == level)
 #define IF_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,>=))
 #define UNLESS_INFO_RUNTIME(level) if(COND_INFO_RUNTIME(level,<))
 #define IF_INFO(level) if(COND_INFO(level,>=))
@@ -58,44 +59,44 @@ using namespace std;
 #define DBG_OP_L(lvl,Dbg,op,module,msg) DBG_OP_F(lvl,Dbg,op,module,msg,__FILE__,__LINE__)
 #define DBG_OP_LQ_NEWLINE(lvl,Dbg,op,module,msg,newline) DBG_OP_F_NL(lvl,Dbg,op,module,msg,"",0,newline)
 #define DBG_OP_LQ(lvl,Dbg,op,module,msg) DBG_OP_F(lvl,Dbg,op,module,msg,"",0)
-#define NESTINFO_GUARD(Dbg,lvl) ns_decoder_global::info_debug::Nest debug_nest_guard_ ## __LINE__ (Dbg,lvl)
+#define NESTINFO_GUARD(Dbg,lvl) ns_info_debug::info_debug::Nest debug_nest_guard_ ## __LINE__ (Dbg,lvl)
 
 #define O_INSERT(msg) os << msg
 
 // some of these names might be used, e.g. in windows.h, but seems ok on linux.  compilation will fail/warn if they are in conflict.
-#define NESTINFO NESTINFO_GUARD(debug,1)
-#define INFO(module,msg) DBG_OP(debug,info,module,O_INSERT(msg))
-#define WARNING(module,msg) DBG_OP(debug,warning,module,O_INSERT(msg))
+#define NESTINFO NESTINFO_GUARD(ns_info_debug::debug,1)
+#define INFO(module,msg) DBG_OP(ns_info_debug::debug,info,module,O_INSERT(msg))
+#define WARNING(module,msg) DBG_OP(ns_info_debug::debug,warning,module,O_INSERT(msg))
 
-//#define ERROR(module,msg) DBG_OP(debug,error,module,O_INSERT(msg))
-//too common a name - conflicts?
+#define ERROR_LINENO(module,msg) DBG_OP(ns_info_debug::debug,error,module,O_INSERT(msg))
+//ERROR too common a name - conflicts?
 
-#define FATAL(module,msg) DBG_OP(debug,fatalError,module,O_INSERT(msg))
-#define INFOQ(module,msg) DBG_OP_Q(debug,info,module,O_INSERT(msg))
-#define INFOB(module) debug.info_begin(module,__FILE__,__LINE__)
-#define WARNINGB(module) debug.warning_begin(module,__FILE__,__LINE__)
-#define ERRORB(module) debug.error_begin(module,__FILE__,__LINE__)
-#define INFOBQ(module) debug.info_begin(module,__FILE__,0)
-#define INFOENDL debug.info_endl()
-#define WARNINGBQ(module) debug.warning_begin(module,__FILE__,0)
-#define ERRORBQ(module) debug.error_begin(module,__FILE__,0)
+#define FATAL(module,msg) DBG_OP(ns_info_debug::debug,fatalError,module,O_INSERT(msg))
+#define INFOQ(module,msg) DBG_OP_Q(ns_info_debug::debug,info,module,O_INSERT(msg))
+#define INFOB(module) ns_info_debug::debug.info_begin(module,__FILE__,__LINE__)
+#define WARNINGB(module) ns_info_debug::debug.warning_begin(module,__FILE__,__LINE__)
+#define ERRORB(module) ns_info_debug::debug.error_begin(module,__FILE__,__LINE__)
+#define INFOBQ(module) ns_info_debug::debug.info_begin(module,__FILE__,0)
+#define INFOENDL ns_info_debug::debug.info_endl()
+#define WARNINGBQ(module) ns_info_debug::debug.warning_begin(module,__FILE__,0)
+#define ERRORBQ(module) ns_info_debug::debug.error_begin(module,__FILE__,0)
 
-#define INFOQSAMELINE(module,msg) DBG_OP_LQ_NEWLINE(0,debug,info,module,O_INSERT(msg),false)
-#define INFOSTREAM debug.info_sameline()
-#define INFOSTREAM_NL debug.info_startline()
-#define WARNINGLQ(lvl,module,msg) DBG_OP_LQ(lvl,debug,warning,module,O_INSERT(msg))
-#define WARNINGL(lvl,module,msg) DBG_OP_L(lvl,debug,warning,module,O_INSERT(msg))
-#define WARNINGQ(module,msg) DBG_OP_Q(debug,warning,module,O_INSERT(msg))
-#define ERRORQ(module,msg) DBG_OP_Q(debug,error,module,O_INSERT(msg))
-#define FATALQ(module,msg) DBG_OP_Q(debug,fatalError,module,O_INSERT(msg))
-#define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,debug,info,module,O_INSERT(msg))
-#define INFOLQE(lvl,module,oexp) DBG_OP_LQ(lvl,debug,info,module,oexp)
-#define INFOL(lvl,module,msg) DBG_OP_L(lvl,debug,info,module,O_INSERT(msg))
-#if INFO_LEVEL >=9
+#define INFOQSAMELINE(module,msg) DBG_OP_LQ_NEWLINE(0,ns_info_debug::debug,info,module,O_INSERT(msg),false)
+#define INFOSTREAM ns_info_debug::debug.info_sameline()
+#define INFOSTREAM_NL ns_info_debug::debug.info_startline()
+#define WARNINGLQ(lvl,module,msg) DBG_OP_LQ(lvl,ns_info_debug::debug,warning,module,O_INSERT(msg))
+#define WARNINGL(lvl,module,msg) DBG_OP_L(lvl,ns_info_debug::debug,warning,module,O_INSERT(msg))
+#define WARNINGQ(module,msg) DBG_OP_Q(ns_info_debug::debug,warning,module,O_INSERT(msg))
+#define ERRORQ(module,msg) DBG_OP_Q(ns_info_debug::debug,error,module,O_INSERT(msg))
+#define FATALQ(module,msg) DBG_OP_Q(ns_info_debug::debug,fatalError,module,O_INSERT(msg))
+#define INFOLQ(lvl,module,msg) DBG_OP_LQ(lvl,ns_info_debug::debug,info,module,O_INSERT(msg))
+#define INFOLQE(lvl,module,oexp) DBG_OP_LQ(lvl,ns_info_debug::debug,info,module,oexp)
+#define INFOL(lvl,module,msg) DBG_OP_L(lvl,ns_info_debug::debug,info,module,O_INSERT(msg))
+#if INFO_LEVEL >= 9
 #define INF9(module,msg) INFOLQ(9,module,O_INSERT(msg))
-#define INF9IN debug.increase_depth()
-#define INF9OUT debug.decrease_depth()
-#define INF9NEST NESTINFO_GUARD(debug,9)
+#define INF9IN ns_info_debug::debug.increase_depth()
+#define INF9OUT ns_info_debug::debug.decrease_depth()
+#define INF9NEST NESTINFO_GUARD(ns_info_debug::debug,9)
 #else
 #define INF9(module,msg)
 #define INF9IN
@@ -103,11 +104,11 @@ using namespace std;
 #define INF9NEST
 #endif
 
-#if INFO_LEVEL >=99
+#if INFO_LEVEL >= 99
 #define INF99(module,msg) INFOLQ(99,module,O_INSERT(msg))
-#define INF99IN debug.increase_depth()
-#define INF99OUT debug.decrease_depth()
-#define INF99NEST NESTINFO_GUARD(debug,99)
+#define INF99IN ns_info_debug::debug.increase_depth()
+#define INF99OUT ns_info_debug::debug.decrease_depth()
+#define INF99NEST NESTINFO_GUARD(ns_info_debug::debug,99)
 #else
 #define INF99(module,msg)
 #define INF99IN
@@ -120,17 +121,17 @@ using namespace std;
 #define WARNT(msg) DBG_OP(test_dbg,warning,"TEST",O_INSERT(msg))
 #define NESTT NESTINFO_GUARD(test_dbg,1)
 #else
-#define INFOT(msg) DBG_OP_L(99,debug,info,"TEST",O_INSERT(msg))
-#define WARNT(msg) DBG_OP_L(99,debug,warning,"TEST",O_INSERT(msg))
+#define INFOT(msg) DBG_OP_L(99,ns_info_debug::debug,info,"TEST",O_INSERT(msg))
+#define WARNT(msg) DBG_OP_L(99,ns_info_debug::debug,warning,"TEST",O_INSERT(msg))
 #if INFO_LEVEL >= 99
-#define NESTT NESTINFO_GUARD(debug,99)
+#define NESTT NESTINFO_GUARD(ns_info_debug::debug,99)
 #else
 #define NESTT
 #endif
 
 #endif
 
-namespace ns_decoder_global {
+namespace ns_info_debug {
 
 //! info_debug: This is a class to print out debugging information
 /*! This should be used for most communication to the user. The reason for this
@@ -308,17 +309,23 @@ class info_debug {
         return runtime_info_level;
     }
 };
-}
-
-extern ns_decoder_global::info_debug debug;        //!< interface for debugging output
-
+#ifdef SINGLE_MAIN
+info_debug debug;
+#else 
+extern info_debug debug;        //!< interface for debugging output
+#endif 
 #ifdef TEST
 # ifdef TEST_MAIN
-ns_decoder_global::info_debug test_dbg;
+info_debug test_dbg;
 # else
-extern ns_decoder_global::info_debug test_dbg;
+info_debug test_dbg;
 # endif 
 #endif
+
+}
+
+
+
 
 // added by Wei Wang.
 /*
@@ -374,7 +381,6 @@ private:
 };
 
 #ifdef SINGLE_MAIN
-ns_decoder_global::info_debug debug;
 unsigned Debugger::debugAll = 0;
 #endif
 
