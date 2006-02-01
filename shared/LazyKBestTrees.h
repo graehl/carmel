@@ -42,7 +42,7 @@ struct DefaultNewAlloc {
 };
 
 
-template <class T,bool destruct=true>
+template <class T,bool destroy=true>
 struct DefaultPoolAlloc {
     std::vector <T *> allocated;
     typedef T allocated_type;
@@ -59,7 +59,7 @@ struct DefaultPoolAlloc {
     }
     void deallocate_all() {
         for (typename std::vector<T*>::const_iterator i=allocated.begin(),e=allocated.end();i!=e;++i)
-            if (destruct)
+            if (destroy)
                 delete *i;
             else
                 ::operator delete((void *)*i);
@@ -139,8 +139,10 @@ struct Node {
     void print(std::ostream &o) const
     {
         o << "{NODE @" << this << '[' << memo.size() << ']';
+        /*
         if (memo.size())
             o << ": " << " first=" << *first_best() << " last=" << *last_best() << " pq=" << pq; // "  << memo=" << memo
+        */
         o << '}';
     }
     static A result_alloc;
