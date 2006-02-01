@@ -127,10 +127,10 @@ struct Symbol {
   std::ios_base::iostate
   print(std::basic_ostream<charT,Traits>& o) const
   {
+      //FIXME: dude, print it escaped the same way as it's read? (round trip was not intended originally)
     if (str < MIN_LEGAL_ADDRESS) {
       o << "symbolint_" << phony_int();
     } else {
-
         if (isDefault())
           return GENIOBAD;
         o << str;
@@ -164,22 +164,24 @@ struct Symbol {
                 }
           } else {
                 do {
-                  switch(c) {
-case '(':case ')':case ',':case '"':case '`':case '=':
-case '%':case '{':case '}':
-case '\t':case '\r':case '\n':case ' ':
+                    switch(c) {
+                    case '(':case ')':case ',':case '"':case '`':case '=':
+                    case '%':case '{':case '}':
+                    case '\t':case '\r':case '\n':case ' ':
 #ifndef GRAPHVIZ_SYMBOL
-                  case '^':case ';':    //FIXME: think this breaks treeviz.cpp (but it's needed for transducer.hpp)
+                    case '^':case ';':    //FIXME: think this breaks treeviz.cpp (but it's needed for transducer.hpp)
 #endif 
 //case '#':
-    //case '$':
-    //case ':':
-    //
-  in.unget();
-  goto donewhile;
-default:
-  g_buf.push_back(c);
-                  }
+//case '$':
+//case ':':
+                        in.unget();
+                        goto donewhile;
+                    case '\\':
+                        EXPECTI(in.get(c));                      
+//fallthrough
+                    default:
+                        g_buf.push_back(c);
+                    }
                 } while (in.get(c));
           }
 

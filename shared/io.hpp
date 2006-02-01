@@ -577,20 +577,29 @@ inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
     std::basic_stringstream<Ch,Tr> s;
     s << data;
     or_true_for_char<true_for_char<'\\'> > special('"');
-    std::istreambuf_iterator<Ch,Tr> i(s),end;
+    typedef std::istreambuf_iterator<Ch,Tr> i_iter;
+    typedef std::ostream_iterator<Ch,Tr> o_iter;
+    i_iter i(s),end;
     bool quote=(std::find_if(i,end,special) != end);
     rewind(s);
     if (quote) {
         out << '"';
-        for (std::istreambuf_iterator<Ch,Tr> i(s),end;i!=end;++i) {
-            char c=*i;
+        for (i_iter i(s);i!=end;++i) {
+            Ch c=*i;
             if (c == '"' || c== '\\')
                 out.put('\\');
             out.put(c);
         }
         out << '"';        
     } else {
-        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,std::ostream_iterator<Ch,Tr>(out));
+//        std::copy(i_iter(s),end,o_iter(out));
+        /*        
+        for (i_iter i(s);i!=end;++i)
+            out.put(*i);
+        */
+        Ch c;
+        while(s.get(c))
+            out.put(c);
     }
 }
 
@@ -744,6 +753,18 @@ struct DefaultReader
          }
 };
 
+template <class String=std::string>
+struct getline_reader
+{
+    typedef String value_type;
+    template <class Ch, class Tr>
+    void operator()(std::basic_istream<Ch,Tr>& in,value_type &read_into) const {
+        std::getline(read_into);
+    }
+};
+
+    
+
 struct DefaultWriter
 {
   template <class Ch, class Tr,class value_type>
@@ -880,7 +901,7 @@ std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T 
 
 template <class Ch, class Tr, class T>
 inline  std::ios_base::iostate print_range(std::basic_ostream<Ch,Tr>& o,T begin, T end,bool multiline=false,bool parens=true) {
-    return range_print(o,begin,end,DefaultWriter(),multiline,parens);
+   return  range_print_iostate(o,begin,end,DefaultWriter(),multiline,parens);
 }
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
