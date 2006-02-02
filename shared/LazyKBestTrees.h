@@ -17,7 +17,7 @@
 #include <new> // placement ::operator new(address) T()
 #include <vector>
 #include "info_debug.hpp"
-
+#include "io.hpp" //vector <<
 // TODO: implement deletion of all the lazykbest results (currently relies on pool/batch deletion)
 //TODO:  MIGHT IT BE MORE FLEXIBLE TO PASS RESULT BY VALUE?
 
@@ -91,7 +91,6 @@ struct Node;
 
 template <class R,class A=DefaultPoolAlloc<R> >
 struct Entry {
-    typedef std::vector<R *> pq_t;
     unsigned childbp[2];
     Node<R,A> *child[2];
     R *result;
@@ -119,10 +118,14 @@ struct Entry {
             if (child[1])
                 o << "," << child[1] << '[' << childbp[1] << ']';
         }
-
         o << ")=" << *result;
         o << '}';
 
+    }
+    inline friend ostream &operator<<(std::ostream &o,const Entry &e) 
+    {
+        e.print(o);
+        return o;
     }
     //        template <class r,class a> friend std::ostream & operator <<(std::ostream &,const typename lazy_kbest<r,a>::Entry &);
 };
@@ -139,10 +142,16 @@ struct Node {
     void print(std::ostream &o) const
     {
         o << "{NODE @" << this << '[' << memo.size() << ']';
-        /*
-        if (memo.size())
-            o << ": " << " first=" << *first_best() << " last=" << *last_best() << " pq=" << pq; // "  << memo=" << memo
-        */
+        
+        if (memo.size()) {            
+            o << ": " << " first=";
+            o<< *first_best();
+            o<< " last=";
+            o<< *last_best();
+            o<< " pq=";
+            print_default(o,pq);          
+//            o<< pq; // "  << memo=" << memo
+        }        
         o << '}';
     }
     static A result_alloc;
