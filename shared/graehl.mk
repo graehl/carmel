@@ -109,7 +109,8 @@ libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPT_LIB) $(BOOST_FS_L
 CXXFLAGS_COMMON += $(ARCH_FLAGS)
 #CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
 
-CPPFLAGS += $(CPPNOWIDECHAR)
+LARGEFILEFLAGS = -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 
+CPPFLAGS += $(CPPNOWIDECHAR) $(LARGEFILEFLAGS)
 LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR))
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
@@ -163,6 +164,8 @@ ifndef $(1)_NOOPT
 $$(BIN)/$(1):\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
  $$($(1)_SLIB)
+	@echo
+	@echo LINK\(optimized\) $$< into $$@
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
