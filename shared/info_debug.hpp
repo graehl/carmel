@@ -117,9 +117,9 @@ using namespace std;
 #endif
 
 #if (defined(TEST) && !defined(QUIET_TEST) )
-#define INFOT(msg) DBG_OP(test_dbg,info,"TEST",O_INSERT(msg))
-#define WARNT(msg) DBG_OP(test_dbg,warning,"TEST",O_INSERT(msg))
-#define NESTT NESTINFO_GUARD(test_dbg,1)
+#define INFOT(msg) DBG_OP(ns_info_debug::test_dbg,info,"TEST",O_INSERT(msg))
+#define WARNT(msg) DBG_OP(ns_info_debug::test_dbg,warning,"TEST",O_INSERT(msg))
+#define NESTT NESTINFO_GUARD(ns_info_debug::test_dbg,1)
 #else
 #define INFOT(msg) DBG_OP_L(99,ns_info_debug::debug,info,"TEST",O_INSERT(msg))
 #define WARNT(msg) DBG_OP_L(99,ns_info_debug::debug,warning,"TEST",O_INSERT(msg))
