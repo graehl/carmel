@@ -449,27 +449,7 @@ struct ResultPrinter {
 };
 
 typedef lazy_kbest<Result> LK;
-}
 
-BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
-    using namespace ns_TEST_lazy_kbest;
-    //a:6(b:5[OR b:10 f a ()],c:1(b:5,f:1))
-    {        
-        LK::Node a,b,c,f;
-        Result ra("a",6),rb("b",5),rc("c",1),rf("d",2),rb2("B",5),rb3("D",10),ra2("A",12);
-        a.add_sorted(&ra,&b,&c);
-        a.add_sorted(&ra2,&a);
-        b.add_sorted(&rb); // terminal
-        b.add_sorted(&rb2,&f);
-        b.add_sorted(&rb3,&b);
-        c.add_sorted(&rc,&b,&f);
-        f.add_sorted(&rf); // terminal
-        NESTT;
-        LK::enumerate_kbest(1,&f,ResultPrinter());
-        LK::enumerate_kbest(1,&b,ResultPrinter());
-        LK::enumerate_kbest(15,&a,ResultPrinter());
-    }
-    {
 /*
   qe
 qe -> A(qe qo) # .33 a
@@ -484,33 +464,66 @@ qo -> C # .25 g
 .34 -> 1.08
 .33 -> 1.10
 */
-        LK::Node qe,qo;
-        Result a("a:qe -> A(qe qo) # .33",1.1),
-            b("b:qe -> A(qo qe) # .33",1.1),
-            c("c:qe -> B(qo) # .34",1.08),
-            d("d:qo -> A(qo qo) # .25",1.37),
-            e("e:qo -> A(qe qe) # .25",1.1),
-            f("f:qo -> B(qe) # .25",1.37),
-            g("g:qo -> C # .25",1.37);
-        qe.add_sorted(&c,&qo);
-        qe.add_sorted(&a,&qe,&qo);
-        qe.add_sorted(&b,&qo,&qe);
+void jonmay_cycle() 
+{
+    LK::Node qe,qo;
+    Result a("a:qe -> A(qe qo) # .33",1.1),
+        b("b:qe -> A(qo qe) # .33",1.1),
+        c("c:qe -> B(qo) # .34",1.08),
+        d("d:qo -> A(qo qo) # .25",1.37),
+        e("e:qo -> A(qe qe) # .25",1.1),
+        f("f:qo -> B(qe) # .25",1.37),
+        g("g:qo -> C # .25",1.37);
+    qe.add_sorted(&c,&qo);
+    qe.add_sorted(&a,&qe,&qo);
+    qe.add_sorted(&b,&qo,&qe);
         
-        qo.add_sorted(&g);
-        qo.add_sorted(&d,&qo);
-        qo.add_sorted(&f,&qe);
-        qo.add_sorted(&e,&qe);
+    qo.add_sorted(&g);
+    qo.add_sorted(&d,&qo);
+    qo.add_sorted(&f,&qe);
+    qo.add_sorted(&e,&qe);
 
-        NESTT;
-        LK::enumerate_kbest(1,&qo,ResultPrinter());
-        LK::enumerate_kbest(1,&qe,ResultPrinter());
-        LK::enumerate_kbest(15,&qe,ResultPrinter());
-        
-            
-    }
-    
-    
+    NESTT;
+    LK::enumerate_kbest(1,&qo,ResultPrinter());
+    LK::enumerate_kbest(1,&qe,ResultPrinter());
+    LK::enumerate_kbest(15,&qe,ResultPrinter());
+
 }
+
+    //a:6(b:5[OR b:10 f a ()],c:1(b:5,f:1))
+void jongraehl_example()
+{
+    LK::Node a,b,c,f;
+    Result ra("a",6),rb("b",5),rc("c",1),rf("d",2),rb2("B",5),rb3("D",10),ra2("A",12);
+    a.add_sorted(&ra,&b,&c);
+    a.add_sorted(&ra2,&a);
+    b.add_sorted(&rb); // terminal
+    b.add_sorted(&rb2,&f);
+    b.add_sorted(&rb3,&b);
+    c.add_sorted(&rc,&b,&f);
+    f.add_sorted(&rf); // terminal
+    NESTT;
+    LK::enumerate_kbest(1,&f,ResultPrinter());
+    LK::enumerate_kbest(1,&b,ResultPrinter());
+    LK::enumerate_kbest(15,&a,ResultPrinter());
+}
+
+
+} //ns
+
+# ifdef JONMAY_MAIN
+int main(int argc,char *argv[])
+{
+    ns_TEST_lazy_kbest::jonmay_cycle();
+    return 0;
+}
+# else 
+BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
+    using namespace ns_TEST_lazy_kbest;
+    jongraehl_example();
+    jonmay_cycle();
+}
+# endif 
 #endif
 
 
