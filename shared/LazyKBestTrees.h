@@ -221,7 +221,7 @@ struct Node {
         assertlvl(19,memo.size()>=2 && memo.back() == PENDING() && old_parent==memo[memo.size()-2]);
         if (pending.child[0]) { // increment first
             BUILDSUCC(pending,old_parent,0);
-            if (pending.child[1] && --pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
+            if (pending.child[1] && pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
                 BUILDSUCC(pending,old_parent,1); // increments childbp[1]
             }
         }
@@ -232,8 +232,8 @@ struct Node {
             return top().result;
     }
 
-    // PRE: unincremented pending
-    //POST: if pending succesor incrementing ith child exists, increment, create new result, and add to heap
+
+    //try worsening ith child and adding to queue
     void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
         Node *child_node=pending.child[i];
         R *old_child=child_node->memo[pending.childbp[i]];
@@ -250,6 +250,7 @@ struct Node {
             INFOT("new result="<<*pending.result);
             push(pending);
         }
+        --pending.childbp[0];
     }
 
     // must be added from best to worst order
@@ -394,46 +395,77 @@ struct lazy_kbest {
 
 
 
-#ifdef TEST
+
 //# include "default_print.hpp"
 //FIXME: doesn't work
 
-# include "test.hpp"
+//# include "test.hpp"
 # include <iostream>
 # include <string>
-using namespace std;
-namespace ns_TEST_lazy_kbest {
 
+
+namespace ns_TEST_lazy_kbest {
+using namespace std;
 struct Result {
-    string val;
+    Result *child[2];
+    string rule;
     string history;
     float cost;
-    string tree;
-
-    Result(const string & v,float cost_) : val(v), history(v,0,1), cost(cost_) {}
+    Result(const string & rule_,float cost_,Result *left=NULL,Result *right=NULL) : rule(rule_),history(rule_,0,1),cost(cost_) {
+        child[0]=left;child[1]=right;
+        if (child[0]) {
+            cost+=child[0]->cost;
+            if (child[1])
+                cost+=child[1]->cost;
+        }
+    }
     friend ostream & operator <<(ostream &o,const Result &v);
     Result(Result *prototype, Result *old_child, Result *new_child,unsigned which_child) {
+        rule=prototype->rule;
+        child[0]=prototype->child[0];
+        child[1]=prototype->child[1];
+        assert(which_child<2);
+        assert(old_child==child[which_child?0:1]);
+        child[which_child]=new_child;
+        cost = prototype->cost + - old_child->cost + new_child->cost;
         NESTT;
-        INFOT("NEW RESULT proto=" << prototype->val << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child);
-        val = prototype->val;
-        std::ostringstream newhistory,newtree;
+        INFOT("NEW RESULT proto=" << *prototype << " old_child=" << old_child << " new_child=" << new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]);
+        
+        std::ostringstream newhistory,newtree,newderivtree;
         newhistory << prototype->history << ',' << (which_child ? "L" : "R") << '-' << old_child->cost << "+" << new_child->cost;
         //<< '(' << new_child->history << ')';
         history = newhistory.str();
-        newtree << val << '(' << new_child->tree << ')';
-        tree = newtree.str();
-
-        cost = prototype->cost + - old_child->cost + new_child->cost;
     }
     bool operator < (const Result &other) const {
         return cost > other.cost;
     } //  worse < better!
-
+    void print_tree(ostream &o,bool deriv=true) const
+    {
+        if (deriv)
+            o << "<<"<<rule<<">>";
+        else {
+            o << rule.substr(rule.find(" -> ")+4,1);    
+        }
+        if (child[0]) {
+            o << "(";
+            child[0]->print_tree(o,deriv);
+            if (child[1]) {
+                o << ",";
+                child[1]->print_tree(o,deriv);
+            }
+            o << ")";            
+        }
+    }
+    
 };
 
-ostream & operator <<(ostream &o,const Result &v)
+inline ostream & operator <<(ostream &o,const Result &v)
 {
-    return o << "{{{val=" << v.val << " cost=" << v.cost << " tree=" << v.tree  << " history=" << v.history << "}}}";
+    o << "{{{cost=" << v.cost <<  " tree=";
+    v.print_tree(o,false);
+    o <<" derivtree=";
+    v.print_tree(o);
+    return o<<" --- history=" << v.history << "}}}";
 }
 
 
@@ -464,16 +496,35 @@ qo -> C # .25 g
 .34 -> 1.08
 .33 -> 1.10
 */
-void jonmay_cycle() 
+
+# include <cmath>
+
+inline void jonmay_cycle() 
 {
-    LK::Node qe,qo;
-    Result a("a:qe -> A(qe qo) # .33",1.1),
-        b("b:qe -> A(qo qe) # .33",1.1),
-        c("c:qe -> B(qo) # .34",1.08),
-        d("d:qo -> A(qo qo) # .25",1.37),
-        e("e:qo -> A(qe qe) # .25",1.1),
-        f("f:qo -> B(qe) # .25",1.37),
-        g("g:qo -> C # .25",1.37);
+    using std::log;
+    LK::Node qe, 
+        qo;
+//    float ca=1.1,cb=1.1,cc=1.08,cd=1.37,ce=1.1,cf=1.37,cg=1.37;
+    /*
+      ca=cb=1.1;
+      cc=1.08;
+      cd=ce=cf=cg=1.37;
+    */
+    float ca,cb,cc,cd,ce,cf,cg;
+    ca=cb=-log(.33);
+    cc=-log(.34);
+    cd=ce=cf=cg=-log(.25);
+    float bqo=cg;  // best: g = 1.37
+    float bqe=cc+bqo;// best: c(qe) = 1.08+1.37
+    Result    g("qo -> C # .25",cg);    
+    Result c("qe -> B(qo) # .34",cc,&g);
+    Result a("qe -> A(qe qo) # .33",ca,&c,&g);
+    Result b("qe -> A(qo qe) # .33",cb,&g,&c);
+    Result d("qo -> A(qo qo) # .25",cd,&g,&g);
+    Result e("qo -> A(qe qe) # .25",ce,&c,&c);
+    Result f("qo -> B(qe) # .25",cf,&c);
+    
+
     qe.add_sorted(&c,&qo);
     qe.add_sorted(&a,&qe,&qo);
     qe.add_sorted(&b,&qo,&qe);
@@ -484,14 +535,12 @@ void jonmay_cycle()
     qo.add_sorted(&e,&qe);
 
     NESTT;
-    LK::enumerate_kbest(1,&qo,ResultPrinter());
-    LK::enumerate_kbest(1,&qe,ResultPrinter());
-    LK::enumerate_kbest(15,&qe,ResultPrinter());
-
+    LK::enumerate_kbest(5,&qo,ResultPrinter());
+    LK::enumerate_kbest(25,&qe,ResultPrinter());
 }
 
     //a:6(b:5[OR b:10 f a ()],c:1(b:5,f:1))
-void jongraehl_example()
+inline void jongraehl_example()
 {
     LK::Node a,b,c,f;
     Result ra("a",6),rb("b",5),rc("c",1),rf("d",2),rb2("B",5),rb3("D",10),ra2("A",12);
@@ -508,22 +557,14 @@ void jongraehl_example()
     LK::enumerate_kbest(15,&a,ResultPrinter());
 }
 
-
 } //ns
 
-# ifdef JONMAY_MAIN
-int main(int argc,char *argv[])
-{
-    ns_TEST_lazy_kbest::jonmay_cycle();
-    return 0;
-}
-# else 
+# ifdef TEST
 BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
     using namespace ns_TEST_lazy_kbest;
     jongraehl_example();
     jonmay_cycle();
 }
-# endif 
 #endif
 
 

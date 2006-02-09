@@ -354,11 +354,19 @@ inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,
     return o << "]";
 }
 
+
+template <class Cont,class Ch,class Tr>
+inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,const Cont &thing)
+{
+    return print_sequence(o,thing.begin(),thing.end());
+}
+
+
 template <class Cont,class Ch,class Tr>
 inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,const Cont &thing,typename
                                                  has_const_iterator<Cont>::type *SFINAE=0)
 {
-    return print_sequence(o,thing.begin(),thing.end());
+    return print_sequence(o,thing);
 }
 
 template <class Cont,class Ch,class Tr>
@@ -375,18 +383,18 @@ operator <<(std::basic_ostream<Ch,Tr> & o,const V &thing)
     return print_default(o,thing);
 }
 
-#define USE_PRINT_DEFAULT(C) \
+#define USE_PRINT_SEQUENCE(C) \
 template <class Ch,class Tr> \
 inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,const C &thing) \
 { \
-    return print_default(o,thing); \
+    return print_sequence(o,thing); \
 }
 
-#define USE_PRINT_DEFAULT_TEMPLATE(C) \
+#define USE_PRINT_SEQUENCE_TEMPLATE(C) \
 template <class V,class Ch,class Tr>                                                         \
 inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,const C<V> &thing) \
 { \
-    return print_default(o,thing); \
+    return print_sequence(o,thing); \
 }
 
 // why not template?  because i think that we may conflict with other overrides
@@ -405,7 +413,7 @@ inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,con
 //MAKE_VECTOR_PRINT_FOR(unsigned)
 //MAKE_VECTOR_PRINT_FOR(std::string)
 
-USE_PRINT_DEFAULT_TEMPLATE(std::vector)
+USE_PRINT_SEQUENCE_TEMPLATE(std::vector)
 
 template <class C>
 inline bool is_shell_special(C c) {
