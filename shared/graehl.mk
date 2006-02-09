@@ -165,7 +165,7 @@ $$(BIN)/$(1):\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
  $$($(1)_SLIB)
 	@echo
-	@echo LINK\(optimized\) $$< into $$@
+	@echo LINK\(optimized\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
@@ -177,7 +177,7 @@ ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
-	@echo LINK\(static\) $$< into $$@
+	@echo LINK\(static\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
@@ -190,7 +190,7 @@ ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
-	@echo LINK\(debug\) $$< into $$@
+	@echo LINK\(debug\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
@@ -200,7 +200,7 @@ endif
 ifndef $(1)_NOTEST
 $$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
 	@echo
-	@echo LINK\(test\) $$< into $$@
+	@echo LINK\(test\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))
