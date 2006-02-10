@@ -1,3 +1,14 @@
+2006-02-09  Jonathan Graehl  <graehl@isi.edu>
+
+	* LazyKBestTrees.h (jonmay_cycle): verified that missing jonmay
+	deriv wasn't a bug but a RTG transcription error
+
+	* test/LazyKbestTrees_test.cpp: run jonmay test case
+
+	* LazyKBestTrees.h: separate add, add_sorted, sort routines.  need
+	to find bug in jonmay missing #17,18,19 (symmetrical q0->A(qo qo)
+	deriv
+
 2006-02-07  Jonathan Graehl  <graehl@isi.edu>
 
 	* graehl.mk (LARGEFILEFLAGS): added default support for >4g files (linux)

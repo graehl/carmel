@@ -120,6 +120,9 @@ CPPFLAGS +=  -pedantic
 endif
 CPPFLAGS_TEST += $(CPPFLAGS)
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
+CPPFLAGS_OPT += $(CPPFLAGS)
+#-DNDEBUG
+
 #-fno-var-tracking
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
@@ -294,7 +297,7 @@ $(OBJT)/%.o: % %.d
 $(OBJ)/%.o: % %.d
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
-	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS) $(CPPFLAGS_OPT) $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
 $(OBJD)/%.o: % %.d

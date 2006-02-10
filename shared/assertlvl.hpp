@@ -5,10 +5,12 @@
 # define ASSERT_LEVEL 9999
 #endif
 
-#include <cassert>
+
 
 #define IF_ASSERT(level) if(ASSERT_LEVEL>=level)
 #define UNLESS_ASSERT(level) if(ASSERT_LEVEL<level)
-#define assertlvl(level,assertion) IF_ASSERT(level) {assert(assertion);}
-
+#ifndef assertlvl
+#include <cassert>
+#define assertlvl(level,assertion) do { IF_ASSERT(level) {assert(assertion);} } while(0)
+#endif
 #endif
