@@ -144,7 +144,20 @@ class info_debug {
  private:
     ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
     ostream *infoOS;                                       //!< output stream where debugging information is sent
+    const char *last_module;
  public:
+    void set_module(const char *module) 
+    {
+        last_module=module;
+    }
+    void update_module (const char *&module)
+    {
+        if (module)
+            last_module=module;
+        else
+            module=last_module;
+    }
+    
     int runtime_info_level;
     unsigned info_outline_depth;
     unsigned debug_outline_depth;
@@ -189,7 +202,7 @@ class info_debug {
 
     info_debug() : debugOS(&cerr), infoOS(&cerr),
               runtime_info_level(INFO_LEVEL),
-              info_outline_depth(0),debug_outline_depth(0),info_atnewline(true) {}
+                   info_outline_depth(0),debug_outline_depth(0),info_atnewline(true),last_module("DEFAULT") {}
 
     inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
         return *debugOS;
@@ -205,12 +218,15 @@ class info_debug {
     inline void setInfoOutput(ostream &o) {                      //!< Set the stream to which informational output is written
         infoOS=&o;
     }
-    void error(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error
+
+    //FIXME: support endline parameter?
+    void error(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error
         error_begin(module, file, line) << info << endl;
     }
 
-    ostream & error_begin(const string &module, const string &file="", const int line=0)
+    ostream & error_begin(const char *module, const string &file="", const int line=0)
     {
+        update_module(module);
         if (debugOS==infoOS)
             info_startline();
         else
@@ -221,15 +237,25 @@ class info_debug {
         return getDebugOutput() << ": ";
     }
 
-    void fatalError(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error and dies
+    void fatalError(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error and dies
+        update_module(module);
         error(module,info,file,line,endline);
-        DEBUG_BREAKPOINT;
-        assert(0);
-        exit(-1);
+        fatal_exit();
     }
 
-    ostream & warning_begin(const string &module, const string &file="", const int line=0)
+    static void fatal_exit() 
     {
+        BREAKPOINT;
+/*        
+        DEBUG_BREAKPOINT;
+        assert(0);
+*/
+        exit(-1);
+    }
+    
+    ostream & warning_begin(const char *module, const string &file="", const int line=0)
+    {
+        update_module(module);        
         if (debugOS==infoOS)
             info_startline();
         else
@@ -240,7 +266,7 @@ class info_debug {
         return getDebugOutput() << ": ";
     }
 
-    void warning(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints a warning message
+    void warning(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints a warning message
         warning_begin(module,file,line) << info << endl;
     }
 
@@ -283,7 +309,8 @@ class info_debug {
     }
 
     //!< note: should close this with info_endl() and not just "\n" or endl
-    ostream & info_begin(const string &module, const string &file="", const int line=0) { //!< prints an informational message
+    ostream & info_begin(const char *module, const string &file="", const int line=0) { //!< prints an informational message
+        update_module(module);
         const char OUTLINE_CHAR='*';
         info_startline();
         for (unsigned depth=info_outline_depth;depth>0;--depth)
@@ -296,7 +323,7 @@ class info_debug {
         return getInfoOutput() << ": ";
     }
 
-    void info(const string &module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
+    void info(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
         info_begin(module,file,line) << info;        
         if (endline)
             info_endl();
@@ -322,8 +349,44 @@ info_debug test_dbg;
 # endif 
 #endif
 
+inline static void dbg_must(const char *file,unsigned line,const char *expr)
+{
+    debug.error_begin(NULL,file,line) << "Assertion failed: " << expr << std::endl;
+    debug.fatal_exit();
 }
 
+template <class T>
+inline static void dbg_expect(const char *file,unsigned line,const T&t,const char *expr,const char *expect)
+{
+    debug.error_begin(NULL,file,line) << "Unexpected value (" << expr << "): got " << t << ", but expected " << expect << std::endl;
+    debug.fatal_exit();
+}
+
+template <class T,class T2>
+inline static void dbg_expect2(const char *file,unsigned line,const T&got,const T2& exp,const char *expr,const char *expect)
+{
+    debug.error_begin(NULL,file,line) << "Unexpected value (" << expr << "): got " << got << ", but expected " << exp << "(" << expect << ")"<<std::endl;
+    debug.fatal_exit();
+}
+
+}
+
+# define MUST(expr) (expr) ? (void)0 :   \
+    ns_info_debug::dbg_must(__FILE__,__LINE__,#expr)
+
+// WARNING: expr occurs twice (repeated computation on failure)
+# define EXPECT_2(expr,expect) do {                                                        \
+        /* Config::log() << #expr << ' ' << #expect << " = " << (expr expect) << std::endl;*/   \
+        if (!((expr) expect)) ns_info_debug::dbg_expect(__FILE__,__LINE__,expr,#expr,#expect);            \
+    } while(0)
+
+# define EXPECT(expr,OP,expect) do {                                                         \
+        /* Config::log() << #expr << ' ' << #expect << " = " << (expr expect) << std::endl;*/   \
+        if (!((expr) OP (expect))) ns_info_debug::dbg_expect2(__FILE__,__LINE__,expr,expect,#expr,#expect);      \
+    } while(0)
+
+# define MUST_L(lvl,expr) do { IF_ASSERT(level) {MUST(assertion);} } while(0)
+# define EXPECT_L(lvl,expr,expect) do { IF_ASSERT(level) {EXPECT(assertion);} } while(0)
 
 
 

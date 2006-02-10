@@ -73,6 +73,17 @@ template <typename T> void heapBuild ( T *heapStart, T *heapEnd )
     heapify(heap, size, i);
 }
 
+//FIXME: test!
+template <typename T> bool heapVerify ( T *heapStart, T *heapEnd )
+{
+  T *heap = heapStart - 1;
+  size_t size = heapEnd - heapStart;
+  while (--size>1)
+      if (heap[size/2]<heap[size])
+          return false;
+  return true;
+}
+
 // *element may need to be moved up toward the root of the heap.  fix.
 template <typename T> inline void heapAdjustUp ( T *heapStart, T *element)
 {

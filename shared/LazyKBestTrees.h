@@ -78,6 +78,7 @@ struct DefaultPoolAlloc {
 #include "2heap.h"
 #else
 #include <algorithm>
+#include <ext/algorithm>
 #endif
 
 
@@ -88,6 +89,11 @@ namespace lazy_kbest_impl {
 
 template <class R,class A>
 struct Node;
+
+std::ostream & operator <<(std::ostream &o,unsigned bp[2])
+{
+    return o << '[' << bp[0] << ','<<bp[1]<<']';
+}
 
 template <class R,class A=DefaultPoolAlloc<R> >
 struct Entry {
@@ -144,12 +150,12 @@ struct Node {
         o << "{NODE @" << this << '[' << memo.size() << ']';
         
         if (memo.size()) {            
-            o << ": " << " first=";
+            o << ": " << " first={{{";
             o<< *first_best();
-            o<< " last=";
+            o<< "}}} last={{{";
             o<< *last_best();
-            o<< " pq=";
-            print_default(o,pq);          
+            o<< "}}}";
+//                o << " pq=" << pq;          
 //            o<< pq; // "  << memo=" << memo
         }        
         o << '}';
@@ -190,8 +196,8 @@ struct Node {
                 memo.push_back(NULL);
                 return NULL;
             }
-            memo.push_back(PENDING()); //FIXME: use dynarray.h and push back without init?
-            //                IF_ASSERT(11) memo[n].result=PENDING;
+            memo.push_back(PENDING());
+//FIXME: use dynarray.h and push back without init?//                IF_ASSERT(11) memo[n].result=PENDING;
             return (memo[n]=next_best());
         }
     }
@@ -214,10 +220,11 @@ struct Node {
     R *next_best() {
         assertlvl(11,!done());
         //            if (pq.empty()) return NULL;
-        QEntry pending=pq.front(); // creating a copy saves so many ugly complexities in trying to make pop_heap / push_heap efficient ...
+        QEntry pending=top(); // creating a copy saves so many ugly complexities in trying to make pop_heap / push_heap efficient ...
+        INFOT("GENERATE SUCCESSORS FOR "<<pending);
         pop(); // since we made a copy already into pending...
 
-        R *old_parent=pending.result;
+        R *old_parent=pending.result; // remember this because we'll be destructively updating pending.result below
         assertlvl(19,memo.size()>=2 && memo.back() == PENDING() && old_parent==memo[memo.size()-2]);
         if (pending.child[0]) { // increment first
             BUILDSUCC(pending,old_parent,0);
@@ -234,70 +241,95 @@ struct Node {
 
 
     //try worsening ith child and adding to queue
-    void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
-        Node *child_node=pending.child[i];
-        R *old_child=child_node->memo[pending.childbp[i]];
-        assertlvl(99,old_child=child_node->get_best(pending.childbp[i]));
-
+    inline void BUILDSUCC(QEntry &pending,R *old_parent,unsigned i)  {
+        Node &child_node=*pending.child[i];
+        unsigned &child_i=pending.childbp[i];
+        R *old_child=child_node.memo[child_i];
+        //assertlvl(99,old_child==child_node.get_best(child_i));
+        
         //            R *new_child;
-        INFOT("BUILDSUCC #" << i << " @" << this << ": " << " old_child=" <<old_child << *this);
+        INFOT("BUILDSUCC #" << i << " @" << this << ": " << " old_parent="<<old_parent<<" old_child=" <<old_child << " NODE="<<*this);
         NESTT;
 
-        if (R *new_child=(child_node->get_best(++pending.childbp[i]))) {         // has child-succesor
-            INFOT("HAVE CHILD SUCCESOR TO " << *this << ": @" << i << ' ' << pending.childbp[0] << ',' << pending.childbp[1]);
+        if (R *new_child=(child_node.get_best(++child_i))) {         // has child-succesor
+            INFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
             pending.result=result_alloc.allocate();
             new(pending.result) R(old_parent,old_child,new_child,i); // FIXME: ensure placement new is used - how?  ::operator new is bad ...
-            INFOT("new result="<<*pending.result);
+            INFOT("new result: "<<*pending.result);
             push(pending);
         }
-        --pending.childbp[0];
+        --child_i;
+        INFOT("restored original i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
     }
 
-    // must be added from best to worst order
+    // must be added from best to worst order ( r1 > r2 > r3 > ... )
     void add_sorted(Result *r,Node<R,A> *left=NULL,Node<R,A> *right=NULL) {
-        INFOT("add_sorted this=" << this << " result=" << *r << " left=" << left << " right=" << right);
-        QEntry e;
-        e.set(r,left,right);
         if (pq.empty()) { // first added
             assertlvl(29,memo.empty());
             memo.push_back(r);
         }
+        add(r,left,right);
+    }
+
+    void add(Result *r,Node<R,A> *left=NULL,Node<R,A> *right=NULL)
+    {        
+        INFOT("add this=" << this << " result=" << *r << " left=" << left << " right=" << right);
+        QEntry e;
+        e.set(r,left,right);
         pq.push_back(e);
         INFOT("done (heap) " << e);
     }
-
-
-        void make_done() {
-            //            top().result = NULL;
-            assert("unsupported"==0);
-        }
-        bool done() const {
-            //            return top().result == NULL;
-            return pq.empty();
-        }
-        void push(const QEntry &e) {
-            pq.push_back(e);
+    
+    void sort()
+    {
 #ifdef GRAEHL_HEAP
-             //FIXME: use dynarray.h? so you don't have to push on a copy of e first
-            heapAdd(pq.begin(),pq.end(),e);
+        heapBuild(pq.begin(),pq.end());
 #else
-            push_heap(pq.begin(),pq.end());
-                        //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
+        make_heap(pq.begin(),pq.end());
 #endif
-        }
-        void pop() {
+        memo.clear();
+        memo.push_back(top().result);
+    }
+    
+    bool is_sorted()
+    {
 #ifdef GRAEHL_HEAP
-            heapPop(pq.begin(),pq.end());
+        return heapVerify(pq.begin(),pq.end());
 #else
-            pop_heap(pq.begin(),pq.end());
-            //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
+        return __gnu_cxx::is_heap(pq.begin(),pq.end());
+#endif 
+    }
+    
+    void make_done() {
+        //            top().result = NULL;
+        assert("unsupported"==0);
+    }
+    bool done() const {
+        //            return top().result == NULL;
+        return pq.empty();
+    }
+    void push(const QEntry &e) {
+        pq.push_back(e);
+#ifdef GRAEHL_HEAP
+        //FIXME: use dynarray.h? so you don't have to push on a copy of e first
+        heapAdd(pq.begin(),pq.end(),e);
+#else
+        push_heap(pq.begin(),pq.end());
+        //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
 #endif
-            pq.pop_back();
-        }
-        const QEntry &top() const {
-            return pq.front();
-        }
-
+    }
+    void pop() {
+#ifdef GRAEHL_HEAP
+        heapPop(pq.begin(),pq.end());
+#else
+        pop_heap(pq.begin(),pq.end());
+        //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
+#endif
+        pq.pop_back();
+    }
+    const QEntry &top() const {
+        return pq.front();
+    }
 };
 
 template <class R,class A>
@@ -419,20 +451,27 @@ struct Result {
                 cost+=child[1]->cost;
         }
     }
-    friend ostream & operator <<(ostream &o,const Result &v);
+    friend ostream & operator <<(ostream &o,const Result &v)
+    {
+        o << "cost=" << v.cost <<  " tree={{{";
+        v.print_tree(o,false);
+        o <<"}}} derivtree={{{";
+        v.print_tree(o);
+        return o<<"}}} history={{{" << v.history << "}}}";
+    }
     Result(Result *prototype, Result *old_child, Result *new_child,unsigned which_child) {
         rule=prototype->rule;
         child[0]=prototype->child[0];
         child[1]=prototype->child[1];
-        assert(which_child<2);
-        assert(old_child==child[which_child?0:1]);
+        EXPECT(which_child,<,2);
+        EXPECT(child[which_child],==,old_child);
         child[which_child]=new_child;
         cost = prototype->cost + - old_child->cost + new_child->cost;
         NESTT;
-        INFOT("NEW RESULT proto=" << *prototype << " old_child=" << old_child << " new_child=" << new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]);
+        INFOT("NEW RESULT proto=" << *prototype << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]);
         
         std::ostringstream newhistory,newtree,newderivtree;
-        newhistory << prototype->history << ',' << (which_child ? "L" : "R") << '-' << old_child->cost << "+" << new_child->cost;
+        newhistory << prototype->history << ',' << (which_child ? "R" : "L") << '-' << old_child->cost << "+" << new_child->cost;
         //<< '(' << new_child->history << ')';
         history = newhistory.str();
     }
@@ -442,15 +481,15 @@ struct Result {
     void print_tree(ostream &o,bool deriv=true) const
     {
         if (deriv)
-            o << "<<"<<rule<<">>";
+            o << "["<<rule<<"]";
         else {
-            o << rule.substr(rule.find(" -> ")+4,1);    
+            o << rule.substr(rule.find("->")+2,1);    
         }
         if (child[0]) {
             o << "(";
             child[0]->print_tree(o,deriv);
             if (child[1]) {
-                o << ",";
+                o << " ";
                 child[1]->print_tree(o,deriv);
             }
             o << ")";            
@@ -459,23 +498,13 @@ struct Result {
     
 };
 
-inline ostream & operator <<(ostream &o,const Result &v)
-{
-    o << "{{{cost=" << v.cost <<  " tree=";
-    v.print_tree(o,false);
-    o <<" derivtree=";
-    v.print_tree(o);
-    return o<<" --- history=" << v.history << "}}}";
-}
-
-
 struct ResultPrinter {
     bool operator()(const Result &r,unsigned i) const {
         NESTT;
-        INFOT("Visiting result #" << i << r);
+        INFOT("Visiting result #" << i << " = " << r);
         INFOT("");
         cout << "RESULT #" << i << "=" << r << "\n";
-        INFOT("");
+        INFOT("done #:" << i);
         return true;
     }
 };
@@ -499,7 +528,7 @@ qo -> C # .25 g
 
 # include <cmath>
 
-inline void jonmay_cycle() 
+inline void jonmay_cycle(int weightset=1) 
 {
     using std::log;
     LK::Node qe, 
@@ -510,34 +539,79 @@ inline void jonmay_cycle()
       cc=1.08;
       cd=ce=cf=cg=1.37;
     */
-    float ca,cb,cc,cd,ce,cf,cg;
-    ca=cb=-log(.33);
-    cc=-log(.34);
-    cd=ce=cf=cg=-log(.25);
-    float bqo=cg;  // best: g = 1.37
-    float bqe=cc+bqo;// best: c(qe) = 1.08+1.37
-    Result    g("qo -> C # .25",cg);    
-    Result c("qe -> B(qo) # .34",cc,&g);
-    Result a("qe -> A(qe qo) # .33",ca,&c,&g);
-    Result b("qe -> A(qo qe) # .33",cb,&g,&c);
-    Result d("qo -> A(qo qo) # .25",cd,&g,&g);
-    Result e("qo -> A(qe qe) # .25",ce,&c,&c);
-    Result f("qo -> B(qe) # .25",cf,&c);
+    float ca=.502,cb=.491,cc=0.152,cd=.603,ce=.502,cf=.174,cg=0.01;
+    if (weightset==1) {
+        ca=cb=-log(.33);
+        cc=-log(.34);
+        cd=ce=cf=cg=-log(.25);
+    } else if (weightset==2) {
+        ca=cb=cc=cd=ce=cf=cg=1;
+    }
+    
+    Result    g("qo->C",cg);    
+    Result c("qe->B(qo)",cc,&g);
+    Result a("qe->A(qe qo)",ca,&c,&g);
+    Result b("qe->A(qo qe)",cb,&g,&c);
+    Result d("qo->A(qo qo)",cd,&g,&g);
+    Result e("qo->A(qe qe)",ce,&c,&c);
+    Result f("qo->B(qe)",cf,&c);
     
 
     qe.add_sorted(&c,&qo);
     qe.add_sorted(&a,&qe,&qo);
     qe.add_sorted(&b,&qo,&qe);
-        
-    qo.add_sorted(&g);
-    qo.add_sorted(&d,&qo);
-    qo.add_sorted(&f,&qe);
-    qo.add_sorted(&e,&qe);
+    MUST(qe.is_sorted());
+    
+    qo.add(&e,&qe);
+    qo.add(&g);
+    qo.add(&d,&qo,&qo);
+    qo.add(&f,&qe);
 
+    MUST(!qo.is_sorted());
+    qo.sort();
+    MUST(qo.is_sorted());
+    
     NESTT;
-    LK::enumerate_kbest(5,&qo,ResultPrinter());
-    LK::enumerate_kbest(25,&qe,ResultPrinter());
+    LK::enumerate_kbest(10,&qo,ResultPrinter());
+    //LK::enumerate_kbest(25,&qe,ResultPrinter());
 }
+
+inline void simplest_cycle()
+{
+    float cc=0,cb=1,ca=.33;
+    Result c("q->C",cc);
+    Result b("q->B(q2)",cb,&c);
+    Result a("q->A(q q)",ca,&c,&c);
+    LK::Node q,q2;
+    q.add(&a,&q,&q);
+    q.add(&b,&q);
+    q.add(&c);
+    MUST(!q.is_sorted());
+    q.sort();
+    MUST(q.is_sorted());
+    NESTT;
+    LK::enumerate_kbest(30,&q,ResultPrinter());
+}
+
+inline void simple_cycle()
+{
+
+    float cc=0;Result c("q->C",cc);
+    float cd=.01;Result d("q2->D(q)",cd,&c);    
+    float cb=.2;Result b("q->B(q2 q2)",cb,&d,&d);
+    float ca=.33;Result a("q->A(q q)",ca,&c,&c);
+    LK::Node q,q2;
+    q.add(&a,&q,&q);
+    q.add(&b,&q2,&q2);
+    q.add(&c);
+    MUST(!q.is_sorted());
+    q.sort();
+    MUST(q.is_sorted());
+    q2.add_sorted(&d,&q);
+    NESTT;
+    LK::enumerate_kbest(30,&q,ResultPrinter());
+}
+
 
     //a:6(b:5[OR b:10 f a ()],c:1(b:5,f:1))
 inline void jongraehl_example()
