@@ -528,7 +528,7 @@ qo -> C # .25 g
 
 # include <cmath>
 
-inline void jonmay_cycle(int weightset=1) 
+inline void jonmay_cycle(int weightset=0) 
 {
     using std::log;
     LK::Node qe, 
@@ -540,15 +540,17 @@ inline void jonmay_cycle(int weightset=1)
       cd=ce=cf=cg=1.37;
     */
     float ca=.502,cb=.491,cc=0.152,cd=.603,ce=.502,cf=.174,cg=0.01;
+
+    if (weightset==2) {
+        ca=cb=cc=cd=ce=cf=cg=1;
+    }
     if (weightset==1) {
         ca=cb=-log(.33);
         cc=-log(.34);
         cd=ce=cf=cg=-log(.25);
-    } else if (weightset==2) {
-        ca=cb=cc=cd=ce=cf=cg=1;
     }
-    
-    Result    g("qo->C",cg);    
+
+    Result g("qo->C",cg);    
     Result c("qe->B(qo)",cc,&g);
     Result a("qe->A(qe qo)",ca,&c,&g);
     Result b("qe->A(qo qe)",cb,&g,&c);
@@ -572,8 +574,8 @@ inline void jonmay_cycle(int weightset=1)
     MUST(qo.is_sorted());
     
     NESTT;
-    LK::enumerate_kbest(10,&qo,ResultPrinter());
-    //LK::enumerate_kbest(25,&qe,ResultPrinter());
+    //LK::enumerate_kbest(10,&qo,ResultPrinter());
+    LK::enumerate_kbest(25,&qe,ResultPrinter());
 }
 
 inline void simplest_cycle()
