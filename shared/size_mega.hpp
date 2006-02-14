@@ -51,7 +51,7 @@ struct size_mega
     friend Ostream & operator <<(Ostream &o,const size_mega &me) 
     {
         restore_stream<Ostream > save(o);
-        o << std::setw(5);
+        o << std::setprecision(2); // std::width(4)
         return print_size(o,me.size,decimal_thousand);
     }
 };
