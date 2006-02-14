@@ -60,15 +60,15 @@ struct memory_stats  {
     typedef size_mega<false,std::size_t> size_type;
     size_type program_allocated() const 
     {
-        return info.uordblks;
+        return size_type(info.uordblks);
     }
     size_type system_allocated() const 
     {
-        return info.arena;
+        return size_type(info.arena);
     }
     size_type memory_mapped() const
     {
-        return info.hblkhd;
+        return size_type(info.hblkhd);
     }
 };
 
