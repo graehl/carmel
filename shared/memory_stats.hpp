@@ -72,7 +72,7 @@ struct memory_stats  {
     }
 };
 
-inline malloc_info operator - (malloc_info after,malloc_info before) 
+inline memory_stats operator - (memory_stats after,memory_stats before) 
 {
     using namespace memory_stats_detail;
     return transform2_array_coerce<unsigned>(after,before,difference_f<int>());

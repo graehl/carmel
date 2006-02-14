@@ -46,7 +46,7 @@ struct size_mega
     {
         return size;
     }
-    size_mega(size_type size_) : size(size_) {}
+    explicit size_mega(size_type size_) : size(size_) {}
     template <class Ostream>
     friend Ostream & operator <<(Ostream &o,const size_mega &me) 
     {
