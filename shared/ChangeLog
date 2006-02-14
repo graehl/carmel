@@ -1,3 +1,8 @@
+2006-02-14  Jonathan Graehl  <graehl@isi.edu>
+
+	* stopwatch.hpp (class stopwatch): adapted from Timer
+	(start/stop/totals seems useful - TODO: include memory stats?)
+
 2006-02-13  Jonathan Graehl  <graehl@isi.edu>
 
 	* size_mega.hpp: from funcs.hpp, STL.h
