@@ -80,7 +80,7 @@ inline memory_stats operator - (memory_stats after,memory_stats before)
 
 inline std::ostream &operator << (std::ostream &o, const memory_stats &s) {
     typedef size_mega<false> sz;
-    return o << "("<<"Memory: "<<s.program_allocated()<<" allocated, " << s.system_allocated() << " total allocated from system, "<<s.memory_mapped()<<" memory mapped)";
+    return o << "["<<s.program_allocated()<<" allocated, " << s.system_allocated() << " from system, "<<s.memory_mapped()<<" memory mapped]";
 }
 
 
