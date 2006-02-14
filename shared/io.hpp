@@ -14,6 +14,7 @@
 #include <iterator>
 #include "has_print.hpp"
 #include <streambuf>
+#include <iostream>
 
 template <class Ch, class Tr,class Alloc>
 inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 

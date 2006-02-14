@@ -1,3 +1,9 @@
+2006-02-13  Jonathan Graehl  <graehl@isi.edu>
+
+	* size_mega.hpp: from funcs.hpp, STL.h
+
+	* memory_stats.hpp: from syntax-decoder STL.h
+
 2006-02-09  Jonathan Graehl  <graehl@isi.edu>
 
 	* LazyKBestTrees.h (jonmay_cycle): verified that missing jonmay
