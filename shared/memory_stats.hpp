@@ -6,30 +6,6 @@
 #include "malloc.h"
 
 
-namespace memory_stats_detail {
-template <class V>
-struct difference_f 
-{
-    V operator()(const V&l,const V&r) const
-    {
-        return l-r;
-    }    
-};
-
-template <class V,class S,class F>
-inline S transform2_array_coerce(const S&l,const S&r,F f) 
-{
-    const unsigned N=sizeof(S)/sizeof(V);
-    S ret;
-    const V *pl=(V*)&l;
-    const V *pr=(V*)&r;
-    V *pret=(V*)&ret;
-    for (unsigned i=0;i<N;++i)
-        pret[i]=f(pl[i],pr[i]);
-    return ret;
-}
-}
-
 typedef struct mallinfo malloc_info;
 
 struct memory_stats  {
@@ -74,8 +50,22 @@ struct memory_stats  {
 
 inline memory_stats operator - (memory_stats after,memory_stats before) 
 {
-    using namespace memory_stats_detail;
-    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
+    memory_stats ret;
+#define MEMSTAT_DIFF(field) ret.info.field=after.info.field-before.info.field
+MEMSTAT_DIFF(arena);    /* total space allocated from system */
+MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
+MEMSTAT_DIFF(smblks);   /* unused -- always zero */
+MEMSTAT_DIFF(hblks);    /* number of mmapped regions */
+MEMSTAT_DIFF(hblkhd);   /* total space in mmapped regions */
+MEMSTAT_DIFF(usmblks);  /* unused -- always zero */
+MEMSTAT_DIFF(fsmblks);  /* unused -- always zero */
+MEMSTAT_DIFF(uordblks); /* total allocated space */
+MEMSTAT_DIFF(fordblks); /* total non-inuse space */
+MEMSTAT_DIFF(keepcost); /* top-most, releasable (via malloc_trim) space */
+#undef MEMSTAT_DIFF
+return ret;
+//    using namespace memory_stats_detail;
+//    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
 }
 
 inline std::ostream &operator << (std::ostream &o, const memory_stats &s) {

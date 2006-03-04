@@ -8,6 +8,9 @@
 #include <stdexcept>
 #include <stdlib.h>
 #include <cstring>
+#include <sstream>
+//#include "info_debug.hpp"
+#include "shell_escape.hpp"
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 # define OS_WINDOWS
@@ -52,20 +55,40 @@ typedef int Error;
 inline int system_safe(const std::string &cmd) 
 {
     int ret=::system(cmd.c_str());
-    
-    if (ret==-1)
+    if (ret!=0)
         throw std::runtime_error(cmd);
     return ret;
 }
 
-inline void copy_file(const std::string &source, const std::string &dest)
+inline int system_shell_safe(const std::string &cmd) 
 {
-    system_safe("cp "+source+" "+dest);
+    const char *shell="/bin/sh -c ";
+    std::stringstream s;
+    s << shell;
+    out_shell_quote(s,cmd);
+    return system_safe(s.str());
+}
+
+inline void copy_file(const std::string &source, const std::string &dest, bool skip_same_size_and_time=false)
+{
+    const char *rsync="rsync -qt";
+    const char *cp="/bin/cp -p";
+    std::stringstream s;
+    s << (skip_same_size_and_time ? rsync : cp) << ' ';
+    out_shell_quote(s,source);
+    s << ' ';
+    out_shell_quote(s,dest);
+//    INFOQ("copy_file",s.str());
+    system_safe(s.str());
 }
 
 inline void mkdir_parents(const std::string &dirname)
 {
-    system_safe("mkdir -p "+dirname);
+    const char *mkdir="/bin/mkdir -p ";
+    std::stringstream s;
+    s << mkdir;
+    out_shell_quote(s,dirname);
+    system_safe(s.str());
 }
 
 #ifdef OS_WINDOWS
@@ -224,7 +247,7 @@ inline bool is_tmpnam_template(const std::string &filename_template)
 //FIXME: provide win32 implementations
 
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!).  returns filename created.  if template is missing XXXXXX, it's appended first.
-inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true) 
+inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=false) 
 {
     const unsigned MY_MAX_PATH=1024;
     char tmp[MY_MAX_PATH+1];
@@ -249,15 +272,20 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_t
 inline std::string maybe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true)
 {
     return is_tmpnam_template(filename_template) ?
-        safe_tmpnam(filename_template) :
+        safe_tmpnam(filename_template,keepfile) :
         filename_template;
 }
 
 
-inline void safe_unlink(const std::string &file,bool must_succeed=true) 
+inline bool safe_unlink(const std::string &file,bool must_succeed=true) 
 {
-    if (::unlink(file.c_str()) == -1 && must_succeed)
-        throw_last_error(std::string("couldn't remove ").append(file));
+    if (::unlink(file.c_str()) == -1) {
+        if (must_succeed)
+            throw_last_error(std::string("couldn't remove ").append(file));
+        return false;
+    } else {
+        return true;
+    }
 }
 #endif
 
@@ -272,6 +300,21 @@ inline std::string joined_dir_file(const std::string &basedir,const std::string 
         return basedir+pathsep+name;
     return basedir+name;
 }
+
+//FIXME: test
+inline void split_dir_file(const std::string &fullpath,std::string &dir,std::string &file,char pathsep='/')
+{
+    using namespace std;
+    string::size_type p=fullpath.rfind(pathsep);
+    if (p==string::npos) {
+        dir=".";
+        file=fullpath;
+    } else {
+        dir=fullpath.substr(0,p);
+        file=fullpath.substr(p+1,fullpath.length()-(p+1));
+    }   
+}
+
 
 #ifdef OS_WINDOWS
 # ifdef max

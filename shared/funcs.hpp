@@ -35,7 +35,29 @@
 # define TOKENIZE_KEY_VAL_IF_DBG(a) a
 #else
 # define TOKENIZE_KEY_VAL_IF_DBG(a)
-#endif 
+#endif
+
+template <class V>
+struct difference_f 
+{
+    V operator()(const V&l,const V&r) const
+    {
+        return l-r;
+    }    
+};
+
+template <class V,class S,class F>
+inline S transform2_array_coerce(const S&l,const S&r,F f) 
+{
+    const unsigned N=sizeof(S)/sizeof(V);
+    S ret;
+    const V *pl=(V*)&l;
+    const V *pr=(V*)&r;
+    V *pret=(V*)&ret;
+    for (unsigned i=0;i<N;++i)
+        pret[i]=f(pl[i],pr[i]);
+    return ret;
+}
 
 template <class F>
 void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':') 
@@ -777,6 +799,11 @@ void compact(std::basic_string<c,t,a> &s) {
 }
 
 #include <string>
+
+inline std::string subspan(const std::string &s,std::string::size_type begin,std::string::size_type end) 
+{
+    return std::string(s,begin,end-begin);
+}
 
 template <typename Container> inline
 void stringtok (Container &container, std::string const &in, const char * const delimiters = " \t\n")

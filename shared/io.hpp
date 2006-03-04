@@ -16,6 +16,8 @@
 #include <streambuf>
 #include <iostream>
 
+#include "shell_escape.hpp"
+    
 template <class Ch, class Tr,class Alloc>
 inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
 {
@@ -292,6 +294,59 @@ struct WordSeparator {
     }
 };
 
+struct word_spacer {
+    bool first;
+    char space_string[2];
+    word_spacer(char space=' ') : first(true) { space_string[0]=space;space_string[1]=0;}
+    const char *empty() const
+    {
+        return space_string+1;
+    }
+    const char *space() const
+    {
+        return space_string;
+    }
+    const char *get_string() 
+    {
+        if (first) {
+            first=false;
+            return empty();
+        } else {
+            return space();
+        }
+    }
+    void reset() 
+    {
+        first=true;
+    }
+    FRIEND_O_INSERTER(word_spacer &me) 
+    {
+        if (me.first)
+            me.first=false;
+        else
+            o << me.space();
+        return o;
+    }
+};
+
+inline std::string space_sep_words(const std::string &sentence,char space=' ')
+{
+    using namespace std;
+    stringstream o;
+    string word;
+    istringstream i(sentence);
+    word_spacer sep(space);
+    while (i >> word)
+        o << sep << word;
+    return o.str();
+}
+
+inline int compare_space_normalized(const std::string &a, const std::string &b)
+{
+    return space_sep_words(a).compare(space_sep_words(b));
+}
+
+
 template <char sep=' '>
 struct IndentLevel {
     unsigned indent;
@@ -415,56 +470,6 @@ inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,con
 //MAKE_VECTOR_PRINT_FOR(std::string)
 
 USE_PRINT_SEQUENCE_TEMPLATE(std::vector)
-
-template <class C>
-inline bool is_shell_special(C c) {
-    switch(c) {
-    case ' ':case '\t':case '\n':
-    case '\\':
-    case '>':case '<':case '|':
-    case '&':case ';':
-    case '"':case '\'':case '`':
-    case '~':case '*':case '?':case '{':case '}':
-    case '$':case '!':case '(':case ')':
-        return true;
-    default:
-        return false;
-    }
-}
-
-template <class C>
-inline bool needs_shell_escape_in_quotes(C c) {
-    switch(c) {
-    case '\\':case '"':case '$':case '`':case '!':
-        return true;
-    default:
-        return false;
-    }
-}
-
-
-template <class C,class Ch, class Tr>
-inline std::basic_ostream<Ch,Tr> & out_shell_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
-    std::stringstream s;
-    s << data;
-    char c;
-    std::istreambuf_iterator<Ch,Tr> i(s),end;
-    if (find_if(i,end,is_shell_special<char>)==end) {
-        rewind(s);
-        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,std::ostreambuf_iterator<Ch,Tr>(out));
-    } else {
-        out << '"';
-        rewind(s);
-        while (s.get(c)) {
-            if (needs_shell_escape_in_quotes(c))
-                out.put('\\');
-            out.put(c);
-        }
-        out << '"';
-    }
-    return out;
-}
-
 
 // header=NULL gives just the string, no newline
 template <class Ch, class Tr>
@@ -1044,14 +1049,8 @@ void insert_byid(const A& vals,I &in,O &out)
 #undef OUTN
 }
 
-inline std::string subspan(const std::string &s,std::string::size_type begin,std::string::size_type end) 
-{
-    return std::string(s,begin,end-begin);
-}
-
-    
 template <class Func>
-inline void     split_noquote(
+inline void split_noquote(
     const std::string &csv,
     Func f,
     const std::string &delim=","

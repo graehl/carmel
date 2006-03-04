@@ -160,7 +160,7 @@ class safe_db
         db_filename=filename;
         db_try(db->open(NULL, db_filename.c_str(),NULL,db_type,open_flags,0),"safe_db::open");
     }
-    void reopen_read() 
+    void reopen_read(const std::string &filename=db_filename) 
     {
         open_read(db_filename,DB_UNKNOWN);
     }
