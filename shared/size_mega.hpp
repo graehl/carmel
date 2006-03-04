@@ -5,14 +5,15 @@
 
 template <class size_type,class outputstream>
 inline outputstream & print_size(outputstream &o,size_type size,bool decimal_thousand=true) {
-    size_type thousand=decimal_thousand ? 1000 : 1024;
+    typedef double size_compute_type;
+    size_compute_type thousand=decimal_thousand ? 1000 : 1024;
     if (size < thousand)
         return o << size;
-    size_type base=thousand;
+    size_compute_type base=thousand;
     const char *suffixes=decimal_thousand ? "kmgt" : "KMGT";
     const char *suff=suffixes;
     for(;;) {
-        size_type nextbase=base*thousand;
+        size_compute_type nextbase=base*thousand;
         if (size < nextbase || suff[1]==0)
             return o << size/(double)base << *suff;
         base = nextbase;
@@ -51,7 +52,8 @@ struct size_mega
     friend Ostream & operator <<(Ostream &o,const size_mega &me) 
     {
         restore_stream<Ostream > save(o);
-        o << std::setprecision(2); // std::width(4)
+//        o << std::setprecision(2);
+        o << std::setw(4);
         return print_size(o,me.size,decimal_thousand);
     }
 };
@@ -74,10 +76,10 @@ inline size_type parse_size(inputstream &i) {
             number *= (1024.*1024.*1024.*1024.);
             break;
         case 'g':
-            number *= (1000*1000*1000);
+            number *= (1000.*1000*1000);
             break;
         case 'G':
-            number *= (1024*1024*1024);
+            number *= (1024.*1024*1024);
             break;
         case 'm':
             number *= (1000*1000);

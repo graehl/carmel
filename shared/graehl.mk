@@ -13,6 +13,9 @@
 #include $(SHARED)/debugger.mk
 #$(__BREAKPOINT)
 
+ifndef BUILD_BASE
+BUILD_BASE:=.
+endif
 LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
@@ -28,8 +31,6 @@ ifeq ($(UNAME),Darwin)
  ARCH=macosx
 endif
 endif
-
-DEPSPRE=deps/$(ARCH)/
 
 ifeq ($(ARCH),linux64)
 ARCH_FLAGS = -march=athlon64
@@ -53,7 +54,7 @@ ifndef BOOST_DIR
 BOOST_DIR:=../boost
 endif
 ifndef BASEOBJ
-BASEOBJ=obj
+BASEOBJ=$(BUILD_BASE)/obj
 endif
 ifndef BASEBIN
 BASEBIN=bin
@@ -68,6 +69,8 @@ ifndef ARCH
   ARCH := $(shell print_arch)
   export ARCH
 endif
+
+DEPSPRE:= $(BUILD_BASE)/deps/$(ARCH)/
 
 # workaround for eval line length limit: immediate substitution shorter?
 OBJ:= $(BASEOBJ)/$(ARCH)

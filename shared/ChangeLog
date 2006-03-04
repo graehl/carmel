@@ -1,3 +1,11 @@
+2006-02-24  Jonathan Graehl  <graehl@isi.edu>
+
+	* shell_escape.hpp: split from io.hpp
+
+2006-02-22  Jonathan Graehl  <graehl@isi.edu>
+
+	* os.hpp (split_dir_file): FIXME: test
+
 2006-02-14  Jonathan Graehl  <graehl@isi.edu>
 
 	* stopwatch.hpp (class stopwatch): adapted from Timer

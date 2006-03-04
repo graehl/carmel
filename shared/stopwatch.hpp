@@ -123,7 +123,7 @@ class stopwatch
 
     template <class Ostream>
     friend Ostream & operator <<(Ostream &os,stopwatch &t) {
-        return os << '[' << t.total_time(WALL_TIME) << " wall seconds, " << t.total_time(USER_TIME) << " user seconds, " << t.total_time(SYSTEM_TIME) << " system seconds, " << t.total_time(PAGEFAULTS) << " major page faults]";
+        return os << '[' << t.total_time(WALL_TIME) << " wall sec, " << t.total_time(USER_TIME) << " user sec, " << t.total_time(SYSTEM_TIME) << " system sec, " << t.total_time(PAGEFAULTS) << " major page faults]";
     }
   
  private:
