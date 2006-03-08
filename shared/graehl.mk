@@ -2,7 +2,7 @@
 # (the variables below)
 # ARCH (if macosx, static builds are blocked)
 #PROGS=a b   
-#a_OBJ=a.o ... a_SLIB=lib.o lib.a (static libraries e.g. a_SLIB=$(BOOST_OPT_LIB))
+#a_OBJ=a.o ... a_SLIB=lib.o lib.a (static libraries e.g. a_SLIB=$(BOOST_OPTIONS_LIB))
 #a_NOSTATIC=1 a_NOTEST=1 ...
 #NOSTATIC=1 (global setting)
 # CXXFLAGS CXXFLAGS_DEBUG CXXFLAGS_TEST
@@ -85,29 +85,29 @@ Dummy1783uio42:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir -p $$f ; do
 
 BOOST_SERIALIZATION_SRC_DIR = $(BOOST_DIR)/libs/serialization/src
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
-BOOST_OPT_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
-BOOST_FS_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
+BOOST_OPTIONS_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
+BOOST_FILESYSTEM_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 
 #wide char archive streams not supported on cygwin so remove *_w*.cpp
 BOOST_SERIALIZATION_SRCS:=$(filter-out utf8_codecvt_facet.cpp,$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))))
 BOOST_TEST_SRCS=$(filter-out cpp_main.cpp,$(notdir $(wildcard $(BOOST_TEST_SRC_DIR)/*.cpp)))
-BOOST_OPT_SRCS=$(filter-out utf8_codecvt_facet.cpp winmain.cpp,$(notdir $(wildcard $(BOOST_OPT_SRC_DIR)/*.cpp)))
-BOOST_FS_SRCS=$(notdir $(wildcard $(BOOST_FS_SRC_DIR)/*.cpp))
+BOOST_OPTIONS_SRCS=$(filter-out utf8_codecvt_facet.cpp winmain.cpp,$(notdir $(wildcard $(BOOST_OPTIONS_SRC_DIR)/*.cpp)))
+BOOST_FILESYSTEM_SRCS=$(notdir $(wildcard $(BOOST_FILESYSTEM_SRC_DIR)/*.cpp))
 
 BOOST_SERIALIZATION_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_SERIALIZATION_SRCS)))
 BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
-BOOST_OPT_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPT_SRCS)))
-BOOST_FS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FS_SRCS)))
+BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS)))
+BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
 BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
-BOOST_OPT_LIB=$(OBJB)/libprogram_options.a
-BOOST_FS_LIB=$(OBJB)/libfilesystem.a
+BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
+BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
 
 list_src: $(BOOST_SERIALIZATION_SRCS)
 	echo $(BOOST_SERIALIZATION_SRCS)
 
-libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPT_LIB) $(BOOST_FS_LIB)
+libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
 
 CXXFLAGS_COMMON += $(ARCH_FLAGS)
 #CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
@@ -255,7 +255,7 @@ test: $(ALL_TESTS)
 #	$(foreach test,$(ALL_TESTS),$(shell $(test) --catch_system_errors=no))
 
 
-$(BOOST_FS_LIB): $(BOOST_FS_OBJS)
+$(BOOST_FILESYSTEM_LIB): $(BOOST_FILESYSTEM_OBJS)
 	@echo
 	@echo creating Boost Filesystem lib
 	$(AR) -rc $@ $^
@@ -267,7 +267,7 @@ $(BOOST_TEST_LIB): $(BOOST_TEST_OBJS)
 	$(AR) -rc $@ $^
 #	$(RANLIB) $@
 
-$(BOOST_OPT_LIB): $(BOOST_OPT_OBJS)
+$(BOOST_OPTIONS_LIB): $(BOOST_OPTIONS_OBJS)
 	@echo
 	@echo creating Boost Program Options lib
 	$(AR) -rc $@ $^
@@ -279,7 +279,7 @@ $(BOOST_SERIALIZATION_LIB): $(BOOST_SERIALIZATION_OBJS)
 	$(AR) -rc $@ $^
 #	$(RANLIB) $@
 
-vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPT_SRC_DIR) $(BOOST_FS_SRC_DIR)
+vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPTIONS_SRC_DIR) $(BOOST_FILESYSTEM_SRC_DIR)
 vpath %.d $(DEPSPRE)
 vpath %.hpp $(BOOST_DIR)
 
@@ -316,7 +316,7 @@ clean:
 	-rm -rf -- $(ALL_OBJS) $(ALL_CLEAN) *.core *.stackdump
 
 distclean: clean
-	-rm -rf -- $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPT_OBJS) msvc++/Debug msvc++/Release
+	-rm -rf -- $(ALL_DEPENDS) $(BOOST_TEST_OBJS) $(BOOST_OPTIONS_OBJS) msvc++/Debug msvc++/Release
 
 allclean: distclean
 	-rm -rf -- $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ)
