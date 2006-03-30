@@ -8,6 +8,9 @@
 #include "assertlvl.hpp"
 #include "breakpoint.hpp"
 
+#define PREXPS(n) " " PREXP(n)
+#define PREXP(n) #n"=" << n
+
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
 #endif
