@@ -78,7 +78,7 @@ struct DefaultPoolAlloc {
 #include "2heap.h"
 #else
 #include <algorithm>
-#include <ext/algorithm>
+#include <ext/algorithm> // is_sorted
 #endif
 
 
