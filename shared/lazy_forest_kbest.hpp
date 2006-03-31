@@ -3,6 +3,9 @@
 
 #include <vector>
 #ifdef TEST
+# define LAZY_FOREST_EXAMPLES
+#endif
+#ifdef LAZY_FOREST_EXAMPLES
 #include "info_debug.hpp"
 #endif
 
@@ -349,6 +352,8 @@ template <class F>
 bool lazy_forest<F>::throw_on_cycle=false;
 
 
+#ifdef LAZY_FOREST_EXAMPLES
+
 //# include "default_print.hpp"
 //FIXME: doesn't work
 
@@ -356,6 +361,10 @@ bool lazy_forest<F>::throw_on_cycle=false;
 # include <iostream>
 # include <string>
 # include <sstream>
+# include <cmath>
+
+namespace lazy_forest_kbest_example {
+
 
 using namespace std;
 struct Result {
@@ -396,7 +405,7 @@ struct Result {
         child[0]=prototype->child[0];
         child[1]=prototype->child[1];
         EXPECT(which_child,<,2);
-//        EXPECT(child[which_child],==,old_child);
+        EXPECT(child[which_child],==,old_child);
         child[which_child]=new_child;
         cost = prototype->cost + - old_child->cost + new_child->cost;
         KBESTNESTT;
@@ -460,8 +469,6 @@ qo -> C # .25 g
 .33 -> 1.10
 */
 
-# include <cmath>
-
 inline void jonmay_cycle(int weightset=0) 
 {
     using std::log;
@@ -516,7 +523,7 @@ inline void simplest_cycle()
 {
     float cc=0,cb=1,ca=.33;
     Result c("q->C",cc);
-    Result b("q->B(q2)",cb,&c);
+    Result b("q->B(q)",cb,&c);
     Result a("q->A(q q)",ca,&c,&c);
     LK::lazy_forest q,q2;
     q.add(&a,&q,&q);
@@ -549,26 +556,45 @@ inline void simple_cycle()
 }
 
 
-    //a:6(b:5[OR b:10 f a ()],c:1(b:5,f:1))
+
 inline void jongraehl_example()
 {
+    float eps=-1000;
     LK::lazy_forest a,b,c,f;
-    Result ra("a",6),rb("b",5),rc("c",1),rf("d",2),rb2("B",5),rb3("D",10),ra2("A",12);
-    a.add_sorted(&ra,&b,&c);
-    a.add_sorted(&ra2,&a);
-    b.add_sorted(&rb); // terminal
-    b.add_sorted(&rb2,&f);
-    b.add_sorted(&rb3,&b);
-    c.add_sorted(&rc,&b,&f);
+    float cf=-2;Result rf("f->F",cf);
+    float cb=-5;Result rb("b->B",cb);
+    float cfb=eps;Result rfb("f->I(b)",cfb,&rb);
+    float cbf=-cf+eps;Result rbf("b->H(f)",cbf,&rf);
+    float cbb=10;Result rbb("b->G(b)",cbb,&rb);
+    float ccbf=8;Result rcbf("c->C(b f)",ccbf,&rb,&rf);
+    float cabc=6;Result rabc("a->A(b c)",cabc,&rb,&rcbf);
+    float caa=-cabc+eps;Result raa("a->Z(a)",caa,&rabc);
+//    Result ra("a",6),rb("b",5),rc("c",1),rf("d",2),rb2("B",5),rb3("D",10),ra2("A",12);
     f.add_sorted(&rf); // terminal
+    f.add_sorted(&rfb);
+    b.add_sorted(&rb); // terminal
+    b.add_sorted(&rbf,&f);
+    b.add_sorted(&rbb,&b);
+    c.add_sorted(&rcbf,&b,&f);
+    a.add_sorted(&rabc,&b,&c);
+    a.add_sorted(&raa,&a);
+    MUST(a.is_sorted());
+    MUST(b.is_sorted());
+    MUST(c.is_sorted());
+    MUST(f.is_sorted());
     NESTT;
+    LK::throw_on_cycle=true;
     f.enumerate_kbest(1,ResultPrinter());
     b.enumerate_kbest(1,ResultPrinter());
+    c.enumerate_kbest(1,ResultPrinter());
     a.enumerate_kbest(15,ResultPrinter());
 }
+}//ns
+#endif
 
 # ifdef TEST
 BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
+    using namespace lazy_forest_kbest_example;
     jongraehl_example();
     jonmay_cycle();
 }
