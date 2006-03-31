@@ -790,10 +790,10 @@ BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
 {
     typedef logweight<float> W;
     W a(1),b("1"),c("e^0"),d("0ln"),e("0log");
-    MUST(a==b);
-    MUST(a==c);
-    MUST(a==d);
-    MUST(a==e);    
+    BOOST_CHECK(a==b);
+    BOOST_CHECK(a==c);
+    BOOST_CHECK(a==d);
+    BOOST_CHECK(a==e);    
 }
 #endif
 

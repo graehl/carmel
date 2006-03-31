@@ -6,8 +6,10 @@
 #include <sstream>
 #include <iostream>
 
-#if defined(SINGLE_MAIN) or defined(TEST_MAIN)
+#if defined(SINGLE_MAIN)
 # define TEST_MAIN
+#endif
+#ifdef TEST_MAIN
 # define BOOST_AUTO_TEST_MAIN
 #endif
 
@@ -124,7 +126,5 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
 #define CHECK_EQUAL_STRING(a,b) BOOST_CHECK_EQUAL(std::string(a),std::string(b))
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
-
-
 
 #endif

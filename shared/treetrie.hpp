@@ -76,7 +76,7 @@ struct treetrie {
   /// F: (where,Tree *) - should be like F[where] = Tree *
   /// boost::reference<array_mapper<Tree<L> *> > works fine as an F
   //// 1/27/2006: can't remember WHY anyone inserting would want to play with an F callback - not used for anything internally, just exposes impl. detail - commented out with /* */
-  template <class L,/*class F*/>
+  template <class L/,*class F*/>
   V insert(Tree<L> *t/*, F f*/) {
     nextwhere=0; // root=0, children start at 1
     // visit: root label
@@ -87,8 +87,8 @@ struct treetrie {
   ///trie ending at _node_. if _rightmost_, done (end of trie-string) when hit a
   ///leaf.  if _terminal_leaves_, any leaf in the rule that isn't a variable
   ///node must have rank 0
-  template <class L,/*class F*/>
-  V insert_expand(Tree<L> *t,V node, /*F f*/) {
+  template <class L/*,class F*/>
+  V insert_expand(Tree<L> *t,V node/*,F f*/) {
     unsigned where=nextwhere++;
 /*    deref(f)(where,t); */
     unsigned rank=t->rank;
