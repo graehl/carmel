@@ -562,16 +562,16 @@ inline void jonmay_cycle(int weightset=0)
     qe.add_sorted(&c,&qo);
     qe.add_sorted(&a,&qe,&qo);
     qe.add_sorted(&b,&qo,&qe);
-    BOOST_CHECK(qe.is_sorted());
+    MUST(qe.is_sorted());
     
     qo.add(&e,&qe);
     qo.add(&g);
     qo.add(&d,&qo,&qo);
     qo.add(&f,&qe);
 
-    BOOST_CHECK(!qo.is_sorted());
+    MUST(!qo.is_sorted());
     qo.sort();
-    BOOST_CHECK(qo.is_sorted());
+    MUST(qo.is_sorted());
     
     NESTT;
     //LK::enumerate_kbest(10,&qo,ResultPrinter());
@@ -588,9 +588,9 @@ inline void simplest_cycle()
     q.add(&a,&q,&q);
     q.add(&b,&q);
     q.add(&c);
-    BOOST_CHECK(!q.is_sorted());
+    MUST(!q.is_sorted());
     q.sort();
-    BOOST_CHECK(q.is_sorted());
+    MUST(q.is_sorted());
     NESTT;
     LK::enumerate_kbest(30,&q,ResultPrinter());
 }
@@ -606,9 +606,9 @@ inline void simple_cycle()
     q.add(&a,&q,&q);
     q.add(&b,&q2,&q2);
     q.add(&c);
-    BOOST_CHECK(!q.is_sorted());
+    MUST(!q.is_sorted());
     q.sort();
-    BOOST_CHECK(q.is_sorted());
+    MUST(q.is_sorted());
     q2.add_sorted(&d,&q);
     NESTT;
     LK::enumerate_kbest(30,&q,ResultPrinter());
