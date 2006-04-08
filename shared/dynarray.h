@@ -30,6 +30,11 @@
 #include <iterator>
 #include <boost/config.hpp>
 
+#ifdef DYNAMIC_ARRAY_EXTRA_ASSERT
+# define dynarray_assert(x) assert(x)
+#else 
+# define dynarray_assert(x)
+#endif 
 //#include <boost/type_traits.hpp>
 
 
@@ -71,7 +76,7 @@ public:
         return begin()+index < end();
     }
     T & operator[] (unsigned int index) const {
-        assert(vec+index < end());
+        dynarray_assert(vec+index < end());
         return vec[index];
     }
 
@@ -94,34 +99,34 @@ public:
 
     array<T,Alloc> substr(unsigned start,unsigned end) const
     {
-        assert(begin()+start <= endspace && begin()+end <= endspace);
+        dynarray_assert(begin()+start <= endspace && begin()+end <= endspace);
         return array<T,Alloc>(begin()+start,begin()+end);
     }
 
     void construct() {
         for (T *p=vec;p!=endspace;++p)
-            PLACEMENT_NEW(p) T();
+            new(p) T();
     }
     void construct(const T& val) {
         for (T *p=vec;p!=endspace;++p)
-            PLACEMENT_NEW(p) T(val);
+            new(p) T(val);
     }
 
     const T& front()  const {
-        assert(size());
+        dynarray_assert(size());
         return *begin();
     }
     const T& back() const {
-        assert(size());
+        dynarray_assert(size());
         return *(end()-1);
     }
 
     T& front() {
-        assert(size());
+        dynarray_assert(size());
         return *begin();
     }
     T& back() {
-        assert(size());
+        dynarray_assert(size());
         return *(end()-1);
     }
 
@@ -164,7 +169,7 @@ public:
     void dealloc() {
         int cap=capacity();
         if (cap) {
-            assert(vec);
+            dynarray_assert(vec);
             this->deallocate(vec,cap);
             Paranoid(vec=NULL;);
             endspace=vec;
@@ -229,7 +234,7 @@ public:
     template <class A2>
     array(std::vector<T,A2> &source,unsigned starti,unsigned endi) 
     {
-        assert(endi <= source.size());
+        dynarray_assert(endi <= source.size());
         vec=&(source[starti]);
         endspace=&(source[endi]);
     }
@@ -264,7 +269,7 @@ public:
         return endspace;
     }
     unsigned int index_of(T *t) const {
-        assert(t>=begin() && t<end());
+        dynarray_assert(t>=begin() && t<end());
         return (unsigned int)(t-vec);
     }
     ///XXX: must always properly set_capacity AFTER set_begin since this invalidates capacity
@@ -298,7 +303,7 @@ public:
     }
 
 //!FIXME: doesn't swap allocator base
-    //    void swap(array<T,Alloc> &a) {assert(0);}
+    //    void swap(array<T,Alloc> &a) {dynarray_assert(0);}
 //FIXME: should only work for dynarray,fixedarray,autoarray
 /*    void swap(array<T,Alloc> &a) {
         array<T,Alloc>::swap(a);
@@ -308,7 +313,7 @@ protected:
     }
 private:
     void operator=(const array<T,Alloc> &a) {
-        assert(0);
+        dynarray_assert(0);
     }
 };
 
@@ -343,7 +348,7 @@ public:
     }
 
     void uninit_copy_from(const T* b,const T* e) {
-        assert(e-b == this->capacity());
+        dynarray_assert(e-b == this->capacity());
         std::uninitialized_copy(b,e,this->begin());
         //memcpy(begin(),b,e-b);
     }
@@ -387,20 +392,20 @@ template <typename T,typename Alloc=std::allocator<T> > class dynamic_array : pu
     T *endv;
     typedef array<T,Alloc> Base;
 private:
-    dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";assert(0);}
-    void swap(array<T,Alloc> &a) {assert(0);}
+    dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
+    void swap(array<T,Alloc> &a) {dynarray_assert(0);}
 public:
     explicit dynamic_array (const char *c) {
         std::istringstream(c) >> *this;
     }
 
     // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-    explicit dynamic_array(unsigned sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { assert(this->invariant()); }
+    explicit dynamic_array(unsigned sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { dynarray_assert(this->invariant()); }
 
     // creates vector holding sp copies of t; does initialize
     explicit dynamic_array(unsigned sp,const T& t) : array<T,Alloc>(sp) {
         construct(t);
-        assert(invariant());
+        dynarray_assert(invariant());
     }
 
     void construct() {
@@ -434,7 +439,7 @@ public:
 //      memcpy(this->vec,a.vec,sizeof(T)*sz);
         std::uninitialized_copy(a.begin(),a.end(),this->begin());
         endv=this->endspace;
-        assert(this->invariant());
+        dynarray_assert(this->invariant());
     }
 
     // warning: stuff will still be destructed!
@@ -454,11 +459,11 @@ public:
     }
 
     const T* end() const { // array code that uses vec+space for boundschecks is duplicated below
-        assert(this->invariant());
+        dynarray_assert(this->invariant());
         return endv;
     }
     T* end()  { // array code that uses vec+space for boundschecks is duplicated below
-        assert(this->invariant());
+        dynarray_assert(this->invariant());
         return endv;
     }
     const T* const_end() const {
@@ -467,7 +472,7 @@ public:
     typedef typename array<T,Alloc>::iterator iterator;
     // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
     void move_rest_to(T *to,iterator i) {
-        assert(i >= this->begin() && i < end());
+        dynarray_assert(i >= this->begin() && i < end());
         copyto(to,i,this->end()-i);
         endv=i;
     }
@@ -476,7 +481,7 @@ public:
     T & at(unsigned int index) const { // run-time bounds-checked
         T *r=this->vec+index;
         if (!(r < end()) )
-            throw std::out_of_range("dynarray");
+            throw std::out_of_range("dynamic_array index out of bounds");
         return *r;
     }
     bool exists(unsigned index) const
@@ -485,12 +490,12 @@ public:
     }
 
     T & operator[] (unsigned int index) const {
-        assert(this->invariant());
-        assert(this->vec+index < end());
+        dynarray_assert(this->invariant());
+        dynarray_assert(this->vec+index < end());
         return (this->vec)[index];
     }
     unsigned int index_of(T *t) const {
-        assert(t>=this->begin() && t<end());
+        dynarray_assert(t>=this->begin() && t<end());
         return (unsigned int)(t-this->vec);
     }
 
@@ -509,7 +514,7 @@ public:
             T *v = end();
             endv=this->vec+index+1;
             while( v < endv )
-                PLACEMENT_NEW(v++) T();
+                new(v++) T();
         }
         return (this->vec)[index];
     }
@@ -529,43 +534,64 @@ public:
 
     // default-construct version (not in STL vector)
     void push_back()
-        {
-            assert(invariant());
-            PLACEMENT_NEW(push_back_raw()) T();
-            assert(invariant());
+    {
+        new(push_back_raw()) T();
+    }
+    template <class T0>
+    inline void push_front(T0 const& t0)
+    {
+        new(push_front_raw()) T(t0);
+    }    
+    template <class T0,class T1>
+    inline void push_front(T0 const& t0,T1 const& t1)
+    {
+        new(push_front_raw()) T(t0,t1);
+    }
+    template <class T0,class T1,class T2>
+    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2)
+    {
+        new(push_front_raw()) T(t0,t1,t2);
+    }
+    
+    void push_back_n(const T& val,unsigned n)
+    {
+        dynarray_assert(invariant());
+        T *newend=endv+n;
+        if (newend > this->endspace) {
+            reserve_at_least(size()+n);
+            newend=endv+n;
         }
-    void push_back(const T& val)
-        {
-            assert(invariant());
-            PLACEMENT_NEW(push_back_raw()) T(val);
-            assert(invariant());
-        }
-    void push_back(const T& val,unsigned n)
-        { assert(invariant());
-            T *newend=endv+n;
-            if (newend > this->endspace) {
-                reserve_at_least(size()+n);
-                newend=endv+n;
-            }
 
-            for (T *p=endv;p!=newend;++p)
-                PLACEMENT_NEW(p) T(val);
-            endv=newend;
-            assert(invariant());}
+        for (T *p=endv;p!=newend;++p)
+            new(p) T(val);
+        endv=newend;
+        dynarray_assert(invariant());
+    }
 
-    // non-construct version (use PLACEMENT_NEW yourself) (not in STL vector either)
+    // non-construct version (use placement new yourself) (not in STL vector either)
     T *push_back_raw()
-        {
-            if ( endv >= this->endspace )
-                if (this->vec == this->endspace )
-                    resize_up(4);
-                else
-                    resize_up(this->capacity()*2); // FIXME: 2^31 problem
-            return endv++;
-        }
+    {
+        if ( endv >= this->endspace )
+            if (this->vec == this->endspace )
+                resize_up(4);
+            else
+                resize_up(this->capacity()*2); // FIXME: 2^31 problem
+        return endv++;
+    }
     void undo_push_back_raw() {
         --endv;
     }
+
+    template <class Better_than_pred>
+    void push_keeping_front_best(T &t,Better_than_pred better) 
+    {
+        throw "untested";
+        push_back(t);
+        if (empty() || better(front(),t))
+            return;
+        swap(front(),back());
+    }
+    
     T &at_grow(unsigned index) {
         T *r=this->vec+index;
         if (r >= end()) {
@@ -575,26 +601,26 @@ public:
             }
             T *i=end();
             for (;i<=r;++i)
-                PLACEMENT_NEW(i) T();
+                new(i) T();
             endv=i;
         }
         return *r;
     }
     const T& front()  const {
-        assert(size());
+//        dynarray_assert(size());
         return *this->begin();
     }
     const T& back() const {
-        assert(size());
+//        dynarray_assert(size());
         return *(end()-1);
     }
 
     T& front() {
-        assert(size());
+        dynarray_assert(size());
         return *this->begin();
     }
     T& back() {
-        assert(size());
+        dynarray_assert(size());
         return *(end()-1);
     }
 
@@ -641,7 +667,7 @@ protected:
     void resize_up(unsigned int newSpace) {
         //     we are somehow allowing 0-capacity vectors now?, so add 1
         //if (newSpace==0) newSpace=1;
-        assert(newSpace > this->capacity());
+        dynarray_assert(newSpace > this->capacity());
         // may be used when we've increased endv past endspace, in order to fix things
         unsigned sz=size();
         T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
@@ -657,7 +683,7 @@ protected:
     }
 public:
     void resize(unsigned int newSpace) {
-        assert(invariant());
+        dynarray_assert(invariant());
         //    if (newSpace==0) newSpace=1;
         if (endv==this->endspace) return;
         unsigned sz=size();
@@ -692,9 +718,7 @@ public:
                 *--pto=*--pfrom;
             // now [pfrom,endv) have been shifted right by n_new
             while(pto!=pos) { // this should now happen n_new times
-#if ASSERT_LVL > 50
-                assert(to!=from);
-#endif
+                dynarray_assert(to!=from);
                 *--pto=*--to;
             }            
         }
@@ -707,11 +731,9 @@ public:
         std::size_t n_new=from-to;
         reserve(size()+n_new);
         while (from!=to)
-            PLACEMENT_NEW(endv++) T(*from++);
+            new(endv++) T(*from++);
 //            *endv++=*from++;
-#if ASSERT_LVL > 50
-        assert(invariant());
-#endif
+        dynarray_assert(invariant());
     }
 
     // could just use copy, back_inserter
@@ -723,7 +745,7 @@ public:
     }
     
     void compact() {
-        assert(invariant());
+        dynarray_assert(invariant());
         if (endv==this->endspace) return;
         //equivalent to resize(size());
         unsigned newSpace=size();
@@ -776,7 +798,7 @@ public:
         }
     }
     unsigned int size() const { return (unsigned)(endv-this->vec); }
-    void set_size(unsigned newSz) { endv=this->vec+newSz; assert(this->invariant()); }
+    void set_size(unsigned newSz) { endv=this->vec+newSz; dynarray_assert(this->invariant()); }
     void reduce_size(unsigned int n) {
         T *end=endv;
         reduce_size_nodestroy(n);
@@ -784,14 +806,14 @@ public:
             i->~T();
     }
     void reduce_size_nodestroy(unsigned int n) {
-        assert(invariant() && n<=size());
+        dynarray_assert(invariant() && n<=size());
         endv=this->vec+n;
     }
     void clear_nodestroy() {
         endv=this->vec;
     }
     void clear() {
-        assert(invariant());
+        dynarray_assert(invariant());
         for ( T *i=this->begin();i!=end();++i)
             i->~T();
         clear_nodestroy();
@@ -870,7 +892,7 @@ public:
 
             //EXPECTCH_SPACE_COMMENT_FIRST('(');
         done:
-            assert(invariant());
+            dynarray_assert(invariant());
             return GENIOGOOD;
           fail:
             clear();
