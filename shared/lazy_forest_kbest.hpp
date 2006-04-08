@@ -1,7 +1,6 @@
 #ifndef LAZY_FOREST_KBEST_HPP
 #define LAZY_FOREST_KBEST_HPP
 
-#include <vector>
 #ifdef TEST
 # define LAZY_FOREST_EXAMPLES
 #endif
@@ -23,11 +22,8 @@
 # define KBESTERRORQ(x,y) ERRORQ(x,y)
 #endif 
 
+#include <vector>
 #include <stdexcept>
-
-//#include "io.hpp" //vector <<
-// TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
-
 #ifdef GRAEHL_HEAP
 #include "2heap.h"
 #else
@@ -52,9 +48,9 @@ struct lazy_derivation_cycle : public std::runtime_error
 };
         
 
-/// build a copy of your (at most binary) derivation forest - lazy_forest
+/// build a copy of your (at most binary) derivation forest, then query its root for the 1st, 2nd, ... best
 /*
-    struct Factory 
+    struct DerivationFactory 
     {
         /// can override derivation_better_than(derivation_type,derivation_type).
         /// derivation_type should be a lightweight (value) object
@@ -62,8 +58,8 @@ struct lazy_derivation_cycle : public std::runtime_error
         typedef Result *derivation_type;
         
         /// special derivation values (not used for normal derivations) (may be of different type but convertible to derivation_type)
-        static derivation_type PENDING;
-        static derivation_type NONE;
+        static derivation_type PENDING();
+        static derivation_type NONE();
 
         /// take an originally better (or best) derivation, substituting for the changed_child_index-th child new_child for old_child (cost difference should usually be computed as (cost(new_child) - cost (old_child)))
         derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index) 
@@ -72,20 +68,20 @@ struct lazy_derivation_cycle : public std::runtime_error
         }
     };
 */
-
+// TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
 template <class DerivationFactory>
 class lazy_forest {
  public:
     typedef DerivationFactory derivation_factory_type;
     typedef typename derivation_factory_type::derivation_type derivation_type;
     typedef derivation_factory_type D;
-    static inline derivation_type NONE() 
+    derivation_type NONE() 
     {
-        return (derivation_type)D::NONE;
+        return (derivation_type)derivation_factory.NONE();
     }
-    static inline derivation_type PENDING() 
+    derivation_type PENDING() 
     {
-        return (derivation_type)D::PENDING;
+        return (derivation_type)derivation_factory.PENDING();
     }
     
     /// bool Visitor(derivation,ith) - if returns false, then stop early.
@@ -174,6 +170,11 @@ class lazy_forest {
         return o;
     }
 
+    static void set_derivation_factory(derivation_factory_type const &df) 
+    {
+        derivation_factory=df;
+    }
+    
     /// if you have any state in your factory, assign to it here
     static derivation_factory_type derivation_factory;
 
@@ -276,6 +277,11 @@ class lazy_forest {
 #else
         make_heap(pq.begin(),pq.end());
 #endif
+        finish_adding();
+    }
+
+    void finish_adding() 
+    {
         memo.clear();
         memo.push_back(top().derivation);
     }
@@ -351,6 +357,7 @@ typename lazy_forest<F>::derivation_factory_type lazy_forest<F>::derivation_fact
 template <class F>
 bool lazy_forest<F>::throw_on_cycle=false;
 
+/// THE REST OF THIS FILE IS JUST EXAMPLES
 
 #ifdef LAZY_FOREST_EXAMPLES
 
@@ -365,14 +372,15 @@ bool lazy_forest<F>::throw_on_cycle=false;
 
 namespace lazy_forest_kbest_example {
 
-
 using namespace std;
 struct Result {
     struct Factory 
     {
         typedef Result *derivation_type;
 //        static derivation_type NONE,PENDING;
-        enum { NONE=0,PENDING=1 };
+//        enum { NONE=0,PENDING=1 };
+        static derivation_type NONE() { return (derivation_type)0;}
+        static derivation_type PENDING() { return (derivation_type)1;}
         derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index) 
         {
             return new Result(prototype,old_child,new_child,changed_child_index);
