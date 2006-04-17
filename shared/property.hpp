@@ -3,13 +3,13 @@
 #define PROPERTY_HPP
 
 #include <boost/property_map.hpp>
-#include "byref.hpp"
-#include "dynarray.h"
+#include <graehl/shared/byref.hpp>
+#include <graehl/shared/dynarray.h>
 #include <utility>
-#include "genio.h"
+#include <graehl/shared/genio.h>
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 

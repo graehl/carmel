@@ -3,7 +3,7 @@
 #define CHARBUF_HPP
 
 // no separate implementation for now, just #define MAIN in one source file that includes this
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 #ifndef CHARBUF_INIT_SIZE
 #define CHARBUF_INIT_SIZE 4096
 #endif
@@ -63,7 +63,7 @@ CharBuf g_buf(CHARBUF_INIT_SIZE);
 #endif
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

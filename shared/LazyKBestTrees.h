@@ -16,8 +16,8 @@
 
 #include <new> // placement ::operator new(address) T()
 #include <vector>
-#include "info_debug.hpp"
-#include "io.hpp" //vector <<
+#include <graehl/shared/info_debug.hpp>
+#include <graehl/shared/io.hpp> //vector <<
 // TODO: implement deletion of all the lazykbest results (currently relies on pool/batch deletion)
 //TODO:  MIGHT IT BE MORE FLEXIBLE TO PASS RESULT BY VALUE?
 
@@ -75,7 +75,7 @@ struct DefaultPoolAlloc {
 
 
 #ifdef GRAEHL_HEAP
-#include "2heap.h"
+#include <graehl/shared/2heap.h>
 #else
 #include <algorithm>
 #include <ext/algorithm> // is_sorted

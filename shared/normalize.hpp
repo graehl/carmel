@@ -2,7 +2,7 @@
 #ifndef NORMALIZE_HPP
 #define NORMALIZE_HPP
 
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 
 //#include "pointeroffset.hpp"
 /*
@@ -21,14 +21,14 @@ struct indirect_gt<size_t,C*> {
 };
 // HANDLED IN funcs.hpp
 */
-#include "container.hpp"
-#include "byref.hpp"
-#include "genio.h"
-#include "threadlocal.hpp"
-#include "funcs.hpp"
+#include <graehl/shared/container.hpp>
+#include <graehl/shared/byref.hpp>
+#include <graehl/shared/genio.h>
+#include <graehl/shared/threadlocal.hpp>
+#include <graehl/shared/funcs.hpp>
 #include <algorithm>
-#include "debugprint.hpp"
-#include "swapbatch.hpp"
+#include <graehl/shared/debugprint.hpp>
+#include <graehl/shared/swapbatch.hpp>
 
 
 //FIXME: leave rules that don't occur in normalization groups alone (use some original/default value)
@@ -270,7 +270,7 @@ operator <<
 }
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

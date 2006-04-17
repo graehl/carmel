@@ -2,15 +2,15 @@
 #ifndef SWAPBATCH_HPP
 #define SWAPBATCH_HPP
 
-#include "checkpoint_istream.hpp"
-#include "memmap.hpp"
+#include <graehl/shared/checkpoint_istream.hpp>
+#include <graehl/shared/memmap.hpp>
 #include <string>
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 #include <boost/lexical_cast.hpp>
-#include "backtrace.hpp"
-#include "stackalloc.hpp"
-#include "genio.h"
-#include "debugprint.hpp"
+#include <graehl/shared/backtrace.hpp>
+#include <graehl/shared/stackalloc.hpp>
+#include <graehl/shared/genio.h>
+#include <graehl/shared/debugprint.hpp>
 
 #ifdef HINT_SWAPBATCH_BASE
 # ifdef BOOST_IO_WINDOWS

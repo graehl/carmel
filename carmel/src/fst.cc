@@ -1,7 +1,7 @@
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <cctype>
-#include "fst.h"
-#include "kbest.h"
+#include <graehl/carmel/src/fst.h>
+#include <graehl/shared/kbest.h>
 
 const int WFST::perline_index = ios_base::xalloc();
 const int WFST::arcformat_index = ios_base::xalloc();
@@ -171,7 +171,7 @@ namespace WFST_impl {
 
 };
 
-#include "genio.h"
+#include <graehl/shared/genio.h>
 
 template <class charT, class Traits>
 std::basic_ostream<charT,Traits>&
@@ -879,7 +879,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   }
 */
 
-#include "wfstio.cc"
+#include <graehl/carmel/src/wfstio.cc>
 
-#include "compose.cc"
+#include <graehl/carmel/src/compose.cc>
 

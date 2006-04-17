@@ -3,7 +3,7 @@
 #define FILEHEADER_HPP
 
 #include <string>
-#include "funcs.hpp"
+#include <graehl/shared/funcs.hpp>
 
 const std::string default_file_header_prefix="$$$";
 

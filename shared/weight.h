@@ -24,12 +24,12 @@ There is well-tested log-rep addition/subtraction code in GraehlCVS (graehl/shar
 Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but that is no longer tolerated - e is the only natural base (and "log" sometimes means base 2, like in information theory, so it's confusing).
 */
 
-#include "config.h"
-#include "myassert.h"
-#include "genio.h"
-#include "funcs.hpp"
-#include "threadlocal.hpp"
-#include "random.hpp"
+#include <graehl/shared/config.h>
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/genio.h>
+#include <graehl/shared/funcs.hpp>
+#include <graehl/shared/threadlocal.hpp>
+#include <graehl/shared/random.hpp>
 #include <cstdlib>
 
 #ifdef _MSC_VER
@@ -770,7 +770,7 @@ public:
 #endif
 
 #ifdef SINGLE_MAIN
-#include "weight.cc"
+#include <graehl/shared/weight.cc>
 #endif
 
 typedef logweight<FLOAT_TYPE> Weight;
@@ -780,9 +780,9 @@ typedef logweight<FLOAT_TYPE> Weight;
 #undef WEIGHT_DEFINE_OP
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #include <cctype>
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 #endif
 
 #ifdef TEST
@@ -799,7 +799,7 @@ BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
 
 #endif
 /*
-#include "semiring.hpp"
+#include <graehl/shared/semiring.hpp>
 template<nnn>
 struct semiring_traits<Weight> {
     typedef Weight value_type;

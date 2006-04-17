@@ -3,23 +3,23 @@
 #define TREE_HPP
 
 #include <iostream>
-#include "myassert.h"
-#include "genio.h"
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/genio.h>
 //#include <vector>
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 #include <algorithm>
 #ifdef USE_LAMBDA
 #include <boost/lambda/lambda.hpp>
 namespace lambda=boost::lambda;
 #endif
 #include <functional>
-#include "config.h"
-#include "graphviz.hpp"
+#include <graehl/shared/config.h>
+#include <graehl/shared/graphviz.hpp>
 //#include "symbol.hpp"
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 using namespace std;

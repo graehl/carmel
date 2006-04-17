@@ -8,19 +8,19 @@
 // -U = treat pre-training weights as prior counts
 // -Y write graphviz
 // -1 = randomly scale weights (of unlocked arcs) after composition uniformly by (0..1]
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <iostream>
 #include <fstream>
 #include <cctype>
 #include <string>
 #include <ctime>
-#include "fst.h"
-#include "myassert.h"
+#include <graehl/carmel/src/fst.h>
+#include <graehl/shared/myassert.h>
 
 #define CARMEL_VERSION "3.1.1"
 
 #ifdef MARCU
-#include "models.h"
+#include <graehl/shared/models.h>
 char *MarcuArgs[]={
     "marcu-carmel",
     "-IEsriqk",

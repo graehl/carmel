@@ -1,13 +1,13 @@
 #ifndef STRHASH_H
 #define STRHASH_H
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <iostream>
 
-#include "myassert.h"
-#include "dynarray.h"
-#include "2hash.h"
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/dynarray.h>
+#include <graehl/shared/2hash.h>
 
-#include "stringkey.h"
+#include <graehl/shared/stringkey.h>
 
 inline std::ostream & operator << (std::ostream & out, const StringKey &s)
 {
@@ -263,7 +263,7 @@ inline std::ostream & operator << (std::ostream &out, Alphabet<T,P> &alph)
 }
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 {
   BOOST_CHECK(!strcmp(static_itoa(0),"0"));
@@ -279,7 +279,7 @@ BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 
 
 #ifdef SINGLE_MAIN
-#include "strhash.cc"
+#include <graehl/shared/strhash.cc>
 #endif
 
 #endif

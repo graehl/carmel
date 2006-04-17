@@ -11,7 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstddef>
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 
 // doesn't quite work like a streambuf: end of readable area isn't increased when you write, without explicit reset_read(size())
 template<class cT, class Traits = std::char_traits<cT> >

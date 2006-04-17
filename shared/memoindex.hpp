@@ -2,7 +2,7 @@
 #ifndef MEMOINDEX_HPP
 #define MEMOINDEX_HPP
 
-#include "2hash.h"
+#include <graehl/shared/2hash.h>
 
 //F: single-argument (adaptable) functor with argument_type return_type
 // scratch that: void F(const arg &,ret &) (don't trust in temp return opt)
@@ -61,7 +61,7 @@ struct MemoFn {
 };
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

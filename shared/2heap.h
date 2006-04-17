@@ -1,8 +1,7 @@
-#ifndef TWO_HEAP_H
-#define TWO_HEAP_H
+#ifndef GRAEHL__SHARED__2HEAP_H
+#define GRAEHL__SHARED__2HEAP_H
 
 #include <cstdlib>
-using std::size_t;
 
 // binary maximum-heap with elements packed in [heapStart, heapEnd) - heap-sorted on > (*heapStart is the maximum element)
 
@@ -11,7 +10,7 @@ using std::size_t;
 // 2*i+1 is the right child.
 
 // heapEnd - heapStart = number of elements
-template <typename T> inline size_t heapSize ( T *s, T *e )
+template <typename T> inline std::size_t heapSize ( T *s, T *e )
 {
   return e - s;
 }
@@ -21,8 +20,8 @@ template <typename T> inline void heapAdd ( T *heapStart, T *heapEnd, const T& e
      // safe to store the element in (and keeping track of increased size)
 {
   T *heap = heapStart - 1;
-  size_t i = heapEnd - heap;
-  size_t last = i;
+  std::size_t i = heapEnd - heap;
+  std::size_t last = i;
   while ( (i /= 2) && heap[i] < elt ) {
     heap[last] = heap[i];
     last = i;
@@ -31,10 +30,10 @@ template <typename T> inline void heapAdd ( T *heapStart, T *heapEnd, const T& e
 }
 
 // internal routine: repair sub-heap condition given a violation at root element i (heap[i=1]==root)
-template <typename T> static inline void heapify ( T *heap, size_t heapSize, size_t i)
+template <typename T> static inline void heapify ( T *heap, std::size_t heapSize, std::size_t i)
 {
   T temp = heap[i];
-  size_t parent = i, child = 2*i;
+  std::size_t parent = i, child = 2*i;
   while ( child < heapSize ) {
     if ( heap[child] < heap[child+1] )
       ++child;
@@ -54,7 +53,7 @@ template <typename T> static inline void heapify ( T *heap, size_t heapSize, siz
 template <typename T> void heapPop (T *heapStart, T *heapEnd)
 {
   T *heap = heapStart - 1;  // to start numbering of array at 1
-  size_t size = heapSize(heapStart,heapEnd);
+  std::size_t size = heapSize(heapStart,heapEnd);
   heap[1] = heap[size--];
   heapify(heap, size, 1);
 }
@@ -68,8 +67,8 @@ template <typename T> inline T & heapTop (T *heapStart)
 template <typename T> void heapBuild ( T *heapStart, T *heapEnd )
 {
   T *heap = heapStart - 1;
-  size_t size = heapEnd - heapStart;
-  for ( size_t i = size/2 ; i ; --i )
+  std::size_t size = heapEnd - heapStart;
+  for ( std::size_t i = size/2 ; i ; --i )
     heapify(heap, size, i);
 }
 
@@ -77,7 +76,7 @@ template <typename T> void heapBuild ( T *heapStart, T *heapEnd )
 template <typename T> bool heapVerify ( T *heapStart, T *heapEnd )
 {
   T *heap = heapStart - 1;
-  size_t size = heapEnd - heapStart;
+  std::size_t size = heapEnd - heapStart;
   while (--size>1)
       if (heap[size/2]<heap[size])
           return false;
@@ -88,7 +87,7 @@ template <typename T> bool heapVerify ( T *heapStart, T *heapEnd )
 template <typename T> inline void heapAdjustUp ( T *heapStart, T *element)
 {
   T *heap = heapStart - 1;
-  size_t parent, current = element - heap;
+  std::size_t parent, current = element - heap;
   T temp = heap[current];
   while ( current > 1 ) {
     parent = current / 2;

@@ -2,11 +2,11 @@
 #define SPARSE_VECTOR_HPP
 
 
-#include "hashtable_fwd.hpp"
+#include <graehl/shared/hashtable_fwd.hpp>
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include "funcs.hpp"
+#include <graehl/shared/funcs.hpp>
 
 template <class Key=std::string,class Data=double>
 struct sparse_vector : public hash_map<Key,Data>

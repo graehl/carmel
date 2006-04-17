@@ -1,12 +1,12 @@
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <string>
 #include <map>
-#include "myassert.h"
-#include "fst.h"
+#include <graehl/shared/myassert.h>
+#include <graehl/carmel/src/fst.h>
 #include <iterator>
 #include <sstream>
-#include "io.hpp"
-#include "debugprint.hpp"
+#include <graehl/shared/io.hpp>
+#include <graehl/shared/debugprint.hpp>
 
 #define DEFAULTSTRBUFSIZE 4096
 

@@ -1,9 +1,9 @@
 #ifndef KBEST_H
 #define KBEST_H
 
-#include "graph.h"
-#include "myassert.h"
-#include "list.h"
+#include <graehl/shared/graph.h>
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/list.h>
 //#include "dynarray.h"
 
 struct pGraphArc {

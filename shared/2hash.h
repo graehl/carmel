@@ -3,23 +3,23 @@
 #ifndef TWO_HASH_H
 #define TWO_HASH_H
 
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <ostream>
 #include <memory>
-#include "byref.hpp"
-#include "hashtable_fwd.hpp"
+#include <graehl/shared/byref.hpp>
+#include <graehl/shared/hashtable_fwd.hpp>
 
 #define GOLDEN_MEAN_FRACTION 2654435769U
 
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <ostream>
 #include <memory>
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 #ifdef DEBUG
 //# define SUPERDEBUG
 # endif
 #ifdef SUPERDEBUG
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 #endif
 
 #ifndef USE_STD_HASH_MAP // graehl hash map
@@ -27,7 +27,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <new>
-#include "myassert.h"
+#include <graehl/shared/myassert.h>
 #include <utility>
 
 const float DEFAULTHASHLOAD = 0.9f;
@@ -672,7 +672,7 @@ inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTab
 */
 
 
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 template <class K,class V,class H,class P,class A,class F>
 void enumerate(const HashTable<K,V,H,P,A>& ht,const K& first,F f)
 {

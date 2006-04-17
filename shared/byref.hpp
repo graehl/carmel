@@ -9,7 +9,7 @@
 
 #include <boost/ref.hpp>
 
-#include "dummy.hpp"
+#include <graehl/shared/dummy.hpp>
 
 template <class C>
 struct dummy<boost::reference_wrapper<C> > {
@@ -57,7 +57,7 @@ deref(const T& t) {
   //return *const_cast<boost::unwrap_reference<T>::type *>&(t);
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST_MAIN

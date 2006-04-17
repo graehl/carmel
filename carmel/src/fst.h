@@ -10,17 +10,17 @@
 #include <ctime>
 #include <sstream>
 #include <iostream>
-#include "2hash.h"
-#include "list.h"
-#include "weight.h"
-#include "dynarray.h"
-#include "strhash.h"
-#include "graph.h"
-#include "train.h"
-#include "myassert.h"
-#include "compose.h"
+#include <graehl/shared/2hash.h>
+#include <graehl/shared/list.h>
+#include <graehl/shared/weight.h>
+#include <graehl/shared/dynarray.h>
+#include <graehl/shared/strhash.h>
+#include <graehl/shared/graph.h>
+#include <graehl/carmel/src/train.h>
+#include <graehl/shared/myassert.h>
+#include <graehl/carmel/src/compose.h>
 #include <iterator>
-#include "kbest.h"
+#include <graehl/shared/kbest.h>
 
 using namespace std;
 

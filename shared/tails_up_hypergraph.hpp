@@ -4,7 +4,7 @@
 
 // decoder ring: HD = hyperarc descriptor, VD = vertex descriptor
 
-#include "hypergraph.hpp"
+#include <graehl/shared/hypergraph.hpp>
 
 template <class HD>
 struct HArcDest  {
@@ -157,9 +157,12 @@ struct TailsUpHypergraph {
     // caller must init to 0
     template <class EdgePMap>
     void count_unique_tails(EdgePMap e) {
-      FOREACH(const Adj &a,adj) {
-          FOREACH(const ArcDest &ad,a) {
-              ++e[ad.harc];
+//      FOREACH(Adj const& a,adj) {
+//          FOREACH(const ArcDest &ad,a) {
+        for(typename Adjs::const_iterator i=adj.begin(),e=adj.end();i!=e;++i) {
+            for (typename Adj::const_iterator j=i->begin(),ej=i->end();j!=ej;++j) {
+                const ArcDest &ad=*j;
+                ++e[ad.harc];
           }
       }
     }
@@ -311,7 +314,9 @@ struct TailsUpHypergraph {
         void reach(VD v) {
           Cost cv=get(mu,v);
           const Adj &a=rev[v];
-          FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
+//          FOREACH(const ArcDest &ad,a) { // for each hyperarc v participates in as a tail
+          for (typename Adj::const_iterator j=a.begin(),ej=a.end();j!=ej;++j) {
+              const ArcDest &ad=*j;
               HD h=ad.harc;
               VD head=source(h,rev.g);
               RemainInf &ri=remain_infinum[h];

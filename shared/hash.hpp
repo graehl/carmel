@@ -26,7 +26,7 @@ namespace stdext = std;
 //using stdext::hash_set;
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TWO_HASH_H
@@ -45,7 +45,7 @@ typename H::value_type::second_type *find_second(const H& ht,const K& k)
 */
 
 #ifdef TEST
-#include "../carmel/src/stringkey.h"
+#include <graehl/shared/../carmel/src/stringkey.h>
 
 
 

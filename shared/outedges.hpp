@@ -3,7 +3,7 @@
 #define OUTEDGES_HPP
 
 #include <boost/graph/graph_traits.hpp>
-#include "hypergraph.hpp"
+#include <graehl/shared/hypergraph.hpp>
 
 //OutEdges (generic out_edge_iterator graph adapter, out_edges ...) and
 

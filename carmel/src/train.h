@@ -1,12 +1,11 @@
 #ifndef TRAIN_H
 #define TRAIN_H 1
-#include "config.h"
-#include "myassert.h"
-#include "2hash.h"
-#include "weight.h"
-#include "list.h"
-#include "2hash.h"
-#include "arc.h"
+#include <graehl/shared/config.h>
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/2hash.h>
+#include <graehl/shared/weight.h>
+#include <graehl/shared/list.h>
+#include <graehl/shared/arc.h>
 #include <iostream>
 
 struct IntKey {
@@ -65,8 +64,7 @@ struct State {
 	else
 	  list->push_front(&(*l));
 #else
-	list=&(*index)[l->out];
-	list->push_front(&(*l));
+	(*index)[l->out].push_front(&(*l));
 #endif
       }
       return;
@@ -89,8 +87,7 @@ struct State {
       else
 	list->push_front(&(*l));
 #else
-	list=&(*index)[l->in];
-	list->push_front(&(*l));
+	(*index)[l->in].push_front(&(*l));
 #endif
 
     }

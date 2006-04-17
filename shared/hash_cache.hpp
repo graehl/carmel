@@ -1,7 +1,7 @@
 #ifndef HASH_CACHE_HPP
 #define HASH_CACHE_HPP
 
-#include "hashtable_fwd.hpp"
+#include <graehl/shared/hashtable_fwd.hpp>
 #include <vector>
 #include <pair>
 #include <cassert>

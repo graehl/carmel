@@ -2,10 +2,10 @@
 #ifndef ADJUSTABLEHEAP_HPP
 #define ADJUSTABLEHEAP_HPP
 
-#include "2heap.h"
-#include "threadlocal.hpp"
-#include "byref.hpp"
-#include "dummy.hpp"
+#include <graehl/shared/2heap.h>
+#include <graehl/shared/threadlocal.hpp>
+#include <graehl/shared/byref.hpp>
+#include <graehl/shared/dummy.hpp>
 
 //! NOTE: key to only SetLocWeight according to a stack discipline - cannot leave multiple instances around using heap allocation!
 
@@ -103,7 +103,7 @@ inline bool operator < (HeapKey<K,W,L> lhs, HeapKey<K,W,L> rhs) {
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

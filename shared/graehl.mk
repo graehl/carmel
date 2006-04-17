@@ -1,8 +1,9 @@
 #you provide:  
 # (the variables below)
 # ARCH (if macosx, static builds are blocked)
-#PROGS=a b   
-#a_OBJ=a.o ... a_SLIB=lib.o lib.a (static libraries e.g. a_SLIB=$(BOOST_OPTIONS_LIB))
+#PROGS=a b
+#build boost yourself and ensure that you have -Lwhatever -Iwhatever for it in CPPFLAGS
+#a_OBJ=a.o ... a_SLIB=lib.o lib.a (static libraries e.g. a_LIB=$(BOOST_OPTIONS_LIB))
 #a_NOSTATIC=1 a_NOTEST=1 ...
 #NOSTATIC=1 (global setting)
 # CXXFLAGS CXXFLAGS_DEBUG CXXFLAGS_TEST
@@ -99,15 +100,27 @@ BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
 BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS)))
 BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
+ifndef BOOST_SUFFIX
+BOOST_SUFFIX:=-gcc
+endif
+ifdef BUILD_OWN_BOOST_LIBS
 BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
+libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
+else
+BOOST_SERIALIZATION_LIB=-lboost_serialization$(BOOST_SUFFIX)
+BOOST_TEST_LIB=-lboost_unit_test_framework$(BOOST_SUFFIX)
+BOOST_OPTIONS_LIB=-lboost_program_options$(BOOST_SUFFIX)
+BOOST_SERIALIZATION_LIB=-lboost_serialization$(BOOST_SUFFIX)
+libs:
+endif
+
 
 list_src: $(BOOST_SERIALIZATION_SRCS)
 	echo $(BOOST_SERIALIZATION_SRCS)
 
-libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
 
 CXXFLAGS_COMMON += $(ARCH_FLAGS)
 #CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
@@ -172,7 +185,7 @@ $$(BIN)/$(1):\
  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(optimized\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB)
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
 $(1): $$(BIN)/$(1)
@@ -184,7 +197,7 @@ ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(static\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) --static 
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
 $(1): $$(BIN)/$(1).static
@@ -197,17 +210,18 @@ $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB)
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
-$$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST)) $$(BOOST_TEST_LIB)  $$($(1)_SLIB)
+#$$(BOOST_TEST_LIB)
+$$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(test\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) 
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB)
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))
 ALL_TESTS += $$(BIN)/$(1).test
@@ -255,6 +269,7 @@ test: $(ALL_TESTS)
 #	$(foreach test,$(ALL_TESTS),$(shell $(test) --catch_system_errors=no))
 
 
+ifdef BUILD_OWN_BOOST_LIBS
 $(BOOST_FILESYSTEM_LIB): $(BOOST_FILESYSTEM_OBJS)
 	@echo
 	@echo creating Boost Filesystem lib
@@ -278,6 +293,7 @@ $(BOOST_SERIALIZATION_LIB): $(BOOST_SERIALIZATION_OBJS)
 	@echo creating Boost Program Serialization lib
 	$(AR) -rc $@ $^
 #	$(RANLIB) $@
+endif
 
 vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPTIONS_SRC_DIR) $(BOOST_FILESYSTEM_SRC_DIR)
 vpath %.d $(DEPSPRE)

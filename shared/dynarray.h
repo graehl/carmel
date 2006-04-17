@@ -19,12 +19,12 @@
 #include <cstddef>
 #include <stdexcept>
 #include <iostream>
-#include "genio.h"
-#include "byref.hpp"
-#include "funcs.hpp"
-#include "io.hpp"
-#include "stackalloc.hpp"
-#include "function_output_iterator.hpp"
+#include <graehl/shared/genio.h>
+#include <graehl/shared/byref.hpp>
+#include <graehl/shared/funcs.hpp>
+#include <graehl/shared/io.hpp>
+#include <graehl/shared/stackalloc.hpp>
+#include <graehl/shared/function_output_iterator.hpp>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <iterator>
@@ -538,19 +538,19 @@ public:
         new(push_back_raw()) T();
     }
     template <class T0>
-    inline void push_front(T0 const& t0)
+    inline void push_back(T0 const& t0)
     {
-        new(push_front_raw()) T(t0);
+        new(push_back_raw()) T(t0);
     }    
     template <class T0,class T1>
-    inline void push_front(T0 const& t0,T1 const& t1)
+    inline void push_back(T0 const& t0,T1 const& t1)
     {
-        new(push_front_raw()) T(t0,t1);
+        new(push_back_raw()) T(t0,t1);
     }
     template <class T0,class T1,class T2>
-    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2)
+    inline void push_back(T0 const& t0,T1 const& t1,T2 const& t2)
     {
-        new(push_front_raw()) T(t0,t1,t2);
+        new(push_back_raw()) T(t0,t1,t2);
     }
     
     void push_back_n(const T& val,unsigned n)
@@ -581,6 +581,11 @@ public:
     void undo_push_back_raw() {
         --endv;
     }
+    bool empty() const {
+        return size()==0;
+        //    return vec==endvec;
+    }
+    
 
     template <class Better_than_pred>
     void push_keeping_front_best(T &t,Better_than_pred better) 
@@ -1061,7 +1066,7 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 
 #ifdef TEST
 
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };
@@ -1143,7 +1148,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     const int sz=7;
     {
         dynamic_array<int> a(sz);
-        a.push_back(sz,sz*3);
+        a.push_back_n(sz,sz*3);
         BOOST_CHECK(a.size() == sz*3);
         BOOST_CHECK(a.capacity() >= sz*3);
         BOOST_CHECK(a[sz]==sz);

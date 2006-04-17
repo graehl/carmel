@@ -1,9 +1,9 @@
 #ifndef ARC_H
 #define ARC_H
 
-#include "config.h"
-#include "weight.h"
-#include "2hash.h"
+#include <graehl/shared/config.h>
+#include <graehl/shared/weight.h>
+#include <graehl/shared/2hash.h>
 #include <iostream>
 
 struct FSTArc {

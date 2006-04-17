@@ -8,8 +8,8 @@
 
 #ifndef MEMMAP_HPP
 #define MEMMAP_HPP
-#include "debugprint.hpp"
-#include "backtrace.hpp"
+#include <graehl/shared/debugprint.hpp>
+#include <graehl/shared/backtrace.hpp>
 
 /*
   #include <stdexcept>
@@ -31,7 +31,7 @@
 
 #include <cassert>
 
-#include "os.hpp"
+#include <graehl/shared/os.hpp>
 
 #ifdef MEMMAP_IO_WINDOWS
 #else
@@ -336,8 +336,8 @@ public:
 };
 
 #ifdef TEST
-#include "test.hpp"
-#include "stdio.h"
+#include <graehl/shared/test.hpp>
+//#include <stdio.h>
 
 BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
 {

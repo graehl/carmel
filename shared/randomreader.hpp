@@ -2,7 +2,7 @@
 #ifndef RANDOMREADER_HPP
 #define RANDOMREADER_HPP
 
-#include "random.hpp"
+#include <graehl/shared/random.hpp>
 
 template <class Label>
 struct RandomReader

@@ -1,14 +1,14 @@
 // singly linked list
 // originally from http://pegasus.rutgers.edu/~elflord/cpp/list_howto/
 // erase_iterator changes to allow insert and erase (not just _after) by Jonathan
-#ifndef SLIST_H
-# define SLIST_H
+#ifndef GRAEHL_SHARED_SLIST_H
+# define GRAEHL_SHARED_SLIST_H
 
 #include <iterator>
 #include <memory> // for placement new
 #include <vector> // for sort
 #include <algorithm> // sort
-#include <function> // for less
+#include <functional> // for less
 #include <cassert>
 
 #ifdef SLIST_EXTRA_ASSERT
@@ -27,7 +27,7 @@ struct predicate_indirector
     {
         return p(*i1);
     }
-    template <class It1,It2>
+    template <class It1,class It2>
     bool operator()(It1 i1, It2 i2) const
     {
         return p(*i1,*i2);
@@ -41,23 +41,31 @@ predicate_indirector<Pred> indirect_predicate(Pred const& p)
     return p;
 } 
 
+namespace impl {
 template <class T>
-struct _slist_Node
+struct slist_node
 {
-    _slist_Node() {}
-    _slist_Node(const T& x,_slist_Node* y = 0):data(x),next(y){}
+    slist_node() {}
+    slist_node(const T& x,slist_node* y = 0):data(x),next(y){}
     T data;
-    _slist_Node* next;
+    slist_node* next;
 };
+}
 
-
-/// can be copied by value (causes sharing).  does not deallocate (relies on a pool).  use slist if you want ownership/deallocation
+/// can be copied by value (causes sharing).  does not deallocate (relies on your using a pool).  use slist if you want ownership/deallocation
 /// only works for singleton/static Alloc
-template <class T,class Alloc=std::allocator<_slist_Node<T> > >
-class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
+template <class T,
+          class A=std::allocator<impl::slist_node<T> >
+//          class A=std::allocator<T>
+          >
+class slist_shared :
+    private A::template rebind<impl::slist_node<T> >::other
+//    private A    
 {
  public:
-  typedef _slist_Node<T> Node;
+    typedef typename A::template rebind<impl::slist_node<T> >::other allocator_type;
+  typedef impl::slist_node<T> Node;
+    typedef slist_shared<T,A> self_type;
   Node* head;
     
   typedef T value_type;
@@ -71,7 +79,7 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
 
   struct val_iterator;
   struct erase_iterator;
-  typedef erase_iterator iterator;
+    typedef val_iterator iterator; /// this means standard list operation (erase) isn't supported for regular iterator
     struct const_iterator
         : public std::iterator<std::forward_iterator_tag, const T>
     {
@@ -150,28 +158,29 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
     struct node_iterator : public std::iterator<std::forward_iterator_tag, Node *>
     {
         Node* m_rep;
-        inline val_iterator(Node* x=0):m_rep(x){}
-        inline val_iterator(const val_iterator& x):m_rep(x.m_rep) {}
-        inline val_iterator(const const_iterator& x):m_rep(x.m_rep) {}
-        inline val_iterator& operator=(const val_iterator& x)
+        inline node_iterator(Node* x=0):m_rep(x){}
+        inline node_iterator(const val_iterator& x):m_rep(x.m_rep) {}
+        inline node_iterator(const node_iterator& x):m_rep(x.m_rep) {}
+        inline node_iterator(const const_iterator& x):m_rep(x.m_rep) {}
+        inline node_iterator& operator=(const node_iterator& x)
         {
             m_rep=x.m_rep; return *this;
         }
-        inline val_iterator& operator++()
+        inline node_iterator& operator++()
         {
             m_rep = m_rep->next; return *this;
         }
-        inline val_iterator operator++(int)
+        inline node_iterator operator++(int)
         {
-            val_iterator tmp(*this); m_rep = m_rep->next; return tmp;
+            node_iterator tmp(*this); m_rep = m_rep->next; return tmp;
         }
         inline Node * operator*() const { return m_rep; }
         inline Node * operator->() const { return m_rep; } //FIXME: should be an error to take a member of a pointer?
-        inline bool operator==(const val_iterator& x) const
+        inline bool operator==(const node_iterator& x) const
         {
             return m_rep == x.m_rep;
         }
-        inline bool operator!=(const val_iterator& x) const
+        inline bool operator!=(const node_iterator& x) const
         {
             return m_rep != x.m_rep;
         }
@@ -189,7 +198,8 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
         //        friend class slist_shared;
         //        operator iterator () { return *m_rep; }
         inline erase_iterator(const val_iterator &x) : m_rep(&x.m_rep->next) {} // points at following node
-        inline erase_iterator(Node** x=0):m_rep(x){}
+        inline erase_iterator():m_rep(0){}
+        inline erase_iterator(Node*& x):m_rep(&x){}
         inline erase_iterator(const erase_iterator& x):m_rep(x.m_rep) {}
         inline erase_iterator& operator=(const erase_iterator& x)
         {
@@ -224,8 +234,13 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
     /// WARNING: O(n) - be very careful to test empty() instead of size()==0
     size_type size() const 
     {
+        return count_length();
+    }
+    
+    size_type count_length() const 
+    {
         size_type ret=0;
-        for ( const_iterator i = L.begin(); i!=L.end(); ++i )
+        for ( const_iterator i = begin(); i!=end(); ++i )
             ++ret;
         return ret;
     }
@@ -262,22 +277,22 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
         sort(std::less<T>());
     }
     
-    slist_shared() : head(0) {}
+    slist_shared() : head(NULL) {}
 
     /// shallow copy
-    slist_shared(const slist& L) : head(L.head);
+    slist_shared(const self_type& L) : head(L.head) {}
     
-    slist(Node *n) : head(n) {}
-    slist(const T &it) : head(allocate()) {new(head) Node(it,0);}
+    slist_shared(Node *n) : head(n) {}
+    slist_shared(const T &it) : head(alloc()) {new(head) Node(it,0);}
 
     void append_deep_copy(Node **pto,Node *from)
     {
-        for (from;from=from->next)
+        for (;from;from=from->next)
             pto=&((*pto=construct(from->data))->next);        
         *pto=NULL;
     }
     
-    void construct_deep_copy(const slist_shared &L)
+    void construct_deep_copy(const self_type &L)
     {
         /*
         head=NULL;
@@ -285,21 +300,25 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
             push_front(*i);
         reverse();
         */
-        append_deep_copy(&head,L.head)
+        append_deep_copy(&head,L.head);
     }
-    void assign_deep_copy(const slist_shared &L)
+    void assign_deep_copy(const self_type &L)
     {
         clear();
         construct_deep_copy(L);
     }
-    
-    inline Node *allocate() 
+
+    allocator_type &allocator() 
     {
-        return this->allocate(1);
+        return *this;
     }
-    void deallocate(Node *n)
+    inline Node *alloc() 
     {
-        this->deallocate(n,1);
+        return allocator().allocate(1);
+    }
+    void dealloc(Node *n)
+    {
+        allocator().deallocate(n,1);
     }
     
     void reverse()
@@ -314,7 +333,7 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
         head = p;
     }
 
-    void swap(slist& x)
+    void swap(self_type& x)
     {
         Node* tmp = head; head = x.head; x.head = tmp;
     }
@@ -345,31 +364,30 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
     
     T *push_front_raw()
     {
-        Node* tmp = allocate();
+        Node* tmp = alloc();
         tmp->next=head;
         head=tmp;
-        return &tmp.data;
+        return &tmp->data;
     }
     T *push_second_raw()
     {
         slist_assert(!empty());
-        Node* tmp = allocate();
+        Node* tmp = alloc();
         tmp->next=head->next;
         head->next=tmp;
-        return &tmp.data;
+        return &tmp->data;
     }
-
     
-    N *construct() 
+    Node *construct() 
     {
-        n *ret=allocate();
+        Node *ret=alloc();
         new(ret->data)T();
         return ret;
     }
     template <class T0>
-    N *construct(T0 t0) 
+    Node *construct(T0 t0) 
     {
-        n *ret=allocate();
+        Node *ret=alloc();
         new(ret->data)T(t0);
         return ret;
     }
@@ -407,7 +425,7 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
         if (head)
         {
             Node* newhead = head->next;
-            deallocate(head);
+            dealloc(head);
             head = newhead;
         }
     }
@@ -427,26 +445,26 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
     inline val_iterator val_begin() { return val_iterator(head); }
     inline val_iterator val_end() { return val_iterator(); }
 
-    // defined in list.h instead
-    //inline iterator erase_begin() { return begin(); }
-    //inline iterator erase_end() { return end(); }
-    inline erase_iterator begin() { return erase_iterator(&head); }
-    inline erase_iterator end() { return erase_iterator(); }
+    
+    inline erase_iterator erase_begin() { return head; }
+    inline erase_iterator erase_end() { return erase_iterator(); }
+    inline iterator begin() { return head; }
+    inline iterator end() { return iterator(); }
     inline const_iterator begin() const { return const_begin(); }
     inline const_iterator end() const { return const_end(); }
-    const_iterator const_begin() const { return const_iterator(head); }
+    const_iterator const_begin() const { return head; }
     const_iterator const_end() const { return const_iterator(); }
 
 
     inline erase_iterator& erase(erase_iterator &e) {
         Node *killme = *e.m_rep;
         *e.m_rep = killme->next;
-        deallocate(killme);
+        dealloc(killme);
         return e;
     }
 
     inline erase_iterator& insert(erase_iterator &e,const T& it) { // moves iterator back to inserted thing!
-        Node *prev=allocate();
+        Node *prev=alloc();
         new (prev)Node(it,*e.m_rep);
         *e.m_rep=prev;
         return e;
@@ -457,35 +475,61 @@ class slist_shared : private Alloc::template rebind<_slist_Node<T> >::other
         Node* tmp = x.m_rep->next;
         if (x.m_rep->next)
             x.m_rep->next = x.m_rep->next->next;
-        deallocate(tmp);
+        dealloc(tmp);
     }
 
     iterator insert_after (iterator& x, const T& y)
     {
-        Node* tmp = allocate();
+        Node* tmp = alloc();
         new(tmp) Node(y,x.m_rep->next);
         x.m_rep->next = tmp;
         return iterator(tmp);
     }
+
+    template <class O>
+    friend O & operator << (O &out, self_type const& list)
+    {
+        out << "(";
+        const_iterator i=list.begin();
+        const_iterator end=list.end();
+        if (i!=end) {
+            out << *i;
+            for( ; i != end ;++i)
+                out << ' ' << *i;
+        }
+        out << ")";
+        return out;
+    }
 };
 
 
-template <class T,class Alloc=std::allocator<_slist_Node<T> > >
-class slist : public slist_shared<T,Alloc>
+/// danger: public inheritance saves us from writing forwarding wrappers, BUT, if we copy shared(nonshared) or shared.swap(nonshared), we can't prohibit this (like we do for nonshared.swap(shared))
+template <class T,class A=std::allocator<T> >
+class slist : public slist_shared<T,A>
 {
  public:
-    typedef slist_shared<T,Alloc> slist_base;
+    typedef slist_shared<T,A> slist_base;
+    typedef slist<T,A> self_type;
     
-    slist() : slist_base(slist) {}
+    slist() :
+        slist_base() {}
     slist(slist_base const& L) { this->construct_deep_copy(L); }
-    slist(Node *n) : slist_base(n) {}
     slist(const T &it) : slist_base(it) {}
-    slist_shared& operator=(slist_base const& x)
+    self_type& operator=(slist_base const& x)
     {
         this->assign_deep_copy(x);
         return *this;
     }
+    void swap(slist& x)
+    {
+        slist_base::swap(x);
+    }
     ~slist() { this->clear(); }
+ private:
+    void swap(slist_base& x)
+    {
+        throw "can't swap shared and nonshared lists";
+    }
 };
 
     

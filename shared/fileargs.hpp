@@ -11,18 +11,18 @@
 #include <sstream>
 #include <stdexcept>
 //#include "fileheader.hpp"
-#include "funcs.hpp"
+#include <graehl/shared/funcs.hpp>
 #ifndef GZSTREAM_NAMESPACE
 # define USE_GZSTREAM_NAMESPACE
 //ns_gzstream
 #endif
-#include "gzstream.h"
+#include <graehl/shared/gzstream.h>
 #if defined(SINGLE_MAIN) || defined(SINGLE_MAIN_GZSTREAM)
 # include "gzstream.C"
 #endif
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-#include "boost/filesystem/convenience.hpp"
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/convenience.hpp>
 
 static const char gz_ext[]=".gz";
 

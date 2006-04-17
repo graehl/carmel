@@ -1,8 +1,8 @@
 #ifndef COMPOSE_H
 #define COMPOSE_H 1
-#include "myassert.h"
+#include <graehl/shared/myassert.h>
 
-#include "2hash.h"
+#include <graehl/shared/2hash.h>
 
 
 #define EMPTY 0

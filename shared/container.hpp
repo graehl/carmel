@@ -2,7 +2,7 @@
 #ifndef CONTAINER_HPP
 #define CONTAINER_HPP
 
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 
 template <class Tag,class M,class F>
 void nested_enumerate(M& m,F &f,Tag t) {
@@ -51,7 +51,7 @@ void enumerate(M& m,F f) {
 
 // Assoc. Maps:
 #include <map>
-#include "2hash.h"
+#include <graehl/shared/2hash.h>
 
 
 struct HashS {
@@ -136,7 +136,7 @@ inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator 
 
 // Containers:
 
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 
 struct VectorS {
   template <class T> struct container {
@@ -144,7 +144,7 @@ struct VectorS {
   };
 };
 
-#include "list.h"
+#include <graehl/shared/list.h>
 
 struct ListS {
   template <class T> struct container {
@@ -154,7 +154,7 @@ struct ListS {
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

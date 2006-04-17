@@ -2,8 +2,8 @@
 #ifndef IO_HPP
 #define IO_HPP
 
-#include "genio.h"
-#include "funcs.hpp"
+#include <graehl/shared/genio.h>
+#include <graehl/shared/funcs.hpp>
 
 #include <locale>
 #include <algorithm>
@@ -12,11 +12,11 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
-#include "has_print.hpp"
+#include <graehl/shared/has_print.hpp>
 #include <streambuf>
 #include <iostream>
 
-#include "shell_escape.hpp"
+#include <graehl/shared/shell_escape.hpp>
     
 template <class Ch, class Tr,class Alloc>
 inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
@@ -1073,7 +1073,7 @@ inline void split_noquote(
 }
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #include <cstring>
 #endif
 

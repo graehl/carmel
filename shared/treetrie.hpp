@@ -2,10 +2,10 @@
 #ifndef TREETRIE_HPP
 #define TREETRIE_HPP
 
-#include "symbol.hpp"
-#include "tree.hpp"
-#include "indexgraph.hpp"
-#include "container.hpp"
+#include <graehl/shared/symbol.hpp>
+#include <graehl/shared/tree.hpp>
+#include <graehl/shared/indexgraph.hpp>
+#include <graehl/shared/container.hpp>
 
 // we're going to fix the label type as Symbol for now, and use only index_graph<Symbol,HashS>, not the BSearchS or MapS
 // we use Symbol::phony_int() to handle where and rank nodes.  what is a tree trie?  see NOTES.
@@ -76,7 +76,7 @@ struct treetrie {
   /// F: (where,Tree *) - should be like F[where] = Tree *
   /// boost::reference<array_mapper<Tree<L> *> > works fine as an F
   //// 1/27/2006: can't remember WHY anyone inserting would want to play with an F callback - not used for anything internally, just exposes impl. detail - commented out with /* */
-  template <class L/,*class F*/>
+  template <class L/*,class F*/>
   V insert(Tree<L> *t/*, F f*/) {
     nextwhere=0; // root=0, children start at 1
     // visit: root label
@@ -181,7 +181,7 @@ struct treetrie {
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

@@ -6,8 +6,8 @@
 #include <iostream>
 #include <vector>
 
-#include "2heap.h"
-#include "list.h"
+#include <graehl/shared/2heap.h>
+#include <graehl/shared/list.h>
 #include <iterator>
 
 struct GraphArc {

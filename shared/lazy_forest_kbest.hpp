@@ -1,12 +1,13 @@
-#ifndef LAZY_FOREST_KBEST_HPP
-#define LAZY_FOREST_KBEST_HPP
+#ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
+#define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
 #ifdef TEST
 # define LAZY_FOREST_EXAMPLES
 #endif
 #ifdef LAZY_FOREST_EXAMPLES
-#include "info_debug.hpp"
+#include <graehl/shared/info_debug.hpp>
 #endif
+#include <graehl/shared/assertlvl.hpp>
 
 #ifndef INFOT
 # define KBESTINFOT(x)
@@ -25,7 +26,7 @@
 #include <vector>
 #include <stdexcept>
 #ifdef GRAEHL_HEAP
-#include "2heap.h"
+#include <graehl/shared/2heap.h>
 #else
 #include <algorithm>
 #include <ext/algorithm> // is_sorted
@@ -60,7 +61,8 @@ struct lazy_derivation_cycle : public std::runtime_error
         /// special derivation values (not used for normal derivations) (may be of different type but convertible to derivation_type)
         static derivation_type PENDING();
         static derivation_type NONE();
-
+/// derivation_type must support: initialization by (copy), assignment, ==, !=
+        
         /// take an originally better (or best) derivation, substituting for the changed_child_index-th child new_child for old_child (cost difference should usually be computed as (cost(new_child) - cost (old_child)))
         derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index) 
         {
@@ -202,7 +204,7 @@ class lazy_forest {
             if (memo[n] == PENDING()) {
                 if (throw_on_cycle)
                     throw lazy_derivation_cycle();
-                KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning DONE instead (this means that the caller's nbest will be filled without using me)... n-1th best=" << memo[n-1]);
+                KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning DONE instead (this means that the caller's nbest will be filled without using me)... n-1th best"); //=" << memo[n-1]
                 memo[n] = NONE();
             }
             return memo[n]; // may be DONE
@@ -253,6 +255,14 @@ class lazy_forest {
             return top().derivation;
     }
 
+    /// may be followed by add()
+    void add_first_sorted(derivation_type r,forest *left=NULL,forest *right=NULL)
+    {
+        assertlvl(9,pq.empty() && memo.empty());
+        memo.push_back(r);
+        add(r,left,right);
+    }
+    
     /// must be added from best to worst order ( r1 > r2 > r3 > ... )
     void add_sorted(derivation_type r,forest *left=NULL,forest *right=NULL) {
         if (pq.empty()) { // first added
@@ -280,6 +290,7 @@ class lazy_forest {
         finish_adding();
     }
 
+    /// optional: if you call only add() on sorted, you must finish_adding().  otherwise don't call, or call sort() instead
     void finish_adding() 
     {
         memo.clear();
