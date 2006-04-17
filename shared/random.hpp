@@ -2,7 +2,7 @@
 #ifndef RANDOM_HPP
 #define RANDOM_HPP
 
-#include "myassert.h"
+#include <graehl/shared/myassert.h>
 
 #ifdef SOLARIS
 //# include <sys/int_types.h>
@@ -30,7 +30,7 @@
 #include <boost/scoped_array.hpp>
 
 #include <ctime>
-#include "os.hpp"
+#include <graehl/shared/os.hpp>
 
 inline unsigned default_random_seed()
 {
@@ -164,9 +164,9 @@ void randomly_permute(V &vec)
 }
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #include <cctype>
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 #endif
 
 #ifdef TEST

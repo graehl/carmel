@@ -14,7 +14,7 @@ const C& dummy<C>::var() {
 }
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

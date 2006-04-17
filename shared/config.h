@@ -39,7 +39,7 @@ namespace Config {
 
 //#define DEBUG
 
-#include "memleak.hpp"
+#include <graehl/shared/memleak.hpp>
 
 #define TREE_SINGLETON_OPT
 typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index

@@ -1,7 +1,7 @@
 #ifndef STATIC_ITOA_H
 #define STATIC_ITOA_H
 
-#include "threadlocal.hpp"
+#include <graehl/shared/threadlocal.hpp>
 
   static char *static_itoa(unsigned pos) {
     static THREADLOCAL char buf[] = "01234567890123456789"; // to put end of string character at buf[20]

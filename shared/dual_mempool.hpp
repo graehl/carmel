@@ -1,7 +1,7 @@
 #ifndef DUAL_MEMPOOL_HPP
 #define DUAL_MEMPOOL_HPP
 
-#include "align.hpp"
+#include <graehl/shared/align.hpp>
 #include <new>
 #include <stdexcept>
 
@@ -185,7 +185,7 @@ Assert2(sz1,=sizeof(Data));
     
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

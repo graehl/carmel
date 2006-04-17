@@ -2,7 +2,7 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <locale>
 #include <iostream>
 

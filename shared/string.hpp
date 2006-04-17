@@ -2,22 +2,22 @@
 #ifndef STRING_HPP
 #define STRING_HPP
 
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 
-#include "ttconfig.hpp"
+#include <graehl/tt/ttconfig.hpp>
 #include <iostream>
-#include "myassert.h"
-#include "genio.h"
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/genio.h>
 //#include <vector>
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
 #include <functional>
 
-#include "tree.hpp"
+#include <graehl/shared/tree.hpp>
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 //using namespace boost::lambda;

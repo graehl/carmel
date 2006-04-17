@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 
 template <class C>
 struct checkpoint_istream_control;

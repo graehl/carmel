@@ -66,13 +66,13 @@ struct SetLocal {
 };
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 
 //typedef LocalGlobal<int> Gint;
 typedef int Gint;
 static Gint savelocal_n=1;
 
-
+/*
 BOOST_AUTO_UNIT_TEST( threadlocal )
 {
   BOOST_CHECK(savelocal_n==1);
@@ -89,6 +89,7 @@ BOOST_AUTO_UNIT_TEST( threadlocal )
   }
   BOOST_CHECK(savelocal_n==1);
 }
+*/
 #endif
 
 #endif

@@ -1,8 +1,8 @@
 #ifndef MEMORY_ARCHIVE_HPP
 #define MEMORY_ARCHIVE_HPP
 
-#include "serialize_config.hpp"
-#include "array_stream.hpp"
+#include <graehl/shared/serialize_config.hpp>
+#include <graehl/shared/array_stream.hpp>
 //#include <cstddef>
 
 template <class T>

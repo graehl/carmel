@@ -2,14 +2,14 @@
 #ifndef POINTEROFFSET_HPP
 #define POINTEROFFSET_HPP
 
-#include "myassert.h"
-#include "genio.h"
-#include "funcs.hpp"
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/genio.h>
+#include <graehl/shared/funcs.hpp>
 #include <iterator>
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 template <class T>

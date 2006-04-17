@@ -2,7 +2,7 @@
 #ifndef PACKEDALLOC_HPP
 #define PACKEDALLOC_HPP
 
-#include "list.h"
+#include <graehl/shared/list.h>
 #include <memory>
 
 #ifndef PACKED_ALLOC_BLOCKSIZE

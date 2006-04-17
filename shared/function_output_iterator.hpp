@@ -2,7 +2,7 @@
 #ifndef FUNCTION_OUTPUT_ITERATOR_HPP
 #define FUNCTION_OUTPUT_ITERATOR_HPP
 
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 #include <iterator>
 
 namespace my {

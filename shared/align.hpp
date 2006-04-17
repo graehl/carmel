@@ -2,10 +2,10 @@
 #define ALIGN_HPP_inc
 
 #include <boost/type_traits/alignment_traits.hpp>
-#include "myassert.h"
+#include <graehl/shared/myassert.h>
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 template <class T>
@@ -47,7 +47,7 @@ bool is_aligned(T *p)
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
 {
     unsigned *p;

@@ -11,15 +11,15 @@
 /// if you inherit from a class that has defined one of these, override it with some other type than void: typedef bool has_print_writer would disable
 
 
-#include "threadlocal.hpp"
-#include "myassert.h"
+#include <graehl/shared/threadlocal.hpp>
+#include <graehl/shared/myassert.h>
 #include <sstream>
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 #include <iostream>
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "has_print.hpp"
-#include "byref.hpp"
+#include <graehl/shared/has_print.hpp>
+#include <graehl/shared/byref.hpp>
 
 #ifdef DEBUG
 #define DEBUG_SEGFAULT Assert(0)
@@ -141,7 +141,7 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 }
 
 
-#include "threadlocal.hpp"
+#include <graehl/shared/threadlocal.hpp>
 
 
 #ifdef _MSC_VER

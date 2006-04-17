@@ -1,10 +1,10 @@
 // linked list wrapper (uses default STL list instead unless -DUSE_SLIST)
 #ifndef LIST_H
 #define LIST_H
-#include "config.h"
+#include <graehl/shared/config.h>
 
 #ifdef USE_SLIST
-#include "slist.h"
+#include <graehl/shared/slist.h>
 #define STL_LIST slist
 #else
 #include <list>
@@ -13,49 +13,37 @@
 
 #include <iostream>
 
-
-template <typename T>
-class List: public STL_LIST<T> {
-  //  typedef STL_LIST<T> S;
+template <class T,class A=std::allocator<T> >
+class List : public STL_LIST<T,A> {
+  //  typedef STL_LIST<T,A> S;
 public:
-#ifndef USE_SLIST
+#ifdef USE_SLIST
+    typedef typename STL_LIST<T,A>::erase_iterator iterator;    
+#else 
     typedef typename List::iterator erase_iterator;
     typedef typename List::iterator val_iterator;
     typename List::const_iterator const_begin() const { return this->begin(); } //{ return const_cast<const List *>(this)->begin(); }
     typename List::const_iterator const_end() const { return this->end(); } //{ return const_cast<const List *>(this)->end(); }
     typename List::iterator val_begin() { return this->begin(); }
     typename List::iterator val_end() { return this->end(); }
-#endif
     typename List::iterator erase_begin() { return this->begin(); }
     typename List::iterator erase_end() { return this->end(); }
+#endif
 
   //constructors
-  List():STL_LIST<T>(){};
-  List(const List &l):STL_LIST<T> (l){};
+  List():STL_LIST<T,A>(){};
+  List(const List &l):STL_LIST<T,A> (l){};
   ~List(){};
   List(const T &it):
 #ifdef USE_SLIST
-    STL_LIST<T>(it)
+    STL_LIST<T,A>(it)
 #else
-    STL_LIST<T>(1,it)
+    STL_LIST<T,A>(1,it)
 #endif
     {  }
-  List(size_t sz,const T &it):STL_LIST<T>(sz,it) {  }
+  List(size_t sz,const T &it):STL_LIST<T,A>(sz,it) {  }
   int notEmpty() const { return !isEmpty(); }
   int isEmpty() const { return this->empty(); }
-  unsigned size() const { //WARNING: you might think this is constant time, but it's not unless using STL_LIST
-    return count_length();
-  }
-  int count_length() const{
-#ifdef USE_SLIST
-    int count=0;
-    for (typename List::const_iterator i=this->const_begin(),end=this->const_end();i!=end;++i)
-      ++count;
-    return count;
-#else
-    return static_cast<int>(this->size());
-#endif
-  }
   void push(const T &it) {
     push_front(it);
   }
@@ -65,11 +53,29 @@ public:
   void pop() {
     this->pop_front();
   }
+#ifndef USE_SLIST
+        template <typename Out,typename T,typename A>
+    friend Out & operator << (Out &out, const List<T,A> &list)
+    {
+        out << "(";
+        typename List<T,A>::const_iterator end = list.end();
+        bool first=true;
+        for( typename List<T,A>::const_iterator n = list.begin() ; n != end ;++n) {
+            out << *n
+                if (first)
+                    first=false;
+                else
+                    out << ' ';
+        }
+        out << ")";
+        return out;
+    }
+#endif 
 };
 /*
   template <typename T>
   class ListPostInserter {
-  typedef List<T> L;
+  typedef List<T,A> L;
   typedef L::iterator Lit;
   L &l;
   Lit lit;
@@ -82,7 +88,7 @@ public:
   };
 */
 #ifdef USE_SLIST
-#define LIST_BACK_INSERTER slist_back_insert_iterator
+//#define LIST_BACK_INSERTER slist_back_insert_iterator
 //#include <iterator>
 /*
   template <class T>
@@ -90,7 +96,7 @@ public:
   // : public std::iterator<output_iterator_tag,T>
   {
 
-  //typedef std::slist<T> L;
+  //typedef std::slist<T,A> L;
   typedef typename T L;
   typedef typename T::iterator Lit;
   typedef T _Container;
@@ -103,7 +109,7 @@ public:
 
   explicit slist_back_insert_iterator(_Container& __x) : container(&__x), cursor(__x.previous(__x.end())) {}
   slist_back_insert_iterator(L& __x,Lit c) : container(&__x), cursor(c) {}
-  slist_back_insert_iterator<T>&
+  slist_back_insert_iterator<T,A>&
   operator=(const typename _Container::value_type & __val) {
   cursor = container->insert_after(cursor,__val);
   return *this;
@@ -113,17 +119,7 @@ public:
   slist_back_insert_iterator<L>& operator++(int) { return *this; }
   };*/
 #else
-#define LIST_BACK_INSERTER back_insert_iterator
+            //#define LIST_BACK_INSERTER back_insert_iterator
 #endif
-
-template <typename T> std::ostream & operator << (std::ostream &out, const List<T> &list)
-{
-  out << "(";
-  typename List<T>::const_iterator end = list.end();
-  for( typename List<T>::const_iterator n = list.begin() ; n != end ;++n)
-    out << *n << ' ';
-  out << ")";
-  return out;
-}
 
 #endif

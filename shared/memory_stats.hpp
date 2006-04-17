@@ -2,8 +2,8 @@
 #define MEMORY_STATS_HPP
 
 #include <cstdlib>
-#include "io.hpp"
-#include "malloc.h"
+#include <graehl/shared/io.hpp>
+#include <graehl/shared/malloc.h>
 
 
 typedef struct mallinfo malloc_info;

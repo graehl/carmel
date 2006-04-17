@@ -1,10 +1,10 @@
 #ifndef STRINGKEY_H
 #define STRINGKEY_H
 
-#include "config.h"
+#include <graehl/shared/config.h>
 #include <string>
-#include "static_itoa.h"
-#include "2hash.h"
+#include <graehl/shared/static_itoa.h>
+#include <graehl/shared/2hash.h>
 
 class StringKey {
 public:

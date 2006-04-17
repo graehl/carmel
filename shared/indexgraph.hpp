@@ -2,7 +2,7 @@
 #ifndef INDEXGRAPH_HPP
 #define INDEXGRAPH_HPP
 
-#include "container.hpp"
+#include <graehl/shared/container.hpp>
 
 #include <algorithm>
 
@@ -244,7 +244,7 @@ public:
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
 #ifdef TEST

@@ -1,7 +1,7 @@
-#include "config.h"
-#include "train.h"
-#include "fst.h"
-#include "weight.h"
+#include <graehl/shared/config.h>
+#include <graehl/carmel/src/train.h>
+#include <graehl/carmel/src/fst.h>
+#include <graehl/shared/weight.h>
 
 //#define DEBUGTRAIN
 

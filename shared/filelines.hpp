@@ -7,10 +7,10 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-#include "dynarray.h"
-#include "myassert.h"
+#include <graehl/shared/dynarray.h>
+#include <graehl/shared/myassert.h>
 #include <string>
-#include "fileargs.hpp"
+#include <graehl/shared/fileargs.hpp>
 #include <boost/lexical_cast.hpp>
 
 typedef boost::shared_ptr<std::ifstream> InSeekFile;

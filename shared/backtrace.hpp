@@ -2,7 +2,7 @@
 #ifndef BACKTRACE_HPP
 #define BACKTRACE_HPP
 
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 #include <exception>
 #include <iostream>
 

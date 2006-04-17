@@ -1,6 +1,6 @@
-#include "config.h"
-#include "compose.h"
-#include "fst.h"
+#include <graehl/shared/config.h>
+#include <graehl/carmel/src/compose.h>
+#include <graehl/carmel/src/fst.h>
 
 int WFST::indexThreshold = 32;
 unsigned int TrioKey::aMax = 0;

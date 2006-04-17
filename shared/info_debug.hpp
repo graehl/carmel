@@ -5,8 +5,8 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include "assertlvl.hpp"
-#include "breakpoint.hpp"
+#include <graehl/shared/assertlvl.hpp>
+#include <graehl/shared/breakpoint.hpp>
 
 #define PREXPS(n) " " PREXP(n)
 #define PREXP(n) #n"=" << n
@@ -29,7 +29,7 @@ using namespace std;
 #define IF_INFO(level) if(COND_INFO(level,>=))
 #define UNLESS_INFO(level) if(COND_INFO(level,<))
 
-#include "makestr.hpp"
+#include <graehl/shared/makestr.hpp>
 
 /* GUIDE TO NAMES:
    NL: newline

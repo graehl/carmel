@@ -10,7 +10,7 @@
 #include <cstring>
 #include <sstream>
 //#include "info_debug.hpp"
-#include "shell_escape.hpp"
+#include <graehl/shared/shell_escape.hpp>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 # define OS_WINDOWS
@@ -108,7 +108,7 @@ inline std::string get_current_dir() {
 
 
 #ifdef DBP_OS_HPP
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 #endif
 
 

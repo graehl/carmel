@@ -2,8 +2,8 @@
 #ifndef ASSERT_H
 #define ASSERT_H
 
-#include "breakpoint.hpp"
-#include "config.h"
+#include <graehl/shared/breakpoint.hpp>
+#include <graehl/shared/config.h>
 #include <cassert>
 
 

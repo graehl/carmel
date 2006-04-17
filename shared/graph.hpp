@@ -7,10 +7,10 @@
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/iterator/counting_iterator.hpp>
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 
-#include "property.hpp"
-#include "container.hpp"
+#include <graehl/shared/property.hpp>
+#include <graehl/shared/container.hpp>
 
 
 

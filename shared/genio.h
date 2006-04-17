@@ -14,7 +14,7 @@ stream buffers.
 
 // TODO: also: check out ipfx and opfx (std proposal, in libstdc++, replacement for sentry stuff)
 
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 
 // important: if you want to allow the first EOF/fail in your read routine to be
 // fine (not an exception) don't use EXPECT... etc. or use EXPECT...FIRST

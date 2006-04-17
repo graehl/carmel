@@ -29,7 +29,7 @@
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 
 BOOST_AUTO_UNIT_TEST( makestring )
 {

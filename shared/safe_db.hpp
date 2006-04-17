@@ -7,11 +7,11 @@
 #include <string>
 #include <cstdlib>
 #include <cstring>
-#include "to_from_buf.hpp"
-#include "key_to_blob.hpp"
-#include "memory_archive.hpp"
+#include <graehl/shared/to_from_buf.hpp>
+#include <graehl/shared/key_to_blob.hpp>
+#include <graehl/shared/memory_archive.hpp>
 #include <boost/config.hpp>
-#include "makestr.hpp"
+#include <graehl/shared/makestr.hpp>
 
 //#define DEBUG_SAFEDB
 

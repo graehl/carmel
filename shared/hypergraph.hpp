@@ -34,18 +34,18 @@
 */
 
 
-#include "ttconfig.hpp"
-#include "property.hpp"
-#include "transducer.hpp"
-#include "list.h"
-#include "dynarray.h"
-#include "weight.h"
+#include <graehl/tt/ttconfig.hpp>
+#include <graehl/shared/property.hpp>
+#include <graehl/tt/transducer.hpp>
+#include <graehl/shared/list.h>
+#include <graehl/shared/dynarray.h>
+#include <graehl/shared/weight.h>
 //#include "byref.hpp"
 #include <boost/ref.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include "adjustableheap.hpp"
+#include <graehl/shared/adjustableheap.hpp>
 
-#include "graph.hpp"
+#include <graehl/shared/graph.hpp>
 
 
 template <class T>

@@ -4,17 +4,17 @@
 // no separate implementation for now, just #define MAIN in one source file that includes this
 
 //#include "weight.h"
-#include "stringkey.h"
-#include "list.h"
-#include "charbuf.hpp"
+#include <graehl/shared/stringkey.h>
+#include <graehl/shared/list.h>
+#include <graehl/shared/charbuf.hpp>
 #include <iostream>
-#include "genio.h"
+#include <graehl/shared/genio.h>
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #endif
 
-#include "packedalloc.hpp"
+#include <graehl/shared/packedalloc.hpp>
 
 #ifndef MIN_LEGAL_ADDRESS
 //FIXME: portability issue:
@@ -65,7 +65,7 @@ public:
   }
 };
 
-#include "static_itoa.h"
+#include <graehl/shared/static_itoa.h>
 
 // uses interned char *
 struct Symbol {
@@ -205,7 +205,7 @@ bool operator ==(const char *c,const Symbol s) {
   return s.operator==(c);
 }
 
-#include "dynarray.h"
+#include <graehl/shared/dynarray.h>
 template <unsigned upto=32>
 struct SmallIntSymbols {
   auto_array<Symbol> cache;
@@ -248,7 +248,7 @@ BEGIN_HASH_VAL(Symbol) {
 
 #ifdef TEST
 
-#include "tree.hpp"
+#include <graehl/shared/tree.hpp>
 
 char *symbol_test_strs[]={"test string","d","el""abc","","e","fall","","e","very very long more than 8","a","b","e",0};
 

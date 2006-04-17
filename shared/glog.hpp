@@ -4,15 +4,15 @@
 //GLOBAL LOGGING
 //TODO: crib from Debug.h, debugprint.h, use teestream
 
-#include "threadlocal.hpp"
-#include "myassert.h"
+#include <graehl/shared/threadlocal.hpp>
+#include <graehl/shared/myassert.h>
 #include <sstream>
-#include "byref.hpp"
+#include <graehl/shared/byref.hpp>
 #include <iostream>
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
-#include "print.hpp"
-#include "byref.hpp"
+#include <graehl/shared/print.hpp>
+#include <graehl/shared/byref.hpp>
 
 #ifdef DEBUG
 #define DEBUG_SEGFAULT Assert(0)

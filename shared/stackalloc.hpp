@@ -3,8 +3,8 @@
 #define STACKALLOC_HPP
 
 #include <stdexcept>
-#include "align.hpp"
-#include "verbose_exception.hpp"
+#include <graehl/shared/align.hpp>
+#include <graehl/shared/verbose_exception.hpp>
 
 // Iis it safe to align once then repeatedly alloc<T> if e.g. sizeof(T) is 6 and
 //alignment is 4 ... does that mean you need to increment pointer by 8?  or does

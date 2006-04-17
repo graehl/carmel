@@ -2,7 +2,7 @@
 #ifndef FUNCS_HPP
 #define FUNCS_HPP
 
-#include "memleak.hpp"
+#include <graehl/shared/memleak.hpp>
 
 #include <iterator>
 
@@ -15,9 +15,9 @@
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/utility/enable_if.hpp>
 
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 
-#include "myassert.h"
+#include <graehl/shared/myassert.h>
 //#include "os.hpp"
 
 #include <functional>
@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include "size_mega.hpp" //FIXME: remove (fixing users)
+#include <graehl/shared/size_mega.hpp> //FIXME: remove (fixing users)
 
 //#define TOKENIZE_KEY_VAL_DEBUG
 
@@ -1577,9 +1577,9 @@ void iota(ForwardIterator begin, ForwardIterator end, ValueType value)
 }
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 #include <cctype>
-#include "debugprint.hpp"
+#include <graehl/shared/debugprint.hpp>
 #endif
 
 #ifdef TEST

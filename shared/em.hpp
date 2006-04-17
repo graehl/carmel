@@ -2,9 +2,9 @@
 #ifndef EM_HPP
 #define EM_HPP
 
-#include "config.h"
-#include "weight.h"
-#include "debugprint.hpp"
+#include <graehl/shared/config.h>
+#include <graehl/shared/weight.h>
+#include <graehl/shared/debugprint.hpp>
 #include <cmath>
 #include <limits>
 
@@ -181,7 +181,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
 
 
 #ifdef TEST
-#include "test.hpp"
+#include <graehl/shared/test.hpp>
 
 BOOST_AUTO_UNIT_TEST( TEST_EM )
 {
