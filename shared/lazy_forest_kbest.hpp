@@ -32,6 +32,8 @@
 #include <ext/algorithm> // is_sorted
 #endif
 
+namespace graehl {
+
 inline std::ostream & operator <<(std::ostream &o,unsigned bp[2])
 {
     return o << '[' << bp[0] << ','<<bp[1]<<']';
@@ -619,5 +621,6 @@ BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
 }
 #endif
 
+}
 
 #endif
