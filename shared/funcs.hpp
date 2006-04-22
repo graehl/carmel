@@ -148,7 +148,6 @@ void trim(Container &cont,std::size_t size)
 {
     if (size < cont.size())
         cont.resize(size); //        cont.erase(cont.begin()+size,cont.end());
-
 }
 
 template <class Container> inline
@@ -524,7 +523,7 @@ void string_into(const Str &str,Data &data)
 }
 
 
-template <class Data,class Str,class size_type> inline
+template <class Data,class Str> inline
 Data string_to(const Str &str)
 {
     Data ret;
@@ -830,57 +829,7 @@ void stringtok (Container &container, std::string const &in, const char * const 
     }
 }
 
-// requires Val::operator += as well as copy ctor.  TODO: version that takes InPlaceFold functor.
-template <class AssocContainer,class Key,class Val>
-inline void accumulate(AssocContainer *table,const Key &key,const Val &val) {
-    std::pair<typename AssocContainer::iterator,bool> was_inserted=table->insert(typename AssocContainer::value_type(key,val));
-    if (!was_inserted.second) {
-        typename AssocContainer::value_type::second_type &old_val=was_inserted.first->second;
-        old_val += val;
-    }
-}
 
-template <class AssocContainer,class Key,class Val>
-inline void maybe_decrease_min(AssocContainer *table,const Key &key,const Val &val) {
-    std::pair<typename AssocContainer::iterator,bool> was_inserted=table->insert(typename AssocContainer::value_type(key,val));
-    if (!was_inserted.second) {
-        typename AssocContainer::value_type::second_type &old_val=was_inserted.first->second;
-//        INFOL(29,"maybe_decrease_min",key << " val=" << val << " oldval=" << old_val);
-        if (val < old_val)
-            old_val=val;
-    } else {
-//                INFOL(30,"maybe_decrease_min",key << " val=" << val);
-    }
-    //    return was_inserted->first->second;
-}
-
-template <class AssocContainer,class Key,class Val>
-inline void maybe_increase_max(AssocContainer *table,const Key &key,const Val &val) {
-    std::pair<typename AssocContainer::iterator,bool> was_inserted=table->insert(typename AssocContainer::value_type(key,val));
-    if (!was_inserted.second) {
-        typename AssocContainer::value_type::second_type &old_val=was_inserted.first->second;
-//        INFOL(29,"maybe_increase_max",key << " val=" << val << " oldval=" << old_val);
-        //!FIXME: no idea how to get this << to use ns_Syntax::operator <<
-        if (old_val < val)
-            old_val=val;
-    } else {
-//                INFOL(30,"maybe_increase_max",key << " val=" << val);
-    }
-//    return was_inserted->first->second;
-    
-}
-
-template <class To,class From>
-inline void maybe_increase_max(To &to,const From &from) {
-    if (to < from)
-        to=from;
-}
-
-template <class To,class From>
-inline void maybe_decrease_min(To &to,const From &from) {
-    if (from < to)
-        to=from;
-}
 
 #ifndef ONE_PLUS_EPSILON
 # ifndef FLOAT_EPSILON
@@ -1638,5 +1587,7 @@ BOOST_AUTO_UNIT_TEST( TEST_FUNCS )
 }
 
 #endif
+
+#include <graehl/shared/assoc_container.hpp>
 
 #endif
