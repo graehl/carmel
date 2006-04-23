@@ -769,7 +769,7 @@ public:
 #define NANCHECK(w)
 #endif
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 #include <graehl/shared/weight.cc>
 #endif
 

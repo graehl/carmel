@@ -151,7 +151,7 @@ Weight countNoCyclePaths(Graph g, int source, int dest)
 }
 
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 # include "graph.cc"
 #endif
 #endif

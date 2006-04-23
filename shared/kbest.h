@@ -135,7 +135,7 @@ static inline void untelescope_cost(GraphArc &w,FLOAT_TYPE *dist)
     w.weight = w.weight + (dist[w.source] - dist[w.dest]);
 }
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 # include "kbest.cc"
 #else
 extern Graph sidetracks;

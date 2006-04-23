@@ -1,4 +1,4 @@
-#define SINGLE_MAIN
+#define GRAEHL__SINGLE_MAIN
 #include "main.hpp"
 #include "makestr.hpp"
 

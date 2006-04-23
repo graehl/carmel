@@ -230,7 +230,7 @@ struct SmallIntSymbols {
 CREATE_INSERTER(Symbol)
 CREATE_EXTRACTOR(Symbol)
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 //SmallIntSymbols<SMALLINT> g_smallint;
 StringInterner<> Symbol::intern;
 //const char * Symbol::str_empty=Symbol::intern("");

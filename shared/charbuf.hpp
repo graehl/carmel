@@ -55,7 +55,7 @@ inline bool & getline_chomped(std::istream &in,CharBuf &buf=g_buf)
     return false;        
 }
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 template<class T>
 typename static_buf<T>::Buf static_buf<T>::buf(default_bufsize<T>::BUFSIZE);
 

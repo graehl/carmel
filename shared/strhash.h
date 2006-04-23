@@ -278,7 +278,7 @@ BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 #endif
 
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 #include <graehl/shared/strhash.cc>
 #endif
 
