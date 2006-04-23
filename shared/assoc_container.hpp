@@ -69,7 +69,7 @@ struct accumulate_min
 template <class AssocContainer,class Key,class Val,class AccumF>
 inline void accumulate(AssocContainer &table,const Key &key,const Val &val,AccumF accum_f) {
 #ifdef GRAEHL__DBG_ASSOC
-    DBPC3("accumulate",key,val);
+    DBPC3("accumulate-pre",key,val);
 #endif 
     std::pair<typename AssocContainer::iterator,bool> was_inserted
         =table.insert(typename AssocContainer::value_type(key,val));
@@ -77,7 +77,7 @@ inline void accumulate(AssocContainer &table,const Key &key,const Val &val,Accum
         accum_f(was_inserted.first->second,val);
 #ifdef GRAEHL__DBG_ASSOC
     assert(table.find(key)!=table.end());
-    DBPC3("accumulate-done",key,table.find(key)->second);
+    DBPC3("accumulate-post",key,table[key]);
 #endif 
 }
 
