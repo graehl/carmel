@@ -38,7 +38,7 @@ namespace glog {
     void print_indent(std::ostream &o);
     void set_loglevel(int loglevel=0);
     void set_logstream(std::ostream &o=std::cerr);
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
     int current_chat;
     int chat_level;
     std::ostream *logstream=&std::cerr;

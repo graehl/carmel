@@ -86,7 +86,7 @@ inline void heapSafeAdd ( Heap &heap, HeapKey<K,W,L> k) {
 }
 
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 template<class K,class W,class L>
 THREADLOCAL W HeapKey<K,W,L>::weightmap(dummy<W>::var());
 

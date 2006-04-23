@@ -1,5 +1,5 @@
 //#define MARCU
-#define SINGLE_MAIN
+#define GRAEHL__SINGLE_MAIN
 // -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)

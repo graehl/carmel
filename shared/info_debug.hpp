@@ -339,7 +339,7 @@ class info_debug {
         return runtime_info_level;
     }
 };
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 info_debug debug;
 #else 
 extern info_debug debug;        //!< interface for debugging output
@@ -446,7 +446,7 @@ private:
     ostream *debugStream;	    /* current debug output stream */
 };
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
 unsigned Debugger::debugAll = 0;
 #endif
 

@@ -17,7 +17,7 @@
 //ns_gzstream
 #endif
 #include <graehl/shared/gzstream.h>
-#if defined(SINGLE_MAIN) || defined(SINGLE_MAIN_GZSTREAM)
+#if defined(GRAEHL__SINGLE_MAIN) || defined(SINGLE_MAIN_GZSTREAM)
 # include "gzstream.C"
 #endif
 #include <boost/filesystem/operations.hpp>

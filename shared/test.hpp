@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 
-#if defined(SINGLE_MAIN)
+#if defined(GRAEHL__SINGLE_MAIN)
 # define TEST_MAIN
 #endif
 #ifdef TEST_MAIN
@@ -48,7 +48,7 @@ struct test_counter {
   void  operator()(const A1 &a,const A2 &a2,const A3 &a3) { ++n;  }
 };
 
-#ifdef SINGLE_MAIN
+#ifdef GRAEHL__SINGLE_MAIN
   unsigned test_counter::n;
 #endif
 
