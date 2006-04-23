@@ -6,6 +6,12 @@
 #define DEBUG_PRINT_MAIN
 #endif
 
+#ifdef DEBUG
+# ifndef GRAEHL__DEBUG_PRINT
+# define GRAEHL__DEBUG_PRINT
+#endif
+#endif
+
 /// In your clase, define a type: if you defined a
 ///  print(ostream &) const
 ///   method like genio.h: GENIO_print
@@ -182,7 +188,7 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 
 #define DBPW(a,w) do { if (DBPISON) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
-#ifdef DEBUG_PRINT
+#ifdef GRAEHL__DEBUG_PRINT
 #define DBP_IN ++DBP::depth
 #define DBP_OUT if (!DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
 #define DBP_SCOPE DBP::scopedepth DBP9423scopedepth ## __LINE__
