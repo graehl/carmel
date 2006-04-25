@@ -1,7 +1,8 @@
-// like unix "tee" for ostreams
-#ifndef TEESTREAM_HPP
-#define TEESTREAM_HPP
+// like unix "tee" for ostreams - see test program below
+#ifndef GRAEHL__SHARED__TEESTREAM_HPP
+#define GRAEHL__SHARED__TEESTREAM_HPP
 #include <iostream>
+namespace graehl {
  class teebuf: public std::streambuf {
   public:
     typedef std::char_traits<char> traits_type;
@@ -21,6 +22,7 @@
     std::streambuf* m_sb1;
     std::streambuf* m_sb2;
   };
+
  #ifdef TEST_MANUAL
  #include <fstream>
   int main() {
@@ -30,5 +32,7 @@
     // write log messages to 'log'
     log << "Hello, dude.\n";
   }
- #endif
+#endif
+}
+
 #endif
