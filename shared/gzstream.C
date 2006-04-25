@@ -31,10 +31,7 @@
 #include <string.h>  // for memcpy
 #include <stdexcept>
 
-#ifdef GZSTREAM_NAMESPACE
-namespace GZSTREAM_NAMESPACE {
-#endif
-using namespace std;
+namespace graehl {
 
 // ----------------------------------------------------------------------------
 // Internal classes to implement gzstream. See header file for user classes.
@@ -83,7 +80,7 @@ gzstreambuf * gzstreambuf::close() {
 void gzstreambuf::handle_gzerror() {
     int errnum;
     const char *errmsg=gzerror(file,&errnum);
-    throw runtime_error(errmsg);    
+    throw std::runtime_error(errmsg);    
 //    if (errnum==Z_DATA_ERROR) throw runtime_error("CRC error reading gzip");
 }
 
@@ -174,9 +171,7 @@ void gzstreambase::close() {
             clear( rdstate() | std::ios::badbit);
 }
 
-#ifdef GZSTREAM_NAMESPACE
-} // namespace GZSTREAM_NAMESPACE
-#endif
+} // namespace graehl
 
 // ============================================================================
 // EOF //

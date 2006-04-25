@@ -29,28 +29,40 @@
 # endif
 #endif
 
+#ifdef DBP_OS_HPP
+#include <graehl/shared/debugprint.hpp>
+#endif
+
+#ifdef OS_WINDOWS
+# include <direct.h>
+#endif
 
 #ifdef MEMMAP_IO_WINDOWS
 # define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 # include <windows.h>
 # undef max
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
+namespace graehl {
 typedef DWORD Error;
-
 inline long get_process_id() {
     return GetCurrentProcessId();
+}
 }
 
 #else
 # include <unistd.h>
+namespace graehl {
+typedef int Error;
 inline long get_process_id() {
     return getpid();
 }
+}
+
 # include <errno.h>
 # include <string.h>
-typedef int Error;
 #endif
 
+namespace graehl {
 
 inline int system_safe(const std::string &cmd) 
 {
@@ -91,9 +103,6 @@ inline void mkdir_parents(const std::string &dirname)
     system_safe(s.str());
 }
 
-#ifdef OS_WINDOWS
-# include <direct.h>
-#endif
 
 inline std::string get_current_dir() {
 #ifdef OS_WINDOWS
@@ -105,12 +114,6 @@ inline std::string get_current_dir() {
     free(malloced);
     return ret;
 }
-
-
-#ifdef DBP_OS_HPP
-#include <graehl/shared/debugprint.hpp>
-#endif
-
 
 inline Error last_error() {
 #ifdef MEMMAP_IO_WINDOWS
@@ -173,8 +176,6 @@ inline bool create_file(const std::string& path,std::size_t size) {
 inline bool remove_file(const std::string &filename) {
     return 0==remove(filename.c_str());
 }
-
-//#include <stdio.h>
 
 struct tmp_fstream
 {
@@ -314,6 +315,8 @@ inline void split_dir_file(const std::string &fullpath,std::string &dir,std::str
         file=fullpath.substr(p+1,fullpath.length()-(p+1));
     }   
 }
+
+} // graehl
 
 
 #ifdef OS_WINDOWS

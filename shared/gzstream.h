@@ -26,17 +26,15 @@
 // Standard C++ Library".
 // ============================================================================
 
-#ifndef GZSTREAM_H
-#define GZSTREAM_H 1
+#ifndef GRAEHL__SHARED__GZSTREAM_H
+#define GRAEHL__SHARED__GZSTREAM_H 1
 
 // standard C++ with new header file names and std:: namespace
 #include <iostream>
 #include <fstream>
 #include <zlib.h>
 
-#ifdef GZSTREAM_NAMESPACE
-namespace GZSTREAM_NAMESPACE {
-#endif
+namespace graehl {
 
 // ----------------------------------------------------------------------------
 // Internal classes to implement gzstream. See below for user classes.
@@ -112,9 +110,7 @@ public:
     }
 };
 
-#ifdef GZSTREAM_NAMESPACE
-} // namespace GZSTREAM_NAMESPACE
-#endif
+} // namespace graehl
 
 #endif // GZSTREAM_H
 // ============================================================================

@@ -2,16 +2,25 @@
 #ifndef BACKTRACE_HPP
 #define BACKTRACE_HPP
 
+
+#ifndef GRAEHL__BACKTRACE_MAIN
+# ifdef GRAEHL__SINGLE_MAIN
+#  define GRAEHL__BACKTRACE_MAIN
+# endif
+#endif
+
 #include <graehl/shared/dynarray.h>
 #include <exception>
 #include <iostream>
 
-#ifdef LINUX_BACKTRACE
+#ifdef HAVE_LINUX_BACKTRACE
 #include <signal.h>
 #include <execinfo.h>
 #endif
 
-#define MAX_TRACE_DEPTH 64
+namespace graehl {
+
+static const int MAX_TRACE_DEPTH=64;
 
 void print_stackframe(std::ostream &o) {
 #ifdef LINUX_BACKTRACE
@@ -70,15 +79,17 @@ std::ostream &operator <<(std::ostream &o,const BackTrace::Loc &l)
     return o;
 }
 
-
-#ifdef GRAEHL__SINGLE_MAIN
+#ifdef GRAEHL__BACKTRACE_MAIN
 BackTrace::LocStack BackTrace::stack;
 bool BackTrace::first=true;
 #endif
 
+} //graehl
+
+
 //defined(DEBUG) ||
 #if !defined(NO_BACKTRACE)
-#define BACKTRACE BackTrace BackTrace_line_ ## __LINE__(__FUNCTION__,__FILE__,__LINE__)
+#define BACKTRACE graehl::BackTrace BackTrace_line_ ## __LINE__(__FUNCTION__,__FILE__,__LINE__)
 #else
 #define BACKTRACE
 #endif
