@@ -1,7 +1,11 @@
-#ifndef SIZE_MEGA_HPP
-#define SIZE_MEGA_HPP
+#ifndef GRAEHL__SHARED__SIZE_MEGA_HPP
+#define GRAEHL__SHARED__SIZE_MEGA_HPP
 
 #include <iomanip>
+#include <boost/lexical_cast.hpp>
+#include <stdexcept>
+
+namespace graehl {
 
 template <class size_type,class outputstream>
 inline outputstream & print_size(outputstream &o,size_type size,bool decimal_thousand=true) {
@@ -103,5 +107,6 @@ inline size_type parse_size(inputstream &i) {
 fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (2^10,2^20,2^30) suffix."));
 }
 
+} //graehl
 
 #endif

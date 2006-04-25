@@ -1,10 +1,10 @@
 // like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).  now also includes fixed size arrays.
 // historical justification: when Carmel was first written, STL wasn't supported by gcc.
-#ifndef DYNARRAY_H
-#define DYNARRAY_H
+#ifndef GRAEHL__SHARED__DYNARRAY_H
+#define GRAEHL__SHARED__DYNARRAY_H
 //FIXME: const safeness for contents e.g. a[1] a.at(1) return const ref if a const?
 
-// For MEMCPY-able-to-move types only!
+// For plain old data (MEMCPY-able-to-move) types only!
 // (MEMCPY copyable (i.e. no external resources owned, i.e. no real destructor) is not assumed although a is_pod template might be nice)
 // Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
 // dynamic_array extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
@@ -36,6 +36,8 @@
 # define dynarray_assert(x)
 #endif 
 //#include <boost/type_traits.hpp>
+
+namespace graehl {
 
 
 // doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length
@@ -1237,5 +1239,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     EQIOTEST(dynamic_array,dynamic_array);
 }
 #endif
+
+} //graehl
 
 #endif

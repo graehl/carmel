@@ -15,9 +15,15 @@
 #include <graehl/shared/has_print.hpp>
 #include <streambuf>
 #include <iostream>
-
 #include <graehl/shared/shell_escape.hpp>
-    
+#include <graehl/shared/word_spacer.hpp>
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#include <cstring>
+#endif
+
+namespace graehl {
+
 template <class Ch, class Tr,class Alloc>
 inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
 {
@@ -395,87 +401,6 @@ inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,con
 USE_PRINT_SEQUENCE_TEMPLATE(std::vector)
 
 // header=NULL gives just the string, no newline
-template <class Ch, class Tr>
-inline std::basic_ostream<Ch,Tr> & print_command_line(std::basic_ostream<Ch,Tr> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
-    if (header)
-        out << header;
-    WordSeparator<' '> sep;
-    for (int i=0;i<argc;++i) {
-        out << sep;
-        out_shell_quote(out,argv[i]);
-    }
-    if (header)
-        out << std::endl;
-    return out;
-}
-
-inline std::string get_command_line( int argc, char *argv[], const char *header="COMMAND LINE:\n") {
-    std::ostringstream os;
-    print_command_line(os,argc,argv,header);
-    return os.str();
-}
-
-struct argc_argv : private std::stringbuf
-{
-    typedef char *arg_t;
-    typedef arg_t *argv_t;
-    
-    std::vector<char *> argvptrs;
-    int argc() const
-    {
-        return argvptrs.size();
-    }
-    argv_t argv() const
-    {
-        return argc() ? (char**)&(argvptrs[0]) : NULL;
-    }
-    void parse(const std::string &cmdline) 
-    {
-        argvptrs.clear();
-        argvptrs.push_back("ARGV");
-#if 1
-        str(cmdline+" ");  // we'll need space for terminating final arg.
-#else
-        str(cmdline);
-        seekoff(0,ios_base::end,ios_base::out);        
-        sputc((char)' ');
-#endif
-        char *i=gptr(),*end=egptr();
-
-        char *o=i;
-        char terminator;
-    next_arg:
-        while(i!=end && *i==' ') ++i;  // [ ]*
-        if (i==end) return;
-
-        if (*i=='"' || *i=='\'') {
-            terminator=*i;
-            ++i;
-        } else {
-            terminator=' ';
-        }
-        
-        argvptrs.push_back(o);
-
-        while(i!=end) {
-            if (*i=='\\') {
-                ++i;
-            } else if (*i==terminator) {
-                *o++=0;
-                ++i;
-                goto next_arg;
-            }
-            *o++=*i++;
-        }
-        *o++=0;
-    }
-    argc_argv() {}
-    explicit argc_argv(const std::string &cmdline) 
-    {
-        parse(cmdline);
-    }
-};
-
 
 template <class C,class Ch, class Tr>
 inline void out_always_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
@@ -996,11 +921,6 @@ inline void split_noquote(
 }
 
 #ifdef TEST
-#include <graehl/shared/test.hpp>
-#include <cstring>
-#endif
-
-#ifdef TEST
 char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
 char *split_strs[]={"",",a","",0};
 char *seps[]={";",";;",",,","   ","=,",",=",0};
@@ -1041,4 +961,5 @@ BOOST_AUTO_UNIT_TEST( TEST_io )
 }
 #endif
 
+} //graehl
 #endif

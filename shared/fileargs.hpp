@@ -1,30 +1,50 @@
 // given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library 
-#ifndef FILEARGS_HPP
-#define FILEARGS_HPP
+#ifndef GRAEHL__SHARED__FILEARGS_HPP
+#define GRAEHL__SHARED__FILEARGS_HPP
 //TODO: support linking to gzstream
 
-#include <string>
+#include <graehl/shared/gzstream.hpp>
+#include <graehl/shared/size_mega.hpp>
+#include <graehl/shared/string_match.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/convenience.hpp>
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
+#include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-//#include "fileheader.hpp"
-#include <graehl/shared/funcs.hpp>
-#ifndef GZSTREAM_NAMESPACE
-# define USE_GZSTREAM_NAMESPACE
-//ns_gzstream
-#endif
-#include <graehl/shared/gzstream.h>
-#if defined(GRAEHL__SINGLE_MAIN) || defined(SINGLE_MAIN_GZSTREAM)
-# include "gzstream.C"
-#endif
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/convenience.hpp>
+
+namespace graehl {
 
 static const char gz_ext[]=".gz";
+
+template <class Stream>
+struct file_arg : public boost::shared_ptr<Stream>
+{
+    typedef boost::shared_ptr<Stream> parent_type;
+    file_arg() {}
+    file_arg(file_arg<Stream> const& o) : parent_type((parent_type const&)o) {}
+    template <class C1>
+    file_arg(C1 const &c1) : parent_type(c1) {}
+    parent_type &parent() { return *this; }
+    parent_type const& parent() const { return *this; }
+    bool valid() const
+    {
+        return parent() && *parent();
+    }
+    Stream &stream() 
+    {
+        return *parent();
+    }
+    operator Stream &() 
+    {
+        return stream();
+    }
+};
+    
 
 typedef boost::shared_ptr<std::istream> Infile;
 typedef boost::shared_ptr<std::ostream> Outfile;
@@ -32,48 +52,63 @@ typedef boost::shared_ptr<std::ifstream> InDiskfile;
 typedef boost::shared_ptr<std::ofstream> OutDiskfile;
 
 struct null_deleter {
-    void operator()(void*) {}
+    void operator()(void*) const {}
 };
 
-#ifndef DEFAULT_IN_P
-#define DEFAULT_IN_P &std::cin
+#ifndef GRAEHL__DEFAULT_IN_P
+#define GRAEHL__DEFAULT_IN_P &std::cin
 #endif
 
-#ifndef DEFAULT_OUT_P
-#define DEFAULT_OUT_P &std::cout
+#ifndef GRAEHL__DEFAULT_OUT_P
+#define GRAEHL__DEFAULT_OUT_P &std::cout
 #endif
 
-#ifndef DEFAULT_LOG_P
-#define DEFAULT_LOG_P &std::cerr
+#ifndef GRAEHL__DEFAULT_LOG_P
+#define GRAEHL__DEFAULT_LOG_P &std::cerr
 #endif
 
-static Infile default_in(DEFAULT_IN_P,null_deleter());
-static Outfile default_log(DEFAULT_LOG_P,null_deleter());
-static Outfile default_out(DEFAULT_OUT_P,null_deleter());
+static Infile default_in(GRAEHL__DEFAULT_IN_P,null_deleter());
+static Outfile default_log(GRAEHL__DEFAULT_LOG_P,null_deleter());
+static Outfile default_out(GRAEHL__DEFAULT_OUT_P,null_deleter());
 static Infile default_in_none;
 static Outfile default_out_none;
 static InDiskfile default_in_disk_none;
 static OutDiskfile default_out_disk_none;
 
 inline bool is_default_in(const Infile &i) {
-    return i.get() == DEFAULT_IN_P;
+    return i.get() == GRAEHL__DEFAULT_IN_P;
 }
 inline bool is_default_out(const Outfile &o) {
-    return o.get() == DEFAULT_OUT_P;
+    return o.get() == GRAEHL__DEFAULT_OUT_P;
 }
 inline bool is_default_log(const Outfile &o) {
-    return o.get() == DEFAULT_LOG_P;
+    return o.get() == GRAEHL__DEFAULT_LOG_P;
 }
+
+template <class Stream>
+inline bool valid(boost::shared_ptr<Stream> const&pfile)
+{
+    return pfile && *pfile;
+}
+
+template <class C>
+inline bool throw_unless_valid(C const&pfile, std::string const& name="file") 
+{
+    if (!valid(pfile))
+        throw std::runtime_error(name+" not valid");
+}
+
+
 
 inline Infile infile(const std::string &s) 
 {
         if (s == "-") {
-        boost::shared_ptr<std::istream> r(DEFAULT_IN_P, null_deleter());
+        boost::shared_ptr<std::istream> r(GRAEHL__DEFAULT_IN_P, null_deleter());
         return (r);
     } else if (s == "-0") {
         return default_in_none;
     } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
-        typedef USE_GZSTREAM_NAMESPACE::igzstream igzs;
+        typedef igzstream igzs;
         boost::shared_ptr<igzs> r(new igzs(s.c_str()));
         if (!*r) 
             throw std::runtime_error(std::string("Could not open compressed input file ").append(s));
@@ -152,15 +187,15 @@ inline std::string output_name_like_cp(const std::string &source,const std::stri
 inline Outfile outfile(const std::string &s) 
 {
     if (s == "-") {
-        boost::shared_ptr<std::ostream> w(DEFAULT_OUT_P, null_deleter());
+        boost::shared_ptr<std::ostream> w(GRAEHL__DEFAULT_OUT_P, null_deleter());
         return (w);
     } else if ( s== "-2") {
-        boost::shared_ptr<std::ostream> w(DEFAULT_LOG_P, null_deleter());
+        boost::shared_ptr<std::ostream> w(GRAEHL__DEFAULT_LOG_P, null_deleter());
         return (w);
     } else if (s == "-0") {
         return default_out_none;
     } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
-        typedef USE_GZSTREAM_NAMESPACE::ogzstream ogzs;
+        typedef ogzstream ogzs;
         boost::shared_ptr<ogzs> w(new ogzs(s.c_str()));
         if (!*w) 
             throw std::runtime_error(std::string("Could not create compressed output file ").append(s));
@@ -189,13 +224,13 @@ inline OutDiskfile outdiskfile(const std::string &s)
     }
 }
 
+inline std::string const& get_single_arg(boost::any& v,std::vector<std::string> const& values) 
+{
+    boost::program_options::validators::check_first_occurrence(v);
+    return boost::program_options::validators::get_single_string(values);
+}
 
-//using namespace boost;
-//using namespace boost::program_options;
-namespace po=boost::program_options;
-using boost::shared_ptr;
-
-//using namespace std;
+} //graehl
 
 namespace boost {    namespace program_options {
 inline void validate(boost::any& v,
@@ -203,84 +238,48 @@ inline void validate(boost::any& v,
               size_t* target_type, int)
 {
     typedef size_t value_type;
-    //using namespace boost::program_options;
+    using namespace graehl;
 
-    // Make sure no previous assignment to 'a' was made.
-    // Extract the first std::string from 'values'. If there is more than
-    // one std::string, it's an error, and exception will be thrown.
-    std::istringstream i(po::validators::get_single_string(values));
-    v=boost::any(parse_size<value_type>(i));
+    std::istringstream i(boost::program_options::validators::get_single_string(values));
+    v=boost::any(graehl::parse_size<value_type>(i));
     char c;
     if (i >> c)
         throw std::runtime_error(std::string("Succesfully read a nonnegative size, but read extra characters after."));
     return;
 }
 
-/* Overload the 'validate' function for shared_ptr<std::istream>. We use shared ptr
+/* Overload the 'validate' function for boost::shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
 inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::istream>* target_type, int)
 {
-    //using namespace boost::program_options;
-
-    // Make sure no previous assignment to 'a' was made.
-    po::validators::check_first_occurrence(v);
-    // Extract the first std::string from 'values'. If there is more than
-    // one std::string, it's an error, and exception will be thrown.
-    const std::string& s = po::validators::get_single_string(values);
-    
-    v=boost::any(infile(s));
+    v=boost::any(graehl::infile(graehl::get_single_arg(v,values)));
 }
 
 inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::ostream>* target_type, int)
 {
-    //using namespace boost::program_options;
-
-    // Make sure no previous assignment to 'a' was made.
-    po::validators::check_first_occurrence(v);
-    // Extract the first std::string from 'values'. If there is more than
-    // one std::string, it's an error, and exception will be thrown.
-    const std::string& s = po::validators::get_single_string(values);
-    
-    v=boost::any(outfile(s));
+    v=boost::any(graehl::outfile(graehl::get_single_arg(v,values)));
 }
 
 inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::ofstream>* target_type, int)
 {
-    //using namespace boost::program_options;
-
-    // Make sure no previous assignment to 'a' was made.
-    po::validators::check_first_occurrence(v);
-    // Extract the first std::string from 'values'. If there is more than
-    // one std::string, it's an error, and exception will be thrown.
-    const std::string& s = po::validators::get_single_string(values);
-
-    v=boost::any(outdiskfile(s));
+    v=boost::any(graehl::outdiskfile(graehl::get_single_arg(v,values)));
 }
 
 inline void validate(boost::any& v,
               const std::vector<std::string>& values,
               boost::shared_ptr<std::ifstream>* target_type, int)
 {
-    //using namespace boost::program_options;
-
-    // Make sure no previous assignment to 'a' was made.
-    po::validators::check_first_occurrence(v);
-    // Extract the first std::string from 'values'. If there is more than
-    // one std::string, it's an error, and exception will be thrown.
-    const std::string& s = po::validators::get_single_string(values);
-
-    v=boost::any(indiskfile(s));
+    v=boost::any(graehl::indiskfile(graehl::get_single_arg(v,values)));
 }
 
-
-}}
+}} // boost::program_options
 
 
 #endif
