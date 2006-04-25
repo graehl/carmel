@@ -1,8 +1,8 @@
 // given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library 
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
-//TODO: support linking to gzstream
 
+#include <graehl/shared/teestream.hpp>
 #include <graehl/shared/gzstream.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/string_match.hpp>
@@ -35,22 +35,22 @@ struct file_arg : public boost::shared_ptr<Stream>
     {
         return parent() && *parent();
     }
-    Stream &stream() 
+    Stream &stream() const
     {
         return *parent();
     }
-    operator Stream &() 
+    operator Stream &() const
     {
         return stream();
     }
 };
-    
+
 
 typedef boost::shared_ptr<std::istream> Infile;
 typedef boost::shared_ptr<std::ostream> Outfile;
 typedef boost::shared_ptr<std::ifstream> InDiskfile;
 typedef boost::shared_ptr<std::ofstream> OutDiskfile;
-
+    
 struct null_deleter {
     void operator()(void*) const {}
 };
@@ -85,6 +85,34 @@ inline bool is_default_log(const Outfile &o) {
     return o.get() == GRAEHL__DEFAULT_LOG_P;
 }
 
+struct tee_file 
+{
+    tee_file() : log_stream(&std::cerr) {}
+    /// must call before you get any tee behavior (without, will go to default log = cerr)!
+    void set(std::ostream &other_output) 
+    {
+        if (file) {
+            teebufptr.reset(
+                            new graehl::teebuf(file->rdbuf(),other_output.rdbuf()));
+            teestreamptr.reset(
+                               log_stream=new std::ostream(teebufptr.get()));
+        } else {
+            log_stream=&other_output;
+        }
+    }
+    Outfile file; // can set this directly, then call init.  if unset, then don't tee.
+    
+    std::ostream &stream() const
+    { return *log_stream; }
+    operator std::ostream &() const
+    { return stream(); }
+    
+ private:
+    std::ostream *log_stream;
+    boost::shared_ptr<graehl::teebuf> teebufptr;
+    boost::shared_ptr<std::ostream> teestreamptr;           
+};
+
 template <class Stream>
 inline bool valid(boost::shared_ptr<Stream> const&pfile)
 {
@@ -98,6 +126,12 @@ inline bool throw_unless_valid(C const&pfile, std::string const& name="file")
         throw std::runtime_error(name+" not valid");
 }
 
+template <class C>
+inline bool throw_unless_valid_optional(C const&pfile, std::string const& name="file") 
+{
+    if (pfile && !valid(pfile))
+        throw std::runtime_error(name+" not valid");
+}
 
 
 inline Infile infile(const std::string &s) 
