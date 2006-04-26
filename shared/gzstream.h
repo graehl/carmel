@@ -27,7 +27,7 @@
 // ============================================================================
 
 #ifndef GRAEHL__SHARED__GZSTREAM_H
-#define GRAEHL__SHARED__GZSTREAM_H 1
+#define GRAEHL__SHARED__GZSTREAM_H
 
 // standard C++ with new header file names and std:: namespace
 #include <iostream>
