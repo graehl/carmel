@@ -11,7 +11,6 @@
 //#include <vector>
 #include <graehl/shared/dynarray.h>
 #include <algorithm>
-#include <boost/lambda/lambda.hpp>
 #include <functional>
 
 #include <graehl/shared/tree.hpp>
@@ -20,23 +19,12 @@
 #include <graehl/shared/test.hpp>
 #endif
 
-//using namespace boost::lambda;
-namespace lambda=boost::lambda;
-//using namespace std;
-
-//template <class L, class Alloc=std::allocator<L> > typedef Array<L,Alloc> String<L,Alloc>;
-
+namespace graehl {
 
 template <class L, class Alloc=std::allocator<L> > struct String : public array<L,Alloc> {
   typedef L Label;
 };
 
-
-
-
-
-
-
-
+}
 
 #endif

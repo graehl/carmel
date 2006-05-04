@@ -4,6 +4,8 @@
 
 #include <graehl/shared/random.hpp>
 
+namespace graehl {
+
 template <class Label>
 struct RandomReader
 {
@@ -104,6 +106,6 @@ struct RandomReaderTermCallback
     }
 };
 
-
+}
 
 #endif

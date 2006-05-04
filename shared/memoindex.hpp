@@ -4,6 +4,8 @@
 
 #include <graehl/shared/2hash.h>
 
+namespace graehl {
+
 //F: single-argument (adaptable) functor with argument_type return_type
 // scratch that: void F(const arg &,ret &) (don't trust in temp return opt)
 // also, f.memo=register(this) ... for (co)recursive memo calls
@@ -125,5 +127,5 @@ BOOST_AUTO_UNIT_TEST( memoindex )
   }
 }
 #endif
-
+}
 #endif

@@ -24,6 +24,26 @@
 
 namespace graehl {
 
+template <class O>
+struct bound_printer 
+{
+    O *po;
+    template <class T>
+    void operator()(T const& t) const 
+    {
+        *po << t;
+    }
+};
+
+template <class O>
+bound_printer<O>
+make_bound_printer(O &o)
+{
+    bound_printer<O> ret;
+    ret.po=&o;
+    return ret;
+}
+
 template <class Ch, class Tr,class Alloc>
 inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
 {
@@ -275,47 +295,13 @@ inline bool parse_range(const std::string &range,Set &set) {
 
 #define O_print  template <class Ch,class Tr> std::basic_ostream<Ch,Tr> & print(std::basic_ostream<Ch,Tr> & o)
 
-
-template <char sep=' '>
-struct IndentLevel {
-    unsigned indent;
-    IndentLevel() { reset(); }
-    void reset() 
-    {
-        indent=0;
-    }
-    void in() 
-    {
-        ++indent;
-    }
-    void out()
-    {
-        //assert(indent!=0);
-        --indent;
-    }
-    void operator ++() 
-    {
-        in();
-    }
-    void operator --()
-    {
-        out();
-    }    
-    std::ostream & newline(std::ostream &o) {
-        o << std::endl;
-        for (unsigned i=0;i<indent;++i)
-            o << sep;
-        return o;
-    }
-};
-
 template <char equal,char comma,class Ck,class Cv>
 std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V) 
 {
     typename Ck::const_iterator ik=K.begin(),ek=K.end();
     typename Cv::const_iterator iv=V.begin(),ev=V.end();
     o << '(';
-    WordSeparator<comma> sep;
+    word_spacer_c<comma> sep;
     for(;ik<ek && iv<ev;++ik,++iv) {
         o << sep << *ik << equal << *iv;        
     }
@@ -332,7 +318,7 @@ std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V)
 template <class It,class Ch,class Tr>
 inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,It begin,It end) 
 {
-    WordSeparator<' '> sep;
+    word_spacer_c<' '> sep;
     o << "[";
     for (;begin!=end;++begin)
         o << sep << *begin;
@@ -361,12 +347,16 @@ inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,c
     return o << thing;
 }
 
+}
+
 template <class V,class Ch,class Tr>
-inline typename boost::enable_if<has_const_iterator<V>, std::basic_ostream<Ch,Tr> & >::type
+inline typename boost::enable_if<graehl::has_const_iterator<V>, std::basic_ostream<Ch,Tr> & >::type
 operator <<(std::basic_ostream<Ch,Tr> & o,const V &thing)
 {
     return print_default(o,thing);
 }
+
+namespace graehl {
 
 #define USE_PRINT_SEQUENCE(C) \
 template <class Ch,class Tr> \
@@ -385,7 +375,7 @@ inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,con
 // why not template?  because i think that we may conflict with other overrides
 #define OLD_MAKE_CONTAINER_PRINT_FOR(C,T)                                           \
     inline std::ostream & operator <<(std::ostream &o,const C<T>& t) {     \
-        WordSeparator<> sep; \
+        word_spacer_c<> sep; \
         o << '[';                                                                                               \
         for (C<T>::const_iterator i=t.begin(),e=t.end();i!=e;++i) \
             o << sep << *i;                                            \
@@ -738,7 +728,7 @@ struct IndirectReader
               o << MULTILINE_SEP;
           }
       } else {
-          WordSeparator<space> sep;
+          word_spacer_c<space> sep;
           for (;begin!=end;++begin) {
               o << sep;
               deref(writer)(o,*begin);
@@ -921,33 +911,12 @@ inline void split_noquote(
 }
 
 #ifdef TEST
-char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
 char *split_strs[]={"",",a","",0};
 char *seps[]={";",";;",",,","   ","=,",",=",0};
 
 BOOST_AUTO_UNIT_TEST( TEST_io )
 {
     using namespace std;
-    {        
-        string opts="ba a \"b c\" 'd' ' e f ' 123";
-        argc_argv args(opts);
-        BOOST_CHECK_EQUAL(args.argc(),7);        
-        for (unsigned i=1;i<args.argc();++i) {
-            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
-        }    
-    }
-    {        
-        string opts=" ba a \"\\b c\" 'd' ' e f '123 ";
-        argc_argv args(opts);
-        BOOST_CHECK_EQUAL(args.argc(),7);
-        for (unsigned i=1;i<args.argc();++i) {
-            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
-        }    
-    }
-    {
-        argc_argv args("");
-        BOOST_CHECK_EQUAL(args.argc(),1);
-    }
     {
         split_noquote(";,a;",make_expect_visitor(split_strs),";");
         for (char **p=seps;*p;++p) {

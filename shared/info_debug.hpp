@@ -1,5 +1,5 @@
-#ifndef INFO_DEBUG_H_inc
-#define INFO_DEBUG_H_inc
+#ifndef GRAEHL__SHARED__INFO_DEBUG_H_inc
+#define GRAEHL__SHARED__INFO_DEBUG_H_inc
 
 #include <string>
 #include <iostream>
@@ -14,7 +14,6 @@
 #ifndef __NO_GNU_NAMESPACE__
 using namespace __gnu_cxx;
 #endif
-using namespace std;
 
 //#undef INFO_LEVEL
 #ifndef INFO_LEVEL
@@ -36,7 +35,7 @@ using namespace std;
    B: begin (returns stream)
    Q: no file/line (quick/quiet)
    L: level (conditioned on INFO_LEVEL and runtime --verbose being at least that level
-   E: expression involving os: i.e. MACRO(os << "hi") not MACRO("hi")
+   E: expression involving os: i.e. MACRO(o << "hi") not MACRO("hi")
 */
 
 #ifdef NO_INFO
@@ -48,10 +47,10 @@ using namespace std;
 
 # define DBG_OP_F_NL(lvl,Dbg,op,module,oexp,file,line,newline) do {     \
         if (INFO_LEVEL >= lvl && (Dbg).runtime_info_level >= lvl) {   \
-   ostringstream os; \
+   std::ostringstream o; \
    oexp; \
-   if(!os) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write " #module " : " #oexp); \
-   (Dbg).op(module,os.str(),file,line,newline);      \
+   if(!o) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write " #module " : " #oexp); \
+   (Dbg).op(module,o.str(),file,line,newline);      \
 } } while(0)
 #endif
 
@@ -64,7 +63,7 @@ using namespace std;
 #define DBG_OP_LQ(lvl,Dbg,op,module,msg) DBG_OP_F(lvl,Dbg,op,module,msg,"",0)
 #define NESTINFO_GUARD(Dbg,lvl) ns_info_debug::info_debug::Nest debug_nest_guard_ ## __LINE__ (Dbg,lvl)
 
-#define O_INSERT(msg) os << msg
+#define O_INSERT(msg) o << msg
 
 // some of these names might be used, e.g. in windows.h, but seems ok on linux.  compilation will fail/warn if they are in conflict.
 #define NESTINFO NESTINFO_GUARD(ns_info_debug::debug,1)
@@ -145,8 +144,8 @@ namespace ns_info_debug {
 
 class info_debug {
  private:
-    ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
-    ostream *infoOS;                                       //!< output stream where debugging information is sent
+    std::ostream *debugOS;                                      //!< output stream where error/WARNING messages are sent
+    std::ostream *infoOS;                                       //!< output stream where debugging information is sent
     const char *last_module;
  public:
     void set_module(const char *module) 
@@ -203,31 +202,31 @@ class info_debug {
         }
     };
 
-    info_debug() : debugOS(&cerr), infoOS(&cerr),
+    info_debug() : debugOS(&std::cerr), infoOS(&std::cerr),
               runtime_info_level(INFO_LEVEL),
                    info_outline_depth(0),debug_outline_depth(0),info_atnewline(true),last_module("DEFAULT") {}
 
-    inline ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
+    inline std::ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
         return *debugOS;
     }
 
-    inline ostream &getInfoOutput() {                      //!< Get the stream to which informational output is written
+    inline std::ostream &getInfoOutput() {                      //!< Get the stream to which informational output is written
         return *infoOS;
     }
-    inline void setDebugOutput(ostream &o) {                     //!< Set the strream to which debugging output is written
+    inline void setDebugOutput(std::ostream &o) {                     //!< Set the strream to which debugging output is written
         debugOS=&o;
     }
 
-    inline void setInfoOutput(ostream &o) {                      //!< Set the stream to which informational output is written
+    inline void setInfoOutput(std::ostream &o) {                      //!< Set the stream to which informational output is written
         infoOS=&o;
     }
 
     //FIXME: support endline parameter?
-    void error(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error
-        error_begin(module, file, line) << info << endl;
+    void error(const char *module, const std::string &info, const std::string &file="", const int line=0,bool endline=true) { //!< prints an error
+        error_begin(module, file, line) << info << std::endl;
     }
 
-    ostream & error_begin(const char *module, const string &file="", const int line=0)
+    std::ostream & error_begin(const char *module, const std::string &file="", const int line=0)
     {
         update_module(module);
         if (debugOS==infoOS)
@@ -240,7 +239,7 @@ class info_debug {
         return getDebugOutput() << ": ";
     }
 
-    void fatalError(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an error and dies
+    void fatalError(const char *module, const std::string &info, const std::string &file="", const int line=0,bool endline=true) { //!< prints an error and dies
         update_module(module);
         error(module,info,file,line,endline);
         fatal_exit();
@@ -256,7 +255,7 @@ class info_debug {
         exit(-1);
     }
     
-    ostream & warning_begin(const char *module, const string &file="", const int line=0)
+    std::ostream & warning_begin(const char *module, const std::string &file="", const int line=0)
     {
         update_module(module);        
         if (debugOS==infoOS)
@@ -269,8 +268,8 @@ class info_debug {
         return getDebugOutput() << ": ";
     }
 
-    void warning(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints a warning message
-        warning_begin(module,file,line) << info << endl;
+    void warning(const char *module, const std::string &info, const std::string &file="", const int line=0,bool endline=true) { //!< prints a warning message
+        warning_begin(module,file,line) << info << std::endl;
     }
 
     bool info_atnewline; // at fresh newline if true, midline if false
@@ -287,13 +286,13 @@ class info_debug {
     }
 
     //post: state=midline
-    inline ostream &info_sameline() {
+    inline std::ostream &info_sameline() {
         info_atnewline=false;
         return *infoOS;
     }
 
     //post: state=midline, after printing a fresh newline (if weren't already at one)
-    inline ostream &info_startline() {
+    inline std::ostream &info_startline() {
         sync();
         if (!info_atnewline) {
             *infoOS << std::endl;
@@ -304,7 +303,7 @@ class info_debug {
 
     //post: state=newline (printing one out if weren't already)
     // this would never be necessary to use if everyone always used info_startline() (except at the very end when closing stream)
-    inline ostream &info_endline() {
+    inline std::ostream &info_endline() {
         if (!info_atnewline) {
             info_endl();
         }
@@ -312,7 +311,7 @@ class info_debug {
     }
 
     //!< note: should close this with info_endl() and not just "\n" or endl
-    ostream & info_begin(const char *module, const string &file="", const int line=0) { //!< prints an informational message
+    std::ostream & info_begin(const char *module, const std::string &file="", const int line=0) { //!< prints an informational message
         update_module(module);
         const char OUTLINE_CHAR='*';
         info_startline();
@@ -326,7 +325,7 @@ class info_debug {
         return getInfoOutput() << ": ";
     }
 
-    void info(const char *module, const string &info, const string &file="", const int line=0,bool endline=true) { //!< prints an informational message
+    void info(const char *module, const std::string &info, const std::string &file="", const int line=0,bool endline=true) { //!< prints an informational message
         info_begin(module,file,line) << info;        
         if (endline)
             info_endl();
@@ -390,65 +389,6 @@ inline static void dbg_expect2(const char *file,unsigned line,const T&got,const 
 
 # define MUST_L(lvl,expr) do { IF_ASSERT(level) {MUST(assertion);} } while(0)
 # define EXPECT_L(lvl,expr,expect) do { IF_ASSERT(level) {EXPECT(assertion);} } while(0)
-
-
-
-// added by Wei Wang.
-/*
- * Here is the typical usage for this mixin class.
- * First, include it in the parents of some class FOO
- *
- * class FOO: public OTHER_PARENT, public FOO { ... }
- *
- * Inside FOO's methods use code such as
- *
- *	if (debug(3)) {
- *	   dout() << "I'm feeling sick today\n";
- *	}
- *
- * Finally, use that code, after setting the debugging level
- * of the object and/or redirecting the debugging output.
- *
- *      FOO foo;
- *	foo.debugme(4); foo.dout(cout);
- *
- * LiBEDebugging can also be set globally (to affect all objects of
- * all classes.
- *
- *	foo.debugall(1);
- *
- */
-class Debugger
-{
-public:
-    Debugger(unsigned level = 0)
-      : nodebug(false), debugLevel(level), debugStream(&cerr) {};
-
-    bool debug(unsigned level)  const  /* true if debugging */
-	{ return (!nodebug && (debugAll >= level || debugLevel >= level)); };
-    virtual void debugme(unsigned level) { debugLevel = level; };
-				    /* set object's debugging level */
-    static void debugall(unsigned level) { debugAll = level; };
-				    /* set global debugging level */
-    unsigned debuglevel() { return debugLevel; };
-
-    virtual ostream &dout() const { return *debugStream; };
-				    /* output stream for use with << */
-    virtual ostream &dout(ostream &stream)  /* redirect debugging output */
-	{ debugStream = &stream; return stream; };
-
-    static unsigned debugall() { return debugAll;}
-
-    bool nodebug;		    /* temporarily disable debugging */
-private:
-    static unsigned debugAll;	    /* global debugging level */
-    unsigned debugLevel;	    /* level of output -- the higher the more*/
-    ostream *debugStream;	    /* current debug output stream */
-};
-
-#ifdef GRAEHL__SINGLE_MAIN
-unsigned Debugger::debugAll = 0;
-#endif
 
 #endif
 

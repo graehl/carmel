@@ -8,6 +8,8 @@
 #include <graehl/shared/test.hpp>
 #endif
 
+namespace graehl {
+
 template <class T>
 T *align_up(T *p)
 {
@@ -86,5 +88,6 @@ BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
 }
 
 #endif
+}
 
 #endif

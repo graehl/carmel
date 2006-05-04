@@ -4,6 +4,8 @@
 
 #include <graehl/shared/byref.hpp>
 
+namespace graehl {
+
 template <class Tag,class M,class F>
 void nested_enumerate(M& m,F &f,Tag t) {
     for (typename M::iterator i=m.begin();i!=m.end();++i)
@@ -212,5 +214,6 @@ BOOST_AUTO_UNIT_TEST( TEST_CONTAINER )
   containertest<VectorS>();
 }
 #endif
+}
 
 #endif

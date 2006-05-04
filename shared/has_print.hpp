@@ -3,12 +3,16 @@
 #define PRINT_ON_HPP
 
 #include <boost/utility/enable_if.hpp>
+#include <boost/ref.hpp>
+//namespace boost { template <class C> class reference_wrapper; }
 
 // usage: template <class A> void func(A &a,typename has_print_plain<A>::type* dummy = 0)
 
 // how this works: has_print<C>::type is either defined (iff C::has_print was typedefed to void), or undefined.  this allows us to exploit SFINAE (google) for function overloads depending on whether C::has_print was typedefed void ;)
 
 // ok - actually, as long as C::has_print is *any* type ...
+
+namespace graehl {
 
 template <class C,class V=void>
 struct has_print;
@@ -83,10 +87,6 @@ struct not_has_print<C,typename has_print<C>::type> {
 template <class C>
 struct not_has_print<C,typename has_print_writer<C>::type> {
 };
-
-namespace boost {
-template <class C> class reference_wrapper;
-}
 
 template <class C>
 struct isa_pointer;
@@ -169,5 +169,7 @@ template <class C>
 struct not_has_const_iterator<boost::reference_wrapper<C> > : public not_has_const_iterator<C> {};
 
 #  endif 
+
+}
 
 #endif

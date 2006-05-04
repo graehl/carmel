@@ -2,8 +2,9 @@
 #ifndef MEMLEAK_HPP
 #define MEMLEAK_HPP
 
+#ifndef PLACEMENT_NEW
 #define PLACEMENT_NEW new
-
+#endif
 
 #if defined(DEBUG) && defined(_MSC_VER)
 #  define MEMDEBUG // link to MSVCRT

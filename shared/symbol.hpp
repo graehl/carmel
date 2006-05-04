@@ -22,6 +22,8 @@
 #define MIN_LEGAL_ADDRESS ((void *)0x1000)
 #endif
 
+namespace graehl {
+
 template <class Alloc=StaticPackedAlloc<char> >
 class StringInterner {
   Alloc alloc;
@@ -381,5 +383,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
  BOOST_CHECK(Symbol(91)=="91");
 }
 #endif
+
+}
 
 #endif

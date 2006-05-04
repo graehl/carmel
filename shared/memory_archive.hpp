@@ -5,6 +5,8 @@
 #include <graehl/shared/array_stream.hpp>
 //#include <cstddef>
 
+namespace graehl {
+
 template <class T>
 inline void set_randomly(T &v,unsigned n)
 {
@@ -93,5 +95,7 @@ BOOST_AUTO_UNIT_TEST( TEST_serialize_memory )
 }
 
 #endif
+
+}
 
 #endif

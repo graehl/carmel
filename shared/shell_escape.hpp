@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <string>
 
+namespace graehl {
+
 template <class C>
 inline bool is_shell_special(C c) {
     switch(c) {
@@ -61,5 +63,6 @@ inline std::string shell_quote(const C& data) {
     return s.str();
 }
 
+}
 
 #endif

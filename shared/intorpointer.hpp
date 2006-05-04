@@ -11,6 +11,8 @@
 
 #include <graehl/shared/pointeroffset.hpp>
 
+namespace graehl {
+
 template <class Pointed=void,class Int=size_t>
 struct IntOrPointer {
     typedef Pointed pointed_type;
@@ -104,5 +106,5 @@ BOOST_AUTO_UNIT_TEST( TEST_INTORPOINTER )
     BOOST_CHECK(p.offset_pointer(&j) == &j+3);
 }
 #endif
-
+}
 #endif

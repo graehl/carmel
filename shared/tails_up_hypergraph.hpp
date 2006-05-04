@@ -6,6 +6,8 @@
 
 #include <graehl/shared/hypergraph.hpp>
 
+namespace graehl {
+
 template <class HD>
 struct HArcDest  {
     HD harc; // hyperarc with this tail
@@ -425,7 +427,8 @@ struct TailsUpHypergraph {
 
 };
 
-//! TESTS in ../tt/transducergraph.hpp
+}//graehl
 
+//! TESTS in ../tt/transducergraph.hpp
 
 #endif

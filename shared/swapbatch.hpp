@@ -81,6 +81,7 @@
  * new beg - [ret,end) is the new unused range
  */
 
+namespace graehl {
 
 template <class B>
 struct SwapBatch {
@@ -501,5 +502,7 @@ BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
 }
 
 # endif
+
+}
 
 #endif

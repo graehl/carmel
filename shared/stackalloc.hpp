@@ -1,4 +1,4 @@
-//you create a fix-sized "stack" and allocate objects by a stack-like discipline without any bookkeeping.  used by swapbatch.hpp
+//you create a fix-sized "stack" and allocate objects by a stack-like discipline without any bookkeeping.  used by swapbatch.hpp.  similar to packedalloc.hpp but without the ability to chain together lists of chunks - just a single chunk.
 #ifndef STACKALLOC_HPP
 #define STACKALLOC_HPP
 
@@ -12,6 +12,8 @@
 //required, then sizeof(T) would be 8, not 6.
 
 // i.e. T* x; ++x or --x always preserves alignment.
+
+namespace graehl {
 
 struct StackAlloc
 {
@@ -153,5 +155,6 @@ BOOST_AUTO_UNIT_TEST( TEST_STACKALLOC )
 
 # endif
 
+}
 
 #endif

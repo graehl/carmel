@@ -5,7 +5,10 @@
 #include <iostream>
 #include <string>
 
-#define GRAPHVIZ_DEFAULT_PRELUDE "node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n graph [center=1];\n"
+
+namespace graehl {
+
+static char const* GRAPHVIZ_DEFAULT_PRELUDE="node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n graph [center=1];\n"
 //ordering=out;\n concentrate=0;\n\n ranksep=.3;
 
 template <class L>
@@ -55,5 +58,7 @@ struct GraphvizPrinter {
         prelude();
     }
 };
+
+}
 
 #endif

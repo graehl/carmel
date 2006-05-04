@@ -6,7 +6,9 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include <graehl/shared/funcs.hpp>
+#include <graehl/shared/string_match.hpp>
+
+namespace graehl {
 
 template <class Key=std::string,class Data=double>
 struct sparse_vector : public hash_map<Key,Data>
@@ -18,6 +20,7 @@ struct sparse_vector : public hash_map<Key,Data>
     {
         tokenize_key_val_pairs(s,*this,pair_sep,key_val_sep);
     }
+    // callback for above
     void operator()(const Component &to_add) 
     {
         pair<typename Map::iterator,bool> add_result=insert(to_add);
@@ -42,6 +45,8 @@ struct sparse_vector : public hash_map<Key,Data>
 };
 
 typedef sparse_vector<std::string,float> named_sparse_vector;
+
+}
 
 #ifdef TEST
 # include "test.hpp"

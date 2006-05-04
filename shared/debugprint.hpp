@@ -37,6 +37,8 @@
 #define DEBUG_SEGFAULT
 #endif
 
+namespace graehl {
+
 struct DebugWriter
 {
   template <class charT, class Traits,class Label>
@@ -349,6 +351,7 @@ std::string dbgstr(const A &a,W w) {
 template<class A>
 const char * dbgstrw(const A &a) {
   return dbgstr(a);
+}
 }
 
 #endif

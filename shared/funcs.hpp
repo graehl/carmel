@@ -2,8 +2,6 @@
 #ifndef FUNCS_HPP
 #define FUNCS_HPP
 
-#include <graehl/shared/memleak.hpp>
-
 #include <iterator>
 
 #include <cmath>
@@ -29,13 +27,7 @@
 
 #include <graehl/shared/size_mega.hpp> //FIXME: remove (fixing users)
 
-//#define TOKENIZE_KEY_VAL_DEBUG
-
-#ifdef TOKENIZE_KEY_VAL_DEBUG
-# define TOKENIZE_KEY_VAL_IF_DBG(a) a
-#else
-# define TOKENIZE_KEY_VAL_IF_DBG(a)
-#endif
+namespace graehl {
 
 template <class V>
 struct difference_f 
@@ -58,45 +50,6 @@ inline S transform2_array_coerce(const S&l,const S&r,F f)
         pret[i]=f(pl[i],pr[i]);
     return ret;
 }
-
-template <class F>
-void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':') 
-{
-    typedef typename F::key_type Key;
-    typedef typename F::data_type Data;
-    using namespace std;    
-    typedef pair<Key,Data> Component;
-    typedef pair<Key,Data> Component;
-    typedef string::size_type Pos;
-    typedef string::const_iterator It;
-    Component to_add;
-    for (It i=s.begin(),e=s.end();;) {
-        for(It key_beg=i; ;++i) {
-            if (i==e) return;
-            TOKENIZE_KEY_VAL_IF_DBG(DBP2(*i,i-s.begin()););
-            if (*i == key_val_sep) { // [last,i) is key
-                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("key",string(key_beg,i)););
-                string_into(string(key_beg,i),to_add.first);
-                break; // done key, expect val
-            }
-        }
-        for (It val_beg=++i; ;++i) {
-            TOKENIZE_KEY_VAL_IF_DBG(
-                if (i==e) DBPC2("<END>",i-s.begin());                    
-                DBP2(*i,i-s.begin());
-                );
-            if (i == e || *i == pair_sep) {
-                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("val",string(val_beg,i)););
-                string_into(string(val_beg,i),to_add.second);
-                f(to_add);
-                if (i==e) return;
-                ++i;
-                break; // next key/val
-            }
-        }
-    }
-}
-
 
 template <class T1, class T2>
 T1 at_least(const T1 &val,const T2 &ensure_min) 
@@ -162,23 +115,6 @@ template <class Container,class Iter> inline
 void append(Container &cont,Iter beg,Iter end) 
 {
     cont.insert(cont.end(),beg,end);
-}
-
-template <class Container> inline
-typename Container::value_type &at_expand(Container &vec,std::size_t index,const typename Container::value_type &default_value=typename Container::value_type()) 
-{
-    std::size_t sz=vec.size();
-    if (index>=sz)
-        vec.resize(index+1,default_value); //     vec.insert(vec.end(),(index-sz)+1,default_value);
-    return vec[index];
-}
-
-template <class Container> inline
-void maybe_decrease_min_at(Container &vec,unsigned index,const typename Container::value_type &decrease_to,const typename Container::value_type &infinity=HUGE_VAL) 
-{
-    typename Container::value_type &f=at_expand(vec,index,infinity);
-    if (f > decrease_to)
-        f = decrease_to;
 }
 
 // Order e.g. less_typeless
@@ -317,32 +253,6 @@ struct select1st_compare : public compare
     bool operator()(const T1&a,const T2&b) const 
     {
         return compare::operator()(a.first,b.first);
-    }
-};
-
-template <class T,class Comp>
-struct compare_indirect_array : public Comp
-{
-    const T *base;
-    typedef compare_indirect_array<T,Comp> Self;
-    compare_indirect_array(T *base_=NULL,const Comp &comp=Comp()) : base(base_),Comp(comp) {}
-    compare_indirect_array(const Self &s) : base(s.base),Comp(s) {}
-    template <class Vec,class VecTo>
-    compare_indirect_array(const Vec &from,VecTo &to,const Comp &comp=Comp()) : Comp(comp) 
-    {
-        init(from,to);
-    }
-    template <class Vec,class VecTo>
-    void init(const Vec &from,VecTo &to)
-    {
-        base=&*from.begin();
-        to.clear();
-        for (unsigned i=0,e=from.size();i<e;++i)
-            to.push_back(i);
-    }    
-    bool operator()(unsigned a,unsigned b) const
-    {
-        return Comp::operator()(base[a],base[b]);
     }
 };
 
@@ -570,50 +480,6 @@ finder<P> make_finder(const P& pred)
 }
 
 
-#define INDIRECT_STRUCT_COMMON(type,method) \
-    struct indirect_ ## type ## _ ## method                  \
-    {                                         \
-        typedef type indirect_type;           \
-        indirect_ ## type ## _ ## method *pimp;              \
-        indirect_ ## type ## _ ## method(type &t) : pimp(&t) {} \
-        indirect_ ## type ## _ ## method(const indirect_ ## type ## _ ## method &t) : pimp(t.pimp) {} \
-
-#define INDIRECT_STRUCT(type,method)                         \
-    INDIRECT_STRUCT_COMMON(type,method) \
-            void operator()() const         \
-            {                                   \
-                pimp->method();               \
-            }                                   \
-    };
-
-#define INDIRECT_STRUCT1(type,method,t1,v1)      \
-    INDIRECT_STRUCT_COMMON(type,method) \
-            void operator()(t1 v1) const         \
-            {                                   \
-                pimp->method(v1);               \
-            }                                   \
-    };
-
-
-#define INDIRECT_STRUCT1(type,method,t1,v1)      \
-    INDIRECT_STRUCT_COMMON(type,method) \
-            void operator()(t1 v1) const         \
-            {                                   \
-                pimp->method(v1);               \
-            }                                   \
-    };
-
-
-
-#define INDIRECT_PROTO(type,method) INDIRECT_STRUCT(type,method)    \
-        void method()
-
-#define INDIRECT_PROTO1(type,method,t1,v1) INDIRECT_STRUCT1(type,method,t1,v1)    \
-        void method(t1 v1)
-
-#define INDIRECT_PROTO2(type,method,t1,v1,t2,v2) INDIRECT_STRUCT2(type,method,t2,v2)   \
-        void method(t1 v1,t2 v2)
-
 /*
 template <typename T,size_t n>
 struct fixed_single_allocator {
@@ -651,7 +517,7 @@ namespace nonstd {
 template <class P,class V>
 void construct(P *to,const V& from)
 {
-  PLACEMENT_NEW(to) P(from);
+  new(to) P(from);
 }
 
 // uninitialized_copy_n was removed from std:: - we don't reuse the name because you might use namespace std; in an old compiler
@@ -663,7 +529,7 @@ void uninitialized_copy_n(I from, unsigned n, F to)
     //PLACEMENT_NEW(&*to) iterator_traits<F>::value_type(*from);
     construct(&*to,*from);
 }
-};
+}
 
 struct dummy_nullary_func {
     typedef void result_type;
@@ -792,43 +658,6 @@ struct self_destruct {
     ~self_destruct() { if (!safety) me->safe_destroy(); }
 };
 
-template <class Size=size_t>
-struct size_accum {
-    Size size;
-    Size max_size;
-    struct ref
-    {
-        size_accum<Size> *p;
-        template <class T>
-        void operator()(const T& t) {
-            (*p)(t);
-        }
-        ref(const size_accum<Size> &r) : p(&r) {}        
-    };
-    
-        
-    size_accum() { reset(); }
-    void reset() 
-    {
-        size=max_size=0;
-    }    
-    template <class T>
-    void operator()(const T& t) {
-        Size tsize=t.size();
-        size += tsize;
-        if (max_size < tsize)
-            max_size = tsize;
-    }
-    Size total() const
-    {
-        return size;
-    }
-    Size maximum() const
-    {
-        return max_size;
-    }
-    operator Size() const { return total(); }
-};
 
 template <class A,class B>
 struct both_functors_byref {
@@ -850,203 +679,6 @@ both_functors_byref<A,B> make_both_functors_byref(A &a_,B &b_)
     return both_functors_byref<A,B>(a_,b_);
 }
 
-
-/*
-      template <class T>
-    struct max_accum {
-        T m;
-        max_accum() : m() {}
-        template <class T2>
-        void operator()(const T2& t) {
-            if (m < t)
-                m = t;
-        }
-        operator T &() { return m; }
-    };
-*/
-template <class T>
-struct max_accum {
-    T maximum;
-    max_accum() : maximum() {}
-    template <class F>
-    void operator()(const F& t) {
-        if (maximum < t)
-            maximum = t;
-    }
-    operator T &() { return maximum; }
-    operator const T &() const { return maximum; }
-};
-
-template <class T>
-struct min_max_accum {
-    T maximum;
-    T minimum;
-    bool seen;
-    min_max_accum() : seen(false) {}
-    template <class F>
-    void operator()(const F& t) {
-//        DBP3(minimum,maximum,t);
-        if (seen) {
-            if (maximum < t)
-                maximum = t;
-            else if (minimum > t)
-                minimum = t;
-        } else {
-            minimum=maximum=t;
-            seen=true;
-        }
-//        DBP2(minimum,maximum);
-    }
-    bool anyseen() const 
-    {
-        return seen;
-    }
-    T maxdiff() const
-    {
-        return this->anyseen()?maximum-minimum:T();
-    }    
-};
-
-//(unbiased) sample variance
-template <class T,class U>
-inline T variance(T sumsq, T sum, U N) 
-{
-    if (N<2)
-        return 0;
-    T mean=sum/N;
-    T diff=(sumsq-sum*mean);
-    return diff > 0 ? diff/(N-1) : 0;
-}
-
-template <class T,class U>
-inline T stddev(T sumsq, T sum, U N) 
-{
-    using std::sqrt;
-    return sqrt(variance(sumsq,sum,N));    
-}
-
-template <class T,class U>
-inline T stderror(T sumsq, T sum, U N) 
-{
-    using std::sqrt;
-    if (N<2)
-        return 0;
-    return stddev(sumsq,sum,N)/sqrt(N);
-}
-
-
-template <class T>
-struct avg_accum {
-    T sum;
-    size_t N;
-    avg_accum() : N(0),sum() {}
-    template <class F>
-    void operator()(const F& t) {
-        ++N;
-        sum+=t;
-    }
-    bool anyseen() const
-    {
-        return N;
-    }
-    T avg() const
-    {
-        return sum/(double)N;
-    }
-    operator T() const 
-    {
-        return avg();
-    }
-    void operator +=(const avg_accum &o)
-    {
-        sum+=o.sum;
-        N+=o.N;
-    }    
-};
-
-template <class T>
-struct stddev_accum {
-    T sum;
-    T sumsq;
-    size_t N;
-    stddev_accum() : N(0),sum(),sumsq() {}
-    bool anyseen() const
-    {
-        return N;
-    }
-    T avg() const
-    {
-        return sum/(double)N;
-    }
-    T variance() const 
-    {
-        return ::variance(sumsq,sum,N);
-    }
-    T stddev() const
-    {
-        return ::stddev(sumsq,sum,N);
-    }
-    T stderror() const
-    {
-        return ::stderror(sumsq,sum,N);
-    }
-    operator T() const 
-    {
-        return avg();
-    }
-    void operator +=(const stddev_accum &o)
-    {
-        sum+=o.sum;
-        sumsq+=o.sumsq;
-        N+=o.N;
-    }
-    template <class F>
-    void operator()(const F& t) {
-        ++N;
-        sum+=t;
-        sumsq+=t*t;
-    }
-};
-
-template <class T>
-struct stat_accum : public stddev_accum<T>,min_max_accum<T> {
-    template <class F>
-    void operator()(const F& t) {
-        stddev_accum<T>::operator()(t); //        ((Avg &)*this)(t);
-        min_max_accum<T>::operator()(t);
-    }
-    operator T() const 
-    {
-        return this->maxdiff();
-    }
-};
-
-    
-
-template <class c,class t,class T>
-std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const stat_accum<T> &v) 
-{
-    if (v.anyseen())
-        return o <<"{{{"<<v.minimum<<'/'<<v.avg()<<"(~"<<v.stddev()<<")/"<<v.maximum<<"}}}";
-    else
-        return o <<"<<<?/?/?>>>";
-}
-
-
-
-template <class T>
-struct max_in_accum {
-    T maximum;
-    max_in_accum() : maximum() {}
-    template <class F>
-    void operator()(const F& t) {
-        for (typename F::const_iterator i=t.begin(),e=t.end();i!=e;++i)
-            if (maximum < *i)
-                maximum = *i;
-    }
-    operator T &() { return maximum; }
-    operator const T &() const { return maximum; }
-};
 
 
 template <class T>
@@ -1091,60 +723,6 @@ set_value<V> value_setter(V &init_value) {
 }
 
 
-template <class I, class B,class C>
-struct indirect_cmp : public C {
-    typedef C Comp;
-    typedef I Index;
-    typedef B Base;
-    typedef indirect_cmp<I,B,C> Self;
-
-    B base;
-
-    indirect_cmp(const B &b,const Comp&comp=Comp()) : base(b), Comp(comp) {}
-    indirect_cmp(const Self &o): base(o.base), Comp((Comp &)o) {}
-
-    bool operator()(const I &a, const I &b) const {
-        return Comp::operator()(base[a], base[b]);
-    }
-};
-
-template <class I,class B,class C>
-void top_n(unsigned n,I begin,I end,const B &base,const C& comp)
-{
-    indirect_cmp<I,B,C> icmp(base,comp);
-    I mid=begin+n;
-    if (mid >= end)
-        sort(begin,end,icmp);
-    else
-        partial_sort(begin,mid,end,icmp);
-}
-
-// useful for sorting; could parameterize on predicate instead of just <=lt, >=gt
-template <class I, class B>
-struct indirect_lt {
-    typedef I Index;
-    typedef B Base;
-    B base;
-    indirect_lt(const B &b) : base(b) {}
-    indirect_lt(const indirect_lt<I,B> &o): base(o.base) {}
-
-    bool operator()(const I &a, const I &b) const {
-        return base[a] < base[b];
-    }
-};
-
-template <class I, class B>
-struct indirect_gt {
-    typedef I Index;
-    typedef B Base;
-    B base;
-    indirect_gt(const B &b) : base(b) {}
-    indirect_gt(const indirect_gt<I,B> &o): base(o.base) {}
-    bool operator()(const I &a, const I &b) const {
-        return base[a] > base[b];
-    }
-};
-
 template <class ForwardIterator>
 bool is_sorted(ForwardIterator begin, ForwardIterator end)
 {
@@ -1182,6 +760,8 @@ void iota(ForwardIterator begin, ForwardIterator end, ValueType value)
         ++begin ;
         ++value ;
     }
+}
+
 }
 
 #endif

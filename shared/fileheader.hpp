@@ -5,6 +5,8 @@
 #include <string>
 #include <graehl/shared/funcs.hpp>
 
+namespace graehl {
+
 const std::string default_file_header_prefix="$$$";
 
 template <class String> bool is_file_header(const String &s) 
@@ -63,5 +65,5 @@ inline std::string copy_header(std::istream &i, std::ostream &o,
         return std::string(header_string.begin(),matched_until);
     }
 }
-
+}
 #endif

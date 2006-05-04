@@ -5,7 +5,7 @@
 #include <graehl/shared/byref.hpp>
 #include <iterator>
 
-namespace my {
+namespace graehl {
 
   template <class UnaryFunction>
   class function_output_iterator {

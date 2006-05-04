@@ -13,6 +13,8 @@
 #endif
 #endif
 
+namespace graehl {
+
 template <class C,class Alloc=std::allocator<C>,size_t block_size=PACKED_ALLOC_BLOCKSIZE > class PackedAlloc {
     Alloc alloc;
     typedef std::pair<C *,size_t> Block;
@@ -48,7 +50,6 @@ public:
     void deallocate_all() {
         for (typename ListB::const_iterator i=blocks.const_begin(),end=blocks.const_end();i!=end;++i)
            alloc.deallocate(i->first,i->second);
-
     }
     PackedAlloc() {
         free_start=free_end=0;
@@ -69,5 +70,7 @@ template <class C,class Alloc=std::allocator<C>,size_t block_size=PACKED_ALLOC_B
 #ifdef GRAEHL__SINGLE_MAIN
 template <class C,class Alloc,size_t block_size> PackedAlloc<C,Alloc,block_size> StaticPackedAlloc<C,Alloc,block_size>::alloc;
 #endif
+
+}
 
 #endif

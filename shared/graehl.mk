@@ -101,7 +101,7 @@ BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS)))
 BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
 ifndef BOOST_SUFFIX
-BOOST_SUFFIX:=-gcc
+BOOST_SUFFIX:=gcc
 endif
 ifdef BUILD_OWN_BOOST_LIBS
 BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
@@ -110,10 +110,10 @@ BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
 libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
 else
-BOOST_SERIALIZATION_LIB=-lboost_serialization$(BOOST_SUFFIX)
-BOOST_TEST_LIB=-lboost_unit_test_framework$(BOOST_SUFFIX)
-BOOST_OPTIONS_LIB=-lboost_program_options$(BOOST_SUFFIX)
-BOOST_SERIALIZATION_LIB=-lboost_serialization$(BOOST_SUFFIX)
+BOOST_SERIALIZATION_LIB=-lboost_serialization-$(BOOST_SUFFIX)
+BOOST_TEST_LIB=-lboost_unit_test_framework-$(BOOST_SUFFIX)
+BOOST_OPTIONS_LIB=-lboost_program_options-$(BOOST_SUFFIX)
+BOOST_SERIALIZATION_LIB=-lboost_serialization-$(BOOST_SUFFIX)
 libs:
 endif
 

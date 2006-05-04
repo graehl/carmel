@@ -8,6 +8,7 @@
 #define CHARBUF_INIT_SIZE 4096
 #endif
 
+namespace graehl {
 
 typedef dynamic_array<char> CharBuf;
 
@@ -89,5 +90,5 @@ BOOST_AUTO_UNIT_TEST( charbuf )
 
 }
 #endif
-
+}
 #endif

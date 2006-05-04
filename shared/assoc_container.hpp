@@ -1,7 +1,9 @@
 #ifndef GRAEHL__SHARED__ASSOC_CONTAINER_HPP
 #define GRAEHL__SHARED__ASSOC_CONTAINER_HPP
 
+#ifdef GRAEHL__DBG_ASSOC
 #include <graehl/shared/debugprint.hpp>
+#endif
 
 namespace graehl {
 
@@ -123,16 +125,21 @@ inline void maybe_increase_max(AssocContainer &table,const Key &key,const Val &v
 //    return was_inserted->first->second;    
 }
 
-template <class To,class From>
-inline void maybe_increase_max(To &to,const From &from) {
-    if (to < from)
-        to=from;
+template <class Container> inline
+typename Container::value_type &at_expand(Container &vec,std::size_t index,const typename Container::value_type &default_value=typename Container::value_type()) 
+{
+    std::size_t sz=vec.size();
+    if (index>=sz)
+        vec.resize(index+1,default_value); //     vec.insert(vec.end(),(index-sz)+1,default_value);
+    return vec[index];
 }
 
-template <class To,class From>
-inline void maybe_decrease_min(To &to,const From &from) {
-    if (from < to)
-        to=from;
+template <class Container> inline
+void maybe_decrease_min_at(Container &vec,unsigned index,const typename Container::value_type &decrease_to,const typename Container::value_type &infinity=HUGE_VAL) 
+{
+    typename Container::value_type &f=at_expand(vec,index,infinity);
+    if (f > decrease_to)
+        f = decrease_to;
 }
 
 

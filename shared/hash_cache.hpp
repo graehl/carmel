@@ -6,6 +6,8 @@
 #include <pair>
 #include <cassert>
 
+namespace graehl {
+
 /* *Hash is a stateless functor:
        size_t Hash::operator()(const Key &key) const
        
@@ -58,6 +60,6 @@ struct hash_cache
     }
 };
 
-    
+}
 
 #endif

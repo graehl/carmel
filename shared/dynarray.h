@@ -1059,7 +1059,7 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 // throw(genio_exception,StackAlloc::Overflow)
 {
     x.vec=a.aligned_next<L>();
-    my::function_output_iterator<boost::reference_wrapper<StackAlloc> > out(boost::ref(a));
+    function_output_iterator<boost::reference_wrapper<StackAlloc> > out(boost::ref(a));
     range_get_from(in,out,DefaultReader<L>());
     x.endspace=a.next<L>();
 }

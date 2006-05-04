@@ -15,6 +15,7 @@
 
 
 
+namespace graehl {
 
 /*
 if graphs had iterator_range
@@ -142,6 +143,6 @@ inline void visit(T unused_type_tag,G &g,F f) {
         deref(f)(*(pi.first));
 }
 
-
+}
 
 #endif

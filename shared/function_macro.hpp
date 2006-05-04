@@ -12,6 +12,17 @@ struct name \
     } \
 }
 
+#define FUNCTION_OBJ_WRAP(funcname,return_type)         \
+struct funcname ## _f \
+{ \
+    typedef return_type result_type; \
+    template <class T1> \
+    result_type operator()(const T1 &x) const \
+    { \
+        return funcname(x);                     \
+    } \
+}
+
 
 #define FUNCTION_OBJ_X_Y(name,return_type,expr)        \
 struct name \

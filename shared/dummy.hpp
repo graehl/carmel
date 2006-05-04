@@ -1,6 +1,9 @@
 #ifndef DUMMY_HPP
 #define DUMMY_HPP
 
+namespace graehl {
+
+
 template <class C>
 struct dummy {
   static const C &var();
@@ -23,5 +26,7 @@ BOOST_AUTO_UNIT_TEST( TEST_dummy )
   BOOST_CHECK(dummy<int>::var() == 0);
 }
 #endif
+
+}
 
 #endif

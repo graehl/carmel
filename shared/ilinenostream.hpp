@@ -4,6 +4,8 @@
 #include <steambuf>
 #include <istream>
 
+namespace graehl {
+
 struct linenobuf:
   public std::streambuf
 {
@@ -57,5 +59,7 @@ struct ilinenostream:
   int main() {
       return 0;
   }
- #endif
+#endif
+}
+
 #endif

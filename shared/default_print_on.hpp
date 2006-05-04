@@ -5,6 +5,9 @@
 
 #include <vector>
 
+namespace graehl {
+
+
 template <class V,class charT,class Traits>
 std::basic_ostream<charT,Traits> & operator << (std::basic_ostream<charT,Traits> &o,const std::vector<V> &v) 
 {
@@ -54,4 +57,5 @@ operator << (std::basic_ostream<charT,Traits>& s, const typename A::default_prin
     return s;
 }
 
+}
 #endif

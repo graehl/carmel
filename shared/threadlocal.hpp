@@ -24,6 +24,11 @@
 #endif
 
 #include <boost/utility.hpp>
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
+namespace graehl {
 
 template <class D>
 struct SaveLocal {
@@ -66,7 +71,6 @@ struct SetLocal {
 };
 
 #ifdef TEST
-#include <graehl/shared/test.hpp>
 
 //typedef LocalGlobal<int> Gint;
 typedef int Gint;
@@ -91,6 +95,8 @@ BOOST_AUTO_UNIT_TEST( threadlocal )
 }
 */
 #endif
+
+}
 
 #endif
 

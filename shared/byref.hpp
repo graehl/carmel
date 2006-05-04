@@ -11,6 +11,9 @@
 
 #include <graehl/shared/dummy.hpp>
 
+namespace graehl {
+
+
 template <class C>
 struct dummy<boost::reference_wrapper<C> > {
   //  static C dummy_imp;
@@ -90,5 +93,5 @@ BOOST_AUTO_UNIT_TEST( TEST_byref )
   BOOST_CHECK(t==2);
 }
 #endif
-
+}
 #endif
