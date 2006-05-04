@@ -13,8 +13,12 @@
 #include <graehl/shared/fileargs.hpp>
 #include <boost/lexical_cast.hpp>
 
+#ifdef WINDOWS
+# undef max
+#endif 
+
+namespace graehl {
 typedef boost::shared_ptr<std::ifstream> InSeekFile;
-#undef max
 struct FileLines
 {
     static const char linesep='\n';
@@ -76,5 +80,6 @@ struct FileLines
     }
 };
 
+}
 
 #endif

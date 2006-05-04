@@ -7,6 +7,8 @@
 
 //OutEdges (generic out_edge_iterator graph adapter, out_edges ...) and
 
+namespace graehl {
+
 template <class G,class E,class C,class V>
 struct OutEdges;
 // for simplicity, requires vertex index ... could allow user to specify property map type instead, but would have to allocate it themself
@@ -54,19 +56,23 @@ struct OutEdges {
   }
 };
 
+}
+
 namespace boost {
 template <class G,class E,class C,class V>
 struct graph_traits<OutEdges<G,E,C,V> > : public graph_traits<G> {
   typedef G parent_graph;
   typedef graph_traits<parent_graph> GT;
-  typedef OutEdges<G,E,C,V> graph;
+    typedef graehl::OutEdges<G,E,C,V> graph;
   typedef typename graph::edge_descriptor edge_descriptor;
   //typedef boost::counting_iterator<edge_descriptor *> out_edge_iterator;
   typedef typename graph::Adj::iterator out_edge_iterator;
   typedef std::pair<out_edge_iterator,out_edge_iterator> pair_out_edge_it;
 };
-};
+}
 
+
+namespace graehl {
 
 template <class G,class E,class C,class V>
 struct hypergraph_traits<OutEdges<G,E,C,V> > : public hypergraph_traits<G> {
@@ -104,6 +110,7 @@ visit_out(
     f(*i);
 }
 
+}
 
 //! TESTS IN TRANSDUCERGRAPH.HPP
 

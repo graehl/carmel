@@ -22,12 +22,13 @@ namespace lambda=boost::lambda;
 #include <graehl/shared/test.hpp>
 #endif
 
-using namespace std;
 
 //template <class L, class A> struct Tree;
 
 // Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
 // FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting Self
+namespace graehl {
+
 template <class L, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
   typedef Tree Self;
   typedef L Label;
@@ -546,8 +547,8 @@ size_t tree_height(const T *tree)
 
 template <class T,class O>
 struct Emitter {
-  O out;
-  Emitter(O o) : out(o) {}
+  O &out;
+  Emitter(O &o) : out(o) {}
   void operator()(T * tree) {
         out << tree;
   }
@@ -609,6 +610,7 @@ template<class T> bool always_equal(const T& a,const T& b) { return true; }
 
 BOOST_AUTO_UNIT_TEST( tree )
 {
+    using namespace std;
   Tree<int> a,b,*c,*d,*g=new_tree(1),*h;
   //string sa="%asdf\n1(%asdf\n 2 %asdf\n,%asdf\n3 (4\n ()\n,\t 5,6))";
   string sa="%asdf\n1%asdf\n(%asdf\n 2 %asdf\n,%asdf\n3 (4\n ()\n,\t 5,6))";
@@ -675,5 +677,6 @@ BOOST_AUTO_UNIT_TEST( tree )
 
 
 #endif
+}
 
 #endif

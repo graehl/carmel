@@ -17,44 +17,6 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace graehl {
-
-static const char gz_ext[]=".gz";
-
-template <class Stream>
-struct file_arg : public boost::shared_ptr<Stream>
-{
-    typedef boost::shared_ptr<Stream> parent_type;
-    file_arg() {}
-    file_arg(file_arg<Stream> const& o) : parent_type((parent_type const&)o) {}
-    template <class C1>
-    file_arg(C1 const &c1) : parent_type(c1) {}
-    parent_type &parent() { return *this; }
-    parent_type const& parent() const { return *this; }
-    bool valid() const
-    {
-        return parent() && *parent();
-    }
-    Stream &stream() const
-    {
-        return *parent();
-    }
-    operator Stream &() const
-    {
-        return stream();
-    }
-};
-
-
-typedef boost::shared_ptr<std::istream> Infile;
-typedef boost::shared_ptr<std::ostream> Outfile;
-typedef boost::shared_ptr<std::ifstream> InDiskfile;
-typedef boost::shared_ptr<std::ofstream> OutDiskfile;
-    
-struct null_deleter {
-    void operator()(void*) const {}
-};
-
 #ifndef GRAEHL__DEFAULT_IN_P
 #define GRAEHL__DEFAULT_IN_P &std::cin
 #endif
@@ -67,6 +29,174 @@ struct null_deleter {
 #define GRAEHL__DEFAULT_LOG_P &std::cerr
 #endif
 
+
+namespace graehl {
+
+template <class Stream>
+struct stream_traits 
+{
+};
+
+    
+template<>
+struct stream_traits<std::ifstream>
+{
+    BOOST_STATIC_CONSTANT(bool,file_only=true);
+    BOOST_STATIC_CONSTANT(bool,read=true);
+};
+
+template<>
+struct stream_traits<std::ofstream>
+{
+    BOOST_STATIC_CONSTANT(bool,file_only=true);
+    BOOST_STATIC_CONSTANT(bool,read=false);
+};
+    
+template<>
+struct stream_traits<std::ostream>
+{
+    BOOST_STATIC_CONSTANT(bool,file_only=false);
+    BOOST_STATIC_CONSTANT(bool,read=false);
+};
+
+template<>
+struct stream_traits<std::istream>
+{
+    BOOST_STATIC_CONSTANT(bool,file_only=false);
+    BOOST_STATIC_CONSTANT(bool,read=true);
+};
+
+static const char gz_ext[]=".gz";
+
+struct null_deleter {
+    void operator()(void*) const {}
+};
+
+template <class Stream>
+struct file_arg : public boost::shared_ptr<Stream>
+{
+    std::string name;
+    typedef boost::shared_ptr<Stream> pointer_type;
+    file_arg() {}
+    explicit file_arg(std::string const& s,
+             bool read=stream_traits<Stream>::read,
+             bool file_only=stream_traits<Stream>::file_only)
+    { set(s,read,file_only); }
+
+    void set(Stream *s) 
+    {
+        pointer().reset(s,null_deleter());
+        name="";
+    }
+    // warning: if you call with incompatible filestream type ... crash!
+    template <class filestream>
+    void set(std::string const& filename,char const* fail_msg="Couldn't open file ")
+    {
+//        boost::shared_ptr<filestream>
+        filestream *f=new filestream(filename.c_str());
+        if (!*f) {
+            delete f;
+            throw std::runtime_error(std::string(fail_msg).append(filename));
+        }
+        
+        pointer().reset((Stream*)f);
+        name=filename;
+    }
+    
+    enum { ALLOW_NULL=1,NO_NULL=0 };
+
+    // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
+    void set(std::string const& s,
+             bool null_allowed=ALLOW_NULL,
+             bool read=stream_traits<Stream>::read,
+             bool file_only=stream_traits<Stream>::file_only)
+    {
+        if (s.empty())
+            throw std::runtime_error("Tried to make file_arg stream from empty filename");
+        if (!file_only && s == "-")
+            set(read ? (Stream*)GRAEHL__DEFAULT_IN_P : (Stream*)GRAEHL__DEFAULT_OUT_P);
+        else if (!file_only && !read && s== "-2")
+            set((Stream *)GRAEHL__DEFAULT_LOG_P);
+        else if (null_allowed && s == "-0")
+            set(NULL);
+        else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
+            if (read)
+                set<igzstream>(s,"Couldn't open compressed input file ");
+            else
+                set<ogzstream>(s,"Couldn't create compressed output file ");
+            } else {
+                if (read)
+                    set<std::ifstream>(s,"Couldn't open compressed input file ");
+                else
+                    set<std::ofstream>(s,"Couldn't create compressed output file ");
+            }
+            name=s;
+        }
+    
+    file_arg(Stream &s,std::string const& name) :
+        pointer_type(*s,null_deleter()),name(name) {}
+    
+    template <class Stream2>
+    file_arg(file_arg<Stream2> const& o) :
+        pointer_type(o.pointer()),name(o.name) {}    
+
+    bool is_none() const
+    { return !pointer(); }
+    
+    void set_none() const
+    { pointer().reset(0);name=""; }
+    
+    bool is_default_in() const {
+        return pointer().get() == GRAEHL__DEFAULT_IN_P; }
+    
+    bool is_default_out() const {
+        return pointer().get() == GRAEHL__DEFAULT_OUT_P; }
+    
+    bool is_default_log() const {
+        return pointer().get() == GRAEHL__DEFAULT_LOG_P; }
+    
+    pointer_type &pointer() { return *this; }
+    pointer_type const& pointer() const { return *this; }
+
+    bool valid() const
+    {
+        return !is_none() && stream();
+    }
+    
+    Stream &stream() const
+    {
+        return *pointer();
+    }
+    operator Stream &() const
+    {
+        return stream();
+    }
+    template<class O>
+    friend O& operator <<(O &o,file_arg<Stream> const& me)
+    {
+        o << me.name;
+        return o;
+    }
+    template<class C,class T>
+    friend std::basic_istream<C,T>& operator >>(std::basic_istream<C,T> &i,file_arg<Stream> & me)
+    {
+        std::string name;
+        i>>name;
+        me.set(name);
+        return i;
+    }
+};
+
+typedef file_arg<std::istream> istream_arg;
+typedef file_arg<std::ostream> ostream_arg;
+typedef file_arg<std::ifstream> ifstream_arg;
+typedef file_arg<std::ofstream> ofstream_arg;
+
+typedef boost::shared_ptr<std::istream> Infile;
+typedef boost::shared_ptr<std::ostream> Outfile;
+typedef boost::shared_ptr<std::ifstream> InDiskfile;
+typedef boost::shared_ptr<std::ofstream> OutDiskfile;
+
 static Infile default_in(GRAEHL__DEFAULT_IN_P,null_deleter());
 static Outfile default_log(GRAEHL__DEFAULT_LOG_P,null_deleter());
 static Outfile default_out(GRAEHL__DEFAULT_OUT_P,null_deleter());
@@ -76,14 +206,19 @@ static InDiskfile default_in_disk_none;
 static OutDiskfile default_out_disk_none;
 
 inline bool is_default_in(const Infile &i) {
-    return i.get() == GRAEHL__DEFAULT_IN_P;
-}
+    return i.get() == GRAEHL__DEFAULT_IN_P; }
+
 inline bool is_default_out(const Outfile &o) {
-    return o.get() == GRAEHL__DEFAULT_OUT_P;
-}
+    return o.get() == GRAEHL__DEFAULT_OUT_P; }
+
 inline bool is_default_log(const Outfile &o) {
-    return o.get() == GRAEHL__DEFAULT_LOG_P;
-}
+    return o.get() == GRAEHL__DEFAULT_LOG_P; }
+
+inline bool is_none(const Infile &i) 
+{ return i.get()==NULL; }
+
+inline bool is_none(const Outfile &o) 
+{ return o.get()==NULL; }
 
 struct tee_file 
 {
@@ -93,14 +228,14 @@ struct tee_file
     {
         if (file) {
             teebufptr.reset(
-                            new graehl::teebuf(file->rdbuf(),other_output.rdbuf()));
+                new graehl::teebuf(file->rdbuf(),other_output.rdbuf()));
             teestreamptr.reset(
-                               log_stream=new std::ostream(teebufptr.get()));
+                log_stream=new std::ostream(teebufptr.get()));
         } else {
             log_stream=&other_output;
         }
     }
-    Outfile file; // can set this directly, then call init.  if unset, then don't tee.
+    ostream_arg file; // can set this directly, then call init.  if unset, then don't tee.
     
     std::ostream &stream() const
     { return *log_stream; }
@@ -114,61 +249,33 @@ struct tee_file
 };
 
 template <class Stream>
-inline bool valid(boost::shared_ptr<Stream> const&pfile)
+inline bool valid(boost::shared_ptr<Stream> const& pfile)
 {
     return pfile && *pfile;
 }
 
 template <class C>
-inline bool throw_unless_valid(C const&pfile, std::string const& name="file") 
+inline bool throw_unless_valid(C const& pfile, std::string const& name="file") 
 {
     if (!valid(pfile))
         throw std::runtime_error(name+" not valid");
 }
 
 template <class C>
-inline bool throw_unless_valid_optional(C const&pfile, std::string const& name="file") 
+inline bool throw_unless_valid_optional(C const& pfile, std::string const& name="file") 
 {
     if (pfile && !valid(pfile))
         throw std::runtime_error(name+" not valid");
 }
 
-
 inline Infile infile(const std::string &s) 
-{
-        if (s == "-") {
-        boost::shared_ptr<std::istream> r(GRAEHL__DEFAULT_IN_P, null_deleter());
-        return (r);
-    } else if (s == "-0") {
-        return default_in_none;
-    } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
-        typedef igzstream igzs;
-        boost::shared_ptr<igzs> r(new igzs(s.c_str()));
-        if (!*r) 
-            throw std::runtime_error(std::string("Could not open compressed input file ").append(s));
-        boost::shared_ptr<std::istream> r2(r);
-        return (r2);
-    } else {   
-        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
-        if (!*r)
-            throw std::runtime_error(std::string("Could not open input file ").append(s));
-        boost::shared_ptr<std::istream> r2(r);
-        return (r2);
-    }
-
+{    
+    return istream_arg(s);
 }
 
 inline InDiskfile indiskfile(const std::string &s)
 {
-    if (s == "-0") {
-        return default_in_disk_none;
-    } else {
-        boost::shared_ptr<std::ifstream> r(new std::ifstream(s.c_str()));
-        if (!*r) {
-            throw std::runtime_error(std::string("Could not open input file ").append(s));
-        }
-        return (r);
-    }
+    return ifstream_arg(s);
 }
 
 namespace fs = boost::filesystem;
@@ -220,42 +327,12 @@ inline std::string output_name_like_cp(const std::string &source,const std::stri
 
 inline Outfile outfile(const std::string &s) 
 {
-    if (s == "-") {
-        boost::shared_ptr<std::ostream> w(GRAEHL__DEFAULT_OUT_P, null_deleter());
-        return (w);
-    } else if ( s== "-2") {
-        boost::shared_ptr<std::ostream> w(GRAEHL__DEFAULT_LOG_P, null_deleter());
-        return (w);
-    } else if (s == "-0") {
-        return default_out_none;
-    } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
-        typedef ogzstream ogzs;
-        boost::shared_ptr<ogzs> w(new ogzs(s.c_str()));
-        if (!*w) 
-            throw std::runtime_error(std::string("Could not create compressed output file ").append(s));
-        boost::shared_ptr<std::ostream> w2(w);
-        return (w2);
-    } else {
-        boost::shared_ptr<std::ofstream> w(new std::ofstream(s.c_str()));
-        if (!*w) {
-            throw std::runtime_error(std::string("Could not create output file ").append(s));
-        }
-        boost::shared_ptr<std::ostream> w2(w);
-        return (w2);
-    }
+    return ostream_arg(s);
 }
 
 inline OutDiskfile outdiskfile(const std::string &s)
 {
-    if (s == "-0") {
-        return default_out_disk_none;
-    } else {
-        boost::shared_ptr<std::ofstream> r(new std::ofstream(s.c_str()));
-        if (!*r) {
-            throw std::runtime_error(std::string("Could not create output file ").append(s));
-        }
-        return (r);
-    }
+    return ofstream_arg(s);
 }
 
 inline std::string const& get_single_arg(boost::any& v,std::vector<std::string> const& values) 
@@ -268,8 +345,8 @@ inline std::string const& get_single_arg(boost::any& v,std::vector<std::string> 
 
 namespace boost {    namespace program_options {
 inline void validate(boost::any& v,
-              const std::vector<std::string>& values,
-              size_t* target_type, int)
+                     const std::vector<std::string>& values,
+                     size_t* target_type, int)
 {
     typedef size_t value_type;
     using namespace graehl;
@@ -282,36 +359,38 @@ inline void validate(boost::any& v,
     return;
 }
 
+#ifdef GRAEHL__VALIDATE_INFILE
 /* Overload the 'validate' function for boost::shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
 inline void validate(boost::any& v,
-              const std::vector<std::string>& values,
-              boost::shared_ptr<std::istream>* target_type, int)
+                     const std::vector<std::string>& values,
+                     boost::shared_ptr<std::istream>* target_type, int)
 {
     v=boost::any(graehl::infile(graehl::get_single_arg(v,values)));
 }
 
 inline void validate(boost::any& v,
-              const std::vector<std::string>& values,
-              boost::shared_ptr<std::ostream>* target_type, int)
+                     const std::vector<std::string>& values,
+                     boost::shared_ptr<std::ostream>* target_type, int)
 {
     v=boost::any(graehl::outfile(graehl::get_single_arg(v,values)));
 }
 
 inline void validate(boost::any& v,
-              const std::vector<std::string>& values,
-              boost::shared_ptr<std::ofstream>* target_type, int)
+                     const std::vector<std::string>& values,
+                     boost::shared_ptr<std::ofstream>* target_type, int)
 {
     v=boost::any(graehl::outdiskfile(graehl::get_single_arg(v,values)));
 }
 
 inline void validate(boost::any& v,
-              const std::vector<std::string>& values,
-              boost::shared_ptr<std::ifstream>* target_type, int)
+                     const std::vector<std::string>& values,
+                     boost::shared_ptr<std::ifstream>* target_type, int)
 {
     v=boost::any(graehl::indiskfile(graehl::get_single_arg(v,values)));
 }
+#endif
 
 }} // boost::program_options
 

@@ -52,13 +52,14 @@ struct word_spacer {
 
 inline std::string space_sep_words(const std::string &sentence,char space=' ')
 {
-    using namespace std;
-    stringstream o;
-    string word;
-    istringstream i(sentence);
+    std::stringstream o;
+    std::string word;
+    std::istringstream i(sentence);
     word_spacer sep(space);
-    while (i >> word)
-        o << sep << word;
+    while (i >> word) {
+        o << sep;
+        o << word; //FIXME: why is this not calling operator <<, but trying to print string OR file_arg?
+    }
     return o.str();
 }
 
@@ -70,9 +71,9 @@ inline int compare_space_normalized(const std::string &a, const std::string &b)
 
 //!< print before word.
 template <char sep=' '>
-struct WordSeparator {
+struct word_spacer_c {
     bool first;
-    WordSeparator() : first(true) {}
+    word_spacer_c() : first(true) {}
     void reset() 
     {
         first=true;
@@ -85,7 +86,7 @@ struct WordSeparator {
         else
             o << sep;
     }
-    typedef WordSeparator<sep> Self;
+    typedef word_spacer_c<sep> Self;
     static const char seperator=sep;
     template <class O> friend inline O& operator<<(O& o,Self &me) 
     {

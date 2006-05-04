@@ -6,13 +6,18 @@
 #include <sstream>
 #include <vector>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#include <cstring>
+#endif
+
 namespace graehl {
 
 template <class Ch, class Tr>
 inline std::basic_ostream<Ch,Tr> & print_command_line(std::basic_ostream<Ch,Tr> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
     if (header)
         out << header;
-    WordSeparator<' '> sep;
+    graehl::word_spacer_c<' '> sep;
     for (int i=0;i<argc;++i) {
         out << sep;
         out_shell_quote(out,argv[i]);
@@ -88,6 +93,37 @@ struct argc_argv : private std::stringbuf
         parse(cmdline);
     }
 };
+
+#ifdef TEST
+char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
+char *split_strs[]={"",",a","",0};
+char *seps[]={";",";;",",,","   ","=,",",=",0};
+
+BOOST_AUTO_UNIT_TEST( TEST_command_line )
+{
+    using namespace std;
+    {        
+        string opts="ba a \"b c\" 'd' ' e f ' 123";
+        argc_argv args(opts);
+        BOOST_CHECK_EQUAL(args.argc(),7);        
+        for (unsigned i=1;i<args.argc();++i) {
+            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
+        }    
+    }
+    {        
+        string opts=" ba a \"\\b c\" 'd' ' e f '123 ";
+        argc_argv args(opts);
+        BOOST_CHECK_EQUAL(args.argc(),7);
+        for (unsigned i=1;i<args.argc();++i) {
+            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
+        }    
+    }
+    {
+        argc_argv args("");
+        BOOST_CHECK_EQUAL(args.argc(),1);
+    }    
+}
+#endif
 
 } //graehl
 

@@ -69,6 +69,8 @@
 #include <boost/config/abi_prefix.hpp>     // Must be the last header.
 
 
+namespace graehl {
+
 struct mapped_file : boost::noncopyable {
 private:
     struct safe_bool_helper { int x; };         // From Bronek Kozicki.
@@ -366,5 +368,6 @@ BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
 
 #endif
 
+}
 #endif
 

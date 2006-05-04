@@ -6,6 +6,8 @@
 #include <fstream>
 #include <graehl/shared/byref.hpp>
 
+namespace graehl {
+
 template <class C>
 struct checkpoint_istream_control;
 
@@ -82,5 +84,5 @@ struct checkpoint_istream : public std::fstream {
     }
 };
 */
-
+}
 #endif

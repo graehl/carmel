@@ -2,9 +2,11 @@
 #define MEMORY_STATS_HPP
 
 #include <cstdlib>
+#include <malloc.h>
 #include <graehl/shared/io.hpp>
-#include <graehl/shared/malloc.h>
+#include <graehl/shared/size_mega.hpp>
 
+namespace graehl {
 
 typedef struct mallinfo malloc_info;
 
@@ -51,18 +53,18 @@ struct memory_stats  {
 inline memory_stats operator - (memory_stats after,memory_stats before) 
 {
     memory_stats ret;
-#define MEMSTAT_DIFF(field) ret.info.field=after.info.field-before.info.field
-MEMSTAT_DIFF(arena);    /* total space allocated from system */
-MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
-MEMSTAT_DIFF(smblks);   /* unused -- always zero */
-MEMSTAT_DIFF(hblks);    /* number of mmapped regions */
-MEMSTAT_DIFF(hblkhd);   /* total space in mmapped regions */
-MEMSTAT_DIFF(usmblks);  /* unused -- always zero */
-MEMSTAT_DIFF(fsmblks);  /* unused -- always zero */
-MEMSTAT_DIFF(uordblks); /* total allocated space */
-MEMSTAT_DIFF(fordblks); /* total non-inuse space */
-MEMSTAT_DIFF(keepcost); /* top-most, releasable (via malloc_trim) space */
-#undef MEMSTAT_DIFF
+#define GRAEHL__MEMSTAT_DIFF(field) ret.info.field=after.info.field-before.info.field
+GRAEHL__MEMSTAT_DIFF(arena);    /* total space allocated from system */
+GRAEHL__MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
+GRAEHL__MEMSTAT_DIFF(smblks);   /* unused -- always zero */
+GRAEHL__MEMSTAT_DIFF(hblks);    /* number of mmapped regions */
+GRAEHL__MEMSTAT_DIFF(hblkhd);   /* total space in mmapped regions */
+GRAEHL__MEMSTAT_DIFF(usmblks);  /* unused -- always zero */
+GRAEHL__MEMSTAT_DIFF(fsmblks);  /* unused -- always zero */
+GRAEHL__MEMSTAT_DIFF(uordblks); /* total allocated space */
+GRAEHL__MEMSTAT_DIFF(fordblks); /* total non-inuse space */
+GRAEHL__MEMSTAT_DIFF(keepcost); /* top-most, releasable (via malloc_trim) space */
+#undef GRAEHL__MEMSTAT_DIFF
 return ret;
 //    using namespace memory_stats_detail;
 //    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
@@ -73,5 +75,6 @@ inline std::ostream &operator << (std::ostream &o, const memory_stats &s) {
     return o << "["<<s.program_allocated()<<" allocated, " << s.system_allocated() << " from system, "<<s.memory_mapped()<<" memory mapped]";
 }
 
+}//graehl
 
 #endif

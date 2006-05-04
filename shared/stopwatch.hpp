@@ -5,6 +5,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+namespace graehl {
+
 class stopwatch
 {
  public:
@@ -138,6 +140,7 @@ class stopwatch
 //    std::vector<double> totals;
 };
 
+}//graehl
 
 #endif
 

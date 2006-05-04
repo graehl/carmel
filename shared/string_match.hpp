@@ -5,6 +5,15 @@
 #include <string>
 #include <iterator>
 
+//#define TOKENIZE_KEY_VAL_DEBUG
+
+#ifdef TOKENIZE_KEY_VAL_DEBUG
+# include <graehl/shared/debugprint.hpp>
+# define TOKENIZE_KEY_VAL_IF_DBG(a) a;
+#else
+# define TOKENIZE_KEY_VAL_IF_DBG(a)
+#endif
+
 namespace graehl {
 
 // returns true and writes pos,n for substring between left-right brackets.  or false if brackets not found.
@@ -322,6 +331,43 @@ void push_back_until(const std::string &term,In &in,Cont & cont)
     parse_until(term,in,make_push_backer(cont));
 }
 
+template <class F>
+void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':') 
+{
+    typedef typename F::key_type Key;
+    typedef typename F::data_type Data;
+    using namespace std;    
+    typedef pair<Key,Data> Component;
+    typedef pair<Key,Data> Component;
+    typedef string::size_type Pos;
+    typedef string::const_iterator It;
+    Component to_add;
+    for (It i=s.begin(),e=s.end();;) {
+        for(It key_beg=i; ;++i) {
+            if (i==e) return;
+            TOKENIZE_KEY_VAL_IF_DBG(DBP2(*i,i-s.begin()));
+            if (*i == key_val_sep) { // [last,i) is key
+                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("key",string(key_beg,i)));
+                string_into(string(key_beg,i),to_add.first);
+                break; // done key, expect val
+            }
+        }
+        for (It val_beg=++i; ;++i) {
+            TOKENIZE_KEY_VAL_IF_DBG(
+                if (i==e) DBPC2("<END>",i-s.begin());                    
+                DBP2(*i,i-s.begin());
+                );
+            if (i == e || *i == pair_sep) {
+                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("val",string(val_beg,i)));
+                string_into(string(val_beg,i),to_add.second);
+                f(to_add);
+                if (i==e) return;
+                ++i;
+                break; // next key/val
+            }
+        }
+    }
+}
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>

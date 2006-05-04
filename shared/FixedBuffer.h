@@ -8,12 +8,14 @@
 # include <cstring>
 # endif
 
+namespace graehl {
+
 template <class T,bool PlainData=false>
 // no bounds checking or growing ...
-struct FixedBuffer {
+struct fixed_buffer {
     T *m_begin;
     T *m_end;
-    FixedBuffer(size_t sz) : m_begin((T*)::operator new(sizeof(T)*sz)),m_end(m_begin) {
+    fixed_buffer(size_t sz) : m_begin((T*)::operator new(sizeof(T)*sz)),m_end(m_begin) {
 //        INFOL(99,"FixedBuffer","New buffer of " << sz << " elements sized " << sizeof(T) << " bytes.");
 # if ASSERT_LVL > 100
         std::memset(m_begin,0x77,sizeof(T)*sz);
@@ -57,7 +59,7 @@ struct FixedBuffer {
     ptrdiff_t size() const {
         return m_end-m_begin;
     }
-    ~FixedBuffer() {
+    ~fixed_buffer() {
         ::operator delete(m_begin);
     }
     void clear() {
@@ -83,10 +85,10 @@ struct FixedBuffer {
 
 template <class T,size_t sz,bool PlainData=false>
 // no bounds checking or growing ...
-struct ConstSizeBuffer {
+struct fixed_buffer_c {
     char m_begin[sz*sizeof(T)];
     T *m_end;
-    ConstSizeBuffer() : m_end((T*)m_begin) {
+    fixed_buffer_c() : m_end((T*)m_begin) {
 # if ASSERT_LVL > 100
         std::memset(m_begin,0x77,sizeof(T)*sz);
 # endif
@@ -162,6 +164,6 @@ struct ConstSizeBuffer {
     }
 };
 
-
+}//graehl
 
 #endif

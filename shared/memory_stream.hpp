@@ -11,6 +11,8 @@
 #include <string>
 #include <utility>
 
+namespace graehl {
+
 template <typename cT,
           typename traits = std::char_traits<cT> >
 class basic_memory_streambuf:
@@ -178,5 +180,8 @@ BOOST_AUTO_UNIT_TEST( TEST_memory_stream )
 //    TEST_check_memory_stream(o1,buf,N);    
 }
 
-#endif 
+#endif
+
+}
+
 #endif

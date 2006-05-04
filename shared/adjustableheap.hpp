@@ -7,6 +7,8 @@
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/dummy.hpp>
 
+namespace graehl {
+
 //! NOTE: key to only SetLocWeight according to a stack discipline - cannot leave multiple instances around using heap allocation!
 
 //! NOTE: default comparison direction is reversed ... making max-heaps into min-heaps (as desired for best-tree) and vice versa
@@ -111,5 +113,6 @@ BOOST_AUTO_UNIT_TEST( TEST_ADJUSTABLEHEAP )
 {
 }
 #endif
+}
 
 #endif

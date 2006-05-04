@@ -47,6 +47,7 @@
 
 #include <graehl/shared/graph.hpp>
 
+namespace graehl {
 
 template <class T>
 struct hypergraph_traits {
@@ -167,5 +168,6 @@ void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
 }
 */
 
+}
 
 #endif

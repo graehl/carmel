@@ -12,6 +12,7 @@
 #include <graehl/shared/test.hpp>
 #endif
 
+namespace graehl {
 
 template <class K>
 struct OffsetMap {
@@ -236,5 +237,6 @@ BOOST_AUTO_UNIT_TEST( PROPERTY )
 {
 }
 #endif
+}
 
 #endif

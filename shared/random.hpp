@@ -32,6 +32,14 @@
 #include <ctime>
 #include <graehl/shared/os.hpp>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#include <cctype>
+#include <graehl/shared/debugprint.hpp>
+#endif
+
+namespace graehl {
+
 inline unsigned default_random_seed()
 {
 //    long pid=get_process_id();
@@ -163,11 +171,6 @@ void randomly_permute(V &vec)
     }
 }
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#include <cctype>
-#include <graehl/shared/debugprint.hpp>
-#endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_RANDOM )
@@ -183,5 +186,6 @@ BOOST_AUTO_UNIT_TEST( TEST_RANDOM )
     }
 }
 #endif
+}
 
 #endif

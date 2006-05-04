@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+namespace graehl {
+
 // returns NULL if k is not in [l,u), otherwise returns iterator pointing to k
 // (assumes [l,u) sorted increasing on <:lt so that lt(l,u))
 template <class R,class K,class L>
@@ -272,5 +274,5 @@ BOOST_AUTO_UNIT_TEST( TEST_indexgraph )
 
 }
 #endif
-
+}
 #endif

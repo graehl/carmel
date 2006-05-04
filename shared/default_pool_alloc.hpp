@@ -1,6 +1,8 @@
 #ifndef DEFAULT_POOL_ALLOC_HPP
 #define DEFAULT_POOL_ALLOC_HPP
 
+namespace graehl {
+
 template <class T,bool destroy=true>
 struct default_pool_alloc {
     std::vector <T *> allocated;
@@ -32,6 +34,8 @@ struct default_pool_alloc {
         return allocated.back();
     }
 };
+
+}
 
 
 #endif

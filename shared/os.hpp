@@ -43,6 +43,7 @@
 # undef max
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
 namespace graehl {
+
 typedef DWORD Error;
 inline long get_process_id() {
     return GetCurrentProcessId();

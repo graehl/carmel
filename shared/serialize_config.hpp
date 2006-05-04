@@ -85,6 +85,8 @@ namespace serial = boost::serialization;
 #include <stdexcept>
 #include <fstream>
 
+namespace graehl {
+
 template <class Archive,class Data,class Ch,class Tr>
 inline void save_to_stream(std::basic_ostream<Ch,Tr> &o,const Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
 {
@@ -117,9 +119,13 @@ inline void load_from_file(const std::string &fname,Data &d, unsigned flags=ARCH
     load_from_stream<Archive>(i,d,flags);
 }
 
-#define load_from_file_default load_from_file<default_iarchive>
-#define save_from_file_default save_to_file<default_oarchive>
-#define load_from_stream_default load_from_stream<default_iarchive>
-#define save_from_stream_default save_to_stream<default_oarchive>
 
+
+}
+
+#define load_from_file_default graehl::load_from_file<default_iarchive>
+#define save_from_file_default graehl::save_to_file<default_oarchive>
+#define load_from_stream_default graehl::load_from_stream<default_iarchive>
+#define save_from_stream_default graehl::save_to_stream<default_oarchive>
+//FIXME: not in namespace; how about some real wrappers?
 #endif

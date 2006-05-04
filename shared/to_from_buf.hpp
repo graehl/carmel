@@ -14,6 +14,9 @@
 
 //DANGER: override this for complex data structures!
 
+
+//FIXME: not sure about precedence between MEMBER_TO_FROM_BUF and these if wrap in namespace graehl
+
 template <class Val,class Db_size>
 inline Db_size to_buf(const Val &data,void *buf,Db_size buflen) 
 {
@@ -48,6 +51,7 @@ inline Db_size from_buf(std::string *pdata,void *buf,Db_size buflen)
     pdata->assign((char *)buf,buflen);
     return pdata->size()+1;
 }
+
 
 #define MEMBER_TO_FROM_BUF     friend unsigned to_buf(const Self &data,void *buffer, unsigned max_size) \
     { return data.to_buf(buffer,max_size); } \

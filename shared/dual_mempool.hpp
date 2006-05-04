@@ -5,6 +5,8 @@
 #include <new>
 #include <stdexcept>
 
+namespace graehl {
+
 // only works for objects whose size is at least sizeof(void *)
 class dual_mempool 
 {
@@ -194,5 +196,7 @@ BOOST_AUTO_UNIT_TEST( TEST_DUAL_MEMPOOL )
     BOOST_CHECK_EQUAL(1,0);
 }
 #endif
+
+}
 
 #endif

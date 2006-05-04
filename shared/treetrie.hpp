@@ -7,8 +7,15 @@
 #include <graehl/shared/indexgraph.hpp>
 #include <graehl/shared/container.hpp>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
+
 // we're going to fix the label type as Symbol for now, and use only index_graph<Symbol,HashS>, not the BSearchS or MapS
 // we use Symbol::phony_int() to handle where and rank nodes.  what is a tree trie?  see NOTES.
+
+namespace graehl {
 
 template <class C>
 bool is_leaf_any_rank(const C& c) {
@@ -179,10 +186,7 @@ struct treetrie {
   }
 };
 
-
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
+}
 
 #ifdef TEST
 #endif

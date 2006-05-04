@@ -4,6 +4,8 @@
 #include <string>
 #include <cstring>
 
+namespace graehl {
+
 /* key type is assumed to be a plain-old-data type (only natural #s work with DB_RECNO)
    Blob (Dbthang) is as specified in Berkeley DB C++ API, but you can plug your own in
        // provides: void key_to_blob(const Key &key,Dbt &dbt) (dbt.set_data(void *);dbt.set_size(Db_size);
@@ -41,7 +43,6 @@ struct blob_from_key
     }
 };
 
-    
-
+}
 
 #endif

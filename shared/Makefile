@@ -5,6 +5,6 @@ test: next
 .PHONY: test
 
 %:
-	cd /cache/syntax-decoder-wei && make $(MAKEFLAGS) $(MAKECMDGOALS) -j 2
+	cd /cache/syntax-decoder-wei && make $(MAKEFLAGS) $(MAKECMDGOALS)
 
 

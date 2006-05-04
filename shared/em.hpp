@@ -12,6 +12,8 @@
 #define LOGPROB_EPSILON numeric_limits<double>::epsilon()
 #endif
 
+namespace graehl {
+
 struct WeightAccum {
         Weight sum;
         int n_nonzero;
@@ -187,5 +189,7 @@ BOOST_AUTO_UNIT_TEST( TEST_EM )
 {
 }
 #endif
+
+}
 
 #endif

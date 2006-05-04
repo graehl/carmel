@@ -1,4 +1,4 @@
-// idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.
+// idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.  Modern CPUs are pretty fast about base+(size*index) access (usually it's free, similar cost to as base or at least base+offset)
 #ifndef POINTEROFFSET_HPP
 #define POINTEROFFSET_HPP
 
@@ -11,6 +11,8 @@
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #endif
+
+namespace graehl {
 
 template <class T>
 inline size_t offset_to_index(const T *a) {
@@ -258,5 +260,7 @@ BOOST_AUTO_UNIT_TEST( TEST_POINTEROFFSET )
 {
 }
 #endif
+
+}
 
 #endif

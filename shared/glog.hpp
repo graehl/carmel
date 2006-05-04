@@ -1,6 +1,6 @@
 // global logging facility
-#ifndef G_LOG_HPP
-#define G_LOG_HPP
+#ifndef GRAEHL__SHARED__GLOG_HPP
+#define GRAEHL__SHARED__GLOG_HPP
 //GLOBAL LOGGING
 //TODO: crib from Debug.h, debugprint.h, use teestream
 
@@ -20,6 +20,7 @@
 #define DEBUG_SEGFAULT
 #endif
 
+namespace graehl {
 
 namespace glog {
     extern unsigned depth;
@@ -60,5 +61,8 @@ namespace glog {
     unsigned depth=0;
     bool disable=false;
 #endif
-};
+}
+
+}
+
 #endif

@@ -30,6 +30,7 @@ struct indirect_gt<size_t,C*> {
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/swapbatch.hpp>
 
+namespace graehl {
 
 //FIXME: leave rules that don't occur in normalization groups alone (use some original/default value)
 template <class Wsource,class Wdest=Wsource>
@@ -305,5 +306,7 @@ BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 //    DBP(w);
 }
 #endif
+
+}
 
 #endif

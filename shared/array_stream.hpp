@@ -13,6 +13,9 @@
 #include <cstddef>
 #include <graehl/shared/debugprint.hpp>
 
+namespace graehl {
+
+
 // doesn't quite work like a streambuf: end of readable area isn't increased when you write, without explicit reset_read(size())
 template<class cT, class Traits = std::char_traits<cT> >
 class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
@@ -431,5 +434,6 @@ BOOST_AUTO_UNIT_TEST( TEST_array_stream )
     TEST_check_memory_stream(o2,buf2,N);
 }
 
-#endif 
+#endif
+}
 #endif

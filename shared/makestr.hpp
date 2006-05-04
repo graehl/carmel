@@ -1,6 +1,6 @@
 // preprocessor macros for building strings out of ostream << "a" << v << "b" - type expressions
-#ifndef MAKESTRING_HPP
-#define MAKESTRING_HPP
+#ifndef GRAEHL__SHARED__MAKESTR_HPP
+#define GRAEHL__SHARED__MAKESTR_HPP
 
 #include <sstream>
 #include <stdexcept>

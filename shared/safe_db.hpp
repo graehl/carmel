@@ -13,6 +13,10 @@
 #include <boost/config.hpp>
 #include <graehl/shared/makestr.hpp>
 
+#ifdef TEST
+# include <graehl/shared/test.hpp>
+# include <graehl/shared/debugprint.hpp>
+#endif 
 //#define DEBUG_SAFEDB
 
 //TODO: use DbEnv (static?) object to allow setting directory for temporary backing files (default is /tmp?)
@@ -27,6 +31,8 @@ ALSO NOTE: db isn't closed when exception thrown
 
 NOT SUPPORTED: DB_QUEUE
 */
+
+namespace graehl {
 
 typedef u_int32_t Db_size;
 typedef db_recno_t Db_recno;
@@ -570,8 +576,6 @@ class safe_db
 };
 
 #ifdef TEST
-# include "test.hpp"
-# include "debugprint.hpp"
 # define CHECKNDATA  BOOST_CHECK_EQUAL(db.n_keys_fast(),n_data);BOOST_CHECK_EQUAL(db.n_keys_fast(),db.n_data_slow())
 template <class SDB>
 void test_safedb_type()
@@ -663,4 +667,6 @@ BOOST_AUTO_UNIT_TEST( TEST_safe_db )
     test_safedb_type<safe_db<DB_RECNO> >();
 }
 #endif
+}
+
 #endif

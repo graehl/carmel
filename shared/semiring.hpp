@@ -1,4 +1,4 @@
-// unused
+// unfinished, unused
 #ifndef SEMIRING_HPP
 #define SEMIRING_HPP
 
