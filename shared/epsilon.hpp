@@ -53,7 +53,7 @@ inline Float slightly_smaller(Float target) {
 
 // note, more meaningful tests exist for values near 0, see Knuth
 // (but for logs, near 0 should be absolute-compared)
-inline bool same_within_abs_epsilon(double a,double b,double epsilon=1e-4) {
+inline bool same_within_abs_epsilon(double a,double b,double epsilon=graehl::EPSILON) {
     return std::fabs(a-b) < epsilon;
 }
 
