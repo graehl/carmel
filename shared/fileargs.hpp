@@ -16,17 +16,18 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <memory>
 
-#ifndef GRAEHL__DEFAULT_IN_P
-#define GRAEHL__DEFAULT_IN_P &std::cin
+#ifndef GRAEHL__DEFAULT_IN
+#define GRAEHL__DEFAULT_IN std::cin
 #endif
 
-#ifndef GRAEHL__DEFAULT_OUT_P
-#define GRAEHL__DEFAULT_OUT_P &std::cout
+#ifndef GRAEHL__DEFAULT_OUT
+#define GRAEHL__DEFAULT_OUT std::cout
 #endif
 
-#ifndef GRAEHL__DEFAULT_LOG_P
-#define GRAEHL__DEFAULT_LOG_P &std::cerr
+#ifndef GRAEHL__DEFAULT_LOG
+#define GRAEHL__DEFAULT_LOG std::cerr
 #endif
 
 
@@ -78,62 +79,92 @@ struct file_arg : public boost::shared_ptr<Stream>
     std::string name;
     typedef boost::shared_ptr<Stream> pointer_type;
     file_arg() {}
-    explicit file_arg(std::string const& s,
-             bool read=stream_traits<Stream>::read,
-             bool file_only=stream_traits<Stream>::file_only)
-    { set(s,read,file_only); }
-
-    void set(Stream *s) 
+    explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL)
+    { set(s,null_allowed); }
+    void throw_fail(std::string const& filename,std::string const& msg="")
     {
-        pointer().reset(s,null_deleter());
-        name="";
+        name=filename;
+        throw std::runtime_error("FAILED("+filename+"): "+msg);
+    }
+
+    enum { DELETE=1,NO_DELETE=0 };
+    
+    void set(Stream &s,std::string const& filename="",bool destroy=NO_DELETE,std::string const& fail_msg="invalid stream") 
+    {
+        if (!s)
+            throw_fail(filename,fail_msg);
+        if (destroy)
+            pointer().reset(&s);
+        else
+            pointer().reset(&s,null_deleter());
+        name=filename;
+    }
+    
+    template <class filestream>
+    void set_checked(filestream &fs,std::string const& filename="",bool destroy=NO_DELETE,std::string const& fail_msg="invalid stream")
+    {
+        try {
+            set(dynamic_cast<Stream &>(fs),filename,destroy,fail_msg);
+        } catch (std::bad_cast &e) {
+            throw_fail(filename," was not of the right stream type");
+        }
     }
     // warning: if you call with incompatible filestream type ... crash!
     template <class filestream>
-    void set(std::string const& filename,char const* fail_msg="Couldn't open file ")
+    void set_new(std::string const& filename,std::string const& fail_msg="Couldn't open file")
     {
-//        boost::shared_ptr<filestream>
-        filestream *f=new filestream(filename.c_str());
-        if (!*f) {
-            delete f;
-            throw std::runtime_error(std::string(fail_msg).append(filename));
-        }
-        
-        pointer().reset((Stream*)f);
-        name=filename;
+        std::auto_ptr<filestream> f(new filestream(filename.c_str()));
+        set_checked(*f,filename,DELETE,fail_msg);
+        f.release(); // w/o delete
     }
     
     enum { ALLOW_NULL=1,NO_NULL=0 };
 
+    void set_gzfile(std::string const&s)
+    {
+        const bool read=stream_traits<Stream>::read;
+        std::string fail_msg="Couldn't open compressed input file";
+        try {
+            if (read) {
+                set_new<igzstream>(s,fail_msg);
+            } else {
+                fail_msg="Couldn't create compressed output file";
+                set_new<ogzstream>(s,fail_msg);
+            }
+        } catch (std::exception &e) {
+            fail_msg.append(" - exception: ").append(e.what());
+            throw_fail(s,fail_msg);
+        }
+    }
+    
     // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
     void set(std::string const& s,
-             bool null_allowed=ALLOW_NULL,
-             bool read=stream_traits<Stream>::read,
-             bool file_only=stream_traits<Stream>::file_only)
+             bool null_allowed=ALLOW_NULL)
     {
-        if (s.empty())
-            throw std::runtime_error("Tried to make file_arg stream from empty filename");
-        if (!file_only && s == "-")
-            set(read ? (Stream*)GRAEHL__DEFAULT_IN_P : (Stream*)GRAEHL__DEFAULT_OUT_P);
-        else if (!file_only && !read && s== "-2")
-            set((Stream *)GRAEHL__DEFAULT_LOG_P);
-        else if (null_allowed && s == "-0")
-            set(NULL);
-        else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
+        const bool read=stream_traits<Stream>::read;
+        const bool file_only=stream_traits<Stream>::file_only;
+        if (s.empty()) {
+            throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");            
+        } if (!file_only && s == "-") {
             if (read)
-                set<igzstream>(s,"Couldn't open compressed input file ");
+                set_checked(GRAEHL__DEFAULT_IN,s);
             else
-                set<ogzstream>(s,"Couldn't create compressed output file ");
-            } else {
-                if (read)
-                    set<std::ifstream>(s,"Couldn't open compressed input file ");
-                else
-                    set<std::ofstream>(s,"Couldn't create compressed output file ");
-            }
-            name=s;
+                set_checked(GRAEHL__DEFAULT_OUT,s);
+        } else if (!file_only && !read && s== "-2")
+            set_checked(GRAEHL__DEFAULT_LOG,s);
+        else if (null_allowed && s == "-0")
+            set_none();
+        else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
+            set_gzfile(s);
+        } else {
+            if (read)
+                set_new<std::ifstream>(s,"Couldn't open input file");
+            else
+                set_new<std::ofstream>(s,"Couldn't create output file");
         }
+    }
     
-    file_arg(Stream &s,std::string const& name) :
+    explicit file_arg(Stream &s,std::string const& name) :
         pointer_type(*s,null_deleter()),name(name) {}
     
     template <class Stream2>
@@ -143,17 +174,17 @@ struct file_arg : public boost::shared_ptr<Stream>
     bool is_none() const
     { return !pointer(); }
     
-    void set_none() const
-    { pointer().reset(0);name=""; }
+    void set_none()
+    { pointer().reset();name="-0"; }
     
     bool is_default_in() const {
-        return pointer().get() == GRAEHL__DEFAULT_IN_P; }
+        return pointer().get() == &GRAEHL__DEFAULT_IN; }
     
     bool is_default_out() const {
-        return pointer().get() == GRAEHL__DEFAULT_OUT_P; }
+        return pointer().get() == &GRAEHL__DEFAULT_OUT; }
     
     bool is_default_log() const {
-        return pointer().get() == GRAEHL__DEFAULT_LOG_P; }
+        return pointer().get() == &GRAEHL__DEFAULT_LOG; }
     
     pointer_type &pointer() { return *this; }
     pointer_type const& pointer() const { return *this; }
@@ -166,10 +197,6 @@ struct file_arg : public boost::shared_ptr<Stream>
     Stream &stream() const
     {
         return *pointer();
-    }
-    operator Stream &() const
-    {
-        return stream();
     }
     template<class O>
     friend O& operator <<(O &o,file_arg<Stream> const& me)
@@ -197,22 +224,22 @@ typedef boost::shared_ptr<std::ostream> Outfile;
 typedef boost::shared_ptr<std::ifstream> InDiskfile;
 typedef boost::shared_ptr<std::ofstream> OutDiskfile;
 
-static Infile default_in(GRAEHL__DEFAULT_IN_P,null_deleter());
-static Outfile default_log(GRAEHL__DEFAULT_LOG_P,null_deleter());
-static Outfile default_out(GRAEHL__DEFAULT_OUT_P,null_deleter());
+static Infile default_in(&GRAEHL__DEFAULT_IN,null_deleter());
+static Outfile default_log(&GRAEHL__DEFAULT_LOG,null_deleter());
+static Outfile default_out(&GRAEHL__DEFAULT_OUT,null_deleter());
 static Infile default_in_none;
 static Outfile default_out_none;
 static InDiskfile default_in_disk_none;
 static OutDiskfile default_out_disk_none;
 
 inline bool is_default_in(const Infile &i) {
-    return i.get() == GRAEHL__DEFAULT_IN_P; }
+    return i.get() == &GRAEHL__DEFAULT_IN; }
 
 inline bool is_default_out(const Outfile &o) {
-    return o.get() == GRAEHL__DEFAULT_OUT_P; }
+    return o.get() == &GRAEHL__DEFAULT_OUT; }
 
 inline bool is_default_log(const Outfile &o) {
-    return o.get() == GRAEHL__DEFAULT_LOG_P; }
+    return o.get() == &GRAEHL__DEFAULT_LOG; }
 
 inline bool is_none(const Infile &i) 
 { return i.get()==NULL; }

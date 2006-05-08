@@ -80,8 +80,8 @@ gzstreambuf * gzstreambuf::close() {
 void gzstreambuf::handle_gzerror() {
     int errnum;
     const char *errmsg=gzerror(file,&errnum);
-    throw std::runtime_error(errmsg);    
-//    if (errnum==Z_DATA_ERROR) throw runtime_error("CRC error reading gzip");
+    if (errnum==Z_DATA_ERROR) errmsg="CRC error reading gzip";
+    throw std::runtime_error(std::string("gzstreambuf error: ")+errmsg);    
 }
 
 
