@@ -193,6 +193,11 @@ struct file_arg : public boost::shared_ptr<Stream>
     {
         return !is_none() && stream();
     }
+    friend
+    bool valid(file_arg<Stream> const& f)
+    {
+        return f.valid();
+    }
     
     Stream &stream() const
     {
