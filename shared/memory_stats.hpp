@@ -71,9 +71,37 @@ return ret;
 }
 
 inline std::ostream &operator << (std::ostream &o, const memory_stats &s) {
-    typedef size_mega<false> sz;
     return o << "["<<s.program_allocated()<<" allocated, " << s.system_allocated() << " from system, "<<s.memory_mapped()<<" memory mapped]";
 }
+
+struct memory_report
+{
+    std::ostream &o;
+    std::string desc;
+    memory_stats before;
+    bool reported;
+    memory_report(std::ostream &o,std::string const& desc="memory used: ")
+        : o(o),desc(desc),reported(false) {}
+    void report()
+    {
+        memory_stats after;
+        memory_stats::size_type pre=before.program_allocated();
+        memory_stats::size_type post=after.program_allocated();
+        o << desc;
+        if (post > pre) {
+            o << "+" << post-pre;
+        } else
+            o << "-" << pre-post;
+        o << " (" << pre << " => " << post << ")\n";
+        reported=true;
+    }
+    ~memory_report()
+    {
+        if (!reported)
+            report();
+    }   
+};
+    
 
 }//graehl
 
