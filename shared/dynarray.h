@@ -30,7 +30,7 @@
 #include <iterator>
 #include <boost/config.hpp>
 
-#ifdef DYNAMIC_ARRAY_EXTRA_ASSERT
+#ifdef GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT
 # define dynarray_assert(x) assert(x)
 #else 
 # define dynarray_assert(x)
@@ -38,7 +38,6 @@
 //#include <boost/type_traits.hpp>
 
 namespace graehl {
-
 
 // doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length
 // allowed.  you must construct and deconstruct elements yourself.  raw dynamic
