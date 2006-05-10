@@ -23,7 +23,7 @@ struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
             }
         };
 
-            template <class T>            
+    template <class T>            
         static
         void typed_print_template(Ostream &o,boost::any const& t)
     {
@@ -155,7 +155,8 @@ define GRAEHL__SHOWING(name)\
            , SHOW_EMPTY=0x2
            , SHOW_DESCRIPTION=0x4
            ,  SHOW_HIERARCHY=0x8
-           ,  SHOW_ALL=0xFFFF
+           ,  SHOW_ALL=0x0FFF
+           ,  SHOW_HELP=0x1000
     };  
         
     void print(Ostream &o,
@@ -166,6 +167,7 @@ define GRAEHL__SHOWING(name)\
         const bool show_description=show_flags & SHOW_DESCRIPTION;
         const bool hierarchy=show_flags & SHOW_HIERARCHY;
         const bool show_empty=show_flags & SHOW_EMPTY;
+        const bool show_help=show_flags & SHOW_HELP;
         
         using namespace boost::program_options;
         using namespace std;
@@ -173,6 +175,8 @@ define GRAEHL__SHOWING(name)\
         for (typename options_type::iterator i=pr_options.begin(),e=pr_options.end();
              i!=e;++i) {
             printable_option & opt=*i;
+            if (!show_help && opt.name()=="help")
+                continue;
             if (hierarchy and opt.in_group)
                 continue;
             variable_value const & var=vm[opt.vmkey()];
@@ -182,7 +186,7 @@ define GRAEHL__SHOWING(name)\
                 continue;
             if (show_description)
                 o << "# " << opt.description() << endl;
-            print_option(o,opt,var);
+                print_option(o,opt,var);
             o << endl;
         }
         o << endl;
@@ -191,8 +195,37 @@ define GRAEHL__SHOWING(name)\
                  i!=e;++i)
                 (*i)->print(o,vm,show_flags);
     }
+
+/// parses arguments, then stores/notifies from opts->vm.  returns unparsed
+/// options and positional arguments, but if not empty, throws exception unless
+/// allow_unrecognized_positional is true
+    std::vector<std::string>
+    parse_options(int argc,char *argv[],
+                  boost::program_options::variables_map &vm,
+                  boost::program_options::positional_options_description *po=NULL,
+                  bool allow_unrecognized_positional=false,
+                  bool allow_unrecognized_opts=false)
+    {
+        using namespace boost::program_options;
+        using namespace std;
+        command_line_parser cl(argc,argv);
+        cl.options(*this);
+        if (po)
+            cl.positional(*po);
+        if (allow_unrecognized_opts)
+            cl.allow_unregistered();
+        parsed_options parsed=cl.run();
+        vector<string> unparsed=collect_unrecognized(parsed.options,
+                                                     po ? exclude_positional : include_positional);
+        if (!allow_unrecognized_positional) {
+            if (!unparsed.empty())
+                throw std::runtime_error("Unrecognized argument: "+unparsed.front());
+        }
+        store(parsed,vm);
+        notify(vm);
+        return unparsed;
+    }
     
-        
  private:
     groups_type groups;
     options_type pr_options;
@@ -210,35 +243,6 @@ define GRAEHL__SHOWING(name)\
         return od;
     }
 };
-
-/// parses arguments, then stores/notifies from opts->vm.  returns unparsed
-/// options and positional arguments, but if not empty, throws exception unless
-/// allow_unrecognized_positional is true
-template <class Ostream>
-std::vector<std::string>
-handle_options(int argc,char *argv[],
-               printable_options_description<Ostream> const& opts,
-               boost::program_options::variables_map &vm,
-               bool allow_unrecognized_positional=false,
-               bool allow_unrecognized_opts=false)
-{
-    using namespace boost::program_options;
-    using namespace std;
-    command_line_parser cl(argc,argv);
-    cl.options(opts);
-    if (allow_unrecognized_opts)
-        cl.allow_unregistered();
-    parsed_options parsed=cl.run();
-    vector<string> unparsed=collect_unrecognized(parsed.options, include_positional);
-    if (!allow_unrecognized_positional) {
-        if (!unparsed.empty())
-            throw std::runtime_error("Unrecognized argument: "+unparsed.front());
-    }
-    store(parsed,vm);
-    notify(vm);
-    return unparsed;
-}
-
 
 } //graehl
 
