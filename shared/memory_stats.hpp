@@ -85,13 +85,14 @@ struct memory_report
     void report()
     {
         memory_stats after;
-        memory_stats::size_type pre=before.program_allocated();
-        memory_stats::size_type post=after.program_allocated();
+        typedef memory_stats::size_type S;
+        S pre=before.program_allocated();
+        S post=after.program_allocated();
         o << desc;
         if (post > pre) {
-            o << "+" << post-pre;
+            o << "+" << S(post-pre);
         } else
-            o << "-" << pre-post;
+            o << "-" << S(pre-post);
         o << " (" << pre << " => " << post << ")\n";
         reported=true;
     }
