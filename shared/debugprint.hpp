@@ -1,9 +1,9 @@
 // dbgout(out,var) function with default implementation; DB* convenience macros.  nested debug dumps.
-#ifndef DEBUGPRINT_HPP
-#define DEBUGPRINT_HPP
+#ifndef GRAEHL__SHARED__DEBUGPRINT_HPP
+#define GRAEHL__SHARED__DEBUGPRINT_HPP
 
 #ifdef GRAEHL__SINGLE_MAIN
-#define DEBUG_PRINT_MAIN
+#define GRAEHL__DEBUG_PRINT_MAIN
 #endif
 
 #ifdef DEBUG
@@ -158,12 +158,12 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 
 #ifdef _MSC_VER
 #include <windows.h>
-#define DBPSS(a) do { (OutputDebugString((const char *)((a).c_str()))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
-#define DBPS(a) do { (OutputDebugString((const char *)(a))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
+#define DBPSS(a) do { (OutputDebugString((const char *)((a).c_str()))); if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
+#define DBPS(a) do { (OutputDebugString((const char *)(a))); if (DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
 
 #else
-#define DBPSS(a) do { if (DBP::logstream) *DBP::logstream << (a); } while(0)
-#define DBPS(a) do { if (DBP::logstream) *DBP::logstream << (a); } while(0)
+#define DBPSS(a) do { if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
+#define DBPS(a) do { if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
 #endif
 
 #include <boost/preprocessor/stringize.hpp>
@@ -175,36 +175,36 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 #  define BOOST_PP_STRINGIZE(L) MAKESTRING(STRINGIZE, L )
 # endif
 # endif
-#define LINESTR dbgstr(__LINE__)
+#define LINESTR graehl::dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 
-#define DBPRE DBP::print_indent();DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
+#define DBPRE graehl::DBP::print_indent();DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
 #define DBPOST DBPS("\n")
 
 #define SDBPOST(o) o << std::endl
 
-#define SDBPRE(o) DBP::print_indent(o);o << __FILE__ ":" << LINESTR<<":"
-#define SBDBP(o,a) do { if (1) { DBPS(" " #a "=_<");o << dbgstr(a);DBPS(">_");  }} while(0)
-#define BDBP(a) do { if (1) { DBPS(" " #a "=_<");DBPSS(dbgstr(a));DBPS(">_");  }} while(0)
-#define BDBPW(a,w) do { if (1) { DBPS(" " #a "=_<");DBPSS(dbgstr(a,w));DBPS(">_");  }} while(0)
+#define SDBPRE(o) graehl::DBP::print_indent(o);o << __FILE__ ":" << LINESTR<<":"
+#define SBDBP(o,a) do { if (1) { DBPS(" " #a "=_<");o << graehl::dbgstr(a);DBPS(">_");  }} while(0)
+#define BDBP(a) do { if (1) { DBPS(" " #a "=_<");DBPSS(graehl::dbgstr(a));DBPS(">_");  }} while(0)
+#define BDBPW(a,w) do { if (1) { DBPS(" " #a "=_<");DBPSS(graehl::dbgstr(a,w));DBPS(">_");  }} while(0)
 
 #define DBPW(a,w) do { if (DBPISON) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
 #ifdef GRAEHL__DEBUG_PRINT
-#define DBP_IN ++DBP::depth
-#define DBP_OUT if (!DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
-#define DBP_SCOPE DBP::scopedepth DBP9423scopedepth ## __LINE__
+#define DBP_IN ++graehl::DBP::depth
+#define DBP_OUT if (!graehl::DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --graehl::DBP::DBPdepth
+#define DBP_SCOPE graehl::DBP::scopedepth DBP9423scopedepth ## __LINE__
 
-#define DBP_ENABLE(x) SetLocal<bool> DBPenablescope_line_## __LINE__(DBP::disable,!x)
+#define DBP_ENABLE(x) graehl::SetLocal<bool> DBPenablescope_line_## __LINE__(graehl::DBP::disable,!x)
 #define DBP_OFF DBP_ENABLE(false)
 #define DBP_ON DBP_ENABLE(true)
 
-#define DBP_VERBOSE(x) SetLocal<int> DBPverbosescope_line_ ## __LINE__(DBP::current_chat,(x))
-#define DBP_INC_VERBOSE SetLocal<int> DBPverbosescope_line_ ## __LINE__(DBP::current_chat,DBP::current_chat+1)
-#define DBP_ADD_VERBOSE(x) SetLocal<int> DBPverbosescope_line_ ## __LINE__ (DBP::current_chat,DBP::current_chat+(x))
+#define DBP_VERBOSE(x) SetLocal<int> DBPverbosescope_line_ ## __LINE__(graehl::DBP::current_chat,(x))
+#define DBP_INC_VERBOSE graehl::SetLocal<int> DBPverbosescope_line_ ## __LINE__(graehl::DBP::current_chat,graehl::DBP::current_chat+1)
+#define DBP_ADD_VERBOSE(x) graehl::SetLocal<int> DBPverbosescope_line_ ## __LINE__ (graehl::DBP::current_chat,graehl::DBP::current_chat+(x))
 
 
-#define DBPISON DBP::is_enabled()
+#define DBPISON graehl::DBP::is_enabled()
 
 
 #define DBP(a) do { if (DBPISON) { DBPRE; BDBP(a);DBPOST;  }} while(0)
@@ -213,8 +213,8 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 #define DBP4(a,b,c,d) do { if (DBPISON) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); DBPOST; }} while(0)
 #define DBP5(a,b,c,d,e) do { if (DBPISON) { DBPRE; BDBP(a); BDBP(b); BDBP(c); BDBP(d); BDBP(e); DBPOST; }} while(0)
 
-//#define DBP2(a,p) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a,p));   }} while(0)
-//#define DBP(a) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(dbgstr(a));  }} while(0)
+//#define DBP2(a,p) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(graehl::dbgstr(a,p));   }} while(0)
+//#define DBP(a) do { if (DBPISON) { DBPS(DBPRE(a,__FILE__,__LINE__)  #a " = ");DBPSS(graehl::dbgstr(a));  }} while(0)
 
 #define DBPC(msg) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); DBPOST;  }} while(0)
 #define DBPC2(msg,a) do { if (DBPISON) { DBPRE; DBPS(" (" msg ")"); BDBP(a); DBPOST;  }} while(0)
