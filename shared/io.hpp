@@ -1,19 +1,16 @@
 // helpful template functions related to input/output.  important concept: Reader and Writer-two argument functors read(in,val) and write(out,val)
-#ifndef IO_HPP
-#define IO_HPP
+#ifndef GRAEHL__SHARED__IO_HPP
+#define GRAEHL__SHARED__IO_HPP
 
 #include <graehl/shared/genio.h>
 #include <graehl/shared/funcs.hpp>
 
-#include <locale>
-#include <algorithm>
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <vector>
 #include <iterator>
 #include <graehl/shared/has_print.hpp>
-#include <streambuf>
 #include <iostream>
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/word_spacer.hpp>
@@ -44,121 +41,6 @@ make_bound_printer(O &o)
     return ret;
 }
 
-template <class Ch, class Tr,class Alloc>
-inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
-{
-    ss.clear();
-    ss.seekg(0,std::ios::beg);
-}
-
-struct false_for_all_chars 
-{
-    bool operator()(char c) const {
-        return false;
-    }    
-};
-    
-template <class F>
-struct or_true_for_char : public F {
-    typedef or_true_for_char<F> self;
-    char C;
-    or_true_for_char(char thischar,const F &f=F()) : F(f), C(thischar) {}
-    or_true_for_char(const self &s) : F(s),C(s.C) {}
-    bool operator()(char c) const {
-        return c == C || F::operator()(c);
-    }
-};
-
-template <class F>
-struct or_true_for_chars : public F {
-    typedef or_true_for_chars<F> self;
-    char C1,C2;
-    or_true_for_chars(char c1,char c2,const F &f=F()) : F(f),C1(c1),C2(c2) {}
-    or_true_for_chars(const self &s) : F(s),C1(s.C1),C2(s.C2) {}
-    bool operator()(char c) const {
-        return c == C1 || c == C2 || F::operator()(c);
-    }
-};
-
-// SpecialChar(c) == true or c == escape_char -> escape
-template <class SpecialChar,class Input,class Output>
-inline Output copy_escaping(Input in,Input in_end,Output out,SpecialChar is_special,char escape_char='\\')
-{
-    or_true_for_char<SpecialChar> need_quote(escape_char,is_special);
-    for (;in!=in_end;++in) {
-        char c=*in;
-        if (need_quote(c))
-            *out++=escape_char;
-        *out++=c;
-    }
-    return out;
-}
-
-//todo: template traits - but shouldn't matter for output!
-template <class Ch,class Tr=std::char_traits<Ch> >
-struct printed_stringstream : public std::basic_stringstream<Ch,Tr>
-{
-    typedef std::basic_stringstream<Ch,Tr> stream;
-    typedef std::istreambuf_iterator<Ch,Tr> iterator;    
-    stream& as_stream() 
-    {
-        return *(stream *)this;
-    }
-    const stream& as_stream() const
-    {
-        return *(const stream *)this;
-    }
-    // note: only one begin() can be iterated concurrently (each begin() destroys all current iterators)
-    iterator begin()
-    {
-        rewind(as_stream());
-        return as_stream();
-    }
-    static iterator end()
-    {
-        return iterator();
-    }    
-    template <class Data>
-    printed_stringstream(const Data &data)
-    {
-        as_stream() << data;
-    }
-    template <class CharP>
-    bool has_char(CharP p)  const
-    {
-        return find_if(begin(),end(),p) != end();
-    }
-};
-    
-template <class Data, class Output, class SpecialChar>
-inline Output print_escaping(const Data &data,Output out,SpecialChar is_special=SpecialChar(),char escape_char='\\')
-{
-    printed_stringstream<typename Output::value_type> pr(data);
-    copy_escaping(pr.begin(),pr.end(),out,is_special,escape_char);
-}
-
-// escape_char and quote_char automatically added to escape_inside_quotes
-template <class Data, class Output, class QuoteProtChar,class SpecialChar>
-inline Output print_quoting_if(QuoteProtChar quote_if,const Data &data,Output out,char quote_char='"',SpecialChar escape_inside_quotes=SpecialChar(),char escape_char='\\')
-{
-    printed_stringstream<typename Output::value_type> pr(data);
-    if (pr.has_char(quote_if)) {
-        or_true_for_char<SpecialChar> quote_or_special(quote_char,escape_inside_quotes);
-        *out++=quote_char;
-        out=copy_escaping(pr.begin(),pr.end(),out,quote_or_special,escape_char);
-        *out++=quote_char;
-        return out;
-    } else
-        return std::copy(pr.begin(),pr.end(),out);
-}
-
-// escape_char and quote_char automatically added to is_special
-template <class Data, class Output, class SpecialChar>
-inline Output print_maybe_quoting(const Data &data,Output out,char quote_char='"',SpecialChar is_special=SpecialChar(),char escape_char='\\')
-{
-    return print_quoting_if(or_true_for_chars<SpecialChar>(escape_char,quote_char,is_special),data,out,quote_char,is_special,escape_char);
-}
-
 
 template <class T>
 void extract_from_filename(const char *filename,T &to) {
@@ -170,71 +52,6 @@ void extract_from_filename(const char *filename,T &to) {
     }
 }
 
-class ctype_mod_ws: public std::ctype<char>
-{
- public:
-    enum make_not_anon_14 {
-        ADD,REPLACE,REMOVE
-    };
-    template <class CharPred>
-    ctype_mod_ws(CharPred pred,int mode=REMOVE): std::ctype<char>(get_table(pred,mode)) {}
- private:
-    static inline void clear_space(std::ctype_base::mask& c) { c &= ~space; }
-    static inline void set_space(std::ctype_base::mask& c) { c &= ~space; }
-    template <class CharPred>
-    static std::ctype_base::mask* get_table(CharPred pred,int mode) {
-        static std::ctype_base::mask rc[table_size];
-        std::copy(classic_table(), classic_table() + table_size, rc);
-        if (mode == REPLACE)
-            std::for_each(rc, rc + table_size, clear_space);
-        for(unsigned i=0;i<table_size;++i) {
-            std::ctype_base::mask &m=rc[i];
-            if (pred(i)) {
-                if (mode==REMOVE)
-                    clear_space(m);
-                else
-                    set_space(m);
-            } else {
-                if (mode==REPLACE)
-                    clear_space(m);
-            }
-        }
-        return rc;
-    }
-
-};
-
-template <char C>
-struct true_for_char {
-    bool operator()(char c) const {
-        return c == C;
-    }
-};
-
-//note: you must free the new in locale's ctype! (or minor memory leak)
-template <class CharPred,class Ch, class Tr>
-inline void change_ws(std::basic_istream<Ch,Tr> &in, CharPred pred, int mode=ctype_mod_ws::ADD)
-{
-    std::locale l;
-    ctype_mod_ws *new_traits=new ctype_mod_ws(pred,mode);
-    std::locale new_l(l, new_traits);
-    in.imbue(new_l);
-}
-template <char C,class Ch, class Tr>
-inline void add_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::ADD)
-{
-    change_ws(in,true_for_char<C>(),mode);
-}
-template <char C,class Ch, class Tr>
-inline void replace_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::REPLACE)
-{
-    change_ws(in,true_for_char<C>(),mode);
-}
-template <char C,class Ch, class Tr>
-inline void remove_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::REMOVE)
-{
-    change_ws(in,true_for_char<C>(),mode);
-}
 
 template <class Value,class Set,class Ch, class Tr>
 inline bool parse_range_as(std::basic_istream<Ch,Tr> &in,Set &set) {
@@ -392,68 +209,6 @@ USE_PRINT_SEQUENCE_TEMPLATE(std::vector)
 
 // header=NULL gives just the string, no newline
 
-template <class C,class Ch, class Tr>
-inline void out_always_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
-    std::stringstream s;
-    s << data;
-    char c;
-    out << '"';
-    while (s.get(c)) {
-        if (c == '"' || c== '\\')
-            out.put('\\');
-        out.put(c);
-    }
-    out << '"';
-}
-
-template <class C,class Ch, class Tr>
-inline void out_ensure_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
-    typedef std::basic_string<Ch,Tr> String;
-    String s=boost::lexical_cast<String>(data);
-    if (s[0] == '"')
-        out << s;
-    else {
-        out << '"';
-        for (typename String::iterator i=s.begin(),e=s.end();i!=e;++i) {
-            char c=*i;
-            if (c == '"' || c== '\\')
-                out.put('\\');
-            out.put(c);
-        }
-        out << '"';
-    }
-}
-
-template <class C,class Ch, class Tr>
-inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
-    std::basic_stringstream<Ch,Tr> s;
-    s << data;
-    or_true_for_char<true_for_char<'\\'> > special('"');
-    typedef std::istreambuf_iterator<Ch,Tr> i_iter;
-    typedef std::ostream_iterator<Ch,Tr> o_iter;
-    i_iter i(s),end;
-    bool quote=(std::find_if(i,end,special) != end);
-    rewind(s);
-    if (quote) {
-        out << '"';
-        for (i_iter i(s);i!=end;++i) {
-            Ch c=*i;
-            if (c == '"' || c== '\\')
-                out.put('\\');
-            out.put(c);
-        }
-        out << '"';        
-    } else {
-//        std::copy(i_iter(s),end,o_iter(out));
-        /*        
-        for (i_iter i(s);i!=end;++i)
-            out.put(*i);
-        */
-        Ch c;
-        while(s.get(c))
-            out.put(c);
-    }
-}
 
 inline char hex_digit_char(unsigned char hex) {
     //assert(hex <= 0xF);
@@ -650,7 +405,6 @@ std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T 
     range_print_iostate(o,begin,end,writer,multiline,parens);
     return o;
 }
-
 
 
 template <class Ch, class Tr, class T>

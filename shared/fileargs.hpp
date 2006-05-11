@@ -224,6 +224,22 @@ typedef file_arg<std::ostream> ostream_arg;
 typedef file_arg<std::ifstream> ifstream_arg;
 typedef file_arg<std::ofstream> ofstream_arg;
 
+istream_arg stdin_arg()
+{
+    return istream_arg("-");
+}
+
+ostream_arg stdout_arg()
+{
+    return ostream_arg("-");
+}
+
+ostream_arg stderr_arg()
+{
+    return ostream_arg("-2");
+}
+
+
 typedef boost::shared_ptr<std::istream> Infile;
 typedef boost::shared_ptr<std::ostream> Outfile;
 typedef boost::shared_ptr<std::ifstream> InDiskfile;
@@ -254,7 +270,17 @@ inline bool is_none(const Outfile &o)
 
 struct tee_file 
 {
-    tee_file() : log_stream(&std::cerr) {}
+    tee_file() {
+        reset_no_tee();
+    }
+    
+    void reset_no_tee(std::ostream &o=std::cerr) 
+    {
+        teestreamptr.reset();
+        teebufptr.reset();
+        log_stream=&o;
+    }
+    
     /// must call before you get any tee behavior (without, will go to default log = cerr)!
     void set(std::ostream &other_output) 
     {
