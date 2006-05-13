@@ -7,6 +7,7 @@
 #include <streambuf>
 #include <sstream>
 #include <iterator>
+#include <vector>
 #include <boost/config.hpp>
 #include <boost/lexical_cast.hpp>
 #include <graehl/shared/char_predicate.hpp>
@@ -19,7 +20,7 @@ namespace graehl {
 
 template <class C,class Ch, class Tr>
 inline void out_always_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
-    std::stringstream s;
+    std::basic_stringstream<Ch,Tr> s;
     s << data;
     char c;
     out << '"';
@@ -55,25 +56,26 @@ inline void out_ensure_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
         out_string_always_quote(out,s);
 }
 
+/// surround with quotes and \" \\ only if any character inside is special \ or ".  note: is_special(whitespace) should return true if you're going to use i >> std::string. but if you use in_quote, it need not.
 template <class C,class Ch, class Tr,class IsSpecial>
-inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,IsSpecial is_special=IsSpecial()) {
+inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,IsSpecial is_special=IsSpecial(),char quote_char='"',char escape_char='\\') {
     std::basic_stringstream<Ch,Tr> s;
     s << data;
-    or_true_for_char<true_for_char<'\\'> > needs_quote('"',is_special);
+    or_true_for_chars<IsSpecial> needs_quote(quote_char,escape_char,is_special);
     typedef std::istreambuf_iterator<Ch,Tr> i_iter;
     typedef std::ostream_iterator<Ch,Tr> o_iter;
     i_iter i(s),end;
     bool quote=(std::find_if(i,end,needs_quote) != end);
     rewind(s);
     if (quote) {
-        out << '"';
+        out << quote_char;
         for (i_iter i(s);i!=end;++i) {
             Ch c=*i;
-            if (c == '"' || c== '\\')
-                out.put('\\');
+            if (c == quote_char || c== escape_char)
+                out.put(escape_char);
             out.put(c);
         }
-        out << '"';        
+        out << quote_char;        
     } else {
 //        std::copy(i_iter(s),end,o_iter(out));
         /*        
@@ -84,6 +86,53 @@ inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,IsSpecial is
         while(s.get(c))
             out.put(c);
     }
+}
+
+template <class Ch, class Tr,class IsSpecial> inline
+std::string
+in_quote(std::basic_istream<Ch,Tr> &i,IsSpecial is_special=IsSpecial(),
+         char quote_char='"',char escape_char='\\')
+{
+//    std::basic_stringstream<Ch,Tr> s;
+    std::vector<Ch> v;
+    in_quote(i,back_inserter(v)//std::ostreambuf_iterator<Ch,Tr>(s)
+             ,is_special,quote_char,escape_char);
+    return std::string(v.begin(),v.end());
+//    return s.str();
+}
+
+template <class Output,class Ch, class Tr,class IsSpecial> inline
+Output
+in_quote(std::basic_istream<Ch,Tr> &i,Output out,IsSpecial is_special=IsSpecial(),
+         char quote_char='"',char escape_char='\\')
+{
+    char c;
+    if (i.get(c)) {
+        *out++=c;
+        if (c==quote_char) { // quoted - end delimited by unescape quote
+            for (;;) {
+                if (!i.get(c))
+                    goto fail;
+                if (c==quote_char)
+                    break;
+                if (c==escape_char)
+                    if (!i.get(c))
+                        goto fail;
+                *out++=c;
+            }
+        } else { // unquoted - end delimited by an is_special char
+            while (i.get(c)) {
+                if (is_special(c)) {
+                    i.unget();
+                    break;
+                }
+                *out++=c;
+            }
+        }
+    } // else end of stream.  shouldn't interpret as empty token but not throwing exception either.  check status of i before you use.
+    return out;
+fail:
+    throw std::runtime_error("end of file reached when parsing quoted string (in_quote)");
 }
 
 //////// more general/complicated: specify predicate for what to escape, backslash, and any output iter.
