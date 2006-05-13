@@ -3,10 +3,12 @@
 
 /// COULD TEMPLATE FOR WIDE CHARS (lazy)
 
+#include <graehl/shared/predicate_compose.hpp>
 #include <locale>
 #include <string>
 
 namespace graehl {
+
 
 // worth making into bitfield?
 struct char_table 
@@ -44,7 +46,7 @@ struct char_table
     void no(char c)
     { me()[c]=false; }
     
-    bool & operator[](char c) 
+    bool & operator[](char c)
     { return table[(unsigned)c]; }
     bool operator()(char c) const
     { return table[(unsigned)c]; }
@@ -58,14 +60,23 @@ struct char_table
     template <class It>
     void set_in(It i,It end,bool set_to=true)
     {
-        set_all(!set_to);
         for(;i!=end;++i)
-            me()[i]=set_to;
+            me()[*i]=set_to;
     }
-    template <class Str>
-    void set_in(Str const&str,bool set_to=true)
+    void set_in(std::string const&str,bool set_to=true)
     {
         set_in(str.begin(),str.end(),set_to);
+    }
+
+    template <class It>
+    void set_in_excl(It i,It end,bool set_to=true)
+    {
+        set_all(!set_to);
+        set_in(i,end,set_to);
+    }
+    void set_in_excl(std::string const&str,bool set_to=true)
+    {
+        set_in_excl(str.begin(),str.end(),set_to);
     }
     
  private:
@@ -73,7 +84,6 @@ struct char_table
     { return *this; }
 };
 
-    
 struct char_predicate : public char_table,public std::unary_function<char,bool> {
     char_predicate() : char_table() {} // ensures!  init of table array to false
     char_predicate(char t1) : char_table() 
@@ -85,13 +95,10 @@ struct char_predicate : public char_table,public std::unary_function<char,bool> 
     {
         set_in(begin,end,true);
     }
-    template <class Str>
-    char_predicate(Str const&str,bool set_to)
+    char_predicate(std::string const&str,bool set_to)
     {
-        set_in(str,set_to);
+        set_in_excl(str,set_to);
     }
-    
-    
     template <class F>
     char_predicate(F f) : char_table() {
         for (unsigned i=0;i<char_table::size;++i)
@@ -99,17 +106,28 @@ struct char_predicate : public char_table,public std::unary_function<char,bool> 
     }
 };
 
+typedef predicate_ref<char_predicate> char_predicate_ref;    
     
     //boost::integer_traits<char>::max+1;
 
+// : public std::unary_function<char,bool>
 template <char C>
-struct true_for_char : public std::unary_function<char,bool> {
+struct true_for_char
+{
     bool operator()(char c) const {
         return c == C;
     }
 };
 
-struct false_for_all_chars : public std::unary_function<char,bool>
+template <char C,char C2>
+struct true_for_chars
+{
+    bool operator()(char c) const {
+        return c == C || c == C2;
+    }
+};
+
+struct false_for_all_chars
 {
     bool operator()(char c) const {
         return false;
@@ -117,7 +135,7 @@ struct false_for_all_chars : public std::unary_function<char,bool>
 };
     
 template <class F>
-struct or_true_for_char : public F, public std::unary_function<char,bool> {
+struct or_true_for_char : public F {
     typedef or_true_for_char<F> self;
     char C;
     or_true_for_char(char thischar,const F &f=F()) : F(f), C(thischar) {}
@@ -128,7 +146,7 @@ struct or_true_for_char : public F, public std::unary_function<char,bool> {
 };
 
 template <class F>
-struct or_true_for_chars : public F, public std::unary_function<char,bool> {
+struct or_true_for_chars : public F {
     typedef or_true_for_chars<F> self;
     char C1,C2;
     or_true_for_chars(char c1,char c2,const F &f=F()) : F(f),C1(c1),C2(c2) {}

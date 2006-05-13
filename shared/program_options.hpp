@@ -45,6 +45,13 @@ struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
 };
 
 
+template <class T>
+boost::program_options::typed_value<T>*
+defaulted_value(T *v)
+{
+    return boost::program_options::value<T>(v)->default_value(*v);
+}
+
 // have to wrap regular options_description and store our own tables because
 // author didn't make enough stuff protected/public or add a virtual print
 // method to value_semantic

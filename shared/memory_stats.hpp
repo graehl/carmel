@@ -93,7 +93,7 @@ struct memory_report
             o << "+" << S(post-pre);
         } else
             o << "-" << S(pre-post);
-        o << " (" << pre << " => " << post << ")\n";
+        o << " (" << pre << " -> " << post << ")\n";
         reported=true;
     }
     ~memory_report()
