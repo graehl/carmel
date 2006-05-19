@@ -47,9 +47,9 @@ struct char_table
     { me()[c]=false; }
     
     bool & operator[](char c)
-    { return table[(unsigned)c]; }
+    { return table[(unsigned char)c]; }
     bool operator()(char c) const
-    { return table[(unsigned)c]; }
+    { return table[(unsigned char)c]; }
 
     void set_all(bool to=true)
     {
