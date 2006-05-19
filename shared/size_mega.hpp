@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
+#include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/program_options.hpp>
 
 namespace graehl {
 
@@ -26,19 +28,6 @@ inline outputstream & print_size(outputstream &o,size_type size,bool decimal_tho
     return o;
 }
 
-template <class Stream>
-struct restore_stream 
-{
-    typedef Stream stream_type;
-    stream_type *pstream;
-    std::ios::fmtflags saved_flags;
-    restore_stream(stream_type &stream) : pstream(&stream), saved_flags(stream.flags()) {}
-    ~restore_stream() 
-    {
-        pstream->flags(saved_flags);
-    }
-};
-
 template <bool decimal_thousand=true,class size_type=double>
 struct size_mega
 {
@@ -55,7 +44,7 @@ struct size_mega
     template <class Ostream>
     friend Ostream & operator <<(Ostream &o,const size_mega &me) 
     {
-        restore_stream<Ostream > save(o);
+        local_stream_flags<Ostream> save(o);
 //        o << std::setprecision(2);
         o << std::setw(4);
         return print_size(o,me.size,decimal_thousand);
@@ -108,5 +97,22 @@ fail:    throw std::runtime_error(std::string("Expected nonnegative number follo
 }
 
 } //graehl
+
+namespace boost {    namespace program_options {
+
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     size_t* target_type, int)
+{
+    typedef size_t value_type;
+    using namespace graehl;
+
+    std::istringstream i(boost::program_options::validators::get_single_string(values));
+    v=boost::any(graehl::parse_size<value_type>(i));
+    must_complete_read(i,"Read a size_mega, but didn't parse whole string ");
+}
+
+}}
+
 
 #endif
