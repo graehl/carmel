@@ -9,6 +9,23 @@
 
 namespace graehl {
 
+inline std::string const& get_single_arg(boost::any& v,std::vector<std::string> const& values) 
+{
+    boost::program_options::validators::check_first_occurrence(v);
+    return boost::program_options::validators::get_single_string(values);
+}
+
+template <class I>
+void must_complete_read(I &in,std::string const& msg="Couldn't parse")
+{
+    char c;
+    if (in.bad())
+        throw std::runtime_error(msg + " - failed input");
+    if (in >> c)
+        throw std::runtime_error(msg + " - got extra char: " + std::string(c,1));
+}
+
+
 template <class Ostream>
 struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
 {

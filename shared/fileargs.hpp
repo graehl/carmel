@@ -6,10 +6,10 @@
 #include <graehl/shared/gzstream.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/string_match.hpp>
+#include <graehl/shared/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
-#include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <iostream>
@@ -78,7 +78,7 @@ struct file_arg : public boost::shared_ptr<Stream>
 {
     std::string name;
     typedef boost::shared_ptr<Stream> pointer_type;
-    file_arg() {}
+    file_arg() { set_none(); }
     explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL)
     { set(s,null_allowed); }
     void throw_fail(std::string const& filename,std::string const& msg="")
@@ -173,6 +173,11 @@ struct file_arg : public boost::shared_ptr<Stream>
 
     bool is_none() const
     { return !pointer(); }
+
+    operator bool() const 
+    {
+        return !is_none();
+    }
     
     void set_none()
     { pointer().reset();name="-0"; }
@@ -393,31 +398,11 @@ inline OutDiskfile outdiskfile(const std::string &s)
     return ofstream_arg(s);
 }
 
-inline std::string const& get_single_arg(boost::any& v,std::vector<std::string> const& values) 
-{
-    boost::program_options::validators::check_first_occurrence(v);
-    return boost::program_options::validators::get_single_string(values);
-}
 
 } //graehl
 
-namespace boost {    namespace program_options {
-inline void validate(boost::any& v,
-                     const std::vector<std::string>& values,
-                     size_t* target_type, int)
-{
-    typedef size_t value_type;
-    using namespace graehl;
-
-    std::istringstream i(boost::program_options::validators::get_single_string(values));
-    v=boost::any(graehl::parse_size<value_type>(i));
-    char c;
-    if (i >> c)
-        throw std::runtime_error(std::string("Succesfully read a nonnegative size, but read extra characters after."));
-    return;
-}
-
 #ifdef GRAEHL__VALIDATE_INFILE
+namespace boost {    namespace program_options {
 /* Overload the 'validate' function for boost::shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
@@ -448,9 +433,9 @@ inline void validate(boost::any& v,
 {
     v=boost::any(graehl::indiskfile(graehl::get_single_arg(v,values)));
 }
+}} // boost::program_options
 #endif
 
-}} // boost::program_options
 
 
 #endif

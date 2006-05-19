@@ -112,7 +112,7 @@ typedef predicate_ref<char_predicate> char_predicate_ref;
 
 // : public std::unary_function<char,bool>
 template <char C>
-struct true_for_char
+struct true_for_char_c
 {
     bool operator()(char c) const {
         return c == C;
@@ -120,7 +120,7 @@ struct true_for_char
 };
 
 template <char C,char C2>
-struct true_for_chars
+struct true_for_chars_c
 {
     bool operator()(char c) const {
         return c == C || c == C2;
@@ -153,6 +153,24 @@ struct or_true_for_chars : public F {
     or_true_for_chars(const self &s) : F(s),C1(s.C1),C2(s.C2) {}
     bool operator()(char c) const {
         return c == C1 || c == C2 || F::operator()(c);
+    }
+};
+
+struct true_for_char {
+    typedef bool result_type;
+    char C1;
+    true_for_char(char c1) : C1(c1) {}
+    bool operator()(char c) const {
+        return c == C1;
+    }
+};
+
+struct true_for_chars {
+    typedef bool result_type;
+    char C1,C2;
+    true_for_chars(char c1,char c2) : C1(c1),C2(c2) {}
+    bool operator()(char c) const {
+        return c == C1 || c == C2;
     }
 };
 

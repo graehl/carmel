@@ -2,6 +2,7 @@
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
 #ifdef TEST
+#  include <graehl/shared/test.hpp>
 # define LAZY_FOREST_EXAMPLES
 #endif
 #ifdef LAZY_FOREST_EXAMPLES

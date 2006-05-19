@@ -5,27 +5,30 @@
 #include <streambuf>
 #include <iostream>
 #include <algorithm>
+#include <graehl/shared/char_predicate.hpp>
 
 namespace graehl {
 
-class ctype_mod_ws: public std::ctype<char>
+struct ctype_table
 {
- public:
-    enum make_not_anon_14 {
+    typedef std::ctype<char> CT;
+    static inline void clear_space(std::ctype_base::mask& c) { c &= ~CT::space; }
+    static inline void set_space(std::ctype_base::mask& c) { c |= CT::space; }
+    typedef std::ctype_base::mask mask_type;
+    
+    mask_type rc[CT::table_size];
+    operator mask_type *() 
+    { return rc; }
+    
+    enum {
         ADD,REPLACE,REMOVE
     };
-    template <class CharPred>
-    ctype_mod_ws(CharPred pred,int mode=REMOVE): std::ctype<char>(get_table(pred,mode)) {}
- private:
-    static inline void clear_space(std::ctype_base::mask& c) { c &= ~space; }
-    static inline void set_space(std::ctype_base::mask& c) { c &= ~space; }
-    template <class CharPred>
-    static std::ctype_base::mask* get_table(CharPred pred,int mode) {
-        static std::ctype_base::mask rc[table_size];
-        std::copy(classic_table(), classic_table() + table_size, rc);
+    template <class CharPred,class WTF>
+    ctype_table(CharPred pred,int mode,WTF const& wtf) {
+        std::copy(wtf, wtf + CT::table_size, rc);
         if (mode == REPLACE)
-            std::for_each(rc, rc + table_size, clear_space);
-        for(unsigned i=0;i<table_size;++i) {
+            std::for_each(rc, rc + CT::table_size, clear_space);
+        for(unsigned i=0;i<CT::table_size;++i) {
             std::ctype_base::mask &m=rc[i];
             if (pred(i)) {
                 if (mode==REMOVE)
@@ -37,36 +40,72 @@ class ctype_mod_ws: public std::ctype<char>
                     clear_space(m);
             }
         }
-        return rc;
     }
-
 };
 
-//note: you must free the new in locale's ctype! (or minor memory leak)
-template <class CharPred,class Ch, class Tr>
-inline void change_ws(std::basic_istream<Ch,Tr> &in, CharPred pred, int mode=ctype_mod_ws::ADD)
+    
+// so we can init ctype_table FIRST.
+class ctype_mod_ws: private ctype_table,public std::ctype<char>
 {
-    std::locale l;
-    ctype_mod_ws *new_traits=new ctype_mod_ws(pred,mode);
-    std::locale new_l(l, new_traits);
-    in.imbue(new_l);
-}
-template <char C,class Ch, class Tr>
-inline void add_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::ADD)
+ public:
+    enum {
+        ADD=ctype_table::ADD,
+        REPLACE=ctype_table::REPLACE,
+        REMOVE=ctype_table::REMOVE
+    };    
+        
+    template <class CharPred>
+    ctype_mod_ws(CharPred pred,int mode=REMOVE): ctype_table(pred,mode,classic_table()),std::ctype<char>(rc) {}
+};
+
+//returns old locale.  when you restore_ws, the new facet will be freed, otherwise, leaks memory
+template <class Tr,class CP>
+inline std::locale change_ws(std::basic_istream<char,Tr> &in,CP pred,int mode=ctype_table::REPLACE)
 {
-    change_ws(in,true_for_char<C>(),mode);
-}
-template <char C,class Ch, class Tr>
-inline void replace_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::REPLACE)
-{
-    change_ws(in,true_for_char<C>(),mode);
-}
-template <char C,class Ch, class Tr>
-inline void remove_ws(std::basic_istream<Ch,Tr> &in, int mode=ctype_mod_ws::REMOVE)
-{
-    change_ws(in,true_for_char<C>(),mode);
+    return in.imbue(std::locale(std::locale(), new ctype_mod_ws(pred,mode)));
 }
 
+template <class Ch, class Tr>
+inline void restore_ws(std::basic_istream<Ch,Tr> &in,std::locale const& old_locale)
+{
+    in.imbue(old_locale);
+}
+
+template <class I>
+struct change_whitespace
+{
+    std::locale old;
+    I &i;
+    enum {
+        ADD=ctype_mod_ws::ADD,
+        REPLACE=ctype_mod_ws::REPLACE,
+        REMOVE=ctype_mod_ws::REMOVE
+    };    
+
+    //    ctype_mod_ws ws;
+
+    template <class CharPred>
+    change_whitespace(I &i,CharPred pred,int mode=REPLACE) :
+        i(i),
+        //ws(pred,mode),
+        old(change_ws(i,pred,mode)) {}
+
+    void restore() 
+    { restore_ws(i,old); }
+    
+};
+
+template <class I>
+struct local_whitespace : public change_whitespace<I>
+{
+    ~local_whitespace() 
+    { this->restore(); }
+    typedef change_whitespace<I> parent_type;
+    
+    template <class CharPred>
+    local_whitespace(I &i,CharPred pred,int mode=parent_type::REPLACE) : parent_type(i,pred,mode) {}
+};
+    
 } //graehl
 
 #endif

@@ -16,6 +16,42 @@
 
 namespace graehl {
 
+template <class Str>
+typename Str::size_type replace(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
+{
+    pos=in.find(oldsub,pos);
+    if (pos==Str::npos)
+        return pos;
+    in.replace(pos,oldsub.length(),newsub);
+    return pos+newsub.length();
+}
+
+// returns true if one was replaced
+template <class Str>
+bool replace_one(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
+{
+    return replace(in,oldsub,newsub,pos) != Str::npos;
+}
+
+// returns number of types we replaced
+template <class Str>
+unsigned replace_all(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
+{
+    unsigned n=0;
+    while ((pos=replace(in,oldsub,newsub,pos))!=Str::npos)
+        ++n;
+    return n;    
+}
+
+
+
+template <class Str,class Sub>
+bool contains(Str const& str,Sub const& sub,typename Str::size_type pos=0)
+{
+    return str.find(sub,pos)!=Str::npos;
+}
+
+
 // returns true and writes pos,n for substring between left-right brackets.  or false if brackets not found.
 template <class Str,class size_type> inline
 bool
@@ -331,13 +367,12 @@ void push_back_until(const std::string &term,In &in,Cont & cont)
     parse_until(term,in,make_push_backer(cont));
 }
 
-template <class F>
+template <class F> inline
 void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':') 
 {
     typedef typename F::key_type Key;
     typedef typename F::data_type Data;
     using namespace std;    
-    typedef pair<Key,Data> Component;
     typedef pair<Key,Data> Component;
     typedef string::size_type Pos;
     typedef string::const_iterator It;
