@@ -1,6 +1,12 @@
 #ifndef GRAEHL__SHARED__INFO_DEBUG_H_inc
 #define GRAEHL__SHARED__INFO_DEBUG_H_inc
 
+#ifdef GRAEHL__SINGLE_MAIN
+# ifndef GRAEHL__INFO_DEBUG_MAIN
+#  define GRAEHL__INFO_DEBUG_MAIN
+# endif 
+#endif 
+
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -338,7 +344,7 @@ class info_debug {
         return runtime_info_level;
     }
 };
-#ifdef GRAEHL__SINGLE_MAIN
+#ifdef GRAEHL__INFO_DEBUG_MAIN
 info_debug debug;
 #else 
 extern info_debug debug;        //!< interface for debugging output
