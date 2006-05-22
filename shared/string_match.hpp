@@ -53,15 +53,14 @@ bool contains(Str const& str,Sub const& sub,typename Str::size_type pos=0)
 
 
 // returns true and writes pos,n for substring between left-right brackets.  or false if brackets not found.
-template <class Str,class size_type> inline
+template <class Str> inline
 bool
-substring_inside_pos_n(const Str &s,const Str &leftbracket,const Str &rightbracket,size_type &pos,size_type &n)
+substring_inside_pos_n(const Str &s,const Str &leftbracket,const Str &rightbracket,typename Str::size_type &pos,typename Str::size_type &n,typename Str::size_type start_from=0)
 {
-    size_type rightpos;
-    const size_type npos=Str::npos;
-    if (npos==(pos=s.find(leftbracket,0))) return false;
+    typename Str::size_type rightpos;
+    if (Str::npos==(pos=s.find(leftbracket,start_from))) return false;
     pos+=leftbracket.length();
-    if (npos==(rightpos=s.find(rightbracket,pos))) return false;
+    if (Str::npos==(rightpos=s.find(rightbracket,pos))) return false;
     n=rightpos-pos;
     return true;
 }
@@ -70,11 +69,11 @@ substring_inside_pos_n(const Str &s,const Str &leftbracket,const Str &rightbrack
 // second is true if found, false if none found
 template <class Str> inline
 std::pair <Str,bool>
-substring_inside(const Str &s,const Str &leftbracket,const Str &rightbracket)
+substring_inside(const Str &s,const Str &leftbracket,const Str &rightbracket,typename Str::size_type start_from=0)
 {
     typedef std::pair <Str,bool> Ret;
     typename Str::size_type pos,n;
-    if (substring_inside_pos_n(s,leftbracket,rightbracket,pos,n))
+    if (substring_inside_pos_n(s,leftbracket,rightbracket,pos,n,start_from))
         return Ret(Str(s,pos,n),true);
     else
         return Ret(Str(),false);
