@@ -229,16 +229,19 @@ typedef file_arg<std::ostream> ostream_arg;
 typedef file_arg<std::ifstream> ifstream_arg;
 typedef file_arg<std::ofstream> ofstream_arg;
 
+inline
 istream_arg stdin_arg()
 {
     return istream_arg("-");
 }
 
+inline
 ostream_arg stdout_arg()
 {
     return ostream_arg("-");
 }
 
+inline
 ostream_arg stderr_arg()
 {
     return ostream_arg("-2");
