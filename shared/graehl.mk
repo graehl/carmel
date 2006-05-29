@@ -42,7 +42,11 @@ else
 endif
 
 ifndef INSTALL_PREFIX
-INSTALL_PREFIX=$(HOME)/isd/$(ARCH)
+ifdef ARCHBASE
+INSTALL_PREFIX=$(ARCHBASE)
+else
+INSTALL_PREFIX=$(HOME)
+endif
 endif
 ifndef BIN_PREFIX
 BIN_PREFIX=$(INSTALL_PREFIX)/bin
@@ -210,7 +214,7 @@ $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB)
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) --static
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug
