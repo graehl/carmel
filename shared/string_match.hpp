@@ -2,8 +2,10 @@
 #define GRAEHL__SHARED__STRING_MATCH_HPP
 
 #include <graehl/shared/function_macro.hpp>
+#include <graehl/shared/null_terminated.hpp>
 #include <string>
 #include <iterator>
+#include <stdexcept>
 
 //#define TOKENIZE_KEY_VAL_DEBUG
 
@@ -12,6 +14,12 @@
 # define TOKENIZE_KEY_VAL_IF_DBG(a) a;
 #else
 # define TOKENIZE_KEY_VAL_IF_DBG(a)
+#endif
+
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#include <cctype>
+#include <graehl/shared/debugprint.hpp>
 #endif
 
 namespace graehl {
@@ -143,6 +151,12 @@ bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
     return true;
 }
 
+template <class Istr, class Prefix> inline
+bool match_begin(Istr bstr,Istr estr,Prefix prefix) 
+{
+    return match_begin(bstr,estr,prefix.begin(),prefix.end());
+}
+
 template <class Istr, class Isubstr> inline
 bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
 {
@@ -153,6 +167,12 @@ bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
             return false;
     }
     return true;
+}
+
+template <class Istr, class Suffix> inline
+bool match_end(Istr bstr,Istr estr,Suffix suffix) 
+{
+    return match_end(bstr,estr,suffix.begin(),suffix.end());
 }
 
 template <class It1,class It2,class Pred> inline
@@ -235,37 +255,29 @@ template <class Str>
 inline
 bool starts_with(const Str &str,char *prefix) 
 {
-    return starts_with(str,std::string(prefix));
+    return starts_with(str.begin(),str.end(),cstr_iterator(prefix),cstr_iterator());
+//    return starts_with(str,std::string(prefix));
+}
+
+template <class Istr, class Prefix> inline
+bool starts_with(Istr bstr,Istr estr,Prefix prefix) 
+{
+    return starts_with(bstr,estr,prefix.begin(),prefix.end());
 }
 
 template <class Str>
 inline
 bool ends_with(const Str &str,char *suffix) 
 {
-    return ends_with(str,std::string(suffix));
+    return ends_with(str.begin(),str.end(),cstr_iterator(suffix),cstr_iterator());
+//    return ends_with(str,std::string(suffix));
 }
 
-
-#if 0
-inline
-bool starts_with(const std::string &str,const std::string &prefix) 
+template <class Istr, class Suffix> inline
+bool ends_with(Istr bstr,Istr estr,Suffix suffix) 
 {
-    return match_begin(str.begin(),str.end(),prefix.begin(),prefix.end());
-//    return (str.find(prefix)==0);
+    return ends_with(bstr,estr,suffix.begin(),suffix.end());
 }
-
-inline
-bool ends_with(const std::string &str,const std::string &suffix) 
-{
-    return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
-//        return starts_with(str.rbegin(),str.rend(),suffix.rbegin(),suffix.rend());
-/*
-  const std::string::size_type slen=str.length();
-    return (str.rfind(suffix)==len-suffix.length());
-*/    
-}
-#endif 
-
 
 // func(const Func::argument_type &val) - assumes val can be parsed from string tokenization (no whitespace)
 template <class In,class Func> inline
@@ -403,11 +415,6 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
     }
 }
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#include <cctype>
-#include <graehl/shared/debugprint.hpp>
-#endif
 
 #ifdef TEST
 const char *TEST_starts_with[]={
@@ -433,7 +440,7 @@ BOOST_AUTO_UNIT_TEST( TEST_FUNCS )
     BOOST_CHECK(starts_with(emptystr,emptystr));
     BOOST_CHECK(ends_with(s1,emptystr));
     BOOST_CHECK(ends_with(emptystr,emptystr));
-    BOOST_CHECK(!starts_with(s1,string("str11")));
+    BOOST_CHECK(!starts_with(s1,"str11"));
     BOOST_CHECK(!ends_with(s1,string("sstr1")));
     BOOST_CHECK(!starts_with(s1,string("str*")));
     BOOST_CHECK(!ends_with(s1,string("*tr1")));
