@@ -1,3 +1,7 @@
+2006-06-02  Jonathan Graehl  <graehl@isi.edu>
+
+	* memory_stats.hpp (operator -): include memory mapped in memory_report
+
 2006-03-31  Jonathan Graehl  <graehl@isi.edu>
 
 	* lazy_forest_kbest.hpp: changed from LazyKBestTrees to value-type

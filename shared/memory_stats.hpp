@@ -36,14 +36,24 @@ struct memory_stats  {
         return info;
     }
     typedef size_mega<false,std::size_t> size_type;
+
+    // includes memory mapped
+    size_type total_allocated() const
+    {
+        return program_allocated()+memory_mapped();
+    }
+    
     size_type program_allocated() const 
     {
         return size_type(info.uordblks);
     }
+
+    // may only grown monotonically (may not reflect free())
     size_type system_allocated() const 
     {
         return size_type(info.arena);
     }
+    
     size_type memory_mapped() const
     {
         return size_type(info.hblkhd);
@@ -86,8 +96,8 @@ struct memory_report
     {
         memory_stats after;
         typedef memory_stats::size_type S;
-        S pre=before.program_allocated();
-        S post=after.program_allocated();
+        S pre=before.total_allocated();
+        S post=after.total_allocated();
         o << desc;
         if (post > pre) {
             o << "+" << S(post-pre);
