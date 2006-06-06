@@ -58,7 +58,7 @@ inline std::string space_sep_words(const std::string &sentence,char space=' ')
     word_spacer sep(space);
     while (i >> word) {
         o << sep;
-        o << word; //FIXME: why is this not calling operator <<, but trying to print string OR file_arg?
+        o << word;
     }
     return o.str();
 }

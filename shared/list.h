@@ -2,6 +2,7 @@
 #ifndef LIST_H
 #define LIST_H
 #include <graehl/shared/config.h>
+#include <graehl/shared/stream_util.hpp>
 
 #ifdef USE_SLIST
 #include <graehl/shared/slist.h>
@@ -17,6 +18,7 @@ template <class T,class A=std::allocator<T> >
 class List : public STL_LIST<T,A> {
   //  typedef STL_LIST<T,A> S;
 public:
+    typedef List<T,A> self_type;
 #ifdef USE_SLIST
     typedef typename STL_LIST<T,A>::erase_iterator iterator;    
 #else 
@@ -54,22 +56,20 @@ public:
     this->pop_front();
   }
 #ifndef USE_SLIST
-        template <typename Out,typename T,typename A>
-    friend Out & operator << (Out &out, const List<T,A> &list)
+    template <class O> void print(O&o) const
     {
-        out << "(";
-        typename List<T,A>::const_iterator end = list.end();
+        o << "(";
         bool first=true;
-        for( typename List<T,A>::const_iterator n = list.begin() ; n != end ;++n) {
-            out << *n
+        for( typename List<T,A>::const_iterator n=begin(),e=list.end();n!=e;++n) {
+            o << *n
                 if (first)
                     first=false;
                 else
-                    out << ' ';
+                    o << ' ';
         }
-        out << ")";
-        return out;
+        o << ")";
     }
+    TO_OSTREAM_PRINT    
 #endif 
 };
 /*

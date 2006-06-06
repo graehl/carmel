@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__STATISTICS_HPP
 #define GRAEHL__SHARED__STATISTICS_HPP
 
+#include <graehl/shared/stream_util.hpp>
+
 namespace graehl {
 
 template <class T>
@@ -230,15 +232,15 @@ struct stat_accum : public stddev_accum<T>,min_max_accum<T> {
     {
         return this->maxdiff();
     }
-    template <class c,class t,class T>
-    friend
-    std::basic_ostream<c,t> & operator <<(std::basic_ostream<c,t> &o,const stat_accum<T> &v) 
+    typedef stat_accum<T> self_type;
+    template <class O> void print(O&o) const
     {
-        if (v.anyseen())
-            return o <<"{{{"<<v.minimum<<'/'<<v.avg()<<"(~"<<v.stddev()<<")/"<<v.maximum<<"}}}";
+        if (anyseen())
+            return o <<"{{{"<<minimum<<'/'<<avg()<<"(~"<<stddev()<<")/"<<maximum<<"}}}";
         else
             return o <<"<<<?/?/?>>>";
-    }    
+    }
+    TO_OSTREAM_PRINT
 };
 
 }

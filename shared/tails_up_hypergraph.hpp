@@ -5,6 +5,7 @@
 // decoder ring: HD = hyperarc descriptor, VD = vertex descriptor
 
 #include <graehl/shared/hypergraph.hpp>
+#include <graehl/shared/stream_util.hpp>
 
 namespace graehl {
 
@@ -13,23 +14,26 @@ struct HArcDest  {
     HD harc; // hyperarc with this tail
     unsigned multiplicity; // tail multiplicity
     HArcDest(HD e) : harc(e), multiplicity(1) {}
-    GENIO_print
-        {
+    typedef HArcDest<HD> self_type;
+    template <class O> void print(O&o) const
+    {
           o << '"';
           harc->print(o);
           o << "\"x"<<multiplicity;
-          return GENIOGOOD;
-        }
+    }
+    TO_OSTREAM_PRINT
 };
 
-template <class charT, class Traits,class S>
+
+/*
+  template <class charT, class Traits,class S>
 std::basic_ostream<charT,Traits>&
 operator <<
     (std::basic_ostream<charT,Traits>& os, const HArcDest<S> &arg)
 {
   return gen_inserter(os,arg);
 }
-
+*/
 
 
 // g: ref to original hypergraph

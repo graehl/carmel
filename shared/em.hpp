@@ -44,12 +44,14 @@ struct WeightAccum {
 */
 typedef std::pair<double,unsigned> ParamDelta;
 
-ostream & operator << (ostream &out,const ParamDelta &p) {
+
+template <class C,class T> inline
+std::basic_ostream<C,T>& operator <<(std::basic_ostream<C,T> &o,ParamDelta const& p)
+{
     if (p.first > 0)
         return out << "delta_weight["<<p.second<<"]="<<p.first;
     else
         return out << "unchanged";
-
 }
 
 /// overrelaxed EM with random restarts.

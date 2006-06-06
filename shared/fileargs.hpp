@@ -2,6 +2,7 @@
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
 
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/teestream.hpp>
 #include <graehl/shared/gzstream.hpp>
 #include <graehl/shared/size_mega.hpp>
@@ -76,6 +77,7 @@ struct null_deleter {
 template <class Stream>
 struct file_arg : public boost::shared_ptr<Stream>
 {
+    typedef file_arg<Stream> self_type;
     std::string name;
     typedef boost::shared_ptr<Stream> pointer_type;
     file_arg() { set_none(); }
@@ -199,7 +201,7 @@ struct file_arg : public boost::shared_ptr<Stream>
         return !is_none() && stream();
     }
     friend
-    bool valid(file_arg<Stream> const& f)
+    bool valid(self_type const& f)
     {
         return f.valid();
     }
@@ -208,20 +210,18 @@ struct file_arg : public boost::shared_ptr<Stream>
     {
         return *pointer();
     }
+
     template<class O>
-    friend O& operator <<(O &o,file_arg<Stream> const& me)
-    {
-        o << me.name;
-        return o;
-    }
-    template<class C,class T>
-    friend std::basic_istream<C,T>& operator >>(std::basic_istream<C,T> &i,file_arg<Stream> & me)
+    void print(O &o) const { o << name;}
+    template <class I>
+    void read(I &i) 
     {
         std::string name;
         i>>name;
-        me.set(name);
-        return i;
-    }
+        set(name);
+    }    
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 typedef file_arg<std::istream> istream_arg;

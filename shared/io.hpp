@@ -250,7 +250,7 @@ inline unsigned out_char_ascii(std::basic_ostream<Ch,Tr> &out, unsigned char c) 
     }
 }
 
-// if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or get_from):
+// if you want custom actions/parsing while reading labels, make a functor with this signature and pass it as an argument to read_tree (or read):
 template <class Label>
 struct DefaultReader
 {
@@ -352,7 +352,7 @@ template <class Label>
     };
 
 
-// can only be passed to class that itself reads things with a Reader get_from method.
+// can only be passed to class that itself reads things with a Reader read method.
 template <class R>
 struct IndirectReader
 {
@@ -414,7 +414,7 @@ inline  std::ios_base::iostate print_range(std::basic_ostream<Ch,Tr>& o,T begin,
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
 template <class Ch, class Tr, class Reader, class T>
-std::ios_base::iostate range_get_from(std::basic_istream<Ch,Tr>& in,T &out,Reader read)
+std::ios_base::iostate range_read(std::basic_istream<Ch,Tr>& in,T &out,Reader read)
 {
     char c;
     EXPECTI_COMMENT_FIRST(in>>c);
@@ -469,7 +469,7 @@ template <class Ch, class Tr,class T>
 T read_range(std::basic_istream<Ch,Tr>& in,T begin,T end) {
 #if 1
     bounded_iterator<T> o(begin,end);
-    if (range_get_from(in,o,DefaultReader<typename std::iterator_traits<T>::value_type >()) != GENIOGOOD)
+    if (range_read(in,o,DefaultReader<typename std::iterator_traits<T>::value_type >()) != GENIOGOOD)
         goto fail;
     return o.base();
 #else

@@ -1,4 +1,4 @@
-//Operators << and >> are generated from members get_from(in) and print(out).  Also, convenience macros for reading/validating
+//Operators << and >> are generated from members read(in) and print(out).  Also, convenience macros for reading/validating
 #ifndef GENIO_H
 #define GENIO_H
 
@@ -19,9 +19,9 @@ stream buffers.
 // important: if you want to allow the first EOF/fail in your read routine to be
 // fine (not an exception) don't use EXPECT... etc. or use EXPECT...FIRST
 
-// very important: make your get_from exception safe (use funcs.hpp self_destruct or other guards/automatically managed resources)
+// very important: make your read exception safe (use funcs.hpp self_destruct or other guards/automatically managed resources)
 
-// your class Arg must will provide Arg::get_from(is) ( is >> arg ) and Arg::print_to(os) (os << arg),
+// your class Arg must will provide Arg::read(is) ( is >> arg ) and Arg::print_to(os) (os << arg),
 // returning std::ios_base::iostate (0,badbit,failbit ...)
 // usage:
 /*
@@ -48,7 +48,7 @@ stream buffers.
 
   template <class charT, class Traits>
   std::ios_base::iostate
-  get_from(std::basic_istream<charT,Traits>& in)
+  read(std::basic_istream<charT,Traits>& in)
   {
     return GENIOGOOD;
   fail:
@@ -80,7 +80,7 @@ CREATE_INSERTER_T1(C) // for classes with 1 template arg.
         } } while(0)
 
 // uses (template) charT, Traits
-// s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (get_from or print)
+// s must be an (i)(o)stream reference; io returns GENIOGOOD or GENIOBAD (read or print)
 #define GEN_EXTRACTOR(s,io) GEN_IO_(s,io,std::basic_istream<charT)
 #define GEN_INSERTER(s,io)  do {                                             \
         typename std::basic_ostream<charT,Traits>::sentry sentry(s);                        \
@@ -99,14 +99,14 @@ std::basic_istream<charT, Traits>&
 gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg)
 {
-  GEN_EXTRACTOR(s,arg.get_from(s));
+  GEN_EXTRACTOR(s,arg.read(s));
   return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_istream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.get_from(s);
+        err = arg.read(s);
     if (err)
         s.setstate(err);
     return s;
@@ -138,14 +138,14 @@ std::basic_istream<charT, Traits>&
 gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg, Reader read)
 {
-  GEN_EXTRACTOR(s,arg.get_from(s,read));
+  GEN_EXTRACTOR(s,arg.read(s,read));
   return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_istream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.get_from(s,read);
+        err = arg.read(s,read);
     if (err)
         s.setstate(err);
     return s;
@@ -157,14 +157,14 @@ std::basic_istream<charT, Traits>&
 gen_extractor
 (std::basic_istream<charT, Traits>& s, Arg &arg, Reader read, Flag f)
 {
-  GEN_EXTRACTOR(s,arg.get_from(s,read,f));
+  GEN_EXTRACTOR(s,arg.read(s,read,f));
   return s;
   /*
     if (!s.good()) return s;
     std::ios_base::iostate err = std::ios_base::goodbit;
     typename std::basic_istream<charT, Traits>::sentry sentry(s);
     if (sentry)
-        err = arg.get_from(s,read,f);
+        err = arg.read(s,read,f);
     if (err)
         s.setstate(err);
     return s;
@@ -282,9 +282,9 @@ inline std::basic_ostream<charT,Traits>& operator << \
 #define GENIO_CHECK_ELSE(inop,fail) do {  if (!(inop).good()) { fail; return GENIOBAD; } } while(0)
 */
 
-#define GENIO_get_from   template <class charT, class Traits> \
+#define GENIO_read   template <class charT, class Traits> \
   std::ios_base::iostate \
-  get_from(std::basic_istream<charT,Traits>& in)
+  read(std::basic_istream<charT,Traits>& in)
 
 #define GENIO_print     typedef void has_print; \
  template <class charT, class Traits> \
@@ -296,9 +296,9 @@ inline std::basic_ostream<charT,Traits>& operator << \
   std::ios_base::iostate \
   print(std::basic_ostream<charT,Traits>& o,Writer w) const
 
-#define GENIO_get_from_any   template <class T> \
+#define GENIO_read_any   template <class T> \
   std::ios_base::iostate \
-    get_from(T& in)
+    read(T& in)
 
 
 /*

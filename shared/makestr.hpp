@@ -35,7 +35,7 @@ BOOST_AUTO_UNIT_TEST( makestring )
 {
     std::string s,e;
 # line 39
-    MAKESTRFL(s,"asdf");BOOST_CHECK(s.find("makestr.hpp:39)asdf")!=string::npos);
+    MAKESTRFL(s,"asdf");BOOST_CHECK(s.find("makestr.hpp:39)asdf")!=std::string::npos);
 
     e="12";
     MAKESTRS(s,os << "12");BOOST_CHECK(s==e);

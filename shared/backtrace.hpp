@@ -9,6 +9,7 @@
 # endif
 #endif
 
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/dynarray.h>
 #include <exception>
 #include <iostream>
@@ -63,7 +64,8 @@ public:
             }
         }
     }
-    static void print(std::ostream& o=std::cerr) {
+    template <class O>
+    static void print(O& o) {
         if (stack.size()) {
             o.clear();
             o << "Exception unwind sequence:\n";
@@ -71,13 +73,12 @@ public:
             o << std::endl;
         }
     }
+    void print() 
+    {
+        print(std::cerr);
+    }
+    TO_OSTREAM_PRINT
 };
-
-std::ostream &operator <<(std::ostream &o,const BackTrace::Loc &l)
-{
-    l.print(o);
-    return o;
-}
 
 #ifdef GRAEHL__BACKTRACE_MAIN
 BackTrace::LocStack BackTrace::stack;

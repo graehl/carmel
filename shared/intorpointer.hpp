@@ -18,7 +18,7 @@ struct IntOrPointer {
     typedef Pointed pointed_type;
     typedef Int integer_type;
     typedef Pointed *value_type;
-    typedef IntOrPointer<Pointed> Self;
+    typedef IntOrPointer<Pointed,Int> self_type;
     IntOrPointer(int j) { *this=j; }
     IntOrPointer(size_t j) { *this=j; }
     IntOrPointer(value_type v) { *this=v; }
@@ -47,35 +47,26 @@ struct IntOrPointer {
     void operator=(C j) { i = 2*(integer_type)j+1; }
     void operator=(value_type v) { p=v; }
     IntOrPointer() {}
-    IntOrPointer(const Self &s) : p(s.p) {}
-    void operator=(const Self &s) { p=s.p; }
+    IntOrPointer(const self_type &s) : p(s.p) {}
+    void operator=(const self_type &s) { p=s.p; }
     template <class C>
     bool operator ==(C* v) { return p==v; }
     template <class C>
     bool operator ==(const C* v) { return p==v; }
     template <class C>
     bool operator ==(C j) { return integer() == j; }
-    bool operator ==(Self s) { return p==s.p; }
-    bool operator !=(Self s) { return p!=s.p; }
-    GENIO_print {
+    bool operator ==(self_type s) { return p==s.p; }
+    bool operator !=(self_type s) { return p!=s.p; }
+    template <class O> void print(O&o) const
+    {
         if (is_integer())
             o << integer();
         else {
             o << "0x" << std::hex << (size_t)pointer() << std::dec;
         }
-        return GENIOGOOD;
     }
+    TO_OSTREAM_PRINT
 };
-
-template <class charT, class Traits,class Pointed,class Int>
-std::basic_ostream<charT,Traits>&
-operator <<
-    (std::basic_ostream<charT,Traits>& os, const IntOrPointer<Pointed,Int> &arg)
-{
-  return gen_inserter(os,arg);
-}
-
-
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_INTORPOINTER )

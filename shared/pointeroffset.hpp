@@ -2,6 +2,7 @@
 #ifndef POINTEROFFSET_HPP
 #define POINTEROFFSET_HPP
 
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/genio.h>
 #include <graehl/shared/funcs.hpp>
@@ -87,6 +88,7 @@ struct PointerOffset {
     typedef C* value_type;
     typedef C pointed_type;
     C *offset;
+    typedef PointerOffset<C> self_type;
     PointerOffset() : offset(0) {}
     PointerOffset(size_t i) : offset(index_to_offset<C>(i)) {
 //        DBP2(i,get_index());
@@ -111,6 +113,18 @@ struct PointerOffset {
     bool operator <(PointerOffset<C> c) const { return offset<c.offset; }
     bool operator <=(PointerOffset<C> c) const { return offset<=c.offset; }
     bool operator !=(PointerOffset<C> c) const { return offset!=c.offset; }
+    template <class O> void print(O&o) const
+    {
+        o << "index=" << arg.get_index();
+    }
+    TO_OSTREAM_PRINT
+    template <class I> void read(I&i)
+    {
+        ptrdiff_t i;
+        in >> i;
+        arg = in ? i : 0;
+    }
+    FROM_ISTREAM_READ
 
 /*
 //    operator value_type &() { return offset; }
@@ -234,14 +248,14 @@ struct indirect_lt<PointerOffset<C>,C*> {
     }
 };
 
+/*
 template <class charT, class Traits,class C>
 std::basic_ostream<charT,Traits>&
 operator <<
-  (std::basic_ostream<charT,Traits>& os, const PointerOffset<C> &arg)
+  (std::basic_ostream<charT,Traits>& o, const PointerOffset<C> &arg)
 {
-    return os << "index=" << arg.get_index();
+    return o << "index=" << arg.get_index();
 }
-
 template <class charT, class Traits,class C>
 std::basic_istream<charT,Traits>&
 operator >>
@@ -253,6 +267,7 @@ operator >>
         arg = i;
     return in;
 }
+*/
 
 
 #ifdef TEST

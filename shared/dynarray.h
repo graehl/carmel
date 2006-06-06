@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <iostream>
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/genio.h>
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/funcs.hpp>
@@ -85,13 +86,13 @@ public:
     bool invariant() const {
         return vec >= endspace;
     }
-    typedef array<T,Alloc> Self;
+    typedef array<T,Alloc> self_type;
 //!FIXME: does this swap allocator base?
     void swap(array<T,Alloc> &a) {
-        Self t;
-        memcpy(&t,this,sizeof(Self));
-        memcpy(this,&a,sizeof(Self));
-        memcpy(&a,&t,sizeof(Self));
+        self_type t;
+        memcpy(&t,this,sizeof(self_type));
+        memcpy(this,&a,sizeof(self_type));
+        memcpy(&a,&t,sizeof(self_type));
     }
     array<T,Alloc> substr(unsigned start) const
     {
@@ -145,23 +146,21 @@ public:
         }
 
 
-
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
-    std::ios_base::iostate get_from_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
+    std::ios_base::iostate read_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
     template <class L,class A> friend
     void read(std::istream &in,array<L,A> &x,StackAlloc &a) throw(genio_exception);
 
 
-
     template <class charT, class Traits, class Reader>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
-        return get_from_imp(this,in,read);
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
+        return read_imp(this,in,read);
     }
 
     template <class charT, class Traits>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
-        return get_from(in,DefaultReader<T>());
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
+        return read(in,DefaultReader<T>());
     }
 
     bool empty() const {
@@ -209,7 +208,7 @@ public:
     array(const array<T,Alloc2>&o) : vec(o.vec),endspace(o.endspace) {}
     
     template <class Alloc2>
-    const Self & operator =(const array<T,Alloc2>&o) {
+    const self_type & operator =(const array<T,Alloc2>&o) {
         vec=o.vec;
         endspace=o.endspace;
         return *this;
@@ -280,6 +279,8 @@ public:
         //set_capacity(cap);
     }
     void set_capacity(unsigned int newCap) { endspace=vec+newCap; }
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 // frees self automatically - WARNING - doesn't copy contents!
@@ -294,13 +295,13 @@ public:
         Super::re_alloc(sp);
     }
     template <class charT, class Traits, class Reader>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
         this->dealloc();
-        return get_from_imp(this,in,read);
+        return read_imp(this,in,read);
     }
     template <class charT, class Traits>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
-        return get_from(in,DefaultReader<T>());
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
+        return read(in,DefaultReader<T>());
     }
 
 //!FIXME: doesn't swap allocator base
@@ -316,6 +317,9 @@ private:
     void operator=(const array<T,Alloc> &a) {
         dynarray_assert(0);
     }
+    typedef auto_array<T,Alloc> self_type;
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 template <class T,class Alloc>
@@ -338,14 +342,14 @@ public:
         //~Super(); // happens implicitly!
     }
     template <class charT, class Traits, class Reader>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read) {
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
         this->destroy();
         this->dealloc();
-        return get_from_imp(this,in,read);
+        return read_imp(this,in,read);
     }
     template <class charT, class Traits>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
-        return get_from(in,DefaultReader<T>());
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
+        return read(in,DefaultReader<T>());
     }
 
     void uninit_copy_from(const T* b,const T* e) {
@@ -379,16 +383,16 @@ public:
         //    DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());
     }
-
-private:
-
+    typedef fixed_array<T,Alloc> self_type;
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,typename Alloc=std::allocator<T> > class dynamic_array : public array<T,Alloc> {
-    typedef dynamic_array<T,Alloc> Self;
+    typedef dynamic_array<T,Alloc> self_type;
     //unsigned int sz;
     T *endv;
     typedef array<T,Alloc> Base;
@@ -854,7 +858,7 @@ public:
     // if any element read fails, whole array is clobbered (even if appending!)
     // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class charT, class Traits, class Reader>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read, bool append=false)
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read, bool append=false)
 
         {
             if (!append)
@@ -905,27 +909,28 @@ public:
             return GENIOBAD;
 #else
             //FIXME:
-            std::back_insert_iterator<Self> appender(*this);            
+            std::back_insert_iterator<self_type> appender(*this);            
             std::ios_base::iostate ret=
-                range_get_from(in,appender,read);
+                range_read(in,appender,read);
             if (ret == GENIOBAD)
                 clear();
             return ret;
 #endif
         }
     template <class charT, class Traits>
-    std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
-        return get_from(in,DefaultReader<T>());
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
+        return read(in,DefaultReader<T>());
     }
     template <class charT, class Traits>
     std::ios_base::iostate append_from(std::basic_istream<charT,Traits>& in) {
-        return get_from(in,DefaultReader<T>(),array<T,Alloc>::APPEND);
+        return read(in,DefaultReader<T>(),array<T,Alloc>::APPEND);
     }
     array<T,Alloc> substr(unsigned start) const
     {
         return substr(start,size());
     }
-
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 
@@ -945,15 +950,16 @@ unsigned new_indices(AB remove,O out) {
 }
 
 template <typename T,typename Alloc,class charT, class Traits, class Reader>
-//std::ios_base::iostate array<T,Alloc>::get_from(std::basic_istream<charT,Traits>& in,Reader read)
-std::ios_base::iostate get_from_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read)
+//std::ios_base::iostate array<T,Alloc>::read(std::basic_istream<charT,Traits>& in,Reader read)
+std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read)
 {
     dynamic_array<T,Alloc> s;
-    std::ios_base::iostate ret=s.get_from(in,read);
+    std::ios_base::iostate ret=s.read(in,read);
     s.compact_giving(*a); // transfers to a
     return ret;
 }
 
+/*
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
@@ -1002,7 +1008,8 @@ operator <<
 {
     return gen_inserter(os,arg);
 }
-
+*/
+              
 #if 1
 #define ARRAYEQIMP                                              \
     if (l.size() != r.size()) return false;                     \
@@ -1059,7 +1066,7 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 {
     x.vec=a.aligned_next<L>();
     function_output_iterator<boost::reference_wrapper<StackAlloc> > out(boost::ref(a));
-    range_get_from(in,out,DefaultReader<L>());
+    range_read(in,out,DefaultReader<L>());
     x.endspace=a.next<L>();
 }
 
@@ -1110,7 +1117,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
         IndirectReader<plus_one_reader> reader;
         istringstream ss(sa);
 
-        ba.get_from(ss,reader);
+        ba.read(ss,reader);
 
 //        DBP(ba);
         BOOST_REQUIRE(aa.size()==5);
@@ -1128,7 +1135,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
         IndirectReader<plus_one_reader> reader;
         istringstream ss(sa);
 
-        ba.get_from(ss,reader);
+        ba.read(ss,reader);
 
 //        DBP(ba);
         BOOST_REQUIRE(aa.size()==5);

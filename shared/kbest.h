@@ -207,7 +207,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                 newPath.heapPos = -1;
                 newPath.node = pathGraph[source];
                 newPath.last = NULL;
-                heapAdd(pathQueue, endQueue++, newPath);
+                heap_add(pathQueue, ++endQueue, newPath);
                 while ( heapSize(pathQueue, endQueue) && ++path_no <= k ) {
                     EdgePath *top = pathQueue;
                     GraphArc *cutArc = top->get_cut_arc(); /* replaced:
@@ -279,18 +279,18 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                         if ( from->left ) {
                             newPath.node = from->left;
                             newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
-                            heapAdd(pathQueue, endQueue++, newPath);
+                            heap_add(pathQueue, ++endQueue, newPath);
                         }
                         if ( from->right ) {
                             newPath.node = from->right;
                             newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
-                            heapAdd(pathQueue, endQueue++, newPath);
+                            heap_add(pathQueue, ++endQueue, newPath);
                         }
                         if ( from->arcHeapSize ) {
                             newPath.heapPos = 0;
                             newPath.node = from;
                             newPath.weight = lastWeight + (newPath.node->arcHeap[0]->weight - spawnVertex->weight);
-                            heapAdd(pathQueue, endQueue++, newPath);
+                            heap_add(pathQueue, ++endQueue, newPath);
                         }
                     } else {
                         spawnVertex = from->arcHeap[lastHeapPos];
@@ -299,11 +299,11 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                         if ( from->arcHeapSize > iChild  ) {
                             newPath.heapPos = iChild;
                             newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
-                            heapAdd(pathQueue, endQueue++, newPath);
+                            heap_add(pathQueue, ++endQueue, newPath);
                             if ( from->arcHeapSize > ++iChild ) {
                                 newPath.heapPos = iChild;
                                 newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
-                                heapAdd(pathQueue, endQueue++, newPath);
+                                heap_add(pathQueue, ++endQueue, newPath);
                             }
                         }
                     }
@@ -312,7 +312,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                         newPath.node = pathGraph[spawnVertex->dest];
                         newPath.heapPos = -1;
                         newPath.weight = lastWeight + newPath.node->arc->weight;
-                        heapAdd(pathQueue, endQueue++, newPath);
+                        heap_add(pathQueue, ++endQueue, newPath);
                     }
                 } // end of while
                 delete[] pathQueue;

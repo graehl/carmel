@@ -1,3 +1,8 @@
+2006-06-05  Jonathan Graehl  <graehl@isi.edu>
+
+	* 2heap.h (template): changed heapAdd to work just like
+	std::push_heap (i.e. preincrement end, not post)
+
 2006-06-02  Jonathan Graehl  <graehl@isi.edu>
 
 	* memory_stats.hpp (operator -): include memory mapped in memory_report
