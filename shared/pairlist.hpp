@@ -157,18 +157,8 @@ class pairlist
         return o.str();
     }
 
-    template<class C,class T>
-    friend std::basic_istream<C,T>& operator >>(std::basic_istream<C,T> &in,self_type & me)
-    {
-        me.read(in);
-        return in;
-    }
-    template<class O>
-    friend O& operator <<(O &o,self_type const& me)
-    {
-        me.print(o);
-        return o;
-    }
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 template <class K,class V,char PairSep,char KVSep>

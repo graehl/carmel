@@ -80,7 +80,8 @@ return ret;
 //    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
 }
 
-inline std::ostream &operator << (std::ostream &o, const memory_stats &s) {
+template <class C,class T> inline std::basic_ostream<C,T> &
+operator << (std::basic_ostream<C,T> &o, const memory_stats &s) {
     return o << "["<<s.program_allocated()<<" allocated, " << s.system_allocated() << " from system, "<<s.memory_mapped()<<" memory mapped]";
 }
 

@@ -2,6 +2,10 @@
 #define GRAEHL__SHARED__2HEAP_H
 
 #include <cstdlib>
+#include <iterator>
+#include <algorithm>
+
+namespace graehl {
 
 // binary maximum-heap with elements packed in [heapStart, heapEnd) - heap-sorted on > (*heapStart is the maximum element)
 
@@ -10,119 +14,118 @@
 // 2*i+1 is the right child.
 
 // heapEnd - heapStart = number of elements
-template <typename T> inline std::size_t heapSize ( T *s, T *e )
+template <typename T> inline std::size_t heapSize ( T s, T e )
 {
   return e - s;
 }
 
-template <typename T> inline void heapAdd ( T *heapStart, T *heapEnd, const T& elt )
+template <typename T,typename V> inline void heap_add ( T heapStart, T heapEnd, V const& elt )
      // caller is responsbile for ensuring that *heapEnd is allocated and
      // safe to store the element in (and keeping track of increased size)
 {
-  T *heap = heapStart - 1;
-  std::size_t i = heapEnd - heap;
+  std::size_t i = heapEnd - heapStart;
+  T heap = heapStart - 1;
   std::size_t last = i;
-  while ( (i /= 2) && heap[i] < elt ) {
-    heap[last] = heap[i];
+  while ( (i /= 2) && *(heap+i) < elt ) {
+    *(heap+last) = *(heap+i);
     last = i;
   }
-  heap[last] = elt;
+  *(heap+last) = elt;
 }
 
-// internal routine: repair sub-heap condition given a violation at root element i (heap[i=1]==root)
-template <typename T> static inline void heapify ( T *heap, std::size_t heapSize, std::size_t i)
+// internal routine: repair sub-heap condition given a violation at root element i (*(heap+i=1)==root)
+template <typename T> static inline void heapify ( T heap, std::size_t heapSize, std::size_t i)
 {
-  T temp = heap[i];
+    typename std::iterator_traits<T>::value_type temp = *(heap+i);
   std::size_t parent = i, child = 2*i;
   while ( child < heapSize ) {
-    if ( heap[child] < heap[child+1] )
+    if ( *(heap+child) < *(heap+child+1) )
       ++child;
-    if ( !(temp < heap[child] ) )
+    if ( !(temp < *(heap+child) ) )
       break;
-    heap[parent] = heap[child];
+    *(heap+parent) = *(heap+child);
     parent = child;
     child *= 2;
   }
-  if ( child == heapSize && temp < heap[child]) {
-    heap[parent] = heap[child];
+  if ( child == heapSize && temp < *(heap+child)) {
+    *(heap+parent) = *(heap+child);
     parent = child;
   }
-  heap[parent] = temp;
+  *(heap+parent) = temp;
 }
 
-template <typename T> void heapPop (T *heapStart, T *heapEnd)
+template <typename T> void heapPop (T heapStart, T heapEnd)
 {
-  T *heap = heapStart - 1;  // to start numbering of array at 1
+  T heap = heapStart - 1;  // to start numbering of array at 1
   std::size_t size = heapSize(heapStart,heapEnd);
-  heap[1] = heap[size--];
+  *(heap+1) = *(heap+size--);
   heapify(heap, size, 1);
 }
 
-template <typename T> inline T & heapTop (T *heapStart)
+template <typename T> inline T & heapTop (T heapStart)
 {
   return *heapStart;
 }
 
 
-template <typename T> void heapBuild ( T *heapStart, T *heapEnd )
+template <typename T> void heapBuild ( T heapStart, T heapEnd )
 {
-  T *heap = heapStart - 1;
+  T heap = heapStart - 1;
   std::size_t size = heapEnd - heapStart;
   for ( std::size_t i = size/2 ; i ; --i )
     heapify(heap, size, i);
 }
 
 //FIXME: test!
-template <typename T> bool heapVerify ( T *heapStart, T *heapEnd )
+template <typename T> bool heapVerify ( T heapStart, T heapEnd )
 {
-  T *heap = heapStart - 1;
+  T heap = heapStart - 1;
   std::size_t size = heapEnd - heapStart;
   while (--size>1)
-      if (heap[size/2]<heap[size])
+      if (*(heap+size/2)<*(heap+size))
           return false;
   return true;
 }
 
 // *element may need to be moved up toward the root of the heap.  fix.
-template <typename T> inline void heapAdjustUp ( T *heapStart, T *element)
+template <typename T> inline void heapAdjustUp ( T heapStart, T element)
 {
-  T *heap = heapStart - 1;
+  T heap = heapStart - 1;
   std::size_t parent, current = element - heap;
-  T temp = heap[current];
+  typename std::iterator_traits<T>::value_type temp = *(heap+current);
   while ( current > 1 ) {
     parent = current / 2;
-    if ( !(heap[parent] < temp) )
+    if ( !(*(heap+parent) < temp) )
       break;
-    heap[current] = heap[parent];
+    *(heap+current) = *(heap+parent);
     current = parent;
   }
-  heap[current] = temp;
+  *(heap+current) = temp;
 }
 
 // *heapStart may need to be moved up toward the bottom of the heap.  fix.
-template <typename T> inline void heapAdjustRootDown ( T *heapStart, T *heapEnd)
+template <typename T> inline void heapAdjustRootDown ( T heapStart, T heapEnd)
 {    
-  T *heap = heapStart - 1;
+  T heap = heapStart - 1;
   heapify(heap,heapSize(heapStart,heapEnd),1);
 }
 
 // *heapStart may need to be moved up toward the bottom of the heap.  fix.
-template <typename T> inline void heapAdjustDown ( T *heapStart, T *heapEnd, T *element)
+template <typename T> inline void heapAdjustDown ( T heapStart, T heapEnd, T element)
 {    
-  T *heap = heapStart - 1;
+  T heap = heapStart - 1;
   heapify(heap,heapSize(heapStart,heapEnd),element-heap);
 }
 
-template <typename T> void heapSort (T *heapStart, T *heapEnd)
+template <typename T> void heapSort (T heapStart, T heapEnd)
 {
   heapBuild(heapStart, heapEnd);
-  T *heap = heapStart - 1;      // to start numbering of array at 1
-  T temp;
+  T heap = heapStart - 1;      // to start numbering of array at 1
+//  typename std::iterator_traits<T>::value_type temp;
   int heapSize = heapEnd - heapStart;
   for ( int i = heapSize ; i != 1 ; --i ) {
-    temp = heap[1];
-    heap[1] = heap[i];
-    heap[i] = temp;
+      std::swap(*(heap+1),*(heap+i));
+      //temp = *(heap+1);*(heap+1) = *(heap+i);*(heap+i) = temp;
     heapify(heap, i-1, 1);
   }
 }
@@ -192,15 +195,15 @@ inline C & heapTop (const C & heap) {
 }
 
 template <typename C>
-inline void heapPop (C & heap) {
+inline void heap_pop (C & heap) {
   heapPop(heap.begin(),heap.end());
   heap.pop_back();
 }
 
-template <typename C>
-inline void heapAdd ( C &heap, const typename C::value_type& elt ) {
-  heap.push_back();
-  heapAdd(heap.begin(),heap.end()-1,elt);
+template <typename C,typename V>
+inline void heap_add ( C &heap, const V& elt ) {
+  heap.push_back(elt);
+  heap_add(heap.begin(),heap.end(),elt);
 }
 
 template <typename C>
@@ -217,5 +220,7 @@ template <typename C>
 inline void heapSort ( C &heap ) {
   heapSort(heap.begin(),heap.end());
 }
+
+}//graehl
 
 #endif

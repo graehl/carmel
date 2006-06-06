@@ -24,6 +24,7 @@ There is well-tested log-rep addition/subtraction code in GraehlCVS (graehl/shar
 Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but that is no longer tolerated - e is the only natural base (and "log" sometimes means base 2, like in information theory, so it's confusing).
 */
 
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/genio.h>
@@ -69,6 +70,7 @@ struct logweight;
 template<class Real>
 struct logweight {                 // capable of representing nonnegative reals
   // internal implementation note: by their base e logarithm
+    typedef logweight<Real> self_type;
   Real weight;
     typedef Real float_type;
   private:
@@ -387,7 +389,7 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
     {
         /*
         std::istringstream is(str);
-        if (get_from(is) == GENIOBAD) {
+        if (read(is) == GENIOBAD) {
             throwbadweight();
         }
         */
@@ -446,7 +448,7 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
     
     
 template<class charT, class Traits>
-std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
+std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
   char c;
   double f=0;
   EXPECTI_FIRST(in >> c);
@@ -484,7 +486,8 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in) {
   return GENIOBAD;
 
 }
-
+TO_OSTREAM_PRINT
+FROM_ISTREAM_READ
 };
 
 template<class Real>
@@ -529,7 +532,7 @@ std::ios_base::iostate logweight<Real>::print(std::basic_ostream<charT,Traits>& 
 }
 
 template<class Real,class charT, class Traits>
-std::ios_base::iostate logweight<Real>::get_from(std::basic_istream<charT,Traits>& in)
+std::ios_base::iostate logweight<Real>::read(std::basic_istream<charT,Traits>& in)
 {
 }
 */
@@ -537,6 +540,7 @@ std::ios_base::iostate logweight<Real>::get_from(std::basic_istream<charT,Traits
 
 
 
+/*
 template<class Real,class charT, class Traits>
 std::basic_istream<charT,Traits>&
 operator >>
@@ -552,7 +556,7 @@ operator <<
 {
         return gen_inserter(os,arg);
 }
-
+*/
 //std::ostream& operator << (std::ostream &o, logweight<Real> weight);
 
 //std::istream& operator >> (std::istream &i, logweight<Real> &weight);

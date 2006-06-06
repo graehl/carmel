@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <graehl/shared/debugprint.hpp>
+#include <graehl/shared/stream_util.hpp>
 
 namespace graehl {
 
@@ -34,16 +35,15 @@ class basic_array_streambuf : public std::basic_streambuf<cT, Traits>
     typedef value_type *iterator;     //NOTE: you can count on iterator being a pointer
 
     // shows what's been written
-    template <class C1,class T1>
-    friend std::basic_ostream<C1,T1> & operator <<(std::basic_ostream<C1,T1> &o,const self &my) 
+    template <class O>
+    void print(O *o) const 
     {
-        o << "array_streambuf[" << my.capacity() << "]=[";
-        for (typename self::iterator i=my.begin(),e=my.end();i!=e;++i)
+        o << "array_streambuf[" << capacity() << "]=[";
+        for (typename self::iterator i=begin(),e=end();i!=e;++i)
             o.put(*i);
         o << "]";
-        return o;
     }
-    
+    TO_OSTREAM_PRINT
 
     explicit
     basic_array_streambuf(const char_type * p = 0, size_type sz = 0)
@@ -239,11 +239,11 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
     typedef cT value_type;
     typedef value_type *iterator; //NOTE: you can count on iterator being a pointer
     typedef basic_array_stream<cT,traits> self;
-    template <class C1,class T1>
-    friend std::basic_ostream<C1,T1> & operator <<(std::basic_ostream<C1,T1> &o,const self &my) 
-    {
-        return o << my.m_sbuf;
-    }
+    
+    template <class O>
+    void print(O&o) const {o<<m_sbuf;}
+    TO_OSTREAM_PRINT
+    
     basic_array_stream() : base(&m_sbuf)
     {}
     explicit

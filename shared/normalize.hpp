@@ -35,6 +35,7 @@ namespace graehl {
 //FIXME: leave rules that don't occur in normalization groups alone (use some original/default value)
 template <class Wsource,class Wdest=Wsource>
 struct NormalizeGroups {
+    typedef NormalizeGroups<Wsource,Wdest> self_type;
     typedef Wsource source_t;
     typedef Wdest dest_t;
 //    typedef PointerOffset<W> index_type; // pointer offsets
@@ -56,7 +57,7 @@ struct NormalizeGroups {
 
     template <class charT, class Traits>
     void
-    get_from(std::basic_istream<charT,Traits>& in)
+    read(std::basic_istream<charT,Traits>& in)
     {
         char c;
         EXPECTCH_SPACE('('); //FIXME: rationalize w/ dynarray input w/ optional '('->eof?  not possible?
@@ -238,19 +239,21 @@ struct NormalizeGroups {
         enumerate(norm_groups,ref(*this));
         DBPC2("After normalize:",array<dest_t>(dest,dest+size));
     }
-    GENIO_print
+    template <class O> void print(O&o) const
     {
-        return norm_groups.print(o);
+        norm_groups.print(o);
     }
-
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
+/*
 template <class charT, class Traits,class W1,class W2>
 std::basic_istream<charT,Traits>&
 operator >>
 (std::basic_istream<charT,Traits>& is, NormalizeGroups<W1,W2> &arg)
 {
-    arg.get_from(is);
+    arg.read(is);
     return is;
 }
 
@@ -260,16 +263,11 @@ std::basic_ostream<charT,Traits>&
 operator <<
               (std::basic_ostream<charT,Traits>& o, const NormalizeGroups<W1,W2> &arg)
 {
-//    return os << arg.norm_groups;
-/*    os << "(\n";
-    arg.norm_groups.enumerate(LineWriter());
-    os << ")\n";
-*/
     arg.print(o);
     return o;
-
 }
-
+*/
+              
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #endif

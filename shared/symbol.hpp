@@ -145,7 +145,7 @@ struct Symbol {
   // empty symbol (isDefault()) is considered an io failure
   template <class charT, class Traits>
   std::ios_base::iostate
-  get_from(std::basic_istream<charT,Traits>& in)
+  read(std::basic_istream<charT,Traits>& in)
   {
         g_buf.clear(); // FIXME: not threadsafe
         char c;

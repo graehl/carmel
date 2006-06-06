@@ -1,13 +1,29 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+#define GRAEHL_HEAP
+
+#ifdef SAMPLE
+# define LAZY_FOREST_EXAMPLES
+#endif 
+
 #ifdef TEST
 #  include <graehl/shared/test.hpp>
 # define LAZY_FOREST_EXAMPLES
 #endif
+
 #ifdef LAZY_FOREST_EXAMPLES
 #include <graehl/shared/info_debug.hpp>
+//# include "default_print.hpp"
+//FIXME: doesn't work
+#include <graehl/shared/debugprint.hpp>
+# include <iostream>
+# include <string>
+# include <sstream>
+# include <cmath>
 #endif
+
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/assertlvl.hpp>
 
 #ifndef INFOT
@@ -80,11 +96,11 @@ class lazy_forest {
     typedef DerivationFactory derivation_factory_type;
     typedef typename derivation_factory_type::derivation_type derivation_type;
     typedef derivation_factory_type D;
-    derivation_type NONE() 
+    derivation_type NONE() const
     {
         return (derivation_type)derivation_factory.NONE();
     }
-    derivation_type PENDING() 
+    derivation_type PENDING() const
     {
         return (derivation_type)derivation_factory.PENDING();
     }
@@ -104,11 +120,11 @@ class lazy_forest {
     }
 
     typedef lazy_forest<derivation_factory_type> forest;
-    typedef forest Self;
+    typedef forest self_type;
 
     //FIXME: faster heap operations if we put handles to hyperedges on heap instead of copying?
     struct hyperedge {
-        typedef hyperedge Self;
+        typedef hyperedge self_type;
         /// antecedent subderivation forest (OR-nodes).  if unary,
         /// child[1]==NULL.  leaves have child[0]==NULL also.
         forest *child[2];
@@ -119,6 +135,13 @@ class lazy_forest {
         /// child[0] and childbp[1]th out of child[1]
         derivation_type derivation;
 
+        // returns NULL if not unary
+        forest *unary_child() const 
+        {
+            if (!child[1]) return NULL;
+            return child[0];
+        }
+        
         hyperedge(derivation_type _derivation,forest *c0,forest *c1) 
         {
             set(_derivation,c0,c1);
@@ -133,7 +156,9 @@ class lazy_forest {
         inline bool operator <(const hyperedge &o) const {
             return derivation_better_than(o.derivation,derivation);
         }
-        void print(std::ostream &o) const
+        
+        template <class O>
+        void print(O &o) const
         {
             o << "{hyperedge(";
             if ( child[0]) {
@@ -144,17 +169,13 @@ class lazy_forest {
             o << ")=" << derivation;
             o << '}';
         }
-        template <class O>
-        friend O &operator<<(O &o,const Self &e) 
-        {
-            e.print(o);
-            return o;
-        }
-        typedef Self default_print;
-        typedef default_print has_print;        
+        
+        TO_OSTREAM_PRINT
+        typedef self_type has_print;
     };
-    
-    void print(std::ostream &o) const
+
+    template <class O>
+    void print(O &o) const
     {
         o << "{NODE @" << this << '[' << memo.size() << ']';        
         if (memo.size()) {            
@@ -168,12 +189,7 @@ class lazy_forest {
         }        
         o << '}';
     }
-    template <class O>
-    friend O &operator<<(O &o,const Self &e) 
-    {
-        e.print(o);
-        return o;
-    }
+    TO_OSTREAM_PRINT
 
     static void set_derivation_factory(derivation_factory_type const &df) 
     {
@@ -207,10 +223,10 @@ class lazy_forest {
             if (memo[n] == PENDING()) {
                 if (throw_on_cycle)
                     throw lazy_derivation_cycle();
-                KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning DONE instead (this means that the caller's nbest will be filled without using me)... n-1th best"); //=" << memo[n-1]
+                KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
                 memo[n] = NONE();
             }
-            return memo[n]; // may be DONE
+            return memo[n]; // may be NONE
         } else {
             assertlvl(19,n==memo.size());
             if (done()) {
@@ -258,7 +274,7 @@ class lazy_forest {
             return top().derivation;
     }
 
-    /// may be followed by add()
+    /// may be followed by add() or add_sorted()  equivalently
     void add_first_sorted(derivation_type r,forest *left=NULL,forest *right=NULL)
     {
         assertlvl(9,pq.empty() && memo.empty());
@@ -283,23 +299,45 @@ class lazy_forest {
         KBESTINFOT("done (heap) " << r);
     }
     
-    void sort()
+    void sort(bool check_best_is_selfloop=false)
     {
 #ifdef GRAEHL_HEAP
         heapBuild(pq.begin(),pq.end());
 #else
-        make_heap(pq.begin(),pq.end());
+        std::make_heap(pq.begin(),pq.end());
 #endif
-        finish_adding();
+        finish_adding(check_best_is_selfloop);
     }
 
-    /// optional: if you call only add() on sorted, you must finish_adding().  otherwise don't call, or call sort() instead
-    void finish_adding() 
+    bool best_is_selfloop() const 
     {
+        return top().unary_child() == this;
+    }
+
+    // note: if 2nd best is selfloop, you're screwed.  violates heap rule temporarily; doing indefinitely would require changing the comparison function.  returns true if everything is ok after, false if we still have a selfloop as first-best
+    bool postpone_selfloop()
+    {
+        if (!best_is_selfloop())
+            return true;        
+        if (pq.size() == 1)
+            return false;
+        if (pq.size()>2 && pq[1] < pq[2]) // STL heap=maxheap.  2 better than 1.
+            std::swap(pq[0],pq[2]);
+        else
+            std::swap(pq[0],pq[1]);
+        return !best_is_selfloop();
+    }
+    
+    /// optional: if you call only add() on sorted, you must finish_adding().  otherwise don't call, or call sort() instead
+    void finish_adding(bool check_best_is_selfloop=false) 
+    {
+        if (check_best_is_selfloop && !postpone_selfloop())
+            throw lazy_derivation_cycle();
         memo.clear();
         memo.push_back(top().derivation);
     }
-    
+
+    // note: postpone_selfloop() may make this not true.
     bool is_sorted()
     {
 #ifdef GRAEHL_HEAP
@@ -313,7 +351,7 @@ class lazy_forest {
         return pq.empty();
     }
     
- private:
+// private:
     typedef std::vector<hyperedge> pq_t;
     typedef std::vector<derivation_type > memo_t;
 
@@ -341,23 +379,23 @@ class lazy_forest {
     }
 
     void push(const hyperedge &e) {
-        pq.push_back(e);
 #ifdef GRAEHL_HEAP
         //FIXME: use dynarray.h? so you don't have to push on a copy of e first
-        heapAdd(pq.begin(),pq.end(),e);
+        heap_add(pq,e);
 #else
-        push_heap(pq.begin(),pq.end());
+        pq.push_back(e);
+        std::push_heap(pq.begin(),pq.end());
         //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
 #endif
     }
     void pop() {
 #ifdef GRAEHL_HEAP
-        heapPop(pq.begin(),pq.end());
+        heap_pop(pq);
 #else
         pop_heap(pq.begin(),pq.end());
         //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
-#endif
         pq.pop_back();
+#endif
     }
     const hyperedge &top() const {
         return pq.front();
@@ -371,18 +409,9 @@ typename lazy_forest<F>::derivation_factory_type lazy_forest<F>::derivation_fact
 template <class F>
 bool lazy_forest<F>::throw_on_cycle=false;
 
-/// THE REST OF THIS FILE IS JUST EXAMPLES
+/// END LIBRARY - only examples/tests follow
 
 #ifdef LAZY_FOREST_EXAMPLES
-
-//# include "default_print.hpp"
-//FIXME: doesn't work
-
-//# include "test.hpp"
-# include <iostream>
-# include <string>
-# include <sstream>
-# include <cmath>
 
 namespace lazy_forest_kbest_example {
 
@@ -491,7 +520,7 @@ qo -> C # .25 g
 .33 -> 1.10
 */
 
-inline void jonmay_cycle(int weightset=0) 
+inline void jonmay_cycle(unsigned N=25,int weightset=0) 
 {
     using std::log;
     LK::lazy_forest qe, 
@@ -538,33 +567,41 @@ inline void jonmay_cycle(int weightset=0)
     
     NESTT;
     //LK::enumerate_kbest(10,&qo,ResultPrinter());
-    qe.enumerate_kbest(25,ResultPrinter());
+    qe.enumerate_kbest(N,ResultPrinter());
 }
 
-inline void simplest_cycle()
+inline void simplest_cycle(unsigned N=25)
 {
-    float cc=0,cb=1,ca=.33;
+    float cc=0,cb=1,ca=.33,cn=-10;
     Result c("q->C",cc);
     Result b("q->B(q)",cb,&c);
+    Result n("q->N(q)",cn,&c);
     Result a("q->A(q q)",ca,&c,&c);
     LK::lazy_forest q,q2;
     q.add(&a,&q,&q);
     q.add(&b,&q);
+    q.add(&n,&q);
     q.add(&c);
     MUST(!q.is_sorted());
     q.sort();
-    MUST(q.is_sorted());
+//    MUST(q.is_sorted());
     NESTT;
-    q.enumerate_kbest(30,ResultPrinter());
+    q.enumerate_kbest(N,ResultPrinter());
 }
 
-inline void simple_cycle()
+inline void simple_cycle(unsigned N=25)
 {
 
-    float cc=0;Result c("q->C",cc);
-    float cd=.01;Result d("q2->D(q)",cd,&c);    
-    float cb=.2;Result b("q->B(q2 q2)",cb,&d,&d);
-    float ca=.33;Result a("q->A(q q)",ca,&c,&c);
+    float cc=0;
+    Result c("q->C",cc);
+    float cd=.01;
+    Result d("q2->D(q)",cd,&c);
+    float cneg=-10;
+    Result eneg("q2->E(q2)",cneg,&d);
+    float cb=.1;
+    Result b("q->B(q2 q2)",cb,&d,&d);
+    float ca=.5;
+    Result a("q->A(q q)",ca,&c,&c);
     LK::lazy_forest q,q2;
     q.add(&a,&q,&q);
     q.add(&b,&q2,&q2);
@@ -573,13 +610,18 @@ inline void simple_cycle()
     q.sort();
     MUST(q.is_sorted());
     q2.add_sorted(&d,&q);
+    q2.add_sorted(&eneg,&q2);
+    DBP2(eneg,d);
+//    MUST(q2.is_sorted());
+//    q2.sort();
+//    DBP2(*q2.pq[0].derivation,*q2.pq[1].derivation);
+    //   MUST(!q2.is_sorted());
     NESTT;
-    q.enumerate_kbest(30,ResultPrinter());
+    q.enumerate_kbest(N,ResultPrinter());
 }
 
 
-
-inline void jongraehl_example()
+inline void jongraehl_example(unsigned N=25)
 {
     float eps=-1000;
     LK::lazy_forest a,b,c,f;
@@ -609,19 +651,50 @@ inline void jongraehl_example()
     f.enumerate_kbest(1,ResultPrinter());
     b.enumerate_kbest(1,ResultPrinter());
     c.enumerate_kbest(1,ResultPrinter());
-    a.enumerate_kbest(15,ResultPrinter());
+    a.enumerate_kbest(N,ResultPrinter());
 }
-}//ns
+
+inline void all_examples(unsigned N=30)
+{
+    simplest_cycle(N);
+    simple_cycle(N);
+    jongraehl_example(N);
+    jonmay_cycle(N);
+}
+
+}//lazy_forest_kbest_example
 #endif
 
 # ifdef TEST
 BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
-    using namespace lazy_forest_kbest_example;
-    jongraehl_example();
-    jonmay_cycle();
+    lazy_forest_kbest_example::all_examples();
+    
 }
 #endif
 
 }
+
+#ifdef SAMPLE
+int main()
+{
+    using namespace graehl::lazy_forest_kbest_example;
+    unsigned N=30;
+    simplest_cycle(N);
+//    all_examples();
+    return 0;
+    /*
+          if (argc>1) {
+        char c=argv[1][0];
+        if (c=='1')
+            simple_cycle();
+        else if (c=='2')
+            simplest_cycle();
+        else
+            jongraehl_example();
+    } else
+        jonmay_cycle();
+    */
+}
+#endif 
 
 #endif

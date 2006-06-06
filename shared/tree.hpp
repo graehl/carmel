@@ -17,6 +17,7 @@ namespace lambda=boost::lambda;
 #include <graehl/shared/graphviz.hpp>
 //#include "symbol.hpp"
 #include <graehl/shared/byref.hpp>
+#include <graehl/shared/stream_util.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -26,18 +27,18 @@ namespace lambda=boost::lambda;
 //template <class L, class A> struct Tree;
 
 // Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
-// FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting Self
+// FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting self_type
 namespace graehl {
 
 template <class L, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
-  typedef Tree Self;
+  typedef Tree self_type;
   typedef L Label;
   Label label;
   typedef rank_type Rank;
   Rank rank;
 private:
-  //Tree(const Self &t) : {}
-  Self **children;
+  //Tree(const self_type &t) : {}
+  self_type **children;
 
 public:
   template<class T>
@@ -48,7 +49,7 @@ public:
   }
   template<class T>
   const T &leaf_data() const {
-        return const_cast<Self *>(this)->leaf_data<T>();
+        return const_cast<self_type *>(this)->leaf_data<T>();
   }
 /*
   int &leaf_data_int() {
@@ -56,10 +57,10 @@ public:
         return *(reinterpret_cast<int *>(&children));
   }
   void * leaf_data() const {
-        return const_cast<Self *>(this)->leaf_data();
+        return const_cast<self_type *>(this)->leaf_data();
   }
   int leaf_data_int() const {
-        return const_cast<Self *>(this)->leaf_data();
+        return const_cast<self_type *>(this)->leaf_data();
   }
   */
 
@@ -79,7 +80,7 @@ public:
 #else
         if (rank)
 #endif
-          children = (Self **)this->allocate(rank);
+          children = (self_type **)this->allocate(rank);
   }
   Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
         alloc(_rank);
@@ -109,10 +110,10 @@ public:
         dealloc();
   }
   // STL container stuff
-  typedef Self *value_type;
+  typedef self_type *value_type;
   typedef value_type *iterator;
 
-  typedef const Self *const_value_type;
+  typedef const self_type *const_value_type;
   typedef const const_value_type *const_iterator;
 
   value_type & child(Rank i) {
@@ -144,10 +145,10 @@ public:
           return children+rank;
   }
   const_iterator begin() const {
-        return const_cast<Self *>(this)->begin();
+        return const_cast<self_type *>(this)->begin();
   }
   const_iterator end() const {
-        return const_cast<Self *>(this)->end();
+        return const_cast<self_type *>(this)->end();
   }
   template <class T>
 friend size_t tree_count(const T *t);
@@ -202,10 +203,10 @@ std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o) const
     */
 //template <class T, class charT, class Traits>  friend
   template <class charT, class Traits, class Reader>
-  static Self *read_tree(std::basic_istream<charT,Traits>& in,Reader r) {
-  Self *ret = new Self;
+  static self_type *read_tree(std::basic_istream<charT,Traits>& in,Reader r) {
+  self_type *ret = new self_type;
   std::ios_base::iostate err = std::ios_base::goodbit;
-  if (ret->get_from(in,r))
+  if (ret->read(in,r))
         in.setstate(err);
   if (!in.good()) {
         delete_tree(ret);
@@ -216,7 +217,7 @@ std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o) const
   }
 
 template <class charT, class Traits>
-  static Self *read_tree(std::basic_istream<charT,Traits>& in) {
+  static self_type *read_tree(std::basic_istream<charT,Traits>& in) {
         return read_tree(in,DefaultReader<Label>());
   }
 
@@ -231,12 +232,12 @@ friend void delete_tree(T *);
 
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
 template <class charT, class Traits, class Reader>
-std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read)
+std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read)
 // doesn't free old children if any
 {
   char c;
   rank=0;
-  dynamic_array<Self *> in_children;
+  dynamic_array<self_type *> in_children;
   EXPECTI_COMMENT_FIRST(in>>c);
   if (c == '(') {
       EXPECTI_COMMENT(deref(read)(in,label));
@@ -262,7 +263,7 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
           break;
       }
       in.unget();
-      Self *in_child = read_tree(in,read);
+      self_type *in_child = read_tree(in,read);
       if (in_child) {
           DBTREEIO('!');
           in_children.push_back(in_child);
@@ -276,21 +277,23 @@ std::ios_base::iostate get_from(std::basic_istream<charT,Traits>& in,Reader read
   return GENIOGOOD;
 
 fail:
-  for (typename dynamic_array<Self *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
+  for (typename dynamic_array<self_type *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
       delete_tree(*i);
   return GENIOBAD;
 }
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 
 
+/*
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
 operator >>
  (std::basic_istream<charT,Traits>& is, Tree<L,A> &arg)
 {
         return gen_extractor(is,arg,DefaultReader<L>());
-        DBTREEIO(std::endl);
 }
 
 template <class charT, class Traits,class L,class A>
@@ -300,7 +303,7 @@ operator <<
 {
         return gen_inserter(os,arg);
 }
-
+*/
 
 
 
@@ -436,7 +439,7 @@ template <class L,class A>
 void Tree<L,A>::dealloc_recursive() {
         for(iterator i=begin(),e=end();i!=e;++i)
           delete_tree(*i);
-        //foreach(begin(),end(),delete_tree<Self>);
+        //foreach(begin(),end(),delete_tree<self_type>);
         dealloc();
   }
 

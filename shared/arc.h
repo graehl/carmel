@@ -4,7 +4,7 @@
 #include <graehl/shared/config.h>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/2hash.h>
-#include <iostream>
+#include <graehl/shared/stream_util.hpp>
 
 struct FSTArc {
   int in;
@@ -38,13 +38,13 @@ struct FSTArc {
     {
         groupId = group;
     }
+    template <class O> void print(O&o) const
+    {
+        o<<'(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
+    }
+    TO_OSTREAM_PRINT
+        
 };
-
-inline
-std::ostream & operator << (std::ostream &out,const FSTArc &a) {
-  out << '(' << a.dest << ' ' << a.in << ' ' << a.out << ' ' << a.weight << ')';
-  return(out);
-}
 
 typedef FSTArc *HalfArc;
 

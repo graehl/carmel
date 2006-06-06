@@ -8,6 +8,7 @@
 #include <memory>
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/hashtable_fwd.hpp>
+#include <graehl/shared/stream_util.hpp>
 
 #define GOLDEN_MEAN_FRACTION 2654435769U
 
@@ -63,25 +64,21 @@ public:
   //friend class HashTable<K,V>;
   //friend class HashIter<K,V>;
   //friend class HashConstIter<K,V>; // Yaser
-#if 0
-#if (__GNUC__== 2 && __GNUG__== 2  && __GNUC_MINOR__ <= 7) || defined(_MSC_VER)
-  // version 2.7.2 or older of gcc compiler does not understand '<>' so it will give
-  // an error message if '<>' is present. However, it is required by newer versions
-  // of the compiler and if it is not present, a warning will be given
-  friend std::ostream & operator << (std::ostream &, const HashEntry<K,V> &);
-#else
-  friend std::ostream & operator << <> (std::ostream &, const HashEntry<K,V> &);
-#endif
-#endif
+    template <class O> void print(O&o) const 
+    {
+        o << '(' << e.first << ',' << e.second << ')';
+    }
+    TO_OSTREAM_PRINT
 };
 
+/*
 template <typename K, typename V,class A,class B>
 inline
 std::basic_ostream<A,B>&
          operator<< (std::basic_ostream<A,B> &out, const HashEntry<K,V> & e) {
-   return out << '(' << e.first << ',' << e.second << ')';
+   return out << 
 }
-
+*/
 
 /*
 template <typename K, typename V> class HashRemoveIter {

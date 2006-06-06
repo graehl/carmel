@@ -9,13 +9,6 @@
 
 #include <graehl/shared/stringkey.h>
 
-inline std::ostream & operator << (std::ostream & out, const StringKey &s)
-{
-  out << s.c_str();
-  return out;
-}
-
-
 class StringPool {
   static char * clone(const char *str) {
     return strcpy(NEW char[strlen(str)+1], str);

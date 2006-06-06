@@ -309,23 +309,23 @@ struct Node {
         return pq.empty();
     }
     void push(const QEntry &e) {
-        pq.push_back(e);
 #ifdef GRAEHL_HEAP
         //FIXME: use dynarray.h? so you don't have to push on a copy of e first
-        heapAdd(pq.begin(),pq.end(),e);
+        heap_add(pq,e);
 #else
+        pq.push_back(e);
         push_heap(pq.begin(),pq.end());
         //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
 #endif
     }
     void pop() {
 #ifdef GRAEHL_HEAP
-        heapPop(pq.begin(),pq.end());
+        heap_pop(pq);
 #else
         pop_heap(pq.begin(),pq.end());
         //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
-#endif
         pq.pop_back();
+#endif
     }
     const QEntry &top() const {
         return pq.front();

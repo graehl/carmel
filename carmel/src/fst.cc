@@ -739,7 +739,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
         newPath.heapPos = -1;
         newPath.node = pathGraph[0];
         newPath.last = NULL;
-        heapAdd(pathQueue, endQueue++, newPath);
+        heap_add(pathQueue, ++endQueue, newPath);
         while ( heapSize(pathQueue, endQueue) && --k ) {
           EdgePath *top = pathQueue;
           GraphArc *cutArc;
@@ -800,18 +800,18 @@ List<List<PathArc> > *WFST::bestPaths(int k)
             if ( from->left ) {
               newPath.node = from->left;
               newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
-              heapAdd(pathQueue, endQueue++, newPath);
+              heap_add(pathQueue, ++endQueue, newPath);
             }
             if ( from->right ) {
               newPath.node = from->right;
               newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
-              heapAdd(pathQueue, endQueue++, newPath);
+              heap_add(pathQueue, ++endQueue, newPath);
             }
             if ( from->arcHeapSize ) {
               newPath.heapPos = 0;
               newPath.node = from;
               newPath.weight = lastWeight + (newPath.node->arcHeap[0]->weight - spawnVertex->weight);
-              heapAdd(pathQueue, endQueue++, newPath);
+              heap_add(pathQueue, ++endQueue, newPath);
             }
           } else {
             spawnVertex = from->arcHeap[lastHeapPos];
@@ -820,11 +820,11 @@ List<List<PathArc> > *WFST::bestPaths(int k)
             if ( from->arcHeapSize > iChild  ) {
               newPath.heapPos = iChild;
               newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
-              heapAdd(pathQueue, endQueue++, newPath);
+              heap_add(pathQueue, ++endQueue, newPath);
               if ( from->arcHeapSize > ++iChild ) {
                 newPath.heapPos = iChild;
                 newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
-                heapAdd(pathQueue, endQueue++, newPath);
+                heap_add(pathQueue, ++endQueue, newPath);
               }
             }
           }
@@ -833,7 +833,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
             newPath.node = pathGraph[spawnVertex->dest];
             newPath.heapPos = -1;
             newPath.weight = lastWeight + newPath.node->arc->weight;
-            heapAdd(pathQueue, endQueue++, newPath);
+            heap_add(pathQueue, ++endQueue, newPath);
           }
         } // end of while
         delete[] pathQueue;

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <graehl/shared/stream_util.hpp>
 
 namespace graehl {
 
@@ -137,7 +138,8 @@ class stopwatch
     {
         os << '[' << total_time(WALL_TIME) << " wall sec, " << total_time(USER_TIME) << " user sec, " << total_time(SYSTEM_TIME) << " system sec, " << total_time(PAGEFAULTS) << " major page faults]";
     }
-    
+    typedef stopwatch self_type;
+    TO_OSTREAM_PRINT
     template <class Ostream>
     friend Ostream & operator <<(Ostream &os,stopwatch const& t) {
         t.print(os);    
