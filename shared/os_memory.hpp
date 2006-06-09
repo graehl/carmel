@@ -18,6 +18,11 @@
 #include <string>
 #include <sstream>
 
+#ifdef GRAEHL__OS_MEMORY_POPEN
+#else 
+#include <sys/sysinfo.h>
+#endif
+
 namespace graehl {
 
 using __gnu_cxx::stdio_filebuf;
@@ -43,6 +48,7 @@ struct os_memory
     
     void measure() 
     {
+#ifdef GRAEHL__OS_MEMORY_POPEN
         char line[4096];
         using namespace std;
         FILE* free;
@@ -65,6 +71,12 @@ struct os_memory
             }
         }
         pclose(free);
+#else
+        struct sysinfo info;
+        unix_nofail(sysinfo(&info),"sysinfo");
+        ram=info.mem_unit*info.totalram;
+        swap=info.mem_unit*info.totalswap;
+#endif 
     }
 
     // without reference to how much memory already used, advise physical+swap_portion*swap-swap_reserve_megs
@@ -153,10 +165,10 @@ int main(int argc, char *argv[])
     os_memory mem;
     cout << mem << endl;
     if (argc==2) {
-        mem.set_memory_limit(size_bytes_integral(string(argv[1])),&cerr);
+        mem.set_memory_limit(size_bytes_integral(string(argv[1]),true),&cerr);
     } else if (argc==3) {
-        size_bytes swap_portion=string(argv[1]);
-        size_bytes swap_reserve_bytes=string(argv[2]);
+        size_bytes swap_portion(argv[1],true);
+        size_bytes swap_reserve_bytes(argv[2],true);
         size_bytes_integral lim=mem.suggest_limit(swap_portion,swap_reserve_bytes);
         cerr << "asking for limit " << lim << " from swap portion " << swap_portion << " and reserved for system swap of " << swap_reserve_bytes <<"\n";
         mem.set_memory_limit(lim,&cerr);

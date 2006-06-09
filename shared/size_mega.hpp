@@ -7,6 +7,7 @@
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/program_options.hpp>
 #include <sstream>
+#include <cstddef>
 
 namespace graehl {
 
@@ -84,7 +85,7 @@ inline size_type size_from_str(std::string const &str) {
 template <bool decimal_thousand=true,class size_type=double>
 struct size_mega
 {
-    typedef size_mega<decimal_thousand,size_mega> self_type;
+    typedef size_mega<decimal_thousand,size_type> self_type;
     size_type size;
     operator size_type &() 
     {
@@ -106,13 +107,14 @@ struct size_mega
         local_stream_flags<Ostream> save(o);
 //        o << std::setprecision(2);
         o << std::setw(4);
-        return print_size(o,size,decimal_thousand);
+        print_size(o,size,decimal_thousand);
     }
     TO_OSTREAM_PRINT
 };
 
 typedef size_mega<false,double> size_bytes;
 typedef size_mega<false,unsigned long long> size_bytes_integral;
+typedef size_mega<true,std::size_t> size_t_metric;
 typedef size_mega<true,double> size_metric;
 
 
