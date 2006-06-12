@@ -2,17 +2,10 @@
 #define GRAEHL__SHARED__NULL_TERMINATED_HPP
 
 #include <boost/iterator/iterator_facade.hpp>
+#include <graehl/shared/is_null.hpp>
 #include <cstring>
 
-template <class C> inline
-bool is_null(C const &c) 
-{ return !c; }
-
-template <class C> inline
-void set_null(C &c)
-{ c=C(); }
-
-
+namespace graehl {
     
 
 template <class C>
@@ -75,6 +68,8 @@ inline C * null_terminated_end(C * s)
 {
     while (*s++) ;
     return s;
+}
+
 }
 
 

@@ -70,7 +70,7 @@ inline size_type parse_size(inputstream &i) {
     if (number - (size_type)number > 1)
         throw std::runtime_error(std::string("Overflow - size too big to fit: ").append(boost::lexical_cast<std::string>(number)));
     return (size_type)number;
-fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (2^10,2^20,2^30) suffix."));
+fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (10^3,10^6,10^9) suffix, or K, M, or G (2^10,2^20,2^30)."));
 }
 
 template <class size_type>
@@ -95,6 +95,7 @@ struct size_mega
     {
         return size;
     }
+    size_mega() : size() {}
     size_mega(self_type const& o) : size(o.size) {}
     size_mega(size_type size_) : size(size_) {}
     size_mega(std::string const& str,bool unused) 

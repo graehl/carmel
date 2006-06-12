@@ -166,54 +166,6 @@ void sort_unique(Cont &cont)
     unique(cont);
 }
 
-
-template <class pointed_to>
-void delete_now(std::auto_ptr<pointed_to> &p) {
-//    std::auto_ptr<pointed_to> take_ownership_and_kill(p);
-        delete p.release();
-}
-
-struct delete_anything
-{
-    template <class P>
-    void operator()(P *p) 
-    {
-        delete p;
-    }    
-};
-
-
-
-// note: google groups on "vector clear deallocate" - you'll see that clear() doesn't free up memory - not so helpful when you hit an OOM exception and want to use a singleton vector instead
-template <class Container> inline
-void reconstruct(Container &v,size_t n,const typename Container::value_type &val)
-{
-    /*
-    v.clear();
-    v.insert(v.end(),n,val);
-    */
-    v.~Container();
-    new(&v)Container(n,val);
-}
-
-template <class Container> inline
-void reconstruct(Container &v,size_t n)
-{
-    /*
-    v.clear();
-    v.insert(v.end(),n,val);
-    */
-    v.~Container();
-    new(&v)Container(n);
-}
-
-template <class V>
-void reconstruct(V &v) {
-    v.~V();
-    new (&v)V();
-}
-
-
 template <class Ck,class Cv,class Cr> inline
 void zip_lists_to_pairlist(const Ck &K,const Cv &V,Cr &result)
 {
@@ -345,14 +297,6 @@ void resize_up_for_index(C &c,size_t i)
     if (newsize > c.size())
         c.resize(newsize);
 }
-
-// note: not finished - see boost::iterator_facade
-template <class P>
-struct null_terminated_iterator
-{
-    P *me;    
-};
-
     
 
 // I hope you have an efficient swap :)
