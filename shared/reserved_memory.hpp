@@ -18,6 +18,10 @@ struct reserved_memory {
     {
         init_safety();
     }
+    ~reserved_memory()
+    {
+        use();
+    }
     bool use() {
         if (safety) {
             ::operator delete(safety); // ok if NULL
