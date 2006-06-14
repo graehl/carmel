@@ -10,7 +10,7 @@ struct time_space_report : public memory_report
 {
     stopwatch time;
     std::string new_desc;
-    time_space_report(std::ostream &o,std::string const& desc_="memory/time elapsed: ")
+    time_space_report(std::ostream &o,std::string const& desc_="\nmemory/time elapsed: ")
         : memory_report(o,""),new_desc(desc_) {}
     void report()
     {

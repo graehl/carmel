@@ -91,7 +91,7 @@ struct memory_report
     std::string desc;
     memory_stats before;
     bool reported;
-    memory_report(std::ostream &o,std::string const& desc="memory used: ")
+    memory_report(std::ostream &o,std::string const& desc="\nmemory used: ")
         : o(o),desc(desc),reported(false) {}
     void report()
     {
@@ -104,7 +104,7 @@ struct memory_report
             o << "+" << S(post-pre);
         } else
             o << "-" << S(pre-post);
-        o << " (" << pre << " -> " << post << ")\n";
+        o << " (" << pre << " -> " << post << ")" << std::endl;
         reported=true;
     }
     ~memory_report()
