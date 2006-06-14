@@ -107,12 +107,12 @@ struct os_memory
     };
     
         
-    
-    static memory_size set_memory_limit(memory_size limit,std::ostream *log=NULL)
+    // also RLIMIT_STACK (man getrlimit)
+    static memory_size set_memory_limit(memory_size limit,std::ostream *log=NULL,int rlim_type=RLIMIT_AS)
     {
         rlimit l;
         /* obtain current address space (virtual memory) limits */
-        unix_nofail(getrlimit( RLIMIT_AS, &l ),"getrlimit RLIMIT_AS");
+        unix_nofail(getrlimit( rlim_type, &l ),"getrlimit");
 
         if ( l.rlim_max != RLIM_INFINITY && l.rlim_max < limit ) {
             /* new limit too high, ignore it */
@@ -121,9 +121,9 @@ struct os_memory
         }
         /* set new limit */
         l.rlim_cur = limit;
-        unix_nofail(setrlimit( RLIMIT_AS, &l ),"setrlimit RLIMIT_AS");
+        unix_nofail(setrlimit( rlim_type, &l ),"setrlimit");
         /* verify - never, ever trust Linux */
-        unix_nofail(getrlimit( RLIMIT_AS, &l),"getrlimit RLIMIT_AS");
+        unix_nofail(getrlimit( rlim_type, &l),"getrlimit");
         
         if ( l.rlim_cur != limit ) {
             if (log) *log << "Didn't get requested soft limit " << printable_limit(limit) << "; got " << printable_limit(l.rlim_cur)<<std::endl;
