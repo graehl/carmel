@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <graehl/shared/char_predicate.hpp>
+#include <boost/config.hpp>
 
 namespace graehl {
 
@@ -20,9 +21,9 @@ struct ctype_table
     operator mask_type *() 
     { return rc; }
     
-    enum {
-        ADD,REPLACE,REMOVE
-    };
+    BOOST_STATIC_CONSTANT(int,ADD=0);
+    BOOST_STATIC_CONSTANT(int,REPLACE=1);
+    BOOST_STATIC_CONSTANT(int,REMOVE=2);
     template <class CharPred,class WTF>
     ctype_table(CharPred pred,int mode,WTF const& wtf) {
         std::copy(wtf, wtf + CT::table_size, rc);
@@ -48,11 +49,9 @@ struct ctype_table
 class ctype_mod_ws: private ctype_table,public std::ctype<char>
 {
  public:
-    enum {
-        ADD=ctype_table::ADD,
-        REPLACE=ctype_table::REPLACE,
-        REMOVE=ctype_table::REMOVE
-    };    
+    BOOST_STATIC_CONSTANT(int,ADD=ctype_table::ADD);
+    BOOST_STATIC_CONSTANT(int,REPLACE=ctype_table::REPLACE);
+    BOOST_STATIC_CONSTANT(int,REMOVE=ctype_table::REMOVE);
         
     template <class CharPred>
     ctype_mod_ws(CharPred pred,int mode=REMOVE): ctype_table(pred,mode,classic_table()),std::ctype<char>(rc) {}

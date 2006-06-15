@@ -171,7 +171,6 @@ class lazy_forest {
         }
         
         TO_OSTREAM_PRINT
-        typedef self_type has_print;
     };
 
     template <class O>
@@ -400,8 +399,6 @@ class lazy_forest {
     const hyperedge &top() const {
         return pq.front();
     }
-    typedef void default_print;
-    typedef void has_print;    
 };
 
 template <class F>
