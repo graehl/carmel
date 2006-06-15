@@ -24,6 +24,18 @@
 
 namespace graehl {
 
+template <class Str> inline
+void erase_begin(Str &s,unsigned n) 
+{
+    s.erase(0,n);
+}
+
+template <class Str> inline
+void erase_end(Str &s,unsigned n) 
+{
+    s.erase(s.length()-n,n);
+}
+
 template <class Str>
 typename Str::size_type replace(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
 {
@@ -358,18 +370,6 @@ template <class Cont> inline
 push_backer<Cont> make_push_backer(Cont &container) 
 {
     return push_backer<Cont>(container);
-}
-
-template <class Str> inline
-void erase_begin(Str &s,unsigned n) 
-{
-    s.erase(0,n);
-}
-
-template <class Str> inline
-void erase_end(Str &s,unsigned n) 
-{
-    s.erase(s.length()-n,n);
 }
 
 template <class In,class Cont> inline

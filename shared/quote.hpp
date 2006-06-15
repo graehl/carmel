@@ -16,6 +16,13 @@
 
 namespace graehl {
 
+template <class Ch, class Tr,class Alloc>
+inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
+{
+    ss.clear();
+    ss.seekg(0,std::ios::beg);
+}
+
 /// convenient usual " \ escaping conventions
 
 template <class C,class Ch, class Tr>
@@ -151,13 +158,6 @@ inline Output copy_escaping(Input in,Input in_end,Output out,SpecialChar is_spec
         *out++=c;
     }
     return out;
-}
-
-template <class Ch, class Tr,class Alloc>
-inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
-{
-    ss.clear();
-    ss.seekg(0,std::ios::beg);
 }
 
 //todo: template traits - but shouldn't matter for output!
