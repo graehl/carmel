@@ -56,11 +56,32 @@ inline std::ostream & operator <<(std::ostream &o,unsigned bp[2])
     return o << '[' << bp[0] << ','<<bp[1]<<']';
 }
 
-template <class Deriv>
+/*
+template <class Deriv> inline
 bool derivation_better_than(const Deriv &me,const Deriv &than)
 {
     return me > than;
 }
+*/
+
+ // you should probably only override (i.e. specialize) this...
+template <class Deriv>
+struct lazy_kbest_derivation_traits 
+{
+    static inline bool better_than(const Deriv &me,const Deriv &than)
+    {
+        return me > than;
+    }
+};
+
+/// but if you overload this you don't need to specialize above, but you may end up less flexible (overloads are always prefered to spec.!)
+template <class Deriv> inline
+bool derivation_better_than(const Deriv &me,const Deriv &than)
+{
+    return lazy_kbest_derivation_traits<Deriv>::better_than(me,than);
+}
+
+
 
 struct lazy_derivation_cycle : public std::runtime_error 
 {
