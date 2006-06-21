@@ -106,8 +106,8 @@ struct size_mega
     void print(Ostream &o) const 
     {
         local_stream_flags<Ostream> save(o);
-//        o << std::setprecision(2);
-        o << std::setw(4);
+        o << std::setprecision(2);
+//        o << std::setw(4);
         print_size(o,size,decimal_thousand);
     }
     TO_OSTREAM_PRINT
