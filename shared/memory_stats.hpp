@@ -35,7 +35,7 @@ struct memory_stats  {
     operator const malloc_info & () const {
         return info;
     }
-    typedef size_mega<false,std::size_t> size_type;
+    typedef size_bytes size_type;
 
     // includes memory mapped
     size_type total_allocated() const
