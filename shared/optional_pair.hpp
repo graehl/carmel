@@ -58,12 +58,15 @@ struct optional_pair //: public std::pair<T1,T2>
     {
         has_second=false;
         char c;
-        if (i >> first)
-            if (i.get(c))
+        if (i >> first) {
+            if (i.get(c)) {
                 if (c!=sep)
                     i.unget();
                 else if (i >> second)
                     has_second=true;
+            } else
+                i.clear();            
+        }
     }
     
     TO_OSTREAM_PRINT

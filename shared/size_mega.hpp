@@ -115,6 +115,7 @@ struct size_mega
 
 typedef size_mega<false,double> size_bytes;
 typedef size_mega<false,unsigned long long> size_bytes_integral;
+typedef size_mega<false,std::size_t> size_t_bytes;
 typedef size_mega<true,std::size_t> size_t_metric;
 typedef size_mega<true,double> size_metric;
 

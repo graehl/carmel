@@ -6,24 +6,38 @@
 
 namespace graehl {
 
-struct time_space_report : public memory_report
+struct time_change 
 {
+    static char const* default_desc() 
+    { return "\nelapsed: "; }
+    
     stopwatch time;
-    std::string new_desc;
-    time_space_report(std::ostream &o,std::string const& desc_="\nmemory/time elapsed: ")
-        : memory_report(o,""),new_desc(desc_) {}
-    void report()
+    template <class O>
+    void print(O &o) const
     {
-        o << new_desc;
-        o << time.recent_total_time() << "sec, memory ";
-        memory_report::report();
+        o << const_cast<stopwatch&>(time).recent_total_time() << " sec";
     }
-    ~time_space_report()
-    {
-        if (!reported)
-            report();
-    }
+    typedef time_change self_type;
+
+    TO_OSTREAM_PRINT    
 };
+
+struct time_space_change 
+{
+    static char const* default_desc() 
+    { return "\ntime and memory used: "; }
+    time_change tc;
+    memory_change mc;
+    void print(std::ostream &o) const
+    {
+        o << tc << ", memory " << mc;
+    }
+    typedef time_space_change self_type;
+    TO_OSTREAM_PRINT
+};
+
+typedef auto_report<time_change> time_report;
+typedef auto_report<time_space_change> time_space_report;
 
 }
 

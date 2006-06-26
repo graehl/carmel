@@ -5,6 +5,8 @@
 #include <malloc.h>
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/size_mega.hpp>
+#include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/auto_report.hpp>
 
 namespace graehl {
 
@@ -85,35 +87,29 @@ operator << (std::basic_ostream<C,T> &o, const memory_stats &s) {
     return o << "["<<s.program_allocated()<<" allocated, " << s.system_allocated() << " from system, "<<s.memory_mapped()<<" memory mapped]";
 }
 
-struct memory_report
+struct memory_change
 {
-    std::ostream &o;
-    std::string desc;
     memory_stats before;
-    bool reported;
-    memory_report(std::ostream &o,std::string const& desc="\nmemory used: ")
-        : o(o),desc(desc),reported(false) {}
-    void report()
+    static char const* default_desc() 
+    { return "\nmemory used: "; }
+    template <class O>
+    void print(O &o) const
     {
         memory_stats after;
         typedef memory_stats::size_type S;
         S pre=before.total_allocated();
         S post=after.total_allocated();
-        o << desc;
         if (post > pre) {
             o << "+" << S(post-pre);
         } else
             o << "-" << S(pre-post);
-        o << " (" << pre << " -> " << post << ")" << std::endl;
-        reported=true;
+        o << " (" << pre << " -> " << post << ")";
     }
-    ~memory_report()
-    {
-        if (!reported)
-            report();
-    }   
+    typedef memory_change self_type;
+    TO_OSTREAM_PRINT
 };
-    
+
+typedef auto_report<memory_change> memory_report;
 
 }//graehl
 
