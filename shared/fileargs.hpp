@@ -140,6 +140,11 @@ struct file_arg : public boost::shared_ptr<Stream>
     }
     
     // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
+    static std::string const& usage() 
+    {
+        return "special filenames: - for STDIN/STDOUT, -2 for STDERR, -0 for none, X.gz for gzipped";
+    }
+    
     void set(std::string const& s,
              bool null_allowed=ALLOW_NULL)
     {
