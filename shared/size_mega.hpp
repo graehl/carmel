@@ -12,7 +12,7 @@
 namespace graehl {
 
 template <class size_type,class outputstream>
-inline outputstream & print_size(outputstream &o,size_type size,bool decimal_thousand=true) {
+inline outputstream & print_size(outputstream &o,size_type size,bool decimal_thousand=true,int max_width=-1) {
     typedef double size_compute_type;
     size_compute_type thousand=decimal_thousand ? 1000 : 1024;
     if (size < thousand)
@@ -22,12 +22,16 @@ inline outputstream & print_size(outputstream &o,size_type size,bool decimal_tho
     const char *suff=suffixes;
     for(;;) {
         size_compute_type nextbase=base*thousand;
-        if (size < nextbase || suff[1]==0)
-            return o << size/(double)base << *suff;
+        if (size < nextbase || suff[1]==0) {
+            double d=size/(double)base;
+            print_max_width_small(o,d,max_width);
+            return o << *suff;
+        }
+        
         base = nextbase;
         ++suff;
     }
-    return o;
+    return o; // unreachable
 }
 
 template <class size_type,class inputstream>
@@ -105,8 +109,7 @@ struct size_mega
     template <class Ostream>
     void print(Ostream &o) const 
     {
-        local_stream_flags<Ostream> save(o);
-        o << std::setprecision(2);
+        local_precision<Ostream> prec(o,2);
 //        o << std::setw(4);
         print_size(o,size,decimal_thousand);
     }
