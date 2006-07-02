@@ -60,10 +60,12 @@ struct local_stream_format
 {
     local_stream_flags<O> f;
     local_precision<O> p;
+    local_stream_format(O &o) : f(o),p(o) {}
 };
 
     
 
+//FIXME: TEST
 template <class O> inline
 O & print_max_width(O&o,double d,int width=6) 
 {
@@ -92,20 +94,21 @@ O & print_max_width(O&o,double d,int width=6)
 template <class O> inline
 O & print_max_width_small(O&o,double d,int width=4) 
 {
-    local_precision<O> save(o);
-    int p=-1;
+    local_stream_format<O> save(o);
+    int p=0;
     if (width>0) {    
         if (d>=0 && d< 10000) {
             if (d < 10) {
                 p=width-2;
             } else if (d<100) {
                 p=width-3;
-            } else
-                p=0;
+            } else if (d<1000) {
+                p=width-4;
+            }
         }
     }
     if (p>0)
-        o << std::setprecision(p);
+        o << std::fixed << std::setprecision(p);
     return o << d;
 }
 
