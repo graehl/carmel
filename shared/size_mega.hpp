@@ -109,9 +109,9 @@ struct size_mega
     template <class Ostream>
     void print(Ostream &o) const 
     {
-        local_precision<Ostream> prec(o,2);
+//        local_precision<Ostream> prec(o,2);
 //        o << std::setw(4);
-        print_size(o,size,decimal_thousand);
+        print_size(o,size,decimal_thousand,5);
     }
     TO_OSTREAM_PRINT
 };
