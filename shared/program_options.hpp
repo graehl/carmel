@@ -9,12 +9,6 @@
 
 namespace graehl {
 
-inline char const* general_options_desc() 
-{
-    return "General options ('-' for STDIN/OUT), '-2' for STDERR, '-0' for none)";
-}
-
-
 inline std::string const& get_single_arg(boost::any& v,std::vector<std::string> const& values) 
 {
     boost::program_options::validators::check_first_occurrence(v);

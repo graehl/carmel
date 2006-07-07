@@ -34,6 +34,17 @@
 
 namespace graehl {
 
+inline std::string file_arg_usage() 
+{
+    return "special filenames: - for STDIN/STDOUT, -2 for STDERR, -0 for none, X.gz for gzipped";
+}
+
+inline std::string general_options_desc() 
+{
+    return "Options ("+file_arg_usage()+"):";
+}
+
+
 template <class Stream>
 struct stream_traits 
 {
@@ -73,6 +84,8 @@ static const char gz_ext[]=".gz";
 struct null_deleter {
     void operator()(void*) const {}
 };
+
+    
 
 template <class Stream>
 struct file_arg : public boost::shared_ptr<Stream>
@@ -140,11 +153,6 @@ struct file_arg : public boost::shared_ptr<Stream>
     }
     
     // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
-    static std::string const& usage() 
-    {
-        return "special filenames: - for STDIN/STDOUT, -2 for STDERR, -0 for none, X.gz for gzipped";
-    }
-    
     void set(std::string const& s,
              bool null_allowed=ALLOW_NULL)
     {
