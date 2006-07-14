@@ -5,7 +5,7 @@
 
 #ifndef ONE_PLUS_EPSILON
 # ifndef FLOAT_EPSILON
-#  define FLOAT_EPSILON .00001
+#  define FLOAT_EPSILON 1e-5
 # endif
 
 namespace graehl {
@@ -53,9 +53,32 @@ inline Float slightly_smaller(Float target) {
 
 // note, more meaningful tests exist for values near 0, see Knuth
 // (but for logs, near 0 should be absolute-compared)
-inline bool same_within_abs_epsilon(double a,double b,double epsilon=graehl::EPSILON) {
+inline bool same_within_abs_epsilon(double a,double b,double epsilon=EPSILON) {
     return std::fabs(a-b) < epsilon;
 }
+
+inline bool close_by_first(double a,double b,double epsilon=EPSILON) 
+{
+    return std::fabs(a-b) <= epsilon*std::fabs(a);
+}
+
+//DONE: cache fabs(a-b) instead of recomputing for a-b and b-a
+inline bool very_close(double a,double b,double epsilon=EPSILON)
+{
+    using std::fabs;
+    double diff=fabs(a-b);
+    return diff<=epsilon*fabs(a) && diff<=epsilon*fabs(b);
+// return close_by_first(a,b,epsilon) && close_by_first(b,a,epsilon);
+}
+
+inline bool close_enough(double a,double b,double epsilon=EPSILON)
+{
+    using std::fabs;
+    double diff=fabs(a-b);
+    return diff<=epsilon*fabs(a) || diff<=epsilon*fabs(b);
+//    return close_by_first(a,b,epsilon) || close_by_first(b,a,epsilon);
+}
+
 
 }
 

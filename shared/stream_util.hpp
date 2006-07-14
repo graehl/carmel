@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cmath>
 
+
 #define TO_OSTREAM_PRINT                                                                     \
     template <class C,class T> \
     friend std::basic_ostream<C,T> & operator <<(std::basic_ostream<C,T> &o, self_type const& me)       \
@@ -27,6 +28,18 @@
     { me.read(i);return i; }
 
 namespace graehl {
+
+template <class I,class O>
+void copy_stream_to(O &o,I&i) 
+{
+    o << i.rdbuf();
+}
+
+template <class I>
+void rewind_read(I &i)
+{
+    i.seekg(0,std::ios::beg);
+}
 
 template <class Stream>
 struct local_stream_flags
