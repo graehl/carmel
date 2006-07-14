@@ -100,6 +100,18 @@ typename Vector::value_type &at_expand(Vector &vec,std::size_t index,const typen
     return vec[index];
 }
 
+template <class Vector,class DefaultInit> inline
+typename Vector::value_type &at_expand_lazy_default(Vector &vec,std::size_t index,DefaultInit di) 
+{
+    std::size_t sz=vec.size();
+    if (index>=sz) {
+        typename Vector::value_type def;
+        di(def);
+        vec.resize(index+1,def); //     vec.insert(vec.end(),(index-sz)+1,default_value);
+    }
+    return vec[index];
+}
+
 template <class Vector> inline
 typename Vector::value_type const& at_default(Vector const& vec,std::size_t index,typename Vector::value_type const& default_value=typename Vector::value_type())
 {
@@ -123,8 +135,7 @@ void accumulate_at(Vector &table,const Key &key,const Val &val,AccumF accum_f) {
     DBPC3("accumulate-pre",key,val);
 #endif
     typename Vector::value_type default_value;
-    accum_f(default_value);
-    accum_f(at_expand(table,key,default_value),val);
+    accum_f(at_expand_lazy_default(table,key,accum_f),val);
 #ifdef GRAEHL__DBG_ASSOC
     DBPC3("accumulate-post",key,table[key]);
 #endif 

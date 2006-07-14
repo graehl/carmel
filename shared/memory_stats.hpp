@@ -47,18 +47,18 @@ struct memory_stats  {
     
     size_type program_allocated() const 
     {
-        return size_type(info.uordblks);
+        return size_type((unsigned)info.uordblks);
     }
 
     // may only grown monotonically (may not reflect free())
     size_type system_allocated() const 
     {
-        return size_type(info.arena);
+        return size_type((unsigned)info.arena);
     }
     
     size_type memory_mapped() const
     {
-        return size_type(info.hblkhd);
+        return size_type((unsigned)info.hblkhd);
     }
 };
 
