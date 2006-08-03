@@ -28,6 +28,7 @@ struct optional_pair //: public std::pair<T1,T2>
     {
         first=f;
         has_second=false;
+        return *this;
     }
     void set_second(T2 const& s) {
         second=s;

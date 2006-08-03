@@ -99,7 +99,7 @@ struct memory_change
         typedef memory_stats::size_type S;
         S pre=before.total_allocated();
         S post=after.total_allocated();
-        if (post > pre) {
+        if (post >= pre) {
             o << "+" << S(post-pre);
         } else
             o << "-" << S(pre-post);

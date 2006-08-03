@@ -334,14 +334,14 @@ inline bool valid(boost::shared_ptr<Stream> const& pfile)
 }
 
 template <class C>
-inline bool throw_unless_valid(C const& pfile, std::string const& name="file") 
+inline void throw_unless_valid(C const& pfile, std::string const& name="file") 
 {
     if (!valid(pfile))
         throw std::runtime_error(name+" not valid");
 }
 
 template <class C>
-inline bool throw_unless_valid_optional(C const& pfile, std::string const& name="file") 
+inline void throw_unless_valid_optional(C const& pfile, std::string const& name="file") 
 {
     if (pfile && !valid(pfile))
         throw std::runtime_error(name+" not valid");

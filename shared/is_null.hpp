@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__IS_NULL_HPP
 #define GRAEHL__SHARED__IS_NULL_HPP
 
+//NOTE: not namespace graehl.
+
 #include <cmath>
 
 template <class C> inline
@@ -33,6 +35,13 @@ inline void set_null(double &f)
     f=NAN;//0./0.;
 }
 
+struct as_null {};
+// tag for constructors
+
+#define MEMBER_IS_SET_NULL MEMBER_SET_NULL MEMBER_IS_NULL
+
+#define MEMBER_SET_NULL     friend bool is_null(self_type const& me) { return me.is_null(); }
+#define MEMBER_IS_NULL     friend void is_null(self_type & me) { return me.set_null(); }
 
 
 #endif
