@@ -73,8 +73,8 @@ inline void restore_ws(std::basic_istream<Ch,Tr> &in,std::locale const& old_loca
 template <class I>
 struct change_whitespace
 {
-    std::locale old;
     I &i;
+    std::locale old;
     enum {
         ADD=ctype_mod_ws::ADD,
         REPLACE=ctype_mod_ws::REPLACE,

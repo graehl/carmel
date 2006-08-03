@@ -102,9 +102,15 @@ void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const
     if (item)
         err << ' ' << item << " # " << number;
     err << ": " << error << std::endl;
+#ifdef INPUT_ERROR_TELLG
     std::streamoff where(in.tellg());
+#endif 
     show_error_context(in,err);
-//    err << "(file position " <<  where << ")" << std::endl;
+     err 
+#ifdef INPUT_ERROR_TELLG
+//   << "(file position " <<  where << ")"
+#endif 
+         << std::endl;
     throw std::runtime_error(err.str());
 }
 

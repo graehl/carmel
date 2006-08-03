@@ -85,8 +85,8 @@ struct printable_options_description
     struct printable_option 
     {
         typedef boost::shared_ptr<option_description> OD;
-        OD od;
         any_printer<Ostream> print;
+        OD od;
         bool in_group;
         
         std::string const& name() 

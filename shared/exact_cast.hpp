@@ -16,6 +16,7 @@ To exact_static_assign(To &to,From const& from)
     to=static_cast<To>(from);
     if (static_cast<From>(to)!=from)
         throw inexact_cast();
+    return to;
 }
 
 template <class To,class From>
