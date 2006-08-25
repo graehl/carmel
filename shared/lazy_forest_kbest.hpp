@@ -89,14 +89,16 @@ struct lazy_derivation_cycle : public std::runtime_error
 };
         
 
-/// build a copy of your (at most binary) derivation forest, then query its root for the 1st, 2nd, ... best
-/*
+/** build a copy of your (at most binary) derivation forest, then query its root for the 1st, 2nd, ... best
+    <code>
     struct DerivationFactory 
     {
         /// can override derivation_better_than(derivation_type,derivation_type).
         /// derivation_type should be a lightweight (value) object
         /// if INFOT debug prints are enabled, must also have o << deriv
         typedef Result *derivation_type;
+
+        friend bool derivation_better_than(derivation_type a,derivation_type b); // override this or lazy_kbest_derivation_traits::better_than.  default is a>b
         
         /// special derivation values (not used for normal derivations) (may be of different type but convertible to derivation_type)
         static derivation_type PENDING();
@@ -109,7 +111,8 @@ struct lazy_derivation_cycle : public std::runtime_error
             return new Result(prototype,old_child,new_child,changed_child_index);
         }
     };
-*/
+    </code>
+**/
 // TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
 template <class DerivationFactory>
 class lazy_forest {
