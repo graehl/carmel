@@ -2,6 +2,11 @@
 #define GRAEHL__SHARED__IS_NULL_HPP
 
 //NOTE: not namespace graehl.
+#ifdef _WIN32
+#include <float.h>
+#include <xmath.h>
+#endif
+
 
 #include <cmath>
 
@@ -15,7 +20,11 @@ void set_null(C &c)
 
 inline bool is_null(float const& f)
 {
+#ifndef _WIN32
     return std::isnan(f);//f!=f;
+#else
+	return _isnan(f) != 0;
+#endif
 //    return f!=f;
 }
 
@@ -26,7 +35,11 @@ inline void set_null(float &f)
 
 inline bool is_null(double const& f)
 {
-    return std::isnan(f);
+#ifndef _WIN32
+    return std::isnan(f);//f!=f;
+#else
+	return _isnan(f) != 0;
+#endif
 // return f!=f;
 }
 
