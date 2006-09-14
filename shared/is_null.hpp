@@ -5,6 +5,16 @@
 #ifdef _WIN32
 #include <float.h>
 #include <xmath.h>
+
+#ifdef NAN
+#undef NAN
+#endif NAN
+
+static const unsigned int nan[2] = {0xffffffff, 0x7fffffff}; 
+static double nan_g = *(double*)nan;
+
+#define NAN (*(const double *) nan_g)
+
 #endif
 
 
