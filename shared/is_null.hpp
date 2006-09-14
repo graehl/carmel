@@ -11,9 +11,8 @@
 #endif NAN
 
 static const unsigned int nan[2] = {0xffffffff, 0x7fffffff}; 
-static double nan_g = *(double*)nan;
 
-#define NAN (*(const double *) nan_g)
+#define NAN (*(const double *) nan)
 
 #endif
 
