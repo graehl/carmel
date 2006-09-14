@@ -158,8 +158,8 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 
 #ifdef _MSC_VER
 #include <windows.h>
-#define DBPSS(a) do { (OutputDebugString((const char *)((a).c_str()))); if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
-#define DBPS(a) do { (OutputDebugString((const char *)(a))); if (DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
+#define DBPSS(a) do { (OutputDebugString((LPCTSTR)((a).c_str()))); if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
+#define DBPS(a) do { (OutputDebugString((LPCTSTR)(a))); if (DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
 
 #else
 #define DBPSS(a) do { if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
@@ -292,7 +292,7 @@ namespace DBP {
     std::ostream *logstream=&std::cerr;
     void print_indent() {
         for(unsigned i=0;i<depth;++i)
-            DBPS(" ");
+            DBPS(' ');
     }
     void print_indent(std::ostream &o) {
         for(unsigned i=0;i<depth;++i)

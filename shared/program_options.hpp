@@ -1,6 +1,10 @@
 #ifndef GRAEHL__SHARED__PROGRAM_OPTIONS_HPP
 #define GRAEHL__SHARED__PROGRAM_OPTIONS_HPP
 
+#ifdef _WIN32
+#include <iso646.h>
+#endif
+
 
 #include <boost/program_options.hpp>
 #include <boost/function.hpp>
@@ -25,7 +29,6 @@ void must_complete_read(I &in,std::string const& msg="Couldn't parse")
         throw std::runtime_error(msg + " - got extra char: " + std::string(c,1));
 }
 
-
 template <class Ostream>
 struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
 {
@@ -44,10 +47,14 @@ struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
         static
         void typed_print_template(Ostream &o,boost::any const& t)
     {
-        o << *boost::any_cast<T const>(&t);
+        o << *boost::any_cast<T const>(&t); 
     }
     
     any_printer() {}
+
+    any_printer(const any_printer& x) 
+       : F(static_cast<F const&>(x))
+    {}
     
     template <class T>
         explicit any_printer(T const* tag) : F(typed_print<T>()) {
@@ -69,6 +76,7 @@ defaulted_value(T *v)
     return boost::program_options::value<T>(v)->default_value(*v);
 }
 
+
 // have to wrap regular options_description and store our own tables because
 // author didn't make enough stuff protected/public or add a virtual print
 // method to value_semantic
@@ -85,6 +93,7 @@ struct printable_options_description
     struct printable_option 
     {
         typedef boost::shared_ptr<option_description> OD;
+
         any_printer<Ostream> print;
         OD od;
         bool in_group;

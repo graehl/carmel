@@ -13,7 +13,9 @@ namespace graehl {
 typedef struct mallinfo malloc_info;
 
 struct memory_stats  {
+#ifndef _WIN32
     malloc_info info;
+#endif
 
   //   struct mallinfo {
 //   int arena;    /* total space allocated from system */
@@ -32,11 +34,15 @@ struct memory_stats  {
         refresh();
     }
     void refresh() {
+#ifndef _WIN32
         info=mallinfo();
+#endif
     }
+#ifndef _WIN32
     operator const malloc_info & () const {
         return info;
     }
+#endif
     typedef size_bytes size_type;
 
     // includes memory mapped
@@ -46,22 +52,34 @@ struct memory_stats  {
     }
     
     size_type program_allocated() const 
-    {
+	{
+#ifndef _WIN32
         return size_type((unsigned)info.uordblks);
+#else
+		return 0;
+#endif
     }
 
     // may only grown monotonically (may not reflect free())
     size_type system_allocated() const 
     {
+#ifndef _WIN32
         return size_type((unsigned)info.arena);
+#else
+#endif
     }
     
     size_type memory_mapped() const
     {
+#ifndef _WIN32
         return size_type((unsigned)info.hblkhd);
+#else
+		return 0;
+#endif
     }
 };
 
+#ifndef _WIN32
 inline memory_stats operator - (memory_stats after,memory_stats before) 
 {
     memory_stats ret;
@@ -81,6 +99,7 @@ return ret;
 //    using namespace memory_stats_detail;
 //    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
 }
+#endif
 
 template <class C,class T> inline std::basic_ostream<C,T> &
 operator << (std::basic_ostream<C,T> &o, const memory_stats &s) {

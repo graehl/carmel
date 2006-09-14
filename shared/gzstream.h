@@ -53,6 +53,12 @@ private:
     int flush_buffer();
     void handle_gzerror(); // throws exception
 public:
+#ifdef _WIN32
+	enum {
+		EOF = -1
+	};
+#endif
+
     gzstreambuf() : opened(0) {
         setp( buffer, buffer + (bufferSize-1));
         setg( buffer + 4,     // beginning of putback area

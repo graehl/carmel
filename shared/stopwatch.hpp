@@ -2,11 +2,27 @@
 #define __STOPWATCH_HPP__
 
 #include <stdexcept>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#undef DELETE
+#else
 #include <sys/time.h>
 #include <sys/resource.h>
+#endif
+
 #include <graehl/shared/stream_util.hpp>
 
 namespace graehl {
+
+#ifdef _WIN32
+struct timeval {
+   long    tv_sec;         /* seconds */
+   long    tv_usec;        /* and microseconds */
+};
+#endif
+
 
 class stopwatch
 {
@@ -27,10 +43,12 @@ class stopwatch
     void start() 
     {
         running = true;
+#ifndef _WIN32
         measure_usage(then_usage);
+#endif
         measure_wallclock(then_wallclock);
     }
-    
+
     /// pauses
     void stop() 
     {
@@ -64,34 +82,46 @@ class stopwatch
     {
         return sec(now)-sec(then);
     }
+#ifndef _WIN32
     static void measure_usage(rusage &r) 
     {
         if (-1==getrusage (RUSAGE_SELF, &r))
             throw std::runtime_error("getrusage failed");
     }
+#endif
     static void measure_wallclock(timeval &tv) 
     {
         if (-1==gettimeofday(&tv, 0))
             throw std::runtime_error("gettimeofday failed");
     }
+
     double recent_user_time() const
     {
+#ifndef _WIN32
         if (!running) return 0;
         rusage now_usage;
         measure_usage(now_usage);
         return elapsed_sec(now_usage.ru_utime,then_usage.ru_utime);
+#else
+		return 0; // TODO: implement Win32 version
+#endif
     }
     double recent_system_time() const
     {
+#ifndef _WIN32
         if (!running) return 0;
         rusage now_usage;
         measure_usage(now_usage);
         return elapsed_sec(now_usage.ru_stime,then_usage.ru_stime);
+#else
+		return 0; // TODO: implement Win32 version
+#endif
     }
     double recent_total_time() const
     {
         return recent_user_time() + recent_system_time();
     }
+
     double recent_wall_time() const
     {
         if (!running) return 0;
@@ -99,13 +129,19 @@ class stopwatch
         measure_wallclock(now_wallclock);
         return elapsed_sec(now_wallclock,then_wallclock);
     }
+
     double recent_major_pagefaults() const
     {
+#ifndef _WIN32
         if (!running) return 0;
         rusage now_usage;
         measure_usage(now_usage);
         return now_usage.ru_majflt-then_usage.ru_majflt;
+#else
+		return 0; // TODO: implement Win32 version
+#endif
     }
+
     double total_time(timer_type type) const
     {
         if (!valid_type(type))
@@ -147,9 +183,28 @@ class stopwatch
     }
   
  private:
+
+#ifdef _WIN32
+
+	static int gettimeofday (struct timeval *tv, void* tz)
+    {
+        union {
+            long long ns100; /*time since 1 Jan 1601 in 100ns units */
+            FILETIME ft;
+        } now;
+
+        GetSystemTimeAsFileTime (&now.ft);
+        tv->tv_usec = (long) ((now.ns100 / 10LL) % 1000000LL);
+        tv->tv_sec = (long) ((now.ns100 - 116444736000000000LL) / 10000000LL);
+        return (0);
+} 
+#endif
+
     bool running;
 
+#ifndef _WIN32
     rusage then_usage;
+#endif
     timeval then_wallclock;
 
     double totals[TYPE_MAX];    

@@ -128,7 +128,7 @@ struct file_arg : public boost::shared_ptr<Stream>
     template <class filestream>
     void set_new(std::string const& filename,std::string const& fail_msg="Couldn't open file")
     {
-        std::auto_ptr<filestream> f(new filestream(filename.c_str()));
+		std::auto_ptr<filestream> f(new filestream(filename.c_str(), ios::binary));
         set_checked(*f,filename,DELETE,fail_msg);
         f.release(); // w/o delete
     }
