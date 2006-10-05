@@ -308,7 +308,7 @@ namespace DBP {
     unsigned depth=0;
     bool disable=false;
 #endif
-};
+}
 
 
 #if 0
