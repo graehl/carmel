@@ -69,7 +69,7 @@ struct not_predicate : public P1
 };
 
     
-};
+}
 
 
 

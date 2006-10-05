@@ -308,7 +308,7 @@ void parse_until(const std::string &term,In &in,Func func)
         string_into(s,val);
         func(val);
     }
-};
+}
 
 
 template <class Str,class Data> inline
