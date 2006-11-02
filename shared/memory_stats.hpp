@@ -2,7 +2,11 @@
 #define MEMORY_STATS_HPP
 
 #include <cstdlib>
-#include <malloc.h>
+#if _MACOSX
+# include <malloc/malloc.h>
+#else
+# include <malloc.h>
+#endif
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/stream_util.hpp>
@@ -10,10 +14,14 @@
 
 namespace graehl {
 
+#if defined(__unix__)
 typedef struct mallinfo malloc_info;
+#elif _MACOSX
+typedef mstats malloc_info;
+#endif
 
 struct memory_stats  {
-#ifndef _WIN32
+#if defined(__unix__) || _MACOSX
     malloc_info info;
 #endif
 
@@ -34,11 +42,13 @@ struct memory_stats  {
         refresh();
     }
     void refresh() {
-#ifndef _WIN32
+#if defined(__unix__)
         info=mallinfo();
+#elif _MACOSX
+        info=mstats();
 #endif
     }
-#ifndef _WIN32
+#if defined(__unix__) || _MACOSX
     operator const malloc_info & () const {
         return info;
     }
@@ -53,8 +63,10 @@ struct memory_stats  {
     
     size_type program_allocated() const 
 	{
-#ifndef _WIN32
+#if defined(__unix__)
         return size_type((unsigned)info.uordblks);
+#elif _MACOSX
+        return size_type(info.bytes_used);
 #else
 		return 0;
 #endif
@@ -63,15 +75,18 @@ struct memory_stats  {
     // may only grown monotonically (may not reflect free())
     size_type system_allocated() const 
     {
-#ifndef _WIN32
+#if defined(__unix__)
         return size_type((unsigned)info.arena);
+#elif _MACOSX
+        return size_type(info.bytes_total);
 #else
+        return 0;
 #endif
     }
     
     size_type memory_mapped() const
     {
-#ifndef _WIN32
+#if defined(__unix__)
         return size_type((unsigned)info.hblkhd);
 #else
 		return 0;
@@ -79,11 +94,11 @@ struct memory_stats  {
     }
 };
 
-#ifndef _WIN32
+#define GRAEHL__MEMSTAT_DIFF(field) ret.info.field=after.info.field-before.info.field
+#if defined(__unix__)
 inline memory_stats operator - (memory_stats after,memory_stats before) 
 {
     memory_stats ret;
-#define GRAEHL__MEMSTAT_DIFF(field) ret.info.field=after.info.field-before.info.field
 GRAEHL__MEMSTAT_DIFF(arena);    /* total space allocated from system */
 GRAEHL__MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
 GRAEHL__MEMSTAT_DIFF(smblks);   /* unused -- always zero */
@@ -98,6 +113,17 @@ GRAEHL__MEMSTAT_DIFF(keepcost); /* top-most, releasable (via malloc_trim) space 
 return ret;
 //    using namespace memory_stats_detail;
 //    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
+}
+#elif _MACOSX
+inline memory_stats operator - (memory_stats after, memory_stats before)
+{
+    memory_stats ret;
+    GRAEHL__MEMSTAT_DIFF(bytes_total);
+    GRAEHL__MEMSTAT_DIFF(chunks_used);
+    GRAEHL__MEMSTAT_DIFF(bytes_used);
+    GRAEHL__MEMSTAT_DIFF(chunks_free);
+    GRAEHL__MEMSTAT_DIFF(bytes_free);
+    return ret;
 }
 #endif
 
