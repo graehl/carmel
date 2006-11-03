@@ -3,13 +3,16 @@
 
 namespace graehl {
 
-template <char sep=' '>
 struct indent_level {
+    char tab;
+    char const* bullet;
     unsigned indent;
-    indent_level() { reset(); }
-    void reset() 
+    indent_level(char tab_=' ',char const* bullet_="") { reset(); }
+    void reset(char tab_=' ',char const* bullet_="")
     {
         indent=0;
+        tab=tab_;
+        bullet=bullet_;
     }
     void in() 
     {
@@ -32,7 +35,8 @@ struct indent_level {
     O& newline(O &o) {
         o << std::endl;
         for (unsigned i=0;i<indent;++i)
-            o << sep;
+            o << tab;
+        o << bullet;
         return o;
     }
 };
