@@ -33,12 +33,14 @@ ifeq ($(UNAME),Darwin)
 endif
 endif
 
+ifndef ARCH_FLAGS
 ifeq ($(ARCH),linux64)
 ARCH_FLAGS = -march=athlon64
 else
  ifeq ($(ARCH),linux)
   ARCH_FLAGS = -m32 -march=pentium4
  endif
+endif
 endif
 
 ifndef INSTALL_PREFIX

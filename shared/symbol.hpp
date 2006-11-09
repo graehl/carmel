@@ -4,6 +4,7 @@
 // no separate implementation for now, just #define MAIN in one source file that includes this
 
 //#include "weight.h"
+#include <graehl/shared/2hash.h>
 #include <graehl/shared/stringkey.h>
 #include <graehl/shared/list.h>
 #include <graehl/shared/charbuf.hpp>
@@ -240,13 +241,6 @@ Symbol Symbol::empty("");
 Symbol Symbol::ZERO(0,Symbol::PHONYINT);
 #endif
 
-BEGIN_HASH_VAL(Symbol) {
-#pragma warning( push )
-#pragma warning( disable : 4311 )
-  return uint_hash(reinterpret_cast<unsigned int>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
-#pragma warning( pop )
-} END_HASH
-
 
 #ifdef TEST
 
@@ -385,5 +379,13 @@ BOOST_AUTO_UNIT_TEST( symbol )
 #endif
 
 }
+
+BEGIN_HASH_VAL(graehl::Symbol) {
+#pragma warning( push )
+#pragma warning( disable : 4311 )
+  return uint_hash(reinterpret_cast<unsigned int>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
+#pragma warning( pop )
+} END_HASH
+
 
 #endif

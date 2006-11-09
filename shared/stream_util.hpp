@@ -8,13 +8,13 @@
 
 #define TO_OSTREAM_PRINT                                                                     \
     template <class Char,class Traits> \
-    friend std::basic_ostream<Char,Traits> & operator <<(std::basic_ostream<Char,Traits> &o, self_type const& me)       \
+    inline friend std::basic_ostream<Char,Traits> & operator <<(std::basic_ostream<Char,Traits> &o, self_type const& me)     \
     { me.print(o);return o; } \
     typedef self_type has_print;
 
 #define FROM_ISTREAM_READ                                                 \
     template <class Char,class Traits> \
-    friend std::basic_istream<Char,Traits>& operator >>(std::basic_istream<Char,Traits> &i,self_type & me)     \
+    inline friend std::basic_istream<Char,Traits>& operator >>(std::basic_istream<Char,Traits> &i,self_type & me)     \
     { me.read(i);return i; }
 
 #define TO_OSTREAM_PRINT_FREE(self_type) \

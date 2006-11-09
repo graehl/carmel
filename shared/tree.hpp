@@ -282,6 +282,14 @@ fail:
   return GENIOBAD;
 }
     TO_OSTREAM_PRINT
+
+    template <class charT, class Traits>
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in)
+{
+    return read(in,DefaultReader<L>());
+    
+}
+
     FROM_ISTREAM_READ
 };
 
@@ -349,7 +357,7 @@ struct TreeVizPrinter : public GraphvizPrinter {
     enum make_not_anon_24 {ANY_ORDER=0,CHILD_ORDER=1,CHILD_SAMERANK=2};
 
 
-    TreeVizPrinter(ostream &o_,unsigned samerank_=CHILD_SAMERANK,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_),samerank(samerank_) {}
+    TreeVizPrinter(std::ostream &o_,unsigned samerank_=CHILD_SAMERANK,const std::string &prelude="",const Labeler &labeler_=Labeler(),const char *graphname="tree") : GraphvizPrinter(o_,prelude,graphname), labeler(labeler_),samerank(samerank_) {}
     void print(const T &t) {
         print(t,next_node++);
         o << std::endl;
@@ -391,8 +399,8 @@ struct TreeVizPrinter : public GraphvizPrinter {
 
 struct TreePrinter {
   bool first;
-  ostream &o;
-  TreePrinter(ostream &o_):o(o_),first(true) {}
+  std::ostream &o;
+  TreePrinter(std::ostream &o_):o(o_),first(true) {}
 template <class T>
   bool discover(T *t) {
    if (!first) o<<' ';
