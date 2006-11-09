@@ -82,14 +82,14 @@ struct graph_types {
 template <class G,class T> struct graph_object;
 
 template <class G> struct graph_object<G,edge_tag_t> {
-    typedef typename graph_traits<G>::edge_descriptor descriptor;
-    typedef typename graph_traits<G>::edge_iterator iterator;
+    typedef typename boost::graph_traits<G>::edge_descriptor descriptor;
+    typedef typename boost::graph_traits<G>::edge_iterator iterator;
     typedef std::pair<iterator,iterator> iterator_pair;
 };
 
 template <class G> struct graph_object<G,vertex_tag_t> {
-    typedef typename graph_traits<G>::vertex_descriptor descriptor;
-    typedef typename graph_traits<G>::vertex_iterator iterator;
+    typedef typename boost::graph_traits<G>::vertex_descriptor descriptor;
+    typedef typename boost::graph_traits<G>::vertex_iterator iterator;
     typedef std::pair<iterator,iterator> iterator_pair;
    };
 
@@ -119,7 +119,7 @@ typename graph_object<G,Tag>::iterator_pair begin_end(edge_tag_t t,G &g) {
 /*
 template <class G,class F>
 inline void visit(edge_tag_t unused,G &g,F f) {
-  typedef typename graph_traits<G>::edge_iterator ei;
+  typedef typename boost::graph_traits<G>::edge_iterator ei;
   std::pair<ei,ei> eis=edges(g);
   for (ei i=eis.first;i!=eis.second;++i)
         f(*i);
@@ -127,7 +127,7 @@ inline void visit(edge_tag_t unused,G &g,F f) {
 
 template <class G,class F>
 inline void visit(vertex_tag_t unused,G &g,F f) {
-  typedef typename graph_traits<G>::vertex_iterator ei;
+  typedef typename boost::graph_traits<G>::vertex_iterator ei;
   std::pair<ei,ei> eis=vertices(g);
   for (ei i=eis.first;i!=eis.second;++i)
         f(*i);

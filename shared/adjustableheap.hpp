@@ -22,7 +22,7 @@ struct HeapKey {
   typedef L locmap_type;
   typedef HeapKey<K,W,L> Self;
   typedef Self *Loc;
-  typedef typename unwrap_reference<W>::type::value_type weight_type;
+    typedef typename boost::unwrap_reference<W>::type::value_type weight_type;
   K key;
   static THREADLOCAL L locmap;
   static THREADLOCAL W weightmap;

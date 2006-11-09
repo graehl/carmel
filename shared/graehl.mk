@@ -227,7 +227,7 @@ ifndef $(1)_NOTEST
 $$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(test\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB)
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(BOOST_TEST_LIB)
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))
 ALL_TESTS += $$(BIN)/$(1).test

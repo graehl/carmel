@@ -30,6 +30,7 @@
 #include <boost/utility/enable_if.hpp>
 #include <graehl/shared/has_print.hpp>
 #include <graehl/shared/byref.hpp>
+#include <graehl/shared/threadlocal.hpp>
 
 #ifdef DEBUG
 #define DEBUG_SEGFAULT Assert(0)
@@ -48,7 +49,6 @@ struct DebugWriter
     return o;
   }
 };
-
 
 
 /*template<class A>
@@ -153,17 +153,49 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 }
 
 
-#include <graehl/shared/threadlocal.hpp>
 
+
+
+#define constEmptyString ""
+template<class A>
+std::string dbgstr(const A &a) {
+//    std::ostringstream dbgbuf;
+  //dbgbuf.str(constEmptyString);
+  //dbgbuf.clear(); // error flags
+  std::ostringstream dbgbuf;
+  dbgout(dbgbuf,a);
+  Assert(dbgbuf.good());
+  return dbgbuf.str();
+  //return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
+}
+
+template<class A,class W>
+std::string dbgstr(const A &a,W w) {
+      std::ostringstream dbgbuf;
+  //dbgbuf.str(constEmptyString);
+  //dbgbuf.clear(); // error flags
+  dbgout(dbgbuf,a,w);
+  Assert(dbgbuf.good());
+  return dbgbuf.str();
+  //return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
+}
+
+#undef constEmptyString
+
+template<class A>
+const char * dbgstrw(const A &a) {
+  return dbgstr(a);
+}
+} //ns
 
 #ifdef _MSC_VER
 #include <windows.h>
-#define DBPSS(a) do { (OutputDebugString((LPCTSTR)((a).c_str()))); if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
-#define DBPS(a) do { (OutputDebugString((LPCTSTR)(a))); if (DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
+#define DBPSS(a) do { (OutputDebugString((LPCTSTR)((a).c_str()))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
+#define DBPS(a) do { (OutputDebugString((LPCTSTR)(a))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
 
 #else
-#define DBPSS(a) do { if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
-#define DBPS(a) do { if (graehl::DBP::logstream) *graehl::DBP::logstream << (a); } while(0)
+#define DBPSS(a) do { if (DBP::logstream) *DBP::logstream << (a); } while(0)
+#define DBPS(a) do { if (DBP::logstream) *DBP::logstream << (a); } while(0)
 #endif
 
 #include <boost/preprocessor/stringize.hpp>
@@ -178,12 +210,12 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 #define LINESTR graehl::dbgstr(__LINE__)
 //BOOST_PP_STRINGIZE(__LINE__)
 
-#define DBPRE graehl::DBP::print_indent();DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
+#define DBPRE DBP::print_indent();DBPS(__FILE__ ":");DBPSS(LINESTR);DBPS(":")
 #define DBPOST DBPS("\n")
 
 #define SDBPOST(o) o << std::endl
 
-#define SDBPRE(o) graehl::DBP::print_indent(o);o << __FILE__ ":" << LINESTR<<":"
+#define SDBPRE(o) DBP::print_indent(o);o << __FILE__ ":" << LINESTR<<":"
 #define SBDBP(o,a) do { if (1) { DBPS(" " #a "=_<");o << graehl::dbgstr(a);DBPS(">_");  }} while(0)
 #define BDBP(a) do { if (1) { DBPS(" " #a "=_<");DBPSS(graehl::dbgstr(a));DBPS(">_");  }} while(0)
 #define BDBPW(a,w) do { if (1) { DBPS(" " #a "=_<");DBPSS(graehl::dbgstr(a,w));DBPS(">_");  }} while(0)
@@ -191,20 +223,20 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 #define DBPW(a,w) do { if (DBPISON) { DBPRE; BDBPW(a,w) ;DBPOST;  }} while(0)
 
 #ifdef GRAEHL__DEBUG_PRINT
-#define DBP_IN ++graehl::DBP::depth
-#define DBP_OUT if (!graehl::DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --graehl::DBP::DBPdepth
-#define DBP_SCOPE graehl::DBP::scopedepth DBP9423scopedepth ## __LINE__
+#define DBP_IN ++DBP::depth
+#define DBP_OUT if (!DBP::depth) DBPC("warning: depth decreased below 0 with DBPOUT"); else --DBP::DBPdepth
+#define DBP_SCOPE DBP::scopedepth DBP9423scopedepth ## __LINE__
 
-#define DBP_ENABLE(x) graehl::SetLocal<bool> DBPenablescope_line_## __LINE__(graehl::DBP::disable,!x)
+#define DBP_ENABLE(x) graehl::SetLocal<bool> DBPenablescope_line_## __LINE__(DBP::disable,!x)
 #define DBP_OFF DBP_ENABLE(false)
 #define DBP_ON DBP_ENABLE(true)
 
-#define DBP_VERBOSE(x) SetLocal<int> DBPverbosescope_line_ ## __LINE__(graehl::DBP::current_chat,(x))
-#define DBP_INC_VERBOSE graehl::SetLocal<int> DBPverbosescope_line_ ## __LINE__(graehl::DBP::current_chat,graehl::DBP::current_chat+1)
-#define DBP_ADD_VERBOSE(x) graehl::SetLocal<int> DBPverbosescope_line_ ## __LINE__ (graehl::DBP::current_chat,graehl::DBP::current_chat+(x))
+#define DBP_VERBOSE(x) SetLocal<int> DBPverbosescope_line_ ## __LINE__(DBP::current_chat,(x))
+#define DBP_INC_VERBOSE graehl::SetLocal<int> DBPverbosescope_line_ ## __LINE__(DBP::current_chat,DBP::current_chat+1)
+#define DBP_ADD_VERBOSE(x) graehl::SetLocal<int> DBPverbosescope_line_ ## __LINE__ (DBP::current_chat,DBP::current_chat+(x))
 
 
-#define DBPISON graehl::DBP::is_enabled()
+#define DBPISON DBP::is_enabled()
 
 
 #define DBP(a) do { if (DBPISON) { DBPRE; BDBP(a);DBPOST;  }} while(0)
@@ -269,6 +301,17 @@ inline void dbgout(std::ostream &o,unsigned short a) {
 #define SDBP4(o,a,b,c,d) do { if (1) { SDBPRE(o); SBDBP(o,a); SBDBP(o,b); SBDBP(o,c); SBDBP(o,d); SDBPOST(o); }} while(0)
 #define SDBP5(o,a,b,c,d,e) do { if (1) { SDBPRE(o); SBDBP(o,a); SBDBP(o,b); SBDBP(o,c); SBDBP(o,d); SBDBP(o,e); SDBPOST(o); }} while(0)
 
+#if 0
+static const std::string constEmptyString;
+extern THREADLOCAL std::ostringstream dbgbuf;
+extern THREADLOCAL std::string dbgstring;
+
+#ifdef GRAEHL__SINGLE_MAIN
+THREADLOCAL std::ostringstream dbgbuf;
+THREADLOCAL std::string dbgstring;
+#endif
+#endif
+
 namespace DBP {
     extern unsigned depth;
     extern bool disable;
@@ -308,50 +351,7 @@ namespace DBP {
     unsigned depth=0;
     bool disable=false;
 #endif
-}
+}//ns
 
-
-#if 0
-static const std::string constEmptyString;
-extern THREADLOCAL std::ostringstream dbgbuf;
-extern THREADLOCAL std::string dbgstring;
-
-#ifdef GRAEHL__SINGLE_MAIN
-THREADLOCAL std::ostringstream dbgbuf;
-THREADLOCAL std::string dbgstring;
-#endif
-#endif
-
-#define constEmptyString ""
-template<class A>
-std::string dbgstr(const A &a) {
-//    std::ostringstream dbgbuf;
-  //dbgbuf.str(constEmptyString);
-  //dbgbuf.clear(); // error flags
-  std::ostringstream dbgbuf;
-  dbgout(dbgbuf,a);
-  Assert(dbgbuf.good());
-  return dbgbuf.str();
-  //return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
-}
-
-template<class A,class W>
-std::string dbgstr(const A &a,W w) {
-      std::ostringstream dbgbuf;
-  //dbgbuf.str(constEmptyString);
-  //dbgbuf.clear(); // error flags
-  dbgout(dbgbuf,a,w);
-  Assert(dbgbuf.good());
-  return dbgbuf.str();
-  //return dbgstring.c_str(); //FIXME: since string is a copy by std, may need to use a static string as well
-}
-
-#undef constEmptyString
-
-template<class A>
-const char * dbgstrw(const A &a) {
-  return dbgstr(a);
-}
-}
 
 #endif

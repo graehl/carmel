@@ -4,7 +4,9 @@
 #define BOOST_AUTO_TEST_MAIN
 
 #include "strhash.h"
+#include "stringkey.cc"
 
+namespace graehl {
 
 void dump_ht(HashTable<StringKey,int> &ht)
 {
@@ -16,9 +18,9 @@ void dump_ht(HashTable<StringKey,int> &ht)
 
 #ifdef STRINGPOOL
 HashTable<StringKey, int> StringPool::counts;
+
 #endif
 
-#include "stringkey.cc"
 
 #ifdef TEST
 struct collide_int {
@@ -220,4 +222,5 @@ Config::log() << "erase ";
 
 #endif
 
+}//ns
 #endif

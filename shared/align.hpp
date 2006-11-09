@@ -52,25 +52,27 @@ bool is_aligned(T *p)
 #include <graehl/shared/test.hpp>
 BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
 {
+    using namespace std;
+    using namespace graehl;
     unsigned *p;
     p=(unsigned *)0x15;
-    BOOST_CHECK_EQUAL(::align_up(p),(unsigned *)0x18);
-    BOOST_CHECK_EQUAL(::align_down(p),(unsigned *)0x14);
+    BOOST_CHECK_EQUAL(align_up(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x16;
-    BOOST_CHECK_EQUAL(::align_up(p),(unsigned *)0x18);
-    BOOST_CHECK_EQUAL(::align_down(p),(unsigned *)0x14);
+    BOOST_CHECK_EQUAL(align_up(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x17;
-    BOOST_CHECK_EQUAL(::align_up(p),(unsigned *)0x18);
-    BOOST_CHECK_EQUAL(::align_down(p),(unsigned *)0x14);
+    BOOST_CHECK_EQUAL(align_up(p),(unsigned *)0x18);
+    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x28;
-    BOOST_CHECK_EQUAL(::align_up(p),p);
-    BOOST_CHECK_EQUAL(::align_down(p),p);
+    BOOST_CHECK_EQUAL(align_up(p),p);
+    BOOST_CHECK_EQUAL(align_down(p),p);
     BOOST_CHECK(is_aligned(p));
 
     const unsigned N=200;

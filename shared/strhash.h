@@ -9,6 +9,8 @@
 
 #include <graehl/shared/stringkey.h>
 
+namespace graehl {
+
 class StringPool {
   static char * clone(const char *str) {
     return strcpy(NEW char[strlen(str)+1], str);
@@ -132,7 +134,7 @@ private:
     if (!StrPool::is_noop)
       name = StrPool::borrow(name);
     //ht[name]=names.size();
-    ::add(ht,name,names.size());
+    graehl::add(ht,name,names.size());
     names.push_back(name);
   }
   void reserve(unsigned n) {
@@ -270,7 +272,8 @@ BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 
 #endif
 
-
+}
+    
 #ifdef GRAEHL__SINGLE_MAIN
 #include <graehl/shared/strhash.cc>
 #endif

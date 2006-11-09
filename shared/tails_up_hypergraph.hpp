@@ -178,16 +178,16 @@ struct TailsUpHypergraph {
     // pi (predecessor map) must also be initialized (to hypergraph_traits<G>::null_hyperarc()?) if you want to detect unreached vertices ... although mu=infty can do as well
     // edgecostmap should be initialized to edge costs
     template <
-        class VertexCostMap=typename VertMapFactory::template rebind<typename property_map<graph,edge_weight_t>::cost_type>::reference,
+        class VertexCostMap=typename VertMapFactory::template rebind<typename boost::property_map<graph,boost::edge_weight_t>::cost_type>::reference,
         //class VertexPredMap=property_factory<graph,VD>::template rebind<HD>::reference
         class VertexPredMap=typename VertMapFactory::template rebind<HD>::reference,
         //dummy_property_map
 
-        class EdgeCostMap=property_map<graph,edge_weight_t>
+        class EdgeCostMap=boost::property_map<graph,boost::edge_weight_t>
         >
     struct BestTree {
         typedef typename VertMapFactory::template rebind<HD>::implementation DefaultPi;
-        typedef typename VertMapFactory::template rebind<typename property_map<graph,edge_weight_t>::cost_type>::implementation DefaultMu;
+        typedef typename VertMapFactory::template rebind<typename boost::property_map<graph,boost::edge_weight_t>::cost_type>::implementation DefaultMu;
         Self &rev;
         VertexCostMap mu;
         VertexPredMap pi;
@@ -197,8 +197,8 @@ struct TailsUpHypergraph {
 
         Locs loc;
 
-        //typedef typename unwrap_reference<VertexCostMap>::type::value_type Cost;
-        typedef typename unwrap_reference<EdgeCostMap>::type::value_type Cost;
+        //typedef typename boost::unwrap_reference<VertexCostMap>::type::value_type Cost;
+        typedef typename boost::unwrap_reference<EdgeCostMap>::type::value_type Cost;
         struct RemainInf : public std::pair<unsigned,Cost> {
             unsigned remain() const { return this->first; }
             Cost cost() const { return this->second; }
@@ -223,7 +223,7 @@ struct TailsUpHypergraph {
         typedef HeapKey<VD,VertexCostMap,typename LocFact::reference> Key;
         typedef dynamic_array<Key> Heap;
         Heap heap;
-
+/*
         BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_=VertexPredMap())
             :
             rev(r),
@@ -237,6 +237,8 @@ struct TailsUpHypergraph {
                     rev.g,
                     make_indexed_pair_copier(ref(remain_infinum),rev.unique_tails_pmap(),get(edge_weight,r.g))); // pair(rem)<-(tr,ev)
             }
+            //fixme: what is edge_weight?
+*/
         // semi-tricky: loc should be default initialized (void *) to 0
         BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec)
             :
@@ -254,7 +256,7 @@ struct TailsUpHypergraph {
 
 
         static Cost infinity() {
-          return numeric_limits<Cost>::infinity();
+            return std::numeric_limits<Cost>::infinity();
         }
         void init_costs(Cost cinit=infinity()) {
           typename GT::pair_vertex_it i=vertices(rev.g);
