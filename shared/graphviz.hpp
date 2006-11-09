@@ -4,17 +4,18 @@
 
 #include <iostream>
 #include <string>
-
+#include <graehl/shared/quote.hpp>
 
 namespace graehl {
 
-static char const* GRAPHVIZ_DEFAULT_PRELUDE="node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n graph [center=1];\n"
+static char const* GRAPHVIZ_DEFAULT_PRELUDE="node [shape=ellipse,width=.1,height=.1];\n edge [arrowhead=none];\n graph [center=1];\n";
+
 //ordering=out;\n concentrate=0;\n\n ranksep=.3;
 
 template <class L>
 struct DefaultNodeLabeler {
     typedef L Label;
-    void print(ostream &o,const Label &l) {
+    void print(std::ostream &o,const Label &l) {
         o << "label=";
         out_ensure_quote(o,l);
     }

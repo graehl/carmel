@@ -1,5 +1,5 @@
-#ifndef WEIGHT_H
-#define WEIGHT_H
+#ifndef GRAEHL_SHARED__WEIGHT_H
+#define GRAEHL_SHARED__WEIGHT_H
 
 /*
 All these are legal input (and output) from Carmel, and ForestEM:
@@ -32,6 +32,13 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 #include <graehl/shared/threadlocal.hpp>
 #include <graehl/shared/random.hpp>
 #include <cstdlib>
+#include <limits>
+
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#include <cctype>
+#include <graehl/shared/debugprint.hpp>
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -47,6 +54,8 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 #ifndef FLOAT_TYPE
 # define FLOAT_TYPE double
 #endif
+
+namespace graehl {
 
 static const double HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 
@@ -651,11 +660,11 @@ inline logweight<Real> operator +(logweight<Real> lhs, logweight<Real> rhs) {
   logweight<Real> result;
 
   if ( diff < 0 ) { // rhs is bigger
-          result.weight = (Real)(rhs.weight + log(1 + std::exp(lhs.weight-rhs.weight)));
+      result.weight = (Real)(rhs.weight + std::log(1 + std::exp(lhs.weight-rhs.weight)));
     return result;
   }
   // lhs is bigger
-  result.weight = (Real)( lhs.weight + log(1 + std::exp(rhs.weight-lhs.weight)));
+  result.weight = (Real)( lhs.weight + std::log(1 + std::exp(rhs.weight-lhs.weight)));
   return result;
 }
 
@@ -682,7 +691,7 @@ inline logweight<Real> operator -(logweight<Real> lhs, logweight<Real> rhs) {
 
   // lhs > rhs
 
-  result.weight = (Real)(lhs.weight + log(1 - std::exp(rdiff)));
+  result.weight = (Real)(lhs.weight + std::log(1 - std::exp(rdiff)));
   return result;
 }
 
@@ -755,26 +764,11 @@ void inline dbgout(std::ostream &o,logweight<Real> w) {
 #endif
 }
 
-#include <limits>
-namespace std {
-template<class Real>
-class numeric_limits<logweight<Real> > {
-public:
-  static bool has_infinity() { return true; }
-    enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
-
-  //FIXME: add rest
-};
-};
 
 #ifdef DEBUGNAN
 #define NANCHECK(w) w.NaNCheck()
 #else
 #define NANCHECK(w)
-#endif
-
-#ifdef GRAEHL__SINGLE_MAIN
-#include <graehl/shared/weight.cc>
 #endif
 
 typedef logweight<FLOAT_TYPE> Weight;
@@ -783,11 +777,6 @@ typedef logweight<FLOAT_TYPE> Weight;
 #undef WEIGHT_FORWARD_OP
 #undef WEIGHT_DEFINE_OP
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#include <cctype>
-#include <graehl/shared/debugprint.hpp>
-#endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
@@ -799,6 +788,23 @@ BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
     BOOST_CHECK(a==d);
     BOOST_CHECK(a==e);    
 }
+#endif
+
+} //ns
+
+namespace std {
+template<class Real>
+class numeric_limits<graehl::logweight<Real> > {
+public:
+  static bool has_infinity() { return true; }
+    enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
+
+  //FIXME: add rest
+};
+};
+
+#ifdef GRAEHL__SINGLE_MAIN
+#include <graehl/shared/weight.cc>
 #endif
 
 #endif
@@ -820,5 +826,6 @@ struct semiring_traits<Weight> {
 
 };
 */
+
 
 

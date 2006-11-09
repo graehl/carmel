@@ -12,7 +12,10 @@ struct InitRand {
 static InitRand _Weight_Init_Rand;
 
 */
+
 //using namespace std;
+
+namespace graehl {
 
 // xalloc gives a unique global handle with per-ios space handled by the ios
 template <class Real>
@@ -23,3 +26,4 @@ template <class Real>
 THREADLOCAL int logweight<Real>::default_base = logweight<Real>::EXP;
 template <class Real>
 THREADLOCAL int logweight<Real>::default_thresh = logweight<Real>::ALWAYS_LOG;
+}

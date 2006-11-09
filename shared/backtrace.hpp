@@ -24,11 +24,11 @@ namespace graehl {
 static const int MAX_TRACE_DEPTH=64;
 
 void print_stackframe(std::ostream &o) {
-#ifdef LINUX_BACKTRACE
+#ifdef HAVE_LINUX_BACKTRACE
     void *trace[MAX_TRACE_DEPTH];
 
-    int trace_size = backtrace(trace, MAX_TRACE_DEPTH);
-    char **messages = backtrace_symbols(trace, trace_size);
+    int trace_size = ::backtrace(trace, MAX_TRACE_DEPTH);
+    char **messages = ::backtrace_symbols(trace, trace_size);
     o << "!!Stack backtrace:\n";
     for (int i=0; i<trace_size; ++i)
         o << "!! " << messages[i] << std::endl;
@@ -77,6 +77,7 @@ public:
     {
         print(std::cerr);
     }
+    typedef BackTrace self_type;
     TO_OSTREAM_PRINT
 };
 

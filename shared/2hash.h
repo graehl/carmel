@@ -9,6 +9,7 @@
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/hashtable_fwd.hpp>
 #include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/byref.hpp>
 
 #define GOLDEN_MEAN_FRACTION 2654435769U
 
@@ -30,13 +31,16 @@
 #include <new>
 #include <graehl/shared/myassert.h>
 #include <utility>
+#include <functional>
+#include <memory>
+
+namespace graehl {
 
 const float DEFAULTHASHLOAD = 0.9f;
 template <typename K, typename V> class HashIter ;
 //template <typename K, typename V> class HashConstIter ;
 
 //int pow2Bound(int request);
-
 inline int pow2Bound(int request) {
   Assert(request < (2 << 29));
   int mask = 2;
@@ -55,6 +59,7 @@ template <typename K, typename V> class HashEntry {
   typedef V mapped_type;
 //private:
    HashEntry<K,V> *next;
+    typedef HashEntry<K,V> self_type;
 public:
   /*  HashEntry() : next(NULL) { }*/
   HashEntry(const K & k, const V& v) : next(NULL), first(k), second(v) { }
@@ -66,7 +71,7 @@ public:
   //friend class HashConstIter<K,V>; // Yaser
     template <class O> void print(O&o) const 
     {
-        o << '(' << e.first << ',' << e.second << ')';
+        o << '(' << first << ',' << second << ')';
     }
     TO_OSTREAM_PRINT
 };
@@ -217,9 +222,7 @@ template <class A,class H,class P>
 };
 //
 //= hash<K>
-#include <functional>
-#include <memory>
-template <typename K, typename V, typename H=::hash<K>, typename P=std::equal_to<K>, typename A=std::allocator<HashEntry<K,V> > > class HashTable : private A::template rebind<HashEntry<K,V> >::other {
+template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=std::allocator<HashEntry<K,V> > > class HashTable : private A::template rebind<HashEntry<K,V> >::other {
  public:
  typedef K key_type;
  typedef V mapped_type;
@@ -669,9 +672,8 @@ inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTab
 */
 
 
-#include <graehl/shared/byref.hpp>
 template <class K,class V,class H,class P,class A,class F>
-void enumerate(const HashTable<K,V,H,P,A>& ht,const K& first,F f)
+inline void enumerate(const HashTable<K,V,H,P,A>& ht,const K& first,F f)
 {
   for (size_t i=0;i<ht.bucket_count();++i)
     for (typename HashTable<K,V,H,P,A>::local_iterator j=ht.begin(i),e=ht.end(i);j!=e;++j)
@@ -717,6 +719,8 @@ struct hash<const char *>
         return cstr_hash(s);
   }
 };
+
+}//ns
 
 #endif // graehl HashTable
 

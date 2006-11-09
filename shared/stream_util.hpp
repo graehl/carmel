@@ -7,24 +7,24 @@
 
 
 #define TO_OSTREAM_PRINT                                                                     \
-    template <class C,class T> \
-    friend std::basic_ostream<C,T> & operator <<(std::basic_ostream<C,T> &o, self_type const& me)       \
+    template <class Char,class Traits> \
+    friend std::basic_ostream<Char,Traits> & operator <<(std::basic_ostream<Char,Traits> &o, self_type const& me)       \
     { me.print(o);return o; } \
     typedef self_type has_print;
 
 #define FROM_ISTREAM_READ                                                 \
-    template <class C,class T> \
-    friend std::basic_istream<C,T>& operator >>(std::basic_istream<C,T> &i,self_type & me)     \
+    template <class Char,class Traits> \
+    friend std::basic_istream<Char,Traits>& operator >>(std::basic_istream<Char,Traits> &i,self_type & me)     \
     { me.read(i);return i; }
 
 #define TO_OSTREAM_PRINT_FREE(self_type) \
-    template <class C,class T> inline \
-    std::basic_ostream<C,T> & operator <<(std::basic_ostream<C,T> &o, self_type const& me)      \
+    template <class Char,class Traits> inline \
+    std::basic_ostream<Char,Traits> & operator <<(std::basic_ostream<Char,Traits> &o, self_type const& me)      \
     { me.print(o);return o; } \
 
 #define FROM_ISTREAM_READ_FREE(self_type)                                                    \
-    template <class C,class T> inline                                                              \
-    std::basic_istream<C,T>& operator >>(std::basic_istream<C,T> &i,self_type & me)     \
+    template <class Char,class Traits> inline                                                              \
+    std::basic_istream<Char,Traits>& operator >>(std::basic_istream<Char,Traits> &i,self_type & me)     \
     { me.read(i);return i; }
 
 namespace graehl {

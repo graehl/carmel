@@ -8,6 +8,7 @@
 #include <graehl/shared/funcs.hpp>
 #include <iterator>
 #include <graehl/shared/debugprint.hpp>
+#include <graehl/shared/indirect.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -83,6 +84,7 @@ struct IndexToOffsetReader {
 */
 
 
+//FIXME: this is a bad idea for 64-bit, really.  use signed integer offsets for more mileage from 32-bit indices on 64-bit address space
 template <class C>
 struct PointerOffset {
     typedef C* value_type;
@@ -97,6 +99,10 @@ struct PointerOffset {
     PointerOffset(const PointerOffset<C> &o) : offset(o.offset) {}
     void set_ptrdiff(const C*a,const C*b) {
         offset=offset_ptrdiff(a,b);
+    }
+    void set_index(size_t i) 
+    {
+        offset=index_to_offset<C>(i);
     }
     value_type get_offset() const {
         return offset;
@@ -115,14 +121,14 @@ struct PointerOffset {
     bool operator !=(PointerOffset<C> c) const { return offset!=c.offset; }
     template <class O> void print(O&o) const
     {
-        o << "index=" << arg.get_index();
+        o << "index=" << get_index();
     }
     TO_OSTREAM_PRINT
-    template <class I> void read(I&i)
+    template <class I> void read(I&in)
     {
-        ptrdiff_t i;
-        in >> i;
-        arg = in ? i : 0;
+        ptrdiff_t n;
+        in >> n;
+        set_index(in ? n : 0);
     }
     FROM_ISTREAM_READ
 

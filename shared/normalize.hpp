@@ -29,6 +29,7 @@ struct indirect_gt<size_t,C*> {
 #include <algorithm>
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/swapbatch.hpp>
+#include <graehl/shared/statistics.hpp>
 
 namespace graehl {
 
@@ -223,7 +224,7 @@ struct NormalizeGroups {
     void normalize(source_t *array_base) {
         normalize(array_base,array_base);
     }
-    void normalize(source_t *array_base, dest_t* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, ostream *_log=NULL) {
+    void normalize(source_t *array_base, dest_t* _dest, int _zerocounts=UNIFORM_ZEROCOUNTS, std::ostream *_log=NULL) {
         base=array_base;
         dest=_dest;
         maxdiff.setZero();

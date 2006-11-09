@@ -235,8 +235,8 @@ struct stat_accum : public stddev_accum<T>,min_max_accum<T> {
     typedef stat_accum<T> self_type;
     template <class O> void print(O&o) const
     {
-        if (anyseen())
-            return o <<"{{{"<<minimum<<'/'<<avg()<<"(~"<<stddev()<<")/"<<maximum<<"}}}";
+        if (this->anyseen())
+            return o <<"{{{"<<this->minimum<<'/'<<this->avg()<<"(~"<<this->stddev()<<")/"<<this->maximum<<"}}}";
         else
             return o <<"<<<?/?/?>>>";
     }
