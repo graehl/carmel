@@ -47,10 +47,12 @@ public:
         const char *function;
         unsigned line;
         Loc(const char *fun,const char *fil,unsigned lin) : file(fil),function(fun),line(lin) {}
-        void print(std::ostream &o) const {
+        template <class O>
+        void print(O &o) const {
             o << function << "() [" << file << ":" << line << "]";
         }
-        friend std::ostream &operator <<(std::ostream &o,const Loc &l);
+        typedef Loc self_type;
+        TO_OSTREAM_PRINT
     };
     typedef dynamic_array<Loc> LocStack;
     static LocStack stack;

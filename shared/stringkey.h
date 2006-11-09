@@ -4,8 +4,10 @@
 #include <graehl/shared/config.h>
 #include <string>
 #include <graehl/shared/static_itoa.h>
-#include <graehl/shared/2hash.h>
+#include <graehl/shared/hashtable_fwd.hpp>
 #include <graehl/shared/stream_util.hpp>
+
+namespace graehl {
 
 struct StringKey {
     char *str;
@@ -54,10 +56,13 @@ struct StringKey {
     typedef StringKey self_type;
     TO_OSTREAM_PRINT
 };
-BEGIN_HASH_VAL(StringKey) {
+}
+
+BEGIN_HASH_VAL(graehl::StringKey) {
 	return x.hash();
 } END_HASH
 //inline size_t hash_value(StringKey s) { return s.hash(); }
 //inline size_t hash(StringKey s) { return s.hash(); }
+
 
 #endif
