@@ -52,7 +52,7 @@ namespace graehl {
 template <class T>
 struct hypergraph_traits {
     typedef T graph;
-    typedef graph_traits<graph> GT;
+    typedef boost::graph_traits<graph> GT;
     typedef typename graph::hyperarc_descriptor hyperarc_descriptor;
     typedef typename graph::hyperarc_iterator hyperarc_iterator;
     typedef typename graph::tail_descriptor tail_descriptor;
@@ -155,7 +155,7 @@ typename graph_object<G,hyperarc_tag_t>::iterator_pair begin_end(hyperarc_tag_t 
 // HyperarcLeftMap = count of unique tails for each edge, should be initialized to 0 by user
 // e.g.
 /*
-  typedef typename graph_traits<G>::hyperarc_index_map HaIndex;
+  typedef typename boost::graph_traits<G>::hyperarc_index_map HaIndex;
   typedef ArrayPMap<unsigned,HaIndex> PMap;
   typename PMap::Imp arc_remain(num_hyperarcs(g),HaIndex(g));
   TailsUpHypergraph<G,PMap> r(g,PMap(arc_remain));
@@ -168,6 +168,6 @@ void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
 }
 */
 
-}
+}//ns
 
 #endif

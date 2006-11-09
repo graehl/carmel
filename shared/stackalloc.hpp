@@ -60,7 +60,7 @@ struct StackAlloc
     }
     template <class T>
     T* next() const {
-        Assert(::is_aligned((T*)top));
+        Assert(graehl::is_aligned((T*)top));
         return ((T*)top);
     }
     template <class T>
@@ -72,7 +72,7 @@ struct StackAlloc
     T* alloc(unsigned n=1) throw(StackAlloc::Overflow)
     {
         T*& ttop(*(T**)&top);
-        Assert(::is_aligned(ttop));
+        Assert(graehl::is_aligned(ttop));
         T* ret=ttop;
         ttop+=n;
         if (overfull())
@@ -120,7 +120,7 @@ struct StackAlloc
     void operator()(const T& t)
     {
         T*& ttop(*(T**)&top);
-        Assert(::is_aligned(ttop));
+        Assert(graehl::is_aligned(ttop));
         if (full())
             VTHROW_A(StackAlloc::Overflow);
         *ttop++=t;

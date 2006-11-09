@@ -103,7 +103,7 @@ struct index_graph {
   template <class F>
   void enumerate_edges(vertex_descriptor from,F f) {
     //    for (vertex_descriptor i=begin(),e=end();i!=e;++i)
-    ::enumerate(verts[from],binderfrom<F>(f,from));
+    graehl::enumerate(verts[from],binderfrom<F>(f,from));
   }
   template <class F>
   void enumerate(vertex_descriptor from,F f) {

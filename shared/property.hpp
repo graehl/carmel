@@ -45,12 +45,12 @@ unsigned get(OffsetMap<K> k,K p) {
 
 
 template <class P>
-typename P::value_type get(reference_wrapper<P> p,typename P::key_type k) {
+typename P::value_type get(boost::reference_wrapper<P> p,typename P::key_type k) {
   return get(deref(p),k);
 }
 
 template <class P>
-void put(reference_wrapper<P> p,typename P::key_type k,typename P::value_type v) {
+void put(boost::reference_wrapper<P> p,typename P::key_type k,typename P::value_type v) {
   return put(deref(p),k,v);
 }
 
@@ -65,7 +65,7 @@ struct ArrayPMapImp
 //: public  boost::put_get_helper<V &,ArrayPMapImp<V,O> >
 {
   typedef ArrayPMapImp<V,O> Self;
-  typedef reference_wrapper<Self> PropertyMap;
+  typedef boost::reference_wrapper<Self> PropertyMap;
   //typedef typename graph_traits<G>::hyperarc_descriptor key_type;
 //  typedef ArrayPMap<V,O> property_map;
   typedef O offset_map;
@@ -132,7 +132,7 @@ void put(ArrayPMapImp<V,O> &p,typename ArrayPMapImp<V,O>::key_type k,V v) {
 template <class V,class O=boost::identity_property_map>
 struct ArrayPMap {
   typedef ArrayPMapImp<V,O> Imp;
-  typedef boost::reference_wrapper<Imp> type;
+  typedef boost::boost::reference_wrapper<Imp> type;
 };
 */
 
@@ -182,14 +182,6 @@ struct property_traits<boost::reference_wrapper<ArrayPMapImp<V,O> > {
 };
 */
 
-namespace boost {
-template<class Imp>
-struct property_traits<boost::reference_wrapper<Imp> > {
-  typedef typename Imp::category category;
-  typedef typename Imp::key_type key_type;
-  typedef typename Imp::value_type value_type;
-};
-};
 /*
 template <class Imp>
 struct RefPMap : public boost::reference_wrapper<Imp>{
@@ -238,5 +230,15 @@ BOOST_AUTO_UNIT_TEST( PROPERTY )
 }
 #endif
 }
+
+namespace boost {
+template<class Imp>
+struct property_traits<boost::reference_wrapper<Imp> > {
+  typedef typename Imp::category category;
+  typedef typename Imp::key_type key_type;
+  typedef typename Imp::value_type value_type;
+};
+};
+
 
 #endif

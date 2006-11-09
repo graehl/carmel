@@ -237,7 +237,7 @@ struct NormalizeGroups {
 
         zerocounts=_zerocounts;
         log=_log;
-        enumerate(norm_groups,ref(*this));
+        enumerate(norm_groups,boost::ref(*this));
         DBPC2("After normalize:",array<dest_t>(dest,dest+size));
     }
     template <class O> void print(O&o) const
@@ -276,6 +276,8 @@ operator <<
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 {
+    using namespace std;
+    using namespace graehl;
     typedef Weight W;
     fixed_array<W> w(10u);
     w[0]=1;
