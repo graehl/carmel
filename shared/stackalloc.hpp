@@ -18,7 +18,7 @@ namespace graehl {
 struct StackAlloc
 {
     // throws when allocation fails (I don't let you check ahead of time)
-    struct Overflow : public VerboseException
+    struct Overflow : public verbose_exception
     {
         VERBOSE_EXCEPTION_WRAP(Overflow)
     };
@@ -40,7 +40,7 @@ struct StackAlloc
             ttop |= align_mask; // = ttop + diff - 1
             ++ttop;
             }*/
-        top=::align_up((T*)top);
+        top=graehl::align_up((T*)top);
     }
     template <class T>
     T* aligned_alloc(unsigned n=1) throw(StackAlloc::Overflow)
@@ -65,7 +65,7 @@ struct StackAlloc
     }
     template <class T>
     T* aligned_next() {
-        top=::align_up((T*)top);
+        top=graehl::align_up((T*)top);
         return ((T*)top);
     }
     template <class T>
@@ -89,7 +89,7 @@ struct StackAlloc
     template <class T>
     T *alloc_end(unsigned n=1) throw(StackAlloc::Overflow)
     {
-        end = ::align_down((T *)end);
+        end = graehl::align_down((T *)end);
         end = ((T*)end)-1;
         if (overfull())
             VTHROW_A(StackAlloc::Overflow);
@@ -108,7 +108,7 @@ struct StackAlloc
     unsigned capacity() const
     {
         T *cend=(T*)end;
-        T *ctop=::align_up((T*)top);
+        T *ctop=graehl::align_up((T*)top);
         if (cend > ctop)
             return cend-ctop;
         else

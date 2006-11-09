@@ -95,6 +95,12 @@ inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,IsSpecial is
     }
 }
 
+template <class C,class Ch, class Tr>
+inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,char quote_char='"',char escape_char='\\') {
+    out_quote(out,data,false_for_all_chars(),quote_char,escape_char);
+}
+
+
 template <class Ch, class Tr,class IsSpecial> inline
 std::string
 in_quote(std::basic_istream<Ch,Tr> &i,IsSpecial is_special=IsSpecial(),

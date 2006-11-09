@@ -8,11 +8,12 @@
 #include <cmath>
 #include <limits>
 
-#ifndef LOGPROB_EPSILON
-#define LOGPROB_EPSILON numeric_limits<double>::epsilon()
-#endif
 
 namespace graehl {
+
+#ifndef LOGPROB_EPSILON
+static const double LOGPROB_EPSILON=std::numeric_limits<double>::epsilon();
+#endif
 
 struct WeightAccum {
         Weight sum;
@@ -46,7 +47,7 @@ typedef std::pair<double,unsigned> ParamDelta;
 
 
 template <class C,class T> inline
-std::basic_ostream<C,T>& operator <<(std::basic_ostream<C,T> &o,ParamDelta const& p)
+std::basic_ostream<C,T>& operator <<(std::basic_ostream<C,T> &out,ParamDelta const& p)
 {
     if (p.first > 0)
         return out << "delta_weight["<<p.second<<"]="<<p.first;
@@ -84,7 +85,7 @@ struct EM_executor {
 // return best (greatest) average log prob
 // note: logs are base e (ln) (well, really, they're whatever your estimate method returns ... note that convergence is based on relative change so the base doesn't matter, unless you care to report an entropy to the user (entropy is always base 2).  or you can report perplexity, just doing base^(avg log prob), using the same base, e.g. e^(average ln prob)
 template <class Exec>
-double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, ostream &logs=Config::log(),unsigned log_level=1)
+double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, std::ostream &logs=Config::log(),unsigned log_level=1)
 {
     DBP_INC_VERBOSE;
     double best_alp=-HUGE_VAL; // alp=average log prob = (logprob1 +...+ logprobn )/ n (negative means 0 probability, 0 = 1 probability)

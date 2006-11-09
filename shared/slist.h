@@ -256,7 +256,7 @@ class slist_shared :
 
     /// must include ALL the nodes on the list (those off will leak)
     template <class Node_ptr_iter>
-    static reorder_nodes(Node **pprev_next,Node_ptr_iter i,Node_ptr_iter end)
+    static void reorder_nodes(Node **pprev_next,Node_ptr_iter i,Node_ptr_iter end)
     {
         Node *previ;
         for(;i!=end;++i)
