@@ -57,6 +57,12 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 
 namespace graehl {
 
+struct zero_weight {};
+struct one_weight {};
+struct inf_weight {};
+    
+    
+
 static const double HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 
 //! warning: unless #ifdef WEIGHT_CORRECT_ZERO
@@ -280,6 +286,9 @@ struct logweight {                 // capable of representing nonnegative reals
     }
   //  weight() : weight(-FLOAT_INF()) {}
   logweight() { setZero(); }
+    logweight(zero_weight t) {setZero();}
+    logweight(one_weight t) {setOne(); }
+    logweight(inf_weight t) {setInfinity(); }
   logweight(bool,bool) { setInfinity(); }
     logweight(Real log_weight,bool dummy) : weight(log_weight) {}
     template <class Real2>
@@ -290,18 +299,12 @@ struct logweight {                 // capable of representing nonnegative reals
         setReal(n);
     }
 #else
-  logweight(double f) {
-    setReal(f);
-  }
-  logweight(float f) {
-    setReal(f);
-  }
-  logweight(size_t f) {
-    setReal(f);
-  }
-  logweight(int f) {
-    setReal(f);
-  }
+    logweight(double f) {setReal(f);} // interesting to allow bigger float types than Real since exponent on double is bigger and can fit in Real=float when log'd
+//    logweight(Real f) {setReal(f);}
+//    logweight(float f) {setReal(f);}
+//    logweight(std::size_t f) {setReal(f);}
+    logweight(int f) {setReal(f);}
+    logweight(unsigned f) {setReal(f);}
 #endif
   logweight<Real> &operator += (logweight<Real> w)
   {
@@ -405,7 +408,7 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
         if (!setString(str))
             throwbadweight();
     }
-    logweight(const char *str) 
+    explicit logweight(const char *str) 
     {
         if (!setString(str))
             throwbadweight();

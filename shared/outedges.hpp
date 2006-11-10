@@ -8,19 +8,20 @@
 //OutEdges (generic out_edge_iterator graph adapter, out_edges ...) and
 
 namespace graehl {
-
+/*
 template <class G,class E,class C,class V>
 struct OutEdges;
+*/
 // for simplicity, requires vertex index ... could allow user to specify property map type instead, but would have to allocate it themself
 
 // see property.hpp for factory
 // must define visit (although default above should be ok)
 template <class G,class T=edge_tag_t,class ContS=VectorS,
-class VertMapFactory=property_factory<G,vertex_tag_t>
+          class VertMapFactory=property_factory<G,vertex_tag_t>
 >
 struct OutEdges {
   typedef OutEdges<G,T,ContS,VertMapFactory> Self;
-  typedef typename graph_traits<G>::vertex_descriptor vertex_descriptor;
+    typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
   typedef typename graph_object<G,T>::descriptor edge_descriptor;
   typedef typename ContS::template container<edge_descriptor>::type Adj;
 
@@ -55,21 +56,20 @@ struct OutEdges {
         adj[source(e,g)].push(e);
   }
 };
-
-}
+}//ns
 
 namespace boost {
 template <class G,class E,class C,class V>
-struct graph_traits<OutEdges<G,E,C,V> > : public graph_traits<G> {
+struct graph_traits<graehl::OutEdges<G,E,C,V> > : public boost::graph_traits<G> {
   typedef G parent_graph;
-  typedef graph_traits<parent_graph> GT;
+    typedef boost::graph_traits<parent_graph> GT;
     typedef graehl::OutEdges<G,E,C,V> graph;
   typedef typename graph::edge_descriptor edge_descriptor;
   //typedef boost::counting_iterator<edge_descriptor *> out_edge_iterator;
   typedef typename graph::Adj::iterator out_edge_iterator;
   typedef std::pair<out_edge_iterator,out_edge_iterator> pair_out_edge_it;
 };
-}
+}//ns
 
 
 namespace graehl {
@@ -80,15 +80,15 @@ struct hypergraph_traits<OutEdges<G,E,C,V> > : public hypergraph_traits<G> {
 };
 
 template <class G,class E,class C,class V>
-inline typename graph_traits<OutEdges<G,E,C,V> >::pair_out_edge_it
+inline typename boost::graph_traits<OutEdges<G,E,C,V> >::pair_out_edge_it
 out_edges(
-          typename graph_traits<OutEdges<G,E,C,V> >::vertex_descriptor v,
+    typename boost::graph_traits<OutEdges<G,E,C,V> >::vertex_descriptor v,
               OutEdges<G,E,C,V> &g
            )
 {
   typedef OutEdges<G,E,C,V> Self;
   typename Self::Adj &adj=g[v];
-  return typename graph_traits<Self>::pair_out_edge_it(adj.begin(),adj.end());
+  return typename boost::graph_traits<Self>::pair_out_edge_it(adj.begin(),adj.end());
 }
 
 template <class G,class E,class C,class V>
@@ -99,7 +99,7 @@ unsigned out_degree(typename OutEdges<G,E,C,V>::vertex_descriptor v,OutEdges<G,E
 template <class G,class E,class C,class V,class F>
 inline void
 visit_out(
-          typename graph_traits<G>::vertex_descriptor v,
+    typename boost::graph_traits<G>::vertex_descriptor v,
               const OutEdges<G,E,C,V> &g,
           F f
            )

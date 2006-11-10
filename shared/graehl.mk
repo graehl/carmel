@@ -270,6 +270,9 @@ endif
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
 	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
 
+check:	test
+
+
 test: $(ALL_TESTS)
 	for test in $(ALL_TESTS) ; do echo Running test: $$test; $$test --catch_system_errors=no ; done
 #	$(foreach test,$(ALL_TESTS),$(shell $(test) --catch_system_errors=no))

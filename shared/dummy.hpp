@@ -1,8 +1,11 @@
 #ifndef DUMMY_HPP
 #define DUMMY_HPP
 
-namespace graehl {
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
 
+namespace graehl {
 
 template <class C>
 struct dummy {
@@ -15,10 +18,6 @@ const C& dummy<C>::var() {
   static C var;
   return var;
 }
-
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_dummy )

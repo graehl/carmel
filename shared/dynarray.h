@@ -27,6 +27,7 @@
 #include <graehl/shared/stackalloc.hpp>
 #include <graehl/shared/function_output_iterator.hpp>
 #include <boost/lexical_cast.hpp>
+#include <vector>
 #include <algorithm>
 #include <iterator>
 #include <boost/config.hpp>
@@ -329,12 +330,14 @@ inline bool operator < (array<T,Alloc> &a,array<T,Alloc> &b)
 }
 
 
+template <typename T,typename Alloc=std::allocator<T> > class dynamic_array;
+
 // FIXME: drop template copy constructor since it screws with one arg size constructor
 // frees self automatically; inits/destroys/copies just like dynamic_array but can't be resized.
 template <typename T,typename Alloc=std::allocator<T> > class fixed_array : public auto_array<T,Alloc> {
 public:
     typedef auto_array<T,Alloc> Super;
-    explicit fixed_array(unsigned sp=0) : Super(sp) {
+    explicit fixed_array(std::size_t sp=0) : Super(sp) {
         this->construct();
     }
     ~fixed_array() {
@@ -357,28 +360,34 @@ public:
         std::uninitialized_copy(b,e,this->begin());
         //memcpy(begin(),b,e-b);
     }
-/*  fixed_array(const array<T,Alloc> &a) : Super(a.capacity()) {
-    DBPC("fixed_array copy",a);
-    uninit_copy_from(a.begin(),a.end());
+    fixed_array(const array<T,Alloc> &a) : Super(a.capacity()) {
+//        DBPC("fixed_array copy",a);
+        uninit_copy_from(a.begin(),a.end());
     }
     fixed_array(const auto_array<T,Alloc> &a) : Super(a.capacity()) {
-    DBPC("fixed_array copy",a);
-    uninit_copy_from(a.begin(),a.end());
+        //       DBPC("fixed_array copy",a);
+        uninit_copy_from(a.begin(),a.end());
     }
-    fixed_array(const dynamic_array<T,Alloc> &a) : Super(a.capacity()) {
-    DBPC("fixed_array copy",a);
-    uninit_copy_from(a.begin(),a.end());
+    template <class A>
+    fixed_array(const dynamic_array<T,A> &a) : Super(a.capacity()) {
+        // DBPC("fixed_array copy",a);
+        uninit_copy_from(a.begin(),a.end());
     }
-*/
+    fixed_array(const std::vector<T> &a) : Super(a.capacity()) {
+        // DBPC("fixed_array copy",a);
+        uninit_copy_from(&*a.begin(),&*a.end());
+    }
+
     //F=fixed_array<T,Alloc>
 
 // having problems with ambiguous constructor?  make sure you pass an *unsigned* int if you want to specify # of elements.  I don't know how to make this constructor exclude integral types, well, I could do it with type traits and a second param is_container<F> *dummy=0
+    /*
     template <class F>
-    fixed_array(const F &a) : Super(a.size()) {
+    explicit fixed_array(const F &a) : Super(a.size()) {
         //    DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());
     }
-
+    */
     fixed_array(const fixed_array<T,Alloc>  &a) : Super(a.size()) {
         //    DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());
@@ -391,7 +400,7 @@ public:
 
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
-template <typename T,typename Alloc=std::allocator<T> > class dynamic_array : public array<T,Alloc> {
+template <typename T,class Alloc> class dynamic_array : public array<T,Alloc> {
     typedef dynamic_array<T,Alloc> self_type;
     //unsigned int sz;
     T *endv;
