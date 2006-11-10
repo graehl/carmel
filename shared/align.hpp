@@ -10,16 +10,18 @@
 
 namespace graehl {
 
+typedef std::size_t align_mask_type;
+
 template <class T>
 T *align_up(T *p)
 {
-    const unsigned align=boost::alignment_of<T>::value;
-    const unsigned align_mask=(align-1);
+    const align_mask_type align=boost::alignment_of<T>::value;
+    const align_mask_type align_mask=(align-1);
 
     Assert2((align_mask & align), ==0); // only works for power-of-2 alignments.
     char *cp=(char *)p;
     cp += align-1;
-    cp -= (align_mask & (unsigned)cp);
+    cp -= (align_mask & (align_mask_type)cp);
 //    DBP4(sizeof(T),align,(void*)p,(void*)cp);
     return (T*)cp;
 }
@@ -27,47 +29,54 @@ T *align_up(T *p)
 template <class T>
 T *align_down(T *p)
 {
-    const unsigned align=boost::alignment_of<T>::value;
-    const unsigned align_mask=(align-1);
+    const align_mask_type align=boost::alignment_of<T>::value;
+    const align_mask_type align_mask=(align-1);
 //    DBP3(align,align_mask,align_mask & align);
-    //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
+    //      align_mask_type & ttop(*(align_mask_type *)&p); //FIXME: do we need to warn compiler about aliasing here?
 //            ttop &= ~align_mask;
     //return p;
     Assert2((align_mask & align), == 0); // only works for power-of-2 alignments.
-    unsigned diff=align_mask & (unsigned)p; //= align-(ttop&align_mask)
+    align_mask_type diff=align_mask & (align_mask_type)p; //= align-(ttop&align_mask)
     return (T*)((char *)p - diff);
 }
 
 template <class T>
 bool is_aligned(T *p)
 {
-    //      unsigned & ttop(*(unsigned *)&p); //FIXME: do we need to warn compiler about aliasing here?
-    const unsigned align=boost::alignment_of<T>::value;
-    const unsigned align_mask=(align-1);
-    return !(align_mask & (unsigned)p);
+    //      align_mask_type & ttop(*(align_mask_type *)&p); //FIXME: do we need to warn compiler about aliasing here?
+    const align_mask_type align=boost::alignment_of<T>::value;
+    const align_mask_type align_mask=(align-1);
+    return !(align_mask & (align_mask_type)p);
 }
 
 
 #ifdef TEST
-#include <graehl/shared/test.hpp>
+
+inline char *topointer(size_t i) 
+{
+    ((char *)0)+i;
+}
+
 BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
 {
     using namespace std;
     using namespace graehl;
     unsigned *p;
     p=(unsigned *)0x15;
-    BOOST_CHECK_EQUAL(align_up(p),(unsigned *)0x18);
-    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
+    unsigned *x18=(unsigned*)topointer(0x18);
+    unsigned *x14=(unsigned*)topointer(0x14);
+    BOOST_CHECK_EQUAL(align_up(p),x18);
+    BOOST_CHECK_EQUAL(align_down(p),x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x16;
-    BOOST_CHECK_EQUAL(align_up(p),(unsigned *)0x18);
-    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
+    BOOST_CHECK_EQUAL(align_up(p),x18);
+    BOOST_CHECK_EQUAL(align_down(p),x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x17;
-    BOOST_CHECK_EQUAL(align_up(p),(unsigned *)0x18);
-    BOOST_CHECK_EQUAL(align_down(p),(unsigned *)0x14);
+    BOOST_CHECK_EQUAL(align_up(p),x18);
+    BOOST_CHECK_EQUAL(align_down(p),x14);
     BOOST_CHECK(!is_aligned(p));
 
     p=(unsigned *)0x28;
@@ -77,9 +86,9 @@ BOOST_AUTO_UNIT_TEST( TEST_ALIGN )
 
     const unsigned N=200;
     const unsigned J=sizeof(int);
-    for (unsigned i=0;i<N;++i) {
-        unsigned word=i/J;
-        unsigned wordup=((i%J) ? word+1 : word);
+    for (size_t i=0;i<N;++i) {
+        size_t word=i/J;
+        size_t wordup=((i%J) ? word+1 : word);
         int *p0=0;
         BOOST_CHECK_EQUAL(align_up((int *)i),p0+wordup);
         BOOST_CHECK_EQUAL(align_down((int *)i),p0+word);

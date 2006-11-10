@@ -13,6 +13,7 @@
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
+#include <graehl/shared/tree.hpp>
 #endif
 
 #include <graehl/shared/packedalloc.hpp>
@@ -244,14 +245,14 @@ Symbol Symbol::ZERO(0,Symbol::PHONYINT);
 
 #ifdef TEST
 
-#include <graehl/shared/tree.hpp>
-
 char *symbol_test_strs[]={"test string","d","el""abc","","e","fall","","e","very very long more than 8","a","b","e",0};
 
 
 
 BOOST_AUTO_UNIT_TEST( symbol )
 {
+    using namespace graehl;
+    using namespace std;
   char buf[1000];
   {buf[0]='a';
   buf[1]=0;
@@ -383,7 +384,7 @@ BOOST_AUTO_UNIT_TEST( symbol )
 BEGIN_HASH_VAL(graehl::Symbol) {
 #pragma warning( push )
 #pragma warning( disable : 4311 )
-  return uint_hash(reinterpret_cast<unsigned int>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
+    return uint_hash(reinterpret_cast<std::size_t>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
 #pragma warning( pop )
 } END_HASH
 

@@ -116,7 +116,7 @@ struct TailsUpHypergraph {
     typedef typename TailsFactory::reference RemainPMap;
     HyperarcLeftMap unique_tails;
     RemainPMap unique_tails_pmap() {
-      return ref(unique_tails);
+      return boost::ref(unique_tails);
     }
 
 
@@ -133,7 +133,7 @@ struct TailsUpHypergraph {
           visit_all();
         }
     void visit_all() {
-      visit(hyperarc_tag,g,ref(*this));
+      visit(hyperarc_tag,g,boost::ref(*this));
     }
     Adj &operator[](VD v) {
       return adj[v];
@@ -214,7 +214,7 @@ struct TailsUpHypergraph {
         typedef typename RemainInfCostFact::implementation RemainInfCosts;
         RemainInfCosts remain_infinum;
         typename RemainInfCostFact::reference hyperarc_remain_and_cost_map() {
-          return ref(remain_infinum);
+          return boost::ref(remain_infinum);
         }
 
         //TailsRemainMap tr;
@@ -223,7 +223,7 @@ struct TailsUpHypergraph {
         typedef HeapKey<VD,VertexCostMap,typename LocFact::reference> Key;
         typedef dynamic_array<Key> Heap;
         Heap heap;
-/*
+
         BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_=VertexPredMap())
             :
             rev(r),
@@ -235,10 +235,15 @@ struct TailsUpHypergraph {
             {
               visit(hyperarc_tag,
                     rev.g,
-                    make_indexed_pair_copier(ref(remain_infinum),rev.unique_tails_pmap(),get(edge_weight,r.g))); // pair(rem)<-(tr,ev)
+                    make_indexed_pair_copier(boost::ref(remain_infinum),rev.unique_tails_pmap(),
+                                             //get(edge_weight,r.g)
+                                             //boost::get(boost::edge_weight,r.g)
+                                             //FIXME:
+                                             boost::property_map<G,boost::edge_weight_t>()
+                        )); // pair(rem)<-(tr,ev)
             }
-            //fixme: what is edge_weight?
-*/
+
+
         // semi-tricky: loc should be default initialized (void *) to 0
         BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec)
             :
@@ -251,7 +256,7 @@ struct TailsUpHypergraph {
             {
               visit(hyperarc_tag,
                     rev.g,
-                    make_indexed_pair_copier(ref(remain_infinum),rev.unique_tails_pmap(),ec)); // pair(rem)<-(tr,ev)
+                    make_indexed_pair_copier(boost::ref(remain_infinum),rev.unique_tails_pmap(),ec)); // pair(rem)<-(tr,ev)
             }
 
 
@@ -297,12 +302,12 @@ struct TailsUpHypergraph {
     public:
         void queue_all() {
           //typename Key::SetLocWeight save(ref(loc),mu);
-          visit(vertex_tag,rev.g,ref(*this));
+          visit(vertex_tag,rev.g,boost::ref(*this));
         }
         template<class I>
         void queue(I begin, I end) {
           //typename Key::SetLocWeight save(ref(loc),mu);
-          std::for_each(begin,end,ref(*this));
+          std::for_each(begin,end,boost::ref(*this));
         }
         void safe_queue(VD v) {
           if (!was_queued(v))
@@ -337,11 +342,11 @@ struct TailsUpHypergraph {
 
         }
         void finish() {
-          typename Key::SetLocWeight save(ref(loc),mu);
+          typename Key::SetLocWeight save(boost::ref(loc),mu);
           heapBuild(heap);
           while(heap.size()) {
               VD top=heap.front().key;
-              heapPop(heap);
+              heap_pop(heap);
               reach(top);
           }
         }
@@ -409,7 +414,7 @@ struct TailsUpHypergraph {
 
         }
         RemainPMap tails_remain_pmap() {
-          return ref(tr);
+          return boost::ref(tr);
         }
 
     };
@@ -423,7 +428,7 @@ struct TailsUpHypergraph {
     template <class B,class E,class VertexReachMap>
     unsigned reach(B begin,E end,VertexReachMap p) {
       Reach<VertexReachMap> alg(*this,p);
-      std::for_each(begin,end,ref(alg));
+      std::for_each(begin,end,boost::ref(alg));
       return alg.n;
     }
 

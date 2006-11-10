@@ -96,8 +96,6 @@ struct argc_argv : private std::stringbuf
 
 #ifdef TEST
 char *test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
-char *split_strs[]={"",",a","",0};
-char *seps[]={";",";;",",,","   ","=,",",=",0};
 
 BOOST_AUTO_UNIT_TEST( TEST_command_line )
 {

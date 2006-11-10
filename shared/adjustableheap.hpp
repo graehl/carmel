@@ -78,7 +78,7 @@ inline void heapAdjustOrAdd ( Heap &heap, HeapKey<K,W,L> k) {
   if (heapLoc)
     heapAdjustUp(heap.begin(),heapLoc);
   else
-    heapAdd(heap,k);
+    heap_add(heap,k);
 }
 
 template <typename Heap,class K,class W,class L>
