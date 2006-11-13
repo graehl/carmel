@@ -1,8 +1,12 @@
 #ifndef MEMORY_STATS_HPP
 #define MEMORY_STATS_HPP
 
+#if defined(__APPLE__) && defined(__MACH__)
+#define _MACOSX 1
+#endif
+
 #include <cstdlib>
-#if _MACOSX
+#if defined(_MACOSX)
 # include <malloc/malloc.h>
 #else
 # include <malloc.h>
@@ -16,12 +20,12 @@ namespace graehl {
 
 #if defined(__unix__)
 typedef struct mallinfo malloc_info;
-#elif _MACOSX
-typedef mstats malloc_info;
+#elif defined(_MACOSX)
+typedef struct mstats malloc_info;
 #endif
 
 struct memory_stats  {
-#if defined(__unix__) || _MACOSX
+#if defined(__unix__) || defined(_MACOSX)
     malloc_info info;
 #endif
 
@@ -44,16 +48,20 @@ struct memory_stats  {
     void refresh() {
 #if defined(__unix__)
         info=mallinfo();
-#elif _MACOSX
+#elif defined(_MACOSX)
         info=mstats();
 #endif
     }
-#if defined(__unix__) || _MACOSX
+#if defined(__unix__) || defined(_MACOSX)
     operator const malloc_info & () const {
         return info;
     }
 #endif
+#if defined(_MACOSX)
+    typedef size_bytes_integral size_type;
+#else
     typedef size_bytes size_type;
+#endif
 
     // includes memory mapped
     size_type total_allocated() const
@@ -77,7 +85,7 @@ struct memory_stats  {
     {
 #if defined(__unix__)
         return size_type((unsigned)info.arena);
-#elif _MACOSX
+#elif defined(_MACOSX)
         return size_type(info.bytes_total);
 #else
         return 0;
@@ -114,7 +122,7 @@ return ret;
 //    using namespace memory_stats_detail;
 //    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
 }
-#elif _MACOSX
+#elif defined(_MACOSX)
 inline memory_stats operator - (memory_stats after, memory_stats before)
 {
     memory_stats ret;
