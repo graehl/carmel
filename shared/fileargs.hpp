@@ -382,6 +382,11 @@ inline size_t count_newlines(const std::string &filename)
     return n_newlines;    
 }
 
+inline void native_filename_check() 
+{
+    fs::path::default_name_check(fs::native);
+}
+
 
 // return the absolute filename that would result from "cp source dest" (and write to *dest_exists whether dest exists) - throws error if source is the same as dest
 inline std::string output_name_like_cp(const std::string &source,const std::string &dest,bool *dest_exists=NULL) 

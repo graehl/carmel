@@ -14,13 +14,34 @@
 
 #include <iostream>
 
+namespace graehl {
+
 template <class T,class A=std::allocator<T> >
 class List : public STL_LIST<T,A> {
-  //  typedef STL_LIST<T,A> S;
+  //  
+    typedef STL_LIST<T,A> S;
 public:
     typedef List<T,A> self_type;
+    typedef typename S::const_iterator const_iterator;
 #ifdef USE_SLIST
-    typedef typename STL_LIST<T,A>::erase_iterator iterator;    
+    typedef typename S::erase_iterator iterator;
+    iterator begin()
+    {
+        return S::erase_begin();
+    }
+    iterator end() 
+    {
+        return S::erase_end();
+    }
+    const_iterator begin() const
+    {
+        return S::const_begin();
+    }
+    const_iterator end() const
+    {
+        return S::const_end();
+    }
+    
 #else 
     typedef typename List::iterator erase_iterator;
     typedef typename List::iterator val_iterator;
@@ -121,5 +142,7 @@ public:
 #else
             //#define LIST_BACK_INSERTER back_insert_iterator
 #endif
+
+}
 
 #endif

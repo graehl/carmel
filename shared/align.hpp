@@ -54,7 +54,7 @@ bool is_aligned(T *p)
 
 inline char *topointer(size_t i) 
 {
-    ((char *)0)+i;
+    return ((char *)0)+i;
 }
 
 BOOST_AUTO_UNIT_TEST( TEST_ALIGN )

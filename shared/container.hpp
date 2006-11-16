@@ -3,6 +3,12 @@
 #define CONTAINER_HPP
 
 #include <graehl/shared/byref.hpp>
+#include <map>
+#include <graehl/shared/2hash.h>
+#include <graehl/shared/list.h>
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
 
 namespace graehl {
 
@@ -52,8 +58,6 @@ void enumerate(M& m,F f) {
 
 
 // Assoc. Maps:
-#include <map>
-#include <graehl/shared/2hash.h>
 
 
 struct HashS {
@@ -146,7 +150,6 @@ struct VectorS {
   };
 };
 
-#include <graehl/shared/list.h>
 
 struct ListS {
   template <class T> struct container {
@@ -155,9 +158,6 @@ struct ListS {
 };
 
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 template <class S>
@@ -190,6 +190,25 @@ void containertest() {
   c.push(9);
   BOOST_CHECK(c.size()==2);
   BOOST_CHECK(c.top()==9);
+  {
+      
+  bool nine=false,ten=false;
+  for(typename cont::const_iterator i=c.begin(),e=c.end();i!=e;++i) {
+    if (*i==9)
+      nine=true;
+    else if (*i==10)
+      ten=true;
+    else
+      BOOST_CHECK(false);
+  }
+  test_counter n;
+  enumerate(c,n);
+  BOOST_CHECK(n.n==2);
+
+  BOOST_CHECK(nine&&ten);
+}
+  {
+      
   bool nine=false,ten=false;
   for(typename cont::iterator i=c.begin(),e=c.end();i!=e;++i) {
     if (*i==9)
@@ -204,6 +223,9 @@ void containertest() {
   BOOST_CHECK(n.n==2);
 
   BOOST_CHECK(nine&&ten);
+}
+
+
 }
 
 BOOST_AUTO_UNIT_TEST( TEST_CONTAINER )
