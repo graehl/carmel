@@ -80,42 +80,6 @@ class slist_shared :
   struct val_iterator;
   struct erase_iterator;
     typedef val_iterator iterator; /// this means standard list operation (erase) isn't supported for regular iterator
-    struct const_iterator
-        : public std::iterator<std::forward_iterator_tag, const T>
-    {
-        const Node* m_rep;
-
-        inline const_iterator(const Node* x=0):m_rep(x){}
-        inline const_iterator(const const_iterator& x):m_rep(x.m_rep) {}
-        inline const_iterator(const val_iterator& x):m_rep(x.m_rep){}
-        inline const_iterator& operator=(const const_iterator& x)
-        {
-            m_rep=x.m_rep; return *this;
-        }
-        inline const_iterator& operator=(const iterator& x)
-        {
-            m_rep=x.m_rep; return *this;
-        }
-        inline const_iterator& operator++()
-        {
-            m_rep = m_rep->next; return *this;
-        }
-        inline const_iterator operator++(int)
-        {
-            const_iterator tmp(*this); m_rep = m_rep->next; return tmp;
-        }
-        inline typename slist_shared::const_reference operator*() const { return m_rep->data; }
-        inline typename slist_shared::const_pointer operator->() const { return &m_rep->data; }
-        inline bool operator==(const const_iterator& x) const
-        {
-            return m_rep == x.m_rep;
-        }
-        inline bool operator!=(const const_iterator& x) const
-        {
-            return m_rep != x.m_rep;
-        }
-    };
-
 
 
     struct val_iterator
@@ -130,7 +94,7 @@ class slist_shared :
 
         inline val_iterator(Node* x=0):m_rep(x){}
         inline val_iterator(const val_iterator& x):m_rep(x.m_rep) {}
-        inline val_iterator(const const_iterator& x):m_rep(x.m_rep) {}
+//        inline val_iterator(const const_iterator& x):m_rep(x.m_rep) {}
         inline val_iterator& operator=(const val_iterator& x)
         {
             m_rep=x.m_rep; return *this;
@@ -161,7 +125,7 @@ class slist_shared :
         inline node_iterator(Node* x=0):m_rep(x){}
         inline node_iterator(const val_iterator& x):m_rep(x.m_rep) {}
         inline node_iterator(const node_iterator& x):m_rep(x.m_rep) {}
-        inline node_iterator(const const_iterator& x):m_rep(x.m_rep) {}
+//        inline node_iterator(const const_iterator& x):m_rep(x.m_rep) {}
         inline node_iterator& operator=(const node_iterator& x)
         {
             m_rep=x.m_rep; return *this;
@@ -197,7 +161,7 @@ class slist_shared :
         //friend class const_iterator;
         //        friend class slist_shared;
         //        operator iterator () { return *m_rep; }
-        inline erase_iterator(const val_iterator &x) : m_rep(&x.m_rep->next) {} // points at following node
+        inline explicit erase_iterator(const val_iterator &x) : m_rep(&x.m_rep->next) {} // points at following node
         inline erase_iterator():m_rep(0){}
         inline erase_iterator(Node*& x):m_rep(&x){}
         inline erase_iterator(const erase_iterator& x):m_rep(x.m_rep) {}
@@ -231,6 +195,43 @@ class slist_shared :
         }
     };
 
+    struct const_iterator
+        : public std::iterator<std::forward_iterator_tag, const T>
+    {
+        const Node* m_rep;
+
+        inline const_iterator(const Node* x=0):m_rep(x){}
+        inline const_iterator(const const_iterator& x):m_rep(x.m_rep) {}
+        inline const_iterator(const val_iterator& x):m_rep(x.m_rep){}
+        inline const_iterator(const erase_iterator& x):m_rep(x.m_rep ? *x.m_rep : 0){}
+        inline const_iterator& operator=(const const_iterator& x)
+        {
+            m_rep=x.m_rep; return *this;
+        }
+        inline const_iterator& operator=(const iterator& x)
+        {
+            m_rep=x.m_rep; return *this;
+        }
+        inline const_iterator& operator++()
+        {
+            m_rep = m_rep->next; return *this;
+        }
+        inline const_iterator operator++(int)
+        {
+            const_iterator tmp(*this); m_rep = m_rep->next; return tmp;
+        }
+        inline typename slist_shared::const_reference operator*() const { return m_rep->data; }
+        inline typename slist_shared::const_pointer operator->() const { return &m_rep->data; }
+        inline bool operator==(const const_iterator& x) const
+        {
+            return m_rep == x.m_rep;
+        }
+        inline bool operator!=(const const_iterator& x) const
+        {
+            return m_rep != x.m_rep;
+        }
+    };
+    
     /// WARNING: O(n) - be very careful to test empty() instead of size()==0
     size_type size() const 
     {

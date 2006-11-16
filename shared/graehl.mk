@@ -140,7 +140,7 @@ CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
 ifdef PEDANTIC
 CPPFLAGS +=  -pedantic
 endif
-CPPFLAGS_TEST += $(CPPFLAGS)
+CPPFLAGS_TEST += $(CPPFLAGS) -ggdb
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
 CPPFLAGS_OPT += $(CPPFLAGS)
 #-DNDEBUG

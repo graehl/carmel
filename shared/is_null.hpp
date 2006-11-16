@@ -2,7 +2,14 @@
 #define GRAEHL__SHARED__IS_NULL_HPP
 
 //NOTE: not namespace graehl.
-#ifdef _WIN32
+
+#include <cmath>
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+# define WIN32_NAN
+#endif
+
+#ifdef WIN32_NAN
 #include <float.h>
 #include <xmath.h>
 
@@ -16,8 +23,16 @@ static const unsigned int nan[2] = {0xffffffff, 0x7fffffff};
 
 #endif
 
+#ifndef NAN
+ #define NAN (0.0/0.0)
+#endif
 
-#include <cmath>
+//#define FLOAT_NULL HUGE_VALF
+//#define DOUBLE_NULL HUGE_VAL
+#define FLOAT_NULL NAN
+#define DOUBLE_NULL NAN
+
+
 
 template <class C> inline
 bool is_null(C const &c) 
@@ -29,32 +44,32 @@ void set_null(C &c)
 
 inline bool is_null(float const& f)
 {
-#ifndef _WIN32
-    return std::isnan(f);//f!=f;
+#ifdef WIN32_NAN
+    return _isnan(f) != 0;
 #else
-	return _isnan(f) != 0;
+    return std::isnan(f);//f!=f;
 #endif
 //    return f!=f;
 }
 
 inline void set_null(float &f)
 {
-    f=NAN;//0./0.;
+    f=FLOAT_NULL;//0./0.;
 }
 
 inline bool is_null(double const& f)
 {
-#ifndef _WIN32
-    return std::isnan(f);//f!=f;
+#ifdef WIN32_NAN
+    return _isnan(f) != 0;
 #else
-	return _isnan(f) != 0;
+    return std::isnan(f);//f!=f;
 #endif
 // return f!=f;
 }
 
 inline void set_null(double &f)
 {
-    f=NAN;//0./0.;
+    f=DOUBLE_NULL;//0./0.;
 }
 
 struct as_null {};
