@@ -240,13 +240,12 @@ endif
 endif
 endif
 
-#--static
 ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB))
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB)) --static
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug
