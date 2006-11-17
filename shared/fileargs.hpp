@@ -102,9 +102,9 @@ struct file_arg : public boost::shared_ptr<Stream>
         throw std::runtime_error("FAILED("+filename+"): "+msg);
     }
 
-    enum { DELETE=1,NO_DELETE=0 };
+    enum { delete_after=1,no_delete_after=0 };
     
-    void set(Stream &s,std::string const& filename="",bool destroy=NO_DELETE,std::string const& fail_msg="invalid stream") 
+    void set(Stream &s,std::string const& filename="",bool destroy=no_delete_after,std::string const& fail_msg="invalid stream") 
     {
         if (!s)
             throw_fail(filename,fail_msg);
@@ -116,7 +116,7 @@ struct file_arg : public boost::shared_ptr<Stream>
     }
     
     template <class filestream>
-    void set_checked(filestream &fs,std::string const& filename="",bool destroy=NO_DELETE,std::string const& fail_msg="invalid stream")
+    void set_checked(filestream &fs,std::string const& filename="",bool destroy=no_delete_after,std::string const& fail_msg="invalid stream")
     {
         try {
             set(dynamic_cast<Stream &>(fs),filename,destroy,fail_msg);
@@ -129,7 +129,7 @@ struct file_arg : public boost::shared_ptr<Stream>
     void set_new(std::string const& filename,std::string const& fail_msg="Couldn't open file")
     {
         std::auto_ptr<filestream> f(new filestream(filename.c_str(),std::ios::binary));
-        set_checked(*f,filename,DELETE,fail_msg);
+        set_checked(*f,filename,delete_after,fail_msg);
         f.release(); // w/o delete
     }
     

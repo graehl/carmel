@@ -53,7 +53,7 @@ private:
     int flush_buffer();
     void handle_gzerror(); // throws exception
 public:
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(CYGWIN)
 	enum {
 		EOF = -1
 	};

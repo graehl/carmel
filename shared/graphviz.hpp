@@ -22,10 +22,10 @@ struct DefaultNodeLabeler {
 };
 
 struct GraphvizPrinter {
-    unsigned graph_no;
     unsigned next_node;
-    std::string graphname, pre;
     std::ostream &o;
+    std::string graphname, pre;
+    unsigned graph_no;
     GraphvizPrinter(std::ostream &o_,const std::string &prelude_,const char *graphname_="graph") : o(o_),graphname(graphname_),pre(prelude_),graph_no(0) {
         prelude();
     }

@@ -382,10 +382,14 @@ BOOST_AUTO_UNIT_TEST( symbol )
 }
 
 BEGIN_HASH_VAL(graehl::Symbol) {
+#ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4311 )
+#endif
     return uint_hash(reinterpret_cast<std::size_t>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
+#ifdef _MSC_VER
 #pragma warning( pop )
+#endif
 } END_HASH
 
 

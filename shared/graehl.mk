@@ -38,27 +38,37 @@ ifeq ($(ARCH),linux64)
 ARCH_FLAGS = -march=athlon64
 else
  ifeq ($(ARCH),linux)
-  ARCH_FLAGS = -m32 -march=pentium4
+#  ARCH_FLAGS = -m32 -march=pentium4
  endif
 endif
 endif
 
 ifndef INSTALL_PREFIX
+ifdef HOSTBASE
+INSTALL_PREFIX=$(HOSTBASE)
+else
 ifdef ARCHBASE
 INSTALL_PREFIX=$(ARCHBASE)
 else
 INSTALL_PREFIX=$(HOME)
 endif
 endif
+endif
 ifndef BIN_PREFIX
 BIN_PREFIX=$(INSTALL_PREFIX)/bin
+endif
+
+ifndef TRUNK
+TRUNK=../..
 endif
 
 ifndef SHARED
 SHARED=../shared
 endif
 ifndef BOOST_DIR
-BOOST_DIR:=../boost
+# note: BOOST_DIR not used for anything now, we assume boost somewhere in std include
+#BOOST_DIR:=../boost
+BOOST_DIR=~/isd/$(HOST)/include
 endif
 ifndef BASEOBJ
 BASEOBJ=$(BUILD_BASE)/obj
@@ -72,21 +82,29 @@ endif
 
 .SUFFIXES:
 .PHONY = distclean all clean depend default
+
 ifndef ARCH
   ARCH := $(shell print_arch)
   export ARCH
 endif
 
-DEPSPRE:= $(BUILD_BASE)/deps/$(ARCH)/
+ifndef BUILDSUB
+  ifdef HOST
+   BUILDSUB=$(HOST)
+  else
+   BUILDSUB=$(ARCH)
+  endif
+endif
+DEPSPRE:= $(BUILD_BASE)/deps/$(BUILDSUB)/
 
 # workaround for eval line length limit: immediate substitution shorter?
-OBJ:= $(BASEOBJ)/$(ARCH)
+OBJ:= $(BASEOBJ)/$(BUILDSUB)
 OBJT:= $(OBJ)/test
 ifndef OBJB
-OBJB:= $(BASESHAREDOBJ)/$(ARCH)
+OBJB:= $(BASESHAREDOBJ)/$(BUILDSUB)
 endif
 OBJD:= $(OBJ)/debug
-BIN:= $(BASEBIN)/$(ARCH)
+BIN:= $(BASEBIN)/$(BUILDSUB)
 ALL_DIRS:= $(BASEOBJ) $(OBJ) $(BASEBIN) $(BIN) $(OBJD) $(OBJT) $(BASESHAREDOBJ) $(OBJB) $(DEPSPRE)
 Dummy1783uio42:=$(shell for f in $(ALL_DIRS); do [ -d $$f ] || mkdir -p $$f ; done)
 
@@ -106,9 +124,21 @@ BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
 BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS)))
 BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
-ifndef BOOST_SUFFIX
-BOOST_SUFFIX:=gcc
+ifndef BOOST_SUFFIX_BASE
+BOOST_SUFFIX_BASE=gcc
 endif
+ifdef BOOST_DEBUG
+ifndef BOOST_DEBUG_SUFFIX
+BOOST_DEBUG_SUFFIX=-d
+endif
+endif
+ifndef NO_THREADS
+BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)-mt$(BOOST_DEBUG_SUFFIX)
+else
+BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)$(BOOST_DEBUG_SUFFIX)
+CPPFLAGS +=  -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
+endif
+
 ifdef BUILD_OWN_BOOST_LIBS
 BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
@@ -136,7 +166,9 @@ CPPFLAGS += $(CPPNOWIDECHAR) $(LARGEFILEFLAGS)
 LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR))
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
-CPPFLAGS += $(addprefix -I,$(INC)) -I$(BOOST_DIR) -DBOOST_NO_MT
+INC += $(TRUNK)
+CPPFLAGS += $(addprefix -I,$(INC)) 
+
 ifdef PEDANTIC
 CPPFLAGS +=  -pedantic
 endif
@@ -148,9 +180,6 @@ CPPFLAGS_OPT += $(CPPFLAGS)
 #-fno-var-tracking
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
 
-ifndef USE_THREADS
-CPPFLAGS +=  -DBOOST_DISABLE_THREADS 
-endif
 
 ifeq ($(ARCH),solaris)
   CPPFLAGS += -DSOLARIS -DUSE_STD_RAND
@@ -191,7 +220,7 @@ $$(BIN)/$(1):\
  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(optimized\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB)
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB)
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 OPT_PROGS += $$(BIN)/$(1)
 $(1): $$(BIN)/$(1)
@@ -203,7 +232,7 @@ ifndef $(1)_NOSTATIC
 $$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(static\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) --static 
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1).static
 $(1): $$(BIN)/$(1).static
@@ -211,12 +240,13 @@ endif
 endif
 endif
 
+#--static
 ifndef $(1)_NODEBUG
 $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) --static
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB))
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug
@@ -248,7 +278,7 @@ $(foreach prog,$(PROGS),$(eval $(call PROG_template,$(prog))))
 
 ALL_PROGS=$(OPT_PROGS) $(DEBUG_PROGS) $(TEST_PROGS) $(STATIC_PROGS)
 
-all: $(ALL_PROGS)
+all: $(ALL_DEPENDS) $(ALL_PROGS)
 
 opt: $(OPT_PROGS)
 
@@ -304,9 +334,9 @@ $(BOOST_SERIALIZATION_LIB): $(BOOST_SERIALIZATION_OBJS)
 #	$(RANLIB) $@
 endif
 
-vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPTIONS_SRC_DIR) $(BOOST_FILESYSTEM_SRC_DIR)
+#vpath %.cpp $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR) $(BOOST_OPTIONS_SRC_DIR) $(BOOST_FILESYSTEM_SRC_DIR)
 vpath %.d $(DEPSPRE)
-vpath %.hpp $(BOOST_DIR)
+#vpath %.hpp $(BOOST_DIR)
 
 #:$(SHARED):.
 .PRECIOUS: $(OBJB)/%.o

@@ -115,11 +115,11 @@ struct printable_options_description
     };
     typedef std::vector<printable_option > options_type;
     
-    printable_options_description(unsigned line_length = m_default_line_length) :
+    printable_options_description(unsigned line_length = options_description::m_default_line_length) :
         options_description(line_length) {}
     
     printable_options_description(const std::string& caption,
-                                  unsigned line_length = m_default_line_length)
+                                  unsigned line_length = options_description::m_default_line_length)
         : options_description(caption,line_length), caption(caption) {}
 
     self_type &add_options()
