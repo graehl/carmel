@@ -1,14 +1,13 @@
 #include <iostream>
 #include <iterator>
 #include <sstream>
-using namespace std;
 #define MAXLENGTH 70
 
 
 template <class I,class O>
 O &cpp_escape_string(O &out,I begin,I end,unsigned wrap_column=(unsigned)-1)
 {
-  int column = 0;
+  unsigned column = 0;
   out << '"';
   for (;begin!=end;++begin) {
     char c=*begin;
@@ -46,19 +45,20 @@ O &cpp_escape_string(O &out,I begin,I end,unsigned wrap_column=(unsigned)-1)
 template <class I,class O>
 O &cpp_escape_string(O &out,I &in,unsigned wrap_column=(unsigned)-1)
 {
-  in >> std::noskipws;
-  typedef istream_iterator<char> Isi;
+    in >> std::noskipws;
+    typedef std::istream_iterator<char> Isi;
   return cpp_escape_string(out,Isi(in),Isi(),wrap_column);
 }
 
 void usage(char *argv0)
 {
-    cerr << argv0 << " [variable_name] [max_line_length]\n\n";
-    cerr << "Provide text on stdin and I'll give you on stdout a C character constant variable,\nwhose name you can specify as the first command-line argument.\n(Second argument will break the text into line-size chunks)";
+    std::cerr << argv0 << " [variable_name] [max_line_length]\n\n";
+    std::cerr << "Provide text on stdin and I'll give you on stdout a C character constant variable,\nwhose name you can specify as the first command-line argument.\n(Second argument will break the text into line-size chunks)";
 }
 
 int main(int argc, char *argv[])
 {
+    using namespace std;
     char *textvar="the_text";
     unsigned max_line_length=MAXLENGTH;
     if (argc > 1) {

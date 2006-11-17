@@ -37,8 +37,8 @@ void print_stackframe(std::ostream &o) {
 
 class BackTrace
 {
-    const char *file;
     const char *function;
+    const char *file;
     unsigned line;
     static bool first;
 public:
