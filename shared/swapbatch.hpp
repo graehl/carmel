@@ -169,6 +169,7 @@ struct SwapBatch {
             else {
                 SDBP4(o,cthis,batch,header,operator*());
             }
+            return GENIOGOOD;
         }
 
     };
@@ -355,7 +356,6 @@ struct SwapBatch {
     template <class F>
     void read_all_enumerate(std::istream &in,F f) {
         BACKTRACE;
-        char c;
         while(in) {
             BatchMember *newguy=read_one(in);
             if (newguy)

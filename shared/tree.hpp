@@ -337,7 +337,7 @@ bool tree_visit(T *tree,F func)
 }
 
 template <class T,class F>
-bool tree_leaf_visit(T *tree,F func)
+void tree_leaf_visit(T *tree,F func)
 {
          if (tree->size()) {
              for (T *child=tree->begin(), *end=tree->end();child!=end;++child) {
@@ -346,6 +346,7 @@ bool tree_leaf_visit(T *tree,F func)
          } else {
            deref(func)(tree);
          }
+         
 }
 
 
@@ -398,8 +399,8 @@ struct TreeVizPrinter : public GraphvizPrinter {
 };
 
 struct TreePrinter {
-  bool first;
   std::ostream &o;
+  bool first;
   TreePrinter(std::ostream &o_):o(o_),first(true) {}
 template <class T>
   bool discover(T *t) {

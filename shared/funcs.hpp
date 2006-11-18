@@ -497,7 +497,7 @@ struct periodic_wrapper : public C
     typedef C Imp;
     typedef typename Imp::result_type result_type;
     Periodic period;
-    periodic_wrapper(unsigned period_=0,const Imp &imp_=Imp()) : period(period_), Imp(imp_) {}
+    periodic_wrapper(unsigned period_=0,const Imp &imp_=Imp()) : Imp(imp_),period(period_) {}
     void set_period(unsigned period_=0)
     {
         period.set_period(period_);

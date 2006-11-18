@@ -154,7 +154,6 @@ struct NormalizeGroups {
                         *log << " - setting to zero probability." << std::endl;
                 }
                 for (GIt j=beg;j!=end;++j) {
-                    source_t &w=source(*j);
                     dest_t &d=sink(*j);
                     DODIFF(d,setto);
                     d=setto;
