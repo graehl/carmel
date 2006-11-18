@@ -88,8 +88,8 @@ template <class Label, class F
 struct RandomReaderTermCallback
 {
     typedef Label value_type;
-    F f;
     double prob_keep;
+    F f;
     RandomReaderTermCallback(const F &f_,double prob_keep_) : prob_keep(prob_keep_),f(f_) {}
     RandomReaderTermCallback(const RandomReaderTermCallback<value_type,F,terminator> &r) : prob_keep(r.prob_keep),f(r.f) {}
     template <class charT, class Traits>
