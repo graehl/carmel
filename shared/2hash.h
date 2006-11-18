@@ -52,13 +52,13 @@ template <typename K, typename V> class HashEntry {
   HashEntry operator =(HashEntry &);    //disallow
   //operator =(HashEntry &);    //disallow
  public:
+//private:
+   HashEntry<K,V> *next;
   //const
         K first;
   V second;
   typedef K key_type;
   typedef V mapped_type;
-//private:
-   HashEntry<K,V> *next;
     typedef HashEntry<K,V> self_type;
 public:
   /*  HashEntry() : next(NULL) { }*/

@@ -500,7 +500,7 @@ template <class A,class I,class O>
 void insert_byid(const A& vals,I &in,O &out)
 {
     char c;
-    unsigned N;
+    unsigned N=0; //init only to suppress warning
     const int waiting_i=0,seen_i=1,seen_id=2,scan_number=3; // can't get enum to work in gcc-4    
     int state=waiting_i;
     while (in.get(c)) {
