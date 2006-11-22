@@ -11,6 +11,7 @@
 #include <sstream>
 //#include "info_debug.hpp"
 #include <graehl/shared/shell_escape.hpp>
+#include <graehl/shared/command_line.hpp>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 # define OS_WINDOWS
@@ -111,10 +112,32 @@ inline std::string get_current_dir() {
 #else
     char *malloced=::getcwd(NULL,0);
 #endif
+    if (!malloced)
+        throw std::runtime_error("Couldn't get current working directory");
     std::string ret(malloced);
     free(malloced);
     return ret;
 }
+
+template <class O>
+void print_current_dir(O&o,const char*header="### CURRENT DIR: ") 
+{
+    if (header)
+        o << header;
+    o << get_current_dir();
+    if (header)
+        o << std::endl;
+}
+
+template <class O>
+void print_command_header(O &o, int argc, char *argv[])
+{
+    print_command_line(o,argc,argv);
+    print_current_dir(o);
+    o << std::endl;
+}
+
+
 
 inline Error last_error() {
 #ifdef MEMMAP_IO_WINDOWS

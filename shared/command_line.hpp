@@ -13,8 +13,8 @@
 
 namespace graehl {
 
-template <class Ch, class Tr>
-inline std::basic_ostream<Ch,Tr> & print_command_line(std::basic_ostream<Ch,Tr> &out, int argc, char *argv[], const char *header="COMMAND LINE:\n") {
+template <class O>
+O & print_command_line(O &out, int argc, char *argv[], const char *header="### COMMAND LINE:\n") {
     if (header)
         out << header;
     graehl::word_spacer_c<' '> sep;
