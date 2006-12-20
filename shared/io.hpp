@@ -369,12 +369,12 @@ struct IndirectReader
 };
 
   template <class Ch, class Tr, class T,class Writer> inline
-  std::ios_base::iostate range_print_iostate(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
+  std::ios_base::iostate range_print_iostate(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')')
   {
       static const char *const MULTILINE_SEP="\n";
       const char space=' ';
       if (parens) {
-          o << '(';
+          o << open_paren;
           if (multiline)
               o << MULTILINE_SEP;
       }
@@ -392,7 +392,7 @@ struct IndirectReader
           }
       }
       if (parens) {
-          o << ')';
+          o << close_paren;
           if (multiline)
               o << MULTILINE_SEP;
       }
@@ -400,12 +400,29 @@ struct IndirectReader
 }
 
 template <class Ch, class Tr, class T,class Writer> inline
-std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true)
+std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')')
 {
     range_print_iostate(o,begin,end,writer,multiline,parens);
     return o;
 }
 
+template <class Writer=DefaultWriter>
+struct container_writer 
+{
+    bool multiline;
+    bool parens;
+    char open_paren;
+    char close_paren;
+    Writer writer;
+    container_writer(bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')',Writer writer=Writer()) : multiline(multiline),parens(parens),open_paren(open_paren),close_paren(close_paren),writer(writer) {}
+    template <class Ch, class Tr,class value_type>
+    std::basic_ostream<Ch,Tr>&
+    operator()(std::basic_ostream<Ch,Tr>& o,const value_type &l) const {
+        return range_print(o,l.begin(),l.end(),writer,multiline,parens,open_paren,close_paren);
+    }
+};
+
+    
 
 template <class Ch, class Tr, class T>
 inline  std::ios_base::iostate print_range(std::basic_ostream<Ch,Tr>& o,T begin, T end,bool multiline=false,bool parens=true) {
@@ -414,16 +431,16 @@ inline  std::ios_base::iostate print_range(std::basic_ostream<Ch,Tr>& o,T begin,
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
 template <class Ch, class Tr, class Reader, class T>
-std::ios_base::iostate range_read(std::basic_istream<Ch,Tr>& in,T &out,Reader read)
+std::ios_base::iostate range_read(std::basic_istream<Ch,Tr>& in,T &out,Reader read,char open_paren='(',char close_paren=')')
 {
     char c;
     EXPECTI_COMMENT_FIRST(in>>c);
-    if (c=='(') {
+    if (c==open_paren) {
         for(;;) {
 //            EXPECTI_COMMENT(in>>c);
             if (!(in >> c))
                 goto done;
-            if (c==')') {
+            if (c==close_paren) {
                 break;
             }
             in.unget();
@@ -463,6 +480,21 @@ done:
   return GENIOGOOD;
 }
 #undef IFBADREAD
+
+template <class Cont,class Reader=DefaultReader<typename Cont::value_type> >
+struct container_reader
+{
+    typedef Cont value_type;
+    char open_paren;
+    char close_paren;
+    Reader reader;
+    container_reader(char open_paren='(',char close_paren=')',Reader reader=Reader()) : open_paren(open_paren),close_paren(close_paren),reader(reader) {}
+    template <class Ch, class Tr>
+    std::basic_istream<Ch,Tr>&
+    operator()(std::basic_istream<Ch,Tr>& i,value_type &l) const {
+        return range_read(i,std::back_inserter<value_type>(l),reader,open_paren,close_paren);
+    }
+};
 
 // note: may attempt to read MORE than [begin,end) - looks for closing paren, fails if not found after no more than end-begin elements (throwing an exception on failure)
 template <class Ch, class Tr,class T>

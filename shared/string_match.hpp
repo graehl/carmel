@@ -3,6 +3,8 @@
 
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/null_terminated.hpp>
+#include <graehl/shared/string_to.hpp>
+
 #include <string>
 #include <iterator>
 #include <stdexcept>
@@ -206,7 +208,7 @@ bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end)
     return starts_with(str,str_end,prefix,prefix_end,equal_typeless());
 }
 
-
+/*
 //FIXME: provide skip-first-whitespace or skip-no-whitespace iterators.
 template <class Ch,class Tr,class CharIt> inline
 bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end) 
@@ -215,6 +217,7 @@ bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end)
     II ibeg(i),iend;
     return match_begin(ibeg,iend,begin,end);
 }
+*/
 
 template <class Ch,class Tr,class CharIt> inline
 bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end,bool skip_first_ws=true) 
@@ -310,43 +313,6 @@ void parse_until(const std::string &term,In &in,Func func)
     }
 }
 
-
-template <class Str,class Data> inline
-void string_into(const Str &str,Data &data) 
-{
-    std::istringstream i(str);
-    if (!(i>>data))
-        throw std::runtime_error("Couldn't convert (string_into): "+str);
-}
-
-
-template <class Data,class Str> inline
-Data string_to(const Str &str)
-{
-    Data ret;
-    string_into(str,ret);
-    return ret;
-}
-/*
-
-template <class Str,class Data,class size_type> inline
-void substring_into(const Str &str,size_type pos,size_type n,Data &data) 
-{
-//    std::istringstream i(str,pos,n); // doesn't exist!
-    std::istringstream i(str.substr(pos,n));
-    if (!(i>>*data))
-        throw std::runtime_error("Couldn't convert (string_into): "+str);
-}
-
-template <class Data,class Str,class size_type> inline
-Data string_to(const Str &str,size_type pos,size_type n)
-{
-    Data ret;
-    substring_into(str,pos,n,ret);
-    return ret;
-}
-
-*/
 
 template <class Cont>
 struct push_backer
