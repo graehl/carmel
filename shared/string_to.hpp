@@ -41,6 +41,15 @@ Data string_to(const Str &str)
     return ret;
 }
 
+template <class D> inline
+std::string to_string(D const &d) 
+{
+    std::ostringstream o;
+    o << d;
+    return o.str();
+}
+
+
 /*
 
 template <class Str,class Data,class size_type> inline
