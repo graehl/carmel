@@ -4,6 +4,7 @@
 
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/teestream.hpp>
+#include <graehl/shared/null_ostream.hpp>
 #include <graehl/shared/gzstream.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/string_match.hpp>
@@ -85,14 +86,28 @@ struct null_deleter {
     void operator()(void*) const {}
 };
 
+template <class S>
+inline void set_null_file_arg(boost::shared_ptr<S> &p) 
+{
+    p.reset();
+}
+
+inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p) 
+{
+    p.reset(new null_ostream()); //(&the_null_ostream,null_deleter());
+}    
     
 
 template <class Stream>
 struct file_arg : public boost::shared_ptr<Stream>
 {
-    typedef file_arg<Stream> self_type;
+ private:
+    bool none;
+ public:
     std::string name;
     typedef boost::shared_ptr<Stream> pointer_type;
+    typedef file_arg<Stream> self_type;
+    
     file_arg() { set_none(); }
     explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL)
     { set(s,null_allowed); }
@@ -167,9 +182,10 @@ struct file_arg : public boost::shared_ptr<Stream>
                 set_checked(GRAEHL__DEFAULT_OUT,s);
         } else if (!file_only && !read && s== "-2")
             set_checked(GRAEHL__DEFAULT_LOG,s);
-        else if (null_allowed && s == "-0")
+        else if (null_allowed && s == "-0") {
             set_none();
-        else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
+            return;
+        } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
             set_gzfile(s);
         } else {
             if (read)
@@ -177,6 +193,7 @@ struct file_arg : public boost::shared_ptr<Stream>
             else
                 set_new<std::ofstream>(s,"Couldn't create output file");
         }
+        none=false;
     }
     
     explicit file_arg(Stream &s,std::string const& name) :
@@ -186,16 +203,16 @@ struct file_arg : public boost::shared_ptr<Stream>
     file_arg(file_arg<Stream2> const& o) :
         pointer_type(o.pointer()),name(o.name) {}    
 
+    void set_none()
+    { none=true;set_null_file_arg(pointer());name="-0"; }
+
     bool is_none() const
-    { return !pointer(); }
+    { return none; }
 
     operator bool() const 
     {
         return !is_none();
-    }
-    
-    void set_none()
-    { pointer().reset();name="-0"; }
+    }    
     
     bool is_default_in() const {
         return pointer().get() == &GRAEHL__DEFAULT_IN; }
