@@ -10,6 +10,9 @@
 #define MEMMAP_HPP
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/backtrace.hpp>
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
 
 /*
   #include <stdexcept>
@@ -338,7 +341,6 @@ public:
 };
 
 #ifdef TEST
-#include <graehl/shared/test.hpp>
 //#include <stdio.h>
 
 BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )

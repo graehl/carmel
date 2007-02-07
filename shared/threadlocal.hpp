@@ -72,11 +72,11 @@ struct SetLocal {
 
 #ifdef TEST
 
+/*
 //typedef LocalGlobal<int> Gint;
 typedef int Gint;
 static Gint savelocal_n=1;
 
-/*
 BOOST_AUTO_UNIT_TEST( threadlocal )
 {
   BOOST_CHECK(savelocal_n==1);

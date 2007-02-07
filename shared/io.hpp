@@ -14,6 +14,7 @@
 #include <iostream>
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/word_spacer.hpp>
+
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #include <cstring>

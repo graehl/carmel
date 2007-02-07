@@ -9,6 +9,10 @@
 
 #include <graehl/shared/stringkey.h>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 namespace graehl {
 
 class StringPool {
@@ -258,7 +262,6 @@ inline std::ostream & operator << (std::ostream &out, Alphabet<T,P> &alph)
 }
 
 #ifdef TEST
-#include <graehl/shared/test.hpp>
 BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
 {
   BOOST_CHECK(!strcmp(static_itoa(0),"0"));

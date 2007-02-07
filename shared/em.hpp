@@ -184,15 +184,6 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
     return best_alp;
 }
 
-
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-
-BOOST_AUTO_UNIT_TEST( TEST_EM )
-{
-}
-#endif
-
 }
 
 #endif

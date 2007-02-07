@@ -189,11 +189,11 @@ class info_debug {
     }
     struct Nest {
         info_debug *pdebug;
-        unsigned info_req;
+        int info_req;
         bool active() const {
             return info_req < pdebug->runtime_info_level;
         }
-        Nest(info_debug &debug,unsigned info_lvl_required=0) : pdebug(&debug),info_req(info_lvl_required) {
+        Nest(info_debug &debug,int info_lvl_required=0) : pdebug(&debug),info_req(info_lvl_required) {
             if (active())
                 pdebug->increase_depth();
         }
@@ -208,9 +208,14 @@ class info_debug {
         }
     };
 
-    info_debug() : debugOS(&std::cerr), infoOS(&std::cerr),
-              runtime_info_level(INFO_LEVEL),
-                   info_outline_depth(0),debug_outline_depth(0),info_atnewline(true),last_module("DEFAULT") {}
+    info_debug() : debugOS(&std::cerr),
+                   infoOS(&std::cerr),
+                   last_module("DEFAULT"),
+                   runtime_info_level(INFO_LEVEL),
+                   info_outline_depth(0),
+                   debug_outline_depth(0),
+                   info_atnewline(true)
+    {}
 
     inline std::ostream &getDebugOutput() {                     //!< Get the strream to which debugging output is written
         return *debugOS;
@@ -278,7 +283,6 @@ class info_debug {
         warning_begin(module,file,line) << info << std::endl;
     }
 
-    bool info_atnewline; // at fresh newline if true, midline if false
 
     void sync() const
     {
@@ -343,6 +347,7 @@ class info_debug {
     int get_info_level() const {
         return runtime_info_level;
     }
+    bool info_atnewline; // at fresh newline if true, midline if false    
 };
 #ifdef GRAEHL__INFO_DEBUG_MAIN
 info_debug debug;

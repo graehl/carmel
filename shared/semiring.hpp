@@ -18,14 +18,4 @@ struct semiring_traits {
 #include <graehl/shared/weight.h>
 
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
-
-#ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_SEMIRING )
-{
-}
-#endif
-
 #endif

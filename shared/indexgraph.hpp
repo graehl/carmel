@@ -6,6 +6,10 @@
 
 #include <algorithm>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 namespace graehl {
 
 // returns NULL if k is not in [l,u), otherwise returns iterator pointing to k
@@ -244,10 +248,6 @@ public:
 };
 #endif
 
-
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 

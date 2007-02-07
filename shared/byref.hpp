@@ -1,7 +1,11 @@
 // when you write a template that takes an argument by value, pass a ref(obj) if you don't want a copy of obj made.  tries to autoconvert back to obj's type but can't do that for operators, so e.g. deref(f)(arg) is necessary in your template function.
 // originally contained my own wrap-reference-as-value class until I discovered Boost's.
-#ifndef BYREF_HPP
-#define BYREF_HPP
+#ifndef GRAEHL__SHARED__BYREF_HPP
+#define GRAEHL__SHARED__BYREF_HPP
+
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
 
 //boost::ref and boost::cref that return instances of boost::reference_wrapper<T>
 // boost::unwrap_reference<T>::type = T
@@ -59,14 +63,16 @@ deref(const T& t) {
 }
   //return *const_cast<boost::unwrap_reference<T>::type *>&(t);
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
+}
+
 
 #ifdef TEST_MAIN
+namespace byref_test{
+
+
 template<class C>
 void f(C c) {
-  deref(c)=1;
+    graehl::deref(c)=1;
 }
 
 void g(int &p) {
@@ -77,11 +83,13 @@ template<class C>
 void h(C c) {
   g(c);
 }
+}
 
 
 
 BOOST_AUTO_UNIT_TEST( TEST_byref )
 {
+    using namespace byref_test;
   int t=0;
   f(t);
   BOOST_CHECK(t==0);
@@ -93,5 +101,4 @@ BOOST_AUTO_UNIT_TEST( TEST_byref )
   BOOST_CHECK(t==2);
 }
 #endif
-}
 #endif

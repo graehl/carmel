@@ -1,6 +1,6 @@
 // helps me use the Boost Unit Test library
-#ifndef TEST_HPP
-#define TEST_HPP
+#ifndef GRAEHL__SHARED__TEST_HPP
+#define GRAEHL__SHARED__TEST_HPP
 
 #include <string>
 #include <sstream>
@@ -17,14 +17,17 @@
 #pragma warning( push )
 #pragma warning( disable : 4267 4535 )
 #endif
+
 //included/
 //#include <boost/test/unit_test_framework.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/test/test_tools.hpp>
+
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
+
 #ifdef BOOST_AUTO_TEST_MAIN
 #ifdef BOOST_NO_EXCEPTIONS
 #include <cstdlib>
@@ -34,6 +37,7 @@ namespace boost {
   }// user defined
 }
 #endif
+
 #endif
 
 namespace graehl {
