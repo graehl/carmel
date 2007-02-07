@@ -8,6 +8,10 @@
 #define CHARBUF_INIT_SIZE 4096
 #endif
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 namespace graehl {
 
 typedef dynamic_array<char> CharBuf;
@@ -63,9 +67,6 @@ typename static_buf<T>::Buf static_buf<T>::buf(default_bufsize<T>::BUFSIZE);
 CharBuf g_buf(CHARBUF_INIT_SIZE);
 #endif
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( charbuf )

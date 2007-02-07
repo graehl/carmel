@@ -7,6 +7,11 @@
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/dummy.hpp>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
+
 namespace graehl {
 
 //! NOTE: key to only SetLocWeight according to a stack discipline - cannot leave multiple instances around using heap allocation!
@@ -103,10 +108,6 @@ inline bool operator < (HeapKey<K,W,L> lhs, HeapKey<K,W,L> rhs) {
 }
 
 
-
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_ADJUSTABLEHEAP )

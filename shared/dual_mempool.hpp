@@ -5,6 +5,10 @@
 #include <new>
 #include <stdexcept>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 namespace graehl {
 
 // only works for objects whose size is at least sizeof(void *)
@@ -185,10 +189,6 @@ Assert2(sz1,=sizeof(Data));
 };
 
     
-
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_DUAL_MEMPOOL )

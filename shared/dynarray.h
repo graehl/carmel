@@ -32,6 +32,10 @@
 #include <iterator>
 #include <boost/config.hpp>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 #ifdef GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT
 # define dynarray_assert(x) assert(x)
 #else 
@@ -1083,7 +1087,6 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 
 #ifdef TEST
 
-#include <graehl/shared/test.hpp>
 
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };

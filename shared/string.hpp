@@ -15,10 +15,6 @@
 
 #include <graehl/shared/tree.hpp>
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
-
 namespace graehl {
 
 template <class L, class Alloc=std::allocator<L> > struct String : public array<L,Alloc> {

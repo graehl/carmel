@@ -6,6 +6,7 @@
 #include <map>
 #include <graehl/shared/2hash.h>
 #include <graehl/shared/list.h>
+
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #endif

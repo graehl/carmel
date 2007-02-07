@@ -4,6 +4,10 @@
 
 #include <graehl/shared/2hash.h>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 namespace graehl {
 
 //F: single-argument (adaptable) functor with argument_type return_type
@@ -62,9 +66,6 @@ struct MemoFn {
   }
 };
 
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
 
 #ifdef TEST
 

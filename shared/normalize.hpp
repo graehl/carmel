@@ -3,6 +3,10 @@
 #define NORMALIZE_HPP
 
 #include <graehl/shared/dynarray.h>
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 
 //#include "pointeroffset.hpp"
 /*
@@ -268,10 +272,6 @@ operator <<
 }
 */
               
-#ifdef TEST
-#include <graehl/shared/test.hpp>
-#endif
-
 #ifdef TEST
 BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
 {
