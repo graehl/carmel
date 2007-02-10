@@ -89,10 +89,15 @@ struct lazy_derivation_cycle : public std::runtime_error
 };
         
 
-/** build a copy of your (at most binary) derivation forest, then query its root for the 1st, 2nd, ... best
+/**
+Note: unfortunately, this entire code does not allow for multiple concurrent jobs (per type of factory), since there is a static set_derivation_factory.  Change would be simple but consume a little extra memory (at each kbest node?)
+
+build a copy of your (at most binary) derivation forest, then query its root for the 1st, 2nd, ... best
     <code>
     struct DerivationFactory 
     {
+
+    
         /// can override derivation_better_than(derivation_type,derivation_type).
         /// derivation_type should be a lightweight (value) object
         /// if INFOT debug prints are enabled, must also have o << deriv
@@ -114,10 +119,48 @@ struct lazy_derivation_cycle : public std::runtime_error
     </code>
 **/
 // TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
-template <class DerivationFactory>
+
+struct permissive_kbest_filter
+{
+    /*
+      typedef some_stateful_derivation_predicate filter_type;
+      some_type filter_init(); /// used like: typename factory_type::filter_type per_node_filter(factory.filter_init());
+    */
+    struct dummy_init_type
+    {
+        template <class Init>
+        dummy_init_type(Init const& g) {}
+    };
+        
+    typedef dummy_init_type init_type;
+    permissive_kbest_filter(init_type const& g) {}
+    
+    template <class E>
+    bool permit(E const& e) const
+    { return true; }
+};
+
+
+struct permissive_kbest_filter_factory
+{
+    typedef permissive_kbest_filter filter_type;
+    bool filter_init() const // gets passed to constructor for filter_type
+    {
+        return true;
+    }   
+};
+
+
+
+template <class DerivationFactory,class FilterFactory=permissive_kbest_filter_factory>
 class lazy_forest {
  public:
     typedef DerivationFactory derivation_factory_type;
+    typedef FilterFactory filter_factory_type;
+    typedef typename filter_factory_type::filter_type filter_type;
+    filter_type filter;
+    lazy_forest() : filter(filter_factory.filter_init()) {}
+    
     typedef typename derivation_factory_type::derivation_type derivation_type;
     typedef derivation_factory_type D;
     derivation_type NONE() const
@@ -143,7 +186,7 @@ class lazy_forest {
         }
     }
 
-    typedef lazy_forest<derivation_factory_type> forest;
+    typedef lazy_forest<derivation_factory_type,filter_factory_type> forest;
     typedef forest self_type;
 
     //FIXME: faster heap operations if we put handles to hyperedges on heap instead of copying?
@@ -218,10 +261,15 @@ class lazy_forest {
     {
         derivation_factory=df;
     }
+    static void set_filter_factory(filter_factory_type const &f) 
+    {
+        filter_factory=f;
+    }
     
     /// if you have any state in your factory, assign to it here
     static derivation_factory_type derivation_factory;
-
+    static filter_factory_type filter_factory;
+    
     /// set this to true if you want negative cost cycles to throw rather than silently stop producing successors
     static bool throw_on_cycle;
 
@@ -252,12 +300,16 @@ class lazy_forest {
             return memo[n]; // may be NONE
         } else {
             assertlvl(19,n==memo.size());
-            if (done()) {
-                memo.push_back(NONE());
-                return NONE();
-            }
             memo.push_back(PENDING());
-            return (memo[n]=next_best());
+            derivation_type &d=memo.back();
+            for(;;) {
+                if (done())
+                    return (d=NONE());
+                d=next_best();
+                if (filter.permit(d))
+                    return d;
+                d=PENDING();
+            }
         }
     }
     /// returns last non-DONE derivation (one must exist!)
@@ -381,7 +433,7 @@ class lazy_forest {
     //MEMBERS:
     pq_t pq;     // INVARIANT: pq[0] contains the last entry added to memo
     memo_t memo;
-
+    
     //try worsening ith (0=left, 1=right) child and adding to queue
     inline void generate_successor_hyperedge(hyperedge &pending,derivation_type old_parent,unsigned i)  {
         lazy_forest &child_node=*pending.child[i];
@@ -425,10 +477,13 @@ class lazy_forest {
     }
 };
 
-template <class F>
-typename lazy_forest<F>::derivation_factory_type lazy_forest<F>::derivation_factory;
-template <class F>
-bool lazy_forest<F>::throw_on_cycle=false;
+//FIXME: have to pass these all as params (recursively) to allow concurrent kbests of same type
+template <class D,class F>
+D lazy_forest<D,F>::derivation_factory;
+template <class D,class F>
+F lazy_forest<D,F>::filter_factory;
+template <class D,class F>
+bool lazy_forest<D,F>::throw_on_cycle=false;
 
 /// END LIBRARY - only examples/tests follow
 
@@ -693,7 +748,7 @@ BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
 }
 #endif
 
-}
+}//graehl
 
 #ifdef SAMPLE
 int main()
