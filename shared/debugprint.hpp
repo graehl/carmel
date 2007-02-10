@@ -186,7 +186,7 @@ template<class A>
 const char * dbgstrw(const A &a) {
   return dbgstr(a);
 }
-} //ns
+}//graehl
 
 #ifdef _MSC_VER
 #include <windows.h>
