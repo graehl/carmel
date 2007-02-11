@@ -306,7 +306,7 @@ class lazy_forest {
                 if (done())
                     return (d=NONE());
                 d=next_best();
-                if (filter.permit(d))
+                if (d==NONE() || filter.permit(d))
                     return d;
                 d=PENDING();
             }
@@ -336,7 +336,7 @@ class lazy_forest {
         pop(); // since we made a copy already into pending...
 
         derivation_type old_parent=pending.derivation; // remember this because we'll be destructively updating pending.derivation below
-        assertlvl(19,memo.size()>=2 && memo.back() == PENDING() && old_parent==memo[memo.size()-2]);
+        assertlvl(19,memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing duplicates:  && old_parent==memo[memo.size()-2]
         if (pending.child[0]) { // increment first
             generate_successor_hyperedge(pending,old_parent,0);
             if (pending.child[1] && pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
