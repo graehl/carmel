@@ -1,5 +1,5 @@
-#ifndef HASHED_VALUE_HPP
-#define HASHED_VALUE_HPP
+#ifndef GRAEHL__SHARED__HASHED_VALUE_HPP
+#define GRAEHL__SHARED__HASHED_VALUE_HPP
 
 #include <boost/functional/hash.hpp>
 #include <functional>

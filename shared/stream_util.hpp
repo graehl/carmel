@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <cmath>
-
+#include <graehl/shared/abs_int.hpp>
 
 #define TO_OSTREAM_PRINT                                                                     \
     template <class Char,class Traits> \
@@ -87,14 +87,15 @@ O & print_max_width(O&o,double d,int width=6)
         double p=std::fabs(d);
         if (d<0)
             --width;
-        int wholes=std::log10(p)+1; //1: log=0, digits=1
-        unsigned need=(wholes < 0) ? -wholes+1 : wholes;
+        int wholes=(int)std::log10(p); //1: log=0, digits=1
+        int need=1 + abs(wholes);
         if (need > width) {
-            unsigned unit_e_exp=1+1+2;
+            int unit_e_exp=1+1+2;
             if (width >= unit_e_exp)
                 o << std::scientific << std::setprecision(width-unit_e_exp);
         } else {
-            unsigned need_dot=need+1;
+            o << std::fixed;
+            int need_dot=need+1;
             if (need_dot < width)
                 o << std::setprecision(width-need_dot);
             else

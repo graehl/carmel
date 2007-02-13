@@ -1,6 +1,9 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+#include <graehl/shared/percent.hpp>
+#include <graehl/shared/assertlvl.hpp>
+
 #define GRAEHL_HEAP
 
 #ifdef SAMPLE
@@ -23,8 +26,6 @@
 # include <cmath>
 #endif
 
-#include <graehl/shared/stream_util.hpp>
-#include <graehl/shared/assertlvl.hpp>
 
 #ifndef INFOT
 # define KBESTINFOT(x)
@@ -151,15 +152,41 @@ struct permissive_kbest_filter_factory
 };
 
 
+struct lazy_kbest_stats 
+{
+    typedef std::size_t count_t;
+    count_t n_passed;
+    count_t n_filtered;
+    void clear() 
+    {
+        n_passed=n_filtered=0;
+    }
+    count_t n_total() const
+    {
+        return n_passed+n_filtered;
+    }
+    lazy_kbest_stats()
+    { clear(); }
+    template <class O> void print(O &o) const
+    {
+        o << "[Lazy kbest filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "<<n_passed<<", or "<<graehl::percent<5>(n_passed,n_total())<<"]";
+    }
+    typedef lazy_kbest_stats self_type;
+    TO_OSTREAM_PRINT
+};
+
+
 
 template <class DerivationFactory,class FilterFactory=permissive_kbest_filter_factory>
-class lazy_forest {
+class lazy_forest
+    : public FilterFactory::filter_type // empty base class opt.
+{
  public:
     typedef DerivationFactory derivation_factory_type;
     typedef FilterFactory filter_factory_type;
     typedef typename filter_factory_type::filter_type filter_type;
-    filter_type filter;
-    lazy_forest() : filter(filter_factory.filter_init()) {}
+    
+    lazy_forest() : filter_type(filter_factory.filter_init()) {}
     
     typedef typename derivation_factory_type::derivation_type derivation_type;
     typedef derivation_factory_type D;
@@ -176,14 +203,16 @@ class lazy_forest {
     /// otherwise stop after generating up to k (up to as many as exist in
     /// forest)
     template <class Visitor>
-    void enumerate_kbest(unsigned k,Visitor visit=Visitor()) {
+    lazy_kbest_stats enumerate_kbest(unsigned k,Visitor visit=Visitor()) {
         KBESTINFOT("COMPUTING BEST " << k << " for node " << *this);
         KBESTNESTT;
+        stats.clear();
         for (unsigned i=0;i<k;++i) {
             derivation_type ith_best=get_best(i);
             if (ith_best == NONE()) break;
             if (!visit(ith_best,i)) break;
         }
+        return stats;
     }
 
     typedef lazy_forest<derivation_factory_type,filter_factory_type> forest;
@@ -269,6 +298,7 @@ class lazy_forest {
     /// if you have any state in your factory, assign to it here
     static derivation_factory_type derivation_factory;
     static filter_factory_type filter_factory;
+    static lazy_kbest_stats stats;
     
     /// set this to true if you want negative cost cycles to throw rather than silently stop producing successors
     static bool throw_on_cycle;
@@ -277,6 +307,9 @@ class lazy_forest {
     {
         return d==NONE();
     }
+
+    filter_type & filter() 
+    { return *this; }
     
     /// return the nth best (starting from 0) or NONE() (test with is_null(d)
     /// if the finite # of derivations in the forest is exhausted.
@@ -306,8 +339,13 @@ class lazy_forest {
                 if (done())
                     return (d=NONE());
                 d=next_best();
-                if (d==NONE() || filter.permit(d))
+                if (d==NONE())
                     return d;
+                if (filter().permit(d)) {    
+                    ++stats.n_passed;
+                    return d;
+                } // else ...
+                ++stats.n_filtered;
                 d=PENDING();
             }
         }
@@ -349,19 +387,27 @@ class lazy_forest {
             return top().derivation;
     }
 
+    void set_first_best(derivation_type r)
+    {
+        assertlvl(29,memo.empty());
+        memo.push_back(r);
+        if (!filter().permit(r))
+            throw std::runtime_error("lazy_forest_kbest: the first-best derivation can never be filtered out");
+        ++stats.n_passed;
+    }
+    
     /// may be followed by add() or add_sorted()  equivalently
     void add_first_sorted(derivation_type r,forest *left=NULL,forest *right=NULL)
     {
         assertlvl(9,pq.empty() && memo.empty());
-        memo.push_back(r);
+        set_first_best(r);
         add(r,left,right);
     }
     
     /// must be added from best to worst order ( r1 > r2 > r3 > ... )
     void add_sorted(derivation_type r,forest *left=NULL,forest *right=NULL) {
         if (pq.empty()) { // first added
-            assertlvl(29,memo.empty());
-            memo.push_back(r);
+            set_first_best(r);
         }
         add(r,left,right);
     }
@@ -409,7 +455,7 @@ class lazy_forest {
         if (check_best_is_selfloop && !postpone_selfloop())
             throw lazy_derivation_cycle();
         memo.clear();
-        memo.push_back(top().derivation);
+        set_first_best(top().derivation);
     }
 
     // note: postpone_selfloop() may make this not true.
@@ -482,6 +528,8 @@ template <class D,class F>
 D lazy_forest<D,F>::derivation_factory;
 template <class D,class F>
 F lazy_forest<D,F>::filter_factory;
+template <class D,class F>
+lazy_kbest_stats lazy_forest<D,F>::stats;
 template <class D,class F>
 bool lazy_forest<D,F>::throw_on_cycle=false;
 
