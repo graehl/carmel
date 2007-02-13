@@ -5,17 +5,18 @@
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/hash_jenkins.hpp>
 
-#ifndef GOLDEN_MEAN_FRACTION
-#define GOLDEN_MEAN_FRACTION 2654435769U
-#endif
-
 namespace graehl {
 
-/// seed can be used to chain (combine) several hashes together
+///golden ratio: 1.6180339887498948482045868343656381177203
+//static const double golden_ratio=1.6180339887498948482045868343656381177203;
+static const uint32_t golden_ratio_fraction_32=2654435769U; // (floor of 2^32/golden_ratio)
+static const uint64_t golden_ratio_fraction_64=0x9E3779B97F4A7C15ULL; // (floor of 2^64/golden_ratio)
+
+/// seed (should not be 0) can be used to chain (combine) several hashes together
 inline uint64_t hash_quads_64(
     const uint32_t *k,                   /* the key, an array of uint32_t values */
     size_t          length,               /* the length of the key, in uint32_ts */
-    uint64_t seed=0)
+    uint64_t seed=golden_ratio_fraction_64) // note: if seed is 0 then the returned hash has same upper/lower 32 bits
 {
     uint32_t *pc=reinterpret_cast<uint32_t*>(&seed);
     hashword2(k,length,pc,pc+1);
@@ -25,7 +26,7 @@ inline uint64_t hash_quads_64(
 inline uint64_t hash_bytes_64(
     const void *k,                   /* the key, an array of bytes */
     size_t          length,               /* the length of the key, in uint32_ts */
-    uint64_t seed=0)
+    uint64_t seed=golden_ratio_fraction_64)
 {
     uint32_t *pc=reinterpret_cast<uint32_t*>(&seed);
     hashlittle2(k,length,pc,pc+1);
@@ -77,7 +78,7 @@ struct incremental_hasher
 {
     uint32_t a;
       
-    incremental_hasher(uint32_t seed=GOLDEN_MEAN_FRACTION) : a(seed) {}
+    incremental_hasher(uint32_t seed=golden_ratio_fraction_64) : a(seed) {}
       
     template <class C>
     void append(C c) 
@@ -117,7 +118,7 @@ inline boost::uint32_t uint32_hash(boost::uint32_t a)
 // HOWEVER (not in Knuth) ... the higher order bits after multiplication are determined by all the bits below it as well.  the "good" part of the hash is lost in the higher bits if you are using power-of-2 buckets (prime # buckets is fine), therefore, shift some of those good bits over and combine them with the lower (by using xor instead of addition, this should continue to make the function reversible)
 //      return key * 2654435767U;
 //      return key * 2654435761U;
-    //return key*GOLDEN_MEAN_FRACTION;
+    //return key*golden_ratio_fraction_32;
 
 // feel free to define TRIVIAL_INT_HASH if you're hashing into prime-numbers of buckets
 // but first FIXME: we're using the same primes that are in boost::unordered_map bucketlist for multiplying out int-pair hashvals
@@ -164,7 +165,7 @@ inline boost::uint32_t uint32_hash(boost::uint32_t a)
 #     endif 
 # else // not expensive
 #ifndef TRIVIAL_INT_HASH
-    a *= GOLDEN_MEAN_FRACTION; // mixes the lower bits into the upper bits, reversible
+    a *= golden_ratio_fraction_32; // mixes the lower bits into the upper bits, reversible
     a ^= (a >> 16); // gets some of the goodness back into the lower bits, reversible
 #endif
 #endif
@@ -206,7 +207,7 @@ inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0)
 }
 
 template <class I1,class I2>
-inline uint64_t hash_range_pod(I1 i,I2 end,uint64_t seed=0) 
+inline uint64_t hash_range_pod(I1 i,I2 end,uint64_t seed=golden_ratio_fraction_64) 
 {
     for (;i!=end;++i)
         seed=hash_bytes_64(&*i,sizeof(typename I1::value_type),seed);
@@ -216,7 +217,7 @@ inline uint64_t hash_range_pod(I1 i,I2 end,uint64_t seed=0)
 
 /// NOTE: only std::vector and similar (actual contiguous array layout) containers will work; others will segfault
 template <class Vec>
-inline uint64_t hash_pod_vector(Vec const& v,uint64_t seed=0) 
+inline uint64_t hash_pod_vector(Vec const& v,uint64_t seed=golden_ratio_fraction_64) 
 {
     typedef typename Vec::value_type Val;
     //FIXME: detect weird array alignment requirements e.g. to 8 bytes
@@ -227,7 +228,7 @@ inline uint64_t hash_pod_vector(Vec const& v,uint64_t seed=0)
     } else {
         // there's alignment to 4 bytes padding; so we can't trust it to be constant
 //        return hash_range(v.begin(),v.end(),boost::hash<Val>()); //,uint32_hash_f()
-        return hash_range_pod(v.begin(),v.end());
+        return hash_range_pod(v.begin(),v.end(),seed);
     }   
 }
 
