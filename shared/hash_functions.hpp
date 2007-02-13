@@ -19,7 +19,7 @@ inline uint64_t hash_quads_64(
     uint64_t seed=golden_ratio_fraction_64) // note: if seed is 0 then the returned hash has same upper/lower 32 bits
 {
     uint32_t *pc=reinterpret_cast<uint32_t*>(&seed);
-    hashword2(k,length,pc,pc+1);
+    hashword2(k,length,pc,pc+1); //FIXME: warning about breaking strict aliasing - how does one annotate code such that strict aliasing optimizations are used?
     return seed;
 }
 
