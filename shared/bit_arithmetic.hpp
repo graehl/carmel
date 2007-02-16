@@ -3,13 +3,31 @@
 
 #include <boost/cstdint.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 
 namespace graehl {
 
 using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
+
+/// while this is covered by the complicated generic thing below, I want to be sure the hash fn. uses the right code
+inline
+uint32_t bit_rotate_left(uint32_t x,uint32_t k)
+{
+    return (x<<k) | (x>>(32-k));
+}
+
+inline
+uint32_t bit_rotate_right(uint32_t x,uint32_t k)
+{
+    return (x>>k) | (x<<(32-k));
+}
+
+#ifndef BOOST_NO_INT64_T
 using boost::uint64_t;
+#endif
 
 //FIXME: make sure this is as fast as macro version - supposed to compile (optimized) to native rotate instruction
 //inline std::size_t bit_rotate_left(std::size_t x, std::size_t k) 
@@ -42,6 +60,7 @@ bit_rotate_left(I x, J k)
 {
     typedef typename boost::remove_cv<I>::type IT;
     assert(k < std::numeric_limits<IT>::digits);
+    assert(std::numeric_limits<IT>::digits == 8 * sizeof(IT));
     return ((x<<k) | (x>>(std::numeric_limits<IT>::digits-k)));
 }
 
@@ -53,23 +72,9 @@ bit_rotate_right(I x, J k)
 {
     typedef typename boost::remove_cv<I>::type IT;
     assert(k < std::numeric_limits<IT>::digits);
+    assert(std::numeric_limits<IT>::digits == 8 * sizeof(IT));
     return ((x<<(std::numeric_limits<IT>::digits-k)) | (x>>k));
 }
-
-//FIXME: untested (esp. on 32 bit)
-
-//inline boost::uint64_t
-//bit_rotate_left(boost::uint64_t x, std::size_t k) 
-//{
-//    return ((x<<k) | (x>>(64-k)));
-//}
-
-//FIXME: untested (esp. on 32 bit)
-//inline boost::uint64_t
-//bit_rotate_right(boost::uint64_t x, std::size_t k) 
-//{
-//    return ((x<<(64-k)) | (x>>k));
-//}
 
 /// interpret the two bytes at d as a uint16 in little endian order
 inline uint16_t unpack_uint16_little(void const*d) 

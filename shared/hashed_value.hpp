@@ -15,6 +15,8 @@ struct hashed_value : public Val
     hashed_value(Val const &v,Hasher const& h=Hasher())
         : Val(v),hash(h(v)) {}
     
+    hashed_value(self_type const& o) : Val(o),hash(o.hash) {}
+    
     Val const& val() const 
     { return *this; }
     
@@ -66,7 +68,7 @@ struct hashed_value : public Val
     {
         return !(*this==v2);
     }
-    friend inline hash_val_type hash_value(self_type const& s) 
+    friend inline std::size_t hash_value(self_type const& s) 
     {
         return s.hash;
     }
