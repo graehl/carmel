@@ -177,7 +177,7 @@ HASH_FROM_FUNCTION_RETURNING(uint32_hash,boost::uint32_t);
 
 inline std::size_t mix_hash(std::size_t a, std::size_t b)
 {
-    a ^= bit_rotate_left(b,1);
+    a ^= bit_rotate_left(b,std::size_t(1));
     return a;
 
 //     std::size_t tmp;

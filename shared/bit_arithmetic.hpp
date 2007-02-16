@@ -2,6 +2,7 @@
 #define GRAEHL__SHARED__BIT_ARITHMETIC_HPP
 
 #include <boost/cstdint.hpp>
+#include <boost/utility/enable_if.hpp>
 
 namespace graehl {
 
@@ -11,28 +12,64 @@ using boost::uint32_t;
 using boost::uint64_t;
 
 //FIXME: make sure this is as fast as macro version - supposed to compile (optimized) to native rotate instruction
-inline uint32_t bit_rotate_left(uint32_t x,unsigned k) 
-{
-    return ((x<<k) | (x>>(32-k)));
-}
+//inline std::size_t bit_rotate_left(std::size_t x, std::size_t k) 
+//{
+//    return ((x<<k) | (x>>(std::numeric_limits<std::size_t>::digits-k)));
+//}
 
 //FIXME: untested (change of variable: old k -> new 32-k (and vice versa)
-inline uint32_t bit_rotate_right(uint32_t x,unsigned k)
+//inline std::size_t bit_rotate_right(std::size_t x, std::size_t k)
+//{
+//    return ((x<<(std::numeric_limits<std::size_t>::digits-k)) | (x>>k));
+//}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// the reason for the remove_cv stuff is that the compiler wants to turn 
+// the call
+//    size_t x;
+//    bit_rotate(x,3) 
+// into an instantiation of
+//    template<class size_t&, int const>
+//    size_t& bit_rotate_left(size_t&,int const);
+//
+////////////////////////////////////////////////////////////////////////////////
+template <class I, class J>
+inline typename boost::enable_if< typename boost::is_integral<I>
+                                , typename boost::remove_cv<I>::type
+                                >::type 
+bit_rotate_left(I x, J k)
 {
-    return ((x<<(32-k)) | (x>>k));
+    typedef typename boost::remove_cv<I>::type IT;
+    assert(k < std::numeric_limits<IT>::digits);
+    return ((x<<k) | (x>>(std::numeric_limits<IT>::digits-k)));
+}
+
+template <class I, class J>
+inline typename boost::enable_if< typename boost::is_integral<I>
+                                , typename boost::remove_cv<I>::type
+                                >::type 
+bit_rotate_right(I x, J k)
+{
+    typedef typename boost::remove_cv<I>::type IT;
+    assert(k < std::numeric_limits<IT>::digits);
+    return ((x<<(std::numeric_limits<IT>::digits-k)) | (x>>k));
 }
 
 //FIXME: untested (esp. on 32 bit)
-inline uint64_t bit_rotate_left(uint64_t x,unsigned k) 
-{
-    return ((x<<k) | (x>>(64-k)));
-}
+
+//inline boost::uint64_t
+//bit_rotate_left(boost::uint64_t x, std::size_t k) 
+//{
+//    return ((x<<k) | (x>>(64-k)));
+//}
 
 //FIXME: untested (esp. on 32 bit)
-inline uint64_t bit_rotate_right(uint64_t x,unsigned k) 
-{
-    return ((x<<(64-k)) | (x>>k));
-}
+//inline boost::uint64_t
+//bit_rotate_right(boost::uint64_t x, std::size_t k) 
+//{
+//    return ((x<<(64-k)) | (x>>k));
+//}
 
 /// interpret the two bytes at d as a uint16 in little endian order
 inline uint16_t unpack_uint16_little(void const*d) 
