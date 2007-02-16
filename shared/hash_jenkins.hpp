@@ -1,8 +1,18 @@
 #ifndef GRAEHL__SHARED__HASH_JENKINS_HPP
 #define GRAEHL__SHARED__HASH_JENKINS_HPP
 
+//#define DEBUG_HASH_JENKINS
+
 #include <boost/cstdint.hpp>
 #include <graehl/shared/bit_arithmetic.hpp>
+
+#ifdef DEBUG_HASH_JENKINS
+# include <iostream>
+# define DBP_JENKINS(a) std::cerr << "DBG Jenkins: "<<a<<std::endl
+#else
+# define DBP_JENKINS(a)
+#endif 
+
 
 // from http://www.burtleburtle.net/bob/c/lookup3.c
 /*
@@ -224,17 +234,35 @@ both be initialized with seeds.  If you pass in (*pb)==0, the output
 (*pc) will be the same as the return value from hashword().
 --------------------------------------------------------------------
 */
-inline void hashword2 (
+inline
+#ifdef HASH_JENKINS_UINT64
+    uint64_t
+#else
+    void
+#endif 
+    hashword2 (
 const uint32_t *k,                   /* the key, an array of uint32_t values */
 size_t          length,               /* the length of the key, in uint32_ts */
+#ifdef HASH_JENKINS_UINT64
+uint64_t seed /* IN: first (LSB) int32: primary seed, second int32: NONZERO 2nd seed.   */
+#else
 uint32_t       *pc,                      /* IN: seed OUT: primary hash value */
-uint32_t       *pb)               /* IN: more seed OUT: secondary hash value */
+uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
+#endif
+        )
 {
   uint32_t a,b,c;
-
   /* Set up the internal state */
-  a = b = c = 0xdeadbeef + ((uint32_t)(length<<2)) + *pc;
-  c += *pb;
+  a = b = c = ((uint32_t)(length<<2)) +
+#ifdef HASH_JENKINS_UINT64
+  (uint32_t)seed;
+  c += seed>>32;
+  DBP_JENKINS("k[0]="<<(length?k[0]:(uint32_t)0)<<" length="<<length<<" seed="<<seed);
+#else
+    *pc;
+    c += *pb;
+    DBP_JENKINS("k[0]="<<(length?k[0]:(uint32_t)0)<<" length="<<length<<" seed[0]="<<*pc<<" seed[1]="<<*pb);
+#endif 
 
   /*------------------------------------------------- handle most of the key */
   while (length > 3)
@@ -258,7 +286,14 @@ uint32_t       *pb)               /* IN: more seed OUT: secondary hash value */
     break;
   }
   /*------------------------------------------------------ report the result */
+#ifdef HASH_JENKINS_UINT64
+    uint64_t ret=c;
+    ret|=((uint64_t)b)<<32;
+    return ret;
+#else 
   *pc=c; *pb=b;
+    DBP_JENKINS("hash[0]="<<*pc<<" hash[1]="<<*pb);
+#endif 
 }
     
 /*
@@ -467,18 +502,37 @@ inline uint32_t hashlittle( const void *key, size_t length, uint32_t initval)
  * the key.  *pc is better mixed than *pb, so use *pc first.  If you want
  * a 64-bit value do something like "*pc + (((uint64_t)*pb)<<32)".
  */
-inline void hashlittle2( 
+inline
+#ifdef HASH_JENKINS_UINT64
+    uint64_t
+#else
+    void
+#endif 
+hashlittle2( 
   const void *key,       /* the key to hash */
   size_t      length,    /* length of the key */
-  uint32_t   *pc,        /* IN: primary initval, OUT: primary hash */
-  uint32_t   *pb)        /* IN: secondary initval, OUT: secondary hash */
+#ifdef HASH_JENKINS_UINT64
+uint64_t seed /* IN: first (LSB) int32: primary seed, second int32: NONZERO 2nd seed.   */
+#else
+uint32_t       *pc,                      /* IN: seed OUT: primary hash value */
+uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
+#endif
+    )
 {
   uint32_t a,b,c;                                          /* internal state */
   union { const void *ptr; size_t i; } u;     /* needed for Mac Powerbook G4 */
 
   /* Set up the internal state */
-  a = b = c = 0xdeadbeef + ((uint32_t)length) + *pc;
-  c += *pb;
+  a = b = c = ((uint32_t)(length<<2)) +
+#ifdef HASH_JENKINS_UINT64
+  (uint32_t)seed;
+  c += seed>>32;
+  DBP_JENKINS("k[0]="<<(uint32_t)(length?((uint8_t *)key)[0]:(uint8_t)0)<<" length="<<length<<" seed="<<seed);
+#else
+    *pc;
+    c += *pb;
+    DBP_JENKINS("k[0]="<<(uint32_t)(length?((uint8_t *)key)[0]:(uint8_t)0)<<" length="<<length<<" seed[0]="<<*pc<<" seed[1]="<<*pb);
+#endif 
 
   u.ptr = key;
   if (GRAEHL__SHARED__HASH_LITTLE_ENDIAN && ((u.i & 0x3) == 0)) {
@@ -521,7 +575,7 @@ inline void hashlittle2(
     case 3 : a+=k[0]&0xffffff; break;
     case 2 : a+=k[0]&0xffff; break;
     case 1 : a+=k[0]&0xff; break;
-    case 0 : *pc=c; *pb=b; return;  /* zero length strings require no mixing */
+    case 0 : goto done;  /* zero length strings require no mixing */
     }
 
 #else /* make valgrind happy */
@@ -541,7 +595,7 @@ inline void hashlittle2(
     case 3 : a+=((uint32_t)k8[2])<<16;   /* fall through */
     case 2 : a+=((uint32_t)k8[1])<<8;    /* fall through */
     case 1 : a+=k8[0]; break;
-    case 0 : *pc=c; *pb=b; return;  /* zero length strings require no mixing */
+    case 0 : goto done;  /* zero length strings require no mixing */
     }
 
 #endif /* !valgrind */
@@ -590,7 +644,7 @@ inline void hashlittle2(
              break;
     case 1 : a+=k8[0];
              break;
-    case 0 : *pc=c; *pb=b; return;  /* zero length strings require no mixing */
+    case 0 : goto done;  /* zero length strings require no mixing */
     }
 
   } else {                        /* need to read the key one byte at a time */
@@ -632,12 +686,19 @@ inline void hashlittle2(
     case 2 : a+=((uint32_t)k[1])<<8;
     case 1 : a+=k[0];
              break;
-    case 0 : *pc=c; *pb=b; return;  /* zero length strings require no mixing */
+    case 0 : goto done;  /* zero length strings require no mixing */
     }
   }
-
-  final_hashes(a,b,c);
+done:
+#ifdef HASH_JENKINS_UINT64
+    uint64_t ret=c;
+    ret|=((uint64_t)b)<<32;
+    return ret;
+#else 
   *pc=c; *pb=b;
+    DBP_JENKINS("hash[0]="<<*pc<<" hash[1]="<<*pb);
+#endif 
+
 }
 
 

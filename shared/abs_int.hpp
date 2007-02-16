@@ -2,15 +2,21 @@
 #define GRAEHL__SHARED__ABS_INT_HPP
 
 #include <boost/cstdint.hpp>
+#include <boost/utility/enable_if.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 
 namespace graehl {
 
-#define GRAEHL__ABS_INT(t) inline t abs(t x) { return x<0 ? -x : x; }
-    
-GRAEHL__ABS_INT(boost::int8_t)
-GRAEHL__ABS_INT(boost::int16_t)
-GRAEHL__ABS_INT(boost::int32_t)
-GRAEHL__ABS_INT(boost::int64_t)
+template <class I>
+inline typename boost::enable_if< typename boost::is_integral<I>
+                                , typename boost::remove_cv<I>::type
+                                >::type 
+bit_rotate_right(I x)
+{
+    typedef typename boost::remove_cv<I>::type IT;
+    return x<0?-x:x;
+}
 
 }
 

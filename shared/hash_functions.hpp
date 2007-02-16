@@ -1,7 +1,12 @@
 #ifndef GRAEHL__SHARED__HASH_FUNCTIONS_HPP
 #define GRAEHL__SHARED__HASH_FUNCTIONS_HPP
 
+// code treating uint64_t as array of two uint32_t made for failed nbest duplicate removal when -O and debug prints off, so try this:
+#define HASH_JENKINS_UINT64
+
 #include <boost/cstdint.hpp>
+#include <iostream>
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/hash_jenkins.hpp>
 
@@ -10,27 +15,128 @@ namespace graehl {
 ///golden ratio: 1.6180339887498948482045868343656381177203
 //static const double golden_ratio=1.6180339887498948482045868343656381177203;
 static const uint32_t golden_ratio_fraction_32=2654435769U; // (floor of 2^32/golden_ratio)
-static const uint64_t golden_ratio_fraction_64=0x9E3779B97F4A7C15ULL; // (floor of 2^64/golden_ratio)
 
-/// seed (should not be 0) can be used to chain (combine) several hashes together
-inline uint64_t hash_quads_64(
-    const uint32_t *k,                   /* the key, an array of uint32_t values */
-    size_t          length,               /* the length of the key, in uint32_ts */
-    uint64_t seed=golden_ratio_fraction_64) // note: if seed is 0 then the returned hash has same upper/lower 32 bits
+// to test no-int64t code, define:
+//#define GRAEHL_HASH64_STRUCT
+
+// to test hash_bytes_64 (slower)
+#define VALGRIND
+
+
+// e.g. BSD has int64_t=int32_t
+#ifdef BOOST_NO_INT64_T
+# ifndef GRAEHL_HASH64_STRUCT
+#  define GRAEHL_HASH64_STRUCT
+# endif
+#endif
+
+#ifdef GRAEHL_HASH64_STRUCT
+struct hash64_t 
 {
-    uint32_t *pc=reinterpret_cast<uint32_t*>(&seed);
-    hashword2(k,length,pc,pc+1); //FIXME: warning about breaking strict aliasing - how does one annotate code such that strict aliasing optimizations are used?
-    return seed;
+    uint32_t v[2];
+    hash64_t(uint32_t a,uint32_t b) 
+    {
+        v[0]=a;
+        v[1]=b;
+    }
+    template <class I>
+    I as_int() const 
+    {
+        assert(sizeof(I) <= sizeof(hash64_t));
+        return *reinterpret_cast<I const*>(this);
+    }
+    operator std::size_t () const 
+    {
+        return as_int<std::size_t>();
+    }
+    template <class O>
+    void print(O &o) const 
+    {
+        o << v[0] << ',' << v[1];
+    }
+    typedef hash64_t self_type;
+    TO_OSTREAM_PRINT
+};
+
+static const hash64_t golden_ratio_fraction_64(0x9E3779B9U,0x7F4A7C15U);
+
+inline uint32_t & first_quad(hash64_t &h) 
+{
+    return h.v[0];
 }
 
-inline uint64_t hash_bytes_64(
-    const void *k,                   /* the key, an array of bytes */
-    size_t          length,               /* the length of the key, in uint32_ts */
-    uint64_t seed=golden_ratio_fraction_64)
+inline uint32_t & second_quad(hash64_t &h) 
 {
-    uint32_t *pc=reinterpret_cast<uint32_t*>(&seed);
-    hashlittle2(k,length,pc,pc+1);
+    return h.v[1];
+}
+
+inline std::size_t hash_value(hash64_t const& h) 
+{
+    return h.as_int<std::size_t>();
+}
+
+inline uint64_t uint64_from(hash64_t const& h) 
+{
+    return h.as_int<uint64_t>();
+}
+
+
+#else
+
+typedef uint64_t hash64_t;
+
+static const hash64_t golden_ratio_fraction_64=0x9E3779B97F4A7C15ULL; // (floor of 2^64/golden_ratio)
+
+inline uint32_t & first_quad(hash64_t &h) 
+{
+    assert(sizeof(hash64_t)==2*sizeof(uint32_t));
+    return reinterpret_cast<uint32_t*>(&h)[0];
+}
+
+inline uint32_t & second_quad(hash64_t &h) 
+{
+    return reinterpret_cast<uint32_t*>(&h)[1];
+}
+
+inline std::size_t hash_value(hash64_t const& h) 
+{
+    assert(sizeof(std::size_t) <= sizeof(hash64_t));
+    return *reinterpret_cast<std::size_t const*>(&h);
+}
+
+inline uint64_t uint64_from(hash64_t const& h) 
+{
+    return h;
+}
+
+
+#endif
+
+/// seed (should not be 0) can be used to chain (combine) several hashes together
+inline hash64_t hash_quads_64(
+    const uint32_t *k,                   /* the key, an array of uint32_t values */
+    size_t          length_in_quads,               /* the length of the key, in uint32_ts */
+    hash64_t seed=golden_ratio_fraction_64) // note: if seed is 0 then the returned hash has same upper/lower 32 bits
+{
+#ifdef HASH_JENKINS_UINT64
+    return hashword2(k,length_in_quads,uint64_from(seed));
+#else 
+    hashword2(k,length_in_quads,&first_quad(seed),&second_quad(seed)); //FIXME: warning about breaking strict aliasing - how does one annotate code such that strict aliasing optimizations are (not) used?
     return seed;
+#endif 
+}
+
+inline hash64_t hash_bytes_64(
+    const void *k,                   /* the key, an array of bytes */
+    size_t          length_in_bytes,               /* the length of the key, in uint32_ts */
+    hash64_t seed=golden_ratio_fraction_64)
+{
+#ifdef HASH_JENKINS_UINT64
+    return hashlittle2(k,length_in_bytes,uint64_from(seed));
+#else 
+    hashlittle2(k,length_in_bytes,&first_quad(seed),&second_quad(seed));
+    return seed;
+#endif 
 }
 
 
@@ -177,7 +283,7 @@ HASH_FROM_FUNCTION_RETURNING(uint32_hash,boost::uint32_t);
 
 inline std::size_t mix_hash(std::size_t a, std::size_t b)
 {
-    a ^= bit_rotate_left(b,std::size_t(1));
+    a ^= bit_rotate_left(b,1);
     return a;
 
 //     std::size_t tmp;
@@ -206,8 +312,10 @@ inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0)
     return seed;
 }
 
+/// warning: due to the impossibility of detecting padding, only call this when
+/// sizeof(Val) is the actual initialized extent (i.e. no padding).
 template <class I1,class I2>
-inline uint64_t hash_range_pod(I1 i,I2 end,uint64_t seed=golden_ratio_fraction_64) 
+inline hash64_t hash_range_pod(I1 i,I2 end,hash64_t seed=golden_ratio_fraction_64) 
 {
     for (;i!=end;++i)
         seed=hash_bytes_64(&*i,sizeof(typename I1::value_type),seed);
@@ -215,9 +323,9 @@ inline uint64_t hash_range_pod(I1 i,I2 end,uint64_t seed=golden_ratio_fraction_6
 }
 
 
-/// NOTE: only std::vector and similar (actual contiguous array layout) containers will work; others will segfault
+/// only std::vector and similar (actual contiguous array layout) containers will work; others will segfault
 template <class Vec>
-inline uint64_t hash_pod_vector(Vec const& v,uint64_t seed=golden_ratio_fraction_64) 
+inline hash64_t hash_pod_vector(Vec const& v,hash64_t seed=golden_ratio_fraction_64) 
 {
     typedef typename Vec::value_type Val;
     //FIXME: detect weird array alignment requirements e.g. to 8 bytes
@@ -281,6 +389,61 @@ inline uint32_t hash_bytes_32 (void const* k, int len) {
 }
 
 }
+
+#ifdef TEST
+# include <graehl/shared/test.hpp>
+
+namespace hash_test {
+template <class O>
+struct pod 
+{
+    std::size_t i;
+    O o;
+    pod(std::size_t i=0) :i (i),o(o) {}
+    friend std::ostream &operator<<(std::ostream &o,pod const &p) { return o << p.i; }
+};
+
+template <class O>
+void test_pod_hash()
+{
+    using namespace graehl;
+    typedef pod<O> P;
+    typedef std::vector<P> V;
+    V v;
+    P p(0);
+    v.push_back(p);
+    BOOST_CHECK_EQUAL(v.front().i,p.i);
+    BOOST_CHECK_EQUAL(v.front().o,p.o);
+    hash64_t seed=golden_ratio_fraction_64;
+    BOOST_CHECK_EQUAL(seed,golden_ratio_fraction_64);
+    hash64_t h1=hash_bytes_64(&v.front(),sizeof(P),seed);
+    BOOST_CHECK_EQUAL(h1,hash_bytes_64(&p,sizeof(P),seed));
+    BOOST_CHECK_EQUAL(h1,hash_pod_vector(v,seed));
+    BOOST_CHECK_EQUAL(seed,golden_ratio_fraction_64);
+    v.push_back(1);
+    uint32_t *f=(uint32_t*)&v.front(),n=v.size()*sizeof(P)/sizeof(uint32_t);
+    BOOST_CHECK_EQUAL(hash_pod_vector(v,seed),hash_quads_64(f,n,seed));
+    seed=0;    
+    BOOST_CHECK_EQUAL(hash_pod_vector(v,seed),hash_quads_64(f,n,seed));
+    
+}
+
+    
+};
+
+
+
+BOOST_AUTO_UNIT_TEST( TEST_hash_function )
+{
+    using namespace std;
+    using namespace graehl;
+    using namespace hash_test;
+    test_pod_hash<uint32_t>();
+    test_pod_hash<uint64_t>();
+}
+
+
+#endif 
 
 
 #endif

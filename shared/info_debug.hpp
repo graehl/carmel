@@ -5,6 +5,9 @@
 # ifndef GRAEHL__INFO_DEBUG_MAIN
 #  define GRAEHL__INFO_DEBUG_MAIN
 # endif 
+# ifndef TEST_MAIN
+#  define TEST_MAIN
+# endif 
 #endif 
 
 #include <string>
@@ -123,8 +126,13 @@ using namespace __gnu_cxx;
 #define INF99OUT
 #define INF99NEST
 #endif
-
 #if (defined(TEST) && !defined(QUIET_TEST) )
+# ifndef ENABLE_TEST_INFO
+#  define ENABLE_TEST_INFO
+# endif
+#endif
+
+#ifdef ENABLE_TEST_INFO
 #define INFOT(msg) DBG_OP(ns_info_debug::test_dbg,info,"TEST",O_INSERT(msg))
 #define WARNT(msg) DBG_OP(ns_info_debug::test_dbg,warning,"TEST",O_INSERT(msg))
 #define NESTT NESTINFO_GUARD(ns_info_debug::test_dbg,1)
@@ -354,11 +362,11 @@ info_debug debug;
 #else 
 extern info_debug debug;        //!< interface for debugging output
 #endif 
-#ifdef TEST
+#ifdef ENABLE_TEST_INFO
 # ifdef TEST_MAIN
 info_debug test_dbg;
 # else
-info_debug test_dbg;
+extern info_debug test_dbg;
 # endif 
 #endif
 

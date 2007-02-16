@@ -4,6 +4,8 @@
 #include <graehl/shared/percent.hpp>
 #include <graehl/shared/assertlvl.hpp>
 
+//#define ENABLE_TEST_INFO /* requires derivations be printable */
+
 #define GRAEHL_HEAP
 
 #ifdef SAMPLE
@@ -15,7 +17,7 @@
 # define LAZY_FOREST_EXAMPLES
 #endif
 
-#ifdef LAZY_FOREST_EXAMPLES
+#if defined(LAZY_FOREST_EXAMPLES) || defined(ENABLE_TEST_INFO)
 #include <graehl/shared/info_debug.hpp>
 //# include "default_print.hpp"
 //FIXME: doesn't work
@@ -25,7 +27,6 @@
 # include <sstream>
 # include <cmath>
 #endif
-
 
 #ifndef INFOT
 # define KBESTINFOT(x)
@@ -139,6 +140,11 @@ struct permissive_kbest_filter
     template <class E>
     bool permit(E const& e) const
     { return true; }
+
+    template <class O,class E>
+    void print(O &o,E const& e) const
+    { o << e; }
+        
 };
 
 
@@ -148,7 +154,7 @@ struct permissive_kbest_filter_factory
     bool filter_init() const // gets passed to constructor for filter_type
     {
         return true;
-    }   
+    }
 };
 
 
@@ -275,10 +281,13 @@ class lazy_forest
         o << "{NODE @" << this << '[' << memo.size() << ']';        
         if (memo.size()) {            
             o << ": " << " first={{{";
-            o<< *first_best();
-            o<< "}}} last={{{";
-            o<< *last_best();
+            filter().print(o,first_best());            //o<< first_best();
             o<< "}}}";
+            if (memo.size()>2) {    
+                o << " last={{{";
+                filter().print(o,last_best());//            o<< last_best();
+                o<< "}}}";
+            }
 //          o << " pq=" << pq;          
 //          o<< pq; // "  << memo=" << memo
         }        
@@ -311,6 +320,9 @@ class lazy_forest
     filter_type & filter() 
     { return *this; }
     
+    filter_type const& filter() const
+    { return *this; }
+    
     /// return the nth best (starting from 0) or NONE() (test with is_null(d)
     /// if the finite # of derivations in the forest is exhausted.
     /// IDEA: LAZY!!
@@ -341,10 +353,12 @@ class lazy_forest
                 d=next_best();
                 if (d==NONE())
                     return d;
-                if (filter().permit(d)) {    
+                if (filter().permit(d)) {
+                    KBESTINFOT("passed "<<n<<"th best for "<<*this);//<<": "<<d);
                     ++stats.n_passed;
                     return d;
-                } // else ...
+                } // else: 
+                KBESTINFOT("filtered candidate "<<n<<"th best for "<<*this);//<<": "<<d);
                 ++stats.n_filtered;
                 d=PENDING();
             }
@@ -353,7 +367,7 @@ class lazy_forest
     /// returns last non-DONE derivation (one must exist!)
     derivation_type last_best() const {
         assertlvl(11,memo.size() && memo.front() != NONE());
-        if (memo.back() && memo.back() != PENDING())
+        if (memo.back() != PENDING() && memo.back() != NONE())
             return memo.back();
         assertlvl(11,memo.size()>1);
         return *(memo.end()-2);
@@ -496,7 +510,7 @@ class lazy_forest
             push(pending);
         }
         --child_i;
-        KBESTINFOT("restored original i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
+//        KBESTINFOT("restored original i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
     }
 
     void push(const hyperedge &e) {

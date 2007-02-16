@@ -2,6 +2,7 @@
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
 
+#include <graehl/shared/null_deleter.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/teestream.hpp>
 #include <graehl/shared/null_ostream.hpp>
@@ -81,10 +82,6 @@ struct stream_traits<std::istream>
 };
 
 static const char gz_ext[]=".gz";
-
-struct null_deleter {
-    void operator()(void*) const {}
-};
 
 template <class S>
 inline void set_null_file_arg(boost::shared_ptr<S> &p) 
