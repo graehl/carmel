@@ -4,6 +4,7 @@
 // code treating uint64_t as array of two uint32_t made for failed nbest duplicate removal when -O and debug prints off, so try this:
 #define HASH_JENKINS_UINT64
 
+#include <iterator>
 #include <boost/cstdint.hpp>
 #include <iostream>
 #include <graehl/shared/stream_util.hpp>
@@ -318,7 +319,7 @@ template <class I1,class I2>
 inline hash64_t hash_range_pod(I1 i,I2 end,hash64_t seed=golden_ratio_fraction_64) 
 {
     for (;i!=end;++i)
-        seed=hash_bytes_64(&*i,sizeof(typename I1::value_type),seed);
+        seed=hash_bytes_64(&*i,sizeof(typename std::iterator_traits<I1>::value_type),seed);
     return seed;
 }
 
