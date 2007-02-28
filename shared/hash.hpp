@@ -15,11 +15,11 @@
         #endif
       #endif
 #else      // ...  there are other compilers, right?
-#include <hash_map>
-#if !(defined(_MSC_VER))
+//#include <hash_map>
+//#if !(defined(_MSC_VER))
 //&& _MSC_VER >= 1300)
-namespace stdext = std;
-#endif
+//namespace stdext = std;
+//#endif
 
 #endif // GNUC
 //using stdext::hash_map;
