@@ -6,7 +6,9 @@
 
 //#define ENABLE_TEST_INFO /* requires derivations be printable */
 
+#if !defined(_MSC_VER)
 #define GRAEHL_HEAP
+#endif
 
 #ifdef SAMPLE
 # define LAZY_FOREST_EXAMPLES
@@ -478,7 +480,11 @@ class lazy_forest
 #ifdef GRAEHL_HEAP
         return heapVerify(pq.begin(),pq.end());
 #else
+# ifdef _MSC_VER
+        return true; //FIXME: implement
+# else 
         return __gnu_cxx::is_heap(pq.begin(),pq.end());
+# endif 
 #endif 
     }
     
