@@ -41,9 +41,10 @@ struct word_spacer {
         if (first)
             first=false;
         else
-            o << space();
-    }    
-    template <class O> friend inline O& operator<<(O& o,word_spacer &me) 
+            o << space_string[0];
+    }
+    template <class C,class T>
+    friend inline std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T>& o,word_spacer &me) 
     {
         me.print(o);
         return o;
@@ -88,7 +89,8 @@ struct word_spacer_c {
     }
     typedef word_spacer_c<sep> Self;
     static const char seperator=sep;
-    template <class O> friend inline O& operator<<(O& o,Self &me) 
+    template <class C,class T>
+    friend inline std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T>& o,Self &me) 
     {
         me.print(o);
         return o;
