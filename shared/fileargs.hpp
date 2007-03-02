@@ -6,7 +6,7 @@
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/teestream.hpp>
 #include <graehl/shared/null_ostream.hpp>
-#include <graehl/shared/gzstream.hpp>
+#include <graehl/shared/gzstream.h>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/string_match.hpp>
 #include <graehl/shared/program_options.hpp>
