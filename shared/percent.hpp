@@ -2,6 +2,7 @@
 #define GRAEHL__SHARED__PERCENT_HPP
 
 #include <graehl/shared/stream_util.hpp>
+#include <iosfwd>
 
 namespace graehl {
 
@@ -15,15 +16,22 @@ struct percent
     {
         return frac*100;
     }
-    template <class O> void print(O &o) const
+    template <class C, class T> 
+    void print(std::basic_ostream<C,T>& o) const
     {
         print_max_width_small(o,get_percent(),width-1);
         o << '%';
     }
     typedef percent<width> self_type;
-    TO_OSTREAM_PRINT
 };
 
+template <class C, class T, int W>
+std::basic_ostream<C,T>& 
+operator << (std::basic_ostream<C,T>& os, percent<W> const& p)
+{
+    p.print(os);
+    return os;
+}
     
 }
 

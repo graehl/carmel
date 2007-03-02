@@ -79,10 +79,12 @@ struct local_stream_format
     
 
 //FIXME: TEST
-template <class O> inline
-O & print_max_width(O&o,double d,int width=6) 
+template <class C, class T>
+std::basic_ostream<C,T>& 
+print_max_width(std::basic_ostream<C,T>& o, double d, int width=6) 
 {
-    local_stream_format<O> save(o);
+    typedef std::basic_ostream<C,T> stream_t;
+    local_stream_format<stream_t> save(o);
     if (width > 0) {
         double p=std::fabs(d);
         if (d<0)
@@ -105,10 +107,12 @@ O & print_max_width(O&o,double d,int width=6)
     return o << d;
 }
 
-template <class O> inline
-O & print_max_width_small(O&o,double d,int width=4) 
+template <class C, class T>
+std::basic_ostream<C,T>& 
+print_max_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
 {
-    local_stream_format<O> save(o);
+    typedef std::basic_ostream<C,T> stream_t;
+    local_stream_format<stream_t> save(o);
     int p=0;
     if (width>0) {    
         if (d>=0 && d< 10000) {

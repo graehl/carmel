@@ -175,15 +175,22 @@ struct lazy_kbest_stats
     }
     lazy_kbest_stats()
     { clear(); }
-    template <class O> void print(O &o) const
+    
+    template <class C, class T> 
+    void print(std::basic_ostream<C,T> &o) const
     {
         o << "[Lazy kbest filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "<<n_passed<<", or "<<graehl::percent<5>(n_passed,n_total())<<"]";
     }
     typedef lazy_kbest_stats self_type;
-    TO_OSTREAM_PRINT
 };
 
-
+template <class C, class T>
+std::basic_ostream<C,T>& 
+operator<<(std::basic_ostream<C,T>& os, lazy_kbest_stats const& kb)
+{
+    kb.print(os);
+    return os; 
+}
 
 template <class DerivationFactory,class FilterFactory=permissive_kbest_filter_factory>
 class lazy_forest
@@ -273,8 +280,6 @@ class lazy_forest
             o << ")=" << derivation;
             o << '}';
         }
-        
-        TO_OSTREAM_PRINT
     };
 
     template <class O>
@@ -295,7 +300,6 @@ class lazy_forest
         }        
         o << '}';
     }
-    TO_OSTREAM_PRINT
 
     static void set_derivation_factory(derivation_factory_type const &df) 
     {
@@ -542,6 +546,22 @@ class lazy_forest
         return pq.front();
     }
 };
+
+template <class C, class T, class DF, class FF>
+std::basic_ostream<C,T>& 
+operator<<(std::basic_ostream<C,T>& os, lazy_forest<DF,FF> const& kb)
+{
+    kb.print(os);
+    return os; 
+}
+
+template <class C, class T, class DF, class FF>
+std::basic_ostream<C,T>& 
+operator<<(std::basic_ostream<C,T>& os, typename lazy_forest<DF,FF>::hyperedge const& h)
+{
+    h.print(os);
+    return os; 
+}
 
 //FIXME: have to pass these all as params (recursively) to allow concurrent kbests of same type
 template <class D,class F>
