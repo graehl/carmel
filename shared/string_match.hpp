@@ -26,6 +26,21 @@
 
 namespace graehl {
 
+template <class I>
+std::string get_string_terminated(I &i,char terminator='\n') 
+{
+    std::stringstream s;
+    char c;
+    while (i.get(c)) {
+        if (c==terminator)
+            return s.str();
+        s.put(c);
+    }
+    throw std::runtime_error("EOF on input before string terminated");
+}
+
+
+
 template <class Str> inline
 void erase_begin(Str &s,unsigned n) 
 {
