@@ -44,6 +44,7 @@ class null_terminated_iterator :
 
 typedef null_terminated_iterator<char> cstr_iterator;
 typedef null_terminated_iterator<char const> const_cstr_iterator;
+typedef null_terminated_iterator<char const> cstr_const_iterator;
 
 inline char const* null_terminated_end(char const* s)
 {
