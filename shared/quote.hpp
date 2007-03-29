@@ -100,20 +100,6 @@ inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,char quote_c
     out_quote(out,data,false_for_all_chars(),quote_char,escape_char);
 }
 
-
-template <class Ch, class Tr,class IsSpecial> inline
-std::string
-in_quote(std::basic_istream<Ch,Tr> &i,IsSpecial is_special=IsSpecial(),
-         char quote_char='"',char escape_char='\\')
-{
-//    std::basic_stringstream<Ch,Tr> s;
-    std::vector<Ch> v;
-    in_quote(i,back_inserter(v)//std::ostreambuf_iterator<Ch,Tr>(s)
-             ,is_special,quote_char,escape_char);
-    return std::string(v.begin(),v.end());
-//    return s.str();
-}
-
 template <class Output,class Ch, class Tr,class IsSpecial> inline
 Output
 in_quote(std::basic_istream<Ch,Tr> &i,Output out,IsSpecial is_special=IsSpecial(),
@@ -147,6 +133,20 @@ in_quote(std::basic_istream<Ch,Tr> &i,Output out,IsSpecial is_special=IsSpecial(
 fail:
     throw std::runtime_error("end of file reached when parsing quoted string (in_quote)");
 }
+
+template <class Ch, class Tr,class IsSpecial> inline
+std::string
+in_quote(std::basic_istream<Ch,Tr> &i,IsSpecial is_special=IsSpecial(),
+         char quote_char='"',char escape_char='\\')
+{
+//    std::basic_stringstream<Ch,Tr> s;
+    std::vector<Ch> v;
+    in_quote(i,back_inserter(v)//std::ostreambuf_iterator<Ch,Tr>(s)
+             ,is_special,quote_char,escape_char);
+    return std::string(v.begin(),v.end());
+//    return s.str();
+}
+
 
 //////// more general/complicated: specify predicate for what to escape, backslash, and any output iter.
 
