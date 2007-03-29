@@ -35,17 +35,17 @@ inline std::string get_command_line( int argc, char *argv[], const char *header=
 
 struct argc_argv : private std::stringbuf
 {
-    typedef char *arg_t;
+    typedef char const*arg_t;
     typedef arg_t *argv_t;
     
-    std::vector<char *> argvptrs;
+    std::vector<char const*> argvptrs;
     int argc() const
     {
         return argvptrs.size();
     }
     argv_t argv() const
     {
-        return argc() ? (char**)&(argvptrs[0]) : NULL;
+        return argc() ? (argv_t)&(argvptrs[0]) : NULL;
     }
     void parse(const std::string &cmdline) 
     {

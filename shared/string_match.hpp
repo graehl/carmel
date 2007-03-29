@@ -283,9 +283,9 @@ bool ends_with(const Str &str,const Str &suffix)
 
 template <class Str>
 inline
-bool starts_with(const Str &str,char *prefix) 
+bool starts_with(const Str &str,char const*prefix) 
 {
-    return starts_with(str.begin(),str.end(),cstr_iterator(prefix),cstr_iterator());
+    return starts_with(str.begin(),str.end(),cstr_const_iterator(prefix),cstr_const_iterator());
 //    return starts_with(str,std::string(prefix));
 }
 
@@ -297,9 +297,9 @@ bool starts_with(Istr bstr,Istr estr,Prefix prefix)
 
 template <class Str>
 inline
-bool ends_with(const Str &str,char *suffix) 
+bool ends_with(const Str &str,char const*suffix) 
 {
-    return ends_with(str.begin(),str.end(),cstr_iterator(suffix),cstr_iterator());
+    return ends_with(str.begin(),str.end(),cstr_const_iterator(suffix),cstr_const_iterator());
 //    return ends_with(str,std::string(suffix));
 }
 
