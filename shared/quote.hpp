@@ -1,6 +1,7 @@
 #ifndef GRAEHL__SHARED__QUOTE_HPP
 #define GRAEHL__SHARED__QUOTE_HPP
 
+#include <stdexcept>
 #include <algorithm>
 #include <locale>
 #include <algorithm>
