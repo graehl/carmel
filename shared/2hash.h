@@ -62,8 +62,10 @@ template <typename K, typename V> class HashEntry {
     typedef HashEntry<K,V> self_type;
 public:
   /*  HashEntry() : next(NULL) { }*/
-  HashEntry(const K & k, const V& v) : next(NULL), first(k), second(v) { }
-  HashEntry(const K &k, const V& v, HashEntry<K,V> * const n) : next(n), first(k), second(v) { }
+    template <class V_init>
+  HashEntry(const K & k, const V_init& v) : next(NULL), first(k), second(v) { }
+    tempalte <class V_init>
+  HashEntry(const K &k, const V_init& v, HashEntry<K,V> * const n) : next(n), first(k), second(v) { }
   HashEntry(const K &k, HashEntry<K,V> * const n) : next(n), first(k), second() { }
 //  HashEntry(const HashEntry &h) : next(h.next), first(h.first), second(h.second) { }
   //friend class HashTable<K,V>;
@@ -263,7 +265,7 @@ template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=s
   int growAt;
   typedef typename A::template rebind<HashEntry<K,V> >::other base_alloc;
   HashEntry<K,V> **table;
-  size_t hashToPos(size_t hashVal) const
+  std::size_t hashToPos(std::size_t hashVal) const
     {
       return hashVal & siz;
     }
@@ -316,16 +318,16 @@ public:
  };
    typedef local_iterator const_local_iterator;
 
-   const_local_iterator begin(size_t i) const {
+   const_local_iterator begin(std::size_t i) const {
          return const_cast<HashEntry<K,V> *>(table[i]);
    }
-   const_local_iterator end(size_t i) const {
+   const_local_iterator end(std::size_t i) const {
          return NULL;
    }
-   local_iterator begin(size_t i) {
+   local_iterator begin(std::size_t i) {
          return table[i];
    }
-   local_iterator end(size_t i) {
+   local_iterator end(std::size_t i) {
          return NULL;
    }
 
@@ -339,11 +341,11 @@ public:
          return NULL;
    }
 
-   size_t bucket(const K& first) const {
+   std::size_t bucket(const K& first) const {
          return hashToPos(get_hash()(first));
    }
-   size_t bucket_size(size_t i) {
-         size_t ret=0;
+   std::size_t bucket_size(std::size_t i) {
+         std::size_t ret=0;
          for (local_iterator l=begin(i),e=end(i);l!=e;++l)
            ++ret;
          return ret;
@@ -378,7 +380,7 @@ public:
   static const int MINHASHSIZE=4;
   void swap(HashTable<K,V,H,P,A> &h)
     {
-      const size_t s = sizeof(HashTable<K,V>)/sizeof(char) + 1;
+      const std::size_t s = sizeof(HashTable<K,V>)/sizeof(char) + 1;
       char temp[s];
       memcpy(temp, this, s);
       memcpy(this, &h, s);
@@ -493,7 +495,7 @@ public:
     {
       if ( ++cnt >= growAt )
                 rehash(2 * siz);
-      size_t i = bucket(first);
+      std::size_t i = bucket(first);
           HashEntry<K,V> *next=table[i];
       table[i] = alloc_node();
                 PLACEMENT_NEW (table[i]) HashEntry<K,V>(first, second, next);
@@ -509,8 +511,8 @@ public:
 public:
   // not part of standard!
         insert_return_type insert(const K& first, const V& second=V()) {
-          size_t hv=get_hash()(first);
-          size_t bucket=hashToPos(hv);
+          std::size_t hv=get_hash()(first);
+          std::size_t bucket=hashToPos(hv);
           for ( HashEntry<K,V> *p = table[bucket]; p ; p = p->next )
                 if ( equal(p->first,first) )
                   return std::pair<find_return_type,bool>((find_return_type)p,false);
@@ -565,7 +567,7 @@ public:
 
   int erase(const K &first)
     {
-      size_t i = bucket(first);
+      std::size_t i = bucket(first);
       HashEntry<K,V> *prev = NULL, *p = table[i];
       if ( !p )
         return 0;
@@ -588,8 +590,8 @@ public:
       }
       return 0;
     }
-  size_t bucket_count() const { return siz + 1; }
-  size_t max_bucket_count() const { return 0x7FFFFFFF; }
+  std::size_t bucket_count() const { return siz + 1; }
+  std::size_t max_bucket_count() const { return 0x7FFFFFFF; }
   int size() const { return cnt; }
   int growWhen() const { return growAt; }
   float load_factor() const { return (float)cnt / (float)(siz + 1); }
@@ -603,7 +605,7 @@ public:
         protected:
   void rehash_pow2(int request)
     {
-      size_t hashVal;
+      std::size_t hashVal;
           int oldSiz = siz;
       HashEntry<K,V> *next, *p, **i, **oldTable = table;
       siz = request;
@@ -675,7 +677,7 @@ inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTab
 template <class K,class V,class H,class P,class A,class F>
 inline void enumerate(const HashTable<K,V,H,P,A>& ht,const K& first,F f)
 {
-  for (size_t i=0;i<ht.bucket_count();++i)
+  for (std::size_t i=0;i<ht.bucket_count();++i)
     for (typename HashTable<K,V,H,P,A>::local_iterator j=ht.begin(i),e=ht.end(i);j!=e;++j)
       deref(f)(*j);
 }
@@ -687,10 +689,17 @@ inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
 }
 
 
+template <class K>
+inline std::size_t hash_value_dispatch(K const& k) 
+{
+    return hash_value(k); // argument dependent lookup
+}
+
+
 template<>
 struct hash<unsigned>
 {
-  size_t operator()(unsigned int key) const {
+  std::size_t operator()(unsigned int key) const {
         return uint_hash(key);
   }
 };
@@ -698,7 +707,7 @@ struct hash<unsigned>
 template<>
 struct hash<char>
 {
-  size_t operator()(char key) const {
+  std::size_t operator()(char key) const {
         return key;
   }
 };
@@ -707,7 +716,7 @@ struct hash<char>
 template<>
 struct hash<int>
 {
-  size_t operator()(int key) const {
+  std::size_t operator()(int key) const {
         return uint_hash(key);
   }
 };
@@ -715,7 +724,7 @@ struct hash<int>
 template<>
 struct hash<const char *>
 {
-  size_t operator()(const char * s) const {
+  std::size_t operator()(const char * s) const {
         return cstr_hash(s);
   }
 };
