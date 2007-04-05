@@ -1,6 +1,7 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+#include <boost/noncopyable.hpp>
 #include <graehl/shared/percent.hpp>
 #include <graehl/shared/assertlvl.hpp>
 
@@ -195,6 +196,7 @@ operator<<(std::basic_ostream<C,T>& os, lazy_kbest_stats const& kb)
 template <class DerivationFactory,class FilterFactory=permissive_kbest_filter_factory>
 class lazy_forest
     : public FilterFactory::filter_type // empty base class opt.
+      //    ,  public boost::noncopyable
 {
  public:
     typedef DerivationFactory derivation_factory_type;
@@ -233,6 +235,12 @@ class lazy_forest
     typedef lazy_forest<derivation_factory_type,filter_factory_type> forest;
     typedef forest self_type;
 
+    void swap(self_type &o) 
+    {
+        pq.swap(o.pq);
+        memo.swap(o.memo);
+    }
+    
     //FIXME: faster heap operations if we put handles to hyperedges on heap instead of copying?
     struct hyperedge {
         typedef hyperedge self_type;
@@ -432,6 +440,11 @@ class lazy_forest
         add(r,left,right);
     }
 
+    void reserve(std::size_t n) 
+    {
+        pq.reserve(n);
+    }
+    
     /// may add in any order, but must call sort() before any get_best()
     void add(derivation_type r,forest *left=NULL,forest *right=NULL)
     {        
