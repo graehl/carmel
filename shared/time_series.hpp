@@ -56,7 +56,8 @@ struct clamped_time_series : public std::unary_function<double,Returns>
 #ifdef DEBUG_TIME_SERIES
         DBP4(start,end,duration,curvature);
 #endif
-        if (duration <= 0) { //set constant fn
+        // note from michael:  start == end avoids k = 0/0
+        if (duration <= 0 or start == end) { //set constant fn
             k=1;
             t_max=1;
             x0=start;
