@@ -6,6 +6,9 @@
 #endif
 
 #include <cstdlib>
+#if defined(__unix__)
+# include <unistd.h>
+#endif 
 #if defined(_MACOSX)
 # include <malloc/malloc.h>
 #else
@@ -28,7 +31,27 @@ struct memory_stats  {
 #if defined(__unix__) || defined(_MACOSX)
     malloc_info info;
 #endif
-
+#if defined(__unix__)
+    long pagesize() const 
+    {
+        return  sysconf(_SC_PAGESIZE);
+    }
+    
+    std::ptrdiff_t process_data_end;
+    char *sbrk_begin() const
+    {
+        return reinterpret_cast<char *>((void *)0);
+    }
+    char *sbrk_end() const
+    {
+        return (char *)sbrk(0);
+    }
+    std::ptrdiff_t sbrk_size() const
+    {
+        return sbrk_end()-sbrk_begin();
+    }
+    
+#endif 
   //   struct mallinfo {
 //   int arena;    /* total space allocated from system */
 //   int ordblks;  /* number of non-inuse chunks */
@@ -48,6 +71,7 @@ struct memory_stats  {
     void refresh() {
 #if defined(__unix__)
         info=mallinfo();
+        process_data_end=sbrk_size();
 #elif defined(_MACOSX)
         info=mstats();
 #endif
@@ -62,11 +86,16 @@ struct memory_stats  {
 #else
     typedef size_bytes size_type;
 #endif
-
+    
     // includes memory mapped
     size_type total_allocated() const
     {
         return program_allocated()+memory_mapped();
+    }
+
+    size_type high_water() const
+    {
+        return system_allocated()+memory_mapped();
     }
     
     size_type program_allocated() const 
@@ -84,7 +113,8 @@ struct memory_stats  {
     size_type system_allocated() const 
     {
 #if defined(__unix__)
-        return size_type((unsigned)info.arena);
+        return process_data_end;
+//        return size_type((unsigned)info.arena);
 #elif defined(_MACOSX)
         return size_type(info.bytes_total);
 #else
@@ -107,6 +137,7 @@ struct memory_stats  {
 inline memory_stats operator - (memory_stats after,memory_stats before) 
 {
     memory_stats ret;
+    ret.process_data_end = after.process_data_end-before.process_data_end;
 GRAEHL__MEMSTAT_DIFF(arena);    /* total space allocated from system */
 GRAEHL__MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
 GRAEHL__MEMSTAT_DIFF(smblks);   /* unused -- always zero */
@@ -145,19 +176,26 @@ struct memory_change
     memory_stats before;
     static char const* default_desc() 
     { return "\nmemory used: "; }
+    typedef memory_stats::size_type S;
     template <class O>
     void print(O &o) const
     {
         memory_stats after;
-        typedef memory_stats::size_type S;
-        S pre=before.total_allocated();
-        S post=after.total_allocated();
+        print_change(o,before.total_allocated(),after.total_allocated());
+        o << "; from OS: ";
+        print_change(o,before.high_water(),after.high_water());
+        
+    }
+    template <class O>
+    void print_change(O &o, S pre, S post) const
+    {
         if (post >= pre) {
             o << "+" << S(post-pre);
         } else
             o << "-" << S(pre-post);
         o << " (" << pre << " -> " << post << ")";
     }
+    
     typedef memory_change self_type;
     TO_OSTREAM_PRINT
 };
