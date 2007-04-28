@@ -233,7 +233,7 @@ define GRAEHL__SHOWING(name)\
 /// options and positional arguments, but if not empty, throws exception unless
 /// allow_unrecognized_positional is true
     std::vector<std::string>
-    parse_options(int argc,char *argv[],
+    parse_options(int argc,char **argv,
                   boost::program_options::variables_map &vm,
                   boost::program_options::positional_options_description *po=NULL,
                   bool allow_unrecognized_positional=false,
@@ -258,6 +258,18 @@ define GRAEHL__SHOWING(name)\
         notify(vm);
         return unparsed;
     }
+
+    std::vector<std::string>
+    parse_options(int argc,char const*argv[],
+                  boost::program_options::variables_map &vm,
+                  boost::program_options::positional_options_description *po=NULL,
+                  bool allow_unrecognized_positional=false,
+                  bool allow_unrecognized_opts=false)
+    {
+        return parse_options(argc,const_cast<char **>(argv),vm,po
+                             ,allow_unrecognized_positional,allow_unrecognized_opts);
+    }
+    
     
  private:
     groups_type groups;

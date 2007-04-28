@@ -129,8 +129,9 @@ void print_current_dir(O&o,const char*header="### CURRENT DIR: ")
         o << std::endl;
 }
 
-template <class O>
-void print_command_header(O &o, int argc, char *argv[])
+
+template <class O,class Argv>
+void print_command_header(O &o, int argc, Argv const& argv)
 {
     print_command_line(o,argc,argv);
     print_current_dir(o);

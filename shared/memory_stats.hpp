@@ -189,9 +189,11 @@ struct memory_change
     template <class O>
     void print_change(O &o, S pre, S post) const
     {
-        if (post >= pre) {
+        if (post == pre)
+            o << '0';
+        else if (post > pre) 
             o << "+" << S(post-pre);
-        } else
+        else
             o << "-" << S(pre-post);
         o << " (" << pre << " -> " << post << ")";
     }
