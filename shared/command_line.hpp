@@ -49,10 +49,22 @@ struct argc_argv : private std::stringbuf
     {
         return argc() ? (argv_t)&(argvptrs[0]) : NULL;
     }
-    void parse(const std::string &cmdline) 
+    bool isspace(char c) 
+    {
+        //    return std::isspace(c);
+        return c==' ' || c=='\n' || c=='\t';
+    }
+
+    void throw_escape_eof() const 
+    {
+        throw std::runtime_error("Error parsing: escape char \\ followed by end of stream (expect some character)");
+    }
+    
+    // note: str is from stringbuf.
+    void parse(const std::string &cmdline,char const* progname="ARGV") 
     {
         argvptrs.clear();
-        argvptrs.push_back("ARGV");
+        argvptrs.push_back(progname);
 #if 1
         str(cmdline+" ");  // we'll need space for terminating final arg.
 #else
@@ -65,34 +77,44 @@ struct argc_argv : private std::stringbuf
         char *o=i;
         char terminator;
     next_arg:
-        while(i!=end && *i==' ') ++i;  // [ ]*
+        while(i!=end && isspace(*i)) ++i;  // [ ]*
         if (i==end) return;
 
         if (*i=='"' || *i=='\'') {
             terminator=*i;
             ++i;
-        } else {
-            terminator=' ';
-        }
-        
-        argvptrs.push_back(o);
-
-        while(i!=end) {
-            if (*i=='\\') {
-                ++i;
-            } else if (*i==terminator) {
-                *o++=0;
-                ++i;
-                goto next_arg;
+            argvptrs.push_back(o);
+            while(i!=end) {
+                if (*i=='\\') {
+                    ++i;
+                    if (i==end) throw_escape_eof();
+                } else if (*i==terminator) {
+                    *o++=0;
+                    ++i;
+                    goto next_arg;
+                }
+                *o++=*i++;
             }
-            *o++=*i++;
+        } else {
+            argvptrs.push_back(o);
+            while(i!=end) {
+                if (*i=='\\') {
+                    ++i;
+                    if (i==end) throw_escape_eof();
+                } else if (isspace(*i)) {
+                    *o++=0;
+                    ++i;
+                    goto next_arg;
+                }
+                *o++=*i++;
+            }
         }
         *o++=0;
     }
     argc_argv() {}
-    explicit argc_argv(const std::string &cmdline) 
+    explicit argc_argv(const std::string &cmdline,char const* progname="ARGV") 
     {
-        parse(cmdline);
+        parse(cmdline,progname);
     }
 };
 
