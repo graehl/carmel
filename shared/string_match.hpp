@@ -26,6 +26,19 @@
 
 namespace graehl {
 
+template <class S>
+S chomp(S const &s) 
+{
+    std::string ws="\n\t ";
+    typename S::size_type b,e;
+    b=s.find_first_not_of(ws);
+    if (b==S::npos)
+        return S();
+    e=s.find_last_not_of(ws);
+    return s.substr(b,e);
+}
+
+
 template <class I>
 std::string get_string_terminated(I &i,char terminator='\n') 
 {
