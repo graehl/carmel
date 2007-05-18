@@ -114,7 +114,6 @@ struct triangular_array : protected Alloc
         return n_triangle(b-1)+a;
     }
     
-    
  private:
     V *vec;
     index_type m;
