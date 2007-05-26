@@ -129,6 +129,14 @@ void maybe_decrease_min_at(Vector &vec,unsigned index,const typename Vector::val
         f = decrease_to;
 }
 
+template <class Vector> inline
+void maybe_increase_max_at(Vector &vec,unsigned index,const typename Vector::value_type &increase_to,const typename Vector::value_type &min_inf=0) 
+{
+    typename Vector::value_type &f=at_expand(vec,index,min_inf);
+    if (f < increase_to)
+        f = increase_to;
+}
+
 template <class Vector,class Key,class Val,class AccumF> inline
 void accumulate_at(Vector &table,const Key &key,const Val &val,AccumF accum_f) {
 #ifdef GRAEHL__DBG_ASSOC
