@@ -427,7 +427,9 @@ class WFST {
 			 }
 		}
 	template <class F> void changeEachParameter(F f) {
-			HashTable<IntKey, Weight> tiedWeights;
+            typedef HashTable<IntKey, Weight> HT;
+            
+			HT tiedWeights;
 		  for ( int s = 0 ; s < numStates() ; ++s )
 				for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
 					int group=a->groupId;
@@ -444,8 +446,8 @@ class WFST {
 							add(tiedWeights,group,a->weight);
 						}
 #else
-	  					HashTable<IntKey, Weight>::insert_return_type it;
-						if ((it=tiedWeights.insert(HashTable<IntKey, Weight>::value_type(group,0))).second) {
+	  					hash_traits<HT>::insert_return_type it;
+						if ((it=tiedWeights.insert(HT::value_type(group,0))).second) {
 						  f(&(a->weight));
 						  it.first->second = a->weight;
 						} else

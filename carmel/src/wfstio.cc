@@ -428,7 +428,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
             return 1;
         }
         {
-            unsigned *uip = stateNames.find(finalName);
+            unsigned const*uip = stateNames.find(finalName);
             if ( uip  ) {
                 final = *uip;
                 finalName.kill();
@@ -626,7 +626,7 @@ List<int> *WFST::symbolList(const char *buf, int output) const
   while ( line ) {
     if ( !getString(line, symbol) )
       break;
-    unsigned *pI = alph->find(symbol);
+    unsigned const*pI = alph->find(symbol);
     if ( !pI) {
       delete ret;
       return NULL;

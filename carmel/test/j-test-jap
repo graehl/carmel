@@ -1,6 +1,9 @@
 echo 'a n ji ra na i to' |
 sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' > test.asciikana
-$B -li -k 1 -OEW test.asciikana asciikana-katakana.transducer >test.katakana
+
+cmd="$B -li -k 1 -OEW test.asciikana asciikana-katakana.transducer"
+echo $cmd
+$cmd > test.katakana
 sed 's/ //g' test.katakana | sed 's/"//g' >test.kana
 
 #rm -f test.asciikana test.jpron test.jpron3 test.jpron2 test.epron test.word test.final
@@ -8,7 +11,9 @@ sed 's/ //g' test.katakana | sed 's/"//g' >test.kana
 echo ""
 echo "Katakana:                      " 
 echo ""
-$B -iIEQ -k 1 test.katakana
+cmd="$B -iIEQ -k 1 test.katakana"
+echo $cmd
+$cmd
 echo ""
 $B -ri jpron.transducer vowel-separator.transducer \
         jpron-asciikana.transducer asciikana-katakana.transducer \

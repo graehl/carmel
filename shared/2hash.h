@@ -1,7 +1,7 @@
 //power-of-two hash table.  alternatively (defined USE_STD_HASH_MAP) uses the vendor's.  also gives a more convenient Value *find_second(key)
 //original rationale: lack of STL support in gcc - and hash_map still isn't officially in STL.
-#ifndef TWO_HASH_H
-#define TWO_HASH_H
+#ifndef GRAEHL_SHARED__2HASH_H
+#define GRAEHL_SHARED__2HASH_H
 
 #include <graehl/shared/config.h>
 #include <ostream>
@@ -655,6 +655,16 @@ public:
 //              template <class _K,class _V,class _H,class _A>
 //friend _V *find_second(const HashTable<_K,_V,_H,_A>& ht,const _K& first);
 };
+
+template <class K,class V,class H,class P,class A>
+struct hash_traits<HashTable<K,V,H,P,A> >
+{
+    typedef HashTable<K,V,H,P,A> HT;
+    typedef typename HT::find_return_type find_return_type;
+    typedef typename HT::insert_return_type insert_return_type;
+};
+
+    
 /*
 struct EmptyStruct {
 };

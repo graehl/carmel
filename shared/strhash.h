@@ -1,5 +1,5 @@
-#ifndef STRHASH_H
-#define STRHASH_H
+#ifndef GRAEHL_SHARED__STRHASH_H
+#define GRAEHL_SHARED__STRHASH_H
 #include <graehl/shared/config.h>
 #include <iostream>
 
@@ -16,6 +16,8 @@
 namespace graehl {
 
 class StringPool {
+    typedef HashTable<StringKey, int> HT;
+    
   static char * clone(const char *str) {
     return strcpy(NEW char[strlen(str)+1], str);
   }
@@ -23,7 +25,7 @@ class StringPool {
     delete str;
   }
 #ifdef STRINGPOOL
-    static HashTable<StringKey, int> counts;
+    static HT counts;
 #endif
 public:
   enum make_not_anon_19 {is_noop=0};
@@ -31,7 +33,7 @@ public:
       if (s.isDefault())
         return s;
 #ifdef STRINGPOOL
-      HashTable<StringKey, int>::find_return_type entryP;
+      hash_traits<HT>::find_return_type entryP;
         if ( (entryP = counts.find(s)) != counts.end() ) {
             (entryP->second)++;
             return (entryP->first);
@@ -48,7 +50,7 @@ public:
 #ifdef STRINGPOOL
       if (s.isDefault())
         return;
-        HashTable<StringKey, int>::find_return_type entryP;
+      hash_traits<HT>::find_return_type entryP;
         if ( !s.isDefault() && (entryP = counts.find(s))!= counts.end() ) {
             Assert(entryP->second > 0);
             Assert(s.str == entryP->first.str);
@@ -64,7 +66,7 @@ public:
     ~StringPool()
     {
 #ifdef STRINGPOOL
-      for ( HashTable<StringKey, int>::iterator i=counts.begin(); i!=counts.end() ; ++i )
+      for ( HT::iterator i=counts.begin(); i!=counts.end() ; ++i )
             ((StringKey &)i->first).kill();
 #endif
     }
@@ -144,7 +146,7 @@ private:
   void reserve(unsigned n) {
     names.reserve(n);
   }
-  unsigned *find(Sym name) const {
+  unsigned const*find(Sym name) const {
     return find_second(ht,name);
   }
   bool is_index(unsigned pos) const {
@@ -157,7 +159,7 @@ private:
     //Assert(name);
     //Sym s = const_cast<char *>(name);
 
-    typename SymIndex::insert_return_type it;
+      typename hash_traits<SymIndex>::insert_return_type it;
     if ( (it = ht.insert(typename SymIndex::value_type(s,names.size()))).second ) {
       if (StrPool::is_noop)
         names.push_back(s);
@@ -240,9 +242,9 @@ private:
     // aMap will give which letter in Alphabet o the letters in a
     // correspond to, or -1 if the letter is not in Alphabet o.
   {
-      unsigned int  *ip;
-      for ( unsigned int i = 0 ; i < size() ; ++i )
-    aMap[i] = (( ip = o.find(names[i])) ? (*ip) : -1 );
+      unsigned const  *ip;
+      for ( unsigned i = 0 ; i < size() ; ++i )
+          aMap[i] = (( ip = o.find(names[i])) ? (*ip) : -1 );
     }
    unsigned size() const { return names.size(); }
   ~Alphabet()
