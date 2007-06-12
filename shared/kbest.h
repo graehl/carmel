@@ -1,10 +1,12 @@
-#ifndef KBEST_H
-#define KBEST_H
+#ifndef GRAEHL_SHARED_KBEST_H
+#define GRAEHL_SHARED_KBEST_H
 
 #include <graehl/shared/graph.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/list.h>
 //#include "dynarray.h"
+
+namespace graehl {
 
 struct pGraphArc {
     GraphArc *p;
@@ -333,5 +335,6 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
     
 }
 
+}
 
 #endif

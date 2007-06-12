@@ -8,15 +8,21 @@
 #include <graehl/shared/arc.h>
 #include <iostream>
 
+namespace graehl {
+
 struct IntKey {
   int i;
-  size_t hash() const { return uint_hash(i); }
+  size_t hash() const { return uint32_hash(i); }
   IntKey() {}
   IntKey(int a) : i(a) {}
   operator int() const { return i; }
 };
 
-BEGIN_HASH_VAL(IntKey) {	return x.hash(); } END_HASH
+}
+
+BEGIN_HASH_VAL(graehl::IntKey) {	return x.hash(); } END_HASH
+
+namespace graehl {
 
 struct State {
   List<FSTArc> arcs;
@@ -172,11 +178,15 @@ struct IOPair {
   int out;
   size_t hash() const
   {
-    return uint_hash(1543 * out + in);
+    return uint32_hash(1543 * out + in);
   }
 };
 
-BEGIN_HASH_VAL(IOPair) {	return x.hash(); } END_HASH
+}
+
+BEGIN_HASH_VAL(graehl::IOPair) {	return x.hash(); } END_HASH
+
+namespace graehl {
 
 std::ostream & operator << (std::ostream &o, IOPair p);
 
@@ -289,5 +299,7 @@ class trainInfo {
       }    
       };*/
 };
+
+}
 
 #endif

@@ -6,6 +6,7 @@
 #include <graehl/shared/predicate_compose.hpp>
 #include <locale>
 #include <string>
+#include <boost/config.hpp>
 
 namespace graehl {
 

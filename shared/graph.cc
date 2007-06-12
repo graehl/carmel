@@ -3,6 +3,8 @@
 #include "graph.h"
 #include "myassert.h"
 
+namespace graehl {
+
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
     out << '(' << a.source <<"->"<< a.dest << ' ' << a.weight;
@@ -288,4 +290,6 @@ std::istream & operator >> (std::istream &istr, Graph &g)
     g.states[a.source].arcs.push(a);
   }
   return istr;
+}
+
 }

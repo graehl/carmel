@@ -155,7 +155,7 @@ public:
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
     std::ios_base::iostate read_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
     template <class L,class A> friend
-    void read(std::istream &in,array<L,A> &x,StackAlloc &a) throw(genio_exception);
+    void read(std::istream &in,array<L,A> &x,StackAlloc &a);// throw(genio_exception);
 
 
     template <class charT, class Traits, class Reader>

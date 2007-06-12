@@ -3,6 +3,8 @@
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/kbest.h>
 
+namespace graehl {
+
 const int WFST::perline_index = ios_base::xalloc();
 const int WFST::arcformat_index = ios_base::xalloc();
 
@@ -878,6 +880,7 @@ List<List<PathArc> > *WFST::bestPaths(int k)
   }
   }
 */
+  }
 
 #include <graehl/carmel/src/wfstio.cc>
 

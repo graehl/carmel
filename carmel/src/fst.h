@@ -21,6 +21,9 @@
 #include <graehl/carmel/src/compose.h>
 #include <iterator>
 #include <graehl/shared/kbest.h>
+#include <boost/config.hpp>
+
+namespace graehl {
 
 using namespace std;
 
@@ -258,7 +261,7 @@ class WFST {
   // Visitor needs to accept GraphArc (from makeGraph ... (FSTArc *)->data gives WFST FSTArc - see kbest.h for visitor description
   template <class Visitor> void bestPaths(unsigned k,Visitor &v) {
       Graph graph = makeGraph();
-      ::bestPaths(graph,0,final,k,v);
+      graehl::bestPaths(graph,0,final,k,v);
       freeGraph(graph);
   }
   // best paths to final
@@ -454,11 +457,11 @@ class WFST {
   void removeMarkedStates(bool marked[]);  // remove states and all arcs to
   // states marked true
   static inline bool isNormal(int groupId) {
-    //return groupId == WFST::NOGROUP;
+    //return groupId == WFST::no_group;
     return groupId < 0;
   }
   static inline bool isLocked(int groupId) {
-    return groupId == WFST::LOCKEDGROUP;
+    return groupId == WFST::locked_group;
   }
   static inline bool isTied(int groupId) {
     return groupId > 0;
@@ -466,10 +469,10 @@ class WFST {
   static inline bool isTiedOrLocked(int groupId) {
     return groupId >= 0;
   }
-  static const int NOGROUP=-1;  
-  static const int LOCKEDGROUP=0;
+    BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);
+    BOOST_STATIC_CONSTANT(int,locked_group=FSTArc::locked_group);
+    
  private:
-  //  static const int NOGROUP(-1);  
   void invalidate() {		// make into empty/invalid transducer
     clear();
   }
@@ -479,5 +482,7 @@ ostream & operator << (ostream &o, WFST &w);
 
 ostream & operator << (std::ostream &o, List<PathArc> &l);
 
+
+}
 
 #endif
