@@ -66,6 +66,13 @@ inline typename HashTable<K,V,H,P,A>::iterator find_value(const HashTable<K,V,H,
 
 namespace graehl {
 
+    template <class H>
+    struct hash_traits
+    {
+        typedef typename H::iterator find_return_type;
+        typedef std::pair<find_return_type,bool> insert_return_type;
+    };
+        
 #ifndef USE_GRAEHL_HASH_MAP
 template <class K,class V,class H,class P,class A>
 inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())

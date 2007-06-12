@@ -50,7 +50,7 @@ if ( (pDest = find_second(stateMap,triDest)) ) \
 #else
 
 #define COMPOSEARC do { \
-  HashTable<TrioKey,int>::insert_return_type i; \
+        hash_traits<HashTable<TrioKey,int> >::insert_return_type i;                              \
   if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
 	trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);states.push_back();\
 	if ( namedStates ) { namer.make(triDest.aState, triDest.bState, triDest.filter);\
@@ -142,8 +142,9 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
           for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
             mediate.dest = (*l)->dest;
             int mediateState;
-			HashTable<HalfArcState, int>::insert_return_type ins;
-            if ( (ins = arcStateMap.insert(HashTable<HalfArcState, int>::value_type(mediate,numStates()))).second ) {			  
+            typedef HashTable<HalfArcState, int> HAT;
+            hash_traits<HAT>::insert_return_type ins;
+            if ( (ins = arcStateMap.insert(HAT::value_type(mediate,numStates()))).second ) {			  
 			  mediateState = numStates();
               states.push_back();
               if ( namedStates ) {
