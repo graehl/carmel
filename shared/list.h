@@ -1,6 +1,6 @@
 // linked list wrapper (uses default STL list instead unless -DUSE_SLIST)
-#ifndef LIST_H
-#define LIST_H
+#ifndef GRAEHL_SHARED_LIST_H
+#define GRAEHL_SHARED_LIST_H
 #include <graehl/shared/config.h>
 #include <graehl/shared/stream_util.hpp>
 

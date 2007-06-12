@@ -1,11 +1,14 @@
-#ifndef COMPOSE_H
-#define COMPOSE_H 1
+#ifndef GRAEHL_CARMEL_COMPOSE_H
+#define GRAEHL_CARMEL_COMPOSE_H
 #include <graehl/shared/myassert.h>
 
 #include <graehl/shared/2hash.h>
 
 
-#define EMPTY 0
+
+namespace graehl {
+
+static const int EMPTY=0;
 
 struct TrioKey {
   static unsigned int aMax;
@@ -24,13 +27,10 @@ struct TrioKey {
   size_t hash() const
   {
     Assert ( aState < aMax && bState < bMax);
-	return uint_hash((bMax * (filter*aMax + aState) + bState));
+	return uint32_hash((bMax * (filter*aMax + aState) + bState));
   }
 };
 
-BEGIN_HASH(TrioKey) {
-  return x.hash();
-  } END_HASH
 
 struct HalfArcState {
   int dest;			// in unshared (lhs) transducer
@@ -47,19 +47,24 @@ struct HalfArcState {
     dest(a), source(b), hiddenLetter(c) {}
   size_t hash() const
   {
-    return uint_hash(TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source);
+    return uint32_hash(TrioKey::bMax*(hiddenLetter*TrioKey::aMax + dest) + source);
   }
 };
-
-BEGIN_HASH(HalfArcState) {
-  return x.hash(); } END_HASH
-  
 
 struct TrioID {
   int num;
   TrioKey tri;
 };
 
+}
+
+BEGIN_HASH(graehl::TrioKey) {
+  return x.hash();
+  } END_HASH
+
+  BEGIN_HASH(graehl::HalfArcState) {
+      return x.hash();
+  } END_HASH
 
 
 #endif

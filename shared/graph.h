@@ -10,6 +10,8 @@
 #include <graehl/shared/list.h>
 #include <iterator>
 
+namespace graehl {
+
 struct GraphArc {
   int source;
   int dest;
@@ -148,6 +150,8 @@ Weight countNoCyclePaths(Graph g, int source, int dest)
     Weight wd=w[dest];
     delete w;
     return wd;    
+}
+
 }
 
 

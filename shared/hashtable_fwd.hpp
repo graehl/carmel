@@ -1,6 +1,8 @@
 // for sources defining hash functions but not using hash tables themselves
-#ifndef HASHTABLE_FWD_HPP
-#define HASHTABLE_FWD_HPP
+#ifndef GRAEHL_SHARED_HASHTABLE_FWD_HPP
+#define GRAEHL_SHARED_HASHTABLE_FWD_HPP
+
+#define GOLDEN_MEAN_FRACTION 2654435769U
 
 #ifdef USE_GRAEHL_HASH_MAP
 #  ifdef USE_GNU_HASH_MAP

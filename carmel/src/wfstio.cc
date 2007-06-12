@@ -7,8 +7,11 @@
 #include <sstream>
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/debugprint.hpp>
+#include <graehl/shared/input_error.hpp>
 
-#define DEFAULTSTRBUFSIZE 4096
+namespace graehl {
+
+static const int DEFAULTSTRBUFSIZE=4096;
 
 #define REQUIRE(x)  do { if (!(x)) { goto INVALID; } } while(0)
 #define GETC do { REQUIRE(istr >> c); } while(0)
@@ -31,7 +34,7 @@ static inline unsigned int pow2(int exp)
 
 
 #define DOS_CR_CHAR '\r'
-static char *getString(istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTSTRBUFSIZE)
+static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTSTRBUFSIZE)
 {
 #define CHECKBUFOVERFLOW do { \
     if (buf >= bufend) \
@@ -633,6 +636,8 @@ List<int> *WFST::symbolList(const char *buf, int output) const
       *cursor++ = *pI;
   }
   return ret;
+}
+
 }
 
 #undef REQUIRE

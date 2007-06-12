@@ -103,6 +103,7 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 
 #define MAX_LEARNING_RATE_EXP 20
 
+#define WEIGHT_FLOAT_TYPE float
 // unless defined, Weight(0) will may give bad results when computed with, depending on math library behavior
 #define WEIGHT_CORRECT_ZERO
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this

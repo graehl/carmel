@@ -11,8 +11,6 @@
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/byref.hpp>
 
-#define GOLDEN_MEAN_FRACTION 2654435769U
-
 #include <graehl/shared/config.h>
 #include <ostream>
 #include <memory>
@@ -64,7 +62,7 @@ public:
   /*  HashEntry() : next(NULL) { }*/
     template <class V_init>
   HashEntry(const K & k, const V_init& v) : next(NULL), first(k), second(v) { }
-    tempalte <class V_init>
+    template <class V_init>
   HashEntry(const K &k, const V_init& v, HashEntry<K,V> * const n) : next(n), first(k), second(v) { }
   HashEntry(const K &k, HashEntry<K,V> * const n) : next(n), first(k), second() { }
 //  HashEntry(const HashEntry &h) : next(h.next), first(h.first), second(h.second) { }
@@ -699,15 +697,15 @@ inline std::size_t hash_value_dispatch(K const& k)
 template<>
 struct hash<unsigned>
 {
-  std::size_t operator()(unsigned int key) const {
-        return uint_hash(key);
+  unsigned operator()(unsigned key) const {
+        return uint32_hash(key);
   }
 };
 
 template<>
 struct hash<char>
 {
-  std::size_t operator()(char key) const {
+  char operator()(char key) const {
         return key;
   }
 };
@@ -716,8 +714,8 @@ struct hash<char>
 template<>
 struct hash<int>
 {
-  std::size_t operator()(int key) const {
-        return uint_hash(key);
+  unsigned operator()(int key) const {
+        return uint32_hash(key);
   }
 };
 

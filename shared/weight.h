@@ -51,9 +51,6 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 #pragma warning(disable:4244)
 #endif
 
-#ifndef FLOAT_TYPE
-# define FLOAT_TYPE double
-#endif
 
 namespace graehl {
 
@@ -520,19 +517,19 @@ inline logweight<Real> pow_logexponent(logweight<Real> a, logweight<Real> b) {
 }
 
 template<class Real>
-inline logweight<Real> root(logweight<Real> w,Real nth) {
+inline logweight<Real> root(logweight<Real> const&w, Real nth) {
         w.takeRoot(nth);
         return w;
 }
 
 template<class Real>
-inline logweight<Real> pow(logweight<Real> w,Real nth) {
+inline logweight<Real> pow(logweight<Real> const&w, Real nth) {
         w.raisePower(nth);
         return w;
 }
 
 template<class Real>
-inline logweight<Real> operator ^(logweight<Real> base,Real exponent) {
+inline logweight<Real> operator ^(logweight<Real> const& base,Real exponent) {
         return pow(base,exponent);
 }
 
@@ -774,7 +771,9 @@ void inline dbgout(std::ostream &o,logweight<Real> w) {
 #define NANCHECK(w)
 #endif
 
-typedef logweight<FLOAT_TYPE> Weight;
+#ifdef WEIGHT_FLOAT_TYPE
+typedef logweight<WEIGHT_FLOAT_TYPE> Weight;
+#endif
 
 #undef WEIGHT_FORWARD_OP_RET
 #undef WEIGHT_FORWARD_OP

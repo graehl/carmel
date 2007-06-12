@@ -2,6 +2,8 @@
 #include <graehl/carmel/src/compose.h>
 #include <graehl/carmel/src/fst.h>
 
+namespace graehl {
+
 int WFST::indexThreshold = 32;
 unsigned int TrioKey::aMax = 0;
 unsigned int TrioKey::bMax = 0;
@@ -106,6 +108,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   List<HalfArc> *matches;
 
   if ( preserveGroups ) {       // use simpler 2 state filter since e transitions cannot be merged anyhow
+      //FIXME: -a ... kbest paths look nothing like non -a.  find the bug!
     HashTable<HalfArcState, int> arcStateMap(2 * (a.numStates() +b.numStates()));
     while ( queue.notEmpty() ) {
       sourceState = queue.top().num;
@@ -392,8 +395,10 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     for ( i = 0 ; i < 3 ; ++i )
       if ( pFinal[i] ) {
         states[*pFinal[i]].addArc(FSTArc(EMPTY, EMPTY, final, 1.0));
-        states[*pFinal[i]].arcs.top().groupId = WFST::LOCKEDGROUP; // prevent weight from changing in training
+        states[*pFinal[i]].arcs.top().groupId = WFST::locked_group; // prevent weight from changing in training
       }
   }
   states.resize(states.size());
+}
+
 }

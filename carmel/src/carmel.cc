@@ -17,7 +17,9 @@
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/myassert.h>
 
-#define CARMEL_VERSION "3.1.1"
+using namespace graehl;
+
+#define CARMEL_VERSION "3.2"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -196,7 +198,8 @@ main(int argc, char *argv[]){
     int i;
     bool flags[256];
     for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
-    char *pc, **parm = NEW char *[argc-1];
+    char *pc;
+    char const**parm = NEW char const *[argc-1];
     unsigned int seed = (unsigned int )std::time(NULL);
     int nParms = 0;
     int kPaths = 0;
@@ -360,7 +363,7 @@ main(int argc, char *argv[]){
     if ( flags['b'] && kPaths < 1 )
         kPaths = 1;
     istream **inputs, **files, **newed_inputs;
-    char **filenames;
+    char const**filenames;
     int nInputs,nChain;
 #ifdef MARCU
     initModels();
@@ -372,7 +375,7 @@ main(int argc, char *argv[]){
         nChain+=(int)Models.size();
 #endif
         newed_inputs = inputs = NEW istream *[nInputs];
-        filenames = NEW char *[nChain];
+        filenames = NEW char const*[nChain];
         if ( flags['r'] ) {
             inputs[nParms] = &cin;
             filenames[nParms] = "stdin";
@@ -836,7 +839,7 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     if ( flags['S'] && input_lineno > 0) {
-        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=" << root(prod_prob,(FLOAT_TYPE)n_pairs).invert() << std::endl;
+        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=" << prod_prob.takeRoot(n_pairs).invert() << std::endl;
     }
 
 #ifndef NODELETE

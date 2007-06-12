@@ -4,6 +4,7 @@
 // code treating uint64_t as array of two uint32_t made for failed nbest duplicate removal when -O and debug prints off, so try this:
 #define HASH_JENKINS_UINT64
 
+#include <cassert>
 #include <iterator>
 #include <boost/cstdint.hpp>
 #include <iostream>
