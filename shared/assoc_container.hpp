@@ -105,7 +105,7 @@ typename Vector::value_type &at_expand(Vector &vec,std::size_t i,const typename 
 template <class Vector> inline
 typename Vector::value_type &at_expand(Vector &vec,std::size_t i) 
 {
-    resize_up_for_idnex(vec,i);
+    resize_up_for_index(vec,i);
     return vec[i];
 }
 
