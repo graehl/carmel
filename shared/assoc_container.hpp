@@ -4,7 +4,9 @@
 /// algorithms for map-like (or hash_map-like), and vector as map with unsigned keys (with default value for expansion).
 /// the latter version are named *_at.  at_expand = rvalue.  at_default = lvalue (doesn't grow even if off range)
 
-/// accumulate (default = addition).  see accumulate.hpp for others.  maintain min/max.  
+/// accumulate (default = addition).  see accumulate.hpp for others.  maintain min/max.
+
+#include <graehl/shared/array.hpp>
 
 #ifdef GRAEHL__DBG_ASSOC
 #include <graehl/shared/debugprint.hpp>
@@ -92,12 +94,19 @@ inline void maybe_increase_max(Map &table,const Key &key,const Val &val) {
 }
 
 template <class Vector> inline
-typename Vector::value_type &at_expand(Vector &vec,std::size_t index,const typename Vector::value_type &default_value=typename Vector::value_type()) 
+typename Vector::value_type &at_expand(Vector &vec,std::size_t i,const typename Vector::value_type &default_value) 
 {
     std::size_t sz=vec.size();
-    if (index>=sz)
-        vec.resize(index+1,default_value); //     vec.insert(vec.end(),(index-sz)+1,default_value);
-    return vec[index];
+    if (i>=sz)
+        vec.resize(i+1,default_value); //     vec.insert(vec.end(),(i-sz)+1,default_value);
+    return vec[i];
+}
+
+template <class Vector> inline
+typename Vector::value_type &at_expand(Vector &vec,std::size_t i) 
+{
+    resize_up_for_idnex(vec,i);
+    return vec[i];
 }
 
 template <class Vector,class DefaultInit> inline

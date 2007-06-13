@@ -1,6 +1,7 @@
 #include <graehl/shared/config.h>
 #include <graehl/carmel/src/compose.h>
 #include <graehl/carmel/src/fst.h>
+#include <graehl/shared/array.hpp>
 
 namespace graehl {
 
@@ -44,7 +45,7 @@ struct TrioNamer {
 if ( (pDest = find_second(stateMap,triDest)) ) \
  { states[sourceState].addArc(FSTArc(in, out, *pDest, weight)); \
 } else { \
-  add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    states.push_back();    \
+  add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    push_back(states);    \
   if ( namedStates ) {      namer.make(triDest.aState, triDest.bState, triDest.filter);      stateNames.add(buf);   \
   }  }} while(0)
 #else
@@ -52,7 +53,7 @@ if ( (pDest = find_second(stateMap,triDest)) ) \
 #define COMPOSEARC do { \
         hash_traits<HashTable<TrioKey,int> >::insert_return_type i;                              \
   if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
-	trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);states.push_back();\
+	trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);push_back(states);\
 	if ( namedStates ) { namer.make(triDest.aState, triDest.bState, triDest.filter);\
 	  stateNames.add(buf);   \
 	}} else trioID.num=i.first->second; \
@@ -95,7 +96,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   trioID.tri = TrioKey(0,0,0);
 
   stateMap[trioID.tri]=0; // add the initial state
-  states.push_back();
+  push_back(states);
   if ( namedStates ) {
     namer.make(0,0,0);
     stateNames.add(buf);
@@ -146,7 +147,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
             hash_traits<HAT>::insert_return_type ins;
             if ( (ins = arcStateMap.insert(HAT::value_type(mediate,numStates()))).second ) {			  
 			  mediateState = numStates();
-              states.push_back();
+              push_back(states);
               if ( namedStates ) {
                 char *p = buf;
 				char *limit=namer.limit;
@@ -248,7 +249,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 triDest.filter = 0;
                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                   Assert ( map[l->out] == (*r)->in );
-                  out = (*r)->out;
+                  out = (*r)->out; //FIXME: uninit
                   weight = l->weight * (*r)->weight;
                   triDest.bState = (*r)->dest;
                   COMPOSEARC;
@@ -390,7 +391,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
   }
   if ( nFinal > 1 ) {
     final = numStates();
-    states.push_back();
+    push_back(states);
     if ( namedStates )
       stateNames.add("final");
     for ( i = 0 ; i < 3 ; ++i )

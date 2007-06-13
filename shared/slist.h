@@ -7,7 +7,7 @@
 #include <iterator>
 #include <memory> // for placement new
 #include <vector> // for sort
-#include <algorithm> // sort
+#include <algorithm> // sort,swap
 #include <functional> // for less
 #include <cassert>
 
@@ -336,7 +336,7 @@ class slist_shared :
 
     void swap(self_type& x)
     {
-        Node* tmp = head; head = x.head; x.head = tmp;
+        std::swap(head,x.head);
     }
 
     // default operator =: shallow

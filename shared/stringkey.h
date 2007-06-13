@@ -1,5 +1,5 @@
-#ifndef STRINGKEY_H
-#define STRINGKEY_H
+#ifndef GRAEHL_SHARED__STRINGKEY_H
+#define GRAEHL_SHARED__STRINGKEY_H
 
 #include <graehl/shared/config.h>
 #include <string>
@@ -16,16 +16,29 @@ struct StringKey {
     StringKey() : str(empty.str) {}
     explicit StringKey(unsigned i) : str(static_itoa(i)) {}
     StringKey(const char *c) : str(const_cast<char *>(c)) {}
+    
+    static inline
+    char * alloc(unsigned len) 
+    {
+        return (char *)::operator new(sizeof(char)*(len+1));
+    }
+
+    static inline
+    void dealloc(char *p) 
+    {
+        ::operator delete(p);
+    }
+    
     const char *clone()
     {
         char *old = str;
-        str = std::strcpy(NEW char[strlen(str)+1], str);
+        str = std::strcpy(alloc(strlen(str)), str);
         return old;
     }
     void kill()
     {
         if (str != empty.str)
-            delete str;
+            dealloc(str);
         str = empty.str;
     }
     //operator char * () { return str; }

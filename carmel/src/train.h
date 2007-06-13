@@ -1,5 +1,6 @@
-#ifndef TRAIN_H
-#define TRAIN_H 1
+#ifndef CARMEL_TRAIN_H
+#define CARMEL_TRAIN_H
+
 #include <graehl/shared/config.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/2hash.h>
@@ -30,7 +31,9 @@ struct State {
 #ifdef BIDIRECTIONAL
   int hitcount;			// how many times index is used, negative for index on input, positive for index on output
 #endif
-  HashTable<IntKey, List<HalfArc> > *index;
+    typedef HashTable<IntKey, List<HalfArc> > Index;
+    
+  Index *index;
   State() : arcs(), size(0), 
 #ifdef BIDIRECTIONAL
        hitcount(0), 
@@ -41,9 +44,9 @@ struct State {
     hitcount = s.hitcount;
 #endif
 //    if (s.index == NULL)
-      index = (HashTable<IntKey, List<HalfArc> > *) NULL ;
+      index = (Index *) NULL ;
 //    else
-//     index = NEW HashTable<IntKey, List<HalfArc> >(*s.index);
+//     index = NEW Index(*s.index);
   } 
   ~State() { flush(); }
   void indexBy(int output = 0) {
@@ -58,7 +61,7 @@ struct State {
       if ( index )
 	return;
 #endif
-      index = NEW HashTable<IntKey, List<HalfArc> >(size);
+      index = NEW Index(size);
       for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
@@ -84,7 +87,7 @@ struct State {
     if ( index )
       return;
 #endif
-    index = NEW HashTable<IntKey, List<HalfArc> >(size);
+    index = NEW Index(size);
     for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
 #ifdef QUEERINDEX
 	  if ( !(list = find_second(*index,(IntKey)l->in)) )
@@ -169,9 +172,25 @@ struct State {
       }
     }
   }
+    void swap(State &b) 
+    {
+        using std::swap;
+        swap(size,b.size);
+        swap(arcs,b.arcs);
+        swap(index,b.index); // safe only because List iterators are stable when lists are swapped        
+#ifdef BIDIRECTIONAL
+        swap(hitcount,b.hitcount);
+#endif 
+    }
 };
 
-std::ostream& operator << (std::ostream &out, struct State &s); // Yaser 7-20-2000
+inline void swap(State &a,State &b) 
+{
+    a.swap(b);
+}
+
+          
+std::ostream& operator << (std::ostream &out, State &s); // Yaser 7-20-2000
 
 struct IOPair {
   int in;
@@ -222,8 +241,8 @@ struct IOSymSeq {
   symSeq o;
   FLOAT_TYPE weight;
   void init(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE w) {
-    i.n = inSeq.count_length();
-    o.n = outSeq.count_length();
+      i.n = inSeq.size();
+      o.n = outSeq.size();
     i.let = NEW int[i.n];
     o.let = NEW int[o.n];
     i.rLet = NEW int[i.n];

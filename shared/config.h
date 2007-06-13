@@ -1,10 +1,11 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
-//#define USE_GRAEHL_HASH_MAP
+#define USE_GRAEHL_HASH_MAP
+// with stdext::hash_map, copies may be made of values (not tested lately)
 
-// use singly linked list
-#define USE_SLIST
+// use singly linked list - recommended (less space)
+//#define USE_SLIST
 
 #ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION
@@ -45,7 +46,7 @@ namespace Config {
 typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
 typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (can't be unsigned type)
 
-#define COPYRIGHT_YEAR 2005
+#define COPYRIGHT_YEAR 2007
 
 //#define DEBUGNAN
 
@@ -109,7 +110,7 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
 // definitely needs to be defined for Microsoft (debug or release) now
 
-// allows WFST to be indexed in either direction?  not recommended.
+// allows WFST to be indexed in either direction?  not recommended. or tested lately.
 //#define BIDIRECTIONAL
 
 

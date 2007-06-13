@@ -8,6 +8,7 @@
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/input_error.hpp>
+#include <graehl/shared/assoc_container.hpp>
 
 namespace graehl {
 
@@ -111,11 +112,11 @@ WFST::WFST(const char *buf)
     symbolInNumber = in->indexOf(symbol);
     symbolOutNumber = out->indexOf(symbol);
     Assert (symbolInNumber == symbolOutNumber);
-    states.push_back();
+    push_back(states);
     states[final].addArc(FSTArc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
     ++final;
   }
-  states.push_back();                    // final state
+  push_back(states);                    // final state
 }
 
 struct ltstr // Yaser 8-3-200
@@ -180,10 +181,10 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
       maxSymbolNumber = symbolInNumber ;
   }
   if (permuteNumbers){
-    states.push_back();                  /* final state*/
+    push_back(states);                  /* final state*/
     final = pow2((int)symbols.size())-1;
     for (unsigned int k=0; k < final; k++){
-      states.push_back();
+      push_back(states);
       vector<bool> taken(maxSymbolNumber+1);
       for (int i = 0 ; i <= maxSymbolNumber ;++i)
         taken[i] = false ;
@@ -199,7 +200,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
   else{
     final = pow2((int)strSymbols.size())-1 ;
     for (unsigned int k=0; k <= final; k++){
-      states.push_back();
+      push_back(states);
     }
     int temp_final = final ;
     //    vector<bool> visited(final,false);
@@ -226,7 +227,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                 }
                 else {
                   while (from_state >= states.size()) // (from_state >= numStates()
-                    states.push_back();
+                    push_back(states);
                   if (i == strSymbols[l].length()-2)
                     to_state = k+temp ;
                   else
@@ -269,13 +270,13 @@ int WFST::getStateIndex(const char *buf) {
 		Config::warn() << "Since intial state was a number, expected an integer state index, but got: " << buf << std::endl << "\t(-K command line option should not be used if states are named)" << std::endl;
       return -1;
     } else {
-      states(st); // expands dynarray
+      resize_up_for_index(states,st);
       return st;
     }
   } else {
     st = stateNames.indexOf((char *)buf);
     if ( st >= states.size() ) {
-      states.push_back();
+      push_back(states);
       Assert(st + 1 == states.size());
     }
     return st;

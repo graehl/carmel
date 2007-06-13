@@ -707,8 +707,8 @@ int pGroup;
 Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
 {
   int i, o, s;
-  int nIn = inSeq.count_length();
-  int nOut = outSeq.count_length();
+  int nIn = inSeq.size();
+  int nOut = outSeq.size();
   int *inLet = (nIn > 0 ? NEW int[nIn] : NULL);
   int *outLet = (nOut > 0 ? NEW int[nOut] : NULL);
   int *pi;
