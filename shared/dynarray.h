@@ -45,6 +45,7 @@
 
 namespace graehl {
 
+
 // doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length
 // allowed.  you must construct and deconstruct elements yourself.  raw dynamic
 // uninitialized (classed) storage array copy constructor is very fast, of
@@ -945,6 +946,12 @@ public:
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
 };
+
+template <typename T,class A>
+void push_back(dynamic_array<T,A> &v)
+{
+    v.push_back();
+}
 
 
 

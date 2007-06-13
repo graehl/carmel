@@ -431,7 +431,8 @@ public:
           #ifndef STATIC_HASH_EQUAL
            m_eq(ht.m_eq)
           #endif
-  base_alloc(*(base_alloc *)this){
+  base_alloc((base_alloc &)ht){
+      Assert(0 == "don't copy hash tables, please");
         table = alloc_table(siz+1);
         for (int i=0; i <= siz; ++i)
           table[i] = clone_bucket(ht.table[i]);

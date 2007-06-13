@@ -32,7 +32,7 @@ default: mydefault
 include ../shared/graehl.mk
 
 mydefault: all
-	cd test && ./runtests.sh ../$(BIN)/carmel
+#	cd test && ./runtests.sh ../$(BIN)/carmel
 #all
 
 #CCFLAGS_PRF    = $(CCFLAGS) -O3 -pg

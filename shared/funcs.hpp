@@ -288,16 +288,7 @@ std::vector<typename V1::value_type> inner_product(const V1 &v1,const V2 &v2)
     std::vector<typename V1::value_type> ret;
     inner_product(v1,v2,ret);
     return ret;
-}
-
-template <class C> inline
-void resize_up_for_index(C &c,size_t i) 
-{
-    const size_t newsize=i+1;
-    if (newsize > c.size())
-        c.resize(newsize);
-}
-    
+}    
 
 // I hope you have an efficient swap :)
 template <class Container> inline

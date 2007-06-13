@@ -174,7 +174,7 @@ CPPFLAGS +=  -pedantic
 endif
 CPPFLAGS_TEST += $(CPPFLAGS) -ggdb
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
-CPPFLAGS_OPT += $(CPPFLAGS)
+CPPFLAGS_OPT += $(CPPFLAGS) -ggdb
 #-DNDEBUG
 
 #-fno-var-tracking
@@ -245,7 +245,7 @@ $$(BIN)/$(1).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB)) --static
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB))
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
 DEBUG_PROGS += $$(BIN)/$(1).debug
 $(1): $$(BIN)/$(1).debug

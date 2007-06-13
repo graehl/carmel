@@ -1,4 +1,4 @@
-#include "slist.h"
+#include "../slist.h"
 #include <iostream>
 #include <algorithm>
 using namespace std;

@@ -3,6 +3,7 @@
 #define GRAEHL_SHARED_LIST_H
 #include <graehl/shared/config.h>
 #include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/word_spacer.hpp>
 
 #ifdef USE_SLIST
 #include <graehl/shared/slist.h>
@@ -22,6 +23,12 @@ class List : public STL_LIST<T,A> {
     typedef STL_LIST<T,A> S;
 public:
     typedef List<T,A> self_type;
+    void swap(self_type &b)
+    {
+        using std::swap;
+        S::swap(b);
+    }
+              
     typedef typename S::const_iterator const_iterator;
 #ifdef USE_SLIST
     typedef typename S::erase_iterator iterator;
@@ -80,19 +87,16 @@ public:
     template <class O> void print(O&o) const
     {
         o << "(";
-        bool first=true;
-        for( typename List<T,A>::const_iterator n=begin(),e=list.end();n!=e;++n) {
-            o << *n
-                if (first)
-                    first=false;
-                else
-                    o << ' ';
+        word_spacer sp;
+        for( const_iterator n=const_begin(),e=const_end();n!=e;++n) {
+            o << sp << *n;            
         }
         o << ")";
     }
     TO_OSTREAM_PRINT    
 #endif 
 };
+
 /*
   template <typename T>
   class ListPostInserter {

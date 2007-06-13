@@ -1,5 +1,5 @@
-#ifndef FST_H 
-#define FST_H
+#ifndef CARMEL_FST_H 
+#define CARMEL_FST_H
 
 
 
@@ -13,7 +13,6 @@
 #include <graehl/shared/2hash.h>
 #include <graehl/shared/list.h>
 #include <graehl/shared/weight.h>
-#include <graehl/shared/dynarray.h>
 #include <graehl/shared/strhash.h>
 #include <graehl/shared/graph.h>
 #include <graehl/carmel/src/train.h>
@@ -94,7 +93,7 @@ class WFST {
   Alphabet<StringKey,StringPool> *out;
   Alphabet<StringKey,StringPool> stateNames;
   unsigned int final;	// final state number - initial state always number 0
-  dynamic_array<State> states;
+    std::vector<State> states;
   	 
   //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
   //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
@@ -322,7 +321,7 @@ class WFST {
   // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
   
   
-  void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource
+  void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource.  if no arc having same group number in weightSource is found, remove the arc from *this
   void numberArcsFrom(int labelStart); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1
   void lockArcs();		// put all arcs in group 0 (weights are locked)
   //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<IntKey, int>; }

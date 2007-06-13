@@ -51,6 +51,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
         WFST::out_arc_per_line(*fstout);
     else
         WFST::out_state_per_line(*fstout);
+    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
 }
 
 static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {

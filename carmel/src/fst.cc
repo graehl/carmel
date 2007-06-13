@@ -2,6 +2,7 @@
 #include <cctype>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/kbest.h>
+#include <graehl/shared/array.hpp>
 
 namespace graehl {
 
@@ -12,8 +13,8 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
 {
   Assert(valid());
 
-  int nIn = inSeq.count_length();
-  int nOut = outSeq.count_length();
+  int nIn = inSeq.size();
+  int nOut = outSeq.size();
   int i, o;
   Weight ***w = forwardSumPaths(inSeq, outSeq);
 
@@ -107,7 +108,7 @@ namespace WFST_impl {
           Ci = state->index->begin();
     }
   public:
-    NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state(wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
+    NormGroupIter(WFST::NormalizeMethod meth,WFST &wfst_) : wfst(wfst_),state(&*wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
     bool moreGroups() { return state != end; }
     template <class charT, class Traits>
     std::ios_base::iostate print(std::basic_ostream<charT,Traits>& os) const {
@@ -116,7 +117,7 @@ namespace WFST_impl {
       } else {
         os << "(joint normalizaton group for ";
       }
-      os << "state=" << wfst.stateName(wfst.states.index_of(state)) << ")";
+      os << "state=" << wfst.stateName(index_of(wfst.states,state)) << ")";
       return std::ios_base::goodbit;
     }
     void beginArcs() {
@@ -339,17 +340,19 @@ void WFST::assignWeights(const WFST &source)
   }
   Weight *pWeight;
   for ( s = 0 ; s < numStates() ; ++s) {
-        source.states[s].flush();
-    List<FSTArc> &arcs = source.states[s].arcs;
+        states[s].flush();
+    List<FSTArc> &arcs = states[s].arcs;
     for ( List<FSTArc>::erase_iterator a=arcs.erase_begin(),end=arcs.erase_end(); a !=end ; ) {
-      if ( isTied(pGroup = a->groupId) )
-        if ( (pWeight = find_second(groupWeight,(IntKey)pGroup)) )
-          a->weight = *pWeight;
-        else {
-          a=states[s].arcs.erase(a);
-          continue;
+        if ( isTied(pGroup = a->groupId) ) {
+            if ( (pWeight = find_second(groupWeight,(IntKey)pGroup)) ) {
+                a->weight = *pWeight;
+                ++a;
+            } else {
+                a=arcs.erase(a);
+            }
+        } else {
+            ++a;
         }
-      ++a;
     }
   }
 }
@@ -403,11 +406,11 @@ Graph WFST::makeGraph() const
   GraphState *g = NEW GraphState[numStates()];
   GraphArc gArc;
   for ( int i = 0 ; i < numStates() ; ++i ){
-    for ( List<FSTArc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l ) {
+    for ( List<FSTArc>::const_iterator l=states[i].arcs.begin(),end = states[i].arcs.end(); l != end; ++l ) {
       gArc.source = i;
       gArc.dest = l->dest;
       gArc.weight = l->weight.getCost();
-      gArc.data = &(*l);
+      gArc.data = (void *)&(*l);
       Assert(gArc.dest < numStates() && gArc.source < numStates());
       g[i].arcs.push(gArc);
     }
@@ -429,12 +432,12 @@ Graph WFST::makeEGraph() const
   GraphState *g = NEW GraphState[numStates()];
   GraphArc gArc;
   for ( int i = 0 ; i < numStates() ; ++i )
-    for ( List<FSTArc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l )
+    for ( List<FSTArc>::const_iterator l=states[i].arcs.begin(),end = states[i].arcs.end(); l != end; ++l )
       if ( l->in == 0 && l->out == 0 ) {
         gArc.source = i;
         gArc.dest = l->dest;
         gArc.weight = - l->weight.weight; // - log
-        gArc.data = &(*l);
+        gArc.data = (void *)&(*l);
         Assert(gArc.dest < numStates() && gArc.source < numStates());
         g[i].arcs.push(gArc);
       }
@@ -627,7 +630,7 @@ void WFST::removeMarkedStates(bool marked[])
     return;
   }
   stateNames.removeMarked(marked, oldToNew);
-  states.removeMarked(marked);
+  remove_marked_swap(states,marked); //states.removeMarked(marked);
   for ( unsigned i = 0 ; i < states.size() ; ++i ) {
     states[i].flush();
     states[i].renumberDestinations(oldToNew);
