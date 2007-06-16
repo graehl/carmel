@@ -290,6 +290,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
     StringKey finalName;
     try {        
+        named_states=1;
         int stateNumber, destState, inL, outL;
         Weight weight;
         char c, d, buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
@@ -297,7 +298,6 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         REQUIRE(getString(istr, buf));
         finalName = buf;
 
-        named_states=1;
         if (!alwaysNamed) {
             named_states=0;
             for (const char *p=finalName.c_str();*p;++p)

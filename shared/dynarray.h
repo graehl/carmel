@@ -12,6 +12,8 @@
 
 //#include "config.h"
 
+#include <boost/utility/enable_if.hpp>
+#include <boost/type_traits/is_integral.hpp>
 #include <string>
 #include <new>
 #include <cassert>
@@ -33,6 +35,7 @@
 #include <boost/config.hpp>
 
 #ifdef TEST
+# include <graehl/shared/array.hpp>
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -115,7 +118,8 @@ public:
         for (T *p=vec;p!=endspace;++p)
             new(p) T();
     }
-    void construct(const T& val) {
+    template <class V>
+    void construct(const V& val) {
         for (T *p=vec;p!=endspace;++p)
             new(p) T(val);
     }
@@ -422,7 +426,8 @@ public:
     explicit dynamic_array(unsigned sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { dynarray_assert(this->invariant()); }
 
     // creates vector holding sp copies of t; does initialize
-    explicit dynamic_array(unsigned sp,const T& t) : array<T,Alloc>(sp) {
+    template <class V>
+    explicit dynamic_array(unsigned sp,const V& t) : array<T,Alloc>(sp) {
         construct(t);
         dynarray_assert(invariant());
     }
@@ -461,6 +466,14 @@ public:
         dynarray_assert(this->invariant());
     }
 
+    template<class RIT>
+    dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b) : array<T,Alloc>(b-a) 
+    {
+        std::uninitialized_copy(a,b,this->begin());
+        endv=this->endspace;
+        dynarray_assert(this->invariant());
+    }
+    
     // warning: stuff will still be destructed!
     void copyto(T *to,T * from,unsigned n) {
         memcpy(to,from,sizeof(T)*n);
@@ -528,7 +541,7 @@ public:
                     newSpace = index+1;
                 else
                     do { newSpace *=2; } while ( index >= newSpace ) ; //FIXME: overflow if newSpace > 2^31
-                resize_up(newSpace);
+                realloc_up(newSpace);
             }
             T *v = end();
             endv=this->vec+index+1;
@@ -592,9 +605,9 @@ public:
     {
         if ( endv >= this->endspace )
             if (this->vec == this->endspace )
-                resize_up(4);
+                realloc_up(4);
             else
-                resize_up(this->capacity()*2); // FIXME: 2^31 problem
+                realloc_up(this->capacity()*2); // FIXME: 2^31 problem
         return endv++;
     }
     void undo_push_back_raw() {
@@ -688,16 +701,31 @@ public:
 //  operator T *() { return this->vec; } // use at own risk (will not be valid after resize)
     // use begin() instead
 protected:
-    void resize_up(unsigned int newSpace) {
-        //     we are somehow allowing 0-capacity vectors now?, so add 1
-        //if (newSpace==0) newSpace=1;
-        dynarray_assert(newSpace > this->capacity());
-        // may be used when we've increased endv past endspace, in order to fix things
+    void construct_n_more(unsigned n) 
+    {
+        Assert(endv+n <= this->endspace);
+        while (--n)
+            new (endv++) T();
+    }
+
+    void resize_up(unsigned new_sz) 
+    {
         unsigned sz=size();
-        T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
+        dynarray_assert(new_sz > size());
+        realloc_up(new_sz);
+        construct_n_more(new_sz-sz);
+    }
+    
+    void realloc_up(unsigned int new_cap) {
+        //     we are somehow allowing 0-capacity vectors now?, so add 1
+        //if (new_cap==0) new_cap=1;
+        unsigned sz=size();
+        dynarray_assert(new_cap > this->capacity());
+        // may be used when we've increased endv past endspace, in order to fix things
+        T *newVec = this->allocate(new_cap); // can throw but we've made no changes yet
         memcpy(newVec, this->vec, sz*sizeof(T));
         dealloc_safe();
-        set_begin(newVec);this->set_capacity(newSpace);set_size(sz);
+        set_begin(newVec);this->set_capacity(new_cap);set_size(sz);
         // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
     }
     void dealloc_safe() {
@@ -706,23 +734,17 @@ protected:
             this->deallocate(this->vec,oldcap); // can't throw
     }
 public:
-    void resize(unsigned int newSpace) {
+    void resize(unsigned int newSz) {
         dynarray_assert(invariant());
-        //    if (newSpace==0) newSpace=1;
-        if (endv==this->endspace) return;
+        //    if (newSz==0) newSz=1;
         unsigned sz=size();
-        if ( newSpace < sz )
-            newSpace = sz;
-        if (newSpace) {
-            T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
-            memcpy(newVec, this->vec, sz*sizeof(T));
-            dealloc_safe();
-            set_begin(newVec);this->set_capacity(newSpace);set_size(sz);
-        } else {
-            dealloc_safe();
-            this->vec=endv=this->endspace=0;
+        if (newSz<sz) {
+            reduce_size(newSz);
+            return;
         }
-        // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
+        if (sz==newSz)
+            return;
+        resize_up(newSz);
     }
     //iterator_tags<Input> == random_access_iterator_tag
     template <class Input>
@@ -806,24 +828,28 @@ public:
 
     void reserve(unsigned int newSpace) {
         if (newSpace > this->capacity())
-            resize_up(newSpace);
+            realloc_up(newSpace);
     }
     void reserve_at_least(unsigned req) {
         unsigned newcap=this->capacity();
         if (req > newcap) {
             if (newcap==0)
-                resize_up(req);
+                realloc_up(req);
             else {
                 do {
                     newcap *=2;
                 } while (req > newcap); //FIXME: could loop forever if you have >= 2^31 capacity already
-                resize_up(newcap);
+                realloc_up(newcap);
             }
         }
     }
     unsigned int size() const { return (unsigned)(endv-this->vec); }
     void set_size(unsigned newSz) { endv=this->vec+newSz; dynarray_assert(this->invariant()); }
     void reduce_size(unsigned int n) {
+        if (n==0) {
+            clear_dealloc();
+            return;
+        }
         T *end=endv;
         reduce_size_nodestroy(n);
         for (T *i=endv;i<end;++i)
@@ -833,6 +859,12 @@ public:
         dynarray_assert(invariant() && n<=size());
         endv=this->vec+n;
     }
+    void clear_dealloc_nodestroy() 
+    {
+        dealloc_safe();
+        endv=this->vec=this->endspace=0;
+    }
+    
     void clear_nodestroy() {
         endv=this->vec;
     }
@@ -841,6 +873,12 @@ public:
         for ( T *i=this->begin();i!=end();++i)
             i->~T();
         clear_nodestroy();
+    }
+    void clear_dealloc() {
+        dynarray_assert(invariant());
+        for ( T *i=this->begin();i!=end();++i)
+            i->~T();
+        clear_dealloc_nodestroy();
     }
     ~dynamic_array() {
         clear();
@@ -954,20 +992,6 @@ void push_back(dynamic_array<T,A> &v)
 }
 
 
-
-// outputs sequence to iterator out, of new indices for each element i, corresponding to deleting element i from an array when remove[i] is true (-1 if it was deleted, new index otherwise), returning one-past-end of out (the return value = # of elements left after deletion)
-template <class AB,class ABe,class O>
-unsigned new_indices(AB i, ABe end,O out) {
-    int f=0;
-    while (i!=end)
-        *out++ = *i++ ? -1 : f++;
-    return f;
-};
-
-template <class AB,class O>
-unsigned new_indices(AB remove,O out) {
-    return new_indices(remove.begin(),remove.end());
-}
 
 template <typename T,typename Alloc,class charT, class Traits, class Reader>
 //std::ios_base::iostate array<T,Alloc>::read(std::basic_istream<charT,Traits>& in,Reader read)
@@ -1229,6 +1253,21 @@ BOOST_AUTO_UNIT_TEST( dynarray )
             ++c;
         else
             BOOST_CHECK(da[d1map[i]]==aa[i]);
+
+// remove_marked_swap
+    std::vector<int> ea(aa.begin(),aa.end());
+    dynamic_array<int> eb(ea.begin(),ea.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(ea.begin(),ea.end(),aa.begin(),aa.end());
+    remove_marked_swap(ea,rm1); // removeMarked
+    BOOST_REQUIRE(ea.size()==sz1);
+    for (int i=0;i<sz1;++i)
+        BOOST_CHECK(a1[i]==ea[i]);
+    remove_marked_swap(eb,rm2);
+    BOOST_REQUIRE(eb.size()==sz2);
+    for (int i=0;i<sz2;++i)
+        BOOST_CHECK(a2[i]==eb[i]);
+
+    
     BOOST_CHECK(c==4);
     db(10)=1;
     BOOST_CHECK(db.size()==11);

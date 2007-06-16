@@ -65,7 +65,7 @@ struct State {
       for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
 	    l != end  ; 
 	    ++l ) {
-#define QUEERINDEX
+// if you distrust ht[key], I guess: //#define QUEERINDEX
 #ifdef QUEERINDEX
  	if ( !(list = find_second(*index,(IntKey)l->out)) )
 	  add(*index,(IntKey)l->out, 

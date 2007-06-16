@@ -73,6 +73,13 @@ namespace graehl {
         typedef std::pair<find_return_type,bool> insert_return_type;
     };
         
+template <class Map,class Key> inline
+bool has_key(const Map &map,const Key &key)
+{
+    return map.find(key)!=map.end();
+}
+
+
 #ifndef USE_GRAEHL_HASH_MAP
 template <class K,class V,class H,class P,class A>
 inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
@@ -96,12 +103,6 @@ typename Map::data_type *find_second(Map &map,const Key &key)
     if (find_it == map.end())
         return NULL;
     return &find_it->second;
-}
-
-template <class Map,class Key> inline
-bool has_key(const Map &map,const Key &key)
-{
-    return map.find(key)!=map.end();
 }
 
 #else

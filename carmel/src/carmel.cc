@@ -16,6 +16,7 @@
 #include <ctime>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/myassert.h>
+#include <boost/config.hpp>
 
 using namespace graehl;
 
@@ -98,25 +99,51 @@ void outWithoutQuotes(const char *str, ostream &out) {
 
 
 struct wfst_paths_printer {
-    enum { SIDETRACKS_ONLY=0 };
+    bool SIDETRACKS_ONLY;
     unsigned n_paths;
     Weight w;
     WFST &wfst;
     ostream &out;
     bool *flags;
-    wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) { n_paths=0;}
+    HashTable<FSTArc *,unsigned> prevent_cycle;
+    bool only_sidetracks;
+    
+    wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {
+        n_paths=0;
+        SIDETRACKS_ONLY=flags['%'];
+    }
     void start_path(unsigned k,FLOAT_TYPE cost) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
         ++n_paths;
         w.setCost(cost);
+        clear_cycle_detect();
     }
     void end_path() {
         if (!flags['W'])
             out << w;
         out << endl;
+#ifdef DEBUGKBEST
+        Config::debug() << endl;
+#endif 
     }
-    void visit_best_arc(const GraphArc &a) {
+    void clear_cycle_detect() 
+    {
+        prevent_cycle.clear();
+    }
+    void visit_best_arc(const GraphArc &a,bool best=true) {
         const char * outSym;
         FSTArc &arc=*(FSTArc *)a.data;
+        if (1 || best) {
+#ifdef DEBUGKBEST
+            Config::debug() << (best ? " best-arc=" : " sidetrack-arc=") << arc << " GraphArc="<<a;
+#endif 
+            if (has_key(prevent_cycle,&arc)) {
+                throw std::runtime_error("Cycle in best path - must be negative cost.");
+                return;
+            } else {
+                prevent_cycle[&arc]=1;
+            }
+        }
+        
         if ( flags['O'] || flags['I'] ) {
             if ( flags['O'] )
                 outSym = wfst.outLetter(arc.out);
@@ -135,7 +162,10 @@ struct wfst_paths_printer {
         }
 
     }
-    void visit_sidetrack_arc(const GraphArc &a) { visit_best_arc(a); }
+    void visit_sidetrack_arc(const GraphArc &a) {
+        clear_cycle_detect();   
+        visit_best_arc(a,false);
+    }
 
 };
 
@@ -365,6 +395,7 @@ main(int argc, char *argv[]){
         kPaths = 1;
     istream **inputs, **files, **newed_inputs;
     char const**filenames;
+    char const**alloced_filenames;
     int nInputs,nChain;
 #ifdef MARCU
     initModels();
@@ -376,7 +407,7 @@ main(int argc, char *argv[]){
         nChain+=(int)Models.size();
 #endif
         newed_inputs = inputs = NEW istream *[nInputs];
-        filenames = NEW char const*[nChain];
+        alloced_filenames = filenames = NEW char const*[nChain];
         if ( flags['r'] ) {
             inputs[nParms] = &cin;
             filenames[nParms] = "stdin";
@@ -840,7 +871,7 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     if ( flags['S'] && input_lineno > 0) {
-        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=" << prod_prob.takeRoot(n_pairs).invert() << std::endl;
+        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=" << prod_prob.root(n_pairs).inverse() << std::endl;
     }
 
 #ifndef NODELETE
@@ -852,7 +883,7 @@ main(int argc, char *argv[]){
     ::operator delete(chainMemory);
     delete[] parm; // alias filenames unless -s
     if(flags['s'])
-        delete[] filenames;
+        delete[] alloced_filenames;
     if(nTarget != -1) {
         if(line_in != &cin)
             delete line_in; // rest were deleted after transducers were read

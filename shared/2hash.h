@@ -10,6 +10,7 @@
 #include <graehl/shared/hashtable_fwd.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/byref.hpp>
+#include <boost/config.hpp>
 
 #include <graehl/shared/config.h>
 #include <ostream>
@@ -238,8 +239,8 @@ template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=s
   hasher hash_function() const { return get_hash(); }
   key_equal key_eq() const { return get_eq(); }
  protected:
-  int siz;  // always a power of 2, stored as 1 less than actual for fast mod operator (implemented as and)
-  int cnt;
+  unsigned siz;  // always a power of 2, stored as 1 less than actual for fast mod operator (implemented as and)
+  unsigned cnt;
 #ifndef STATIC_HASHER
   H hash;
 #endif
@@ -260,9 +261,11 @@ template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=s
         return hash;
 #endif
   }
-  int growAt;
-  typedef typename A::template rebind<HashEntry<K,V> >::other base_alloc;
-  HashEntry<K,V> **table;
+  unsigned growAt;
+    typedef HashEntry<K,V> Node;
+    
+  typedef typename A::template rebind<Node >::other base_alloc;
+  Node **table;
   std::size_t hashToPos(std::size_t hashVal) const
     {
       return hashVal & siz;
@@ -270,14 +273,14 @@ template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=s
 public:
     template <class F>
     void visit_key_val(F &f) {
-        typedef HashEntry<K,V> *bucket_chain;
+        typedef Node *bucket_chain;
         typedef bucket_chain *buckets_iterator;
 #ifdef SUPERDEBUG
         DBP_VERBOSE(0);
         DBP_ON;
         DBPC3("visit_key_val",*this,table);
 # endif
-        for (buckets_iterator i=const_cast<HashEntry<K,V> **>(table),e=const_cast<HashEntry<K,V> **>(table+siz);i<=e;++i) { // <= because siz = #buckets-1
+        for (buckets_iterator i=const_cast<Node **>(table),e=const_cast<Node **>(table+siz);i<=e;++i) { // <= because siz = #buckets-1
             for (bucket_chain p=*i;p;p=p->next) {
 #ifdef SUPERDEBUG
                 DBPC5("visit_key_val",p,i,p->first,p->second);
@@ -287,7 +290,7 @@ public:
         }
     }
  class local_iterator : public std::iterator<std::forward_iterator_tag, std::pair<const K,V> > {
-   typedef HashEntry<K,V> *T;
+   typedef Node *T;
    T m_rep;
    typedef std::pair<const K,V> value_type;
  public:
@@ -317,7 +320,7 @@ public:
    typedef local_iterator const_local_iterator;
 
    const_local_iterator begin(std::size_t i) const {
-         return const_cast<HashEntry<K,V> *>(table[i]);
+         return const_cast<Node *>(table[i]);
    }
    const_local_iterator end(std::size_t i) const {
          return NULL;
@@ -374,8 +377,8 @@ private:
     }
         */
 public:
-  static const int DEFAULTHASHSIZE=8;
-  static const int MINHASHSIZE=4;
+    BOOST_STATIC_CONSTANT(unsigned,DEFAULTHASHSIZE=8);
+    BOOST_STATIC_CONSTANT(unsigned,MINHASHSIZE=4);
   void swap(HashTable<K,V,H,P,A> &h)
     {
       const std::size_t s = sizeof(HashTable<K,V>)/sizeof(char) + 1;
@@ -385,14 +388,14 @@ public:
       memcpy(&h, temp, s);
     }
 
-        HashTable(int sz, const hasher &hf)
+        HashTable(unsigned sz, const hasher &hf)
 #ifndef STATIC_HASHER
           : hash(hf)
 #endif
         {
           init(sz);
         }
-        HashTable(int sz, const hasher &hf,const key_equal &eq_)
+        HashTable(unsigned sz, const hasher &hf,const key_equal &eq_)
           #if !(defined(STATIC_HASHER) && defined(STATIC_HASH_EQUAL))
           :
 #endif
@@ -408,7 +411,7 @@ public:
         {
           init(sz);
         }
-        HashTable(int sz, const hasher &hf,const key_equal &eq_,const A &a) :
+        HashTable(unsigned sz, const hasher &hf,const key_equal &eq_,const A &a) :
                 #ifndef STATIC_HASHER
         hash(hf)
         #endif
@@ -434,43 +437,43 @@ public:
   base_alloc((base_alloc &)ht){
       Assert(0 == "don't copy hash tables, please");
         table = alloc_table(siz+1);
-        for (int i=0; i <= siz; ++i)
+        for (unsigned i=0; i <= siz; ++i)
           table[i] = clone_bucket(ht.table[i]);
   }
 
 
-        explicit HashTable(int sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD) {
+        explicit HashTable(unsigned sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD) {
           init(sz,mLoad);
         }
   protected:
-        HashEntry<K,V> *clone_bucket(HashEntry<K,V> *p) {
+        Node *clone_bucket(Node *p) {
           if (!p)
                 return p;
-          HashEntry<K,V> *ret=alloc_node();
-          PLACEMENT_NEW(ret)HashEntry<K,V>(p->first,p->second,clone_bucket(p->next));
+          Node *ret=alloc_node();
+          PLACEMENT_NEW(ret)Node(p->first,p->second,clone_bucket(p->next));
           return ret;
         }
-  void init(int sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD)
+  void init(unsigned sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD)
     {
       if ( sz < MINHASHSIZE )
         siz = MINHASHSIZE;
       else
         siz = pow2Bound(sz);
       cnt = 0;
-      growAt = (int)(mLoad * siz);
+      growAt = (unsigned)(mLoad * siz);
       if ( growAt < 2 )
         growAt = 2;
       siz--;   // size is actually siz + 1
       alloc_table(siz+1);
-      for ( int i = 0 ; i <= siz ; i++ )
+      for ( unsigned i = 0 ; i <= siz ; i++ )
         table[i] = NULL;
     }
         public:
           void clear() {
-                for (int i=0;i<=siz;i++) {
-                  for(HashEntry<K,V> *entry=table[i],*next;entry;entry=next) {
+                for (unsigned i=0;i<=siz;i++) {
+                  for(Node *entry=table[i],*next;entry;entry=next) {
                         next=entry->next;
-                        free_node(entry);
+                        delete_node(entry);
                   }
                   table[i]=NULL;
                 }
@@ -495,9 +498,9 @@ public:
       if ( ++cnt >= growAt )
                 rehash(2 * siz);
       std::size_t i = bucket(first);
-          HashEntry<K,V> *next=table[i];
+          Node *next=table[i];
       table[i] = alloc_node();
-                PLACEMENT_NEW (table[i]) HashEntry<K,V>(first, second, next);
+                PLACEMENT_NEW (table[i]) Node(first, second, next);
       return &table[i]->second;
     }
 public:
@@ -512,17 +515,19 @@ public:
         insert_return_type insert(const K& first, const V& second=V()) {
           std::size_t hv=get_hash()(first);
           std::size_t bucket=hashToPos(hv);
-          for ( HashEntry<K,V> *p = table[bucket]; p ; p = p->next )
+          for ( Node *p = table[bucket]; p ; p = p->next )
                 if ( equal(p->first,first) )
-                  return std::pair<find_return_type,bool>((find_return_type)p,false);
+                  return insert_return_type(
+                      (find_return_type)p
+                      ,false);
 
           if ( ++cnt >= growAt ) {
                 rehash(2 * siz);
                 bucket=hashToPos(hv);
           }
-          HashEntry<K,V> *next=table[bucket];
+          Node *next=table[bucket];
           table[bucket] = alloc_node();
-          PLACEMENT_NEW (table[bucket]) HashEntry<K,V>(first, second, next);
+          PLACEMENT_NEW (table[bucket]) Node(first, second, next);
           return insert_return_type(
                 reinterpret_cast<find_return_type>(table[bucket])
                 ,true);
@@ -536,14 +541,14 @@ public:
 
   find_return_type find(const K &first) const
     {
-      for ( HashEntry<K,V> *p = table[bucket(first)]; p ; p = p->next )
+      for ( Node *p = table[bucket(first)]; p ; p = p->next )
         if ( equal(p->first,first) )
           return reinterpret_cast<find_return_type>(p);
       return NULL;
     }
   V *find_second(const K& first) const
         {
-      for ( HashEntry<K,V> *p = table[bucket(first)]; p ; p = p->next )
+      for ( Node *p = table[bucket(first)]; p ; p = p->next )
         if ( equal(p->first,first) )
           return &(p->second);
       return NULL;
@@ -564,15 +569,15 @@ public:
           return insert(first).first->second;
     }
 
-  int erase(const K &first)
+    bool erase(const K &first)
     {
       std::size_t i = bucket(first);
-      HashEntry<K,V> *prev = NULL, *p = table[i];
+      Node *prev = NULL, *p = table[i];
       if ( !p )
         return 0;
       else if ( equal(p->first,first) ) {
         table[i] = p->next;
-        free_node(p);
+        delete_node(p);
         --cnt;
         return 1;
       }
@@ -582,7 +587,7 @@ public:
         if ( !p ) break;
         if ( equal(p->first,first) ) {
           prev->next = p->next;
-          free_node(p);
+          delete_node(p);
           --cnt;
           return 1;
         }
@@ -597,16 +602,16 @@ public:
   float max_load_factor() const { return (float)growAt / (float)(siz + 1); }
   void max_load_factor(float mLoad)
     {
-      growAt = (int)(mLoad * (siz+1));
+      growAt = (unsigned)(mLoad * (siz+1));
       if ( growAt < 2 )
         growAt = 2;
     }
         protected:
-  void rehash_pow2(int request)
+  void rehash_pow2(unsigned request)
     {
       std::size_t hashVal;
-          int oldSiz = siz;
-      HashEntry<K,V> *next, *p, **i, **oldTable = table;
+      unsigned oldSiz = siz;
+      Node *next, *p, **i, **oldTable = table;
       siz = request;
       alloc_table(siz);
       siz--;  // actual size is siz + 1 (power of 2)
@@ -619,11 +624,11 @@ public:
           p->next = table[hashVal];
           table[hashVal] = p;
         }
-      growAt = int((float(growAt) * (siz+1)) / (oldSiz+1))+1;
+      growAt = unsigned((float(growAt) * (siz+1)) / (oldSiz+1))+1;
       free_table(oldTable,oldSiz);
     }
         public:
-          void rehash(int request) { rehash_pow2(pow2Bound(request)); }
+          void rehash(unsigned request) { rehash_pow2(pow2Bound(request)); }
   friend class HashIter<K,V>;
   //friend class HashConstIter<K,V>;
 
@@ -632,27 +637,32 @@ public:
 
   private:
 #ifndef _MSC_VER
-        typedef typename A::template rebind<HashEntry<K,V> * >::other table_alloc;
+        typedef typename A::template rebind<Node * >::other table_alloc;
 
-        void alloc_table(unsigned int _n)
+        void alloc_table(unsigned _n)
         {
           table=table_alloc().allocate(_n); // should we be keeping the alloc around permanently?  probably.
         }
-        void free_table(HashEntry<K,V> ** t,int size) {
+        void free_table(Node ** t,unsigned size) {
           table_alloc().deallocate(t,size+1);
         }
 #else
 
-        void alloc_table(unsigned int _n)
+        void alloc_table(unsigned _n)
         {
-          table=NEW HashEntry<K,V> *[_n];
+          table=NEW Node *[_n];
         }
-        void free_table(HashEntry<K,V> ** t, int size) {
+        void free_table(Node ** t, unsigned size) {
           delete[] t;
         }
 #endif
-        HashEntry<K,V> *alloc_node() { return this->allocate(1); }
-        void free_node(HashEntry<K,V> *p) { return this->deallocate(p,1); }
+        Node *alloc_node() { return this->allocate(1); }
+    void delete_node(Node *p) 
+    {
+        p->~Node();
+        free_node(p);
+    }
+        void free_node(Node *p) { return this->deallocate(p,1); }
 //              template <class _K,class _V,class _H,class _A>
 //friend _V *find_second(const HashTable<_K,_V,_H,_A>& ht,const _K& first);
 };
