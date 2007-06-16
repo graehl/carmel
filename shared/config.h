@@ -1,10 +1,10 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
-#define USE_GRAEHL_HASH_MAP
+//#define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
-// use singly linked list - recommended (less space)
+// use singly linked list - recommended (less space) - but FIXME: double free!
 //#define USE_SLIST
 
 #ifndef SINGLE_PRECISION

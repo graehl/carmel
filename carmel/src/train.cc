@@ -185,7 +185,7 @@ while(1) { // random restarts
       pp_ratio_scaled.setZero();
     } else {
       Weight pp_ratio=newPerplexity/lastPerplexity;
-      pp_ratio_scaled = pp_ratio.takeRoot(newPerplexity.getLogImp()); // EM delta=(L'-L)/abs(L')
+      pp_ratio_scaled = pp_ratio.root(newPerplexity.getLogImp()); // EM delta=(L'-L)/abs(L')
       Config::log() << " (relative-perplexity-ratio=" << pp_ratio_scaled << "), max{d(weight)}=" << lastChange;
 #ifdef DEBUG_ADAPTIVE_EM
       Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
@@ -522,8 +522,9 @@ Weight WFST::train_estimate(bool delete_bad_training)
 #ifdef DEBUG_ESTIMATE_PP
     Config::debug() << ',' << fin;
 #endif
-    prodModProb *= fin.raisePower(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
-
+    fin.raisePower(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
+    prodModProb *= fin;
+    
 #ifdef DEBUGTRAIN
     Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif
@@ -604,7 +605,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
 
   } // end of while(training examples)
 
-  return prodModProb.takeRoot(trn->totalEmpiricalWeight).invert(); // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
+  return prodModProb.root(trn->totalEmpiricalWeight).inverse(); // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
 
 }
 
@@ -680,7 +681,7 @@ int pGroup;
          if (delta_scale > 1.)
          if ( !isLocked((d->arc)->groupId) )
                                          if ( d->scratch.isPositive() ) {
-                                             d->weight() = d->scratch * ((d->em_weight / d->scratch).raisePower(delta_scale));
+                                             d->weight() = d->scratch * ((d->em_weight / d->scratch).pow(delta_scale));
                                                 NANCHECK(d->scratch);   NANCHECK(d->weight());
 
                                          }

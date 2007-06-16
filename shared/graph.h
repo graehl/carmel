@@ -12,6 +12,8 @@
 
 namespace graehl {
 
+static const unsigned DFS_NO_PREDECESSOR=(unsigned)-1;
+
 struct GraphArc {
   int source;
   int dest;

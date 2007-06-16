@@ -149,7 +149,7 @@ extern GraphState *shortPathTree;
 template <class Visitor>
 void insertShortPath(int source, int dest, Visitor &v)
 {
-    if (!Visitor::SIDETRACKS_ONLY) {        
+    if (!v.SIDETRACKS_ONLY) {        
         GraphArc *taken;
         for ( int iState = source ; iState != dest; iState = taken->dest ) {
             taken = &shortPathTree[iState].arcs.top();
@@ -174,7 +174,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
     Graph shortPathGraph = shortestPathTreeTo(graph, dest,dist);
     FLOAT_TYPE path_cost;
 #ifdef DEBUGKBEST
-    Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
+    Config::debug() << "Shortest path graph ("<<source<<"->"<<dest<<"): "<<k<<'\n' << shortPathGraph;
 #endif
     shortPathTree = shortPathGraph.states;
     if ( shortPathTree[source].arcs.notEmpty() || dest == source ) {
@@ -187,12 +187,15 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
         if ( k > 1 ) {
             GraphHeap::freeAll();
             pathGraph = NEW GraphHeap *[nStates];
+            for ( unsigned i = 0 ; i < nStates ; ++i ) pathGraph[i] = 0; // necessary because we may not have reduced (removed states that aren't start->state->finish reachable
             sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
             bool *visited = NEW bool[nStates];
             for ( unsigned i = 0 ; i < nStates ; ++i ) visited[i] = false;
 //      freeAllSidetracks();
             Graph revPathTree = reverseGraph(shortPathGraph);
             depthFirstSearch(revPathTree, dest, visited, buildSidetracksHeap); // depthFirstSearch recursively calls the function passed as the last argument (in this  case "buildSidetracksHeap")
+            delete[] visited;
+
             if ( pathGraph[source] ) {
 #ifdef DEBUGKBEST
                 Config::debug() << "printing trees\n";
@@ -257,10 +260,10 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                         GraphArc *cutarc=*cut;
                         insertShortPath(sourceState, cutarc->source, v); // stitch end of last sidetrack to beginning of this one
                         sourceState = cutarc->dest;
-                        if (!Visitor::SIDETRACKS_ONLY)
+                        if (!v.SIDETRACKS_ONLY)
                             untelescope_cost(*cutarc,dist);
                         v.visit_sidetrack_arc(*cutarc);
-                        if (!Visitor::SIDETRACKS_ONLY)
+                        if (!v.SIDETRACKS_ONLY)
                             telescope_cost(*cutarc,dist);                        
                     }
 
@@ -319,12 +322,13 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                 } // end of while
                 delete[] pathQueue;
                 delete[] retired;
-            } // end of if (pathGraph[0])
+            } else {
+                Config::log() << "No best paths from start to finish, so no kbest.\n";
+            }// end of if (pathGraph[0])
             GraphHeap::freeAll(); // FIXME: global
             freeAllSidetracks(); // FIXME: global
 
             delete[] pathGraph;
-            delete[] visited;
             freeGraph(revPathTree);
             freeGraph(sidetracks);
         } // end of if (k > 1)

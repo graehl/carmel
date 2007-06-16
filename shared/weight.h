@@ -175,7 +175,7 @@ struct logweight {                 // capable of representing nonnegative reals
     out_default_log(std::basic_ostream<A,B>& os)  { os.iword(thresh_index) = DEFAULT_LOG; return os; }
 
 
-//  static logweight<Real> result;
+//  static self_type result;
   // default = operator:
 
   //double toFloat() const {
@@ -226,7 +226,7 @@ struct logweight {                 // capable of representing nonnegative reals
   bool isPositive() const {
     return weight > -FLOAT_INF();
   }
-    static logweight<Real> much_larger(const logweight<Real> o=1.) {
+    static self_type much_larger(const self_type o=1.) {
         return MUCH_BIGGER_LN + o.weight;
     }
     template <class Real2>
@@ -275,11 +275,11 @@ struct logweight {                 // capable of representing nonnegative reals
     static const Real ln10 = log(10.f);
     weight=w*ln10;
   }
-    static logweight<Real> ZERO() {
-        return logweight<Real>();
+    static self_type ZERO() {
+        return self_type();
     }
-    static logweight<Real>  INF() {
-        return logweight<Real>(false,false);
+    static self_type  INF() {
+        return self_type(false,false);
     }
   //  weight() : weight(-FLOAT_INF()) {}
   logweight() { setZero(); }
@@ -303,17 +303,17 @@ struct logweight {                 // capable of representing nonnegative reals
     logweight(int f) {setReal(f);}
     logweight(unsigned f) {setReal(f);}
 #endif
-  logweight<Real> &operator += (logweight<Real> w)
+  self_type &operator += (self_type w)
   {
     *this = *this + w;
     return *this;
   }
-  logweight<Real> &operator -= (logweight<Real> w)
+  self_type &operator -= (self_type w)
   {
     *this = *this - w;
     return *this;
   }
-  logweight<Real> &operator *= (logweight<Real> w)
+  self_type &operator *= (self_type w)
   {
 #ifdef WEIGHT_CORRECT_ZERO
     if (!isZero())
@@ -321,7 +321,7 @@ struct logweight {                 // capable of representing nonnegative reals
                         weight += w.weight;
     return *this;
   }
-  logweight<Real> &operator /= (logweight<Real> w)
+  self_type &operator /= (self_type w)
   {
                                 Assert(!w.isZero());
 #ifdef WEIGHT_CORRECT_ZERO
@@ -334,28 +334,46 @@ struct logweight {                 // capable of representing nonnegative reals
 
     return *this;
   }
-  logweight<Real> &raisePower(Real power) {
+  self_type &raisePower(Real power) {
 #ifdef WEIGHT_CORRECT_ZERO
                 if (!isZero())
 #endif
                         weight *= power;
     return *this;
   }
-  logweight<Real> &invert() {
+  self_type &invert() {
     weight = -weight;
     return *this;
   }
-  logweight<Real> inverse() {
-      return logweight<Real>(-weight,true);
+  self_type inverse() {
+      return self_type(-weight,false
   }
-  logweight<Real> &takeRoot(Real nth) {
+  self_type &takeRoot(Real nth) {
 #ifdef WEIGHT_CORRECT_ZERO
                 if (!isZero())
 #endif
                         weight /= nth;
     return *this;
   }
-  logweight<Real> &operator ^= (Real power) { // raise logweight<Real>^power
+    self_type root(Real nth) const
+    {
+#ifdef WEIGHT_CORRECT_ZERO
+        if (!isZero())
+            return *this;
+#endif
+        return self_type(weight/nth,false);
+    }
+
+    self_type pow(Real nth) const
+    {
+#ifdef WEIGHT_CORRECT_ZERO
+        if (!isZero())
+            return *this;
+#endif
+        return self_type(weight*nth,false);
+    }
+    
+  self_type &operator ^= (Real power) { // raise self_type^power
     raisePower(power);
     return *this;
   }
@@ -517,13 +535,13 @@ inline logweight<Real> pow_logexponent(logweight<Real> a, logweight<Real> b) {
 }
 
 template<class Real>
-inline logweight<Real> root(logweight<Real> const&w, Real nth) {
+inline logweight<Real> root(logweight<Real> w, Real nth) {
         w.takeRoot(nth);
         return w;
 }
 
 template<class Real>
-inline logweight<Real> pow(logweight<Real> const&w, Real nth) {
+inline logweight<Real> pow(logweight<Real> w, Real nth) {
         w.raisePower(nth);
         return w;
 }
@@ -609,8 +627,8 @@ inline bool operator != (logweight<Real> lhs, logweight<Real> rhs) { return lhs.
 
 #define WEIGHT_FORWARD_OP(op) WEIGHT_FORWARD_OP_RET(op,logweight<Real>)
 
-WEIGHT_DEFINE_OP(*,return logweight<Real>(lhs.weight+rhs.weight,true))
-WEIGHT_DEFINE_OP(/,return logweight<Real>(lhs.weight-rhs.weight,true))
+WEIGHT_DEFINE_OP(*,return logweight<Real>(lhs.weight+rhs.weight,false
+WEIGHT_DEFINE_OP(/,return logweight<Real>(lhs.weight-rhs.weight,false
 
 /*
 //FIXME: doesn't implicitly convert!

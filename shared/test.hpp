@@ -105,8 +105,8 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
   template <class C>
   struct expect_visitor 
   {
-      unsigned next;
       const C *array_expected;
+      unsigned next;
       expect_visitor(const C * e) : array_expected(e),next(0) {}
       expect_visitor(const expect_visitor &o) : array_expected(o.array_expected),next(o.next) {}
       template <class D>

@@ -19,7 +19,7 @@ void freeAllSidetracks()
 {
     for (unsigned int i = 0 ; i < Repository.size() ;i++)
         if (Repository[i])
-            delete (pGraphArc *) Repository[i] ;
+            delete[] (pGraphArc *) Repository[i] ;
     Repository.clear();
 }
 
@@ -32,11 +32,14 @@ void buildSidetracksHeap(unsigned state, unsigned pred)
   // the caller function (e.g., bestPaths) deletes the memory when it is done.
   GraphHeap *prev;
 
-  if ( pred == -1 )
+  if ( pred == DFS_NO_PREDECESSOR )
     prev = NULL;
   else
     prev = pathGraph[pred];
 
+#ifdef DEBUGKBEST
+    Config::debug() << "buildSidetracksHeap state="<<state<<" predecessor="<<pred<<"\n";
+#endif 
 
   List<GraphArc> &arcs=sidetracks.states[state].arcs;
   List<GraphArc>::val_iterator s=arcs.val_begin(),end=arcs.val_end();
