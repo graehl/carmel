@@ -5,7 +5,7 @@
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
 // use singly linked list - recommended (less space) - but FIXME: double free!
-#define USE_SLIST
+//#define USE_SLIST
 
 #ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION

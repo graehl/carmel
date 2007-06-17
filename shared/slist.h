@@ -632,17 +632,29 @@ int a1[] = { 1, 4, 5 };
 int a2[] = {3,4,6,7};
 BOOST_AUTO_UNIT_TEST( test_slist )
 {
+    using namespace graehl;
     typedef slist<int> L;
     L l(a,a+7),m,n,o(a1,a1+3),p(a2,a2+4);
     m.set_prepend(a,a+7);
     BOOST_CHECK_EQUAL(l.size(),7);
     BOOST_CHECK(l!=o);
     BOOST_CHECK(o!=p);
+    L q=p;
+    BOOST_CHECK_EQUAL(p,q);
+    p.front()=10;
+    BOOST_CHECK(p!=q);
     L::back_insert_iterator out(n);
     for (int i=0;i<7;++i)
         *out++ = a[i];
     BOOST_CHECK_EQUAL(l,n);
-    
+    std::vector<L> v;
+    for (int i=0;i<100;++i) {
+        v.push_back(L());
+        v.back().set_prepend(a,a+(i%7));
+    }
+    for (int i=0;i<100;++i) {
+        BOOST_CHECK_EQUAL(v[i],L(a,a+(i%7)));
+    }
 }
 #endif 
     
