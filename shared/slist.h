@@ -384,6 +384,11 @@ class slist_shared :
                 return false;
         }
     }
+
+    bool operator!=(const self_type & o) const
+    {
+        return !(*this==o);
+    }
     
     allocator_type &allocator() 
     {
@@ -628,10 +633,16 @@ int a2[] = {3,4,6,7};
 BOOST_AUTO_UNIT_TEST( test_slist )
 {
     typedef slist<int> L;
-    L l(a,a+7),m;
+    L l(a,a+7),m,n,o(a1,a1+3),p(a2,a2+4);
     m.set_prepend(a,a+7);
     BOOST_CHECK_EQUAL(l.size(),7);
-    BOOST_CHECK_EQUAL(l,m);
+    BOOST_CHECK(l!=o);
+    BOOST_CHECK(o!=p);
+    L::back_insert_iterator out(n);
+    for (int i=0;i<7;++i)
+        *out++ = a[i];
+    BOOST_CHECK_EQUAL(l,n);
+    
 }
 #endif 
     
