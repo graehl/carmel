@@ -289,6 +289,7 @@ class trainInfo {
   trainInfo() {};
  private:
   trainInfo(const trainInfo& a){
+      throw std::runtime_error("Do not copy trainInfo");
   }
   /*  if (a.forArcs == NULL)
       forArcs = NULL ;
