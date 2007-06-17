@@ -11,6 +11,10 @@
 #include <functional> // for less
 #include <cassert>
 
+#ifdef TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 #ifdef SLIST_EXTRA_ASSERT
 # define slist_assert(x) assert(x)
 #else 
@@ -66,6 +70,38 @@ class slist_shared :
     typedef typename A::template rebind<impl::slist_node<T> >::other allocator_type;
   typedef impl::slist_node<T> Node;
     typedef slist_shared<T,A> self_type;
+    struct back_insert_iterator : public std::iterator<std::output_iterator_tag, T>
+    {
+        self_type *list;
+        Node **ptail;
+        explicit back_insert_iterator(self_type &l) : list(&l)
+        {
+            for (ptail=&l.head_node(); *ptail; ptail=&(*ptail)->next ) ;
+        }
+        back_insert_iterator& operator++()
+        {
+            return *this;
+        }
+        back_insert_iterator& operator++(int)
+        {
+            return *this;
+        }
+        back_insert_iterator &operator *() 
+        {
+            return *this;
+        }
+        back_insert_iterator &operator=(back_insert_iterator const& o) 
+        {
+            list=o.list;
+            ptail=o.ptail;
+        }
+        T & operator =(T const& t) 
+        {
+            return list->push_after(ptail,t)->data;
+        }
+        
+    };
+        
   Node* head;
     
   typedef T value_type;
@@ -88,6 +124,10 @@ class slist_shared :
 
         //XXX should be private but can't get friend working
         Node* m_rep;
+        bool is_end() const 
+        {
+            return !m_rep;
+        }        
         //        friend class const_iterator;
 
         //        friend class slist_shared;
@@ -220,6 +260,11 @@ class slist_shared :
         {
             const_iterator tmp(*this); m_rep = m_rep->next; return tmp;
         }
+        bool is_end() const 
+        {
+            return !m_rep;
+        }
+        
         inline typename slist_shared::const_reference operator*() const { return m_rep->data; }
         inline typename slist_shared::const_pointer operator->() const { return &m_rep->data; }
         inline bool operator==(const const_iterator& x) const
@@ -283,10 +328,29 @@ class slist_shared :
     /// shallow copy
     slist_shared(const self_type& L) : head(L.head) {}
     
-    slist_shared(Node *n) : head(n) {}
+    explicit slist_shared(Node *n) : head(n) {}
     slist_shared(const T &it) : head(alloc()) {new(head) Node(it,0);}
-
-    void append_deep_copy(Node **pto,Node *from)
+    template <class I>
+    slist_shared(I i,I end)
+    {
+        set_prepend_raw(i,end,NULL);
+    }
+    template <class I>
+    void set_prepend_raw(I i,I end,Node *rest=NULL) 
+    {        
+        Node **pnext=&head;
+        for (;i!=end;++i) {
+            push_after(pnext,*i);
+        }
+        *pnext=rest;
+    }
+    template <class I>
+    void set_prepend(I i,I end)
+    {
+        set_prepend_raw(i,end,head);
+    }
+    
+    static inline void append_deep_copy(Node **pto,Node *from)
     {
         for (;from;from=from->next)
             pto=&((*pto=construct(from->data))->next);        
@@ -309,6 +373,18 @@ class slist_shared :
         construct_deep_copy(L);
     }
 
+    bool operator==(const self_type & o) const
+    {
+        for (const_iterator a=begin(),b=o.begin();;++a,++b) {
+            if (a.is_end())
+                return b.is_end();
+            if (b.is_end())
+                return false;
+            if (*a!=*b)
+                return false;
+        }
+    }
+    
     allocator_type &allocator() 
     {
         return *this;
@@ -362,6 +438,15 @@ class slist_shared :
     {
         new(push_front_raw()) T(t0,t1,t2);
     }
+    template <class D>
+    Node * push_after(Node **&pnext,D const& d) 
+    {
+        Node* ret=construct(d);
+        *pnext=ret;
+        pnext=&ret->next;
+        ret->next=0;
+        return ret;
+    }
     
     T *push_front_raw()
     {
@@ -382,14 +467,14 @@ class slist_shared :
     Node *construct() 
     {
         Node *ret=alloc();
-        new(ret->data)T();
+        new(&ret->data)T();
         return ret;
     }
     template <class T0>
     Node *construct(T0 t0) 
     {
         Node *ret=alloc();
-        new(ret->data)T(t0);
+        new(&ret->data)T(t0);
         return ret;
     }
 
@@ -516,6 +601,8 @@ class slist : public slist_shared<T,A>
         slist_base() {}
     slist(slist_base const& L) { this->construct_deep_copy(L); }
     slist(const T &it) : slist_base(it) {}
+    template <class I>
+    slist(I i,I end) : slist_base(i,end) {}
     self_type& operator=(slist_base const& x)
     {
         this->assign_deep_copy(x);
@@ -533,5 +620,19 @@ class slist : public slist_shared<T,A>
     }
 };
 
+#ifdef TEST
+
+int a[] = { 1,2,3,4,5,6,7 };
+int a1[] = { 1, 4, 5 };
+int a2[] = {3,4,6,7};
+BOOST_AUTO_UNIT_TEST( test_slist )
+{
+    typedef slist<int> L;
+    L l(a,a+7),m;
+    m.set_prepend(a,a+7);
+    BOOST_CHECK_EQUAL(l.size(),7);
+    BOOST_CHECK_EQUAL(l,m);
+}
+#endif 
     
 #endif

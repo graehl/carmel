@@ -26,7 +26,6 @@ public:
     typedef List<T,A> self_type;
     void swap(self_type &b)
     {
-        using std::swap;
         S::swap(b);
     }
               
@@ -49,7 +48,7 @@ public:
     {
         return S::const_end();
     }
-    typedef S::back_insert_iterator back_insert_iterator;
+    typedef typename S::back_insert_iterator back_insert_iterator;
 #else 
     typedef typename List::iterator erase_iterator;
     typedef typename List::iterator val_iterator;
