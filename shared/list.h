@@ -4,6 +4,7 @@
 #include <graehl/shared/config.h>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/word_spacer.hpp>
+#include <iterator>
 
 #ifdef USE_SLIST
 #include <graehl/shared/slist.h>
@@ -48,7 +49,7 @@ public:
     {
         return S::const_end();
     }
-    
+    typedef S::back_insert_iterator back_insert_iterator;
 #else 
     typedef typename List::iterator erase_iterator;
     typedef typename List::iterator val_iterator;
@@ -58,8 +59,17 @@ public:
     typename List::iterator val_end() { return this->end(); }
     typename List::iterator erase_begin() { return this->begin(); }
     typename List::iterator erase_end() { return this->end(); }
+    struct back_insert_iterator : public std::insert_iterator<List>
+    {
+        explicit back_insert_iterator(List &l) : std::insert_iterator<List>(l,l.end())
+        {}
+    };
 #endif
-
+    back_insert_iterator back_inserter() 
+    {
+        return back_insert_iterator(*this);
+    }
+    
   //constructors
   List():STL_LIST<T,A>(){};
   List(const List &l):STL_LIST<T,A> (l){};

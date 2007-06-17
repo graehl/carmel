@@ -671,7 +671,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
     //List<List<PathArc> >::iterator insertHere=paths->begin();
     for (int i=0;i<k;) {
       paths->push_front(List<PathArc>());
-      if ( randomPath(insert_iterator<List<PathArc> >(paths->front(),paths->front().erase_begin()),max_len) == -1 ) {
+      if ( randomPath(paths->front().back_inserter(),max_len) == -1 ) {
         paths->pop_front();
       } else {
         ++i;
