@@ -79,7 +79,7 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
   default:
     while ( in.get(*++buf) && *buf != '\n' && *buf != '\t' && *buf != ' ' && *buf != '!' && *buf != ')' )
         CHECKBUFOVERFLOW;
-    if ( *buf == ')' )
+    if ( *buf == ')' || *buf == '!')
         in.unget();
     *buf = 0;
     if (buf[-1] == DOS_CR_CHAR)
