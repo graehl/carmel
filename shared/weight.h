@@ -81,16 +81,16 @@ struct logweight;
 //#define MAKENOTANON name ## __LINE__
 template<class Real>
 struct logweight {                 // capable of representing nonnegative reals
-  // internal implementation note: by their base e logarithm
+    // internal implementation note: by their base e logarithm
     typedef logweight<Real> self_type;
-  Real weight;
+    Real weight;
     typedef Real float_type;
-  private:
+ private:
     enum MAKENOTANON  { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
     enum name2 { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
-  // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
-  // 32 * ln 10 =~ 73
-  // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
+    // IEE float safe till about 10^38, loses precision earlier (10^32?) or 2^127 -> 2^120
+    // 32 * ln 10 =~ 73
+    // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
 //  enum make_not_anon_26 {LN_TILL_UNDERFLOW=} ;
     static inline Real LN_TILL_UNDERFLOW() 
     {
@@ -100,17 +100,17 @@ struct logweight {                 // capable of representing nonnegative reals
     {
         return MUCH_BIGGER_LN;
     }
-  static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
-  static const int thresh_index; // handle for OutThresh
+    static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
+    static const int thresh_index; // handle for OutThresh
     static THREADLOCAL int default_base;
     static THREADLOCAL int default_thresh;
-  public:
-  // linux g++ 3.2 didn't like static self-class member
-  static const Real FLOAT_INF() {
+ public:
+    // linux g++ 3.2 didn't like static self-class member
+    static const Real FLOAT_INF() {
         return HUGE_FLOAT;
-  }
+    }
 
-  // output format manipulators: cout << Weight::out_log10;
+    // output format manipulators: cout << Weight::out_log10;
     static void default_log10() {
         default_base=LOG10;
     }
@@ -153,22 +153,22 @@ struct logweight {                 // capable of representing nonnegative reals
 
     template<class A,class B> static std::basic_ostream<A,B>&
     out_default_base(std::basic_ostream<A,B>& os) { os.iword(base_index) = DEFAULT_BASE; return os; }
-  template<class A,class B> static std::basic_ostream<A,B>&
+    template<class A,class B> static std::basic_ostream<A,B>&
     out_log10(std::basic_ostream<A,B>& os)  { os.iword(base_index) = LOG10; return os; }
 
-  template<class A,class B> static std::basic_ostream<A,B>&
+    template<class A,class B> static std::basic_ostream<A,B>&
     out_exp(std::basic_ostream<A,B>& os)  { os.iword(base_index) = EXP; return os; }
 
-  template<class A,class B> static std::basic_ostream<A,B>&
+    template<class A,class B> static std::basic_ostream<A,B>&
     out_ln(std::basic_ostream<A,B>& os) { os.iword(base_index) = LN; return os; }
 
-  template<class A,class B> static std::basic_ostream<A,B>&
+    template<class A,class B> static std::basic_ostream<A,B>&
     out_sometimes_log(std::basic_ostream<A,B>& os) { os.iword(thresh_index) = SOMETIMES_LOG; return os; }
 
-  template<class A,class B> static std::basic_ostream<A,B>&
+    template<class A,class B> static std::basic_ostream<A,B>&
     out_always_log(std::basic_ostream<A,B>& os)  { os.iword(thresh_index) = ALWAYS_LOG; return os; }
 
-  template<class A,class B> static std::basic_ostream<A,B>&
+    template<class A,class B> static std::basic_ostream<A,B>&
     out_never_log(std::basic_ostream<A,B>& os)  { os.iword(thresh_index) = NEVER_LOG; return os; }
 
     template<class A,class B> static std::basic_ostream<A,B>&
@@ -176,56 +176,56 @@ struct logweight {                 // capable of representing nonnegative reals
 
 
 //  static self_type result;
-  // default = operator:
+    // default = operator:
 
-  //double toFloat() const {
-  //return getReal();
-  //}
+    //double toFloat() const {
+    //return getReal();
+    //}
 
-  double getReal() const {
-    return std::exp(weight);
-  }
-  void setRandomFraction() {
+    double getReal() const {
+        return std::exp(weight);
+    }
+    void setRandomFraction() {
         setReal(random_pos_fraction());
-  }
-  Real getLog(Real base) const {
-    return weight / log(base);
-  }
-  Real getLogImp() const {
-    return weight;
-  }
-  typedef Real cost_type;
-  cost_type getCost() const {
+    }
+    Real getLog(Real base) const {
+        return weight / log(base);
+    }
+    Real getLogImp() const {
+        return weight;
+    }
+    typedef Real cost_type;
+    cost_type getCost() const {
         return -weight;
-  }
-  void setCost(Real f) {
+    }
+    void setCost(Real f) {
         weight=-f;
-  }
+    }
 
-  Real getLn() const {
-    return weight;
-  }
-  Real getLog10() const {
-    static const Real oo_ln10 = 1./log(10.f);
-    return oo_ln10 * weight;
-  }
-  bool fitsInReal() const {
-      return isZero() || (getLn() < LN_TILL_UNDERFLOW() && getLn() > -LN_TILL_UNDERFLOW());
-  }
-  bool isInfinity() const {
-    return weight == FLOAT_INF();
-  }
-  void setInfinity() {
-    weight = FLOAT_INF();
-  }
+    Real getLn() const {
+        return weight;
+    }
+    Real getLog10() const {
+        static const Real oo_ln10 = 1./log(10.f);
+        return oo_ln10 * weight;
+    }
+    bool fitsInReal() const {
+        return isZero() || (getLn() < LN_TILL_UNDERFLOW() && getLn() > -LN_TILL_UNDERFLOW());
+    }
+    bool isInfinity() const {
+        return weight == FLOAT_INF();
+    }
+    void setInfinity() {
+        weight = FLOAT_INF();
+    }
 
-  bool isZero() const {
+    bool isZero() const {
 //    return weight == -FLOAT_INF();
         return !isPositive();
-  }
-  bool isPositive() const {
-    return weight > -FLOAT_INF();
-  }
+    }
+    bool isPositive() const {
+        return weight > -FLOAT_INF();
+    }
     static self_type much_larger(const self_type o=1.) {
         return MUCH_BIGGER_LN + o.weight;
     }
@@ -243,50 +243,49 @@ struct logweight {                 // capable of representing nonnegative reals
         return weight > (MUCH_BIGGER_LN - NEAR_LN_PROXIMITY);
 #  endif
     }
-  void setZero() {
-    weight = -FLOAT_INF();
-  }
-  bool isOne() const {
+    void setZero() {
+        weight = -FLOAT_INF();
+    }
+    bool isOne() const {
         return weight==0;
-  }
-  void setOne() {
+    }
+    void setOne() {
         weight=0;
-  }
-  void setReal(double f) {
-    if (f > 0)
-      weight=(Real)log(f);
-    else
-      setZero();
-  }
-        void NaNCheck() const {
+    }
+    void setReal(double f) {
+        if (f > 0)
+            weight=(Real)log(f);
+        else
+            setZero();
+    }
+    void NaNCheck() const {
 #ifdef DEBUG
-          if(weight!=weight) {
-                *(int*)0=0;
-                Assert(weight==weight);
-          }
-#else
-                assert(weight==weight);
-#endif
+        if(weight!=weight) {
+            *(int*)0=0;
+            Assert(weight==weight);
         }
-  void setLn(Real w) {
-    weight=w;
-  }
-  void setLog10(Real w) {
-    static const Real ln10 = log(10.f);
-    weight=w*ln10;
-  }
+#else
+        assert(weight==weight);
+#endif
+    }
+    void setLn(Real w) {
+        weight=w;
+    }
+    void setLog10(Real w) {
+        static const Real ln10 = log(10.f);
+        weight=w*ln10;
+    }
     static self_type ZERO() {
         return self_type();
     }
     static self_type  INF() {
         return self_type(false,false);
     }
-  //  weight() : weight(-FLOAT_INF()) {}
-  logweight() { setZero(); }
+    logweight() { setZero(); }
     logweight(zero_weight t) {setZero();}
     logweight(one_weight t) {setOne(); }
     logweight(inf_weight t) {setInfinity(); }
-  logweight(bool,bool) { setInfinity(); }
+    logweight(bool,bool) { setInfinity(); }
     logweight(Real log_weight,bool dummy) : weight(log_weight) {}
     template <class Real2>
     logweight(const logweight<Real2> &o) : weight(o.weight) {}
@@ -303,58 +302,58 @@ struct logweight {                 // capable of representing nonnegative reals
     logweight(int f) {setReal(f);}
     logweight(unsigned f) {setReal(f);}
 #endif
-  self_type &operator += (self_type w)
-  {
-    *this = *this + w;
-    return *this;
-  }
-  self_type &operator -= (self_type w)
-  {
-    *this = *this - w;
-    return *this;
-  }
-  self_type &operator *= (self_type w)
-  {
+    self_type &operator += (self_type w)
+    {
+        *this = *this + w;
+        return *this;
+    }
+    self_type &operator -= (self_type w)
+    {
+        *this = *this - w;
+        return *this;
+    }
+    self_type &operator *= (self_type w)
+    {
 #ifdef WEIGHT_CORRECT_ZERO
-    if (!isZero())
+        if (!isZero())
 #endif
-                        weight += w.weight;
-    return *this;
-  }
-  self_type &operator /= (self_type w)
-  {
-                                Assert(!w.isZero());
+            weight += w.weight;
+        return *this;
+    }
+    self_type &operator /= (self_type w)
+    {
+        Assert(!w.isZero());
 #ifdef WEIGHT_CORRECT_ZERO
 //              if (w.isZero())
-                //      weight = FLOAT_INF();
-    //else
-                        if (!isZero())
+        //      weight = FLOAT_INF();
+        //else
+        if (!isZero())
 #endif
             weight -= w.weight;
 
-    return *this;
-  }
-  self_type &raisePower(Real power) {
+        return *this;
+    }
+    self_type &raisePower(Real power) {
 #ifdef WEIGHT_CORRECT_ZERO
-                if (!isZero())
+        if (!isZero())
 #endif
-                        weight *= power;
-    return *this;
-  }
-  self_type &invert() {
-    weight = -weight;
-    return *this;
-  }
-  self_type inverse() {
-      return self_type(-weight,false
-  }
-  self_type &takeRoot(Real nth) {
+            weight *= power;
+        return *this;
+    }
+    self_type &invert() {
+        weight = -weight;
+        return *this;
+    }
+    self_type inverse() {
+        return self_type(-weight,false);    
+    }
+    self_type &takeRoot(Real nth) {
 #ifdef WEIGHT_CORRECT_ZERO
-                if (!isZero())
+        if (!isZero())
 #endif
-                        weight /= nth;
-    return *this;
-  }
+            weight /= nth;
+        return *this;
+    }
     self_type root(Real nth) const
     {
 #ifdef WEIGHT_CORRECT_ZERO
@@ -373,15 +372,15 @@ struct logweight {                 // capable of representing nonnegative reals
         return self_type(weight*nth,false);
     }
     
-  self_type &operator ^= (Real power) { // raise self_type^power
-    raisePower(power);
-    return *this;
-  }
+    self_type &operator ^= (Real power) { // raise self_type^power
+        raisePower(power);
+        return *this;
+    }
 
-  template<class charT, class Traits>
-inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o) {
-      return o.precision(sizeof(Real) > 4 ? 15 : 7);
-  }
+    template<class charT, class Traits>
+    inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o) {
+        return o.precision(sizeof(Real) > 4 ? 15 : 7);
+    }
 
     template<class charT, class Traits>
     std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o) const {
@@ -415,10 +414,10 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
     logweight(const std::string &str) 
     {
         /*
-        std::istringstream is(str);
-        if (read(is) == GENIOBAD) {
-            throwbadweight();
-        }
+          std::istringstream is(str);
+          if (read(is) == GENIOBAD) {
+          throwbadweight();
+          }
         */
         if (!setString(str))
             throwbadweight();
@@ -454,7 +453,7 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
         if (b+1<end && b[0]=='e' && b[1] == '^') {
             weight=std::strtod(b+2,&e);
             return e;
-       } else {
+        } else {
             double d=std::strtod(b,&e);
             if (e[0]=='l') {
                 if (e[1]=='n') {
@@ -474,47 +473,47 @@ inline static std::streamsize set_precision(std::basic_ostream<charT,Traits>& o)
     }
     
     
-template<class charT, class Traits>
-std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
-  char c;
-  double f=0;
-  EXPECTI_FIRST(in >> c);
-  if (c != 'e')
-      in.unget();
-  else {
-      EXPECTCH('^');
-      EXPECTI(in >> f);
-      setLn((Real)f);
-      return GENIOGOOD;
-  }
-  in >> f;
+    template<class charT, class Traits>
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
+        char c;
+        double f=0;
+        EXPECTI_FIRST(in >> c);
+        if (c != 'e')
+            in.unget();
+        else {
+            EXPECTCH('^');
+            EXPECTI(in >> f);
+            setLn((Real)f);
+            return GENIOGOOD;
+        }
+        in >> f;
 
-  if ( in.fail() )
-      goto fail;
-  if ( in.eof() ) {
-    setReal(f);
-  } else if ( (c = in.get()) == 'l' ) {
-   char n = in.get();
-   if ( n == 'n')
-    setLn((Real)f);
-   else if ( n == 'o' && in.get() == 'g' )
-    setLog10(f);
-   else {
-    setZero();
+        if ( in.fail() )
+            goto fail;
+        if ( in.eof() ) {
+            setReal(f);
+        } else if ( (c = in.get()) == 'l' ) {
+            char n = in.get();
+            if ( n == 'n')
+                setLn((Real)f);
+            else if ( n == 'o' && in.get() == 'g' )
+                setLog10(f);
+            else {
+                setZero();
+                return GENIOBAD;
+            }
+        } else {
+            in.unget();
+            setReal(f);
+        }
+        return GENIOGOOD;
+    fail:
+        setZero();
         return GENIOBAD;
-   }
-  } else {
-    in.unget();
-    setReal(f);
-  }
-  return GENIOGOOD;
-  fail:
-  setZero();
-  return GENIOBAD;
 
-}
-TO_OSTREAM_PRINT
-FROM_ISTREAM_READ
+    }
+    TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
 };
 
 template<class Real>
@@ -530,67 +529,67 @@ template<class T> inline T exponential(typename T::float_type exponent) {
 
 template<class Real>
 inline logweight<Real> pow_logexponent(logweight<Real> a, logweight<Real> b) {
-        a.raisePower(b.weight);
-        return a;
+    a.raisePower(b.weight);
+    return a;
 }
 
 template<class Real>
 inline logweight<Real> root(logweight<Real> w, Real nth) {
-        w.takeRoot(nth);
-        return w;
+    w.takeRoot(nth);
+    return w;
 }
 
 template<class Real>
 inline logweight<Real> pow(logweight<Real> w, Real nth) {
-        w.raisePower(nth);
-        return w;
+    w.raisePower(nth);
+    return w;
 }
 
 template<class Real>
 inline logweight<Real> operator ^(logweight<Real> const& base,Real exponent) {
-        return pow(base,exponent);
+    return pow(base,exponent);
 }
 
 
 /*
-template<class Real,class charT, class Traits>
-std::ios_base::iostate logweight<Real>::print(std::basic_ostream<charT,Traits>& o) const
-{
-}
+  template<class Real,class charT, class Traits>
+  std::ios_base::iostate logweight<Real>::print(std::basic_ostream<charT,Traits>& o) const
+  {
+  }
 
-template<class Real,class charT, class Traits>
-std::ios_base::iostate logweight<Real>::read(std::basic_istream<charT,Traits>& in)
-{
-}
+  template<class Real,class charT, class Traits>
+  std::ios_base::iostate logweight<Real>::read(std::basic_istream<charT,Traits>& in)
+  {
+  }
 */
 
 
 
 
 /*
-template<class Real,class charT, class Traits>
-std::basic_istream<charT,Traits>&
-operator >>
- (std::basic_istream<charT,Traits>& is, logweight<Real> &arg)
-{
-        return gen_extractor(is,arg);
-}
+  template<class Real,class charT, class Traits>
+  std::basic_istream<charT,Traits>&
+  operator >>
+  (std::basic_istream<charT,Traits>& is, logweight<Real> &arg)
+  {
+  return gen_extractor(is,arg);
+  }
 
-template<class Real,class charT, class Traits>
-std::basic_ostream<charT,Traits>&
-operator <<
- (std::basic_ostream<charT,Traits>& os, const logweight<Real> &arg)
-{
-        return gen_inserter(os,arg);
-}
+  template<class Real,class charT, class Traits>
+  std::basic_ostream<charT,Traits>&
+  operator <<
+  (std::basic_ostream<charT,Traits>& os, const logweight<Real> &arg)
+  {
+  return gen_inserter(os,arg);
+  }
 */
 //std::ostream& operator << (std::ostream &o, logweight<Real> weight);
 
 //std::istream& operator >> (std::istream &i, logweight<Real> &weight);
 
 /*
-bool operator == (logweight<Real> lhs, logweight<Real> rhs);
-bool operator != (logweight<Real> lhs, logweight<Real> rhs);
+  bool operator == (logweight<Real> lhs, logweight<Real> rhs);
+  bool operator != (logweight<Real> lhs, logweight<Real> rhs);
 
 //using namespace std;
 
@@ -615,127 +614,127 @@ inline bool operator == (logweight<Real> lhs, logweight<Real> rhs) { return lhs.
 template<class Real>
 inline bool operator != (logweight<Real> lhs, logweight<Real> rhs) { return lhs.weight != rhs.weight; }
 
-#define WEIGHT_DEFINE_OP(op,impl) \
+#define WEIGHT_DEFINE_OP(op,impl)                                                                                                               \
     template <class Real> inline logweight<Real> operator op(logweight<Real> lhs, logweight<Real> rhs) { impl; }                                \
     template <class Real,class T> inline logweight<Real> operator op(logweight<Real> lhs, const T& rhs_) { logweight<Real> rhs(rhs_); impl; }   \
     template <class T,class Real> inline logweight<Real> operator op(const T& lhs_, logweight<Real> rhs) { logweight<Real> lhs(lhs_); impl; }
 
 
-#define WEIGHT_FORWARD_OP_RET(op,rettype)                                                                                                                           \
-    template <class Real,class T> inline rettype operator op(logweight<Real> lhs, const T& rhs_) { logweight<Real> rhs(rhs_); return lhs op rhs; }   \
+#define WEIGHT_FORWARD_OP_RET(op,rettype)                                                                                                               \
+    template <class Real,class T> inline rettype operator op(logweight<Real> lhs, const T& rhs_) { logweight<Real> rhs(rhs_); return lhs op rhs; }      \
     template <class T,class Real> inline rettype operator op(const T& lhs_, logweight<Real> rhs) { logweight<Real> lhs(lhs_); return lhs op rhs; }
 
 #define WEIGHT_FORWARD_OP(op) WEIGHT_FORWARD_OP_RET(op,logweight<Real>)
 
-WEIGHT_DEFINE_OP(*,return logweight<Real>(lhs.weight+rhs.weight,false
-WEIGHT_DEFINE_OP(/,return logweight<Real>(lhs.weight-rhs.weight,false
+WEIGHT_DEFINE_OP(*,return logweight<Real>(lhs.weight+rhs.weight,false))
+    WEIGHT_DEFINE_OP(/,return logweight<Real>(lhs.weight-rhs.weight,false))
 
 /*
 //FIXME: doesn't implicitly convert!
 template<class Real,class T>
 inline logweight<Real> operator *(logweight<Real> lhs, logweight<Real> rhs) {
-  logweight<Real> result;
-  result.weight =  lhs.weight + rhs.weight;
-  return result;
+logweight<Real> result;
+result.weight =  lhs.weight + rhs.weight;
+return result;
 }
 
 template<class Real,class T>
 inline logweight<Real> operator *(logweight<Real> lhs, const T &rhs) {
-  logweight<Real> result;
-  result.weight =  lhs.weight + logweight<Real>(rhs).weight;
-  return result;
+logweight<Real> result;
+result.weight =  lhs.weight + logweight<Real>(rhs).weight;
+return result;
 }
 
 template<class Real>
 inline logweight<Real> operator /(logweight<Real> lhs, logweight<Real> rhs) {
-  logweight<Real> result;
-  result.weight =  lhs.weight - rhs.weight;
-  return result;
+logweight<Real> result;
+result.weight =  lhs.weight - rhs.weight;
+return result;
 }
 */
 
 
 
 
-template<class Real>
+    template<class Real>
 inline logweight<Real> operator +(logweight<Real> lhs, logweight<Real> rhs) {
-  //fixme: below test is needed with glibc without -ffast-math to compute 0+0 properly (?)
-  //  if (lhs == 0.0)
-  //  return rhs;
+    //fixme: below test is needed with glibc without -ffast-math to compute 0+0 properly (?)
+    //  if (lhs == 0.0)
+    //  return rhs;
 #ifdef WEIGHT_CORRECT_ZERO
-        if (lhs.isZero())
-                return rhs;
-        if (rhs.isZero())
-                return lhs;
+    if (lhs.isZero())
+        return rhs;
+    if (rhs.isZero())
+        return lhs;
 #endif
 
-  Real diff = lhs.weight - rhs.weight;
-  if ( diff > MUCH_BIGGER_LN )
-    return lhs;
-  if ( diff < -MUCH_BIGGER_LN )
-    return rhs;
+    Real diff = lhs.weight - rhs.weight;
+    if ( diff > MUCH_BIGGER_LN )
+        return lhs;
+    if ( diff < -MUCH_BIGGER_LN )
+        return rhs;
 
-  logweight<Real> result;
+    logweight<Real> result;
 
-  if ( diff < 0 ) { // rhs is bigger
-      result.weight = (Real)(rhs.weight + std::log(1 + std::exp(lhs.weight-rhs.weight)));
+    if ( diff < 0 ) { // rhs is bigger
+        result.weight = (Real)(rhs.weight + std::log(1 + std::exp(lhs.weight-rhs.weight)));
+        return result;
+    }
+    // lhs is bigger
+    result.weight = (Real)( lhs.weight + std::log(1 + std::exp(rhs.weight-lhs.weight)));
     return result;
-  }
-  // lhs is bigger
-  result.weight = (Real)( lhs.weight + std::log(1 + std::exp(rhs.weight-lhs.weight)));
-  return result;
 }
 
 template<class Real>
 inline logweight<Real> operator -(logweight<Real> lhs, logweight<Real> rhs) {
 
 #ifdef WEIGHT_CORRECT_ZERO
-        if (rhs.isZero())
-                return lhs;
+    if (rhs.isZero())
+        return lhs;
 #endif
 
-  logweight<Real> result;
-        Real rdiff=rhs.weight-lhs.weight;
-  if ( rdiff >= 0 )        // lhs <= rhs
-          // clamp to zero as minimum without giving exception (not mathematically correct!)
-  {
-    //result.weight = -FLOAT_INF(); // default constructed to this already
+    logweight<Real> result;
+    Real rdiff=rhs.weight-lhs.weight;
+    if ( rdiff >= 0 )        // lhs <= rhs
+        // clamp to zero as minimum without giving exception (not mathematically correct!)
+    {
+        //result.weight = -FLOAT_INF(); // default constructed to this already
+        return result;
+    }
+
+
+    if ( rdiff < -MUCH_BIGGER_LN ) // lhs >> rhs
+        return lhs;
+
+    // lhs > rhs
+
+    result.weight = (Real)(lhs.weight + std::log(1 - std::exp(rdiff)));
     return result;
-  }
-
-
-  if ( rdiff < -MUCH_BIGGER_LN ) // lhs >> rhs
-          return lhs;
-
-  // lhs > rhs
-
-  result.weight = (Real)(lhs.weight + std::log(1 - std::exp(rdiff)));
-  return result;
 }
 
 WEIGHT_FORWARD_OP(+)
-WEIGHT_FORWARD_OP(-)
+    WEIGHT_FORWARD_OP(-)
 
 //FIXME: why can't second arg be double? typedef?
-template<class Real>
+    template<class Real>
 inline logweight<Real> absdiff(logweight<Real> lhs, logweight<Real> rhs) {
 #if 0
-        // UNTESTED
-        Real diff=lhs.weight-rhs.weight;
-        if ( diff > MUCH_BIGGER_LN )
-                return lhs;
-        if ( diff < -MUCH_BIGGER_LN )
-                return rhs;
-        logweight<Real> result;
-        if ( diff < 0 )
-                result.weight = (Real)(rhs.weight + log(1 - std::exp(diff)));
-        else
-                result.weight = (Real)(lhs.weight + log(1 - std::exp(-diff)));
+    // UNTESTED
+    Real diff=lhs.weight-rhs.weight;
+    if ( diff > MUCH_BIGGER_LN )
+        return lhs;
+    if ( diff < -MUCH_BIGGER_LN )
+        return rhs;
+    logweight<Real> result;
+    if ( diff < 0 )
+        result.weight = (Real)(rhs.weight + log(1 - std::exp(diff)));
+    else
+        result.weight = (Real)(lhs.weight + log(1 - std::exp(-diff)));
 #else
-        if (lhs.weight > rhs.weight)
-                return lhs-rhs;
-        else
-                return rhs-lhs;
+    if (lhs.weight > rhs.weight)
+        return lhs-rhs;
+    else
+        return rhs-lhs;
 #endif
 }
 
@@ -759,11 +758,11 @@ template<class Real>
 inline bool operator >=(logweight<Real> lhs, double rhs) { return lhs.weight >= logweight<Real>::getlogreal(rhs); }
 */
 WEIGHT_FORWARD_OP_RET(<,bool)
-WEIGHT_FORWARD_OP_RET(<=,bool)
-WEIGHT_FORWARD_OP_RET(>,bool)
-WEIGHT_FORWARD_OP_RET(>=,bool)
-WEIGHT_FORWARD_OP_RET(==,bool)
-WEIGHT_FORWARD_OP_RET(!=,bool)
+    WEIGHT_FORWARD_OP_RET(<=,bool)
+    WEIGHT_FORWARD_OP_RET(>,bool)
+    WEIGHT_FORWARD_OP_RET(>=,bool)
+    WEIGHT_FORWARD_OP_RET(==,bool)
+    WEIGHT_FORWARD_OP_RET(!=,bool)
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -771,13 +770,13 @@ WEIGHT_FORWARD_OP_RET(!=,bool)
 
 
 
-template <class Real>
+    template <class Real>
 void inline dbgout(std::ostream &o,logweight<Real> w) {
     logweight<Real>::out_never_log(o);
     o << w;
 #ifdef VERBOSE_DEBUG
-      o << '=';
-      logweight<Real>::out_always_log(o)
+    o << '=';
+    logweight<Real>::out_always_log(o)
         o << w;
 #endif
 }
@@ -815,11 +814,11 @@ BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
 namespace std {
 template<class Real>
 class numeric_limits<graehl::logweight<Real> > {
-public:
-  static bool has_infinity() { return true; }
+ public:
+    static bool has_infinity() { return true; }
     enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
 
-  //FIXME: add rest
+    //FIXME: add rest
 };
 };
 
@@ -829,23 +828,20 @@ public:
 
 #endif
 /*
-#include <graehl/shared/semiring.hpp>
-template<nnn>
-struct semiring_traits<Weight> {
-    typedef Weight value_type;
-    static inline value_type exponential(Real exponent) {
-        return exponential<C>(exponent);
-    }
-    static inline void set_one(Weight &w) { w.setOne(); }
-    static inline void set_zero(Weight &w) { w.setZero(); }
-    static inline bool is_one(const Weight &w) { w.isOne(); }
-    static inline bool is_zero(const Weight &w) { w.isZero(); }
-    static inline void addto(Weight &w,Weight p) {
-        w += p;
-    }
+  #include <graehl/shared/semiring.hpp>
+  template<nnn>
+  struct semiring_traits<Weight> {
+  typedef Weight value_type;
+  static inline value_type exponential(Real exponent) {
+  return exponential<C>(exponent);
+  }
+  static inline void set_one(Weight &w) { w.setOne(); }
+  static inline void set_zero(Weight &w) { w.setZero(); }
+  static inline bool is_one(const Weight &w) { w.isOne(); }
+  static inline bool is_zero(const Weight &w) { w.isZero(); }
+  static inline void addto(Weight &w,Weight p) {
+  w += p;
+  }
 
-};
+  };
 */
-
-
-

@@ -8,6 +8,7 @@
 // -U = treat pre-training weights as prior counts
 // -Y write graphviz
 // -1 = randomly scale weights (of unlocked arcs) after composition uniformly by (0..1]
+// -@ = for -g, print input/output pairs
 #include <graehl/shared/config.h>
 #include <iostream>
 #include <fstream>
@@ -60,7 +61,6 @@ static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
     for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
         if (i>0)
             cout << ' ';
-
         cout << (*a)[seq[i]];
 
     }
@@ -717,6 +717,13 @@ main(int argc, char *argv[]){
                         if ( !*pairStream )
                             break;
                         ++input_lineno;
+                        WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);            
+                        getline(*pairStream,buf);
+                        if ( !*pairStream )
+                            break;
+                        ++input_lineno;
+                        WFST::symbol_ids outs(*result,buf.c_str(),1,input_lineno);
+/*                        
                         List<int> *inSeq = result->symbolList(buf.c_str(), 0);
                         if ( !inSeq ) {
                             Config::warn() << "Input sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
@@ -731,12 +738,15 @@ main(int argc, char *argv[]){
                             Config::warn() << "Output sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
                             return -21;
                         }
-                        Weight prob=result->sumOfAllPaths(*inSeq, *outSeq);
+*/
+                        Weight prob=result->sumOfAllPaths(ins, outs);
                         ++n_pairs;
                         prod_prob*=prob;
                         cout << prob << std::endl;
+                        /*
                         delete inSeq;
                         delete outSeq;
+                        */
                     }
                 } else {
                     List<int> empty_list;
@@ -749,9 +759,12 @@ main(int argc, char *argv[]){
                 if (pairStream) {
                     for ( ; ; ) {
                         weight = 1;
+                        input_lineno=0;
                         getline(*pairStream,buf);
                         if ( !*pairStream )
                             break;
+                        ++input_lineno;
+                        
                         if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
                             istringstream w(buf.c_str());
                             w >> weight;
@@ -762,15 +775,23 @@ main(int argc, char *argv[]){
                             getline(*pairStream,buf);
                             if ( !*pairStream )
                                 break;
+                            ++input_lineno;                            
                         }
-                        List<int> *inSeq = result->symbolList(buf.c_str(), 0);
+/*
+                        List<int> *inSeq = result->symbolList(buf.c_str(), 0);                        
                         if ( !inSeq ) {
                             Config::warn() << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
                             return -22;
                         }
+*/
+                        WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);
                         getline(*pairStream,buf);
                         if ( !*pairStream )
                             break;
+                        ++input_lineno;
+                        
+                        WFST::symbol_ids outs(*result,buf.c_str(),1,input_lineno);
+                        /*
                         List<int> *outSeq = result->symbolList(buf.c_str(), 1);
                         if ( !outSeq ) {
                             Config::warn() << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
@@ -779,6 +800,9 @@ main(int argc, char *argv[]){
                         result->trainExample(*inSeq, *outSeq, weight);
                         delete inSeq;
                         delete outSeq;
+*/
+                        result->trainExample(ins, outs, weight);
+
                     }
                 } else {
                     List<int> empty_list;
@@ -788,14 +812,18 @@ main(int argc, char *argv[]){
             } else if ( nGenerate > 0 ) {
                 MINIMIZE;
                 //        if ( !flags['n'] )
-                //        result->normalize(norm_method);
+                //        result->normalize(norm_method); // normalization is done locally when generating random paths
                 if ( maxGenArcs == 0 )
                     maxGenArcs = DEFAULT_MAX_GEN_ARCS;
                 if ( flags['G'] ) {
                     for (int i=0; i<nGenerate; ) {
                         List<PathArc> l;
                         if (result->randomPath(&l) != -1) {
-                            printPath(flags,&l);
+                            if (flags['@']) {
+                                WFST::print_training_pair(cout,l);
+                            } else {
+                                printPath(flags,&l);
+                            }
                             ++i;
                         }
                     }
@@ -804,7 +832,6 @@ main(int argc, char *argv[]){
                     int *inSeq = NEW int[maxSize];
                     int *outSeq = NEW int[maxSize];
                     for ( int s = 0 ; s < nGenerate ; ++s ) {
-
                         while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
                         printSeq(result->in,inSeq,maxGenArcs);
                         cout << std::endl;
@@ -871,7 +898,7 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     if ( flags['S'] && input_lineno > 0) {
-        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=" << prod_prob.root(n_pairs).inverse() << std::endl;
+        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=2^" << prod_prob.root(n_pairs).inverse().getLog(2) << std::endl;
     }
 
 #ifndef NODELETE
@@ -958,10 +985,10 @@ void usageHelp(void)
     cout << "ll arcs with weight less than w";
     cout << "\n-w w\t\tprune states and arcs only used in paths w times worse\n\t\tthan the best path (1 means keep only best path, 10 = keep paths up to 10 times weaker)";
     cout <<"\n-z n\t\tkeep at most n states (those used in highest-scoring paths)";
-    cout << "\n-g n\t\tstochastically generate";
+    cout << "\n-G n\t\tstochastically generate";
     cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
     cout << "itial state to the final state\n\t\toutput is in the same for";
-    cout << "m accepted in -t and -S.\n\t\tTraining a transducer on its own -g output should be a no-op.\n-G n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
+    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -G output should be a no-op.\n-g n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n-@\t\tFor -g, output in the same format as -G and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
     cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
     cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
     cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";

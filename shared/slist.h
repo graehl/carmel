@@ -464,7 +464,7 @@ class slist_shared :
         return e;
     }
 
-    inline erase_iterator& insert(erase_iterator &e,const T& it) { // moves iterator back to inserted thing!
+    inline erase_iterator& insert(erase_iterator &e,const T& it) { // moves iterator back to inserted thing!  note this means insert_iterator etc. add things opposite what the full (doubly linked) does
         Node *prev=alloc();
         new (prev)Node(it,*e.m_rep);
         *e.m_rep=prev;

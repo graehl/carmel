@@ -90,6 +90,7 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 //#define DEBUGTRAINDETAIL
 //#define DEBUGNORMALIZE
 #define DEBUGKBEST
+#define DEBUG_RANDOM_GENERATE
 //#define DEBUGPRUNE
 //#define DEBUGFB
 #define DEBUGCOMPOSE

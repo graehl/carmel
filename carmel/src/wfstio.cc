@@ -610,12 +610,13 @@ void WFST::listAlphabet(ostream &ostr, int output)
   ostr << *alph;
 }
 
-//XXX don't allocate then return list, take pointer to list
-List<int> *WFST::symbolList(const char *buf, int output) const
+void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno) const
 {
-  List<int> *ret = NEW List<int>;
+//  List<int> *ret = NEW List<int>;
+    
   //LIST_BACK_INSERTER<List<int> > cursor(*ret);
-  insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
+//  insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
+  List<int>::back_insert_iterator cursor(*ret);
   //  ListIter<int> ins(*ret);
   istringstream line(buf);
   char symbol[DEFAULTSTRBUFSIZE];
@@ -629,14 +630,20 @@ List<int> *WFST::symbolList(const char *buf, int output) const
       break;
     unsigned const*pI = alph->find(symbol);
     if ( !pI) {
-      delete ret;
-      return NULL;
+//      delete ret;
+//      return NULL;
+
+        std::ostringstream o;
+        o << "Input sequence has symbol not in alphabet: "<<symbol;
+        if (lineno >= 0)
+            o << " on line " << lineno;
+        throw std::runtime_error(o.str());
     } else
       //      ins.insert(*pI);
       //      ret->insert(ret->begin(),*pI);
       *cursor++ = *pI;
   }
-  return ret;
+//  return ret;
 }
 
 }

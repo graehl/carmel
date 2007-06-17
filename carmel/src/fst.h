@@ -21,6 +21,7 @@
 #include <iterator>
 #include <graehl/shared/kbest.h>
 #include <boost/config.hpp>
+#include <graehl/shared/config.h>
 
 namespace graehl {
 
@@ -209,47 +210,55 @@ class WFST {
   friend ostream & operator << (ostream &,  WFST &); // Yaser 7-20-2000
   // I=PathArc output iterator; returns length of path or -1 on error
   int randomPath(List<PathArc> *l,int max_len=-1) {
-    return randomPath(insert_iterator<List<PathArc> >(*l,l->erase_begin()), max_len);
+      return randomPath(l->back_inserter(), max_len);
   }
-  template <class I> int randomPath(I i,int max_len=-1)
+    template <class I> int randomPath(I i,int max_len=-1)
     {
-      PathArc p;
-      int s=0;
-      unsigned int len=0;
-      unsigned int max=*(unsigned int *)&max_len;
-      for (;;) {
-	if (s == final)
-	  return len;
-	if  ( len > max || states[s].arcs.isEmpty() )
-	  return -1;
-	// choose random arc:
-	Weight arcsum;
-	typedef List<FSTArc> LA;
-	typedef LA::const_iterator LAit;
-	const LA& arcs=states[s].arcs;
-	LAit start=arcs.const_begin(),end=arcs.const_end();
-	for (LAit li = start; li!=end; ++li) {
-	  arcsum+=li->weight;
-	}
-	Weight which_arc = arcsum * randomFloat();
-	arcsum.setZero();
-	for (LAit li = start; li!=end; ++li) {
-	  if ( (arcsum += li->weight) >= which_arc) {
-	    // add arc
-	    setPathArc(&p,*li);
-	    *i++ = p;
-	    s=li->dest;
-	    ++len;
-	    //				if (!(i))
-	    //					return -1;
-	    break;
-	  }
-	}
-	++len;
-      }
+        PathArc p;
+        int s=0;
+        unsigned int len=0;
+        unsigned int max=*(unsigned int *)&max_len;
+        for (;;) {
+            if (s == final)
+                return len;
+            if  ( len > max || states[s].arcs.isEmpty() )
+                return -1;
+            // choose random arc:
+            Weight arcsum;
+            typedef List<FSTArc> LA;
+            typedef LA::const_iterator LAit;
+            const LA& arcs=states[s].arcs;
+            LAit start=arcs.const_begin(),end=arcs.const_end();
+            for (LAit li = start; li!=end; ++li) {
+                arcsum+=li->weight;
+            }
+            Weight which_arc = arcsum * randomFloat();
+#ifdef DEBUG_RANDOM_GENERATE
+            Config::debug() << " chose "<<which_arc<<"/"<<arcsum;
+#endif 
+            arcsum.setZero();
+            for (LAit li = start; li!=end; ++li) {
+                if ( (arcsum += li->weight) >= which_arc) {
+                    // add arc
+                    setPathArc(&p,*li);
+                    *i++ = p;
+#ifdef DEBUG_RANDOM_GENERATE
+            Config::debug() << " arc="<<*li;
+#endif 
+                    s=li->dest;
+                    ++len;
+                    //				if (!(i))
+                    //					return -1;
+                    goto next_arc;
+                }
+            }
+            throw std::runtime_error("Failed to choose a random arc when generating random paths.  Since we remove useless states, this should never happen");
+        next_arc:
+            ++len;
+        }
     }
 
-  List<List<PathArc> > * randomPaths(int k, int max_len=-1); // k) gives a list of k 
+  List<List<PathArc> > * randomPaths(int k, int max_len=-1); // gives a list of (up to) k paths
   // random paths to final
   // labels are pointers to names in WFST so do not
   // use the path after the WFST is deleted
@@ -268,7 +277,37 @@ class WFST {
   // use the path after the WFST is deleted
   // list is dynamically allocated - delete it
   // yourself when you are done with it
-  List<int> *symbolList(const char *buf, int output=0) const;   
+    struct symbol_ids : public List<int> 
+    {
+        symbol_ids(WFST const& wfst,char const* buf,int output=0,int line=-1) 
+        {
+            wfst.symbolList(this,buf,output,line);
+        }
+    };
+
+    static void print_yield(ostream &o,List<PathArc> const &path,bool output=false,bool show_special=false) 
+    {
+        if (path.empty())
+            return;
+        graehl::word_spacer sp(' ');
+        for (List<PathArc>::const_iterator li=path.const_begin(),end=path.const_end(); li != end; ++li ) {
+            WFST const& w=*li->wfst;
+            int id=output ? li->out : li->in;
+            if (show_special || id!=EPSILON_INDEX)
+                o << sp << (output ? w.outLetter(id) : w.inLetter(id));
+        }
+    }
+
+    static void print_training_pair(ostream &o,List<PathArc> const &path,bool show_special=false)
+    {
+        print_yield(cout,path,false,show_special);
+        o << endl;
+        print_yield(cout,path,true,show_special);
+        o << endl;
+    }
+    
+        
+    void symbolList(List<int> *ret,const char *buf, int output=0,int line=-1) const;   
   // takes space-separated symbols and returns a list of symbol numbers in the
   // input or output alphabet
   const char *inLetter(unsigned i) const {
