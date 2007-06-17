@@ -184,10 +184,12 @@ struct State {
     }
 };
 
+/*
 inline void swap(State &a,State &b) 
 {
     a.swap(b);
 }
+*/
 
           
 std::ostream& operator << (std::ostream &out, State &s); // Yaser 7-20-2000
@@ -321,5 +323,14 @@ class trainInfo {
 };
 
 }
+
+namespace std {
+inline void swap(graehl::State &a,graehl::State &b) 
+{
+    a.swap(b);
+}
+}
+
+
 
 #endif
