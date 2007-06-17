@@ -471,6 +471,11 @@ struct logweight {                 // capable of representing nonnegative reals
         }
         return 0;
     }
+    template <class O>
+    void print_base(O &o,Real base) const 
+    {
+        o << base << '^' << getLog(base);
+    }
     
     
     template<class charT, class Traits>

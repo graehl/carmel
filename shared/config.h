@@ -11,6 +11,31 @@
 #define DOUBLE_PRECISION
 #endif
 
+#ifdef DEBUG
+#define DEBUGLEAK
+#define DEBUG_ESTIMATE_PP
+#define DEBUGNAN
+//#define DEBUGTRAIN
+//#define DEBUGTRAINDETAIL
+//#define DEBUGNORMALIZE
+#define DEBUGKBEST
+#define DEBUG_RANDOM_GENERATE
+//#define DEBUGPRUNE
+//#define DEBUGFB
+#define DEBUGCOMPOSE
+#define DEBUG_ADAPTIVE_EM
+#define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-3
+#endif
+
+
+//#define DEBUGNAN
+
+
+#ifdef DEBUGNORMALIZE
+#define CHECKNORMALIZE
+#endif
+
+
 #include <iostream>
 namespace Config {
   inline std::ostream &err() {
@@ -38,8 +63,6 @@ namespace Config {
 #endif
 #endif
 
-//#define DEBUG
-
 #include <graehl/shared/memleak.hpp>
 
 #define TREE_SINGLETON_OPT
@@ -47,8 +70,6 @@ typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
 typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (can't be unsigned type)
 
 #define COPYRIGHT_YEAR 2007
-
-//#define DEBUGNAN
 
 //do this in Makefile for consistency with boost test lib src that don't include me:
 //#define BOOST_DISABLE_THREADS
@@ -81,27 +102,6 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 #pragma warning( disable : 4355 )
 #endif
 
-
-#ifdef DEBUG
-#define DEBUGLEAK
-#define DEBUG_ESTIMATE_PP
-#define DEBUGNAN
-//#define DEBUGTRAIN
-//#define DEBUGTRAINDETAIL
-//#define DEBUGNORMALIZE
-#define DEBUGKBEST
-#define DEBUG_RANDOM_GENERATE
-//#define DEBUGPRUNE
-//#define DEBUGFB
-#define DEBUGCOMPOSE
-#define DEBUG_ADAPTIVE_EM
-#define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-3
-#endif
-
-
-#ifdef DEBUGNORMALIZE
-#define CHECKNORMALIZE
-#endif
 
 #define MAX_LEARNING_RATE_EXP 20
 

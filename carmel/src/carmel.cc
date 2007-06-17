@@ -802,7 +802,6 @@ main(int argc, char *argv[]){
                         delete outSeq;
 */
                         result->trainExample(ins, outs, weight);
-
                     }
                 } else {
                     List<int> empty_list;
@@ -898,7 +897,9 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     if ( flags['S'] && input_lineno > 0) {
-        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=2^" << prod_prob.root(n_pairs).inverse().getLog(2) << std::endl;
+        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=";
+        prod_prob.root(n_pairs).inverse().print_base(Config::log(),2);
+        Config::log() << std::endl;
     }
 
 #ifndef NODELETE
