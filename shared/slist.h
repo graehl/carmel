@@ -78,6 +78,11 @@ class slist_shared :
         {
             for (ptail=&l.head_node(); *ptail; ptail=&(*ptail)->next ) ;
         }
+        explicit back_insert_iterator(self_type &l,Node *after) : list(&l) 
+        {
+            **ptail=&after->next;
+        }
+        
         back_insert_iterator& operator++()
         {
             return *this;
@@ -97,7 +102,7 @@ class slist_shared :
         }
         T & operator =(T const& t) 
         {
-            return list->push_after(ptail,t)->data;
+            return list->push_after(ptail,t,*ptail)->data;
         }
         
     };
@@ -340,7 +345,7 @@ class slist_shared :
     {        
         Node **pnext=&head;
         for (;i!=end;++i) {
-            push_after(pnext,*i);
+            push_after_uninit_next(pnext,*i);
         }
         *pnext=rest;
     }
@@ -350,7 +355,7 @@ class slist_shared :
         set_prepend_raw(i,end,head);
     }
     
-    static inline void append_deep_copy(Node **pto,Node *from)
+    void append_deep_copy(Node **pto,Node *from)
     {
         for (;from;from=from->next)
             pto=&((*pto=construct(from->data))->next);        
@@ -444,12 +449,21 @@ class slist_shared :
         new(push_front_raw()) T(t0,t1,t2);
     }
     template <class D>
-    Node * push_after(Node **&pnext,D const& d) 
+    Node * push_after(Node **&pnext,D const& d,Node *n=0) 
     {
         Node* ret=construct(d);
         *pnext=ret;
         pnext=&ret->next;
-        ret->next=0;
+        ret->next=n;
+        return ret;
+    }
+
+    template <class D>
+    Node * push_after_uninit_next(Node **&pnext,D const& d) 
+    {
+        Node* ret=construct(d);
+        *pnext=ret;
+        pnext=&ret->next;
         return ret;
     }
     
@@ -605,6 +619,7 @@ class slist : public slist_shared<T,A>
     slist() :
         slist_base() {}
     slist(slist_base const& L) { this->construct_deep_copy(L); }
+    slist(self_type const& L) { this->construct_deep_copy(L); }
     slist(const T &it) : slist_base(it) {}
     template <class I>
     slist(I i,I end) : slist_base(i,end) {}
@@ -613,6 +628,13 @@ class slist : public slist_shared<T,A>
         this->assign_deep_copy(x);
         return *this;
     }
+    /*
+    self_type& operator=(self_type const& x)
+    {
+        this->assign_deep_copy(x);
+        return *this;
+        }*/
+    
     void swap(slist& x)
     {
         slist_base::swap(x);
