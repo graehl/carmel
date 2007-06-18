@@ -250,7 +250,6 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
     Config::log() << std::endl;
     EACHDW(dw->weight()=dw->best_weight;);
 
-    return bestPerplexity;
     delete[] trn->forArcs;
     delete[] trn->revArcs;
     delete trn->forETopo;
@@ -272,6 +271,7 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
     delete[] b;
     delete trn;
     trn = NULL;
+    return bestPerplexity;
 }
 
 // possible speedups:

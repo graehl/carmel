@@ -215,52 +215,52 @@ $(1)_OBJ=$$(addsuffix .o,$$($(1)_SRC))
 $(1)_OBJ_TEST=$$(addsuffix .o,$$($(1)_SRC_TEST))
 
 ifndef $(1)_NOOPT
-$$(BIN)/$(1):\
+$$(BIN)/$(1)$(PROGSUFFIX):\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(optimized\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB)
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
-OPT_PROGS += $$(BIN)/$(1)
+OPT_PROGS += $$(BIN)/$(1)$(PROGSUFFIX)
 $(1): $$(BIN)/$(1)
 endif
 
 ifneq (${ARCH},macosx)
 ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
-$$(BIN)/$(1).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
+$$(BIN)/$(1)$(PROGSUFFIX).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(static\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
-STATIC_PROGS += $$(BIN)/$(1).static
+STATIC_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).static
 $(1): $$(BIN)/$(1).static
 endif
 endif
 endif
 
 ifndef $(1)_NODEBUG
-$$(BIN)/$(1).debug:\
+$$(BIN)/$(1)$(PROGSUFFIX).debug:\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB))
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
-DEBUG_PROGS += $$(BIN)/$(1).debug
+DEBUG_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).debug
 $(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
 #$$(BOOST_TEST_LIB)
-$$(BIN)/$(1).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))  $$($(1)_SLIB)
+$$(BIN)/$(1)$(PROGSUFFIX).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(test\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(BOOST_TEST_LIB)
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))
-ALL_TESTS += $$(BIN)/$(1).test
-TEST_PROGS += $$(BIN)/$(1).test
+ALL_TESTS += $$(BIN)/$(1)$(PROGSUFFIX).test
+TEST_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).test
 $(1): $$(BIN)/$(1).test
 endif
 
@@ -296,6 +296,7 @@ CYGEXE=.exe
 else
 CYGEXE=
 endif
+
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
 	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
 
