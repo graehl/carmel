@@ -12,6 +12,7 @@
 #include <graehl/shared/config.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <cctype>
 #include <string>
 #include <ctime>
@@ -83,6 +84,7 @@ int isSpecial(const char* psz) {
     return *--psz == '*';
 }
 
+    
 void outWithoutQuotes(const char *str, ostream &out) {
     if ( *str != '\"') {
         out << str;
@@ -97,6 +99,14 @@ void outWithoutQuotes(const char *str, ostream &out) {
         out << str;
 }
 
+void out_maybe_quote(char const* str,ostream &out,bool quote) 
+{
+    if (quote)
+        out << str;
+    else
+        outWithoutQuotes(str,out);
+}
+
 
 struct wfst_paths_printer {
     bool SIDETRACKS_ONLY;
@@ -107,6 +117,9 @@ struct wfst_paths_printer {
     bool *flags;
     HashTable<FSTArc *,unsigned> prevent_cycle;
     bool only_sidetracks;
+    typedef std::vector<int> Output;
+    Output output;
+    graehl::word_spacer sp;
     
     wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {
         n_paths=0;
@@ -116,11 +129,23 @@ struct wfst_paths_printer {
         ++n_paths;
         w.setCost(cost);
         clear_cycle_detect();
+        output.clear();
+        sp.reset();
+        
     }
     void end_path() {
-        if (!flags['W'])
-            out << w;
-        out << endl;
+        if (flags['@'] ) {
+            out << endl;
+            sp.reset();
+            for (Output::const_iterator i=output.begin(),e=output.end();i!=e;++i)
+                out << sp << wfst.outLetter(*i);
+            out << endl;
+        } else {
+            if (!flags['W'])
+                out << sp << w;
+            out << endl;
+        }
+        
 #ifdef DEBUGKBEST
         Config::debug() << endl;
 #endif 
@@ -130,8 +155,8 @@ struct wfst_paths_printer {
         prevent_cycle.clear();
     }
     void visit_best_arc(const GraphArc &a,bool best=true) {
-        const char * outSym;
         FSTArc &arc=*(FSTArc *)a.data;
+//        path.push_back(&arc);
         if (1 || best) {
 #ifdef DEBUGKBEST
             Config::debug() << (best ? " best-arc=" : " sidetrack-arc=") << arc << " GraphArc="<<a;
@@ -143,24 +168,24 @@ struct wfst_paths_printer {
                 prevent_cycle[&arc]=1;
             }
         }
-        
-        if ( flags['O'] || flags['I'] ) {
-            if ( flags['O'] )
-                outSym = wfst.outLetter(arc.out);
-            else
-                outSym = wfst.inLetter(arc.in);
-            if ( !(flags['E'] && isSpecial(outSym)) ) {
-                if ( flags['Q'] )
-                    outWithoutQuotes(outSym, out);
-                else
-                    out << outSym;
-                out << ' ';
+        if (flags['@'] ) {
+            int inid=arc.in,outid=arc.out;
+            if (outid!=WFST::epsilon_index)
+                output.push_back(outid);
+            if (inid!=WFST::epsilon_index)
+                out << sp << wfst.inLetter(inid);
+        } else {            
+            if ( flags['O'] || flags['I'] ) {
+                int id = flags['O'] ? arc.out : arc.in;
+                if ( !(flags['E'] && id==WFST::epsilon_index) ) {
+                    out << sp;
+                    out_maybe_quote(flags['O'] ? wfst.outLetter(id) : wfst.inLetter(id),out,flags['Q']);
+                }
+            } else {
+                out << sp;
+                wfst.printArc(arc,a.source,out);
             }
-        } else {
-            wfst.printArc(arc,a.source,out);
-            out << ' ';
         }
-
     }
     void visit_sidetrack_arc(const GraphArc &a) {
         clear_cycle_detect();   
@@ -636,7 +661,7 @@ main(int argc, char *argv[]){
             if ( !result->valid() ) {
                 Config::warn() << ")\nEmpty or invalid result of composition with transducer " << filenames[i] << ".\n";
                 for ( i = 0 ; i < kPaths ; ++i ) {
-                    if ( !flags['W'] )
+                    if ( !(flags['W'] || flags['@']) )
                         cout << 0;
                     cout << "\n";
                 }
@@ -691,12 +716,10 @@ main(int argc, char *argv[]){
                 kPathsLeft -= pp.n_paths;
             }
             for ( unsigned fill = 0 ; fill < kPathsLeft ; ++fill ) {
-                if ( !flags['W'] )
+                if ( !(flags['W']||flags['@']) )
                     cout << 0;
                 cout << "\n";
-
             }
-
         } else if ( flags['x'] ) {
             result->listAlphabet(cout, 0);
         } else if ( flags['y'] ) {
@@ -989,7 +1012,7 @@ void usageHelp(void)
     cout << "\n-G n\t\tstochastically generate";
     cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
     cout << "itial state to the final state\n\t\toutput is in the same for";
-    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -G output should be a no-op.\n-g n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n-@\t\tFor -g, output in the same format as -G and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
+    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -G output should be a no-op.\n-g n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n-@\t\tFor -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
     cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
     cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
     cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
@@ -997,7 +1020,9 @@ void usageHelp(void)
     cout << "ue group number\n\t\tstarting at n and counting up.  If n is 0 (";
     cout << "the special group\n\t\tfor unchangeable arcs), all the arcs are ";
     cout << "assigned to group 0\n\t\tif n is negative, all group numbers are";
-    cout << " removed\n-A\t\tthe weights in the first transducer (depending o";
+    cout << " removed";
+    cout << "\n-j\t\tPerform joint rather than conditional normalization";
+    cout << "\n-A\t\tthe weights in the first transducer (depending o";
     cout << "n -l or -r, as\n\t\twith -b, -S, and -t) are assigned to the res";
     cout << "ult, by arc group\n\t\tnumber.  Arcs with group numbers for whic";
     cout << "h there is no\n\t\tcorresponding group in the first transducer a";
@@ -1010,7 +1035,6 @@ void usageHelp(void)
     cout << " normal approach, but the transducer will have\n\t\tequivalent p";
     cout << "aths.\n-h\t\thelp on transducers, file formats\n";
     cout << "-V\t\tversion number\n-u\t\tDon't normalize outgoing arcs for each input during training;\n\t\ttry -tuM 1 to see forward-backward counts for arcs" ;
-    cout << "\n-j\t\tPerform joint rather than conditional normalization";
     cout << "\n-Y\t\tWrite transducer to GraphViz .dot file\n\t\t(see http://www.research.att.com/sw/tools/graphviz/)";
     cout << "\n-q\t\tSuppress computation status messages (quiet!)";
     cout << "\n-K\t\tAssume state names are integer indexes (when the final state is an integer)";

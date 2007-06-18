@@ -353,7 +353,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                     //   else, single repetition
 #define ENDIOW (c==')'||c=='!')                    
                     if (ENDIOW) { // ...)
-                        inL=outL=EPSILON_INDEX;
+                        inL=outL=WFST::epsilon_index;
                         weight=1.0;
                     } else {
                         char *e;
@@ -362,7 +362,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                         PEEKC;
                         if (ENDIOW) {  // ... weight) or ... symbol)
                             if (weight.setString(buf)) { // ... weight)
-                                inL=outL=EPSILON_INDEX;
+                                inL=outL=WFST::epsilon_index;
                             } else { // ... symbol)
                                 inL = in->indexOf(buf);
                                 outL = out->indexOf(buf);
