@@ -1,12 +1,21 @@
-tt: tree transducer toolkit (and derivation forests EM training)
-
 carmel: finite state transducer toolkit (and k-best graph paths)
- (see carmel/README)
+ (see carmel/README).  To build, cd carmel; make install
+
+tt: tree transducer toolkit (and derivation forests EM training) - not included in carmel distribution
 
 shared: generic routines used by both
 
-Make sure the environment variable ARCH is set to something
-(e.g. cygwin,linux,solaris)
+Make sure the environment variable ARCH (or BUILDSUB) is set to something
+(e.g. cygwin,linux,solaris).
+
+for example:
+
+cd carmel
+BUILDSUB=linux INSTALL_PREFIX=/usr/local ARCH_FLAGS="-m32 -march=pentium4" make -j 4 install
+
+or, to build without installing (look in bin/$BUILDSUB for binaries)
+
+BUILDSUB=linux  make -j 4
 
 Requires GNU make (unfortunately, version 3.80 or greater is required due to
 some bugs with earlier versions' $(eval)), and a recent C++ compiler (gcc 3.4 is
@@ -24,4 +33,7 @@ make
 ARCH can be whatever you like - it's not used for anything except to keep object
 files and binaries segregated.  (exception: if you build with ARCH=macosx, no
 static binaries will be built, since the platform doesn't seem to support it).
+
+If you're mystified by what's going on in the build, look at shared/graehl.mk
+
 

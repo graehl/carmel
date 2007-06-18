@@ -189,7 +189,7 @@ struct logweight {                 // capable of representing nonnegative reals
         setReal(random_pos_fraction());
     }
     Real getLog(Real base) const {
-        return weight / log(base);
+        return weight / std::log(base);
     }
     Real getLogImp() const {
         return weight;
