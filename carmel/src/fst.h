@@ -47,13 +47,11 @@ class WFST {
  private:	 
     enum { STATE,ARC } PerLine;
     enum { BRIEF,FULL } ArcFormat;
-    enum { epsilon_index=0 };
     static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
     static const int arcformat_index; // handle for OutThresh
     void initAlphabet() {
         trn=NULL;
 #define EPSILON_SYMBOL "*e*"
-#define EPSILON_INDEX 0
         in = NEW Alphabet<StringKey,StringPool>(EPSILON_SYMBOL);
         out = NEW Alphabet<StringKey,StringPool>(EPSILON_SYMBOL);
         ownerIn=ownerOut=1;
@@ -71,6 +69,7 @@ class WFST {
     }
     int getStateIndex(const char *buf); // creates the state according to named_states, returns -1 on failure
  public:
+    enum { epsilon_index=0 };
 
     template<class A,class B> static inline std::basic_ostream<A,B>&
     out_state_per_line(std::basic_ostream<A,B>& os) { os.iword(perline_index) = STATE; return os; }
@@ -293,7 +292,7 @@ class WFST {
         for (List<PathArc>::const_iterator li=path.const_begin(),end=path.const_end(); li != end; ++li ) {
             WFST const& w=*li->wfst;
             int id=output ? li->out : li->in;
-            if (show_special || id!=EPSILON_INDEX)
+            if (show_special || id!=epsilon_index)
                 o << sp << (output ? w.outLetter(id) : w.inLetter(id));
         }
     }
