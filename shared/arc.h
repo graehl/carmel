@@ -14,16 +14,16 @@ struct FSTArc {
     BOOST_STATIC_CONSTANT(int,locked_group=0);
     
     typedef FSTArc self_type;
-  int in;
-  int out;
-  int dest;
-  Weight weight;
-  int groupId;
+    int in;
+    int out;
+    int dest;
+    Weight weight;
+    int groupId;
     
 //    enum {no_group=-1,locked_group=0};
 
-  FSTArc(int i, int o, int d, Weight w,int g = no_group) :
-    in(i), out(o), dest(d), weight(w), groupId(g)
+    FSTArc(int i, int o, int d, Weight w,int g = no_group) :
+        in(i), out(o), dest(d), weight(w), groupId(g)
     {}
     bool isNormal() const {
         //return groupId == no_group;
@@ -57,34 +57,34 @@ struct FSTArc {
 typedef FSTArc *HalfArc;
 
 struct UnArc {
-  int in;
-  int out;
-  int dest;
-  bool operator == (const UnArc& r) const {
-    return in == r.in && out == r.out && dest == r.dest;
-  }
-  size_t hash() const
-  {
-    return uint32_hash((in * 193 + out * 6151 + dest));
-  }
+    int in;
+    int out;
+    int dest;
+    bool operator == (const UnArc& r) const {
+        return in == r.in && out == r.out && dest == r.dest;
+    }
+    size_t hash() const
+    {
+        return uint32_hash((in * 193 + out * 6151 + dest));
+    }
 };
 
 /*
-HASHNS_B
-template<>
-struct hash<UnArc>
-{
+  HASHNS_B
+  template<>
+  struct hash<UnArc>
+  {
   size_t operator()(const UnArc &x) const {
-    return x.hash();
+  return x.hash();
   }
-};
-HASHNS_E
+  };
+  HASHNS_E
 */
 
 }
 
 BEGIN_HASH(graehl::UnArc) {
-  return x.hash();
+    return x.hash();
 } END_HASH
 
 #endif

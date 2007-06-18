@@ -537,7 +537,7 @@ main(int argc, char *argv[]){
     for ( ; ; ) { // input transducer from string line reading loop
         if (nTarget != -1) { // if to construct a finite state from input
             if ( !*line_in ) {
-              fail_ntarget:
+            fail_ntarget:
                 Config::warn() << "No lines of input provided.\n";
                 PLACEMENT_NEW (&chain[nTarget])WFST(); break;
             }
@@ -724,28 +724,28 @@ main(int argc, char *argv[]){
                         ++input_lineno;
                         WFST::symbol_ids outs(*result,buf.c_str(),1,input_lineno);
 /*                        
-                        List<int> *inSeq = result->symbolList(buf.c_str(), 0);
-                        if ( !inSeq ) {
-                            Config::warn() << "Input sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
-                            return -22;
-                        }
-                        getline(*pairStream,buf);
-                        ++input_lineno;
-                        if ( !*pairStream )
-                            break;
-                        List<int> *outSeq = result->symbolList(buf.c_str(), 1);
-                        if ( !outSeq ) {
-                            Config::warn() << "Output sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
-                            return -21;
-                        }
+                          List<int> *inSeq = result->symbolList(buf.c_str(), 0);
+                          if ( !inSeq ) {
+                          Config::warn() << "Input sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
+                          return -22;
+                          }
+                          getline(*pairStream,buf);
+                          ++input_lineno;
+                          if ( !*pairStream )
+                          break;
+                          List<int> *outSeq = result->symbolList(buf.c_str(), 1);
+                          if ( !outSeq ) {
+                          Config::warn() << "Output sequence: " << buf << " on line " << input_lineno << " contains symbols not in the alphabet.\n";
+                          return -21;
+                          }
 */
                         Weight prob=result->sumOfAllPaths(ins, outs);
                         ++n_pairs;
                         prod_prob*=prob;
                         cout << prob << std::endl;
                         /*
-                        delete inSeq;
-                        delete outSeq;
+                          delete inSeq;
+                          delete outSeq;
                         */
                     }
                 } else {
@@ -778,11 +778,11 @@ main(int argc, char *argv[]){
                             ++input_lineno;                            
                         }
 /*
-                        List<int> *inSeq = result->symbolList(buf.c_str(), 0);                        
-                        if ( !inSeq ) {
-                            Config::warn() << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
-                            return -22;
-                        }
+  List<int> *inSeq = result->symbolList(buf.c_str(), 0);                        
+  if ( !inSeq ) {
+  Config::warn() << "Input sequence: " << buf << " contains symbols not in the alphabet.\n";
+  return -22;
+  }
 */
                         WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);
                         getline(*pairStream,buf);
@@ -792,15 +792,15 @@ main(int argc, char *argv[]){
                         
                         WFST::symbol_ids outs(*result,buf.c_str(),1,input_lineno);
                         /*
-                        List<int> *outSeq = result->symbolList(buf.c_str(), 1);
-                        if ( !outSeq ) {
-                            Config::warn() << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
-                            return -21;
-                        }
-                        result->trainExample(*inSeq, *outSeq, weight);
-                        delete inSeq;
-                        delete outSeq;
-*/
+                          List<int> *outSeq = result->symbolList(buf.c_str(), 1);
+                          if ( !outSeq ) {
+                          Config::warn() << "Output sequence: " << buf << " contains symbols not in the alphabet.\n";
+                          return -21;
+                          }
+                          result->trainExample(*inSeq, *outSeq, weight);
+                          delete inSeq;
+                          delete outSeq;
+                        */
                         result->trainExample(ins, outs, weight);
                     }
                 } else {
@@ -868,7 +868,7 @@ main(int argc, char *argv[]){
                     *fstout << *result;
             }
         }
-      nextInput:
+    nextInput:
 
 #ifndef NODELETE
 
