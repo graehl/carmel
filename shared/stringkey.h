@@ -72,10 +72,10 @@ struct StringKey {
 }
 
 BEGIN_HASH_VAL(graehl::StringKey) {
-	return x.hash();
+    return x.hash();
 } END_HASH
-//inline size_t hash_value(StringKey s) { return s.hash(); }
-//inline size_t hash(StringKey s) { return s.hash(); }
+  //inline size_t hash_value(StringKey s) { return s.hash(); }
+  //inline size_t hash(StringKey s) { return s.hash(); }
 
 
 #endif
