@@ -360,7 +360,7 @@ void WFST::assignWeights(const WFST &source)
 void WFST::unTieGroups() {
   for ( int s = 0 ; s < numStates() ; ++s ){
     for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
-      a->groupId = NOGROUP ;
+      a->groupId = no_group ;
   }
 }
 
@@ -585,7 +585,7 @@ void WFST::reduce()
      for ( List<FSTArc>::iterator a(states[i].arcs.begin()), end = states[i].arcs.end() ; a !=end  ; ++a ){
      if ((discard[i])
      || !(visitedForward[a->dest] && visitedBackward[(a->dest)])){ // if a state should be discarded remove its arcs from tie group, also an FSTArc must be removed if its destination state is discarded.
-     a->groupId = NOGROUP ;
+     a->groupId = no_group ;
      }
      }
      }
