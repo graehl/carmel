@@ -12,7 +12,7 @@
 #endif
 
 #ifdef DEBUG
-# define DEBUG_STRINGPOOL
+//# define DEBUG_STRINGPOOL
 #define DEBUGLEAK
 #define DEBUG_ESTIMATE_PP
 #define DEBUGNAN
@@ -83,7 +83,7 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 #define STATIC_HASHER
 
 // if not STRINGPOOL, then same string -> different address (but no global hashtable needed)
-#if 1 || !defined(DEBUG)
+#if !defined(DEBUG)
 #define STRINGPOOL
 #endif
 #ifndef STRINGPOOLCLASS

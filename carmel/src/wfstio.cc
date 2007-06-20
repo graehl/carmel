@@ -77,10 +77,15 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
         return 0;
         break;
     default:
-        while ( in.get(*++buf) && *buf != '\n' && *buf != '\t' && *buf != ' ' && *buf != '!' && *buf != ')' )
+        while ( in.get(*++buf)) {
             CHECKBUFOVERFLOW;
-        if ( *buf == ')' || *buf == '!')
-            in.unget();
+            if (*buf == '\n' || *buf == '\t' || *buf == ' ')
+                break;
+            if (*buf != '!' || *buf != ')' ) {
+                in.unget();
+                break;
+            }
+        }        
         *buf = 0;
         if (buf[-1] == DOS_CR_CHAR)
             *--buf = 0;
