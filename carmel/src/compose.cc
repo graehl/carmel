@@ -5,7 +5,7 @@
 
 namespace graehl {
 
-int WFST::indexThreshold = 32;
+int WFST::indexThreshold = 12;
 unsigned int TrioKey::aMax = 0;
 unsigned int TrioKey::bMax = 0;
 
@@ -15,22 +15,41 @@ struct TrioNamer {
     const WFST &b;
     char *limit;
     TrioNamer(char *buf_,unsigned capacity,const WFST &a_,const WFST &b_) : buf(buf_),a(a_),b(b_) {
-	limit=buf+capacity-5;
-	Assert(limit>buf);
+        limit=buf+capacity-6; // shoudl be 4: end of string, | <filter-state> |.  but 6 to be safe.
+        Assert(limit>buf);
     }
-    void make(unsigned aState,unsigned bState,char filter) {
-	char *bufP=buf;
-	const char *aName=a.stateName(aState);
-        while ( *aName && buf<limit )
-            *bufP++ = *aName++;
-	*bufP++ = '|';
-	*bufP++ = filter + '0';
-	*bufP++ = '|';
-	const char *bName=b.stateName(bState);
-        while ( *bName && bufP < limit)
-            *bufP++ = *bName++;
-	*bufP = 0;
+    void append_safe(char *&p,char const* str) 
+    {
+        while ( *str && p<limit )
+            *p++ = *str++;
+        if ( *str )
+#define STATENAME_TOO_LONG_ERROR_TEXT(x)  "state name too long - exceeded " #x
+            throw std::runtime_error(STATENAME_TOO_LONG_ERROR_TEXT(MAX_STATENAME_LEN));
     }
+    
+    char const* make(unsigned aState,unsigned bState,char filter) {
+        char *p=buf;
+        append_safe(p,a.stateName(aState));
+        *p++ = '|';
+        *p++ = filter + '0';
+        *p++ = '|';
+        append_safe(p,b.stateName(bState));
+        *p = 0;
+        return buf;
+    }
+    char const* make_mediate(unsigned astate,unsigned bstate,int middle_letter) 
+    {
+        char *p=buf;
+        append_safe(p,b.stateName(bstate));
+        *p++=',';
+        append_safe(p,a.outLetter(middle_letter));
+        *p++='-';
+        *p++='>';
+        append_safe(p,a.stateName(astate));
+        *p = 0;
+        return buf;
+    }
+    
 };
 
 //#define OLDCOMPOSEARC
@@ -41,28 +60,33 @@ struct TrioNamer {
 #endif
 
 #ifdef OLDCOMPOSEARC
-#define COMPOSEARC do {                                                                                                                                                                                 \
-        if ( (pDest = find_second(stateMap,triDest)) )                                                                                                                                                  \
-        { states[sourceState].addArc(FSTArc(in, out, *pDest, weight));                                                                                                                                  \
-        } else {                                                                                                                                                                                        \
+#define COMPOSEARC do {       \
+        if ( (pDest = find_second(stateMap,triDest)) ) \
+        { states[sourceState].addArc(FSTArc(in, out, *pDest, weight)); \
+        } else {             \
             add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    push_back(states); \
-            if ( namedStates ) {      namer.make(triDest.aState, triDest.bState, triDest.filter);      stateNames.add(buf);                                                                             \
+            if ( namedStates ) {      stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter)); \
             }  }} while(0)
 #else
 
-#define COMPOSEARC do {                                                                                                         \
-        hash_traits<HashTable<TrioKey,int> >::insert_return_type i;                                                             \
-        if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) {                          \
-            trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);push_back(states);                                   \
-            if ( namedStates ) { namer.make(triDest.aState, triDest.bState, triDest.filter);                                    \
-                stateNames.add(buf);                                                                                            \
-            }} else trioID.num=i.first->second;                                                                                 \
-        states[sourceState].addArc(FSTArc(in, out, trioID.num, weight)); DUMPARC(in, out, trioID.num, weight);} while(0)
+    //uses: stateMap[triDest] states, queue, in, out, weight, [namedStates,stateNames,namer,buf]
+    
+#define COMPOSEARC_GROUP(g) do {                                          \
+        hash_traits<HashTable<TrioKey,int> >::insert_return_type i; \
+        if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
+            trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);push_back(states); \
+            if ( namedStates ) stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter),trioID.num); \
+        } else trioID.num=i.first->second; \
+        states[sourceState].addArc(FSTArc(in, out, trioID.num, weight,g)); DUMPARC(in, out, trioID.num, weight);} while(0)
+
+#define COMPOSEARC COMPOSEARC_GROUP(FSTArc::no_group)
 #endif
+
 
 
 WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0), ownerOut(0), in(a.in), out(b.out), states((a.numStates() + b.numStates())), trn(NULL)
 {
+    const int EMPTY=epsilon_index;
     if ( !(a.valid() && b.valid()) ) {
         invalidate();
         return;
@@ -94,12 +118,14 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     TrioID trioID;
     trioID.num = 0;
     trioID.tri = TrioKey(0,0,0);
-
+    states.clear();
+    
     stateMap[trioID.tri]=0; // add the initial state
     push_back(states);
     if ( namedStates ) {
+        stateNames.clear();
         namer.make(0,0,0);
-        stateNames.add(buf);
+        stateNames.add(buf,0);
         named_states=true;
     } else {
         named_states=false;
@@ -111,6 +137,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     if ( preserveGroups ) {       // use simpler 2 state filter since e transitions cannot be merged anyhow
         //FIXME: -a ... kbest paths look nothing like non -a.  find the bug!
         HashTable<HalfArcState, int> arcStateMap(2 * (a.numStates() +b.numStates()));
+        // a mediate state has a name like: bstate,"m"->astate, where "m" is a letter in the interface (output of a, input of b)
         while ( queue.notEmpty() ) {
             sourceState = queue.top().num;
             triSource = queue.top().tri;
@@ -118,75 +145,58 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
             State *aState = &a.states[triSource.aState], *bState = &b.states[triSource.bState];
             aState->indexBy(1);
             bState->indexBy(0);
-            int group;
             const HashTable<IntKey, List<HalfArc> > &aindex=*aState->index;
             for ( HashTable<IntKey, List<HalfArc> >::const_iterator ll=aindex.begin() ; ll != aindex.end(); ++ll ) {
                 HalfArcState mediate;
-                mediate.hiddenLetter = ll->first;
-                mediate.source = triSource.bState;
+                mediate.l_hiddenLetter = ll->first;
+                mediate.r_source = triSource.bState;
                 if (  ll->first == EMPTY ) {
                     if ( triSource.filter == 0 ) {
                         out = EMPTY;
                         triDest.filter = 0;
                         triDest.bState = triSource.bState;
                         for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
-                            weight = (*l)->weight;
-                            triDest.aState = (*l)->dest;
-                            in = (*l)->in;
-                            COMPOSEARC;
-                            //!danger: should probably use IsTiedOrLocked() in FSTArc.h.
-                            if ( isTiedOrLocked(group = (*l)->groupId) )
-                                states[sourceState].arcs.top().groupId = group;
+                            HalfArc const& la=*l;
+                            weight = la->weight;
+                            triDest.aState = la->dest;
+                            in = la->in;
+                            COMPOSEARC_GROUP(la->groupId);
                         }
                     }
-                } else if ( (matches = find_second(*bState->index,(IntKey)map[mediate.hiddenLetter])) ) {
+                } else if ( (matches = find_second(*bState->index,(IntKey)map[mediate.l_hiddenLetter])) ) {
                     for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
-                        mediate.dest = (*l)->dest;
-                        int mediateState;
+                        HalfArc const& la=*l;
+                        mediate.l_dest = la->dest;
+                        int mediateState=numStates();
                         typedef HashTable<HalfArcState, int> HAT;
                         hash_traits<HAT>::insert_return_type ins;
-                        if ( (ins = arcStateMap.insert(HAT::value_type(mediate,numStates()))).second ) {			  
-                            mediateState = numStates();
+                        if ( (ins = arcStateMap.insert(HAT::value_type(mediate,mediateState))).second ) {
+// populate new mediateState
                             push_back(states);
-                            if ( namedStates ) {
-                                char *p = buf;
-				char *limit=namer.limit;
-                                const char *s = b.stateName(mediate.source),
-                                    *l = (*a.out)[mediate.hiddenLetter].c_str();
-                                while ( *s && p < limit)
-                                    *p++ = *s++;
-                                *p++ = ',';
-                                while ( *l && p < limit)
-                                    *p++ = *l++;
-                                *p++ = '-';
-                                *p++ = '>';
-				const char *d= a.stateName(mediate.dest);
-                                while ( (*p++ = *d++) && p < limit) ;
-                                stateNames.add(buf);
-                            } else {
-                                mediateState = ins.first->second;
-                            }
-
+                            if ( namedStates )
+                                stateNames.add(namer.make_mediate(mediate.l_dest,mediate.r_source,mediate.l_hiddenLetter),mediateState);
                             int temp = sourceState;
-                            sourceState = mediateState;
-                            triDest.aState = mediate.dest;
-                            in = EMPTY;
-                            triDest.filter = 0;
-                            for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
-                                Assert ( map[(*l)->out] == (*r)->in );
-                                out = (*r)->out;
-                                triDest.bState = (*r)->dest;
-                                weight = (*r)->weight;
-                                COMPOSEARC;
-                                if ( isTiedOrLocked(group = (*r)->groupId) )
-                                    states[sourceState].arcs.top().groupId = group;
+                            {                                
+                                sourceState = mediateState;
+                                triDest.aState = mediate.l_dest;
+                                in = EMPTY;
+                                triDest.filter = 0;
+                                for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
+                                    HalfArc const& ra=*r;
+                                    Assert ( map[la->out] == ra->in );
+                                    out = ra->out;
+                                    triDest.bState = ra->dest;
+                                    weight = ra->weight;
+                                    COMPOSEARC_GROUP(ra->groupId);
+                                }
                             }
                             sourceState = temp;
+                            
+                        } else {
+                            mediateState = ins.first->second;                            
                         }
-                        states[sourceState].addArc(FSTArc((*l)->in, EMPTY, mediateState, (*l)->weight));
-                        if ( (group = (*l)->groupId)>=0)
-                            states[sourceState].arcs.top().groupId = group;
-
+                        
+                        states[sourceState].addArc(FSTArc(la->in, EMPTY, mediateState, la->weight,la->groupId));
                     }
                 }
             }
@@ -195,17 +205,20 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                 triDest.aState = triSource.aState;
                 triDest.filter = 1;
                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
-                    Assert ( (*r)->in == EMPTY );
-                    out = (*r)->out;
-                    weight = (*r)->weight;
-                    triDest.bState = (*r)->dest;
-                    COMPOSEARC;
-                    if ( (group = (*r)->groupId)>=0)
-                        states[sourceState].arcs.top().groupId = group;
+                    HalfArc const& ra=*r;
+                    Assert ( ra->in == EMPTY );
+                    out = ra->out;
+                    weight = ra->weight;
+                    triDest.bState = ra->dest;
+                    COMPOSEARC_GROUP(ra->groupId);
                 }
             }
         }
+
     } else {
+        // 3 state filter; results in fewer epsilons (merge a:*e* composed with *e*:z into a single a:z in some cases?
+
+        
         while ( queue.notEmpty() ) {
             sourceState = queue.top().num;
             triSource = queue.top().tri;
@@ -222,7 +235,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
             if ( larger->size > WFST::indexThreshold ) {
                 larger->indexBy( larger == aState ); // create hash table
                 if ( larger == bState ) {       // bState (rhs transducer) is larger
-                    for ( List<FSTArc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end() ; l !=end ; ++l) {
+                    for ( List<FSTArc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end()
+                              ; l !=end ; ++l) {
                         in = l->in;
                         triDest.aState = l->dest;
                         if ( l->out == EMPTY ) {
@@ -236,7 +250,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                             if ( triSource.filter == 0 )
                                 if ( (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
                                     triDest.filter = 0;
-                                    for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
+                                    for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end()
+                                              ; r!=end ; ++r ) {
                                         Assert((*r)->in == EMPTY);
                                         out = (*r)->out;
                                         weight = l->weight * (*r)->weight;
@@ -247,7 +262,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                         } else {
                             if ( (matches = find_second(*bState->index,(IntKey)map[l->out])) ) {
                                 triDest.filter = 0;
-                                for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
+                                for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end()
+                                          ; r!=end ; ++r ) {
                                     Assert ( map[l->out] == (*r)->in );
                                     out = (*r)->out; //FIXME: uninit
                                     weight = l->weight * (*r)->weight;
@@ -393,7 +409,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
         final = numStates();
         push_back(states);
         if ( namedStates )
-            stateNames.add("final");
+            stateNames.add("final",final);
         for ( i = 0 ; i < 3 ; ++i )
             if ( pFinal[i] ) {
                 states[*pFinal[i]].addArc(FSTArc(EMPTY, EMPTY, final, 1.0));

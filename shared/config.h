@@ -1,17 +1,18 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
-#define USE_GRAEHL_HASH_MAP
+//#define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
 // use singly linked list - recommended (less space) - but FIXME: double free!
-#define USE_SLIST
+//#define USE_SLIST
 
 #ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION
 #endif
 
 #ifdef DEBUG
+# define DEBUG_STRINGPOOL
 #define DEBUGLEAK
 #define DEBUG_ESTIMATE_PP
 #define DEBUGNAN
@@ -20,7 +21,7 @@
 //#define DEBUGNORMALIZE
 #define DEBUGKBEST
 #define DEBUG_RANDOM_GENERATE
-//#define DEBUGPRUNE
+#define DEBUGPRUNE
 //#define DEBUGFB
 #define DEBUGCOMPOSE
 #define DEBUG_ADAPTIVE_EM
@@ -81,7 +82,10 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 #define STATIC_HASH_EQUAL
 #define STATIC_HASHER
 
+// if not STRINGPOOL, then same string -> different address (but no global hashtable needed)
+#if 1 || !defined(DEBUG)
 #define STRINGPOOL
+#endif
 #ifndef STRINGPOOLCLASS
 #define STRINGPOOLCLASS StringPool
 #endif

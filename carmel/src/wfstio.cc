@@ -628,6 +628,7 @@ void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno) con
     while ( line ) {
         if ( !getString(line, symbol) )
             break;
+#if WFSTIO_ERROR_SEQUENCE_NOT_IN_ALPHABET
         unsigned const*pI = alph->find(symbol);
         if ( !pI) {
 //      delete ret;
@@ -642,6 +643,9 @@ void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno) con
             //      ins.insert(*pI);
             //      ret->insert(ret->begin(),*pI);
             *cursor++ = *pI;
+#else
+        *cursor++ = alph->index_of(symbol);
+#endif 
     }
 //  return ret;
 }

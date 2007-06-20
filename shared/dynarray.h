@@ -33,10 +33,10 @@
 #include <algorithm>
 #include <iterator>
 #include <boost/config.hpp>
+#include <graehl/shared/array.hpp>
 
 #ifdef TEST
-# include <graehl/shared/array.hpp>
-#include <graehl/shared/test.hpp>
+# include <graehl/shared/test.hpp>
 #endif
 
 #ifdef GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT
@@ -662,6 +662,10 @@ public:
     }
 
     void removeMarked(bool marked[]) {
+        graehl::remove_marked_swap(*this,marked);
+    }
+    
+    void removeMarked_nodestroy(bool marked[]) {
         unsigned sz=size();
         if ( !sz ) return;
         unsigned int f, i = 0;
@@ -1136,21 +1140,21 @@ struct plus_one_reader {
         return in;
     }
 };
-BOOST_AUTO_UNIT_TEST( dynarray )
+BOOST_AUTO_UNIT_TEST( test_dynarray )
 {
     using namespace std;
     {
         const int N=10;
 
-    StackAlloc al;
-    int aspace[N];
-    al.init(aspace,aspace+N);
-    istringstream ina("(1 2 3 4)");
-    array<int> aint;
-    read(ina,aint,al);
-    BOOST_CHECK(aint.size()==4);
-    BOOST_CHECK(aint[3]==4);
-    BOOST_CHECK(al.top=aspace+4);
+        StackAlloc al;
+        int aspace[N];
+        al.init(aspace,aspace+N);
+        istringstream ina("(1 2 3 4)");
+        array<int> aint;
+        read(ina,aint,al);
+        BOOST_CHECK(aint.size()==4);
+        BOOST_CHECK(aint[3]==4);
+        BOOST_CHECK(al.top=aspace+4);
     }
 
     {
@@ -1214,7 +1218,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
 
     using namespace std;
     array<int> aa(sz);
-    BOOST_CHECK(aa.capacity() == sz);
+    BOOST_CHECK_EQUAL(aa.capacity(),sz);
     dynamic_array<int> da;
     dynamic_array<int> db(sz);
     BOOST_CHECK(db.capacity() == sz);
@@ -1236,11 +1240,11 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     BOOST_CHECK(da==aa);
     BOOST_CHECK(db==aa);
     const int sz1=3,sz2=4;;
-    da.removeMarked(rm1); // removeMarked
+    da.removeMarked_nodestroy(rm1); // removeMarked
     BOOST_REQUIRE(da.size()==sz1);
     for (int i=0;i<sz1;++i)
         BOOST_CHECK(a1[i]==da[i]);
-    db.removeMarked(rm2);
+    db.removeMarked_nodestroy(rm2);
     BOOST_REQUIRE(db.size()==sz2);
     for (int i=0;i<sz2;++i)
         BOOST_CHECK(a2[i]==db[i]);
@@ -1267,6 +1271,15 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     for (int i=0;i<sz2;++i)
         BOOST_CHECK(a2[i]==eb[i]);
 
+    std::vector<int> o2n(aa.size());
+    BOOST_CHECK_EQUAL(indices_after_remove_marked(array_begin(o2n),rm1,7),ea.size());
+    for (int i=0;i<aa.size();++i)
+        if (o2n[i]==-1) {
+            BOOST_CHECK_EQUAL(rm1[i],1);
+        } else {
+            BOOST_CHECK_EQUAL(aa[i],ea[o2n[i]]);
+        }
+    
     
     BOOST_CHECK(c==4);
     db(10)=1;
@@ -1294,7 +1307,7 @@ BOOST_AUTO_UNIT_TEST( dynarray )
     string sa="( 2 ,3 4\n \n\t 5,6)";
     string sb="(2 3 4 5 6)";
 
-#define EQIOTEST(A,B)  do { A<int> a;B<int> b;stringstream o;istringstream isa(sa);isa >> a; \
+#define EQIOTEST(A,B)  do { A<int> a;B<int> b;stringstream o;istringstream isa(sa);isa >> a;    \
         o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);} while(0)
 
     EQIOTEST(array,array);

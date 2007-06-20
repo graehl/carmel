@@ -110,7 +110,7 @@ struct State {
 #endif
     }
   
-    void addArc(const FSTArc &arc)
+    FSTArc & addArc(const FSTArc &arc)
     {
         arcs.push(arc);
         ++size;
@@ -122,6 +122,7 @@ struct State {
             index = NULL;
         }
 #endif
+        return arcs.top();
     }
     void reduce() {		// consolidate all duplicate arcs
         HashTable<UnArc, Weight *> hWeights;
@@ -161,7 +162,7 @@ struct State {
         return arcs.erase(t);
     }
     void renumberDestinations(int *oldToNew) { // negative means remove transition
-        Assert(!index);
+        flush();
         for (List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
             int &dest = (int &)l->dest;
             if ( oldToNew[dest] < 0 ) {

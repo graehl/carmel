@@ -14,9 +14,11 @@ struct StringKey {
     const char *c_str() const { return str; }
     static StringKey empty;
     StringKey() : str(empty.str) {}
-    explicit StringKey(unsigned i) : str(static_itoa(i)) {}
+    explicit StringKey(unsigned i) : str(static_itoa(i)) {} // big trouble if you try to kill() one of these
     StringKey(const char *c) : str(const_cast<char *>(c)) {}
+    StringKey(StringKey const& o) : str(o.str) {}
     
+    // note: pass in string length (extra '\0' added for you)
     static inline
     char * alloc(unsigned len) 
     {
@@ -29,11 +31,11 @@ struct StringKey {
         ::operator delete(p);
     }
     
-    const char *clone()
+    void clone()
     {
-        char *old = str;
-        str = std::strcpy(alloc(strlen(str)), str);
-        return old;
+//        char *old = str;
+        str= *str ? std::strcpy(alloc(strlen(str)), str) : empty.str;
+//        return old;
     }
     void kill()
     {
@@ -44,6 +46,12 @@ struct StringKey {
     //operator char * () { return str; }
     //	char * operator =(char * c) { char *t = str; str = c; return t; } // returns old value: why?
     char * operator=(char *c) { return str=c; }
+    StringKey const& operator=(StringKey  const& o) 
+    {
+        str=o.str;
+        return *this;
+    }
+    
     bool operator < ( const StringKey &a) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
     {
         return strcmp(str,a.str)<0;

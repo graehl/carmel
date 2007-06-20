@@ -8,7 +8,7 @@
 
 namespace graehl {
 
-void dump_ht(HashTable<StringKey,int> &ht)
+void dump_ht(HashTable<StringKey,unsigned> &ht)
 {
   Config::debug() << ht;
 
@@ -17,20 +17,20 @@ void dump_ht(HashTable<StringKey,int> &ht)
 
 
 #ifdef STRINGPOOL
-HashTable<StringKey, int> StringPool::counts;
+HashTable<StringKey, unsigned> StringPool::counts;
 
 #endif
 
 
 #ifdef TEST
-struct collide_int {
+struct collide_unsigned {
 #ifndef STATIC_HASHER
-  int mask;
+  unsigned mask;
 
-  collide_int() : mask(-1) {}
+    collide_unsigned() : mask((unsigned)-1) {}
  #endif
-  //collide_int(int m) : mask(m) {}
-  size_t operator()(int i) const {
+  //collide_int(unsigned m) : mask(m) {}
+  size_t operator()(unsigned i) const {
 #ifndef STATIC_HASHER
         return i&mask;
 #else
@@ -39,7 +39,7 @@ struct collide_int {
   }
 };
 
-typedef HashTable<int,int,collide_int> HT;
+typedef HashTable<unsigned,unsigned,collide_unsigned> HT;
 void dump_ht(HT &ht)
 {
   Config::debug() << ht;
@@ -51,16 +51,16 @@ BOOST_AUTO_UNIT_TEST( alphabet )
   Alphabet<StringKey,StringPool> a;
   Alphabet<StringKey,StringPool> b;
   const char *s[]={"u","ul","mu","pi"};
-  const int n=sizeof(s)/sizeof(s[0]);
+  const unsigned n=sizeof(s)/sizeof(s[0]);
   BOOST_CHECK(n==4);
   a.add("a");
-  for (int i=0;i<n;++i) {
+  for (unsigned i=0;i<n;++i) {
         BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
         BOOST_CHECK(a[*a.find(s[i])] == s[i]);
         BOOST_CHECK(b(*b.find(s[i])) == s[i]);
   }
   BOOST_CHECK(a.size()==5 && b.size()==4);
-  for (int i=0;i<n;++i)
+  for (unsigned i=0;i<n;++i)
         BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
   BOOST_CHECK(a.size()==5 && b.size()==4);
   BOOST_CHECK(a(4)=="pi");
@@ -75,14 +75,14 @@ BOOST_AUTO_UNIT_TEST( alphabet )
 #include <boost/progress.hpp>
 #endif
 
-  static void hashtest(int n, int mask)
+  static void hashtest(unsigned n, unsigned mask)
   {
         n *= 2;
 #ifdef BENCH
         Config::log() << n << " with mask " << mask << "\n";
 #endif
-        collide_int hashfn;
-                typedef HashTable<int,int,collide_int> HT;
+        collide_unsigned hashfn;
+                typedef HashTable<unsigned,unsigned,collide_unsigned> HT;
 #ifndef STATIC_HASHER
         hashfn.mask=mask;
 #endif
@@ -96,7 +96,7 @@ BOOST_AUTO_UNIT_TEST( alphabet )
 #ifdef BENCH
           boost::progress_timer t;
 #endif
-        int i;
+        unsigned i;
         // n must be even
         {
 #ifdef BENCH
@@ -131,7 +131,7 @@ again:
           BOOST_CHECK(ht.find(i) != ht.end());
           BOOST_CHECK(ht.find(i)->first == i);
           BOOST_CHECK(ht.find(i)->second == i);
-          BOOST_CHECK(ht.insert(std::pair<int,int>(i,0)).second == false);
+          BOOST_CHECK(ht.insert(std::pair<unsigned,unsigned>(i,0)).second == false);
           BOOST_CHECK(*find_second(ht,i) == i);
 
           BOOST_CHECK(ht[i] == i);
@@ -145,7 +145,7 @@ again:
           boost::progress_timer t;
 #endif
         for (HT::iterator hit=ht.begin();hit!=ht.end();++hit) {
-          int k=hit->first;
+          unsigned k=hit->first;
           BOOST_CHECK(hit->second==k);
           BOOST_CHECK(k<n && k>=0);
           seen[k]=true;
@@ -157,10 +157,10 @@ again:
         for (i=0; i <n; ++i)
           seen[i]=false;
         size_t total=0;
-        for (i=0;i<(int)ht.bucket_count();++i) {
+        for (i=0;i<(unsigned)ht.bucket_count();++i) {
           total += ht.bucket_size(i);
           for (HT::local_iterator hit=ht.begin(i),end=ht.end(i);hit!=ht.end(i);++hit) {
-                int k=hit->first;
+                unsigned k=hit->first;
                 BOOST_CHECK(hit->second==k);
                 BOOST_CHECK(k<n && k>=0);
                 seen[k]=true;
@@ -195,7 +195,7 @@ Config::log() << "erase ";
           BOOST_CHECK(ht.find(i) == ht.end());
           BOOST_CHECK(find_second(ht,i) == NULL);
           if ( i % 2) {
-          HT::insert_return_type insr=ht.insert(std::pair<int,int>(i,i));
+          HT::insert_return_type insr=ht.insert(std::pair<unsigned,unsigned>(i,i));
           BOOST_CHECK(insr.second == true);
           BOOST_CHECK(insr.first->first == i);
           BOOST_CHECK(insr.first->second == i);

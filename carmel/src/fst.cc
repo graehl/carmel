@@ -619,23 +619,17 @@ void WFST::removeMarkedStates(bool marked[])
 {
     Assert(valid());
     int *oldToNew = NEW int[numStates()];
-    int i = 0, f = 0;
-    while ( i < numStates() )
-        if (marked[i])
-            oldToNew[i++] = -1;
-        else
-            oldToNew[i++] = f++;
-    if ( i == f ) { // none to be removed
-        delete[] oldToNew;
-        return;
+    unsigned n_pre=numStates();
+    
+    if ( n_pre != graehl::indices_after_remove_marked(oldToNew,marked,n_pre) ) { // something removed
+        stateNames.removeMarked(marked, oldToNew,n_pre);
+        remove_marked_swap(states,marked); //states.removeMarked(marked);
+        for ( unsigned i = 0 ; i < states.size() ; ++i ) {
+            states[i].renumberDestinations(oldToNew);
+        }
+        final = oldToNew[final]==-1 ? invalid_state : oldToNew[final];
     }
-    stateNames.removeMarked(marked, oldToNew);
-    remove_marked_swap(states,marked); //states.removeMarked(marked);
-    for ( unsigned i = 0 ; i < states.size() ; ++i ) {
-        states[i].flush();
-        states[i].renumberDestinations(oldToNew);
-    }
-    final = oldToNew[final];
+    
     delete[] oldToNew;
 }
 
