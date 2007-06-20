@@ -60,15 +60,15 @@ struct slist_node
 /// only works for singleton/static Alloc
 template <class T,
           class A=std::allocator<impl::slist_node<T> >
-//          class A=std::allocator<T>
-          >
+          //          class A=std::allocator<T>
+>
 class slist_shared :
     private A::template rebind<impl::slist_node<T> >::other
-//    private A    
+    //    private A    
 {
  public:
     typedef typename A::template rebind<impl::slist_node<T> >::other allocator_type;
-  typedef impl::slist_node<T> Node;
+    typedef impl::slist_node<T> Node;
     typedef slist_shared<T,A> self_type;
     struct back_insert_iterator : public std::iterator<std::output_iterator_tag, T>
     {
@@ -107,19 +107,19 @@ class slist_shared :
         
     };
         
-  Node* head;
+    Node* head;
     
-  typedef T value_type;
-  typedef value_type* pointer;
-  typedef const value_type* const_pointer;
-  typedef value_type& reference;
-  typedef const value_type& const_reference;
-  typedef unsigned int size_type;
-  //  typedef int difference_type;
-  //  typedef forward_iterator_tag _Iterator_category;
+    typedef T value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
+    typedef unsigned int size_type;
+    //  typedef int difference_type;
+    //  typedef forward_iterator_tag _Iterator_category;
 
-  struct val_iterator;
-  struct erase_iterator;
+    struct val_iterator;
+    struct erase_iterator;
     typedef val_iterator iterator; /// this means standard list operation (erase) isn't supported for regular iterator
 
 
@@ -365,10 +365,10 @@ class slist_shared :
     void construct_deep_copy(const self_type &L)
     {
         /*
-        head=NULL;
-        for ( const_iterator i = L.begin(); i!=L.end(); ++i )
-            push_front(*i);
-        reverse();
+          head=NULL;
+          for ( const_iterator i = L.begin(); i!=L.end(); ++i )
+          push_front(*i);
+          reverse();
         */
         append_deep_copy(&head,L.head);
     }
@@ -523,7 +523,7 @@ class slist_shared :
             head=n;
         }
     }
-    public:
+ public:
             
     inline void pop_front()
     {
@@ -629,11 +629,11 @@ class slist : public slist_shared<T,A>
         return *this;
     }
     /*
-    self_type& operator=(self_type const& x)
-    {
-        this->assign_deep_copy(x);
-        return *this;
-        }*/
+      self_type& operator=(self_type const& x)
+      {
+      this->assign_deep_copy(x);
+      return *this;
+      }*/
     
     void swap(slist& x)
     {

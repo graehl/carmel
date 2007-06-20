@@ -44,7 +44,9 @@ std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 
 class WFST {
- private:	 
+ public:
+    typedef Alphabet<StringKey,StringPool> alphabet;
+ private:
     enum { STATE,ARC } PerLine;
     enum { BRIEF,FULL } ArcFormat;
     static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
@@ -52,8 +54,8 @@ class WFST {
     void initAlphabet() {
         trn=NULL;
 #define EPSILON_SYMBOL "*e*"
-        in = NEW Alphabet<StringKey,StringPool>(EPSILON_SYMBOL);
-        out = NEW Alphabet<StringKey,StringPool>(EPSILON_SYMBOL);
+        in = NEW alphabet(EPSILON_SYMBOL);
+        out = NEW alphabet(EPSILON_SYMBOL);
         ownerIn=ownerOut=1;
     }
     void train_prune(); // delete states with zero counts
@@ -89,9 +91,9 @@ class WFST {
     bool ownerIn;
     bool ownerOut;
     bool named_states;
-    Alphabet<StringKey,StringPool> *in;
-    Alphabet<StringKey,StringPool> *out;
-    Alphabet<StringKey,StringPool> stateNames;
+    alphabet *in;
+    alphabet *out;
+    alphabet stateNames;
     unsigned int final;	// final state number - initial state always number 0
     std::vector<State> states;
   	 
@@ -162,7 +164,7 @@ class WFST {
     //	lastChange = train_maximize(method);
     Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
     Weight train_maximize(NormalizeMethod method=CONDITIONAL,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
-    WFST(const WFST &a) {}
+    WFST(const WFST &a) { throw std::runtime_error("No copying WFSTs allowed!"); }
  public:
     void index(int dir) {
         for ( int s = 0 ; s < numStates() ; ++s ) {
@@ -191,13 +193,13 @@ class WFST {
     WFST(istream & istr,bool alwaysNamed=false) {
         initAlphabet();
         if (!this->readLegible(istr,alwaysNamed))
-            final = (unsigned)INVALID;
+            final = invalid_state;
     }
 
     WFST(const string &str, bool alwaysNamed){
         initAlphabet();
         if (!this->readLegible(str,alwaysNamed))
-            final = (unsigned)INVALID;
+            final = invalid_state;
     }
 
     WFST(const char *buf); // make a simple transducer representing an input sequence
@@ -367,8 +369,8 @@ class WFST {
   
   
     int generate(int *inSeq, int *outSeq, int minArcs, int maxArcs);
-    enum{INVALID=-1};
-    int valid() const { return ( final != (unsigned)INVALID ); }
+    BOOST_STATIC_CONSTANT(unsigned,invalid_state=(unsigned)-1);
+    int valid() const { return ( final != invalid_state ); }
     unsigned int size() const { if ( !valid() ) return 0; else return numStates(); }
     int numArcs() const {
         int a = 0;
@@ -416,13 +418,13 @@ class WFST {
     }
     void ownInAlphabet() {
         if ( !ownerIn ) {
-            in = NEW Alphabet<StringKey,StringPool>(*in);
+            in = NEW alphabet(*in);
             ownerIn = 1;
         }
     }
     void ownOutAlphabet() {
         if ( !ownerOut ) {
-            out = NEW Alphabet<StringKey,StringPool>(*out);
+            out = NEW alphabet(*out);
             ownerOut = 1;
         }
     }
@@ -430,18 +432,18 @@ class WFST {
         if (named_states) {
             stateNames.~Alphabet();
             named_states=false;
-            PLACEMENT_NEW (&stateNames) Alphabet<StringKey,StringPool>();
+            PLACEMENT_NEW (&stateNames) alphabet();
         }
     }
 
     void clear() {
+        final = invalid_state;        
         unNameStates();
         states.clear();
-        deleteAlphabet();
-        final = (unsigned)INVALID;
+        destroy();
     }
     ~WFST() {
-        clear();
+        destroy();
     }
     typedef void (*WeightChanger)(Weight *w);
     static void setRandom(Weight *w) {
@@ -495,8 +497,12 @@ class WFST {
     }
     void removeMarkedStates(bool marked[]);  // remove states and all arcs to
     // states marked true
+    BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);
+    BOOST_STATIC_CONSTANT(int,locked_group=FSTArc::locked_group);
     static inline bool isNormal(int groupId) {
-        //return groupId == WFST::no_group;
+        Assert(groupId >= 0 || groupId==no_group);
+        
+        //return groupId == WFST::no_group; // same/faster test:
         return groupId < 0;
     }
     static inline bool isLocked(int groupId) {
@@ -508,10 +514,13 @@ class WFST {
     static inline bool isTiedOrLocked(int groupId) {
         return groupId >= 0;
     }
-    BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);
-    BOOST_STATIC_CONSTANT(int,locked_group=FSTArc::locked_group);
     
  private:
+    void destroy() 
+    {
+        deleteAlphabet();
+    }
+    
     void invalidate() {		// make into empty/invalid transducer
         clear();
     }
