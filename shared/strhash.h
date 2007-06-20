@@ -26,7 +26,7 @@ class StringPool {
  public:
     BOOST_STATIC_CONSTANT(bool,is_noop=0);
     static StringKey borrow(StringKey s) {
-//        if (s.isDefault())            return s;
+        if (s.isDefault())            return s;
 #ifdef STRINGPOOL
         hash_traits<HT>::insert_return_type
             i=counts.insert(HT::value_type(s,1));
@@ -42,7 +42,7 @@ class StringPool {
 #endif
     }
     static void giveBack(StringKey s) {
-//        if (s.isDefault()) return;
+        if (s.isDefault()) return;
 #ifdef STRINGPOOL
         Assert(has_key(counts,s) && counts[s]>0);
         if (--*find_second(counts,s) == 0) {

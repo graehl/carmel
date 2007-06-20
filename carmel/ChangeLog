@@ -1,3 +1,10 @@
+2007-06-20  Jonathan Graehl  <graehl@isi.edu>
+
+	* fixed bugs (thanks, valgrind) all over: reading transducers with
+	locked arcs, -a (tied arc preserving, for training) composition,
+	-m (meaningful state names). decipherment (-a composition followed
+	by training) works again.
+
 2005-07-08  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: I changed nothing about the output of transducers (keeping the new e^ default instead of "ln"), but carmel now can properly identify e^-n weights in the presence of omitted input or output symbols.  Also, the following formats are now accepted:
