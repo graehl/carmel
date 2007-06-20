@@ -81,7 +81,7 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
             CHECKBUFOVERFLOW;
             if (*buf == '\n' || *buf == '\t' || *buf == ' ')
                 break;
-            if (*buf != '!' || *buf != ')' ) {
+            if (*buf == '!' || *buf == ')' ) {
                 in.unget();
                 break;
             }
