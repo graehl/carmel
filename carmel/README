@@ -2,14 +2,14 @@
 * This software ("Carmel") is licensed for research use only, as described in  *
 * the LICENSE file in this distribution.  The software can be downloaded from  *
 * http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
+* contact Kevin Knight (knight@isi.edu)    *
 * with questions about the software or commercial licensing.  All software is  *
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
 
-Carmel Version 2.1:
+Carmel Version 3.2:
 
-This version of carmel is released on 2003-01-20. For changes and
+This version of carmel is released on 2007-06-20. For changes and
 additions to Carmel, see ChangeLog.
 
 Table of Contents:
@@ -70,10 +70,7 @@ you may need to set CC.$ARCH to point to your version 3 or greater g++
 (on some systems it will be called g++30 or similar)
 
 
-You should probably use GNU make.  If you are not using GNU make, you will need to
-
-    % echo > dependencies.$ARCH
-
+You should probably use GNU make (3.8 or later)
 
 2. Create the dependency structure, to do that type:
 
@@ -83,11 +80,8 @@ You should probably use GNU make.  If you are not using GNU make, you will need 
 
    % make 
 
-(Note: this will create an optimized version of carmel.For a
-debug/profile/purified version  % make debug (purify profile)
-
 Carmel also compiles with the latest Microsoft Visual C++ (.NET currently).
-A project file is included in the msvc++ directory.
+A project file is included in the msvc++ directory.  *This hasn't been checked lately!*
 
 Part IV: Carmel File Formats:
 ------------------------------
@@ -145,11 +139,14 @@ result to the standard output.
 		input/output pair should count in training (default is 1)
 -e w		w is the convergence criteria for training (the minimum
 		change in an arc's weight to trigger another iteration) - 
-		default w is 1E-5 (or, -5log)
--f w		w is a floor weight used for training, which is added to the
-		counts for all arcs, immediately before normalization - if
-		nonzero, it ensures that no arc will be given zero weight -
-		default w is 0
+		default w is 1E-4 (or, -4log)
+-X w		w is a perplexity convergence ratio between 0 and 1,
+		with 1 being the strictest (default w=.999)
+-f w		w is a per-training example floor weight used for training,
+		added to the counts for all arcs, immediately before normalization -
+		(this implements so-called "Dirichlet prior" smoothing)
+-U		use the initial weights of non-locked arcs as per-example prior counts
+		(in the same way as, and in addition to, -f)
 -M n		n is the maximum number of training iterations that will be
 		performed, regardless of whether the convergence criteria is
 		met - default n is 256
@@ -159,32 +156,38 @@ result to the standard output.
 -F filename	write the final transducer to a file (in lieu of stdout)
 -v		invert the resulting transducer by swapping the input and
 		output symbols 
--d		do not eliminate dead-end states from all transducers created
+-d		do not reduce (eliminate dead-end states) created
 -C		consolidate arcs with same source, destination, input and
 		output, with a total weight equal to the sum (clamped to a
 		maximum weight of one)
 -p w		prune (discard) all arcs with weight less than w
--g n		stochastically generate n input/output pairs by following
+-w w		prune states and arcs only used in paths w times worse
+		than the best path (1 means keep only best path, 10 = keep paths up to 10 times weaker)
+-z n		keep at most n states (those used in highest-scoring paths)
+-G n		stochastically generate n input/output pairs by following
 		random paths (first choosing an input symbol with uniform
 		probability, then using the weights to choose an output symbol
 		and destination) from the initial state to the final state
 		output is in the same form accepted in -t and -S.
-		Training a transducer on its own -g output should be a no-op.
--G n		stochastically generate n paths by randomly picking an arc
+		Training a transducer with conditional normalization on its own -G output should be a no-op.
+-g n		stochastically generate n paths by randomly picking an arc
 		leaving the current state, by joint normalization
 		until the final state is reached.
 		same output format as -k best paths
+
+-@		For -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.
 -R n		Use n as the random seed for repeatable -g and -G results
 		default seed = current time
 -L n		while generating input/output pairs with -g or -G, give up if
 		final state isn't reached after n steps (default n=1000)
 -T n		during composition, index arcs in a hash table when the
 		product of the number of arcs of two states is greater than n 
-		(by default, n = 128)
+		(by default, n = 32)
 -N n		assign each arc in the result transducer a unique group number
 		starting at n and counting up.  If n is 0 (the special group
 		for unchangeable arcs), all the arcs are assigned to group 0
 		if n is negative, all group numbers are removed
+-j		Perform joint rather than conditional normalization
 -A		the weights in the first transducer (depending on -l or -r, as
 		with -b, -S, and -t) are assigned to the result, by arc group
 		number.  Arcs with group numbers for which there is no
@@ -201,7 +204,13 @@ result to the standard output.
 -V		version number
 -u		Don't normalize outgoing arcs for each input during training;
 		try -tuM 1 to see forward-backward counts for arcs
--j		Perform joint rather than conditional normalization
+-Y		Write transducer to GraphViz .dot file
+		(see http://www.research.att.com/sw/tools/graphviz/)
+-q		Suppress computation status messages (quiet!)
+-K		Assume state names are integer indexes (when the final state is an integer)
+-o g		Use learning rate growth factor g (>= 1) (default=1)
+-1		randomly scale weights (of unlocked arcs) after composition uniformly by (0..1]
+-! n		perform n additional random initializations of arcs for training, keeping the lowest perplexity
 
 some formatting switches for paths from -k or -G:
 	-I	show input symbols only
@@ -211,11 +220,12 @@ some formatting switches for paths from -k or -G:
 	-Q	if -I or -O is specified, omit outermost quotes of symbol names
 	-W	do not show weights for paths
 
-Weight output format switches (by default, small/large weights are written as logarithms):
-	-B	Write weights as their base 10 log (default is ln, e.g.
-		'-5ln' signifies e^(-5))
-	-Z	Write weights in logarithm form always, e.g. '-10ln',
+Weight output format switches
+		(by default, small/large weights are written as logarithms):
+	-Z	Write weights in logarithm form always, e.g. 'e^-10',
 		except for 0, which is written simply as '0'
+	-B	Write weights as their base 10 log (e.g. -1log == 0.1)
+	-2	Instead of e^K, output Kln (deprecated)
 	-D	Write weights as reals always, e.g. '1.234e-200'
 
 Transducer output format switches:
@@ -223,4 +233,3 @@ Transducer output format switches:
 	-J	Don't omit output=input or Weight=1
 
 Confused?  Think you've found a bug?  If all else fails, e-mail graehl@isi.edu or knight@isi.edu
-

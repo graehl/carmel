@@ -11,7 +11,7 @@
 #define DOUBLE_PRECISION
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG) && defined(CARMEL_DEBUG_PRINTS)
 //# define DEBUG_STRINGPOOL
 #define DEBUGLEAK
 #define DEBUG_ESTIMATE_PP
