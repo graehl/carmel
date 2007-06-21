@@ -179,7 +179,7 @@ struct wfst_paths_printer {
                 int id = flags['O'] ? arc.out : arc.in;
                 if ( !(flags['E'] && id==WFST::epsilon_index) ) {
                     out << sp;
-                    out_maybe_quote(flags['O'] ? wfst.outLetter(id) : wfst.inLetter(id),out,flags['Q']);
+                    out_maybe_quote(flags['O'] ? wfst.outLetter(id) : wfst.inLetter(id),out,!flags['Q']);
                 }
             } else {
                 out << sp;
