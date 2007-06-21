@@ -4,6 +4,12 @@
 //#define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
+#ifdef _MSC_VER
+#ifndef USE_GRAEHL_HASH_MAP
+#define USE_GRAEHL_HASH_MAP
+#endif
+#endif
+
 // use singly linked list - recommended (less space) - but FIXME: double free!
 //#define USE_SLIST
 
