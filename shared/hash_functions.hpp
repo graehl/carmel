@@ -186,7 +186,7 @@ struct incremental_hasher
 {
     uint32_t a;
       
-    incremental_hasher(uint32_t seed=golden_ratio_fraction_64) : a(seed) {}
+    incremental_hasher(uint32_t seed=golden_ratio_fraction_32) : a(seed) {}
       
     template <class C>
     void append(C c) 

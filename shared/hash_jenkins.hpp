@@ -257,7 +257,7 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
   a = b = c = ((uint32_t)(length<<2)) +
 #ifdef HASH_JENKINS_UINT64
   (uint32_t)seed;
-  c += seed>>32;
+  c += (unit32_t)(seed>>32);
   DBP_JENKINS("k[0]="<<(length?k[0]:(uint32_t)0)<<" length="<<length<<" seed="<<seed);
 #else
     *pc;
@@ -527,7 +527,7 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
   a = b = c = ((uint32_t)(length<<2)) +
 #ifdef HASH_JENKINS_UINT64
   (uint32_t)seed;
-  c += seed>>32;
+  c += (uint32_t)(seed>>32);
   DBP_JENKINS("k[0]="<<(uint32_t)(length?((uint8_t *)key)[0]:(uint8_t)0)<<" length="<<length<<" seed="<<seed);
 #else
     *pc;

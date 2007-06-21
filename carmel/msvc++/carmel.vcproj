@@ -11,59 +11,6 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Debug_Broken|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
-			ConfigurationType="1"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\..\shared;..\..\boost"
-				PreprocessorDefinitions="/DBOOST_DISABLE_THREADS /DBOOST_NO_MT"
-				IgnoreStandardIncludePath="FALSE"
-				MinimalRebuild="TRUE"
-				ExceptionHandling="TRUE"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
-				UsePrecompiledHeader="0"
-				BrowseInformation="1"
-				BrowseInformationFile="browse"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/../../bin/carmel.win32.debug.exe"
-				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/carmel.pdb"
-				SubSystem="1"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
@@ -193,7 +140,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="..\..\shared;..\..\boost"
+				AdditionalIncludeDirectories="..\..\..;..\..\..\boost"
 				PreprocessorDefinitions="/DBOOST_DISABLE_THREADS /DBOOST_NO_MT"
 				StringPooling="TRUE"
 				ExceptionHandling="TRUE"
@@ -312,16 +259,6 @@
 				RelativePath="..\src\carmel.cc"
 				FileType="0">
 				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
@@ -379,16 +316,6 @@
 				RelativePath="..\src\fst.cc"
 				FileType="0">
 				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
@@ -431,16 +358,6 @@
 				RelativePath="..\..\shared\graph.cc"
 				FileType="0">
 				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
@@ -482,16 +399,6 @@
 			<File
 				RelativePath="..\..\shared\kbest.cc"
 				FileType="0">
-				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -565,16 +472,6 @@
 				RelativePath="..\src\train.cc"
 				FileType="0">
 				<FileConfiguration
-					Name="Debug_Broken|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
@@ -616,17 +513,6 @@
 			<File
 				RelativePath="..\src\tests\Tweight.cc"
 				FileType="0">
-				<FileConfiguration
-					Name="Debug_Broken|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalOptions="/I z:\isd\boost /I z:\isd\devel\tt"
-						MinimalRebuild="FALSE"
-						ExceptionHandling="FALSE"
-						BrowseInformation="1"
-						BrowseInformationFile=""/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
@@ -774,12 +660,6 @@
 			<File
 				RelativePath="..\src\compose.cc">
 				<FileConfiguration
-					Name="Debug_Broken|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
@@ -849,12 +729,6 @@
 			<File
 				RelativePath="..\..\shared\strhash.cc">
 				<FileConfiguration
-					Name="Debug_Broken|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
@@ -897,12 +771,6 @@
 			<File
 				RelativePath="..\..\shared\weight.cc">
 				<FileConfiguration
-					Name="Debug_Broken|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
@@ -932,12 +800,6 @@
 			</File>
 			<File
 				RelativePath="..\src\wfstio.cc">
-				<FileConfiguration
-					Name="Debug_Broken|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
