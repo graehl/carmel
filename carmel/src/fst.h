@@ -22,6 +22,7 @@
 #include <graehl/shared/kbest.h>
 #include <boost/config.hpp>
 #include <graehl/shared/config.h>
+#include <graehl/shared/mean_field_scale.hpp>
 
 namespace graehl {
 
@@ -156,15 +157,23 @@ class WFST {
     static int indexThreshold;
     Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
     trainInfo *trn;
-    enum NormalizeMethod { CONDITIONAL, // all arcs from a state with the same input will add to one
+    enum norm_group_by { CONDITIONAL, // all arcs from a state with the same input will add to one
                            JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
                            NONE // 
     } ;
+    
+    struct NormalizeMethod 
+    {
+        norm_group_by group;
+        mean_field_scale scale;
+    };
+    
+        
     //     newPerplexity = train_estimate();
     //	lastChange = train_maximize(method);
     Weight train_estimate(bool delete_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
-    Weight train_maximize(NormalizeMethod method=CONDITIONAL,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
-    WFST(const WFST &a) { throw std::runtime_error("No copying WFSTs allowed!"); }
+    Weight train_maximize(NormalizeMethod const& method,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
+    WFST(const WFST &a) { throw std::runtime_error("No copying of WFSTs allowed!"); }
  public:
     void index(int dir) {
         for ( int s = 0 ; s < numStates() ; ++s ) {
@@ -338,16 +347,13 @@ class WFST {
     void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
         changeEachParameter(setRandom);
     }
-    void normalize(NormalizeMethod method=CONDITIONAL);
-    /*void normalizePerInput() {	
-      normalize(CONDITIONAL);
-      }*/
+    void normalize(NormalizeMethod const& method);
 
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
-    void trainBegin(NormalizeMethod method=CONDITIONAL,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
+    void trainBegin(NormalizeMethod const& method,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
     void trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight);
-    Weight trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod method=CONDITIONAL, int ran_restarts=0);
+    Weight trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod const& method, int ran_restarts=0);
     // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
     // returns per-example perplexity achieved
 

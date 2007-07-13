@@ -17,6 +17,8 @@
 #define DOUBLE_PRECISION
 #endif
 
+//#define CARMEL_DEBUG_PRINTS
+
 #if defined(DEBUG) && defined(CARMEL_DEBUG_PRINTS)
 //# define DEBUG_STRINGPOOL
 #define DEBUGLEAK
@@ -24,7 +26,7 @@
 #define DEBUGNAN
 //#define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
-//#define DEBUGNORMALIZE
+#define DEBUGNORMALIZE
 #define DEBUGKBEST
 #define DEBUG_RANDOM_GENERATE
 #define DEBUGPRUNE
@@ -34,6 +36,9 @@
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-3
 #endif
 
+#ifdef DEBUG
+#define DEBUGNORMALIZE
+#endif
 
 //#define DEBUGNAN
 
