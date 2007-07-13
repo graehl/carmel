@@ -268,7 +268,8 @@ main(int argc, char *argv[]){
     Weight prune;
     Weight prod_prob=1;
     int n_pairs=0;
-    WFST::NormalizeMethod norm_method = WFST::CONDITIONAL;
+    WFST::NormalizeMethod norm_method;
+    norm_method.group=WFST::CONDITIONAL;
     int pruneFlag = 0;
     int floorFlag = 0;
     bool seedFlag = false;
@@ -289,7 +290,8 @@ main(int argc, char *argv[]){
     int ranRestarts = 0;
     bool isInChain;
     ostream *fstout = &cout;
-
+    bool mean_field_oneshot_flag=false;
+    
     std::ios_base::sync_with_stdio(false);
 
     for ( i = 1 ; i < argc ; ++i ) {
@@ -327,10 +329,12 @@ main(int argc, char *argv[]){
                     maxGenArcs = -1;
                 else if ( *pc == 'N' )
                     labelFlag = 1;
+                else if ( *pc == '+' )
+                    mean_field_oneshot_flag=true;
                 else if ( *pc == 'j' )
-                    norm_method = WFST::JOINT;
+                    norm_method.group = WFST::JOINT;
                 else if ( *pc == 'u' )
-                    norm_method = WFST::NONE;
+                    norm_method.group = WFST::NONE;
                 flags[*pc] = 1;
             }
         else
@@ -397,8 +401,13 @@ main(int argc, char *argv[]){
                     Config::warn() << "Could not create file " << argv[i] << ".\n";
                     return -8;
                 }
-            } else
+            } else if (mean_field_oneshot_flag) {
+                mean_field_oneshot_flag=0;
+                norm_method.scale.linear=false;
+                readParam(&norm_method.scale.alpha,argv[i],'+');
+            } else {
                 parm[nParms++] = argv[i];
+            }
     }
     bool prunePath = flags['w'] || flags['z'];
     srand(seed);
@@ -947,8 +956,10 @@ void usageHelp(void)
     cout << "ghts one per line if -i is used, it will apply to the\n\t\tsecon";
     cout << "d input, as -i consumes the first\n-n\t\tnormalize the weights o";
     cout << "f arcs so that for each state, the\n\t\tweights all of the arcs ";
-    cout << "with the same input symbol add to one\n-t\t\tgiven pairs of inpu";
-    cout << "t/output sequences, as in -S, adjust the\n\t\tweights of the tra";
+    cout << "with the same input symbol add to one";
+    cout << "\n-j\t\tPerform joint rather than conditional normalization";
+    cout << "\n-+ a\t\tUsing alpha a (recommended: 0), perform pseudo-Dirichlet-process normalization:\n\t\texp(digamma(alpha+w_i))/sum{exp(digamma(alpha+w_j)} instead of just w_i/sum{w_j}";
+    cout << "\n-t\t\tgiven pairs of input/output sequences, as in -S, adjust the\n\t\tweights of the tra";
     cout << "nsducer so as to approximate the conditional\n\t\tdistribution o";
     cout << "f the output sequences given the input sequences\n\t\toptionally";
     cout << ", an extra line preceeding an input/output pair may\n\t\tcontain";
@@ -988,7 +999,6 @@ void usageHelp(void)
     cout << "the special group\n\t\tfor unchangeable arcs), all the arcs are ";
     cout << "assigned to group 0\n\t\tif n is negative, all group numbers are";
     cout << " removed";
-    cout << "\n-j\t\tPerform joint rather than conditional normalization";
     cout << "\n-A\t\tthe weights in the first transducer (depending o";
     cout << "n -l or -r, as\n\t\twith -b, -S, and -t) are assigned to the res";
     cout << "ult, by arc group\n\t\tnumber.  Arcs with group numbers for whic";
@@ -1014,7 +1024,7 @@ void usageHelp(void)
     cout << "fied, omit special symbols (beginning and\n\t\tending with an as";
     cout << "terisk (e.g. \"*e*\"))\n\t-Q\tif -I or -O is specified, omit out";
     cout << "ermost quotes of symbol names\n\t-W\tdo not show weights for pat";
-    cout << "hs";
+    cout << "hs\n\t-%\tSkip arcs that are optimal, showing only sidetracks\n";
     cout << "\n\nWeight output format switches\n\t\t(by default, small/large weights are written as logarithms):";
     cout << "\n\t-Z\tWrite weights in logarithm form always, e.g. 'e^-10',\n\t\texcept for 0, which is written simply as '0'";
     cout << "\n\t-B\tWrite weights as their base 10 log (e.g. -1log == 0.1)";

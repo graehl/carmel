@@ -7,7 +7,7 @@
 
 namespace graehl {
 
-void WFST::trainBegin(WFST::NormalizeMethod method,bool weight_is_prior_count, Weight smoothFloor) {
+void WFST::trainBegin(WFST::NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor) {
     //consolidateArcs();
     normalize(method);
     Assert(!trn);
@@ -109,7 +109,7 @@ struct WeightAccum {
     }
 };
 
-Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod method, int ran_restarts)
+Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod const& method, int ran_restarts)
 {
     Assert(trn);
     int i, o, nSt = numStates();
@@ -632,7 +632,7 @@ void WFST::train_prune() {
 
 }
 
-Weight WFST::train_maximize(WFST::NormalizeMethod method,FLOAT_TYPE delta_scale)
+Weight WFST::train_maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE delta_scale)
 {
     Assert(trn);
 

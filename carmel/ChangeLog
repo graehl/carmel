@@ -1,3 +1,7 @@
+2007-07-12  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/carmel.cc: -+ 0: mean-field with alpha=0 (normalization: exp(digamma(alpha+w_i))/exp(digamma(alpha+sum w_j))
+
 2007-06-20  Jonathan Graehl  <graehl@isi.edu>
 
 	* fixed bugs (thanks, valgrind) all over: reading transducers with
