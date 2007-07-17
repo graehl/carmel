@@ -37,7 +37,7 @@
 #endif
 
 #ifdef DEBUG
-#define DEBUGNORMALIZE
+//#define DEBUGNORMALIZE
 #endif
 
 //#define DEBUGNAN

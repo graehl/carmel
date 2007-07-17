@@ -1,3 +1,7 @@
+2007-07-16  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/carmel.cc (CARMEL_VERSION): 3.3
+
 2007-07-12  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/carmel.cc: -+ 0: mean-field with alpha=0 (normalization: exp(digamma(alpha+w_i))/exp(digamma(alpha+sum w_j))
