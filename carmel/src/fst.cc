@@ -9,6 +9,9 @@ namespace graehl {
 const int WFST::perline_index = ios_base::xalloc();
 const int WFST::arcformat_index = ios_base::xalloc();
 
+#define DP_SLIDE_36
+// slide 36 gives what seems like a bad norm method: scale(c)/scale(sum{c_i}).  slide 38 looks better: scale(c)/sum{scale(c_i)}.  update: slide 38 was wrong, and is revised in http://www.cs.berkeley.edu/~pliang/papers/tutorial-acl2007.pdf
+
 Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
 {
     Assert(valid());
@@ -226,10 +229,6 @@ void WFST::normalize(NormalizeMethod const& method)
             if (isLocked(a.groupId)) //note: training does not set any counts for locked arcs.  so this is the original weight
                 locked_sum += w;
             else {
-#ifdef DEBUGNORMALIZE
-                Config::debug() << " w="<<w<<" scale(w)="<<scale(w);
-#endif 
-                w=scale(w);
                 sum += w;
             }
         }
@@ -285,8 +284,10 @@ void WFST::normalize(NormalizeMethod const& method)
                         Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
                         NANCHECK(groupTotal);
                         if (!groupTotal.isZero()) { // then groupNorm non0 also
-                            a.weight = //( scale(groupTotal)/scale(groupNorm));
-                                groupTotal/groupNorm;
+                            a.weight =
+                                scale(groupTotal)/scale(groupNorm)
+                                    ;
+                                
                             reserved += a.weight;
                         } else
                             a.weight.setZero();
@@ -309,13 +310,14 @@ void WFST::normalize(NormalizeMethod const& method)
         fraction_remain -= reserved;
         NANCHECK(fraction_remain);
         if (!fraction_remain.isZero()) { // something left
-            normal_sum /= fraction_remain; // total counts that would be needed to fairly give reserved weights out
             NANCHECK(normal_sum);
+            Weight scaled_sum=scale(normal_sum);
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                 FSTArc & a=**g;
                 if (isNormal(a.groupId)) {
-                    a.weight = //scale(a.weight)/scale(normal_sum);
-                        a.weight/normal_sum;
+                    a.weight = fraction_remain *
+                        scale(a.weight)/scaled_sum
+                        ;
                     NANCHECK(a.weight);
                 }
             }

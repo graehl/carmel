@@ -22,7 +22,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.2"
+#define CARMEL_VERSION "3.3"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -958,7 +958,7 @@ void usageHelp(void)
     cout << "f arcs so that for each state, the\n\t\tweights all of the arcs ";
     cout << "with the same input symbol add to one";
     cout << "\n-j\t\tPerform joint rather than conditional normalization";
-    cout << "\n-+ a\t\tUsing alpha a (recommended: 0), perform pseudo-Dirichlet-process normalization:\n\t\texp(digamma(alpha+w_i))/sum{exp(digamma(alpha+w_j)} instead of just w_i/sum{w_j}";
+    cout << "\n-+ a\t\tUsing alpha a (recommended: 0), perform pseudo-Dirichlet-process normalization:\n\t\texp(digamma(alpha+w_i))/exp(digamma(alpha+sum{w_j}) instead of just w_i/sum{w_j}";
     cout << "\n-t\t\tgiven pairs of input/output sequences, as in -S, adjust the\n\t\tweights of the tra";
     cout << "nsducer so as to approximate the conditional\n\t\tdistribution o";
     cout << "f the output sequences given the input sequences\n\t\toptionally";
