@@ -70,7 +70,7 @@ static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
 template <class T>
 void readParam(T *t, char *from, char sw) {
     istringstream is(from);
-    is >> *t;
+ is >> *t;
     if ( is.fail() ) {
         Config::warn() << "Expected a number after -" << sw << " switch, (instead got \'" << from << "\' - as a number, " << *t << ").\n";
         exit(-1);
