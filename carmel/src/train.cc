@@ -526,8 +526,8 @@ Weight WFST::train_estimate(bool delete_bad_training)
 #ifdef DEBUG_ESTIMATE_PP
         Config::debug() << ',' << fin;
 #endif
-        fin.raisePower(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
-        prodModProb *= fin;
+
+        prodModProb *= fin.pow(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
     
 #ifdef DEBUGTRAIN
         Config::debug()<<"Forward prob = " << fin << std::endl;
@@ -558,6 +558,7 @@ Weight WFST::train_estimate(bool delete_bad_training)
         letIn = seq->i.let;
         letOut = seq->o.let;
 
+        
         EACHDW(
             dw->scratch.setZero();
             );
@@ -596,9 +597,11 @@ Weight WFST::train_estimate(bool delete_bad_training)
                             dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
                     }
                 }
+
+        Weight mult=seq->weight;
         EACHDW(
             if (!dw->scratch.isZero())
-                dw->counts += (dw->scratch / fin) * (Weight)seq->weight;
+                dw->counts += mult*(dw->scratch / fin);
             );
 
         ++seq;

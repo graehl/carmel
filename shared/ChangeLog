@@ -1,3 +1,7 @@
+2007-07-24  Jonathan Graehl  <graehl@isi.edu>
+
+	* weight.h: Weight::pow,root was identity.  oops.
+
 2006-06-05  Jonathan Graehl  <graehl@isi.edu>
 
 	* 2heap.h (template): changed heapAdd to work just like

@@ -357,7 +357,7 @@ struct logweight {                 // capable of representing nonnegative reals
     self_type root(Real nth) const
     {
 #ifdef WEIGHT_CORRECT_ZERO
-        if (!isZero())
+        if (isZero())
             return *this;
 #endif
         return self_type(weight/nth,false);
@@ -366,7 +366,7 @@ struct logweight {                 // capable of representing nonnegative reals
     self_type pow(Real nth) const
     {
 #ifdef WEIGHT_CORRECT_ZERO
-        if (!isZero())
+        if (isZero())
             return *this;
 #endif
         return self_type(weight*nth,false);
