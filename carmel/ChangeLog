@@ -1,3 +1,7 @@
+2007-07-24  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/train.cc (train_estimate): fixed training example multiplicity (was doubly scaled)
+
 2007-07-16  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/carmel.cc (CARMEL_VERSION): 3.3
