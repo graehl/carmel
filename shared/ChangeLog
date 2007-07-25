@@ -1,5 +1,7 @@
 2007-07-24  Jonathan Graehl  <graehl@isi.edu>
 
+	* mean_field_scale.hpp (struct mean_field_scale): linear interpolation for digamma(x<.0002)
+
 	* weight.h: Weight::pow,root was identity.  oops.
 
 2006-06-05  Jonathan Graehl  <graehl@isi.edu>
