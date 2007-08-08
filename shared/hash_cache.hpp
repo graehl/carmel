@@ -1,10 +1,12 @@
-#ifndef HASH_CACHE_HPP
-#define HASH_CACHE_HPP
+#ifndef GRAEHL__SHARED__HASH_CACHE_HPP
+#define GRAEHL__SHARED__HASH_CACHE_HPP
 
-#include <graehl/shared/hashtable_fwd.hpp>
+#include <boost/functional/hash.hpp>
+//#include <graehl/shared/hashtable_fwd.hpp>
 #include <vector>
-#include <pair>
 #include <cassert>
+
+#include <graehl/shared/doubling_primes.hpp>
 
 namespace graehl {
 
@@ -16,29 +18,30 @@ namespace graehl {
 
      *Key must provide equality,assignment
 */
-template <class Key,class Val,class Backing,class Hash=::hash<Key>, size_t default_cache_size=7919 >
+template <class Key,class Val,class Backing,class Hash=boost::hash<Key>, size_t default_cache_size=7919 >
 struct hash_cache 
 {
     Backing backing_store;
     static Hash stateless_hasher;
-    const unsigned cachesize=default_cache_size; // nice to have this prime.  TODO: growing, variable size, etc?
-    typedef hash_cache<Kev,Val,Backing> Self;
-    static unsigned hash(const Key &key) const
+    unsigned cachesize;
+    typedef hash_cache<Key,Val,Backing> Self;
+    static unsigned hash(const Key &key)
     {
         return stateless_hasher(key);
     }
-    hash_cache(const Key &unused=Key()) { init(unused); }
-    hash_cache(const Key &unused=Key(),const Backing &back) : backing_store(back) { init(unused); }
+    hash_cache(const Key &null_value=Key(),std::size_t cache_size=10000) { init(null_value); }
+    hash_cache(const Key &null_value=Key(),const Backing &back,std::size_t cache_size=10000) : backing_store(back) { init(null_value); }
     typedef std::pair<Key,Val> entry;
-    typedef std::vector<kvpair> cache;
-    void init(const Key &unused=Key()) 
+    typedef std::vector<entry> cache;
+    void init(const Key &null_value=Key(),std::size_t cache_size=10000) 
     {
+        cachesize=next_doubled_prime(cache_size);
         cache.clear();
-        cache.resize(cachesize,entry(unused,Val()));
+        cache.resize(cachesize,entry(null_value,Val()));
         assert(cache.size()==cachesize);
         n_miss=n_hit=0;
     }    
-    unsigned n_miss,n_hit;
+    std::size_t n_miss,n_hit;
     // returns [0...1] portion of hits
     double hit_rate() 
     {
@@ -59,6 +62,7 @@ struct hash_cache
         return cached_val;
     }
 };
+
 
 }
 
