@@ -93,7 +93,7 @@ struct dynamic_hash_cache
         
         o << " (cache capacity="<< capacity()<<" hit rate="<<std::setprecision(2)<<hit_rate()*100<<"% hits="<<n_hit<<" misses="<<n_miss;
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
-        o << " hash collisions="<<n_collide<< " collision rate="<<std::setprecision(2)<<100.*n_collide/n_queries();
+        o << " hash collisions="<<n_collide<< " collision rate="<<std::setprecision(2)<<100.*n_collide/n_queries()<<"%";
 #endif 
         o <<")";
     }
