@@ -305,6 +305,14 @@ inline std::size_t mix_hash(std::size_t a, std::size_t b)
 //     return tmp;
 }
 
+inline std::size_t hash_quads_null_term(unsigned const* a,unsigned max_words=1,unsigned null_word=0)
+{
+    std::size_t h=0;
+    for (unsigned i=0;i<max_words && a[i]!=null_word;++i)
+        h=mix_hash(h,a[i]);
+    return h;
+}
+
 template <class I1,class I2,class Hval>
 inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0) 
 {
