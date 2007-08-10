@@ -14,16 +14,20 @@ void some_operation()
 {
     typename Locking::lock(*this);
 // or    bool do_lock=...;
-//    typename Locking::lock(*this,do_lock);
+//    typename Locking::scoped_lock(*this,do_lock);
     // (locks if do_lock)
 }
 };
 */
 
 #include <graehl/shared/no_locking.hpp>
+#include <boost/detail/lightweight_mutex.hpp>
 
 namespace graehl {
-typedef boost::mutex locking;    
+
+typedef boost::mutex locking;
+typedef boost::detail::lightweight_mutex spin_locking; ///WARNING: does not support scoped_lock(spin_locking&,bool)
+
 }
 
 
