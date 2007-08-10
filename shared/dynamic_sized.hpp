@@ -27,7 +27,7 @@ struct dynamic_sized
         return &front;
     }
     
-    
+    dynamic_sized() {}
  private:
     dynamic_sized(dynamic_sized const& o) 
     {
