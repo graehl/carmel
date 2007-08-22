@@ -74,20 +74,6 @@ inline void dbgout(std::ostream &o,void *a) {
 }
 
 
-template <class A>
-inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
-  (void)dummy;
-  if (a == NULL) {
-    o << "NULL";
-  } else {
-      dbgout(o,(void *)a);
-      o << "=&((";
-      dbgout(o,*a);
-      o << "))";
-  }
-}
-
-
 // what follows relies on SFINAE (google) to identify whether an object supports print (with or without a Writer param)
 template<class A>
 inline void dbgout(std::ostream &o,const A &a, typename has_print_plain<A>::type* dummy = 0) {
@@ -140,6 +126,10 @@ inline void dbgout_hex(std::ostream &o,const A &a) {
     o << a << "(=0x" << std::hex << (size_t)a << std::dec << ")";
 }
 
+inline void dbgout(std::ostream &o,unsigned long a) {
+    dbgout_hex(o,a);
+}
+
 inline void dbgout(std::ostream &o,unsigned a) {
     dbgout_hex(o,a);
 }
@@ -152,6 +142,20 @@ inline void dbgout(std::ostream &o,unsigned short a) {
     dbgout_hex(o,a);
 }
 
+
+
+template <class A>
+inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is_pointer<A> >::type* dummy = 0) {
+  (void)dummy;
+  if (a == NULL) {
+    o << "NULL";
+  } else {
+      dbgout(o,(void *)a);
+      o << "=&((";
+      dbgout(o,*a);
+      o << "))";
+  }
+}
 
 
 

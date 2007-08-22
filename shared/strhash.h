@@ -125,6 +125,12 @@ class Alphabet {
         memcpy(this, &a, s);
         memcpy(&a, swapTemp, s);
     }
+    
+    void add(Sym const& s) 
+    {
+        add(s,names.size());
+    }
+    
     // s must be new, and added at index n
     void add(Sym s,unsigned n) {
         Assert(find(s) == NULL);
@@ -154,10 +160,10 @@ class Alphabet {
     bool is_index(unsigned pos) const {
         return pos < names.size();
     }
-    unsigned index_of(Sym s) {
+    unsigned index_of(Sym const& s) {
         return indexOf(s);
     }
-    unsigned indexOf(Sym s) {
+    unsigned indexOf(Sym const& s) {
         //Assert(name);
         //Sym s = const_cast<char *>(name);
 

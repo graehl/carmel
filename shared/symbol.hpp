@@ -245,7 +245,7 @@ Symbol Symbol::ZERO(0,Symbol::PHONYINT);
 
 #ifdef TEST
 
-char *symbol_test_strs[]={"test string","d","el""abc","","e","fall","","e","very very long more than 8","a","b","e",0};
+char const* symbol_test_strs[]={"test string","d","el""abc","","e","fall","","e","very very long more than 8","a","b","e",0};
 
 
 
@@ -386,7 +386,7 @@ BEGIN_HASH_VAL(graehl::Symbol) {
 #pragma warning( push )
 #pragma warning( disable : 4311 )
 #endif
-    return uint_hash(reinterpret_cast<std::size_t>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
+    return uint32_hash(reinterpret_cast<std::size_t>(x.str)); //FIXME: probably 64-bit pointer unsafe (only uses sizeof(unsigned)-LSBytes)
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
