@@ -53,7 +53,7 @@ BOOST_AUTO_UNIT_TEST( alphabet )
   const char *s[]={"u","ul","mu","pi"};
   const unsigned n=sizeof(s)/sizeof(s[0]);
   BOOST_CHECK(n==4);
-  a.add("a");
+  a.add(StringKey("a"));
   for (unsigned i=0;i<n;++i) {
         BOOST_CHECK(a.index_of(s[i]) == b.indexOf(s[i])+1);
         BOOST_CHECK(a[*a.find(s[i])] == s[i]);

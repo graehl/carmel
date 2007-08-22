@@ -144,7 +144,7 @@ public:
             using std::ios;
             DBP_ADD_VERBOSE(1);
             DBPC6("memmap",path,mode,create,base_address,length);
-            if (((unsigned)base_address) & alignment()) {
+            if (((std::size_t)base_address) & alignment()) {
 //                DBP3(base_address,alignment(),((unsigned)base_address) & alignment());
 //                throw ios::failure("requested base address for memmap not page-aligned");
                 // can't really do this because when we memmap with NULL (OS chooses), it gives us things that aren't aligned (alignment() is buggy)

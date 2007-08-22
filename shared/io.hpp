@@ -600,8 +600,8 @@ inline void split_noquote(
 }
 
 #ifdef TEST
-char *split_strs[]={"",",a","",0};
-char *seps[]={";",";;",",,","   ","=,",",=",0};
+char const* split_strs[]={"",",a","",0};
+char const* seps[]={";",";;",",,","   ","=,",",=",0};
 
 BOOST_AUTO_UNIT_TEST( TEST_io )
 {

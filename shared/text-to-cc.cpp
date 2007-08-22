@@ -59,7 +59,7 @@ void usage(char *argv0)
 int main(int argc, char *argv[])
 {
     using namespace std;
-    char *textvar="the_text";
+    char const *textvar="the_text";
     unsigned max_line_length=MAXLENGTH;
     if (argc > 1) {
         if (argv[1][0]=='-') {

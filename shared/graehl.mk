@@ -115,6 +115,9 @@ BOOST_FILESYSTEM_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 
 #wide char archive streams not supported on cygwin so remove *_w*.cpp
 BOOST_SERIALIZATION_SRCS:=$(filter-out utf8_codecvt_facet.cpp,$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))))
+
+#BOOST_SERIALIZATION_SRCS:=$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp)))
+
 BOOST_TEST_SRCS=$(filter-out cpp_main.cpp,$(notdir $(wildcard $(BOOST_TEST_SRC_DIR)/*.cpp)))
 BOOST_OPTIONS_SRCS=$(filter-out utf8_codecvt_facet.cpp winmain.cpp,$(notdir $(wildcard $(BOOST_OPTIONS_SRC_DIR)/*.cpp)))
 BOOST_FILESYSTEM_SRCS=$(notdir $(wildcard $(BOOST_FILESYSTEM_SRC_DIR)/*.cpp))

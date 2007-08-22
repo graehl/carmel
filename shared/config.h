@@ -1,7 +1,7 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
-//#define USE_GRAEHL_HASH_MAP
+#define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
 #ifdef _MSC_VER
