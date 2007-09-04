@@ -608,7 +608,7 @@ BOOST_AUTO_UNIT_TEST( TEST_io )
     using namespace std;
     {
         split_noquote(";,a;",make_expect_visitor(split_strs),";");
-        for (char **p=seps;*p;++p) {
+        for (char const **p=seps;*p;++p) {
             string s;
             for (char **q=split_strs;*q;++q)
                 s.append(*q);

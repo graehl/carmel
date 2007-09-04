@@ -5,6 +5,7 @@
 #include <graehl/shared/doubling_primes.hpp>
 #include <graehl/shared/hash_functions.hpp>
 #include <graehl/shared/no_locking.hpp>
+#include <graehl/shared/percent.hpp>
 #include <cassert>
 #include <iostream>
 
@@ -91,7 +92,7 @@ struct dynamic_hash_cache
     void stats(O &o) const
     {
         
-        o << " (cache capacity="<< capacity()<<" hit rate="<<std::setprecision(3)<<hit_rate()*100<<"% hits="<<n_hit<<" misses="<<n_miss;
+        o << " (cache capacity="<< capacity()<<" hit rate="<<percent<4>(hit_rate())<<"% hits="<<n_hit<<" misses="<<n_miss;
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
         o << " hash collisions="<<n_collide<< " collision rate="<<std::setprecision(2)<<100.*n_collide/n_queries()<<"%";
 #endif 

@@ -568,12 +568,15 @@ main(int argc, char *argv[]){
     }
 #endif
 
+
     for ( ; ; ) { // input transducer from string line reading loop
         if (nTarget != -1) { // if to construct a finite state from input
-            if ( !*line_in ) {
+            if ( !*line_in) {
             fail_ntarget:
-                Config::warn() << "No lines of input provided.\n";
-                PLACEMENT_NEW (&chain[nTarget])WFST(); break;
+                if (input_lineno == 0)
+                    Config::warn() << "No lines of input provided.\n";
+                PLACEMENT_NEW (&chain[nTarget])WFST();
+                break;
             }
 
             *line_in >> ws;
