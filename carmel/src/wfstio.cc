@@ -299,7 +299,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         int stateNumber, destState, inL, outL;
         Weight weight;
         char c, d, buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
-        skip_comment(istr);
+        skip_comment(istr,COMMENT_CHAR);
         REQUIRE(getString(istr, buf));
         finalName = buf;
 
@@ -319,7 +319,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
         while ( istr >> c ) {
             // begin line:
-            skip_comment(istr);
+            skip_comment(istr,COMMENT_CHAR);
             REQUIRE(c == '(');
             // start state:
             REQUIRE(getString(istr, buf));
