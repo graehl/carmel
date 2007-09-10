@@ -288,7 +288,7 @@ int WFST::getStateIndex(const char *buf) {
     }
 }
 
-static const char COMMENT_CHAR='#';
+static const char COMMENT_CHAR='%';
 
 //FIXME: need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr,bool alwaysNamed)
