@@ -1,3 +1,8 @@
+2007-09-10  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/wfstio.cc: % is the line-initial comment character (to agree
+	with tutorial).  if you use # before, sorry
+
 2007-07-24  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/train.cc (train_estimate): fixed training example multiplicity (was doubly scaled)
@@ -19,7 +24,10 @@
 
 2005-07-08  Jonathan Graehl  <graehl@isi.edu>
 
-	* src/wfstio.cc: I changed nothing about the output of transducers (keeping the new e^ default instead of "ln"), but carmel now can properly identify e^-n weights in the presence of omitted input or output symbols.  Also, the following formats are now accepted:
+	* src/wfstio.cc: I changed nothing about the output of transducers
+	(keeping the new e^ default instead of "ln"), but carmel now can
+	properly identify e^-n weights in the presence of omitted input or
+	output symbols.  Also, the following formats are now accepted:
 
 (source dest weight)  (epsilon i/o)
 (source dest input weight) (fsa)
