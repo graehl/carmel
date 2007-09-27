@@ -15,6 +15,8 @@
 
 #include <graehl/shared/dummy.hpp>
 
+    
+
 namespace graehl {
 
 
@@ -29,7 +31,6 @@ boost::reference_wrapper<C> dummy<boost::reference_wrapper<C> >::var() {
   static boost::reference_wrapper<C> var(*(C*)NULL);
   return var;
 }
-
 /*
 template <class C>
 struct ByRef {
@@ -64,6 +65,47 @@ deref(const T& t) {
   //return *const_cast<boost::unwrap_reference<T>::type *>&(t);
 
 }
+
+namespace std {
+
+template<class R>
+struct equal_to<boost::reference_wrapper<R> > 
+{
+    typedef boost::reference_wrapper<R> arg_type;
+    typedef arg_type first_argument_type;
+    typedef arg_type second_argument_type;
+    typedef bool result_type;
+    
+    bool operator()(arg_type const& r1,arg_type const& r2) const
+    {
+        return (R const &)r1 == (R const &)r2;
+    }
+    
+};
+
+}
+
+namespace boost {
+
+template<class R>
+struct hash;
+
+
+template<class R>
+struct hash<boost::reference_wrapper<R> > 
+{
+    typedef boost::reference_wrapper<R> arg_type;
+    typedef std::size_t result_type;
+    
+    result_type operator()(arg_type const& r) const
+    {
+        return hash_value((R const&)r);
+    }
+};
+
+}
+
+    
 
 
 #ifdef TEST_MAIN
@@ -101,4 +143,7 @@ BOOST_AUTO_UNIT_TEST( TEST_byref )
   BOOST_CHECK(t==2);
 }
 #endif
+
+
+
 #endif
