@@ -610,7 +610,7 @@ BOOST_AUTO_UNIT_TEST( TEST_io )
         split_noquote(";,a;",make_expect_visitor(split_strs),";");
         for (char const **p=seps;*p;++p) {
             string s;
-            for (char **q=split_strs;*q;++q)
+            for (char const **q=split_strs;*q;++q)
                 s.append(*q);
             split_noquote(s,make_expect_visitor(split_strs),*p);
         }
