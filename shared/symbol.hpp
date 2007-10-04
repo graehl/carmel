@@ -285,8 +285,8 @@ BOOST_AUTO_UNIT_TEST( symbol )
   BOOST_CHECK(!strcmp(Symbol(s).str,buf));
   }
   char *last=0;
-  for(char **i=symbol_test_strs;*i;++i) {
-    char *a=*i;
+  for(char const**i=symbol_test_strs;*i;++i) {
+    char const *a=*i;
     strcpy(buf,a);
     char *c=Symbol(a);
     char *d=Symbol(buf);
