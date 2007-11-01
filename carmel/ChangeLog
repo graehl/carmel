@@ -1,3 +1,9 @@
+2007-11-01  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/fst.cc (reduce): fixed segfault when a self-epsilon loop arc
+	is eliminated by reduce (no -d), followed by conditional
+	normalization (-n)
+
 2007-09-10  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/wfstio.cc: % is the line-initial comment character (to agree

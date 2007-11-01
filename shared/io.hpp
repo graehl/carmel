@@ -527,33 +527,39 @@ T read_range(std::basic_istream<Ch,Tr>& in,T begin,T end) {
     throw std::runtime_error("expected e.g. ( a,b,c,d ) or (a b c d) as range input");
 }
 
-// hardcoded to look for input id=N so we don't need full boyer-moore algorithm
+// hardcoded to look for input [word-boundary]'id=N' so we don't need full boyer-moore algorithm
 // not chartraits sensitive - assumes 0...9 coded in order.
 template <class A,class I,class O>
 void insert_byid(const A& vals,I &in,O &out)
 {
     char c;
     unsigned N=0; //init only to suppress warning
-    const int waiting_i=0,seen_i=1,seen_id=2,scan_number=3; // can't get enum to work in gcc-4    
+    const int waiting_space=0,waiting_i=1,seen_i=2,seen_id=3,scan_number=4,start=waiting_space; // can't get enum to work in gcc-4    
     int state=waiting_i;
     while (in.get(c)) {
         switch(state) {
+        case waiting_space:
+            if (c==' ' || c== '\n' || c== '\t')
+                state=waiting_i;
+            break;
         case waiting_i:
             if (c=='i')
                 state=seen_i;
+            else
+                state=start;
             break;
         case seen_i:
             if (c=='d')
                 state=seen_id;
             else
-                state=waiting_i;
+                state=start;
             break;
         case seen_id:
             if (c=='=') {
                 N=0;
                 state=scan_number;
             } else
-                state=waiting_i;
+                state=start;
             break;
         case scan_number:
             switch (c) {
@@ -561,10 +567,9 @@ void insert_byid(const A& vals,I &in,O &out)
             case '6':case '7':case '8':case '9':case '0':
                 N*=10;
                 N+=(c-'0');
-
                 break;
             default:
-                state=waiting_i;
+                state=start;
 #define OUTN do { deref(vals)(out,N); } while(0)
                 OUTN;
             }
