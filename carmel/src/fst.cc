@@ -127,7 +127,7 @@ class NormGroupIter {
         if(method==WFST::CONDITIONAL) {
             if (empty_state())
                 return;
-            Ci2 = Ci->second.const_begin();
+            Ci2 = Ci->second.const_begin(); // segfault w/ *e* selfloop as only arc
             Cend = Ci->second.const_end();
         } else {
             Ji = state->arcs.val_begin();
@@ -615,12 +615,7 @@ void WFST::reduce()
     removeMarkedStates(visitedForward);
 
     for ( i = 0 ; i < numStates() ; ++i ) {
-        states[i].flush();
-        for ( List<FSTArc>::erase_iterator a=states[i].arcs.erase_begin(),end = states[i].arcs.erase_end() ; a != end; )
-            if ( a->in == 0 && a->out == 0 && a->dest == i ) // erase empty loops
-                a=states[i].arcs.erase(a);
-            else
-                ++a;
+        states[i].remove_epsilons_to(i);
     }
 
     delete[] visitedBackward;

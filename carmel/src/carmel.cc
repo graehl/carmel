@@ -22,7 +22,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.4"
+#define CARMEL_VERSION "3.4.1"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>

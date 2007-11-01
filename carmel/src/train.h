@@ -34,6 +34,7 @@ struct State {
     typedef HashTable<IntKey, List<HalfArc> > Index;
     
     Index *index;
+    
     State() : arcs(), size(0), 
 #ifdef BIDIRECTIONAL
               hitcount(0), 
@@ -125,6 +126,7 @@ struct State {
         return arcs.top();
     }
     void reduce() {		// consolidate all duplicate arcs
+        flush();
         HashTable<UnArc, Weight *> hWeights;
         UnArc un;
         Weight **ppWt;
@@ -148,6 +150,16 @@ struct State {
             }
         }
     }
+    void remove_epsilons_to(int dest)  // *e*/*e* transition to same state has no structural/bestpath value.  we do this always when reducing (not "-d")
+    {
+        flush();
+        for ( List<FSTArc>::erase_iterator a=arcs.erase_begin(),end = arcs.erase_end() ; a != end; )
+            if ( a->in == 0 && a->out == 0 && a->dest == dest ) // erase empty loops
+                a=remove(a);
+            else
+                ++a;
+    }
+    
     void prune(Weight thresh) {
         for ( List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
             if ( l->weight < thresh ) {
