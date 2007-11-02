@@ -1,3 +1,7 @@
+2007-11-02  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/train.cc: print per-output-symbol ppx
+
 2007-11-01  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/fst.cc (reduce): fixed segfault when a self-epsilon loop arc

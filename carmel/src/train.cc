@@ -12,6 +12,7 @@ void WFST::trainBegin(WFST::NormalizeMethod const& method,bool weight_is_prior_c
     normalize(method);
     Assert(!trn);
     trn = NEW trainInfo; //FIXME: memleak
+//    trn->init();
     //  trn->smoothFloor = smoothFloor;
     IOPair IO;
     DWPair DW;
@@ -59,9 +60,7 @@ void WFST::trainBegin(WFST::NormalizeMethod const& method,bool weight_is_prior_c
         delete[] revEGraph.states;
     }
 
-    trn->f = trn->b = NULL;
-    trn->maxIn = trn->maxOut = 0;
-    trn->totalEmpiricalWeight = 0;
+    
 #ifdef DEBUGTRAIN
     Config::debug() << "Just after training setup "<< *this ;
 #endif
@@ -80,6 +79,10 @@ void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
         trn->maxIn = s.i.n;
     if ( s.o.n > trn->maxOut )
         trn->maxOut = s.o.n;
+    trn->n_input+=s.i.n;
+    trn->n_output+=s.o.n;
+    trn->w_input+=s.i.n*weight;
+    trn->w_output+=s.o.n*weight;
 }
 
 #define EACHDW(a)   do {  for ( int s = 0 ; s < numStates() ; ++s ) {                                                           \
@@ -169,9 +172,13 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
 #endif
 
             DWSTAT("Before estimate");
-            Weight newPerplexity = train_estimate(); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
+            Weight corpus_p;
+            Weight newPerplexity = train_estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             DWSTAT("After estimate");
-            Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): per-example-perplexity=";
+            Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
+            Config::log() << " per-output-symbol-perplexity=";
+            corpus_p.root(trn->n_output).inverse().print_base(Config::log(),2);
+            Config::log() << " per-example-perplexity=";
             newPerplexity.print_base(Config::log(),2);
             if ( newPerplexity < bestPerplexity ) {
                 Config::log() << " (new best)";
@@ -192,7 +199,8 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
                 Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
                 if ( learning_rate > 1) {
                     EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap EM/scaled
-                    Weight em_pp=train_estimate();
+                    Weight d;
+                    Weight em_pp=train_estimate(d);
 
                     Config::log() << "unscaled-EM-perplexity=" << em_pp;
                     EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap back
@@ -454,14 +462,15 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 #endif
 }
 
-Weight WFST::train_estimate(bool delete_bad_training)
+Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_training)
 {
     Assert(trn);
     int i, o, s, nIn, nOut, *letIn, *letOut;
 
     // for perplexity
     Weight prodModProb = 1;
-
+    unweighted_corpus_prob=1;
+    
     Weight ***f = trn->f;
     Weight ***b = trn->b;
     HashTable <IOPair, List<DWPair> > *IOarcs;
@@ -528,7 +537,8 @@ Weight WFST::train_estimate(bool delete_bad_training)
 #endif
 
         prodModProb *= fin.pow(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
-    
+        unweighted_corpus_prob *= fin;
+        
 #ifdef DEBUGTRAIN
         Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif

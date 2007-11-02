@@ -294,14 +294,26 @@ class trainInfo {
     int maxIn, maxOut;
     List <IOSymSeq> examples;
     //Weight smoothFloor;
-    FLOAT_TYPE totalEmpiricalWeight;
+    FLOAT_TYPE totalEmpiricalWeight; // # of examples, if each is weighted equally
+    FLOAT_TYPE n_input,n_output,w_input,w_output; // for per-symbol ppx.  w_ is multiplied by example weight.  n_ is unweighted
+    
     int nStates; // Yaser added this . number of States 
 #ifdef N_E_REPS // Yaser : the following variables need to be taken care of in the copy constructor
     Weight *wNew;
     Weight *wOld;
 #endif
 
-    trainInfo() {};
+    trainInfo()
+    {
+        init();
+    }
+
+    void init() 
+    {
+        n_input=n_output=w_input=w_output=totalEmpiricalWeight=0;
+        f=b=0;
+        maxIn=maxOut=0;
+    }
  private:
     trainInfo(const trainInfo& a){
         throw std::runtime_error("Do not copy trainInfo");
