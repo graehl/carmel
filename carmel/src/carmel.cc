@@ -22,7 +22,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.4.1"
+#define CARMEL_VERSION "3.4.2"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -70,7 +70,7 @@ static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
 template <class T>
 void readParam(T *t, char *from, char sw) {
     istringstream is(from);
- is >> *t;
+    is >> *t;
     if ( is.fail() ) {
         Config::warn() << "Expected a number after -" << sw << " switch, (instead got \'" << from << "\' - as a number, " << *t << ").\n";
         exit(-1);
