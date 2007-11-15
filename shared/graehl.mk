@@ -127,12 +127,13 @@ BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
 BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS)))
 BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
+ifndef BOOST_SUFFIX
 ifndef BOOST_SUFFIX_BASE
-BOOST_SUFFIX_BASE=gcc
+BOOST_SUFFIX_BASE="gcc"
 endif
 ifdef BOOST_DEBUG
 ifndef BOOST_DEBUG_SUFFIX
-BOOST_DEBUG_SUFFIX=-d
+BOOST_DEBUG_SUFFIX="-gd"
 endif
 endif
 ifndef NO_THREADS
@@ -140,6 +141,13 @@ BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)-mt$(BOOST_DEBUG_SUFFIX)
 else
 BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)$(BOOST_DEBUG_SUFFIX)
 CPPFLAGS +=  -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
+endif
+endif
+
+ifdef BOOST_SUFFIX
+BSUF=-$(BOOST_SUFFIX)
+else
+BSUF=
 endif
 
 ifdef BUILD_OWN_BOOST_LIBS
@@ -149,10 +157,10 @@ BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
 libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
 else
-BOOST_SERIALIZATION_LIB=-lboost_serialization-$(BOOST_SUFFIX)
-BOOST_TEST_LIB=-lboost_unit_test_framework-$(BOOST_SUFFIX)
-BOOST_OPTIONS_LIB=-lboost_program_options-$(BOOST_SUFFIX)
-BOOST_SERIALIZATION_LIB=-lboost_serialization-$(BOOST_SUFFIX)
+BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
+BOOST_TEST_LIB=-lboost_unit_test_framework$(BSUF)
+BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF)
+BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
 libs:
 endif
 
