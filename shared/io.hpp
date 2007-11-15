@@ -534,11 +534,14 @@ void insert_byid(const A& vals,I &in,O &out)
 {
     char c;
     unsigned N=0; //init only to suppress warning
-    const int waiting_space=0,waiting_i=1,seen_i=2,seen_id=3,scan_number=4,start=waiting_space; // can't get enum to work in gcc-4    
+    const int waiting_space=0,waiting_i=1,seen_i=2,seen_id=3,scan_number=4; // can't get enum to work in gcc-4
+    const int restart=waiting_space;
+    
     int state=waiting_i;
     while (in.get(c)) {
         switch(state) {
         case waiting_space:
+        check_was_space:
             if (c==' ' || c== '\n' || c== '\t')
                 state=waiting_i;
             break;
@@ -546,20 +549,20 @@ void insert_byid(const A& vals,I &in,O &out)
             if (c=='i')
                 state=seen_i;
             else
-                state=start;
+                state=restart;
             break;
         case seen_i:
             if (c=='d')
                 state=seen_id;
             else
-                state=start;
+                state=restart;
             break;
         case seen_id:
             if (c=='=') {
                 N=0;
                 state=scan_number;
             } else
-                state=start;
+                state=restart;
             break;
         case scan_number:
             switch (c) {
@@ -569,16 +572,17 @@ void insert_byid(const A& vals,I &in,O &out)
                 N+=(c-'0');
                 break;
             default:
-                state=start;
-#define OUTN do { deref(vals)(out,N); } while(0)
-                OUTN;
+                state=restart;
+#define INSERT_BYID_OUTN do { deref(vals)(out,N); } while(0)
+                INSERT_BYID_OUTN;
+                goto check_was_space;
             }
         }
         out.put(c);
     }
     if (state == scan_number) // file ends without newline.
-                OUTN;
-#undef OUTN
+        INSERT_BYID_OUTN;
+#undef INSERT_BYID_OUTN
 }
 
 template <class Func>
