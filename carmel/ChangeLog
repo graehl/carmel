@@ -1,3 +1,7 @@
+2007-12-13  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/carmel.cc (usageHelp): -= 2.0 (raise all weights by power of 2)
+
 2007-11-02  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/train.cc: print per-output-symbol ppx

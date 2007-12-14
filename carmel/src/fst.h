@@ -442,6 +442,12 @@ class WFST {
         }
     }
 
+    void raisePower(double exponent=1.0) 
+    {
+        for ( int s = 0 ; s < numStates() ; ++s )
+            states[s].raisePower(exponent);
+    }
+    
     void clear() {
         final = invalid_state;        
         unNameStates();

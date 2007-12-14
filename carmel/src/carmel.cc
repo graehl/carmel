@@ -291,11 +291,13 @@ main(int argc, char *argv[]){
     bool isInChain;
     ostream *fstout = &cout;
     bool mean_field_oneshot_flag=false;
+    bool exponent_flag=false;
+    double exponent=1;
     
     std::ios_base::sync_with_stdio(false);
 
     for ( i = 1 ; i < argc ; ++i ) {
-        if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag)
+        if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag && !mean_field_oneshot_flag && !exponent_flag)
             while ( *(++pc) ) {
                 if ( *pc == 'k' )
                     kPaths = -1;
@@ -335,10 +337,15 @@ main(int argc, char *argv[]){
                     norm_method.group = WFST::JOINT;
                 else if ( *pc == 'u' )
                     norm_method.group = WFST::NONE;
+                else if ( *pc == ' ' )
+                    exponent_flag=true;
                 flags[*pc] = 1;
             }
         else
-            if ( labelFlag ) {
+            if (exponent_flag) {
+                exponent_flag=false;
+                readParam(&exponent,argv[i],'=');
+            } else if ( labelFlag ) {
                 labelFlag = 0;
                 readParam(&labelStart,argv[i],'N');
             } else if ( converge_pp_flag ) {
@@ -864,6 +871,10 @@ main(int argc, char *argv[]){
                     }
                 MINIMIZE;
 
+                if ( exponent != 1.0) {
+                    result->raisePower(exponent);
+                }
+                
                 if ( flags ['Y'] )
                     result->writeGraphViz(*fstout);
                 else
