@@ -22,7 +22,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.4.2"
+#define CARMEL_VERSION "3.4.3"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -337,7 +337,7 @@ main(int argc, char *argv[]){
                     norm_method.group = WFST::JOINT;
                 else if ( *pc == 'u' )
                     norm_method.group = WFST::NONE;
-                else if ( *pc == ' ' )
+                else if ( *pc == '=' )
                     exponent_flag=true;
                 flags[*pc] = 1;
             }
