@@ -12,7 +12,7 @@
 // coarse grain locking (saves memory, negligible when you can just use a smaller cache, but worse performance).  note: no space or time overhead with graehl::no_locking
 //#define DYNAMIC_HASH_CACHE_SINGLE_LOCK
 
-#define DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
+//#define DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
 
 namespace graehl {
 

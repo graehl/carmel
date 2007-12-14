@@ -50,6 +50,14 @@ struct State {
 //     index = NEW Index(*s.index);
     } 
     ~State() { flush(); }
+
+    void raisePower(double exponent=1.0) 
+    {
+        for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
+            l->weight.raisePower(exponent);
+    }
+    
+    
     void indexBy(int output = 0) {
         List<HalfArc> *list;
         if ( output ) {
