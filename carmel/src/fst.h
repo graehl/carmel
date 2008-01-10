@@ -94,8 +94,17 @@ class WFST {
     bool named_states;
     alphabet *in;
     alphabet *out;
+    alphabet &in_alph() const 
+    {
+        return *in;
+    }
+    alphabet &out_alph() const 
+    {
+        return *out;
+    }
+    
     alphabet stateNames;
-    unsigned int final;	// final state number - initial state always number 0
+    unsigned final;	// final state number - initial state always number 0
     std::vector<State> states;
   	 
     //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
@@ -353,7 +362,7 @@ class WFST {
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
     void trainBegin(NormalizeMethod const& method,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
     void trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight);
-    Weight trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod const& method, int ran_restarts=0);
+    Weight trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod const& method, int ran_restarts=0,bool cache_derivations=false);
     // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
     // returns per-example perplexity achieved
 

@@ -25,6 +25,19 @@ std::ostream & operator << (std::ostream &out, const GraphArc &a);
 
 struct GraphState {
   List<GraphArc> arcs;
+    void add(GraphArc const& a) 
+    {
+        arcs.push(a);
+    }    
+    void add(int source,int dest,FLOAT_TYPE weight,void *data) 
+    {
+        GraphArc a;
+        a.source=source;
+        a.dest=dest;
+        a.weight=weight;
+        a.data=data;
+        add(a);
+    }
 };
 
 struct Graph {

@@ -2,6 +2,7 @@
 #include <graehl/carmel/src/train.h>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/weight.h>
+#include <graehl/carmel/src/derivations.h>
 
 //#define DEBUGTRAIN
 
@@ -112,25 +113,82 @@ struct WeightAccum {
     }
 };
 
-Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod const& method, int ran_restarts)
+struct forward_backward 
 {
-    Assert(trn);
-    int i, o, nSt = numStates();
-    int maxIn = trn->maxIn;
-    int maxOut = trn->maxOut;
-    Weight ***f = trn->f = NEW Weight **[maxIn+1];
-    Weight ***b = trn->b = NEW Weight **[maxIn+1];
-    trn->nStates = nSt ; // Yaser - added for supporting a copy constrcutor for trainInfo this 7-26-2000
-    for ( i = 0 ; i <= maxIn ; ++i ) {
-        f[i] = NEW Weight *[maxOut+1];
-        b[i] = NEW Weight *[maxOut+1];
-        for ( o = 0 ; o <= maxOut ; ++o ) {
-            f[i][o] = NEW Weight [nSt];
-            b[i][o] = NEW Weight [nSt];
+    Weight ***f;
+    Weight ***b;
+    unsigned n_in,n_out,n_st;
+    bool use_matrix;
+    typedef carmel::derivations Derivs;
+    
+    List<Derivs> cached_derivs;
+
+    template <class Examples>
+    void compute_derivations(WFST &x,Examples const &ex) 
+    {
+        unsigned n=1;
+        for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
+             i!=end ; ++i,++n) {
+            cached_derivs.push(Derivs(x,i->i,i->o));
+            if (!cached_derivs.front().compute()) {
+                warn_no_derivations(x,*i,n);
+                cached_derivs.pop();
+            }
         }
     }
+    
+    
+    forward_backward(WFST &x,bool cache_derivations,unsigned n_states,trainInfo *trn) 
+    {
+        n_st=trn->nStates=n_states;
+        if (cache_derivations) {
+            f=b=NULL;
+            use_matrix=false;
+            compute_derivations(x,trn->examples);
+            if(0) return; // for now, proceed with usual matrix no matter what, until we debug compute_derivations
+        }
+        use_matrix=true;
+        n_in=trn->maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
+        n_out=trn->maxOut+1;
+        f = trn->f = NEW Weight **[n_in];
+        b = trn->b = NEW Weight **[n_in];
+        for ( unsigned i = 0 ; i < n_in ; ++i ) {
+            f[i] = NEW Weight *[n_out];
+            b[i] = NEW Weight *[n_out];
+            for ( unsigned o = 0 ; o < n_out ; ++o ) {
+                f[i][o] = NEW Weight [n_st];
+                b[i][o] = NEW Weight [n_st];
+            }
+        }            
+    }
 
+    ~forward_backward() 
+    {
+        if (use_matrix) {
+            for ( unsigned i = 0 ; i < n_in ; ++i ) {
+                for ( unsigned o = 0 ; o < n_out ; ++o ) {
+                    delete[] f[i][o];
+                    delete[] b[i][o];
+                }
+                delete[] f[i];
+                delete[] b[i];
+            }
+            delete[] f;
+            delete[] b;   
+        }        
+    }
+    
+};
 
+    
+
+Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod const& method, int ran_restarts,bool cache_derivations)
+{
+    Assert(trn);
+//    trn->cache_derivations=cache_derivations;
+    forward_backward fb(*this,cache_derivations,numStates(),trn);
+    
+    int i, o, nSt = numStates();
 
     if ( trn->totalEmpiricalWeight > 0 ) {
         EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
@@ -267,16 +325,6 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
     for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
         seq->kill();
 
-    for ( i = 0 ; i <= maxIn ; ++i ) {
-        for ( o = 0 ; o <= maxOut ; ++o ) {
-            delete[] f[i][o];
-            delete[] b[i][o];
-        }
-        delete[] f[i];
-        delete[] b[i];
-    }
-    delete[] f;
-    delete[] b;
     delete trn;
     trn = NULL;
     return bestPerplexity;
@@ -462,6 +510,24 @@ void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
 #endif
 }
 
+void training_progress(unsigned train_example_no) 
+{
+    const unsigned EXAMPLES_PER_DOT=10;
+    const unsigned EXAMPLES_PER_NUMBER=(70*EXAMPLES_PER_DOT);
+    if (train_example_no % EXAMPLES_PER_DOT == 0)
+        Config::log() << '.' ;
+    if (train_example_no % EXAMPLES_PER_NUMBER == 0)
+        Config::debug() << train_example_no << '\n' ;    
+}
+
+
+void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n) 
+{
+                
+    Config::warn() << "No derivations in transducer for input/output #"<<n<<":\n";
+    s.print(Config::warn(),x,"\n");
+}
+
 Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_training)
 {
     Assert(trn);
@@ -497,12 +563,7 @@ Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_train
 
         //#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
         ++train_example_no ;
-#define EXAMPLES_PER_DOT 10
-#define EXAMPLES_PER_NUMBER (70*EXAMPLES_PER_DOT)
-        if (train_example_no % EXAMPLES_PER_DOT == 0)
-            Config::log() << '.' ;
-        if (train_example_no % EXAMPLES_PER_NUMBER == 0)
-            Config::debug() << train_example_no << '\n' ;
+        training_progress(train_example_no);
         //#endif
         nIn = seq->i.n;
         nOut = seq->o.n;
@@ -544,13 +605,7 @@ Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_train
 #endif
         if (delete_bad_training)
             if ( !(fin.isPositive()) ) {
-                Config::warn() << "No accepting path in transducer for input/output:\n";
-                for ( i = 0 ; i < nIn ; ++i )
-                    Config::warn() << (*in)[seq->i.let[i]] << ' ';
-                Config::warn() << '\n';
-                for ( o = 0 ; o < nOut ; ++o )
-                    Config::warn() << (*out)[seq->o.let[o]] << ' ';
-                Config::warn() << '\n';
+                warn_no_derivations(*this,*seq,train_example_no);
                 seq=trn->examples.erase(seq);
                 continue;
             }

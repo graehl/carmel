@@ -1,11 +1,13 @@
 #ifndef CARMEL_TRAIN_H
 #define CARMEL_TRAIN_H
 
+#include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/2hash.h>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/list.h>
+#include <graehl/shared/dynarray.h>
 #include <graehl/shared/arc.h>
 #include <iostream>
 
@@ -19,22 +21,49 @@ struct IntKey {
     operator int() const { return i; }
 };
 
+struct IOPair {
+    int in;
+    int out;
+    size_t hash() const
+    {
+        return uint32_hash(1543 * out + in);
+    }
+    IOPair() {}
+    IOPair(int in,int out) : in(in),out(out) {}
+};
+
+std::ostream & operator << (std::ostream &o, IOPair p);
+
+inline bool operator == (const IOPair l, const IOPair r) { 
+    return l.in == r.in && l.out == r.out; }
+
 }
 
 BEGIN_HASH_VAL(graehl::IntKey) {	return x.hash(); } END_HASH
+BEGIN_HASH_VAL(graehl::IOPair) {	return x.hash(); } END_HASH
 
 namespace graehl {
 
 struct State {
-    List<FSTArc> arcs;
+    typedef List<FSTArc> Arcs;
+    
+    Arcs arcs;
     int size;
 #ifdef BIDIRECTIONAL
     int hitcount;			// how many times index is used, negative for index on input, positive for index on output
 #endif
     typedef HashTable<IntKey, List<HalfArc> > Index;
+
+    template <class IOMap>
+    void index_io(IOMap &m) const 
+    {
+        for ( Arcs::const_iterator a=arcs.begin(),end=arcs.end() ; a != end ; ++a )
+            m[IOPair(a->in,a->out)].push_back(const_cast<FSTArc*>(&*a));
+    }
     
     Index *index;
-    
+
+//    typedef HashTable<
     State() : arcs(), size(0), 
 #ifdef BIDIRECTIONAL
               hitcount(0), 
@@ -53,7 +82,7 @@ struct State {
 
     void raisePower(double exponent=1.0) 
     {
-        for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
+        for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
             l->weight.raisePower(exponent);
     }
     
@@ -71,7 +100,7 @@ struct State {
                 return;
 #endif
             index = NEW Index(size);
-            for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
+            for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
                   l != end  ; 
                   ++l ) {
 // if you distrust ht[key], I guess: //#define QUEERINDEX
@@ -97,7 +126,7 @@ struct State {
             return;
 #endif
         index = NEW Index(size);
-        for ( List<FSTArc>::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
+        for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
 #ifdef QUEERINDEX
             if ( !(list = find_second(*index,(IntKey)l->in)) )
                 add(*index,(IntKey)l->in, 
@@ -138,7 +167,7 @@ struct State {
         HashTable<UnArc, Weight *> hWeights;
         UnArc un;
         Weight **ppWt;
-        for ( List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
+        for ( Arcs::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
             if ( l->weight.isZero() ) {
                 l=remove(l);
                 continue;
@@ -161,7 +190,7 @@ struct State {
     void remove_epsilons_to(int dest)  // *e*/*e* transition to same state has no structural/bestpath value.  we do this always when reducing (not "-d")
     {
         flush();
-        for ( List<FSTArc>::erase_iterator a=arcs.erase_begin(),end = arcs.erase_end() ; a != end; )
+        for ( Arcs::erase_iterator a=arcs.erase_begin(),end = arcs.erase_end() ; a != end; )
             if ( a->in == 0 && a->out == 0 && a->dest == dest ) // erase empty loops
                 a=remove(a);
             else
@@ -169,7 +198,7 @@ struct State {
     }
     
     void prune(Weight thresh) {
-        for ( List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
+        for ( Arcs::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
             if ( l->weight < thresh ) {
                 l=remove(l);
             } else
@@ -183,7 +212,7 @@ struct State {
     }
     void renumberDestinations(int *oldToNew) { // negative means remove transition
         flush();
-        for (List<FSTArc>::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
+        for (Arcs::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
             int &dest = (int &)l->dest;
             if ( oldToNew[dest] < 0 ) {
                 l=remove(l); 
@@ -215,26 +244,6 @@ struct State {
           
 std::ostream& operator << (std::ostream &out, State &s); // Yaser 7-20-2000
 
-struct IOPair {
-    int in;
-    int out;
-    size_t hash() const
-    {
-        return uint32_hash(1543 * out + in);
-    }
-};
-
-}
-
-BEGIN_HASH_VAL(graehl::IOPair) {	return x.hash(); } END_HASH
-
-namespace graehl {
-
-std::ostream & operator << (std::ostream &o, IOPair p);
-
-inline bool operator == (const IOPair l, const IOPair r) { 
-    return l.in == r.in && l.out == r.out; }
-
 struct DWPair {
     int dest;
     FSTArc *arc;
@@ -255,6 +264,30 @@ struct symSeq {
     int n;
     int *let;
     int *rLet;
+    typedef int* iterator;
+    iterator begin() const
+    {
+        return let;
+    }
+    iterator end() const
+    {
+        return let+n;
+    }
+    iterator rbegin() const
+    {
+        return rLet;
+    }
+    iterator rend() const
+    {
+        return rLet+n;
+    }
+    template <class O,class Alphabet>
+    void print(O &o,Alphabet const& a) const
+    {
+        graehl::word_spacer sp;
+        for (int i=0;i<n;++i)
+            o << sp << a[let[i]];
+    }
 };
 
 std::ostream & operator << (std::ostream & out , const symSeq & s);
@@ -287,12 +320,27 @@ struct IOSymSeq {
         delete[] i.let;
         delete[] i.rLet;
     }
+    template <class O,class Alphabet>
+    void print(O &os,Alphabet const& in,Alphabet const& out,char const* term="\n") const
+    {
+        i.print(os,in);
+        os << term;
+        o.print(os,out);
+        os << term;
+    }
+    template <class O,class FST>
+    void print(O &o,FST const& x,char const* term="\n") const
+    {
+        print(o,x.in_alph(),x.out_alph(),term);
+    }
+    
 };
 
 std::ostream & operator << (std::ostream & out , const IOSymSeq & s);   // Yaser 7-21-2000
 
 class trainInfo {
  public:
+//    bool cache_derivations;
     HashTable<IOPair, List<DWPair> > *forArcs;
     HashTable<IOPair, List<DWPair> > *revArcs;
     List<int> *forETopo;
@@ -321,6 +369,7 @@ class trainInfo {
         n_input=n_output=w_input=w_output=totalEmpiricalWeight=0;
         f=b=0;
         maxIn=maxOut=0;
+//        cache_derivations=false;
     }
  private:
     trainInfo(const trainInfo& a){

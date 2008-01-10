@@ -1,5 +1,6 @@
 //#define MARCU
 #define GRAEHL__SINGLE_MAIN
+// -? = cache em derivations; currently limited to memory; should change to use disk
 // -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
@@ -417,6 +418,8 @@ main(int argc, char *argv[]){
             }
     }
     bool prunePath = flags['w'] || flags['z'];
+    bool cache_derivations=flags['?'];
+
     srand(seed);
     setOutputFormat(flags,&cout);
     setOutputFormat(flags,&cerr);
@@ -816,7 +819,7 @@ main(int argc, char *argv[]){
                     List<int> empty_list;
                     result->trainExample(empty_list, empty_list, 1.0);
                 }
-                result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method, ranRestarts);
+                result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method, ranRestarts,cache_derivations);
             } else if ( nGenerate > 0 ) {
                 MINIMIZE;
                 //        if ( !flags['n'] )
@@ -1032,6 +1035,7 @@ void usageHelp(void)
     cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default=1)";
     cout << "\n-1\t\trandomly scale weights (of unlocked arcs) after composition uniformly by (0..1]";
     cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
+    cout << "\n-?\t\tcache EM derivations in memory for faster iterations";
     cout << "\n\n";
     cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
     cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";
