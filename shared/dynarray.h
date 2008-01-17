@@ -293,11 +293,12 @@ public:
     FROM_ISTREAM_READ
 };
 
-// frees self automatically - WARNING - doesn't copy contents!
+// frees self automatically - WARNING - doesn't copy contents!  inits self and destroys self as well
 template <typename T,typename Alloc=std::allocator<T> > class auto_array : public array<T,Alloc> {
 public:
     typedef array<T,Alloc> Super;
-    explicit auto_array(unsigned sp=0) : Super(sp) { }
+    explicit auto_array(unsigned sp=0) : Super(sp) {
+    }
     ~auto_array() {
         this->dealloc();
     }

@@ -351,32 +351,7 @@ public:
            ++ret;
          return ret;
    }
-private:
-  /*
-  HashTable(const HashTable<K,V,H,P,A> &ht)
-    {
-      // making this private will probably prevent
-      // tables from being copied, and this message
-      // will warn if they are
 
-      //    std::cerr << "Unauthorized hash table copy " << &ht << " to " << this << "\n";
-      // This  code is added by Yaser to Allow copy contructors for hash tables - ignore comments above
-      //    std::cerr << "copying a hash table \n";
-      siz = 4;
-      cnt = 0;
-      growAt = (int)(DEFAULTHASHLOAD * siz);
-      if ( growAt < 2 )
-        growAt = 2;
-      siz--;   // size is actually siz + 1
-      table = alloc_table(siz+1);
-      for ( int i = 0 ; i <= siz ; i++ )
-        table[i] = NULL;
-      for(const_iterator k=ht.begin() ; k != ht.end() ; ++k)
-        add(k->first,k->second);
-      //    std::cerr <<"done\n";
-    }
-        */
-public:
     BOOST_STATIC_CONSTANT(unsigned,DEFAULTHASHSIZE=8);
     BOOST_STATIC_CONSTANT(unsigned,MINHASHSIZE=4);
   void swap(HashTable<K,V,H,P,A> &h)
@@ -424,22 +399,20 @@ public:
     base_alloc(a) {
           init(sz);
         }
-  HashTable(const HashTable<K,V,H,P,A> &ht) : siz(ht.siz), growAt(ht.growAt),
-                #ifndef STATIC_HASHER
-        hash(ht.hash)
-        #endif
-#if !(defined(STATIC_HASHER) && defined(STATIC_HASH_EQUAL))
-          ,
+  HashTable(const HashTable<K,V,H,P,A> &ht) : siz(ht.siz), growAt(ht.growAt)
+#ifndef STATIC_HASHER
+                                            , hash(ht.hash)
 #endif
-          #ifndef STATIC_HASH_EQUAL
-           m_eq(ht.m_eq)
-          #endif
-  base_alloc((base_alloc &)ht){
-      Assert(0 == "don't copy hash tables, please");
-        table = alloc_table(siz+1);
+#ifndef STATIC_HASH_EQUAL
+                                            , m_eq(ht.m_eq),
+#endif
+            , base_alloc((base_alloc &)ht)
+    {
+//        Assert(0 == "don't copy hash tables, please");
+        alloc_table(bucket_count());
         for (unsigned i=0; i <= siz; ++i)
-          table[i] = clone_bucket(ht.table[i]);
-  }
+            table[i] = clone_bucket(ht.table[i]);
+    }
 
 
         explicit HashTable(unsigned sz = DEFAULTHASHSIZE, float mLoad = DEFAULTHASHLOAD) {
@@ -448,7 +421,7 @@ public:
   protected:
         Node *clone_bucket(Node *p) {
           if (!p)
-                return p;
+              return p;
           Node *ret=alloc_node();
           PLACEMENT_NEW(ret)Node(p->first,p->second,clone_bucket(p->next));
           return ret;
@@ -464,22 +437,27 @@ public:
       if ( growAt < 2 )
         growAt = 2;
       siz--;   // size is actually siz + 1
-      alloc_table(siz+1);
+      alloc_table(bucket_count());
       for ( unsigned i = 0 ; i <= siz ; i++ )
         table[i] = NULL;
     }
-        public:
-          void clear() {
-                for (unsigned i=0;i<=siz;i++) {
-                  for(Node *entry=table[i],*next;entry;entry=next) {
-                        next=entry->next;
-                        delete_node(entry);
-                  }
-                  table[i]=NULL;
-                }
-                cnt = 0;
-          }
-  ~HashTable()
+    void grow() 
+    {
+        rehash_pow2(2*bucket_count());
+    }
+    
+ public:
+    void clear() {
+        for (unsigned i=0;i<=siz;i++) {
+            for(Node *entry=table[i],*next;entry;entry=next) {
+                next=entry->next;
+                delete_node(entry);
+            }
+            table[i]=NULL;
+        }
+        cnt = 0;
+    }
+    ~HashTable()
     {
       //    std::cerr << "HashTable destructor called\n"; // Yaser
       if ( table ) {
@@ -490,20 +468,16 @@ public:
       }
     }
 
-
-public:
-        // use insert instead
-  V *add(const K &first, const V &second=V())
+    // use insert instead
+    V *add(const K &first, const V &second=V())
     {
-      if ( ++cnt >= growAt )
-                rehash(2 * siz);
-      std::size_t i = bucket(first);
-          Node *next=table[i];
-      table[i] = alloc_node();
-                PLACEMENT_NEW (table[i]) Node(first, second, next);
-      return &table[i]->second;
+        if ( ++cnt >= growAt )
+            grow();
+        std::size_t i = bucket(first);
+        Node *next=table[i];
+        PLACEMENT_NEW (table[i] = alloc_node()) Node(first, second, next);
+        return &table[i]->second;
     }
-public:
 
         // bool is true if insertion was performed, false if key already existed.  pointer to the key/val pair in the table is returned
   private:
@@ -512,7 +486,7 @@ public:
         }
 public:
   // not part of standard!
-        insert_return_type insert(const K& first, const V& second=V()) {
+    insert_return_type insert(const K& first, const V& second/*=V()*/) {
           std::size_t hv=get_hash()(first);
           std::size_t bucket=hashToPos(hv);
           for ( Node *p = table[bucket]; p ; p = p->next )
@@ -522,18 +496,39 @@ public:
                       ,false);
 
           if ( ++cnt >= growAt ) {
-                rehash(2 * siz);
-                bucket=hashToPos(hv);
+              grow();
+              bucket=hashToPos(hv);
           }
           Node *next=table[bucket];
-          table[bucket] = alloc_node();
-          PLACEMENT_NEW (table[bucket]) Node(first, second, next);
+          PLACEMENT_NEW (table[bucket] = alloc_node()) Node(first, second, next);
           return insert_return_type(
                 reinterpret_cast<find_return_type>(table[bucket])
                 ,true);
 
         }
 
+    // copied from above
+        insert_return_type insert(const K& first) {
+          std::size_t hv=get_hash()(first);
+          std::size_t bucket=hashToPos(hv);
+          for ( Node *p = table[bucket]; p ; p = p->next )
+                if ( equal(p->first,first) )
+                  return insert_return_type(
+                      (find_return_type)p
+                      ,false);
+
+          if ( ++cnt >= growAt ) {
+              grow();
+                bucket=hashToPos(hv);
+          }
+          Node *next=table[bucket];
+          PLACEMENT_NEW (table[bucket] = alloc_node()) Node(first,next);
+          return insert_return_type(
+                reinterpret_cast<find_return_type>(table[bucket])
+                ,true);
+
+        }
+    
         insert_return_type insert(const value_type &t) {
           return insert(t.first,t.second);
         }
@@ -602,7 +597,7 @@ public:
   float max_load_factor() const { return (float)growAt / (float)(siz + 1); }
   void max_load_factor(float mLoad)
     {
-      growAt = (unsigned)(mLoad * (siz+1));
+      growAt = (unsigned)(mLoad * (bucket_count()));
       if ( growAt < 2 )
         growAt = 2;
     }

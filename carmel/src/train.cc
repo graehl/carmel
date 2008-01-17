@@ -126,11 +126,12 @@ struct forward_backward
     template <class Examples>
     void compute_derivations(WFST &x,Examples const &ex) 
     {
+        carmel::wfst_io_index io(x);
         unsigned n=1;
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
-            cached_derivs.push(Derivs(x,i->i,i->o));
-            if (!cached_derivs.front().compute()) {
+            cached_derivs.push_front(x,i->i,i->o);
+            if (!cached_derivs.front().compute(io)) {
                 warn_no_derivations(x,*i,n);
                 cached_derivs.pop();
             }
