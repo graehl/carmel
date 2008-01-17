@@ -11,7 +11,7 @@
 #endif
 
 // use singly linked list - recommended (less space) - but FIXME: double free!
-//#define USE_SLIST
+#define USE_SLIST
 
 #ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION

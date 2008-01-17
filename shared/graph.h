@@ -19,6 +19,10 @@ struct GraphArc {
   int dest;
   FLOAT_TYPE weight;
   void *data;
+    GraphArc() {}
+    GraphArc(int source,int dest,FLOAT_TYPE weight,void *data) :
+        source(source),dest(dest),weight(weight),data(data)
+    {}
 };
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a);
@@ -31,12 +35,15 @@ struct GraphState {
     }    
     void add(int source,int dest,FLOAT_TYPE weight,void *data) 
     {
+        /*
         GraphArc a;
         a.source=source;
         a.dest=dest;
         a.weight=weight;
         a.data=data;
         add(a);
+        */
+        arcs.push_front(source,dest,weight,data);
     }
 };
 

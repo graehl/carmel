@@ -86,6 +86,7 @@ public:
   void push(const T &it) {
     push_front(it);
   }
+    
   T &top() {
     return this->front();
   }
@@ -93,6 +94,21 @@ public:
     this->pop_front();
   }
 #ifndef USE_SLIST
+    template <class T0,class T1>
+    inline void push_front(T0 const& t0,T1 const& t1)
+    {
+        push_front(T(t0,t1));
+    }
+    template <class T0,class T1,class T2>
+    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2)
+    {
+        push_front(T(t0,t1,t2));
+    }
+    template <class T0,class T1,class T2,class T3>
+    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2,T3 const& t3)
+    {
+        push_front(T(t0,t1,t2,t3));
+    }
     template <class O> void print(O&o) const
     {
         o << "(";
