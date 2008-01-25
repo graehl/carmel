@@ -244,15 +244,48 @@ struct State {
           
 std::ostream& operator << (std::ostream &out, State &s); // Yaser 7-20-2000
 
-struct DWPair {
-    int dest;
+struct arc_counts 
+{
+    unsigned src;
+    unsigned dest() const
+    {
+        return arc->dest;
+    }
+    int in() const
+    {
+        return arc->in;
+    }
+    int out() const
+    {
+        return arc->out;
+    }
+    int groupId() const 
+    {
+        return arc->groupId;
+    }
+    
     FSTArc *arc;
     Weight scratch;
     Weight em_weight;
     Weight best_weight;
     Weight counts;
     Weight prior_counts;
-    Weight &weight() const { return arc->weight; }
+    Weight &weight() const 
+    {
+        return arc->weight;
+    }
+};
+
+std::ostream& operator << (std::ostream &o,arc_counts const& ac);
+
+    
+
+struct DWPair {    
+    unsigned dest; // to allow reverse forward = backward version
+    unsigned id; // to arc_counts table
+    DWPair(DWPair const& o) : dest(o.dest),id(o.id) {}
+    DWPair() {}
+    DWPair(unsigned dest,unsigned id) : dest(dest),id(id) {}
 };
 
 std::ostream & operator << (std::ostream &o, DWPair p);
@@ -292,11 +325,15 @@ struct symSeq {
 
 std::ostream & operator << (std::ostream & out , const symSeq & s);
 
-struct IOSymSeq {
+struct IOSymSeq : boost::noncopyable{
     symSeq i;
     symSeq o;
     FLOAT_TYPE weight;
-    void init(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE w) {
+    IOSymSeq(List<int> const&inSeq, List<int> const&outSeq, FLOAT_TYPE w) 
+    {
+        init(inSeq,outSeq,w);
+    }
+    void init(List<int> const&inSeq, List<int> const&outSeq, FLOAT_TYPE w) {
         i.n = inSeq.size();
         o.n = outSeq.size();
         i.let = NEW int[i.n];
@@ -315,11 +352,19 @@ struct IOSymSeq {
         weight = w;
     }
     void kill() {
-        delete[] o.let;
-        delete[] o.rLet;
-        delete[] i.let;
-        delete[] i.rLet;
+        if (o.let) {
+            delete[] o.let;
+            delete[] o.rLet;
+            delete[] i.let;
+            delete[] i.rLet;
+            o.let=NULL;
+        }
     }
+    ~IOSymSeq() 
+    {
+        kill();
+    }
+    
     template <class O,class Alphabet>
     void print(O &os,Alphabet const& in,Alphabet const& out,char const* term="\n") const
     {
@@ -338,70 +383,46 @@ struct IOSymSeq {
 
 std::ostream & operator << (std::ostream & out , const IOSymSeq & s);   // Yaser 7-21-2000
 
-class trainInfo {
+class training_corpus : boost::noncopyable
+{
  public:
+    training_corpus() { clear(); }
+    void clear()
+    {
+        maxIn=maxOut=n_input=n_output=w_input=w_output=totalEmpiricalWeight=0;
+        examples.clear();
+    }
+    
+    void add(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight=1.) 
+    {
+        examples.push_front(inSeq,outSeq,weight);
+        IOSymSeq const& n=examples.front();
+        unsigned i=n.i.n,o=n.o.n;
+        n_input += i;
+        n_output += o;
+        w_input += weight*i;
+        w_output += weight*o;
+        if (maxIn<i) maxIn=i;
+        if (maxOut<o) maxOut=o;
+        totalEmpiricalWeight += weight;
+    }
+    void finish_adding() 
+    {
+        examples.reverse();
+    }
+    void set_null()
+    {
+        clear();
+        List<int> empty_list;
+        add(empty_list, empty_list, 1.0);
+    }    
+
 //    bool cache_derivations;
-    HashTable<IOPair, List<DWPair> > *forArcs;
-    HashTable<IOPair, List<DWPair> > *revArcs;
-    List<int> *forETopo;
-    List<int> *revETopo;
-    Weight ***f;
-    Weight ***b;
-    int maxIn, maxOut;
+    unsigned maxIn, maxOut; // highest index (N-1) of input,output symbols respectively.
     List <IOSymSeq> examples;
     //Weight smoothFloor;
     FLOAT_TYPE totalEmpiricalWeight; // # of examples, if each is weighted equally
     FLOAT_TYPE n_input,n_output,w_input,w_output; // for per-symbol ppx.  w_ is multiplied by example weight.  n_ is unweighted
-    
-    int nStates; // Yaser added this . number of States 
-#ifdef N_E_REPS // Yaser : the following variables need to be taken care of in the copy constructor
-    Weight *wNew;
-    Weight *wOld;
-#endif
-
-    trainInfo()
-    {
-        init();
-    }
-
-    void init() 
-    {
-        n_input=n_output=w_input=w_output=totalEmpiricalWeight=0;
-        f=b=0;
-        maxIn=maxOut=0;
-//        cache_derivations=false;
-    }
- private:
-    trainInfo(const trainInfo& a){
-        throw std::runtime_error("Do not copy trainInfo");
-    }
-    /*  if (a.forArcs == NULL)
-        forArcs = NULL ;
-        else 
-        forArcs=NEW HashTable<IOPair, List<DWPair> >(*a.forArcs);
-        revArcs=NEW HashTable<IOPair, List<DWPair> >(*a.revArcs);
-        forETopo=NEW List<int>(*a.forETopo);
-        revETopo=NEW List<int>(*a.revETopo);
-        maxIn=(a.maxIn);
-        maxOut=(a.maxOut);
-        examples=(a.examples);
-        smoothFloor =(a.smoothFloor);
-        nStates=a.nStates;
-        f = NEW Weight **[maxIn+1];
-        b = NEW Weight **[maxIn+1];
-        for ( int i = 0 ; i <= maxIn ; ++i ) {
-        f[i] = NEW Weight *[maxOut+1];
-        b[i] = NEW Weight *[maxOut+1];
-        for ( int o = 0 ; o <= maxOut ; ++o ) {
-        f[i][o] = NEW Weight [nStates];
-        b[i][o] = NEW Weight [nStates];
-        for (int s = 0 ; s < nStates ; s++){
-        f[i][o][s] = a.f[i][o][s] ;
-        b[i][o][s] = a.b[i][o][s] ;
-        }
-        }
-        }    
-        };*/
 };
 
 }
@@ -411,6 +432,7 @@ inline void swap(graehl::State &a,graehl::State &b)
 {
     a.swap(b);
 }
+
 }
 
 

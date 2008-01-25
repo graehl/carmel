@@ -84,7 +84,7 @@ struct TrioNamer {
 
 
 
-WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0), ownerOut(0), in(a.in), out(b.out), states((a.numStates() + b.numStates())), trn(NULL)
+WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0), ownerOut(0), in(a.in), out(b.out), states((a.numStates() + b.numStates()))
 {
     const int EMPTY=epsilon_index;
     if ( !(a.valid() && b.valid()) ) {

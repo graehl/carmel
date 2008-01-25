@@ -370,6 +370,10 @@ public:
         std::uninitialized_copy(b,e,this->begin());
         //memcpy(begin(),b,e-b);
     }
+    fixed_array(T const& t,std::size_t sp) : Super(sp) 
+    {
+        this->construct(t);
+    }
     fixed_array(const array<T,Alloc> &a) : Super(a.capacity()) {
 //        DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());

@@ -12,26 +12,6 @@ const int WFST::arcformat_index = ios_base::xalloc();
 #define DP_SLIDE_36
 // slide 36 gives what seems like a bad norm method: scale(c)/scale(sum{c_i}).  slide 38 looks better: scale(c)/sum{scale(c_i)}.  update: slide 38 was wrong, and is revised in http://www.cs.berkeley.edu/~pliang/papers/tutorial-acl2007.pdf
 
-Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
-{
-    Assert(valid());
-
-    int nIn = inSeq.size();
-    int nOut = outSeq.size();
-    int i, o;
-    Weight ***w = forwardSumPaths(inSeq, outSeq);
-
-    Weight fin = w[nIn][nOut][final];
-
-    for ( i = 0 ; i <= nIn ; ++i ) {
-        for ( o = 0 ; o <= nOut ; ++o )
-            delete[] w[i][o];
-        delete[] w[i];
-    }
-    delete[] w;
-    return fin;
-}
-
 void WFST::pruneArcs(Weight thresh)
 {
     for ( int s = 0 ; s < numStates() ; ++s )
