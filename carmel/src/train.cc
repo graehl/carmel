@@ -123,16 +123,16 @@ struct forward_backward
     
     void matrix_compute(int nIn,int *inLet,int nOut,int *outLet,int start,Weight ***w,matrix_io_index::states_t &io,List<int> const& eTopo);
     
-    void matrix_forward_prop(Weight ***w,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o) 
+    void matrix_forward_prop(Weight ***m,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o) 
     {
         if (!fio) return;
         for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
             arc_counts &a=arcs[dw->id];
-            Weight &to=w[i+d_i][o+d_o][s];
-            Weight from=w[i][o][s];
-            Weight w=a.weight();
             unsigned d=dw->dest;
-            assert(a.dest()==d||a.src==d);
+            assert(a.dest()==d||a.src==d); // first: forward, second: reverse
+            Weight &to=m[i+d_i][o+d_o][d];
+            Weight from=m[i][o][s];
+            Weight w=a.weight();
 #ifdef DEBUGFB
             Config::debug() << "w["<<i+d_i<<"]["<<o+d_o<<"]["<<d<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< to <<" + " << from <<" * "<< w <<" = "<< to <<" + " << from*w <<" = "<< to+(from*w)<<"\n";
 #endif 
