@@ -1,6 +1,7 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
+// required now! 
 #define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
@@ -10,20 +11,21 @@
 #endif
 #endif
 
-// use singly linked list - recommended (less space) - but FIXME: double free!
+// use singly linked list - required now, because dynamic_array<std::list> can't be guaranteed safe via memcpy as move
 #define USE_SLIST
 
 #ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION
 #endif
 
-//#define CARMEL_DEBUG_PRINTS
+#define CARMEL_DEBUG_PRINTS
 
 #if defined(DEBUG) && defined(CARMEL_DEBUG_PRINTS)
 //# define DEBUG_STRINGPOOL
 #define DEBUGLEAK
 #define DEBUG_ESTIMATE_PP
 #define DEBUGNAN
+#define DEBUGDERIVATIONS
 //#define DEBUGTRAIN
 //#define DEBUGTRAINDETAIL
 #define DEBUGNORMALIZE

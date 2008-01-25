@@ -28,8 +28,6 @@ namespace graehl {
 
 using namespace std;
 
-ostream & operator << (ostream &out, const trainInfo &t); // Yaser 7-20-2000
-
 class WFST;
 struct PathArc {
     //const char *in;
@@ -53,7 +51,6 @@ class WFST {
     static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
     static const int arcformat_index; // handle for OutThresh
     void initAlphabet() {
-        trn=NULL;
 #define EPSILON_SYMBOL "*e*"
         in = NEW alphabet(EPSILON_SYMBOL);
         out = NEW alphabet(EPSILON_SYMBOL);
@@ -84,6 +81,8 @@ class WFST {
     out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; return os; }
 
 
+    void read_training_corpus(std::istream &in,training_corpus &c);
+    
     static inline FLOAT_TYPE randomFloat()       // in range [0, 1)
     {
         return rand() * (1.f / (RAND_MAX+1.f));
@@ -164,8 +163,6 @@ class WFST {
       }*/
 
     static int indexThreshold;
-    Weight ***forwardSumPaths(List<int> &inSeq, List<int> &outSeq);
-    trainInfo *trn;
     enum norm_group_by { CONDITIONAL, // all arcs from a state with the same input will add to one
                            JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
                            NONE // 
@@ -177,11 +174,6 @@ class WFST {
         mean_field_scale scale;
     };
     
-        
-    //     newPerplexity = train_estimate();
-    //	lastChange = train_maximize(method);
-    Weight train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
-    Weight train_maximize(NormalizeMethod const& method,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
     WFST(const WFST &a) { throw std::runtime_error("No copying of WFSTs allowed!"); }
  public:
     void index(int dir) {
@@ -206,7 +198,6 @@ class WFST {
     //  WFST(const WFST &a): 
     //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))), 
     //stateNames(a.stateNames), final(a.final), states(a.states), 
-    //trn(((a.trn ==0)? 0 : (NEW trainInfo(*a.trn)))){}; // Yaser added this 7-25-2000 copy constructor*/
 
     WFST(istream & istr,bool alwaysNamed=false) {
         initAlphabet();
@@ -356,15 +347,16 @@ class WFST {
     void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
         changeEachParameter(setRandom);
     }
-    void normalize(NormalizeMethod const& method);
-
+    void normalize(NormalizeMethod const& method);    
+    
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
-    // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor)
-    void trainBegin(NormalizeMethod const& method,bool weight_is_prior_count=false, Weight smoothFloor=0.0);
-    void trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight);
-    Weight trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,NormalizeMethod const& method, int ran_restarts=0,bool cache_derivations=false);
-    // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
+    // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor).
+    // corpus may have examples w/ no derivations removed from it!
+    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,bool cache_derivations=false);
     // returns per-example perplexity achieved
+    
+//    Weight trainFinish();
+    // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
 
     void invert();		// switch input letters for output letters
     void reduce();		// eliminate all states not along a path from
@@ -535,8 +527,25 @@ class WFST {
     static inline bool isTiedOrLocked(int groupId) {
         return groupId >= 0;
     }
+
+    // v(unsigned source_state,FSTArc &arc)
+    template <class V>
+    void visit_arcs(V & v) 
+    {
+        unsigned arcno=0;
+        for ( unsigned s = 0 ; s < numStates() ; ++s )
+            for ( List<FSTArc>::const_iterator i=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); i != end; ++i )
+                v(s,const_cast<FSTArc &>(*i));
+    }
+
     
  private:
+        
+
+    //	lastChange = train_maximize(method);
+    // counts must have been filled in (happens in trainFinish) so not useful to public
+    Weight train_maximize(NormalizeMethod const& method,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
+    
     void destroy() 
     {
         deleteAlphabet();

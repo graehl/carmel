@@ -784,42 +784,14 @@ main(int argc, char *argv[]){
                 }
             } else if ( flags['t'] ) {
                 FLOAT_TYPE weight;
-                result->trainBegin(norm_method,flags['U'],smoothFloor);
+                training_corpus corpus;
+                
                 if (pairStream) {
-                    for ( ; ; ) {
-                        weight = 1;
-                        input_lineno=0;
-                        getline(*pairStream,buf);
-                        if ( !*pairStream )
-                            break;
-                        ++input_lineno;
-                        
-                        if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
-                            istringstream w(buf.c_str());
-                            w >> weight;
-                            if ( w.fail() ) {
-                                Config::warn() << "Bad training example weight: " << buf << std::endl;
-                                continue;
-                            }
-                            getline(*pairStream,buf);
-                            if ( !*pairStream )
-                                break;
-                            ++input_lineno;                            
-                        }
-                        WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);
-                        getline(*pairStream,buf);
-                        if ( !*pairStream )
-                            break;
-                        ++input_lineno;
-                        
-                        WFST::symbol_ids outs(*result,buf.c_str(),1,input_lineno);
-                        result->trainExample(ins, outs, weight);
-                    }
+                    result->read_training_corpus(*pairStream,corpus);
                 } else {
-                    List<int> empty_list;
-                    result->trainExample(empty_list, empty_list, 1.0);
+                    corpus.set_null();
                 }
-                result->trainFinish(converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, norm_method, ranRestarts,cache_derivations);
+                result->train(corpus,norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations);
             } else if ( nGenerate > 0 ) {
                 MINIMIZE;
                 //        if ( !flags['n'] )

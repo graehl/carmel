@@ -2,6 +2,8 @@
 //static const FLOAT_TYPE HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 #include "graph.h"
 #include "myassert.h"
+//#include <dynarray.h>
+#include <array.hpp>
 
 namespace graehl {
 
@@ -23,6 +25,27 @@ void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*fu
   dfsRec(startState, DFS_NO_PREDECESSOR);
 }
 
+// g's arcs are reversed and added to graph dest
+void add_reversed_arcs(GraphState *rev,GraphState const*source,unsigned n) 
+{
+    for ( unsigned i  = 0 ; i < n ; ++i ){
+        List<GraphArc> const&arcs = source[i].arcs;
+        for ( List<GraphArc>::const_iterator l=arcs.begin(),end = arcs.end(); l != end; ++l ) {
+/*            GraphArc r;
+            r.data = &(*l);
+            Assert(i == l->source);
+            r.dest = i;
+            r.source = l->dest;
+            r.weight = l->weight;
+            rev[r.source].arcs.push(r);
+*/
+            
+            rev[l->dest].arcs.push_front(l->dest,l->source,l->weight,(void*)&(*l));
+        }
+    }    
+}
+
+
 Graph reverseGraph(Graph g)
   // This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
@@ -30,23 +53,11 @@ Graph reverseGraph(Graph g)
   //
 
 {
-  GraphState *rev = NEW GraphState[g.nStates];
-  for ( unsigned i  = 0 ; i < g.nStates ; ++i ){
-    List<GraphArc> &arcs = g.states[i].arcs;
-    for ( List<GraphArc>::val_iterator l=arcs.val_begin(),end = arcs.val_end(); l != end; ++l ) {
-      GraphArc r;
-      r.data = &(*l);
-      Assert(i == l->source);
-      r.dest = i;
-      r.source = l->dest;
-      r.weight = l->weight;
-      rev[r.source].arcs.push(r);
-    }
-  }
-  Graph ret;
-  ret.states = rev;
-  ret.nStates = g.nStates;
-  return ret;
+    Graph ret;
+    ret.states = NEW GraphState[g.nStates];
+    ret.nStates = g.nStates;
+    add_reversed_arcs(ret.states,g.states,g.nStates);
+    return ret;
 }
 
 Graph dfsGraph;
@@ -203,6 +214,15 @@ void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc *
 
 }
 
+    
+unsigned removeStates_inplace(Graph g,bool marked[])
+{
+    indices_after_removing ttable(marked,marked+g.nStates);
+    return graehl::shuffle_removing(g.states,ttable,rewrite_GraphState());
+}
+
+
+
 Graph removeStates(Graph g, bool marked[]) // not tested
   // This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
@@ -224,9 +244,8 @@ Graph removeStates(Graph g, bool marked[]) // not tested
       const List<GraphArc> &arcs = g.states[i].arcs;
       for ( List<GraphArc>::const_iterator oldArc=arcs.const_begin(),end=arcs.const_end() ; oldArc !=end ; ++oldArc )
         if ( !marked[oldArc->dest] ) {
-          GraphArc newArc = *oldArc;
-          newArc.dest = oldToNew[newArc.dest];
-          newArcs.push(newArc);
+            newArcs.push(GraphArc(oldToNew[oldArc->dest],oldToNew[oldArc->source],
+                                  oldArc->weight,oldArc->data));
         }
     }
 

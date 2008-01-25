@@ -19,6 +19,17 @@ struct GraphArc {
   int dest;
   FLOAT_TYPE weight;
   void *data;
+    template <class T>
+    T &data_as() 
+    {
+        return reinterpret_cast<T &>(data);
+    }
+    template <class T>
+    T const&data_as() const
+    {
+        return reinterpret_cast<T const&>(data);
+    }
+    
     GraphArc() {}
     GraphArc(int source,int dest,FLOAT_TYPE weight,void *data) :
         source(source),dest(dest),weight(weight),data(data)
@@ -28,11 +39,12 @@ struct GraphArc {
 std::ostream & operator << (std::ostream &out, const GraphArc &a);
 
 struct GraphState {
-  List<GraphArc> arcs;
+    typedef  List<GraphArc> arcs_type;
+    arcs_type arcs;
     void add(GraphArc const& a) 
     {
         arcs.push(a);
-    }    
+    }
     void add(int source,int dest,FLOAT_TYPE weight,void *data) 
     {
         /*
@@ -47,10 +59,14 @@ struct GraphState {
     }
 };
 
+
 struct Graph {
   GraphState *states;
   unsigned nStates;
 };
+
+// take the arcs in graph (source,n_states) and add them, reversing source<->dest, to destination graph (destination,n_states)
+void add_reversed_arcs(GraphState *destination,GraphState const*source,unsigned n_states);
 
 Graph reverseGraph(Graph g) ;
 
@@ -134,7 +150,44 @@ void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc *
 //  otherwise, store pointer to arc taken to get to state s in taken[s]
 
 
+// if marked[i], remove state i and arcs leading to it
 Graph removeStates(Graph g, bool marked[]); // not tested
+
+struct rewrite_GraphState
+{
+    template <class OldToNew>
+    void rewrite_arc(GraphArc &a,OldToNew const& m) const 
+    {
+        a.source=m[a.source];
+        a.dest=m[a.dest];
+    }
+
+    // OldToNew[i] = i -> this new index if keeping i, (unsigned)-1 if removing i
+    template <class OldToNew>
+    void operator()(GraphState &s,OldToNew const& t) const 
+    {
+        typedef GraphState::arcs_type A;
+        
+        for (A::erase_iterator i=s.arcs.begin(),e=s.arcs.end();i!=e;) {
+            if (t[i->dest]==(unsigned)-1) {
+                i=s.arcs.erase(i);
+            } else {
+                i->source=t[i->source];
+                i->dest=t[i->dest];
+                ++i;
+            }
+        }
+    }
+
+    void operator()(GraphState &s) 
+    {
+        s.arcs.clear();
+    }
+};
+
+// as removeStates(..), but graph g is modified by swapping deleted states to the end (and clearing their arcs), returns number of states remaining
+unsigned removeStates_inplace(Graph g,bool marked[]);
+
 
 inline void freeGraph(Graph graph) {
     delete[] graph.states;

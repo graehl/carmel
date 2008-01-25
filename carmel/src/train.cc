@@ -1,3 +1,4 @@
+#include <boost/utility.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/carmel/src/train.h>
 #include <graehl/carmel/src/fst.h>
@@ -8,100 +9,16 @@
 
 namespace graehl {
 
-void WFST::trainBegin(WFST::NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor) {
-    //consolidateArcs();
-    normalize(method);
-    Assert(!trn);
-    trn = NEW trainInfo; //FIXME: memleak
-//    trn->init();
-    //  trn->smoothFloor = smoothFloor;
-    IOPair IO;
-    DWPair DW;
-    List<DWPair> *pLDW;
-    HashTable<IOPair, List<DWPair> > *IOarcs =
-        trn->forArcs = NEW HashTable<IOPair, List<DWPair> >[numStates()];
-    HashTable<IOPair, List<DWPair> > *revIOarcs =
-        trn->revArcs = NEW HashTable<IOPair, List<DWPair> >[numStates()];
-    int s;
-    for ( s = 0 ; s < numStates() ; ++s ){
-        for ( List<FSTArc>::val_iterator aI=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); aI != end; ++aI ) {
-            IO.in = aI->in;
-            IO.out = aI->out;
-            int d = DW.dest = aI->dest;
-            DW.arc = &(*aI);
-            //if ( !(pLDW = find_second(IOarcs[s],IO)) )
-            pLDW = &IOarcs[s][IO]; //FIXME: memleak
-            DW.prior_counts = smoothFloor + weight_is_prior_count * aI->weight;
-            // add in forward direction
-            pLDW->push(DW);
-
-            // reverse direction and add in reverse direction
-            DW.dest = s;
-            //if ( !(pLDW = find_second(revIOarcs[d],IO)) )
-            pLDW = &revIOarcs[d][IO];
-            pLDW->push(DW);
-        }
-    }
-
-    Graph eGraph = makeEGraph();
-    Graph revEGraph = reverseGraph(eGraph);
-    trn->forETopo = NEW List<int>;
-    {
-        TopoSort t(eGraph,trn->forETopo);
-        t.order_crucial();
-        int b = t.get_n_back_edges();
-        if ( b > 0 )
-            Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
-        delete[] eGraph.states;
-    }
-    trn->revETopo = NEW List<int>;
-    {
-        TopoSort t(revEGraph,trn->revETopo);
-        t.order_crucial();
-        delete[] revEGraph.states;
-    }
-
-    
-#ifdef DEBUGTRAIN
-    Config::debug() << "Just after training setup "<< *this ;
-#endif
-}
-
-void WFST::trainExample(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight)
-{
-    Assert(trn);
-    Assert(weight > 0);
-    IOSymSeq s;
-    s.init(inSeq, outSeq, weight);
-    trn->totalEmpiricalWeight += weight;
-    trn->examples.push_front(s);
-    //trn->examples.insert(trn->examples.end(),s);
-    if ( s.i.n > trn->maxIn )
-        trn->maxIn = s.i.n;
-    if ( s.o.n > trn->maxOut )
-        trn->maxOut = s.o.n;
-    trn->n_input+=s.i.n;
-    trn->n_output+=s.o.n;
-    trn->w_input+=s.i.n*weight;
-    trn->w_output+=s.o.n*weight;
-}
-
-#define EACHDW(a)   do {  for ( int s = 0 ; s < numStates() ; ++s ) {                                                           \
-            HashTable<IOPair, List<DWPair> >&hashref=trn->forArcs[s];                                                           \
-            for ( HashTable<IOPair, List<DWPair> >::iterator ha=hashref.begin(); ha!=hashref.end() ; ++ha ){                    \
-                for ( List<DWPair>::val_iterator dw=ha->second.val_begin(),dend = ha->second.val_end() ; dw !=dend ; ++dw ) {   \
-                    a } } } } while(0)
-
 
 struct WeightAccum {
     Weight sum;
     int n_nonzero;
     int n;
-    void operator ()(Weight *w) {
-        w->NaNCheck();
-        sum += *w;
+    void operator ()(Weight const&w) {
+        w.NaNCheck();
+        sum += w;
         ++n;
-        if (w->isPositive())
+        if (w.isPositive())
             ++n_nonzero;
     }
     WeightAccum() {
@@ -111,89 +28,424 @@ struct WeightAccum {
         n=n_nonzero=0;
         sum.setZero();
     }
+    friend std::ostream & operator <<(std::ostream &o,WeightAccum const& a) 
+    {
+        return o << "("<<a.sum<<","<<a.n<<","<<a.n_nonzero<<")";
+    }    
 };
+
+void print_stats(arcs_table const& t,char const* header) 
+{
+    
+    Config::debug() << header;
+    WeightAccum a_w;
+    WeightAccum a_c;
+    for (arcs_table::const_iterator i=t.begin(),e=t.end();i!=e;++i) {
+        a_w(i->weight());
+        a_c(i->counts);
+    }
+    Config::debug() << "(sum,n,nonzero): weights="<<a_w<<" counts="<<a_c<<"\n";
+}
+
+struct matrix_io_index : boost::noncopyable
+{
+    typedef dynamic_array<DWPair> for_io;
+    typedef HashTable<IOPair,for_io> for_state;
+    typedef fixed_array<for_state> states_t;
+
+    states_t forward,backward;
+    arcs_table &t;
+
+    matrix_io_index(arcs_table &t) : t(t)
+    {
+    }
+
+    void populate(bool include_backward=true) 
+    {
+        for (unsigned i=0,N=t.size();i!=N;++i) {
+            arc_counts const& ac=t[i];
+            IOPair io(ac.in(),ac.out());
+            forward[ac.src][io].push_back(DWPair(ac.dest(),i));
+            if (include_backward)
+                backward[ac.dest()][io].push_back(DWPair(ac.src,i));
+        }
+    }
+};
+    
+
+// similar to transposition but not quite: instead of replacing w.ij with w.ji, replace w.ij with w.(I-i)(J-j) ... matrix has the same dimensions.  it's a 180 degree rotation, not a reflection about the identity line
+void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
+    int i;
+    for ( i = 0 ; i <= max_i/2 ; ++i ) {
+        Weight **temp = w[i];
+        w[i] = w[max_i - i];
+        w[max_i - i] = temp;
+    }
+    for ( i = 0 ; i <= max_i ; ++i )
+        for ( int o = 0 ; o <= max_o/2 ; ++o ) {
+            Weight *temp = w[i][o];
+            w[i][o] = w[i][max_o - o];
+            w[i][max_o - o] = temp;
+        }
+}
 
 struct forward_backward 
 {
-    Weight ***f;
-    Weight ***b;
+    WFST &x;
     unsigned n_in,n_out,n_st;
-    bool use_matrix;
-    typedef carmel::derivations Derivs;
+    typedef arcs_table arcs_t;
+    training_corpus *trn;
     
+    arcs_t arcs;
+
+    /// stuff for old matrix (non derivation-structure-caching) based forward/backward
+    bool use_matrix;
+    bool remove_bad_training;    
+    matrix_io_index mio;
+    Weight ***f,***b;
+    List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)    
+
+    /// stuff for new derivation caching EM:
+    typedef derivations Derivs;    
     List<Derivs> cached_derivs;
 
-    template <class Examples>
-    void compute_derivations(WFST &x,Examples const &ex) 
+    
+    void matrix_compute(IOSymSeq const& s,bool backward=false) 
     {
-        carmel::wfst_io_index io(x);
+        if (backward) {
+            matrix_compute(s.i.n,s.i.rLet,s.o.n,s.o.rLet,x.final,b,mio.backward,e_backward_topo);
+            // since the backward paths were obtained on the reversed input/output, reverse them back
+            matrix_reverse_io(b,s.i.n,s.o.n);
+        } else
+            matrix_compute(s.i.n,s.i.let,s.o.n,s.o.let,0,f,mio.forward,e_forward_topo);
+    }
+    
+    void matrix_compute(int nIn,int *inLet,int nOut,int *outLet,int start,Weight ***w,matrix_io_index::states_t &io,List<int> const& eTopo);
+    
+    void matrix_forward_prop(Weight ***w,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o) 
+    {
+        if (!fio) return;
+        for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
+            arc_counts &a=arcs[dw->id];
+            Weight &to=w[i+d_i][o+d_o][s];
+            Weight from=w[i][o][s];
+            Weight w=a.weight();
+            unsigned d=dw->dest;
+            assert(a.dest()==d);
+#ifdef DEBUGFB
+            Config::debug() << "w["<<i+d_i<<"]["<<o+d_o<<"]["<<d<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< to <<" + " << from <<" * "<< w <<" = "<< to <<" + " << from*w <<" = "<< to+(from*w)<<"\n";
+#endif 
+            to += from * w;            
+        }
+    }
+    
+    
+    void matrix_count(matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
+    {
+        if (!fio) return;
+        for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
+            arc_counts &a=arcs[dw->id];
+            assert(a.dest()==dw->dest);
+            a.scratch += f[i][o][s] *a.weight() * b[i+d_i][o+d_o][dw->dest];
+        }
+    }
+    
+    template <class Examples>
+    void compute_derivations(Examples const &ex) 
+    {
+        wfst_io_index io(arcs);
         unsigned n=1;
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
             cached_derivs.push_front(x,i->i,i->o);
-            if (!cached_derivs.front().compute(io)) {
+            Derivs &d=cached_derivs.front();
+            if (!d.compute(io)) {
                 warn_no_derivations(x,*i,n);
                 cached_derivs.pop();
+            } else {
+#ifdef DEBUGDERIVATIONS
+                Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
+                i->print(Config::debug(),x,"\n");
+                printGraph(d.forward(),Config::debug());
+#endif 
             }
         }
-    }
-    
-    
-    forward_backward(WFST &x,bool cache_derivations,unsigned n_states,trainInfo *trn) 
-    {
-        n_st=trn->nStates=n_states;
-        if (cache_derivations) {
-            f=b=NULL;
-            use_matrix=false;
-            compute_derivations(x,trn->examples);
-            if(0) return; // for now, proceed with usual matrix no matter what, until we debug compute_derivations
-        }
-        use_matrix=true;
-        n_in=trn->maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
-        n_out=trn->maxOut+1;
-        f = trn->f = NEW Weight **[n_in];
-        b = trn->b = NEW Weight **[n_in];
-        for ( unsigned i = 0 ; i < n_in ; ++i ) {
-            f[i] = NEW Weight *[n_out];
-            b[i] = NEW Weight *[n_out];
-            for ( unsigned o = 0 ; o < n_out ; ++o ) {
-                f[i][o] = NEW Weight [n_st];
-                b[i][o] = NEW Weight [n_st];
-            }
-        }            
     }
 
-    ~forward_backward() 
+
+            
+    //     newPerplexity = train_estimate();
+    //	lastChange = train_maximize(method);
+    //    Weight train_estimate(Weight &unweighted_corpus_prob,bool remove_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
+    //    Weight train_maximize(NormalizeMethod const& method,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
+
+// return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
+// unweighted_corpus_prob: ignore per-example weight, product over corpus of p(example)
+    Weight estimate(Weight &unweighted_corpus_prob);
+
+    // return max change
+    Weight maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE delta_scale);
+
+    void matrix_fb(IOSymSeq &s);
+
+    
+    void e_topo_populate(bool include_backward=false) 
     {
-        if (use_matrix) {
+        assert(use_matrix);
+        e_forward_topo.clear();
+        if (include_backward)
+            e_backward_topo.clear();
+        {
+            Graph eGraph = x.makeEGraph();
+            TopoSort t(eGraph,&e_forward_topo);
+            t.order_crucial();
+            int b = t.get_n_back_edges();
+            if ( b > 0 )
+                Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
+            if (include_backward) {
+                Graph revEGraph = reverseGraph(eGraph);
+                TopoSort t(revEGraph,&e_backward_topo);
+                t.order_crucial();
+                freeGraph(revEGraph);
+            }
+            freeGraph(eGraph);
+        }
+    }
+    
+    forward_backward(WFST &x,bool per_arc_prior,Weight global_prior,bool cache_derivations,bool include_backward=true)
+        : x(x),arcs(x,per_arc_prior,global_prior),mio(arcs)
+    {
+        trn=NULL;
+        f=b=NULL;
+        remove_bad_training=true;
+        if (cache_derivations) {
+            use_matrix=false;
+        } else {            
+            use_matrix=true;
+            mio.populate(include_backward);
+            e_topo_populate(include_backward);
+        }        
+        n_st=x.numStates();
+    }
+
+    void matrix_dump(unsigned m_i,unsigned m_o) 
+    {
+        assert (use_matrix && f && b);
+        Config::debug() << "\nForwardProb/BackwardProb:\n";
+        for (int i = 0 ;i<=m_i ; ++i){
+            for (int o = 0 ; o <=m_o ; ++o){
+                Config::debug() << i << ':' << o << " (" ;
+                for (int s = 0 ; s < n_st ; ++s){
+                    Config::debug() << f[i][o][s] <<'/'<<b[i][o][s];
+                    if (s < n_st-1)
+                        Config::debug() << ' ' ;
+                }
+                Config::debug() <<')'<<std::endl;
+                if(o < m_o)
+                    Config::debug() <<' ' ;
+            }
+            Config::debug() <<std::endl;
+        }
+    }    
+
+    training_corpus &corpus() const 
+    {
+        return *trn;
+    }
+    
+    // call before using corpus
+    void prepare(training_corpus & corpus,bool include_backward=true)  // nonconst ref because we may remove examples with no derivation
+    {
+        trn=&corpus;
+
+        if (use_matrix) {    
+            n_in=corpus.maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
+            n_out=corpus.maxOut+1;
+            f = NEW Weight **[n_in];
+            if (include_backward)
+                b=NULL;
+            else
+                b = NEW Weight **[n_in];
+            for ( unsigned i = 0 ; i < n_in ; ++i ) {
+                f[i] = NEW Weight *[n_out];
+                if (b)
+                    b[i] = NEW Weight *[n_out];
+                for ( unsigned o = 0 ; o < n_out ; ++o ) {
+                    f[i][o] = NEW Weight [n_st];
+                    if (b)
+                        b[i][o] = NEW Weight [n_st];
+                }
+            }
+        } else {
+            compute_derivations(corpus.examples);
+        }
+    }
+
+    // call after done using f,b matrix for a corpus
+    void cleanup() 
+    {
+        if (use_matrix && f) {
             for ( unsigned i = 0 ; i < n_in ; ++i ) {
                 for ( unsigned o = 0 ; o < n_out ; ++o ) {
                     delete[] f[i][o];
-                    delete[] b[i][o];
+                    if (b)
+                        delete[] b[i][o];
                 }
                 delete[] f[i];
-                delete[] b[i];
+                if (b)
+                    delete[] b[i];
             }
             delete[] f;
-            delete[] b;   
-        }        
+            if (b)
+                delete[] b;   
+        }
+        f=b=NULL;
     }
     
+    ~forward_backward() 
+    {
+        cleanup();
+    }
+
+    
+    
+};
+
+namespace for_arcs {
+
+
+// scratch gets previous weight
+struct prep_new_weights
+{
+    Weight scale_prior;
+    prep_new_weights(Weight scale_prior) : scale_prior(scale_prior) {}
+    void operator()(arc_counts &a) const 
+    {
+        if ( !WFST::isLocked((a.arc)->groupId) ) { // if the group is tied, then the group number is zero, then the old weight does not change. Otherwise update as follows
+            a.scratch = a.weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
+            a.weight() = a.counts + a.prior_counts*scale_prior; // new (unnormalized weight)
+            NANCHECK(a.counts);
+            NANCHECK(a.prior_counts);
+            NANCHECK(a.weight());
+            NANCHECK(a.scratch);
+        }
+    }
+};
+
+// overrelax weight() and store raw EM weight in em_weight.  after pre_norm_counts, scratch has old .  also after WFST::normalize.  POST: need normalization again.
+struct overrelax
+{
+    FLOAT_TYPE delta_scale;
+    overrelax(FLOAT_TYPE delta_scale) : delta_scale(delta_scale) {}
+    void operator()(arc_counts &a) const
+    {
+        a.em_weight = a.weight();
+        NANCHECK(a.em_weight);
+        if (delta_scale > 1.)
+            if ( !WFST::isLocked(a.groupId()) )
+                if ( a.scratch.isPositive() ) {
+                    a.weight() = a.scratch * ((a.em_weight / a.scratch).pow(delta_scale));
+                    NANCHECK(a.scratch);
+                    NANCHECK(a.weight());
+                }
+    }        
+};
+
+struct max_change
+{
+    Weight maxChange;
+    void operator()(arc_counts &a) 
+    {
+        if (!WFST::isLocked(a.groupId())) {
+            Weight change = absdiff(a.weight(),a.scratch);
+            if ( change > maxChange )
+                maxChange = change;
+        }
+    }
+    Weight get() const 
+    {
+        return maxChange;
+    }
+};
+
+struct save_best 
+{
+    void operator()(arc_counts &a) const
+    {
+        a.best_weight=a.weight();
+    }
+};
+
+struct swap_em_scaled
+{
+    void operator()(arc_counts &a) const
+    {
+        std::swap(a.em_weight,a.weight());
+    }
+};  
+
+struct keep_em_weight
+{
+    void operator()(arc_counts &a) const
+    {
+        a.weight()=a.em_weight;
+    }
+};
+
+struct use_best_weight
+{
+    void operator()(arc_counts &a) const
+    {
+        a.weight()=a.best_weight;
+    }
+};
+    
+
+struct clear_count
+{
+    void operator()(arc_counts &a) const
+    {
+        a.counts.setZero();
+    }
+};
+
+struct clear_scratch
+{
+    void operator()(arc_counts &a) const
+    {
+        a.scratch.setZero();
+    }
+};
+
+struct add_weighted_scratch
+{
+    Weight w;
+    add_weighted_scratch(Weight w):w(w){}
+    void operator()(arc_counts &a) const
+    {
+        if (!a.scratch.isZero())
+            a.counts += w*a.scratch;
+#ifdef DEBUG
+        NANCHECK(a.counts);
+        NANCHECK(a.scratch);
+#endif
+    }
 };
 
     
 
-Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter, FLOAT_TYPE learning_rate_growth_factor, NormalizeMethod const& method, int ran_restarts,bool cache_derivations)
-{
-    Assert(trn);
-//    trn->cache_derivations=cache_derivations;
-    forward_backward fb(*this,cache_derivations,numStates(),trn);
     
-    int i, o, nSt = numStates();
+}//ns
 
-    if ( trn->totalEmpiricalWeight > 0 ) {
-        EACHDW(dw->prior_counts *= trn->totalEmpiricalWeight;);
-    }
+Weight WFST::train(
+                   training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count,
+                   Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
+                   int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
+                   int ran_restarts,bool cache_derivations
+                   )
+{
+    forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations);
+    fb.prepare(corpus,true);
 
     Weight bestPerplexity;
     bestPerplexity.setInfinity();
@@ -212,37 +464,31 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
                 Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
                 break;
             }
+            
 #ifdef DEBUGTRAIN
             Config::debug() << "Starting iteration: " << train_iter << '\n';
 #endif
+            
 #ifdef DEBUG
-#define DWSTAT(a)                                                                                                                                                               \
-            do {Config::debug() << a;                                                                                                                                           \
-                WeightAccum a_w;                                                                                                                                                \
-                WeightAccum a_c;                                                                                                                                                \
-                EACHDW(                                                                                                                                                         \
-                    a_w(&(dw->weight()));                                                                                                                                       \
-                    a_c(&(dw->counts));                                                                                                                                         \
-                    );                                                                                                                                                          \
-                Config::debug() << "(sum,n,nonzero): weights=("<<a_w.sum<<","<<a_w.n<<","<<a_w.n_nonzero<<")" << " counts=("<<a_c.sum<<","<<a_c.n<<","<<a_c.n_nonzero<<")\n";   \
-            } while(0)
+#define DWSTAT(a) print_stats(arcs,a)
+            arcs_table const&arcs=fb.arcs;
 #else
 #define DWSTAT
 #endif
-
+            
             DWSTAT("Before estimate");
             Weight corpus_p;
-            Weight newPerplexity = train_estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
+            Weight newPerplexity = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             DWSTAT("After estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
             Config::log() << " per-output-symbol-perplexity=";
-            corpus_p.root(trn->n_output).inverse().print_base(Config::log(),2);
+            corpus_p.root(corpus.n_output).inverse().print_base(Config::log(),2);
             Config::log() << " per-example-perplexity=";
             newPerplexity.print_base(Config::log(),2);
             if ( newPerplexity < bestPerplexity ) {
                 Config::log() << " (new best)";
                 bestPerplexity=newPerplexity;
-                EACHDW(dw->best_weight=dw->weight(););
+                fb.arcs.visit(for_arcs::save_best());
             }
 
             Weight pp_ratio_scaled;
@@ -257,12 +503,15 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
 #ifdef DEBUG_ADAPTIVE_EM
                 Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
                 if ( learning_rate > 1) {
-                    EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap EM/scaled
+                    fb.arcs.visit(for_arcs::swap_em_scaled());
+
                     Weight d;
-                    Weight em_pp=train_estimate(d);
+                    Weight em_pp=fb.estimate(d);
 
                     Config::log() << "unscaled-EM-perplexity=" << em_pp;
-                    EACHDW(Weight t=dw->em_weight;dw->em_weight=dw->weight();dw->weight()=t;);        // swap back
+                    
+                    fb.arcs.visit(for_arcs::swap_em_scaled());
+
                     if (em_pp > lastPerplexity)
                         Config::warn() << " - last EM worsened perplexity, from " << lastPerplexity << " to " << em_pp << ", which is theoretically impossible." << std::endl;
                 }
@@ -275,7 +524,8 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
                     if ( learning_rate > 1 ) {
                         Config::log() << "Failed to improve (relaxation rate too high); starting again at learning rate 1" << std::endl;
                         learning_rate=1;
-                        EACHDW(dw->weight() = dw->em_weight;);
+                        fb.arcs.visit(for_arcs::keep_em_weight());
+
                         last_was_reset=true;
                         continue;
                     }
@@ -293,7 +543,7 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
                 very_first_time=false;
             }
             DWSTAT("Before maximize");
-            lastChange = train_maximize(method,learning_rate);
+            lastChange = fb.maximize(method,learning_rate);
             DWSTAT("After maximize");
             if (lastChange <= converge_arc_delta ) {
                 Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << train_iter << " iterations.\n";
@@ -315,19 +565,10 @@ Weight WFST::trainFinish(Weight converge_arc_delta, Weight converge_perplexity_r
     bestPerplexity.print_base(Config::log(),2);
 
     Config::log() << std::endl;
-    EACHDW(dw->weight()=dw->best_weight;);
+    fb.arcs.visit(for_arcs::use_best_weight());
 
-    delete[] trn->forArcs;
-    delete[] trn->revArcs;
-    delete trn->forETopo;
-    delete trn->revETopo;
-
-
-    for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq )
-        seq->kill();
-
-    delete trn;
-    trn = NULL;
+    //        for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq ) seq->kill();
+    
     return bestPerplexity;
 }
 
@@ -343,171 +584,72 @@ when you have an *e* leaving something on the agenda, you need to add the dest t
 */
 // ** in order for excluding states to be worthwhile in O(s*i*o) terms, have to take as input a 0-initialized w matrix and clear each non-0 entry after it is no longer in play.  ouch - that means all the lists (of nonzero values) need to be kept around until after people are done playing with the w
 
-void sumPaths(int nSt, int start, Weight ***w, HashTable<IOPair, List<DWPair> > *IOarcs, List<int> * eTopo, int nIn, int *inLet, int nOut, int *outLet)
+void forward_backward::matrix_compute(int nIn,int *inLet,int nOut,int *outLet,int start,Weight ***w,matrix_io_index::states_t &io,List<int> const& eTopo)
 {
+    
     int i, o, s;
-#ifdef N_E_REPS
-    Weight *wNew = NEW Weight [nSt];
-    Weight *wOld = NEW Weight [nSt];
-#endif
     for ( i = 0 ; i <= nIn ; ++i )
         for ( o = 0 ; o <= nOut ; ++o )
-            for ( s = 0 ; s < nSt ; ++s )
+            for ( s = 0 ; s < n_st ; ++s )
                 w[i][o][s].setZero();
 
     w[0][0][start] = 1;
 
     IOPair IO;
-    List<DWPair> *pLDW;
 
-    for ( i = 0 ; i <= nIn ; ++i )
+    typedef matrix_io_index::for_io for_io;
+    for_io *pLDW;
+
+    for ( i = 0 ; i <= nIn ; ++i ) {
         for ( o = 0 ; o <= nOut ; ++o ) {
 #ifdef DEBUGFB
             Config::debug() <<"("<<i<<","<<o<<")\n";
 #endif
             IO.in = 0;
             IO.out = 0;
-#ifdef N_E_REPS
-            for ( s = 0 ; s < nSt; ++s )
-                wNew[s] = w[i][o][s];
-#endif
-            for ( List<int>::const_iterator topI=eTopo->const_begin(),end=eTopo->const_end() ; topI != end; ++topI ) {
+            for ( List<int>::const_iterator topI=eTopo.const_begin(),end=eTopo.const_end() ; topI != end; ++topI ) {
                 s = *topI;
-                if ( (pLDW = find_second(IOarcs[s],IO)) ){
-                    for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end2 = pLDW->const_end() ; dw !=end2; ++dw ){
-#ifdef DEBUGFB
-                        Config::debug() << "w["<<i<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< w[i][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
-#endif
-                        w[i][o][dw->dest] += w[i][o][s] * dw->weight();
-#ifdef DEBUGFB
-                        Config::debug() << w[i][o][dw->dest] << '\n';
-#endif
-                    }
-                }
+                matrix_io_index::for_state const& fs = io[s];
+                matrix_forward_prop(w,find_second(fs,IO),s,i,o,0,0);
             }
-#ifdef N_E_REPS
-            // caveat: this method is wrong, although it will converge as N_E_REPS -> inf assuming the null transitions are normalized per source state, it can converge higher than it should by counting the same paths multiple times.  thus, N_E_REPS is not enabled =D
-            for ( int rep = 0 ; rep < N_E_REPS ; ++rep ) {
-                for ( s = 0 ; s < nSt; ++s )
-                    wOld[s] = wNew[s];
-                for ( s = 0 ; s < nSt; ++s )
-                    wNew[s] = w[i][o][s];
-                for ( s = 0 ; s < nSt; ++s ) {
-                    if ( (pLDW = find_second(IOarcs[s],IO)) ){
-                        for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw )
-                            wNew[dw->dest] += wOld[s] * dw->weight();
-                    }
-                }
-            }
-#endif
-            for ( s = 0 ; s < nSt; ++s ) {
-#ifdef N_E_REPS
-                w[i][o][s] = wNew[s];
-#endif
+            for ( s = 0 ; s < n_st; ++s ) {
                 if ( w[i][o][s].isZero() )
                     continue;
+                matrix_io_index::for_state const& fs = io[s];
                 if ( o < nOut ) {
                     IO.in = 0;
                     IO.out = outLet[o];
-                    if ( (pLDW = find_second(IOarcs[s],IO)) ){
-                        for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
-#ifdef DEBUGFB
-                            Config::debug() << "w["<<i<<"]["<<o+1<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw<<") ="<< w[i][o+1][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i][o+1][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
-#endif
-                            w[i][o+1][dw->dest] += w[i][o][s] * dw->weight();
-#ifdef DEBUGFB
-                            Config::debug() << w[i][o+1][dw->dest] << '\n';
-#endif
-                        }
-                    }
+                    matrix_forward_prop(w,find_second(fs,IO),s,i,o,0,1);
                     if ( i < nIn ) {
                         IO.in = inLet[i];
                         IO.out = outLet[o];
-                        if ( (pLDW = find_second(IOarcs[s],IO)) ){
-                            for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
-#ifdef DEBUGFB
-                                Config::debug() << "w["<<i+1<<"]["<<o+1<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw<<") ="<< w[i+1][o+1][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o+1][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
-#endif
-                                w[i+1][o+1][dw->dest] += w[i][o][s] * dw->weight();
-#ifdef DEBUGFB
-                                Config::debug() << w[i+1][o+1][dw->dest] << '\n';
-#endif
-                            }
-                        }
+                        matrix_forward_prop(w,find_second(fs,IO),s,i,o,1,1);
                     }
                 }
                 if ( i < nIn ) {
                     IO.in = inLet[i];
                     IO.out = 0;
-                    if ( (pLDW = find_second(IOarcs[s],IO)) ){
-                        for ( List<DWPair>::const_iterator dw=pLDW->const_begin(),end = pLDW->const_end() ; dw != end; ++dw ){
-#ifdef DEBUGFB
-                            Config::debug() << "w["<<i+1<<"]["<<o<<"]["<<dw->dest<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight ("<< *dw <<") ="<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] <<" * "<< dw->weight() <<" = "<< w[i+1][o][dw->dest] <<" + " << w[i][o][s] * dw->weight() <<" = ";
-#endif
-                            w[i+1][o][dw->dest] += w[i][o][s] * dw->weight();
-#ifdef DEBUGFB
-                            Config::debug() << w[i+1][o][dw->dest] << '\n';
-#endif
-                        }
-                    }
+                    matrix_forward_prop(w,find_second(fs,IO),s,i,o,1,0);               
                 }
             }
         }
-#ifdef N_E_REPS
-    delete[] wNew;
-    delete[] wOld;
-#endif
-}
-
-// similar to transposition but not quite: instead of replacing w.ij with w.ji, replace w.ij with w.(I-i)(J-j) ... matrix has the same dimensions.  it's a 180 degree rotation, not a reflection about the identity line
-void reverseMatrix(Weight ***w,int nIn, int nOut) {
-    int i;
-    for ( i = 0 ; i <= nIn/2 ; ++i ) {
-        Weight **temp = w[i];
-        w[i] = w[nIn - i];
-        w[nIn - i] = temp;
     }
-    for ( i = 0 ; i <= nIn ; ++i )
-        for ( int o = 0 ; o <= nOut/2 ; ++o ) {
-            Weight *temp = w[i][o];
-            w[i][o] = w[i][nOut - o];
-            w[i][nOut - o] = temp;
-        }
 }
 
-void forwardBackward(IOSymSeq &s, trainInfo *trn, int nSt, int final)
+
+void forward_backward::matrix_fb(IOSymSeq &s)
 {
-    Assert(trn);
 #ifdef DEBUGFB
     Config::debug() << "training example: \n"<<s << "\nForward\n" ;
 #endif
-    sumPaths(nSt, 0, trn->f, trn->forArcs, trn->forETopo, s.i.n, s.i.let, s.o.n, s.o.let);
+    matrix_compute(s,false);
 #ifdef DEBUGFB
     Config::debug() << "\nBackward\n";
 #endif
-    sumPaths(nSt, final, trn->b, trn->revArcs, trn->revETopo, s.i.n, s.i.rLet, s.o.n, s.o.rLet);
-
-    Weight ***w = trn->b;
-    int nIn = s.i.n;
-    int nOut = s.o.n;
-    // since the backward paths were obtained on the reversed input/output, reverse them back
-    reverseMatrix(w,nIn,nOut);
+    matrix_compute(s,true);
+    
 #ifdef DEBUGTRAINDETAIL // Yaser 7-20-2000
-    Config::debug() << "\nForwardProb/BackwardProb:\n";
-    for (int i = 0 ;i<= nIn ; ++i){
-        for (int o = 0 ; o <= nOut ; ++o){
-            Config::debug() << i << ':' << o << " (" ;
-            for (int s = 0 ; s < nSt ; ++s){
-                Config::debug() << trn->f[i][o][s] <<'/'<<trn->b[i][o][s];
-                if (s < nSt-1)
-                    Config::debug() << ' ' ;
-            }
-            Config::debug() <<')'<<std::endl;
-            if(o < nOut-1)
-                Config::debug() <<' ' ;
-        }
-        Config::debug() <<std::endl;
-    }
+    matrix_dump(s.i.n,s.o.n);
 #endif
 }
 
@@ -529,29 +671,20 @@ void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n)
     s.print(Config::warn(),x,"\n");
 }
 
-Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_training)
+Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
 {
-    Assert(trn);
     int i, o, s, nIn, nOut, *letIn, *letOut;
 
     // for perplexity
-    Weight prodModProb = 1;
+    Weight ret = 1;
     unweighted_corpus_prob=1;
     
-    Weight ***f = trn->f;
-    Weight ***b = trn->b;
-    HashTable <IOPair, List<DWPair> > *IOarcs;
-    List<DWPair> * pLDW;
+    typedef matrix_io_index::for_io for_io;
+    for_io *pLDW;
     IOPair io;
-    EACHDW(
-        dw->counts.setZero();
-        );
+    
 
-    List<IOSymSeq>::erase_iterator seq=trn->examples.erase_begin(),lastExample=trn->examples.erase_end();
-#ifdef DEBUG
-    EACHDW(NANCHECK(dw->counts););
-
-#endif
+    List<IOSymSeq>::erase_iterator seq=corpus().examples.erase_begin(),lastExample=corpus().examples.erase_end();
     //#ifdef DEBUGTRAIN
     int train_example_no = 0 ; // Yaser 7-13-2000
     //#endif
@@ -560,6 +693,7 @@ Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_train
     Config::debug() << " Exampleprobs:";
 #endif
 
+    arcs.visit(for_arcs::clear_count());
     while (seq != lastExample) { // loop over all training examples
 
         //#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
@@ -568,45 +702,21 @@ Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_train
         //#endif
         nIn = seq->i.n;
         nOut = seq->o.n;
-        forwardBackward(*seq, trn, numStates(), final);
-#ifdef DEBUGTRAIN
-        Config::debug() << '\n';
-        for ( i = 0 ; i < nIn ; ++i ) {
-            Config::debug() << (*in)[seq->i.let[i]] << ' ' ;
-            for ( o = 0 ; o < nOut ; ++o ) {
-                Config::debug() << (*out)[seq->o.let[o]] << ' ' ;
-                Config::debug() << '(' << f[i][o][0];
-                for ( s = 1 ; s < numStates() ; ++s ) {
-                    Config::debug() << ' ' << f[i][o][s];
-                }
-                Config::debug() << ") ";
-            }
-            Config::debug() << "\t\t";
-            for ( o = 0 ; o < nOut ; ++o ) {
-                Config::debug() << (*out)[seq->o.let[o]] << ' ' ;
-                Config::debug() << '(' << b[i][o][0];
-                for ( s = 1 ; s < numStates() ; ++s ) {
-                    Config::debug() << ' ' << b[i][o][s];
-                }
-                Config::debug() << ") ";
-            }
-            Config::debug() << '\n';
-        }
-#endif
-        Weight fin = f[nIn][nOut][final];
+        matrix_fb(*seq);
+        Weight fin = f[nIn][nOut][x.final];
 #ifdef DEBUG_ESTIMATE_PP
         Config::debug() << ',' << fin;
 #endif
 
-        prodModProb *= fin.pow(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = prodModProb, of course.  raising ^N does the multiplication N times for an example that is weighted N
+        ret *= fin.pow(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = ret, of course.  raising ^N does the multiplication N times for an example that is weighted N
         unweighted_corpus_prob *= fin;
         
 #ifdef DEBUGTRAIN
         Config::debug()<<"Forward prob = " << fin << std::endl;
 #endif
-        if (delete_bad_training)
+        if (remove_bad_training)
             if ( !(fin.isPositive()) ) {
-                warn_no_derivations(*this,*seq,train_example_no);
+                warn_no_derivations(x,*seq,train_example_no);
                 seq=trn->examples.erase(seq);
                 continue;
             }
@@ -624,66 +734,42 @@ Weight WFST::train_estimate(Weight &unweighted_corpus_prob,bool delete_bad_train
         letIn = seq->i.let;
         letOut = seq->o.let;
 
-        
-        EACHDW(
-            dw->scratch.setZero();
-            );
+    arcs.visit(for_arcs::clear_scratch());
 
         // accumulate counts for each arc's contribution throughout all uses it has in explaining the training
         for ( i = 0 ; i <= nIn ; ++i ) // go over all symbols in input in the training pair
             for ( o = 0 ; o <= nOut ; ++o ) // go over all symbols in the output pair
-                for ( s = 0 ; s < numStates() ; ++s ) {
-                    IOarcs = trn->forArcs + s;
+                for ( s = 0 ; s < n_st ; ++s ) {
+                    matrix_io_index::for_state const& fs = mio.forward[s];
                     if ( i < nIn ) { // input is not epsilon
                         io.in = letIn[i];
                         if ( o < nOut ) { // output is also not epsilon
                             io.out = letOut[o];
-                            if ( (pLDW = find_second(*IOarcs,io)) ){
-                                for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
-                                    dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o+1][dw->dest];
-                            }
+                            matrix_count(find_second(fs,io),s,i,o,1,1);
                         }
-                        io.out = epsilon_index; // output is epsilon, input is not
-                        if ( (pLDW = find_second(*IOarcs,io)) ){
-                            for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
-                                dw->scratch += f[i][o][s] * dw->weight() * b[i+1][o][dw->dest];
-                        }
+                        io.out = 0; // output is epsilon, input is not
+                        matrix_count(find_second(fs,io),s,i,o,1,0);
                     }
-                    io.in = epsilon_index; // input is epsilon
+                    io.in = 0; // input is epsilon
                     if ( o < nOut ) { // input is epsilon, output is not
                         io.out = letOut[o];
-                        if ( (pLDW = find_second(*IOarcs,io)) ){
-                            for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
-                                dw->scratch += f[i][o][s] * dw->weight() * b[i][o+1][dw->dest];
-                        }
+                        matrix_count(find_second(fs,io),s,i,o,0,1);
                     }
-                    io.out = epsilon_index; // input and output are both epsilon
-                    if ( (pLDW = find_second(*IOarcs,io)) ){
-                        for ( List<DWPair>::val_iterator dw=pLDW->val_begin(),end = pLDW->val_end() ; dw !=end ; ++dw )
-                            dw->scratch += f[i][o][s] * dw->weight() * b[i][o][dw->dest];
-                    }
+                    io.out = 0; // input and output are both epsilon
+                    matrix_count(find_second(fs,io),s,i,o,0,0);
                 }
 
-        Weight mult=seq->weight;
-        EACHDW(
-            if (!dw->scratch.isZero())
-                dw->counts += mult*(dw->scratch / fin);
-            );
+        arcs.visit(for_arcs::add_weighted_scratch(seq->weight/fin));
+        //        Weight mult=seq->weight;
+        //        EACHDW(if (!dw->scratch.isZero()) dw->counts += mult*(dw->scratch / fin););
 
         ++seq;
-#ifdef DEBUG
-        EACHDW(NANCHECK(dw->counts);NANCHECK(dw->scratch););
-
-#endif
-
     } // end of while(training examples)
 
-    return prodModProb.root(trn->totalEmpiricalWeight).inverse(); // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
-
+    return ret.root(trn->totalEmpiricalWeight).inverse(); // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
 }
 
 void WFST::train_prune() {
-    Assert(trn);
     /*
       int n_states=numStates();
       bool *dead_states=NEW bool[n_states]; // blah: won't really work unless we also delete stuff from trn, so postponing
@@ -700,156 +786,64 @@ void WFST::train_prune() {
     */
 
 }
-
-Weight WFST::train_maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE delta_scale)
+std::ostream& operator << (std::ostream &o,arc_counts const& ac)
 {
-    Assert(trn);
-
-#ifdef DEBUGTRAINDETAIL
-#define DUMPDW  do { for ( int s = 0 ; s < numStates() ; ++s )                                                                                                  \
-            for ( HashTable<IOPair, List<DWPair> >::const_iterator ha(trn->forArcs[s]) ; ha ; ++ha ){                                                           \
-                List<DWPair>::const_iterator end = ha.val().const_end() ;                                                                                       \
-                for ( List<DWPair>::const_iterator dw=ha.val().const_begin() ; dw !=end; ++dw ){                                                                \
-                    if ( isTiedOrLocked(pGroup = (dw->arc)->groupId) )                                                                                          \
-                        Config::debug() << pGroup << ' ' ;                                                                                                      \
-                    Config::debug() << s << "->" << *dw->arc <<  " weight " << dw->weight() << " scratch: "<< dw->scratch  <<" counts " <<dw->counts  << '\n';  \
-                }                                                                                                                                               \
-            } } while(0)
     int pGroup;
-    Config::debug() << "\nWeights before prior smoothing\n";
-    DUMPDW;
-#endif
-    EACHDW (
-        if ( !isLocked((dw->arc)->groupId) ) { // if the group is tied, and the group number is zero, then the old weight does not change. Otherwise update as follows
-            //Weight &w=dw->weight();
-            dw->scratch = dw->weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
-            //Weight &counts = dw->counts;
-            NANCHECK(dw->counts);
-            NANCHECK(dw->prior_counts);
-            dw->weight() = dw->counts + dw->prior_counts; // new (unnormalized weight)
-            NANCHECK(dw->weight());
-            NANCHECK(dw->scratch);
-        }
-        );
+    if ( WFST::isTiedOrLocked(pGroup = ac.groupId()) )    
+        o << pGroup << ' ' ;                                                                                                                                    \
+    o<< ac.src << "->" << *ac.arc <<  " weight " << ac.weight() << " scratch: "<< ac.scratch  <<" counts " <<ac.counts  << '\n';
+    return o;
+}
+
+
+Weight forward_backward::maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE delta_scale)
+{
+    
 #ifdef DEBUGTRAINDETAIL
-    Config::debug() << "\nWeights before normalization\n";
-    DUMPDW;
+#define DUMPDW(h) fb.arcs.dump(Config::debug(),h)
+#else
+#define DUMPDW(h)
 #endif
+    
+    DUMPDW("Weights before prior smoothing");
+
+    //    arcs.pre_norm_counts(corpus.totalEmpiricalWeight);
+    arcs.visit(for_arcs::prep_new_weights(corpus().totalEmpiricalWeight));
+    
+    DUMPDW("Weights before normalization");
+
     DWSTAT("Before normalize");
-    normalize(method);
+    x.normalize(method);
     DWSTAT("After normalize");
-#ifdef DEBUG_ADAPTIVE_EM
-    //normalize(method);
-#endif
-#ifdef DEBUGTRAINDETAIL
-    Config::debug() << "\nWeights after normalization\n";
-    DUMPDW;
-#endif
 
-    // overrelax weight() and store raw EM weight in em_weight
-    EACHDW(
-        DWPair *d=&*dw;
-        d->em_weight = d->weight();
-        NANCHECK(d->em_weight);
-        if (delta_scale > 1.)
-            if ( !isLocked((d->arc)->groupId) )
-                if ( d->scratch.isPositive() ) {
-                    d->weight() = d->scratch * ((d->em_weight / d->scratch).pow(delta_scale));
-                    NANCHECK(d->scratch);   NANCHECK(d->weight());
+    DUMPDW("Weights after normalization");
 
-                }
-        );
-
-    Weight change, maxChange;
+    arcs.visit(for_arcs::overrelax(delta_scale));
+    
+    //    arcs.overrelax();
 
     // find maximum change for convergence
-    //maxChange.setZero(); // default constructor
 
     if (delta_scale > 1.)
-        normalize(method);
-
-    EACHDW(
-        if (!isLocked((dw->arc)->groupId)) {
-            change = absdiff(dw->weight(),dw->scratch);
-            if ( change > maxChange )
-                maxChange = change;
-        }
-        );
-    return maxChange; // TODO: recompute change after delta_scale/normalize?
+        x.normalize(method);
+    
+    //    return arcs.max_change();
+    for_arcs::max_change c;
+    arcs.visit(c);
+    return c.get();
 }
 
-Weight ***WFST::forwardSumPaths(List<int> &inSeq, List<int> &outSeq)
+Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
 {
-    int i, o, s;
-    int nIn = inSeq.size();
-    int nOut = outSeq.size();
-    int *inLet = (nIn > 0 ? NEW int[nIn] : NULL);
-    int *outLet = (nOut > 0 ? NEW int[nOut] : NULL);
-    int *pi;
-
-    pi = inLet;
-    for ( List<int>::const_iterator inL=inSeq.const_begin(), end = inSeq.const_end() ; inL != end; ++inL )
-        *pi++ = *inL;
-
-    pi = outLet;
-    for ( List<int>::const_iterator outL=outSeq.const_begin(),end = outSeq.const_end() ; outL != end; ++outL )
-        *pi++ = *outL;
-
-    HashTable<IOPair, List<DWPair> > *IOarcs =
-        NEW HashTable<IOPair, List<DWPair> >[numStates()];
-
-    IOPair IO;
-    DWPair DW;
-    List<DWPair> *pLDW;
-
-    for ( s = 0 ; s < numStates() ; ++s ){
-        for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
-            IO.in = a->in;
-            IO.out = a->out;
-            DW.dest = a->dest;
-            DW.arc = &*a;
-            //if ( !(pLDW = find_second(IOarcs[s],IO)) )
-            pLDW = &IOarcs[s][IO];
-            pLDW->push(DW);
-        }
-    }
-
-    List<int> eTopo;
-    {
-        Graph eGraph = makeEGraph();
-        TopoSort t(eGraph,&eTopo);
-        t.order_crucial();
-        int b = t.get_n_back_edges();
-        if ( b > 0 )
-            Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  May not add paths with those cycles properly" << std::endl;
-        delete[] eGraph.states;
-    }
-
-    Weight ***w = NEW Weight **[nIn+1];
-    for ( i = 0 ; i <= nIn ; ++i ) {
-        w[i] = NEW Weight *[nOut+1];
-        for ( o = 0 ; o <= nOut ; ++o )
-            w[i][o] = NEW Weight [numStates()];
-    }
-    sumPaths(numStates(), 0, w, IOarcs, &eTopo, nIn, inLet, nOut, outLet);
-
-    delete[] IOarcs;
-    delete[] inLet;
-    delete[] outLet;
-    return w;
+    Assert(valid());
+    training_corpus corpus;
+    corpus.add(inSeq,outSeq);
+    IOSymSeq const& s=corpus.examples.front();
+    forward_backward fb(*this,false,false,false,false);
+    fb.prepare(corpus,false);
+    fb.matrix_compute(s,false);
+    return fb.f[s.i.n][s.o.n][final];
 }
-
-
-ostream & operator << (ostream &out, const trainInfo &t){ // Yaser 7-20-2000
-
-    out << "Forward Edges Topologically Sorted\n" ;
-    if (t.forETopo)
-        out << *(t.forETopo)<<'\n';
-    else out << "not set yet!";
-    return(out);
-}
-
-
 
 ostream& operator << (ostream &out, struct State &s){ // Yaser 7-20-2000
     out << s.arcs << '\n';
@@ -863,7 +857,7 @@ ostream & operator << (ostream &o, IOPair p)
 
 ostream & operator << (ostream &o, DWPair p)
 {
-    return o << *(p.arc)  ;
+    return o << "#"<<p.id<<"->"<<p.dest;
 }
 
 
@@ -890,6 +884,41 @@ ostream & operator << (ostream & out , const symSeq & s){   // Yaser 7-21-2000
 ostream & operator << (ostream & out , const IOSymSeq & s){   // Yaser 7-21-2000
     out << s.i << s.o ;
     return(out);
+}
+
+void WFST::read_training_corpus(std::istream &in,training_corpus &corpus) 
+{
+    string buf;
+    unsigned input_lineno=0;
+    for ( ; ; ) {
+        FLOAT_TYPE weight = 1;
+        getline(in,buf);
+        if ( !in )
+            break;
+        ++input_lineno;
+                        
+        if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
+            istringstream w(buf.c_str());
+            w >> weight;
+            if ( w.fail() ) {
+                Config::warn() << "Bad training example weight: " << buf << std::endl;
+                continue;
+            }
+            getline(in,buf);
+            if ( !in )
+                break;
+            ++input_lineno;                            
+        }
+        WFST::symbol_ids ins(*this,buf.c_str(),0,input_lineno);
+        getline(in,buf);
+        if ( !in )
+            break;
+        ++input_lineno;
+                        
+        WFST::symbol_ids outs(*this,buf.c_str(),1,input_lineno);
+        corpus.add(ins, outs, weight);
+    }
+    
 }
 
 }
