@@ -53,21 +53,22 @@ struct matrix_io_index : boost::noncopyable
     typedef HashTable<IOPair,for_io> for_state;
     typedef fixed_array<for_state> states_t;
 
-    states_t forward,backward;
     arcs_table &t;
+    states_t forward,backward;
 
-    matrix_io_index(arcs_table &t) : t(t)
+    matrix_io_index(arcs_table &t) : t(t), forward(t.n_states), backward(t.n_states)
     {
     }
 
-    void populate(bool include_backward=true) 
+    void populate(bool include_backward) 
     {
         for (unsigned i=0,N=t.size();i!=N;++i) {
             arc_counts const& ac=t[i];
             IOPair io(ac.in(),ac.out());
-            forward[ac.src][io].push_back(DWPair(ac.dest(),i));
+            unsigned s=ac.src,d=ac.dest();
+            forward[s][io].push_back(DWPair(d,i));
             if (include_backward)
-                backward[ac.dest()][io].push_back(DWPair(ac.src,i));
+                backward[d][io].push_back(DWPair(s,i));
         }
     }
 };
@@ -131,7 +132,7 @@ struct forward_backward
             Weight from=w[i][o][s];
             Weight w=a.weight();
             unsigned d=dw->dest;
-            assert(a.dest()==d);
+            assert(a.dest()==d||a.src==d);
 #ifdef DEBUGFB
             Config::debug() << "w["<<i+d_i<<"]["<<o+d_o<<"]["<<d<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< to <<" + " << from <<" * "<< w <<" = "<< to <<" + " << from*w <<" = "<< to+(from*w)<<"\n";
 #endif 
@@ -189,12 +190,11 @@ struct forward_backward
     void matrix_fb(IOSymSeq &s);
 
     
-    void e_topo_populate(bool include_backward=false) 
+    void e_topo_populate(bool include_backward) 
     {
         assert(use_matrix);
         e_forward_topo.clear();
-        if (include_backward)
-            e_backward_topo.clear();
+        e_backward_topo.clear();
         {
             Graph eGraph = x.makeEGraph();
             TopoSort t(eGraph,&e_forward_topo);
@@ -263,9 +263,9 @@ struct forward_backward
             n_out=corpus.maxOut+1;
             f = NEW Weight **[n_in];
             if (include_backward)
-                b=NULL;
-            else
                 b = NEW Weight **[n_in];
+            else
+                b=NULL;
             for ( unsigned i = 0 ; i < n_in ; ++i ) {
                 f[i] = NEW Weight *[n_out];
                 if (b)
@@ -444,7 +444,7 @@ Weight WFST::train(
                    int ran_restarts,bool cache_derivations
                    )
 {
-    forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations);
+    forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations,true);
     fb.prepare(corpus,true);
 
     Weight bestPerplexity;
@@ -800,7 +800,7 @@ Weight forward_backward::maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE
 {
     
 #ifdef DEBUGTRAINDETAIL
-#define DUMPDW(h) fb.arcs.dump(Config::debug(),h)
+#define DUMPDW(h) arcs.dump(Config::debug(),h)
 #else
 #define DUMPDW(h)
 #endif

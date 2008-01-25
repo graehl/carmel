@@ -325,7 +325,7 @@ struct symSeq {
 
 std::ostream & operator << (std::ostream & out , const symSeq & s);
 
-struct IOSymSeq : boost::noncopyable{
+struct IOSymSeq : boost::noncopyable {
     symSeq i;
     symSeq o;
     FLOAT_TYPE weight;
@@ -343,11 +343,11 @@ struct IOSymSeq : boost::noncopyable{
         int *pi, *rpi;
         pi = i.let;
         rpi = i.rLet + i.n;
-        for ( List<int>::const_iterator inL=inSeq.const_begin(),end=inSeq.const_end() ; inL != end ; ++inL )
+        for ( List<int>::const_iterator inL=inSeq.begin(),endI=inSeq.end() ; inL != endI ; ++inL )
             *pi++ = *--rpi = *inL;
         pi = o.let;
         rpi = o.rLet + o.n;
-        for ( List<int>::const_iterator outL=outSeq.const_begin(),end=outSeq.const_end() ; outL != end ; ++outL )
+        for ( List<int>::const_iterator outL=outSeq.begin(),endO=outSeq.end() ; outL != endO ; ++outL )
             *pi++ = *--rpi = *outL;
         weight = w;
     }
