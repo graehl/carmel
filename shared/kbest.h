@@ -129,12 +129,12 @@ struct BestPathsPrinter {
 
 static inline void telescope_cost(GraphArc &w,FLOAT_TYPE *dist)
 {    
-    w.weight = w.weight - (dist[w.source] - dist[w.dest]);
+    w.weight = w.weight - (dist[w.src] - dist[w.dest]);
 }
 
 static inline void untelescope_cost(GraphArc &w,FLOAT_TYPE *dist)
 {    
-    w.weight = w.weight + (dist[w.source] - dist[w.dest]);
+    w.weight = w.weight + (dist[w.src] - dist[w.dest]);
 }
 
 #ifdef GRAEHL__SINGLE_MAIN
@@ -147,11 +147,11 @@ extern GraphState *shortPathTree;
 
 
 template <class Visitor>
-void insertShortPath(int source, int dest, Visitor &v)
+void insertShortPath(int src, int dest, Visitor &v)
 {
     if (!v.SIDETRACKS_ONLY) {        
         GraphArc *taken;
-        for ( int iState = source ; iState != dest; iState = taken->dest ) {
+        for ( int iState = src ; iState != dest; iState = taken->dest ) {
             taken = &shortPathTree[iState].arcs.top();
             v.visit_best_arc(*taken);
         }
@@ -159,10 +159,10 @@ void insertShortPath(int source, int dest, Visitor &v)
 }
 
 template <class Visitor>
-void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v) {
+void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
     unsigned nStates=graph.nStates;
     Assert(nStates > 0 && graph.states);
-    Assert(source >= 0 && source < nStates);
+    Assert(src >= 0 && src < nStates);
     Assert(dest >= 0 && dest < nStates);
 
 #ifdef DEBUGKBEST
@@ -174,14 +174,14 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
     Graph shortPathGraph = shortestPathTreeTo(graph, dest,dist);
     FLOAT_TYPE path_cost;
 #ifdef DEBUGKBEST
-    Config::debug() << "Shortest path graph ("<<source<<"->"<<dest<<"): "<<k<<'\n' << shortPathGraph;
+    Config::debug() << "Shortest path graph ("<<src<<"->"<<dest<<"): "<<k<<'\n' << shortPathGraph;
 #endif
     shortPathTree = shortPathGraph.states;
-    if ( shortPathTree[source].arcs.notEmpty() || dest == source ) {
+    if ( shortPathTree[src].arcs.notEmpty() || dest == src ) {
 
-        FLOAT_TYPE base_path_cost=dist[source];
+        FLOAT_TYPE base_path_cost=dist[src];
         v.start_path(path_no,base_path_cost);
-        insertShortPath(source, dest, v);
+        insertShortPath(src, dest, v);
         v.end_path();
 
         if ( k > 1 ) {
@@ -196,7 +196,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
             depthFirstSearch(revPathTree, dest, visited, buildSidetracksHeap); // depthFirstSearch recursively calls the function passed as the last argument (in this  case "buildSidetracksHeap")
             delete[] visited;
 
-            if ( pathGraph[source] ) {
+            if ( pathGraph[src] ) {
 #ifdef DEBUGKBEST
                 Config::debug() << "printing trees\n";
                 for ( unsigned i = 0 ; i < nStates ; ++i )
@@ -208,9 +208,9 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                 EdgePath *retired = NEW EdgePath[k+1];
                 EdgePath *endRetired = retired;
                 EdgePath newPath;
-                newPath.weight = pathGraph[source]->arc->weight;
+                newPath.weight = pathGraph[src]->arc->weight;
                 newPath.heapPos = -1;
-                newPath.node = pathGraph[source];
+                newPath.node = pathGraph[src];
                 newPath.last = NULL;
                 heap_add(pathQueue, ++endQueue, newPath);
                 while ( heapSize(pathQueue, endQueue) && ++path_no <= k ) {
@@ -253,13 +253,13 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                     Config::debug() << "\n\n";
 #endif
 
-                    int sourceState = source; // pretend beginning state is end of last sidetrack
+                    int srcState = src; // pretend beginning state is end of last sidetrack
 
                     v.start_path(path_no,path_cost);
                     for ( Sidetracks::const_iterator cut=shortPath.const_begin(),end=shortPath.const_end(); cut != end; ++cut ) {
                         GraphArc *cutarc=*cut;
-                        insertShortPath(sourceState, cutarc->source, v); // stitch end of last sidetrack to beginning of this one
-                        sourceState = cutarc->dest;
+                        insertShortPath(srcState, cutarc->src, v); // stitch end of last sidetrack to beginning of this one
+                        srcState = cutarc->dest;
                         if (!v.SIDETRACKS_ONLY)
                             untelescope_cost(*cutarc,dist);
                         v.visit_sidetrack_arc(*cutarc);
@@ -267,7 +267,7 @@ void bestPaths(Graph graph,unsigned source, unsigned dest,unsigned k,Visitor &v)
                             telescope_cost(*cutarc,dist);                        
                     }
 
-                    insertShortPath(sourceState, dest, v); // connect end of last sidetrack to dest state
+                    insertShortPath(srcState, dest, v); // connect end of last sidetrack to dest state
 
                     v.end_path();
 

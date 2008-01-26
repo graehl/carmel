@@ -13,6 +13,9 @@
 
 namespace graehl {
 
+void check_fb_agree(Weight f,Weight b);
+void training_progress(unsigned train_example_no);
+
 struct IntKey {
     int i;
     size_t hash() const { return uint32_hash(i); }

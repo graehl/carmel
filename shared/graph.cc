@@ -9,7 +9,7 @@ namespace graehl {
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
-    out << '(' << a.source <<"->"<< a.dest << ' ' << a.weight;
+    out << '(' << a.src <<"->"<< a.dest << ' ' << a.weight;
     //out << ' ' << a.data;    
     return out << ')';
 }
@@ -26,21 +26,23 @@ void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*fu
 }
 
 // g's arcs are reversed and added to graph dest
-void add_reversed_arcs(GraphState *rev,GraphState const*source,unsigned n) 
+void add_reversed_arcs(GraphState *rev,GraphState const*src,unsigned n,bool data_point_to_forward) 
 {
     for ( unsigned i  = 0 ; i < n ; ++i ){
-        List<GraphArc> const&arcs = source[i].arcs;
+        List<GraphArc> const&arcs = src[i].arcs;
         for ( List<GraphArc>::const_iterator l=arcs.begin(),end = arcs.end(); l != end; ++l ) {
 /*            GraphArc r;
             r.data = &(*l);
-            Assert(i == l->source);
+            Assert(i == l->src);
             r.dest = i;
-            r.source = l->dest;
+            r.src = l->dest;
             r.weight = l->weight;
-            rev[r.source].arcs.push(r);
+            rev[r.src].arcs.push(r);
 */
             
-            rev[l->dest].arcs.push_front(l->dest,l->source,l->weight,(void*)&(*l));
+            rev[l->dest].arcs.push_front(l->dest,l->src,l->weight,
+                                         data_point_to_forward ? (void*)&(*l) : l->data
+                );
         }
     }    
 }
@@ -143,8 +145,8 @@ Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist)
   return pg;
 }
 
-void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc **taken)
-  // computes best paths from single source to all other states
+void shortestDistancesFrom(Graph g, unsigned src, FLOAT_TYPE *dist,GraphArc **taken)
+  // computes best paths from single src to all other states
   // if taken == NULL, only compute weights (stored in dist)
   //  otherwise, store pointer to arc taken to get to state s in taken[s]
 {
@@ -172,18 +174,18 @@ void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc *
   DistToState::weights = weights;
   DistToState::stateLocations = stateLocations;
 
-  weights[source] = 0;
+  weights[src] = 0;
   for ( i = 1; i < nStates ; ++i ) {
     int fillWith;
-    if ( i <= source )
+    if ( i <= src )
       fillWith = i-1;
     else
       fillWith = i;
     distQueue[i].state = fillWith;
     stateLocations[fillWith] = &distQueue[i];
   }
-  distQueue[0].state = source;
-  stateLocations[source] = &distQueue[0];
+  distQueue[0].state = src;
+  stateLocations[src] = &distQueue[0];
 
 
   FLOAT_TYPE candidate;
@@ -244,7 +246,7 @@ Graph removeStates(Graph g, bool marked[]) // not tested
       const List<GraphArc> &arcs = g.states[i].arcs;
       for ( List<GraphArc>::const_iterator oldArc=arcs.const_begin(),end=arcs.const_end() ; oldArc !=end ; ++oldArc )
         if ( !marked[oldArc->dest] ) {
-            newArcs.push(GraphArc(oldToNew[oldArc->dest],oldToNew[oldArc->source],
+            newArcs.push(GraphArc(oldToNew[oldArc->dest],oldToNew[oldArc->src],
                                   oldArc->weight,oldArc->data));
         }
     }
@@ -275,7 +277,7 @@ std::istream & operator >> (std::istream &istr, GraphArc &a)
   char c;
   int i;
   istr >> c;			// open paren
-  istr >> a.source;
+  istr >> a.src;
   istr >> a.dest;
   istr >> a.weight;
   istr >> c;			// close paren
@@ -304,9 +306,9 @@ std::istream & operator >> (std::istream &istr, Graph &g)
       break;
     istr.putback(c);
     istr >> a;
-    if ( !(istr && a.source >= 0 && a.source < g.nStates) )
+    if ( !(istr && a.src >= 0 && a.src < g.nStates) )
       break;
-    g.states[a.source].arcs.push(a);
+    g.states[a.src].arcs.push(a);
   }
   return istr;
 }

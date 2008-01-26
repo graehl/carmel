@@ -408,11 +408,11 @@ Graph WFST::makeGraph() const
     GraphArc gArc;
     for ( int i = 0 ; i < numStates() ; ++i ){
         for ( List<FSTArc>::const_iterator l=states[i].arcs.begin(),end = states[i].arcs.end(); l != end; ++l ) {
-            gArc.source = i;
+            gArc.src = i;
             gArc.dest = l->dest;
             gArc.weight = l->weight.getCost();
             gArc.data = (void *)&(*l);
-            Assert(gArc.dest < numStates() && gArc.source < numStates());
+            Assert(gArc.dest < numStates() && gArc.src < numStates());
             g[i].arcs.push(gArc);
         }
     }
@@ -435,11 +435,11 @@ Graph WFST::makeEGraph() const
     for ( int i = 0 ; i < numStates() ; ++i )
         for ( List<FSTArc>::const_iterator l=states[i].arcs.begin(),end = states[i].arcs.end(); l != end; ++l )
             if ( l->in == 0 && l->out == 0 ) {
-                gArc.source = i;
+                gArc.src = i;
                 gArc.dest = l->dest;
                 gArc.weight = - l->weight.weight; // - log
                 gArc.data = (void *)&(*l);
-                Assert(gArc.dest < numStates() && gArc.source < numStates());
+                Assert(gArc.dest < numStates() && gArc.src < numStates());
                 g[i].arcs.push(gArc);
             }
 

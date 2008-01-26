@@ -184,7 +184,7 @@ struct wfst_paths_printer {
                 }
             } else {
                 out << sp;
-                wfst.printArc(arc,a.source,out);
+                wfst.printArc(arc,a.src,out);
             }
         }
     }

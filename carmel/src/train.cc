@@ -9,6 +9,19 @@
 
 namespace graehl {
 
+void check_fb_agree(Weight fin,Weight fin2)
+{
+#ifdef DEBUGTRAIN
+    Config::debug()<<"Forward prob = " << fin << std::endl;
+    Config::debug()<<"Backward prob = " << fin2 << std::endl;
+#endif
+#ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON        
+    double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
+    double e = ratio - 1;
+    if ( e > ALLOWED_FORWARD_OVER_BACKWARD_EPSILON )
+        Config::warn() << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
+#endif
+}
 
 struct WeightAccum {
     Weight sum;
@@ -107,8 +120,8 @@ struct forward_backward
     List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)    
 
     /// stuff for new derivation caching EM:
-    typedef derivations Derivs;    
-    List<Derivs> cached_derivs;
+    typedef List<derivations> cached_derivs_t;
+    cached_derivs_t cached_derivs;
 
     
     void matrix_compute(IOSymSeq const& s,bool backward=false) 
@@ -140,7 +153,7 @@ struct forward_backward
         }
     }
     
-    
+    // accumulate counts for this example into scratch (so they can be weighted later all at once.  saves a few mults to weighting as you go?)
     void matrix_count(matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
     {
         if (!fio) return;
@@ -158,8 +171,8 @@ struct forward_backward
         unsigned n=1;
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
-            cached_derivs.push_front(x,i->i,i->o);
-            Derivs &d=cached_derivs.front();
+            cached_derivs.push_front(x,i->i,i->o,i->weight,n);
+            derivations &d=cached_derivs.front();
             if (!d.compute(io)) {
                 warn_no_derivations(x,*i,n);
                 cached_derivs.pop();
@@ -167,7 +180,7 @@ struct forward_backward
 #ifdef DEBUGDERIVATIONS
                 Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
                 i->print(Config::debug(),x,"\n");
-                printGraph(d.forward(),Config::debug());
+                printGraph(d.graph(),Config::debug());
 #endif 
             }
         }
@@ -183,6 +196,15 @@ struct forward_backward
 // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
 // unweighted_corpus_prob: ignore per-example weight, product over corpus of p(example)
     Weight estimate(Weight &unweighted_corpus_prob);
+
+ private:
+    // these take an initialize unweighted_corpus_prob and counts, and accumulate over the training corpus
+    Weight estimate_cached(Weight &unweighted_corpus_prob_accum);
+    Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
+
+    // uses derivs.weight to scale counts for that example.  returns unweighted prob, however
+    Weight estimate_cached(derivations const& derivs);
+ public:
 
     // return max change
     Weight maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE delta_scale);
@@ -673,11 +695,44 @@ void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n)
 
 Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
 {
+    arcs.visit(for_arcs::clear_count());
+    unweighted_corpus_prob=1;
+    if (use_matrix)
+        return estimate_matrix(unweighted_corpus_prob);
+    else
+        return estimate_cached(unweighted_corpus_prob);
+}
+
+Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
+{
+    assert(!use_matrix);
+    Weight weighted_corpus_prob=1;
+    unsigned n=0;
+    for (cached_derivs_t::const_iterator i=cached_derivs.begin(),e=cached_derivs.end();i!=e;++i) {
+        ++n;
+        training_progress(n);
+        Weight prob=estimate_cached(*i);
+        unweighted_corpus_prob_accum *= prob;
+        weighted_corpus_prob *= prob.pow(i->weight);
+    }
+    return weighted_corpus_prob;
+}
+
+Weight forward_backward::estimate_cached(derivations const& derivs)
+{
+    return derivs.collect_counts(arcs);
+}
+
+
+
+Weight forward_backward::estimate_matrix(Weight &unweighted_corpus_prob)
+{
+    assert(use_matrix && b);
     int i, o, s, nIn, nOut, *letIn, *letOut;
 
     // for perplexity
     Weight ret = 1;
-    unweighted_corpus_prob=1;
+
     
     typedef matrix_io_index::for_io for_io;
     for_io *pLDW;
@@ -693,7 +748,6 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
     Config::debug() << " Exampleprobs:";
 #endif
 
-    arcs.visit(for_arcs::clear_count());
     while (seq != lastExample) { // loop over all training examples
 
         //#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
@@ -710,26 +764,15 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
 
         ret *= fin.pow(seq->weight); // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) = (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead; prod(prob) = ret, of course.  raising ^N does the multiplication N times for an example that is weighted N
         unweighted_corpus_prob *= fin;
-        
-#ifdef DEBUGTRAIN
-        Config::debug()<<"Forward prob = " << fin << std::endl;
-#endif
+
+
         if (remove_bad_training)
             if ( !(fin.isPositive()) ) {
                 warn_no_derivations(x,*seq,train_example_no);
                 seq=trn->examples.erase(seq);
                 continue;
             }
-#ifdef ALLOWED_FORWARD_OVER_BACKWARD_EPSILON
-        Weight fin2 = b[0][0][0];
-#ifdef DEBUGTRAIN
-        Config::debug()<<"Backward prob = " << fin2 << std::endl;
-#endif
-        double ratio = (fin > fin2 ? fin/fin2 : fin2/fin).getReal();
-        double e = ratio - 1;
-        if ( e > ALLOWED_FORWARD_OVER_BACKWARD_EPSILON )
-            Config::warn() << "Warning: forward prob vs backward prob relative difference of " << e << " exceeded " << ALLOWED_FORWARD_OVER_BACKWARD_EPSILON << " (with infinite precision, it should be 0).\n";
-#endif
+        check_fb_agree(fin,b[0][0][0]);
 
         letIn = seq->i.let;
         letOut = seq->o.let;
