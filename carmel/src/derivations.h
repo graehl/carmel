@@ -121,7 +121,7 @@ struct wfst_io_index : boost::noncopyable
 };
 
     
-struct derivations
+struct derivations : boost::noncopyable
 {
  private:
 //    typedef List<int> Symbols;
@@ -140,6 +140,9 @@ struct derivations
     typedef HashTable<deriv_state,state_id> state_to_id;
     state_to_id id_of_state;
  public:
+    double weight;
+    unsigned lineno;
+    
     bool empty() const 
     {
         return no_goal;
@@ -149,24 +152,92 @@ struct derivations
         assert(!empty());
         return fin;
     }
+
+    unsigned n_deriv_fsa_states() const 
+    {
+        return g.size();
+    }
+
+    /*
+    void update_weights(arcs_table &t) 
+    {
+        for (vgraph::iterator i=g.begin(),e=g.end();i!=e;++i) {
+            unsigned arcid=i->data_as<unsigned>();
+            i->weight=t[arcid].weight().getReal();
+        }
+    }
+    */
     
-    Graph forward() 
+    Graph graph() const
     {
         assert(!empty());
         
         Graph r;
-        r.states=&g.front();
+        r.states=const_cast<GraphState *>(&g.front());
         r.nStates=g.size();
         return r;
     }
     
     template <class Symbols>
-    derivations(WFST const & x,Symbols const& in,Symbols const& out) // unusually, you must call compute() before using the object.  lets me push_back easier in container w/o copy or pimpl
+    derivations(WFST const & x,Symbols const& in,Symbols const& out,double w=1,unsigned line=0) // unusually, you must call compute() before using the object.  lets me push_back easier in container w/o copy or pimpl
         : x(x)
         ,in(in.begin(),in.end())
         ,out(out.begin(),out.end())
+        , weight(w)
+        , lineno(line)
     {}
 
+    typedef fixed_array<Weight> fb_weights;
+
+    struct weight_for 
+    {
+        typedef Weight result_type;
+        arcs_table const& t;
+        weight_for(arcs_table const& t) : t(t) {}
+        arc_counts &ac(GraphArc const& a) const 
+        {
+            assert(a.data_as<unsigned>()<t.size());
+            return t[a.data_as<unsigned>()];
+        }
+        Weight operator()(GraphArc const& a) const
+        {
+            return ac(a).weight();
+        }
+    };    
+        
+    Weight collect_counts(arcs_table &t) const
+    {
+//        update_weights(t);
+        weight_for wf(t);
+        
+        unsigned nst=g.size();
+        fb_weights f(nst),b(nst); // default 0-init
+
+
+        f[0]=1;
+        propogate_paths(graph(),wf,f,0);        
+        Weight prob=f[fin];
+        
+        reversed_graph r(g); // NOTE: we could cache this reversed graph as well, but we'd run into swapping sooner.  I bet it's faster to recompute for each example by a lot when you get to that size range, and not much slower before.
+
+        b[fin]=1;
+        propogate_paths(r.graph(),wf,b,fin);
+        
+        check_fb_agree(prob,b[0]);
+
+        for (unsigned s=0;s<nst;++s) {
+            arcs_type const& arcs=g[s].arcs;
+            for (arcs_type::const_iterator i=arcs.begin(),e=arcs.end();i!=e;++i) {
+                GraphArc const& a=*i;
+                arc_counts &ac=wf.ac(a);
+                Weight arc_contrib=ac.weight()*f[a.src]*b[a.dest];
+                ac.counts += arc_contrib*weight/fin;
+            }            
+        }
+        
+        return prob;
+    }
+    
 //    derivations(derivations const& o) : x(o.x),in(o.in),out(o.out) {} // similarly, this doesn't really copy the derivations; you need to compute() after.  um, this would be bad if you used a vector rather than a list?
 
     // return true iff goal reached (some deriv exists)
@@ -208,10 +279,10 @@ struct derivations
             for (arcs_type::const_iterator i=arcs.begin(),e=arcs.end();i!=e;++i)
                 mark_reaching(m,i->dest,v);
         }
-        Graph graph()
+        Graph graph() const
         {
             Graph ret;
-            ret.states=&b.front();
+            ret.states=const_cast<GraphState *>(&b.front());
             ret.nStates=b.size();
             return ret;
         }
@@ -228,7 +299,7 @@ struct derivations
         fixed_array<bool> remove(true,g.size());
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug() << "Pruning derivations - original:\n";
-        printGraph(forward(),Config::debug());
+        printGraph(graph(),Config::debug());
 #endif        
         reversed_graph r(g);
 #ifdef DEBUG_DERIVATIONS_PRUNE
@@ -252,18 +323,12 @@ struct derivations
                 
         Config::debug() << "Pruning derivations - final, new size="<<new_size<<":\n";
                 
-        printGraph(forward(),Config::debug());
+        printGraph(graph(),Config::debug());
 #endif        
         g.resize(new_size);
     }
     
  private:
-    /*
-      Graph reverse() //WARNING: you have to delete[] return.states 
-      {
-      return reverseGraph(forward());
-      }
-    */
     state_id derive (wfst_io_index const& io,deriv_state const& d);
     
     void add_arcs(wfst_io_index const& io,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out

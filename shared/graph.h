@@ -15,7 +15,7 @@ namespace graehl {
 static const unsigned DFS_NO_PREDECESSOR=(unsigned)-1;
 
 struct GraphArc {
-  int source;
+  int src;
   int dest;
   FLOAT_TYPE weight;
   void *data;
@@ -24,6 +24,7 @@ struct GraphArc {
     {
         return reinterpret_cast<T &>(data);
     }
+    /// note: not safe to use with integral types if you construct as void * data ... only safe if you set with data_as()
     template <class T>
     T const&data_as() const
     {
@@ -31,8 +32,11 @@ struct GraphArc {
     }
     
     GraphArc() {}
-    GraphArc(int source,int dest,FLOAT_TYPE weight,void *data) :
-        source(source),dest(dest),weight(weight),data(data)
+    GraphArc(int src,int dest,FLOAT_TYPE weight,void *data) :
+        src(src),dest(dest),weight(weight),data(data)
+    {}
+    GraphArc(int src,int dest,FLOAT_TYPE weight) :
+        src(src),dest(dest),weight(weight)
     {}
 };
 
@@ -45,17 +49,22 @@ struct GraphState {
     {
         arcs.push(a);
     }
-    void add(int source,int dest,FLOAT_TYPE weight,void *data) 
+    
+    template <class T>
+    void add(int src,int dest,FLOAT_TYPE weight, T const& data) 
     {
-        /*
-        GraphArc a;
-        a.source=source;
-        a.dest=dest;
-        a.weight=weight;
-        a.data=data;
-        add(a);
-        */
-        arcs.push_front(source,dest,weight,data);
+        arcs.push_front(src,dest,weight);
+        arcs.front().data_as<T>()=data;
+    }
+    
+    void add(int src,int dest,FLOAT_TYPE weight, void *data) 
+    {
+        arcs.push_front(src,dest,weight,data);
+    }
+    
+    void add(int src,int dest,FLOAT_TYPE weight) 
+    {
+        arcs.push_front(src,dest,weight);
     }
 };
 
@@ -65,8 +74,8 @@ struct Graph {
   unsigned nStates;
 };
 
-// take the arcs in graph (source,n_states) and add them, reversing source<->dest, to destination graph (destination,n_states)
-void add_reversed_arcs(GraphState *destination,GraphState const*source,unsigned n_states);
+// take the arcs in graph (src,n_states) and add them, reversing src<->dest, to destination graph (destination,n_states).  copy data field unless data_point_to_forward, in which case point to original (forward) arc
+void add_reversed_arcs(GraphState *destination,GraphState const*src,unsigned n_states,bool data_point_to_forward=false);
 
 Graph reverseGraph(Graph g) ;
 
@@ -78,7 +87,7 @@ void dfsRec(unsigned state, unsigned pred);
 void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*func)(unsigned state, unsigned pred));
 
 template <class Weight>
-void countNoCyclePaths(Graph g, Weight *nPaths, int source);
+void countNoCyclePaths(Graph g, Weight *nPaths, int src);
 
 class TopoSort {
   typedef std::front_insert_iterator<List<int> > IntPusher;
@@ -144,8 +153,8 @@ Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist);
 // returns graph (need to delete[] ret.states yourself)
 // computes best paths from all states to single destination, storing tree of arcs taken in *pathTree, and distances to dest in *dist
 
-void shortestDistancesFrom(Graph g, unsigned source, FLOAT_TYPE *dist,GraphArc **taken=NULL);
-// computes best paths from single source to all other states
+void shortestDistancesFrom(Graph g, unsigned src, FLOAT_TYPE *dist,GraphArc **taken=NULL);
+// computes best paths from single src to all other states
 // if taken == NULL, only compute weights (stored in dist)
 //  otherwise, store pointer to arc taken to get to state s in taken[s]
 
@@ -158,7 +167,7 @@ struct rewrite_GraphState
     template <class OldToNew>
     void rewrite_arc(GraphArc &a,OldToNew const& m) const 
     {
-        a.source=m[a.source];
+        a.src=m[a.src];
         a.dest=m[a.dest];
     }
 
@@ -172,7 +181,7 @@ struct rewrite_GraphState
             if (t[i->dest]==(unsigned)-1) {
                 i=s.arcs.erase(i);
             } else {
-                i->source=t[i->source];
+                i->src=t[i->src];
                 i->dest=t[i->dest];
                 ++i;
             }
@@ -201,15 +210,15 @@ inline std::ostream & operator << (std::ostream &out, const Graph &g) {
 }
 
 template <class Weight>
-void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
+void countNoCyclePaths(Graph g, Weight *nPaths, int src) {
   List<int> topo;
 
   TopoSort sort(g,&topo);
-  sort.order_from(source);
+  sort.order_from(src);
 
   for ( unsigned i = 0 ; i < g.nStates; ++i )
     nPaths[i]=0;
-  nPaths[source] = 1;
+  nPaths[src] = 1;
   for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
     const List<GraphArc> &arcs = g.states[*t].arcs;
     for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
@@ -218,14 +227,34 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int source) {
 }
 
 template <class Weight>
-Weight countNoCyclePaths(Graph g, int source, int dest) 
+Weight countNoCyclePaths(Graph g, int src, int dest) 
 {
     Weight *w=new Weight[g.nStates];
-    countNoCyclePaths(g,w,source);
+    countNoCyclePaths(g,w,src);
     Weight wd=w[dest];
     delete w;
     return wd;    
 }
+
+// w is an array with as many entries as g has states.   w[start] is nonzero
+template <class Weight_get,class Weight_array>
+void propogate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned start)
+{
+  List<int> topo;
+  
+  TopoSort sort(g,&topo);
+  sort.order_from(start);
+  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
+      unsigned src=*t;
+      const List<GraphArc> &arcs = g.states[src].arcs;
+      for ( List<GraphArc>::const_iterator i=arcs.const_begin(),end=arcs.const_end() ; i !=end ; ++i ) {
+          GraphArc const& a=*i;
+          w[a.dest] += w[src] * getwt(a);
+      }
+  }
+
+}
+
 
 }
 

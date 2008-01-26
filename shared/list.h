@@ -109,6 +109,12 @@ public:
     {
         push_front(T(t0,t1,t2,t3));
     }
+    template <class T0,class T1,class T2,class T3,class T4>
+    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2,T3 const& t3,T4 const& t4)
+    {
+        push_front(T(t0,t1,t2,t3,t4));
+    }
+    
     template <class O> void print(O&o) const
     {
         o << "(";

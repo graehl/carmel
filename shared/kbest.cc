@@ -90,7 +90,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist)
         if ( dist[i] != HUGE_VAL ){
             const List<GraphArc> &la=lG.states[i].arcs;
             for ( List<GraphArc>::const_iterator l=la.const_begin(),end=la.const_end() ; l != end; ++l ) {
-                Assert(i == l->source);
+                Assert(i == l->src);
 
                 const List<GraphArc> &ra=rG.states[i].arcs;
                 for ( List<GraphArc>::const_iterator r=ra.const_begin(),end=ra.const_end() ; r !=end ; ++r )
