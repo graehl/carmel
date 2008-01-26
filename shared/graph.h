@@ -49,6 +49,10 @@ struct GraphState {
     {
         arcs.push(a);
     }
+    std::size_t outdegree() const 
+    {
+        return arcs.size();
+    }
     
     template <class T>
     void add(int src,int dest,FLOAT_TYPE weight, T const& data) 
@@ -113,7 +117,7 @@ class TopoSort {
   void order(bool all=true) {
     for ( unsigned i = 0 ; i < g.nStates ; ++i )
       if ( all || !g.states[i].arcs.empty() )
-    order_from(i);
+          order_from(i);
   }
   int get_n_back_edges() const { return n_back_edges; }
   void order_from(int s) {
@@ -220,9 +224,10 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int src) {
     nPaths[i]=0;
   nPaths[src] = 1;
   for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
-    const List<GraphArc> &arcs = g.states[*t].arcs;
-    for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
-      nPaths[a->dest] += nPaths[(*t)];
+      unsigned src=*t;
+      const List<GraphArc> &arcs = g.states[src].arcs;
+      for ( List<GraphArc>::const_iterator a=arcs.const_begin(),end=arcs.const_end() ; a !=end ; ++a )
+          nPaths[a->dest] += nPaths[src];
   }
 }
 
