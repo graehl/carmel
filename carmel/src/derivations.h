@@ -16,6 +16,9 @@ special form of compose: input string * transducer * output string (more efficie
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/train.h>
 #include <graehl/shared/dynarray.h>
+//#include <graehl/shared/stream_util.hpp>
+//#include <graehl/shared/size_mega.hpp>
+
 #include <array.hpp>
 #include <io.hpp>
 
@@ -120,6 +123,7 @@ struct wfst_io_index : boost::noncopyable
     }
 };
 
+
     
 struct derivations : boost::noncopyable
 {
@@ -140,6 +144,51 @@ struct derivations : boost::noncopyable
     typedef HashTable<deriv_state,state_id> state_to_id;
     state_to_id id_of_state;
  public:
+    struct statistics 
+    {
+        struct states_arcs 
+        {
+            double states,arcs;
+            states_arcs() {
+                clear();
+            }
+            void clear() 
+            {
+                states=arcs=0;
+            }
+            void print(std::ostream &o) const 
+            {
+                o << "(" << states << " states, "<<arcs<<" arcs)";
+            }
+            void operator /= (states_arcs const& d) 
+            {
+                states/=d.states;
+                arcs/=d.states;
+            }
+            typedef states_arcs self_type;
+            TO_OSTREAM_PRINT
+        };
+        
+
+        states_arcs pre,post;
+        
+        void print(std::ostream &o) const 
+        {
+            states_arcs ratio=post;
+            ratio/=pre;
+            
+            o << "\nFor all cached derivations:\n"
+              <<  "Pre pruning: "<< pre <<"\n"
+              <<"Post pruning: " << post << "\n"
+              << "Portion kept: " << ratio << "\n"
+                ;
+        }
+        typedef statistics self_type;
+        TO_OSTREAM_PRINT
+    };
+
+    static statistics global_stats;
+    
     double weight;
     unsigned lineno;
     
@@ -231,7 +280,7 @@ struct derivations : boost::noncopyable
                 GraphArc const& a=*i;
                 arc_counts &ac=wf.ac(a);
                 Weight arc_contrib=ac.weight()*f[a.src]*b[a.dest];
-                ac.counts += arc_contrib*weight/fin;
+                ac.counts += arc_contrib*weight/prob;
             }            
         }
         
@@ -252,8 +301,11 @@ struct derivations : boost::noncopyable
         no_goal=(pfin==NULL);
         if (drop_names)
             id_of_state.clear();
+        global_stats.pre.states=g.size();
         if (prune_)
             prune();
+        else
+            global_stats.post=global_stats.pre;
         return !no_goal;
     }
 
@@ -316,6 +368,8 @@ struct derivations : boost::noncopyable
         fin=ttable[fin];
         // now: remove[i] = true -> no path to final
         unsigned new_size=graehl::shuffle_removing(&g.front(),ttable,rewrite_GraphState());
+        global_stats.post.states=new_size;
+//        global_stats.post.arcs=global_stats.pre.arcs;
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug()<<"old state->new state ttable:\n";
         print_range(Config::debug(),ttable.map,ttable.map+ttable.n_mapped);
@@ -339,6 +393,7 @@ struct derivations : boost::noncopyable
             for (for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
                 arc_counts const& a=io.t[id];
+                ++global_stats.pre.arcs;
                 g[source].add(source,derive(io,deriv_state(i_in,a.dest(),i_out)),0,(void *)id);
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
             }

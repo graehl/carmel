@@ -9,6 +9,8 @@
 
 namespace graehl {
 
+derivations::statistics derivations::global_stats;
+
 void check_fb_agree(Weight fin,Weight fin2)
 {
 #ifdef DEBUGTRAIN
@@ -184,6 +186,7 @@ struct forward_backward
 #endif 
             }
         }
+        Config::log() << derivations::global_stats;
     }
 
 
@@ -697,10 +700,12 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
 {
     arcs.visit(for_arcs::clear_count());
     unweighted_corpus_prob=1;
+    Weight p;
     if (use_matrix)
-        return estimate_matrix(unweighted_corpus_prob);
+        p=estimate_matrix(unweighted_corpus_prob);
     else
-        return estimate_cached(unweighted_corpus_prob);
+        p=estimate_cached(unweighted_corpus_prob);
+    return p.root(trn->totalEmpiricalWeight).inverse();
 }
 
 Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
@@ -809,7 +814,7 @@ Weight forward_backward::estimate_matrix(Weight &unweighted_corpus_prob)
         ++seq;
     } // end of while(training examples)
 
-    return ret.root(trn->totalEmpiricalWeight).inverse(); // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
+    return ret; // ,trn->totalEmpiricalWeight); // return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
 }
 
 void WFST::train_prune() {

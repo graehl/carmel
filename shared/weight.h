@@ -151,6 +151,8 @@ struct logweight {                 // capable of representing nonnegative reals
         return thresh;
     }
 
+    
+    
     template<class A,class B> static std::basic_ostream<A,B>&
     out_default_base(std::basic_ostream<A,B>& os) { os.iword(base_index) = DEFAULT_BASE; return os; }
     template<class A,class B> static std::basic_ostream<A,B>&
