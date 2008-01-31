@@ -670,6 +670,12 @@ struct hash_traits<HashTable<K,V,H,P,A> >
     typedef typename HT::insert_return_type insert_return_type;
 };
 
+template <class K,class V,class H,class P,class A,class F>
+inline void swap(HashTable<K,V,H,P,A>& a,HashTable<K,V,H,P,A>& b)
+{
+    a.swap(b);
+}
+
     
 /*
 struct EmptyStruct {

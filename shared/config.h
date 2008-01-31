@@ -1,9 +1,12 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
-// required now! 
+// required now!  because values are never moved in memory from the singly linked nodes they live on.  so no assign/copy needed - can have hash_map of containers efficiently
 #define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
+
+// prefer USE_SLIST, for the same reason as USE_GRAEHL_HASH_MAP - list of containers guarantees no copies
+//#define USE_SLIST
 
 #ifdef _MSC_VER
 #ifndef USE_GRAEHL_HASH_MAP
@@ -11,14 +14,12 @@
 #endif
 #endif
 
-// use singly linked list - required now, because dynamic_array<std::list> can't be guaranteed safe via memcpy as move
-#define USE_SLIST
 
 #ifndef SINGLE_PRECISION
 #define DOUBLE_PRECISION
 #endif
 
-#define CARMEL_DEBUG_PRINTS
+//#define CARMEL_DEBUG_PRINTS
 
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-5
 

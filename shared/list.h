@@ -94,6 +94,13 @@ public:
     this->pop_front();
   }
 #ifndef USE_SLIST
+
+    template <class T0>
+    inline void push_front(T0 const& t0)
+    {
+        S::push_front(t0);
+    }
+
     template <class T0,class T1>
     inline void push_front(T0 const& t0,T1 const& t1)
     {
@@ -177,6 +184,13 @@ public:
 #else
             //#define LIST_BACK_INSERTER back_insert_iterator
 #endif
+
+template <class T,class A>
+  void swap(graehl::List<T,A> &a
+            ,graehl::List<T,A> &b) 
+  {
+      a.swap(b);
+  }
 
 }
 

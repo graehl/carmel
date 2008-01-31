@@ -178,15 +178,14 @@ LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDI
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
 INC += $(TRUNK)
-CPPFLAGS += $(addprefix -I,$(INC)) 
+CPPFLAGS := $(addprefix -I,$(INC)) $(CPPFLAGS)
 
 ifdef PEDANTIC
 CPPFLAGS +=  -pedantic
 endif
 CPPFLAGS_TEST += $(CPPFLAGS) -ggdb
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
-CPPFLAGS_OPT += $(CPPFLAGS) -ggdb
-#-DNDEBUG
+CPPFLAGS_OPT += $(CPPFLAGS) -ggdb -DNDEBUG
 
 #-fno-var-tracking
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
@@ -226,52 +225,52 @@ $(1)_OBJ=$$(addsuffix .o,$$($(1)_SRC))
 $(1)_OBJ_TEST=$$(addsuffix .o,$$($(1)_SRC_TEST))
 
 ifndef $(1)_NOOPT
-$$(BIN)/$(1)$(PROGSUFFIX):\
+$$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX):\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(optimized\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB)
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
-OPT_PROGS += $$(BIN)/$(1)$(PROGSUFFIX)
+OPT_PROGS += $$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX)
 $(1): $$(BIN)/$(1)
 endif
 
 ifneq (${ARCH},macosx)
 ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
-$$(BIN)/$(1)$(PROGSUFFIX).static: $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
+$$(BIN)/$(1)$(PROGSUFFIX).static$(REVSUFFIX): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(static\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB) --static 
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
-STATIC_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).static
+STATIC_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).static$(REVSUFFIX)
 $(1): $$(BIN)/$(1).static
 endif
 endif
 endif
 
 ifndef $(1)_NODEBUG
-$$(BIN)/$(1)$(PROGSUFFIX).debug:\
+$$(BIN)/$(1)$(PROGSUFFIX).debug$(REVSUFFIX):\
  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB))
 ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
-DEBUG_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).debug
+DEBUG_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).debug$(REVSUFFIX)
 $(1): $$(BIN)/$(1).debug
 endif
 
 ifndef $(1)_NOTEST
 #$$(BOOST_TEST_LIB)
-$$(BIN)/$(1)$(PROGSUFFIX).test: $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))  $$($(1)_SLIB)
+$$(BIN)/$(1)$(PROGSUFFIX).test$(REVSUFFIX): $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(test\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(BOOST_TEST_LIB)
 #	$$@ --catch_system_errors=no
 ALL_OBJS += $$(addprefix $$(OBJT)/,$$($(1)_OBJ_TEST))
-ALL_TESTS += $$(BIN)/$(1)$(PROGSUFFIX).test
-TEST_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).test
+ALL_TESTS += $$(BIN)/$(1)$(PROGSUFFIX).test$(REVSUFFIX)
+TEST_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).test$(REVSUFFIX)
 $(1): $$(BIN)/$(1).test
 endif
 
@@ -354,25 +353,25 @@ vpath %.d $(DEPSPRE)
 $(OBJB)/%.o: %
 	@echo
 	@echo COMPILE\(boost\) $< into $@
-	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CPPFLAGS)  $(CXXFLAGS_COMMON) $(CXXFLAGS) $< -o $@
 
 .PRECIOUS: $(OBJT)/%.o
 $(OBJT)/%.o: % %.d
 	@echo
 	@echo COMPILE\(test\) $< into $@
-	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS_TEST) $(CPPFLAGS_TEST) $< -o $@
+	$(CXX) -c $(CPPFLAGS_TEST) $(CXXFLAGS_COMMON) $(CXXFLAGS_TEST)  $< -o $@
 
 .PRECIOUS: $(OBJ)/%.o
 $(OBJ)/%.o: % %.d
 	@echo
 	@echo COMPILE\(optimized\) $< into $@
-	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS) $(CPPFLAGS_OPT) $< -o $@
+	$(CXX) -c $(CPPFLAGS_OPT) $(CXXFLAGS_COMMON) $(CXXFLAGS)  $< -o $@
 
 .PRECIOUS: $(OBJD)/%.o
 $(OBJD)/%.o: % %.d
 	@echo
 	@echo COMPILE\(debug\) $< into $@
-	$(CXX) -c $(CXXFLAGS_COMMON) $(CXXFLAGS_DEBUG) $(CPPFLAGS_DEBUG) $< -o $@
+	$(CXX) -c $(CPPFLAGS_DEBUG) $(CXXFLAGS_COMMON) $(CXXFLAGS_DEBUG)  $< -o $@
 
 #dirs:
 # $(addsuffix /.,$(ALL_DIRS))

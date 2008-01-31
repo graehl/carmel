@@ -397,7 +397,7 @@ void WFST::invert()
     }
 }
 
-Graph WFST::makeGraph() const
+Graph WFST::makeGraph()
 // Comment by Yaser: This function creates NEW GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 // whatever the caller function is responsible for deleting this data.
@@ -407,11 +407,11 @@ Graph WFST::makeGraph() const
     GraphState *g = NEW GraphState[numStates()];
     GraphArc gArc;
     for ( int i = 0 ; i < numStates() ; ++i ){
-        for ( List<FSTArc>::const_iterator l=states[i].arcs.begin(),end = states[i].arcs.end(); l != end; ++l ) {
+        for ( List<FSTArc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l ) {
             gArc.src = i;
             gArc.dest = l->dest;
             gArc.weight = l->weight.getCost();
-            gArc.data = (void *)&(*l);
+            gArc.data_as<FSTArc *>() = &*l;
             Assert(gArc.dest < numStates() && gArc.src < numStates());
             g[i].arcs.push(gArc);
         }
@@ -422,7 +422,7 @@ Graph WFST::makeGraph() const
     return ret;
 }
 
-Graph WFST::makeEGraph() const
+Graph WFST::makeEGraph()
 // Comment by Yaser: This function creates NEW GraphState[] and because the
 // return Graph points to this newly created Graph, it is NOT deleted. Therefore
 // whatever the caller function is responsible for deleting this data.
@@ -433,12 +433,12 @@ Graph WFST::makeEGraph() const
     GraphState *g = NEW GraphState[numStates()];
     GraphArc gArc;
     for ( int i = 0 ; i < numStates() ; ++i )
-        for ( List<FSTArc>::const_iterator l=states[i].arcs.begin(),end = states[i].arcs.end(); l != end; ++l )
+        for ( List<FSTArc>::val_iterator l=states[i].arcs.val_begin(),end = states[i].arcs.val_end(); l != end; ++l )
             if ( l->in == 0 && l->out == 0 ) {
                 gArc.src = i;
                 gArc.dest = l->dest;
-                gArc.weight = - l->weight.weight; // - log
-                gArc.data = (void *)&(*l);
+                gArc.weight = l->weight.getCost();
+                gArc.data_as<FSTArc *>() = &*l;
                 Assert(gArc.dest < numStates() && gArc.src < numStates());
                 g[i].arcs.push(gArc);
             }
@@ -672,207 +672,6 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
     return paths;
 }
 
-/*
-  List<List<PathArc> > *WFST::bestPaths(int k)
-  {
-  int nStates = numStates();
-  Assert(valid());
-
-  typedef List<List<PathArc> > LLP;
-  LLP *paths = NEW List<List<PathArc> >;
-  insert_iterator<LLP> path_adder(*paths,paths->erase_begin());
-  //List<List<PathArc> >::iterator insertHere=paths->begin();
-
-  Graph graph = makeGraph();
-  #ifdef DEBUGKBEST
-  Config::debug() << "Calling KBest on WFST with k: "<<k<<'\n' << graph;
-  #endif
-
-  FLOAT_TYPE *dist = NEW FLOAT_TYPE[nStates];
-  Graph shortPathGraph = shortestPathTreeTo(graph, final,dist);
-  #ifdef DEBUGKBEST
-  Config::debug() << "Shortest path graph: "<<k<<'\n' << shortPathGraph;
-  #endif
-  shortPathTree = shortPathGraph.states;
-
-  if ( shortPathTree[0].arcs.notEmpty() || final == 0 ) {
-
-  List<PathArc> temp;
-  //List<PathArc>::iterator path=temp.begin();
-  //paths->push_back(temp);
-  insert_iterator<List<PathArc> > here(temp,temp.erase_begin());
-  insertShortPath(shortPathTree, 0, final, here);
-  *path_adder++ = temp; //XXX unnecessary copy because of output iterator not giving reference to added item =(
-
-
-
-  if ( k > 1 ) {
-  GraphHeap::freeAll();
-  Graph revPathTree = reverseGraph(shortPathGraph);
-  pathGraph = NEW GraphHeap *[nStates];
-  sidetracks = sidetrackGraph(graph, shortPathGraph, dist);
-  bool *visited = NEW bool[nStates];
-  for ( int i = 0 ; i < nStates ; ++i ) visited[i] = false;
-  // IMPORTANT NOTE: depthFirstSearch recursively calls the function
-  // passed as the last argument (in this  case "buildSidetracksHeap")
-  //
-  freeAllSidetracks();
-  depthFirstSearch(revPathTree, final, visited, buildSidetracksHeap);
-  if ( pathGraph[0] ) {
-  #ifdef DEBUGKBEST
-  cout << "printing trees\n";
-  for ( int i = 0 ; i < nStates ; ++i )
-  printTree(pathGraph[i], 0);
-  cout << "done printing trees\n\n";
-  #endif
-  EdgePath *pathQueue = NEW EdgePath[4 * (k+1)];  // out-degree is at most 4
-  EdgePath *endQueue = pathQueue;
-  EdgePath *retired = NEW EdgePath[k+1];
-  EdgePath *endRetired = retired;
-  EdgePath newPath;
-  newPath.weight = pathGraph[0]->arc->weight;
-  newPath.heapPos = -1;
-  newPath.node = pathGraph[0];
-  newPath.last = NULL;
-  heap_add(pathQueue, ++endQueue, newPath);
-  while ( heapSize(pathQueue, endQueue) && --k ) {
-  EdgePath *top = pathQueue;
-  GraphArc *cutArc;
-  List<GraphArc *> shortPath;
-  #ifdef DEBUGKBEST
-  cout << top->weight;
-  #endif
-  if ( top->heapPos == -1 )
-  cutArc = top->node->arc;
-  else
-  cutArc = top->node->arcHeap[top->heapPos];
-  shortPath.push( cutArc);
-  #ifdef DEBUGKBEST
-  cout << ' ' << *cutArc;
-  #endif
-  EdgePath *last;
-  while ( (last = top->last) ) {
-  if ( !((last->heapPos == -1 && (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right )) || (last->heapPos >= 0 && top->heapPos != -1 )) ) { // got to p on a cross edge
-  if ( last->heapPos == -1 )
-  cutArc = last->node->arc;
-  else
-  cutArc = last->node->arcHeap[last->heapPos];
-  shortPath.push(cutArc);
-  #ifdef DEBUGKBEST
-  cout << ' ' << *cutArc;
-  #endif
-  }
-  top = last;
-  }
-  #ifdef DEBUGKBEST
-  cout << "\n\n";
-  #endif
-  List<PathArc> temp;
-  //List<PathArc>::iterator fullPath=temp.begin();
-  insert_iterator<List<PathArc> > path_cursor(temp,temp.erase_begin());
-
-  int sourceState = 0; // pretend beginning state is end of last sidetrack
-
-  for ( List<GraphArc *>::const_iterator cut=shortPath.const_begin(),end=shortPath.const_end(); cut != end; ++cut ) {
-  insertShortPath(shortPathTree, sourceState, (*cut)->source, path_cursor); // stitch end of last sidetrack to beginning of this one
-  sourceState = (*cut)->dest;
-  insertPathArc(*cut, path_cursor); // append this sidetrack
-  }
-  insertShortPath(shortPathTree, sourceState, final, path_cursor); // connect end of last sidetrack to final state
-
-  //paths->push_back(temp);
-  *path_adder++ = temp;
-  *endRetired = pathQueue[0];
-  newPath.last = endRetired++;
-  heapPop(pathQueue, endQueue--);
-  int lastHeapPos = newPath.last->heapPos;
-  GraphArc *spawnVertex;
-  GraphHeap *from = newPath.last->node;
-  FLOAT_TYPE lastWeight = newPath.last->weight;
-  if ( lastHeapPos == -1 ) {
-  spawnVertex = from->arc;
-  newPath.heapPos = -1;
-  if ( from->left ) {
-  newPath.node = from->left;
-  newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
-  heap_add(pathQueue, ++endQueue, newPath);
-  }
-  if ( from->right ) {
-  newPath.node = from->right;
-  newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
-  heap_add(pathQueue, ++endQueue, newPath);
-  }
-  if ( from->arcHeapSize ) {
-  newPath.heapPos = 0;
-  newPath.node = from;
-  newPath.weight = lastWeight + (newPath.node->arcHeap[0]->weight - spawnVertex->weight);
-  heap_add(pathQueue, ++endQueue, newPath);
-  }
-  } else {
-  spawnVertex = from->arcHeap[lastHeapPos];
-  newPath.node = from;
-  int iChild = 2 * lastHeapPos + 1;
-  if ( from->arcHeapSize > iChild  ) {
-  newPath.heapPos = iChild;
-  newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
-  heap_add(pathQueue, ++endQueue, newPath);
-  if ( from->arcHeapSize > ++iChild ) {
-  newPath.heapPos = iChild;
-  newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
-  heap_add(pathQueue, ++endQueue, newPath);
-  }
-  }
-  }
-  if ( pathGraph[spawnVertex->dest] ) {
-  newPath.heapPos = -1;
-  newPath.node = pathGraph[spawnVertex->dest];
-  newPath.heapPos = -1;
-  newPath.weight = lastWeight + newPath.node->arc->weight;
-  heap_add(pathQueue, ++endQueue, newPath);
-  }
-  } // end of while
-  delete[] pathQueue;
-  delete[] retired;
-  } // end of if (pathGraph[0])
-  GraphHeap::freeAll();
-
-  //Yaser 6-26-2001:  The following repository was filled using the
-  // "buildSidetracksHeap" method which is called recursively by the
-  // "depthFirstSearch()" method and it was never deleted because
-  // we needed it here in bestPaths(). Hence we have to delete it here
-  // since we are done with it.
-  freeAllSidetracks();
-
-  delete[] pathGraph;
-  delete[] visited;
-  delete[] revPathTree.states;
-  delete[] sidetracks.states;
-  } // end of if (k > 1)
-  }
-
-  delete[] graph.states;
-  delete[] shortPathGraph.states;
-  delete[] dist;
-
-  return paths;
-  }
-  void WFST::insertPathArc(GraphArc *gArc,List<PathArc>* l)
-  {
-  PathArc pArc;
-  FSTArc *taken = (FSTArc *)gArc->data;
-  setPathArc(&pArc,*taken);
-  l->push_back(pArc);
-  }
-
-  void WFST::insertShortPath(int source, int dest, List<PathArc>*l)
-  {
-  GraphArc *taken;
-  for ( int iState = source ; iState != dest; iState = taken->dest ) {
-  taken = &shortPathTree[iState].arcs.top();
-  insertPathArc(taken,l);
-  }
-  }
-*/
 }
 
 #include <graehl/carmel/src/wfstio.cc>

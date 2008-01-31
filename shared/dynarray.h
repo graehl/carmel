@@ -103,6 +103,10 @@ public:
         memcpy(this,&a,sizeof(self_type));
         memcpy(&a,&t,sizeof(self_type));
     }
+    inline friend void swap(self_type &a,self_type &b) 
+    {
+        a.swap(b);
+    }    
     array<T,Alloc> substr(unsigned start) const
     {
         return substr(start,size());
@@ -331,6 +335,11 @@ private:
     typedef auto_array<T,Alloc> self_type;
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
+ public:
+    inline friend void swap(self_type &a,self_type &b) 
+    {
+        a.swap(b);
+    }    
 };
 
 template <class T,class Alloc>
@@ -421,7 +430,7 @@ template <typename T,class Alloc> class dynamic_array : public array<T,Alloc> {
     typedef array<T,Alloc> Base;
 private:
     dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
-    void swap(array<T,Alloc> &a) {dynarray_assert(0);}
+//    void swap(array<T,Alloc> &a) {dynarray_assert(0);}
 public:
     explicit dynamic_array (const char *c) {
         std::istringstream(c) >> *this;
@@ -668,6 +677,11 @@ public:
 
     void removeMarked(bool marked[]) {
         graehl::remove_marked_swap(*this,marked);
+    }
+
+    inline friend void swap(self_type &a,self_type &b) 
+    {
+        a.swap(b);
     }
     
     void removeMarked_nodestroy(bool marked[]) {

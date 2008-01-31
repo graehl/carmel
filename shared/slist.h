@@ -19,7 +19,9 @@
 # define slist_assert(x) assert(x)
 #else 
 # define slist_assert(x)
-#endif 
+#endif
+
+namespace graehl {
 
 template <class Pred>
 struct predicate_indirector
@@ -639,12 +641,12 @@ class slist : public slist_shared<T,A>
         this->assign_deep_copy(x);
         return *this;
     }
-    /*
-      self_type& operator=(self_type const& x)
-      {
-      this->assign_deep_copy(x);
-      return *this;
-      }*/
+    
+    self_type& operator=(self_type const& x)
+    {
+        this->assign_deep_copy(x);
+        return *this;
+    }
     
     void swap(slist& x)
     {
@@ -657,6 +659,21 @@ class slist : public slist_shared<T,A>
         throw "can't swap shared and nonshared lists";
     }
 };
+
+
+template <class T,class A>
+  void swap(slist_shared<T,A> &a
+            ,slist_shared<T,A> &b) 
+  {
+      a.swap(b);
+  }
+
+template <class T,class A>
+  void swap(slist<T,A> &a
+            ,slist<T,A> &b) 
+  {
+      a.swap(b);
+  }
 
 #ifdef TEST
 
@@ -690,5 +707,17 @@ BOOST_AUTO_UNIT_TEST( test_slist )
     }
 }
 #endif 
-    
+
+}
+
+/* // argument dependent name lookup in STL means you can
+   // using std::swap; swap(a,b) // where swap is in same ns as a and b
+namespace std
+{
+
+  
+}
+*/
+
+
 #endif

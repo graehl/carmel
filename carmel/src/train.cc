@@ -126,7 +126,7 @@ struct forward_backward
     cached_derivs_t cached_derivs;
 
     
-    void matrix_compute(IOSymSeq const& s,bool backward=false) 
+    inline void matrix_compute(IOSymSeq const& s,bool backward=false) 
     {
         if (backward) {
             matrix_compute(s.i.n,s.i.rLet,s.o.n,s.o.rLet,x.final,b,mio.backward,e_backward_topo);
@@ -138,7 +138,7 @@ struct forward_backward
     
     void matrix_compute(int nIn,int *inLet,int nOut,int *outLet,int start,Weight ***w,matrix_io_index::states_t &io,List<int> const& eTopo);
     
-    void matrix_forward_prop(Weight ***m,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o) 
+    inline void matrix_forward_prop(Weight ***m,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o) 
     {
         if (!fio) return;
         for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
@@ -156,7 +156,7 @@ struct forward_backward
     }
     
     // accumulate counts for this example into scratch (so they can be weighted later all at once.  saves a few mults to weighting as you go?)
-    void matrix_count(matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
+    inline void matrix_count(matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
     {
         if (!fio) return;
         for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {

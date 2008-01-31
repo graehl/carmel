@@ -85,6 +85,11 @@ inline size_type size_from_str(std::string const &str) {
     return ret;
 }
 
+template <class size_type>
+inline void size_from_str(std::string const &str,size_type &sz) {
+    sz=size_from_str<size_type>(str);
+}
+
 
 template <bool decimal_thousand=true,class size_type=double>
 struct size_mega

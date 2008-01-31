@@ -125,7 +125,7 @@ struct wfst_io_index : boost::noncopyable
 
 
     
-struct derivations : boost::noncopyable
+struct derivations //: boost::noncopyable
 {
  private:
 //    typedef List<int> Symbols;
@@ -287,7 +287,7 @@ struct derivations : boost::noncopyable
         return prob;
     }
     
-//    derivations(derivations const& o) : x(o.x),in(o.in),out(o.out) {} // similarly, this doesn't really copy the derivations; you need to compute() after.  um, this would be bad if you used a vector rather than a list?
+    derivations(derivations const& o) : x(o.x),in(o.in),out(o.out) {} // similarly, this doesn't really copy the derivations; you need to compute() after.  um, this would be bad if you used a vector rather than a list?
 
     // return true iff goal reached (some deriv exists)
     bool compute(wfst_io_index const& io,bool drop_names=true,bool prune_=true) 
@@ -394,7 +394,7 @@ struct derivations : boost::noncopyable
                 unsigned id=*i;
                 arc_counts const& a=io.t[id];
                 ++global_stats.pre.arcs;
-                g[source].add(source,derive(io,deriv_state(i_in,a.dest(),i_out)),0,(void *)id);
+                g[source].add_data_as(source,derive(io,deriv_state(i_in,a.dest(),i_out)),0,id);
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
             }
         
