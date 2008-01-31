@@ -1,5 +1,6 @@
 //#define MARCU
 #define GRAEHL__SINGLE_MAIN
+// -= 2.0  = square weights then normalize
 // -? = cache em derivations; currently limited to memory; should change to use disk
 // -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
@@ -23,7 +24,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.4.3"
+#define CARMEL_VERSION "3.4.5"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -156,7 +157,7 @@ struct wfst_paths_printer {
         prevent_cycle.clear();
     }
     void visit_best_arc(const GraphArc &a,bool best=true) {
-        FSTArc &arc=*(FSTArc *)a.data;
+        FSTArc &arc=*a.data_as<FSTArc *>();
 //        path.push_back(&arc);
         if (1 || best) {
 #ifdef DEBUGKBEST
@@ -1008,6 +1009,7 @@ void usageHelp(void)
     cout << "\n-1\t\trandomly scale weights (of unlocked arcs) after composition uniformly by (0..1]";
     cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
     cout << "\n-?\t\tcache EM derivations in memory for faster iterations";
+    cout << "\n-= 2.0\t\traise weights to 2.0th power, *after* normalization.\n";
     cout << "\n\n";
     cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
     cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";

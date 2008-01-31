@@ -140,8 +140,7 @@ class WFST {
     void insertPathArc(GraphArc *gArc,T &l)
     {
         PathArc pArc;
-        FSTArc *taken = (FSTArc *)gArc->data;
-        setPathArc(&pArc,*taken);
+        setPathArc(&pArc,*gArc->data_as<FSTArc*>());
         *(l++) = pArc;
     }
     template <class T>
@@ -385,7 +384,7 @@ class WFST {
             a += states[i].size;
         return a;
     }
-    Weight numNoCyclePaths() const {
+    Weight numNoCyclePaths() {
         if ( !valid() ) return Weight();
         Weight *nPaths = NEW Weight[numStates()];
         Graph g = makeGraph();
@@ -401,10 +400,10 @@ class WFST {
         else
             WFST::indexThreshold = t; 
     }
-    Graph makeGraph() const; // weights = -log, so path length is sum and best path 
+    Graph makeGraph(); // weights = -log, so path length is sum and best path 
     // is the shortest; GraphArc::data is a pointer 
     // to the FSTArc it corresponds to in the WFST
-    Graph makeEGraph() const; // same as makeGraph, but restricted to *e* / *e* arcs
+    Graph makeEGraph(); // same as makeGraph, but restricted to *e* / *e* arcs
     void ownAlphabet() {
         ownInAlphabet();
         ownOutAlphabet();

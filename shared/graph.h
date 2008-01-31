@@ -22,13 +22,13 @@ struct GraphArc {
     template <class T>
     T &data_as() 
     {
-        return reinterpret_cast<T &>(data);
+        return *(T*)(&data);
     }
     /// note: not safe to use with integral types if you construct as void * data ... only safe if you set with data_as()
     template <class T>
     T const&data_as() const
     {
-        return reinterpret_cast<T const&>(data);
+        return *(T const*)(&data);
     }
     
     GraphArc() {}
@@ -55,7 +55,7 @@ struct GraphState {
     }
     
     template <class T>
-    void add(int src,int dest,FLOAT_TYPE weight, T const& data) 
+    void add_data_as(int src,int dest,FLOAT_TYPE weight, T const& data) 
     {
         arcs.push_front(src,dest,weight);
         arcs.front().data_as<T>()=data;
@@ -71,6 +71,11 @@ struct GraphState {
         arcs.push_front(src,dest,weight);
     }
 };
+
+inline void swap(GraphState &a,GraphState &b) 
+{
+    a.arcs.swap(b.arcs);
+}
 
 
 struct Graph {

@@ -39,10 +39,12 @@ void add_reversed_arcs(GraphState *rev,GraphState const*src,unsigned n,bool data
             r.weight = l->weight;
             rev[r.src].arcs.push(r);
 */
-            
-            rev[l->dest].arcs.push_front(l->dest,l->src,l->weight,
-                                         data_point_to_forward ? (void*)&(*l) : l->data
-                );
+            List<GraphArc> & d=rev[l->dest].arcs;
+            d.push_front(l->dest,l->src,l->weight,l->data);
+            if (data_point_to_forward)
+//                d.front().data_as<GraphArc *>()=&const_cast<GraphArc&>(*l);
+                d.front().data_as<GraphArc const*>()=&*l;
+
         }
     }    
 }
@@ -58,7 +60,7 @@ Graph reverseGraph(Graph g)
     Graph ret;
     ret.states = NEW GraphState[g.nStates];
     ret.nStates = g.nStates;
-    add_reversed_arcs(ret.states,g.states,g.nStates);
+    add_reversed_arcs(ret.states,g.states,g.nStates,true);
     return ret;
 }
 
@@ -127,7 +129,7 @@ Graph shortestPathTreeTo(Graph g, unsigned dest, FLOAT_TYPE *dist)
 
   for ( i = 0 ; i < g.nStates ; ++i )
     if ( taken[i] ) {
-      GraphArc * rev_taken = (GraphArc *)taken[i]->data;
+        GraphArc * rev_taken = taken[i]->data_as<GraphArc *>();
 #ifdef DEBUGKBEST
       Config::debug() << ' ' << i << ' ' << rev_taken;
 #endif
@@ -242,13 +244,11 @@ Graph removeStates(Graph g, bool marked[]) // not tested
 
   for ( i = 0 ; i < g.nStates ; ++i )
     if ( !marked[i] ) {
-      List<GraphArc> &newArcs = reduced[oldToNew[i]].arcs;
-      const List<GraphArc> &arcs = g.states[i].arcs;
-      for ( List<GraphArc>::const_iterator oldArc=arcs.const_begin(),end=arcs.const_end() ; oldArc !=end ; ++oldArc )
-        if ( !marked[oldArc->dest] ) {
-            newArcs.push(GraphArc(oldToNew[oldArc->dest],oldToNew[oldArc->src],
-                                  oldArc->weight,oldArc->data));
-        }
+        GraphState &new_state=reduced[oldToNew[i]];
+        List<GraphArc> const&arcs = g.states[i].arcs;
+        for ( List<GraphArc>::const_iterator oldArc=arcs.begin(),end=arcs.end() ; oldArc !=end ; ++oldArc )
+            if ( !marked[oldArc->dest] )
+                new_state.add(oldToNew[oldArc->dest],oldToNew[oldArc->src],oldArc->weight,oldArc->data);
     }
 
   delete[] oldToNew;

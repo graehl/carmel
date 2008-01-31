@@ -1,9 +1,17 @@
 //workaround for difficulties I've had getting a debugger breakpoint from a failed assert
-#ifndef ASSERT_H
-#define ASSERT_H
+#ifndef GRAEHL_SHARED__ASSERT_H
+#define GRAEHL_SHARED__ASSERT_H
+
 
 #include <graehl/shared/breakpoint.hpp>
 #include <graehl/shared/config.h>
+
+#ifndef DEBUG
+# ifndef NDEBUG
+//# define NDEBUG
+#endif 
+#endif
+
 #include <cassert>
 
 

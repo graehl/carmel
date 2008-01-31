@@ -151,6 +151,7 @@ struct indices_after_removing
 template <class T,class Rewrite>
 unsigned shuffle_removing(T *v,indices_after_removing const& ttable,Rewrite r) 
 {
+    using std::swap;
     unsigned to, i = 0, sz= ttable.n_mapped;
 //    if (sz==0) return 0;
     for ( ; i < sz && !ttable.removing(i) ;++i )

@@ -237,12 +237,11 @@ struct State {
     }
 };
 
-/*
-  inline void swap(State &a,State &b) 
-  {
-  a.swap(b);
-  }
-*/
+
+inline void swap(State &a,State &b) 
+{
+    a.swap(b);
+}
 
           
 std::ostream& operator << (std::ostream &out, State &s); // Yaser 7-20-2000
@@ -301,6 +300,7 @@ struct symSeq {
     int *let;
     int *rLet;
     typedef int* iterator;
+    typedef int*const_iterator;
     iterator begin() const
     {
         return let;
@@ -317,6 +317,10 @@ struct symSeq {
     {
         return rLet+n;
     }
+    unsigned size() const
+    {
+        return n;
+    }
     template <class O,class Alphabet>
     void print(O &o,Alphabet const& a) const
     {
@@ -328,7 +332,7 @@ struct symSeq {
 
 std::ostream & operator << (std::ostream & out , const symSeq & s);
 
-struct IOSymSeq : boost::noncopyable {
+struct IOSymSeq {
     symSeq i;
     symSeq o;
     FLOAT_TYPE weight;
@@ -336,7 +340,8 @@ struct IOSymSeq : boost::noncopyable {
     {
         init(inSeq,outSeq,w);
     }
-    void init(List<int> const&inSeq, List<int> const&outSeq, FLOAT_TYPE w) {
+    template <class S>
+    void init(S const&inSeq, S const&outSeq, FLOAT_TYPE w) {
         i.n = inSeq.size();
         o.n = outSeq.size();
         i.let = NEW int[i.n];
@@ -346,11 +351,11 @@ struct IOSymSeq : boost::noncopyable {
         int *pi, *rpi;
         pi = i.let;
         rpi = i.rLet + i.n;
-        for ( List<int>::const_iterator inL=inSeq.begin(),endI=inSeq.end() ; inL != endI ; ++inL )
+        for ( typename S::const_iterator inL=inSeq.begin(),endI=inSeq.end() ; inL != endI ; ++inL )
             *pi++ = *--rpi = *inL;
         pi = o.let;
         rpi = o.rLet + o.n;
-        for ( List<int>::const_iterator outL=outSeq.begin(),endO=outSeq.end() ; outL != endO ; ++outL )
+        for ( typename S::const_iterator outL=outSeq.begin(),endO=outSeq.end() ; outL != endO ; ++outL )
             *pi++ = *--rpi = *outL;
         weight = w;
     }
@@ -363,6 +368,11 @@ struct IOSymSeq : boost::noncopyable {
             o.let=NULL;
         }
     }
+    IOSymSeq(IOSymSeq const& o) 
+    {
+        init(o.i,o.o,o.weight);
+    }
+    
     ~IOSymSeq() 
     {
         kill();
@@ -392,7 +402,9 @@ class training_corpus : boost::noncopyable
     training_corpus() { clear(); }
     void clear()
     {
-        maxIn=maxOut=n_input=n_output=w_input=w_output=totalEmpiricalWeight=0;
+        maxIn=maxOut=0;
+        n_input=n_output=0;
+        w_input=w_output=totalEmpiricalWeight=0;
         examples.clear();
     }
     

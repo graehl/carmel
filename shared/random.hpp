@@ -123,6 +123,11 @@ inline size_t random_less_than(size_t limit) {
 #endif
 }
 
+inline bool random_bool() 
+{
+    return random_less_than(2);
+}
+
 inline size_t random_up_to(size_t limit) {
     return random_less_than(limit+1);
 }
