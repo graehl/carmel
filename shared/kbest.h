@@ -215,12 +215,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
                 heap_add(pathQueue, ++endQueue, newPath);
                 while ( heapSize(pathQueue, endQueue) && ++path_no <= k ) {
                     EdgePath *top = pathQueue;
-                    GraphArc *cutArc = top->get_cut_arc(); /* replaced:
-                                          if ( top->heapPos < 0 )
-                        cutArc = top->node->arc;
-                    else
-                        cutArc = top->node->arcHeap[top->heapPos];
-                    */
+                    GraphArc *cutArc = top->get_cut_arc();
                     typedef List<GraphArc *> Sidetracks;
                     Sidetracks shortPath;
 #ifdef DEBUGKBEST
@@ -235,12 +230,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
                     EdgePath *last;
                     while ( (last = top->last) ) {
                         if ( !((last->heapPos == -1 && (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right )) || (last->heapPos >= 0 && top->heapPos != -1 )) ) { // got to p on a cross edge
-                            cutArc=last->get_cut_arc(); /* replaced:
-                            if ( last->heapPos == -1 )
-                                cutArc = last->node->arc;
-                            else
-                                cutArc = last->node->arcHeap[last->heapPos];
-                            */
+                            cutArc=last->get_cut_arc();
                             shortPath.push( cutArc);
                             path_cost += cutArc->weight;
 #ifdef DEBUGKBEST

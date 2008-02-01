@@ -28,7 +28,12 @@ public:
     {
         S::swap(b);
     }
-              
+
+    inline void friend swap(self_type &a,self_type &b) 
+    {
+        a.swap(b);
+    }
+    
     typedef typename S::const_iterator const_iterator;
 #ifdef USE_SLIST
     typedef typename S::erase_iterator iterator;
@@ -184,13 +189,6 @@ public:
 #else
             //#define LIST_BACK_INSERTER back_insert_iterator
 #endif
-
-template <class T,class A>
-  void swap(graehl::List<T,A> &a
-            ,graehl::List<T,A> &b) 
-  {
-      a.swap(b);
-  }
 
 }
 

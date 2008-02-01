@@ -44,8 +44,8 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
     
     int l;
     char *s,*bufend=buf+STRBUFSIZE-2;
-    if ( !(in >> buf[0]) ) return 0;
-    switch ( buf[0] ) {
+    if ( !(in >> *buf) ) return 0;
+    switch ( *buf ) {
     case '"':
         l = 0;                      // 1 if backslash was last character
         for ( s = buf+1 ; s < bufend ; ++s ) {
@@ -86,14 +86,14 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
                 break;
             }
         }        
-        *buf = 0;
+        *buf = '\0';
         if (buf[-1] == DOS_CR_CHAR)
-            *--buf = 0;
+            *--buf = '\0';
         break;
     }
     return buf;
 bufoverflow:
-    *bufend=0;
+    *bufend='\0';
     std::cerr << "Symbol too long (over "<<bufend-buf<<" characters): " << buf;
     return 0;
 #undef CHECKBUFOVERFLOW
@@ -298,7 +298,9 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         named_states=1;
         int stateNumber, destState, inL, outL;
         Weight weight;
-        char c, d, buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
+        char c, d;
+        char buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
+//        string buf,buf2; // FIXME: rewrite getString to use growing buffer?
         skip_comment(istr,COMMENT_CHAR);
         REQUIRE(getString(istr, buf));
         finalName = buf;

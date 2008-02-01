@@ -5,8 +5,9 @@
 #define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
 
-// prefer USE_SLIST, for the same reason as USE_GRAEHL_HASH_MAP - list of containers guarantees no copies
-//#define USE_SLIST
+// require USE_SLIST w/ -? deriv caching, for the same reason as USE_GRAEHL_HASH_MAP - list of containers guarantees no copies
+#define USE_SLIST
+//FIXME: USE_SLIST causes crash in kbest output with -O3 but not -O
 
 #ifdef _MSC_VER
 #ifndef USE_GRAEHL_HASH_MAP

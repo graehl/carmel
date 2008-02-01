@@ -179,8 +179,8 @@ struct derivations //: boost::noncopyable
             
             o << "\nFor all cached derivations:\n"
               <<  "Pre pruning: "<< pre <<"\n"
-              <<"Post pruning: " << post << "\n"
-              << "Portion kept: " << ratio << "\n"
+              <<"Post pruning: " << post.states << " states.\n"
+              << "Portion kept: " << ratio.states << " states.\n"
                 ;
         }
         typedef statistics self_type;
