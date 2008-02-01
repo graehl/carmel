@@ -24,7 +24,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.4.5"
+#define CARMEL_VERSION "3.5"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -133,7 +133,6 @@ struct wfst_paths_printer {
         clear_cycle_detect();
         output.clear();
         sp.reset();
-        
     }
     void end_path() {
         if (flags['@'] ) {
@@ -596,7 +595,7 @@ main(int argc, char *argv[]){
             if ( !*line_in )
                 goto fail_ntarget;
 
-//            if ( input_lineno != 0 )                chain[nTarget].~WFST(); // we do this at the end of loop now.
+//            if ( input_lineno != 0 )                chain[nTarget].~WFST(); // we do this at the e
             if (flags['P']){ // need a permutation lattice instead
                 int length ;
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);

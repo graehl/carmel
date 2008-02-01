@@ -185,7 +185,8 @@ CPPFLAGS +=  -pedantic
 endif
 CPPFLAGS_TEST += $(CPPFLAGS) -ggdb
 CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
-CPPFLAGS_OPT += $(CPPFLAGS) -ggdb -DNDEBUG
+CPPFLAGS_OPT += $(CPPFLAGS) -ggdb
+#-DNDEBUG
 
 #-fno-var-tracking
 # somehow that is getting automatically set by boost now for gcc 3.4.1 (detecting that -lthread is not used? dunno)
