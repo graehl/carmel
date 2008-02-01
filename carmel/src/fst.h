@@ -545,7 +545,7 @@ class WFST {
     // counts must have been filled in (happens in trainFinish) so not useful to public
     Weight train_maximize(NormalizeMethod const& method,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
     
-    void destroy() 
+    void destroy()  // just in case we're sloppy, this is idempotent.  note: the actual destructor may not be - std::vector, etc.
     {
         deleteAlphabet();
     }
