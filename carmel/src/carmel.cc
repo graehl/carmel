@@ -596,8 +596,7 @@ main(int argc, char *argv[]){
             if ( !*line_in )
                 goto fail_ntarget;
 
-            if ( input_lineno != 0 )
-                chain[nTarget].~WFST();
+//            if ( input_lineno != 0 )                chain[nTarget].~WFST(); // we do this at the end of loop now.
             if (flags['P']){ // need a permutation lattice instead
                 int length ;
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
@@ -882,6 +881,10 @@ main(int argc, char *argv[]){
             Config::debug() << "can't delete result because it is part of chain .. \n";
 #endif
 #endif
+        if (nTarget != -1) { // if to construct a finite state from input
+            chain[nTarget].~WFST();
+        }
+        
         if ( !flags['b'] )
             break;
     } // end of all input
