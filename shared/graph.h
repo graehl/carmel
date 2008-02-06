@@ -8,6 +8,7 @@
 
 #include <graehl/shared/2heap.h>
 #include <graehl/shared/list.h>
+#include <graehl/shared/push_backer.hpp>
 #include <iterator>
 
 namespace graehl {
@@ -98,6 +99,7 @@ void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*fu
 template <class Weight>
 void countNoCyclePaths(Graph g, Weight *nPaths, int src);
 
+
 class TopoSort {
   typedef std::front_insert_iterator<List<int> > IntPusher;
   Graph g;
@@ -142,6 +144,54 @@ class TopoSort {
     *o++ = s;
   }
   ~TopoSort() { delete[] done; delete[] begun; }
+};
+
+struct reverse_topo_order {
+  Graph g;
+  bool *done;
+  bool *begun;
+  int n_back_edges;
+ public:
+
+  reverse_topo_order(Graph g_) : g(g_), n_back_edges(0) {
+    done = NEW bool[g.nStates];
+    begun = NEW bool[g.nStates];
+    for (unsigned i=0;i<g.nStates;++i)
+      done[i]=begun[i]=false;
+  }
+    template <class O>
+  void order_all(O o) {
+        order(o,true);
+  }
+    template <class O>
+  void order_crucial(O o) {
+        order(o,false);
+  }
+    template <class O>
+    void order(O o,bool all=true) {
+    for ( unsigned i = 0 ; i < g.nStates ; ++i )
+      if ( all || !g.states[i].arcs.empty() )
+          order_from(o,i);
+  }
+  int get_n_back_edges() const { return n_back_edges; }
+    template <class O>
+    void order_from(O o,int s) {
+        if (done[s]) return;
+        if (begun[s]) { // this state previously started but not finished already = back edge/cycle!
+            ++n_back_edges;
+            return;
+        }
+        begun[s]=true;
+        const List<GraphArc> &arcs = g.states[s].arcs;
+        for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l !=end ; ++l ) {
+            order_from(o,l->dest);
+        }
+        done[s]=true;
+
+        // insert at beginning of sorted list (we must come before anything reachable by us!)
+        o(s);
+  }
+  ~reverse_topo_order() { delete[] done; delete[] begun; }
 };
 
 
@@ -247,14 +297,11 @@ Weight countNoCyclePaths(Graph g, int src, int dest)
 }
 
 // w is an array with as many entries as g has states.   w[start] is nonzero
-template <class Weight_get,class Weight_array>
-void propogate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned start)
+
+template <class Weight_get,class Weight_array,class Order>
+void propogate_paths_in_order(Graph g,Order t,Order const& t_order_end,Weight_get const& getwt,Weight_array& w)
 {
-  List<int> topo;
-  
-  TopoSort sort(g,&topo);
-  sort.order_from(start);
-  for ( List<int>::const_iterator t=topo.const_begin(),end = topo.const_end() ; t != end; ++t ){
+  for (  ; t != t_order_end; ++t ){
       unsigned src=*t;
       const List<GraphArc> &arcs = g.states[src].arcs;
       for ( List<GraphArc>::const_iterator i=arcs.const_begin(),end=arcs.const_end() ; i !=end ; ++i ) {
@@ -262,7 +309,21 @@ void propogate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned st
           w[a.dest] += w[src] * getwt(a);
       }
   }
+}
 
+template <class Weight_get,class Weight_array>
+void propogate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned start)
+{
+    dynamic_array<unsigned> rev;
+    reverse_topo_order r(g);
+    r.order_from(make_push_backer(rev),start);
+    propogate_paths_in_order(g,rev.rbegin(),rev.rend(),getwt,w);
+/*        
+  List<int> topo;  
+  TopoSort sort(g,&topo);
+  sort.order_from(start);
+  propogate_paths_in_order(g,topo.begin(),topo.end(),getwt,w);
+*/
 }
 
 

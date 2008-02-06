@@ -1,7 +1,8 @@
 //#define MARCU
 #define GRAEHL__SINGLE_MAIN
-// -= 2.0  = square weights then normalize
+// -: = cache em derivations including reverse structure (uses more memory but faster iterations)
 // -? = cache em derivations; currently limited to memory; should change to use disk
+// -= 2.0  = square weights then normalize
 // -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
@@ -24,7 +25,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.5"
+#define CARMEL_VERSION "3.6"
 
 #ifdef MARCU
 #include <graehl/shared/models.h>
@@ -418,8 +419,8 @@ main(int argc, char *argv[]){
             }
     }
     bool prunePath = flags['w'] || flags['z'];
-    bool cache_derivations=flags['?'];
-
+    unsigned cache_derivations_level=flags[':'] ? 2 : (flags['?'] ? 1 : 0);
+    
     srand(seed);
     setOutputFormat(flags,&cout);
     setOutputFormat(flags,&cerr);
@@ -790,7 +791,7 @@ main(int argc, char *argv[]){
                 } else {
                     corpus.set_null();
                 }
-                result->train(corpus,norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations);
+                result->train(corpus,norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
             } else if ( nGenerate > 0 ) {
                 MINIMIZE;
                 //        if ( !flags['n'] )
@@ -1011,6 +1012,8 @@ void usageHelp(void)
     cout << "\n-1\t\trandomly scale weights (of unlocked arcs) after composition uniformly by (0..1]";
     cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
     cout << "\n-?\t\tcache EM derivations in memory for faster iterations";
+    cout << "\n-:\t\tcache em derivations including reverse structure (faster but uses even more memory)";
+    
     cout << "\n-= 2.0\t\traise weights to 2.0th power, *after* normalization.\n";
     cout << "\n\n";
     cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";

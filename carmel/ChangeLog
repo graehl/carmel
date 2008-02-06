@@ -1,3 +1,10 @@
+2008-02-05  Jonathan Graehl  <graehl@isi.edu>
+
+	* src/carmel.cc (CARMEL_VERSION): v3.6 // -: = cache em
+	derivations including reverse structure (uses more memory but
+	faster iterations) // -? = cache em derivations; currently limited
+	to memory; should change to use disk
+
 2007-12-13  Jonathan Graehl  <graehl@isi.edu>
 
 	* src/carmel.cc (usageHelp): -= 2.0 (raise all weights by power of 2)

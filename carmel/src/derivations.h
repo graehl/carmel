@@ -140,6 +140,7 @@ struct derivations //: boost::noncopyable
     typedef unsigned state_id;
     state_id fin;
     bool no_goal;
+    bool cache_backward;
     
     typedef HashTable<deriv_state,state_id> state_to_id;
     state_to_id id_of_state;
@@ -216,6 +217,11 @@ struct derivations //: boost::noncopyable
         }
     }
     */
+
+    unsigned n_states() const 
+    {
+        return g.size();
+    }
     
     Graph graph() const
     {
@@ -228,12 +234,13 @@ struct derivations //: boost::noncopyable
     }
     
     template <class Symbols>
-    derivations(WFST const & x,Symbols const& in,Symbols const& out,double w=1,unsigned line=0) // unusually, you must call compute() before using the object.  lets me push_back easier in container w/o copy or pimpl
+    derivations(WFST const & x,Symbols const& in,Symbols const& out,double w=1,unsigned line=0,bool cache_backward=false) // unusually, you must call compute() before using the object.  lets me push_back easier in container w/o copy or pimpl
         : x(x)
         ,in(in.begin(),in.end())
         ,out(out.begin(),out.end())
         , weight(w)
         , lineno(line)
+        , cache_backward(cache_backward)
     {}
 
     typedef fixed_array<Weight> fb_weights;
@@ -253,8 +260,13 @@ struct derivations //: boost::noncopyable
             return ac(a).weight();
         }
     };    
-        
-    Weight collect_counts(arcs_table &t) const
+
+    unsigned start() const 
+    {
+        return 0;
+    }
+    
+    Weight collect_counts(arcs_table &t)
     {
 //        update_weights(t);
         weight_for wf(t);
@@ -264,13 +276,20 @@ struct derivations //: boost::noncopyable
 
 
         f[0]=1;
-        propogate_paths(graph(),wf,f,0);        
+        get_order();
+        
+        propogate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),wf,f);        
         Weight prob=f[fin];
         
-        reversed_graph r(g); // NOTE: we could cache this reversed graph as well, but we'd run into swapping sooner.  I bet it's faster to recompute for each example by a lot when you get to that size range, and not much slower before.
+//        reversed_graph r(g); // NOTE: we could cache this reversed graph as well, but we'd run into swapping sooner.  I bet it's faster to recompute for each example by a lot when you get to that size range, and not much slower before.
+        get_reverse();
+        
 
         b[fin]=1;
-        propogate_paths(r.graph(),wf,b,fin);
+        propogate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,b);
+
+        free_order();
+        free_reverse();
         
         check_fb_agree(prob,b[0]);
 
@@ -283,6 +302,7 @@ struct derivations //: boost::noncopyable
                 ac.counts += arc_contrib*weight/prob;
             }            
         }
+
         
         return prob;
     }
@@ -306,7 +326,15 @@ struct derivations //: boost::noncopyable
             prune();
         else
             global_stats.post=global_stats.pre;
-        return !no_goal;
+        if (no_goal)
+            return false;
+        else {
+            if (cache_backward) {
+                make_reverse();
+                make_order();
+            }
+            return true;
+        }
     }
 
     typedef GraphState::arcs_type arcs_type;
@@ -314,10 +342,25 @@ struct derivations //: boost::noncopyable
     struct reversed_graph 
     {
         fixed_array<GraphState> b;
+        reversed_graph() {}        
+        
         template <class Graph>
-        reversed_graph(Graph const& forward) : b(forward.size())
+        reversed_graph(Graph const& forward)
         {
+            init(forward);
+        }
+
+        // only call if you clear() or default constructed last
+        template <class Graph>
+        void init(Graph const& forward)
+        {
+            b.init(forward.size());
             add_reversed_arcs(&b.front(),&forward.front(),forward.size());
+        }
+
+        void clear() 
+        {
+            b.clear();
         }
         
         /// m[i] is set to val if state leads to i along a path in b, the reversed graph (i.e. in the orig. graph, something leads to "state".  you must set all m[i] !=val if they haven't already been visited by this
@@ -399,6 +442,50 @@ struct derivations //: boost::noncopyable
             }
         
     }
+    
+    reversed_graph r;
+    dynamic_array<unsigned> reverse_order;
+    // because of pruning, there is not much gain in visiting from the final state in reversed order.  the reverse of reverse_order is the forward order starting at start (0).  and the reverse of that is a valid order for starting at finish and following reverse arcs (it's just that finish may not be the first thing on the reverse_order, if pruning didn't happen, or if there were cycles
+    
+    void make_reverse() 
+    {
+        r.init(g);
+    }
+    void free_reverse()
+    {
+        if (!cache_backward)
+            r.clear();
+    }
+
+    void get_reverse()
+    {
+        if (!cache_backward)
+            make_reverse();
+    }
+
+    void make_order()
+    {
+        reverse_order.reserve(g.size());
+        reverse_topo_order rev(graph());
+        rev.order_from(make_push_backer(reverse_order),start());
+        if (rev.get_n_back_edges() > 0)
+            Config::warn()<<"Warning: at least one cycle in derivations for example ("<<rev.get_n_back_edges()<<" back edges).  Forward/backward will miss some paths.\n";
+    }
+
+    void free_order()
+    {
+        if (!cache_backward)
+            reverse_order.clear();
+    }
+    void get_order()
+    {
+        if (!cache_backward)
+            make_order();
+    }
+
+    
+    
+     
     
     
 };
