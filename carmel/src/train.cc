@@ -173,7 +173,7 @@ struct forward_backward
         unsigned n=1;
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
-            cached_derivs.push_front(x,i->i,i->o,i->weight,n);
+            cached_derivs.push_front(x,i->i,i->o,i->weight,n,cache_backward);
             derivations &d=cached_derivs.front();
             if (!d.compute(io)) {
                 warn_no_derivations(x,*i,n);
@@ -206,7 +206,7 @@ struct forward_backward
     Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
 
     // uses derivs.weight to scale counts for that example.  returns unweighted prob, however
-    Weight estimate_cached(derivations const& derivs);
+    Weight estimate_cached(derivations & derivs);
  public:
 
     // return max change
@@ -236,15 +236,18 @@ struct forward_backward
             freeGraph(eGraph);
         }
     }
+
+    bool cache_backward;
     
-    forward_backward(WFST &x,bool per_arc_prior,Weight global_prior,bool cache_derivations,bool include_backward=true)
+    forward_backward(WFST &x,bool per_arc_prior,Weight global_prior,unsigned cache_derivations_level,bool include_backward=true)
         : x(x),arcs(x,per_arc_prior,global_prior),mio(arcs)
     {
         trn=NULL;
         f=b=NULL;
         remove_bad_training=true;
-        if (cache_derivations) {
+        if (cache_derivations_level!=WFST::cache_nothing) {
             use_matrix=false;
+            cache_backward=(cache_derivations_level==WFST::cache_forward_backward);
         } else {            
             use_matrix=true;
             mio.populate(include_backward);
@@ -466,10 +469,10 @@ Weight WFST::train(
                    training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count,
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
                    int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
-                   int ran_restarts,bool cache_derivations
+                   int ran_restarts,unsigned cache_derivations_level
                    )
 {
-    forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations,true);
+    forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
     fb.prepare(corpus,true);
 
     Weight bestPerplexity;
@@ -713,7 +716,7 @@ Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
     assert(!use_matrix);
     Weight weighted_corpus_prob=1;
     unsigned n=0;
-    for (cached_derivs_t::const_iterator i=cached_derivs.begin(),e=cached_derivs.end();i!=e;++i) {
+    for (cached_derivs_t::val_iterator i=cached_derivs.val_begin(),e=cached_derivs.val_end();i!=e;++i) {
         ++n;
         training_progress(n);
         Weight prob=estimate_cached(*i);
@@ -723,7 +726,7 @@ Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
     return weighted_corpus_prob;
 }
 
-Weight forward_backward::estimate_cached(derivations const& derivs)
+Weight forward_backward::estimate_cached(derivations & derivs)
 {
     return derivs.collect_counts(arcs);
 }

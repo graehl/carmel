@@ -351,8 +351,12 @@ class WFST {
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor).
     // corpus may have examples w/ no derivations removed from it!
-    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,bool cache_derivations=false);
+        
+    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,unsigned cache_derivations_level=0);
     // returns per-example perplexity achieved
+    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2 
+    }; // cache_derivations_level param
+
     
 //    Weight trainFinish();
     // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  

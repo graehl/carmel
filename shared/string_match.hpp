@@ -4,6 +4,7 @@
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/null_terminated.hpp>
 #include <graehl/shared/string_to.hpp>
+#include <graehl/shared/push_backer.hpp>
 
 #include <string>
 #include <iterator>
@@ -339,31 +340,6 @@ void parse_until(const std::string &term,In &in,Func func)
         string_into(s,val);
         func(val);
     }
-}
-
-
-template <class Cont>
-struct push_backer
-{
-    Cont *cont;
-    typedef void result_type;
-    typedef typename Cont::value_type argument_type;
-    push_backer(Cont &container) : cont(&container) {}
-    template <class V>
-    void operator()(const V&v) const
-    {
-        cont->push_back(v);
-    }
-    void operator()() const
-    {
-        cont->push_back(argument_type());
-    }
-};
-
-template <class Cont> inline
-push_backer<Cont> make_push_backer(Cont &container) 
-{
-    return push_backer<Cont>(container);
 }
 
 template <class In,class Cont> inline

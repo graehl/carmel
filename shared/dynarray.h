@@ -29,10 +29,12 @@
 #include <graehl/shared/stackalloc.hpp>
 #include <graehl/shared/function_output_iterator.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/iterator/reverse_iterator.hpp>
 #include <vector>
 #include <algorithm>
 #include <iterator>
 #include <boost/config.hpp>
+
 #include <graehl/shared/array.hpp>
 
 #ifdef TEST
@@ -62,7 +64,8 @@ template <typename T,typename Alloc=std::allocator<T> > class array : protected 
     typedef T &reference;
     typedef const T& const_reference;
     typedef unsigned size_type;
-    
+    typedef boost::reverse_iterator<iterator> reverse_iterator;
+    typedef boost::reverse_iterator<const_iterator> const_reverse_iterator;
 protected:
     //unsigned int space;
     T *vec;
@@ -270,12 +273,31 @@ public:
     unsigned size() const { return capacity(); }
     T * begin() { return vec; }
     T * end() {       return endspace;      }
+    reverse_iterator rbegin() 
+    {
+        return reverse_iterator(end());
+    }
+    reverse_iterator rend()
+    {
+        return reverse_iterator(begin());
+    }
+    
     const T* begin() const {
         return vec;
     }
     const T* end() const {
         return endspace;
     }
+
+    const_reverse_iterator rbegin() const
+    {
+        return const_reverse_iterator(end());
+    }
+    const_reverse_iterator rend() const
+    {
+        return const_reverse_iterator(begin());
+    }
+    
     const T* const_begin() const {
         return vec;
     }
@@ -363,6 +385,31 @@ public:
         this->destroy();
         //~Super(); // happens implicitly!
     }
+    void clear() 
+    {
+        this->destroy();
+        this->dealloc();
+    }
+
+    // pre: capacity is 0
+    void init(std::size_t sp) 
+    {
+        assert(this->capacity()==0);
+        this->alloc(sp);
+        this->construct();
+    }
+    
+    void reinit(std::size_t sp) 
+    {
+        if (sp==this->capacity()) {
+            this->destroy();
+            this->construct();
+        } else {
+            clear();
+            reinit(sp);
+        }
+    }
+    
     template <class charT, class Traits, class Reader>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
         this->destroy();
@@ -508,6 +555,20 @@ public:
         dynarray_assert(this->invariant());
         return endv;
     }
+
+    typedef typename Base::const_reverse_iterator const_reverse_iterator;
+    typedef typename Base::reverse_iterator reverse_iterator;
+    
+    const_reverse_iterator rbegin() const
+    {
+        return const_reverse_iterator(end());
+    }
+
+    reverse_iterator rbegin()
+    {
+        return reverse_iterator(end());
+    }
+    
     T* end()  { // array code that uses vec+space for boundschecks is duplicated below
         dynarray_assert(this->invariant());
         return endv;
