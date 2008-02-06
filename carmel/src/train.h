@@ -442,14 +442,6 @@ class training_corpus : boost::noncopyable
 
 }
 
-namespace std {
-inline void swap(graehl::State &a,graehl::State &b) 
-{
-    a.swap(b);
-}
-
-}
-
 
 
 #endif

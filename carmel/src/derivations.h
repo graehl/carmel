@@ -16,6 +16,7 @@ special form of compose: input string * transducer * output string (more efficie
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/train.h>
 #include <graehl/shared/dynarray.h>
+#include <boost/cstdint.hpp>
 //#include <graehl/shared/stream_util.hpp>
 //#include <graehl/shared/size_mega.hpp>
 
@@ -26,7 +27,7 @@ namespace graehl {
 
 struct deriv_state 
 {
-    unsigned i,s,o; // input,state,output
+    uint32_t i,s,o; // input,state,output
     std::size_t hash() const 
     {
         return hash_quads_64(&i,sizeof(deriv_state)/sizeof(i));
@@ -36,7 +37,7 @@ struct deriv_state
     {
         return r.i==i && r.s==s && r.o==o;
     }
-    deriv_state(unsigned i,unsigned s,unsigned o) : i(i),s(s),o(o) {}
+    deriv_state(uint32_t i,uint32_t s,uint32_t o) : i(i),s(s),o(o) {}
 };
 
 
