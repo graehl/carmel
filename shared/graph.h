@@ -59,7 +59,7 @@ struct GraphState {
     void add_data_as(int src,int dest,FLOAT_TYPE weight, T const& data) 
     {
         arcs.push_front(src,dest,weight);
-        arcs.front().data_as<T>()=data;
+        arcs.front().template data_as<T>()=data;
     }
     
     void add(int src,int dest,FLOAT_TYPE weight, void *data) 
