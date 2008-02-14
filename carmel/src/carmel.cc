@@ -896,7 +896,8 @@ main(int argc, char *argv[]){
 
 #ifndef NODELETE
     for ( i = 0 ; i < nChain ; ++i )
-        chainMemory[i].~WFST();
+        if (i!=nTarget)
+            chainMemory[i].~WFST();
     //  if ( flags['A'] )
     //    chainMemory[i].~WFST();
 #endif

@@ -1,4 +1,4 @@
-#you provide:  
+#You provide:  
 # (the variables below)
 # ARCH (if macosx, static builds are blocked)
 #PROGS=a b
@@ -31,6 +31,12 @@ endif
 ifeq ($(UNAME),Darwin)
  ARCH=macosx
 endif
+endif
+
+ifeq ($(ARCH),cygwin)
+CYGEXE:=.exe
+else
+CYGEXE:=
 endif
 
 ifndef ARCH_FLAGS
@@ -226,14 +232,14 @@ $(1)_OBJ=$$(addsuffix .o,$$($(1)_SRC))
 $(1)_OBJ_TEST=$$(addsuffix .o,$$($(1)_SRC_TEST))
 
 ifndef $(1)_NOOPT
-$$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX):\
+$$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX)$(CYGEXE):\
  $$(addprefix $$(OBJ)/,$$($(1)_OBJ))\
  $$($(1)_SLIB)
 	@echo
 	@echo LINK\(optimized\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB)
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
-OPT_PROGS += $$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX)
+OPT_PROGS += $$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX)$(CYGEXE)
 $(1): $$(BIN)/$(1)
 endif
 
@@ -302,14 +308,9 @@ redepend:
 
 depend: $(ALL_DEPENDS)
 
-ifeq ($(ARCH),cygwin)
-CYGEXE=.exe
-else
-CYGEXE=
-endif
 
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
-	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(addsuffix $(CYGEXE), $(OPT_PROGS)) $(BIN_PREFIX)
+	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(OPT_PROGS) $(BIN_PREFIX)
 
 check:	test
 
