@@ -28,7 +28,7 @@ using namespace graehl;
 #define CARMEL_VERSION "3.6"
 
 #ifdef MARCU
-#include <graehl/shared/models.h>
+#include <graehl/carmel/src/models.h>
 char *MarcuArgs[]={
     "marcu-carmel",
     "-IEsriqk",
@@ -569,11 +569,11 @@ main(int argc, char *argv[]){
 
 #ifdef MARCU
     //chain,inputs,filenames,nTarget,nInputs
-    for (i=0,j=nModels;i<nInputs;++i,++j)
+    for (int i=0,j=nModels;i<nInputs;++i,++j)
         filenames[j]=filenames[i];
     chain-=nModels;
     nTarget+=nModels;
-    for (j=0;j<nModels;++j) {
+    for (int j=0;j<nModels;++j) {
         PLACEMENT_NEW (&chain[j]) WFST(Models[j],!flags['K']);
         filenames[j] = "Models.builtin";
     }
