@@ -34,6 +34,17 @@ struct optional_pair //: public std::pair<T1,T2>
         second=s;
         has_second=true;
     }
+    self_type& set(T1 const& f) {
+        first=f;
+        has_second=false;
+        return *this;
+    }
+    self_type &set(T1 const& f,T2 const& s) {
+        first=f;
+        has_second=true;
+        second=s;
+        return *this;
+    }
     template <class F>
     second_type get_second_default(F const& second_from_first) const 
     {
