@@ -86,7 +86,7 @@ inline void test_serialize_type(const T *dummy=0)
     }
 }
 
-BOOST_AUTO_UNIT_TEST( TEST_serialize_memory )
+BOOST_AUTO_TEST_CASE( TEST_serialize_memory )
 {
     test_serialize_type<int>();
     test_serialize_type<std::string>();

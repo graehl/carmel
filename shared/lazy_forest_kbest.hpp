@@ -843,7 +843,7 @@ inline void all_examples(unsigned N=30)
 #endif
 
 # ifdef TEST
-BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
+BOOST_AUTO_TEST_CASE(TEST_lazy_kbest) {
     lazy_forest_kbest_example::all_examples();
     
 }

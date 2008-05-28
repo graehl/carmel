@@ -612,7 +612,7 @@ inline void split_noquote(
 char const* split_strs[]={"",",a","",0};
 char const* seps[]={";",";;",",,","   ","=,",",=",0};
 
-BOOST_AUTO_UNIT_TEST( TEST_io )
+BOOST_AUTO_TEST_CASE( TEST_io )
 {
     using namespace std;
     {

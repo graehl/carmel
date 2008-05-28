@@ -1220,7 +1220,7 @@ struct plus_one_reader {
         return in;
     }
 };
-BOOST_AUTO_UNIT_TEST( test_dynarray )
+BOOST_AUTO_TEST_CASE( test_dynarray )
 {
     using namespace std;
     {

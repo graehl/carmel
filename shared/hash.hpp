@@ -49,7 +49,7 @@ typename H::value_type::second_type *find_second(const H& ht,const K& k)
 
 
 
-BOOST_AUTO_UNIT_TEST( hash)
+BOOST_AUTO_TEST_CASE( hash)
 {
   stdext::hash_map<int,int> hm;
   hm[0]=1;

@@ -475,7 +475,7 @@ void swapbatch_test_do(const char *c) {
 #  include <sstream>
 #  include "os.hpp"
 
-BOOST_AUTO_UNIT_TEST( TEST_SWAPBATCH )
+BOOST_AUTO_TEST_CASE( TEST_SWAPBATCH )
 {
     using namespace std;
     const char *s1="string one\n2\n3 . \n abcdefghijklmopqrstuvwxyz\n4\nend\n\n";

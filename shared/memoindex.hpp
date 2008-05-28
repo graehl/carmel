@@ -86,7 +86,7 @@ struct ExampleF : public MemoFn<int,int> {
         memo=memo_;
   }
 };
-BOOST_AUTO_UNIT_TEST( memoindex )
+BOOST_AUTO_TEST_CASE( memoindex )
 {
   {
   unsigned start=0;

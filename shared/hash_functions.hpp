@@ -443,7 +443,7 @@ void test_pod_hash()
 
 
 
-BOOST_AUTO_UNIT_TEST( TEST_hash_function )
+BOOST_AUTO_TEST_CASE( TEST_hash_function )
 {
     using namespace std;
     using namespace graehl;

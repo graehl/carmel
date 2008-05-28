@@ -28,7 +28,7 @@ bool try_string_into(Str const& str,To &to,bool complete=true)
 template <class Str,class Data> inline
 void string_into(const Str &str,Data &data) 
 {
-    if (!try_string_to(str,data))
+    if (!try_string_into(str,data))
         throw std::runtime_error("Couldn't convert (string_into): "+str);
 }
 

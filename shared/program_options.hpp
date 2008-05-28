@@ -7,6 +7,7 @@
 
 
 #include <boost/program_options.hpp>
+#include <boost/program_options/options_description.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>

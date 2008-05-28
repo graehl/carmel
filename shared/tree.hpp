@@ -1,10 +1,11 @@
 // the usual recursive label+list of children trees
-#ifndef TREE_HPP
-#define TREE_HPP
+#ifndef GRAEHL_SHARED__TREE_HPP
+#define GRAEHL_SHARED__TREE_HPP
 
 #include <iostream>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/genio.h>
+#include <graehl/shared/word_spacer.hpp>
 //#include <vector>
 #include <graehl/shared/dynarray.h>
 #include <algorithm>
@@ -21,208 +22,228 @@ namespace lambda=boost::lambda;
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
+#include <graehl/shared/string_to.hpp>
+
 #endif
 
 
 //template <class L, class A> struct Tree;
 
-// Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.
+// Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.  finish with dealloc_recursive()
 // FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting self_type
 namespace graehl {
 
-template <class L, class Alloc=std::allocator<void *> > struct Tree : private Alloc {
-  typedef Tree self_type;
-  typedef L Label;
-  Label label;
-  typedef rank_type Rank;
-  Rank rank;
-private:
-  //Tree(const self_type &t) : {}
-  self_type **children;
+template <class L, class Alloc=std::allocator<void *> > struct shared_tree : private Alloc {
+    typedef shared_tree self_type;
+    typedef L Label;
+    Label label;
+    typedef rank_type Rank;
+    Rank rank;
+ private:
+    //shared_tree(const self_type &t) : {}
+    self_type **children;
 
-public:
-  template<class T>
-  T &leaf_data() {
+ public:
+    template<class T>
+    T &leaf_data() {
         Assert(rank==0);
         Assert(sizeof(T) <= sizeof(children));
         return *(reinterpret_cast<T*>(&children));
-  }
-  template<class T>
-  const T &leaf_data() const {
+    }
+    template<class T>
+    const T &leaf_data() const {
         return const_cast<self_type *>(this)->leaf_data<T>();
-  }
-/*
-  int &leaf_data_int() {
-        Assert(rank==0);
-        return *(reinterpret_cast<int *>(&children));
-  }
-  void * leaf_data() const {
-        return const_cast<self_type *>(this)->leaf_data();
-  }
-  int leaf_data_int() const {
-        return const_cast<self_type *>(this)->leaf_data();
-  }
-  */
-
-  Rank size() const {
+    }
+    /*
+      int &leaf_data_int() {
+      Assert(rank==0);
+      return *(reinterpret_cast<int *>(&children));
+      }
+      void * leaf_data() const {
+      return const_cast<self_type *>(this)->leaf_data();
+      }
+      int leaf_data_int() const {
+      return const_cast<self_type *>(this)->leaf_data();
+      }
+    */
+    Rank size() const {
         return rank;
-  }
-  Tree() : rank(0) {}
-  explicit Tree (const Label &l) : rank(0),label(l) {  }
-  Tree (const Label &l,Rank n) : label(l) { alloc(n); }
-  explicit Tree (const char *c) {
-        std::istringstream ic(c);ic >> *this;
-  }
-  void alloc(Rank _rank) {
+    }
+    shared_tree() : rank(0) {}
+    explicit shared_tree (const Label &l) : rank(0),label(l) {  }
+    shared_tree (const Label &l,Rank n) : label(l) { alloc(n); }
+    explicit shared_tree (std::string const& s) {
+        std::istringstream ic(s);ic >> *this;
+    }
+    void alloc(Rank _rank) {
         rank=_rank;
 #ifdef TREE_SINGLETON_OPT
         if (rank>1)
 #else
-        if (rank)
+            if (rank)
 #endif
-          children = (self_type **)this->allocate(rank);
-  }
-  Tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
+                children = (self_type **)this->allocate(rank);
+    }
+    template <class to_type>
+    void copy_deep(to_type &to) const 
+    {
+        to.clear();
+        to.label=label;
+        to.alloc(rank);
+        iterator t=to.begin();
+        for (const_iterator i=begin(),e=end();i!=e;++i,++t) {
+            (*i)->copy_deep(*(*t=new to_type));
+        }
+    }
+    
+    shared_tree(Rank _rank,Alloc _alloc=Alloc()) : Alloc(_alloc) {
         alloc(_rank);
-  }
-  void dump_children() {
+    }
+    void dump_children() {
         dealloc();
-  }
-  void create_children(unsigned n) {
+    }
+    void create_children(unsigned n) {
         alloc(n);
-  }
-  void set_rank(unsigned n) {
+    }
+    void set_rank(unsigned n) {
         dealloc();
         alloc(n);
-  }
-  void dealloc() {
+    }
+    void clear() 
+    {
+        dealloc();
+    }
+    void dealloc() {
 #ifdef TREE_SINGLETON_OPT
         if (rank>1)
 #else
-        if (rank)
+            if (rank)
 #endif
-          this->deallocate((void **)children,rank);
+                this->deallocate((void **)children,rank);
         rank=0;
-  }
-  void dealloc_recursive();
+    }
+    void dealloc_recursive();
 
-  ~Tree() {
+    ~shared_tree() {
         dealloc();
-  }
-  // STL container stuff
-  typedef self_type *value_type;
-  typedef value_type *iterator;
+    }
+    // STL container stuff
+    typedef self_type *value_type;
+    typedef value_type *iterator;
 
-  typedef const self_type *const_value_type;
-  typedef const const_value_type *const_iterator;
+    typedef const self_type *const_value_type;
+    typedef const const_value_type *const_iterator;
 
-  value_type & child(Rank i) {
+    value_type & child(Rank i) {
 #ifdef TREE_SINGLETON_OPT
         if (rank == 1) {
-          Assert(i==0);
-          return *(value_type *)children;
+            Assert(i==0);
+            return *(value_type *)children;
         }
 #endif
         return children[i];
-  }
-  value_type & operator [](Rank i) { return child(i); }
+    }
+    value_type & operator [](Rank i) { return child(i); }
 
 
-  iterator begin() {
+    iterator begin() {
 #ifdef TREE_SINGLETON_OPT
         if (rank == 1)
-          return (iterator)&children;
+            return (iterator)&children;
         else
 #endif
-          return children;
-  }
-  iterator end() {
+            return children;
+    }
+    iterator end() {
 #ifdef TREE_SINGLETON_OPT
         if (rank == 1)
-          return ((iterator)&children) + 1;
+            return ((iterator)&children) + 1;
         else
 #endif
-          return children+rank;
-  }
-  const_iterator begin() const {
+            return children+rank;
+    }
+    const_iterator begin() const {
         return const_cast<self_type *>(this)->begin();
-  }
-  const_iterator end() const {
+    }
+    const_iterator end() const {
         return const_cast<self_type *>(this)->end();
-  }
-  template <class T>
-friend size_t tree_count(const T *t);
-  template <class T>
-friend size_t tree_height(const T *t);
+    }
+    template <class T>
+    friend size_t tree_count(const T *t);
+    template <class T>
+    friend size_t tree_height(const T *t);
 
-  //height = maximum length path from root
-  size_t height() const
-{
-  return tree_height(this);
-}
+    //height = maximum length path from root
+    size_t height() const
+    {
+        return tree_height(this);
+    }
 
-        size_t count_nodes() const
-        {
-          return tree_count(this);
+    size_t count_nodes() const
+    {
+        return tree_count(this);
+    }
+    template <class charT, class Traits>
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o,bool lisp_style=true) const
+    {
+        if (!lisp_style || !rank)
+            o << label;
+        if (rank) {
+            o << '(';
+            word_spacer sp;
+            if (lisp_style)
+                o << sp << label;
+            for (const_iterator i=begin(),e=end();i!=e;++i) {
+                o << sp << **i;
+            }
+            o << ')';
         }
-template <class charT, class Traits>
-std::ios_base::iostate print(std::basic_ostream<charT,Traits>& o) const
-  {
-  o << label;
-  if (rank) {
-        o << '(';
-        bool first=true;
-        for (const_iterator i=begin(),e=end();i!=e;++i) {
-          if (first)
-                first = false;
-          else
-                o << ' ';
-          o << **i;
-        }
-        o << ')';
-  }
-  return GENIOGOOD;
-}
-
-    /*
-    template <class charT, class Traits, class Writer>
-    std::ios_base::iostate print_graphviz(std::basic_ostream<charT,Traits>& o,Writer writer, const char *treename="T") const {
-        o << "digraph ";
-        out_quote(o,treename);
-        o << " {\n";
-        print_graphviz_rec(o,writer,0);
-        o << "}\n";
         return GENIOGOOD;
     }
-    template <class charT, class Traits, class Writer>
-    void print_graphviz_rec(std::basic_ostream<charT,Traits>& o,Writer writer,unsigned node_no) const {
-        for (const_iterator i=begin(),e=end();i!=e;++i) {
-            i->print_graphviz_rec(o,writer,++node_no);
-        }
-    }
+
+    /*
+      template <class charT, class Traits, class Writer>
+      std::ios_base::iostate print_graphviz(std::basic_ostream<charT,Traits>& o,Writer writer, const char *treename="T") const {
+      o << "digraph ";
+      out_quote(o,treename);
+      o << " {\n";
+      print_graphviz_rec(o,writer,0);
+      o << "}\n";
+      return GENIOGOOD;
+      }
+      template <class charT, class Traits, class Writer>
+      void print_graphviz_rec(std::basic_ostream<charT,Traits>& o,Writer writer,unsigned node_no) const {
+      for (const_iterator i=begin(),e=end();i!=e;++i) {
+      i->print_graphviz_rec(o,writer,++node_no);
+      }
+      }
     */
-//template <class T, class charT, class Traits>  friend
-  template <class charT, class Traits, class Reader>
-  static self_type *read_tree(std::basic_istream<charT,Traits>& in,Reader r) {
-  self_type *ret = new self_type;
-  std::ios_base::iostate err = std::ios_base::goodbit;
-  if (ret->read(in,r))
-        in.setstate(err);
-  if (!in.good()) {
-        delete_tree(ret);
-        return NULL;
-  }
-  return ret;
 
-  }
+    typedef int style_type;
+    BOOST_STATIC_CONSTANT(style_type,UNKNOWN=0);
+    BOOST_STATIC_CONSTANT(style_type,PAREN_FIRST=1);
+    BOOST_STATIC_CONSTANT(style_type,HEAD_FIRST=2);
+    
+    //template <class T, class charT, class Traits>  friend
+    template <class charT, class Traits, class Reader>
+    static self_type *read_tree(std::basic_istream<charT,Traits>& in,Reader r,style_type style=UNKNOWN) {
+        self_type *ret = new self_type;
+        std::ios_base::iostate err = std::ios_base::goodbit;
+        if (ret->read(in,r,style))
+            in.setstate(err);
+        if (!in.good()) {
+            ret->dealloc_recursive();
+            return NULL;
+        }
+        return ret;
+    }
 
-template <class charT, class Traits>
-  static self_type *read_tree(std::basic_istream<charT,Traits>& in) {
+    template <class charT, class Traits>
+    static self_type *read_tree(std::basic_istream<charT,Traits>& in) {
         return read_tree(in,DefaultReader<Label>());
-  }
+    }
 
-template <class T>
-friend void delete_tree(T *);
+//    template <class T> friend void delete_tree(T *);
 
 #ifdef DEBUG_TREEIO
 #define DBTREEIO(a) DBP(a)
@@ -230,95 +251,160 @@ friend void delete_tree(T *);
 #define DBTREEIO(a)
 #endif
 
-// Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
-template <class charT, class Traits, class Reader>
-std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read)
-// doesn't free old children if any
-{
-  char c;
-  rank=0;
-  dynamic_array<self_type *> in_children;
-  EXPECTI_COMMENT_FIRST(in>>c);
-  if (c == '(') {
-      EXPECTI_COMMENT(deref(read)(in,label));
-  } else {
-      in.unget();
-      EXPECTI_COMMENT_FIRST(deref(read)(in,label));
-      EXPECTI_COMMENT_FIRST(in >> c);
-      if (in.eof()) // since c!='(' before in>>c, can almost not test for this - but don't want to unget() if nothing was read.
-          return GENIOGOOD;
-      if (c!='(') {
-          in.unget();
-          return GENIOGOOD;
-      }
-  } //POST: read a '(' and a label (in either order)
-  DBTREEIO(label);
-  DBTREEIO('(');
-  for(;;) {
-      EXPECTI_COMMENT(in>>c);
-      if (c == ',')
-          EXPECTI_COMMENT(in>>c);
-      if (c==')') {
-          DBTREEIO(')');
-          break;
-      }
-      in.unget();
-      self_type *in_child = read_tree(in,read);
-      if (in_child) {
-          DBTREEIO('!');
-          in_children.push_back(in_child);
-      } else
-          goto fail;
-  }
-  dealloc();
-  alloc((rank_type)in_children.size());
-  //copy(in_children.begin(),in_children.end(),begin());
-  in_children.moveto(begin());
-  return GENIOGOOD;
+    // this method is supposed to recognize two types of trees: one where the initial is (head ....) and the other which is head(...) ... (1 (2 3)) vs. 1(2 3) - note that this is shorthand for (1 ((2) (3))) vs. 1(2() 3()) (leaves have 0 children).  also, comma is allowed a separator as well as space.  this means that labels can't contain '(),' ... also, we don't like 1 (2 3) ... this would parse as the tree 1, not 1(2 3) (i.e. no space between label and '(')
+    // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
+    template <class charT, class Traits, class Reader>
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read,style_type style=UNKNOWN)
+    {
+        char c;
+        rank=0;
+        dynamic_array<self_type *> in_children;
+        EXPECTI_COMMENT_FIRST(in>>c);
+        if (c == '(') {
+            if (style==HEAD_FIRST)
+                return GENIOBAD;
+            style=PAREN_FIRST;
+            EXPECTI_COMMENT_FIRST(deref(read)(in,label));
+            DBTREEIO(label);
+        } else {
+            in.unget();
+            EXPECTI_COMMENT_FIRST(deref(read)(in,label));
+            DBTREEIO(label);
+            if (style==PAREN_FIRST) { // then must be leaf
+                goto good;
+            } else
+                style=HEAD_FIRST;
+            I_COMMENT(in.get(c));
+            // to disambiguate (1 (2) 3 (4)) vs. 1( 2 3(4)) ... should be (1 2 3 4) and not (1 2 (3 4)) ... in other words open paren must follow root label.  but now we allow space by fixing style at root 
+            if (in.eof()) // since c!='(' before in>>c, can almost not test for this - but don't want to unget() if nothing was read.
+                goto good;
+            if (!in)
+                goto fail;
+            if (c!='(') {
+                in.unget();
+                goto good;
+            }
+        } //POST: read a '(' and a label (in either order)
+        DBTREEIO('(');
+        for(;;) {
+            EXPECTI_COMMENT(in>>c);
+            if (c == ',')
+                EXPECTI_COMMENT(in>>c);
+            if (c==')') {
+                DBTREEIO(')');
+                break;
+            }
+            in.unget();
+            self_type *in_child = read_tree(in,read,style);
+            if (in_child) {
+                DBTREEIO('!');
+                in_children.push_back(in_child);
+            } else
+                goto fail;
+        }
+        dealloc();
+        alloc((rank_type)in_children.size());
+        //copy(in_children.begin(),in_children.end(),begin());
+        in_children.moveto(begin());
+        goto good;
 
-fail:
-  for (typename dynamic_array<self_type *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
-      delete_tree(*i);
-  return GENIOBAD;
-}
+    fail:
+        for (typename dynamic_array<self_type *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
+            (*i)->dealloc_recursive();
+        return GENIOBAD;
+    good:
+        DBTREEIO(*this);
+        return GENIOGOOD;
+    }
     TO_OSTREAM_PRINT
 
     template <class charT, class Traits>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in)
-{
-    return read(in,DefaultReader<L>());
-    
-}
+    {
+        return read(in,DefaultReader<L>());    
+    }
 
     FROM_ISTREAM_READ
 };
 
+template <class L, class Alloc=std::allocator<void *> > struct tree : public shared_tree<L,Alloc> {
+    typedef tree self_type;
+    typedef shared_tree<L,Alloc> shared;
 
+    tree()  {}
+    explicit tree(L const& l) : shared(l) {}
+    explicit tree(std::string const& c) : shared(c) {}
+    tree(shared const& o)
+    {
+        o.copy_deep(*this);
+    }
+    tree(self_type const& o)
+    {
+        o.copy_deep(*this);
+    }
+    tree(rank_type rank,Alloc alloc=Alloc()) : shared(rank,alloc) {}
+    tree(L const&l,rank_type r) : shared(l,r) {}
+    ~tree() { clear(); }
+    typedef self_type *value_type;
 
-/*
-template <class charT, class Traits,class L,class A>
-std::basic_istream<charT,Traits>&
-operator >>
- (std::basic_istream<charT,Traits>& is, Tree<L,A> &arg)
-{
-        return gen_extractor(is,arg,DefaultReader<L>());
-}
+    typedef value_type *iterator;
+    typedef const self_type *const_value_type;
+    typedef const const_value_type *const_iterator;
 
-template <class charT, class Traits,class L,class A>
-std::basic_ostream<charT,Traits>&
-operator <<
- (std::basic_ostream<charT,Traits>& os, const Tree<L,A> &arg)
-{
-        return gen_inserter(os,arg);
-}
-*/
+    value_type &child(rank_type i) 
+    {
+        return shared::child(i);
+    }
+    iterator begin()
+    {
+        return (iterator)shared::begin();
+    }
+    iterator end()
+    {
+        return (iterator)shared::end();
+    }
+    const_iterator begin() const 
+    {
+        return (const_iterator)shared::begin();
+    }
+    const_iterator end() const 
+    {
+        return (const_iterator)shared::end();
+    }
+    
+    void clear() 
+    {
+        for (iterator i=begin(),e=end();i!=e;++i)
+            (*i)->clear();        
+        this->dealloc();
+    }
+    
+    TO_OSTREAM_PRINT
+    template <class charT, class Traits, class Reader>
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read)
+    {
+        clear();
+        return shared::read(in,read);
+    }
+    template <class charT, class Traits>
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in)
+    {
+        return read(in,DefaultReader<L>());    
+    }
 
-
+    FROM_ISTREAM_READ
+    
+};
+    
 
 
 
 template <class C>
-void delete_arg(C &c) {
+void delete_arg(C
+#ifndef DEBUG
+                const
+#endif 
+                &c) {
   delete c;
 #ifdef DEBUG
   c=NULL;
@@ -328,32 +414,31 @@ void delete_arg(C &c) {
 template <class T,class F>
 bool tree_visit(T *tree,F func)
 {
-  if (!deref(func).discover(tree))
-     return false;
-  for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
+    if (!deref(func).discover(tree))
+        return false;
+    for (typename T::iterator i=tree->begin(), end=tree->end(); i!=end; ++i)
         if (!tree_visit(*i,func))
-                break;
-  return deref(func).finish(tree);
+            break;
+    return deref(func).finish(tree);
 }
 
 template <class T,class F>
 void tree_leaf_visit(T *tree,F func)
 {
-         if (tree->size()) {
-             for (T *child=tree->begin(), *end=tree->end();child!=end;++child) {
-                 tree_leaf_visit(child,func);
-             }
-         } else {
-           deref(func)(tree);
-         }
-         
+    if (tree->size()) {
+        for (T *child=tree->begin(), *end=tree->end();child!=end;++child) {
+            tree_leaf_visit(child,func);
+        }
+    } else {
+        deref(func)(tree);
+    }
 }
 
 
 template <class Label,class Labeler=DefaultNodeLabeler<Label> >
 struct TreeVizPrinter : public GraphvizPrinter {
     Labeler labeler;
-    typedef Tree<Label> T;
+    typedef shared_tree<Label> T;
     unsigned samerank;
     enum make_not_anon_24 {ANY_ORDER=0,CHILD_ORDER=1,CHILD_SAMERANK=2};
 
@@ -437,17 +522,19 @@ void postorder(const T *tree,F func)
 }
 
 
-template <class T>
-void delete_tree(T *tree)
+template <class L,class A>
+void delete_tree(shared_tree<L,A> *tree)
 {
   Assert(tree);
-  postorder(tree,delete_arg<T *>);
+    tree->dealloc_recursive();
+//  postorder(tree,delete_arg<shared_tree<L,A> *>);
 }
 
 template <class L,class A>
-void Tree<L,A>::dealloc_recursive() {
+void shared_tree<L,A>::dealloc_recursive() {
         for(iterator i=begin(),e=end();i!=e;++i)
-          delete_tree(*i);
+            (*i)->dealloc_recursive();
+            //delete_tree(*i);
         //foreach(begin(),end(),delete_tree<self_type>);
         dealloc();
   }
@@ -493,7 +580,6 @@ bool tree_contains(const T1& a,const T2& b)
 template <class T1,class T2,class P>
 bool tree_contains(const T1& a,const T2& b,P equal)
 {
-
   if ( !equal(a,b) )
         return false;
   // leaves of b can match interior nodes of a
@@ -510,13 +596,13 @@ bool tree_contains(const T1& a,const T2& b,P equal)
 
 
 template <class L,class A>
-inline bool operator !=(const Tree<L,A> &a,const Tree<L,A> &b)
+inline bool operator !=(const shared_tree<L,A> &a,const shared_tree<L,A> &b)
 {
   return !(a==b);
 }
 
 template <class L,class A>
-inline bool operator ==(const Tree<L,A> &a,const Tree<L,A> &b)
+inline bool operator ==(const shared_tree<L,A> &a,const shared_tree<L,A> &b)
 {
   return tree_equal(a,b);
 }
@@ -581,28 +667,28 @@ void emit_postorder(const T *t,O out)
 
 
 template <class L>
-Tree<L> *new_tree(const L &l) {
-  return new Tree<L> (l,0);
+tree<L> *new_tree(const L &l) {
+  return new tree<L> (l,0);
 }
 
 template <class L>
-Tree<L> *new_tree(const L &l, Tree<L> *c1) {
-  Tree<L> *ret = new Tree<L>(l,1);
+tree<L> *new_tree(const L &l, tree<L> *c1) {
+  tree<L> *ret = new tree<L>(l,1);
   (*ret)[0]=c1;
   return ret;
 }
 
 template <class L>
-Tree<L> *new_tree(const L &l, Tree<L> *c1, Tree<L> *c2) {
-  Tree<L> *ret = new Tree<L>(l,2);
+tree<L> *new_tree(const L &l, tree<L> *c1, tree<L> *c2) {
+  tree<L> *ret = new tree<L>(l,2);
   (*ret)[0]=c1;
   (*ret)[1]=c2;
   return ret;
 }
 
 template <class L>
-Tree<L> *new_tree(const L &l, Tree<L> *c1, Tree<L> *c2, Tree<L> *c3) {
-  Tree<L> *ret = new Tree<L>(l,3);
+tree<L> *new_tree(const L &l, tree<L> *c1, tree<L> *c2, tree<L> *c3) {
+  tree<L> *ret = new tree<L>(l,3);
   (*ret)[0]=c1;
   (*ret)[1]=c2;
   (*ret)[2]=c3;
@@ -610,34 +696,38 @@ Tree<L> *new_tree(const L &l, Tree<L> *c1, Tree<L> *c2, Tree<L> *c3) {
 }
 
 template <class L,class charT, class Traits>
-Tree<L> *read_tree(std::basic_istream<charT,Traits>& in)
+tree<L> *read_tree(std::basic_istream<charT,Traits>& in)
 {
-  //return Tree<L>::read_tree(in,DefaultReader<L>());
-  return Tree<L>::read_tree(in);
+    tree<L> *ret = new tree<L>;
+    in >> *ret;
+    return ret;
+  //return tree<L>::read_tree(in,DefaultReader<L>());
+  //return tree<L>::read_tree(in);
 }
 
 #ifdef TEST
 
 template<class T> bool always_equal(const T& a,const T& b) { return true; }
 
-BOOST_AUTO_UNIT_TEST( tree )
+BOOST_AUTO_TEST_CASE( test_tree )
 {
     using namespace std;
-  Tree<int> a,b,*c,*d,*g=new_tree(1),*h;
+  tree<int> a,b,*c,*d,*g=new_tree(1),*h;
   //string sa="%asdf\n1(%asdf\n 2 %asdf\n,%asdf\n3 (4\n ()\n,\t 5,6))";
   string sa="%asdf\n1%asdf\n(%asdf\n 2 %asdf\n,%asdf\n3 (4\n ()\n,\t 5,6))";
   //string sa="1(2 3(4 5 6))";
-  string sb="1(2 3(4 5 6))";
+  string streeprint="1(2 3(4 5 6))";
+  string sb="(1 2 (3 4 5 6))";
   stringstream o;
   istringstream isa(sa);
   isa >> a;
   o << a;
-  BOOST_CHECK(o.str() == sb);
+  BOOST_CHECK_EQUAL(o.str(),sb);
   o >> b;
   ostringstream o2;
   TreePrinter tp(o2);
   tree_visit(&a,boost::ref(tp));
-  BOOST_CHECK(o.str() == o2.str());
+  BOOST_CHECK_EQUAL(streeprint,o2.str());
   c=new_tree(1,
                 new_tree(2),
                 new_tree(3,
@@ -647,44 +737,45 @@ BOOST_AUTO_UNIT_TEST( tree )
   h=read_tree<int>(isb);
   //h=Tree<int>::read_tree(istringstream(sb),DefaultReader<int>());
   BOOST_CHECK(a == a);
-  BOOST_CHECK(a == b);
-  BOOST_CHECK(a == *c);
-  BOOST_CHECK(a == *h);
-  BOOST_CHECK(a.count_nodes()==6);
-  BOOST_CHECK(tree_equal(a,*c,always_equal<Tree<int> >));
-  BOOST_CHECK(tree_contains(a,*c,always_equal<Tree<int> >));
-  BOOST_CHECK(tree_contains(a,*d,always_equal<Tree<int> >));
+  BOOST_CHECK_EQUAL(a,b);
+  BOOST_CHECK_EQUAL(a,*c);
+  BOOST_CHECK_EQUAL(a,*h);
+  BOOST_CHECK_EQUAL(a.count_nodes(),6);
+  BOOST_CHECK(tree_equal(a,*c,always_equal<tree<int> >));
+  BOOST_CHECK(tree_contains(a,*c,always_equal<tree<int> >));
+  BOOST_CHECK(tree_contains(a,*d,always_equal<tree<int> >));
   BOOST_CHECK(tree_contains(a,*d));
   BOOST_CHECK(tree_contains(a,b));
   BOOST_CHECK(!tree_contains(*d,a));
-  Tree<int> e("1(1(1) 1(1,1,1))"),
+  tree<int> e("1(1(1) 1(1,1,1))"),
                 f("1(1(1()),1)");
-  BOOST_CHECK(!tree_contains(a,e,always_equal<Tree<int> >));
-  BOOST_CHECK(tree_contains(e,a,always_equal<Tree<int> >));
+  BOOST_CHECK(!tree_contains(a,e,always_equal<tree<int> >));
+  BOOST_CHECK(tree_contains(e,a,always_equal<tree<int> >));
   BOOST_CHECK(!tree_contains(f,e));
   BOOST_CHECK(tree_contains(e,f));
   BOOST_CHECK(tree_contains(a,*g));
   BOOST_CHECK(e.height()==2);
   BOOST_CHECK(f.height()==2);
-  BOOST_CHECK(a.height()==2);
+  BOOST_CHECK_EQUAL(a.height(),2);
   BOOST_CHECK(g->height()==0);
-  a.dealloc_recursive();
-  b.dealloc_recursive();
-  e.dealloc_recursive();
-  f.dealloc_recursive();
-  delete_tree(c);
-  delete_tree(d);
-  delete_tree(g);
-  delete_tree(h);
-  Tree<int> k("1");
-  Tree<int> l("1()");
+//  delete_tree(c);
+//  delete_tree(d);
+//  delete_tree(g);
+//  delete_tree(h);
+  tree<int> k("1");
+  tree<int> l("1()");
   BOOST_CHECK(tree_equal(k,l));
   BOOST_CHECK(k.rank==0);
   BOOST_CHECK(l.rank==0);
   BOOST_CHECK(l.label==1);
-  k.dealloc_recursive();
-  l.dealloc_recursive();
-
+  string s1="(1 2 (3))";
+  string s2="(1 2 3)";
+  tree<int> t1,t2;
+  string_into(s1,t1);
+  string_into(s2,t2);
+  BOOST_CHECK_EQUAL(s2,to_string(t2));
+  BOOST_CHECK_EQUAL(t1,t2);
+  BOOST_CHECK(tree_equal(t1,t2));
 }
 
 

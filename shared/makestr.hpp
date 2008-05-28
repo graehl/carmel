@@ -31,7 +31,7 @@
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 
-BOOST_AUTO_UNIT_TEST( makestring )
+BOOST_AUTO_TEST_CASE( makestring )
 {
     std::string s,e;
 # line 39

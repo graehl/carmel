@@ -51,7 +51,7 @@ typedef sparse_vector<std::string,float> named_sparse_vector;
 #ifdef TEST
 # include "test.hpp"
 
-BOOST_AUTO_UNIT_TEST( TEST_sparse_vector )
+BOOST_AUTO_TEST_CASE( TEST_sparse_vector )
 {
     named_sparse_vector v1;
     string s="a:1,bc:2,def:0";

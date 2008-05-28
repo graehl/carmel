@@ -661,7 +661,7 @@ void test_safedb_type()
     }
 }
 
-BOOST_AUTO_UNIT_TEST( TEST_safe_db )
+BOOST_AUTO_TEST_CASE( TEST_safe_db )
 {
     test_safedb_type<safe_db<DB_HASH> >();
     test_safedb_type<safe_db<DB_RECNO> >();

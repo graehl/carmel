@@ -225,7 +225,7 @@ IndexedPairCopier<P1,P2,P3> make_indexed_pair_copier(const P1 a,const P2 b,const
 }
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( PROPERTY )
+BOOST_AUTO_TEST_CASE( PROPERTY )
 {
 }
 #endif

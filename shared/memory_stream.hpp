@@ -172,7 +172,7 @@ typedef basic_memory_stream<wchar_t> wmemory_stream;
 
 #ifdef TEST
 # include "array_stream.hpp"
-BOOST_AUTO_UNIT_TEST( TEST_memory_stream )
+BOOST_AUTO_TEST_CASE( TEST_memory_stream )
 {
     const unsigned N=memory_streambuf::DEFAULT_BUFSIZE*2+4;
     char buf[N];

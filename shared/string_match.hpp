@@ -402,7 +402,7 @@ const char *TEST_ends_with[]={
 };
 // NOTE: could use substring but that's more bug-prone ;D
 
-BOOST_AUTO_UNIT_TEST( TEST_FUNCS )
+BOOST_AUTO_TEST_CASE( TEST_FUNCS )
 {
     using namespace std;
     string s1("str1"),emptystr;

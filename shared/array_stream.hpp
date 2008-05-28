@@ -422,7 +422,7 @@ inline void TEST_check_memory_stream(C &o,char *buf,unsigned n)
 
 
 
-BOOST_AUTO_UNIT_TEST( TEST_array_stream )
+BOOST_AUTO_TEST_CASE( TEST_array_stream )
 {
     array_stream i1(tarr1);
     TEST_check_array_stream(i1);

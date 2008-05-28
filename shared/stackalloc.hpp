@@ -129,7 +129,7 @@ struct StackAlloc
 
 # ifdef TEST
 #  include "test.hpp"
-BOOST_AUTO_UNIT_TEST( TEST_STACKALLOC )
+BOOST_AUTO_TEST_CASE( TEST_STACKALLOC )
 {
     const int N=100;
     int a[N];

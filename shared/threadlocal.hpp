@@ -77,7 +77,7 @@ struct SetLocal {
 typedef int Gint;
 static Gint savelocal_n=1;
 
-BOOST_AUTO_UNIT_TEST( threadlocal )
+BOOST_AUTO_TEST_CASE( threadlocal )
 {
   BOOST_CHECK(savelocal_n==1);
   {

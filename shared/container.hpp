@@ -229,7 +229,7 @@ void containertest() {
 
 }
 
-BOOST_AUTO_UNIT_TEST( TEST_CONTAINER )
+BOOST_AUTO_TEST_CASE( TEST_CONTAINER )
 {
   maptest<HashS>();
   maptest<MapS>();

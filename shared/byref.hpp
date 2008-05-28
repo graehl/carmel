@@ -129,7 +129,7 @@ void h(C c) {
 
 
 
-BOOST_AUTO_UNIT_TEST( TEST_byref )
+BOOST_AUTO_TEST_CASE( TEST_byref )
 {
     using namespace byref_test;
   int t=0;

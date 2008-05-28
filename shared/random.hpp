@@ -178,7 +178,7 @@ void randomly_permute(V &vec)
 
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_RANDOM )
+BOOST_AUTO_TEST_CASE( TEST_RANDOM )
 {
     using namespace std;
     const int NREP=10000;

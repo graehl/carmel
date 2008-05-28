@@ -268,7 +268,7 @@ class Alphabet {
     }
 
 #ifdef TEST
-    BOOST_AUTO_UNIT_TEST( TEST_static_itoa )
+    BOOST_AUTO_TEST_CASE( TEST_static_itoa )
     {
         BOOST_CHECK(!strcmp(static_itoa(0),"0"));
         BOOST_CHECK(!strcmp(static_itoa(3),"3"));
