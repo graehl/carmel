@@ -249,7 +249,7 @@ char const* symbol_test_strs[]={"test string","d","el""abc","","e","fall","","e"
 
 
 
-BOOST_AUTO_UNIT_TEST( symbol )
+BOOST_AUTO_TEST_CASE( symbol )
 {
     using namespace graehl;
     using namespace std;

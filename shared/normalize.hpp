@@ -273,7 +273,7 @@ operator <<
 */
               
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_NORMALIZE )
+BOOST_AUTO_TEST_CASE( TEST_NORMALIZE )
 {
     using namespace std;
     using namespace graehl;

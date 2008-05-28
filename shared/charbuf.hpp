@@ -69,7 +69,7 @@ CharBuf g_buf(CHARBUF_INIT_SIZE);
 
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( charbuf )
+BOOST_AUTO_TEST_CASE( charbuf )
 {
   BOOST_CHECK((char_buf())().size() == 0);
   {

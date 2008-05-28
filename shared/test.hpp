@@ -10,7 +10,7 @@
 # define TEST_MAIN
 #endif
 #ifdef TEST_MAIN
-# define BOOST_AUTO_TEST_MAIN
+# define BOOST_TEST_MAIN
 #endif
 
 #ifdef _MSC_VER
@@ -20,15 +20,18 @@
 
 //included/
 //#include <boost/test/unit_test_framework.hpp>
-#include <boost/test/auto_unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
-#include <boost/test/test_tools.hpp>
+#ifdef INCLUDED_TEST
+#include <boost/test/included/unit_test.hpp>
+#else
+#include <boost/test/unit_test.hpp>
+#endif
+//#include <boost/test/floating_point_comparison.hpp>
 
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
 
-#ifdef BOOST_AUTO_TEST_MAIN
+#ifdef BOOST_TEST_MAIN
 #ifdef BOOST_NO_EXCEPTIONS
 #include <cstdlib>
 namespace boost {

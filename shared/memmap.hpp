@@ -343,7 +343,7 @@ public:
 #ifdef TEST
 //#include <stdio.h>
 
-BOOST_AUTO_UNIT_TEST( TEST_MEMMAP )
+BOOST_AUTO_TEST_CASE( TEST_MEMMAP )
 {
     using namespace std;
     mapped_file memmap;

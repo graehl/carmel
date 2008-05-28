@@ -213,7 +213,7 @@ inline void validate(boost::any& v,
 }}
 
 # ifdef TEST
-BOOST_AUTO_UNIT_TEST(TEST_pairlist) {
+BOOST_AUTO_TEST_CASE(TEST_pairlist) {
     using namespace std;
     using namespace boost;
     using namespace graehl;

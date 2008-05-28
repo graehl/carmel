@@ -69,7 +69,7 @@ struct IntOrPointer {
 };
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_INTORPOINTER )
+BOOST_AUTO_TEST_CASE( TEST_INTORPOINTER )
 {
     int i=3,k;
     IntOrPointer<int> p(5);

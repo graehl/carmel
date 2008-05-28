@@ -150,7 +150,7 @@ struct triangular_array : protected Alloc
 
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( triangular_array_test )
+BOOST_AUTO_TEST_CASE( triangular_array_test )
 {
     typedef triangular_array<unsigned> A;
     A m2;

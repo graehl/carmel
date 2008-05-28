@@ -687,7 +687,7 @@ template <class T,class A>
 int a[] = { 1,2,3,4,5,6,7 };
 int a1[] = { 1, 4, 5 };
 int a2[] = {3,4,6,7};
-BOOST_AUTO_UNIT_TEST( test_slist )
+BOOST_AUTO_TEST_CASE( test_slist )
 {
     using namespace graehl;
     typedef slist<int> L;

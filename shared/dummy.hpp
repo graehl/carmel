@@ -1,5 +1,5 @@
-#ifndef DUMMY_HPP
-#define DUMMY_HPP
+#ifndef GRAEHL_SHARED__DUMMY_HPP
+#define GRAEHL_SHARED__DUMMY_HPP
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -20,7 +20,8 @@ const C& dummy<C>::var() {
 }
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_dummy )
+
+BOOST_AUTO_TEST_CASE( TEST_dummy )
 {
   BOOST_CHECK(dummy<int>::var() == 0);
 }

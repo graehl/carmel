@@ -121,7 +121,7 @@ struct argc_argv : private std::stringbuf
 #ifdef TEST
 char const* test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
 
-BOOST_AUTO_UNIT_TEST( TEST_command_line )
+BOOST_AUTO_TEST_CASE( TEST_command_line )
 {
     using namespace std;
     {        

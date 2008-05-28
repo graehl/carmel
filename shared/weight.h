@@ -805,7 +805,7 @@ typedef logweight<WEIGHT_FLOAT_TYPE> Weight;
 
 
 #ifdef TEST
-BOOST_AUTO_UNIT_TEST( TEST_WEIGHT )
+BOOST_AUTO_TEST_CASE( TEST_WEIGHT )
 {
     typedef logweight<float> W;
     W a(1),b("1"),c("e^0"),d("0ln"),e("0log");

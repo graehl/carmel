@@ -251,7 +251,7 @@ public:
 
 #ifdef TEST
 
-BOOST_AUTO_UNIT_TEST( TEST_indexgraph )
+BOOST_AUTO_TEST_CASE( TEST_indexgraph )
 {
   index_graph<char> ig;
   BOOST_CHECK(ig.num_vertices()==1);

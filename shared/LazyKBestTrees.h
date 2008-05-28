@@ -635,7 +635,7 @@ inline void jongraehl_example()
 } //ns
 
 # ifdef TEST
-BOOST_AUTO_UNIT_TEST(TEST_lazy_kbest) {
+BOOST_AUTO_TEST_CASE(TEST_lazy_kbest) {
     using namespace ns_TEST_lazy_kbest;
     jongraehl_example();
     jonmay_cycle();
