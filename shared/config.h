@@ -83,11 +83,10 @@ namespace Config {
 
 #include <graehl/shared/memleak.hpp>
 
-#define TREE_SINGLETON_OPT
-typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
-typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (can't be unsigned type)
+namespace graehl {typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
+}
 
-#define COPYRIGHT_YEAR 2007
+#define COPYRIGHT_YEAR 2008
 
 //do this in Makefile for consistency with boost test lib src that don't include me:
 //#define BOOST_DISABLE_THREADS

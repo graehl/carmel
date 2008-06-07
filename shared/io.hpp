@@ -42,6 +42,27 @@ make_bound_printer(O &o)
     return ret;
 }
 
+template <class W>
+struct bound_writer
+{
+    W const& w;
+    bound_writer(W const& w) : w(w) {}
+    bound_writer(bound_writer const& o) :w(o.w) {}
+    template <class O,class V>
+    void operator()(O &o,V const& v) const
+    {
+        v.print(o,w);
+    }
+};
+
+    
+template <class W>
+bound_writer<W>
+make_bound_writer(W const& w)
+{
+    return bound_writer<W>(w);
+}    
+
 
 template <class T>
 void extract_from_filename(const char *filename,T &to) {
