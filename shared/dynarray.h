@@ -1202,6 +1202,7 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 
 #ifdef TEST
 
+//FIXME: deallocate everything to make running valgrind on tests less painful
 
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };
