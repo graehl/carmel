@@ -40,7 +40,7 @@ namespace lambda=boost::lambda;
 //template <class L, class A> struct Tree;
 
 // Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.  finish with dealloc_recursive()
-// FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting self_type
+// FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting self_type ... that is, shared_tree nodes are coming off usual heap, but we act interested in how we get the child pointer vectors.  really, if you care about one, you probably care about the other.
 namespace graehl {
 
 template <class L, class Alloc=std::allocator<void *> > struct shared_tree : private Alloc {
@@ -317,6 +317,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
         char c;
         rank=0;
         dynamic_array<self_type *> in_children;
+        try {
         EXPECTI_COMMENT_FIRST(in>>c);
         if (c == '(') {
             if (style==HEAD_FIRST)
@@ -365,7 +366,10 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
         //copy(in_children.begin(),in_children.end(),begin());
         in_children.moveto(begin());
         goto good;
-
+        } catch(...) {
+            goto fail;
+        }
+        
     fail:
         for (typename dynamic_array<self_type *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
             (*i)->dealloc_recursive();
@@ -414,6 +418,11 @@ template <class L, class Alloc=std::allocator<void *> > struct tree : public sha
     typedef const self_type *const_value_type;
     typedef const const_value_type *const_iterator;
 
+    void operator=(self_type &o) 
+    {
+        o.clear();
+        this->copy_deep(o);
+    }
 
     value_type &child(rank_type i) 
     {
@@ -444,7 +453,7 @@ template <class L, class Alloc=std::allocator<void *> > struct tree : public sha
     {
         for (iterator i=begin(),e=end();i!=e;++i)
             if (*i)
-                (*i)->clear();        
+                delete *i;
         this->dealloc();
     }
     
@@ -827,6 +836,11 @@ BOOST_AUTO_TEST_CASE( test_tree )
   BOOST_CHECK(f.height()==2);
   BOOST_CHECK_EQUAL(a.height(),2);
   BOOST_CHECK(g->height()==0);
+  delete c;
+  delete d;
+  delete h;
+  delete g;
+  
 //  delete_tree(c);
 //  delete_tree(d);
 //  delete_tree(g);

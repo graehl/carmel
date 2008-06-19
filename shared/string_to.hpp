@@ -29,7 +29,7 @@ template <class Str,class Data> inline
 void string_into(const Str &str,Data &data) 
 {
     if (!try_string_into(str,data))
-        throw std::runtime_error("Couldn't convert (string_into): "+str);
+        throw std::runtime_error(std::string("Couldn't convert (string_into): ")+str);
 }
 
 
