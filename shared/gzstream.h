@@ -42,7 +42,7 @@ namespace graehl {
 
 class gzstreambuf : public std::streambuf {
 private:
-    static const int bufferSize = 47+4096;    // size of data buff
+    static const int bufferSize = 47+(1024*256);    // size of data buff
     // 47 totals 256 bytes under g++ for igzstream at the end.
 
     gzFile           file;               // file handle for compressed file
