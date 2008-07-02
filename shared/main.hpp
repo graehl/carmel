@@ -12,12 +12,6 @@
 
 namespace graehl {
 
-inline void unsync_cout()
-{
-    std::ios::sync_with_stdio(false);
-    std::cin.tie(0);
-}
-
 inline void default_locale()
 {
     std::locale::global(std::locale(""));

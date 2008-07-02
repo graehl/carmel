@@ -53,6 +53,21 @@ typedef T self_type;
 
 namespace graehl {
 
+// faster c++ stream -> OS read/write
+inline void unsync_stdio() 
+{
+    std::ios_base::sync_with_stdio(false);
+}
+
+// also don't coordinate input/output (for stream processing vs. interactive prompt/response)
+inline void unsync_cout()
+{
+    unsync_stdio();
+    std::cin.tie(0);
+}
+
+
+
 template <class I,class O>
 void copy_stream_to(O &o,I&i) 
 {

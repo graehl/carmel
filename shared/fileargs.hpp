@@ -14,6 +14,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/config.hpp>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -95,14 +96,33 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 }    
     
 
+template <std::size_t bufsize=256*1024>
+struct large_streambuf
+{
+    BOOST_STATIC_CONSTANT(std::size_t,size=bufsize);
+    char buf[bufsize];
+    template <class S>
+    large_streambuf(S &s) 
+    {
+        s.rdbuf()->pubsetbuf(buf,size);
+    }
+};
+
+    
+
 template <class Stream>
 struct file_arg : public boost::shared_ptr<Stream>
 {
  private:
+    typedef large_streambuf<> buf_type;
+    typedef boost::shared_ptr<buf_type> buf_p_type;
+    buf_p_type buf;
+    
     bool none;
  public:
     std::string name;
     typedef boost::shared_ptr<Stream> pointer_type;
+    
     typedef file_arg<Stream> self_type;
     
     file_arg() { set_none(); }
@@ -136,6 +156,8 @@ struct file_arg : public boost::shared_ptr<Stream>
             throw_fail(filename," was not of the right stream type");
         }
     }
+    BOOST_STATIC_CONSTANT(std::size_t,bufsize=256*1024);
+    
     // warning: if you call with incompatible filestream type ... crash!
     template <class filestream>
     void set_new(std::string const& filename,std::string const& fail_msg="Couldn't open file")
@@ -143,6 +165,44 @@ struct file_arg : public boost::shared_ptr<Stream>
         std::auto_ptr<filestream> f(new filestream(filename.c_str(),std::ios::binary));
         set_checked(*f,filename,delete_after,fail_msg);
         f.release(); // w/o delete
+    }
+
+    // nearly a copy of set_new, except that apparently you can't open the file first then set buffer:
+    /*
+      Yes --- this was what Jens found. So, for the following code
+
+ ifstream in;
+   char buffer[1<<20];
+   in.rdbuf()->pubsetbuf(buffer, 1<<20);
+   in.open("bb");
+   string str;
+   while(getline(in, str)){   }
+
+the buffer will be set to be 1M. But if I change it to the following code,
+
+ ifstream in("bb");
+   char buffer[1<<20];
+   in.rdbuf()->pubsetbuf(buffer, 1<<20);
+     string str;
+   while(getline(in, str)){   }
+
+the buffer will be back to 8k.
+    */
+
+    template <class filestream>
+    void set_new_buf(std::string const& filename,std::string const& fail_msg="Couldn't open file",bool large_buf=true)
+    {
+        std::auto_ptr<filestream> f(new filestream());
+        set_checked(*f,filename,delete_after,fail_msg);
+        if (large_buf) give_large_buf();
+        const bool read=stream_traits<Stream>::read;
+        f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
+        f.release(); // w/o delete        
+    }
+
+    void give_large_buf() 
+    {
+        buf.reset(new buf_type(*pointer()));
     }
     
     enum { ALLOW_NULL=1,NO_NULL=0 };
@@ -166,29 +226,33 @@ struct file_arg : public boost::shared_ptr<Stream>
     
     // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
     void set(std::string const& s,
-             bool null_allowed=ALLOW_NULL)
+             bool null_allowed=ALLOW_NULL, bool large_buf=true
+        )
     {
         const bool read=stream_traits<Stream>::read;
         const bool file_only=stream_traits<Stream>::file_only;
         if (s.empty()) {
             throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");            
         } if (!file_only && s == "-") {
-            if (read)
+            if (read) {
                 set_checked(GRAEHL__DEFAULT_IN,s);
-            else
+                if (large_buf) give_large_buf();
+            } else {
                 set_checked(GRAEHL__DEFAULT_OUT,s);
-        } else if (!file_only && !read && s== "-2")
+                // I don't recommend making a huge output buffer by default, because people are used to watching output
+            }            
+        } else if (!file_only && !read && s== "-2") {
             set_checked(GRAEHL__DEFAULT_LOG,s);
-        else if (null_allowed && s == "-0") {
+        } else if (null_allowed && s == "-0") {
             set_none();
             return;
         } else if (match_end(s.begin(),s.end(),gz_ext,gz_ext+sizeof(gz_ext)-1)) {
             set_gzfile(s);
         } else {
             if (read)
-                set_new<std::ifstream>(s,"Couldn't open input file");
+                set_new_buf<std::ifstream>(s,"Couldn't open input file",large_buf);
             else
-                set_new<std::ofstream>(s,"Couldn't create output file");
+                set_new_buf<std::ofstream>(s,"Couldn't create output file",large_buf);
         }
         none=false;
     }
@@ -198,7 +262,7 @@ struct file_arg : public boost::shared_ptr<Stream>
     
     template <class Stream2>
     file_arg(file_arg<Stream2> const& o) :
-        pointer_type(o.pointer()),name(o.name) {}    
+        pointer_type(o.pointer()),name(o.name),buf(o.buf) {}    
 
     void set_none()
     { none=true;set_null_file_arg(pointer());name="-0"; }
