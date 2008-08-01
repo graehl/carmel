@@ -293,6 +293,7 @@ static const char COMMENT_CHAR='%';
 //FIXME: need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
+    State::arc_adder arc_add(states);
     StringKey finalName;
     try {        
         named_states=1;
@@ -399,7 +400,8 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                     // expecting: [ '!' [groupid]]
 #undef GETBUF
 //                    DBP5(stateNumber,destState,inL,outL,weight);                    
-                    states[stateNumber].addArc(FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
+//                    states[stateNumber].addArc(FSTArc(inL, outL, destState, weight));
+                    arc_add(stateNumber,FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
                     GETC;
                     if ( c == '!' ) { // lock weight
                         FSTArc *lastAdded = &states[stateNumber].arcs.top();

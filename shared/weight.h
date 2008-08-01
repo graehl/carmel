@@ -57,7 +57,10 @@ namespace graehl {
 struct zero_weight {};
 struct one_weight {};
 struct inf_weight {};
-    
+struct neglog10_weight {};
+struct negln_weight {};
+struct log10_weight {};
+struct ln_weight {};
     
 
 static const double HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
@@ -207,6 +210,15 @@ struct logweight {                 // capable of representing nonnegative reals
     Real getLn() const {
         return weight;
     }
+    Real getNegLn() const 
+    {
+        return -weight;
+    }
+    Real getNegLog10() const 
+    {
+        static const Real neg_oo_ln10 = -1./log(10.f);
+        return neg_oo_ln10 * weight;
+    }
     Real getLog10() const {
         static const Real oo_ln10 = 1./log(10.f);
         return oo_ln10 * weight;
@@ -277,6 +289,10 @@ struct logweight {                 // capable of representing nonnegative reals
         static const Real ln10 = log(10.f);
         weight=w*ln10;
     }
+    void setNegLog10(Real w) {
+        static const Real negln10 = -log(10.f);
+        weight=w*negln10;
+    }
     static self_type ZERO() {
         return self_type();
     }
@@ -287,6 +303,10 @@ struct logweight {                 // capable of representing nonnegative reals
     logweight(zero_weight t) {setZero();}
     logweight(one_weight t) {setOne(); }
     logweight(inf_weight t) {setInfinity(); }
+    logweight(Real w,ln_weight t) {setLn(w);}
+    logweight(Real w,negln_weight t) {setLn(-w);}
+    logweight(Real w,log10_weight t) {setLog10(w);}
+    logweight(Real w,neglog10_weight t) {setNegLog10(w);}
     logweight(bool,bool) { setInfinity(); }
     logweight(Real log_weight,bool dummy) : weight(log_weight) {}
     template <class Real2>

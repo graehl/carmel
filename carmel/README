@@ -7,6 +7,14 @@
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
 
+note: carmel/src/config.hpp currently has USE_OPENFST defined.  to build, either
+undefine it, or extract http://www.openfst.org so that the directory "fst"
+(containing "fst/lib") is a sibling of "graehl" (or ensure that "fst" is in your
+include path)
+
+openfst is used to allow determinization/minimization
+
+
 Carmel Version 3.2:
 
 This version of carmel is released on 2007-06-20. For changes and

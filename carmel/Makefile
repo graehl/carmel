@@ -21,7 +21,7 @@ INC=$(SRC) $(SHARED)
 LIB = 
 CPP_EXT=cc
 
-#LDFLAGS = -lm
+LDFLAGS = -lpthread
 BASECXXFLAGS= -ffast-math
 CXXFLAGS= $(BASECXXFLAGS) -O2
 #FIXME: crashes with -O3 on kbest output
