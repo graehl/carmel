@@ -76,6 +76,12 @@ class slist_shared :
     {
         self_type *list;
         Node **ptail;
+        back_insert_iterator() : list(0) {}
+        bool null() const 
+        {
+            return list==0;
+        }
+        
         explicit back_insert_iterator(self_type &l) : list(&l)
         {
             for (ptail=&l.head_node(); *ptail; ptail=&(*ptail)->next ) ;
@@ -526,6 +532,15 @@ class slist_shared :
         } else
             add_keeping_front_best(construct(t),better);
     }
+    // returns end() if empty, otherwise last before end()
+    iterator just_before_end() const 
+    {
+        if (!head)
+            return iterator(head);
+        Node *p=head;
+        for (;p->next;p=p->next) ;
+        return iterator(p);
+    }
     
  private:
     template <class Better_than_pred>
@@ -603,8 +618,12 @@ class slist_shared :
         dealloc(tmp);
     }
 
-    iterator insert_after (iterator& x, const T& y)
+    iterator insert_after (iterator const& x, const T& y)
     {
+        if (x.m_rep==NULL) {
+            push_front(y);
+            return iterator(head);
+        }        
         Node* tmp = alloc();
         new(tmp) Node(y,x.m_rep->next);
         x.m_rep->next = tmp;

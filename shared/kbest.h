@@ -313,7 +313,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
                 delete[] pathQueue;
                 delete[] retired;
             } else {
-                Config::log() << "No best paths from start to finish, so no kbest.\n";
+//                Config::log() << "no more best paths exist.\n";
             }// end of if (pathGraph[0])
             GraphHeap::freeAll(); // FIXME: global
             freeAllSidetracks(); // FIXME: global

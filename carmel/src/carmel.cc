@@ -71,7 +71,7 @@ static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
 }
 
 template <class T>
-void readParam(T *t, char *from, char sw) {
+void readParam(T *t, char const*from, char sw) {
     istringstream is(from);
     is >> *t;
     if ( is.fail() ) {
@@ -230,6 +230,95 @@ void printPath(bool *flags,const List<PathArc> *pli) {
 void usageHelp(void);
 void WFSTformatHelp(void);
 
+typedef std::map<std::string,double> long_opts_t;
+
+struct carmel_main 
+{
+    bool *flags;
+    long_opts_t &long_opts;
+    Weight prune_wt;
+    WFST::NormalizeMethod norm_method;
+    Weight keep_path_ratio;
+    int max_states;
+    
+    carmel_main(bool *flags,long_opts_t &long_opts)
+        :flags(flags),long_opts(long_opts)
+    {
+        norm_method.group=WFST::CONDITIONAL;
+        keep_path_ratio.setInfinity();
+        max_states=WFST::UNLIMITED;
+    }
+
+    bool prunePath() const 
+    {
+        return flags['w'] || flags['z'];
+    }
+
+    void normalize(WFST *result)
+    {
+        result->normalize(norm_method);
+    }
+    
+    void post_train_normalize(WFST *result)
+    {
+        if (flags['t']&&(flags['p'] || prunePath()))
+            result->normalize(norm_method);
+        
+    }
+    
+    
+    void prune(WFST *result) 
+    {
+        if ( flags['p'] )
+            result->pruneArcs(prune_wt);
+        if ( prunePath() )
+            result->prunePaths(max_states,keep_path_ratio);
+            
+    }
+    void minimize(WFST *result) 
+    {
+        if ( flags['C'] )
+            result->consolidateArcs();
+        if ( !flags['d'] )
+            result->reduce();
+    }
+    
+    void openfst_minimize(WFST *result) 
+    {
+#ifdef USE_OPENFST
+        bool det=long_opts["minimize-determinize"]
+            ,con=!long_opts["minimize-no-connect"]
+            ,inv=long_opts["minimize-inverted"]
+            ,rmeps=long_opts["minimize-rmepsilon"]
+            ;
+        
+        if (!flags['q'])
+            Config::log() << " openfst " <<
+                (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
+        bool worked=false;
+        if (long_opts["minimize-sum"])
+            worked=result->minimize_openfst<fst::VectorFst<fst::LogArc> >(det,rmeps,true,con,inv);
+        else
+            worked=result->minimize_openfst<fst::StdVectorFst>(det,rmeps,true,con,inv);
+        if (!worked)
+            Config::log() << " (FST not input-determinized, try --openfst-minimize-determinize, which may not terminate)";
+        if (!flags['q']) Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";
+#else
+#endif 
+    }
+    void openfst_roundtrip(WFST *result)
+    {
+#ifdef USE_OPENFST
+            if (!flags['q']) Config::log() << "performing (meaningless test) carmel->openfst->carmel round trip\n";
+            result->roundtrip_openfst<fst::StdVectorFst>();
+#endif 
+    }
+    
+    
+};
+
+
+
 #ifndef TEST
 int
 #ifdef _MSC_VER
@@ -267,17 +356,11 @@ main(int argc, char *argv[]){
     bool converge_pp_flag = false;
     int convergeFlag = 0;
     Weight smoothFloor;
-    Weight prune;
     Weight prod_prob=1;
     int n_pairs=0;
-    WFST::NormalizeMethod norm_method;
-    norm_method.group=WFST::CONDITIONAL;
     int pruneFlag = 0;
     int floorFlag = 0;
     bool seedFlag = false;
-    int max_states = WFST::UNLIMITED;
-    Weight keep_path_ratio;
-    keep_path_ratio.setInfinity();
     bool wrFlag = false;
     bool msFlag = false;
     bool learning_rate_growth_flag = false;
@@ -295,11 +378,28 @@ main(int argc, char *argv[]){
     bool mean_field_oneshot_flag=false;
     bool exponent_flag=false;
     double exponent=1;
+    long_opts_t long_opts;
+
+    carmel_main cm(flags,long_opts);
     
     std::ios_base::sync_with_stdio(false);
 
     for ( i = 1 ; i < argc ; ++i ) {
         if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag && !mean_field_oneshot_flag && !exponent_flag)
+            if (pc[1]=='-') {
+                // long option
+                char * s=pc+2;
+                char  *e=s;
+                double v=1;
+                for(;*e;++e)
+                    if (*e== '=' ) {
+                        readParam(&v,e+1,'-');
+                        break;
+                    }
+                std::string key(pc+2,e);
+                long_opts[key]=v;
+                cerr << "option " << key << " = " << v << endl;
+            } else {        
             while ( *(++pc) ) {
                 if ( *pc == 'k' )
                     kPaths = -1;
@@ -336,13 +436,15 @@ main(int argc, char *argv[]){
                 else if ( *pc == '+' )
                     mean_field_oneshot_flag=true;
                 else if ( *pc == 'j' )
-                    norm_method.group = WFST::JOINT;
+                    cm.norm_method.group = WFST::JOINT;
                 else if ( *pc == 'u' )
-                    norm_method.group = WFST::NONE;
+                    cm.norm_method.group = WFST::NONE;
                 else if ( *pc == '=' )
                     exponent_flag=true;
                 flags[*pc] = 1;
             }
+            }
+        
         else
             if (exponent_flag) {
                 exponent_flag=false;
@@ -365,14 +467,14 @@ main(int argc, char *argv[]){
                 seedFlag=false;
                 readParam(&seed,argv[i],'R');
             } else if ( wrFlag ) {
-                readParam(&keep_path_ratio,argv[i],'w');
-                if (keep_path_ratio < 1)
-                    keep_path_ratio = 1;
+                readParam(&cm.keep_path_ratio,argv[i],'w');
+                if (cm.keep_path_ratio < 1)
+                    cm.keep_path_ratio = 1;
                 wrFlag=false;
             } else if ( msFlag ) {
-                readParam(&max_states,argv[i],'z');
-                if ( max_states < 1 )
-                    max_states = 1;
+                readParam(&cm.max_states,argv[i],'z');
+                if ( cm.max_states < 1 )
+                    cm.max_states = 1;
                 msFlag=false;
             } else if ( kPaths == -1 ) {
                 readParam(&kPaths,argv[i],'k');
@@ -402,7 +504,7 @@ main(int argc, char *argv[]){
                 readParam(&smoothFloor,argv[i],'f');
             } else if ( pruneFlag ) {
                 pruneFlag = 0;
-                readParam(&prune,argv[i],'p');
+                readParam(&cm.prune_wt,argv[i],'p');
             } else if ( fstout == NULL ) {
                 fstout = NEW ofstream(argv[i]);
                 setOutputFormat(flags,fstout);
@@ -412,8 +514,8 @@ main(int argc, char *argv[]){
                 }
             } else if (mean_field_oneshot_flag) {
                 mean_field_oneshot_flag=0;
-                norm_method.scale.linear=false;
-                readParam(&norm_method.scale.alpha,argv[i],'+');
+                cm.norm_method.scale.linear=false;
+                readParam(&cm.norm_method.scale.alpha,argv[i],'+');
             } else {
                 parm[nParms++] = argv[i];
             }
@@ -616,32 +718,20 @@ main(int argc, char *argv[]){
             }
         }
 
-#define PRUNE do {                                              \
-            if ( flags['p'] )                                   \
-                result->pruneArcs(prune);                       \
-            if ( prunePath )                                    \
-                result->prunePaths(max_states,keep_path_ratio); \
-        } while(0)
-
-#define MINIMIZE do {                           \
-            if ( flags['C'] )                   \
-                result->consolidateArcs();      \
-            if ( !flags['d'] )                  \
-                result->reduce();               \
-        } while(0)
 
         bool r=flags['r'];
         result = (r ? &chain[nChain-1] :&chain[0]);
         bool first=true;
-        MINIMIZE;
+        cm.minimize(result);
         if (nInputs < 2)
-            PRUNE;
+            cm.prune(result);
 #ifdef  DEBUGCOMPOSE
         Config::debug() << "\nStarting composition chain: result is chain[" << (int)(result-chain) <<"]\n";
 #endif
 
+        unsigned n_compositions=0;
         for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) { // composition loop
-
+            ++n_compositions;
 #ifdef  DEBUGCOMPOSE
             Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
@@ -691,15 +781,17 @@ main(int argc, char *argv[]){
                 goto nextInput;
             }
             bool finalcompose = i == (r ? 0 : nChain-1);
-            MINIMIZE;
+            cm.minimize(result);
             if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
                 Config::log()  << " reduce-> " << result->size() << "/" << result->numArcs();
             if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
                 q_states=result->size();
                 q_arcs=result->numArcs();
-                PRUNE;
+                cm.prune(result);
                 if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
                     Config::log()  << " prune-> " << result->size() << "/" << result->numArcs();
+                if (long_opts["minimize-compositions"]>=n_compositions || long_opts["minimize-all-compositions"])
+                    cm.openfst_minimize(result);
             }
             if (!flags['q'])
                 Config::log() << ")";
@@ -711,12 +803,15 @@ main(int argc, char *argv[]){
         Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
 
+        if (long_opts["openfst-roundtrip"]) {
+            cm.openfst_roundtrip(result);
+        }
         if ( flags['v'] )
             result->invert();
         if ( flags['1'] )
             result->randomScale();
         if ( flags['n'] )
-            result->normalize(norm_method);
+            cm.normalize(result);
         if ( flags['A'] ) {
             Assert(weightSource);
             result->assignWeights(*weightSource);
@@ -791,11 +886,9 @@ main(int argc, char *argv[]){
                 } else {
                     corpus.set_null();
                 }
-                result->train(corpus,norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
+                result->train(corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
             } else if ( nGenerate > 0 ) {
-                MINIMIZE;
-                //        if ( !flags['n'] )
-                //        result->normalize(norm_method); // normalization is done locally when generating random paths
+                cm.minimize(result);
                 if ( maxGenArcs == 0 )
                     maxGenArcs = DEFAULT_MAX_GEN_ARCS;
                 if ( flags['G'] ) {
@@ -839,13 +932,12 @@ main(int argc, char *argv[]){
 
 
             if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
-                PRUNE;
-                if ( flags['t'] )
-                    if (flags['p'] || prunePath) {
-                        result->normalize(norm_method);
-                    }
-                MINIMIZE;
-
+                cm.prune(result);                
+                cm.post_train_normalize(result);
+                cm.minimize(result);
+                if (long_opts["minimize"])
+                    cm.openfst_minimize(result);
+                
                 if ( exponent != 1.0) {
                     result->raisePower(exponent);
                 }
@@ -1032,8 +1124,33 @@ void usageHelp(void)
     cout << "\n\t-H\tOne arc per line (by default one state and all its arcs per line)";
     cout << "\n\t-J\tDon't omit output=input or Weight=1";
 
+#ifdef USE_OPENFST
+    cout << "--minimize-compositions=N : det/min after each of the first N compositions"
+        "\n"
+        "--minimize-all-compositions : the same, but for N=infinity"
+        "\n"
+        "--minimize : minimize the final result before printing"
+        "\n"
+        "--minimize-determinize : determinize before minimize - necessary if transducer"
+        "isn't already deterministic.  if this fails, carmel will abort.  without this"
+        "option, carmel will detect nondeterminstic transducers and skip minimization"
+        "\n"
+        "--minimize-no-connect : skip the removal of unconnected states after"
+        "minimization (not recommended)"
+        "\n"
+        "--minimize-inverted : use this if your transducer is output deterministic, and"
+        "not input deterministic.  inverts, minimizes, then inverts back"
+        "\n"
+        "--minimize-rmepsilon : use to get rid of *e*/*e* (both input and output epsilon)"
+        "arcs prior to minimization.  necessary if you have any state with two outgoing"
+        "epsilon arcs"
+        "\n"
+        ;    
+#endif 
+
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
+
 }
 
 void WFSTformatHelp(void)

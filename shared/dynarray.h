@@ -424,7 +424,6 @@ public:
     void uninit_copy_from(const T* b,const T* e) {
         dynarray_assert(e-b == this->capacity());
         std::uninitialized_copy(b,e,this->begin());
-        //memcpy(begin(),b,e-b);
     }
     fixed_array(T const& t,std::size_t sp) : Super(sp) 
     {
@@ -521,7 +520,6 @@ public:
     dynamic_array(const dynamic_array &a) : array<T,Alloc>(a.size()) {
 //      unsigned sz=a.size();
         //alloc(sz);
-//      memcpy(this->vec,a.vec,sizeof(T)*sz);
         std::uninitialized_copy(a.begin(),a.end(),this->begin());
         endv=this->endspace;
         dynarray_assert(this->invariant());
@@ -788,7 +786,7 @@ protected:
     void construct_n_more(unsigned n) 
     {
         Assert(endv+n <= this->endspace);
-        while (--n)
+        while (n--)
             new (endv++) T();
     }
 
@@ -798,6 +796,7 @@ protected:
         dynarray_assert(new_sz > size());
         realloc_up(new_sz);
         construct_n_more(new_sz-sz);
+        Assert(size()==new_sz);
     }
     
     void realloc_up(unsigned int new_cap) {
@@ -829,6 +828,7 @@ public:
         if (sz==newSz)
             return;
         resize_up(newSz);
+        assert(size()==newSz);
     }
     //iterator_tags<Input> == random_access_iterator_tag
     template <class Input>

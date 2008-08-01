@@ -2,6 +2,7 @@
 #include <graehl/carmel/src/compose.h>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/array.hpp>
+#include <cstring>
 
 namespace graehl {
 
@@ -9,19 +10,70 @@ int WFST::indexThreshold = 12;
 unsigned int TrioKey::aMax = 0;
 unsigned int TrioKey::bMax = 0;
 
+
+//FIXME: use stringstream so there are no artifical name length limits
 struct TrioNamer {
-    char *buf;
+    char *buf,*buf_escape;
     const WFST &a;
     const WFST &b;
     char *limit;
-    TrioNamer(char *buf_,unsigned capacity,const WFST &a_,const WFST &b_) : buf(buf_),a(a_),b(b_) {
+    BOOST_STATIC_CONSTANT(unsigned,n_char=1 << (8 * sizeof(char)));
+    BOOST_STATIC_CONSTANT(char,escape='\\');
+    bool special[n_char];
+    bool needs_escape;
+    
+    TrioNamer(unsigned capacity,const WFST &a_,const WFST &b_) : a(a_),b(b_) {
+        buf=(char*)::operator new(capacity);
+        buf_escape=(char*)::operator new(2*capacity+3);
         limit=buf+capacity-6; // shoudl be 4: end of string, | <filter-state> |.  but 6 to be safe.
         Assert(limit>buf);
+        std::memset((char*)special,0,sizeof(bool)*n_char);
+        special[escape]=special[' ']=special['(']=special[')']=1;
+        needs_escape=false;
     }
+    ~TrioNamer() 
+    {
+        ::operator delete(buf);
+        ::operator delete(buf_escape);
+    }
+
+    bool should_quote() const
+    {
+        if (buf[0]=='"')
+            return true;
+        for (char *p=buf;*p;++p) {
+            if (*p=='(' || *p==')' || *p==' ') //*p=='\n' || *p=='\t'
+                return true;
+        }
+        return false;
+    }
+    
+    char const* finish() 
+    {
+//        if (needs_escape) {
+        if (should_quote()) {
+            needs_escape=false;
+            char *o=buf_escape;
+            *o++='"';
+            for (char *p=buf;*p;++p) {
+                if (*p=='"' || *p==escape)
+                    *o++=escape;
+                *o++=*p;
+            }
+            *o++='"';
+            *o=0;
+            return buf_escape;
+        }
+        return buf;
+    }
+    
     void append_safe(char *&p,char const* str) 
     {
-        while ( *str && p<limit )
-            *p++ = *str++;
+        for (; *str && p<limit;++str ) {
+            if (special[*p++ = *str])
+                needs_escape=true;
+        }
+        
         if ( *str )
 #define STATENAME_TOO_LONG_ERROR_TEXT(x)  "state name too long - exceeded " #x
             throw std::runtime_error(STATENAME_TOO_LONG_ERROR_TEXT(MAX_STATENAME_LEN));
@@ -35,7 +87,7 @@ struct TrioNamer {
         *p++ = '|';
         append_safe(p,b.stateName(bState));
         *p = 0;
-        return buf;
+        return finish();
     }
     char const* make_mediate(unsigned astate,unsigned bstate,int middle_letter) 
     {
@@ -47,7 +99,7 @@ struct TrioNamer {
         *p++='>';
         append_safe(p,a.stateName(astate));
         *p = 0;
-        return buf;
+        return finish();
     }
     
 };
@@ -95,8 +147,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     int *revMap = NEW int[b.in->size()];
     Assert(a.out->verify());
     Assert(b.in->verify());
-    char buf[MAX_STATENAME_LEN+1];
-    TrioNamer namer(buf,MAX_STATENAME_LEN+1,a,b);
+    TrioNamer namer(MAX_STATENAME_LEN+1,a,b);
     a.out->mapTo(*b.in, map);     // find matching symbols in interfacing alphabet
     b.in->mapTo(*a.out, revMap);
     Assert(map[0]==0);
@@ -124,8 +175,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
     push_back(states);
     if ( namedStates ) {
         stateNames.clear();
-        namer.make(0,0,0);
-        stateNames.add(buf,0);
+        stateNames.add(namer.make(0,0,0),0);
         named_states=true;
     } else {
         named_states=false;

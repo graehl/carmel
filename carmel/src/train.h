@@ -8,6 +8,7 @@
 #include <graehl/shared/weight.h>
 #include <graehl/shared/list.h>
 #include <graehl/shared/dynarray.h>
+#include <graehl/shared/array.hpp>
 #include <graehl/shared/arc.h>
 #include <iostream>
 
@@ -49,6 +50,19 @@ namespace graehl {
 
 struct State {
     typedef List<FSTArc> Arcs;
+
+    // note: loses tie groups.
+    // openfst.org MutableFst<LogArc>, (or StdArc) eg StdVectorFst<StdArc>
+    template <class Fst>
+    void to_openfst(Fst &fst,unsigned source) const
+    {
+        typedef typename Fst::Arc A;
+        typedef typename A::Weight W;
+        typedef typename A::StateId I;
+        for ( Arcs::const_iterator a=arcs.begin(),end=arcs.end() ; a != end ; ++a ) {
+            fst.AddArc(source,A(a->in,a->out,W(a->weight.getNegLog10()),a->dest));
+        }
+    }
     
     Arcs arcs;
     int size;
@@ -150,7 +164,36 @@ struct State {
         hitcount = 0;
 #endif
     }
-  
+
+    // don't pass by value, expensive
+    struct arc_adder
+    {
+        typedef Arcs::val_iterator I;
+//        typedef Arcs::back_insert_iterator I;
+//        I b;
+        typedef dynamic_array<State> StateVector;
+        StateVector &states; // only safe because we *know* that only shallow copies are made in moving lists around
+        dynamic_array<I> bi; 
+        arc_adder(StateVector &states) : states(states)
+                                       ,bi(states.size())
+        {}
+        void operator()(unsigned i,FSTArc const& arc) 
+        {
+//            states[i].addArc(arc); return;
+            State &s=states[i];
+            I &b=bi.at_grow(i);
+#if 0
+            if (b.null())
+                b=s.arcs.back_inserter();
+            *b++=arc;
+#else
+            b=s.arcs.insert_after(b,arc);
+#endif 
+            ++s.size;
+        }
+    };
+    
+        
     FSTArc & addArc(const FSTArc &arc)
     {
         arcs.push(arc);
@@ -165,6 +208,7 @@ struct State {
 #endif
         return arcs.top();
     }
+    
     void reduce() {		// consolidate all duplicate arcs
         flush();
         HashTable<UnArc, Weight *> hWeights;

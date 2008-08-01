@@ -2,7 +2,7 @@
 #define CARMEL_FST_H
 
 
-
+#include <graehl/carmel/src/config.hpp>
 #include <vector>
 #include <cstring>
 #include <cstdlib>
@@ -23,6 +23,8 @@
 #include <boost/config.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/mean_field_scale.hpp>
+
+#include <graehl/shared/debugprint.hpp>
 
 namespace graehl {
 
@@ -69,6 +71,155 @@ class WFST {
     }
     int getStateIndex(const char *buf); // creates the state according to named_states, returns -1 on failure
  public:
+    // openfst MutableFst<LogArc> or <StdArc>, eg StdVectorFst
+    template <class Fst>
+    void to_openfst(Fst &fst) const
+    {
+        typedef typename Fst::Arc A;
+        typedef typename A::Weight W;
+        typedef typename A::StateId I;
+        fst.DeleteStates();
+        for (unsigned i=0,e=numStates();i!=e;++i) {
+            I s=fst.AddState();
+            assert(s==i);
+            states[i].to_openfst(fst,i);
+        }
+        fst.SetStart(0);
+        fst.SetFinal(final,W::One());
+    }
+    template <class FstWeight>
+    Weight to_weight(FstWeight const& w) 
+    {
+        return Weight(w.Value(),neglog10_weight());
+    }
+    
+#ifdef USE_OPENFST
+    // here we depend on ArcIterator directly
+    // openfst ExpandedFst<LogArc>
+    template <class Fst>
+    void from_openfst(Fst &fst)
+    {
+        typedef typename Fst::Arc A;
+        typedef typename A::Weight W;
+        typedef typename A::StateId I;
+        typedef fst::ArcIterator<Fst> AI;
+        
+        const W zero=W::Zero();
+        const W one=W::One();
+        
+        unsigned n_final=0;
+        unsigned max_final=0;
+        unsigned o_n=fst.NumStates();
+        for (unsigned i=0;i!=o_n;++i) {
+            if (zero != fst.Final(i)) {
+                ++n_final;
+                DBP2(i,fst.Final(i));
+                max_final=i;
+            }
+        }
+        if (n_final==0) {
+            clear();
+            return;
+        }
+        bool need_extra_final=(n_final>1 || fst.Final(max_final)!=one); // todo: if final is in no cycles, make all arcs entering final bear the final cost if not==1
+
+        unsigned ns=o_n+(need_extra_final?1:0);
+        unNameStates();
+        states.clear();
+        states.resize(ns);
+//        DBP4(states.size(),ns,o_n,need_extra_final);
+        State::arc_adder arc_add(states);
+        
+        unsigned o2s[o_n]; //FIXME: does an expandedfst always have ids [0...numstates)? 
+        unsigned s=0,i=0;
+        unsigned o_start=fst.Start();
+
+        //... precomputing may save time but we're really just doing i==start?0:(i<start?i+1:i)
+        for (unsigned o=0;o<o_n;++o) {
+            o2s[o]=
+                (o < o_start) ? o+1 : o;
+        }
+        o2s[o_start]=0;
+
+        // actually iterate over the arcs for each state, translating ids by our constraint that start index must be 0
+        
+        for (unsigned o=0;o<o_n;++o) {
+            for (AI ai(fst,o);!ai.Done();ai.Next()) {
+                A const&arc=ai.Value();
+                const FSTArc a(arc.ilabel,arc.olabel,o2s[arc.nextstate],to_weight(arc.weight));
+//                DBP5(o,o2s[o],arc.nextstate,o2s[arc.nextstate],a);
+                arc_add(o2s[o],a);
+            }
+        }
+
+        // set final status, adding a state and arcs if necessary (carmel has no final state weights)
+        if (!need_extra_final) { 
+            final=max_final;
+            Assert(final<numStates());
+        } else {
+            final=numStates()-1;
+            for (unsigned i=0;i!=o_n;++i) {
+                W fw=fst.Final(i);
+                if (zero != fw) {
+                    states[i].addArc(FSTArc(epsilon_index,epsilon_index,final,to_weight(fw)));
+                }
+            }
+        }
+        
+        
+    }
+    
+    template <class Fst>
+    void roundtrip_openfst() // for debugging, to_openfst then from_openfst, will lose arc indices
+    {
+        Fst f;
+//        DBP(numStates());
+        to_openfst(f);
+        from_openfst(f);
+//        DBP(numStates());
+    }
+
+    // if determinize is false, input must already be deterministic.  connect=false means don't prune unconnected states.  determinize=true -> may not terminate (if lacking twins property, see openfst.org)
+    template <class Fst>
+    bool minimize_openfst(bool determinize=true,bool rmepsilon=false,bool minimize=true,bool connect=true,bool inverted=false) // for debugging, to_openfst then from_openfst, will lose arc indices
+    {
+        if (inverted)
+            invert();
+        Fst f,f2;
+//        DBP(numStates());
+//        try {
+            if (determinize) {
+                to_openfst(f2);
+                Determinize(f2,&f);
+            } else {
+                to_openfst(f);
+                if (!f.Properties(fst::kIDeterministic,true)) {
+//                Config::log() << " (FST not input deterministic, skipping openfst minimize) ";
+                    return false;
+                }
+            }
+            if (rmepsilon) {
+                RmEpsilon(&f);
+            }
+            if (minimize) {
+                Minimize(&f);
+            }
+            if (connect)
+                Connect(&f);
+            /*
+        } catch(std::exception &e) {
+            Config::log() << "\nERROR: "<<e.what()<<std::endl;
+            return false;
+        }
+            */
+        from_openfst(f);
+        if (inverted)
+            invert();
+        return true;        
+//        DBP(numStates());
+    }
+
+#endif 
     enum { epsilon_index=0 };
 
     template<class A,class B> static inline std::basic_ostream<A,B>&
@@ -104,7 +255,10 @@ class WFST {
     
     alphabet stateNames;
     unsigned final;	// final state number - initial state always number 0
-    std::vector<State> states;
+    typedef dynamic_array<State> StateVector;
+    // note: std::vector<State> doesn't work with State::state_adder because copies by value are made during readLegible
+    
+    StateVector states;
   	 
     //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
     //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
@@ -450,6 +604,14 @@ class WFST {
     {
         for ( int s = 0 ; s < numStates() ; ++s )
             states[s].raisePower(exponent);
+    }
+    
+    // returns id of newly added empty state
+    unsigned add_state() 
+    {
+        unsigned r=states.size();
+        states.push_back();
+        return r;
     }
     
     void clear() {

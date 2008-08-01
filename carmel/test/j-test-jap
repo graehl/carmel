@@ -1,3 +1,5 @@
+
+
 echo 'a n ji ra na i to' |
 sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' > test.asciikana
 
@@ -15,16 +17,16 @@ cmd="$B -iIEQ -k 1 test.katakana"
 echo $cmd
 $cmd
 echo ""
-$B -ri jpron.transducer vowel-separator.transducer \
+$B $BARGS -ri jpron.transducer vowel-separator.transducer \
         jpron-asciikana.transducer asciikana-katakana.transducer \
   test.katakana > test.jpron2
 
 echo "Japanese pronunciation:        " 
 echo ""
-$B -IEQ -k 2 test.jpron2
+$B -IEQ -k 1 test.jpron2
 echo ""
 
-$B -r epron-jpron.1.transducer test.jpron2 > test.epron
+$B $BARGS -r epron-jpron.1.transducer test.jpron2 > test.epron
 
 echo "Top English pronunciations:         "
 echo ""
@@ -32,7 +34,7 @@ $B -IEQ -k 5 test.epron
 echo "  ..."
 echo ""
 
-$B -r word-epron.names.55000wds.transducer test.epron > test.word
+$B $BARGS -r word-epron.names.55000wds.transducer test.epron > test.word
 $B -rk 1 word-epron.names.55000wds.transducer test.epron 
 
 echo "Top English word sequences:         "
@@ -41,7 +43,7 @@ $B -IEQ -k 5 test.word
 echo "  ..."
 echo ""
 
-$B -r word.names.50000wds.transducer test.word  > test.final
+$B $BARGS -r word.names.50000wds.transducer test.word  > test.final
 
 echo "Top Re-scored English word sequence:  " 
 echo ""
