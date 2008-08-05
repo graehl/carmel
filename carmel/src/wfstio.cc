@@ -401,21 +401,26 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
 #undef GETBUF
 //                    DBP5(stateNumber,destState,inL,outL,weight);                    
 //                    states[stateNumber].addArc(FSTArc(inL, outL, destState, weight));
-                    arc_add(stateNumber,FSTArc(inL, outL, destState, weight)); //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
+//TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
+//DONE. see below arc_add
+                    
+                    FSTArc to_add(inL, outL, destState, weight);
                     GETC;
                     if ( c == '!' ) { // lock weight
-                        FSTArc *lastAdded = &states[stateNumber].arcs.top();
                         PEEKC;
                         if( isdigit(c) ) {
                             int group;
                             REQUIRE(istr >> group);
                             //      tieGroup.insert(IntKey(int(lastAdded)), group);
-                            lastAdded->setGroup(group);
+                            to_add.setGroup(group);
                         } else {
-                            lastAdded->setLocked();
+                            to_add.setLocked();
                         }                        
                     } else
                         istr.unget();
+                    
+                    arc_add(stateNumber,to_add); 
+                    
                     // POST: finished reading: iow!g)
                     if (!iowparen)
                         break;
