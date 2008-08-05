@@ -473,7 +473,10 @@ struct logweight {                 // capable of representing nonnegative reals
     {
         char *e;
         if (b+1<end && b[0]=='e' && b[1] == '^') {
-            weight=std::strtod(b+2,&e);
+            setLn(std::strtod(b+2,&e));
+            return e;
+        } else if (b+2<end && b[0]=='1'&&b[1]=='0'&&b[2]=='^') {
+            setLog10(std::strtod(b+3,&e));
             return e;
         } else {
             double d=std::strtod(b,&e);
@@ -514,7 +517,13 @@ struct logweight {                 // capable of representing nonnegative reals
             return GENIOGOOD;
         }
         in >> f;
-
+        if (f==10) {
+            if ((in >> c) && c=='^') {
+                EXPECTI(in>>f);
+                setLog10((Real)f);
+            }
+        }
+        
         if ( in.fail() )
             goto fail;
         if ( in.eof() ) {
