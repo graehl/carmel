@@ -25,7 +25,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.6"
+#define CARMEL_VERSION "3.8"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -264,6 +264,17 @@ struct carmel_main
         if (flags['t']&&(flags['p'] || prunePath()))
             result->normalize(norm_method);
         
+    }
+
+    void write_transducer(std::ostream &o,WFST *result) 
+    {
+        if ( flags ['Y'] )
+            result->writeGraphViz(o);
+        else {
+            if ( long_opts["final-sink"] )
+                result->ensure_final_sink();
+            o << *result;
+        }
     }
     
     
@@ -942,10 +953,7 @@ main(int argc, char *argv[]){
                     result->raisePower(exponent);
                 }
                 
-                if ( flags ['Y'] )
-                    result->writeGraphViz(*fstout);
-                else
-                    *fstout << *result;
+                cm.write_transducer(*fstout,result);
             }
         }
     nextInput:
@@ -1143,11 +1151,12 @@ void usageHelp(void)
         "\n"
         "--minimize-rmepsilon : use to get rid of *e*/*e* (both input and output epsilon)\n"
         "arcs prior to minimization.  necessary if you have any state with two outgoing\n"
-        "epsilon arcs\n"
+        "epsilon arcs, but makes minimization fail if you have loops (leaving final state)\n"
         "\n"
         ;    
 #endif 
 
+    cout << "\n\n--final-sink : if needed, add a new final state with no outgoing arcs\n";
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 

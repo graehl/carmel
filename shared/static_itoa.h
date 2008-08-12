@@ -1,5 +1,5 @@
-#ifndef STATIC_ITOA_H
-#define STATIC_ITOA_H
+#ifndef GRAEHL_SHARED__STATIC_ITOA_H
+#define GRAEHL_SHARED__STATIC_ITOA_H
 
 #include <graehl/shared/threadlocal.hpp>
 

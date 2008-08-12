@@ -52,6 +52,7 @@ class WFST {
     enum { BRIEF,FULL } ArcFormat;
     static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
     static const int arcformat_index; // handle for OutThresh
+    
     void initAlphabet() {
 #define EPSILON_SYMBOL "*e*"
         in = NEW alphabet(EPSILON_SYMBOL);
@@ -183,6 +184,7 @@ class WFST {
     template <class Fst>
     bool minimize_openfst(bool determinize=true,bool rmepsilon=false,bool minimize=true,bool connect=true,bool inverted=false) // for debugging, to_openfst then from_openfst, will lose arc indices
     {
+        ensure_final_sink();
         if (inverted)
             invert();
         Fst f,f2;
@@ -222,6 +224,18 @@ class WFST {
 #endif 
     enum { epsilon_index=0 };
 
+
+    // some algorithms (e.g. determinizing) are confused when the final state has arcs leaving it.  this will add a new final state with no exit, if necessary (and a p=1 epsilon transition from old final state to new one)
+    void ensure_final_sink() 
+    {
+        if (!states[final].size)
+            return;
+        unsigned old_final=final;
+        final=add_state("FINAL_SINK");
+        states[old_final].addArc(FSTArc(epsilon_index,epsilon_index,final,1));
+    }
+    
+    
     template<class A,class B> static inline std::basic_ostream<A,B>&
     out_state_per_line(std::basic_ostream<A,B>& os) { os.iword(perline_index) = STATE; return os; }
     template<class A,class B> static inline std::basic_ostream<A,B>&
@@ -607,10 +621,14 @@ class WFST {
     }
     
     // returns id of newly added empty state
-    unsigned add_state() 
+    unsigned add_state(char const* name="NEWSTATE") 
     {
         unsigned r=states.size();
         states.push_back();
+        if (named_states) {
+            unsigned equals_r=stateNames.add_make_unique(name);
+            Assert(equals_r==r);
+        }
         return r;
     }
     

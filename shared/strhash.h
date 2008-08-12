@@ -7,6 +7,7 @@
 #include <graehl/shared/dynarray.h>
 #include <graehl/shared/2hash.h>
 # include <graehl/shared/array.hpp>
+# include <graehl/shared/random.hpp>
 
 #include <graehl/shared/stringkey.h>
 #include <boost/config.hpp>
@@ -126,10 +127,31 @@ class Alphabet {
         memcpy(&a, swapTemp, s);
     }
     
-    void add(Sym const& s) 
+    unsigned add(Sym const& s) 
     {
-        add(s,names.size());
+        unsigned ret=names.size();
+        add(s,ret);
+        return ret;
     }
+    
+    unsigned add_make_unique(Sym const& s)
+    {
+        if (!have(s))
+            return add(s);
+        
+        std::stringstream b;
+        b << s.c_str();
+        while (have(b.str()))
+//            b << "X";
+            b.put(random_alphanum());
+        return add(b.str());
+    }
+
+    bool have(Sym const& s) 
+    {
+        return find_second(ht,s);
+    }
+    
     
     // s must be new, and added at index n
     void add(Sym s,unsigned n) {
