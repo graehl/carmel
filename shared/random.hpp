@@ -134,18 +134,20 @@ inline size_t random_up_to(size_t limit) {
 
 
 
-#define NLETTERS 26
+#define GRAEHL_RANDOM__NLETTERS 26
 // works for only if a-z A-Z and 0-9 are contiguous
 inline char random_alpha() {
-    unsigned r=random_less_than(NLETTERS*2);
-    return (r < NLETTERS) ? 'a'+r : ('A'-NLETTERS)+r;
+    unsigned r=random_less_than(GRAEHL_RANDOM__NLETTERS*2);
+    return (r < GRAEHL_RANDOM__NLETTERS) ? 'a'+r : ('A'-GRAEHL_RANDOM__NLETTERS)+r;
 }
 
 inline char random_alphanum() {
-    unsigned r=random_less_than(NLETTERS*2+10);
-    return r < NLETTERS*2 ? ((r < NLETTERS) ? 'a'+r : ('A'-NLETTERS)+r) : ('0'-NLETTERS*2)+r;
+    unsigned r=random_less_than(GRAEHL_RANDOM__NLETTERS*2+10);
+    return r < GRAEHL_RANDOM__NLETTERS*2 ?
+        ((r < GRAEHL_RANDOM__NLETTERS) ? 'a'+r : ('A'-GRAEHL_RANDOM__NLETTERS)+r)
+        : ('0'-GRAEHL_RANDOM__NLETTERS*2)+r;
 }
-#undef NLETTERS
+#undef GRAEHL_RANDOM__NLETTERS
 
 inline std::string random_alpha_string(unsigned len) {
     boost::scoped_array<char> s(new char[len+1]);

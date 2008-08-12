@@ -18,6 +18,9 @@ struct StringKey {
     StringKey(const char *c) : str(const_cast<char *>(c)) {}
     StringKey(StringKey const& o) : str(o.str) {}
     
+    // warning: if s is temporary, it must last until you clone or stop using this:
+    StringKey(std::string const& s) : str(const_cast<char *>(s.c_str())) {}
+    
     // note: pass in string length (extra '\0' added for you)
     static inline
     char * alloc(unsigned len) 
