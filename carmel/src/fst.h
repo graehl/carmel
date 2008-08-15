@@ -65,9 +65,13 @@ class WFST {
         deleteAlphabet(0);
         deleteAlphabet(1);
     }
+    /*
     BOOST_STATIC_CONSTANT(int,input=State::input);
     BOOST_STATIC_CONSTANT(int,output=State::output);
+    */
+    enum {input=0,output=1};
     
+        
     void deleteAlphabet(int dir) {
         if ( dir==input && ownerIn ) {
             delete in;
@@ -80,7 +84,9 @@ class WFST {
 
     void identity_alphabet_from(int dir) 
     {
-        int to = (dir==input)?output:input;
+        int to = (dir==State::input) ?
+             State::output
+            : State::input;
         deleteAlphabet(to);
         if (dir==input) {
             out=in;
@@ -241,7 +247,7 @@ class WFST {
     }
 
 #endif 
-    enum { epsilon_index=0 };
+    enum { epsilon_index=FSTArc::epsilon };
 
 
     // some algorithms (e.g. determinizing) are confused when the final state has arcs leaving it.  this will add a new final state with no exit, if necessary (and a p=1 epsilon transition from old final state to new one)

@@ -12,7 +12,7 @@ namespace graehl {
 struct FSTArc {
     BOOST_STATIC_CONSTANT(int,no_group=-1);
     BOOST_STATIC_CONSTANT(int,locked_group=0);
-    BOOST_STATIC_CONSTANT(int,espilon=0);
+    BOOST_STATIC_CONSTANT(int,epsilon=0);
     
     typedef FSTArc self_type;
     int in;
