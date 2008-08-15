@@ -49,9 +49,12 @@ BEGIN_HASH_VAL(graehl::IOPair) {	return x.hash(); } END_HASH
 namespace graehl {
 
 struct State {
+    /*
     BOOST_STATIC_CONSTANT(int,input=0);
     BOOST_STATIC_CONSTANT(int,output=1);
-    
+    */
+    enum {input=0,output=1};
+
     typedef List<FSTArc> Arcs;
 
     // note: loses tie groups.
