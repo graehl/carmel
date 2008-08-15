@@ -60,16 +60,35 @@ class WFST {
         ownerIn=ownerOut=1;
     }
     void train_prune(); // delete states with zero counts
-    void deleteAlphabet() {
-        if ( ownerIn ) {
+    void deleteAlphabet() 
+    {
+        deleteAlphabet(0);
+        deleteAlphabet(1);
+    }
+    BOOST_STATIC_CONSTANT(int,input=State::input);
+    BOOST_STATIC_CONSTANT(int,output=State::output);
+    
+    void deleteAlphabet(int dir) {
+        if ( dir==input && ownerIn ) {
             delete in;
             ownerIn = 0;
-        }
-        if ( ownerOut ) {
+        } else if ( dir==output && ownerOut ) {
             delete out;
             ownerOut = 0;
         }
     }
+
+    void identity_alphabet_from(int dir) 
+    {
+        int to = (dir==input)?output:input;
+        deleteAlphabet(to);
+        if (dir==input) {
+            out=in;
+        } else {
+            in=out;
+        }
+    }
+    
     int getStateIndex(const char *buf); // creates the state according to named_states, returns -1 on failure
  public:
     // openfst MutableFst<LogArc> or <StdArc>, eg StdVectorFst
@@ -343,6 +362,8 @@ class WFST {
     
     WFST(const WFST &a) { throw std::runtime_error("No copying of WFSTs allowed!"); }
  public:
+
+    
     void index(int dir) {
         for ( int s = 0 ; s < numStates() ; ++s ) {
             states[s].flush();
@@ -350,12 +371,22 @@ class WFST {
         }
     }
     void indexInput() {
-        index(0);
+        index(State::input);
     }
     void indexOutput() {
-        index(1);
+        index(State::output);
     }
 
+    void project(int dir=State::input,bool identity_fsa=false) {
+        if (identity_fsa) {
+            identity_alphabet_from(dir);
+        }
+        
+        for ( int s = 0 ; s < numStates() ; ++s )
+            states[s].project(dir,identity_fsa);
+    }
+    
+    
     void indexFlush() { // index on input symbol or output symbol depending on composition direction
         for ( int s = 0 ; s < numStates() ; ++s ) {
             states[s].flush();
@@ -532,7 +563,7 @@ class WFST {
     void invert();		// switch input letters for output letters
     void reduce();		// eliminate all states not along a path from
                                 // initial state to final state
-    void consolidateArcs();	// combine identical arcs, with combined weight = sum
+    void consolidateArcs(bool sum=true,bool clamp=true);	// combine identical arcs, with combined weight = sum, or just max if sum=false.  sum clamped to max of 1 if clamp=true
     void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
     enum {UNLIMITED=-1};
     void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INF()); 

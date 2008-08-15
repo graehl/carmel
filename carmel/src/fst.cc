@@ -605,10 +605,10 @@ void WFST::reduce()
     delete[] graph;
 }
 
-void WFST::consolidateArcs()
+void WFST::consolidateArcs(bool sum,bool clamp)
 {
     for ( int i = 0 ; i < numStates() ; ++i )
-        states[i].reduce();
+        states[i].reduce(sum,clamp);
 }
 
 void WFST::removeMarkedStates(bool marked[])

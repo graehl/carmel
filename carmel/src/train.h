@@ -49,6 +49,9 @@ BEGIN_HASH_VAL(graehl::IOPair) {	return x.hash(); } END_HASH
 namespace graehl {
 
 struct State {
+    BOOST_STATIC_CONSTANT(int,input=0);
+    BOOST_STATIC_CONSTANT(int,output=1);
+    
     typedef List<FSTArc> Arcs;
 
     // note: loses tie groups.
@@ -61,6 +64,7 @@ struct State {
         typedef typename A::StateId I;
         for ( Arcs::const_iterator a=arcs.begin(),end=arcs.end() ; a != end ; ++a ) {
             fst.AddArc(source,A(a->in,a->out,W(a->weight.getNegLog10()),a->dest));
+            // note: just like we do, openfst uses index 0 for epsilons
         }
     }
     
@@ -103,10 +107,21 @@ struct State {
             l->weight.raisePower(exponent);
     }
     
+
+    // input => left projection, output => right.  epsilon->string or string->epsilon (identity_fsa=true), or string->string (identity_fsa=false)
+    void project(int dir=input,bool identity_fsa=false) 
+    {
+        flush();
+        for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
+            if (dir==output)
+                l->in=identity_fsa?l->out:0;
+            else
+                l->out=identity_fsa?l->in:0;
+    }
     
-    void indexBy(int output = 0) {
+    void indexBy(int dir = 0) {
         List<HalfArc> *list;
-        if ( output ) {
+        if ( dir ) {
 #ifdef BIDIRECTIONAL
             if ( hitcount++ > 0 )
                 return;
@@ -208,8 +223,20 @@ struct State {
 #endif
         return arcs.top();
     }
+
+    static inline void combine_arc_weight(Weight &w,Weight d,bool sum,bool clamp) 
+    {
+        if (sum) {
+            w+=d;
+            if (clamp && w>1)
+                w.setOne();
+        } else {
+            if (d>w)
+                w=d;
+        }
+    }
     
-    void reduce() {		// consolidate all duplicate arcs
+    void reduce(bool sum=true,bool clamp=false) {		// consolidate all duplicate arcs
         flush();
         HashTable<UnArc, Weight *> hWeights;
         UnArc un;
@@ -223,10 +250,7 @@ struct State {
             un.out = l->out;
             un.dest = l->dest;
             if ( (ppWt = find_second(hWeights,un)) ) {
-                **ppWt += l->weight;
-                if ( **ppWt > 1 )
-                    **ppWt = Weight((FLOAT_TYPE)1.);
-	
+                combine_arc_weight(**ppWt,l->weight,sum,clamp);	
                 l=remove(l);
             } else {
                 hWeights[un]= &l->weight; // add?
@@ -269,6 +293,8 @@ struct State {
             }
         }
     }
+    
+    
     void swap(State &b) 
     {
         using std::swap;

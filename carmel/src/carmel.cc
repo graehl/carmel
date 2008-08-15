@@ -25,7 +25,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.8"
+#define CARMEL_VERSION "3.9"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -273,6 +273,13 @@ struct carmel_main
         else {
             if ( long_opts["final-sink"] )
                 result->ensure_final_sink();
+            bool id=long_opts["project-identity-fsa"];
+            
+            if (long_opts["project-left"])
+                result->project(State::input,id);
+            if (long_opts["project-right"])
+                result->project(State::output,id);
+            
             o << *result;
         }
     }
@@ -289,7 +296,7 @@ struct carmel_main
     void minimize(WFST *result) 
     {
         if ( flags['C'] )
-            result->consolidateArcs();
+            result->consolidateArcs(!long_opts["consolidate-max"],!long_opts["consolidate-unclamped"]);
         if ( !flags['d'] )
             result->reduce();
     }
@@ -301,6 +308,7 @@ struct carmel_main
             ,con=!long_opts["minimize-no-connect"]
             ,inv=long_opts["minimize-inverted"]
             ,rmeps=long_opts["minimize-rmepsilon"]
+            , pairs=long_opts["minimize-pairs"]
             ;
         
         if (!flags['q'])
@@ -1157,6 +1165,12 @@ void usageHelp(void)
 #endif 
 
     cout << "\n\n--final-sink : if needed, add a new final state with no outgoing arcs\n";
+    cout << "\n--consolidate-max : for -C, use max instead of sum for duplicate arcs\n";
+    cout << "\n--consolidate-unclamped : for -C sums, clamp result to max of 1\n";
+    cout << "\n--project-left : replace arc x:y with x:*e*\n";
+    cout << "\n--project-right : replace arc x:y with *e*:y\n";
+    cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
+    
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 
