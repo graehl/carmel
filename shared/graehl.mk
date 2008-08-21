@@ -17,7 +17,7 @@
 ifndef BUILD_BASE
 BUILD_BASE:=.
 endif
-LIB += z
+#LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
 UNAME=$(shell uname)
@@ -204,7 +204,8 @@ ifeq ($(ARCH),solaris)
 endif
 
 ifeq ($(ARCH),linux)
- CPPFLAGS += -DLINUX_BACKTRACE -DLINUX  -rdynamic
+ CPPFLAGS +=  -DLINUX
+ #-DLINUX_BACKTRACE -rdynamic
 #-rdynamic: forces global symbol table (could remove for optimized build)
 endif
 

@@ -25,7 +25,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.9"
+#define CARMEL_VERSION "3.10"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -268,6 +268,10 @@ struct carmel_main
 
     void write_transducer(std::ostream &o,WFST *result) 
     {
+        if (long_opts["test-as-pairs"]) {
+            WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
+        }
+            
         if ( flags ['Y'] )
             result->writeGraphViz(o);
         else {
@@ -300,31 +304,39 @@ struct carmel_main
         if ( !flags['d'] )
             result->reduce();
     }
+
+    template <class OpenFST>
+    void openfst_minimize_type(WFST *result)
+    {
+#ifdef USE_OPENFST
+        if (!flags['q'])
+            Config::log() << " openfst " <<
+                (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
+        if (!result->minimize_openfst<OpenFST>(
+                long_opts["minimize-determinize"]
+                , long_opts["minimize-rmepsilon"]
+                ,true
+                , !long_opts["minimize-no-connect"]
+                , long_opts["minimize-inverted"]
+                , long_opts["minimize-pairs"]
+                , !long_opts["minimize-pairs-no-epsilon"]
+                )
+            )
+            Config::log() << " (FST not input-determinized, try --minimize-determinize, which may not terminate)";
+        if (!flags['q']) Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";
+#endif 
+    }
     
     void openfst_minimize(WFST *result) 
     {
 #ifdef USE_OPENFST
-        bool det=long_opts["minimize-determinize"]
-            ,con=!long_opts["minimize-no-connect"]
-            ,inv=long_opts["minimize-inverted"]
-            ,rmeps=long_opts["minimize-rmepsilon"]
-            , pairs=long_opts["minimize-pairs"]
-            ;
-        
-        if (!flags['q'])
-            Config::log() << " openfst " <<
-                (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
-        bool worked=false;
         if (long_opts["minimize-sum"])
-            worked=result->minimize_openfst<fst::VectorFst<fst::LogArc> >(det,rmeps,true,con,inv);
+            openfst_minimize_type<fst::VectorFst<fst::LogArc> >(result);
         else
-            worked=result->minimize_openfst<fst::StdVectorFst>(det,rmeps,true,con,inv);
-        if (!worked)
-            Config::log() << " (FST not input-determinized, try --openfst-minimize-determinize, which may not terminate)";
-        if (!flags['q']) Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";
-#else
+            openfst_minimize_type<fst::StdVectorFst>(result);
 #endif 
     }
+    
     void openfst_roundtrip(WFST *result)
     {
 #ifdef USE_OPENFST
@@ -1160,6 +1172,13 @@ void usageHelp(void)
         "--minimize-rmepsilon : use to get rid of *e*/*e* (both input and output epsilon)\n"
         "arcs prior to minimization.  necessary if you have any state with two outgoing\n"
         "epsilon arcs, but makes minimization fail if you have loops (leaving final state)\n"
+        "\n"
+        "--minimize-pairs : in case of a nonfunctional transducer (input nondeterministic\n"
+        "with multiple possible output strings) perform a less ambitious FSA --minimize treating\n"
+        "the input:output as a single symbol '(input,output)'.  this provides less minimization but always works\n"
+        "\n"
+        "--minimize-pairs-no-epsilon : for --minimize-pairs, treat *e*:*e* as a real symbol and not an epsilon\n"
+        "if you don't use this, you may need to use --minimize-rmepsilon, which should give a smaller result anyway\n"
         "\n"
         ;    
 #endif 
