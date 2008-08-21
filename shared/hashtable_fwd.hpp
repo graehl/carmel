@@ -13,7 +13,7 @@
 #endif
 
 #include <cstddef>
-
+#include <boost/functional/hash/hash.hpp>
 #include <graehl/shared/hash_functions.hpp>
 
 #ifdef USE_GNU_HASH_MAP
@@ -123,7 +123,7 @@ inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
 template <class T> struct hash;
 
   template <class C>
-  struct hash { std::size_t operator()(const C &c) const { return c.hash(); } };
+  struct hash { std::size_t operator()(const C &c) const { return boost::hash_value(c); } };
 #endif
 
 template<class T1,class T2,class T3,class T4,class T5,class A,class B>

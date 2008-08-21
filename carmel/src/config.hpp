@@ -4,6 +4,7 @@
 #define USE_OPENFST
 
 #ifdef USE_OPENFST
+# include <cstring>
 # include "fst/lib/compat.h"
 # include <stdexcept>
 

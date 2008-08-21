@@ -472,6 +472,8 @@ Weight WFST::train(
                    int ran_restarts,unsigned cache_derivations_level
                    )
 {
+    normalize(method);
+    
     forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
     fb.prepare(corpus,true);
 

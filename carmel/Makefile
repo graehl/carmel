@@ -23,7 +23,13 @@ CPP_EXT=cc
 
 LDFLAGS = -lpthread
 BASECXXFLAGS= -ffast-math
+CPPFLAGS += -Wno-deprecated
+ifeq ($(HOST),cage)
+CXXFLAGS= $(BASECXXFLAGS) -O
+LDFLAGS += -lstdc++
+else
 CXXFLAGS= $(BASECXXFLAGS) -O2
+endif
 #FIXME: crashes with -O3 on kbest output
 CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST

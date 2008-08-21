@@ -70,8 +70,7 @@ class WFST {
     BOOST_STATIC_CONSTANT(int,output=State::output);
     */
     enum {input=0,output=1};
-    
-        
+
     void deleteAlphabet(int dir) {
         if ( dir==input && ownerIn ) {
             delete in;
@@ -118,6 +117,64 @@ class WFST {
     {
         return Weight(w.Value(),neglog10_weight());
     }
+
+    // scoped object: on creation, turns the arcs into identity-FSA with symbol
+    // = pair of old input/output.  on destruction, restores the pairs into
+    // original input/output alphabet.  during the duration, any symbol<->string
+    // lookup (e.g. i/o) is prohibited
+    struct as_pairs_fsa
+    {
+        WFST &wfst;
+        bool keep_epsilon; // *e*:*e* -> *e* if true, non-epsilon pair-symbol if false
+//        typedef std::pair<int,int> newsym;
+        typedef IOPair newsym;
+        typedef std::vector<newsym> newsyms;
+        newsyms syms;
+        bool to_pairs;
+
+        // does nothing if to_pairs=false
+        as_pairs_fsa(WFST &wfst,bool keep_epsilon=true,bool to_pairs=true)
+            :wfst(wfst)
+            ,keep_epsilon(keep_epsilon) 
+            ,to_pairs(to_pairs)
+        {
+            if (!to_pairs) return;
+
+            typedef HashTable<newsym,unsigned> tosyms;
+            
+            tosyms to;
+
+            syms.push_back(newsym(0,0));
+            if (keep_epsilon)
+                to.add(syms[0],0);
+            
+            for (StateVector::iterator i=wfst.states.begin(),e=wfst.states.end();i!=e;++i) {
+                State::Arcs &arcs=i->arcs;
+                for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
+                    newsym s(l->in,l->out);
+                    tosyms::insert_return_type ins=to.insert(s,syms.size());
+                    if (ins.second)
+                        syms.push_back(s);
+                    l->in=l->out=ins.first->second;
+                }   
+            }
+        }
+        ~as_pairs_fsa() 
+        {
+            if (!to_pairs) return;
+                
+            for (StateVector::iterator i=wfst.states.begin(),e=wfst.states.end();i!=e;++i) {
+                State::Arcs &arcs=i->arcs;
+                for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
+                    newsym &s=syms[l->in];
+                    l->in=s.in;
+                    l->out=s.out;
+                }   
+            }            
+        }
+            
+    };        
+        
     
 #ifdef USE_OPENFST
     // here we depend on ArcIterator directly
@@ -207,12 +264,14 @@ class WFST {
 
     // if determinize is false, input must already be deterministic.  connect=false means don't prune unconnected states.  determinize=true -> may not terminate (if lacking twins property, see openfst.org)
     template <class Fst>
-    bool minimize_openfst(bool determinize=true,bool rmepsilon=false,bool minimize=true,bool connect=true,bool inverted=false) // for debugging, to_openfst then from_openfst, will lose arc indices
+    bool minimize_openfst(bool determinize=true,bool rmepsilon=false,bool minimize=true,bool connect=true,bool inverted=false,bool as_pairs=false,bool pairs_keep_epsilon=true) // for debugging, to_openfst then from_openfst, will lose arc indices
     {
         ensure_final_sink();
         if (inverted)
             invert();
         Fst f,f2;
+        {
+            as_pairs_fsa scoped_pairs(*this,pairs_keep_epsilon,as_pairs);
 //        DBP(numStates());
 //        try {
             if (determinize) {
@@ -234,12 +293,13 @@ class WFST {
             if (connect)
                 Connect(&f);
             /*
-        } catch(std::exception &e) {
-            Config::log() << "\nERROR: "<<e.what()<<std::endl;
-            return false;
-        }
+              } catch(std::exception &e) {
+              Config::log() << "\nERROR: "<<e.what()<<std::endl;
+              return false;
+              }
             */
-        from_openfst(f);
+            from_openfst(f);
+        }        
         if (inverted)
             invert();
         return true;        
