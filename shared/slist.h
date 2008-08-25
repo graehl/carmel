@@ -47,7 +47,6 @@ predicate_indirector<Pred> indirect_predicate(Pred const& p)
     return p;
 } 
 
-namespace impl {
 template <class T>
 struct slist_node
 {
@@ -56,21 +55,20 @@ struct slist_node
     T data;
     slist_node* next;
 };
-}
 
 /// can be copied by value (causes sharing).  does not deallocate (relies on your using a pool).  use slist if you want ownership/deallocation
 /// only works for singleton/static Alloc
 template <class T,
-          class A=std::allocator<impl::slist_node<T> >
+          class A=std::allocator<slist_node<T> >
           //          class A=std::allocator<T>
 >
 class slist_shared :
-    private A::template rebind<impl::slist_node<T> >::other
+    private A::template rebind<slist_node<T> >::other
     //    private A    
 {
  public:
-    typedef typename A::template rebind<impl::slist_node<T> >::other allocator_type;
-    typedef impl::slist_node<T> Node;
+    typedef typename A::template rebind<slist_node<T> >::other allocator_type;
+    typedef slist_node<T> Node;
     typedef slist_shared<T,A> self_type;
     struct back_insert_iterator : public std::iterator<std::output_iterator_tag, T>
     {

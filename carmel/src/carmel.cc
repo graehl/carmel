@@ -20,6 +20,7 @@
 #include <string>
 #include <ctime>
 #include <graehl/carmel/src/fst.h>
+#include <graehl/carmel/src/cascade.h>
 #include <graehl/shared/myassert.h>
 #include <boost/config.hpp>
 
@@ -340,8 +341,8 @@ struct carmel_main
     void openfst_roundtrip(WFST *result)
     {
 #ifdef USE_OPENFST
-            if (!flags['q']) Config::log() << "performing (meaningless test) carmel->openfst->carmel round trip\n";
-            result->roundtrip_openfst<fst::StdVectorFst>();
+        if (!flags['q']) Config::log() << "performing (meaningless test) carmel->openfst->carmel round trip\n";
+        result->roundtrip_openfst<fst::StdVectorFst>();
 #endif 
     }
     
@@ -431,49 +432,49 @@ main(int argc, char *argv[]){
                 long_opts[key]=v;
                 cerr << "option " << key << " = " << v << endl;
             } else {        
-            while ( *(++pc) ) {
-                if ( *pc == 'k' )
-                    kPaths = -1;
-                else if ( *pc == '!' )
-                    rrFlag=true;
-                else if ( *pc == 'o' )
-                    learning_rate_growth_flag=true;
-                else if ( *pc == 'X' )
-                    converge_pp_flag=true;
-                else if ( *pc == 'w' )
-                    wrFlag=true;
-                else if ( *pc == 'z' )
-                    msFlag=true;
-                else if ( *pc == 'R' )
-                    seedFlag=true;
-                else if ( *pc == 'F' )
-                    fstout = NULL;
-                else if ( *pc == 'T' )
-                    thresh = -1;
-                else if ( *pc == 'e' )
-                    convergeFlag = 1;
-                else if ( *pc == 'f' )
-                    floorFlag = 1;
-                else if ( *pc == 'p' )
-                    pruneFlag = 1;
-                else if ( *pc == 'g' || *pc == 'G' )
-                    nGenerate = -1;
-                else if ( *pc == 'M' )
-                    maxTrainIter = -1;
-                else if ( *pc == 'L' )
-                    maxGenArcs = -1;
-                else if ( *pc == 'N' )
-                    labelFlag = 1;
-                else if ( *pc == '+' )
-                    mean_field_oneshot_flag=true;
-                else if ( *pc == 'j' )
-                    cm.norm_method.group = WFST::JOINT;
-                else if ( *pc == 'u' )
-                    cm.norm_method.group = WFST::NONE;
-                else if ( *pc == '=' )
-                    exponent_flag=true;
-                flags[*pc] = 1;
-            }
+                while ( *(++pc) ) {
+                    if ( *pc == 'k' )
+                        kPaths = -1;
+                    else if ( *pc == '!' )
+                        rrFlag=true;
+                    else if ( *pc == 'o' )
+                        learning_rate_growth_flag=true;
+                    else if ( *pc == 'X' )
+                        converge_pp_flag=true;
+                    else if ( *pc == 'w' )
+                        wrFlag=true;
+                    else if ( *pc == 'z' )
+                        msFlag=true;
+                    else if ( *pc == 'R' )
+                        seedFlag=true;
+                    else if ( *pc == 'F' )
+                        fstout = NULL;
+                    else if ( *pc == 'T' )
+                        thresh = -1;
+                    else if ( *pc == 'e' )
+                        convergeFlag = 1;
+                    else if ( *pc == 'f' )
+                        floorFlag = 1;
+                    else if ( *pc == 'p' )
+                        pruneFlag = 1;
+                    else if ( *pc == 'g' || *pc == 'G' )
+                        nGenerate = -1;
+                    else if ( *pc == 'M' )
+                        maxTrainIter = -1;
+                    else if ( *pc == 'L' )
+                        maxGenArcs = -1;
+                    else if ( *pc == 'N' )
+                        labelFlag = 1;
+                    else if ( *pc == '+' )
+                        mean_field_oneshot_flag=true;
+                    else if ( *pc == 'j' )
+                        cm.norm_method.group = WFST::JOINT;
+                    else if ( *pc == 'u' )
+                        cm.norm_method.group = WFST::NONE;
+                    else if ( *pc == '=' )
+                        exponent_flag=true;
+                    flags[*pc] = 1;
+                }
             }
         
         else
@@ -606,6 +607,10 @@ main(int argc, char *argv[]){
         filenames = parm;
     }
     istream *pairStream = NULL;
+    bool train_cascade=long_opts["train-cascade"];
+    cascade_parameters cascade(train_cascade);
+    if ( train_cascade )
+        flags['t']=1;
     if ( flags['t'] )
         flags['S'] = 1;
     //(flags['S'] ||
@@ -760,14 +765,23 @@ main(int argc, char *argv[]){
         Config::debug() << "\nStarting composition chain: result is chain[" << (int)(result-chain) <<"]\n";
 #endif
 
+        if (nChain<2 && train_cascade) {
+            Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade";
+            long_opts["train-cascade"]=0;
+            train_cascade=0;
+        }
+        
         unsigned n_compositions=0;
-        for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) { // composition loop
+        for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
+// composition loop
             ++n_compositions;
 #ifdef  DEBUGCOMPOSE
             Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
             // composition happens here:
-            WFST *next = NEW WFST((r ? chain[i] : *result), (r ? *result : chain[i]), flags['m'], flags['a']);
+            WFST &t1=(r ? chain[i] : *result);
+            WFST &t2=(r ? *result : chain[i]);
+            WFST *next = NEW WFST(cascade,t1,t2, flags['m'], flags['a']);
 #ifndef NODELETE
             //      if (nTarget != -1) {
             //        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
@@ -827,6 +841,7 @@ main(int argc, char *argv[]){
             if (!flags['q'])
                 Config::log() << ")";
         }
+        cascade.done_composing();
         if (!flags['q'] && nChain > 1 )
             Config::log() << std::endl;
 
@@ -909,15 +924,25 @@ main(int argc, char *argv[]){
                     cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
                 }
             } else if ( flags['t'] ) {
-                FLOAT_TYPE weight;
-                training_corpus corpus;
-                
+                training_corpus corpus;                
                 if (pairStream) {
                     result->read_training_corpus(*pairStream,corpus);
                 } else {
                     corpus.set_null();
                 }
-                result->train(corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
+                result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
+
+                if (train_cascade) {
+                    // write inputfilename.trained for each input
+                    char const** chain_filenames=filenames+(chain-chainMemory);
+                    assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
+                    for (unsigned i=0;i<nChain;++i) {
+                        std::string const& f=chain_filenames[i];
+                        std::string const& f_trained=f+".trained";
+                        Config::log() << "Writing trained "<<f<<" to "<<f_trained<<std::endl;
+                        chain[i].writeLegibleFilename(f_trained);
+                    }
+                }
             } else if ( nGenerate > 0 ) {
                 cm.minimize(result);
                 if ( maxGenArcs == 0 )
@@ -1189,6 +1214,8 @@ void usageHelp(void)
     cout << "\n--project-left : replace arc x:y with x:*e*\n";
     cout << "\n--project-right : replace arc x:y with *e*:y\n";
     cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
+
+//    cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S\n";
     
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";

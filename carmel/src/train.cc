@@ -4,6 +4,7 @@
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/weight.h>
 #include <graehl/carmel/src/derivations.h>
+#include <graehl/carmel/src/cascade.h>
 
 //#define DEBUGTRAIN
 
@@ -108,6 +109,7 @@ void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
 struct forward_backward 
 {
     WFST &x;
+    cascade_parameters &cascade;
     unsigned n_in,n_out,n_st;
     typedef arcs_table arcs_t;
     training_corpus *trn;
@@ -238,9 +240,9 @@ struct forward_backward
     }
 
     bool cache_backward;
-    
-    forward_backward(WFST &x,bool per_arc_prior,Weight global_prior,unsigned cache_derivations_level,bool include_backward=true)
-        : x(x),arcs(x,per_arc_prior,global_prior),mio(arcs)
+
+    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,unsigned cache_derivations_level,bool include_backward=true)
+        : x(x),cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
     {
         trn=NULL;
         f=b=NULL;
@@ -351,7 +353,9 @@ struct prep_new_weights
     {
         if ( !WFST::isLocked((a.arc)->groupId) ) { // if the group is tied, then the group number is zero, then the old weight does not change. Otherwise update as follows
             a.scratch = a.weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
+            //FIXME: in cascade, do we want a change per component transducer weight change convergence criteria?
             a.weight() = a.counts + a.prior_counts*scale_prior; // new (unnormalized weight)
+            
             NANCHECK(a.counts);
             NANCHECK(a.prior_counts);
             NANCHECK(a.weight());
@@ -470,11 +474,22 @@ Weight WFST::train(
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
                    int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
                    int ran_restarts,unsigned cache_derivations_level
+    )
+{
+    cascade_parameters cascade;
+    return train(cascade,corpus,method,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,maxTrainIter,learning_rate_growth_factor,ran_restarts,cache_derivations_level);
+}
+
+Weight WFST::train(cascade_parameters &cascade,
+                   training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count,
+                   Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
+                   int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
+                   int ran_restarts,unsigned cache_derivations_level
                    )
 {
-    normalize(method);
+    cascade.normalize_and_update(*this,method);
     
-    forward_backward fb(*this,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
+    forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
     fb.prepare(corpus,true);
 
     Weight bestPerplexity;
@@ -584,8 +599,7 @@ Weight WFST::train(
         }
         if (ran_restarts > 0) {
             --ran_restarts;
-            randomSet();
-            normalize(method);
+            cascade.random_restart(*this,method);
             Config::log() << "\nRandom restart - " << ran_restarts << " remaining.\n";
         } else {
             break;
@@ -862,11 +876,13 @@ Weight forward_backward::maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE
 
     //    arcs.pre_norm_counts(corpus.totalEmpiricalWeight);
     arcs.visit(for_arcs::prep_new_weights(corpus().totalEmpiricalWeight));
+
+    cascade.distribute_counts(arcs);
     
     DUMPDW("Weights before normalization");
 
     DWSTAT("Before normalize");
-    x.normalize(method);
+    cascade.normalize_and_update(x,method);
     DWSTAT("After normalize");
 
     DUMPDW("Weights after normalization");
@@ -892,7 +908,8 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
     training_corpus corpus;
     corpus.add(inSeq,outSeq);
     IOSymSeq const& s=corpus.examples.front();
-    forward_backward fb(*this,false,false,false,false);
+    cascade_parameters trivial;
+    forward_backward fb(*this,trivial,false,false,false,false);
     fb.prepare(corpus,false);
     fb.matrix_compute(s,false);
     return fb.f[s.i.n][s.o.n][final];

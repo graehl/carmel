@@ -296,6 +296,11 @@ struct logweight {                 // capable of representing nonnegative reals
     static self_type ZERO() {
         return self_type();
     }
+    static self_type ONE() 
+    {
+        return self_type(one_weight());
+    }
+    
     static self_type  INF() {
         return self_type(false,false);
     }

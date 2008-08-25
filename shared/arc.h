@@ -10,8 +10,8 @@
 namespace graehl {
 
 struct FSTArc {
-    BOOST_STATIC_CONSTANT(int,no_group=-1);
-    BOOST_STATIC_CONSTANT(int,locked_group=0);
+    BOOST_STATIC_CONSTANT(unsigned,no_group=(unsigned)-1);
+    BOOST_STATIC_CONSTANT(unsigned,locked_group=0);
     BOOST_STATIC_CONSTANT(int,epsilon=0);
     
     typedef FSTArc self_type;
@@ -19,11 +19,13 @@ struct FSTArc {
     int out;
     int dest;
     Weight weight;
-    int groupId;
+    typedef unsigned group_t;
+    
+    group_t groupId;
     
 //    enum {no_group=-1,locked_group=0};
 
-    FSTArc(int i, int o, int d, Weight w,int g = no_group) :
+    FSTArc(int i, int o, int d, Weight w,group_t g = no_group) :
         in(i), out(o), dest(d), weight(w), groupId(g)
     {}
     bool isNormal() const {
