@@ -573,6 +573,13 @@ void WFST::writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON) {
     OUTARCWEIGHT(os,&a);
 }
 
+void WFST::writeLegibleFilename(std::string const& name) 
+{
+    std::ofstream of(name.c_str());
+    writeLegible(of);
+}
+
+
 void WFST::writeLegible(ostream &os)
 {
     BOOLBRIEF;

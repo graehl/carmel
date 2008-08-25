@@ -1,6 +1,7 @@
 #include <graehl/shared/config.h>
 #include <graehl/carmel/src/compose.h>
 #include <graehl/carmel/src/fst.h>
+#include <graehl/carmel/src/cascade.h>
 #include <graehl/shared/array.hpp>
 #include <cstring>
 
@@ -135,9 +136,29 @@ struct TrioNamer {
 #endif
 
 
-
-WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0), ownerOut(0), in(a.in), out(b.out), states((a.numStates() + b.numStates()))
+WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool groups) 
 {
+    if (groups && !cascade.trivial)
+        throw std::runtime_error("Don't set preserve groups (-a) along with --train-cascade; --train-cascade maps original parameters through a more efficient mechanism.");
+    set_compose(cascade,a,b,namedStates,false);
+}
+
+WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) 
+{
+    cascade_parameters c;
+    set_compose(c,a,b,namedStates,preserveGroups);
+}
+
+
+void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates, bool preserveGroups) 
+
+{
+    deleteAlphabet();
+    ownerIn=ownerOut=0;
+    in=a.in;
+    out=b.out;
+    states.reserve(a.numStates()+b.numStates());
+    
     const int EMPTY=epsilon_index;
     if ( !(a.valid() && b.valid()) ) {
         invalidate();
@@ -184,7 +205,8 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
 
     List<HalfArc> *matches;
 
-    if ( preserveGroups ) {       // use simpler 2 state filter since e transitions cannot be merged anyhow
+    if ( preserveGroups) {       // use simpler 2 state filter since e transitions cannot be merged anyhow
+        assert(cascade.trivial);
         //FIXME: -a ... kbest paths look nothing like non -a.  find the bug!
         HashTable<HalfArcState, int> arcStateMap(2 * (a.numStates() +b.numStates()));
         // a mediate state has a name like: bstate,"m"->astate, where "m" is a letter in the interface (output of a, input of b)
@@ -295,7 +317,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                 weight = l->weight;
                                 triDest.filter = 1;
                                 triDest.bState = triSource.bState;
-                                COMPOSEARC;
+                                COMPOSEARC_GROUP(cascade.record(&*l));
                             }
                             if ( triSource.filter == 0 )
                                 if ( (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
@@ -306,7 +328,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                         out = (*r)->out;
                                         weight = l->weight * (*r)->weight;
                                         triDest.bState = (*r)->dest;
-                                        COMPOSEARC;
+                                        COMPOSEARC_GROUP(cascade.record(&*l,*r));
                                     }
                                 }
                         } else {
@@ -318,7 +340,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                     out = (*r)->out; //FIXME: uninit
                                     weight = l->weight * (*r)->weight;
                                     triDest.bState = (*r)->dest;
-                                    COMPOSEARC;
+                                    COMPOSEARC_GROUP(cascade.record(&*l,*r));
                                 }
                             }
                         }
@@ -332,7 +354,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                             out = (*r)->out;
                             weight = (*r)->weight;
                             triDest.bState = (*r)->dest;
-                            COMPOSEARC;
+                            COMPOSEARC_GROUP(cascade.record(*r));
                         }
                     }
                 } else {                        // aState (lhs transducer) is larger
@@ -345,7 +367,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                 weight = r->weight;
                                 triDest.filter = 2;
                                 triDest.aState = triSource.aState;
-                                COMPOSEARC;
+                                COMPOSEARC_GROUP(cascade.record(&*r));
                             }
                             if ( triSource.filter == 0 )
                                 if ( (matches = find_second(*aState->index,(IntKey)EMPTY)) ) {
@@ -355,7 +377,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                         in = (*l)->in;
                                         weight = (*l)->weight * r->weight;
                                         triDest.aState = (*l)->dest;
-                                        COMPOSEARC;
+                                        COMPOSEARC_GROUP(cascade.record(*l,&*r));
                                     }
                                 }
                         } else {
@@ -366,7 +388,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                     in = (*l)->in;
                                     weight = (*l)->weight * r->weight;
                                     triDest.aState = (*l)->dest;
-                                    COMPOSEARC;
+                                    COMPOSEARC_GROUP(cascade.record(*l,&*r));
                                 }
                             }
                         }
@@ -380,7 +402,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                             in = (*l)->in;
                             weight = (*l)->weight;
                             triDest.aState = (*l)->dest;
-                            COMPOSEARC;
+                            COMPOSEARC_GROUP(cascade.record(*l));
                         }
                     }
                 }
@@ -394,7 +416,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                             weight = l->weight;
                             triDest.filter = 1;
                             triDest.bState = triSource.bState;
-                            COMPOSEARC;
+                            COMPOSEARC_GROUP(cascade.record(&*l));
                         }
                         if ( triSource.filter == 0 ){
                             for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
@@ -403,11 +425,10 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                     weight = l->weight * r->weight;
                                     triDest.bState = r->dest;
                                     triDest.filter = 0;
-                                    COMPOSEARC;
+                                    COMPOSEARC_GROUP(cascade.record(&*l,&*r));
                                 }
                             }
                         }
-
                     } else {
                         triDest.filter = 0;
                         for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
@@ -415,7 +436,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                                 out = r->out;
                                 weight = l->weight * r->weight;
                                 triDest.bState = r->dest;
-                                COMPOSEARC;
+                                COMPOSEARC_GROUP(cascade.record(&*l,&*r));
                             }
                         }
                     }
@@ -429,7 +450,7 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) : ownerIn(0)
                             out = r->out;
                             weight = r->weight;
                             triDest.bState = r->dest;
-                            COMPOSEARC;
+                            COMPOSEARC_GROUP(cascade.record(&*r));
                         }
                     }
                 }

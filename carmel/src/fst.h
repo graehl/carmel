@@ -44,6 +44,8 @@ std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 
 
+struct cascade_parameters; // in cascade.h, but we avoid circular dependency by knowing only about references in this header
+
 class WFST {
  public:
     typedef Alphabet<StringKey,StringPool> alphabet;
@@ -368,6 +370,7 @@ class WFST {
     int readLegible(const string& str, bool alwaysNamed=false);  
     void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false);
     void writeLegible(ostream &);
+    void writeLegibleFilename(std::string const& name);
     void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
     int numStates() const { return states.size(); }
     bool isFinal(int s) { return s==final; }
@@ -477,7 +480,9 @@ class WFST {
 
     WFST(const char *buf); // make a simple transducer representing an input sequence
     WFST(const char *buf, int& length,bool permuteNumbers); // make a simple transducer representing an input sequence lattice - Yaser
-    WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b
+    WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b    
+    WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false,bool preserveGroups = false);	// a composed with b, but remembering in cascade the identities.  preserveGroups is meaningless since cascade keeps refs to original arcs anyway
+    void set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);
     // resulting WFST has only reference to input/output alphabets - use ownAlphabet()
     // if the original source of the alphabets must be deleted
     void listAlphabet(ostream &out, int output = 0);
@@ -611,6 +616,15 @@ class WFST {
     void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
         changeEachParameter(setRandom);
     }
+    void zero_all_arcs() 
+    {
+        changeEachParameter(setZero);
+    }
+    void one_all_arcs()
+    {
+        changeEachParameter(setOne);
+    }
+    
     void normalize(NormalizeMethod const& method);    
     
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
@@ -618,6 +632,8 @@ class WFST {
     // corpus may have examples w/ no derivations removed from it!
         
     Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,unsigned cache_derivations_level=0);
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,unsigned cache_derivations_level=0); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+    
     // returns per-example perplexity achieved
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2 
     }; // cache_derivations_level param
@@ -749,6 +765,15 @@ class WFST {
         random.setRandomFraction();
         *w *= random;
     }
+    static void setOne(Weight *w) 
+    {
+        w->setOne();
+    }
+    static void setZero(Weight *w) 
+    {
+        w->setZero();
+    }
+    
     template <class F> void readEachParameter(F f) {
         HashTable<IntKey, bool> seenGroups;
         for ( int s = 0 ; s < numStates() ; ++s )
@@ -795,8 +820,8 @@ class WFST {
     static inline bool isNormal(int groupId) {
         Assert(groupId >= 0 || groupId==no_group);
         
-        //return groupId == WFST::no_group; // same/faster test:
-        return groupId < 0;
+        return groupId == WFST::no_group; // same/faster test:
+        //return groupId < 0;
     }
     static inline bool isLocked(int groupId) {
         return groupId == WFST::locked_group;
