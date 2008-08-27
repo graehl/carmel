@@ -616,13 +616,22 @@ class WFST {
     void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
         changeEachParameter(setRandom);
     }
+    template <class V>
+    void visit_arcs_sourceless(V &v) const
+    {
+        for (StateVector::const_iterator i=states.begin(),e=states.end();i!=e;++i) {
+            i->visit_arcs(v);
+        }        
+    }
+    
+    void set_constant_weights(Weight w=Weight::ONE()) 
+    {
+        changeEachParameter(set_constant_weight(w));
+    }
+    
     void zero_all_arcs() 
     {
-        changeEachParameter(setZero);
-    }
-    void one_all_arcs()
-    {
-        changeEachParameter(setOne);
+        set_constant_weights(Weight::ZERO());
     }
     
     void normalize(NormalizeMethod const& method);    
@@ -631,8 +640,8 @@ class WFST {
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor).
     // corpus may have examples w/ no derivations removed from it!
         
-    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,unsigned cache_derivations_level=0);
-    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,int ran_restarts=0,unsigned cache_derivations_level=0); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0);
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     
     // returns per-example perplexity achieved
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2 
@@ -765,15 +774,18 @@ class WFST {
         random.setRandomFraction();
         *w *= random;
     }
-    static void setOne(Weight *w) 
+    struct set_constant_weight 
     {
-        w->setOne();
-    }
-    static void setZero(Weight *w) 
-    {
-        w->setZero();
-    }
+        Weight c;
+        set_constant_weight(Weight c) : c(c) {}
+        set_constant_weight(set_constant_weight const& o) : c(o.c) {}
+        void operator()(Weight *w) const
+        {
+            *w=c;
+        }
+    };
     
+        
     template <class F> void readEachParameter(F f) {
         HashTable<IntKey, bool> seenGroups;
         for ( int s = 0 ; s < numStates() ; ++s )
@@ -837,11 +849,12 @@ class WFST {
     template <class V>
     void visit_arcs(V & v) 
     {
-        unsigned arcno=0;
+//        unsigned arcno=0;
         for ( unsigned s = 0 ; s < numStates() ; ++s )
             for ( List<FSTArc>::const_iterator i=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); i != end; ++i )
                 v(s,const_cast<FSTArc &>(*i));
     }
+    
 
     
  private:

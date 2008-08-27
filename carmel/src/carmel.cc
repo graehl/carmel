@@ -241,6 +241,20 @@ struct carmel_main
     WFST::NormalizeMethod norm_method;
     Weight keep_path_ratio;
     int max_states;
+
+    bool have_opt(std::string const&key) const
+    {
+        return long_opts.find(key)!=long_opts.end();
+    }
+
+    template <class V>
+    bool get_opt(std::string const&key,V &v) const
+    {
+        long_opts_t::const_iterator i=long_opts.find(key);
+        if (i==long_opts.end()) return false;
+        v=i->second;
+        return true;
+    }
     
     carmel_main(bool *flags,long_opts_t &long_opts)
         :flags(flags),long_opts(long_opts)
@@ -267,24 +281,49 @@ struct carmel_main
         
     }
 
-    void write_transducer(std::ostream &o,WFST *result) 
+    void maybe_constant_weight(WFST *result) 
     {
-        if (long_opts["test-as-pairs"]) {
-            WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
+        Weight c;
+        if (get_opt("constant-weight",c)) {
+            Config::log() << "Setting all (non-locked) arcs in result to weight "<<c<<std::endl;
+            result->set_constant_weights(c);
         }
-            
+    }
+
+    void maybe_project(WFST *result) 
+    {
+        bool id=long_opts["project-identity-fsa"];        
+        if (long_opts["project-left"])
+            result->project(State::input,id);
+        if (long_opts["project-right"])
+            result->project(State::output,id);
+    }
+    
+    void post_compose(WFST *result) 
+    {
+        maybe_constant_weight(result);
+        maybe_sink(result);
+        if ( flags['v'] )
+            result->invert();
+        if ( flags['1'] )
+            result->randomScale();        
+        if (flags['n'])
+            normalize(result);
+    }
+
+    void maybe_sink(WFST *result) 
+    {
+        if ( long_opts["final-sink"] )
+            result->ensure_final_sink();
+    }
+    
+    void write_transducer(std::ostream &o,WFST *result) 
+    {        
+//        if (long_opts["test-as-pairs"])  WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
+        maybe_project(result);
         if ( flags ['Y'] )
             result->writeGraphViz(o);
-        else {
-            if ( long_opts["final-sink"] )
-                result->ensure_final_sink();
-            bool id=long_opts["project-identity-fsa"];
-            
-            if (long_opts["project-left"])
-                result->project(State::input,id);
-            if (long_opts["project-right"])
-                result->project(State::output,id);
-            
+        else {            
             o << *result;
         }
     }
@@ -852,12 +891,7 @@ main(int argc, char *argv[]){
         if (long_opts["openfst-roundtrip"]) {
             cm.openfst_roundtrip(result);
         }
-        if ( flags['v'] )
-            result->invert();
-        if ( flags['1'] )
-            result->randomScale();
-        if ( flags['n'] )
-            cm.normalize(result);
+        cm.post_compose(result);
         if ( flags['A'] ) {
             Assert(weightSource);
             result->assignWeights(*weightSource);
@@ -987,7 +1021,8 @@ main(int argc, char *argv[]){
 
 
 
-            if ( ( !flags['k'] && !flags['x'] && !flags['y'] && !flags['S']) && !flags['c'] && !flags['g'] && !flags['G'] || flags['F'] ) {
+            if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !train_cascade)
+                 || flags['F'] ) {
                 cm.prune(result);                
                 cm.post_train_normalize(result);
                 cm.minimize(result);
