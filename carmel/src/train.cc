@@ -343,6 +343,23 @@ struct forward_backward
 
 namespace for_arcs {
 
+// use before estimate so cascade can recover counts
+struct save_counts
+{
+    void operator()(arc_counts &a) const 
+    {
+        a.scratch = a.weight();
+    }
+};
+
+struct save_best_counts
+{
+    void operator()(arc_counts &a) const 
+    {
+        a.best_weight=a.scratch;
+    }
+};
+    
 
 // scratch gets previous weight
 struct prep_new_weights
@@ -352,6 +369,7 @@ struct prep_new_weights
     void operator()(arc_counts &a) const 
     {
         if ( !WFST::isLocked((a.arc)->groupId) ) { // if the group is tied, then the group number is zero, then the old weight does not change. Otherwise update as follows
+            //note: it's not possible for a cascade composed arc to have a locked groupid, so don't bother not testing
             a.scratch = a.weight();   // old weight - Yaser: this is needed only to calculate change in weight later on ..
             //FIXME: in cascade, do we want a change per component transducer weight change convergence criteria?
             a.weight() = a.counts + a.prior_counts*scale_prior; // new (unnormalized weight)
@@ -487,7 +505,8 @@ Weight WFST::train(cascade_parameters &cascade,
                    int ran_restarts,unsigned cache_derivations_level
                    )
 {
-    cascade.normalize_and_update(*this,method);
+    
+    cascade.normalize(*this,method);
     
     forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
     fb.prepare(corpus,true);
@@ -495,6 +514,17 @@ Weight WFST::train(cascade_parameters &cascade,
     Weight bestPerplexity;
     bestPerplexity.setInfinity();
     bool very_first_time=true;
+    bool using_cascade=!cascade.trivial;
+    if (using_cascade) {
+        if (learning_rate_growth_factor!=1.) {
+            Config::warn() << "Overrelaxed EM not supported for --train-cascade.  Disabling (growth factor=1)."<<std::endl;
+            learning_rate_growth_factor=1;
+        }
+        
+    }
+    
+    bool have_good_weights=false;
+    
     while(1) { // random restarts
         int train_iter = 0;
         Weight lastChange;
@@ -523,6 +553,14 @@ Weight WFST::train(cascade_parameters &cascade,
             
             DWSTAT("Before estimate");
             Weight corpus_p;
+            bool cascade_counts=using_cascade && !first_time;
+            
+            if (cascade_counts) {
+                fb.arcs.visit(for_arcs::save_counts());
+            }
+
+            cascade.update(*this);
+            
             Weight newPerplexity = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             DWSTAT("After estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
@@ -530,10 +568,14 @@ Weight WFST::train(cascade_parameters &cascade,
             corpus_p.root(corpus.n_output).inverse().print_base(Config::log(),2);
             Config::log() << " per-example-perplexity=";
             newPerplexity.print_base(Config::log(),2);
-            if ( newPerplexity < bestPerplexity ) {
+            if ( newPerplexity < bestPerplexity && (!using_cascade || cascade_counts)) { // because of how I'm saving only composed counts, we can't actually get back to our initial starting point (iter 1)
                 Config::log() << " (new best)";
                 bestPerplexity=newPerplexity;
-                fb.arcs.visit(for_arcs::save_best());
+                have_good_weights=true;
+                if (using_cascade)
+                    fb.arcs.visit(for_arcs::save_best_counts());
+                else
+                    fb.arcs.visit(for_arcs::save_best()); // drawn from pre-normalization counts in case of non-trivial cascade, post-norm weights otherwise
             }
 
             Weight pp_ratio_scaled;
@@ -575,7 +617,10 @@ Weight WFST::train(cascade_parameters &cascade,
                         continue;
                     }
                     Config::log() << "Converged - per-example perplexity ratio exceeds " << converge_perplexity_ratio << " after " << train_iter << " iterations.\n";
-                    break;
+                    if (!have_good_weights)
+                        Config::log() << "Because of the --train-cascade implementation, we need another iteration even though we've converged.\n";
+                    else
+                        break;
                 } else {
                     if (learning_rate < MAX_LEARNING_RATE_EXP)
                         learning_rate *= learning_rate_growth_factor;
@@ -590,7 +635,7 @@ Weight WFST::train(cascade_parameters &cascade,
             DWSTAT("Before maximize");
             lastChange = fb.maximize(method,learning_rate);
             DWSTAT("After maximize");
-            if (lastChange <= converge_arc_delta ) {
+            if (lastChange <= converge_arc_delta && have_good_weights) {
                 Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << train_iter << " iterations.\n";
                 break;
             }
@@ -610,7 +655,10 @@ Weight WFST::train(cascade_parameters &cascade,
 
     Config::log() << std::endl;
     fb.arcs.visit(for_arcs::use_best_weight());
-
+    if (using_cascade)
+        cascade.use_counts_final(*this,method);
+    
+    
     //        for ( List<IOSymSeq>::val_iterator seq=trn->examples.val_begin(),end = trn->examples.val_end() ; seq !=end ; ++seq ) seq->kill();
     
     return bestPerplexity;
@@ -877,29 +925,31 @@ Weight forward_backward::maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE
     //    arcs.pre_norm_counts(corpus.totalEmpiricalWeight);
     arcs.visit(for_arcs::prep_new_weights(corpus().totalEmpiricalWeight));
 
-    cascade.distribute_counts(arcs);
     
-    DUMPDW("Weights before normalization");
+//    DUMPDW("Weights before normalization");
 
-    DWSTAT("Before normalize");
-    cascade.normalize_and_update(x,method);
-    DWSTAT("After normalize");
-
-    DUMPDW("Weights after normalization");
-
-    arcs.visit(for_arcs::overrelax(delta_scale));
+//    DWSTAT("Before normalize");
+    cascade.use_counts(x,method); // doesn't actually put weights back into x for nontrivial cascade, which is why the following is skipped for cascades.  update prior to estimate puts the weights in place.
     
-    //    arcs.overrelax();
+    if (cascade.trivial) {
+        DUMPDW("Weights after normalization");
+        DWSTAT("After normalize");
 
-    // find maximum change for convergence
-
-    if (delta_scale > 1.)
-        x.normalize(method);
+        arcs.visit(for_arcs::overrelax(delta_scale));
     
-    //    return arcs.max_change();
-    for_arcs::max_change c;
-    arcs.visit(c);
-    return c.get();
+        //    arcs.overrelax();
+
+        // find maximum change for convergence
+
+        if (delta_scale > 1.)
+            x.normalize(method);
+    
+        //    return arcs.max_change();
+        for_arcs::max_change c;
+        arcs.visit(c);
+        return c.get();
+    } else
+        return 1;
 }
 
 Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
