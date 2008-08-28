@@ -140,7 +140,7 @@ WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool g
 {
     if (groups && !cascade.trivial)
         throw std::runtime_error("Don't set preserve groups (-a) along with --train-cascade; --train-cascade maps original parameters through a more efficient mechanism.");
-    set_compose(cascade,a,b,namedStates,false);
+    set_compose(cascade,a,b,namedStates,groups);
 }
 
 WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) 

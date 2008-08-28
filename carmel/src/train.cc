@@ -343,20 +343,21 @@ struct forward_backward
 
 namespace for_arcs {
 
-// use before estimate so cascade can recover counts
+// for cascade, use before update->estimate so cascade can recover counts later (estimate doesn't use em_weight)
 struct save_counts
 {
     void operator()(arc_counts &a) const 
     {
-        a.scratch = a.weight();
+        a.em_weight = a.weight();
     }
 };
 
+// use after estimate if you got a new global best
 struct save_best_counts
 {
     void operator()(arc_counts &a) const 
     {
-        a.best_weight=a.scratch;
+        a.best_weight=a.em_weight;
     }
 };
     
@@ -535,10 +536,6 @@ Weight WFST::train(cascade_parameters &cascade,
         bool last_was_reset=false;
         for ( ; ; ) {
             ++train_iter;
-            if ( train_iter > maxTrainIter ) {
-                Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
-                break;
-            }
             
 #ifdef DEBUGTRAIN
             Config::debug() << "Starting iteration: " << train_iter << '\n';
@@ -556,10 +553,15 @@ Weight WFST::train(cascade_parameters &cascade,
             bool cascade_counts=using_cascade && !first_time;
             
             if (cascade_counts) {
-                fb.arcs.visit(for_arcs::save_counts());
+                fb.arcs.visit(for_arcs::save_counts()); // so you can later save_best_counts if you like the ppx
             }
 
             cascade.update(*this);
+
+            if ( train_iter > maxTrainIter && have_good_weights) {
+                Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
+                break;
+            }
             
             Weight newPerplexity = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             DWSTAT("After estimate");

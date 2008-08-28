@@ -629,7 +629,7 @@ class WFST {
         changeEachParameter(set_constant_weight(w));
     }
     
-    void zero_all_arcs() 
+    void zero_arcs() 
     {
         set_constant_weights(Weight::ZERO());
     }
@@ -795,6 +795,7 @@ class WFST {
                     f((const Weight *)&(a->weight));
             }
     }
+    // respects locked/tied arcs.  f(&weight) changes weight once per group or ungrouped arc, and never for locked
     template <class F> void changeEachParameter(F f) {
         typedef HashTable<IntKey, Weight> HT;
             
@@ -802,26 +803,19 @@ class WFST {
         for ( int s = 0 ; s < numStates() ; ++s )
             for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
                 int group=a->groupId;
+                if (isLocked(group))
+                    return;
                 if (isNormal(group))
                     f(&(a->weight));
-                if (isTied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
+                else if (isTied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
 //#define OLD_EACH_PARAM
-#ifdef OLD_EACH_PARAM
-                    Weight *pw;
-                    if (pw=find_second(tiedWeights,group))
-                        a->weight=*pw;
-                    else {
-                        f(&(a->weight));
-                        add(tiedWeights,group,a->weight);
-                    }
-#else
-                    hash_traits<HT>::insert_return_type it;
+                    //hash_traits<HT>::insert_return_type
+                    HT::insert_return_type it;
                     if ((it=tiedWeights.insert(HT::value_type(group,0))).second) {
                         f(&(a->weight));
                         it.first->second = a->weight;
                     } else
                         a->weight = it.first->second;
-#endif
                 }
             }
     }
@@ -830,8 +824,6 @@ class WFST {
     BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);
     BOOST_STATIC_CONSTANT(int,locked_group=FSTArc::locked_group);
     static inline bool isNormal(int groupId) {
-        Assert(groupId >= 0 || groupId==no_group);
-        
         return groupId == WFST::no_group; // same/faster test:
         //return groupId < 0;
     }
