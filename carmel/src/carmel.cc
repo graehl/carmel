@@ -647,7 +647,7 @@ main(int argc, char *argv[]){
     }
     istream *pairStream = NULL;
     bool train_cascade=long_opts["train-cascade"];
-    cascade_parameters cascade(train_cascade,long_opts["debug-cascade"]);
+    cascade_parameters cascade(train_cascade,(unsigned)long_opts["debug-cascade"]);
     if ( train_cascade )
         flags['t']=1;
     if ( flags['t'] )
