@@ -51,7 +51,13 @@ struct FSTArc {
     }
     template <class O> void print(O&o) const
     {
-        o<<'(' << dest << ' ' << in << ' ' << out << ' ' << weight << ')';
+        o<<"(->" << dest << ' ' << in << '/' << out << ' ' << weight;
+        if (groupId!=no_group) {
+            o << '!';
+            if (groupId!=locked_group)
+                o << groupId;
+        }
+        o <<')';
     }
     TO_OSTREAM_PRINT
         

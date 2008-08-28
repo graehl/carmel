@@ -10,6 +10,8 @@
 #include <algorithm> // sort,swap
 #include <functional> // for less
 #include <cassert>
+#include <graehl/shared/io.hpp>
+#include <graehl/shared/stream_util.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -67,9 +69,23 @@ class slist_shared :
     //    private A    
 {
  public:
+    template <class O>
+    void print(O &o,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')') const
+    {
+        print_range(o,begin(),end(),multiline,parens,open_paren,close_paren);
+    }
+
+    template <class O,class Writer>
+    void print_writer(O &o,Writer w,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')') const
+    {
+        range_print_iostate(o,begin(),end(),w,multiline,parens,open_paren,close_paren);
+    }
+    
+    
     typedef typename A::template rebind<slist_node<T> >::other allocator_type;
     typedef slist_node<T> Node;
     typedef slist_shared<T,A> self_type;
+    TO_OSTREAM_PRINT
     struct back_insert_iterator : public std::iterator<std::output_iterator_tag, T>
     {
         self_type *list;

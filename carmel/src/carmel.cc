@@ -58,7 +58,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
         WFST::out_arc_per_line(*fstout);
     else
         WFST::out_state_per_line(*fstout);
-    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
+//    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
 }
 
 static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
@@ -647,7 +647,7 @@ main(int argc, char *argv[]){
     }
     istream *pairStream = NULL;
     bool train_cascade=long_opts["train-cascade"];
-    cascade_parameters cascade(train_cascade);
+    cascade_parameters cascade(train_cascade,long_opts["debug-cascade"]);
     if ( train_cascade )
         flags['t']=1;
     if ( flags['t'] )
@@ -796,6 +796,7 @@ main(int argc, char *argv[]){
 
         bool r=flags['r'];
         result = (r ? &chain[nChain-1] :&chain[0]);
+        cascade.add(result);
         bool first=true;
         cm.minimize(result);
         if (nInputs < 2)
@@ -818,6 +819,7 @@ main(int argc, char *argv[]){
             Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
             // composition happens here:
+            cascade.add(chain+i);
             WFST &t1=(r ? chain[i] : *result);
             WFST &t2=(r ? *result : chain[i]);
             WFST *next = NEW WFST(cascade,t1,t2, flags['m'], flags['a']);
@@ -974,7 +976,9 @@ main(int argc, char *argv[]){
                         std::string const& f=chain_filenames[i];
                         std::string const& f_trained=f+".trained";
                         Config::log() << "Writing trained "<<f<<" to "<<f_trained<<std::endl;
-                        chain[i].writeLegibleFilename(f_trained);
+                        std::ofstream of(f_trained.c_str());
+                        setOutputFormat(flags,&of);
+                        chain[i].writeLegible(of);
                     }
                 }
             } else if ( nGenerate > 0 ) {

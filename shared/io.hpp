@@ -4,6 +4,7 @@
 
 #include <graehl/shared/genio.h>
 #include <graehl/shared/funcs.hpp>
+#include <graehl/shared/byref.hpp>
 
 #include <fstream>
 #include <string>
@@ -155,9 +156,9 @@ std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V)
 
 
 template <class It,class Ch,class Tr>
-inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,It begin,It end) 
+inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,It begin,It end,char c=' ') 
 {
-    word_spacer_c<' '> sep;
+    word_spacer sep(c);
     o << "[";
     for (;begin!=end;++begin)
         o << sep << *begin;
@@ -390,8 +391,8 @@ struct IndirectReader
     }
 };
 
-  template <class Ch, class Tr, class T,class Writer> inline
-  std::ios_base::iostate range_print_iostate(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')')
+  template <class O, class T,class Writer> inline
+  std::ios_base::iostate range_print_iostate(O& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')')
   {
       static const char *const MULTILINE_SEP="\n";
       const char space=' ';
@@ -424,7 +425,7 @@ struct IndirectReader
 template <class Ch, class Tr, class T,class Writer> inline
 std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T end,Writer writer,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')')
 {
-    range_print_iostate(o,begin,end,writer,multiline,parens);
+    range_print_iostate(o,begin,end,writer,multiline,parens,open_paren,close_paren);
     return o;
 }
 
@@ -446,9 +447,9 @@ struct container_writer
 
     
 
-template <class Ch, class Tr, class T>
-inline  std::ios_base::iostate print_range(std::basic_ostream<Ch,Tr>& o,T begin, T end,bool multiline=false,bool parens=true) {
-   return  range_print_iostate(o,begin,end,DefaultWriter(),multiline,parens);
+template <class O, class T>
+inline  std::ios_base::iostate print_range(O& o,T begin, T end,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')') {
+    return  range_print_iostate(o,begin,end,DefaultWriter(),multiline,parens,open_paren,close_paren);
 }
 
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
