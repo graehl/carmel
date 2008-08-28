@@ -138,6 +138,7 @@ struct TrioNamer {
 
 WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool groups) 
 {
+    in=out=0;
     if (groups && !cascade.trivial)
         throw std::runtime_error("Don't set preserve groups (-a) along with --train-cascade; --train-cascade maps original parameters through a more efficient mechanism.");
     set_compose(cascade,a,b,namedStates,groups);
@@ -145,13 +146,13 @@ WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool g
 
 WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) 
 {
+    in=out=0;
     cascade_parameters c;
     set_compose(c,a,b,namedStates,preserveGroups);
 }
 
 
-void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates, bool preserveGroups) 
-
+void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates, bool preserveGroups)
 {
     deleteAlphabet();
     ownerIn=ownerOut=0;
