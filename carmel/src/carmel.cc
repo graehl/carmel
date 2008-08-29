@@ -26,7 +26,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "3.11"
+#define CARMEL_VERSION "4.0"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -337,12 +337,16 @@ struct carmel_main
             result->prunePaths(max_states,keep_path_ratio);
             
     }
-    void minimize(WFST *result) 
+
+    // return true if # of arcs change
+    bool minimize(WFST *result) 
     {
+        unsigned n=result->numArcs();
         if ( flags['C'] )
             result->consolidateArcs(!long_opts["consolidate-max"],!long_opts["consolidate-unclamped"]);
         if ( !flags['d'] )
             result->reduce();
+        return result->numArcs()!=n;
     }
 
     template <class OpenFST>
@@ -867,9 +871,10 @@ main(int argc, char *argv[]){
                 goto nextInput;
             }
             bool finalcompose = i == (r ? 0 : nChain-1);
-            cm.minimize(result);
-            if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
+            bool arcs_changed=cm.minimize(result);
+            if (!flags['q'] && (q_states != result->size() || arcs_changed ))
                 Config::log()  << " reduce-> " << result->size() << "/" << result->numArcs();
+            cascade.done_composing(*result,arcs_changed && long_opts["train-cascade-compress"]);
             if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
                 q_states=result->size();
                 q_arcs=result->numArcs();
@@ -882,7 +887,6 @@ main(int argc, char *argv[]){
             if (!flags['q'])
                 Config::log() << ")";
         }
-        cascade.done_composing();
         if (!flags['q'] && nChain > 1 )
             Config::log() << std::endl;
 
