@@ -75,6 +75,14 @@ struct State {
             v(*i);
         }
     }
+
+    template <class V>
+    void visit_arcs(unsigned s,V &v) 
+    {
+        for (Arcs::val_iterator i=arcs.val_begin(),e=arcs.val_end();i!=e;++i) {
+            v(s,*i);
+        }
+    }
     
     Arcs arcs;
     int size;

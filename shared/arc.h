@@ -10,9 +10,6 @@
 namespace graehl {
 
 struct FSTArc {
-    BOOST_STATIC_CONSTANT(unsigned,no_group=(unsigned)-1);
-    BOOST_STATIC_CONSTANT(unsigned,locked_group=0);
-    BOOST_STATIC_CONSTANT(int,epsilon=0);
     
     typedef FSTArc self_type;
     int in;
@@ -20,6 +17,10 @@ struct FSTArc {
     int dest;
     Weight weight;
     typedef unsigned group_t;
+
+    BOOST_STATIC_CONSTANT(unsigned,no_group=(unsigned)-1);
+    BOOST_STATIC_CONSTANT(unsigned,locked_group=0);
+    BOOST_STATIC_CONSTANT(int,epsilon=0);
     
     group_t groupId;
     
@@ -29,18 +30,31 @@ struct FSTArc {
         in(i), out(o), dest(d), weight(w), groupId(g)
     {}
     bool isNormal() const {
-        //return groupId == no_group;
-        return groupId < 0;
+        return normal(groupId);
+    }
+    static inline bool normal(group_t groupId) 
+    {
+        return groupId == no_group;
     }
     bool isLocked() const {
+        return locked(groupId);
+    }
+    static inline bool locked(group_t groupId) 
+    {
         return groupId == locked_group;
     }
     bool isTied() const {
-        return groupId > 0;
+        return tied(groupId);
     }
+    static inline bool tied(group_t groupId) 
+    {
+        return !locked(groupId) && !normal(groupId);
+    }
+
     bool isTiedOrLocked() const {
-        return groupId >= 0;
+        return !normal(groupId);
     }
+
     void setLocked() 
     {
         setGroup(locked_group);

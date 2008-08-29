@@ -791,7 +791,7 @@ class WFST {
         for ( int s = 0 ; s < numStates() ; ++s )
             for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
                 int group=a->groupId;
-                if (isNormal(group) || isTied(group) && seenGroups.insert(HashTable<IntKey, bool>::value_type(group,true)).second)
+                if (isNormal(group) || FSTArc::tied(group) && seenGroups.insert(HashTable<IntKey, bool>::value_type(group,true)).second)
                     f((const Weight *)&(a->weight));
             }
     }
@@ -807,7 +807,7 @@ class WFST {
                     return;
                 if (isNormal(group))
                     f(&(a->weight));
-                else if (isTied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
+                else if (FSTArc::tied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
 //#define OLD_EACH_PARAM
                     //hash_traits<HT>::insert_return_type
                     HT::insert_return_type it;
@@ -824,17 +824,16 @@ class WFST {
     BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);
     BOOST_STATIC_CONSTANT(int,locked_group=FSTArc::locked_group);
     static inline bool isNormal(int groupId) {
-        return groupId == WFST::no_group; // same/faster test:
-        //return groupId < 0;
+        return FSTArc::normal(groupId);
     }
     static inline bool isLocked(int groupId) {
-        return groupId == WFST::locked_group;
+        return FSTArc::locked(groupId);
     }
     static inline bool isTied(int groupId) {
-        return groupId > 0;
+        return FSTArc::tied(groupId);
     }
     static inline bool isTiedOrLocked(int groupId) {
-        return groupId >= 0;
+        return !FSTArc::normal(groupId);
     }
 
     // v(unsigned source_state,FSTArc &arc)
@@ -842,9 +841,8 @@ class WFST {
     void visit_arcs(V & v) 
     {
 //        unsigned arcno=0;
-        for ( unsigned s = 0 ; s < numStates() ; ++s )
-            for ( List<FSTArc>::const_iterator i=states[s].arcs.val_begin(),end=states[s].arcs.val_end(); i != end; ++i )
-                v(s,const_cast<FSTArc &>(*i));
+        for ( unsigned s = 0,e=numStates() ; s < e ; ++s )
+            states[s].visit_arcs(s,v);
     }
     
 

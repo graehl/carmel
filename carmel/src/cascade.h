@@ -2,6 +2,7 @@
 #define GRAEHL_CARMEL__CASCADE_H
 
 #include <vector>
+#include <graehl/shared/array.hpp>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/derivations.h>
 #include <graehl/shared/slist.h>
@@ -33,7 +34,7 @@ struct cascade_parameters
     boost::object_pool<node_t> pool;
     chain_id nil_chain;
     unsigned debug; //bitfield
-    enum { DEBUG_CHAINS=1,DEBUG_CASCADE=2,DEBUG_COMPOSED=4 };
+    enum { DEBUG_CHAINS=1,DEBUG_CASCADE=2,DEBUG_COMPOSED=4,DEBUG_COMPRESS=8 };
         
     
     typedef HashTable<param,chain_id> epsilon_map_t; // any pair of arcs from a*b will only occur once in composition, but a single epsilon a or b may reoccur many times. we want to use a single chain_id for all those, so we have to hash
@@ -50,8 +51,15 @@ struct cascade_parameters
     void distribute_chain_counts(chain_t p,Weight counts) 
     {
         for (;p;p=p->next)
-            p->data->weight += counts;
-    }    
+            distribute_counts(*p->data,counts);
+    }
+
+    void distribute_counts(FSTArc &a,Weight counts) 
+    {
+        if (!a.isLocked()) // because locked arcs w/ weight other than 1 need to appear in chain, but can't have their weights altered
+            a.weight += counts;
+    }
+    
 
     void distribute_chain_id_counts(chain_id id,Weight counts)
     {
@@ -65,9 +73,7 @@ struct cascade_parameters
         arcs_table_distribute_counts(cascade_parameters &cascade) : cascade(cascade) {}
         void operator()(unsigned /*source*/,FSTArc const&a) const 
         {
-            // note: using weight which is, after prep_new_weights, including the global prior.
-//FIXME: per-arc prior in original transducers also
-//            if (a.isLocked()) return; // this is handled by construction ( -> nil_chain )
+            // note: using weight which is, after prep_new_weights, including the global prior. //FIXME: per-arc prior in original transducers also
             cascade.distribute_chain_id_counts(a.groupId,a.weight);   
         }
     };
@@ -164,7 +170,8 @@ struct cascade_parameters
         for (;p;p=p->next)
             w *= p->data->weight;
     }
-    
+
+    // todo: using structure of composition, could perhaps use the shared structure to reduce number of accumulates (linked list by index might be tricky but possible, toposort dependencies then go?
     void calculate_chain_weights()
     {
         chain_weights.clear();
@@ -190,12 +197,12 @@ struct cascade_parameters
             o << "cascade["<<i<<"]:\n"<<*cascade[i]<<"\n";
     }
     
-    void print_chains(std::ostream &o) 
+    void print_chains(std::ostream &o,bool weights=true) 
     {
         o << "Composed chains:\n";
         for (unsigned i=0,e=chains.size();
              i!=e;++i)
-            print_chain(o,i);
+            print_chain(o,i,weights);
     }
 
     struct param_writer
@@ -207,9 +214,11 @@ struct cascade_parameters
         }
     };
 
-    void print_chain(std::ostream &o,unsigned i) 
+    void print_chain(std::ostream &o,unsigned i,bool weights=true) 
     {
-        o<<i<<": "<<chain_weights[i]<<" \t";
+        o<<i<<": \t";
+        if (weights)
+            o<<chain_weights[i]<<" \t";
         shared_list_t c(chains[i]);
         c.print_writer(o,param_writer());
         o << "\n";
@@ -272,6 +281,7 @@ struct cascade_parameters
     {
         if (trivial) return FSTArc::no_group;
         // a * b should be generated at most once, so add it immediately
+        //TODO: in theory a and/or b could be epsilons from earlier, and although we bothered to collapse the epsilons with epsilon_chains hash earlier, we'd be making redundant pairs.  a similar hash on pairs (a,b) could ensure that same-bracketing cons structures are stored only once
         chain_t v=cons(a,cons(b));
         if (!v)
             return nil_chain;
@@ -279,11 +289,73 @@ struct cascade_parameters
         chains.push_back(v);
         return ret;
     }
+
+    // used to find now-defunct (after final-state-reachability reduction) arcs' chains and remove them.  should lead to some slight per-iteration speedup in calculate_weights and a little memory saving.
+// the arc visitation skips locked arcs which come up e.g. with multiple finals during composition w.r.t epsilon-filter state.
+    struct remap_chains
+    {
+        indices_after_removing newids;
+        fixed_array<bool> remove;
+
+        remap_chains(unsigned n,unsigned nil_chain) : remove(true,n) {
+            remove[nil_chain]=false;
+        }
+
+        void find_used(WFST const& w) 
+        {
+            w.visit_arcs_sourceless(*this);
+            newids.init(remove);
+            remove.clear();
+        }
+
+        // from above find_used
+        void operator()(FSTArc const& a) 
+        {
+            if (a.isLocked()) return;
+            remove[a.groupId]=false;
+        }        
+
+        void rewrite_arcs(WFST & w)
+        {
+            w.visit_arcs(*this);
+        }
+
+        // from above rewrite_arcs_using
+        void operator()(unsigned s,FSTArc & a) 
+        {
+            if (a.isLocked()) return;
+            assert(!newids.removing(a.groupId));
+            a.groupId=newids[a.groupId];
+        }   
+    };
+
+    // call *before* calculate_chain_weights (weights aren't moved also)
+    void compress_chains(WFST &composed) 
+    {
+        debug_chains(DEBUG_COMPRESS,"compress chains pre");
+        remap_chains r(chains.size(),nil_chain);
+        r.find_used(composed);
+        r.rewrite_arcs(composed);
+        r.newids.do_moves(chains);
+        chain_weights.clear();
+        debug_chains(DEBUG_COMPRESS,"compress chains post");
+    }
+
+    void debug_chains(unsigned dbgtype,char const* header="chains") 
+    {
+        if (debug&dbgtype) {
+            Config::debug()<<"\n"<<header<<":\n";
+            print_chains(Config::debug(),false);
+            Config::debug()<<"\n";
+        }
+    }
     
-    void done_composing() 
+    void done_composing(WFST &composed,bool compress_removed_arcs=false) 
     {
         if (trivial) return;
         epsilon_chains.clear();
+        if (compress_removed_arcs)
+            compress_chains(composed);
     }
 
     void add(WFST *w) 
