@@ -148,8 +148,8 @@ struct forward_backward
             unsigned d=dw->dest;
             assert(a.dest()==d||a.src==d); // first: forward, second: reverse
             Weight &to=m[i+d_i][o+d_o][d];
-            Weight from=m[i][o][s];
-            Weight w=a.weight();
+            Weight const& from=m[i][o][s];
+            Weight const& w=a.weight();
 #ifdef DEBUGFB
             Config::debug() << "w["<<i+d_i<<"]["<<o+d_o<<"]["<<d<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< to <<" + " << from <<" * "<< w <<" = "<< to <<" + " << from*w <<" = "<< to+(from*w)<<"\n";
 #endif 

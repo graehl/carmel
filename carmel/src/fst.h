@@ -633,8 +633,9 @@ class WFST {
     {
         set_constant_weights(Weight::ZERO());
     }
-    
-    void normalize(NormalizeMethod const& method);    
+
+    // bool uniform_zero_normgroups=true -> if a group's arcs' weights are all 0, set them uniform instead of leaving them 0
+    void normalize(NormalizeMethod const& method,bool uniform_zero_normgroups=false);    
     
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor).
