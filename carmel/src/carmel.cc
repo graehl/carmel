@@ -874,7 +874,7 @@ main(int argc, char *argv[]){
             bool arcs_changed=cm.minimize(result);
             if (!flags['q'] && (q_states != result->size() || arcs_changed ))
                 Config::log()  << " reduce-> " << result->size() << "/" << result->numArcs();
-            cascade.done_composing(*result,arcs_changed && long_opts["train-cascade-compress"]);
+            cascade.done_composing(*result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
             if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
                 q_states=result->size();
                 q_arcs=result->numArcs();

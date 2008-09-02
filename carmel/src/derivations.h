@@ -165,7 +165,10 @@ struct derivations //: boost::noncopyable
             void operator /= (states_arcs const& d) 
             {
                 states/=d.states;
-                arcs/=d.states;
+                if (d.arcs==0)
+                    arcs=1;
+                else
+                    arcs/=d.arcs;
             }
             typedef states_arcs self_type;
             TO_OSTREAM_PRINT
@@ -181,8 +184,8 @@ struct derivations //: boost::noncopyable
             
             o << "\nFor all cached derivations:\n"
               <<  "Pre pruning: "<< pre <<"\n"
-              <<"Post pruning: " << post.states << " states.\n"
-              << "Portion kept: " << ratio.states << " states.\n"
+              <<"Post pruning: " << post << "\n"
+              << "Portion kept: " << ratio << "\n"
                 ;
         }
         typedef statistics self_type;
@@ -411,9 +414,10 @@ struct derivations //: boost::noncopyable
         indices_after_removing ttable(remove);
         fin=ttable[fin];
         // now: remove[i] = true -> no path to final
-        unsigned new_size=graehl::shuffle_removing(&g.front(),ttable,rewrite_GraphState());
+        rewrite_GraphState rw;
+        unsigned new_size=graehl::shuffle_removing(&g.front(),ttable,rw);
         global_stats.post.states=new_size;
-//        global_stats.post.arcs=global_stats.pre.arcs;
+        global_stats.post.arcs=rw.n_kept;
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug()<<"old state->new state ttable:\n";
         print_range(Config::debug(),ttable.map,ttable.map+ttable.n_mapped);

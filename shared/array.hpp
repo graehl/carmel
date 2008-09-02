@@ -207,7 +207,7 @@ struct indices_after_removing
 
 // return index of one past last rewritten element.  moves v[i] to v[ttable[i]], and calls Rewrite(v[ttable[i]],t) where ttable[i] is the new index in v.  if ttable[i] == -1, then swaps v[i] to the end, calling Rewrite(v[ttable[i]])
 template <class T,class Rewrite>
-unsigned shuffle_removing(T *v,indices_after_removing const& ttable,Rewrite r) 
+unsigned shuffle_removing(T *v,indices_after_removing const& ttable,Rewrite &r) 
 {
     using std::swap;
     unsigned to, i = 0, sz= ttable.n_mapped;

@@ -222,7 +222,8 @@ void shortestDistancesFrom(Graph g, unsigned src, FLOAT_TYPE *dist,GraphArc **ta
 unsigned removeStates_inplace(Graph g,bool marked[])
 {
     indices_after_removing ttable(marked,marked+g.nStates);
-    return graehl::shuffle_removing(g.states,ttable,rewrite_GraphState());
+    rewrite_GraphState r;
+    return graehl::shuffle_removing(g.states,ttable,r);
 }
 
 

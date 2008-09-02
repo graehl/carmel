@@ -34,7 +34,7 @@ struct cascade_parameters
     boost::object_pool<node_t> pool;
     chain_id nil_chain;
     unsigned debug; //bitfield
-    enum { DEBUG_CHAINS=1,DEBUG_CASCADE=2,DEBUG_COMPOSED=4,DEBUG_COMPRESS=8 };
+    enum { DEBUG_CHAINS=1,DEBUG_CASCADE=2,DEBUG_COMPOSED=4,DEBUG_COMPRESS=8,DEBUG_COMPRESS_VERBOSE=16 };
         
     
     typedef HashTable<param,chain_id> epsilon_map_t; // any pair of arcs from a*b will only occur once in composition, but a single epsilon a or b may reoccur many times. we want to use a single chain_id for all those, so we have to hash
@@ -238,7 +238,7 @@ struct cascade_parameters
                 update_composed_arc(*l);
         }
         print(Config::debug(),debug&DEBUG_CASCADE,debug&DEBUG_CHAINS);
-        if (debug)
+        if (debug&DEBUG_COMPOSED)
             Config::debug() << "composed post:\n" << composed << std::endl;
     }
 
@@ -332,24 +332,32 @@ struct cascade_parameters
     // call *before* calculate_chain_weights (weights aren't moved also)
     void compress_chains(WFST &composed) 
     {
-        debug_chains(DEBUG_COMPRESS,"compress chains pre");
+        bool v=DEBUG_COMPRESS_VERBOSE&debug;
+        bool d=DEBUG_COMPRESS&debug;
+        debug_chains(d,"compress chains pre",v);
         remap_chains r(chains.size(),nil_chain);
         r.find_used(composed);
         r.rewrite_arcs(composed);
         r.newids.do_moves(chains);
         chain_weights.clear();
-        debug_chains(DEBUG_COMPRESS,"compress chains post");
+        debug_chains(d,"compress chains post",v);
     }
 
-    void debug_chains(unsigned dbgtype,char const* header="chains") 
+    void debug_chains(bool enable=true,char const* header="chains",bool verbose=true) 
     {
-        if (debug&dbgtype) {
-            Config::debug()<<"\n"<<header<<":\n";
-            print_chains(Config::debug(),false);
-            Config::debug()<<"\n";
+        if (enable) {
+            Config::debug()<<"\n"<<header;
+            Config::debug()<<" ("<<chains.size()<<" entries)";
+            if (verbose) {
+                Config::debug()<<":\n";
+                print_chains(Config::debug(),false);
+                Config::debug()<<"\n";
+            } else {
+                Config::debug()<<".\n";
+            }
         }
     }
-    
+
     void done_composing(WFST &composed,bool compress_removed_arcs=false) 
     {
         if (trivial) return;

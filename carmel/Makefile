@@ -26,12 +26,12 @@ BASECXXFLAGS= -ffast-math
 CPPFLAGS += -Wno-deprecated
 ifeq ($(HOST),cage)
 CXXFLAGS= $(BASECXXFLAGS) -O
-LDFLAGS += -lstdc++
+LDFLAGS += -lstdc++ -pg
 else
 CXXFLAGS= $(BASECXXFLAGS) -O2
 endif
 #FIXME: crashes with -O3 on kbest output
-CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
+CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb -pg
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST
 
 default: mydefault

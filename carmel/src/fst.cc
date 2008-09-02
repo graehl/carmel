@@ -174,7 +174,7 @@ static void NaNCheck(const Weight *w) {
 }
 
 
-void WFST::normalize(NormalizeMethod const& method)
+void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
 {
     norm_group_by group=method.group;
     
@@ -289,7 +289,8 @@ void WFST::normalize(NormalizeMethod const& method)
         Weight fraction_remain = 1.;
         fraction_remain -= reserved;
         NANCHECK(fraction_remain);
-        if (!fraction_remain.isZero()) { // something left
+        bool something_left_for_normal=!fraction_remain.isZero();
+        if (something_left_for_normal  && (uniform_zero_normgroups || !normal_sum.isZero())) {
             NANCHECK(normal_sum);
             Weight scaled_sum=scale(normal_sum);
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {

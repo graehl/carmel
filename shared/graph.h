@@ -223,6 +223,10 @@ Graph removeStates(Graph g, bool marked[]); // not tested
 
 struct rewrite_GraphState
 {
+    unsigned n_kept;
+    rewrite_GraphState() : n_kept(0)
+    {}
+    
     template <class OldToNew>
     void rewrite_arc(GraphArc &a,OldToNew const& m) const 
     {
@@ -232,7 +236,7 @@ struct rewrite_GraphState
 
     // OldToNew[i] = i -> this new index if keeping i, (unsigned)-1 if removing i
     template <class OldToNew>
-    void operator()(GraphState &s,OldToNew const& t) const 
+    void operator()(GraphState &s,OldToNew const& t)
     {
         typedef GraphState::arcs_type A;
         
@@ -240,6 +244,7 @@ struct rewrite_GraphState
             if (t[i->dest]==(unsigned)-1) {
                 i=s.arcs.erase(i);
             } else {
+                ++n_kept;
                 i->src=t[i->src];
                 i->dest=t[i->dest];
                 ++i;
