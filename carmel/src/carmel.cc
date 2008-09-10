@@ -651,7 +651,7 @@ main(int argc, char *argv[]){
     }
     istream *pairStream = NULL;
     bool train_cascade=long_opts["train-cascade"];
-    cascade_parameters cascade(train_cascade,(unsigned)long_opts["debug-cascade"]);
+    cascade_parameters cascade(train_cascade || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
     if ( train_cascade )
         flags['t']=1;
     if ( flags['t'] )
@@ -1263,9 +1263,12 @@ void usageHelp(void)
     cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
 
     cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
+    /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
     cout << "\n--train-cascade-compress-always : even when the composition needed no pruning, compress the table (certainly frivolous)\n";
     cout << "\n--debug-cascade=N : N is a bitfield: DEBUG_CHAINS=1,DEBUG_CASCADE=2,DEBUG_COMPOSED=4,DEBUG_COMPRESS=8,DEBUG_COMPRESS_VERBOSE=16\n";
+    cout << "\n--compose-cascade : see the result of composing as a cascade without doing tuning (note: for debugging; group numbers on output will be impenetrable even with --debug-cascade=4\n";
+    */
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 

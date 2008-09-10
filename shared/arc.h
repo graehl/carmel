@@ -50,7 +50,7 @@ struct FSTArc {
     {
         return !locked(groupId) && !normal(groupId);
     }
-
+    
     bool isTiedOrLocked() const {
         return !normal(groupId);
     }
