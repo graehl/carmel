@@ -26,7 +26,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.0"
+#define CARMEL_VERSION "4.1"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -801,7 +801,6 @@ main(int argc, char *argv[]){
         bool r=flags['r'];
         result = (r ? &chain[nChain-1] :&chain[0]);
         cascade.add(result);
-        bool first=true;
         cm.minimize(result);
         if (nInputs < 2)
             cm.prune(result);
@@ -816,6 +815,7 @@ main(int argc, char *argv[]){
         }
         
         unsigned n_compositions=0;
+        bool first=true;
         for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
 // composition loop
             ++n_compositions;
@@ -824,6 +824,10 @@ main(int argc, char *argv[]){
 #endif
             // composition happens here:
             cascade.add(chain+i);
+            if (first)
+                cascade.prepare_compose();
+            else
+                cascade.prepare_compose(r);
             WFST &t1=(r ? chain[i] : *result);
             WFST &t2=(r ? *result : chain[i]);
             WFST *next = NEW WFST(cascade,t1,t2, flags['m'], flags['a']);
@@ -1258,8 +1262,10 @@ void usageHelp(void)
     cout << "\n--project-right : replace arc x:y with *e*:y\n";
     cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
 
-//    cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S\n";
-    
+    cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
+    cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
+    cout << "\n--train-cascade-compress-always : even when the composition needed no pruning, compress the table (certainly frivolous)\n";
+    cout << "\n--debug-cascade=N : N is a bitfield: DEBUG_CHAINS=1,DEBUG_CASCADE=2,DEBUG_COMPOSED=4,DEBUG_COMPRESS=8,DEBUG_COMPRESS_VERBOSE=16\n";
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 

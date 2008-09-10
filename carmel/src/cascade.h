@@ -242,15 +242,80 @@ struct cascade_parameters
             Config::debug() << "composed post:\n" << composed << std::endl;
     }
 
-    chain_id record(FSTArc const* e) 
+    bool is_chain[2]; // is_chain[second] tells if arcs given to record are already chained, i.e. should you cons then append or just append
+
+    void prepare_compose() 
     {
-        return record(const_cast<param>(e));
+        prepare_compose(false,false);
+    }
+    
+    
+    void prepare_compose(bool right_assoc) // shorthand for left->right.  right_assoc -> first is not chain, second is
+    {
+        if (right_assoc)
+            prepare_compose(false,true);
+        else
+            prepare_compose(true,false);
+    }
+    
+    void prepare_compose(bool first_chain,bool second_chain) 
+    {
+        is_chain[0]=first_chain;
+        is_chain[1]=second_chain;
+    }
+    
+    
+    chain_id record1(FSTArc const* e) 
+    {
+        return record_eps(const_cast<param>(e),is_chain[0]);
     }
 
+    chain_id record2(FSTArc const* e) 
+    {
+        return record_eps(const_cast<param>(e),is_chain[1]);
+    }
+    
     inline chain_t cons(param a,chain_t cdr=0) 
     {
         if (is_locked_1(a)) return cdr;
         return pool.construct(a,cdr);
+    }
+
+    inline chain_t cons(param a,param b) 
+    {
+        return cons(a,cons(b));
+    }
+
+    /*
+    inline chain_t cons(chain_t a,param b)
+    {
+        return cons(b,a);
+        }*/
+
+    //FIXME: untested, since we only compose strictly left or right assoc. - maybe better sharing w/ a tree cons structure (type flag indicates leaf? if you allow arbitrary assoc.
+    inline chain_t cons(chain_t a,chain_t b)
+    {
+        for(;a;a=a->next)
+            b=cons(a->data,b);
+        return b;
+    }
+
+    chain_t cons_chain(param a,param b) 
+    {
+        assert(!is_chain[0] || a->groupId <= chains.size());
+        assert(!is_chain[1] || b->groupId <= chains.size());
+        if (is_chain[0]) {
+            chain_t ca=chains[a->groupId];
+            if (is_chain[1])
+                return cons(ca,chains[b->groupId]);
+            else
+                return cons(b,ca);
+        } else {
+            if (is_chain[1])
+                return cons(a,chains[b->groupId]);
+            else
+                return cons(a,b);
+        }
     }
     
     chain_id record(FSTArc const* a,FSTArc const* b) 
@@ -264,17 +329,19 @@ struct cascade_parameters
     }
 
     //if the entire (e) or (a,b) is all is_locked_1(), then undo push_back to vector and reference a canonical 'nil' chain_t  index
-    chain_id record(param e) 
+    chain_id record_eps(param e,bool chain=false) 
     {
         if (trivial) return FSTArc::no_group;
-        epsilon_map_t::insert_return_type ins=epsilon_chains.insert(e,chains.size());
+        if (chain) return e->groupId;
+        chain_id next=chains.size();
+        epsilon_map_t::insert_return_type ins=epsilon_chains.insert(e,next);
         if (ins.second) {
             chain_t v=cons(e);
             if (!v)
-                return ins.first->second=nil_chain;
-            chains.push_back(cons(e));
+                return (ins.first->second=nil_chain);
+            chains.push_back(v);
         }
-        return ins.first->second;
+        return next;
     }
 
     chain_id record(param a,param b) 
@@ -282,7 +349,7 @@ struct cascade_parameters
         if (trivial) return FSTArc::no_group;
         // a * b should be generated at most once, so add it immediately
         //TODO: in theory a and/or b could be epsilons from earlier, and although we bothered to collapse the epsilons with epsilon_chains hash earlier, we'd be making redundant pairs.  a similar hash on pairs (a,b) could ensure that same-bracketing cons structures are stored only once
-        chain_t v=cons(a,cons(b));
+        chain_t v=cons_chain(a,b);
         if (!v)
             return nil_chain;
         chain_id ret=chains.size();

@@ -371,6 +371,11 @@ class slist_shared :
         }
         *pnext=rest;
     }
+    void set_prepend(self_type const& l)  // copies l to beginning of *this
+    {
+        set_prepend(l.begin(),l.end());
+    }
+    
     template <class I>
     void set_prepend(I i,I end)
     {

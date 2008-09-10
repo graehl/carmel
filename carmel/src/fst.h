@@ -485,6 +485,21 @@ class WFST {
     void set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);
     // resulting WFST has only reference to input/output alphabets - use ownAlphabet()
     // if the original source of the alphabets must be deleted
+
+    /* cascade usage (compose then train original transducers):
+
+    cascade_parameters cascade;
+    cascade.prepare_compose(false,false);
+    WFST x(cascade,a,b);
+    cascade.prepare_compose(true,false);
+    WFST y(cascade,x,c);
+    cascade.prepare_compose(false,true);
+    WFST z(cascade,d,y); // now you've done d*((a*b)*c)
+    cascade.done_composing(z);
+    z.train(cascade,...); // trains d,a,b,c parameters via paths in z explaining corpus
+    
+    */
+    
     void listAlphabet(ostream &out, int output = 0);
     friend ostream & operator << (ostream &,  WFST &); // Yaser 7-20-2000
     // I=PathArc output iterator; returns length of path or -1 on error
@@ -643,7 +658,6 @@ class WFST {
         
     Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0);
     Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
-    
     // returns per-example perplexity achieved
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2 
     }; // cache_derivations_level param
