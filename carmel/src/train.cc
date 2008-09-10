@@ -627,8 +627,8 @@ Weight WFST::train(cascade_parameters &cascade,
                     if (learning_rate < MAX_LEARNING_RATE_EXP)
                         learning_rate *= learning_rate_growth_factor;
                 }
-            } else
-                last_was_reset=false;
+            } else //FIXME: should I do: // if (!using_cascade || !first_time) or is the ppx reported for cascade accurate?  i think it is accurate; it's just that we need to have saved counts after an estimate, so we can't save a global best at i=1
+                    last_was_reset=false;
 
             if (very_first_time) {
                 train_prune();
