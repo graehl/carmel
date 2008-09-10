@@ -482,8 +482,8 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
             stateNames.add("final",final);
         for ( i = 0 ; i < 3 ; ++i )
             if ( pFinal[i] ) {
-                states[*pFinal[i]].addArc(FSTArc(EMPTY, EMPTY, final, 1.0));
-                states[*pFinal[i]].arcs.top().groupId = WFST::locked_group; // prevent weight from changing in training
+                State &s=states[*pFinal[i]];
+                s.addArc(FSTArc(EMPTY, EMPTY, final, 1.0,cascade.locked_1_groupid())); // prevent weight from changing in training
             }
     }
     states.resize(states.size());

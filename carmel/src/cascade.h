@@ -175,10 +175,10 @@ struct cascade_parameters
     void calculate_chain_weights()
     {
         chain_weights.clear();
-        chain_weights.resize(chains.size(),Weight::ONE()); // recall, nil chain will keep the default ONE
+        chain_weights.resize(chains.size(),Weight::ONE()); 
         for (unsigned i=0,e=chains.size();
              i!=e;++i) {
-            accumulate_chain(chain_weights[i],chains[i]);
+            accumulate_chain(chain_weights[i],chains[i]); // recall, nil chain will keep the default ONE as it's an empty list
         }   
     }
 
@@ -328,20 +328,29 @@ struct cascade_parameters
         return e->isLocked() && e->weight.isOne();
     }
 
+    chain_id locked_1_groupid() 
+    {
+        return trivial?WFST::locked_group:nil_chain;
+    }
+    
+    inline chain_id original_id(param e)
+    {
+        return is_locked_1(e) ? nil_chain : e->groupId;
+    }
+    
     //if the entire (e) or (a,b) is all is_locked_1(), then undo push_back to vector and reference a canonical 'nil' chain_t  index
     chain_id record_eps(param e,bool chain=false) 
     {
         if (trivial) return FSTArc::no_group;
-        if (chain) return e->groupId;
-        chain_id next=chains.size();
-        epsilon_map_t::insert_return_type ins=epsilon_chains.insert(e,next);
+        if (chain) return original_id(e);
+        epsilon_map_t::insert_return_type ins=epsilon_chains.insert(e,chains.size()); // can't cache chains.size() for return since we only want to return that if we newly inserted
         if (ins.second) {
             chain_t v=cons(e);
             if (!v)
                 return (ins.first->second=nil_chain);
             chains.push_back(v);
         }
-        return next;
+        return ins.first->second;
     }
 
     chain_id record(param a,param b) 
