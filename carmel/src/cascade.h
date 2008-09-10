@@ -100,6 +100,15 @@ struct cascade_parameters
         update(composed);
     }
 
+    void set_trivial() 
+    {
+        chain_weights.clear();
+        chains.clear();
+        epsilon_chains.clear();
+        trivial=true;
+        
+    }
+    
     cascade_parameters(bool remember_cascade=false,unsigned debug=0)
         : debug(debug)
     {
@@ -341,7 +350,7 @@ struct cascade_parameters
     //if the entire (e) or (a,b) is all is_locked_1(), then undo push_back to vector and reference a canonical 'nil' chain_t  index
     chain_id record_eps(param e,bool chain=false) 
     {
-        if (trivial) return FSTArc::no_group;
+        if (trivial) return e->groupId; // for -a composition, but also means epsilons with tie groups in regular composition maintain group
         if (chain) return original_id(e);
         epsilon_map_t::insert_return_type ins=epsilon_chains.insert(e,chains.size()); // can't cache chains.size() for return since we only want to return that if we newly inserted
         if (ins.second) {

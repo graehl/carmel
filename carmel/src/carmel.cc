@@ -650,9 +650,8 @@ main(int argc, char *argv[]){
         filenames = parm;
     }
     istream *pairStream = NULL;
-    bool train_cascade=long_opts["train-cascade"];
-    cascade_parameters cascade(train_cascade || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
-    if ( train_cascade )
+    cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
+    if ( !cascade.trivial )
         flags['t']=1;
     if ( flags['t'] )
         flags['S'] = 1;
@@ -808,10 +807,9 @@ main(int argc, char *argv[]){
         Config::debug() << "\nStarting composition chain: result is chain[" << (int)(result-chain) <<"]\n";
 #endif
 
-        if (nChain<2 && train_cascade) {
-            Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade";
-            long_opts["train-cascade"]=0;
-            train_cascade=0;
+        if (nChain<2 && !cascade.trivial) {
+            Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
+            cascade.set_trivial();
         }
         
         unsigned n_compositions=0;
@@ -976,7 +974,7 @@ main(int argc, char *argv[]){
                 }
                 result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
 
-                if (train_cascade) {
+                if (!cascade.trivial) {
                     // write inputfilename.trained for each input
                     char const** chain_filenames=filenames+(chain-chainMemory);
                     assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
@@ -1033,7 +1031,7 @@ main(int argc, char *argv[]){
 
 
 
-            if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !train_cascade)
+            if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && cascade.trivial)
                  || flags['F'] ) {
                 cm.prune(result);                
                 cm.post_train_normalize(result);
