@@ -26,7 +26,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.1"
+#define CARMEL_VERSION "4.2"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -306,7 +306,9 @@ struct carmel_main
         if ( flags['v'] )
             result->invert();
         if ( flags['1'] )
-            result->randomScale();        
+            result->randomScale();
+        if ( long_opts["random-set"] )
+            result->randomSet();
         if (flags['n'])
             normalize(result);
     }
@@ -799,7 +801,6 @@ main(int argc, char *argv[]){
 
         bool r=flags['r'];
         result = (r ? &chain[nChain-1] :&chain[0]);
-        cascade.add(result);
         cm.minimize(result);
         if (nInputs < 2)
             cm.prune(result);
@@ -814,6 +815,7 @@ main(int argc, char *argv[]){
         
         unsigned n_compositions=0;
         bool first=true;
+        cascade.add(result);
         for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
 // composition loop
             ++n_compositions;
@@ -1259,7 +1261,7 @@ void usageHelp(void)
     cout << "\n--project-left : replace arc x:y with x:*e*\n";
     cout << "\n--project-right : replace arc x:y with *e*:y\n";
     cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
-
+    cout << "\n--random-set : like -1 but ignore previous weights and set a new weight on (0..1]\n";
     cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
     /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
