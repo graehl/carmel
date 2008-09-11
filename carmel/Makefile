@@ -26,7 +26,8 @@ BASECXXFLAGS= -ffast-math
 CPPFLAGS += -Wno-deprecated
 ifeq ($(HOST),cage)
 CXXFLAGS= $(BASECXXFLAGS) -O
-LDFLAGS += -lstdc++ -pg
+LDFLAGS += -lstdc++
+# -pg
 else
 CXXFLAGS= $(BASECXXFLAGS) -O2
 endif

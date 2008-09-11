@@ -247,39 +247,39 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
         // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
         // also, compute sum of normal arcs
         for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-            FSTArc & a=**g;
-            if ( isTiedOrLocked(pGroup = a.groupId) ) { // tied or locked arc
-                if ( isTied(pGroup) ) { // tied:
-                    Weight groupNorm = *find_second(groupStateTotal,(IntKey)pGroup); // can be 0 if no counts at all for any states of group
-                    Weight gmax=*find_second(groupMaxLockedSum,(IntKey)pGroup);
-                    NANCHECK(gmax);
-                    Weight one(1.);
-                    if ( gmax > one) {
+            FSTArc & a=**g;   
+            if ( isTied(pGroup=a.groupId) ) { // tied:
+                Weight groupNorm = *find_second(groupStateTotal,(IntKey)pGroup); // can be 0 if no counts at all for any states of group
+                Weight gmax=*find_second(groupMaxLockedSum,(IntKey)pGroup);
+                NANCHECK(gmax);
+                Weight one(1.);
+                if ( gmax > one) {
+                    a.weight.setZero();
+                } else {
+                    if ( !gmax.isZero() )
+                        groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
+                    NANCHECK(groupNorm);
+                    
+                    Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
+                    NANCHECK(groupTotal);
+                    if (!groupTotal.isZero()) { // then groupNorm non0 also
+                        a.weight =
+                            scale(groupTotal)/scale(groupNorm)
+                            ;
+                        
+                        reserved += a.weight;
+                    } else
                         a.weight.setZero();
-                    } else {
-                        if ( !gmax.isZero() )
-                            groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
-                        NANCHECK(groupNorm);
-
-                        Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
-                        NANCHECK(groupTotal);
-                        if (!groupTotal.isZero()) { // then groupNorm non0 also
-                            a.weight =
-                                scale(groupTotal)/scale(groupNorm)
-                                    ;
-                                
-                            reserved += a.weight;
-                        } else
-                            a.weight.setZero();
-                        NANCHECK(reserved);
-                    }
-                } else { // locked:
-                    reserved += a.weight;
                     NANCHECK(reserved);
                 }
-            }  else if (!a.weight.isZero()) // normal arc
-                normal_sum += a.weight;
+            } else if (isLocked(pGroup)) { // locked:
+                reserved += a.weight;
+                NANCHECK(reserved);
+            } else { //normal
+                normal_sum+=a.weight;
+            }
         }
+        
 #ifdef DEBUGNORMALIZE
         if ( reserved > 1.001 )
             Config::warn() << "Warning: sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0\n";
