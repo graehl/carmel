@@ -160,7 +160,8 @@ struct cascade_parameters
             composed.normalize(method);
         } else {
             randomize();
-            normalize_and_update(composed,method);
+            //normalize_and_update(composed,method);
+            normalize(method); // update happens at top of random restarts loop already
         }    
     }
     
@@ -236,10 +237,10 @@ struct cascade_parameters
     
     void update(WFST &composed) 
     {
+        if (trivial) return;
         if (debug&DEBUG_COMPOSED)
             Config::debug() << "composed pre:\n" << composed << std::endl;
         // composed has groupids that are indices into chains, unless trivial
-        if (trivial) return;
         calculate_chain_weights();        
         for (WFST::StateVector::iterator i=composed.states.begin(),e=composed.states.end();i!=e;++i) {
             State::Arcs &arcs=i->arcs;

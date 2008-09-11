@@ -626,10 +626,10 @@ class WFST {
     Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
     // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
     void randomScale() {  // randomly scale weights (of unlocked arcs) before training by (0..1]
-        changeEachParameter(scaleRandom);
+        changeEachParameter(scaleRandom());
     }
     void randomSet() { // randomly set weights (of unlocked arcs) on (0..1]
-        changeEachParameter(setRandom);
+        changeEachParameter(setRandom());
     }
     template <class V>
     void visit_arcs_sourceless(V &v) const
@@ -778,15 +778,20 @@ class WFST {
     ~WFST() {
         destroy();
     }
-    typedef void (*WeightChanger)(Weight *w);
-    static void setRandom(Weight *w) {
-        w->setRandomFraction();
-    }
-    static void scaleRandom(Weight *w) {
-        Weight random;
-        random.setRandomFraction();
-        *w *= random;
-    }
+    struct setRandom {
+        void operator()(Weight *w) const {
+            w->setRandomFraction();
+        }
+    };
+    
+    struct scaleRandom {
+        void operator()(Weight *w) const {
+            Weight random;
+            random.setRandomFraction();
+            *w *= random;
+        }    
+    };
+        
     struct set_constant_weight 
     {
         Weight c;
@@ -808,19 +813,30 @@ class WFST {
                     f((const Weight *)&(a->weight));
             }
     }
+
+
+    template <class F> void changeEachParameter(F f) {
+        State::modify_parameter_once<F> m=f;
+        for ( int s = 0 ; s < numStates() ; ++s )
+            states[s].visit_arcs(s,m);
+    }
+    
+
+    /*
     // respects locked/tied arcs.  f(&weight) changes weight once per group or ungrouped arc, and never for locked
     template <class F> void changeEachParameter(F f) {
-        typedef HashTable<IntKey, Weight> HT;
+        typedef FSTArc::group_t G;
+        typedef HashTable<G, Weight> HT;
             
         HT tiedWeights;
         for ( int s = 0 ; s < numStates() ; ++s )
             for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
-                int group=a->groupId;
+                G group=a->groupId;
                 if (isLocked(group))
                     return;
                 if (isNormal(group))
                     f(&(a->weight));
-                else if (FSTArc::tied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
+                else if (isTied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
 //#define OLD_EACH_PARAM
                     //hash_traits<HT>::insert_return_type
                     HT::insert_return_type it;
@@ -832,6 +848,7 @@ class WFST {
                 }
             }
     }
+    */
     void removeMarkedStates(bool marked[]);  // remove states and all arcs to
     // states marked true
     BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);

@@ -83,6 +83,29 @@ struct State {
             v(s,*i);
         }
     }
+
+    // respects locked/tied arcs.  f(&weight) changes weight once per group or ungrouped arc, and never for locked
+    template <class F> struct modify_parameter_once : public F
+    {
+        typedef FSTArc::group_t G;
+        typedef HashTable<G, Weight> HT;
+        HT tied;
+        modify_parameter_once(F const& f) : F(f) {}
+        void operator()(unsigned source,FSTArc &a) 
+        {
+            if (a.isLocked()) return;
+            if (a.isNormal())
+                F::operator()(&a.weight);
+            else { //tied
+                HT::insert_return_type it=tied.insert(HT::value_type(a.groupId,0));
+                if (it.second) {
+                    F::operator()(&a.weight);
+                    it.first->second = a.weight;
+                } else
+                    a.weight = it.first->second;
+            }
+        }
+    };
     
     Arcs arcs;
     int size;

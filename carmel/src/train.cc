@@ -548,7 +548,7 @@ Weight WFST::train(cascade_parameters &cascade,
 #define DWSTAT
 #endif
             
-            DWSTAT("Before estimate");
+//            DWSTAT("Before estimate");
             Weight corpus_p;
             bool cascade_counts=using_cascade && !first_time;
             
@@ -634,9 +634,9 @@ Weight WFST::train(cascade_parameters &cascade,
                 train_prune();
                 very_first_time=false;
             }
-            DWSTAT("Before maximize");
+//            DWSTAT("Before maximize");
             lastChange = fb.maximize(method,learning_rate);
-            DWSTAT("After maximize");
+//            DWSTAT("After maximize");
             if (lastChange <= converge_arc_delta && have_good_weights) {
                 Config::log() << "Converged - maximum weight change less than " << converge_arc_delta << " after " << train_iter << " iterations.\n";
                 break;
@@ -935,7 +935,7 @@ Weight forward_backward::maximize(WFST::NormalizeMethod const& method,FLOAT_TYPE
     
     if (cascade.trivial) {
         DUMPDW("Weights after normalization");
-        DWSTAT("After normalize");
+//        DWSTAT("After normalize");
 
         arcs.visit(for_arcs::overrelax(delta_scale));
     
