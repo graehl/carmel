@@ -780,9 +780,7 @@ class WFST {
     }
     typedef void (*WeightChanger)(Weight *w);
     static void setRandom(Weight *w) {
-        Weight random;
-        random.setRandomFraction();
-        *w = random;
+        w->setRandomFraction();
     }
     static void scaleRandom(Weight *w) {
         Weight random;
@@ -846,9 +844,6 @@ class WFST {
     }
     static inline bool isTied(int groupId) {
         return FSTArc::tied(groupId);
-    }
-    static inline bool isTiedOrLocked(int groupId) {
-        return !FSTArc::normal(groupId);
     }
 
     // v(unsigned source_state,FSTArc &arc)

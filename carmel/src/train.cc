@@ -906,7 +906,7 @@ void WFST::train_prune() {
 std::ostream& operator << (std::ostream &o,arc_counts const& ac)
 {
     int pGroup;
-    if ( WFST::isTiedOrLocked(pGroup = ac.groupId()) )    
+    if ( !WFST::isNormal(pGroup = ac.groupId()) )    
         o << pGroup << ' ' ;                                                                                                                                    \
     o<< ac.src << "->" << *ac.arc <<  " weight " << ac.weight() << " scratch: "<< ac.scratch  <<" counts " <<ac.counts  << '\n';
     return o;
