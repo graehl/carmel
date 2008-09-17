@@ -493,10 +493,11 @@ Weight WFST::train(
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
                    int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
                    int ran_restarts,unsigned cache_derivations_level
+                   , random_restart_acceptor ra
     )
 {
     cascade_parameters cascade;
-    return train(cascade,corpus,method,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,maxTrainIter,learning_rate_growth_factor,ran_restarts,cache_derivations_level);
+    return train(cascade,corpus,method,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,maxTrainIter,learning_rate_growth_factor,ran_restarts,cache_derivations_level,ra);
 }
 
 Weight WFST::train(cascade_parameters &cascade,
@@ -504,9 +505,9 @@ Weight WFST::train(cascade_parameters &cascade,
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
                    int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
                    int ran_restarts,unsigned cache_derivations_level
+                   , random_restart_acceptor ra
                    )
 {
-    
     cascade.normalize(*this,method);
     
     forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
@@ -526,15 +527,16 @@ Weight WFST::train(cascade_parameters &cascade,
     
     bool have_good_weights=false;
     
-    while(1) { // random restarts
+    for(unsigned restart_no=0;;++restart_no) { // random restarts
         int train_iter = 0;
         Weight lastChange;
         Weight lastPerplexity;
         lastPerplexity.setInfinity();
         FLOAT_TYPE learning_rate=1;
-        bool first_time=true;
+//        bool first_time=true;
         bool last_was_reset=false;
         for ( ; ; ) {
+            const bool first_time=train_iter==0;
             ++train_iter;
             
 #ifdef DEBUGTRAIN
@@ -566,10 +568,7 @@ Weight WFST::train(cascade_parameters &cascade,
             Weight newPerplexity = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             DWSTAT("After estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
-            Config::log() << " per-output-symbol-perplexity=";
-            corpus_p.root(corpus.n_output).inverse().print_base(Config::log(),2);
-            Config::log() << " per-example-perplexity=";
-            newPerplexity.print_base(Config::log(),2);
+            Config::log() << " per-output-symbol-perplexity="<<corpus_p.root(corpus.n_output).inverse().as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
             if ( newPerplexity < bestPerplexity && (!using_cascade || cascade_counts)) { // because of how I'm saving only composed counts, we can't actually get back to our initial starting point (iter 1)
                 Config::log() << " (new best)";
                 bestPerplexity=newPerplexity;
@@ -580,14 +579,19 @@ Weight WFST::train(cascade_parameters &cascade,
                     fb.arcs.visit(for_arcs::save_best()); // drawn from pre-normalization counts in case of non-trivial cascade, post-norm weights otherwise
             }
 
+            
             Weight pp_ratio_scaled;
             if ( first_time ) {
                 Config::log() << std::endl;
-                first_time = false;
+                if (!ra.accept(newPerplexity,bestPerplexity,restart_no,&Config::log())) {
+                    Config::log() << "Random start was insufficiently promising; trying another."<<std::endl;
+                    break; // to next random restart
+                }            
                 pp_ratio_scaled.setZero();
             } else {
-                Weight pp_ratio=newPerplexity/lastPerplexity;
-                pp_ratio_scaled = pp_ratio.root(std::fabs(newPerplexity.getLogImp())); // EM delta=(L'-L)/abs(L')
+                pp_ratio_scaled = newPerplexity.relative_perplexity_ratio(lastPerplexity);
+//Weight pp_ratio=newPerplexity/lastPerplexity;
+                //pp_ratio_scaled=pp_ratio.root(std::fabs(newPerplexity.getLogImp())); // EM delta=(L'-L)/abs(L')
                 Config::log() << " (relative-perplexity-ratio=" << pp_ratio_scaled << "), max{d(weight)}=" << lastChange;
 #ifdef DEBUG_ADAPTIVE_EM
                 Config::log()  << " last-perplexity="<<lastPerplexity<<' ';
@@ -652,8 +656,7 @@ Weight WFST::train(cascade_parameters &cascade,
             break;
         }
     }
-    Config::log() << "Setting weights to model with lowest per-example-perplexity ( = prod[modelprob(example)]^(-1/num_examples) = 2^(-log_2(p_model(corpus))/N) = ";
-    bestPerplexity.print_base(Config::log(),2);
+    Config::log() << "Setting weights to model with lowest per-example-perplexity ( = prod[modelprob(example)]^(-1/num_examples) = 2^(-log_2(p_model(corpus))/N) = "<<bestPerplexity.as_base(2);
 
     Config::log() << std::endl;
     fb.arcs.visit(for_arcs::use_best_weight());

@@ -187,6 +187,12 @@ struct logweight {                 // capable of representing nonnegative reals
     //return getReal();
     //}
 
+    //  *this > o <=>  returned ratio > 1 (bigger is worse).  unlike *this/o, this is scale invariant
+    self_type relative_perplexity_ratio(self_type const& o) const 
+    {
+        return (*this/o).root(std::fabs(getLogImp())); // EM delta=(L'-L)/abs(L')
+    }
+    
     double getReal() const {
         return std::exp(weight);
     }
@@ -328,6 +334,33 @@ struct logweight {                 // capable of representing nonnegative reals
 //    logweight(std::size_t f) {setReal(f);}
     logweight(int f) {setReal(f);}
     logweight(unsigned f) {setReal(f);}
+    logweight(self_type const& base,Real power) 
+    {
+        weight=base.weight*power;
+    }
+    
+    logweight(const std::string &str) 
+    {
+        /*
+          std::istringstream is(str);
+          if (read(is) == GENIOBAD) {
+          throwbadweight();
+          }
+        */
+        if (!setString(str))
+            throwbadweight();
+    }
+    explicit logweight(const char *str) 
+    {
+        if (!setString(str))
+            throwbadweight();
+    }
+    logweight(const char *begin, const char *end)
+    {
+        if (!setString(begin,end))
+            throwbadweight();    
+    }
+    
 #endif
     self_type &operator += (self_type w)
     {
@@ -438,27 +471,6 @@ struct logweight {                 // capable of representing nonnegative reals
         throw "bad logweight";            
     }
     
-    logweight(const std::string &str) 
-    {
-        /*
-          std::istringstream is(str);
-          if (read(is) == GENIOBAD) {
-          throwbadweight();
-          }
-        */
-        if (!setString(str))
-            throwbadweight();
-    }
-    explicit logweight(const char *str) 
-    {
-        if (!setString(str))
-            throwbadweight();
-    }
-    logweight(const char *begin, const char *end)
-    {
-        if (!setString(begin,end))
-            throwbadweight();    
-    }
     bool setString(const std::string &str) 
     {
         const char *beg=str.c_str(), *end=beg+str.length();
@@ -555,7 +567,29 @@ struct logweight {                 // capable of representing nonnegative reals
     }
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
+    struct base_printer
+    {
+        typedef base_printer self_type;
+        Real base;
+        typedef logweight<Real> Weight;
+        Weight w;
+        base_printer(Real base,Weight const& w) : base(base),w(w) {}
+//    base_printer(base_printer const& o) : base(o.base) {}
+        template <class O>
+        void print(O &o) const
+        {
+            w.print_base(o,base);
+        }
+        TO_OSTREAM_PRINT
+    };
+    base_printer as_base(Real base) const 
+    {
+        return base_printer(base,*this);
+    }
+    
 };
+
+
 
 template<class Real>
 inline Real log(logweight<Real> a) {

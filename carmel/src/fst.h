@@ -655,9 +655,61 @@ class WFST {
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor).
     // corpus may have examples w/ no derivations removed from it!
+
+    struct random_restart_acceptor 
+    {
+        /* when you ask for N random restarts, some of them may be rejected if
+         * they're especially bad, according to a simple criteria: the corpus
+         * prob. after 1 iteration must be at least as high as the prob. at the
+         * same iteration in the start that holds the current best converged
+         * point.  you can supply a tolerance (as a likelihood ratio with the
+         * same meaning as converge_perplexity_ratio in train for slightly worse
+         * restarts (i.e. tolerance .999 means start must be better than before,
+         * 1.001 means it can be slightly worse), and an exponentiation rate r
+         * for this tolerance, so that tolerance^(1/(i*r*N)) is the likelihood
+         * ratio used at restart i from 1...N, i.e. tolerance is moved towards
+         * 1 over time
+         */ 
+        Weight best_start; // perplexity, lower is better
+        Weight tolerance; // >1 means allow worse, <1 means improvement must be significant
+        Weight final_tolerance; // greater r moves tolerance toward 1 in later restarts
+        double N; // number of restarts over which to vary 
+        Weight likelihood_ratio(unsigned i=0) const 
+        {
+            if (i>=N)
+                return final_tolerance;
+            return tolerance*(final_tolerance/tolerance).pow((i-1)/(N-1));
+        }
+        random_restart_acceptor() : tolerance(inf_weight()),final_tolerance(inf_weight()),N(0) {}
+        random_restart_acceptor(double final_at_N,Weight tol,Weight final_tol=Weight::ZERO()) : tolerance(tol),final_tolerance(final_tol),N(final_at_N)
+        {
+            if (tolerance.isZero())
+                tolerance.setInfinity();
+            if (final_tolerance.isZero())
+                final_tolerance=tolerance;
+        }
         
-    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0);
-    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+        bool accept(Weight this_start,Weight converged_best,unsigned restart_i,std::ostream *o=0)
+        {
+            Weight lr=likelihood_ratio(restart_i);
+            if (restart_i==0) {
+                best_start=this_start;
+                if (o)
+                    *o << "Initial best start point ppx="<<this_start.as_base(2)<<std::endl;
+                return true;
+            }
+            *o << "For restart "<<restart_i<<", ";
+            Weight ppr=this_start.relative_perplexity_ratio(best_start);
+            bool r=(lr>ppr);
+            if (o)
+                *o << (r?"accepting":"rejecting") <<" worse random start of "<<this_start.as_base(2)<<" compared to " <<best_start.as_base(2)<<" with relative ppx ratio="<<ppr<<" compared to target of "<<lr<<std::endl;
+            return r;
+        }
+    };
+    
+        
+    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0,random_restart_acceptor ra=random_restart_acceptor());
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0,random_restart_acceptor ra=random_restart_acceptor()); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2 
     }; // cache_derivations_level param
@@ -693,11 +745,12 @@ class WFST {
             a += states[i].size;
         return a;
     }
-    Weight numNoCyclePaths() {
+    // *p_n_back_edges = 0 iff no cycles (optional output arg)
+    Weight numNoCyclePaths(unsigned *p_n_back_edges=0) {
         if ( !valid() ) return Weight();
         Weight *nPaths = NEW Weight[numStates()];
         Graph g = makeGraph();
-        countNoCyclePaths(g, nPaths, 0);
+        countNoCyclePaths(g, nPaths, 0,p_n_back_edges);
         delete[] g.states;
         Weight ret = nPaths[final];
         delete[] nPaths;

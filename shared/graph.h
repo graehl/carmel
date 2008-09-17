@@ -109,6 +109,11 @@ class TopoSort {
   int n_back_edges;
  public:
 
+    bool has_cycle() const 
+    {
+        return n_back_edges;
+    }
+    
   TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) {
     done = NEW bool[g.nStates];
     begun = NEW bool[g.nStates];
@@ -150,7 +155,7 @@ struct reverse_topo_order {
   Graph g;
   bool *done;
   bool *begun;
-  int n_back_edges;
+  unsigned n_back_edges;
  public:
 
   reverse_topo_order(Graph g_) : g(g_), n_back_edges(0) {
@@ -173,7 +178,7 @@ struct reverse_topo_order {
       if ( all || !g.states[i].arcs.empty() )
           order_from(o,i);
   }
-  int get_n_back_edges() const { return n_back_edges; }
+  unsigned get_n_back_edges() const { return n_back_edges; }
     template <class O>
     void order_from(O o,int s) {
         if (done[s]) return;
@@ -274,12 +279,12 @@ inline std::ostream & operator << (std::ostream &out, const Graph &g) {
 }
 
 template <class Weight>
-void countNoCyclePaths(Graph g, Weight *nPaths, int src) {
+void countNoCyclePaths(Graph g, Weight *nPaths, int src,unsigned *p_n_back_edges=0) {
   List<int> topo;
 
   TopoSort sort(g,&topo);
   sort.order_from(src);
-
+  if (p_n_back_edges) *p_n_back_edges=sort.get_n_back_edges();
   for ( unsigned i = 0 ; i < g.nStates; ++i )
     nPaths[i]=0;
   nPaths[src] = 1;
@@ -292,10 +297,10 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int src) {
 }
 
 template <class Weight>
-Weight countNoCyclePaths(Graph g, int src, int dest) 
+Weight countNoCyclePaths(Graph g, int src, int dest,unsigned *p_n_back_edges=0) 
 {
     Weight *w=new Weight[g.nStates];
-    countNoCyclePaths(g,w,src);
+    countNoCyclePaths(g,w,src,p_n_back_edges);
     Weight wd=w[dest];
     delete w;
     return wd;    
