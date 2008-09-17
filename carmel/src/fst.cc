@@ -673,6 +673,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
     return paths;
 }
 
+    
 }
 
 #include <graehl/carmel/src/wfstio.cc>

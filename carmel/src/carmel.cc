@@ -26,7 +26,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.2"
+#define CARMEL_VERSION "4.3"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -67,7 +67,6 @@ static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
         if (i>0)
             cout << ' ';
         cout << (*a)[seq[i]];
-
     }
 }
 
@@ -891,7 +890,7 @@ main(int argc, char *argv[]){
             if (!flags['q'])
                 Config::log() << ")";
         }
-        if (!flags['q'] && nChain > 1 )
+        if (!flags['q'])
             Config::log() << std::endl;
 
 #ifdef  DEBUGCOMPOSE
@@ -934,7 +933,13 @@ main(int argc, char *argv[]){
         } else if ( flags['c'] ) {
             cout << "Number of states in result: " << result->size() << std::endl;
             cout << "Number of arcs in result: " << result->numArcs() << std::endl;
-            cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths() << std::endl;
+            unsigned n_back;
+            cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths(&n_back) << std::endl;
+            if (n_back)
+                cout<<"Number of cycle-causing arcs in result: " << n_back;
+            else
+                cout << "Result is acyclic.";
+            cout <<std::endl;
         }
         if ( flags['t'] )
             flags['S'] = 0;
@@ -974,8 +979,11 @@ main(int argc, char *argv[]){
                 } else {
                     corpus.set_null();
                 }
-                result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level);
-
+                unsigned rr=ranRestarts;
+                if (long_opts["final-restart"])
+                    rr=long_opts["final-restart"];
+                WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
+                result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level,ran_accept);
                 if (!cascade.trivial) {
                     // write inputfilename.trained for each input
                     char const** chain_filenames=filenames+(chain-chainMemory);
@@ -1252,6 +1260,14 @@ void usageHelp(void)
         "--minimize-pairs-no-epsilon : for --minimize-pairs, treat *e*:*e* as a real symbol and not an epsilon\n"
         "if you don't use this, you may need to use --minimize-rmepsilon, which should give a smaller result anyway\n"
         "\n"
+        "--restart-tolerance=w : like -X w, but applied to the first iteration of each random start.\n"
+        "a random start is rejected unless its perplexity is within (log likelihood ratio) w of the best start so far.\n"
+        "w=1.1 allows a start up to 10% worse than the best, .9 demands a 10% improvement.\n"
+        "\n"
+        "--final-restart-tolerance=w : vary --restart-tolerance from its initial value to this\n"
+        "\n"
+        "--final-restart=N : the 1st...Nth random restart move from --restart-tolerance to\n"
+        "--final-restart-tolerance (exponentially) and then holds constant from restarts N,N+1,...\n"
         ;    
 #endif 
 
