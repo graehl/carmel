@@ -8,8 +8,9 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 }
 
 #ifndef SATISFY_VALGRIND
+//FIXME: make SATISFY_VALGRIND + TREE_SINGLETON_OPT compile
 // program is still correct w/o this defined, but you get bogus valgrind warnings if not
-# define SATISFY_VALGRIND
+//# define SATISFY_VALGRIND
 #endif
 
 #include <iostream>
@@ -50,19 +51,37 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     rank_type rank;
  protected:
     //shared_tree(const self_type &t) : {}
-    self_type **children;
+    union children_or_child 
+    {
+        self_type **children;
+        self_type *child;
+    };
+    
+        
+    children_or_child c;
 
  public:
     bool is_leaf() const 
     {
         return rank==0;
     }
+
+    template <class T>
+    struct related_child
+    {
+        self_type dummy;
+        T data;
+        related_child() {}
+    };
     
+        
     template<class T>
     T &leaf_data() {
         Assert(rank==0);
-        Assert(sizeof(T) <= sizeof(children));
-        return *(reinterpret_cast<T*>(&children));
+        Assert(sizeof(T) <= sizeof(c.children));
+//        return *(reinterpret_cast<T*>(&children));
+        return *(T *)(related_child<T>*)&c.child;
+        // C99 aliasing is ok with this because we cast to a struct that relates T* and self_type*, or so I'm told
     }
     template<class T>
     const T &leaf_data() const {
@@ -110,7 +129,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
 #else
             if (rank)
 #endif
-                children = (self_type **)this->allocate(rank);
+                c.children = (self_type **)this->allocate(rank);
 #ifdef SATISFY_VALGRIND
             else
                 children=0;
@@ -151,7 +170,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
 #else
             if (rank)
 #endif
-                this->deallocate((void **)children,rank);
+                this->deallocate((void **)c.children,rank);
         rank=0;
     }
     void dealloc_recursive();
@@ -170,10 +189,10 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
 #ifdef TREE_SINGLETON_OPT
         if (rank == 1) {
             Assert(i==0);
-            return *(value_type *)&children;
+            return c.child;
         }
 #endif
-        return children[i];
+        return c.children[i];
     }
 
     value_type & child(rank_type i) const {
@@ -186,18 +205,18 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     iterator begin() {
 #ifdef TREE_SINGLETON_OPT
         if (rank == 1)
-            return (iterator)&children;
+            return &c.child;
         else
 #endif
-            return children;
+            return c.children;
     }
     iterator end() {
 #ifdef TREE_SINGLETON_OPT
         if (rank == 1)
-            return ((iterator)&children) + 1;
+            return &c.child+1;
         else
 #endif
-            return children+rank;
+            return c.children+rank;
     }
     const_iterator begin() const {
         return const_cast<self_type *>(this)->begin();
