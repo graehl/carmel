@@ -41,6 +41,34 @@ struct cascade_parameters
 
     epsilon_map_t epsilon_chains;
 
+    typedef WFST::saved_weights_t saved_weights_t;
+    
+    void save_weights(WFST const&composed,saved_weights_t &save) const
+    {
+        if (trivial) {
+            composed.save_weights(save);
+            return;
+        }
+        for (cascade_t::const_iterator i=cascade.begin(),e=cascade.end();
+             i!=e;++i)
+            (*i)->save_weights(save);
+    }
+
+    void restore_weights(WFST & composed,saved_weights_t const& save) 
+    {
+        if (trivial) {
+            composed.restore_weights(save.begin());
+            return;
+        }
+        saved_weights_t::const_iterator si=save.begin();
+        for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
+             i!=e;++i)
+            si=(*i)->restore_weights(si);
+        update(composed); // note: don't need to normalize
+        //FIXME: is that update redundant in practice?
+    }
+    
+    
     void clear_counts() 
     {
         for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
@@ -106,7 +134,6 @@ struct cascade_parameters
         chains.clear();
         epsilon_chains.clear();
         trivial=true;
-        
     }
     
     cascade_parameters(bool remember_cascade=false,unsigned debug=0)

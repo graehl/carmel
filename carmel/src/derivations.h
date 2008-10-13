@@ -125,7 +125,7 @@ struct wfst_io_index : boost::noncopyable
 };
 
 
-    
+// all the derivations for one in/out pair through WFST x
 struct derivations //: boost::noncopyable
 {
  private:
@@ -265,7 +265,7 @@ struct derivations //: boost::noncopyable
         }
     };    
 
-    unsigned start() const 
+    state_id start() const 
     {
         return 0;
     }
@@ -282,7 +282,7 @@ struct derivations //: boost::noncopyable
         f[0]=1;
         get_order();
         
-        propogate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),wf,f);        
+        propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),wf,f);        
         Weight prob=f[fin];
         
 //        reversed_graph r(g); // NOTE: we could cache this reversed graph as well, but we'd run into swapping sooner.  I bet it's faster to recompute for each example by a lot when you get to that size range, and not much slower before.
@@ -290,7 +290,7 @@ struct derivations //: boost::noncopyable
         
 
         b[fin]=1;
-        propogate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,b);
+        propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,b);
 
         free_order();
         free_reverse();

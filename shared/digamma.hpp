@@ -185,15 +185,32 @@ done:
 }
 
 #ifdef SAMPLE
+# include <fstream>
 # include <iostream>
 int main()
 {
-    double step=0.001;
-    for (double x=step;x<=step*40;x+=step) {
+    using namespace std;
+    
+//    cout << "set title \"carmel digamma implementation\"\n";
+//    cout << "set xlabel \"x\"\n";
+//    cout << "set ylabel \"digamma(x)\"\n";
+//    cout << "set terminal png\n";
+//    cout << "set output \"digamma.png\"\n";
+//    cout << "set logscale y\n";
+
+    ofstream f("digamma.dat");
+
+    cout << "plot 'digamma.dat' using 1:2 title 'digamma'\n";
+
+    unsigned nsteps=200;
+    double step=0.0002;
+    
+    for (double x=step;x<=step*nsteps;x+=step) {
         double d=graehl::digamma(x);
-        double ed=std::exp(d);
+        double ed=exp(d);
         double ed_est=x-.5;
-        std::cerr << "exp(digamma("<<x << "))="<<ed<<" diff(x-.5)="<<ed_est-ed<<std::endl;
+        cerr << "exp(digamma("<<x << "))="<<ed<<" diff(x-.5)="<<ed_est-ed<<endl;
+        f << x << "\t"<<ed<<"\n";
     }
     return 0;
 }

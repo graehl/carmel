@@ -676,11 +676,12 @@ public:
     // non-construct version (use placement new yourself) (not in STL vector either)
     T *push_back_raw()
     {
-        if ( endv >= this->endspace )
+        if ( endv >= this->endspace ) {
             if (this->vec == this->endspace )
                 realloc_up(4);
             else
                 realloc_up(this->capacity()*2); // FIXME: 2^31 problem
+        }
         return endv++;
     }
     void undo_push_back_raw() {

@@ -962,10 +962,6 @@ main(int argc, char *argv[]){
                         ++n_pairs;
                         prod_prob*=prob;
                         cout << prob << std::endl;
-                        /*
-                          delete inSeq;
-                          delete outSeq;
-                        */
                     }
                 } else {
                     List<int> empty_list;
@@ -981,7 +977,7 @@ main(int argc, char *argv[]){
                 }
                 unsigned rr=ranRestarts;
                 if (long_opts["final-restart"])
-                    rr=long_opts["final-restart"];
+                    rr=(unsigned)long_opts["final-restart"];
                 WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
                 result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level,ran_accept);
                 if (!cascade.trivial) {
