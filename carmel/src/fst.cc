@@ -212,9 +212,6 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
                 sum += w;
             }
         }
-#ifdef DEBUGNAN
-        readEachParameter(NaNCheck);
-#endif
 #ifdef DEBUGNORMALIZE
         Config::debug() << " locked_sum=" << locked_sum << " sum=" << sum << std::endl;
 #endif
@@ -320,10 +317,6 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
         if ( sum > 1+NORM_EPSILON || sum < 1-NORM_EPSILON)
             Config::warn() << "Warning: sum of normalized arcs for " << g << " = " << sum << " - should equal 1.0\n";
     }
-#endif
-
-#ifdef DEBUGNAN
-    readEachParameter(NaNCheck);
 #endif
 
     if (group == CONDITIONAL)

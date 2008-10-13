@@ -1,8 +1,8 @@
 #ifndef GRAEHL__SHARED__MEAN_FIELD_SCALE_HPP
 #define GRAEHL__SHARED__MEAN_FIELD_SCALE_HPP
 
-#include <digamma.hpp>
-#include <weight.h>
+#include <graehl/shared/digamma.hpp>
+#include <graehl/shared/weight.h>
 
 namespace graehl {
 
@@ -18,12 +18,13 @@ struct mean_field_scale
     {
         if (linear)
             return x;
-        typedef logweight<Real> W;
-        W xa=x+alpha;
-        double floor=.0002;
+        typedef logweight<Real> W;        
+        double xa=x.getReal()+alpha;
+        const double floor=.0002;
+        static const W dig_floor(digamma(floor),false);
         if (xa < floor) // until we can compute digamma in logspace, this will be the answer.  and, can't ask digamma(0), because it's negative inf.  but exp(-inf)=0
-            return W(digamma(floor),false)*(xa/floor);
-        return W(digamma(xa.getReal()),false);
+            return dig_floor*(xa/floor);
+        return W(digamma(xa),false);
     }
 };
 

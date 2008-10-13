@@ -854,54 +854,58 @@ class WFST {
         {
             *w=c;
         }
-    };
-    
-        
-    template <class F> void readEachParameter(F f) {
-        HashTable<IntKey, bool> seenGroups;
-        for ( int s = 0 ; s < numStates() ; ++s )
-            for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
-                int group=a->groupId;
-                if (isNormal(group) || FSTArc::tied(group) && seenGroups.insert(HashTable<IntKey, bool>::value_type(group,true)).second)
-                    f((const Weight *)&(a->weight));
-            }
-    }
+    };        
 
-
-    template <class F> void changeEachParameter(F f) {
+    template <class F>
+    F changeEachParameter(F f) {
         State::modify_parameter_once<F> m=f;
         for ( int s = 0 ; s < numStates() ; ++s )
             states[s].visit_arcs(s,m);
+        return m;
+    }
+
+    typedef std::vector<Weight> saved_weights_t;
+
+    struct param_saver 
+    {
+        saved_weights_t &save;
+        param_saver(saved_weights_t &save) : save(save) {}
+        void operator()(unsigned source,FSTArc &a) 
+        {
+            save.push_back(a.weight);
+        }
+    };
+        
+
+    typedef saved_weights_t::const_iterator saved_weight_p;
+
+    struct param_restorer 
+    {
+        saved_weight_p i;         //FIXME: end for boundscheck
+        param_restorer(saved_weight_p i) : i(i) {}
+        void operator()(unsigned source,FSTArc &a)
+        {
+            a.weight=*i++;
+        }
+    };
+    
+        
+    // appends, so you can chain several store_weights on different WFST, just so long as you restore them in the same order
+    void save_weights(saved_weights_t &save) const
+    {
+        //FIXME: instead of visit_arcs, changeEachParameter? (if large tie groups, you would benefit w/ less memory required to store)? ... remember, restore_weights must use the same method.  for now, I say not worth the overhead.
+        param_saver s=save;
+        const_cast<WFST&>(*this).visit_arcs(s);
+    }
+
+    // returns position of next unused weight, so you can use the same array for several WFST in a particular order
+    saved_weight_p restore_weights(saved_weight_p i) 
+    {
+        param_restorer r=i;
+        return visit_arcs(r).i;
     }
     
 
-    /*
-    // respects locked/tied arcs.  f(&weight) changes weight once per group or ungrouped arc, and never for locked
-    template <class F> void changeEachParameter(F f) {
-        typedef FSTArc::group_t G;
-        typedef HashTable<G, Weight> HT;
-            
-        HT tiedWeights;
-        for ( int s = 0 ; s < numStates() ; ++s )
-            for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )  {
-                G group=a->groupId;
-                if (isLocked(group))
-                    return;
-                if (isNormal(group))
-                    f(&(a->weight));
-                else if (isTied(group)) { // assumption: all the weights for the tie group are the same (they should be, after normalization at least)
-//#define OLD_EACH_PARAM
-                    //hash_traits<HT>::insert_return_type
-                    HT::insert_return_type it;
-                    if ((it=tiedWeights.insert(HT::value_type(group,0))).second) {
-                        f(&(a->weight));
-                        it.first->second = a->weight;
-                    } else
-                        a->weight = it.first->second;
-                }
-            }
-    }
-    */
     void removeMarkedStates(bool marked[]);  // remove states and all arcs to
     // states marked true
     BOOST_STATIC_CONSTANT(int,no_group=FSTArc::no_group);
@@ -918,11 +922,12 @@ class WFST {
 
     // v(unsigned source_state,FSTArc &arc)
     template <class V>
-    void visit_arcs(V & v) 
+    V & visit_arcs(V & v) 
     {
 //        unsigned arcno=0;
         for ( unsigned s = 0,e=numStates() ; s < e ; ++s )
             states[s].visit_arcs(s,v);
+        return v;
     }
     
 
