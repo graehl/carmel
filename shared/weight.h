@@ -24,6 +24,7 @@ There is well-tested log-rep addition/subtraction code in GraehlCVS (graehl/shar
 Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but that is no longer tolerated - e is the only natural base (and "log" sometimes means base 2, like in information theory, so it's confusing).
 */
 
+#include <boost/lexical_cast.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/myassert.h>
@@ -54,6 +55,8 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 
 namespace graehl {
 
+struct quiet_NaN_weight {};
+struct signaling_NaN_weight {};
 struct zero_weight {};
 struct one_weight {};
 struct inf_weight {};
@@ -311,6 +314,8 @@ struct logweight {                 // capable of representing nonnegative reals
         return self_type(false,false);
     }
     logweight() { setZero(); }
+    logweight(quiet_NaN_weight t) {weight=std::numeric_limits<Real>::quiet_NaN(); }
+    logweight(signaling_NaN_weight t) {weight=std::numeric_limits<Real>::signaling_NaN(); }
     logweight(zero_weight t) {setZero();}
     logweight(one_weight t) {setOne(); }
     logweight(inf_weight t) {setInfinity(); }
@@ -888,14 +893,95 @@ BOOST_AUTO_TEST_CASE( TEST_WEIGHT )
 
 namespace std {
 template<class Real>
-class numeric_limits<graehl::logweight<Real> > {
+class numeric_limits<graehl::logweight<Real> > : public std::numeric_limits<Real> {
+    typedef graehl::logweight<Real> W;
  public:
-    static bool has_infinity() { return true; }
-    enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
+    BOOST_STATIC_CONSTANT(bool,has_infinity=true);
+    BOOST_STATIC_CONSTANT(bool,is_exact=false);
+    BOOST_STATIC_CONSTANT(bool,is_integer=false);
+    BOOST_STATIC_CONSTANT(bool,is_signed=false);
+    BOOST_STATIC_CONSTANT(bool,is_modulo=false);
+    static W denorm_min() { return W(graehl::zero_weight()); }
+    static W min() { return W(graehl::zero_weight()); }
+    static W max() { return W(graehl::inf_weight()); }
+    static W infinity() { return W(graehl::inf_weight()); }
+    static W quiet_NaN () { return W(graehl::quiet_NaN_weight()); }
+    static W signaling_NaN () { return W(graehl::signaling_NaN_weight()); }
+//    BOOST_STATIC_CONSTANT(int,radix=10);
+//    BOOST_STATIC_CONSTANT(int,digits=std::numeric_limits<Real>::digits10);
+//    BOOST_STATIC_CONSTANT(int,digits10=std::numeric_limits<Real>::digits10);
+    
+// so boost::lcast_precision doesn't lose info.
+    
+//    enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
 
+    
     //FIXME: add rest
+    /*
+      namespace std {
+
+  template <class T>
+  class numeric_limits {
+
+    public:
+
+    // General -- meaningful for all specializations.
+    static const bool is_specialized ;
+    static T min () throw();
+    static T max () throw();
+    static const int radix ;
+    static const int digits ;
+    static const int digits10 ;
+    static const bool is_signed ;
+    static const bool is_integer ;
+    static const bool is_exact ;
+    static const bool traps ;
+    static const bool is_modulo ;
+    static const bool is_bounded ;
+
+    // Floating point specific.
+    static T epsilon () throw();
+    static T round_error () throw();
+    static const int min_exponent10 ;
+    static const int max_exponent10 ;
+    static const int min_exponent ;
+    static const int max_exponent ;
+    static const bool has_infinity ;
+    static const bool has_quiet_NaN ;
+    static const bool has_signaling_NaN ;
+    static const bool is_iec559 ;
+    static const float_denorm_style has_denorm ;
+    static const bool has_denorm_loss;
+    static const bool tinyness_before ;
+    static const float_round_style round_style ;
+    static T denorm_min () throw();
+    static T infinity () throw();
+    static T quiet_NaN () throw();
+    static T signaling_NaN () throw();
+  };
+
+  enum float_round_style {
+    round_indeterminate       = -1,
+    round_toward_zero         =  0,
+    round_to_nearest          =  1,
+    round_toward_infinity     =  2,
+    round_toward_neg_infinity =  3
+  };
+  enum float_denorm_style {
+    denorm_indeterminate      = -1,
+    denorm_absent             =  0,
+    denorm_present            =  1
+  };
+}
+    */
 };
-};
+}
+
+
+namespace boost {
+
+}
+
 
 #ifdef GRAEHL__SINGLE_MAIN
 #include <graehl/shared/weight.cc>
