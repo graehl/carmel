@@ -17,7 +17,7 @@
 ifndef BUILD_BASE
 BUILD_BASE:=.
 endif
-#LIB += z
+LIB += z
 CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
 UNAME=$(shell uname)
@@ -165,8 +165,9 @@ libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_
 else
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
 BOOST_TEST_LIB=-lboost_unit_test_framework$(BSUF)
-BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF)
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
+BOOST_SYSTEM_LIB=-lboost_filesystem$(BSUF)
+BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF) $(BOOST_SYSTEM_LIB)
 libs:
 endif
 

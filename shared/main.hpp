@@ -1,8 +1,9 @@
 // some main() boilerplate
-#ifndef MAIN_HPP
-#define MAIN_HPP
+#ifndef GRAEHL_SHARED__MAIN_HPP
+#define GRAEHL_SHARED__MAIN_HPP
 
 #include <graehl/shared/config.h>
+#include <graehl/shared/stream_util.hpp>
 #include <locale>
 #include <iostream>
 

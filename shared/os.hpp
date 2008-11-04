@@ -13,7 +13,7 @@
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/command_line.hpp>
 
-#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
 # define OS_WINDOWS
 #else
 #include <unistd.h>

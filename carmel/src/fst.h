@@ -23,6 +23,7 @@
 #include <boost/config.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/mean_field_scale.hpp>
+#include <graehl/shared/size_mega.hpp>
 
 #include <graehl/shared/debugprint.hpp>
 
@@ -707,12 +708,49 @@ class WFST {
         }
     };
     
+    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3
+    }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
+
+    // TODO: move more of the train params into here
+    struct train_opts 
+    {
+        unsigned cache_level;
+        std::string disk_cache_filename;
+        size_t_bytes disk_cache_bufsize;
+
+        FLOAT_TYPE learning_rate_growth_factor;
+        int ran_restarts;
+        random_restart_acceptor ra;
         
-    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0,random_restart_acceptor ra=random_restart_acceptor());
-    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor=1.,int ran_restarts=0,unsigned cache_derivations_level=0,random_restart_acceptor ra=random_restart_acceptor()); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+        train_opts() { set_defaults(); }
+        
+        void set_defaults() 
+        {
+            cache_level=cache_nothing;
+            disk_cache_filename="/tmp/carmel.derivations.XXXXXX";
+            disk_cache_bufsize=256*1024*1024;
+            learning_rate_growth_factor=1.;
+            ran_restarts=0;
+            ra=random_restart_acceptor();
+        }
+        bool use_disk() const 
+        {
+            return cache_level == cache_disk;
+        }
+        bool cache() const 
+        {
+            return cache_level != cache_nothing;
+        }
+        bool cache_backward() const
+        {
+            return cache_level == cache_forward_backward;
+        }
+    };
+    
+        
+    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts);
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
-    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2 
-    }; // cache_derivations_level param
 
     
 //    Weight trainFinish();

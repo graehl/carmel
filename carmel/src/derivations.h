@@ -13,6 +13,7 @@ special form of compose: input string * transducer * output string (more efficie
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/hashtable_fwd.hpp>
 #include <graehl/shared/graph.hpp>
+#include <graehl/shared/simple_serialize.hpp>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/train.h>
 #include <graehl/shared/dynarray.h>
@@ -126,15 +127,16 @@ struct wfst_io_index : boost::noncopyable
 
 
 // all the derivations for one in/out pair through WFST x
+// note that the reverse graph and topo (cache_backward saves them) point to arcs directly via pointers, so serialization omits those (forces cache_backward=false on load), so they're rebuilt when needed
+// containing derivations in a dynarray is fine since the lists used in graph states are movable, and state_to_id isn't kept around after compute, but even if it is, HashTable can also be moved.
 struct derivations //: boost::noncopyable
 {
  private:
 //    typedef List<int> Symbols;
     typedef int Sym;
     typedef dynamic_array<Sym> Seq;
-    WFST const& x;
     
-    Seq in,out;
+    Seq in,out; // cleared after compute()
     
     typedef dynamic_array<GraphState> vgraph;
     vgraph g;
@@ -236,16 +238,8 @@ struct derivations //: boost::noncopyable
         r.nStates=g.size();
         return r;
     }
-    
-    template <class Symbols>
-    derivations(WFST const & x,Symbols const& in,Symbols const& out,double w=1,unsigned line=0,bool cache_backward=false) // unusually, you must call compute() before using the object.  lets me push_back easier in container w/o copy or pimpl
-        : x(x)
-        ,in(in.begin(),in.end())
-        ,out(out.begin(),out.end())
-        , weight(w)
-        , lineno(line)
-        , cache_backward(cache_backward)
-    {}
+
+    derivations() {}
 
     typedef fixed_array<Weight> fb_weights;
 
@@ -310,12 +304,32 @@ struct derivations //: boost::noncopyable
         
         return prob;
     }
-    
-    derivations(derivations const& o) : x(o.x),in(o.in),out(o.out) {} // similarly, this doesn't really copy the derivations; you need to compute() after.  um, this would be bad if you used a vector rather than a list?
-
+ private:
+    derivations(derivations const& o) : in(o.in),out(o.out) {} // similarly, this doesn't really copy the derivations; you need to compute() after.  um, this would be bad if you used a vector rather than a list?
+ public:
     // return true iff goal reached (some deriv exists)
-    bool compute(wfst_io_index const& io,bool drop_names=true,bool prune_=true) 
+    template <class Symbols>
+    void init(Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false)
     {
+        in.set(in_);
+        out.set(out_);
+        weight=w;
+        lineno=line;
+        cache_backward=cache_backward_;
+        id_of_state.clear();
+        g.clear();
+        free_reverse();
+    }
+
+    template <class Symbols>
+    bool init_and_compute(WFST &x,wfst_io_index const& io,Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false,bool drop_names=true,bool prune_=true) 
+    {
+        init(in_,out_,w,line,cache_backward_);
+        return compute(x,io,drop_names,prune_);
+    }
+    
+    bool compute(WFST &x,wfst_io_index const& io,bool drop_names=true,bool prune_=true) 
+    {   
         state_id start=derive(io,deriv_state(0,0,0));
         assert(start==0);
         deriv_state goal(in.size(),x.final,out.size());
@@ -330,9 +344,10 @@ struct derivations //: boost::noncopyable
             prune();
         else
             global_stats.post=global_stats.pre;
-        if (no_goal)
+        if (no_goal) {
+            g.clear();
             return false;
-        else {
+        } else {
             if (cache_backward) {
                 make_reverse();
                 make_order();
@@ -341,6 +356,26 @@ struct derivations //: boost::noncopyable
         }
     }
 
+    // nonportable serialization to temporary rewindable tape file
+    template <class A>
+    void serialize(A &a) 
+    {
+        a & fin & g & weight & lineno;
+        if (A::is_loading) {
+            no_goal=g.empty();
+            free_extras(); // not saved/loaded, so clear
+        }
+    }
+
+    void free_extras()  // no longer needed after compute
+    {
+        cache_backward=false;
+        free_reverse();
+        id_of_state.clear();
+        in.clear();
+        out.clear();
+    }
+    
     typedef GraphState::arcs_type arcs_type;
 
     struct reversed_graph 

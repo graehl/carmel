@@ -71,7 +71,7 @@ struct treetrie {
   typedef Index::vertex_descriptor V;
   Index index;
   //  dynamic_array<List<void *> matches;
-  typedef Tree<key_type> MTree;
+  typedef shared_tree<key_type> MTree;
   dynamic_array<MTree *> where_subtrees; // where (see NOTES) -> subtree with that where
   treetrie() {}
 
@@ -84,7 +84,7 @@ struct treetrie {
   /// boost::reference<array_mapper<Tree<L> *> > works fine as an F
   //// 1/27/2006: can't remember WHY anyone inserting would want to play with an F callback - not used for anything internally, just exposes impl. detail - commented out with /* */
   template <class L/*,class F*/>
-  V insert(Tree<L> *t/*, F f*/) {
+  V insert(shared_tree<L> *t/*, F f*/) {
     nextwhere=0; // root=0, children start at 1
     // visit: root label
     V node=index.force(index.begin(),get_symbol(t->label));
@@ -95,12 +95,12 @@ struct treetrie {
   ///leaf.  if _terminal_leaves_, any leaf in the rule that isn't a variable
   ///node must have rank 0
   template <class L/*,class F*/>
-  V insert_expand(Tree<L> *t,V node/*,F f*/) {
+  V insert_expand(shared_tree<L> *t,V node/*,F f*/) {
     unsigned where=nextwhere++;
 /*    deref(f)(where,t); */
     unsigned rank=t->rank;
     L &lab=t->label;
-    typedef typename Tree<L>::iterator child_it;
+    typedef typename shared_tree<L>::iterator child_it;
     if (rank) { // rule internal node
       // add (where,rank) to expand t
       node=index.force(node,Symbol(where,Symbol::PHONYINT));

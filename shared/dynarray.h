@@ -4,8 +4,7 @@
 #define GRAEHL__SHARED__DYNARRAY_H
 //FIXME: const safeness for contents e.g. a[1] a.at(1) return const ref if a const?
 
-// For plain old data (MEMCPY-able-to-move) types only!
-// (MEMCPY copyable (i.e. no external resources owned, i.e. no real destructor) is not assumed although a is_pod template might be nice)
+// For (MEMCPY-able-to-move) types *only* (e.g. plain old data)  constructor/destructor that do things is fine, as long as nothing goes wrong when relocating the object to a diff address by just moving the bytes with no notification, e.g. circularly linked head node as a member will fail badly
 // Array encapsulates a region of memory and doesn't own its own storage ... you can create subarrays of arrays that use the same storage.  you could implement vector or string on top of it.  it does take an allocator argument and has methods alloc, dealloc, re_alloc (realloc is a macro in MS, for shame), which need not be used.  as a rule, nothing writing an Array ever deallocs old space automatically, since an Array might not have alloced it.
 // dynamic_array extends an array to allow it to be grown efficiently one element at a time (there is more storage than is used) ... like vector but better for MEMCPY-able stuff
 // note that dynamic_array may have capacity()==0 (though using push_back and array(i) will allocate it as necessary)
@@ -27,6 +26,7 @@
 #include <graehl/shared/funcs.hpp>
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/stackalloc.hpp>
+#include <graehl/shared/simple_serialize.hpp>
 #include <graehl/shared/function_output_iterator.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/iterator/reverse_iterator.hpp>
@@ -71,6 +71,10 @@ protected:
     T *vec;
     T *endspace;
 public:
+    static inline size_type bytes(size_type n) 
+    {
+        return sizeof(T)*n;
+    }    
     BOOST_STATIC_CONSTANT(bool,REPLACE=0);
     BOOST_STATIC_CONSTANT(bool,APPEND=1);
     
@@ -198,7 +202,7 @@ public:
     }
 
     void copyto(T *to,unsigned n) {
-        memcpy(to,vec,sizeof(T)*n);
+        memcpy(to,vec,bytes(n));
     }
 
     void copyto(T *to) {
@@ -470,8 +474,11 @@ public:
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
 // FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,class Alloc> class dynamic_array : public array<T,Alloc> {
+public:
+    typedef unsigned size_type;
+ private:
     typedef dynamic_array<T,Alloc> self_type;
-    //unsigned int sz;
+    //size_type int sz;
     T *endv;
     typedef array<T,Alloc> Base;
 private:
@@ -483,11 +490,11 @@ public:
     }
 
     // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-    explicit dynamic_array(unsigned sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { dynarray_assert(this->invariant()); }
+    explicit dynamic_array(size_type sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { dynarray_assert(this->invariant()); }
 
     // creates vector holding sp copies of t; does initialize
     template <class V>
-    explicit dynamic_array(unsigned sp,const V& t) : array<T,Alloc>(sp) {
+    explicit dynamic_array(size_type sp,const V& t) : array<T,Alloc>(sp) {
         construct(t);
         dynarray_assert(invariant());
     }
@@ -501,7 +508,7 @@ public:
         endv=this->endspace;
     }
 
-    void reinit(unsigned sp,const T& t=T()) {
+    void reinit(size_type sp,const T& t=T()) {
         clear();
         reserve(sp);
         T *real_es=this->endspace;
@@ -509,7 +516,7 @@ public:
         array<T,Alloc>::construct(t);
         this->endspace=real_es;
     }
-    void reinit_nodestroy(unsigned sp,const T& t=T()) {
+    void reinit_nodestroy(size_type sp,const T& t=T()) {
         reserve(sp);
         T *real_es=this->endspace;
         endv=this->endspace=this->vec+sp;
@@ -518,7 +525,7 @@ public:
     }
 
     dynamic_array(const dynamic_array &a) : array<T,Alloc>(a.size()) {
-//      unsigned sz=a.size();
+//      size_type sz=a.size();
         //alloc(sz);
         std::uninitialized_copy(a.begin(),a.end(),this->begin());
         endv=this->endspace;
@@ -532,12 +539,36 @@ public:
         endv=this->endspace;
         dynarray_assert(this->invariant());
     }
+
+    template<class Iter>
+    void append(Iter a,Iter const& b) 
+    {
+        for (;a!=b;++a) {
+            push_back(*a);
+        }
+    }
+    
+    template<class Iter>
+    void set(Iter a,Iter const& b) 
+    {
+        clear();
+        append(a,b);
+    }
+
+    template <class C>
+    void set(C const& c) 
+    {
+        clear();
+        reserve(c.size());
+        append(c.begin(),c.end());
+    }
+    
     
     // warning: stuff will still be destructed!
-    void copyto(T *to,T * from,unsigned n) {
-        memcpy(to,from,sizeof(T)*n);
+    void copyto(T *to,T * from,size_type n) {
+        memcpy(to,from,bytes(n));
     }
-    void copyto(T *to,unsigned n) {
+    void copyto(T *to,size_type n) {
         copyto(to,this->vec,n);
     }
     void copyto(T *to) {
@@ -583,32 +614,32 @@ public:
     }
 
 
-    T & at(unsigned int index) const { // run-time bounds-checked
+    T & at(size_type index) const { // run-time bounds-checked
         T *r=this->vec+index;
         if (!(r < end()) )
             throw std::out_of_range("dynamic_array index out of bounds");
         return *r;
     }
-    bool exists(unsigned index) const
+    bool exists(size_type index) const
     {
         return this->begin()+index < end();
     }
 
-    T & operator[] (unsigned int index) const {
+    T & operator[] (size_type index) const {
         dynarray_assert(this->invariant());
         dynarray_assert(this->vec+index < end());
         return (this->vec)[index];
     }
-    unsigned int index_of(T *t) const {
+    size_type index_of(T *t) const {
         dynarray_assert(t>=this->begin() && t<end());
-        return (unsigned int)(t-this->vec);
+        return (size_type)(t-this->vec);
     }
 
     // NEW OPERATIONS:
     // like [], but bounds-safe: if past end, expands and default constructs elements between old max element and including new max index
-    T & operator() (unsigned int index) {
+    T & operator() (size_type index) {
         if ( index >= size() ) {
-            unsigned int newSpace = this->capacity();
+            size_type newSpace = this->capacity();
             if (index >= newSpace) {
                 if (newSpace==0)
                     newSpace = index+1;
@@ -658,7 +689,7 @@ public:
         new(push_back_raw()) T(t0,t1,t2);
     }
     
-    void push_back_n(const T& val,unsigned n)
+    void push_back_n(const T& val,size_type n)
     {
         dynarray_assert(invariant());
         T *newend=endv+n;
@@ -703,7 +734,7 @@ public:
         swap(front(),back());
     }
     
-    T &at_grow(unsigned index) {
+    T &at_grow(size_type index) {
         T *r=this->vec+index;
         if (r >= end()) {
             if (r >= this->endspace) {
@@ -745,9 +776,9 @@ public:
     }
     
     void removeMarked_nodestroy(bool marked[]) {
-        unsigned sz=size();
+        size_type sz=size();
         if ( !sz ) return;
-        unsigned int f, i = 0;
+        size_type f, i = 0;
         while ( i < sz && !marked[i] ) ++i;
         f = i; // find first marked (don't need to move anything below it)
 #ifndef OLD_REMOVE_MARKED
@@ -758,12 +789,12 @@ public:
                     (this->vec)[i++].~T();
                 if (i==sz)
                     break;
-                unsigned i_base=i;
+                size_type i_base=i;
                 while (i<sz && !marked[i]) ++i;
                 if (i_base!=i) {
-                    unsigned run=(i-i_base);
+                    size_type run=(i-i_base);
 //                      DBP(f << i_base << run);
-                    memmove(&(this->vec)[f],&(this->vec)[i_base],sizeof(T)*run);
+                    memmove(&(this->vec)[f],&(this->vec)[i_base],bytes(run));
                     f+=run;
                 }
             }
@@ -784,44 +815,66 @@ public:
 //  operator T *() { return this->vec; } // use at own risk (will not be valid after resize)
     // use begin() instead
 protected:
-    void construct_n_more(unsigned n) 
+    void construct_n_more(size_type n) 
     {
         Assert(endv+n <= this->endspace);
         while (n--)
             new (endv++) T();
     }
 
-    void resize_up(unsigned new_sz) 
+    void resize_up(size_type new_sz) 
     {
-        unsigned sz=size();
+        size_type sz=size();
         dynarray_assert(new_sz > size());
         realloc_up(new_sz);
         construct_n_more(new_sz-sz);
         Assert(size()==new_sz);
     }
     
-    void realloc_up(unsigned int new_cap) {
+    void realloc_up(size_type new_cap) {
         //     we are somehow allowing 0-capacity vectors now?, so add 1
         //if (new_cap==0) new_cap=1;
-        unsigned sz=size();
+        size_type sz=size();
         dynarray_assert(new_cap > this->capacity());
         // may be used when we've increased endv past endspace, in order to fix things
         T *newVec = this->allocate(new_cap); // can throw but we've made no changes yet
-        memcpy(newVec, this->vec, sz*sizeof(T));
+        memcpy(newVec, this->vec, bytes(sz));
         dealloc_safe();
         set_begin(newVec);this->set_capacity(new_cap);set_size(sz);
         // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
     }
     void dealloc_safe() {
-        unsigned oldcap=this->capacity();
+        size_type oldcap=this->capacity();
         if (oldcap)
             this->deallocate(this->vec,oldcap); // can't throw
     }
 public:
-    void resize(unsigned int newSz) {
+
+#if GRAEHL_DYNARRAY_POD_ONLY_SERIALIZE
+    // note: using this implies a trivial destructor / POD copy constructor (which resizable dynarray already exploits)
+    template <class A>
+    void serialize(A &a) {
+        size_type sz;
+        if (A::is_saving) sz=size();
+        a&sz;
+        if (A::is_loading) {
+            reserve_at_least(sz);
+            set_size(sz);            
+        }
+        a.binary(this->vec,bytes(sz));
+    }
+#else
+    template <class A>
+    void serialize(A &a) 
+    {
+        serialize_container(a,*this);
+    }
+    
+#endif 
+    void resize(size_type newSz) {
         dynarray_assert(invariant());
         //    if (newSz==0) newSz=1;
-        unsigned sz=size();
+        size_type sz=size();
         if (newSz<sz) {
             reduce_size(newSz);
             return;
@@ -854,19 +907,31 @@ public:
             }            
         }
     }
-
+    
     //iterator_tags<Input> == random_access_iterator_tag    
     template <class Input>
-    void append(Input from,Input to) 
+    void append_ra(Input from,Input to) 
     {
-        std::size_t n_new=from-to;
+        /*
+        std::size_t n_new=to-from;
         reserve(size()+n_new);
         while (from!=to)
             new(endv++) T(*from++);
-//            *endv++=*from++;
         dynarray_assert(invariant());
+        */
+        append_n(from,to-from);
     }
 
+    //iterator_tags<Input> == random_access_iterator_tag    
+    template <class Input>
+    void append_n(Input from,size_type n) 
+    {
+        reserve(size()+n);
+        while (n-- > 0)
+            new(endv++) T(*from++);
+//        dynarray_assert(invariant());
+    }
+    
     // could just use copy, back_inserter
     template <class Input>
     void append_push_back(Input from,Input to) 
@@ -874,16 +939,22 @@ public:
         while (from!=to)
             push_back(*from++);
     }
+
+    static inline size_type bytes(size_type n) 
+    {
+        return sizeof(T)*n;
+    }
+    
     
     void compact() {
         dynarray_assert(invariant());
         if (endv==this->endspace) return;
         //equivalent to resize(size());
-        unsigned newSpace=size();
+        size_type newSpace=size();
         //    if (newSpace==0) newSpace=1; // have decided that 0-length dynarray is impossible
         if(newSpace) {
             T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
-            memcpy(newVec, this->vec, newSpace*sizeof(T));
+            memcpy(newVec, this->vec, bytes(newSpace));
 
             dealloc_safe();
             //set_begin(newVec);
@@ -898,25 +969,25 @@ public:
 
     // doesn't dealloc *into
     void compact(array<T,Alloc> &into) {
-        unsigned sz=size();
+        size_type sz=size();
         into.alloc(sz);
         copyto(into.begin());
     }
 
     // doesn't dealloc *into
     void compact_giving(array<T,Alloc> &into) {
-        unsigned sz=size();
+        size_type sz=size();
         into.alloc(sz);
         copyto(into.begin());
         clear_nodestroy();
     }
 
-    void reserve(unsigned int newSpace) {
+    void reserve(size_type newSpace) {
         if (newSpace > this->capacity())
             realloc_up(newSpace);
     }
-    void reserve_at_least(unsigned req) {
-        unsigned newcap=this->capacity();
+    void reserve_at_least(size_type req) {
+        size_type newcap=this->capacity();
         if (req > newcap) {
             if (newcap==0)
                 realloc_up(req);
@@ -928,9 +999,9 @@ public:
             }
         }
     }
-    unsigned int size() const { return (unsigned)(endv-this->vec); }
-    void set_size(unsigned newSz) { endv=this->vec+newSz; dynarray_assert(this->invariant()); }
-    void reduce_size(unsigned int n) {
+    size_type size() const { return (size_type)(endv-this->vec); }
+    void set_size(size_type newSz) { endv=this->vec+newSz; dynarray_assert(this->invariant()); }
+    void reduce_size(size_type n) {
         if (n==0) {
             clear_dealloc();
             return;
@@ -940,7 +1011,7 @@ public:
         for (T *i=endv;i<end;++i)
             i->~T();
     }
-    void reduce_size_nodestroy(unsigned int n) {
+    void reduce_size_nodestroy(size_type n) {
         dynarray_assert(invariant() && n<=size());
         endv=this->vec+n;
     }

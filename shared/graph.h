@@ -11,6 +11,8 @@
 #include <graehl/shared/push_backer.hpp>
 #include <iterator>
 
+//#include <boost/serialization/access.hpp>
+
 namespace graehl {
 
 static const unsigned DFS_NO_PREDECESSOR=(unsigned)-1;
@@ -39,6 +41,11 @@ struct GraphArc {
     GraphArc(int src,int dest,FLOAT_TYPE weight) :
         src(src),dest(dest),weight(weight)
     {}
+// private:
+// friend class boost::serialization::access;
+    template <class Archive> 
+    void serialize(Archive & ar, const unsigned int version=0)
+    { ar & src & dest & weight & data; }
 };
 
 std::ostream & operator << (std::ostream &out, const GraphArc &a);
@@ -46,6 +53,11 @@ std::ostream & operator << (std::ostream &out, const GraphArc &a);
 struct GraphState {
     typedef  List<GraphArc> arcs_type;
     arcs_type arcs;
+    
+    template <class Archive> 
+    void serialize(Archive & ar, const unsigned int version=0)
+    { ar & arcs; }
+    
     void add(GraphArc const& a) 
     {
         arcs.push(a);
@@ -309,7 +321,7 @@ Weight countNoCyclePaths(Graph g, int src, int dest,unsigned *p_n_back_edges=0)
 // w is an array with as many entries as g has states.   w[start] is nonzero
 
 template <class Weight_get,class Weight_array,class Order>
-void propogate_paths_in_order(Graph g,Order t,Order const& t_order_end,Weight_get const& getwt,Weight_array& w)
+void propagate_paths_in_order(Graph g,Order t,Order const& t_order_end,Weight_get const& getwt,Weight_array& w)
 {
   for (  ; t != t_order_end; ++t ){
       unsigned src=*t;
@@ -322,17 +334,17 @@ void propogate_paths_in_order(Graph g,Order t,Order const& t_order_end,Weight_ge
 }
 
 template <class Weight_get,class Weight_array>
-void propogate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned start)
+void propagate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned start)
 {
     dynamic_array<unsigned> rev;
     reverse_topo_order r(g);
     r.order_from(make_push_backer(rev),start);
-    propogate_paths_in_order(g,rev.rbegin(),rev.rend(),getwt,w);
+    propagate_paths_in_order(g,rev.rbegin(),rev.rend(),getwt,w);
 /*        
   List<int> topo;  
   TopoSort sort(g,&topo);
   sort.order_from(start);
-  propogate_paths_in_order(g,topo.begin(),topo.end(),getwt,w);
+  propagate_paths_in_order(g,topo.begin(),topo.end(),getwt,w);
 */
 }
 
