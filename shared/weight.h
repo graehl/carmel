@@ -903,18 +903,15 @@ class numeric_limits<graehl::logweight<Real> > : public std::numeric_limits<Real
     BOOST_STATIC_CONSTANT(bool,is_modulo=false);
     static W denorm_min() { return W(graehl::zero_weight()); }
     static W min() { return W(graehl::zero_weight()); }
+//    static W max() { return W(std::numeric_limits<Real>::max(),graehl::ln_weight()); }
     static W max() { return W(graehl::inf_weight()); }
     static W infinity() { return W(graehl::inf_weight()); }
     static W quiet_NaN () { return W(graehl::quiet_NaN_weight()); }
     static W signaling_NaN () { return W(graehl::signaling_NaN_weight()); }
+    // BOOST_STATIC_CONSTANT(int,extra_digits_factor=10); // so boost::lcast_precision doesn't lose info.
 //    BOOST_STATIC_CONSTANT(int,radix=10);
-//    BOOST_STATIC_CONSTANT(int,digits=std::numeric_limits<Real>::digits10);
-//    BOOST_STATIC_CONSTANT(int,digits10=std::numeric_limits<Real>::digits10);
-    
-// so boost::lcast_precision doesn't lose info.
-    
-//    enum name3 { is_specialized=1,digits10=std::numeric_limits<Real>::digits10 };
-
+//    BOOST_STATIC_CONSTANT(int,digits=std::numeric_limits<Real>::digits10*extra_digits_factor);
+//    BOOST_STATIC_CONSTANT(int,digits10=std::numeric_limits<Real>::digits10*extra_digits_factor);
     
     //FIXME: add rest
     /*

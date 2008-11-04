@@ -2,6 +2,7 @@
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
 
+#include <graehl/shared/large_streambuf.hpp>
 #include <graehl/shared/null_deleter.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/teestream.hpp>
@@ -96,17 +97,6 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 }    
     
 
-template <std::size_t bufsize=256*1024>
-struct large_streambuf
-{
-    BOOST_STATIC_CONSTANT(std::size_t,size=bufsize);
-    char buf[bufsize];
-    template <class S>
-    large_streambuf(S &s) 
-    {
-        s.rdbuf()->pubsetbuf(buf,size);
-    }
-};
 
     
 

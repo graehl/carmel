@@ -53,6 +53,7 @@ template <class T>
 struct slist_node
 {
     slist_node() {}
+    slist_node(slist_node *y) : next(y) {}
     slist_node(const T& x,slist_node* y = 0):data(x),next(y){}
     T data;
     slist_node* next;
@@ -399,6 +400,30 @@ class slist_shared :
         */
         append_deep_copy(&head,L.head);
     }
+
+    template <class Ar>
+    void serialize(Ar &a) 
+    {
+        if (Ar::is_loading) {
+            size_type sz;
+            a & sz;
+            Node **pto=&head; // yes, this leaks, but this is a shared list i.e. you manage nodes.  see slist for managed storage
+//            head=NULL; 
+            T val;
+            while(sz-->0) {
+                Node *n=construct();
+                pto=&(*pto=n)->next;
+                a & n->data;
+            }
+            *pto=NULL;
+        } else {
+            size_type sz=size();
+            a & sz;
+            for (Node *p=head;p;p=p->next)
+                a & p->data;
+        }
+    }
+    
     void assign_deep_copy(const self_type &L)
     {
         clear();
@@ -430,6 +455,11 @@ class slist_shared :
     {
         return allocator().allocate(1);
     }
+    inline Node *construct_next(Node *next) 
+    {
+        new(alloc())Node(next);
+    }
+    
     void dealloc(Node *n)
     {
         allocator().deallocate(n,1);
@@ -649,6 +679,7 @@ class slist_shared :
         return iterator(tmp);
     }
 
+    /*
     template <class O>
     friend O & operator << (O &out, self_type const& list)
     {
@@ -663,6 +694,7 @@ class slist_shared :
         out << ")";
         return out;
     }
+    */
 };
 
 
@@ -697,6 +729,15 @@ class slist : public slist_shared<T,A>
     {
         slist_base::swap(x);
     }
+
+    template <class Ar>
+    void serialize(Ar &a) 
+    {
+        if (Ar::is_loading)
+            this->clear();
+        slist_base::serialize(a);
+    }
+    
     ~slist() { this->clear(); }
  private:
     void swap(slist_base& x)
@@ -722,15 +763,15 @@ template <class T,class A>
 
 #ifdef TEST
 
-int a[] = { 1,2,3,4,5,6,7 };
-int a1[] = { 1, 4, 5 };
-int a2[] = {3,4,6,7};
+int sla[] = { 1,2,3,4,5,6,7 };
+int sla1[] = { 1, 4, 5 };
+int sla2[] = {3,4,6,7};
 BOOST_AUTO_TEST_CASE( test_slist )
 {
     using namespace graehl;
     typedef slist<int> L;
-    L l(a,a+7),m,n,o(a1,a1+3),p(a2,a2+4);
-    m.set_prepend(a,a+7);
+    L l(sla,sla+7),m,n,o(sla1,sla1+3),p(sla2,sla2+4);
+    m.set_prepend(sla,sla+7);
     BOOST_CHECK_EQUAL(l.size(),7);
     BOOST_CHECK(l!=o);
     BOOST_CHECK(o!=p);
@@ -740,15 +781,15 @@ BOOST_AUTO_TEST_CASE( test_slist )
     BOOST_CHECK(p!=q);
     L::back_insert_iterator out(n);
     for (int i=0;i<7;++i)
-        *out++ = a[i];
+        *out++ = sla[i];
     BOOST_CHECK_EQUAL(l,n);
     std::vector<L> v;
     for (int i=0;i<100;++i) {
         v.push_back(L());
-        v.back().set_prepend(a,a+(i%7));
+        v.back().set_prepend(sla,sla+(i%7));
     }
     for (int i=0;i<100;++i) {
-        BOOST_CHECK_EQUAL(v[i],L(a,a+(i%7)));
+        BOOST_CHECK_EQUAL(v[i],L(sla,sla+(i%7)));
     }
 }
 #endif 

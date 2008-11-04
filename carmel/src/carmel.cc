@@ -22,11 +22,12 @@
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/cascade.h>
 #include <graehl/shared/myassert.h>
+#include <graehl/shared/string_to.hpp>
 #include <boost/config.hpp>
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.3"
+#define CARMEL_VERSION "4.4"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -79,6 +80,7 @@ void readParam(T *t, char const*from, char sw) {
         exit(-1);
     }
 }
+
 
 int isSpecial(const char* psz) {
     if ( !(*psz == '*') )
@@ -231,11 +233,13 @@ void usageHelp(void);
 void WFSTformatHelp(void);
 
 typedef std::map<std::string,double> long_opts_t;
+typedef std::map<std::string,std::string> text_long_opts_t;
 
 struct carmel_main 
 {
     bool *flags;
     long_opts_t &long_opts;
+    text_long_opts_t &text_long_opts;
     Weight prune_wt;
     WFST::NormalizeMethod norm_method;
     Weight keep_path_ratio;
@@ -254,9 +258,24 @@ struct carmel_main
         v=i->second;
         return true;
     }
+
+    std::string const& set_default_text(std::string const& key,std::string const& default_val) 
+    {
+        std::string &val=text_long_opts[key];
+        if (val.empty())
+            val=default_val;
+        return val;
+    }
+
+    template <class V>
+    V const& get_default_opt(std::string const& key,V &v,std::string const& default_val) 
+    {
+        return string_into(set_default_text(key,default_val),v);
+    }
     
-    carmel_main(bool *flags,long_opts_t &long_opts)
-        :flags(flags),long_opts(long_opts)
+
+    carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
+        :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts)
     {
         norm_method.group=WFST::CONDITIONAL;
         keep_path_ratio.setInfinity();
@@ -440,7 +459,6 @@ main(int argc, char *argv[]){
     bool wrFlag = false;
     bool msFlag = false;
     bool learning_rate_growth_flag = false;
-    FLOAT_TYPE learning_rate_growth_factor=(FLOAT_TYPE)1.;
     int nGenerate = 0;
     int maxTrainIter = 256;
 #define DEFAULT_MAX_GEN_ARCS 1000
@@ -448,15 +466,16 @@ main(int argc, char *argv[]){
     int labelStart = 0;
     int labelFlag = 0;
     bool rrFlag=false;
-    int ranRestarts = 0;
     bool isInChain;
     ostream *fstout = &cout;
     bool mean_field_oneshot_flag=false;
     bool exponent_flag=false;
     double exponent=1;
     long_opts_t long_opts;
-
-    carmel_main cm(flags,long_opts);
+    text_long_opts_t text_long_opts;
+    WFST::train_opts train_opt;
+    
+    carmel_main cm(flags,long_opts,text_long_opts);
     
     std::ios_base::sync_with_stdio(false);
 
@@ -466,15 +485,29 @@ main(int argc, char *argv[]){
                 // long option
                 char * s=pc+2;
                 char  *e=s;
-                double v=1;
+                double v;
+                bool have_val=false;
                 for(;*e;++e)
                     if (*e== '=' ) {
-                        readParam(&v,e+1,'-');
+                        have_val=true;
                         break;
                     }
+                
                 std::string key(pc+2,e);
+                std::string val;
+
+                if (have_val) {
+                    val=(e+1);
+                    text_long_opts[key]=val;
+                    istringstream is(val);
+                    is >> v;
+                    if (is.fail())
+                        v=-1;
+                } else {
+                    (void)text_long_opts[key];
+                }
                 long_opts[key]=v;
-                cerr << "option " << key << " = " << v << endl;
+                cerr << "option " << key << " = " << val << endl;
             } else {        
                 while ( *(++pc) ) {
                     if ( *pc == 'k' )
@@ -533,12 +566,12 @@ main(int argc, char *argv[]){
                 readParam(&converge_pp_ratio,argv[i],'X');
             } else if ( learning_rate_growth_flag ) {
                 learning_rate_growth_flag = false;
-                readParam(&learning_rate_growth_factor,argv[i],'o');
-                if (learning_rate_growth_factor < 1)
-                    learning_rate_growth_factor=1;
+                readParam(&train_opt.learning_rate_growth_factor,argv[i],'o');
+                if (train_opt.learning_rate_growth_factor < 1)
+                    train_opt.learning_rate_growth_factor=1;
             } else if (rrFlag) {
                 rrFlag=false;
-                readParam(&ranRestarts,argv[i],'!');
+                readParam(&train_opt.ran_restarts,argv[i],'!');
             } else if (seedFlag) {
                 seedFlag=false;
                 readParam(&seed,argv[i],'R');
@@ -597,7 +630,13 @@ main(int argc, char *argv[]){
             }
     }
     bool prunePath = flags['w'] || flags['z'];
-    unsigned cache_derivations_level=flags[':'] ? 2 : (flags['?'] ? 1 : 0);
+    train_opt.cache_level=flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing);
+    if (cm.have_opt("disk-cache-derivations")) {
+        train_opt.cache_level=WFST::cache_disk;
+        train_opt.disk_cache_filename=cm.set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
+        cm.get_default_opt("disk-cache-bufsize",train_opt.disk_cache_bufsize,"1M");
+        Config::log()<<"Disk cache of derivations will be created at "<<train_opt.disk_cache_filename<<" using read buffer of "<<train_opt.disk_cache_bufsize<<" bytes.\n";
+    }
     
     srand(seed);
     setOutputFormat(flags,&cout);
@@ -975,11 +1014,13 @@ main(int argc, char *argv[]){
                 } else {
                     corpus.set_null();
                 }
-                unsigned rr=ranRestarts;
+                unsigned rr=train_opt.ran_restarts;
                 if (long_opts["final-restart"])
                     rr=(unsigned)long_opts["final-restart"];
                 WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
-                result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, learning_rate_growth_factor, ranRestarts,cache_derivations_level,ran_accept);
+                train_opt.ra=ran_accept;
+                
+                result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, train_opt);
                 if (!cascade.trivial) {
                     // write inputfilename.trained for each input
                     char const** chain_filenames=filenames+(chain-chainMemory);
@@ -1255,7 +1296,10 @@ void usageHelp(void)
         "\n"
         "--minimize-pairs-no-epsilon : for --minimize-pairs, treat *e*:*e* as a real symbol and not an epsilon\n"
         "if you don't use this, you may need to use --minimize-rmepsilon, which should give a smaller result anyway\n"
-        "\n"
+        ;
+    
+#endif 
+cout <<         "\n"
         "--restart-tolerance=w : like -X w, but applied to the first iteration of each random start.\n"
         "a random start is rejected unless its perplexity is within (log likelihood ratio) w of the best start so far.\n"
         "w=1.1 allows a start up to 10% worse than the best, .9 demands a 10% improvement.\n"
@@ -1264,9 +1308,8 @@ void usageHelp(void)
         "\n"
         "--final-restart=N : the 1st...Nth random restart move from --restart-tolerance to\n"
         "--final-restart-tolerance (exponentially) and then holds constant from restarts N,N+1,...\n"
-        ;    
-#endif 
-
+    ;
+ 
     cout << "\n\n--final-sink : if needed, add a new final state with no outgoing arcs\n";
     cout << "\n--consolidate-max : for -C, use max instead of sum for duplicate arcs\n";
     cout << "\n--consolidate-unclamped : for -C sums, clamp result to max of 1\n";
@@ -1275,6 +1318,11 @@ void usageHelp(void)
     cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
     cout << "\n--random-set : like -1 but ignore previous weights and set a new weight on (0..1]\n";
     cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
+    cout <<    "\n"
+        "--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes\n"
+        "\n"
+        "--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)\n"
+        ;    
     /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
     cout << "\n--train-cascade-compress-always : even when the composition needed no pruning, compress the table (certainly frivolous)\n";

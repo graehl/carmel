@@ -17,7 +17,6 @@ derivations::state_id derivations::derive(wfst_io_index const& io,deriv_state co
     g.push_back();
         
     wfst_io_index::for_state const&fs=io.st[d.s];
-
         
     add_arcs(io,EPS,EPS,d.i,d.o,fs,ret);
     

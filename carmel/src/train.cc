@@ -5,6 +5,8 @@
 #include <graehl/shared/weight.h>
 #include <graehl/carmel/src/derivations.h>
 #include <graehl/carmel/src/cascade.h>
+#include <graehl/shared/serialize_batch.hpp>
+#include <graehl/shared/time_space_report.hpp>
 
 //#define DEBUGTRAIN
 
@@ -124,8 +126,8 @@ struct forward_backward
     List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)    
 
     /// stuff for new derivation caching EM:
-    typedef List<derivations> cached_derivs_t;
-    cached_derivs_t cached_derivs;
+    //    typedef List<derivations> cached_derivs_t; // could use a vector, i think ... but no need
+    //    cached_derivs_t cached_derivs;
 
     
     inline void matrix_compute(IOSymSeq const& s,bool backward=false) 
@@ -173,21 +175,23 @@ struct forward_backward
     {
         wfst_io_index io(arcs);
         unsigned n=1;
+        cached_derivs.clear();
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
-            cached_derivs.push_front(x,i->i,i->o,i->weight,n,cache_backward);
-            derivations &d=cached_derivs.front();
-            if (!d.compute(io)) {
+            derivations &d=cached_derivs.start_new();
+            if (!d.init_and_compute(x,io,i->i,i->o,i->weight,n,cache_backward)) {
                 warn_no_derivations(x,*i,n);
-                cached_derivs.pop();
+                cached_derivs.drop_new();
             } else {
 #ifdef DEBUGDERIVATIONS
                 Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
                 i->print(Config::debug(),x,"\n");
                 printGraph(d.graph(),Config::debug());
-#endif 
+#endif
+                cached_derivs.keep_new();
             }
         }
+        cached_derivs.mark_end();
         Config::log() << derivations::global_stats;
     }
 
@@ -240,17 +244,20 @@ struct forward_backward
     }
 
     bool cache_backward;
-
-    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,unsigned cache_derivations_level,bool include_backward=true)
+    serialize_batch<derivations> cached_derivs;
+    
+    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts=WFST::train_opts())
         : x(x),cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
+        ,cached_derivs(opts.use_disk(),opts.disk_cache_filename,true,opts.disk_cache_bufsize)
     {
         trn=NULL;
         f=b=NULL;
         remove_bad_training=true;
-        if (cache_derivations_level!=WFST::cache_nothing) {
+        if (opts.cache()) {
             use_matrix=false;
-            cache_backward=(cache_derivations_level==WFST::cache_forward_backward);
-        } else {            
+            cache_backward=opts.cache_backward();
+            Config::log()<<"Caching derivations in "<<cached_derivs.stored_in()<<std::endl;
+        } else {
             use_matrix=true;
             mio.populate(include_backward);
             e_topo_populate(include_backward);
@@ -307,6 +314,7 @@ struct forward_backward
                 }
             }
         } else {
+            graehl::time_space_report(Config::log(),"Computed cached derivations:");
             compute_derivations(corpus.examples);
         }
     }
@@ -491,26 +499,28 @@ struct add_weighted_scratch
 Weight WFST::train(
                    training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count,
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
-                   int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
-                   int ran_restarts,unsigned cache_derivations_level
-                   , random_restart_acceptor ra
+                   int maxTrainIter
+                   ,train_opts const& opts
     )
 {
     cascade_parameters cascade;
-    return train(cascade,corpus,method,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,maxTrainIter,learning_rate_growth_factor,ran_restarts,cache_derivations_level,ra);
+    return train(cascade,corpus,method,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,maxTrainIter,opts);
 }
 
+//,learning_rate_growth_factor,ran_restarts,ra
 Weight WFST::train(cascade_parameters &cascade,
                    training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count,
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
-                   int maxTrainIter,FLOAT_TYPE learning_rate_growth_factor,
-                   int ran_restarts,unsigned cache_derivations_level
-                   , random_restart_acceptor ra
+                   int maxTrainIter
+                   ,train_opts const& opts
                    )
 {
     cascade.normalize(*this,method);
+    unsigned ran_restarts=opts.ran_restarts;
+    double learning_rate_growth_factor=opts.learning_rate_growth_factor;
+    random_restart_acceptor ra=opts.ra;
     
-    forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,cache_derivations_level,true);
+    forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,true,opts);
     fb.prepare(corpus,true);
 
     Weight bestPerplexity;
@@ -538,7 +548,7 @@ Weight WFST::train(cascade_parameters &cascade,
         for ( ; ; ) {
             const bool first_time=train_iter==0;
             ++train_iter;
-            
+            time_report taken(Config::log(),"Time for iteration: ");
 #ifdef DEBUGTRAIN
             Config::debug() << "Starting iteration: " << train_iter << '\n';
 #endif
@@ -785,12 +795,13 @@ Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
     assert(!use_matrix);
     Weight weighted_corpus_prob=1;
     unsigned n=0;
-    for (cached_derivs_t::val_iterator i=cached_derivs.val_begin(),e=cached_derivs.val_end();i!=e;++i) {
+    for (cached_derivs.rewind();cached_derivs.advance();) {
         ++n;
         training_progress(n);
-        Weight prob=estimate_cached(*i);
+        derivations & d=cached_derivs.current();
+        Weight prob=estimate_cached(d);
         unweighted_corpus_prob_accum *= prob;
-        weighted_corpus_prob *= prob.pow(i->weight);
+        weighted_corpus_prob *= prob.pow(d.weight);
     }
     return weighted_corpus_prob;
 }
@@ -964,7 +975,7 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
     corpus.add(inSeq,outSeq);
     IOSymSeq const& s=corpus.examples.front();
     cascade_parameters trivial;
-    forward_backward fb(*this,trivial,false,false,false,false);
+    forward_backward fb(*this,trivial,false,0,false);
     fb.prepare(corpus,false);
     fb.matrix_compute(s,false);
     return fb.f[s.i.n][s.o.n][final];

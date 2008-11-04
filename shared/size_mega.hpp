@@ -109,8 +109,18 @@ struct size_mega
     size_mega(size_type size_) : size(size_) {}
     size_mega(std::string const& str,bool unused) 
     {
+        init(str);
+    }
+    void init(std::string const &str) 
+    {
         size=(size_type)size_from_str<size_type>(str);
     }
+
+    self_type & operator =(std::string const&s) 
+    {
+        init(s);
+    }
+    
     template <class Ostream>
     void print(Ostream &o) const 
     {
@@ -119,6 +129,20 @@ struct size_mega
         print_size(o,size,decimal_thousand,5);
     }
     TO_OSTREAM_PRINT
+    FROM_ISTREAM_READ
+    template <class I>
+    void read(I &i) 
+    {
+        /*
+        std::string s;
+        if (i>>s)
+            init(s);
+        else
+            size=0;
+        */
+        size=parse_size<size_type>(i);
+    }
+    
 };
 
 typedef size_mega<false,double> size_bytes;
