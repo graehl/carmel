@@ -14,6 +14,20 @@ struct FSTArc {
     typedef FSTArc self_type;
     int in;
     int out;
+    enum {
+        input=0,output=1 
+    };
+    
+        
+    int &symbol(int dir) 
+    {
+        return dir ? out : in;
+    }
+    int symbol(int dir) const
+    {
+        return dir ? out : in;
+    }
+    
     int dest;
     Weight weight;
     typedef unsigned group_t;
@@ -21,6 +35,7 @@ struct FSTArc {
     BOOST_STATIC_CONSTANT(unsigned,no_group=(unsigned)-1);
     BOOST_STATIC_CONSTANT(unsigned,locked_group=0);
     BOOST_STATIC_CONSTANT(int,epsilon=0);
+    BOOST_STATIC_CONSTANT(int,wildcard=1);
     
     group_t groupId;
     

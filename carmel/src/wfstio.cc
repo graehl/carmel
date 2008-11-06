@@ -114,8 +114,8 @@ WFST::WFST(const char *buf)
             invalidate();
             return;
         }
-        symbolInNumber = in->indexOf(symbol);
-        symbolOutNumber = out->indexOf(symbol);
+        symbolInNumber = alphabet(0).indexOf(symbol);
+        symbolOutNumber = alphabet(1).indexOf(symbol);
         Assert (symbolInNumber == symbolOutNumber);
         push_back(states);
         states[final].addArc(FSTArc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
@@ -153,6 +153,8 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
     string currSym("") ;
     int symbolInNumber, symbolOutNumber,maxSymbolNumber=0 ;
     final = 0;
+    alphabet_type &in=alphabet(0),&out=alphabet(1);
+    
     while ( line ) {
         if ( !getString(line, symbol) ){
             if(!permuteNumbers && currSym != ""){
@@ -178,8 +180,8 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                 currSym="";
             }
         }
-        symbolInNumber = in->indexOf(symbol);
-        symbolOutNumber = out->indexOf(symbol);
+        symbolInNumber = in.indexOf(symbol);
+        symbolOutNumber = out.indexOf(symbol);
         Assert (symbolInNumber == symbolOutNumber);
         symbols.push_back(symbolInNumber);
         if (maxSymbolNumber < symbolInNumber)
@@ -227,7 +229,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                             for(unsigned int i =1 ; i < strSymbols[l].length()-1 ; i++){
                                 string s("\"\"\"");
                                 s[1] = strSymbols[l][i];
-                                if (NULL == in->find(const_cast<char *>(s.c_str())) || NULL == out->find(const_cast<char *>(s.c_str()))){
+                                if (NULL == in.find(const_cast<char *>(s.c_str())) || NULL == out.find(const_cast<char *>(s.c_str()))){
                                     std::cerr << "problem! didn't find "<< s << '\n';
                                 }
                                 else {
@@ -239,19 +241,19 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                                         to_state =  ++temp_final ;
                                     if (from_state >= states.size())
                                         states.resize(from_state);
-                                    //              std::cerr << "adding arc (from:" << from_state << ", to:"<<to_state <<", in/out:"<<s <<"("<<in->indexOf(const_cast<char *>(s.c_str()))<<"))\n";
-                                    states[from_state].addArc(FSTArc(in->indexOf(const_cast<char *>(s.c_str())),in->indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
+                                    //              std::cerr << "adding arc (from:" << from_state << ", to:"<<to_state <<", in/out:"<<s <<"("<<in.indexOf(const_cast<char *>(s.c_str()))<<"))\n";
+                                    states[from_state].addArc(FSTArc(in.indexOf(const_cast<char *>(s.c_str())),in.indexOf(const_cast<char *>(s.c_str())) ,to_state, 1.0));
                                     from_state=to_state ;
                                 }
                             }
                         }
                         else{
-                            if (NULL == in->find(const_cast<char *>(strSymbols[l].c_str())) || NULL == out->find(const_cast<char *>(strSymbols[l].c_str()))){
+                            if (NULL == in.find(const_cast<char *>(strSymbols[l].c_str())) || NULL == out.find(const_cast<char *>(strSymbols[l].c_str()))){
                                 std::cerr << "Error in constructing a permutation lattice!! didn't find symbol in the alphabet "<< strSymbols[l] << '\n';
                             }
                             else {
                                 //              std::cerr << "adding arc (from:" << k << ", to:"<<k+temp <<", in/out:"<<strSymbols[l].c_str() << '\n';
-                                states[k].addArc(FSTArc(in->indexOf(const_cast<char *>(strSymbols[l].c_str())),out->indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
+                                states[k].addArc(FSTArc(in.indexOf(const_cast<char *>(strSymbols[l].c_str())),out.indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
                             }
                         }
                         /*symbols[l], symbols[l], k+temp, 1.0));*/
@@ -293,6 +295,7 @@ static const char COMMENT_CHAR='%';
 //FIXME: need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
+    alphabet_type &in=alphabet(0),&out=alphabet(1);    
     State::arc_adder arc_add(states);
     StringKey finalName;
     try {        
@@ -319,7 +322,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
             finalName.clone();
         else
             final=getStateIndex(buf);
-        Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
+//        Assert( *in.find(EPSILON_SYMBOL)==0 && *out.find(EPSILON_SYMBOL)==0 );
         while ( istr >> c ) {
             // begin line:
             skip_comment(istr,COMMENT_CHAR);
@@ -372,23 +375,23 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                             if (weight.setString(buf)) { // ... weight)
                                 inL=outL=WFST::epsilon_index;
                             } else { // ... symbol)
-                                inL = in->indexOf(buf);
-                                outL = out->indexOf(buf);
+                                inL = in.indexOf(buf);
+                                outL = out.indexOf(buf);
                                 weight=1.0;
                             }              
                         } else {
-                            inL = in->indexOf(buf);
+                            inL = in.indexOf(buf);
                             GETBUF(buf2);
                             PEEKC;
                             if (ENDIOW) {  // ... iosymbol weight) or ... isymbol osymbol)
                                 if (weight.setString(buf2)) { // ... iosymbol weight)
-                                    outL = out->indexOf(buf);
+                                    outL = out.indexOf(buf);
                                 } else { // ... iosymbol osymbol) 
-                                    outL = out->indexOf(buf2);
+                                    outL = out.indexOf(buf2);
                                     weight=1.0;
                                 }        
                             } else { // ... isymbol osymbol weight)
-                                outL = out->indexOf(buf2);
+                                outL = out.indexOf(buf2);
                                 REQUIRE(istr >> weight);
                                 PEEKC;
                                 REQUIRE(ENDIOW);
@@ -473,7 +476,7 @@ INVALID:
             istr.unget();
             if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
             REQUIRE(getString(istr, buf));
-            outL = out->indexOf(buf);
+            outL = out.indexOf(buf);
             GETC; // skip ws
             istr.unget();
             weight.setZero();
@@ -588,7 +591,8 @@ void WFST::writeLegible(ostream &os)
     const char *inLet, *outLet, *destState;
 
     if ( !valid() ) return;
-    Assert( *in->find(EPSILON_SYMBOL)==0 && *out->find(EPSILON_SYMBOL)==0 );
+//    alphabet_type &in=alphabet(0),&out=alphabet(1);
+//    Assert( *in.find(EPSILON_SYMBOL)==0 && *out.find(EPSILON_SYMBOL)==0 );
     os << stateName(final);
     for (i = 0 ; i < numStates() ; i++) {
         if (!onearc)
@@ -601,8 +605,8 @@ void WFST::writeLegible(ostream &os)
                 destState = stateName(a->dest);
                 os << " (" << destState;
                 if ( !brief || a->in || a->out ) { // omit *e* *e* labels
-                    inLet = (*in)[a->in].c_str();
-                    outLet = (*out)[a->out].c_str();
+                    inLet = inLetter(a->in);
+                    outLet = outLetter(a->out);
                     os << " " << inLet;
                     if ( !brief || strcmp(inLet, outLet) )
                         os << " " << outLet;
@@ -621,17 +625,20 @@ void WFST::writeLegible(ostream &os)
     os << "\n";
 }
 
-void WFST::listAlphabet(ostream &ostr, int output)
+void WFST::listAlphabet(ostream &ostr, int dir)
 {
+    ostr << alphabet(dir);
+/*    
     Alphabet<StringKey,StringPool> *alph;
     if ( output )
         alph = out;
     else
         alph = in;
     ostr << *alph;
+*/
 }
 
-void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno) const
+void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno)
 {
 //  List<int> *ret = NEW List<int>;
     
@@ -641,16 +648,12 @@ void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno) con
     //  ListIter<int> ins(*ret);
     istringstream line(buf);
     char symbol[DEFAULTSTRBUFSIZE];
-    Alphabet<StringKey,StringPool> *alph;
-    if ( output )
-        alph = out;
-    else
-        alph = in;
+    alphabet_type &alph=alphabet(output);
     while ( line ) {
         if ( !getString(line, symbol) )
             break;
 #if WFSTIO_ERROR_SEQUENCE_NOT_IN_ALPHABET
-        unsigned const*pI = alph->find(symbol);
+        unsigned const*pI = alph.find(symbol);
         if ( !pI) {
 //      delete ret;
 //      return NULL;
@@ -665,7 +668,7 @@ void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno) con
             //      ret->insert(ret->begin(),*pI);
             *cursor++ = *pI;
 #else
-        *cursor++ = alph->index_of(symbol);
+        *cursor++ = alph.index_of(symbol);
 #endif 
     }
 //  return ret;

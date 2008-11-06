@@ -98,11 +98,45 @@ read_pairlist_callback<Pairlist> make_read_pairlist_callback(Pairlist &pairlist,
     return read_pairlist_callback<Pairlist>(pairlist,d,append);
 }
 
-
 template <class I,class Pairlist,class Def> inline
 void read_pairlist(I &in,Pairlist &p,Def const& default_val,char pair_sep=',',char key_val_sep=':',bool append=false)
 {
     parse_pairlist(in,make_read_pairlist_callback(p,default_val,append),pair_sep,key_val_sep);
+}
+
+template <class List>
+struct read_list_callback 
+{
+    List *p;
+    typedef typename List::value_type value_type;
+    typedef typename value_type::first_type first_argument_type;
+    typedef typename bool second_argument_type; // we won't use this
+    read_list_callback(List &list,bool append=false)
+        : p(&list)
+    { if (!append) p->clear(); }
+
+    void operator()(first_argument_type const& key) const
+    {
+        p->push_back(key);
+    }   
+    void operator()(first_argument_type const& key,second_argument_type const& val) const
+    {
+        p->push_back(key);
+    }
+};
+
+template <class List>
+read_list_callback<List> make_read_list_callback(List &list,bool append=false)
+{
+    return read_list_callback<List>(list,append);
+}
+
+
+// warning: nul chars will trigger bool parsing.  c strings can't have nul chars anyway, and i'm too lazy to write a similar parse_list from parse_pairlist
+template <class I,class List> inline
+void read_list(I &in,List &p,char sep=',',bool append=false)
+{
+    parse_pairlist(in,make_read_list_callback(p,append),sep,'\0');
 }
 
 template <class O,class It,class Def> inline
