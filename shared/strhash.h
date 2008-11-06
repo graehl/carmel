@@ -89,6 +89,12 @@ class Alphabet {
     Alphabet(Sym c) {
         add(c,0);
     }
+    Alphabet(Sym c,Sym d) 
+    {
+        add(c,0);
+        add(d,1);
+    }
+    
     Alphabet(const Alphabet &a) {
 #ifdef NODELETE
         memcpy(this, &a, sizeof(Alphabet));

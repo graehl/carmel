@@ -37,6 +37,14 @@ struct PathArc {
     //const char *out;
     //const char *destState;
     int in,out,destState;
+    int &symbol(int dir) 
+    {
+        return dir ? out : in;
+    }
+    int symbol(int dir) const
+    {
+        return dir ? out : in;
+    }
     const WFST *wfst;
     Weight weight;
 };
@@ -49,20 +57,34 @@ struct cascade_parameters; // in cascade.h, but we avoid circular dependency by 
 
 class WFST {
  public:
-    typedef Alphabet<StringKey,StringPool> alphabet;
+    typedef Alphabet<StringKey,StringPool> alphabet_type;
  private:
     enum { STATE,ARC } PerLine;
     enum { BRIEF,FULL } ArcFormat;
     static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
     static const int arcformat_index; // handle for OutThresh
+
+#define EPSILON_SYMBOL "*e*"
+#define WILDCARD_SYMBOL "*w*"        
+    void initAlphabet(int dir) 
+    {
+        owner_alph[dir]=1;
+        alph[dir]=NEW alphabet_type(EPSILON_SYMBOL,WILDCARD_SYMBOL);
+    }
     
     void initAlphabet() {
-#define EPSILON_SYMBOL "*e*"
-        in = NEW alphabet(EPSILON_SYMBOL);
-        out = NEW alphabet(EPSILON_SYMBOL);
-        ownerIn=ownerOut=1;
+        initAlphabet(0);
+        initAlphabet(1);
     }
+    
     void train_prune(); // delete states with zero counts
+    
+    void deleteAlphabet(int dir) {
+        if (owner_alph[dir])
+            delete alph[dir];
+        owner_alph[dir]=0;
+        alph[dir]=0;
+    }
     void deleteAlphabet() 
     {
         deleteAlphabet(0);
@@ -74,27 +96,17 @@ class WFST {
     */
     enum {input=0,output=1};
 
-    void deleteAlphabet(int dir) {
-        if ( dir==input && ownerIn ) {
-            delete in;
-            ownerIn = 0;
-        } else if ( dir==output && ownerOut ) {
-            delete out;
-            ownerOut = 0;
-        }
+    inline static int opposite(int dir) 
+    {
+        return dir ? 0 : 1;
     }
+    
 
     void identity_alphabet_from(int dir) 
     {
-        int to = (dir==State::input) ?
-             State::output
-            : State::input;
+        int to = opposite(dir);
         deleteAlphabet(to);
-        if (dir==input) {
-            out=in;
-        } else {
-            in=out;
-        }
+        alph[to]=alph[dir];
     }
     
     int getStateIndex(const char *buf); // creates the state according to named_states, returns -1 on failure
@@ -310,7 +322,7 @@ class WFST {
     }
 
 #endif 
-    enum { epsilon_index=FSTArc::epsilon };
+    enum { epsilon_index=FSTArc::epsilon,wildcard_index=FSTArc::wildcard,start_normal_index };
 
 
     // some algorithms (e.g. determinizing) are confused when the final state has arcs leaving it.  this will add a new final state with no exit, if necessary (and a p=1 epsilon transition from old final state to new one)
@@ -341,21 +353,19 @@ class WFST {
         return rand() * (1.f / (RAND_MAX+1.f));
     }
 
-    bool ownerIn;
-    bool ownerOut;
+    bool owner_alph[2];
+    alphabet_type *alph[2];
     bool named_states;
-    alphabet *in;
-    alphabet *out;
-    alphabet &in_alph() const 
+    alphabet_type &in_alph() const 
     {
-        return *in;
+        return *alph[input];
     }
-    alphabet &out_alph() const 
+    alphabet_type &out_alph() const 
     {
-        return *out;
+        return *alph[output];
     }
     
-    alphabet stateNames;
+    alphabet_type stateNames;
     unsigned final;	// final state number - initial state always number 0
     typedef dynamic_array<State> StateVector;
     // note: std::vector<State> doesn't work with State::state_adder because copies by value are made during readLegible
@@ -479,6 +489,13 @@ class WFST {
             final = invalid_state;
     }
 
+    /* the following is for dir=input.  reverse if dir=output.
+       given 
+       taking all the input strings in transducer E=edit_distance_to
+       produce a subset of all edits 
+    WFST(std::vector<int> const& string,WFST &edit_distance_to,Weight ins,Weight del,Weight subst,bool epsilon_outer=false,int dir=input)
+    */
+    
     WFST(const char *buf); // make a simple transducer representing an input sequence
     WFST(const char *buf, int& length,bool permuteNumbers); // make a simple transducer representing an input sequence lattice - Yaser
     WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b    
@@ -500,8 +517,18 @@ class WFST {
     z.train(cascade,...); // trains d,a,b,c parameters via paths in z explaining corpus
     
     */
+
+    alphabet_type &alphabet(int dir) 
+    {
+        return *alph[dir];
+    }
+
+    alphabet_type const&alphabet(int dir) const
+    {
+        return *alph[dir];
+    }
     
-    void listAlphabet(ostream &out, int output = 0);
+    void listAlphabet(ostream &out, int dir = input);
     friend ostream & operator << (ostream &,  WFST &); // Yaser 7-20-2000
     // I=PathArc output iterator; returns length of path or -1 on error
     int randomPath(List<PathArc> *l,int max_len=-1) {
@@ -574,12 +601,17 @@ class WFST {
     // yourself when you are done with it
     struct symbol_ids : public List<int> 
     {
-        symbol_ids(WFST const& wfst,char const* buf,int output=0,int line=-1) 
+        symbol_ids(WFST & wfst,char const* buf,int output=0,int line=-1) 
         {
             wfst.symbolList(this,buf,output,line);
         }
     };
 
+    static inline bool is_special(int letter) 
+    {
+        return letter>=start_normal_index;
+    }
+    
     static void print_yield(ostream &o,List<PathArc> const &path,bool output=false,bool show_special=false) 
     {
         if (path.empty())
@@ -587,9 +619,9 @@ class WFST {
         graehl::word_spacer sp(' ');
         for (List<PathArc>::const_iterator li=path.const_begin(),end=path.const_end(); li != end; ++li ) {
             WFST const& w=*li->wfst;
-            int id=output ? li->out : li->in;
-            if (show_special || id!=epsilon_index)
-                o << sp << (output ? w.outLetter(id) : w.inLetter(id));
+            int id=li->symbol(output);
+            if (show_special || !is_special(id))
+                o << sp << w.letter(id,output);
         }
     }
 
@@ -602,19 +634,21 @@ class WFST {
     }
     
         
-    void symbolList(List<int> *ret,const char *buf, int output=0,int line=-1) const;   
+    void symbolList(List<int> *ret,const char *buf, int output=0,int line=-1);   
     // takes space-separated symbols and returns a list of symbol numbers in the
     // input or output alphabet
     const char *inLetter(unsigned i) const {
-        Assert ( i >= 0 );
-        Assert ( i < in->size() );
-        return (*in)[i].c_str();
+        return letter(i,0);
     }
     const char *outLetter(unsigned i) const {
-        Assert ( i >= 0 );
-        Assert ( i < out->size() );
-        return (*out)[i].c_str();
+        return letter(i,1);
     }
+    char const* letter(unsigned i,int dir) const 
+    {
+        Assert ( i < alphabet(dir).size() );
+        return alphabet(dir)[i].c_str();
+    }
+    
     //NB: uses static (must use or copy before next call) return string buffer if !named_states
     const char *stateName(int i) const {
         Assert ( i >= 0 );
@@ -804,41 +838,37 @@ class WFST {
     // is the shortest; GraphArc::data is a pointer 
     // to the FSTArc it corresponds to in the WFST
     Graph makeEGraph(); // same as makeGraph, but restricted to *e* / *e* arcs
+
+    //untested
     void ownAlphabet() {
-        ownInAlphabet();
-        ownOutAlphabet();
+        ownAlphabet(0);
+        ownAlphabet(1);
     }
-    void stealInAlphabet(WFST &from) {
-        if (from.ownerIn && from.in == in) {
-            from.ownerIn=0;
-            ownerIn=1;
+
+    //untested
+    void stealAlphabet(WFST &from,int dir) 
+    {
+        if (from.owner_alph[dir] && alph[dir]==from.alph[dir] ) { // && !owner_alph[dir] // unnecessary
+            from.owner_alph[dir]=0;
+            owner_alph[dir]=1;
         } else
-            ownInAlphabet();
+            ownAlphabet(dir);
     }
-    void stealOutAlphabet(WFST &from) {
-        if (from.ownerOut && from.out == out) {
-            from.ownerOut=0;
-            ownerOut=1;
-        } else
-            ownOutAlphabet();
-    }
-    void ownInAlphabet() {
-        if ( !ownerIn ) {
-            in = NEW alphabet(*in);
-            ownerIn = 1;
+
+    // untested
+    void ownAlphabet(int dir) 
+    {
+        if (!owner_alph[dir]) {
+            alph[dir]=NEW alphabet_type(*alph[dir]);
+            owner_alph[dir]=1;
         }
     }
-    void ownOutAlphabet() {
-        if ( !ownerOut ) {
-            out = NEW alphabet(*out);
-            ownerOut = 1;
-        }
-    }
+    
     void unNameStates() {
         if (named_states) {
             stateNames.~Alphabet();
             named_states=false;
-            PLACEMENT_NEW (&stateNames) alphabet();
+            PLACEMENT_NEW (&stateNames) alphabet_type();
         }
     }
 

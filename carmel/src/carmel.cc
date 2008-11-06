@@ -62,12 +62,12 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
 //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
 }
 
-static void printSeq(Alphabet<StringKey,StringPool> *a,int *seq,int maxSize) {
+static void printSeq(Alphabet<StringKey,StringPool> &a,int *seq,int maxSize) {
 
     for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
         if (i>0)
             cout << ' ';
-        cout << (*a)[seq[i]];
+        cout << a[seq[i]];
     }
 }
 
@@ -1056,9 +1056,9 @@ main(int argc, char *argv[]){
                     int *outSeq = NEW int[maxSize];
                     for ( int s = 0 ; s < nGenerate ; ++s ) {
                         while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
-                        printSeq(result->in,inSeq,maxGenArcs);
+                        printSeq(result->in_alph(),inSeq,maxGenArcs);
                         cout << std::endl;
-                        printSeq(result->out,outSeq,maxGenArcs);
+                        printSeq(result->out_alph(),outSeq,maxGenArcs);
                         cout << std::endl;
                         /*for ( i = 0 ; i < maxSize ; ) {
                           if (outSeq[i] > 0)

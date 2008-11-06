@@ -138,7 +138,8 @@ struct TrioNamer {
 
 WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool groups) 
 {
-    in=out=0;
+    alph[0]=alph[1]=0;
+    owner_alph[0]=owner_alph[1]=0;
     if (false && groups && !cascade.trivial)
         throw std::runtime_error("Don't set preserve groups (-a) along with --train-cascade; --train-cascade maps original parameters through a more efficient mechanism.");
     set_compose(cascade,a,b,namedStates,groups);
@@ -146,7 +147,8 @@ WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool g
 
 WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) 
 {
-    in=out=0;
+    alph[0]=alph[1]=0;
+    owner_alph[0]=owner_alph[1]=0;
     cascade_parameters c;
     set_compose(c,a,b,namedStates,preserveGroups);
 }
@@ -155,9 +157,11 @@ WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups)
 void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates, bool preserveGroups)
 {
     deleteAlphabet();
-    ownerIn=ownerOut=0;
-    in=a.in;
-    out=b.out;
+    owner_alph[0]=owner_alph[1]=0;
+    alph[0]=a.alph[0];
+    alph[1]=b.alph[1];
+    alphabet_type &aout=a.alphabet(1),&bin=b.alphabet(0);
+
     states.reserve(a.numStates()+b.numStates());
     
     const int EMPTY=epsilon_index;
@@ -165,13 +169,14 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
         invalidate();
         return;
     }
-    int *map = NEW int[a.out->size()];
-    int *revMap = NEW int[b.in->size()];
-    Assert(a.out->verify());
-    Assert(b.in->verify());
+    
+    int *map = NEW int[aout.size()];
+    int *revMap = NEW int[bin.size()];
+    Assert(aout.verify());
+    Assert(bin.verify());
     TrioNamer namer(MAX_STATENAME_LEN+1,a,b);
-    a.out->mapTo(*b.in, map);     // find matching symbols in interfacing alphabet
-    b.in->mapTo(*a.out, revMap);
+    aout.mapTo(bin, map);     // find matching symbols in interfacing alphabet
+    bin.mapTo(aout, revMap);
     Assert(map[0]==0);
     Assert(revMap[0]==0); // *e* always 0
     TrioKey::aMax = a.numStates(); // used in hash function
