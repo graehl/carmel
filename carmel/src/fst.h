@@ -49,6 +49,26 @@ struct PathArc {
     Weight weight;
 };
 
+
+/*
+template <class PathArcIt>
+struct path_yield 
+{
+    PathArcIt it,end;
+    int dir;
+    path_yield(PathArcIt const& it,PathArcIt const& end, int dir=0) : it(it),end(end),dir(dir) {}
+    typedef int value_type;
+    int operator *() 
+    {
+        return it->symbol(dir);
+    }
+    typedef path_yield<PathArcIt> self_type;
+    self_type & operator ++(int) { return *this; }
+    self_type & operator ++() { return *this; }
+};
+*/
+
+    
 std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 
