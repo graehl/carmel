@@ -372,6 +372,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                         GETBUF(buf);
                         PEEKC;
                         if (ENDIOW) {  // ... weight) or ... symbol)
+                            //FIXME: document: this means that even though unquoted symbols are supported, you must quote any symbol that can parse into a weight, e.g. -10ln, e^3, 10^-3, 0.1
                             if (weight.setString(buf)) { // ... weight)
                                 inL=outL=WFST::epsilon_index;
                             } else { // ... symbol)

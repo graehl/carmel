@@ -311,8 +311,8 @@ redepend:
 depend: $(ALL_DEPENDS)
 
 
-install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS)
-	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(OPT_PROGS) $(BIN_PREFIX)
+install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS) $(CP_PROGS)
+	mkdir -p $(BIN_PREFIX) ; cp $(STATIC_PROGS) $(DEBUG_PROGS) $(OPT_PROGS) $(CP_PROGS) $(BIN_PREFIX)
 
 check:	test
 

@@ -11,6 +11,7 @@ default: mydefault
 
 DIR=.
 SRC=$(DIR)/src
+CP_PROGS=$(wildcard $(SRC) *.pl)
 SHARED=$(DIR)/../shared
 PROGS=carmel
 carmel_SRC=carmel.cc fst.cc train.cc derivations.cc
