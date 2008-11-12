@@ -39,6 +39,7 @@ char *MarcuArgs[]={
 #endif
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
+    if (fstout) {
     if ( flags['B'] )
         Weight::out_log10(*fstout);
     else if (flags['2'])
@@ -59,7 +60,23 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
         WFST::out_arc_per_line(*fstout);
     else
         WFST::out_state_per_line(*fstout);
-//    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
+    //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
+    }
+    if ( flags['B'] )
+        Weight::default_log10();
+    else if (flags['2'])
+        Weight::default_ln();
+    else
+        Weight::default_exp();
+    if ( flags['Z'] )
+        Weight::default_always_log();
+    else
+        Weight::default_sometimes_log();
+    if ( flags['D'] )
+        Weight::default_never_log();
+    WFST::set_arc_default_format(flags['J'] ? WFST::FULL : WFST::BRIEF);
+    WFST::set_arc_default_per(flags['H'] ? WFST::ARC : WFST::STATE);
+    //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?    
 }
 
 static void printSeq(Alphabet<StringKey,StringPool> &a,int *seq,int maxSize) {
@@ -639,6 +656,7 @@ main(int argc, char *argv[]){
     }
     
     srand(seed);
+    setOutputFormat(flags,0); // set default for all streams
     setOutputFormat(flags,&cout);
     setOutputFormat(flags,&cerr);
     WFST::setIndexThreshold(thresh);
