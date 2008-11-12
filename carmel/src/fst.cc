@@ -6,8 +6,10 @@
 
 namespace graehl {
 
-const int WFST::perline_index = ios_base::xalloc();
-const int WFST::arcformat_index = ios_base::xalloc();
+const int WFST::per_line_index = ios_base::xalloc();
+const int WFST::arc_format_index = ios_base::xalloc();
+THREADLOCAL int WFST::default_per_line = WFST::STATE;
+THREADLOCAL int WFST::default_arc_format = WFST::BRIEF;
 
 #define DP_SLIDE_36
 // slide 36 gives what seems like a bad norm method: scale(c)/scale(sum{c_i}).  slide 38 looks better: scale(c)/sum{scale(c_i)}.  update: slide 38 was wrong, and is revised in http://www.cs.berkeley.edu/~pliang/papers/tutorial-acl2007.pdf

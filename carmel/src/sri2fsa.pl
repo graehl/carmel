@@ -5,8 +5,24 @@
 
 # example usage:  
 
-# EOS=0 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
-# EOS=1 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
+# LOCK_BACKOFF=1 EOS=0 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
+
+# CHECK_SUFFIX=1 EOS=1 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
+
+# lock backoff: backoff weights are locked, allowing normalization so
+# sum-over-paths = 1 (something you may not get from sri trained LMs)
+
+# EOS: FSA emits </s> symbol at end instead of epsilon
+
+# SUFFIX: do not set, to properly translate SRI lms that are generated with
+# weird pruning/combination strategies, which may have ngrams that when
+# shortened by removing the first word, do not exist, or have no backoff cost.
+# SRI requires that all prefixes exist w/ a backoff, but not all suffixes (even
+# though a sane LM would have suffixes).  If set to 1, assumes suffixes are
+# present (so can translate arbitrarily large SRILM without large memory).
+
+
+# from the SRI docs:
 
 #The so-called ARPA (or Doug Paul) format for N-gram backoff models starts with a header, introduced by the keyword \data\, listing the number of N-grams of each length. Following that, N-grams are listed one per line, grouped into sections by length, each section starting with the keyword \N-grams:, where  N is the length of the N-grams to follow. Each N-gram line starts with the logarithm (base 10) of conditional probability  p of that N-gram, followed by the words w1...wN making up the N-gram. These are optionally followed by the logarithm (base 10) of the backoff weight for the N-gram. The keyword \end\ concludes the model representation.
 
@@ -20,6 +36,17 @@ use strict;
 
 my $eos=$ENV{EOS}; # </s> vs. *e* at end
 my $lock_bo=$ENV{LOCK_BACKOFF};
+my $checksuf=!$ENV{SUFFIX};
+
+my $DEBUG=$ENV{DEBUG};
+
+sub debug {
+    print STDERR join(' ',@_),"\n" if $DEBUG;
+}
+
+my %seen_bo;
+$seen_bo{'""'}=1;
+
 
 ## END OPTIONS
 
@@ -94,21 +121,26 @@ sub ngram_to_fsa_arc {
                                          # since it's a prefix of us and we
                                          # exist, so it must have had a BO
     push @escs,$laste;
-    shift @escs;
-    my $bostate=escaped_to_state(@escs);
+    my $bostate;
+    do {
+        shift @escs;
+        $bostate=escaped_to_state(@escs);
+        &debug($bostate,exists $seen_bo{$bostate} ? " exists" : " missing");
+    } while($checksuf && !exists $seen_bo{$bostate});
     my $dest;
     if ($last_word eq $eos_word) {
-        $dest=$eos_state;
+        $dest=$eos_state;  # with suffix checking on, this is probably redundant
         $word_sym=$carmel_eos_word;
     } elsif (defined($bo)) {
         $dest=$whole;
         print "($dest $bostate 10^$bo$bo_suffix)\n";
+        $seen_bo{$dest}=1 if $checksuf;
     } else {
         $dest=$bostate;
     }
     
 
-    print "($source $dest $word_sym 10^$p)\n";
+    print "($source $dest $word_sym 10^$p)\n" unless ($last_word eq $sos_word);
 }
 
 

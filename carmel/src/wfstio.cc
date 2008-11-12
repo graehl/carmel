@@ -9,6 +9,7 @@
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/input_error.hpp>
 #include <graehl/shared/assoc_container.hpp>
+#include <graehl/shared/graphviz.hpp>
 
 namespace graehl {
 
@@ -17,7 +18,6 @@ static const int DEFAULTSTRBUFSIZE=4096;
 #define REQUIRE(x)  do { if (!(x)) { goto INVALID; } } while(0)
 #define GETC do { REQUIRE(istr >> c); } while(0)
 #define PEEKC  do { REQUIRE(istr>>c); istr.unget(); } while(0)
-#define BOOLBRIEF bool brief = (os.iword(arcformat_index) == BRIEF)
 #define OUTARCWEIGHT(os,a)              do { int pGroup = (a)->groupId; \
         if ( !brief || pGroup >= 0 || (a)->weight != 1.0 )              \
             os << " " << (a)->weight;                                   \
@@ -530,10 +530,10 @@ void WFST::writeGraphViz(ostream &os)
     const char * const invis_start_name="invis_start";
     const char * const prelude="digraph G {";
     //size=\"7.5,10\",
-    const char * const format="graph[page=\"8.5,11\",center=1,orientation=landscape]";
+    const char * const format="graph[center=1]"; //,orientation=landscape //,page=\"11,17\"
     const char * const coda = ";\n}\n";
     const char * const final_border = "peripheries=2";
-    const char * const state_shape = "node [shape=circle]"; // "shape=ellipse"
+    const char * const state_shape = "node [shape=ellipse,width=.1,height=.1]"; // "shape=ellipse"
     const char * const arrow = " -> ";
     const char * const open = " [";
     const char close = ']';
@@ -559,7 +559,7 @@ void WFST::writeGraphViz(ostream &os)
             writeQuoted(os,stateName(a->dest));
             os << open << label;
             ostringstream arclabel;
-            writeArc(arclabel,*a);
+            writeArc(arclabel,*a,false);
             writeQuoted(os,arclabel.str().c_str());
             os << close;
         }
@@ -570,10 +570,13 @@ void WFST::writeGraphViz(ostream &os)
 
 //#define GREEK_EPSILON 1
 
+// for graphviz ... GREEK_EPSILON sucks in that dot doesn't compute bounding box for that char properly?
 void WFST::writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON) {
     static const char * const epsilon = "&#949;";
-    os << (!GREEK_EPSILON || a.in ? inLetter(a.in) : epsilon) << " : " << (!GREEK_EPSILON || a.out ? outLetter(a.out) : epsilon);
-    BOOLBRIEF;
+    bool brief = get_arc_format(os)==BRIEF;
+    os << letter_or_eps(a.in,input,epsilon,GREEK_EPSILON);
+    if (!(brief && a.in == a.out))
+        os << " : " << letter_or_eps(a.out,output,epsilon,GREEK_EPSILON);
     OUTARCWEIGHT(os,&a);
 }
 
@@ -586,8 +589,8 @@ void WFST::writeLegibleFilename(std::string const& name)
 
 void WFST::writeLegible(ostream &os)
 {
-    BOOLBRIEF;
-    bool onearc = (os.iword(perline_index) == ARC);
+    bool brief = get_arc_format(os)==BRIEF;
+    bool onearc = get_per_line(os)==ARC;
     int i;
     const char *inLet, *outLet, *destState;
 

@@ -15,6 +15,7 @@
 #include <graehl/shared/weight.h>
 #include <graehl/shared/strhash.h>
 #include <graehl/shared/graph.h>
+#include <graehl/shared/threadlocal.hpp>
 #include <graehl/carmel/src/train.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/carmel/src/compose.h>
@@ -78,11 +79,11 @@ struct cascade_parameters; // in cascade.h, but we avoid circular dependency by 
 class WFST {
  public:
     typedef Alphabet<StringKey,StringPool> alphabet_type;
+    enum { DEFAULT_PER_LINE,STATE,ARC } /*Per_Line */;
+    enum { DEFAULT_ARC_FORMAT,BRIEF,FULL } /*Arc_Format*/ ;
  private:
-    enum { STATE,ARC } PerLine;
-    enum { BRIEF,FULL } ArcFormat;
-    static const int perline_index; // handle to ostream iword for LogBase enum (initialized to 0)
-    static const int arcformat_index; // handle for OutThresh
+    static const int per_line_index; // handle to ostream iword for LogBase enum (initialized to 0)
+    static const int arc_format_index; // handle for OutThresh
 
 #define EPSILON_SYMBOL "*e*"
 #define WILDCARD_SYMBOL "*w*"        
@@ -355,15 +356,55 @@ class WFST {
         states[old_final].addArc(FSTArc(epsilon_index,epsilon_index,final,1));
     }
     
+
+    static THREADLOCAL int default_per_line;
+    static THREADLOCAL int default_arc_format;
+
+    static inline void set_arc_default_per(int per) 
+    {
+        default_per_line=per;
+    }
+    static inline void set_arc_default_format(int ver) 
+    {
+        default_arc_format=ver;
+    }
+
+    static inline int get_arc_format(std::ostream &os) 
+    {
+        int r=os.iword(arc_format_index);
+        return r==DEFAULT_ARC_FORMAT ? default_arc_format : r;
+    }
+
+    static inline int get_per_line(std::ostream &os) 
+    {
+        int r=os.iword(per_line_index);
+        return r==DEFAULT_PER_LINE ? default_per_line : r;
+    }
+
+    static inline void set_arc_format(std::ostream &os,int i) 
+    {
+        os.iword(arc_format_index)=i;
+    }
+
+    static inline void set_per_line(std::ostream &os,int i) 
+    {
+        os.iword(per_line_index)=i;
+    }
+    
     
     template<class A,class B> static inline std::basic_ostream<A,B>&
-    out_state_per_line(std::basic_ostream<A,B>& os) { os.iword(perline_index) = STATE; return os; }
+    out_state_per_line(std::basic_ostream<A,B>& os) { os.iword(per_line_index) = STATE; return os; }
     template<class A,class B> static inline std::basic_ostream<A,B>&
-    out_arc_per_line(std::basic_ostream<A,B>& os) { os.iword(perline_index) = ARC; return os; }
+    out_arc_per_line(std::basic_ostream<A,B>& os) { os.iword(per_line_index) = ARC; return os; }
     template<class A,class B> static inline std::basic_ostream<A,B>&
-    out_arc_brief(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = BRIEF; return os; }
+    out_arc_default_per(std::basic_ostream<A,B>& os) { os.iword(per_line_index) = DEFAULT_PER_LINE; return os; }
+    
     template<class A,class B> static inline std::basic_ostream<A,B>&
-    out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arcformat_index) = FULL; return os; }
+    out_arc_brief(std::basic_ostream<A,B>& os) { os.iword(arc_format_index) = BRIEF; return os; }
+    template<class A,class B> static inline std::basic_ostream<A,B>&
+    out_arc_full(std::basic_ostream<A,B>& os) { os.iword(arc_format_index) = FULL; return os; }
+    template<class A,class B> static inline std::basic_ostream<A,B>&
+    out_arc_default_format(std::basic_ostream<A,B>& os) { os.iword(arc_format_index) = DEFAULT_ARC_FORMAT; return os; }
 
 
     void read_training_corpus(std::istream &in,training_corpus &c);
@@ -399,7 +440,7 @@ class WFST {
     int abort();			// called on a bad read
     int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
     int readLegible(const string& str, bool alwaysNamed=false);  
-    void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false);
+    void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false); // for graphviz
     void writeLegible(ostream &);
     void writeLegibleFilename(std::string const& name);
     void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
@@ -657,6 +698,11 @@ class WFST {
     void symbolList(List<int> *ret,const char *buf, int output=0,int line=-1);   
     // takes space-separated symbols and returns a list of symbol numbers in the
     // input or output alphabet
+    char const* letter_or_eps(unsigned i,int dir,char const* eps="&#949",bool use_eps=true) 
+    {
+        return (use_eps && i==epsilon_index) ? eps : letter(i,dir);
+    }
+    
     const char *inLetter(unsigned i) const {
         return letter(i,0);
     }
