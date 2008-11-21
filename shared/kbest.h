@@ -1,9 +1,13 @@
 #ifndef GRAEHL_SHARED_KBEST_H
 #define GRAEHL_SHARED_KBEST_H
 
+//FIXME: uses globals rather than explicit context struct; not threadsafe
+
 #include <graehl/shared/graph.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/list.h>
+#include <graehl/shared/2hash.h>
+
 //#include "dynarray.h"
 
 namespace graehl {
@@ -97,9 +101,9 @@ void printTree(GraphHeap *t, int n) ;
 void shortPrintTree(GraphHeap *t);
 
 // you can inherit from this or just provide the same interface
-struct BestPathsVisitor {
+struct best_paths_visitor {
     enum make_not_anon_16 { SIDETRACKS_ONLY=0 };
-    void start_path(unsigned k,FLOAT_TYPE cost) {} // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
+    void start_path(unsigned k,FLOAT_TYPE cost) {} // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish.  AGAIN: k starts at 1, not 0
     void end_path() {}
     void visit_best_arc(const GraphArc &a) {} // won't be called if SIDETRACKS_ONLY != 0
     void visit_sidetrack_arc(const GraphArc &a) { visit_best_arc(a); }
@@ -146,25 +150,42 @@ extern GraphState *shortPathTree;
 #endif
 
 
-template <class Visitor>
-void insertShortPath(int src, int dest, Visitor &v)
+typedef HashTable<GraphArc *,bool> taken_arc_type;
+
+struct best_path_has_cycle : public std::runtime_error
 {
-    if (!v.SIDETRACKS_ONLY) {        
+    best_path_has_cycle() : std::runtime_error("Best path has a cycle; visiting best arcs (not just sidetracks) in kbest results would give an infinite loop.") {}
+};
+
+template <class Visitor>
+void insertShortPath(int src, int dest, Visitor &v, taken_arc_type *cycle_detect=NULL)
+{
+    if (!v.SIDETRACKS_ONLY) {
+        if (cycle_detect)
+            cycle_detect->clear();
         GraphArc *taken;
         for ( int iState = src ; iState != dest; iState = taken->dest ) {
             taken = &shortPathTree[iState].arcs.top();
+            if (cycle_detect && !was_inserted(insert(*cycle_detect,taken,true)))
+                throw best_path_has_cycle();
             v.visit_best_arc(*taken);
         }
     }
 }
 
+
+    
+// throw_on_cycle, if false, will avoid checking for cycles but could infinitely loop
 template <class Visitor>
-void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
+void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v,bool throw_on_cycle=true) {
     unsigned nStates=graph.nStates;
     Assert(nStates > 0 && graph.states);
     Assert(src >= 0 && src < nStates);
     Assert(dest >= 0 && dest < nStates);
 
+    taken_arc_type cycle_detect;
+    taken_arc_type * p_cycle_hash=throw_on_cycle ? &cycle_detect : 0;
+    
 #ifdef DEBUGKBEST
     Config::debug() << "Calling KBest with k: "<<k<<'\n' << graph;
 #endif
@@ -181,7 +202,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
 
         FLOAT_TYPE base_path_cost=dist[src];
         v.start_path(path_no,base_path_cost);
-        insertShortPath(src, dest, v);
+        insertShortPath(src, dest, v, p_cycle_hash);
         v.end_path();
 
         if ( k > 1 ) {
@@ -248,7 +269,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
                     v.start_path(path_no,path_cost);
                     for ( Sidetracks::const_iterator cut=shortPath.const_begin(),end=shortPath.const_end(); cut != end; ++cut ) {
                         GraphArc *cutarc=*cut;
-                        insertShortPath(srcState, cutarc->src, v); // stitch end of last sidetrack to beginning of this one
+                        insertShortPath(srcState, cutarc->src, v, p_cycle_hash); // stitch end of last sidetrack to beginning of this one
                         srcState = cutarc->dest;
                         if (!v.SIDETRACKS_ONLY)
                             untelescope_cost(*cutarc,dist);
@@ -257,7 +278,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v) {
                             telescope_cost(*cutarc,dist);                        
                     }
 
-                    insertShortPath(srcState, dest, v); // connect end of last sidetrack to dest state
+                    insertShortPath(srcState, dest, v, p_cycle_hash); // connect end of last sidetrack to dest state
 
                     v.end_path();
 

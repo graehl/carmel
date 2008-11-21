@@ -23,11 +23,12 @@
 #include <graehl/carmel/src/cascade.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/string_to.hpp>
+#include <graehl/shared/split.hpp>
 #include <boost/config.hpp>
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.4"
+#define CARMEL_VERSION "4.5"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -137,22 +138,21 @@ struct wfst_paths_printer {
     WFST &wfst;
     ostream &out;
     bool *flags;
-    HashTable<FSTArc *,unsigned> prevent_cycle;
-    bool only_sidetracks;
     typedef std::vector<int> Output;
     Output output;
     graehl::word_spacer sp;
+    unsigned src; //FIXME: if sidetracks_only then you don't show the real arc source, but the end of last sidetrack.
     
     wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {
         n_paths=0;
         SIDETRACKS_ONLY=flags['%'];
     }
-    void start_path(unsigned k,FLOAT_TYPE cost) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
+    void start_path(unsigned k,Weight path_w) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
         ++n_paths;
-        w.setCost(cost);
-        clear_cycle_detect();
+        w=path_w;
         output.clear();
         sp.reset();
+        src=0;
     }
     void end_path() {
         if (flags['@'] ) {
@@ -171,24 +171,8 @@ struct wfst_paths_printer {
         Config::debug() << endl;
 #endif 
     }
-    void clear_cycle_detect() 
-    {
-        prevent_cycle.clear();
-    }
-    void visit_best_arc(const GraphArc &a,bool best=true) {
-        FSTArc &arc=*a.data_as<FSTArc *>();
+    void visit_best_arc(FSTArc &arc) {
 //        path.push_back(&arc);
-        if (1 || best) {
-#ifdef DEBUGKBEST
-            Config::debug() << (best ? " best-arc=" : " sidetrack-arc=") << arc << " GraphArc="<<a;
-#endif 
-            if (has_key(prevent_cycle,&arc)) {
-                throw std::runtime_error("Cycle in best path - must be negative cost.");
-                return;
-            } else {
-                prevent_cycle[&arc]=1;
-            }
-        }
         if (flags['@'] ) {
             int inid=arc.in,outid=arc.out;
             if (outid!=WFST::epsilon_index)
@@ -204,13 +188,13 @@ struct wfst_paths_printer {
                 }
             } else {
                 out << sp;
-                wfst.printArc(arc,a.src,out);
+                wfst.printArc(arc,src,out);
             }
         }
+        src=(unsigned)arc.dest;
     }
-    void visit_sidetrack_arc(const GraphArc &a) {
-        clear_cycle_detect();   
-        visit_best_arc(a,false);
+    void visit_sidetrack_arc(FSTArc &a) {
+        visit_best_arc(a);
     }
 
 };
@@ -768,11 +752,27 @@ main(int argc, char *argv[]){
             nTarget = 0;
         line_in=inputs[nTarget];
     }
+    dynamic_array<double> exponents;
+    if (cm.have_opt("exponents")) {
+        split_into(cm.text_long_opts["exponents"],exponents,",");
+        Config::log() << "Using input WFST -exponents:\n";//<<exponents<<"\n";
+        for (i=0 ; i < nInputs ; ++i) {
+            Config::log() << filenames[i];
+            if (i < exponents.size())
+                Config::log() << " ^ " << exponents[i];
+            Config::log() << std::endl;
+        }
+        Config::log() << std::endl;        
+    }
+    
     for ( i = 0 ; i < nInputs ; ++i ) {
         if ( i != nTarget ) {
-            PLACEMENT_NEW (&chain[i]) WFST(*inputs[i],!flags['K']);
+            WFST *w=chain+i;
+            PLACEMENT_NEW (w) WFST(*inputs[i],!flags['K']);
+            if (i < exponents.size())
+                w->raisePower(exponents[i]);
             if ( !flags['m'] && nInputs > 1 )
-                chain[i].unNameStates();
+                w->unNameStates();
             if ( inputs[i] != &cin ) {
 #ifdef DEBUG
                 //Config::debug() << "Deleting file " << i << " & " << inputs[i] <<"\n";
@@ -780,7 +780,7 @@ main(int argc, char *argv[]){
 
                 delete inputs[i];
             }
-            if ( !(chain[i].valid()) ) {
+            if ( !(w->valid()) ) {
                 Config::warn() << "Bad format of transducer file: " << filenames[i] << "\n";
                 //        for ( j = i+1 ; j < nInputs ; ++j )
                 //          if ( inputs[i] != &cin )
@@ -974,8 +974,7 @@ main(int argc, char *argv[]){
             unsigned kPathsLeft=kPaths;
             if ( result->valid() ) {
                 wfst_paths_printer pp(*result,cout,flags);
-                result->bestPaths(kPaths,pp);
-
+                result->visit_kbest(kPaths,pp);
                 kPathsLeft -= pp.n_paths;
             }
             for ( unsigned fill = 0 ; fill < kPathsLeft ; ++fill ) {
@@ -1104,10 +1103,7 @@ main(int argc, char *argv[]){
                 if (long_opts["minimize"])
                     cm.openfst_minimize(result);
                 
-                if ( exponent != 1.0) {
-                    result->raisePower(exponent);
-                }
-                
+                result->raisePower(exponent);                
                 cm.write_transducer(*fstout,result);
             }
         }
@@ -1340,7 +1336,11 @@ cout <<         "\n"
         "--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes\n"
         "\n"
         "--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)\n"
-        ;    
+        ;
+    cout << "\n"
+        "--exponents=2,.1 : comma separated list of exponents, applied left to right to the input WFSTs (including stdin if -s).  if more inputs than exponents, use (noop) exponent of 1.  this differs from -=, which exponentiates the weights of the resulting (output) WFST.\n"
+        ;
+    
     /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
     cout << "\n--train-cascade-compress-always : even when the composition needed no pruning, compress the table (certainly frivolous)\n";

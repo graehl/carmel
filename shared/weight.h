@@ -64,7 +64,7 @@ struct neglog10_weight {};
 struct negln_weight {};
 struct log10_weight {};
 struct ln_weight {};
-    
+struct cost_weight {}; // impl. base, which happens to be negln
 
 static const double HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 
@@ -91,6 +91,14 @@ struct logweight {                 // capable of representing nonnegative reals
     typedef logweight<Real> self_type;
     Real weight;
     typedef Real float_type;
+    void swap(self_type &a) throw() {
+        using std::swap;
+        swap(weight,a.weight);
+    }
+    inline friend void swap(self_type &a,self_type &b) throw()
+    {
+        a.swap(b);
+    }
  private:
     enum MAKENOTANON  { DEFAULT_BASE=0,LN=1,LOG10=2,EXP=3 }; // EXP is same as LN but write e^10e-6 not 10e-6ln
     enum name2 { DEFAULT_LOG=0,ALWAYS_LOG=1, SOMETIMES_LOG=2, NEVER_LOG=3 };
@@ -323,6 +331,7 @@ struct logweight {                 // capable of representing nonnegative reals
     logweight(Real w,negln_weight t) {setLn(-w);}
     logweight(Real w,log10_weight t) {setLog10(w);}
     logweight(Real w,neglog10_weight t) {setNegLog10(w);}
+    logweight(Real w,cost_weight t) {setCost(w);}
     logweight(bool,bool) { setInfinity(); }
     logweight(Real log_weight,bool dummy) : weight(log_weight) {}
     template <class Real2>
@@ -435,6 +444,19 @@ struct logweight {                 // capable of representing nonnegative reals
             return *this;
 #endif
         return self_type(weight*nth,false);
+    }
+
+    // return -1 if this is less than o, 0 if equal, 1 otherwise
+    int cmp(self_type const& o) const
+    {
+        Real diff=o.weight-weight;
+        return diff < 0 ? -1 : (diff ? 1 : 0);
+    }
+
+    // -1: a<b 0: a==b 1: a>b
+    inline friend int cmp(self_type const& a,self_type const& b) 
+    {
+        return a.cmp(b);
     }
     
     self_type &operator ^= (Real power) { // raise self_type^power

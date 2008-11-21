@@ -15,6 +15,7 @@
 #include <iostream>
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/word_spacer.hpp>
+#include <graehl/shared/split.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -606,49 +607,6 @@ void insert_byid(const A& vals,I &in,O &out)
         INSERT_BYID_OUTN;
 #undef INSERT_BYID_OUTN
 }
-
-template <class Func>
-inline void split_noquote(
-    const std::string &csv,
-    Func f,
-    const std::string &delim=","
-    )
-{
-    using namespace std;
-    string::size_type pos=0,nextpos;
-    string::size_type delim_len=delim.length();
-//    DBP2(delim,delim_len);
-    while((nextpos=csv.find(delim,pos)) != string::npos) {
-//        DBP4(csv,pos,nextpos,string(csv,pos,nextpos-pos));        
-        if (! f(string(csv,pos,nextpos-pos)) )
-            return;
-        pos=nextpos+delim_len;
-    }
-    if (pos!=0) {
-//        DBP4(csv,pos,csv.length(),string(csv,pos,csv.length()-pos));
-        f(string(csv,pos,csv.length()-pos));
-    }    
-}
-
-#ifdef TEST
-char const* split_strs[]={"",",a","",0};
-char const* seps[]={";",";;",",,","   ","=,",",=",0};
-
-BOOST_AUTO_TEST_CASE( TEST_io )
-{
-    using namespace std;
-    {
-        split_noquote(";,a;",make_expect_visitor(split_strs),";");
-        for (char const **p=seps;*p;++p) {
-            string s;
-            for (char const **q=split_strs;*q;++q)
-                s.append(*q);
-            split_noquote(s,make_expect_visitor(split_strs),*p);
-        }
-    }
-    
-}
-#endif
 
 } //graehl
 #endif

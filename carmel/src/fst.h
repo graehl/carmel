@@ -20,12 +20,12 @@
 #include <graehl/shared/myassert.h>
 #include <graehl/carmel/src/compose.h>
 #include <iterator>
+#include <algorithm>
 #include <graehl/shared/kbest.h>
 #include <boost/config.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/mean_field_scale.hpp>
 #include <graehl/shared/size_mega.hpp>
-
 #include <graehl/shared/debugprint.hpp>
 
 namespace graehl {
@@ -409,7 +409,7 @@ class WFST {
 
     void read_training_corpus(std::istream &in,training_corpus &c);
     
-    static inline FLOAT_TYPE randomFloat()       // in range [0, 1)
+    static inline double randomFloat()       // in range [0, 1)
     {
         return rand() * (1.f / (RAND_MAX+1.f));
     }
@@ -550,13 +550,6 @@ class WFST {
             final = invalid_state;
     }
 
-    /* the following is for dir=input.  reverse if dir=output.
-       given 
-       taking all the input strings in transducer E=edit_distance_to
-       produce a subset of all edits 
-    WFST(std::vector<int> const& string,WFST &edit_distance_to,Weight ins,Weight del,Weight subst,bool epsilon_outer=false,int dir=input)
-    */
-    
     WFST(const char *buf); // make a simple transducer representing an input sequence
     WFST(const char *buf, int& length,bool permuteNumbers); // make a simple transducer representing an input sequence lattice - Yaser
     WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b    
@@ -648,13 +641,249 @@ class WFST {
     // list is dynamically allocated - delete it
     // yourself when you are done with it
 
-    List<List<PathArc> > *bestPaths(int k); // bestPaths(k) gives a list of the (up to ) k
-    // Visitor needs to accept GraphArc (from makeGraph ... (FSTArc *)->data gives WFST FSTArc - see kbest.h for visitor description
-    template <class Visitor> void bestPaths(unsigned k,Visitor &v) {
+    // Visitor needs to accept GraphArc (from makeGraph ... (FSTArc *)->data gives WFST FSTArc - see kbest.h for visitor description.  deprecated for visit_kbest
+    template <class Visitor> void bestPaths(unsigned k,Visitor &v,bool throw_on_cycle=true) {
         Graph graph = makeGraph();
-        graehl::bestPaths(graph,0,final,k,v);
+        graehl::bestPaths(graph,0,final,k,v,throw_on_cycle);
         freeGraph(graph);
     }
+
+    
+
+    // if you prefer to use a visitor that deals with FST arcs rather than graph arcs
+    template <class V>
+    struct arc_visitor 
+    {
+        V *pv;
+        bool SIDETRACKS_ONLY;
+        
+        arc_visitor(V &v) : pv(&v) {
+            SIDETRACKS_ONLY=pv->SIDETRACKS_ONLY;
+        }
+
+        void start_path(unsigned k,double cost) 
+        {
+            pv->start_path(k,Weight(cost,cost_weight()));
+        }
+        void end_path() 
+        {
+            pv->end_path();
+        }
+        void visit_best_arc(const GraphArc &a) 
+        {
+            pv->visit_best_arc(*(FSTArc*)a.data);
+        }
+        void visit_sidetrack_arc(const GraphArc &a) 
+        {
+            pv->visit_best_arc(*(FSTArc*)a.data);
+        }
+    };
+
+    template <class Visitor>
+    void visit_kbest(unsigned k,Visitor &v,bool throw_on_cycle=true) {
+        arc_visitor<Visitor> wrap_visitor(v);
+        bestPaths(k,wrap_visitor,throw_on_cycle);
+    }
+    
+    template <class Visitor>
+    void visit_kbest(unsigned k,Visitor const &v,bool throw_on_cycle=true) {
+        Visitor v2(v);
+        visit_kbest(k,v,throw_on_cycle);
+    }
+    
+    typedef dynamic_array<int> string_type;
+    typedef dynamic_array<FSTArc *> path_type;
+
+
+    static inline
+    void path_yield_into(string_type &s,path_type const& path,int dir=WFST::input,bool skip_epsilon=true)
+    {
+        for (path_type::const_iterator i=path.begin(),e=path.end();i!=e;++i) {
+            FSTArc const& a=**i;
+            if (!(skip_epsilon && a.is_epsilon(dir)))
+                s.push_back(a.symbol(dir));
+        }        
+    }
+
+    /*
+    struct yield_from_path : public string_type 
+    {
+        yield_from_path(path_type const& path,int dir=WFST::input,bool skip_epsilon=true) 
+        {
+            WFST::path_yield_into(*this,path,dir,skip_epsilon);
+        }
+    };
+
+    // path_yield_visitor<MyVisitor> yield(MyVisitor(),WFST::input,true); wfst.visit_kbest(10,yield);
+    template <class V>
+    struct path_yield_visitor : public string_type
+    {
+        enum { SIDETRACKS_ONLY=0 };
+        int dir; // input or output
+        bool skip_epsilon;
+        V &v;
+        path_yield_visitor(V &v,int dir=WFST::input,bool skip_epsilon=true) : v(v),dir(dir), skip_epsilon(skip_epsilon) {}
+        
+        void start_path(unsigned k,Weight w) { this->clear(); }
+        void end_path() {
+            v(*this);
+        }
+        void visit_best_arc(const FSTArc &a) { visit_arc(a); }
+        void visit_sidetrack_arc(const FSTArc &a) { visit_arc(a); }
+        void visit_arc(const FSTArc &a)
+        {
+            if (!(skip_epsilon && a.is_epsilon(dir)))
+                this->push_back(a.symbol(dir));
+        }
+    };
+    */
+    /* the following is for dir=input.  reverse if dir=output.
+       given 
+       taking all the input strings in transducer E=edit_distance_to
+       produce a subset of all edits 
+    WFST(std::vector<int> const& string,WFST &edit_distance_to,Weight ins,Weight del,Weight subst,bool epsilon_outer=false,int dir=input)
+    */
+
+    
+
+    struct annotated_path 
+    {
+        path_type p;
+        unsigned k;
+        Weight w; // used as sort key, holds mbr score, provided to path_visitor, etc.
+        Weight orig_w;
+        
+        annotated_path(unsigned k,Weight w) : k(k),w(w) {
+            orig_w=w;
+        }
+
+        typedef annotated_path self_type;
+        
+        void swap_impl(self_type &a) throw() {
+            swap(p,a.p);
+            swap(w,a.w);
+            swap(orig_w,a.orig_w);
+            using std::swap;
+            swap(k,a.k);
+        }
+        friend void swap(self_type &a,self_type &b) throw()
+        {
+            a.swap_impl(b);
+        }    
+
+        // for sort best-first, so reverse.
+        inline bool operator <(self_type const&o) const  
+        {
+            return w > o.w;
+        }
+        
+        inline int cmp(self_type const& o) const 
+        {
+            return w.cmp(o.w);
+        }
+        
+        // note: i didn't care to annotate w/ sidetrack vs. not (for -% path output) so everything is reported as a best_arc.  visitor must accept FSTArc &, not GraphArc &
+        template <class V>
+        void replay_to(V &v) const
+        {
+            v.start_path(k,w);
+            for (path_type::const_iterator i=p.begin(),e=p.end();i!=e;++i)
+                v.visit_best_arc(**i);
+            v.end_path();
+        }
+        
+    };
+
+    typedef dynamic_array<annotated_path> annotated_paths_type;
+
+    struct annotated_paths : public annotated_paths_type
+    {
+        annotated_paths(WFST &w,unsigned k,bool cc=true) 
+        {
+            w.visit_kbest(k,*this,cc);
+        }
+        void start_path(unsigned k,Weight w) 
+        {
+            this->push_back(annotated_path(k,w));
+        }
+        void end_path() {}
+        enum { SIDETRACKS_ONLY=0 };
+
+        void visit_sidetrack_arc(FSTArc &a) 
+        {
+            visit_best_arc(a);
+        }
+
+        void visit_best_arc(FSTArc &a)
+        {
+            this->back().p.push_back(&a);
+        }
+
+        template <class V>
+        void replay_to(V &v,unsigned i) const
+        {
+            Assert(i>0);
+            (*this)[i-1].replay_to(v);
+        }
+
+        // show only the top k
+        template <class V>
+        void replay_first_k_to(V &v,unsigned max_k=(unsigned)-1) const
+        {
+            for (unsigned i=1,e=std::min(max_k,this->size());i<=e;++i)
+                replay_to(v,i);
+        }
+
+        // for sort, descending order by weight (i.e. best first)
+        static int compare(void const*a,void const*b) 
+        {
+            annotated_path const& pa=*(annotated_path*)a;
+            annotated_path const& pb=*(annotated_path*)b;
+            return pb.cmp(pa);
+        }
+        
+        
+        void resort() 
+        {
+//            std::sort(this->begin(),this->end()); // would need operator = for dynamic_array.
+            std::qsort(this->begin(),this->size(),sizeof(annotated_path),compare);
+        }
+        
+    };
+    
+    
+    /* take the current WFSA (project on chosen direction) as a weighted distribution (the accepting paths are normalized).  alpha sharpens(>1)/softens(<1)/neutral(=1) (e^alph*a)/sum(e^(alph*a_i)).  then choose the highest weight path out of the top search_k under MBR edit distance, and emit the best rescored visit_k
+
+    visitor V is called with:
+    v.visit(WFST &w,unsigned k,unsigned pre_mbr_k,Weight mbr_score,path_type const& p,yield_type const& y)
+
+    of course w,k,and y are redundant.  but i like you so they're given.
+
+    */
+    
+      
+
+    
+    template <class V>
+    void edit_distance_mbr(unsigned search_k,unsigned visit_k,V &v,double alpha=1.,int dir=WFST::input)
+    {
+        annotated_paths paths(*this,search_k,true);
+        raisePower(alpha);
+        
+        //STUB:
+        paths.replay_first_k_to(v,visit_k);
+        
+        raisePower(1./alpha);
+    }
+    
+    
+    void set_string(alphabet_type &a,string_type const& str,bool clone_alph=true)
+    {
+        //TODO
+    }
+    
+        
+    
     // best paths to final
     // labels are pointers to names in WFST so do not
     // use the path after the WFST is deleted
@@ -818,7 +1047,7 @@ class WFST {
         std::string disk_cache_filename;
         size_t_bytes disk_cache_bufsize;
 
-        FLOAT_TYPE learning_rate_growth_factor;
+        double learning_rate_growth_factor;
         int ran_restarts;
         random_restart_acceptor ra;
         
@@ -940,6 +1169,7 @@ class WFST {
 
     void raisePower(double exponent=1.0) 
     {
+        if (exponent==1.0) return;
         for ( int s = 0 ; s < numStates() ; ++s )
             states[s].raisePower(exponent);
     }
@@ -1071,7 +1301,7 @@ class WFST {
 
     //	lastChange = train_maximize(method);
     // counts must have been filled in (happens in trainFinish) so not useful to public
-    Weight train_maximize(NormalizeMethod const& method,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
+    Weight train_maximize(NormalizeMethod const& method,double delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
     
     void destroy()  // just in case we're sloppy, this is idempotent.  note: the actual destructor may not be - std::vector, etc.
     {
