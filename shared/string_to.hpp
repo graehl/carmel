@@ -1,6 +1,7 @@
 #ifndef GRAEHL__SHARED__STRING_TO_HPP
 #define GRAEHL__SHARED__STRING_TO_HPP
 
+#include <string>
 #include <sstream>
 
 namespace graehl {

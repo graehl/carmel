@@ -104,13 +104,13 @@ public:
     }
     typedef array<T,Alloc> self_type;
 //!FIXME: does this swap allocator base?
-    void swap(array<T,Alloc> &a) {
+    void swap(array<T,Alloc> &a) throw() {
         self_type t;
         memcpy(&t,this,sizeof(self_type));
         memcpy(this,&a,sizeof(self_type));
         memcpy(&a,&t,sizeof(self_type));
     }
-    inline friend void swap(self_type &a,self_type &b) 
+    inline friend void swap(self_type &a,self_type &b) throw()
     {
         a.swap(b);
     }    
@@ -1471,5 +1471,16 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
 #endif
 
 } //graehl
+
+
+//FIXME: overriding std::swap is technically illegal, but this allows some dumb std::sort to swap, which it should have found in graehl::swap by arg. dependent lookup.  
+namespace std {
+template <class T,class A>
+void swap(graehl::dynamic_array<T,A> &a,graehl::dynamic_array<T,A> &b) throw()
+{
+    a.swap(b);
+}
+}
+
 
 #endif

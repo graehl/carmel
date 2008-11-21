@@ -1,6 +1,6 @@
 // throw exceptions holding a message, and function/file/line info
-#ifndef VERBOSE_EXCEPTION_HPP
-#define VERBOSE_EXCEPTION_HPP
+#ifndef GRAEHL_SHARED__VERBOSE_EXCEPTION_HPP
+#define GRAEHL_SHARED__VERBOSE_EXCEPTION_HPP
 
 #include <exception>
 #include <iostream>

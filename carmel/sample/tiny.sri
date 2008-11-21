@@ -1,12 +1,13 @@
 
 \data\
-ngram 1=4
+ngram 1=5
 ngram 2=6
 ngram 3=2
 
 \1-grams:
 -3      a     -.1
 -2      b     -.2
+-4	c
 -99      <s>     -1.5
 -1       </s>
 
@@ -21,3 +22,5 @@ ngram 3=2
 \3-grams:
 -.1 <s> a a
 -.2   b b a
+
+\end\
