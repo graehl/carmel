@@ -98,9 +98,14 @@ private:
 #endif // __linux__
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wincrypt.h>
+#undef max
+#undef min
 #include <boost/lexical_cast.hpp>
 
 const char* const boost::random_device::default_token = MS_DEF_PROV;

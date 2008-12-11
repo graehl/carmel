@@ -3,10 +3,17 @@
 
 //NOTE: not namespace graehl.
 
-#include <cmath>
-
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_MSC_VER)
 # define WIN32_NAN
+# define GRAEHL_ISNAN(x) ( _isnan(x) != 0 )
+#else
+# if defined(_STLPORT_VERSION)
+#  include <math.h>
+#  define GRAEHL_ISNAN(x) isnan(x) // in stlport, only c99 version of isnan is available
+# else
+#  include <cmath>
+#  define GRAEHL_ISNAN(x) std::isnan(x) // gcc native stdlib includes isnan as an exported template function
+# endif
 #endif
 
 #ifdef WIN32_NAN
@@ -17,9 +24,9 @@
 #undef NAN
 #endif NAN
 
-static const unsigned int nan[2] = {0xffffffff, 0x7fffffff}; 
+static const unsigned int graehl_nan[2] = {0xffffffff, 0x7fffffff}; 
 
-#define NAN (*(const double *) nan)
+#define NAN (*(const double *) graehl_nan)
 
 #endif
 
@@ -29,8 +36,8 @@ static const unsigned int nan[2] = {0xffffffff, 0x7fffffff};
 
 //#define FLOAT_NULL HUGE_VALF
 //#define DOUBLE_NULL HUGE_VAL
-#define FLOAT_NULL NAN
-#define DOUBLE_NULL NAN
+#define FLOAT_NULL float(NAN)
+#define DOUBLE_NULL double(NAN)
 
 
 
@@ -44,12 +51,7 @@ void set_null(C &c)
 
 inline bool is_null(float const& f)
 {
-#ifdef WIN32_NAN
-    return _isnan(f) != 0;
-#else
-    return std::isnan(f);//f!=f;
-#endif
-//    return f!=f;
+    return GRAEHL_ISNAN(f);
 }
 
 inline void set_null(float &f)
@@ -59,12 +61,7 @@ inline void set_null(float &f)
 
 inline bool is_null(double const& f)
 {
-#ifdef WIN32_NAN
-    return _isnan(f) != 0;
-#else
-    return std::isnan(f);//f!=f;
-#endif
-// return f!=f;
+    return GRAEHL_ISNAN(f);
 }
 
 inline void set_null(double &f)

@@ -13,14 +13,14 @@ namespace graehl {
 struct ctype_table
 {
     typedef std::ctype<char> CT;
-    static inline void clear_space(std::ctype_base::mask& c) { c &= ~CT::space; }
-    static inline void set_space(std::ctype_base::mask& c) { c |= CT::space; }
+    static inline void clear_space(std::ctype_base::mask& c) { c = c & (~CT::space); }
+    static inline void set_space(std::ctype_base::mask& c) { c = c | CT::space; }
     typedef std::ctype_base::mask mask_type;
-    
+
     mask_type rc[CT::table_size];
-    operator mask_type *() 
+    operator mask_type *()
     { return rc; }
-    
+
     BOOST_STATIC_CONSTANT(int,ADD=0);
     BOOST_STATIC_CONSTANT(int,REPLACE=1);
     BOOST_STATIC_CONSTANT(int,REMOVE=2);
@@ -44,7 +44,7 @@ struct ctype_table
     }
 };
 
-    
+
 // so we can init ctype_table FIRST.
 class ctype_mod_ws: private ctype_table,public std::ctype<char>
 {
@@ -52,7 +52,7 @@ class ctype_mod_ws: private ctype_table,public std::ctype<char>
     BOOST_STATIC_CONSTANT(int,ADD=ctype_table::ADD);
     BOOST_STATIC_CONSTANT(int,REPLACE=ctype_table::REPLACE);
     BOOST_STATIC_CONSTANT(int,REMOVE=ctype_table::REMOVE);
-        
+
     template <class CharPred>
     ctype_mod_ws(CharPred pred,int mode=REMOVE): ctype_table(pred,mode,classic_table()),std::ctype<char>(rc) {}
 };
@@ -79,7 +79,7 @@ struct change_whitespace
         ADD=ctype_mod_ws::ADD,
         REPLACE=ctype_mod_ws::REPLACE,
         REMOVE=ctype_mod_ws::REMOVE
-    };    
+    };
 
     //    ctype_mod_ws ws;
 
@@ -89,22 +89,22 @@ struct change_whitespace
         //ws(pred,mode),
         old(change_ws(i,pred,mode)) {}
 
-    void restore() 
+    void restore()
     { restore_ws(i,old); }
-    
+
 };
 
 template <class I>
 struct local_whitespace : public change_whitespace<I>
 {
-    ~local_whitespace() 
+    ~local_whitespace()
     { this->restore(); }
     typedef change_whitespace<I> parent_type;
-    
+
     template <class CharPred>
     local_whitespace(I &i,CharPred pred,int mode=parent_type::REPLACE) : parent_type(i,pred,mode) {}
 };
-    
+
 } //graehl
 
 #endif

@@ -3,7 +3,7 @@
 
 #ifndef BREAKPOINT
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_WIN32) && !defined(_WIN64)
 # define BREAKPOINT __asm int 3
 #else
 # ifdef __i386__
@@ -18,7 +18,7 @@
 #ifdef DEBUG
 # define DEBUG_BREAKPOINT BREAKPOINT
 #else
-# define DEBUG_BREAKPOINT 
+# define DEBUG_BREAKPOINT
 #endif
 
 

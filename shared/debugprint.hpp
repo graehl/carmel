@@ -193,7 +193,13 @@ const char * dbgstrw(const A &a) {
 }//graehl
 
 #ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
+#undef min
+#undef max
 #define DBPSS(a) do { (OutputDebugString((LPCTSTR)((a).c_str()))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
 #define DBPS(a) do { (OutputDebugString((LPCTSTR)(a))); if (DBP::logstream) *DBP::logstream << (a); } while(0)
 

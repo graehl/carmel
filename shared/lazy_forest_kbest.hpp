@@ -51,7 +51,9 @@
 #include <graehl/shared/2heap.h>
 #else
 #include <algorithm>
+#ifdef __GNUC__
 #include <ext/algorithm> // is_sorted
+#endif
 #endif
 
 namespace graehl {
