@@ -142,7 +142,7 @@ struct file_arg : public boost::shared_ptr<Stream>
     {
         try {
             set(dynamic_cast<Stream &>(fs),filename,destroy,fail_msg);
-        } catch (std::bad_cast &e) {
+        } catch (std::bad_cast &) {
             throw_fail(filename," was not of the right stream type");
         }
     }

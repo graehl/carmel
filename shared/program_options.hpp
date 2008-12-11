@@ -196,11 +196,11 @@ define GRAEHL__SHOWING(name)\
                boost::program_options::variables_map &vm,
                int show_flags=SHOW_DESCRIPTION & SHOW_DEFAULTED & SHOW_HIERARCHY)
     {
-        const bool show_defaulted=show_flags & SHOW_DEFAULTED;
-        const bool show_description=show_flags & SHOW_DESCRIPTION;
-        const bool hierarchy=show_flags & SHOW_HIERARCHY;
-        const bool show_empty=show_flags & SHOW_EMPTY;
-        const bool show_help=show_flags & SHOW_HELP;
+        const bool show_defaulted=bool(show_flags & SHOW_DEFAULTED);
+        const bool show_description=bool(show_flags & SHOW_DESCRIPTION);
+        const bool hierarchy=bool(show_flags & SHOW_HIERARCHY);
+        const bool show_empty=bool(show_flags & SHOW_EMPTY);
+        const bool show_help=bool(show_flags & SHOW_HELP);
         
         using namespace boost::program_options;
         using namespace std;

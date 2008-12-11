@@ -39,9 +39,13 @@
 #endif
 
 #ifdef MEMMAP_IO_WINDOWS
+# ifndef NOMINMAX
+# define NOMINMAX
+# endif
 # define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 # include <windows.h>
 # undef max
+# undef min
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
 namespace graehl {
 

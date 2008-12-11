@@ -37,7 +37,7 @@ struct dynamic_hash_cache
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
     std::size_t n_collide;
 #endif 
-    typedef unsigned const* quad_p;
+    typedef boost::uint32_t const* quad_p;
     struct locked_result
 #ifndef DYNAMIC_HASH_CACHE_SINGLE_LOCK
     : public locking_type
