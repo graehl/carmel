@@ -149,7 +149,7 @@ class WFST {
         fst.SetFinal(final,W::One());
     }
     template <class FstWeight>
-    Weight to_weight(FstWeight const& w) 
+    Weight openfst_to_weight(FstWeight const& w) 
     {
         return Weight(w.Value(),neglog10_weight());
     }
@@ -265,7 +265,7 @@ class WFST {
         for (unsigned o=0;o<o_n;++o) {
             for (AI ai(fst,o);!ai.Done();ai.Next()) {
                 A const&arc=ai.Value();
-                const FSTArc a(arc.ilabel,arc.olabel,o2s[arc.nextstate],to_weight(arc.weight));
+                const FSTArc a(arc.ilabel,arc.olabel,o2s[arc.nextstate],openfst_to_weight(arc.weight));
 //                DBP5(o,o2s[o],arc.nextstate,o2s[arc.nextstate],a);
                 arc_add(o2s[o],a);
             }
@@ -280,7 +280,7 @@ class WFST {
             for (unsigned i=0;i!=o_n;++i) {
                 W fw=fst.Final(i);
                 if (zero != fw) {
-                    states[i].addArc(FSTArc(epsilon_index,epsilon_index,final,to_weight(fw)));
+                    states[i].addArc(FSTArc(epsilon_index,epsilon_index,final,openfst_to_weight(fw)));
                 }
             }
         }
@@ -1112,6 +1112,9 @@ class WFST {
             a += states[i].size;
         return a;
     }
+
+    //FIXME: you could run out of memory translating the FST into a graph just to report a summary.  topo sort and arc propagation from graph.h aren't that complicated to repeat (or abstract)
+    
     // *p_n_back_edges = 0 iff no cycles (optional output arg)
     Weight numNoCyclePaths(unsigned *p_n_back_edges=0) {
         if ( !valid() ) return Weight();
@@ -1123,12 +1126,35 @@ class WFST {
         delete[] nPaths;
         return ret;
     }
+
+    struct weight_for_cost 
+    {
+        typedef Weight result_type;
+        Weight operator()(GraphArc const& a) const
+        {
+            return Weight(a.weight,cost_weight());
+        }
+    };
+        
+    Weight sum_acyclic_paths()
+    {
+        fixed_array<Weight> w(numStates());
+        w[0]=1;
+        Graph g = makeGraph();
+        weight_for_cost f;
+        propagate_paths(g,f,w,0);
+        delete[] g.states;
+        return w[final];
+    }
+    
     static void setIndexThreshold(int t) {
         if ( t < 0 )
             WFST::indexThreshold = 0;
         else
             WFST::indexThreshold = t; 
     }
+
+    //FIXME: these aren't technically const because they leave a mutable pointer to orig. arc, but can we make a const version for truly const uses?
     Graph makeGraph(); // weights = -log, so path length is sum and best path 
     // is the shortest; GraphArc::data is a pointer 
     // to the FSTArc it corresponds to in the WFST
@@ -1153,7 +1179,7 @@ class WFST {
     // untested
     void ownAlphabet(int dir) 
     {
-        if (!owner_alph[dir]) {
+        if (!owner_alph[dir] && alph[dir]) {
             alph[dir]=NEW alphabet_type(*alph[dir]);
             owner_alph[dir]=1;
         }

@@ -37,6 +37,7 @@ use strict;
 my $eos=$ENV{EOS}; # </s> vs. *e* at end
 my $lock_bo=$ENV{LOCK_BACKOFF};
 my $checksuf=!$ENV{SUFFIX};
+my $NOQUOTE=$ENV{NOQUOTE};
 
 my $DEBUG=$ENV{DEBUG};
 
@@ -113,7 +114,7 @@ sub words_to_state {
 sub ngram_to_fsa_arc {
     my ($p,$bo,@words)=@_;
     my $last_word=$words[$#words];
-    my $word_sym=escape_for_carmel($last_word);
+    my $word_sym=$NOQUOTE ? $last_word : escape_for_carmel($last_word);
     my @escs=map(escape_for_seq($_),@words);
     my $whole=escaped_to_state(@escs);
     my $laste=pop @escs;
