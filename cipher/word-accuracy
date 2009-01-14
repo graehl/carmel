@@ -1,0 +1,63 @@
+#!/usr/bin/perl -w
+use strict;
+
+# arg1: gold standard
+# other args/stdin: text scored vs. gold
+
+my $f=shift;
+
+my $N=0;
+my $C=0;
+my $mismatch=0;
+my $mismatch_N=0;
+my $lineno=0;
+my $Q=$ENV{QUIET};
+my $EG=$ENV{EGOLD};
+my $ET=$ENV{ETEST};
+
+my %errors_for_gold;
+my %errors_for_test;
+
+sub report_errors {
+    my ($h,$n)=@_;
+    print "Errors per $n word:\n" if ($n);
+    print "$_ $h->{$_}\n" for sort { $h->{$b} <=> $h->{$a} } keys %{$h};
+    print "\n";
+}
+
+sub judge {
+    my ($g,$t)=@_;
+    my $n=scalar @{$g};
+    $N+= $n;
+    if (scalar @{$t} != $n) {
+        ++$mismatch;
+        $mismatch_N+=$n;
+        print STDERR "line $lineno - # of tokens don't match.  gold=(",join(' ',@$g),"), test=(",join(' ',@$t),")\n" unless $Q;
+        return;
+    }
+    for (0..$n-1) {
+        if ($g->[$_] ne $t->[$_]) {
+            ++$errors_for_gold{$g->[$_]} if $EG;
+            ++$errors_for_test{$t->[$_]} if $ET;
+        } else {
+            ++$C;
+        }
+    }
+}
+
+open F,"$f" or die "couldn't open gold standard (arg1) $f";
+while (<F>) {
+    ++$lineno;
+    chomp;
+    my @g=split;
+    last unless defined ($_=<>);
+    chomp;
+    my @t=split;
+    judge(\@g,\@t);
+}
+
+print "$mismatch lines in gold had wrong number of tokens ($mismatch_N running words).\n" if $mismatch;
+print "$C correct of $N running words.\nAccuracy=",$C/$N,"\n" if $N;
+
+report_errors(\%errors_for_gold,"gold standard") if $EG;
+report_errors(\%errors_for_test,"test") if $ET;

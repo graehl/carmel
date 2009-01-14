@@ -1,0 +1,13 @@
+#!/bin/bash
+
+nclass=${nclass:-4}
+class="class$nclass"
+mkdir -p $class
+test=${test:-test}
+train=${train:-train}
+texts="$test $train"
+#texts=${texts:-train test test.cipher}
+echo making lm classes for \"$texts\"
+for t in $texts ; do
+ ngram-class -numclasses $nclass -text $t -class-counts $class/$t.counts -classes $class/$t
+done

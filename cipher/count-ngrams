@@ -1,0 +1,22 @@
+#!/bin/bash
+d=`dirname $0`
+maxorder=${maxorder:-3}
+texts=${texts:-train test test.cipher}
+out=${out:-lms}
+mkdir -p $out
+echo making lms and counts for texts \"$texts\" up to ngram order \"$maxorder\"
+ for t in $texts ; do
+ writearg="-write $out/$t.counts"
+  for N in `seq 1 $maxorder` ; do
+     writearg="$writearg -write$N $out/$t.counts$N"
+  done
+trainlm=$out/$t.${maxorder}gram
+  echo counting for $t: ngram-count -order $maxorder -unk -sort -text $t $writearg -lm $trainlm
+  ngram-count -order $maxorder -unk -sort -text $t $writearg -lm $trainlm
+  for N in `seq 1 $maxorder` ; do
+    sort -rnk $((N+1)) $out/$t.counts$N > $out/$t.sortcounts$N
+  done
+
+NOQUOTE= CHECK_SUFFIX= EOS= $d/sri2fsa.pl $trainlm | carmel -Ns 0 > $trainlm.fst
+
+ done

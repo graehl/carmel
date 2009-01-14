@@ -1,0 +1,9 @@
+#!/bin/bash
+# needs carmel binaries in PATH
+d=`dirname $0`
+nclass=${nclass:-4}
+class="class$nclass"
+mkdir -p $class
+$d/class-ngrams
+$d/decipher-classes
+$d/eval-classes

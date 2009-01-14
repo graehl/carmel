@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+use strict;
+
+my %c1;
+my %c2;
+
+
+sub get_classes {
+    my ($h,$f)=@_;
+    open F,"<",$f or die;
+    while (<F>) {
+        my ($class)=split ' ',$_,2;
+        ++$h->{$class};
+    }
+}
+
+get_classes(\%c1,shift);
+get_classes(\%c2,shift);
+
+my @c2=sort keys %c2;
+my $n2=scalar @c2;
+my $pcond=1./$n2;
+
+my $S="S";
+
+print "$S\n";
+print "($S\n";
+
+for my $k1 (sort keys %c1) { 
+    for (@c2) {
+        print " ($S $k1 $_ $pcond)\n";
+    }
+}
+
+print ")\n";

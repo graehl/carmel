@@ -28,7 +28,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.5"
+#define CARMEL_VERSION "4.7"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -134,6 +134,7 @@ void out_maybe_quote(char const* str,ostream &out,bool quote)
 struct wfst_paths_printer {
     bool SIDETRACKS_ONLY;
     unsigned n_paths;
+    Weight best_w;
     Weight w;
     WFST &wfst;
     ostream &out;
@@ -150,6 +151,8 @@ struct wfst_paths_printer {
     void start_path(unsigned k,Weight path_w) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
         ++n_paths;
         w=path_w;
+        if (k==1)
+            best_w=w;
         output.clear();
         sp.reset();
         src=0;
@@ -238,6 +241,92 @@ typedef std::map<std::string,std::string> text_long_opts_t;
 
 struct carmel_main 
 {
+    
+    ifstream post_b;
+
+    void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0) 
+    {
+        Config::log()<<"product of probs="<<prod_prob<<", per-example perplexity(N="<<n_pairs<<")=";
+        prod_prob.root(n_pairs).inverse().print_base(Config::log(),2);
+        Config::log()<<", per-input-symbol perplexity(Nsym="<<n_symbols<<")=";
+        prod_prob.root(n_symbols).inverse().print_base(Config::log(),2);
+        if (n_0prob)
+            Config::log()<<", excluding "<<n_0prob<<" 0 probabilities (i.e. real ppx is infinite).";
+        Config::log()<<std::endl;
+    }
+    
+    istream *open_postb() 
+    {
+        if (have_opt("post-b")) {
+            post_b.open(text_long_opts["post-b"].c_str(),ifstream::in);
+            return &post_b;
+        } else
+            return NULL;
+    }
+
+    Weight prod_viterbi;
+    Weight prod_sum;
+    unsigned n_0prob;
+    unsigned n_prob;
+    Weight prod_sum_pre; // for post-b
+    double n_symbols;
+
+    void non0_viterbi_prob(Weight p) 
+    {
+        ++n_prob;
+        prod_viterbi*=p;
+    }
+    
+    
+    void report_batch()
+    {
+        bool postb=have_opt("post-b");
+        bool sump=have_opt("sum");
+        unsigned N=n_0prob+n_prob;
+        if (!N) return;
+        if (n_0prob)
+            Config::log() << "No derivations found for "<<n_0prob<<" of "<<N<<" inputs.\n";
+        else
+            Config::log() << "Derivations found for all "<<N<<" inputs.\n";
+        if (postb&&sump) {
+            Config::log() << "Just before --post-b, sum-all-paths ";
+            log_ppx(n_prob,prod_sum_pre,n_0prob);
+        }
+        Config::log() << "Viterbi (best path) ";
+        log_ppx(n_prob,prod_viterbi,n_0prob);
+        if (sump) {
+            Config::log() << "Sum (all paths) ";
+            log_ppx(n_prob,prod_sum,n_0prob);
+            if (postb) {
+                Config::log() << "Conditional (final divided by previous sum-all-paths) ";
+                log_ppx(n_prob,prod_sum/prod_sum_pre,n_0prob);
+            }
+        }
+    }
+    
+    
+    void print_kbest(unsigned kPaths,WFST *result) 
+    {
+        unsigned kPathsLeft=kPaths;
+        if ( result->valid() ) {
+            wfst_paths_printer pp(*result,cout,flags);
+            result->visit_kbest(kPaths,pp);
+            kPathsLeft -= pp.n_paths;
+            if (pp.best_w.isZero())
+                ++n_0prob;
+            else {
+                non0_viterbi_prob(pp.best_w);
+            }
+        } else {
+            n_0prob++;
+        }
+        for ( unsigned fill = 0 ; fill < kPathsLeft ; ++fill ) {
+            if ( !(flags['W']||flags['@']) )
+                cout << 0;
+            cout << "\n";
+        }        
+    }
+    
     bool *flags;
     long_opts_t &long_opts;
     text_long_opts_t &text_long_opts;
@@ -281,6 +370,12 @@ struct carmel_main
         norm_method.group=WFST::CONDITIONAL;
         keep_path_ratio.setInfinity();
         max_states=WFST::UNLIMITED;
+        n_0prob=0;
+        n_prob=0;
+        n_symbols=0; // for per-symbol ppx - counted only for non-0prob
+        prod_viterbi=1;
+        prod_sum=1;
+        prod_sum_pre=1;
     }
 
     bool prunePath() const 
@@ -318,8 +413,49 @@ struct carmel_main
             result->project(State::output,id);
     }
     
-    void post_compose(WFST *result) 
+    bool post_compose(WFST *&result) 
     {
+        bool sump=have_opt("sum");
+        Weight s=1;
+        
+        if (sump) {
+            s=result->sum_acyclic_paths();
+        }
+        
+        prod_sum_pre*=s;
+        
+        if (have_opt("post-b")) {
+            post_b >> ws;
+            std::string buf;
+            getline(post_b,buf);
+            if (!post_b) {
+                Config::warn() << "--post-b file didn't have as many lines as -b file.\n";
+                return false;
+            }
+            WFST pb(buf.c_str());
+            if ( !(pb.valid()) ) {
+                Config::warn() << "For --post-b="<<long_opts["post-b"]<<", couldn't handle input line: " << buf << "\n";
+                return false;
+            }
+            WFST *p=result;
+            if (flags['r'])
+                result=new WFST(pb,*p);
+            else
+                result=new WFST(*p,pb);
+            if (!result->valid()) {
+                ++n_0prob;
+                return false;
+            }
+            result->ownAlphabet();
+            delete p;
+            if (sump) {
+                s=result->sum_acyclic_paths();
+            }
+        }
+        
+        prod_sum*=s;
+            
+        
         maybe_constant_weight(result);
         maybe_sink(result);
         if ( flags['v'] )
@@ -330,6 +466,7 @@ struct carmel_main
             result->randomSet();
         if (flags['n'])
             normalize(result);
+        return true;
     }
 
     void maybe_sink(WFST *result) 
@@ -738,6 +875,7 @@ main(int argc, char *argv[]){
         else
             --nParms;
     }
+    cm.open_postb();
     WFST *chainMemory = (WFST*)::operator new(nChain * sizeof(WFST));
     WFST *chain = chainMemory;
 #ifdef MARCU
@@ -746,10 +884,7 @@ main(int argc, char *argv[]){
     int nTarget = -1; // chain[nTarget] is the linear acceptor built from input sequences
     istream *line_in=NULL;
     if ( flags['i'] || flags['b']||flags['P']) {// flags['P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
-        if ( flags['r'] )
-            nTarget = nInputs-1;
-        else
-            nTarget = 0;
+        nTarget = flags['r'] ? nInputs-1 : 0;
         line_in=inputs[nTarget];
     }
     dynamic_array<double> exponents;
@@ -835,11 +970,15 @@ main(int argc, char *argv[]){
                 goto fail_ntarget;
 
 //            if ( input_lineno != 0 )                chain[nTarget].~WFST(); // we do this at the e
+            int length ;
             if (flags['P']){ // need a permutation lattice instead
-                int length ;
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
-            } else // no permutation, just need input acceptor
+            } else { // no permutation, just need input acceptor
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str());
+                length=chain[nTarget].numStates();
+            }
+            cm.n_symbols+=length;
+            
             CHECKLEAK(input_lineno);
             ++input_lineno;
 
@@ -921,13 +1060,8 @@ main(int argc, char *argv[]){
 #endif
 
             if ( !result->valid() ) {
-                Config::warn() << ")\nEmpty or invalid result of composition with transducer " << filenames[i] << ".\n";
-                for ( i = 0 ; i < kPaths ; ++i ) {
-                    if ( !(flags['W'] || flags['@']) )
-                        cout << 0;
-                    cout << "\n";
-                }
-
+                Config::warn() << ")\nEmpty or invalid result of composition with transducer \"" << filenames[i] << "\".\n";
+                cm.print_kbest(kPaths,result);
                 goto nextInput;
             }
             bool finalcompose = i == (r ? 0 : nChain-1);
@@ -950,14 +1084,17 @@ main(int argc, char *argv[]){
         if (!flags['q'])
             Config::log() << std::endl;
 
+        
 #ifdef  DEBUGCOMPOSE
         Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
 
+        
         if (long_opts["openfst-roundtrip"]) {
             cm.openfst_roundtrip(result);
         }
-        cm.post_compose(result);
+        if (!cm.post_compose(result))
+            goto nextInput;
         if ( flags['A'] ) {
             Assert(weightSource);
             result->assignWeights(*weightSource);
@@ -971,17 +1108,7 @@ main(int argc, char *argv[]){
                 result->unTieGroups();
         }
         if ( kPaths > 0  ) {
-            unsigned kPathsLeft=kPaths;
-            if ( result->valid() ) {
-                wfst_paths_printer pp(*result,cout,flags);
-                result->visit_kbest(kPaths,pp);
-                kPathsLeft -= pp.n_paths;
-            }
-            for ( unsigned fill = 0 ; fill < kPathsLeft ; ++fill ) {
-                if ( !(flags['W']||flags['@']) )
-                    cout << 0;
-                cout << "\n";
-            }
+            cm.print_kbest(kPaths,result);
         } else if ( flags['x'] ) {
             result->listAlphabet(cout, 0);
         } else if ( flags['y'] ) {
@@ -990,7 +1117,7 @@ main(int argc, char *argv[]){
             cout << "Number of states in result: " << result->size() << std::endl;
             cout << "Number of arcs in result: " << result->numArcs() << std::endl;
             unsigned n_back;
-            cout << "Number of paths in result (without taking cycles): " << result->numNoCyclePaths(&n_back) << std::endl;
+            cout << "Number of paths in result (valid for acyclic only; a cycle means infinitely many): " << result->numNoCyclePaths(&n_back) << std::endl;
             if (n_back)
                 cout<<"Number of cycle-causing arcs in result: " << n_back;
             else
@@ -1135,14 +1262,13 @@ main(int argc, char *argv[]){
         if (nTarget != -1) { // if to construct a finite state from input
             chain[nTarget].~WFST();
         }
-        
         if ( !flags['b'] )
             break;
     } // end of all input
+    cm.report_batch();
     if ( flags['S'] && input_lineno > 0) {
-        Config::log() << "Corpus probability=" << prod_prob << " ; Per-example model perplexity(N=" << n_pairs <<")=";
-        prod_prob.root(n_pairs).inverse().print_base(Config::log(),2);
-        Config::log() << std::endl;
+        Config::log() << "-S corpus ";
+        cm.log_ppx(n_pairs,prod_prob);
     }
 
 #ifndef NODELETE
@@ -1340,6 +1466,11 @@ cout <<         "\n"
     cout << "\n"
         "--exponents=2,.1 : comma separated list of exponents, applied left to right to the input WFSTs (including stdin if -s).  if more inputs than exponents, use (noop) exponent of 1.  this differs from -=, which exponentiates the weights of the resulting (output) WFST.\n"
         ;
+    cout << "\n"
+        "--post-b=transducerfile : in conjunction with -b, a parallel sequence of inputs to be composed with the result (left or right composition depending on -l / -r.  compare to -S except 2 parallel files instead of alternating lines, and gives best paths like -b.  also may succeed for compositions that wouldn't fit in memory under -S\n";
+    
+    cout << "\n"
+        "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n";
     
     /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";

@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+
+while(<>) {
+    s/^\S+\s*/ /;
+    s/ \%(\S*)\b/++$spec{$1};''/ge;
+    print;
+}
+
+for (sort keys %spec) {
+    print STDERR "removed $spec{$_} $_\n";
+}

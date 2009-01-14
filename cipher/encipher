@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+# not crypto secure ;) reverses order of printable nonspace ascii (run again to
+# get plaintext)
+
+use strict;
+
+my $ne=127; # DEL (127)
+my $n0=32; # ascii space, not reversed
+
+my %t;
+
+for my $o (0..255) {
+    my $c=chr($o);
+    if ($o<$ne && $o>$n0) {
+        $o=$ne-($o-$n0);
+    }
+    $t{$c}=chr($o);
+}
+
+while(<>) {
+    s#(.)#$t{$1}#g;
+    print;
+}

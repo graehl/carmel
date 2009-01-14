@@ -1,0 +1,23 @@
+#!/usr/bin/perl -w
+use strict;
+
+my %c;
+
+my $UNKTO=$ENV{UNKTO};
+
+open C,"<",shift or die;
+while(<C>) {
+    my ($class,$p,$w)=split;
+    $c{$w}=$class;
+}
+
+$UNKTO="the" unless defined $UNKTO;
+
+my $unkto=$c{$UNKTO};
+print STDERR "text-to-classes assigning unknown words to the class for '${UNKTO}' ($unkto).\n" if $unkto;
+
+while(<>) {
+    s/(\S+)/$c{$1} || $unkto || die "class missing for word $1 (UNKTO=$UNKTO unkto_class=$unkto)"/oge;
+    print;
+}
+

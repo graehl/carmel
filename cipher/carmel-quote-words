@@ -1,0 +1,16 @@
+#!/usr/bin/perl -w
+use strict;
+
+# use for all single words as tokens in FSA
+sub escape_for_carmel
+{
+    my ($s)=@_;
+    $s =~ s/([\"])/\$1/og;
+    return qq{"$s"};
+}
+
+while(<>) {
+    s/(\S+)/&escape_for_carmel($1)/oge;
+    print;
+}
+

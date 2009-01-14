@@ -1,0 +1,50 @@
+#!/bin/bash
+# TODO: train on unclassed ciphertext w/ soft clusters in ilne?
+# needs carmel binaries in PATH
+d=`dirname $0`
+maxorder=${maxorder:-3}
+N=$maxorder
+lmsuf=${N}gram
+test=${test:-test}
+train=${train:-train}
+texts="$test $train"
+nclass=${nclass:-4}
+class="class$nclass"
+mkdir -p $class
+
+echo producing trained carmel channel $tchan from train $train and test $test
+
+set -x
+ for t in $texts ; do
+  c=$class/$t
+  $d/text-to-classes $c $t > $c.classtext
+ done
+
+ct=$class/$train
+trainlm=$ct.$lmsuf
+classfsa=$trainlm.fsa
+classfst=$trainlm.fst
+ngram-count -order $N -sort -text $ct.classtext -lm $trainlm
+NOQUOTE=1 CHECK_SUFFIX= EOS= $d/sri2fsa.pl $trainlm > $classfst
+carmel -N 0 --project-right $classfst > $classfsa
+chan=$class/class-channel.$train.$test
+tchan=$chan.$lmsuf
+uchan=$chan.untrained
+
+ctest=$class/$test
+$d/full-class-channel $ct $ctest > $uchan
+QUOTE= $d/epsilon-string-pairs $ctest.classtext | carmel $trainopt -sta --train-cascade $classfsa $uchan
+mv $uchan.trained $tchan
+echo trained class channel in $tchan
+
+
+#cw=$test.class.word
+#INVERT= class-word-fst  $ctest > $cw
+#QUOTE=1 $d/epsilon-string-pairs $test | carmel $trainopt -sta --train-cascade $classfsa $uchan $cw
+#mv $uchan.trained $tchan
+#tcw=class-cipherword.$lmsuf
+#mv $cw $tcw
+
+
+#echo adjusted cipher class-word soft clusters in $tcw
+#echo fixed cipher class-word trained class channel in $tchan.fixed.class

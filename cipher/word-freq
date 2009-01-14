@@ -1,0 +1,8 @@
+#!/bin/bash
+d=`dirname $0`
+
+if [ "$top" ] ; then
+$d/split-words $* | sort | uniq -c | sort -rn | head -n $top
+else
+$d/split-words $* | sort | uniq -c | sort -rn 
+fi

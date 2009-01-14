@@ -1,0 +1,133 @@
+#!/bin/bash
+# needs carmel binaries in PATH or in carmel env var
+
+# control with: 
+# topn=N (for eval of class accuracy for top N frequent cipherwords)
+# firstn=N check test data's class accuracy for first N lines
+# end2end=1 further, guess likely words out of class and evaluate on per-plaintext-word basis
+# wordngram=1 use a word based lm (slower in end2end)
+
+d=`dirname $0`
+topn=${topn:-100}
+firstn=${firstn:-$topn}
+nclass=${nclass:-4}
+class="class$nclass"
+
+carmel=${carmel:-~graehl/t/graehl/carmel/bin/cage/carmel.debug}
+maxorder=${maxorder:-3}
+lmsuf=${maxorder}gram
+test=${test:-test}
+train=${train:-train}
+chan=$class/class-channel.$train.$test
+tchan=${tchan:-$chan.$lmsuf}
+uchan=$chan.untrained
+ct=$class/$train
+trainlm=$ct.$lmsuf
+classfsa=$trainlm.fsa
+classfst=$trainlm.fst
+
+wordlm=lms/$train.$lmsuf.fst
+
+if [ "$FLOOR" ] ; then
+ echo channel FLOOR=$FLOOR
+fi
+
+wc=$class/$train.word.class
+cw=$class/$test.class.word
+wc_w=$class/$train.word.class.w
+
+#set -x
+
+INVERT=1 $d/class-word-fst $class/$train | carmel -Hns > $wc
+INVERT=1 $d/class-word-fst $class/$test | carmel -Hns | carmel -Hvs > $cw
+INVERT= $d/class-word-fst $class/$train | carmel -Hns | carmel -Hvs > $wc_w
+
+echo cascade is: $wc channel $cw
+
+### for all below:
+# arg1: name, arg2:observed cipher text, arg3: post-compose text, pipeline=
+function ppx
+{
+ ppxf=$chan.ppx.$firstn.$1
+ set -x
+ $carmel --sum --post-b=$3 -rb -IE $pipeline $2 2>&1  | tee $ppxf
+ set +x
+}
+
+function accuracy
+{
+ accf=$chan.accuracy.$firstname.$1
+ vitf=$chan.viterbi.$firstname.$1
+ $carmel -rb -IEW $pipeline $2 | tee $vitf
+ ETEST=1 $d/word-accuracy $3 $vitf >  $accf
+}
+
+#prechan=, arg4 if set => ppx of these inputs
+function error_rate_gen
+{
+ pipeline="$prechan $chan $cw"
+ echo lm=$1 text=$2 pipeline=$pipeline ppx=$4
+ [ "$4" ] && ppx $*
+ accuracy $*
+ head -n 10 $ppxf $vitf $accf
+}
+
+function error_rate
+{
+   prechan="$lm $wc_w $classlm"
+   error_rate_gen $1 $firstnf $1 $lm
+}
+
+####
+
+for chan in $tchan $uchan; do 
+if [ $topn -gt 0 ] ; then
+ echo channel $chan taking the top $topn most frequent test words to themselves:
+ topw=$class/$test.top-$topn.words 
+ $d/word-freq $test | head -n $topn  > $topw
+#  awk '{printf "%s\n%s\n",$2,$2}' < $topw | $d/carmel-quote-words > $topw.class.eval.corpus
+#  carmel -S $topw.class.eval.corpus $wc $chan $cw 2>&1 | tee $chan.accuracy.top-$topn
+ words=$topw.carmel.words
+  awk '{printf "%s\n",$2}' < $topw | $d/carmel-quote-words > $words
+ $carmel --sum --post-b=$words -b $words $wc $chan $cw 2>&1 | tee $chan.accuracy.top-$topn
+fi
+
+# predict actual plaintext test corpus
+
+if [ $firstn -gt 0 ] ; then
+
+#set -x
+ firstname=first-$firstn
+ firstnf=$class/$firstname
+ head -n $firstn $test | $d/carmel-quote-words > $firstnf
+
+classnf=$firstnf.classtext
+head -n $firstn $test | UNKTO=the $d/text-to-classes $class/$train > $classnf
+
+#pipeline="$classfst $chan $cw"
+prechan=$classfst
+error_rate_gen tag-lm $firstnf $classnf 1
+
+if [ "$end2end" ] ; then
+classlm=
+lm=
+error_rate no_lm
+
+classlm=$classfst
+lm=
+error_rate $lmsuf-class
+
+if [ "$wordngram" ] ; then
+classlm=$classfst
+lm=$wordlm
+error_rate $lmsuf-word+class
+
+classlm=
+lm=$wordlm
+error_rate $lmsuf-word
+fi
+
+fi
+
+fi
+done

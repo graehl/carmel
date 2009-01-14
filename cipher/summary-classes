@@ -1,0 +1,7 @@
+#!/bin/bash
+for f in $*; do
+echo 
+echo ====================
+echo $f
+tail -n 2 $f/class-channel.train.test.*gram.accuracy.top-* | grep -v Conditional
+done

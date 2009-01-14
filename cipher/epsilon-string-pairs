@@ -1,0 +1,12 @@
+#!/usr/bin/perl -w
+use strict;
+
+my $QUOTE=$ENV{QUOTE};
+
+while(<>) {
+    print "\n";
+    if ($QUOTE) {
+        s/(\S+)/"$1"/og;
+    }
+    print;
+}

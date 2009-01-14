@@ -1,0 +1,32 @@
+#!/usr/bin/perl -w
+use strict;
+
+my $S="S";
+
+print "$S\n";
+print "($S\n";
+
+my $invert=$ENV{INVERT}; # fst takes word->class if set.
+my $floor=$ENV{FLOOR}; # drop lines w/ p<floor
+
+# use for all single words as tokens in FSA
+sub escape_for_carmel
+{
+    my ($s)=@_;
+    $s =~ s/([\"])/\$1/og;
+    return qq{"$s"};
+}
+
+while(<>) {
+    my ($class,$p,$w)=split;
+    next if defined $floor && $p < $floor;
+    $w=escape_for_carmel($w);
+    if ($invert) {
+        my $t=$w;
+        $w=$class;
+        $class=$t;
+    }
+    print " ($S $class $w $p)\n";
+}
+
+print ")\n";

@@ -1,0 +1,3 @@
+#!/usr/bin/perl -n
+split;
+print $_,"\n" for @_;
