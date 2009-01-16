@@ -12,8 +12,8 @@ topn=${topn:-100}
 firstn=${firstn:-$topn}
 nclass=${nclass:-4}
 class="class$nclass"
-
-carmel=${carmel:-~graehl/t/graehl/carmel/bin/cage/carmel.debug}
+#~graehl/t/graehl/carmel/bin/cage/carmel.debug
+carmel=${carmel:-carmel}
 maxorder=${maxorder:-3}
 lmsuf=${maxorder}gram
 test=${test:-test}
@@ -25,6 +25,7 @@ ct=$class/$train
 trainlm=$ct.$lmsuf
 classfsa=$trainlm.fsa
 classfst=$trainlm.fst
+$carmel --project-right --project-identity-fsa $trainlm.fsa > $trainlm.fst
 
 wordlm=lms/$train.$lmsuf.fst
 
@@ -42,24 +43,53 @@ INVERT=1 $d/class-word-fst $class/$train | carmel -Hns > $wc
 INVERT=1 $d/class-word-fst $class/$test | carmel -Hns | carmel -Hvs > $cw
 INVERT= $d/class-word-fst $class/$train | carmel -Hns | carmel -Hvs > $wc_w
 
-echo cascade is: $wc channel $cw
+#function topn_name
+#{
+#    echo $1.top-$topn
+#}
+
+function subname
+{
+
+    local name=$subname_pre
+#    echo pre: $name args: $* 1>&2
+    mkdir -p $name
+    for part in $*; do
+        part=`basename $part`
+        name="${name}$part"
+    done
+    echo "> $name" 1>&2
+    echo $name
+}
+
+function firstn_name
+{
+    subname_pre=$class/first-$firstn/
+    subname $*
+}
+
+function topn_name
+{
+   subname_pre=$class/top-$topn-words/
+   subname $*
+}
 
 ### for all below:
 # arg1: name, arg2:observed cipher text, arg3: post-compose text, pipeline=
 function ppx
 {
- ppxf=$chan.ppx.$firstn.$1
+ ppxf=`firstn_name $chan.ppx.$1`
  set -x
- $carmel --sum --post-b=$3 -rb -IE $pipeline $2 2>&1  | tee $ppxf
+ $carmel --sum --post-b=$3 -rb -IE $pipeline $2  | tee $ppxf
  set +x
 }
 
 function accuracy
 {
- accf=$chan.accuracy.$firstname.$1
- vitf=$chan.viterbi.$firstname.$1
+ accf=`firstn_name $chan.accuracy.$1`
+ vitf=`firstn_name $chan.viterbi.$1`
  $carmel -rb -IEW $pipeline $2 | tee $vitf
- ETEST=1 $d/word-accuracy $3 $vitf >  $accf
+ ETEST=1 BASELINE=1 $d/word-accuracy $3 $vitf >  $accf
 }
 
 #prechan=, arg4 if set => ppx of these inputs
@@ -75,21 +105,23 @@ function error_rate_gen
 function error_rate
 {
    prechan="$lm $wc_w $classlm"
-   error_rate_gen $1 $firstnf $1 $lm
+   error_rate_gen $1 $firstnf $firstnf $lm
 }
 
 ####
 
+
+
 for chan in $tchan $uchan; do 
 if [ $topn -gt 0 ] ; then
  echo channel $chan taking the top $topn most frequent test words to themselves:
- topw=$class/$test.top-$topn.words 
+ topw=`topn_name $class/$test.dict`
  $d/word-freq $test | head -n $topn  > $topw
 #  awk '{printf "%s\n%s\n",$2,$2}' < $topw | $d/carmel-quote-words > $topw.class.eval.corpus
 #  carmel -S $topw.class.eval.corpus $wc $chan $cw 2>&1 | tee $chan.accuracy.top-$topn
- words=$topw.carmel.words
+ words=`topn_name $class/$test.dict.quoted`
   awk '{printf "%s\n",$2}' < $topw | $d/carmel-quote-words > $words
- $carmel --sum --post-b=$words -b $words $wc $chan $cw 2>&1 | tee $chan.accuracy.top-$topn
+ $carmel --sum --post-b=$words -b $words $wc $chan $cw 2>&1 | tee `topn_name $chan.accuracy`
 fi
 
 # predict actual plaintext test corpus
@@ -97,11 +129,17 @@ fi
 if [ $firstn -gt 0 ] ; then
 
 #set -x
- firstname=first-$firstn
- firstnf=$class/$firstname
+# firstname=first-$firstn
+# firstnd=$class/$firstname/
+# mkdir -p $firstd
+# firstnf=$firstnd/test
+
+# firstnf=$class/$firstname
+
+ firstnf=`firstn_name $test`
  head -n $firstn $test | $d/carmel-quote-words > $firstnf
 
-classnf=$firstnf.classtext
+classnf=`firstn_name $test.classtext`
 head -n $firstn $test | UNKTO=the $d/text-to-classes $class/$train > $classnf
 
 #pipeline="$classfst $chan $cw"

@@ -14,9 +14,23 @@ my $lineno=0;
 my $Q=$ENV{QUIET};
 my $EG=$ENV{EGOLD};
 my $ET=$ENV{ETEST};
+my $BASELINE=$ENV{BASELINE};
 
 my %errors_for_gold;
 my %errors_for_test;
+my %gold_freq;
+
+my $Cmost=0;
+my $mostly;
+
+
+sub maybe_most_frequent {
+    my $g=++$gold_freq{$_[0]};
+    if ($Cmost<$g) {
+        $Cmost=$g;
+        $mostly=$_[0];
+    }
+}
 
 sub report_errors {
     my ($h,$n)=@_;
@@ -36,9 +50,12 @@ sub judge {
         return;
     }
     for (0..$n-1) {
-        if ($g->[$_] ne $t->[$_]) {
-            ++$errors_for_gold{$g->[$_]} if $EG;
-            ++$errors_for_test{$t->[$_]} if $ET;
+        my $gold=$g->[$_];
+        my $test=$t->[$_];
+        maybe_most_frequent($gold) if $BASELINE;
+        if ($gold ne $test) {
+            ++$errors_for_gold{$gold} if $EG;
+            ++$errors_for_test{$test} if $ET;
         } else {
             ++$C;
         }
@@ -58,6 +75,7 @@ while (<F>) {
 
 print "$mismatch lines in gold had wrong number of tokens ($mismatch_N running words).\n" if $mismatch;
 print "$C correct of $N running words.\nAccuracy=",$C/$N,"\n" if $N;
+print "Baseline: constant most frequent word (",$mostly,") occured $Cmost of $N running words; accuracy=",$Cmost/$N,"\n" if $BASELINE;
 
 report_errors(\%errors_for_gold,"gold standard") if $EG;
 report_errors(\%errors_for_test,"test") if $ET;
