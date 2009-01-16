@@ -166,7 +166,8 @@ else
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
 BOOST_TEST_LIB=-lboost_unit_test_framework$(BSUF)
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
-BOOST_SYSTEM_LIB=-lboost_filesystem$(BSUF)
+BOOST_SYSTEM_LIB=-lboost_system$(BSUF)
+BOOST_FILESYSTEM_LIB=-lboost_filesystem$(BSUF)
 BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF) $(BOOST_SYSTEM_LIB)
 libs:
 endif

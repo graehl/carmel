@@ -1,4 +1,5 @@
 //#define MARCU
+//TODO: training_progress(i) Log() ...... quiet mode for batch composition?
 #define GRAEHL__SINGLE_MAIN
 // -: = cache em derivations including reverse structure (uses more memory but faster iterations)
 // -? = cache em derivations; currently limited to memory; should change to use disk
@@ -975,7 +976,7 @@ main(int argc, char *argv[]){
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
             } else { // no permutation, just need input acceptor
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str());
-                length=chain[nTarget].numStates();
+                length=chain[nTarget].numStates()-1; // single letter uses separate start + final surrounding it.  each addl letter adds 1 state.
             }
             cm.n_symbols+=length;
             
