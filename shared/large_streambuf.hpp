@@ -1,7 +1,7 @@
 #ifndef GRAEHL_SHARED__LARGE_STREAMBUF_HPP
 #define GRAEHL_SHARED__LARGE_STREAMBUF_HPP
 
-
+#include <boost/config.hpp>
 #include <boost/config.hpp>
 #include <fstream>
 #include <new>
