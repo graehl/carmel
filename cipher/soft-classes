@@ -1,0 +1,51 @@
+#!/usr/bin/perl -w
+use strict;
+
+# requires carmel in path
+
+# STDIN: word f1=a f2=b
+# arg1 (from SRI) cipherclass: CLASS-00004 0.425734 to
+# arg2 plain->cipher class channel (carmel WFST): 
+# 0
+# (0 (0 CLASS-00037 CLASS-00004 7.2048590358686e-05) ... )
+
+# STDOUT : word f1=a f2=b
+
+my $floor=$ENV{FLOOR}; # anything below this is skipped
+
+my $cipherclass=shift;
+my $channel=shift;
+
+die unless defined $channel;
+
+my %chan;
+my %cipherclass;
+
+open C,"carmel -DHJ $channel|" or die;
+my $final=<C>;
+while (<C>) {
+    if (/^\(\S+ \(\S+ (\S+) (\S+) ([^)]+)\)\)$/) {
+        my ($pc,$cc,$w)=($1,$2,$3);
+        print STDERR"$pc -> $cc ($w)\n";
+#        push $chan{$cc},[$pc,$w];
+        next if defined $floor && $w < $floor;
+        $chan{$cc}.=" $pc=$w";
+    }
+}
+close C;
+
+open D,"<",$cipherclass or die;
+while(<D>) {
+    my ($class,$p,$w)=split;
+#    print STDERR "$w : $class\n";
+    $cipherclass{$w}=$class;
+}
+
+while(<>) {
+    chomp;
+    my ($w)=split ' ',$_,2;
+    my $cc=$cipherclass{$w};
+    die "$w wasn't listed in cipher classes dictionary $cipherclass" unless defined $cc;
+    die "cipherclass $cc for word $w wasn't in plain->cipher channel $channel" unless exists $chan{$cc};
+    print "$_",$chan{$cc},"\n";
+}

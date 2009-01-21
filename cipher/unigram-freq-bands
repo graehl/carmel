@@ -1,0 +1,148 @@
+#!/usr/bin/perl -w
+use strict;
+
+# simultaneously collects counts for words in 2 domain/data sets, normalizing
+# into frequencies.  lays BANDS (env variable, default 10) bands w/ N+1 endpoints,
+# lowest and highest being the max/min unigram freq (across both domains), then
+# outputs for each domain lines:
+
+# word p=x p1=y p2=... pN=z
+
+# where x y z are probs i.e. (0...1].  but =0 values are omitted.  p means
+# unigram probability, p1 is the smallest frequency band, pN the greatest
+
+# input for domain 1 is 1st arg, output is 2nd arg
+# input for domain 2 is all other args, output is stdout
+
+# band p endpoint values e1=x .... eN=z are listed on stderr, for each domain
+
+# note: if p=x and pi=y p(i+1)=(1-y), (all other bands will be 0), then
+# ei*y+e(i+1)*(1-y)=x that is, linear interpolation.  later, maybe an option for
+# geometric interpolation (i.e. logspace)
+
+my %cp;
+my %cc;
+
+my $bands=$ENV{BANDS};
+$bands=10 unless $bands;
+if ($bands<2) {
+    $bands=undef;
+    print STDERR "Using no frequency bands (minimum effective number=2).\n";
+}
+
+# filehandle, hash ref.  returns total # of words (hash gets counts/total # for
+# each word)
+sub get_freqs {
+    my ($fh,$c)=@_;
+    my $s=0;
+    while (<$fh>) {
+        chomp;
+        my @w=split;
+        ++$c->{$_} for (@w);
+        $s += scalar @w;
+    }
+    return $s;
+}
+
+my $max=0;
+my $min=1;
+
+my %cf; # count of frequency - keys are probs
+my $sumf=0; # sum of freqs - i.e. number of domains
+sub normalize_freqs {
+    ++$sumf;
+    my ($s,$c,$cof)=@_;
+    for (keys %$c) {
+        my $a=($c->{$_} /= $s);
+        $max=$a if $a>$max;
+        $min=$a if $a<$min;
+        ++$cof->{$a} if defined $cof;
+    }
+}
+
+sub do_freqs {
+    normalize_freqs(&get_freqs,$_[1],\%cf);
+}
+
+my $range=$max-$min;
+
+
+my $EPS=1e-15;
+
+sub bands_from_count_of_freq {
+    my ($bands,$cof,$sumof)=@_;
+    my $fstep=$sumof/($bands-1);
+    my $fnext=0;
+    my $fsum=0;
+    my @e;
+    my $last;
+    for (sort {$a<=>$b} keys %$cof) {
+        my $f=$_*$cof->{$_};
+#        print STDERR "$cof->{$_} * $_ = $f.  sum $fsum next $fnext step $fstep.\n";
+        if ($fsum>=$fnext-$EPS) {
+            $fnext+=$fstep;
+            push @e,$_ unless (scalar @e and $_==$e[$#e]);
+        }
+        $fsum += $f;
+        $last=$_;
+    }
+#    push @e,$last if $last && scalar @e < $bands;
+    return @e;
+}
+
+my @e;
+%cf=();
+
+
+sub print_freqs {
+    my ($fh,$c)=@_;
+    for my $k (sort {$c->{$b} <=> $c->{$a}} keys %$c) {
+        my $y=$c->{$k};
+        print $fh "$k p=$y";
+        if ($bands) {
+            die unless $y>= $e[0] - $EPS;
+            die "should be $y<= $e[$#e]" unless $y<= $e[$#e] + $EPS;
+            for (0..$#e) {
+                my $high=$e[$_];
+                my $highpart;
+                if ($y<=$high+$EPS) {
+                    # between low @ $_-1 and high @$_, except: 
+                    if ($_==0) { # handles actual min, important because $e[-1] is out of bounds
+                        $highpart=1;
+                    } else {
+                        my $low=$e[$_-1];
+                        $highpart=($y-$low)/($high-$low);
+                    }
+                    my $lowpart=1-$highpart;
+                    print $fh " p",$_-1,"=$lowpart" if $lowpart>0;
+                    print $fh " p",$_,"=$highpart" if $highpart>0;
+                    last;
+                }
+            }
+        }
+        print $fh "\n";
+    }
+}
+
+
+my ($in,$out);
+
+if (scalar @_ > 2) {
+    $in=shift;
+    $out=shift;
+    open I,'<',$in or die;
+    do_freqs(\*I,\%cc);
+}
+
+do_freqs(\*STDIN,\%cp);
+
+@e=bands_from_count_of_freq($bands,\%cf,$sumf) if $bands;
+
+print STDERR (join ' ',(map {"e$_=$e[$_]"} (0..$#e))),"\n";
+
+print_freqs(\*STDOUT,\%cp);
+
+if ($out) {
+    open O,'>',$out or die;
+    print_freqs(\*O,\%cc);
+}
