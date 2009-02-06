@@ -430,6 +430,41 @@ std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T 
     return o;
 }
 
+template <class Dict>
+struct dict_writer 
+{
+    Dict const* dict;
+    dict_writer(Dict const& d) : dict(&d) {}
+    dict_writer() : dict() {}
+    dict_writer(dict_writer const& o) : dict(o.dict) {}
+    template <class O,class Index>
+    void operator()(O &o,Index const& i) 
+    {
+        o << dict->get_token(i);
+    }
+};
+
+template <class Dict>
+struct dict_reader
+{
+    typedef typename Dict::index_type value_type;
+    
+    Dict *dict;
+    dict_reader(Dict const& d) : dict(&d) {}
+    dict_reader() : dict() {}
+    dict_reader(dict_reader const& o) : dict(o.dict) {}
+    
+    template <class S,class Index>
+    void operator()(S &s,Index & i) 
+    {
+        typename Dict::token_type t;
+        s >> t;
+        i=dict->get_index(t);
+    }
+};
+
+    
+
 template <class Writer=DefaultWriter>
 struct container_writer 
 {

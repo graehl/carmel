@@ -341,6 +341,20 @@ inline std::basic_istream<charT,Traits>& skip_comment(std::basic_istream<charT,T
 
 
 
+template <class charT, class Traits>
+inline std::basic_istream<charT,Traits>& skip_chars(std::basic_istream<charT,Traits>&in,charT ch) {
+    char c;
+    while (in.get(c))
+        if (c!=ch) {
+            in.unget();
+            break;
+        }
+    return in;
+}
+
+
+
+
 //#define GENIO_THROW2(a,b) DBPC2(a,b)
 typedef std::ios_base::failure genio_exception;
 #define GENIO_EOF_OK bool GENIO_eof_ok=true
@@ -364,7 +378,7 @@ typedef std::ios_base::failure genio_exception;
 //#define PEEKCH(a,i,e) do { if (!in.get(c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define PEEKCH_SPACE(a,i,e) do { if (!(in>>c).good()) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
 //#define IFCH_SPACE_COMMENT(a) if (!(skip_comment(in).good()&&(in>>c).good())) goto fail; if (c==a) { i } else { in.unget(); e } } while(0)
-
+//#define SKIP_CHARS(i,ch) do { while (in.get(c)) { if (c!=ch) { in.unget();break; } } } while(0)
 #define GENIORET std::ios_base::iostate
 
 

@@ -1,6 +1,6 @@
-// some main() boilerplate
 #ifndef GRAEHL_SHARED__MAIN_HPP
 #define GRAEHL_SHARED__MAIN_HPP
+// some main() boilerplate w/ microsoft leak detection, which is obsolete w/ valgrind
 
 #include <graehl/shared/config.h>
 #include <graehl/shared/stream_util.hpp>
