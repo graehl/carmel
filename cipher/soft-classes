@@ -9,30 +9,34 @@ use strict;
 # 0
 # (0 (0 CLASS-00037 CLASS-00004 7.2048590358686e-05) ... )
 
-# STDOUT : word f1=a f2=b
+# if arg2 is omitted, then identity class channel
+
+# STDOUT : word f1=a f2=b CLASS-05=.425 CLASS-06=.5
 
 my $floor=$ENV{FLOOR}; # anything below this is skipped
 
 my $cipherclass=shift;
 my $channel=shift;
 
-die unless defined $channel;
+die unless defined $cipherclass;
 
 my %chan;
 my %cipherclass;
 
+if ($channel) {
 open C,"carmel -DHJ $channel|" or die;
 my $final=<C>;
 while (<C>) {
     if (/^\(\S+ \(\S+ (\S+) (\S+) ([^)]+)\)\)$/) {
         my ($pc,$cc,$w)=($1,$2,$3);
-        print STDERR"$pc -> $cc ($w)\n";
-#        push $chan{$cc},[$pc,$w];
+#        print STDERR"$pc -> $cc ($w)\n";
         next if defined $floor && $w < $floor;
+#        push $chan{$cc},[$pc,$w];
         $chan{$cc}.=" $pc=$w";
     }
 }
 close C;
+}
 
 open D,"<",$cipherclass or die;
 while(<D>) {
@@ -46,6 +50,12 @@ while(<>) {
     my ($w)=split ' ',$_,2;
     my $cc=$cipherclass{$w};
     die "$w wasn't listed in cipher classes dictionary $cipherclass" unless defined $cc;
-    die "cipherclass $cc for word $w wasn't in plain->cipher channel $channel" unless exists $chan{$cc};
-    print "$_",$chan{$cc},"\n";
+    print $_;
+    if ($channel) {
+        die "cipherclass $cc for word $w wasn't in plain->cipher channel $channel" unless exists $chan{$cc};
+        print $chan{$cc};
+    } else {
+        print " $cc=1";
+    }
+    print "\n";
 }

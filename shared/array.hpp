@@ -28,9 +28,9 @@ unsigned index_of(Vec const& v,typename Vec::value_type const* p)
 }
 
 template <class C> inline
-void resize_up_for_index(C &c,size_t i) 
+void resize_up_for_index(C &c,std::size_t i) 
 {
-    const size_t newsize=i+1;
+    const std::size_t newsize=i+1;
     if (newsize > c.size())
         c.resize(newsize);
 }

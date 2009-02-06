@@ -14,7 +14,7 @@ nclass=${nclass:-4}
 class="class$nclass"
 #~graehl/t/graehl/carmel/bin/cage/carmel.debug
 carmel=${carmel:-carmel}
-maxorder=${maxorder:-3}
+maxorder=${maxorder:-2}
 lmsuf=${maxorder}gram
 test=${test:-test}
 train=${train:-train}

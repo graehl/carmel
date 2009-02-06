@@ -1,0 +1,26 @@
+#!/bin/bash
+# needs carmel binaries in PATH or in carmel env var
+
+d=`dirname $0`
+nclass=${nclass:-4}
+class="class$nclass"
+maxorder=${maxorder:-2}
+lmsuf=${maxorder}gram
+test=${test:-test}
+train=${train:-train}
+chan=$class/class-channel.$train.$test
+tchan=${tchan:-$chan.$lmsuf}
+
+if [ "$FLOOR" ] ; then
+ echo class FLOOR=$FLOOR
+fi
+
+fbase=$class/feats.$lmsuf
+ftrain=$fbase.train
+ftest=$fbase.test
+
+set -x
+$d/unigram-freq-bands $train $ftrain.uni < $test > $ftest.uni && \
+$d/soft-classes $class/$train < $ftrain.uni > $ftrain && \
+$d/soft-classes $class/$test $tchan < $ftest.uni > $ftest
+rm $ftrain.uni $ftest.uni

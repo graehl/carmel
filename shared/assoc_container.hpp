@@ -7,6 +7,7 @@
 /// accumulate (default = addition).  see accumulate.hpp for others.  maintain min/max.
 
 #include <graehl/shared/array.hpp>
+#include <boost/assign/ptr_list_inserter.hpp>
 
 #ifdef GRAEHL__DBG_ASSOC
 #include <graehl/shared/debugprint.hpp>
@@ -108,6 +109,25 @@ typename Vector::value_type &at_expand(Vector &vec,std::size_t i)
     resize_up_for_index(vec,i);
     return vec[i];
 }
+
+template <class C> inline
+void ptr_resize_up_for_index(C &c,std::size_t i) 
+{
+    const std::size_t newsize=i+1;
+    if (newsize > c.size()) {
+        c.reserve(newsize);
+        for (std::size_t i=newsize-c.size();i;--i)
+            boost::assign::ptr_push_back(c)();
+    }
+}
+
+template <class Vector> inline
+typename Vector::reference ptr_at_expand(Vector &vec,std::size_t i) 
+{
+    ptr_resize_up_for_index(vec,i);
+    return vec[i];
+}
+
 
 template <class Vector,class DefaultInit> inline
 typename Vector::value_type &at_expand_lazy_default(Vector &vec,std::size_t index,DefaultInit di) 

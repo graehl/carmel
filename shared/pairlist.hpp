@@ -20,15 +20,28 @@
 #include <graehl/shared/stream_whitespace.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/program_options.hpp>
+ #include <cctype>
 
 namespace graehl {
 
-// see also string_match.hpp: tokenize_key_val_pairs
+
+template <class O,class It,class Def> inline
+void print_pairlist(O &o,It b,It end,Def const& default_val,bool always_print_default=false,char pair_sep=',',char key_val_sep=':')
+{
+    word_spacer sp(pair_sep);
+    for (;b!=end;++b) {
+        o << sp << b->first;
+        if (always_print_default || b->second != default_val)
+            o << key_val_sep << b->second;
+    }
+}
+
+// see also string_match.hpp: tokenize_key_val_pairs for an approach that splits substrings without left->right input extraction; parse_pairlist, to the contrary, allows extraction to contain consumed separators.   on the other hand, those separators are considered whitespace, and normal whitespace isn't, for the duration.
 
 // calls F(key,val) for each of ",k1,k2:v2,k3,k2:v3 ...".  the , and : are optional, but the : must be there if v2 follows, so we know v2 is a value and not a key.  if no value follows, then default is used
-// to enable parsing of strings, only pair_sep and key_val_sep count as 'whitespace' for the duration
+// to enable parsing of strings, only pair_sep and key_val_sep count as 'whitespace' for the duration.  THIS MAY BE CONFUSING :)
 template <class I,class F> inline
-void parse_pairlist(I &in,F f,char pair_sep=',',char key_val_sep=':') 
+void parse_pairlist(I &in,F const& f,char pair_sep=',',char key_val_sep=':',char stop='\n') 
 {
     using namespace std;
     local_whitespace<I> lw(in,true_for_chars(pair_sep,key_val_sep));
@@ -44,6 +57,8 @@ void parse_pairlist(I &in,F f,char pair_sep=',',char key_val_sep=':')
         if (!(in.get(c))) return;
 //        PAIRLIST_DEBUG(DBP(c));
         if (c!=pair_sep) {
+            if (c==stop)
+                return;
             if (first) {
                 in.unget();
                 first=false;  
@@ -68,6 +83,30 @@ void parse_pairlist(I &in,F f,char pair_sep=',',char key_val_sep=':')
     }
 }
 
+
+template <class Cont>
+struct insert_value
+{
+    template <class C,class V>
+    static inline void insert(C &c,V const& v) 
+    {
+        c.push_back(v);
+    }
+};
+
+# define PAIRLIST_USE_INSERT_4(C) \
+    template <class c1,class c2,class c3,class c4>      \
+    struct insert_value<C<c1,c2,c3,c4> >                  \
+    {                                                   \
+        template <class Cont,class V>                   \
+        static inline void insert(Cont &c,V const& v)   \
+        { c.insert(v); }                                \
+    };
+
+PAIRLIST_USE_INSERT_4(std::map)
+PAIRLIST_USE_INSERT_4(std::multimap)
+
+
 //e.g. Pairlist = vector<pair<K,V> >
 template <class Pairlist>
 struct read_pairlist_callback 
@@ -87,7 +126,8 @@ struct read_pairlist_callback
     }   
     void operator()(first_argument_type const& key,second_argument_type const& val) const
     {
-        p->push_back(std::make_pair(key,val));
+//        p->push_back(std::make_pair(key,val));
+        insert_value<Pairlist>::insert(*p,std::make_pair(key,val));
     }
 };
 
@@ -99,9 +139,9 @@ read_pairlist_callback<Pairlist> make_read_pairlist_callback(Pairlist &pairlist,
 }
 
 template <class I,class Pairlist,class Def> inline
-void read_pairlist(I &in,Pairlist &p,Def const& default_val,char pair_sep=',',char key_val_sep=':',bool append=false)
+void read_pairlist(I &in,Pairlist &p,Def const& default_val,char pair_sep=',',char key_val_sep=':',bool append=false,char stop='\n')
 {
-    parse_pairlist(in,make_read_pairlist_callback(p,default_val,append),pair_sep,key_val_sep);
+    parse_pairlist(in,make_read_pairlist_callback(p,default_val,append),pair_sep,key_val_sep,stop);
 }
 
 template <class List>
@@ -110,7 +150,7 @@ struct read_list_callback
     List *p;
     typedef typename List::value_type value_type;
     typedef typename value_type::first_type first_argument_type;
-    typedef typename bool second_argument_type; // we won't use this
+    typedef bool second_argument_type; // we won't use this
     read_list_callback(List &list,bool append=false)
         : p(&list)
     { if (!append) p->clear(); }
@@ -121,7 +161,7 @@ struct read_list_callback
     }   
     void operator()(first_argument_type const& key,second_argument_type const& val) const
     {
-        p->push_back(key);
+        p->push_back(key);        
     }
 };
 
@@ -134,20 +174,9 @@ read_list_callback<List> make_read_list_callback(List &list,bool append=false)
 
 // warning: nul chars will trigger bool parsing.  c strings can't have nul chars anyway, and i'm too lazy to write a similar parse_list from parse_pairlist
 template <class I,class List> inline
-void read_list(I &in,List &p,char sep=',',bool append=false)
+void read_list(I &in,List &p,char sep=',',bool append=false,char stop='\n')
 {
-    parse_pairlist(in,make_read_list_callback(p,append),sep,'\0');
-}
-
-template <class O,class It,class Def> inline
-void print_pairlist(O &o,It b,It end,Def const& default_val,bool always_print_default=false,char pair_sep=',',char key_val_sep=':')
-{
-    word_spacer sp(pair_sep);
-    for (;b!=end;++b) {
-        o << sp << b->first;
-        if (always_print_default || b->second != default_val)
-            o << key_val_sep << b->second;
-    }
+    parse_pairlist(in,make_read_list_callback(p,append),sep,'\0',stop);
 }
 
 template <class K,class V>

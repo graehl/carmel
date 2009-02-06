@@ -7,3 +7,4 @@ mkdir -p $class
 $d/class-ngrams
 $d/decipher-classes
 $d/eval-classes
+$d/class-features

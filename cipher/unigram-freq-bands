@@ -6,7 +6,7 @@ use strict;
 # lowest and highest being the max/min unigram freq (across both domains), then
 # outputs for each domain lines:
 
-# word p=x p1=y p2=... pN=z
+# word p=x b1=y b2=... bN=z
 
 # where x y z are probs i.e. (0...1].  but =0 values are omitted.  p means
 # unigram probability, p1 is the smallest frequency band, pN the greatest
@@ -16,9 +16,20 @@ use strict;
 
 # band p endpoint values e1=x .... eN=z are listed on stderr, for each domain
 
-# note: if p=x and pi=y p(i+1)=(1-y), (all other bands will be 0), then
+# note: if p=x and bi=y b(i+1)=(1-y), (all other bands will be 0), then
 # ei*y+e(i+1)*(1-y)=x that is, linear interpolation.  later, maybe an option for
 # geometric interpolation (i.e. logspace)
+
+
+
+my ($in,$out);
+
+if (scalar @ARGV >= 2) {
+    $in=shift;
+    $out=shift;
+#    print STDERR "domain 1: $in -> $out.  domain 2: STDIN -> STDOUT.\n";
+}
+
 
 my %cp;
 my %cc;
@@ -86,7 +97,7 @@ sub bands_from_count_of_freq {
         $fsum += $f;
         $last=$_;
     }
-#    push @e,$last if $last && scalar @e < $bands;
+    push @e,$last if (defined $last && scalar @e < $bands && $last!=$e[$#e]);
     return @e;
 }
 
@@ -114,8 +125,8 @@ sub print_freqs {
                         $highpart=($y-$low)/($high-$low);
                     }
                     my $lowpart=1-$highpart;
-                    print $fh " p",$_-1,"=$lowpart" if $lowpart>0;
-                    print $fh " p",$_,"=$highpart" if $highpart>0;
+                    print $fh " b",$_-1,"=$lowpart" if $lowpart>0;
+                    print $fh " b",$_,"=$highpart" if $highpart>0;
                     last;
                 }
             }
@@ -124,17 +135,12 @@ sub print_freqs {
     }
 }
 
+do_freqs(\*STDIN,\%cp);
 
-my ($in,$out);
-
-if (scalar @_ > 2) {
-    $in=shift;
-    $out=shift;
+if ($out) {
     open I,'<',$in or die;
     do_freqs(\*I,\%cc);
 }
-
-do_freqs(\*STDIN,\%cp);
 
 @e=bands_from_count_of_freq($bands,\%cf,$sumf) if $bands;
 

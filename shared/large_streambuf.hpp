@@ -5,7 +5,6 @@
 #include <boost/config.hpp>
 #include <fstream>
 #include <new>
-//#include <dynarray.h>
 
 namespace graehl {
 

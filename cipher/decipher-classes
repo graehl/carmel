@@ -2,7 +2,7 @@
 # TODO: train on unclassed ciphertext w/ soft clusters in ilne?
 # needs carmel binaries in PATH
 d=`dirname $0`
-maxorder=${maxorder:-3}
+maxorder=${maxorder:-2}
 N=$maxorder
 lmsuf=${N}gram
 test=${test:-test}
