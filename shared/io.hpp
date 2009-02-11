@@ -437,8 +437,12 @@ struct dict_writer
     dict_writer(Dict const& d) : dict(&d) {}
     dict_writer() : dict() {}
     dict_writer(dict_writer const& o) : dict(o.dict) {}
+    void set(Dict const& d) 
+    {
+        dict=&d;
+    }
     template <class O,class Index>
-    void operator()(O &o,Index const& i) 
+    void operator()(O &o,Index const& i) const
     {
         o << dict->get_token(i);
     }
@@ -453,9 +457,13 @@ struct dict_reader
     dict_reader(Dict const& d) : dict(&d) {}
     dict_reader() : dict() {}
     dict_reader(dict_reader const& o) : dict(o.dict) {}
+    void set(Dict & d) 
+    {
+        dict=&d;
+    }
     
     template <class S,class Index>
-    void operator()(S &s,Index & i) 
+    void operator()(S &s,Index & i) const 
     {
         typename Dict::token_type t;
         s >> t;
