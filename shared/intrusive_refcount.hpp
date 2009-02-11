@@ -8,8 +8,8 @@
 
 /** usage:
     struct mine : public boost::instrusive_refcount<mine> {};
-    mine m;
-    boost::intrusive_ptr<mine> p=&m;
+
+    boost::intrusive_ptr<mine> p(new mine());
 */
 
 namespace boost {
@@ -24,13 +24,13 @@ class atomic_intrusive_refcount;
 template<class T>
 void intrusive_ptr_add_ref(intrusive_refcount<T>* ptr)
 {
-    ptr->add_ref();
+    ++(ptr->refs);
 }
 
 template<class T>
 void intrusive_ptr_release(intrusive_refcount<T>* ptr)
 {
-    ptr->release();
+    if (!--(ptr->refs)) delete static_cast<T*>(ptr);
 } 
 
 
@@ -47,8 +47,6 @@ class intrusive_refcount : boost::noncopyable
     intrusive_refcount(): refs(0) {}
     ~intrusive_refcount() { assert(refs==0); }
 
-    void add_ref() { ++refs; }
-    void release() { if(!--refs) delete static_cast<T*>(this); }
 private:
     unsigned refs;
 };
@@ -57,13 +55,13 @@ private:
 template<class T>
 void intrusive_ptr_add_ref(atomic_intrusive_refcount<T>* ptr)
 {
-    ptr->add_ref();
+    ++(ptr->refs);
 }
 
 template<class T>
 void intrusive_ptr_release(atomic_intrusive_refcount<T>* ptr)
 {
-    ptr->release();
+    if(!--(ptr->refs)) delete static_cast<T*>(ptr);
 } 
 
 template<class T>
@@ -76,8 +74,6 @@ class atomic_intrusive_refcount : boost::noncopyable
     atomic_intrusive_refcount(): refs(0) {}
     ~atomic_intrusive_refcount() { assert(refs==0); }
 
-    void add_ref() { ++refs; }
-    void release() { if(!--refs) delete static_cast<T*>(this); }
 private:
     boost::detail::atomic_count refs;
 };
