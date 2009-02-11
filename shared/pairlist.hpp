@@ -36,10 +36,24 @@ void print_pairlist(O &o,It b,It end,Def const& default_val,bool always_print_de
     }
 }
 
+// writer for first only
+template <class O,class It,class Def,class W1> inline
+void print_pairlist_w1(O &o,W1 const& w1,It b,It end,Def const& default_val,bool always_print_default=false,char pair_sep=',',char key_val_sep=':')
+{
+    word_spacer sp(pair_sep);
+    for (;b!=end;++b) {
+        o << sp;
+        w1(o,b->first);
+        if (always_print_default || b->second != default_val)
+            o << key_val_sep << b->second;
+    }
+}
+
 // see also string_match.hpp: tokenize_key_val_pairs for an approach that splits substrings without left->right input extraction; parse_pairlist, to the contrary, allows extraction to contain consumed separators.   on the other hand, those separators are considered whitespace, and normal whitespace isn't, for the duration.
 
 // calls F(key,val) for each of ",k1,k2:v2,k3,k2:v3 ...".  the , and : are optional, but the : must be there if v2 follows, so we know v2 is a value and not a key.  if no value follows, then default is used
 // to enable parsing of strings, only pair_sep and key_val_sep count as 'whitespace' for the duration.  THIS MAY BE CONFUSING :)
+// stop char may be gobbled up by vN parsing; if so, then add a final separator before it.
 template <class I,class F> inline
 void parse_pairlist(I &in,F const& f,char pair_sep=',',char key_val_sep=':',char stop='\n') 
 {
@@ -65,6 +79,10 @@ void parse_pairlist(I &in,F const& f,char pair_sep=',',char key_val_sep=':',char
             } else {
                 throw runtime_error("missing separator before next key in read_pairlist");
             }
+        }
+        if (in.get(c)) { // allow final "sep stop"
+            if (c==stop) return;
+            in.unget();
         }
         if (!(in >> k)) return;
         if (in.get(c)) {

@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__NULL_OSTREAM_HPP
 #define GRAEHL__SHARED__NULL_OSTREAM_HPP
 
+//FIXME: doesn't seem to work w/ boost 1.37
+
 #include <streambuf>
 #include <ostream>
 #include <string>
