@@ -22,17 +22,17 @@ namespace graehl {
     std::streambuf* m_sb1;
     std::streambuf* m_sb2;
   };
+}
 
  #ifdef TEST_MANUAL
  #include <fstream>
   int main() {
     std::ofstream  logfile("/tmp/logfile.txt");
-    teebuf teebuf(std::cout.rdbuf(), logfile.rdbuf());
+    graehl::teebuf teebuf(logfile.rdbuf(),std::cerr.rdbuf());
     std::ostream   log(&teebuf);
     // write log messages to 'log'
-    log << "Hello, dude.\n";
+    log << "Hello, dude.  check /tmp/logfile.txt\n";
   }
 #endif
-}
 
 #endif

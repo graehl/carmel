@@ -1,3 +1,5 @@
+P=main_template
+
 all: next
 
 test: next
@@ -5,6 +7,6 @@ test: next
 .PHONY: test
 
 %:
-	cd /cache/syntax-decoder-wei && make $(MAKEFLAGS) $(MAKECMDGOALS)
+	cd ../$(P) && make $(MAKEFLAGS) $(MAKECMDGOALS)
 
 
