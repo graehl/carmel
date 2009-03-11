@@ -157,7 +157,7 @@ struct file_arg : public boost::shared_ptr<Stream>
         f.release(); // w/o delete
     }
 
-    // nearly a copy of set_new, except that apparently you can't open the file first then set buffer:
+    // set_new_buf is nearly a copy of set_new, except that apparently you can't open the file first then set buffer:
     /*
       Yes --- this was what Jens found. So, for the following code
 
@@ -185,7 +185,7 @@ the buffer will be back to 8k.
         std::auto_ptr<filestream> f(new filestream());
         set_checked(*f,filename,delete_after,fail_msg);
         if (large_buf) give_large_buf();
-        const bool read=stream_traits<Stream>::read;
+        const bool read=stream_traits<filestream>::read;
         f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
         f.release(); // w/o delete        
     }
