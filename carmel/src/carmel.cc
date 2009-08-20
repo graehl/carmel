@@ -78,7 +78,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
         Weight::default_never_log();
     WFST::set_arc_default_format(flags['J'] ? WFST::FULL : WFST::BRIEF);
     WFST::set_arc_default_per(flags['H'] ? WFST::ARC : WFST::STATE);
-    //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?    
+    //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
 }
 
 static void printSeq(Alphabet<StringKey,StringPool> &a,int *seq,int maxSize) {
@@ -108,7 +108,7 @@ int isSpecial(const char* psz) {
     return *--psz == '*';
 }
 
-    
+
 void outWithoutQuotes(const char *str, ostream &out) {
     if ( *str != '\"') {
         out << str;
@@ -123,7 +123,7 @@ void outWithoutQuotes(const char *str, ostream &out) {
         out << str;
 }
 
-void out_maybe_quote(char const* str,ostream &out,bool quote) 
+void out_maybe_quote(char const* str,ostream &out,bool quote)
 {
     if (quote)
         out << str;
@@ -144,7 +144,7 @@ struct wfst_paths_printer {
     Output output;
     graehl::word_spacer sp;
     unsigned src; //FIXME: if sidetracks_only then you don't show the real arc source, but the end of last sidetrack.
-    
+
     wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {
         n_paths=0;
         SIDETRACKS_ONLY=flags['%'];
@@ -170,10 +170,10 @@ struct wfst_paths_printer {
                 out << sp << w;
             out << endl;
         }
-        
+
 #ifdef DEBUGKBEST
         Config::debug() << endl;
-#endif 
+#endif
     }
     void visit_best_arc(FSTArc &arc) {
 //        path.push_back(&arc);
@@ -183,7 +183,7 @@ struct wfst_paths_printer {
                 output.push_back(outid);
             if (inid!=WFST::epsilon_index)
                 out << sp << wfst.inLetter(inid);
-        } else {            
+        } else {
             if ( flags['O'] || flags['I'] ) {
                 int id = flags['O'] ? arc.out : arc.in;
                 if ( !(flags['E'] && id==WFST::epsilon_index) ) {
@@ -240,12 +240,12 @@ void WFSTformatHelp(void);
 typedef std::map<std::string,double> long_opts_t;
 typedef std::map<std::string,std::string> text_long_opts_t;
 
-struct carmel_main 
+struct carmel_main
 {
-    
+
     ifstream post_b;
 
-    void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0) 
+    void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0)
     {
         Config::log()<<"product of probs="<<prod_prob<<", per-example perplexity(N="<<n_pairs<<")=";
         prod_prob.root(n_pairs).inverse().print_base(Config::log(),2);
@@ -255,8 +255,8 @@ struct carmel_main
             Config::log()<<", excluding "<<n_0prob<<" 0 probabilities (i.e. real ppx is infinite).";
         Config::log()<<std::endl;
     }
-    
-    istream *open_postb() 
+
+    istream *open_postb()
     {
         if (have_opt("post-b")) {
             post_b.open(text_long_opts["post-b"].c_str(),ifstream::in);
@@ -272,13 +272,13 @@ struct carmel_main
     Weight prod_sum_pre; // for post-b
     double n_symbols;
 
-    void non0_viterbi_prob(Weight p) 
+    void non0_viterbi_prob(Weight p)
     {
         ++n_prob;
         prod_viterbi*=p;
     }
-    
-    
+
+
     void report_batch()
     {
         bool postb=have_opt("post-b");
@@ -304,9 +304,9 @@ struct carmel_main
             }
         }
     }
-    
-    
-    void print_kbest(unsigned kPaths,WFST *result) 
+
+
+    void print_kbest(unsigned kPaths,WFST *result)
     {
         unsigned kPathsLeft=kPaths;
         if ( result->valid() ) {
@@ -325,9 +325,9 @@ struct carmel_main
             if ( !(flags['W']||flags['@']) )
                 cout << 0;
             cout << "\n";
-        }        
+        }
     }
-    
+
     bool *flags;
     long_opts_t &long_opts;
     text_long_opts_t &text_long_opts;
@@ -350,7 +350,7 @@ struct carmel_main
         return true;
     }
 
-    std::string const& set_default_text(std::string const& key,std::string const& default_val) 
+    std::string const& set_default_text(std::string const& key,std::string const& default_val)
     {
         std::string &val=text_long_opts[key];
         if (val.empty())
@@ -359,11 +359,11 @@ struct carmel_main
     }
 
     template <class V>
-    V const& get_default_opt(std::string const& key,V &v,std::string const& default_val) 
+    V const& get_default_opt(std::string const& key,V &v,std::string const& default_val)
     {
         return string_into(set_default_text(key,default_val),v);
     }
-    
+
 
     carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
         :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts)
@@ -379,7 +379,7 @@ struct carmel_main
         prod_sum_pre=1;
     }
 
-    bool prunePath() const 
+    bool prunePath() const
     {
         return flags['w'] || flags['z'];
     }
@@ -388,15 +388,15 @@ struct carmel_main
     {
         result->normalize(norm_method);
     }
-    
+
     void post_train_normalize(WFST *result)
     {
         if (flags['t']&&(flags['p'] || prunePath()))
             result->normalize(norm_method);
-        
+
     }
 
-    void maybe_constant_weight(WFST *result) 
+    void maybe_constant_weight(WFST *result)
     {
         Weight c;
         if (get_opt("constant-weight",c)) {
@@ -405,26 +405,26 @@ struct carmel_main
         }
     }
 
-    void maybe_project(WFST *result) 
+    void maybe_project(WFST *result)
     {
-        bool id=long_opts["project-identity-fsa"];        
+        bool id=long_opts["project-identity-fsa"];
         if (long_opts["project-left"])
             result->project(State::input,id);
         if (long_opts["project-right"])
             result->project(State::output,id);
     }
-    
-    bool post_compose(WFST *&result) 
+
+    bool post_compose(WFST *&result)
     {
         bool sump=have_opt("sum");
         Weight s=1;
-        
+
         if (sump) {
             s=result->sum_acyclic_paths();
         }
-        
+
         prod_sum_pre*=s;
-        
+
         if (have_opt("post-b")) {
             post_b >> ws;
             std::string buf;
@@ -453,10 +453,10 @@ struct carmel_main
                 s=result->sum_acyclic_paths();
             }
         }
-        
+
         prod_sum*=s;
-            
-        
+
+
         maybe_constant_weight(result);
         maybe_sink(result);
         if ( flags['v'] )
@@ -470,35 +470,35 @@ struct carmel_main
         return true;
     }
 
-    void maybe_sink(WFST *result) 
+    void maybe_sink(WFST *result)
     {
         if ( long_opts["final-sink"] )
             result->ensure_final_sink();
     }
-    
-    void write_transducer(std::ostream &o,WFST *result) 
-    {        
+
+    void write_transducer(std::ostream &o,WFST *result)
+    {
 //        if (long_opts["test-as-pairs"])  WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
         maybe_project(result);
         if ( flags ['Y'] )
             result->writeGraphViz(o);
-        else {            
+        else {
             o << *result;
         }
     }
-    
-    
-    void prune(WFST *result) 
+
+
+    void prune(WFST *result)
     {
         if ( flags['p'] )
             result->pruneArcs(prune_wt);
         if ( prunePath() )
             result->prunePaths(max_states,keep_path_ratio);
-            
+
     }
 
     // return true if # of arcs change
-    bool minimize(WFST *result) 
+    bool minimize(WFST *result)
     {
         unsigned n=result->numArcs();
         if ( flags['C'] )
@@ -527,28 +527,28 @@ struct carmel_main
             )
             Config::log() << " (FST not input-determinized, try --minimize-determinize, which may not terminate)";
         if (!flags['q']) Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";
-#endif 
+#endif
     }
-    
-    void openfst_minimize(WFST *result) 
+
+    void openfst_minimize(WFST *result)
     {
 #ifdef USE_OPENFST
         if (long_opts["minimize-sum"])
             openfst_minimize_type<fst::VectorFst<fst::LogArc> >(result);
         else
             openfst_minimize_type<fst::StdVectorFst>(result);
-#endif 
+#endif
     }
-    
+
     void openfst_roundtrip(WFST *result)
     {
 #ifdef USE_OPENFST
         if (!flags['q']) Config::log() << "performing (meaningless test) carmel->openfst->carmel round trip\n";
         result->roundtrip_openfst<fst::StdVectorFst>();
-#endif 
+#endif
     }
-    
-    
+
+
 };
 
 
@@ -613,9 +613,9 @@ main(int argc, char *argv[]){
     long_opts_t long_opts;
     text_long_opts_t text_long_opts;
     WFST::train_opts train_opt;
-    
+
     carmel_main cm(flags,long_opts,text_long_opts);
-    
+
     std::ios_base::sync_with_stdio(false);
 
     for ( i = 1 ; i < argc ; ++i ) {
@@ -631,7 +631,7 @@ main(int argc, char *argv[]){
                         have_val=true;
                         break;
                     }
-                
+
                 std::string key(pc+2,e);
                 std::string val;
 
@@ -647,7 +647,7 @@ main(int argc, char *argv[]){
                 }
                 long_opts[key]=v;
                 cerr << "option " << key << " = " << val << endl;
-            } else {        
+            } else {
                 while ( *(++pc) ) {
                     if ( *pc == 'k' )
                         kPaths = -1;
@@ -692,7 +692,7 @@ main(int argc, char *argv[]){
                     flags[*pc] = 1;
                 }
             }
-        
+
         else
             if (exponent_flag) {
                 exponent_flag=false;
@@ -776,7 +776,7 @@ main(int argc, char *argv[]){
         cm.get_default_opt("disk-cache-bufsize",train_opt.disk_cache_bufsize,"1M");
         Config::log()<<"Disk cache of derivations will be created at "<<train_opt.disk_cache_filename<<" using read buffer of "<<train_opt.disk_cache_bufsize<<" bytes.\n";
     }
-    
+
     srand(seed);
     setOutputFormat(flags,0); // set default for all streams
     setOutputFormat(flags,&cout);
@@ -891,16 +891,40 @@ main(int argc, char *argv[]){
     dynamic_array<double> exponents;
     if (cm.have_opt("exponents")) {
         split_into(cm.text_long_opts["exponents"],exponents,",");
-        Config::log() << "Using input WFST -exponents:\n";//<<exponents<<"\n";
+        Config::log() << "Using input WFST --exponents:\n";//<<exponents<<"\n";
         for (i=0 ; i < nInputs ; ++i) {
             Config::log() << filenames[i];
             if (i < exponents.size())
-                Config::log() << " ^ " << exponents[i];
+                Config::log() << "  ^ " << exponents[i];
             Config::log() << std::endl;
         }
-        Config::log() << std::endl;        
+        Config::log() << std::endl;
     }
-    
+    if (cm.have_opt("priors")) {
+        split_into(cm.text_long_opts["priors"],train_opt.priors,",");
+        Config::log() << "Using input WFST --priors:\n";//<<priors<<"\n";
+        for (i=0 ; i < nInputs ; ++i) {
+            Config::log() << filenames[i];
+            if (i >= train_opt.priors.size())
+                train_opt.priors.push_back(0);
+            Config::log() << "  ~ " << train_opt.priors[i];
+            Config::log() << std::endl;
+        }
+        Config::log() << std::endl;
+    }
+    cm.get_opt("burnin",train_opt.sched.burnin);
+    cm.get_opt("epoch",train_opt.sched.epoch);
+    train_opt.gibbs = cm.have_opt("gibbs");
+    if (train_opt.gibbs) {
+        flags['t']=true;
+        flags['?']=true;
+        long_opts["train-cascade"]=1;
+    }
+    train_opt.unsupervised_decode = cm.have_opt("unsupervised");
+    cm.get_opt("high-temp",train_opt.high_temp);
+    cm.get_opt("low-temp",train_opt.low_temp);
+
+
     for ( i = 0 ; i < nInputs ; ++i ) {
         if ( i != nTarget ) {
             WFST *w=chain+i;
@@ -979,7 +1003,7 @@ main(int argc, char *argv[]){
                 length=chain[nTarget].numStates()-1; // single letter uses separate start + final surrounding it.  each addl letter adds 1 state.
             }
             cm.n_symbols+=length;
-            
+
             CHECKLEAK(input_lineno);
             ++input_lineno;
 
@@ -1008,7 +1032,7 @@ main(int argc, char *argv[]){
             Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
             cascade.set_trivial();
         }
-        
+
         unsigned n_compositions=0;
         bool first=true;
         cascade.add(result);
@@ -1085,12 +1109,12 @@ main(int argc, char *argv[]){
         if (!flags['q'])
             Config::log() << std::endl;
 
-        
+
 #ifdef  DEBUGCOMPOSE
         Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
 
-        
+
         if (long_opts["openfst-roundtrip"]) {
             cm.openfst_roundtrip(result);
         }
@@ -1136,7 +1160,7 @@ main(int argc, char *argv[]){
                         if ( !*pairStream )
                             break;
                         ++input_lineno;
-                        WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);            
+                        WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);
                         getline(*pairStream,buf);
                         if ( !*pairStream )
                             break;
@@ -1153,7 +1177,7 @@ main(int argc, char *argv[]){
                     cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
                 }
             } else if ( flags['t'] ) {
-                training_corpus corpus;                
+                training_corpus corpus;
                 if (pairStream) {
                     result->read_training_corpus(*pairStream,corpus);
                 } else {
@@ -1164,7 +1188,7 @@ main(int argc, char *argv[]){
                     rr=(unsigned)long_opts["final-restart"];
                 WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
                 train_opt.ra=ran_accept;
-                
+
                 result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, train_opt);
                 if (!cascade.trivial) {
                     // write inputfilename.trained for each input
@@ -1225,13 +1249,13 @@ main(int argc, char *argv[]){
 
             if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && cascade.trivial)
                  || flags['F'] ) {
-                cm.prune(result);                
+                cm.prune(result);
                 cm.post_train_normalize(result);
                 cm.minimize(result);
                 if (long_opts["minimize"])
                     cm.openfst_minimize(result);
-                
-                result->raisePower(exponent);                
+
+                result->raisePower(exponent);
                 cm.write_transducer(*fstout,result);
             }
         }
@@ -1392,7 +1416,7 @@ void usageHelp(void)
     cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
     cout << "\n-?\t\tcache EM derivations in memory for faster iterations";
     cout << "\n-:\t\tcache em derivations including reverse structure (faster but uses even more memory)";
-    
+
     cout << "\n-= 2.0\t\traise weights to 2.0th power, *after* normalization.\n";
     cout << "\n\n";
     cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
@@ -1438,8 +1462,8 @@ void usageHelp(void)
         "--minimize-pairs-no-epsilon : for --minimize-pairs, treat *e*:*e* as a real symbol and not an epsilon\n"
         "if you don't use this, you may need to use --minimize-rmepsilon, which should give a smaller result anyway\n"
         ;
-    
-#endif 
+
+#endif
 cout <<         "\n"
         "--restart-tolerance=w : like -X w, but applied to the first iteration of each random start.\n"
         "a random start is rejected unless its perplexity is within (log likelihood ratio) w of the best start so far.\n"
@@ -1450,7 +1474,7 @@ cout <<         "\n"
         "--final-restart=N : the 1st...Nth random restart move from --restart-tolerance to\n"
         "--final-restart-tolerance (exponentially) and then holds constant from restarts N,N+1,...\n"
     ;
- 
+
     cout << "\n\n--final-sink : if needed, add a new final state with no outgoing arcs\n";
     cout << "\n--consolidate-max : for -C, use max instead of sum for duplicate arcs\n";
     cout << "\n--consolidate-unclamped : for -C sums, clamp result to max of 1\n";
@@ -1469,10 +1493,19 @@ cout <<         "\n"
         ;
     cout << "\n"
         "--post-b=transducerfile : in conjunction with -b, a parallel sequence of inputs to be composed with the result (left or right composition depending on -l / -r.  compare to -S except 2 parallel files instead of alternating lines, and gives best paths like -b.  also may succeed for compositions that wouldn't fit in memory under -S\n";
-    
+
     cout << "\n"
         "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n";
-    
+
+    cout << "\n"
+        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade and -? or --disk-cache-derivations.\n"
+        "--unsupervised : print output sequences of first transducer in cascade at last iteration.\n"
+        "--high-temp : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
+        "--low-temp : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
+        "--burnin : summing gibbs counts, skip this many iterations first (iteration 0 is a completely random derivation!)\n"
+        "--epoch : sum gibbs counts every <epoch> iterations after burnin\n"
+        "\n";
+
     /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
     cout << "\n--train-cascade-compress-always : even when the composition needed no pruning, compress the table (certainly frivolous)\n";

@@ -1,0 +1,30 @@
+A cascade of N WFST are composed, giving WFST C.  Weights of the original WFST are adjusted subject to normalization (conditional or joint WFST::NormalizeMethod).  Then a sequence of (input,output) sentences are explained using the composition.  In a single EM training iteration, expected counts are computed for each arc in the composition, and using cascade.h, the counts are assigned to the original WFST, and normalized.
+
+Some options are abstracted.  Usually a single class type handles the abstraction, with members/functions for the alternatives contained in it.  The unused members are designed to occupy only trivial space.
+
+For instance:
+
+cascade may have 1 WFST; then cascade_parameters.trivial == true.
+
+cascades of more than 1 thing mean that the composition tracks linked lists ("chains") of original WFST parameters for each arc in C.  to do training of the cascade, the "--train-cascade" option must be used, otherwise the result of composition is used a singleton to be trained.  cascade.h then handles transfer of counts from arcs in C to their chains' origins, normalization of the N cascade WFST, and regeneration of new weights in C from the chains. Also, temporary storage for the "global best" weights in the N original WFST.
+
+another option: "-a" modifies composition so that each arc in C has a singleton chain.  this is often more efficient (even though it creates more states, C may have many fewer arcs!).  See compose.cc
+
+"--disk-cache-derivations" or "-?" (memory cache derivations) will compute precisely the intersection of each (input,output) example with C, prune it, and save it.  Then expected counts are computed over that structure in linear time.  Without caching, the full matrix of forward/backward for each (input-suffix,C-state,output-suffix) is generated for each example at each iteration, which may be slower in sparse structures.  See derivations.{h,cc} and train.cc:forward_backward.use_matrix
+
+derivations.h has its own graehl/shared/graph.h based representation of the intersections of C with examples.  This intersection could have been stored as a WFST, but the graph structure is more compact.
+
+---+ Proposed blocked Gibbs sampling (Bayesian prior) implementation
+
+Require cache-derivations for efficiency (matrix is deprecated).
+
+New inputs:
+
+# of samples per example per iteration: probably just 1.  as # approaches infinity, you'd just have forward/backward frac. counts
+
+Priors: Each normalization group in the N WFSTs may have a "base model" uniform prior beta, so that you have a proposal HMM prob of p[i]=(beta+count[i])/Z.  Perhaps one beta per WFST until an input format for annotating the N input WFST's normgroups' priors (or a separate description file for named states: (state,input) or (state) => prior).  This can be done using the cascade chains to read the original arcs from input WFST #1.
+
+Optional unsupervised decode (deterministic annealing schedule of start/end temperature).  Show the outputs of the leftmost cascade WFST (usually *e*:HIDDEN is used and (input,output) examples all have input=*e*) corresponding to the final sample.
+
+Trained weights collection: burn-in (initially skip B) and epoch (collect 1, skip E,repeat) for cumulative counts.  Perhaps trained weights output can be disabled entirely for unsupervised decode.
+
