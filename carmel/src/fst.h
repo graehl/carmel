@@ -1,7 +1,8 @@
-#ifndef CARMEL_FST_H 
+#ifndef CARMEL_FST_H
 #define CARMEL_FST_H
 
 
+#include <graehl/shared/time_series.hpp>
 #include <graehl/carmel/src/config.hpp>
 #include <vector>
 #include <cstring>
@@ -38,7 +39,7 @@ struct PathArc {
     //const char *out;
     //const char *destState;
     int in,out,destState;
-    int &symbol(int dir) 
+    int &symbol(int dir)
     {
         return dir ? out : in;
     }
@@ -53,13 +54,13 @@ struct PathArc {
 
 /*
 template <class PathArcIt>
-struct path_yield 
+struct path_yield
 {
     PathArcIt it,end;
     int dir;
     path_yield(PathArcIt const& it,PathArcIt const& end, int dir=0) : it(it),end(end),dir(dir) {}
     typedef int value_type;
-    int operator *() 
+    int operator *()
     {
         return it->symbol(dir);
     }
@@ -69,7 +70,7 @@ struct path_yield
 };
 */
 
-    
+
 std::ostream & operator << (std::ostream & o, const PathArc &p);
 
 
@@ -86,27 +87,27 @@ class WFST {
     static const int arc_format_index; // handle for OutThresh
 
 #define EPSILON_SYMBOL "*e*"
-#define WILDCARD_SYMBOL "*w*"        
-    void initAlphabet(int dir) 
+#define WILDCARD_SYMBOL "*w*"
+    void initAlphabet(int dir)
     {
         owner_alph[dir]=1;
         alph[dir]=NEW alphabet_type(EPSILON_SYMBOL,WILDCARD_SYMBOL);
     }
-    
+
     void initAlphabet() {
         initAlphabet(0);
         initAlphabet(1);
     }
-    
+
     void train_prune(); // delete states with zero counts
-    
+
     void deleteAlphabet(int dir) {
         if (owner_alph[dir])
             delete alph[dir];
         owner_alph[dir]=0;
         alph[dir]=0;
     }
-    void deleteAlphabet() 
+    void deleteAlphabet()
     {
         deleteAlphabet(0);
         deleteAlphabet(1);
@@ -117,19 +118,19 @@ class WFST {
     */
     enum {input=0,output=1};
 
-    inline static int opposite(int dir) 
+    inline static int opposite(int dir)
     {
         return dir ? 0 : 1;
     }
-    
 
-    void identity_alphabet_from(int dir) 
+
+    void identity_alphabet_from(int dir)
     {
         int to = opposite(dir);
         deleteAlphabet(to);
         alph[to]=alph[dir];
     }
-    
+
     int getStateIndex(const char *buf); // creates the state according to named_states, returns -1 on failure
  public:
     // openfst MutableFst<LogArc> or <StdArc>, eg StdVectorFst
@@ -149,7 +150,7 @@ class WFST {
         fst.SetFinal(final,W::One());
     }
     template <class FstWeight>
-    Weight openfst_to_weight(FstWeight const& w) 
+    Weight openfst_to_weight(FstWeight const& w)
     {
         return Weight(w.Value(),neglog10_weight());
     }
@@ -171,19 +172,19 @@ class WFST {
         // does nothing if to_pairs=false
         as_pairs_fsa(WFST &wfst,bool keep_epsilon=true,bool to_pairs=true)
             :wfst(wfst)
-            ,keep_epsilon(keep_epsilon) 
+            ,keep_epsilon(keep_epsilon)
             ,to_pairs(to_pairs)
         {
             if (!to_pairs) return;
 
             typedef HashTable<newsym,unsigned> tosyms;
-            
+
             tosyms to;
 
             syms.push_back(newsym(0,0));
             if (keep_epsilon)
                 to.add(syms[0],0);
-            
+
             for (StateVector::iterator i=wfst.states.begin(),e=wfst.states.end();i!=e;++i) {
                 State::Arcs &arcs=i->arcs;
                 for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
@@ -192,26 +193,26 @@ class WFST {
                     if (ins.second)
                         syms.push_back(s);
                     l->in=l->out=ins.first->second;
-                }   
+                }
             }
         }
-        ~as_pairs_fsa() 
+        ~as_pairs_fsa()
         {
             if (!to_pairs) return;
-                
+
             for (StateVector::iterator i=wfst.states.begin(),e=wfst.states.end();i!=e;++i) {
                 State::Arcs &arcs=i->arcs;
                 for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
                     newsym &s=syms[l->in];
                     l->in=s.in;
                     l->out=s.out;
-                }   
-            }            
+                }
+            }
         }
-            
-    };        
-        
-    
+
+    };
+
+
 #ifdef USE_OPENFST
     // here we depend on ArcIterator directly
     // openfst ExpandedFst<LogArc>
@@ -222,10 +223,10 @@ class WFST {
         typedef typename A::Weight W;
         typedef typename A::StateId I;
         typedef fst::ArcIterator<Fst> AI;
-        
+
         const W zero=W::Zero();
         const W one=W::One();
-        
+
         unsigned n_final=0;
         unsigned max_final=0;
         unsigned o_n=fst.NumStates();
@@ -248,8 +249,8 @@ class WFST {
         states.resize(ns);
 //        DBP4(states.size(),ns,o_n,need_extra_final);
         State::arc_adder arc_add(states);
-        
-        unsigned o2s[o_n]; //FIXME: does an expandedfst always have ids [0...numstates)? 
+
+        unsigned o2s[o_n]; //FIXME: does an expandedfst always have ids [0...numstates)?
         unsigned s=0,i=0;
         unsigned o_start=fst.Start();
 
@@ -261,7 +262,7 @@ class WFST {
         o2s[o_start]=0;
 
         // actually iterate over the arcs for each state, translating ids by our constraint that start index must be 0
-        
+
         for (unsigned o=0;o<o_n;++o) {
             for (AI ai(fst,o);!ai.Done();ai.Next()) {
                 A const&arc=ai.Value();
@@ -272,7 +273,7 @@ class WFST {
         }
 
         // set final status, adding a state and arcs if necessary (carmel has no final state weights)
-        if (!need_extra_final) { 
+        if (!need_extra_final) {
             final=max_final;
             Assert(final<numStates());
         } else {
@@ -284,10 +285,10 @@ class WFST {
                 }
             }
         }
-        
-        
+
+
     }
-    
+
     template <class Fst>
     void roundtrip_openfst() // for debugging, to_openfst then from_openfst, will lose arc indices
     {
@@ -335,19 +336,19 @@ class WFST {
               }
             */
             from_openfst(f);
-        }        
+        }
         if (inverted)
             invert();
-        return true;        
+        return true;
 //        DBP(numStates());
     }
 
-#endif 
+#endif
     enum { epsilon_index=FSTArc::epsilon,wildcard_index=FSTArc::wildcard,start_normal_index };
 
 
     // some algorithms (e.g. determinizing) are confused when the final state has arcs leaving it.  this will add a new final state with no exit, if necessary (and a p=1 epsilon transition from old final state to new one)
-    void ensure_final_sink() 
+    void ensure_final_sink()
     {
         if (!states[final].size)
             return;
@@ -355,50 +356,50 @@ class WFST {
         final=add_state("FINAL_SINK");
         states[old_final].addArc(FSTArc(epsilon_index,epsilon_index,final,1));
     }
-    
+
 
     static THREADLOCAL int default_per_line;
     static THREADLOCAL int default_arc_format;
 
-    static inline void set_arc_default_per(int per) 
+    static inline void set_arc_default_per(int per)
     {
         default_per_line=per;
     }
-    static inline void set_arc_default_format(int ver) 
+    static inline void set_arc_default_format(int ver)
     {
         default_arc_format=ver;
     }
 
-    static inline int get_arc_format(std::ostream &os) 
+    static inline int get_arc_format(std::ostream &os)
     {
         int r=os.iword(arc_format_index);
         return r==DEFAULT_ARC_FORMAT ? default_arc_format : r;
     }
 
-    static inline int get_per_line(std::ostream &os) 
+    static inline int get_per_line(std::ostream &os)
     {
         int r=os.iword(per_line_index);
         return r==DEFAULT_PER_LINE ? default_per_line : r;
     }
 
-    static inline void set_arc_format(std::ostream &os,int i) 
+    static inline void set_arc_format(std::ostream &os,int i)
     {
         os.iword(arc_format_index)=i;
     }
 
-    static inline void set_per_line(std::ostream &os,int i) 
+    static inline void set_per_line(std::ostream &os,int i)
     {
         os.iword(per_line_index)=i;
     }
-    
-    
+
+
     template<class A,class B> static inline std::basic_ostream<A,B>&
     out_state_per_line(std::basic_ostream<A,B>& os) { os.iword(per_line_index) = STATE; return os; }
     template<class A,class B> static inline std::basic_ostream<A,B>&
     out_arc_per_line(std::basic_ostream<A,B>& os) { os.iword(per_line_index) = ARC; return os; }
     template<class A,class B> static inline std::basic_ostream<A,B>&
     out_arc_default_per(std::basic_ostream<A,B>& os) { os.iword(per_line_index) = DEFAULT_PER_LINE; return os; }
-    
+
     template<class A,class B> static inline std::basic_ostream<A,B>&
     out_arc_brief(std::basic_ostream<A,B>& os) { os.iword(arc_format_index) = BRIEF; return os; }
     template<class A,class B> static inline std::basic_ostream<A,B>&
@@ -408,7 +409,7 @@ class WFST {
 
 
     void read_training_corpus(std::istream &in,training_corpus &c);
-    
+
     static inline double randomFloat()       // in range [0, 1)
     {
         return rand() * (1.f / (RAND_MAX+1.f));
@@ -417,29 +418,29 @@ class WFST {
     bool owner_alph[2];
     alphabet_type *alph[2];
     bool named_states;
-    alphabet_type &in_alph() const 
+    alphabet_type &in_alph() const
     {
         return *alph[input];
     }
-    alphabet_type &out_alph() const 
+    alphabet_type &out_alph() const
     {
         return *alph[output];
     }
-    
+
     alphabet_type stateNames;
     unsigned final;	// final state number - initial state always number 0
     typedef dynamic_array<State> StateVector;
     // note: std::vector<State> doesn't work with State::state_adder because copies by value are made during readLegible
-    
+
     StateVector states;
-  	 
+
     //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
     //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
     //  WFST & operator = (WFST &){return *this;} Yaser
     //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
     int abort();			// called on a bad read
     int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
-    int readLegible(const string& str, bool alwaysNamed=false);  
+    int readLegible(const string& str, bool alwaysNamed=false);
     void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false); // for graphviz
     void writeLegible(ostream &);
     void writeLegibleFilename(std::string const& name);
@@ -462,7 +463,7 @@ class WFST {
         return o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out) << " / " << a.weight << ")";
     }
 
-    /*void insertPathArc(GraphArc *gArc, List<PathArc>*);  
+    /*void insertPathArc(GraphArc *gArc, List<PathArc>*);
       void insertShortPath(int source, int dest, List<PathArc> *);*/
     template <class T>
     void insertPathArc(GraphArc *gArc,T &l)
@@ -492,19 +493,19 @@ class WFST {
     static int indexThreshold;
     enum norm_group_by { CONDITIONAL, // all arcs from a state with the same input will add to one
                            JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
-                           NONE // 
+                           NONE //
     } ;
-    
-    struct NormalizeMethod 
+
+    struct NormalizeMethod
     {
         norm_group_by group;
         mean_field_scale scale;
     };
-    
+
     WFST(const WFST &a) { throw std::runtime_error("No copying of WFSTs allowed!"); }
  public:
 
-    
+
     void index(int dir) {
         for ( int s = 0 ; s < numStates() ; ++s ) {
             states[s].flush();
@@ -522,21 +523,21 @@ class WFST {
         if (identity_fsa) {
             identity_alphabet_from(dir);
         }
-        
+
         for ( int s = 0 ; s < numStates() ; ++s )
             states[s].project(dir,identity_fsa);
     }
-    
-    
+
+
     void indexFlush() { // index on input symbol or output symbol depending on composition direction
         for ( int s = 0 ; s < numStates() ; ++s ) {
             states[s].flush();
         }
     }
     WFST() { initAlphabet(); named_states=0;}
-    //  WFST(const WFST &a): 
-    //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))), 
-    //stateNames(a.stateNames), final(a.final), states(a.states), 
+    //  WFST(const WFST &a):
+    //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))),
+    //stateNames(a.stateNames), final(a.final), states(a.states),
 
     WFST(istream & istr,bool alwaysNamed=false) {
         initAlphabet();
@@ -552,7 +553,7 @@ class WFST {
 
     WFST(const char *buf); // make a simple transducer representing an input sequence
     WFST(const char *buf, int& length,bool permuteNumbers); // make a simple transducer representing an input sequence lattice - Yaser
-    WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b    
+    WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b
     WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false,bool preserveGroups = false);	// a composed with b, but remembering in cascade the identities.  preserveGroups is meaningless since cascade keeps refs to original arcs anyway
     void set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);
     // resulting WFST has only reference to input/output alphabets - use ownAlphabet()
@@ -569,10 +570,10 @@ class WFST {
     WFST z(cascade,d,y); // now you've done d*((a*b)*c)
     cascade.done_composing(z);
     z.train(cascade,...); // trains d,a,b,c parameters via paths in z explaining corpus
-    
+
     */
 
-    alphabet_type &alphabet(int dir) 
+    alphabet_type &alphabet(int dir)
     {
         return *alph[dir];
     }
@@ -581,7 +582,7 @@ class WFST {
     {
         return *alph[dir];
     }
-    
+
     void listAlphabet(ostream &out, int dir = input);
     friend ostream & operator << (ostream &,  WFST &); // Yaser 7-20-2000
     // I=PathArc output iterator; returns length of path or -1 on error
@@ -611,7 +612,7 @@ class WFST {
             Weight which_arc = arcsum * randomFloat();
 #ifdef DEBUG_RANDOM_GENERATE
             Config::debug() << " chose "<<which_arc<<"/"<<arcsum;
-#endif 
+#endif
             arcsum.setZero();
             for (LAit li = start; li!=end; ++li) {
                 if ( (arcsum += li->weight) >= which_arc) {
@@ -620,7 +621,7 @@ class WFST {
                     *i++ = p;
 #ifdef DEBUG_RANDOM_GENERATE
                     Config::debug() << " arc="<<*li;
-#endif 
+#endif
                     s=li->dest;
                     ++len;
                     //				if (!(i))
@@ -641,6 +642,8 @@ class WFST {
     // list is dynamically allocated - delete it
     // yourself when you are done with it
 
+
+
     // Visitor needs to accept GraphArc (from makeGraph ... (FSTArc *)->data gives WFST FSTArc - see kbest.h for visitor description.  deprecated for visit_kbest
     template <class Visitor> void bestPaths(unsigned k,Visitor &v,bool throw_on_cycle=true) {
         Graph graph = makeGraph();
@@ -648,32 +651,32 @@ class WFST {
         freeGraph(graph);
     }
 
-    
+
 
     // if you prefer to use a visitor that deals with FST arcs rather than graph arcs
     template <class V>
-    struct arc_visitor 
+    struct arc_visitor
     {
         V *pv;
         bool SIDETRACKS_ONLY;
-        
+
         arc_visitor(V &v) : pv(&v) {
             SIDETRACKS_ONLY=pv->SIDETRACKS_ONLY;
         }
 
-        void start_path(unsigned k,double cost) 
+        void start_path(unsigned k,double cost)
         {
             pv->start_path(k,Weight(cost,cost_weight()));
         }
-        void end_path() 
+        void end_path()
         {
             pv->end_path();
         }
-        void visit_best_arc(const GraphArc &a) 
+        void visit_best_arc(const GraphArc &a)
         {
             pv->visit_best_arc(*(FSTArc*)a.data);
         }
-        void visit_sidetrack_arc(const GraphArc &a) 
+        void visit_sidetrack_arc(const GraphArc &a)
         {
             pv->visit_best_arc(*(FSTArc*)a.data);
         }
@@ -684,13 +687,13 @@ class WFST {
         arc_visitor<Visitor> wrap_visitor(v);
         bestPaths(k,wrap_visitor,throw_on_cycle);
     }
-    
+
     template <class Visitor>
     void visit_kbest(unsigned k,Visitor const &v,bool throw_on_cycle=true) {
         Visitor v2(v);
         visit_kbest(k,v,throw_on_cycle);
     }
-    
+
     typedef dynamic_array<int> string_type;
     typedef dynamic_array<FSTArc *> path_type;
 
@@ -702,13 +705,13 @@ class WFST {
             FSTArc const& a=**i;
             if (!(skip_epsilon && a.is_epsilon(dir)))
                 s.push_back(a.symbol(dir));
-        }        
+        }
     }
 
     /*
-    struct yield_from_path : public string_type 
+    struct yield_from_path : public string_type
     {
-        yield_from_path(path_type const& path,int dir=WFST::input,bool skip_epsilon=true) 
+        yield_from_path(path_type const& path,int dir=WFST::input,bool skip_epsilon=true)
         {
             WFST::path_yield_into(*this,path,dir,skip_epsilon);
         }
@@ -723,7 +726,7 @@ class WFST {
         bool skip_epsilon;
         V &v;
         path_yield_visitor(V &v,int dir=WFST::input,bool skip_epsilon=true) : v(v),dir(dir), skip_epsilon(skip_epsilon) {}
-        
+
         void start_path(unsigned k,Weight w) { this->clear(); }
         void end_path() {
             v(*this);
@@ -738,27 +741,27 @@ class WFST {
     };
     */
     /* the following is for dir=input.  reverse if dir=output.
-       given 
+       given
        taking all the input strings in transducer E=edit_distance_to
-       produce a subset of all edits 
+       produce a subset of all edits
     WFST(std::vector<int> const& string,WFST &edit_distance_to,Weight ins,Weight del,Weight subst,bool epsilon_outer=false,int dir=input)
     */
 
-    
 
-    struct annotated_path 
+
+    struct annotated_path
     {
         path_type p;
         unsigned k;
         Weight w; // used as sort key, holds mbr score, provided to path_visitor, etc.
         Weight orig_w;
-        
+
         annotated_path(unsigned k,Weight w) : k(k),w(w) {
             orig_w=w;
         }
 
         typedef annotated_path self_type;
-        
+
         void swap_impl(self_type &a) throw() {
             swap(p,a.p);
             swap(w,a.w);
@@ -769,19 +772,19 @@ class WFST {
         friend void swap(self_type &a,self_type &b) throw()
         {
             a.swap_impl(b);
-        }    
+        }
 
         // for sort best-first, so reverse.
-        inline bool operator <(self_type const&o) const  
+        inline bool operator <(self_type const&o) const
         {
             return w > o.w;
         }
-        
-        inline int cmp(self_type const& o) const 
+
+        inline int cmp(self_type const& o) const
         {
             return w.cmp(o.w);
         }
-        
+
         // note: i didn't care to annotate w/ sidetrack vs. not (for -% path output) so everything is reported as a best_arc.  visitor must accept FSTArc &, not GraphArc &
         template <class V>
         void replay_to(V &v) const
@@ -791,25 +794,25 @@ class WFST {
                 v.visit_best_arc(**i);
             v.end_path();
         }
-        
+
     };
 
     typedef dynamic_array<annotated_path> annotated_paths_type;
 
     struct annotated_paths : public annotated_paths_type
     {
-        annotated_paths(WFST &w,unsigned k,bool cc=true) 
+        annotated_paths(WFST &w,unsigned k,bool cc=true)
         {
             w.visit_kbest(k,*this,cc);
         }
-        void start_path(unsigned k,Weight w) 
+        void start_path(unsigned k,Weight w)
         {
             this->push_back(annotated_path(k,w));
         }
         void end_path() {}
         enum { SIDETRACKS_ONLY=0 };
 
-        void visit_sidetrack_arc(FSTArc &a) 
+        void visit_sidetrack_arc(FSTArc &a)
         {
             visit_best_arc(a);
         }
@@ -835,23 +838,23 @@ class WFST {
         }
 
         // for sort, descending order by weight (i.e. best first)
-        static int compare(void const*a,void const*b) 
+        static int compare(void const*a,void const*b)
         {
             annotated_path const& pa=*(annotated_path*)a;
             annotated_path const& pb=*(annotated_path*)b;
             return pb.cmp(pa);
         }
-        
-        
-        void resort() 
+
+
+        void resort()
         {
 //            std::sort(this->begin(),this->end()); // would need operator = for dynamic_array.
             std::qsort(this->begin(),this->size(),sizeof(annotated_path),compare);
         }
-        
+
     };
-    
-    
+
+
     /* take the current WFSA (project on chosen direction) as a weighted distribution (the accepting paths are normalized).  alpha sharpens(>1)/softens(<1)/neutral(=1) (e^alph*a)/sum(e^(alph*a_i)).  then choose the highest weight path out of the top search_k under MBR edit distance, and emit the best rescored visit_k
 
     visitor V is called with:
@@ -860,49 +863,49 @@ class WFST {
     of course w,k,and y are redundant.  but i like you so they're given.
 
     */
-    
-      
 
-    
+
+
+
     template <class V>
     void edit_distance_mbr(unsigned search_k,unsigned visit_k,V &v,double alpha=1.,int dir=WFST::input)
     {
         annotated_paths paths(*this,search_k,true);
         raisePower(alpha);
-        
+
         //STUB:
         paths.replay_first_k_to(v,visit_k);
-        
+
         raisePower(1./alpha);
     }
-    
-    
+
+
     void set_string(alphabet_type &a,string_type const& str,bool clone_alph=true)
     {
         //TODO
     }
-    
-        
-    
+
+
+
     // best paths to final
     // labels are pointers to names in WFST so do not
     // use the path after the WFST is deleted
     // list is dynamically allocated - delete it
     // yourself when you are done with it
-    struct symbol_ids : public List<int> 
+    struct symbol_ids : public List<int>
     {
-        symbol_ids(WFST & wfst,char const* buf,int output=0,int line=-1) 
+        symbol_ids(WFST & wfst,char const* buf,int output=0,int line=-1)
         {
             wfst.symbolList(this,buf,output,line);
         }
     };
 
-    static inline bool is_special(int letter) 
+    static inline bool is_special(int letter)
     {
         return letter>=start_normal_index;
     }
-    
-    static void print_yield(ostream &o,List<PathArc> const &path,bool output=false,bool show_special=false) 
+
+    static void print_yield(ostream &o,List<PathArc> const &path,bool output=false,bool show_special=false)
     {
         if (path.empty())
             return;
@@ -922,28 +925,28 @@ class WFST {
         print_yield(cout,path,true,show_special);
         o << endl;
     }
-    
-        
-    void symbolList(List<int> *ret,const char *buf, int output=0,int line=-1);   
+
+
+    void symbolList(List<int> *ret,const char *buf, int output=0,int line=-1);
     // takes space-separated symbols and returns a list of symbol numbers in the
     // input or output alphabet
-    char const* letter_or_eps(unsigned i,int dir,char const* eps="&#949",bool use_eps=true) 
+    char const* letter_or_eps(unsigned i,int dir,char const* eps="&#949",bool use_eps=true)
     {
         return (use_eps && i==epsilon_index) ? eps : letter(i,dir);
     }
-    
+
     const char *inLetter(unsigned i) const {
         return letter(i,0);
     }
     const char *outLetter(unsigned i) const {
         return letter(i,1);
     }
-    char const* letter(unsigned i,int dir) const 
+    char const* letter(unsigned i,int dir) const
     {
         Assert ( i < alphabet(dir).size() );
         return alphabet(dir)[i].c_str();
     }
-    
+
     //NB: uses static (must use or copy before next call) return string buffer if !named_states
     const char *stateName(int i) const {
         Assert ( i >= 0 );
@@ -966,27 +969,27 @@ class WFST {
     {
         for (StateVector::const_iterator i=states.begin(),e=states.end();i!=e;++i) {
             i->visit_arcs(v);
-        }        
+        }
     }
-    
-    void set_constant_weights(Weight w=Weight::ONE()) 
+
+    void set_constant_weights(Weight w=Weight::ONE())
     {
         changeEachParameter(set_constant_weight(w));
     }
-    
-    void zero_arcs() 
+
+    void zero_arcs()
     {
         set_constant_weights(Weight::ZERO());
     }
 
     // bool uniform_zero_normgroups=true -> if a group's arcs' weights are all 0, set them uniform instead of leaving them 0
-    void normalize(NormalizeMethod const& method,bool uniform_zero_normgroups=false);    
-    
+    void normalize(NormalizeMethod const& method,bool uniform_zero_normgroups=false);
+
     // if weight_is_prior_count, weights before training are prior counts.  smoothFloor counts are also added to all arcs
     // NEW weight = normalize(induced forward/backward counts + weight_is_prior_count*old_weight + smoothFloor).
     // corpus may have examples w/ no derivations removed from it!
 
-    struct random_restart_acceptor 
+    struct random_restart_acceptor
     {
         /* when you ask for N random restarts, some of them may be rejected if
          * they're especially bad, according to a simple criteria: the corpus
@@ -999,12 +1002,12 @@ class WFST {
          * for this tolerance, so that tolerance^(1/(i*r*N)) is the likelihood
          * ratio used at restart i from 1...N, i.e. tolerance is moved towards
          * 1 over time
-         */ 
+         */
         Weight best_start; // perplexity, lower is better
         Weight tolerance; // >1 means allow worse, <1 means improvement must be significant
         Weight final_tolerance; // greater r moves tolerance toward 1 in later restarts
-        double N; // number of restarts over which to vary 
-        Weight likelihood_ratio(unsigned i=0) const 
+        double N; // number of restarts over which to vary
+        Weight likelihood_ratio(unsigned i=0) const
         {
             if (i>=N)
                 return final_tolerance;
@@ -1018,7 +1021,7 @@ class WFST {
             if (final_tolerance.isZero())
                 final_tolerance=tolerance;
         }
-        
+
         bool accept(Weight this_start,Weight converged_best,unsigned restart_i,std::ostream *o=0)
         {
             Weight lr=likelihood_ratio(restart_i);
@@ -1036,12 +1039,33 @@ class WFST {
             return r;
         }
     };
-    
+
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3
     }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
 
+
+    struct counting_schedule
+    {
+        unsigned burnin;
+        unsigned epoch;
+        bool operator()(unsigned i)
+        {
+            return i>=burnin && (i-burnin)%epoch==0;
+        }
+        counting_schedule()
+        {
+            set();
+        }
+        void set(unsigned burn=0,unsigned every=1)
+        {
+            burnin=burn;
+            epoch=every;
+        }
+    };
+
+
     // TODO: move more of the train params into here
-    struct train_opts 
+    struct train_opts
     {
         unsigned cache_level;
         std::string disk_cache_filename;
@@ -1050,11 +1074,26 @@ class WFST {
         double learning_rate_growth_factor;
         int ran_restarts;
         random_restart_acceptor ra;
-        
+
+        // for gibbs sampling
+        bool gibbs;
+        dynamic_array<double> priors;
+        bool unsupervised_decode;
+        // random choices have probs raised to 1/temperature(iteration) before coin flip
+        clamped_time_series<double> temperature(double iters) {
+            return clamped_time_series<double>(high_temp,low_temp,iters);
+        }
+        double high_temp,low_temp;
+        counting_schedule sched;
         train_opts() { set_defaults(); }
-        
-        void set_defaults() 
+
+        void set_defaults()
         {
+            high_temp=low_temp=1;
+            gibbs=false;
+            sched.set();
+            unsupervised_decode=false;
+            priors.clear();
             cache_level=cache_nothing;
             disk_cache_filename="/tmp/carmel.derivations.XXXXXX";
             disk_cache_bufsize=256*1024*1024;
@@ -1062,11 +1101,11 @@ class WFST {
             ran_restarts=0;
             ra=random_restart_acceptor();
         }
-        bool use_disk() const 
+        bool use_disk() const
         {
             return cache_level == cache_disk;
         }
-        bool cache() const 
+        bool cache() const
         {
             return cache_level != cache_nothing;
         }
@@ -1075,15 +1114,15 @@ class WFST {
             return cache_level == cache_forward_backward;
         }
     };
-    
-        
+
+
     Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts);
     Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
 
-    
+
 //    Weight trainFinish();
-    // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.  
+    // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.
 
     void invert();		// switch input letters for output letters
     void reduce();		// eliminate all states not along a path from
@@ -1091,17 +1130,17 @@ class WFST {
     void consolidateArcs(bool sum=true,bool clamp=true);	// combine identical arcs, with combined weight = sum, or just max if sum=false.  sum clamped to max of 1 if clamp=true
     void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
     enum {UNLIMITED=-1};
-    void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INF()); 
+    void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INF());
     // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
-  
-  
+
+
     void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource.  if no arc having same group number in weightSource is found, remove the arc from *this
     void numberArcsFrom(int labelStart); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1
     void lockArcs();		// put all arcs in group 0 (weights are locked)
     //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<IntKey, int>; }
     void unTieGroups();
-  
-  
+
+
     int generate(int *inSeq, int *outSeq, int minArcs, int maxArcs);
     BOOST_STATIC_CONSTANT(unsigned,invalid_state=(unsigned)-1);
     int valid() const { return ( final != invalid_state ); }
@@ -1114,7 +1153,7 @@ class WFST {
     }
 
     //FIXME: you could run out of memory translating the FST into a graph just to report a summary.  topo sort and arc propagation from graph.h aren't that complicated to repeat (or abstract)
-    
+
     // *p_n_back_edges = 0 iff no cycles (optional output arg)
     Weight numNoCyclePaths(unsigned *p_n_back_edges=0) {
         if ( !valid() ) return Weight();
@@ -1127,7 +1166,7 @@ class WFST {
         return ret;
     }
 
-    struct weight_for_cost 
+    struct weight_for_cost
     {
         typedef Weight result_type;
         Weight operator()(GraphArc const& a) const
@@ -1135,7 +1174,7 @@ class WFST {
             return Weight(a.weight,cost_weight());
         }
     };
-        
+
     Weight sum_acyclic_paths()
     {
         fixed_array<Weight> w(numStates());
@@ -1146,17 +1185,17 @@ class WFST {
         delete[] g.states;
         return w[final];
     }
-    
+
     static void setIndexThreshold(int t) {
         if ( t < 0 )
             WFST::indexThreshold = 0;
         else
-            WFST::indexThreshold = t; 
+            WFST::indexThreshold = t;
     }
 
     //FIXME: these aren't technically const because they leave a mutable pointer to orig. arc, but can we make a const version for truly const uses?
-    Graph makeGraph(); // weights = -log, so path length is sum and best path 
-    // is the shortest; GraphArc::data is a pointer 
+    Graph makeGraph(); // weights = -log, so path length is sum and best path
+    // is the shortest; GraphArc::data is a pointer
     // to the FSTArc it corresponds to in the WFST
     Graph makeEGraph(); // same as makeGraph, but restricted to *e* / *e* arcs
 
@@ -1167,7 +1206,7 @@ class WFST {
     }
 
     //untested
-    void stealAlphabet(WFST &from,int dir) 
+    void stealAlphabet(WFST &from,int dir)
     {
         if (from.owner_alph[dir] && alph[dir]==from.alph[dir] ) { // && !owner_alph[dir] // unnecessary
             from.owner_alph[dir]=0;
@@ -1177,14 +1216,14 @@ class WFST {
     }
 
     // untested
-    void ownAlphabet(int dir) 
+    void ownAlphabet(int dir)
     {
         if (!owner_alph[dir] && alph[dir]) {
             alph[dir]=NEW alphabet_type(*alph[dir]);
             owner_alph[dir]=1;
         }
     }
-    
+
     void unNameStates() {
         if (named_states) {
             stateNames.~Alphabet();
@@ -1193,15 +1232,15 @@ class WFST {
         }
     }
 
-    void raisePower(double exponent=1.0) 
+    void raisePower(double exponent=1.0)
     {
         if (exponent==1.0) return;
         for ( int s = 0 ; s < numStates() ; ++s )
             states[s].raisePower(exponent);
     }
-    
+
     // returns id of newly added empty state
-    unsigned add_state(char const* name="NEWSTATE") 
+    unsigned add_state(char const* name="NEWSTATE")
     {
         unsigned r=states.size();
         states.push_back();
@@ -1211,9 +1250,9 @@ class WFST {
         }
         return r;
     }
-    
+
     void clear() {
-        final = invalid_state;        
+        final = invalid_state;
         unNameStates();
         states.clear();
         destroy();
@@ -1226,16 +1265,16 @@ class WFST {
             w->setRandomFraction();
         }
     };
-    
+
     struct scaleRandom {
         void operator()(Weight *w) const {
             Weight random;
             random.setRandomFraction();
             *w *= random;
-        }    
+        }
     };
-        
-    struct set_constant_weight 
+
+    struct set_constant_weight
     {
         Weight c;
         set_constant_weight(Weight c) : c(c) {}
@@ -1244,7 +1283,7 @@ class WFST {
         {
             *w=c;
         }
-    };        
+    };
 
     template <class F>
     F changeEachParameter(F f) {
@@ -1256,20 +1295,20 @@ class WFST {
 
     typedef std::vector<Weight> saved_weights_t;
 
-    struct param_saver 
+    struct param_saver
     {
         saved_weights_t &save;
         param_saver(saved_weights_t &save) : save(save) {}
-        void operator()(unsigned source,FSTArc &a) 
+        void operator()(unsigned source,FSTArc &a)
         {
             save.push_back(a.weight);
         }
     };
-        
+
 
     typedef saved_weights_t::const_iterator saved_weight_p;
 
-    struct param_restorer 
+    struct param_restorer
     {
         saved_weight_p i;         //FIXME: end for boundscheck
         param_restorer(saved_weight_p i) : i(i) {}
@@ -1278,8 +1317,8 @@ class WFST {
             a.weight=*i++;
         }
     };
-    
-        
+
+
     // appends, so you can chain several store_weights on different WFST, just so long as you restore them in the same order
     void save_weights(saved_weights_t &save) const
     {
@@ -1289,12 +1328,12 @@ class WFST {
     }
 
     // returns position of next unused weight, so you can use the same array for several WFST in a particular order
-    saved_weight_p restore_weights(saved_weight_p i) 
+    saved_weight_p restore_weights(saved_weight_p i)
     {
         param_restorer r=i;
         return visit_arcs(r).i;
     }
-    
+
 
     void removeMarkedStates(bool marked[]);  // remove states and all arcs to
     // states marked true
@@ -1312,28 +1351,28 @@ class WFST {
 
     // v(unsigned source_state,FSTArc &arc)
     template <class V>
-    V & visit_arcs(V & v) 
+    V & visit_arcs(V & v)
     {
 //        unsigned arcno=0;
         for ( unsigned s = 0,e=numStates() ; s < e ; ++s )
             states[s].visit_arcs(s,v);
         return v;
     }
-    
 
-    
+
+
  private:
-        
+
 
     //	lastChange = train_maximize(method);
     // counts must have been filled in (happens in trainFinish) so not useful to public
     Weight train_maximize(NormalizeMethod const& method,double delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
-    
+
     void destroy()  // just in case we're sloppy, this is idempotent.  note: the actual destructor may not be - std::vector, etc.
     {
         deleteAlphabet();
     }
-    
+
     void invalidate() {		// make into empty/invalid transducer
         clear();
     }

@@ -42,6 +42,7 @@ struct deriv_state
 };
 
 
+// temporary counts etc. for deriv arcs.  see cascade.h for how weights are pushed back to original wfsts
 struct arcs_table : public dynamic_array<arc_counts>
 {
     typedef dynamic_array<arc_counts> arcs_type;
