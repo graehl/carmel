@@ -19,7 +19,7 @@ carmel_NOTEST=1
 vpath %.cc $(SRC):$(SHARED)
 VPATH=$(SRC):$(SHARED)
 INC=$(SRC) $(SHARED)
-LIB = 
+LIB =
 CPP_EXT=cc
 
 LDFLAGS = -lpthread
@@ -33,7 +33,7 @@ else
 CXXFLAGS= $(BASECXXFLAGS) -O2
 endif
 #FIXME: crashes with -O3 on kbest output
-CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb -pg
+CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST
 
 default: mydefault

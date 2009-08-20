@@ -1,7 +1,7 @@
 #ifndef CARMEL__CONFIG_HPP
 #define CARMEL__CONFIG_HPP
 
-#define USE_OPENFST
+//#define USE_OPENFST
 
 #ifdef USE_OPENFST
 # include <cstring>
@@ -16,14 +16,14 @@ struct log_message_exception : public LogMessage
     {
         exception=(type=="FATAL");
     }
-    ~log_message_exception() 
+    ~log_message_exception()
     {
         if (exception)
             throw std::runtime_error("openfst FATAL exception");
     }
-    
+
 };
-    
+
 }
 
 # undef LOG
