@@ -917,6 +917,7 @@ main(int argc, char *argv[]){
     train_opt.gibbs = cm.have_opt("gibbs");
     if (train_opt.gibbs) {
         flags['t']=true;
+        flags['a']=true;
         flags['?']=true;
         long_opts["train-cascade"]=1;
     }
@@ -1498,11 +1499,11 @@ cout <<         "\n"
         "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n";
 
     cout << "\n"
-        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade and -? or --disk-cache-derivations.\n"
+        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, -a, and -? or --disk-cache-derivations.\n"
         "--unsupervised : print output sequences of first transducer in cascade at last iteration.\n"
         "--high-temp : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
-        "--burnin : summing gibbs counts, skip this many iterations first (iteration 0 is a completely random derivation!)\n"
+        "--burnin : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
         "--epoch : sum gibbs counts every <epoch> iterations after burnin\n"
         "\n";
 
