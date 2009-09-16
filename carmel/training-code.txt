@@ -24,7 +24,21 @@ New inputs:
 
 Priors: Each normalization group in the N WFSTs may have a "base model" uniform prior beta, so that you have a proposal HMM prob of p[i]=(beta+count[i])/Z.  Perhaps one beta per WFST until an input format for annotating the N input WFST's normgroups' priors (or a separate description file for named states: (state,input) or (state) => prior).  This can be done using the cascade chains to read the original arcs from input WFST #1.
 
+Base model (p0) from initial cascade xdcr weights?  What's the collapsed proposal HMM in that case?
+
 Optional unsupervised decode (deterministic annealing schedule of start/end temperature).  Show the outputs of the leftmost cascade WFST (usually *e*:HIDDEN is used and (input,output) examples all have input=*e*) corresponding to the final sample.
 
 Trained weights collection: burn-in (initially skip B) and epoch (collect 1, skip E,repeat) for cumulative counts.  Perhaps trained weights output can be disabled entirely for unsupervised decode.
 
+
+---- maintaining past/future counts / probs
+
+Normalizing cascade parameters: it's important to not recompute full sum-of-counts each time we move to another example.  Therefore, associated with each arc in cascade: norm-group-id(pointer to shared Z sum) and count. Both counts include prior and exclude the current example.
+
+Therefore we also need to save the counts for previous iteration for each example.  If # samples per example = 1 then could just store the particular derivation chosen, and subtract its counts out.  We store the derivation chosen so we can print --unsupervised hidden sequence, too.  Any time we take out counts, we take them out from arc and norm-Z-sums.
+
+Need then to iterate using Normalize type (cond/joint) to identify derivation graph arc indices with normgroup (meaning -a mandatory, probably a good idea),
+OR:
+cascade tracks FSTArc * (<graehl/shared/arc.h> - weird, would think that would go in carmel/src).  steal group ids except locked id when doing gibbs?  hash? change cascade rep to use integer arc table index instead?
+
+In sampling, we won't actually need to push weights back to original cascade except at very end if we choose to write trained results.
