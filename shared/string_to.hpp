@@ -14,8 +14,14 @@ bool try_stream_into(I & i,To &to,bool complete=true)
     if (complete) {
         char c;
         return !(i >> c);
-    }   
+    }
     return true;
+}
+
+template <class Str>
+bool try_string_into(Str const& str,Str &to,bool complete=true)
+{
+    str=to;
 }
 
 template <class Str,class To>
@@ -26,8 +32,9 @@ bool try_string_into(Str const& str,To &to,bool complete=true)
 }
 
 
+
 template <class Str,class Data> inline
-Data & string_into(const Str &str,Data &data) 
+Data & string_into(const Str &str,Data &data)
 {
     if (!try_string_into(str,data))
         throw std::runtime_error(std::string("Couldn't convert (string_into): ")+str);
@@ -44,7 +51,7 @@ Data string_to(const Str &str)
 }
 
 template <class D> inline
-std::string to_string(D const &d) 
+std::string to_string(D const &d)
 {
     std::ostringstream o;
     o << d;
@@ -55,7 +62,7 @@ std::string to_string(D const &d)
 /*
 
 template <class Str,class Data,class size_type> inline
-void substring_into(const Str &str,size_type pos,size_type n,Data &data) 
+void substring_into(const Str &str,size_type pos,size_type n,Data &data)
 {
 //    std::istringstream i(str,pos,n); // doesn't exist!
     std::istringstream i(str.substr(pos,n));
