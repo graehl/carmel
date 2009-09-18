@@ -176,17 +176,38 @@ static void NaNCheck(const Weight *w) {
 }
 
 
+unsigned WFST::set_normgroups(NormalizeMethod const& method, unsigned sid)
+{
+    unsigned id=sid;
+    norm_group_by group=method.group;
+    if (group==NONE)
+        return sid;
+    if (group==CONDITIONAL)
+        indexInput();
+    for (WFST_impl::NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
+        for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+            FSTArc & a=**g;
+            a.groupId=id;
+            //TODO:
+        }
+        ++id;
+    }
+
+    return id;
+}
+
+
 void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
 {
     norm_group_by group=method.group;
-    
+
     if (group==NONE)
         return;
     if (group==CONDITIONAL)
         indexInput();
 
     graehl::mean_field_scale const& scale=method.scale;
-    
+
     // NEW plan:
     // step 1: compute sum of counts for non-locked arcs, and divide it by (1-(sum of locked arcs)) to reserve appropriate counts for the locked arcs
     // step 2: for tied arc groups, add these inferred counts to the group state counts total.  also sum group arc counts total.
@@ -194,7 +215,7 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
     //   ... alternative: give locked arcs implied counts in the tie group; norm-group having tie-group arcs, with highest locked arc sum R divides unscaled tie group state counts total by (1-R) instead of dividing individual state counts by (1-sum).  this ensures that tied arcs are kept small enough to make room for locked ones in ALL states and should leave some room for normal arcs as well
     // step 4: give normal arcs their share of what's left, if anything
 
-
+    Weight addc=method.add_count;
     int pGroup;
     HashTable<IntKey, Weight> groupArcTotal;
     HashTable<IntKey, Weight> groupStateTotal;
@@ -203,11 +224,12 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
     for (WFST_impl::NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
 #ifdef DEBUGNORMALIZE
         Config::debug() << "Normgroup=" << g;
-#endif 
+#endif
         Weight sum,locked_sum; // =0, sum of probability of all arcs that has this input
         for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
             FSTArc & a=**g;
             Weight &w=a.weight;
+            w+=addc;
             if (isLocked(a.groupId)) //note: training does not set any counts for locked arcs.  so this is the original weight
                 locked_sum += w;
             else {
@@ -220,7 +242,7 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
         for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
             FSTArc const& a=**g;
             if ( isTied(pGroup = a.groupId) ) {
-                groupArcTotal[pGroup] += a.weight; // default init is to 0          
+                groupArcTotal[pGroup] += a.weight; // default init is to 0
                 groupStateTotal[pGroup] += sum;
                 Weight &m=groupMaxLockedSum[pGroup];
                 if (locked_sum > m)
@@ -246,7 +268,7 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
         // tied arc weight = sum (over arcs in tie group) of weight / sum (over arcs in tie group) of norm-group-total-weight
         // also, compute sum of normal arcs
         for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-            FSTArc & a=**g;   
+            FSTArc & a=**g;
             if ( isTied(pGroup=a.groupId) ) { // tied:
                 Weight groupNorm = *find_second(groupStateTotal,(IntKey)pGroup); // can be 0 if no counts at all for any states of group
                 Weight gmax=*find_second(groupMaxLockedSum,(IntKey)pGroup);
@@ -258,14 +280,14 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
                     if ( !gmax.isZero() )
                         groupNorm /= (one - gmax); // as described in NEW plan above: ensure tied arcs leave room for the worst case competing locked arcs sum in any norm-group
                     NANCHECK(groupNorm);
-                    
+
                     Weight groupTotal=*find_second(groupArcTotal,(IntKey)pGroup);
                     NANCHECK(groupTotal);
                     if (!groupTotal.isZero()) { // then groupNorm non0 also
                         a.weight =
                             scale(groupTotal)/scale(groupNorm)
                             ;
-                        
+
                         reserved += a.weight;
                     } else
                         a.weight.setZero();
@@ -278,12 +300,12 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
                 normal_sum+=a.weight;
             }
         }
-        
+
 #ifdef DEBUGNORMALIZE
         if ( reserved > 1.001 )
             Config::warn() << "Warning: sum of reserved arcs for " << g << " = " << reserved << " - should not exceed 1.0\n";
 #endif
-        
+
         // pass 2b: give normal arcs their share of however much is left
         Weight fraction_remain = 1.;
         fraction_remain -= reserved;
@@ -612,7 +634,7 @@ void WFST::removeMarkedStates(bool marked[])
     Assert(valid());
     int *oldToNew = NEW int[numStates()];
     unsigned n_pre=numStates();
-    
+
     if ( n_pre != graehl::indices_after_remove_marked(oldToNew,marked,n_pre) ) { // something removed
         stateNames.removeMarked(marked, oldToNew,n_pre);
         remove_marked_swap(states,marked); //states.removeMarked(marked);
@@ -621,7 +643,7 @@ void WFST::removeMarkedStates(bool marked[])
         }
         final = oldToNew[final]==-1 ? invalid_state : oldToNew[final];
     }
-    
+
     delete[] oldToNew;
 }
 
@@ -668,7 +690,7 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
     return paths;
 }
 
-    
+
 }
 
 #include <graehl/carmel/src/wfstio.cc>

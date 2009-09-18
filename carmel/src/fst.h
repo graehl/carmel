@@ -496,10 +496,62 @@ class WFST {
                            NONE //
     } ;
 
+    static char const* norm_group_name (norm_group_by n)
+    {
+        return (n==CONDITIONAL) ? "Conditional"
+            : (n==JOINT) ? "Joint"
+            : "None";
+    }
+
     struct NormalizeMethod
     {
         norm_group_by group;
         mean_field_scale scale;
+        Weight add_count;
+        NormalizeMethod() { set_default(); }
+        void set_default()
+        {
+            group=CONDITIONAL;
+            scale.set_default();
+            add_count=0;
+        }
+        void parse_group(char c)
+        {
+            if (c=='j'||c=='J') group=JOINT;
+            else if (c=='c'||c=='C') group=CONDITIONAL;
+            else group=NONE;
+        }
+        typedef std::string const& str;
+        struct f_group
+        {
+            static void set(NormalizeMethod &m,char c)
+            {
+                m.parse_group(c);
+            }
+            typedef char arg_type;
+            static char const* get(NormalizeMethod &m) { return norm_group_name(m.group); }
+
+            //static void set(NormalizeMethod &m,str s) {set(m,s[0]);}
+        };
+        struct f_scale
+        {
+            static void set(NormalizeMethod &m,double s)
+            {
+                m.scale.set_alpha(s);
+            }
+            typedef double arg_type;
+            static arg_type const& get(NormalizeMethod &m) { return m.scale.alpha; }
+            //static void set(NormalizeMethod &m,str s) {set(m,c[0]);}
+        };
+        struct f_prior
+        {
+            typedef Weight arg_type;
+            static void set(NormalizeMethod &m,Weight const& w)
+            {
+                m.add_count=w;
+            }
+            static arg_type const& get(NormalizeMethod &m) { return m.add_count; }
+        };
     };
 
     WFST(const WFST &a) { throw std::runtime_error("No copying of WFSTs allowed!"); }
@@ -1040,8 +1092,6 @@ class WFST {
         }
     };
 
-    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3
-    }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
 
 
     struct counting_schedule
@@ -1063,44 +1113,13 @@ class WFST {
         }
     };
 
-
-    // TODO: move more of the train params into here
-    struct train_opts
+    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3
+    }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
+    struct deriv_cache_opts
     {
         unsigned cache_level;
         std::string disk_cache_filename;
         size_t_bytes disk_cache_bufsize;
-
-        double learning_rate_growth_factor;
-        int ran_restarts;
-        random_restart_acceptor ra;
-
-        // for gibbs sampling
-        bool gibbs;
-        dynamic_array<double> priors;
-        bool unsupervised_decode;
-        // random choices have probs raised to 1/temperature(iteration) before coin flip
-        clamped_time_series<double> temperature(double iters) {
-            return clamped_time_series<double>(high_temp,low_temp,iters);
-        }
-        double high_temp,low_temp;
-        counting_schedule sched;
-        train_opts() { set_defaults(); }
-
-        void set_defaults()
-        {
-            high_temp=low_temp=1;
-            gibbs=false;
-            sched.set();
-            unsupervised_decode=false;
-            priors.clear();
-            cache_level=cache_nothing;
-            disk_cache_filename="/tmp/carmel.derivations.XXXXXX";
-            disk_cache_bufsize=256*1024*1024;
-            learning_rate_growth_factor=1.;
-            ran_restarts=0;
-            ra=random_restart_acceptor();
-        }
         bool use_disk() const
         {
             return cache_level == cache_disk;
@@ -1113,11 +1132,64 @@ class WFST {
         {
             return cache_level == cache_forward_backward;
         }
+        deriv_cache_opts() { set_defaults(); }
+        void set_defaults()
+        {
+            cache_level=cache_nothing;
+            disk_cache_filename="/tmp/carmel.derivations.XXXXXX";
+            disk_cache_bufsize=256*1024*1024;
+        }
+
     };
 
+    struct gibbs_opts
+    {
+        dynamic_array<double> priors;
+        bool unsupervised_decode;
+        // random choices have probs raised to 1/temperature(iteration) before coin flip
+        clamped_time_series<double> temperature(double iters) {
+            return clamped_time_series<double>(high_temp,low_temp,iters);
+        }
+        double high_temp,low_temp;
+        counting_schedule sched;
+        gibbs_opts() { set_defaults(); }
+        void set_defaults()
+        {
+            high_temp=low_temp=1;
+            sched.set();
+            unsupervised_decode=false;
+            priors.clear();
+        }
+    };
 
-    Weight train(training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts);
-    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethod const& method,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+    // set data field of arcs to int id of their normgroup (starting at idbase).  returns next free id. note: tied arcs ignored (TODO: set data field to list of normgroup ids to allow tying?)
+    unsigned set_normgroups(NormalizeMethod const& nm,unsigned idbase);
+
+    // TODO: move more of the train params into here
+    struct train_opts
+    {
+        deriv_cache_opts cache;
+
+        double learning_rate_growth_factor;
+        int ran_restarts;
+        random_restart_acceptor ra;
+
+        train_opts() { set_defaults(); }
+        void set_defaults()
+        {
+            cache.set_defaults();
+            learning_rate_growth_factor=1.;
+            ran_restarts=0;
+            ra=random_restart_acceptor();
+        }
+    };
+
+    typedef dynamic_array<NormalizeMethod> NormalizeMethods;
+
+    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods const& methods,train_opts const& topt, gibbs_opts const& gopt);
+
+    Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts);
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
 
 

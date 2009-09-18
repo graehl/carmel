@@ -15,20 +15,20 @@ template <class Cont>
 struct split_push_back
 {
     typedef typename Cont::value_type value_type;
-    
+
     Cont *c;
     split_push_back(Cont &cr) : c(&cr) {}
-    
+
     template <class Str>
-    bool operator()(Str const& s) 
+    bool operator()(Str const& s)
     {
         c->push_back(string_to<value_type>(s));
         return true;
     }
-    
+
 };
 
-    
+
 
 template <class Func>
 inline void split_noquote(
@@ -40,9 +40,10 @@ inline void split_noquote(
     using namespace std;
     string::size_type pos=0,nextpos;
     string::size_type delim_len=delim.length();
+    if (delim_len==0) delim_len=1;
 //    DBP2(delim,delim_len);
     while((nextpos=csv.find(delim,pos)) != string::npos) {
-//        DBP4(csv,pos,nextpos,string(csv,pos,nextpos-pos));        
+//        DBP4(csv,pos,nextpos,string(csv,pos,nextpos-pos));
         if (! f(string(csv,pos,nextpos-pos)) )
             return;
         pos=nextpos+delim_len;
@@ -50,7 +51,7 @@ inline void split_noquote(
     if (csv.length()!=0) {
 //        DBP4(csv,pos,csv.length(),string(csv,pos,csv.length()-pos));
         f(string(csv,pos,csv.length()-pos));
-    }    
+    }
 }
 
 template <class Cont>
@@ -80,7 +81,7 @@ BOOST_AUTO_TEST_CASE( TEST_io )
             split_noquote(s,make_expect_visitor(split_strs),*p);
         }
     }
-    
+
 }
 #endif
 
