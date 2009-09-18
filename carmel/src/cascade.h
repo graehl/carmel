@@ -19,6 +19,7 @@ struct cascade_parameters
 
     typedef std::vector<WFST *> cascade_t;
     cascade_t cascade; // (in no particular order) all the transducers that were composed together
+    //FIXME: would be nice to store composed in cascade if it's a trivial one.
     //FIXME: per arc and global prior per cascade member (training of a cascade w/ prior has weird interpretation now, want per-cascade as well or instead)
     typedef FSTArc * param;
 //    typedef unsigned param_id;
@@ -41,6 +42,11 @@ struct cascade_parameters
     epsilon_map_t epsilon_chains;
 
     typedef WFST::saved_weights_t saved_weights_t;
+
+    unsigned size() const
+    {
+        return trivial?1:cascade.size();
+    }
 
     void save_weights(WFST const&composed,saved_weights_t &save) const
     {
@@ -115,15 +121,15 @@ struct cascade_parameters
         composed.visit_arcs(v);
     }
 
-    void use_counts(WFST &composed,WFST::NormalizeMethod const& method)
+    void use_counts(WFST &composed,WFST::NormalizeMethods const& methods)
     {
         distribute_counts(composed);
-        normalize(composed,method);
+        normalize(composed,methods);
     }
 
-    void use_counts_final(WFST &composed,WFST::NormalizeMethod const& method)
+    void use_counts_final(WFST &composed,WFST::NormalizeMethods const& methods)
     {
-        use_counts(composed,method);
+        use_counts(composed,methods);
         update(composed);
     }
 
@@ -150,48 +156,58 @@ struct cascade_parameters
         // empty chain means: don't update the original arc in any way
     }
 
-    void normalize(WFST &composed,WFST::NormalizeMethod const& method)
+    unsigned set_normgroups(WFST &composed,WFST::NormalizeMethods const& methods,unsigned startid=0)
     {
         if (trivial)
-            composed.normalize(method);
-        else
-            normalize(method);
+            return composed.set_normgroups(methods[0],startid);
+        else {
+            unsigned id=startid;
+            for (unsigned i=0,n=cascade.size();i<n;++i)
+                id=cascade[i]->set_normgroups(methods[i],id);
+            return id;
+        }
     }
 
-    void normalize(WFST::NormalizeMethod const& method)
+    void normalize(WFST &composed,WFST::NormalizeMethods const& methods)
     {
-        for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
-             i!=e;++i)
-            (*i)->normalize(method);
+        if (trivial)
+            composed.normalize(methods[0]);
+        else
+            normalize(methods);
+    }
+
+    void normalize(WFST::NormalizeMethods const& methods)
+    {
+        for (unsigned i=0,n=cascade.size();i<n;++i)
+            cascade[i]->normalize(methods[i]);
     }
 
 
     void randomize()
     {
-        for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
-             i!=e;++i)
-            (*i)->randomSet();
+            for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
+                 i!=e;++i)
+                (*i)->randomSet();
+    }
+    void randomize(WFST &composed)
+    {
+        if (trivial)
+            composed.randomSet();
+        else
+            randomize();
     }
 
-    void normalize_and_update(WFST &composed,WFST::NormalizeMethod const& method)
+    void normalize_and_update(WFST &composed,WFST::NormalizeMethods const& methods)
     {
-        normalize(composed,method);
+        normalize(composed,methods);
         update(composed);
     }
 
-    void random_restart(WFST &composed,WFST::NormalizeMethod const& method)
+    void random_restart(WFST &composed,WFST::NormalizeMethods const& methods)
     {
-        if (trivial) {
-            composed.randomSet();
-            composed.normalize(method);
-        } else {
-            randomize();
-            //normalize_and_update(composed,method);
-            normalize(method); // update happens at top of random restarts loop already
-        }
+        randomize(composed);
+        normalize(composed,methods); // update happens at top of random restarts loop already
     }
-
-
 
     // not to be used on arcs that weren't composed via cascade
     void update_composed_arc(FSTArc &comp)

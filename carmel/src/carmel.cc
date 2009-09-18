@@ -242,8 +242,24 @@ typedef std::map<std::string,std::string> text_long_opts_t;
 
 struct carmel_main
 {
-
     ifstream post_b;
+    WFST::gibbs_opts gopt;
+    bool gibbs_opts()
+    {
+        bool gibbs = have_opt("gibbs");
+        if (gibbs) {
+            flags['t']=true;
+            flags['a']=true;
+            flags['?']=true;
+            long_opts["train-cascade"]=1;
+        }
+        get_opt("burnin",gopt.sched.burnin);
+        get_opt("epoch",gopt.sched.epoch);
+        gopt.unsupervised_decode = have_opt("unsupervised");
+        get_opt("high-temp",gopt.high_temp);
+        get_opt("low-temp",gopt.low_temp);
+        return gibbs;
+    }
 
     void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0)
     {
@@ -332,7 +348,86 @@ struct carmel_main
     long_opts_t &long_opts;
     text_long_opts_t &text_long_opts;
     Weight prune_wt;
-    WFST::NormalizeMethod norm_method;
+    char const**filenames;
+    unsigned nInputs;
+    void set_inputs(char const** fnm, unsigned N)
+    {
+        filenames=fnm;
+        nInputs=N;
+    }
+
+    typedef WFST::NormalizeMethod NM;
+    NM norm_method;
+    typedef dynamic_array<NM> NMs;
+    NMs nms;
+    template <class V>
+    struct field
+    {
+        typedef V arg_type;
+        static void set(V &v,V const& to) {v=to;}
+        static V const& get(V const&v) { return v; }
+    };
+    template <class V>
+    struct cell
+    {
+        V *v;
+        cell() : v(new V()) {}
+        template <class C0>
+        cell(C0 const& c0) : v(new V(c0)) {}
+        template <class C0,class C1>
+        cell(C0 const& c0,C1 const& c1) : v(new V(c0)) {}
+        ~cell() {delete v;}
+        operator V &() { return *v; }
+        operator V const&() const { return *v; }
+    };
+    template <class O,class Setter>
+    struct Putter
+    {
+        typedef typename Setter::arg_type arg_type;
+        cell<O> o;
+        Putter(O o) : o(o) {}
+        template <class Str>
+        bool operator()(Str const& s)
+        {
+            Setter::set(*o,string_to<arg_type>(s));
+            ++o;
+            return true;
+        }
+    };
+    template <class Setter,class V>
+    unsigned set_vector(std::string const& key,dynamic_array<V> &pr,char const* osep = " ^ ",char const* isep=",")
+    {
+        typedef typename dynamic_array<V>::iterator I;
+        split_noquote(text_long_opts[key],Putter<I,Setter>(pr.begin()),isep);
+        Config::log() << "Using input WFST --"<<key<<":\n";
+    unsigned i=0;
+        for (i=0 ; i < nInputs ; ++i) {
+            Config::log() << filenames[i];
+            Config::log() << osep << Setter::get(pr[i]);
+            Config::log() << std::endl;
+        }
+        Config::log() << std::endl;
+    return i;
+    }
+    template <class V>
+    void parse_vector(std::string const& key,dynamic_array<V> &pr,V const& zero=0,char const* osep = " ^ ",char const* isep=",")
+    {
+        unsigned i=set_vector<field<V> >(key,pr,osep,isep);
+        while (i<nInputs)
+            pr[i++]=zero;
+    }
+
+    NMs const& norms()
+    {
+        unsigned N=nInputs;
+        nms.clear();
+        nms.push_back_n(norm_method,N);
+        set_vector<NM::f_group>("normby",nms," norm by ","");
+        set_vector<NM::f_scale>("digamma",nms," digamma ",",");
+        set_vector<NM::f_prior>("priors",nms," add counts ",",");
+        return nms;
+    }
+
     Weight keep_path_ratio;
     int max_states;
 
@@ -346,7 +441,7 @@ struct carmel_main
     {
         long_opts_t::const_iterator i=long_opts.find(key);
         if (i==long_opts.end()) return false;
-        v=i->second;
+        v=(V)i->second;
         return true;
     }
 
@@ -769,12 +864,13 @@ main(int argc, char *argv[]){
             }
     }
     bool prunePath = flags['w'] || flags['z'];
-    train_opt.cache_level=flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing);
+    WFST::deriv_cache_opts &copt=train_opt.cache;
+    copt.cache_level=flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing);
     if (cm.have_opt("disk-cache-derivations")) {
-        train_opt.cache_level=WFST::cache_disk;
-        train_opt.disk_cache_filename=cm.set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
-        cm.get_default_opt("disk-cache-bufsize",train_opt.disk_cache_bufsize,"1M");
-        Config::log()<<"Disk cache of derivations will be created at "<<train_opt.disk_cache_filename<<" using read buffer of "<<train_opt.disk_cache_bufsize<<" bytes.\n";
+        copt.cache_level=WFST::cache_disk;
+        copt.disk_cache_filename=cm.set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
+        cm.get_default_opt("disk-cache-bufsize",copt.disk_cache_bufsize,"1M");
+        Config::log()<<"Disk cache of derivations will be created at "<<copt.disk_cache_filename<<" using read buffer of "<<copt.disk_cache_bufsize<<" bytes.\n";
     }
 
     srand(seed);
@@ -830,6 +926,7 @@ main(int argc, char *argv[]){
         filenames = parm;
     }
     istream *pairStream = NULL;
+    bool gibbs = cm.gibbs_opts();
     cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
     if ( !cascade.trivial )
         flags['t']=1;
@@ -889,6 +986,9 @@ main(int argc, char *argv[]){
         line_in=inputs[nTarget];
     }
     dynamic_array<double> exponents;
+    cm.set_inputs(filenames,nInputs);
+    cm.parse_vector("exponents",exponents,1.0," ^ ",",");
+    /*
     if (cm.have_opt("exponents")) {
         split_into(cm.text_long_opts["exponents"],exponents,",");
         Config::log() << "Using input WFST --exponents:\n";//<<exponents<<"\n";
@@ -899,31 +999,23 @@ main(int argc, char *argv[]){
             Config::log() << std::endl;
         }
         Config::log() << std::endl;
-    }
+        }*/
+    /*
+//    cm.parse_vector(filenames,nInputs,"priors",gopt.priors,0," ~ ");
     if (cm.have_opt("priors")) {
-        split_into(cm.text_long_opts["priors"],train_opt.priors,",");
+        dynamic_array<double> &pr=gopt.priors;
+        split_into(cm.text_long_opts["priors"],pr,",");
         Config::log() << "Using input WFST --priors:\n";//<<priors<<"\n";
         for (i=0 ; i < nInputs ; ++i) {
             Config::log() << filenames[i];
-            if (i >= train_opt.priors.size())
-                train_opt.priors.push_back(0);
-            Config::log() << "  ~ " << train_opt.priors[i];
+            if (i >= pr.size())
+                pr.push_back(0);
+            Config::log() << "  ~ " << pr[i];
             Config::log() << std::endl;
         }
         Config::log() << std::endl;
-    }
-    cm.get_opt("burnin",train_opt.sched.burnin);
-    cm.get_opt("epoch",train_opt.sched.epoch);
-    train_opt.gibbs = cm.have_opt("gibbs");
-    if (train_opt.gibbs) {
-        flags['t']=true;
-        flags['a']=true;
-        flags['?']=true;
-        long_opts["train-cascade"]=1;
-    }
-    train_opt.unsupervised_decode = cm.have_opt("unsupervised");
-    cm.get_opt("high-temp",train_opt.high_temp);
-    cm.get_opt("low-temp",train_opt.low_temp);
+        }*/
+
 
 
     for ( i = 0 ; i < nInputs ; ++i ) {
@@ -1184,13 +1276,20 @@ main(int argc, char *argv[]){
                 } else {
                     corpus.set_null();
                 }
-                unsigned rr=train_opt.ran_restarts;
-                if (long_opts["final-restart"])
-                    rr=(unsigned)long_opts["final-restart"];
-                WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
-                train_opt.ra=ran_accept;
 
-                result->train(cascade,corpus,cm.norm_method,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, train_opt);
+                carmel_main::NMs const& nms=cm.norms();
+                if (gibbs) {
+                    result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt);
+                } else {
+                    unsigned rr=train_opt.ran_restarts;
+                    if (long_opts["final-restart"])
+                        rr=(unsigned)long_opts["final-restart"];
+                    WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
+                    train_opt.ra=ran_accept;
+
+                    result->train(cascade,corpus,nms,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, train_opt);
+                }
+
                 if (!cascade.trivial) {
                     // write inputfilename.trained for each input
                     char const** chain_filenames=filenames+(chain-chainMemory);
@@ -1497,6 +1596,12 @@ cout <<         "\n"
 
     cout << "\n"
         "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n";
+
+    cout << "\n"
+        "--normby=JCCC : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional\n"
+        "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
+        "--digamma=0,,.5 : (gibbs/train-cascade) if digamma[n] is a number x, scale num and denom by exp(digamma(count+x)).  for variational bayes, choose digamma=0 and put the additional counts in --priors instead\n"
+        ;
 
     cout << "\n"
         "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, -a, and -? or --disk-cache-derivations.\n"

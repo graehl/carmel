@@ -10,15 +10,25 @@ struct mean_field_scale
 {
     bool linear; // if linear, then don't use alpha.  otherwise convert to exp(digamma(alpha+x))
     double alpha;
-    mean_field_scale() : linear(true),alpha(0) {}
-    
+    mean_field_scale() { set_default(); }
+    void set_default()
+    {
+        linear=true;
+        alpha=0;
+    }
+    void set_alpha(double a)
+    {
+        linear=false;
+        alpha=a;
+    }
+
     // returns exp(digamma(x))
     template <class Real>
-    logweight<Real> operator()(logweight<Real> const& x) const 
+    logweight<Real> operator()(logweight<Real> const& x) const
     {
         if (linear)
             return x;
-        typedef logweight<Real> W;        
+        typedef logweight<Real> W;
         double xa=x.getReal()+alpha;
         const double floor=.0002;
         static const W dig_floor(digamma(floor),false);
