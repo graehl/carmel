@@ -14,11 +14,12 @@
 
 namespace graehl {
 
-template <template<class X,class=std::allocator<X> >class C,class B,class F,class A,class Al>
-C<B,Al> map(C<A,Al> const& c,F f)
+template <template<class X,class=std::allocator<X> >class R,class C,class F>
+R<typename F::return_type,typename C::allocator_type::template rebind<typename F::return_type>::type> map(C const& c,F f)
 {
-    C<B,Al> ret;
-    for (typename C<A,Al>::const_iterator i=c.begin(),e=c.end();i!=e;++i)
+    //
+    R<typename F::return_type,typename C::allocator_type::template rebind<typename F::return_type>::type> ret;
+    for (typename C::const_iterator i=c.begin(),e=c.end();i!=e;++i)
         ret.push_back(f(*i));
     return ret;
 }
@@ -29,17 +30,6 @@ R map(C const& c,F f)
     R ret;
     for (typename C::const_iterator i=c.begin(),e=c.end();i!=e;++i)
         ret.push_back(f(*i));
-    return ret;
-}
-
-
-template <template<class X,class=std::allocator<X> >class C,class B,class F,class A,class Al>
-C<B,Al> mapn(C<A,Al> const& c, F f)
-{
-    C<B,Al> ret(c.size());
-    typename C<B,Al>::iterator o=ret.begin();
-    for (typename C<A,Al>::const_iterator i=c.begin(),e=c.end();i!=e;++i,++o)
-        *o=f(*i);
     return ret;
 }
 
@@ -259,6 +249,16 @@ void containertest() {
 }
 
 int plus1(int x) { return x-10; }
+struct F
+{
+    typedef unsigned return_type;
+    unsigned operator()(int x) const
+    {
+        return x-10;
+    }
+};
+
+
 BOOST_AUTO_TEST_CASE( TEST_CONTAINER )
 {
   maptest<HashS>();
@@ -268,6 +268,7 @@ BOOST_AUTO_TEST_CASE( TEST_CONTAINER )
   dynamic_array<int> a(10,2);
   a[1]=1;
   std::cout << a << "\n" << map<dynamic_array<int> >(a,plus1) << "\n";
+  std::cout << a << "\n" << map<dynamic_array>(a,F()) << "\n";
 }
 #endif
 }
