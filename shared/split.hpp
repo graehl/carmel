@@ -75,11 +75,12 @@ inline Cont split_string(
     std::string const& delim=","
     )
 {
-    Cont ret;
+    Cont c;
     split_noquote(str,split_string_push_back<Cont>(c),delim);
+    return c;
 }
 
-std::vector<std::string> split(
+inline std::vector<std::string> split(
     std::string const& str,
     std::string const& delim=","
     )
