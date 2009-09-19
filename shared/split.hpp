@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE( TEST_io )
                 if (q[1])
                     s.append(sep);
             }
-            cout << sep << "\t"<< s << endl;
+            //cout << sep << "\t"<< s << endl;
             split_noquote(s,make_expect_visitor(split_strs),sep);
         }
     }
