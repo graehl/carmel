@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__HASH_FUNCTIONS_HPP
 #define GRAEHL__SHARED__HASH_FUNCTIONS_HPP
 
+//FIXME: hash_bytes_64 and hash_quads_64 don't agree
+
 // code treating uint64_t as array of two uint32_t made for failed nbest duplicate removal when -O and debug prints off, so try this:
 #define HASH_JENKINS_UINT64
 
@@ -22,7 +24,7 @@ static const uint32_t golden_ratio_fraction_32=2654435769U; // (floor of 2^32/go
 //#define GRAEHL_HASH64_STRUCT
 
 // to test hash_bytes_64 (slower)
-#define VALGRIND
+//#define VALGRIND
 
 
 // e.g. BSD has int64_t=int32_t
@@ -33,26 +35,26 @@ static const uint32_t golden_ratio_fraction_32=2654435769U; // (floor of 2^32/go
 #endif
 
 #ifdef GRAEHL_HASH64_STRUCT
-struct hash64_t 
+struct hash64_t
 {
     uint32_t v[2];
-    hash64_t(uint32_t a,uint32_t b) 
+    hash64_t(uint32_t a,uint32_t b)
     {
         v[0]=a;
         v[1]=b;
     }
     template <class I>
-    I as_int() const 
+    I as_int() const
     {
         assert(sizeof(I) <= sizeof(hash64_t));
         return *reinterpret_cast<I const*>(this);
     }
-    operator std::size_t () const 
+    operator std::size_t () const
     {
         return as_int<std::size_t>();
     }
     template <class O>
-    void print(O &o) const 
+    void print(O &o) const
     {
         o << v[0] << ',' << v[1];
     }
@@ -62,22 +64,22 @@ struct hash64_t
 
 static const hash64_t golden_ratio_fraction_64(0x9E3779B9U,0x7F4A7C15U);
 
-inline uint32_t & first_quad(hash64_t &h) 
+inline uint32_t & first_quad(hash64_t &h)
 {
     return h.v[0];
 }
 
-inline uint32_t & second_quad(hash64_t &h) 
+inline uint32_t & second_quad(hash64_t &h)
 {
     return h.v[1];
 }
 
-inline std::size_t hash_value(hash64_t const& h) 
+inline std::size_t hash_value(hash64_t const& h)
 {
     return h.as_int<std::size_t>();
 }
 
-inline uint64_t uint64_from(hash64_t const& h) 
+inline uint64_t uint64_from(hash64_t const& h)
 {
     return h.as_int<uint64_t>();
 }
@@ -89,24 +91,24 @@ typedef uint64_t hash64_t;
 
 static const hash64_t golden_ratio_fraction_64=0x9E3779B97F4A7C15ULL; // (floor of 2^64/golden_ratio)
 
-inline uint32_t & first_quad(hash64_t &h) 
+inline uint32_t & first_quad(hash64_t &h)
 {
     assert(sizeof(hash64_t)==2*sizeof(uint32_t));
     return reinterpret_cast<uint32_t*>(&h)[0];
 }
 
-inline uint32_t & second_quad(hash64_t &h) 
+inline uint32_t & second_quad(hash64_t &h)
 {
     return reinterpret_cast<uint32_t*>(&h)[1];
 }
 
-inline std::size_t hash_value(hash64_t const& h) 
+inline std::size_t hash_value(hash64_t const& h)
 {
     assert(sizeof(std::size_t) <= sizeof(hash64_t));
     return *reinterpret_cast<std::size_t const*>(&h);
 }
 
-inline uint64_t uint64_from(hash64_t const& h) 
+inline uint64_t uint64_from(hash64_t const& h)
 {
     return h;
 }
@@ -122,10 +124,10 @@ inline hash64_t hash_quads_64(
 {
 #ifdef HASH_JENKINS_UINT64
     return hashword2(k,length_in_quads,uint64_from(seed));
-#else 
+#else
     hashword2(k,length_in_quads,&first_quad(seed),&second_quad(seed)); //FIXME: warning about breaking strict aliasing - how does one annotate code such that strict aliasing optimizations are (not) used?
     return seed;
-#endif 
+#endif
 }
 
 inline hash64_t hash_bytes_64(
@@ -135,10 +137,10 @@ inline hash64_t hash_bytes_64(
 {
 #ifdef HASH_JENKINS_UINT64
     return hashlittle2(k,length_in_bytes,uint64_from(seed));
-#else 
+#else
     hashlittle2(k,length_in_bytes,&first_quad(seed),&second_quad(seed));
     return seed;
-#endif 
+#endif
 }
 
 
@@ -182,20 +184,20 @@ inline std::size_t cstr_hash (const char *p)
 
 
 /// Bob Jenkins' "One at a time" hash: http://burtleburtle.net/bob/hash/doobs.html
-struct incremental_hasher 
+struct incremental_hasher
 {
     uint32_t a;
-      
+
     incremental_hasher(uint32_t seed=golden_ratio_fraction_32) : a(seed) {}
-      
+
     template <class C>
-    void append(C c) 
+    void append(C c)
     {
         a+=c;
         a+= a<<10;
         a^=a>>6;
     }
-      
+
     uint32_t val() const
     {
         uint32_t r=a;
@@ -270,7 +272,7 @@ inline boost::uint32_t uint32_hash(boost::uint32_t a)
     a = (a+0xd3a2646c) ^ (a<<9);
     a = (a+0xfd7046c5) + (a<<3);
     a = (a^0xb55a4f09) ^ (a>>16);
-#     endif 
+#     endif
 # else // not expensive
 #ifndef TRIVIAL_INT_HASH
     a *= golden_ratio_fraction_32; // mixes the lower bits into the upper bits, reversible
@@ -314,7 +316,7 @@ inline std::size_t hash_quads_null_term(unsigned const* a,unsigned max_words=1,u
 }
 
 template <class I1,class I2,class Hval>
-inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0) 
+inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0)
 {
     for (;i!=end;++i) {
         seed=mix_hash(seed,h(*i));
@@ -325,7 +327,7 @@ inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0)
 /// warning: due to the impossibility of detecting padding, only call this when
 /// sizeof(Val) is the actual initialized extent (i.e. no padding).
 template <class I1,class I2>
-inline hash64_t hash_range_pod(I1 i,I2 end,hash64_t seed=golden_ratio_fraction_64) 
+inline hash64_t hash_range_pod(I1 i,I2 end,hash64_t seed=golden_ratio_fraction_64)
 {
     for (;i!=end;++i)
         seed=hash_bytes_64(&*i,sizeof(typename std::iterator_traits<I1>::value_type),seed);
@@ -335,19 +337,19 @@ inline hash64_t hash_range_pod(I1 i,I2 end,hash64_t seed=golden_ratio_fraction_6
 
 /// only std::vector and similar (actual contiguous array layout) containers will work; others will segfault
 template <class Vec>
-inline hash64_t hash_pod_vector(Vec const& v,hash64_t seed=golden_ratio_fraction_64) 
+inline hash64_t hash_pod_vector(Vec const& v,hash64_t seed=golden_ratio_fraction_64)
 {
     typedef typename Vec::value_type Val;
     //FIXME: detect weird array alignment requirements e.g. to 8 bytes
-    if (sizeof(Val)%4 == 0) {
+    if (sizeof(Val)%8 == 0) { //FIXME: causing hash_pod_vector == hash_quads_64 to fail
         return hash_quads_64(reinterpret_cast<uint32_t const*>(&*v.begin()),(sizeof(Val)/sizeof(uint32_t))*v.size(),seed);
-    } else if (sizeof(Val)==2 || sizeof(Val)==1) {
+    } else if (/*sizeof(Val)%8 == 0 ||*/ sizeof(Val)==4 || sizeof(Val)==2 || sizeof(Val)==1) {
         return hash_bytes_64(&*v.begin(),sizeof(Val)*v.size(),seed);
     } else {
         // there's alignment to 4 bytes padding; so we can't trust it to be constant
 //        return hash_range(v.begin(),v.end(),boost::hash<Val>()); //,uint32_hash_f()
         return hash_range_pod(v.begin(),v.end(),seed);
-    }   
+    }
 }
 
 /* Paul Hsieh: http://www.azillionmonkeys.com/qed/hash.html - faster than Jenkins (and has same good properties) but only 32 bit hash value, no seed chaining (although chaining would be a minor tweak)
@@ -356,7 +358,7 @@ inline uint32_t hash_bytes_32 (void const* k, int len) {
     char const* data=(char const* )k;
     uint32_t hash = len, tmp;
     int rem;
-    
+
     if (len <= 0 || data == NULL) return 0;
 
     rem = len & 3;
@@ -405,7 +407,7 @@ inline uint32_t hash_bytes_32 (void const* k, int len) {
 
 namespace hash_test {
 template <class O>
-struct pod 
+struct pod
 {
     std::size_t i;
     O o;
@@ -433,12 +435,11 @@ void test_pod_hash()
     v.push_back(1);
     uint32_t *f=(uint32_t*)&v.front(),n=v.size()*sizeof(P)/sizeof(uint32_t);
     BOOST_CHECK_EQUAL(hash_pod_vector(v,seed),hash_quads_64(f,n,seed));
-    seed=0;    
+    seed=0;
     BOOST_CHECK_EQUAL(hash_pod_vector(v,seed),hash_quads_64(f,n,seed));
-    
 }
 
-    
+
 };
 
 
@@ -453,7 +454,7 @@ BOOST_AUTO_TEST_CASE( TEST_hash_function )
 }
 
 
-#endif 
+#endif
 
 
 #endif
