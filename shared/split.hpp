@@ -100,9 +100,14 @@ BOOST_AUTO_TEST_CASE( TEST_io )
         split_noquote(";,a;",make_expect_visitor(split_strs),";");
         for (char const **p=seps;*p;++p) {
             string s;
-            for (char const **q=split_strs;*q;++q)
+            char const* sep=*p;
+            for (char const **q=split_strs;*q;++q) {
                 s.append(*q);
-            split_noquote(s,make_expect_visitor(split_strs),*p);
+                if (q[1])
+                    s.append(sep);
+            }
+            cout << sep << "\t"<< s << endl;
+            split_noquote(s,make_expect_visitor(split_strs),sep);
         }
     }
 

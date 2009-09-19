@@ -1278,16 +1278,16 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 
 bool rm1[] = { 0,1,1,0,0,1,1 };
 bool rm2[] = { 1,1,0,0,1,0,0 };
-int a[] = { 1,2,3,4,5,6,7 };
-int a1[] = { 1, 4, 5 };
-int a2[] = {3,4,6,7};
+unsigned a[] = { 1,2,3,4,5,6,7 };
+unsigned a1[] = { 1, 4, 5 };
+unsigned a2[] = {3,4,6,7};
 #include <algorithm>
 #include <iterator>
 struct plus_one_reader {
-    typedef int value_type;
+    typedef unsigned value_type;
     template <class charT, class Traits>
     std::basic_istream<charT,Traits>&
-    operator()(std::basic_istream<charT,Traits>& in,int &l) const {
+    operator()(std::basic_istream<charT,Traits>& in,unsigned &l) const {
         in >> l;
         ++l;
         return in;
@@ -1297,13 +1297,13 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
 {
     using namespace std;
     {
-        const int N=10;
+        const unsigned N=10;
 
         StackAlloc al;
-        int aspace[N];
+        unsigned aspace[N];
         al.init(aspace,aspace+N);
         istringstream ina("(1 2 3 4)");
-        array<int> aint;
+        array<unsigned> aint;
         read(ina,aint,al);
         BOOST_CHECK(aint.size()==4);
         BOOST_CHECK(aint[3]==4);
@@ -1311,7 +1311,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     }
 
     {
-        fixed_array<fixed_array<int> > aa,ba;
+        fixed_array<fixed_array<unsigned> > aa,ba;
         std::string sa="(() (1) (1 2 3) () (4))";
         BOOST_CHECK(test_extract_insert(sa,aa));
         IndirectReader<plus_one_reader> reader;
@@ -1329,7 +1329,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     }
 
     {
-        fixed_array<fixed_array<int> > aa,ba;
+        fixed_array<fixed_array<unsigned> > aa,ba;
         std::string sa="(() (1) (1 2 3) () (4))";
         BOOST_CHECK(test_extract_insert(sa,aa));
         IndirectReader<plus_one_reader> reader;
@@ -1346,11 +1346,11 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
         BOOST_CHECK(ba[1][0]==2);
     }
     {
-        dynamic_array<int> a;
+        dynamic_array<unsigned> a;
         a.at_grow(5)=1;
         BOOST_CHECK(a.size()==5+1);
         BOOST_CHECK(a[5]==1);
-        for (int i=0; i < 5; ++i)
+        for (unsigned i=0; i < 5; ++i)
             BOOST_CHECK(a.at(i)==0);
     }
     const unsigned sz=7;
@@ -1370,10 +1370,10 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     }
 
     using namespace std;
-    array<int> aa(sz);
+    array<unsigned> aa(sz);
     BOOST_CHECK_EQUAL(aa.capacity(),sz);
-    dynamic_array<int> da;
-    dynamic_array<int> db(sz);
+    dynamic_array<unsigned> da;
+    dynamic_array<unsigned> db(sz);
     BOOST_CHECK(db.capacity() == sz);
     copy(a,a+sz,aa.begin());
     copy(a,a+sz,back_inserter(da));
@@ -1385,26 +1385,26 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     BOOST_CHECK(search(a,a+sz,da.begin(),da.end())==a); // tests push_back
     BOOST_CHECK(search(a,a+sz,db.begin(),db.end())==a); // tests push_back
     BOOST_CHECK(search(da.begin(),da.end(),aa.begin(),aa.end())==da.begin());
-    for (int i=0;i<sz;++i) {
+    for (unsigned i=0;i<sz;++i) {
         BOOST_CHECK(a[i]==aa.at(i));
         BOOST_CHECK(a[i]==da.at(i));
         BOOST_CHECK(a[i]==db(i));
     }
     BOOST_CHECK(da==aa);
     BOOST_CHECK(db==aa);
-    const int sz1=3,sz2=4;;
+    const unsigned sz1=3,sz2=4;;
     da.removeMarked_nodestroy(rm1); // removeMarked
     BOOST_REQUIRE(da.size()==sz1);
-    for (int i=0;i<sz1;++i)
+    for (unsigned i=0;i<sz1;++i)
         BOOST_CHECK(a1[i]==da[i]);
     db.removeMarked_nodestroy(rm2);
     BOOST_REQUIRE(db.size()==sz2);
-    for (int i=0;i<sz2;++i)
+    for (unsigned i=0;i<sz2;++i)
         BOOST_CHECK(a2[i]==db[i]);
     array<int> d1map(sz),d2map(sz);
     BOOST_CHECK(3==new_indices(rm1,rm1+sz,d1map.begin()));
     BOOST_CHECK(4==new_indices(rm2,rm2+sz,d2map.begin()));
-    int c=0;
+    unsigned c=0;
     for (unsigned i=0;i<d1map.size();++i)
         if (d1map[i]==-1)
             ++c;
@@ -1412,21 +1412,21 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
             BOOST_CHECK(da[d1map[i]]==aa[i]);
 
 // remove_marked_swap
-    std::vector<int> ea(aa.begin(),aa.end());
-    dynamic_array<int> eb(ea.begin(),ea.end());
+    std::vector<unsigned> ea(aa.begin(),aa.end());
+    dynamic_array<unsigned> eb(ea.begin(),ea.end());
     BOOST_CHECK_EQUAL_COLLECTIONS(ea.begin(),ea.end(),aa.begin(),aa.end());
     remove_marked_swap(ea,rm1); // removeMarked
     BOOST_REQUIRE(ea.size()==sz1);
-    for (int i=0;i<sz1;++i)
+    for (unsigned i=0;i<sz1;++i)
         BOOST_CHECK(a1[i]==ea[i]);
     remove_marked_swap(eb,rm2);
     BOOST_REQUIRE(eb.size()==sz2);
-    for (int i=0;i<sz2;++i)
+    for (unsigned i=0;i<sz2;++i)
         BOOST_CHECK(a2[i]==eb[i]);
 
     std::vector<int> o2n(aa.size());
     BOOST_CHECK_EQUAL(indices_after_remove_marked(array_begin(o2n),rm1,7),ea.size());
-    for (int i=0;i<aa.size();++i)
+    for (unsigned i=0;i<aa.size();++i)
         if (o2n[i]==-1) {
             BOOST_CHECK_EQUAL(rm1[i],1);
         } else {
@@ -1444,8 +1444,8 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     std::string emptya=" ()";
     std::string emptyb="()";
     {
-        array<int> a;
-        dynamic_array<int> b;
+        array<unsigned> a;
+        dynamic_array<unsigned> b;
         istringstream iea(emptya);
         iea >> a;
         stringstream o;
@@ -1460,7 +1460,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     string sa="( 2 ,3 4\n \n\t 5,6)";
     string sb="(2 3 4 5 6)";
 
-#define EQIOTEST(A,B)  do { A<int> a;B<int> b;stringstream o;istringstream isa(sa);isa >> a;    \
+#define EQIOTEST(A,B)  do { A<unsigned> a;B<unsigned> b;stringstream o;istringstream isa(sa);isa >> a;    \
         o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);} while(0)
 
     EQIOTEST(array,array);
