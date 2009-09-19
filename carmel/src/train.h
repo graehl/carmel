@@ -10,7 +10,7 @@ namespace graehl {
 void check_fb_agree(Weight f,Weight b);
 void training_progress(unsigned train_example_no);
 
-struct arc_counts 
+struct arc_counts
 {
     unsigned src;
     unsigned dest() const
@@ -25,18 +25,18 @@ struct arc_counts
     {
         return arc->out;
     }
-    int groupId() const 
+    int groupId() const
     {
         return arc->groupId;
     }
-    
     FSTArc *arc;
+//    double gibbscount;
     Weight scratch;
     Weight em_weight;
     Weight best_weight;
     Weight counts;
     Weight prior_counts;
-    Weight &weight() const 
+    Weight &weight() const
     {
         return arc->weight;
     }
@@ -44,9 +44,9 @@ struct arc_counts
 
 std::ostream& operator << (std::ostream &o,arc_counts const& ac);
 
-    
 
-struct DWPair {    
+
+struct DWPair {
     unsigned dest; // to allow reverse forward = backward version
     unsigned id; // to arc_counts table
     DWPair(DWPair const& o) : dest(o.dest),id(o.id) {}
@@ -100,7 +100,7 @@ struct IOSymSeq {
     symSeq i;
     symSeq o;
     FLOAT_TYPE weight;
-    IOSymSeq(List<int> const&inSeq, List<int> const&outSeq, FLOAT_TYPE w) 
+    IOSymSeq(List<int> const&inSeq, List<int> const&outSeq, FLOAT_TYPE w)
     {
         init(inSeq,outSeq,w);
     }
@@ -132,16 +132,16 @@ struct IOSymSeq {
             o.let=NULL;
         }
     }
-    IOSymSeq(IOSymSeq const& o) 
+    IOSymSeq(IOSymSeq const& o)
     {
         init(o.i,o.o,o.weight);
     }
-    
-    ~IOSymSeq() 
+
+    ~IOSymSeq()
     {
         kill();
     }
-    
+
     template <class O,class Alphabet>
     void print(O &os,Alphabet const& in,Alphabet const& out,char const* term="\n") const
     {
@@ -155,7 +155,7 @@ struct IOSymSeq {
     {
         print(o,x.in_alph(),x.out_alph(),term);
     }
-    
+
 };
 
 std::ostream & operator << (std::ostream & out , const IOSymSeq & s);   // Yaser 7-21-2000
@@ -171,8 +171,8 @@ class training_corpus : boost::noncopyable
         w_input=w_output=totalEmpiricalWeight=0;
         examples.clear();
     }
-    
-    void add(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight=1.) 
+
+    void add(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight=1.)
     {
         examples.push_front(inSeq,outSeq,weight);
         IOSymSeq const& n=examples.front();
@@ -185,7 +185,7 @@ class training_corpus : boost::noncopyable
         if (maxOut<o) maxOut=o;
         totalEmpiricalWeight += weight;
     }
-    void finish_adding() 
+    void finish_adding()
     {
         examples.reverse();
     }
@@ -194,7 +194,7 @@ class training_corpus : boost::noncopyable
         clear();
         List<int> empty_list;
         add(empty_list, empty_list, 1.0);
-    }    
+    }
 
 //    bool cache_derivations;
     unsigned maxIn, maxOut; // highest index (N-1) of input,output symbols respectively.

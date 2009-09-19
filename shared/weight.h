@@ -106,7 +106,7 @@ struct logweight {                 // capable of representing nonnegative reals
     // 32 * ln 10 =~ 73
     // double goes up to 2^1027, loses precision at say 2^119?  119 * ln 2 = 82
 //  enum make_not_anon_26 {LN_TILL_UNDERFLOW=} ;
-    static inline Real LN_TILL_UNDERFLOW() 
+    static inline Real LN_TILL_UNDERFLOW()
     {
         return UNDERFLOW_LN;
     }
@@ -165,8 +165,8 @@ struct logweight {                 // capable of representing nonnegative reals
         return thresh;
     }
 
-    
-    
+
+
     template<class A,class B> static std::basic_ostream<A,B>&
     out_default_base(std::basic_ostream<A,B>& os) { os.iword(base_index) = DEFAULT_BASE; return os; }
     template<class A,class B> static std::basic_ostream<A,B>&
@@ -199,14 +199,20 @@ struct logweight {                 // capable of representing nonnegative reals
     //}
 
     //  *this > o <=>  returned ratio > 1 (bigger is worse).  unlike *this/o, this is scale invariant
-    self_type relative_perplexity_ratio(self_type const& o) const 
+    self_type relative_perplexity_ratio(self_type const& o) const
     {
         return (*this/o).root(std::fabs(getLogImp())); // EM delta=(L'-L)/abs(L')
     }
-    
+
     double getReal() const {
         return std::exp(weight);
     }
+    // weight -> (double -> weight  xtor) problem?  make it explicit?
+    operator double() const
+    {
+        return getReal();
+    }
+
     void setRandomFraction() {
         setReal(random_pos_fraction());
     }
@@ -227,11 +233,11 @@ struct logweight {                 // capable of representing nonnegative reals
     Real getLn() const {
         return weight;
     }
-    Real getNegLn() const 
+    Real getNegLn() const
     {
         return -weight;
     }
-    Real getNegLog10() const 
+    Real getNegLog10() const
     {
         static const Real neg_oo_ln10 = -1./log(10.f);
         return neg_oo_ln10 * weight;
@@ -313,11 +319,11 @@ struct logweight {                 // capable of representing nonnegative reals
     static self_type ZERO() {
         return self_type();
     }
-    static self_type ONE() 
+    static self_type ONE()
     {
         return self_type(one_weight());
     }
-    
+
     static self_type  INF() {
         return self_type(false,false);
     }
@@ -348,12 +354,12 @@ struct logweight {                 // capable of representing nonnegative reals
 //    logweight(std::size_t f) {setReal(f);}
     logweight(int f) {setReal(f);}
     logweight(unsigned f) {setReal(f);}
-    logweight(self_type const& base,Real power) 
+    logweight(self_type const& base,Real power)
     {
         weight=base.weight*power;
     }
-    
-    logweight(const std::string &str) 
+
+    logweight(const std::string &str)
     {
         /*
           std::istringstream is(str);
@@ -364,7 +370,7 @@ struct logweight {                 // capable of representing nonnegative reals
         if (!setString(str))
             throwbadweight();
     }
-    explicit logweight(const char *str) 
+    explicit logweight(const char *str)
     {
         if (!setString(str))
             throwbadweight();
@@ -372,9 +378,9 @@ struct logweight {                 // capable of representing nonnegative reals
     logweight(const char *begin, const char *end)
     {
         if (!setString(begin,end))
-            throwbadweight();    
+            throwbadweight();
     }
-    
+
 #endif
     self_type &operator += (self_type w)
     {
@@ -419,7 +425,7 @@ struct logweight {                 // capable of representing nonnegative reals
         return *this;
     }
     self_type inverse() {
-        return self_type(-weight,false);    
+        return self_type(-weight,false);
     }
     self_type &takeRoot(Real nth) {
 #ifdef WEIGHT_CORRECT_ZERO
@@ -454,11 +460,11 @@ struct logweight {                 // capable of representing nonnegative reals
     }
 
     // -1: a<b 0: a==b 1: a>b
-    inline friend int cmp(self_type const& a,self_type const& b) 
+    inline friend int cmp(self_type const& a,self_type const& b)
     {
         return a.cmp(b);
     }
-    
+
     self_type &operator ^= (Real power) { // raise self_type^power
         raisePower(power);
         return *this;
@@ -493,27 +499,27 @@ struct logweight {                 // capable of representing nonnegative reals
         o.precision(old_precision);
         return GENIOGOOD;
     }
-    void throwbadweight() 
+    void throwbadweight()
     {
-        throw "bad logweight";            
+        throw "bad logweight";
     }
-    
-    bool setString(const std::string &str) 
+
+    bool setString(const std::string &str)
     {
         const char *beg=str.c_str(), *end=beg+str.length();
         return setStringPartial(beg,end)==end;
     }
-    bool setString(const char *str) 
+    bool setString(const char *str)
     {
         const char *end = str+std::strlen(str);
         return setStringPartial(str,end)==end;
     }
-    bool setString(const char *str, const char *end) 
+    bool setString(const char *str, const char *end)
     {
         return setStringPartial(str,end)==end;
-    }    
+    }
     // reads from b up to as much as end, returning one past last read character, or NULL if error
-    char *setStringPartial(const char *b, const char *end) 
+    char *setStringPartial(const char *b, const char *end)
     {
         char *e;
         if (b+1<end && b[0]=='e' && b[1] == '^') {
@@ -531,22 +537,22 @@ struct logweight {                 // capable of representing nonnegative reals
                 } else if (e[1]=='o' && e[2]=='g') {
                     setLog10(d);
                     return e+3;
-                } else                
+                } else
                     return 0;
             } else {
                 setReal(d);
                 return e;
-            }            
+            }
         }
         return 0;
     }
     template <class O>
-    void print_base(O &o,Real base) const 
+    void print_base(O &o,Real base) const
     {
         o << base << '^' << getLog(base);
     }
-    
-    
+
+
     template<class charT, class Traits>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
         char c;
@@ -567,7 +573,7 @@ struct logweight {                 // capable of representing nonnegative reals
                 setLog10((Real)f);
             }
         }
-        
+
         if ( in.fail() )
             goto fail;
         if ( in.eof() ) {
@@ -609,11 +615,11 @@ struct logweight {                 // capable of representing nonnegative reals
         }
         TO_OSTREAM_PRINT
     };
-    base_printer as_base(Real base) const 
+    base_printer as_base(Real base) const
     {
         return base_printer(base,*this);
     }
-    
+
 };
 
 
@@ -907,7 +913,7 @@ BOOST_AUTO_TEST_CASE( TEST_WEIGHT )
     BOOST_CHECK(a==b);
     BOOST_CHECK(a==c);
     BOOST_CHECK(a==d);
-    BOOST_CHECK(a==e);    
+    BOOST_CHECK(a==e);
 }
 #endif
 
@@ -934,7 +940,7 @@ class numeric_limits<graehl::logweight<Real> > : public std::numeric_limits<Real
 //    BOOST_STATIC_CONSTANT(int,radix=10);
 //    BOOST_STATIC_CONSTANT(int,digits=std::numeric_limits<Real>::digits10*extra_digits_factor);
 //    BOOST_STATIC_CONSTANT(int,digits10=std::numeric_limits<Real>::digits10*extra_digits_factor);
-    
+
     //FIXME: add rest
     /*
       namespace std {

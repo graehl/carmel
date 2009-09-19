@@ -43,9 +43,9 @@
 
 #ifdef GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT
 # define dynarray_assert(x) assert(x)
-#else 
+#else
 # define dynarray_assert(x)
-#endif 
+#endif
 //#include <boost/type_traits.hpp>
 
 namespace graehl {
@@ -71,13 +71,13 @@ protected:
     T *vec;
     T *endspace;
 public:
-    static inline size_type bytes(size_type n) 
+    static inline size_type bytes(size_type n)
     {
         return sizeof(T)*n;
-    }    
+    }
     BOOST_STATIC_CONSTANT(bool,REPLACE=0);
     BOOST_STATIC_CONSTANT(bool,APPEND=1);
-    
+
     BOOST_STATIC_CONSTANT(bool,BRIEF=0);
     BOOST_STATIC_CONSTANT(bool, MULTILINE=1);
 
@@ -113,7 +113,7 @@ public:
     inline friend void swap(self_type &a,self_type &b) throw()
     {
         a.swap(b);
-    }    
+    }
     array<T,Alloc> substr(unsigned start) const
     {
         return substr(start,size());
@@ -227,33 +227,33 @@ public:
     // okay to shallow copy since we don't automatically destroy anything
     template <class Alloc2>
     array(const array<T,Alloc2>&o) : vec(o.vec),endspace(o.endspace) {}
-    
+
     template <class Alloc2>
     const self_type & operator =(const array<T,Alloc2>&o) {
         vec=o.vec;
         endspace=o.endspace;
         return *this;
     }
-    
+
     explicit array(const char *c) {
         std::istringstream(c) >> *this;
     }
-    
+
     // create array reference to a STL vector - note: I *believe* stdc++ requires storage be contiguous, i.e. iterators be pointers ... if not, nonportable
-    explicit array(std::vector<T> &vec) 
+    explicit array(std::vector<T> &vec)
     {
         init(vec);
     }
-    void init(std::vector<T> &vector) 
+    void init(std::vector<T> &vector)
     {
         vec=&(vector.front());
         set_capacity(vector.size());
     }
-    
-    
+
+
     //FIXME: unsafe: etc. I'm relying on contiguousness of std::vector storage
     template <class A2>
-    array(std::vector<T,A2> &source,unsigned starti,unsigned endi) 
+    array(std::vector<T,A2> &source,unsigned starti,unsigned endi)
     {
         dynarray_assert(endi <= source.size());
         vec=&(source[starti]);
@@ -262,7 +262,7 @@ public:
 
     template <class A2>
     array(typename std::vector<T,A2>::const_iterator begin,typename std::vector<T,A2>::const_iterator end) : vec(const_cast<T *>(&*begin)), endspace(const_cast<T *>(&*end)) { }
-    
+
     array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
     array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
     explicit array(unsigned sp=4) { alloc(sp); }
@@ -277,7 +277,7 @@ public:
     unsigned size() const { return capacity(); }
     T * begin() { return vec; }
     T * end() {       return endspace;      }
-    reverse_iterator rbegin() 
+    reverse_iterator rbegin()
     {
         return reverse_iterator(end());
     }
@@ -285,7 +285,7 @@ public:
     {
         return reverse_iterator(begin());
     }
-    
+
     const T* begin() const {
         return vec;
     }
@@ -301,7 +301,7 @@ public:
     {
         return const_reverse_iterator(begin());
     }
-    
+
     const T* const_begin() const {
         return vec;
     }
@@ -362,14 +362,14 @@ private:
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
  public:
-    inline friend void swap(self_type &a,self_type &b) 
+    inline friend void swap(self_type &a,self_type &b)
     {
         a.swap(b);
-    }    
+    }
 };
 
 template <class T,class Alloc>
-inline bool operator < (array<T,Alloc> &a,array<T,Alloc> &b) 
+inline bool operator < (array<T,Alloc> &a,array<T,Alloc> &b)
 {
     return std::lexicographical_compare(a.begin(),a.end(),b.begin(),b.end());
 }
@@ -382,28 +382,32 @@ template <typename T,typename Alloc=std::allocator<T> > class dynamic_array;
 template <typename T,typename Alloc=std::allocator<T> > class fixed_array : public auto_array<T,Alloc> {
 public:
     typedef auto_array<T,Alloc> Super;
-    explicit fixed_array(std::size_t sp=0) : Super(sp) {
+    explicit fixed_array() : Super(0) {  }
+    explicit fixed_array(std::size_t sp) : Super(sp) {
         this->construct();
+    }
+    explicit fixed_array(T const& t,std::size_t sp) : Super(sp) {
+        this->construct(t);
     }
     ~fixed_array() {
         this->destroy();
         //~Super(); // happens implicitly!
     }
-    void clear() 
+    void clear()
     {
         this->destroy();
         this->dealloc();
     }
 
     // pre: capacity is 0
-    void init(std::size_t sp) 
+    void init(std::size_t sp)
     {
         assert(this->capacity()==0);
         this->alloc(sp);
         this->construct();
     }
-    
-    void reinit(std::size_t sp) 
+
+    void reinit(std::size_t sp)
     {
         if (sp==this->capacity()) {
             this->destroy();
@@ -413,7 +417,7 @@ public:
             reinit(sp);
         }
     }
-    
+
     template <class charT, class Traits, class Reader>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
         this->destroy();
@@ -429,7 +433,7 @@ public:
         dynarray_assert(e-b == this->capacity());
         std::uninitialized_copy(b,e,this->begin());
     }
-    fixed_array(T const& t,std::size_t sp) : Super(sp) 
+    fixed_array(T const& t,std::size_t sp) : Super(sp)
     {
         this->construct(t);
     }
@@ -533,7 +537,7 @@ public:
     }
 
     template<class RIT>
-    dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b) : array<T,Alloc>(b-a) 
+    dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b) : array<T,Alloc>(b-a)
     {
         std::uninitialized_copy(a,b,this->begin());
         endv=this->endspace;
@@ -541,29 +545,29 @@ public:
     }
 
     template<class Iter>
-    void append(Iter a,Iter const& b) 
+    void append(Iter a,Iter const& b)
     {
         for (;a!=b;++a) {
             push_back(*a);
         }
     }
-    
+
     template<class Iter>
-    void set(Iter a,Iter const& b) 
+    void set(Iter a,Iter const& b)
     {
         clear();
         append(a,b);
     }
 
     template <class C>
-    void set(C const& c) 
+    void set(C const& c)
     {
         clear();
         reserve(c.size());
         append(c.begin(),c.end());
     }
-    
-    
+
+
     // warning: stuff will still be destructed!
     void copyto(T *to,T * from,size_type n) {
         memcpy(to,from,bytes(n));
@@ -587,7 +591,7 @@ public:
 
     typedef typename Base::const_reverse_iterator const_reverse_iterator;
     typedef typename Base::reverse_iterator reverse_iterator;
-    
+
     const_reverse_iterator rbegin() const
     {
         return const_reverse_iterator(end());
@@ -597,7 +601,7 @@ public:
     {
         return reverse_iterator(end());
     }
-    
+
     T* end()  { // array code that uses vec+space for boundschecks is duplicated below
         dynarray_assert(this->invariant());
         return endv;
@@ -677,7 +681,7 @@ public:
     inline void push_back(T0 const& t0)
     {
         new(push_back_raw()) T(t0);
-    }    
+    }
     template <class T0,class T1>
     inline void push_back(T0 const& t0,T1 const& t1)
     {
@@ -688,7 +692,7 @@ public:
     {
         new(push_back_raw()) T(t0,t1,t2);
     }
-    
+
     void push_back_n(const T& val,size_type n)
     {
         dynarray_assert(invariant());
@@ -722,10 +726,10 @@ public:
         return size()==0;
         //    return vec==endvec;
     }
-    
+
 
     template <class Better_than_pred>
-    void push_keeping_front_best(T &t,Better_than_pred better) 
+    void push_keeping_front_best(T &t,Better_than_pred better)
     {
         throw "untested";
         push_back(t);
@@ -733,7 +737,7 @@ public:
             return;
         swap(front(),back());
     }
-    
+
     T &at_grow(size_type index) {
         T *r=this->vec+index;
         if (r >= end()) {
@@ -770,11 +774,11 @@ public:
         graehl::remove_marked_swap(*this,marked);
     }
 
-    inline friend void swap(self_type &a,self_type &b) 
+    inline friend void swap(self_type &a,self_type &b)
     {
         a.swap(b);
     }
-    
+
     void removeMarked_nodestroy(bool marked[]) {
         size_type sz=size();
         if ( !sz ) return;
@@ -815,14 +819,14 @@ public:
 //  operator T *() { return this->vec; } // use at own risk (will not be valid after resize)
     // use begin() instead
 protected:
-    void construct_n_more(size_type n) 
+    void construct_n_more(size_type n)
     {
         Assert(endv+n <= this->endspace);
         while (n--)
             new (endv++) T();
     }
 
-    void resize_up(size_type new_sz) 
+    void resize_up(size_type new_sz)
     {
         size_type sz=size();
         dynarray_assert(new_sz > size());
@@ -830,7 +834,7 @@ protected:
         construct_n_more(new_sz-sz);
         Assert(size()==new_sz);
     }
-    
+
     void realloc_up(size_type new_cap) {
         //     we are somehow allowing 0-capacity vectors now?, so add 1
         //if (new_cap==0) new_cap=1;
@@ -859,18 +863,18 @@ public:
         a&sz;
         if (A::is_loading) {
             reserve_at_least(sz);
-            set_size(sz);            
+            set_size(sz);
         }
         a.binary(this->vec,bytes(sz));
     }
 #else
     template <class A>
-    void serialize(A &a) 
+    void serialize(A &a)
     {
         serialize_container(a,*this);
     }
-    
-#endif 
+
+#endif
     void resize(size_type newSz) {
         dynarray_assert(invariant());
         //    if (newSz==0) newSz=1;
@@ -886,7 +890,7 @@ public:
     }
     //iterator_tags<Input> == random_access_iterator_tag
     template <class Input>
-    void insert(iterator pos,Input from,Input to) 
+    void insert(iterator pos,Input from,Input to)
     {
         if (pos==end()) {
             append(from,to);
@@ -904,13 +908,13 @@ public:
             while(pto!=pos) { // this should now happen n_new times
                 dynarray_assert(to!=from);
                 *--pto=*--to;
-            }            
+            }
         }
     }
-    
-    //iterator_tags<Input> == random_access_iterator_tag    
+
+    //iterator_tags<Input> == random_access_iterator_tag
     template <class Input>
-    void append_ra(Input from,Input to) 
+    void append_ra(Input from,Input to)
     {
         /*
         std::size_t n_new=to-from;
@@ -922,30 +926,30 @@ public:
         append_n(from,to-from);
     }
 
-    //iterator_tags<Input> == random_access_iterator_tag    
+    //iterator_tags<Input> == random_access_iterator_tag
     template <class Input>
-    void append_n(Input from,size_type n) 
+    void append_n(Input from,size_type n)
     {
         reserve(size()+n);
         while (n-- > 0)
             new(endv++) T(*from++);
 //        dynarray_assert(invariant());
     }
-    
+
     // could just use copy, back_inserter
     template <class Input>
-    void append_push_back(Input from,Input to) 
+    void append_push_back(Input from,Input to)
     {
         while (from!=to)
             push_back(*from++);
     }
 
-    static inline size_type bytes(size_type n) 
+    static inline size_type bytes(size_type n)
     {
         return sizeof(T)*n;
     }
-    
-    
+
+
     void compact() {
         dynarray_assert(invariant());
         if (endv==this->endspace) return;
@@ -1015,12 +1019,12 @@ public:
         dynarray_assert(invariant() && n<=size());
         endv=this->vec+n;
     }
-    void clear_dealloc_nodestroy() 
+    void clear_dealloc_nodestroy()
     {
         dealloc_safe();
         endv=this->vec=this->endspace=0;
     }
-    
+
     void clear_nodestroy() {
         endv=this->vec;
     }
@@ -1117,7 +1121,7 @@ public:
             return GENIOBAD;
 #else
             //FIXME:
-            std::back_insert_iterator<self_type> appender(*this);            
+            std::back_insert_iterator<self_type> appender(*this);
             std::ios_base::iostate ret=
                 range_read(in,appender,read);
             if (ret == GENIOBAD)
@@ -1209,7 +1213,7 @@ operator <<
     return gen_inserter(os,arg);
 }
 */
-              
+
 #if 1
 #define ARRAYEQIMP                                              \
     if (l.size() != r.size()) return false;                     \
@@ -1432,8 +1436,8 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
         } else {
             BOOST_CHECK_EQUAL(aa[i],ea[o2n[i]]);
         }
-    
-    
+
+
     BOOST_CHECK(c==4);
     db(10)=1;
     BOOST_CHECK(db.size()==11);
@@ -1473,7 +1477,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
 } //graehl
 
 
-//FIXME: overriding std::swap is technically illegal, but this allows some dumb std::sort to swap, which it should have found in graehl::swap by arg. dependent lookup.  
+//FIXME: overriding std::swap is technically illegal, but this allows some dumb std::sort to swap, which it should have found in graehl::swap by arg. dependent lookup.
 namespace std {
 template <class T,class A>
 void swap(graehl::dynamic_array<T,A> &a,graehl::dynamic_array<T,A> &b) throw()

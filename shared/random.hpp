@@ -7,7 +7,7 @@
 #ifdef SOLARIS
 //# include <sys/int_types.h>
 //FIXME: needed for boost/random - report bug to boost.org? (actually no, had uint32_t, just bug in pass_through_engine.hpp trying to get uint32_t::base_type
-#endif 
+#endif
 
 #include <cmath> // also needed for boost/random :( (pow)
 #include <algorithm> // min for boost/random
@@ -15,17 +15,17 @@
 #ifdef USE_NONDET_RANDOM
 # ifndef LINUX
 #  undef USE_NONDET_RANDOM
-# else 
+# else
 #  include <boost/nondet_random.hpp>
 # if defined(GRAEHL__SINGLE_MAIN) || defined (RANDOM_SINGLE_MAIN)
 #  include "nondet_random.cpp"
 # endif
-#endif 
+#endif
 #endif
 
 #ifdef USE_STD_RAND
 # include <cstdlib>
-#endif 
+#endif
 
 #include <boost/scoped_array.hpp>
 
@@ -85,6 +85,12 @@ inline double random01() // returns uniform random number on [0..1)
 # endif
 }
 
+inline double random_less_than(double n) // random from [0..n)
+{
+    return n*random01();
+}
+
+
 inline double random_pos_fraction() // returns uniform random number on (0..1]
 {
 #ifdef  USE_STD_RAND
@@ -96,7 +102,7 @@ inline double random_pos_fraction() // returns uniform random number on (0..1]
 }
 
 template <class V1,class V2>
-inline V1 random_half_open(const V1 &v1, const V2 &v2) 
+inline V1 random_half_open(const V1 &v1, const V2 &v2)
 {
     return v1+random01()*(v2-v1);
 }
@@ -123,7 +129,7 @@ inline size_t random_less_than(size_t limit) {
 #endif
 }
 
-inline bool random_bool() 
+inline bool random_bool()
 {
     return random_less_than(2);
 }
@@ -158,8 +164,37 @@ inline std::string random_alpha_string(unsigned len) {
     return s.get();
 }
 
+// P(*It) = double probability (unnormalized)
+template <class It,class P>
+It choose_p(It begin,It end,P const& p)
+{
+    double sum=0.;
+    for (It i=begin;i!=end;++i)
+        sum+=P(*i);
+    double choice=sum*random01();
+    for (It i=begin;i!=end;++i) {
+        choice -= P(*i);
+        if (choice<0)
+            return i;
+    }
+    return end;
+}
+
+// as above but already normalized
+template <class It,class P>
+It choose_p01(It begin,It end,P const& p)
+{
+    double sum=0.;
+    double choice=random01();
+    for (It i=begin;i!=end;++i)
+        if (sum<choice) return i;
+        else sum+=P(*i);
+    return end;
+}
+
+
 template <class It>
-void randomly_permute(It begin,It end) 
+void randomly_permute(It begin,It end)
 {
     using std::swap;
     size_t N=end-begin;
@@ -173,7 +208,7 @@ void randomly_permute(V &vec)
 {
     using std::swap;
     size_t N=vec.size();
-    for (size_t i=0;i<N;++i) {        
+    for (size_t i=0;i<N;++i) {
         swap(vec[i],vec[random_up_to(i)]);
     }
 }

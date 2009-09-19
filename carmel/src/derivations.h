@@ -264,6 +264,58 @@ struct derivations //: boost::noncopyable
         return 0;
     }
 
+    //FIXME: allow storying r.graph() as primary, free up graph() (for gibbs)
+    typedef dynamic_array<arc_counts *> acpath;
+
+    template <class WeightFor>
+    struct pfor
+    {
+        fb_weights b;
+        WeightFor const &wf;
+        pfor(unsigned nst,WeightFor const &wf) : b(nst),wf(wf) {  }
+
+        template <class I>
+        void global_normalize(I b,I end) const
+        {
+            Weight sum;
+            for (It i=b;i!=end;++i)
+                sum+=b[i->dest]*wf(*i);
+            for (It i=b;i!=end;++i)
+                i->weight=(wf(*i)/sum).getReal();
+        }
+        double operator()(GraphArc const& a) const
+        {
+            return a.weight;
+        }
+    };
+
+
+    template <class WeightFor>
+    void random_path(acpath &p,WeightFor const& wf)
+    {
+        unsigned nst=g.size();
+        pfor<WeightFor> pf(nst,wf);
+        get_order();
+        get_reverse();
+        b[fin]=1;
+        propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,pf.b);
+        free_order();
+        free_reverse();
+        unsigned s=0;
+        p.clear();
+        fixed_array<bool> normed(nst);
+        while (s!=fin) { // fin should have no outgoing arcs if you want sampling to be sensible
+            arcs_type const& arcs=g[s].arcs;
+            if (!normed[s]) {
+                normed[s]=true;
+                pfor.global_normalize(arcs.begin(),arcs.end());
+            }
+            GraphArc const& a=*choose_p01(arcs.begin(),arcs.end(),pfor);
+            p.push_back(wf.ac(a));
+            s=a.dest;
+        }
+    }
+
     Weight collect_counts(arcs_table &t)
     {
 //        update_weights(t);
@@ -419,7 +471,6 @@ struct derivations //: boost::noncopyable
             ret.nStates=b.size();
             return ret;
         }
-
     };
 
     void prune()
