@@ -18,12 +18,6 @@ bool try_stream_into(I & i,To &to,bool complete=true)
     return true;
 }
 
-template <class Str>
-bool try_string_into(Str const& str,Str &to,bool complete=true)
-{
-    str=to;
-}
-
 template <class Str,class To>
 bool try_string_into(Str const& str,To &to,bool complete=true)
 {
@@ -56,6 +50,32 @@ std::string to_string(D const &d)
     std::ostringstream o;
     o << d;
     return o.str();
+}
+
+template <class Str>
+bool try_string_into(Str const& str,Str &to,bool complete=true)
+{
+    str=to;
+    return true;
+}
+
+
+template <class Str>
+Str const& to_string(Str const& d)
+{
+    return d;
+}
+
+template <class Str>
+Str const& string_to(Str const &s)
+{
+    return s;
+}
+
+template <class Str>
+Str & string_into(Str const &s,Str &d)
+{
+    return d=s;
 }
 
 

@@ -386,7 +386,7 @@ public:
     explicit fixed_array(std::size_t sp) : Super(sp) {
         this->construct();
     }
-    explicit fixed_array(T const& t,std::size_t sp) : Super(sp) {
+    fixed_array(T const& t,std::size_t sp) : Super(sp) {
         this->construct(t);
     }
     ~fixed_array() {
@@ -432,10 +432,6 @@ public:
     void uninit_copy_from(const T* b,const T* e) {
         dynarray_assert(e-b == this->capacity());
         std::uninitialized_copy(b,e,this->begin());
-    }
-    fixed_array(T const& t,std::size_t sp) : Super(sp)
-    {
-        this->construct(t);
     }
     fixed_array(const array<T,Alloc> &a) : Super(a.capacity()) {
 //        DBPC("fixed_array copy",a);
@@ -1357,9 +1353,9 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
         for (int i=0; i < 5; ++i)
             BOOST_CHECK(a.at(i)==0);
     }
-    const int sz=7;
+    const unsigned sz=7;
     {
-        dynamic_array<int> a(sz);
+        dynamic_array<unsigned> a(sz);
         a.push_back_n(sz,sz*3);
         BOOST_CHECK(a.size() == sz*3);
         BOOST_CHECK(a.capacity() >= sz*3);
@@ -1367,7 +1363,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     }
 
     {
-        dynamic_array<int> a(sz*3,sz);
+        dynamic_array<unsigned> a(sz*3,sz);
         BOOST_CHECK(a.size() == sz*3);
         BOOST_CHECK(a.capacity() == sz*3);
         BOOST_CHECK(a[sz]==sz);

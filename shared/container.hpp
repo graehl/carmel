@@ -6,12 +6,42 @@
 #include <map>
 #include <graehl/shared/2hash.h>
 #include <graehl/shared/list.h>
+#include <graehl/shared/dynarray.h>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #endif
 
 namespace graehl {
+
+template <template<class X,class=std::allocator<X> >class C,class B,class F,class A,class Al>
+C<B,Al> map(C<A,Al> const& c,F f)
+{
+    C<B,Al> ret;
+    for (typename C<A,Al>::const_iterator i=c.begin(),e=c.end();i!=e;++i)
+        ret.push_back(f(*i));
+    return ret;
+}
+
+template <class R,class C,class F>
+R map(C const& c,F f)
+{
+    R ret;
+    for (typename C::const_iterator i=c.begin(),e=c.end();i!=e;++i)
+        ret.push_back(f(*i));
+    return ret;
+}
+
+
+template <template<class X,class=std::allocator<X> >class C,class B,class F,class A,class Al>
+C<B,Al> mapn(C<A,Al> const& c, F f)
+{
+    C<B,Al> ret(c.size());
+    typename C<B,Al>::iterator o=ret.begin();
+    for (typename C<A,Al>::const_iterator i=c.begin(),e=c.end();i!=e;++i,++o)
+        *o=f(*i);
+    return ret;
+}
 
 template <class Tag,class M,class F>
 void nested_enumerate(M& m,F &f,Tag t) {
@@ -129,7 +159,7 @@ typename map_traits<std::map<K,V> >::insert_return_type insert(std::map<K,V>& ht
 }
 
 template <class T>
-inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator *SFINAE=0) 
+inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator *SFINAE=0)
 {
     if (v1.size()!=v2.size())
         return false;
@@ -143,7 +173,6 @@ inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator 
 
 // Containers:
 
-#include <graehl/shared/dynarray.h>
 
 struct VectorS {
   template <class T> struct container {
@@ -192,7 +221,7 @@ void containertest() {
   BOOST_CHECK(c.size()==2);
   BOOST_CHECK(c.top()==9);
   {
-      
+
   bool nine=false,ten=false;
   for(typename cont::const_iterator i=c.begin(),e=c.end();i!=e;++i) {
     if (*i==9)
@@ -209,7 +238,7 @@ void containertest() {
   BOOST_CHECK(nine&&ten);
 }
   {
-      
+
   bool nine=false,ten=false;
   for(typename cont::iterator i=c.begin(),e=c.end();i!=e;++i) {
     if (*i==9)
@@ -229,12 +258,16 @@ void containertest() {
 
 }
 
+int plus1(int x) { return x-10; }
 BOOST_AUTO_TEST_CASE( TEST_CONTAINER )
 {
   maptest<HashS>();
   maptest<MapS>();
   containertest<ListS>();
   containertest<VectorS>();
+  dynamic_array<int> a(10,2);
+  a[1]=1;
+  std::cout << a << "\n" << map<dynamic_array<int> >(a,plus1) << "\n";
 }
 #endif
 }
