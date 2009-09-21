@@ -85,7 +85,7 @@ inline double random01() // returns uniform random number on [0..1)
 # endif
 }
 
-inline double random_less_than(double n) // random from [0..n)
+inline double random0n(double n) // random from [0..n)
 {
     return n*random01();
 }
