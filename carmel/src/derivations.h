@@ -55,6 +55,12 @@ struct arcs_table : public dynamic_array<arc_counts>
         n_states=x.numStates();
         x.visit_arcs(*this);
     }
+    arc_counts &ac(GraphArc const& a) const
+    {
+        assert(a.data_as<unsigned>()<size());
+        return (*(arcs_type *)this)[a.data_as<unsigned>()];
+    }
+
     void operator()(unsigned s,FSTArc &a)
     {
         this->push_back();
@@ -250,8 +256,9 @@ struct derivations //: boost::noncopyable
         weight_for(arcs_table const& t) : t(t) {}
         arc_counts &ac(GraphArc const& a) const
         {
-            assert(a.data_as<unsigned>()<t.size());
-            return t[a.data_as<unsigned>()];
+/*            assert(a.data_as<unsigned>()<t.size());
+              return t[a.data_as<unsigned>()];*/
+            return ac(a);
         }
         Weight operator()(GraphArc const& a) const
         {
@@ -272,10 +279,11 @@ struct derivations //: boost::noncopyable
     {
         fb_weights b;
         WeightFor const &wf;
-        pfor(unsigned nst,WeightFor const &wf) : b(nst),wf(wf) {  }
-
-        template <class I>
-        void global_normalize(I b,I end) const
+        pfor(unsigned nst,WeightFor const &wf) : b(nst),wf(wf) {
+            b[fin]=1;
+        }
+        template <class It>
+        void global_normalize(It b,It end) const
         {
             Weight sum;
             for (It i=b;i!=end;++i)
@@ -297,7 +305,6 @@ struct derivations //: boost::noncopyable
         pfor<WeightFor> pf(nst,wf);
         get_order();
         get_reverse();
-        b[fin]=1;
         propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,pf.b);
         free_order();
         free_reverse();
@@ -308,9 +315,9 @@ struct derivations //: boost::noncopyable
             arcs_type const& arcs=g[s].arcs;
             if (!normed[s]) {
                 normed[s]=true;
-                pfor.global_normalize(arcs.begin(),arcs.end());
+                pf.global_normalize(arcs.begin(),arcs.end());
             }
-            GraphArc const& a=*choose_p01(arcs.begin(),arcs.end(),pfor);
+            GraphArc const& a=*choose_p01(arcs.begin(),arcs.end(),pf);
             p.push_back(wf.ac(a));
             s=a.dest;
         }

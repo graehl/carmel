@@ -110,10 +110,10 @@ void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
 
 struct cached_derivs
 {
-    bool cache_backward;
-    serialize_batch<derivations> cached_derivs;
-    cached_derivs(training_corpus &corpus,deriv_cache_opts const& copt)
-        : cached_derivs(opts.cache.use_disk(),opts.cache.disk_cache_filename,true,opts.cache.disk_cache_bufsize)
+    WFST &x;
+    serialize_batch<derivations> derivs;
+    cached_derivs(WFST &x,training_corpus &corpus,WFST::deriv_cache_opts const& copt)
+        : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize), arcs(x)
     {
         if (copt.cache()) {
             graehl::time_space_report(Config::log(),"Computed cached derivations:");
@@ -121,37 +121,37 @@ struct cached_derivs
         }
     }
     template <class Examples>
-    void compute_derivations(Examples const &ex)
+    void compute_derivations(Examples const &ex,bool cache_backward)
     {
         wfst_io_index io(arcs);
         unsigned n=1;
-        cached_derivs.clear();
+        derivs.clear();
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
-            derivations &d=cached_derivs.start_new();
+            derivations &d=derivs.start_new();
             if (!d.init_and_compute(x,io,i->i,i->o,i->weight,n,cache_backward)) {
                 warn_no_derivations(x,*i,n);
-                cached_derivs.drop_new();
+                derivs.drop_new();
             } else {
 #ifdef DEBUGDERIVATIONS
                 Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
                 i->print(Config::debug(),x,"\n");
                 printGraph(d.graph(),Config::debug());
 #endif
-                cached_derivs.keep_new();
+                derivs.keep_new();
             }
         }
-        cached_derivs.mark_end();
+        derivs.mark_end();
         Config::log() << derivations::global_stats;
     }
     template <class F>
     void foreach_deriv(F &f)
     {
         unsigned n=0;
-        for (cached_derivs.rewind();cached_derivs.advance();) {
+        for (derivs.rewind();derivs.advance();) {
             ++n;
             training_progress(n);
-            f(cached_derivs.current());
+            f(derivs.current());
         }
 
     }
@@ -164,27 +164,23 @@ struct gibbs
     WFST &composed;
     cascade_parameters &cascade;
     training_corpus &corpus;
-    NormalizeMethods const& methods;
-    train_opts const& topt;
-    gibbs_opts const& gopt;
+    WFST::NormalizeMethods const& methods;
+    WFST::train_opts const& topt;
+    WFST::gibbs_opts const& gopt;
     typedef fixed_array<Weight> normsum_t;
     unsigned nnorm;
     normsum_t normsum;
     cached_derivs derivs;
-    arc_counts &ac(GraphArc const& a)
-    {
-        return derivs.arcs.ac(a);
-    }
     typedef derivations::acpath acpath;
     void addc(acpath const& p)
     {
         for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
-            addc(ac(*i));
+            addc(**i);
     }
     void subc(acpath const& p)
     {
         for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
-            addc(ac(*i));
+            addc(**i);
     }
     Weight one;
     void addc(arc_counts &c)
@@ -195,7 +191,7 @@ struct gibbs
     {
         c.counts-=one;
     }
-
+    arc_counts &ac(GraphArc const& a) { return derivs.arcs.ac(a); }
     Weight operator()(GraphArc const& a)
     {
         arc_counts &c=ac(a);
@@ -243,9 +239,11 @@ struct save_counts
 
 */
  //arcs.visit(save_counts())
-    gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods const& methods, train_opts const& topt
-           , gibbs_opts const& gopt) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_normgroups(composed,methods), normsum(nnorm), derivs(corpus,topt.cache), one(1.)
+  gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
+        ,WFST::NormalizeMethods const& methods
+        , WFST::train_opts const& topt
+        , WFST::gibbs_opts const& gopt) :
+      composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_normgroups(composed,methods)), normsum(nnorm), derivs(composed,corpus,topt.cache), one(1.)
     {
     }
 };
