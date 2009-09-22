@@ -397,16 +397,19 @@ struct carmel_main
     unsigned set_vector(std::string const& key,dynamic_array<V> &pr,char const* osep = " ^ ",char const* isep=",")
     {
         typedef typename dynamic_array<V>::iterator I;
-        split_noquote(text_long_opts[key],Putter<I,Setter>(pr.begin()),isep);
-        Config::log() << "Using input WFST --"<<key<<":\n";
-    unsigned i=0;
-        for (i=0 ; i < nInputs ; ++i) {
-            Config::log() << filenames[i];
-            Config::log() << osep << Setter::get(pr[i]);
+        unsigned n=split_noquote(text_long_opts[key],Putter<I,Setter>(pr.begin()),isep);
+        if (n>0) {
+            Config::log() << "Using input WFST --"<<key<<":\n";
+            unsigned i=0;
+            for (i=0 ; i < n ; ++i) {
+                Config::log() << filenames[i];
+                Config::log() << osep << Setter::get(pr[i]);
+                Config::log() << std::endl;
+            }
             Config::log() << std::endl;
+            return n;
         }
-        Config::log() << std::endl;
-    return i;
+        return 0;
     }
     template <class V>
     void parse_vector(std::string const& key,dynamic_array<V> &pr,V const& zero=0,char const* osep = " ^ ",char const* isep=",")
