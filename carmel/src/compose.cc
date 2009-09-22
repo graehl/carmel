@@ -22,7 +22,7 @@ struct TrioNamer {
     BOOST_STATIC_CONSTANT(char,escape='\\');
     bool special[n_char];
     bool needs_escape;
-    
+
     TrioNamer(unsigned capacity,const WFST &a_,const WFST &b_) : a(a_),b(b_) {
         buf=(char*)::operator new(capacity);
         buf_escape=(char*)::operator new(2*capacity+3);
@@ -32,7 +32,7 @@ struct TrioNamer {
         special[escape]=special[' ']=special['(']=special[')']=1;
         needs_escape=false;
     }
-    ~TrioNamer() 
+    ~TrioNamer()
     {
         ::operator delete(buf);
         ::operator delete(buf_escape);
@@ -48,8 +48,8 @@ struct TrioNamer {
         }
         return false;
     }
-    
-    char const* finish() 
+
+    char const* finish()
     {
 //        if (needs_escape) {
         if (should_quote()) {
@@ -67,19 +67,19 @@ struct TrioNamer {
         }
         return buf;
     }
-    
-    void append_safe(char *&p,char const* str) 
+
+    void append_safe(char *&p,char const* str)
     {
         for (; *str && p<limit;++str ) {
             if (special[*p++ = *str])
                 needs_escape=true;
         }
-        
+
         if ( *str )
 #define STATENAME_TOO_LONG_ERROR_TEXT(x)  "state name too long - exceeded " #x
             throw std::runtime_error(STATENAME_TOO_LONG_ERROR_TEXT(MAX_STATENAME_LEN));
     }
-    
+
     char const* make(unsigned aState,unsigned bState,char filter) {
         char *p=buf;
         append_safe(p,a.stateName(aState));
@@ -90,7 +90,7 @@ struct TrioNamer {
         *p = 0;
         return finish();
     }
-    char const* make_mediate(unsigned astate,unsigned bstate,int middle_letter) 
+    char const* make_mediate(unsigned astate,unsigned bstate,int middle_letter)
     {
         char *p=buf;
         append_safe(p,b.stateName(bstate));
@@ -102,7 +102,7 @@ struct TrioNamer {
         *p = 0;
         return finish();
     }
-    
+
 };
 
 //#define OLDCOMPOSEARC
@@ -123,7 +123,7 @@ struct TrioNamer {
 #else
 
     //uses: stateMap[triDest] states, queue, in, out, weight, [namedStates,stateNames,namer,buf]
-    
+
 #define COMPOSEARC_GROUP(g) do {                                          \
         hash_traits<HashTable<TrioKey,int> >::insert_return_type i; \
         if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
@@ -136,7 +136,7 @@ struct TrioNamer {
 #endif
 
 
-WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool groups) 
+WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool groups)
 {
     alph[0]=alph[1]=0;
     owner_alph[0]=owner_alph[1]=0;
@@ -145,7 +145,7 @@ WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool g
     set_compose(cascade,a,b,namedStates,groups);
 }
 
-WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups) 
+WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups)
 {
     alph[0]=alph[1]=0;
     owner_alph[0]=owner_alph[1]=0;
@@ -163,13 +163,13 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
     alphabet_type &aout=a.alphabet(1),&bin=b.alphabet(0);
 
     states.reserve(a.numStates()+b.numStates());
-    
+
     const int EMPTY=epsilon_index;
     if ( !(a.valid() && b.valid()) ) {
         invalidate();
         return;
     }
-    
+
     int *map = NEW int[aout.size()];
     int *revMap = NEW int[bin.size()];
     Assert(aout.verify());
@@ -197,7 +197,7 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
     trioID.num = 0;
     trioID.tri = TrioKey(0,0,0);
     states.clear();
-    
+
     stateMap[trioID.tri]=0; // add the initial state
     push_back(states);
     if ( namedStates ) {
@@ -212,6 +212,11 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
     List<HalfArc> *matches;
 
     if ( preserveGroups) {       // use simpler 2 state filter since e transitions cannot be merged anyhow
+        /* 2 state filter:
+           0->0 : a:c from a:b (in l) and b:c (in r), incl. b=*e*
+           1->0 : a:c from a:b (in l) and b:c (in r), b!=*e*
+           0->1 or 1->1 : *e*:c from *e*:c (in r)
+         */
         //FIXME: -a ... kbest paths look nothing like non -a.  find the bug!
         HashTable<HalfArcState, int> arcStateMap(2 * (a.numStates() +b.numStates())); // of course you may need 2*a*b+k states; this is just to get a larger initial table
         // a mediate state has a name like: bstate,"m"->astate, where "m" is a letter in the interface (output of a, input of b)
@@ -253,7 +258,7 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                             if ( namedStates )
                                 stateNames.add(namer.make_mediate(mediate.l_dest,mediate.r_source,mediate.l_hiddenLetter),mediateState);
                             int temp = sourceState;
-                            {                                
+                            {
                                 sourceState = mediateState;
                                 triDest.aState = mediate.l_dest;
                                 in = EMPTY;
@@ -269,7 +274,7 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                             }
                             sourceState = temp;
                         } else {
-                            mediateState = ins.first->second;                            
+                            mediateState = ins.first->second;
                         }
                         states[sourceState].addArc(FSTArc(la->in, EMPTY, mediateState, la->weight,
                                                           cascade.record1(la))); //arc from a
@@ -292,9 +297,15 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
         }
 
     } else {
-        // 3 state filter; results in fewer epsilons (merge a:*e* composed with *e*:z into a single a:z in some cases?
+        // 3 state filter:
+/* composing l.r
+   filter state:
+  0->0 : a:c from a:b in l, b:c in r, incl. b=*e*
+  0->1 or 1->1 : a:*e* from a:*e* in l
+  0->2 or 2->2 : *e*:c from *e*:c in r
+  2->0 or 1->0 : a:c from a:b (l) b:c (r) where b != *e*
+ */
 
-        
         while ( queue.notEmpty() ) {
             sourceState = queue.top().num;
             triSource = queue.top().tri;
@@ -362,6 +373,7 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                         }
                     }
                 } else {                        // aState (lhs transducer) is larger
+                    //FIXME: total duplicated code from above case, except switching order of in/out.  a macro could factor this w/ no runtime cost
                     for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r!=end  ; ++r) {
                         out = r->out;
                         triDest.bState = r->dest;

@@ -1,4 +1,4 @@
-// given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library 
+// given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
 
@@ -38,23 +38,23 @@
 
 namespace graehl {
 
-inline std::string file_arg_usage() 
+inline std::string file_arg_usage()
 {
     return "special filenames: - for STDIN/STDOUT, -2 for STDERR, -0 for none, X.gz for gzipped";
 }
 
-inline std::string general_options_desc() 
+inline std::string general_options_desc()
 {
     return "Options ("+file_arg_usage()+"):";
 }
 
 
 template <class Stream>
-struct stream_traits 
+struct stream_traits
 {
 };
 
-    
+
 template<>
 struct stream_traits<std::ifstream>
 {
@@ -68,7 +68,7 @@ struct stream_traits<std::ofstream>
     BOOST_STATIC_CONSTANT(bool,file_only=true);
     BOOST_STATIC_CONSTANT(bool,read=false);
 };
-    
+
 template<>
 struct stream_traits<std::ostream>
 {
@@ -86,19 +86,19 @@ struct stream_traits<std::istream>
 static const char gz_ext[]=".gz";
 
 template <class S>
-inline void set_null_file_arg(boost::shared_ptr<S> &p) 
+inline void set_null_file_arg(boost::shared_ptr<S> &p)
 {
     p.reset();
 }
 
-inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p) 
+inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 {
     p.reset(new null_ostream()); //(&the_null_ostream,null_deleter());
-}    
-    
+}
 
 
-    
+
+
 
 template <class Stream>
 struct file_arg : public boost::shared_ptr<Stream>
@@ -107,14 +107,19 @@ struct file_arg : public boost::shared_ptr<Stream>
     typedef large_streambuf<> buf_type;
     typedef boost::shared_ptr<buf_type> buf_p_type;
     buf_p_type buf;
-    
+
     bool none;
  public:
     std::string name;
+    char const* desc()
+    {
+        return name.c_str();
+    }
+
     typedef boost::shared_ptr<Stream> pointer_type;
-    
+
     typedef file_arg<Stream> self_type;
-    
+
     file_arg() { set_none(); }
     explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL)
     { set(s,null_allowed); }
@@ -125,8 +130,8 @@ struct file_arg : public boost::shared_ptr<Stream>
     }
 
     enum { delete_after=1,no_delete_after=0 };
-    
-    void set(Stream &s,std::string const& filename="",bool destroy=no_delete_after,std::string const& fail_msg="invalid stream") 
+
+    void set(Stream &s,std::string const& filename="",bool destroy=no_delete_after,std::string const& fail_msg="invalid stream")
     {
         if (!s)
             throw_fail(filename,fail_msg);
@@ -136,7 +141,7 @@ struct file_arg : public boost::shared_ptr<Stream>
             pointer().reset(&s,null_deleter());
         name=filename;
     }
-    
+
     template <class filestream>
     void set_checked(filestream &fs,std::string const& filename="",bool destroy=no_delete_after,std::string const& fail_msg="invalid stream")
     {
@@ -147,7 +152,7 @@ struct file_arg : public boost::shared_ptr<Stream>
         }
     }
     BOOST_STATIC_CONSTANT(std::size_t,bufsize=256*1024);
-    
+
     // warning: if you call with incompatible filestream type ... crash!
     template <class filestream>
     void set_new(std::string const& filename,std::string const& fail_msg="Couldn't open file")
@@ -187,14 +192,14 @@ the buffer will be back to 8k.
         if (large_buf) give_large_buf();
         const bool read=stream_traits<filestream>::read;
         f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
-        f.release(); // w/o delete        
+        f.release(); // w/o delete
     }
 
-    void give_large_buf() 
+    void give_large_buf()
     {
         buf.reset(new buf_type(*pointer()));
     }
-    
+
     enum { ALLOW_NULL=1,NO_NULL=0 };
 
     void set_gzfile(std::string const&s)
@@ -213,7 +218,7 @@ the buffer will be back to 8k.
             throw_fail(s,fail_msg);
         }
     }
-    
+
     // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
     void set(std::string const& s,
              bool null_allowed=ALLOW_NULL, bool large_buf=true
@@ -222,7 +227,7 @@ the buffer will be back to 8k.
         const bool read=stream_traits<Stream>::read;
         const bool file_only=stream_traits<Stream>::file_only;
         if (s.empty()) {
-            throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");            
+            throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");
         } if (!file_only && s == "-") {
             if (read) {
                 set_checked(GRAEHL__DEFAULT_IN,s);
@@ -230,7 +235,7 @@ the buffer will be back to 8k.
             } else {
                 set_checked(GRAEHL__DEFAULT_OUT,s);
                 // I don't recommend making a huge output buffer by default, because people are used to watching output
-            }            
+            }
         } else if (!file_only && !read && s== "-2") {
             set_checked(GRAEHL__DEFAULT_LOG,s);
         } else if (null_allowed && s == "-0") {
@@ -246,13 +251,13 @@ the buffer will be back to 8k.
         }
         none=false;
     }
-    
+
     explicit file_arg(Stream &s,std::string const& name) :
         pointer_type(*s,null_deleter()),name(name) {}
-    
+
     template <class Stream2>
     file_arg(file_arg<Stream2> const& o) :
-        pointer_type(o.pointer()),name(o.name),buf(o.buf) {}    
+        pointer_type(o.pointer()),name(o.name),buf(o.buf) {}
 
     void set_none()
     { none=true;set_null_file_arg(pointer());name="-0"; }
@@ -260,20 +265,20 @@ the buffer will be back to 8k.
     bool is_none() const
     { return none; }
 
-    operator bool() const 
+    operator bool() const
     {
         return !is_none();
-    }    
-    
+    }
+
     bool is_default_in() const {
         return pointer().get() == &GRAEHL__DEFAULT_IN; }
-    
+
     bool is_default_out() const {
         return pointer().get() == &GRAEHL__DEFAULT_OUT; }
-    
+
     bool is_default_log() const {
         return pointer().get() == &GRAEHL__DEFAULT_LOG; }
-    
+
     pointer_type &pointer() { return *this; }
     pointer_type const& pointer() const { return *this; }
 
@@ -286,7 +291,7 @@ the buffer will be back to 8k.
     {
         return f.valid();
     }
-    
+
     Stream &stream() const
     {
         return *pointer();
@@ -295,12 +300,12 @@ the buffer will be back to 8k.
     template<class O>
     void print(O &o) const { o << name;}
     template <class I>
-    void read(I &i) 
+    void read(I &i)
     {
         std::string name;
         i>>name;
         set(name);
-    }    
+    }
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
 };
@@ -351,27 +356,27 @@ inline bool is_default_out(const Outfile &o) {
 inline bool is_default_log(const Outfile &o) {
     return o.get() == &GRAEHL__DEFAULT_LOG; }
 
-inline bool is_none(const Infile &i) 
+inline bool is_none(const Infile &i)
 { return i.get()==NULL; }
 
-inline bool is_none(const Outfile &o) 
+inline bool is_none(const Outfile &o)
 { return o.get()==NULL; }
 
-struct tee_file 
+struct tee_file
 {
     tee_file() {
         reset_no_tee();
     }
-    
-    void reset_no_tee(std::ostream &o=std::cerr) 
+
+    void reset_no_tee(std::ostream &o=std::cerr)
     {
         teestreamptr.reset();
         teebufptr.reset();
         log_stream=&o;
     }
-    
+
     /// must call before you get any tee behavior (without, will go to default log = cerr)!
-    void set(std::ostream &other_output) 
+    void set(std::ostream &other_output)
     {
         if (file) {
             teebufptr.reset(
@@ -383,16 +388,16 @@ struct tee_file
         }
     }
     ostream_arg file; // can set this directly, then call init.  if unset, then don't tee.
-    
+
     std::ostream &stream() const
     { return *log_stream; }
     operator std::ostream &() const
     { return stream(); }
-    
+
  private:
     std::ostream *log_stream;
     boost::shared_ptr<graehl::teebuf> teebufptr;
-    boost::shared_ptr<std::ostream> teestreamptr;           
+    boost::shared_ptr<std::ostream> teestreamptr;
 };
 
 template <class Stream>
@@ -402,21 +407,21 @@ inline bool valid(boost::shared_ptr<Stream> const& pfile)
 }
 
 template <class C>
-inline void throw_unless_valid(C const& pfile, std::string const& name="file") 
+inline void throw_unless_valid(C const& pfile, std::string const& name="file")
 {
     if (!valid(pfile))
         throw std::runtime_error(name+" not valid");
 }
 
 template <class C>
-inline void throw_unless_valid_optional(C const& pfile, std::string const& name="file") 
+inline void throw_unless_valid_optional(C const& pfile, std::string const& name="file")
 {
     if (pfile && !valid(pfile))
         throw std::runtime_error(name+" not valid");
 }
 
-inline Infile infile(const std::string &s) 
-{    
+inline Infile infile(const std::string &s)
+{
     return istream_arg(s);
 }
 
@@ -427,7 +432,7 @@ inline InDiskfile indiskfile(const std::string &s)
 
 namespace fs = boost::filesystem;
 
-inline fs::path full_path(const std::string &relative) 
+inline fs::path full_path(const std::string &relative)
 {
     return fs::system_complete( fs::path( relative, fs::native ) );
 }
@@ -438,7 +443,7 @@ inline bool directory_exists(const fs::path &possible_dir)
 }
 
 // works on .gz files!
-inline size_t count_newlines(const std::string &filename) 
+inline size_t count_newlines(const std::string &filename)
 {
     Infile i=infile(filename);
     char c;
@@ -447,37 +452,37 @@ inline size_t count_newlines(const std::string &filename)
         if (c=='\n')
             ++n_newlines;
     }
-    return n_newlines;    
+    return n_newlines;
 }
 
-inline void native_filename_check() 
+inline void native_filename_check()
 {
     fs::path::default_name_check(fs::native);
 }
 
 
 // return the absolute filename that would result from "cp source dest" (and write to *dest_exists whether dest exists) - throws error if source is the same as dest
-inline std::string output_name_like_cp(const std::string &source,const std::string &dest,bool *dest_exists=NULL) 
+inline std::string output_name_like_cp(const std::string &source,const std::string &dest,bool *dest_exists=NULL)
 {
     fs::path full_dest=full_path(dest);
     fs::path full_source=full_path(source);
-    
+
     if (directory_exists(full_dest))
         full_dest /= full_source.leaf();
     if (dest_exists && fs::exists(full_dest))
         *dest_exists=1;
-        
+
 
     full_dest.normalize();
     full_source.normalize();
-    
+
     if (fs::equivalent(full_dest,full_source))
         throw std::runtime_error("Destination file is same as source!");
-    
+
     return full_dest.native_file_string();
 }
 
-inline Outfile outfile(const std::string &s) 
+inline Outfile outfile(const std::string &s)
 {
     return ostream_arg(s);
 }
