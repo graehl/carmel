@@ -10,9 +10,10 @@ namespace graehl {
 void check_fb_agree(Weight f,Weight b);
 void training_progress(unsigned train_example_no);
 
-struct arc_counts
+struct arc_counts_base
 {
     unsigned src;
+    FSTArc *arc;
     unsigned dest() const
     {
         return arc->dest;
@@ -29,18 +30,44 @@ struct arc_counts
     {
         return arc->groupId;
     }
-    FSTArc *arc;
-//    double gibbscount;
+    Weight &weight() const
+    {
+        return arc->weight;
+    }
+    void set(unsigned s,FSTArc *a,Weight prior)
+    {
+        arc=a;
+        src=s;
+    }
+};
+
+
+struct arc_counts : public arc_counts_base
+{
     Weight scratch;
     Weight em_weight;
     Weight best_weight;
     Weight counts;
     Weight prior_counts;
-    Weight &weight() const
+    void set(unsigned s,FSTArc *a,Weight prior)
     {
-        return arc->weight;
+        arc_counts_base::set(s,a,prior);
+        prior_counts=prior;
     }
 };
+
+struct gibbs_counts : public arc_counts_base
+{
+    double count;
+    unsigned norm;
+    void set(unsigned s,FSTArc *a,Weight prior)
+    {
+        arc_counts_base::set(s,a,prior);
+        norm=groupId();
+        count=prior.getReal();
+    }
+};
+
 
 std::ostream& operator << (std::ostream &o,arc_counts const& ac);
 
