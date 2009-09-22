@@ -29,7 +29,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.7"
+#define CARMEL_VERSION "4.8"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -285,6 +285,7 @@ struct carmel_main
     Weight prod_sum;
     unsigned n_0prob;
     unsigned n_prob;
+    unsigned n_lines() const { return n_0prob+n_prob; }
     Weight prod_sum_pre; // for post-b
     double n_symbols;
 
@@ -299,7 +300,7 @@ struct carmel_main
     {
         bool postb=have_opt("post-b");
         bool sump=have_opt("sum");
-        unsigned N=n_0prob+n_prob;
+        unsigned N=n_lines();
         if (!N) return;
         if (n_0prob)
             Config::log() << "No derivations found for "<<n_0prob<<" of "<<N<<" inputs.\n";
@@ -535,9 +536,9 @@ struct carmel_main
             }
             WFST *p=result;
             if (flags['r'])
-                result=new WFST(pb,*p);
+                result=new WFST(pb,*p,flags['m'],flags['a']);
             else
-                result=new WFST(*p,pb);
+                result=new WFST(*p,pb,flags['m'],flags['a']);
             if (!result->valid()) {
                 ++n_0prob;
                 return false;
@@ -863,6 +864,11 @@ main(int argc, char *argv[]){
                 parm[nParms++] = argv[i];
             }
     }
+    if (cm.have_opt("help")) {
+        usageHelp();
+        WFSTformatHelp();
+        return 0;
+    }
     bool prunePath = flags['w'] || flags['z'];
     WFST::deriv_cache_opts &copt=train_opt.cache;
     copt.cache_level=flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing);
@@ -879,7 +885,6 @@ main(int argc, char *argv[]){
     setOutputFormat(flags,&cerr);
     WFST::setIndexThreshold(thresh);
     if ( flags['h'] ) {
-        WFSTformatHelp();
         cout << endl << endl;
         usageHelp();
         return 0;
@@ -1463,10 +1468,10 @@ void usageHelp(void)
     cout << "ut pair should count in training (default is 1)\n-e w\t\tw is th";
     cout << "e convergence criteria for training (the minimum\n\t\tchange in ";
     cout << "an arc\'s weight to trigger another iteration) - \n\t\tdefault w";
-    cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a per-training example floor weight used for train";
+    cout << " is 1E-4 (or, -4log)\n-X w\t\tw is a perplexity convergence ratio between 0 and 1,\n\t\twith 1 being the strictest (default w=.999)\n-f w\t\tw is a count added to every arc before normalizing for train (-t)";
     cout << "ing,\n\t\tadded to the counts for all arcs, immediately";
     cout << " before normalization -\n\t\t(this implements so-called \"Dirichlet prior\" smoothing)";
-    cout << "\n-U\t\tuse the initial weights of non-locked arcs as per-example prior counts\n\t\t(in the same way as, and in addition to, -f)";
+    cout << "\n-U\t\tuse the initial weights of non-locked arcs as prior counts\n\t\t(in addition to -f)";
     cout << "\n-M n\t\tn is th";
     cout << "e maximum number of training iterations that will be\n\t\tperfor";
     cout << "med, regardless of whether the convergence criteria is\n\t\tmet ";
@@ -1612,6 +1617,7 @@ cout <<         "\n"
         "--epoch : sum gibbs counts every <epoch> iterations after burnin\n"
         "\n";
 
+    cout << "\n--help : more detailed help\n";
     /* // user doesn't need to know about this stuff
     cout << "\n--train-cascade-compress : perform a (probably frivolous) reduction of unused arcs' parameter lists\n";
     cout << "\n--train-cascade-compress-always : even when the composition needed no pruning, compress the table (certainly frivolous)\n";

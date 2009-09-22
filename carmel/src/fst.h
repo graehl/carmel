@@ -934,6 +934,7 @@ class WFST {
 
     void set_string(alphabet_type &a,string_type const& str,bool clone_alph=true)
     {
+        assert(0);
         //TODO
     }
 
@@ -1229,13 +1230,17 @@ class WFST {
     // *p_n_back_edges = 0 iff no cycles (optional output arg)
     Weight numNoCyclePaths(unsigned *p_n_back_edges=0) {
         if ( !valid() ) return Weight();
-        Weight *nPaths = NEW Weight[numStates()];
+        fixed_array<Weight> nPaths(numStates());
         Graph g = makeGraph();
-        countNoCyclePaths(g, nPaths, 0,p_n_back_edges);
+        countNoCyclePaths(g, nPaths.begin(), 0,p_n_back_edges);
         delete[] g.states;
         Weight ret = nPaths[final];
-        delete[] nPaths;
         return ret;
+    }
+
+    bool isEmpty()
+    {
+        return states.empty();
     }
 
     struct weight_for_cost

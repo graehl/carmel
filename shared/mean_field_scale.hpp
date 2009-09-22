@@ -34,6 +34,7 @@ struct mean_field_scale
         static const W dig_floor(digamma(floor),false);
         if (xa < floor) // until we can compute digamma in logspace, this will be the answer.  and, can't ask digamma(0), because it's negative inf.  but exp(-inf)=0
             return dig_floor*(xa/floor);
+        // this is a mistake: denominator of sum of n things is supposed to get (alpha*n + sum), not (alpha+sum).  but it seems to work better (sometimes)
         return W(digamma(xa),false);
     }
 };
