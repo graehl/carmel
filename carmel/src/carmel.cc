@@ -232,8 +232,6 @@ void printPath(bool *flags,const List<PathArc> *pli) {
 
 }
 
-
-
 void usageHelp(void);
 void WFSTformatHelp(void);
 
@@ -459,7 +457,6 @@ struct carmel_main
     {
         return string_into(set_default_text(key,default_val),v);
     }
-
 
     carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
         :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts)
@@ -1425,6 +1422,100 @@ main(int argc, char *argv[]){
 }
 #endif
 
+
+void WFSTformatHelp(void)
+{
+    cout << "A weighted finite state transducer (WFST) is a directed graph wi";
+    cout << "th weighted\narcs, and an input and output label on each arc.  E";
+    cout << "ach vertex is called a\n\"state\", and one state is designated a";
+    cout << "s the initial state and another as the\nfinal state.  Every path";
+    cout << " from the initial state to the final state represents\na transdu";
+    cout << "ction from the concatenation of the input labels of arcs along t";
+    cout << "he\npath, to the concatenation of the output labels, with a weig";
+    cout << "ht equal to the\nproduct of the weights of each transition taken";
+    cout << ".  The weight of a transduction\nmay represent, for instance, th";
+    cout << "e conditional probability of the output\nsequence given the inpu";
+    cout << "t sequence.  The actual weight that should be assigned\nto a tra";
+    cout << "nsduction is, more accurately, the sum of the weights of all pos";
+    cout << "sible\npaths which emit the input:output sequence, but it is mor";
+    cout << "e convenient to\nsearch for the best path, so that the sum is ap";
+    cout << "proximated by the maximum.  A\nspecial \"empty\" symbol, when us";
+    cout << "ed as an input or output label, disappears in\nthe concatenation";
+    cout << "s.\n\nTwo transductions may be composed, meaning that the weight";
+    cout << " of any input:output\npair is the sum over all intermediate poss";
+    cout << "ibilities of the product of the\nweight of input:intermediate in";
+    cout << " the first and the weight of\nintermediate:output in the second.";
+    cout << "  If the transductions represent conditional\nprobabilities, and";
+    cout << " the intermediate possibilities represent a partition of\nevents";
+    cout << " such that input and output are independent given the intermedia";
+    cout << "te\npossibilities, then the conditional probability of output gi";
+    cout << "ven input is given\nby the composition of the first transducer, ";
+    cout << "which contains the probabilities\np(input|intermediates) and the";
+    cout << " second transducer, which contains the\nprobabilities p(intermed";
+    cout << "iates|output).  Given two WFST representing\ntransductions, anot";
+    cout << "her WFST representing the composition of the two\ntransductions ";
+    cout << "can be easily created (with up to the product of the number of\n";
+    cout << "states).\n\nThis program accepts parenthesized lists of states a";
+    cout << "nd arcs in a variety of\nformats.  Whitespace can be used freely";
+    cout << " between symbols.  States are named by\nany string of characters";
+    cout << " (except parentheses) delimited by whitespace, or\ncontained in ";
+    cout << "bounding quotes or asterisks (\"state 1\" or *initial state*, fo";
+    cout << "r\nexample).  Input/output symbols are of the same format, excep";
+    cout << "t they must not\nbegin with a number, decimal point, or minus.  ";
+    cout << "Input/output symbols bounded by\nasterisks are intended to be sp";
+    cout << "ecial symbols.  Only one, *e*, the empty\nsymbol, is currently t";
+    cout << "reated differently by the program.  Special symbols\nare not cas";
+    cout << "e sensitive (converted to lowercase on input).  Quoted symbol na";
+    cout << "mes\nmay contain internal quotes so long as they are escaped by ";
+    cout << "a backslash\nimmediately preceding them (e.g. \"\\\"hello\\\"\")";
+    cout << ".  Symbols should not be longer\nthan 4000 characters.  Weights ";
+    cout << "are floating point numbers, optionally followed\nimmediately by ";
+    cout << "the letters \'log\', in which case the number is the base 10\nlo";
+    cout << "garithm of the actual weight (logarithms are used internally to ";
+    cout << "avoid\nunderflow).\n\nEvery transducer file begins with the name";
+    cout << " of the final state, and is followed\nby a list of arcs.  No exp";
+    cout << "licit list of states is needed; if a state name\noccurs as the s";
+    cout << "ource or destination of an arc, it is created.  Each\nparenthesi";
+    cout << "zed expression of the form describes zero or more arcs (here the";
+    cout << "\nasterisk means zero or more repetitions of the parenthesized e";
+    cout << "xpression to the\nleft) :\n\n(source-state (destination-state in";
+    cout << "put output weight)*)\n(source-state (destination-state (input ou";
+    cout << "tput weight)*)*)\n\nif right parentheses following \"weight\" is";
+    cout << " immediately preceded by an\nexclamation point (\'!\'), then tha";
+    cout << "t weight will be locked and unchanged by\nnormalization or train";
+    cout << "ing (however, the arc may still be eliminated by\nreduction (abs";
+    cout << "ence of -d) or consolidation (-C) operations)\n\nThe initial sta";
+    cout << "te is the source-state mentioned in the first such expression.\n";
+    cout << "\"weight\" can be omitted, for a default weight of one.  \"outpu";
+    cout << "t\" can also be\nommitted, in which case the output is the same ";
+    cout << "as the input.  This program\noutputs transducers using the first";
+    cout << " option, giving only one expression per\n\"source-state\", and e";
+    cout << "xhaustively listing every arc out of that state in no\nparticula";
+    cout << "r order, omitting \"weight\" and \"output\" whenever they are no";
+    cout << "t\nneeded.  However, inputs may even contain many of these expre";
+    cout << "ssions sharing\nthe same \"source-state\", in which case the arc";
+    cout << "s are added to the existing\nstate.\n\nWhen the -n or -b options";
+    cout << " are used, the input is instead sequences of\nspace-separated sy";
+    cout << "mbols, from which a finite state automata accepting exactly\ntha";
+    cout << "t sequence with weight one (a FSA is simply a transducer where v";
+    cout << "ery arc has\nmatching input and output, and a weight of one).  W";
+    cout << "ith the -b (batch) option,\nthe input may consist of any number ";
+    cout << "of such sequences, each on their own\nline.  Each input sequence";
+    cout << " must be no longer than 60000 characters.\n\nWhen the -m option ";
+    cout << "is specified, meaningful names will be assigned to states\ncreat";
+    cout << "ed in the composition of two WFST, in the following format (othe";
+    cout << "rwise\nstate names are numbers assigned sequentially):\n\nlhs-WF";
+    cout << "ST-state-name|filter-state|rhs-WFST-state-name\n\n\"filter-state";
+    cout << "\" is a number between 0 and 2, representing the state in an\nim";
+    cout << "plicit intermediate transducer used to eliminate redundant paths";
+    cout << " using empty\n(*e*) transitions.\n\nWhen -k number-of-paths is u";
+    cout << "sed without limiting the output with -I or -O,\npaths are displa";
+    cout << "yed as a list of space-separated, parenthesized arcs:\n\n(input-";
+    cout << "symbol : output-symbol / weight -> destination-state) \n\nfollow";
+    cout << "ed by the path weight (the product of the weights in the sequenc";
+    cout << "e) at\nthe end of the line.\n\n";
+}
+
 void usageHelp(void)
 {
     cout << "usage: carmel [switches] [file1 file2 ... filen]\n\ncomposes a seq";
@@ -1627,97 +1718,4 @@ cout <<         "\n"
     cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
     cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
 
-}
-
-void WFSTformatHelp(void)
-{
-    cout << "A weighted finite state transducer (WFST) is a directed graph wi";
-    cout << "th weighted\narcs, and an input and output label on each arc.  E";
-    cout << "ach vertex is called a\n\"state\", and one state is designated a";
-    cout << "s the initial state and another as the\nfinal state.  Every path";
-    cout << " from the initial state to the final state represents\na transdu";
-    cout << "ction from the concatenation of the input labels of arcs along t";
-    cout << "he\npath, to the concatenation of the output labels, with a weig";
-    cout << "ht equal to the\nproduct of the weights of each transition taken";
-    cout << ".  The weight of a transduction\nmay represent, for instance, th";
-    cout << "e conditional probability of the output\nsequence given the inpu";
-    cout << "t sequence.  The actual weight that should be assigned\nto a tra";
-    cout << "nsduction is, more accurately, the sum of the weights of all pos";
-    cout << "sible\npaths which emit the input:output sequence, but it is mor";
-    cout << "e convenient to\nsearch for the best path, so that the sum is ap";
-    cout << "proximated by the maximum.  A\nspecial \"empty\" symbol, when us";
-    cout << "ed as an input or output label, disappears in\nthe concatenation";
-    cout << "s.\n\nTwo transductions may be composed, meaning that the weight";
-    cout << " of any input:output\npair is the sum over all intermediate poss";
-    cout << "ibilities of the product of the\nweight of input:intermediate in";
-    cout << " the first and the weight of\nintermediate:output in the second.";
-    cout << "  If the transductions represent conditional\nprobabilities, and";
-    cout << " the intermediate possibilities represent a partition of\nevents";
-    cout << " such that input and output are independent given the intermedia";
-    cout << "te\npossibilities, then the conditional probability of output gi";
-    cout << "ven input is given\nby the composition of the first transducer, ";
-    cout << "which contains the probabilities\np(input|intermediates) and the";
-    cout << " second transducer, which contains the\nprobabilities p(intermed";
-    cout << "iates|output).  Given two WFST representing\ntransductions, anot";
-    cout << "her WFST representing the composition of the two\ntransductions ";
-    cout << "can be easily created (with up to the product of the number of\n";
-    cout << "states).\n\nThis program accepts parenthesized lists of states a";
-    cout << "nd arcs in a variety of\nformats.  Whitespace can be used freely";
-    cout << " between symbols.  States are named by\nany string of characters";
-    cout << " (except parentheses) delimited by whitespace, or\ncontained in ";
-    cout << "bounding quotes or asterisks (\"state 1\" or *initial state*, fo";
-    cout << "r\nexample).  Input/output symbols are of the same format, excep";
-    cout << "t they must not\nbegin with a number, decimal point, or minus.  ";
-    cout << "Input/output symbols bounded by\nasterisks are intended to be sp";
-    cout << "ecial symbols.  Only one, *e*, the empty\nsymbol, is currently t";
-    cout << "reated differently by the program.  Special symbols\nare not cas";
-    cout << "e sensitive (converted to lowercase on input).  Quoted symbol na";
-    cout << "mes\nmay contain internal quotes so long as they are escaped by ";
-    cout << "a backslash\nimmediately preceding them (e.g. \"\\\"hello\\\"\")";
-    cout << ".  Symbols should not be longer\nthan 4000 characters.  Weights ";
-    cout << "are floating point numbers, optionally followed\nimmediately by ";
-    cout << "the letters \'log\', in which case the number is the base 10\nlo";
-    cout << "garithm of the actual weight (logarithms are used internally to ";
-    cout << "avoid\nunderflow).\n\nEvery transducer file begins with the name";
-    cout << " of the final state, and is followed\nby a list of arcs.  No exp";
-    cout << "licit list of states is needed; if a state name\noccurs as the s";
-    cout << "ource or destination of an arc, it is created.  Each\nparenthesi";
-    cout << "zed expression of the form describes zero or more arcs (here the";
-    cout << "\nasterisk means zero or more repetitions of the parenthesized e";
-    cout << "xpression to the\nleft) :\n\n(source-state (destination-state in";
-    cout << "put output weight)*)\n(source-state (destination-state (input ou";
-    cout << "tput weight)*)*)\n\nif right parentheses following \"weight\" is";
-    cout << " immediately preceded by an\nexclamation point (\'!\'), then tha";
-    cout << "t weight will be locked and unchanged by\nnormalization or train";
-    cout << "ing (however, the arc may still be eliminated by\nreduction (abs";
-    cout << "ence of -d) or consolidation (-C) operations)\n\nThe initial sta";
-    cout << "te is the source-state mentioned in the first such expression.\n";
-    cout << "\"weight\" can be omitted, for a default weight of one.  \"outpu";
-    cout << "t\" can also be\nommitted, in which case the output is the same ";
-    cout << "as the input.  This program\noutputs transducers using the first";
-    cout << " option, giving only one expression per\n\"source-state\", and e";
-    cout << "xhaustively listing every arc out of that state in no\nparticula";
-    cout << "r order, omitting \"weight\" and \"output\" whenever they are no";
-    cout << "t\nneeded.  However, inputs may even contain many of these expre";
-    cout << "ssions sharing\nthe same \"source-state\", in which case the arc";
-    cout << "s are added to the existing\nstate.\n\nWhen the -n or -b options";
-    cout << " are used, the input is instead sequences of\nspace-separated sy";
-    cout << "mbols, from which a finite state automata accepting exactly\ntha";
-    cout << "t sequence with weight one (a FSA is simply a transducer where v";
-    cout << "ery arc has\nmatching input and output, and a weight of one).  W";
-    cout << "ith the -b (batch) option,\nthe input may consist of any number ";
-    cout << "of such sequences, each on their own\nline.  Each input sequence";
-    cout << " must be no longer than 60000 characters.\n\nWhen the -m option ";
-    cout << "is specified, meaningful names will be assigned to states\ncreat";
-    cout << "ed in the composition of two WFST, in the following format (othe";
-    cout << "rwise\nstate names are numbers assigned sequentially):\n\nlhs-WF";
-    cout << "ST-state-name|filter-state|rhs-WFST-state-name\n\n\"filter-state";
-    cout << "\" is a number between 0 and 2, representing the state in an\nim";
-    cout << "plicit intermediate transducer used to eliminate redundant paths";
-    cout << " using empty\n(*e*) transitions.\n\nWhen -k number-of-paths is u";
-    cout << "sed without limiting the output with -I or -O,\npaths are displa";
-    cout << "yed as a list of space-separated, parenthesized arcs:\n\n(input-";
-    cout << "symbol : output-symbol / weight -> destination-state) \n\nfollow";
-    cout << "ed by the path weight (the product of the weights in the sequenc";
-    cout << "e) at\nthe end of the line.\n\n";
 }
