@@ -3,11 +3,11 @@
 
 # translate input sri text language model to carmel wfsa
 
-# example usage:  
+# example usage:
 
 # LOCK_BACKOFF=1 EOS=0 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
 
-# CHECK_SUFFIX=1 EOS=1 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
+# SUFFIX=1 EOS=1 ./sri2fsa.pl ../sample/3gram.sri | carmel -gIs 10
 
 # lock backoff: backoff weights are locked, allowing normalization so
 # sum-over-paths = 1 (something you may not get from sri trained LMs)
@@ -34,10 +34,15 @@ use strict;
 
 ## OPTIONS:
 
-my $eos=$ENV{EOS}; # </s> vs. *e* at end
+my $start1gram=$ENV{START1}; # no_context_state start instead of <s> context
+#my $sos=$ENV{SOS};
+my $eos=$ENV{EOS}; # input has </s> vs. *e* at end
 my $lock_bo=$ENV{LOCK_BACKOFF};
 my $checksuf=!$ENV{SUFFIX};
 my $NOQUOTE=$ENV{NOQUOTE};
+my $fulln=$ENV{FULLN};
+$fulln = 0 unless defined $fulln;
+my $minn=exists $ENV{MINN} ? $ENV{MINN} : $fulln;
 
 my $DEBUG=$ENV{DEBUG};
 
@@ -58,7 +63,7 @@ my $loop=$ENV{LOOP}; #TODO: probability of another sentence would need to be giv
 
 my $eos_word="</s>";
 my $eos_state=$eos_word; # replace dest w/ this carmel state, if last word is
-                         # $eos_word 
+                         # $eos_word
 my $carmel_eos_word=$eos ? '"</s>"' : "*e*" ;
 
 my $sos_word="<s>";
@@ -66,7 +71,7 @@ my $sos_state=$sos_word;
 
 my $no_context_state='""';
 
-my $start_state=$sos_state; # could start in $no_context_state instead
+my $start_state=$start1gram ? $no_context_state : $sos_state; # could start in $no_context_state instead
 my $final_state=$eos_state;
 
 
@@ -127,7 +132,7 @@ sub ngram_to_fsa_arc {
         shift @escs;
         $bostate=escaped_to_state(@escs);
         &debug($bostate,exists $seen_bo{$bostate} ? " exists" : " missing");
-    } while($checksuf && !exists $seen_bo{$bostate});
+    } while($checksuf && scalar @escs && !exists $seen_bo{$bostate});
     my $dest;
     if ($last_word eq $eos_word) {
         $dest=$eos_state;  # with suffix checking on, this is probably redundant
@@ -139,7 +144,7 @@ sub ngram_to_fsa_arc {
     } else {
         $dest=$bostate;
     }
-    
+
 
     print "($source $dest $word_sym 10^$p)\n" unless ($last_word eq $sos_word);
 }
@@ -165,9 +170,53 @@ sub read_srilm {
     }
 }
 
-print qq{$final_state\n($start_state)\n};
 
-read_srilm(\&ngram_to_fsa_arc);
+sub full_ngrams {
+    my ($N,$proc)=@_;
+    my %w;
+    local $_;
+    while(<>) {
+        chomp;
+        my @w=split ' ';
+        $w{$_}=1 for (@w);
+    }
+#    no warnings 'closure'; # needed if you use a named sub for visit, rather than a lambda
+    my @words=keys %w;
+    my $nw=scalar @words;
+    my $p=1.0/($nw+2);
+    my $lp=log($p)/log(10);
+    my @ngr=();
+    my $visit;
+    $visit = sub {
+        my $d=scalar @ngr;
+        my $bo;
+        if ($d<$N) {
+            $bo=$lp;
+            for my $w (@words) {
+                push @ngr,$w;
+                $visit->();
+                pop @ngr;
+            }
+            $proc->($lp,$bo,@ngr,$eos_word) if ($d+1>=$minn);
+        }
+        $proc->($lp,$bo,@ngr) if ($d >= $minn || ($d>=2 && $ngr[0] eq $sos_word));
+    };
+    $visit->();
+    if (!$start1gram) {
+        @ngr=($sos_word);
+        $visit->();
+    }
+}
 
+print qq{$final_state\n};
+$start_state='""' if $fulln==1;
+print qq{($start_state)\n};  # fails if srilm is unigram.
+
+if ($fulln>0) {
+    $checksuf=0;
+    full_ngrams($fulln,\&ngram_to_fsa_arc)
+} else {
+    read_srilm(\&ngram_to_fsa_arc);
+}
 exit;
 
