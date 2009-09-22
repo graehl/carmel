@@ -10,9 +10,9 @@ using namespace std;
 
 namespace graehl {
 
-struct mate : public main 
+struct mate : public main
 {
-    mate() : main("mate","v1",usage_str)
+    mate() : main("mate",usage_str,"v1")
     {}
 };
 
@@ -20,4 +20,4 @@ struct mate : public main
 
 INT_MAIN(graehl::mate)
 
-    
+
