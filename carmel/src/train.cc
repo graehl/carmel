@@ -52,13 +52,14 @@ struct WeightAccum {
     }
 };
 
-void print_stats(arcs_table const& t,char const* header)
+template <class a>
+void print_stats(arcs_table<a> const& t,char const* header)
 {
 
     Config::debug() << header;
     WeightAccum a_w;
     WeightAccum a_c;
-    for (arcs_table::const_iterator i=t.begin(),e=t.end();i!=e;++i) {
+    for (typename arcs_table<a>::const_iterator i=t.begin(),e=t.end();i!=e;++i) {
         a_w(i->weight());
         a_c(i->counts);
     }
@@ -71,10 +72,10 @@ struct matrix_io_index : boost::noncopyable
     typedef HashTable<IOPair,for_io> for_state;
     typedef fixed_array<for_state> states_t;
 
-    arcs_table &t;
+    arcs_table<arc_counts> &t;
     states_t forward,backward;
 
-    matrix_io_index(arcs_table &t) : t(t), forward(t.n_states), backward(t.n_states)
+    matrix_io_index(arcs_table<arc_counts> &t) : t(t), forward(t.n_states), backward(t.n_states)
     {
     }
 
@@ -108,6 +109,7 @@ void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
         }
 }
 
+template <class arc_counts>
 struct cached_derivs
 {
     WFST &x;
@@ -123,7 +125,7 @@ struct cached_derivs
     template <class Examples>
     void compute_derivations(Examples const &ex,bool cache_backward)
     {
-        wfst_io_index io(arcs);
+        wfst_io_index<arc_counts> io(arcs);
         unsigned n=1;
         derivs.clear();
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
@@ -155,7 +157,7 @@ struct cached_derivs
         }
 
     }
-    typedef arcs_table arcs_t;
+    typedef arcs_table<arc_counts> arcs_t;
     arcs_t arcs;
 };
 
@@ -170,7 +172,7 @@ struct gibbs
     typedef fixed_array<Weight> normsum_t;
     unsigned nnorm;
     normsum_t normsum;
-    cached_derivs derivs;
+    cached_derivs<gibbs_counts> derivs;
     typedef derivations::acpath acpath;
     void addc(acpath const& p)
     {
@@ -191,11 +193,11 @@ struct gibbs
     {
         c.counts-=one;
     }
-    arc_counts &ac(GraphArc const& a) { return derivs.arcs.ac(a); }
+    gibbs_counts &count(GraphArc const& a) { return derivs.arcs.ac(a); }
     Weight operator()(GraphArc const& a)
     {
-        arc_counts &c=ac(a);
-        return c.counts/normsum[c.groupId()];
+        gibbs_counts &c=count(a);
+        return c.count/normsum[c.norm];
     }
 
 /*struct arc_counts
@@ -254,7 +256,7 @@ struct forward_backward
     WFST &x;
     cascade_parameters &cascade;
     unsigned n_in,n_out,n_st;
-    typedef arcs_table arcs_t;
+    typedef arcs_table<arc_counts> arcs_t;
     training_corpus *trn;
 
     arcs_t arcs;
@@ -314,7 +316,7 @@ struct forward_backward
     template <class Examples>
     void compute_derivations(Examples const &ex)
     {
-        wfst_io_index io(arcs);
+        wfst_io_index<arc_counts> io(arcs);
         unsigned n=1;
         cached_derivs.clear();
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
@@ -701,7 +703,7 @@ Weight WFST::train(cascade_parameters &cascade,
 
 #ifdef DEBUG
 #define DWSTAT(a) print_stats(arcs,a)
-            arcs_table const&arcs=fb.arcs;
+            arcs_table<arc_counts> const &arcs=fb.arcs;
 #else
 #define DWSTAT
 #endif
@@ -1063,12 +1065,19 @@ void WFST::train_prune() {
     */
 
 }
+
 std::ostream& operator << (std::ostream &o,arc_counts const& ac)
 {
     int pGroup;
     if ( !WFST::isNormal(pGroup = ac.groupId()) )
         o << pGroup << ' ' ;                                                                                                                                    \
     o<< ac.src << "->" << *ac.arc <<  " weight " << ac.weight() << " scratch: "<< ac.scratch  <<" counts " <<ac.counts  << '\n';
+    return o;
+}
+
+std::ostream& operator << (std::ostream &o,gibbs_counts const& ac)
+{
+    o<< ac.src << "->" << *ac.arc <<  " count: " << ac.count << " norm: " << ac.norm << '\n';
     return o;
 }
 

@@ -43,8 +43,10 @@ struct deriv_state
 
 
 // temporary counts etc. for deriv arcs.  see cascade.h for how weights are pushed back to original wfsts
+template <class arc_counts>
 struct arcs_table : public dynamic_array<arc_counts>
 {
+    typedef arc_counts counts_type;
     typedef dynamic_array<arc_counts> arcs_type;
     unsigned n_states;
     bool per_arc_prior;
@@ -57,7 +59,7 @@ struct arcs_table : public dynamic_array<arc_counts>
     }
     arc_counts &ac(GraphArc const& a) const
     {
-        assert(a.data_as<unsigned>()<size());
+        assert(a.data_as<unsigned>()<this->size());
         return (*(arcs_type *)this)[a.data_as<unsigned>()];
     }
 
@@ -65,15 +67,11 @@ struct arcs_table : public dynamic_array<arc_counts>
     {
         this->push_back();
         arc_counts &ac=this->back();
-        ac.arc=&a;
-        ac.prior_counts=global_prior;
-        if (per_arc_prior)
-            ac.prior_counts+=a.weight;
-        ac.src=s;
+        ac.set(s,&a,per_arc_prior?global_prior+a.weight:global_prior); //TODO: different prior per transducer
     }
 
-#define ARCS_TABLE_EACH(i) for (arcs_type::iterator i=this->begin(),end=this->end();i!=end;++i)
-#define ARCS_TABLE_EACH_C(i) for (arcs_type::const_iterator i=this->begin(),end=this->end();i!=end;++i)
+#define ARCS_TABLE_EACH(i) for (typename arcs_type::iterator i=this->begin(),end=this->end();i!=end;++i)
+#define ARCS_TABLE_EACH_C(i) for (typename arcs_type::const_iterator i=this->begin(),end=this->end();i!=end;++i)
 
     template <class V>
     void visit(V &v)
@@ -114,16 +112,19 @@ struct arcs_table : public dynamic_array<arc_counts>
 #undef ARCS_TABLE_EACH
 };
 
+template <class arc_counts>
 struct wfst_io_index : boost::noncopyable
 {
+    typedef arc_counts counts_type;
     typedef dynamic_array<unsigned> for_io; // id in arcs_table
     typedef HashTable<IOPair,for_io> for_state;
     typedef fixed_array<for_state> states_t;
 
     states_t st;
-    arcs_table &t;
+    typedef arcs_table<arc_counts> arct;
+    arct &t;
 
-    wfst_io_index(arcs_table &t) : st(t.n_states),t(t)
+    wfst_io_index(arct &t) : st(t.n_states),t(t)
     {
         for (unsigned i=0,N=t.size();i!=N;++i) {
             arc_counts const& ac=t[i];
@@ -249,6 +250,7 @@ struct derivations //: boost::noncopyable
 
     typedef fixed_array<Weight> fb_weights;
 
+    template <class arcs_table>
     struct weight_for
     {
         typedef Weight result_type;
@@ -323,10 +325,11 @@ struct derivations //: boost::noncopyable
         }
     }
 
+    template <class arcs_table>
     Weight collect_counts(arcs_table &t)
     {
 //        update_weights(t);
-        weight_for wf(t);
+        weight_for<arcs_table> wf(t);
 
         unsigned nst=g.size();
         fb_weights f(nst),b(nst); // default 0-init
@@ -379,13 +382,14 @@ struct derivations //: boost::noncopyable
         free_reverse();
     }
 
-    template <class Symbols>
+    template <class Symbols,class wfst_io_index>
     bool init_and_compute(WFST &x,wfst_io_index const& io,Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false,bool drop_names=true,bool prune_=true)
     {
         init(in_,out_,w,line,cache_backward_);
         return compute(x,io,drop_names,prune_);
     }
 
+    template <class wfst_io_index>
     bool compute(WFST &x,wfst_io_index const& io,bool drop_names=true,bool prune_=true)
     {
         state_id start=derive(io,deriv_state(0,0,0));
@@ -520,18 +524,43 @@ struct derivations //: boost::noncopyable
     }
 
  private:
-    state_id derive (wfst_io_index const& io,deriv_state const& d);
-
-    void add_arcs(wfst_io_index const& io,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out
-                  ,wfst_io_index::for_state const& fs,unsigned source)
+    template <class wfst_io_index>
+    state_id derive (wfst_io_index const& io,deriv_state const& d)
     {
-        typedef wfst_io_index::for_io for_io;
+        const int EPS=WFST::epsilon_index;
+        state_id ret=g.size();
+        state_to_id::insert_return_type already=
+            id_of_state.insert(d,ret);
+        if (!already.second)
+            return already.first->second;
+        add(id_of_state,d,ret); // NOTE: very important that we've added this before we start taking self-epsilons.
+        g.push_back();
+        typename wfst_io_index::for_state const&fs=io.st[d.s];
+        add_arcs(io,EPS,EPS,d.i,d.o,fs,ret);
+        if (d.o < out.size()) {
+            add_arcs(io,EPS,out[d.o],d.i,d.o+1,fs,ret);
+        }
+        if (d.i < in.size()) {
+            Sym i=in[d.i];
+            add_arcs(io,i,EPS,d.i+1,d.o,fs,ret);
+            if (d.o < out.size()) {
+                add_arcs(io,i,out[d.o],d.i+1,d.o+1,fs,ret);
+            }
+        }
+        return ret;
+    }
+
+
+    template <class wfst_io_index>
+    void add_arcs(wfst_io_index const& io,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out
+                  ,typename wfst_io_index::for_state const& fs,unsigned source)
+    {
+        typedef typename wfst_io_index::for_io for_io;
         if (for_io const* match=find_second(fs,IOPair(s_in,s_out)))
-            for (for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
+            for (typename for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
-                arc_counts const& a=io.t[id];
                 ++global_stats.pre.arcs;
-                g[source].add_data_as(source,derive(io,deriv_state(i_in,a.dest(),i_out)),0,id);
+                g[source].add_data_as(source,derive(io,deriv_state(i_in,io.t[id].dest(),i_out)),0,id);
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
             }
 
