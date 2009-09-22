@@ -40,7 +40,7 @@ struct split_string_push_back
 };
 
 template <class Func>
-inline void split_noquote(
+inline unsigned split_noquote(
     const std::string &csv,
     Func f,
     const std::string &delim=","
@@ -50,23 +50,29 @@ inline void split_noquote(
     string::size_type pos=0,nextpos;
     string::size_type delim_len=delim.length();
     if (delim_len==0) delim_len=1;
+    unsigned n=0;
     while((nextpos=csv.find(delim,pos)) != string::npos) {
         if (! f(string(csv,pos,nextpos-pos)) )
-            return;
+            return n;
+        ++n;
         pos=nextpos+delim_len;
     }
-    if (csv.length()!=0)
-        f(string(csv,pos,csv.length()-pos));
+    if (csv.length()!=0) {
+        if (!f(string(csv,pos,csv.length()-pos)))
+            return n;
+        ++n;
+    }
+    return n;
 }
 
 template <class Cont>
-inline void split_into(
+inline unsigned split_into(
     std::string const& str,
     Cont &c,
     std::string const& delim=","
     )
 {
-    split_noquote(str,split_push_back<Cont>(c),delim);
+    return split_noquote(str,split_push_back<Cont>(c),delim);
 }
 
 template <class Cont>
