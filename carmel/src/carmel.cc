@@ -397,17 +397,20 @@ struct carmel_main
     unsigned set_vector(std::string const& key,dynamic_array<V> &pr,char const* osep = " ^ ",char const* isep=",")
     {
         typedef typename dynamic_array<V>::iterator I;
-        unsigned n=split_noquote(text_long_opts[key],Putter<I,Setter>(pr.begin()),isep);
-        if (n>0) {
-            Config::log() << "Using input WFST --"<<key<<":\n";
-            unsigned i=0;
-            for (i=0 ; i < n ; ++i) {
-                Config::log() << filenames[i];
-                Config::log() << osep << Setter::get(pr[i]);
+        std::string const& opt=text_long_opts[key];
+        if (!opt.empty()) {
+            unsigned n=split_noquote(opt,Putter<I,Setter>(pr.begin()),isep);
+            if (n>0) {
+                Config::log() << "Using input WFST --"<<key<<":\n";
+                unsigned i=0;
+                for (i=0 ; i < n ; ++i) {
+                    Config::log() << filenames[i];
+                    Config::log() << osep << Setter::get(pr[i]);
+                    Config::log() << std::endl;
+                }
                 Config::log() << std::endl;
+                return n;
             }
-            Config::log() << std::endl;
-            return n;
         }
         return 0;
     }
@@ -424,7 +427,8 @@ struct carmel_main
         unsigned N=nInputs;
         nms.clear();
         nms.push_back_n(norm_method,N);
-        set_vector<NM::f_group>("normby",nms," norm by ","");
+        if (have_opt("normby"))
+            set_vector<NM::f_group>("normby",nms," norm by ","");
         set_vector<NM::f_scale>("digamma",nms," digamma ",",");
         set_vector<NM::f_prior>("priors",nms," add counts ",",");
         return nms;
