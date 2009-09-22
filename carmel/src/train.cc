@@ -1094,7 +1094,7 @@ Weight forward_backward::maximize(WFST::NormalizeMethods const& methods,FLOAT_TY
     DUMPDW("Weights before prior smoothing");
 
     //    arcs.pre_norm_counts(corpus.totalEmpiricalWeight);
-    arcs.visit(for_arcs::prep_new_weights(corpus().totalEmpiricalWeight));
+    arcs.visit(for_arcs::prep_new_weights(1.0));
 
 
 //    DUMPDW("Weights before normalization");

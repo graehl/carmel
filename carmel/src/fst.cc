@@ -180,7 +180,7 @@ unsigned WFST::set_normgroups(NormalizeMethod const& method, unsigned sid)
 {
     unsigned id=sid;
     norm_group_by group=method.group;
-    if (group==NONE)
+    if (isEmpty() || group==NONE)
         return sid;
     if (group==CONDITIONAL)
         indexInput();
