@@ -7,6 +7,6 @@ test: next
 .PHONY: test
 
 %:
-	cd ../$(P) && make $(MAKEFLAGS) $(MAKECMDGOALS)
+	g++ words_per_line.cpp -I../.. -o words_per_line && ./words_per_line < words_per_line.cpp
 
 

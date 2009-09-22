@@ -1,4 +1,4 @@
-//provides access to a collection of objects larger than virtual memory allows, by explicitly mapping a region to disk files which are (re)mapped on demand.  objects must provide a read method that constructs the object to contiguous memory.  input must support seek() to handle out-of-space retries.
+//provides access to a collection of objects larger than virtual memory allows.  input must support seek back to beginning
 #ifndef GRAEHL_SHARED__SERIALIZE_BATCH_HPP
 #define GRAEHL_SHARED__SERIALIZE_BATCH_HPP
 
@@ -37,8 +37,8 @@ struct serialize_batch {
         RECORD_FOLLOWS=0x31415926,
         END_RECORDS=0x27182818
     };
-    
-        
+
+
  public:
     typedef serialize_batch<B> self_type;
 
@@ -52,9 +52,9 @@ struct serialize_batch {
     ostream_archive oa;
     bool delete_file; // if true, filename is deleted on destruction
     bigger_streambuf buf;
-    
+
     value_type current_from_f;
-    
+
     // if !use_file
     typedef dynamic_array<value_type> A; //FIXME: use slist?  because POD-move might be bad for some people (even though serialize works fine)
     typedef typename A::iterator AI;
@@ -63,7 +63,7 @@ struct serialize_batch {
     bool rewind_store; // set to true to rewind, so first advance sets cursor=begin
 
     size_t total_items;
-    
+
     bool advance()
     {
         if (use_file) {
@@ -84,7 +84,7 @@ struct serialize_batch {
                 ++store_cursor;
             return store_cursor!=store.end();
         }
-        
+
     }
 
     void rewind()
@@ -94,10 +94,10 @@ struct serialize_batch {
         else
             rewind_store=true;
     }
-    
-    
+
+
     // may only follow a call to advance() (repeated current() after that is ok).  any changes made won't be preserved for next rewind if using disk.  but i return a mutable reference in case caches in the object need updating.
-    value_type &current() 
+    value_type &current()
     {
         if (use_file)
             return current_from_f;
@@ -106,7 +106,7 @@ struct serialize_batch {
     }
 
 /* to iterate:
-   
+
 for(batch.rewind();batch.advance();)
 dosomething(batch.current())
 */
@@ -120,21 +120,21 @@ o << ")\n";
 return GENIOGOOD;
 }
     */
-     size_t size() const {        
+     size_t size() const {
          return total_items;
      }
 
-    std::string stored_in() const 
+    std::string stored_in() const
     {
         return use_file ? filename : "memory";
     }
-    
+
     void print_stats(std::ostream &out) const {
         out << size() << " items, stored in " << stored_in() << "\n";
     }
-    
+
     template <class F>
-    void enumerate(F f)  {        
+    void enumerate(F f)  {
 //        DBP_INC_VERBOSE;
         rewind();
         while(advance())
@@ -180,7 +180,7 @@ return GENIOGOOD;
        batch.mark_end();
     */
 
-    void clear() 
+    void clear()
     {
         if (use_file) {
             f.seekp(0,std::ios::beg);
@@ -189,7 +189,7 @@ return GENIOGOOD;
         }
         total_items=0;
     }
-    
+
     value_type &start_new()
     {
         if (use_file)
@@ -201,7 +201,7 @@ return GENIOGOOD;
     }
 
     // no more using start_new()'s returned object after one of these:
-    void keep_new() 
+    void keep_new()
     {
         ++total_items;
         if (use_file) {
@@ -225,7 +225,7 @@ return GENIOGOOD;
             f.flush();
         }
     }
-    
+
 };
 
 

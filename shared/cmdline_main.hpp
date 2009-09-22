@@ -16,11 +16,11 @@
 
 namespace graehl {
 
-struct main 
+struct main
 {
     typedef main self_type;
 
-    friend inline std::ostream &operator<<(std::ostream &o,self_type const& s) 
+    friend inline std::ostream &operator<<(std::ostream &o,self_type const& s)
     {
         s.print(o);
         return o;
@@ -34,13 +34,13 @@ struct main
     {
         return appname+"-"+get_version();
     }
-    
+
     std::string get_version() const
     {
         return version+compiled;
     }
 
-    
+
     int debug_lvl;
     bool help;
     ostream_arg log_file,out_file;
@@ -50,6 +50,7 @@ struct main
     std::auto_ptr<std::ostream> teestreamptr;
 
     std::string appname,version,compiled,usage;
+    //FIXME: segfault if version is a char const* global in subclass xtor, why?
     main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",std::string const& compiled=GRAEHL_MAIN_COMPILED)  : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Allowed options"),options_added(false)
     {
     }
@@ -57,24 +58,24 @@ struct main
     typedef printable_options_description<std::ostream> OD;
     OD general,cosmetic,all_options;
     bool options_added;
-    
+
     virtual void run()
     {
         out() << cmdname << ' ' << version << ' ' << compiled << std::endl;
     }
-    
+
     virtual void set_defaults()
     {
         set_defaults_base();
     }
-    
+
     virtual void validate_parameters()
     {
         validate_parameters_base();
     }
 
     // this should only be called once.  (called after set_defaults)
-    virtual void add_options(OD &all) 
+    virtual void add_options(OD &all)
     {
         if (options_added)
             return;
@@ -83,42 +84,42 @@ struct main
         finish_options(all);
     }
 
-    virtual void finish_options(OD &all) 
+    virtual void finish_options(OD &all)
     {
         all.add(general).add(cosmetic);
         options_added=true;
-    }    
-    
+    }
+
     virtual void add_options_extra(OD &all) {}
 
-    virtual void log_invocation() 
+    virtual void log_invocation()
     {
         log_invocation_base();
     }
 
-    
-    void set_defaults_base() 
+
+    void set_defaults_base()
     {
         out_file=stdout_arg();
         log_file=stderr_arg();
     }
-    
-    inline std::ostream &log() const {
-        return *log_stream;      
-    }
-    
-    inline std::ostream &out() const {
-        return *out_file;      
-    }    
 
-    void log_invocation_base() 
-    {                
+    inline std::ostream &log() const {
+        return *log_stream;
+    }
+
+    inline std::ostream &out() const {
+        return *out_file;
+    }
+
+    void log_invocation_base()
+    {
         log() << "### COMMAND LINE:\n" << cmdline_str << "\n\n";
         log() << "### CHOSEN OPTIONS:\n";
         all_options.print(log(),vm,OD::SHOW_DEFAULTED | OD::SHOW_HIERARCHY);
     }
-    
-    void validate_parameters_base() 
+
+    void validate_parameters_base()
     {
         log_stream=log_file.get();
         if (!is_default_log(log_file)) // tee to cerr
@@ -130,44 +131,44 @@ struct main
         DBP::set_logstream(&log());
         DBP::set_loglevel(log_level);
 #endif
-        
+
     }
-    
-    void add_options_base(OD &all,bool add_out_file=true) 
+
+    void add_options_base(OD &all,bool add_out_file=true)
     {
         using boost::program_options::bool_switch;
-        
+
         general.add_options()
             ("help,h", bool_switch(&help),
              "show usage/documentation")
             ;
 
-      
+
         if (add_out_file)
             cosmetic.add_options()
                 ("out-file,o",defaulted_value(&out_file),
                  "Output here (instead of STDOUT)");
-            
+
         cosmetic.add_options()
             ("log-file,l",defaulted_value(&log_file),
              "Send logs messages here (as well as to STDERR) - FIXME: must end in .gz")
             ("debug-level,d",defaulted_value(&debug_lvl),
-             "Debugging output level (0 = off, 0xFFFF = max)")             
+             "Debugging output level (0 = off, 0xFFFF = max)")
             ;
-        
+
     }
 
     boost::program_options::variables_map vm;
-    
-    bool parse_args(int argc, char **argv) 
+
+    bool parse_args(int argc, char **argv)
     {
         using namespace std;
         using namespace boost::program_options;
 
         add_options(all_options);
-        
+
         try {
-            cmdline_str=graehl::get_command_line(argc,argv,NULL);        
+            cmdline_str=graehl::get_command_line(argc,argv,NULL);
             all_options.parse_options(argc,argv,vm);
 
             if (help) {
@@ -184,7 +185,7 @@ struct main
         return true;
     }
 
-    
+
     //FIXME: defaults cannot change after first parse_args
     int run(int argc, char** argv)
     {
@@ -210,9 +211,9 @@ struct main
             return carp("FATAL Exception of unknown type!");
         }
         return 0;
-        
+
     }
-    
+
     template <class C>
     int carp(C const& c) const
     {
@@ -224,7 +225,7 @@ struct main
     virtual ~main() {}
 };
 
-    
+
 
 }
 
