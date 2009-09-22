@@ -25,11 +25,11 @@
 namespace graehl {
 
 template <class O>
-struct bound_printer 
+struct bound_printer
 {
     O *po;
     template <class T>
-    void operator()(T const& t) const 
+    void operator()(T const& t) const
     {
         *po << t;
     }
@@ -57,13 +57,13 @@ struct bound_writer
     }
 };
 
-    
+
 template <class W>
 bound_writer<W>
 make_bound_writer(W const& w)
 {
     return bound_writer<W>(w);
-}    
+}
 
 
 template <class T>
@@ -80,12 +80,12 @@ void extract_from_filename(const char *filename,T &to) {
 template <class Value,class Set,class Ch, class Tr>
 inline bool parse_range_as(std::basic_istream<Ch,Tr> &in,Set &set) {
     char c;
-//    typedef typename Set::value_type Value;    
+//    typedef typename Set::value_type Value;
     Value a,b;
     while(in) {
         if (!(in>>c)) break;
         bool remove=false;
-        if (c!='^') {            
+        if (c!='^') {
             if (c!='\\')
                 in.unget();
         } else
@@ -95,7 +95,7 @@ inline bool parse_range_as(std::basic_istream<Ch,Tr> &in,Set &set) {
             set.erase(a);
         else
             set.insert(a);
-        if (!(in>>c)) break;        
+        if (!(in>>c)) break;
         if (c=='-') {
             if (!(in>>b)) break;
             for(;a<=b;++a)
@@ -137,27 +137,27 @@ inline bool parse_range(const std::string &range,Set &set) {
 #define O_print  template <class Ch,class Tr> std::basic_ostream<Ch,Tr> & print(std::basic_ostream<Ch,Tr> & o)
 
 template <char equal,char comma,class Ck,class Cv>
-std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V) 
+std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V)
 {
     typename Ck::const_iterator ik=K.begin(),ek=K.end();
     typename Cv::const_iterator iv=V.begin(),ev=V.end();
     o << '(';
     word_spacer_c<comma> sep;
     for(;ik<ek && iv<ev;++ik,++iv) {
-        o << sep << *ik << equal << *iv;        
+        o << sep << *ik << equal << *iv;
     }
     return o << ')';
 }
 
 template <class Ck,class Cv>
-std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V) 
+std::ostream& print_parallel_key_val(std::ostream &o,const Ck &K,const Cv &V)
 {
     return print_parallel_key_val<'=',',',Ck,Cv>(o,K,V);
 }
 
 
 template <class It,class Ch,class Tr>
-inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,It begin,It end,char c=' ') 
+inline std::basic_ostream<Ch,Tr> & print_sequence(std::basic_ostream<Ch,Tr> & o,It begin,It end,char c=' ')
 {
     word_spacer sep(c);
     o << "[";
@@ -183,7 +183,7 @@ inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,c
 
 template <class Cont,class Ch,class Tr>
 inline std::basic_ostream<Ch,Tr> & print_default(std::basic_ostream<Ch,Tr> & o,const Cont &thing,typename
-                                                 not_has_const_iterator<Cont>::type *SFINAE=0) 
+                                                 not_has_const_iterator<Cont>::type *SFINAE=0)
 {
     return o << thing;
 }
@@ -203,14 +203,14 @@ namespace graehl {
 template <class Ch,class Tr> \
 inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,const C &thing) \
 { \
-    return print_sequence(o,thing); \
+    return graehl::print_sequence(o,thing);     \
 }
 
 #define USE_PRINT_SEQUENCE_TEMPLATE(C) \
 template <class V,class Ch,class Tr>                                                         \
 inline std::basic_ostream<Ch,Tr> & operator <<(std::basic_ostream<Ch,Tr> & o,const C<V> &thing) \
 { \
-    return print_sequence(o,thing); \
+    return graehl::print_sequence(o,thing); \
 }
 
 // why not template?  because i think that we may conflict with other overrides
@@ -296,7 +296,7 @@ struct getline_reader
     }
 };
 
-    
+
 
 struct DefaultWriter
 {
@@ -431,13 +431,13 @@ std::basic_ostream<Ch,Tr> & range_print(std::basic_ostream<Ch,Tr>& o,T begin, T 
 }
 
 template <class Dict>
-struct dict_writer 
+struct dict_writer
 {
     Dict const* dict;
     dict_writer(Dict const& d) : dict(&d) {}
     dict_writer() : dict() {}
     dict_writer(dict_writer const& o) : dict(o.dict) {}
-    void set(Dict const& d) 
+    void set(Dict const& d)
     {
         dict=&d;
     }
@@ -452,18 +452,18 @@ template <class Dict>
 struct dict_reader
 {
     typedef typename Dict::index_type value_type;
-    
+
     Dict *dict;
     dict_reader(Dict const& d) : dict(&d) {}
     dict_reader() : dict() {}
     dict_reader(dict_reader const& o) : dict(o.dict) {}
-    void set(Dict & d) 
+    void set(Dict & d)
     {
         dict=&d;
     }
-    
+
     template <class S,class Index>
-    void operator()(S &s,Index & i) const 
+    void operator()(S &s,Index & i) const
     {
         typename Dict::token_type t;
         s >> t;
@@ -471,10 +471,10 @@ struct dict_reader
     }
 };
 
-    
+
 
 template <class Writer=DefaultWriter>
-struct container_writer 
+struct container_writer
 {
     bool multiline;
     bool parens;
@@ -489,7 +489,7 @@ struct container_writer
     }
 };
 
-    
+
 
 template <class O, class T>
 inline  std::ios_base::iostate print_range(O& o,T begin, T end,bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')') {
@@ -602,7 +602,7 @@ void insert_byid(const A& vals,I &in,O &out)
     unsigned N=0; //init only to suppress warning
     const int waiting_space=0,waiting_i=1,seen_i=2,seen_id=3,scan_number=4; // can't get enum to work in gcc-4
     const int restart=waiting_space;
-    
+
     int state=waiting_i;
     while (in.get(c)) {
         switch(state) {
