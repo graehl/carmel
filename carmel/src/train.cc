@@ -295,7 +295,7 @@ struct gibbs
                 Config::warn() << "--print-from,-to gibbs ["<<a<<","<<b<<") is out of range for "<<c.size()<<" input transducers.\n";
             return;
         }
-        b=std::min(b,c.size());
+        if (b>c.size()) b=c.size();
         if (a==b) return;
         for (sample_t::const_iterator i=sample.begin(),e=sample.end();i!=e;++i)
             print_path(*i,a,b,c);
