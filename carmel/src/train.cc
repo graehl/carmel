@@ -168,7 +168,7 @@ struct gibbs
     training_corpus &corpus;
     WFST::NormalizeMethods const& methods;
     WFST::train_opts const& topt;
-    WFST::gibbs_opts const& gopt;
+    WFST::gibbs_opts gopt;
     typedef WFST::gibbs_params gps_t;
     gps_t gps;
     typedef fixed_array<Weight> normsum_t;
@@ -261,7 +261,7 @@ struct gibbs
             power=1./temp(i);
             t=i-burnt0;
             if (t==0) {
-                for (gps_t::const_iterator i=gps.begin(),e=gps.end();i!=e;++i)
+                for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
                     i->initsum();
                 accum_delta=true;
             } else if (t<0) t==0;
@@ -282,11 +282,11 @@ struct gibbs
         assert(b<=r.size());
         for (unsigned i=a;i<b;++i)
             r[i].clear();
-        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
-            cascade_path &rp=r[i];
-            for (param_list p=*i;p;p=p->next)
-                rp.push_back((FSTArc*)p->data);
-        }
+        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
+            for (param_list p=*i;p;p=p->next) {
+                FSTArc *a=(FSTArc*)p->data;
+                r[param(a).cascadei].push_back(a);
+            }
     }
     void print_sample(unsigned a,unsigned b,casc c)
     {
@@ -300,14 +300,14 @@ struct gibbs
         for (sample_t::const_iterator i=sample.begin(),e=sample.end();i!=e;++i)
             print_path(*i,a,b,c);
     }
-    void print_sample(acpath const& p,unsigned a,unsigned b,casc c)
+    void print_path(acpath const& p,unsigned a,unsigned b,casc c)
     {
         cascade_paths ps(c.size());
         paths(p,a,b,ps);
         for (unsigned i=a;i<b;++i) {
-            gopt.printer(c[i],ps[i]);
+            gopt.printer(*c[i],ps[i]);
         }
-        gopt.printer.out<<'\n';
+        gopt.printer.out()<<'\n';
     }
     void print_sample()
     {
@@ -738,12 +738,11 @@ struct add_weighted_scratch
 Weight WFST::train(
                    training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count,
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
-                   int maxTrainIter
-                   ,train_opts const& opts
+                   train_opts const& opts
     )
 {
     cascade_parameters cascade;
-    return train(cascade,corpus,methods,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,maxTrainIter,opts);
+    return train(cascade,corpus,methods,weight_is_prior_count,smoothFloor,converge_arc_delta,converge_perplexity_ratio,opts);
 }
 
 
@@ -751,8 +750,7 @@ Weight WFST::train(
 Weight WFST::train(cascade_parameters &cascade,
                    training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count,
                    Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio,
-                   int maxTrainIter
-                   ,train_opts const& opts
+                   train_opts const& opts
                    )
 {
     cascade.normalize(*this,methods);
@@ -778,7 +776,7 @@ Weight WFST::train(cascade_parameters &cascade,
     bool have_good_weights=false;
 
     for(unsigned restart_no=0;;++restart_no) { // random restarts
-        int train_iter = 0;
+        unsigned train_iter = 0;
         Weight lastChange;
         Weight lastPerplexity;
         lastPerplexity.setInfinity();
@@ -810,8 +808,8 @@ Weight WFST::train(cascade_parameters &cascade,
 
             cascade.update(*this);
 
-            if ( train_iter > maxTrainIter && have_good_weights) {
-                Config::log()  << "Maximum number of iterations (" << maxTrainIter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
+            if ( train_iter > opts.max_iter && have_good_weights) {
+                Config::log()  << "Maximum number of iterations (" << opts.max_iter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
                 break;
             }
 

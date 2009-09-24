@@ -188,7 +188,7 @@ It choose_p01(It begin,It end,P const& p)
     double choice=random01();
     for (It i=begin;i!=end;++i)
         if (sum<choice) return i;
-        else sum+=P(*i);
+        else sum+=p(*i);
     return end;
 }
 

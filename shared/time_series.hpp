@@ -19,6 +19,11 @@
 
 namespace graehl {
 
+inline double pow(double x,double y)
+{
+    return std::pow(x,y);  // this isn't found with using namespace std, so ...
+}
+
 /*
 template <class V>
 struct time_series

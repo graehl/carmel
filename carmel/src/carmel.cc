@@ -836,9 +836,9 @@ main(int argc, char *argv[]){
                 if ( nGenerate < 1 )
                     nGenerate = 1;
             } else if ( maxTrainIter == -1 ) {
-                readParam(&maxTrainIter,argv[i],'M');
-                if ( maxTrainIter < 1 )
-                    maxTrainIter = 1;
+                readParam(&train_opt.max_iter,argv[i],'M');
+                if ( train_opt.max_iter < 1 )
+                    train_opt.max_iter = 1;
             } else if ( maxGenArcs == -1 ) {
                 readParam(&maxGenArcs,argv[i],'L');
                 if ( maxGenArcs < 0 )
@@ -1299,7 +1299,7 @@ main(int argc, char *argv[]){
                     WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
                     train_opt.ra=ran_accept;
 
-                    result->train(cascade,corpus,nms,flags['U'],smoothFloor,converge, converge_pp_ratio, maxTrainIter, train_opt);
+                    result->train(cascade,corpus,nms,flags['U'],smoothFloor,converge, converge_pp_ratio, train_opt);
                 }
 
                 if (!cascade.trivial) {

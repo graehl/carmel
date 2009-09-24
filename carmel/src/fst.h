@@ -114,7 +114,7 @@ class WFST {
             W=flags['W'];
             E=flags['E'];
         }
-
+        std::ostream &out() { return *pout; }
         void start(WFST &wfst)
         {
             src=0;
@@ -186,15 +186,14 @@ class WFST {
             }
             src=(unsigned)arc.dest;
         }
-        /*
         template <class I>
-        void operator()(WFST &w,I beg,I end)
+        void operator()(WFST &w,I i,I end)
         {
             start(w);
-            for (I i=beg;i!=end;++i)
+            for(;i!=end;++i)
                 arc(w,*i);
             finish(w);
-            }*/
+        }
         template <class C>
         void operator()(WFST &w,C const& c)
         {
@@ -1266,7 +1265,7 @@ class WFST {
         bool cumulative_counts;
         // random choices have probs raised to 1/temperature(iteration) before coin flip
         typedef clamped_time_series<double> temps;
-        temps temperature(double iters) {
+        temps temperature(double iters) const {
             return temps(high_temp,low_temp,iters,temps::linear);
         }
         double high_temp,low_temp;
@@ -1311,7 +1310,7 @@ class WFST {
     void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,double min_prior=1e-20);
 
     Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts);
-    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
 
 

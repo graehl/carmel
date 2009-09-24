@@ -98,7 +98,7 @@ struct GraphState {
     template <class W>
     void setwt(W const& w)
     {
-        for ( List<GraphArc>::const_iterator i=arcs.const_begin(),end=arcs.const_end() ; i !=end ; ++i ) {
+        for ( List<GraphArc>::iterator i=arcs.begin(),end=arcs.end() ; i !=end ; ++i ) {
             GraphArc &a=*i;
             a.wt()=w(a);
         }
@@ -119,7 +119,7 @@ struct Graph {
     template <class W>
     void setwt(W const& w)
     {
-        for ( unsigned i=0;i<nStates;++i)
+        for (unsigned i=0;i<nStates;++i)
             states[i].setwt(w);
     }
 };

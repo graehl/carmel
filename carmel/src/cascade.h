@@ -314,7 +314,7 @@ struct cascade_parameters
     void update_gibbs(P const& p)
     {
         for (unsigned i=0,e=chains.size();i!=e;++i)
-            update_gibbs(chains[i],p);
+            update_gibbs(*cascade[i],p);
     }
 
     template <class P>
@@ -332,10 +332,9 @@ struct cascade_parameters
     template <class P>
     void update_gibbs(WFST &w,P const& p)
     {
-        w.visit_arcs(gibbs_update<P>(w,p));
+        gibbs_update<P> up(w,p);
+        w.visit_arcs(up);
     }
-
-
 
     bool is_chain[2]; // is_chain[second] tells if arcs given to record are already chained, i.e. should you cons then append or just append
 
