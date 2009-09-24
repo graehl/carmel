@@ -98,13 +98,11 @@ struct GraphState {
     template <class W>
     void setwt(W const& w)
     {
-        for ( List<GraphArc>::iterator i=arcs.begin(),end=arcs.end() ; i !=end ; ++i ) {
+        for ( List<GraphArc>::val_iterator i=arcs.val_begin(),end=arcs.val_end() ; i !=end ; ++i ) {
             GraphArc &a=*i;
             a.wt()=w(a);
         }
-
     }
-
 };
 
 inline void swap(GraphState &a,GraphState &b)
