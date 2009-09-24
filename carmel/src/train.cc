@@ -153,7 +153,7 @@ struct cached_derivs
         for (derivs.rewind();derivs.advance();) {
             ++n;
             training_progress(n);
-            f(derivs.current());
+            f(n,derivs.current());
         }
 
     }
@@ -169,86 +169,184 @@ struct gibbs
     WFST::NormalizeMethods const& methods;
     WFST::train_opts const& topt;
     WFST::gibbs_opts const& gopt;
+    typedef WFST::gibbs_params gps_t;
+    gps_t gps;
     typedef fixed_array<Weight> normsum_t;
     unsigned nnorm;
     normsum_t normsum;
     cached_derivs<gibbs_counts> derivs;
-    typedef derivations::acpath acpath;
-    void addc(acpath const& p)
+    typedef cascade_parameters::chain_t param_list;
+    typedef FSTArc *carc_t;
+    typedef dynamic_array<param_list> acpath;
+    typedef fixed_array<acpath> sample_t;
+    sample_t sample;
+    carc_t carc(GraphArc const& a) const
+    {
+        return derivs.arcs.ac(a).arc;
+    }
+    param_list ac(GraphArc const& a) const
+    {
+        return cascade[carc(a)];
+    }
+    void addc(acpath const& p,double delta)
     {
         for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
-            addc(**i);
+            addc(*i,delta);
     }
-    void subc(acpath const& p)
+    void addc(param_list p,double delta)
     {
-        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
-            addc(**i);
+        for (;p;p=p->next)
+            addc(param(p->data),delta);
     }
-    Weight one;
-    void addc(arc_counts &c)
+    void addc(gibbs_param &p,double delta)
     {
-        c.counts+=one;
+        p.addsum(delta,t,normsum,accum_delta);
     }
-    void subc(arc_counts &c)
+    gibbs_param &param(FSTArc const& f) const
+    { return gps[f.groupId]; }
+    gibbs_param &param(FSTArc const* pf) const
+    { return param(*pf); }
+    double p_param(gibbs_param const&p) const
     {
-        c.counts-=one;
+        return p.count/normsum[p.norm];
     }
-    gibbs_counts &count(GraphArc const& a) { return derivs.arcs.ac(a); }
-    Weight operator()(GraphArc const& a)
+    // for cascade.update_gibbs
+    double operator()(FSTArc const& f) const
     {
-        gibbs_counts &c=count(a);
-        return c.count/normsum[c.norm];
+        return p_param(param(f));
+    }
+    void iteration()
+    {
+        derivs.foreach_deriv(*this);
+    }
+    void operator()(unsigned n,derivations &d)
+    {
+        acpath &p=sample[n];
+        if (subtract_old) {
+            addc(p,-1);
+        }
+        d.random_path(p,*this);
+        addc(p,1);
+    }
+    // for derivations::random_path; compute global backward probs on Weight array
+    double operator()(GraphArc const& a) const
+    {
+        param_list p=ac(a);
+        double w=1.;
+        for (;p;p=p->next)
+            w*=p_param(param(p->data));
+        return w;
+    }
+    //TODO: allow locked arcs?  see fst.h *_gibbs derivations global_normalize
+    gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
+          ,WFST::NormalizeMethods & methods
+          ,WFST::train_opts const& topt
+          ,WFST::gibbs_opts const& gopt) :
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), temp(gopt.temperature(topt.max_iter-1))
+    {
+        cascade.set_composed(composed);
+        Ni=topt.max_iter;
+        burnt0=gopt.cumulative_counts ? gopt.sched.burnin : Ni;
+        run();
+    }
+    void run()
+    {
+        addnorms(); // for base model
+        power=1.;
+        subtract_old=false;
+        accum_delta=false;
+        iteration(); // random initial sample
+        subtract_old=true;
+        for (i=0;i<Ni;++i) {
+            power=1./temp(i);
+            t=i-burnt0;
+            if (t==0) {
+                for (gps_t::const_iterator i=gps.begin(),e=gps.end();i!=e;++i)
+                    i->initsum();
+                accum_delta=true;
+            } else if (t<0) t==0;
+            training_progress(i);
+            iteration();
+        }
+    }
+    void save_weights()
+    {
+        cascade.update_gibbs(*this);
+    }
+    typedef dynamic_array<FSTArc*> cascade_path;
+    typedef fixed_array<cascade_path> cascade_paths;
+    typedef cascade_parameters::cascade_t casc;
+    // for transducers in c[i] for i in [a,b) put result in r[i]
+    void paths(acpath const& p,unsigned a,unsigned b,cascade_paths &r)
+    {
+        assert(b<=r.size());
+        for (unsigned i=a;i<b;++i)
+            r[i].clear();
+        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
+            cascade_path &rp=r[i];
+            for (param_list p=*i;p;p=p->next)
+                rp.push_back((FSTArc*)p->data);
+        }
+    }
+    void print_sample(unsigned a,unsigned b,casc c)
+    {
+        if (!(b>a && a<c.size())) {
+            if (b!=0)
+                Config::warn() << "--print-from,-to gibbs ["<<a<<","<<b<<") is out of range for "<<c.size()<<" input transducers.\n";
+            return;
+        }
+        b=std::min(b,c.size());
+        if (a==b) return;
+        for (sample_t::const_iterator i=sample.begin(),e=sample.end();i!=e;++i)
+            print_path(*i,a,b,c);
+    }
+    void print_sample(acpath const& p,unsigned a,unsigned b,casc c)
+    {
+        cascade_paths ps(c.size());
+        paths(p,a,b,ps);
+        for (unsigned i=a;i<b;++i) {
+            gopt.printer(c[i],ps[i]);
+        }
+        gopt.printer.out<<'\n';
+    }
+    void print_sample()
+    {
+        print_sample(gopt.print_from,gopt.print_to,cascade.cascade);
     }
 
-/*struct arc_counts
+ private:
+    unsigned i,Ni;
+    double power;
+    double t;
+    double burnt0;
+    WFST::gibbs_opts::temps temp;
+    bool subtract_old;
+    bool accum_delta;
+
+    void addnorms()
+    {
+        for (gps_t::const_iterator i=gps.begin(),e=gps.end();i!=e;++i) {
+            gibbs_param const& p=*i;
+            normsum[p.norm]+=p.count;
+        }
+    }
+};
+
+
+void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
+                       , gibbs_opts const& gopt, double min_prior)
 {
-    unsigned src;
-    unsigned dest() const
-    {
-        return arc->dest;
+    for (NormalizeMethods::iterator i=methods.begin(),e=methods.end();i!=e;++i) {
+        if (i->add_count<=0) {
+            Config::warn() << "Gibbs sampling requires positive --priors for base model / initial sample.  Setting to "<<min_prior<<"\n";
+            i->add_count=min_prior;
+        }
     }
-    int in() const
-    {
-        return arc->in;
-    }
-    int out() const
-    {
-        return arc->out;
-    }
-    int groupId() const
-    {
-        return arc->groupId;
-    }
-    FSTArc *arc;
-    Weight scratch;
-    Weight em_weight;
-    Weight best_weight;
-    Weight counts;
-    Weight prior_counts;
-    Weight &weight() const
-    {
-        return arc->weight;
-    }
-};
+    gibbs g(*this,cascade,corpus,methods,topt,gopt);
+    g.save_weights();
+    g.print_sample();
+}
 
-struct save_counts
-{
-    void operator()(arc_counts &a) const
-    {
-        a.em_weight = a.weight();
-    }
-};
-
-*/
- //arcs.visit(save_counts())
-  gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
-        ,WFST::NormalizeMethods const& methods
-        , WFST::train_opts const& topt
-        , WFST::gibbs_opts const& gopt) :
-      composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_normgroups(composed,methods)), normsum(nnorm), derivs(composed,corpus,topt.cache), one(1.)
-    {
-    }
-};
 
 
 struct forward_backward
@@ -393,6 +491,7 @@ struct forward_backward
         : x(x),cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
         ,cached_derivs(opts.cache.use_disk(),opts.cache.disk_cache_filename,true,opts.cache.disk_cache_bufsize)
     {
+        cascade.set_composed(x);
         trn=NULL;
         f=b=NULL;
         remove_bad_training=true;
@@ -635,13 +734,6 @@ struct add_weighted_scratch
 }//ns
 
 
-
-
-void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods const& methods, train_opts const& topt
-                 , gibbs_opts const& gopt)
-{
-    gibbs g(*this,cascade,corpus,methods,topt,gopt);
-}
 
 Weight WFST::train(
                    training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count,
@@ -1077,10 +1169,9 @@ std::ostream& operator << (std::ostream &o,arc_counts const& ac)
 
 std::ostream& operator << (std::ostream &o,gibbs_counts const& ac)
 {
-    o<< ac.src << "->" << *ac.arc <<  " count: " << ac.count << " norm: " << ac.norm << '\n';
+    o<< ac.src << "->" << *ac.arc <<'\n';
     return o;
 }
-
 
 Weight forward_backward::maximize(WFST::NormalizeMethods const& methods,FLOAT_TYPE delta_scale)
 {

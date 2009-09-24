@@ -249,13 +249,16 @@ struct carmel_main
             flags['t']=true;
             flags['a']=true;
             flags['?']=true;
+            flags[':']=true; // cache reverse also
             long_opts["train-cascade"]=1;
         }
         get_opt("burnin",gopt.sched.burnin);
         get_opt("epoch",gopt.sched.epoch);
-        gopt.unsupervised_decode = have_opt("unsupervised");
+        get_opt("print-to",gopt.print_to);
+        get_opt("print-from",gopt.print_from);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
+        gopt.printer.set_flags(flags);
         return gibbs;
     }
 
@@ -422,7 +425,7 @@ struct carmel_main
             pr[i++]=zero;
     }
 
-    NMs const& norms()
+    NMs & norms()
     {
         unsigned N=nInputs;
         nms.clear();
@@ -1286,7 +1289,7 @@ main(int argc, char *argv[]){
                     corpus.set_null();
                 }
 
-                carmel_main::NMs const& nms=cm.norms();
+                carmel_main::NMs & nms=cm.norms();
                 if (gibbs) {
                     result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt);
                 } else {
@@ -1712,7 +1715,7 @@ cout <<         "\n"
         "--high-temp : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
         "--burnin : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
-        "--epoch : sum gibbs counts every <epoch> iterations after burnin\n"
+        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";

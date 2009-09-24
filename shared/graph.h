@@ -5,11 +5,13 @@
 
 #include <iostream>
 #include <vector>
+#include <iterator>
 
+#include <graehl/shared/config.h>
+#include <graehl/shared/weight.h>
 #include <graehl/shared/2heap.h>
 #include <graehl/shared/list.h>
 #include <graehl/shared/push_backer.hpp>
-#include <iterator>
 
 //#include <boost/serialization/access.hpp>
 
@@ -20,10 +22,20 @@ static const unsigned DFS_NO_PREDECESSOR=(unsigned)-1;
 struct GraphArc {
   int src;
   int dest;
-  FLOAT_TYPE weight;
+    WEIGHT_FLOAT_TYPE weight;
+    Weight & wt() const
+    {
+        return *(Weight *)&weight;
+    }
+    /*
+    Weight const& wt() const
+    {
+        return *(Weight const*)&weight;
+        }*/
+
   void *data;
     template <class T>
-    T &data_as() 
+    T &data_as()
     {
         return *(T*)(&data);
     }
@@ -33,7 +45,7 @@ struct GraphArc {
     {
         return *(T const*)(&data);
     }
-    
+
     GraphArc() {}
     GraphArc(int src,int dest,FLOAT_TYPE weight,void *data) :
         src(src),dest(dest),weight(weight),data(data)
@@ -43,7 +55,7 @@ struct GraphArc {
     {}
 // private:
 // friend class boost::serialization::access;
-    template <class Archive> 
+    template <class Archive>
     void serialize(Archive & ar, const unsigned int version=0)
     { ar & src & dest & weight & data; }
 };
@@ -53,39 +65,49 @@ std::ostream & operator << (std::ostream &out, const GraphArc &a);
 struct GraphState {
     typedef  List<GraphArc> arcs_type;
     arcs_type arcs;
-    
-    template <class Archive> 
+
+    template <class Archive>
     void serialize(Archive & ar, const unsigned int version=0)
     { ar & arcs; }
-    
-    void add(GraphArc const& a) 
+
+    void add(GraphArc const& a)
     {
         arcs.push(a);
     }
-    std::size_t outdegree() const 
+    std::size_t outdegree() const
     {
         return arcs.size();
     }
-    
+
     template <class T>
-    void add_data_as(int src,int dest,FLOAT_TYPE weight, T const& data) 
+    void add_data_as(int src,int dest,FLOAT_TYPE weight, T const& data)
     {
         arcs.push_front(src,dest,weight);
         arcs.front().template data_as<T>()=data;
     }
-    
-    void add(int src,int dest,FLOAT_TYPE weight, void *data) 
+
+    void add(int src,int dest,FLOAT_TYPE weight, void *data)
     {
         arcs.push_front(src,dest,weight,data);
     }
-    
-    void add(int src,int dest,FLOAT_TYPE weight) 
+
+    void add(int src,int dest,FLOAT_TYPE weight)
     {
         arcs.push_front(src,dest,weight);
     }
+    template <class W>
+    void setwt(W const& w)
+    {
+        for ( List<GraphArc>::const_iterator i=arcs.const_begin(),end=arcs.const_end() ; i !=end ; ++i ) {
+            GraphArc &a=*i;
+            a.wt()=w(a);
+        }
+
+    }
+
 };
 
-inline void swap(GraphState &a,GraphState &b) 
+inline void swap(GraphState &a,GraphState &b)
 {
     a.arcs.swap(b.arcs);
 }
@@ -94,6 +116,12 @@ inline void swap(GraphState &a,GraphState &b)
 struct Graph {
   GraphState *states;
   unsigned nStates;
+    template <class W>
+    void setwt(W const& w)
+    {
+        for ( unsigned i=0;i<nStates;++i)
+            states[i].setwt(w);
+    }
 };
 
 // take the arcs in graph (src,n_states) and add them, reversing src<->dest, to destination graph (destination,n_states).  copy data field unless data_point_to_forward, in which case point to original (forward) arc
@@ -121,11 +149,11 @@ class TopoSort {
   int n_back_edges;
  public:
 
-    bool has_cycle() const 
+    bool has_cycle() const
     {
         return n_back_edges;
     }
-    
+
   TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) {
     done = NEW bool[g.nStates];
     begun = NEW bool[g.nStates];
@@ -243,9 +271,9 @@ struct rewrite_GraphState
     unsigned n_kept;
     rewrite_GraphState() : n_kept(0)
     {}
-    
+
     template <class OldToNew>
-    void rewrite_arc(GraphArc &a,OldToNew const& m) const 
+    void rewrite_arc(GraphArc &a,OldToNew const& m) const
     {
         a.src=m[a.src];
         a.dest=m[a.dest];
@@ -256,7 +284,7 @@ struct rewrite_GraphState
     void operator()(GraphState &s,OldToNew const& t)
     {
         typedef GraphState::arcs_type A;
-        
+
         for (A::erase_iterator i=s.arcs.begin(),e=s.arcs.end();i!=e;) {
             if (t[i->dest]==(unsigned)-1) {
                 i=s.arcs.erase(i);
@@ -269,7 +297,7 @@ struct rewrite_GraphState
         }
     }
 
-    void operator()(GraphState &s) 
+    void operator()(GraphState &s)
     {
         s.arcs.clear();
     }
@@ -309,13 +337,13 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int src,unsigned *p_n_back_edges
 }
 
 template <class Weight>
-Weight countNoCyclePaths(Graph g, int src, int dest,unsigned *p_n_back_edges=0) 
+Weight countNoCyclePaths(Graph g, int src, int dest,unsigned *p_n_back_edges=0)
 {
     Weight *w=new Weight[g.nStates];
     countNoCyclePaths(g,w,src,p_n_back_edges);
     Weight wd=w[dest];
     delete w;
-    return wd;    
+    return wd;
 }
 
 // w is an array with as many entries as g has states.   w[start] is nonzero
@@ -333,6 +361,20 @@ void propagate_paths_in_order(Graph g,Order t,Order const& t_order_end,Weight_ge
   }
 }
 
+struct get_wt
+{
+    Weight const& operator()(GraphArc const& a) const
+    {
+        return a.wt();
+    }
+};
+
+template <class Weight_array,class Order>
+void propagate_paths_in_order_wt(Graph g,Order t,Order const& t_order_end,Weight_array& w)
+{
+    propagate_paths_in_order(g,t,t_order_end,get_wt(),w);
+}
+
 template <class Weight_get,class Weight_array>
 void propagate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned start)
 {
@@ -340,8 +382,8 @@ void propagate_paths(Graph g,Weight_get const& getwt,Weight_array& w,unsigned st
     reverse_topo_order r(g);
     r.order_from(make_push_backer(rev),start);
     propagate_paths_in_order(g,rev.rbegin(),rev.rend(),getwt,w);
-/*        
-  List<int> topo;  
+/*
+  List<int> topo;
   TopoSort sort(g,&topo);
   sort.order_from(start);
   propagate_paths_in_order(g,topo.begin(),topo.end(),getwt,w);
