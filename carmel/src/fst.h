@@ -88,6 +88,121 @@ class WFST {
 
 #define EPSILON_SYMBOL "*e*"
 #define WILDCARD_SYMBOL "*w*"
+    struct path_print
+    {
+        // options
+        bool O,I,Q,AT,W,E;
+        typedef dynamic_array<int> Output;
+        // bound here for fun:
+        std::ostream *pout;
+        // state used/saved per arc:
+        Output output;
+        graehl::word_spacer sp;
+        unsigned src;
+        Weight w;
+        path_print() : pout(&Config::out()),O(),I(),Q(),AT(),W(),E() {  }
+        path_print(bool const* flags) : pout(&Config::out())
+        {
+            set_flags(flags);
+        }
+        void set_flags(bool const* flags)
+        {
+            O=flags['O'];
+            I=flags['I'];
+            Q=flags['Q'];
+            AT=flags['@'];
+            W=flags['W'];
+            E=flags['E'];
+        }
+
+        void start(WFST &wfst)
+        {
+            src=0;
+            sp.reset();
+            output.clear();
+            w.setOne();
+        }
+        void finish(WFST &wfst)
+        {
+            std::ostream &out=*pout;
+            using namespace std;
+            if (AT ) {
+                out << endl;
+                sp.reset();
+                for (Output::const_iterator i=output.begin(),e=output.end();i!=e;++i)
+                    out << sp << wfst.outLetter(*i);
+                out << endl;
+            } else {
+                if (!W)
+                    out << sp << w;
+                out << endl;
+            }
+        }
+        static void out_maybe_quote(char const* str,ostream &out,bool quote)
+        {
+            if (quote)
+                out << str;
+            else
+                outWithoutQuotes(str,out);
+        }
+        static void outWithoutQuotes(const char *str, ostream &out) {
+            if ( *str != '\"') {
+                out << str;
+                return;
+            }
+            const char *psz = str;
+            while ( *++psz ) ;
+            if ( *--psz == '\"' ) {
+                while ( ++str < psz )
+                    out << *str;
+            } else
+                out << str;
+        }
+        void arc(WFST &wfst,FSTArc *a)
+        {
+            arc(wfst,*a);
+        }
+        void arc(WFST &wfst,FSTArc &arc)
+        {
+            std::ostream &out=*pout;
+            w*=arc.weight;
+            if (AT) {
+                int inid=arc.in,outid=arc.out;
+                if (outid!=WFST::epsilon_index)
+                    output.push_back(outid);
+                if (inid!=WFST::epsilon_index)
+                    out << sp << wfst.inLetter(inid);
+            } else {
+                if ( O || I ) {
+                    int id = O ? arc.out : arc.in;
+                    if ( !(E && id==WFST::epsilon_index) ) {
+                        out << sp;
+                        out_maybe_quote(O ? wfst.outLetter(id) : wfst.inLetter(id),out,!Q);
+                    }
+                } else {
+                    out << sp;
+                    wfst.printArc(arc,src,out);
+                }
+            }
+            src=(unsigned)arc.dest;
+        }
+        /*
+        template <class I>
+        void operator()(WFST &w,I beg,I end)
+        {
+            start(w);
+            for (I i=beg;i!=end;++i)
+                arc(w,*i);
+            finish(w);
+            }*/
+        template <class C>
+        void operator()(WFST &w,C const& c)
+        {
+            (*this)(w,c.begin(),c.end());
+        }
+    };
+
+
     void initAlphabet(int dir)
     {
         owner_alph[dir]=1;
@@ -641,6 +756,7 @@ class WFST {
     int randomPath(List<PathArc> *l,int max_len=-1) {
         return randomPath(l->back_inserter(), max_len);
     }
+    // makes locally random choices; doesn't pick a path relative to sum-of-all-paths
     template <class I> int randomPath(I i,int max_len=-1)
     {
         PathArc p;
@@ -702,8 +818,6 @@ class WFST {
         graehl::bestPaths(graph,0,final,k,v,throw_on_cycle);
         freeGraph(graph);
     }
-
-
 
     // if you prefer to use a visitor that deals with FST arcs rather than graph arcs
     template <class V>
@@ -1095,24 +1209,6 @@ class WFST {
 
 
 
-    struct counting_schedule
-    {
-        unsigned burnin;
-        unsigned epoch;
-        bool operator()(unsigned i)
-        {
-            return i>=burnin && (i-burnin)%epoch==0;
-        }
-        counting_schedule()
-        {
-            set();
-        }
-        void set(unsigned burn=0,unsigned every=1)
-        {
-            burnin=burn;
-            epoch=every;
-        }
-    };
 
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3
     }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
@@ -1143,34 +1239,59 @@ class WFST {
 
     };
 
+    struct counting_schedule
+    {
+        unsigned burnin;
+        unsigned epoch;
+        bool operator()(unsigned i)
+        {
+            return i>=burnin && (i-burnin)%epoch==0;
+        }
+        counting_schedule()
+        {
+            set();
+        }
+        void set(unsigned burn=0,unsigned every=1)
+        {
+            burnin=burn;
+            epoch=every;
+        }
+    };
+
     struct gibbs_opts
     {
-        dynamic_array<double> priors;
-        bool unsupervised_decode;
+        unsigned print_from;
+        unsigned print_to;
+        path_print printer;
+        bool cumulative_counts;
         // random choices have probs raised to 1/temperature(iteration) before coin flip
-        clamped_time_series<double> temperature(double iters) {
-            return clamped_time_series<double>(high_temp,low_temp,iters);
+        typedef clamped_time_series<double> temps;
+        temps temperature(double iters) {
+            return temps(high_temp,low_temp,iters,temps::linear);
         }
         double high_temp,low_temp;
         counting_schedule sched;
         gibbs_opts() { set_defaults(); }
         void set_defaults()
         {
+            print_from=print_to=0;
             high_temp=low_temp=1;
             sched.set();
-            unsupervised_decode=false;
-            priors.clear();
+            cumulative_counts=true;
         }
     };
 
     // set data field of arcs to int id of their normgroup (starting at idbase).  returns next free id. note: tied arcs ignored (TODO: set data field to list of normgroup ids to allow tying?)
-    unsigned set_normgroups(NormalizeMethod const& nm,unsigned idbase);
+    // push_back each arc to gps which will store its normgroup and prior count
+    typedef dynamic_array<gibbs_param> gibbs_params;
+    unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,unsigned cascadei=0);
+
 
     // TODO: move more of the train params into here
     struct train_opts
     {
         deriv_cache_opts cache;
-
+        unsigned max_iter;
         double learning_rate_growth_factor;
         int ran_restarts;
         random_restart_acceptor ra;
@@ -1187,9 +1308,9 @@ class WFST {
 
     typedef dynamic_array<NormalizeMethod> NormalizeMethods;
 
-    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods const& methods,train_opts const& topt, gibbs_opts const& gopt);
+    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,double min_prior=1e-20);
 
-    Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts);
+    Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts);
     Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, int maxTrainIter,train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
 

@@ -42,7 +42,7 @@ include ../shared/graehl.mk
 
 mydefault: all
 
-tests: ../$(BIN)/carmel.debug
+tests: $(BIN)/carmel.debug
 	cd test && ./runtests.sh ../$<
 #all
 

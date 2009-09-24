@@ -383,10 +383,11 @@ template <typename T,typename Alloc=std::allocator<T> > class fixed_array : publ
 public:
     typedef auto_array<T,Alloc> Super;
     explicit fixed_array() : Super(0) {  }
-    explicit fixed_array(std::size_t sp) : Super(sp) {
+    typedef unsigned size_type;
+    explicit fixed_array(size_type sp) : Super(sp) {
         this->construct();
     }
-    fixed_array(T const& t,std::size_t sp) : Super(sp) {
+    fixed_array(T const& t,size_type sp) : Super(sp) {
         this->construct(t);
     }
     ~fixed_array() {
@@ -400,21 +401,53 @@ public:
     }
 
     // pre: capacity is 0
-    void init(std::size_t sp)
+    void init(size_type sp)
     {
         assert(this->capacity()==0);
         this->alloc(sp);
         this->construct();
     }
+    void init(size_type sp,T const&t)
+    {
+        assert(this->capacity()==0);
+        this->alloc(sp);
+        this->construct(t);
+    }
 
-    void reinit(std::size_t sp)
+    void reinit(size_type sp)
     {
         if (sp==this->capacity()) {
             this->destroy();
             this->construct();
         } else {
             clear();
-            reinit(sp);
+            init(sp);
+        }
+    }
+    void reinit(size_type sp,const T& t) {
+        if (sp==this->capacity()) {
+            this->destroy();
+            this->construct(t);
+        } else {
+            clear();
+            init(sp,t);
+        }
+    }
+    void reinit_nodestroy(size_type sp)
+    {
+        if (sp==this->capacity()) {
+            this->construct();
+        } else {
+            this->dealloc();
+            init(sp);
+        }
+    }
+    void reinit_nodestroy(size_type sp,const T& t) {
+        if (sp==this->capacity()) {
+            this->construct(t);
+        } else {
+            this->dealloc();
+            init(sp,t);
         }
     }
 
@@ -891,7 +924,7 @@ public:
         if (pos==end()) {
             append(from,to);
         } else {
-            std::size_t n_new=from-to;
+            size_type n_new=from-to;
             reserve(size()+n_new);
             //FIXME: untested
             assert(!"untested");
@@ -913,7 +946,7 @@ public:
     void append_ra(Input from,Input to)
     {
         /*
-        std::size_t n_new=to-from;
+        size_type n_new=to-from;
         reserve(size()+n_new);
         while (from!=to)
             new(endv++) T(*from++);

@@ -56,6 +56,7 @@
 
 #include <iostream>
 namespace Config {
+  inline std::ostream &out() { return std::cout; }
   inline std::ostream &err() {
     return std::cerr;
   }

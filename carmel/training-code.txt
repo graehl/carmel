@@ -1,3 +1,15 @@
+What's wrong with current cascade+derivation for gibbs?
+
+In derivation, an arcs_table<arc_counts> has priors, counts, etc. per composed arc.  The derivations are saved as a graph with .data_as<unsigned> = index into table.  But in a cascade, each graph arc may be more than one input fst arc.  So forward/backward/random happen at the per-composed-arc level.
+
+Composed arcs do have (tie) groups which index into cascade; same group = same parameter.  Counts are summed then normalized
+
+Cascade takes composed arc counts and adds them to each label in composed arcs' cascade chain, then copies summed counts to original chain arc weight field, then asks chain to normalize itself
+
+For gibbs, we need to replace or supplement the composed arcs' group->chain label "list of original arc*" with "list of (arc *,normgroup id,count,...).  We can mandate -a so lists are all trivial (0 or 1 long).  The original arcs right now have their groups replaced w/ consec. indices WFST::set_normgroups.  Indirection could be done there so each orig arc gets its own "gibbs state=normgroup id,count" index, instead of changing cascade type (affecting composition operations) when doing gibbs.
+
+=================
+
 A cascade of N WFST are composed, giving WFST C.  Weights of the original WFST are adjusted subject to normalization (conditional or joint WFST::NormalizeMethod).  Then a sequence of (input,output) sentences are explained using the composition.  In a single EM training iteration, expected counts are computed for each arc in the composition, and using cascade.h, the counts are assigned to the original WFST, and normalized.
 
 Some options are abstracted.  Usually a single class type handles the abstraction, with members/functions for the alternatives contained in it.  The unused members are designed to occupy only trivial space.

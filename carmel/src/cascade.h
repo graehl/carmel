@@ -10,25 +10,41 @@
 
 namespace graehl {
 
-// track pointers to arcs in a composition cascade, and host shared lists of them, given a global index in the cascade, so that the groupId of the composed FSTArc gives a list
+// track pointers to arcs in a composition cascade, and host shared lists of them, given a global index in the cascade, so that the groupId of the composed FSTArc gives a list.
+// note: composition of cascades gets its groupId set with this unique chain_id meaning a list of original input arcs
 struct cascade_parameters
 {
+    WFST *pcomposed;
+//FIXME: to simplify, in trivial case and otherwise, composed should be passed in once so it can be added to single chain (if trivial).  note: this simplification hasn't actually been done yet.
+    void set_composed(WFST &c) {
+        pcomposed=&c;
+        if (trivial) {
+            cascade.clear();
+            cascade.push_back(pcomposed);
+        }
+    }
     bool trivial; // if true, we're not using cascade_parameters to do anything
                   // different from old carmel; we pass a trivial object around to
                   // avoid type/template dispatch at some small runtime cost
 
     typedef std::vector<WFST *> cascade_t;
     cascade_t cascade; // (in no particular order) all the transducers that were composed together
-    //FIXME: would be nice to store composed in cascade if it's a trivial one.
     //FIXME: per arc and global prior per cascade member (training of a cascade w/ prior has weird interpretation now, want per-cascade as well or instead)
     typedef FSTArc * param;
 //    typedef unsigned param_id;
 //    std::vector<param> params_byid;
+    struct arcid
+    {
+        FSTArc *arc;
+        unsigned xid; // transducer arc came from
+    };
+
+
     typedef param param_id;
     typedef slist_node<param_id> node_t;
     typedef slist_shared<param_id> shared_list_t;
     typedef node_t *chain_t;
-    typedef std::vector<chain_t> chains_t;
+    typedef std::vector<chain_t> chains_t; // // change w/ vector<arcid> ? so you know what component each arc came from
     chains_t chains;
     std::vector<Weight> chain_weights;
     typedef FSTArc::group_t chain_id;
@@ -156,14 +172,14 @@ struct cascade_parameters
         // empty chain means: don't update the original arc in any way
     }
 
-    unsigned set_normgroups(WFST &composed,WFST::NormalizeMethods const& methods,unsigned startid=0)
+    unsigned set_gibbs_params(WFST &composed,WFST::NormalizeMethods & methods,WFST::gibbs_params &gps,unsigned startid=0)
     {
         if (trivial)
-            return composed.set_normgroups(methods[0],startid);
+            return composed.set_gibbs_params(methods[0],startid,gps);
         else {
             unsigned id=startid;
             for (unsigned i=0,n=cascade.size();i<n;++i)
-                id=cascade[i]->set_normgroups(methods[i],id);
+                id=cascade[i]->set_gibbs_params(methods[i],id,gps);
             return id;
         }
     }
@@ -294,6 +310,33 @@ struct cascade_parameters
             Config::debug() << "composed post:\n" << composed << std::endl;
     }
 
+    template <class P>
+    void update_gibbs(P const& p)
+    {
+        for (unsigned i=0,e=chains.size();i!=e;++i)
+            update_gibbs(chains[i],p);
+    }
+
+    template <class P>
+    struct gibbs_update
+    {
+        WFST &w;
+        P const& p;
+        gibbs_update(WFST &w,P const& p) : w(w),p(p) {}
+        void operator()(unsigned src,FSTArc & a) const
+        {
+            a.weight=p(a);
+        }
+    };
+
+    template <class P>
+    void update_gibbs(WFST &w,P const& p)
+    {
+        w.visit_arcs(gibbs_update<P>(w,p));
+    }
+
+
+
     bool is_chain[2]; // is_chain[second] tells if arcs given to record are already chained, i.e. should you cons then append or just append
 
     void prepare_compose()
@@ -350,6 +393,15 @@ struct cascade_parameters
         for(;a;a=a->next)
             b=cons(a->data,b);
         return b;
+    }
+
+    chain_t operator[](FSTArc const*arc) const
+    {
+        return chains[arc->groupId];
+    }
+    chain_t operator[](FSTArc const&arc) const
+    {
+        return chains[arc.groupId];
     }
 
     chain_t cons_chain(param a,param b)

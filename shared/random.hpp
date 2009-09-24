@@ -164,7 +164,7 @@ inline std::string random_alpha_string(unsigned len) {
     return s.get();
 }
 
-// P(*It) = double probability (unnormalized)
+// P(*It) = double probability (unnormalized).
 template <class It,class P>
 It choose_p(It begin,It end,P const& p)
 {

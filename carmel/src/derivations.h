@@ -248,11 +248,11 @@ struct derivations //: boost::noncopyable
 
     derivations() {}
 
-    typedef fixed_array<Weight> fb_weights;
 
     template <class arcs_table>
     struct weight_for
     {
+        typedef typename arcs_table::counts_type arc_counts;
         typedef Weight result_type;
         arcs_table const& t;
         weight_for(arcs_table const& t) : t(t) {}
@@ -260,7 +260,7 @@ struct derivations //: boost::noncopyable
         {
 /*            assert(a.data_as<unsigned>()<t.size());
               return t[a.data_as<unsigned>()];*/
-            return ac(a);
+            return t.ac(a);
         }
         Weight operator()(GraphArc const& a) const
         {
@@ -274,7 +274,8 @@ struct derivations //: boost::noncopyable
     }
 
     //FIXME: allow storying r.graph() as primary, free up graph() (for gibbs)
-    typedef dynamic_array<arc_counts *> acpath;
+
+    typedef fixed_array<Weight> fb_weights;
 
     template <class WeightFor>
     struct pfor
@@ -284,42 +285,52 @@ struct derivations //: boost::noncopyable
         pfor(unsigned nst,WeightFor const &wf) : b(nst),wf(wf) {
             b[fin]=1;
         }
+        // store in GraphArc .weight the normalized probability
         template <class It>
-        void global_normalize(It b,It end) const
+        void global_normalize(It b,It end,double power=1.) const
         {
             Weight sum;
-            for (It i=b;i!=end;++i)
-                sum+=b[i->dest]*wf(*i);
-            for (It i=b;i!=end;++i)
-                i->weight=(wf(*i)/sum).getReal();
+            for (It i=b;i!=end;++i) {
+                GraphArc & a=*i;
+                Weight nw=(b[a.dest]*wf(a)).pow(power);
+                sum+=nw;
+                a.wt()=nw;
+            }
+            if (sum.isZero())
+                sum.setOne();
+            for (It i=b;i!=end;++i) {
+                GraphArc & a=*i;
+                a.wt()/=sum;
+            }
         }
         double operator()(GraphArc const& a) const
         {
-            return a.weight;
+            return a.wt().getReal();
         }
     };
 
-
-    template <class WeightFor>
-    void random_path(acpath &p,WeightFor const& wf)
+    template <class acpath,class WeightFor>
+    void random_path(acpath &p,WeightFor const& wf,double power=1.)
     {
         unsigned nst=g.size();
         pfor<WeightFor> pf(nst,wf);
         get_order();
         get_reverse();
-        propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,pf.b);
+        Graph &rg=r.graph();
+        rg.setwt(wf);
+        propagate_paths_in_order_wt(rg,reverse_order.begin(),reverse_order.end(),pf.b);
         free_order();
         free_reverse();
         unsigned s=0;
         p.clear();
-        fixed_array<bool> normed(nst);
+        std::vector<bool> normed(nst,false);
         while (s!=fin) { // fin should have no outgoing arcs if you want sampling to be sensible
             arcs_type const& arcs=g[s].arcs;
             if (!normed[s]) {
                 normed[s]=true;
-                pf.global_normalize(arcs.begin(),arcs.end());
+                pf.global_normalize(arcs.begin(),arcs.end(),power);
             }
-            GraphArc const& a=*choose_p01(arcs.begin(),arcs.end(),pf);
+            GraphArc const& a=*choose_p01(arcs.begin(),arcs.end(),pf); // no empty states allowed that aren't final
             p.push_back(wf.ac(a));
             s=a.dest;
         }

@@ -175,27 +175,27 @@ static void NaNCheck(const Weight *w) {
     w->NaNCheck();
 }
 
-
-unsigned WFST::set_normgroups(NormalizeMethod const& method, unsigned sid)
+unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,unsigned cascadei)
 {
-    unsigned id=sid;
-    norm_group_by group=method.group;
-    if (isEmpty() || group==NONE)
-        return sid;
-    if (group==CONDITIONAL)
+    unsigned id=normidbase;
+    if (isEmpty())
+        return id;
+    if (nm.group==NONE) {
+        Config::warn()<<"Can't turn off normalization for gibbs training; changing to conditional.\n";
+        nm.group=CONDITIONAL;
+    }
+    if (nm.group==CONDITIONAL)
         indexInput();
-    for (WFST_impl::NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
+    for (WFST_impl::NormGroupIter g(nm.group,*this); g.moreGroups(); g.nextGroup()) {
         for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
             FSTArc & a=**g;
-            a.groupId=id;
-            //TODO:
+            a.groupId=gps.size();
+            gps.push_back(id,nm.add_count,cascadei);
         }
         ++id;
     }
-
     return id;
 }
-
 
 void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
 {
