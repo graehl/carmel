@@ -34,9 +34,9 @@ struct delta_sum
     double extend(double t)
     {
         double moret=t-tmax;
-        s+=x*moret;
+        if (moret<0) throw_unknown_delta_sum(t,tmax);
         tmax=t;
-        return s;
+        return s+=x*moret;
     }
     double sum(double t) const
     {
@@ -77,6 +77,12 @@ struct bounded_delta_sum
     double x;
     double tmax;
     double s;
+    double extend(double t)
+    {
+        assert(t==tmax);
+        return s;
+    }
+
     double sum() const
     {
         return s;

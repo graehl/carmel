@@ -1059,7 +1059,7 @@ public:
     }
     void clear() {
         dynarray_assert(invariant());
-        for ( T *i=this->begin();i!=end();++i)
+        for ( T *i=this->begin(),*e=end();i!=e;++i)
             i->~T();
         clear_nodestroy();
     }

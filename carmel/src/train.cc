@@ -109,9 +109,20 @@ void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
         }
 }
 
+#ifdef DEBUG_GIBBS
+#define DGIBBS(a) a;
+#else
+#define DGIBBS(a)
+#endif
+#define OUTGIBBS(a) DGIBBS(std::cerr<<a)
+
 template <class arc_counts>
 struct cached_derivs
 {
+    unsigned size()
+    {
+        return derivs.size();
+    }
     WFST &x;
     serialize_batch<derivations> derivs;
     cached_derivs(WFST &x,training_corpus &corpus,WFST::deriv_cache_opts const& copt)
@@ -213,14 +224,24 @@ struct gibbs
     void iteration()
     {
         derivs.foreach_deriv(*this);
+#ifdef DEBUG_GIBBS
+        print_sample(0,cascade.size());
+//        save_weights(false); // unnormalized total counts
+//        std::cerr<<'\n'<<*cascade.cascade[0]<<'\n';
+#endif
     }
-    void operator()(unsigned n,derivations &d)
+    //cached_derivs.foreach_deriv
+    //FIXME: some weirdo made foreach_deriv 1-based
+    void operator()(unsigned n_1based,derivations &d)
     {
-        acpath &p=sample[n];
+        training_progress(n_1based);
+        acpath &p=sample[n_1based-1];
         if (subtract_old) {
             addc(p,-1);
         }
+        OUTGIBBS(','<<n_1based<<':')
         d.random_path(p,*this);
+        OUTGIBBS(p.size());
         addc(p,1);
     }
     // for derivations::random_path; compute global backward probs on Weight array
@@ -242,7 +263,7 @@ struct gibbs
           ,WFST::NormalizeMethods & methods
           ,WFST::train_opts const& topt
           ,WFST::gibbs_opts const& gopt) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), temp(gopt.temperature(topt.max_iter-1))
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter-1))
     {
         cascade.set_composed(composed);
         just1=cascade.trivial; //TODO: handle just1
@@ -270,6 +291,7 @@ struct gibbs
             iteration();
         }
     }
+    // not idempotent until final iteration, because param.sumcount.x is obliterated
     void normalize_accum_delta()
     {
         normsum_t sn(nnorm);
@@ -282,9 +304,9 @@ struct gibbs
         }
     }
 
-    void save_weights()
+    void save_weights(bool accum=true)
     {
-        if (accum_delta)
+        if (accum&&accum_delta)
             normalize_accum_delta();
         cascade.update_gibbs(*this);
     }
@@ -333,9 +355,13 @@ struct gibbs
         }
         gopt.printer.out()<<'\n';
     }
+    void print_sample(unsigned print_from,unsigned print_to)
+    {
+        print_sample(print_from,print_to,cascade.cascade);
+    }
     void print_sample()
     {
-        print_sample(gopt.print_from,gopt.print_to,cascade.cascade);
+        print_sample(gopt.print_from,gopt.print_to);
     }
 
  private:
@@ -370,6 +396,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     gibbs g(*this,cascade,corpus,methods,topt,gopt);
     g.save_weights();
     g.print_sample();
+    cascade.clear_groups();
 }
 
 
@@ -1242,6 +1269,7 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
     Assert(valid());
     training_corpus corpus;
     corpus.add(inSeq,outSeq);
+    corpus.finish_adding();
     IOSymSeq const& s=corpus.examples.front();
     cascade_parameters trivial;
     forward_backward fb(*this,trivial,false,0,false);
@@ -1323,7 +1351,7 @@ void WFST::read_training_corpus(std::istream &in,training_corpus &corpus)
         WFST::symbol_ids outs(*this,buf.c_str(),1,input_lineno);
         corpus.add(ins, outs, weight);
     }
-
+    corpus.finish_adding();
 }
 
 }

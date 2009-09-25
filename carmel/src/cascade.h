@@ -317,6 +317,12 @@ struct cascade_parameters
             update_gibbs(*cascade[i],p);
     }
 
+    void clear_groups()
+    {
+        for (unsigned i=0,e=cascade.size();i!=e;++i)
+            cascade[i]->clear_groups();
+    }
+
     template <class P>
     struct gibbs_update
     {

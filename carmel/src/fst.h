@@ -1556,6 +1556,11 @@ class WFST {
             states[s].visit_arcs(s,v);
         return v;
     }
+    void clear_groups()
+    {
+        FSTArc::clear_group_f f;
+        visit_arcs(f);
+    }
 
 
 

@@ -1719,7 +1719,7 @@ cout <<         "\n"
         ;
 
     cout << "\n"
-        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, -a, and -? -: or --disk-cache-derivations. (use -M n) to set iterations like -t\n"
+        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
         "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path.  default n=0\n";
         "--high-temp : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
