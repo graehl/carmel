@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cassert>
 #include <functional>
+#include <ostream>
 
 namespace graehl {
 
@@ -47,7 +48,8 @@ struct clamped_time_series : public std::unary_function<double,Returns>
     value_type k;
     value_type x_origin;
     time_type t_max;
-    BOOST_STATIC_CONSTANT(double,linear= -1.7976931348623157e308);
+//    BOOST_STATIC_CONSTANT(double,linear= -1.7976931348623157e308); // bad answers (all 0) for anything near -INF.  fast math lib failure?
+    BOOST_STATIC_CONSTANT(double,linear= -1e10);
     BOOST_STATIC_CONSTANT(double,exponential=0);
     BOOST_STATIC_CONSTANT(time_type,constant=0);
 
@@ -57,6 +59,11 @@ struct clamped_time_series : public std::unary_function<double,Returns>
     // curvature=0->regular exponential decay (x[n+1]=k*x[n]).  curvature->(-infty) -> (nearly) linear.  curvature>=1 -> impossible. curvature->1 -> quickly drops to end and stays nearly constant
     {
         assert(curvature<=1);
+        if (duration && start!=end) {
+            assert(start>0);
+            assert(end>0);
+        }
+
         set(start,end,duration,curvature);
     }
 
@@ -95,7 +102,11 @@ struct clamped_time_series : public std::unary_function<double,Returns>
     }
     value_type end() const
     {
-        return x0*k+x_origin;
+        return x0*k+x_origin; // because k=xN/x0, and xN=end-x_origin
+    }
+    value_type curvature() const
+    {
+        return x_origin/end();
     }
 
     value_type value(time_type t) const
@@ -113,6 +124,17 @@ struct clamped_time_series : public std::unary_function<double,Returns>
         return static_cast<return_type>(value(t));
     }
 
+    void print(std::ostream &o) const
+    {
+        o<<"[0.."<<t_max<<"]="<<start()<<".."<<end()<<";c="<<curvature();
+    }
+
+    typedef clamped_time_series<Computes,Returns> self_type;
+    inline friend std::ostream & operator <<(std::ostream &o,self_type const& s)
+    {
+        s.print(o);
+        return o;
+    }
 };
 
 } //graehl
@@ -123,31 +145,58 @@ struct clamped_time_series : public std::unary_function<double,Returns>
 
 #ifdef TIME_SERIES_SAMPLE
 # include <iostream>
+
+using namespace graehl;
+
+typedef clamped_time_series<double> dser;
+
+double s=8,e=.2,t_max=3;
+double linear=dser::linear;
+double curves[] = {
+    0,.9,linear
+};
+
+dser series[] = {
+ dser(s,e,t_max,0)
+};
+
 int main(int argc, char *argv[])
 {
     using namespace std;
-    using namespace graehl;
-    double s=8,e=2,t_max=3;
+    for (unsigned i=0;i<sizeof(curves)/sizeof(curves[0]);++i) {
+        dser d(s,e,t_max,curves[i]);
+        cout << d << "\n";
+        for (double t=0;t<=t_max+1;t+=.5)
+            cout << "t="<<t<<"\t"<<d(t)<<endl;
+    }
+
+    cout <<"\n\n";
+
     {
 
     clamped_time_series<double>
         s1(s,e,t_max,0),
         s2(s,e,t_max,.9),
-        s3(s,e,t_max,-1e5);
+        s3(s,e,t_max,linear);
+
+
     for (double t=0;t<=t_max+1;t+=.5) {
-        cout << "t="<<t<<" "<<s1(t);
-        cout <<" "<<s2(t)<<" "<<s3(t)<<endl;
+        cout << "t="<<t<<"\t"<<s1(t);
+        cout <<"\t"<<s2(t)<<"\t"<<s3(t)<<endl;
     }
     }
+
+    cout<<"\n\n";
+
     {
 
     clamped_time_series<double,unsigned>
         s1(s,e,t_max,0),
         s2(s,e,t_max,.9),
-        s3(s,e,t_max,-1e5);
+        s3(s,e,t_max,linear);
     for (double t=0;t<=t_max+1;t+=.5) {
-        cout << "t="<<t<<" "<<s1(t);
-        cout <<" "<<s2(t)<<" "<<s3(t)<<endl;
+        cout << "t="<<t<<"\t"<<s1(t);
+        cout <<"\t"<<s2(t)<<"\t"<<s3(t)<<endl;
     }
 
     }
