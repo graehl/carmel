@@ -43,6 +43,7 @@
 #endif
 
 #ifdef DEBUG
+//# define DEBUG_GIBBS
 //#define DEBUGNORMALIZE
 #endif
 

@@ -26,8 +26,10 @@ struct gibbs_param
     {
         count+=d;
         ns[norm]+=d;
-        if (accum_delta)
+        if (accum_delta) {
             sumcount.add_delta(d,t);
+            assert(count==sumcount.x);
+        }
     }
 
     gibbs_param(unsigned norm, double prior, unsigned cascadei) : norm(norm),count(prior),cascadei(cascadei) {  }
@@ -228,6 +230,7 @@ class training_corpus : boost::noncopyable
         n_input=n_output=0;
         w_input=w_output=totalEmpiricalWeight=0;
         examples.clear();
+        n_pairs=0;
     }
 
     void add(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight=1.)
@@ -242,11 +245,12 @@ class training_corpus : boost::noncopyable
         if (maxIn<i) maxIn=i;
         if (maxOut<o) maxOut=o;
         totalEmpiricalWeight += weight;
+        ++n_pairs;
+
     }
     void finish_adding()
     {
         examples.reverse();
-        n_pairs=examples.size();
     }
     void set_null()
     {
