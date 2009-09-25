@@ -1,0 +1,3 @@
+source is a fully connected tag bigram
+channel is a dictionary allowing a subset of part of speech tags for each word
+cipher is words (decipher into hidden tags)

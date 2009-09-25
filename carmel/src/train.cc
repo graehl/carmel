@@ -223,12 +223,14 @@ struct gibbs
     }
     void iteration()
     {
+        Config::log()<<"Gibbs i="<<i<<' ';
         derivs.foreach_deriv(*this);
 #ifdef DEBUG_GIBBS
         print_sample(0,cascade.size());
 //        save_weights(false); // unnormalized total counts
 //        std::cerr<<'\n'<<*cascade.cascade[0]<<'\n';
 #endif
+        Config::log()<<'\n';
     }
     //cached_derivs.foreach_deriv
     //FIXME: some weirdo made foreach_deriv 1-based
@@ -239,9 +241,9 @@ struct gibbs
         if (subtract_old) {
             addc(p,-1);
         }
-        OUTGIBBS(','<<n_1based<<':')
+//        OUTGIBBS(','<<n_1based<<':')
         d.random_path(p,*this);
-        OUTGIBBS(p.size());
+//        OUTGIBBS(p.size());
         addc(p,1);
     }
     // for derivations::random_path; compute global backward probs on Weight array
@@ -1050,14 +1052,14 @@ void forward_backward::matrix_fb(IOSymSeq &s)
 #endif
 }
 
-void training_progress(unsigned train_example_no)
+void training_progress(unsigned train_example_no,unsigned scale)
 {
-    const unsigned EXAMPLES_PER_DOT=10;
+    const unsigned EXAMPLES_PER_DOT=scale;
     const unsigned EXAMPLES_PER_NUMBER=(70*EXAMPLES_PER_DOT);
     if (train_example_no % EXAMPLES_PER_DOT == 0)
         Config::log() << '.' ;
     if (train_example_no % EXAMPLES_PER_NUMBER == 0)
-        Config::debug() << train_example_no << '\n' ;
+        Config::log() << train_example_no << '\n' ;
 }
 
 
