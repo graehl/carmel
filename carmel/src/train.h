@@ -9,7 +9,7 @@
 namespace graehl {
 
 void check_fb_agree(Weight f,Weight b);
-void training_progress(unsigned train_example_no);
+void training_progress(unsigned train_example_no,unsigned scale=10);
 
 struct gibbs_param
 {
