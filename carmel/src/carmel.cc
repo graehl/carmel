@@ -242,12 +242,16 @@ struct carmel_main
 {
     ifstream post_b;
     WFST::gibbs_opts gopt;
+    WFST::train_opts topt;
+
     bool gibbs_opts()
     {
         bool gibbs = have_opt("gibbs");
         if (gibbs) {
             flags['t']=true;
-            flags['a']=true;
+//            flags['a']=true;
+            topt.cache.cache_level=WFST::cache_forward_backward;
+            /* strictly speaking, the following 2 aren't needed */
             flags['?']=true;
             flags[':']=true; // cache reverse also
             long_opts["train-cascade"]=1;
@@ -258,6 +262,7 @@ struct carmel_main
         get_opt("print-from",gopt.print_from);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
+        gopt.cumulative_counts=!have_opt("final-counts");
         gopt.printer.set_flags(flags);
         return gibbs;
     }
@@ -702,7 +707,6 @@ main(int argc, char *argv[]){
     bool msFlag = false;
     bool learning_rate_growth_flag = false;
     int nGenerate = 0;
-    int maxTrainIter = 256;
 #define DEFAULT_MAX_GEN_ARCS 1000
     int maxGenArcs = 0;
     int labelStart = 0;
@@ -715,9 +719,9 @@ main(int argc, char *argv[]){
     double exponent=1;
     long_opts_t long_opts;
     text_long_opts_t text_long_opts;
-    WFST::train_opts train_opt;
 
     carmel_main cm(flags,long_opts,text_long_opts);
+    WFST::train_opts &train_opt=cm.topt;
 
     std::ios_base::sync_with_stdio(false);
 
@@ -779,7 +783,7 @@ main(int argc, char *argv[]){
                     else if ( *pc == 'g' || *pc == 'G' )
                         nGenerate = -1;
                     else if ( *pc == 'M' )
-                        maxTrainIter = -1;
+                        train_opt.max_iter=-1;
                     else if ( *pc == 'L' )
                         maxGenArcs = -1;
                     else if ( *pc == 'N' )
@@ -835,7 +839,7 @@ main(int argc, char *argv[]){
                 readParam(&nGenerate,argv[i],'g');
                 if ( nGenerate < 1 )
                     nGenerate = 1;
-            } else if ( maxTrainIter == -1 ) {
+            } else if ( train_opt.max_iter == -1 ) {
                 readParam(&train_opt.max_iter,argv[i],'M');
                 if ( train_opt.max_iter < 1 )
                     train_opt.max_iter = 1;
@@ -1135,6 +1139,11 @@ main(int argc, char *argv[]){
 
         if (nChain<2 && !cascade.trivial) {
             Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
+            if (gibbs) {
+                Config::warn() << "--gibbs (because of --train-cascade) requires at least two transducers in composition; disabling --gibbs\n";
+                gibbs=false;
+            }
+
             cascade.set_trivial();
         }
 
@@ -1710,12 +1719,13 @@ cout <<         "\n"
         ;
 
     cout << "\n"
-        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, -a, and -? or --disk-cache-derivations.\n"
-        "--unsupervised : print output sequences of first transducer in cascade at last iteration.\n"
+        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, -a, and -? -: or --disk-cache-derivations. (use -M n) to set iterations like -t\n"
+        "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path.  default n=0\n";
         "--high-temp : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
         "--burnin : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
-        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
+//        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
+        "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";

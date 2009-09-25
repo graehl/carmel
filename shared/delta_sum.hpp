@@ -31,6 +31,13 @@ struct delta_sum
 {
     double x,tmax;
     double s;
+    double extend(double t)
+    {
+        double moret=t-tmax;
+        s+=x*moret;
+        tmax=t;
+        return s;
+    }
     double sum(double t) const
     {
         if (t<=0) return 0;

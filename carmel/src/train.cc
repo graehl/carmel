@@ -171,7 +171,7 @@ struct gibbs
     WFST::gibbs_opts gopt;
     typedef WFST::gibbs_params gps_t;
     gps_t gps;
-    typedef fixed_array<Weight> normsum_t;
+    typedef fixed_array<double> normsum_t;
     unsigned nnorm;
     normsum_t normsum;
     cached_derivs<gibbs_counts> derivs;
@@ -210,11 +210,6 @@ struct gibbs
     {
         return p.count/normsum[p.norm];
     }
-    // for cascade.update_gibbs
-    double operator()(FSTArc const& f) const
-    {
-        return p_param(param(f));
-    }
     void iteration()
     {
         derivs.foreach_deriv(*this);
@@ -231,11 +226,16 @@ struct gibbs
     // for derivations::random_path; compute global backward probs on Weight array
     double operator()(GraphArc const& a) const
     {
+//        if (just1) return p_param(just1param(a));
         param_list p=ac(a);
         double w=1.;
         for (;p;p=p->next)
             w*=p_param(param(p->data));
         return w;
+    }
+    gibbs_param &just1param(GraphArc const& a) const
+    {
+        return param(carc(a));
     }
     //TODO: allow locked arcs?  see fst.h *_gibbs derivations global_normalize
     gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
@@ -245,12 +245,13 @@ struct gibbs
         composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), temp(gopt.temperature(topt.max_iter-1))
     {
         cascade.set_composed(composed);
-        Ni=topt.max_iter;
-        burnt0=gopt.cumulative_counts ? gopt.sched.burnin : Ni;
+        just1=cascade.trivial; //TODO: handle just1
         run();
     }
     void run()
     {
+        Ni=topt.max_iter;
+        burnt0=gopt.cumulative_counts ? gopt.sched.burnin : Ni;
         addnorms(); // for base model
         power=1.;
         subtract_old=false;
@@ -269,10 +270,33 @@ struct gibbs
             iteration();
         }
     }
+    void normalize_accum_delta()
+    {
+        normsum_t sn(nnorm);
+        double tmax=Ni-1;
+        for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
+            sn[i->norm]+=i->sumcount.extend(tmax);
+        for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
+            gibbs_param &p=*i;
+            p.sumcount.x=p.sumcount.s/sn[p.norm];
+        }
+    }
+
     void save_weights()
     {
+        if (accum_delta)
+            normalize_accum_delta();
         cascade.update_gibbs(*this);
     }
+    // for cascade.update_gibbs
+    double operator()(FSTArc const& f) const
+    {
+        gibbs_param &p=param(f);
+        if (accum_delta)
+            return p.sumcount.x;
+        return p_param(p);
+    }
+
     typedef dynamic_array<FSTArc*> cascade_path;
     typedef fixed_array<cascade_path> cascade_paths;
     typedef cascade_parameters::cascade_t casc;
@@ -315,6 +339,7 @@ struct gibbs
     }
 
  private:
+    bool just1;
     unsigned i,Ni;
     double power;
     double t;
