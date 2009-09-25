@@ -225,7 +225,7 @@ struct gibbs
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
         o<<"Gibbs i="<<i;
-        if (!temp.constant())
+        if (!temp.is_constant())
             o<<" temperature="<<1./power<<" power="<<power<<suffix;
         return o;
     }
