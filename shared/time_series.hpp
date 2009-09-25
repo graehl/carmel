@@ -96,6 +96,10 @@ struct clamped_time_series : public std::unary_function<double,Returns>
         DBP3(x0,xN,k);
 #endif
     }
+    bool is_constant() const
+    {
+        return k==1;
+    }
     value_type start() const
     {
         return x0+x_origin;
