@@ -31,6 +31,7 @@
 
 #include <ctime>
 #include <graehl/shared/os.hpp>
+#include <graehl/shared/verbose_exception.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -168,16 +169,18 @@ inline std::string random_alpha_string(unsigned len) {
 template <class It,class P>
 It choose_p(It begin,It end,P const& p)
 {
+    if (begin==end) return end;
     double sum=0.;
     for (It i=begin;i!=end;++i)
-        sum+=P(*i);
+        sum+=p(*i);
     double choice=sum*random01();
-    for (It i=begin;i!=end;++i) {
-        choice -= P(*i);
-        if (choice<0)
-            return i;
+    for (It i=begin;;) {
+        choice -= p(*i);
+        It r=i;
+        ++i;
+        if (choice<0 || i==end) return r;
     }
-    return end;
+    return begin; //unreachable
 }
 
 // as above but already normalized
@@ -186,10 +189,13 @@ It choose_p01(It begin,It end,P const& p)
 {
     double sum=0.;
     double choice=random01();
-    for (It i=begin;i!=end;++i)
-        if (sum<choice) return i;
-        else sum+=p(*i);
-    return end;
+    for (It i=begin;;) {
+        sum+=p(*i);
+        It r=i;
+        ++i;
+        if (sum>choice || i==end) return r;
+    }
+    return begin; //unreachable
 }
 
 

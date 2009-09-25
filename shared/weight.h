@@ -327,6 +327,20 @@ struct logweight {                 // capable of representing nonnegative reals
     static self_type  INF() {
         return self_type(false,false);
     }
+
+    // print return.as_base(2)
+    self_type ppxper(double n) const
+    {
+        return root(-n);
+    }
+
+    std::ostream &print_ppx(std::ostream &o,double n_symbol,double n_example
+                            ,char const* symbolname="per-output-symbol-perplexity="
+                            ,char const* examplename="per-example-perplexity=") const
+    {
+        return o<<symbolname<<"(N="<<n_symbol<<")"<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")"<<ppxper(n_example).as_base(2);
+    }
+
     logweight() { setZero(); }
     logweight(quiet_NaN_weight t) {weight=std::numeric_limits<Real>::quiet_NaN(); }
     logweight(signaling_NaN_weight t) {weight=std::numeric_limits<Real>::signaling_NaN(); }

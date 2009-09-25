@@ -179,7 +179,7 @@ struct cascade_parameters
         else {
             unsigned id=startid;
             for (unsigned i=0,n=cascade.size();i<n;++i)
-                id=cascade[i]->set_gibbs_params(methods[i],id,gps);
+                id=cascade[i]->set_gibbs_params(methods[i],id,gps,i);
             return id;
         }
     }

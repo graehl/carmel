@@ -334,7 +334,7 @@ struct derivations //: boost::noncopyable
                 normed[s]=true;
                 pf.global_normalize(arcs.begin(),arcs.end(),power);
             }
-            GraphArc const& a=*choose_p01(arcs.begin(),arcs.end(),pf); // no empty states allowed that aren't final
+            GraphArc const& a=*choose_p(arcs.begin(),arcs.end(),pf); // no empty states allowed that aren't final
             p.push_back(wf.ac(a));
             s=a.dest;
         }

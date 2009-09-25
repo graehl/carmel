@@ -134,31 +134,42 @@ void out_maybe_quote(char const* str,ostream &out,bool quote)
 
 struct wfst_paths_printer {
     bool SIDETRACKS_ONLY;
+    WFST &wfst;
     unsigned n_paths;
     Weight best_w;
+    /*
     Weight w;
-    WFST &wfst;
     ostream &out;
     bool *flags;
     typedef std::vector<int> Output;
     Output output;
     graehl::word_spacer sp;
     unsigned src; //FIXME: if sidetracks_only then you don't show the real arc source, but the end of last sidetrack.
-
     wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {
         n_paths=0;
         SIDETRACKS_ONLY=flags['%'];
+        }*/
+    WFST::path_print pp;
+    wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags)
+        : SIDETRACKS_ONLY(_flags['%']),wfst(_wfst),pp(_flags) {
+        pp.set_out(_out);
+        n_paths=0;
     }
     void start_path(unsigned k,Weight path_w) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
-        ++n_paths;
-        w=path_w;
         if (k==1)
-            best_w=w;
+            best_w=path_w;
+        ++n_paths;
+        /*
+        w=path_w;
         output.clear();
         sp.reset();
         src=0;
+        */
+        pp.start(wfst);
     }
     void end_path() {
+        pp.finish(wfst);
+        /*
         if (flags['@'] ) {
             out << endl;
             sp.reset();
@@ -170,12 +181,14 @@ struct wfst_paths_printer {
                 out << sp << w;
             out << endl;
         }
-
+        */
 #ifdef DEBUGKBEST
         Config::debug() << endl;
 #endif
     }
     void visit_best_arc(FSTArc &arc) {
+        pp.arc(wfst,arc);
+        /*
 //        path.push_back(&arc);
         if (flags['@'] ) {
             int inid=arc.in,outid=arc.out;
@@ -196,6 +209,7 @@ struct wfst_paths_printer {
             }
         }
         src=(unsigned)arc.dest;
+        */
     }
     void visit_sidetrack_arc(FSTArc &a) {
         visit_best_arc(a);
@@ -204,6 +218,7 @@ struct wfst_paths_printer {
 };
 
 void printPath(bool *flags,const List<PathArc> *pli) {
+    /*
     Weight w = 1.0;
     const char * outSym;
 
@@ -229,7 +244,19 @@ void printPath(bool *flags,const List<PathArc> *pli) {
     if ( !flags['W'] )
         cout << w;
     cout << "\n";
-
+    */
+    if (pli->empty()) cout<<"\n";
+    else {
+        WFST const&w=*pli->front().wfst;
+        WFST::path_print pp(flags);
+        pp.set_out(cout);
+/*        pp.start(w);
+        for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li )
+            pp.arc(*li);
+        pp.finish(w);
+*/
+        pp(w,*pli);
+    }
 }
 
 void usageHelp(void);
@@ -260,6 +287,7 @@ struct carmel_main
         get_opt("epoch",gopt.sched.epoch);
         get_opt("print-to",gopt.print_to);
         get_opt("print-from",gopt.print_from);
+        get_opt("print-every",gopt.print_every);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
         gopt.cumulative_counts=!have_opt("final-counts");
@@ -1720,13 +1748,14 @@ cout <<         "\n"
 
     cout << "\n"
         "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
-        "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path.  default n=0\n";
-        "--high-temp : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
-        "--low-temp : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
-        "--burnin : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
-//        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
+        "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
+        "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
+        "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
+        "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
+        "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
         "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's\n"
         "\n";
+//        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
 
     cout << "\n--help : more detailed help\n";
     /* // user doesn't need to know about this stuff
