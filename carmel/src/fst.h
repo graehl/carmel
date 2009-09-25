@@ -34,6 +34,8 @@ namespace graehl {
 using namespace std;
 
 class WFST;
+
+//TODO: this is an abomination e.g. missing groupId; use pair<FSTArc,WFST *> instead?
 struct PathArc {
     //const char *in;
     //const char *out;
@@ -52,28 +54,7 @@ struct PathArc {
 };
 
 
-/*
-template <class PathArcIt>
-struct path_yield
-{
-    PathArcIt it,end;
-    int dir;
-    path_yield(PathArcIt const& it,PathArcIt const& end, int dir=0) : it(it),end(end),dir(dir) {}
-    typedef int value_type;
-    int operator *()
-    {
-        return it->symbol(dir);
-    }
-    typedef path_yield<PathArcIt> self_type;
-    self_type & operator ++(int) { return *this; }
-    self_type & operator ++() { return *this; }
-};
-*/
-
-
 std::ostream & operator << (std::ostream & o, const PathArc &p);
-
-
 
 struct cascade_parameters; // in cascade.h, but we avoid circular dependency by knowing only about references in this header
 
@@ -82,10 +63,6 @@ class WFST {
     typedef Alphabet<StringKey,StringPool> alphabet_type;
     enum { DEFAULT_PER_LINE,STATE,ARC } /*Per_Line */;
     enum { DEFAULT_ARC_FORMAT,BRIEF,FULL } /*Arc_Format*/ ;
- private:
-    static const int per_line_index; // handle to ostream iword for LogBase enum (initialized to 0)
-    static const int arc_format_index; // handle for OutThresh
-
 #define EPSILON_SYMBOL "*e*"
 #define WILDCARD_SYMBOL "*w*"
     struct path_print
@@ -115,14 +92,20 @@ class WFST {
             E=flags['E'];
         }
         std::ostream &out() { return *pout; }
-        void start(WFST &wfst)
+        void set_out(std::ostream &o) { pout=&o; }
+        void start(WFST const&wfst)
         {
             src=0;
             sp.reset();
             output.clear();
             w.setOne();
         }
-        void finish(WFST &wfst)
+        bool needs_weight() const
+        {
+            return AT || (!W && (O || I));
+        }
+
+        void finish(WFST const&wfst)
         {
             std::ostream &out=*pout;
             using namespace std;
@@ -158,11 +141,18 @@ class WFST {
             } else
                 out << str;
         }
-        void arc(WFST &wfst,FSTArc *a)
+        void arc(PathArc const& p)
+        {
+            WFST const&wfst=*p.wfst;
+            FSTArc a(p.in,p.out,p.destState,p.weight);
+            arc(wfst,a);
+        }
+        void arc(WFST const& w,PathArc const& p) { arc(p); }
+        void arc(WFST const& wfst,FSTArc const* a)
         {
             arc(wfst,*a);
         }
-        void arc(WFST &wfst,FSTArc &arc)
+        void arc(WFST const& wfst,FSTArc const& arc)
         {
             std::ostream &out=*pout;
             w*=arc.weight;
@@ -187,7 +177,7 @@ class WFST {
             src=(unsigned)arc.dest;
         }
         template <class I>
-        void operator()(WFST &w,I i,I end)
+        void operator()(WFST const&w,I i,I end)
         {
             start(w);
             for(;i!=end;++i)
@@ -195,11 +185,15 @@ class WFST {
             finish(w);
         }
         template <class C>
-        void operator()(WFST &w,C const& c)
+        void operator()(WFST const&w,C const& path)
         {
-            (*this)(w,c.begin(),c.end());
+            (*this)(w,path.begin(),path.end());
         }
     };
+
+ private:
+    static const int per_line_index; // handle to ostream iword for LogBase enum (initialized to 0)
+    static const int arc_format_index; // handle for OutThresh
 
 
     void initAlphabet(int dir)
@@ -561,19 +555,19 @@ class WFST {
     void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
     int numStates() const { return states.size(); }
     bool isFinal(int s) { return s==final; }
-    void setPathArc(PathArc *pArc,const FSTArc &a) {
+    void setPathArc(PathArc *pArc,const FSTArc &a) const {
         pArc->in = a.in;
         pArc->out = a.out;
         pArc->destState = a.dest;
         pArc->weight = a.weight;
         pArc->wfst=this;
     }
-    std::ostream & printArc(const FSTArc &a,std::ostream &o) {
+    std::ostream & printArc(const FSTArc &a,std::ostream &o) const {
         PathArc p;
         setPathArc(&p,a);
         return o << p;
     }
-    std::ostream & printArc(const FSTArc &a,int source,std::ostream &o) {
+    std::ostream & printArc(const FSTArc &a,int source,std::ostream &o) const {
         return o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out) << " / " << a.weight << ")";
     }
 
@@ -1259,6 +1253,8 @@ class WFST {
 
     struct gibbs_opts
     {
+        bool ppx;
+        unsigned print_every; // print the current sample every N iterations
         unsigned print_from;
         unsigned print_to;
         path_print printer;
@@ -1273,6 +1269,8 @@ class WFST {
         gibbs_opts() { set_defaults(); }
         void set_defaults()
         {
+            ppx=true;
+            print_every=0;
             print_from=print_to=0;
             high_temp=low_temp=1;
             sched.set();
@@ -1308,7 +1306,7 @@ class WFST {
 
     typedef dynamic_array<NormalizeMethod> NormalizeMethods;
 
-    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,double min_prior=1e-20);
+    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,double min_prior=1e-2);
 
     Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts);
     Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)

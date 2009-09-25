@@ -8,6 +8,7 @@
 #include <graehl/shared/serialize_batch.hpp>
 #include <graehl/shared/time_space_report.hpp>
 
+#define DEBUG_GIBBS
 //#define DEBUGTRAIN
 
 namespace graehl {
@@ -221,16 +222,29 @@ struct gibbs
     {
         return p.count/normsum[p.norm];
     }
+    std::ostream &itername(std::ostream &o,char const* suffix=" ") const
+    {
+        o<<"Gibbs i="<<i;
+        if (!temp.constant())
+            o<<" temperature="<<1./power<<" power="<<power<<suffix;
+        return o;
+    }
     void iteration()
     {
-        Config::log()<<"Gibbs i="<<i<<' ';
+        itername(Config::log());
+        prob.setOne();
         derivs.foreach_deriv(*this);
+        if (gopt.ppx) {
+            Config::log()<<" i="<<i<<" sample-prob="<<prob<<" ";
+            prob.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs);
+        }
+        Config::log()<<'\n';
+        maybe_print_paths_periodic();
 #ifdef DEBUG_GIBBS
-        print_sample(0,cascade.size());
+//        print_sample(0,cascade.size());
 //        save_weights(false); // unnormalized total counts
 //        std::cerr<<'\n'<<*cascade.cascade[0]<<'\n';
 #endif
-        Config::log()<<'\n';
     }
     //cached_derivs.foreach_deriv
     //FIXME: some weirdo made foreach_deriv 1-based
@@ -243,6 +257,8 @@ struct gibbs
         }
 //        OUTGIBBS(','<<n_1based<<':')
         d.random_path(p,*this);
+        if (gopt.ppx)
+            prob*=p_path(p);
 //        OUTGIBBS(p.size());
         addc(p,1);
     }
@@ -250,10 +266,20 @@ struct gibbs
     double operator()(GraphArc const& a) const
     {
 //        if (just1) return p_param(just1param(a));
-        param_list p=ac(a);
+        return p_param_list(ac(a));
+    }
+    double p_param_list(param_list p) const
+    {
         double w=1.;
         for (;p;p=p->next)
             w*=p_param(param(p->data));
+        return w;
+    }
+    Weight p_path(acpath const& p) const
+    {
+        Weight w=one_weight();
+        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
+            w*=p_param_list(*i);
         return w;
     }
     gibbs_param &just1param(GraphArc const& a) const
@@ -265,7 +291,7 @@ struct gibbs
           ,WFST::NormalizeMethods & methods
           ,WFST::train_opts const& topt
           ,WFST::gibbs_opts const& gopt) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter-1))
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
     {
         cascade.set_composed(composed);
         just1=cascade.trivial; //TODO: handle just1
@@ -279,9 +305,10 @@ struct gibbs
         power=1.;
         subtract_old=false;
         accum_delta=false;
+        i=0;
         iteration(); // random initial sample
         subtract_old=true;
-        for (i=0;i<Ni;++i) {
+        for (i=1;i<=Ni;++i) {
             power=1./temp(i);
             t=i-burnt0;
             if (t==0) {
@@ -289,7 +316,6 @@ struct gibbs
                     i->initsum();
                 accum_delta=true;
             } else if (t<0) t==0;
-            training_progress(i);
             iteration();
         }
     }
@@ -297,7 +323,7 @@ struct gibbs
     void normalize_accum_delta()
     {
         normsum_t sn(nnorm);
-        double tmax=Ni-1;
+        double tmax=Ni;
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
             sn[i->norm]+=i->sumcount.extend(tmax);
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
@@ -324,7 +350,7 @@ struct gibbs
     typedef dynamic_array<FSTArc*> cascade_path;
     typedef fixed_array<cascade_path> cascade_paths;
     typedef cascade_parameters::cascade_t casc;
-    // for transducers in c[i] for i in [a,b) put result in r[i]
+    // single path in composition -> separate paths for each in cascade[i], for i in [a,b) put result in r[i]
     void paths(acpath const& p,unsigned a,unsigned b,cascade_paths &r)
     {
         assert(b<=r.size());
@@ -332,11 +358,13 @@ struct gibbs
             r[i].clear();
         for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
             for (param_list p=*i;p;p=p->next) {
-                FSTArc *a=(FSTArc*)p->data;
-                r[param(a).cascadei].push_back(a);
+                FSTArc *a=p->data;
+                unsigned ci=param(a).cascadei;
+                assert(ci<r.size());
+                r[ci].push_back(a);
             }
     }
-    void print_sample(unsigned a,unsigned b,casc c)
+    void print_sample(unsigned a,unsigned b,casc const& c)
     {
         if (!(b>a && a<c.size())) {
             if (b!=0)
@@ -348,7 +376,7 @@ struct gibbs
         for (sample_t::const_iterator i=sample.begin(),e=sample.end();i!=e;++i)
             print_path(*i,a,b,c);
     }
-    void print_path(acpath const& p,unsigned a,unsigned b,casc c)
+    void print_path(acpath const& p,unsigned a,unsigned b,casc const &c)
     {
         cascade_paths ps(c.size());
         paths(p,a,b,ps);
@@ -365,8 +393,26 @@ struct gibbs
     {
         print_sample(gopt.print_from,gopt.print_to);
     }
+    static inline bool divides(unsigned div,unsigned i)
+    {
+        return div!=0 && i%div==0;
+    }
+    void maybe_print_paths_periodic()
+    {
+        if (divides(gopt.print_every,i))
+            print_paths_periodic();
+    }
+    void print_paths_periodic()
+    {
+        itername(gopt.printer.out()<<"# ","\n");
+        if (gopt.printer.needs_weight())
+            save_weights(false);
+        print_sample();
+        gopt.printer.out()<<"#\n";
+    }
 
  private:
+    Weight prob;
     bool just1;
     unsigned i,Ni;
     double power;
@@ -399,6 +445,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     g.save_weights();
     g.print_sample();
     cascade.clear_groups();
+    cascade.update(*this);
 }
 
 
@@ -497,7 +544,7 @@ struct forward_backward
     //    Weight train_estimate(Weight &unweighted_corpus_prob,bool remove_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
     //    Weight train_maximize(NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
 
-// return per-example perplexity = 2^entropy=p(corpus)^(-1/N)
+// return corpus prob; print with Weight::print_ppx
 // unweighted_corpus_prob: ignore per-example weight, product over corpus of p(example)
     Weight estimate(Weight &unweighted_corpus_prob);
 
@@ -610,7 +657,7 @@ struct forward_backward
                 }
             }
         } else {
-            graehl::time_space_report(Config::log(),"Computed cached derivations:");
+            graehl::time_space_report(Config::log(),"Computed cached derivations: ");
             compute_derivations(corpus.examples);
         }
     }
@@ -867,10 +914,11 @@ Weight WFST::train(cascade_parameters &cascade,
                 break;
             }
 
-            Weight newPerplexity = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
+            Weight p = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
+            Weight newPerplexity=p.ppxper(corpus.totalEmpiricalWeight);
             DWSTAT("After estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
-            Config::log() << " per-output-symbol-perplexity="<<corpus_p.root(corpus.n_output).inverse().as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
+            Config::log() << " per-output-symbol-perplexity="<<corpus_p.ppxper(corpus.n_output).as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
             if ( newPerplexity < bestPerplexity && (!using_cascade || cascade_counts)) { // because of how I'm saving only composed counts, we can't actually get back to our initial starting point (iter 1)
                 Config::log() << " (new best)";
                 bestPerplexity=newPerplexity;
@@ -1079,7 +1127,7 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
         p=estimate_matrix(unweighted_corpus_prob);
     else
         p=estimate_cached(unweighted_corpus_prob);
-    return p.root(trn->totalEmpiricalWeight).inverse();
+    return p;
 }
 
 Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
