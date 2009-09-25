@@ -1,3 +1,11 @@
+More efficient train-cascade + -a (one param per arc) - we like writing the trained transducers back, but can change slist chain of real param pointer to just point to original arc?  Could simplify gibbs to require -a as well?
+
+==========
+
+A bummer of a wart in gibbs w/ a single transducer: --train-cascade, which is mandatory for gibbs, doesn't create the same indirect id->param list structure; it's special cased for trivial (non-cascade) case.  can we build a real singleton cascade for gibbs, or do we need a special case of all the cascade operations used in gibbs?  (latter should be more efficient).  plan for special case: instead of path = pointers to param chains, path = pointers to fst arc (do it by casting or union?)
+
+===========
+
 What's wrong with current cascade+derivation for gibbs?
 
 In derivation, an arcs_table<arc_counts> has priors, counts, etc. per composed arc.  The derivations are saved as a graph with .data_as<unsigned> = index into table.  But in a cascade, each graph arc may be more than one input fst arc.  So forward/backward/random happen at the per-composed-arc level.

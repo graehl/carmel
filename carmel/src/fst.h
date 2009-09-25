@@ -1298,6 +1298,7 @@ class WFST {
         train_opts() { set_defaults(); }
         void set_defaults()
         {
+            max_iter=500;
             cache.set_defaults();
             learning_rate_growth_factor=1.;
             ran_restarts=0;
@@ -1551,7 +1552,7 @@ class WFST {
     V & visit_arcs(V & v)
     {
 //        unsigned arcno=0;
-        for ( unsigned s = 0,e=numStates() ; s < e ; ++s )
+        for (unsigned s=0,e=numStates();s<e;++s)
             states[s].visit_arcs(s,v);
         return v;
     }

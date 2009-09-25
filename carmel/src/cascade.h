@@ -313,7 +313,7 @@ struct cascade_parameters
     template <class P>
     void update_gibbs(P const& p)
     {
-        for (unsigned i=0,e=chains.size();i!=e;++i)
+        for (unsigned i=0,e=cascade.size();i!=e;++i)
             update_gibbs(*cascade[i],p);
     }
 
