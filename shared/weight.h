@@ -335,10 +335,10 @@ struct logweight {                 // capable of representing nonnegative reals
     }
 
     std::ostream &print_ppx(std::ostream &o,double n_symbol,double n_example
-                            ,char const* symbolname="per-output-symbol-perplexity="
-                            ,char const* examplename="per-example-perplexity=") const
+                            ,char const* symbolname="per-output-symbol-perplexity"
+                            ,char const* examplename="per-example-perplexity") const
     {
-        return o<<symbolname<<"(N="<<n_symbol<<")"<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")"<<ppxper(n_example).as_base(2);
+        return o<<symbolname<<"(N="<<n_symbol<<")="<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
     }
 
     logweight() { setZero(); }
