@@ -29,7 +29,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "4.8"
+#define CARMEL_VERSION "5.0"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -1738,12 +1738,14 @@ cout <<         "\n"
         "--post-b=transducerfile : in conjunction with -b, a parallel sequence of inputs to be composed with the result (left or right composition depending on -l / -r.  compare to -S except 2 parallel files instead of alternating lines, and gives best paths like -b.  also may succeed for compositions that wouldn't fit in memory under -S\n";
 
     cout << "\n"
-        "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n";
+        "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n"
+
+        ;
 
     cout << "\n"
+        "--digamma=0,,.5 : (train-cascade) if digamma[n] is a number x, scale num and denom by exp(digamma(count+x)).  for variational bayes, choose digamma=0 and put the additional counts in --priors instead\n"
         "--normby=JCCC : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional\n"
         "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
-        "--digamma=0,,.5 : (gibbs/train-cascade) if digamma[n] is a number x, scale num and denom by exp(digamma(count+x)).  for variational bayes, choose digamma=0 and put the additional counts in --priors instead\n"
         ;
 
     cout << "\n"
