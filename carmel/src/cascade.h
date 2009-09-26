@@ -9,6 +9,7 @@
 #include <boost/pool/object_pool.hpp>
 
 namespace graehl {
+ // WARNING: thread unsafe for gibbs operator[](arc if trivial) identity node
 
 // track pointers to arcs in a composition cascade, and host shared lists of them, given a global index in the cascade, so that the groupId of the composed FSTArc gives a list.
 // note: composition of cascades gets its groupId set with this unique chain_id meaning a list of original input arcs
@@ -43,7 +44,7 @@ struct cascade_parameters
     typedef param param_id;
     typedef slist_node<param_id> node_t;
     typedef slist_shared<param_id> shared_list_t;
-    typedef node_t *chain_t;
+    typedef node_t * chain_t; //FIXME: make this a const pointer, but object_pool doesn't like it
     typedef std::vector<chain_t> chains_t; // // change w/ vector<arcid> ? so you know what component each arc came from
     chains_t chains;
     std::vector<Weight> chain_weights;
@@ -158,7 +159,7 @@ struct cascade_parameters
     }
 
     cascade_parameters(bool remember_cascade=false,unsigned debug=0)
-        : debug(debug)
+        : debug(debug),tempnode(NULL,NULL)
     {
         if ((trivial=!remember_cascade)) return;
 
@@ -402,10 +403,16 @@ struct cascade_parameters
 
     chain_t operator[](FSTArc const*arc) const
     {
-        return chains[arc->groupId];
+        return operator[](*arc);
     }
+    mutable node_t tempnode;
+
     chain_t operator[](FSTArc const&arc) const
     {
+        if (trivial) {
+            tempnode.data=const_cast<FSTArc *>(&arc);
+            return &tempnode;
+        }
         return chains[arc.groupId];
     }
 

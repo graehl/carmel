@@ -1167,11 +1167,10 @@ main(int argc, char *argv[]){
 
         if (nChain<2 && !cascade.trivial) {
             Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
-            if (gibbs) {
+            if (false&&gibbs) {
                 Config::warn() << "--gibbs (because of --train-cascade) requires at least two transducers in composition; disabling --gibbs\n";
                 gibbs=false;
             }
-
             cascade.set_trivial();
         }
 

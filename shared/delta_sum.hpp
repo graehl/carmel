@@ -27,6 +27,7 @@ inline void throw_unknown_delta_sum(double t,double tmax) {
 
 // can get any [0,t>tmax] sum or [t0>tmax,t>tmax] sum where tmax is the highest t of any delta
 //TESTME:
+//Essentially I forget the sum (s) at values of t<tmax.  I track the current instantaneous value x at time tmax, and so can give the sum over time from t=0..t' for any t'>=tmax (sum(t') below)
 struct delta_sum
 {
     double x,tmax;
