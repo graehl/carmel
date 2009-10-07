@@ -1254,6 +1254,7 @@ class WFST {
     struct gibbs_opts
     {
         bool ppx;
+        bool p0init;
         unsigned print_every; // print the current sample every N iterations
         unsigned print_from;
         unsigned print_to;
@@ -1269,6 +1270,7 @@ class WFST {
         gibbs_opts() { set_defaults(); }
         void set_defaults()
         {
+            p0init=true;
             ppx=true;
             print_every=0;
             print_from=print_to=0;
@@ -1281,7 +1283,7 @@ class WFST {
     // set data field of arcs to int id of their normgroup (starting at idbase).  returns next free id. note: tied arcs ignored (TODO: set data field to list of normgroup ids to allow tying?)
     // push_back each arc to gps which will store its normgroup and prior count
     typedef dynamic_array<gibbs_param> gibbs_params;
-    unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,unsigned cascadei=0);
+    unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init=true,unsigned cascadei=0);
 
 
     // TODO: move more of the train params into here

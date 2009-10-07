@@ -173,8 +173,9 @@ struct cascade_parameters
         // empty chain means: don't update the original arc in any way
     }
 
-    unsigned set_gibbs_params(WFST &composed,WFST::NormalizeMethods & methods,WFST::gibbs_params &gps,unsigned startid=0)
+    unsigned set_gibbs_params(WFST &composed,WFST::NormalizeMethods & methods,WFST::gibbs_params &gps,bool p0init=true,unsigned startid=0)
     {
+//        gps.push_back(0,0,0); //FIXME: unused index 0 for locked arcs
         if (trivial)
             return composed.set_gibbs_params(methods[0],startid,gps);
         else {
