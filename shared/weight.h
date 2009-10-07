@@ -340,7 +340,7 @@ struct logweight {                 // capable of representing nonnegative reals
                             , char const* probname="probability"
         ) const
     {
-        return o<<probname<<"="<<*this<<" "<<symbolname<<"(N="<<n_symbol<<")="<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
+        return o<<probname<<"="<<as_base(2)<<" "<<symbolname<<"(N="<<n_symbol<<")="<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
     }
 
     logweight() { setZero(); }
