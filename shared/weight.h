@@ -584,17 +584,26 @@ struct logweight {                 // capable of representing nonnegative reals
         }
         in >> f;
         if (f==10) {
-            if ((in >> c) && c=='^') {
-                EXPECTI(in>>f);
-                setLog10((Real)f);
+            if (in >> c) {
+                if (c=='^') {
+                    EXPECTI(in>>f);
+                    setLog10((Real)f);
+                } else {
+                    in.unget();
+                    setReal(f);
+                    return GENIOGOOD;
+                }
+            } else {
+                setReal(f);
+                return GENIOGOOD;
             }
         }
 
-        if ( in.fail() )
-            goto fail;
-        if ( in.eof() ) {
+        if (in.eof())
             setReal(f);
-        } else if ( (c = in.get()) == 'l' ) {
+        else if (in.fail())
+            goto fail;
+        else if ( (c = in.get()) == 'l' ) {
             char n = in.get();
             if ( n == 'n')
                 setLn((Real)f);
@@ -612,10 +621,9 @@ struct logweight {                 // capable of representing nonnegative reals
     fail:
         setZero();
         return GENIOBAD;
-
     }
     TO_OSTREAM_PRINT
-    FROM_ISTREAM_READ
+    FROM_ISTREAM_READ_GEN
     struct base_printer
     {
         typedef base_printer self_type;

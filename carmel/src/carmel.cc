@@ -26,6 +26,7 @@
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/split.hpp>
 #include <boost/config.hpp>
+#include <graehl/shared/random.hpp>
 
 using namespace graehl;
 
@@ -726,7 +727,7 @@ main(int argc, char *argv[]){
     for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
     char *pc;
     char const**parm = NEW char const *[argc-1];
-    unsigned int seed = (unsigned int )std::time(NULL);
+    unsigned int seed = default_random_seed();//(unsigned int )std::time(NULL);
     int nParms = 0;
     int kPaths = 0;
     int thresh = 32;
@@ -928,6 +929,7 @@ main(int argc, char *argv[]){
     }
 
     srand(seed);
+    set_random_seed(seed);
     setOutputFormat(flags,0); // set default for all streams
     setOutputFormat(flags,&cout);
     setOutputFormat(flags,&cerr);
