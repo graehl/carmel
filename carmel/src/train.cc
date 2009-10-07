@@ -220,6 +220,7 @@ struct gibbs
     { return param(*pf); }
     double p_param(gibbs_param const&p) const
     {
+
         return p.count/normsum[p.norm];
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
@@ -291,7 +292,7 @@ struct gibbs
           ,WFST::NormalizeMethods & methods
           ,WFST::train_opts const& topt
           ,WFST::gibbs_opts const& gopt) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps)), normsum(nnorm), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), nnorm(cascade.set_gibbs_params(composed,methods,gps,gopt.p0init)), normsum(nnorm), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
     {
         cascade.set_composed(composed);
         just1=cascade.trivial; //TODO: handle just1
@@ -918,7 +919,8 @@ Weight WFST::train(cascade_parameters &cascade,
             Weight newPerplexity=p.ppxper(corpus.totalEmpiricalWeight);
             DWSTAT("After estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
-            Config::log() << " per-output-symbol-perplexity="<<corpus_p.ppxper(corpus.n_output).as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
+//            Config::log() << " per-output-symbol-perplexity="<<corpus_p.ppxper(corpus.n_output).as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
+            corpus_p.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
             if ( newPerplexity < bestPerplexity && (!using_cascade || cascade_counts)) { // because of how I'm saving only composed counts, we can't actually get back to our initial starting point (iter 1)
                 Config::log() << " (new best)";
                 bestPerplexity=newPerplexity;
@@ -928,7 +930,6 @@ Weight WFST::train(cascade_parameters &cascade,
                 else
                     fb.arcs.visit(for_arcs::save_best()); // drawn from pre-normalization counts in case of non-trivial cascade, post-norm weights otherwise
             }
-
 
             Weight pp_ratio_scaled;
             if ( first_time ) {

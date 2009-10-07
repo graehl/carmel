@@ -16,13 +16,13 @@ struct gibbs_param
     double count;
     unsigned norm;
     unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
-    delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs
+    delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
     void initsum()
     {
         sumcount.add_delta(count,0);
     }
     template <class Normsums>
-    void addsum(double d,double t,Normsums &ns,bool accum_delta)
+    void addsum(double d,double t,Normsums &ns,bool accum_delta) // first call should be w/ t=0
     {
         count+=d;
         ns[norm]+=d;

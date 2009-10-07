@@ -273,7 +273,7 @@ struct carmel_main
 
     bool gibbs_opts()
     {
-        bool gibbs = have_opt("gibbs");
+        bool gibbs = have_opt("crp");
         if (gibbs) {
             flags['t']=true;
 //            flags['a']=true;
@@ -290,6 +290,8 @@ struct carmel_main
         get_opt("print-every",gopt.print_every);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
+//        bool uniformp0=false;
+        gopt.p0init=!have_opt("uniformp0");
         gopt.cumulative_counts=!have_opt("final-counts");
         gopt.printer.set_flags(flags);
         return gibbs;
@@ -297,13 +299,18 @@ struct carmel_main
 
     void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0)
     {
-        Config::log()<<"product of probs="<<prod_prob<<", per-example perplexity(N="<<n_pairs<<")=";
-        prod_prob.root(n_pairs).inverse().print_base(Config::log(),2);
-        Config::log()<<", per-input-symbol perplexity(Nsym="<<n_symbols<<")=";
-        prod_prob.root(n_symbols).inverse().print_base(Config::log(),2);
+        std::ostream &o=Config::log();
+        o<<"product of probs="<<prod_prob<<", ";
+        prod_prob.print_ppx(o,n_symbols,n_pairs,"per-input-symbol-perplexity","per-line-perplexity");
+        /*
+        o<<"per-example perplexity(N="<<n_pairs<<")=";
+        prod_prob.root(n_pairs).inverse().print_base(o,2);
+        o<<"per-input-symbol perplexity(Nsym="<<n_symbols<<")=";
+        prod_prob.root(n_symbols).inverse().print_base(o,2);
+        */
         if (n_0prob)
-            Config::log()<<", excluding "<<n_0prob<<" 0 probabilities (i.e. real ppx is infinite).";
-        Config::log()<<std::endl;
+            o<<", excluding "<<n_0prob<<" 0 probabilities (i.e. real ppx is infinite).";
+        o<<std::endl;
     }
 
     istream *open_postb()
@@ -332,25 +339,26 @@ struct carmel_main
 
     void report_batch()
     {
+        std::ostream &o=Config::log();
         bool postb=have_opt("post-b");
         bool sump=have_opt("sum");
         unsigned N=n_lines();
         if (!N) return;
         if (n_0prob)
-            Config::log() << "No derivations found for "<<n_0prob<<" of "<<N<<" inputs.\n";
+            o << "No derivations found for "<<n_0prob<<" of "<<N<<" inputs.\n";
         else
-            Config::log() << "Derivations found for all "<<N<<" inputs.\n";
+            o << "Derivations found for all "<<N<<" inputs.\n";
         if (postb&&sump) {
-            Config::log() << "Just before --post-b, sum-all-paths ";
+            o << "Just before --post-b, sum-all-paths ";
             log_ppx(n_prob,prod_sum_pre,n_0prob);
         }
-        Config::log() << "Viterbi (best path) ";
+        o << "Viterbi (best path) ";
         log_ppx(n_prob,prod_viterbi,n_0prob);
         if (sump) {
-            Config::log() << "Sum (all paths) ";
+            o << "Sum (all paths) ";
             log_ppx(n_prob,prod_sum,n_0prob);
             if (postb) {
-                Config::log() << "Conditional (final divided by previous sum-all-paths) ";
+                o << "Conditional (final divided by previous sum-all-paths) ";
                 log_ppx(n_prob,prod_sum/prod_sum_pre,n_0prob);
             }
         }
@@ -432,19 +440,20 @@ struct carmel_main
     template <class Setter,class V>
     unsigned set_vector(std::string const& key,dynamic_array<V> &pr,char const* osep = " ^ ",char const* isep=",")
     {
+        std::ostream &o=Config::log();
         typedef typename dynamic_array<V>::iterator I;
         std::string const& opt=text_long_opts[key];
         if (!opt.empty()) {
             unsigned n=split_noquote(opt,Putter<I,Setter>(pr.begin()),isep);
             if (n>0) {
-                Config::log() << "Using input WFST --"<<key<<":\n";
+                o << "Using input WFST --"<<key<<":\n";
                 unsigned i=0;
                 for (i=0 ; i < n ; ++i) {
-                    Config::log() << filenames[i];
-                    Config::log() << osep << Setter::get(pr[i]);
-                    Config::log() << std::endl;
+                    o << filenames[i];
+                    o << osep << Setter::get(pr[i]);
+                    o << std::endl;
                 }
-                Config::log() << std::endl;
+                o << std::endl;
                 return n;
             }
         }
@@ -811,7 +820,7 @@ main(int argc, char *argv[]){
                     else if ( *pc == 'g' || *pc == 'G' )
                         nGenerate = -1;
                     else if ( *pc == 'M' )
-                        train_opt.max_iter=-1;
+                        train_opt.max_iter=(unsigned)-1;
                     else if ( *pc == 'L' )
                         maxGenArcs = -1;
                     else if ( *pc == 'N' )
@@ -867,7 +876,7 @@ main(int argc, char *argv[]){
                 readParam(&nGenerate,argv[i],'g');
                 if ( nGenerate < 1 )
                     nGenerate = 1;
-            } else if ( train_opt.max_iter == -1 ) {
+            } else if ( train_opt.max_iter == (unsigned)-1 ) {
                 readParam(&train_opt.max_iter,argv[i],'M');
                 if ( train_opt.max_iter < 1 )
                     train_opt.max_iter = 1;
@@ -1168,7 +1177,7 @@ main(int argc, char *argv[]){
         if (nChain<2 && !cascade.trivial) {
             Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
             if (false&&gibbs) {
-                Config::warn() << "--gibbs (because of --train-cascade) requires at least two transducers in composition; disabling --gibbs\n";
+                Config::warn() << "--crp (because of --train-cascade) requires at least two transducers in composition; disabling --crp\n";
                 gibbs=false;
             }
             cascade.set_trivial();
@@ -1391,9 +1400,6 @@ main(int argc, char *argv[]){
                     delete[] outSeq;
                 }
             }
-
-
-
 
             if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && cascade.trivial)
                  || flags['F'] ) {
@@ -1748,13 +1754,14 @@ cout <<         "\n"
         ;
 
     cout << "\n"
-        "--gibbs : train by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
+        "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
         "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
-        "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's\n"
+        "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)\n"
+        "--uniformp0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
         "\n";
 //        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
 
