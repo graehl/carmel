@@ -10,7 +10,7 @@ template <class I,class To>
 bool try_stream_into(I & i,To &to,bool complete=true)
 {
     i >> to;
-    if (!i) return false;
+    if (i.fail()) return false;
     if (complete) {
         char c;
         return !(i >> c);

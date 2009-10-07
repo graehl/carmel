@@ -2,6 +2,9 @@
 #ifndef GENIO_H
 #define GENIO_H
 
+#define GENIOGOOD std::ios_base::goodbit
+#define GENIOBAD std::ios_base::failbit
+
 // CHANGE: void print(ostream &) is fine.  we assume output never fails
 /*
   Dietmar says:
@@ -73,10 +76,11 @@ CREATE_INSERTER_T1(C) // for classes with 1 template arg.
 #include <stdexcept>
 
 #define GEN_IO_(s,io,sentrytype) do {                                             \
-        typename sentrytype,Traits>::sentry sentry(s);                        \
+        typename sentrytype,Traits>::sentry sentry(s,false);                           \
         if (sentry) {                                                 \
             std::ios_base::iostate err = io; \
-            if (err) s.setstate(err);        \
+            if (err==GENIOGOOD) s.clear();        \
+            else if (err) s.setstate(err); \
         } } while(0)
 
 // uses (template) charT, Traits
@@ -131,6 +135,11 @@ gen_inserter
         s.setstate(err);
     return s;*/
 }
+
+#define FROM_ISTREAM_READ_GEN                                                 \
+    template <class Char,class Traits> \
+    inline friend std::basic_istream<Char,Traits>& operator >>(std::basic_istream<Char,Traits> &i,self_type & me)     \
+    { return gen_extractor(i,me); }
 
 
 template <class charT, class Traits, class Arg, class Reader>
@@ -272,8 +281,6 @@ inline std::basic_ostream<charT,Traits>& operator << \
                                                      (std::basic_ostream<charT,Traits>& os, const C<T1> &arg) {  \
     return gen_inserter(os,arg); }
 
-#define GENIOGOOD std::ios_base::goodbit
-#define GENIOBAD std::ios_base::failbit
 
 #define GENIOSETBAD(in) do { in.setstate(GENIOBAD); } while(0)
 
