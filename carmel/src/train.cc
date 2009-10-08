@@ -253,11 +253,10 @@ struct gibbs
     {
         training_progress(n_1based);
         acpath &p=sample[n_1based-1];
-        if (subtract_old) {
+        if (subtract_old)
             addc(p,-1);
-        }
 //        OUTGIBBS(','<<n_1based<<':')
-        d.random_path(p,*this);
+        d.random_path(p,*this,power);
         if (gopt.ppx)
             prob*=p_path(p);
 //        OUTGIBBS(p.size());
