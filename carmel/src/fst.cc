@@ -186,15 +186,26 @@ unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_p
     }
     if (nm.group==CONDITIONAL)
         indexInput();
+    Weight ac=nm.add_count;
     for (WFST_impl::NormGroupIter g(nm.group,*this); g.moreGroups(); g.nextGroup()) {
+        Weight sum=0;
+        double N=0;
+        Weight scale=one_weight();
+        if (p0init) {
+            for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+                ++N;
+                sum+=(*g)->weight;
+            }
+            if (N>0)
+                scale=N/sum;
+        }
         for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
             FSTArc & a=**g;
             a.groupId=gps.size();
-            Weight ac=nm.add_count;
-            if (p0init)
-                ac*=a.weight;
-            gps.push_back(id,ac.getReal(),cascadei);
+            Weight prior=p0init ? (ac*scale*a.weight) : ac;
+            gps.push_back(id,prior.getReal(),cascadei);
         }
+
         ++id;
     }
     return id;

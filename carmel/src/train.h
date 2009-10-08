@@ -5,6 +5,7 @@
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/delta_sum.hpp>
+#include <graehl/shared/stream_util.hpp>
 
 namespace graehl {
 
@@ -31,8 +32,16 @@ struct gibbs_param
             assert(count==sumcount.x);
         }
     }
-
     gibbs_param(unsigned norm, double prior, unsigned cascadei) : norm(norm),count(prior),cascadei(cascadei) {  }
+    typedef gibbs_param self_type;
+    TO_OSTREAM_PRINT
+    template <class O>
+    void print(O &o) const
+    {
+        o<<count<<'\t'<<norm<<'\t'<<cascadei;
+        if (!sumcount.empty())
+            o<<'\t'<<sumcount;
+    }
 };
 
 

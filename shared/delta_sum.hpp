@@ -10,6 +10,7 @@
  */
 
 #include <stdexcept>
+#include <graehl/shared/stream_util.hpp>
 
 namespace graehl {
 
@@ -69,6 +70,19 @@ struct delta_sum
         add_delta(v-x,t);
     }
     delta_sum(double x0=0.) : x(x0),tmax(0),s(0) {  }
+    bool empty() const
+    {
+        return tmax==0;
+    }
+    typedef delta_sum self_type;
+    TO_OSTREAM_PRINT
+    template<class O>
+    void print(O &o) const
+    {
+        o<<"x("<<tmax<<")="<<x<<" sum="<<s;
+        if (tmax>0)
+            o<<" avg="<<s/tmax;
+    }
 };
 
 // tmax fixed in advance!  essentially no advantage over more flexible delta_sum except barely simpler computation
@@ -83,7 +97,10 @@ struct bounded_delta_sum
         assert(t==tmax);
         return s;
     }
-
+    bool empty() const
+    {
+        return x==0;
+    }
     double sum() const
     {
         return s;
@@ -113,6 +130,15 @@ struct bounded_delta_sum
         add_delta(v-x,t);
     }
     bounded_delta_sum(double x0,double tmax) : x(x0),tmax(tmax),s(0) {  }
+    typedef bounded_delta_sum self_type;
+    TO_OSTREAM_PRINT
+    template<class O>
+    void print(O &o) const
+    {
+        o<<"x(t<"<<tmax<<")="<<x<<" sum="<<s;
+        if (tmax>0)
+            o<<" avg="<<s/tmax;
+    }
 };
 
 

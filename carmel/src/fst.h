@@ -1258,6 +1258,8 @@ class WFST {
         unsigned print_every; // print the current sample every N iterations
         unsigned print_from;
         unsigned print_to;
+        unsigned print_counts_from;
+        unsigned print_counts_to;
         path_print printer;
         bool cumulative_counts;
         // random choices have probs raised to 1/temperature(iteration) before coin flip
@@ -1270,6 +1272,7 @@ class WFST {
         gibbs_opts() { set_defaults(); }
         void set_defaults()
         {
+            print_counts_from=print_counts_to=0;
             p0init=true;
             ppx=true;
             print_every=0;
