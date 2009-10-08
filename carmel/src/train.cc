@@ -236,7 +236,7 @@ struct gibbs
         prob.setOne();
         derivs.foreach_deriv(*this);
         if (gopt.ppx) {
-            Config::log()<<" i="<<i<<" sample-prob="<<prob<<" ";
+            Config::log()<<" i="<<i<<" sample ";
             prob.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs);
         }
         Config::log()<<'\n';
@@ -307,6 +307,7 @@ struct gibbs
         subtract_old=false;
         accum_delta=false;
         i=0;
+        if (gopt.print_every!=0) print_counts("prior counts");
         iteration(); // random initial sample
         subtract_old=true;
         for (i=1;i<=Ni;++i) {
@@ -403,6 +404,19 @@ struct gibbs
         if (divides(gopt.print_every,i))
             print_paths_periodic();
     }
+    std::ostream &out()
+    {
+        return gopt.printer.out();
+    }
+    void print_counts(char const* name="counts")
+    {
+        unsigned from=gopt.print_counts_from;
+        unsigned to=std::min(gopt.print_counts_to,gps.size());
+        if (to>from && from<gps.size()) {
+            out()<<"# count\tnormgrp\tinput#\tcumulative\t"<<name<<" i="<<i<<"\n";
+            print_range(out(),gps.begin()+from,gps.begin()+to,true,true);
+        }
+    }
     void print_paths_periodic()
     {
         itername(gopt.printer.out()<<"# ","\n");
@@ -410,6 +424,7 @@ struct gibbs
             save_weights(false);
         print_sample();
         gopt.printer.out()<<"#\n";
+        print_counts();
     }
 
  private:

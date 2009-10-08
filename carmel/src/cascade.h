@@ -177,11 +177,11 @@ struct cascade_parameters
     {
 //        gps.push_back(0,0,0); //FIXME: unused index 0 for locked arcs
         if (trivial)
-            return composed.set_gibbs_params(methods[0],startid,gps);
+            return composed.set_gibbs_params(methods[0],startid,gps,p0init,0);
         else {
             unsigned id=startid;
             for (unsigned i=0,n=cascade.size();i<n;++i)
-                id=cascade[i]->set_gibbs_params(methods[i],id,gps,i);
+                id=cascade[i]->set_gibbs_params(methods[i],id,gps,p0init,i);
             return id;
         }
     }
