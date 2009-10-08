@@ -1559,6 +1559,7 @@ class WFST {
             states[s].visit_arcs(s,v);
         return v;
     }
+    //FIXME: same as unTieGroups - keep just 1
     void clear_groups()
     {
         FSTArc::clear_group_f f;
