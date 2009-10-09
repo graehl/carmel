@@ -179,7 +179,7 @@ struct gibbs
     cascade_parameters &cascade;
     training_corpus &corpus;
     WFST::NormalizeMethods const& methods;
-    WFST::train_opts const& topt;
+    WFST::train_opts topt;
     WFST::gibbs_opts gopt;
     typedef WFST::gibbs_params gps_t;
     gps_t gps;
@@ -214,13 +214,31 @@ struct gibbs
     {
         p.addsum(delta,t,normsum,accum_delta);
     }
+    Weight cache_prob(acpath const& p)
+    {
+        Weight prob=one_weight();
+        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
+            prob*=cache_prob(*i);
+        return prob;
+    }
+    Weight cache_prob(param_list p)
+    {
+        Weight prob=one_weight();
+        for (;p;p=p->next)
+            prob*=cache_prob(p->data->groupId);
+        return prob;
+    }
+    double cache_prob(unsigned paramid)
+    {
+        unsigned norm=gps[paramid].norm;
+        return ccount[paramid]++/csum[norm]++;
+    }
     gibbs_param &param(FSTArc const& f) const
     { return gps[f.groupId]; }
     gibbs_param &param(FSTArc const* pf) const
     { return param(*pf); }
     double p_param(gibbs_param const&p) const
     {
-
         return p.count/normsum[p.norm];
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
@@ -232,14 +250,32 @@ struct gibbs
     }
     void iteration()
     {
-        itername(Config::log());
+        std::ostream &log=Config::log();
+        itername(log);
         prob.setOne();
-        derivs.foreach_deriv(*this);
-        if (gopt.ppx) {
-            Config::log()<<" i="<<i<<" sample ";
-            prob.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs);
+        if (gopt.cache_prob) {
+            cprob.setOne();
+            unsigned N=gps.size();
+            ccount.init(N);
+            csum.init(nnorm);
+            for (unsigned i=0;i<N;++i) {
+                gibbs_param const& gp=gps[i];
+                csum[gp.norm]+=(ccount[i]=gp.prior);
+            }
         }
-        Config::log()<<'\n';
+        log<<" i="<<i;
+        derivs.foreach_deriv(*this);
+        if (gopt.cache_prob) {
+            ccount.dealloc();
+            csum.dealloc();
+            log<<" cache-model ";
+            cprob.print_ppx(log,corpus.n_output,corpus.n_pairs);
+        }
+        if (gopt.ppx) {
+            log<<" sample ";
+            prob.print_ppx(log,corpus.n_output,corpus.n_pairs);
+        }
+        log<<'\n';
         maybe_print_paths_periodic();
 #ifdef DEBUG_GIBBS
 //        print_sample(0,cascade.size());
@@ -257,6 +293,8 @@ struct gibbs
             addc(p,-1);
 //        OUTGIBBS(','<<n_1based<<':')
         d.random_path(p,*this,power);
+        if (gopt.cache_prob)
+            cprob*=cache_prob(p);
         if (gopt.ppx)
             prob*=p_path(p);
 //        OUTGIBBS(p.size());
@@ -332,7 +370,6 @@ struct gibbs
             p.sumcount.x=p.sumcount.s/sn[p.norm];
         }
     }
-
     void save_weights(bool accum=true)
     {
         if (accum&&accum_delta)
@@ -347,7 +384,6 @@ struct gibbs
             return p.sumcount.x;
         return p_param(p);
     }
-
     typedef dynamic_array<FSTArc*> cascade_path;
     typedef fixed_array<cascade_path> cascade_paths;
     typedef cascade_parameters::cascade_t casc;
@@ -427,6 +463,8 @@ struct gibbs
     }
 
  private:
+    normsum_t ccount,csum; // for computing true cache model probs
+    Weight cprob;
     Weight prob;
     bool just1;
     unsigned i,Ni;

@@ -284,6 +284,7 @@ struct carmel_main
             flags[':']=true; // cache reverse also
             long_opts["train-cascade"]=1;
         }
+        get_opt("init-em",gopt.init_em);
         get_opt("burnin",gopt.sched.burnin);
         get_opt("epoch",gopt.sched.epoch);
         get_opt("print-to",gopt.print_to);
@@ -293,8 +294,10 @@ struct carmel_main
         get_opt("print-every",gopt.print_every);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
+        gopt.cache_prob=have_opt("cache-prob");
 //        bool uniformp0=false;
         gopt.p0init=!have_opt("uniform-p0");
+        gopt.ppx=!have_opt("no-sample-prob");
         gopt.cumulative_counts=!have_opt("final-counts");
         gopt.printer.set_flags(flags);
         return gibbs;
@@ -1767,6 +1770,8 @@ cout <<         "\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
         "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
+        "--cache-prob : show the true probability according to cache model for each sample (not the prob given model and previous sample)\n"
+        "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
         "\n";
 //        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
 

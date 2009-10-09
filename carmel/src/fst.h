@@ -1253,6 +1253,8 @@ class WFST {
 
     struct gibbs_opts
     {
+        unsigned init_em;
+        bool cache_prob;
         bool ppx;
         bool p0init;
         unsigned print_every; // print the current sample every N iterations
@@ -1272,6 +1274,8 @@ class WFST {
         gibbs_opts() { set_defaults(); }
         void set_defaults()
         {
+            init_em=0;
+            cache_prob=false;
             print_counts_from=print_counts_to=0;
             p0init=true;
             ppx=true;
