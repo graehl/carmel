@@ -575,7 +575,9 @@ struct derivations //: boost::noncopyable
             for (typename for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
                 ++global_stats.pre.arcs;
-                g[source].add_data_as(source,derive(io,deriv_state(i_in,io.t[id].dest(),i_out)),0,id);
+//                typename wfst_io_index::counts_type const& ac=io.t[id];
+                FSTArc *a=io.t[id].arc;
+                g[source].add_data_as(source,derive(io,deriv_state(i_in,a->dest,i_out)),a->weight.getReal(),id); // weight only used by gibbs init em prob
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
             }
 

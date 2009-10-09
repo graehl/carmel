@@ -1254,6 +1254,7 @@ class WFST {
     struct gibbs_opts
     {
         unsigned init_em;
+        bool em_p0;
         bool cache_prob;
         bool ppx;
         bool p0init;
@@ -1275,6 +1276,7 @@ class WFST {
         void set_defaults()
         {
             init_em=0;
+            em_p0=false;
             cache_prob=false;
             print_counts_from=print_counts_to=0;
             p0init=true;
@@ -1318,7 +1320,8 @@ class WFST {
     void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,double min_prior=1e-2);
 
     Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts);
-    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts); // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
+    Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts,bool restore_old_weights=false);
+    // set weights in original composed transducers (the transducers that were composed w/ the given cascade object and must still be valid for updating arcs/normalizing)
     // returns per-example perplexity achieved
 
 

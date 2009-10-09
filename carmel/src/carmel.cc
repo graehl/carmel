@@ -285,6 +285,7 @@ struct carmel_main
             long_opts["train-cascade"]=1;
         }
         get_opt("init-em",gopt.init_em);
+        gopt.em_p0=have_opt("em-p0");
         get_opt("burnin",gopt.sched.burnin);
         get_opt("epoch",gopt.sched.epoch);
         get_opt("print-to",gopt.print_to);
@@ -1772,6 +1773,7 @@ cout <<         "\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
         "--cache-prob : show the true probability according to cache model for each sample (not the prob given model and previous sample)\n"
         "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
+        "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)"
         "\n";
 //        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
 
