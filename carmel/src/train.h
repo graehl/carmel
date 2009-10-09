@@ -14,6 +14,7 @@ void training_progress(unsigned train_example_no,unsigned scale=10);
 
 struct gibbs_param
 {
+    double prior; //FIXME: not needed except to make computing --cache-prob easier
     double count;
     unsigned norm;
     unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
@@ -32,7 +33,7 @@ struct gibbs_param
             assert(count==sumcount.x);
         }
     }
-    gibbs_param(unsigned norm, double prior, unsigned cascadei) : norm(norm),count(prior),cascadei(cascadei) {  }
+    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),count(prior),norm(norm),cascadei(cascadei) {  }
     typedef gibbs_param self_type;
     TO_OSTREAM_PRINT
     template <class O>
