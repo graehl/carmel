@@ -146,6 +146,7 @@ struct cascade_parameters
 
     void use_counts_final(WFST &composed,WFST::NormalizeMethods const& methods)
     {
+        if (trivial) return;
         use_counts(composed,methods);
         update(composed);
     }
@@ -312,12 +313,6 @@ struct cascade_parameters
             Config::debug() << "composed post:\n" << composed << std::endl;
     }
 
-    template <class P>
-    void update_gibbs(P const& p)
-    {
-        for (unsigned i=0,e=cascade.size();i!=e;++i)
-            update_gibbs(*cascade[i],p);
-    }
 
     void clear_groups()
     {
@@ -325,6 +320,7 @@ struct cascade_parameters
             cascade[i]->clear_groups();
     }
 
+    /*
     template <class P>
     struct gibbs_update
     {
@@ -336,12 +332,19 @@ struct cascade_parameters
             a.weight=p(a);
         }
     };
+    */
+    template <class P>
+    void update_gibbs(P const& p)
+    {
+        for (unsigned i=0,e=cascade.size();i!=e;++i)
+            update_gibbs(*cascade[i],p);
+    }
 
     template <class P>
     void update_gibbs(WFST &w,P const& p)
     {
-        gibbs_update<P> up(w,p);
-        w.visit_arcs(up);
+//        gibbs_update<P> up(w,p);
+        w.visit_arcs(p);
     }
 
     bool is_chain[2]; // is_chain[second] tells if arcs given to record are already chained, i.e. should you cons then append or just append
