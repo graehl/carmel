@@ -772,7 +772,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
         unsigned N=t2.max_iter=gopt.init_em;
 
         // EM:
-#if 1
+#if 0
         forward_backward fb(*this,cascade,false,0,true,t2);
         fb.prepare(corpus,true);
         Weight p,cp;

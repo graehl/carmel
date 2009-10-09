@@ -30,7 +30,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "5.2"
+#define CARMEL_VERSION "5.3"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -1669,7 +1669,7 @@ void usageHelp(void)
     cout << "\n-K\t\tAssume state names are integer indexes (when the final state is an integer)";
     cout << "\n-o g\t\tUse learning rate growth factor g (>= 1) (default=1)";
     cout << "\n-1\t\trandomly scale weights (of unlocked arcs) after composition uniformly by (0..1]";
-    cout << "\n-! n\t\tperform n additional random initializations of arcs for training, keeping the lowest perplexity";
+    cout << "\n-! n\t\tperform n additional random restarts (initializations of arcs) for training, keeping the lowest perplexity";
     cout << "\n-?\t\tcache EM derivations in memory for faster iterations";
     cout << "\n-:\t\tcache em derivations including reverse structure (faster but uses even more memory)";
 
