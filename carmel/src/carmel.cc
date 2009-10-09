@@ -30,7 +30,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "5.1"
+#define CARMEL_VERSION "5.2"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -298,7 +298,7 @@ struct carmel_main
         gopt.cache_prob=have_opt("cache-prob");
 //        bool uniformp0=false;
         gopt.p0init=!have_opt("uniform-p0");
-        gopt.ppx=!have_opt("no-sample-prob");
+        gopt.ppx=have_opt("sample-prob") || !gopt.cache_prob;
         gopt.cumulative_counts=!have_opt("final-counts");
         gopt.printer.set_flags(flags);
         return gibbs;
@@ -1771,9 +1771,10 @@ cout <<         "\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
         "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
-        "--cache-prob : show the true probability according to cache model for each sample (not the prob given model and previous sample)\n"
+        "--cache-prob : show the true probability according to cache model for each sample\n"
+        "--sample-prob : show the sample prob given model, previous sample\n"
         "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
-        "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)"
+        "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)\n"
         "\n";
 //        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
 
