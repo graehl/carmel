@@ -1,3 +1,11 @@
+derivations graph.h has data as int index into an arcs_table<train.h::arc_counts_base::arc (FSTArc *)+em_weight,counts,etc.>
+
+for gibbs, just the .arc *?
+
+.arc->groupId gives cascade chain index
+
+=======
+
 More efficient train-cascade + -a (one param per arc) - we like writing the trained transducers back, but can change slist chain of real param pointer to just point to original arc?  Could simplify gibbs to require -a as well?
 
 ==========
