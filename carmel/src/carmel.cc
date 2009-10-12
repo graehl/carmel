@@ -30,7 +30,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "5.3"
+#define CARMEL_VERSION "5.2"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -989,11 +989,11 @@ main(int argc, char *argv[]){
     istream *pairStream = NULL;
     bool gibbs = cm.gibbs_opts();
     cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
-    if ( !cascade.trivial )
+    bool trainc=!cascade.trivial;
+    if (trainc)
         flags['t']=1;
     if ( flags['t'] )
         flags['S'] = 1;
-    //(flags['S'] ||
     if ( nChain < 1 || flags['A'] && nInputs < 2) {
         Config::warn() << "No inputs supplied.\n";
         return -12;
@@ -1183,9 +1183,9 @@ main(int argc, char *argv[]){
 #endif
 
         if (nChain<2 && !cascade.trivial) {
-            Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
+//            Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
             if (false&&gibbs) {
-                Config::warn() << "--crp (because of --train-cascade) requires at least two transducers in composition; disabling --crp\n";
+                Config::warn() << "--crp requires at least two transducers in composition; disabling --crp\n";
                 gibbs=false;
             }
             cascade.set_trivial();
@@ -1355,7 +1355,7 @@ main(int argc, char *argv[]){
                     result->train(cascade,corpus,nms,flags['U'],smoothFloor,converge, converge_pp_ratio, train_opt);
                 }
 
-                if (!cascade.trivial) {
+                if (trainc) {
                     // write inputfilename.trained for each input
                     char const** chain_filenames=filenames+(chain-chainMemory);
                     assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
@@ -1409,7 +1409,7 @@ main(int argc, char *argv[]){
                 }
             }
 
-            if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && cascade.trivial)
+            if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !trainc)
                  || flags['F'] ) {
                 cm.prune(result);
                 cm.post_train_normalize(result);
@@ -1642,7 +1642,8 @@ void usageHelp(void)
     cout << "\n-G n\t\tstochastically generate";
     cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
     cout << "itial state to the final state\n\t\toutput is in the same for";
-    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -G output should be a no-op.\n-g n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n-@\t\tFor -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
+    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -G output should be a no-op.\n-g n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n"
+        "-@\t\tFor -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
     cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
     cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
     cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
