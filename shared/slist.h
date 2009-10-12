@@ -69,6 +69,11 @@ inline slist_node<T> & singleton_node(T const& data)
     return r;
 };
 
+template <class T>
+inline slist_node<T> *new_singleton(T const& data)
+{
+    return new slist_node<T>(data);
+}
 
 
 /// can be copied by value (causes sharing).  does not deallocate (relies on your using a pool).  use slist if you want ownership/deallocation

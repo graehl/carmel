@@ -173,7 +173,7 @@ struct cached_derivs
     arcs_t arcs;
 };
 
-
+//FIXME: use cached_derivs<arc_counts>
 struct forward_backward
 {
     WFST &x;
@@ -595,7 +595,8 @@ struct gibbs
         nnorm=cascade.set_gibbs_params(composed,methods,gps,gopt.p0init);
         normsum.init(nnorm);
         cascade.set_composed(composed);
-        just1=cascade.trivial; //TODO: handle just1
+        cascade.set_trivial_gibbs_chains();
+//        just1=cascade.trivial; //TODO: handle just1
     }
     void run(bool use_init_prob=false)
     {
@@ -729,7 +730,7 @@ struct gibbs
     normsum_t ccount,csum; // for computing true cache model probs
     Weight cprob;
     Weight prob;
-    bool just1;
+//    bool just1;
     unsigned i,Ni;
     double power;
     double t;

@@ -45,8 +45,21 @@ struct cascade_parameters
     typedef slist_node<param_id> node_t;
     typedef slist_shared<param_id> shared_list_t;
     typedef node_t * chain_t; //FIXME: make this a const pointer, but object_pool doesn't like it
-    typedef std::vector<chain_t> chains_t; // // change w/ vector<arcid> ? so you know what component each arc came from
+    typedef dynamic_array<chain_t> chains_t; // // change w/ vector<arcid> ? so you know what component each arc came from
     chains_t chains;
+
+    void set_trivial_gibbs_chains()
+    {
+        if (trivial) {
+            assert(pcomposed);
+            pcomposed->visit_arcs(*this);
+        }
+    }
+    void operator()(unsigned s,FSTArc &a)
+    {
+        chains.at_grow(a.groupId)=pool.construct(&a);
+    }
+
     std::vector<Weight> chain_weights;
     typedef FSTArc::group_t chain_id;
     boost::object_pool<node_t> pool;
@@ -160,14 +173,14 @@ struct cascade_parameters
     }
 
     cascade_parameters(bool remember_cascade=false,unsigned debug=0)
-        : debug(debug),tempnode(NULL,NULL)
+        : pcomposed(0),debug(debug),tempnode(NULL,NULL)
     {
         if ((trivial=!remember_cascade)) return;
 
         //chains.push_back(0); // we don't mind using a 0 index since we don't use groupids at all when cascade composing
 
         nil_chain=chains.size();
-        chains.push_back(0); // canonical nil index for compositions  where every parameter was locked with weight of 1.
+        chains.push_back((chain_t)0); // canonical nil index for compositions  where every parameter was locked with weight of 1.
         // note composition will create locked -> final state arcs for epsilon filter finals.  but locked_group is 0, so you get nil_chain anyway
         assert(nil_chain==FSTArc::locked_group);
 
@@ -178,7 +191,7 @@ struct cascade_parameters
     {
 //        gps.push_back(0,0,0); //FIXME: unused index 0 for locked arcs
         if (trivial)
-            return composed.set_gibbs_params(methods[0],startid,gps,p0init,0);
+            return composed.set_gibbs_params(methods[0],startid,gps,p0init,startid);
         else {
             unsigned id=startid;
             for (unsigned i=0,n=cascade.size();i<n;++i)
