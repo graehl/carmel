@@ -57,7 +57,7 @@ struct cascade_parameters
     }
     void operator()(unsigned s,FSTArc &a)
     {
-        chains.at_grow(a.groupId)=pool.construct(&a);
+        chains.at_grow(a.groupId)=pool.construct(&a,(chain_t)0);
     }
 
     std::vector<Weight> chain_weights;
@@ -187,6 +187,8 @@ struct cascade_parameters
         // empty chain means: don't update the original arc in any way
     }
 
+    // returns # of normgroups (starting at startid).
+    // gps gets normgroup-id labeled init counts, indexed by cascade (input) arc: gps[arc.groupId]
     unsigned set_gibbs_params(WFST &composed,WFST::NormalizeMethods & methods,WFST::gibbs_params &gps,bool p0init=true,unsigned startid=0)
     {
 //        gps.push_back(0,0,0); //FIXME: unused index 0 for locked arcs

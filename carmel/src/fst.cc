@@ -205,7 +205,6 @@ unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_p
             Weight prior=p0init ? (ac*scale*a.weight) : ac;
             gps.push_back(id,prior.getReal(),cascadei);
         }
-
         ++id;
     }
     return id;
