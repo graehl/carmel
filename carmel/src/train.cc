@@ -190,9 +190,7 @@ struct gibbs
     {
         init_trivial(WFST &composed,cascade_parameters &cascade)
         {
-
         }
-
     };
     init_trivial init;
     cached_derivs<gibbs_counts> derivs;
@@ -328,7 +326,6 @@ struct gibbs
     // for derivations::random_path; compute global backward probs on Weight array
     double operator()(GraphArc const& a) const
     {
-//        if (just1) return p_param(just1param(a));
         return p_param_list(ac(a));
     }
     double p_param_list(param_list p) const
@@ -345,26 +342,23 @@ struct gibbs
             w*=p_param_list(*i);
         return w;
     }
-    gibbs_param &just1param(GraphArc const& a) const
-    {
-        return param(carc(a));
-    }
     //TODO: allow locked arcs?  see fst.h *_gibbs derivations global_normalize
     gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
           ,WFST::NormalizeMethods & methods
           ,WFST::train_opts const& topt
           ,WFST::gibbs_opts const& gopt
-          , WFST::saved_weights_t *saved=0
+          ,WFST::saved_weights_t *saved=0
         ) :
         composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), init(composed,cascade), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
     {
         if (saved)
             cascade.restore_weights(composed,*saved); // but derivs got a chance to grab em weights for init random sample!
-        nnorm=cascade.set_gibbs_params(composed,methods,gps,gopt.p0init);
+        nnorm=cascade.set_gibbs_params(composed,methods,gps,gopt.p0init); // #1 - overwrite chains' (input xdcr arcs) group
+//        if (cascade.trivial) OUTGIBBS(composed); // #1 verified
         normsum.init(nnorm);
         cascade.set_composed(composed);
-        cascade.set_trivial_gibbs_chains();
-//        just1=cascade.trivial; //TODO: handle just1
+        cascade.set_trivial_gibbs_chains(); // #2 - build the singleton chains based on groups from #1
+//        DGIBBS(cascade.print_chains(std::cerr,false)); // #2 verified
     }
     void run(bool use_init_prob=false)
     {
@@ -424,13 +418,15 @@ struct gibbs
         assert(b<=r.size());
         for (unsigned i=a;i<b;++i)
             r[i].clear();
-        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
+        for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
+//            OUTGIBBS(*i); //FIXME: trivial => all the same but first (!)
             for (param_list p=*i;p;p=p->next) {
                 FSTArc *a=p->data;
                 unsigned ci=param(a).cascadei;
                 assert(ci<r.size());
                 r[ci].push_back(a);
             }
+        }
     }
     void print_sample(unsigned a,unsigned b,casc const& c)
     {
@@ -498,7 +494,6 @@ struct gibbs
     normsum_t ccount,csum; // for computing true cache model probs
     Weight cprob;
     Weight prob;
-//    bool just1;
     unsigned i,Ni;
     double power;
     double t;
