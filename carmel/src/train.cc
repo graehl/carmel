@@ -120,14 +120,16 @@ void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
 template <class arc_counts>
 struct cached_derivs
 {
+    WFST &x;
+    serialize_batch<derivations> derivs;
+    typedef arcs_table<arc_counts> arcs_t;
+    arcs_t arcs;
     unsigned size()
     {
         return derivs.size();
     }
-    WFST &x;
-    serialize_batch<derivations> derivs;
     cached_derivs(WFST &x,training_corpus &corpus,WFST::deriv_cache_opts const& copt)
-        : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize), arcs(x)
+        : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize),arcs(x)
     {
         if (copt.cache()) {
             graehl::time_space_report(Config::log(),"Computed cached derivations:");
@@ -168,207 +170,6 @@ struct cached_derivs
             f(n,derivs.current());
         }
 
-    }
-    typedef arcs_table<arc_counts> arcs_t;
-    arcs_t arcs;
-};
-
-struct forward_backward : public cached_derivs<arc_counts>
-{
-    typedef cached_derivs<arc_counts> cache_t;
-    cascade_parameters &cascade;
-    unsigned n_in,n_out,n_st;
-    typedef arcs_table<arc_counts> arcs_t;
-    training_corpus *trn;
-
-    arcs_t arcs;
-
-    /// stuff for old matrix (non derivation-structure-caching) based forward/backward
-    bool use_matrix;
-    bool remove_bad_training;
-    matrix_io_index mio;
-    Weight ***f,***b;
-    List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)
-
-    inline void matrix_compute(IOSymSeq const& s,bool backward=false)
-    {
-        if (backward) {
-            matrix_compute(s.i.n,s.i.rLet,s.o.n,s.o.rLet,x.final,b,mio.backward,e_backward_topo);
-            // since the backward paths were obtained on the reversed input/output, reverse them back
-            matrix_reverse_io(b,s.i.n,s.o.n);
-        } else
-            matrix_compute(s.i.n,s.i.let,s.o.n,s.o.let,0,f,mio.forward,e_forward_topo);
-    }
-
-    void matrix_compute(int nIn,int *inLet,int nOut,int *outLet,int start,Weight ***w,matrix_io_index::states_t &io,List<int> const& eTopo);
-
-    inline void matrix_forward_prop(Weight ***m,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
-    {
-        if (!fio) return;
-        for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
-            arc_counts &a=arcs[dw->id];
-            unsigned d=dw->dest;
-            assert(a.dest()==d||a.src==d); // first: forward, second: reverse
-            Weight &to=m[i+d_i][o+d_o][d];
-            Weight const& from=m[i][o][s];
-            Weight const& w=a.weight();
-#ifdef DEBUGFB
-            Config::debug() << "w["<<i+d_i<<"]["<<o+d_o<<"]["<<d<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< to <<" + " << from <<" * "<< w <<" = "<< to <<" + " << from*w <<" = "<< to+(from*w)<<"\n";
-#endif
-            to += from * w;
-        }
-    }
-
-    // accumulate counts for this example into scratch (so they can be weighted later all at once.  saves a few mults to weighting as you go?)
-    inline void matrix_count(matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
-    {
-        if (!fio) return;
-        for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
-            arc_counts &a=arcs[dw->id];
-            assert(a.dest()==dw->dest);
-            a.scratch += f[i][o][s] *a.weight() * b[i+d_i][o+d_o][dw->dest];
-        }
-    }
-
-
-    //     newPerplexity = train_estimate();
-    //	lastChange = train_maximize(method);
-    //    Weight train_estimate(Weight &unweighted_corpus_prob,bool remove_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
-    //    Weight train_maximize(NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
-
-// return corpus prob; print with Weight::print_ppx
-// unweighted_corpus_prob: ignore per-example weight, product over corpus of p(example)
-    Weight estimate(Weight &unweighted_corpus_prob);
-
- private:
-    // these take an initialize unweighted_corpus_prob and counts, and accumulate over the training corpus
-    Weight estimate_cached(Weight &unweighted_corpus_prob_accum);
-    Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
-
-    // uses derivs.weight to scale counts for that example.  returns unweighted prob, however
-    Weight estimate_cached(derivations & derivs);
- public:
-
-    // return max change
-    Weight maximize(WFST::NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1.);
-
-    void matrix_fb(IOSymSeq &s);
-
-
-    void e_topo_populate(bool include_backward)
-    {
-        assert(use_matrix);
-        e_forward_topo.clear();
-        e_backward_topo.clear();
-        {
-            Graph eGraph = x.makeEGraph();
-            TopoSort t(eGraph,&e_forward_topo);
-            t.order_crucial();
-            int b = t.get_n_back_edges();
-            if ( b > 0 )
-                Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
-            if (include_backward) {
-                Graph revEGraph = reverseGraph(eGraph);
-                TopoSort t(revEGraph,&e_backward_topo);
-                t.order_crucial();
-                freeGraph(revEGraph);
-            }
-            freeGraph(eGraph);
-        }
-    }
-
-    bool cache_backward;
-//    serialize_batch<derivations> cached_derivs;
-
-    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts,training_corpus & corpus)
-        : cache_t(x,corpus,opts.cache)
-        , cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
-    {
-        cascade.set_composed(x);
-        trn=NULL;
-        f=b=NULL;
-        remove_bad_training=true;
-        if (opts.cache.cache()) {
-            use_matrix=false;
-            cache_backward=opts.cache.cache_backward();
-            Config::log()<<"Caching derivations in "<<derivs.stored_in()<<std::endl;
-        } else {
-            use_matrix=true;
-            mio.populate(include_backward);
-            e_topo_populate(include_backward);
-        }
-        n_st=x.numStates();
-        trn=&corpus;
-        if (use_matrix) {
-            n_in=corpus.maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
-            n_out=corpus.maxOut+1;
-            f = NEW Weight **[n_in];
-            if (include_backward)
-                b = NEW Weight **[n_in];
-            else
-                b=NULL;
-            for ( unsigned i = 0 ; i < n_in ; ++i ) {
-                f[i] = NEW Weight *[n_out];
-                if (b)
-                    b[i] = NEW Weight *[n_out];
-                for ( unsigned o = 0 ; o < n_out ; ++o ) {
-                    f[i][o] = NEW Weight [n_st];
-                    if (b)
-                        b[i][o] = NEW Weight [n_st];
-                }
-            }
-        }
-    }
-
-    void matrix_dump(unsigned m_i,unsigned m_o)
-    {
-        assert (use_matrix && f && b);
-        Config::debug() << "\nForwardProb/BackwardProb:\n";
-        for (int i = 0 ;i<=m_i ; ++i){
-            for (int o = 0 ; o <=m_o ; ++o){
-                Config::debug() << i << ':' << o << " (" ;
-                for (int s = 0 ; s < n_st ; ++s){
-                    Config::debug() << f[i][o][s] <<'/'<<b[i][o][s];
-                    if (s < n_st-1)
-                        Config::debug() << ' ' ;
-                }
-                Config::debug() <<')'<<std::endl;
-                if(o < m_o)
-                    Config::debug() <<' ' ;
-            }
-            Config::debug() <<std::endl;
-        }
-    }
-
-    training_corpus &corpus() const
-    {
-        return *trn;
-    }
-
-    // call after done using f,b matrix for a corpus
-    void cleanup()
-    {
-        if (use_matrix && f) {
-            for ( unsigned i = 0 ; i < n_in ; ++i ) {
-                for ( unsigned o = 0 ; o < n_out ; ++o ) {
-                    delete[] f[i][o];
-                    if (b)
-                        delete[] b[i][o];
-                }
-                delete[] f[i];
-                if (b)
-                    delete[] b[i];
-            }
-            delete[] f;
-            if (b)
-                delete[] b;
-        }
-        f=b=NULL;
-    }
-
-    ~forward_backward()
-    {
-        cleanup();
     }
 };
 
@@ -912,6 +713,204 @@ struct add_weighted_scratch
 
 }//ns
 
+
+
+struct forward_backward : public cached_derivs<arc_counts>
+{
+    typedef cached_derivs<arc_counts> cache_t;
+    cascade_parameters &cascade;
+    unsigned n_in,n_out,n_st;
+    typedef arcs_table<arc_counts> arcs_t;
+    training_corpus *trn;
+
+    arcs_t arcs;
+
+    /// stuff for old matrix (non derivation-structure-caching) based forward/backward
+    bool use_matrix;
+    bool remove_bad_training;
+    matrix_io_index mio;
+    Weight ***f,***b;
+    List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)
+
+    inline void matrix_compute(IOSymSeq const& s,bool backward=false)
+    {
+        if (backward) {
+            matrix_compute(s.i.n,s.i.rLet,s.o.n,s.o.rLet,x.final,b,mio.backward,e_backward_topo);
+            // since the backward paths were obtained on the reversed input/output, reverse them back
+            matrix_reverse_io(b,s.i.n,s.o.n);
+        } else
+            matrix_compute(s.i.n,s.i.let,s.o.n,s.o.let,0,f,mio.forward,e_forward_topo);
+    }
+
+    void matrix_compute(int nIn,int *inLet,int nOut,int *outLet,int start,Weight ***w,matrix_io_index::states_t &io,List<int> const& eTopo);
+
+    inline void matrix_forward_prop(Weight ***m,matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
+    {
+        if (!fio) return;
+        for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
+            arc_counts &a=arcs[dw->id];
+            unsigned d=dw->dest;
+            assert(a.dest()==d||a.src==d); // first: forward, second: reverse
+            Weight &to=m[i+d_i][o+d_o][d];
+            Weight const& from=m[i][o][s];
+            Weight const& w=a.weight();
+#ifdef DEBUGFB
+            Config::debug() << "w["<<i+d_i<<"]["<<o+d_o<<"]["<<d<<"] += " <<  "w["<<i<<"]["<<o<<"]["<<s<<"] * weight("<< *dw<<") ="<< to <<" + " << from <<" * "<< w <<" = "<< to <<" + " << from*w <<" = "<< to+(from*w)<<"\n";
+#endif
+            to += from * w;
+        }
+    }
+
+    // accumulate counts for this example into scratch (so they can be weighted later all at once.  saves a few mults to weighting as you go?)
+    inline void matrix_count(matrix_io_index::for_io const* fio,unsigned s,unsigned i,unsigned o,unsigned d_i,unsigned d_o)
+    {
+        if (!fio) return;
+        for (matrix_io_index::for_io::const_iterator dw=fio->begin(),e=fio->end();dw!=e;++dw) {
+            arc_counts &a=arcs[dw->id];
+            assert(a.dest()==dw->dest);
+            a.scratch += f[i][o][s] *a.weight() * b[i+d_i][o+d_o][dw->dest];
+        }
+    }
+
+    //     newPerplexity = train_estimate();
+    //	lastChange = train_maximize(method);
+    //    Weight train_estimate(Weight &unweighted_corpus_prob,bool remove_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
+    //    Weight train_maximize(NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
+
+// return corpus prob; print with Weight::print_ppx
+// unweighted_corpus_prob: ignore per-example weight, product over corpus of p(example)
+    Weight estimate(Weight &unweighted_corpus_prob);
+
+ private:
+    // these take an initialize unweighted_corpus_prob and counts, and accumulate over the training corpus
+    Weight estimate_cached(Weight &unweighted_corpus_prob_accum);
+    Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
+
+    // uses derivs.weight to scale counts for that example.  returns unweighted prob, however
+    Weight estimate_cached(derivations & derivs);
+ public:
+
+    // return max change
+    Weight maximize(WFST::NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1.);
+
+    void matrix_fb(IOSymSeq &s);
+
+    void e_topo_populate(bool include_backward)
+    {
+        assert(use_matrix);
+        e_forward_topo.clear();
+        e_backward_topo.clear();
+        {
+            Graph eGraph = x.makeEGraph();
+            TopoSort t(eGraph,&e_forward_topo);
+            t.order_crucial();
+            int b = t.get_n_back_edges();
+            if ( b > 0 )
+                Config::warn() << "Warning: empty-label subgraph has " << b << " cycles!  Training may not propogate counts properly" << std::endl;
+            if (include_backward) {
+                Graph revEGraph = reverseGraph(eGraph);
+                TopoSort t(revEGraph,&e_backward_topo);
+                t.order_crucial();
+                freeGraph(revEGraph);
+            }
+            freeGraph(eGraph);
+        }
+    }
+
+    bool cache_backward;
+//    serialize_batch<derivations> cached_derivs;
+
+    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts,training_corpus & corpus)
+        : cache_t(x,corpus,opts.cache)
+        , cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
+    {
+        cascade.set_composed(x);
+        trn=NULL;
+        f=b=NULL;
+        remove_bad_training=true;
+        if (opts.cache.cache()) {
+            use_matrix=false;
+            cache_backward=opts.cache.cache_backward();
+            Config::log()<<"Caching derivations in "<<derivs.stored_in()<<std::endl;
+        } else {
+            use_matrix=true;
+            mio.populate(include_backward);
+            e_topo_populate(include_backward);
+        }
+        n_st=x.numStates();
+        trn=&corpus;
+        if (use_matrix) {
+            n_in=corpus.maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
+            n_out=corpus.maxOut+1;
+            f = NEW Weight **[n_in];
+            if (include_backward)
+                b = NEW Weight **[n_in];
+            else
+                b=NULL;
+            for ( unsigned i = 0 ; i < n_in ; ++i ) {
+                f[i] = NEW Weight *[n_out];
+                if (b)
+                    b[i] = NEW Weight *[n_out];
+                for ( unsigned o = 0 ; o < n_out ; ++o ) {
+                    f[i][o] = NEW Weight [n_st];
+                    if (b)
+                        b[i][o] = NEW Weight [n_st];
+                }
+            }
+        }
+    }
+
+    void matrix_dump(unsigned m_i,unsigned m_o)
+    {
+        assert (use_matrix && f && b);
+        Config::debug() << "\nForwardProb/BackwardProb:\n";
+        for (int i = 0 ;i<=m_i ; ++i){
+            for (int o = 0 ; o <=m_o ; ++o){
+                Config::debug() << i << ':' << o << " (" ;
+                for (int s = 0 ; s < n_st ; ++s){
+                    Config::debug() << f[i][o][s] <<'/'<<b[i][o][s];
+                    if (s < n_st-1)
+                        Config::debug() << ' ' ;
+                }
+                Config::debug() <<')'<<std::endl;
+                if(o < m_o)
+                    Config::debug() <<' ' ;
+            }
+            Config::debug() <<std::endl;
+        }
+    }
+
+    training_corpus &corpus() const
+    {
+        return *trn;
+    }
+
+    // call after done using f,b matrix for a corpus
+    void cleanup()
+    {
+        if (use_matrix && f) {
+            for ( unsigned i = 0 ; i < n_in ; ++i ) {
+                for ( unsigned o = 0 ; o < n_out ; ++o ) {
+                    delete[] f[i][o];
+                    if (b)
+                        delete[] b[i][o];
+                }
+                delete[] f[i];
+                if (b)
+                    delete[] b[i];
+            }
+            delete[] f;
+            if (b)
+                delete[] b;
+        }
+        f=b=NULL;
+    }
+
+    ~forward_backward()
+    {
+        cleanup();
+    }
+};
 
 
 Weight WFST::train(
