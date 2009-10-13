@@ -885,8 +885,8 @@ main(int argc, char *argv[]){
                     nGenerate = 1;
             } else if ( train_opt.max_iter == (unsigned)-1 ) {
                 readParam(&train_opt.max_iter,argv[i],'M');
-                if ( train_opt.max_iter < 1 )
-                    train_opt.max_iter = 1;
+                if ( train_opt.max_iter < 0 )
+                    train_opt.max_iter = 0;
             } else if ( maxGenArcs == -1 ) {
                 readParam(&maxGenArcs,argv[i],'L');
                 if ( maxGenArcs < 0 )
