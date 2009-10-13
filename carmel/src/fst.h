@@ -694,7 +694,7 @@ class WFST {
             states[s].flush();
         }
     }
-    WFST() { initAlphabet(); named_states=0;}
+    WFST() { initAlphabet(); named_states=0; final=0;states.push_back();}
     //  WFST(const WFST &a):
     //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))),
     //stateNames(a.stateNames), final(a.final), states(a.states),
@@ -1229,7 +1229,6 @@ class WFST {
             disk_cache_filename="/tmp/carmel.derivations.XXXXXX";
             disk_cache_bufsize=256*1024*1024;
         }
-
     };
 
     struct counting_schedule

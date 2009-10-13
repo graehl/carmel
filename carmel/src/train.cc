@@ -137,13 +137,13 @@ struct cached_derivs
     template <class Examples>
     void compute_derivations(Examples const &ex,bool cache_backward)
     {
-        wfst_io_index<arc_counts> io(arcs);
+        wfst_io_index io(x);
         unsigned n=1;
         derivs.clear();
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
             derivations &d=derivs.start_new();
-            if (!d.init_and_compute(x,io,i->i,i->o,i->weight,n,cache_backward)) {
+            if (!d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward)) {
                 warn_no_derivations(x,*i,n);
                 derivs.drop_new();
             } else {
@@ -173,10 +173,9 @@ struct cached_derivs
     arcs_t arcs;
 };
 
-//FIXME: use cached_derivs<arc_counts>
-struct forward_backward
+struct forward_backward : public cached_derivs<arc_counts>
 {
-    WFST &x;
+    typedef cached_derivs<arc_counts> cache_t;
     cascade_parameters &cascade;
     unsigned n_in,n_out,n_st;
     typedef arcs_table<arc_counts> arcs_t;
@@ -190,11 +189,6 @@ struct forward_backward
     matrix_io_index mio;
     Weight ***f,***b;
     List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)
-
-    /// stuff for new derivation caching EM:
-    //    typedef List<derivations> cached_derivs_t; // could use a vector, i think ... but no need
-    //    cached_derivs_t cached_derivs;
-
 
     inline void matrix_compute(IOSymSeq const& s,bool backward=false)
     {
@@ -235,32 +229,6 @@ struct forward_backward
             a.scratch += f[i][o][s] *a.weight() * b[i+d_i][o+d_o][dw->dest];
         }
     }
-
-    template <class Examples>
-    void compute_derivations(Examples const &ex)
-    {
-        wfst_io_index<arc_counts> io(arcs);
-        unsigned n=1;
-        cached_derivs.clear();
-        for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
-             i!=end ; ++i,++n) {
-            derivations &d=cached_derivs.start_new();
-            if (!d.init_and_compute(x,io,i->i,i->o,i->weight,n,cache_backward)) {
-                warn_no_derivations(x,*i,n);
-                cached_derivs.drop_new();
-            } else {
-#ifdef DEBUGDERIVATIONS
-                Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
-                i->print(Config::debug(),x,"\n");
-                printGraph(d.graph(),Config::debug());
-#endif
-                cached_derivs.keep_new();
-            }
-        }
-        cached_derivs.mark_end();
-        Config::log() << derivations::global_stats;
-    }
-
 
 
     //     newPerplexity = train_estimate();
@@ -310,11 +278,11 @@ struct forward_backward
     }
 
     bool cache_backward;
-    serialize_batch<derivations> cached_derivs;
+//    serialize_batch<derivations> cached_derivs;
 
-    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts=WFST::train_opts())
-        : x(x),cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
-        ,cached_derivs(opts.cache.use_disk(),opts.cache.disk_cache_filename,true,opts.cache.disk_cache_bufsize)
+    forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts,training_corpus & corpus)
+        : cache_t(x,corpus,opts.cache)
+        , cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
     {
         cascade.set_composed(x);
         trn=NULL;
@@ -323,13 +291,33 @@ struct forward_backward
         if (opts.cache.cache()) {
             use_matrix=false;
             cache_backward=opts.cache.cache_backward();
-            Config::log()<<"Caching derivations in "<<cached_derivs.stored_in()<<std::endl;
+            Config::log()<<"Caching derivations in "<<derivs.stored_in()<<std::endl;
         } else {
             use_matrix=true;
             mio.populate(include_backward);
             e_topo_populate(include_backward);
         }
         n_st=x.numStates();
+        trn=&corpus;
+        if (use_matrix) {
+            n_in=corpus.maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
+            n_out=corpus.maxOut+1;
+            f = NEW Weight **[n_in];
+            if (include_backward)
+                b = NEW Weight **[n_in];
+            else
+                b=NULL;
+            for ( unsigned i = 0 ; i < n_in ; ++i ) {
+                f[i] = NEW Weight *[n_out];
+                if (b)
+                    b[i] = NEW Weight *[n_out];
+                for ( unsigned o = 0 ; o < n_out ; ++o ) {
+                    f[i][o] = NEW Weight [n_st];
+                    if (b)
+                        b[i][o] = NEW Weight [n_st];
+                }
+            }
+        }
     }
 
     void matrix_dump(unsigned m_i,unsigned m_o)
@@ -355,35 +343,6 @@ struct forward_backward
     training_corpus &corpus() const
     {
         return *trn;
-    }
-
-    // call before using corpus
-    void prepare(training_corpus & corpus,bool include_backward=true)  // nonconst ref because we may remove examples with no derivation
-    {
-        trn=&corpus;
-
-        if (use_matrix) {
-            n_in=corpus.maxIn+1; // because position 0->1 is first symbol, there are n+1 boundary markers
-            n_out=corpus.maxOut+1;
-            f = NEW Weight **[n_in];
-            if (include_backward)
-                b = NEW Weight **[n_in];
-            else
-                b=NULL;
-            for ( unsigned i = 0 ; i < n_in ; ++i ) {
-                f[i] = NEW Weight *[n_out];
-                if (b)
-                    b[i] = NEW Weight *[n_out];
-                for ( unsigned o = 0 ; o < n_out ; ++o ) {
-                    f[i][o] = NEW Weight [n_st];
-                    if (b)
-                        b[i][o] = NEW Weight [n_st];
-                }
-            }
-        } else {
-            graehl::time_space_report(Config::log(),"Computed cached derivations: ");
-            compute_derivations(corpus.examples);
-        }
     }
 
     // call after done using f,b matrix for a corpus
@@ -426,6 +385,15 @@ struct gibbs
     typedef fixed_array<double> normsum_t;
     unsigned nnorm;
     normsum_t normsum;
+    struct init_trivial  // hack to make single transducer cascade work; stuff done before derivs are built
+    {
+        init_trivial(WFST &composed,cascade_parameters &cascade)
+        {
+
+        }
+
+    };
+    init_trivial init;
     cached_derivs<gibbs_counts> derivs;
     typedef cascade_parameters::chain_t param_list;
     typedef FSTArc *carc_t;
@@ -505,7 +473,6 @@ struct gibbs
                 csum[gp.norm]+=(ccount[i]=gp.prior);
             }
         }
-        log<<" i="<<i;
         derivs.foreach_deriv(*this);
         if (gopt.cache_prob) {
             ccount.dealloc();
@@ -588,7 +555,7 @@ struct gibbs
           ,WFST::gibbs_opts const& gopt
           , WFST::saved_weights_t *saved=0
         ) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), init(composed,cascade), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
     {
         if (saved)
             cascade.restore_weights(composed,*saved); // but derivs got a chance to grab em weights for init random sample!
@@ -774,8 +741,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
 
         // EM:
 #if 0
-        forward_backward fb(*this,cascade,false,0,true,t2);
-        fb.prepare(corpus,true);
+        forward_backward fb(*this,cascade,false,0,true,t2,corpus);
         Weight p,cp;
         for (unsigned i=0;i<N;++i) {
             time_report taken(Config::log(),"Time for iteration: ");
@@ -971,8 +937,7 @@ Weight WFST::train(cascade_parameters &cascade,
     double learning_rate_growth_factor=opts.learning_rate_growth_factor;
     random_restart_acceptor ra=opts.ra;
 
-    forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,true,opts);
-    fb.prepare(corpus,true);
+    forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,true,opts,corpus);
 
     Weight bestPerplexity;
     bestPerplexity.setInfinity();
@@ -1242,10 +1207,10 @@ Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
     assert(!use_matrix);
     Weight weighted_corpus_prob=1;
     unsigned n=0;
-    for (cached_derivs.rewind();cached_derivs.advance();) {
+    for (derivs.rewind();derivs.advance();) {
         ++n;
         training_progress(n);
-        derivations & d=cached_derivs.current();
+        derivations & d=derivs.current();
         Weight prob=estimate_cached(d);
         unweighted_corpus_prob_accum *= prob;
         weighted_corpus_prob *= prob.pow(d.weight);
@@ -1376,7 +1341,7 @@ std::ostream& operator << (std::ostream &o,arc_counts const& ac)
 
 std::ostream& operator << (std::ostream &o,gibbs_counts const& ac)
 {
-    o<< ac.src << "->" << *ac.arc <<'\n';
+    o<< "->" << *ac.arc <<'\n';
     return o;
 }
 
@@ -1429,8 +1394,7 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
     corpus.finish_adding();
     IOSymSeq const& s=corpus.examples.front();
     cascade_parameters trivial;
-    forward_backward fb(*this,trivial,false,0,false);
-    fb.prepare(corpus,false);
+    forward_backward fb(*this,trivial,false,0,false,train_opts(),corpus);
     fb.matrix_compute(s,false);
     return fb.f[s.i.n][s.o.n][final];
 }
