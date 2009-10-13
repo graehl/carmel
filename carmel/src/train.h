@@ -49,7 +49,6 @@ struct gibbs_param
 struct arc_counts_base
 {
     FSTArc *arc;
-    unsigned src; // this appears redundant except in making wfst_io_index easier to build
     unsigned dest() const
     {
         return arc->dest;
@@ -73,7 +72,6 @@ struct arc_counts_base
     void set(unsigned s,FSTArc *a,Weight prior)
     {
         arc=a;
-        src=s;
     }
 };
 
@@ -85,10 +83,12 @@ struct arc_counts : public arc_counts_base
     Weight best_weight;
     Weight counts;
     Weight prior_counts;
+    unsigned src; // this allows collecting per-arc couns from fwd/backwd
     void set(unsigned s,FSTArc *a,Weight prior)
     {
         arc_counts_base::set(s,a,prior);
         prior_counts=prior;
+        src=s;
     }
 };
 /*

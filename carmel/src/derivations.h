@@ -112,7 +112,6 @@ struct arcs_table : public dynamic_array<arc_counts>
 #undef ARCS_TABLE_EACH
 };
 
-template <class arc_counts>
 struct wfst_io_index : boost::noncopyable
 {
     typedef arc_counts counts_type;
@@ -121,15 +120,24 @@ struct wfst_io_index : boost::noncopyable
     typedef fixed_array<for_state> states_t;
 
     states_t st;
-    typedef arcs_table<arc_counts> arct;
-    arct &t;
 
-    wfst_io_index(arct &t) : st(t.n_states),t(t)
+/*    wfst_io_index(arct &t) : st(t.n_states),t(t)
     {
         for (unsigned i=0,N=t.size();i!=N;++i) {
             arc_counts const& ac=t[i];
             st[ac.src][IOPair(ac.in(),ac.out())].push_back(i);
         }
+    }
+*/
+    wfst_io_index(WFST const&x) : st(x.numStates())
+    {
+        i=0;
+        ((WFST&)x).visit_arcs(*this);
+    }
+    unsigned i; // # arcs
+    void operator()(unsigned src,FSTArc &a)
+    {
+        st[src][IOPair(a.in,a.out)].push_back(i++);
     }
 };
 
@@ -397,17 +405,17 @@ struct derivations //: boost::noncopyable
         free_reverse();
     }
 
-    template <class Symbols,class wfst_io_index>
-    bool init_and_compute(WFST &x,wfst_io_index const& io,Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false,bool drop_names=true,bool prune_=true)
+    template <class Symbols,class arcs_table>
+    bool init_and_compute(WFST &x,wfst_io_index const& io,arcs_table const& atab,Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false,bool drop_names=true,bool prune_=true)
     {
         init(in_,out_,w,line,cache_backward_);
-        return compute(x,io,drop_names,prune_);
+        return compute(x,io,atab,drop_names,prune_);
     }
 
-    template <class wfst_io_index>
-    bool compute(WFST &x,wfst_io_index const& io,bool drop_names=true,bool prune_=true)
+    template <class arcs_table>
+    bool compute(WFST &x,wfst_io_index const& io,arcs_table const&atab,bool drop_names=true,bool prune_=true)
     {
-        state_id start=derive(io,deriv_state(0,0,0));
+        state_id start=derive(io,atab,deriv_state(0,0,0));
         assert(start==0);
         deriv_state goal(in.size(),x.final,out.size());
         state_id *pfin=find_second(id_of_state,goal);
@@ -539,8 +547,8 @@ struct derivations //: boost::noncopyable
     }
 
  private:
-    template <class wfst_io_index>
-    state_id derive (wfst_io_index const& io,deriv_state const& d)
+    template <class arcs_table>
+    state_id derive(wfst_io_index const& io,arcs_table const&atab,deriv_state const& d)
     {
         const int EPS=WFST::epsilon_index;
         state_id ret=g.size();
@@ -551,23 +559,23 @@ struct derivations //: boost::noncopyable
         add(id_of_state,d,ret); // NOTE: very important that we've added this before we start taking self-epsilons.
         g.push_back();
         typename wfst_io_index::for_state const&fs=io.st[d.s];
-        add_arcs(io,EPS,EPS,d.i,d.o,fs,ret);
+        add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,ret);
         if (d.o < out.size()) {
-            add_arcs(io,EPS,out[d.o],d.i,d.o+1,fs,ret);
+            add_arcs(io,atab,EPS,out[d.o],d.i,d.o+1,fs,ret);
         }
         if (d.i < in.size()) {
             Sym i=in[d.i];
-            add_arcs(io,i,EPS,d.i+1,d.o,fs,ret);
+            add_arcs(io,atab,i,EPS,d.i+1,d.o,fs,ret);
             if (d.o < out.size()) {
-                add_arcs(io,i,out[d.o],d.i+1,d.o+1,fs,ret);
+                add_arcs(io,atab,i,out[d.o],d.i+1,d.o+1,fs,ret);
             }
         }
         return ret;
     }
 
 
-    template <class wfst_io_index>
-    void add_arcs(wfst_io_index const& io,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out
+    template <class arcs_table>
+    void add_arcs(wfst_io_index const& io,arcs_table const&atab,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out
                   ,typename wfst_io_index::for_state const& fs,unsigned source)
     {
         typedef typename wfst_io_index::for_io for_io;
@@ -575,9 +583,8 @@ struct derivations //: boost::noncopyable
             for (typename for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
                 ++global_stats.pre.arcs;
-//                typename wfst_io_index::counts_type const& ac=io.t[id];
-                FSTArc *a=io.t[id].arc;
-                g[source].add_data_as(source,derive(io,deriv_state(i_in,a->dest,i_out)),a->weight.getReal(),id); // weight only used by gibbs init em prob
+                FSTArc *a=atab[id].arc;
+                g[source].add_data_as(source,derive(io,atab,deriv_state(i_in,a->dest,i_out)),a->weight.getReal(),id); // weight only used by gibbs init em prob
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
             }
 
