@@ -173,7 +173,7 @@ struct cascade_parameters
     }
 
     cascade_parameters(bool remember_cascade=false,unsigned debug=0)
-        : pcomposed(0),debug(debug),tempnode(NULL,NULL)
+        : pcomposed(0),debug(debug)//,tempnode(NULL,NULL)
     {
         if ((trivial=!remember_cascade)) return;
 
@@ -424,14 +424,15 @@ struct cascade_parameters
     {
         return operator[](*arc);
     }
-    mutable node_t tempnode;
 
     chain_t operator[](FSTArc const&arc) const
     {
+        /* // doesn't work because these are persisted in sample (acpaths).  would need memory pool; instead just initialize chains explicitly w/ set_trivial_gibbs_chains
         if (trivial) {
             tempnode.data=const_cast<FSTArc *>(&arc);
             return &tempnode;
         }
+        */
         return chains[arc.groupId];
     }
 

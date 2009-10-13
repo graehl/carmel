@@ -419,7 +419,6 @@ struct gibbs
         for (unsigned i=a;i<b;++i)
             r[i].clear();
         for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
-//            OUTGIBBS(*i); //FIXME: trivial => all the same but first (!)
             for (param_list p=*i;p;p=p->next) {
                 FSTArc *a=p->data;
                 unsigned ci=param(a).cascadei;

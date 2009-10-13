@@ -311,6 +311,7 @@ struct derivations //: boost::noncopyable
                 a.wt()/=sum;
             }
         }
+        // for rg.setwt(wf) backward prop:
         double operator()(GraphArc const& a) const
         {
             return a.wt().getReal();
@@ -320,10 +321,8 @@ struct derivations //: boost::noncopyable
     template <class acpath,class WeightFor>
     void random_path(acpath &p,WeightFor const& wf,double power=1.)
     {
-        if (empty()) {
-            p.clear();
-            return;
-        }
+        p.clear();
+        if (empty()) return;
         unsigned nst=g.size();
         pfor<WeightFor> pf(nst,wf,fin);
         get_order();
@@ -334,7 +333,6 @@ struct derivations //: boost::noncopyable
         free_order();
         free_reverse();
         unsigned s=0;
-        p.clear();
         std::vector<bool> normed(nst,false);
         while (s!=fin) { // fin should have no outgoing arcs if you want sampling to be sensible
             arcs_type &arcs=g[s].arcs;
