@@ -1,0 +1,76 @@
+"A comparison of Bayeisan estimators for unsupervised HMM POS taggers" (Gao+Johnson) defines the proposal HMM with a uniform p0 (base distribution) and prior alpha as having arc weights that are normalized from:
+
+pcounts(x,y)=[n_sample(x,y)+alpha]
+
+p(x|y)=pcounts(x,y) / sum_z[pcounts(z,y)]
+
+where:
+
+x,y is just the name of some parameter that is linked to some arcs in the derivation lattice, and all the x,z are the ones that are in the same multinomial (normalization group).  for example, y could be "q" and x "u" in the source language model for decipherment.
+
+n_sample(x,y) is the number of times an arc with that label appears in the last current sample for each block (excluding the block currently being resampled).  it's an integer.
+
+Now, at the end, averaging over all the samples post burn-in, we have e_sample(x,y), the expectation over the sample posterior of n_sample(x,y) (without holding out any one block's counts).  I happen to consider each full pass through all the blocks, where I potentially change each block's sample derivation, as a single sample, but treating each changed block as another entire whole sample (with every other block unchanged) wouldn't make a difference.
+
+I use ecounts(x,y)=[e_sample(x,y)+alpha] and p_trained(x|y)=ecounts(x,y)/sum_z[pcounts(z,y)], just like in the proposal HMM.
+
+My rationale: suppose I were in the midst of Gibbs sampling, but I suddenly decided to add an extra training example.  Then the proposal HMM probabilities I'd use for that block would be exactly p_trained averaging over only the last sample.  If those are the probabilities that let me sample from the posterior, then those are also the ones I'd want to decode that new example with. Averaging counts over all the samples is the only difference in this case (of suddenly adding a new block).
+
+Further feel-good: remember my argument that if you have a prior distribution over models (param vectors) centered about p0 (the base distribution), alpha is supposed to represent how much evidence (confidence) is responsible for your prior belief.  If you see a little data that's poorly explained by p0, you should update (but only a little bit) your posterior belief of how likely each model is so that the center shifts away from p0 and toward what better explains the data.  At least, this is how I think about Bayesian updating intuitively.  But, if there's a lot of data (compared to alpha), then I should be willing to move the center of my fuzzy "what models might explain all the evidence" belief further from p0.
+
+Possible rebuttal to above: alpha and p0 already factor into the samples collected via the Proposal HMM weights.  So you might get exactly the right update by taking p_etrained=e_sample(x,y)/sum_z[e_sample(z,y)]; including the prior counts again would be double weighting p0/alpha.
+
+Because I'm not certain what the right answer is, I'll make it an option until we find the truth from literature or from David's rationalizations.
+
+Kevin, you were concerned that p_etrained could only give p(u|q)=0 or 1 in a two letter training corpus, even though p0(u|q)=.98. That's not true unless you use --final-counts (take e_sample over only a single sample).
+
+By the way, the prior counts I use given a non-uniform p0 are:
+
+alpha*M*p0(x|y), where M is |{(z,y)}|, the number of parameters in the multinomial p0(z|y).  The factor of M is necessary in order to agree with the definition of the Proposal HMM for a uniform p0, but otherwise pointless.
+
+Kevin, I told you it was alpha*p0(x|y) earlier.  That's wrong (but right if you consider the "real alpha" as "user supplied alpha"*M).
+
+Kevin Knight wrote:
+>
+> this looks like a good way to rationalize how we build .trained machines after gibbs sampling finishes, but jon, can you tell us how we build .trained machines after gibbs sampling finishes?  then the rationalization will compute for me :-)   thanks -- kevin
+>
+>
+> David Chiang wrote:
+>> Another thought. The method of building a trained FST from the samples and then using that FST to decode new data can be rationalized as follows.
+>>
+>> x = observed data
+>> y = hidden data
+>> w = parameters
+>> P(x,y|w) = model
+>>
+>> The Gibbs sampler estimates P(y|x). Then we treat that as the complete data and maximize likelihood:
+>>
+>> argmax_w \sum_y P_gibbs(y|x) log P(x,y|w)
+>> = argmax_w \sum_y P_gibbs(y|x) log P(y|x,w) + log P(x|w)
+>> = argmax_w \sum_y P_gibbs(y|x) log (P(y|x,w) / P_gibbs(y|x)) + log P(x|w)
+>> = argmax_w -KL_y[P_gibbs(y|x) || P(y|x,w)] + log P(x|w)
+>>
+>> The first term says, find me the point estimate for w that makes the model approximate P_gibbs as closely as possible.
+>> The second term says, do what EM does.
+>>
+>> So the estimate for w that you get is a compromise between EM and Bayes.
+>>
+>> David
+>>
+>> David Chiang wrote:
+>>> It would be great to see plots where there is a tighter relationship between x and y axes. For example
+>>>
+>>> x = Pcache of a sample (not just the last)
+>>> y = accuracy of sample (not viterbi)
+>>>
+>>> x = average log Pcache of all samples from one run = entropy
+>>> y = average accuracy of samples
+>>>
+>>> Hypothesis: minimum entropy is a good way to choose a run. It suggests that the sampler has wandered into the good part of the space. That's my interpretation of your plot on p. 3, upper right.
+>>>
+>>> x = accuracy of viterbi decoding trained from all samples
+>>> y = average accuracy of samples
+>>>
+>>> Another decision rule not discussed yet, but which gives good accuracies, is to take the tagging obtained by, for each word, taking the tag that occurs in the most samples.
+
+

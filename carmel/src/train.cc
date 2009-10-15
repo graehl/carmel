@@ -178,18 +178,21 @@ struct gibbs
     struct run_stats
     {
         double N; // from burnin...last iter, or just last if --final-counts
+        Weight sumprob; //FIXME: more precision, or (scale,sum) pair
         Weight allprob,finalprob; // (prod over all N, and final) sample cache probs
         run_stats() {clear();}
         void clear()
         {
             allprob.setOne();
             finalprob.setOne();
+            sumprob=0;
             N=0;
         }
         void record(double t,Weight prob)
         {
             if (t>=0) {
                 N+=1;
+                sumprob+=prob;
                 allprob*=prob;
                 finalprob=prob;
             }
@@ -203,7 +206,7 @@ struct gibbs
         }
         bool better(run_stats const& o,WFST::gibbs_opts const& gopt)
         {
-            return gopt.argmax_final ? finalprob>o.finalprob : allprob>o.allprob;
+            return gopt.argmax_final ? finalprob>o.finalprob : (gopt.argmax_sum ? sumprob>o.sumprob : allprob>o.allprob);
         }
     };
 
@@ -218,13 +221,6 @@ struct gibbs
     typedef fixed_array<double> normsum_t;
     unsigned nnorm;
     normsum_t normsum;
-    struct init_trivial  // hack to make single transducer cascade work; stuff done before derivs are built
-    {
-        init_trivial(WFST &composed,cascade_parameters &cascade)
-        {
-        }
-    };
-    init_trivial init;
     cached_derivs<gibbs_counts> derivs;
     typedef cascade_parameters::chain_t param_list;
     typedef FSTArc *carc_t;
@@ -397,7 +393,7 @@ struct gibbs
           ,WFST::gibbs_opts const& gopt
           ,WFST::saved_weights_t *init_sample_weights=NULL
         ) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), init(composed,cascade), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter)), init_sample_weights(init_sample_weights)
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter)), init_sample_weights(init_sample_weights)
     {
         this->gopt.validate();
         if (init_sample_weights && !cascade.trivial)
@@ -470,16 +466,22 @@ struct gibbs
     }
     run_stats stats;
 
-    // not idempotent until final iteration, because param.sumcount.x is obliterated
+    // not idempotent!  only run at final iteration!
     void normalize_accum_delta()
     {
         normsum_t sn(nnorm);
         double tmax1=Ni+1-burnt0;
-        for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
-            sn[i->norm]+=i->sumcount.extend(tmax1);
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
-            gibbs_param &p=*i;
-            p.sumcount.x=p.sumcount.s/sn[p.norm];
+            gibbs_param &g=*i;
+            delta_sum &d=g.sumcount;
+            if (gopt.exclude_prior)
+                d.addbase(-g.prior);
+            d.extend(tmax1);
+            sn[g.norm]+=d.s;
+        }
+        for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
+            gibbs_param &g=*i;
+            g.sumcount.x=g.sumcount.s/sn[g.norm];
         }
     }
     saved_weights_t *wto;

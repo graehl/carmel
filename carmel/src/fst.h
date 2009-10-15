@@ -1265,6 +1265,9 @@ class WFST {
         unsigned print_counts_to;
         path_print printer;
         bool cumulative_counts;
+        bool argmax_final;
+        bool argmax_sum;
+        bool exclude_prior;
         // random choices have probs raised to 1/temperature(iteration) before coin flip
         typedef clamped_time_series<double> temps;
         temps temperature(double iters) const {
@@ -1288,8 +1291,9 @@ class WFST {
             sched.set();
             cumulative_counts=true;
             argmax_final=false;
+            argmax_sum=false;
+            exclude_prior=false;
         }
-        bool argmax_final;
         void validate()
         {
             if (restarts>0)
