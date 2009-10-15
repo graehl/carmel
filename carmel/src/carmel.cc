@@ -275,6 +275,7 @@ struct carmel_main
     bool gibbs_opts()
     {
         bool gibbs = have_opt("crp");
+
         if (gibbs) {
             flags['t']=true;
 //            flags['a']=true;
@@ -286,6 +287,8 @@ struct carmel_main
         }
         get_opt("crp-restarts",gopt.restarts);
         gopt.argmax_final=have_opt("crp-argmax-final");
+        gopt.argmax_sum=have_opt("crp-argmax-sum");
+        gopt.exclude_prior=have_opt("crp-exclude-prior");
         get_opt("init-em",gopt.init_em);
         gopt.em_p0=have_opt("em-p0");
         get_opt("burnin",gopt.sched.burnin);
@@ -1768,6 +1771,8 @@ cout <<         "\n"
         "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
         "--crp-restarts : number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights\n"
         "--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples\n"
+        "--crp-argmax-sum : instead of multiplying the sample probs together and choosing the best, sum (average) them\n"
+        "--crp-exclude-prior : when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts\n"
         "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--print-counts-to=n --print-counts-from=m: every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"

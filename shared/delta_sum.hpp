@@ -33,6 +33,13 @@ struct delta_sum
 {
     double x,tmax;
     double s;
+    delta_sum& addbase(double d) // same as add_delta(d,0)
+    {
+        s+=d*tmax;
+        x+=d;
+        return *this;
+    }
+
     double extend(double t)
     {
         double moret=t-tmax;
