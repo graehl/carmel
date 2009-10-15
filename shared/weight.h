@@ -329,7 +329,7 @@ struct logweight {                 // capable of representing nonnegative reals
     }
 
     // print return.as_base(2)
-    self_type ppxper(double n) const
+    self_type ppxper(double n=1) const
     {
         return root(-n);
     }

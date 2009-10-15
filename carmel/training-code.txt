@@ -1,3 +1,21 @@
+It would be great to see plots where there is a tighter relationship between x and y axes. For example
+
+x = Pcache of a sample (not just the last)
+y = accuracy of sample (not viterbi)
+
+x = average log Pcache of all samples from one run = entropy
+y = average accuracy of samples
+
+Hypothesis: minimum entropy is a good way to choose a run. It suggests that the sampler has wandered into the good part of the space. That's my interpretation of your plot on p. 3, upper right.
+
+x = accuracy of viterbi decoding trained from all samples
+y = average accuracy of samples
+
+Another decision rule not discussed yet, but which gives good accuracies, is to take the tagging obtained by, for each word, taking the tag that occurs in the most samples.
+
+=====
+
+
 derivations graph.h has data as int index into an arcs_table<train.h::arc_counts_base::arc (FSTArc *)+em_weight,counts,etc.>
 
 for gibbs, just the .arc *?

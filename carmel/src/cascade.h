@@ -335,21 +335,8 @@ struct cascade_parameters
             cascade[i]->clear_groups();
     }
 
-    /*
     template <class P>
-    struct gibbs_update
-    {
-        WFST &w;
-        P const& p;
-        gibbs_update(WFST &w,P const& p) : w(w),p(p) {}
-        void operator()(unsigned src,FSTArc & a) const
-        {
-            a.weight=p(a);
-        }
-    };
-    */
-    template <class P>
-    void update_gibbs(P const& p)
+    void update_gibbs(P const& p) //NOTE: same order of visiting as save/restore_weights ! relied on by gibbs
     {
         for (unsigned i=0,e=cascade.size();i!=e;++i)
             update_gibbs(*cascade[i],p);

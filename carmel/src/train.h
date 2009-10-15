@@ -15,33 +15,33 @@ void training_progress(unsigned train_example_no,unsigned scale=10);
 struct gibbs_param
 {
     double prior; //FIXME: not needed except to make computing --cache-prob easier
-    double count;
+    inline double count() const
+    {
+        return sumcount.x;
+    }
     unsigned norm;
     unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
     delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
-    void initsum()
+    template <class Normsum>
+    void restore_p0(Normsum &ns)
     {
-        sumcount.add_delta(count,0);
+        ns[norm]+=prior;
+        sumcount.clear(prior);
     }
     template <class Normsums>
-    void addsum(double d,double t,Normsums &ns,bool accum_delta) // first call should be w/ t=0
+    void addsum(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
     {
-        count+=d;
+//        count+=d;
         ns[norm]+=d;
-        if (accum_delta) {
-            sumcount.add_delta(d,t);
-            assert(count==sumcount.x);
-        }
+        sumcount.add_delta(d,t);
     }
-    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),count(prior),norm(norm),cascadei(cascadei) {  }
+    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),norm(norm),cascadei(cascadei) {}
     typedef gibbs_param self_type;
     TO_OSTREAM_PRINT
     template <class O>
     void print(O &o) const
     {
-        o<<count<<'\t'<<norm<<'\t'<<cascadei;
-        if (!sumcount.empty())
-            o<<'\t'<<sumcount;
+        o<<norm<<'\t'<<cascadei<<'\t'<<sumcount;
     }
 };
 
