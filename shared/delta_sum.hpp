@@ -60,7 +60,7 @@ struct delta_sum
         if (moret>0) {
             tmax=t;
             s+=moret*x;
-        } else {
+        } else if (moret<0) {
             s+=d*(-moret);
         }
         x+=d;
@@ -69,7 +69,13 @@ struct delta_sum
     {
         add_delta(v-x,t);
     }
-    delta_sum(double x0=0.) : x(x0),tmax(0),s(0) {  }
+    delta_sum(double x0=0) { clear(x0); }
+    void clear(double x0=0)
+    {
+        x=x0;
+        s=tmax=0;
+    }
+
     bool empty() const
     {
         return tmax==0;

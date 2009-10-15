@@ -30,7 +30,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "5.2"
+#define CARMEL_VERSION "5.3"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -284,6 +284,8 @@ struct carmel_main
             flags[':']=true; // cache reverse also
             long_opts["train-cascade"]=1;
         }
+        get_opt("crp-restarts",gopt.restarts);
+        gopt.argmax_final=have_opt("crp-argmax-final");
         get_opt("init-em",gopt.init_em);
         gopt.em_p0=have_opt("em-p0");
         get_opt("burnin",gopt.sched.burnin);
@@ -1764,12 +1766,14 @@ cout <<         "\n"
 
     cout << "\n"
         "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
+        "--crp-restarts : number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights\n"
+        "--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples\n"
         "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--print-counts-to=n --print-counts-from=m: every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
         "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
-        "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a completely random derivation!)\n"
+        "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights)\n"
         "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
         "--cache-prob : show the true probability according to cache model for each sample\n"

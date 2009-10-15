@@ -175,6 +175,38 @@ struct cached_derivs
 
 struct gibbs
 {
+    struct run_stats
+    {
+        double N; // from burnin...last iter, or just last if --final-counts
+        Weight allprob,finalprob; // (prod over all N, and final) sample cache probs
+        run_stats() {clear();}
+        void clear()
+        {
+            allprob.setOne();
+            finalprob.setOne();
+            N=0;
+        }
+        void record(double t,Weight prob)
+        {
+            if (t>=0) {
+                N+=1;
+                allprob*=prob;
+                finalprob=prob;
+            }
+        }
+        typedef run_stats self_type;
+        TO_OSTREAM_PRINT
+        template <class O>
+        void print(O&o) const
+        {
+            o << "#samples="<<N<<" final sample ppx="<<finalprob.ppxper().as_base(2)<<" burned-in avg="<<allprob.ppxper(N).as_base(2);
+        }
+        bool better(run_stats const& o,WFST::gibbs_opts const& gopt)
+        {
+            return gopt.argmax_final ? finalprob>o.finalprob : allprob>o.allprob;
+        }
+    };
+
     WFST &composed;
     cascade_parameters &cascade;
     training_corpus &corpus;
@@ -199,6 +231,8 @@ struct gibbs
     typedef dynamic_array<param_list> acpath;
     typedef fixed_array<acpath> sample_t;
     sample_t sample;
+    typedef WFST::saved_weights_t saved_weights_t;
+
     carc_t carc(GraphArc const& a) const
     {
         return derivs.arcs.ac(a).arc;
@@ -219,8 +253,12 @@ struct gibbs
     }
     void addc(gibbs_param &p,double delta)
     {
-        p.addsum(delta,t,normsum,accum_delta);
+        p.addsum(delta,t,normsum); //t=0 and accum_delta=false until burnin
     }
+    gibbs_param &param(FSTArc const& f) const
+    { return gps[f.groupId]; }
+    gibbs_param &param(FSTArc const* pf) const
+    { return param(*pf); }
     Weight cache_prob(acpath const& p)
     {
         Weight prob=one_weight();
@@ -242,13 +280,9 @@ struct gibbs
         unsigned norm=gps[paramid].norm;
         return ccount[paramid]++/csum[norm]++;
     }
-    gibbs_param &param(FSTArc const& f) const
-    { return gps[f.groupId]; }
-    gibbs_param &param(FSTArc const* pf) const
-    { return param(*pf); }
     double p_param(gibbs_param const&p) const
     {
-        return p.count/normsum[p.norm];
+        return p.count()/normsum[p.norm];
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
@@ -257,10 +291,10 @@ struct gibbs
             o<<" temperature="<<1./power<<" power="<<power<<suffix;
         return o;
     }
+    std::ostream &log() { return Config::log(); }
     void iteration()
     {
-        std::ostream &log=Config::log();
-        itername(log);
+        itername(log());
         prob.setOne();
         if (gopt.cache_prob) {
             cprob.setOne();
@@ -272,18 +306,24 @@ struct gibbs
                 csum[gp.norm]+=(ccount[i]=gp.prior);
             }
         }
+        saved_weights_t single_save;
+        if (init_prob && init_sample_weights && cascade.trivial) {
+            composed.restore_weights(*init_sample_weights);
+        }
         derivs.foreach_deriv(*this);
+        Weight p=prob;
         if (gopt.cache_prob) {
             ccount.dealloc();
             csum.dealloc();
-            log<<" cache-model ";
-            cprob.print_ppx(log,corpus.n_output,corpus.n_pairs);
+            log()<<" cache-model ";
+            p=cprob;
         }
         if (gopt.ppx) {
-            log<<" sample ";
-            prob.print_ppx(log,corpus.n_output,corpus.n_pairs);
+            log()<<" sample ";
         }
-        log<<'\n';
+        print_ppx(log(),p);
+        stats.record(t,p);
+        log()<<'\n';
         maybe_print_paths_periodic();
 #ifdef DEBUG_GIBBS
 //        print_sample(0,cascade.size());
@@ -291,19 +331,25 @@ struct gibbs
 //        std::cerr<<'\n'<<*cascade.cascade[0]<<'\n';
 #endif
     }
+    void print_ppx(std::ostream &o,Weight w)
+    {
+        w.print_ppx(o,corpus.n_output,corpus.n_pairs);
+    }
+
     struct p_init
     {
         gibbs const&c;
         p_init(gibbs const&c) :c(c) {  }
         double operator()(GraphArc const& a) const
         {
-            return a.weight;
+            return c.carc(a)->weight.getReal(); //TESTME
         }
         param_list ac(GraphArc const& a) const
         {
             return c.ac(a);
         }
-    };    //cached_derivs.foreach_deriv
+    };
+//cached_derivs.foreach_deriv
     void operator()(unsigned n_1based,derivations &d)
     {
         training_progress(n_1based);
@@ -343,16 +389,20 @@ struct gibbs
         return w;
     }
     //TODO: allow locked arcs?  see fst.h *_gibbs derivations global_normalize
+    //FIXME: random gibbs starts can't use EM starting probs for first sample - problem?
+
     gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
           ,WFST::NormalizeMethods & methods
           ,WFST::train_opts const& topt
           ,WFST::gibbs_opts const& gopt
-          ,WFST::saved_weights_t *saved=0
+          ,WFST::saved_weights_t *init_sample_weights=NULL
         ) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), init(composed,cascade), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter))
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), init(composed,cascade), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter)), init_sample_weights(init_sample_weights)
     {
-        if (saved)
-            cascade.restore_weights(composed,*saved); // but derivs got a chance to grab em weights for init random sample!
+        this->gopt.validate();
+        if (init_sample_weights && !cascade.trivial)
+            composed.restore_weights(*init_sample_weights);
+//        if (saved) cascade.restore_weights(composed,*saved); // but derivs got a chance to grab em weights for init random sample!
         nnorm=cascade.set_gibbs_params(composed,methods,gps,gopt.p0init); // #1 - overwrite chains' (input xdcr arcs) group
 //        if (cascade.trivial) OUTGIBBS(composed); // #1 verified
         normsum.init(nnorm);
@@ -360,11 +410,44 @@ struct gibbs
         cascade.set_trivial_gibbs_chains(); // #2 - build the singleton chains based on groups from #1
 //        DGIBBS(cascade.print_chains(std::cerr,false)); // #2 verified
     }
-    void run(bool use_init_prob=false)
+    void restore_p0()
     {
+        normsum.reinit(nnorm);
+        for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
+            i->restore_p0(normsum);
+    }
+    void run_starts(bool use_init_prob=false)
+    {
+        if (gopt.restarts==0) {
+            run(use_init_prob);
+            save_weights();
+            print_sample();
+            return;
+        }
+        saved_weights_t best_weights;
+        sample_t best_sample;
+        best_sample.init(derivs.size());
+        unsigned re=gopt.restarts;
+        run_stats best;
+        do {
+            if (gopt.restarts>0) log()<<"\nRandom start ("<<re<<" remaining)\n";
+            run_stats s=run(use_init_prob);
+            if (re==gopt.restarts || s.better(best,gopt)) {
+                log() << "\nNew best: "<<s<<"\n";
+                best_sample.swap(sample);
+                save_weights(true,&best_weights);
+            }
+        } while(re-- > 0);
+        cascade.restore_weights(composed,best_weights);
+        print_sample(best_sample);
+    }
+
+    run_stats run(bool use_init_prob=false)
+    {
+        stats.clear();
         Ni=topt.max_iter;
         burnt0=gopt.cumulative_counts ? gopt.sched.burnin : Ni;
-        addnorms(); // for base model
+        restore_p0();
         power=1.;
         accum_delta=false;
         i=0;
@@ -377,28 +460,33 @@ struct gibbs
         for (i=1;i<=Ni;++i) {
             power=1./temp(i);
             t=i-burnt0;
-            if (t==0) {
-                for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
-                    i->initsum();
+            if (t>=0) {
                 accum_delta=true;
             } else if (t<0) t==0;
             iteration();
         }
+        log()<<"\nGibbs stats: "<<stats<<"\n";
+        return stats;
     }
+    run_stats stats;
+
     // not idempotent until final iteration, because param.sumcount.x is obliterated
     void normalize_accum_delta()
     {
         normsum_t sn(nnorm);
-        double tmax=Ni;
+        double tmax1=Ni+1-burnt0;
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
-            sn[i->norm]+=i->sumcount.extend(tmax);
+            sn[i->norm]+=i->sumcount.extend(tmax1);
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
             gibbs_param &p=*i;
             p.sumcount.x=p.sumcount.s/sn[p.norm];
         }
     }
-    void save_weights(bool accum=true)
+    saved_weights_t *wto;
+    void save_weights(bool accum=true,saved_weights_t *weightsto=NULL)
     {
+        wto=weightsto;
+        if (wto) wto->clear();
         if (accum&&accum_delta)
             normalize_accum_delta();
         cascade.update_gibbs(*this);
@@ -407,7 +495,11 @@ struct gibbs
     void operator()(unsigned src,FSTArc & f) const
     {
         gibbs_param &p=param(f);
-        f.weight=accum_delta ? p.sumcount.x : p_param(p);
+        Weight w=accum_delta ? p.sumcount.x : p_param(p);
+        if (wto)
+            wto->push_back(w);
+        else
+            f.weight=w;
     }
     typedef dynamic_array<FSTArc*> cascade_path;
     typedef fixed_array<cascade_path> cascade_paths;
@@ -427,7 +519,7 @@ struct gibbs
             }
         }
     }
-    void print_sample(unsigned a,unsigned b,casc const& c)
+    void print_sample(sample_t const& sample,unsigned a,unsigned b,casc const& c)
     {
         if (!(b>a && a<c.size())) {
             if (b!=0)
@@ -448,14 +540,19 @@ struct gibbs
         }
         gopt.printer.out()<<'\n';
     }
-    void print_sample(unsigned print_from,unsigned print_to)
+    void print_sample(sample_t const& sample,unsigned print_from,unsigned print_to)
     {
-        print_sample(print_from,print_to,cascade.cascade);
+        print_sample(sample,print_from,print_to,cascade.cascade);
+    }
+    void print_sample(sample_t const& sample)
+    {
+        print_sample(sample,gopt.print_from,gopt.print_to);
     }
     void print_sample()
     {
-        print_sample(gopt.print_from,gopt.print_to);
+        print_sample(sample);
     }
+
     static inline bool divides(unsigned div,unsigned i)
     {
         return div!=0 && i%div==0;
@@ -474,7 +571,7 @@ struct gibbs
         unsigned from=gopt.print_counts_from;
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         if (to>from && from<gps.size()) {
-            out()<<"# count\tnormgrp\tinput#\tcumulative\t"<<name<<" i="<<i<<"\n";
+            out()<<"normgrp\tinput#\tcounts\t"<<name<<" i="<<i<<"\n";
             print_range(out(),gps.begin()+from,gps.begin()+to,true,true);
         }
     }
@@ -493,22 +590,26 @@ struct gibbs
     normsum_t ccount,csum; // for computing true cache model probs
     Weight cprob;
     Weight prob;
-    unsigned i,Ni;
+    unsigned i,Ni; // i=0 is random init sample.  i=1...Ni are the gibbs samples
     double power;
-    double t;
     double burnt0;
+    double t; // at i=burnt0, t=0.  at tmax = nI-burnt0, we have the final sample.
     WFST::gibbs_opts::temps temp;
     bool subtract_old;
     bool accum_delta;
+    saved_weights_t *init_sample_weights;
 
-    void addnorms()
+/*
+      void addnorms()
     {
         for (gps_t::const_iterator i=gps.begin(),e=gps.end();i!=e;++i) {
             gibbs_param const& p=*i;
             normsum[p.norm]+=p.count;
         }
     }
+*/
 };
+
 
 
 void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
@@ -524,7 +625,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
 
     bool em=gopt.init_em>0;
     bool restore=em && !gopt.em_p0;
-    saved_weights_t saved;
+    saved_weights_t saved,init_sample_weights;
     if (restore)
         cascade.save_weights(*this,saved);
     if (em) {
@@ -539,7 +640,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
         forward_backward fb(*this,cascade,false,0,true,t2,corpus);
         Weight p,cp;
         for (unsigned i=0;i<N;++i) {
-            time_report taken(Config::log(),"Time for iteration: ");
+            time_report taken(log,"Time for iteration: ");
             cascade.update(*this);
             p=fb.estimate(cp);
             Weight maxdarc=fb.maximize(m2);
@@ -552,12 +653,14 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
         train(cascade,corpus,m2,false,0,0,1,t2,true);
 #endif
     }
+    if (restore) {
+        save_weights(init_sample_weights);
+        cascade.restore_weights(*this,saved);
+    }
     //restore old weights; can't do gibbs init before em because groupId gets overwritten; em needs that id from composition
-    gibbs g(*this,cascade,corpus,methods,topt,gopt,restore?&saved:0);
+    gibbs g(*this,cascade,corpus,methods,topt,gopt,restore?&init_sample_weights:0);
     saved.clear();
-    g.run(em);
-    g.save_weights();
-    g.print_sample();
+    g.run_starts(em);
     cascade.clear_groups();
     cascade.update(*this);
 }

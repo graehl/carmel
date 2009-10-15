@@ -362,7 +362,7 @@ private:
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
  public:
-    inline friend void swap(self_type &a,self_type &b)
+    inline friend void swap(self_type &a,self_type &b) throw()
     {
         a.swap(b);
     }
@@ -516,8 +516,18 @@ public:
     typedef array<T,Alloc> Base;
 private:
     dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
-//    void swap(array<T,Alloc> &a) {dynarray_assert(0);}
 public:
+    void swap(self_type &b) throw()
+    {
+        Base::swap(b);
+        std::swap(endv,b.endv);
+    }
+
+    inline friend void swap(self_type &a,self_type &b) throw()
+    {
+        a.swap(b);
+    }
+
     explicit dynamic_array (const char *c) {
         std::istringstream(c) >> *this;
     }
@@ -801,11 +811,6 @@ public:
 
     void removeMarked(bool marked[]) {
         graehl::remove_marked_swap(*this,marked);
-    }
-
-    inline friend void swap(self_type &a,self_type &b)
-    {
-        a.swap(b);
     }
 
     void removeMarked_nodestroy(bool marked[]) {

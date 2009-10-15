@@ -1252,6 +1252,7 @@ class WFST {
 
     struct gibbs_opts
     {
+        unsigned restarts;
         unsigned init_em;
         bool em_p0;
         bool cache_prob;
@@ -1274,6 +1275,7 @@ class WFST {
         gibbs_opts() { set_defaults(); }
         void set_defaults()
         {
+            restarts=0;
             init_em=0;
             em_p0=false;
             cache_prob=false;
@@ -1285,9 +1287,17 @@ class WFST {
             high_temp=low_temp=1;
             sched.set();
             cumulative_counts=true;
+            argmax_final=false;
         }
-    };
+        bool argmax_final;
+        void validate()
+        {
+            if (restarts>0)
+                cache_prob=true;
+//            if (!cumulative_counts) argmax_final=true;
+        }
 
+    };
     // set data field of arcs to int id of their normgroup (starting at idbase).  returns next free id. note: tied arcs ignored (TODO: set data field to list of normgroup ids to allow tying?)
     // push_back each arc to gps which will store its normgroup and prior count
     typedef dynamic_array<gibbs_param> gibbs_params;
@@ -1541,6 +1551,10 @@ class WFST {
         return visit_arcs(r).i;
     }
 
+    void restore_weights(saved_weights_t const& s)
+    {
+        restore_weights(s.begin());
+    }
 
     void removeMarkedStates(bool marked[]);  // remove states and all arcs to
     // states marked true

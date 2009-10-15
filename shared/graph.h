@@ -103,6 +103,21 @@ struct GraphState {
             a.wt()=w(a);
         }
     }
+
+    typedef dynamic_array<WEIGHT_FLOAT_TYPE> saved_weights_t;
+    void save_weights(saved_weights_t &s) const
+    {
+        for ( List<GraphArc>::const_iterator i=arcs.const_begin(),end=arcs.const_end() ; i !=end ; ++i )
+            s.push_back(i->weight);
+    }
+    unsigned restore_weights(saved_weights_t const& s,unsigned start=0)
+    {
+        for ( List<GraphArc>::val_iterator i=arcs.val_begin(),end=arcs.val_end() ; i !=end ; ++i ) {
+            GraphArc &a=*i;
+            a.weight=s[start++];
+        }
+        return start;
+    }
 };
 
 inline void swap(GraphState &a,GraphState &b)
@@ -112,13 +127,25 @@ inline void swap(GraphState &a,GraphState &b)
 
 
 struct Graph {
-  GraphState *states;
-  unsigned nStates;
+    GraphState *states;
+    unsigned nStates;
     template <class W>
     void setwt(W const& w)
     {
         for (unsigned i=0;i<nStates;++i)
             states[i].setwt(w);
+    }
+    typedef GraphState::saved_weights_t saved_weights_t;
+    void save_weights(saved_weights_t &s) const
+    {
+        for (unsigned i=0;i<nStates;++i)
+            states[i].save_weights(s);
+
+    }
+    unsigned restore_weights(saved_weights_t const& s,unsigned start=0)
+    {
+        for (unsigned i=0;i<nStates;++i)
+            start=states[i].restore_weights(s,start);
     }
 };
 
