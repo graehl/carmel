@@ -405,7 +405,7 @@ struct gibbs
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);
 //        if (saved) cascade.restore_weights(composed,*saved); // but derivs got a chance to grab em weights for init random sample!
-        nnorm=cascade.set_gibbs_params(composed,methods,gps,gopt.p0init); // #1 - overwrite chains' (input xdcr arcs) group
+        nnorm=cascade.set_gibbs_params(composed,methods,gps,!gopt.uniformp0); // #1 - overwrite chains' (input xdcr arcs) group
 //        if (cascade.trivial) OUTGIBBS(composed); // #1 verified
         normsum.init(nnorm);
         cascade.set_composed(composed);
@@ -448,7 +448,7 @@ struct gibbs
     {
         stats.clear();
         Ni=topt.max_iter;
-        burnt0=gopt.cumulative_counts ? gopt.burnin : Ni;
+        burnt0=gopt.final_counts ? Ni : gopt.burnin;
         restore_p0();
         power=1.;
         accum_delta=false;
