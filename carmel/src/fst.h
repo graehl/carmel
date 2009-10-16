@@ -1,8 +1,6 @@
-#ifndef CARMEL_FST_H
-#define CARMEL_FST_H
+#ifndef GRAEHL_CARMEL__FST_H
+#define GRAEHL_CARMEL__FST_H
 
-
-#include <graehl/shared/time_series.hpp>
 #include <graehl/carmel/src/config.hpp>
 #include <vector>
 #include <cstring>
@@ -28,6 +26,7 @@
 #include <graehl/shared/mean_field_scale.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/debugprint.hpp>
+#include <graehl/shared/gibbs.hpp>
 
 namespace graehl {
 
@@ -1231,82 +1230,9 @@ class WFST {
         }
     };
 
-    struct counting_schedule
-    {
-        unsigned burnin;
-        unsigned epoch;
-        bool operator()(unsigned i)
-        {
-            return i>=burnin && (i-burnin)%epoch==0;
-        }
-        counting_schedule()
-        {
-            set();
-        }
-        void set(unsigned burn=0,unsigned every=1)
-        {
-            burnin=burn;
-            epoch=every;
-        }
-    };
-
-    struct gibbs_opts
-    {
-        unsigned restarts;
-        unsigned init_em;
-        bool em_p0;
-        bool cache_prob;
-        bool ppx;
-        bool p0init;
-        unsigned print_every; // print the current sample every N iterations
-        unsigned print_from;
-        unsigned print_to;
-        unsigned print_counts_from;
-        unsigned print_counts_to;
-        path_print printer;
-        bool cumulative_counts;
-        bool argmax_final;
-        bool argmax_sum;
-        bool exclude_prior;
-        // random choices have probs raised to 1/temperature(iteration) before coin flip
-        typedef clamped_time_series<double> temps;
-        temps temperature(double iters) const {
-            return temps(high_temp,low_temp,iters,temps::linear);
-        }
-        double high_temp,low_temp;
-        counting_schedule sched;
-        gibbs_opts() { set_defaults(); }
-        void set_defaults()
-        {
-            restarts=0;
-            init_em=0;
-            em_p0=false;
-            cache_prob=false;
-            print_counts_from=print_counts_to=0;
-            p0init=true;
-            ppx=true;
-            print_every=0;
-            print_from=print_to=0;
-            high_temp=low_temp=1;
-            sched.set();
-            cumulative_counts=true;
-            argmax_final=false;
-            argmax_sum=false;
-            exclude_prior=false;
-        }
-        void validate()
-        {
-            if (restarts>0)
-                cache_prob=true;
-//            if (!cumulative_counts) argmax_final=true;
-        }
-
-    };
-    // set data field of arcs to int id of their normgroup (starting at idbase).  returns next free id. note: tied arcs ignored (TODO: set data field to list of normgroup ids to allow tying?)
-    // push_back each arc to gps which will store its normgroup and prior count
+    // set data field of arcs to int id of their gibbs_param gps[i].  gps[i].norm is set (starting at normidbase).  returns next free id. note: tied arcs ignored.  also compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc
     typedef dynamic_array<gibbs_param> gibbs_params;
-    unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init=true,unsigned cascadei=0);
-
+    unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init=true);
 
     // TODO: move more of the train params into here
     struct train_opts
@@ -1330,7 +1256,7 @@ class WFST {
 
     typedef dynamic_array<NormalizeMethod> NormalizeMethods;
 
-    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,double min_prior=1e-2);
+    void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,path_print const&printer=path_print(),double min_prior=1e-2);
 
     Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts);
     Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts,bool restore_old_weights=false);
@@ -1362,8 +1288,12 @@ class WFST {
     BOOST_STATIC_CONSTANT(unsigned,invalid_state=(unsigned)-1);
     int valid() const { return ( final != invalid_state ); }
     unsigned int size() const { if ( !valid() ) return 0; else return numStates(); }
-    int numArcs() const {
-        int a = 0;
+    unsigned n_edges() const
+    {
+        return numArcs();
+    }
+    unsigned numArcs() const {
+        unsigned a = 0;
         for (int i = 0 ; i < numStates() ; ++i )
             a += states[i].size;
         return a;

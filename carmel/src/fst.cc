@@ -175,7 +175,7 @@ static void NaNCheck(const Weight *w) {
     w->NaNCheck();
 }
 
-unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init,unsigned cascadei)
+unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init)
 {
     unsigned id=normidbase;
     if (isEmpty())
@@ -203,7 +203,7 @@ unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_p
             FSTArc & a=**g;
             a.groupId=gps.size();
             Weight prior=p0init ? (ac*scale*a.weight) : ac;
-            gps.push_back(id,prior.getReal(),cascadei);
+            gps.push_back(id,prior.getReal());
         }
         ++id;
     }
