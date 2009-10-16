@@ -398,10 +398,11 @@ struct gibbs
           ,WFST::path_print const& printer
           ,WFST::saved_weights_t *init_sample_weights=NULL
         ) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), printer(printer), derivs(composed,corpus,topt.cache), sample(derivs.size()), temp(gopt.temperature(topt.max_iter)), init_sample_weights(init_sample_weights)
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), printer(printer), derivs(composed,corpus,topt.cache), sample(derivs.size()), init_sample_weights(init_sample_weights)
     {
         set_cascadei();
         this->gopt.validate();
+        temp=gopt.temp;
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);
 //        if (saved) cascade.restore_weights(composed,*saved); // but derivs got a chance to grab em weights for init random sample!
@@ -447,7 +448,7 @@ struct gibbs
     run_stats run(bool use_init_prob=false)
     {
         stats.clear();
-        Ni=topt.max_iter;
+        Ni=gopt.iter;
         burnt0=gopt.final_counts ? Ni : gopt.burnin;
         restore_p0();
         power=1.;
@@ -627,7 +628,7 @@ struct gibbs
 
 
 void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
-                       , gibbs_opts const& gopt, path_print const& printer, double min_prior)
+                       , gibbs_opts const &gopt1, path_print const& printer, double min_prior)
 {
     std::ostream &log=Config::log();
     for (NormalizeMethods::iterator i=methods.begin(),e=methods.end();i!=e;++i) {
@@ -636,7 +637,8 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
             i->add_count=min_prior;
         }
     }
-
+    gibbs_opts gopt=gopt1;
+    gopt.iter=topt.max_iter;
     bool em=gopt.init_em>0;
     bool restore=em && !gopt.em_p0;
     saved_weights_t saved,init_sample_weights;
