@@ -4,24 +4,25 @@
 #include <graehl/carmel/src/state.h>
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/array.hpp>
-#include <graehl/shared/delta_sum.hpp>
 #include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/gibbs.hpp>
 
 namespace graehl {
 
 void check_fb_agree(Weight f,Weight b);
 void training_progress(unsigned train_example_no,unsigned scale=10);
 
+/*
 struct gibbs_param
 {
-    double prior; //FIXME: not needed except to make computing --cache-prob easier
+    double prior; //FIXME: only needed for --cache-prob and --crp-except-prior
     inline double count() const
     {
         return sumcount.x;
     }
     unsigned norm;
     unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
-    delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
+    delta_sum sumcount;
     template <class Normsum>
     void restore_p0(Normsum &ns)
     {
@@ -31,7 +32,6 @@ struct gibbs_param
     template <class Normsums>
     void addsum(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
     {
-//        count+=d;
         ns[norm]+=d;
         sumcount.add_delta(d,t);
     }
@@ -43,7 +43,7 @@ struct gibbs_param
     {
         o<<norm<<'\t'<<cascadei<<'\t'<<sumcount;
     }
-};
+    };*/
 
 
 struct arc_counts_base

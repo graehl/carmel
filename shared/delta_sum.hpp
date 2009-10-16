@@ -29,41 +29,42 @@ inline void throw_unknown_delta_sum(double t,double tmax) {
 // can get any [0,t>tmax] sum or [t0>tmax,t>tmax] sum where tmax is the highest t of any delta
 //TESTME:
 //Essentially I forget the sum (s) at values of t<tmax.  I track the current instantaneous value x at time tmax, and so can give the sum over time from t=0..t' for any t'>=tmax (sum(t') below)
-struct delta_sum
+template <class D>
+struct delta_sum_f
 {
-    double x,tmax;
-    double s;
-    delta_sum& addbase(double d) // same as add_delta(d,0)
+    typedef delta_sum_f<D> self_type;
+    delta_sum_f(D x0=0) { clear(x0); }
+    D x,tmax;
+    D s;
+    void addbase(D d) // same as add_delta(d,0)
     {
         s+=d*tmax;
         x+=d;
-        return *this;
     }
-
-    double extend(double t)
+    void extend(D t)
     {
-        double moret=t-tmax;
+        D moret=t-tmax;
         if (moret<0) throw_unknown_delta_sum(t,tmax);
         tmax=t;
-        return s+=x*moret;
+        s+=x*moret;
     }
-    double sum(double t) const
+    D sum(D t) const
     {
         if (t<=0) return 0;
         if (t>0 && t<tmax) throw_unknown_delta_sum(t,tmax);
         return s+(tmax-t)*x;
     }
-    double sum(double t0,double tm) const
+    D sum(D t0,D tm) const
     {
         return sum(tm)-sum(t0);
     }
-    double add_delta(delta const& d)
+    D add_delta(delta const& d)
     {
         add_delta(d.d,d.t);
     }
-    double add_delta(double d,double t)
+    D add_delta(D d,D t)
     {
-        double moret=t-tmax;
+        D moret=t-tmax;
         if (moret>0) {
             tmax=t;
             s+=moret*x;
@@ -72,22 +73,19 @@ struct delta_sum
         }
         x+=d;
     }
-    double add_val(double v,double t) // only works if t>=tmax, i.e. deltas/vals come in increasing order
+    D add_val(D v,D t) // only works if t>=tmax, i.e. deltas/vals come in increasing order
     {
         add_delta(v-x,t);
     }
-    delta_sum(double x0=0) { clear(x0); }
-    void clear(double x0=0)
+    void clear(D x0=0)
     {
         x=x0;
         s=tmax=0;
     }
-
     bool empty() const
     {
         return tmax==0;
     }
-    typedef delta_sum self_type;
     TO_OSTREAM_PRINT
     template<class O>
     void print(O &o) const
@@ -97,6 +95,8 @@ struct delta_sum
             o<<" avg="<<s/tmax;
     }
 };
+
+typedef delta_sum_f<double> delta_sum;
 
 // tmax fixed in advance!  essentially no advantage over more flexible delta_sum except barely simpler computation
 //TESTME:

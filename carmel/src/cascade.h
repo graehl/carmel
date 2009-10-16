@@ -187,17 +187,17 @@ struct cascade_parameters
         // empty chain means: don't update the original arc in any way
     }
 
-    // returns # of normgroups (starting at startid).
+    // returns # of normgroups
     // gps gets normgroup-id labeled init counts, indexed by cascade (input) arc: gps[arc.groupId]
-    unsigned set_gibbs_params(WFST &composed,WFST::NormalizeMethods & methods,WFST::gibbs_params &gps,bool p0init=true,unsigned startid=0)
+    unsigned set_gibbs_params(WFST &composed,WFST::NormalizeMethods & methods,WFST::gibbs_params &gps,bool p0init=true)
     {
 //        gps.push_back(0,0,0); //FIXME: unused index 0 for locked arcs
         if (trivial)
-            return composed.set_gibbs_params(methods[0],startid,gps,p0init,startid);
+            return composed.set_gibbs_params(methods[0],0,gps,p0init);
         else {
-            unsigned id=startid;
+            unsigned id=0;
             for (unsigned i=0,n=cascade.size();i<n;++i)
-                id=cascade[i]->set_gibbs_params(methods[i],id,gps,p0init,i);
+                id=cascade[i]->set_gibbs_params(methods[i],id,gps,p0init);
             return id;
         }
     }

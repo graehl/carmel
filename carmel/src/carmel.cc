@@ -269,10 +269,11 @@ typedef std::map<std::string,std::string> text_long_opts_t;
 struct carmel_main
 {
     ifstream post_b;
-    WFST::gibbs_opts gopt;
+    graehl::gibbs_opts gopt;
+    WFST::path_print printer;
     WFST::train_opts topt;
 
-    bool gibbs_opts()
+    bool parse_gibbs_opts()
     {
         bool gibbs = have_opt("crp");
 
@@ -291,8 +292,7 @@ struct carmel_main
         gopt.exclude_prior=have_opt("crp-exclude-prior");
         get_opt("init-em",gopt.init_em);
         gopt.em_p0=have_opt("em-p0");
-        get_opt("burnin",gopt.sched.burnin);
-        get_opt("epoch",gopt.sched.epoch);
+        get_opt("burnin",gopt.burnin);
         get_opt("print-to",gopt.print_to);
         get_opt("print-from",gopt.print_from);
         get_opt("print-counts-to",gopt.print_counts_to);
@@ -305,7 +305,7 @@ struct carmel_main
         gopt.p0init=!have_opt("uniform-p0");
         gopt.ppx=have_opt("sample-prob") || !gopt.cache_prob;
         gopt.cumulative_counts=!have_opt("final-counts");
-        gopt.printer.set_flags(flags);
+        printer.set_flags(flags);
         return gibbs;
     }
 
@@ -992,7 +992,7 @@ main(int argc, char *argv[]){
         filenames = parm;
     }
     istream *pairStream = NULL;
-    bool gibbs = cm.gibbs_opts();
+    bool gibbs = cm.parse_gibbs_opts();
     cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
     bool trainc=!cascade.trivial;
     if (trainc)
@@ -1349,7 +1349,7 @@ main(int argc, char *argv[]){
 
                 carmel_main::NMs & nms=cm.norms();
                 if (gibbs) {
-                    result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt);
+                    result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
                     unsigned rr=train_opt.ran_restarts;
                     if (long_opts["final-restart"])
@@ -1786,7 +1786,6 @@ cout <<         "\n"
         "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
         "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)\n"
         "\n";
-//        "--epoch : sum gibbs counts every <epoch> iterations after burnin (unimplemented; effective epoch=1 for now)\n"
 
     cout << "\n--help : more detailed help\n";
     /* // user doesn't need to know about this stuff
