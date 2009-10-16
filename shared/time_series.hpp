@@ -53,6 +53,11 @@ struct clamped_time_series : public std::unary_function<double,Returns>
     BOOST_STATIC_CONSTANT(double,exponential=0);
     BOOST_STATIC_CONSTANT(time_type,constant=0);
 
+    clamped_time_series()
+    {
+        set(0,0);
+    }
+
     clamped_time_series(value_type start,value_type end,// start and end should both be positive.  at t<=0, return start, at t>=duration-1, return end.  in between, depends on alpha
                         time_type duration=constant, // varies over t in [0,duration);
                         double curvature=exponential)

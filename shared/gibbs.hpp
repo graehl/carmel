@@ -77,8 +77,9 @@ struct gibbs_opts
     bool exclude_prior;
     // random choices have probs raised to 1/temperature(iteration) before coin flip
     typedef clamped_time_series<double> temps;
-    temps temperature(double iters) const {
-        return temps(high_temp,low_temp,iters,temps::linear);
+    temps temp;
+    temps temperature() const {
+        return temps(high_temp,low_temp,iter,temps::linear);
     }
     double high_temp,low_temp;
     gibbs_opts() { set_defaults(); }
@@ -108,6 +109,7 @@ if (final_counts) burnin=iter-1;
         if (restarts>0)
             cache_prob=true;
 //            if (!cumulative_counts) argmax_final=true;
+        temp=temperature();
     }
 };
 
