@@ -3,24 +3,76 @@
 
 #include <graehl/shared/delta_sum.hpp>
 #include <graehl/shared/time_series.hpp>
+#include <boost/program_options.hpp>
 
 namespace graehl {
 
 struct gibbs_opts
 {
+    template <class OD>
+    void add_options(OD &all, bool carmel_opts=false)
+    {
+        using boost::program_options::bool_switch;
+
+        OD gibbs("Gibbs (chinese restaurant process) options");
+        gibbs.add_options()
+            ("crp", defaulted_value(&iter),
+             "# of iterations of Bayesian 'chinese restaurant process' parameter estimation (Gibbs sampling) instead of EM")
+            ("crp-exclude-prior", bool_switch(&exclude_prior),
+             "when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts")
+            ("cache-prob", bool_switch(&cache_prob),
+             "show the true probability according to cache model for each sample")
+            ("sample-prob", bool_switch(&cache_prob),
+             "show the sample prob given model, previous sample")
+            ("high-temp", defaulted_value(&high_temp),
+             "raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised")
+            ("low-temp", defaulted_value(&low_temp),
+             "see high-temp. temperature is high-temp @i=0, low-temp @i=finaltemperature at final iteration (linear interpolation from high->low)")
+            ("burnin", defaulted_value(&burnin),
+             "when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights)")
+            ("final-counts", bool_switch(&final_counts),
+             "normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored; effectively set burnin=# crp iter)")
+            ;
+        if (carmel_opts)
+            gibbs.add_options()
+                ("crp-restarts", defaulted_value(&restarts),
+                 "number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights")
+                ("crp-argmax-final",bool_switch(&argmax_final),
+                 "for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples")
+                ("crp-argmax-sum",bool_switch(&argmax_sum),
+                 "instead of multiplying the sample probs together and choosing the best, sum (average) them")
+                ("print-from",defaulted_value(&print_from),
+                 "for [print-from]..([print-to]-1)th input transducer, print the final iteration's path on its own line.  a blank line follows each training example")
+                ("print-to",defaulted_value(&print_to),
+                 "see print-from")
+                ("print-every",defaulted_value(&print_every),
+                 "with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
+                ("print-counts-from",defaulted_value(&print_counts_from),
+                 "every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)")
+                ("print-counts-to",defaulted_value(&print_counts_to),
+                 "see print-counts-from")
+                ("init-em",defaulted_value(&init_em),
+                 "perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them")
+                ("em-p0",bool_switch(&em_p0),
+                 "with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)")
+                ("uniform-p0",bool_switch(&uniformp0),
+                 "use a uniform base probability model for --crp, even when the input WFST have weights")
+                ;
+    }
+    unsigned iter;
     unsigned restarts;
     unsigned init_em;
     unsigned burnin;
     bool em_p0;
     bool cache_prob;
     bool ppx;
-    bool p0init;
+    bool uniformp0;
     unsigned print_every; // print the current sample every N iterations
     unsigned print_from;
     unsigned print_to;
     unsigned print_counts_from;
     unsigned print_counts_to;
-    bool cumulative_counts;
+    bool final_counts;
     bool argmax_final;
     bool argmax_sum;
     bool exclude_prior;
@@ -33,24 +85,27 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        iter=0;
         burnin=0;
         restarts=0;
         init_em=0;
         em_p0=false;
         cache_prob=false;
         print_counts_from=print_counts_to=0;
-        p0init=true;
+        uniformp0=false;
         ppx=true;
         print_every=0;
         print_from=print_to=0;
         high_temp=low_temp=1;
-        cumulative_counts=true;
+        final_counts=false;
         argmax_final=false;
         argmax_sum=false;
         exclude_prior=false;
     }
     void validate()
     {
+if (final_counts) burnin=iter-1;
+
         if (restarts>0)
             cache_prob=true;
 //            if (!cumulative_counts) argmax_final=true;

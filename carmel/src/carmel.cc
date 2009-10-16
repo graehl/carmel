@@ -302,9 +302,9 @@ struct carmel_main
         get_opt("low-temp",gopt.low_temp);
         gopt.cache_prob=have_opt("cache-prob");
 //        bool uniformp0=false;
-        gopt.p0init=!have_opt("uniform-p0");
+        gopt.uniformp0=have_opt("uniform-p0");
         gopt.ppx=have_opt("sample-prob") || !gopt.cache_prob;
-        gopt.cumulative_counts=!have_opt("final-counts");
+        gopt.final_counts=have_opt("final-counts");
         printer.set_flags(flags);
         return gibbs;
     }
@@ -1773,9 +1773,9 @@ cout <<         "\n"
         "--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples\n"
         "--crp-argmax-sum : instead of multiplying the sample probs together and choosing the best, sum (average) them\n"
         "--crp-exclude-prior : when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts\n"
-        "--print-from=n --print-to=m: for 0..(m-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
+        "--print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
-        "--print-counts-to=n --print-counts-from=m: every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
+        "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
         "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights)\n"
