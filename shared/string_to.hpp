@@ -60,8 +60,8 @@ bool try_string_into(Str const& str,Str &to,bool complete=true)
 }
 
 
-template <class Str>
-Str const& to_string(Str const& d)
+inline
+std::string const& to_string(std::string const& d)
 {
     return d;
 }
