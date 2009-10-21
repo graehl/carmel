@@ -15,7 +15,12 @@ struct segments : public dynamic_array<X>
     typedef typename P::const_iterator const_iterator;
 
     static const unsigned LEFT=0; // 1 is first valid index (index of upper bound for segment you're in)
-    unsigned segid(X x)
+    unsigned segid0based(X const& x)
+    {
+        return segid(x)-1;
+    }
+
+    unsigned segid(X const& x)
     {
         const_iterator w=std::lower_bound(P::begin(),P::end(),x);
         unsigned i=w-P::begin();
@@ -25,28 +30,28 @@ struct segments : public dynamic_array<X>
     {
         return P::size();
     }
-    bool increases(X x)
+    bool increases(X const& x)
     {
         return P::empty() || x>P::back();
     }
     // deltas and positions must come in increasing order
-    void add_at(X x)
+    void add_at(X const& x)
     {
         assert(increases(x));
         P::push_back(x);
     }
-    void start(X x)
+    void start(X const& x)
     {
         P::clear();
         P::push_back(x);
     }
-    void add_delta(X dx)
+    void add_delta(X const& dx)
     {
         P::push_back(P::empty()?dx:dx+P::back());
     }
     // for integral X only: precompute segid(x) for x=[0,n)
     template <class C>
-    void inverse_i_push_back(C &c,X N,X startx=0) const
+    void inverse_i_push_back(C &c,X const& N,X const& startx=0) const
     {
         X x=startx;
         for (unsigned i=0,N=P::size();i!=N;++i) {
@@ -56,7 +61,7 @@ struct segments : public dynamic_array<X>
         }
     }
     template <class C>
-    void inverse_i(C b,C end,X startx=0) const
+    void inverse_i(C b,C end,X const& startx=0) const
     {
         X x=startx;
         for (unsigned i=0,N=P::size();b!=end&&i!=N;++i) {

@@ -7,13 +7,13 @@ namespace graehl {
 
 template <class To,class From>
 inline void maybe_increase_max(To &to,const From &from) {
-    if (to < from)
+    if (to<from)
         to=from;
 }
 
 template <class To,class From>
 inline void maybe_decrease_min(To &to,const From &from) {
-    if (from < to)
+    if (from<to)
         to=from;
 }
 

@@ -3,6 +3,7 @@
 #include <graehl/carmel/src/fst.h>
 #include <graehl/shared/kbest.h>
 #include <graehl/shared/array.hpp>
+#include <graehl/shared/genio.h>
 
 namespace graehl {
 
@@ -73,98 +74,10 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
     }
 }
 
-namespace WFST_impl {
-
-class NormGroupIter {
-    WFST &wfst;
-    State *state;
-    State *end;
-    typedef HashTable<IntKey, List<HalfArc> >::iterator Cit;
-    typedef List<HalfArc>::const_iterator Cit2;
-    typedef List<FSTArc>::val_iterator Jit;
-    Cit Ci;
-    Cit2 Ci2,Cend;
-    Jit Ji,Jend;
-    const WFST::norm_group_by method;
-    bool empty_state() { return state->size == 0; }
-    void beginState() {
-        if(method==WFST::CONDITIONAL)
-            if (!empty_state())
-                Ci = state->index->begin();
-    }
- public:
-    NormGroupIter(WFST::norm_group_by meth,WFST &wfst_) : wfst(wfst_),state(&*wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
-    bool moreGroups() { return state != end; }
-    template <class charT, class Traits>
-    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& os) const {
-        if(method==WFST::CONDITIONAL) {
-            os << "(conditional normalization group for input=" << wfst.inLetter(Ci->first) << " in ";
-        } else {
-            os << "(joint normalizaton group for ";
-        }
-        os << "state=" << wfst.stateName(index_of(wfst.states,state)) << ")";
-        return std::ios_base::goodbit;
-    }
-    void beginArcs() {
-        if(method==WFST::CONDITIONAL) {
-            if (empty_state())
-                return;
-            Ci2 = Ci->second.const_begin(); // segfault w/ *e* selfloop as only arc
-            Cend = Ci->second.const_end();
-        } else {
-            Ji = state->arcs.val_begin();
-            Jend = state->arcs.val_end();
-        }
-    }
-    bool moreArcs() {
-        if(method==WFST::CONDITIONAL) {
-            if (empty_state())
-                return false;
-            return Ci2 != Cend;
-        } else {
-            return Ji != Jend;
-        }
-    }
-    FSTArc * operator *() {
-        if(method==WFST::CONDITIONAL) {
-            return *Ci2;
-        } else {
-            return &*Ji;
-        }
-    }
-    void nextArc() {
-        if(method==WFST::CONDITIONAL) {
-            ++Ci2;
-        } else {
-            ++Ji;
-        }
-    }
-    void nextGroup() {
-        if(method==WFST::CONDITIONAL) {
-            if ( !empty_state() )
-                ++Ci;
-            while (empty_state() || Ci == state->index->end()) {
-                ++state;
-                if (moreGroups())
-                    beginState();
-                else
-                    break;
-            }
-        } else {
-            ++state;
-        }
-    }
-
-};
-
-};
-
-#include <graehl/shared/genio.h>
-
 template <class charT, class Traits>
 std::basic_ostream<charT,Traits>&
 operator <<
-              (std::basic_ostream<charT,Traits>& os, const WFST_impl::NormGroupIter &arg)
+              (std::basic_ostream<charT,Traits>& os, const NormGroupIter &arg)
 {
     return gen_inserter(os,arg);
 }
@@ -187,7 +100,7 @@ unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_p
     if (nm.group==CONDITIONAL)
         indexInput();
     Weight ac=nm.add_count;
-    for (WFST_impl::NormGroupIter g(nm.group,*this); g.moreGroups(); g.nextGroup()) {
+    for (NormGroupIter g(nm.group,*this); g.moreGroups(); g.nextGroup()) {
         Weight sum=0;
         double N=0;
         Weight scale=one_weight();
@@ -234,7 +147,7 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
     HashTable<IntKey, Weight> groupStateTotal;
     HashTable<IntKey, Weight> groupMaxLockedSum;
     // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in a tie group, its weight and its normalization group's weight.
-    for (WFST_impl::NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
+    for (NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
 #ifdef DEBUGNORMALIZE
         Config::debug() << "Normgroup=" << g;
 #endif
@@ -273,7 +186,7 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
 
 
     // global pass 2: assign weights
-    for (WFST_impl::NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
+    for (NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
         Weight normal_sum;//=0
         Weight reserved;// =0
         Assert(reserved.isZero()&&normal_sum.isZero());
@@ -345,7 +258,7 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
     }
 
 #ifdef CHECKNORMALIZE
-    for (WFST_impl::NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
+    for (NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
 
         Weight sum;
         for ( g.beginArcs(); g.moreArcs(); g.nextArc())

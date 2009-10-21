@@ -27,6 +27,11 @@ struct serialize_batch_error : public std::runtime_error
     serialize_batch_error() : std::runtime_error("serialize_batch error - didn't read expected RECORD_FOLLOWS or END_RECORDS header") {}
 };
 
+struct serialize_batch_index_error : public std::runtime_error
+{
+    serialize_batch_index_error() : std::runtime_error("serialize_batch error - tried to use record at index >= size") {}
+};
+
 template <class B>
 struct serialize_batch {
  private:
@@ -60,12 +65,15 @@ struct serialize_batch {
     typedef typename A::iterator AI;
     A store;
     AI store_cursor;
+    unsigned current_i;
+
     bool rewind_store; // set to true to rewind, so first advance sets cursor=begin
 
     size_t total_items;
 
     bool advance()
     {
+        ++current_i;
         if (use_file) {
             unsigned header;
             ia >> header;
@@ -87,14 +95,20 @@ struct serialize_batch {
 
     }
 
+    void must_advance()
+    {
+        if (!advance())
+            throw serialize_batch_index_error();
+    }
+
     void rewind()
     {
+        current_i=(unsigned)-1;
         if (use_file)
             f.seekg(0,std::ios::beg);
         else
             rewind_store=true;
     }
-
 
     // may only follow a call to advance() (repeated current() after that is ok).  any changes made won't be preserved for next rewind if using disk.  but i return a mutable reference in case caches in the object need updating.
     value_type &current()
@@ -139,6 +153,16 @@ return GENIOGOOD;
         rewind();
         while(advance())
             deref(f)(current());
+    }
+
+    value_type &operator[](unsigned i)
+    {
+        if (i==0 || i<current_i) {
+            rewind();
+            must_advance();
+        }
+        while (current_i<i) must_advance();
+        return current();
     }
 
     // large_bufsize = # of bytes for own fstream buffer, recommend 64*1024*1024

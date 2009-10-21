@@ -466,6 +466,22 @@ public:
         dynarray_assert(e-b == this->capacity());
         std::uninitialized_copy(b,e,this->begin());
     }
+    template <class V>
+    void uninit_copy_from(V const& v)
+    {
+        uninit_copy_from(v.begin(),v.end());
+    }
+    void copy_from(const T* b,const T* e)
+    {
+        this->destroy();
+        uninit_copy_from(b,e);
+    }
+    template <class V>
+    void copy_from(V const& v)
+    {
+        copy_from(v.begin(),v.end());
+    }
+
     fixed_array(const array<T,Alloc> &a) : Super(a.capacity()) {
 //        DBPC("fixed_array copy",a);
         uninit_copy_from(a.begin(),a.end());

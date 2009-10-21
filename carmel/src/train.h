@@ -1,6 +1,7 @@
 #ifndef CARMEL_TRAIN_H
 #define CARMEL_TRAIN_H
 
+#include <graehl/shared/config.h>
 #include <graehl/carmel/src/state.h>
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/array.hpp>
@@ -10,7 +11,8 @@
 namespace graehl {
 
 void check_fb_agree(Weight f,Weight b);
-void training_progress(unsigned train_example_no,unsigned scale=10);
+
+void training_progress(unsigned train_example_no,unsigned scale=10,unsigned num_every=70);
 
 /*
 struct gibbs_param
