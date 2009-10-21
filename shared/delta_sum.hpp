@@ -64,6 +64,7 @@ struct delta_sum_f
     }
     D add_delta(D d,D t)
     {
+        assert(t>=0);
         D moret=t-tmax;
         if (moret>0) {
             tmax=t;
@@ -75,6 +76,7 @@ struct delta_sum_f
     }
     D add_val(D v,D t) // only works if t>=tmax, i.e. deltas/vals come in increasing order
     {
+        assert(t>=tmax);
         add_delta(v-x,t);
     }
     void clear(D x0=0)

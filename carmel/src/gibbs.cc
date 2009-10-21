@@ -48,7 +48,7 @@ struct carmel_gibbs : public gibbs_base
     {
         gibbs_base::run_starts(*this);
         // copy weights to transd. so path weights are right?
-        print_sample(sample);
+        gibbs_base::print_all(*this);
         cascade.update_gibbs(*this);
     }
     // for cascade.update_gibbs
@@ -232,7 +232,7 @@ struct carmel_gibbs : public gibbs_base
         return cascade[carc(a)];
     }
 
-    bool init_prob;
+    bool init_prob; // NOTE: unlike old method, composed weights don't get updated until all runs are done
     bool pinit_differs_p0;
 
     void init_run(unsigned r)
