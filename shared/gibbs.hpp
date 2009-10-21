@@ -215,6 +215,7 @@ struct gibbs_base
         , out(out)
         , log(log)
         , nnorm(0)
+        , sample(n_blocks)
     {
         this->gopt.validate();
         temp=gopt.temp;
