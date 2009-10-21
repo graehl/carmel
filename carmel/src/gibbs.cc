@@ -243,4 +243,44 @@ struct carmel_gibbs : public gibbs_base
     }
 };
 
+
+void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
+                       , gibbs_opts const &gopt1, path_print const& printer, double min_prior)
+{
+    std::ostream &log=Config::log();
+    for (NormalizeMethods::iterator i=methods.begin(),e=methods.end();i!=e;++i) {
+        if (i->add_count<=0) {
+            Config::warn() << "Gibbs sampling requires positive --priors for base model / initial sample.  Setting to "<<min_prior<<"\n";
+            i->add_count=min_prior;
+        }
+    }
+    gibbs_opts gopt=gopt1;
+    gopt.iter=topt.max_iter;
+    bool em=gopt.init_em>0;
+    bool restore=em && !gopt.em_p0;
+    saved_weights_t saved,init_sample_weights;
+    if (restore)
+        cascade.save_weights(*this,saved);
+    if (em) {
+        NormalizeMethods m2=methods;
+        for (NormalizeMethods::iterator i=m2.begin(),e=m2.end();i!=e;++i)
+            i->add_count=0;
+        train_opts t2=topt;
+        t2.max_iter=gopt.init_em;
+        // EM:
+        train(cascade,corpus,m2,false,0,0,1,t2,true);
+    }
+    if (restore) {
+        save_weights(init_sample_weights);
+        cascade.restore_weights(*this,saved);
+    }
+    //restore old weights; can't do gibbs init before em because groupId gets overwritten; em needs that id from composition
+    carmel_gibbs g(*this,cascade,corpus,methods,topt,gopt,printer,restore?&init_sample_weights:0);
+    saved.clear();
+//    g.run_starts(em);
+    g.run();
+    cascade.clear_groups();
+    cascade.update(*this);
+}
+
 }

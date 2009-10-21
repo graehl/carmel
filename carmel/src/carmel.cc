@@ -1349,6 +1349,10 @@ main(int argc, char *argv[]){
 
                 carmel_main::NMs & nms=cm.norms();
                 if (gibbs) {
+                    if (cm.have_opt("crp-old")) {
+                        cm.gopt.uniformp0=true;
+                        result->train_gibbs_old(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
+                    }
                     result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
                     unsigned rr=train_opt.ran_restarts;

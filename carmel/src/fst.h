@@ -1258,6 +1258,7 @@ class WFST {
     typedef dynamic_array<NormalizeMethod> NormalizeMethods;
 
     void train_gibbs(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,path_print const&printer=path_print(),double min_prior=1e-2);
+    void train_gibbs_old(cascade_parameters &cascade, training_corpus &corpus,NormalizeMethods & methods,train_opts const& topt, gibbs_opts const& gopt,path_print const&printer=path_print(),double min_prior=1e-2);
 
     Weight train(training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts);
     Weight train(cascade_parameters &cascade,training_corpus & corpus,NormalizeMethods const& methods,bool weight_is_prior_count, Weight smoothFloor,Weight converge_arc_delta, Weight converge_perplexity_ratio, train_opts const& opts,bool restore_old_weights=false);

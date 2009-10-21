@@ -36,25 +36,29 @@ struct gibbs_opts
              "When summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights)")
             ("final-counts", bool_switch(&final_counts),
              "Normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored; effectively set burnin=# crp iter)")
+            ("print-counts-from",defaulted_value(&print_counts_from),
+             "Every --print-every, print the instantaneous and cumulative counts for parameters from...(to-1) (for debugging)")
+            ("print-counts-to",defaulted_value(&print_counts_to),
+             "See print-counts-from")
+            ("print-normsum-from",defaulted_value(&print_normsum_from),
+             "Every --print-every, print the normalization groups' instantaneous (proposal HMM) sum-counts, for from...(to-1)")
+            ("print-normsum-to",defaulted_value(&print_normsum_to),
+             "See print-normsum-to")
+            ("print-every",defaulted_value(&print_every),
+             "print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
+            ("crp-restarts", defaulted_value(&restarts),
+             "Number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights")
+            ("crp-argmax-final",bool_switch(&argmax_final),
+             "For --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples")
+            ("crp-argmax-sum",bool_switch(&argmax_sum),
+             "Instead of multiplying the sample probs together and choosing the best, sum (average) them")
             ;
         if (carmel_opts)
             opt.add_options()
-                ("crp-restarts", defaulted_value(&restarts),
-                 "Number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights")
-                ("crp-argmax-final",bool_switch(&argmax_final),
-                 "For --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples")
-                ("crp-argmax-sum",bool_switch(&argmax_sum),
-                 "Instead of multiplying the sample probs together and choosing the best, sum (average) them")
                 ("print-from",defaulted_value(&print_from),
                  "For [print-from]..([print-to]-1)th input transducer, print the final iteration's path on its own line.  a blank line follows each training example")
                 ("print-to",defaulted_value(&print_to),
                  "See print-from")
-                ("print-every",defaulted_value(&print_every),
-                 "With --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
-                ("print-counts-from",defaulted_value(&print_counts_from),
-                 "Every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)")
-                ("print-counts-to",defaulted_value(&print_counts_to),
-                 "See print-counts-from")
                 ("init-em",defaulted_value(&init_em),
                  "Perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them")
                 ("em-p0",bool_switch(&em_p0),
@@ -71,23 +75,37 @@ struct gibbs_opts
     double high_temp,low_temp;
     unsigned burnin;
     bool final_counts;
+    unsigned print_every; // print the current sample every N iterations
+    unsigned print_counts_from,print_counts_to; // which param ids' counts to print
+    unsigned print_normsum_from,print_normsum_to; // which normgroup ids' sums to print
+
+    unsigned restarts; // 0 = 1 run (no restarts)
+
+     // criteria to max over restarts:
+    bool argmax_final;
+    bool argmax_sum;
 
     //carmel only:
     unsigned init_em;
     bool em_p0;
     bool uniformp0;
-    unsigned print_every; // print the current sample every N iterations
-    unsigned print_counts_from;
-    unsigned print_counts_to;
-    unsigned restarts;
-    bool argmax_final;
-    bool argmax_sum;
-    unsigned print_from;
-    unsigned print_to;
+    unsigned print_from,print_to; // which blocks to print
+
     bool printing_derivs() const
     {
         return print_to>print_from;
     }
+
+    bool printing_counts() const
+    {
+        return print_counts_to>print_counts_from;
+    }
+
+    bool printing_norms() const
+    {
+        return print_normsum_to>print_normsum_from;
+    }
+
 
     // random choices have probs raised to 1/temperature(iteration) before coin flip
     typedef clamped_time_series<double> temps;
@@ -105,6 +123,7 @@ struct gibbs_opts
         em_p0=false;
         cache_prob=false;
         print_counts_from=print_counts_to=0;
+        print_normsum_from=print_normsum_to=0;
         uniformp0=false;
         ppx=true;
         print_every=0;
@@ -476,16 +495,29 @@ struct gibbs_base
         if (divides(gopt.print_every,i)) {
             itername(out<<"# ","\n");
             imp.print_sample(sample);
-            out<<"#\n";
+            print_norms();
             print_counts();
         }
     }
+    void print_norms(char const* name="normalization group sums")
+    {
+        if (gopt.printing_norms())
+            return;
+        unsigned from=gopt.print_normsum_from;
+        unsigned to=std::min(gopt.print_normsum_to,normsum.size());
+        if (to>from) {
+            out <<"#\nnormgrp\tsum\t<<name"<<" i="<<i<<"\n";
+        }
+
+    }
     void print_counts(char const* name="counts")
     {
+        if (!gopt.printing_counts())
+            return;
         unsigned from=gopt.print_counts_from;
         unsigned to=std::min(gopt.print_counts_to,gps.size());
-        if (to>from && from<gps.size()) {
-            out<<"normgrp\tcounts\t"<<name<<" i="<<i<<"\n";
+        if (to>from) {
+            out<<"#\nnormgrp\tcounts\t"<<name<<" i="<<i<<"\n";
             print_range(out,gps.begin()+from,gps.begin()+to,true,true);
         }
     }

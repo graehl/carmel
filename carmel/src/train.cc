@@ -5,7 +5,6 @@
 #include <graehl/carmel/src/cascade.h>
 #include <graehl/carmel/src/cached_derivs.h>
 #include <graehl/shared/periodic.hpp>
-
 #include <graehl/shared/segments.hpp>
 
 //#define DEBUGTRAIN
@@ -535,7 +534,10 @@ struct gibbs
     {
         unsigned from=gopt.print_counts_from;
         unsigned to=std::min(gopt.print_counts_to,gps.size());
-        if (to>from && from<gps.size()) {
+        if (to>from) {
+            out() <<"normgrp\tsum\t"<<" i="<<i<<"\n";
+            for (unsigned ni=0,N=normsum.size();ni<N;++ni)
+                out()<<ni<<'\t'<<normsum[ni]<<'\n';
             out()<<"normgrp\tcounts\t"<<name<<" i="<<i<<"\n";
             print_range(out(),gps.begin()+from,gps.begin()+to,true,true);
         }
@@ -576,7 +578,7 @@ struct gibbs
 };
 
 
-void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
+void WFST::train_gibbs_old(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
                        , gibbs_opts const &gopt1, path_print const& printer, double min_prior)
 {
     std::ostream &log=Config::log();
@@ -626,9 +628,11 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     gibbs g(*this,cascade,corpus,methods,topt,gopt,printer,restore?&init_sample_weights:0);
     saved.clear();
     g.run_starts(em);
+    g.run();
     cascade.clear_groups();
     cascade.update(*this);
 }
+
 
 namespace for_arcs {
 
