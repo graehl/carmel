@@ -257,6 +257,7 @@ struct derivations //: boost::noncopyable
     derivations() {}
 
 
+    // for EM, not gibbs? :
     template <class arcs_table>
     struct weight_for
     {
@@ -318,10 +319,9 @@ struct derivations //: boost::noncopyable
         }
     };
 
-    template <class acpath,class WeightFor>
-    void random_path(acpath &p,WeightFor const& wf,double power=1.)
+    template <class WeightFor>
+    void random_path(WeightFor const& wf,double power=1.)
     {
-        p.clear();
         if (empty()) return;
         unsigned nst=g.size();
         pfor<WeightFor> pf(nst,wf,fin);
@@ -341,7 +341,7 @@ struct derivations //: boost::noncopyable
                 pf.global_normalize(arcs.begin(),arcs.end(),power);
             }
             GraphArc const& a=*choose_p(arcs.begin(),arcs.end(),pf); // no empty states allowed that aren't final
-            p.push_back(wf.ac(a));
+            wf.choose_arc(a);
             s=a.dest;
         }
     }

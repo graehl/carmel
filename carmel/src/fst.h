@@ -90,7 +90,7 @@ class WFST {
             W=flags['W'];
             E=flags['E'];
         }
-        std::ostream &out() { return *pout; }
+        std::ostream &out() const { return *pout; }
         void set_out(std::ostream &o) { pout=&o; }
         void start(WFST const&wfst)
         {
@@ -1234,6 +1234,7 @@ class WFST {
     typedef dynamic_array<gibbs_param> gibbs_params;
     unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init=true);
 
+
     // TODO: move more of the train params into here
     struct train_opts
     {
@@ -1539,9 +1540,93 @@ class WFST {
     }
 };
 
+class NormGroupIter {
+    WFST &wfst;
+    State *state;
+    State *end;
+    typedef HashTable<IntKey, List<HalfArc> >::iterator Cit;
+    typedef List<HalfArc>::const_iterator Cit2;
+    typedef List<FSTArc>::val_iterator Jit;
+    Cit Ci;
+    Cit2 Ci2,Cend;
+    Jit Ji,Jend;
+    const WFST::norm_group_by method;
+    bool empty_state() { return state->size == 0; }
+    void beginState() {
+        if(method==WFST::CONDITIONAL)
+            if (!empty_state())
+                Ci = state->index->begin();
+    }
+ public:
+    NormGroupIter(WFST::norm_group_by meth,WFST &wfst_) : wfst(wfst_),state(&*wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
+    bool moreGroups() { return state != end; }
+    template <class charT, class Traits>
+    std::ios_base::iostate print(std::basic_ostream<charT,Traits>& os) const {
+        if(method==WFST::CONDITIONAL) {
+            os << "(conditional normalization group for input=" << wfst.inLetter(Ci->first) << " in ";
+        } else {
+            os << "(joint normalizaton group for ";
+        }
+        os << "state=" << wfst.stateName(index_of(wfst.states,state)) << ")";
+        return std::ios_base::goodbit;
+    }
+    void beginArcs() {
+        if(method==WFST::CONDITIONAL) {
+            if (empty_state())
+                return;
+            Ci2 = Ci->second.const_begin(); // segfault w/ *e* selfloop as only arc
+            Cend = Ci->second.const_end();
+        } else {
+            Ji = state->arcs.val_begin();
+            Jend = state->arcs.val_end();
+        }
+    }
+    bool moreArcs() {
+        if(method==WFST::CONDITIONAL) {
+            if (empty_state())
+                return false;
+            return Ci2 != Cend;
+        } else {
+            return Ji != Jend;
+        }
+    }
+    FSTArc * operator *() {
+        if(method==WFST::CONDITIONAL) {
+            return *Ci2;
+        } else {
+            return &*Ji;
+        }
+    }
+    void nextArc() {
+        if(method==WFST::CONDITIONAL) {
+            ++Ci2;
+        } else {
+            ++Ji;
+        }
+    }
+    void nextGroup() {
+        if(method==WFST::CONDITIONAL) {
+            if ( !empty_state() )
+                ++Ci;
+            while (empty_state() || Ci == state->index->end()) {
+                ++state;
+                if (moreGroups())
+                    beginState();
+                else
+                    break;
+            }
+        } else {
+            ++state;
+        }
+    }
+};
+
+void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n);
+
 ostream & operator << (ostream &o, WFST &w);
 
 ostream & operator << (std::ostream &o, List<PathArc> &l);
+
 
 
 }

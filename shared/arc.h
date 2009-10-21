@@ -47,6 +47,7 @@ struct FSTArc {
 
 //    enum {no_group=-1,locked_group=0};
 
+    FSTArc() {  }
     FSTArc(int i, int o, int d, Weight w,group_t g = no_group) :
         in(i), out(o), dest(d), weight(w), groupId(g)
     {}

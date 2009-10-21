@@ -1,4 +1,6 @@
 //provides access to a collection of objects larger than virtual memory allows, by explicitly mapping a region to disk files which are (re)mapped on demand.  objects must provide a read method that constructs the object to contiguous memory.  input must support seek() to handle out-of-space retries.
+// WARNING: references returned by iterator are potentially invalidated any time a different-valued iterator is created or used
+//FIXME: real support for random access
 #ifndef SWAPBATCH_HPP
 #define SWAPBATCH_HPP
 
@@ -204,6 +206,24 @@ struct SwapBatch {
         return ret;
     }
 
+    // bogus operator[] that does sequential scanning (we have no random access index).  should be ok
+    refrence operator[](unsigned i) const
+    {
+        if (i==0||i<current_i) {
+            current_i=0;
+            current_iter=begin();
+        }
+        if (current_iter.is_end()) goto fail;
+        while (i>current_i) {
+            ++current_i;
+            ++current_iter;
+            if (current_iter.is_end()) goto fail;
+        }
+        return *current_iter;
+    fail:
+        throw std::range_error("index for swapbatch[] is past end");
+    }
+
 
     size_type n_batch;
     std::string basename;
@@ -284,6 +304,8 @@ struct SwapBatch {
         n_batch=0; // could loop from n_batch ... 0 but it might confuse :)
     }
     size_t total_items;
+    size_t current_i;
+    iterator current_iter;
     size_t size() const {
         BACKTRACE;
         return total_items;
@@ -483,7 +505,7 @@ BOOST_AUTO_TEST_CASE( TEST_SWAPBATCH )
     typedef SwapBatch<const char *> SB;
 
     BOOST_CHECK(1);
-    
+
     SB b(t1,28+2*sizeof(size_t)+sizeof(char*)); // string is exactly 28 bytes counting \n
     tmp_fstream i1(s1);
     BOOST_CHECK_EQUAL(b.n_batches(),1);

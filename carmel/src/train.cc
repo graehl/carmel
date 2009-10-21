@@ -1,18 +1,21 @@
 #include <boost/utility.hpp>
-#include <graehl/shared/config.h>
 #include <graehl/carmel/src/train.h>
 #include <graehl/carmel/src/fst.h>
-#include <graehl/shared/weight.h>
 #include <graehl/carmel/src/derivations.h>
 #include <graehl/carmel/src/cascade.h>
-#include <graehl/shared/serialize_batch.hpp>
-#include <graehl/shared/time_space_report.hpp>
+#include <graehl/carmel/src/cached_derivs.h>
+#include <graehl/shared/periodic.hpp>
+
 #include <graehl/shared/segments.hpp>
 
-#define DEBUG_GIBBS
 //#define DEBUGTRAIN
 
 namespace graehl {
+
+void training_progress(unsigned train_example_no,unsigned scale,unsigned num_every)
+{
+    num_progress(Config::log(),train_example_no,scale,num_every);
+}
 
 derivations::statistics derivations::global_stats;
 
@@ -111,71 +114,9 @@ void matrix_reverse_io(Weight ***w,int max_i, int max_o) {
         }
 }
 
-#ifdef DEBUG_GIBBS
-#define DGIBBS(a) a;
-#else
-#define DGIBBS(a)
-#endif
-#define OUTGIBBS(a) DGIBBS(std::cerr<<a)
-
-template <class arc_counts>
-struct cached_derivs
-{
-    WFST &x;
-    serialize_batch<derivations> derivs;
-    typedef arcs_table<arc_counts> arcs_t;
-    arcs_t arcs;
-    unsigned size()
-    {
-        return derivs.size();
-    }
-    cached_derivs(WFST &x,training_corpus &corpus,WFST::deriv_cache_opts const& copt)
-        : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize),arcs(x)
-    {
-        if (copt.cache()) {
-            graehl::time_space_report(Config::log(),"Computed cached derivations:");
-            compute_derivations(corpus.examples,copt.cache_backward());
-        }
-    }
-    template <class Examples>
-    void compute_derivations(Examples const &ex,bool cache_backward)
-    {
-        wfst_io_index io(x);
-        unsigned n=1;
-        derivs.clear();
-        for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
-             i!=end ; ++i,++n) {
-            derivations &d=derivs.start_new();
-            if (!d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward)) {
-                warn_no_derivations(x,*i,n);
-                derivs.drop_new();
-            } else {
-#ifdef DEBUGDERIVATIONS
-                Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
-                i->print(Config::debug(),x,"\n");
-                printGraph(d.graph(),Config::debug());
-#endif
-                derivs.keep_new();
-            }
-        }
-        derivs.mark_end();
-        Config::log() << derivations::global_stats;
-    }
-    template <class F>
-    void foreach_deriv(F &f)
-    {
-        unsigned n=0;
-        for (derivs.rewind();derivs.advance();) {
-            ++n;
-            training_progress(n);
-            f(n,derivs.current());
-        }
-
-    }
-};
-
 struct gibbs
 {
+    /*
     struct run_stats
     {
         double N; // from burnin...last iter, or just last if --final-counts
@@ -210,12 +151,13 @@ struct gibbs
             return gopt.argmax_final ? finalprob>o.finalprob : (gopt.argmax_sum ? sumprob>o.sumprob : allprob>o.allprob);
         }
     };
+    */
+    typedef gibbs_stats run_stats;
 
     WFST &composed;
     cascade_parameters &cascade;
     training_corpus &corpus;
     WFST::NormalizeMethods const& methods;
-    WFST::train_opts topt;
     gibbs_opts gopt;
     WFST::path_print printer;
     typedef WFST::gibbs_params gps_t;
@@ -241,6 +183,12 @@ struct gibbs
     {
         return cascade[carc(a)];
     }
+    acpath *curpath;
+    void choose_arc(GraphArc const& a) const
+    {
+        curpath->push_back(ac(a));
+    }
+
     void addc(acpath const& p,double delta)
     {
         for (acpath::const_iterator i=p.begin(),e=p.end();i!=e;++i)
@@ -306,7 +254,6 @@ struct gibbs
                 csum[gp.norm]+=(ccount[i]=gp.prior);
             }
         }
-        saved_weights_t single_save;
         if (init_prob && init_sample_weights && cascade.trivial) {
             composed.restore_weights(*init_sample_weights);
         }
@@ -344,9 +291,9 @@ struct gibbs
         {
             return c.carc(a)->weight.getReal(); //TESTME
         }
-        param_list ac(GraphArc const& a) const
+        void choose_arc(GraphArc const& a) const
         {
-            return c.ac(a);
+            return c.choose_arc(a);
         }
     };
 //cached_derivs.foreach_deriv
@@ -357,10 +304,12 @@ struct gibbs
         if (subtract_old)
             addc(p,-1);
 //        OUTGIBBS(','<<n_1based<<':')
+        p.clear();
+        curpath=&p;
         if (init_prob) {
-            d.random_path(p,p_init(*this),power);
+            d.random_path(p_init(*this),power);
         } else {
-            d.random_path(p,*this,power);
+            d.random_path(*this,power);
         }
         if (gopt.cache_prob)
             cprob*=cache_prob(p);
@@ -398,7 +347,7 @@ struct gibbs
           ,WFST::path_print const& printer
           ,WFST::saved_weights_t *init_sample_weights=NULL
         ) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), topt(topt), gopt(gopt), printer(printer), derivs(composed,corpus,topt.cache), sample(derivs.size()), init_sample_weights(init_sample_weights)
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), gopt(gopt), printer(printer), derivs(composed,corpus,topt.cache), sample(derivs.size()), init_sample_weights(init_sample_weights)
     {
         set_cascadei();
         this->gopt.validate();
@@ -437,6 +386,7 @@ struct gibbs
             run_stats s=run(use_init_prob);
             if (re==gopt.restarts || s.better(best,gopt)) {
                 log() << "\nNew best: "<<s<<"\n";
+                best=s;
                 best_sample.swap(sample);
                 save_weights(true,&best_weights);
             }
@@ -626,7 +576,6 @@ struct gibbs
 };
 
 
-
 void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
                        , gibbs_opts const &gopt1, path_print const& printer, double min_prior)
 {
@@ -680,7 +629,6 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     cascade.clear_groups();
     cascade.update(*this);
 }
-
 
 namespace for_arcs {
 
@@ -1284,20 +1232,8 @@ void forward_backward::matrix_fb(IOSymSeq &s)
 #endif
 }
 
-void training_progress(unsigned train_example_no,unsigned scale)
-{
-    const unsigned EXAMPLES_PER_DOT=scale;
-    const unsigned EXAMPLES_PER_NUMBER=(70*EXAMPLES_PER_DOT);
-    if (train_example_no % EXAMPLES_PER_DOT == 0)
-        Config::log() << '.' ;
-    if (train_example_no % EXAMPLES_PER_NUMBER == 0)
-        Config::log() << train_example_no << '\n' ;
-}
-
-
 void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n)
 {
-
     Config::warn() << "No derivations in transducer for input/output #"<<n<<":\n";
     s.print(Config::warn(),x,"\n");
 }
