@@ -294,6 +294,8 @@ struct carmel_main
         gopt.em_p0=have_opt("em-p0");
         get_opt("burnin",gopt.burnin);
         get_opt("print-to",gopt.print_to);
+        get_opt("print-normsum-from",gopt.print_normsum_from);
+        get_opt("print-normsum-to",gopt.print_normsum_to);
         get_opt("print-from",gopt.print_from);
         get_opt("print-counts-to",gopt.print_counts_to);
         get_opt("print-counts-from",gopt.print_counts_from);

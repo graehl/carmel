@@ -137,12 +137,48 @@ struct gibbs_opts
     void validate()
     {
         if (final_counts) burnin=iter-1;
+        if (burnin>iter)
+            burnin=iter;
         if (restarts>0)
             cache_prob=true;
 //            if (!cumulative_counts) argmax_final=true;
         temp=temperature();
     }
 };
+
+
+/*
+struct gibbs_param
+{
+    double prior; //FIXME: only needed for --cache-prob and --crp-except-prior
+    inline double count() const
+    {
+        return sumcount.x;
+    }
+    unsigned norm;
+    unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
+    delta_sum sumcount;
+    template <class Normsum>
+    void restore_p0(Normsum &ns)
+    {
+        ns[norm]+=prior;
+        sumcount.clear(prior);
+    }
+    template <class Normsums>
+    void addsum(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
+    {
+        ns[norm]+=d;
+        sumcount.add_delta(d,t);
+    }
+    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),norm(norm),cascadei(cascadei) {}
+    typedef gibbs_param self_type;
+    TO_OSTREAM_PRINT
+    template <class O>
+    void print(O &o) const
+    {
+        o<<norm<<'\t'<<cascadei<<'\t'<<sumcount;
+    }
+    };*/
 
 //template <class F>
 struct gibbs_param
@@ -161,8 +197,8 @@ struct gibbs_param
     template <class Normsum>
     void restore_p0(Normsum &ns)
     {
+        ns[norm]+=prior;
         sumcount.clear(prior);
-        add_norm(ns);
     }
     template <class Normsum>
     void add_norm(Normsum &ns) const
@@ -301,7 +337,7 @@ struct gibbs_base
     }
     void compute_norms()
     {
-        normsum.reinit(nnorm);
+        normsum.reinit_nodestroy(nnorm);
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
             i->add_norm(normsum);
     }
@@ -309,7 +345,7 @@ struct gibbs_base
     // save/restore params
     void save_counts(saved_counts_t &c)
     {
-        c.reinit(size());
+        c.reinit_nodestroy(size());
         for (unsigned i=0,N=size();i<N;++i)
             c[i]=gps[i].count();
     }
@@ -398,29 +434,29 @@ struct gibbs_base
     {
         stats.clear();
         Ni=gopt.iter;
-        imp.init_run(runi);
         restore_p0();
+        imp.init_run(runi);
         power=1.;
         accum_delta=false;
         i=0;
+        t=0;
         if (gopt.print_every!=0) print_counts("prior counts");
         burnt0=gopt.final_counts ? Ni : gopt.burnin;
-        subtract_old=false;
-        iteration(imp); // random initial sample
-        subtract_old=true;
+        iteration(imp,false); // random initial sample
         for (i=1;i<=Ni;++i) {
             power=1./temp(i);
             t=i-burnt0;
             if (t>=0) accum_delta=true;
-            else if (t<0) t==0;
-            iteration(imp);
+            else if (t<0)
+                t=0;
+            iteration(imp,true);
         }
         log<<"\nGibbs stats: "<<stats<<"\n";
         return stats;
     }
 
     template <class G>
-    void iteration(G &imp)
+    void iteration(G &imp,bool subtract_old=true)
     {
         itername(log);
         if (gopt.cache_prob) reset_cache();
@@ -428,7 +464,8 @@ struct gibbs_base
         for (unsigned b=0;b<n_blocks;++b) {
             num_progress(log,b);
             block_t &block=sample[b];
-            addc(block,-1);
+            if (subtract_old)
+                addc(block,-1);
             block.clear();
             imp.resample_block(i);
             addc(block,1);
@@ -447,7 +484,7 @@ struct gibbs_base
         gibbs_stats best;
         unsigned re=gopt.restarts;
         for (unsigned r=0;r<=re;++r) {
-            graehl::time_space_report(Config::log(),"Gibbs restart:");
+            graehl::time_space_report(Config::log(),"Gibbs restart: ");
             if (re>0) log<<"\nRandom start "<<r<<"(of "<<re<<")\n";
             gibbs_stats const& s=run(r,imp);
             if (r==0 || s.better(best,gopt)) {
@@ -480,9 +517,10 @@ struct gibbs_base
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
-        o<<"Gibbs i="<<i;
+        o<<"Gibbs i="<<i<<" time="<<t;
         if (!temp.is_constant())
             o<<" temperature="<<1./power<<" power="<<power<<suffix;
+        o<<' ';
         return o;
     }
     static inline bool divides(unsigned div,unsigned i)
@@ -494,14 +532,12 @@ struct gibbs_base
     {
         if (divides(gopt.print_every,i)) {
             itername(out<<"# ","\n");
-            imp.print_sample(sample);
-            print_norms();
-            print_counts();
+            print_all(imp,false);
         }
     }
     void print_norms(char const* name="normalization group sums")
     {
-        if (gopt.printing_norms())
+        if (!gopt.printing_norms())
             return;
         unsigned from=gopt.print_normsum_from;
         unsigned to=std::min(gopt.print_normsum_to,normsum.size());
@@ -521,6 +557,16 @@ struct gibbs_base
             print_range(out,gps.begin()+from,gps.begin()+to,true,true);
         }
     }
+    template <class G>
+    void print_all(G &imp,bool final=true)
+    {
+        if (final)
+            out<<"# final best gibbs run:\n";
+        imp.print_sample(sample);
+        print_norms();
+        print_counts();
+    }
+
 };
 
 /* GE inherits from gibbs_base.

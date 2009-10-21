@@ -107,11 +107,11 @@ struct num_tick_writer
 typedef periodic_wrapper_i<num_tick_writer> num_ticker;
 
 template <class O>
-void num_progress(O &o,unsigned i,unsigned tick_every=10,unsigned num_every_ticks=70,char const* tick=".",char const* post_num="\n",bool tick_and_num=false)
+void num_progress(O &o,unsigned i,unsigned tick_every=10,unsigned num_every_ticks=70,char const* tick=".",char const* post_num="",char const* pre_num="",bool tick_and_num=false)
 {
     unsigned num_every=tick_every*num_every_ticks;
     if (i % num_every == 0) {
-        o << i << post_num;
+        o << pre_num << i << post_num;
         if (tick_and_num)
             o << tick;
     } else if (i % tick_every == 0)

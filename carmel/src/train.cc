@@ -233,9 +233,10 @@ struct gibbs
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
-        o<<"Gibbs i="<<i;
+        o<<"Gibbs i="<<i<<" time="<<t;
         if (!temp.is_constant())
             o<<" temperature="<<1./power<<" power="<<power<<suffix;
+        o<<' ';
         return o;
     }
     std::ostream &log() { return Config::log(); }
@@ -403,6 +404,7 @@ struct gibbs
         power=1.;
         accum_delta=false;
         i=0;
+        t=0;
         if (gopt.print_every!=0) print_counts("prior counts");
         init_prob=use_init_prob;
         subtract_old=false;
@@ -414,7 +416,8 @@ struct gibbs
             t=i-burnt0;
             if (t>=0) {
                 accum_delta=true;
-            } else if (t<0) t==0;
+            } else if (t<0)
+                t=0;
             iteration();
         }
         log()<<"\nGibbs stats: "<<stats<<"\n";
@@ -427,6 +430,7 @@ struct gibbs
     {
         normsum_t sn(nnorm);
         double tmax1=Ni+1-burnt0;
+        assert(tmax1>0);
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
             gibbs_param &g=*i;
             delta_sum &d=g.sumcount;
@@ -536,7 +540,7 @@ struct gibbs
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         if (to>from) {
             out() <<"normgrp\tsum\t"<<" i="<<i<<"\n";
-            for (unsigned ni=0,N=normsum.size();ni<N;++ni)
+            for (unsigned ni=gopt.print_normsum_from,N=std::min(normsum.size(),gopt.print_normsum_to);ni<N;++ni)
                 out()<<ni<<'\t'<<normsum[ni]<<'\n';
             out()<<"normgrp\tcounts\t"<<name<<" i="<<i<<"\n";
             print_range(out(),gps.begin()+from,gps.begin()+to,true,true);
