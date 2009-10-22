@@ -517,7 +517,7 @@ struct gibbs
     }
     void set_cascadei()
     {
-        cascadei.start(0);
+        cascadei.set_start(0);
         for (unsigned i=0,N=cascade.size();i!=N;++i)
             cascadei.add_delta(cascade.cascade[i]->n_edges());
     }
@@ -540,7 +540,7 @@ struct gibbs
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         if (to>from) {
             out() <<"normgrp\tsum\t"<<" i="<<i<<"\n";
-            for (unsigned ni=gopt.print_normsum_from,N=std::min(normsum.size(),gopt.print_normsum_to);ni<N;++ni)
+            for (unsigned ni=gopt.print_norms_from,N=std::min(normsum.size(),gopt.print_norms_to);ni<N;++ni)
                 out()<<ni<<'\t'<<normsum[ni]<<'\n';
             out()<<"normgrp\tcounts\t"<<name<<" i="<<i<<"\n";
             print_range(out(),gps.begin()+from,gps.begin()+to,true,true);

@@ -52,7 +52,7 @@ struct delta_sum_f
     {
         if (t<=0) return 0;
         if (t>0 && t<tmax) throw_unknown_delta_sum(t,tmax);
-        return s+(tmax-t)*x;
+        return s+(t-tmax)*x;
     }
     D sum(D t0,D tm) const
     {
@@ -91,6 +91,11 @@ struct delta_sum_f
     D avg() const
     {
         return tmax>0 ? s/tmax : x;
+    }
+    D avg(D t) const
+    {
+        assert(t>=tmax);
+        return t>0 ? sum(t)/t : x;
     }
     TO_OSTREAM_PRINT
     template<class O>

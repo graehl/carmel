@@ -286,15 +286,14 @@ struct derivations //: boost::noncopyable
 
     typedef fixed_array<Weight> fb_weights;
 
-    //  WeightFor is carmel_gibbs typically (or else p_init for EM init samples).  2 req listed below:
 
     // weights for random_path (for gibbs).
-    template <class WeightFor>
+//    template <class WeightFor>
     struct pfor
     {
         fb_weights b;
-        WeightFor const &wf;
-        pfor(unsigned nst,WeightFor const &wf,unsigned fin) : b(nst),wf(wf) {
+//        WeightFor const &wf;
+        pfor(unsigned nst,unsigned fin) : b(nst) {//,wf(wf) { //WeightFor const &wf,
             b[fin]=1;
         }
         // store in GraphArc .weight the normalized probability
@@ -304,7 +303,7 @@ struct derivations //: boost::noncopyable
             Weight sum;
             for (It i=beg;i!=end;++i) {
                 GraphArc & a=*i;
-                Weight nw=(b[a.dest]*wf(a)).pow(power); // req 1: wf(GraphArc a)
+                Weight nw=(a.wt()*b[a.dest]).pow(power);
                 sum+=nw;
                 a.wt()=nw;
             }
@@ -315,24 +314,27 @@ struct derivations //: boost::noncopyable
                 a.wt()/=sum;
             }
         }
-        // for rg.setwt(wf) backward prop:
+        //used by random.hpp choose_p
         double operator()(GraphArc const& a) const
         {
             return a.wt().getReal();
         }
     };
 
+    // Weight wf(GraphArc &a)
+    // wf.choose_arc(GraphArc const& a)
+    //  WeightFor is carmel_gibbs typically (or else p_init for EM init samples).  2 req listed below:
     template <class WeightFor>
     void random_path(WeightFor const& wf,double power=1.)
     {
         if (empty()) return;
         unsigned nst=g.size();
-        pfor<WeightFor> pf(nst,wf,fin);
         get_order();
         get_reverse();
         Graph rg=r.graph();
-        rg.setwt(wf);
-        propagate_paths_in_order_wt(rg,reverse_order.begin(),reverse_order.end(),pf.b);
+        rg.setwt(wf); // req 1: wf(GraphArc a).  now a.wt() has the result
+        pfor pf(nst,fin);
+        propagate_paths_in_order_wt(rg,reverse_order.begin(),reverse_order.end(),pf.b); // uses wf(a) from setwt
         free_order();
         free_reverse();
         unsigned s=0;

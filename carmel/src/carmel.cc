@@ -293,13 +293,15 @@ struct carmel_main
         get_opt("init-em",gopt.init_em);
         gopt.em_p0=have_opt("em-p0");
         get_opt("burnin",gopt.burnin);
+        get_opt("width",gopt.width);
         get_opt("print-from",gopt.print_from);
         get_opt("print-to",gopt.print_to);
-        get_opt("print-normsum-from",gopt.print_normsum_from);
-        get_opt("print-normsum-to",gopt.print_normsum_to);
+        get_opt("print-norms-from",gopt.print_norms_from);
+        get_opt("print-norms-to",gopt.print_norms_to);
         get_opt("print-counts-from",gopt.print_counts_from);
         get_opt("print-counts-to",gopt.print_counts_to);
         get_opt("print-counts-sparse",gopt.print_counts_sparse);
+        get_opt("print-counts-rich",gopt.rich_counts);
         get_opt("print-every",gopt.print_every);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
@@ -1782,6 +1784,8 @@ cout <<         "\n"
         "--print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
+        "--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)\n"
+        "--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts\n"
         "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights)\n"
@@ -1791,6 +1795,7 @@ cout <<         "\n"
         "--sample-prob : show the sample prob given model, previous sample\n"
         "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
         "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)\n"
+        "--width : for count/prob printout, truncate numbers to this many chars wide\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";

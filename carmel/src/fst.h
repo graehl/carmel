@@ -1543,6 +1543,7 @@ class WFST {
 
 class NormGroupIter {
     WFST &wfst;
+    State *begin;
     State *state;
     State *end;
     typedef HashTable<IntKey, List<HalfArc> >::iterator Cit;
@@ -1559,7 +1560,15 @@ class NormGroupIter {
                 Ci = state->index->begin();
     }
  public:
-    NormGroupIter(WFST::norm_group_by meth,WFST &wfst_) : wfst(wfst_),state(&*wfst_.states.begin()), end(state+wfst_.numStates()), method(meth) { beginState(); } // initializer order = same as declaration (state before end)
+    unsigned source()
+    {
+        return state-begin;
+    }
+    NormGroupIter(WFST::norm_group_by meth,WFST &wfst_) : wfst(wfst_),method(meth) {
+        state=begin=&*wfst.states.begin();
+        end=begin+wfst.numStates();
+        beginState();
+    }
     bool moreGroups() { return state != end; }
     template <class charT, class Traits>
     std::ios_base::iostate print(std::basic_ostream<charT,Traits>& os) const {
