@@ -73,13 +73,13 @@ struct serialize_batch {
 
     bool advance()
     {
-        ++current_i;
         if (use_file) {
             unsigned header;
             ia >> header;
             if (header==END_RECORDS)
                 return false;
             else if (header==RECORD_FOLLOWS) {
+                ++current_i;
                 ia >> current_from_f;
                 return true;
             } else
@@ -88,11 +88,13 @@ struct serialize_batch {
             if (rewind_store) {
                 rewind_store=false;
                 store_cursor=store.begin();
-            } else
+                current_i=0;
+            } else {
+                ++current_i;
                 ++store_cursor;
+            }
             return store_cursor!=store.end();
         }
-
     }
 
     void must_advance()

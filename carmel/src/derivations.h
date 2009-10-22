@@ -286,6 +286,7 @@ struct derivations //: boost::noncopyable
 
     typedef fixed_array<Weight> fb_weights;
 
+    // weights for random_path (for gibbs).  WeightFor is carmel_gibbs typically (or else p_init for EM init samples)
     template <class WeightFor>
     struct pfor
     {
@@ -301,7 +302,7 @@ struct derivations //: boost::noncopyable
             Weight sum;
             for (It i=beg;i!=end;++i) {
                 GraphArc & a=*i;
-                Weight nw=(b[a.dest]*wf(a)).pow(power);
+                Weight nw=(b[a.dest]*wf(a)).pow(power); // req 1: wf(GraphArc a)
                 sum+=nw;
                 a.wt()=nw;
             }
@@ -336,12 +337,12 @@ struct derivations //: boost::noncopyable
         std::vector<bool> normed(nst,false);
         while (s!=fin) { // fin should have no outgoing arcs if you want sampling to be sensible
             arcs_type &arcs=g[s].arcs;
-            if (!normed[s]) {
+            if (!normed[s]) { // don't normalize (+compute probs for arcs) in states we don't visit, and save the result if we revisit
                 normed[s]=true;
                 pf.global_normalize(arcs.begin(),arcs.end(),power);
             }
             GraphArc const& a=*choose_p(arcs.begin(),arcs.end(),pf); // no empty states allowed that aren't final
-            wf.choose_arc(a);
+            wf.choose_arc(a); // req 2: wf.choose_arc(GraphArc a)
             s=a.dest;
         }
     }

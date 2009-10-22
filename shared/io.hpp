@@ -496,6 +496,11 @@ inline  std::ios_base::iostate print_range(O& o,T begin, T end,bool multiline=fa
     return  range_print_iostate(o,begin,end,DefaultWriter(),multiline,parens,open_paren,close_paren);
 }
 
+template <class O, class C>
+inline  std::ios_base::iostate print_range_i(O& o,C const&c,unsigned from, unsigned to, bool multiline=false,bool parens=true,char open_paren='(',char close_paren=')') {
+    return  range_print_iostate(o,c.begin()+from,c.begin()+to,DefaultWriter(),multiline,parens,open_paren,close_paren);
+}
+
   // modifies out iterator.  if returns GENIOBAD then elements might be left partially extracted.  (clear them yourself if you want)
 template <class Ch, class Tr, class Reader, class T>
 std::ios_base::iostate range_read(std::basic_istream<Ch,Tr>& in,T &out,Reader read,char open_paren='(',char close_paren=')')
