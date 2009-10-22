@@ -104,12 +104,20 @@ public:
         return vec >= endspace;
     }
     typedef array<T,Alloc> self_type;
-//!FIXME: does this swap allocator base?
+//FIXME: swap allocator if it has state?
     void swap(array<T,Alloc> &a) throw() {
+        /*
         self_type t;
         memcpy(&t,this,sizeof(self_type));
         memcpy(this,&a,sizeof(self_type));
         memcpy(&a,&t,sizeof(self_type));
+        */
+        T *tvec=vec;
+        T *tendspace=endspace;
+        vec=a.vec;
+        endspace=a.endspace;
+        a.vec=tvec;
+        a.endspace=tendspace;
     }
     inline friend void swap(self_type &a,self_type &b) throw()
     {
@@ -346,12 +354,6 @@ public:
         return read(in,DefaultReader<T>());
     }
 
-//!FIXME: doesn't swap allocator base
-    //    void swap(array<T,Alloc> &a) {dynarray_assert(0);}
-//FIXME: should only work for dynarray,fixedarray,autoarray
-/*    void swap(array<T,Alloc> &a) {
-        array<T,Alloc>::swap(a);
-        }*/
 protected:
     auto_array(auto_array<T,Alloc> &a) : Super(a.capacity()){
     }
@@ -520,8 +522,59 @@ public:
     FROM_ISTREAM_READ
 };
 
+#if 0
+template <class charT, class Traits,class L,class A>
+std::basic_istream<charT,Traits>&
+operator >>
+(std::basic_istream<charT,Traits>& is, array<L,A> &arg)
+{
+    return gen_extractor(is,arg);
 }
 
+template <class charT, class Traits,class L,class A>
+std::basic_ostream<charT,Traits>&
+operator <<
+    (std::basic_ostream<charT,Traits>& os, const array<L,A> &arg)
+{
+    return gen_inserter(os,arg);
+}
+
+template <class charT, class Traits,class L,class A>
+std::basic_istream<charT,Traits>&
+operator >>
+(std::basic_istream<charT,Traits>& is, auto_array<L,A> &arg)
+{
+    return gen_extractor(is,arg);
+}
+
+template <class charT, class Traits,class L,class A>
+std::basic_istream<charT,Traits>&
+operator >>
+(std::basic_istream<charT,Traits>& is, fixed_array<L,A> &arg)
+{
+    return gen_extractor(is,arg);
+}
+#endif
+}
+
+//FIXME: overriding std::swap is technically illegal, but this allows some dumb std::sort to swap, which it should have found in graehl::swap by arg. dependent lookup.
+namespace std {
+template <class T,class A>
+void swap(graehl::array<T,A> &a,graehl::array<T,A> &b) throw()
+{
+    a.swap(b);
+}
+template <class T,class A>
+void swap(graehl::auto_array<T,A> &a,graehl::auto_array<T,A> &b) throw()
+{
+    a.swap(b);
+}
+template <class T,class A>
+void swap(graehl::fixed_array<T,A> &a,graehl::fixed_array<T,A> &b) throw()
+{
+    a.swap(b);
+}
+}
 
 
 #endif

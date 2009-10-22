@@ -278,7 +278,6 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     //restore old weights; can't do gibbs init before em because groupId gets overwritten; em needs that id from composition
     carmel_gibbs g(*this,cascade,corpus,methods,topt,gopt,printer,restore?&init_sample_weights:0);
     saved.clear();
-//    g.run_starts(em);
     g.run();
     cascade.clear_groups();
     cascade.update(*this);

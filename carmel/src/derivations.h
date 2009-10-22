@@ -286,7 +286,9 @@ struct derivations //: boost::noncopyable
 
     typedef fixed_array<Weight> fb_weights;
 
-    // weights for random_path (for gibbs).  WeightFor is carmel_gibbs typically (or else p_init for EM init samples)
+    //  WeightFor is carmel_gibbs typically (or else p_init for EM init samples).  2 req listed below:
+
+    // weights for random_path (for gibbs).
     template <class WeightFor>
     struct pfor
     {

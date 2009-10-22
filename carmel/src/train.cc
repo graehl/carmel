@@ -632,7 +632,6 @@ void WFST::train_gibbs_old(cascade_parameters &cascade, training_corpus &corpus,
     gibbs g(*this,cascade,corpus,methods,topt,gopt,printer,restore?&init_sample_weights:0);
     saved.clear();
     g.run_starts(em);
-    g.run();
     cascade.clear_groups();
     cascade.update(*this);
 }
