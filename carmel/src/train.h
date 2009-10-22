@@ -60,20 +60,7 @@ struct arc_counts : public arc_counts_base
         src=s;
     }
 };
-/*
-//FIXME: can this just be = FSTArc * (interface as free functions?)
-struct gibbs_counts : public arc_counts_base
-{
-//    double count;
-//    unsigned norm;
-    void set(unsigned s,FSTArc *a,Weight prior)
-    {
-        arc_counts_base::set(s,a,prior);
-//        norm=groupId();
-//        count=prior.getReal();
-    }
-};
-*/
+
 typedef arc_counts_base gibbs_counts;
 
 std::ostream& operator << (std::ostream &o,arc_counts const& ac);

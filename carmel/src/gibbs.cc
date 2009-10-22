@@ -107,7 +107,17 @@ struct carmel_gibbs : public gibbs_base
     WFST::NormalizeMethods const& methods;
     WFST::path_print printer;
     segments<unsigned> cascadei;
-    cached_derivs<gibbs_counts> derivs;
+    typedef cascade_parameters::chain_t param_list; // a composed arc has a derivs.arcs entry eventually linking to a list of original cascade arcs making it up (will have either 0 or 1 items in a -a composition, however; we could simplify by forcing -a)
+    cached_derivs<arc_counts_base> derivs; //derivs.arcs is an arcs_table<arc_counts_base>.  derivs.arcs.ac(GraphArc a) gives the arc_counts_base for a deriv arc a.  arc_counts_base just has FSTArc *arc (unlike EM arc_counts which also has counts etc.)
+    FSTArc* composed_arc(GraphArc const& a) const
+    {
+        return derivs.arcs.ac(a).arc;
+    }
+    param_list ac(GraphArc const& a) const
+    {
+        return cascade[composed_arc(a)];
+    }
+
     typedef WFST::saved_weights_t saved_weights_t;
     WFST::saved_weights_t *init_sample_weights; //FIXME: should probably go by the wayside; not very productive since burnin should give conditional indep. anyway; if we keep it, then store as a double array instead and modify p_init to reference that.
 
@@ -185,7 +195,7 @@ struct carmel_gibbs : public gibbs_base
         p_init(carmel_gibbs const&c) : c(c) {  }
         double operator()(GraphArc const& a) const
         {
-            return c.carc(a)->weight.getReal(); //TESTME
+            return c.composed_arc(a)->weight.getReal(); //TESTME
         }
         void choose_arc(GraphArc const& a) const
         {
@@ -195,10 +205,11 @@ struct carmel_gibbs : public gibbs_base
 
     Weight resample_block(unsigned block)
     {
-        block_t &b=sample[block];
+        block_t &b=sample[block];  // this is cleared for us already
         blockp=&b;
         typedef dynamic_array<param_list> acpath;
         derivations &d=derivs.derivs[block];
+//        OUTGIBBS(" block "<<block<<" line "<<d.lineno<<"\n");
         if (init_prob)
             d.random_path(p_init(*this),power);
         else
@@ -206,12 +217,7 @@ struct carmel_gibbs : public gibbs_base
     }
 
     //for resample block:
-    block_t *blockp;
-    void choose_arc(GraphArc const& a) const
-    {
-        for (param_list p=ac(a);p;p=p->next)
-            blockp->push_back(p->data->groupId);
-    }
+    // *this is used as WeightFor in derivations pfor,random_path:
     double operator()(GraphArc const& a) const
     {
         double prob=1;
@@ -219,17 +225,11 @@ struct carmel_gibbs : public gibbs_base
             prob*=gibbs_base::proposal_prob(p->data->groupId);
         return prob;
     }
-
-    typedef cascade_parameters::chain_t param_list;
-    typedef FSTArc *carc_t;
-
-    carc_t carc(GraphArc const& a) const
+    block_t *blockp;
+    void choose_arc(GraphArc const& a) const
     {
-        return derivs.arcs.ac(a).arc;
-    }
-    param_list ac(GraphArc const& a) const
-    {
-        return cascade[carc(a)];
+        for (param_list p=ac(a);p;p=p->next)
+            blockp->push_back(p->data->groupId);
     }
 
     bool init_prob; // NOTE: unlike old method, composed weights don't get updated until all runs are done

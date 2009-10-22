@@ -299,6 +299,7 @@ struct carmel_main
         get_opt("print-from",gopt.print_from);
         get_opt("print-counts-to",gopt.print_counts_to);
         get_opt("print-counts-from",gopt.print_counts_from);
+        get_opt("print-counts-sparse",gopt.print_counts_sparse);
         get_opt("print-every",gopt.print_every);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
@@ -1352,10 +1353,10 @@ main(int argc, char *argv[]){
                 carmel_main::NMs & nms=cm.norms();
                 if (gibbs) {
                     if (cm.have_opt("crp-old")) {
-                        cm.gopt.uniformp0=true;
+//                        cm.gopt.uniformp0=true;
                         result->train_gibbs_old(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
-                    }
-                    result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
+                    } else
+                        result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
                     unsigned rr=train_opt.ran_restarts;
                     if (long_opts["final-restart"])

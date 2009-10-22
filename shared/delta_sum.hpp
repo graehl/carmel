@@ -88,13 +88,17 @@ struct delta_sum_f
     {
         return tmax==0;
     }
+    D avg() const
+    {
+        return tmax>0 ? s/tmax : x;
+    }
     TO_OSTREAM_PRINT
     template<class O>
     void print(O &o) const
     {
         o<<"x("<<tmax<<")="<<x<<" sum="<<s;
         if (tmax>0)
-            o<<" avg="<<s/tmax;
+            o<<" avg="<<avg();
     }
 };
 
@@ -147,12 +151,16 @@ struct bounded_delta_sum
     bounded_delta_sum(double x0,double tmax) : x(x0),tmax(tmax),s(0) {  }
     typedef bounded_delta_sum self_type;
     TO_OSTREAM_PRINT
+    double avg() const
+    {
+        return tmax>0 ? s/tmax : x;
+    }
     template<class O>
     void print(O &o) const
     {
         o<<"x(t<"<<tmax<<")="<<x<<" sum="<<s;
         if (tmax>0)
-            o<<" avg="<<s/tmax;
+            o<<" avg="<<avg();
     }
 };
 
