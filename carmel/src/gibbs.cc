@@ -95,7 +95,7 @@ struct carmel_gibbs : public gibbs_base
                 FSTArc & a=**g;
                 a.groupId=gps.size();
                 define_param(id,uniformp0?alpha:(ac*scale*a.weight).getReal());
-                if (gopt.printing_derivs()) arcs.push_back(&a);
+                if (gopt.printing_sample()) arcs.push_back(&a);
             }
             ++id;
         }
@@ -135,7 +135,8 @@ struct carmel_gibbs : public gibbs_base
             unsigned parami=*i;
             unsigned ci=cascadei.segid0based(parami);
             assert(ci<r.size());
-            r[ci].push_back(parami);
+            if (ci>=a && ci<b)
+                r[ci].push_back(parami);
         }
     }
     void print_sample(blocks_t const& sample,unsigned a,unsigned b,casc const& c)
