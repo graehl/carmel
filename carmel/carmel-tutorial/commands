@@ -1,0 +1,33 @@
+
+#==========================================================================
+# Commands found in "Training Finite-State Transducer Cascades with Carmel"
+#==========================================================================
+
+CARMEL=/nfs/topaz/graehl/isd/cage/bin/carmel.static
+
+$CARMEL -c epron-jpron.fst
+$CARMEL -t epron-jpron.data epron-jpron.fst
+$CARMEL -t -HJ epron-jpron.data epron-jpron.fst
+
+$CARMEL -t -HJ -! 10 cluster.data cluster.fsa
+$CARMEL --train-cascade -HJ cluster.data cat.fsa spellout.fst
+$CARMEL --project-right --project-identity-fsa -HJ cat.fsa.trained > cat.fsa.trained.noe
+awk 'NF>0' cluster.data > cluster.data.noe
+cat cluster.data.noe | $CARMEL -qbsriWIEk 1 cat.fsa.trained.noe spellout.fst.trained
+
+$CARMEL --train-cascade -HJ tagging.data tagging.fsa tagging.fst
+$CARMEL --project-right --project-identity-fsa -HJ tagging.fsa.trained > tagging.fsa.trained.noe
+awk 'NF>0' tagging.data > tagging.data.noe
+cat tagging.data.noe | $CARMEL -qbsriWIEk 1 tagging.fsa.trained.noe tagging.fst.trained
+
+$CARMEL --train-cascade -HJ cipher.data cipher.wfsa cipher.fst
+$CARMEL --project-right --project-identity-fsa -HJ cipher.wfsa > cipher.wfsa.noe
+awk 'NF>0' cipher.data > cipher.data.noe
+cat cipher.data.noe | $CARMEL -qbsriWIEk 1 cipher.wfsa.noe cipher.fst.trained
+
+$CARMEL --train-cascade -X 0.99999 -! 10 deltrans.data delete.fst transform.fst
+$CARMEL --train-cascade deltrans.data         delete.fst transform.fst
+$CARMEL --train-cascade deltrans.data.compact delete.fst transform.fst
+
+$CARMEL --crp -M 6000 tagging.data tagging.fsa tagging.fst
+
