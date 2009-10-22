@@ -1,5 +1,5 @@
 carmel: finite state transducer toolkit (and k-best graph paths)
- (see carmel/README).  To build, cd carmel; make install
+ (see carmel/README and carmel/carmel-tutorial).  To build, cd carmel; make install
 
 tt: tree transducer toolkit (and derivation forests EM training) - not included in carmel distribution
 

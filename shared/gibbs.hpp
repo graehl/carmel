@@ -221,7 +221,7 @@ struct gibbs_param
     template <class O>
     void print(O &o) const
     {
-        o<<norm<<'\t'<<sumcount;
+        o<<norm<<'\t'<<sumcount<<" prior="<<prior;
     }
 };
 
@@ -308,7 +308,7 @@ struct gibbs_base
     // add params, then restore_p0() will be called on run()
     unsigned define_param(unsigned norm, double prior=0)
     {
-        maybe_increase_max(nnorm,norm);
+        maybe_increase_max(nnorm,norm+1);
         unsigned r=gps.size();
         gps.push_back(norm,prior);
         return r;

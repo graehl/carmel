@@ -701,30 +701,7 @@ std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Trait
     return ret;
 }
 
-/*
-template <class charT, class Traits,class L,class A>
-std::basic_istream<charT,Traits>&
-operator >>
-(std::basic_istream<charT,Traits>& is, array<L,A> &arg)
-{
-    return gen_extractor(is,arg);
-}
-
-template <class charT, class Traits,class L,class A>
-std::basic_istream<charT,Traits>&
-operator >>
-(std::basic_istream<charT,Traits>& is, auto_array<L,A> &arg)
-{
-    return gen_extractor(is,arg);
-}
-
-template <class charT, class Traits,class L,class A>
-std::basic_istream<charT,Traits>&
-operator >>
-(std::basic_istream<charT,Traits>& is, fixed_array<L,A> &arg)
-{
-    return gen_extractor(is,arg);
-}
+#if 0
 
 template <class charT, class Traits,class L,class A>
 std::basic_istream<charT,Traits>&
@@ -732,14 +709,6 @@ operator >>
 (std::basic_istream<charT,Traits>& is, dynamic_array<L,A> &arg)
 {
     return gen_extractor(is,arg);
-}
-
-template <class charT, class Traits,class L,class A>
-std::basic_ostream<charT,Traits>&
-operator <<
-    (std::basic_ostream<charT,Traits>& os, const array<L,A> &arg)
-{
-    return gen_inserter(os,arg);
 }
 
 
@@ -750,7 +719,7 @@ operator <<
 {
     return gen_inserter(os,arg);
 }
-*/
+#endif
 
 #if 1
 #define ARRAYEQIMP                                              \
