@@ -40,8 +40,8 @@ struct gibbs_opts
              "Every --print-every, print the instantaneous and cumulative counts for parameters from...(to-1) (for debugging)")
             ("print-counts-to",defaulted_value(&print_counts_to),
              "See print-counts-from.  -1 means until end")
-            ("print-counts-sparse",bool_switch(&print_counts_sparse),
-             "skip printing counts with avg count=prior (i.e. parameters that were never used")
+            ("print-counts-sparse",defaulted_value(&print_counts_sparse),
+             "(if nonzero) skip printing counts with avg(count)<prior+sparse, and show parameter index")
             ("print-normsum-from",defaulted_value(&print_normsum_from),
              "Every --print-every, print the normalization groups' instantaneous (proposal HMM) sum-counts, for from...(to-1)")
             ("print-normsum-to",defaulted_value(&print_normsum_to),
@@ -79,7 +79,7 @@ struct gibbs_opts
     bool final_counts;
     unsigned print_every; // print the current sample every N iterations
     unsigned print_counts_from,print_counts_to; // which param ids' counts to print
-    bool print_counts_sparse;
+    double print_counts_sparse;
     unsigned print_normsum_from,print_normsum_to; // which normgroup ids' sums to print
 
     unsigned restarts; // 0 = 1 run (no restarts)
@@ -94,7 +94,7 @@ struct gibbs_opts
     bool uniformp0;
     unsigned print_from,print_to; // which blocks to print
 
-    bool printing_derivs() const
+    bool printing_sample() const
     {
         return print_to>print_from;
     }
@@ -125,7 +125,7 @@ struct gibbs_opts
         init_em=0;
         em_p0=false;
         cache_prob=false;
-        print_counts_sparse=false;
+        print_counts_sparse=0;
         print_counts_from=print_counts_to=0;
         print_normsum_from=print_normsum_to=0;
         uniformp0=false;
@@ -561,13 +561,14 @@ struct gibbs_base
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         if (to>from) {
             out<<"\n# ";
-            if (gopt.print_counts_sparse)
+            bool sparse=gopt.print_counts_sparse!=0;
+            if (sparse)
                 out<<"id\t";
             out<<"group\tcounts\t"<<name<<" i="<<i<<"\n";
-            if (gopt.print_counts_sparse) {
+            if (sparse) {
                 for (unsigned i=from;i<to;++i) {
                     gibbs_param const& p=gps[i];
-                    if (p.sumcount.avg()>p.prior)
+                    if (p.sumcount.avg()>=p.prior+gopt.print_counts_sparse)
                         out<<i<<'\t'<<p<<'\n';
                 }
             } else {
@@ -580,7 +581,8 @@ struct gibbs_base
     {
         if (final)
             out<<"# final best gibbs run:\n";
-        imp.print_sample(sample);
+        if (gopt.printing_sample())
+            imp.print_sample(sample);
         print_norms();
         print_counts();
     }
