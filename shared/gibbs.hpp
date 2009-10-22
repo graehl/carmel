@@ -1,12 +1,15 @@
 #ifndef GRAEHL_SHARED__GIBBS_HPP
 #define GRAEHL_SHARED__GIBBS_HPP
 
+#include <iomanip>
+#include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/time_space_report.hpp>
 #include <graehl/shared/periodic.hpp>
 #include <graehl/shared/maybe_update_bound.hpp>
 #include <graehl/shared/delta_sum.hpp>
 #include <graehl/shared/time_series.hpp>
 #include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/print_width.hpp>
 #include <graehl/shared/weight.h>
 #include <boost/program_options.hpp>
 
@@ -36,24 +39,28 @@ struct gibbs_opts
              "When summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights)")
             ("final-counts", bool_switch(&final_counts),
              "Normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored; effectively set burnin=# crp iter)")
-            ("print-counts-from",defaulted_value(&print_counts_from),
-             "Every --print-every, print the instantaneous and cumulative counts for parameters from...(to-1) (for debugging)")
-            ("print-counts-to",defaulted_value(&print_counts_to),
-             "See print-counts-from.  -1 means until end")
-            ("print-counts-sparse",defaulted_value(&print_counts_sparse),
-             "(if nonzero) skip printing counts with avg(count)<prior+sparse, and show parameter index")
-            ("print-normsum-from",defaulted_value(&print_normsum_from),
-             "Every --print-every, print the normalization groups' instantaneous (proposal HMM) sum-counts, for from...(to-1)")
-            ("print-normsum-to",defaulted_value(&print_normsum_to),
-             "See print-normsum-to.  -1 means until end")
-            ("print-every",defaulted_value(&print_every),
-             "print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
             ("crp-restarts", defaulted_value(&restarts),
              "Number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights")
             ("crp-argmax-final",bool_switch(&argmax_final),
              "For --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples")
             ("crp-argmax-sum",bool_switch(&argmax_sum),
              "Instead of multiplying the sample probs together and choosing the best, sum (average) them")
+            ("print-counts-from",defaulted_value(&print_counts_from),
+             "Every --print-every, print the instantaneous and cumulative counts for parameters from...(to-1) (for debugging)")
+            ("print-counts-to",defaulted_value(&print_counts_to),
+             "See print-counts-from.  -1 means until end")
+            ("print-counts-sparse",defaulted_value(&print_counts_sparse),
+             "(if nonzero) skip printing counts with avg(count)<prior+sparse, and show parameter index")
+            ("print-counts-rich",defaulted_value(&rich_counts)->zero_tokens(),
+             "print a rich identifier for each parameter's counts")
+            ("width",defaulted_value(&width),
+             "limit counts/probs to this many printed characters")
+            ("print-norms-from",defaulted_value(&print_norms_from),
+             "Every --print-every, print the normalization groups' instantaneous (proposal HMM) sum-counts, for from...(to-1)")
+            ("print-norms-to",defaulted_value(&print_norms_to),
+             "See print-norms-to.  -1 means until end")
+            ("print-every",defaulted_value(&print_every),
+             "print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
             ;
         if (carmel_opts)
             opt.add_options()
@@ -79,8 +86,10 @@ struct gibbs_opts
     bool final_counts;
     unsigned print_every; // print the current sample every N iterations
     unsigned print_counts_from,print_counts_to; // which param ids' counts to print
+    bool rich_counts; // show extra identification for each parameter, not just its id
+    unsigned width; // # chars for counts/probs etc.
     double print_counts_sparse;
-    unsigned print_normsum_from,print_normsum_to; // which normgroup ids' sums to print
+    unsigned print_norms_from,print_norms_to; // which normgroup ids' sums to print
 
     unsigned restarts; // 0 = 1 run (no restarts)
 
@@ -106,7 +115,7 @@ struct gibbs_opts
 
     bool printing_norms() const
     {
-        return print_normsum_to>print_normsum_from;
+        return print_norms_to>print_norms_from;
     }
 
 
@@ -119,6 +128,7 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        width=7;
         iter=0;
         burnin=0;
         restarts=0;
@@ -127,7 +137,7 @@ struct gibbs_opts
         cache_prob=false;
         print_counts_sparse=0;
         print_counts_from=print_counts_to=0;
-        print_normsum_from=print_normsum_to=0;
+        print_norms_from=print_norms_to=0;
         uniformp0=false;
         ppx=true;
         print_every=0;
@@ -140,7 +150,7 @@ struct gibbs_opts
     }
     void validate()
     {
-        if (final_counts) burnin=iter-1;
+        if (final_counts) burnin=iter;
         if (burnin>iter)
             burnin=iter;
         if (restarts>0)
@@ -182,7 +192,46 @@ struct gibbs_param
     {
         o<<norm<<'\t'<<cascadei<<'\t'<<sumcount;
     }
-    };*/
+    };
+
+    //carmel 5.2:
+
+
+struct gibbs_param
+{
+    double prior; //FIXME: not needed except to make computing --cache-prob easier
+    double count;
+    unsigned norm;
+    unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
+    delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
+    void initsum()
+    {
+        sumcount.add_delta(count,0);
+    }
+    template <class Normsums>
+    void addsum(double d,double t,Normsums &ns,bool accum_delta) // first call should be w/ t=0
+    {
+        count+=d;
+        ns[norm]+=d;
+        if (accum_delta) {
+            sumcount.add_delta(d,t);
+            assert(count==sumcount.x);
+        }
+    }
+    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),count(prior),norm(norm),cascadei(cascadei) {  }
+    typedef gibbs_param self_type;
+    TO_OSTREAM_PRINT
+    template <class O>
+    void print(O &o) const
+    {
+        o<<count<<'\t'<<norm<<'\t'<<cascadei;
+        if (!sumcount.empty())
+            o<<'\t'<<sumcount;
+    }
+};
+
+
+*/
 
 //template <class F>
 struct gibbs_param
@@ -297,12 +346,19 @@ struct gibbs_base
     double power; // for deterministic annealing (temperature)
  private:
     normsum_t ccount,csum,pcount,psum; // for computing true cache model probs
-    unsigned i,Ni; // i=0 is random init sample.  i=1...Ni are the gibbs samples
-    double burnt0;
-    double t; // at i=burnt0, t=0.  at tmax = nI-burnt0, we have the final sample.
+    unsigned i,Ni; // i=0 is random init sample.  i=1...Ni are the (gibbs resampled) samples
+    double t; // at i=gopt.burnin, t=0.  at tmax = nI-gopt.burnin, we have the final sample.
     gibbs_opts::temps temp;
     bool accum_delta;
  public:
+    bool burning() const
+    {
+        return i>=gopt.burnin;
+    }
+    double final_t() const
+    {
+        return Ni-gopt.burnin;
+    }
     unsigned size() const { return gps.size(); }
 
     // add params, then restore_p0() will be called on run()
@@ -325,12 +381,13 @@ struct gibbs_base
     {
         if (gopt.final_counts && !gopt.exclude_prior)
             return;
-        double tmax1=Ni+1-burnt0; //FIXME: check this gives the final iteration a single vote, not 0 or 2.
+        double tmax1=final_t()+1; // if we don't add 1, then the last iteration's value isn't included in average
+        double EPSILON=0; //1e-30; // avoid divide by 0 when normalizing
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
             gibbs_param &g=*i;
             delta_sum &d=g.sumcount;
             if (gopt.exclude_prior)
-                d.addbase(-g.prior);
+                d.addbase(EPSILON-g.prior);
             if (!gopt.final_counts) {
                 d.extend(tmax1);
                 d.x=d.s;
@@ -406,6 +463,7 @@ struct gibbs_base
         Weight prob=one_weight();
         for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i)
             prob*=proposal_prob(*i);
+        assert(prob<=one_weight());
         return prob;
     }
     double proposal_prob(unsigned paramid) const
@@ -438,19 +496,17 @@ struct gibbs_base
         Ni=gopt.iter;
         restore_p0();
         imp.init_run(runi);
-        power=1.;
         accum_delta=false;
         i=0;
         t=0;
-        if (gopt.print_every!=0) {
+        if (gopt.print_every!=0 && gopt.print_counts_sparse!=0) {
             out<<"# ";
-            print_counts("prior counts");
+            print_counts(imp,true,"(prior counts)");
         }
-        burnt0=gopt.final_counts ? Ni : gopt.burnin;
         iteration(imp,false); // random initial sample
+        //FIXME: isn't really random!  get the same sample after every iteration
         for (i=1;i<=Ni;++i) {
-            power=1./temp(i);
-            t=i-burnt0;
+            t=i-gopt.burnin;
             if (t>=0) accum_delta=true;
             else if (t<0)
                 t=0;
@@ -463,9 +519,11 @@ struct gibbs_base
     template <class G>
     void iteration(G &imp,bool subtract_old=true)
     {
+        power=1./temp(i);
         itername(log);
         if (gopt.cache_prob) reset_cache();
         Weight p=1;
+        imp.init_iteration(i);
         for (unsigned b=0;b<n_blocks;++b) {
             num_progress(log,b);
             block_t &block=sample[b];
@@ -500,10 +558,9 @@ struct gibbs_base
                 best_sample.swap(sample);
             }
         }
-        if (re>0) {
+        best_sample.swap(sample);
+        if (re>0)
             restore_counts(best_counts);
-            best_sample.swap(sample);
-        }
         if (gopt.cache_prob) free_cache();
         return best;
     }
@@ -518,7 +575,8 @@ struct gibbs_base
         log<<" "<<(gopt.cache_prob?"cache-model":"sample")<<" ";
         p.print_ppx(log,n_sym,n_blocks);
         log<<'\n';
-        stats.record(t,p);
+        if (burning())
+            stats.record(t,p);
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
@@ -544,37 +602,74 @@ struct gibbs_base
     {
         if (!gopt.printing_norms())
             return;
-        unsigned from=gopt.print_normsum_from;
-        unsigned to=std::min(gopt.print_normsum_to,normsum.size());
+        unsigned from=gopt.print_norms_from;
+        unsigned to=std::min(gopt.print_norms_to,normsum.size());
         if (to>from) {
-            out <<"\n# group\tsum\t"<<name<<" i="<<i<<"\n";
+            out <<"\n# group\t"<<name<<" i="<<i<<"\n";
             print_range_i(out,normsum,from,to,true,true);
         }
 
     }
-    //TODO: print extra identifiers for parameters (using imp) e.g. arc details in carmel
-    void print_counts(char const* name="counts")
+    void print_field(double d)
     {
+        out<<'\t';
+        print_width(out,d,gopt.width);
+    }
+
+    //TODO: print extra identifiers for parameters (using imp) e.g. arc details in carmel
+    template <class G>
+    void print_counts(G &imp,bool final=false,char const* name="")
+    {
+        unsigned width=gopt.width;
+        if (width<4) width=20;
+/*        local_precision<std::ostream> prec(out,width);
+        local_stream_format<std::ostream> save(out);
+        out.precision(width);
+        out<<std::setw(width);*/
         if (!gopt.printing_counts())
             return;
         unsigned from=gopt.print_counts_from;
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         if (to>from) {
-            out<<"\n# ";
+            out<<"\n#";
             bool sparse=gopt.print_counts_sparse!=0;
             if (sparse)
                 out<<"id\t";
-            out<<"group\tcounts\t"<<name<<" i="<<i<<"\n";
-            if (sparse) {
-                for (unsigned i=from;i<to;++i) {
-                    gibbs_param const& p=gps[i];
-                    if (p.sumcount.avg()>=p.prior+gopt.print_counts_sparse)
-                        out<<i<<'\t'<<p<<'\n';
+            out<<"group\tcounts\tprob";
+            double ta=t+1;
+            if (!final)
+                out<<"\tavg@"<<ta<<"\tlast@t\tprior";
+            if (gopt.rich_counts)
+                out<<"\tparam name";
+            if (!final)
+                out<<"\titer="<<i;
+            out<<"\t"<<name;
+            out<<'\n';
+            for (unsigned i=from;i<to;++i) {
+                gibbs_param const& p=gps[i];
+                delta_sum const& d=p.sumcount;
+                double avg=d.avg(ta);
+                if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
+                    if (sparse)
+                        out<<i<<'\t';
+                    out<<p.norm;
+                    print_field(d.x);
+                    print_field(proposal_prob(i));
+                    if (!final) {
+                        print_field(avg);
+                        print_field(d.tmax);
+                        print_field(p.prior);
+                    }
+                    if (gopt.rich_counts) {
+                        out<<'\t';
+                        imp.print_param(out,i);
+                    }
+//                    out<<'\t'<<d.s;
+                    out<<'\n';
                 }
-            } else {
-                print_range_i(out,gps,from,to,true,true);
             }
         }
+        out<<'\n';
     }
     template <class G>
     void print_all(G &imp,bool final=true)
@@ -584,7 +679,7 @@ struct gibbs_base
         if (gopt.printing_sample())
             imp.print_sample(sample);
         print_norms();
-        print_counts();
+        print_counts(imp,final);
     }
 
 };
@@ -592,9 +687,10 @@ struct gibbs_base
 /* GE inherits from gibbs_base.
 
    init_run(r): for r=[0,gopt.restarts]
-   resample_block(i): for i=[0,n_pairs): choose new random sample[i] using p^power
+   init_iteration(i)
+   resample_block(blocki): for blocki=[0,n_pairs): choose new random sample[blocki] using p^power
    print_sample(sample):
-
+   print_param(out,parami): like out<<gps[i] but customized
  */
 
 

@@ -15,22 +15,23 @@ struct segments : public dynamic_array<X>
     typedef typename P::const_iterator const_iterator;
 
     static const unsigned LEFT=0; // 1 is first valid index (index of upper bound for segment you're in)
-    unsigned segid0based(X const& x)
+    unsigned segid0based(X const& x) const
     {
         return segid(x)-1;
     }
 
-    unsigned segid(X const& x)
+    unsigned segid(X const& x) const
     {
-        const_iterator w=std::lower_bound(P::begin(),P::end(),x);
+//        if (P::front()==x) return 1;
+        const_iterator w=std::upper_bound(P::begin(),P::end(),x); // returns one past last equal or lesser item.
         unsigned i=w-P::begin();
         return i;
     }
-    unsigned RIGHT()
+    unsigned RIGHT() const
     {
         return P::size();
     }
-    bool increases(X const& x)
+    bool increases(X const& x) const
     {
         return P::empty() || x>P::back();
     }
@@ -40,7 +41,7 @@ struct segments : public dynamic_array<X>
         assert(increases(x));
         P::push_back(x);
     }
-    void start(X const& x)
+    void set_start(X const& x)
     {
         P::clear();
         P::push_back(x);
@@ -74,7 +75,7 @@ struct segments : public dynamic_array<X>
     }
     segments()
     {
-        start(0);
+        set_start(0);
     }
 };
 

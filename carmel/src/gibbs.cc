@@ -17,6 +17,8 @@ namespace graehl {
 
 struct carmel_gibbs : public gibbs_base
 {
+    bool have_names;
+
     carmel_gibbs(
         WFST &composed
         ,cascade_parameters &cascade
@@ -39,7 +41,8 @@ struct carmel_gibbs : public gibbs_base
         set_cascadei();
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);
-        set_gibbs_params();
+        have_names=gopt.rich_counts;
+        set_gibbs_params(gopt.printing_sample()||have_names,have_names);
         cascade.set_trivial_gibbs_chains();
         pinit_differs_p0=init_sample_weights&&!gopt.em_p0;
     }
@@ -57,16 +60,16 @@ struct carmel_gibbs : public gibbs_base
         f.weight=gibbs_base::proposal_prob(gps[f.groupId]);
     }
 
-    void set_gibbs_params()
+    void set_gibbs_params(bool addarcs=false,bool addsource=false)
     {
         for (unsigned norm=0,i=0,N=cascade.size();i<N;++i)
-            norm=add_gibbs_params(norm,*cascade.cascade[i],methods[i],gopt.uniformp0);
+            norm=add_gibbs_params(norm,*cascade.cascade[i],methods[i],gopt.uniformp0,addarcs,addsource);
     }
     typedef dynamic_array<FSTArc *> arc_for_param_t;
     arc_for_param_t arcs;
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
     // return next free normgroup id, start at normidbase
-    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod & nm,bool uniformp0=false)
+    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod & nm,bool uniformp0=false,bool addarcs=false,bool addsource=false)
     {
         unsigned id=normidbase;
         if (w.isEmpty())
@@ -83,6 +86,8 @@ struct carmel_gibbs : public gibbs_base
             Weight sum=0;
             double N=0;
             Weight scale=one_weight();
+            unsigned src=g.source();
+            assert(src<w.numStates());
             if (!uniformp0) {
                 for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                     ++N;
@@ -95,11 +100,20 @@ struct carmel_gibbs : public gibbs_base
                 FSTArc & a=**g;
                 a.groupId=gps.size();
                 define_param(id,uniformp0?alpha:(ac*scale*a.weight).getReal());
-                if (gopt.printing_sample()) arcs.push_back(&a);
+                if (addarcs) arcs.push_back(&a);
+                if (addsource) arc_sources.push_back(src);
             }
             ++id;
         }
         return id;
+    }
+    dynamic_array<unsigned> arc_sources;
+    std::ostream &print_param(std::ostream &out,unsigned parami) const
+    {
+        assert(parami<arcs.size());
+        assert(parami<arc_sources.size());
+        wfst_for(parami).printArc(*arcs[parami],arc_sources[parami],out);
+        return out;
     }
 
     WFST &composed;
@@ -125,6 +139,18 @@ struct carmel_gibbs : public gibbs_base
     typedef dynamic_array<unsigned> cascade_path;
     typedef fixed_array<cascade_path> cascade_paths;
     typedef cascade_parameters::cascade_t casc;
+    unsigned cascadei_for(unsigned parami) const
+    {
+        unsigned ci=cascadei.segid0based(parami);
+        assert(ci<cascade.cascade.size());
+        return ci;
+    }
+    WFST &wfst_for(unsigned parami) const
+    {
+        unsigned ci=cascadei_for(parami);
+        return *cascade.cascade[ci];
+    }
+
     // single path in composition -> separate paths for each in cascade[i], for i in [a,b) put result in r[i]
     void paths(block_t const& p,unsigned a,unsigned b,cascade_paths &r)
     {
@@ -133,8 +159,7 @@ struct carmel_gibbs : public gibbs_base
             r[i].clear();
         for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
             unsigned parami=*i;
-            unsigned ci=cascadei.segid0based(parami);
-            assert(ci<r.size());
+            unsigned ci=cascadei_for(parami);
             if (ci>=a && ci<b)
                 r[ci].push_back(parami);
         }
@@ -173,7 +198,7 @@ struct carmel_gibbs : public gibbs_base
         paths(p,a,b,ps);
         for (unsigned i=a;i<b;++i)
             print_cascade_path(*c[i],ps[i]);
-        printer.out()<<'\n';
+//        printer.out()<<'\n'; // not needed; we already get a newline from printer
     }
     void print_sample(blocks_t const& sample,unsigned print_from,unsigned print_to)
     {
@@ -185,7 +210,7 @@ struct carmel_gibbs : public gibbs_base
     }
     void set_cascadei()
     {
-        cascadei.start(0);
+        cascadei.set_start(0);
         for (unsigned i=0,N=cascade.size();i!=N;++i)
             cascadei.add_delta(cascade.cascade[i]->n_edges());
     }
@@ -210,27 +235,39 @@ struct carmel_gibbs : public gibbs_base
         blockp=&b;
         typedef dynamic_array<param_list> acpath;
         derivations &d=derivs.derivs[block];
-//        OUTGIBBS(" block "<<block<<" line "<<d.lineno<<"\n");
+        OUTGIBBS(" block "<<block<<" line "<<d.lineno<<"\n");
         if (init_prob)
             d.random_path(p_init(*this),power);
         else
             d.random_path(*this,power);
+        OUTGIBBS('\n')
     }
 
+#define CARMEL_GIBBS_FOR_ID(grapharc,paramid,body)        \
+        for (param_list p=ac(grapharc);p;p=p->next) { \
+            unsigned paramid=p->data->groupId; \
+            body; }
     //for resample block:
     // *this is used as WeightFor in derivations pfor,random_path:
-    double operator()(GraphArc const& a) const
+#define OUTGIBBS2(x)
+    Weight operator()(GraphArc const& a) const
     {
-        double prob=1;
-        for (param_list p=ac(a);p;p=p->next)
-            prob*=gibbs_base::proposal_prob(p->data->groupId);
+        Weight prob=one_weight();
+        OUTGIBBS2("p("<<a<<"):");
+        CARMEL_GIBBS_FOR_ID(a,id,{
+                double p=gibbs_base::proposal_prob(id);
+                prob*=p;
+                OUTGIBBS2(" "<<id);
+//                OUTGIBBS(" p("<<id<<")="<<p);
+                //DGIBBS(if (have_names) print_param(std::cerr<<"[",id)<<"]");
+            })
+            OUTGIBBS2(" = "<<prob<<'\n')
         return prob;
     }
     block_t *blockp;
     void choose_arc(GraphArc const& a) const
     {
-        for (param_list p=ac(a);p;p=p->next)
-            blockp->push_back(p->data->groupId);
+        CARMEL_GIBBS_FOR_ID(a,id,blockp->push_back(id))
     }
 
     bool init_prob; // NOTE: unlike old method, composed weights don't get updated until all runs are done
@@ -242,6 +279,11 @@ struct carmel_gibbs : public gibbs_base
         if (init_prob && init_sample_weights && cascade.trivial)
             composed.restore_weights(*init_sample_weights);
     }
+    void init_iteration(unsigned i)
+    {
+        if (i>0) init_prob=false;
+    }
+
 };
 
 
