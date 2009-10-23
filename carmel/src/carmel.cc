@@ -1353,11 +1353,7 @@ main(int argc, char *argv[]){
 
                 carmel_main::NMs & nms=cm.norms();
                 if (gibbs) {
-                    if (cm.have_opt("crp-old")) {
-//                        cm.gopt.uniformp0=true;
-                        result->train_gibbs_old(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
-                    } else
-                        result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
+                    result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
                     unsigned rr=train_opt.ran_restarts;
                     if (long_opts["final-restart"])
@@ -1785,6 +1781,7 @@ cout <<         "\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
         "--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)\n"
+        "--width : for --print-counts, truncate numbers to this many chars wide\n"
         "--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts\n"
         "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
         "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
@@ -1795,7 +1792,6 @@ cout <<         "\n"
         "--sample-prob : show the sample prob given model, previous sample\n"
         "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
         "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)\n"
-        "--width : for count/prob printout, truncate numbers to this many chars wide\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";
