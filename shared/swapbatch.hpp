@@ -91,7 +91,7 @@ struct SwapBatch {
 
     typedef B BatchMember;
     typedef std::size_t size_type; // boost::intmax_t
-
+    typedef B& reference;
     struct iterator
     {
         typedef SwapBatch<B> Cont;
@@ -207,7 +207,7 @@ struct SwapBatch {
     }
 
     // bogus operator[] that does sequential scanning (we have no random access index).  should be ok
-    reference operator[](unsigned i) const
+    reference operator[](unsigned i)
     {
         if (i==0||i<current_i) {
             current_i=0;
