@@ -69,6 +69,8 @@ struct gibbs_opts
              "See print-norms-to.  -1 means until end")
             ("print-every",defaulted_value(&print_every),
              "print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
+            ("progress-every",defaulted_value(&tick_every),
+             "show a progress tick (.) every N blocks")
             ;
         if (carmel_opts)
             opt.add_options()
@@ -100,6 +102,7 @@ struct gibbs_opts
     unsigned print_norms_from,print_norms_to; // which normgroup ids' sums to print
 
     unsigned restarts; // 0 = 1 run (no restarts)
+    unsigned tick_every;
 
      // criteria to max over restarts:
     bool argmax_final;
@@ -136,6 +139,7 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        tick_every=100;
         width=7;
         iter=0;
         burnin=0;
@@ -466,7 +470,7 @@ struct gibbs_base
         Weight p=1;
         imp.init_iteration(iter);
         for (unsigned b=0;b<n_blocks;++b) {
-            num_progress(log,b);
+            num_progress(log,b,gopt.tick_every);
             block_t &block=sample[b];
             if (subtract_old)
                 addc(block,-1);
@@ -515,7 +519,7 @@ struct gibbs_base
     void record_iteration(Weight p)
     {
         log<<" "<<(gopt.cache_prob?"cache-model":"sample")<<" ";
-        p.print_ppx(log,n_sym,n_blocks);
+        p.print_ppx(log,n_sym,n_blocks,"per-point-ppx","per-block-ppx","prob");
         log<<'\n';
         if (burning())
             stats.record(time,p);
