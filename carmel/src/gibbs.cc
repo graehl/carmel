@@ -105,7 +105,7 @@ struct carmel_gibbs : public gibbs_base
     {
         assert(parami<arcs.size());
         assert(parami<arc_sources.size());
-        wfst_for(parami).printArc(*arcs[parami],arc_sources[parami],out);
+        wfst_for(parami).printArc(*arcs[parami],arc_sources[parami],out,false);
         return out;
     }
 
