@@ -82,45 +82,8 @@ operator <<
     return gen_inserter(os,arg);
 }
 
-
-
 static void NaNCheck(const Weight *w) {
     w->NaNCheck();
-}
-
-unsigned WFST::set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init)
-{
-    unsigned id=normidbase;
-    if (isEmpty())
-        return id;
-    if (nm.group==NONE) {
-        Config::warn()<<"Can't turn off normalization for gibbs training; changing to conditional.\n";
-        nm.group=CONDITIONAL;
-    }
-    if (nm.group==CONDITIONAL)
-        indexInput();
-    Weight ac=nm.add_count;
-    for (NormGroupIter g(nm.group,*this); g.moreGroups(); g.nextGroup()) {
-        Weight sum=0;
-        double N=0;
-        Weight scale=one_weight();
-        if (p0init) {
-            for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-                ++N;
-                sum+=(*g)->weight;
-            }
-            if (N>0)
-                scale=N/sum;
-        }
-        for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-            FSTArc & a=**g;
-            a.groupId=gps.size();
-            Weight prior=p0init ? (ac*scale*a.weight) : ac;
-            gps.push_back(id,prior.getReal());
-        }
-        ++id;
-    }
-    return id;
 }
 
 void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
