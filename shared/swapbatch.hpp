@@ -207,7 +207,7 @@ struct SwapBatch {
     }
 
     // bogus operator[] that does sequential scanning (we have no random access index).  should be ok
-    refrence operator[](unsigned i) const
+    reference operator[](unsigned i) const
     {
         if (i==0||i<current_i) {
             current_i=0;
