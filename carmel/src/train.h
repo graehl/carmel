@@ -6,7 +6,6 @@
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/stream_util.hpp>
-#include <graehl/shared/gibbs.hpp>
 
 namespace graehl {
 

@@ -342,10 +342,13 @@ struct gibbs_base
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
-        o<<"Gibbs i="<<iter<<" time="<<time;
-        if (!temp.is_constant())
-            o<<" temperature="<<temperature<<" power="<<power<<suffix;
-        o<<' ';
+        o<<"Gibbs i="<<iter;
+        //o<<" time="<<time;
+        if (!temp.is_constant()) {
+            o<<" temperature="<<temperature;
+            o<<" power="<<power;
+        }
+        o<<suffix;
         return o;
     }
     static inline bool divides(unsigned div,unsigned i)
