@@ -566,8 +566,10 @@ class WFST {
         setPathArc(&p,a);
         return o << p;
     }
-    std::ostream & printArc(const FSTArc &a,int source,std::ostream &o) const {
-        return o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out) << " / " << a.weight << ")";
+    std::ostream & printArc(const FSTArc &a,int source,std::ostream &o,bool weight=true) const {
+        o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out);
+        if (weight) o<< " / " << a.weight;
+        o << ")";
     }
 
     /*void insertPathArc(GraphArc *gArc, List<PathArc>*);

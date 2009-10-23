@@ -169,78 +169,6 @@ struct gibbs_opts
 };
 
 
-/*
-struct gibbs_param
-{
-    double prior; //FIXME: only needed for --cache-prob and --crp-except-prior
-    inline double count() const
-    {
-        return sumcount.x;
-    }
-    unsigned norm;
-    unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
-    delta_sum sumcount;
-    template <class Normsum>
-    void restore_p0(Normsum &ns)
-    {
-        ns[norm]+=prior;
-        sumcount.clear(prior);
-    }
-    template <class Normsums>
-    void addsum(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
-    {
-        ns[norm]+=d;
-        sumcount.add_delta(d,t);
-    }
-    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),norm(norm),cascadei(cascadei) {}
-    typedef gibbs_param self_type;
-    TO_OSTREAM_PRINT
-    template <class O>
-    void print(O &o) const
-    {
-        o<<norm<<'\t'<<cascadei<<'\t'<<sumcount;
-    }
-    };
-
-    //carmel 5.2:
-
-
-struct gibbs_param
-{
-    double prior; //FIXME: not needed except to make computing --cache-prob easier
-    double count;
-    unsigned norm;
-    unsigned cascadei; //FIXME: only needed at end; per-norm parallel array or anon union w/ count?
-    delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
-    void initsum()
-    {
-        sumcount.add_delta(count,0);
-    }
-    template <class Normsums>
-    void addsum(double d,double t,Normsums &ns,bool accum_delta) // first call should be w/ t=0
-    {
-        count+=d;
-        ns[norm]+=d;
-        if (accum_delta) {
-            sumcount.add_delta(d,t);
-            assert(count==sumcount.x);
-        }
-    }
-    gibbs_param(unsigned norm, double prior, unsigned cascadei) : prior(prior),count(prior),norm(norm),cascadei(cascadei) {  }
-    typedef gibbs_param self_type;
-    TO_OSTREAM_PRINT
-    template <class O>
-    void print(O &o) const
-    {
-        o<<count<<'\t'<<norm<<'\t'<<cascadei;
-        if (!sumcount.empty())
-            o<<'\t'<<sumcount;
-    }
-};
-
-
-*/
-
 //template <class F>
 struct gibbs_param
 {
@@ -256,10 +184,11 @@ struct gibbs_param
     unsigned norm; // index shared by all params to be normalized w/ this one
     delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
     template <class Normsum>
-    void restore_p0(Normsum &ns)
+    void restore_p0(Normsum &ns) //ns must have been init to all 0s before the restore_p0 calls on each param
     {
         ns[norm]+=prior;
         sumcount.clear(prior);
+        assert(sumcount.tmax==0);
     }
     template <class Normsum>
     void add_norm(Normsum &ns) const
@@ -356,14 +285,14 @@ struct gibbs_base
     double power; // for deterministic annealing (temperature) = 1/temperature if temp positive.
  private:
     normsum_t ccount,csum,pcount,psum; // for computing true cache model probs
-    unsigned i,Ni; // i=0 is random init sample.  i=1...Ni are the (gibbs resampled) samples
-    double t; // at i=gopt.burnin, t=0.  at tmax = nI-gopt.burnin, we have the final sample.
+    unsigned iter,Ni; // i=0 is random init sample.  i=1...Ni are the (gibbs resampled) samples
+    double time; // at i=gopt.burnin, t=0.  at tmax = nI-gopt.burnin, we have the final sample.
     gibbs_opts::temps temp;
     bool accum_delta;
  public:
     bool burning() const
     {
-        return i>=gopt.burnin;
+        return iter>=gopt.burnin;
     }
     double final_t() const
     {
@@ -486,7 +415,8 @@ struct gibbs_base
     }
     void addc(gibbs_param &p,double delta)
     {
-        p.addsum(delta,t,normsum); //t=0 and accum_delta=false until burnin
+        assert(time>=p.sumcount.tmax);
+        p.addsum(delta,time,normsum); //t=0 and accum_delta=false until burnin
     }
     void addc(unsigned param,double delta)
     {
@@ -494,6 +424,7 @@ struct gibbs_base
     }
     void addc(block_t &b,double delta)
     {
+        assert(time>=0);
         for (block_t::const_iterator i=b.begin(),e=b.end();i!=e;++i)
             addc(*i,delta);
     }
@@ -507,19 +438,18 @@ struct gibbs_base
         restore_p0();
         imp.init_run(runi);
         accum_delta=false;
-        i=0;
-        t=0;
+        iter=0;
+        time=0;
         if (gopt.print_every!=0 && gopt.print_counts_sparse==0) {
             out<<"# ";
             print_counts(imp,true,"(prior counts)");
         }
         iteration(imp,false); // random initial sample
         //FIXME: isn't really random!  get the same sample after every iteration
-        for (i=1;i<=Ni;++i) {
-            t=i-gopt.burnin;
-            if (t>=0) accum_delta=true;
-            else if (t<0)
-                t=0;
+        for (iter=1;iter<=Ni;++iter) {
+            time=(double)iter-(double)gopt.burnin; //very funny: unsigned arithmetic -> double (unsigned maximum) if you're sloppy
+            if (time>=0) accum_delta=true;
+            else time=0;
             iteration(imp,true);
         }
         log<<"\nGibbs stats: "<<stats<<"\n";
@@ -529,12 +459,12 @@ struct gibbs_base
     template <class G>
     void iteration(G &imp,bool subtract_old=true)
     {
-        temperature=temp(i);
+        temperature=temp(iter);
         power=(temperature>0)?1./temperature:1;
         itername(log);
         if (gopt.cache_prob) reset_cache();
         Weight p=1;
-        imp.init_iteration(i);
+        imp.init_iteration(iter);
         for (unsigned b=0;b<n_blocks;++b) {
             num_progress(log,b);
             block_t &block=sample[b];
@@ -558,8 +488,9 @@ struct gibbs_base
         gibbs_stats best;
         unsigned re=gopt.restarts;
         for (unsigned r=0;r<=re;++r) {
-            graehl::time_space_report(Config::log(),"Gibbs restart: ");
-            if (re>0) log<<"\nRandom start "<<r<<"(of "<<re<<")\n";
+            graehl::time_space_report(log,"Gibbs sampling run: ");
+            if (re>0) log<<"(random restart "<<r<<" of "<<re<<"): ";
+            log<<"\n";
             gibbs_stats const& s=run(r,imp);
             if (r==0 || s.better(best,gopt)) {
                 log << "\nNew best: "<<s<<"\n";
@@ -587,11 +518,11 @@ struct gibbs_base
         p.print_ppx(log,n_sym,n_blocks);
         log<<'\n';
         if (burning())
-            stats.record(t,p);
+            stats.record(time,p);
     }
     std::ostream &itername(std::ostream &o,char const* suffix=" ") const
     {
-        o<<"Gibbs i="<<i<<" time="<<t;
+        o<<"Gibbs i="<<iter<<" time="<<time;
         if (!temp.is_constant())
             o<<" temperature="<<temperature<<" power="<<power<<suffix;
         o<<' ';
@@ -604,7 +535,7 @@ struct gibbs_base
     template <class G>
     void maybe_print_periodic(G &imp)
     {
-        if (divides(gopt.print_every,i)) {
+        if (divides(gopt.print_every,iter)) {
             itername(out<<"# ","\n");
             print_all(imp,false);
         }
@@ -616,7 +547,7 @@ struct gibbs_base
         unsigned from=gopt.print_norms_from;
         unsigned to=std::min(gopt.print_norms_to,normsum.size());
         if (to>from) {
-            out <<"\n# group\t"<<name<<" i="<<i<<"\n";
+            out <<"\n# group\t"<<name<<" i="<<iter<<"\n";
             print_range_i(out,normsum,from,to,true,true);
         }
 
@@ -626,8 +557,6 @@ struct gibbs_base
         out<<'\t';
         print_width(out,d,gopt.width);
     }
-
-    //TODO: print extra identifiers for parameters (using imp) e.g. arc details in carmel
     template <class G>
     void print_counts(G &imp,bool final=false,char const* name="")
     {
@@ -647,24 +576,24 @@ struct gibbs_base
             if (sparse)
                 out<<"id\t";
             out<<"group\tcounts\tprob";
-            double ta=t+1;
+            double ta=time+1;
             if (!final)
                 out<<"\tavg@"<<ta<<"\tlast@t\tprior";
             if (gopt.rich_counts)
                 out<<"\tparam name";
             if (!final)
-                out<<"\titer="<<i;
+                out<<"\titer="<<iter;
             out<<"\t"<<name;
             out<<'\n';
             for (unsigned i=from;i<to;++i) {
                 gibbs_param const& p=gps[i];
                 delta_sum const& d=p.sumcount;
-                double avg=d.avg(ta);
+                double avg=final?d.x/ta:d.avg(ta);
                 if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
                     if (sparse)
                         out<<i<<'\t';
                     out<<p.norm;
-                    print_field(final?d.x/ta:d.x);
+                    print_field(final?avg:d.x); //NOTE: for final, only the counts were restored upon restarts, so don't use anything other than d.x
                     print_field(proposal_prob(i));
                     if (!final) {
                         print_field(avg);
