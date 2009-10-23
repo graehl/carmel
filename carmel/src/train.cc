@@ -343,14 +343,14 @@ struct gibbs
     gibbs(WFST &composed,cascade_parameters &cascade, training_corpus &corpus
           ,WFST::NormalizeMethods & methods
           ,WFST::train_opts const& topt
-          ,gibbs_opts const& gopt
+          ,gibbs_opts const& gopt_
           ,WFST::path_print const& printer
           ,WFST::saved_weights_t *init_sample_weights=NULL
         ) :
-        composed(composed), cascade(cascade), corpus(corpus), methods(methods), gopt(gopt), printer(printer), derivs(composed,corpus,topt.cache), sample(derivs.size()), init_sample_weights(init_sample_weights)
+        composed(composed), cascade(cascade), corpus(corpus), methods(methods), gopt(gopt_), printer(printer), derivs(composed,corpus,topt.cache), sample(derivs.size()), init_sample_weights(init_sample_weights)
     {
         set_cascadei();
-        this->gopt.validate();
+        gopt.validate();
         temp=gopt.temp;
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);

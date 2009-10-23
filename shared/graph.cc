@@ -10,7 +10,7 @@ namespace graehl {
 std::ostream & operator << (std::ostream &out, const GraphArc &a)
 {
     out << '(' << a.src <<"->"<< a.dest << ' ' << a.weight;
-    //out << ' ' << a.data;    
+    //out << ' ' << a.data;
     return out << ')';
 }
 
@@ -26,7 +26,7 @@ void depthFirstSearch(Graph graph, unsigned startState, bool* visited, void (*fu
 }
 
 // g's arcs are reversed and added to graph dest
-void add_reversed_arcs(GraphState *rev,GraphState const*src,unsigned n,bool data_point_to_forward) 
+void add_reversed_arcs(GraphState *rev,GraphState const*src,unsigned n,bool data_point_to_forward)
 {
     for ( unsigned i  = 0 ; i < n ; ++i ){
         List<GraphArc> const&arcs = src[i].arcs;
@@ -40,17 +40,13 @@ void add_reversed_arcs(GraphState *rev,GraphState const*src,unsigned n,bool data
             rev[r.src].arcs.push(r);
 */
             List<GraphArc> & d=rev[l->dest].arcs;
-            d.push_front(l->dest,l->src,l->weight,l->data);
-            if (data_point_to_forward)
-//                d.front().data_as<GraphArc *>()=&const_cast<GraphArc&>(*l);
-                d.front().data_as<GraphArc const*>()=&*l;
-
+            d.push_front(l->dest,l->src,l->weight,data_point_to_forward?(void*)&*l:(void*)l->data);
         }
-    }    
+    }
 }
 
 
-Graph reverseGraph(Graph g)
+Graph reverseGraph(Graph g,bool data_point_to_forward)
   // This function creates NEW GraphState[] and because the
   // return Graph points to this newly created Graph, it is NOT deleted. Therefore
   // whatever the caller function is responsible for deleting this data.
@@ -60,7 +56,7 @@ Graph reverseGraph(Graph g)
     Graph ret;
     ret.states = NEW GraphState[g.nStates];
     ret.nStates = g.nStates;
-    add_reversed_arcs(ret.states,g.states,g.nStates,true);
+    add_reversed_arcs(ret.states,g.states,g.nStates,data_point_to_forward);
     return ret;
 }
 
@@ -218,7 +214,7 @@ void shortestDistancesFrom(Graph g, unsigned src, FLOAT_TYPE *dist,GraphArc **ta
 
 }
 
-    
+
 unsigned removeStates_inplace(Graph g,bool marked[])
 {
     indices_after_removing ttable(marked,marked+g.nStates);

@@ -8,7 +8,10 @@
 /*
 
 special form of compose: input string * transducer * output string (more efficient than compose.h (input string * transducer) * output string.
+
+NOTE: grapharc data field is an unsigned index into an arcs_table (which has the fstarc * and possibly ancillary counts).  for gibbs+cascade, link directly to cascade would be sufficient.
 */
+#include <graehl/shared/weight.h>
 #include <boost/utility.hpp>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/hashtable_fwd.hpp>
@@ -286,14 +289,15 @@ struct derivations //: boost::noncopyable
 
     typedef fixed_array<Weight> fb_weights;
 
-
+#define ORANDPATH(x) //std::cerr<<x
     // weights for random_path (for gibbs).
-//    template <class WeightFor>
+    template <class WeightFor>
     struct pfor
     {
         fb_weights b;
-//        WeightFor const &wf;
-        pfor(unsigned nst,unsigned fin) : b(nst) {//,wf(wf) { //WeightFor const &wf,
+        WeightFor const &wf;
+        pfor(unsigned nst,unsigned fin,WeightFor const &wf) : b(nst),wf(wf)//
+        {
             b[fin]=1;
         }
         // store in GraphArc .weight the normalized probability
@@ -301,23 +305,28 @@ struct derivations //: boost::noncopyable
         void global_normalize(It beg,It end,double power=1.) const
         {
             Weight sum;
+            ORANDPATH("global_normalize power="<<power);
             for (It i=beg;i!=end;++i) {
                 GraphArc & a=*i;
-                Weight nw=(a.wt()*b[a.dest]).pow(power);
+                Weight nw=(wf(a)*b[a.dest]).pow(power); // req 1: wf(a)
+                ORANDPATH(" p="<<a.wt()<<" b="<<b[a.dest]);
                 sum+=nw;
                 a.wt()=nw;
             }
+            ORANDPATH(" =>(globalnorm sum="<<sum<<")");
             if (sum.isZero())
                 sum.setOne();
             for (It i=beg;i!=end;++i) {
                 GraphArc & a=*i;
-                a.wt()/=sum;
+                a.weight=(a.wt()/sum).getReal(); // warning: aliasing (a.wt() and a.weight are a fake-union)
+                ORANDPATH(" "<<a.weight);
             }
+            ORANDPATH("\n");
         }
         //used by random.hpp choose_p
         double operator()(GraphArc const& a) const
         {
-            return a.wt().getReal();
+            return a.weight;
         }
     };
 
@@ -333,7 +342,7 @@ struct derivations //: boost::noncopyable
         get_reverse();
         Graph rg=r.graph();
         rg.setwt(wf); // req 1: wf(GraphArc a).  now a.wt() has the result
-        pfor pf(nst,fin);
+        pfor<WeightFor> pf(nst,fin,wf);
         propagate_paths_in_order_wt(rg,reverse_order.begin(),reverse_order.end(),pf.b); // uses wf(a) from setwt
         free_order();
         free_reverse();
@@ -343,9 +352,10 @@ struct derivations //: boost::noncopyable
             arcs_type &arcs=g[s].arcs;
             if (!normed[s]) { // don't normalize (+compute probs for arcs) in states we don't visit, and save the result if we revisit
                 normed[s]=true;
-                pf.global_normalize(arcs.begin(),arcs.end(),power);
+                pf.global_normalize(arcs.val_begin(),arcs.val_end(),power);
             }
-            GraphArc const& a=*choose_p(arcs.begin(),arcs.end(),pf); // no empty states allowed that aren't final
+            GraphArc const& a=*choose_p(arcs.const_begin(),arcs.const_end(),pf); // no empty states allowed that aren't final.
+            // use the re-normalizing choose_p rather than choose_p01 to protect from rounding issues with Weight::getReal sum to 1
             wf.choose_arc(a); // req 2: wf.choose_arc(GraphArc a)
             s=a.dest;
         }
@@ -482,7 +492,7 @@ struct derivations //: boost::noncopyable
         void init(Graph const& forward)
         {
             b.init(forward.size());
-            add_reversed_arcs(&b.front(),&forward.front(),forward.size());
+            add_reversed_arcs(&b.front(),&forward.front(),forward.size(),false);
         }
 
         void clear()

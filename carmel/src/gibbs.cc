@@ -5,13 +5,6 @@
 #include <graehl/shared/gibbs.hpp>
 #include <graehl/shared/segments.hpp>
 
-#define DEBUG_GIBBS
-#ifdef DEBUG_GIBBS
-#define DGIBBS(a) a;
-#else
-#define DGIBBS(a)
-#endif
-#define OUTGIBBS(a) DGIBBS(std::cerr<<a)
 
 namespace graehl {
 
@@ -228,19 +221,19 @@ struct carmel_gibbs : public gibbs_base
             return c.choose_arc(a);
         }
     };
-
+#define OUTGIBBS3(x) //OUTGIBBS(x)
     Weight resample_block(unsigned block)
     {
         block_t &b=sample[block];  // this is cleared for us already
         blockp=&b;
         typedef dynamic_array<param_list> acpath;
         derivations &d=derivs.derivs[block];
-        OUTGIBBS(" block "<<block<<" line "<<d.lineno<<"\n");
+        OUTGIBBS3(" block "<<block<<" line "<<d.lineno<<"\n");
         if (init_prob)
             d.random_path(p_init(*this),power);
         else
             d.random_path(*this,power);
-        OUTGIBBS('\n')
+        OUTGIBBS3('\n')
     }
 
 #define CARMEL_GIBBS_FOR_ID(grapharc,paramid,body)        \
@@ -249,7 +242,9 @@ struct carmel_gibbs : public gibbs_base
             body; }
     //for resample block:
     // *this is used as WeightFor in derivations pfor,random_path:
-#define OUTGIBBS2(x)
+#define OUTGIBBS2(x) //OUTGIBBS(x)
+#define DGIBBS2(x) //x
+
     Weight operator()(GraphArc const& a) const
     {
         Weight prob=one_weight();
@@ -257,9 +252,8 @@ struct carmel_gibbs : public gibbs_base
         CARMEL_GIBBS_FOR_ID(a,id,{
                 double p=gibbs_base::proposal_prob(id);
                 prob*=p;
-                OUTGIBBS2(" "<<id);
-//                OUTGIBBS(" p("<<id<<")="<<p);
-                //DGIBBS(if (have_names) print_param(std::cerr<<"[",id)<<"]");
+                OUTGIBBS2(" p("<<id<<")="<<p);
+                //DGIBBS2(if (have_names) print_param(std::cerr<<"[",id)<<"]");
             })
             OUTGIBBS2(" = "<<prob<<'\n')
         return prob;
@@ -267,6 +261,8 @@ struct carmel_gibbs : public gibbs_base
     block_t *blockp;
     void choose_arc(GraphArc const& a) const
     {
+        DGIBBS2(CARMEL_GIBBS_FOR_ID(a,id,out<<" "<<id));
+        OUTGIBBS2("=(ids for "<<a<<")\n");
         CARMEL_GIBBS_FOR_ID(a,id,blockp->push_back(id))
     }
 
