@@ -13,6 +13,14 @@
 #include <graehl/shared/weight.h>
 #include <boost/program_options.hpp>
 
+#define DEBUG_GIBBS
+#ifdef DEBUG_GIBBS
+#define DGIBBS(a) a;
+#else
+#define DGIBBS(a)
+#endif
+#define OUTGIBBS(a) DGIBBS(std::cerr<<a)
+
 namespace graehl {
 
 struct gibbs_opts
@@ -312,12 +320,12 @@ struct gibbs_stats
 
 struct gibbs_base
 {
-    gibbs_base(gibbs_opts const &gopt
+    gibbs_base(gibbs_opts const &gopt_
                , unsigned n_sym=1
                , unsigned n_blocks=1
                , std::ostream &out=std::cout
                , std::ostream &log=std::cerr)
-        : gopt(gopt)
+        : gopt(gopt_)
         , n_sym(n_sym)
         , n_blocks(n_blocks)
         , out(out)
@@ -325,8 +333,9 @@ struct gibbs_base
         , nnorm(0)
         , sample(n_blocks)
     {
-        this->gopt.validate();
+        gopt.validate();
         temp=gopt.temp;
+//        OUTGIBBS("temp="<<temp<<"\n");
     }
     gibbs_stats stats;
     gibbs_opts gopt;
@@ -343,7 +352,8 @@ struct gibbs_base
     unsigned nnorm;
     normsum_t normsum;
     blocks_t sample;
-    double power; // for deterministic annealing (temperature)
+    double temperature;
+    double power; // for deterministic annealing (temperature) = 1/temperature if temp positive.
  private:
     normsum_t ccount,csum,pcount,psum; // for computing true cache model probs
     unsigned i,Ni; // i=0 is random init sample.  i=1...Ni are the (gibbs resampled) samples
@@ -499,7 +509,7 @@ struct gibbs_base
         accum_delta=false;
         i=0;
         t=0;
-        if (gopt.print_every!=0 && gopt.print_counts_sparse!=0) {
+        if (gopt.print_every!=0 && gopt.print_counts_sparse==0) {
             out<<"# ";
             print_counts(imp,true,"(prior counts)");
         }
@@ -519,7 +529,8 @@ struct gibbs_base
     template <class G>
     void iteration(G &imp,bool subtract_old=true)
     {
-        power=1./temp(i);
+        temperature=temp(i);
+        power=(temperature>0)?1./temperature:1;
         itername(log);
         if (gopt.cache_prob) reset_cache();
         Weight p=1;
@@ -582,7 +593,7 @@ struct gibbs_base
     {
         o<<"Gibbs i="<<i<<" time="<<t;
         if (!temp.is_constant())
-            o<<" temperature="<<1./power<<" power="<<power<<suffix;
+            o<<" temperature="<<temperature<<" power="<<power<<suffix;
         o<<' ';
         return o;
     }
@@ -653,7 +664,7 @@ struct gibbs_base
                     if (sparse)
                         out<<i<<'\t';
                     out<<p.norm;
-                    print_field(d.x);
+                    print_field(final?d.x/ta:d.x);
                     print_field(proposal_prob(i));
                     if (!final) {
                         print_field(avg);

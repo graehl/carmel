@@ -152,7 +152,7 @@ struct Graph {
 // take the arcs in graph (src,n_states) and add them, reversing src<->dest, to destination graph (destination,n_states).  copy data field unless data_point_to_forward, in which case point to original (forward) arc
 void add_reversed_arcs(GraphState *destination,GraphState const*src,unsigned n_states,bool data_point_to_forward=false);
 
-Graph reverseGraph(Graph g) ;
+Graph reverseGraph(Graph g,bool data_point_to_forward=true) ;
 
 extern Graph dfsGraph;
 extern bool *dfsVis;

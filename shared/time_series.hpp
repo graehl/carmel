@@ -68,7 +68,6 @@ struct clamped_time_series : public std::unary_function<double,Returns>
             assert(start>0);
             assert(end>0);
         }
-
         set(start,end,duration,curvature);
     }
 
@@ -78,7 +77,7 @@ struct clamped_time_series : public std::unary_function<double,Returns>
 #ifdef DEBUG_TIME_SERIES
         DBP4(start,end,duration,curvature);
 #endif
-        if (duration <= 0 or start == end) { //set constant fn
+        if (duration <= 0 || start == end) { //set constant fn
             k=1;
             t_max=1;
             x0=start;
@@ -135,7 +134,10 @@ struct clamped_time_series : public std::unary_function<double,Returns>
 
     void print(std::ostream &o) const
     {
-        o<<"[0.."<<t_max<<"]="<<start()<<".."<<end()<<";c="<<curvature();
+        if (is_constant())
+            o<<"[constant]"<<start();
+        else
+            o<<"[0.."<<t_max<<"]="<<start()<<".."<<end()<<";c="<<curvature();
     }
 
     typedef clamped_time_series<Computes,Returns> self_type;

@@ -105,6 +105,8 @@ print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
         --width;
     }
     double wholes=std::log10(p); //1: log=0, digits=1
+    if (wholes<=width && d==(double)(int)d)
+        return o<<d;
     if (p<1) {
         int a=-wholes;
         const int dot0=2;
