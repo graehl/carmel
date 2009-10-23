@@ -26,7 +26,7 @@
 #include <graehl/shared/mean_field_scale.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/debugprint.hpp>
-#include <graehl/shared/gibbs.hpp>
+#include <graehl/shared/gibbs_opts.hpp>
 
 namespace graehl {
 
@@ -1231,10 +1231,6 @@ class WFST {
             disk_cache_bufsize=256*1024*1024;
         }
     };
-
-    // set data field of arcs to int id of their gibbs_param gps[i].  gps[i].norm is set (starting at normidbase).  returns next free id. note: tied arcs ignored.  also compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc
-    typedef dynamic_array<gibbs_param> gibbs_params;
-    unsigned set_gibbs_params(NormalizeMethod & nm,unsigned normidbase,gibbs_params &gps,bool p0init=true);
 
 
     // TODO: move more of the train params into here
