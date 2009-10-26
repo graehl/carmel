@@ -3,14 +3,15 @@
 # Commands found in "Training Finite-State Transducer Cascades with Carmel"
 #==========================================================================
 
-CARMEL=/nfs/topaz/graehl/isd/cage/bin/carmel.static
+#CARMEL=/nfs/topaz/graehl/isd/cage/bin/carmel.static
+CARMEL=/nfs/isd3/knight/carmel-download/graehl/carmel/bin/linux64/carmel
 
 $CARMEL -c epron-jpron.fst
 $CARMEL -t epron-jpron.data epron-jpron.fst
 $CARMEL -t -HJ epron-jpron.data epron-jpron.fst
 
 $CARMEL -t -HJ -! 10 cluster.data cluster.fsa
-$CARMEL --train-cascade -HJ cluster.data cat.fsa spellout.fst
+$CARMEL --train-cascade -HJ -! 100 cluster.data cat.fsa spellout.fst
 $CARMEL --project-right --project-identity-fsa -HJ cat.fsa.trained > cat.fsa.trained.noe
 awk 'NF>0' cluster.data > cluster.data.noe
 cat cluster.data.noe | $CARMEL -qbsriWIEk 1 cat.fsa.trained.noe spellout.fst.trained
