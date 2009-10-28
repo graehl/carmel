@@ -4,6 +4,7 @@
 #include <graehl/carmel/src/derivations.h>
 #include <graehl/shared/serialize_batch.hpp>
 #include <graehl/shared/time_space_report.hpp>
+#include <graehl/shared/periodic.hpp>
 
 namespace graehl {
 
@@ -23,18 +24,21 @@ struct cached_derivs
         : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize),arcs(x)
     {
         if (copt.cache()) {
-            graehl::time_space_report(Config::log(),"Computed cached derivations:");
             compute_derivations(corpus.examples,copt.cache_backward());
         }
     }
     template <class Examples>
     void compute_derivations(Examples const &ex,bool cache_backward)
     {
+        std::ostream &log=Config::log();
+        log<<"Caching derivations:\n";
+        graehl::time_space_report r(log,"Computed cached derivations: ");
         wfst_io_index io(x);
         unsigned n=1;
         derivs.clear();
         for (typename Examples::const_iterator i=ex.begin(),end=ex.end();
              i!=end ; ++i,++n) {
+            num_progress(log,n,10,70,".","\n");
             derivations &d=derivs.start_new();
             if (!d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward)) {
                 warn_no_derivations(x,*i,n);
@@ -48,8 +52,9 @@ struct cached_derivs
                 derivs.keep_new();
             }
         }
+        log << "\n";
         derivs.mark_end();
-        Config::log() << derivations::global_stats;
+        log << derivations::global_stats;
     }
     template <class F>
     void foreach_deriv(F &f)

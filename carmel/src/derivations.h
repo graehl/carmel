@@ -15,7 +15,7 @@ NOTE: grapharc data field is an unsigned index into an arcs_table (which has the
 #include <boost/utility.hpp>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/hashtable_fwd.hpp>
-#include <graehl/shared/graph.hpp>
+#include <graehl/shared/graph.h>
 #include <graehl/shared/simple_serialize.hpp>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/train.h>
@@ -167,11 +167,35 @@ struct derivations //: boost::noncopyable
     typedef HashTable<deriv_state,state_id> state_to_id;
     state_to_id id_of_state;
  public:
+    Weight n_paths() const
+    {
+        if (empty()) return zero_weight();
+        return countNoCyclePathsTo<Weight>(graph(),0,fin);
+    }
+
     struct statistics
     {
+        Weight sum_paths;
+        Weight prod_paths;
+        double N;
+        statistics() : prod_paths(one_weight()), N(0) {  }
+        void prune_record(derivations &d,bool do_prune=true)
+        {
+            ++N;
+            pre.states=d.g.size();
+            if (do_prune)
+                d.prune();
+            else
+                post=pre;
+            Weight npath=d.n_paths();
+            prod_paths*=npath;
+            sum_paths+=npath;
+        }
+
         struct states_arcs
         {
             double states,arcs;
+
             states_arcs() {
                 clear();
             }
@@ -202,10 +226,12 @@ struct derivations //: boost::noncopyable
             states_arcs ratio=post;
             ratio/=pre;
 
-            o << "\nFor all cached derivations:\n"
+            o << "\nTotal for "<<N<<" cached derivations:\n"
               <<  "Pre pruning: "<< pre <<"\n"
               <<"Post pruning: " << post << "\n"
               << "Portion kept: " << ratio << "\n"
+                << "Avg # of paths (arith. mean): " << sum_paths/N << "\n"
+              << "Avg # of paths (geom. mean): " << prod_paths.root(N) << "\n"
                 ;
         }
         typedef statistics self_type;
@@ -437,11 +463,7 @@ struct derivations //: boost::noncopyable
         no_goal=(pfin==NULL);
         if (drop_names)
             id_of_state.clear();
-        global_stats.pre.states=g.size();
-        if (prune_)
-            prune();
-        else
-            global_stats.post=global_stats.pre;
+        global_stats.prune_record(*this,prune_);
         if (no_goal) {
             g.clear();
             return false;
@@ -557,6 +579,7 @@ struct derivations //: boost::noncopyable
         printGraph(graph(),Config::debug());
 #endif
         g.resize(new_size);
+        g.compact();
     }
 
  private:
