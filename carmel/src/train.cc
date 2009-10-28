@@ -746,6 +746,7 @@ Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
         unweighted_corpus_prob_accum *= prob;
         weighted_corpus_prob *= prob.pow(d.weight);
     }
+    Config::log()<<'\n';
     return weighted_corpus_prob;
 }
 
