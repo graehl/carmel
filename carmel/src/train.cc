@@ -13,7 +13,7 @@ namespace graehl {
 
 void training_progress(unsigned train_example_no,unsigned scale,unsigned num_every)
 {
-    num_progress(Config::log(),train_example_no,scale,num_every);
+    num_progress(Config::log(),train_example_no,scale,num_every,".","\n");
 }
 
 derivations::statistics derivations::global_stats;
@@ -536,7 +536,7 @@ Weight WFST::train(cascade_parameters &cascade,
 
             Weight p = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             Weight newPerplexity=p.ppxper(corpus.totalEmpiricalWeight);
-            DWSTAT("After estimate");
+            DWSTAT("\nAfter estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
 //            Config::log() << " per-output-symbol-perplexity="<<corpus_p.ppxper(corpus.n_output).as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
             corpus_p.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
