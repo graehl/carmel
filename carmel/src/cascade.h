@@ -320,20 +320,6 @@ struct cascade_parameters
             cascade[i]->clear_groups();
     }
 
-    template <class P>
-    void update_gibbs(P const& p) //NOTE: same order of visiting as save/restore_weights ! relied on by gibbs
-    {
-        for (unsigned i=0,e=cascade.size();i!=e;++i)
-            update_gibbs(*cascade[i],p);
-    }
-
-    template <class P>
-    void update_gibbs(WFST &w,P const& p)
-    {
-//        gibbs_update<P> up(w,p);
-        w.visit_arcs(p);
-    }
-
     bool is_chain[2]; // is_chain[second] tells if arcs given to record are already chained, i.e. should you cons then append or just append
 
     void prepare_compose()

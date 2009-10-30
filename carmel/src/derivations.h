@@ -29,18 +29,21 @@ NOTE: grapharc data field is an unsigned index into an arcs_table (which has the
 
 namespace graehl {
 
+//TODO: epsilon filter needed so training sums over subseqs of *e*:o and i:*e* don't care about order?  don't think so.
 struct deriv_state
 {
     uint32_t i,s,o; // input,state,output
     std::size_t hash() const
     {
-        return hash_quads_64(&i,sizeof(deriv_state)/sizeof(i));
+        //return hash_quads_64(&i,sizeof(deriv_state)/sizeof(i));
+        return hash3(i,s,o);
 //hash_bytes_32((void *)this,sizeof(deriv_state));
     }
     bool operator ==(deriv_state const& r)  const
     {
         return r.i==i && r.s==s && r.o==o;
     }
+    deriv_state() {  }
     deriv_state(uint32_t i,uint32_t s,uint32_t o) : i(i),s(s),o(o) {}
 };
 
@@ -454,9 +457,10 @@ struct derivations //: boost::noncopyable
     template <class arcs_table>
     bool compute(WFST &x,wfst_io_index const& io,arcs_table const&atab,bool drop_names=true,bool prune_=true)
     {
+        remove.clear();
+        goal=deriv_state(in.size(),x.final,out.size());
         state_id start=derive(io,atab,deriv_state(0,0,0));
         assert(start==0);
-        deriv_state goal(in.size(),x.final,out.size());
         state_id *pfin=find_second(id_of_state,goal);
         if (pfin)
             fin=*pfin;
@@ -546,6 +550,7 @@ struct derivations //: boost::noncopyable
     {
         if (empty())
             return;
+        /*
         fixed_array<bool> remove(true,g.size());
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug() << "Pruning derivations - original:\n";
@@ -557,14 +562,15 @@ struct derivations //: boost::noncopyable
         printGraph(r.graph(),Config::debug());
 #endif
         r.mark_reaching(remove,final(),false);
+        */
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug() << "Removing states:";
         print_range(Config::debug(),remove.begin(),remove.end());
         Config::debug() << "\n";
 #endif
         indices_after_removing ttable(remove);
+        remove.clear();
         fin=ttable[fin];
-        // now: remove[i] = true -> no path to final
         rewrite_GraphState rw;
         unsigned new_size=graehl::shuffle_removing(&g.front(),ttable,rw);
         global_stats.post.states=new_size;
@@ -583,47 +589,64 @@ struct derivations //: boost::noncopyable
     }
 
  private:
+    std::vector<bool> remove; // remove[i] = true -> no path to final
+    deriv_state goal;
+    bool is_goal(deriv_state const& d) const
+    {
+        return goal==d;
+    }
+    //TODO: integrate prune+derive?  win=won't have to add an arc that doesn't finish.
     template <class arcs_table>
     state_id derive(wfst_io_index const& io,arcs_table const&atab,deriv_state const& d)
     {
         const int EPS=WFST::epsilon_index;
-        state_id ret=g.size();
+        state_id src=g.size();
         state_to_id::insert_return_type already=
-            id_of_state.insert(d,ret);
+            id_of_state.insert(d,src);
         if (!already.second)
-            return already.first->second;
-        add(id_of_state,d,ret); // NOTE: very important that we've added this before we start taking self-epsilons.
+            return already.first->second; // return id if state was previously explored
+        // new state = src - already added by insert above
+//        add(id_of_state,d,src); // NOTE: very important that we've added this before we start taking self-epsilons.
         g.push_back();
+        remove.push_back(false);
         typename wfst_io_index::for_state const&fs=io.st[d.s];
-        add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,ret);
-        if (d.o < out.size()) {
-            add_arcs(io,atab,EPS,out[d.o],d.i,d.o+1,fs,ret);
+        add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src);
+        bool bad=!is_goal(d);
+        bool useO=d.o<out.size();
+        if (useO) {
+            bad&=add_arcs(io,atab,EPS,out[d.o],d.i,d.o+1,fs,src);
         }
         if (d.i < in.size()) {
-            Sym i=in[d.i];
-            add_arcs(io,atab,i,EPS,d.i+1,d.o,fs,ret);
-            if (d.o < out.size()) {
-                add_arcs(io,atab,i,out[d.o],d.i+1,d.o+1,fs,ret);
+            Sym si=in[d.i];
+            bad&=add_arcs(io,atab,si,EPS,d.i+1,d.o,fs,src);
+            if (useO) {
+                bad&=add_arcs(io,atab,si,out[d.o],d.i+1,d.o+1,fs,src);
             }
         }
-        return ret;
+        remove[src]=bad;
+        return src;
     }
 
 
     template <class arcs_table>
-    void add_arcs(wfst_io_index const& io,arcs_table const&atab,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out
+    bool add_arcs(wfst_io_index const& io,arcs_table const&atab,Sym s_in,Sym s_out,unsigned i_in,unsigned i_out
                   ,typename wfst_io_index::for_state const& fs,unsigned source)
     {
         typedef typename wfst_io_index::for_io for_io;
+        bool bad=true;
         if (for_io const* match=find_second(fs,IOPair(s_in,s_out)))
             for (typename for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
                 ++global_stats.pre.arcs;
                 FSTArc *a=atab[id].arc;
-                g[source].add_data_as(source,derive(io,atab,deriv_state(i_in,a->dest,i_out)),a->weight.getReal(),id); // weight only used by gibbs init em prob
+                unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
+                if (!remove[dst]) {
+                    bad=false;
+                    g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
+                }
             }
-
+        return bad;
     }
 
     reversed_graph r;

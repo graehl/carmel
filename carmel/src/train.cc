@@ -327,12 +327,49 @@ struct forward_backward : public cached_derivs<arc_counts>
 
  private:
     // these take an initialize unweighted_corpus_prob and counts, and accumulate over the training corpus
-    Weight estimate_cached(Weight &unweighted_corpus_prob_accum);
+    bool first_estimate;
+    Weight weighted_corpus_prob;
+    Weight *unweighted_corpus_prob;
+    Weight estimate_cached(Weight &unweighted_corpus_prob_accum)
+    {
+        assert(!use_matrix);
+        unweighted_corpus_prob=&unweighted_corpus_prob_accum;
+        weighted_corpus_prob.setOne();
+        foreach_deriv(*this);
+        Config::log()<<'\n';
+        return weighted_corpus_prob;
+    }
+    template <class F>
+    void foreach_deriv(F &f)
+    {
+        assert(!use_matrix);
+        if (cache)
+            cache_t::foreach_deriv(f);
+        else {
+            wfst_io_index io(x); // TODO: lift outside of foreach deriv?
+            unsigned n=0;
+            List<IOSymSeq> &ex=corpus().examples;
+            for (List<IOSymSeq>::erase_iterator i=ex.erase_begin(),end=ex.erase_end();i!=end;++i) {
+                ++n;
+                derivations derivs;
+                if (derivs.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward)) {
+                    f(n,derivs);
+                } else if (first_estimate) {
+                    if (remove_bad_training) i=ex.erase(i);
+                    warn_no_derivations(x,*i,n);
+                }
+            }
+        }
+    }
     Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
-
-    // uses derivs.weight to scale counts for that example.  returns unweighted prob, however
-    Weight estimate_cached(derivations & derivs);
  public:
+    void operator()(unsigned n,derivations &derivs)
+    {
+        training_progress(n);
+        Weight prob=derivs.collect_counts(arcs);
+        *unweighted_corpus_prob*=prob;
+        weighted_corpus_prob*=prob.pow(derivs.weight);
+    }
 
     // return max change
     Weight maximize(WFST::NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1.);
@@ -361,6 +398,7 @@ struct forward_backward : public cached_derivs<arc_counts>
         }
     }
 
+    bool cache;
     bool cache_backward;
 //    serialize_batch<derivations> cached_derivs;
 
@@ -368,16 +406,20 @@ struct forward_backward : public cached_derivs<arc_counts>
         : cache_t(x,corpus,opts.cache)
         , cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
     {
+        first_estimate=true;
         cascade.set_composed(x);
         trn=NULL;
         f=b=NULL;
         remove_bad_training=true;
-        if (opts.cache.cache()) {
+        cache=opts.cache.cache();
+        use_matrix=opts.cache.use_matrix();
+        if (use_matrix)
+            Config::log()<<"Using (input,state,output) full matrix, not derivation lattice.  Usually slower.\n";
+        cache_backward=cache&&opts.cache.cache_backward();
+        if (cache) {
             use_matrix=false;
-            cache_backward=opts.cache.cache_backward();
             Config::log()<<"Caching derivations in "<<derivs.stored_in()<<std::endl;
-        } else {
-            use_matrix=true;
+        } else if (use_matrix) {
             mio.populate(include_backward);
             e_topo_populate(include_backward);
         }
@@ -533,7 +575,6 @@ Weight WFST::train(cascade_parameters &cascade,
                 Config::log()  << "Maximum number of iterations (" << opts.max_iter << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange << "\n";
                 break;
             }
-
             Weight p = fb.estimate(corpus_p); //lastPerplexity.isInfinity() // only delete no-path training the first time, in case we screw up with our learning rate
             Weight newPerplexity=p.ppxper(corpus.totalEmpiricalWeight);
             DWSTAT("\nAfter estimate");
@@ -730,30 +771,10 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
         p=estimate_matrix(unweighted_corpus_prob);
     else
         p=estimate_cached(unweighted_corpus_prob);
+    first_estimate=false;
     return p;
 }
 
-Weight forward_backward::estimate_cached(Weight &unweighted_corpus_prob_accum)
-{
-    assert(!use_matrix);
-    Weight weighted_corpus_prob=1;
-    unsigned n=0;
-    for (derivs.rewind();derivs.advance();) {
-        ++n;
-        training_progress(n);
-        derivations & d=derivs.current();
-        Weight prob=estimate_cached(d);
-        unweighted_corpus_prob_accum *= prob;
-        weighted_corpus_prob *= prob.pow(d.weight);
-    }
-    Config::log()<<'\n';
-    return weighted_corpus_prob;
-}
-
-Weight forward_backward::estimate_cached(derivations & derivs)
-{
-    return derivs.collect_counts(arcs);
-}
 
 
 
@@ -798,12 +819,11 @@ Weight forward_backward::estimate_matrix(Weight &unweighted_corpus_prob)
         unweighted_corpus_prob *= fin;
 
 
-        if (remove_bad_training)
-            if ( !(fin.isPositive()) ) {
-                warn_no_derivations(x,*seq,train_example_no);
-                seq=trn->examples.erase(seq);
-                continue;
-            }
+        if ( !(fin.isPositive()) ) {
+            warn_no_derivations(x,*seq,train_example_no);
+            if (remove_bad_training) seq=corpus().examples.erase(seq);
+            continue;
+        }
         check_fb_agree(fin,b[0][0][0]);
 
         letIn = seq->i.let;
@@ -982,28 +1002,31 @@ void WFST::read_training_corpus(std::istream &in,training_corpus &corpus)
         if ( !in )
             break;
         ++input_lineno;
-
-        if ( isdigit(buf[0]) || buf[0] == '-' || buf[0] == '.' ) {
-            istringstream w(buf.c_str());
-            w >> weight;
-            if ( w.fail() ) {
+        char s=buf[0];
+        if ( isdigit(s) || s == '-' || s == '.' || s=='e') { //FIXME: this is dumb since we allow symbols without quotes; require option to specify weight always present, or parallel weight file
+            istringstream w(buf);
+            if ( !try_stream_into(w,weight) ) {
                 Config::warn() << "Bad training example weight: " << buf << std::endl;
                 continue;
             }
             getline(in,buf);
-            if ( !in )
-                break;
             ++input_lineno;
+            if ( !in ) goto warn;
         }
         WFST::symbol_ids ins(*this,buf.c_str(),0,input_lineno);
         getline(in,buf);
-        if ( !in )
-            break;
         ++input_lineno;
+        if ( !in ) {
+            if (!ins.empty()) goto warn; else break;
+        }
 
         WFST::symbol_ids outs(*this,buf.c_str(),1,input_lineno);
         corpus.add(ins, outs, weight);
     }
+    goto done;
+warn:
+    Config::warn() << "Incomplete input/output training pair; last line #"<<input_lineno<<": " << buf << std::endl;
+done:
     corpus.finish_adding();
 }
 
