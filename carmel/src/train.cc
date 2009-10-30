@@ -353,7 +353,7 @@ struct forward_backward : public cached_derivs<arc_counts>
             for (List<IOSymSeq>::erase_iterator i=ex.erase_begin(),end=ex.erase_end();i!=end;++i) {
                 ++n;
                 derivations derivs;
-                if (derivs.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward)) {
+                if (derivs.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward,prune)) {
                     f(n,derivs);
                 } else if (first_estimate) {
                     if (remove_bad_training) i=ex.erase(i);
@@ -402,11 +402,13 @@ struct forward_backward : public cached_derivs<arc_counts>
     bool cache;
     bool cache_backward;
 //    serialize_batch<derivations> cached_derivs;
+    bool prune;
 
     forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts,training_corpus & corpus)
         : cache_t(x,corpus,opts.cache)
         , cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
     {
+        prune=opts.cache.prune();
         first_estimate=true;
         cascade.set_composed(x);
         trn=NULL;

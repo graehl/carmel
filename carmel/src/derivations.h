@@ -1,8 +1,11 @@
 #ifndef GRAEHL_CARMEL_DERIVATIONS_H
 #define GRAEHL_CARMEL_DERIVATIONS_H
 
+#define DEBUGDERIVATIONS
+
 #ifdef DEBUGDERIVATIONS
 # define DEBUG_DERIVATIONS_PRUNE
+//# define DEBUG_DERIVATIONS_PRUNE_EXTRA
 #endif
 
 /*
@@ -32,6 +35,15 @@ namespace graehl {
 //TODO: epsilon filter needed so training sums over subseqs of *e*:o and i:*e* don't care about order?  don't think so.
 struct deriv_state
 {
+    typedef deriv_state self_type;
+    TO_OSTREAM_PRINT
+    template<class O>
+    void print(O &os) const
+    {
+        os<<'(';
+        os<<i<<' '<<s<<' '<<o;
+        os<<')';
+    }
     uint32_t i,s,o; // input,state,output
     std::size_t hash() const
     {
@@ -169,6 +181,13 @@ struct derivations //: boost::noncopyable
 
     typedef HashTable<deriv_state,state_id> state_to_id;
     state_to_id id_of_state;
+    typedef fixed_array<deriv_state> id_to_state;
+    void fill_id_to_state(id_to_state &f)
+    {
+        f.reinit(g.size());
+        for (state_to_id::iterator i=id_of_state.begin();i!=id_of_state.end();++i)
+            f[i->second]=i->first;
+    }
  public:
     Weight n_paths() const
     {
@@ -181,9 +200,12 @@ struct derivations //: boost::noncopyable
         Weight sum_paths;
         Weight prod_paths;
         double N;
-        statistics() : prod_paths(one_weight()), N(0) {  }
+        statistics() : prod_paths(one_weight()), N(0),pruned(false) {  }
+        bool pruned;
+
         void prune_record(derivations &d,bool do_prune=true)
         {
+            pruned=do_prune;
             ++N;
             pre.states=d.g.size();
             if (do_prune)
@@ -229,13 +251,17 @@ struct derivations //: boost::noncopyable
             states_arcs ratio=post;
             ratio/=pre;
 
-            o << "\nTotal for "<<N<<" cached derivations:\n"
-              <<  "Pre pruning: "<< pre <<"\n"
-              <<"Post pruning: " << post << "\n"
-              << "Portion kept: " << ratio << "\n"
-                << "Avg # of paths (arith. mean): " << sum_paths/N << "\n"
-              << "Avg # of paths (geom. mean): " << prod_paths.root(N) << "\n"
-                ;
+            o << "\nTotal for "<<N<<" cached derivations:";
+            if (!pruned)
+                o << " " << pre << "\n";
+            else
+                o << "\n"
+                  <<  "Pre pruning: "<< pre <<"\n"
+                  <<"Post pruning: " << post << "\n"
+                  << "Portion kept: " << ratio << "\n"
+                  << "Avg # of paths (arith. mean): " << sum_paths/N << "\n"
+                  << "Avg # of paths (geom. mean): " << prod_paths.root(N) << "\n"
+                    ;
         }
         typedef statistics self_type;
         TO_OSTREAM_PRINT
@@ -448,7 +474,7 @@ struct derivations //: boost::noncopyable
     }
 
     template <class Symbols,class arcs_table>
-    bool init_and_compute(WFST &x,wfst_io_index const& io,arcs_table const& atab,Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false,bool drop_names=true,bool prune_=true)
+    bool init_and_compute(WFST &x,wfst_io_index const& io,arcs_table const& atab,Symbols const& in_,Symbols const& out_,double w=1,unsigned line=0,bool cache_backward_=false,bool prune_=true,bool drop_names=true)
     {
         init(in_,out_,w,line,cache_backward_);
         return compute(x,io,atab,drop_names,prune_);
@@ -465,9 +491,9 @@ struct derivations //: boost::noncopyable
         if (pfin)
             fin=*pfin;
         no_goal=(pfin==NULL);
+        global_stats.prune_record(*this,prune_);
         if (drop_names)
             id_of_state.clear();
-        global_stats.prune_record(*this,prune_);
         if (no_goal) {
             g.clear();
             return false;
@@ -551,19 +577,35 @@ struct derivations //: boost::noncopyable
         if (empty())
             return;
 #if 1
+        std::ostream &dbg=Config::debug();
+
         fixed_array<bool> remove(true,g.size());
-#ifdef DEBUG_DERIVATIONS_PRUNE
+#ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
         Config::debug() << "Pruning derivations - original:\n";
         printGraph(graph(),Config::debug());
 #endif
         reversed_graph r(g);
-#ifdef DEBUG_DERIVATIONS_PRUNE
+#ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
         Config::debug() << "Pruning derivations - reversed:\n";
         printGraph(r.graph(),Config::debug());
 #endif
         r.mark_reaching(remove,final(),false);
 #endif
 #ifdef DEBUG_DERIVATIONS_PRUNE
+        id_to_state i2s;
+        fill_id_to_state(i2s);
+        dbg<<"\ngoal="<<goal<<"\n";
+        for (unsigned i=0,N=remove.size();i!=N;++i) {
+            bool r=remove[i],r2=this->remove[i];
+            if (!r)
+                dbg<<"i="<<i<<" "<<(r?'*':'.')<<" "<<(r2?'*':'.')<<" "<<i2s[i]<<'\n';
+            if (r!=r2)
+                Config::warn()<<"state="<<i<<" dfs="<<(r?'*':'.')<<" build="<<(r2?'*':'.')<<i2s[i]<<'\n';
+        }
+        dbg<<"\ngoal="<<goal<<"\n";
+#endif
+
+#ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
         Config::debug() << "Removing states:";
         print_range(Config::debug(),remove.begin(),remove.end());
         Config::debug() << "\n";
@@ -575,13 +617,12 @@ struct derivations //: boost::noncopyable
         unsigned new_size=graehl::shuffle_removing(&g.front(),ttable,rw);
         global_stats.post.states=new_size;
         global_stats.post.arcs=rw.n_kept;
-#ifdef DEBUG_DERIVATIONS_PRUNE
+#ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
         Config::debug()<<"old state->new state ttable:\n";
         print_range(Config::debug(),ttable.map,ttable.map+ttable.n_mapped);
         Config::debug()<<"\n";
 
         Config::debug() << "Pruning derivations - final, new size="<<new_size<<":\n";
-
         printGraph(graph(),Config::debug());
 #endif
         g.resize(new_size);
@@ -614,19 +655,19 @@ struct derivations //: boost::noncopyable
         remove.push_back(false);
         typename wfst_io_index::for_state const&fs=io.st[d.s];
         add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src);
-        bool bad=!is_goal(d);
+        bool dead=!is_goal(d);
         bool useO=d.o<out.size(),useI=d.i<in.size();
         unsigned o1=d.o+1,i1=d.o+1;
         if (useO)
-            bad&=add_arcs(io,atab,EPS,out[d.o],d.i,o1,fs,src);
+            if (add_arcs(io,atab,EPS,out[d.o],d.i,o1,fs,src)) dead=false;
         if (useI) {
             Sym si=in[d.i];
-            bad&=add_arcs(io,atab,si,EPS,i1,d.o,fs,src);
+            if (add_arcs(io,atab,si,EPS,i1,d.o,fs,src)) dead=false;
             if (useO) {
-                bad&=add_arcs(io,atab,si,out[d.o],i1,o1,fs,src);
+                if (add_arcs(io,atab,si,out[d.o],i1,o1,fs,src)) dead=false;
             }
         }
-        remove[src]=bad;
+        remove[src]=dead;
         return src;
     }
 
@@ -636,20 +677,20 @@ struct derivations //: boost::noncopyable
                   ,typename wfst_io_index::for_state const& fs,unsigned source)
     {
         typedef typename wfst_io_index::for_io for_io;
-        bool bad=true;
+        bool reachgoal=false;
         if (for_io const* match=find_second(fs,IOPair(s_in,s_out)))
             for (typename for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
                 ++global_stats.pre.arcs;
                 FSTArc *a=atab[id].arc;
                 unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
-                if (true||!remove[dst]) { //FIXME: remove array isn't showing reachability to final (goal) state, so disabled.
-                    bad=false;
-                    g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
-// note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
+// note: use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
+                g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
+                if (!remove[dst]) { //FIXME: remove array isn't showing reachability to final (goal) state, so disabled.
+                    reachgoal=true;
                 }
             }
-        return bad;
+        return reachgoal;
     }
 
     reversed_graph r;

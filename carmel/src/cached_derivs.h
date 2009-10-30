@@ -24,11 +24,11 @@ struct cached_derivs
         : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize),arcs(x)
     {
         if (copt.cache()) {
-            compute_derivations(corpus.examples,copt.cache_backward());
+            compute_derivations(corpus.examples,copt.cache_backward(),copt.prune());
         }
     }
     template <class Examples>
-    void compute_derivations(Examples const &ex,bool cache_backward)
+    void compute_derivations(Examples const &ex,bool cache_backward,bool prune=true)
     {
         std::ostream &log=Config::log();
         log<<"Caching derivations:\n";
@@ -40,11 +40,11 @@ struct cached_derivs
              i!=end ; ++i,++n) {
             num_progress(log,n,10,70,".","\n");
             derivations &d=derivs.start_new();
-            if (!d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward)) {
+            if (!d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward,prune)) {
                 warn_no_derivations(x,*i,n);
                 derivs.drop_new();
             } else {
-#ifdef DEBUGDERIVATIONS
+#ifdef DEBUG_DERIVATIONS_EXTRA
                 Config::debug() << "Derivations in transducer for input/output #"<<n<<" (final="<<d.final()<<"):\n";
                 i->print(Config::debug(),x,"\n");
                 printGraph(d.graph(),Config::debug());
