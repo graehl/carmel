@@ -51,10 +51,15 @@ struct deriv_state
         return hash3(i,s,o);
 //hash_bytes_32((void *)this,sizeof(deriv_state));
     }
+    bool operator !=(deriv_state const& r)  const
+    {
+        return !(*this==r);
+    }
     bool operator ==(deriv_state const& r)  const
     {
         return r.i==i && r.s==s && r.o==o;
     }
+
     deriv_state() {  }
     deriv_state(uint32_t i,uint32_t s,uint32_t o) : i(i),s(s),o(o) {}
 };
@@ -485,6 +490,10 @@ struct derivations //: boost::noncopyable
     {
         remove.clear();
         goal=deriv_state(in.size(),x.final,out.size());
+#ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
+        Config::debug()<<"\ngoal="<<goal<<"\n";
+#endif
+
         state_id start=derive(io,atab,deriv_state(0,0,0));
         assert(start==0);
         state_id *pfin=find_second(id_of_state,goal);
@@ -576,8 +585,10 @@ struct derivations //: boost::noncopyable
     {
         if (empty())
             return;
-#if 1
+#ifdef DEBUG_DERIVATIONS_PRUNE
         std::ostream &dbg=Config::debug();
+#endif
+#if 0
 
         fixed_array<bool> remove(true,g.size());
 #ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
@@ -591,14 +602,17 @@ struct derivations //: boost::noncopyable
 #endif
         r.mark_reaching(remove,final(),false);
 #endif
+
 #ifdef DEBUG_DERIVATIONS_PRUNE
         id_to_state i2s;
         fill_id_to_state(i2s);
-        dbg<<"\ngoal="<<goal<<"\n";
+//        dbg<<"\ngoal="<<goal<<"\n";
         for (unsigned i=0,N=remove.size();i!=N;++i) {
             bool r=remove[i],r2=this->remove[i];
+# if DEBUG_DERIVATIONS_PRUNE_EXTRA
             if (!r)
                 dbg<<"i="<<i<<" "<<(r?'*':'.')<<" "<<(r2?'*':'.')<<" "<<i2s[i]<<'\n';
+# endif
             if (r!=r2)
                 Config::warn()<<"state="<<i<<" dfs="<<(r?'*':'.')<<" build="<<(r2?'*':'.')<<i2s[i]<<'\n';
         }
@@ -634,11 +648,7 @@ struct derivations //: boost::noncopyable
     typedef dynamic_array<bool> remove_t;
     remove_t remove; // remove[i] = true -> no path to final
     deriv_state goal;
-    bool is_goal(deriv_state const& d) const
-    {
-        return goal==d;
-            //d.i==in.size()&&d.s==x.final&&d.o==out.size();
-    }
+
     //TODO: integrate prune+derive?  win=won't have to add an arc that doesn't finish.
     template <class arcs_table>
     state_id derive(wfst_io_index const& io,arcs_table const&atab,deriv_state const& d)
@@ -654,8 +664,8 @@ struct derivations //: boost::noncopyable
         g.push_back();
         remove.push_back(false);
         typename wfst_io_index::for_state const&fs=io.st[d.s];
-        add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src);
-        bool dead=!is_goal(d);
+        bool dead=(d!=goal);
+        if (add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src)) dead=false;
         bool useO=d.o<out.size(),useI=d.i<in.size();
         unsigned o1=d.o+1,i1=d.o+1;
         if (useO)
@@ -685,8 +695,8 @@ struct derivations //: boost::noncopyable
                 FSTArc *a=atab[id].arc;
                 unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
 // note: use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
-                g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
                 if (!remove[dst]) { //FIXME: remove array isn't showing reachability to final (goal) state, so disabled.
+                    g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
                     reachgoal=true;
                 }
             }
