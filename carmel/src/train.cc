@@ -525,6 +525,16 @@ Weight WFST::train(cascade_parameters &cascade,
     random_restart_acceptor ra=opts.ra;
 
     forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,true,opts,corpus);
+    Weight corpus_p;
+    if (opts.max_iter==0) {
+        Config::log() << "0 iterations specified for training; output weights will be unnormalized fractional counts (except locked arcs).\n";
+        Weight p=fb.estimate(corpus_p);
+        corpus_p.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
+        fb.arcs.visit(for_arcs::prep_new_weights(1.0));
+        cascade.use_counts(*this,methods);
+        Config::log()<<"\n";
+        return p.ppxper(corpus.totalEmpiricalWeight);
+    }
 
     Weight bestPerplexity;
     bestPerplexity.setInfinity();
@@ -564,7 +574,6 @@ Weight WFST::train(cascade_parameters &cascade,
 #endif
 
 //            DWSTAT("Before estimate");
-            Weight corpus_p;
             bool cascade_counts=using_cascade && !first_time;
 
             if (cascade_counts) {
@@ -910,6 +919,8 @@ Weight forward_backward::maximize(WFST::NormalizeMethods const& methods,FLOAT_TY
 
     DUMPDW("Weights before prior smoothing");
 
+    cascade.save_none(methods);
+
     //    arcs.pre_norm_counts(corpus.totalEmpiricalWeight);
     arcs.visit(for_arcs::prep_new_weights(1.0));
 
@@ -918,6 +929,8 @@ Weight forward_backward::maximize(WFST::NormalizeMethods const& methods,FLOAT_TY
 
 //    DWSTAT("Before normalize");
     cascade.use_counts(x,methods); // doesn't actually put weights back into x for nontrivial cascade, which is why the following is skipped for cascades.  update prior to estimate puts the weights in place.
+
+    cascade.load_none(methods);
 
     if (cascade.trivial) {
         DUMPDW("Weights after normalization");
