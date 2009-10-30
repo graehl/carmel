@@ -45,9 +45,18 @@ struct carmel_gibbs : public gibbs_base
         gibbs_base::run_starts(*this);
         // copy weights to transd. so path weights are right?
         gibbs_base::print_all(*this);
-        cascade.update_gibbs(*this);
+        probs_to_cascade();
     }
-    // for cascade.update_gibbs
+
+    void probs_to_cascade()
+    {
+        for (unsigned i=0,N=cascade.size();i<N;++i) {
+            WFST &w=*cascade.cascade[i];
+            if (methods[i].group!=WFST::NONE)
+                w.visit_arcs(*this); // uses below operator()
+        }
+    }
+    // for probs_to_cascade()
     void operator()(unsigned src,FSTArc & f) const
     {
         f.weight=gibbs_base::proposal_prob(gps[f.groupId]);
@@ -55,22 +64,27 @@ struct carmel_gibbs : public gibbs_base
 
     void set_gibbs_params(bool addarcs=false,bool addsource=false)
     {
-        for (unsigned norm=0,i=0,N=cascade.size();i<N;++i)
-            norm=add_gibbs_params(norm,*cascade.cascade[i],methods[i],gopt.uniformp0,addarcs,addsource);
+        unsigned dummy=define_param(0,1);
+        assert(dummy==FSTArc::locked_group); // this parameter always gives p=1 because it's in its own normgrp
+        for (unsigned norm=1,i=0,N=cascade.size();i<N;++i) {
+            WFST &w=*cascade.cascade[i];
+            WFST::NormalizeMethod const& nm=methods[i];
+            norm=add_gibbs_params(norm,w,nm,gopt.uniformp0,addarcs,addsource);
+        }
     }
     typedef dynamic_array<FSTArc *> arc_for_param_t;
     arc_for_param_t arcs;
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
     // return next free normgroup id, start at normidbase
-    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod & nm,bool uniformp0=false,bool addarcs=false,bool addsource=false)
+    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod const& nm,bool uniformp0=false,bool addarcs=false,bool addsource=false)
     {
+        if (nm.group==WFST::NONE) {
+            w.lockArcs();
+            return normidbase;
+        }
         unsigned id=normidbase;
         if (w.isEmpty())
             return id;
-        if (nm.group==WFST::NONE) {
-            Config::warn()<<"Can't turn off normalization for gibbs training; changing to conditional.\n";
-            nm.group=WFST::CONDITIONAL;
-        }
         if (nm.group==WFST::CONDITIONAL)
             w.indexInput();
         Weight ac=nm.add_count;

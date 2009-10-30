@@ -549,8 +549,8 @@ class WFST {
     int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
     int readLegible(const string& str, bool alwaysNamed=false);
     void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false); // for graphviz
-    void writeLegible(ostream &);
-    void writeLegibleFilename(std::string const& name);
+    void writeLegible(ostream &,bool include_zero=false);
+    void writeLegibleFilename(std::string const& name,bool include_zero=false);
     void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
     int numStates() const { return states.size(); }
     bool isFinal(int s) { return s==final; }
@@ -1204,10 +1204,14 @@ class WFST {
 
 
 
-    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3
+    enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3,matrix_fb=4
     }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
     struct deriv_cache_opts
     {
+        bool use_matrix() const
+        {
+            return cache_level == matrix_fb;
+        }
         unsigned cache_level;
         std::string disk_cache_filename;
         size_t_bytes disk_cache_bufsize;
@@ -1217,7 +1221,7 @@ class WFST {
         }
         bool cache() const
         {
-            return cache_level != cache_nothing;
+            return cache_level != cache_nothing && cache_level != matrix_fb;
         }
         bool cache_backward() const
         {

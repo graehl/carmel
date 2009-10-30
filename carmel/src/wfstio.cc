@@ -41,7 +41,7 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
         if (buf >= bufend)                      \
             goto bufoverflow;                   \
     } while(0)
-    
+
     int l;
     char *s,*bufend=buf+STRBUFSIZE-2;
     if ( !(in >> *buf) ) return 0;
@@ -85,7 +85,7 @@ static char *getString(std::istream &in, char *buf,unsigned STRBUFSIZE=DEFAULTST
                 in.unget();
                 break;
             }
-        }        
+        }
         *buf = '\0';
         if (buf[-1] == DOS_CR_CHAR)
             *--buf = '\0';
@@ -154,7 +154,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
     int symbolInNumber, symbolOutNumber,maxSymbolNumber=0 ;
     final = 0;
     alphabet_type &in=alphabet(0),&out=alphabet(1);
-    
+
     while ( line ) {
         if ( !getString(line, symbol) ){
             if(!permuteNumbers && currSym != ""){
@@ -295,10 +295,10 @@ static const char COMMENT_CHAR='%';
 //FIXME: need to destroy old data or switch this to a constructor
 int WFST::readLegible(istream &istr,bool alwaysNamed)
 {
-    alphabet_type &in=alphabet(0),&out=alphabet(1);    
+    alphabet_type &in=alphabet(0),&out=alphabet(1);
     State::arc_adder arc_add(states);
     StringKey finalName;
-    try {        
+    try {
         named_states=1;
         int stateNumber, destState, inL, outL;
         Weight weight;
@@ -333,7 +333,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
             stateNumber=getStateIndex(buf);
             if (stateNumber == -1)
                 goto INVALID;
-            
+
             // PRE: read: '(' source
             // expecting: {[destparen(] dest ... [destparen)]}* ')'
             for (;;) {
@@ -343,7 +343,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                     istr.unget();
                 if( c == ')' )
                     break;
-      
+
                 // dest state:
                 REQUIRE(getString(istr, buf));
                 destState=getStateIndex(buf);
@@ -360,9 +360,9 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                         PEEKC;
                     //PRE: read: '(' source [destparen(] dest [iowparen(]
                     //expecting: if iowparen, repetitions of: [[input [output]] weight] [![group]] ')'
-                    //             reps separated by '('/REPEAT OR ')'/END 
+                    //             reps separated by '('/REPEAT OR ')'/END
                     //   else, single repetition
-#define ENDIOW (c==')'||c=='!')                    
+#define ENDIOW (c==')'||c=='!')
                     if (ENDIOW) { // ...)
                         inL=outL=WFST::epsilon_index;
                         weight=1.0;
@@ -379,7 +379,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                                 inL = in.indexOf(buf);
                                 outL = out.indexOf(buf);
                                 weight=1.0;
-                            }              
+                            }
                         } else {
                             inL = in.indexOf(buf);
                             GETBUF(buf2);
@@ -387,27 +387,27 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                             if (ENDIOW) {  // ... iosymbol weight) or ... isymbol osymbol)
                                 if (weight.setString(buf2)) { // ... iosymbol weight)
                                     outL = out.indexOf(buf);
-                                } else { // ... iosymbol osymbol) 
+                                } else { // ... iosymbol osymbol)
                                     outL = out.indexOf(buf2);
                                     weight=1.0;
-                                }        
+                                }
                             } else { // ... isymbol osymbol weight)
                                 outL = out.indexOf(buf2);
                                 REQUIRE(istr >> weight);
                                 PEEKC;
                                 REQUIRE(ENDIOW);
-                            } 
+                            }
                         }
                     }
-                    
+
                     // POST: read iow sequence
                     // expecting: [ '!' [groupid]]
 #undef GETBUF
-//                    DBP5(stateNumber,destState,inL,outL,weight);                    
+//                    DBP5(stateNumber,destState,inL,outL,weight);
 //                    states[stateNumber].addArc(FSTArc(inL, outL, destState, weight));
 //TODO: use back_insert_iterator so arc list doesn't get reversed? or print out in reverse order?
 //DONE. see below arc_add
-                    
+
                     FSTArc to_add(inL, outL, destState, weight);
                     GETC;
                     if ( c == '!' ) { // lock weight
@@ -419,27 +419,27 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
                             to_add.setGroup(group);
                         } else {
                             to_add.setLocked();
-                        }                        
+                        }
                     } else
                         istr.unget();
-                    
-                    arc_add(stateNumber,to_add); 
-                    
+
+                    arc_add(stateNumber,to_add);
+
                     // POST: finished reading: iow!g)
                     if (!iowparen)
                         break;
                     REQUIRE(istr >> c && c== ')');
                     PEEKC;
                     if (c==')')
-                        break;                        
+                        break;
                 }
                 if (!destparen)
-                    break;       
+                    break;
                 REQUIRE(istr >> c && c== ')');
             }
             REQUIRE(istr >> c && c== ')');
             // POST: finished with (dest (iow!g)*)* (done with "line")
-        }        
+        }
         // POST: no more input
         if ( !named_states) {
             if (!(final < size())) goto INVALID; // whoops, this can never happen because of getStateIndex creating the (empty) state
@@ -458,7 +458,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
             }
         }
     } catch (std::exception &e) {
-        goto INVALID;        
+        goto INVALID;
     }
 INVALID:
     show_error_context(istr,cerr);
@@ -467,7 +467,7 @@ INVALID:
     invalidate();
     return 0;
 }
-/*          
+/*
             buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
             GETC;  // skip whitespace
             istr.unget();
@@ -580,14 +580,14 @@ void WFST::writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON) {
     OUTARCWEIGHT(os,&a);
 }
 
-void WFST::writeLegibleFilename(std::string const& name) 
+void WFST::writeLegibleFilename(std::string const& name,bool include_zero)
 {
     std::ofstream of(name.c_str());
-    writeLegible(of);
+    writeLegible(of,include_zero);
 }
 
 
-void WFST::writeLegible(ostream &os)
+void WFST::writeLegible(ostream &os,bool include_zero)
 {
     bool brief = get_arc_format(os)==BRIEF;
     bool onearc = get_per_line(os)==ARC;
@@ -603,7 +603,7 @@ void WFST::writeLegible(ostream &os)
             os << "\n(" << stateName(i);
         for (List<FSTArc>::const_iterator a=states[i].arcs.const_begin(),end = states[i].arcs.const_end() ; a !=end ; ++a ) {
 
-            if ( a->weight.isPositive() ) {
+            if (include_zero||a->weight.isPositive() ) {
                 if (onearc)
                     os << "\n(" << stateName(i);
                 destState = stateName(a->dest);
@@ -632,7 +632,7 @@ void WFST::writeLegible(ostream &os)
 void WFST::listAlphabet(ostream &ostr, int dir)
 {
     ostr << alphabet(dir);
-/*    
+/*
     Alphabet<StringKey,StringPool> *alph;
     if ( output )
         alph = out;
@@ -645,7 +645,7 @@ void WFST::listAlphabet(ostream &ostr, int dir)
 void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno)
 {
 //  List<int> *ret = NEW List<int>;
-    
+
     //LIST_BACK_INSERTER<List<int> > cursor(*ret);
 //  insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
     List<int>::back_insert_iterator cursor(*ret);
@@ -673,7 +673,7 @@ void WFST::symbolList(List<int> *ret,const char *buf, int output,int lineno)
             *cursor++ = *pI;
 #else
         *cursor++ = alph.index_of(symbol);
-#endif 
+#endif
     }
 //  return ret;
 }

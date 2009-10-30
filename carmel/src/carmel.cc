@@ -669,6 +669,52 @@ struct carmel_main
         return result->numArcs()!=n;
     }
 
+    struct shrink_monitor
+    {
+        shrink_monitor(char const* name,WFST &result,bool print,bool &changed)
+            : name(name),result(result),print(print),changed(changed)
+        {
+            st=result.size();
+            arc=result.numArcs();
+        }
+        char const* name;
+        WFST &result;
+        bool print;
+        bool &changed;
+        unsigned st,arc;
+        ~shrink_monitor()
+        {
+            unsigned nst=result.size(),narc=result.numArcs();
+            if (nst!=st || narc!=arc) {
+                changed=true;
+                if (print)
+                    Config::log() << ' '<<name<<"-> "<<nst<<'/'<<narc;
+            }
+        }
+
+    };
+
+    bool shrink(WFST *result,bool print=true,bool do_prune=true,bool openfst_min=false,char const* end="\n")
+    {
+        WFST &w=*result;
+        bool changed=false;
+        print=print&&!flags['q'];
+        {
+            shrink_monitor m("reduce",w,print,changed);
+            minimize(result);
+        }
+        if (do_prune) {
+            shrink_monitor m("prune",w,print,changed);
+            prune(result);
+        }
+        if (openfst_min) {
+            shrink_monitor m("openfst-minimize",w,print,changed);
+            openfst_minimize(result);
+        }
+        if (print) Config::log()<<end;
+        return changed;
+    }
+
     template <class OpenFST>
     void openfst_minimize_type(WFST *result)
     {
@@ -784,7 +830,6 @@ main(int argc, char *argv[]){
                 // long option
                 char * s=pc+2;
                 char  *e=s;
-                double v;
                 bool have_val=false;
                 for(;*e;++e)
                     if (*e== '=' ) {
@@ -795,6 +840,7 @@ main(int argc, char *argv[]){
                 std::string key(pc+2,e);
                 std::string val;
 
+                double v=1;
                 if (have_val) {
                     val=(e+1);
                     text_long_opts[key]=val;
@@ -802,8 +848,6 @@ main(int argc, char *argv[]){
                     is >> v;
                     if (is.fail())
                         v=-1;
-                } else {
-                    (void)text_long_opts[key];
                 }
                 long_opts[key]=v;
                 cerr << "option " << key << " = " << val << endl;
@@ -935,7 +979,7 @@ main(int argc, char *argv[]){
     }
     bool prunePath = flags['w'] || flags['z'];
     WFST::deriv_cache_opts &copt=train_opt.cache;
-    copt.cache_level=flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing);
+    copt.cache_level=cm.have_opt("matrix-fb") ? WFST::matrix_fb : (flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing));
     if (cm.have_opt("disk-cache-derivations")) {
         copt.cache_level=WFST::cache_disk;
         copt.disk_cache_filename=cm.set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
@@ -1257,21 +1301,24 @@ main(int argc, char *argv[]){
                 goto nextInput;
             }
             bool finalcompose = i == (r ? 0 : nChain-1);
+            bool om=long_opts["minimize-compositions"]>=n_compositions || long_opts["minimize-all-compositions"];
+            bool nok=!(kPaths>0 && finalcompose);
+            bool arcs_changed=cm.shrink(result,true,!(kPaths>0 && finalcompose),nok&&om,")");
+            /*
             bool arcs_changed=cm.minimize(result);
             if (!flags['q'] && (q_states != result->size() || arcs_changed ))
                 Config::log()  << " reduce-> " << result->size() << "/" << result->numArcs();
-            cascade.done_composing(*result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
             if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
                 q_states=result->size();
                 q_arcs=result->numArcs();
                 cm.prune(result);
                 if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
                     Config::log()  << " prune-> " << result->size() << "/" << result->numArcs();
-                if (long_opts["minimize-compositions"]>=n_compositions || long_opts["minimize-all-compositions"])
-                    cm.openfst_minimize(result);
-            }
+                    }
             if (!flags['q'])
                 Config::log() << ")";
+            */
+            cascade.done_composing(*result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
         }
         if (!flags['q'])
             Config::log() << std::endl;
@@ -1378,7 +1425,8 @@ main(int argc, char *argv[]){
                     }
                 }
             } else if ( nGenerate > 0 ) {
-                cm.minimize(result);
+                cm.shrink(result,true,true,true,"\n");
+//                cm.minimize(result);
                 if ( maxGenArcs == 0 )
                     maxGenArcs = DEFAULT_MAX_GEN_ARCS;
                 if ( flags['G'] ) {
@@ -1420,9 +1468,10 @@ main(int argc, char *argv[]){
 
             if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !trainc)
                  || flags['F'] ) {
-                cm.prune(result);
+                cm.shrink(result,true,true,true,"\n");
+//                cm.prune(result);
                 cm.post_train_normalize(result);
-                cm.minimize(result);
+//                cm.minimize(result);
                 if (long_opts["minimize"])
                     cm.openfst_minimize(result);
 
@@ -1749,6 +1798,7 @@ cout <<         "\n"
     cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
     cout << "\n--random-set : like -1 but ignore previous weights and set a new weight on (0..1]\n";
     cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
+    cout << "\n--matrix-fb : use a n*m*s matrix (n=input sentence length, m=output len, s=# states) for training, rather than a sparse derivations lattice (not recommended, but may be faster in some cases without caching i.e. -: or -?)";
     cout <<    "\n"
         "--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes\n"
         "\n"
@@ -1767,7 +1817,7 @@ cout <<         "\n"
 
     cout << "\n"
         "--digamma=0,,.5 : (train-cascade) if digamma[n] is a number x, scale num and denom by exp(digamma(count+x)).  for variational bayes, choose digamma=0 and put the additional counts in --priors instead\n"
-        "--normby=JCCC : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional\n"
+        "--normby=JCDN : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional, N=none (every arc stays at original prob.)\n"
         "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
         ;
 
