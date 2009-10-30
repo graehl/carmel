@@ -980,6 +980,7 @@ main(int argc, char *argv[]){
     bool prunePath = flags['w'] || flags['z'];
     WFST::deriv_cache_opts &copt=train_opt.cache;
     copt.cache_level=cm.have_opt("matrix-fb") ? WFST::matrix_fb : (flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing));
+    copt.do_prune=!cm.have_opt("cache-no-prune");
     if (cm.have_opt("disk-cache-derivations")) {
         copt.cache_level=WFST::cache_disk;
         copt.disk_cache_filename=cm.set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
@@ -1802,7 +1803,9 @@ cout <<         "\n"
     cout <<    "\n"
         "--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes\n"
         "\n"
-        "--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)\n"
+        "--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)"
+        "\n--cache-no-prune : don't prune unreachable states in derivation cache (not recommended)."
+        "\n"
         ;
     cout << "\n"
         "--exponents=2,.1 : comma separated list of exponents, applied left to right to the input WFSTs (including stdin if -s).  if more inputs than exponents, use (noop) exponent of 1.  this differs from -=, which exponentiates the weights of the resulting (output) WFST.\n"

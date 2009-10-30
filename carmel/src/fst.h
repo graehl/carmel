@@ -1208,6 +1208,12 @@ class WFST {
     }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
     struct deriv_cache_opts
     {
+        bool do_prune;
+        bool prune() const
+        {
+            return do_prune;
+        }
+
         bool use_matrix() const
         {
             return cache_level == matrix_fb;
@@ -1230,6 +1236,7 @@ class WFST {
         deriv_cache_opts() { set_defaults(); }
         void set_defaults()
         {
+            do_prune=true;
             cache_level=cache_nothing;
             disk_cache_filename="/tmp/carmel.derivations.XXXXXX";
             disk_cache_bufsize=256*1024*1024;
