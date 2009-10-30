@@ -6,6 +6,7 @@
 #include <graehl/carmel/src/cached_derivs.h>
 #include <graehl/shared/periodic.hpp>
 #include <graehl/shared/segments.hpp>
+#include <graehl/shared/time_space_report.hpp>
 
 //#define DEBUGTRAIN
 
@@ -517,6 +518,7 @@ Weight WFST::train(cascade_parameters &cascade,
                    , bool restore_old_weights
                    )
 {
+    graehl::time_space_report ts(Config::log(),"Training took ");
     cascade.normalize(*this,methods);
     unsigned ran_restarts=opts.ran_restarts;
     double learning_rate_growth_factor=opts.learning_rate_growth_factor;

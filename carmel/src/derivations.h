@@ -589,11 +589,14 @@ struct derivations //: boost::noncopyable
     }
 
  private:
-    std::vector<bool> remove; // remove[i] = true -> no path to final
+//    typedef std::vector<bool> remove_t; // bit vector
+    typedef dynamic_array<bool> remove_t;
+    remove_t remove; // remove[i] = true -> no path to final
     deriv_state goal;
     bool is_goal(deriv_state const& d) const
     {
         return goal==d;
+            //d.i==in.size()&&d.s==x.final&&d.o==out.size();
     }
     //TODO: integrate prune+derive?  win=won't have to add an arc that doesn't finish.
     template <class arcs_table>
@@ -640,7 +643,7 @@ struct derivations //: boost::noncopyable
                 ++global_stats.pre.arcs;
                 FSTArc *a=atab[id].arc;
                 unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
-                if (!remove[dst]) {
+                if (true||!remove[dst]) {
                     bad=false;
                     g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
