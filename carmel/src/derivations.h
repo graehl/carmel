@@ -550,7 +550,7 @@ struct derivations //: boost::noncopyable
     {
         if (empty())
             return;
-        /*
+#if 1
         fixed_array<bool> remove(true,g.size());
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug() << "Pruning derivations - original:\n";
@@ -562,7 +562,7 @@ struct derivations //: boost::noncopyable
         printGraph(r.graph(),Config::debug());
 #endif
         r.mark_reaching(remove,final(),false);
-        */
+#endif
 #ifdef DEBUG_DERIVATIONS_PRUNE
         Config::debug() << "Removing states:";
         print_range(Config::debug(),remove.begin(),remove.end());
@@ -615,15 +615,15 @@ struct derivations //: boost::noncopyable
         typename wfst_io_index::for_state const&fs=io.st[d.s];
         add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src);
         bool bad=!is_goal(d);
-        bool useO=d.o<out.size();
-        if (useO) {
-            bad&=add_arcs(io,atab,EPS,out[d.o],d.i,d.o+1,fs,src);
-        }
-        if (d.i < in.size()) {
+        bool useO=d.o<out.size(),useI=d.i<in.size();
+        unsigned o1=d.o+1,i1=d.o+1;
+        if (useO)
+            bad&=add_arcs(io,atab,EPS,out[d.o],d.i,o1,fs,src);
+        if (useI) {
             Sym si=in[d.i];
-            bad&=add_arcs(io,atab,si,EPS,d.i+1,d.o,fs,src);
+            bad&=add_arcs(io,atab,si,EPS,i1,d.o,fs,src);
             if (useO) {
-                bad&=add_arcs(io,atab,si,out[d.o],d.i+1,d.o+1,fs,src);
+                bad&=add_arcs(io,atab,si,out[d.o],i1,o1,fs,src);
             }
         }
         remove[src]=bad;
@@ -643,7 +643,7 @@ struct derivations //: boost::noncopyable
                 ++global_stats.pre.arcs;
                 FSTArc *a=atab[id].arc;
                 unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
-                if (true||!remove[dst]) {
+                if (true||!remove[dst]) { //FIXME: remove array isn't showing reachability to final (goal) state, so disabled.
                     bad=false;
                     g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
 // note: had to use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator

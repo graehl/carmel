@@ -151,6 +151,30 @@ struct cascade_parameters
         composed.visit_arcs(v);
     }
 
+    dynamic_array<WFST::saved_weights_t> none_saves;
+
+    void save_none(WFST::NormalizeMethods const& methods)
+    {
+        unsigned N=methods.size();
+        assert(N==cascade.size());
+        none_saves.reinit(N);
+        for (unsigned i=0;i!=N;++i)
+            if (methods[i].group==WFST::NONE)
+                cascade[i]->save_weights(none_saves[i]);
+    }
+
+    void load_none(WFST::NormalizeMethods const& methods)
+    {
+        unsigned N=methods.size();
+        assert(N==cascade.size());
+        for (unsigned i=0;i!=N;++i)
+            if (methods[i].group==WFST::NONE) {
+                cascade[i]->restore_weights(none_saves[i]);
+                none_saves[i].clear();
+            }
+    }
+
+
     void use_counts(WFST &composed,WFST::NormalizeMethods const& methods)
     {
         distribute_counts(composed);
