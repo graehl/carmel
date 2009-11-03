@@ -1,5 +1,7 @@
-#ifndef GRAEHL_CARMEL_DERIVATIONS_H
-#define GRAEHL_CARMEL_DERIVATIONS_H
+#ifndef GRAEHL_CARMEL__DERIVATIONS_H
+#define GRAEHL_CARMEL__DERIVATIONS_H
+
+#define DERIVPRUNE 0
 
 #ifdef DEBUGDERIVATIONS
 # define DEBUG_DERIVATIONS_PRUNE
@@ -486,7 +488,9 @@ struct derivations //: boost::noncopyable
     template <class arcs_table>
     bool compute(WFST &x,wfst_io_index const& io,arcs_table const&atab,bool drop_names=true,bool prune_=true)
     {
+#if DERIVPRUNE
         remove.clear();
+#endif
         goal=deriv_state(in.size(),x.final,out.size());
 #ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
         Config::debug()<<"\ngoal="<<goal<<"\n";
@@ -586,8 +590,7 @@ struct derivations //: boost::noncopyable
 #ifdef DEBUG_DERIVATIONS_PRUNE
         std::ostream &dbg=Config::debug();
 #endif
-#if 0
-
+#if !DERIVPRUNE
         fixed_array<bool> remove(true,g.size());
 #ifdef DEBUG_DERIVATIONS_PRUNE_EXTRA
         Config::debug() << "Pruning derivations - original:\n";
@@ -644,7 +647,9 @@ struct derivations //: boost::noncopyable
  private:
 //    typedef std::vector<bool> remove_t; // bit vector
     typedef dynamic_array<bool> remove_t;
+#if DERIVPRUNE
     remove_t remove; // remove[i] = true -> no path to final
+#endif
     deriv_state goal;
 
     //TODO: integrate prune+derive?  win=won't have to add an arc that doesn't finish.
@@ -660,7 +665,9 @@ struct derivations //: boost::noncopyable
         // new state = src - already added by insert above
 //        add(id_of_state,d,src); // NOTE: very important that we've added this before we start taking self-epsilons.
         g.push_back();
+#if DERIVPRUNE
         remove.push_back(false);
+#endif
         typename wfst_io_index::for_state const&fs=io.st[d.s];
         bool dead=(d!=goal);
         if (add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src)) dead=false;
@@ -671,11 +678,12 @@ struct derivations //: boost::noncopyable
         if (useI) {
             Sym si=in[d.i];
             if (add_arcs(io,atab,si,EPS,i1,d.o,fs,src)) dead=false;
-            if (useO) {
+            if (useO)
                 if (add_arcs(io,atab,si,out[d.o],i1,o1,fs,src)) dead=false;
-            }
         }
+#if DERIVPRUNE
         remove[src]=dead;
+#endif
         return src;
     }
 
@@ -693,7 +701,10 @@ struct derivations //: boost::noncopyable
                 FSTArc *a=atab[id].arc;
                 unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
 // note: use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
-                if (!remove[dst]) { //FIXME: remove array isn't showing reachability to final (goal) state, so disabled.
+#if DERIVPRUNE
+                if (!remove[dst])
+#endif
+                { //FIXME: remove array isn't showing reachability to final (goal) state, so disabled.
                     g[source].add_data_as(source,dst,a->weight.getReal(),id); // weight only used by gibbs init em prob
                     reachgoal=true;
                 }
