@@ -538,12 +538,17 @@ Weight WFST::train(cascade_parameters &cascade,
 
     forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,true,opts,corpus);
     Weight corpus_p;
-    if (opts.max_iter==0) {
-        Config::log() << "0 iterations specified for training; output weights will be unnormalized fractional counts (except locked arcs).\n";
+    if (opts.max_iter==0 || opts.max_iter==1&&opts.ran_restarts==0) {
+        if (opts.max_iter==0)
+            Config::log() << "0 iterations specified for training; output weights will be unnormalized fractional counts (except locked arcs).\n";
         Weight p=fb.estimate(corpus_p);
         corpus_p.print_ppx_symbol(Config::log(),corpus.n_input,corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
-        fb.arcs.visit(for_arcs::prep_new_weights(1.0));
-        cascade.distribute_counts(*this);
+        if (opts.max_iter==0) {
+            fb.arcs.visit(for_arcs::prep_new_weights(1.0));
+            cascade.distribute_counts(*this);
+        } else {
+            fb.maximize(methods,1);
+        }
         Config::log()<<"\n";
         return p.ppxper(corpus.totalEmpiricalWeight);
     }
@@ -553,7 +558,7 @@ Weight WFST::train(cascade_parameters &cascade,
     bool very_first_time=true;
     bool using_cascade=!cascade.trivial;
     if (using_cascade) {
-        if (learning_rate_growth_factor!=1.) {
+        if (learning_rate_growth_factor!=1) {
             Config::warn() << "Overrelaxed EM not supported for --train-cascade.  Disabling (growth factor=1)."<<std::endl;
             learning_rate_growth_factor=1;
         }
