@@ -7,6 +7,7 @@
 #include <vector>
 #include <iterator>
 
+#include <graehl/shared/dynarray.h>
 #include <graehl/shared/config.h>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/2heap.h>
@@ -362,12 +363,12 @@ void countNoCyclePaths(Graph g, Weight *nPaths, int src,unsigned *p_n_back_edges
 }
 
 template <class Weight>
-Weight countNoCyclePaths(Graph g, int src, int dest,unsigned *p_n_back_edges=0)
+Weight countNoCyclePathsTo(Graph g, int src, int dest,unsigned *p_n_back_edges=0)
 {
     Weight *w=new Weight[g.nStates];
     countNoCyclePaths(g,w,src,p_n_back_edges);
     Weight wd=w[dest];
-    delete w;
+    delete[] w;
     return wd;
 }
 

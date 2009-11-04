@@ -1,6 +1,6 @@
 // visit and begin_end for Boost Graph Library graphs (for consistency with hypergraph.hpp)
-#ifndef GRAPH_HPP
-#define GRAPH_HPP
+#ifndef GRAEHL_SHARED__GRAPH_HPP
+#define GRAEHL_SHARED__GRAPH_HPP
 
 // graph_object<G,(vertex|edge|hyperarc)_t>, visit(edge_tag,g) ...
 

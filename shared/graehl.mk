@@ -1,4 +1,4 @@
-#You provide:  
+#You provide:
 # (the variables below)
 # ARCH (if macosx, static builds are blocked)
 #PROGS=a b
@@ -8,7 +8,7 @@
 #NOSTATIC=1 (global setting)
 # CXXFLAGS CXXFLAGS_DEBUG CXXFLAGS_TEST
 # LIB = math thread ...
-# INC = . 
+# INC = .
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
 
 #include $(SHARED)/debugger.mk
@@ -18,7 +18,6 @@ ifndef BUILD_BASE
 BUILD_BASE:=.
 endif
 LIB += z
-CXXFLAGS += $(CMDCXXFLAGS)
 ifndef ARCH
 UNAME=$(shell uname)
 ARCH=cygwin
@@ -73,8 +72,8 @@ SHARED=../shared
 endif
 ifndef BOOST_DIR
 # note: BOOST_DIR not used for anything now, we assume boost somewhere in std include
-#BOOST_DIR:=../boost
-BOOST_DIR=~/isd/$(HOST)/include
+BOOST_DIR:=../boost
+#BOOST_DIR=~/isd/$(HOST)/include
 endif
 ifndef BASEOBJ
 BASEOBJ=$(BUILD_BASE)/obj
@@ -177,10 +176,10 @@ list_src: $(BOOST_SERIALIZATION_SRCS)
 	echo $(BOOST_SERIALIZATION_SRCS)
 
 
-CXXFLAGS_COMMON += $(ARCH_FLAGS)
+CXXFLAGS_COMMON += $(ARCH_FLAGS) $(CMDCXXFLAGS)
 #CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
 
-LARGEFILEFLAGS = -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 
+LARGEFILEFLAGS = -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 CPPFLAGS += $(CPPNOWIDECHAR) $(LARGEFILEFLAGS)
 LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR))
 #-lpthread
@@ -252,7 +251,7 @@ ifndef $(1)_NOSTATIC
 $$(BIN)/$(1)$(PROGSUFFIX).static$(REVSUFFIX): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
 	@echo
 	@echo LINK\(static\) $$@ - from $$^
-	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB) --static 
+	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$($(1)_BOOSTLIB) --static
 ALL_OBJS   += $$(addprefix $$(OBJ)/,$$($(1)_OBJ))
 STATIC_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).static$(REVSUFFIX)
 $(1): $$(BIN)/$(1).static
@@ -266,7 +265,7 @@ $$(BIN)/$(1)$(PROGSUFFIX).debug$(REVSUFFIX):\
 	@echo
 	@echo LINK\(debug\) $$@ - from $$^
 	$$(CXX) $$^ -o $$@ $$(LDFLAGS) $$($(1)_LIB) $$(addsuffix -d,$$($(1)_BOOSTLIB))
-ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ)) 
+ALL_OBJS +=  $$(addprefix $$(OBJD)/,$$($(1)_OBJ))
 DEBUG_PROGS += $$(BIN)/$(1)$(PROGSUFFIX).debug$(REVSUFFIX)
 $(1): $$(BIN)/$(1).debug
 endif
@@ -399,7 +398,7 @@ endif
 #                 sed 's/\($*\)\.o[ :]*/$@ : /g' $@.raw > $@ && sed 's/\($*\)\.o[ :]*/\n\%\/\1.o : /g' $@.raw >> $@ \
 #sed 's/\($*\)\.o[ :]*/DEPS_$@ := /g' $@.raw > $@ && echo $(basename $<).o : \\\$DEPS_$(basename $<) >> $@ \
 
-#phony: -MP 
+#phony: -MP
 $(DEPSPRE)%.d: %
 	@set -e; \
 	if [ x$(DEPEND) != x -o ! -f $@ ] ; then \
@@ -415,7 +414,7 @@ perl -pe 's|([^:]*)\.o[ :]*|$(OBJD)/$(*F).o : |g' $@.raw >> $@ && \
 echo >> $@ && \
 perl -pe 's|([^:]*)\.o[ :]*|$(OBJT)/$(*F).o : |g' $@.raw >> $@  \
  || rm -f $@ ); rm -f $@.raw ; fi
-#; else touch $@ 
+#; else touch $@
 
 ifneq ($(MAKECMDGOALS),depend)
 ifneq ($(MAKECMDGOALS),distclean)

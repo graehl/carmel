@@ -103,12 +103,15 @@ inline std::vector<std::string> split(
 #ifdef TEST
 char const* split_strs[]={"",",a","",0};
 char const* seps[]={";",";;",",,","   ","=,",",=",0};
+char const* split_chrs[]={";",",","a",";"};
 
 BOOST_AUTO_TEST_CASE( TEST_io )
 {
     using namespace std;
     {
-        split_noquote(";,a;",make_expect_visitor(split_strs),";");
+        std::string str=";,a;";
+        split_noquote(str,make_expect_visitor(split_chrs),"");
+        split_noquote(str,make_expect_visitor(split_strs),";");
         for (char const **p=seps;*p;++p) {
             string s;
             char const* sep=*p;
@@ -117,8 +120,8 @@ BOOST_AUTO_TEST_CASE( TEST_io )
                 if (q[1])
                     s.append(sep);
             }
+            //split_noquote(s,make_expect_visitor(split_strs),seps);
             //cout << sep << "\t"<< s << endl;
-            split_noquote(s,make_expect_visitor(split_strs),sep);
         }
     }
 

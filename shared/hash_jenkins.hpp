@@ -11,8 +11,7 @@
 # define DBP_JENKINS(a) std::cerr << "DBG Jenkins: "<<a<<std::endl
 #else
 # define DBP_JENKINS(a)
-#endif 
-
+#endif
 
 // from http://www.burtleburtle.net/bob/c/lookup3.c
 /*
@@ -20,8 +19,8 @@
 lookup3.c, by Bob Jenkins, May 2006, Public Domain.
 
 These are functions for producing 32-bit hashes for hash table lookup.
-hashword(), hashlittle(), hashlittle2(), hashbig(), mix(), and final() 
-are externally useful functions.  Routines to test the hash are included 
+hashword(), hashlittle(), hashlittle2(), hashbig(), mix(), and final()
+are externally useful functions.  Routines to test the hash are included
 if SELF_TEST is defined.  You can use this free for any purpose.  It's in
 the public domain.  It has no warranty.
 
@@ -29,7 +28,7 @@ You probably want to use hashlittle().  hashlittle() and hashbig()
 hash byte arrays.  hashlittle() is is faster than hashbig() on
 little-endian machines.  Intel and AMD are little-endian machines.
 On second thought, you probably want hashlittle2(), which is identical to
-hashlittle() except it returns two 32-bit hashes for the price of one.  
+hashlittle() except it returns two 32-bit hashes for the price of one.
 You could implement hashbig2() if you wanted but I haven't bothered here.
 
 If you want to find a hash of, say, exactly 7 integers, do
@@ -42,9 +41,9 @@ If you want to find a hash of, say, exactly 7 integers, do
 then use c as the hash value.  If you have a variable length array of
 4-byte integers to hash, use hashword().  If you have a byte array (like
 a character string), use hashlittle().  If you have several byte arrays, or
-a mix of things, see the comments above hashlittle().  
+a mix of things, see the comments above hashlittle().
 
-Why is this so big?  I read 12 bytes at a time into 3 4-byte integers, 
+Why is this so big?  I read 12 bytes at a time into 3 4-byte integers,
 then mix those integers.  This is fast (you can do a lot more thorough
 mixing with 12*3 instructions on 3 integers than you can with 3 instructions
 on 1 byte), but shoehorning those bytes into integers efficiently is messy.
@@ -106,7 +105,7 @@ This was tested for:
   the output delta to a Gray code (a^(a>>1)) so a string of 1's (as
   is commonly produced by subtraction) look like a single 1-bit
   difference.
-* the base values were pseudorandom, all zero but one bit set, or 
+* the base values were pseudorandom, all zero but one bit set, or
   all zero plus a counter that starts at zero.
 
 Some k values for my "a-=c; a^=rot(c,k); c+=b;" arrangement that
@@ -116,7 +115,7 @@ satisfy this are
    14  9  3  7 17  3
 Well, "9 15 3 18 27 15" didn't quite get 32 bits diffing
 for "differ" defined as + with a one-bit base and a two-bit delta.  I
-used http://burtleburtle.net/bob/hash/avalanche.html to choose 
+used http://burtleburtle.net/bob/hash/avalanche.html to choose
 the operations, constants, and arrangements of the variables.
 
 This does not achieve avalanche.  There are input bits of (a,b,c)
@@ -132,7 +131,7 @@ on, and rotates are much kinder to the top and bottom bits, so I used
 rotates.
 -------------------------------------------------------------------------------
 */
-inline void mix_hashes(uint32_t &a,uint32_t &b,uint32_t &c) 
+inline void mix_hashes(uint32_t &a,uint32_t &b,uint32_t &c)
 {
     a -= c;  a ^= bit_rotate_left(c, 4);  c += b;
     b -= a;  b ^= bit_rotate_left(a, 6);  a += c;
@@ -141,6 +140,21 @@ inline void mix_hashes(uint32_t &a,uint32_t &b,uint32_t &c)
     b -= a;  b ^= bit_rotate_left(a,19);  a += c;
     c -= b;  c ^= bit_rotate_left(b, 4);  b += a;
 }
+
+inline uint32_t hash3(uint32_t a,uint32_t b,uint32_t c)
+{
+    a-=b;  a-=c;  a=a^(c >> 13);
+    b-=c;  b-=a;  b=b^(a << 8);
+    c-=a;  c-=b;  c=c^(b >> 13);
+    a-=b;  a-=c;  a=a^(c >> 12);
+    b-=c;  b-=a;  b=b^(a << 16);
+    c-=a;  c-=b;  c=c^(b >> 5);
+    a-=b;  a-=c;  a=a^(c >> 3);
+    b-=c;  b-=a;  b=b^(a << 10);
+    c-=a;  c-=b;  c=c^(b >> 15);
+    return c;
+}
+
 
 /*
 -------------------------------------------------------------------------------
@@ -155,7 +169,7 @@ produce values of c that look totally different.  This was tested for
   the output delta to a Gray code (a^(a>>1)) so a string of 1's (as
   is commonly produced by subtraction) look like a single 1-bit
   difference.
-* the base values were pseudorandom, all zero but one bit set, or 
+* the base values were pseudorandom, all zero but one bit set, or
   all zero plus a counter that starts at zero.
 
 These constants passed:
@@ -173,7 +187,7 @@ inline void final_hashes(uint32_t &a,uint32_t &b,uint32_t &c)
   a ^= c; a -= bit_rotate_left(c,11);
   b ^= a; b -= bit_rotate_left(a,25);
   c ^= b; c -= bit_rotate_left(b,16);
-  a ^= c; a -= bit_rotate_left(c,4); 
+  a ^= c; a -= bit_rotate_left(c,4);
   b ^= a; b -= bit_rotate_left(a,14);
   c ^= b; c -= bit_rotate_left(b,24);
 }
@@ -214,7 +228,7 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
 
   /*------------------------------------------- handle the last 3 uint32_t's */
   switch(length)                     /* all the case statements fall through */
-  { 
+  {
   case 3 : c+=k[2];
   case 2 : b+=k[1];
   case 1 : a+=k[0];
@@ -231,7 +245,7 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
 --------------------------------------------------------------------
 hashword2() -- same as hashword(), but take two seeds and return two
 32-bit values.  pc and pb must both be nonnull, and *pc and *pb must
-both be initialized with seeds.  If you pass in (*pb)==0, the output 
+both be initialized with seeds.  If you pass in (*pb)==0, the output
 (*pc) will be the same as the return value from hashword().
 --------------------------------------------------------------------
 */
@@ -240,7 +254,7 @@ inline
     uint64_t
 #else
     void
-#endif 
+#endif
     hashword2 (
 const uint32_t *k,                   /* the key, an array of uint32_t values */
 size_t          length,               /* the length of the key, in uint32_ts */
@@ -263,7 +277,7 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
     *pc;
     c += *pb;
     DBP_JENKINS("k[0]="<<(length?k[0]:(uint32_t)0)<<" length="<<length<<" seed[0]="<<*pc<<" seed[1]="<<*pb);
-#endif 
+#endif
 
   /*------------------------------------------------- handle most of the key */
   while (length > 3)
@@ -278,7 +292,7 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
 
   /*------------------------------------------- handle the last 3 uint32_t's */
   switch(length)                     /* all the case statements fall through */
-  { 
+  {
   case 3 : c+=k[2];
   case 2 : b+=k[1];
   case 1 : a+=k[0];
@@ -291,12 +305,12 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
     uint64_t ret=c;
     ret|=((uint64_t)b)<<32;
     return ret;
-#else 
+#else
   *pc=c; *pb=b;
     DBP_JENKINS("hash[0]="<<*pc<<" hash[1]="<<*pb);
-#endif 
+#endif
 }
-    
+
 /*
 -------------------------------------------------------------------------------
 hashlittle() -- hash a variable-length key into a 32-bit value
@@ -348,7 +362,7 @@ inline uint32_t hashlittle( const void *key, size_t length, uint32_t initval)
     }
 
     /*----------------------------- handle the last (probably partial) block */
-    /* 
+    /*
      * "k[2]&0xffffff" actually reads beyond the end of the string, but
      * then masks off the part it's not allowed to read.  Because the
      * string is aligned, the masked-off tail is in the same word as the
@@ -508,8 +522,8 @@ inline
     uint64_t
 #else
     void
-#endif 
-hashlittle2( 
+#endif
+hashlittle2(
   const void *key,       /* the key to hash */
   size_t      length,    /* length of the key */
 #ifdef HASH_JENKINS_UINT64
@@ -533,7 +547,7 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
     *pc;
     c += *pb;
     DBP_JENKINS("k[0]="<<(uint32_t)(length?((uint8_t *)key)[0]:(uint8_t)0)<<" length="<<length<<" seed[0]="<<*pc<<" seed[1]="<<*pb);
-#endif 
+#endif
 
   u.ptr = key;
   if (GRAEHL__SHARED__HASH_LITTLE_ENDIAN && ((u.i & 0x3) == 0)) {
@@ -551,7 +565,7 @@ uint32_t       *pb               /* IN: more seed OUT: secondary hash value */
     }
 
     /*----------------------------- handle the last (probably partial) block */
-    /* 
+    /*
      * "k[2]&0xffffff" actually reads beyond the end of the string, but
      * then masks off the part it's not allowed to read.  Because the
      * string is aligned, the masked-off tail is in the same word as the
@@ -695,10 +709,10 @@ done:
     uint64_t ret=c;
     ret|=((uint64_t)b)<<32;
     return ret;
-#else 
+#else
   *pc=c; *pb=b;
     DBP_JENKINS("hash[0]="<<*pc<<" hash[1]="<<*pb);
-#endif 
+#endif
 
 }
 
@@ -708,7 +722,7 @@ done:
  * hashbig():
  * This is the same as hashword() on big-endian machines.  It is different
  * from hashlittle() on all machines.  hashbig() takes advantage of
- * big-endian byte ordering. 
+ * big-endian byte ordering.
  */
 inline uint32_t hashbig( const void *key, size_t length, uint32_t initval)
 {
@@ -734,7 +748,7 @@ inline uint32_t hashbig( const void *key, size_t length, uint32_t initval)
     }
 
     /*----------------------------- handle the last (probably partial) block */
-    /* 
+    /*
      * "k[2]<<8" actually reads beyond the end of the string, but
      * then shifts out the part it's not allowed to read.  Because the
      * string is aligned, the illegal read is in the same word as the
@@ -847,7 +861,7 @@ void driver1()
 
   time(&a);
   for (i=0; i<256; ++i) buf[i] = 'x';
-  for (i=0; i<1; ++i) 
+  for (i=0; i<1; ++i)
   {
     h = hashlittle(&buf[0],1,h);
   }
@@ -883,7 +897,7 @@ void driver2()
 
       	  /*---- check that every output bit is affected by that input bit */
 	  for (k=0; k<MAXPAIR; k+=2)
-	  { 
+	  {
 	    uint32_t finished=1;
 	    /* keys have one bit different */
 	    for (l=0; l<hlen+1; ++l) {a[l] = b[l] = (uint8_t)0;}
@@ -908,7 +922,7 @@ void driver2()
 	    if (finished) break;
 	  }
 	  if (k>z) z=k;
-	  if (k==MAXPAIR) 
+	  if (k==MAXPAIR)
 	  {
 	     printf("Some bit didn't change: ");
 	     printf("%.8x %.8x %.8x %.8x %.8x %.8x  ",
@@ -994,7 +1008,7 @@ void driver3()
   i=47, j=0;
   hashword2(&len, 1, &i, &j);
   if (hashword(&len, 1, 47) != i)
-    printf("hashword2 and hashword mismatch %x %x\n", 
+    printf("hashword2 and hashword mismatch %x %x\n",
 	   i, hashword(&len, 1, 47));
 
   /* check hashlittle doesn't read before or after the ends of the string */
@@ -1011,7 +1025,7 @@ void driver3()
       *(b-1)=(uint8_t)~0;
       x = hashlittle(b, len, (uint32_t)1);
       y = hashlittle(b, len, (uint32_t)1);
-      if ((ref != x) || (ref != y)) 
+      if ((ref != x) || (ref != y))
       {
 	printf("alignment error: %.8x %.8x %.8x %ud %ud\n",ref,x,y,
                h, i);

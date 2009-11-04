@@ -221,6 +221,7 @@ struct cascade_parameters
 
     void normalize(WFST::NormalizeMethods const& methods)
     {
+        assert(methods.size()==cascade.size());
         for (unsigned i=0,n=cascade.size();i<n;++i)
             cascade[i]->normalize(methods[i]);
     }

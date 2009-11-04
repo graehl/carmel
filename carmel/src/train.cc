@@ -21,7 +21,7 @@ void training_progress(unsigned train_example_no,unsigned scale,unsigned num_eve
 void training_progress_scale(unsigned n,unsigned N,unsigned num_every)
 {
     unsigned d=2*num_every;
-    unsigned s=(n+d-1)/d;
+    unsigned s=(N+d-1)/d;
     if (s<1) s=1;
     training_progress(n,s,num_every);
 }
@@ -543,7 +543,7 @@ Weight WFST::train(cascade_parameters &cascade,
         Weight p=fb.estimate(corpus_p);
         corpus_p.print_ppx_symbol(Config::log(),corpus.n_input,corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
         fb.arcs.visit(for_arcs::prep_new_weights(1.0));
-        cascade.use_counts(*this,methods);
+        cascade.distribute_counts(*this);
         Config::log()<<"\n";
         return p.ppxper(corpus.totalEmpiricalWeight);
     }

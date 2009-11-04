@@ -59,7 +59,7 @@ public:
         clear();
         reserve(sp);
         T *real_es=this->endspace;
-        endv=this->endspace=sp;
+        endv=this->endspace=this->vec+sp;
         array<T,Alloc>::construct(t);
         this->endspace=real_es;
     }
@@ -413,6 +413,7 @@ public:
     }
 
 #endif
+    // doesn't compact (allocate smaller space).  call compact()
     void resize(size_type newSz) {
         dynarray_assert(invariant());
         //    if (newSz==0) newSz=1;
@@ -497,7 +498,6 @@ public:
         if(newSpace) {
             T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
             memcpy(newVec, this->vec, bytes(newSpace));
-
             dealloc_safe();
             //set_begin(newVec);
             //set_capacity(newSpace);set_size(sz);
@@ -543,6 +543,7 @@ public:
     }
     size_type size() const { return (size_type)(endv-this->vec); }
     void set_size(size_type newSz) { endv=this->vec+newSz; dynarray_assert(this->invariant()); }
+    // doesn't compact (free space) unless n==0
     void reduce_size(size_type n) {
         if (n==0) {
             clear_dealloc();

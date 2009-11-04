@@ -123,7 +123,7 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
-        tick_every=100;
+        tick_every=0;
         width=7;
         iter=0;
         burnin=0;
@@ -146,6 +146,7 @@ struct gibbs_opts
     }
     void validate()
     {
+        if (tick_every<1) tick_every=1;
         if (final_counts) burnin=iter;
         if (burnin>iter)
             burnin=iter;

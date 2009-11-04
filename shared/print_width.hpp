@@ -108,14 +108,14 @@ print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
     if (wholes<=width && d==(double)(int)d)
         return o<<d;
     if (p<1) {
-        int a=-wholes;
+        int a=(int)-wholes;
         const int dot0=2;
         int need=dot0+minprec+a;
         if (need >= width)
             return o << std::scientific << std::setprecision(sig_for_exp(width,a)-1) << d;
         return o << std::setprecision(width-dot0-a) << d;
     } else {
-        int a=wholes;
+        int a=(int)wholes;
         int need=1+a;
         if (need > width)
             return o << std::scientific << std::setprecision(sig_for_exp(width,a)-1) << d;

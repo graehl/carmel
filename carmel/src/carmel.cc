@@ -427,6 +427,7 @@ struct carmel_main
         static void set(V &v,V const& to) {v=to;}
         static V const& get(V const&v) { return v; }
     };
+    /// a cell acts like a value V object but once constructed, copies of cell have ref to same object
     template <class V>
     struct cell
     {
@@ -435,7 +436,7 @@ struct carmel_main
         template <class C0>
         cell(C0 const& c0) : v(new V(c0)) {}
         template <class C0,class C1>
-        cell(C0 const& c0,C1 const& c1) : v(new V(c0)) {}
+        cell(C0 const& c0,C1 const& c1) : v(new V(c0,c1)) {}
         ~cell() {delete v;}
         operator V &() { return *v; }
         operator V const&() const { return *v; }
@@ -465,7 +466,7 @@ struct carmel_main
             if (n>0) {
                 o << "Using input WFST --"<<key<<":\n";
                 unsigned i=0;
-                for (i=0 ; i < n ; ++i) {
+                for (i=0;i<n;++i) {
                     o << filenames[i];
                     o << osep << Setter::get(pr[i]);
                     o << std::endl;
@@ -1401,7 +1402,7 @@ main(int argc, char *argv[]){
                     corpus.set_null();
                 }
 
-                carmel_main::NMs & nms=cm.norms();
+                carmel_main::NMs &nms=cm.norms();
                 if (gibbs) {
                     result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
@@ -1410,7 +1411,6 @@ main(int argc, char *argv[]){
                         rr=(unsigned)long_opts["final-restart"];
                     WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
                     train_opt.ra=ran_accept;
-
                     result->train(cascade,corpus,nms,flags['U'],smoothFloor,converge, converge_pp_ratio, train_opt);
                 }
 
