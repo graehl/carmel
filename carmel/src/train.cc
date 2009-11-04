@@ -12,10 +12,20 @@
 
 namespace graehl {
 
+
 void training_progress(unsigned train_example_no,unsigned scale,unsigned num_every)
 {
     num_progress(Config::log(),train_example_no,scale,num_every,".","\n");
 }
+
+void training_progress_scale(unsigned n,unsigned N,unsigned num_every)
+{
+    unsigned d=2*num_every;
+    unsigned s=(n+d-1)/d;
+    if (s<1) s=1;
+    training_progress(n,s,num_every);
+}
+
 
 derivations::statistics derivations::global_stats;
 
@@ -366,7 +376,7 @@ struct forward_backward : public cached_derivs<arc_counts>
  public:
     void operator()(unsigned n,derivations &derivs)
     {
-        training_progress(n);
+        training_progress_scale(n,corpus().size());
         Weight prob=derivs.collect_counts(arcs);
         *unweighted_corpus_prob*=prob;
         weighted_corpus_prob*=prob.pow(derivs.weight);
@@ -531,7 +541,7 @@ Weight WFST::train(cascade_parameters &cascade,
     if (opts.max_iter==0) {
         Config::log() << "0 iterations specified for training; output weights will be unnormalized fractional counts (except locked arcs).\n";
         Weight p=fb.estimate(corpus_p);
-        corpus_p.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
+        corpus_p.print_ppx_symbol(Config::log(),corpus.n_input,corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
         fb.arcs.visit(for_arcs::prep_new_weights(1.0));
         cascade.use_counts(*this,methods);
         Config::log()<<"\n";
@@ -593,7 +603,7 @@ Weight WFST::train(cascade_parameters &cascade,
             DWSTAT("\nAfter estimate");
             Config::log() << "i=" << train_iter << " (rate=" << learning_rate << "): ";
 //            Config::log() << " per-output-symbol-perplexity="<<corpus_p.ppxper(corpus.n_output).as_base(2)<<" per-example-perplexity="<<newPerplexity.as_base(2);
-            corpus_p.print_ppx(Config::log(),corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
+            corpus_p.print_ppx_symbol(Config::log(),corpus.n_input,corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
             if ( newPerplexity < bestPerplexity && (!using_cascade || cascade_counts)) { // because of how I'm saving only composed counts, we can't actually get back to our initial starting point (iter 1)
                 Config::log() << " (new best)";
                 bestPerplexity=newPerplexity;
@@ -818,7 +828,7 @@ Weight forward_backward::estimate_matrix(Weight &unweighted_corpus_prob)
 
         //#ifdef DEBUGTRAIN // Yaser 13-7-2000 - Debugging messages ..
         ++train_example_no ;
-        training_progress(train_example_no);
+        training_progress(train_example_no,corpus().size());
         //#endif
         nIn = seq->i.n;
         nOut = seq->o.n;
