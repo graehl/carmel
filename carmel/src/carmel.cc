@@ -344,6 +344,7 @@ struct carmel_main
     unsigned n_prob;
     unsigned n_lines() const { return n_0prob+n_prob; }
     Weight prod_sum_pre; // for post-b
+//    double n_isymbols;
     double n_symbols;
 
     void non0_viterbi_prob(Weight p)
@@ -535,6 +536,7 @@ struct carmel_main
         n_0prob=0;
         n_prob=0;
         n_symbols=0; // for per-symbol ppx - counted only for non-0prob
+//        n_isymbols=0;
         prod_viterbi=1;
         prod_sum=1;
         prod_sum_pre=1;

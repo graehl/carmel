@@ -12,7 +12,7 @@ namespace graehl {
 void check_fb_agree(Weight f,Weight b);
 
 void training_progress(unsigned train_example_no,unsigned scale=10,unsigned num_every=70);
-
+void training_progress_scale(unsigned n,unsigned N,unsigned num_every=70); //
 
 struct arc_counts_base
 {

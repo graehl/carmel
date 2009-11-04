@@ -672,7 +672,7 @@ struct derivations //: boost::noncopyable
         bool dead=(d!=goal);
         if (add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src)) dead=false;
         bool useO=d.o<out.size(),useI=d.i<in.size();
-        unsigned o1=d.o+1,i1=d.o+1;
+        unsigned o1=d.o+1,i1=d.i+1;
         if (useO)
             if (add_arcs(io,atab,EPS,out[d.o],d.i,o1,fs,src)) dead=false;
         if (useI) {
