@@ -639,8 +639,6 @@ class WFST {
             }
             typedef char arg_type;
             static char const* get(NormalizeMethod &m) { return norm_group_name(m.group); }
-
-            //static void set(NormalizeMethod &m,str s) {set(m,s[0]);}
         };
         struct f_scale
         {
@@ -650,7 +648,6 @@ class WFST {
             }
             typedef double arg_type;
             static arg_type const& get(NormalizeMethod &m) { return m.scale.alpha; }
-            //static void set(NormalizeMethod &m,str s) {set(m,c[0]);}
         };
         struct f_prior
         {

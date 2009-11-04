@@ -16,6 +16,11 @@
 
 namespace graehl {
 
+inline uint32_t hash3_fast(uint32_t a,uint32_t b,uint32_t c)
+{
+    return a+311*b+571*c;
+}
+
 ///golden ratio: 1.6180339887498948482045868343656381177203
 //static const double golden_ratio=1.6180339887498948482045868343656381177203;
 static const uint32_t golden_ratio_fraction_32=2654435769U; // (floor of 2^32/golden_ratio)

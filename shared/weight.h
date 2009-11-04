@@ -334,6 +334,16 @@ struct logweight {                 // capable of representing nonnegative reals
         return root(-n);
     }
 
+
+    std::ostream &print_ppx_symbol(std::ostream &o,double n_isymbol,double n_osymbol,double n_example
+                            ,char const* symbolname="per-symbol-perplexity"
+                            ,char const* examplename="per-example-perplexity"
+                            , char const* probname="probability"
+        ) const
+    {
+        print_ppx(o,std::max(n_osymbol,n_isymbol),n_example,symbolname,examplename,probname);
+    }
+
     std::ostream &print_ppx(std::ostream &o,double n_symbol,double n_example
                             ,char const* symbolname="per-output-symbol-perplexity"
                             ,char const* examplename="per-example-perplexity"

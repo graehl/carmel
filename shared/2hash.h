@@ -70,7 +70,7 @@ public:
   //friend class HashTable<K,V>;
   //friend class HashIter<K,V>;
   //friend class HashConstIter<K,V>; // Yaser
-    template <class O> void print(O&o) const 
+    template <class O> void print(O&o) const
     {
         o << '(' << first << ',' << second << ')';
     }
@@ -82,7 +82,7 @@ template <typename K, typename V,class A,class B>
 inline
 std::basic_ostream<A,B>&
          operator<< (std::basic_ostream<A,B> &out, const HashEntry<K,V> & e) {
-   return out << 
+   return out <<
 }
 */
 
@@ -263,7 +263,7 @@ template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=s
   }
   unsigned growAt;
     typedef HashEntry<K,V> Node;
-    
+
   typedef typename A::template rebind<Node >::other base_alloc;
   Node **table;
   std::size_t hashToPos(std::size_t hashVal) const
@@ -334,13 +334,13 @@ public:
 
     const_iterator begin() const {
         return ((HashTable<K,V,H,P,A> *)this)->begin();
-        }
-        iterator begin()  {
-          return *this;
-        }
-   find_return_type end() const {
-         return NULL;
-   }
+    }
+    iterator begin()  {
+        return iterator(*this);
+    }
+    find_return_type end() const {
+        return NULL;
+    }
 
    std::size_t bucket(const K& first) const {
          return hashToPos(get_hash()(first));
@@ -441,11 +441,11 @@ public:
       for ( unsigned i = 0 ; i <= siz ; i++ )
         table[i] = NULL;
     }
-    void grow() 
+    void grow()
     {
         rehash_pow2(2*bucket_count());
     }
-    
+
  public:
     void clear() {
         for (unsigned i=0;i<=siz;i++) {
@@ -528,7 +528,7 @@ public:
                 ,true);
 
         }
-    
+
         insert_return_type insert(const value_type &t) {
           return insert(t.first,t.second);
         }
@@ -652,7 +652,7 @@ public:
         }
 #endif
         Node *alloc_node() { return this->allocate(1); }
-    void delete_node(Node *p) 
+    void delete_node(Node *p)
     {
         p->~Node();
         free_node(p);
@@ -676,7 +676,7 @@ inline void swap(HashTable<K,V,H,P,A>& a,HashTable<K,V,H,P,A>& b)
     a.swap(b);
 }
 
-    
+
 /*
 struct EmptyStruct {
 };
@@ -710,7 +710,7 @@ inline V *add(HashTable<K,V,H,P,A>& ht,const K&k,const V& v=V())
 
 
 template <class K>
-inline std::size_t hash_value_dispatch(K const& k) 
+inline std::size_t hash_value_dispatch(K const& k)
 {
     return hash_value(k); // argument dependent lookup
 }
