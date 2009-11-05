@@ -723,6 +723,7 @@ Weight WFST::train(cascade_parameters &cascade,
     fb.load_best();
     cascade.use_counts_final(methods); // also updates composed xdcr weights
 
+    ts.report(); // show memory held
     return bestPerplexity;
 }
 
