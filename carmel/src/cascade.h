@@ -1,8 +1,8 @@
 #ifndef GRAEHL_CARMEL__CASCADE_H
 #define GRAEHL_CARMEL__CASCADE_H
 
-#include <vector>
 #include <graehl/shared/array.hpp>
+#include <graehl/shared/dynarray.h>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/derivations.h>
 #include <graehl/shared/slist.h>
@@ -19,16 +19,14 @@ struct cascade_parameters
 //FIXME: to simplify, in trivial case and otherwise, composed should be passed in once so it can be added to single chain (if trivial).  note: this simplification hasn't actually been done yet.
     void set_composed(WFST &c) {
         pcomposed=&c;
-        if (trivial) {
-            cascade.clear();
-            cascade.push_back(pcomposed);
-        }
+        if (trivial)
+            cascade.reinit(1,pcomposed);
     }
     bool trivial; // if true, we're not using cascade_parameters to do anything
                   // different from old carmel; we pass a trivial object around to
                   // avoid type/template dispatch at some small runtime cost
 
-    typedef std::vector<WFST *> cascade_t;
+    typedef dynamic_array<WFST *> cascade_t;
     cascade_t cascade; // (in no particular order) all the transducers that were composed together
     //FIXME: per arc and global prior per cascade member (training of a cascade w/ prior has weird interpretation now, want per-cascade as well or instead)
     typedef FSTArc * param;
@@ -78,31 +76,22 @@ struct cascade_parameters
         return trivial?1:cascade.size();
     }
 
-    void save_weights(WFST const&composed,saved_weights_t &save) const
+    void save_weights(saved_weights_t &save) const
     {
-        if (trivial) {
-            composed.save_weights(save);
-            return;
-        }
         for (cascade_t::const_iterator i=cascade.begin(),e=cascade.end();
              i!=e;++i)
             (*i)->save_weights(save);
     }
 
-    void restore_weights(WFST & composed,saved_weights_t const& save)
+    void restore_weights(saved_weights_t const& save)
     {
-        if (trivial) {
-            composed.restore_weights(save.begin());
-            return;
-        }
         saved_weights_t::const_iterator si=save.begin();
         for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
              i!=e;++i)
             si=(*i)->restore_weights(si);
-        update(composed); // note: don't need to normalize
+        update();
         //FIXME: is that update redundant in practice?
     }
-
 
     void clear_counts()
     {
@@ -141,51 +130,61 @@ struct cascade_parameters
         }
     };
 
-    // for composed wfst that has arc weights which are unnormalized counts
-    void distribute_counts(WFST &composed)
+    WFST &composed() const
+    {
+        return *pcomposed;
+    }
+
+    // take counts from composed, and add them to chain arcs' weight.  (clear_counts() 0s weight out first)
+    void distribute_counts()
     //arcs_table &at
     {
         if (trivial) return;
         clear_counts();
         arcs_table_distribute_counts v(*this);
-        composed.visit_arcs(v);
+        composed().visit_arcs(v);
     }
 
     dynamic_array<WFST::saved_weights_t> none_saves;
 
+#define DO_FOR_NONE(i,cond)                        \
+    for (unsigned i=0,n=std::min(methods.size(),cascade.size());i!=n;++i)       \
+        if (methods[i].group cond WFST::NONE)
+#define FOR_NONE(i) DO_FOR_NONE(i,==)
+#define EXCEPT_FOR_NONE(i) DO_FOR_NONE(i,!=)
+
+
+    // a save,modify,load is used instead of associating each arc in chains with which transducer it is, so as to skip the NONE-normalized (weight-locked) ones.  only the NONE weights are saved/loaded, allowing the others to change.
     void save_none(WFST::NormalizeMethods const& methods)
     {
-        unsigned N=methods.size();
-        assert(N==cascade.size());
-        none_saves.reinit(N);
-        for (unsigned i=0;i!=N;++i)
-            if (methods[i].group==WFST::NONE)
-                cascade[i]->save_weights(none_saves[i]);
+        none_saves.reinit(methods.size());
+        FOR_NONE(i)
+            cascade[i]->save_weights(none_saves[i]);
     }
 
     void load_none(WFST::NormalizeMethods const& methods)
     {
-        unsigned N=methods.size();
-        assert(N==cascade.size());
-        for (unsigned i=0;i!=N;++i)
-            if (methods[i].group==WFST::NONE) {
-                cascade[i]->restore_weights(none_saves[i]);
-                none_saves[i].clear();
-            }
+        FOR_NONE(i)
+        {
+            cascade[i]->restore_weights(none_saves[i]);
+            none_saves[i].clear();
+        }
     }
 
 
-    void use_counts(WFST &composed,WFST::NormalizeMethods const& methods)
+    void use_counts(WFST::NormalizeMethods const& methods)
     {
-        distribute_counts(composed);
-        normalize(composed,methods);
+        distribute_counts();
+        normalize(methods);
     }
 
-    void use_counts_final(WFST &composed,WFST::NormalizeMethods const& methods)
+    void use_counts_final(WFST::NormalizeMethods const& methods)
     {
         if (trivial) return;
-        use_counts(composed,methods);
-        update(composed);
+        save_none(methods);
+        use_counts(methods);
+        load_none(methods);
+        update();
     }
 
     void set_trivial()
@@ -211,14 +210,6 @@ struct cascade_parameters
         // empty chain means: don't update the original arc in any way
     }
 
-    void normalize(WFST &composed,WFST::NormalizeMethods const& methods)
-    {
-        if (trivial)
-            composed.normalize(methods[0]);
-        else
-            normalize(methods);
-    }
-
     void normalize(WFST::NormalizeMethods const& methods)
     {
         assert(methods.size()==cascade.size());
@@ -227,30 +218,22 @@ struct cascade_parameters
     }
 
 
-    void randomize()
+    void randomize(WFST::NormalizeMethods const& methods)
     {
-            for (cascade_t::iterator i=cascade.begin(),e=cascade.end();
-                 i!=e;++i)
-                (*i)->randomSet();
-    }
-    void randomize(WFST &composed)
-    {
-        if (trivial)
-            composed.randomSet();
-        else
-            randomize();
+        EXCEPT_FOR_NONE(i)
+            cascade[i]->randomSet();
     }
 
-    void normalize_and_update(WFST &composed,WFST::NormalizeMethods const& methods)
+    void normalize_and_update(WFST::NormalizeMethods const& methods)
     {
-        normalize(composed,methods);
-        update(composed);
+        normalize(methods);
+        update();
     }
 
-    void random_restart(WFST &composed,WFST::NormalizeMethods const& methods)
+    void random_restart(WFST::NormalizeMethods const& methods)
     {
-        randomize(composed);
-        normalize(composed,methods); // update happens at top of random restarts loop already
+        randomize(methods);
+        normalize(methods); // update happens at top of random restarts loop already
     }
 
     // not to be used on arcs that weren't composed via cascade
@@ -321,21 +304,22 @@ struct cascade_parameters
     }
 
 
-    void update(WFST &composed)
+    void update()
     {
         if (trivial) return;
         if (debug&DEBUG_COMPOSED)
-            Config::debug() << "composed pre:\n" << composed << std::endl;
+            Config::debug() << "composed pre:\n" << composed() << std::endl;
         // composed has groupids that are indices into chains, unless trivial
         calculate_chain_weights();
-        for (WFST::StateVector::iterator i=composed.states.begin(),e=composed.states.end();i!=e;++i) {
+        WFST::StateVector &st=composed().states;
+        for (WFST::StateVector::iterator i=st.begin(),e=st.end();i!=e;++i) {
             State::Arcs &arcs=i->arcs;
             for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
                 update_composed_arc(*l);
         }
         print(Config::debug(),debug&DEBUG_CASCADE,debug&DEBUG_CHAINS);
         if (debug&DEBUG_COMPOSED)
-            Config::debug() << "composed post:\n" << composed << std::endl;
+            Config::debug() << "composed post:\n" << composed() << std::endl;
     }
 
 
@@ -525,14 +509,14 @@ struct cascade_parameters
     };
 
     // call *before* calculate_chain_weights (weights aren't moved also)
-    void compress_chains(WFST &composed)
+    void compress_chains()
     {
         bool v=DEBUG_COMPRESS_VERBOSE&debug;
         bool d=DEBUG_COMPRESS&debug;
         debug_chains(d,"compress chains pre",v);
         remap_chains r(chains.size(),nil_chain);
-        r.find_used(composed);
-        r.rewrite_arcs(composed);
+        r.find_used(composed());
+        r.rewrite_arcs(composed());
         r.newids.do_moves(chains);
         chain_weights.clear();
         debug_chains(d,"compress chains post",v);
@@ -555,10 +539,11 @@ struct cascade_parameters
 
     void done_composing(WFST &composed,bool compress_removed_arcs=false)
     {
+        set_composed(composed);
         if (trivial) return;
         epsilon_chains.clear();
         if (compress_removed_arcs)
-            compress_chains(composed);
+            compress_chains();
     }
 
     void add(WFST *w)

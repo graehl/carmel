@@ -30,7 +30,7 @@ struct carmel_gibbs : public gibbs_base
         , derivs(composed,corpus,topt.cache) // gets pre-init_sample_weights weight.
         , init_sample_weights(init_sample_weights)
     {
-        cascade.set_composed(composed);
+//        cascade.set_composed(composed);
         set_cascadei();
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);
@@ -313,7 +313,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     bool restore=em && !gopt.em_p0;
     saved_weights_t saved,init_sample_weights;
     if (restore)
-        cascade.save_weights(*this,saved);
+        cascade.save_weights(saved);
     if (em) {
         NormalizeMethods m2=methods;
         for (NormalizeMethods::iterator i=m2.begin(),e=m2.end();i!=e;++i)
@@ -325,14 +325,14 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     }
     if (restore) {
         save_weights(init_sample_weights);
-        cascade.restore_weights(*this,saved);
+        cascade.restore_weights(saved);
     }
     //restore old weights; can't do gibbs init before em because groupId gets overwritten; em needs that id from composition
     carmel_gibbs g(*this,cascade,corpus,methods,topt,gopt,printer,restore?&init_sample_weights:0);
     saved.clear();
     g.run();
     cascade.clear_groups();
-    cascade.update(*this);
+    cascade.update();
 }
 
 }
