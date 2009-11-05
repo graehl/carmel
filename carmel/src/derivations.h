@@ -320,7 +320,7 @@ struct derivations //: boost::noncopyable
     derivations() {}
 
 
-    // for EM, not gibbs? :
+    // for EM, not gibbs:
     template <class arcs_table>
     struct weight_for
     {
@@ -336,7 +336,7 @@ struct derivations //: boost::noncopyable
         }
         Weight operator()(GraphArc const& a) const
         {
-            return ac(a).weight();
+            return t.ac(a).weight();
         }
     };
 
@@ -421,34 +421,24 @@ struct derivations //: boost::noncopyable
         }
     }
 
+    // update expected counts and return prob (sum of paths)
     template <class arcs_table>
     Weight collect_counts(arcs_table &t)
     {
 //        update_weights(t);
         weight_for<arcs_table> wf(t);
-
         unsigned nst=g.size();
         fb_weights f(nst),b(nst); // default 0-init
-
-
         f[0]=1;
         get_order();
-
         propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),wf,f);
         Weight prob=f[fin];
-
-//        reversed_graph r(g); // NOTE: we could cache this reversed graph as well, but we'd run into swapping sooner.  I bet it's faster to recompute for each example by a lot when you get to that size range, and not much slower before.
         get_reverse();
-
-
         b[fin]=1;
         propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,b);
-
         free_order();
         free_reverse();
-
         check_fb_agree(prob,b[0]);
-
         for (unsigned s=0;s<nst;++s) {
             arcs_type const& arcs=g[s].arcs;
             for (arcs_type::const_iterator i=arcs.begin(),e=arcs.end();i!=e;++i) {
@@ -458,7 +448,6 @@ struct derivations //: boost::noncopyable
                 ac.counts += arc_contrib*weight/prob;
             }
         }
-
         return prob;
     }
  private:

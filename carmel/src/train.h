@@ -51,7 +51,7 @@ struct arc_counts : public arc_counts_base
     Weight best_weight;
     Weight counts;
     Weight prior_counts;
-    unsigned src; // this allows collecting per-arc couns from fwd/backwd
+    unsigned src; // this allows collecting per-arc counts from fwd/backwd
     void set(unsigned s,FSTArc *a,Weight prior)
     {
         arc_counts_base::set(s,a,prior);
