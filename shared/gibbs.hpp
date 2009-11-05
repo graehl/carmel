@@ -67,9 +67,16 @@ struct gibbs_param
 
 struct gibbs_base
 {
+    void init(unsigned n_sym_=1, unsigned n_blocks_=1)
+    {
+        n_sym=n_sym_;
+        n_blocks=n_blocks_;
+        sample.reinit(n_blocks);
+    }
+
     gibbs_base(gibbs_opts const &gopt_
-               , unsigned n_sym=1
-               , unsigned n_blocks=1
+               , unsigned n_sym_=1
+               , unsigned n_blocks_=1
                , std::ostream &out=std::cout
                , std::ostream &log=std::cerr)
         : gopt(gopt_)
@@ -82,8 +89,24 @@ struct gibbs_base
     {
         gopt.validate();
         temp=gopt.temp;
-//        OUTGIBBS("temp="<<temp<<"\n");
     }
+
+    // need to call init before use
+    gibbs_base(gibbs_opts const &gopt_
+               ,std::ostream &out=std::cout
+               ,std::ostream &log=std::cerr)
+        : gopt(gopt_)
+        , n_sym(1)
+        , n_blocks(1)
+        , out(out)
+        , log(log)
+        , nnorm(0)
+        , sample(0)
+    {
+        gopt.validate();
+        temp=gopt.temp;
+    }
+
     gibbs_stats stats;
     gibbs_opts gopt;
     std::ostream &out;
