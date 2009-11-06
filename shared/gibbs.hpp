@@ -322,7 +322,7 @@ struct gibbs_base
         assert(prob<=one_weight());
         return prob;
     }
-    operator()(unsigned i) const { return proposal_prob(i); }
+    Weight operator()(unsigned i) const { return proposal_prob(i); }
     double proposal_prob(unsigned paramid) const
     {
         return proposal_prob(gps[paramid]);
