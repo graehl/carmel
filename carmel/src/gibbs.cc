@@ -69,14 +69,14 @@ struct carmel_gibbs : public gibbs_base
         for (unsigned norm=1,i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
             WFST::NormalizeMethod const& nm=methods[i];
-            norm=add_gibbs_params(norm,w,nm,gopt.uniformp0,addarcs,addsource);
+            norm=add_gibbs_params(norm,w,nm,addarcs,addsource);
         }
     }
     typedef dynamic_array<FSTArc *> arc_for_param_t;
     arc_for_param_t arcs;
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
     // return next free normgroup id, start at normidbase
-    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod const& nm,bool uniformp0=false,bool addarcs=false,bool addsource=false)
+    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod const& nm,bool addarcs=false,bool addsource=false)
     {
         if (nm.group==WFST::NONE) {
             w.lockArcs();
@@ -89,13 +89,14 @@ struct carmel_gibbs : public gibbs_base
             w.indexInput();
         Weight ac=nm.add_count;
         double alpha=ac.getReal();
+        bool uniformp0=gopt.uniformp0;
         for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
             Weight sum=0;
             double N=0;
             Weight scale=one_weight();
             unsigned src=g.source();
             assert(src<w.numStates());
-            if (!uniformp0) {
+            if (!gopt.uniformp0) {
                 for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                     ++N;
                     sum+=(*g)->weight;
@@ -106,7 +107,8 @@ struct carmel_gibbs : public gibbs_base
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                 FSTArc & a=**g;
                 a.groupId=gps.size();
-                define_param(id,uniformp0?alpha:(ac*scale*a.weight).getReal());
+//                define_param(id,gopt.uniformp0?alpha:(ac*scale*a.weight).getReal());
+                define_param(id,(a.weight*scale).getReal(),alpha);
                 if (addarcs) arcs.push_back(&a);
                 if (addsource) arc_sources.push_back(src);
             }
@@ -115,12 +117,11 @@ struct carmel_gibbs : public gibbs_base
         return id;
     }
     dynamic_array<unsigned> arc_sources;
-    std::ostream &print_param(std::ostream &out,unsigned parami) const
+    void print_param(std::ostream &out,unsigned parami) const
     {
         assert(parami<arcs.size());
         assert(parami<arc_sources.size());
         wfst_for(parami).printArc(*arcs[parami],arc_sources[parami],out,false);
-        return out;
     }
 
     WFST &composed;
@@ -239,7 +240,7 @@ struct carmel_gibbs : public gibbs_base
     Weight resample_block(unsigned block)
     {
         block_t &b=sample[block];  // this is cleared for us already
-        blockp=&b;
+//        blockp=&b;
         typedef dynamic_array<param_list> acpath;
         derivations &d=derivs.derivs[block];
         OUTGIBBS3(" block "<<block<<" line "<<d.lineno<<"\n");
@@ -272,7 +273,7 @@ struct carmel_gibbs : public gibbs_base
             OUTGIBBS2(" = "<<prob<<'\n')
         return prob;
     }
-    block_t *blockp;
+//    block_t *blockp;
     void choose_arc(GraphArc const& a) const
     {
         DGIBBS2(CARMEL_GIBBS_FOR_ID(a,id,out<<" "<<id));
