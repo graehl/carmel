@@ -590,6 +590,7 @@ Weight WFST::train(cascade_parameters &cascade,
             log << "0 iterations specified for training; output weights will be unnormalized fractional counts (except locked arcs).\n";
         cascade.update();
         Weight p=fb.estimate(corpus_p);
+        log<<"Corpus ";
         corpus_p.print_ppx_symbol(log,corpus.n_input,corpus.n_output,corpus.n_pairs); //FIXME: newPerplexity is training-example-weighted
         if (opts.max_iter==0) {
             fb.arcs.visit(for_arcs::prep_new_weights(1.0));
