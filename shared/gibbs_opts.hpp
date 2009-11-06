@@ -12,7 +12,7 @@ struct gibbs_opts
 {
     static char const* desc() { return "Gibbs (chinese restaurant process) options"; }
     template <class OD>
-    void add_options(OD &opt, bool carmel_opts=false)
+    void add_options(OD &opt, bool carmel_opts=false, bool forest_opts=false)
     {
         opt.add_options()
             ("crp", defaulted_value(&iter),
@@ -56,6 +56,12 @@ struct gibbs_opts
             ("progress-every",defaulted_value(&tick_every),
              "show a progress tick (.) every N blocks")
             ;
+        if (forest_opts)
+            opt.add_options()
+                ("alpha",defaulted_value(&alpha),
+                 "prior applied to initial param values: alpha*p0*N (where N is # of items in normgroup, so uniform has p0*N=1)")
+                ;
+
         if (carmel_opts)
             opt.add_options()
                 ("print-from",defaulted_value(&print_from),
@@ -97,6 +103,9 @@ struct gibbs_opts
     bool em_p0;
     bool uniformp0;
     unsigned print_from,print_to; // which blocks to print
+
+    //forest-em only:
+    double alpha;
 
     bool printing_sample() const
     {

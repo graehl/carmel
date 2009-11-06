@@ -7,6 +7,7 @@
 #include <graehl/shared/time_space_report.hpp>
 #include <graehl/shared/periodic.hpp>
 #include <graehl/shared/maybe_update_bound.hpp>
+#include <graehl/shared/assoc_container.hpp>
 #include <graehl/shared/delta_sum.hpp>
 #include <graehl/shared/print_width.hpp>
 
@@ -18,6 +19,56 @@
 #define DGIBBS(a)
 #endif
 #define OUTGIBBS(a) DGIBBS(std::cerr<<a)
+
+/* Gibbs underlying implementation inherits from gibbs_base, and calls run_starts(*this)
+
+   impl must call for each param one of:
+       unsigned define_param(unsigned norm, double prior)
+       unsigned define_param(unsigned norm, double prob, double alpha)
+       where define_param(n,p,a) = define_param(n,gopt.uniformp0?alpha:alpha*prob)
+
+   or (allowing out of order param id defn)
+       void define_param_id(unsigned id,unsigned norm,double prob,double alpha)
+
+       prior, when normalized, serves at the base distribution.
+
+   the current (during resampling) prob of a param is gibbs_base::proposal_prob(id) or gibbs_base::proposal_prob(gps_t)
+
+   init_run(r): for r=[0,gopt.restarts]
+   init_iteration(i)
+   resample_block(blocki): for blocki=[0,n_pairs): choose new random sample[blocki] using p^power
+   print_sample(sample):
+   print_param(out,parami): like out<<gps[i] but customized
+
+    void run_gibbs()
+    {
+        assert(gibbs);
+        gibbs_base::init(n_nodes,total_forests); //FIXME: input # of "symbols" by cmd line since avg derivtree size != #symbols
+        gibbs_base::run_starts(*this);
+        gibbs_base::print_all(*this);
+    }
+    void init_run(unsigned r)
+    {
+    }
+    void init_iteration(unsigned i)
+    {
+    }
+    block_t *blockp;
+    Weight resample_block(unsigned block)
+    {
+        block_t &b=sample[block];  // this is cleared for us already
+        blockp=&b;
+    }
+    void print_sample(blocks_t const& sample)
+    {
+        out<<"\n";
+    }
+    void print_param(std::ostream &out,unsigned parami) const
+    {
+        out<<"\n";
+    }
+
+ */
 
 
 namespace graehl {
@@ -35,6 +86,8 @@ struct gibbs_param
     {
         return sumcount.x;
     }
+//TODO: actually handle no-normgroup (locked) special value.  if you want to force p=1 just put it in a singleton normgroup
+    static const unsigned NONORM=(unsigned)-1;
     unsigned norm; // index shared by all params to be normalized w/ this one
     delta_sum sumcount; //FIXME: move this to optional parallel array for many-parameter non-cumulative gibbs.
     template <class Normsum>
@@ -55,6 +108,7 @@ struct gibbs_param
         ns[norm]+=d;
         sumcount.add_delta(d,t);
     }
+    gibbs_param() {  }
     gibbs_param(unsigned norm, double prior) : prior(prior),norm(norm) {}
     typedef gibbs_param self_type;
     TO_OSTREAM_PRINT
@@ -72,6 +126,8 @@ struct gibbs_base
         n_sym=n_sym_;
         n_blocks=n_blocks_;
         sample.reinit(n_blocks);
+        gps.clear();
+        nnorm=0;
     }
 
     gibbs_base(gibbs_opts const &gopt_
@@ -142,13 +198,33 @@ struct gibbs_base
     unsigned size() const { return gps.size(); }
 
     // add params, then restore_p0() will be called on run()
-    unsigned define_param(unsigned norm, double prior=0)
+    unsigned define_param(unsigned norm,double prior)
     {
         maybe_increase_max(nnorm,norm+1);
         unsigned r=gps.size();
         gps.push_back(norm,prior);
         return r;
     }
+    double prior(double prob,double alpha) const
+    {
+        return gopt.uniformp0?alpha:alpha*prob;
+    }
+
+    unsigned define_param(unsigned norm,double prob,double alpha)
+    {
+        return define_param(norm,prior(prob,alpha));
+    }
+
+    void define_param_id(unsigned id,unsigned norm,double prior)
+    {
+        at_expand(gps,id)=gibbs_param(norm,prior);
+        maybe_increase_max(nnorm,norm+1);
+    }
+    void define_param_id(unsigned id,unsigned norm,double prob,double alpha)
+    {
+        define_param_id(id,norm,prior(prob,alpha));
+    }
+
     void restore_p0()
     {
         normsum.reinit(nnorm);
@@ -156,7 +232,7 @@ struct gibbs_base
             i->restore_p0(normsum);
     }
 
-    // finalize avged counts over burned in iters
+    // finalize avged counts over burned in iters; now proposal_prob = avged over all samples
     void finalize_cumulative_counts()
     {
         if (gopt.final_counts && !gopt.exclude_prior)
@@ -237,7 +313,7 @@ struct gibbs_base
         return ccount[paramid]++/csum[norm]++;
     }
 
-    //proposal HMM within an iteration:
+    //proposal HMM within an iteration.  also avged prob once finalized
     Weight proposal_prob(block_t const& p)
     {
         Weight prob=one_weight();
@@ -246,6 +322,7 @@ struct gibbs_base
         assert(prob<=one_weight());
         return prob;
     }
+    operator()(unsigned i) const { return proposal_prob(i); }
     double proposal_prob(unsigned paramid) const
     {
         return proposal_prob(gps[paramid]);
@@ -297,6 +374,7 @@ struct gibbs_base
         return stats;
     }
 
+
     template <class G>
     void iteration(G &imp,bool subtract_old=true)
     {
@@ -312,6 +390,7 @@ struct gibbs_base
             if (subtract_old)
                 addc(block,-1);
             block.clear();
+            blockp=&block;
             imp.resample_block(b);
             addc(block,1);
             p*=prob(block);
@@ -321,6 +400,7 @@ struct gibbs_base
     }
     unsigned beststart;
  public:
+    block_t *blockp; // redundant/courtesy: resample_block gets block index as argument already
     template <class G>
     gibbs_stats run_starts(G &imp)
     {
@@ -345,7 +425,7 @@ struct gibbs_base
         }
         best_sample.swap(sample);
         if (re>0)
-            restore_counts(best_counts);
+            restore_probs(best_counts); //TESTME: used to erroneously be restore_counts! was this accidentally doing something good in start-selection?
         if (gopt.cache_prob) free_cache();
         return best;
     }
@@ -470,14 +550,6 @@ struct gibbs_base
 
 };
 
-/* GE inherits from gibbs_base.
-
-   init_run(r): for r=[0,gopt.restarts]
-   init_iteration(i)
-   resample_block(blocki): for blocki=[0,n_pairs): choose new random sample[blocki] using p^power
-   print_sample(sample):
-   print_param(out,parami): like out<<gps[i] but customized
- */
 
 
 

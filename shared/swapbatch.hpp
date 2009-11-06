@@ -1,8 +1,8 @@
 //provides access to a collection of objects larger than virtual memory allows, by explicitly mapping a region to disk files which are (re)mapped on demand.  objects must provide a read method that constructs the object to contiguous memory.  input must support seek() to handle out-of-space retries.
 // WARNING: references returned by iterator are potentially invalidated any time a different-valued iterator is created or used
 //FIXME: real support for random access
-#ifndef SWAPBATCH_HPP
-#define SWAPBATCH_HPP
+#ifndef GRAEHL_SHARED__SWAPBATCH_HPP
+#define GRAEHL_SHARED__SWAPBATCH_HPP
 
 #include <graehl/shared/checkpoint_istream.hpp>
 #include <graehl/shared/memmap.hpp>
@@ -184,8 +184,6 @@ struct SwapBatch {
         o << ")\n";
         return GENIOGOOD;
     }
-
-
 
     iterator begin()
     {

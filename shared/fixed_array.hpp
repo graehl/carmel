@@ -94,7 +94,12 @@ public:
     {
         return begin()+index < end();
     }
+    //TODO: const/nonconst ref return
     T & operator[] (unsigned int index) const {
+        dynarray_assert(vec+index < end());
+        return vec[index];
+    }
+    T & operator() (unsigned int index) const {
         dynarray_assert(vec+index < end());
         return vec[index];
     }

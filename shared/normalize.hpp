@@ -1,6 +1,6 @@
 // normalization to 1 for each group in a disjoint partition of indices
-#ifndef NORMALIZE_HPP
-#define NORMALIZE_HPP
+#ifndef GRAEHL_SHARED__NORMALIZE_HPP
+#define GRAEHL_SHARED__NORMALIZE_HPP
 
 #include <graehl/shared/dynarray.h>
 #ifdef TEST
@@ -50,6 +50,7 @@ struct NormalizeGroups {
     typedef SwapBatch<Group> Groups;
     max_in_accum<offset_type> max_offset;
     size_accum<size_t> total_size;
+    Groups norm_groups;
 
     NormalizeGroups(std::string basename,unsigned batchsize,source_t add_k_smoothing_=0)  : norm_groups(basename,batchsize), add_k_smoothing(add_k_smoothing_)
     {
@@ -58,7 +59,6 @@ struct NormalizeGroups {
 
     }
 
-    Groups norm_groups;
 
     template <class charT, class Traits>
     void
@@ -113,6 +113,7 @@ struct NormalizeGroups {
     int zerocounts; // use enum vals
     size_t maxdiff_index;
     typedef typename Group::iterator GIt;
+    typedef typename Group::const_iterator GItc;
     void print_stats(std::ostream &out=std::cerr) const {
         unsigned npar=num_params();
         unsigned ng=num_groups();
@@ -194,6 +195,25 @@ struct NormalizeGroups {
         }
     }
 #endif
+    template <class V> // v(normindex,paramid) where paramid is in normindex.  if end_index>0, v(none_id,i) for any unseen i<end_index
+    void visit_norm_param(V &v,index_type end_index=0,unsigned none_id=(unsigned)-1) {
+        fixed_array<bool> seen(end_index);
+        unsigned normi=0;
+        for (Groups::iterator g=norm_groups.begin(),ge=norm_groups.end();g!=ge;++g) {
+            ++normi;
+            Group const& group=*g;
+            for (GItc p=group.begin(),pe=group.end();p!=pe;++p) {
+                index_type i=*p;
+                v(normi,i);
+                if (i<end_index) seen[i]=true;
+            }
+        }
+        normi=(unsigned)-1;
+        for (index_type i=0;i<end_index;++i)
+            if (!seen[i])
+                v(normi,i);
+    }
+
     template <class T> // enumerate:
     void visit(Group &group, T tag) {
         GIt beg=group.begin(),end=group.end();
@@ -205,7 +225,7 @@ struct NormalizeGroups {
         }
         if (sum > 0)
             for (GIt i=beg;i!=end;++i) {
-                dest_t &w=sink(*i);                
+                dest_t &w=sink(*i);
                 w /= sum;
             }
     }
@@ -271,7 +291,7 @@ operator <<
     return o;
 }
 */
-              
+
 #ifdef TEST
 BOOST_AUTO_TEST_CASE( TEST_NORMALIZE )
 {
