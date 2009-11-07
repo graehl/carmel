@@ -302,19 +302,19 @@ struct gibbs_base
         ccount.dealloc();
         csum.dealloc();
     }
-    Weight cache_prob(block_t const& p)
-    {
-        Weight prob=one_weight();
-        for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i)
-            prob*=cache_prob(*i);
-        return prob;
-    }
     double cache_prob(unsigned paramid)
     {
         unsigned norm=gps[paramid].norm;
         return ccount[paramid]++/csum[norm]++;
     }
-
+    Weight cache_prob(block_t const& p)
+    {
+        Weight prob=one_weight();
+        for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i)
+            prob*=cache_prob(*i);
+        assert(prob<=one_weight());
+        return prob;
+    }
     //proposal HMM within an iteration.  also avged prob once finalized
     Weight proposal_prob(block_t const& p)
     {
@@ -364,7 +364,7 @@ struct gibbs_base
     {
         stats.clear();
         Ni=gopt.iter;
-        restore_p0();
+        restore_p0(); // sets counts to prior, and normsums so prob is right
         imp.init_run(runi);
         accum_delta=false;
         iter=0;
@@ -403,8 +403,8 @@ struct gibbs_base
             block.clear();
             blockp=&block;
             imp.resample_block(b);
+            p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
             addc(block,1);
-            p*=prob(block);
         }
         record_iteration(p);
         maybe_print_periodic(imp);
@@ -446,10 +446,21 @@ struct gibbs_base
     {
         return gopt.cache_prob?cache_prob(b):proposal_prob(b);
     }
+    void log_ppx(Weight p)
+    {
+        p.print_ppx(log,n_sym,n_blocks,"per-point-ppx","per-block-ppx","prob");
+    }
+
     void record_iteration(Weight p)
     {
-        log<<" "<<(gopt.cache_prob?"cache-model":"sample")<<" ";
-        p.print_ppx(log,n_sym,n_blocks,"per-point-ppx","per-block-ppx","prob");
+        if (gopt.cache_prob) {
+            log << " cache-model ";
+            log_ppx(p);
+        }
+        if (gopt.cheap_prob) {
+            log << " cheap-prob ";
+            log_ppx(p);
+        }
         log<<'\n';
         if (burning())
             stats.record(time,p);

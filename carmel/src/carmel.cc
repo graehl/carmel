@@ -306,8 +306,9 @@ struct carmel_main
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
         gopt.cache_prob=have_opt("cache-prob");
+        gopt.cheap_prob=have_opt("sample-prob");
+        if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=true;
         gopt.uniformp0=have_opt("uniform-p0");
-        gopt.ppx=have_opt("sample-prob") || !gopt.cache_prob;
         gopt.final_counts=have_opt("final-counts");
         printer.set_flags(flags);
         return gibbs;
