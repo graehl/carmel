@@ -5,6 +5,7 @@
 #include <graehl/shared/time_series.hpp>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/fileargs.hpp>
 
 namespace graehl {
 
@@ -60,6 +61,8 @@ struct gibbs_opts
             opt.add_options()
                 ("alpha",defaulted_value(&alpha),
                  "prior applied to initial param values: alpha*p0*N (where N is # of items in normgroup, so uniform has p0*N=1)")
+                ("outsample-file",defaulted_value(&sample_file),
+                 "print actual sample (tree w/o parens) to this file")
                 ;
 
         if (carmel_opts)
@@ -105,11 +108,12 @@ struct gibbs_opts
     unsigned print_from,print_to; // which blocks to print
 
     //forest-em only:
-    double alpha;
+    double alpha; //TODO: per-normgroup (or per-param) alphas
+    ostream_arg sample_file;
 
     bool printing_sample() const
     {
-        return print_to>print_from;
+        return sample_file || print_to>print_from;
     }
 
     bool printing_counts() const
@@ -132,6 +136,8 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        sample_file=ostream_arg();
+        alpha=.1;
         tick_every=0;
         width=7;
         iter=0;

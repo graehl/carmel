@@ -237,7 +237,7 @@ struct carmel_gibbs : public gibbs_base
         }
     };
 #define OUTGIBBS3(x) //OUTGIBBS(x)
-    Weight resample_block(unsigned block)
+    void resample_block(unsigned block)
     {
         block_t &b=sample[block];  // this is cleared for us already
 //        blockp=&b;

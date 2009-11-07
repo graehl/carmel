@@ -341,7 +341,7 @@ struct logweight {                 // capable of representing nonnegative reals
                             , char const* probname="probability"
         ) const
     {
-        print_ppx(o,std::max(n_osymbol,n_isymbol),n_example,symbolname,examplename,probname);
+        return print_ppx(o,std::max(n_osymbol,n_isymbol),n_example,symbolname,examplename,probname);
     }
 
     std::ostream &print_ppx(std::ostream &o,double n_symbol,double n_example

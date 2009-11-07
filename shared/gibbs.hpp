@@ -11,6 +11,8 @@
 #include <graehl/shared/delta_sum.hpp>
 #include <graehl/shared/print_width.hpp>
 
+#include <graehl/shared/debugprint.hpp>
+
 
 #define DEBUG_GIBBS
 #ifdef DEBUG_GIBBS
@@ -54,7 +56,7 @@
     {
     }
     block_t *blockp;
-    Weight resample_block(unsigned block)
+    void resample_block(unsigned block)
     {
         block_t &b=sample[block];  // this is cleared for us already
         blockp=&b;
@@ -108,7 +110,7 @@ struct gibbs_param
         ns[norm]+=d;
         sumcount.add_delta(d,t);
     }
-    gibbs_param() {  }
+    gibbs_param() : prior(),norm() {  }
     gibbs_param(unsigned norm, double prior) : prior(prior),norm(norm) {}
     typedef gibbs_param self_type;
     TO_OSTREAM_PRINT
@@ -165,6 +167,7 @@ struct gibbs_base
 
     gibbs_stats stats;
     gibbs_opts gopt;
+    unsigned n_sym,n_blocks;
     std::ostream &out;
     std::ostream &log;
     typedef gibbs_param gp_t;
@@ -173,7 +176,6 @@ struct gibbs_base
     typedef dynamic_array<unsigned> block_t; // indexes into gps
     typedef fixed_array<block_t> blocks_t;
     typedef dynamic_array<gp_t> gps_t;
-    unsigned n_sym,n_blocks;
     gps_t gps;
     unsigned nnorm;
     normsum_t normsum;
@@ -323,9 +325,18 @@ struct gibbs_base
         return prob;
     }
     Weight operator()(unsigned i) const { return proposal_prob(i); }
+    double final_prob(unsigned paramid) const
+    {
+        return final_prob(gps[paramid]);
+    }
     double proposal_prob(unsigned paramid) const
     {
         return proposal_prob(gps[paramid]);
+    }
+    double final_prob(gibbs_param const& p) const // like proposal_prob but safe for hole parameters skipped when defining by id
+    {
+        double c=p.count();
+        return c>0?c/normsum[p.norm]:c;
     }
     double proposal_prob(gibbs_param const&p) const
     {

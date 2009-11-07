@@ -12,6 +12,10 @@
 #endif
 #endif
 
+/* SUFFIXES:
+   W means with writer; DBPW(a,w) goes to a.print(dbgout,w)
+ */
+
 /// In your clase, define a type: if you defined a
 ///  print(ostream &) const
 ///   method like genio.h: GENIO_print
