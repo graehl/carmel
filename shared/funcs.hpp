@@ -1,6 +1,6 @@
 // misc. helpful template functions (TODO: categorize them)
-#ifndef FUNCS_HPP
-#define FUNCS_HPP
+#ifndef GRAEHL_SHARED__FUNCS_HPP
+#define GRAEHL_SHARED__FUNCS_HPP
 
 #include <iterator>
 
@@ -30,16 +30,16 @@
 namespace graehl {
 
 template <class V>
-struct difference_f 
+struct difference_f
 {
     V operator()(const V&l,const V&r) const
     {
         return l-r;
-    }    
+    }
 };
 
 template <class V,class S,class F>
-inline S transform2_array_coerce(const S&l,const S&r,F f) 
+inline S transform2_array_coerce(const S&l,const S&r,F f)
 {
     const unsigned N=sizeof(S)/sizeof(V);
     S ret;
@@ -52,20 +52,20 @@ inline S transform2_array_coerce(const S&l,const S&r,F f)
 }
 
 template <class T1, class T2>
-T1 at_least(const T1 &val,const T2 &ensure_min) 
+T1 at_least(const T1 &val,const T2 &ensure_min)
 {
     return (val < ensure_min) ? ensure_min : val;
 }
 
 template <class T1, class T2>
-T1 at_most(const T1 &val,const T2 &ensure_max) 
+T1 at_most(const T1 &val,const T2 &ensure_max)
 {
     return (val > ensure_max) ? ensure_max : val;
 }
 
 
 template <class Set>
-struct not_in_set 
+struct not_in_set
 {
     const Set *set;
     not_in_set(const Set *set_) : set(set_) {}
@@ -79,7 +79,7 @@ struct not_in_set
 };
 
 template <class Set>
-not_in_set<Set> make_not_in_set(Set *s) 
+not_in_set<Set> make_not_in_set(Set *s)
 {
     return not_in_set<Set>(s);
 }
@@ -106,20 +106,20 @@ void trim(Container &cont,std::size_t size)
 template <class Container> inline
 void grow(Container &cont,std::size_t size,const typename Container::value_type &default_value=typename Container::value_type())
 {
-    std::size_t contsz=cont.size();    
+    std::size_t contsz=cont.size();
     if (size > contsz)
         cont.resize(size,default_value); //       cont.insert(cont.end()+size,size-contsz,default_value);
 }
 
 template <class Container,class Iter> inline
-void append(Container &cont,Iter beg,Iter end) 
+void append(Container &cont,Iter beg,Iter end)
 {
     cont.insert(cont.end(),beg,end);
 }
 
 // Order e.g. less_typeless
 template <class Cont,class Order> inline
-void sort(Cont &cont,Order order) 
+void sort(Cont &cont,Order order)
 {
     std::sort(cont.begin(),cont.end(),order);
 }
@@ -131,16 +131,16 @@ void unique(Cont &cont,Order order)
         std::unique(cont.begin(),cont.end(),order),
         cont.end());
 }
-        
+
 template <class Cont,class Order> inline
-void sort_unique(Cont &cont,Order order) 
+void sort_unique(Cont &cont,Order order)
 {
     sort(cont,order);
     unique(cont,order);
 }
 
 template <class Cont> inline
-void sort(Cont &cont) 
+void sort(Cont &cont)
 {
     std::sort(cont.begin(),cont.end());
 }
@@ -158,9 +158,9 @@ void unique(Cont &cont)
         std::unique(cont.begin(),cont.end()),
         cont.end());
 }
-        
+
 template <class Cont> inline
-void sort_unique(Cont &cont) 
+void sort_unique(Cont &cont)
 {
     sort(cont);
     unique(cont);
@@ -173,7 +173,7 @@ void zip_lists_to_pairlist(const Ck &K,const Cv &V,Cr &result)
     typename Ck::const_iterator ik=K.begin(),ek=K.end();
     typename Cv::const_iterator iv=V.begin(),ev=V.end();
     for(;ik<ek && iv<ev;++ik,++iv)
-        result.push_back(typename Cr::value_type(*ik,*iv));    
+        result.push_back(typename Cr::value_type(*ik,*iv));
     assert(ik==ek && iv==ev);
 }
 
@@ -186,46 +186,46 @@ std::vector<std::pair<typename Ck::value_type,typename Cv::value_type> > zip_lis
 }
 
 template <bool descending=false>
-struct compare_fabs 
+struct compare_fabs
 {
     template <class T1,class T2>
-    bool operator()(const T1&a,const T2&b) const 
+    bool operator()(const T1&a,const T2&b) const
     {
         return (descending) ?
             fabs(b) < fabs(a)
             :
             fabs(a) < fabs(b);
-    }    
+    }
 };
 
 template <class compare=compare_fabs<true> >
 struct select1st_compare : public compare
 {
     template <class T1,class T2>
-    bool operator()(const T1&a,const T2&b) const 
+    bool operator()(const T1&a,const T2&b) const
     {
         return compare::operator()(a.first,b.first);
     }
 };
 
-    
+
 template <class FloatVec> inline
 typename FloatVec::value_type
-norm(const FloatVec &vec) 
+norm(const FloatVec &vec)
 {
     typedef typename FloatVec::const_iterator Iter;
     typedef typename FloatVec::value_type Float;
     Float sumsq=0;
     for (Iter i=vec.begin(),e=vec.end();i!=e;++i) {
         Float v=*i;
-        sumsq+=v*v;        
+        sumsq+=v*v;
     }
     return sqrt(sumsq);
 }
 
 template <class FloatVec,class Scalar> inline
 void
-scale(FloatVec &vec,const Scalar &scale) 
+scale(FloatVec &vec,const Scalar &scale)
 {
     typedef typename FloatVec::iterator Iter;
     for (Iter i=vec.begin(),e=vec.end();i!=e;++i)
@@ -234,7 +234,7 @@ scale(FloatVec &vec,const Scalar &scale)
 
 template <class FloatVec,class Scalar> inline
 void
-unscale(FloatVec &vec,const Scalar &scale) 
+unscale(FloatVec &vec,const Scalar &scale)
 {
     typedef typename FloatVec::iterator Iter;
     for (Iter i=vec.begin(),e=vec.end();i!=e;++i)
@@ -243,7 +243,7 @@ unscale(FloatVec &vec,const Scalar &scale)
 
 template <class FloatVec> inline
 typename FloatVec::value_type
-normalize(FloatVec &vec) 
+normalize(FloatVec &vec)
 {
     typedef typename FloatVec::iterator Iter;
     typedef typename FloatVec::value_type Float;
@@ -265,30 +265,30 @@ norm_of_inner_product(const FloatVec &vec,const V2 &v2)
     assert(vec.size()==v2.size());
     for (Iter i=vec.begin(),e=vec.end();i!=e;++i,++i2) {
         Float v=*i * *i2;
-        sumsq+=v*v;   
+        sumsq+=v*v;
     }
     return sqrt(sumsq);
 }
 
 template <class V1,class V2,class Vout> inline
-void inner_product(const V1 &v1,const V2 &v2,Vout &vout) 
+void inner_product(const V1 &v1,const V2 &v2,Vout &vout)
 {
     vout.clear();
     vout.reserve(v1.size());
     assert(v1.size()==v2.size());
     typename V1::const_iterator iv1=v1.begin(),ev1=v1.end();
-    typename V2::const_iterator iv2=v2.begin();//,ev=V.end();    
+    typename V2::const_iterator iv2=v2.begin();//,ev=V.end();
     for(;iv1<ev1;++iv1,++iv2)
         vout.push_back(*iv1 * *iv2);
 }
 
 template <class V1,class V2,class Vout> inline
-std::vector<typename V1::value_type> inner_product(const V1 &v1,const V2 &v2) 
+std::vector<typename V1::value_type> inner_product(const V1 &v1,const V2 &v2)
 {
     std::vector<typename V1::value_type> ret;
     inner_product(v1,v2,ret);
     return ret;
-}    
+}
 
 // I hope you have an efficient swap :)
 template <class Container> inline
@@ -303,7 +303,7 @@ void compact(std::basic_string<c,t,a> &s) {
 
 #include <string>
 
-inline std::string subspan(const std::string &s,std::string::size_type begin,std::string::size_type end) 
+inline std::string subspan(const std::string &s,std::string::size_type begin,std::string::size_type end)
 {
     return std::string(s,begin,end-begin);
 }
@@ -471,7 +471,7 @@ struct Periodic {
         left=0;
     }
     bool check() {
-        DBP2(period,left);
+//        DBP2(period,left);
         if (period && enabled) {
             if (!--left) {
                 left=period;

@@ -62,7 +62,7 @@ struct delta_sum_f
     {
         add_delta(d.d,d.t);
     }
-    D add_delta(D d,D t)
+    void add_delta(D d,D t)
     {
         assert(t>=0);
         D moret=t-tmax;
@@ -137,7 +137,7 @@ struct bounded_delta_sum
         return s+x*extrat;
     }
 
-    double add_delta(double d,double t)
+    void add_delta(double d,double t)
     {
         double tleft=tmax-t;
         if (tleft>=0) {
@@ -145,11 +145,11 @@ struct bounded_delta_sum
             x+=d;
         }
     }
-    double add_delta(delta const& d)
+    void add_delta(delta const& d)
     {
         add_delta(d.d,d.t);
     }
-    double add_val(double v,double t)
+    void add_val(double v,double t)
     {
         add_delta(v-x,t);
     }
