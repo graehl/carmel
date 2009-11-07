@@ -5,10 +5,15 @@
 #include <graehl/shared/time_series.hpp>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/stream_util.hpp>
+
+// avoid library linking dep for carmel (note: carmel should use boost options too eventually)
+#ifdef FOREST_EM_VERSION
 #include <graehl/shared/fileargs.hpp>
+#endif
 
 namespace graehl {
 
+//TODO: parse unsigned so -1 is not error but rather max_unsigned?
 struct gibbs_opts
 {
     static char const* desc() { return "Gibbs (chinese restaurant process) options"; }
@@ -22,8 +27,10 @@ struct gibbs_opts
              "When writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts")
             ("cache-prob", defaulted_value(&cache_prob)->zero_tokens(),
              "Show the true probability according to cache model for each sample")
-            ("sample-prob", defaulted_value(&ppx)->zero_tokens(),
-             "Show the sample prob given model, previous sample")
+            ("cheap-prob", defaulted_value(&cheap_prob)->zero_tokens(),
+             "Show a cheaper-to-compute version of --cache-prob which doesn't update probs mid-block")
+            ("no-prob", defaulted_value(&no_prob)->zero_tokens(),
+             "Give no probability output")
             ("high-temp", defaulted_value(&high_temp),
              "Raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised")
             ("low-temp", defaulted_value(&low_temp),
@@ -41,7 +48,7 @@ struct gibbs_opts
             ("print-counts-from",defaulted_value(&print_counts_from),
              "Every --print-every, print the instantaneous and cumulative counts for parameters from...(to-1) (for debugging)")
             ("print-counts-to",defaulted_value(&print_counts_to),
-             "See print-counts-from.  -1 means until end")
+             "See print-counts-from.  4294967295 means until end")
             ("print-counts-sparse",defaulted_value(&print_counts_sparse),
              "(if nonzero) skip printing counts with avg(count)<prior+sparse, and show parameter index")
             ("print-counts-rich",defaulted_value(&rich_counts)->zero_tokens(),
@@ -51,7 +58,7 @@ struct gibbs_opts
             ("print-norms-from",defaulted_value(&print_norms_from),
              "Every --print-every, print the normalization groups' instantaneous (proposal HMM) sum-counts, for from...(to-1)")
             ("print-norms-to",defaulted_value(&print_norms_to),
-             "See print-norms-to.  -1 means until end")
+             "See print-norms-to.  4294967295 means until end")
             ("print-every",defaulted_value(&print_every),
              "print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
             ("progress-every",defaulted_value(&tick_every),
@@ -61,8 +68,10 @@ struct gibbs_opts
             opt.add_options()
                 ("alpha",defaulted_value(&alpha),
                  "prior applied to initial param values: alpha*p0*N (where N is # of items in normgroup, so uniform has p0*N=1)")
+#ifdef FOREST_EM_VERSION
                 ("outsample-file",defaulted_value(&sample_file),
                  "print actual sample (tree w/o parens) to this file")
+#endif
                 ;
 
         if (carmel_opts)
@@ -70,7 +79,7 @@ struct gibbs_opts
                 ("print-from",defaulted_value(&print_from),
                  "For [print-from]..([print-to]-1)th input transducer, print the final iteration's path on its own line.  a blank line follows each training example")
                 ("print-to",defaulted_value(&print_to),
-                 "See print-from.  -1 means until end")
+                 "See print-from. 4294967295 means until end")
                 ("init-em",defaulted_value(&init_em),
                  "Perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them")
                 ("em-p0",defaulted_value(&em_p0)->zero_tokens(),
@@ -83,7 +92,8 @@ struct gibbs_opts
     unsigned iter;
     bool exclude_prior;
     bool cache_prob;
-    bool ppx;
+    bool cheap_prob;
+    bool no_prob;
     double high_temp,low_temp;
     unsigned burnin;
     bool final_counts;
@@ -109,11 +119,19 @@ struct gibbs_opts
 
     //forest-em only:
     double alpha; //TODO: per-normgroup (or per-param) alphas
-    ostream_arg sample_file;
 
+#ifdef FOREST_EM_VERSION
+    ostream_arg sample_file;
+#endif
     bool printing_sample() const
     {
-        return sample_file || print_to>print_from;
+        return
+#ifdef FOREST_EM_VERSION
+            sample_file
+#else
+            print_to>print_from;
+#endif
+        ;
     }
 
     bool printing_counts() const
@@ -136,7 +154,9 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+#ifdef FOREST_EM_VERSION
         sample_file=ostream_arg();
+#endif
         alpha=.1;
         tick_every=0;
         width=7;
@@ -150,7 +170,8 @@ struct gibbs_opts
         print_counts_from=print_counts_to=0;
         print_norms_from=print_norms_to=0;
         uniformp0=false;
-        ppx=true;
+        cheap_prob=false;
+        cache_prob=true;
         print_every=0;
         print_from=print_to=0;
         high_temp=low_temp=1;
@@ -161,6 +182,9 @@ struct gibbs_opts
     }
     void validate()
     {
+        if (no_prob) {
+            cache_prob=cheap_prob=false;
+        }
         if (tick_every<1) tick_every=1;
         if (final_counts) burnin=iter;
         if (burnin>iter)
