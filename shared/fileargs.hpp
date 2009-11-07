@@ -1,3 +1,4 @@
+//FIXME: maybe because of large buffer change, writing to a non-.gz file seems to produce no output when a filearg is copied (even though we're using shared_ptr
 // given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
@@ -99,30 +100,38 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 
 
 
-
+// copyable because it's a shared ptr to an ostream, and holds shared ptr to a larger buffer used by it (for non-.gz file input/output) - make sure file is flushed before member buffer is destroyed, though!
 template <class Stream>
-struct file_arg : public boost::shared_ptr<Stream>
+struct file_arg
 {
  private:
     typedef large_streambuf<> buf_type;
     typedef boost::shared_ptr<buf_type> buf_p_type;
     buf_p_type buf;
-
+    typedef boost::shared_ptr<Stream> pointer_type;
+    pointer_type pointer; // this will get destroyed before buf (constructed after), which may be necessary since we don't require explicit flush.
     bool none;
  public:
+    operator pointer_type() const { return pointer; }
+    Stream &operator *() const { return *pointer; }
+    Stream *get() const
+    {
+        return pointer.get();
+    }
+    Stream *operator ->() const { return get(); }
+
     std::string name;
     char const* desc()
     {
         return name.c_str();
     }
 
-    typedef boost::shared_ptr<Stream> pointer_type;
 
     typedef file_arg<Stream> self_type;
 
     file_arg() { set_none(); }
-    explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL)
-    { set(s,null_allowed); }
+    explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL,bool large_buf=false)
+    { set(s,null_allowed,large_buf); }
     void throw_fail(std::string const& filename,std::string const& msg="")
     {
         name=filename;
@@ -136,9 +145,9 @@ struct file_arg : public boost::shared_ptr<Stream>
         if (!s)
             throw_fail(filename,fail_msg);
         if (destroy)
-            pointer().reset(&s);
+            pointer.reset(&s);
         else
-            pointer().reset(&s,null_deleter());
+            pointer.reset(&s,null_deleter());
         name=filename;
     }
 
@@ -197,7 +206,7 @@ the buffer will be back to 8k.
 
     void give_large_buf()
     {
-        buf.reset(new buf_type(*pointer()));
+        buf.reset(new buf_type(*pointer));
     }
 
     enum { ALLOW_NULL=1,NO_NULL=0 };
@@ -257,10 +266,10 @@ the buffer will be back to 8k.
 
     template <class Stream2>
     file_arg(file_arg<Stream2> const& o) :
-        pointer_type(o.pointer()),name(o.name),buf(o.buf) {}
+        pointer_type(o.pointer),name(o.name),buf(o.buf) {}
 
     void set_none()
-    { none=true;set_null_file_arg(pointer());name="-0"; }
+    { none=true;set_null_file_arg(pointer);name="-0"; }
 
     bool is_none() const
     { return none; }
@@ -271,16 +280,13 @@ the buffer will be back to 8k.
     }
 
     bool is_default_in() const {
-        return pointer().get() == &GRAEHL__DEFAULT_IN; }
+        return pointer.get() == &GRAEHL__DEFAULT_IN; }
 
     bool is_default_out() const {
-        return pointer().get() == &GRAEHL__DEFAULT_OUT; }
+        return pointer.get() == &GRAEHL__DEFAULT_OUT; }
 
     bool is_default_log() const {
-        return pointer().get() == &GRAEHL__DEFAULT_LOG; }
-
-    pointer_type &pointer() { return *this; }
-    pointer_type const& pointer() const { return *this; }
+        return pointer.get() == &GRAEHL__DEFAULT_LOG; }
 
     bool valid() const
     {
@@ -294,7 +300,7 @@ the buffer will be back to 8k.
 
     Stream &stream() const
     {
-        return *pointer();
+        return *pointer;
     }
 
     template<class O>
