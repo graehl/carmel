@@ -183,6 +183,24 @@ It choose_p(It begin,It end,P const& p)
     return begin; //unreachable
 }
 
+// P(*It) = double probability (unnormalized).
+template <class Sum,class It,class P>
+It choose_p_sum(It begin,It end,P const& p)
+{
+    if (begin==end) return end;
+    Sum sum=0.;
+    for (It i=begin;i!=end;++i)
+        sum+=p(*i);
+    double choice=random01();
+    for (It i=begin;;) {
+        choice -= p(*i)/sum;
+        It r=i;
+        ++i;
+        if (choice<0 || i==end) return r;
+    }
+    return begin; //unreachable
+}
+
 // as above but already normalized
 template <class It,class P>
 It choose_p01(It begin,It end,P const& p)

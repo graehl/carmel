@@ -237,10 +237,14 @@ struct carmel_gibbs : public gibbs_base
         }
     };
 #define OUTGIBBS3(x) //OUTGIBBS(x)
+    double block_weight(unsigned block)
+    {
+        return derivs.derivs[block].weight;
+    }
+
     void resample_block(unsigned block)
     {
-        block_t &b=sample[block];  // this is cleared for us already
-//        blockp=&b;
+        block_t &b=*blockp; // comes cleared.
         typedef dynamic_array<param_list> acpath;
         derivations &d=derivs.derivs[block];
         OUTGIBBS3(" block "<<block<<" line "<<d.lineno<<"\n");
