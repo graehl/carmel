@@ -157,6 +157,7 @@ return GENIOGOOD;
             deref(f)(current());
     }
 
+    /// i: 0 indexed
     value_type &operator[](unsigned i)
     {
         if (i==0 || i<current_i) {

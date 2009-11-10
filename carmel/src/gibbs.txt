@@ -1,3 +1,5 @@
+Todo: auto prior tuning
+
 "A comparison of Bayeisan estimators for unsupervised HMM POS taggers" (Gao+Johnson) defines the proposal HMM with a uniform p0 (base distribution) and prior alpha as having arc weights that are normalized from:
 
 pcounts(x,y)=[n_sample(x,y)+alpha]

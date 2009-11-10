@@ -133,8 +133,8 @@ struct gibbs_base
     }
 
     gibbs_base(gibbs_opts const &gopt_
-               , unsigned n_sym_=1
-               , unsigned n_blocks_=1
+               , unsigned n_sym=1
+               , unsigned n_blocks=1
                , std::ostream &out=std::cout
                , std::ostream &log=std::cerr)
         : gopt(gopt_)
@@ -385,6 +385,10 @@ struct gibbs_base
         return stats;
     }
 
+    double block_weight(unsigned block)
+    {
+        return 1;
+    }
 
     template <class G>
     void iteration(G &imp,bool subtract_old=true)
@@ -396,12 +400,13 @@ struct gibbs_base
         Weight p=1;
         imp.init_iteration(iter);
         for (unsigned b=0;b<n_blocks;++b) {
-            num_progress(log,b,gopt.tick_every);
+            num_progress(log,b,gopt.tick_every); //FIXME: use proportional progress so total #blocks = 2 lines of status or so
             block_t &block=sample[b];
+            blockp=&block;
+            double wt=imp.block_weight(b);
             if (subtract_old)
                 addc(block,-1);
             block.clear();
-            blockp=&block;
             imp.resample_block(b);
             p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
             addc(block,1);

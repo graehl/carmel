@@ -407,7 +407,7 @@ struct derivations //: boost::noncopyable
         free_order();
         free_reverse();
         unsigned s=0;
-        std::vector<bool> normed(nst,false);
+        std::vector<bool> normed(nst,false); // this is linear time; may actually slow down random choice vs. normalizing on fly
         while (s!=fin) { // fin should have no outgoing arcs if you want sampling to be sensible
             arcs_type &arcs=g[s].arcs;
             if (!normed[s]) { // don't normalize (+compute probs for arcs) in states we don't visit, and save the result if we revisit

@@ -305,9 +305,9 @@ struct carmel_main
         get_opt("print-every",gopt.print_every);
         get_opt("high-temp",gopt.high_temp);
         get_opt("low-temp",gopt.low_temp);
-        gopt.cache_prob=have_opt("cache-prob");
+//        gopt.cache_prob=have_opt("cache-prob");
         gopt.cheap_prob=have_opt("sample-prob");
-        if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=true;
+        if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=have_opt("no-prob");
         gopt.uniformp0=have_opt("uniform-p0");
         gopt.final_counts=have_opt("final-counts");
         printer.set_flags(flags);
@@ -1848,6 +1848,7 @@ cout <<         "\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
         "--cache-prob : show the true probability according to cache model for each sample\n"
         "--sample-prob : show the sample prob given model, previous sample\n"
+        "--no-prob : show no probability for --crp\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";
