@@ -400,7 +400,10 @@ struct gibbs_base
         Weight p=1;
         imp.init_iteration(iter);
         for (unsigned b=0;b<n_blocks;++b) {
-            num_progress(log,b,gopt.tick_every); //FIXME: use proportional progress so total #blocks = 2 lines of status or so
+            if (gopt.tick_every)
+                num_progress(log,b,gopt.tick_every); //FIXME: use proportional progress so total #blocks = 2 lines of status or so
+            else
+                num_progress_scale(log,b,n_blocks);
             block_t &block=sample[b];
             blockp=&block;
             double wt=imp.block_weight(b);

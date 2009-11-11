@@ -118,6 +118,16 @@ void num_progress(O &o,unsigned i,unsigned tick_every=10,unsigned num_every_tick
         o << tick;
 }
 
+
+template <class O>
+void num_progress_scale(O &o,unsigned n,unsigned N,unsigned num_every=70,char const* tick=".",char const* post_num="\n",char const* pre_num="",bool tick_and_num=false,bool num_0=true)
+{
+    unsigned d=2*num_every;
+    unsigned s=(N+d-1)/d;
+    if (s<1) s=1;
+    num_progress(o,n,s,num_every,tick,post_num,pre_num,tick_and_num,num_0);
+}
+
 }
 
 #endif

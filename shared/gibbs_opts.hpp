@@ -185,7 +185,7 @@ struct gibbs_opts
         if (no_prob) {
             cache_prob=cheap_prob=false;
         }
-        if (tick_every<1) tick_every=100;
+//        if (tick_every<1) tick_every=100;
         if (final_counts) burnin=iter;
         if (burnin>iter)
             burnin=iter;
