@@ -2,7 +2,7 @@
 #ifndef PROPERTY_HPP
 #define PROPERTY_HPP
 
-#include <boost/property_map.hpp>
+#include <boost/property_map/property_map.hpp>
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/dynarray.h>
 #include <utility>
