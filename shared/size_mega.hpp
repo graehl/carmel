@@ -4,7 +4,6 @@
 #include <iomanip>
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
-#include <graehl/shared/print_width.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/program_options.hpp>
 #include <sstream>
@@ -25,10 +24,10 @@ inline outputstream & print_size(outputstream &o,size_type size,bool decimal_tho
         size_compute_type nextbase=base*thousand;
         if (size < nextbase || suff[1]==0) {
             double d=size/(double)base;
-            print_width_small(o,d,max_width);
+            print_max_width_small(o,d,max_width);
             return o << *suff;
         }
-
+        
         base = nextbase;
         ++suff;
     }
@@ -46,7 +45,7 @@ inline size_type parse_size(inputstream &i) {
         switch(c) {
         case 't':
             number *= (1000.*1000.*1000.*1000.);
-            break;
+            break;            
         case 'T':
             number *= (1024.*1024.*1024.*1024.);
             break;
@@ -97,7 +96,7 @@ struct size_mega
 {
     typedef size_mega<decimal_thousand,size_type> self_type;
     size_type size;
-    operator size_type &()
+    operator size_type &() 
     {
         return size;
     }
@@ -108,22 +107,22 @@ struct size_mega
     size_mega() : size() {}
     size_mega(self_type const& o) : size(o.size) {}
     size_mega(size_type size_) : size(size_) {}
-    size_mega(std::string const& str,bool unused)
+    size_mega(std::string const& str,bool unused) 
     {
         init(str);
     }
-    void init(std::string const &str)
+    void init(std::string const &str) 
     {
         size=(size_type)size_from_str<size_type>(str);
     }
 
-    self_type & operator =(std::string const&s)
+    self_type & operator =(std::string const&s) 
     {
         init(s);
     }
-
+    
     template <class Ostream>
-    void print(Ostream &o) const
+    void print(Ostream &o) const 
     {
 //        local_precision<Ostream> prec(o,2);
 //        o << std::setw(4);
@@ -132,7 +131,7 @@ struct size_mega
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
     template <class I>
-    void read(I &i)
+    void read(I &i) 
     {
         /*
         std::string s;
@@ -143,7 +142,7 @@ struct size_mega
         */
         size=parse_size<size_type>(i);
     }
-
+    
 };
 
 typedef size_mega<false,double> size_bytes;
