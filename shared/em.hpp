@@ -64,12 +64,12 @@ struct EM_executor {
      // assigns random parameter values - not called unless random_restarts > 0
     void randomize() {}
      // returns (weighted) average log prob over all examples given current parameters, and collects counts (performs count initialization itself).  first_time flag intended to allow you to drop examples that have 0 probability (training can't continue if they're kept)
+    double size(); // # of examples for which estimate returns per-example log (base e) likelihood
     double estimate(bool first_time) {return 0;}
     // assigns new parameters from counts collected by estimate; learning_rate may be ignored, but is intended to magnify the delta from the previous parameter set to the normalized new parameter set.  should return largest absolute change to any parameter, and the index of that parameter.  should also save the un-magnified (raw normalized counts) version for undo_maximize (if you only use learning_rate==1, then you don't need to do anything but normalize)
     ParamDelta maximize(double learning_rate) {return ParamDelta(0,0);}
     // for overrelaxed EM: if probability gets worse, reset learning rate to 1 and use the last improved weights.  or, you may wish to save a copy of the learning-rate-1 new weights that you extrapolate the overrelaxed ones from (compared to their previous value), and simply restore those, rather than backing off to the previous iteration and wasting another estimate.
     void undo_maximize() {}
-
      // if you're doing random restarts, transfer the current parameters to safekeeping
     void save_best() {}
     void restore_best() {} // called when EM is (completely) finished
@@ -112,10 +112,16 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
                 break;
             }
 //            if (log_level > 0) logs << "Starting iteration: " << train_iter << '\n';
+            double N=exec.size();
 
             double new_alp = exec.estimate(very_first_time);
+            Weight prob(new_alp*N,ln_weight());
 
-            logs << "\ni=" << train_iter << " (rate=" << learning_rate << "): average per-example probability= e^" << new_alp;
+            logs << "\ni=" << train_iter;
+            if (learning_rate!=1) logs << " (rate=" << learning_rate << ")";
+            logs<< ": ";
+            prob.print_ppx_example(logs,N);
+//            logs<<": average per-example probability= e^" << new_alp;
 
             //FIXME: don't really need to do this so often, can move outside of for loop even ... but for sanity's sake (not much efficiency difference) leave it here
             if ( new_alp > best_alp || very_first_time ) {

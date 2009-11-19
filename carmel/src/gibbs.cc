@@ -70,6 +70,9 @@ struct carmel_gibbs : public gibbs_base
 
     void set_gibbs_params(bool addarcs=false,bool addsource=false)
     {
+        // for dummy_id (locked arc)
+        if (addarcs) arcs.push_back();
+        if (addsource) arc_sources.push_back();
         for (unsigned norm=1,i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
             WFST::NormalizeMethod const& nm=methods[i];
