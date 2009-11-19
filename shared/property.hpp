@@ -1,8 +1,9 @@
 // some Boost Graph Library property maps
-#ifndef PROPERTY_HPP
-#define PROPERTY_HPP
+#ifndef GRAEHL_SHARED__PROPERTY_HPP
+#define GRAEHL_SHARED__PROPERTY_HPP
 
-#include <boost/property_map/property_map.hpp>
+//#include <boost/property_map/property_map.hpp> //boost 1.40
+#include <boost/property_map.hpp>
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/dynarray.h>
 #include <utility>
