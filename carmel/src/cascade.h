@@ -46,6 +46,14 @@ struct cascade_parameters
             cascade[i]->visit_arcs_sourceless(m);
     }
 
+    // set groupids
+    void number_from(unsigned start=1) const
+    {
+        for (unsigned i=0,n=cascade.size();i<n;++i)
+            start=cascade[i]->numberArcsFrom(start); //TEST: same order as visit_arcs_sourceless
+    }
+
+
     void fem_norms(std::ostream &o,WFST::NormalizeMethods const& methods) const
     {
         arcid_type aid;
@@ -84,7 +92,7 @@ struct cascade_parameters
     template <class arc_counts>
     void fem_deriv(std::ostream &o,arcs_table<arc_counts> const&arcs,arcid_type const& aid,derivations const& deriv) const
     {
-//        printGraph(deriv.graph(),o);
+        printGraph(deriv.graph(),Config::debug());
         unsigned start=deriv.start(),fin=deriv.final();
         Graph g=deriv.graph();
         backrefs br(g,start);

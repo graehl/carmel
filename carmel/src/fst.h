@@ -1285,7 +1285,7 @@ class WFST {
 
 
     void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource.  if no arc having same group number in weightSource is found, remove the arc from *this
-    void numberArcsFrom(int labelStart); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1
+    unsigned numberArcsFrom(unsigned labelStart=1); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1.  returns next available label
     void lockArcs();		// put all arcs in group 0 (weights are locked)
     //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<IntKey, int>; }
     void unTieGroups();

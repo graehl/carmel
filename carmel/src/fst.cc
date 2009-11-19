@@ -279,12 +279,13 @@ void WFST::lockArcs() {
     }
 }
 
-void WFST::numberArcsFrom(int label) {
+unsigned WFST::numberArcsFrom(unsigned label) {
     Assert ( label > 0 );
     for ( int s = 0 ; s < numStates() ; ++s ){
         for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a )
             a->groupId = label++;
     }
+    return label;
 }
 
 

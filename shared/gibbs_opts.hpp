@@ -166,12 +166,12 @@ struct gibbs_opts
         restarts=0;
         init_em=0;
         em_p0=false;
-        cache_prob=false;
         print_counts_sparse=0;
         print_counts_from=print_counts_to=0;
         print_norms_from=print_norms_to=0;
         uniformp0=false;
         cheap_prob=false;
+        no_prob=false;
         cache_prob=true;
         print_every=0;
         print_from=print_to=0;
