@@ -1198,13 +1198,13 @@ class WFST {
         }
     };
 
-
-
+    static void output_format(bool *flags,std::ostream *fstout=NULL); // flags as described in carmel -h
 
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3,matrix_fb=4
     }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
     struct deriv_cache_opts
     {
+        std::string out_derivfile;
         bool do_prune;
         bool prune() const
         {
@@ -1245,7 +1245,7 @@ class WFST {
     struct train_opts
     {
         deriv_cache_opts cache;
-        unsigned max_iter;
+        int max_iter;
         double learning_rate_growth_factor;
         int ran_restarts;
         random_restart_acceptor ra;

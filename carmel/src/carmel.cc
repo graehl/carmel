@@ -1,3 +1,12 @@
+/* to decide:
+
+   -b batch compose: what should happen w/ cascade?  disallowed combination w/ --fem-param and many other options?
+
+   avoid train or compose entirely when just writing -fem-param and -fem-norm?
+
+   --save-fem-param after training?
+ */
+
 //#define MARCU
 //TODO: training_progress(i) Log() ...... quiet mode for batch composition?
 #define GRAEHL__SINGLE_MAIN
@@ -42,6 +51,9 @@ char *MarcuArgs[]={
 #endif
 
 static void setOutputFormat(bool *flags,ostream *fstout) {
+    WFST::output_format(flags,fstout);
+    return;
+    /*
     if (fstout) {
     if ( flags['B'] )
         Weight::out_log10(*fstout);
@@ -80,6 +92,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
     WFST::set_arc_default_format(flags['J'] ? WFST::FULL : WFST::BRIEF);
     WFST::set_arc_default_per(flags['H'] ? WFST::ARC : WFST::STATE);
     //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
+    */
 }
 
 static void printSeq(Alphabet<StringKey,StringPool> &a,int *seq,int maxSize) {
@@ -101,6 +114,15 @@ void readParam(T *t, char const*from, char sw) {
     }
 }
 
+template <class T>
+bool readParam(bool *argflags,T *t, char const*from, char sw) {
+    if (argflags[sw]) {
+        argflags[sw]=false;
+        readParam(t,from,sw);
+        return true;
+    }
+    return false;
+}
 
 int isSpecial(const char* psz) {
     if ( !(*psz == '*') )
@@ -273,18 +295,32 @@ struct carmel_main
     WFST::path_print printer;
     WFST::train_opts topt;
 
+    void force_cascade_derivs()
+    {
+        flags['t']=true;
+        long_opts["train-cascade"]=1;
+    }
+
+    bool parse_cache_opts()
+    {
+        WFST::deriv_cache_opts &copt=topt.cache;
+        copt.cache_level=have_opt("matrix-fb") ? WFST::matrix_fb : (flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing));
+        copt.do_prune=!have_opt("cache-no-prune");
+        if (have_opt("disk-cache-derivations")) {
+            copt.cache_level=WFST::cache_disk;
+            copt.disk_cache_filename=set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
+            get_default_opt("disk-cache-bufsize",copt.disk_cache_bufsize,"1M");
+            Config::log()<<"Disk cache of derivations will be created at "<<copt.disk_cache_filename<<" using read buffer of "<<copt.disk_cache_bufsize<<" bytes.\n";
+        }
+    }
+
     bool parse_gibbs_opts()
     {
         bool gibbs = have_opt("crp");
 
         if (gibbs) {
-            flags['t']=true;
-//            flags['a']=true;
             topt.cache.cache_level=WFST::cache_forward_backward;
-            /* strictly speaking, the following 2 aren't needed */
-            flags['?']=true;
-            flags[':']=true; // cache reverse also
-            long_opts["train-cascade"]=1;
+            force_cascade_derivs();
         }
         get_opt("crp-restarts",gopt.restarts);
         gopt.argmax_final=have_opt("crp-argmax-final");
@@ -320,10 +356,10 @@ struct carmel_main
         o<<"product of probs="<<prod_prob<<", ";
         prod_prob.print_ppx(o,n_symbols,n_pairs,"per-input-symbol-perplexity","per-line-perplexity");
         /*
-        o<<"per-example perplexity(N="<<n_pairs<<")=";
-        prod_prob.root(n_pairs).inverse().print_base(o,2);
-        o<<"per-input-symbol perplexity(Nsym="<<n_symbols<<")=";
-        prod_prob.root(n_symbols).inverse().print_base(o,2);
+          o<<"per-example perplexity(N="<<n_pairs<<")=";
+          prod_prob.root(n_pairs).inverse().print_base(o,2);
+          o<<"per-input-symbol perplexity(Nsym="<<n_symbols<<")=";
+          prod_prob.root(n_symbols).inverse().print_base(o,2);
         */
         if (n_0prob)
             o<<", excluding "<<n_0prob<<" 0 probabilities (i.e. real ppx is infinite).";
@@ -354,7 +390,6 @@ struct carmel_main
         prod_viterbi*=p;
     }
 
-
     void report_batch()
     {
         std::ostream &o=Config::log();
@@ -381,7 +416,6 @@ struct carmel_main
             }
         }
     }
-
 
     void print_kbest(unsigned kPaths,WFST *result)
     {
@@ -416,6 +450,8 @@ struct carmel_main
         filenames=fnm;
         nInputs=N;
     }
+
+
 
     typedef WFST::NormalizeMethod NM;
     NM norm_method;
@@ -515,7 +551,12 @@ struct carmel_main
         return true;
     }
 
-    std::string const& set_default_text(std::string const& key,std::string const& default_val)
+    std::string const& set_text(std::string const& key,std::string &to)
+    {
+        to=text_long_opts[key];
+    }
+
+    std::string const& set_default_text(std::string const& key,std::string const& default_val="")
     {
         std::string &val=text_long_opts[key];
         if (val.empty())
@@ -530,7 +571,7 @@ struct carmel_main
     }
 
     carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
-        :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts)
+        :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts),fems(true,false)
     {
         norm_method.group=WFST::CONDITIONAL;
         keep_path_ratio.setInfinity();
@@ -632,6 +673,7 @@ struct carmel_main
             result->randomSet();
         if (flags['n'])
             normalize(result);
+
         return true;
     }
 
@@ -651,7 +693,6 @@ struct carmel_main
             o << *result;
         }
     }
-
 
     void prune(WFST *result)
     {
@@ -759,6 +800,86 @@ struct carmel_main
 #endif
     }
 
+    cascade_parameters fems; // remembers chain no matter whether --train-cascade is enabled
+    dynamic_array<std::string> fem_filenames;
+
+
+    std::string fem_norm,fem_forest,fem_inparam,fem_outparam,fem_suffix;
+
+    void parse_fem_opts()
+    {
+        set_text("load-fem-param",fem_inparam);
+        set_text("write-loaded",fem_suffix);
+        set_text("fem-param",fem_outparam);
+        set_text("fem-norm",fem_norm);
+        set_text("fem-forest",fem_forest);
+        if (!fem_forest.empty()) {
+            topt.cache.out_derivfile=fem_forest;
+            force_cascade_derivs();
+        }
+    }
+
+    void fem_normby()
+    {
+        if (have_opt("normby")) {
+            Config::log()<<"Normalizing input transducers by --normby="<<text_long_opts["normby"]<<endl;
+            fems.normalize(nms);
+        }
+    }
+
+    void fem_add(WFST *w,char const* filename)
+    {
+        unsigned i=fems.size();
+        fems.add(w);
+        fem_filenames.push_back(filename);
+    }
+
+    void fem_in()
+    {
+        if (!fem_inparam.empty()) {
+            Config::log()<<"Reading cascade weights from --load-fem-param "<<fem_inparam<<endl;
+            std::ifstream i(fem_inparam.c_str());
+            if (!i) {
+                throw std::runtime_error("Missing --load-fem-param file.\n");
+            }
+            fems.read_params(i);
+        }
+        fem_normby();
+        if (have_opt("write-loaded"))
+            write_trained(fem_suffix);
+
+    }
+
+    void fem_out()
+    {
+        if (!fem_outparam.empty()) {
+            Config::log()<<"Writing cascade weights to --fem-param "<<fem_outparam<<endl;
+            std::ofstream o(fem_outparam.c_str());
+            fems.print_params(o);
+        }
+        if (!fem_norm.empty()) {
+            Config::log()<<"Writing forest-em normgroups to --fem-norm "<<fem_norm<<endl;
+            std::ofstream o(fem_norm.c_str());
+            fems.fem_norms(o,nms);
+        }
+    }
+
+    void write_trained(std::string const& suffix="trained")
+    {
+        fems.write_trained(suffix,flags,fem_filenames.begin());
+/*
+        char const** chain_filenames=filenames+(chain-chainMemory);
+        assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
+        for (unsigned i=0;i<nChain;++i) {
+            std::string const& f=chain_filenames[i];
+            std::string const& f_trained=suffix.empty()?f:(f+"."+suffix);
+            Config::log() << "Writing "<<suffix<<' '<<f<<" to "<<f_trained<<std::endl;
+            std::ofstream of(f_trained.c_str());
+            setOutputFormat(flags,&of);
+            chain[i].writeLegible(of);
+        }
+*/
+    }
 
 };
 
@@ -770,13 +891,13 @@ int
 __cdecl
 #endif
 main(int argc, char *argv[]){
+    try {
     INITLEAK;
 #ifdef _MSC_VER
 #ifdef MEMDEBUG
     //int tmpFlag = CrtSetDbgFlag(CRTDBGREPORTFLAG);
     //tmpFlag |= CRTDBGCHECKALWAYSDF;
     //CrtSetDbgFlag(tmpFlag);
-
 #endif
 #endif
 #ifdef MARCU
@@ -789,7 +910,8 @@ main(int argc, char *argv[]){
     }
     int i;
     bool flags[256];
-    for ( i = 0 ; i < 256 ; ++i ) flags[i] = 0;
+    bool argflags[256];
+    for ( i = 0 ; i < 256 ; ++i ) argflags[i]=flags[i] = 0;
     char *pc;
     char const**parm = NEW char const *[argc-1];
     unsigned int seed = default_random_seed();//(unsigned int )std::time(NULL);
@@ -829,7 +951,75 @@ main(int argc, char *argv[]){
     std::ios_base::sync_with_stdio(false);
 
     for ( i = 1 ; i < argc ; ++i ) {
-        if ((pc=argv[i])[0] == '-' && pc[1] != '\0' && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag && !mean_field_oneshot_flag && !exponent_flag)
+        char *arg=argv[i];
+        if (exponent_flag) {
+            exponent_flag=false;
+            readParam(&exponent,arg,'=');
+        } else if ( labelFlag ) {
+            labelFlag = 0;
+            readParam(&labelStart,arg,'N');
+        } else if ( converge_pp_flag ) {
+            converge_pp_flag = false;
+            readParam(&converge_pp_ratio,arg,'X');
+        } else if ( learning_rate_growth_flag ) {
+            learning_rate_growth_flag = false;
+            readParam(&train_opt.learning_rate_growth_factor,arg,'o');
+            if (train_opt.learning_rate_growth_factor < 1)
+                train_opt.learning_rate_growth_factor=1;
+        } else if (rrFlag) {
+            rrFlag=false;
+            readParam(&train_opt.ran_restarts,arg,'!');
+        } else if (seedFlag) {
+            seedFlag=false;
+            readParam(&seed,arg,'R');
+        } else if ( wrFlag ) {
+            readParam(&cm.keep_path_ratio,arg,'w');
+            if (cm.keep_path_ratio < 1)
+                cm.keep_path_ratio = 1;
+            wrFlag=false;
+        } else if ( msFlag ) {
+            readParam(&cm.max_states,arg,'z');
+            if ( cm.max_states < 1 )
+                cm.max_states = 1;
+            msFlag=false;
+        } else if ( kPaths == -1 ) {
+            readParam(&kPaths,arg,'k');
+            if ( kPaths < 1 )
+                kPaths = 1;
+        } else if ( nGenerate == -1 ) {
+            readParam(&nGenerate,arg,'g');
+            if ( nGenerate < 1 )
+                nGenerate = 1;
+        } else if ( readParam(argflags,&train_opt.max_iter,arg,'M')) {
+        } else if ( maxGenArcs == -1 ) {
+            readParam(&maxGenArcs,arg,'L');
+            if ( maxGenArcs < 0 )
+                maxGenArcs = 0;
+        } else if ( thresh == -1 ) {
+            readParam(&thresh,arg,'T');
+            if ( thresh < 0 )
+                thresh = 0;
+        } else if ( convergeFlag ) {
+            convergeFlag = 0;
+            readParam(&converge,arg,'e');
+        } else if ( floorFlag ) {
+            floorFlag = 0;
+            readParam(&smoothFloor,arg,'f');
+        } else if ( pruneFlag ) {
+            pruneFlag = 0;
+            readParam(&cm.prune_wt,arg,'p');
+        } else if ( fstout == NULL ) {
+            fstout = NEW ofstream(arg);
+            setOutputFormat(flags,fstout);
+            if ( !*fstout ) {
+                Config::warn() << "Could not create file " << arg << ".\n";
+                return -8;
+            }
+        } else if (mean_field_oneshot_flag) {
+            mean_field_oneshot_flag=0;
+            cm.norm_method.scale.linear=false;
+            readParam(&cm.norm_method.scale.alpha,arg,'+');
+        } else if ((pc=arg)[0] == '-' && pc[1] != '\0') { // && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag && !mean_field_oneshot_flag && !exponent_flag
             if (pc[1]=='-') {
                 // long option
                 char * s=pc+2;
@@ -840,10 +1030,8 @@ main(int argc, char *argv[]){
                         have_val=true;
                         break;
                     }
-
                 std::string key(pc+2,e);
                 std::string val;
-
                 double v=1;
                 if (have_val) {
                     val=(e+1);
@@ -884,7 +1072,7 @@ main(int argc, char *argv[]){
                     else if ( *pc == 'g' || *pc == 'G' )
                         nGenerate = -1;
                     else if ( *pc == 'M' )
-                        train_opt.max_iter=(unsigned)-1;
+                        train_opt.max_iter=-1;
                     else if ( *pc == 'L' )
                         maxGenArcs = -1;
                     else if ( *pc == 'N' )
@@ -898,83 +1086,12 @@ main(int argc, char *argv[]){
                     else if ( *pc == '=' )
                         exponent_flag=true;
                     flags[*pc] = 1;
+                    argflags[*pc] = 1;
                 }
             }
-
-        else
-            if (exponent_flag) {
-                exponent_flag=false;
-                readParam(&exponent,argv[i],'=');
-            } else if ( labelFlag ) {
-                labelFlag = 0;
-                readParam(&labelStart,argv[i],'N');
-            } else if ( converge_pp_flag ) {
-                converge_pp_flag = false;
-                readParam(&converge_pp_ratio,argv[i],'X');
-            } else if ( learning_rate_growth_flag ) {
-                learning_rate_growth_flag = false;
-                readParam(&train_opt.learning_rate_growth_factor,argv[i],'o');
-                if (train_opt.learning_rate_growth_factor < 1)
-                    train_opt.learning_rate_growth_factor=1;
-            } else if (rrFlag) {
-                rrFlag=false;
-                readParam(&train_opt.ran_restarts,argv[i],'!');
-            } else if (seedFlag) {
-                seedFlag=false;
-                readParam(&seed,argv[i],'R');
-            } else if ( wrFlag ) {
-                readParam(&cm.keep_path_ratio,argv[i],'w');
-                if (cm.keep_path_ratio < 1)
-                    cm.keep_path_ratio = 1;
-                wrFlag=false;
-            } else if ( msFlag ) {
-                readParam(&cm.max_states,argv[i],'z');
-                if ( cm.max_states < 1 )
-                    cm.max_states = 1;
-                msFlag=false;
-            } else if ( kPaths == -1 ) {
-                readParam(&kPaths,argv[i],'k');
-                if ( kPaths < 1 )
-                    kPaths = 1;
-            } else if ( nGenerate == -1 ) {
-                readParam(&nGenerate,argv[i],'g');
-                if ( nGenerate < 1 )
-                    nGenerate = 1;
-            } else if ( train_opt.max_iter == (unsigned)-1 ) {
-                readParam(&train_opt.max_iter,argv[i],'M');
-                if ( train_opt.max_iter < 0 )
-                    train_opt.max_iter = 0;
-            } else if ( maxGenArcs == -1 ) {
-                readParam(&maxGenArcs,argv[i],'L');
-                if ( maxGenArcs < 0 )
-                    maxGenArcs = 0;
-            } else if ( thresh == -1 ) {
-                readParam(&thresh,argv[i],'T');
-                if ( thresh < 0 )
-                    thresh = 0;
-            } else if ( convergeFlag ) {
-                convergeFlag = 0;
-                readParam(&converge,argv[i],'e');
-            } else if ( floorFlag ) {
-                floorFlag = 0;
-                readParam(&smoothFloor,argv[i],'f');
-            } else if ( pruneFlag ) {
-                pruneFlag = 0;
-                readParam(&cm.prune_wt,argv[i],'p');
-            } else if ( fstout == NULL ) {
-                fstout = NEW ofstream(argv[i]);
-                setOutputFormat(flags,fstout);
-                if ( !*fstout ) {
-                    Config::warn() << "Could not create file " << argv[i] << ".\n";
-                    return -8;
-                }
-            } else if (mean_field_oneshot_flag) {
-                mean_field_oneshot_flag=0;
-                cm.norm_method.scale.linear=false;
-                readParam(&cm.norm_method.scale.alpha,argv[i],'+');
-            } else {
-                parm[nParms++] = argv[i];
-            }
+        } else {
+            parm[nParms++] = arg;
+        }
     }
     if (cm.have_opt("help")) {
         usageHelp();
@@ -982,15 +1099,6 @@ main(int argc, char *argv[]){
         return 0;
     }
     bool prunePath = flags['w'] || flags['z'];
-    WFST::deriv_cache_opts &copt=train_opt.cache;
-    copt.cache_level=cm.have_opt("matrix-fb") ? WFST::matrix_fb : (flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing));
-    copt.do_prune=!cm.have_opt("cache-no-prune");
-    if (cm.have_opt("disk-cache-derivations")) {
-        copt.cache_level=WFST::cache_disk;
-        copt.disk_cache_filename=cm.set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
-        cm.get_default_opt("disk-cache-bufsize",copt.disk_cache_bufsize,"1M");
-        Config::log()<<"Disk cache of derivations will be created at "<<copt.disk_cache_filename<<" using read buffer of "<<copt.disk_cache_bufsize<<" bytes.\n";
-    }
 
     srand(seed);
     set_random_seed(seed);
@@ -1045,8 +1153,11 @@ main(int argc, char *argv[]){
         filenames = parm;
     }
     istream *pairStream = NULL;
+    cm.parse_cache_opts();
     bool gibbs = cm.parse_gibbs_opts();
+    cm.parse_fem_opts();
     cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
+
     bool trainc=!cascade.trivial;
     if (trainc)
         flags['t']=1;
@@ -1093,6 +1204,12 @@ main(int argc, char *argv[]){
             --nParms;
     }
     cm.open_postb();
+    dynamic_array<double> exponents;
+    cm.set_inputs(filenames,nInputs);
+    cm.parse_vector("exponents",exponents,1.0," ^ ",",");
+
+    carmel_main::NMs &nms=cm.norms();
+
     WFST *chainMemory = (WFST*)::operator new(nChain * sizeof(WFST));
     WFST *chain = chainMemory;
 #ifdef MARCU
@@ -1104,43 +1221,11 @@ main(int argc, char *argv[]){
         nTarget = flags['r'] ? nInputs-1 : 0;
         line_in=inputs[nTarget];
     }
-    dynamic_array<double> exponents;
-    cm.set_inputs(filenames,nInputs);
-    cm.parse_vector("exponents",exponents,1.0," ^ ",",");
-    /*
-    if (cm.have_opt("exponents")) {
-        split_into(cm.text_long_opts["exponents"],exponents,",");
-        Config::log() << "Using input WFST --exponents:\n";//<<exponents<<"\n";
-        for (i=0 ; i < nInputs ; ++i) {
-            Config::log() << filenames[i];
-            if (i < exponents.size())
-                Config::log() << "  ^ " << exponents[i];
-            Config::log() << std::endl;
-        }
-        Config::log() << std::endl;
-        }*/
-    /*
-//    cm.parse_vector(filenames,nInputs,"priors",gopt.priors,0," ~ ");
-    if (cm.have_opt("priors")) {
-        dynamic_array<double> &pr=gopt.priors;
-        split_into(cm.text_long_opts["priors"],pr,",");
-        Config::log() << "Using input WFST --priors:\n";//<<priors<<"\n";
-        for (i=0 ; i < nInputs ; ++i) {
-            Config::log() << filenames[i];
-            if (i >= pr.size())
-                pr.push_back(0);
-            Config::log() << "  ~ " << pr[i];
-            Config::log() << std::endl;
-        }
-        Config::log() << std::endl;
-        }*/
-
-
-
     for ( i = 0 ; i < nInputs ; ++i ) {
         if ( i != nTarget ) {
             WFST *w=chain+i;
             PLACEMENT_NEW (w) WFST(*inputs[i],!flags['K']);
+            cm.fem_add(w,filenames[i]);
             if (i < exponents.size())
                 w->raisePower(exponents[i]);
             if ( !flags['m'] && nInputs > 1 )
@@ -1241,11 +1326,6 @@ main(int argc, char *argv[]){
 #endif
 
         if (nChain<2 && !cascade.trivial) {
-//            Config::warn() << "--train-cascade requires at least two transducers in composition; disabling --train-cascade\n";
-            if (false&&gibbs) {
-                Config::warn() << "--crp requires at least two transducers in composition; disabling --crp\n";
-                gibbs=false;
-            }
             cascade.set_trivial();
         }
 
@@ -1332,7 +1412,7 @@ main(int argc, char *argv[]){
 #ifdef  DEBUGCOMPOSE
         Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
-
+        cm.fem_in();
 
         if (long_opts["openfst-roundtrip"]) {
             cm.openfst_roundtrip(result);
@@ -1360,14 +1440,17 @@ main(int argc, char *argv[]){
         } else if ( flags['c'] ) {
             cout << "Number of states in result: " << result->size() << std::endl;
             cout << "Number of arcs in result: " << result->numArcs() << std::endl;
-            unsigned n_back;
-            cout << "Number of paths in result (valid for acyclic only; a cycle means infinitely many): " << result->numNoCyclePaths(&n_back) << std::endl;
-            if (n_back)
-                cout<<"Number of cycle-causing arcs in result: " << n_back;
-            else
-                cout << "Result is acyclic.";
+            if (result->numArcs()) {
+                unsigned n_back;
+                cout << "Number of paths in result (valid for acyclic only; a cycle means infinitely many): " << result->numNoCyclePaths(&n_back) << std::endl;
+                if (n_back)
+                    cout<<"Number of cycle-causing arcs in result: " << n_back;
+                else
+                    cout << "Result is acyclic.";
+            }
             cout <<std::endl;
         }
+
         if ( flags['t'] )
             flags['S'] = 0;
         if ( !flags['b'] ) {
@@ -1403,7 +1486,6 @@ main(int argc, char *argv[]){
                     corpus.set_null();
                 }
 
-                carmel_main::NMs &nms=cm.norms();
                 if (gibbs) {
                     result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
@@ -1416,6 +1498,8 @@ main(int argc, char *argv[]){
                 }
 
                 if (trainc) {
+                    cm.write_trained("trained");
+                    /*
                     // write inputfilename.trained for each input
                     char const** chain_filenames=filenames+(chain-chainMemory);
                     assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
@@ -1427,6 +1511,7 @@ main(int argc, char *argv[]){
                         setOutputFormat(flags,&of);
                         chain[i].writeLegible(of);
                     }
+                    */
                 }
             } else if ( nGenerate > 0 ) {
                 cm.shrink(result,true,true,true,"\n");
@@ -1515,6 +1600,8 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     cm.report_batch();
+    cm.fem_out();
+
     if ( flags['S'] && input_lineno > 0) {
         Config::log() << "-S corpus ";
         cm.log_ppx(n_pairs,prod_prob);
@@ -1541,7 +1628,13 @@ main(int argc, char *argv[]){
     if ( fstout != &cout )
         delete fstout;
     return 0;
+}catch(std::exception &e) {
+    Config::log()<<"ERROR: "<<e.what()<<"\n";
+    return -11;
 }
+}
+
+
 #endif
 
 
@@ -1849,6 +1942,14 @@ cout <<         "\n"
         "--cache-prob : show the true probability according to cache model for each sample\n"
         "--sample-prob : show the sample prob given model, previous sample\n"
         "--no-prob : show no probability for --crp\n"
+        "\n";
+
+    cout << "\n"
+        "--load-fem-param infile: (todo) restore params onto cascade from forest-em params file\n"
+        "--write-loaded suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite inputN)\n"
+        "--fem-param outfile: (todo) write forest-em params file for the input cascade\n"
+        "--fem-norm outfile : write a forest-em normgroups file for the input cascade\n"
+        "--fem-forest outfile : write a forest-em derivation forests file (implies --train-cascade -?)\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";

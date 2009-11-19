@@ -166,6 +166,47 @@ template <class Weight>
 void countNoCyclePaths(Graph g, Weight *nPaths, int src);
 
 
+struct backref
+{
+    unsigned uses; // if >1, then assign id
+    unsigned id;
+    backref() : uses(),id()
+    {}
+    bool use(unsigned &nextid)
+    {
+        if (uses++>0) {
+            id=nextid++;
+            return false;
+        }
+        return true;
+    }
+};
+
+struct backrefs
+{
+    fixed_array<backref> ids;
+    Graph g;
+    unsigned nextid;
+    backrefs(Graph g,unsigned root,unsigned startid=1) : g(g),ids(g.nStates),nextid(startid)
+    {
+        use(root);
+    }
+    void use(unsigned s)
+    {
+        if (ids[s].use(nextid))
+            order_from(s);
+    }
+    void order_from(unsigned s)
+    {
+        const List<GraphArc> &arcs = g.states[s].arcs;
+        for ( List<GraphArc>::const_iterator l=arcs.const_begin(),end=arcs.const_end() ; l !=end ; ++l ) {
+            use(l->dest);
+        }
+    }
+};
+
+
+
 class TopoSort {
   typedef std::front_insert_iterator<List<int> > IntPusher;
   Graph g;
@@ -174,12 +215,10 @@ class TopoSort {
   IntPusher o;
   int n_back_edges;
  public:
-
     bool has_cycle() const
     {
         return n_back_edges;
     }
-
   TopoSort(Graph g_, List<int> *l) : g(g_), o(*l), n_back_edges(0) {
     done = NEW bool[g.nStates];
     begun = NEW bool[g.nStates];

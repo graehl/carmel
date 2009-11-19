@@ -27,9 +27,12 @@ struct carmel_gibbs : public gibbs_base
         , cascade(cascade)
         , methods(methods)
         , printer(printer)
-        , derivs(composed,corpus,topt.cache) // gets pre-init_sample_weights weight.
+        , derivs(composed,cascade,corpus,topt.cache) // gets pre-init_sample_weights weight.
         , init_sample_weights(init_sample_weights)
     {
+        dummy_id=define_param(0,1);
+        assert(dummy_id==FSTArc::locked_group); // this parameter always gives p=1 because it's in its own normgrp
+        first_id=dummy_id+1;
 //        cascade.set_composed(composed);
         set_cascadei();
         if (init_sample_weights && !cascade.trivial)
@@ -62,10 +65,11 @@ struct carmel_gibbs : public gibbs_base
         f.weight=gibbs_base::proposal_prob(gps[f.groupId]);
     }
 
+    unsigned dummy_id;
+    unsigned first_id;
+
     void set_gibbs_params(bool addarcs=false,bool addsource=false)
     {
-        unsigned dummy=define_param(0,1);
-        assert(dummy==FSTArc::locked_group); // this parameter always gives p=1 because it's in its own normgrp
         for (unsigned norm=1,i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
             WFST::NormalizeMethod const& nm=methods[i];
@@ -167,9 +171,11 @@ struct carmel_gibbs : public gibbs_base
             r[i].clear();
         for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
             unsigned parami=*i;
-            unsigned ci=cascadei_for(parami);
-            if (ci>=a && ci<b)
-                r[ci].push_back(parami);
+            if (parami!=dummy_id) {
+                unsigned ci=cascadei_for(parami);
+                if (ci>=a && ci<b)
+                    r[ci].push_back(parami);
+            }
         }
     }
     void print_sample(blocks_t const& sample,unsigned a,unsigned b,casc const& c)
@@ -218,7 +224,7 @@ struct carmel_gibbs : public gibbs_base
     }
     void set_cascadei()
     {
-        cascadei.set_start(0);
+        cascadei.set_start(first_id);
         for (unsigned i=0,N=cascade.size();i!=N;++i)
             cascadei.add_delta(cascade.cascade[i]->n_edges());
     }

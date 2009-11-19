@@ -338,7 +338,6 @@ struct forward_backward : public cached_derivs<arc_counts>
 
  private:
     // these take an initialize unweighted_corpus_prob and counts, and accumulate over the training corpus
-    bool first_estimate;
     Weight weighted_corpus_prob;
     Weight *unweighted_corpus_prob;
     Weight estimate_cached(Weight &unweighted_corpus_prob_accum)
@@ -346,31 +345,9 @@ struct forward_backward : public cached_derivs<arc_counts>
         assert(!use_matrix);
         unweighted_corpus_prob=&unweighted_corpus_prob_accum;
         weighted_corpus_prob.setOne();
-        foreach_deriv(*this);
+        cache_t::foreach_deriv(*this);
         Config::log()<<'\n';
         return weighted_corpus_prob;
-    }
-    template <class F>
-    void foreach_deriv(F &f)
-    {
-        assert(!use_matrix);
-        if (cache)
-            cache_t::foreach_deriv(f);
-        else {
-            wfst_io_index io(x); // TODO: lift outside of foreach deriv?
-            unsigned n=0;
-            List<IOSymSeq> &ex=corpus().examples;
-            for (List<IOSymSeq>::erase_iterator i=ex.erase_begin(),end=ex.erase_end();i!=end;++i) {
-                ++n;
-                derivations derivs;
-                if (derivs.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward,prune)) {
-                    f(n,derivs);
-                } else if (first_estimate) {
-                    if (remove_bad_training) i=ex.erase(i);
-                    warn_no_derivations(x,*i,n);
-                }
-            }
-        }
     }
     Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
  public:
@@ -413,22 +390,24 @@ struct forward_backward : public cached_derivs<arc_counts>
     bool cache_backward;
 //    serialize_batch<derivations> cached_derivs;
     bool prune;
+    std::string odf;
 
     forward_backward(WFST &x,cascade_parameters &cascade,bool per_arc_prior,Weight global_prior,bool include_backward,WFST::train_opts const& opts,training_corpus & corpus)
-        : cache_t(x,corpus,opts.cache)
+        : cache_t(x,cascade,corpus,opts.cache)
         , cascade(cascade),arcs(x,per_arc_prior,global_prior),mio(arcs)
     {
-        prune=opts.cache.prune();
-        first_estimate=true;
+        WFST::deriv_cache_opts const& copt=opts.cache;
+        odf=copt.out_derivfile;
+        prune=copt.prune();
         cascade.set_composed(x);
         trn=NULL;
         f=b=NULL;
         remove_bad_training=true;
-        cache=opts.cache.cache();
-        use_matrix=opts.cache.use_matrix();
+        cache=copt.cache();
+        use_matrix=copt.use_matrix();
         if (use_matrix)
             Config::log()<<"Using (input,state,output) full matrix, not derivation lattice.  Usually slower.\n";
-        cache_backward=cache&&opts.cache.cache_backward();
+        cache_backward=cache&&copt.cache_backward();
         if (cache) {
             use_matrix=false;
             Config::log()<<"Caching derivations in "<<derivs.stored_in()<<std::endl;
@@ -583,6 +562,10 @@ Weight WFST::train(cascade_parameters &cascade,
     random_restart_acceptor ra=opts.ra;
     forward_backward fb(*this,cascade,weight_is_prior_count,smoothFloor,true,opts,corpus);
     Weight corpus_p;
+
+    if (opts.max_iter<0) {
+        return fb.estimate(corpus_p).ppxper(corpus.totalEmpiricalWeight);
+    }
 
     // when you just want frac counts or a single iteration:
     if (opts.max_iter==0 || opts.max_iter==1&&opts.ran_restarts==0) {
@@ -809,11 +792,6 @@ void forward_backward::matrix_fb(IOSymSeq &s)
 #endif
 }
 
-void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n)
-{
-    Config::warn() << "No derivations in transducer for input/output #"<<n<<":\n";
-    s.print(Config::warn(),x,"\n");
-}
 
 Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
 {
@@ -824,11 +802,8 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
         p=estimate_matrix(unweighted_corpus_prob);
     else
         p=estimate_cached(unweighted_corpus_prob);
-    first_estimate=false;
     return p;
 }
-
-
 
 
 Weight forward_backward::estimate_matrix(Weight &unweighted_corpus_prob)
