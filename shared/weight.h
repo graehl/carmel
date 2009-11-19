@@ -517,7 +517,6 @@ struct logweight {                 // capable of representing nonnegative reals
             o << "0";
         else {
             int log=get_log(o);
-
             if ( (log == SOMETIMES_LOG && fitsInReal()) || log == NEVER_LOG ) {
                 o << getReal();
             } else { // out of range or ALWAYS_LOG
