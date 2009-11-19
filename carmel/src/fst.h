@@ -1579,8 +1579,10 @@ class NormGroupIter {
     std::ios_base::iostate print(std::basic_ostream<charT,Traits>& os) const {
         if(method==WFST::CONDITIONAL) {
             os << "(conditional normalization group for input=" << wfst.inLetter(Ci->first) << " in ";
-        } else {
+        } else if (method==WFST::JOINT) {
             os << "(joint normalizaton group for ";
+        } else {
+            os << "(no normalization ";
         }
         os << "state=" << wfst.stateName(index_of(wfst.states,state)) << ")";
         return std::ios_base::goodbit;

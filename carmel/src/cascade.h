@@ -35,7 +35,7 @@ struct cascade_parameters
         arcid_marker(arcid_type &aid,unsigned start=1) : aid(aid),id(start) {  }
         void operator()(FSTArc const& a)
         {
-            aid[&a]=id++;
+            aid.add(&a,id++);
         }
     };
 
@@ -65,10 +65,17 @@ struct cascade_parameters
 
     void fem_norms(std::ostream &o,arcid_type const& aid,WFST &w,WFST::NormalizeMethod const& nm) const
     {
-        for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
+        WFST::norm_group_by group=nm.group;
+        if (group==WFST::NONE)
+            return;
+        if (group==WFST::CONDITIONAL)
+            w.indexInput();
+        for (NormGroupIter g(group,w); g.moreGroups(); g.nextGroup()) {
             o<<'(';
-            for ( g.beginArcs(); g.moreArcs(); g.nextArc())
-                o<<' '<<*aid.find(*g);
+            for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+                o<<' '<<aid[*g];
+            }
+
             o<<" )\n";
         }
     }
@@ -77,40 +84,52 @@ struct cascade_parameters
     template <class arc_counts>
     void fem_deriv(std::ostream &o,arcs_table<arc_counts> const&arcs,arcid_type const& aid,derivations const& deriv) const
     {
-        o<<"\n";
 //        printGraph(deriv.graph(),o);
         unsigned start=deriv.start(),fin=deriv.final();
         Graph g=deriv.graph();
         backrefs br(g,start);
         fem_deriv(o,arcs,aid,br,g.states,start,fin);
+        o<<"\n";
     }
 
+    //TODO: could share just like chains cons are shared.  but -a is best and means no sharing so meh
     template <class arc_counts>
     void fem_deriv(std::ostream &o,arcs_table<arc_counts> const&arcs,arcid_type const& aid,backrefs &br,GraphState *states,unsigned s,unsigned fin) const
     {
+        const unsigned BACKREF_DEFINED=0;
         backref &b=br.ids[s];
-        if (b.uses>1)
+        bool backdef=b.uses>1; // now, MUST have enclosing parens even for singleton
+        if (backdef) {
             o<<"#"<<b.id;
-        o<<"(";
+            b.uses=BACKREF_DEFINED;
+        } else if (b.uses==BACKREF_DEFINED) {
+            o<<"#"<<b.id;
+            return;
+        }
+
         //print labels
         const List<GraphArc> &st=states[s].arcs;
         bool ornode=st.has2();
         if (ornode)
-            o<<"OR";
+            o<<"(OR";
         for ( List<GraphArc>::const_iterator l=st.const_begin(),end=st.const_end() ; l !=end ; ++l ) {
-            if (ornode)
-                o<<" (";
-            graehl::word_spacer spid;
+            if (ornode) o<<" ";
             GraphArc const& a=*l;
-            for (chain_t p=(*this)[arcs.ac(a).arc];p;p=p->next)
-                o<<spid<<*aid.find(p->data);
+            chain_t p=(*this)[arcs.ac(a).arc];
             unsigned n=a.dest;
-            if (n!=fin)
+            bool mid=n!=fin;
+            bool nonleaf1=backdef||p&&(p->next||mid); // could postpone decision to use parens if !p (recursive flag passed in)
+            if (nonleaf1) o<<"(";
+            graehl::word_spacer space;
+            for (;p;p=p->next)
+                o<<space<<aid[p->data];
+            if (mid) {
+                o<<space;
                 fem_deriv(o,arcs,aid,br,states,n,fin);
-            if (ornode)
-                o<<")";
+            }
+            if (nonleaf1) o<<")";
         }
-        o<<")";
+        if (ornode) o<<")";
     }
 
     struct print_params_f

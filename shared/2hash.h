@@ -563,6 +563,10 @@ public:
       //return *findOrAdd(first);
           return insert(first).first->second;
     }
+  V const& operator[](const K &first) const
+    {
+        return *find_second(first);
+    }
 
     bool erase(const K &first)
     {

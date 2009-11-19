@@ -353,6 +353,14 @@ struct logweight {                 // capable of representing nonnegative reals
         return o<<probname<<"="<<as_base(2)<<" "<<symbolname<<"(N="<<n_symbol<<")="<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
     }
 
+    std::ostream &print_ppx_example(std::ostream &o,double n_example
+                            ,char const* examplename="per-example-perplexity"
+                            , char const* probname="probability"
+        ) const
+    {
+        return o<<probname<<"="<<as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
+    }
+
     logweight() { setZero(); }
     logweight(quiet_NaN_weight t) {weight=std::numeric_limits<Real>::quiet_NaN(); }
     logweight(signaling_NaN_weight t) {weight=std::numeric_limits<Real>::signaling_NaN(); }
