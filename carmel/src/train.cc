@@ -601,7 +601,7 @@ Weight WFST::train(cascade_parameters &cascade,
     bool have_good_weights=false;
     for(unsigned restart_no=0;;++restart_no) {
         unsigned train_iter = 0;
-        Weight lastChange;
+        Weight lastChange=10;
         Weight lastPerplexity;
         lastPerplexity.setInfinity();
         FLOAT_TYPE learning_rate=1;
@@ -649,7 +649,9 @@ Weight WFST::train(cascade_parameters &cascade,
                 pp_ratio_scaled.setZero();
             } else {
                 pp_ratio_scaled = newPerplexity.relative_perplexity_ratio(lastPerplexity);
-                log << " (relative-perplexity-ratio=" << pp_ratio_scaled << "), max{d(weight)}=" << lastChange;
+                log << " (relative-perplexity-ratio=" << pp_ratio_scaled << ")";
+                if (lastChange<1)
+                    log<<", max{d(weight)}=" << lastChange;
 #ifdef DEBUG_ADAPTIVE_EM
                 log  << " last-perplexity="<<lastPerplexity<<' ';
                 if ( learning_rate > 1) {
@@ -954,7 +956,7 @@ Weight forward_backward::maximize(WFST::NormalizeMethods const& methods,FLOAT_TY
         arcs.visit(c);
         return c.get();
     } else
-        return 1;
+        return 10;
 }
 
 Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)

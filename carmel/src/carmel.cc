@@ -1958,12 +1958,12 @@ cout <<         "\n"
         "\n";
 
     cout << "\n"
-        "--load-fem-param infile: (todo) restore params onto cascade from forest-em params file\n"
-        "--write-loaded suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite inputN)\n"
-        "--number-from N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
-        "--fem-param outfile: (todo) write forest-em params file for the input cascade\n"
-        "--fem-norm outfile : write a forest-em normgroups file for the input cascade\n"
-        "--fem-forest outfile : write a forest-em derivation forests file (implies --train-cascade -?)\n"
+        "--load-fem-param=infile: restore params onto cascade from forest-em params file\n"
+        "--write-loaded=suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite 'inputN', not 'inputN.')\n"
+        "--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
+        "--fem-param=outfile: write forest-em params file for the input cascade\n"
+        "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
+        "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade -?)\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";
