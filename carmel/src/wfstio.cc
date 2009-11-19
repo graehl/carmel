@@ -13,6 +13,48 @@
 
 namespace graehl {
 
+void WFST::output_format(bool *flags,std::ostream *fstout)
+{
+    if (fstout) {
+        if ( flags['B'] )
+            Weight::out_log10(*fstout);
+        else if (flags['2'])
+            Weight::out_ln(*fstout);
+        else
+            Weight::out_exp(*fstout);
+        if ( flags['Z'] )
+            Weight::out_always_log(*fstout);
+        else
+            Weight::out_sometimes_log(*fstout);
+        if ( flags['D'] )
+            Weight::out_never_log(*fstout);
+        if ( flags['J'] )
+            out_arc_full(*fstout);
+        else
+            out_arc_brief(*fstout);
+        if ( flags['H'] )
+            out_arc_per_line(*fstout);
+        else
+            out_state_per_line(*fstout);
+        //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
+    }
+    if ( flags['B'] )
+        Weight::default_log10();
+    else if (flags['2'])
+        Weight::default_ln();
+    else
+        Weight::default_exp();
+    if ( flags['Z'] )
+        Weight::default_always_log();
+    else
+        Weight::default_sometimes_log();
+    if ( flags['D'] )
+        Weight::default_never_log();
+    set_arc_default_format(flags['J'] ? FULL : BRIEF);
+    set_arc_default_per(flags['H'] ? ARC : STATE);
+    //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
+}
+
 static const int DEFAULTSTRBUFSIZE=4096;
 
 #define REQUIRE(x)  do { if (!(x)) { goto INVALID; } } while(0)

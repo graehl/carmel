@@ -170,6 +170,7 @@ struct wfst_io_index : boost::noncopyable
 // containing derivations in a dynarray is fine since the lists used in graph states are movable, and state_to_id isn't kept around after compute, but even if it is, HashTable can also be moved.
 struct derivations //: boost::noncopyable
 {
+
  private:
 //    typedef List<int> Symbols;
     typedef int Sym;
@@ -194,6 +195,7 @@ struct derivations //: boost::noncopyable
             f[i->second]=i->first;
     }
  public:
+
     Weight n_paths() const
     {
         if (empty()) return zero_weight();
@@ -281,6 +283,10 @@ struct derivations //: boost::noncopyable
     {
         return no_goal;
     }
+    state_id start() const
+    {
+        return 0;
+    }
     state_id final() const
     {
         assert(!empty());
@@ -319,7 +325,6 @@ struct derivations //: boost::noncopyable
 
     derivations() {}
 
-
     // for EM, not gibbs:
     template <class arcs_table>
     struct weight_for
@@ -339,11 +344,6 @@ struct derivations //: boost::noncopyable
             return t.ac(a).weight();
         }
     };
-
-    state_id start() const
-    {
-        return 0;
-    }
 
     //FIXME: allow storying r.graph() as primary, free up graph() (for gibbs)
 

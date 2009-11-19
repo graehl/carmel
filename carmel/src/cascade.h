@@ -15,6 +15,144 @@ namespace graehl {
 // note: composition of cascades gets its groupId set with this unique chain_id meaning a list of original input arcs
 struct cascade_parameters
 {
+    void write_trained(std::string const& suffix,bool *flags,std::string *filenames)
+    {
+        for (unsigned i=0,n=cascade.size();i<n;++i) {
+            std::string const& f=filenames[i];
+            std::string const& f_trained=suffix.empty()?f:(f+"."+suffix);
+            Config::log() << "Writing "<<suffix<<' '<<f<<" to "<<f_trained<<std::endl;
+            std::ofstream of(f_trained.c_str());
+            WFST::output_format(flags,&of);
+            cascade[i]->writeLegible(of);
+        }
+    }
+
+    typedef HashTable<FSTArc const*,unsigned> arcid_type;
+    struct arcid_marker
+    {
+        arcid_type &aid;
+        unsigned id;
+        arcid_marker(arcid_type &aid,unsigned start=1) : aid(aid),id(start) {  }
+        void operator()(FSTArc const& a)
+        {
+            aid[&a]=id++;
+        }
+    };
+
+    void arcids(arcid_type &aid,unsigned start=1) const
+    {
+        arcid_marker m(aid,start);
+        for (unsigned i=0,n=cascade.size();i<n;++i)
+            cascade[i]->visit_arcs_sourceless(m);
+    }
+
+    void fem_norms(std::ostream &o,WFST::NormalizeMethods const& methods) const
+    {
+        arcid_type aid;
+        arcids(aid);
+        fem_norms(o,aid,methods);
+    }
+
+    void fem_norms(std::ostream &o,arcid_type const& aid,WFST::NormalizeMethods const& methods) const
+    {
+        o<<"(";
+        for (unsigned i=0,n=cascade.size();i<n;++i) {
+            o<<"\n";
+            fem_norms(o,aid,*cascade[i],methods[i]);
+        }
+        o<<")\n";
+    }
+
+    void fem_norms(std::ostream &o,arcid_type const& aid,WFST &w,WFST::NormalizeMethod const& nm) const
+    {
+        for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
+            o<<'(';
+            for ( g.beginArcs(); g.moreArcs(); g.nextArc())
+                o<<' '<<*aid.find(*g);
+            o<<" )\n";
+        }
+    }
+
+    // assumes (correctly!) that final state in deriv lattice has no outgoing arcs
+    template <class arc_counts>
+    void fem_deriv(std::ostream &o,arcs_table<arc_counts> const&arcs,arcid_type const& aid,derivations const& deriv) const
+    {
+        o<<"\n";
+//        printGraph(deriv.graph(),o);
+        unsigned start=deriv.start(),fin=deriv.final();
+        Graph g=deriv.graph();
+        backrefs br(g,start);
+        fem_deriv(o,arcs,aid,br,g.states,start,fin);
+    }
+
+    template <class arc_counts>
+    void fem_deriv(std::ostream &o,arcs_table<arc_counts> const&arcs,arcid_type const& aid,backrefs &br,GraphState *states,unsigned s,unsigned fin) const
+    {
+        backref &b=br.ids[s];
+        if (b.uses>1)
+            o<<"#"<<b.id;
+        o<<"(";
+        //print labels
+        const List<GraphArc> &st=states[s].arcs;
+        bool ornode=st.has2();
+        if (ornode)
+            o<<"OR";
+        for ( List<GraphArc>::const_iterator l=st.const_begin(),end=st.const_end() ; l !=end ; ++l ) {
+            if (ornode)
+                o<<" (";
+            graehl::word_spacer spid;
+            GraphArc const& a=*l;
+            for (chain_t p=(*this)[arcs.ac(a).arc];p;p=p->next)
+                o<<spid<<*aid.find(p->data);
+            unsigned n=a.dest;
+            if (n!=fin)
+                fem_deriv(o,arcs,aid,br,states,n,fin);
+            if (ornode)
+                o<<")";
+        }
+        o<<")";
+    }
+
+    struct print_params_f
+    {
+        std::ostream &o;
+        print_params_f(std::ostream &o) : o(o) {  }
+        void operator()(FSTArc const& a)
+        {
+            o<<a.weight<<"\n";
+        }
+    };
+
+
+    void print_params(std::ostream &o) const
+    {
+        print_params_f p=o;
+        for (unsigned i=0,n=cascade.size();i<n;++i) {
+            o<<"\n";
+            cascade[i]->visit_arcs_sourceless(p);
+        }
+    }
+
+    struct read_params_f
+    {
+        std::istream &i;
+        read_params_f(std::istream &i) : i(i) {  }
+        void operator()(unsigned /*src*/,FSTArc &a)
+        {
+            if (!(i>>a.weight)) {
+                throw std::runtime_error("--load-fem-param file doesn't have enough params; make sure it was --fem-param saved for the same cascade");
+            }
+        }
+    };
+
+    void read_params(std::istream &i) const
+    {
+        read_params_f r=i;
+        for (unsigned i=0,n=cascade.size();i<n;++i) {
+            cascade[i]->visit_arcs(r);
+        }
+    }
+
     WFST *pcomposed;
 //FIXME: to simplify, in trivial case and otherwise, composed should be passed in once so it can be added to single chain (if trivial).  note: this simplification hasn't actually been done yet.
     void set_composed(WFST &c) {
@@ -190,7 +328,7 @@ struct cascade_parameters
     void set_trivial()
     {
         chain_weights.clear();
-        chains.clear();
+//        chains.clear();
         epsilon_chains.clear();
         trivial=true;
     }

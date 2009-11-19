@@ -199,7 +199,7 @@ struct gibbs_base
     }
     unsigned size() const { return gps.size(); }
 
-    // add params, then restore_p0() will be called on run()
+    // add params, then restore_p0() will be called on run().  first param assigned id=0.
     unsigned define_param(unsigned norm,double prior)
     {
         maybe_increase_max(nnorm,norm+1);
@@ -571,7 +571,7 @@ struct gibbs_base
     void print_all(G &imp,bool final=true)
     {
         if (final)
-            out<<"# final best gibbs run (start #<<"<<beststart<<"):\n";
+            out<<"# final best gibbs run (start #"<<beststart<<"):\n";
         if (gopt.printing_sample())
             imp.print_sample(sample);
         print_norms();

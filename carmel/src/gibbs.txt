@@ -1,3 +1,11 @@
+Todo: normgroup id ordering for forest-em?
+  cascade assign param ids -> groups all at once (not single xdcr, user supplies offset)
+  write normgroups,
+  write train derivs.  both with param id = above assigned id order. with cascade param chain decoding
+  read/write forest-em weights file (same cascade order)
+
+Todo: force -a default for --train-cascade unless --a-cascade (turns -a off)
+
 Todo: auto prior tuning
 
 "A comparison of Bayeisan estimators for unsupervised HMM POS taggers" (Gao+Johnson) defines the proposal HMM with a uniform p0 (base distribution) and prior alpha as having arc weights that are normalized from:
