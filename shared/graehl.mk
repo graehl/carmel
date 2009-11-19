@@ -1,3 +1,4 @@
+#set BOOST_SUFFIX=gcc-mt if your boost libraries are libboost-thread$(BOOST_SUFFIX).so
 #You provide:
 # (the variables below)
 # ARCH (if macosx, static builds are blocked)
@@ -134,7 +135,7 @@ BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRC
 
 ifndef BOOST_SUFFIX
 ifndef BOOST_SUFFIX_BASE
-BOOST_SUFFIX_BASE="gcc"
+#BOOST_SUFFIX_BASE="gcc"
 endif
 ifdef BOOST_DEBUG
 ifndef BOOST_DEBUG_SUFFIX
@@ -142,9 +143,9 @@ BOOST_DEBUG_SUFFIX="-gd"
 endif
 endif
 ifndef NO_THREADS
-BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)-mt$(BOOST_DEBUG_SUFFIX)
+#BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)-mt$(BOOST_DEBUG_SUFFIX)
 else
-BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)$(BOOST_DEBUG_SUFFIX)
+#BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)$(BOOST_DEBUG_SUFFIX)
 CPPFLAGS +=  -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
 endif
 endif

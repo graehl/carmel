@@ -408,11 +408,11 @@ struct gibbs_base
             blockp=&block;
             double wt=imp.block_weight(b);
             if (subtract_old)
-                addc(block,-1);
+                addc(block,-wt);
             block.clear();
             imp.resample_block(b);
             p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
-            addc(block,1);
+            addc(block,wt);
         }
         record_iteration(p);
         maybe_print_periodic(imp);
