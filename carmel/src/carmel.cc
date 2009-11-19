@@ -576,9 +576,9 @@ struct carmel_main
         return string_into(set_default_text(key,default_val),v);
     }
 
-    carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
-        :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts),fems(true,false)
+    void set_defaults()
     {
+
         norm_method.group=WFST::CONDITIONAL;
         keep_path_ratio.setInfinity();
         max_states=WFST::UNLIMITED;
@@ -589,6 +589,13 @@ struct carmel_main
         prod_viterbi=1;
         prod_sum=1;
         prod_sum_pre=1;
+        number_from=0;
+    }
+
+    carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
+        :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts),fems(true,false)
+    {
+        set_defaults();
     }
 
     bool prunePath() const

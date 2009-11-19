@@ -2,8 +2,12 @@
 #ifndef GRAEHL_SHARED__PROPERTY_HPP
 #define GRAEHL_SHARED__PROPERTY_HPP
 
-//#include <boost/property_map/property_map.hpp> //boost 1.40
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 104000
+#include <boost/property_map/property_map.hpp> //boost 1.40
+#else
 #include <boost/property_map.hpp>
+#endif
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/dynarray.h>
 #include <utility>
