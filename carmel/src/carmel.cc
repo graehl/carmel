@@ -316,37 +316,43 @@ struct carmel_main
 
     bool parse_gibbs_opts()
     {
+        printer.set_flags(flags);
         bool gibbs = have_opt("crp");
-
         if (gibbs) {
+            unsigned m;
+            get_opt("crp",m);
+            if (m>1) {
+                Config::log()<<"Replacing -M "<<topt.max_iter<<" with --crp="<<m<<endl;
+                topt.max_iter=m;
+            }
+
             topt.cache.cache_level=WFST::cache_forward_backward;
             force_cascade_derivs();
-        }
-        get_opt("crp-restarts",gopt.restarts);
-        gopt.argmax_final=have_opt("crp-argmax-final");
-        gopt.argmax_sum=have_opt("crp-argmax-sum");
-        gopt.exclude_prior=have_opt("crp-exclude-prior");
-        get_opt("init-em",gopt.init_em);
-        gopt.em_p0=have_opt("em-p0");
-        get_opt("burnin",gopt.burnin);
-        get_opt("width",gopt.width);
-        get_opt("print-from",gopt.print_from);
-        get_opt("print-to",gopt.print_to);
-        get_opt("print-norms-from",gopt.print_norms_from);
-        get_opt("print-norms-to",gopt.print_norms_to);
-        get_opt("print-counts-from",gopt.print_counts_from);
-        get_opt("print-counts-to",gopt.print_counts_to);
-        get_opt("print-counts-sparse",gopt.print_counts_sparse);
-        get_opt("print-counts-rich",gopt.rich_counts);
-        get_opt("print-every",gopt.print_every);
-        get_opt("high-temp",gopt.high_temp);
-        get_opt("low-temp",gopt.low_temp);
+            get_opt("crp-restarts",gopt.restarts);
+            gopt.argmax_final=have_opt("crp-argmax-final");
+            gopt.argmax_sum=have_opt("crp-argmax-sum");
+            gopt.exclude_prior=have_opt("crp-exclude-prior");
+            get_opt("init-em",gopt.init_em);
+            gopt.em_p0=have_opt("em-p0");
+            get_opt("burnin",gopt.burnin);
+            get_opt("width",gopt.width);
+            get_opt("print-from",gopt.print_from);
+            get_opt("print-to",gopt.print_to);
+            get_opt("print-norms-from",gopt.print_norms_from);
+            get_opt("print-norms-to",gopt.print_norms_to);
+            get_opt("print-counts-from",gopt.print_counts_from);
+            get_opt("print-counts-to",gopt.print_counts_to);
+            get_opt("print-counts-sparse",gopt.print_counts_sparse);
+            get_opt("print-counts-rich",gopt.rich_counts);
+            get_opt("print-every",gopt.print_every);
+            get_opt("high-temp",gopt.high_temp);
+            get_opt("low-temp",gopt.low_temp);
 //        gopt.cache_prob=have_opt("cache-prob");
-        gopt.cheap_prob=have_opt("sample-prob");
-        if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=have_opt("no-prob");
-        gopt.uniformp0=have_opt("uniform-p0");
-        gopt.final_counts=have_opt("final-counts");
-        printer.set_flags(flags);
+            gopt.cheap_prob=have_opt("sample-prob");
+            if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=have_opt("no-prob");
+            gopt.uniformp0=have_opt("uniform-p0");
+            gopt.final_counts=have_opt("final-counts");
+        }
         return gibbs;
     }
 
@@ -817,7 +823,10 @@ struct carmel_main
             topt.cache.out_derivfile=fem_forest;
             force_cascade_derivs();
         }
+        get_opt("number-from",number_from);
     }
+
+    unsigned number_from;
 
     void fem_normby()
     {
@@ -845,9 +854,12 @@ struct carmel_main
             fems.read_params(i);
         }
         fem_normby();
+        if (number_from>0) {
+            Config::log()<<"Assigning unique group ids to each arc in input cascade starting at "<<number_from<<".\n";
+            fems.number_from(number_from);
+        }
         if (have_opt("write-loaded"))
             write_trained(fem_suffix);
-
     }
 
     void fem_out()
@@ -862,6 +874,7 @@ struct carmel_main
             std::ofstream o(fem_norm.c_str());
             fems.fem_norms(o,nms);
         }
+
     }
 
     void write_trained(std::string const& suffix="trained")
@@ -1947,6 +1960,7 @@ cout <<         "\n"
     cout << "\n"
         "--load-fem-param infile: (todo) restore params onto cascade from forest-em params file\n"
         "--write-loaded suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite inputN)\n"
+        "--number-from N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
         "--fem-param outfile: (todo) write forest-em params file for the input cascade\n"
         "--fem-norm outfile : write a forest-em normgroups file for the input cascade\n"
         "--fem-forest outfile : write a forest-em derivation forests file (implies --train-cascade -?)\n"

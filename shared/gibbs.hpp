@@ -571,7 +571,7 @@ struct gibbs_base
     void print_all(G &imp,bool final=true)
     {
         if (final)
-            out<<"# final best gibbs run (start #"<<beststart<<"):\n";
+            out<<"\n# final best gibbs run (start #"<<beststart<<"):\n";
         if (gopt.printing_sample())
             imp.print_sample(sample);
         print_norms();
