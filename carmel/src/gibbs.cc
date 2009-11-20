@@ -65,6 +65,7 @@ struct carmel_gibbs : public gibbs_base
         f.weight=gibbs_base::proposal_prob(gps[f.groupId]);
     }
 
+
     unsigned dummy_id; //FIXME: this was intended to force locked arcs to have p=1, but now we have a facility for REALLY locking arcs in gibbs.hpp.  further it seems that no param was ever added w/ this id, so this was just dead code messing up/complicating gibbs param id :: cascade arc order correspondence (carefully checked + working now, but still, TODO: remove this and start at 0 again)
     unsigned first_id;
 
@@ -79,6 +80,13 @@ struct carmel_gibbs : public gibbs_base
             norm=add_gibbs_params(norm,w,nm,addarcs,addsource);
         }
     }
+    // add params w/ norm group==NONE
+    void operator()(FSTArc const& f)
+    {
+        const_cast<FSTArc&>(f).groupId=gps.size();
+        define_param(f.weight.getReal());
+    }
+
     typedef dynamic_array<FSTArc *> arc_for_param_t;
     arc_for_param_t arcs;
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
@@ -86,7 +94,8 @@ struct carmel_gibbs : public gibbs_base
     unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod const& nm,bool addarcs=false,bool addsource=false)
     {
         if (nm.group==WFST::NONE) {
-            w.lockArcs();
+//            w.lockArcs();
+            w.visit_arcs_sourceless(*this);
             return normidbase;
         }
         unsigned id=normidbase;
