@@ -6,9 +6,14 @@ function eval-res {
  #echo `diff -y z1 z2 | egrep '(\||<|>)' | wc -l` '('`diff z1 z2 | grep '^<' | wc -l`')'
  #grep '^<' | wc -l
 }
-
 echo ${suf:=.trained} ${csuf:=2} ${carmel:=carmel}
 echo ${src:=plain.bi.wfsa} ${chan:=subst.wfst$suf} ${cipher:=cipher$csuf} ${correct:=correct$csuf} ${log:=errors.log}
+
+if [ "$weights" ] ; then
+    chan=$subst.wfst.fem.$weights
+    carmel --load-fem-param=$weights subst.wfst > $chan
+fi
+
 $carmel -HJ -= 3.0 $chan > $chan.cubed
 $carmel --project-right --project-identity-fsa $src > $src.id
 function errors_chan

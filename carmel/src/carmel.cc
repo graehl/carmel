@@ -314,10 +314,12 @@ struct carmel_main
         }
     }
 
-    bool parse_gibbs_opts()
+    bool gibbs;
+
+    void parse_gibbs_opts()
     {
         printer.set_flags(flags);
-        bool gibbs = have_opt("crp");
+        gibbs = have_opt("crp");
         if (gibbs) {
             unsigned m;
             get_opt("crp",m);
@@ -353,7 +355,6 @@ struct carmel_main
             gopt.uniformp0=have_opt("uniform-p0");
             gopt.final_counts=have_opt("final-counts");
         }
-        return gibbs;
     }
 
     void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0)
@@ -576,21 +577,6 @@ struct carmel_main
         return string_into(set_default_text(key,default_val),v);
     }
 
-    void set_defaults()
-    {
-
-        norm_method.group=WFST::CONDITIONAL;
-        keep_path_ratio.setInfinity();
-        max_states=WFST::UNLIMITED;
-        n_0prob=0;
-        n_prob=0;
-        n_symbols=0; // for per-symbol ppx - counted only for non-0prob
-//        n_isymbols=0;
-        prod_viterbi=1;
-        prod_sum=1;
-        prod_sum_pre=1;
-        number_from=0;
-    }
 
     carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
         :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts),fems(true,false)
@@ -817,13 +803,41 @@ struct carmel_main
     dynamic_array<std::string> fem_filenames;
 
 
-    std::string fem_norm,fem_forest,fem_inparam,fem_outparam,fem_suffix;
+    std::string fem_norm,fem_forest,fem_inparam,fem_outparam,fem_suffix,fem_early_outparam;
+
+    bool no_compose;
+
+    void set_defaults()
+    {
+        gibbs=false;
+        norm_method.group=WFST::CONDITIONAL;
+        keep_path_ratio.setInfinity();
+        max_states=WFST::UNLIMITED;
+        n_0prob=0;
+        n_prob=0;
+        n_symbols=0; // for per-symbol ppx - counted only for non-0prob
+//        n_isymbols=0;
+        prod_viterbi=1;
+        prod_sum=1;
+        prod_sum_pre=1;
+        number_from=0;
+        no_compose=false;
+    }
+
+    void parse_opts()
+    {
+        parse_cache_opts();
+        parse_gibbs_opts();
+        parse_fem_opts();
+        no_compose=have_opt("no-compose");
+    }
 
     void parse_fem_opts()
     {
         set_text("load-fem-param",fem_inparam);
         set_text("write-loaded",fem_suffix);
         set_text("fem-param",fem_outparam);
+        set_text("fem-early-param",fem_early_outparam);
         set_text("fem-norm",fem_norm);
         set_text("fem-forest",fem_forest);
         if (!fem_forest.empty()) {
@@ -861,6 +875,7 @@ struct carmel_main
             fems.read_params(i);
         }
         fem_normby();
+        fem_out_param(fem_early_outparam);
         if (number_from>0) {
             Config::log()<<"Assigning unique group ids to each arc in input cascade starting at "<<number_from<<".\n";
             fems.number_from(number_from);
@@ -869,19 +884,48 @@ struct carmel_main
             write_trained(fem_suffix);
     }
 
-    void fem_out()
+    void fem_out_param(std::string const& out)
     {
         if (!fem_outparam.empty()) {
             Config::log()<<"Writing cascade weights to --fem-param "<<fem_outparam<<endl;
             std::ofstream o(fem_outparam.c_str());
             fems.print_params(o);
         }
+    }
+
+    void fem_out()
+    {
+        fem_out_param(fem_outparam);
         if (!fem_norm.empty()) {
             Config::log()<<"Writing forest-em normgroups to --fem-norm "<<fem_norm<<endl;
             std::ofstream o(fem_norm.c_str());
             fems.fem_norms(o,nms);
         }
 
+    }
+
+    void fem_stats()
+    {
+        for (unsigned i=0,N=fems.size();i<N;++i) {
+            Config::log()<<"\n";
+            stats(Config::log(),fems.cascade[i],fem_filenames[i]);
+        }
+    }
+
+
+    void stats(std::ostream &out,WFST *w,std::string const& name)
+    {
+        out << "Number of states in "<<name<<": " << w->size() << std::endl;
+        out << "Number of arcs in "<<name<<": " << w->numArcs() << std::endl;
+        if (w->numArcs()) {
+            unsigned n_back;
+            out << "Number of paths in "<<name<<" (valid for acyclic only; a cycle means infinitely many): " << w->numNoCyclePaths(&n_back) << std::endl;
+            if (n_back)
+                out<<"Number of cycle-causing arcs in "<<name<<": " << n_back;
+            else
+                out << name<<" is acyclic.";
+        }
+        out <<std::endl;
     }
 
     void write_trained(std::string const& suffix="trained")
@@ -1173,9 +1217,8 @@ main(int argc, char *argv[]){
         filenames = parm;
     }
     istream *pairStream = NULL;
-    cm.parse_cache_opts();
-    bool gibbs = cm.parse_gibbs_opts();
-    cm.parse_fem_opts();
+    cm.parse_opts();
+    bool gibbs = cm.gibbs;
     cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
 
     bool trainc=!cascade.trivial;
@@ -1294,7 +1337,10 @@ main(int argc, char *argv[]){
     }
 #endif
 
-
+    if (cm.no_compose) {
+        cm.fem_stats();
+    } else {
+        if (cm.have_opt("cascade-stats")) cm.fem_stats();
     for ( ; ; ) { // input transducer from string line reading loop
         if (nTarget != -1) { // if to construct a finite state from input
             if ( !*line_in) {
@@ -1458,17 +1504,7 @@ main(int argc, char *argv[]){
         } else if ( flags['y'] ) {
             result->listAlphabet(cout, 1);
         } else if ( flags['c'] ) {
-            cout << "Number of states in result: " << result->size() << std::endl;
-            cout << "Number of arcs in result: " << result->numArcs() << std::endl;
-            if (result->numArcs()) {
-                unsigned n_back;
-                cout << "Number of paths in result (valid for acyclic only; a cycle means infinitely many): " << result->numNoCyclePaths(&n_back) << std::endl;
-                if (n_back)
-                    cout<<"Number of cycle-causing arcs in result: " << n_back;
-                else
-                    cout << "Result is acyclic.";
-            }
-            cout <<std::endl;
+            cm.stats(cout,result,"result");
         }
 
         if ( flags['t'] )
@@ -1620,6 +1656,8 @@ main(int argc, char *argv[]){
             break;
     } // end of all input
     cm.report_batch();
+    }
+
     cm.fem_out();
 
     if ( flags['S'] && input_lineno > 0) {
@@ -1970,7 +2008,8 @@ cout <<         "\n"
         "--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
         "--fem-param=outfile: write forest-em params file for the input cascade\n"
         "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
-        "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade -?)\n"
+        "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM\n"
+        "--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)\n"
         "\n";
 
     cout << "\n--help : more detailed help\n";

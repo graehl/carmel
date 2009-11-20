@@ -79,7 +79,8 @@ namespace graehl {
 //template <class F>
 struct gibbs_param
 {
-    double prior; //FIXME: not needed except to make computing --cache-prob easier
+    double prior; //FIXME: not needed except to make computing --cache-prob easier.  also holds prob when NONORM
+    //FIXME: alternative strategy: store locked arc prob in count(), and ensure that NONORM=0 (reserved normsum id) has sum locked to 1.  may be slightly faster when computing probs for sampling
     double count() const
     {
         return sumcount.x;
@@ -88,6 +89,10 @@ struct gibbs_param
     {
         return sumcount.x;
     }
+    bool has_norm() const // if NONORM, then prior = actual prob
+    {
+        return norm!=NONORM;
+    }
 //TODO: actually handle no-normgroup (locked) special value.  if you want to force p=1 just put it in a singleton normgroup
     static const unsigned NONORM=(unsigned)-1;
     unsigned norm; // index shared by all params to be normalized w/ this one
@@ -95,20 +100,25 @@ struct gibbs_param
     template <class Normsum>
     void restore_p0(Normsum &ns) //ns must have been init to all 0s before the restore_p0 calls on each param
     {
-        ns[norm]+=prior;
-        sumcount.clear(prior);
-        assert(sumcount.tmax==0);
+        if (has_norm()) {
+            ns[norm]+=prior;
+            sumcount.clear(prior);
+            assert(sumcount.tmax==0);
+        }
     }
     template <class Normsum>
     void add_norm(Normsum &ns) const
     {
-        ns[norm]+=count();
+        if (has_norm())
+            ns[norm]+=count();
     }
     template <class Normsums>
     void addsum(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
     {
-        ns[norm]+=d;
-        sumcount.add_delta(d,t);
+        if (has_norm()) {
+            ns[norm]+=d;
+            sumcount.add_delta(d,t);
+        }
     }
     gibbs_param() : prior(),norm() {  }
     gibbs_param(unsigned norm, double prior) : prior(prior),norm(norm) {}
@@ -207,14 +217,23 @@ struct gibbs_base
         gps.push_back(norm,prior);
         return r;
     }
-    double prior(double prob,double alpha) const
+    double prior(double prob,double alpha,double normsz) const
     {
-        return gopt.uniformp0?alpha:alpha*prob;
+        return gopt.uniformp0?alpha:alpha*prob*normsz;
     }
 
-    unsigned define_param(unsigned norm,double prob,double alpha)
+    unsigned define_param(unsigned norm,double prob,double alpha,double normsz)
     {
-        return define_param(norm,prior(prob,alpha));
+        return define_param(norm,prior(prob,alpha,normsz));
+    }
+    void define_param(double prob) //fixed prob
+    {
+        define_param(gibbs_param::NONORM,prob);
+    }
+
+    void define_param_id(unsigned id,double prob) //fixed prob
+    {
+        define_param_id(id,gibbs_param::NONORM,prob);
     }
 
     void define_param_id(unsigned id,unsigned norm,double prior)
@@ -222,9 +241,9 @@ struct gibbs_base
         at_expand(gps,id)=gibbs_param(norm,prior);
         maybe_increase_max(nnorm,norm+1);
     }
-    void define_param_id(unsigned id,unsigned norm,double prob,double alpha)
+    void define_param_id(unsigned id,unsigned norm,double prob,double alpha,double normsz)
     {
-        define_param_id(id,norm,prior(prob,alpha));
+        define_param_id(id,norm,prior(prob,alpha,normsz));
     }
 
     void restore_p0()
@@ -288,7 +307,8 @@ struct gibbs_base
         csum.init(nnorm);
         for (unsigned i=0;i<N;++i) {
             gibbs_param const& gp=gps[i];
-            psum[gp.norm]+=(pcount[i]=gp.prior);
+            if (gp.has_norm())
+                psum[gp.norm]+=(pcount[i]=gp.prior);
         }
         reset_cache();
     }
@@ -305,7 +325,10 @@ struct gibbs_base
     double cache_prob(unsigned paramid)
     {
         unsigned norm=gps[paramid].norm;
-        return ccount[paramid]++/csum[norm]++;
+        if (norm==gibbs_param::NONORM)
+            return gps[paramid].prior;
+        else
+            return ccount[paramid]++/csum[norm]++;
     }
     Weight cache_prob(block_t const& p)
     {
@@ -335,12 +358,16 @@ struct gibbs_base
     }
     double final_prob(gibbs_param const& p) const // like proposal_prob but safe for hole parameters skipped when defining by id
     {
-        double c=p.count();
-        return c>0?c/normsum[p.norm]:c;
+        if (p.has_norm()) {
+            double c=p.count();
+            return c>0?c/normsum[p.norm]:c;
+        } else
+            return p.prior;
+
     }
     double proposal_prob(gibbs_param const&p) const
     {
-        return p.count()/normsum[p.norm];
+        return p.has_norm() ? p.count()/normsum[p.norm] : p.prior;
     }
     void addc(gibbs_param &p,double delta)
     {

@@ -117,7 +117,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
             double new_alp = exec.estimate(very_first_time);
             Weight prob(new_alp*N,ln_weight());
 
-            logs << "\ni=" << train_iter;
+            logs << "i=" << train_iter;
             if (learning_rate!=1) logs << " (rate=" << learning_rate << ")";
             logs<< ": ";
             prob.print_ppx_example(logs,N);
@@ -147,7 +147,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
             } else {
 //                Weight pp_ratio=new_alp/last_alp;
 //                pp_ratio_scaled = root(pp_ratio,new_alp.getLogImp()); // EM delta=(L'-L)/abs(L')
-                logs << " (relative-d-avg-logprob=" << rel_dpp << "), max " << max_delta_param;
+                logs << " (relative-d-avg-logprob=" << rel_dpp << "), max " << max_delta_param<<std::endl;
             }
             if (!last_was_reset) {
                 if ( rel_dpp < rel_eps ) {
