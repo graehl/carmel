@@ -158,6 +158,7 @@ struct gibbs_opts
 #ifdef FOREST_EM_VERSION
         sample_file=ostream_arg();
 #endif
+        rich_counts=false;
         alpha=.1;
         tick_every=0;
         width=7;

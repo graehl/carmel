@@ -79,6 +79,57 @@ namespace graehl {
 //template <class F>
 struct gibbs_param
 {
+    void exclude_prior()
+    {
+        if (has_norm())
+            sumcount.addbase(-prior);
+    }
+    void final_counts(double tmax1)
+    {
+        if (has_norm()) {
+            sumcount.extend(tmax1);
+            sumcount.x=sumcount.s;
+        }
+    }
+    double save_count() const
+    {
+        return count();
+    }
+    void restore_count(double saved)
+    {
+        count()=saved;
+    }
+
+    template <class A>
+    void init_cache(unsigned i,A &pcount,A &psum) const
+    {
+        if (has_norm())
+            psum[norm]+=(pcount[i]=prior);
+    }
+
+    template <class A>
+    double cache_prob(unsigned paramid,A &ccount,A &csum) const
+    {
+        return has_norm() ? ccount[paramid]++/csum[norm]++ : prior;
+    }
+
+    // same as proposal_prob but returns p=0 for 0 count instead of div by 0
+    template <class A>
+    double final_prob(A &normsum) const
+    {
+        if (has_norm()) {
+            double c=count();
+            return c>0?c/normsum[norm]:c;
+        } else
+            return prior;
+    }
+
+    template <class A>
+    double proposal_prob(A &normsum) const
+    {
+        return has_norm() ? count()/normsum[norm] : prior;
+    }
+
     double prior; //FIXME: not needed except to make computing --cache-prob easier.  also holds prob when NONORM
     //FIXME: alternative strategy: store locked arc prob in count(), and ensure that NONORM=0 (reserved normsum id) has sum locked to 1.  may be slightly faster when computing probs for sampling
     double count() const
@@ -113,7 +164,7 @@ struct gibbs_param
             ns[norm]+=count();
     }
     template <class Normsums>
-    void addsum(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
+    void addc(double d,double t,Normsums &ns) // first call(s) should be w/ t=0
     {
         if (has_norm()) {
             ns[norm]+=d;
@@ -259,17 +310,12 @@ struct gibbs_base
         if (gopt.final_counts && !gopt.exclude_prior)
             return;
         double tmax1=final_t()+1; // if we don't add 1, then the last iteration's value isn't included in average
-        double EPSILON=0; //1e-30; // avoid divide by 0 when normalizing
-        for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i) {
-            gibbs_param &g=*i;
-            delta_sum &d=g.sumcount;
-            if (gopt.exclude_prior)
-                d.addbase(EPSILON-g.prior);
-            if (!gopt.final_counts) {
-                d.extend(tmax1);
-                d.x=d.s;
-            }
-        }
+        if (gopt.exclude_prior)
+            for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
+                i->exclude_prior();
+        if (!gopt.final_counts)
+            for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
+                i->final_counts(tmax1);
         compute_norms();
     }
     void compute_norms()
@@ -279,17 +325,17 @@ struct gibbs_base
             i->add_norm(normsum);
     }
 
-    // save/restore params
+    // save/restore params //note: locked (NONORM) arcs wt in prior aren't touched
     void save_counts(saved_counts_t &c)
     {
         c.reinit_nodestroy(size());
         for (unsigned i=0,N=size();i<N;++i)
-            c[i]=gps[i].count();
+            c[i]=gps[i].save_count();
     }
     void restore_counts(saved_counts_t const& c)
     {
         for (unsigned i=0,N=size();i<N;++i)
-            gps[i].count()=c[i];
+            gps[i].restore_count(c[i]);
     }
     void restore_probs(saved_counts_t const& c)
     {
@@ -305,11 +351,8 @@ struct gibbs_base
         psum.init(nnorm);
         ccount.init(N);
         csum.init(nnorm);
-        for (unsigned i=0;i<N;++i) {
-            gibbs_param const& gp=gps[i];
-            if (gp.has_norm())
-                psum[gp.norm]+=(pcount[i]=gp.prior);
-        }
+        for (unsigned i=0;i<N;++i)
+            gps[i].init_cache(i,pcount,psum);
         reset_cache();
     }
     void reset_cache()
@@ -324,11 +367,7 @@ struct gibbs_base
     }
     double cache_prob(unsigned paramid)
     {
-        unsigned norm=gps[paramid].norm;
-        if (norm==gibbs_param::NONORM)
-            return gps[paramid].prior;
-        else
-            return ccount[paramid]++/csum[norm]++;
+        return gps[paramid].cache_prob(paramid,ccount,csum);
     }
     Weight cache_prob(block_t const& p)
     {
@@ -367,12 +406,12 @@ struct gibbs_base
     }
     double proposal_prob(gibbs_param const&p) const
     {
-        return p.has_norm() ? p.count()/normsum[p.norm] : p.prior;
+        return p.proposal_prob(normsum);
     }
     void addc(gibbs_param &p,double delta)
     {
         assert(time>=p.sumcount.tmax);
-        p.addsum(delta,time,normsum); //t=0 and accum_delta=false until burnin
+        p.addc(delta,time,normsum); //t=0 and accum_delta=false until burnin
     }
     void addc(unsigned param,double delta)
     {
