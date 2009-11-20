@@ -92,7 +92,7 @@ struct cascade_parameters
     template <class arc_counts>
     void fem_deriv(std::ostream &o,arcs_table<arc_counts> const&arcs,arcid_type const& aid,derivations const& deriv) const
     {
-        printGraph(deriv.graph(),Config::debug());
+//        printGraph(deriv.graph(),Config::debug());
         unsigned start=deriv.start(),fin=deriv.final();
         Graph g=deriv.graph();
         backrefs br(g,start);
