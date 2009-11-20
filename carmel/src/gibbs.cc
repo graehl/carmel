@@ -65,7 +65,7 @@ struct carmel_gibbs : public gibbs_base
         f.weight=gibbs_base::proposal_prob(gps[f.groupId]);
     }
 
-    unsigned dummy_id;
+    unsigned dummy_id; //FIXME: this was intended to force locked arcs to have p=1, but now we have a facility for REALLY locking arcs in gibbs.hpp.  further it seems that no param was ever added w/ this id, so this was just dead code messing up/complicating gibbs param id :: cascade arc order correspondence (carefully checked + working now, but still, TODO: remove this and start at 0 again)
     unsigned first_id;
 
     void set_gibbs_params(bool addarcs=false,bool addsource=false)
@@ -114,8 +114,12 @@ struct carmel_gibbs : public gibbs_base
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                 FSTArc & a=**g;
                 a.groupId=gps.size();
+                if (a.isLocked())
+                    define_param(a.weight.getReal()); //FIXME: slight semantic difference: prob for locked doesn't compete w/ others in this normgroup.  solution: fixed array remains[normgrp] to go along w/ normsum[normgrp].  p=remains[normgrp]*count/normsum[normgrp].  where remains[i]=1-sum (locked arcs' prob in grp i)
+                else {
 //                define_param(id,gopt.uniformp0?alpha:(ac*scale*a.weight).getReal());
-                define_param(id,(a.weight*scale).getReal(),alpha);
+                    define_param(id,(a.weight/sum).getReal(),alpha,N);
+                }
                 if (addarcs) arcs.push_back(&a);
                 if (addsource) arc_sources.push_back(src);
             }

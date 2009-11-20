@@ -195,23 +195,23 @@ struct NormalizeGroups {
         }
     }
 #endif
-    template <class V> // v(normindex,paramid) where paramid is in normindex.  if end_index>0, v(none_id,i) for any unseen i<end_index
+    template <class V> // v(normindex,paramid,normsize) where paramid is in normindex.  if end_index>0, v(i) for any unseen i<end_index
     void visit_norm_param(V &v,index_type end_index=0,unsigned none_id=(unsigned)-1) {
         fixed_array<bool> seen(end_index);
         unsigned normi=0;
         for (Groups::iterator g=norm_groups.begin(),ge=norm_groups.end();g!=ge;++g) {
             ++normi;
             Group const& group=*g;
+            unsigned gsz=group.size();
             for (GItc p=group.begin(),pe=group.end();p!=pe;++p) {
                 index_type i=*p;
-                v(normi,i);
+                v(normi,i,gsz);
                 if (i<end_index) seen[i]=true;
             }
         }
-        normi=(unsigned)-1;
         for (index_type i=0;i<end_index;++i)
             if (!seen[i])
-                v(normi,i);
+                v(i);
     }
 
     template <class T> // enumerate:
