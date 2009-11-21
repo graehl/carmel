@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 function eval-res {
  cat $1 | tr ' ' '\012' | awk 'NF > 0' | tr -d '"' >z1
  cat $2 | tr ' ' '\012' | awk 'NF > 0' | tr -d '"' >z2

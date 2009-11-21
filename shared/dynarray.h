@@ -694,9 +694,9 @@ void push_back(dynamic_array<T,A> &v)
 
 template <typename T,typename Alloc,class charT, class Traits, class Reader>
 //std::ios_base::iostate array<T,Alloc>::read(std::basic_istream<charT,Traits>& in,Reader read)
-std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read)
+std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve)
 {
-    dynamic_array<T,Alloc> s;
+    dynamic_array<T,Alloc> s(reserve);
     std::ios_base::iostate ret=s.read(in,read);
     s.compact_giving(*a); // transfers to a
     return ret;

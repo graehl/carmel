@@ -67,9 +67,11 @@ struct gibbs_opts
             ;
         if (forest_opts)
             opt.add_options()
-                ("alpha",defaulted_value(&alpha),
+                ("const-alpha",defaulted_value(&alpha),
                  "prior applied to initial param values: alpha*p0*N (where N is # of items in normgroup, so uniform has p0*N=1)")
 #ifdef FOREST_EM_VERSION
+                ("alpha",defaulted_value(&alpha_file),
+                 "per-parameter alpha (overrides const-alpha); -1 means locked (use init prob but don't update/normalize)")
                 ("outsample-file",defaulted_value(&sample_file),
                  "print actual sample (tree w/o parens) to this file")
 #endif
@@ -123,6 +125,7 @@ struct gibbs_opts
 
 #ifdef FOREST_EM_VERSION
     ostream_arg sample_file;
+    istream_arg alpha_file;
 #endif
     bool printing_sample() const
     {
