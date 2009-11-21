@@ -1338,6 +1338,8 @@ main(int argc, char *argv[]){
     }
 #endif
 
+    cm.fem_in();
+
     if (cm.no_compose) {
         cm.fem_stats();
     } else {
@@ -1479,7 +1481,6 @@ main(int argc, char *argv[]){
 #ifdef  DEBUGCOMPOSE
         Config::debug() << "done chain of compositions  .. now processing result\n";
 #endif
-        cm.fem_in();
 
         if (long_opts["openfst-roundtrip"]) {
             cm.openfst_roundtrip(result);

@@ -84,6 +84,13 @@ struct EM_executor {
 //    ran_restarts = how many times to randomly initialize parameters (after doing one iteration with supplied parameters), keeping the best PP params of all runs
 // return best (greatest) average log prob
 // note: logs are base e (ln) (well, really, they're whatever your estimate method returns ... note that convergence is based on relative change so the base doesn't matter, unless you care to report an entropy to the user (entropy is always base 2).  or you can report perplexity, just doing base^(avg log prob), using the same base, e.g. e^(average ln prob)
+
+inline void print_alp(std::ostream &logs,double N,double alp)
+{
+    Weight prob(alp*N,ln_weight());
+    prob.print_ppx_example(logs,N);
+}
+
 template <class Exec>
 double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relative_avg_logprob_epsilon=.0001,int ran_restarts=0,double converge_param_delta=0, double learning_rate_growth_factor=1, std::ostream &logs=Config::log(),unsigned log_level=1)
 {
@@ -94,6 +101,7 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
 
     double &rel_eps=converge_relative_avg_logprob_epsilon;
     bool very_first_time=true;
+    double N=exec.size();
     while(1) { // random restarts
         unsigned train_iter = 0;
         ParamDelta max_delta_param;
@@ -112,15 +120,13 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
                 break;
             }
 //            if (log_level > 0) logs << "Starting iteration: " << train_iter << '\n';
-            double N=exec.size();
 
             double new_alp = exec.estimate(very_first_time);
-            Weight prob(new_alp*N,ln_weight());
 
             logs << "i=" << train_iter;
             if (learning_rate!=1) logs << " (rate=" << learning_rate << ")";
             logs<< ": ";
-            prob.print_ppx_example(logs,N);
+            print_alp(logs,N,new_alp);
 //            logs<<": average per-example probability= e^" << new_alp;
 
             //FIXME: don't really need to do this so often, can move outside of for loop even ... but for sanity's sake (not much efficiency difference) leave it here
@@ -184,7 +190,13 @@ double overrelaxed_em(Exec &exec,unsigned max_iter=10000,double converge_relativ
             break;
         }
     }
-    logs << "\nSetting weights to model with lowest avg-logprob=" << best_alp << std::endl;
+
+    logs << "\nSetting weights to model with best ";
+    print_alp(logs,N,best_alp);
+
+    //logs<<avg-logprob=" << best_alp;
+    logs<<std::endl;
+
     exec.restore_best();
 
     return best_alp;
