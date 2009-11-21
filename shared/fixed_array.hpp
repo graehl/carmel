@@ -183,7 +183,7 @@ public:
 
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
-    std::ios_base::iostate read_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read);
+    std::ios_base::iostate read_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve=1000);
     template <class L,class A> friend
     void read(std::istream &in,array<L,A> &x,StackAlloc &a);// throw(genio_exception);
 
@@ -346,6 +346,11 @@ public:
     ~auto_array() {
         this->dealloc();
     }
+    void clear()
+    {
+        this->dealloc();
+    }
+
     void alloc(unsigned sp) {
         Super::re_alloc(sp);
     }
@@ -356,7 +361,9 @@ public:
     }
     template <class charT, class Traits>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
-        return read(in,DefaultReader<T>());
+        this->dealloc();
+        return read_imp(this,in,DefaultReader<T>(),1000);
+//        return read(in,);
     }
 
 protected:

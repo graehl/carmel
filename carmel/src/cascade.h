@@ -53,6 +53,30 @@ struct cascade_parameters
             start=cascade[i]->numberArcsFrom(start); //TEST: same order as visit_arcs_sourceless
     }
 
+    struct alpha_v
+    {
+        std::ostream &o;
+        double prior; // -1 = locked
+        alpha_v(std::ostream &o,WFST::NormalizeMethod const& m)
+            : o(o)
+            , prior(m.group==WFST::NONE ? -1 : m.add_count.getReal()) {}
+        void operator()(FSTArc const& a) const
+        {
+            o << (a.isLocked()?-1:prior) <<'\n';
+        }
+    };
+
+
+    void fem_alpha(std::ostream &o,WFST::NormalizeMethods const& methods) const
+    {
+        graehl::word_spacer sp('\n');
+        for (unsigned i=0,n=cascade.size();i<n;++i) {
+//            o<<sp;
+            alpha_v v(o,methods[i]);
+            cascade[i]->visit_arcs_sourceless(v);
+        }
+    }
+
 
     void fem_norms(std::ostream &o,WFST::NormalizeMethods const& methods) const
     {
@@ -154,8 +178,9 @@ struct cascade_parameters
     void print_params(std::ostream &o) const
     {
         print_params_f p=o;
+        graehl::word_spacer sp('\n');
         for (unsigned i=0,n=cascade.size();i<n;++i) {
-            o<<"\n";
+//            o<<sp;
             cascade[i]->visit_arcs_sourceless(p);
         }
     }

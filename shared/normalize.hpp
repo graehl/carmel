@@ -196,7 +196,7 @@ struct NormalizeGroups {
     }
 #endif
     template <class V> // v(normindex,paramid,normsize) where paramid is in normindex.  if end_index>0, v(i) for any unseen i<end_index
-    void visit_norm_param(V &v,index_type end_index=0,unsigned none_id=(unsigned)-1) {
+    void visit_norm_param(V &v,index_type end_index=0) {
         fixed_array<bool> seen(end_index);
         unsigned normi=0;
         for (Groups::iterator g=norm_groups.begin(),ge=norm_groups.end();g!=ge;++g) {

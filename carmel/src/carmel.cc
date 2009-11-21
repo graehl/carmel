@@ -803,7 +803,7 @@ struct carmel_main
     dynamic_array<std::string> fem_filenames;
 
 
-    std::string fem_norm,fem_forest,fem_inparam,fem_outparam,fem_suffix,fem_early_outparam;
+    std::string fem_norm,fem_forest,fem_inparam,fem_outparam,fem_suffix,fem_early_outparam,fem_alpha;
 
     bool no_compose;
 
@@ -838,6 +838,7 @@ struct carmel_main
         set_text("write-loaded",fem_suffix);
         set_text("fem-param",fem_outparam);
         set_text("fem-early-param",fem_early_outparam);
+        set_text("fem-alpha",fem_alpha);
         set_text("fem-norm",fem_norm);
         set_text("fem-forest",fem_forest);
         if (!fem_forest.empty()) {
@@ -867,7 +868,7 @@ struct carmel_main
     void fem_in()
     {
         if (!fem_inparam.empty()) {
-            Config::log()<<"Reading cascade weights from --load-fem-param "<<fem_inparam<<endl;
+            Config::log()<<"Reading cascade weights from --load-fem-param="<<fem_inparam<<endl;
             std::ifstream i(fem_inparam.c_str());
             if (!i) {
                 throw std::runtime_error("Missing --load-fem-param file.\n");
@@ -887,7 +888,7 @@ struct carmel_main
     void fem_out_param(std::string const& out)
     {
         if (!fem_outparam.empty()) {
-            Config::log()<<"Writing cascade weights to --fem-param "<<fem_outparam<<endl;
+            Config::log()<<"Writing cascade weights to --fem-param="<<fem_outparam<<endl;
             std::ofstream o(fem_outparam.c_str());
             fems.print_params(o);
         }
@@ -897,11 +898,15 @@ struct carmel_main
     {
         fem_out_param(fem_outparam);
         if (!fem_norm.empty()) {
-            Config::log()<<"Writing forest-em normgroups to --fem-norm "<<fem_norm<<endl;
+            Config::log()<<"Writing forest-em normgroups to --fem-norm="<<fem_norm<<endl;
             std::ofstream o(fem_norm.c_str());
             fems.fem_norms(o,nms);
         }
-
+        if (!fem_alpha.empty()) {
+            Config::log()<<"Writing forest-em alpha to --fem-alpha="<<fem_alpha<<endl;
+            std::ofstream o(fem_alpha.c_str());
+            fems.fem_alpha(o,nms);
+        }
     }
 
     void fem_stats()
@@ -2009,6 +2014,7 @@ cout <<         "\n"
         "--fem-param=outfile: write forest-em params file for the input cascade\n"
         "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
         "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM\n"
+        "--fem-alpha=outfile : write a (parallel to --fem-param) list of per-parameter alpha (as in --crp --priors=.01,.0001).  locked arcs and --normby=N parameters get alpha -1 (which is also understood by forest-em --crp to lock)\n"
         "--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)\n"
         "\n";
 
