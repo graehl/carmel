@@ -189,8 +189,8 @@ public:
 
 
     template <class charT, class Traits, class Reader>
-    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
-        return read_imp(this,in,read);
+    std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve=1000) {
+        return read_imp(this,in,read,reserve);
     }
 
     template <class charT, class Traits>
@@ -588,5 +588,6 @@ void swap(graehl::fixed_array<T,A> &a,graehl::fixed_array<T,A> &b) throw()
 }
 }
 
-
+#include <graehl/shared/dynarray.h>
+// needed for read_imp for now
 #endif
