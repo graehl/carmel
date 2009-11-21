@@ -15,7 +15,7 @@ namespace graehl {
 // note: composition of cascades gets its groupId set with this unique chain_id meaning a list of original input arcs
 struct cascade_parameters
 {
-    void write_trained(std::string const& suffix,bool *flags,std::string *filenames)
+    void write_trained(std::string const& suffix,bool *flags,std::string *filenames,bool show0=false)
     {
         for (unsigned i=0,n=cascade.size();i<n;++i) {
             std::string const& f=filenames[i];
@@ -23,7 +23,7 @@ struct cascade_parameters
             Config::log() << "Writing "<<suffix<<' '<<f<<" to "<<f_trained<<std::endl;
             std::ofstream of(f_trained.c_str());
             WFST::output_format(flags,&of);
-            cascade[i]->writeLegible(of);
+            cascade[i]->writeLegible(of,show0);
         }
     }
 
@@ -46,11 +46,23 @@ struct cascade_parameters
             cascade[i]->visit_arcs_sourceless(m);
     }
 
+    struct number_v
+    {
+        unsigned i;
+        number_v(unsigned start) : i(start-1) {  }
+        void operator()(unsigned src,FSTArc & a)
+        {
+            a.groupId=++i;
+        }
+    };
+
     // set groupids
     void number_from(unsigned start=1) const
     {
+        number_v v(start);
         for (unsigned i=0,n=cascade.size();i<n;++i)
-            start=cascade[i]->numberArcsFrom(start); //TEST: same order as visit_arcs_sourceless
+//            start=cascade[i]->numberArcsFrom(start); //TEST: same order as visit_arcs_sourceless
+            cascade[i]->visit_arcs(v); // definitely same order!
     }
 
     struct alpha_v

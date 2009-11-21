@@ -1,5 +1,6 @@
 /* to decide:
 
+   show0: make printing never drop 0 prob arcs, provide option to remove them explicitly (so that --fem-param etc. are always lined up) - for now just forcing print of 0 arcs
    -b batch compose: what should happen w/ cascade?  disallowed combination w/ --fem-param and many other options?
 
    avoid train or compose entirely when just writing -fem-param and -fem-norm?
@@ -529,9 +530,13 @@ struct carmel_main
             pr[i++]=zero;
     }
 
+    bool real_cascade() {
+        return long_opts["train-cascade"] || long_opts["compose-cascade"];
+    }
+
     NMs & norms()
     {
-        unsigned N=nInputs;
+        unsigned N=real_cascade()?nInputs:1;
         nms.clear();
         nms.push_back_n(norm_method,N);
         if (have_opt("normby"))
@@ -558,9 +563,9 @@ struct carmel_main
         return true;
     }
 
-    std::string const& set_text(std::string const& key,std::string &to)
+    bool set_text(std::string const& key,std::string &to)
     {
-        to=text_long_opts[key];
+        return !(to=text_long_opts[key]).empty();
     }
 
     std::string const& set_default_text(std::string const& key,std::string const& default_val="")
@@ -682,6 +687,7 @@ struct carmel_main
             result->ensure_final_sink();
     }
 
+
     void write_transducer(std::ostream &o,WFST *result)
     {
 //        if (long_opts["test-as-pairs"])  WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
@@ -689,7 +695,7 @@ struct carmel_main
         if ( flags ['Y'] )
             result->writeGraphViz(o);
         else {
-            o << *result;
+            result->writeLegible(o,show0);
         }
     }
 
@@ -699,7 +705,6 @@ struct carmel_main
             result->pruneArcs(prune_wt);
         if ( prunePath() )
             result->prunePaths(max_states,keep_path_ratio);
-
     }
 
     // return true if # of arcs change
@@ -807,8 +812,11 @@ struct carmel_main
 
     bool no_compose;
 
+    bool show0;
+
     void set_defaults()
     {
+        show0=false;
         gibbs=false;
         norm_method.group=WFST::CONDITIONAL;
         keep_path_ratio.setInfinity();
@@ -836,16 +844,16 @@ struct carmel_main
     {
         set_text("load-fem-param",fem_inparam);
         set_text("write-loaded",fem_suffix);
-        set_text("fem-param",fem_outparam);
-        set_text("fem-early-param",fem_early_outparam);
-        set_text("fem-alpha",fem_alpha);
-        set_text("fem-norm",fem_norm);
-        set_text("fem-forest",fem_forest);
+        show0|=set_text("fem-param",fem_outparam);
+        show0|=set_text("fem-early-param",fem_early_outparam);
+        show0|=set_text("fem-alpha",fem_alpha);
+        show0|=set_text("fem-norm",fem_norm);
+        show0|=set_text("fem-forest",fem_forest);
         if (!fem_forest.empty()) {
             topt.cache.out_derivfile=fem_forest;
             force_cascade_derivs();
         }
-        get_opt("number-from",number_from);
+        show0|=get_opt("number-from",number_from);
     }
 
     unsigned number_from;
@@ -935,19 +943,7 @@ struct carmel_main
 
     void write_trained(std::string const& suffix="trained")
     {
-        fems.write_trained(suffix,flags,fem_filenames.begin());
-/*
-        char const** chain_filenames=filenames+(chain-chainMemory);
-        assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
-        for (unsigned i=0;i<nChain;++i) {
-            std::string const& f=chain_filenames[i];
-            std::string const& f_trained=suffix.empty()?f:(f+"."+suffix);
-            Config::log() << "Writing "<<suffix<<' '<<f<<" to "<<f_trained<<std::endl;
-            std::ofstream of(f_trained.c_str());
-            setOutputFormat(flags,&of);
-            chain[i].writeLegible(of);
-        }
-*/
+        fems.write_trained(suffix,flags,fem_filenames.begin(),show0);
     }
 
 };
@@ -1224,7 +1220,7 @@ main(int argc, char *argv[]){
     istream *pairStream = NULL;
     cm.parse_opts();
     bool gibbs = cm.gibbs;
-    cascade_parameters cascade(long_opts["train-cascade"] || long_opts["compose-cascade"],(unsigned)long_opts["debug-cascade"]);
+    cascade_parameters cascade(cm.real_cascade(),(unsigned)long_opts["debug-cascade"]);
 
     bool trainc=!cascade.trivial;
     if (trainc)
@@ -1560,19 +1556,6 @@ main(int argc, char *argv[]){
 
                 if (trainc) {
                     cm.write_trained("trained");
-                    /*
-                    // write inputfilename.trained for each input
-                    char const** chain_filenames=filenames+(chain-chainMemory);
-                    assert(chain_filenames>=filenames && chain_filenames-filenames<=1);
-                    for (unsigned i=0;i<nChain;++i) {
-                        std::string const& f=chain_filenames[i];
-                        std::string const& f_trained=f+".trained";
-                        Config::log() << "Writing trained "<<f<<" to "<<f_trained<<std::endl;
-                        std::ofstream of(f_trained.c_str());
-                        setOutputFormat(flags,&of);
-                        chain[i].writeLegible(of);
-                    }
-                    */
                 }
             } else if ( nGenerate > 0 ) {
                 cm.shrink(result,true,true,true,"\n");
