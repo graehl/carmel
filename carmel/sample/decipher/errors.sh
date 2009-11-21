@@ -11,8 +11,11 @@ echo ${suf:=.trained} ${csuf:=2} ${carmel:=carmel} ${chanbase=subst.wfst}
 echo ${src:=plain.bi.wfsa} ${chan:=$chanbase$suf} ${cipher:=cipher$csuf} ${correct:=correct$csuf} ${log:=errors.log}
 
 if [ "$weights" ] ; then
-    chan=$chanbase.`basename $weights`
-    $carmel -H --load-fem-param=$weights $chanbase > $chan
+    suf=`basename $weights`
+    set -x
+    $carmel -H --load-fem-param=$weights $src $chanbase --no-compose --write-loaded=$suf
+    chan=$chanbase.$suf
+    set +x
 fi
 
 $carmel -HJ -= 3.0 $chan > $chan.cubed

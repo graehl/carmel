@@ -126,6 +126,10 @@ struct file_arg
         return name.c_str();
     }
 
+    void close()
+    {
+        set_none();
+    }
 
     typedef file_arg<Stream> self_type;
 
@@ -269,7 +273,7 @@ the buffer will be back to 8k.
         pointer_type(o.pointer),name(o.name),buf(o.buf) {}
 
     void set_none()
-    { none=true;set_null_file_arg(pointer);name="-0"; }
+    { none=true;set_null_file_arg(pointer);buf.reset();name="-0"; }
 
     bool is_none() const
     { return none; }
