@@ -428,7 +428,7 @@ struct gibbs_base
     template <class G>
     gibbs_stats run(unsigned runi,G &imp)
     {
-        stats.clear();
+        stats.clear(n_sym,n_blocks);
         Ni=gopt.iter;
         restore_p0(); // sets counts to prior, and normsums so prob is right
         imp.init_run(runi);
@@ -522,7 +522,8 @@ struct gibbs_base
     }
     void log_ppx(Weight p)
     {
-        p.print_ppx(log,n_sym,n_blocks,"per-point-ppx","per-block-ppx","prob");
+//        p.print_ppx(log,n_sym,n_blocks,"per-point-ppx","per-block-ppx","prob");
+        stats.print_ppx(log,p);
     }
 
     void record_iteration(Weight p)
