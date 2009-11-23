@@ -71,7 +71,7 @@ struct gibbs_opts
                  "prior applied to initial param values: alpha*p0*N (where N is # of items in normgroup, so uniform has p0*N=1)")
 #ifdef FOREST_EM_VERSION
                 ("alpha",defaulted_value(&alpha_file),
-                 "per-parameter alpha (overrides const-alpha); -1 means locked (use init prob but don't update/normalize)")
+                 "per-parameter alpha file parallel to -I (overrides const-alpha); negative alpha means locked (use init prob but don't update/normalize)")
                 ("outsample-file",defaulted_value(&sample_file),
                  "print actual sample (tree w/o parens) to this file")
 #endif
@@ -206,16 +206,20 @@ struct gibbs_opts
 struct gibbs_stats
 {
     double N; // from burnin...last iter, or just last if --final-counts
+    double n_sym,n_blocks;
+
     Weight sumprob; //FIXME: more precision, or (scale,sum) pair
     Weight allprob,finalprob; // (prod over all N, and final) sample cache probs
     typedef gibbs_stats self_type;
     gibbs_stats() {clear();}
-    void clear()
+    void clear(double ns=1,double nb=1)
     {
         allprob.setOne();
         finalprob.setOne();
         sumprob=0;
         N=0;
+        n_blocks=nb;
+        n_sym=ns;
     }
     void record(double t,Weight prob)
     {
@@ -228,9 +232,18 @@ struct gibbs_stats
     }
     TO_OSTREAM_PRINT
     template <class O>
+    void print_ppx(O &o,Weight p) const
+    {
+        p.print_ppx(o,n_sym,n_blocks,"per-point-ppx","per-block-ppx","prob");
+    }
+
+    template <class O>
     void print(O&o) const
     {
-        o << "#samples="<<N<<" final sample ppx="<<finalprob.ppxper().as_base(2)<<" burned-in avg="<<allprob.ppxper(N).as_base(2);
+        o << "#samples="<<N<<" final sample ";
+        print_ppx(o,finalprob);
+        o << "; burned-in avg ";
+        print_ppx(o,allprob.root(N));
     }
     bool better(gibbs_stats const& o,gibbs_opts const& gopt) const
     {

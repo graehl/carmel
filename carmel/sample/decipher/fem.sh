@@ -1,5 +1,5 @@
 set -e
-echo ${suf:=fem} ${ITER:=100} ${restarts:=0}
+echo ${suf:=fem} ${ITER:=1000} ${restarts:=0}
 i4=$((ITER/4))
 [ "$EM" ] || CRP=1
 if [ "$EM" ] ; then
