@@ -74,6 +74,8 @@ struct gibbs_opts
                  "per-parameter alpha file parallel to -I (overrides const-alpha); negative alpha means locked (use init prob but don't update/normalize)")
                 ("outsample-file",defaulted_value(&sample_file),
                  "print actual sample (tree w/o parens) to this file")
+                ("n-symbols",defaulted_value(&n_sym),
+                 "N for per-point perplexity (total number of symbols the derivations explain).  there's no way to deduce this automatically since a single rule may produce multiple symbols")
 #endif
                 ;
 
@@ -122,6 +124,7 @@ struct gibbs_opts
 
     //forest-em only:
     double alpha; //TODO: per-normgroup (or per-param) alphas
+    unsigned n_sym;
 
 #ifdef FOREST_EM_VERSION
     ostream_arg sample_file;
@@ -158,6 +161,7 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        n_sym=0;
 #ifdef FOREST_EM_VERSION
         sample_file=ostream_arg();
 #endif
@@ -240,9 +244,9 @@ struct gibbs_stats
     template <class O>
     void print(O&o) const
     {
-        o << "#samples="<<N<<" final sample ";
+        o << "final sample ";
         print_ppx(o,finalprob);
-        o << "; burned-in avg ";
+        o << "\n  burned-in avg (over "<<N<<" samples) ";
         print_ppx(o,allprob.root(N));
     }
     bool better(gibbs_stats const& o,gibbs_opts const& gopt) const
