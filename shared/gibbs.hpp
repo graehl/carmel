@@ -187,6 +187,8 @@ struct gibbs_base
     void init(unsigned n_sym_=1, unsigned n_blocks_=1)
     {
         n_sym=n_sym_;
+        if (gopt.n_sym)
+            n_sym=gopt.n_sym;
         n_blocks=n_blocks_;
         sample.reinit(n_blocks);
         gps.clear();
@@ -199,15 +201,13 @@ struct gibbs_base
                , std::ostream &out=std::cout
                , std::ostream &log=std::cerr)
         : gopt(gopt_)
-        , n_sym(n_sym)
-        , n_blocks(n_blocks)
         , out(out)
         , log(log)
         , nnorm(0)
-        , sample(n_blocks)
     {
         gopt.validate();
         temp=gopt.temp;
+        init(n_sym,n_blocks);
     }
 
     // need to call init before use
