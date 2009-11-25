@@ -30,10 +30,6 @@ struct carmel_gibbs : public gibbs_base
         , derivs(composed,cascade,corpus,topt.cache) // gets pre-init_sample_weights weight.
         , init_sample_weights(init_sample_weights)
     {
-        dummy_id=define_param(0,1);
-        assert(dummy_id==FSTArc::locked_group); // this parameter always gives p=1 because it's in its own normgrp
-        first_id=dummy_id+1;
-//        cascade.set_composed(composed);
         set_cascadei();
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);
@@ -66,15 +62,11 @@ struct carmel_gibbs : public gibbs_base
     }
 
 
-    unsigned dummy_id; //FIXME: this was intended to force locked arcs to have p=1, but now we have a facility for REALLY locking arcs in gibbs.hpp.  further it seems that no param was ever added w/ this id, so this was just dead code messing up/complicating gibbs param id :: cascade arc order correspondence (carefully checked + working now, but still, TODO: remove this and start at 0 again)
-    unsigned first_id;
+        enum { first_id=0 };
 
     void set_gibbs_params(bool addarcs=false,bool addsource=false)
     {
-        // for dummy_id (locked arc)
-        if (addarcs) arcs.push_back();
-        if (addsource) arc_sources.push_back();
-        for (unsigned norm=1,i=0,N=cascade.size();i<N;++i) {
+        for (unsigned norm=0,i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
             WFST::NormalizeMethod const& nm=methods[i];
             norm=add_gibbs_params(norm,w,nm,addarcs,addsource);
@@ -187,11 +179,9 @@ struct carmel_gibbs : public gibbs_base
             r[i].clear();
         for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i) {
             unsigned parami=*i;
-            if (parami!=dummy_id) {
-                unsigned ci=cascadei_for(parami);
-                if (ci>=a && ci<b)
-                    r[ci].push_back(parami);
-            }
+            unsigned ci=cascadei_for(parami);
+            if (ci>=a && ci<b)
+                r[ci].push_back(parami);
         }
     }
     void print_sample(blocks_t const& sample,unsigned a,unsigned b,casc const& c)

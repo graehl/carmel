@@ -69,13 +69,13 @@ struct gibbs_opts
             opt.add_options()
                 ("const-alpha",defaulted_value(&alpha),
                  "prior applied to initial param values: alpha*p0*N (where N is # of items in normgroup, so uniform has p0*N=1)")
+                ("n-symbols",defaulted_value(&n_sym),
+                 "N for per-point perplexity (total number of symbols the derivations explain).  there's no way to deduce this automatically since a single rule may produce multiple symbols")
 #ifdef FOREST_EM_VERSION
                 ("alpha",defaulted_value(&alpha_file),
                  "per-parameter alpha file parallel to -I (overrides const-alpha); negative alpha means locked (use init prob but don't update/normalize)")
                 ("outsample-file",defaulted_value(&sample_file),
                  "print actual sample (tree w/o parens) to this file")
-                ("n-symbols",defaulted_value(&n_sym),
-                 "N for per-point perplexity (total number of symbols the derivations explain).  there's no way to deduce this automatically since a single rule may produce multiple symbols")
 #endif
                 ;
 

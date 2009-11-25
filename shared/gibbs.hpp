@@ -598,7 +598,7 @@ struct gibbs_base
             bool sparse=gopt.print_counts_sparse!=0;
             if (sparse)
                 out<<"id\t";
-            out<<"group\tcounts\tprob";
+            out<<"group\tcount\tprob";
             double ta=time+1;
             if (!final)
                 out<<"\tavg@"<<ta<<"\tlast@t\tprior";
@@ -615,7 +615,10 @@ struct gibbs_base
                 if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
                     if (sparse)
                         out<<i<<'\t';
-                    out<<p.norm;
+                    if (p.has_norm())
+                        out<<p.norm;
+                    else
+                        out<<"LOCKED";
                     print_field(final?avg:d.x); //NOTE: for final, only the counts were restored upon restarts, so don't use anything other than d.x
                     print_field(proposal_prob(i));
                     if (!final) {
