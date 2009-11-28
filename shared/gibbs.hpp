@@ -131,7 +131,7 @@ struct gibbs_param
     }
 
     double prior; //FIXME: not needed except to make computing --cache-prob easier.  also holds prob when NONORM
-    //FIXME: alternative strategy: store locked arc prob in count(), and ensure that NONORM=0 (reserved normsum id) has sum locked to 1.  may be slightly faster when computing probs for sampling
+    //FIXME: alternative strategy: store locked arc prob in count(), and ensure that NONORM=-1 (reserved normsum id) has sum locked to 1.  may be slightly faster when computing probs for sampling
     double count() const
     {
         return sumcount.x;
@@ -611,7 +611,7 @@ struct gibbs_base
             for (unsigned i=from;i<to;++i) {
                 gibbs_param const& p=gps[i];
                 delta_sum const& d=p.sumcount;
-                double avg=final?d.x/ta:d.avg(ta);
+                double avg=final?d.x/ta:d.avg(ta);  //d.x is an instantaneous (per-iter) count in non-final, but holds the total in the final iteration
                 if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
                     if (sparse)
                         out<<i<<'\t';
@@ -619,7 +619,10 @@ struct gibbs_base
                         out<<p.norm;
                     else
                         out<<"LOCKED";
-                    print_field(final?avg:d.x); //NOTE: for final, only the counts were restored upon restarts, so don't use anything other than d.x
+                    if (final)
+                        print_field(avg);
+                    else
+                        print_field(d.x); // inst. count
                     print_field(proposal_prob(i));
                     if (!final) {
                         print_field(avg);
