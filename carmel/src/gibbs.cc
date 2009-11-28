@@ -114,13 +114,13 @@ struct carmel_gibbs : public gibbs_base
             }
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                 FSTArc & a=**g;
-                a.groupId=gps.size();
                 if (a.isLocked())
                     define_param(a.weight.getReal()); //FIXME: slight semantic difference: prob for locked doesn't compete w/ others in this normgroup.  solution: fixed array remains[normgrp] to go along w/ normsum[normgrp].  p=remains[normgrp]*count/normsum[normgrp].  where remains[i]=1-sum (locked arcs' prob in grp i)
                 else {
 //                define_param(id,gopt.uniformp0?alpha:(ac*scale*a.weight).getReal());
                     define_param(id,(a.weight/sum).getReal(),alpha,N);
                 }
+                a.groupId=gps.size(); // SUBTLE BUG: do this AFTER testing a.isLocked
                 if (addarcs) arcs.push_back(&a);
                 if (addsource) arc_sources.push_back(src);
             }
