@@ -171,7 +171,7 @@ struct gibbs_param
             sumcount.add_delta(d,t);
         }
     }
-    gibbs_param() : prior(),norm() {  }
+    gibbs_param() : prior(),norm(NONORM) {  }
     gibbs_param(unsigned norm, double prior) : prior(prior),norm(norm) {}
     typedef gibbs_param self_type;
     TO_OSTREAM_PRINT
@@ -277,9 +277,9 @@ struct gibbs_base
     {
         return define_param(norm,prior(prob,alpha,normsz));
     }
-    void define_param(double prob) //fixed prob
+    unsigned define_param(double prob) //fixed prob
     {
-        define_param(gibbs_param::NONORM,prob);
+        return define_param(gibbs_param::NONORM,prob);
     }
 
     void define_param_id(unsigned id,double prob) //fixed prob
@@ -652,21 +652,6 @@ struct gibbs_base
     }
 
 };
-
-
-
-
-/*
-template <class GE>
-struct gibbs_crp : public gibbs_base
-{
-    gibbs_opts & opt;
-    GE &imp;
-    gibbs_crp(gibbs_opts & opt,GE &imp) : opt(opt),imp(imp),log(imp.log()) {  }
-
-};
-*/
-
 
 
 }

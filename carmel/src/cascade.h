@@ -150,8 +150,6 @@ struct cascade_parameters
             o<<"#"<<b.id;
             return;
         }
-
-        //print labels
         const List<GraphArc> &st=states[s].arcs;
         bool ornode=st.has2();
         if (ornode)
