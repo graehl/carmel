@@ -73,24 +73,23 @@ struct carmel_gibbs : public gibbs_base
         }
     }
     // add params w/ norm group==NONE
-    void operator()(FSTArc const& f)
+    void operator()(FSTArc const& a)
     {
-        const_cast<FSTArc&>(f).groupId=gps.size();
-        define_param(f.weight.getReal());
+        define_param(a.weight.getReal());
+        const_cast<FSTArc&>(a).groupId=gps.size();
     }
 
     typedef dynamic_array<FSTArc *> arc_for_param_t;
     arc_for_param_t arcs;
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
     // return next free normgroup id, start at normidbase
-    unsigned add_gibbs_params(unsigned normidbase,WFST &w,WFST::NormalizeMethod const& nm,bool addarcs=false,bool addsource=false)
+    unsigned add_gibbs_params(unsigned /*normgroup start*/ id,WFST &w,WFST::NormalizeMethod const& nm,bool addarcs=false,bool addsource=false)
     {
         if (nm.group==WFST::NONE) {
 //            w.lockArcs();
             w.visit_arcs_sourceless(*this);
-            return normidbase;
+            return id;
         }
-        unsigned id=normidbase;
         if (w.isEmpty())
             return id;
         if (nm.group==WFST::CONDITIONAL)
@@ -106,21 +105,21 @@ struct carmel_gibbs : public gibbs_base
             assert(src<w.numStates());
             if (!gopt.uniformp0) {
                 for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-                    ++N;
-                    sum+=(*g)->weight;
+                    FSTArc const& a=**g;
+                    if (!a.isLocked()) {
+                        ++N;
+                        sum+=a.weight;
+                    }
                 }
                 if (N>0)
                     scale=N/sum;
             }
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
                 FSTArc & a=**g;
-                if (a.isLocked())
-                    define_param(a.weight.getReal()); //FIXME: slight semantic difference: prob for locked doesn't compete w/ others in this normgroup.  solution: fixed array remains[normgrp] to go along w/ normsum[normgrp].  p=remains[normgrp]*count/normsum[normgrp].  where remains[i]=1-sum (locked arcs' prob in grp i)
-                else {
-//                define_param(id,gopt.uniformp0?alpha:(ac*scale*a.weight).getReal());
-                    define_param(id,(a.weight/sum).getReal(),alpha,N);
-                }
-                a.groupId=gps.size(); // SUBTLE BUG: do this AFTER testing a.isLocked
+                a.groupId=a.isLocked()
+                    ? define_param(a.weight.getReal())
+                    : define_param(id,(a.weight/sum).getReal(),alpha,N);
+            /* FIXME: slight semantic difference: prob for locked doesn't compete w/ others in this normgroup.  solution: fixed array remains[normgrp] to go along w/ normsum[normgrp].  p=remains[normgrp]*count/normsum[normgrp].  where remains[i]=1-sum (locked arcs' prob in grp i)*/
                 if (addarcs) arcs.push_back(&a);
                 if (addsource) arc_sources.push_back(src);
             }
