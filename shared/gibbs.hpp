@@ -95,8 +95,7 @@ struct gibbs_param
     void final_counts(double tmax1)
     {
         if (has_norm()) {
-            sumcount.extend(tmax1);
-            sumcount.x=sumcount.s;
+            count()=sumcount.extend(tmax1);
         }
     }
     double save_count() const

@@ -41,12 +41,12 @@ struct delta_sum_f
         s+=d*tmax;
         x+=d;
     }
-    void extend(D t)
+    double extend(D t)
     {
         D moret=t-tmax;
         if (moret<0) throw_unknown_delta_sum(t,tmax);
         tmax=t;
-        s+=x*moret;
+        return s+=x*moret;
     }
     D sum(D t) const
     {
