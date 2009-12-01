@@ -41,18 +41,19 @@ struct delta_sum_f
         s+=d*tmax;
         x+=d;
     }
-    double extend(D t)
+    void extend(D t)
     {
         D moret=t-tmax;
         if (moret<0) throw_unknown_delta_sum(t,tmax);
         tmax=t;
-        return s+=x*moret;
+        s+=x*moret;
     }
     D sum(D t) const
     {
         if (t<=0) return 0;
-        if (t>0 && t<tmax) throw_unknown_delta_sum(t,tmax);
-        return s+(t-tmax)*x;
+        D moret=t-tmax;
+        if (moret<0) throw_unknown_delta_sum(t,tmax);
+        return s+x*moret;
     }
     D sum(D t0,D tm) const
     {
@@ -116,10 +117,9 @@ struct bounded_delta_sum
     double x;
     double tmax;
     double s;
-    double extend(double t)
+    void extend(double t)
     {
         assert(t==tmax);
-        return s;
     }
     bool empty() const
     {
