@@ -39,11 +39,17 @@ struct cascade_parameters
         }
     };
 
+    template <class V>
+    void visit_arcs(V &v) const
+    {
+        for (unsigned i=0,n=cascade.size();i<n;++i)
+            cascade[i]->visit_arcs_sourceless(v);
+    }
+
     void arcids(arcid_type &aid,unsigned start=1) const
     {
         arcid_marker m(aid,start);
-        for (unsigned i=0,n=cascade.size();i<n;++i)
-            cascade[i]->visit_arcs_sourceless(m);
+        visit_arcs(m);
     }
 
     struct number_v
@@ -188,11 +194,12 @@ struct cascade_parameters
     void print_params(std::ostream &o) const
     {
         print_params_f p=o;
-        graehl::word_spacer sp('\n');
+        visit_arcs(p);
+/*        graehl::word_spacer sp('\n');
         for (unsigned i=0,n=cascade.size();i<n;++i) {
 //            o<<sp;
             cascade[i]->visit_arcs_sourceless(p);
-        }
+            }*/
     }
 
     struct read_params_f

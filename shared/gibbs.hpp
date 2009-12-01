@@ -42,6 +42,14 @@
    print_sample(sample):
    print_param(out,parami): like out<<gps[i] but customized
 
+   void print_counts(bool final=false,char const* name="") {
+     print_counts_default(*this,final,name);
+   }
+   void print_periodic()
+    {
+        print_all(*this);
+    }
+
     void run_gibbs()
     {
         assert(gibbs);
@@ -558,6 +566,7 @@ struct gibbs_base
             print_all(imp,false);
         }
     }
+
     void print_norms(char const* name="normalization group sums")
     {
         if (!gopt.printing_norms())
@@ -578,14 +587,12 @@ struct gibbs_base
     template <class G>
     void print_count(unsigned i,G &imp,bool final=false)
     {
-        bool sparse=gopt.print_counts_sparse!=0;
         double ta=time+1;
             gibbs_param const& p=gps[i];
             delta_sum const& d=p.sumcount;
             double avg=final?d.x/ta:d.avg(ta);  //d.x is an instantaneous (per-iter) count in non-final, but holds the total in the final iteration
-            if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
-                if (sparse)
-                    out<<i<<'\t';
+            if (gopt.print_counts_sparse==0 || avg>=p.prior+gopt.print_counts_sparse) {
+                out<<i<<'\t';
                 if (p.has_norm())
                     out<<p.norm;
                 else
@@ -612,9 +619,8 @@ struct gibbs_base
     void print_counts_header(bool final,char const* name="")
     {
         if (!gopt.printing_counts()) return;
-        bool sparse=gopt.print_counts_sparse!=0;
-        if (sparse)
-            out<<"id\t";
+        out<<"\n#";
+        out<<"id\t";
         out<<"group\tcount\tprob";
         double ta=time+1;
         if (!final)
@@ -625,7 +631,14 @@ struct gibbs_base
             out<<"\titer="<<iter;
         out<<"\t"<<name;
         out<<'\n';
-        out<<"\n#";
+    }
+
+    // override order here
+    template <class G>
+    void print_counts_body(G &imp,bool final,unsigned from,unsigned to)
+    {
+        for (unsigned i=from;i<to;++i)
+            print_count(i,imp,final);
     }
 
     template <class G>
@@ -633,11 +646,8 @@ struct gibbs_base
     {
         if (!gopt.printing_counts()) return;
         print_counts_header(final,name);
-        unsigned from=gopt.print_counts_from;
-        unsigned to=std::min(gopt.print_counts_to,gps.size());
-        for (unsigned i=from;i<to;++i)
-            print_count(i,imp,final);
-        out<<'\n';
+        imp.print_counts_body(imp,final,gopt.print_counts_from,std::min(gopt.print_counts_to,gps.size()));
+        out<<"\n";
     }
     template <class G>
     void print_all(G &imp,bool final=true)
