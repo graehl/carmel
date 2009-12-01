@@ -222,7 +222,6 @@ void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
 
 #ifdef CHECKNORMALIZE
     for (NormGroupIter g(group,*this); g.moreGroups(); g.nextGroup()) {
-
         Weight sum;
         for ( g.beginArcs(); g.moreArcs(); g.nextArc())
             sum += (*g)->weight;

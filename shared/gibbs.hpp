@@ -609,7 +609,7 @@ struct gibbs_base
             }
     }
 
-    void print_counts_header()
+    void print_counts_header(bool final,char const* name="")
     {
         if (!gopt.printing_counts()) return;
         bool sparse=gopt.print_counts_sparse!=0;
@@ -632,11 +632,11 @@ struct gibbs_base
     void print_counts(G &imp,bool final=false,char const* name="")
     {
         if (!gopt.printing_counts()) return;
-        print_counts_header();
+        print_counts_header(final,name);
         unsigned from=gopt.print_counts_from;
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         for (unsigned i=from;i<to;++i)
-            print_count(i,impl,final);
+            print_count(i,imp,final);
         out<<'\n';
     }
     template <class G>

@@ -206,11 +206,6 @@ class WFST {
         initAlphabet(1);
     }
 
-    void init_index()
-    {
-        indexed_by=State::none;
-    }
-
     void init()
     {
         initAlphabet();
@@ -694,16 +689,19 @@ class WFST {
     }
 
     void project(int dir=State::input,bool identity_fsa=false) {
-        if (identity_fsa) {
+        if (identity_fsa)
             identity_alphabet_from(dir);
-        }
-
         for ( int s = 0 ; s < numStates() ; ++s )
             states[s].project(dir,identity_fsa);
     }
 
+    void init_index()
+    {
+        indexed_by=State::none;
+    }
 
     void indexFlush() { // index on input symbol or output symbol depending on composition direction
+        init_index();
         for ( int s = 0 ; s < numStates() ; ++s ) {
             states[s].flush();
         }
