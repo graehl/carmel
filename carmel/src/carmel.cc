@@ -334,6 +334,7 @@ struct carmel_main
             get_opt("crp-restarts",gopt.restarts);
             gopt.argmax_final=have_opt("crp-argmax-final");
             gopt.argmax_sum=have_opt("crp-argmax-sum");
+            gopt.norm_order=have_opt("normgroup-order");
             gopt.exclude_prior=have_opt("crp-exclude-prior");
             get_opt("init-em",gopt.init_em);
             gopt.em_p0=have_opt("em-p0");
@@ -1165,6 +1166,7 @@ main(int argc, char *argv[]){
     }
     bool prunePath = flags['w'] || flags['z'];
 
+    Config::log() << "Using random seed -R "<<seed<<endl;
     srand(seed);
     set_random_seed(seed);
     setOutputFormat(flags,0); // set default for all streams
@@ -1983,6 +1985,7 @@ cout <<         "\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
         "--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)\n"
+        "--print-counts-rich : show cascade arc associated with each count\n"
         "--width : for --print-counts, truncate numbers to this many chars wide\n"
         "--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"

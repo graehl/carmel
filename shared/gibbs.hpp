@@ -646,7 +646,11 @@ struct gibbs_base
     {
         if (!gopt.printing_counts()) return;
         print_counts_header(final,name);
-        imp.print_counts_body(imp,final,gopt.print_counts_from,std::min(gopt.print_counts_to,gps.size()));
+        unsigned to=std::min(gopt.print_counts_to,gps.size());
+        if (gopt.norm_order)
+            print_counts_body(imp,final,gopt.print_counts_from,to);
+        else
+            imp.print_counts_body(imp,final,gopt.print_counts_from,to);
         out<<"\n";
     }
     template <class G>
