@@ -95,7 +95,8 @@ struct gibbs_param
     void final_counts(double tmax1)
     {
         if (has_norm()) {
-            count()=sumcount.extend(tmax1);
+            sumcount.extend(tmax1);
+            count()=sumcount.s;
         }
     }
     double save_count() const
@@ -255,7 +256,6 @@ struct gibbs_base
     unsigned iter,Ni; // i=0 is random init sample.  i=1...Ni are the (gibbs resampled) samples
     double time; // at i=gopt.burnin, t=0.  at tmax = nI-gopt.burnin, we have the final sample.
     gibbs_opts::temps temp;
-    bool accum_delta;
  public:
     bool burning() const
     {
@@ -413,7 +413,7 @@ struct gibbs_base
     void addc(gibbs_param &p,double delta)
     {
         assert(time>=p.sumcount.tmax);
-        p.addc(delta,time,normsum); //t=0 and accum_delta=false until burnin
+        p.addc(delta,time,normsum); //t=0 until burnin done
     }
     void addc(unsigned param,double delta)
     {
@@ -434,7 +434,6 @@ struct gibbs_base
         Ni=gopt.iter;
         restore_p0(); // sets counts to prior, and normsums so prob is right
         imp.init_run(runi);
-        accum_delta=false;
         iter=0;
         time=0;
         if (gopt.print_every!=0 && gopt.print_counts_sparse==0) {
@@ -445,8 +444,7 @@ struct gibbs_base
         //FIXME: isn't really random!  get the same sample after every iteration
         for (iter=1;iter<=Ni;++iter) {
             time=(double)iter-(double)gopt.burnin; //very funny: unsigned arithmetic -> double (unsigned maximum) if you're sloppy
-            if (time>=0) accum_delta=true;
-            else time=0;
+            if (time<0) time=0;
             iteration(imp,true);
         }
         log<<"\nGibbs stats: "<<stats<<"\n";
@@ -561,7 +559,8 @@ struct gibbs_base
     void maybe_print_periodic(G &imp)
     {
         if (divides(gopt.print_every,iter)) {
-            itername(out<<"# ","\n");
+            itername(out<<"# ");
+            out<<"t="<<time<<"\n";
             print_all(imp,false);
         }
     }
@@ -573,7 +572,7 @@ struct gibbs_base
         unsigned from=gopt.print_norms_from;
         unsigned to=std::min(gopt.print_norms_to,normsum.size());
         if (to>from) {
-            out <<"\n# group\t"<<name<<" i="<<iter<<"\n";
+            out <<"\n# group\t"<<name<<" i="<<iter<<" t="<<time<<"\n";
             print_range_i(out,normsum,from,to,true,true);
         }
 
@@ -587,32 +586,33 @@ struct gibbs_base
     void print_count(unsigned i,G &imp,bool final=false)
     {
         double ta=time+1;
-            gibbs_param const& p=gps[i];
-            delta_sum const& d=p.sumcount;
-            double avg=final?d.x/ta:d.avg(ta);  //d.x is an instantaneous (per-iter) count in non-final, but holds the total in the final iteration
-            if (gopt.print_counts_sparse==0 || avg>=p.prior+gopt.print_counts_sparse) {
-                out<<i<<'\t';
-                if (p.has_norm())
-                    out<<p.norm;
-                else
-                    out<<"LOCKED";
-                if (final)
-                    print_field(avg);
-                else
-                    print_field(d.x); // inst. count
-                print_field(proposal_prob(i));
-                if (!final) {
-                    print_field(avg);
-                    print_field(d.tmax);
-                    print_field(p.prior);
-                }
-                if (gopt.rich_counts) {
-                    out<<'\t';
-                    imp.print_param(out,i);
-                }
-//                    out<<'\t'<<d.s;
-                out<<'\n';
+        gibbs_param const& p=gps[i];
+        delta_sum const& d=p.sumcount;
+        double lastat=d.tmax;
+        double avg=final?d.x/ta:d.avg(ta);  //d.x is an instantaneous (per-iter) count in non-final, but holds the extended .s sum after the final iteration and on restoring best start
+        if (gopt.print_counts_sparse==0 || avg>=p.prior+gopt.print_counts_sparse) {
+            out<<i<<'\t';
+            if (p.has_norm())
+                out<<p.norm;
+            else
+                out<<"LOCKED";
+            if (final)
+                print_field(avg);
+            else
+                print_field(d.x); // inst. count
+            print_field(proposal_prob(i));
+            if (!final) {
+                print_field(avg);
+                print_field(lastat);
+                print_field(p.prior);
             }
+            if (gopt.rich_counts) {
+                out<<'\t';
+                imp.print_param(out,i);
+            }
+//                    out<<'\t'<<d.s;
+            out<<'\n';
+        }
     }
 
     void print_counts_header(bool final,char const* name="")
@@ -656,7 +656,7 @@ struct gibbs_base
     void print_all(G &imp,bool final=true)
     {
         if (final)
-            out<<"\n# final best gibbs run (start #"<<beststart<<"):\n";
+            out<<"\n# final best gibbs run (start #"<<beststart<<" t="<<time<<"):\n";
         if (gopt.printing_sample())
             imp.print_sample(sample);
         print_norms();
