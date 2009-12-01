@@ -114,37 +114,55 @@ struct carmel_gibbs : public gibbs_base
         }
         if (w.isEmpty())
             return id;
-        if (nm.group==WFST::CONDITIONAL)
+        bool cond=nm.group==WFST::CONDITIONAL;
+        if (cond)
             w.indexInput();
         Weight ac=nm.add_count;
         double alpha=ac.getReal();
         bool uniformp0=gopt.uniformp0;
+        typedef dynamic_array<FSTArc *> U;
+        U unlocked; // we need to reverse arcs if conditional
         for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
             Weight sum=0;
-            double N=0;
-            Weight scale=one_weight();
             unsigned src=g.source();
             assert(src<w.numStates());
-            if (!gopt.uniformp0) {
-                for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-                    FSTArc const& a=**g;
-                    if (!a.isLocked()) {
-                        ++N;
-                        sum+=a.weight;
-                    }
-                }
-                if (N>0)
-                    scale=N/sum;
-            }
+            unlocked.clear();
             for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-                FSTArc & a=**g;
-                a.groupId=a.isLocked()
-                    ? define_param(a.weight.getReal())
-                    : define_param(id,(a.weight/sum).getReal(),alpha,N);
-            /* FIXME: slight semantic difference: prob for locked doesn't compete w/ others in this normgroup.  solution: fixed array remains[normgrp] to go along w/ normsum[normgrp].  p=remains[normgrp]*count/normsum[normgrp].  where remains[i]=1-sum (locked arcs' prob in grp i)*/
+                FSTArc &a=**g;
                 if (addarcs) arcs.push_back(&a);
                 if (addsource) arc_sources.push_back(src);
+                if (a.isLocked()) {
+                    a.groupId=define_param(a.weight.getReal());
+                    /* FIXME: slight semantic difference: prob for locked
+                     * doesn't compete w/ others in this normgroup.  solution:
+                     * fixed array remains[normgrp] to go along w/
+                     * normsum[normgrp].
+                     * p=remains[normgrp]*count/normsum[normgrp].  where
+                     * remains[i]=1-sum (locked arcs' prob in grp i)*/
+                } else {
+                    unlocked.push_back(&a);
+                    sum+=a.weight;
+                }
             }
+            unsigned N=unlocked.size();
+            /* old (5.2), working prior:
+               prior=p0init ? (ac*scale*a.weight) : ac; (p0init=!uniformp0)
+               where ac=alpha scale=N/sum
+
+               new: prior=gopt.uniformp0?alpha:alpha*prob*normsz;
+
+               these are the same, because prob=a.weight/sum
+            */
+            if (cond)
+                for (U::const_reverse_iterator i=unlocked.rbegin(),e=unlocked.rend();i!=e;++i) {
+                    FSTArc &a=**i;
+                    a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
+                }
+            else
+                for (U::const_iterator i=unlocked.begin(),e=unlocked.end();i!=e;++i) {
+                    FSTArc &a=**i;
+                    a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
+                }
             ++id;
         }
         return id;
@@ -169,7 +187,9 @@ struct carmel_gibbs : public gibbs_base
     {
         assert(parami<arcs.size());
         assert(parami<arc_sources.size());
-        wfst_for(parami).printArc(*arcs[parami],arc_sources[parami],out,false);
+        unsigned ci=cascadei_for(parami);
+        out<<ci;
+        wfst_ci(ci).printArc(*arcs[parami],arc_sources[parami],out,false);
     }
 
     WFST &composed;
@@ -201,10 +221,13 @@ struct carmel_gibbs : public gibbs_base
         assert(ci<cascade.cascade.size());
         return ci;
     }
+    WFST &wfst_ci(unsigned ci) const
+    {
+        return *cascade.cascade[ci];
+    }
     WFST &wfst_for(unsigned parami) const
     {
-        unsigned ci=cascadei_for(parami);
-        return *cascade.cascade[ci];
+        return wfst_ci(cascadei_for(parami));
     }
 
     // single path in composition -> separate paths for each in cascade[i], for i in [a,b) put result in r[i]
@@ -365,6 +388,7 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     bool em=gopt.init_em>0;
     bool restore=em && !gopt.em_p0;
     saved_weights_t saved,init_sample_weights;
+//    cascade.normalize(m2);  // not necessary because we divide a.weight by sum when adding gibbs params
     if (restore)
         cascade.save_weights(saved);
     if (em) {

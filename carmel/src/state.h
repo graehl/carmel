@@ -157,7 +157,7 @@ struct State {
             else
                 l->out=identity_fsa?l->in:0;
     }
-
+//fixme: push back
     void indexBy(int dir = 0) {
         List<HalfArc> *list;
         if ( dir ) {

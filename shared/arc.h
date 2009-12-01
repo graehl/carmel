@@ -18,7 +18,6 @@ struct FSTArc {
         input=0,output=1
     };
 
-
     int &symbol(int dir)
     {
         return dir ? out : in;
@@ -27,12 +26,10 @@ struct FSTArc {
     {
         return dir ? out : in;
     }
-
     bool is_epsilon(int dir) const
     {
         return symbol(dir)==epsilon;
     }
-
 
     int dest;
     Weight weight;
