@@ -206,6 +206,17 @@ class WFST {
         initAlphabet(1);
     }
 
+    void init_index()
+    {
+        indexed_by=State::none;
+    }
+
+    void init()
+    {
+        initAlphabet();
+        init_index();
+    }
+
     void train_prune(); // delete states with zero counts
 
     void deleteAlphabet(int dir) {
@@ -664,10 +675,15 @@ class WFST {
  public:
 
 
+    int indexed_by;
+
     void index(int dir) {
-        for ( int s = 0 ; s < numStates() ; ++s ) {
-            states[s].flush();
-            states[s].indexBy(dir);
+        if (indexed_by!=dir) {
+            indexed_by=dir;
+            for ( int s = 0 ; s < numStates() ; ++s ) {
+                states[s].flush();
+                states[s].indexBy(dir);
+            }
         }
     }
     void indexInput() {
@@ -692,19 +708,19 @@ class WFST {
             states[s].flush();
         }
     }
-    WFST() { initAlphabet(); named_states=0; final=0;states.push_back();}
+    WFST() { init(); named_states=0; final=0;states.push_back(); }
     //  WFST(const WFST &a):
     //ownerInOut(1), in(((a.in == 0)? 0:(NEW Alphabet(*a.in)))), out(((a.out == 0)? 0:(NEW Alphabet(*a.out)))),
     //stateNames(a.stateNames), final(a.final), states(a.states),
 
     WFST(istream & istr,bool alwaysNamed=false) {
-        initAlphabet();
+        init();
         if (!this->readLegible(istr,alwaysNamed))
             final = invalid_state;
     }
 
     WFST(const string &str, bool alwaysNamed){
-        initAlphabet();
+        init();
         if (!this->readLegible(str,alwaysNamed))
             final = invalid_state;
     }

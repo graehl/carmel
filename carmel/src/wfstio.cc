@@ -144,7 +144,7 @@ bufoverflow:
 WFST::WFST(const char *buf)
 {
     named_states=0;
-    initAlphabet();
+    init();
     istringstream line(buf);
     char symbol[DEFAULTSTRBUFSIZE];
     int symbolInNumber, symbolOutNumber;
@@ -186,7 +186,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
 // Generate a permutation lattice for a given string
 {
     named_states=0;
-    initAlphabet();
+    init();
     length = 0 ;
     istringstream line(buf);
     char symbol[DEFAULTSTRBUFSIZE];

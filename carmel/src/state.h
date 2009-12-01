@@ -34,7 +34,7 @@ struct IOPair {
 
 std::ostream & operator << (std::ostream &o, IOPair p);
 
-inline bool operator == (const IOPair l, const IOPair r) { 
+inline bool operator == (const IOPair l, const IOPair r) {
     return l.in == r.in && l.out == r.out;
 }
 
@@ -50,7 +50,7 @@ struct State {
     BOOST_STATIC_CONSTANT(int,input=0);
     BOOST_STATIC_CONSTANT(int,output=1);
     */
-    enum {input=0,output=1};
+    enum {input=0,output=1,none=2};
 
     typedef List<FSTArc> Arcs;
 
@@ -77,7 +77,7 @@ struct State {
     }
 
     template <class V>
-    void visit_arcs(unsigned s,V &v) 
+    void visit_arcs(unsigned s,V &v)
     {
         for (Arcs::val_iterator i=arcs.val_begin(),e=arcs.val_end();i!=e;++i) {
             v(s,*i);
@@ -91,7 +91,7 @@ struct State {
         typedef HashTable<G, Weight> HT;
         HT tied;
         modify_parameter_once(F const& f) : F(f) {}
-        void operator()(unsigned source,FSTArc &a) 
+        void operator()(unsigned source,FSTArc &a)
         {
             if (a.isLocked()) return;
             if (a.isNormal())
@@ -106,7 +106,7 @@ struct State {
             }
         }
     };
-    
+
     Arcs arcs;
     int size;
 #ifdef BIDIRECTIONAL
@@ -115,18 +115,18 @@ struct State {
     typedef HashTable<IntKey, List<HalfArc> > Index;
 
     template <class IOMap>
-    void index_io(IOMap &m) const 
+    void index_io(IOMap &m) const
     {
         for ( Arcs::const_iterator a=arcs.begin(),end=arcs.end() ; a != end ; ++a )
             m[IOPair(a->in,a->out)].push_back(const_cast<FSTArc*>(&*a));
     }
-    
+
     Index *index;
 
 //    typedef HashTable<
-    State() : arcs(), size(0), 
+    State() : arcs(), size(0),
 #ifdef BIDIRECTIONAL
-              hitcount(0), 
+              hitcount(0),
 #endif
               index(NULL) { }
     State(const State &s): arcs(s.arcs),size(s.size) {
@@ -137,18 +137,18 @@ struct State {
         index = (Index *) NULL ;
 //    else
 //     index = NEW Index(*s.index);
-    } 
+    }
     ~State() { flush(); }
 
-    void raisePower(double exponent=1.0) 
+    void raisePower(double exponent=1.0)
     {
         for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
             l->weight.raisePower(exponent);
     }
-    
+
 
     // input => left projection, output => right.  epsilon->string or string->epsilon (identity_fsa=true), or string->string (identity_fsa=false)
-    void project(int dir=input,bool identity_fsa=false) 
+    void project(int dir=input,bool identity_fsa=false)
     {
         flush();
         for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l )
@@ -157,7 +157,7 @@ struct State {
             else
                 l->out=identity_fsa?l->in:0;
     }
-    
+
     void indexBy(int dir = 0) {
         List<HalfArc> *list;
         if ( dir ) {
@@ -171,13 +171,13 @@ struct State {
                 return;
 #endif
             index = NEW Index(size);
-            for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; 
-                  l != end  ; 
+            for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ;
+                  l != end  ;
                   ++l ) {
 // if you distrust ht[key], I guess: //#define QUEERINDEX
 #ifdef QUEERINDEX
                 if ( !(list = find_second(*index,(IntKey)l->out)) )
-                    add(*index,(IntKey)l->out, 
+                    add(*index,(IntKey)l->out,
                         List<HalfArc>(&(*l)));
                 else
                     list->push_front(&(*l));
@@ -200,8 +200,8 @@ struct State {
         for ( Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
 #ifdef QUEERINDEX
             if ( !(list = find_second(*index,(IntKey)l->in)) )
-                add(*index,(IntKey)l->in, 
-                    List<HalfArc>(&(*l)));	
+                add(*index,(IntKey)l->in,
+                    List<HalfArc>(&(*l)));
             else
                 list->push_front(&(*l));
 #else
@@ -227,11 +227,11 @@ struct State {
 //        I b;
         typedef dynamic_array<State> StateVector;
         StateVector &states; // only safe because we *know* that only shallow copies are made in moving lists around
-        dynamic_array<I> bi; 
+        dynamic_array<I> bi;
         arc_adder(StateVector &states) : states(states)
                                        ,bi(states.size())
         {}
-        void operator()(unsigned i,FSTArc const& arc) 
+        void operator()(unsigned i,FSTArc const& arc)
         {
 //            states[i].addArc(arc); return;
             State &s=states[i];
@@ -242,12 +242,12 @@ struct State {
             *b++=arc;
 #else
             b=s.arcs.insert_after(b,arc);
-#endif 
+#endif
             ++s.size;
         }
     };
-    
-        
+
+
     FSTArc & addArc(const FSTArc &arc)
     {
         arcs.push(arc);
@@ -263,7 +263,7 @@ struct State {
         return arcs.top();
     }
 
-    static inline void combine_arc_weight(Weight &w,Weight d,bool sum,bool clamp) 
+    static inline void combine_arc_weight(Weight &w,Weight d,bool sum,bool clamp)
     {
         if (sum) {
             w+=d;
@@ -274,7 +274,7 @@ struct State {
                 w=d;
         }
     }
-    
+
     void reduce(bool sum=true,bool clamp=false) {		// consolidate all duplicate arcs
         flush();
         HashTable<UnArc, Weight *> hWeights;
@@ -289,7 +289,7 @@ struct State {
             un.out = l->out;
             un.dest = l->dest;
             if ( (ppWt = find_second(hWeights,un)) ) {
-                combine_arc_weight(**ppWt,l->weight,sum,clamp);	
+                combine_arc_weight(**ppWt,l->weight,sum,clamp);
                 l=remove(l);
             } else {
                 hWeights[un]= &l->weight; // add?
@@ -306,7 +306,7 @@ struct State {
             else
                 ++a;
     }
-    
+
     void prune(Weight thresh) {
         for ( Arcs::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end() ; l != end ;) {
             if ( l->weight < thresh ) {
@@ -325,34 +325,34 @@ struct State {
         for (Arcs::erase_iterator l=arcs.erase_begin(),end=arcs.erase_end(); l != end; ) {
             int &dest = (int &)l->dest;
             if ( oldToNew[dest] < 0 ) {
-                l=remove(l); 
+                l=remove(l);
             } else {
                 dest = oldToNew[dest];
                 ++l;
             }
         }
     }
-    
-    
-    void swap(State &b) 
+
+
+    void swap(State &b)
     {
         using std::swap;
         swap(size,b.size);
         swap(arcs,b.arcs);
-        swap(index,b.index); // safe only because List iterators are stable when lists are swapped        
+        swap(index,b.index); // safe only because List iterators are stable when lists are swapped
 #ifdef BIDIRECTIONAL
         swap(hitcount,b.hitcount);
-#endif 
+#endif
     }
 };
 
 
-inline void swap(State &a,State &b) 
+inline void swap(State &a,State &b)
 {
     a.swap(b);
 }
 
-          
+
 std::ostream& operator << (std::ostream &out, State &s); // Yaser 7-20-2000
 
 }//ns

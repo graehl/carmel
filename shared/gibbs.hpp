@@ -397,12 +397,7 @@ struct gibbs_base
     }
     double final_prob(gibbs_param const& p) const // like proposal_prob but safe for hole parameters skipped when defining by id
     {
-        if (p.has_norm()) {
-            double c=p.count();
-            return c>0?c/normsum[p.norm]:c;
-        } else
-            return p.prior;
-
+        return p.final_prob(normsum);
     }
     double proposal_prob(gibbs_param const&p) const
     {
@@ -581,63 +576,67 @@ struct gibbs_base
         print_width(out,d,gopt.width);
     }
     template <class G>
+    void print_count(unsigned i,G &imp,bool final=false)
+    {
+        bool sparse=gopt.print_counts_sparse!=0;
+        double ta=time+1;
+            gibbs_param const& p=gps[i];
+            delta_sum const& d=p.sumcount;
+            double avg=final?d.x/ta:d.avg(ta);  //d.x is an instantaneous (per-iter) count in non-final, but holds the total in the final iteration
+            if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
+                if (sparse)
+                    out<<i<<'\t';
+                if (p.has_norm())
+                    out<<p.norm;
+                else
+                    out<<"LOCKED";
+                if (final)
+                    print_field(avg);
+                else
+                    print_field(d.x); // inst. count
+                print_field(proposal_prob(i));
+                if (!final) {
+                    print_field(avg);
+                    print_field(d.tmax);
+                    print_field(p.prior);
+                }
+                if (gopt.rich_counts) {
+                    out<<'\t';
+                    imp.print_param(out,i);
+                }
+//                    out<<'\t'<<d.s;
+                out<<'\n';
+            }
+    }
+
+    void print_counts_header()
+    {
+        if (!gopt.printing_counts()) return;
+        bool sparse=gopt.print_counts_sparse!=0;
+        if (sparse)
+            out<<"id\t";
+        out<<"group\tcount\tprob";
+        double ta=time+1;
+        if (!final)
+            out<<"\tavg@"<<ta<<"\tlast@t\tprior";
+        if (gopt.rich_counts)
+            out<<"\tparam name";
+        if (!final)
+            out<<"\titer="<<iter;
+        out<<"\t"<<name;
+        out<<'\n';
+        out<<"\n#";
+    }
+
+    template <class G>
     void print_counts(G &imp,bool final=false,char const* name="")
     {
-        unsigned width=gopt.width;
-        if (width<4) width=20;
-/*        local_precision<std::ostream> prec(out,width);
-        local_stream_format<std::ostream> save(out);
-        out.precision(width);
-        out<<std::setw(width);*/
-        if (!gopt.printing_counts())
-            return;
+        if (!gopt.printing_counts()) return;
+        print_counts_header();
         unsigned from=gopt.print_counts_from;
         unsigned to=std::min(gopt.print_counts_to,gps.size());
-        if (to>from) {
-            out<<"\n#";
-            bool sparse=gopt.print_counts_sparse!=0;
-            if (sparse)
-                out<<"id\t";
-            out<<"group\tcount\tprob";
-            double ta=time+1;
-            if (!final)
-                out<<"\tavg@"<<ta<<"\tlast@t\tprior";
-            if (gopt.rich_counts)
-                out<<"\tparam name";
-            if (!final)
-                out<<"\titer="<<iter;
-            out<<"\t"<<name;
-            out<<'\n';
-            for (unsigned i=from;i<to;++i) {
-                gibbs_param const& p=gps[i];
-                delta_sum const& d=p.sumcount;
-                double avg=final?d.x/ta:d.avg(ta);  //d.x is an instantaneous (per-iter) count in non-final, but holds the total in the final iteration
-                if (!sparse || avg>=p.prior+gopt.print_counts_sparse) {
-                    if (sparse)
-                        out<<i<<'\t';
-                    if (p.has_norm())
-                        out<<p.norm;
-                    else
-                        out<<"LOCKED";
-                    if (final)
-                        print_field(avg);
-                    else
-                        print_field(d.x); // inst. count
-                    print_field(proposal_prob(i));
-                    if (!final) {
-                        print_field(avg);
-                        print_field(d.tmax);
-                        print_field(p.prior);
-                    }
-                    if (gopt.rich_counts) {
-                        out<<'\t';
-                        imp.print_param(out,i);
-                    }
-//                    out<<'\t'<<d.s;
-                    out<<'\n';
-                }
-            }
-        }
+        for (unsigned i=from;i<to;++i)
+            print_count(i,impl,final);
         out<<'\n';
     }
     template <class G>

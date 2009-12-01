@@ -684,6 +684,7 @@ class slist_shared :
         dealloc(tmp);
     }
 
+    // insert so *++x=y, and return ++x (repeated x=l.insert_after(x,y) means ys ordered from head to tail
     iterator insert_after (iterator const& x, const T& y)
     {
         if (x.m_rep==NULL) {

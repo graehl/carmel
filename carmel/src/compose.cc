@@ -138,6 +138,7 @@ struct TrioNamer {
 
 WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool groups)
 {
+    init_index();
     alph[0]=alph[1]=0;
     owner_alph[0]=owner_alph[1]=0;
     if (false && groups && !cascade.trivial)
@@ -147,6 +148,7 @@ WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool g
 
 WFST::WFST(WFST &a, WFST &b, bool namedStates, bool preserveGroups)
 {
+    init_index();
     alph[0]=alph[1]=0;
     owner_alph[0]=owner_alph[1]=0;
     cascade_parameters c;
