@@ -890,7 +890,10 @@ struct carmel_main
 
     void fem_in()
     {
-        random_set();
+        if (long_opts["random-set"]) {
+            show_seed();
+            fems.randomize(nms);
+        }
         if (!fem_inparam.empty()) {
             Config::log()<<"Reading cascade weights from --load-fem-param="<<fem_inparam<<endl;
             std::ifstream i(fem_inparam.c_str());
@@ -933,13 +936,6 @@ struct carmel_main
         }
     }
 
-    void random_set()
-    {
-        if (long_opts["random-set"]) {
-            show_seed();
-            cascade.randomize();
-        }
-    }
 
     void fem_stats()
     {
