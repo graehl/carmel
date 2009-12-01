@@ -191,6 +191,7 @@ struct gibbs_opts
     }
     void validate()
     {
+        if (width<4) width=20;
         if (no_prob) {
             cache_prob=cheap_prob=false;
         }

@@ -1,0 +1,10 @@
+Carmel is the first significant C++ I wrote.  It's pre-STL.  I wouldn't write it this way today, but it's not worth a rewrite.  Here are some things to watch out for:
+
+I wrote a node-based hashtable which means it's safe to directly contain a singly linked list by value (because nodes are never copied in normal hashtable operation).  This means you'd have horrible performance on grows if you switched to open hashing.  The gnu hashtable is also node-based.
+
+arcs' groupId field is reused as an index for other purposes (e.g. tracking lists of original cascade arcs in a composition, associating arcs w/ gibbs parameter ids)
+
+Command line option processing is gross.  I'd use boost program_options today.  --long options aren't spelling checked / closed-class.
+
+singly linked lists were used for arcs and other things, so as to be relatively memory-concise, and mutable.  a growing array (e.g. std::vector) might be better cache-locality and performance, and certainly lower space if compacted after e.g. reading lists from file (size won't change after that).
+

@@ -51,18 +51,17 @@ struct carmel_gibbs : public gibbs_base
     {
         for (unsigned i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
-            if (methods[i].group!=WFST::NONE)
-                w.visit_arcs(*this); // uses below operator()
+            WFST::NormalizeMethod const& nm=methods[i];
+            visit_wfst_params(*this,w,nm);
         }
     }
     // for probs_to_cascade()
     void operator()(unsigned src,FSTArc & f) const
     {
-        f.weight=gibbs_base::proposal_prob(gps[f.groupId]);
+        f.weight.setReal(gibbs_base::final_prob(f.groupId));
     }
 
-
-        enum { first_id=0 };
+    enum { first_id=0 };
 
     void set_gibbs_params(bool addarcs=false,bool addsource=false)
     {
@@ -127,6 +126,21 @@ struct carmel_gibbs : public gibbs_base
         }
         return id;
     }
+
+    //same order as add_gibbs_params ; important: conditional norm will give different param order than --fem-param etc.
+    template <class V>
+    void visit_wfst_params(V &v,WFST &w,WFST::NormalizeMethod const& nm) const
+    {
+        if (nm.group==WFST::NONE) return;
+        for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
+            unsigned src=g.source();
+            for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+                FSTArc &a=**g;
+                v(src,a);
+            }
+        }
+    }
+
     dynamic_array<unsigned> arc_sources;
     void print_param(std::ostream &out,unsigned parami) const
     {
