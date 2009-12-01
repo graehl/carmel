@@ -43,8 +43,31 @@ struct carmel_gibbs : public gibbs_base
     {
         gibbs_base::run_starts(*this);
         // copy weights to transd. so path weights are right?
-        gibbs_base::print_all(*this);
+        gibbs_base::print_all(*this,true);
         probs_to_cascade();
+    }
+
+    struct print_counts_f
+    {
+        carmel_gibbs &g;
+        unsigned from,to,i;
+        bool final;
+        print_counts_f(carmel_gibbs &g,unsigned from,unsigned to,bool final=false) : g(g),from(from),to(to),i(),final(final) {  }
+        bool operator()(FSTArc const& a)
+        {
+            if (i>=from && i<to) {
+                unsigned gi=a.groupId;
+                g.print_count(gi,g,final);
+            }
+            return (++i<to);
+        }
+    };
+
+    // print counts in fst file order, not normgroups order
+    void print_counts_body(carmel_gibbs & /*g*/,bool final,unsigned from,unsigned to)
+    {
+        print_counts_f p(*this,from,to,final);
+        cascade.visit_arcs(p);
     }
 
     void probs_to_cascade()
