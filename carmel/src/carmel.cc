@@ -51,6 +51,16 @@ char *MarcuArgs[]={
 };
 #endif
 
+static unsigned seed;
+static bool seed_shown=false;
+
+static void show_seed()
+{
+    if (seed_shown) return;
+    seed_shown=true;
+    Config::log() << "Using random seed -R "<<seed<<endl;
+}
+
 static void setOutputFormat(bool *flags,ostream *fstout) {
     WFST::output_format(flags,fstout);
     return;
@@ -672,10 +682,14 @@ struct carmel_main
         maybe_sink(result);
         if ( flags['v'] )
             result->invert();
-        if ( flags['1'] )
+        if ( flags['1'] ) {
+            show_seed();
             result->randomScale();
-        if ( long_opts["random-set"] )
+        }
+        if ( long_opts["random-set"] ) {
+            show_seed();
             result->randomSet();
+        }
         if (flags['n'])
             normalize(result);
 
@@ -876,6 +890,7 @@ struct carmel_main
 
     void fem_in()
     {
+        random_set();
         if (!fem_inparam.empty()) {
             Config::log()<<"Reading cascade weights from --load-fem-param="<<fem_inparam<<endl;
             std::ifstream i(fem_inparam.c_str());
@@ -915,6 +930,14 @@ struct carmel_main
             Config::log()<<"Writing forest-em alpha to --fem-alpha="<<fem_alpha<<endl;
             std::ofstream o(fem_alpha.c_str());
             fems.fem_alpha(o,nms);
+        }
+    }
+
+    void random_set()
+    {
+        if (long_opts["random-set"]) {
+            show_seed();
+            cascade.randomize();
         }
     }
 
@@ -980,7 +1003,7 @@ main(int argc, char *argv[]){
     for ( i = 0 ; i < 256 ; ++i ) argflags[i]=flags[i] = 0;
     char *pc;
     char const**parm = NEW char const *[argc-1];
-    unsigned int seed = default_random_seed();//(unsigned int )std::time(NULL);
+    seed = default_random_seed();//(unsigned int )std::time(NULL);
     int nParms = 0;
     int kPaths = 0;
     int thresh = 32;
@@ -1166,7 +1189,6 @@ main(int argc, char *argv[]){
     }
     bool prunePath = flags['w'] || flags['z'];
 
-    Config::log() << "Using random seed -R "<<seed<<endl;
     srand(seed);
     set_random_seed(seed);
     setOutputFormat(flags,0); // set default for all streams
@@ -1539,6 +1561,7 @@ main(int argc, char *argv[]){
                     cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
                 }
             } else if ( flags['t'] ) {
+                show_seed();
                 training_corpus corpus;
                 if (pairStream) {
                     result->read_training_corpus(*pairStream,corpus);
@@ -1566,6 +1589,7 @@ main(int argc, char *argv[]){
                 if ( maxGenArcs == 0 )
                     maxGenArcs = DEFAULT_MAX_GEN_ARCS;
                 if ( flags['G'] ) {
+                    show_seed();
                     for (int i=0; i<nGenerate; ) {
                         List<PathArc> l;
                         if (result->randomPath(&l) != -1) {

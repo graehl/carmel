@@ -127,7 +127,7 @@ struct gibbs_param
     {
         if (has_norm()) {
             double c=count();
-            return c>0?c/normsum[norm]:c;
+            return c>0?c/normsum[norm]:0;
         } else
             return prior;
     }
