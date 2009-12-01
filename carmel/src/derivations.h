@@ -13,6 +13,9 @@
 special form of compose: input string * transducer * output string (more efficient than compose.h (input string * transducer) * output string.
 
 NOTE: grapharc data field is an unsigned index into an arcs_table (which has the fstarc * and possibly ancillary counts).  for gibbs+cascade, link directly to cascade would be sufficient.
+
+believe/check: only one (composed) arc between any 2 states, because each state is cascade-state-tuple,i-pos,o-pos.  change in i,o pos determines label of arc.  with -a composition, that means only one cascade arc between any 2 deriv states.
+
 */
 #include <graehl/shared/weight.h>
 #include <boost/utility.hpp>

@@ -75,13 +75,14 @@ struct carmel_gibbs : public gibbs_base
         for (unsigned i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
             WFST::NormalizeMethod const& nm=methods[i];
-            visit_wfst_params(*this,w,nm);
+//            visit_wfst_params(*this,w,nm);
+            w.visit_arcs(*this);
         }
     }
     // for probs_to_cascade()
-    void operator()(unsigned src,FSTArc & f) const
+    void operator()(unsigned src,FSTArc & a) const
     {
-        f.weight.setReal(gibbs_base::final_prob(f.groupId));
+        a.weight.setReal(gibbs_base::final_prob(a.groupId));
     }
 
     enum { first_id=0 };
@@ -153,7 +154,7 @@ struct carmel_gibbs : public gibbs_base
 
                these are the same, because prob=a.weight/sum
             */
-            if (cond)
+            if (cond&&!gopt.norm_order) // FIXME: getting reversed arcs is only useful for comparison to old carmel print-counts e.g. 5.2.  should just be if (cond) once that's debugged
                 for (U::const_reverse_iterator i=unlocked.rbegin(),e=unlocked.rend();i!=e;++i) {
                     FSTArc &a=**i;
                     a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
