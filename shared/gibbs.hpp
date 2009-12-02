@@ -600,7 +600,7 @@ struct gibbs_base
                 print_field(avg);
             else
                 print_field(d.x); // inst. count
-            print_field(proposal_prob(i));
+            print_field(final_prob(i));
             if (!final) {
                 print_field(avg);
                 print_field(lastat);

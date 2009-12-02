@@ -344,7 +344,7 @@ struct carmel_main
             get_opt("crp-restarts",gopt.restarts);
             gopt.argmax_final=have_opt("crp-argmax-final");
             gopt.argmax_sum=have_opt("crp-argmax-sum");
-            gopt.norm_order=have_opt("normgroup-order");
+            gopt.norm_order=have_opt("norm-order");
             gopt.exclude_prior=have_opt("crp-exclude-prior");
             get_opt("init-em",gopt.init_em);
             gopt.em_p0=have_opt("em-p0");
@@ -2004,6 +2004,7 @@ cout <<         "\n"
         "--print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
         "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
         "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
+        "--norm-order : print counts in gibbs param id order (different from fst file order for conditional); params for a normgroup will always be consecutive\n"
         "--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)\n"
         "--print-counts-rich : show cascade arc associated with each count\n"
         "--width : for --print-counts, truncate numbers to this many chars wide\n"
