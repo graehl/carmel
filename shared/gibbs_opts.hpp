@@ -91,7 +91,7 @@ struct gibbs_opts
                  "With init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)")
                 ("uniform-p0",defaulted_value(&uniformp0)->zero_tokens(),
                  "Use a uniform base probability model for --crp, even when the input WFST have weights.  --em-p0 overrides this.")
-                ("normgroup-order",defaulted_value(&norm_order)->zero_tokens(),
+                ("norm-order",defaulted_value(&norm_order)->zero_tokens(),
                  "Print arc counts in normgroup (consecutive gibbs param id) order rather than WFST file order")
                 ;
     }

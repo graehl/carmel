@@ -295,19 +295,6 @@ struct carmel_gibbs : public gibbs_base
             cascadei.add_delta(cascade.cascade[i]->n_edges());
     }
 
-    struct p_init
-    {
-        carmel_gibbs const&c;
-        p_init(carmel_gibbs const&c) : c(c) {  }
-        double operator()(GraphArc const& a) const
-        {
-            return c.composed_arc(a)->weight.getReal(); //TESTME
-        }
-        void choose_arc(GraphArc const& a) const
-        {
-            return c.choose_arc(a);
-        }
-    };
 #define OUTGIBBS3(x) //OUTGIBBS(x)
     double block_weight(unsigned block)
     {
@@ -331,11 +318,26 @@ struct carmel_gibbs : public gibbs_base
         for (param_list p=ac(grapharc);p;p=p->next) { \
             unsigned paramid=p->data->groupId; \
             body; }
-    //for resample block:
-    // *this is used as WeightFor in derivations pfor,random_path:
+
 #define OUTGIBBS2(x) //OUTGIBBS(x)
 #define DGIBBS2(x) //x
 
+    // for resample block:
+    struct p_init
+    {
+        carmel_gibbs const&c;
+        p_init(carmel_gibbs const&c) : c(c) {  }
+        double operator()(GraphArc const& a) const
+        {
+            return c.composed_arc(a)->weight.getReal(); //TESTME
+        }
+        void choose_arc(GraphArc const& a) const
+        {
+            return c.choose_arc(a);
+        }
+    };
+    //for resample block:
+    // *this is used as WeightFor in derivations pfor,random_path:
     Weight operator()(GraphArc const& a) const
     {
         Weight prob=one_weight();

@@ -1,6 +1,17 @@
-//provides access to a collection of objects larger than virtual memory allows, by explicitly mapping a region to disk files which are (re)mapped on demand.  objects must provide a read method that constructs the object to contiguous memory.  input must support seek() to handle out-of-space retries.
-// WARNING: references returned by iterator are potentially invalidated any time a different-valued iterator is created or used
-//FIXME: real support for random access
+/*
+  provides access to a collection of objects larger than virtual memory allows,
+  by explicitly mapping a region to disk files which are (re)mapped on demand.
+  objects must provide a read method that constructs the object to contiguous
+  memory.  input must support seek() to handle out-of-space retries.  your
+  object will be stored in memory (saved/loaded) in a fixed location as a POD.
+  so you should refer only to heap structures obtained from StackAlloc::alloc*
+  in your read(istream &,this,StackAlloc &)
+
+   WARNING: references returned by iterator are potentially invalidated any time
+   a different-valued iterator is created or used
+
+   FIXME: real support for random access
+*/
 #ifndef GRAEHL_SHARED__SWAPBATCH_HPP
 #define GRAEHL_SHARED__SWAPBATCH_HPP
 
@@ -314,7 +325,7 @@ struct SwapBatch {
     void print_stats(std::ostream &out) const {
         out << size() << " items in " << n_batches() << " batches of " << batchsize << " bytes, stored in " << basename << "N";
     }
-    size_type *d_tail;
+    size_type *d_tail; // write here: offset in size_types to next item.  could be an offset in bytes but both fields are size_type aligned for sure.
     BatchMember *read_one(std::istream &is)
     {
         BACKTRACE;
@@ -323,10 +334,10 @@ struct SwapBatch {
         bool first=true;
         void *save;
     again:
-        save=space.save_end();
+        save=space.save_end(); // for reservation:
         BatchMember *newguy;
         try {
-            space.alloc_end<size_type>(); // precautionary: ensure we can alloc new d_tail.
+            space.alloc_end<size_type>(); // reservation: ensure we can alloc new d_tail.
             DBP(space.remain());
             newguy=space.aligned_alloc<BatchMember>();
             DBP2((void*)newguy,space.remain());
@@ -353,7 +364,7 @@ struct SwapBatch {
         // ELSE: read was success!
         ++total_items;
         DBP2(save,space.end);
-        space.restore_end(save);
+        space.restore_end(save); // release d_tail reservation
         DBP2(space.top,space.end);
         size_type *d_last_tail=d_tail;
         Assert(space.capacity<size_type>());
@@ -464,7 +475,6 @@ void read(std::istream &in,const char * &b,StackAlloc &a) {
             a.alloc<char>(); // space for this char (actually, the next)
             *p++=c;
         }
-
     }
     *p=0;
     // # alloc<char> = # p increments, + 1.  good.
