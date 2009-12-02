@@ -95,22 +95,33 @@ struct carmel_gibbs : public gibbs_base
             norm=add_gibbs_params(norm,w,nm,addarcs,addsource);
         }
     }
-    // add params w/ norm group==NONE
-    void operator()(FSTArc const& a)
-    {
-        define_param(a.weight.getReal());
-        const_cast<FSTArc&>(a).groupId=gps.size();
-    }
 
     typedef dynamic_array<FSTArc *> arc_for_param_t;
     arc_for_param_t arcs;
+
+    // add params w/ norm group==NONE
+    struct add_gibbs_nonorm
+    {
+        carmel_gibbs &self;
+        bool add_arcs,add_source;
+        add_gibbs_nonorm(carmel_gibbs &self,bool add_arcs,bool add_source) : self(self),add_arcs(add_arcs),add_source(add_source) {  }
+        void operator()(unsigned src,FSTArc & a)
+        {
+            a.groupId=self.define_param(a.weight.getReal());
+            if (add_arcs) self.arcs.push_back(&a);
+            if (add_source) self.arc_sources.push_back(src);
+        }
+    };
+
+
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
     // return next free normgroup id, start at normidbase
     unsigned add_gibbs_params(unsigned /*normgroup start*/ id,WFST &w,WFST::NormalizeMethod const& nm,bool addarcs=false,bool addsource=false)
     {
         if (nm.group==WFST::NONE) {
 //            w.lockArcs();
-            w.visit_arcs_sourceless(*this);
+            add_gibbs_nonorm v(*this,addarcs,addsource);
+            w.visit_arcs(v);
             return id;
         }
         if (w.isEmpty())

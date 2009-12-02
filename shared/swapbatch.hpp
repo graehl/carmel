@@ -5,7 +5,9 @@
   memory.  input must support seek() to handle out-of-space retries.  your
   object will be stored in memory (saved/loaded) in a fixed location as a POD.
   so you should refer only to heap structures obtained from StackAlloc::alloc*
-  in your read(istream &,this,StackAlloc &)
+  in your read(istream &,this,StackAlloc &).  note: if you have no temp/volatile
+  fields in your object, then set rw=false in SwapBatch constructor to enforce
+  memory protection.
 
    WARNING: references returned by iterator are potentially invalidated any time
    a different-valued iterator is created or used
@@ -233,7 +235,7 @@ struct SwapBatch {
         throw std::range_error("index for swapbatch[] is past end");
     }
 
-
+    bool rw;
     size_type n_batch;
     std::string basename;
     mapped_file memmap;
@@ -300,7 +302,7 @@ struct SwapBatch {
         if (i >= n_batch)
             throw std::range_error("batch swapfile index too large");
         loaded_batch=(unsigned)-1;
-        memmap.reopen(batch_name(i),std::ios::in,batchsize,0,false);
+        memmap.reopen(batch_name(i),std::ios::in|(rw?std::ios::out:0),batchsize,0,false);
         loaded_batch=i;
     }
     void remove_batches() {
@@ -438,7 +440,7 @@ struct SwapBatch {
         }
     }
 
-    SwapBatch(const std::string &basename_,size_type batch_bytesize) : basename(basename_),batchsize(batch_bytesize), autodelete(true) {
+    SwapBatch(const std::string &basename_,size_type batch_bytesize,bool rw=true) : rw(rw),basename(basename_),batchsize(batch_bytesize), autodelete(true) {
         BACKTRACE;
         total_items=0;
         n_batch=0;

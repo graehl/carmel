@@ -6,8 +6,8 @@
 // License: http://www.boost.org/LICENSE_1_0.txt.)
 
 
-#ifndef MEMMAP_HPP
-#define MEMMAP_HPP
+#ifndef GRAEHL_SHARED__MEMMAP_HPP
+#define GRAEHL_SHARED__MEMMAP_HPP
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/backtrace.hpp>
 #ifdef TEST
