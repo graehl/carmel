@@ -284,9 +284,9 @@ struct SwapBatch {
 //                DBP3((void *)base,(void *)batchsize_rounded_up,(void *)(base-batchsize_rounded_up));
                 base -= batchsize_rounded_up;
             }
-            memmap.open(batch_name(n_batch),std::ios::out,batchsize,0,true,base,true); // creates new file and memmaps
+            memmap.open(batch_name(n_batch),readmode,batchsize,0,true,base,true); // creates new file and memmaps
         } else {
-            memmap.reopen(batch_name(n_batch),std::ios::out,batchsize,0,true); // creates new file and memmaps
+            memmap.reopen(batch_name(n_batch),readmode,batchsize,0,true); // creates new file and memmaps
         }
         loaded_batch=n_batch++;
         space.init(memmap.begin(),memmap.end());
@@ -302,7 +302,7 @@ struct SwapBatch {
         if (i >= n_batch)
             throw std::range_error("batch swapfile index too large");
         loaded_batch=(unsigned)-1;
-        memmap.reopen(batch_name(i),std::ios::in|(rw?std::ios::out:0),batchsize,0,false);
+        memmap.reopen(batch_name(i),loadmode,batchsize,0,false);
         loaded_batch=i;
     }
     void remove_batches() {
@@ -440,7 +440,10 @@ struct SwapBatch {
         }
     }
 
+    std::ios::openmode readmode,loadmode;
     SwapBatch(const std::string &basename_,size_type batch_bytesize,bool rw=true) : rw(rw),basename(basename_),batchsize(batch_bytesize), autodelete(true) {
+        readmode=rw ? (std::ios::in|std::ios::out) : std::ios::out;
+        loadmode=rw ? (std::ios::in|std::ios::out) : std::ios::in;
         BACKTRACE;
         total_items=0;
         n_batch=0;
