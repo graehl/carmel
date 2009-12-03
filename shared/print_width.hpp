@@ -90,6 +90,7 @@ template <class C, class T>
 std::basic_ostream<C,T>&
 print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
 {
+    const double epsilon=1e-8;
 //    return o << std::setprecision(width) << d;
     if (width>=20 || d==0. || width <=0) {
         o<<d;
@@ -104,7 +105,7 @@ print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
         p=-d;
         --width;
     }
-    double wholes=std::log10(p); //1: log=0, digits=1
+    double wholes=std::log10(p*(1+epsilon)); //1: log=0, digits=1
     if (wholes<=width && d==(double)(int)d)
         return o<<d;
     if (p<1) {
