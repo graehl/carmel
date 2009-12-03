@@ -107,76 +107,89 @@ struct carmel_gibbs : public gibbs_base
         add_gibbs_nonorm(carmel_gibbs &self,bool add_arcs,bool add_source) : self(self),add_arcs(add_arcs),add_source(add_source) {  }
         void operator()(unsigned src,FSTArc & a)
         {
-            a.groupId=self.define_param(a.weight.getReal());
-            if (add_arcs) self.arcs.push_back(&a);
-            if (add_source) self.arc_sources.push_back(src);
+            self.add_locked(src,a,add_arcs,add_source);
         }
     };
+
+    void record_arc(unsigned src,FSTArc &a,bool add_arcs,bool add_source)
+    {
+        if (add_arcs) arcs.push_back(&a);
+        if (add_source) arc_sources.push_back(src);
+    }
+
+    void add_locked(unsigned src,FSTArc &a,bool add_arcs,bool add_source)
+    {
+        a.groupId=define_param(a.weight.getReal());
+        record_arc(src,a,add_arcs,add_source);
+    }
 
 
     // compute the prior pseudocount gps[i].prior as alpha*M*p0 where M is the size of the normgroup and p0 is the (normalized) value on the arc.  if uniformp0, then pseudocount is just alpha (same as uniform p0)
     // return next free normgroup id, start at normidbase
-    unsigned add_gibbs_params(unsigned /*normgroup start*/ id,WFST &w,WFST::NormalizeMethod const& nm,bool addarcs=false,bool addsource=false)
+    unsigned add_gibbs_params(unsigned /*normgroup start*/ id,WFST &w,WFST::NormalizeMethod const& nm,bool add_arcs=false,bool add_source=false)
     {
         if (nm.group==WFST::NONE) {
 //            w.lockArcs();
-            add_gibbs_nonorm v(*this,addarcs,addsource);
+            add_gibbs_nonorm v(*this,add_arcs,add_source);
             w.visit_arcs(v);
-            return id;
-        }
-        if (w.isEmpty())
-            return id;
-        bool cond=nm.group==WFST::CONDITIONAL;
-        if (cond)
-            w.indexInput();
-        Weight ac=nm.add_count;
-        double alpha=ac.getReal();
-        bool uniformp0=gopt.uniformp0;
-        typedef dynamic_array<FSTArc *> U;
-        U unlocked; // we need to reverse arcs if conditional
-        for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
-            Weight sum=0;
-            unsigned src=g.source();
-            assert(src<w.numStates());
-            unlocked.clear();
-            for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
-                FSTArc &a=**g;
-                if (addarcs) arcs.push_back(&a);
-                if (addsource) arc_sources.push_back(src);
-                if (a.isLocked()) {
-                    a.groupId=define_param(a.weight.getReal());
-                    /* FIXME: slight semantic difference: prob for locked
-                     * doesn't compete w/ others in this normgroup.  solution:
-                     * fixed array remains[normgrp] to go along w/
-                     * normsum[normgrp].
-                     * p=remains[normgrp]*count/normsum[normgrp].  where
-                     * remains[i]=1-sum (locked arcs' prob in grp i)*/
-                } else {
-                    unlocked.push_back(&a);
-                    sum+=a.weight;
+        } else if (!w.isEmpty()) {
+            bool cond=nm.group==WFST::CONDITIONAL;
+            if (cond)
+                w.indexInput();
+            Weight ac=nm.add_count;
+            double alpha=ac.getReal();
+            bool uniformp0=gopt.uniformp0;
+            typedef dynamic_array<FSTArc *> U;
+            U unlocked; // we need to reverse arcs if conditional
+            for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
+                Weight sum=0;
+                unsigned src=g.source();
+                assert(src<w.numStates());
+                unlocked.clear();
+                for ( g.beginArcs(); g.moreArcs(); g.nextArc()) {
+                    FSTArc &a=**g;
+                    if (a.isLocked()) {
+                        add_locked(src,a,add_arcs,add_source);
+                        /* FIXME: slight semantic difference: prob for locked
+                         * doesn't compete w/ others in this normgroup.  solution:
+                         * fixed array remains[normgrp] to go along w/
+                         * normsum[normgrp].
+                         * p=remains[normgrp]*count/normsum[normgrp].  where
+                         * remains[i]=1-sum (locked arcs' prob in grp i)*/
+                    } else {
+                        unlocked.push_back(&a);
+                        sum+=a.weight;
+                    }
                 }
+                unsigned N=unlocked.size();
+                /* old (5.2), working prior:
+                   prior=p0init ? (ac*scale*a.weight) : ac; (p0init=!uniformp0)
+                   where ac=alpha scale=N/sum
+
+                   new: prior=gopt.uniformp0?alpha:alpha*prob*normsz;
+
+                   these are the same, because prob=a.weight/sum
+                */
+                if (cond)
+                    for (U::const_reverse_iterator i=unlocked.rbegin(),e=unlocked.rend();i!=e;++i) {
+                        FSTArc &a=**i;
+                        a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
+                        record_arc(src,a,add_arcs,add_source);
+
+                    }
+                else
+                    for (U::const_iterator i=unlocked.begin(),e=unlocked.end();i!=e;++i) {
+                        FSTArc &a=**i;
+                        //FIXME: avoid duplicated code w/ above (only order differs; reverse in place?)
+                        a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
+                        record_arc(src,a,add_arcs,add_source);
+
+                    }
+                ++id;
             }
-            unsigned N=unlocked.size();
-            /* old (5.2), working prior:
-               prior=p0init ? (ac*scale*a.weight) : ac; (p0init=!uniformp0)
-               where ac=alpha scale=N/sum
-
-               new: prior=gopt.uniformp0?alpha:alpha*prob*normsz;
-
-               these are the same, because prob=a.weight/sum
-            */
-            if (cond&&!gopt.norm_order) // FIXME: getting reversed arcs is only useful for comparison to old carmel print-counts e.g. 5.2.  should just be if (cond) once that's debugged
-                for (U::const_reverse_iterator i=unlocked.rbegin(),e=unlocked.rend();i!=e;++i) {
-                    FSTArc &a=**i;
-                    a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
-                }
-            else
-                for (U::const_iterator i=unlocked.begin(),e=unlocked.end();i!=e;++i) {
-                    FSTArc &a=**i;
-                    a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
-                }
-            ++id;
         }
+        assert(!add_arcs || arcs.size()==gps.size());
+        assert(!add_source || arc_sources.size()==gps.size());
         return id;
     }
 
