@@ -1,5 +1,7 @@
 #!/bin/bash
 . ~graehl/isd/hints/bashlib.sh
+extract=${extract:-`which extract`}
+extract=`realpath $extract`
 function one {
     perl -pe 's/$/ 1/' "$@"
 }
