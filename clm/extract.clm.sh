@@ -59,7 +59,7 @@ for i in `seq 1 $nc`; do
     sl=$((el-chunksz+1))
     oxi=$ox.c$i
     #-G -T
-    echo extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -x /dev/null -g 1 -l 1000:$bign -m 5000 -O -i -X
+    echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -x /dev/null -g 1 -l 1000:$bign -m 5000 -O -i -X
 done
 ) | $grf -
 for d in left right; do
