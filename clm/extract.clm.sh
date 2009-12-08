@@ -1,11 +1,5 @@
 #!/bin/bash
-#TODO: parallelize (giraffe) ghkm chunks, pipe preproc straight to ngram-count w/o intermediate file?
-ix=${ix:-training}
-ox=${ox:-x}
-set -x
-extract "$@" -w $ox.left -W $ox.right -s 0 -e ${head:-999999999} -N ${N:=3} -r $ix -x ${ruleout:=/dev/null} -G - -g 1 -l 1000:${bign:=0} -m 5000 -O -T -i -X
-set +x
-set -e
+. ~graehl/isd/hints/bashlib.sh
 function one {
     perl -pe 's/$/ 1/' "$@"
 }
@@ -43,12 +37,35 @@ function clm_from_counts {
 #    rm $Ev
 }
 
-for f in $ox.left $ox.right; do
-    sort $f | uniq | filt > $f.u
-#    filt < $f > $f.d
-    ulm=$f.$N.srilm
-    clm_from_counts $f.u $ulm
-    show $f.u $ulm
-done
+###
 
-wc -l $ruleout $ox*.u
+#TODO: parallelize (giraffe?) ghkm chunks, pipe preproc straight to ngram-count w/o intermediate file?
+grf=${grf:-giraffe}
+ix=${ix:-training}
+ox=${ox:-x}
+chunksz=${chunksz:-100000}
+nl=`nlines $ix.e`
+nc=$(((nl+chunksz-1)/chunksz))
+N=${N:-3}
+bign=${bign:-0}
+echo "$((nc)) chunks of $chunksz ea. for $nl lines.  $N-gram i=$ix o=$ox bign=$bign"
+set -e
+(
+for i in `seq 1 $nc`; do
+    el=$((chunksz*i))
+    sl=$((el-chunksz+1))
+    oxi=$ox.c$i
+    #-G -T
+    echo extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -x /dev/null -g 1 -l 1000:$bign -m 5000 -O -i -X
+done
+) | $grf -
+for d in left right; do
+    (
+    dp=$ox.$d
+    sort $ox.c*.$d | uniq | filt > $dp
+    ulm=$dp.$N.srilm
+    clm_from_counts $ox.$d.u $ulm
+    show $dp $ulm
+    )&
+done
+wait
