@@ -1,6 +1,10 @@
 * unique-per-location (extract -X | sort | uniq) counts can be obtained with minimal rules.
 
-I'm supplying only max-order counts to SRI's ngram-count -read counts-file; it seems to write an lm with lower-order counts filled in for me, which is nice.  This is safe to do, right?
+
+> Finally, I'll note that I'm supplying only max-order counts to SRI's ngram-count -read counts-file; it seems to write an lm with lower-order counts filled in for me, which is nice.  This is safe to do, right?
+>
+
+WRONG! - this is true only for unigrams; singleton trigram "Efrom Eapart F<s>" didn't include any Eapart in the trained lm unless I also included an explicit count for bigram "Eapart F<s>".
 
 =============
 
