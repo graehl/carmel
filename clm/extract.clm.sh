@@ -51,7 +51,7 @@ nl=`nlines $ix.e`
 nc=$(((nl+chunksz-1)/chunksz))
 N=${N:-3}
 bign=${bign:-0}
-echo "$((nc)) chunks of $chunksz ea. for $nl lines.  $N-gram i=$ix o=$ox bign=$bign"
+banner "$((nc)) chunks of $chunksz ea. for $nl lines.  $N-gram i=$ix o=$ox bign=$bign"
 set -e
 (
 for i in `seq 1 $nc`; do
@@ -62,12 +62,13 @@ for i in `seq 1 $nc`; do
     echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -x /dev/null -g 1 -l 1000:$bign -m 5000 -O -i -X
 done
 ) | $grf -
+header DONE WITH GHKM
 for d in left right; do
     (
     dp=$ox.$d
     sort $ox.c*.$d | uniq | filt > $dp
     ulm=$dp.$N.srilm
-    clm_from_counts $ox.$d.u $ulm
+    clm_from_counts $dp $ulm
     show $dp $ulm
     )&
 done
