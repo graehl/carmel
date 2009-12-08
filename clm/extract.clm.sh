@@ -1,4 +1,5 @@
 #!/bin/bash
+#TODO: parallelize (giraffe) ghkm chunks, pipe preproc straight to ngram-count w/o intermediate file?
 ix=${ix:-training}
 ox=${ox:-x}
 set -x
@@ -36,8 +37,7 @@ function clm_from_counts {
     local unkargs="-unk"
     local ngoargs="-order $ngram"
     local noprune="-minprune $((ngram+1))"
-    local smoothargs="-cdiscount 0"
-    #"-wbdiscount"
+    local smoothargs="-wbdiscount"
 #kn discount fails when contexts are not events.
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $out $*
 #    rm $Ev
