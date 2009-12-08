@@ -1,6 +1,6 @@
 // wraps Boost or regular random number generators
-#ifndef RANDOM_HPP
-#define RANDOM_HPP
+#ifndef GRAEHL_SHARED__RANDOM_HPP
+#define GRAEHL_SHARED__RANDOM_HPP
 
 #include <graehl/shared/myassert.h>
 
