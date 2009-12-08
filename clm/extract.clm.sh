@@ -39,6 +39,7 @@ function clm_from_counts {
 
 ###
 
+function main {
 #TODO: parallelize (giraffe?) ghkm chunks, pipe preproc straight to ngram-count w/o intermediate file?
 grf=${grf:-giraffe}
 ix=${ix:-training}
@@ -69,3 +70,6 @@ for d in left right; do
     )&
 done
 wait
+}
+
+main
