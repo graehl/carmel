@@ -75,4 +75,4 @@ done
 wait
 }
 
-main
+[ "$nomain" ] || main
