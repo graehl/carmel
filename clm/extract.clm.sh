@@ -19,6 +19,9 @@ function show {
 function Evocab {
     perl -ne '$e{$2}=1 while /(^| )(E\S+)/g;END{print "$_\n" for (keys %e)}' "$@"
 }
+function stripEF {
+    perl -pi -e 's/(\s)[EF](\S+)/$1$2/go' "$@"
+}
 function clm_from_counts {
     local count=${1:?'Ea Eb Fc x' e.g. x=1 time, clm ngram counts.  E... are all nonevents (context), F... is predicted.  env N=3 means trigram}
     shift
@@ -36,10 +39,10 @@ function clm_from_counts {
 #kn discount fails when contexts are not events.
     set -x
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $out $*
+    [ "$stripEF" ] && stripEF $out
     set +x
 #    rm $Ev
 }
-
 ###
 
 function main {
@@ -73,7 +76,7 @@ for d in left right; do
     sort $dfiles | uniq | filt > $dp
     tar -cjf $ox.$d.ghkm.tar.bz2 $dfiles && rm $dfiles
     ulm=$dp.$N.srilm
-    clm_from_counts $dp $ulm
+    stripEF=1 clm_from_counts $dp $ulm
     show $dp $ulm
     bzip2 $dp
     ) &
