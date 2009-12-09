@@ -20,22 +20,23 @@ function Evocab {
     perl -ne '$e{$2}=1 while /(^| )(E\S+)/g;END{print "$_\n" for (keys %e)}' "$@"
 }
 function clm_from_counts {
-    local count=${1:?'Ea Eb Fc x' e.g. x=1 time, clm ngram counts.  E... are all nonevents (context), F... is predicted}
+    local count=${1:?'Ea Eb Fc x' e.g. x=1 time, clm ngram counts.  E... are all nonevents (context), F... is predicted.  env N=3 means trigram}
     shift
-    local out=$1
+    local ngram=${N:-3}
+    local out=${1:-$count.$ngram.srilm}
     shift
-    name=Evocab ngram=${N:-3}
     local Ev=$count.Ev
     #`mktemp`
     Evocab $count > $Ev
     show $count $Ev
-    echo using ngram order N=$ngram
     local unkargs="-unk"
     local ngoargs="-order $ngram"
     local noprune="-minprune $((ngram+1))"
     local smoothargs="-wbdiscount"
 #kn discount fails when contexts are not events.
+    set -x
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $out $*
+    set +x
 #    rm $Ev
 }
 
@@ -53,24 +54,29 @@ N=${N:-3}
 bign=${bign:-0}
 banner "$((nc)) chunks of $chunksz ea. for $nl lines.  $N-gram i=$ix o=$ox bign=$bign"
 set -e
-(
+lfiles=""
+rfiles=""
+rm -f $ox.c*.{left,right}
 for i in `seq 1 $nc`; do
     el=$((chunksz*i))
     sl=$((el-chunksz+1))
     oxi=$ox.c$i
     #-G -T
     echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -x /dev/null -g 1 -l 1000:$bign -m 5000 -O -i -X
-done
-) | $grf -
+done | $grf -
 header DONE WITH GHKM
 for d in left right; do
     (
     dp=$ox.$d
-    sort $ox.c*.$d | uniq | filt > $dp
+    dfiles=$ox.c*.$d
+    showvars_required dfiles
+    sort $dfiles | uniq | filt > $dp
+    tar -cjf $ox.$d.ghkm.tar.bz2 $dfiles && rm $dfiles
     ulm=$dp.$N.srilm
     clm_from_counts $dp $ulm
     show $dp $ulm
-    )&
+    bzip2 $dp
+    ) &
 done
 wait
 }
