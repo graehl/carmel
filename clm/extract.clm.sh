@@ -74,11 +74,13 @@ for d in left right; do
     dfiles=$ox.c*.$d
     showvars_required dfiles
     sort $dfiles | uniq | filt > $dp
-    tar -cjf $ox.$d.ghkm.tar.bz2 $dfiles && rm $dfiles
+    tbz=$ox.$d.ghkm.tar.bz2
+    rm -f $tbz
+    tar -cjf $tbz $dfiles && rm $dfiles
     ulm=$dp.$N.srilm
     stripEF=1 clm_from_counts $dp $ulm
     show $dp $ulm
-    bzip2 $dp
+    bzip2 -f $dp
     ) &
 done
 wait
