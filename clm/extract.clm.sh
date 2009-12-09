@@ -64,8 +64,8 @@ for i in `seq 1 $nc`; do
     el=$((chunksz*i))
     sl=$((el-chunksz+1))
     oxi=$ox.c$i
-    #-G -T
-    echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -x /dev/null -g 1 -l 1000:$bign -m 5000 -O -i -X
+    #empirically (100sent) verififed to not change uniqued locations over minimal: -G - (wsd), $bign>0, -T
+    echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
 done | $grf -
 header DONE WITH GHKM
 for d in left right; do
