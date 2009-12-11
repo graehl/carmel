@@ -1,5 +1,5 @@
-#ifndef GRAEHL__SHARED__DYNARRAY_H
-#define GRAEHL__SHARED__DYNARRAY_H
+#ifndef GRAEHL__SHARED__dynarray_hpp
+#define GRAEHL__SHARED__dynarray_hpp
 
 // like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).
 // historical justification: when Carmel was first written, STL wasn't supported by gcc.
