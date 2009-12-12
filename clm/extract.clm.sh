@@ -2,11 +2,14 @@
 . ~graehl/isd/hints/bashlib.sh
 extract=${extract:-`which extract`}
 extract=`realpath $extract`
+[ "$numclass" ] && enumclass=1
+[ "$numclass" ] && fnumclass=1
+showvars enumclass fnumclass
 function one {
     perl -pe 's/$/ 1/' "$@"
 }
 function bocounts {
-    perl -ne '@a=split;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
+    perl -ne '@a=split;for (0..$#a) { $a[$_] =~ s/\d/\@/g if $_==$#a && $ENV{fnumclass} || $_<$#a && $ENV{enumclass}} @a;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
 }
 function filt {
     egrep '^[0-9]' -- "$@" | cut  -f4- | bocounts | one
@@ -51,7 +54,7 @@ grf=${grf:-giraffe}
 ix=${ix:-training}
 ox=${ox:-x}
 chunksz=${chunksz:-100000}
-nl=`nlines $ix.e-parse`
+nl=${head:-`nlines $ix.e-parse`}
 nc=$(((nl+chunksz-1)/chunksz))
 N=${N:-3}
 bign=${bign:-0}

@@ -1,5 +1,7 @@
 * unique-per-location (extract -X | sort | uniq) counts can be obtained with minimal rules.
 
+not necessary: p(f<s>|e<s> e1) because p(e1|e<s>) in monolingual LM already captures this entirely and p (f<s>|e<s>) = 1.  similar for p(f</s>|ek </s>).
+
 
 > Finally, I'll note that I'm supplying only max-order counts to SRI's ngram-count -read counts-file; it seems to write an lm with lower-order counts filled in for me, which is nice.  This is safe to do, right?
 >
@@ -76,7 +78,7 @@ That's good to know; I was going to use SRI's tools.  Thanks for the tip.
 >>>
 >>> I'll elaborate.  For simplicity, I'll just talk about the left-side events in what follows; the same would naturally be done, independently, for the right-side events.
 >>>
->>> When we extract rules from our aligned and parsed parallel data, we may generate many rules for the same ((p,q),(i,j)) (e-span,f-span) pair, and even more where just the left (p,i) (english,foreign) span boundaries are the same.  So, I plan to either collect at most one count for a given left event (f_{i-1}|e_p,e_{p+1}) per sentence, or, with a little more effort, give one count to the events resulting from the unique left (p,i) positions arising in rule extraction, since technically it's more correct to give multiple counts in the rare event that the same ngram occurs in multiple (p,i) positions.
+>>> When we extract rules from our aligned and parsed parallel data, we may generate many rules for the same ((p,q),(i,j)) (e-span,f-span) pair, and even more where just the left (p,i) (english,foreign) span boundaries are the same. So, I plan to either collect at most one count for a given left event (f_{i-1}|e_p,e_{p+1}) per sentence, or, with a little more effort, give one count to the events resulting from the unique left (p,i) positions arising in rule extraction, since technically it's more correct to give multiple counts in the rare event that the same ngram occurs in multiple (p,i) positions.
 >>>
 >>> Alternatively, I could collect weighted fractional counts based on the portion of derivation trees in our extracted rule forest where each (p,i) position occurs.
 >>>
