@@ -38,7 +38,7 @@
 
    init_run(r): for r=[0,gopt.restarts]
    init_iteration(i)
-   resample_block(blocki): for blocki=[0,n_pairs): choose new random sample[blocki] using p^power
+   resample_block(blocki): for blocki=[0,n_pairs): choose new random sample[blocki] using p^power (this->power, don't forget to use it :)
    print_sample(sample):
    print_param(out,parami): like out<<gps[i] but customized
 
