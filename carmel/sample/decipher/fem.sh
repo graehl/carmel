@@ -7,6 +7,10 @@ $fem -f forest -H -n norm -I param -e 0 -o $suf.em -i $i4 -r $restarts
 weights=$suf.em ./errors.sh
 fi
 if [ "$CRP" ] ; then
-$fem -f forest -H -n norm -I param -e 0 -o $suf.crp --crp=$ITER --burnin=$i4 --alpha=alpha
-weights=$suf.crp ./errors.sh
+if [ "$DA" ] ; then
+ sda=".crp.da=.$DA"
+ argda="--high-temp=2 --low-temp=$DA"
+fi
+$fem -f forest -H -n norm -I param -e 0 -o $suf$sda $argda --crp=$ITER --burnin=$i4 --alpha=alpha
+weights=$suf$sda ./errors.sh
 fi
