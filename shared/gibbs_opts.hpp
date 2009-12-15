@@ -76,6 +76,8 @@ struct gibbs_opts
                  "per-parameter alpha file parallel to -I (overrides const-alpha); negative alpha means locked (use init prob but don't update/normalize)")
                 ("outsample-file",defaulted_value(&sample_file),
                  "print actual sample (tree w/o parens) to this file")
+                ("print-file",defaulted_value(&print_file),
+                 "print-counts and print-norms to this file (default stdout)")
 #endif
                 ;
 
@@ -130,7 +132,7 @@ struct gibbs_opts
     unsigned n_sym;
 
 #ifdef FOREST_EM_VERSION
-    ostream_arg sample_file;
+    ostream_arg sample_file,print_file;
     istream_arg alpha_file;
 #endif
     bool printing_sample() const
@@ -167,6 +169,7 @@ struct gibbs_opts
         n_sym=0;
 #ifdef FOREST_EM_VERSION
         sample_file=ostream_arg();
+        print_file=stdout_arg();
 #endif
         rich_counts=false;
         alpha=.1;
