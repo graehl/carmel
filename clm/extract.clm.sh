@@ -80,8 +80,8 @@ for d in left right; do
     tbz=$ox.$d.ghkm.tar.bz2
     rm -f $tbz
     tar -cjf $tbz $dfiles && rm $dfiles
-    ulm=$dp.$N.srilm
-    stripEF=1 clm_from_counts $dp $ulm
+    ulm=$ox.$N.srilm.$d
+    stripEF=1 out= clm_from_counts $dp $ulm
     show $dp $ulm
     bzip2 -f $dp
     ) &
