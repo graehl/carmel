@@ -1,5 +1,7 @@
 #!/bin/bash
 . ~graehl/isd/hints/bashlib.sh
+. ~graehl/t/utilities/make.lm.sh
+
 extract=${extract:-`which extract`}
 extract=`realpath $extract`
 [ "$numclass" ] && enumclass=1
@@ -43,6 +45,7 @@ function clm_from_counts {
     set -x
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $out $*
     [ "$stripEF" ] && stripEF $out
+    lwlm_from_srilm $out
     set +x
 #    rm $Ev
 }
@@ -81,7 +84,7 @@ for d in left right; do
     rm -f $tbz
     tar -cjf $tbz $dfiles && rm $dfiles
     ulm=$ox.$N.srilm.$d
-    stripEF=1 out= clm_from_counts $dp $ulm
+    stripEF=1 clm_from_counts $dp $ulm
     show $dp $ulm
     bzip2 -f $dp
     ) &
