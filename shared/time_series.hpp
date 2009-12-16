@@ -64,10 +64,12 @@ struct clamped_time_series : public std::unary_function<double,Returns>
     // curvature=0->regular exponential decay (x[n+1]=k*x[n]).  curvature->(-infty) -> (nearly) linear.  curvature>=1 -> impossible. curvature->1 -> quickly drops to end and stays nearly constant
     {
         assert(curvature<=1);
-        if (duration && start!=end) {
+        /* //FIXME: disabled because decoder_filters fixing end to 2 (start at 0)
+        if (false && duration && start!=end) {
             assert(start>0);
             assert(end>0);
         }
+        */
         set(start,end,duration,curvature);
     }
 
