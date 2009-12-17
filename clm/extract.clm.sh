@@ -10,6 +10,10 @@ showvars enumclass fnumclass
 function one {
     perl -pe 's/$/ 1/' "$@"
 }
+function fsos {
+    #not very helpful; if stripEF already happened need to parse ngram format to determine if last word is BO or not
+    perl -i -pe 's/\b\F<(\/)?s\>\s*$/F<${1}foreign-sentence>/o' "$@"
+}
 function bocounts {
     perl -ne 'chomp;@a=split;for (0..$#a) { $a[$_] =~ s/\d/\@/g if $_==$#a && $ENV{fnumclass} || $_<$#a && $ENV{enumclass}};$a[$#a]=~s/^\F<(\/)?s\>$/F<${1}foreign-sentence>/o;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
 }
