@@ -11,7 +11,7 @@ function one {
     perl -pe 's/$/ 1/' "$@"
 }
 function bocounts {
-    perl -ne '@a=split;for (0..$#a) { $a[$_] =~ s/\d/\@/g if $_==$#a && $ENV{fnumclass} || $_<$#a && $ENV{enumclass}} @a;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
+    perl -ne 'chomp;@a=split;for (0..$#a) { $a[$_] =~ s/\d/\@/g if $_==$#a && $ENV{fnumclass} || $_<$#a && $ENV{enumclass}};$a[$#a]=~s/^\F<(\/)?s\>$/F<${1}foreign-sentence>/o;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
 }
 function filt {
     egrep '^[0-9]' -- "$@" | cut  -f4- | bocounts | one
@@ -58,6 +58,9 @@ ix=${ix:-training}
 ox=${ox:-x}
 chunksz=${chunksz:-100000}
 nl=${head:-`nlines $ix.e-parse`}
+if [ $chunksz -gt $nl ] ; then
+     chunksz=$nl
+fi
 nc=$(((nl+chunksz-1)/chunksz))
 N=${N:-3}
 bign=${bign:-0}
@@ -69,6 +72,7 @@ rm -f $ox.c*.{left,right}
 for i in `seq 1 $nc`; do
     el=$((chunksz*i))
     sl=$((el-chunksz+1))
+#    showvars_required nc chunksz el sl
     oxi=$ox.c$i
     #empirically (100sent) verififed to not change uniqued locations over minimal: -G - (wsd), $bign>0, -T
     echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
