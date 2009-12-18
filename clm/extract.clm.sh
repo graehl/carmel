@@ -95,9 +95,10 @@ for d in left right; do
     stripEF=1 clm_from_counts $dp $ulm
     show $dp $ulm
     bzip2 -f $dp
-    ) &
+    )
+    #&
 done
-wait
+#wait
 }
 
 [ "$nomain" ] || main
