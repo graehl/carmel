@@ -35,7 +35,7 @@ function clm_from_counts {
     local count=${1:?'Ea Eb Fc x' e.g. x=1 time, clm ngram counts.  E... are all nonevents (context), F... is predicted.  env N=3 means trigram}
     shift
     local ngram=${N:-3}
-    local out=${1:-$count.$ngram.srilm}
+    local sri=${1:-$count.$ngram.srilm}
     shift
     local Ev=$count.Ev
     #`mktemp`
@@ -47,9 +47,9 @@ function clm_from_counts {
     local smoothargs="-wbdiscount"
 #kn discount fails when contexts are not events.
     set -x
-    ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $out $*
-    [ "$stripEF" ] && stripEF $out
-    lwlm_from_srilm $out
+    ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
+    [ "$stripEF" ] && stripEF $sri
+    lwlm_from_srilm $sri
     set +x
 #    rm $Ev
 }
