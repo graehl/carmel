@@ -28,6 +28,7 @@ function show {
 function Evocab {
     perl -ne '$e{$2}=1 while /(^| )(E\S+)/g;END{print "$_\n" for (keys %e)}' "$@"
 }
+# must be sorted (E comes before F)
 function stripEF {
     perl -pi -e 's/(\s)[EF](\S+)/$1$2/go' "$@"
 }
@@ -46,17 +47,19 @@ function clm_from_counts {
     local noprune="-minprune $((ngram+1))"
     local smoothargs="-wbdiscount"
 #kn discount fails when contexts are not events.
-    set -x
+#    set -x
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
-    [ "$stripEF" ] && stripEF $sri
+    local ef=$sri.EF.bz2
+    [ "$stripEF" ] && bzip2 -c $sri > $ef && bunzip2 -c $ef | stripEF > $sri
     lwlm_from_srilm $sri
-    set +x
+#    set +x
 #    rm $Ev
 }
 ###
 
 function main {
-#TODO: parallelize (giraffe?) ghkm chunks, pipe preproc straight to ngram-count w/o intermediate file?
+#TODO: pipe preproc straight to ngram-count w/o intermediate file?
+    set -x
 grf=${grf:-giraffe}
 ix=${ix:-training}
 ox=${ox:-x}
