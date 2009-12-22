@@ -59,16 +59,16 @@ function clm_from_counts {
 #kn discount fails when contexts are not events.
 #    set -x
     if ! newer_than=$count skip_files 2 $sri ; then
-     catz $count | Evocab > $Ev
-     show $Ev
+        catz $count | Evocab > $Ev
+        show $Ev
         ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
         if [ "$stripEF" ] ; then
-delay
+            delay
             mv -f $sri $sri.EF
-delay
+            delay
             $stripef < $sri.EF > $sri && bzip2 -f $sri.EF
         fi
-delay
+        delay
     fi
 #    set +x
 #    rm $Ev
@@ -106,7 +106,6 @@ for i in `seq 1 $nc`; do
 done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
 
 header DONE WITH GHKM
-
 delay
 
 for d in left right; do
@@ -121,17 +120,19 @@ for d in left right; do
     )
 done
 fi
+
 for d in left right; do
     dpz=$ox.$d.bz2
     ulm=$ox.$N.srilm.$d
-    newer_than=$dpz skip_files 2 $ulm || stripEF=1 clm_from_counts $dpz $ulm
-        if [ "$makelw" ] ; then
-            lwlm_from_srilm $ulm
-        fi
-        if [ "$makebig" ] ; then
-            ngram=$ngram biglm_from_srilm $ulm
-        fi
-
+    stripEF=1 clm_from_counts $dpz $ulm
+    if [ "$makelw" ] ; then
+        outl=`LWfromSRI $ulm`
+        newer_than=$ulm skip_files 3 $outl || lwlm_from_srilm $ulm $outl
+    fi
+    if [ "$makebig" ] ; then
+        outb=`bigfromSRI $ulm`
+        newer_than=$ulm skip_files 4 $outb || ngram=$ngram biglm_from_srilm $ulm $outb
+    fi
 done
 #wait
 }
