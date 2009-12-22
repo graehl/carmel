@@ -35,11 +35,6 @@ function bocounts {
 function filt {
     egrep '^[0-9]' -- "$@" | cut  -f4- | bocounts | one
 }
-function show {
-    echo '==>' $name '<=='
-    wc -l "$@"
-    head "$@"
-}
 function Evocab {
     perl -ne '$e{$1}=1 while /(\S+E)($| )/g;END{print "$_\n" for (keys %e)}' "$@"
 }
@@ -60,13 +55,13 @@ function clm_from_counts {
 #    set -x
     if ! newer_than=$count skip_files 2 $sri ; then
         catz $count | Evocab > $Ev
-        show $Ev
         ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
+        show_outputs $Ev $sri
         if [ "$stripEF" ] ; then
             delay
             mv -f $sri $sri.EF
             delay
-            $stripef < $sri.EF > $sri && bzip2 -f $sri.EF
+            $stripef < $sri.EF > $sri && bzip2 -f $sri.EF && show_outputs $sri
         fi
         delay
     fi
@@ -125,6 +120,10 @@ for d in left right; do
     dpz=$ox.$d.bz2
     ulm=$ox.$N.srilm.$d
     stripEF=1 clm_from_counts $dpz $ulm
+done
+for d in left right; do
+    #redundant loop, but get srilm out no matter what fails in conversion
+    ulm=$ox.$N.srilm.$d
     if [ "$makelw" ] ; then
         outl=`LWfromSRI $ulm`
         newer_than=$ulm skip_files 3 $outl || lwlm_from_srilm $ulm $outl
@@ -137,4 +136,4 @@ done
 #wait
 }
 
-[ "$nomain" ] || main
+[ "$nomain" ] || main; exit

@@ -51,7 +51,7 @@ while(<>) {
             print1("$p\t$ev$bo\n");
             $boline=$bo="";
         }
-    } elsif (/^(.*<(\/s|s|unk)>)?$/o) {
+    } elsif (/^(.*<(\/s|s|unk)>)$/o) {
         print1($_);
     } else {
         die "unknown ngram line: $_" unless /^$/o || /^\\(\d+-grams:|end)\\$/o;
