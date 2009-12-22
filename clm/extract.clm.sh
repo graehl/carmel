@@ -2,8 +2,12 @@
 . ~graehl/isd/hints/bashlib.sh
 . ~graehl/t/utilities/make.lm.sh
 
+stripef=${stripef:-$d/stripEF.pl}
+[ -x $stripef ] || stripef=cat
+
 extract=${extract:-`which extract`}
 extract=`realpath $extract`
+
 [ "$numclass" ] && enumclass=1
 [ "$numclass" ] && fnumclass=1
 showvars enumclass fnumclass
@@ -12,10 +16,10 @@ function one {
 }
 function fsos {
     #loose: works on finished srilm w/ or w/o F prefix, thus subject to error if foreign word looks like a logprob and there's no backoff
-    perl -i -pe 's#(\s+)(F?)<(/?)s>(\s*-?\d*\.?\d*)$#$1$2<${3}foreign-sentence>$4#o' "$@"
+    perl -i -pe 's#(\s+)<(/?)s>(F?)(\s*-?\d*\.?\d*)$#$1<${2}foreign-sentence>$2$3#o' "$@"
 }
 function bocounts {
-    perl -ne 'chomp;@a=split;for (0..$#a) { $a[$_] =~ s/\d/\@/g if $_==$#a && $ENV{fnumclass} || $_<$#a && $ENV{enumclass}};$a[$#a]=~s/^\F<(\/)?s\>$/F<${1}foreign-sentence>/o;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
+    perl -ne 'chomp;@a=split;for (0..$#a) { $a[$_] =~ s/\d/\@/g if $_==$#a && $ENV{fnumclass} || $_<$#a && $ENV{enumclass}};$a[$#a]=~s/^\<(\/)?s\>F$/<${1}foreign-sentence>F/o;for (0..$#a) { print join(" ",@a[$_..$#a]),"\n" }' "$@"
 }
 function filt {
     egrep '^[0-9]' -- "$@" | cut  -f4- | bocounts | one
@@ -26,12 +30,9 @@ function show {
     head "$@"
 }
 function Evocab {
-    perl -ne '$e{$2}=1 while /(^| )(E\S+)/g;END{print "$_\n" for (keys %e)}' "$@"
+    perl -ne '$e{$1}=1 while /(\S+E)($| )/g;END{print "$_\n" for (keys %e)}' "$@"
 }
-# must be sorted (E comes before F)
-function stripEF {
-    perl -pi -e 's/(\s)[EF](\S+)/$1$2/go' "$@"
-}
+
 function clm_from_counts {
     local count=${1:?'Ea Eb Fc x' e.g. x=1 time, clm ngram counts.  E... are all nonevents (context), F... is predicted.  env N=3 means trigram}
     shift
@@ -50,7 +51,7 @@ function clm_from_counts {
 #    set -x
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
     local ef=$sri.EF.bz2
-    [ "$stripEF" ] && bzip2 -c $sri > $ef && bunzip2 -c $ef | stripEF > $sri
+    [ "$stripEF" ] && bzip2 -c $sri > $ef && bunzip2 -c $ef | $stripef > $sri
     lwlm_from_srilm $sri
 #    set +x
 #    rm $Ev
