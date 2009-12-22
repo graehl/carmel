@@ -29,6 +29,7 @@ while(<>) {
     if (/^\\(\d+)-grams:\s*$/o) {
         $N=$1;
         push @ngrams,0;
+        print $fh $_;
         print STDERR "starting $N-grams...\n";
     } elsif ($N==0) {
     } elsif (/(\S+)\s+(.*?)(\S+)(F|E(\s+[-\d.e]+)?)\s*$/o) {
