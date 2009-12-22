@@ -13,7 +13,9 @@
 
 use warnings;
 use File::Temp;
-my ($fh, $tmpname) = File::Temp::tempfile('stripEF.srilm.XXXXXX');
+my $TEMP=$ENV{TEMP};
+$TEMP='.' unless $TEMP;
+my ($fh, $tmpname) = File::Temp::tempfile("$TEMP/stripEF.srilm.XXXXXX");
 print STDERR "using temporary $tmpname\n";
 
 my ($bo,$boline,$N1)=("","",0);
