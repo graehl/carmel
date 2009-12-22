@@ -50,9 +50,10 @@ function clm_from_counts {
 #kn discount fails when contexts are not events.
 #    set -x
     ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
-    local ef=$sri.EF.bz2
-    [ "$stripEF" ] && bzip2 -c $sri > $ef && bunzip2 -c $ef | $stripef > $sri
+    sleep 2
+    [ "$stripEF" ] && mv -f $sri $sri.EF && $stripef < $sri.EF > $sri && bzip2 -f $sri.EF
     lwlm_from_srilm $sri
+    ngram=$ngram biglm_from_srilm $sri
 #    set +x
 #    rm $Ev
 }
