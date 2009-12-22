@@ -11,6 +11,17 @@ extract=`realpath $extract`
 [ "$numclass" ] && enumclass=1
 [ "$numclass" ] && fnumclass=1
 showvars enumclass fnumclass
+
+sleeptime=0
+
+case  `hostname | /usr/bin/tr -d '\r\n'` in
+   hpc*) sleeptime=1
+esac
+
+function delay {
+    sleep $sleeptime
+}
+
 function one {
     perl -pe 's/$/ 1/' "$@"
 }
@@ -41,19 +52,24 @@ function clm_from_counts {
     shift
     local Ev=$count.Ev
     #`mktemp`
-    Evocab $count > $Ev
-    show $count $Ev
     local unkargs="-unk"
     local ngoargs="-order $ngram"
     local noprune="-minprune $((ngram+1))"
     local smoothargs="-wbdiscount"
 #kn discount fails when contexts are not events.
 #    set -x
-    ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
-    sleep 2
-    [ "$stripEF" ] && mv -f $sri $sri.EF && $stripef < $sri.EF > $sri && bzip2 -f $sri.EF
-    lwlm_from_srilm $sri
-    ngram=$ngram biglm_from_srilm $sri
+    if ! newer_than=$count skip_files 2 $sri ; then
+     catz $count | Evocab > $Ev
+     show $Ev
+        ngram-count $ngoargs $unkargs $smoothargs $noprune -sort -read $count -nonevents $Ev -lm $sri $*
+        if [ "$stripEF" ] ; then
+delay
+            mv -f $sri $sri.EF
+delay
+            $stripef < $sri.EF > $sri && bzip2 -f $sri.EF
+        fi
+delay
+    fi
 #    set +x
 #    rm $Ev
 }
@@ -61,7 +77,7 @@ function clm_from_counts {
 
 function main {
 #TODO: pipe preproc straight to ngram-count w/o intermediate file?
-    set -x
+#    set -x
 grf=${grf:-giraffe}
 ix=${ix:-training}
 ox=${ox:-x}
@@ -78,6 +94,8 @@ set -e
 lfiles=""
 rfiles=""
 rm -f $ox.c*.{left,right}
+
+if ! skip_files 1 $ox.left.bz2 $ox.right.bz2 ; then
 for i in `seq 1 $nc`; do
     el=$((chunksz*i))
     sl=$((el-chunksz+1))
@@ -85,23 +103,35 @@ for i in `seq 1 $nc`; do
     oxi=$ox.c$i
     #empirically (100sent) verififed to not change uniqued locations over minimal: -G - (wsd), $bign>0, -T
     echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
-done | $grf -
+done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
+
 header DONE WITH GHKM
+
+delay
+
 for d in left right; do
     (
-    dp=$ox.$d
-    dfiles=$ox.c*.$d
-    showvars_required dfiles
-    sort $dfiles | uniq | filt > $dp
-    tbz=$ox.$d.ghkm.tar.bz2
-    rm -f $tbz
-    tar -cjf $tbz $dfiles && rm $dfiles
-    ulm=$ox.$N.srilm.$d
-    stripEF=1 clm_from_counts $dp $ulm
-    show $dp $ulm
-    bzip2 -f $dp
+    dpz=$ox.$d.bz2
+     dfiles=$ox.c*.$d
+     showvars_required dfiles
+     sort $dfiles | uniq | filt | bzip2 -c > $dpz
+     tbz=$ox.$d.ghkm.tar.bz2
+     rm -f $tbz
+     tar -cjf $tbz $dfiles && rm $dfiles
     )
-    #&
+done
+fi
+for d in left right; do
+    dpz=$ox.$d.bz2
+    ulm=$ox.$N.srilm.$d
+    newer_than=$dpz skip_files 2 $ulm || stripEF=1 clm_from_counts $dpz $ulm
+        if [ "$makelw" ] ; then
+            lwlm_from_srilm $ulm
+        fi
+        if [ "$makebig" ] ; then
+            ngram=$ngram biglm_from_srilm $ulm
+        fi
+
 done
 #wait
 }
