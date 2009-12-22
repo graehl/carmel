@@ -14,12 +14,15 @@ while(<>) {
     if (/^\\(\d+)-grams:\s*$/o) {
         $N=$1;
         print STDERR "starting $N-grams...\n";
-    } elsif ($N==0 || ($order&&$order!=$N) || /^\s*(\\end\\)?$/) {
+    } elsif (/^\\end\\$/) {
+        $N=0;
+        %ctx=();
+    } elsif ($N==0 || ($order&&$order!=$N) || /^\s*$/ ) {
     } else {
         my @w=split;
         my $ctx=join(' ',@w[1..$N]);
         if ($dup) {
-            die "DUPLICATE: $ctx :\n$_ " if exists $ctx{$ctx};
+            die "DUPLICATE ($ARGV): $ctx :\n$_ " if exists $ctx{$ctx};
             $ctx{$ctx}=1;
         }
         print $ctx,"\n" if $print;
