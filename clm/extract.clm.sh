@@ -130,7 +130,7 @@ for d in left right; do
     fi
     if [ "$makebig" ] ; then
         outb=`bigfromSRI $ulm`
-        newer_than=$ulm skip_files 4 $outb || ngram=$ngram biglm_from_srilm $ulm $outb
+        newer_than=$ulm skip_files 4 $outb || ngram=$N biglm_from_srilm $ulm $outb
     fi
 done
 #wait
