@@ -1,3 +1,27 @@
+Jonathan Graehl wrote:
+> I have another question:
+>
+> Do your rules ever have more than 2 variables?  Ours can, and when they
+
+No, we have up to two variables.
+
+> do, we binarize them so that they have <= 2.  So far I've only scored the outside foreign words for the span the whole rule is over, but I feel like I probably should do that for the spans for each of the binarized rules.  This would require that my lm training know about the binarization of rules as well (we don't just go left->right).
+>
+> What do you do with unknown foreign words?  I trained (using sri tools) a lm with a p(<unk>), but given that only some of the foreign words are predicted, it seems like derivations with fewer brackets adjacent the unknown word are rewarded:
+>
+> ((((a b) c) U) (d (e f)))
+>
+> vs.
+>
+> (((a (b c)) U) ((d e) f))
+>
+> where U is a foreign word (maybe a named entity) we didn't see in the training data.
+
+I haven't thought about the case of unknown words before. Yes, you are right. It would prefer one splitting than another based on the position of unknown words. In fact, the context LM is mainly designed to disambiguate hypotheses with the same splitting. I once even wanted to treat it as an outside estimate instead of part of the inside score, but I didn't try it.
+
+
+=============
+
 * unique-per-location (extract -X | sort | uniq) counts can be obtained with minimal rules.
 
 not necessary: p(f<s>|e<s> e1) because p(e1|e<s>) in monolingual LM already captures this entirely and p (f<s>|e<s>) = 1.  similar for p(f</s>|ek </s>).

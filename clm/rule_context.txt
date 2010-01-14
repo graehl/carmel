@@ -1,0 +1,35 @@
+% Rule Context Scoring
+% Jonathan Graehl
+% Jan 14, 2010
+
+# Notation
+
+$x$
+  : a rule
+$N$
+  : the root tag of $x$
+$f$
+  : a foreign sentence under translation $f_1,\ldots,f_F$
+$s=(a,b)$
+  : the foreign span $f_a,\ldots,f_b$
+$e$
+  : $e_1,\ldots,e_E$, the english translation of $f_a,\ldots,f_b$ using the rule
+
+# Current Features
+
+In general we want to score a rule application in context: $p(x|f,(a,b),e,N)$ (caveat: $e$ depends on $x$).
+
+## Global (whole foreign sentence) model1
+$g(x,f) = \prod_{e\in x} p(e|NULL)+\sum_{i=1}^F p(e|f_i)$ where $p$ is the model1 t-table probability
+
+## Context Language Model (Shen et. al)
+$clm(f,(a,b),e) = p_l(e_1,e_0,f_{a-1})*p_r(e_{E-1},e_E,f_{b+1})$
+where $p_l(a,b,c)$ is a trigram $p(c|a,b)$ learned from seeing foreign $c$ immediately preceeding what has the english translation $(b,a,\ldots)$ (`<foreign-sentence>` and `</foreign-sentence>` are imagined as $f_0$ and $f_{F+1}$), and $p_r(x,y,z)$ is from foreign $z$ immediately following english translation $(\ldots,x,y)$.  If the english translation is just one word, then a bigram is used.
+
+# Binarized Rule Scoring
+
+Maybe we just score xrs rules.  But we parse using binarized rules and prefer to score every item, not just those that complete an xrs rule.
+
+Global model1 is only scored for xrs rules, but because it's context independent (given the input sentence) it's just a regular rule feature and contributes a meaningful score (via admissable heuristic) to each binary item.
+
+Context language model events could be computed for binary edges as well (because our xrs rules are itg-binarized into binary rules that always cover a contiguous e-span).  However, ngram counts would need to be collected over binarized brackets during rule extraction.  Since during rule aquisition we haven't yet decided on a binarization, I'd either emit clm ngram events for all possible binarizations, or postpone the work until I can reconcile the xrs derivation forest with the binarized rules.
