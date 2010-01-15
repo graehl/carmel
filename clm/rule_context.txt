@@ -1,4 +1,4 @@
-% Rule Context Scoring
+﻿% Rule Context Scoring
 % Jonathan Graehl
 % Jan 14, 2010
 
@@ -15,16 +15,26 @@ $s=(a,b)$
 $e$
   : $e_1,\ldots,e_E$, the english translation of $f_a,\ldots,f_b$ using the rule
 
-# Current Features
+# Features
 
-In general we want to score a rule application in context: $p(x|f,(a,b),e,N)$ (caveat: $e$ depends on $x$).
+In general we want to score a rule application in context: $p(x|f,(a,b),e,N)$ (caveat: $e$ depends on $x$), rather than the regular joint $p(x|N)$.  In practice we have a weighted sum of several independent features which may be in the reverse direction e.g. $p(f|x)$.
+
+## Non-contextual features
+
+The original smoothed joint $p(x|N)$ is supplemented with hundreds of features by now, e.g. model1 and inverse model1.
 
 ## Global (whole foreign sentence) model1
 $g(x,f) = \prod_{e\in x} p(e|NULL)+\sum_{i=1}^F p(e|f_i)$ where $p$ is the model1 t-table probability
 
 ## Context Language Model (Shen et. al)
-$clm(f,(a,b),e) = p_l(e_1,e_0,f_{a-1})*p_r(e_{E-1},e_E,f_{b+1})$
-where $p_l(a,b,c)$ is a trigram $p(c|a,b)$ learned from seeing foreign $c$ immediately preceeding what has the english translation $(b,a,\ldots)$ (`<foreign-sentence>` and `</foreign-sentence>` are imagined as $f_0$ and $f_{F+1}$), and $p_r(x,y,z)$ is from foreign $z$ immediately following english translation $(\ldots,x,y)$.  If the english translation is just one word, then a bigram is used.
+$clm(f,(a,b),e) = p_{left}(e_1,e_0,f_{a-1}) p_{right}(e_{E-1},e_E,f_{b+1})$
+where $p_{left}(a,b,c)$ is a trigram $p(c|a,b)$ learned from seeing foreign $c$ immediately preceeding what has the english translation $(b,a,\ldots)$ (`<foreign-sentence>` and `</foreign-sentence>` are imagined as $f_0$ and $f_{F+1}$), and $p_{right}(x,y,z)$ is from foreign $z$ immediately following english translation $(\ldots,x,y)$.  If the english translation is just one word, then a bigram is used.
+
+## Heuristic
+Someone tried using a heuristic $h(N,f,(a,b))=h_{left}(f_{a-1}|N) h_{right}(f_{b+1}|N)$ a very long time ago.  It wasn't helpful in reducing search error.  But it wasn't tried as part of the model score.
+
+## Syntactic context language model
+$cslm(x,f,(a,b),e,N) = s_{left}(x,e_1,e_0,N,f_{a-1}) s_{right}(x,e_{E-1},e_E,N,f_{b+1})$, similar to context language model but with 5grams.  The regular ngram backoff rules imply that if a nonterminal $N$ wasn't seen in training with $e_0$ as its leftmost word and $f_{a-1}$ as the left-adjacent foreign word, then $s_{left}(x,e_1,e_0,N,f_{a-1})$ = $backoff_{left}(x,e_1,e_0,N)*s_{left}(f_{a-1}|N)$.  Specific distributions for most rules would probably be sparse enough that a backoff would be used.  A less linear backoff scheme would require stepping outside the default ngram lm implementation.
 
 # Binarized Rule Scoring
 
@@ -33,3 +43,9 @@ Maybe we just score xrs rules.  But we parse using binarized rules and prefer to
 Global model1 is only scored for xrs rules, but because it's context independent (given the input sentence) it's just a regular rule feature and contributes a meaningful score (via admissable heuristic) to each binary item.
 
 Context language model events could be computed for binary edges as well (because our xrs rules are itg-binarized into binary rules that always cover a contiguous e-span).  However, ngram counts would need to be collected over binarized brackets during rule extraction.  Since during rule aquisition we haven't yet decided on a binarization, I'd either emit clm ngram events for all possible binarizations, or postpone the work until I can reconcile the xrs derivation forest with the binarized rules.
+
+In the case of the syntactic clm, the events for many virtual nonterminals would be quite sparse.  A simpler option would be to score virtual (non-xrs binary) items with the non-syntactic clm statistic: $p_{left}(e_1,e_0,f_{a-1}$), or, as always, to just score xrs rules.
+
+# Competition between small and big rules
+
+If our only features were properly normalized $p(x|f,(a,b),N)$, then small and big (especially composed) rules could compete sensibly.  For any translation (derivation) of the entire $f$, there is an xrs-parse with multiple (or no) left and right brackets adjacent each foreign word, and similarly for a binary-parse.  clm and cslm will then predict ($p_{left,right}(f_i)$) a different multiset of foreign words depending on the bracketing.  For xrs-only clm, larger rules will predict fewer words, which will reward them beyond the usual benefit of having memorized a large chunk of training data if we didn't smooth perfectly.  So we might want to reward smaller rules (or even all rules), e.g. through a constant reward feature on each xrs rule (we have this already in `derivation-size`).
