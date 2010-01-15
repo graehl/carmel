@@ -1,4 +1,4 @@
-﻿% Rule Context Scoring
+% Rule Context Scoring
 % Jonathan Graehl
 % Jan 14, 2010
 
