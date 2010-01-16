@@ -555,7 +555,7 @@ Weight WFST::train(cascade_parameters &cascade,
 {
     std::ostream &log=Config::log();
     graehl::time_space_report ts(log,"Training took ");
-//    cascade.set_composed(*this);
+    cascade.set_composed(*this);
     cascade.normalize(methods);
     unsigned ran_restarts=opts.ran_restarts;
     double learning_rate_growth_factor=opts.learning_rate_growth_factor;
