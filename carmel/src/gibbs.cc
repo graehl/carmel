@@ -22,7 +22,7 @@ struct carmel_gibbs : public gibbs_base
         ,WFST::path_print const& printer
         ,WFST::saved_weights_t *init_sample_weights=NULL
         ) :
-        gibbs_base(gopt,corpus.n_output,corpus.n_pairs,printer.out(),Config::log())
+        gibbs_base(gopt,printer.out(),Config::log())
         , composed(composed)
         , cascade(cascade)
         , methods(methods)
@@ -30,6 +30,8 @@ struct carmel_gibbs : public gibbs_base
         , derivs(composed,cascade,corpus,topt.cache) // gets pre-init_sample_weights weight.
         , init_sample_weights(init_sample_weights)
     {
+        //corpus.n_output,corpus.n_pairs,
+        gibbs_base::init(derivs.n_output(),derivs.size()); // doesn't include input examples with no derivs
         set_cascadei();
         if (init_sample_weights && !cascade.trivial)
             composed.restore_weights(*init_sample_weights);

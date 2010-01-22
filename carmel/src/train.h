@@ -191,17 +191,21 @@ class training_corpus : boost::noncopyable
 
     void clear()
     {
+        examples.clear();
+        clear_counts();
+    }
+
+    void clear_counts()
+    {
         maxIn=maxOut=0;
         n_input=n_output=0;
         w_input=w_output=totalEmpiricalWeight=0;
-        examples.clear();
         n_pairs=0;
     }
 
-    void add(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight=1.)
+    void count(IOSymSeq const& n)
     {
-        examples.push_front(inSeq,outSeq,weight);
-        IOSymSeq const& n=examples.front();
+        FLOAT_TYPE weight=n.weight;
         unsigned i=n.i.n,o=n.o.n;
         n_input += i;
         n_output += o;
@@ -211,6 +215,19 @@ class training_corpus : boost::noncopyable
         if (maxOut<o) maxOut=o;
         totalEmpiricalWeight += weight;
         ++n_pairs;
+    }
+
+    void count()
+    {
+        clear_counts();
+        for (List<IOSymSeq>::const_iterator i=examples.const_begin(),end=examples.const_end();i!=end;++i)
+            count(*i);
+    }
+
+    void add(List<int> &inSeq, List<int> &outSeq, FLOAT_TYPE weight=1.)
+    {
+        examples.push_front(inSeq,outSeq,weight);
+        count(examples.front());
 
     }
     void finish_adding()
