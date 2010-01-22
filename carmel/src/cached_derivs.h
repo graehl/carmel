@@ -25,8 +25,13 @@ struct cached_derivs
 
     unsigned size()
     {
-        return derivs.size();
+        return cached?derivs.size():corpus.size();
     }
+    unsigned n_output() const
+    {
+        return corpus.n_output;
+    }
+
     cached_derivs(WFST &x,cascade_parameters const& cascade,training_corpus &corpus,WFST::deriv_cache_opts const& copt)
         : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize),arcs(x),out_derivfile(copt.out_derivfile),cascade(cascade),corpus(corpus),copt(copt)
     {
@@ -84,6 +89,9 @@ struct cached_derivs
                     warn_no_derivations(x,*i,n);
                 }
             }
+            if (first) {
+                corpus.count();
+            }
         }
         first=false;
     }
@@ -106,6 +114,7 @@ struct cached_derivs
              i!=end ; ++i,++n) {
             num_progress(log,n,10,70,".","\n");
             derivations &d=derivs.start_new();
+            corpus.clear_counts();
             if (!d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,cache_backward,prune)) {
                 warn_no_derivations(x,*i,n);
                 derivs.drop_new();
@@ -116,6 +125,7 @@ struct cached_derivs
                 printGraph(d.graph(),Config::debug());
 #endif
                 derivs.keep_new();
+                corpus.count(*i);
             }
         }
         log << "\n";
