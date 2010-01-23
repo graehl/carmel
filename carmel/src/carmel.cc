@@ -1881,7 +1881,8 @@ void usageHelp(void)
     cout << "ult, by arc group\n\t\tnumber.  Arcs with group numbers for whic";
     cout << "h there is no\n\t\tcorresponding group in the first transducer a";
     cout << "re removed\n-m\t\tgive meaningful names to states created in com";
-    cout << "position\n\t\trather than just numbers\n-a\t\tduring composition";
+    cout << "position\n\t\trather than just numbers\n"
+        "-a\t\t(may SIGNIFICANTLY speed up --train-cascade) during composition";
     cout << ", keep the identity of matching arcs from\n\t\tthe two transduce";
     cout << "rs separate, assigning the same arc group\n\t\tnumber to arcs in";
     cout << " the result as the arc in the transducer it\n\t\tcame from.  Thi";
