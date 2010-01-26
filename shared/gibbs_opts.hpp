@@ -64,6 +64,10 @@ struct gibbs_opts
              "print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #")
             ("progress-every",defaulted_value(&tick_every),
              "show a progress tick (.) every N blocks")
+            ("prior-inference-stddev",defaulted_value(&prior_inference_stddev),
+             "if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1; proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1")
+            ("prior-inference-global",defaulted_value(&prior_inference_global),"disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths")
+            ("prior-inference-local",defaulted_value(&prior_inference_local),"disregarding supplied hyper-normalization groups, seperately scale prior counts for each multinomial (normalization group)")
             ;
         if (forest_opts)
             opt.add_options()
@@ -113,6 +117,10 @@ struct gibbs_opts
     unsigned width; // # chars for counts/probs etc.
     double print_counts_sparse;
     unsigned print_norms_from,print_norms_to; // which normgroup ids' sums to print
+
+    double prior_inference_stddev;
+    bool prior_inference_global;
+    bool prior_inference_local;
 
     unsigned restarts; // 0 = 1 run (no restarts)
     unsigned tick_every;
@@ -166,6 +174,8 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        prior_inference_local=prior_inference_global=false;
+        prior_inference_stddev=0;
         n_sym=0;
 #ifdef FOREST_EM_VERSION
         sample_file=ostream_arg();
