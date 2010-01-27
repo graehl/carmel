@@ -338,8 +338,8 @@ struct carmel_main
                 Config::log()<<"Replacing -M "<<topt.max_iter<<" with --crp="<<m<<endl;
                 topt.max_iter=m;
             }
-
-            topt.cache.cache_level=WFST::cache_forward_backward;
+            if (topt.cache.cache_level==WFST::cache_nothing)
+                topt.cache.cache_level=WFST::cache_forward;
             force_cascade_derivs();
             get_opt("crp-restarts",gopt.restarts);
             gopt.argmax_final=have_opt("crp-argmax-final");
