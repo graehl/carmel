@@ -359,8 +359,9 @@ struct gibbs_base
         assert(sdev>0);
         gaussian_t rscale(1,sdev);
         unsigned N=prior_scale.nexti;
-        Weight q1=1,q2=1;
+        Weight q1=one_weight(),q2=one_weight();
         scales.reinit(N);
+        scales[0]=1;
         for (unsigned i=1;i<N;++i) {
             scales[i]=random_scale_ratio();
             q1*=boost::math::pdf(rscale,scales[i]);
@@ -380,18 +381,25 @@ struct gibbs_base
     {
         if (gopt.prior_inference_stddev<=0) return;
         Weight a2=choose_prior_scales();
-//todo: more efficient cache of already updated cache prob w/ present priors
-        Weight p1=cache_prob();
+        normsum_t pcount1(pcount),psum1(psum);
+        //todo: don't modify state for current priors in checking quality of proposed new priors (cache_prob should take argument for which set of arrays to use)
+        Weight p1=cache_prob(); // //todo: use already computed cache prob
         scale_priors(false);
         Weight p2=cache_prob();
         Weight a1=p2/p1;
         Weight a=a1*a2;
-        log<<" accepting new priors with a1="<<a1<<" a2="<<a2<<" p_accept="<<a<<": ";
+        log<<" accepting new priors ";
+//        DGIBBS(log<<"scaled by "<<scales<<" ");
+        log<<"with ";
+        DGIBBS(log<<"p1="<<p1<<" p2="<<p2<<);
+        log<<" a1=p2/p1="<<a1<<" a2=q(1|2)/q(2|1)="<<a2<<" p_accept="<<a<<": ";
         if (random01()<a.getReal()) {
             // accept changed priors
             log<<"accepted";
         } else {
             log<<"rejected";
+            pcount1.swap(pcount);
+            psum1.swap(psum);
             scale_priors(true); // undo new prior
         }
     }
@@ -494,13 +502,20 @@ struct gibbs_base
     {
         unsigned N=gps.size();
         pcount.init(N);
-        psum.init(nnorm);
         ccount.init(N);
         csum.init(nnorm);
-        for (unsigned i=0;i<N;++i)
+        psum.init(nnorm);
+        recompute_cache();
+    }
+    void recompute_cache()
+    {
+        for (unsigned i=0;i<nnorm;++i)
+            psum[i]=0;
+        for (unsigned i=0,N=gps.size();i<N;++i)
             gps[i].init_cache(i,pcount,psum);
         reset_cache();
     }
+
     void reset_cache()
     {
         ccount.uninit_copy_from(pcount);
@@ -511,10 +526,13 @@ struct gibbs_base
         ccount.dealloc();
         csum.dealloc();
     }
-    Weight cache_prob()
+    Weight cache_prob(bool recompute=true)
     {
-        reset_cache();
-        Weight w=1;
+        if (recompute) // if priors have changed
+            recompute_cache();
+        else
+            reset_cache();
+        Weight w=one_weight();
         for (unsigned i=0;i<n_blocks;++i)
             w*=cache_prob(sample[i]);
         return w;
