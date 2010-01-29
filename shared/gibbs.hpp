@@ -306,17 +306,19 @@ struct gibbs_base
             for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
                 i->scale_prior(*this,s,normsum,invert);
         }
+
+        // set_local and set_global only work after normgroups are all add()ed.  otherwise on lookup you'll have refs off the end of array
         void set_local()
         {
-            nexti=size();
+            nexti=size()+1;
             for (unsigned i=0,N=size();i!=N;++i)
-                (*this)[i]=i;
+                (*this)[i]=i+1;
         }
         void set_global()
         {
-            nexti=1;
+            nexti=2;
             for (unsigned i=0,N=size();i!=N;++i)
-                (*this)[i]=0;
+                (*this)[i]=1;
         }
     };
     metanorm prior_scale;
