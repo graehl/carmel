@@ -12,7 +12,7 @@
 #include <graehl/shared/print_width.hpp>
 
 #include <graehl/shared/debugprint.hpp>
-
+#include <boost/math/distributions/normal.hpp>
 
 #define DEBUG_GIBBS
 #ifdef DEBUG_GIBBS
@@ -138,6 +138,35 @@ struct gibbs_param
         return has_norm() ? count()/normsum[norm] : prior;
     }
 
+    template <class A>
+    void scale_prior(double scaleby,A &normsum)
+    {
+        if (has_norm()) {
+            double s=scaleby*prior,d=s-prior;
+            sumcount.addbase(d);
+            normsum[norm]+=d;
+            prior=s;
+        }
+    }
+
+    typedef fixed_array<double> scale_t;
+    typedef dynamic_array<unsigned> i_of_norm_t;
+    template <class A>
+    void scale_prior(i_of_norm_t const& normi,scale_t const& scale,A &normsum,bool invert=false)
+    {
+        if (has_norm()) {
+            unsigned i=normi[norm];
+            if (i>0) {
+                double scaleby=scale[i];
+                if (invert) scaleby=1./scaleby;
+                double s=scaleby,d=s-prior;
+                sumcount.addbase(d);
+                normsum[norm]+=d;
+                prior=s;
+            }
+        }
+    }
+
     double prior; //FIXME: not needed except to make computing --cache-prob easier.  also holds prob when NONORM
     //FIXME: alternative strategy: store locked arc prob in count(), and ensure that NONORM=-1 (reserved normsum id) has sum locked to 1.  may be slightly faster when computing probs for sampling
     double count() const
@@ -201,6 +230,7 @@ struct gibbs_base
         sample.reinit(n_blocks);
         gps.clear();
         nnorm=0;
+        init_rscale();
     }
 
     gibbs_base(gibbs_opts const &gopt_
@@ -251,12 +281,121 @@ struct gibbs_base
     blocks_t sample;
     double temperature;
     double power; // for deterministic annealing (temperature) = 1/temperature if temp positive.
+    typedef gibbs_param::i_of_norm_t i_of_norm_t;
+    typedef gibbs_param::scale_t scale_t;
+    struct metanorm : public i_of_norm_t // metanorm[normgrp] = id where same id = scaled by same random factor (group 0 is never scaled)
+    {
+        unsigned nexti;
+        metanorm(unsigned nexti=1) : nexti(nexti) {  }
+        void add(unsigned norm)
+        {
+            (*this)(norm)=nexti;
+        }
+        void add_fixed(unsigned norm)
+        {
+            (*this)(norm)=0;
+        }
+
+        void finish_scalegroup()
+        {
+            ++nexti;
+        }
+        void scale_priors(gps_t &gps,normsum_t &normsum,scale_t const& s,bool invert=false)
+        {
+            for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
+                i->scale_prior(*this,s,normsum,invert);
+        }
+        void set_local()
+        {
+            nexti=size();
+            for (unsigned i=0,N=size();i!=N;++i)
+                (*this)[i]=i;
+        }
+        void set_global()
+        {
+            nexti=1;
+            for (unsigned i=0,N=size();i!=N;++i)
+                (*this)[i]=0;
+        }
+    };
+    metanorm prior_scale;
+
  private:
     normsum_t ccount,csum,pcount,psum; // for computing true cache model probs
     unsigned iter,Ni; // i=0 is random init sample.  i=1...Ni are the (gibbs resampled) samples
     double time; // at i=gopt.burnin, t=0.  at tmax = nI-gopt.burnin, we have the final sample.
     gibbs_opts::temps temp;
+    scale_t scales;
+    typedef boost::math::normal_distribution<double> gaussian_t;
+    gaussian_t rscale;
+    double rquantfor0;
+    double rquantremain;
+    Weight rpdfmean;
+    void init_rscale()
+    {
+        double sdev=gopt.prior_inference_stddev;
+        if (sdev<=0) return;
+        double mean=1;
+        rscale=gaussian_t(mean,sdev);
+        try {
+            rquantfor0=boost::math::cdf(rscale,0);
+        } catch(std::domain_error &e) {
+            rquantfor0=0;
+        }
+        rquantremain=1-rquantfor0;
+//        rpdfmean=boost::math::pdf(rscale,mean);
+    }
+    double random_scale_ratio() const  // greater than 0
+    {
+        double r=boost::math::quantile(rscale,rquantfor0+random01()*rquantremain);
+        assert(r>0);
+        return r;
+    }
+
+    // return M-H assymetric term Q(scale from old)/Q(old from scale)
+    Weight choose_prior_scales()
+    {
+        double sdev=gopt.prior_inference_stddev;
+        assert(sdev>0);
+        gaussian_t rscale(1,sdev);
+        unsigned N=prior_scale.nexti;
+        Weight q1=1,q2=1;
+        scales.reinit(N);
+        for (unsigned i=1;i<N;++i) {
+            scales[i]=random_scale_ratio();
+            q1*=boost::math::pdf(rscale,scales[i]);
+            q2*=boost::math::pdf(rscale,1/scales[i]);
+        }
+        return q2/q1;
+    }
+
+    void scale_priors(bool inverse)
+    {
+        prior_scale.scale_priors(gps,normsum,scales,inverse);
+    }
+
  public:
+
+    void propose_new_priors()
+    {
+        if (gopt.prior_inference_stddev<=0) return;
+        Weight a2=choose_prior_scales();
+//todo: more efficient cache of already updated cache prob w/ present priors
+        Weight p1=cache_prob();
+        scale_priors(false);
+        Weight p2=cache_prob();
+        Weight a1=p2/p1;
+        Weight a=a1*a2;
+        log<<" accepting new priors with a1="<<a1<<" a2="<<a2<<" p_accept="<<a<<": ";
+        if (random01()<a.getReal()) {
+            // accept changed priors
+            log<<"accepted";
+        } else {
+            log<<"rejected";
+            scale_priors(true); // undo new prior
+        }
+    }
+
     bool burning() const
     {
         return iter>=gopt.burnin;
@@ -372,6 +511,15 @@ struct gibbs_base
         ccount.dealloc();
         csum.dealloc();
     }
+    Weight cache_prob()
+    {
+        reset_cache();
+        Weight w=1;
+        for (unsigned i=0;i<n_blocks;++i)
+            w*=cache_prob(sample[i]);
+        return w;
+    }
+
     double cache_prob(unsigned paramid)
     {
         return gps[paramid].cache_prob(paramid,ccount,csum);
@@ -478,8 +626,10 @@ struct gibbs_base
             block.clear();
             imp.resample_block(b);
             p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
-            addc(block,wt);
+            addc(block,wt); //todo: can efficiently compute cache prob as we do this
         }
+        if (burning())
+            propose_new_priors();
         record_iteration(p);
         maybe_print_periodic(imp);
     }
@@ -583,7 +733,7 @@ struct gibbs_base
         print_width(out,d,gopt.width);
     }
     template <class G>
-    void print_count(unsigned i,G &imp,bool final=false)
+    void print_count(unsigned i,G &imp,bool final=false,bool show_metanorm=true)
     {
         double ta=time+1;
         gibbs_param const& p=gps[i];
@@ -605,6 +755,14 @@ struct gibbs_base
                 print_field(avg);
                 print_field(lastat);
                 print_field(p.prior);
+                if (show_metanorm) {
+                    unsigned metanorm=p.has_norm()?prior_scale[p.norm]:0;
+                    out<<'\t';
+                    if (metanorm>0)
+                        out<<metanorm;
+                    else
+                        out<<"FIXED";
+                }
             }
             if (gopt.rich_counts) {
                 out<<'\t';
@@ -615,15 +773,18 @@ struct gibbs_base
         }
     }
 
-    void print_counts_header(bool final,char const* name="")
+    void print_counts_header(bool final,char const* name="",bool show_metanorm=true)
     {
         if (!gopt.printing_counts()) return;
         out<<"\n#";
         out<<"id\t";
         out<<"group\tcount\tprob";
         double ta=time+1;
-        if (!final)
+        if (!final) {
             out<<"\tavg@"<<ta<<"\tlast@t\tprior";
+            if (show_metanorm)
+                out<<"\tgroupby";
+        }
         if (gopt.rich_counts)
             out<<"\tparam name";
         if (!final)
@@ -634,22 +795,22 @@ struct gibbs_base
 
     // override order here
     template <class G>
-    void print_counts_body(G &imp,bool final,unsigned from,unsigned to)
+    void print_counts_body(G &imp,bool final,unsigned from,unsigned to,bool show_metanorm=true)
     {
         for (unsigned i=from;i<to;++i)
-            print_count(i,imp,final);
+            print_count(i,imp,final,show_metanorm);
     }
 
     template <class G>
-    void print_counts(G &imp,bool final=false,char const* name="")
+    void print_counts(G &imp,bool final=false,char const* name="",bool show_metanorm=true)
     {
         if (!gopt.printing_counts()) return;
-        print_counts_header(final,name);
+        print_counts_header(final,name,show_metanorm);
         unsigned to=std::min(gopt.print_counts_to,gps.size());
         if (gopt.norm_order)
-            print_counts_body(imp,final,gopt.print_counts_from,to);
+            print_counts_body(imp,final,gopt.print_counts_from,to,show_metanorm);
         else
-            imp.print_counts_body(imp,final,gopt.print_counts_from,to);
+            imp.print_counts_body(imp,final,gopt.print_counts_from,to,show_metanorm);
         out<<"\n";
     }
     template <class G>

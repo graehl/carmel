@@ -54,21 +54,23 @@ struct carmel_gibbs : public gibbs_base
         carmel_gibbs &g;
         unsigned from,to,i;
         bool final;
-        print_counts_f(carmel_gibbs &g,unsigned from,unsigned to,bool final=false) : g(g),from(from),to(to),i(),final(final) {  }
+        bool show_metanorm;
+        print_counts_f(carmel_gibbs &g,unsigned from,unsigned to,bool final=false,bool show_metanorm=true) : g(g),from(from),to(to),i(),final(final),show_metanorm(show_metanorm) {  }
         bool operator()(FSTArc const& a)
         {
-            if (i>=from && i<to) {
-                unsigned gi=a.groupId;
-                g.print_count(gi,g,final);
-            }
-            return (++i<to);
+            unsigned gi=a.groupId;
+//            if (i>=from && i<to)
+            if (gi>=from && gi<to)
+                g.print_count(gi,g,final,show_metanorm);
+//            return (++i<to);
+            return true;
         }
     };
 
     // print counts in fst file order, not normgroups order
-    void print_counts_body(carmel_gibbs & /*g*/,bool final,unsigned from,unsigned to)
+    void print_counts_body(carmel_gibbs & /*g*/,bool final,unsigned from,unsigned to,bool show_metanorm=true)
     {
-        print_counts_f p(*this,from,to,final);
+        print_counts_f p(*this,from,to,final,show_metanorm);
         cascade.visit_arcs(p);
     }
 
@@ -130,6 +132,7 @@ struct carmel_gibbs : public gibbs_base
     // return next free normgroup id, start at normidbase
     unsigned add_gibbs_params(unsigned /*normgroup start*/ id,WFST &w,WFST::NormalizeMethod const& nm,bool add_arcs=false,bool add_source=false)
     {
+        WFST::prior_group_by pgroup=nm.priorgroup;
         if (nm.group==WFST::NONE) {
 //            w.lockArcs();
             add_gibbs_nonorm v(*this,add_arcs,add_source);
@@ -144,6 +147,10 @@ struct carmel_gibbs : public gibbs_base
             typedef dynamic_array<FSTArc *> U;
             U unlocked; // we need to reverse arcs if conditional
             for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
+                if (pgroup==WFST::FIXED)
+                    prior_scale.add_fixed(id);
+                else
+                    prior_scale.add(id);
                 Weight sum=0;
                 unsigned src=g.source();
                 assert(src<w.numStates());
@@ -188,7 +195,11 @@ struct carmel_gibbs : public gibbs_base
 
                     }
                 ++id;
+                if (pgroup==WFST::LOCAL)
+                    prior_scale.finish_scalegroup();
             }
+            if (pgroup==WFST::SINGLE)
+                prior_scale.finish_scalegroup();
         }
         assert(!add_arcs || arcs.size()==gps.size());
         assert(!add_source || arc_sources.size()==gps.size());

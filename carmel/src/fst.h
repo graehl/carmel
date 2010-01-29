@@ -610,6 +610,11 @@ class WFST {
                            JOINT, // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming no dead ends
                            NONE //
     } ;
+    enum prior_group_by {
+        FIXED, // don't rescale at all
+        SINGLE, // all prior counts scale in same direction (for a transducer)
+        LOCAL // scale each normgroup in a diff direction
+    } ;
 
     static char const* norm_group_name (norm_group_by n)
     {
@@ -618,8 +623,14 @@ class WFST {
             : "None";
     }
 
+    static char const* priorgroup_name (prior_group_by p)
+    {
+        return (p==FIXED) ? "0" : (p==SINGLE) ? "1" : "2";
+    }
+
     struct NormalizeMethod
     {
+        prior_group_by priorgroup;
         norm_group_by group;
         mean_field_scale scale;
         Weight add_count;
@@ -629,6 +640,7 @@ class WFST {
             group=CONDITIONAL;
             scale.set_default();
             add_count=0;
+            priorgroup=FIXED;
         }
         void parse_group(char c)
         {
@@ -636,6 +648,14 @@ class WFST {
             else if (c=='c'||c=='C') group=CONDITIONAL;
             else group=NONE;
         }
+        void parse_priorgroup(char c)
+        {
+            if (c=='0') priorgroup = FIXED;
+            else if (c=='1') priorgroup=SINGLE;
+            else if (c=='2') priorgroup=LOCAL;
+            else throw std::runtime_error("prior-groupby characters must be 0 (no scaling), 1 (same scaling for whole xdcr), or 2 (separate scaling for each normgroup)");
+        }
+
         typedef std::string const& str;
         struct f_group
         {
@@ -663,6 +683,15 @@ class WFST {
                 m.add_count=w;
             }
             static arg_type const& get(NormalizeMethod &m) { return m.add_count; }
+        };
+        struct f_priorgroup
+        {
+            typedef char arg_type;
+            static void set(NormalizeMethod &m,char c)
+            {
+                m.parse_priorgroup(c);
+            }
+            static char const* get(NormalizeMethod &m) { return priorgroup_name(m.priorgroup); }
         };
     };
 
