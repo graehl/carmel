@@ -359,7 +359,7 @@ struct gibbs_base
         assert(sdev>0);
         gaussian_t rscale(1,sdev);
         unsigned N=prior_scale.nexti;
-        Weight q1=one_weight(),q2=one_weight();
+        Weight q1=1,q2=1;
         scales.reinit(N);
         scales[0]=1;
         for (unsigned i=1;i<N;++i) {
@@ -383,16 +383,16 @@ struct gibbs_base
         Weight a2=choose_prior_scales();
         normsum_t pcount1(pcount),psum1(psum);
         //todo: don't modify state for current priors in checking quality of proposed new priors (cache_prob should take argument for which set of arrays to use)
-        Weight p1=cache_prob(); // //todo: use already computed cache prob
+        Weight p1=cache_prob(false); // //todo: use already computed cache prob
         scale_priors(false);
-        Weight p2=cache_prob();
+        Weight p2=cache_prob(true);
         Weight a1=p2/p1;
         Weight a=a1*a2;
         log<<" accepting new priors ";
 //        DGIBBS(log<<"scaled by "<<scales<<" ");
         log<<"with ";
-        DGIBBS(log<<"p1="<<p1<<" p2="<<p2<<);
-        log<<" a1=p2/p1="<<a1<<" a2=q(1|2)/q(2|1)="<<a2<<" p_accept="<<a<<": ";
+//        DGIBBS(log<<"p1="<<p1.as_base(2)<<" p2="<<p2.as_base(2));
+        log<<" a1=p2/p1="<<a1.getReal()<<" a2=q(1|2)/q(2|1)="<<a2.getReal()<<" p_accept="<<a.getReal()<<": ";
         if (random01()<a.getReal()) {
             // accept changed priors
             log<<"accepted";
@@ -505,15 +505,15 @@ struct gibbs_base
         ccount.init(N);
         csum.init(nnorm);
         psum.init(nnorm);
-        recompute_cache();
+        recompute_cache_priors();
+        reset_cache();
     }
-    void recompute_cache()
+    void recompute_cache_priors() //todo: recompute into ccount/csum instead for checking new priors?
     {
         for (unsigned i=0;i<nnorm;++i)
             psum[i]=0;
         for (unsigned i=0,N=gps.size();i<N;++i)
             gps[i].init_cache(i,pcount,psum);
-        reset_cache();
     }
 
     void reset_cache()
@@ -526,13 +526,12 @@ struct gibbs_base
         ccount.dealloc();
         csum.dealloc();
     }
-    Weight cache_prob(bool recompute=true)
+    Weight cache_prob(bool recompute)
     {
         if (recompute) // if priors have changed
-            recompute_cache();
-        else
-            reset_cache();
-        Weight w=one_weight();
+            recompute_cache_priors();
+        reset_cache();
+        Weight w=1;
         for (unsigned i=0;i<n_blocks;++i)
             w*=cache_prob(sample[i]);
         return w;
@@ -544,19 +543,19 @@ struct gibbs_base
     }
     Weight cache_prob(block_t const& p)
     {
-        Weight prob=one_weight();
+        Weight prob=1;
         for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i)
             prob*=cache_prob(*i);
-        assert(prob<=one_weight());
+        assert(prob<=1);
         return prob;
     }
     //proposal HMM within an iteration.  also avged prob once finalized
     Weight proposal_prob(block_t const& p)
     {
-        Weight prob=one_weight();
+        Weight prob=1;
         for (block_t::const_iterator i=p.begin(),e=p.end();i!=e;++i)
             prob*=proposal_prob(*i);
-        assert(prob<=one_weight());
+        assert(prob<=1);
         return prob;
     }
     Weight operator()(unsigned i) const { return proposal_prob(i); }
