@@ -361,6 +361,7 @@ struct carmel_main
             get_opt("print-every",gopt.print_every);
             get_opt("high-temp",gopt.high_temp);
             get_opt("low-temp",gopt.low_temp);
+            gopt.prior_inference_restart_fresh=have_opt("prior-inference-restart-fresh");
             gopt.prior_inference_global=have_opt("prior-inference-global");
             get_opt("prior-inference-stddev",gopt.prior_inference_stddev);
 //        gopt.cache_prob=have_opt("cache-prob");
@@ -2021,6 +2022,7 @@ cout <<         "\n"
         "--no-prob : show no probability for --crp\n"
         "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1; proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
         "--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...\n"
+        "--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values\n"
         "\n";
 
     cout << "\n"

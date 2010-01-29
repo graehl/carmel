@@ -68,6 +68,7 @@ struct gibbs_opts
              "if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1; proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1")
             ("prior-inference-global",defaulted_value(&prior_inference_global),"disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths")
             ("prior-inference-local",defaulted_value(&prior_inference_local),"disregarding supplied hyper-normalization groups, seperately scale prior counts for each multinomial (normalization group)")
+            ("prior-inference-restart-fresh",defaulted_value(&prior_inference_restart_fresh),"on each random restart, reset the priors to their initial value (otherwise, let them drift across restarts); note: smaller priors generally memorize training data better.")
             ;
         if (forest_opts)
             opt.add_options()
@@ -121,6 +122,7 @@ struct gibbs_opts
     double prior_inference_stddev;
     bool prior_inference_global;
     bool prior_inference_local;
+    bool prior_inference_restart_fresh;
 
     unsigned restarts; // 0 = 1 run (no restarts)
     unsigned tick_every;
@@ -175,6 +177,7 @@ struct gibbs_opts
     void set_defaults()
     {
         prior_inference_local=prior_inference_global=false;
+        prior_inference_restart_fresh=false;
         prior_inference_stddev=0;
         n_sym=0;
 #ifdef FOREST_EM_VERSION

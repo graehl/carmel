@@ -231,6 +231,7 @@ struct gibbs_base
         gps.clear();
         nnorm=0;
         init_rscale();
+        use_cache_prob=gopt.cache_prob||gopt.prior_inference_stddev>0;
     }
 
     gibbs_base(gibbs_opts const &gopt_
@@ -331,6 +332,7 @@ struct gibbs_base
     double rquantfor0;
     double rquantremain;
     Weight rpdfmean;
+    bool use_cache_prob;
     void init_rscale()
     {
         double sdev=gopt.prior_inference_stddev;
@@ -497,9 +499,23 @@ struct gibbs_base
         compute_norms();
     }
 
+    void save_priors(saved_counts_t &c)
+    {
+        c.reinit_nodestroy(size());
+        for (unsigned i=0,N=size();i<N;++i)
+            c[i]=gps[i].prior;
+    }
+    void restore_priors(saved_counts_t const& c)
+    {
+        for (unsigned i=0,N=size();i<N;++i)
+            gps[i].prior=c[i];
+        recompute_cache_priors();
+    }
+
     // cache probability changes each time a param is used (it becomes more likely in the future)
     void init_cache()
     {
+        if (!use_cache_prob) return;
         unsigned N=gps.size();
         pcount.init(N);
         ccount.init(N);
@@ -510,6 +526,7 @@ struct gibbs_base
     }
     void recompute_cache_priors() //todo: recompute into ccount/csum instead for checking new priors?
     {
+        if (!use_cache_prob) return;
         for (unsigned i=0;i<nnorm;++i)
             psum[i]=0;
         for (unsigned i=0,N=gps.size();i<N;++i)
@@ -518,11 +535,13 @@ struct gibbs_base
 
     void reset_cache()
     {
+        if (!use_cache_prob) return;
         ccount.uninit_copy_from(pcount);
         csum.uninit_copy_from(psum);
     }
     void free_cache()
     {
+        if (!use_cache_prob) return;
         ccount.dealloc();
         csum.dealloc();
     }
@@ -627,7 +646,7 @@ struct gibbs_base
         temperature=temp(iter);
         power=(temperature>0)?1./temperature:1;
         itername(log);
-        if (gopt.cache_prob) reset_cache();
+        if (use_cache_prob) reset_cache();
         Weight p=1;
         imp.init_iteration(iter);
         for (unsigned b=0;b<n_blocks;++b) {
@@ -656,14 +675,20 @@ struct gibbs_base
     template <class G>
     gibbs_stats run_starts(G &imp)
     {
-        if (gopt.cache_prob) init_cache();
+        init_cache();
+        saved_counts_t priors;
         saved_counts_t best_counts;
         blocks_t best_sample(n_blocks);
         gibbs_stats best;
         unsigned re=gopt.restarts;
+        bool restart_priors=re>0 && gopt.prior_inference_restart_fresh;
+        if (restart_priors)
+            save_priors(priors);
         for (unsigned r=0;r<=re;++r) {
             graehl::time_space_report(log,"Gibbs sampling run: ");
             if (re>0) log<<"(random restart "<<r<<" of "<<re<<"): ";
+            if (r>0&&restart_priors)
+                restore_priors(priors);
             log<<"\n";
             gibbs_stats const& s=run(r,imp);
             if (r==0 || s.better(best,gopt)) {
@@ -678,7 +703,7 @@ struct gibbs_base
         best_sample.swap(sample);
         if (re>0)
             restore_probs(best_counts); //TESTME: used to erroneously be restore_counts! was this accidentally doing something good in start-selection?
-        if (gopt.cache_prob) free_cache();
+        free_cache();
         return best;
     }
 
