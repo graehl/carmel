@@ -138,17 +138,6 @@ struct gibbs_param
         return has_norm() ? count()/normsum[norm] : prior;
     }
 
-    template <class A>
-    void scale_prior(double scaleby,A &normsum)
-    {
-        if (has_norm()) {
-            double s=scaleby*prior,d=s-prior;
-            sumcount.addbase(d);
-            normsum[norm]+=d;
-            prior=s;
-        }
-    }
-
     typedef fixed_array<double> scale_t;
     typedef dynamic_array<unsigned> i_of_norm_t;
     template <class A>
@@ -157,9 +146,9 @@ struct gibbs_param
         if (has_norm()) {
             unsigned i=normi[norm];
             if (i>0) {
-                double scaleby=scale[i];
-                if (invert) scaleby=1./scaleby;
-                double s=scaleby,d=s-prior;
+                double f=scale[i];
+                if (invert) f=1./f;
+                double s=f*prior,d=s-prior;
                 sumcount.addbase(d);
                 normsum[norm]+=d;
                 prior=s;
@@ -384,10 +373,10 @@ struct gibbs_base
         scales.reinit(N);
         for (unsigned i=1;i<N;++i) {
             scales[i]=random_scale_ratio();
-            q1*=boost::math::pdf(rscale,scales[i]);
-            q2*=boost::math::pdf(rscale,1/scales[i]);
+            q2_1*=boost::math::pdf(rscale,scales[i]); // p new | old
+            q1_2*=boost::math::pdf(rscale,1/scales[i]); // p old | new
         }
-        return q2/q1;
+        return q1_2/q2_1;
     }
 
     void scale_priors(bool inverse)
@@ -403,25 +392,22 @@ struct gibbs_base
         Weight a2=choose_prior_scales();
         normsum_t pcount1(pcount),psum1(psum);
         //todo: don't modify state for current priors in checking quality of proposed new priors (cache_prob should take argument for which set of arrays to use)
-        Weight p1=cache_prob(false); // //todo: use already computed cache prob
+        Weight p1=cache_prob(false); // //todo: use already computed cache prob // false should agree w/ true but isn't.  why?
         scale_priors(false);
         Weight p2=cache_prob(true);
         Weight a1=p2/p1;
         Weight a=a1*a2;
-        log<<" accepting new priors ";
+        bool accept=random01()<a.getReal();
+        log<<(accept?"accepted":"rejected")<<" new priors ";
+        if (gopt.prior_inference_show) {
+            log<<prior_scale.cumulative<<" ";
+        }
 //        DGIBBS(log<<"scaled by "<<scales<<" ");
         log<<"with ";
-        if (gopt.prior_inference_show) {
-            log<<"prior-scales="<<prior_scale.cumulative<<" ";
-        }
-//        DGIBBS(log<<"p1="<<p1.as_base(2)<<" p2="<<p2.as_base(2));
-        log<<" a1=p2/p1="<<a1.getReal()<<" a2=q(1|2)/q(2|1)="<<a2.getReal()<<" p_accept="<<a.getReal()<<": ";
-        if (random01()<a.getReal()) {
-            // accept changed priors
-            log<<"accepted";
-
-        } else {
-            log<<"rejected";
+//DGIBBS()
+        log<<"p1="<<p1.as_base(2)<<" p2="<<p2.as_base(2);
+        log<<" a1=p2/p1="<<a1.getReal()<<" a2=q(1|2)/q(2|1)="<<a2.getReal()<<" p_accept="<<a.getReal()<<". ";
+        if (!accept) {
             pcount1.swap(pcount);
             psum1.swap(psum);
             scale_priors(true); // undo new prior
@@ -573,7 +559,7 @@ struct gibbs_base
     {
         if (recompute) // if priors have changed
             recompute_cache_priors();
-        reset_cache();
+        reset_cache(); // todo: copy from proposed changed priors to ccount directly, then to pcount if accept
         Weight w=1;
         for (unsigned i=0;i<n_blocks;++i)
             w*=cache_prob(sample[i]);
@@ -692,7 +678,7 @@ struct gibbs_base
             p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
             addc(block,wt); //todo: can efficiently compute cache prob as we do this
         }
-        if (burning())
+        if (iter>0 && burning())
             propose_new_priors();
         record_iteration(p);
         maybe_print_periodic(imp);

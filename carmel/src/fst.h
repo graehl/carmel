@@ -625,7 +625,7 @@ class WFST {
 
     static char const* priorgroup_name (prior_group_by p)
     {
-        return (p==FIXED) ? "0" : (p==SINGLE) ? "1" : "2";
+        return (p==FIXED) ? "0 (fixed priors)" : (p==SINGLE) ? "1 (single prior scale)" : "2 (per-normgroup prior scale)";
     }
 
     struct NormalizeMethod
