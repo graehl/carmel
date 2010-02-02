@@ -369,7 +369,7 @@ struct gibbs_base
         assert(sdev>0);
         gaussian_t rscale(1,sdev);
         unsigned N=prior_scale.nexti;
-        Weight q1=1,q2=1;
+        Weight q2_1=1,q1_2=1;
         scales.reinit(N);
         for (unsigned i=1;i<N;++i) {
             scales[i]=random_scale_ratio();
@@ -395,8 +395,8 @@ struct gibbs_base
         Weight p1=cache_prob(false); // //todo: use already computed cache prob // false should agree w/ true but isn't.  why?
         scale_priors(false);
         Weight p2=cache_prob(true);
-        Weight a1=p2/p1;
-        Weight a=a1*a2;
+        Weight a1=p2/p1; // current sample is this many times more likely under the new prior pseudocounts
+        Weight a=a1*a2; // correct for asymm. prior scale proposal dist. (accept more often if it's easier to get back to old)
         bool accept=random01()<a.getReal();
         log<<(accept?"accepted":"rejected")<<" new priors ";
         if (gopt.prior_inference_show) {
