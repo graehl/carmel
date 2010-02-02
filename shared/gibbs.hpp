@@ -400,7 +400,7 @@ struct gibbs_base
         bool accept=random01()<a.getReal();
         log<<(accept?"accepted":"rejected")<<" new priors ";
         if (gopt.prior_inference_show) {
-            log<<prior_scale.cumulative<<" ";
+            log<<prior_scale.cumulative<<" "; //TODO: show avg per-parameter prior, not scale factor?
         }
 //        DGIBBS(log<<"scaled by "<<scales<<" ");
         log<<"with ";
