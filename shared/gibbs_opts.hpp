@@ -69,6 +69,7 @@ struct gibbs_opts
             ("prior-inference-global",defaulted_value(&prior_inference_global),"disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths")
             ("prior-inference-local",defaulted_value(&prior_inference_local),"disregarding supplied hyper-normalization groups, seperately scale prior counts for each multinomial (normalization group)")
             ("prior-inference-restart-fresh",defaulted_value(&prior_inference_restart_fresh),"on each random restart, reset the priors to their initial value (otherwise, let them drift across restarts); note: smaller priors generally memorize training data better.")
+            ("prior-inference-show",defaulted_value(&prior_inference_show),"show for each prior group the cumulative scale applied to its prior counts")
             ;
         if (forest_opts)
             opt.add_options()
@@ -119,6 +120,7 @@ struct gibbs_opts
     double print_counts_sparse;
     unsigned print_norms_from,print_norms_to; // which normgroup ids' sums to print
 
+    bool prior_inference_show;
     double prior_inference_stddev;
     bool prior_inference_global;
     bool prior_inference_local;

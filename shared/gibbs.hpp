@@ -284,8 +284,15 @@ struct gibbs_base
     double power; // for deterministic annealing (temperature) = 1/temperature if temp positive.
     typedef gibbs_param::i_of_norm_t i_of_norm_t;
     typedef gibbs_param::scale_t scale_t;
-    struct metanorm : public i_of_norm_t // metanorm[normgrp] = id where same id = scaled by same random factor (group 0 is never scaled)
+    struct metanorm : public i_of_norm_t // metanorm[normgrp] = id where same id = scaled by same random factor (group 0 is never scaled but still occurs in scale_t array with ignored value)
     {
+        dynamic_array<double> cumulative;
+
+        void init_cumulative()
+        {
+            cumulative.reinit(nexti-1,1);
+        }
+
         unsigned nexti;
         metanorm(unsigned nexti=1) : nexti(nexti) {  }
         void add(unsigned norm)
@@ -301,8 +308,18 @@ struct gibbs_base
         {
             ++nexti;
         }
-        void scale_priors(gps_t &gps,normsum_t &normsum,scale_t const& s,bool invert=false)
+
+        void scale_priors(gps_t &gps,normsum_t &normsum,scale_t & s,bool invert=false)
         {
+            for (unsigned i=1;i<nexti;++i) {
+                double &r=cumulative[i-1];
+                double k=s[i];
+                if (invert)
+                    r/=k;
+                else
+                    r*=k;
+            }
+            s[0]=1;
             for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
                 i->scale_prior(*this,s,normsum,invert);
         }
@@ -365,7 +382,6 @@ struct gibbs_base
         unsigned N=prior_scale.nexti;
         Weight q1=1,q2=1;
         scales.reinit(N);
-        scales[0]=1;
         for (unsigned i=1;i<N;++i) {
             scales[i]=random_scale_ratio();
             q1*=boost::math::pdf(rscale,scales[i]);
@@ -395,11 +411,15 @@ struct gibbs_base
         log<<" accepting new priors ";
 //        DGIBBS(log<<"scaled by "<<scales<<" ");
         log<<"with ";
+        if (gopt.prior_inference_show) {
+            log<<"prior-scales="<<prior_scale.cumulative<<" ";
+        }
 //        DGIBBS(log<<"p1="<<p1.as_base(2)<<" p2="<<p2.as_base(2));
         log<<" a1=p2/p1="<<a1.getReal()<<" a2=q(1|2)/q(2|1)="<<a2.getReal()<<" p_accept="<<a.getReal()<<": ";
         if (random01()<a.getReal()) {
             // accept changed priors
             log<<"accepted";
+
         } else {
             log<<"rejected";
             pcount1.swap(pcount);
@@ -457,7 +477,7 @@ struct gibbs_base
 
     void restore_p0()
     {
-        normsum.reinit(nnorm);
+        normsum.reinit_nodestroy(nnorm);
         for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
             i->restore_p0(normsum);
     }
@@ -507,11 +527,13 @@ struct gibbs_base
         for (unsigned i=0,N=size();i<N;++i)
             c[i]=gps[i].prior;
     }
+
     void restore_priors(saved_counts_t const& c)
     {
         for (unsigned i=0,N=size();i<N;++i)
             gps[i].prior=c[i];
         recompute_cache_priors();
+        prior_scale.init_cumulative();
     }
 
     // cache probability changes each time a param is used (it becomes more likely in the future)
@@ -626,6 +648,7 @@ struct gibbs_base
             out<<"# ";
             print_counts(imp,true,"(prior counts)");
         }
+
         iteration(imp,false); // random initial sample
         //FIXME: isn't really random!  get the same sample after every iteration
         for (iter=1;iter<=Ni;++iter) {
@@ -634,6 +657,9 @@ struct gibbs_base
             iteration(imp,true);
         }
         log<<"\nGibbs stats: "<<stats<<"\n";
+        if (gopt.prior_inference_show)
+            log<<"Final prior-scale="<<prior_scale.cumulative<<"\n";
+
         return stats;
     }
 
@@ -684,6 +710,7 @@ struct gibbs_base
         gibbs_stats best;
         unsigned re=gopt.restarts;
         bool restart_priors=re>0 && gopt.prior_inference_restart_fresh;
+        prior_scale.init_cumulative();
         if (restart_priors)
             save_priors(priors);
         for (unsigned r=0;r<=re;++r) {
