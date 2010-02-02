@@ -184,7 +184,6 @@ struct carmel_gibbs : public gibbs_base
                         FSTArc &a=**i;
                         a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
                         record_arc(src,a,add_arcs,add_source);
-
                     }
                 else
                     for (U::const_iterator i=unlocked.begin(),e=unlocked.end();i!=e;++i) {
@@ -192,7 +191,6 @@ struct carmel_gibbs : public gibbs_base
                         //FIXME: avoid duplicated code w/ above (only order differs; reverse in place?)
                         a.groupId=define_param(id,(a.weight/sum).getReal(),alpha,N);
                         record_arc(src,a,add_arcs,add_source);
-
                     }
                 ++id;
                 if (pgroup==WFST::LOCAL)

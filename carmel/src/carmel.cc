@@ -362,6 +362,7 @@ struct carmel_main
             get_opt("high-temp",gopt.high_temp);
             get_opt("low-temp",gopt.low_temp);
             gopt.prior_inference_restart_fresh=have_opt("prior-inference-restart-fresh");
+            gopt.prior_inference_show=have_opt("prior-inference-show");
             gopt.prior_inference_global=have_opt("prior-inference-global");
             get_opt("prior-inference-stddev",gopt.prior_inference_stddev);
 //        gopt.cache_prob=have_opt("cache-prob");
@@ -1992,7 +1993,6 @@ cout <<         "\n"
         "--digamma=0,,.5 : (train-cascade) if digamma[n] is a number x, scale num and denom by exp(digamma(count+x)).  for variational bayes, choose digamma=0 and put the additional counts in --priors instead\n"
         "--normby=JCCN : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional, N=none (every arc stays at original prob; in --crp for now, this means a probability of 1 is used for N normalized arcs)\n"
         "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
-        "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group\n"
         "\n"
         ;
 
@@ -2023,6 +2023,8 @@ cout <<         "\n"
         "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1; proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
         "--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...\n"
         "--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values\n"
+        "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group\n"
+        "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
         "\n";
 
     cout << "\n"
