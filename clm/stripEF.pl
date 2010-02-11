@@ -10,7 +10,11 @@
 # whenever those consecutive pairs occur, they're collapsed to:
 # -2.4 ctx word -1.3
 # all tokens have the E and F suffixes stripped.  (ctx may be 0 or more words)
-
+#
+# recent bugfix:
+# -99 ctxE wordE -1.3
+# -99 ctx2E word2E -1.3
+# needs to output both of these
 use warnings;
 use File::Temp;
 my $TEMP=$ENV{TEMP};
@@ -41,6 +45,7 @@ while(<>) {
         if ($p==-99) {
             die "F word $w w/ 0 prob: $_" if $fe eq "F";
             $bo=defined $ebo ? $ebo : "";
+            print1($boline) if ($boline);
             $boline="$p\t$ev$bo\n";
             $lastev=$ev;
         } else {
@@ -58,6 +63,7 @@ while(<>) {
         print $fh $_;
     }
 }
+print1($boline) if ($boline);
 
 print "\n\\data\\\n";
 for (1..$#ngrams) {
