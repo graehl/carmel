@@ -49,9 +49,9 @@ struct clamped_time_series : public std::unary_function<double,Returns>
     value_type x_origin;
     time_type t_max;
 //    BOOST_STATIC_CONSTANT(double,linear= -1.7976931348623157e308); // bad answers (all 0) for anything near -INF.  fast math lib failure?
-    BOOST_STATIC_CONSTANT(double,linear= -1e10);
-    BOOST_STATIC_CONSTANT(double,exponential=0);
-    BOOST_STATIC_CONSTANT(time_type,constant=0);
+    BOOST_STATIC_CONSTANT(int,linear=-100000000);
+    BOOST_STATIC_CONSTANT(int,exponential=0);
+    BOOST_STATIC_CONSTANT(int,constant=0);
 
     clamped_time_series()
     {
