@@ -640,7 +640,7 @@ class WFST {
             group=CONDITIONAL;
             scale.set_default();
             add_count=0;
-            priorgroup=FIXED;
+            priorgroup=SINGLE;
         }
         void parse_group(char c)
         {
