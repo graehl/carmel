@@ -2023,7 +2023,7 @@ cout <<         "\n"
         "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1; proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
         "--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...\n"
         "--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values\n"
-        "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group\n"
+        "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.\n"
         "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
         "\n";
 

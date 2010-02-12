@@ -37,6 +37,7 @@ struct carmel_gibbs : public gibbs_base
             composed.restore_weights(*init_sample_weights);
         have_names=gopt.rich_counts;
         set_gibbs_params(gopt.printing_sample()||have_names,have_names);
+        finish_params();
         cascade.set_trivial_gibbs_chains();
         pinit_differs_p0=init_sample_weights&&!gopt.em_p0;
     }

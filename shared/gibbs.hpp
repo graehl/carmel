@@ -210,6 +210,7 @@ struct gibbs_param
 
 struct gibbs_base
 {
+
     void init(unsigned n_sym_=1, unsigned n_blocks_=1)
     {
         n_sym=n_sym_;
@@ -292,7 +293,6 @@ struct gibbs_base
         {
             (*this)(norm)=0;
         }
-
         void finish_scalegroup()
         {
             ++nexti;
@@ -311,6 +311,14 @@ struct gibbs_base
             s[0]=1;
             for (gps_t::iterator i=gps.begin(),e=gps.end();i!=e;++i)
                 i->scale_prior(*this,s,normsum,invert);
+        }
+
+        void set_fixed()
+        {
+            nexti=0;
+            for (unsigned i=0,N=size();i!=N;++i)
+                (*this)[i]=0;
+
         }
 
         // set_local and set_global only work after normgroups are all add()ed.  otherwise on lookup you'll have refs off the end of array
@@ -423,6 +431,16 @@ struct gibbs_base
         return Ni-gopt.burnin;
     }
     unsigned size() const { return gps.size(); }
+
+    // called after parameters all defined.
+    void finish_params()
+    {
+        prior_scale.resize(nnorm);
+        if (gopt.prior_inference_global)
+            prior_scale.set_global();
+        if (gopt.prior_inference_local)
+            prior_scale.set_local();
+    }
 
     // add params, then restore_p0() will be called on run().  first param assigned id=0.
     unsigned define_param(unsigned norm,double prior)
