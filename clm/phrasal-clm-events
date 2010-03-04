@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.6
 
-import getopt, sys, os, pprint, itertools, re
+import getopt, sys, os, pprint, itertools, re, traceback
 dbg=os.environ.get('DEBUG')
 fs='foreign-sentence'
 start_fs='<'+fs+'>'
@@ -89,7 +89,10 @@ eparse_leaf=re.compile('\([^() ]+ ([^ ]+)\)(?: |$)')
 def eparse_yield(etree):
     return re.findall(eparse_leaf,etree)
 
+# return # of bad e-parse lines, # of other errors
 def write_clm_events(e_in,a_in,f_in,left_out,right_out,N=3,efsuffix=True,show_position=False):
+    badne=0
+    errors=0
     apair=re.compile('(\d+)-(\d+)')
     for eline,a,f,lineno in zip(e_in,a_in,f_in,itertools.count(0)):
         try:
@@ -112,6 +115,8 @@ def write_clm_events(e_in,a_in,f_in,left_out,right_out,N=3,efsuffix=True,show_po
             maxe=max([e for e,_ in efs])
             if (ne<=maxe):
                 warn("Sentence %d (0=first) alignment refers to e position %d when # e words is only %d\ne-parse: %s\na: %s\ne: %s" % (lineno,maxe,ne,eline.strip(),a.strip(),pprint.pformat(es)))
+                badne+=1
+                continue
             dump(efs)
 
             e_fs=coverlist(efs,ne)
@@ -146,8 +151,12 @@ def write_clm_events(e_in,a_in,f_in,left_out,right_out,N=3,efsuffix=True,show_po
                         #todo: keep bottom-right-corner-visited array and write_event whenever we complete a phrase; start from top left corner = (0,0) and never backtrack.  then we avoid the 2nd call below:  (but beware: unaligned rows/columns need visiting too; this does that)
                     if (right_out and exists_phrase_anchored(e,f,1,span_ef,span_fe)):
                         write_event(right_out,1,(a+1,c+1))
-        except IndexError as i:
-            warn("Bad index for sentence # %d - %s" % (lineno,i),"ERROR: ")
+        except Exception:
+            tp,err,tb=sys.exc_info()
+            traceback.print_exception(tp,err,tb)
+            warn("Bad index for sentence # %d"%lineno,"ERROR: ")
+            errors+=1
+    return (badne,errors)
 
 def main():
     try:
@@ -179,7 +188,14 @@ def main():
             efsuffix=False
         else:
             assert False, "unhandled option"
-    write_clm_events(open(inbase+".e-parse"),open(inbase+".a"),open(inbase+".f"),outs[0],outs[1],N,efsuffix,show_position)
+    (badne,errors)=write_clm_events(open(inbase+".e-parse"),open(inbase+".a"),open(inbase+".f"),outs[0],outs[1],N,efsuffix,show_position)
+    if badne>0:
+        warn("%d total bad e-parse lines"%badne)
+    if errors>0:
+        warn("%d error-causing lines"%errors)
+    return errors
 
 if __name__ == "__main__":
-    main()
+    errors=main()
+    if errors:
+        sys.exit(errors)
