@@ -1,0 +1,168 @@
+#!/usr/bin/env python2.6
+
+import getopt, sys, os, pprint, itertools, re
+dbg=os.environ.get('DEBUG')
+fs='foreign-sentence'
+start_fs='<'+fs+'>'
+end_fs='</'+fs+'>'
+
+def flat_single(l):
+    if (len(l)==1):
+        return l[0]
+    return l
+
+def dump(*l):
+    if dbg: pprint.pprint(flat_single(l),sys.stderr)
+
+def usage():
+    print """
+    CROSS-LANGUAGE LM ARGUMENTS (note: <foreign-sentence> to start and </foreign-sentence> to end):
+        -w <file> : output filename for left events.
+        -W <file> : output filename for right events.
+    -N <ngram-order> : default=3 (trigram).
+        -X : preface each event with [sentence #] [e-position] [f-position]
+        -q : eliminate the E and F suffixes (normally theE and xyzF for .e 'the' and .f 'xyz'.
+            Not recommended, since ngram-count -nonevents <Evocabfile> is useful.
+
+     -r <basename> : basename of three files that are read:
+                     <basename>.e-parse : file of English (lowercased) text, same as yield of .e-parse
+                     <basename>.a       : word alignment
+                     <basename>.f       : foreign sentences
+
+                        """
+
+#return smallest span covering both sa and sb; if either is 0-length then the other is returned (i.e. 0-length spans are empty sets, not singleton point sets)
+def span_cover(sa,sb):
+    if (sa[0]<sa[1]):
+        if (sb[0]<sb[1]):
+            return (min(sa[0],sb[0]),max(sa[1],sb[1])) # 0-length spans would confuse this formula
+        return sa
+    else:
+        return sb
+
+#returns (a,b) for half-open [a,b) covering points
+def span_cover_points(points):
+    if (len(points)==0):
+        return (0,0)
+    return (min(points),max(points)+1)
+
+# return adjacency list indexed by [a]=[x,...,z] for pairs (a,x) ... (a,z)
+def adjlist(pairs,na):
+    adj=[[] for row in xrange(na)]
+    for a,b in pairs:
+        adj[a].append(b)
+    return adj
+
+def coverlist(pairs,na):
+    return [span_cover_points(x) for x in adjlist(pairs,na)]
+
+# returns matrix of pairs (c,d) bounding c<=f<d where a<=e<b aligns e to f. indexed by [a][b] meaning english span [a,b)
+# an empty range means no f aligns to any of e [a,b)
+def project_span(cover_ef,ne):
+    ees=[(ne+1)*[(0,0)] for _ in xrange(ne)]
+    for a in xrange(ne):
+        row=ees[a]
+        for b in xrange(a,ne):
+            row[b+1]=span_cover(row[b],cover_ef[b])
+    return ees
+
+def exists_phrase_anchored(espan,fspan,anchor_i,ef,fe):
+    espan2=span_cover(espan,fe[fspan[0]][fspan[1]])
+    if (espan[anchor_i]!=espan2[anchor_i]):
+        return False
+    elif espan==espan2:
+        return True
+    else:
+        return exists_phrase_anchored(fspan,espan2,anchor_i,fe,ef)
+
+eparse_leaf=re.compile('\([^() ]+ ([^ ]+)\)(?: |$)')
+def eparse_yield(etree):
+    return re.findall(eparse_leaf,etree)
+
+def write_clm_events(e_in,a_in,f_in,left_out,right_out,N=3,efsuffix=True,show_position=False):
+    apair=re.compile('(\d+)-(\d+)')
+    for e,a,f,lineno in zip(e_in,a_in,f_in,itertools.count(0)):
+        es=eparse_yield(e)
+        dump(es)
+        if (efsuffix):
+            es=[x+"E" for x in es]
+        fs_raw=f.strip().split()
+        if (efsuffix):
+            fs_raw=[x+"F" for x in fs_raw]
+        efs_raw=[apair.match(a).group(1,2) for a in a.strip().split()]
+
+        fs=[start_fs]+fs_raw+[end_fs] # this shifts foreign indices so 1st real word is @1
+
+        ne=len(es)
+        nf=len(fs)
+
+        efs=[(int(e),int(f)+1) for e,f in efs_raw]
+        dump(efs)
+
+        e_fs=coverlist(efs,ne)
+        fes=[(f,e) for e,f in efs]
+        f_es=coverlist(fes,nf)
+
+        span_ef=project_span(e_fs,ne)
+        span_fe=project_span(f_es,nf)
+
+        h=N-1
+        def text_event(isright,corner):
+            pos=''
+            if show_position:
+                pos="%d\t%d\t%d\t" % (lineno,corner[0],corner[1])
+            if isright:
+                event=es[max(0,corner[0]-h):corner[0]]+[fs[corner[1]]]
+            else:
+                event=es[corner[0]:min(ne,corner[0]+h)][::-1]+[fs[corner[1]-1]]
+            return pos+" ".join(event)
+
+        def write_event(out,isright,corner):
+            ev=text_event(isright,corner)
+            dump(isright,ev)
+            out.write(ev+"\n")
+
+        for a in xrange(ne):
+            for c in xrange(1,nf-1):
+                e=(a,a+1)
+                f=(c,c+1)
+                if (exists_phrase_anchored(e,f,0,span_ef,span_fe)):
+                    write_event(left_out,0,(a,c))
+                    #todo: keep bottom-right-corner-visited array and write_event whenever we complete a phrase; start from top left corner = (0,0) and never backtrack.  then we avoid the 2nd call below:  (but beware: unaligned rows/columns need visiting too; this does that)
+                if (exists_phrase_anchored(e,f,1,span_ef,span_fe)):
+                    write_event(right_out,1,(a+1,c+1))
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hqXw:W:N:r:", ["help"])
+    except getopt.GetoptError, err:
+        print str(err)
+        usage()
+        sys.exit(2)
+    outs = [None,None]
+    inbase = ""
+    N = 3
+    show_position = False
+    efsuffix = True
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-w"):
+            outs[0]=open(a,'w')
+        elif o in ("-W"):
+            outs[1]=open(a,'w')
+        elif o in ("-r"):
+            inbase=a
+        elif o in ("-N"):
+            N=int(a)
+        elif o in ("-X"):
+            show_position=True
+        elif o in ("-q"):
+            efsuffix=False
+        else:
+            assert False, "unhandled option"
+    write_clm_events(open(inbase+".e-parse"),open(inbase+".a"),open(inbase+".f"),outs[0],outs[1],N,efsuffix,show_position)
+
+if __name__ == "__main__":
+    main()

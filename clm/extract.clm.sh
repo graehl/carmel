@@ -2,6 +2,8 @@
 . ~graehl/isd/hints/bashlib.sh
 . ~graehl/t/utilities/make.lm.sh
 
+phrasal=${phrasal:-$d/phrasal-clm-events}
+yield=${yield:$d/e-parse-yield.pl}
 stripef=${stripef:-$d/stripEF.pl}
 [ -x $stripef ] || stripef=cat
 
@@ -10,7 +12,7 @@ extract=`realpath $extract`
 
 [ "$numclass" ] && enumclass=1
 [ "$numclass" ] && fnumclass=1
-showvars enumclass fnumclass
+showvars enumclass fnumclass binary
 
 sleeptime=0
 
@@ -91,29 +93,37 @@ rfiles=""
 rm -f $ox.c*.{left,right}
 
 if ! skip_files 1 $ox.left.bz2 $ox.right.bz2 ; then
-for i in `seq 1 $nc`; do
-    el=$((chunksz*i))
-    sl=$((el-chunksz+1))
+    if [ "$binary" ]; then
+        $phrasal -w $ox.left -W $ox.right -N $N -r $ix
+        for d in left right; do
+         bocounts $ox.$d | one | bzip2 -c > $ox.$d.bz2
+        done
+    else
+        for i in `seq 1 $nc`; do
+            el=$((chunksz*i))
+            sl=$((el-chunksz+1))
 #    showvars_required nc chunksz el sl
-    oxi=$ox.c$i
+            oxi=$ox.c$i
     #empirically (100sent) verififed to not change uniqued locations over minimal: -G - (wsd), $bign>0, -T
-    echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
-done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
+            echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
+        done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
 
-header DONE WITH GHKM
-delay
+        header DONE WITH GHKM
+        delay
 
-for d in left right; do
-    (
-    dpz=$ox.$d.bz2
-     dfiles=$ox.c*.$d
-     showvars_required dfiles
-     sort $dfiles | uniq | filt | bzip2 -c > $dpz
-     tbz=$ox.$d.ghkm.tar.bz2
-     rm -f $tbz
-     tar -cjf $tbz $dfiles && rm $dfiles
-    )
-done
+        for d in left right; do
+            (
+                dpz=$ox.$d.bz2
+                dfiles=$ox.c*.$d
+                showvars_required dfiles
+                sort $dfiles | uniq | filt | bzip2 -c > $dpz
+                tbz=$ox.$d.ghkm.tar.bz2
+                rm -f $tbz
+                tar -cjf $tbz $dfiles && rm $dfiles
+            )
+        done
+
+    fi
 fi
 
 for d in left right; do
