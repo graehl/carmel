@@ -6,6 +6,16 @@ fs='foreign-sentence'
 start_fs='<'+fs+'>'
 end_fs='</'+fs+'>'
 
+def warn(msg,pre="WARNING: "):
+    sys.stderr.write(pre+str(msg)+"\n")
+
+def progress(n,progress_per=1000,progress_num_per=10000):
+    if (n>0):
+        if (n % progress_num_per==0):
+            sys.stderr.write(str(n))
+        elif (n % progress_per==0):
+            sys.stderr.write(".")
+
 def flat_single(l):
     if (len(l)==1):
         return l[0]
@@ -81,56 +91,63 @@ def eparse_yield(etree):
 
 def write_clm_events(e_in,a_in,f_in,left_out,right_out,N=3,efsuffix=True,show_position=False):
     apair=re.compile('(\d+)-(\d+)')
-    for e,a,f,lineno in zip(e_in,a_in,f_in,itertools.count(0)):
-        es=eparse_yield(e)
-        dump(es)
-        if (efsuffix):
-            es=[x+"E" for x in es]
-        fs_raw=f.strip().split()
-        if (efsuffix):
-            fs_raw=[x+"F" for x in fs_raw]
-        efs_raw=[apair.match(a).group(1,2) for a in a.strip().split()]
+    for eline,a,f,lineno in zip(e_in,a_in,f_in,itertools.count(0)):
+        try:
+            progress(lineno)
+            es=eparse_yield(eline)
+            dump(es)
+            if (efsuffix):
+                es=[x+"E" for x in es]
+            fs_raw=f.strip().split()
+            efs_raw=[apair.match(a).group(1,2) for a in a.strip().split()]
 
-        fs=[start_fs]+fs_raw+[end_fs] # this shifts foreign indices so 1st real word is @1
+            fs=[start_fs]+fs_raw+[end_fs] # this shifts foreign indices so 1st real word is @1
+            if (efsuffix):
+                fs=[x+"F" for x in fs]
 
-        ne=len(es)
-        nf=len(fs)
+            ne=len(es)
+            nf=len(fs)
 
-        efs=[(int(e),int(f)+1) for e,f in efs_raw]
-        dump(efs)
+            efs=[(int(e),int(f)+1) for e,f in efs_raw]
+            maxe=max([e for e,_ in efs])
+            if (ne<=maxe):
+                warn("Sentence %d (0=first) alignment refers to e position %d when # e words is only %d\ne-parse: %s\na: %s\ne: %s" % (lineno,maxe,ne,eline.strip(),a.strip(),pprint.pformat(es)))
+            dump(efs)
 
-        e_fs=coverlist(efs,ne)
-        fes=[(f,e) for e,f in efs]
-        f_es=coverlist(fes,nf)
+            e_fs=coverlist(efs,ne)
+            fes=[(f,e) for e,f in efs]
+            f_es=coverlist(fes,nf)
 
-        span_ef=project_span(e_fs,ne)
-        span_fe=project_span(f_es,nf)
+            span_ef=project_span(e_fs,ne)
+            span_fe=project_span(f_es,nf)
 
-        h=N-1
-        def text_event(isright,corner):
-            pos=''
-            if show_position:
-                pos="%d\t%d\t%d\t" % (lineno,corner[0],corner[1])
-            if isright:
-                event=es[max(0,corner[0]-h):corner[0]]+[fs[corner[1]]]
-            else:
-                event=es[corner[0]:min(ne,corner[0]+h)][::-1]+[fs[corner[1]-1]]
-            return pos+" ".join(event)
+            h=N-1
+            def text_event(isright,corner):
+                pos=''
+                if show_position:
+                    pos="%d\t%d\t%d\t" % (lineno,corner[0],corner[1])
+                if isright:
+                    event=es[max(0,corner[0]-h):corner[0]]+[fs[corner[1]]]
+                else:
+                    event=es[corner[0]:min(ne,corner[0]+h)][::-1]+[fs[corner[1]-1]]
+                return pos+" ".join(event)
 
-        def write_event(out,isright,corner):
-            ev=text_event(isright,corner)
-            dump(isright,ev)
-            out.write(ev+"\n")
+            def write_event(out,isright,corner):
+                ev=text_event(isright,corner)
+                dump(isright,ev)
+                out.write(ev+"\n")
 
-        for a in xrange(ne):
-            for c in xrange(1,nf-1):
-                e=(a,a+1)
-                f=(c,c+1)
-                if (exists_phrase_anchored(e,f,0,span_ef,span_fe)):
-                    write_event(left_out,0,(a,c))
-                    #todo: keep bottom-right-corner-visited array and write_event whenever we complete a phrase; start from top left corner = (0,0) and never backtrack.  then we avoid the 2nd call below:  (but beware: unaligned rows/columns need visiting too; this does that)
-                if (exists_phrase_anchored(e,f,1,span_ef,span_fe)):
-                    write_event(right_out,1,(a+1,c+1))
+            for a in xrange(ne):
+                for c in xrange(1,nf-1):
+                    e=(a,a+1)
+                    f=(c,c+1)
+                    if (left_out and exists_phrase_anchored(e,f,0,span_ef,span_fe)):
+                        write_event(left_out,0,(a,c))
+                        #todo: keep bottom-right-corner-visited array and write_event whenever we complete a phrase; start from top left corner = (0,0) and never backtrack.  then we avoid the 2nd call below:  (but beware: unaligned rows/columns need visiting too; this does that)
+                    if (right_out and exists_phrase_anchored(e,f,1,span_ef,span_fe)):
+                        write_event(right_out,1,(a+1,c+1))
+        except IndexError as i:
+            warn("Bad index for sentence # %d - %s" % (lineno,i),"ERROR: ")
 
 def main():
     try:

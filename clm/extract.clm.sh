@@ -79,14 +79,19 @@ grf=${grf:-giraffe}
 ix=${ix:-training}
 ox=${ox:-x}
 chunksz=${chunksz:-100000}
+if [ "$binary" ] ; then
+    chunksum="binary (phrasal) "
+else
 nl=${head:-`nlines $ix.e-parse`}
 if [ $chunksz -gt $nl ] ; then
      chunksz=$nl
 fi
 nc=$(((nl+chunksz-1)/chunksz))
+chunksum="$((nc)) chunks of $chunksz ea. for $nl lines. "
+fi
 N=${N:-3}
 bign=${bign:-0}
-banner "$((nc)) chunks of $chunksz ea. for $nl lines.  $N-gram i=$ix o=$ox bign=$bign"
+banner "$chunksum$N-gram i=$ix o=$ox bign=$bign"
 set -e
 lfiles=""
 rfiles=""
