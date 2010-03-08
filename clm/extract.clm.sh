@@ -101,7 +101,7 @@ if ! skip_files 1 $ox.left.bz2 $ox.right.bz2 ; then
     if [ "$binary" ]; then
         $phrasal -w $ox.left -W $ox.right -N $N -r $ix
         for d in left right; do
-         bocounts $ox.$d | one | bzip2 -c > $ox.$d.bz2
+         bocounts $ox.$d | one | bzip2 -c > $ox.$d.bz2 && rm $ox.$d
         done
     else
         for i in `seq 1 $nc`; do
