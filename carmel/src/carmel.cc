@@ -365,6 +365,7 @@ struct carmel_main
             gopt.prior_inference_show=have_opt("prior-inference-show");
             gopt.prior_inference_global=have_opt("prior-inference-global");
             get_opt("prior-inference-stddev",gopt.prior_inference_stddev);
+
 //        gopt.cache_prob=have_opt("cache-prob");
             gopt.cheap_prob=have_opt("sample-prob");
             if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=have_opt("no-prob");
@@ -553,6 +554,9 @@ struct carmel_main
     {
         unsigned N=real_cascade()?nInputs:1;
         nms.clear();
+        if (gopt.prior_inference_stddev)
+            if (norm_method.add_count<=0)
+                norm_method.add_count=1;
         nms.push_back_n(norm_method,N);
         if (have_opt("normby"))
             set_vector<NM::f_group>("normby",nms," norm by ","");
@@ -1990,7 +1994,7 @@ cout <<         "\n"
         ;
 
     cout << "\n"
-        "--digamma=0,,.5 : (train-cascade) if digamma[n] is a number x, scale num and denom by exp(digamma(count+x)).  for variational bayes, choose digamma=0 and put the additional counts in --priors instead\n"
+        "--digamma=0,,0.5 : (train-cascade) comma separated components for each transducer in the cascade; if the component is the empty string, do the usual num/denom normalization; if given a number alpha (as opposed to the empty string), do exp(digamma(num+alpha))/exp(digamma(denom+alpha)).  the variational bayes approximation requires exp(digamma(denom+N*alpha)) where N is the size of the normgroup; this can be achieved by setting --digamma=0 and --priors=x.\n"
         "--normby=JCCN : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional, N=none (every arc stays at original prob; in --crp for now, this means a probability of 1 is used for N normalized arcs)\n"
         "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
         "\n"
