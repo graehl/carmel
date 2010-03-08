@@ -40,7 +40,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "5.5"
+#define CARMEL_VERSION "5.6"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -798,7 +798,7 @@ struct carmel_main
         if (!result->minimize_openfst<OpenFST>(
                 long_opts["minimize-determinize"]
                 , long_opts["minimize-rmepsilon"]
-                ,true
+                ,!long_opts["minimize-no-minimize"]
                 , !long_opts["minimize-no-connect"]
                 , long_opts["minimize-inverted"]
                 , long_opts["minimize-pairs"]
@@ -1589,7 +1589,7 @@ main(int argc, char *argv[]){
                     cm.write_trained("trained");
                 }
             } else if ( nGenerate > 0 ) {
-                cm.shrink(result,true,true,true,"\n");
+                cm.shrink(result,true,true,long_opts["minimize"],"\n");
 //                cm.minimize(result);
                 if ( maxGenArcs == 0 )
                     maxGenArcs = DEFAULT_MAX_GEN_ARCS;
@@ -1633,12 +1633,10 @@ main(int argc, char *argv[]){
 
             if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !trainc)
                  || flags['F'] ) {
-                cm.shrink(result,true,true,true,"\n");
+                cm.shrink(result,true,true,long_opts["minimize"],"\n");
 //                cm.prune(result);
                 cm.post_train_normalize(result);
 //                cm.minimize(result);
-                if (long_opts["minimize"])
-                    cm.openfst_minimize(result);
 
                 result->raisePower(exponent);
                 cm.write_transducer(*fstout,result);
