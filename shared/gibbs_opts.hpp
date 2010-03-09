@@ -70,6 +70,8 @@ struct gibbs_opts
             ("prior-inference-local",defaulted_value(&prior_inference_local),"disregarding supplied hyper-normalization groups, seperately scale prior counts for each multinomial (normalization group)")
             ("prior-inference-restart-fresh",defaulted_value(&prior_inference_restart_fresh),"on each random restart, reset the priors to their initial value (otherwise, let them drift across restarts); note: smaller priors generally memorize training data better.")
             ("prior-inference-show",defaulted_value(&prior_inference_show),"show for each prior group the cumulative scale applied to its prior counts")
+            ("prior-inference-start",defaulted_value(&prior_inference_start),"on iterations [start,end) do hyperparam inference; default is to do inference starting from --burnin, but this overrides that")
+            ("prior-inference-end",defaulted_value(&prior_inference_end),"see above")
             ;
         if (forest_opts)
             opt.add_options()
@@ -125,6 +127,7 @@ struct gibbs_opts
     bool prior_inference_global;
     bool prior_inference_local;
     bool prior_inference_restart_fresh;
+    unsigned prior_inference_start,prior_inference_end;
 
     unsigned restarts; // 0 = 1 run (no restarts)
     unsigned tick_every;
