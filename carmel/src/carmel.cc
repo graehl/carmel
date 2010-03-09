@@ -796,9 +796,9 @@ struct carmel_main
             Config::log() << " openfst " <<
                 (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
         if (!result->minimize_openfst<OpenFST>(
-                long_opts["minimize-determinize"]
+                long_opts["minimize-determinize"] || long_opts["minimize-determinize-only"]
                 , long_opts["minimize-rmepsilon"]
-                ,!long_opts["minimize-no-minimize"]
+                ,!long_opts["minimize-determinize-only"]
                 , !long_opts["minimize-no-connect"]
                 , long_opts["minimize-inverted"]
                 , long_opts["minimize-pairs"]
@@ -1633,7 +1633,7 @@ main(int argc, char *argv[]){
 
             if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !trainc)
                  || flags['F'] ) {
-                cm.shrink(result,true,true,long_opts["minimize"],"\n");
+                cm.shrink(result,true,true,long_opts["minimize"]||long_opts["minimize-determinize-only"],"\n");
 //                cm.prune(result);
                 cm.post_train_normalize(result);
 //                cm.minimize(result);
@@ -1928,8 +1928,10 @@ void usageHelp(void)
         "\n"
         "--minimize-all-compositions : the same, but for N=infinity\n"
         "\n"
-        "--minimize : minimize the final result before printing\n"
+        "--minimize : minimize the final result before printing.  UNLESS THIS (or one of the two above) IS SET, many --minimize-X options have no effect.\n"
         "\n"
+        "--minimize-determinize-only : just determinize, no minimize\n"
+        "--minimize-sum : collapse paths by summing prob (default is to keep the best)\n"
         "--minimize-determinize : determinize before minimize - necessary if transducer\n"
         "isn't already deterministic.  if this fails, carmel will abort.  without this\n"
         "option, carmel will detect nondeterminstic transducers and skip minimization\n"
@@ -2022,9 +2024,11 @@ cout <<         "\n"
         "--cache-prob : show the true probability according to cache model for each sample\n"
         "--sample-prob : show the sample prob given model, previous sample\n"
         "--no-prob : show no probability for --crp\n"
-        "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1; proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
+        "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1.  the default --priors is now 1 instead of 0. proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
         "--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...\n"
         "--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values\n"
+        "--prior-inference-start : on iterations [start,end) do hyperparam inference; default is to do inference starting from --burnin, but this overrides that\n"
+        "--prior-inference-end : default is to continue inference until the final sample, but this overrides that (e.g. you may wish inference to conclude at burnin)\n"
         "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.\n"
         "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
         "\n";

@@ -426,6 +426,12 @@ struct gibbs_base
     {
         return iter>=gopt.burnin;
     }
+    bool inferring() const
+    {
+        unsigned start=gopt.prior_inference_start ? gopt.prior_inference_start : gopt.burnin;
+        return start<=iter && (!gopt.prior_inference_end || iter<gopt.prior_inference_end);
+    }
+
     double final_t() const
     {
         return Ni-gopt.burnin;
@@ -696,7 +702,7 @@ struct gibbs_base
             p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
             addc(block,wt); //todo: can efficiently compute cache prob as we do this
         }
-        if (iter>0 && burning())
+        if (iter>0 && inferring())
             propose_new_priors();
         record_iteration(p);
         maybe_print_periodic(imp);
