@@ -29,24 +29,24 @@ template <class Backing,class Locking=graehl::no_locking>
 struct dynamic_hash_cache
 #ifdef DYNAMIC_HASH_CACHE_SINGLE_LOCK
     : private Locking
-#endif 
+#endif
 {
     typedef typename Backing::result_type result_type;
-    typedef Locking locking_type;
-    typedef typename locking_type::scoped_lock lock_type;
+    typedef typename Locking::mutex_type mutex_type;
+    typedef typename Locking::guard_type guard_type; // mutex_type::scoped_lock has a richer interface, which we don't need
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
     std::size_t n_collide;
-#endif 
+#endif
     typedef boost::uint32_t const* quad_p;
     struct locked_result
 #ifndef DYNAMIC_HASH_CACHE_SINGLE_LOCK
-    : public locking_type
+    : public mutex_type
 #endif
     {
         result_type result;
     };
 
-    locking_type &locking(locked_result &r)
+    mutex_type &locking(locked_result &r)
     {
         return
 #ifdef DYNAMIC_HASH_CACHE_SINGLE_LOCK
@@ -66,24 +66,24 @@ struct dynamic_hash_cache
     void flush()
     {
 #ifdef DYNAMIC_HASH_CACHE_SINGLE_LOCK
-        lock_type l(*this);
-#endif 
+        guard_type l(*this);
+#endif
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
         n_collide=
-#endif 
+#endif
             n_miss=n_hit=0;
-        
+
         assert(cachesize==cache.size);
         for (unsigned i=0;i<cachesize;++i) {
             cache_entry &e=cache[i];
 #ifndef DYNAMIC_HASH_CACHE_SINGLE_LOCK
-            lock_type l(e.fixed);
-#endif 
+            guard_type l(e.fixed);
+#endif
             e.dynamic.set_null();
         }
     }
 
-    unsigned capacity() const 
+    unsigned capacity() const
     {
         return cachesize;
     }
@@ -91,54 +91,59 @@ struct dynamic_hash_cache
     template <class O>
     void stats(O &o) const
     {
-        
+
         o << " (cache capacity="<< capacity()<<" hit rate="<<percent<4>(hit_rate())<<"% hits="<<n_hit<<" misses="<<n_miss;
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
         o << " hash collisions="<<n_collide<< " collision rate="<<std::setprecision(2)<<100.*n_collide/n_queries()<<"%";
-#endif 
+#endif
         o <<")";
     }
-    
+
     std::size_t n_miss,n_hit;
-    double n_queries() const 
+    double n_queries() const
     {
         return (double)n_miss+(double)n_hit;
     }
-    
+
     // returns [0...1] portion of hits
     double hit_rate() const
     {
         return n_hit / n_queries();
     }
     dynamic_hash_cache(Backing const& b,unsigned max_len,unsigned cache_size=10000)
-        : 
+        :
         cachesize(next_doubled_prime(cache_size))
         , max_len(max_len)
         , cache(cachesize,max_len+graehl::n_unsigned(sizeof(cache_entry)))
         , b(b)
     {
+        cache.construct();
         flush();
+    }
+    ~dynamic_hash_cache()
+    {
+        cache.destroy();
     }
 
     // conceptually const: answer doesn't depend on whether cache was modified
-    result_type operator()(quad_p p,unsigned len) const 
+    result_type operator()(quad_p p,unsigned len) const
     {
         return const_cast<self_type&>(*this)(p,len);
     }
-    
+
     result_type operator()(quad_p p,unsigned len)
     {
         assert(len <= max_len);
         assert(cachesize==cache.size);
         unsigned i=(unsigned)graehl::hash_quads_64(p,len) % cachesize;
 
-        bool hit;        
+        bool hit;
         cache_entry &e=cache[i];
         key_type &cached_key=e.dynamic;
-        locking_type &m=locking(e.fixed);
+        mutex_type &m=locking(e.fixed);
         result_type &cached_result=e.fixed.result;
         {
-            lock_type l(m);
+            guard_type l(m);
             hit=cached_key.equal(p,len);
             if (hit) {
                 ++n_hit;
@@ -147,18 +152,18 @@ struct dynamic_hash_cache
 #ifdef DYNAMIC_HASH_CACHE_TRACK_COLLISIONS
             if (!cached_key.is_null())
                 ++n_collide;
-#endif 
+#endif
         }
         ++n_miss;
         result_type r=b(p,len);
-        {    
-            lock_type l(m);
+        {
+            guard_type l(m);
             cached_key.set(p,len);
             cached_result=r;
-        }        
+        }
         return r;
     }
-    
+
 };
 
 

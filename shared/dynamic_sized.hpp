@@ -12,7 +12,7 @@ namespace graehl {
 //TODO: template all on word type (allow char), and pascal allow different length type?
 
 // use as a base class for unsigned-aligned pod array types (instead of void *, char *).  for documentation.  also gives the alignment we almost always want (4 bytes)
-struct dynamic_sized 
+struct dynamic_sized
 {
     unsigned front;
 
@@ -26,10 +26,10 @@ struct dynamic_sized
     {
         return &front;
     }
-    
+
     dynamic_sized() {}
  private:
-    dynamic_sized(dynamic_sized const& o) 
+    dynamic_sized(dynamic_sized const& o)
     {
         assert(0);
         throw std::runtime_error("can't copy construct dynamically sized objects");
@@ -37,10 +37,11 @@ struct dynamic_sized
 };
 
 
+/// a pascal string has first a size (front) and immediately adjacent in memory that many words.  in this case, the words are unsigned (32bit) rather than chars
 struct pascal_words_string : public dynamic_sized
 {
     typedef unsigned const* quad_p;
-    
+
     bool is_null()
     {
         return front==(unsigned)-1;
@@ -61,31 +62,30 @@ struct pascal_words_string : public dynamic_sized
         front=len;
         std::memcpy(begin()+1,p,len*sizeof(unsigned));
     }
-    
+
 };
 
 template <class Fixed,class Dynamic=pascal_words_string>
-struct dynamic_pair 
+struct dynamic_pair
 {
     Fixed fixed;
     Dynamic dynamic;
 };
 
-inline unsigned n_unsigned(unsigned bytes) 
+inline unsigned n_unsigned(unsigned bytes)
 {
     return (bytes+sizeof(unsigned)-1)/sizeof(unsigned);
 }
 
-    
-//FIXME: allocator?
 
-// each dynamic_sized object must be of bounded size.
+/// each dynamic_sized object must be of bounded size.  further, the objects aren't initialized (i.e. size header isn't even set to 0)
+//TODO: allocator ratehr than ::new
 template <class V>
-struct dynamic_sized_array 
+struct dynamic_sized_array
 {
     typedef V value_type; // note: actual size is greater than sizeof(V)
     typedef dynamic_sized_array<V> self_type;
-    
+
     dynamic_sized_array(unsigned n_objects,unsigned max_object_words)
         : size(n_objects)
         , max_object_words(max_object_words)
@@ -96,12 +96,12 @@ struct dynamic_sized_array
     {
         ::operator delete(words);
     }
-    
-    value_type &operator[](unsigned i) 
+
+    value_type &operator[](unsigned i)
     {
         return (value_type&)words[i*max_object_words];
     }
-    value_type const&operator[](unsigned i) const 
+    value_type const&operator[](unsigned i) const
     {
         return const_cast<self_type&>(*this)[i];
     }
@@ -113,26 +113,49 @@ struct dynamic_sized_array
 
     unsigned *end_words() const
     {
-        return words+size;
+        return words+n_words();
     }
 
-    void set_words(unsigned to=0) 
+    unsigned n_words() const
     {
-        for (unsigned i=0;i<size;++i)
+        return size*max_object_words;
+    }
+
+    void set_words(unsigned to=0)
+    {
+        for (unsigned i=0,N=n_words();i<N;++i)
             words[i]=to;
     }
 
     void set_first_words(unsigned to=0)
-    {    
-        for (unsigned i=0;i<size;i+=max_object_words)
+    {
+        for (unsigned i=0,N=n_words();i<N;i+=max_object_words)
             words[i]=to;
-    }    
-    
+    }
+
+    // these aren't automatically called
+    void construct()
+    {
+        for (unsigned i=0;i<size;++i)
+            new(&(*this)[i]) value_type();
+    }
+    template <class T>
+    void construct(T const& t)
+    {
+        for (unsigned i=0;i<size;++i)
+            new(&(*this)[i]) value_type(t);
+    }
+    void destroy()
+    {
+        for (unsigned i=0;i<size;++i)
+            (*this)[i].~value_type();
+    }
+
     unsigned size,max_object_words;
  private:
     unsigned *words;
 };
-    
+
 
 }
 

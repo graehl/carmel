@@ -10,7 +10,7 @@ intent:
 template <class Locking=graehl::no_locking> // or graehl::locking
 struct collection : private Locking
 {
-void some_operation() 
+void some_operation()
 {
     typename Locking::lock(*this);
 // or    bool do_lock=...;
@@ -22,17 +22,18 @@ void some_operation()
 
 namespace graehl {
 
-struct no_locking 
+struct no_locking
 {
     typedef no_locking self_type;
-    struct scoped_lock 
+    typedef no_locking mutex_type;
+    struct guard_type
     {
-        scoped_lock(self_type const& l) {}
-        scoped_lock(self_type const& l,bool b) {}
+        guard_type(self_type const& l) {}
+        guard_type(self_type const& l,bool b) {}
     };
 };
 
-    
+
 }
 
 
