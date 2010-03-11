@@ -423,7 +423,6 @@ class WFST {
         {
             as_pairs_fsa scoped_pairs(*this,pairs_keep_epsilon,as_pairs);
 //        DBP(numStates());
-//        try {
             if (determinize) {
                 to_openfst(f2);
                 Determinize(f2,&f);

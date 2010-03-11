@@ -10,7 +10,7 @@ intent:
 template <class Locking=graehl::no_locking> // or graehl::locking
 struct collection : private Locking
 {
-void some_operation() 
+void some_operation()
 {
     typename Locking::lock(*this);
 // or    bool do_lock=...;
@@ -25,8 +25,21 @@ void some_operation()
 
 namespace graehl {
 
-typedef boost::mutex locking;
-typedef boost::detail::lightweight_mutex spin_locking; ///WARNING: does not support scoped_lock(spin_locking&,bool)
+//typedef boost::mutex locking;
+//typedef boost::detail::lightweight_mutex spin_locking; ///WARNING: does not support scoped_lock(spin_locking&,bool)
+
+struct locking
+{
+    typedef boost::mutex mutex_type;
+    typedef boost::lock_guard<mutex_type> guard_type;
+};
+
+struct spin_locking
+{
+    typedef boost::detail::lightweight_mutex mutex_type;
+//    typedef boost::lock_guard<mutex_type> guard_type;
+    typedef mutex_type::scoped_lock guard_type;
+};
 
 }
 
