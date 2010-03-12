@@ -327,7 +327,7 @@ struct carmel_gibbs : public gibbs_base
     void set_cascadei()
     {
         cascadei.set_start(first_id);
-        for (unsigned i=0,N=cascade.size();i!=N;++i)
+        for (unsigned i=0,N=cascade.cascade.size();i!=N;++i)
             cascadei.add_delta(cascade.cascade[i]->n_edges());
     }
 
