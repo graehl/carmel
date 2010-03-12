@@ -63,7 +63,7 @@ struct State {
         typedef typename A::Weight W;
         typedef typename A::StateId I;
         for ( Arcs::const_iterator a=arcs.begin(),end=arcs.end() ; a != end ; ++a ) {
-            fst.AddArc(source,A(a->in,a->out,W(a->weight.getNegLog10()),a->dest));
+            fst.AddArc(source,A(a->in,a->out,W(a->weight.getNegLn()),a->dest));
             // note: just like we do, openfst uses index 0 for epsilons
         }
     }

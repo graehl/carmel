@@ -265,7 +265,7 @@ class WFST {
     template <class FstWeight>
     Weight openfst_to_weight(FstWeight const& w)
     {
-        return Weight(w.Value(),neglog10_weight());
+        return Weight(w.Value(),negln_weight());
     }
 
     // scoped object: on creation, turns the arcs into identity-FSA with symbol
@@ -391,7 +391,7 @@ class WFST {
             Assert(final<numStates());
         } else {
             final=numStates()-1;
-            for (unsigned i=0;i!=o_n;++i) {
+            for (unsigned i=0;i<=max_final;++i) {
                 W fw=fst.Final(i);
                 if (zero != fw) {
                     states[i].addArc(FSTArc(epsilon_index,epsilon_index,final,openfst_to_weight(fw)));

@@ -903,6 +903,8 @@ struct carmel_main
             show_seed();
             fems.randomize(nms);
         }
+        if (long_opts["constant-set"]) {
+        }
         if (!fem_inparam.empty()) {
             Config::log()<<"Reading cascade weights from --load-fem-param="<<fem_inparam<<endl;
             std::ifstream i(fem_inparam.c_str());
