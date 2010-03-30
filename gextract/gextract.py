@@ -16,7 +16,7 @@ usage.add_option("--unquote",action="store_false",dest="quote",help="don't surro
 usage.add_option("-d","--derivation",action="store_true",dest="derivation",help="print derivation tree following rules (label 0 is first rule)")
 usage.add_option("--attr",action="store_true",dest="attr",help="print ### line=N id=N attributes on rules")
 usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
-usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=False,header=True)
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=False,header=True,derivation=True)
 
 def intpair(stringpair):
     return (int(stringpair[0]),int(stringpair[1]))
@@ -96,7 +96,7 @@ class Alignment(object):
     def __str__(self):
         return " ".join(["%d-%d"%p for p in self.efpairs])
 
-class Psent(object):
+class Translation(object):
     def __init__(self,etree,estring,a,f,lineno=None):
         self.etree=etree
         self.estring=estring
@@ -186,31 +186,33 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 s+=xrs_var_lhs(xn[0],c,quote)
                 xn[0]+=1
             else:
-                s+=Psent.xrs_lhs_str(c,foreign,fbase,quote,xn)
+                s+=Translation.xrs_lhs_str(c,foreign,fbase,quote,xn)
             s+=' '
         return s[:-1]+')'
 
     @staticmethod
-    def xrsfrontier(root):
-        "return the set of all frontier nodes below root with no other frontier nodes between them and root."
-        r=[]
+    def xrsfrontier_generator(root):
+        "generator: list of all frontier nodes below root with no other interposing frontier nodes"
+        for c in root.children:
+            if c.frontier_node:
+                yield(c)
+            else:
+                for s in Translation.xrsfrontier(c):
+                    yield s
+
+    @staticmethod
+    def xrsfrontier_rec(root,r):
         for c in root.children:
             if c.frontier_node:
                 r.append(c)
             else:
-                r.extend(Psent.xrsfrontier(c))
+                Translation.xrsfrontier_rec(c,r)
         return r
 
     @staticmethod
-    def xrsfrontier_generator_bugged(root):
-        "doesn't work (python 2.5 or 2.6)! use xrsfrontier"
-        for c in root.children:
-            import dumpx
-            dumpx.dump(c.label,c.frontier_node,c.span,[g.label for g in c.children])
-            if c.frontier_node:
-                yield(c)
-            else:
-                Psent.xrsfrontier(c)
+    def xrsfrontier(root):
+        "list of all frontier nodes below root with no other frontier nodes between them and root."
+        return Translation.xrsfrontier_rec(root,[])
 
     @staticmethod
     def xrs_deriv(t,rulei=None):
@@ -218,12 +220,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         i=rulei[0]
         rulei[0]+=1
         #"%d%s"%(i,span_str(t.span))
-        r=tree.Node(i,[Psent.xrs_deriv(c,rulei) for c in Psent.xrsfrontier(t)])
+        r=tree.Node(i,[Translation.xrs_deriv(c,rulei) for c in Translation.xrsfrontier(t)])
         return r
 
     def derivation_tree(self):
         "derivation tree with label = index into all_rules"
-        return Psent.xrs_deriv(self.etree)
+        return Translation.xrs_deriv(self.etree)
 
     #TODO: bugfix with allow_epsilon_rhs
     @staticmethod
@@ -246,8 +248,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         s=root.span
         b,ge=s
         frhs=self.f[b:ge]
-        lhs=Psent.xrs_lhs_str(root,frhs,b,quote)
-        rhs=Psent.xrs_rhs_str(frhs,b,ge,quote)
+        lhs=Translation.xrs_lhs_str(root,frhs,b,quote)
+        rhs=Translation.xrs_rhs_str(frhs,b,ge,quote)
         return lhs+' -> '+rhs
 
     def all_rules(self,quote=False):
@@ -260,7 +262,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return etree.relabel(lambda t:t.label+span_str(t.span))
 
     def __str__(self):
-        return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Psent.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
+        return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Translation.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
 
     def estring():
         return
@@ -270,7 +272,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         e=etree.yieldlist()
         f=fline.strip().split()
         a=Alignment(aline,len(e),len(f))
-        return Psent(etree,e,a,f,lineno)
+        return Translation(etree,e,a,f,lineno)
 
 class Training(object):
     def __init__(self,parsef,alignf,ff):
@@ -281,7 +283,7 @@ class Training(object):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
         for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
-                yield Psent.parse_sent(eline,aline,fline,lineno)
+                yield Translation.parse_sent(eline,aline,fline,lineno)
 
 def attr_pairlist(obj,names=None):
     """return a list of tuples (a1,v1)... if names is a list ["a1","a2"], or all attributes if names is None.  skip nonexistent or None attributes"""
