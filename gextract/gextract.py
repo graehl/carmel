@@ -1,4 +1,7 @@
 #!/usr/bin/env python2.6
+"""
+minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node
+"""
 
 import os,sys,itertools,re
 sys.path.append(os.path.dirname(sys.argv[0]))
@@ -6,9 +9,8 @@ sys.path.append(os.path.dirname(sys.argv[0]))
 import tree
 
 import optparse
-inbase="astronauts"
 usage=optparse.OptionParser()
-usage.add_option("-r","--inbase",dest=inbase)
+usage.add_option("-r","--inbase",dest="inbase",default="astronauts",help="input .e-parse .a .f")
 
 def intpair(stringpair):
     return (int(stringpair[0]),int(stringpair[1]))
@@ -136,7 +138,7 @@ times each word is covered"""
         return self.etree.postorder()
 
     def frontier(self):
-        return [c for c in self.etree.postorder() if c.frontier_node]
+        return [c for c in self.treenodes() if c.frontier_node]
 
     def ghkm(self,leaves_are_frontier=False):
         self.set_spans(self.etree)
@@ -201,8 +203,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         rhs=Psent.xrs_rhs_str(frhs,b,ge)
         return lhs+' -> '+rhs
 
-    def all_rules(self):
-        return [self.xrs_str(c) for c in self.treenodes() if c.frontier_node]
+    def all_rules(self,include_terminals=False):
+        return [self.xrs_str(c) for c in self.frontier() if include_terminals or not c.is_terminal()]
 
     @staticmethod
     def fetree(etree):
@@ -226,14 +228,21 @@ class Training(object):
         self.parsef=parsef
         self.alignf=alignf
         self.ff=ff
+    def __str__(self):
+        return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
         for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
                 yield Psent.parse_sent(eline,aline,fline)
 
 def main():
     opts,_=usage.parse_args()
+    import dumpx
+    inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
+    print "### gextract minimal inbase="+opts.inbase,train
     for t in train.reader():
+        print
+        print "### ",t
         for r in t.all_rules():
             print r
 
