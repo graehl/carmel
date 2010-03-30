@@ -284,20 +284,19 @@ class Training(object):
 
 pod_types=[int,float,long,complex,str,unicode,bool]
 def attr_pairlist(obj,names=None,types=pod_types):
-    """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  skip nonexistent or None attributes"""
+    """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  if types is not None, then filter the tuples to those whose value's type is in types'"""
     if not names:
         names=[a for a in dir(obj) if a[0:2] != '__']
-    return [(k,getattr(obj,k)) for k in names if hasattr(obj,k) and type(getattr(obj,k)) in types]
+    return [(k,getattr(obj,k)) for k in names if hasattr(obj,k) and (types is None or type(getattr(obj,k)) in types)]
 
-def attr_str(obj,names=None):
+def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
-    return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names)])
+    return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
 
 def main():
     opts,_=usage.parse_args()
     if opts.header:
         print "### gextract %s minimal %s"%(version,attr_str(opts,['terminals','quote','attr','derivation','inbase']))
-        print attr_str(opts)
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
