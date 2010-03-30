@@ -24,11 +24,15 @@ class Node:
         self.order = 0
 
     def __copy__(self):
-        return self.relabel(lambda x:x)
+        return self.relabel(lambda x:x.label)
+        #return Node(self.label,[c.__copy__() for c in self.children])
 
     def relabel(self,newlabel):
         "copy w/ t'.label = newlabel(t)"
         return Node(newlabel(self),[c.relabel(newlabel) for c in self.children])
+
+    def yield_labels(self):
+        return [t.label for t in self.frontier()]
 
     def __str__(self):
         if len(self.children) != 0:
@@ -88,9 +92,6 @@ class Node:
             return l
         else:
             return [self]
-
-    def yieldlist(self):
-        return [t.label for t in self.frontier()]
 
     def is_dominated_by(self, node):
         return self is node or (self.parent != None and self.parent.is_dominated_by(node))

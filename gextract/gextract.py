@@ -60,7 +60,8 @@ def span_empty(s):
     return s[0]>=s[1]
 
 def span_cover(sa,sb):
-    "return smallest span covering both sa and sb; if either is 0-length then the other is returned (i.e. 0-length spans are empty sets, not singleton point sets)"
+    """return smallest span covering both sa and sb; if either is 0-length then the other is returned
+    (i.e. 0-length spans are empty sets, not singleton point sets)"""
     if sa is None:
         return sb
     if (sa[0]<sa[1]):
@@ -169,7 +170,6 @@ times each word is covered"""
             if not c.frontier_node:
                 c.span=None
 
-
     @staticmethod
     def xrs_lhs_str(t,foreign,fbase,quote,xn=None):
         """return xrs rule lhs string, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
@@ -256,7 +256,6 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         "list of all minimal rules"
         return [self.xrs_str(c,quote) for c in self.frontier()]
 
-
     @staticmethod
     def fetree(etree):
         return etree.relabel(lambda t:t.label+span_str(t.span))
@@ -269,7 +268,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def parse_sent(eline,aline,fline,lineno):
         etree=raduparse(eline)
-        e=etree.yieldlist()
+        e=etree.yield_labels()
         f=fline.strip().split()
         a=Alignment(aline,len(e),len(f))
         return Translation(etree,e,a,f,lineno)
