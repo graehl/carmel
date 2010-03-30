@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.6
+doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 """
-minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node
-"""
+version="0.9"
 
 import os,sys,itertools,re
 sys.path.append(os.path.dirname(sys.argv[0]))
@@ -9,13 +9,14 @@ sys.path.append(os.path.dirname(sys.argv[0]))
 import tree
 import optparse
 
-usage=optparse.OptionParser()
-usage.add_option("-r","--inbase",dest="inbase",help="input .e-parse .a .f")
+usage=optparse.OptionParser(epilog=doc,version="%prog "+version)
+usage.add_option("-r","--inbase",dest="inbase",metavar="PREFIX",help="input lines from PREFIX.{e-parse,a,f}")
 usage.add_option("-t","--terminals",action="store_true",dest="terminals",help="allow terminal (word without POS) rule root")
-usage.add_option("--unquote",action="store_false",dest="quote",default=True,help="don't surround terminals with double quotes.  no escape convention yet.")
-usage.add_option("-d","--derivation",action="store_true",dest="derivation",default=False,help="print derivation tree following rules (label 0 is first rule)")
-usage.add_option("--attr",action="store_true",dest="attr",default=False,help="print ### line=N id=N attributes on rules")
-usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=False)
+usage.add_option("--unquote",action="store_false",dest="quote",help="don't surround terminals with double quotes.  no escape convention yet.")
+usage.add_option("-d","--derivation",action="store_true",dest="derivation",help="print derivation tree following rules (label 0 is first rule)")
+usage.add_option("--attr",action="store_true",dest="attr",help="print ### line=N id=N attributes on rules")
+usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=False,header=True)
 
 def intpair(stringpair):
     return (int(stringpair[0]),int(stringpair[1]))
@@ -282,16 +283,26 @@ class Training(object):
         for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
                 yield Psent.parse_sent(eline,aline,fline,lineno)
 
+def attr_pairlist(obj,names=None):
+    """return a list of tuples (a1,v1)... if names is a list ["a1","a2"], or all attributes if names is None.  skip nonexistent or None attributes"""
+    return [(k,getattr(obj,k)) for k in names if hasattr(obj,k) and getattr(obj,k) is not None]
+
+def attr_str(obj,names=None):
+    "return string: a1=v1 a2=v2 for attr_pairlist"
+    return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names)])
+
 def main():
     opts,_=usage.parse_args()
-    import dumpx
+    if opts.header:
+        print "### gextract %s minimal %s"%(version,attr_str(opts,['terminals','quote','attr','derivation','inbase']))
+        #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
-    print "### gextract minimal terminals=%s quote=%s inbase=%s %s"%(opts.terminals,opts.quote,opts.inbase,train)
     for t in train.reader():
         t.ghkm(opts.terminals)
         print
-        print "###",t
+        if opts.header:
+            print "###",t
         for r,id in itertools.izip(t.all_rules(opts.quote),itertools.count(0)):
             print r+("### line=%d id=%d"%(t.lineno,id) if opts.attr else "")
         if (opts.derivation):
