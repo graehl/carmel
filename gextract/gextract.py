@@ -263,8 +263,6 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def __str__(self):
         return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Translation.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
 
-    def estring():
-        return
     @staticmethod
     def parse_sent(eline,aline,fline,lineno):
         etree=raduparse(eline)
@@ -311,5 +309,4 @@ def main():
 
 if __name__ == "__main__":
     errors=main()
-    if errors:
-        sys.exit(errors)
+    if errors: sys.exit(errors)
