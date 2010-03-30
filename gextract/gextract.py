@@ -7,19 +7,27 @@ import os,sys,itertools,re
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 import tree
-
 import optparse
+
 usage=optparse.OptionParser()
-usage.add_option("-r","--inbase",dest="inbase",default="astronauts",help="input .e-parse .a .f")
+usage.add_option("-r","--inbase",dest="inbase",help="input .e-parse .a .f")
+usage.add_option("-t","--terminals",action="store_true",dest="terminals",help="allow terminal (word without POS) rule root")
+usage.add_option("--unquote",action="store_false",dest="quote",default=True,help="don't surround terminals with double quotes.  no escape convention yet.")
+usage.add_option("-d","--derivation",action="store_true",dest="derivation",default=False,help="print derivation tree following rules (label 0 is first rule)")
+usage.add_option("--attr",action="store_true",dest="attr",default=False,help="print ### line=N id=N attributes on rules")
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=False)
 
 def intpair(stringpair):
     return (int(stringpair[0]),int(stringpair[1]))
 
-def xrs_quote(s):
-    return '"'+s+'"'
+def xrs_quote(s,quote):
+    return '"'+s+'"' if quote else s
 
 def xrs_var(i):
     return 'x'+str(i)
+
+def xrs_var_lhs(i,node,quote):
+    return xrs_var(i)+':'+(xrs_quote(node.label,quote) if node.is_terminal() else node.label)
 
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
 radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
@@ -46,6 +54,9 @@ def span_cover_points(points):
     if (len(points)==0):
         return (0,0)
     return (min(points),max(points)+1)
+
+def span_empty(s):
+    return s[0]>=s[1]
 
 def span_cover(sa,sb):
     "return smallest span covering both sa and sb; if either is 0-length then the other is returned (i.e. 0-length spans are empty sets, not singleton point sets)"
@@ -85,49 +96,53 @@ class Alignment(object):
         return " ".join(["%d-%d"%p for p in self.efpairs])
 
 class Psent(object):
-    def __init__(self,etree,estring,a,f):
+    def __init__(self,etree,estring,a,f,lineno=None):
         self.etree=etree
         self.estring=estring
         self.a=a
         self.f=f
         self.nf=len(f)
         self.ne=len(estring)
+        self.lineno=lineno
         assert(self.nf==a.nf)
         assert(self.ne==a.ne)
-        self.fspane=a.spanadje()
-        self.ghkm()
+        self.set_spans(self.etree,self.a.spanadje())
 
-    def set_spans(self,enode,epos=0):
+    def set_spans(self,enode,fspane,epos=0):
         "epos is enode's yield's starting position in english yield; returns ending position.  sets treenode.span foreign (a,b)"
         if enode.is_terminal():
-            enode.span=self.fspane[epos]
+            enode.span=fspane[epos]
             return epos+1
         else:
             span=None
             for c in enode.children:
-                epos=self.set_spans(c,epos)
+                epos=self.set_spans(c,fspane,epos)
                 span=span_cover(span,c.span)
             enode.span=span
             return epos
 
-    def find_frontier(self,enode,cspan=None):
+    def find_frontier(self,enode,allow_epsilon_rhs=False,cspan=None):
         """set treenode.frontier_node iff (GHKM) span and cspan are nonoverlapping; cspan is union of spans of nodes that aren't
 descendant or ancestor'.  cspan is a mutable array that efficiently tracks the current complement span by counting the number of
 times each word is covered"""
         if cspan is None:
             cspan=[1]*self.nf
         spanr=range(enode.span[0],enode.span[1])
-        fr=True
-        for i in spanr:
-            cspan[i]-=1
-            if cspan[i]:
-                fr=False
-        enode.frontier_node=fr
+        if (spanr or allow_epsilon_rhs):
+            fr=True
+            for i in spanr:
+                assert(cspan[i]>0)
+                cspan[i]-=1
+                if cspan[i]>0:
+                    fr=False
+            enode.frontier_node=fr
+        else:
+            enode.frontier_node=False
         for c in enode.children:
             for i in range(c.span[0],c.span[1]):
                 cspan[i]+=1
         for c in enode.children:
-            self.find_frontier(c,cspan)
+            self.find_frontier(c,allow_epsilon_rhs,cspan)
         for c in enode.children:
             for i in range(c.span[0],c.span[1]):
                 cspan[i]-=1
@@ -135,52 +150,83 @@ times each word is covered"""
             cspan[i]+=1
 
     def treenodes(self):
-        return self.etree.postorder()
+        return self.etree.preorder()
 
     def frontier(self):
-        return [c for c in self.treenodes() if c.frontier_node]
+        for c in self.treenodes():
+            if c.frontier_node:
+                yield c
 
-    def ghkm(self,leaves_are_frontier=False):
-        self.set_spans(self.etree)
+    def ghkm(self,leaves_are_frontier=False,allow_epsilon_rhs=False):
         self.etree.span=(0,self.nf)
-        self.find_frontier(self.etree)
+        self.find_frontier(self.etree,allow_epsilon_rhs)
         if not leaves_are_frontier:
             for c in self.etree.frontier():
                 c.frontier_node=False
         for c in self.treenodes():
+            c.allspan=c.span
             if not c.frontier_node:
                 c.span=None
 
-    @staticmethod
-    def xrsfrontier(root):
-        for c in root.children:
-            if c.frontier_node:
-                yield(c)
-            else:
-                xrsfrontier(c)
 
     @staticmethod
-    def xrs_lhs_str(t,foreign,fbase,xn=None):
+    def xrs_lhs_str(t,foreign,fbase,quote,xn=None):
         """return xrs rule lhs string, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
 where xi:node.label was a variable in the lhs string; only the first foreign word in the variable is replaced.  foreign initially is
 foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in t.span.  xn is just an implementation detail (mutable cell); ignore it."""
         if xn is None: xn=[0]
         if t.is_terminal():
-            return xrs_quote(t.label)
+            return xrs_quote(t.label,quote)
         s=t.label+'('
         for c in t.children:
             if c.frontier_node:
                 l=c.span[0]
                 foreign[l-fbase]=(xn[0],c)
-                s+=xrs_var(xn[0])+':'+c.label
+                s+=xrs_var_lhs(xn[0],c,quote)
                 xn[0]+=1
             else:
-                s+=Psent.xrs_lhs_str(c,foreign,fbase,xn)
+                s+=Psent.xrs_lhs_str(c,foreign,fbase,quote,xn)
             s+=' '
         return s[:-1]+')'
 
     @staticmethod
-    def xrs_rhs_str(frhs,b,ge):
+    def xrsfrontier(root):
+        "return the set of all frontier nodes below root with no other frontier nodes between them and root."
+        r=[]
+        for c in root.children:
+            if c.frontier_node:
+                r.append(c)
+            else:
+                r.extend(Psent.xrsfrontier(c))
+        return r
+
+    @staticmethod
+    def xrsfrontier_generator_bugged(root):
+        "doesn't work (python 2.5 or 2.6)! use xrsfrontier"
+        for c in root.children:
+            import dumpx
+            dumpx.dump(c.label,c.frontier_node,c.span,[g.label for g in c.children])
+            if c.frontier_node:
+                yield(c)
+            else:
+                Psent.xrsfrontier(c)
+
+    @staticmethod
+    def xrs_deriv(t,rulei=None):
+        if not rulei: rulei=[0]
+        i=rulei[0]
+        rulei[0]+=1
+        #"%d%s"%(i,span_str(t.span))
+        r=tree.Node(i,[Psent.xrs_deriv(c,rulei) for c in Psent.xrsfrontier(t)])
+        return r
+
+    def derivation_tree(self):
+        "derivation tree with label = index into all_rules"
+        return Psent.xrs_deriv(self.etree)
+
+    #TODO: bugfix with allow_epsilon_rhs
+    @staticmethod
+    def xrs_rhs_str(frhs,b,ge,quote=False):
         rhs=""
         gi=b
         while gi<ge:
@@ -189,39 +235,41 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 rhs+=xrs_var(c[0])
                 gi=c[1].span[1]
             else:
-                rhs+=xrs_quote(c)
+                rhs+=xrs_quote(c,quote)
                 gi+=1
             rhs+=' '
         return rhs[:-1]
 
-    def xrs_str(self,root):
+    def xrs_str(self,root,quote=False):
         assert(root.frontier_node)
         s=root.span
         b,ge=s
         frhs=self.f[b:ge]
-        lhs=Psent.xrs_lhs_str(root,frhs,b)
-        rhs=Psent.xrs_rhs_str(frhs,b,ge)
+        lhs=Psent.xrs_lhs_str(root,frhs,b,quote)
+        rhs=Psent.xrs_rhs_str(frhs,b,ge,quote)
         return lhs+' -> '+rhs
 
-    def all_rules(self,include_terminals=False):
-        return [self.xrs_str(c) for c in self.frontier() if include_terminals or not c.is_terminal()]
+    def all_rules(self,quote=False):
+        "list of all minimal rules"
+        return [self.xrs_str(c,quote) for c in self.frontier()]
+
 
     @staticmethod
     def fetree(etree):
         return etree.relabel(lambda t:t.label+span_str(t.span))
 
     def __str__(self):
-        return "e={%s} #e=%d #f=%d a={%s} f={%s}"%(Psent.fetree(self.etree),self.ne,self.nf,self.a,self.f)
+        return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Psent.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
 
     def estring():
         return
     @staticmethod
-    def parse_sent(eline,aline,fline):
+    def parse_sent(eline,aline,fline,lineno):
         etree=raduparse(eline)
         e=etree.yieldlist()
         f=fline.strip().split()
         a=Alignment(aline,len(e),len(f))
-        return Psent(etree,e,a,f)
+        return Psent(etree,e,a,f,lineno)
 
 class Training(object):
     def __init__(self,parsef,alignf,ff):
@@ -232,19 +280,22 @@ class Training(object):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
         for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
-                yield Psent.parse_sent(eline,aline,fline)
+                yield Psent.parse_sent(eline,aline,fline,lineno)
 
 def main():
     opts,_=usage.parse_args()
     import dumpx
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
-    print "### gextract minimal inbase="+opts.inbase,train
+    print "### gextract minimal terminals=%s quote=%s inbase=%s %s"%(opts.terminals,opts.quote,opts.inbase,train)
     for t in train.reader():
+        t.ghkm(opts.terminals)
         print
-        print "### ",t
-        for r in t.all_rules():
-            print r
+        print "###",t
+        for r,id in itertools.izip(t.all_rules(opts.quote),itertools.count(0)):
+            print r+("### line=%d id=%d"%(t.lineno,id) if opts.attr else "")
+        if (opts.derivation):
+            print t.derivation_tree()
 
 if __name__ == "__main__":
     errors=main()
