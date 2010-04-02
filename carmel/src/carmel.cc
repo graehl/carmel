@@ -2005,6 +2005,17 @@ cout <<         "\n"
         "\n"
         ;
 
+    cout << "\nforest-em export/import:\n"
+        "--load-fem-param=infile: restore params onto cascade from forest-em params file\n"
+        "--write-loaded=suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite 'inputN', not 'inputN.')\n"
+        "--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
+        "--fem-param=outfile: write forest-em params file for the input cascade\n"
+        "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
+        "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM\n"
+        "--fem-alpha=outfile : write a (parallel to --fem-param) list of per-parameter alpha (as in --crp --priors=.01,.0001).  locked arcs and --normby=N parameters get alpha -1 (which is also understood by forest-em --crp to lock)\n"
+        "--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)\n"
+        "\n";
+
     cout << "\ngibbs sampling / incremental em options:\n"
         "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights).  typical settings are --burnin=2000 -M 10000\n"
@@ -2041,16 +2052,6 @@ cout <<         "\n"
         "--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)\n"
         "\n";
 
-    cout << "\n"
-        "--load-fem-param=infile: restore params onto cascade from forest-em params file\n"
-        "--write-loaded=suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite 'inputN', not 'inputN.')\n"
-        "--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
-        "--fem-param=outfile: write forest-em params file for the input cascade\n"
-        "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
-        "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM\n"
-        "--fem-alpha=outfile : write a (parallel to --fem-param) list of per-parameter alpha (as in --crp --priors=.01,.0001).  locked arcs and --normby=N parameters get alpha -1 (which is also understood by forest-em --crp to lock)\n"
-        "--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)\n"
-        "\n";
 
     cout << "\n--help : more detailed help\n";
     /* // user doesn't need to know about this stuff
