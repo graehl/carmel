@@ -40,7 +40,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "5.6"
+#define CARMEL_VERSION "6.0"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -2037,8 +2037,8 @@ cout <<         "\n"
         "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.\n"
         "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
         "--expectation: use full forward/backward fractional counts instead of a single count=1 random sample\n"
-        "--random-start: for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course."
-        "--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)"
+        "--random-start: for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course.\n"
+        "--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)\n"
         "\n";
 
     cout << "\n"
