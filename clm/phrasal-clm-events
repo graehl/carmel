@@ -41,8 +41,8 @@ def usage():
 
                         """
 
-#return smallest span covering both sa and sb; if either is 0-length then the other is returned (i.e. 0-length spans are empty sets, not singleton point sets)
 def span_cover(sa,sb):
+    "return smallest span covering both sa and sb; if either is 0-length then the other is returned (i.e. 0-length spans are empty sets, not singleton point sets)"
     if (sa[0]<sa[1]):
         if (sb[0]<sb[1]):
             return (min(sa[0],sb[0]),max(sa[1],sb[1])) # 0-length spans would confuse this formula
@@ -94,15 +94,15 @@ def write_clm_events(e_in,a_in,f_in,left_out,right_out,N=3,efsuffix=True,show_po
     badne=0
     errors=0
     apair=re.compile('(\d+)-(\d+)')
-    for eline,a,f,lineno in zip(e_in,a_in,f_in,itertools.count(0)):
+    for eline,aline,fline,lineno in itertools.izip(e_in,a_in,f_in,itertools.count(0)):
         try:
             progress(lineno)
             es=eparse_yield(eline)
             dump(es)
             if (efsuffix):
                 es=[x+"E" for x in es]
-            fs_raw=f.strip().split()
-            efs_raw=[apair.match(a).group(1,2) for a in a.strip().split()]
+            fs_raw=fline.strip().split()
+            efs_raw=[apair.match(a).group(1,2) for a in aline.strip().split()]
 
             fs=[start_fs]+fs_raw+[end_fs] # this shifts foreign indices so 1st real word is @1
             if (efsuffix):

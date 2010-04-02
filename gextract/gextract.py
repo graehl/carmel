@@ -76,6 +76,33 @@ def span_str(s):
         return ""
     return "[%d,%d]"%s
 
+class XrsBase(object):
+    "p0: base model for generating any rule given a root nonterminal"
+    alpha=pow(10,6)
+    "p(rule)=[count(rule)+p0(rule)*alpha]/[alpha+sum_{rules r w/ same root NT}count(r)]"
+    pexpand=.5
+    "probability of expanding a nonterminal (preterminals always expand into terminal w/ p=1).  if no expansion, then variable."
+    pchild=.5
+    "geometric dist. on # of children; pchild is prob to add another"
+    pterm=.5
+    "geometric dist. on # of source terminals (rule rhs); pterm prob to add another"
+    "variables are placed one at a time w/ uniform distr. over # of possible placements, i.e. p for placing all n variables = t!/(t+n)! where t is # of terminals"
+    sourcevocab=5000
+    "uniformly choose which terminal out of this many possibilities"
+    nonterms=42
+    "uniformly choose which nonterminal out of this many possiblities.  note that which are preterminals is deduced from tree structure; keeping the labels disjoint is the parser's responsbility"
+
+    def __init__(self):
+        self.update_model()
+
+    def update_model(self):
+        self.psourceword=self.pterm/self.sourcevocab
+        self.pnonterm=1./self.nonterms
+
+class Counts(object):
+    def __init__(self):
+        1
+
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
     def __init__(self,aline,ne,nf):
@@ -151,14 +178,6 @@ times each word is covered"""
         for i in spanr:
             cspan[i]+=1
 
-    def treenodes(self):
-        return self.etree.preorder()
-
-    def frontier(self):
-        for c in self.treenodes():
-            if c.frontier_node:
-                yield c
-
     def ghkm(self,leaves_are_frontier=False,allow_epsilon_rhs=False):
         self.etree.span=(0,self.nf)
         self.find_frontier(self.etree,allow_epsilon_rhs)
@@ -189,6 +208,15 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 s+=Translation.xrs_lhs_str(c,foreign,fbase,quote,xn)
             s+=' '
         return s[:-1]+')'
+
+
+    def treenodes(self):
+        return self.etree.preorder()
+
+    def frontier(self):
+        for c in self.treenodes():
+            if c.frontier_node:
+                yield c
 
     @staticmethod
     def xrsfrontier_generator(root):

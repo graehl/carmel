@@ -339,7 +339,7 @@ struct carmel_main
                 topt.max_iter=m;
             }
             if (topt.cache.cache_level==WFST::cache_nothing)
-                topt.cache.cache_level=WFST::cache_forward;
+                topt.cache.cache_level=(gopt.expectation?WFST::cache_forward_backward:WFST::cache_forward);
             force_cascade_derivs();
             get_opt("crp-restarts",gopt.restarts);
             gopt.argmax_final=have_opt("crp-argmax-final");

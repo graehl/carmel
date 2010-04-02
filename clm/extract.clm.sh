@@ -111,6 +111,7 @@ if ! skip_files 1 $ox.left.bz2 $ox.right.bz2 ; then
             oxi=$ox.c$i
     #empirically (100sent) verififed to not change uniqued locations over minimal: -G - (wsd), $bign>0, -T
             echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
+            # -U 0 would disable ambiguous unaligned word attachment but we want to use the same setting as in real pipeline extraction
         done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
 
         header DONE WITH GHKM
