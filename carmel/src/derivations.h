@@ -424,6 +424,35 @@ struct derivations //: boost::noncopyable
         }
     }
 
+    //FIXME: gibbs.cc / incremental em version of below - too lazy to refactor, fix later
+    template <class gibbs>
+    Weight collect_counts_gibbs(gibbs const& gi)
+    {
+        if (empty()) return 1;
+//        update_weights(t);
+        unsigned nst=g.size();
+        fb_weights f(nst),b(nst); // default 0-init
+        f[0]=1;
+        get_order();
+        propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),gi,f);
+        Weight prob=f[fin];
+        get_reverse();
+        b[fin]=1;
+        propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),gi,b);
+        free_order();
+        free_reverse();
+        check_fb_agree(prob,b[0]);
+        for (unsigned s=0;s<nst;++s) {
+            arcs_type const& arcs=g[s].arcs;
+            for (arcs_type::const_iterator i=arcs.begin(),e=arcs.end();i!=e;++i) {
+                GraphArc const& a=*i;
+                Weight arc_contrib=gi(a)*f[a.src]*b[a.dest];
+                gi.choose_arc(a,arc_contrib/prob); //TODO: VERY minor speedup: initialize b[fin] to 1/prob instead of 1?  then no need to /prob.
+            }
+        }
+        return prob;
+    }
+
     // update expected counts and return prob (sum of paths)
     template <class arcs_table>
     Weight collect_counts(arcs_table &t)
@@ -453,6 +482,8 @@ struct derivations //: boost::noncopyable
         }
         return prob;
     }
+
+
  private:
     derivations(derivations const& o) : in(o.in),out(o.out) {} // similarly, this doesn't really copy the derivations; you need to compute() after.  um, this would be bad if you used a vector rather than a list?
  public:

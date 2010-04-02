@@ -24,6 +24,8 @@ struct gibbs_opts
         opt.add_options()
             ("crp", defaulted_value(&iter),
              "# of iterations of Bayesian 'chinese restaurant process' parameter estimation (Gibbs sampling) instead of EM")
+            ("include-self",defaulted_value(&include_self)->zero_tokens(),
+             "don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)")
             ("crp-exclude-prior", defaulted_value(&exclude_prior)->zero_tokens(),
              "When writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts")
             ("cache-prob", defaulted_value(&cache_prob)->zero_tokens(),
@@ -103,6 +105,10 @@ struct gibbs_opts
                  "Use a uniform base probability model for --crp, even when the input WFST have weights.  --em-p0 overrides this.")
                 ("norm-order",defaulted_value(&norm_order)->zero_tokens(),
                  "Print arc counts in normgroup (consecutive gibbs param id) order rather than WFST file order")
+                ("expectation",defaulted_value(&expectation)->zero_tokens(),
+                 "use full forward/backward fractional counts instead of a single count=1 random sample")
+                ("random-start",defaulted_value(&random_start)->zero_tokens(),
+                 "for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course.")
                 ;
     }
     //forest-em and carmel supported:
@@ -136,7 +142,13 @@ struct gibbs_opts
     bool argmax_final;
     bool argmax_sum;
 
+    bool include_self; // don't remove counts from current block before creating proposal. expectation+include_self = incremental EM
+
+
     //carmel only:
+    bool expectation; // instead of sampling, ask the gibbs impl. to compute full forward/backward fractional counts
+    bool random_start;
+
     unsigned init_em;
     bool em_p0;
     bool uniformp0;
@@ -181,6 +193,10 @@ struct gibbs_opts
     gibbs_opts() { set_defaults(); }
     void set_defaults()
     {
+        expectation=false;
+        random_start=false;
+
+        include_self=false;
         prior_inference_start=prior_inference_end=0;
         prior_inference_local=prior_inference_global=false;
         prior_inference_restart_fresh=false;

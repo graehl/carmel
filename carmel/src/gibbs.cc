@@ -282,6 +282,9 @@ struct carmel_gibbs : public gibbs_base
     }
     void print_sample(blocks_t const& sample,unsigned a,unsigned b,casc const& c)
     {
+        if (gopt.expectation) {
+            throw "can't print sample when using expectation because there is no single sample.\n";
+        }
         if (!(b>a && a<c.size())) {
             if (b!=0)
                 Config::warn() << "--print-from,-to gibbs ["<<a<<","<<b<<") is out of range for "<<c.size()<<" input transducers.\n";
@@ -290,7 +293,7 @@ struct carmel_gibbs : public gibbs_base
         if (b>c.size()) b=c.size();
         if (a==b) return;
         for (blocks_t::const_iterator i=sample.begin(),e=sample.end();i!=e;++i)
-            print_path(*i,a,b,c);
+            print_path(i->id,a,b,c);
     }
     void print_cascade_path(WFST &w,cascade_path const& p)
     {
@@ -339,14 +342,22 @@ struct carmel_gibbs : public gibbs_base
 
     void resample_block(unsigned block)
     {
-        block_t &b=*blockp; // comes cleared.
+        block_delta &b=sample[block]; // already cleared
         typedef dynamic_array<param_list> acpath;
         derivations &d=derivs.derivs[block];
         OUTGIBBS3(" block "<<block<<" line "<<d.lineno<<"\n");
-        if (init_prob)
-            d.random_path(p_init(*this),power);
-        else
-            d.random_path(*this,power);
+        blockp=&b.id;
+        if (gopt.expectation) {
+            // no support for init_prob yet.  (different initial weights than the base model for computing first iter expectation).  doesn't seem useful anyway.  gopt.random_start happens after anyway
+            blockd=&b;
+            b.prob=d.collect_counts_gibbs(*this);
+        } else {
+            if (init_prob)
+                d.random_path(p_init(*this),power);
+            else
+                d.random_path(*this,power);
+        }
+
         OUTGIBBS3('\n')
     }
 
@@ -387,12 +398,19 @@ struct carmel_gibbs : public gibbs_base
             OUTGIBBS2(" = "<<prob<<'\n')
         return prob;
     }
-//    block_t *blockp;
+    block_t *blockp;
+    block_delta *blockd;
     void choose_arc(GraphArc const& a) const
     {
         DGIBBS2(CARMEL_GIBBS_FOR_ID(a,id,out<<" "<<id));
         OUTGIBBS2("=(ids for "<<a<<")\n");
         CARMEL_GIBBS_FOR_ID(a,id,blockp->push_back(id))
+    }
+    void choose_arc(GraphArc const& a,double wt) const
+    {
+        DGIBBS2(CARMEL_GIBBS_FOR_ID(a,id,out<<" "<<id<<"="<<wt<<" "));
+        OUTGIBBS2("=(ids for "<<a<<")\n");
+        CARMEL_GIBBS_FOR_ID(a,id,blockd->push_back(id,wt))
     }
 
     bool init_prob; // NOTE: unlike old method, composed weights don't get updated until all runs are done

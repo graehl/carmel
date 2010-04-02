@@ -263,8 +263,116 @@ struct gibbs_base
     typedef gibbs_param gp_t;
     typedef fixed_array<double> normsum_t;
     typedef normsum_t saved_counts_t;
-    typedef dynamic_array<unsigned> block_t; // indexes into gps
-    typedef fixed_array<block_t> blocks_t;
+    struct block_delta
+    {
+        Weight prob;
+        typedef unsigned id_t;
+        typedef double wt_t;
+        typedef dynamic_array<id_t> ids_t; // indexes into gps
+        typedef dynamic_array<wt_t> wts_t; // if nonempty, applies a non-1 weight to each gibbs_param in block_t
+        ids_t id;
+        wts_t wt;
+
+        void randomize()
+        {
+            force_weights();
+            for (wts_t::iterator i=wt.begin(),e=wt.end();i!=e;++i)
+                *i *= random01();
+        }
+
+        void clear()
+        {
+            id.clear();
+            wt.clear();
+        }
+        void swap(block_delta &o)
+        {
+            id.swap(o.id);
+            wt.swap(o.wt);
+        }
+
+        unsigned size() const { return id.size(); }
+        bool have_weights() const
+        {
+            if (wt.size()==id.size())
+                return true;
+            assert(wt.empty());
+            return false;
+        }
+        void force_weights()
+        {
+            if (have_weights()) return;
+            wt.reinit(size(),1);
+        }
+
+        void push_back(id_t i)
+        {
+            assert(!have_weights());
+            id.push_back(i);
+        }
+        void push_back(id_t i,wt_t w)
+        {
+            assert(have_weights());
+            id.push_back(i);
+            wt.push_back(w);
+        }
+     private:
+        //TODO: test all below before using
+        typedef std::pair<id_t,wt_t> pair_t;
+        typedef dynamic_array<pair_t > pairs_t;
+        void to_pairs(pairs_t &c)
+        {
+            assert(have_weights());
+            unsigned i=0,N=id.size();
+            c.reserve(N);
+            for (;i<N;++i)
+                c.push_back(pair_t(id[i],wt[i]));
+        }
+        // consecutive (id,wt) (id,wt2) -> id,(wt+wt2)
+        void combine_from_pairs(pairs_t const& c)
+        {
+            clear();
+            unsigned N=c.size();
+            if (N==0) return;
+            id_t last=c[0].first;
+            wt_t sum=c[0].second;
+            for(unsigned i=1;i<N;++i) {
+                pair_t const& p=c[i];
+                id_t ci=p.first;
+                if (last==ci)
+                    sum+=p.second;
+                else {
+                    id.push_back(last);
+                    wt.push_back(sum);
+                    last=ci;
+                    sum=p.second;
+                }
+            }
+            id.push_back(last);
+            wt.push_back(sum);
+        }
+        struct order_first
+        {
+            bool operator()(pair_t const& a,pair_t const& b) const { return a.first<b.first; }
+        };
+
+        //TODO: test
+        void compress()
+        {
+            if (have_weights()) {
+                pairs_t p;
+                to_pairs(p);
+                std::sort(p.begin(),p.end(),order_first());
+                combine_from_pairs(p);
+            }
+        }
+
+
+    };
+
+    typedef fixed_array<block_delta> blocks_t;
+    typedef block_delta::ids_t block_t; // will have meaning (cache prob print sample etc) only for sampling, not forward/backward
+
     typedef dynamic_array<gp_t> gps_t;
     gps_t gps;
     unsigned nnorm;
@@ -396,6 +504,9 @@ struct gibbs_base
 
     void propose_new_priors()
     {
+        if (gopt.expectation) {
+            throw "prior inference not yet supported for expectation - i.e. it only works with cache prob and blocked gibbs sampling.  in principle using likelihood instead of cache prob should be possible.\n";
+        }
         if (gopt.prior_inference_stddev<=0) return;
         Weight a2=choose_prior_scales();
         normsum_t pcount1(pcount),psum1(psum);
@@ -594,6 +705,14 @@ struct gibbs_base
     {
         return gps[paramid].cache_prob(paramid,ccount,csum);
     }
+    Weight cache_prob(block_delta const& p)
+    {
+        if (gopt.expectation)
+            return p.prob;
+        else
+            return cache_prob(p.id);
+    }
+
     Weight cache_prob(block_t const& p)
     {
         Weight prob=1;
@@ -628,21 +747,37 @@ struct gibbs_base
     {
         return p.proposal_prob(normsum);
     }
-    void addc(gibbs_param &p,double delta)
+    void addc(gibbs_param &p,double scale)
     {
         assert(time>=p.sumcount.tmax);
-        p.addc(delta,time,normsum); //t=0 until burnin done
+        p.addc(scale,time,normsum); //t=0 until burnin done
     }
-    void addc(unsigned param,double delta)
+    void addc(unsigned param,double scale)
     {
-        addc(gps[param],delta);
+        addc(gps[param],scale);
     }
-    void addc(block_t &b,double delta)
+    void addc(block_t &b,double scale)
     {
         assert(time>=0);
         for (block_t::const_iterator i=b.begin(),e=b.end();i!=e;++i)
-            addc(*i,delta);
+            addc(*i,scale);
     }
+    void addc(block_delta &bd,double scale)
+    {
+        block_t & b=bd.id;
+        if (gopt.expectation)
+            for (unsigned i=0,N=b.size();i<N;++i)
+                addc(b[i],bd.wt[i]*scale);
+        else
+            addc(b,scale);
+    }
+
+    void clear_blocks()
+    {
+        for (unsigned i=0;i<n_blocks;++i)
+            sample[i].clear();
+    }
+
  private:
     //actual impl:
     template <class G>
@@ -658,13 +793,13 @@ struct gibbs_base
             out<<"# ";
             print_counts(imp,true,"(prior counts)");
         }
-
-        iteration(imp,false); // random initial sample
+        clear_blocks();
+        iteration(imp,gopt.random_start||(runi&&gopt.expectation)); // initial sample; randomize deltas when doing expectation to prevent deterministic hillclimb
         //FIXME: isn't really random!  get the same sample after every iteration
         for (iter=1;iter<=Ni;++iter) {
             time=(double)iter-(double)gopt.burnin; //very funny: unsigned arithmetic -> double (unsigned maximum) if you're sloppy
             if (time<0) time=0;
-            iteration(imp,true);
+            iteration(imp,false);
         }
         log<<"\nGibbs stats: "<<stats<<"\n";
         if (gopt.prior_inference_show)
@@ -679,7 +814,7 @@ struct gibbs_base
     }
 
     template <class G>
-    void iteration(G &imp,bool subtract_old=true)
+    void iteration(G &imp,bool randomize)
     {
         temperature=temp(iter);
         power=(temperature>0)?1./temperature:1;
@@ -692,14 +827,28 @@ struct gibbs_base
                 num_progress(log,b+1,gopt.tick_every,70,".",""); //FIXME: use proportional progress so total #blocks = 2 lines of status or so
             else
                 num_progress_scale(log,b+1,n_blocks,70,2,".","\n ");
-            block_t &block=sample[b];
-            blockp=&block;
+            block_delta &block=sample[b];
             double wt=imp.block_weight(b);
-            if (subtract_old)
+            if (!gopt.include_self)
                 addc(block,-wt);
-            block.clear();
+            block_delta include_self_save;
+            if (gopt.include_self)
+                include_self_save.swap(block);
+            else
+                block.clear();
             imp.resample_block(b);
-            p*=prob(block); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
+            block_delta &bd=sample[b];
+            if (gopt.expectation) {
+                if (randomize) {
+                    bd.randomize();
+                    bd.prob=0; // TODO: get prob after randomizing
+                }
+            } else {
+                bd.prob=prob(block.id); // for gopt.cheap_prob, do this before adding probs back to get prob underestimate; do it after to get overestimate (cache model is immune because it tracks own history)
+            }
+            p*=bd.prob;
+            if (gopt.include_self)
+                addc(include_self_save,-wt);
             addc(block,wt); //todo: can efficiently compute cache prob as we do this
         }
         if (iter>0 && inferring())
@@ -709,7 +858,6 @@ struct gibbs_base
     }
     unsigned beststart;
  public:
-    block_t *blockp; // redundant/courtesy: resample_block gets block index as argument already
     template <class G>
     gibbs_stats run_starts(G &imp)
     {
@@ -757,7 +905,7 @@ struct gibbs_base
         stats.print_ppx(log,p);
     }
 
-    void record_iteration(Weight p)
+    void record_iteration(Weight p,bool random_scale_expectation=false)
     {
         if (gopt.cache_prob) {
             log << " cache-model ";
