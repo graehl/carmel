@@ -282,9 +282,8 @@ struct carmel_gibbs : public gibbs_base
     }
     void print_sample(blocks_t const& sample,unsigned a,unsigned b,casc const& c)
     {
-        if (gopt.expectation) {
-            throw "can't print sample when using expectation because there is no single sample.\n";
-        }
+        if (gopt.expectation)
+            unimplemented("can't print sample when using expectation because there is no single sample.\n");
         if (!(b>a && a<c.size())) {
             if (b!=0)
                 Config::warn() << "--print-from,-to gibbs ["<<a<<","<<b<<") is out of range for "<<c.size()<<" input transducers.\n";
