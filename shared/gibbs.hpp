@@ -10,7 +10,7 @@
 #include <graehl/shared/assoc_container.hpp>
 #include <graehl/shared/delta_sum.hpp>
 #include <graehl/shared/print_width.hpp>
-
+#include <graehl/shared/unimplemented.hpp>
 #include <graehl/shared/debugprint.hpp>
 #include <boost/math/distributions/normal.hpp>
 
@@ -221,7 +221,7 @@ struct gibbs_base
         gps.clear();
         nnorm=0;
         init_rscale();
-        use_cache_prob=gopt.cache_prob||gopt.prior_inference_stddev>0;
+        use_cache_prob=!gopt.expectation && (gopt.cache_prob||gopt.prior_inference_stddev>0);
     }
 
     gibbs_base(gibbs_opts const &gopt_
@@ -504,10 +504,9 @@ struct gibbs_base
 
     void propose_new_priors()
     {
-        if (gopt.expectation) {
-            throw "prior inference not yet supported for expectation - i.e. it only works with cache prob and blocked gibbs sampling.  in principle using likelihood instead of cache prob should be possible.\n";
-        }
         if (gopt.prior_inference_stddev<=0) return;
+        if (gopt.expectation)
+            unimplemented("prior inference not yet supported for expectation - i.e. it only works with cache prob and blocked gibbs sampling.  in principle using likelihood instead of cache prob should be possible.");
         Weight a2=choose_prior_scales();
         normsum_t pcount1(pcount),psum1(psum);
         //todo: don't modify state for current priors in checking quality of proposed new priors (cache_prob should take argument for which set of arrays to use)
@@ -540,7 +539,7 @@ struct gibbs_base
     bool inferring() const
     {
         unsigned start=gopt.prior_inference_start ? gopt.prior_inference_start : gopt.burnin;
-        return start<=iter && (!gopt.prior_inference_end || iter<gopt.prior_inference_end);
+        return gopt.prior_inference_stddev>0 && start<=iter && (!gopt.prior_inference_end || iter<gopt.prior_inference_end);
     }
 
     double final_t() const
@@ -907,14 +906,18 @@ struct gibbs_base
 
     void record_iteration(Weight p,bool random_scale_expectation=false)
     {
-        if (gopt.cache_prob) {
-            log << " cache-model ";
+        char const* probname=0;
+        if (gopt.expectation)
+            probname="sum-all-derivations";
+        else if (gopt.cache_prob)
+            probname="cache-model";
+        else if (gopt.cheap_prob)
+            probname="cheap(proposal)";
+        if (probname) {
+            log << ' '<<probname<<' ';
             log_ppx(p);
         }
-        if (gopt.cheap_prob) {
-            log << " cheap-prob ";
-            log_ppx(p);
-        }
+
         log<<'\n';
         if (burning())
             stats.record(time,p);

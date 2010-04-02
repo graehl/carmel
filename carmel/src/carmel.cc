@@ -341,6 +341,9 @@ struct carmel_main
             if (topt.cache.cache_level==WFST::cache_nothing)
                 topt.cache.cache_level=(gopt.expectation?WFST::cache_forward_backward:WFST::cache_forward);
             force_cascade_derivs();
+            gopt.expectation=have_opt("expectation");
+            gopt.include_self=have_opt("include-self");
+            gopt.random_start=have_opt("random-start");
             get_opt("crp-restarts",gopt.restarts);
             gopt.argmax_final=have_opt("crp-argmax-final");
             gopt.argmax_sum=have_opt("crp-argmax-sum");
@@ -2002,7 +2005,7 @@ cout <<         "\n"
         "\n"
         ;
 
-    cout << "\n"
+    cout << "\ngibbs sampling / incremental em options:\n"
         "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
         "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights).  typical settings are --burnin=2000 -M 10000\n"
         "--crp-restarts : number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights\n"
@@ -2033,6 +2036,9 @@ cout <<         "\n"
         "--prior-inference-end : default is to continue inference until the final sample, but this overrides that (e.g. you may wish inference to conclude at burnin)\n"
         "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.\n"
         "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
+        "--expectation: use full forward/backward fractional counts instead of a single count=1 random sample\n"
+        "--random-start: for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course."
+        "--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)"
         "\n";
 
     cout << "\n"
