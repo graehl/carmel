@@ -1,7 +1,7 @@
 #ifndef CARMEL__CONFIG_HPP
 #define CARMEL__CONFIG_HPP
 
-#define USE_OPENFST
+//#define USE_OPENFST
 
 #ifdef USE_OPENFST
 # include <cstring>
