@@ -3,7 +3,9 @@ doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) 
 """
 version="0.9"
 
-import os,sys,itertools,re
+import dumpx
+
+import os,sys,itertools,re,operator
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 import tree
@@ -14,9 +16,9 @@ usage.add_option("-r","--inbase",dest="inbase",metavar="PREFIX",help="input line
 usage.add_option("-t","--terminals",action="store_true",dest="terminals",help="allow terminal (word without POS) rule root")
 usage.add_option("--unquote",action="store_false",dest="quote",help="don't surround terminals with double quotes.  no escape convention yet.")
 usage.add_option("-d","--derivation",action="store_true",dest="derivation",help="print derivation tree following rules (label 0 is first rule)")
-usage.add_option("--attr",action="store_true",dest="attr",help="print ### line=N id=N attributes on rules")
+usage.add_option("--no-attr",action="store_false",dest="attr",help="print ### line=N id=N attributes on rules")
 usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
-usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=False,header=True,derivation=True)
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=True)
 
 def intpair(stringpair):
     return (int(stringpair[0]),int(stringpair[1]))
@@ -86,11 +88,15 @@ class XrsBase(object):
     "geometric dist. on # of children; pchild is prob to add another"
     pterm=.5
     "geometric dist. on # of source terminals (rule rhs); pterm prob to add another"
-    "variables are placed one at a time w/ uniform distr. over # of possible placements, i.e. p for placing all n variables = t!/(t+n)! where t is # of terminals"
-    sourcevocab=5000
+    "variables are placed one at a time w/ uniform distr. over # of possible placements, i.e. # of ways for placing 2 vars amongst t terminals = (t+1)*(t+2).  for n vars, prod_"
+    sourcevocab=1000
     "uniformly choose which terminal out of this many possibilities"
-    nonterms=42
+    nonterms=40
     "uniformly choose which nonterminal out of this many possiblities.  note that which are preterminals is deduced from tree structure; keeping the labels disjoint is the parser's responsbility"
+
+    def __str__(self):
+        return attr_str(self)
+    #,['alpha','pexpand','pchild','pterm','sourcevocab','nonterms'])
 
     def __init__(self):
         self.update_model()
@@ -98,6 +104,18 @@ class XrsBase(object):
     def update_model(self):
         self.psourceword=self.pterm/self.sourcevocab
         self.pnonterm=1./self.nonterms
+        self.pendchild=1.-self.pchild
+        self.pendterm=1.-self.pterm
+
+
+    @staticmethod
+    def ways_vars(n_t,n_nt):
+        if n_nt==0:
+            return 1.
+        return reduce(operator.mul,map(float,range(n_t+1,n_t+n_nt+1)))
+
+    def p_rhs(self,n_t,n_nt):
+        return self.pendterm*pow(self.psourceword,n_t)/XrsBase.ways_vars(n_t,n_nt)
 
 class Counts(object):
     def __init__(self):
@@ -190,25 +208,35 @@ times each word is covered"""
                 c.span=None
 
     @staticmethod
-    def xrs_lhs_str(t,foreign,fbase,quote,xn=None):
-        """return xrs rule lhs string, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
+    def xrs_lhs_str(t,foreign,fbase,basemodel,quote=False):
+        """return pair of xrs rule lhs string and base model prob, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
 where xi:node.label was a variable in the lhs string; only the first foreign word in the variable is replaced.  foreign initially is
 foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in t.span.  xn is just an implementation detail (mutable cell); ignore it."""
-        if xn is None: xn=[0]
+        s,p,x=Translation.xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,0)
+        return (s,p/basemodel.pnonterm)
+
+    @staticmethod
+    def xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,xn):
         if t.is_terminal():
-            return xrs_quote(t.label,quote)
+            return (xrs_quote(t.label,quote),basemodel.psourceword,xn)
         s=t.label+'('
+        p=basemodel.pnonterm
+        preterm=t.is_preterminal()
+        nc=len(t.children)
+        if not preterm: # preterms labels must be distinct from non-preterms
+            p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
         for c in t.children:
             if c.frontier_node:
                 l=c.span[0]
-                foreign[l-fbase]=(xn[0],c)
-                s+=xrs_var_lhs(xn[0],c,quote)
-                xn[0]+=1
+                foreign[l-fbase]=(xn,c)
+                s+=xrs_var_lhs(xn,c,quote)
+                xn+=1
             else:
-                s+=Translation.xrs_lhs_str(c,foreign,fbase,quote,xn)
+                sc,pc,xn=Translation.xrs_lhs_str_r(c,foreign,fbase,basemodel,quote,xn)
+                s+=sc
+                p*=pc
             s+=' '
-        return s[:-1]+')'
-
+        return (s[:-1]+')',p,xn)
 
     def treenodes(self):
         return self.etree.preorder()
@@ -257,32 +285,38 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     #TODO: bugfix with allow_epsilon_rhs
     @staticmethod
-    def xrs_rhs_str(frhs,b,ge,quote=False):
+    def xrs_rhs_str(frhs,b,ge,basemodel,quote=False):
         rhs=""
         gi=b
+        p=basemodel.pendterm
+        n_nt=0
+        n_t=0
         while gi<ge:
             c=frhs[gi-b]
             if type(c) is tuple:
                 rhs+=xrs_var(c[0])
+                n_nt+=1
                 gi=c[1].span[1]
             else:
+                n_t+=1
                 rhs+=xrs_quote(c,quote)
                 gi+=1
             rhs+=' '
-        return rhs[:-1]
+        return (rhs[:-1],basemodel.p_rhs(n_t,n_nt))
 
-    def xrs_str(self,root,quote=False):
+    def xrs_str(self,root,basemodel,quote=False):
+        """return (rule string,basemodel prob) pair for rule w/ root"""
         assert(root.frontier_node)
         s=root.span
         b,ge=s
         frhs=self.f[b:ge]
-        lhs=Translation.xrs_lhs_str(root,frhs,b,quote)
-        rhs=Translation.xrs_rhs_str(frhs,b,ge,quote)
-        return lhs+' -> '+rhs
+        lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
+        rhs,pr=Translation.xrs_rhs_str(frhs,b,ge,basemodel,quote)
+        return (lhs+' -> '+rhs,pl*pr)
 
-    def all_rules(self,quote=False):
+    def all_rules(self,basemodel,quote=False):
         "list of all minimal rules"
-        return [self.xrs_str(c,quote) for c in self.frontier()]
+        return [self.xrs_str(c,basemodel,quote) for c in self.frontier()]
 
     @staticmethod
     def fetree(etree):
@@ -328,13 +362,14 @@ def main():
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
+    basemodel=XrsBase()
     for t in train.reader():
         t.ghkm(opts.terminals)
         print
         if opts.header:
             print "###",t
-        for r,id in itertools.izip(t.all_rules(opts.quote),itertools.count(0)):
-            print r+("### line=%d id=%d"%(t.lineno,id) if opts.attr else "")
+        for (r,p),id in itertools.izip(t.all_rules(basemodel,opts.quote),itertools.count(0)):
+            print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.attr else "")
         if (opts.derivation):
             print t.derivation_tree()
 

@@ -33,6 +33,6 @@ def interrogate(item):
          print "No"
      if hasattr(item, '__doc__'):
          doc = getattr(item, '__doc__')
- 	doc = doc.strip()   # Remove leading/trailing whitespace.
- 	firstline = doc.split('\n')[0]
- 	print "DOC:     ", firstline
+ 	 doc = doc.strip()   # Remove leading/trailing whitespace.
+ 	 firstline = doc.split('\n')[0]
+ 	 print "DOC:     ", firstline
