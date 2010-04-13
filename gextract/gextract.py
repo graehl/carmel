@@ -18,7 +18,18 @@ usage.add_option("--unquote",action="store_false",dest="quote",help="don't surro
 usage.add_option("-d","--derivation",action="store_true",dest="derivation",help="print derivation tree following rules (label 0 is first rule)")
 usage.add_option("--no-attr",action="store_false",dest="attr",help="print ### line=N id=N attributes on rules")
 usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
-usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=True)
+usage.add_option("--alignment-out",dest="alignment_out",metavar="FILE",help="write new alignment (fully connecting words in rules) here")
+usage.add_option("--header-full-align",action="store_true",dest="header_full_align",help="write full-align={{{...}}} attribute in header, same as --alignment-out")
+usage.add_option("--no-rules",action="store_false",dest="rules",help="do not print rules")
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True
+                   ,rules=False,header_full_align=True                  #debugging
+                   )
+
+def open_out(fname):
+    "if fname is '-', return sys.stdout, else return open(fname,'w').  not sure if it's ok to close stdout, so let GC close file please."
+    if fname=='-':
+        return sys.stdout
+    return open(fname,'w')
 
 def intpair(stringpair):
     return (int(stringpair[0]),int(stringpair[1]))
@@ -58,8 +69,14 @@ def span_cover_points(points):
         return (0,0)
     return (min(points),max(points)+1)
 
+def span_points(s):
+    return range(s[0],s[1])
+
 def span_empty(s):
     return s[0]>=s[1]
+
+def span_size(s):
+    return s[1]-s[0]
 
 def span_cover(sa,sb):
     """return smallest span covering both sa and sb; if either is 0-length then the other is returned
@@ -72,6 +89,33 @@ def span_cover(sa,sb):
         return sa
     else:
         return sb
+
+def span_points_except(s,points):
+    "return list of points in s=[a,b) but not in list points"
+    a=s[0]
+    b=s[1]
+    ss=range(a,b)
+    for p in points:
+        if a<p<=b:
+            ss[i-a]=None
+    return [x for x in ss if x is not None]
+
+def unmarked_span(s):
+    return [False for x in range(s[0],s[1])]
+
+def fresh_mark(marks,i):
+    if not marks[i]:
+        marks[i]=True
+        return True
+    return False
+
+def span_points_fresh(span,marks):
+    "if marks[i] was false for s[0]<=i<s[1], set to true and include i in return list."
+    return [i for i in range(span[0],span[1]) if fresh_mark(marks,i)]
+
+def span_mark(span,marks):
+    for i in range(span[0],span[1]):
+        marks[i]=True
 
 def span_str(s):
     if s is None:
@@ -124,9 +168,18 @@ class Counts(object):
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
     def __init__(self,aline,ne,nf):
-        self.efpairs=[intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()]
+        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf)"
+        self.efpairs=[intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()] if aline else []
         self.ne=ne
         self.nf=nf
+    def copy_blank(self):
+        "return a blank alignment of same dimensions"
+        return Alignment(None,self.ne,self.nf)
+    def fully_connect(self,es,fs):
+        "es and fs are lists of e and f indices, fully connect cross product"
+        for e in es:
+            for f in fs:
+                self.efpairs.append((e,f))
     def adje(self):
         "for e word index, list of f words aligned to it"
         return adjlist(self.efpairs,self.ne)
@@ -151,6 +204,7 @@ class Translation(object):
         self.nf=len(f)
         self.ne=len(estring)
         self.lineno=lineno
+        self.have_derivation=False
         assert(self.nf==a.nf)
         assert(self.ne==a.ne)
         self.set_spans(self.etree,self.a.spanadje())
@@ -197,13 +251,14 @@ times each word is covered"""
             cspan[i]+=1
 
     def ghkm(self,leaves_are_frontier=False,allow_epsilon_rhs=False):
+        self.have_derivation=True
         self.etree.span=(0,self.nf)
         self.find_frontier(self.etree,allow_epsilon_rhs)
         if not leaves_are_frontier:
             for c in self.etree.frontier():
                 c.frontier_node=False
         for c in self.treenodes():
-            c.allspan=c.span
+            c.fspan=c.span
             if not c.frontier_node:
                 c.span=None
 
@@ -333,6 +388,42 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         a=Alignment(aline,len(e),len(f))
         return Translation(etree,e,a,f,lineno)
 
+    def full_alignment(self):
+        """return Alignment object where each rule's lexical items are in full bipartite alignment.  for a minimal-rules derivation, this alignment will induce exactly the same derivation if provided as the .a input"""
+        assert(self.have_derivation)
+        fa=self.a.copy_blank()
+        t=self.etree
+        Translation.set_espan(t,0)
+        Translation.full_align(t,fa,unmarked_span(t.espan),unmarked_span(t.fspan))
+        return fa
+
+    @staticmethod
+    def full_align(t,fa,emarks,fmarks):
+        "if t.frontier_node, set es[e]=1 and fs[f]=1 for e in t.espan and f in t.fspan.  add to fa.efpairs the full_alignment"
+        for c in t.children:
+            Translation.full_align(c,fa,emarks,fmarks)
+        if t.frontier_node:
+            es=span_points_fresh(t.espan,emarks)
+            fs=span_points_fresh(t.fspan,fmarks)
+            fa.fully_connect(es,fs)
+
+    @staticmethod
+    def set_espan(t,ebase):
+        """set node.espan for all nodes in subtree t, espan=[ebase,b), and returns b.
+        b=ebase+N where N is the number of leaves under t. skips the work if t.espan is already set"""
+        if hasattr(t,'espan'):
+            return t.espan[1]
+        if t.is_terminal():
+            ep=ebase+1
+            t.espan=(ebase,ep)
+            return ep
+        else:
+            ep=ebase
+            for c in t.children:
+                ep=Translation.set_espan(c,ep)
+            t.espan=(ebase,ep)
+            return ep
+
 class Training(object):
     def __init__(self,parsef,alignf,ff):
         self.parsef=parsef
@@ -363,15 +454,24 @@ def main():
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
     basemodel=XrsBase()
+    ao=opts.alignment_out
+    if ao:
+        aof=open_out(ao)
+    getalign=ao or opts.header_full_align
     for t in train.reader():
         t.ghkm(opts.terminals)
+        if getalign:
+            fa=t.full_alignment()
         print
         if opts.header:
-            print "###",t
-        for (r,p),id in itertools.izip(t.all_rules(basemodel,opts.quote),itertools.count(0)):
-            print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.attr else "")
-        if (opts.derivation):
+            print "###",t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
+        if opts.rules:
+            for (r,p),id in itertools.izip(t.all_rules(basemodel,opts.quote),itertools.count(0)):
+                print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.attr else "")
+        if opts.derivation:
             print t.derivation_tree()
+        if ao:
+            aof.write(str(fa)+'\n')
 
 if __name__ == "__main__":
     errors=main()
