@@ -1,4 +1,7 @@
 import os,pprint,sys
+dbg=os.environ.get('DEBUG')
+dbg=True
+
 def x(s="debug stop."):
     raise Exception("x: "+s)
 def warn(msg,pre="WARNING: "):
@@ -7,8 +10,6 @@ def flat_single(l):
     if (len(l)==1):
         return l[0]
     return l
-dbg=os.environ.get('DEBUG')
-dbg=True
 def pstr(*l):
     return pprint.saferepr(flat_single(l))
 def dump(*l):
