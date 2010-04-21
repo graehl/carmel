@@ -1,6 +1,12 @@
 ### from graehl import *
+"""TODO:
+ figure out python logging lib
+"""
 
-import sys
+import sys,re
+
+def log(s):
+    sys.stderr.write("### "+s+"\n")
 
 def fold(f,z,list):
     for x in list:
@@ -17,6 +23,13 @@ def reduce(f,list):
             z=f(z,x)
     return z
 
+def cartesian_product(a,b):
+    "return list of tuples"
+    return [(x,y) for x in a for y in b]
+
+def range_incl(a,b):
+    return range(a,b+1)
+
 pod_types=[int,float,long,complex,str,unicode,bool]
 def attr_pairlist(obj,names=None,types=pod_types):
     """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  if types is not None, then filter the tuples to those whose value's type is in types'"""
@@ -28,8 +41,6 @@ def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
     return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
 
-def log(s):
-    sys.stderr.write("### "+s+"\n")
 
 def open_out(fname):
     "if fname is '-', return sys.stdout, else return open(fname,'w').  not sure if it's ok to close stdout, so let GC close file please."
@@ -37,6 +48,11 @@ def open_out(fname):
         return sys.stdout
     return open(fname,'w')
 
+def open_out_prefix(prefix,name):
+    "open_out prefix+name, or stdout if prefix='-'"
+    if prefix=='-':
+        return sys.stdout
+    return open_out(prefix+name)
 
 def adjlist(pairs,na):
     "return adjacency list indexed by [a]=[x,...,z] for pairs (a,x) ... (a,z)"
@@ -111,3 +127,16 @@ def span_str(s):
         return "[]"
     return "[%d,%d]"%s
 
+
+radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
+radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
+radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
+def radu2ptb(t):
+    t=radu_drophead.sub(r'(\1',t)
+    t=radu_lrb.sub(r'(\1 -LRB-)',t)
+    t=radu_rrb.sub(r'(\1 -RRB-)',t)
+    return t
+
+def raduparse(t):
+    t=radu2ptb(t)
+    return tree.str_to_tree(t)

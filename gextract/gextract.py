@@ -9,7 +9,7 @@ tropical semiring (a*b=>a+b,a+b=>a+log1p(exp(b-a)) where b>a) if needed (large r
 version="0.9"
 
 
-import os,sys,itertools,re,operator,collections
+import os,sys,itertools,re,operator,collections,random
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 import tree
@@ -27,7 +27,7 @@ usage.add_option("--no-attr",action="store_false",dest="attr",help="print ### li
 usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
 usage.add_option("--alignment-out",dest="alignment_out",metavar="FILE",help="write new alignment (fully connecting words in rules) here")
 usage.add_option("--header-full-align",action="store_true",dest="header_full_align",help="write full-align={{{...}}} attribute in header, same as --alignment-out")
-usage.add_option("-i","--iter",dest="iter",help="number of gibbs sampling passes through data")
+usage.add_option("-i","--iter",dest="iter",help="number of gibbs sampling passes through data",type="int")
 usage.add_option("--no-rules",action="store_false",dest="rules",help="do not print rules")
 usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True
                    ,rules=False,header_full_align=True,iter=1                  #debugging
@@ -42,19 +42,6 @@ def xrs_var(i):
 
 def xrs_var_lhs(i,node,quote):
     return xrs_var(i)+':'+(xrs_quote(node.label,quote) if node.is_terminal() else node.label)
-
-radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
-radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
-radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
-def radu2ptb(t):
-    t=radu_drophead.sub(r'(\1',t)
-    t=radu_lrb.sub(r'(\1 -LRB-)',t)
-    t=radu_rrb.sub(r'(\1 -RRB-)',t)
-    return t
-
-def raduparse(t):
-    t=radu2ptb(t)
-    return tree.str_to_tree(t)
 
 class XrsBase(object):
     "p0: base model for generating any rule given a root nonterminal"
@@ -130,19 +117,14 @@ class Counts(object):
         self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
         self.basep=basep
         self.alpha=basep.alpha
-    def expand(self,root):
-        """apply blunsom EXPAND operator (random choice) at each node in root (excluding root)"""
-        for c in root.children:
-            self.expand_r(c,[root])
 
-    def expand_r(self,t,p):
-        """give t a new span contained in parent p[0], but not infringing on siblings' fspan.  also update cfspans.  p is a path from p[0] to t; p[i] may all need their cfspan expanded if we set t.span"""
+    def expand(self,t):
+        """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update cfspans.  p is a path from p[0] to t; p[i] may all need their cfspan expanded if we set t.span"""
         ch=t.children
         chi=[(ch[i].fspan,ch[i],i) for i in range(0,len(ch))]
         chi.sort()
-        dump(chi)
-        for (f,c,i) in chi:
-            a=1
+        for (fspan,c,i) in chi:
+            L=1
 
     def __str__(self):
         return "\n".join(rules.itervalues())
@@ -470,7 +452,11 @@ class Training(object):
         for iter in range(0,opts.iter):
             log("gibbs iter=%d"%iter)
             for e in ex:
-                counts.expand(e.etree)
+                root=e.etree
+                nodes=list(root.preorder())[1:]
+                #                random.shuffle(nodes)
+                for n in nodes:
+                    counts.expand(n)
     def output(self,opts):
         ao=opts.alignment_out
         if ao:
