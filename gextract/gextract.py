@@ -1,11 +1,13 @@
 #!/usr/bin/env python2.6
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 """
+
+
 version="0.9"
 
 import dumpx
 
-import os,sys,itertools,re,operator
+import os,sys,itertools,re,operator,collections
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 import tree
@@ -20,10 +22,42 @@ usage.add_option("--no-attr",action="store_false",dest="attr",help="print ### li
 usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
 usage.add_option("--alignment-out",dest="alignment_out",metavar="FILE",help="write new alignment (fully connecting words in rules) here")
 usage.add_option("--header-full-align",action="store_true",dest="header_full_align",help="write full-align={{{...}}} attribute in header, same as --alignment-out")
+usage.add_option("-i","--iter",dest="iter",help="number of gibbs sampling passes through data")
 usage.add_option("--no-rules",action="store_false",dest="rules",help="do not print rules")
 usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True
-                   ,rules=False,header_full_align=True                  #debugging
+                   ,rules=False,header_full_align=True,iter=1                  #debugging
                    )
+
+### general lib:
+
+def fold(f,z,list):
+    for x in list:
+        z=f(z,x)
+    return z
+
+def reduce(f,list):
+    "note: assumes f(a,b)=b if a is None"
+    z=None
+    for x in list:
+        if z is None:
+            z=x
+        else:
+            z=f(z,x)
+    return z
+
+pod_types=[int,float,long,complex,str,unicode,bool]
+def attr_pairlist(obj,names=None,types=pod_types):
+    """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  if types is not None, then filter the tuples to those whose value's type is in types'"""
+    if not names:
+        names=[a for a in dir(obj) if a[0:2] != '__']
+    return [(k,getattr(obj,k)) for k in names if hasattr(obj,k) and (types is None or type(getattr(obj,k)) in types)]
+
+def attr_str(obj,names=None,types=pod_types):
+    "return string: a1=v1 a2=v2 for attr_pairlist"
+    return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
+
+def log(s):
+    sys.stderr.write("### "+s+"\n")
 
 def open_out(fname):
     "if fname is '-', return sys.stdout, else return open(fname,'w').  not sure if it's ok to close stdout, so let GC close file please."
@@ -31,30 +65,6 @@ def open_out(fname):
         return sys.stdout
     return open(fname,'w')
 
-def intpair(stringpair):
-    return (int(stringpair[0]),int(stringpair[1]))
-
-def xrs_quote(s,quote):
-    return '"'+s+'"' if quote else s
-
-def xrs_var(i):
-    return 'x'+str(i)
-
-def xrs_var_lhs(i,node,quote):
-    return xrs_var(i)+':'+(xrs_quote(node.label,quote) if node.is_terminal() else node.label)
-
-radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
-radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
-radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
-def radu2ptb(t):
-    t=radu_drophead.sub(r'(\1',t)
-    t=radu_lrb.sub(r'(\1 -LRB-)',t)
-    t=radu_rrb.sub(r'(\1 -RRB-)',t)
-    return t
-
-def raduparse(t):
-    t=radu2ptb(t)
-    return tree.str_to_tree(t)
 
 def adjlist(pairs,na):
     "return adjacency list indexed by [a]=[x,...,z] for pairs (a,x) ... (a,z)"
@@ -63,35 +73,41 @@ def adjlist(pairs,na):
         adj[a].append(b)
     return adj
 
+"""spans: empty span is None, not (0,0) or similar.  s[0]<=i<s[1] are the i in a span s."""
 def span_cover_points(points):
     "returns (a,b) for half-open [a,b) covering points"
     if (len(points)==0):
-        return (0,0)
+        return None
     return (min(points),max(points)+1)
 
 def span_points(s):
+    if s is None: return []
     return range(s[0],s[1])
 
 def span_empty(s):
-    return s[0]>=s[1]
+    return s is None
 
 def span_size(s):
+    if s is None: return 0
     return s[1]-s[0]
 
 def span_cover(sa,sb):
-    """return smallest span covering both sa and sb; if either is 0-length then the other is returned
-    (i.e. 0-length spans are empty sets, not singleton point sets)"""
+    """return smallest span covering both sa and sb; if either is None other is returned; 0-length spans aren't allowed - use None instead"""
     if sa is None:
         return sb
-    if (sa[0]<sa[1]):
-        if (sb[0]<sb[1]):
-            return (min(sa[0],sb[0]),max(sa[1],sb[1])) # 0-length spans would confuse this formula
+    if sb is None:
         return sa
-    else:
-        return sb
+    return (min(sa[0],sb[0]),max(sa[1],sb[1])) # 0-length spans would confuse this formula, which is why
+
+def span_in(a,b):
+    "a contained in b"
+    if a is None: return True
+    if b is None: return False
+    return a[0]>=b[0] && a[1]<=b[1]
 
 def span_points_except(s,points):
     "return list of points in s=[a,b) but not in list points"
+    if s is None: return []
     a=s[0]
     b=s[1]
     ss=range(a,b)
@@ -114,13 +130,37 @@ def span_points_fresh(span,marks):
     return [i for i in range(span[0],span[1]) if fresh_mark(marks,i)]
 
 def span_mark(span,marks):
-    for i in range(span[0],span[1]):
-        marks[i]=True
+    if span is not None:
+        for i in range(span[0],span[1]):
+            marks[i]=True
 
 def span_str(s):
     if s is None:
-        return ""
+        return "[]"
     return "[%d,%d]"%s
+
+### end lib
+def xrs_quote(s,quote):
+    return '"'+s+'"' if quote else s
+
+def xrs_var(i):
+    return 'x'+str(i)
+
+def xrs_var_lhs(i,node,quote):
+    return xrs_var(i)+':'+(xrs_quote(node.label,quote) if node.is_terminal() else node.label)
+
+radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
+radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
+radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
+def radu2ptb(t):
+    t=radu_drophead.sub(r'(\1',t)
+    t=radu_lrb.sub(r'(\1 -LRB-)',t)
+    t=radu_rrb.sub(r'(\1 -RRB-)',t)
+    return t
+
+def raduparse(t):
+    t=radu2ptb(t)
+    return tree.str_to_tree(t)
 
 class XrsBase(object):
     "p0: base model for generating any rule given a root nonterminal"
@@ -151,7 +191,6 @@ class XrsBase(object):
         self.pendchild=1.-self.pchild
         self.pendterm=1.-self.pterm
 
-
     @staticmethod
     def ways_vars(n_t,n_nt):
         if n_nt==0:
@@ -161,14 +200,65 @@ class XrsBase(object):
     def p_rhs(self,n_t,n_nt):
         return self.pendterm*pow(self.psourceword,n_t)/XrsBase.ways_vars(n_t,n_nt)
 
+basep_default=XrsBase()
+
+class Count(object):
+    "prior = p0*alpha.  count includes prior"
+    def __init__(self,rule,prior,group,count=0):
+        self.rule=rule
+        self.prior=prior
+        self.count=count
+        self.group=group
+    def reset(self):
+        self.count=self.prior
+    def __str__(self):
+        return "{{{count=%d p0=%g %s}}}"%(self.rule,self.prior,self.count)
+
 class Counts(object):
-    def __init__(self):
-        1
+    """track counts and sum of counts for groups on the fly.  TODO: integerize groups (root nonterminals)"""
+    def get(self,rule,prior,group):
+        "return Count object c for rule"
+        if rule in self.rules:
+            return self.rules[rule]
+        r=Count(rule,prior,group)
+        self.rules[rule]=r
+        return r
+    def prob(self,c):
+        return c.count/self.norms[c.group]
+    def add(self,c,d):
+        g=c.group
+        n=self.norms
+        if g in n: n[g]+=d
+        else: n[g]=d+self.alpha
+        c.count+=d
+    def __init__(self,basep=basep_default):
+        self.rules={} # todo: make count object have reference to norm count cell instead of looking up in hash?
+        self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
+        self.basep=basep
+        self.alpha=basep.alpha
+    def expand(self,root):
+        """apply blunsom EXPAND operator (random choice) at each node in root (excluding root)"""
+        for c in root.children:
+            self.expand_r(c,[root])
+
+    def expand_r(self,t,p):
+        """give t a new span contained in parent p[0], but not infringing on siblings' fspan.  also update cfspans.  p is a path from p[0] to t; p[i] may all need their cfspan expanded if we set t.span"""
+        ch=t.children
+        chi=[(ch[i].fspan,ch[i],i) for i in range(0,len(ch))]
+        chi.sort()
+        dumpx.dump(chi)
+        for (f,c,i) in chi:
+            a=1
+
+    def __str__(self):
+        return "\n".join(rules.itervalues())
 
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
     def __init__(self,aline,ne,nf):
         "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf)"
+        def intpair(stringpair):
+            return (int(stringpair[0]),int(stringpair[1]))
         self.efpairs=[intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()] if aline else []
         self.ne=ne
         self.nf=nf
@@ -228,7 +318,7 @@ descendant or ancestor'.  cspan is a mutable array that efficiently tracks the c
 times each word is covered"""
         if cspan is None:
             cspan=[1]*self.nf
-        spanr=range(enode.span[0],enode.span[1])
+        spanr=[] if enode.span is None else range(enode.span[0],enode.span[1])
         if (spanr or allow_epsilon_rhs):
             fr=True
             for i in spanr:
@@ -240,13 +330,15 @@ times each word is covered"""
         else:
             enode.frontier_node=False
         for c in enode.children:
-            for i in range(c.span[0],c.span[1]):
-                cspan[i]+=1
+            if c.span is not None:
+                for i in range(c.span[0],c.span[1]):
+                    cspan[i]+=1
         for c in enode.children:
             self.find_frontier(c,allow_epsilon_rhs,cspan)
         for c in enode.children:
-            for i in range(c.span[0],c.span[1]):
-                cspan[i]-=1
+            if c.span is not None:
+                for i in range(c.span[0],c.span[1]):
+                    cspan[i]-=1
         for i in spanr:
             cspan[i]+=1
 
@@ -367,10 +459,10 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         frhs=self.f[b:ge]
         lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
         rhs,pr=Translation.xrs_rhs_str(frhs,b,ge,basemodel,quote)
-        return (lhs+' -> '+rhs,pl*pr)
+        return (lhs+' -> '+rhs,pl*pr,root)
 
     def all_rules(self,basemodel,quote=False):
-        "list of all minimal rules"
+        "list of all minimal rules: (rule,p0,group (root NT))"
         return [self.xrs_str(c,basemodel,quote) for c in self.frontier()]
 
     @staticmethod
@@ -424,27 +516,91 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             t.espan=(ebase,ep)
             return ep
 
+    #cfspan: children's fspan cover
+    @staticmethod
+    def set_cfspan(t):
+        """for node under t, set node.cfspan to the smallest span enclosing node.children.fspan or None if no children with fspans."""
+        s=None
+        for c in t.children:
+            s=span_cover(s,Translation.set_cfspan(c))
+        t.cfspan=s
+        return s
+
+    def set_cfspans(self):
+        Translation.set_cfspan(self.etree)
+
+    @staticmethod
+    def update_fspan(t,new):
+        """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' cfspan and fspan reflecting this"""
+        old=t.fspan
+        t.fspan=new
+        parent=t.parent
+        while True:
+            par=parent.cfspan
+            if (par[0]==old[0] and par[0]<new[0]) or (par[1]==old[1] and par[1]>new[1]):
+                new=None
+                for c in parent.children:
+                    new=span_cover(new,c.cfspan)
+            else:
+                new=(min(par[0],new[0]),max(par[1],new[1]))
+            parent.cfspan=new
+            if parent.span is not None: break # this is a frontier node so its fspan includes the new
+            if span_in(new,parent.fspan): break # no change
+            old=parent.cfspan
+            new=span_cover(new,parent.fspan)
+            parent.fspan=new
+            parent=parent.parent
+
 class Training(object):
-    def __init__(self,parsef,alignf,ff):
+    def __init__(self,parsef,alignf,ff,basep=basep_default):
         self.parsef=parsef
         self.alignf=alignf
         self.ff=ff
+        self.basep=basep
+        self.counts=Counts(basep)
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
         for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
                 yield Translation.parse_sent(eline,aline,fline,lineno)
+    #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
+    def gibbs(self,opts,ex):
+        log("Using gibbs sampling starting from minimal ghkm.")
+        counts=self.counts
+        for e in ex:
+            for (r,p,t) in e.all_rules(self.basep):
+                c=counts.get(r,p,t.label)
+                t.count=c
+                counts.add(c,1)
+            e.set_cfspans()
+        for iter in range(0,opts.iter):
+            log("gibbs iter=%d"%iter)
+            for e in ex:
+                counts.expand(e.etree)
+    def output(self,opts):
+        ao=opts.alignment_out
+        if ao:
+            aof=open_out(ao)
+        getalign=ao or opts.header_full_align
+        examples=list(self.reader())
+        for t in examples:
+            t.ghkm(opts.terminals)
+        if opts.iter>0:
+            self.gibbs(opts,examples)
+        for t in examples:
+            if getalign:
+                fa=t.full_alignment()
+            print
+            if opts.header:
+                print "###",t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
+            if opts.rules:
+                for (r,p,_),id in itertools.izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
+                    print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.attr else "")
+            if opts.derivation:
+                print t.derivation_tree()
+            if ao:
+                aof.write(str(fa)+'\n')
 
-pod_types=[int,float,long,complex,str,unicode,bool]
-def attr_pairlist(obj,names=None,types=pod_types):
-    """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  if types is not None, then filter the tuples to those whose value's type is in types'"""
-    if not names:
-        names=[a for a in dir(obj) if a[0:2] != '__']
-    return [(k,getattr(obj,k)) for k in names if hasattr(obj,k) and (types is None or type(getattr(obj,k)) in types)]
-
-def attr_str(obj,names=None,types=pod_types):
-    "return string: a1=v1 a2=v2 for attr_pairlist"
-    return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
 
 def main():
     opts,_=usage.parse_args()
@@ -453,25 +609,7 @@ def main():
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
-    basemodel=XrsBase()
-    ao=opts.alignment_out
-    if ao:
-        aof=open_out(ao)
-    getalign=ao or opts.header_full_align
-    for t in train.reader():
-        t.ghkm(opts.terminals)
-        if getalign:
-            fa=t.full_alignment()
-        print
-        if opts.header:
-            print "###",t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
-        if opts.rules:
-            for (r,p),id in itertools.izip(t.all_rules(basemodel,opts.quote),itertools.count(0)):
-                print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.attr else "")
-        if opts.derivation:
-            print t.derivation_tree()
-        if ao:
-            aof.write(str(fa)+'\n')
+    train.output(opts)
 
 if __name__ == "__main__":
     errors=main()
