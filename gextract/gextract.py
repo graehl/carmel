@@ -29,11 +29,15 @@ usage.add_option("--alignment-out",dest="alignment_out",metavar="FILE",help="wri
 usage.add_option("--header-full-align",action="store_true",dest="header_full_align",help="write full-align={{{...}}} attribute in header, same as --alignment-out")
 usage.add_option("-i","--iter",dest="iter",help="number of gibbs sampling passes through data",type="int")
 usage.add_option("--no-rules",action="store_false",dest="rules",help="do not print rules")
-usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True
+usage.add_option("--randomize",action="store_true",dest="randomize",help="shuffle input sentence order for gibbs")
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False
                    ,rules=False,header_full_align=True,iter=1                  #debugging
                    )
 
-### general lib:
+def raduparse(t):
+    t=radu2ptb(t)
+    return tree.str_to_tree(t)
+
 def xrs_quote(s,quote):
     return '"'+s+'"' if quote else s
 
@@ -118,8 +122,12 @@ class Counts(object):
         self.basep=basep
         self.alpha=basep.alpha
 
+        #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
     def expand(self,t):
-        """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update cfspans.  p is a path from p[0] to t; p[i] may all need their cfspan expanded if we set t.span"""
+        """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
+        minspan=t.closure_span
+        if minspan is None:
+            1
         ch=t.children
         chi=[(ch[i].fspan,ch[i],i) for i in range(0,len(ch))]
         chi.sort()
@@ -194,8 +202,11 @@ descendant or ancestor'.  cspan is a mutable array that efficiently tracks the c
 times each word is covered"""
         if cspan is None:
             cspan=[1]*self.nf
-        spanr=[] if enode.span is None else range(enode.span[0],enode.span[1])
-        if (spanr or allow_epsilon_rhs):
+        if enode.span is None:
+            spanr=[]
+            enode.frontier_node=allow_epsilon_rhs
+        else:
+            spanr=range(enode.span[0],enode.span[1])
             fr=True
             for i in spanr:
                 assert(cspan[i]>0)
@@ -203,8 +214,6 @@ times each word is covered"""
                 if cspan[i]>0:
                     fr=False
             enode.frontier_node=fr
-        else:
-            enode.frontier_node=False
         for c in enode.children:
             if c.span is not None:
                 for i in range(c.span[0],c.span[1]):
@@ -361,7 +370,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         assert(self.have_derivation)
         fa=self.a.copy_blank()
         t=self.etree
-        Translation.set_espan(t,0)
+        self.set_espan()
         Translation.full_align(t,fa,unmarked_span(t.espan),unmarked_span(t.fspan))
         return fa
 
@@ -375,12 +384,15 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             fs=span_points_fresh(t.fspan,fmarks)
             fa.fully_connect(es,fs)
 
+    def set_espans(self):
+        if hasattr(self,"set_espan"): return
+        self.set_espan=True
+        Translation.set_espan(self.etree,0)
+
     @staticmethod
     def set_espan(t,ebase):
         """set node.espan for all nodes in subtree t, espan=[ebase,b), and returns b.
-        b=ebase+N where N is the number of leaves under t. skips the work if t.espan is already set"""
-        if hasattr(t,'espan'):
-            return t.espan[1]
+        b=ebase+N where N is the number of leaves under t.  writes fe[i]=node ith word is aligned to (fe must be None init)"""
         if t.is_terminal():
             ep=ebase+1
             t.espan=(ebase,ep)
@@ -392,40 +404,52 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             t.espan=(ebase,ep)
             return ep
 
-    #cfspan: children's fspan cover
+    #closure_span: children's fspan closure
     @staticmethod
-    def set_cfspan(t):
-        """for node under t, set node.cfspan to the smallest span enclosing node.children.fspan or None if no children with fspans."""
+    def set_closure_span(t):
+        """for node under t, set node.closure_span to the smallest span enclosing node.children.fspan or None if no children with fspans."""
         s=None
         for c in t.children:
-            s=span_cover(s,Translation.set_cfspan(c))
-        t.cfspan=s
+            s=span_cover(s,Translation.set_closure_span(c))
+        t.closure_span=s
         return s
 
-    def set_cfspans(self):
-        Translation.set_cfspan(self.etree)
+    def set_closure_spans(self):
+        Translation.set_closure_span(self.etree)
 
     @staticmethod
     def update_fspan(t,new):
-        """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' cfspan and fspan reflecting this"""
+        """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' closure_span and fspan reflecting this"""
         old=t.fspan
         t.fspan=new
         parent=t.parent
         while True:
-            par=parent.cfspan
+            par=parent.closure_span
             if (par[0]==old[0] and par[0]<new[0]) or (par[1]==old[1] and par[1]>new[1]):
                 new=None
                 for c in parent.children:
-                    new=span_cover(new,c.cfspan)
+                    new=span_cover(new,c.closure_span)
             else:
                 new=(min(par[0],new[0]),max(par[1],new[1]))
-            parent.cfspan=new
+            parent.closure_span=new
             if parent.span is not None: break # this is a frontier node so its fspan includes the new
             if span_in(new,parent.fspan): break # no change
-            old=parent.cfspan
+            old=parent.closure_span
             new=span_cover(new,parent.fspan)
             parent.fspan=new
             parent=parent.parent
+
+
+    @staticmethod
+    def f2enode(t,fe):
+        """recursive for all t in subtree: wherever t.span isn't empty, align all unaligned words @i in it so fe[i]=t"""
+        for c in t.children: f2enode(c,fe)
+        for p in span_points(t.span): if fe[p] is None: fe[p]=t
+
+    def set_f2enode(self):
+        fe=[None for x in range(0,self.nf)]
+        f2enode(self.etree,fe)
+        self.f2enode=fe
 
 class Training(object):
     def __init__(self,parsef,alignf,ff,basep=basep_default):
@@ -440,21 +464,24 @@ class Training(object):
         for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
                 yield Translation.parse_sent(eline,aline,fline,lineno)
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
-    def gibbs(self,opts,ex):
+    def gibbs(self,opts,examples):
         log("Using gibbs sampling starting from minimal ghkm.")
         counts=self.counts
-        for e in ex:
-            for (r,p,t) in e.all_rules(self.basep):
+        if opts.randomize:
+            random.shuffle(examples)
+        for ex in examples:
+            for (r,p,t) in ex.all_rules(self.basep):
                 c=counts.get(r,p,t.label)
                 t.count=c
                 counts.add(c,1)
-            e.set_cfspans()
+            ex.set_closure_spans()
+        ex.set_f2enode()
         for iter in range(0,opts.iter):
             log("gibbs iter=%d"%iter)
-            for e in ex:
-                root=e.etree
+            for ex in examples:
+                root=ex.etree
                 nodes=list(root.preorder())[1:]
-                #                random.shuffle(nodes)
+                if opts.randomize: random.shuffle(nodes)
                 for n in nodes:
                     counts.expand(n)
     def output(self,opts):

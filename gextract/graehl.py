@@ -13,15 +13,8 @@ def fold(f,z,list):
         z=f(z,x)
     return z
 
-def reduce(f,list):
-    "note: assumes f(a,b)=b if a is None"
-    z=None
-    for x in list:
-        if z is None:
-            z=x
-        else:
-            z=f(z,x)
-    return z
+def fold(f,z,list):
+    return reduce(f,list,z)
 
 def cartesian_product(a,b):
     "return list of tuples"
@@ -40,7 +33,6 @@ def attr_pairlist(obj,names=None,types=pod_types):
 def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
     return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
-
 
 def open_out(fname):
     "if fname is '-', return sys.stdout, else return open(fname,'w').  not sure if it's ok to close stdout, so let GC close file please."
@@ -137,6 +129,3 @@ def radu2ptb(t):
     t=radu_rrb.sub(r'(\1 -RRB-)',t)
     return t
 
-def raduparse(t):
-    t=radu2ptb(t)
-    return tree.str_to_tree(t)
