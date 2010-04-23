@@ -23,15 +23,15 @@ usage.add_option("-r","--inbase",dest="inbase",metavar="PREFIX",help="input line
 usage.add_option("-t","--terminals",action="store_true",dest="terminals",help="allow terminal (word without POS) rule root")
 usage.add_option("--unquote",action="store_false",dest="quote",help="don't surround terminals with double quotes.  no escape convention yet.")
 usage.add_option("-d","--derivation",action="store_true",dest="derivation",help="print derivation tree following rules (label 0 is first rule)")
-usage.add_option("--no-attr",action="store_false",dest="attr",help="print ### line=N id=N attributes on rules")
-usage.add_option("--no-header",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
+usage.add_option("--nofeatures",action="store_false",dest="attr",help="print ### line=N id=N attributes on rules")
+usage.add_option("--noheader",action="store_false",dest="header",help="suppress ### header lines (outputs for a line are still blank-line separated)")
 usage.add_option("--alignment-out",dest="alignment_out",metavar="FILE",help="write new alignment (fully connecting words in rules) here")
 usage.add_option("--header-full-align",action="store_true",dest="header_full_align",help="write full-align={{{...}}} attribute in header, same as --alignment-out")
 usage.add_option("-i","--iter",dest="iter",help="number of gibbs sampling passes through data",type="int")
-usage.add_option("--no-rules",action="store_false",dest="rules",help="do not print rules")
+usage.add_option("--norules",action="store_false",dest="rules",help="do not print rules")
 usage.add_option("--randomize",action="store_true",dest="randomize",help="shuffle input sentence order for gibbs")
-usage.set_defaults(inbase="astronauts",terminals=False,quote=True,attr=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False
-                   ,rules=False,header_full_align=True,iter=1                  #debugging
+usage.set_defaults(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False
+#                   ,header_full_align=True,iter=1                  #debugging
                    )
 
 def raduparse(t):
@@ -439,12 +439,13 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             parent.fspan=new
             parent=parent.parent
 
-
     @staticmethod
     def f2enode(t,fe):
         """recursive for all t in subtree: wherever t.span isn't empty, align all unaligned words @i in it so fe[i]=t"""
         for c in t.children: f2enode(c,fe)
-        for p in span_points(t.span): if fe[p] is None: fe[p]=t
+        for p in span_points(t.span):
+            if fe[p] is None:
+                fe[p]=t
 
     def set_f2enode(self):
         fe=[None for x in range(0,self.nf)]
@@ -483,7 +484,7 @@ class Training(object):
                 nodes=list(root.preorder())[1:]
                 if opts.randomize: random.shuffle(nodes)
                 for n in nodes:
-                    counts.expand(n)
+                    counts.expand(n,ex)
     def output(self,opts):
         ao=opts.alignment_out
         if ao:
@@ -502,22 +503,32 @@ class Training(object):
                 print "###",t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
             if opts.rules:
                 for (r,p,_),id in itertools.izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
-                    print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.attr else "")
+                    print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
             if opts.derivation:
                 print t.derivation_tree()
             if ao:
                 aof.write(str(fa)+'\n')
 
-
-def main():
-    opts,_=usage.parse_args()
+def gextract(opts):
     if opts.header:
-        print "### gextract %s minimal %s"%(version,attr_str(opts,['terminals','quote','attr','derivation','inbase']))
+        justnames=['terminals','quote','attr','derivation','inbase']
+        print "### gextract %s minimal %s"%(version,attr_str(opts))
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
     train.output(opts)
 
-if __name__ == "__main__":
+import optfunc
+
+@optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0):
+    gextract(Locals())
+
+optfunc.main(optfunc_gextract)
+
+def main():
+    opts,_=usage.parse_args()
+
+if False and __name__ == "__main__":
     errors=main()
     if errors: sys.exit(errors)

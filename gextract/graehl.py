@@ -5,8 +5,57 @@
 
 import sys,re
 
+def filter2(list,p):
+    "return tuple of two lists a,b: a is the subseq in list where p(a[i]) is True, b is everything else"
+    a=[]
+    b=[]
+    for x in list:
+        if p(x):
+            a.append(x)
+        else:
+            b.append(x)
+    return a,b
+
+def func_args(func):
+    "return dict func's arg=default (default=None if no default)"
+    args, varargs, varkw, defaultvals = inspect.getargspec(func)
+    nd=len(defaultvals)
+    defaultvals = defaultvals or ()
+    options = dict(zip(args[-nd:], defaultvals))
+    options.pop('rest_', None)
+    for a in args[0:-nd]:
+        options[a]=None
+    return options
+
+class Record(object):
+    def __init__(self):
+        pass
+    def update(self,d):
+        """make fields of object for dict or object d.  FIXME: int keys in dict can't make int records (would have to hack Record to be indexable"""
+        if (hasattr(d,'__dict__')):
+            d=getattr(d,'__dict__')
+        self.__dict__.update(d)
+
+def getlocals(up=0):
+    """returns dict of locals of calling function (or up-parent) using frame"""
+    f = sys._getframe(1+up)
+    args = inspect.getargvalues(f)
+    return args[3]
+
+class Locals(Record):
+    def __init__(self,up=0):
+        self.update(getlocals(up+1))
+
+def object_from_dict(d):
+    "setattr(obj,key)=val for key,val in d and return obj"
+    obj=Record()
+    obj.update(d)
+
 def log(s):
     sys.stderr.write("### "+s+"\n")
+
+def dict_slice(d,keys):
+    return dict((k,d[k]) for k in keys)
 
 def fold(f,z,list):
     for x in list:
@@ -23,12 +72,18 @@ def cartesian_product(a,b):
 def range_incl(a,b):
     return range(a,b+1)
 
+import inspect
+
 pod_types=[int,float,long,complex,str,unicode,bool]
-def attr_pairlist(obj,names=None,types=pod_types):
+
+def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private=True):
     """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  if types is not None, then filter the tuples to those whose value's type is in types'"""
     if not names:
-        names=[a for a in dir(obj) if a[0:2] != '__']
-    return [(k,getattr(obj,k)) for k in names if hasattr(obj,k) and (types is None or type(getattr(obj,k)) in types)]
+        names=[a for a in map(str,dir(obj)) if not (skip_private and a[0:2] == '__')]
+    #    attrs,indices=filter2(names,lambda x:type(x) is str)
+    avs=[(k,getattr(obj,k)) for k in names if hasattr(obj,k)]
+    return [(a,b) for (a,b) in avs if not ((skip_callable and callable(b)) or (types is not None and type(b) not in types))]
+    #+[(i,obj[i]) for i in indices]
 
 def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
