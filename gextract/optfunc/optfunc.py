@@ -177,10 +177,15 @@ def run(
             stderr.write('%s: ' % func.__name__)
         stderr.write("%s\n" % '\n'.join(errors))
 
+def caller_module(i):
+    if (i>=0):
+        i+=1
+    prev_frame = inspect.stack()[i][0]
+    return inspect.getmodule(prev_frame)
+
 def main(*args, **kwargs):
-    prev_frame = inspect.stack()[-1][0]
-    mod = inspect.getmodule(prev_frame)
-    if mod is not None and mod.__name__ == '__main__':
+    mod=caller_module(1)
+    if mod is None or mod.__name__ == '__main__':
         run(*args, **kwargs)
     return args[0] # So it won't break anything if used as a decorator
 
