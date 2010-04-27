@@ -526,18 +526,18 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def f2enode(t,fe):
         """recursive for all t in subtree: wherever t.span isn't empty, align all unaligned words @i in it so fe[i]=t.  fe[i]=None means unaligned (all words should be aligned to top node if nothing else, though)"""
-        for c in t.children: f2enode(c,fe)
+        for c in t.children: Translation.f2enode(c,fe)
         for p in span_points(t.span):
             if fe[p] is None:
                 fe[p]=t
 
     def set_f2enode(self):
         fe=[None for x in range(0,self.nf)]
-        f2enode(self.etree,fe)
+        Translation.f2enode(self.etree,fe)
         self.f2enode=fe
 
     def make_count_attr(self):
-        for t in self.root.preorder():
+        for t in self.etree.preorder():
             if not hasattr(t,"count"):
                 t.count=None
 
@@ -555,6 +555,11 @@ class Training(object):
                 yield Translation.parse_sent(eline,aline,fline,lineno)
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
     def gibbs(self,opts,examples):
+        self.gibbs_prep(opts,examples)
+        for iter in range(0,opts.iter):
+            self.gibbs_iter(opts,examples)
+
+    def gibbs_prep(self,opts,examples):
         log("Using gibbs sampling starting from minimal ghkm.")
         counts=self.counts
         if opts.randomize:
@@ -567,24 +572,21 @@ class Training(object):
             ex.make_count_attr()
             ex.set_closure_spans()
             ex.set_f2enode()
-        for iter in range(0,opts.iter):
-            log("gibbs iter=%d"%iter)
-            for ex in examples:
-                root=ex.etree
-                nodes=list(root.preorder())[1:] #exclude top node
-                if opts.randomize: random.shuffle(nodes)
-                for n in nodes:
-                    counts.expand(n,ex)
-    def output(self,opts):
+
+    def gibbs_iter(self,opts,examples):
+        log("gibbs iter=%d"%iter)
+        for ex in examples:
+            root=ex.etree
+            nodes=list(root.preorder())[1:] #exclude top node
+            if opts.randomize: random.shuffle(nodes)
+            for n in nodes:
+                self.counts.expand(n,ex)
+
+    def output(self,opts,examples):
         ao=opts.alignment_out
         if ao:
             aof=open_out(ao)
         getalign=ao or opts.header_full_align
-        examples=list(self.reader())
-        for t in examples:
-            t.ghkm(opts.terminals)
-        if opts.iter>0:
-            self.gibbs(opts,examples)
         for t in examples:
             if getalign:
                 fa=t.full_alignment()
@@ -598,6 +600,13 @@ class Training(object):
                 print t.derivation_tree()
             if ao:
                 aof.write(str(fa)+'\n')
+    def main(self,opts):
+        examples=list(self.reader())
+        for t in examples:
+            t.ghkm(opts.terminals)
+        if opts.iter>0:
+            self.gibbs(opts,examples)
+        self.output(opts,examples)
 
 def gextract(opts):
     if opts.header:
@@ -606,12 +615,45 @@ def gextract(opts):
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
     train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
-    train.output(opts)
+    train.main(opts)
+
+
+### tests:
+
+
+class TestTranslation(unittest.TestCase):
+    def setUp(self):
+        dump("init test")
+        inbase='astronauts'
+        terminals=False
+        quote=True
+        features=True
+        header=True
+        derivation=True
+        alignment_out=None
+        header_full_align=False
+        rules=True
+        randomize=False
+        iter=0
+        test=False
+        self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
+        self.opts=Locals()
+    def test_output(self):
+        tr=self.train
+        opts=self.opts
+        examples=list(tr.reader())
+        for t in examples:
+            t.ghkm(False)
+        tr.gibbs(opts,examples)
+        tr.output(opts,examples)
+
+
+### main:
 
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=False):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=True):
     if test:
         unittest.main()
     else:
@@ -626,9 +668,3 @@ if False and __name__ == "__main__":
     errors=main()
     if errors: sys.exit(errors)
 
-### tests:
-
-
-class TestTranslation(unittest.TestCase):
-    def setUp(self):
-        self.ex=1
