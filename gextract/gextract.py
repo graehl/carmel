@@ -111,6 +111,7 @@ class Counts(object):
     def prob(self,c):
         return c.count/self.norms[c.group]
     def add(self,c,d):
+        #todo: garbage collection for keys w/ 0 count
         g=c.group
         n=self.norms
         if g in n: n[g]+=d
@@ -123,16 +124,52 @@ class Counts(object):
         self.alpha=basep.alpha
 
         #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
-    def expand(self,t):
+    def update_count(n):
+        "tree node n which has a .span (is a rule root) gets its old rule count decreased by 1 and new rule count increased by 1"
+        oldc=n.count
+        newrule,newbasep=Translation.xrs_str(n,base)
+        newc=self.get(newrule,newbasep,n.label)
+        self.add(oldc,-1)
+        self.add(newc,1)
+        n.count=newc
+    def expand(self,node,ex):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
-        minspan=t.closure_span
-        if minspan is None:
-            1
-        ch=t.children
-        chi=[(ch[i].fspan,ch[i],i) for i in range(0,len(ch))]
-        chi.sort()
-        for (fspan,c,i) in chi:
-            L=1
+        base=self.basep
+        f2e=ex.f2enode
+        minspan=node.closure_span
+        parnode=node.find_ancestor(lambda n:n.span is not None)
+        if parnode is None:
+            return # can't adjust top node anyway
+        parspan=parnode.span
+        pold=self.prob(parnode.count)*self.prob(node.count)
+        oldspan=node.span
+        newspans=[(pold,oldspan)]
+        def consider_span(span):
+            node.span=span
+            parprob=Translation.xrs_prob(parnode,base)
+            prob=Translation.xrs_prob(node,base)
+            newspans.append((prob*parprob,span))
+        closure=node.closure_span
+        imax=parspan[1]
+        jmin=parspan[0]+1
+        consider_span(None)
+        if closure is not None:
+            assert(span_in(closure,parspan))
+            imax=closure[0]
+            jmin=closure[1]
+        for i in range(parspan[0],imax):
+            fi=f2e[i]
+            if fi is parnode or fi is node: # otherwise a sibling of parnode covers f[i]
+                for j in range(max(i+1,jmin),parspan[1]):
+                    consider_span(i,j)
+                    f=f2e[j]
+                    if not (f is parnode or f is node):
+                        break
+        newspan=choosep(newspan)
+        if (newspan!=oldspan):
+            update_count(parnode)
+            update_count(node)
+            Translation.update_span(node,newspan)
 
     def __str__(self):
         return "\n".join(rules.itervalues())
@@ -336,7 +373,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             rhs+=' '
         return (rhs[:-1],basemodel.p_rhs(n_t,n_nt))
 
-    def xrs_str(self,root,basemodel,quote=False):
+    @staticmethod
+    def xrs_str(root,basemodel,quote=False):
         """return (rule string,basemodel prob) pair for rule w/ root"""
         assert(root.frontier_node)
         s=root.span
@@ -346,9 +384,47 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         rhs,pr=Translation.xrs_rhs_str(frhs,b,ge,basemodel,quote)
         return (lhs+' -> '+rhs,pl*pr,root)
 
+    @staticmethod
+    def n_rhs(node):
+        "return (#vars,#terminals) in subtree at node; vars have a .span and stop recursion"
+        fs=node.fspan
+        if node.span is not None:
+            return (1,0) #var
+        if fs is None:
+            return (0,0) #no rhs
+        nt=fs[1]-fs[0]
+        nv=0
+        for c in node.children:
+            cv,ct=n_rhs(c)
+            nt-=ct
+            nv+=cv
+        return (nv,nt)
+
+    @staticmethod
+    def xrs_prob(root,basemodel):
+        """same as xrs_str(root,basemodel)[1]"""
+        return Translation.xrs_str(root,basemodel)[1]
+        #TODO: test
+        lhs_prob=xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
+        n_t,n_nt=n_rhs(root)
+        rhs_prob=basemode.p_rhs(n_t,n_nt)
+
+    @staticmethod
+    def xrs_prob_lhs_r(t,basemodel):
+        if t.is_terminal():
+            return basemodel.psourceword
+        preterm=t.is_preterminal()
+        p=basemodel.pnonterm
+        if not preterm: # preterms labels must be distinct from non-preterms
+            p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
+        for c in t.children:
+            if not c.frontier_node:
+                p*=Translation.xrs_prob_lhs_r(c,foreign,fbase,basemodel,quote,xn)
+        return p
+
     def all_rules(self,basemodel,quote=False):
         "list of all minimal rules: (rule,p0,group (root NT))"
-        return [self.xrs_str(c,basemodel,quote) for c in self.frontier()]
+        return [Translation.xrs_str(c,basemodel,quote) for c in self.frontier()]
 
     @staticmethod
     def fetree(etree):
@@ -419,7 +495,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     @staticmethod
     def update_fspan(t,new):
-        """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' closure_span and fspan reflecting this"""
+        """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' closure_span and fspan reflecting this.
+        """
         old=t.fspan
         t.fspan=new
         parent=t.parent
@@ -440,8 +517,13 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             parent=parent.parent
 
     @staticmethod
+    def update_span(t,new):
+        t.span=new
+        update_fspan(t,new)
+
+    @staticmethod
     def f2enode(t,fe):
-        """recursive for all t in subtree: wherever t.span isn't empty, align all unaligned words @i in it so fe[i]=t"""
+        """recursive for all t in subtree: wherever t.span isn't empty, align all unaligned words @i in it so fe[i]=t.  fe[i]=None means unaligned (all words should be aligned to top node if nothing else, though)"""
         for c in t.children: f2enode(c,fe)
         for p in span_points(t.span):
             if fe[p] is None:
@@ -451,6 +533,11 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         fe=[None for x in range(0,self.nf)]
         f2enode(self.etree,fe)
         self.f2enode=fe
+
+    def make_count_attr(self):
+        for t in self.root.preorder():
+            if not hasattr(t,"count"):
+                t.count=None
 
 class Training(object):
     def __init__(self,parsef,alignf,ff,basep=basep_default):
@@ -475,13 +562,14 @@ class Training(object):
                 c=counts.get(r,p,t.label)
                 t.count=c
                 counts.add(c,1)
+            ex.make_count_attr()
             ex.set_closure_spans()
-        ex.set_f2enode()
+            ex.set_f2enode()
         for iter in range(0,opts.iter):
             log("gibbs iter=%d"%iter)
             for ex in examples:
                 root=ex.etree
-                nodes=list(root.preorder())[1:]
+                nodes=list(root.preorder())[1:] #exclude top node
                 if opts.randomize: random.shuffle(nodes)
                 for n in nodes:
                     counts.expand(n,ex)

@@ -23,6 +23,25 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def find_ancestor(self,pred):
+        "return closest ancestor such that pred(ancestor), or else None"
+        p=self.parent
+        while p is not None and not pred(p):
+            p=p.parent
+        return p
+
+    def find_descendants(self,pred,r):
+        "return list of frontier of descendants such that pred(descendant).  frontier not meaning just leaves - internal nodes with pred(node) stop recursion"
+        if r is None:
+            r=[]
+            for c in self.children: c.find_descendants(pred,r)
+            return r
+        else:
+            if pred(self):
+                r.append(self)
+            else:
+                for c in self.children: c.find_descendants(pred,r)
+
     def __copy__(self):
         return self.relabel(lambda x:x.label)
         #return Node(self.label,[c.__copy__() for c in self.children])

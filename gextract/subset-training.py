@@ -56,12 +56,8 @@ def subset_training(inbase="astronauts",outbase="-",upper_length=sys.maxint,lowe
         of.write(fline)
         oe.write(eline)
 
-def optparse_main():
+optfunc.main(subset_training)
+
+if False and __name__ == '__main__':
     o,_=usage.parse_args()
     subset_training(o.inbase,o.outbase,o.upper_length,o.lower_length,o.end,o.begin,o.monotone,o.n_output_lines)
-
-if __name__ == '__main__':
-    optfunc.run(subset_training)
-    #    optfunc.header='commands:\n'
-    #    optfunc.run([subset_training])
-    #    optparse_main()

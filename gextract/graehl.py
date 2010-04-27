@@ -3,7 +3,21 @@
  figure out python logging lib
 """
 
-import sys,re
+import sys,re,random
+
+def choosep(p_item_list):
+    "given list of tuples (p,item), return a random item according to (possibly unnormalized) p, None if empty list input"
+    if len(p_item_list)==0:
+        return None
+    z=sum(x[0] for x in p_item_list)
+    c=random.random()*z
+    for (p,i) in p_item_list:
+        c-=p
+        if c<=0:
+            return i
+    return p_item_list[-1][1]
+
+
 
 def filter2(list,p):
     "return tuple of two lists a,b: a is the subseq in list where p(a[i]) is True, b is everything else"
@@ -136,9 +150,7 @@ def span_cover(sa,sb):
 
 def span_in(a,b):
     "a contained in b"
-    if a is None: return True
-    if b is None: return False
-    return a[0]>=b[0] and a[1]<=b[1]
+    return a is None or (b is not None and a[0]>=b[0] and a[1]<=b[1])
 
 def span_points_except(s,points):
     "return list of points in s=[a,b) but not in list points"
