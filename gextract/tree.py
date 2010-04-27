@@ -23,6 +23,28 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def __getitem__(self,gornaddr):
+        "gornaddr is a list [] for root [0] for first child of root, [0,2] for 3rd child of that, etc."
+        if len(gornaddr) == 0:
+            return self
+        return self.children[gornaddr[0]][gornaddr[1:]]
+
+    def zip_postorder(self,other):
+        "other and self have the same shape; yield tuples (selfnode,othernode) in postorder"
+        for c,oc in zip(self.children,other.children):
+            for p in c.zip_postorder(oc):
+                yield p
+        yield (self,other)
+
+    def set_attr_from(self,srct,dest_attr,src_attr='label',default=None,skip_missing=False):
+        "setattr(node,dest_attr,getattr(srctnode,src_attr)) for every node in self, and every srctnode in srct.  if a srct node is missing the attribute, use default, or don't set the attribute at all if skip_missing"
+        if hasattr(srct,src_attr):
+            setattr(self,dest_attr,getattr(srct,src_attr))
+        elif not skip_missing:
+            setattr(self,dest_attr,default)
+        for c,sc in zip(self.children,srct.children):
+            c.set_attr_from(sc,dest_attr,src_attr,default,skip_missing)
+
     def find_ancestor(self,pred):
         "return closest ancestor such that pred(ancestor), or else None"
         p=self.parent

@@ -12,8 +12,11 @@ version="0.9"
 import os,sys,itertools,re,operator,collections,random
 sys.path.append(os.path.dirname(sys.argv[0]))
 
+import pdb
 import tree
 import optparse
+
+import unittest
 
 from graehl import *
 from dumpx import *
@@ -124,7 +127,7 @@ class Counts(object):
         self.alpha=basep.alpha
 
         #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
-    def update_count(n):
+    def update_count(self,n):
         "tree node n which has a .span (is a rule root) gets its old rule count decreased by 1 and new rule count increased by 1"
         oldc=n.count
         newrule,newbasep=Translation.xrs_str(n,base)
@@ -167,8 +170,8 @@ class Counts(object):
                         break
         newspan=choosep(newspan)
         if (newspan!=oldspan):
-            update_count(parnode)
-            update_count(node)
+            self.update_count(parnode)
+            self.update_count(node)
             Translation.update_span(node,newspan)
 
     def __str__(self):
@@ -373,8 +376,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             rhs+=' '
         return (rhs[:-1],basemodel.p_rhs(n_t,n_nt))
 
-    @staticmethod
-    def xrs_str(root,basemodel,quote=False):
+    def xrs_str(self,root,basemodel,quote=False):
         """return (rule string,basemodel prob) pair for rule w/ root"""
         assert(root.frontier_node)
         s=root.span
@@ -403,9 +405,9 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def xrs_prob(root,basemodel):
         """same as xrs_str(root,basemodel)[1]"""
-        return Translation.xrs_str(root,basemodel)[1]
+        #return Translation.xrs_str(root,basemodel)[1]
         #TODO: test
-        lhs_prob=xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
+        lhs_prob=Translation.xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
         n_t,n_nt=n_rhs(root)
         rhs_prob=basemode.p_rhs(n_t,n_nt)
 
@@ -424,7 +426,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     def all_rules(self,basemodel,quote=False):
         "list of all minimal rules: (rule,p0,group (root NT))"
-        return [Translation.xrs_str(c,basemodel,quote) for c in self.frontier()]
+        return [self.xrs_str(c,basemodel,quote) for c in self.frontier()]
 
     @staticmethod
     def fetree(etree):
@@ -519,7 +521,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def update_span(t,new):
         t.span=new
-        update_fspan(t,new)
+        Translation.update_fspan(t,new)
 
     @staticmethod
     def f2enode(t,fe):
@@ -609,8 +611,11 @@ def gextract(opts):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0):
-    gextract(Locals())
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=False):
+    if test:
+        unittest.main()
+    else:
+        gextract(Locals())
 
 optfunc.main(optfunc_gextract)
 
@@ -620,3 +625,10 @@ def main():
 if False and __name__ == "__main__":
     errors=main()
     if errors: sys.exit(errors)
+
+### tests:
+
+
+class TestTranslation(unittest.TestCase):
+    def setUp(self):
+        self.ex=1
