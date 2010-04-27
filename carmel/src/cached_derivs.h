@@ -27,7 +27,7 @@ struct cached_derivs
     {
         return cached?derivs.size():corpus.size();
     }
-    unsigned n_output() const
+    double n_output() const
     {
         return corpus.n_output;
     }
