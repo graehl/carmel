@@ -1211,6 +1211,8 @@ class WFST {
         {
             if (i>=N)
                 return final_tolerance;
+            if (tolerance.isInfinity())
+                return tolerance;
             return tolerance*(final_tolerance/tolerance).pow((i-1)/(N-1));
         }
         random_restart_acceptor() : tolerance(inf_weight()),final_tolerance(inf_weight()),N(0) {}
