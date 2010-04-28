@@ -9,7 +9,7 @@
 import re
 
 class Node:
-    "Tree node"
+    "Tree node.  length is # of nodes.  self.parent.children[self.order]=self"
     def __init__(self, label, children):
         self.label = label
         self.children = children
@@ -28,6 +28,44 @@ class Node:
         if len(gornaddr) == 0:
             return self
         return self.children[gornaddr[0]][gornaddr[1:]]
+
+    def filter_inplace(self):
+        "top down, remove subtree with root node t unless keep(t).  returns new tree (destructive update of old one)"
+        if not keep(self):
+            return None
+        return filter_inplace_children(keep)
+
+    def filter_inplace_children(self,keep):
+        "like filter_inplace, but always keep root"
+        newc=None
+        oldc=self.children
+        newi=0
+        for i in range(0,len(oldc)):
+            c=oldc[i]
+            kc=c.filter(keep)
+            if kc is None:
+                self.length -= 1
+                if newc is None:
+                    newc=oldc[0:i]
+                    newi=i
+            else:
+                if newc is not None:
+                    newc.append(c)
+                    c.order=newi
+                newi+=1
+        if newc is not None:
+            self.children=newc
+        return self
+
+    def filter(self,keep):
+        "like filter_inplace, but doesn't destroy original"
+        if not keep(self):
+            return None
+        return self.filter_children(keep)
+
+    def filter_children(self,keep):
+        "like filter, but always keep root"
+        return Node(self.label,filter(lambda x:x is not None,(c.filter(keep) for c in self.children)))
 
     def zip_postorder(self,other):
         "other and self have the same shape; yield tuples (selfnode,othernode) in postorder"

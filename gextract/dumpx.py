@@ -12,6 +12,9 @@ def flat_single(l):
     return l
 def pstr(*l):
     return pprint.saferepr(flat_single(l))
+def dumph(msg):
+    if msg is not None:
+        sys.stderr.write(str(msg)+": ")
 def dump(*l):
     if dbg:
         sys.stderr.write(pstr(*l)+'\n')

@@ -21,6 +21,19 @@ import unittest
 from graehl import *
 from dumpx import *
 
+def rulefrag(t):
+    return filter_children(t,lambda x:x.span is not None)
+
+def richt(t,attrs=['label','span']):
+    return t.relabel(lambda x:','.join(str(getattr(x,n)) if hasattr(x,n) else '' for n in attrs))
+
+def richs(t,attrs=['label','span','closure_span']):
+    return str(richt(t,attrs))
+
+def dumpt(t,msg=None,attrs=['label','span','closure_span']):
+    dumph(msg)
+    dump(str(richt(t,attrs)))
+
 usage=optparse.OptionParser(epilog=doc,version="%prog "+version)
 usage.add_option("-r","--inbase",dest="inbase",metavar="PREFIX",help="input lines from PREFIX.{e-parse,a,f}")
 usage.add_option("-t","--terminals",action="store_true",dest="terminals",help="allow terminal (word without POS) rule root")
@@ -127,10 +140,10 @@ class Counts(object):
         self.alpha=basep.alpha
 
         #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
-    def update_count(self,n):
+    def update_count(self,n,ex):
         "tree node n which has a .span (is a rule root) gets its old rule count decreased by 1 and new rule count increased by 1"
         oldc=n.count
-        newrule,newbasep=Translation.xrs_str(n,base)
+        newrule,newbasep,x=ex.xrs_str(n,self.basep)
         newc=self.get(newrule,newbasep,n.label)
         self.add(oldc,-1)
         self.add(newc,1)
@@ -148,9 +161,12 @@ class Counts(object):
         oldspan=node.span
         newspans=[(pold,oldspan)]
         def consider_span(span):
+            dump(span,richs(node))
             node.span=span
             parprob=Translation.xrs_prob(parnode,base)
+            dump(parprob)
             prob=Translation.xrs_prob(node,base)
+            dump(prob)
             newspans.append((prob*parprob,span))
         closure=node.closure_span
         imax=parspan[1]
@@ -160,18 +176,21 @@ class Counts(object):
             assert(span_in(closure,parspan))
             imax=closure[0]
             jmin=closure[1]
+        dump(parspan[0],imax,jmin,parspan[1])
         for i in range(parspan[0],imax):
             fi=f2e[i]
             if fi is parnode or fi is node: # otherwise a sibling of parnode covers f[i]
                 for j in range(max(i+1,jmin),parspan[1]):
-                    consider_span(i,j)
+                    newsp=(i,j)
+                    if newsp!=oldspan:
+                        consider_span(newsp)
                     f=f2e[j]
                     if not (f is parnode or f is node):
                         break
-        newspan=choosep(newspan)
+        newspan=choosep(newspans)
         if (newspan!=oldspan):
-            self.update_count(parnode)
-            self.update_count(node)
+            self.update_count(parnode,ex)
+            self.update_count(node,ex)
             Translation.update_span(node,newspan)
 
     def __str__(self):
@@ -224,16 +243,16 @@ class Translation(object):
         self.set_spans(self.etree,self.a.spanadje())
 
     def set_spans(self,enode,fspane,epos=0):
-        "epos is enode's yield's starting position in english yield; returns ending position.  sets treenode.span foreign (a,b)"
+        "epos is enode's yield's starting position in english yield; returns ending position.  sets treenode.fspan foreign (a,b)"
         if enode.is_terminal():
-            enode.span=fspane[epos]
+            enode.fspan=fspane[epos]
             return epos+1
         else:
             span=None
             for c in enode.children:
                 epos=self.set_spans(c,fspane,epos)
-                span=span_cover(span,c.span)
-            enode.span=span
+                span=span_cover(span,c.fspan)
+            enode.fspan=span
             return epos
 
     def find_frontier(self,enode,allow_epsilon_rhs=False,cspan=None):
@@ -242,48 +261,44 @@ descendant or ancestor'.  cspan is a mutable array that efficiently tracks the c
 times each word is covered"""
         if cspan is None:
             cspan=[1]*self.nf
-        if enode.span is None:
+        if enode.fspan is None:
             spanr=[]
-            enode.frontier_node=allow_epsilon_rhs
+            fr=allow_epsilon_rhs
         else:
-            spanr=range(enode.span[0],enode.span[1])
+            spanr=range(enode.fspan[0],enode.fspan[1])
             fr=True
             for i in spanr:
                 assert(cspan[i]>0)
                 cspan[i]-=1
                 if cspan[i]>0:
                     fr=False
-            enode.frontier_node=fr
+        enode.span=enode.fspan if fr else None
         for c in enode.children:
-            if c.span is not None:
-                for i in range(c.span[0],c.span[1]):
+            if c.fspan is not None:
+                for i in range(c.fspan[0],c.fspan[1]):
                     cspan[i]+=1
         for c in enode.children:
             self.find_frontier(c,allow_epsilon_rhs,cspan)
         for c in enode.children:
-            if c.span is not None:
-                for i in range(c.span[0],c.span[1]):
+            if c.fspan is not None:
+                for i in range(c.fspan[0],c.fspan[1]):
                     cspan[i]-=1
         for i in spanr:
             cspan[i]+=1
 
     def ghkm(self,leaves_are_frontier=False,allow_epsilon_rhs=False):
         self.have_derivation=True
-        self.etree.span=(0,self.nf)
+        self.etree.fspan=(0,self.nf)
         self.find_frontier(self.etree,allow_epsilon_rhs)
         if not leaves_are_frontier:
             for c in self.etree.frontier():
-                c.frontier_node=False
-        for c in self.treenodes():
-            c.fspan=c.span
-            if not c.frontier_node:
                 c.span=None
 
     @staticmethod
     def xrs_lhs_str(t,foreign,fbase,basemodel,quote=False):
         """return pair of xrs rule lhs string and base model prob, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
 where xi:node.label was a variable in the lhs string; only the first foreign word in the variable is replaced.  foreign initially is
-foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in t.span.  xn is just an implementation detail (mutable cell); ignore it."""
+foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in t.span.  the x in the 3rd slot of return tuple is just an implementation detail; ignore it."""
         s,p,x=Translation.xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,0)
         return (s,p/basemodel.pnonterm)
 
@@ -298,7 +313,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         if not preterm: # preterms labels must be distinct from non-preterms
             p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
         for c in t.children:
-            if c.frontier_node:
+            if c.span is not None:
                 l=c.span[0]
                 foreign[l-fbase]=(xn,c)
                 s+=xrs_var_lhs(xn,c,quote)
@@ -315,7 +330,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     def frontier(self):
         for c in self.treenodes():
-            if c.frontier_node:
+            if c.span is not None:
                 yield c
 
     @staticmethod
@@ -331,7 +346,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def xrsfrontier_rec(root,r):
         for c in root.children:
-            if c.frontier_node:
+            if c.span is not None:
                 r.append(c)
             else:
                 Translation.xrsfrontier_rec(c,r)
@@ -368,7 +383,10 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             if type(c) is tuple:
                 rhs+=xrs_var(c[0])
                 n_nt+=1
-                gi=c[1].span[1]
+                newi=c[1].span[1]
+                dumpt(c[1])
+                assert(newi>gi)
+                gi=newi
             else:
                 n_t+=1
                 rhs+=xrs_quote(c,quote)
@@ -378,13 +396,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     def xrs_str(self,root,basemodel,quote=False):
         """return (rule string,basemodel prob) pair for rule w/ root"""
-        assert(root.frontier_node)
-        s=root.span
-        b,ge=s
-        frhs=self.f[b:ge]
+        assert(root.span is not None)
+        b,e=root.span
+        frhs=self.f[b:e]
         lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
-        rhs,pr=Translation.xrs_rhs_str(frhs,b,ge,basemodel,quote)
-        return (lhs+' -> '+rhs,pl*pr,root)
+        rhs,pr=Translation.xrs_rhs_str(frhs,b,e,basemodel,quote)
+        return (lhs+' -> '+rhs,pl*pr)
 
     @staticmethod
     def n_rhs(node):
@@ -397,7 +414,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         nt=fs[1]-fs[0]
         nv=0
         for c in node.children:
-            cv,ct=n_rhs(c)
+            cv,ct=Translation.n_rhs(c)
             nt-=ct
             nv+=cv
         return (nv,nt)
@@ -408,8 +425,9 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         #return Translation.xrs_str(root,basemodel)[1]
         #TODO: test
         lhs_prob=Translation.xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
-        n_t,n_nt=n_rhs(root)
-        rhs_prob=basemode.p_rhs(n_t,n_nt)
+        n_t,n_nt=Translation.n_rhs(root)
+        rhs_prob=basemodel.p_rhs(n_t,n_nt)
+        return lhs_prob*rhs_prob
 
     @staticmethod
     def xrs_prob_lhs_r(t,basemodel):
@@ -418,15 +436,15 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         preterm=t.is_preterminal()
         p=basemodel.pnonterm
         if not preterm: # preterms labels must be distinct from non-preterms
-            p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
+            p*=pow(basemodel.pchild,len(t.children)-1)*basemodel.pendchild
         for c in t.children:
             if not c.frontier_node:
-                p*=Translation.xrs_prob_lhs_r(c,foreign,fbase,basemodel,quote,xn)
+                p*=Translation.xrs_prob_lhs_r(c,basemodel)
         return p
 
     def all_rules(self,basemodel,quote=False):
-        "list of all minimal rules: (rule,p0,group (root NT))"
-        return [self.xrs_str(c,basemodel,quote) for c in self.frontier()]
+        "list of all minimal rules: (rule,p0,root node of rule)"
+        return [self.xrs_str(c,basemodel,quote)+(c,) for c in self.frontier()]
 
     @staticmethod
     def fetree(etree):
@@ -486,14 +504,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def set_closure_span(t):
         """for node under t, set node.closure_span to the smallest span enclosing node.children.fspan or None if no children with fspans."""
-        s=None
-        for c in t.children:
-            s=span_cover(s,Translation.set_closure_span(c))
-        t.closure_span=s
-        return s
+        t.closure_span=reduce(lambda x,y:span_cover(x,y.fspan),t.children,None)
+        dump(richs(t),"closure",t.closure_span)
 
     def set_closure_spans(self):
-        Translation.set_closure_span(self.etree)
+        for n in self.etree.postorder():
+            Translation.set_closure_span(n)
 
     @staticmethod
     def update_fspan(t,new):
@@ -557,7 +573,7 @@ class Training(object):
     def gibbs(self,opts,examples):
         self.gibbs_prep(opts,examples)
         for iter in range(0,opts.iter):
-            self.gibbs_iter(opts,examples)
+            self.gibbs_iter(iter,opts,examples)
 
     def gibbs_prep(self,opts,examples):
         log("Using gibbs sampling starting from minimal ghkm.")
@@ -565,15 +581,15 @@ class Training(object):
         if opts.randomize:
             random.shuffle(examples)
         for ex in examples:
-            for (r,p,t) in ex.all_rules(self.basep):
-                c=counts.get(r,p,t.label)
-                t.count=c
+            for (rule,p,root) in ex.all_rules(self.basep):
+                c=counts.get(rule,p,root.label)
+                root.count=c
                 counts.add(c,1)
             ex.make_count_attr()
             ex.set_closure_spans()
             ex.set_f2enode()
 
-    def gibbs_iter(self,opts,examples):
+    def gibbs_iter(self,iter,opts,examples):
         log("gibbs iter=%d"%iter)
         for ex in examples:
             root=ex.etree
@@ -644,7 +660,9 @@ class TestTranslation(unittest.TestCase):
         examples=list(tr.reader())
         for t in examples:
             t.ghkm(False)
-        tr.gibbs(opts,examples)
+        tr.gibbs_prep(opts,examples)
+        for iter in range(0,opts.iter):
+            tr.gibbs_iter(iter,opts,examples)
         tr.output(opts,examples)
 
 

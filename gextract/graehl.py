@@ -17,8 +17,6 @@ def choosep(p_item_list):
             return i
     return p_item_list[-1][1]
 
-
-
 def filter2(list,p):
     "return tuple of two lists a,b: a is the subseq in list where p(a[i]) is True, b is everything else"
     a=[]
