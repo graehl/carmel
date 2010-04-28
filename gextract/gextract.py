@@ -143,11 +143,15 @@ class Counts(object):
     def update_count(self,n,ex):
         "tree node n which has a .span (is a rule root) gets its old rule count decreased by 1 and new rule count increased by 1"
         oldc=n.count
-        newrule,newbasep,x=ex.xrs_str(n,self.basep)
-        newc=self.get(newrule,newbasep,n.label)
-        self.add(oldc,-1)
-        self.add(newc,1)
-        n.count=newc
+        if n.span is not None:
+            newrule,newbasep=ex.xrs_str(n,self.basep)
+            newc=self.get(newrule,newbasep,n.label)
+            self.add(newc,1)
+            n.count=newc
+        else:
+            n.count=None
+        if oldc is not None:
+            self.add(oldc,-1)
     def expand(self,node,ex):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
         base=self.basep
@@ -157,16 +161,14 @@ class Counts(object):
         if parnode is None:
             return # can't adjust top node anyway
         parspan=parnode.span
-        pold=self.prob(parnode.count)*self.prob(node.count)
         oldspan=node.span
+        pold=self.prob(parnode.count)*(self.prob(node.count) if oldspan is not None else 1.)
         newspans=[(pold,oldspan)]
         def consider_span(span):
-            dump(span,richs(node))
+#            dump(span,richs(node))
             node.span=span
             parprob=Translation.xrs_prob(parnode,base)
-            dump(parprob)
             prob=Translation.xrs_prob(node,base)
-            dump(prob)
             newspans.append((prob*parprob,span))
         closure=node.closure_span
         imax=parspan[1]
@@ -176,7 +178,7 @@ class Counts(object):
             assert(span_in(closure,parspan))
             imax=closure[0]
             jmin=closure[1]
-        dump(parspan[0],imax,jmin,parspan[1])
+#        dump(parspan[0],imax,jmin,parspan[1])
         for i in range(parspan[0],imax):
             fi=f2e[i]
             if fi is parnode or fi is node: # otherwise a sibling of parnode covers f[i]
@@ -438,7 +440,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         if not preterm: # preterms labels must be distinct from non-preterms
             p*=pow(basemodel.pchild,len(t.children)-1)*basemodel.pendchild
         for c in t.children:
-            if not c.frontier_node:
+            if c.span is None:
                 p*=Translation.xrs_prob_lhs_r(c,basemodel)
         return p
 
@@ -505,7 +507,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def set_closure_span(t):
         """for node under t, set node.closure_span to the smallest span enclosing node.children.fspan or None if no children with fspans."""
         t.closure_span=reduce(lambda x,y:span_cover(x,y.fspan),t.children,None)
-        dump(richs(t),"closure",t.closure_span)
+##        dump(richs(t),"closure",t.closure_span)
 
     def set_closure_spans(self):
         for n in self.etree.postorder():
@@ -520,7 +522,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         parent=t.parent
         while True:
             par=parent.closure_span
-            if (par[0]==old[0] and par[0]<new[0]) or (par[1]==old[1] and par[1]>new[1]):
+            if (par is None or new is None) or (par[0]==old[0] and par[0]<new[0]) or (par[1]==old[1] and par[1]>new[1]):
                 new=None
                 for c in parent.children:
                     new=span_cover(new,c.closure_span)
@@ -650,7 +652,7 @@ class TestTranslation(unittest.TestCase):
         header_full_align=False
         rules=True
         randomize=False
-        iter=0
+        iter=1
         test=False
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
         self.opts=Locals()
