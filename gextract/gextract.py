@@ -47,9 +47,19 @@ def dumpt(t,msg=None,attrs=['label','span','closure_span']):
     dumph(msg)
     dump(richs(t,attrs))
 
-def checkspan(t):
+def checkt(t):
     for node in t.preorder():
-        asserteq((node.span is None),(node.count is None),richs(node))
+        checkrule(node)
+        checkclosure(node)
+
+def checkrule(t):
+    asserteq((t.span is None),(t.count is None),richs(t))
+
+def checkclosure(t):
+    clo=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),t.children,None)
+    asserteq(clo,t.closure_span,richs(t))
+    if t.span is not None:
+        assert span_in(clo,t.span),richs(t)
 
 usage=optparse.OptionParser(epilog=doc,version="%prog "+version)
 usage.add_option("-r","--inbase",dest="inbase",metavar="PREFIX",help="input lines from PREFIX.{e-parse,a,f}")
@@ -176,12 +186,12 @@ class Counts(object):
         return self.prob(node.count) if node.span is not None else 1.
     def expand(self,node,ex):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
-        checkspan(node)
+        checkt(node)
         f2e=ex.f2enode
         minspan=node.closure_span
         parnode=node.find_ancestor(lambda n:n.span is not None)
-#        dump(richs(node),richs(parnode))
-        checkspan(parnode)
+        dump(richs(node))
+        checkt(parnode)
         if parnode is None:
             assert(node.parent is None)
             return # can't adjust top node anyway
@@ -214,6 +224,7 @@ class Counts(object):
                     f=f2e[j]
                     if not (f is parnode or f is node):
                         break
+        node.span=oldspan # recover from mutilated invariant in consider_span
         newspan=choosep(newspans) # make sure to fix: set node.span and node.count accordingly
         def align(a,b,to):
             for i in range(a,b):
@@ -235,10 +246,12 @@ class Counts(object):
                     align(oldspan[1],newspan[1],node)
                 elif newspan[1]<oldspan[1]:
                     align(newspan[1],oldspan[1],parnode)
-            Translation.update_span(node,newspan)
-            self.update_count(parnode,ex) # update_count sets .count is None <=> .span is None
-            self.update_count(node,ex)
-        checkspan(node)
+            Translation.update_span(node,newspan) # sets span, breaking .count is None <=> .span is None
+            self.update_count(node,ex) # fixes above
+            self.update_count(parnode,ex)
+        dump(richs(node))
+        dump(richs(parnode))
+        checkt(node)
 
     def __str__(self):
         return "\n".join(rules.itervalues())
@@ -356,11 +369,11 @@ times each word is covered"""
         """return pair of xrs rule lhs string and base model prob, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
 where xi:node.label was a variable in the lhs string; only the first foreign word in the variable is replaced.  foreign initially is
 foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in t.span.  the x in the 3rd slot of return tuple is just an implementation detail; ignore it."""
-        s,p,x=Translation.xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,0)
+        s,p,x=Translation.xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,0,t)
         return (s,p/basemodel.pnonterm)
 
     @staticmethod
-    def xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,xn):
+    def xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,xn,parent):
         "xn is variable index"
         if t.is_terminal():
             return (xrs_quote(t.label,quote),basemodel.psourceword,xn)
@@ -373,13 +386,14 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         for c in t.children:
             if c.span is not None:
                 l=c.span[0]
-                fi=l-fbase
+                fi=c.span[0]-fbase
+                assert span_in(c.span,parent.span),richs(parent)
                 assertindex(fi,foreign)
                 foreign[fi]=(xn,c)
                 s+=xrs_var_lhs(xn,c,quote)
                 xn+=1
             else:
-                sc,pc,xn=Translation.xrs_lhs_str_r(c,foreign,fbase,basemodel,quote,xn)
+                sc,pc,xn=Translation.xrs_lhs_str_r(c,foreign,fbase,basemodel,quote,xn,parent)
                 s+=sc
                 p*=pc
             s+=' '
@@ -459,9 +473,9 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     def xrs_prob(self,root,basemodel):
         """same as xrs_str(root,basemodel)[1]"""
-        assert(root.span is not None)
+        assert root.span is not None
         return self.xrs_str(root,basemodel)[1]
-        #TODO: test
+        #TODO: test - should be faster since we don't generate rule string
         lhs_prob=Translation.xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
         n_t,n_nt=Translation.n_rhs(root)
         rhs_prob=basemodel.p_rhs(n_t,n_nt)
@@ -538,43 +552,16 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             t.espan=(ebase,ep)
             return ep
 
-    #closure_span: children's fspan closure
     @staticmethod
     def set_closure_span(t):
-        """for node under t, set node.closure_span to the smallest span enclosing node.children.fspan or None if no children with fspans."""
-        t.closure_span=reduce(lambda x,y:span_cover(x,y.fspan),t.children,None)
+        """for node under t, set node.closure_span to the smallest span enclosing node.children.closure_span and node.children.span.  closure_span must already be computed for children"""
+        t.closure_span=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),t.children,None)
+        #reduce(lambda x,y:span_cover(x,y.fspan),t.children,None)
 ##        dump(richs(t),"closure",t.closure_span)
 
     def set_closure_spans(self):
         for n in self.etree.postorder():
             Translation.set_closure_span(n)
-
-    @staticmethod
-    def update_fspan(t,new):
-        """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' closure_span and fspan reflecting this.
-        FIXME: i think in gibbs we just use the f2enode array and forget about fspan entirely (but we do use closure span?)
-        TEST
-        """
-        old=t.fspan
-        t.fspan=new
-        parent=t.parent
-        while True:
-            par=parent.closure_span
-            dump(par,old,new)
-            if (par is None or new is None) or (par[0]==old[0] and par[0]<new[0]) or (par[1]==old[1] and par[1]>new[1]):
-                new=None
-                for c in parent.children:
-                    new=span_cover(new,c.closure_span)
-            else:
-                new=(min(par[0],new[0]),max(par[1],new[1]))
-            parent.closure_span=new
-            if parent.span is not None: break # this is a frontier node so its fspan includes the new
-            #if span_in(new,parent.fspan): break # no change
-            if new==old: break
-            old=parent.closure_span
-            new=span_cover(new,parent.fspan)
-            parent.fspan=new
-            parent=parent.parent
 
 
     @staticmethod
@@ -582,10 +569,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         """set t.span=new and update closure_spans upward if necessary; allow fspan to become out of date; fspan is just closure_span if span is None else span
         FIXME: test
         """
-        old=t.closure_span if t.span is None else t.span
-#        dump(new,old,richs(t))
+        old=t.span or t.closure_span
         t.span=new
-        #Translation.update_fspan(t,new)
         if new is None:
             new=t.closure_span
         if old==new:
@@ -593,18 +578,19 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         p=t.parent
         while True: # p is a node whose (closure) span has changed from old to new
             par=p.closure_span
-            if par is None:
-                p.closure_span=new
-                return
-            if old is not None and ((par[0]==old[0] and (new is None or par[0]<new[0])) or (par[1]==old[1] and (new is None or par[1]>new[1]))): # either side was formerly propping up an end of par, but was shrunk
-                new=reduce(lambda x,y:span_cover(x,y.closure_span),p.children,None)
-            else: # we grew or held equal both ends
-                new=span_cover(par,new)
+            dump(new,old,par,richs(p))
+            if par is not None:
+                if old is not None and ((par[0]==old[0] and (new is None or par[0]<new[0])) or (par[1]==old[1] and (new is None or par[1]>new[1]))): # either side was formerly propping up an end of par, but was shrunk
+                    new=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),p.children,None)
+                else: # we grew or held equal both ends
+                    new=span_cover(par,new)
             old=p.closure_span
             if new==old: break #no change
             p.closure_span=new
             if p.span is not None: break
+            checkclosure(p)
             p=p.parent
+        checkclosure(t)
 
     @staticmethod
     def f2enode(t,fe):
@@ -656,7 +642,7 @@ class Training(object):
             ex.make_count_attr()
             ex.set_closure_spans()
             ex.set_f2enode()
-            checkspan(ex.etree)
+            checkt(ex.etree)
 
     def gibbs_iter(self,iter,opts,examples):
         log("gibbs iter=%d"%iter)

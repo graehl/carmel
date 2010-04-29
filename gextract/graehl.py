@@ -70,13 +70,16 @@ def log(s):
 def dict_slice(d,keys):
     return dict((k,d[k]) for k in keys)
 
+#reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5)
+# If the optional initializer is present, it is placed before the items of the iterable in the calculation, and serves as a default when the iterable is empty
+def fold(f,z,list):
+    return reduce(f,list,z)
+
 def fold(f,z,list):
     for x in list:
         z=f(z,x)
     return z
 
-def fold(f,z,list):
-    return reduce(f,list,z)
 
 def cartesian_product(a,b):
     "return list of tuples"
