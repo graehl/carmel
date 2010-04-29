@@ -5,6 +5,7 @@
 
 import sys,re,random
 
+
 def choosep(p_item_list):
     "given list of tuples (p,item), return a random item according to (possibly unnormalized) p, None if empty list input"
     if len(p_item_list)==0:

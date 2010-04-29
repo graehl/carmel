@@ -24,15 +24,32 @@ from dumpx import *
 def rulefrag(t):
     return filter_children(t,lambda x:x.span is not None)
 
-def richt(t,attrs=['label','span']):
-    return t.relabel(lambda x:','.join(str(getattr(x,n)) if hasattr(x,n) else '' for n in attrs))
+import string
+parenescape=string.maketrans('()','[]')
+def richstr(t):
+    if type(t) is tuple and len(t)==2:
+        return "[%s,%s]"%t
+    return string.translate(str(t),parenescape)
 
-def richs(t,attrs=['label','span','closure_span']):
-    return str(richt(t,attrs))
+def richt(t,attrs=['label','span'],namesinline=False):
+    #lambda x:','.join(("%s=%s"%(n,getattr(x,n)) if namesinline else str(getattr(x,n)))
+    def newl(x):
+        return ','.join([richstr(getattr(x,n)) if hasattr(x,n) else '' for n in attrs])
+    return t.relabel(newl)
+
+def richs(t,attrs=['label','span','closure_span'],names=True,namesinline=False):
+    s=''
+    if names:
+        s='['+(','.join(attrs))+']'
+    return s+str(richt(t,attrs))
 
 def dumpt(t,msg=None,attrs=['label','span','closure_span']):
     dumph(msg)
-    dump(str(richt(t,attrs)))
+    dump(richs(t,attrs))
+
+def checkspan(t):
+    for node in t.preorder():
+        asserteq((node.span is None),(node.count is None),richs(node))
 
 usage=optparse.OptionParser(epilog=doc,version="%prog "+version)
 usage.add_option("-r","--inbase",dest="inbase",metavar="PREFIX",help="input lines from PREFIX.{e-parse,a,f}")
@@ -152,23 +169,31 @@ class Counts(object):
             n.count=None
         if oldc is not None:
             self.add(oldc,-1)
+    def rulep(self,node):
+        "return 1.0 if span is None, else rule prob of node (span=None <=> count=None)"
+#        dump(node.span,node.count,richs(node))
+        asserteq((node.span is None),(node.count is None),richs(node))
+        return self.prob(node.count) if node.span is not None else 1.
     def expand(self,node,ex):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
-        base=self.basep
+        checkspan(node)
         f2e=ex.f2enode
         minspan=node.closure_span
         parnode=node.find_ancestor(lambda n:n.span is not None)
+#        dump(richs(node),richs(parnode))
+        checkspan(parnode)
         if parnode is None:
+            assert(node.parent is None)
             return # can't adjust top node anyway
         parspan=parnode.span
+        assert (parspan is not None)
         oldspan=node.span
-        pold=self.prob(parnode.count)*(self.prob(node.count) if oldspan is not None else 1.)
-        newspans=[(pold,oldspan)]
+        newspans=[(self.rulep(parnode)*self.rulep(node),oldspan)]
         def consider_span(span):
-#            dump(span,richs(node))
             node.span=span
-            parprob=Translation.xrs_prob(parnode,base)
-            prob=Translation.xrs_prob(node,base)
+            parprob=ex.xrs_prob(parnode,self.basep)
+            prob=1. if span is None else ex.xrs_prob(node,self.basep)
+#            dump(span,richs(node),prob,parprob)
             newspans.append((prob*parprob,span))
         closure=node.closure_span
         imax=parspan[1]
@@ -189,11 +214,31 @@ class Counts(object):
                     f=f2e[j]
                     if not (f is parnode or f is node):
                         break
-        newspan=choosep(newspans)
-        if (newspan!=oldspan):
-            self.update_count(parnode,ex)
-            self.update_count(node,ex)
+        newspan=choosep(newspans) # make sure to fix: set node.span and node.count accordingly
+        def align(a,b,to):
+            for i in range(a,b):
+                f2e[i]=to
+        if (newspan==oldspan):
+            node.span=oldspan # field was overwritten when considering
+        else:
+            if newspan is None:
+                if oldspan is not None:
+                    align(oldspan[0],oldspan[1],parnode)
+            elif oldspan is None:
+                align(newspan[0],newspan[1],node)
+            else:
+                if newspan[0]<oldspan[0]:
+                    align(newspan[0],oldspan[0],node)
+                elif newspan[0]>oldspan[0]:
+                    align(oldspan[0],newspan[0],parnode)
+                if newspan[1]>oldspan[1]:
+                    align(oldspan[1],newspan[1],node)
+                elif newspan[1]<oldspan[1]:
+                    align(newspan[1],oldspan[1],parnode)
             Translation.update_span(node,newspan)
+            self.update_count(parnode,ex) # update_count sets .count is None <=> .span is None
+            self.update_count(node,ex)
+        checkspan(node)
 
     def __str__(self):
         return "\n".join(rules.itervalues())
@@ -296,6 +341,16 @@ times each word is covered"""
             for c in self.etree.frontier():
                 c.span=None
 
+    def xrs_str(self,root,basemodel,quote=False):
+        """return (rule string,basemodel prob) pair for rule w/ root"""
+        assert(root.span is not None)
+        b,e=root.span
+        frhs=self.f[b:e]
+        asserteq(len(frhs),e-b)
+        lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
+        rhs,pr=Translation.xrs_rhs_str(frhs,b,e,basemodel,quote)
+        return (lhs+' -> '+rhs,pl*pr)
+
     @staticmethod
     def xrs_lhs_str(t,foreign,fbase,basemodel,quote=False):
         """return pair of xrs rule lhs string and base model prob, with the foreign words corresponding to the rhs span being replaced by the tuple (i,node)
@@ -306,6 +361,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     @staticmethod
     def xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,xn):
+        "xn is variable index"
         if t.is_terminal():
             return (xrs_quote(t.label,quote),basemodel.psourceword,xn)
         s=t.label+'('
@@ -317,7 +373,9 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         for c in t.children:
             if c.span is not None:
                 l=c.span[0]
-                foreign[l-fbase]=(xn,c)
+                fi=l-fbase
+                assertindex(fi,foreign)
+                foreign[fi]=(xn,c)
                 s+=xrs_var_lhs(xn,c,quote)
                 xn+=1
             else:
@@ -327,23 +385,33 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             s+=' '
         return (s[:-1]+')',p,xn)
 
-    def treenodes(self):
-        return self.etree.preorder()
+    #TODO: bugfix with allow_epsilon_rhs
+    @staticmethod
+    def xrs_rhs_str(frhs,b,ge,basemodel,quote=False):
+        rhs=""
+        gi=b
+        p=basemodel.pendterm
+        n_nt=0
+        n_t=0
+        while gi<ge:
+            c=frhs[gi-b]
+            if type(c) is tuple:
+                rhs+=xrs_var(c[0])
+                n_nt+=1
+                newi=c[1].span[1]
+                assertgt(newi,gi)
+                gi=newi
+            else:
+                n_t+=1
+                rhs+=xrs_quote(c,quote)
+                gi+=1
+            rhs+=' '
+        return (rhs[:-1],basemodel.p_rhs(n_t,n_nt))
 
     def frontier(self):
-        for c in self.treenodes():
+        for c in self.etree.preorder():
             if c.span is not None:
                 yield c
-
-    @staticmethod
-    def xrsfrontier_generator(root):
-        "generator: list of all frontier nodes below root with no other interposing frontier nodes"
-        for c in root.children:
-            if c.frontier_node:
-                yield(c)
-            else:
-                for s in Translation.xrsfrontier(c):
-                    yield s
 
     @staticmethod
     def xrsfrontier_rec(root,r):
@@ -372,38 +440,6 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         "derivation tree with label = index into all_rules"
         return Translation.xrs_deriv(self.etree)
 
-    #TODO: bugfix with allow_epsilon_rhs
-    @staticmethod
-    def xrs_rhs_str(frhs,b,ge,basemodel,quote=False):
-        rhs=""
-        gi=b
-        p=basemodel.pendterm
-        n_nt=0
-        n_t=0
-        while gi<ge:
-            c=frhs[gi-b]
-            if type(c) is tuple:
-                rhs+=xrs_var(c[0])
-                n_nt+=1
-                newi=c[1].span[1]
-                dumpt(c[1])
-                assert(newi>gi)
-                gi=newi
-            else:
-                n_t+=1
-                rhs+=xrs_quote(c,quote)
-                gi+=1
-            rhs+=' '
-        return (rhs[:-1],basemodel.p_rhs(n_t,n_nt))
-
-    def xrs_str(self,root,basemodel,quote=False):
-        """return (rule string,basemodel prob) pair for rule w/ root"""
-        assert(root.span is not None)
-        b,e=root.span
-        frhs=self.f[b:e]
-        lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
-        rhs,pr=Translation.xrs_rhs_str(frhs,b,e,basemodel,quote)
-        return (lhs+' -> '+rhs,pl*pr)
 
     @staticmethod
     def n_rhs(node):
@@ -421,10 +457,10 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             nv+=cv
         return (nv,nt)
 
-    @staticmethod
-    def xrs_prob(root,basemodel):
+    def xrs_prob(self,root,basemodel):
         """same as xrs_str(root,basemodel)[1]"""
-        #return Translation.xrs_str(root,basemodel)[1]
+        assert(root.span is not None)
+        return self.xrs_str(root,basemodel)[1]
         #TODO: test
         lhs_prob=Translation.xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
         n_t,n_nt=Translation.n_rhs(root)
@@ -468,7 +504,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         assert(self.have_derivation)
         fa=self.a.copy_blank()
         t=self.etree
-        self.set_espan()
+        self.set_espans()
         Translation.full_align(t,fa,unmarked_span(t.espan),unmarked_span(t.fspan))
         return fa
 
@@ -516,12 +552,15 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     @staticmethod
     def update_fspan(t,new):
         """update t.fspan to new (which must be contained in closest parent frontier node's fspan, but possibly expanding intermediate parents' fspan); update parents' closure_span and fspan reflecting this.
+        FIXME: i think in gibbs we just use the f2enode array and forget about fspan entirely (but we do use closure span?)
+        TEST
         """
         old=t.fspan
         t.fspan=new
         parent=t.parent
         while True:
             par=parent.closure_span
+            dump(par,old,new)
             if (par is None or new is None) or (par[0]==old[0] and par[0]<new[0]) or (par[1]==old[1] and par[1]>new[1]):
                 new=None
                 for c in parent.children:
@@ -530,16 +569,42 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 new=(min(par[0],new[0]),max(par[1],new[1]))
             parent.closure_span=new
             if parent.span is not None: break # this is a frontier node so its fspan includes the new
-            if span_in(new,parent.fspan): break # no change
+            #if span_in(new,parent.fspan): break # no change
+            if new==old: break
             old=parent.closure_span
             new=span_cover(new,parent.fspan)
             parent.fspan=new
             parent=parent.parent
 
+
     @staticmethod
     def update_span(t,new):
+        """set t.span=new and update closure_spans upward if necessary; allow fspan to become out of date; fspan is just closure_span if span is None else span
+        FIXME: test
+        """
+        old=t.closure_span if t.span is None else t.span
+#        dump(new,old,richs(t))
         t.span=new
-        Translation.update_fspan(t,new)
+        #Translation.update_fspan(t,new)
+        if new is None:
+            new=t.closure_span
+        if old==new:
+            return
+        p=t.parent
+        while True: # p is a node whose (closure) span has changed from old to new
+            par=p.closure_span
+            if par is None:
+                p.closure_span=new
+                return
+            if old is not None and ((par[0]==old[0] and (new is None or par[0]<new[0])) or (par[1]==old[1] and (new is None or par[1]>new[1]))): # either side was formerly propping up an end of par, but was shrunk
+                new=reduce(lambda x,y:span_cover(x,y.closure_span),p.children,None)
+            else: # we grew or held equal both ends
+                new=span_cover(par,new)
+            old=p.closure_span
+            if new==old: break #no change
+            p.closure_span=new
+            if p.span is not None: break
+            p=p.parent
 
     @staticmethod
     def f2enode(t,fe):
@@ -557,6 +622,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def make_count_attr(self):
         for t in self.etree.preorder():
             if not hasattr(t,"count"):
+                assert(t.span is None)
                 t.count=None
 
 class Training(object):
@@ -590,34 +656,43 @@ class Training(object):
             ex.make_count_attr()
             ex.set_closure_spans()
             ex.set_f2enode()
+            checkspan(ex.etree)
 
     def gibbs_iter(self,iter,opts,examples):
         log("gibbs iter=%d"%iter)
         for ex in examples:
             root=ex.etree
             nodes=list(root.preorder())[1:] #exclude top node
+            if not opts.terminals:
+                nodes=[x for x in nodes if not x.is_terminal()]
             if opts.randomize: random.shuffle(nodes)
             for n in nodes:
                 self.counts.expand(n,ex)
+            if opts.outputevery and iter % opts.outputevery == 0:
+                self.output_ex(ex,opts,"iter=%d"%iter)
+
+    def output_ex(self,t,opts,header='',aof=None):
+        getalign=aof is not None or opts.header_full_align
+        if getalign:
+            fa=t.full_alignment()
+        print
+        if opts.header:
+            print "###",header,t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
+        if opts.rules:
+            for (r,p,_),id in itertools.izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
+                print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
+        if opts.derivation:
+            print t.derivation_tree()
+        if aof is not None:
+            aof.write(str(fa)+'\n')
 
     def output(self,opts,examples):
         ao=opts.alignment_out
         if ao:
             aof=open_out(ao)
-        getalign=ao or opts.header_full_align
         for t in examples:
-            if getalign:
-                fa=t.full_alignment()
-            print
-            if opts.header:
-                print "###",t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
-            if opts.rules:
-                for (r,p,_),id in itertools.izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
-                    print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
-            if opts.derivation:
-                print t.derivation_tree()
-            if ao:
-                aof.write(str(fa)+'\n')
+            self.output_ex(t,opts,aof)
+
     def main(self,opts):
         examples=list(self.reader())
         for t in examples:
@@ -652,16 +727,20 @@ class TestTranslation(unittest.TestCase):
         header_full_align=False
         rules=True
         randomize=False
-        iter=1
+        iter=10
         test=False
+        outputevery=1
+        header_full_align=False
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
         self.opts=Locals()
+        random.seed(12345)
     def test_output(self):
         tr=self.train
         opts=self.opts
         examples=list(tr.reader())
         for t in examples:
             t.ghkm(False)
+            dumpt(t.etree,"after ghkm")
         tr.gibbs_prep(opts,examples)
         for iter in range(0,opts.iter):
             tr.gibbs_iter(iter,opts,examples)
@@ -673,7 +752,7 @@ class TestTranslation(unittest.TestCase):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=True):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=True,outputevery=0):
     if test:
         unittest.main()
     else:
