@@ -29,6 +29,14 @@ class ErrorCollectingOptionParser(OptionParser):
     def error(self, msg):
         self._errors.append(msg)
 
+optypes=[int,long,float,complex] # not type='choice' choices='a|b'
+def optype(t):
+    if t is bool:
+        return None
+    if t in optypes:
+        return t
+    return "string"
+
 def func_to_optionparser(func):
     args, varargs, varkw, defaultvals = inspect.getargspec(func)
     defaultvals = defaultvals or ()
@@ -82,7 +90,9 @@ def func_to_optionparser(func):
         help_post=' (default: %s)'%examples
         opt.add_option(make_option(
             short_name, long_name, action=action, dest=name, default=example,
-            help = helpdict.get(funcname, '')+help_post
+            help = helpdict.get(funcname, '')+help_post,
+            type=optype(type(example))
+
         ))
 
     return opt, required_args
