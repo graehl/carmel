@@ -23,6 +23,9 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def __len__(self):
+        return self.length
+
     def get(self,gornaddr):
         """gornaddr is a list [] for root [0] for first child of root, [0,2] for 3rd child of that, etc.
         was __getitem__ but too valuable to discover mistaken use of tree as tuple/list, so new name"""

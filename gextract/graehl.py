@@ -48,6 +48,8 @@ class Record(object):
         if (hasattr(d,'__dict__')):
             d=getattr(d,'__dict__')
         self.__dict__.update(d)
+    def __str__(self):
+        return attr_str(self)
 
 def getlocals(up=0):
     """returns dict of locals of calling function (or up-parent) using frame"""

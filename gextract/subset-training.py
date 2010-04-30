@@ -29,10 +29,13 @@ def raduparse(t):
     t=radu2ptb(t)
     return tree.str_to_tree(t)
 
+INF=sys.maxint
+
 @optfunc.arghelp('upper_length','exclude lines whose # of english words is not in [lower,upper]')
 @optfunc.arghelp('inbase','read inbase.{e-parse,a,f}')
-def subset_training(inbase="astronauts",outbase="-",upper_length=sys.maxint,lower_length=0,end=sys.maxint,begin=0,monotone=True,n_output_lines=sys.maxint):
+def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=38,end=40,monotone=False,n_output_lines=INF):
     "filter inbase.{e-parse,a,f} to outbase"
+    dump(str(Locals()))
     oa=open_out_prefix(outbase,".a")
     ina=open(inbase+".a")
     of=open_out_prefix(outbase,".f")

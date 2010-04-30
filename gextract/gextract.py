@@ -9,7 +9,7 @@ tropical semiring (a*b=>a+b,a+b=>a+log1p(exp(b-a)) where b>a) if needed (large r
 version="0.9"
 
 
-import os,sys,itertools,re,operator,collections,random
+import os,sys,itertools,re,operator,collections,random,math
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 import pdb
@@ -20,6 +20,8 @@ import unittest
 
 from graehl import *
 from dumpx import *
+
+log10_zero=-1000.
 
 def rulefrag(t):
     return filter_children(t,lambda x:x.span is not None)
@@ -138,9 +140,10 @@ class Count(object):
         self.count=count
         self.group=group
     def reset(self):
-        self.count=self.prior
+        self.count=0
+#        self.count=self.prior
     def __str__(self):
-        return "{{{count=%d p0=%g %s}}}"%(self.rule,self.prior,self.count)
+        return "{{{count=%d p0*a=%g %s}}}"%(self.count,self.prior,self.rule)
 
 class Counts(object):
     """track counts and sum of counts for groups on the fly.  TODO: integerize groups (root nonterminals)"""
@@ -148,11 +151,13 @@ class Counts(object):
         "return Count object c for rule"
         if rule in self.rules:
             return self.rules[rule]
-        r=Count(rule,prior,group)
+        r=Count(rule,prior*self.alpha,group)
+#        dump(rule,prior,self.alpha,group,str(r))
         self.rules[rule]=r
         return r
     def prob(self,c):
-        return c.count/self.norms[c.group]
+        return (c.count+c.prior)/self.norms[c.group]
+        #todo: include prior in count but protect from underflow: epsilon+1 - 1 == 0 (bad, can't get logprob)
     def add(self,c,d):
         #todo: garbage collection for keys w/ 0 count
         g=c.group
@@ -160,6 +165,9 @@ class Counts(object):
         if g in n: n[g]+=d
         else: n[g]=d+self.alpha
         c.count+=d
+#        dump(str(c),n[g],d)
+        assertcmp(n[g],'>',0)
+        assertcmp(c.count,'>=',0)
     def __init__(self,basep=basep_default):
         self.rules={} # todo: make count object have reference to norm count cell instead of looking up in hash?
         self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
@@ -190,7 +198,7 @@ class Counts(object):
         f2e=ex.f2enode
         minspan=node.closure_span
         parnode=node.find_ancestor(lambda n:n.span is not None)
-        dump(richs(node))
+#        dump(richs(node))
         checkt(parnode)
         if parnode is None:
             assert(node.parent is None)
@@ -249,8 +257,8 @@ class Counts(object):
             Translation.update_span(node,newspan) # sets span, breaking .count is None <=> .span is None
             self.update_count(node,ex) # fixes above
             self.update_count(parnode,ex)
-        dump(richs(node))
-        dump(richs(parnode))
+#        dump(richs(node))
+#        dump(richs(parnode))
         checkt(node)
 
     def __str__(self):
@@ -578,7 +586,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         p=t.parent
         while True: # p is a node whose (closure) span has changed from old to new
             par=p.closure_span
-            dump(new,old,par,richs(p))
+#            dump(new,old,par,richs(p))
             if par is not None:
                 if old is not None and ((par[0]==old[0] and (new is None or par[0]<new[0])) or (par[1]==old[1] and (new is None or par[1]>new[1]))): # either side was formerly propping up an end of par, but was shrunk
                     new=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),p.children,None)
@@ -611,6 +619,22 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 assert(t.span is None)
                 t.count=None
 
+    def cache_prob(self,counts):
+        "return log10(prob) of current derivation correctly under cache model"
+        rcs=[t.count for t in self.etree.preorder() if t.count is not None]
+        for r in rcs: counts.add(r,-1)
+        lp=0.
+        for r in rcs:
+            p=counts.prob(r)
+            if (p<=0.):
+                warn("underflow in prob, using log10(<=0)=%f"%log10_zero)
+                l=log10_zero
+            else:
+                l=math.log10(p)
+            lp+=l
+            counts.add(r,1)
+        return lp
+
 class Training(object):
     def __init__(self,parsef,alignf,ff,basep=basep_default):
         self.parsef=parsef
@@ -634,7 +658,13 @@ class Training(object):
         counts=self.counts
         if opts.randomize:
             random.shuffle(examples)
+        self.nf=0
+        self.netree=0
+        self.nestring=0
         for ex in examples:
+            self.nf+=ex.nf
+            self.netree+=len(ex.etree)
+            self.nestring+=ex.ne
             for (rule,p,root) in ex.all_rules(self.basep):
                 c=counts.get(rule,p,root.label)
                 root.count=c
@@ -643,10 +673,13 @@ class Training(object):
             ex.set_closure_spans()
             ex.set_f2enode()
             checkt(ex.etree)
+        log("gibbs prepared for %d iterations over %d examples totaling %d foreign words, %d english tree nodes with %d leaves"%(opts.iter,len(examples),self.nf,self.netree,self.nestring))
 
     def gibbs_iter(self,iter,opts,examples):
-        log("gibbs iter=%d"%iter)
+        lp=0.
+        ei=0
         for ex in examples:
+            ei+=1
             root=ex.etree
             nodes=list(root.preorder())[1:] #exclude top node
             if not opts.terminals:
@@ -656,6 +689,11 @@ class Training(object):
                 self.counts.expand(n,ex)
             if opts.outputevery and iter % opts.outputevery == 0:
                 self.output_ex(ex,opts,"iter=%d"%iter)
+            elp=ex.cache_prob(self.counts)
+            if opts.verbose>=2:
+                log("iter=%d example=%d log10(cache-prob)=%f"%(iter,ei,elp))
+            lp+=elp
+        log("gibbs iter=%d log10(cache-prob)=%f"%(iter,lp))
 
     def output_ex(self,t,opts,header='',aof=None):
         getalign=aof is not None or opts.header_full_align
@@ -674,10 +712,8 @@ class Training(object):
 
     def output(self,opts,examples):
         ao=opts.alignment_out
-        if ao:
-            aof=open_out(ao)
         for t in examples:
-            self.output_ex(t,opts,aof)
+            self.output_ex(t,opts,(ao and open_out(ao)) or None)
 
     def main(self,opts):
         examples=list(self.reader())
@@ -703,7 +739,8 @@ def gextract(opts):
 class TestTranslation(unittest.TestCase):
     def setUp(self):
         dump("init test")
-        inbase='astronauts'
+        inbase='39' #'astronauts'
+        verbose=2
         terminals=False
         quote=True
         features=True
@@ -715,7 +752,7 @@ class TestTranslation(unittest.TestCase):
         randomize=False
         iter=10
         test=False
-        outputevery=1
+        outputevery=10
         header_full_align=False
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
         self.opts=Locals()
@@ -726,7 +763,7 @@ class TestTranslation(unittest.TestCase):
         examples=list(tr.reader())
         for t in examples:
             t.ghkm(False)
-            dumpt(t.etree,"after ghkm")
+            #dumpt(t.etree,"after ghkm")
         tr.gibbs_prep(opts,examples)
         for iter in range(0,opts.iter):
             tr.gibbs_iter(iter,opts,examples)
@@ -738,7 +775,7 @@ class TestTranslation(unittest.TestCase):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=True,outputevery=0):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=True,outputevery=0,verbose=1):
     if test:
         unittest.main()
     else:
