@@ -214,9 +214,14 @@ class Node:
                 spans[node] = (spans[node.children[0]][0], spans[node.children[-1]][1])
         return spans
 
+    def all_children(self):
+        for child in self.children:
+            for desc in child.preorder():
+                yield desc
+
     def preorder(self):
         yield self
-        for child in self.children:
+        for child in self.children: # inlining of all_children for efficiency
             for desc in child.preorder():
                 yield desc
 

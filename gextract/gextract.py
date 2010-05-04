@@ -192,12 +192,35 @@ class Counts(object):
 #        dump(node.span,node.count,richs(node))
         asserteq((node.span is None),(node.count is None),richs(node))
         return self.prob(node.count) if node.span is not None else 1.
+    @static_method
+    def rule_parent(node):
+        return node.find_ancestor(lambda n:n.span is not None)
+    @static_method
+    def is_rule_leaf(node):
+        return all((n.span is None for n in node.all_children()))
+    @static_method
+    def swap_spans(n1,n2):
+        s1=n1.span
+        n1.span=n2.span
+        n2.span=s1
+    def swap(self,n1,n2):
+        "a swap of spans (and counts) means that parent rule may change if one of the spans was None"
+        parent=Counts.rule_parent(n1)
+        asserteq(parent,Counts.rule_parent(n2),"swap not common rule parents",richs(n1),richs(n2))
+        assert Counts.is_rule_leaf(n1),"swap not rule leaf: "+richs(n1)
+        assert Counts.is_rule_leaf(n2),"swap not rule leaf: "+richs(n2)
+        assert n1.closure_span is None
+        assert n2.closure_span is None
+        if withp(.5): return # don't swap
+        c1=n1.count
+        n1.count=n2.count
+        n2.count=c1
     def expand(self,node,ex):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
         checkt(node)
         f2e=ex.f2enode
         minspan=node.closure_span
-        parnode=node.find_ancestor(lambda n:n.span is not None)
+        parnode=Counts.rule_parent(node)
 #        dump(richs(node))
         checkt(parnode)
         if parnode is None:
@@ -562,7 +585,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
     @staticmethod
     def set_closure_span(t):
-        """for node under t, set node.closure_span to the smallest span enclosing node.children.closure_span and node.children.span.  closure_span must already be computed for children"""
+        """for node under t, set node.closure_span to the smallest span enclosing node.children.closure_span and node.children.span.  closure_span must already be computed for children.  closure_span may be smaller than span (and may be None)"""
         t.closure_span=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),t.children,None)
         #reduce(lambda x,y:span_cover(x,y.fspan),t.children,None)
 ##        dump(richs(t),"closure",t.closure_span)
@@ -713,7 +736,7 @@ class Training(object):
     def output(self,opts,examples):
         ao=opts.alignment_out
         for t in examples:
-            self.output_ex(t,opts,(ao and open_out(ao)) or None)
+            self.output_ex(t,opts,'',(ao and open_out(ao)) or None)
 
     def main(self,opts):
         examples=list(self.reader())
