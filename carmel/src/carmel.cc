@@ -519,14 +519,19 @@ struct carmel_main
             return true;
         }
     };
+    template <class S,class O>
+    Putter<O,S> make_putter(O const& o)
+    {
+        return Putter<O,S>(o);
+    }
+
     template <class Setter,class V>
     unsigned set_vector(std::string const& key,dynamic_array<V> &pr,char const* osep = " ^ ",char const* isep=",")
     {
         std::ostream &o=Config::log();
-        typedef typename dynamic_array<V>::iterator I;
         std::string const& opt=text_long_opts[key];
         if (!opt.empty()) {
-            unsigned n=split_noquote(opt,Putter<I,Setter>(pr.begin()),isep);
+            unsigned n=split_noquote(opt,make_putter<Setter>(pr.begin()),isep,pr.size(),false,true);
             if (n>0) {
                 o << "Using input WFST --"<<key<<":\n";
                 unsigned i=0;
@@ -544,6 +549,7 @@ struct carmel_main
     template <class V>
     void parse_vector(std::string const& key,dynamic_array<V> &pr,V const& zero=0,char const* osep = " ^ ",char const* isep=",")
     {
+        pr.resize(nInputs);
         unsigned i=set_vector<field<V> >(key,pr,osep,isep);
         while (i<nInputs)
             pr[i++]=zero;
@@ -1702,6 +1708,8 @@ main(int argc, char *argv[]){
     if(nTarget != -1) {
         if(line_in != &cin)
             delete line_in; // rest were deleted after transducers were read
+            //FIXME: reenable deletion later after solving: this is a double deletion under carmel.debug -ri -k 5 -IEQ word.names.50000wds.transducer word-epron.names.55000wds.transducer epron-jpron.1.transducer jpron.transducer vowel-separator.transducer jpron-asciikana.transducer angela.str
+
     }
     if (pairStream != &cin)
         delete pairStream;
