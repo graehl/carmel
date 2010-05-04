@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <sstream>
 
 namespace graehl {
 
@@ -13,20 +15,35 @@ namespace graehl {
 #define GRAEHL__ERROR_PRETEXT_CHARS 20
 #endif
 
+inline void
+throw_parse_error(std::string const& context,
+                  std::string const& complaint="parse error",
+                  std::string::size_type pos=std::string::npos)
+{
+    using namespace std;
+    ostringstream o;
+    o << complaint << ": ";
+    if (pos==string::npos)
+        o << context;
+    else
+        o << string(context,0,pos)<<"<ERROR HERE>"<<string(context,pos);
+    throw runtime_error(o.str());
+}
+
 template <class C>
 inline
-C scrunch_char(C c,char with='/') 
+C scrunch_char(C c,char with='/')
 {
     switch(c) {
     case '\n':case '\t':
         return with;
     default:
         return c;
-    }   
+    }
 }
 
 template <class O,class C> inline
-void output_n(O &o,const C &c,unsigned n) 
+void output_n(O &o,const C &c,unsigned n)
 {
     for (unsigned i=0;i<n;++i)
         o << c;
@@ -44,7 +61,7 @@ void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot>
     in.clear();
     std::streamoff before(in.tellg());
 //    DBP(before);
-    if (before>0) {        
+    if (before>0) {
         in.seekg(-(int)prechars,std::ios_base::cur);
         std::streamoff after(in.tellg());
         if (!in) {
@@ -52,9 +69,9 @@ void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot>
             in.seekg(after=0);
         }
         actual_pretext_chars=before-after;
-    } 
-        
-    
+    }
+
+
 //    } else {
 //        actual_pretext_chars=0;
 //    }
@@ -79,7 +96,7 @@ void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot>
         } else
             break;
     }
-    
+
     if (ip!=actual_pretext_chars)
         out << "<<<WARNING: COULD NOT READ " << prechars << " pre-error characters (only got " << ip << ")>>>";
     for(unsigned i=0;i<GRAEHL__ERROR_CONTEXT_CHARS;++i)
@@ -104,12 +121,12 @@ void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const
     err << ": " << error << std::endl;
 #ifdef INPUT_ERROR_TELLG
     std::streamoff where(in.tellg());
-#endif 
+#endif
     show_error_context(in,err);
-     err 
+     err
 #ifdef INPUT_ERROR_TELLG
 //   << "(file position " <<  where << ")"
-#endif 
+#endif
          << std::endl;
     throw std::runtime_error(err.str());
 }

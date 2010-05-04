@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <graehl/shared/string_to.hpp>
+#include <graehl/shared/input_error.hpp>
+
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #include <cstring>
@@ -42,8 +44,11 @@ struct split_string_push_back
 template <class Func>
 inline unsigned split_noquote(
     const std::string &csv,
-    Func f,
-    const std::string &delim=","
+    Func f, // this returns false if we want to stop; we return the number of fields (up to N) for which f returned true.
+    const std::string &delim=",",
+    unsigned N=(unsigned)-1, // max number of calls to f (even if more fields exist)
+    bool leave_tail=true, // if N reached and there's more string left, include it in final call to f
+    bool must_complete=false // throw if whole string isn't consumed (meaningless unless leave_tail==false)
     )
 {
     using namespace std;
@@ -56,13 +61,15 @@ inline unsigned split_noquote(
     }
     string::size_type pos=0,nextpos;
     unsigned n=0;
-    while((nextpos=csv.find(delim,pos)) != string::npos) {
+    while(n<N&&(!leave_tail||n+1<N)&&(nextpos=csv.find(delim,pos)) != string::npos) {
         if (! f(string(csv,pos,nextpos-pos)) )
             return n;
         ++n;
         pos=nextpos+delim_len;
     }
     if (csv.length()!=0) {
+        if (must_complete && n+1!=N)
+            throw_parse_error(csv,"Expected exactly "+to_string(N)+" "+delim+" separated fields",pos);
         if (!f(string(csv,pos,csv.length()-pos)))
             return n;
         ++n;
