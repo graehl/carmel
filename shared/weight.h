@@ -79,13 +79,15 @@ template<class Real>
 struct logweight;
 
 #define MUCH_BIGGER_LN (sizeof(Real)==4? (Real)16. : (Real)36.)
-#define UNDERFLOW_LN (sizeof(Real)==4? (Real)73. : (Real)82.)
 // represents BIG=10^MUCH_BIGGER_LN - if X > BIG*Y, then X+Y =~ X 32 bit Real
 // IEEE Real has 23 binary digit mantissa, so can represent about 16 base E
 // digits only if you use 64-bit doubles instead of floats, 52 binary digits
 // note that you'll start to see underflow slightly earlier - this is a
 // conservative value.  subtract one if you *want* the result of addition to be
 // not lose tons of information
+/* in other words log(exp1p(exp(a))-1 = 0 for a>=MUCH_BIGGER_LN
+ */
+#define UNDERFLOW_LN (sizeof(Real)==4? (Real)73. : (Real)82.)
 
 //#define MAKENOTANON name ## __LINE__
 template<class Real>
