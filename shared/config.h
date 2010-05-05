@@ -21,6 +21,9 @@
 #define DOUBLE_PRECISION
 #endif
 
+#define GRAEHL_USE_LOG1P
+// disable above if math.h doesn't include log1p, or if you want a speedup (but losing accuracy in Weight addition of small numbers to larger ones)
+
 //#define CARMEL_DEBUG_PRINTS
 
 #define ALLOWED_FORWARD_OVER_BACKWARD_EPSILON 1e-5
