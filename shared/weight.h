@@ -54,6 +54,9 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 
 
 namespace graehl {
+#ifdef GRAEHL_USE_LOG1P
+# include <math.h>
+#endif
 
 struct quiet_NaN_weight {};
 struct signaling_NaN_weight {};
@@ -825,12 +828,25 @@ inline logweight<Real> operator +(logweight<Real> lhs, logweight<Real> rhs) {
 
     logweight<Real> result;
 
+    //TODO: is log1p(x)=log(1+x) faster?  or just more accurate near x=0?
     if ( diff < 0 ) { // rhs is bigger
-        result.weight = (Real)(rhs.weight + std::log(1 + std::exp(lhs.weight-rhs.weight)));
+        result.weight = (Real)(rhs.weight +
+#ifdef GRAEHL_USE_LOG1P
+                               log1p(std::exp(diff))
+#else
+                               std::log(1 + std::exp(diff))
+#endif
+            );
         return result;
     }
     // lhs is bigger
-    result.weight = (Real)( lhs.weight + std::log(1 + std::exp(rhs.weight-lhs.weight)));
+    result.weight = (Real)( lhs.weight +
+#ifdef GRAEHL_USE_LOG1P
+                               log1p(std::exp(-diff))
+#else
+                            std::log(1 + std::exp(-diff))
+#endif
+        );
     return result;
 }
 

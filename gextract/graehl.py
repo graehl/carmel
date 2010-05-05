@@ -3,7 +3,19 @@
  figure out python logging lib
 """
 
-import sys,re,random
+import sys,re,random,math
+
+# could be more concise; but hope that this is efficient.
+def logadd(lhs,rhs):
+    "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
+#    if a>b: return logadd(b,a)
+    diff=lhs-rhs
+    if diff > 36: return lhs # e^36 or more overflows double floats.
+    if diff < 0: #rhs is bigger
+        if diff < -36: return rhs
+        return rhs+math.log1p(math.exp(diff))
+    return lhs+math.log1p(math.exp(-diff))
+
 
 
 def choosep(p_item_list):

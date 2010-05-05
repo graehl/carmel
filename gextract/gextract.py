@@ -21,7 +21,7 @@ import unittest
 from graehl import *
 from dumpx import *
 
-log10_zero=-1000.
+log10_zero=-10000.
 
 def rulefrag(t):
     return filter_children(t,lambda x:x.span is not None)
@@ -192,13 +192,13 @@ class Counts(object):
 #        dump(node.span,node.count,richs(node))
         asserteq((node.span is None),(node.count is None),richs(node))
         return self.prob(node.count) if node.span is not None else 1.
-    @static_method
+    @staticmethod
     def rule_parent(node):
         return node.find_ancestor(lambda n:n.span is not None)
-    @static_method
+    @staticmethod
     def is_rule_leaf(node):
         return all((n.span is None for n in node.all_children()))
-    @static_method
+    @staticmethod
     def swap_spans(n1,n2):
         s1=n1.span
         n1.span=n2.span
@@ -762,7 +762,7 @@ def gextract(opts):
 class TestTranslation(unittest.TestCase):
     def setUp(self):
         dump("init test")
-        inbase='39' #'astronauts'
+        inbase='astronauts'
         verbose=2
         terminals=False
         quote=True
@@ -773,7 +773,7 @@ class TestTranslation(unittest.TestCase):
         header_full_align=False
         rules=True
         randomize=False
-        iter=10
+        iter=1
         test=False
         outputevery=10
         header_full_align=False

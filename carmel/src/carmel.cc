@@ -40,7 +40,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "6.2"
+#define CARMEL_VERSION "6.3"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
