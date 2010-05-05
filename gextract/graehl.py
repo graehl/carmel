@@ -5,18 +5,32 @@
 
 import sys,re,random,math
 
-# could be more concise; but hope that this is efficient.
-def logadd(lhs,rhs):
-    "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
-#    if a>b: return logadd(b,a)
-    diff=lhs-rhs
-    if diff > 36: return lhs # e^36 or more overflows double floats.
-    if diff < 0: #rhs is bigger
-        if diff < -36: return rhs
-        return rhs+math.log1p(math.exp(diff))
-    return lhs+math.log1p(math.exp(-diff))
+PYTHON26=sys.version >= '2.6'
 
+# could be more concise; but hope that this is efficient.  note: on python 2.6 i saw no numerical difference when logadding 1e-15 and 1
+if PYTHON26:
+    def logadd(lhs,rhs):
+        "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
+    #    if a>b: return logadd(b,a)
+        diff=lhs-rhs
+        if diff > 36: return lhs # e^36 or more overflows double floats.
+        if diff < 0: #rhs is bigger
+            if diff < -36: return rhs
+            return rhs+math.log1p(math.exp(diff))
+        return lhs+math.log1p(math.exp(-diff))
+else:
+    def logadd(lhs,rhs):
+        "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
+    #    if a>b: return logadd(b,a)
+        diff=lhs-rhs
+        if diff > 36: return lhs # e^36 or more overflows double floats.
+        if diff < 0: #rhs is bigger
+            if diff < -36: return rhs
+            return rhs+math.log(1.+math.exp(diff))
+        return lhs+math.log(1.+math.exp(-diff))
 
+def logadd_plus(a,b):
+    return math.exp(logadd(math.log(a),math.log(b)))
 
 def choosep(p_item_list):
     "given list of tuples (p,item), return a random item according to (possibly unnormalized) p, None if empty list input"
@@ -215,3 +229,11 @@ def radu2ptb(t):
     t=radu_rrb.sub(r'(\1 -RRB-)',t)
     return t
 
+if __name__ == "__main__":
+    f='%.50g'
+    a,b=map(float,sys.argv[1:])
+    s1=a+b
+    s2=logadd_plus(a,b)
+    d1=s1-b
+    d2=s2-b
+    print PYTHON26,sys.version,f%a,f%b,f%d1,f%d2,f%math.exp(math.log(a))
