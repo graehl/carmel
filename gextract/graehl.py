@@ -5,6 +5,81 @@
 
 import sys,re,random,math
 
+def uniq_shuffled(xs):
+    "doesn't preserve xs order, but removes duplicates.  fastest"
+    return list(set(xs))
+
+def uniq_stable(xs):
+    'xs with duplicates removed; in original order'
+    seen=set()
+    r=[]
+    for x in xs:
+        if x not in seen:
+            seen.add(x)
+            r.append(x)
+    return r
+
+def uniq(xs):
+    'xs must be sorted! removes duplicates'
+    if len(xs)==0: return []
+    p=xs[0]
+    r=[p]
+    for x in xs:
+        if x!=p:
+            r.append(x)
+        p=x
+    return r
+
+def sort_uniq(xs):
+    return uniq(sorted(xs))
+
+class Alignment(object):
+    apair=re.compile(r'(\d+)-(\d+)')
+    def __init__(self,aline,ne,nf):
+        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf)"
+        def intpair(stringpair):
+            return (int(stringpair[0]),int(stringpair[1]))
+        self.efpairs=uniq_shuffled(intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()) if aline else []
+        self.ne=ne
+        self.nf=nf
+    def copy_blank(self):
+        "return a blank alignment of same dimensions"
+        return Alignment(None,self.ne,self.nf)
+    def corrupt(self,p,d):
+        'corrupt e and f ends of an alignment link independently in output.a with probability p; move a distorted link within +-d'
+        def rdistort(p,d):
+            if random.random()<p:
+                return random.randint(-d,d)
+            return 0
+        self.efpairs=[(bound(e+rdistort(p,d),self.ne),bound(f+rdistort(p,d),self.nf)) for e,f in self.efpairs]
+    def fully_connect(self,es,fs):
+        "es and fs are lists of e and f indices, fully connect cross product"
+        for e in es:
+            for f in fs:
+                self.efpairs.append((e,f))
+    def adje(self):
+        "for e word index, list of f words aligned to it"
+        return adjlist(self.efpairs,self.ne)
+    def adjf(self):
+        "inverse of adje (indexed by f)"
+        return adjlist([(f,e) for (e,f) in self.efpairs],self.nf)
+    def spanadje(self):
+        "minimal covering span (fa,fb) for e word index's aligned f words"
+        return [span_cover_points(adj) for adj in self.adje()]
+    def spanadjf(self):
+        "inverse of spanadje"
+        return [span_cover_points(adj) for adj in self.adjf()]
+    def __str__(self):
+        return " ".join(["%d-%d"%p for p in self.efpairs])
+
+def clamp(x,a,b):
+    'force x to lie on [a,b]'
+    return min(b,max(a,x))
+
+def bound(x,n):
+    'force x to lie on [0,n)'
+    return clamp(x,0,n-1)
+
 def unordered_pairs(xs):
     "return list of (a,b) for all a,b in xs, such that a is before b in xs"
     n=len(xs)
