@@ -67,14 +67,20 @@ def func_to_optionparser(func):
             opt._custom_names[name] = funcname
         # Or we pick the first letter from the name not already in use:
         else:
-            for short in name:
-                if short not in shortnames:
+            short=None
+            for s in name:
+                if s not in shortnames:
+                    short=s
                     break
 
-        shortnames.add(short)
-        short_name = '-%s' % short
+        names=[]
+        if short is not None:
+            shortnames.add(short)
+            short_name = '-%s' % short
+            names.append(short_name)
         longn=name.replace('_', '-')
         long_name = '--%s' % longn
+        names.append(long_name)
         if type(example) is bool:
             no_name='--no%s'%longn
             opt.add_option(make_option(
@@ -88,12 +94,11 @@ def func_to_optionparser(func):
             if example==sys.maxint: examples="INFINITY"
             if example==(-sys.maxint-1): examples="-INFINITY"
         help_post=' (default: %s)'%examples
-        opt.add_option(make_option(
-            short_name, long_name, action=action, dest=name, default=example,
+        args=short_name
+        kwargs=dict(action=action, dest=name, default=example,
             help = helpdict.get(funcname, '')+help_post,
-            type=optype(type(example))
-
-        ))
+            type=optype(type(example)))
+        opt.add_option(make_option(*names,**kwargs))
 
     return opt, required_args
 
@@ -190,12 +195,12 @@ def run(
 def caller_module(i):
     if (i>=0):
         i+=1
-    prev_frame = inspect.stack()[i][0]
-    return inspect.getmodule(prev_frame)
+    stk=inspect.stack()[i]
+    return inspect.getmodule(stk[0])
 
 def main(*args, **kwargs):
     mod=caller_module(1)
-    if mod is None or mod.__name__ == '__main__':
+    if mod is None or mod.__name__ == '<module>' or mod.__name__ == '__main__':
         run(*args, **kwargs)
     return args[0] # So it won't break anything if used as a decorator
 

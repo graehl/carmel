@@ -5,6 +5,12 @@
 
 import sys,re,random,math
 
+def unordered_pairs(xs):
+    "return list of (a,b) for all a,b in xs, such that a is before b in xs"
+    n=len(xs)
+    return [(xs[i],xs[j]) for i in range(0,n) for j in range(i+1,n)]
+    # yuck, for x in X for y in f(x) is just like for x in X: for y in f(y): - should be backwards.
+
 PYTHON26=sys.version >= '2.6'
 
 # could be more concise; but hope that this is efficient.  note: on python 2.6 i saw no numerical difference when logadding 1e-15 and 1
@@ -43,6 +49,46 @@ def choosep(p_item_list):
         if c<=0:
             return i
     return p_item_list[-1][1]
+
+def choosei(ps):
+    "given list of possibly unnormalized probabilities, return a random index drawn from that multinomial; None if empty list input"
+    if len(ps)==0:
+        return None
+    z=sum(ps)
+    c=random.random()*z
+    for i in range(0,len(ps)):
+        c-=ps[i]
+        if c<=0:
+            return i
+    return len(ps)-1
+
+def normalize_logps(logps):
+    logz=reduce(logadd,logps)
+    return [lp-logz for lp in logps]
+
+def ps_from_logps(logps):
+    logz=reduce(logadd,logps)
+    return [math.exp(lp-logz) for lp in logps]
+
+from dumpx import *
+
+def choosei_logps(logps):
+    ps=ps_from_logps(logps)
+    i=choosei(ps)
+#    dump(callerstring(1),i,logps,ps)
+    return i
+
+def choosei_logp(ps):
+    "given list of logprobs, return random index"
+    if len(ps)==0:
+        return None
+    z=sum(ps)
+    c=random.random()*z
+    for i in range(0,len(ps)):
+        c-=ps[i]
+        if c<=0:
+            return i
+    return len(ps)-1
 
 def withp(prob):
     return random.random()<prob
@@ -101,15 +147,22 @@ def log(s):
 def dict_slice(d,keys):
     return dict((k,d[k]) for k in keys)
 
-#reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5)
-# If the optional initializer is present, it is placed before the items of the iterable in the calculation, and serves as a default when the iterable is empty
-def fold(f,z,list):
-    return reduce(f,list,z)
-
 def fold(f,z,list):
     for x in list:
         z=f(z,x)
     return z
+
+def scan(f,z,list):
+    result=[z]
+    for x in list:
+        z=f(z,x)
+        result.append(z)
+    return result
+
+#reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5)
+# If the optional initializer is present, it is placed before the items of the iterable in the calculation, and serves as a default when the iterable is empty
+def fold(f,z,list):
+    return reduce(f,list,z)
 
 
 def cartesian_product(a,b):
@@ -228,12 +281,3 @@ def radu2ptb(t):
     t=radu_lrb.sub(r'(\1 -LRB-)',t)
     t=radu_rrb.sub(r'(\1 -RRB-)',t)
     return t
-
-if __name__ == "__main__":
-    f='%.50g'
-    a,b=map(float,sys.argv[1:])
-    s1=a+b
-    s2=logadd_plus(a,b)
-    d1=s1-b
-    d2=s2-b
-    print PYTHON26,sys.version,f%a,f%b,f%d1,f%d2,f%math.exp(math.log(a))

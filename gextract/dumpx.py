@@ -98,6 +98,9 @@ def assertgt(a,b,*r):
 def assertge(a,b,*r):
     assertcmpi(1,a,'>=',b,*r)
 
+def assertne(a,b,*r):
+    assertcmpi(1,a,'!=',b,*r)
+
 def x(s="debug stop."):
     raise Exception("x: "+s)
 def warn(msg,pre="WARNING: "):

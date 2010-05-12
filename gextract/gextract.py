@@ -28,6 +28,14 @@ def rulefrag(t):
 
 import string
 parenescape=string.maketrans('()','[]')
+
+less_checking=True
+
+noisy_log=False
+def log_change(type,olds,news,parnode,*rest):
+    if noisy_log:
+        sys.stderr.write(type+': old='+pstr(map(cstr,olds))+' new='+pstr(map(cstr,news))+' parnode(after)='+richs(parnode,names=False)+' '+pstr(rest)+'\n')
+
 def richstr(t):
     if type(t) is tuple and len(t)==2:
         return "[%s,%s]"%t
@@ -50,6 +58,7 @@ def dumpt(t,msg=None,attrs=['label','span','closure_span']):
     dump(richs(t,attrs))
 
 def checkt(t):
+    if less_checking: return
     for node in t.preorder():
         checkrule(node)
         checkclosure(node)
@@ -138,12 +147,21 @@ class Count(object):
         self.rule=rule
         self.prior=prior
         self.count=count
-        self.group=group
+        self.group=group  #TODO: speedup: store ref to directly mutable cell rather than root label for hash
     def reset(self):
         self.count=0
 #        self.count=self.prior
     def __str__(self):
         return "{{{count=%d p0*a=%g %s}}}"%(self.count,self.prior,self.rule)
+
+def cstr(n):
+    return '' if n is None else ((n if not hasattr(n,"rule") else n.rule) if n is not None else '')
+
+def cnstr(n):
+    return span_str(n.span)+cstr(n.count)
+
+def cnstrs(*ns):
+    return map(cnstr,ns)
 
 class Counts(object):
     """track counts and sum of counts for groups on the fly.  TODO: integerize groups (root nonterminals)"""
@@ -151,19 +169,33 @@ class Counts(object):
         "return Count object c for rule"
         if rule in self.rules:
             return self.rules[rule]
+        assert(prior<=1)
         r=Count(rule,prior*self.alpha,group)
+        if group not in self.norms: self.norms[group]=self.alpha
 #        dump(rule,prior,self.alpha,group,str(r))
         self.rules[rule]=r
         return r
+    def logprob(self,c):
+        return math.log(self.prob(c))
     def prob(self,c):
-        return (c.count+c.prior)/self.norms[c.group]
+        return 1. if c is None else (c.count+c.prior)/self.norms[c.group]
         #todo: include prior in count but protect from underflow: epsilon+1 - 1 == 0 (bad, can't get logprob)
+    def logprobm1(self,c):
+#        dump('probm1',cstr(c),self.probm1(c))
+        return math.log(self.probm1(c))
+    def probm1(self,c):
+        "return prob given all the other events but this one (i.e. sub 1 from num and denom)"
+        if c is None: return 1.
+        assertge(self.norms[c.group],self.alpha)
+        return (c.count+c.prior-1.)/(self.norms[c.group]-1.)
     def add(self,c,d):
+        "denominator n[c.group] is created if necessary, including alpha (added once only), and d is added to c.count and n[c.group]"
+        if c is None: return
         #todo: garbage collection for keys w/ 0 count
         g=c.group
         n=self.norms
-        if g in n: n[g]+=d
-        else: n[g]=d+self.alpha
+#        dump('delta norm count',d,n[g],c,str(c))
+        n[g]+=d
         c.count+=d
 #        dump(str(c),n[g],d)
         assertcmp(n[g],'>',0)
@@ -173,25 +205,7 @@ class Counts(object):
         self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
         self.basep=basep
         self.alpha=basep.alpha
-
         #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
-    def update_count(self,n,ex):
-        "tree node n which has a .span (is a rule root) gets its old rule count decreased by 1 and new rule count increased by 1"
-        oldc=n.count
-        if n.span is not None:
-            newrule,newbasep=ex.xrs_str(n,self.basep)
-            newc=self.get(newrule,newbasep,n.label)
-            self.add(newc,1)
-            n.count=newc
-        else:
-            n.count=None
-        if oldc is not None:
-            self.add(oldc,-1)
-    def rulep(self,node):
-        "return 1.0 if span is None, else rule prob of node (span=None <=> count=None)"
-#        dump(node.span,node.count,richs(node))
-        asserteq((node.span is None),(node.count is None),richs(node))
-        return self.prob(node.count) if node.span is not None else 1.
     @staticmethod
     def rule_parent(node):
         return node.find_ancestor(lambda n:n.span is not None)
@@ -203,22 +217,69 @@ class Counts(object):
         s1=n1.span
         n1.span=n2.span
         n2.span=s1
-    def swap(self,n1,n2):
+    def swap(self,n1,n2,ex):
         "a swap of spans (and counts) means that parent rule may change if one of the spans was None"
-        parent=Counts.rule_parent(n1)
-        asserteq(parent,Counts.rule_parent(n2),"swap not common rule parents",richs(n1),richs(n2))
+        parnode=Counts.rule_parent(n1)
+        asserteq(parnode,Counts.rule_parent(n2),"swap not common rule parents",richs(n1),richs(n2))
         assert Counts.is_rule_leaf(n1),"swap not rule leaf: "+richs(n1)
         assert Counts.is_rule_leaf(n2),"swap not rule leaf: "+richs(n2)
         assert n1.closure_span is None
         assert n2.closure_span is None
-        if withp(.5): return # don't swap
-        c1=n1.count
-        n1.count=n2.count
-        n2.count=c1
+#        dump("swap?",richs(n1),richs(n2))
+        if n1.span is None and n2.span is None: return
+        cold1=n1.count #TODO: use list for old/new count +1 -1?
+        cold2=n2.count
+        pold=parnode.count
+        self.add(parnode.count,-1)
+        oldp=self.logprob(parnode.count)
+        self.add(cold1,-1)
+        old1=self.logprob(cold1)
+        self.add(cold2,-1)
+        old2=self.logprob(cold2)
+        oldlogp=oldp+old1+old2
+#        dump("oldp,old1,old2",oldp,old1,old2)
+        Counts.swap_spans(n1,n2)
+        newpc=self.count_for_node(parnode,ex)
+        new1=self.count_for_node(n1,ex)
+        new2=self.count_for_node(n2,ex)
+#        dump(newpc,cnstrs(parnode))
+        lnp=self.logprob(newpc)
+        self.add(newpc,1)
+        ln1=self.logprob(new1)
+        self.add(new1,1)
+        newlogp=lnp+ln1+self.logprob(new2)
+        #check math on exchangability: add,add,add,pm1,pm1,pm1 == p,add,p,add,p,add
+        usenew=choosei_logps([oldlogp,newlogp])
+        if usenew==0:
+            Counts.swap_spans(n1,n2) #swap back to original
+            self.add(parnode.count,1)
+            self.add(cold1,1)
+            self.add(cold2,1) #TODO: test how close an approximation it is to not change the counts before getting logprobm1
+            self.add(newpc,-1)
+            self.add(new1,-1)
+        else:
+            self.add(new2,1)
+            parnode.count=newpc
+            n1.count=new1
+            n2.count=new2
+            Translation.update_span(n1,n1.span,n2.span) # these were already swapped; fix up closure spans
+            Translation.update_span(n2,n2.span,n1.span)
+            log_change("swapped",[cold1,cold2,pold],[new1,new2,newpc],parnode)
+        # above is a slowdown but properly handles the corner case where 2 (or 3) of the new rules are identical, or, more likely, have the same normgroup.  but in a large training set it would be nearly correct to ignore that.  also, could assume that none of the old rules = new and not have to adjust counts at all.  just use probm1.
+    def count_for_node(self,node,ex):
+        "return rule count ref for rule headed at node (without setting node.count).  None if node doesn't head a rule"
+        if node.span is None: return None
+        rule,base=ex.xrs_str(node,self.basep)
+        c=self.get(rule,base,node.label)
+#        dump(cstr(c))
+        return c
     def expand(self,node,ex):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
         checkt(node)
         f2e=ex.f2enode
+        def align(a,b,to):
+            for i in range(a,b):
+                f2e[i]=to
         minspan=node.closure_span
         parnode=Counts.rule_parent(node)
 #        dump(richs(node))
@@ -229,17 +290,32 @@ class Counts(object):
         parspan=parnode.span
         assert (parspan is not None)
         oldspan=node.span
-        newspans=[(self.rulep(parnode)*self.rulep(node),oldspan)]
+#        newlogps=[self.logprobm1(parnode.count)+self.logprobm1(node.count)]
+# above commented out because it's too high prob in unlikely event of parent rule = self rule
+        oldpc=parnode.count
+        oldnc=node.count
+        self.add(oldpc,-1)
+        plp=self.logprob(oldpc)
+        self.add(oldnc,-1)
+        nlp=self.logprob(oldnc)
+        newlogps=[nlp+plp]
+        newspans=[(oldspan,node.count,parnode.count)] # parallel to newlogps;  (span,count,parcount)
+        #same as init to empty and then consider_span(oldspan) but remember old rule struct
+        assert(parnode is not node)
         def consider_span(span):
             node.span=span
-            parprob=ex.xrs_prob(parnode,self.basep)
-            prob=1. if span is None else ex.xrs_prob(node,self.basep)
-#            dump(span,richs(node),prob,parprob)
-            newspans.append((prob*parprob,span))
+            parc=self.count_for_node(parnode,ex)
+            lp=self.logprob(parc)
+            self.add(parc,1)
+            newc=self.count_for_node(node,ex)
+            newlogps.append(lp+self.logprob(newc))
+            newspans.append((span,newc,parc))
+            self.add(parc,-1)
         closure=node.closure_span
         imax=parspan[1]
         jmin=parspan[0]+1
-        consider_span(None)
+        if oldspan is not None:
+            consider_span(None)
         if closure is not None:
             assert(span_in(closure,parspan))
             imax=closure[0]
@@ -256,13 +332,20 @@ class Counts(object):
                     if not (f is parnode or f is node):
                         break
         node.span=oldspan # recover from mutilated invariant in consider_span
-        newspan=choosep(newspans) # make sure to fix: set node.span and node.count accordingly
-        def align(a,b,to):
-            for i in range(a,b):
-                f2e[i]=to
-        if (newspan==oldspan):
-            node.span=oldspan # field was overwritten when considering
-        else:
+        newspani=choosei_logps(newlogps) # make sure to fix: set node.span and node.count accordingly
+#        dump(newspani,newspans[newspani],node.count,parnode.count)
+        newspan,node.count,parnode.count=newspans[newspani]
+
+        self.add(parnode.count,1)
+        self.add(node.count,1)
+        node.span=newspan
+        if (newspan!=oldspan):
+            oldpars="old parnode="+richs(parnode,names=False)
+            Translation.update_span(node,newspan,oldspan) # sets span, fixing .count is None <=> .span is None
+            log_change("expanded",[oldnc,oldpc],[node.count,parnode.count],parnode,oldpars)
+            checkclosure(node)
+            checkclosure(parnode)
+            #FIXME: this is supposed to be efficient and correct.  make sure that it is!
             if newspan is None:
                 if oldspan is not None:
                     align(oldspan[0],oldspan[1],parnode)
@@ -277,12 +360,9 @@ class Counts(object):
                     align(oldspan[1],newspan[1],node)
                 elif newspan[1]<oldspan[1]:
                     align(newspan[1],oldspan[1],parnode)
-            Translation.update_span(node,newspan) # sets span, breaking .count is None <=> .span is None
-            self.update_count(node,ex) # fixes above
-            self.update_count(parnode,ex)
 #        dump(richs(node))
 #        dump(richs(parnode))
-        checkt(node)
+        checkt(parnode)
 
     def __str__(self):
         return "\n".join(rules.itervalues())
@@ -332,6 +412,22 @@ class Translation(object):
         assert(self.nf==a.nf)
         assert(self.ne==a.ne)
         self.set_spans(self.etree,self.a.spanadje())
+
+    def visit_swaps(self,counts):
+        self.visit_swaps_r(counts,self.etree,[])
+
+    def visit_swaps_r(self,counts,node,pch):
+        "append to pch all children with a .span who don't have any .span under them.  return True iff no .span in node-rooted subtree.  try swapping any 2 nodes that have a rule on them already.  for swapping a none with something, you can shrink one then grow other.  may want to include none/some swap but would have to complicate eligible pairs computation (parent no longer eligible after child none receives a rule)"
+        if node.span is None:
+            return all([self.visit_swaps_r(counts,c,pch) for c in node.children])
+        ch=[]
+        noch=all([self.visit_swaps_r(counts,c,ch) for c in node.children])
+        if noch:
+            pch.append(node)
+#        dump("swap",richs(node),map(richs,ch))
+        for c1,c2 in unordered_pairs(ch): #TODO: any benefit to randomizing order of pairs, or, changing subsequent pairs considered if a swap is made?
+            counts.swap(c1,c2,self)
+        return False
 
     def set_spans(self,enode,fspane,epos=0):
         "epos is enode's yield's starting position in english yield; returns ending position.  sets treenode.fspan foreign (a,b)"
@@ -502,9 +598,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             nv+=cv
         return (nv,nt)
 
+    def xrs_logprob(self,root,basemodel):
+        return math.log(self.xrs_prob(root,basemodel))
+
     def xrs_prob(self,root,basemodel):
         """same as xrs_str(root,basemodel)[1]"""
-        assert root.span is not None
+        if root.span is None: return 1.
         return self.xrs_str(root,basemodel)[1]
         #TODO: test - should be faster since we don't generate rule string
         lhs_prob=Translation.xrs_prob_lhs_r(root,basemodel)/basemodel.pnonterm
@@ -596,12 +695,15 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 
 
     @staticmethod
-    def update_span(t,new):
+    def update_span(t,new,old):
         """set t.span=new and update closure_spans upward if necessary; allow fspan to become out of date; fspan is just closure_span if span is None else span
         FIXME: test
         """
-        old=t.span or t.closure_span
+        dbgme=False
+        if dbgme: pdb.set_trace()
+        old=old or t.closure_span
         t.span=new
+        assert(span_in(t.closure_span,new) or new is None)
         if new is None:
             new=t.closure_span
         if old==new:
@@ -609,17 +711,22 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         p=t.parent
         while True: # p is a node whose (closure) span has changed from old to new
             par=p.closure_span
+            assert(new in [y.span or y.closure_span for y in p.children])
+            if True:
+                new=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),p.children,None)
+            else:
 #            dump(new,old,par,richs(p))
-            if par is not None:
-                if old is not None and ((par[0]==old[0] and (new is None or par[0]<new[0])) or (par[1]==old[1] and (new is None or par[1]>new[1]))): # either side was formerly propping up an end of par, but was shrunk
-                    new=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),p.children,None)
-                else: # we grew or held equal both ends
-                    new=span_cover(par,new)
+                if par is not None:
+                    if old is not None and ((par[0]==old[0] and (new is None or par[0]<new[0])) or (par[1]==old[1] and (new is None or par[1]>new[1]))): # either side was formerly propping up an end of par, but was shrunk
+                        new=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),p.children,None)
+                    else: # we grew or held equal both ends
+                        new=span_cover(par,new)
             old=p.closure_span
             if new==old: break #no change
+#            dump("update closure",new,richs(p))
             p.closure_span=new
-            if p.span is not None: break
             checkclosure(p)
+            if p.span is not None: break
             p=p.parent
         checkclosure(t)
 
@@ -698,6 +805,7 @@ class Training(object):
             checkt(ex.etree)
         log("gibbs prepared for %d iterations over %d examples totaling %d foreign words, %d english tree nodes with %d leaves"%(opts.iter,len(examples),self.nf,self.netree,self.nestring))
 
+
     def gibbs_iter(self,iter,opts,examples):
         lp=0.
         ei=0
@@ -710,6 +818,8 @@ class Training(object):
             if opts.randomize: random.shuffle(nodes)
             for n in nodes:
                 self.counts.expand(n,ex)
+            if opts.swap:
+                ex.visit_swaps(self.counts)
             if opts.outputevery and iter % opts.outputevery == 0:
                 self.output_ex(ex,opts,"iter=%d"%iter)
             elp=ex.cache_prob(self.counts)
@@ -739,6 +849,8 @@ class Training(object):
             self.output_ex(t,opts,'',(ao and open_out(ao)) or None)
 
     def main(self,opts):
+        global noisy_log
+        noisy_log=opts.verbose>3
         examples=list(self.reader())
         for t in examples:
             t.ghkm(opts.terminals)
@@ -773,10 +885,11 @@ class TestTranslation(unittest.TestCase):
         header_full_align=False
         rules=True
         randomize=False
-        iter=1
+        iter=10
         test=False
         outputevery=10
         header_full_align=False
+        swap=True
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
         self.opts=Locals()
         random.seed(12345)
@@ -798,8 +911,9 @@ class TestTranslation(unittest.TestCase):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=0,test=True,outputevery=0,verbose=1):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True):
     if test:
+        sys.argv=sys.argv[0:1]
         unittest.main()
     else:
         gextract(Locals())
