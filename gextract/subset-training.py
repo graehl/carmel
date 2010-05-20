@@ -66,7 +66,9 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
             desc+=iinfo.readline().strip()
         if not (lineno>=begin and lineno<end): continue
         etree=raduparse(eline)
-        estring=etree.yield_labels()
+        estring=[]
+        if etree is not None:
+            estring=etree.yield_labels()
         ne=len(estring)
         if ne>upper_length or ne<lower_length: continue
         if n>=n_output_lines: break
