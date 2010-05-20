@@ -407,6 +407,12 @@ struct carmel_main
     unsigned n_0prob;
     unsigned n_prob;
     unsigned n_lines() const { return n_0prob+n_prob; }
+    unsigned n_pre_lines() const
+    {
+        return pre_n_0prob+pre_n_prob;
+    }
+    unsigned pre_n_0prob;
+    unsigned pre_n_prob;
     Weight prod_sum_pre; // for post-b
 //    double n_isymbols;
     double n_symbols;
@@ -417,21 +423,31 @@ struct carmel_main
         prod_viterbi*=p;
     }
 
+    void report_0probs(char const* name,unsigned n,unsigned N) const
+    {
+        std::ostream &o=Config::log();
+        if (n)
+            o << "No derivations found for "<<n<<" of ";
+        else
+            o << "Derivations found for all ";
+        o<<N<<" "<<name<<"\n";
+
+    }
+
     void report_batch()
     {
         std::ostream &o=Config::log();
         bool postb=have_opt("post-b");
         bool sump=have_opt("sum");
         unsigned N=n_lines();
-        if (!N) return;
-        if (n_0prob)
-            o << "No derivations found for "<<n_0prob<<" of "<<N<<" inputs.\n";
-        else
-            o << "Derivations found for all "<<N<<" inputs.\n";
-        if (postb&&sump) {
-            o << "Just before --post-b, sum-all-paths ";
-            log_ppx(n_prob,prod_sum_pre,n_0prob);
+        unsigned Npre=n_pre_lines();
+        if (Npre) {
+            report_0probs(postb?"inputs just before --post-b":" inputs",pre_n_0prob,Npre);
+            if (postb) o << "Just before --post-b, sum-all-paths ";
+            log_ppx(n_prob,prod_sum_pre,pre_n_0prob);
         }
+        if (!N) return;
+        report_0probs("inputs",n_0prob,N);
         o << "Viterbi (best path) ";
         log_ppx(n_prob,prod_viterbi,n_0prob);
         if (sump) {
@@ -660,6 +676,10 @@ struct carmel_main
 
         if (sump) {
             s=result->sum_acyclic_paths();
+            if (s.isZero())
+                ++pre_n_0prob;
+            else
+                ++pre_n_prob;
         }
 
         prod_sum_pre*=s;
@@ -856,6 +876,8 @@ struct carmel_main
         max_states=WFST::UNLIMITED;
         n_0prob=0;
         n_prob=0;
+        pre_n_0prob=0;
+        pre_n_prob=0;
         n_symbols=0; // for per-symbol ppx - counted only for non-0prob
 //        n_isymbols=0;
         prod_viterbi=1;

@@ -355,7 +355,12 @@ struct logweight {                 // capable of representing nonnegative reals
                             , char const* probname="probability"
         ) const
     {
-        return o<<probname<<"="<<as_base(2)<<" "<<symbolname<<"(N="<<n_symbol<<")="<<ppxper(n_symbol).as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
+        o<<probname<<"="<<as_base(2);
+        if (n_symbol)
+            o<<" "<<symbolname<<"(N="<<n_symbol<<")="<<ppxper(n_symbol).as_base(2);
+        if (n_example)
+            o<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
+        return o;
     }
 
     std::ostream &print_ppx_example(std::ostream &o,double n_example
@@ -363,7 +368,10 @@ struct logweight {                 // capable of representing nonnegative reals
                             , char const* probname="probability"
         ) const
     {
-        return o<<probname<<"="<<as_base(2)<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
+        o<<probname<<"="<<as_base(2);
+        if (n_example>0)
+            o<<" "<<examplename<<"(N="<<n_example<<")="<<ppxper(n_example).as_base(2);
+        return o;
     }
 
     logweight() { setZero(); }
