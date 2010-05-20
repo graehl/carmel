@@ -5,6 +5,27 @@
 
 import sys,re,random,math
 
+from itertools import izip
+
+log_zero=-1e10
+n_zeroprobs=0
+
+def log_prob(p):
+    global n_zeroprobs
+    if p==0:
+        n_zeroprobs+=1
+        return log_zero
+    return math.log(p)
+
+def report_zeroprobs():
+    "print (and return) any zero probs since last call"
+    global n_zeroprobs
+    if n_zeroprobs>0:
+        warn("encountered %d 0.0 probs, used log(0)=%g"%(n_zeroprobs,log_zero))
+    n=n_zeroprobs
+    n_zeroprobs=0
+    return n
+
 def uniq_shuffled(xs):
     "doesn't preserve xs order, but removes duplicates.  fastest"
     return list(set(xs))
@@ -33,13 +54,48 @@ def uniq(xs):
 def sort_uniq(xs):
     return uniq(sorted(xs))
 
+def componentwise(xs,ys,s=sum):
+    "return zs with zs[i]=s(xs[i],ys[i]); len(zs)==min(len(xs),len(ys))"
+    return map(s,izip(xs,ys))
+
+def set_agreement(test,gold):
+    "return (true pos,false pos,false neg), i.e. (|test intersect gold|,|test - gold|,|gold - test|).  these can be vector_summed"
+    if type(test) is not set:
+        test=set(test)
+    if type(gold) is not set:
+        gold=set(gold)
+    falsepos=len(test-gold)
+    truepos=len(test)-falsepos
+    falseneg=len(gold-test)
+    return (truepos,falsepos,falseneg)
+
+def pr_from_agreement(truepos,falsepos,falseneg):
+    "given (true pos,false pos,false neg) return (precision,recall)"
+    P=float(truepos)/(truepos+falsepos)
+    R=float(truepos)/(truepos+falseneg)
+    return (P,R)
+
+def set_pr(test,gold):
+    "return (precision,recall) for test and gold as sets"
+    P=float(truepos)/len(test)
+    R=float(truepos)/len(gold)
+    return (P,R)
+
+def fmeasure(P,R,alpha_precision=.5):
+    "given precision, recall, return weighted fmeasure"
+    A=float(alpha_precision)
+    return 1./(A/P+(1-A)/R)
+
+def fmeasure_str(P,R,alpha_precision=.5):
+    return 'P=%f R=%f weighted(P=%f)-F=%f'%(P,R,alpha_precision,fmeasure(P,R,alpha_precision))
+
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
     def __init__(self,aline,ne,nf):
         "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf)"
         def intpair(stringpair):
             return (int(stringpair[0]),int(stringpair[1]))
-        self.efpairs=uniq_shuffled(intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()) if aline else []
+        self.efpairs=list(set((intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()))) if aline else []
         self.ne=ne
         self.nf=nf
     def copy_blank(self):
@@ -51,7 +107,14 @@ class Alignment(object):
             if random.random()<p:
                 return random.randint(-d,d)
             return 0
-        self.efpairs=[(bound(e+rdistort(p,d),self.ne),bound(f+rdistort(p,d),self.nf)) for e,f in self.efpairs]
+        self.efpairs=list(set((bound(e+rdistort(p,d),self.ne),bound(f+rdistort(p,d),self.nf)) for e,f in self.efpairs))
+    def agreement(self,gold):
+        "returns (true pos,false pos,false neg) vs. gold"
+        return set_agreement(self.efpairs,gold.efpairs)
+    @staticmethod
+    def fstr(p,r,alpha_precision=.6):
+        "alpha=.6 was best correlation w/ translation quality in Fraser+Marcu ISI-TR-616"
+        return fmeasure_str(p,r,alpha_precision)
     def fully_connect(self,es,fs):
         "es and fs are lists of e and f indices, fully connect cross product"
         for e in es:
@@ -216,6 +279,12 @@ def object_from_dict(d):
     obj=Record()
     obj.update(d)
 
+def log_start(s):
+    sys.stderr.write("### "+s)
+def log_continue(s):
+    sys.stderr.write(s)
+def log_finish(s):
+    sys.stderr.write(s+"\n")
 def log(s):
     sys.stderr.write("### "+s+"\n")
 

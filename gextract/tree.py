@@ -24,7 +24,12 @@ class Node:
         self.order = 0
 
     def __len__(self):
+        "length of frontier"
         return self.length
+
+    def size(self):
+        "number of nodes"
+        return 1+sum(c.size() for c in self.children)
 
     def get(self,gornaddr):
         """gornaddr is a list [] for root [0] for first child of root, [0,2] for 3rd child of that, etc.

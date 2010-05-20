@@ -66,7 +66,7 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
             a=Alignment(aline,ne,nf)
             oagold.write(aline)
             a.corrupt(pcorrupt,dcorrupt)
-            aline=str(a)
+            aline=str(a)+'\n'
         oa.write(aline)
         of.write(fline)
         oe.write(eline)

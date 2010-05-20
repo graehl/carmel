@@ -10,6 +10,7 @@ version="0.9"
 
 
 import os,sys,itertools,re,operator,collections,random,math
+from itertools import izip
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 import pdb
@@ -21,7 +22,8 @@ import unittest
 from graehl import *
 from dumpx import *
 
-log10_zero=-10000.
+
+viz=
 
 def rulefrag(t):
     return filter_children(t,lambda x:x.span is not None)
@@ -151,6 +153,9 @@ class Count(object):
     def reset(self):
         self.count=0
 #        self.count=self.prior
+    def size(self):
+        "return some notion of size (number of etree nodes?) of rule. for now just # of bytes"
+        return len(self.rule)
     def __str__(self):
         return "{{{count=%d p0*a=%g %s}}}"%(self.count,self.prior,self.rule)
 
@@ -162,6 +167,33 @@ def cnstr(n):
 
 def cnstrs(*ns):
     return map(cnstr,ns)
+
+class Histogram(object):
+    """dict counting occurrences of keys; will provide sorted list of (key,count) or output to gnuplot format"""
+    def __init__(self):
+        self.c=dict()
+    def count(self,k,d=1):
+        "by setting d to some arbitrary number, you can have any (x,y) to be graphed as a histogram or line"
+        c=self.c
+        if k in c:
+            c[k]+=d
+        else:
+            c[k]=d
+        assert(c[k]>=0)
+        return c[k]
+    def get_sorted(self):
+        "return sorted list of (key,count)"
+        return [(k,self.c[k]) for k in sorted(self.c.iterkeys())]
+    def get_binned(self,binwidth=10):
+        "assuming numeric keys, return sorted list ((min,max),count) grouped by [min,min+binwidth),[min+binwidth,min+binwidth*2) etc."
+        assert False
+    def text_gnuplot(self,binwidth=None,line=False):
+        "returns a gnuplot program that uses bars if line is False, and bins if binwidth isn't None"
+        assert binwidth is None
+
+        assert False
+    def __str__(self):
+        return str(self.get_sorted())
 
 class Counts(object):
     """track counts and sum of counts for groups on the fly.  TODO: integerize groups (root nonterminals)"""
@@ -175,8 +207,23 @@ class Counts(object):
 #        dump(rule,prior,self.alpha,group,str(r))
         self.rules[rule]=r
         return r
+    def used_rules(self):
+        "return only those Count objects whose count>0"
+        return [x for x in self.rules.itervalues() if x.count>0]
+    def freq_hist(self):
+        "return histogram of rule counts"
+        h=Histogram()
+        for r in self.used_rules():
+            h.count(r.count)
+        return h
+    def size_hist(self):
+        "return histogram of rule sizes"
+        h=Histogram()
+        for r in self.used_rules():
+            h.count(r.size())
+        return h
     def logprob(self,c):
-        return math.log(self.prob(c))
+        return log_prob(self.prob(c))
     def prob(self,c):
         return 1. if c is None else (c.count+c.prior)/self.norms[c.group]
         #todo: include prior in count but protect from underflow: epsilon+1 - 1 == 0 (bad, can't get logprob)
@@ -367,38 +414,6 @@ class Counts(object):
     def __str__(self):
         return "\n".join(rules.itervalues())
 
-class Alignment(object):
-    apair=re.compile(r'(\d+)-(\d+)')
-    def __init__(self,aline,ne,nf):
-        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf)"
-        def intpair(stringpair):
-            return (int(stringpair[0]),int(stringpair[1]))
-        self.efpairs=[intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()] if aline else []
-        self.ne=ne
-        self.nf=nf
-    def copy_blank(self):
-        "return a blank alignment of same dimensions"
-        return Alignment(None,self.ne,self.nf)
-    def fully_connect(self,es,fs):
-        "es and fs are lists of e and f indices, fully connect cross product"
-        for e in es:
-            for f in fs:
-                self.efpairs.append((e,f))
-    def adje(self):
-        "for e word index, list of f words aligned to it"
-        return adjlist(self.efpairs,self.ne)
-    def adjf(self):
-        "inverse of adje (indexed by f)"
-        return adjlist([(f,e) for (e,f) in self.efpairs],self.nf)
-    def spanadje(self):
-        "minimal covering span (fa,fb) for e word index's aligned f words"
-        return [span_cover_points(adj) for adj in self.adje()]
-    def spanadjf(self):
-        "inverse of spanadje"
-        return [span_cover_points(adj) for adj in self.adjf()]
-    def __str__(self):
-        return " ".join(["%d-%d"%p for p in self.efpairs])
-
 class Translation(object):
     def __init__(self,etree,estring,a,f,lineno=None):
         self.etree=etree
@@ -407,6 +422,7 @@ class Translation(object):
         self.f=f
         self.nf=len(f)
         self.ne=len(estring)
+        self.netree=etree.size()
         self.lineno=lineno
         self.have_derivation=False
         assert(self.nf==a.nf)
@@ -649,7 +665,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         fa=self.a.copy_blank()
         t=self.etree
         self.set_espans()
-        Translation.full_align(t,fa,unmarked_span(t.espan),unmarked_span(t.fspan))
+        assert(t.span is not None)
+        Translation.full_align(t,fa,unmarked_span(t.espan),unmarked_span(t.span))
         return fa
 
     @staticmethod
@@ -657,14 +674,14 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         "if t.frontier_node, set es[e]=1 and fs[f]=1 for e in t.espan and f in t.fspan.  add to fa.efpairs the full_alignment"
         for c in t.children:
             Translation.full_align(c,fa,emarks,fmarks)
-        if t.frontier_node:
+        if t.span is not None:
             es=span_points_fresh(t.espan,emarks)
-            fs=span_points_fresh(t.fspan,fmarks)
+            fs=span_points_fresh(t.span,fmarks)
             fa.fully_connect(es,fs)
 
     def set_espans(self):
-        if hasattr(self,"set_espan"): return
-        self.set_espan=True
+        if hasattr(self,"espan_done"): return
+        self.espan_done=True
         Translation.set_espan(self.etree,0)
 
     @staticmethod
@@ -757,8 +774,9 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         for r in rcs:
             p=counts.prob(r)
             if (p<=0.):
-                warn("underflow in prob, using log10(<=0)=%f"%log10_zero)
-                l=log10_zero
+                warn("underflow in cache prob %g, using log10(<=0)=%g\n%s"%(p,log_zero,callerstring(2)))
+
+                l=log_zero
             else:
                 l=math.log10(p)
             lp+=l
@@ -766,35 +784,44 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return lp
 
 class Training(object):
-    def __init__(self,parsef,alignf,ff,basep=basep_default):
+    def __init__(self,parsef,alignf,ff,opts,basep=basep_default):
+        self.output_files=dict()
         self.parsef=parsef
         self.alignf=alignf
         self.ff=ff
         self.basep=basep
         self.counts=Counts(basep)
+        self.golda=None
+        self.examples=list(self.reader())
+        self.opts=opts
+        if opts.golda:
+
+            self.golda=[Alignment(aline,t.ne,t.nf) for aline,t in izip(open(opts.golda),self.examples)]
+#            dump(str(self.golda))
+
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
-        for eline,aline,fline,lineno in itertools.izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
+        for eline,aline,fline,lineno in izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
                 yield Translation.parse_sent(eline,aline,fline,lineno)
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
-    def gibbs(self,opts,examples):
-        self.gibbs_prep(opts,examples)
-        for iter in range(0,opts.iter):
-            self.gibbs_iter(iter,opts,examples)
+    def gibbs(self):
+        self.gibbs_prep()
+        for iter in range(0,self.opts.iter):
+            self.gibbs_iter(iter)
+        report_zeroprobs()
 
-    def gibbs_prep(self,opts,examples):
+    def gibbs_prep(self):
+        opts=self.opts
         log("Using gibbs sampling starting from minimal ghkm.")
         counts=self.counts
         if opts.randomize:
             random.shuffle(examples)
-        self.nf=0
-        self.netree=0
-        self.nestring=0
-        for ex in examples:
-            self.nf+=ex.nf
-            self.netree+=len(ex.etree)
-            self.nestring+=ex.ne
+        xs=self.examples
+        self.nf=sum(x.nf for x in xs)
+        self.netree=sum(x.netree for x in xs)
+        self.ne=sum(x.ne for x in xs)
+        for ex in self.examples:
             for (rule,p,root) in ex.all_rules(self.basep):
                 c=counts.get(rule,p,root.label)
                 root.count=c
@@ -803,13 +830,16 @@ class Training(object):
             ex.set_closure_spans()
             ex.set_f2enode()
             checkt(ex.etree)
-        log("gibbs prepared for %d iterations over %d examples totaling %d foreign words, %d english tree nodes with %d leaves"%(opts.iter,len(examples),self.nf,self.netree,self.nestring))
+        log("gibbs prepared for %d iterations over %d examples totaling %d foreign words, %d english tree nodes with %d leaves"%(opts.iter,len(self.examples),self.nf,self.netree,self.ne))
+        self.write_histogram()
+        report_zeroprobs()
 
 
-    def gibbs_iter(self,iter,opts,examples):
+    def gibbs_iter(self,iter):
+        opts=self.opts
         lp=0.
         ei=0
-        for ex in examples:
+        for ex in self.examples:
             ei+=1
             root=ex.etree
             nodes=list(root.preorder())[1:] #exclude top node
@@ -821,14 +851,39 @@ class Training(object):
             if opts.swap:
                 ex.visit_swaps(self.counts)
             if opts.outputevery and iter % opts.outputevery == 0:
-                self.output_ex(ex,opts,"iter=%d"%iter)
+                self.output_ex(ex,"iter=%d"%iter)
             elp=ex.cache_prob(self.counts)
             if opts.verbose>=2:
                 log("iter=%d example=%d log10(cache-prob)=%f"%(iter,ei,elp))
             lp+=elp
-        log("gibbs iter=%d log10(cache-prob)=%f"%(iter,lp))
+        if opts.histogram:
+            self.write_histogram(iter)
+        log("gibbs iter=%d log10(cache-prob)=%f "%(iter,lp)+self.alignment_report(iter))
+        report_zeroprobs()
 
-    def output_ex(self,t,opts,header='',aof=None):
+    def write_histogram(self,iter=None):
+        header="minimal ghkm" if iter is None else "gibbs iter %d"%iter
+        log("%s size histogram: %s"%(header,self.counts.size_hist()))
+        log("%s rule frequency histogram: %s"%(header,self.counts.freq_hist()))
+
+    def alignment_report(self,iter=None):
+        "returns string describing aggregate alignment p/r/f.  TODO: don't compute full alignment multiple times if also printing it in output_ex?"
+        if self.golda is None: return ""
+        ret=""
+        if False and iter is not None:
+            ret+="iter=%d "%iter
+        fas=[ex.full_alignment() for ex in self.examples]
+        agrees=[a.agreement(g) for a,g in zip(fas,self.golda)]
+        agree=reduce(componentwise,agrees)
+#        agree=reduce(lambda z,(ex,gold):componentwise(z,ex.full_alignment().agreement(gold),sum),zip(self.examples,self.golda))
+        p,r=pr_from_agreement(*agree)
+        dump(agree,p,r)
+        fs=Alignment.fstr(p,r)
+        ret+="alignment "+fs
+        return ret
+
+    def output_ex(self,t,header='',aof=None):
+        opts=self.opts
         getalign=aof is not None or opts.header_full_align
         if getalign:
             fa=t.full_alignment()
@@ -836,27 +891,36 @@ class Training(object):
         if opts.header:
             print "###",header,t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
         if opts.rules:
-            for (r,p,_),id in itertools.izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
+            for (r,p,_),id in izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
                 print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
         if opts.derivation:
             print t.derivation_tree()
         if aof is not None:
             aof.write(str(fa)+'\n')
 
-    def output(self,opts,examples):
-        ao=opts.alignment_out
-        for t in examples:
-            self.output_ex(t,opts,'',(ao and open_out(ao)) or None)
+    def output(self):
+        ao=self.opts.alignment_out
+        aof=(ao and open_out(ao)) or None
+        for t in self.examples:
+            self.output_ex(t,'',aof)
 
-    def main(self,opts):
+    def output_file(self,suffix):
+        if suffix not in self.output_files:
+            self.output_files[suffix]=open_out_prefix(self.opts.outbase,suffix)
+        return self.output_files[suffix]
+
+    def ghkm(self):
+        for t in self.examples:
+            t.ghkm(self.opts.terminals)
+
+    def main(self):
         global noisy_log
-        noisy_log=opts.verbose>3
-        examples=list(self.reader())
-        for t in examples:
-            t.ghkm(opts.terminals)
-        if opts.iter>0:
-            self.gibbs(opts,examples)
-        self.output(opts,examples)
+        noisy_log=self.opts.verbose>3
+        self.ghkm()
+        log("minimal ghkm "+self.alignment_report())
+        if self.opts.iter>0:
+            self.gibbs()
+        self.output()
 
 def gextract(opts):
     if opts.header:
@@ -864,8 +928,8 @@ def gextract(opts):
         print "### gextract %s minimal %s"%(version,attr_str(opts))
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
-    train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
-    train.main(opts)
+    train=Training(inbase+".e-parse",inbase+".a",inbase+".f",opts)
+    train.main()
 
 
 ### tests:
@@ -874,7 +938,8 @@ def gextract(opts):
 class TestTranslation(unittest.TestCase):
     def setUp(self):
         dump("init test")
-        inbase='astronauts'
+        inbase='mono0.1'
+        golda='mono0.1.a-gold'
         verbose=2
         terminals=False
         quote=True
@@ -885,25 +950,24 @@ class TestTranslation(unittest.TestCase):
         header_full_align=False
         rules=True
         randomize=False
-        iter=10
+        iter=1
         test=False
         outputevery=10
         header_full_align=False
         swap=True
-        self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f")
         self.opts=Locals()
+        self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f",self.opts)
         random.seed(12345)
+        histogram=""
     def test_output(self):
         tr=self.train
         opts=self.opts
-        examples=list(tr.reader())
-        for t in examples:
-            t.ghkm(False)
-            #dumpt(t.etree,"after ghkm")
-        tr.gibbs_prep(opts,examples)
+        examples=self.train.examples
+        tr.ghkm()
+        tr.gibbs_prep()
         for iter in range(0,opts.iter):
-            tr.gibbs_iter(iter,opts,examples)
-        tr.output(opts,examples)
+            tr.gibbs_iter(iter)
+        tr.output()
 
 
 ### main:
@@ -911,7 +975,7 @@ class TestTranslation(unittest.TestCase):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-"):
     if test:
         sys.argv=sys.argv[0:1]
         unittest.main()
