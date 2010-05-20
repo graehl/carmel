@@ -23,7 +23,7 @@ from graehl import *
 from dumpx import *
 
 
-viz=
+viz='viz-tree-string-pair.pl'
 
 def rulefrag(t):
     return filter_children(t,lambda x:x.span is not None)
@@ -774,8 +774,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         for r in rcs:
             p=counts.prob(r)
             if (p<=0.):
-                warn("underflow in cache prob %g, using log10(<=0)=%g\n%s"%(p,log_zero,callerstring(2)))
-
+                warn("underflow in cache prob %g, using log10(zeroprob)=%g\n%s"%(p,log_zero,callerstring(2)))
                 l=log_zero
             else:
                 l=math.log10(p)

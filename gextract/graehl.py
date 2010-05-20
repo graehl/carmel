@@ -21,7 +21,7 @@ def report_zeroprobs():
     "print (and return) any zero probs since last call"
     global n_zeroprobs
     if n_zeroprobs>0:
-        warn("encountered %d 0.0 probs, used log(0)=%g"%(n_zeroprobs,log_zero))
+        warn("encountered %d zeroprobs, used log(0)=%g"%(n_zeroprobs,log_zero))
     n=n_zeroprobs
     n_zeroprobs=0
     return n
