@@ -3,16 +3,17 @@
 wd=${wd:-exp}
 noise=${noise:-.1}
 iter=${iter:-50}
-in=${in:-training}
+in=${in:-10k}
 inlimit=${inlimit:-30}
+nin=${nin:-1000}
 nviz=${nviz:-6}
 showvars_required wd noise iter in nviz
 
 mkdir -p $wd
-inm=mono0$noise
+inm=mono.$nin.0$noise
 set -e
 sub=$wd/$inm
-./subset-training.py -u $inlimit --pcorrupt=$noise --monotone --inbase=$in --outbase=$sub
+./subset-training.py -n $nin -u $inlimit --pcorrupt=$noise --monotone --inbase=$in --outbase=$sub
 alignbase=$sub.i=$iter
 for s in e-parse f a info; do
     cp $sub.$s $alignbase.$s
