@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.6
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 
+TODO: when count=0 for all possible changes, use stored logp(basep) so we can choose between many implausibles with proper weight (hack for now: uniform)
 TODO: get actual #nonterms, sourcevocab from input etrees (currently hardcoded 40, 1000)
 TODO: better base models
 TODO: anneal?  avg counts not final?
@@ -134,6 +135,7 @@ class XrsBase(object):
         self.pendterm=1.-self.pterm
 
     def update_vocabsize(self,nt,nnt):
+        log("xrs base model vocab size: %d terminals and %d nonterminals"%(nt,nnt))
         self.sourcevocab=nt
         self.nonterms=nnt
         self.update_model()
@@ -809,7 +811,7 @@ class Training(object):
         for x in self.examples:
             for t in x.etree.preorder():
                 (terms if t.is_terminal() else nonterms).add(t.label)
-        dump(len(terms),len(nonterms),nonterms)
+        dump(str(nonterms))
         self.basep.update_vocabsize(len(terms),len(nonterms))
 
     def __str__(self):
@@ -948,6 +950,7 @@ class Training(object):
         self.output()
 
 def gextract(opts):
+    assert(opts.alignment_out or opts.alignments_every==0)
     if opts.header:
         justnames=['terminals','quote','attr','derivation','inbase']
         print "### gextract %s minimal %s"%(version,attr_str(opts))
@@ -1003,6 +1006,7 @@ class TestTranslation(unittest.TestCase):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
+@optfunc.arghelp('alignments_every','write to alignment_out.<iter> every this many iterations')
 @optfunc.arghelp('temp0','temperature 1 means no annealing, 2 means ignore prob, near 0 means deterministic best prob; tempf at final iteration and temp0 at first')
 def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.):
     if test:

@@ -203,10 +203,12 @@ def choosep(p_item_list):
     return p_item_list[-1][1]
 
 def choosei(ps):
-    "given list of possibly unnormalized probabilities, return a random index drawn from that multinomial; None if empty list input"
+    "given list of possibly unnormalized probabilities, return a random index drawn from that multinomial; None if empty list input.  return with uniform prob if all ps=0 (underflow)"
     if len(ps)==0:
         return None
     z=sum(ps)
+    if z<=0:
+        return random.randint(0,len(ps)-1)
     c=random.random()*z
     for i in range(0,len(ps)):
         c-=ps[i]
