@@ -37,11 +37,11 @@ import random
 @optfunc.arghelp('inbase','read inbase.{e-parse,a,f}')
 @optfunc.arghelp('pcorrupt','if > 0, corrupt each link in output.a with this probability; write uncorrupted alignment to .a-gold')
 @optfunc.arghelp('dcorrupt','move both the e and f ends of a distorted link within +-d')
-def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False):
+def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,align_in=""):
     "filter inbase.{e-parse,a,f} to outbase"
     dump(str(Locals()))
     oa=open_out_prefix(outbase,".a")
-    ina=open(inbase+".a")
+    ina=open(align_in if align_in else inbase+".a")
     of=open_out_prefix(outbase,".f")
     inf=open(inbase+".f")
     oe=open_out_prefix(outbase,".e-parse")

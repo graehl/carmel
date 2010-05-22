@@ -31,13 +31,37 @@ done
  log=$alignbase.log
  if ! [ "$skip" ] ; then
      set -x
-     ./gextract.py --notest --golda $sub.a-gold --alignment-out $alignbase.a --inbase=$sub --iter=$iter 2>&1 2>&1 >$out | tee $log
+     everyarg=""
+     [ "$every" ] && everyarg="--alignments-every=$every"
+     ./gextract.py $everyarg --notest --golda $sub.a-gold --alignment-out $alignbase.a --inbase=$sub --iter=$iter "$@" 2>&1 >$out | tee $log
      set +x
  fi
 pr=" `lastpr $log`"
+comment="noise=$noise iter=$iter$pr"
 #fi
-vizin=$alignbase.first$nviz
-./subset-training.py --comment="noise=$noise iter=$iter$pr" -l 10 -u $vizlimit -n $nviz --inbase=$alignbase --outbase=$vizin --skip-identity
-lang=eng vizalign $vizin
+function vizsub {
+    echo -- vizsub "$@"
+    vizlimit=${vizlimit:-20}
+    nviz=${nviz:-6}
+    lang=${lang:-eng}
+    local in=$1
+    comment=${comment:-$in}
+    align=${2:-$in.a}
+    vizout=$align.first$nviz
+    ./subset-training.py --align-in=$align --comment="$comment" -l 10 -u $vizlimit -n $nviz --inbase=$in --outbase=$vizout --skip-identity
+    lang=$lang vizalign $vizout
+    echo $vizout.pdf
+}
+vizsub $sub $alignbase.a
+if [ "$every" ] ; then
+    set +e
+for i in `seq 0 $iter`; do
+    af=$alignbase.a.$i
+    echo $af
+    set -x
+    [ -f $af ] && vizsub $sub $af 2>/dev/null
+    set +x
+done
+fi
 showvars pr out log
 grep zeroprob $log || echo "no zeroprob"

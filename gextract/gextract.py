@@ -270,7 +270,7 @@ class Counts(object):
         s1=n1.span
         n1.span=n2.span
         n2.span=s1
-    def swap(self,n1,n2,ex):
+    def swap(self,n1,n2,ex,power=1.):
         "a swap of spans (and counts) means that parent rule may change if one of the spans was None"
         parnode=Counts.rule_parent(n1)
         asserteq(parnode,Counts.rule_parent(n2),"swap not common rule parents",richs(n1),richs(n2))
@@ -302,7 +302,7 @@ class Counts(object):
         self.add(new1,1)
         newlogp=lnp+ln1+self.logprob(new2)
         #check math on exchangability: add,add,add,pm1,pm1,pm1 == p,add,p,add,p,add
-        usenew=choosei_logps([oldlogp,newlogp])
+        usenew=choosei_logps([oldlogp,newlogp],power)
         if usenew==0:
             Counts.swap_spans(n1,n2) #swap back to original
             self.add(parnode.count,1)
@@ -326,7 +326,7 @@ class Counts(object):
         c=self.get(rule,base,node.label)
 #        dump(cstr(c))
         return c
-    def expand(self,node,ex):
+    def expand(self,node,ex,power=1.):
         """apply blunsom EXPAND operator (random choice) - give t a new span contained in (grandN)-parent rule (p.span), but not infringing on siblings' fspan.  also update closure_spans.  p is a path from p[0] to t; p[i] may all need their closure_span expanded if we set t.span"""
         checkt(node)
         f2e=ex.f2enode
@@ -385,7 +385,7 @@ class Counts(object):
                     if not (f is parnode or f is node):
                         break
         node.span=oldspan # recover from mutilated invariant in consider_span
-        newspani=choosei_logps(newlogps) # make sure to fix: set node.span and node.count accordingly
+        newspani=choosei_logps(newlogps,power) # make sure to fix: set node.span and node.count accordingly
 #        dump(newspani,newspans[newspani],node.count,parnode.count)
         newspan,node.count,parnode.count=newspans[newspani]
 
@@ -435,20 +435,20 @@ class Translation(object):
         assert(self.ne==a.ne)
         self.set_spans(self.etree,self.a.spanadje())
 
-    def visit_swaps(self,counts):
-        self.visit_swaps_r(counts,self.etree,[])
+    def visit_swaps(self,counts,power=1):
+        self.visit_swaps_r(counts,self.etree,[],power)
 
-    def visit_swaps_r(self,counts,node,pch):
+    def visit_swaps_r(self,counts,node,pch,power):
         "append to pch all children with a .span who don't have any .span under them.  return True iff no .span in node-rooted subtree.  try swapping any 2 nodes that have a rule on them already.  for swapping a none with something, you can shrink one then grow other.  may want to include none/some swap but would have to complicate eligible pairs computation (parent no longer eligible after child none receives a rule)"
         if node.span is None:
-            return all([self.visit_swaps_r(counts,c,pch) for c in node.children])
+            return all([self.visit_swaps_r(counts,c,pch,power) for c in node.children])
         ch=[]
-        noch=all([self.visit_swaps_r(counts,c,ch) for c in node.children])
+        noch=all([self.visit_swaps_r(counts,c,ch,power) for c in node.children])
         if noch:
             pch.append(node)
 #        dump("swap",richs(node),map(richs,ch))
         for c1,c2 in unordered_pairs(ch): #TODO: any benefit to randomizing order of pairs, or, changing subsequent pairs considered if a swap is made?
-            counts.swap(c1,c2,self)
+            counts.swap(c1,c2,self,power)
         return False
 
     def set_spans(self,enode,fspane,epos=0):
@@ -853,6 +853,7 @@ class Training(object):
         opts=self.opts
         lp=0.
         ei=0
+        power=anneal_power(iter,opts.iter,opts.temp0,opts.tempf)
         for ex in self.examples:
             ei+=1
             root=ex.etree
@@ -861,9 +862,9 @@ class Training(object):
                 nodes=[x for x in nodes if not x.is_terminal()]
             if opts.randomize: random.shuffle(nodes)
             for n in nodes:
-                self.counts.expand(n,ex)
+                self.counts.expand(n,ex,power)
             if opts.swap:
-                ex.visit_swaps(self.counts)
+                ex.visit_swaps(self.counts,power)
             if opts.outputevery and iter % opts.outputevery == 0:
                 self.output_ex(ex,"iter=%d"%iter)
             elp=ex.cache_prob(self.counts)
@@ -872,8 +873,18 @@ class Training(object):
             lp+=elp
         if opts.histogram:
             self.write_histogram(iter)
+        if opts.alignments_every>0 and iter % opts.alignments_every == 0:
+            self.write_alignments(iter)
         log("gibbs iter=%d log10(cache-prob)=%f "%(iter,lp)+self.alignment_report(iter))
         report_zeroprobs()
+
+    def write_alignments(self,iter):
+        oa=open_out_prefix(self.opts.alignment_out,".%d"%iter)
+        log("writing alignments to "+oa.name)
+#        log("writing alignments to "+self.opts.alignment_out+"."+str(iter))
+        for x in self.examples:
+            oa.write(str(x.full_alignment())+'\n')
+        oa.close()
 
     def write_histogram(self,iter=None):
         header="minimal ghkm" if iter is None else "gibbs iter %d"%iter
@@ -972,7 +983,10 @@ class TestTranslation(unittest.TestCase):
         self.opts=Locals()
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f",self.opts)
         random.seed(12345)
-        histogram=""
+        histogram=False
+        outbase=""
+        alignments_every=0
+        temp0=tempf=1.
     def test_output(self):
         tr=self.train
         opts=self.opts
@@ -989,7 +1003,8 @@ class TestTranslation(unittest.TestCase):
 import optfunc
 
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-"):
+@optfunc.arghelp('temp0','temperature 1 means no annealing, 2 means ignore prob, near 0 means deterministic best prob; tempf at final iteration and temp0 at first')
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.):
     if test:
         sys.argv=sys.argv[0:1]
         unittest.main()

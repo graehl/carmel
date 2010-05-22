@@ -10,6 +10,16 @@ from itertools import izip
 log_zero=-1e10
 n_zeroprobs=0
 
+def interpolate(a,b,frac_a):
+    f=float(frac_a)
+    return a*f+b*(1.-f)
+
+def anneal_temp(i,ni,t0,tf):
+    return interpolate(t0,tf,1 if ni<=1 else float(i)/(ni-1.))
+
+def anneal_power(i,ni,t0,tf):
+    return 1./anneal_temp(i,ni,t0,tf)
+
 def log_prob(p):
     global n_zeroprobs
     if p==0:
@@ -214,7 +224,9 @@ def ps_from_logps(logps):
 
 from dumpx import *
 
-def choosei_logps(logps):
+def choosei_logps(logps,power=1.):
+    if (power!=1.):
+        logps=[power*l for l in logps]
     ps=ps_from_logps(logps)
     i=choosei(ps)
 #    dump(callerstring(1),i,logps,ps)
