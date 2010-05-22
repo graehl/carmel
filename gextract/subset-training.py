@@ -37,7 +37,7 @@ import random
 @optfunc.arghelp('inbase','read inbase.{e-parse,a,f}')
 @optfunc.arghelp('pcorrupt','if > 0, corrupt each link in output.a with this probability; write uncorrupted alignment to .a-gold')
 @optfunc.arghelp('dcorrupt','move both the e and f ends of a distorted link within +-d')
-def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment=""):
+def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False):
     "filter inbase.{e-parse,a,f} to outbase"
     dump(str(Locals()))
     oa=open_out_prefix(outbase,".a")
@@ -77,9 +77,10 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
             fline=' '.join([s.upper() for s in estring])+'\n'
             aline=' '.join(['%d-%d'%(i,i) for i in range(0,ne)])+'\n'
             desc+=" monotone"
+        nf=len(fline.split())
+        a=Alignment(aline,ne,nf)
+        if skip_identity and a.is_identity(): continue
         if distort:
-            nf=len(fline.split())
-            a=Alignment(aline,ne,nf)
             oagold.write(aline)
             a.corrupt(pcorrupt,dcorrupt)
             aline=str(a)+'\n'

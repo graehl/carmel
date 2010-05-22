@@ -87,7 +87,9 @@ def fmeasure(P,R,alpha_precision=.5):
     return 1./(A/P+(1-A)/R)
 
 def fmeasure_str(P,R,alpha_precision=.5):
-    return 'P=%f R=%f weighted(P=%f)-F=%f'%(P,R,alpha_precision,fmeasure(P,R,alpha_precision))
+    return 'P=%.3g R=%.3g weighted(P=%g)-F=%.3g'%(P,R,alpha_precision,fmeasure(P,R,alpha_precision))
+
+import itertools
 
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
@@ -98,6 +100,8 @@ class Alignment(object):
         self.efpairs=list(set((intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()))) if aline else []
         self.ne=ne
         self.nf=nf
+    def is_identity(self):
+        return self.ne==self.nf and len(self.efpairs)==self.ne and all((a,a)==b for (a,b) in itertools.izip(itertools.count(0),sorted(self.efpairs)))
     def copy_blank(self):
         "return a blank alignment of same dimensions"
         return Alignment(None,self.ne,self.nf)

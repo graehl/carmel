@@ -5,7 +5,7 @@ noise=${noise:-.1}
 iter=${iter:-50}
 in=${in:-10k}
 inlimit=${inlimit:-30}
-vizlimit=${vizlimit:-25}
+vizlimit=${vizlimit:-20}
 nin=${nin:-100000}
 nviz=${nviz:-6}
 
@@ -37,7 +37,7 @@ done
 pr=" `lastpr $log`"
 #fi
 vizin=$alignbase.first$nviz
-./subset-training.py --comment="noise=$noise iter=$iter$pr" -l 10 -u $vizlimit -n $nviz --inbase=$alignbase --outbase=$vizin
+./subset-training.py --comment="noise=$noise iter=$iter$pr" -l 10 -u $vizlimit -n $nviz --inbase=$alignbase --outbase=$vizin --skip-identity
 lang=eng vizalign $vizin
 showvars pr out log
 grep zeroprob $log || echo "no zeroprob"

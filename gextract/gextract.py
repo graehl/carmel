@@ -1,9 +1,10 @@
 #!/usr/bin/env python2.6
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
-"""
 
-TODO="""
-tropical semiring (a*b=>a+b,a+b=>a+log1p(exp(b-a)) where b>a) if needed (large rules p0 may underflow?)
+TODO: get actual #nonterms, sourcevocab from input etrees (currently hardcoded 40, 1000)
+TODO: better base models
+TODO: anneal?  avg counts not final?
+TODO: output per-sentence alignment accuracy also?  to .info file?
 """
 
 version="0.9"
@@ -131,6 +132,11 @@ class XrsBase(object):
         self.pnonterm=1./self.nonterms
         self.pendchild=1.-self.pchild
         self.pendterm=1.-self.pterm
+
+    def update_vocabsize(self,nt,nnt):
+        self.sourcevocab=nt
+        self.nonterms=nnt
+        self.update_model()
 
     @staticmethod
     def ways_vars(n_t,n_nt):
@@ -794,9 +800,17 @@ class Training(object):
         self.examples=list(self.reader())
         self.opts=opts
         if opts.golda:
-
             self.golda=[Alignment(aline,t.ne,t.nf) for aline,t in izip(open(opts.golda),self.examples)]
-#            dump(str(self.golda))
+
+    def adjust_basep(self):
+        "set self.basep.{sourcevocab,nonterms} based on actual counts in examples"
+        terms=set()
+        nonterms=set()
+        for x in self.examples:
+            for t in x.etree.preorder():
+                (terms if t.is_terminal() else nonterms).add(t.label)
+        dump(len(terms),len(nonterms),nonterms)
+        self.basep.update_vocabsize(len(terms),len(nonterms))
 
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
@@ -811,6 +825,7 @@ class Training(object):
         report_zeroprobs()
 
     def gibbs_prep(self):
+        self.adjust_basep()
         opts=self.opts
         log("Using gibbs sampling starting from minimal ghkm.")
         counts=self.counts
@@ -876,7 +891,7 @@ class Training(object):
         agree=reduce(componentwise,agrees)
 #        agree=reduce(lambda z,(ex,gold):componentwise(z,ex.full_alignment().agreement(gold),sum),zip(self.examples,self.golda))
         p,r=pr_from_agreement(*agree)
-        dump(agree,p,r)
+#        dump(agree,p,r)
         fs=Alignment.fstr(p,r)
         ret+="alignment "+fs
         return ret
