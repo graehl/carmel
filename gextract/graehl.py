@@ -10,9 +10,62 @@ from itertools import izip
 log_zero=-1e10
 n_zeroprobs=0
 
-def interpolate(a,b,frac_a):
-    f=float(frac_a)
-    return a*f+b*(1.-f)
+def take(n,gen):
+    i=0
+    for x in gen:
+        if i>=n: break
+        yield x
+        i+=1
+
+def drop(n,gen):
+    i=0
+    for x in gen:
+        if i<n:
+            i+=1
+            continue
+        yield x
+
+def ireduce(func, iterable, init=None):
+    if init is None:
+        iterable = iter(iterable)
+        curr = iterable.next()
+    else:
+        curr = init
+    for x in iterable:
+        curr = func(curr, x)
+        yield curr
+
+def default_generator(gen,default=None):
+    'wrap gen - if gen is None, then yield (forever) None'
+    if gen is None:
+        while True: yield default
+    else:
+        for x in gen: yield x
+
+
+def close_file(f):
+    if f is not sys.stdin and f is not sys.stderr and f is not sys.stdout:
+        f.close()
+
+def open_default_line(file,default=None):
+    'return generator: either file lines if it can be opened, or infinitely many default'
+    f=None
+    try:
+        f=open(file)
+    except:
+        while True: yield default
+    for x in f: yield x
+
+def tryelse(f,default=None):
+    try:
+        r=f()
+    except:
+        return default
+    return r
+
+def interpolate(a,b,frac_b):
+    f=float(frac_b)
+    return b*f+a*(1.-f)
 
 def anneal_temp(i,ni,t0,tf):
     return interpolate(t0,tf,1 if ni<=1 else float(i)/(ni-1.))
@@ -112,6 +165,10 @@ class Alignment(object):
         self.nf=nf
     def is_identity(self):
         return self.ne==self.nf and len(self.efpairs)==self.ne and all((a,a)==b for (a,b) in itertools.izip(itertools.count(0),sorted(self.efpairs)))
+    def includes_identity(self):
+        if self.ne!=self.nf: return False
+        s=self.efpairs_set()
+        return all((i,i) in s for i in range(0,self.nf))
     def copy_blank(self):
         "return a blank alignment of same dimensions"
         return Alignment(None,self.ne,self.nf)
@@ -122,6 +179,10 @@ class Alignment(object):
                 return random.randint(-d,d)
             return 0
         self.efpairs=list(set((bound(e+rdistort(p,d),self.ne),bound(f+rdistort(p,d),self.nf)) for e,f in self.efpairs))
+    def str_agreement(self,gold,alpha_precision=.6):
+        ag=self.agreement(gold)
+        p,r=pr_from_agreement(*ag)
+        return Alignment.fstr(p,r,alpha_precision)
     def agreement(self,gold):
         "returns (true pos,false pos,false neg) vs. gold"
         return set_agreement(self.efpairs,gold.efpairs)
@@ -134,6 +195,9 @@ class Alignment(object):
         for e in es:
             for f in fs:
                 self.efpairs.append((e,f))
+    def efpairs_set(self):
+        "set of (e,f) links"
+        return set(self.efpairs)
     def adje(self):
         "for e word index, list of f words aligned to it"
         return adjlist(self.efpairs,self.ne)

@@ -37,9 +37,10 @@ import random
 @optfunc.arghelp('inbase','read inbase.{e-parse,a,f}')
 @optfunc.arghelp('pcorrupt','if > 0, corrupt each link in output.a with this probability; write uncorrupted alignment to .a-gold')
 @optfunc.arghelp('dcorrupt','move both the e and f ends of a distorted link within +-d')
-def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,align_in=""):
+@optfunc.arghelp('skip_includes_identity','skip sentences that do not have recall=1 for the identity alignment (#e = #f and (i,i) link is set for 0<=i<#f')
+def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,skip_includes_identity=False,align_in="",info_in=""):
     "filter inbase.{e-parse,a,f} to outbase"
-    dump(str(Locals()))
+#    dump(str(Locals()))
     oa=open_out_prefix(outbase,".a")
     ina=open(align_in if align_in else inbase+".a")
     of=open_out_prefix(outbase,".f")
@@ -48,7 +49,7 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
     oinfo=open_out_prefix(outbase,".info")
     ine=open(inbase+".e-parse")
     try:
-        iinfo=open(inbase+".info")
+        iinfo=open(info_in if info_in else inbase+".info")
     except:
         iinfo=None
     distort=pcorrupt>0
@@ -69,7 +70,7 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
     for eline,aline,fline,lineno in itertools.izip(ine,ina,inf,itertools.count(0)):
         desc=descbase
         if comment:
-            desc+="%d: "%comment
+            desc+="%s: "%comment
         if iinfo is None:
             desc+="%s.{e-parse,a,f} line %d"%(inbase,lineno)
         else:
@@ -89,6 +90,7 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
         nf=len(fline.split())
         a=Alignment(aline,ne,nf)
         if skip_identity and a.is_identity(): continue
+        if skip_includes_identity and a.includes_identity(): continue
         if distort:
             oagold.write(aline)
             a.corrupt(pcorrupt,dcorrupt)
@@ -98,6 +100,7 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
         of.write(fline)
         oe.write(eline)
         oinfo.write(desc+"\n")
+    log("%d lines written"%n)
 optfunc.main(subset_training)
 
 if False and __name__ == '__main__':

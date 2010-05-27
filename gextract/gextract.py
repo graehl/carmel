@@ -2,9 +2,8 @@
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 
 TODO: when count=0 for all possible changes, use stored logp(basep) so we can choose between many implausibles with proper weight (hack for now: uniform)
-TODO: get actual #nonterms, sourcevocab from input etrees (currently hardcoded 40, 1000)
-TODO: better base models
-TODO: anneal?  avg counts not final?
+TODO: better base models, incl model1 ttable or other alignment probs
+TODO: avg counts not final?
 TODO: output per-sentence alignment accuracy also?  to .info file?
 """
 
@@ -423,11 +422,12 @@ class Counts(object):
         return "\n".join(rules.itervalues())
 
 class Translation(object):
-    def __init__(self,etree,estring,a,f,lineno=None):
+    def __init__(self,etree,estring,a,f,info,lineno=None):
         self.etree=etree
         self.estring=estring
         self.a=a
         self.f=f
+        self.info=info
         self.nf=len(f)
         self.ne=len(estring)
         self.netree=etree.size()
@@ -660,12 +660,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Translation.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
 
     @staticmethod
-    def parse_sent(eline,aline,fline,lineno):
+    def parse_sent(eline,aline,fline,iline,lineno):
         etree=raduparse(eline)
         e=etree.yield_labels()
         f=fline.strip().split()
         a=Alignment(aline,len(e),len(f))
-        return Translation(etree,e,a,f,lineno)
+        return Translation(etree,e,a,f,iline,lineno)
 
     def full_alignment(self):
         """return Alignment object where each rule's lexical items are in full bipartite alignment.  for a minimal-rules derivation, this alignment will induce exactly the same derivation if provided as the .a input"""
@@ -791,11 +791,13 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return lp
 
 class Training(object):
-    def __init__(self,parsef,alignf,ff,opts,basep=basep_default):
+    def __init__(self,parsef,alignf,ff,infof,opts,basep=basep_default):
         self.output_files=dict()
+        self.inbase,ext=os.path.splitext(alignf)
         self.parsef=parsef
         self.alignf=alignf
         self.ff=ff
+        self.infof=infof
         self.basep=basep
         self.counts=Counts(basep)
         self.golda=None
@@ -817,8 +819,9 @@ class Training(object):
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
-        for eline,aline,fline,lineno in izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
-                yield Translation.parse_sent(eline,aline,fline,lineno)
+        infos=tryelse(lambda:open(self.infof),itertools.imap(lambda i:"%s line #%d"%(self.inbase,i),itertools.count(0)))
+        for eline,aline,fline,iline,lineno in izip(open(self.parsef),open(self.alignf),open(self.ff),infos,itertools.count(0)):
+                yield Translation.parse_sent(eline,aline,fline,iline,lineno)
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
     def gibbs(self):
         self.gibbs_prep()
@@ -855,7 +858,9 @@ class Training(object):
         opts=self.opts
         lp=0.
         ei=0
-        power=anneal_power(iter,opts.iter,opts.temp0,opts.tempf)
+        atemp=anneal_temp(iter,opts.iter,opts.temp0,opts.tempf)
+        power=1.0/atemp
+        tempstr=(" temp=%4g"%atemp) if atemp!=1. else ""
         for ex in self.examples:
             ei+=1
             root=ex.etree
@@ -871,34 +876,43 @@ class Training(object):
                 self.output_ex(ex,"iter=%d"%iter)
             elp=ex.cache_prob(self.counts)
             if opts.verbose>=2:
-                log("iter=%d example=%d log10(cache-prob)=%f"%(iter,ei,elp))
+                log("iter=%d example=%d log10(cache-prob)=%f%s"%(iter,ei,elp,tempstr))
             lp+=elp
         if opts.histogram:
             self.write_histogram(iter)
         if opts.alignments_every>0 and iter % opts.alignments_every == 0:
             self.write_alignments(iter)
-        log("gibbs iter=%d log10(cache-prob)=%f "%(iter,lp)+self.alignment_report(iter))
+        log("gibbs iter=%d log10(cache-prob)=%f%s %s"%(iter,lp,tempstr,self.alignment_report(iter)))
         report_zeroprobs()
 
     def write_alignments(self,iter):
-        oa=open_out_prefix(self.opts.alignment_out,".%d"%iter)
+        if not self.opts.alignment_out: return
+        (obase,osuf)=os.path.splitext(self.opts.alignment_out)
+        isuf='' if iter is None else ".i=%d"%iter
+        oa=open_out_prefix(obase,isuf+osuf)
+        pr=self.golda is not None
+        if pr:
+            oi=open_out_prefix(obase,isuf+'.info')
+            log("writing precision/recall to %s"%oi.name)
         log("writing alignments to "+oa.name)
 #        log("writing alignments to "+self.opts.alignment_out+"."+str(iter))
+        i=0
         for x in self.examples:
-            oa.write(str(x.full_alignment())+'\n')
-        oa.close()
+            a=x.full_alignment()
+            if pr:
+                oi.write('%s %s\n'%(x.info,a.str_agreement(self.golda[i])))
+                i+=1
+            oa.write(str(a)+'\n')
+        if pr:
+            close_file(oi)
+        close_file(oa)
 
     def write_histogram(self,iter=None):
         header="minimal ghkm" if iter is None else "gibbs iter %d"%iter
         log("%s size histogram: %s"%(header,self.counts.size_hist()))
         log("%s rule frequency histogram: %s"%(header,self.counts.freq_hist()))
 
-    def alignment_report(self,iter=None):
-        "returns string describing aggregate alignment p/r/f.  TODO: don't compute full alignment multiple times if also printing it in output_ex?"
-        if self.golda is None: return ""
-        ret=""
-        if False and iter is not None:
-            ret+="iter=%d "%iter
+    def alignment_prstring(self):
         fas=[ex.full_alignment() for ex in self.examples]
         agrees=[a.agreement(g) for a,g in zip(fas,self.golda)]
         agree=reduce(componentwise,agrees)
@@ -906,12 +920,20 @@ class Training(object):
         p,r=pr_from_agreement(*agree)
 #        dump(agree,p,r)
         fs=Alignment.fstr(p,r)
+        return fs
+    def alignment_report(self,iter=None):
+        "returns string describing aggregate alignment p/r/f.  TODO: don't compute full alignment multiple times if also printing it in output_ex?"
+        if self.golda is None: return ""
+        ret=""
+        if False and iter is not None:
+            ret+="iter=%d "%iter
+        fs=self.alignment_prstring()
         ret+="alignment "+fs
         return ret
 
-    def output_ex(self,t,header='',aof=None):
+    def output_ex(self,t,header=''):
         opts=self.opts
-        getalign=aof is not None or opts.header_full_align
+        getalign=opts.header_full_align
         if getalign:
             fa=t.full_alignment()
         print
@@ -922,14 +944,11 @@ class Training(object):
                 print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
         if opts.derivation:
             print t.derivation_tree()
-        if aof is not None:
-            aof.write(str(fa)+'\n')
 
     def output(self):
-        ao=self.opts.alignment_out
-        aof=(ao and open_out(ao)) or None
+        self.write_alignments(None)
         for t in self.examples:
-            self.output_ex(t,'',aof)
+            self.output_ex(t,'')
 
     def output_file(self,suffix):
         if suffix not in self.output_files:
@@ -956,7 +975,7 @@ def gextract(opts):
         print "### gextract %s minimal %s"%(version,attr_str(opts))
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
-    train=Training(inbase+".e-parse",inbase+".a",inbase+".f",opts)
+    train=Training(inbase+".e-parse",inbase+".a",inbase+".f",inbase+".info",opts)
     train.main()
 
 
@@ -966,30 +985,30 @@ def gextract(opts):
 class TestTranslation(unittest.TestCase):
     def setUp(self):
         dump("init test")
-        inbase='mono0.1'
-        golda='mono0.1.a-gold'
+        inbase='castronauts'
+        golda='castronauts.a-gold'
         verbose=2
         terminals=False
         quote=True
         features=True
         header=True
         derivation=True
-        alignment_out=None
+        alignment_out='-'
         header_full_align=False
         rules=True
         randomize=False
-        iter=1
+        iter=2
         test=False
         outputevery=10
         header_full_align=False
         swap=True
-        self.opts=Locals()
-        self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f",self.opts)
         random.seed(12345)
         histogram=False
-        outbase=""
-        alignments_every=0
+        alignments_every=1
         temp0=tempf=1.
+        outbase='-'
+        self.opts=Locals()
+        self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f",inbase+".info",self.opts)
     def test_output(self):
         tr=self.train
         opts=self.opts
@@ -1008,7 +1027,7 @@ import optfunc
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
 @optfunc.arghelp('alignments_every','write to alignment_out.<iter> every this many iterations')
 @optfunc.arghelp('temp0','temperature 1 means no annealing, 2 means ignore prob, near 0 means deterministic best prob; tempf at final iteration and temp0 at first')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=False,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.):
     if test:
         sys.argv=sys.argv[0:1]
         unittest.main()
