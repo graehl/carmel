@@ -55,11 +55,21 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
     if distort:
         oagold=open_out_prefix(outbase,".a-gold")
     n=0
+    descbase=""
+    if upper_length<INF:
+        descbase+="len<=%d "%upper_length
+    if skip_identity:
+        descbase+="non-identity "
+    if n_output_lines<INF:
+        descbase+="(head -%d) "%n_output_lines
+    if monotone:
+        descbase+="monotone "
+    if distort:
+        descbase+="(w/ prob=%g alignments +-%d) "%(dcorrupt,pcorrupt)
     for eline,aline,fline,lineno in itertools.izip(ine,ina,inf,itertools.count(0)):
+        desc=descbase
         if comment:
-            desc=comment+': '
-        else:
-            desc=''
+            desc+="%d: "%comment
         if iinfo is None:
             desc+="%s.{e-parse,a,f} line %d"%(inbase,lineno)
         else:
@@ -76,7 +86,6 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
         if monotone:
             fline=' '.join([s.upper() for s in estring])+'\n'
             aline=' '.join(['%d-%d'%(i,i) for i in range(0,ne)])+'\n'
-            desc+=" monotone"
         nf=len(fline.split())
         a=Alignment(aline,ne,nf)
         if skip_identity and a.is_identity(): continue
@@ -84,7 +93,7 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
             oagold.write(aline)
             a.corrupt(pcorrupt,dcorrupt)
             aline=str(a)+'\n'
-            desc+=" links corrupted +-%d with prob=%g"%(dcorrupt,pcorrupt)
+
         oa.write(aline)
         of.write(fline)
         oe.write(eline)
