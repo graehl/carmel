@@ -197,11 +197,14 @@ class Alignment(object):
         self.efpairs=list(set((bound(e+rdistort(p,d),self.ne),bound(f+rdistort(p,d),self.nf)) for e,f in self.efpairs))
     def str_agreement(self,gold,alpha_precision=.6):
         ag=self.agreement(gold)
-        p,r=pr_from_agreement(*ag)
-        return Alignment.fstr(p,r,alpha_precision)
+        return Alignment.agreestr(ag)
     def agreement(self,gold):
         "returns (true pos,false pos,false neg) vs. gold"
         return set_agreement(self.efpairs,gold.efpairs)
+    @staticmethod
+    def agreestr(ag,alpha_precision=.6):
+        p,r=pr_from_agreement(*ag)
+        return Alignment.fstr(p,r,alpha_precision)
     @staticmethod
     def fstr(p,r,alpha_precision=.6):
         "alpha=.6 was best correlation w/ translation quality in Fraser+Marcu ISI-TR-616"

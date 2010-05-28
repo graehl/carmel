@@ -659,9 +659,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return etree.relabel(lambda t:t.label+span_str(t.span))
 
     def count_str(self,node,counts):
-        s=node.span
-        c=node.count
-        if c is None or s is None: return ""
+        try:
+            s=node.span
+            c=node.count
+            if c is None or s is None: return ""
+        except:
+            return ""
 #        ss=span_str(node.span)
         return ":***%s"%counts.count_str(c)
 
@@ -904,7 +907,8 @@ class Training(object):
     def write_alignments(self,iter):
         if not self.opts.alignment_out: return
         (obase,osuf)=os.path.splitext(self.opts.alignment_out)
-        isuf='' if iter is None else (".i=%d"%iter)
+        isuf='' if iter is None else (".i=%s"%iter)
+        iname='final' if iter is None else str(iter)
         oa=open_out_prefix(obase,isuf+osuf)
         pr=self.golda is not None
         oe=open_out_prefix(obase,isuf+'.e-parse')
@@ -915,10 +919,10 @@ class Training(object):
         log("writing alignments to "+oa.name)
 #        log("writing alignments to "+self.opts.alignment_out+"."+str(iter))
         i=0
-        for x in self.examples:
-            a=x.full_alignment()
+        corpuspr,_,agrees,fas=self.alignment_prstring() #TODO: compute once for alignment_report, and resuse in write_alignments?
+        for x,agree,a in zip(self.examples,agrees,fas):
             if pr:
-                oi.write('%s %s\n'%(x.info,a.str_agreement(self.golda[i])))
+                oi.write('i=%s %s %s (avg: %s)\n'%(iname,x.info,Alignment.agreestr(agree),corpuspr))
                 i+=1
             oa.write(str(a)+'\n')
             oe.write(str(x.tree_counts(self.counts))+'\n')
@@ -939,7 +943,7 @@ class Training(object):
         p,r=pr_from_agreement(*agree)
 #        dump(agree,p,r)
         fs=Alignment.fstr(p,r)
-        return fs
+        return fs,agree,agrees,fas
 
     def alignment_report(self,iter=None):
         "returns string describing aggregate alignment p/r/f.  TODO: don't compute full alignment multiple times if also printing it in output_ex?"
@@ -947,7 +951,7 @@ class Training(object):
         ret=""
         if False and iter is not None:
             ret+="iter=%d "%iter
-        fs=self.alignment_prstring()
+        fs,_,_,_=self.alignment_prstring()
         ret+="alignment "+fs
         return ret
 
@@ -983,6 +987,7 @@ class Training(object):
         global noisy_log
         noisy_log=self.opts.verbose>3
         self.ghkm()
+        if self.opts.alignments_every>0: self.write_alignments('ghkm')
         log("minimal ghkm "+self.alignment_report())
         if self.opts.iter>0:
             self.gibbs()
