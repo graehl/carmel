@@ -54,22 +54,22 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
         oagold=open_out_prefix(outbase,".a-gold")
     n=0
     descbase=""
+    if n_output_lines<INF:
+        descbase+="first %d "%n_output_lines
     if upper_length<INF:
         descbase+="len<=%d "%upper_length
     if skip_identity:
         descbase+="non-identity "
-    if n_output_lines<INF:
-        descbase+="(head -%d) "%n_output_lines
     if monotone:
         descbase+="monotone "
     if distort:
-        descbase+="(w/ prob=%g alignments +-%d) "%(dcorrupt,pcorrupt)
+        descbase+="(noise prob=%g +-%d) "%(pcorrupt,dcorrupt)
     for eline,aline,fline,lineno in itertools.izip(ine,ina,inf,itertools.count(0)):
         desc=descbase
         if comment:
             desc+="%s: "%comment
         if iinfo is None:
-            desc+="%s.{e-parse,a,f} line %d"%(inbase,lineno)
+            desc+="%s line %d"%(inbase,lineno)
         else:
             desc+=iinfo.readline().strip()
         if not (lineno>=begin and lineno<end): continue

@@ -166,7 +166,7 @@ def fmeasure(P,R,alpha_precision=.5):
     return 0. if P==0 or R==0 else 1./(A/P+(1-A)/R)
 
 def fmeasure_str(P,R,alpha_precision=.5):
-    return 'P=%.3g R=%.3g weighted(P=%g)-F=%.3g'%(P,R,alpha_precision,fmeasure(P,R,alpha_precision))
+    return 'P=%.3g R=%.3g F(%.3g)=%.3g'%(P,R,alpha_precision,fmeasure(P,R,alpha_precision))
 
 import itertools
 

@@ -4,7 +4,6 @@ doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) 
 TODO: when count=0 for all possible changes, use stored logp(basep) so we can choose between many implausibles with proper weight (hack for now: uniform)
 TODO: better base models, incl model1 ttable or other alignment probs
 TODO: avg counts not final?
-TODO: output per-sentence alignment accuracy also?  to .info file?
 """
 
 version="0.9"
@@ -673,12 +672,12 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Translation.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
 
     @staticmethod
-    def parse_sent(eline,aline,fline,iline,lineno):
+    def parse_sent(eline,aline,fline,info,lineno):
         etree=raduparse(eline)
         e=etree.yield_labels()
         f=fline.strip().split()
         a=Alignment(aline,len(e),len(f))
-        return Translation(etree,e,a,f,iline,lineno)
+        return Translation(etree,e,a,f,info.strip(),int(lineno))
 
     def full_alignment(self):
         """return Alignment object where each rule's lexical items are in full bipartite alignment.  for a minimal-rules derivation, this alignment will induce exactly the same derivation if provided as the .a input"""
@@ -832,9 +831,11 @@ class Training(object):
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
     def reader(self):
-        infos=tryelse(lambda:open(self.infof),itertools.imap(lambda i:"%s line #%d"%(self.inbase,i),itertools.count(0)))
-        for eline,aline,fline,iline,lineno in izip(open(self.parsef),open(self.alignf),open(self.ff),infos,itertools.count(0)):
-                yield Translation.parse_sent(eline,aline,fline,iline,lineno)
+        infof=open_except(self.infof)
+#        infos=tryelse(lambda:open(self.infof),itertools.imap(lambda i:"%s line #%d"%(self.inbase,i),itertools.count(0)))
+        for eline,aline,fline,lineno in izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
+            iline=infof.next().strip() if infof is not None else "%s line #%d"%(self.inbase,lineno)
+            yield Translation.parse_sent(eline,aline,fline,iline,lineno)
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
     def gibbs(self):
         self.gibbs_prep()
@@ -939,6 +940,7 @@ class Training(object):
 #        dump(agree,p,r)
         fs=Alignment.fstr(p,r)
         return fs
+
     def alignment_report(self,iter=None):
         "returns string describing aggregate alignment p/r/f.  TODO: don't compute full alignment multiple times if also printing it in output_ex?"
         if self.golda is None: return ""

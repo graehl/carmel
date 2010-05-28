@@ -5,6 +5,7 @@ eff=~graehl/bin/eff
 function main {
 wd=${wd:-exp}
 noise=${noise:-.1}
+noised=${noised:-4}
 iter=${iter:-50}
 in=${in:-10k}
 inlimit=${inlimit:-30}
@@ -44,7 +45,7 @@ inm=$mono.0$noise
 set -e
 sub=$wd/$inm
 if ! [ "$skip" ] ; then
- ./subset-training.py -n $nin -u $inlimit --pcorrupt=$noise --monotone --inbase=$in --outbase=$sub
+ ./subset-training.py -n $nin -u $inlimit --pcorrupt=$noise --dcorrupt=$noised --monotone --inbase=$in --outbase=$sub
 fi
 desc=`head -1 $sub.info | perl -pe 's/line \d+//'`
 alignbase=$sub.iter=$iter$annealf
@@ -83,6 +84,10 @@ function vizsub {
     else
     echo -- vizsub "$@"
     vizlimit=${vizlimit:-20}
+    local limarg
+    if [ $vizlimit -lt $inlimit ] ; then
+        limarg="-u $vizlimit"
+    fi
     nviz=${nviz:-6}
     lang=${lang:-eng}
     local in=$1
@@ -95,7 +100,7 @@ function vizsub {
     [ -f $af ] && aarg="--align-in=$af"
     local inf=$alignb.info
     [ -f $inf ] && infarg="--info-in=$alignb.info"
-    ./subset-training.py $aarg $infarg --etree-in=$alignb.e-parse --comment="$comment" -l 10 -u $vizlimit -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
+    ./subset-training.py $aarg $infarg --etree-in=$alignb.e-parse --comment="$comment" -l 10 $limarg -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
     local nsub=`nlines $vizout`
     lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
     fi
