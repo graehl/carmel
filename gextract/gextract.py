@@ -24,6 +24,7 @@ from graehl import *
 from dumpx import *
 
 
+toplabel='TOP'
 viz='viz-tree-string-pair.pl'
 
 def rulefrag(t):
@@ -234,6 +235,8 @@ class Counts(object):
     def prob(self,c):
         return 1. if c is None else (c.count+c.prior)/self.norms[c.group]
         #todo: include prior in count but protect from underflow: epsilon+1 - 1 == 0 (bad, can't get logprob)
+    def count_str(self,c):
+        return "0" if c is None else "%d/%d"%(c.count,self.norms[c.group]-self.alpha)
     def logprobm1(self,c):
 #        dump('probm1',cstr(c),self.probm1(c))
         return math.log(self.probm1(c))
@@ -656,6 +659,16 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def fetree(etree):
         return etree.relabel(lambda t:t.label+span_str(t.span))
 
+    def count_str(self,node,counts):
+        s=node.span
+        c=node.count
+        if c is None or s is None: return ""
+#        ss=span_str(node.span)
+        return ":***%s"%counts.count_str(c)
+
+    def tree_counts(self,counts):
+        return self.etree.relabel(lambda t:t.label+self.count_str(t,counts))
+
     def __str__(self):
         return "line=%d e={{{%s}}} #e=%d #f=%d a={{{%s}}} f={{{%s}}}"%(self.lineno,Translation.fetree(self.etree),self.ne,self.nf,self.a," ".join(self.f))
 
@@ -867,6 +880,8 @@ class Training(object):
             nodes=list(root.preorder())[1:] #exclude top node
             if not opts.terminals:
                 nodes=[x for x in nodes if not x.is_terminal()]
+            if opts.force_top_s:
+                nodes=[x for x in nodes if not x.is_s()]
             if opts.randomize: random.shuffle(nodes)
             for n in nodes:
                 self.counts.expand(n,ex,power)
@@ -888,9 +903,11 @@ class Training(object):
     def write_alignments(self,iter):
         if not self.opts.alignment_out: return
         (obase,osuf)=os.path.splitext(self.opts.alignment_out)
-        isuf='' if iter is None else ".i=%d"%iter
+        isuf='' if iter is None else (".i=%d"%iter)
         oa=open_out_prefix(obase,isuf+osuf)
         pr=self.golda is not None
+        oe=open_out_prefix(obase,isuf+'.e-parse')
+        log("writing count-labeled e-parse to "+oe.name)
         if pr:
             oi=open_out_prefix(obase,isuf+'.info')
             log("writing precision/recall to %s"%oi.name)
@@ -903,6 +920,7 @@ class Training(object):
                 oi.write('%s %s\n'%(x.info,a.str_agreement(self.golda[i])))
                 i+=1
             oa.write(str(a)+'\n')
+            oe.write(str(x.tree_counts(self.counts))+'\n')
         if pr:
             close_file(oi)
         close_file(oa)
@@ -1007,6 +1025,7 @@ class TestTranslation(unittest.TestCase):
         alignments_every=1
         temp0=tempf=1.
         outbase='-'
+        force_top_s=True
         self.opts=Locals()
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f",inbase+".info",self.opts)
     def test_output(self):
@@ -1015,8 +1034,8 @@ class TestTranslation(unittest.TestCase):
         examples=self.train.examples
         tr.ghkm()
         tr.gibbs_prep()
-        for iter in range(0,opts.iter):
-            tr.gibbs_iter(iter)
+        for i in range(0,opts.iter):
+            tr.gibbs_iter(i)
         tr.output()
 
 
@@ -1027,7 +1046,9 @@ import optfunc
 @optfunc.arghelp('alignment_out','write new alignment (fully connecting words in rules) here')
 @optfunc.arghelp('alignments_every','write to alignment_out.<iter> every this many iterations')
 @optfunc.arghelp('temp0','temperature 1 means no annealing, 2 means ignore prob, near 0 means deterministic best prob; tempf at final iteration and temp0 at first')
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.):
+@optfunc.arghelp('force_top_s','force unary TOP(X(...)) to be distinct rule, i.e. X gets a rule as does TOP')
+
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.,force_top_s=True):
     if test:
         sys.argv=sys.argv[0:1]
         unittest.main()

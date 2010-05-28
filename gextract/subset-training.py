@@ -38,7 +38,7 @@ import random
 @optfunc.arghelp('pcorrupt','if > 0, corrupt each link in output.a with this probability; write uncorrupted alignment to .a-gold')
 @optfunc.arghelp('dcorrupt','move both the e and f ends of a distorted link within +-d')
 @optfunc.arghelp('skip_includes_identity','skip sentences that do not have recall=1 for the identity alignment (#e = #f and (i,i) link is set for 0<=i<#f')
-def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,skip_includes_identity=False,align_in="",info_in=""):
+def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,skip_includes_identity=False,align_in="",info_in="",etree_in=""):
     "filter inbase.{e-parse,a,f} to outbase"
 #    dump(str(Locals()))
     oa=open_out_prefix(outbase,".a")
@@ -47,11 +47,8 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
     inf=open(inbase+".f")
     oe=open_out_prefix(outbase,".e-parse")
     oinfo=open_out_prefix(outbase,".info")
-    ine=open(inbase+".e-parse")
-    try:
-        iinfo=open(info_in if info_in else inbase+".info")
-    except:
-        iinfo=None
+    ine=open_first(etree_in,inbase+".e-parse")
+    iinfo=open_first(info_in,inbase+".info")
     distort=pcorrupt>0
     if distort:
         oagold=open_out_prefix(outbase,".a-gold")

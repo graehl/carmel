@@ -23,6 +23,14 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def is_top(self):
+        'is self TOP(X(...)) for some TOP,X?'
+        return self is not None and self.parent is None and len(self.children)==1
+
+    def is_s(self):
+        'is parent a top?  then this is its single descendant'
+        return self.parent.is_top()
+
     def __len__(self):
         "length of frontier"
         return self.length

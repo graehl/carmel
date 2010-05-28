@@ -1,5 +1,6 @@
 . ~graehl/isd/hints/aliases.sh
 . ~graehl/isd/hints/bashlib.sh
+set -o pipefail
 eff=~graehl/bin/eff
 function main {
 wd=${wd:-exp}
@@ -19,6 +20,7 @@ vizro=
 else
 vizro=--skip-identity
 fi
+[ "$vizall" ] || vaopt=-s
 vizsubopt=${vizsubopt:-$vizro}
 
 desc="monotone links corrupted +-$noisex with prob=$noise"
@@ -46,7 +48,7 @@ if ! [ "$skip" ] ; then
 fi
 desc=`head -1 $sub.info | perl -pe 's/line \d+//'`
 alignbase=$sub.iter=$iter$annealf
-for s in e-parse f a info; do
+for s in f a info; do
     cp $sub.$s $alignbase.$s
 done
 [ "$noise" == 0 ] && cp $sub.a $sub.a-gold
@@ -76,6 +78,9 @@ g2=`graph 2 "alignment-recall"`
 g3=`graph 3 "sample-prob" '0.7"'`
 #fi
 function vizsub {
+    if [ "$skipviz" ] ; then
+        echo skipping
+    else
     echo -- vizsub "$@"
     vizlimit=${vizlimit:-20}
     nviz=${nviz:-6}
@@ -90,11 +95,10 @@ function vizsub {
     [ -f $af ] && aarg="--align-in=$af"
     local inf=$alignb.info
     [ -f $inf ] && infarg="--info-in=$alignb.info"
-    ./subset-training.py $aarg $infarg --comment="$comment" -l 10 -u $vizlimit -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
+    ./subset-training.py $aarg $infarg --etree-in=$alignb.e-parse --comment="$comment" -l 10 -u $vizlimit -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
     local nsub=`nlines $vizout`
-    set +e
-    lang=$lang vizalign $vizout -s && echo $vizout.pdf
-    set -e
+    lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
+    fi
 }
 vizsub $sub $alignbase
 if [ "$every" ] ; then

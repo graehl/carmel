@@ -63,6 +63,19 @@ def tryelse(f,default=None):
         return default
     return r
 
+def open_except(f,default=None):
+    return tryelse(lambda:open(f),default)
+
+def open_first(*fs):
+    for f in fs:
+        if f:
+            try:
+                r=open(f)
+            except:
+                continue
+            return r
+    return None
+
 def interpolate(a,b,frac_b):
     f=float(frac_b)
     return b*f+a*(1.-f)
@@ -132,10 +145,13 @@ def set_agreement(test,gold):
     falseneg=len(gold-test)
     return (truepos,falsepos,falseneg)
 
+def divpos_else(q,d,e):
+    return e if d==0 else float(q)/d
+
 def pr_from_agreement(truepos,falsepos,falseneg):
     "given (true pos,false pos,false neg) return (precision,recall)"
-    P=float(truepos)/(truepos+falsepos)
-    R=float(truepos)/(truepos+falseneg)
+    P=divpos_else(truepos,truepos+falsepos,1.)
+    R=divpos_else(truepos,truepos+falseneg,1.)
     return (P,R)
 
 def set_pr(test,gold):
@@ -147,7 +163,7 @@ def set_pr(test,gold):
 def fmeasure(P,R,alpha_precision=.5):
     "given precision, recall, return weighted fmeasure"
     A=float(alpha_precision)
-    return 1./(A/P+(1-A)/R)
+    return 0. if P==0 or R==0 else 1./(A/P+(1-A)/R)
 
 def fmeasure_str(P,R,alpha_precision=.5):
     return 'P=%.3g R=%.3g weighted(P=%g)-F=%.3g'%(P,R,alpha_precision,fmeasure(P,R,alpha_precision))
