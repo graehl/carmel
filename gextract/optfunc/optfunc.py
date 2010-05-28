@@ -135,7 +135,7 @@ def resolve_args(func, argv):
     return options.__dict__, parser._errors
 
 def run(
-        func, argv=None, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr
+        func, argv=None, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, hide_exception_detail=False
     ):
     argv = argv or sys.argv[1:]
     include_func_name_in_errors = False
@@ -187,6 +187,8 @@ def run(
             if include_func_name_in_errors:
                 stderr.write('%s: ' % func.__name__)
             stderr.write(str(e) + '\n')
+            if not hide_exception_detail:
+                raise
     else:
         if include_func_name_in_errors:
             stderr.write('%s: ' % func.__name__)
