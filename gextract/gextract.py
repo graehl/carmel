@@ -870,6 +870,9 @@ class Training(object):
         self.write_histogram()
         report_zeroprobs()
 
+    def alignment_iter(self,iter):
+        opts=self.opts
+        return opts.alignments_every>0 and iter % opts.alignments_every == 0 or iter < opts.alignments_until
 
     def gibbs_iter(self,iter):
         opts=self.opts
@@ -899,7 +902,7 @@ class Training(object):
             lp+=elp
         if opts.histogram:
             self.write_histogram(iter)
-        if opts.alignments_every>0 and iter % opts.alignments_every == 0:
+        if self.alignment_iter(iter):
             self.write_alignments(iter)
         log("gibbs iter=%d log10(cache-prob)=%f%s %s"%(iter,lp,tempstr,self.alignment_report(iter)))
         report_zeroprobs()
@@ -1030,6 +1033,7 @@ class TestTranslation(unittest.TestCase):
         random.seed(12345)
         histogram=False
         alignments_every=1
+        alignments_until=5
         temp0=tempf=1.
         outbase='-'
         force_top_s=True
@@ -1055,7 +1059,7 @@ import optfunc
 @optfunc.arghelp('temp0','temperature 1 means no annealing, 2 means ignore prob, near 0 means deterministic best prob; tempf at final iteration and temp0 at first')
 @optfunc.arghelp('force_top_s','force unary TOP(X(...)) to be distinct rule, i.e. X gets a rule as does TOP')
 
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.,force_top_s=True):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.,force_top_s=True,alignments_until=0):
     if test:
         sys.argv=sys.argv[0:1]
         unittest.main()
