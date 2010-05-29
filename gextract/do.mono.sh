@@ -16,6 +16,7 @@ tempf=${tempf:-1}
 vizhead=${vizhead:-2}
 if [ "$justgraph" ] ; then
     skip=1
+    skipviz=1
 fi
 if [ "$vizrecall" ] ; then
 vizro=--skip-includes-identity
@@ -81,17 +82,22 @@ fi
 comment="iter=$iter"
 irp=$alignbase.irp
 $eff -f 'iter,R,log10(cache-prob),P' $log > $irp
+graphps=""
 function graph {
     local y=$1
     local ylbl="$2"
     local ylbldistance=${3:-'0.7"'}
-    local of=$alignbase.y=$y.$ylbl.png
-    pl -png -o $of -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
+    local obase=$alignbase.y=$y.$ylbl
+    local of=$obase.png
+    local ops=$obase.ps
+    quietly pl -png -o $of -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
+    quietly pl -landscape -ps -o $ops -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
     echo $of
+    graphps="$graphps $ops"
 }
-g2=`graph 2 "alignment-recall"`
-g3=`graph 3 "sample-prob"`
-g3=`graph 4 "alignment-precision"`
+graph 2 "alignment-recall"
+graph 3 "sample-prob"
+graph 4 "alignment-precision"
 
 allvizpdf=""
 function vizsub {
@@ -109,33 +115,32 @@ function vizsub {
         local vizout=$alignb.first$nviz
         local vizpdf=$vizout.pdf
         allvizpdf="$allvizpdf $vizpdf"
+#        echo lang=$lang vizalign $vizout $vaopt
     if [ "$skipviz" ] ; then
         echo skipping
     else
         ./subset-training.py --align-in=$alignb.a --info-in=$alignb.info --etree-in=$alignb.e-parse --comment="$comment" -l 10 $limarg -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
-        lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
+        showcmd=1 lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
     fi
 }
 
-if ! [ "$justgraph" ] ; then
-    vizsub $sub $alignbase
-    if [ "$every" ] ; then
-        set +e
-        for i in  ghkm `seq 0 $iter`; do
-            afb=$alignbase.i=$i
-            af=$afb.a
-            [ -f $af ] && vizsub $sub $afb 2>/dev/null
-        done
-    fi
-    if [ "$vizhead" -gt 0 ] ; then
-        currydef pdfheadn pdfrange 1 $vizhead
-        mapreduce_files pdfheadn pdfcat $allvizpdf > $alignbase.all.head-$vizhead.pdf
-    fi
+vizsub $sub $alignbase
+if [ "$every" ] ; then
+    set +e
+    for i in  ghkm `seq 0 $iter`; do
+        afb=$alignbase.i=$i
+        af=$afb.a
+        [ -f $af ] && vizsub $sub $afb 2>/dev/null
+    done
+fi
+if [ "$vizhead" -gt 0 ] ; then
+    currydef pdfheadn pdfrange 1 $vizhead
+    mapreduce_files pdfheadn pdfcat $graphps $allvizpdf > $alignbase.all.head-$vizhead.pdf
 fi
 ls $alignbase*.a
 ls $alignbase*.pdf
 ls $alignbase*.png
-showvars pr out log g2 g3
+showvars pr out log graphps
 grep zeroprob $log || echo "no zeroprob"
 }
 main;exit
