@@ -1,7 +1,6 @@
 #!/usr/bin/env python2.6
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 
-TODO: when count=0 for all possible changes, use stored logp(basep) so we can choose between many implausibles with proper weight (hack for now: uniform)
 TODO: better base models, incl model1 ttable or other alignment probs
 TODO: avg counts not final?
 """
@@ -104,7 +103,7 @@ def xrs_var(i):
 def xrs_var_lhs(i,node,quote):
     return xrs_var(i)+':'+(xrs_quote(node.label,quote) if node.is_terminal() else node.label)
 
-class XrsBase(object):
+class BaseModel(object):
     "p0: base model for generating any rule given a root nonterminal"
     alpha=pow(10,6)
     "p(rule)=[count(rule)+p0(rule)*alpha]/[alpha+sum_{rules r w/ same root NT}count(r)]"
@@ -115,7 +114,7 @@ class XrsBase(object):
     pterm=.5
     "geometric dist. on # of source terminals (rule rhs); pterm prob to add another"
     "variables are placed one at a time w/ uniform distr. over # of possible placements, i.e. # of ways for placing 2 vars amongst t terminals = (t+1)*(t+2).  for n vars, prod_"
-    sourcevocab=1000
+    sourcevocab=5000
     "uniformly choose which terminal out of this many possibilities"
     nonterms=40
     "uniformly choose which nonterminal out of this many possiblities.  note that which are preterminals is deduced from tree structure; keeping the labels disjoint is the parser's responsbility"
@@ -152,7 +151,7 @@ class XrsBase(object):
 
 
     def p_rhs(self,n_t,n_nt):
-        return self.pendterm*pow(self.psourceword,n_t)/XrsBase.ways_vars(n_t,n_nt)
+        return self.pendterm*pow(self.psourceword,n_t)/BaseModel.ways_vars(n_t,n_nt)
 
     @staticmethod
     def logways_vars(n_t,n_nt):
@@ -161,9 +160,9 @@ class XrsBase(object):
         return sum(map(math.log,range(n_t+1,n_t+n_nt+1)))
 
     def logp_rhs(self,n_t,n_nt):
-        return self.logpendterm+(self.logpsourceword*n_t)-XrsBase.logways_vars(n_t,n_nt)
+        return self.logpendterm+(self.logpsourceword*n_t)-BaseModel.logways_vars(n_t,n_nt)
 
-basemodel_default=XrsBase()
+basemodel_default=BaseModel()
 
 class Count(object):
     "prior = p0*alpha.  logprior=log(p0).  count does not include prior"
@@ -247,7 +246,7 @@ class Counts(object):
         return sum(1 for r in self.used_rules() if approx_equal(r.count,1.))
     def model_size(self):
         "# of chars in all rules w/ count > 0"
-        return sum(len(r.rule) for r in self.used_rules() if r.count>0.)
+        return sum(len(r.rule) for r in self.used_rules() if r.count>0.00001)
     def size_hist(self):
         "return histogram of rule sizes"
         h=Histogram()

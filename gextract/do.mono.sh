@@ -51,8 +51,9 @@ function main {
     if [ "$tempf" != 1 -o "$temp0" != 1 ] ; then
         annealarg="--tempf=$tempf"
         a0arg="--temp0=$temp0"
-        annealdesc="annealing tempf=$tempf "
+        annealdesc="tempf=$tempf "
         annealf=".tempf=$tempf"
+        [ "$newf" ] && [ "$temp0" != 1 ] && annealf=".temp0=$temp0$annealf" && annealdesc="temp0=$temp0 $annealdesc"
     fi
     if [ "$mono" ] ; then
         oname=mono
@@ -90,7 +91,7 @@ function main {
 #pr=" `lastpr $log`"
     comment="iter=$iter"
     irp=$alignbase.irp
-    $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 1 $log > $irp
+    $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 2 $log > $irp
     graphps=""
     function graph {
         local y=$1
@@ -122,8 +123,8 @@ function main {
     if [ `nlines $irp` -gt 0 ] ; then
         graph2 2 "alignment recall" 4 "alignment precision"
         graph 3 "sample logprob"
-        graph 5 "# of 1 count rules"
-        graph 6 "model size (characters)"
+        grep -q $log "n-1count" && graph 5 "# of 1 count rules"
+        grep -q $log "model-size" && graph 6 "model size (characters)"
 #    graph 2 "alignment-recall"
 #    graph 4 "alignment-precision"
     else
