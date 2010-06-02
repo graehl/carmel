@@ -10,6 +10,22 @@ from itertools import izip
 log_zero=-1e10
 n_zeroprobs=0
 
+# see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
+def approx_equal(x,a,epsilon=.000001):
+    return abs(x-a) <= abs(x+a)*epsilon
+
+def approx_leq(x,a,epsilon=.000001):
+    return x <= a+epsilon*abs(x+a)
+
+def approx_geq(x,a,epsilon=.000001):
+    return x+epsilon*abs(x+a) >= a
+
+def definitely_gt(x,a,epsilon=.000001):
+    return x > a+epsilon*abs(x+a)
+
+def definitely_lt(x,a,epsilon=.000001):
+    return x+epsilon*abs(x+a) < a
+
 def take(n,gen):
     i=0
     for x in gen:
@@ -252,7 +268,6 @@ PYTHON26=sys.version >= '2.6'
 if PYTHON26:
     def logadd(lhs,rhs):
         "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
-    #    if a>b: return logadd(b,a)
         diff=lhs-rhs
         if diff > 36: return lhs # e^36 or more overflows double floats.
         if diff < 0: #rhs is bigger
@@ -262,7 +277,6 @@ if PYTHON26:
 else:
     def logadd(lhs,rhs):
         "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
-    #    if a>b: return logadd(b,a)
         diff=lhs-rhs
         if diff > 36: return lhs # e^36 or more overflows double floats.
         if diff < 0: #rhs is bigger

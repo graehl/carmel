@@ -132,6 +132,11 @@ class XrsBase(object):
         self.pnonterm=1./self.nonterms
         self.pendchild=1.-self.pchild
         self.pendterm=1.-self.pterm
+        self.logpnonterm=math.log(self.pnonterm)
+        self.logpendterm=math.log(self.pendterm)
+        self.logpsourceword=math.log(self.psourceword)
+        self.logpchild=math.log(self.pchild)
+        self.logpendchild=math.log(self.pendchild)
 
     def update_vocabsize(self,nt,nnt):
         log("xrs base model vocab size: %d terminals and %d nonterminals"%(nt,nnt))
@@ -145,17 +150,28 @@ class XrsBase(object):
             return 1.
         return reduce(operator.mul,map(float,range(n_t+1,n_t+n_nt+1)))
 
+
     def p_rhs(self,n_t,n_nt):
         return self.pendterm*pow(self.psourceword,n_t)/XrsBase.ways_vars(n_t,n_nt)
 
-basep_default=XrsBase()
+    @staticmethod
+    def logways_vars(n_t,n_nt):
+        if n_nt==0:
+            return 0.
+        return sum(map(math.log,range(n_t+1,n_t+n_nt+1)))
+
+    def logp_rhs(self,n_t,n_nt):
+        return self.logpendterm+(self.logpsourceword*n_t)-XrsBase.logways_vars(n_t,n_nt)
+
+basemodel_default=XrsBase()
 
 class Count(object):
-    "prior = p0*alpha.  count includes prior"
-    def __init__(self,rule,prior,group,count=0):
+    "prior = p0*alpha.  logprior=log(p0).  count does not include prior"
+    def __init__(self,rule,logprior,alpha,group):
         self.rule=rule
-        self.prior=prior
-        self.count=count
+        self.logprior=logprior
+        self.prior=math.exp(logprior)*alpha
+        self.count=0.
         self.group=group  #TODO: speedup: store ref to directly mutable cell rather than root label for hash
     def reset(self):
         self.count=0
@@ -203,26 +219,32 @@ class Histogram(object):
         return str(self.get_sorted())
 
 class Counts(object):
-    """track counts and sum of counts for groups on the fly.  TODO: integerize groups (root nonterminals)"""
-    def get(self,rule,prior,group):
+    """track counts and sum of counts for groups on the fly.
+    TODO: integerize groups (root nonterminals).
+    norms include alpha, but count.count doesn't.
+    """
+    def get(self,rule,logprior,group):
         "return Count object c for rule"
         if rule in self.rules:
             return self.rules[rule]
-        assert(prior<=1)
-        r=Count(rule,prior*self.alpha,group)
+        assert(logprior<=0.)
+        r=Count(rule,logprior,self.alpha,group)
         if group not in self.norms: self.norms[group]=self.alpha
-#        dump(rule,prior,self.alpha,group,str(r))
+#        dump(rule,logprior,self.alpha,group,str(r))
         self.rules[rule]=r
         return r
     def used_rules(self):
         "return only those Count objects whose count>0"
-        return [x for x in self.rules.itervalues() if x.count>0]
+        return [x for x in self.rules.itervalues() if x.count>0.]
     def freq_hist(self):
         "return histogram of rule counts"
         h=Histogram()
         for r in self.used_rules():
             h.count(r.count)
         return h
+    def n_1counts(self):
+        "first bin of freq_hist - # of rules w/ count=1"
+        return len(r for r in self.used_rules() if approx_equal(r.count,1.))
     def size_hist(self):
         "return histogram of rule sizes"
         h=Histogram()
@@ -230,12 +252,16 @@ class Counts(object):
             h.count(r.size())
         return h
     def logprob(self,c):
-        return log_prob(self.prob(c))
+        if c is None: return 0.
+        n=self.norms[c.group]
+        return c.logprior if approx_leq(n,self.alpha) else log_prob((c.count+c.prior)/n)
     def prob(self,c):
         return 1. if c is None else (c.count+c.prior)/self.norms[c.group]
         #todo: include prior in count but protect from underflow: epsilon+1 - 1 == 0 (bad, can't get logprob)
     def count_str(self,c):
         return "0" if c is None else "%d/%d"%(c.count,self.norms[c.group]-self.alpha)
+
+    #probm1 turns out to not be useful; i just manually add and subtract counts to get the "all but this" effect
     def logprobm1(self,c):
 #        dump('probm1',cstr(c),self.probm1(c))
         return math.log(self.probm1(c))
@@ -243,6 +269,7 @@ class Counts(object):
         "return prob given all the other events but this one (i.e. sub 1 from num and denom)"
         if c is None: return 1.
         assertge(self.norms[c.group],self.alpha)
+
         return (c.count+c.prior-1.)/(self.norms[c.group]-1.)
     def add(self,c,d):
         "denominator n[c.group] is created if necessary, including alpha (added once only), and d is added to c.count and n[c.group]"
@@ -256,11 +283,12 @@ class Counts(object):
 #        dump(str(c),n[g],d)
         assertcmp(n[g],'>',0)
         assertcmp(c.count,'>=',0)
-    def __init__(self,basep=basep_default):
+    def __init__(self,basemodel=basemodel_default):
         self.rules={} # todo: make count object have reference to norm count cell instead of looking up in hash?
         self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
-        self.basep=basep
-        self.alpha=basep.alpha
+        self.basemodel=basemodel
+        self.alpha=float(basemodel.alpha)
+#        self.logalpha=math.log(self.alpha)
         #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
     @staticmethod
     def rule_parent(node):
@@ -325,7 +353,7 @@ class Counts(object):
     def count_for_node(self,node,ex):
         "return rule count ref for rule headed at node (without setting node.count).  None if node doesn't head a rule"
         if node.span is None: return None
-        rule,base=ex.xrs_str(node,self.basep)
+        rule,base=ex.xrs_str(node,self.basemodel)
         c=self.get(rule,base,node.label)
 #        dump(cstr(c))
         return c
@@ -508,14 +536,14 @@ times each word is covered"""
                 c.span=None
 
     def xrs_str(self,root,basemodel,quote=False):
-        """return (rule string,basemodel prob) pair for rule w/ root"""
+        """return (rule string,basemodel logprob) pair for rule w/ root"""
         assert(root.span is not None)
         b,e=root.span
         frhs=self.f[b:e]
         asserteq(len(frhs),e-b)
         lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
         rhs,pr=Translation.xrs_rhs_str(frhs,b,e,basemodel,quote)
-        return (lhs+' -> '+rhs,pl*pr)
+        return (lhs+' -> '+rhs,pl+pr)
 
     @staticmethod
     def xrs_lhs_str(t,foreign,fbase,basemodel,quote=False):
@@ -523,19 +551,20 @@ times each word is covered"""
 where xi:node.label was a variable in the lhs string; only the first foreign word in the variable is replaced.  foreign initially is
 foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in t.span.  the x in the 3rd slot of return tuple is just an implementation detail; ignore it."""
         s,p,x=Translation.xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,0,t)
-        return (s,p/basemodel.pnonterm)
+        return (s,p-basemodel.logpnonterm)
 
     @staticmethod
     def xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,xn,parent):
         "xn is variable index"
         if t.is_terminal():
-            return (xrs_quote(t.label,quote),basemodel.psourceword,xn)
+            return (xrs_quote(t.label,quote),basemodel.logpsourceword,xn)
         s=t.label+'('
-        p=basemodel.pnonterm
+        p=basemodel.logpnonterm
         preterm=t.is_preterminal()
         nc=len(t.children)
         if not preterm: # preterms labels must be distinct from non-preterms
-            p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
+            p+=(basemodel.logpchild*(nc-1))+basemodel.logpendchild
+#            p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
         for c in t.children:
             if c.span is not None:
                 l=c.span[0]
@@ -548,7 +577,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             else:
                 sc,pc,xn=Translation.xrs_lhs_str_r(c,foreign,fbase,basemodel,quote,xn,parent)
                 s+=sc
-                p*=pc
+                p+=pc
             s+=' '
         return (s[:-1]+')',p,xn)
 
@@ -557,7 +586,6 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def xrs_rhs_str(frhs,b,ge,basemodel,quote=False):
         rhs=""
         gi=b
-        p=basemodel.pendterm
         n_nt=0
         n_t=0
         while gi<ge:
@@ -573,7 +601,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 rhs+=xrs_quote(c,quote)
                 gi+=1
             rhs+=' '
-        return (rhs[:-1],basemodel.p_rhs(n_t,n_nt))
+        return (rhs[:-1],basemodel.logp_rhs(n_t,n_nt))
 
     def frontier(self):
         for c in self.etree.preorder():
@@ -624,6 +652,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             nv+=cv
         return (nv,nt)
 
+#note: xrs_*prob are unused since we always generate rule string key at same time.  could use them to test the logprobs, though?  otherwise delete code
     def xrs_logprob(self,root,basemodel):
         return math.log(self.xrs_prob(root,basemodel))
 
@@ -806,30 +835,30 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return lp
 
 class Training(object):
-    def __init__(self,parsef,alignf,ff,infof,opts,basep=basep_default):
+    def __init__(self,parsef,alignf,ff,infof,opts,basemodel=basemodel_default):
         self.output_files=dict()
         self.inbase,ext=os.path.splitext(alignf)
         self.parsef=parsef
         self.alignf=alignf
         self.ff=ff
         self.infof=infof
-        self.basep=basep
-        self.counts=Counts(basep)
+        self.basemodel=basemodel
+        self.counts=Counts(basemodel)
         self.golda=None
         self.examples=list(self.reader())
         self.opts=opts
         if opts.golda:
             self.golda=[Alignment(aline,t.ne,t.nf) for aline,t in izip(open(opts.golda),self.examples)]
 
-    def adjust_basep(self):
-        "set self.basep.{sourcevocab,nonterms} based on actual counts in examples"
+    def adjust_basemodel(self):
+        "set self.basemodel.{sourcevocab,nonterms} based on actual counts in examples"
         terms=set()
         nonterms=set()
         for x in self.examples:
             for t in x.etree.preorder():
                 (terms if t.is_terminal() else nonterms).add(t.label)
         dump(str(nonterms))
-        self.basep.update_vocabsize(len(terms),len(nonterms))
+        self.basemodel.update_vocabsize(len(terms),len(nonterms))
 
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
@@ -847,7 +876,7 @@ class Training(object):
         report_zeroprobs()
 
     def gibbs_prep(self):
-        self.adjust_basep()
+        self.adjust_basemodel()
         opts=self.opts
         log("Using gibbs sampling starting from minimal ghkm.")
         counts=self.counts
@@ -858,7 +887,7 @@ class Training(object):
         self.netree=sum(x.netree for x in xs)
         self.ne=sum(x.ne for x in xs)
         for ex in self.examples:
-            for (rule,p,root) in ex.all_rules(self.basep):
+            for (rule,p,root) in ex.all_rules(self.basemodel):
                 c=counts.get(rule,p,root.label)
                 root.count=c
                 counts.add(c,1)
@@ -967,8 +996,8 @@ class Training(object):
         if opts.header:
             print "###",header,t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
         if opts.rules:
-            for (r,p,_),id in izip(t.all_rules(self.basep,opts.quote),itertools.count(0)):
-                print r+(" ### baseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
+            for (r,p,_),id in izip(t.all_rules(self.basemodel,opts.quote),itertools.count(0)):
+                print r+(" ### logbaseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
         if opts.derivation:
             print t.derivation_tree()
 

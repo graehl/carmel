@@ -99,7 +99,7 @@ function main {
         local obase=$alignbase.y=$y.$ylbl
         local of=$obase.png
         local ops=$obase.ps
-        plboth $obase-prefab -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
+        plboth $obase -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
         echo $of
         graphps="$graphps $ops"
     }
@@ -142,8 +142,8 @@ function main {
         local vizpdf=$vizout.pdf
         allvizpdf="$allvizpdf $vizpdf"
 #        echo lang=$lang vizalign $vizout $vaopt
-        if [ "$skipviz" ] ; then
-            echo skipping
+        if [ "$skipviz" ] || [ ! -f $alignb.a ] ; then
+            echo skipping $alignb.a
         else
             ./subset-training.py --align-in=$alignb.a --info-in=$alignb.info --etree-in=$alignb.e-parse --comment="$comment" -l 10 $limarg -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
             showcmd=1 lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
