@@ -2,6 +2,60 @@
 . ~graehl/isd/hints/bashlib.sh
 set -o pipefail
 eff=~graehl/bin/eff
+
+function graph {
+    local y=$1
+    local ylbl="$2"
+    local ylbldistance=${3:-'0.7"'}
+    local obase=$alignbase.y=$y.`filename_from $ylbl`
+    local of=$obase.png
+    local ops=$obase.ps
+    plboth $obase -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
+    echo $of
+    graphps="$graphps $ops"
+}
+
+function graph2 {
+    local y=$1
+    local ylbl=$2
+    local y2=$3
+    local ylbl2=$4
+    local ylbldistance=${3:-'0.7"'}
+    local obase=$alignbase.y=$y.`filename_from $ylbl`.y2=$y2.`filename_from $ylbl2`
+    local of=$obase.png
+    local ops=$obase.ps
+        #yrange=0
+    set -x
+    plboth $obase -prefab lines data=$irp x=1 pointsym=none pointsym2=none y=$y name="$ylbl" y2=$y2 name2="$ylbl2" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" -scale 1.4
+    set +x
+    echo $of
+    graphps="$graphps $ops"
+}
+
+function vizsub {
+    echo -- vizsub "$@"
+    vizlimit=${vizlimit:-20}
+    local limarg
+    if [ $vizlimit -lt $inlimit ] ; then
+        limarg="-u $vizlimit"
+    fi
+    nviz=${nviz:-6}
+    lang=${lang:-eng}
+    local in=$1
+    comment=${comment:-$in}
+    local alignb=${2:-$in}
+    local vizout=$alignb.first$nviz
+    local vizpdf=$vizout.pdf
+    allvizpdf="$allvizpdf $vizpdf"
+#        echo lang=$lang vizalign $vizout $vaopt
+    if [ "$skipviz" ] || [ ! -f $alignb.a ] ; then
+        echo skipping $alignb.a
+    else
+        ./subset-training.py --align-in=$alignb.a --info-in=$alignb.info --etree-in=$alignb.e-parse --comment="$comment" -l 10 $limarg -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
+        showcmd=1 lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
+    fi
+}
+
 function main {
     wd=${wd:-exp}
     noised=${noised:-4}
@@ -20,16 +74,15 @@ function main {
         skip=1
         skipviz=1
     fi
-    vizsubopt=${vizsubopt:-$vizro}
     if [ "$nomono" ] ; then
         mono=
         noise=${noise:-0}
         vizall=1
-        desc="vs. GIZA++"
+        desc="${desc}vs. GIZA++"
     else
         mono=1
         lang=eng
-        desc="vs. monotone"
+        desc="${desc}vs. monotone"
     fi
     noise=${noise:-.1}
     if [ "$noise" != 0 ] ; then
@@ -42,6 +95,7 @@ function main {
     else
         vizro=--skip-identity
     fi
+    vizsubopt=${vizsubopt:-$vizro}
     [ "$vizall" ] || vaopt=-s
 
     mkdir -p $wd
@@ -93,33 +147,6 @@ function main {
     irp=$alignbase.irp
     $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 2 $log > $irp
     graphps=""
-    function graph {
-        local y=$1
-        local ylbl="$2"
-        local ylbldistance=${3:-'0.7"'}
-        local obase=$alignbase.y=$y.`filename_from $ylbl`
-        local of=$obase.png
-        local ops=$obase.ps
-        plboth $obase -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
-        echo $of
-        graphps="$graphps $ops"
-    }
-    function graph2 {
-        local y=$1
-        local ylbl=$2
-        local y2=$3
-        local ylbl2=$4
-        local ylbldistance=${3:-'0.7"'}
-        local obase=$alignbase.y=$y.`filename_from $ylbl`.y2=$y2.`filename_from $ylbl2`
-        local of=$obase.png
-        local ops=$obase.ps
-        #yrange=0
-        set -x
-        plboth $obase -prefab lines data=$irp x=1 pointsym=none pointsym2=none y=$y name="$ylbl" y2=$y2 name2="$ylbl2" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" -scale 1.4
-        set +x
-        echo $of
-        graphps="$graphps $ops"
-    }
     if [ `nlines $irp` -gt 0 ] ; then
         graph2 2 "alignment recall" 4 "alignment precision"
         graph 3 "sample logprob"
@@ -131,29 +158,6 @@ function main {
         warn "no iterations finished in logfile"
     fi
     allvizpdf=""
-    function vizsub {
-        echo -- vizsub "$@"
-        vizlimit=${vizlimit:-20}
-        local limarg
-        if [ $vizlimit -lt $inlimit ] ; then
-            limarg="-u $vizlimit"
-        fi
-        nviz=${nviz:-6}
-        lang=${lang:-eng}
-        local in=$1
-        comment=${comment:-$in}
-        local alignb=${2:-$in}
-        local vizout=$alignb.first$nviz
-        local vizpdf=$vizout.pdf
-        allvizpdf="$allvizpdf $vizpdf"
-#        echo lang=$lang vizalign $vizout $vaopt
-        if [ "$skipviz" ] || [ ! -f $alignb.a ] ; then
-            echo skipping $alignb.a
-        else
-            ./subset-training.py --align-in=$alignb.a --info-in=$alignb.info --etree-in=$alignb.e-parse --comment="$comment" -l 10 $limarg -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
-            showcmd=1 lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
-        fi
-    }
 
     vizsub $sub $alignbase
     if [ "$every" ] ; then
