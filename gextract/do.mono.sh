@@ -90,13 +90,13 @@ function main {
 #pr=" `lastpr $log`"
     comment="iter=$iter"
     irp=$alignbase.irp
-    $eff -f 'iter,R,log10(cache-prob),P' $log > $irp
+    $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 1 $log > $irp
     graphps=""
     function graph {
         local y=$1
         local ylbl="$2"
         local ylbldistance=${3:-'0.7"'}
-        local obase=$alignbase.y=$y.$ylbl
+        local obase=$alignbase.y=$y.`filename_from $ylbl`
         local of=$obase.png
         local ops=$obase.ps
         plboth $obase -prefab lines data=$irp pointsym=none x=1 y=$y ylbl="$ylbl" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
@@ -109,17 +109,21 @@ function main {
         local y2=$3
         local ylbl2=$4
         local ylbldistance=${3:-'0.7"'}
-        local obase=$alignbase.y=$y.$ylbl.y2=$y2.$ylbl2
+        local obase=$alignbase.y=$y.`filename_from $ylbl`.y2=$y2.`filename_from $ylbl2`
         local of=$obase.png
         local ops=$obase.ps
         #yrange=0
-        plboth $obase -prefab lines data=$irp x=1 y=$y name="$ylbl" y2=$y2 name2="$ylbl2" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" -scale 1.4
+        set -x
+        plboth $obase -prefab lines data=$irp x=1 pointsym=none pointsym2=none y=$y name="$ylbl" y2=$y2 name2="$ylbl2" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" -scale 1.4
+        set +x
         echo $of
         graphps="$graphps $ops"
     }
     if [ `nlines $irp` -gt 0 ] ; then
-        graph2 2 "alignment-recall" 4 "alignment-precision"
-        graph 3 "sample-prob"
+        graph2 2 "alignment recall" 4 "alignment precision"
+        graph 3 "sample logprob"
+        graph 5 "# of 1 count rules"
+        graph 6 "model size (characters)"
 #    graph 2 "alignment-recall"
 #    graph 4 "alignment-precision"
     else

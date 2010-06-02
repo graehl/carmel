@@ -12,19 +12,19 @@ n_zeroprobs=0
 
 # see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
 def approx_equal(x,a,epsilon=.000001):
-    return abs(x-a) <= abs(x+a)*epsilon
+    return abs(x-a) <= abs(x)+abs(a)*epsilon
 
 def approx_leq(x,a,epsilon=.000001):
-    return x <= a+epsilon*abs(x+a)
+    return x <= a+epsilon*abs(x)+abs(a)
 
 def approx_geq(x,a,epsilon=.000001):
-    return x+epsilon*abs(x+a) >= a
+    return x+epsilon*abs(x)+abs(a) >= a
 
 def definitely_gt(x,a,epsilon=.000001):
-    return x > a+epsilon*abs(x+a)
+    return x > a+epsilon*abs(x)+abs(a)
 
 def definitely_lt(x,a,epsilon=.000001):
-    return x+epsilon*abs(x+a) < a
+    return x+epsilon*abs(x)+abs(a) < a
 
 def take(n,gen):
     i=0

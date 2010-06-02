@@ -244,7 +244,10 @@ class Counts(object):
         return h
     def n_1counts(self):
         "first bin of freq_hist - # of rules w/ count=1"
-        return len(r for r in self.used_rules() if approx_equal(r.count,1.))
+        return sum(1 for r in self.used_rules() if approx_equal(r.count,1.))
+    def model_size(self):
+        "# of chars in all rules w/ count > 0"
+        return sum(len(r.rule) for r in self.used_rules() if r.count>0.)
     def size_hist(self):
         "return histogram of rule sizes"
         h=Histogram()
@@ -909,7 +912,7 @@ class Training(object):
         ei=0
         atemp=anneal_temp(iter,opts.iter,opts.temp0,opts.tempf)
         power=1.0/atemp
-        tempstr=(" temp=%4g"%atemp) if atemp!=1. else ""
+        tempstr=(" temp=%.4g"%atemp) if atemp!=1. else ""
         for ex in self.examples:
             ei+=1
             root=ex.etree
@@ -933,7 +936,7 @@ class Training(object):
             self.write_histogram(iter)
         if self.alignment_iter(iter):
             self.write_alignments(iter)
-        log("gibbs iter=%d log10(cache-prob)=%f%s %s"%(iter,lp,tempstr,self.alignment_report(iter)))
+        log("gibbs iter=%d log10(cache-prob)=%f%s n-1count=%s model-size=%s %s"%(iter,lp,tempstr,self.counts.n_1counts(),self.counts.model_size(),self.alignment_report(iter)))
         report_zeroprobs()
 
     def write_alignments(self,iter):
