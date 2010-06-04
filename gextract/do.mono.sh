@@ -85,8 +85,8 @@ function main {
         desc="${desc}vs. monotone"
     fi
     noise=${noise:-.1}
-    if [ "$noise" != 0 ] ; then
-     desc="${desc}, skewed +-$noised with prob=$noise"
+    if false && [ "$noise" != 0 ] ; then
+        desc="${desc}, skewed +-$noised with prob=$noise"
     fi
     if [ "$vizrecall" ] ; then
         vizro=--skip-includes-identity
@@ -143,38 +143,40 @@ function main {
         set +x
     fi
 #pr=" `lastpr $log`"
-    comment="iter=$iter"
-    irp=$alignbase.irp
-    $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 2 $log > $irp
-    graphps=""
-    if [ `nlines $irp` -gt 0 ] ; then
-        graph2 2 "alignment recall" 4 "alignment precision"
-        graph 3 "sample logprob"
-        grep -q $log "n-1count" && graph 5 "# of 1 count rules"
-        grep -q $log "model-size" && graph 6 "model size (characters)"
+    if ! [ "$noviz" ] ; then
+        comment="iter=$iter"
+        irp=$alignbase.irp
+        $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 2 $log > $irp
+        graphps=""
+        if [ `nlines $irp` -gt 0 ] ; then
+            graph2 2 "alignment recall" 4 "alignment precision"
+            graph 3 "sample logprob"
+            grep -q $log "n-1count" && graph 5 "# of 1 count rules"
+            grep -q $log "model-size" && graph 6 "model size (characters)"
 #    graph 2 "alignment-recall"
 #    graph 4 "alignment-precision"
-    else
-        warn "no iterations finished in logfile"
-    fi
-    allvizpdf=""
+        else
+            warn "no iterations finished in logfile"
+        fi
+        allvizpdf=""
 
-    vizsub $sub $alignbase
-    if [ "$every" ] ; then
-        set +e
-        for i in  ghkm `seq 0 $iter`; do
-            afb=$alignbase.i=$i
-            af=$afb.a
-            [ -f $af ] && vizsub $sub $afb 2>/dev/null
-        done
-    fi
-    if [ "$vizhead" -gt 0 ] ; then
-        currydef pdfheadn pdfrange 1 $vizhead
-        mapreduce_files pdfheadn pdfcat $graphps $allvizpdf > $alignbase.all.head-$vizhead.pdf
+        vizsub $sub $alignbase
+        if [ "$every" ] ; then
+            set +e
+            for i in  ghkm `seq 0 $iter`; do
+                afb=$alignbase.i=$i
+                af=$afb.a
+                [ -f $af ] && vizsub $sub $afb 2>/dev/null
+            done
+        fi
+        if [ "$vizhead" -gt 0 ] ; then
+            currydef pdfheadn pdfrange 1 $vizhead
+            mapreduce_files pdfheadn pdfcat $graphps $allvizpdf > $alignbase.all.head-$vizhead.pdf
+        fi
+        ls $alignbase*.pdf
+        ls $alignbase*.png
     fi
     ls $alignbase*.a
-    ls $alignbase*.pdf
-    ls $alignbase*.png
     showvars pr out log graphps
     grep zeroprob $log || echo "no zeroprob"
 }

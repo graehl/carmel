@@ -69,6 +69,7 @@ def checkrule(t):
     asserteq((t.span is None),(t.count is None),richs(t))
 
 def checkclosure(t):
+    if less_checking: return
     clo=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),t.children,None)
     asserteq(clo,t.closure_span,richs(t))
     if t.span is not None:
@@ -174,7 +175,6 @@ class Count(object):
         self.group=group  #TODO: speedup: store ref to directly mutable cell rather than root label for hash
     def reset(self):
         self.count=0
-#        self.count=self.prior
     def size(self):
         "return some notion of size (number of etree nodes?) of rule. for now just # of bytes"
         return len(self.rule)
@@ -270,7 +270,7 @@ class Counts(object):
     def probm1(self,c):
         "return prob given all the other events but this one (i.e. sub 1 from num and denom)"
         if c is None: return 1.
-        assertge(self.norms[c.group],self.alpha)
+#        assertge(self.norms[c.group],self.alpha)
 
         return (c.count+c.prior-1.)/(self.norms[c.group]-1.)
     def add(self,c,d):
@@ -283,8 +283,8 @@ class Counts(object):
         n[g]+=d
         c.count+=d
 #        dump(str(c),n[g],d)
-        assertcmp(n[g],'>',0)
-        assertcmp(c.count,'>=',0)
+#        assertcmp(n[g],'>',0)
+#        assertcmp(c.count,'>=',0)
     def __init__(self,basemodel=basemodel_default):
         self.rules={} # todo: make count object have reference to norm count cell instead of looking up in hash?
         self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
@@ -306,11 +306,11 @@ class Counts(object):
     def swap(self,n1,n2,ex,power=1.):
         "a swap of spans (and counts) means that parent rule may change if one of the spans was None"
         parnode=Counts.rule_parent(n1)
-        asserteq(parnode,Counts.rule_parent(n2),"swap not common rule parents",richs(n1),richs(n2))
-        assert Counts.is_rule_leaf(n1),"swap not rule leaf: "+richs(n1)
-        assert Counts.is_rule_leaf(n2),"swap not rule leaf: "+richs(n2)
-        assert n1.closure_span is None
-        assert n2.closure_span is None
+#        asserteq(parnode,Counts.rule_parent(n2),"swap not common rule parents",richs(n1),richs(n2))
+#        assert Counts.is_rule_leaf(n1),"swap not rule leaf: "+richs(n1)
+#        assert Counts.is_rule_leaf(n2),"swap not rule leaf: "+richs(n2)
+#        assert n1.closure_span is None
+#        assert n2.closure_span is None
 #        dump("swap?",richs(n1),richs(n2))
         if n1.span is None and n2.span is None: return
         cold1=n1.count #TODO: use list for old/new count +1 -1?
@@ -371,10 +371,10 @@ class Counts(object):
 #        dump(richs(node))
         checkt(parnode)
         if parnode is None:
-            assert(node.parent is None)
+#            assert(node.parent is None)
             return # can't adjust top node anyway
         parspan=parnode.span
-        assert (parspan is not None)
+#        assert (parspan is not None)
         oldspan=node.span
 #        newlogps=[self.logprobm1(parnode.count)+self.logprobm1(node.count)]
 # above commented out because it's too high prob in unlikely event of parent rule = self rule
@@ -387,7 +387,7 @@ class Counts(object):
         newlogps=[nlp+plp]
         newspans=[(oldspan,node.count,parnode.count)] # parallel to newlogps;  (span,count,parcount)
         #same as init to empty and then consider_span(oldspan) but remember old rule struct
-        assert(parnode is not node)
+#        assert(parnode is not node)
         def consider_span(span):
             node.span=span
             parc=self.count_for_node(parnode,ex)
@@ -403,7 +403,7 @@ class Counts(object):
         if oldspan is not None:
             consider_span(None)
         if closure is not None:
-            assert(span_in(closure,parspan))
+#            assert(span_in(closure,parspan))
             imax=closure[0]
             jmin=closure[1]
 #        dump(parspan[0],imax,jmin,parspan[1])
@@ -511,7 +511,7 @@ times each word is covered"""
             spanr=range(enode.fspan[0],enode.fspan[1])
             fr=True
             for i in spanr:
-                assert(cspan[i]>0)
+#                assert(cspan[i]>0)
                 cspan[i]-=1
                 if cspan[i]>0:
                     fr=False
@@ -539,10 +539,10 @@ times each word is covered"""
 
     def xrs_str(self,root,basemodel,quote=False):
         """return (rule string,basemodel logprob) pair for rule w/ root"""
-        assert(root.span is not None)
+#        assert(root.span is not None)
         b,e=root.span
         frhs=self.f[b:e]
-        asserteq(len(frhs),e-b)
+#        asserteq(len(frhs),e-b)
         lhs,pl=Translation.xrs_lhs_str(root,frhs,b,basemodel,quote)
         rhs,pr=Translation.xrs_rhs_str(frhs,b,e,basemodel,quote)
         return (lhs+' -> '+rhs,pl+pr)
@@ -571,8 +571,8 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             if c.span is not None:
                 l=c.span[0]
                 fi=c.span[0]-fbase
-                assert span_in(c.span,parent.span),richs(parent)
-                assertindex(fi,foreign)
+#                assert span_in(c.span,parent.span),richs(parent)
+#                assertindex(fi,foreign)
                 foreign[fi]=(xn,c)
                 s+=xrs_var_lhs(xn,c,quote)
                 xn+=1
@@ -596,7 +596,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 rhs+=xrs_var(c[0])
                 n_nt+=1
                 newi=c[1].span[1]
-                assertgt(newi,gi)
+#                assertgt(newi,gi)
                 gi=newi
             else:
                 n_t+=1
@@ -774,7 +774,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         if dbgme: pdb.set_trace()
         old=old or t.closure_span
         t.span=new
-        assert(span_in(t.closure_span,new) or new is None)
+#        assert(span_in(t.closure_span,new) or new is None)
         if new is None:
             new=t.closure_span
         if old==new:
@@ -782,7 +782,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         p=t.parent
         while True: # p is a node whose (closure) span has changed from old to new
             par=p.closure_span
-            assert(new in [y.span or y.closure_span for y in p.children])
+#            assert(new in [y.span or y.closure_span for y in p.children])
             if True:
                 new=reduce(lambda x,y:span_cover(x,y.span or y.closure_span),p.children,None)
             else:
