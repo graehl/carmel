@@ -151,8 +151,8 @@ function main {
         if [ `nlines $irp` -gt 0 ] ; then
             graph2 2 "alignment recall" 4 "alignment precision"
             graph 3 "sample logprob"
-            grep -q $log "n-1count" && graph 5 "# of 1 count rules"
-            grep -q $log "model-size" && graph 6 "model size (characters)"
+            grep -q "n-1count" $log && graph 5 "# of 1 count rules"
+            grep -q "model-size" $log  && graph 6 "model size (characters)"
 #    graph 2 "alignment-recall"
 #    graph 4 "alignment-precision"
         else

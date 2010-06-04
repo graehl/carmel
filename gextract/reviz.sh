@@ -2,6 +2,7 @@
 export skip=1
 
 skip=1 until=5 noised=2 every=20 temp0=1 tempf=1 noise=.15 iter=160 ./do.mono.sh
+[ "$first" ] && exit
 
 skip=1 noised=2 until=3 every=10 temp0=1.5 tempf=.08 noise=.2 iter=80 ./do.mono.sh
 
@@ -9,7 +10,6 @@ skip=1 noised=2 until=3 every=10 temp0=1.5 tempf=.08 noise=.2 iter=80 ./do.mono.
 # test new log impl, no anneal
 skip=1 every=10 until=2 nin=1000 iter=50 noise=.2 noised=2 ./do.mono.sh
 
-[ "$first" ] && exit
 
 #real foreign.
 skip=1 until=10 nomono=1 iter=500 every=20 ./do.mono.sh

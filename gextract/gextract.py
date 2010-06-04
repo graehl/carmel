@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.6
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 
-TODO: better base models, incl model1 ttable or other alignment probs
+TODO: better base models, incl modelN ttable or other alignment probs
 TODO: avg counts not final?
 """
 
@@ -682,7 +682,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         return p
 
     def all_rules(self,basemodel,quote=False):
-        "list of all minimal rules: (rule,p0,root node of rule)"
+        "list of all minimal rules: (rule,logp0,root node of rule)"
         return [self.xrs_str(c,basemodel,quote)+(c,) for c in self.frontier()]
 
     @staticmethod
@@ -826,13 +826,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         for r in rcs: counts.add(r,-1)
         lp=0.
         for r in rcs:
-            p=counts.prob(r)
-            if (p<=0.):
-                warn("underflow in cache prob %g, using log10(zeroprob)=%g\n%s"%(p,log_zero,callerstring(2)))
-                l=log_zero
-            else:
-                l=math.log10(p)
-            lp+=l
+            lp+=counts.logprob(r)
             counts.add(r,1)
         return lp
 
@@ -889,8 +883,8 @@ class Training(object):
         self.netree=sum(x.netree for x in xs)
         self.ne=sum(x.ne for x in xs)
         for ex in self.examples:
-            for (rule,p,root) in ex.all_rules(self.basemodel):
-                c=counts.get(rule,p,root.label)
+            for (rule,logp,root) in ex.all_rules(self.basemodel):
+                c=counts.get(rule,logp,root.label)
                 root.count=c
                 counts.add(c,1)
             ex.make_count_attr()
