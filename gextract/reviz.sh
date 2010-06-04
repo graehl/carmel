@@ -1,8 +1,9 @@
 #!/bin/bash
 export skip=1
+skip=1 iter=100 nin=1000 noise=.3 noised=5 ./do.mono.sh
+[ "$first" ] && exit
 
 skip=1 until=5 noised=2 every=20 temp0=1 tempf=1 noise=.15 iter=160 ./do.mono.sh
-[ "$first" ] && exit
 
 skip=1 noised=2 until=3 every=10 temp0=1.5 tempf=.08 noise=.2 iter=80 ./do.mono.sh
 

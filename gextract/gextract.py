@@ -5,7 +5,7 @@ TODO: better base models, incl modelN ttable or other alignment probs
 TODO: avg counts not final?
 """
 
-version="0.9"
+version="0.95"
 
 
 import os,sys,itertools,re,operator,collections,random,math
@@ -950,7 +950,7 @@ class Training(object):
         corpuspr,_,agrees,fas=self.alignment_prstring() #TODO: compute once for alignment_report, and resuse in write_alignments?
         for x,agree,a in zip(self.examples,agrees,fas):
             if pr:
-                oi.write('i=%s %s %s (avg: %s)\n'%(iname,x.info,Alignment.agreestr(agree),corpuspr))
+                oi.write('v%s i=%s %s %s (avg: %s)\n'%(version,iname,x.info,Alignment.agreestr(agree),corpuspr))
                 i+=1
             oa.write(str(a)+'\n')
             oe.write(str(x.tree_counts(self.counts))+'\n')
@@ -1021,7 +1021,11 @@ class Training(object):
             self.gibbs()
         self.output()
 
+import time
 def gextract(opts):
+    log("gextract v%s"%version)
+    log(' '.join(sys.argv))
+    log(time.ctime())
     assert(opts.alignment_out or opts.alignments_every==0)
     if opts.header:
         justnames=['terminals','quote','attr','derivation','inbase']
