@@ -5,13 +5,13 @@ TODO: better base models, incl modelN ttable or other alignment probs
 TODO: avg counts not final?
 """
 
-version="0.95"
-
-
-import os,sys,itertools,re,operator,collections,random,math
-from itertools import izip
+import os,sys
 sys.path.append(os.path.dirname(sys.argv[0]))
 
+version="0.96"
+
+import itertools,re,operator,collections,random,math
+from itertools import izip
 import pdb
 import tree
 import optparse
