@@ -116,6 +116,7 @@ class BaseModel(object):
     "geometric dist. on # of source terminals (rule rhs); pterm prob to add another"
     "variables are placed one at a time w/ uniform distr. over # of possible placements, i.e. # of ways for placing 2 vars amongst t terminals = (t+1)*(t+2).  for n vars, prod_"
     sourcevocab=5000
+    tarvocab=5000
     "uniformly choose which terminal out of this many possibilities"
     nonterms=40
     "uniformly choose which nonterminal out of this many possiblities.  note that which are preterminals is deduced from tree structure; keeping the labels disjoint is the parser's responsbility"
@@ -128,20 +129,23 @@ class BaseModel(object):
         self.update_model()
 
     def update_model(self):
+        self.ptarword=1./self.tarvocab
         self.psourceword=self.pterm/self.sourcevocab
         self.pnonterm=1./self.nonterms
         self.pendchild=1.-self.pchild
         self.pendterm=1.-self.pterm
+        self.logptarword=math.log(self.ptarword)
         self.logpnonterm=math.log(self.pnonterm)
         self.logpendterm=math.log(self.pendterm)
         self.logpsourceword=math.log(self.psourceword)
         self.logpchild=math.log(self.pchild)
         self.logpendchild=math.log(self.pendchild)
 
-    def update_vocabsize(self,nt,nnt):
-        log("xrs base model vocab size: %d terminals and %d nonterminals"%(nt,nnt))
-        self.sourcevocab=nt
-        self.nonterms=nnt
+    def update_vocabsize(self,ents,ewords,fwords):
+        log("xrs base model vocab size: %d f terminals, %d e terminals and %d e nonterminals"%(fwords,ewords,ents))
+        self.sourcevocab=fwords
+        self.tarvocab=ewords
+        self.nonterms=ents
         self.update_model()
 
     @staticmethod
@@ -560,7 +564,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def xrs_lhs_str_r(t,foreign,fbase,basemodel,quote,xn,parent):
         "xn is variable index"
         if t.is_terminal():
-            return (xrs_quote(t.label,quote),basemodel.logpsourceword,xn)
+            return (xrs_quote(t.label,quote),basemodel.logptarword,xn)
         s=t.label+'('
         p=basemodel.logpnonterm
         preterm=t.is_preterminal()
@@ -850,14 +854,18 @@ class Training(object):
             self.golda=[Alignment(aline,t.ne,t.nf) for aline,t in izip(open(opts.golda),self.examples)]
 
     def adjust_basemodel(self):
-        "set self.basemodel.{sourcevocab,nonterms} based on actual counts in examples"
-        terms=set()
-        nonterms=set()
+        "set self.basemodel.{sourcevocab,nonterms} based on actual counts in examples.  also populate self.{evocab,fvocab,enonterms} sets"
+        evocab=set()
+        enonterms=set()
+        fvocab=set(f for t in self.examples for f in t.f)
         for x in self.examples:
             for t in x.etree.preorder():
-                (terms if t.is_terminal() else nonterms).add(t.label)
-        dump(str(nonterms))
-        self.basemodel.update_vocabsize(len(terms),len(nonterms))
+                (evocab if t.is_terminal() else enonterms).add(t.label)
+        dump(str(enonterms))
+        self.basemodel.update_vocabsize(len(enonterms),len(evocab),len(fvocab))
+        self.evocab=evocab
+        self.enonterms=enonterms
+        self.fvocab=fvocab
 
     def __str__(self):
         return "[parallel training: e-parse=%s align=%s foreign=%s]"%(self.parsef,self.alignf,self.ff)
