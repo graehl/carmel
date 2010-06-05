@@ -256,7 +256,7 @@ class Counts(object):
     def logprob(self,c):
         if c is None: return 0.
         n=self.norms[c.group]
-        return c.logprior if approx_leq(n,self.alpha) else log_prob((c.count+c.prior)/n)
+        return c.logprior if n<=self.alphaleq else log_prob((c.count+c.prior)/n)
     def prob(self,c):
         return 1. if c is None else (c.count+c.prior)/self.norms[c.group]
         #todo: include prior in count but protect from underflow: epsilon+1 - 1 == 0 (bad, can't get logprob)
@@ -290,6 +290,7 @@ class Counts(object):
         self.norms={} # on init, include the alpha term already (doesn't need to include base model p0 * alpha since p0s sum to 1)
         self.basemodel=basemodel
         self.alpha=float(basemodel.alpha)
+        self.alphaleq=self.alpha*(1+1e-5)
 #        self.logalpha=math.log(self.alpha)
         #TODO: efficient top-down non-random order for expand -> have outside to parent rule available already
     @staticmethod
@@ -841,7 +842,9 @@ class Training(object):
         self.basemodel=basemodel
         self.counts=Counts(basemodel)
         self.golda=None
+        logtime("reading training...")
         self.examples=list(self.reader())
+        logtime("read %d training examples."%len(self.examples))
         self.opts=opts
         if opts.golda:
             self.golda=[Alignment(aline,t.ne,t.nf) for aline,t in izip(open(opts.golda),self.examples)]
@@ -863,7 +866,11 @@ class Training(object):
 #        infos=tryelse(lambda:open(self.infof),itertools.imap(lambda i:"%s line #%d"%(self.inbase,i),itertools.count(0)))
         for eline,aline,fline,lineno in izip(open(self.parsef),open(self.alignf),open(self.ff),itertools.count(0)):
             iline=infof.next().strip() if infof is not None else "%s line #%d"%(self.inbase,lineno)
-            yield Translation.parse_sent(eline,aline,fline,iline,lineno)
+            try:
+                t=Translation.parse_sent(eline,aline,fline,iline,lineno)
+                yield t
+            except:
+                warn("bad translation line %d: %s %s %s %s"%(lineno,iline,eline,aline,fline))
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
     def gibbs(self):
         self.gibbs_prep()
@@ -1021,11 +1028,9 @@ class Training(object):
             self.gibbs()
         self.output()
 
-import time
 def gextract(opts):
     log("gextract v%s"%version)
     log(' '.join(sys.argv))
-    log(time.ctime())
     assert(opts.alignment_out or opts.alignments_every==0)
     if opts.header:
         justnames=['terminals','quote','attr','derivation','inbase']

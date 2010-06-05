@@ -402,6 +402,9 @@ def log_finish(s):
     sys.stderr.write(s+"\n")
 def log(s):
     sys.stderr.write("### "+s+"\n")
+import time
+def logtime(s=""):
+    log(time.ctime()+(" "+s if s else ""))
 
 def dict_slice(d,keys):
     return dict((k,d[k]) for k in keys)

@@ -126,7 +126,12 @@ function main {
     set -e
     sub=$wd/$inm
     if ! [ "$skip" ] ; then
-        ./subset-training.py -n $nin -u $inlimit --pcorrupt=$noise --dcorrupt=$noised $monoarg --inbase=$in --outbase=$sub
+        ls $sub.* || true
+        if [ "$clobber" ] || [ ! -f $sub.nonce ] ; then
+         echo "generating $sub.*"
+         ./subset-training.py -n $nin -u $inlimit --pcorrupt=$noise --dcorrupt=$noised $monoarg --inbase=$in --outbase=$sub
+         touch $sub.nonce
+        fi
     fi
     desc="$desc "`head -1 $sub.info | perl -pe 's/line \d+//'`
     alignbase=$sub.iter=$iter$annealf
