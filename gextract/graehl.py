@@ -321,8 +321,6 @@ def ps_from_logps(logps):
     logz=reduce(logadd,logps)
     return [math.exp(lp-logz) for lp in logps]
 
-from dumpx import *
-
 def choosei_logps(logps,power=1.):
     if (power!=1.):
         logps=[power*l for l in logps]
@@ -450,6 +448,10 @@ def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private
 def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
     return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
+
+def open_in(fname):
+    "if fname is '-', return sys.stdin, else return open(fname,'r')"
+    return sys.stdin if fname=='-' else open(fname,'r')
 
 def open_out(fname):
     "if fname is '-', return sys.stdout, else return open(fname,'w').  not sure if it's ok to close stdout, so let GC close file please."
