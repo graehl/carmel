@@ -195,6 +195,13 @@ class Alignment(object):
         self.efpairs=list(set((intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()))) if aline else []
         self.ne=ne
         self.nf=nf
+    def inverse(self):
+        r=self.copy_blank()
+        r.efpairs=[(b,a) for (a,b) in self.efpairs]
+        return r
+    @staticmethod
+    def inverse_str(aline):
+        return str(Alignment(aline,0,0).inverse())
     def is_identity(self):
         return self.ne==self.nf and len(self.efpairs)==self.ne and all((a,a)==b for (a,b) in itertools.izip(itertools.count(0),sorted(self.efpairs)))
     def includes_identity(self):
@@ -448,6 +455,10 @@ def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private
 def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
     return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
+
+def writeln(line,file=sys.stdout):
+    f.write(f)
+    f.write('\n')
 
 def open_in(fname):
     "if fname is '-', return sys.stdin, else return open(fname,'r')"
