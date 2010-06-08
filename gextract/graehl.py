@@ -188,20 +188,21 @@ import itertools
 
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
-    def __init__(self,aline,ne,nf):
-        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf)"
+    def __init__(self,aline,ne,nf,flip=False):
+        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf).  if flip, then aline is f-e instead.  if ne or nf is not None, bound check (should catch backwards e-f vs f-e format often)"
         def intpair(stringpair):
-            return (int(stringpair[0]),int(stringpair[1]))
+            a,b=(int(stringpair[0]),int(stringpair[1]))
+            e,f=(b,a) if flip else (a,b)
+            if (ne is None or e<ne) and (nf is None or f<nf):
+                return e,f
+            raise Exception("alignment %d-%d >= bounds %d-%d - are you reading inverse or wrong alignments? aline=%s"%(e,f,ne,nf,aline))
         self.efpairs=list(set((intpair(Alignment.apair.match(a).group(1,2)) for a in aline.strip().split()))) if aline else []
         self.ne=ne
         self.nf=nf
     def inverse(self):
-        r=self.copy_blank()
+        r=Alignment(None,self.nf,self.ne)
         r.efpairs=[(b,a) for (a,b) in self.efpairs]
         return r
-    @staticmethod
-    def inverse_str(aline):
-        return str(Alignment(aline,0,0).inverse())
     def is_identity(self):
         return self.ne==self.nf and len(self.efpairs)==self.ne and all((a,a)==b for (a,b) in itertools.izip(itertools.count(0),sorted(self.efpairs)))
     def includes_identity(self):
@@ -253,6 +254,7 @@ class Alignment(object):
         "inverse of spanadje"
         return [span_cover_points(adj) for adj in self.adjf()]
     def __str__(self):
+        "warning: no roundtrip possible because we only print pairs and not e/f len"
         return " ".join(["%d-%d"%p for p in self.efpairs])
 
 def clamp(x,a,b):
