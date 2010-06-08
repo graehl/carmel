@@ -188,11 +188,11 @@ import itertools
 
 class Alignment(object):
     apair=re.compile(r'(\d+)-(\d+)')
-    def __init__(self,aline,ne,nf,flip=False):
-        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf).  if flip, then aline is f-e instead.  if ne or nf is not None, bound check (should catch backwards e-f vs f-e format often)"
+    def __init__(self,aline,ne,nf,fe_align=False):
+        "aline is giza-format alignment: '0-0 0-1 ...' (e-f index with 0<=e<ne, 0<=f<nf).  if fe_align, then aline is f-e instead.  if ne or nf is not None, bound check (should catch backwards e-f vs f-e format often)"
         def intpair(stringpair):
             a,b=(int(stringpair[0]),int(stringpair[1]))
-            e,f=(b,a) if flip else (a,b)
+            e,f=(b,a) if fe_align else (a,b)
             if (ne is None or e<ne) and (nf is None or f<nf):
                 return e,f
             raise Exception("alignment %d-%d >= bounds %d-%d - are you reading inverse or wrong alignments? aline=%s"%(e,f,ne,nf,aline))
