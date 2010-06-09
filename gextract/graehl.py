@@ -170,12 +170,6 @@ def pr_from_agreement(truepos,falsepos,falseneg):
     R=divpos_else(truepos,truepos+falseneg,1.)
     return (P,R)
 
-def set_pr(test,gold):
-    "return (precision,recall) for test and gold as sets"
-    P=float(truepos)/len(test)
-    R=float(truepos)/len(gold)
-    return (P,R)
-
 def fmeasure(P,R,alpha_precision=.5):
     "given precision, recall, return weighted fmeasure"
     A=float(alpha_precision)
@@ -411,7 +405,30 @@ def log(s):
     sys.stderr.write("### "+s+"\n")
 import time
 def logtime(s=""):
-    log(time.ctime()+(" "+s if s else ""))
+    log(time.ctime()+(": "+s if s else ""))
+
+def sec_per(sec,N=1):
+    if N is None or N<=0: return "None finished yet"
+    if sec<=0: return "Infinitely many per sec (time precision too small to measure)"
+    return "%g sec per"%(float(sec)/N) if sec>N else "%g per sec"%(float(N)/sec)
+
+time_keys=dict()
+def log_time_since(key="",extra="",N=1):
+    t=time.time()
+    if key not in time_keys:
+        time_keys[key]=t
+        return
+    last=time_keys[key]
+    time_keys[key]=t
+    d=t-last
+    per=' (%s, N=%s)'%(sec_per(d,N),N) if N>0 else ''
+    elapsed='%s sec since last '%d
+    logtime('%s%s%s%s'%(elapsed,key,extra,per))
+
+def test_since(key="test"):
+    for i in range(0,10):
+        log_time_since(key,i,i)
+        for j in range(0,100000): a=1
 
 def dict_slice(d,keys):
     return dict((k,d[k]) for k in keys)

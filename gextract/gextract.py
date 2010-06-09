@@ -925,6 +925,9 @@ class Training(object):
         self.write_histogram()
         report_zeroprobs()
 
+    def __len__(self):
+        return len(self.examples)
+
     def alignment_iter(self,iter):
         opts=self.opts
         return (opts.alignments_every>0 and iter % opts.alignments_every == 0) or iter < opts.alignments_until
@@ -938,6 +941,7 @@ class Training(object):
         atemp=anneal_temp(iter,opts.iter,opts.temp0,opts.tempf)
         power=1.0/atemp
         tempstr=(" temp=%.4g"%atemp) if atemp!=1. else ""
+        log_time_since("starting gibbs iteration, i=",iter,len(self))
         for ex in self.examples:
             ei+=1
             root=ex.etree
