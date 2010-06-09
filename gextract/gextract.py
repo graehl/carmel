@@ -182,6 +182,11 @@ class Count(object):
     def size(self):
         "return some notion of size (number of etree nodes?) of rule. for now just # of bytes"
         return len(self.rule)
+    def lhs_rhs(self):
+        return self.rule.split(' -> ')
+    def ht(self):
+        l,r=self.lhs_rhs()
+        return sum(1 for c in l if c=='(')
     def __str__(self):
         return "{{{count=%d p0*a=%g %s}}}"%(self.count,self.prior,self.rule)
 
@@ -238,25 +243,35 @@ class Counts(object):
         return r
     def used_rules(self):
         "return only those Count objects whose count>0"
-        return [x for x in self.rules.itervalues() if x.count>0.]
+        return [x for x in self.rules.itervalues() if x.count>0.01]
+    def hist(self,f_count):
+        h=Histogram()
+        for r in self.used_rules():
+            h.count(f_count(r))
+        return h
+    def count(self,filter_count):
+        return sum(1 for r in self.used_rules() if filter_count(r))
     def freq_hist(self):
         "return histogram of rule counts"
-        h=Histogram()
-        for r in self.used_rules():
-            h.count(r.count)
-        return h
-    def n_1counts(self):
-        "first bin of freq_hist - # of rules w/ count=1"
-        return sum(1 for r in self.used_rules() if approx_equal(r.count,1.))
-    def model_size(self):
-        "# of chars in all rules w/ count > 0"
-        return sum(len(r.rule) for r in self.used_rules() if r.count>0.00001)
+        return self.hist(lambda r:r.count)
+    def ht_hist(self):
+        return self.hist(lambda r:r.ht())
     def size_hist(self):
         "return histogram of rule sizes"
-        h=Histogram()
-        for r in self.used_rules():
-            h.count(r.size())
-        return h
+        return self.hist(lambda r:r.size())
+    def n_ht(self,ht=1):
+        return self.count(lambda r:r.ht()==ht)
+    def n_rules(self):
+        return len(self.used_rules())
+    def n_counteq(self,ceq=1.):
+        "first bin of freq_hist - # of rules w/ count=1"
+        return self.count(lambda r:approx_equal(r.count,ceq))
+#        return sum(1 for r in self.used_rules() if approx_equal(r.count,1.))
+    def summary(self):
+        return 'n-rules=%s n-ht1=%s n-1count=%s model-size=%s'%(self.n_rules(),self.n_ht(1),self.n_counteq(1),self.model_size())
+    def model_size(self):
+        "# of chars in all rules w/ count > 0"
+        return sum(r.size() for r in self.used_rules())
     def logprob(self,c):
         if c is None: return 0.
         n=self.norms[c.group]
@@ -694,7 +709,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
     def fetree(etree):
         return etree.relabel(lambda t:t.label+span_str(t.span))
 
-    def count_str(self,node,counts):
+    def count_str(self,node,counts,fspan=True):
         try:
             s=node.span
             c=node.count
@@ -702,7 +717,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         except:
             return ""
 #        ss=span_str(node.span)
-        return ":***%s"%counts.count_str(c)
+        return "%s:***%s"%((span_str(s) if fspan else ''),counts.count_str(c))
 
     def tree_counts(self,counts):
         return self.etree.relabel(lambda t:t.label+self.count_str(t,counts))
@@ -826,7 +841,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 t.count=None
 
     def cache_prob(self,counts):
-        "return log10(prob) of current derivation correctly under cache model"
+        "return log10(prob) of current derivation correctly under cache model, given all the other derivations as history"
         rcs=[t.count for t in self.etree.preorder() if t.count is not None]
         for r in rcs: counts.add(r,-1)
         lp=0.
@@ -912,9 +927,11 @@ class Training(object):
 
     def alignment_iter(self,iter):
         opts=self.opts
-        return opts.alignments_every>0 and iter % opts.alignments_every == 0 or iter < opts.alignments_until
+        return (opts.alignments_every>0 and iter % opts.alignments_every == 0) or iter < opts.alignments_until
 
     def gibbs_iter(self,iter):
+        if self.alignment_iter(iter):
+            self.write_alignments(iter)
         opts=self.opts
         lp=0.
         ei=0
@@ -942,9 +959,8 @@ class Training(object):
             lp+=elp
         if opts.histogram:
             self.write_histogram(iter)
-        if self.alignment_iter(iter):
-            self.write_alignments(iter)
-        log("gibbs iter=%d log10(cache-prob)=%f%s n-1count=%s model-size=%s %s"%(iter,lp,tempstr,self.counts.n_1counts(),self.counts.model_size(),self.alignment_report(iter)))
+        c=self.counts
+        log("gibbs iter=%d log10(cache-prob)=%f%s %s %s"%(iter,lp,tempstr,self.counts.summary(),self.alignment_report(iter)))
         report_zeroprobs()
 
     def write_alignments(self,iter):
@@ -977,6 +993,7 @@ class Training(object):
         header="minimal ghkm" if iter is None else "gibbs iter %d"%iter
         log("%s size histogram: %s"%(header,self.counts.size_hist()))
         log("%s rule frequency histogram: %s"%(header,self.counts.freq_hist()))
+        log("%s rule height histogram: %s"%(header,self.counts.ht_hist()))
 
     def alignment_prstring(self):
         fas=[ex.full_alignment() for ex in self.examples]
@@ -1030,7 +1047,7 @@ class Training(object):
         global noisy_log
         noisy_log=self.opts.verbose>3
         self.ghkm()
-        if self.opts.alignments_every>0: self.write_alignments('ghkm')
+        if self.alignment_iter(0): self.write_alignments('ghkm')
         log("minimal ghkm "+self.alignment_report())
         if self.opts.iter>0:
             self.gibbs()

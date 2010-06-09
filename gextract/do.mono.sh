@@ -17,20 +17,36 @@ function graph {
 
 function graph2 {
     local y=$1
-    local ylbl=$2
+    local ylbl="$2"
     local y2=$3
-    local ylbl2=$4
-    local ylbldistance=${3:-'0.7"'}
+    local ylbl2="$4"
+    local ylbldistance=${5:-'0.7"'}
     local obase=$alignbase.y=$y.`filename_from $ylbl`.y2=$y2.`filename_from $ylbl2`
     local of=$obase.png
     local ops=$obase.ps
         #yrange=0
-    set -x
     plboth $obase -prefab lines data=$irp x=1 pointsym=none pointsym2=none y=$y name="$ylbl" y2=$y2 name2="$ylbl2" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" -scale 1.4
-    set +x
     echo $of
     graphps="$graphps $ops"
 }
+
+function graph3 {
+    local y=$1
+    local ylbl="$2"
+    local y2=$3
+    local ylbl2="$4"
+    local y3=$5
+    local ylbl3="$6"
+    local ylbldistance=${7:-'0.7"'}
+    local obase=$alignbase.y=$y.`filename_from $ylbl`.y2=$y2.`filename_from $ylbl2`.y3=$y3.`filename_from $ylbl3`
+    local of=$obase.png
+    local ops=$obase.ps
+        #yrange=0
+    plboth $obase -prefab lines data=$irp x=1 pointsym=none pointsym2=none y=$y name="$ylbl" y2=$y2 name2="$ylbl2" y3=$y3 name3="$ylbl3" ylbldistance=$ylbldistance xlbl=iter title="$annealdesc$desc" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" -scale 1.4
+    echo $of
+    graphps="$graphps $ops"
+}
+
 
 function vizsub {
     echo -- vizsub "$@"
@@ -56,7 +72,7 @@ function vizsub {
     fi
 }
 
-function main {
+function cfg {
     wd=${wd:-exp}
     noised=${noised:-4}
     iter=${iter:-50}
@@ -96,9 +112,9 @@ function main {
         vizro=--skip-identity
     fi
     vizsubopt=${vizsubopt:-$vizro}
-    [ "$vizall" ] || vaopt=-s
-
-    mkdir -p $wd
+    if ! [ "$vizall" ] || [ "$vsid" ] ; then
+      vaopt=-s
+    fi
     ntrain=`nlines $in.f`
     showvars_required wd noise iter in nviz nin temp0 tempf vizhead lang until
     showvars_optional vizsubopt justgraph skip vizrecall vizall mono nomono skipviz every
@@ -119,12 +135,17 @@ function main {
 
     if [ "$nin" -gt "$ntrain" ] ; then
         echo "corpus $in has only $ntrain lines"
+        nin=$ntrain
     else
         oname=first-$nin.$oname
     fi
     inm=$oname.0$noise
-    set -e
     sub=$wd/$inm
+}
+
+function main {
+    mkdir -p $wd
+    set -e
     if ! [ "$skip" ] ; then
         ls $sub.* || true
         if [ "$clobber" ] || [ ! -f $sub.nonce ] ; then
@@ -151,12 +172,16 @@ function main {
     if ! [ "$noviz" ] ; then
         comment="iter=$iter"
         irp=$alignbase.irp
-        $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size' -missing 0 -allow-missing 2 $log > $irp
+        $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size,F(0.6),n-rules,n-ht1' -missing 0 -allow-missing 4 $log > $irp
         graphps=""
         if [ `nlines $irp` -gt 0 ] ; then
-            graph2 2 "alignment recall" 4 "alignment precision"
             graph 3 "sample logprob"
-            grep -q "n-1count" $log && graph 5 "# of 1 count rules"
+            graph3 2 "alignment-recall" 4 "alignment-precision" 7 "alignment-F-measure"
+            if grep -q "n-ht1" $log ; then
+                graph3 5 "#-count-1-rules" 8 "#-rules" 9 "#-height-1-rules"
+            else
+                grep -q "n-1count" $log && graph 5 "# of 1 count rules"
+            fi
             grep -q "model-size" $log  && graph 6 "model size (characters)"
 #    graph 2 "alignment-recall"
 #    graph 4 "alignment-precision"
@@ -168,7 +193,7 @@ function main {
         vizsub $sub $alignbase
         if [ "$every" ] ; then
             set +e
-            for i in  ghkm `seq 0 $iter`; do
+            for i in `seq 0 $iter`; do
                 afb=$alignbase.i=$i
                 af=$afb.a
                 [ -f $af ] && vizsub $sub $afb 2>/dev/null
@@ -186,4 +211,7 @@ function main {
     grep zeroprob $log || echo "no zeroprob"
 }
 
-main;exit
+cfg
+if ! [ "$nomain" ]  ; then
+    main;exit
+fi
