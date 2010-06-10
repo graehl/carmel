@@ -1,0 +1,11 @@
+3935:
+
+(TOP~1~1 -0.00000 (S~1~1 -0.00000 (S-BAR~3~3 -0.00000 (NP-C~1~1 -0.00000 (NPB~1~1 -0.00000 (PRP we) ) ) (ADVP~1~1 -0.00000 (RB also) ) (VP~2~1 -0.00000 (VBD did) (NP-C~2~1 -0.00000 (NPB~1~1 -0.00000 (NNS interviews) ) (PP~2~1 -0.00000 (IN in) (NP-C~2~1 -0.00000 (NPB~2~2 -0.00000 (DT the) (NN market) ) (PP~2~1 -0.00000 (IN of) (NP-C~2~1 -0.00000 (NPB~2~2 -0.00000 (DT a) (NN village) ) (VP~2~1 -0.00000 (VBN called) (SG-C~1~1 -0.00000 (VP~3~3 -0.00000 (LST~4~4 -0.00000 (-LRB- () (-LRB- () (NN wokatu) (-RRB- )) ) (ADVP~3~2 -0.00000 (NP~1~1 -0.00000 (NPB~2~2 -0.00000 (SYM ),) (NPB-BAR~2~2 -0.00000 (CD 87) (NNS kilometers) ) ) ) (RB south) (PP~2~1 -0.00000 (IN of) (NP-C~1~1 -0.00000 (NPB~1~1 -0.00000 (NN arba) ) ) ) ) (VB minch) ) ) ) ) ) ) ) ) ) ) (. .) ) )
+
+(SYM ),) means ")," ?
+
+1660:
+
+(TOP~1~1 -0.00000 (S~2~2 -0.00000 (NP-C~1~1 -0.00000 (NPB~2~2 -0.00000 (CD 1,320) (NNS journalists) ) ) (VP~3~1 -0.00000 (VBP have) (ADVP~1~1 -0.00000 (RB already) ) (VP-C~2~1 -0.00000 (VBN registered) (PRN~3~1 -0.00000 (PRN-BAR~2~1 -0.00000 (-LRB- () (NP~2~1 -0.00000 (NP-BAR~1~1 -0.00000 (NPB~1~1 -0.00000 (NNS writers) ) (: :) ) (NP~1~1 -0.00000 (NPB~1~1 -0.00000 (CD 601) ) ) ) ) (, ,) (NP~2~1 -0.00000 (NPB~2~2 -0.00000 (NN press) (NNS photographers) ) (: :) (NP~1~1 -0.00000 (NPB~1~1 -0.00000 (CD 171) ) ) ) (, ,) (NP~2~1 -0.00000 (NP-BAR~2~1 -0.00000 (NP-BAR~2~1 -0.00000 (NP-BAR~1~1 -0.00000 (NPB~2~2 -0.00000 (NML~2~1 -0.00000 (NML-BAR~2~1 -0.00000 (NN radio) (CC and) ) (NN television) ) (NNS reporters) ) (: :) ) (NP~1~1 -0.00000 (NPB~1~1 -0.00000 (CD 400) ) ) ) (, ,) (NP~1~1 -0.00000 (NPB~1~1 -0.00000 (FW etc.) ) ) ) (X~1~1 -0.00000 (SYM ).) ) ) ) ) ) ) )
+
+(SYM ).) means ")." ?

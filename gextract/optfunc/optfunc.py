@@ -58,6 +58,9 @@ def func_to_optionparser(func):
 
     # Add the options, automatically detecting their -short and --long names
     shortnames = set(['h'])
+    for name,_ in options.items():
+        if single_char_prefix_re.match(name):
+            shortnames.add(name[0])
     for funcname, example in options.items():
         # They either explicitly set the short with x_blah...
         name = funcname
@@ -94,7 +97,6 @@ def func_to_optionparser(func):
             if example==sys.maxint: examples="INFINITY"
             if example==(-sys.maxint-1): examples="-INFINITY"
         help_post=' (default: %s)'%examples
-        args=short_name
         kwargs=dict(action=action, dest=name, default=example,
             help = helpdict.get(funcname, '')+help_post,
             type=optype(type(example)))

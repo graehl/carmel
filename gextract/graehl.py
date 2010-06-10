@@ -109,6 +109,9 @@ def log_prob(p):
         return log_zero
     return math.log(p)
 
+def warn(msg,pre="WARNING: "):
+    sys.stderr.write(pre+str(msg)+"\n")
+
 def report_zeroprobs():
     "print (and return) any zero probs since last call"
     global n_zeroprobs
@@ -570,8 +573,17 @@ def span_str(s):
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
 radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
 radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
+sym_rrb=re.compile(r'\((\S+(-\d+)?) (\S+)\)(?= |$)')
+rparen=re.compile(r'\)')
+lparen=re.compile(r'\(')
+def escape_paren(s):
+    s=rparen.sub('-RRB-',s)
+    return lparen.sub('-LRB-',s)
+def rrb_repl(match):
+    return '(%s %s)'%(match.group(1),escape_paren(match.group(3)))
 def radu2ptb(t):
     t=radu_drophead.sub(r'(\1',t)
     t=radu_lrb.sub(r'(\1 -LRB-)',t)
     t=radu_rrb.sub(r'(\1 -RRB-)',t)
+    t=sym_rrb.sub(rrb_repl,t)
     return t

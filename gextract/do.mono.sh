@@ -58,17 +58,24 @@ function vizsub {
     nviz=${nviz:-6}
     lang=${lang:-eng}
     local in=$1
-    comment=${comment:-$in}
+    comment=${comment:-"$in"}
     local alignb=${2:-$in}
     local vizout=$alignb.first$nviz
     local vizpdf=$vizout.pdf
     allvizpdf="$allvizpdf $vizpdf"
 #        echo lang=$lang vizalign $vizout $vaopt
-    if [ "$skipviz" ] || [ ! -f $alignb.a ] ; then
-        echo skipping $alignb.a
+    #
+    local wholea=$alignb.a
+    local wholei=$alignb.info
+    if [ "$skipviz" ] || ! [ -f $wholea ]; then
+        echo skipping $wholea
     else
-        ./subset-training.py --align-in=$alignb.a --info-in=$alignb.info --etree-in=$alignb.e-parse --comment="$comment" -l 10 $limarg -n $nviz --inbase=$in --outbase=$vizout $vizsubopt
-        showcmd=1 lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
+        wc -l $wholea
+        ./subset-training.py --align-in=$wholea --info-in=$wholei --etree-in=$alignb.e-parse --inbase=$in --outbase=$vizout --output-lines=$nviz --lower-length=10 $limarg  $vizsubopt --comment=$comment
+#         --comment=$comment -l 10 $limarg -n $nviz  $vizsubopt
+        wc -l $vizout.a
+        #showcmd=1
+        lang=$lang vizalign $vizout $vaopt && echo $vizout.pdf
     fi
 }
 
@@ -196,7 +203,7 @@ function main {
             for i in `seq 0 $iter`; do
                 afb=$alignbase.i=$i
                 af=$afb.a
-                [ -f $af ] && vizsub $sub $afb 2>/dev/null
+                [ -f $af ] && vizsub $sub $afb
             done
         fi
         if [ "$vizhead" -gt 0 ] ; then

@@ -24,6 +24,8 @@ usage.set_defaults(inbase="astronauts",outbase="-",monotone=False,begin=0,end=sy
 from graehl import *
 from dumpx import *
 
+#warn(' '.join(sys.argv))
+
 import tree
 def raduparse(t):
     t=radu2ptb(t)
@@ -38,7 +40,8 @@ import random
 @optfunc.arghelp('pcorrupt','if > 0, corrupt each link in output.a with this probability; write uncorrupted alignment to .a-gold')
 @optfunc.arghelp('dcorrupt','move both the e and f ends of a distorted link within +-d')
 @optfunc.arghelp('skip_includes_identity','skip sentences that do not have recall=1 for the identity alignment (#e = #f and (i,i) link is set for 0<=i<#f')
-def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,n_output_lines=INF,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,skip_includes_identity=False,align_in="",info_in="",etree_in=""):
+@optfunc.arghelp('begin','on line numbers pre-filtering, output lines from [begin,end)')
+def subset_training(n_output_lines=INF,inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,skip_includes_identity=False,align_in="",info_in="",etree_in="",estring_out=False,fileline=False,clean_eparse_out=False):
     "filter inbase.{e-parse,a,f} to outbase"
 #    dump(str(Locals()))
     oa=open_out_prefix(outbase,".a")
@@ -46,6 +49,10 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
     of=open_out_prefix(outbase,".f")
     inf=open(inbase+".f")
     oe=open_out_prefix(outbase,".e-parse")
+    if estring_out:
+        oes=open_out_prefix(outbase,".e")
+    if clean_eparse_out:
+        oeclean=open_out_prefix(outbase,".clean-e-parse")
     oinfo=open_out_prefix(outbase,".info")
     ine=open_first(etree_in,inbase+".e-parse")
     iinfo=open_first(info_in,inbase+".info")
@@ -68,10 +75,12 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
         desc=descbase
         if comment:
             desc+="%s: "%comment
+        fldesc="%s line %d"%(inbase,lineno)
         if iinfo is None:
-            desc+="%s line %d"%(inbase,lineno)
+            desc+=fldesc
         else:
-            desc+=iinfo.readline().strip()
+            desc+=iinfo.readline().strip()+(" (%s)"%fldesc if fileline else "")
+
         if not (lineno>=begin and lineno<end): continue
         etree=raduparse(eline)
         estring=[]
@@ -79,8 +88,6 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
             estring=etree.yield_labels()
         ne=len(estring)
         if ne>upper_length or ne<lower_length: continue
-        if n>=n_output_lines: break
-        n+=1
         if monotone:
             fline=' '.join([s.upper() for s in estring])+'\n'
             aline=' '.join(['%d-%d'%(i,i) for i in range(0,ne)])+'\n'
@@ -88,15 +95,21 @@ def subset_training(inbase="training",outbase="-",upper_length=INF,lower_length=
         a=Alignment(aline,ne,nf)
         if skip_identity and a.is_identity(): continue
         if skip_includes_identity and a.includes_identity(): continue
+        if n>=n_output_lines: break
+        n+=1
+
         if distort:
             oagold.write(aline)
             a.corrupt(pcorrupt,dcorrupt)
             aline=str(a)+'\n'
-
-        oa.write(aline)
+        oinfo.write(desc+"\n")
+        if estring_out:
+            oes.write(' '.join(estring)+'\n')
+        if clean_eparse_out:
+            oeclean.write(str(etree)+'\n')
         of.write(fline)
         oe.write(eline)
-        oinfo.write(desc+"\n")
+        oa.write(aline)
     log("%d lines written"%n)
 optfunc.main(subset_training)
 
