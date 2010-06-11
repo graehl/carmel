@@ -7,23 +7,38 @@ import sys,re,random,math
 
 from itertools import izip
 
+def mapdictv(d,f):
+    "copy of dict d but with keys v replaced by f(v), or deleted if None"
+    d2=dict()
+    for k,v in d.iteritems():
+        v2=f(v)
+        if v2 is not None:
+            d2[k]=v2
+    return d2
+
 log_zero=-1e10
 n_zeroprobs=0
 
+epsilon=1e-5
+neg_epsilon=-epsilon
+
+def approx_zero(x,epsilon=epsilon):
+    return abs(x)<=epsilon
+
 # see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
-def approx_equal(x,a,epsilon=.000001):
+def approx_equal(x,a,epsilon=epsilon):
     return abs(x-a) <= (abs(x)+abs(a))*epsilon
 
-def approx_leq(x,a,epsilon=.000001):
+def approx_leq(x,a,epsilon=epsilon):
     return x <= a+epsilon*(abs(x)+abs(a))
 
-def approx_geq(x,a,epsilon=.000001):
+def approx_geq(x,a,epsilon=epsilon):
     return x+epsilon*(abs(x)+abs(a)) >= a
 
-def definitely_gt(x,a,epsilon=.000001):
+def definitely_gt(x,a,epsilon=epsilon):
     return x > a+epsilon*(abs(x)+abs(a))
 
-def definitely_lt(x,a,epsilon=.000001):
+def definitely_lt(x,a,epsilon=epsilon):
     return x+epsilon*(abs(x)+abs(a)) < a
 
 def take(n,gen):
@@ -571,8 +586,8 @@ def span_str(s):
 
 
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
-radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
-radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
+#radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
+#radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
 sym_rrb=re.compile(r'\((\S+(-\d+)?) (\S+)\)(?= |$)')
 rparen=re.compile(r'\)')
 lparen=re.compile(r'\(')
@@ -581,9 +596,10 @@ def escape_paren(s):
     return lparen.sub('-LRB-',s)
 def rrb_repl(match):
     return '(%s %s)'%(match.group(1),escape_paren(match.group(3)))
-def radu2ptb(t):
-    t=radu_drophead.sub(r'(\1',t)
-    t=radu_lrb.sub(r'(\1 -LRB-)',t)
-    t=radu_rrb.sub(r'(\1 -RRB-)',t)
+def radu2ptb(t,strip_head=True):
+    "radu format: all close parens that indicate tree structure are followed by space or end, so that () are legal within symbols - we escape them to -LRB- -RRB- for handling by tree.py.  also, we strip head info"
+    if strip_head: t=radu_drophead.sub(r'(\1',t)
+#    t=radu_lrb.sub(r'(\1 -LRB-)',t)
+#    t=radu_rrb.sub(r'(\1 -RRB-)',t)
     t=sym_rrb.sub(rrb_repl,t)
     return t

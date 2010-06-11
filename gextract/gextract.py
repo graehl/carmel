@@ -5,12 +5,18 @@ TODO: better base models, incl modelN ttable or other alignment probs
 TODO: avg counts not final?
 """
 
+import zlib
+
+compressed_size=True
+drop_0counts=True
+# save memory.
+
 import os,sys
 sys.path.append(os.path.dirname(sys.argv[0]))
 
 version="0.96"
 
-import itertools,re,operator,collections,random,math
+import itertools,re,operator,collections,random,math,traceback
 from itertools import izip
 import pdb
 import tree
@@ -177,6 +183,16 @@ class Count(object):
         self.prior=math.exp(logprior)*alpha
         self.count=0.
         self.group=group  #TODO: speedup: store ref to directly mutable cell rather than root label for hash
+    def start_check(self):
+        self.check=0
+        assertle(0,self.count)
+    def inc_check(self,norms):
+        self.check+=1
+        norms[self.group]-=1
+        assertle(neg_epsilon,norms[self.group])
+        assertle(self.check,self.count)
+    def finish_check(self):
+        asserteq(self.check,self.count,"Count check")
     def reset(self):
         self.count=0
     def size(self):
@@ -241,9 +257,26 @@ class Counts(object):
 #        dump(rule,logprior,self.alpha,group,str(r))
         self.rules[rule]=r
         return r
+    def start_check(self):
+        for x in self.rules.itervalues():
+            x.start_check()
+    def finish_check(self):
+        for x in self.rules.itervalues():
+            x.finish_check()
+    def del_0count(self):
+        "if count=0, then it's not being used anywhere in the sample.  return how many were deleted (space freed up), and # rules pre-deletion"
+        r=self.rules
+        ndel=0
+        rv=r.values()
+        for x in rv:
+            assert(x.count>=0)
+            if x.count==0:
+                del r[x.rule]
+                ndel+=1
+        return ndel,len(rv)
     def used_rules(self):
         "return only those Count objects whose count>0"
-        return [x for x in self.rules.itervalues() if x.count>0.01]
+        return [x for x in self.rules.itervalues() if x.count>0]
     def hist(self,f_count):
         h=Histogram()
         for r in self.used_rules():
@@ -268,10 +301,16 @@ class Counts(object):
         return self.count(lambda r:approx_equal(r.count,ceq))
 #        return sum(1 for r in self.used_rules() if approx_equal(r.count,1.))
     def summary(self):
-        return 'n-rules=%s n-ht1=%s n-1count=%s model-size=%s'%(self.n_rules(),self.n_ht(1),self.n_counteq(1),self.model_size())
+        cs=(" compressed-model-size=%s"%self.compressed_model_size()) if compressed_size else ''
+        nall=len(self.rules)
+        n=self.n_rules()
+        return 'n-rules=%s n-1count=%s n-0count=%s n-ht1=%s model-size=%s%s'%(n,self.n_counteq(1),nall-n,self.n_ht(1),self.model_size(),cs)
     def model_size(self):
         "# of chars in all rules w/ count > 0"
         return sum(r.size() for r in self.used_rules())
+    def compressed_model_size(self):
+        "# of comprssed chars in all rules w/ count > 0"
+        return len(zlib.compress('\n'.join(r.rule for r in self.used_rules())))
     def logprob(self,c):
         if c is None: return 0.
         n=self.norms[c.group]
@@ -730,6 +769,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         etree=raduparse(eline)
         e=etree.yield_labels()
         f=fline.strip().split()
+#        dump(etree,len(e),e,len(f),f)
         a=Alignment(aline,len(e),len(f))
         return Translation(etree,e,a,f,info.strip(),int(lineno))
 
@@ -850,6 +890,11 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
             counts.add(r,1)
         return lp
 
+    def check_counts(self,norms):
+        for t in self.etree.preorder():
+            c=t.count
+            if c is not None: c.inc_check(norms)
+
 class Training(object):
     def __init__(self,parsef,alignf,ff,infof,opts,basemodel=basemodel_default):
         self.output_files=dict()
@@ -868,6 +913,21 @@ class Training(object):
         if opts.golda:
             self.golda=[Alignment(aline,t.ne,t.nf) for aline,t in izip(open(opts.golda),self.examples)]
 
+    def check_counts(self):
+        cs=self.counts
+        cs.start_check()
+        a=cs.alpha
+#        dump(cs.norms)
+        sums=mapdictv(cs.norms,lambda n:n-a)
+#        dump(sums)
+        #dict((k,s-a) for k,s in cs.norms.iteritems())
+        for x in self.examples:
+            x.check_counts(sums)
+        for k,v in sums.iteritems():
+            if not approx_zero(v):
+                assertfail(1,"for current sample - normgroup %s didn't have expected sum=%g; difference of %g"%(k,cs.norms[k]-cs.alpha,v))
+        cs.finish_check()
+
     def adjust_basemodel(self):
         "set self.basemodel.{sourcevocab,nonterms} based on actual counts in examples.  also populate self.{evocab,fvocab,enonterms} sets"
         evocab=set()
@@ -876,7 +936,7 @@ class Training(object):
         for x in self.examples:
             for t in x.etree.preorder():
                 (evocab if t.is_terminal() else enonterms).add(t.label)
-        dump(str(enonterms))
+#        dump(str(enonterms))
         self.basemodel.update_vocabsize(len(enonterms),len(evocab),len(fvocab))
         self.evocab=evocab
         self.enonterms=enonterms
@@ -891,9 +951,10 @@ class Training(object):
             iline=infof.next().strip() if infof is not None else "%s line #%d"%(self.inbase,lineno)
             try:
                 t=Translation.parse_sent(eline,aline,fline,iline,lineno)
+#                warn("good line %d: %s %s %s %s %s - %s"%(lineno,str(t),iline,eline,aline,fline))
                 yield t
             except:
-                warn("bad translation line %d: %s %s %s %s"%(lineno,iline,eline,aline,fline))
+                warn("bad translation line %d: %s %s %s %s - %s"%(lineno,iline,eline,aline,fline,traceback.format_exc()))
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
     def gibbs(self):
         self.gibbs_prep()
@@ -933,6 +994,7 @@ class Training(object):
         return (opts.alignments_every>0 and iter % opts.alignments_every == 0) or iter < opts.alignments_until
 
     def gibbs_iter(self,iter):
+        self.check_counts()
         if self.alignment_iter(iter):
             self.write_alignments(iter)
         opts=self.opts
@@ -963,8 +1025,11 @@ class Training(object):
             lp+=elp
         if opts.histogram:
             self.write_histogram(iter)
-        c=self.counts
-        log("gibbs iter=%d log10(cache-prob)=%f%s %s %s"%(iter,lp,tempstr,self.counts.summary(),self.alignment_report(iter)))
+        cs=self.counts
+        droppeds=''
+        if drop_0counts:
+            droppeds=" deleted-0count=%d"%cs.del_0count()[0] # n-anycount=%d
+        log("gibbs iter=%d log10(cache-prob)=%f%s %s %s%s"%(iter,lp,tempstr,cs.summary(),self.alignment_report(iter),droppeds))
         report_zeroprobs()
 
     def write_alignments(self,iter):
@@ -1048,7 +1113,8 @@ class Training(object):
             t.ghkm(self.opts.terminals)
 
     def main(self):
-        global noisy_log
+        global noisy_log,drop_0counts
+        drop_0counts=self.opts.delete_0count
         noisy_log=self.opts.verbose>3
         self.ghkm()
         if self.alignment_iter(0): self.write_alignments('ghkm')
@@ -1088,7 +1154,7 @@ class TestTranslation(unittest.TestCase):
         header_full_align=False
         rules=True
         randomize=False
-        iter=2
+        iter=20
         test=False
         outputevery=10
         header_full_align=False
@@ -1100,6 +1166,7 @@ class TestTranslation(unittest.TestCase):
         temp0=tempf=1.
         outbase='-'
         force_top_s=True
+        delete_0count=True
         self.opts=Locals()
         self.train=Training(inbase+".e-parse",inbase+".a",inbase+".f",inbase+".info",self.opts)
     def test_output(self):
@@ -1122,7 +1189,7 @@ import optfunc
 @optfunc.arghelp('temp0','temperature 1 means no annealing, 2 means ignore prob, near 0 means deterministic best prob; tempf at final iteration and temp0 at first')
 @optfunc.arghelp('force_top_s','force unary TOP(X(...)) to be distinct rule, i.e. X gets a rule as does TOP')
 
-def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.,force_top_s=True,alignments_until=0):
+def optfunc_gextract(inbase="astronauts",terminals=False,quote=True,features=True,header=True,derivation=False,alignment_out=None,header_full_align=False,rules=True,randomize=False,iter=2,test=True,outputevery=0,verbose=1,swap=True,golda="",histogram=False,outbase="-",alignments_every=0,temp0=1.,tempf=1.,force_top_s=True,alignments_until=0,delete_0count=True):
     if test:
         sys.argv=sys.argv[0:1]
         unittest.main()

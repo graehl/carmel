@@ -89,6 +89,10 @@ def assertcmpi(back,a,cmp,b,*r):
     if not cmps[cmp](a,b):
         assertfail(1+back,cmp,a,b,*r)
 
+def assertle(a,b,*addl):
+    if not a<=b:
+        assertfail(1,"a<=b",a,b,*addl)
+
 def assertcmp(*r):
     assertcmpi(1,*r)
 
