@@ -179,7 +179,7 @@ function main {
     if ! [ "$noviz" ] ; then
         comment="iter=$iter"
         irp=$alignbase.irp
-        $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size,F(0.6),n-rules,n-ht1' -missing 0 -allow-missing 4 $log > $irp
+        $eff -f 'iter,R,log10(cache-prob),P,n-1count,model-size,F(0.6),n-rules,n-ht1,compressed-model-size' -missing 0 -allow-missing 5 $log > $irp
         graphps=""
         if [ `nlines $irp` -gt 0 ] ; then
             graph 3 "sample logprob"
@@ -189,7 +189,11 @@ function main {
             else
                 grep -q "n-1count" $log && graph 5 "# of 1 count rules"
             fi
-            grep -q "model-size" $log  && graph 6 "model size (characters)"
+            if grep -q "compressed-model-size" $log ; then
+                graph2 6 "model-size-bytes" 10 "model-size-GZIPped-bytes"
+            else
+                grep -q "model-size" $log  && graph 6 "model size (characters)"
+            fi
 #    graph 2 "alignment-recall"
 #    graph 4 "alignment-precision"
         else
