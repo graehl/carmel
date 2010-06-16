@@ -44,6 +44,7 @@ import random
 def subset_training(n_output_lines=INF,inbase="training",outbase="-",upper_length=INF,lower_length=0,begin=0,end=INF,monotone=False,pcorrupt=0.,dcorrupt=4,comment="",skip_identity=False,skip_includes_identity=False,align_in="",info_in="",etree_in="",estring_out=False,fileline=False,clean_eparse_out=False):
     "filter inbase.{e-parse,a,f} to outbase"
 #    dump(str(Locals()))
+    sys.stderr.write('### %s\n'%Locals())
     oa=open_out_prefix(outbase,".a")
     ina=open(align_in if align_in else inbase+".a")
     of=open_out_prefix(outbase,".f")
@@ -82,16 +83,18 @@ def subset_training(n_output_lines=INF,inbase="training",outbase="-",upper_lengt
             desc+=iinfo.readline().strip()+(" (%s)"%fldesc if fileline else "")
 
         if not (lineno>=begin and lineno<end): continue
+        nf=len(fline.split())
         etree=raduparse(eline)
         estring=[]
         if etree is not None:
             estring=etree.yield_labels()
-        ne=len(estring)
+            ne=len(estring)
+        else:
+            ne=nf
         if ne>upper_length or ne<lower_length: continue
         if monotone:
             fline=' '.join([s.upper() for s in estring])+'\n'
             aline=' '.join(['%d-%d'%(i,i) for i in range(0,ne)])+'\n'
-        nf=len(fline.split())
         a=Alignment(aline,ne,nf)
         if skip_identity and a.is_identity(): continue
         if skip_includes_identity and a.includes_identity(): continue

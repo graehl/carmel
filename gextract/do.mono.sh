@@ -70,8 +70,10 @@ function vizsub {
     if [ "$skipviz" ] || ! [ -f $wholea ]; then
         echo skipping $wholea
     else
-        wc -l $wholea
+#        wc -l $wholea $wholei
+#        set -x
         ./subset-training.py --align-in=$wholea --info-in=$wholei --etree-in=$alignb.e-parse --inbase=$in --outbase=$vizout --output-lines=$nviz --lower-length=10 $limarg  $vizsubopt --comment=$comment
+#        set +x
 #         --comment=$comment -l 10 $limarg -n $nviz  $vizsubopt
         wc -l $vizout.a
         #showcmd=1
@@ -207,6 +209,7 @@ function main {
             for i in `seq 0 $iter`; do
                 afb=$alignbase.i=$i
                 af=$afb.a
+#                ls -l $af
                 [ -f $af ] && vizsub $sub $afb
             done
         fi
