@@ -3,9 +3,29 @@
  figure out python logging lib
 """
 
-import sys,re,random,math
+import sys,re,random,math,os
 
 from itertools import izip
+
+def mismatch_text(xs,ys,xname='xs',yname='ys',pre='mismatch: '):
+    if xs==ys:
+        return ''
+    i=first_mismatch(xs,ys)
+    if i<len(xs):
+        if i<len(ys):
+            return '%s%s[%d]!=%s[%d] ( %s != %s )'%(pre,xname,i,yname,i,xs[i],ys[i])
+        else:
+            return '%s%s longer than %s'%(pre,xname,yname)
+    else:
+        return '%s%s shorter than %s'%(pre,xname,yname)
+
+def first_mismatch(xs,ys):
+    "return first index where xs[i]!=ys[i], i.e. i may be len(xs) or len(ys) if no mismatch"
+    l=min(len(xs),len(ys))
+    for i in range(0,l):
+        if xs[i]!=ys[i]:
+            return i
+    return l
 
 def mapdictv(d,f):
     "copy of dict d but with keys v replaced by f(v), or deleted if None"
@@ -124,8 +144,15 @@ def log_prob(p):
         return log_zero
     return math.log(p)
 
+n_warn=0
+
 def warn(msg,pre="WARNING: "):
+    global n_warn
+    n_warn+=1
     sys.stderr.write(pre+str(msg)+"\n")
+
+def info_summary(msg=''):
+    warn("%s - %d total warnings"%(msg,n_warn))
 
 def report_zeroprobs():
     "print (and return) any zero probs since last call"
@@ -511,6 +538,8 @@ def open_out_prefix(prefix,name):
     "open_out prefix+name, or stdout if prefix='-'"
     if prefix=='-':
         return sys.stdout
+    if prefix=='-0' or prefix=='/dev/null':
+        return os.devnull
     return open_out(prefix+name)
 
 def adjlist(pairs,na):
