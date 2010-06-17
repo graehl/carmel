@@ -131,16 +131,29 @@ class Node:
         return [t.label for t in self.frontier()]
 
     def __str__(self):
+        return self.str(False)
+
+    def str(self,radu=False):
+        return self.str_impl(radu,radu,radu)
+
+    def str_impl(self,radu_paren=False,radu_head=False,radu_prob=False):
         if len(self.children) != 0:
             s = "(" + str(self.label)
+            nonterm=len(self.children)>1 or len(self.children[0].children)!=0
+            if radu_head and nonterm: s+='~0~0'
+            if radu_paren: s += ' '
+            if radu_prob and nonterm: s+='0.0 '
             for child in self.children:
-                s += " " + child.__str__()
+                if not radu_paren: s += ' '
+                s += child.str_impl(radu_paren,radu_head,radu_prob)
             s += ")"
+            if radu_paren: s += ' '
             return s
         else:
             s = str(self.label)
-            s = re.sub("\(", "-LRB-", s)
-            s = re.sub("\)", "-RRB-", s)
+            if not radu_paren:
+                s = re.sub("\(", "-LRB-", s)
+                s = re.sub("\)", "-RRB-", s)
             return s
 
     def descendant(self, addr):

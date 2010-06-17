@@ -15,7 +15,7 @@ def raduparse(t):
     t=radu2ptb(t)
     return tree.str_to_tree(t)
 
-def check_parse(input='',e='',parse='',f='',yield_out='',tree_out=''):
+def check_parse(input='',e='',parse='',f='',yield_out='',tree_out='',radu_tree_format=True):
     if input:
         if not e: e="%s.e"%input
         if not parse: parse="%s.e-parse"%input
@@ -32,7 +32,7 @@ def check_parse(input='',e='',parse='',f='',yield_out='',tree_out=''):
         if yield_out:
             of.write(' '.join(pes)+'\n')
         if tree_out:
-            ot.write(str(etree)+'\n')
+            ot.write(etree.str(radu_tree_format)+'\n')
         if len(es)!=len(pes):
             warn("line %d .e-parse has %d leaves but .e has %d words"%(no,len(pes),len(es)))
         if es!=pes:
