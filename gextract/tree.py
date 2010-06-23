@@ -10,9 +10,12 @@ import re
 
 class Node:
     "Tree node.  length is # of nodes.  self.parent.children[self.order]=self"
-    def __init__(self, label, children):
+    def __init__(self, label, children=None):
         self.label = label
-        self.children = children
+        if children is None:
+            self.children = []
+        else:
+            self.children = children
         self.length = 0
         for i in range(len(self.children)):
             self.children[i].parent = self
@@ -162,6 +165,16 @@ class Node:
         else:
             return self.children[addr[0]].descendant(addr[1:])
 
+    def append_child(self, child):
+        child.parent=self
+        i=len(self.children)
+        self.children.append(child)
+        self.children[i]=i
+        if len(self.children)>1:
+            self.length+=child.length
+        else:
+            self.length=child.length
+
     def insert_child(self, i, child):
         child.parent = self
         self.children[i:i] = [child]
@@ -294,6 +307,9 @@ def scan_tree(tokens, pos):
 tokenizer = re.compile(r"\(|\)|[^()\s]+")
 
 def str_to_tree(s):
-    (tree, n) = scan_tree(tokenizer.findall(s), 0)
+    toks=tokenizer.findall(s)
+    if toks[1]=='(' and toks[-2]==')': #berkeley parse ( (tree) )
+        toks=toks[1:-1]
+    (tree, n) = scan_tree(toks, 0)
     return tree
 

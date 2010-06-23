@@ -3,9 +3,22 @@
  figure out python logging lib
 """
 
-import sys,re,random,math,os
+import sys,re,random,math,os,collections
 
 from itertools import izip
+
+class RDict(dict):
+    """perl's autovivification for dict of dict of ..."""
+    def __getitem__(self, item):
+        try:
+            return dict.__getitem__(self, item)
+        except KeyError:
+            value = self[item] = type(self)()
+            return value
+
+class IntDict(collections.defaultdict):
+    def __init__(self,*a,**kw):
+        collections.defaultdict.__init__(self,int,*a,**kw)
 
 def mismatch_text(xs,ys,xname='xs',yname='ys',pre='mismatch: '):
     if xs==ys:
@@ -617,7 +630,7 @@ def span_str(s):
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
 #radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
 #radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
-sym_rrb=re.compile(r'\((\S+(-\d+)?) (\S+)\)(?= |$)')
+sym_rrb=re.compile(r'\((\S+(-\d+)?) (\(|\)|[^) ]+)\)(?= |$)')
 rparen=re.compile(r'\)')
 lparen=re.compile(r'\(')
 def escape_paren(s):
