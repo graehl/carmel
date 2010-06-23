@@ -662,10 +662,20 @@ class slist_shared :
     const_iterator const_end() const { return const_iterator(); }
 
 
+  //FIXME: copy in paramlist is ambiguous with updating below
+    inline erase_iterator erase(erase_iterator const& e_c) {
+      erase_iterator e=e_c;
+      this->erase(e);
+      return e;
+    }
+
+  // error to call this on an empty list or iterator at end() already
     inline erase_iterator& erase(erase_iterator &e) {
         Node *killme = *e.m_rep;
+        assert(killme);
         *e.m_rep = killme->next;
-        dealloc(killme);
+//        if (killme)
+          dealloc(killme);
         return e;
     }
 
@@ -715,6 +725,37 @@ class slist_shared :
     */
 };
 
+template <class ECont,class EI,class CI>
+void sorted_subtract_inplace(ECont &a,EI i,EI e,CI i2,CI e2)
+{
+  if (i==e) return;
+  for (;i2!=e2;++i2) {
+    while (*i<*i2) {
+      if (i==e)
+        return;
+
+      ++i;
+    }
+    while (*i==*i2) {
+      i=a.erase(i);
+      if (i==e) return;
+    }
+  }
+}
+
+
+template <class C1,class C2>
+void sorted_subtract_inplace(C1 &a,C2 const& b)
+{
+  sorted_subtract_inplace(a,a.erase_begin(),a.erase_end(),b.begin(),b.end());
+}
+
+template <class C1,class C2>
+C1 sorted_subtract(C1 a,C2 const& b)
+{
+  sorted_subtract_inplace(a,b);
+  return a;
+}
 
 /// danger: public inheritance saves us from writing forwarding wrappers, BUT, if we copy shared(nonshared) or shared.swap(nonshared), we can't prohibit this (like we do for nonshared.swap(shared))
 template <class T,class A=std::allocator<T> >
@@ -783,12 +824,25 @@ template <class T,class A>
 
 int sla[] = { 1,2,3,4,5,6,7 };
 int sla1[] = { 1, 4, 5 };
+int slam1[] = {2,3,6,7};
+int slam12[] = {2,3,3,6,7};
+
 int sla2[] = {3,4,6,7};
 BOOST_AUTO_TEST_CASE( test_slist )
 {
     using namespace graehl;
     typedef slist<int> L;
     L l(sla,sla+7),m,n,o(sla1,sla1+3),p(sla2,sla2+4);
+    L la(l),la1(o),la2(slam1,slam1+4),la22(slam12,slam12+5),empty;
+    L erase1(la1);
+    BOOST_CHECK_EQUAL(*erase1.erase(erase1.erase_begin()),sla1[1]);
+  BOOST_CHECK_EQUAL(sorted_subtract(la,la2),la1);
+      BOOST_CHECK_EQUAL(sorted_subtract(la,la1),la2);
+  BOOST_CHECK_EQUAL(sorted_subtract(la1,la),empty);
+    BOOST_CHECK_EQUAL(sorted_subtract(la,empty),la);
+    BOOST_CHECK_EQUAL(sorted_subtract(la,la22),la1);
+    BOOST_CHECK_EQUAL(sorted_subtract(la22,la1),la22);
+
     m.set_prepend(sla,sla+7);
     BOOST_CHECK_EQUAL(l.size(),7);
     BOOST_CHECK(l!=o);

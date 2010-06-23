@@ -77,7 +77,7 @@ struct cached_derivs
             wfst_io_index io(x); // TODO: lift outside of foreach deriv?
             unsigned n=0;
             List<IOSymSeq> &ex=corpus.examples;
-            for (List<IOSymSeq>::erase_iterator i=ex.erase_begin(),end=ex.erase_end();i!=end;++i) {
+            for (List<IOSymSeq>::erase_iterator i=ex.erase_begin(),end=ex.erase_end();i!=end;) {
                 ++n;
                 derivations d;
                 if (d.init_and_compute(x,io,arcs,i->i,i->o,i->weight,n,copt.cache_backward(),copt.prune())) {
@@ -85,9 +85,13 @@ struct cached_derivs
                     if (fem)
                         cascade.fem_deriv(*od,arcs,aid,d);
                 } else if (first) {
-                    if (copt.prune()) i=ex.erase(i);
                     warn_no_derivations(x,*i,n);
+                    if (copt.prune()) {
+                      i=ex.erase(i);
+                      continue;
+                    }
                 }
+                ++i;
             }
             if (first) {
                 corpus.count();
