@@ -1,0 +1,6 @@
+FINAL
+(0 (Z Z 1!) (X X 1!) (Y Y 1!) (FINAL 1!))
+(Z (Y Y 1!) (X X 1!) (Z Z 1!) (FINAL 1!))
+(X (Y Y 1!) (X X 1!) (Z Z 1!) (FINAL 1!))
+(Y (Y Y 1!) (X X 1!) (Z Z 1!) (FINAL 1!))
+(FINAL)
