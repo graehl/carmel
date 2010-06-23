@@ -424,6 +424,9 @@ struct derivations //: boost::noncopyable
         }
     }
 
+  bool have_order;
+
+
     //FIXME: gibbs.cc / incremental em version of below - too lazy to refactor, fix later
     template <class gibbs>
     Weight collect_counts_gibbs(gibbs const& gi)
@@ -432,16 +435,7 @@ struct derivations //: boost::noncopyable
 //        update_weights(t);
         unsigned nst=g.size();
         fb_weights f(nst),b(nst); // default 0-init
-        f[0]=1;
-        get_order();
-        propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),gi,f);
-        Weight prob=f[fin];
-        get_reverse();
-        b[fin]=1;
-        propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),gi,b);
-        free_order();
-        free_reverse();
-        check_fb_agree(prob,b[0]);
+        Weight prob=compute_fb(f,b,gi);
         for (unsigned s=0;s<nst;++s) {
             arcs_type const& arcs=g[s].arcs;
             for (arcs_type::const_iterator i=arcs.begin(),e=arcs.end();i!=e;++i) {
@@ -453,6 +447,39 @@ struct derivations //: boost::noncopyable
         return prob;
     }
 
+  template <class V>
+  Weight compute_fb(fb_weights &f,fb_weights &b,V &gi)
+  {
+    assert(!empty());
+    unsigned nst=g.size();
+    f.reinit(nst);
+    b.reinit(nst);
+    f[0]=1;
+    get_order();
+    propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),gi,f);
+    Weight prob=f[fin];
+    get_reverse();
+    b[fin]=1;
+    propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),gi,b);
+    free_order();
+    free_reverse();
+    check_fb_agree(prob,b[0]);
+    return prob;
+  }
+
+  template <class arcs_table>
+  Weight prob(arcs_table &t)
+  {
+    weight_for<arcs_table> wf(t);
+    fb_weights f(g.size());
+    f[0]=1;
+    get_order();
+    propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),wf,f);
+    Weight prob=f[fin];
+    free_order();
+    return prob;
+  }
+
     // update expected counts and return prob (sum of paths)
     template <class arcs_table>
     Weight collect_counts(arcs_table &t)
@@ -461,16 +488,7 @@ struct derivations //: boost::noncopyable
         weight_for<arcs_table> wf(t);
         unsigned nst=g.size();
         fb_weights f(nst),b(nst); // default 0-init
-        f[0]=1;
-        get_order();
-        propagate_paths_in_order(graph(),reverse_order.rbegin(),reverse_order.rend(),wf,f);
-        Weight prob=f[fin];
-        get_reverse();
-        b[fin]=1;
-        propagate_paths_in_order(r.graph(),reverse_order.begin(),reverse_order.end(),wf,b);
-        free_order();
-        free_reverse();
-        check_fb_agree(prob,b[0]);
+        Weight prob=compute_fb(f,b,wf);
         for (unsigned s=0;s<nst;++s) {
             arcs_type const& arcs=g[s].arcs;
             for (arcs_type::const_iterator i=arcs.begin(),e=arcs.end();i!=e;++i) {
@@ -525,6 +543,12 @@ struct derivations //: boost::noncopyable
         if (pfin)
             fin=*pfin;
         no_goal=(pfin==NULL);
+        if (no_goal) {
+#if true || defined(DEBUGDERIVATIONS)
+          Config::debug()<<"goal "<<goal<<" not found:\n";
+          Config::debug()<<id_of_state<<'\n';
+#endif
+        }
         global_stats.prune_record(*this,prune_);
         if (drop_names)
             id_of_state.clear();
