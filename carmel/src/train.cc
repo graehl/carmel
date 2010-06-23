@@ -286,6 +286,19 @@ struct forward_backward : public cached_derivs<arc_counts>
     matrix_io_index mio;
     Weight ***f,***b;
     List<int> e_forward_topo,e_backward_topo; // epsilon edges that don't make cycles are handled by propogating forward/backward in these orders (state = int because of graph.h)
+  bool exists_some_derivation() const
+  {
+    if (trn->examples.empty()) {
+      Config::warn()<<"No training example had a derivation - check your models, quotes, manually compose with -s, etc.\n";
+      return false;
+    }
+    return true;
+  }
+  void throw_if_no_derivation() const
+  {
+    if (!exists_some_derivation())
+      throw std::runtime_error("No training example had a derivation - aborting training.");
+  }
 
     inline void matrix_compute(IOSymSeq const& s,bool backward=false)
     {
@@ -641,6 +654,7 @@ Weight WFST::train(cascade_parameters &cascade,
             }
             Weight pp_ratio_scaled;
             if ( first_time ) {
+
                 log << std::endl;
                 if (!ra.accept(newPerplexity,bestPerplexity,restart_no,&log)) {
                     log << "Random start was insufficiently promising; trying another."<<std::endl;
@@ -804,6 +818,7 @@ Weight forward_backward::estimate(Weight &unweighted_corpus_prob)
         p=estimate_matrix(unweighted_corpus_prob);
     else
         p=estimate_cached(unweighted_corpus_prob);
+    throw_if_no_derivation();
     return p;
 }
 

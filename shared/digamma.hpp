@@ -4,6 +4,17 @@
 
 #include <cmath>
 #include <stdexcept>
+#define USE_BOOST_DIGAMMA
+
+#ifdef USE_BOOST_DIGAMMA
+#include <boost/math/special_functions/digamma.hpp>
+namespace graehl {
+namespace digamma_impl {
+using namespace boost::math::policies;
+typedef policy<digits10<8> > digamma_policy;
+}
+}
+#endif
 
 /*							psi.c
  *
@@ -98,11 +109,14 @@ inline double polevl( double x, double coef[], int N )
 
 inline double digamma(double x)
 {
+#ifdef USE_BOOST_DIGAMMA
+return boost::math::digamma(x,digamma_impl::digamma_policy());
+#else
     using namespace std;
     const double EUL=0.57721566490153286061;
     const double PI     =  3.14159265358979323846;
     const double MAXNUM =  1.79769313486231570815E308;    /* 2**1024*(1-MACHEP) */
-    
+
     double p, q, nz, s, w, y, z;
     int i, n, negative;
 
@@ -180,6 +194,7 @@ done:
     }
 
     return(y);
+#endif
 }
 
 }
@@ -190,7 +205,7 @@ done:
 int main()
 {
     using namespace std;
-    
+
 //    cout << "set title \"carmel digamma implementation\"\n";
 //    cout << "set xlabel \"x\"\n";
 //    cout << "set ylabel \"digamma(x)\"\n";
@@ -204,7 +219,7 @@ int main()
 
     unsigned nsteps=200;
     double step=0.0002;
-    
+
     for (double x=step;x<=step*nsteps;x+=step) {
         double d=graehl::digamma(x);
         double ed=exp(d);

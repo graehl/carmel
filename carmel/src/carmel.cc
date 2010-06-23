@@ -40,7 +40,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "6.4"
+#define CARMEL_VERSION "6.5"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -1914,7 +1914,7 @@ void usageHelp(void)
     cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
     cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
     cout << " = 32)\n-N n\t\tassign each arc in the result transducer a uniq";
-    cout << "ue group number\n\t\tstarting at n and counting up.  If n is 0 (";
+    cout << "ue parameter-tie group number\n\t\tstarting at n and counting up.  If n is 0 (";
     cout << "the special group\n\t\tfor unchangeable arcs), all the arcs are ";
     cout << "assigned to group 0\n\t\tif n is negative, all group numbers are";
     cout << " removed";
@@ -2006,7 +2006,7 @@ cout <<         "\n"
     cout << "\n--consolidate-unclamped : for -C sums, clamp result to max of 1\n";
     cout << "\n--project-left : replace arc x:y with x:*e*\n";
     cout << "\n--project-right : replace arc x:y with *e*:y\n";
-    cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc\n";
+    cout << "\n--project-identity-fsa : modifies either projection so result is an identity arc (left means keep the input symbol, right the output)\n";
     cout << "\n--random-set : like -1 but ignore previous weights and set a new weight on (0..1]\n";
     cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
     cout << "\n--matrix-fb : use a n*m*s matrix (n=input sentence length, m=output len, s=# states) for training, rather than a sparse derivations lattice (not recommended, but may be faster in some cases without caching i.e. -: or -?)";
