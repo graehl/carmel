@@ -1,0 +1,18 @@
+FINAL
+(0 (Z *e* Z ))
+(0 (X *e* X ))
+(0 (Y *e* Y ))
+  (0 (FINAL ))
+(Y (Y *e* Y ))
+(Y (X *e* X ))
+(Y (Z *e* Z ))
+(Y (FINAL  ))
+(X (Y *e* Y ))
+(X (X *e* X ))
+(X (Z *e* Z ))
+(X (FINAL  ))
+(Z (Y *e* Y ))
+(Z (X *e* X ))
+(Z (Z *e* Z ))
+(Z (FINAL  ))
+
