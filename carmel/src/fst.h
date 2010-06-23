@@ -1246,6 +1246,7 @@ class WFST {
 
     enum { cache_nothing=0,cache_forward=1,cache_forward_backward=2,cache_disk=3,matrix_fb=4
     }; // for train_opts.  cache disk only caches forward since disk should be slower than recomputing backward from forward
+  // matrix fb is deprecated - explicit intersection with derivations.h is MUCH better in sparse cases.
     struct deriv_cache_opts
     {
         std::string out_derivfile;

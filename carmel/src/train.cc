@@ -289,7 +289,7 @@ struct forward_backward : public cached_derivs<arc_counts>
   bool exists_some_derivation() const
   {
     if (trn->examples.empty()) {
-      Config::warn()<<"No training example had a derivation - check your models, quotes, manually compose with -s, etc.\n";
+      Config::warn()<<"No training example had a derivation - check your models, quotes, manually compose with -i, etc.\n";
       return false;
     }
     return true;
@@ -364,6 +364,7 @@ struct forward_backward : public cached_derivs<arc_counts>
     }
     Weight estimate_matrix(Weight &unweighted_corpus_prob_accum);
  public:
+
     void operator()(unsigned n,derivations &derivs) // for foreach_deriv
     {
         training_progress_scale(n,corpus().size());
@@ -981,10 +982,20 @@ Weight WFST::sumOfAllPaths(List<int> &inSeq, List<int> &outSeq)
     corpus.add(inSeq,outSeq);
     corpus.finish_adding();
     IOSymSeq const& s=corpus.examples.front();
+    /*
     cascade_parameters trivial;
-    forward_backward fb(*this,trivial,false,0,false,train_opts(),corpus);
+    train_opts topt;
+    topt.cache.cache_level=WFST::cache_forward_backward;
+    forward_backward fb(*this,trivial,false,0,false,topt,corpus);
     fb.matrix_compute(s,false);
     return fb.f[s.i.n][s.o.n][final];
+    */
+    WFST &x=*this;
+    derivations d;
+    typedef arcs_table<arc_counts_base> arcs_t;
+    arcs_t arcs(x,false,0);
+    wfst_io_index io(x);
+    return d.init_and_compute(x,io,arcs,s.i,s.o) ? d.prob(arcs) : Weight::ZERO();
 }
 
 ostream& operator << (ostream &out, struct State &s){ // Yaser 7-20-2000
