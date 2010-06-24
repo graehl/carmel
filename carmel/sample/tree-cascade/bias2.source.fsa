@@ -1,6 +1,0 @@
-FINAL
-(0 (Z Z) (X X) (Y Y) (FINAL))
-(Z (Y Y) (X X) (Z Z) (FINAL))
-(X (Y Y) (X X) (Z Z) (FINAL))
-(Y (Y Y) (X X) (Z Z) (FINAL))
-(FINAL)

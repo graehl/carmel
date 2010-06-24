@@ -24,7 +24,6 @@
 ///   typedef void has_print_writer;
 /// if you inherit from a class that has defined one of these, override it with some other type than void: typedef bool has_print_writer would disable
 
-
 #include <graehl/shared/threadlocal.hpp>
 #include <graehl/shared/myassert.h>
 #include <sstream>
