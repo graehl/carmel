@@ -479,7 +479,14 @@ class slist_shared :
 
     void dealloc(Node *n)
     {
-        allocator().deallocate(n,1);
+      assert(n);
+      /*
+       According to 20.4.​1.1/8, deallocate requires:
+
+        p shall be a pointer value obtained from allocate(). n shall equal the value
+        passed as the first argument to the invocation of allocate which returned p.
+      */
+      allocator().deallocate(n,1);
     }
 
     void reverse()
@@ -631,7 +638,7 @@ class slist_shared :
         {
             Node* newhead = head->next;
             head->data.~T();
-            dealloc(head);
+            if (head) dealloc(head);
             head = newhead;
         }
     }
