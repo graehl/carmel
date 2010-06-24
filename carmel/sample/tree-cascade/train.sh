@@ -4,6 +4,7 @@ hidden=hidden.fsa
 given="observed1 observed2"
 channel=observed0
 observed="$given $channel"
+carmel=${carmel:-carmel}
 
 function tofile {
     if [ "$verbose" ] ; then
@@ -30,7 +31,6 @@ desc $source produces $observed - training $source and $channel
 
 set -e
 set -o pipefail
-carmel=${carmel:-~/trunk/graehl/carmel/bin/zergling/carmel.debug}
 dir=${dir:-`pwd`}
 cd $dir || exit
 
