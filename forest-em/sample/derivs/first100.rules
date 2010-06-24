@@ -1,0 +1,2102 @@
+NPB(x0:NN x1:NNS) -> "计算" x0 "额" x1 "处"
+RB("sufficiently") -> "十分"
+S-C(x0:NP-C VP(VBD("did") RB("not") VP-C(VB("have") NP-C(x1:NPB x2:PP x3:SG)))) -> x2 "未" x1 "使" x0 x3
+IN("except") -> "除了"
+VP-C(VBN("used") PP(IN("for") x0:NP-C)) -> "用以" x0
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 x16
+S(x0:NP-C VP(x1:VBZ x2:VP-C) x3:.) -> x1 x0 x2 x3
+NPB(NNP("member") NNPS("states")) -> "会员国"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> x1 x0 x2 x3 x7 x8 x10 "所" x9 "而" x6 x5 x4
+NP-C(x0:NPB) -> "时" x0
+NNS("/") -> "/"
+VP(x0:VBG x1:NP-C x2:PP) -> x0 x1 x2 "也"
+NPB(x0:NNS x1:, NNS("payments")) -> x0 x1
+NP-C(NPB(x0:DT x1:NN) PP(IN("of") NP-C(NPB(DT("the") NN("exchange") NN("rate")) VP(x2:VBN PP(IN("in") NP-C(NPB(x3:DT NN("conversion")) x4:PP PP(TO("to") x5:NP-C))) x6:, x7:SG)))) -> x0 x4 "转换" "为" x5 x2 "的" "汇率" "是" x1 x3 x6 x7
+PP(IN("of") x0:NP-C) -> x0 "则"
+NPB(DT("these") NNPS("states")) -> "兹"
+NN("reduction") -> "有所" "减少"
+VBN("calculated") -> "计算"
+NPB(DT("the") x0:NNP x1:NNP) -> "向" x0 x1
+PP(IN("in") NP-C(NPB(DT("a") x0:ADJP x1:NN))) -> "以" x0 "的" x1
+NP-C(NPB(x0:DT x1:NN) PP(IN("of") NP-C(x2:NPB PP(IN("of") NP-C(NPB(x3:DT x4:NNS))) x5:NP))) -> x4 x5 x2 x1 "购买力" "平价" x3 "概念" x0
+NP-C(x0:NP x1:CC x2:NP) -> x0 x1 x2 "情况"
+NPB(x0:ADJP x1:NNP NN("exchange") NNS("rates")) -> x0 x1 "的" "汇率"
+NNS("developments") -> "调整"
+S(x0:S x1:: x2:S) -> x0 x1 x2
+NPB(x0:DT x1:JJ x2:NNS) -> x0 x1 x2 "的"
+ADJP(x0:JJ x1:CC x2:JJ) -> x0 x1 x2 "的"
+VBN("challenged") -> "挑战"
+VBP("are") -> "数字"
+NN("scale") -> "分摊" "比" "额" "表"
+S(PP(IN("in") NP-C(NPB(NN("view")) PP(IN("of") NP-C(NPB(DT("the") NNS("provisions")) VP(VBN("contained") PP(IN("in") NP-C(NPB(NNS("paragraphs") CD("3") CC("and") CD("5")) PP(IN("of") NP-C(NPB(NNP("general") NNP("assembly") NN("resolution")) ADJP(NP(NPB(CD("46") NNS("/"))) JJ("221") NP(NPB(NNP("b"))))))))))))) ,(",") x0:NP-C x1:VP x2:.) -> x0 x1 x2
+NPB(x0:NNP) -> x0 "进行"
+NP-C(x0:NPB) -> "切" "尔" x0
+NP-C(x0:NPB) -> x0 "以来"
+VBZ("has") -> "也"
+NP-C(x0:NPB) -> x0 "出"
+NP-C(x0:NPB x1:VP) -> x1 x0 "损失"
+VP-C(x0:VB x1:SBAR-C) -> x0 x1 "算" "出"
+SBAR(x0:WHADVP x1:SG-C) -> x1 x0
+JJ("long") -> "长"
+VB("buy") -> "买" "到"
+VBG("reflecting") -> "反映"
+VP(VBD("coincided") PP(IN("with") x0:NP-C)) -> "时" "正好" x0
+NN("minus") -> "减" "去"
+NP-C(NPB(x0:NNP x1:NNP) x2:VP) -> x0 x2 x1
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NP x2:CC x3:NP))) -> x1 x0 x2 "切" "尔" x3
+NPB(PRP$("its") x0:NN) -> x0
+NP-C(NPB(DT("the") NN("request")) x0:PP SBAR(WHNP(WDT("that")) SG-C(VP(VBP("do") RB("not") VP-C(VB("correspond") PP(TO("to") NP-C(NPB(PRP$("their") NN("capacity")) SG(VP(TO("to") VP-C(VB("pay"))))))))))) -> x0
+PP(IN("of") x0:NP-C) -> x0 "第"
+NP-C(x0:NPB x1:PP) -> x0 x1 ","
+NNS("totals") -> "总数"
+NP(NPB(x0:JJ NN("exchange") NNS("rates")) VP(x1:VBG x2:NP-C)) -> x0 "的" "汇率" "来" x1 "计算" x2
+RB("not") -> "无用"
+S(x0:SG x1:, x2:NP-C x3:VP x4:.) -> x0 x1 "但是" x2 x3 x4
+IN("during") -> "期间"
+NP-C(x0:NPB) -> "第" x0
+JJ("economic") -> "经济"
+NPB(x0:DT NN("fact")) -> x0
+NP-C(x0:NPB) -> "同时" x0
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NNS("concerns")) VP(VBN("expressed"))))) -> "对" x0 x1 "关切"
+VP(x0:VBN x1:ADVP) -> x0 x1
+VP-C(x0:VB x1:SBAR-C) -> x0 x1 "的"
+VP(x0:VBP x1:RB x2:VP-C) -> "统计" x0 x1 x2 "内"
+VP(x0:VBZ VP-C(x1:VBN x2:PP)) -> x1 x0 "," x2
+VP(x0:VBN PP(x1:IN x2:NP-C)) -> x2 x0 x1
+PP(IN("in") x0:NP-C) -> x0 "》" "的"
+NPB(DT("the") JJ("inflated") NN("nature")) -> "夸大"
+S(x0:NP-C VP(x1:VBZ VP-C(x2:VBN VP-C(x3:VBN ADJP(x4:RB x5:JJ)))) x6:.) -> x4 "," x0 x1 x5 x2 x3 x6
+RB("thus") -> "因此"
+NP-C(x0:NPB) -> x0 "所"
+VBN("assessed") -> "计算" "摊" "款"
+VP(x0:TO x1:VP-C) -> x0 x1
+PRP$("its") -> "其"
+DT("15.") -> "15."
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(NNS("assessments"))))) -> x0 "时"
+VP(VBG("distinguishing") PP(IN("between") x0:NP-C)) -> "将" x0 "区分"
+S(ADVP(RB("previously")) ,(",") NP-C(x0:NPB PP(IN("for") NP-C(NPB(x1:DT x2:JJ x3:JJ x4:NNPS)))) VP(x5:VBD x6:PP ADJP(DT("the") x7:JJ PP(x8:IN x9:NP-C) x10:SBAR)) x11:.) -> x1 x5 "," x2 x3 x4 x9 x0 x6 "是" x7 x8 ";" x10 x11
+IN("for") -> "对"
+VP-C(x0:VB) -> x0
+NPB(NN("exchange") NNS("rates")) -> "汇率"
+NNS("data") -> "数据"
+NPB(DT("the") x0:NN x1:NN) -> "比" x0 x1 "的"
+NNS("payments") -> "缴" "款"
+NPB(x0:DT x1:NN) -> x1 x0 "生产"
+NP-C(x0:NPB) -> x0 "以来" "国民收入"
+NN("policy") -> "政策"
+NPB(x0:DT x1:NNS x2:CC x3:NNS) -> x0 x1 x2 x3
+VP-C(x0:VB x1:SBAR-C) -> x0 x1 "算" "出" "的"
+NN("principle") -> "原则"
+DT("each") -> "每" "个"
+PP(x0:IN NP-C(x1:NPB PP(JJ("such") IN("as") x2:NP-C))) -> "比例" "如" "编制" x0 x2 x1
+PP(IN("at") x0:NP-C) -> x0
+IN("in") -> "按"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> "的" x1 x0 x2 x3 x7 x8 x10 "所" x9 x6 x5 x4
+NPB(x0:JJ x1:NN x2:NNS) -> x0 x1 x2
+NP-C(x0:NPB x1:VP) -> "所" x1 "的" x0
+NPB(JJ("national") NN("income") x0:NNS) -> "国民收入" x0
+DT("a") -> "制定"
+VBN("existed") -> "有"
+VP(x0:VBP x1:ADJP) -> x0 "比例" x1
+JJ("unrepresentative") -> "代表" "摩尔" "多" "维"
+NPB(DT("the") x0:JJ NNP("union")) -> x0
+NPB(x0:CD x1:NNS) -> "第" x0 x1
+NPB(DT("the") x0:JJ x1:NN x2:NN) -> x0 "比" x1 x2
+PP(IN("of") x0:NP-C) -> x0 "所"
+S-C(NP-C(NPB(PRP("it"))) x0:VP) -> x0
+PP(IN("of") x0:NP-C) -> "时" "应当" "以" x0
+NP-C(NPB(x0:JJ x1:NN) PP(x2:IN x3:NP-C)) -> "在" x3 "进行" x0 x2 x1
+VBN("been") -> "已"
+VBP("reflect") -> "反映" "出"
+NP-C(x0:NPB VP(x1:VBN x2:PP)) -> x2 x0 x1 "的"
+NNS("dollars") -> "美元"
+NPB(DT("the") NN("transition") NN("period")) -> "过渡时期"
+DT("the") -> "到"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 x16
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1 "出"
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" x0 "处" x1 x2
+NP-C(NPB(NN("regard")) x0:PP) -> x0
+NPB(x0:NN) -> "(" "例如" x0
+PP(IN("of") x0:NP-C) -> "尔" x0
+IN("of") -> "条"
+JJ("comparable") -> "比较"
+ADJP(x0:JJ x1:CC x2:JJ) -> x0 x1 x2
+S(x0:`` x1:PP ,(",") x2:NP-C x3:VP x4:.) -> x0 x2 x1 x3 x4
+NN("alia") -> "其他" "外"
+VP(x0:VBZ x1:NP-C) -> x1 "方面" "的" x0
+NP-C(x0:NPB x1:SBAR) -> x0 x1
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "货物" "和" "劳务" "那样" x16
+JJ("first") -> "一份"
+NPB(x0:NNP x1:NNP x2:NN) -> x0 x1 x2 "的"
+VBN("needed") -> "需要" "作出"
+JJ("other") -> "其他"
+RB("currently") -> "现行"
+VBN("used") -> "采用"
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6 "算"
+VP(x0:MD x1:VP-C) -> "便" x0 x1 "算" "出"
+NP-C(x0:NPB x1:SG) -> x1 x0
+NN("estimate") -> "估计"
+JJ("year") -> "10年"
+NNP("republic") -> "共和国"
+VP-C(x0:VB x1:PP) -> x0 "第" x1
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NPB PP(IN("of") NP-C(NPB(NN("procedure")) PP(IN("of") NP-C(NPB(DT("the") NNP("general") NNP("assembly") x2:CC x3:NNS x4:NN) PP(IN("of") NP-C(NPB(x5:DT x6:JJ x7:NN) PP(x8:IN NP-C(NP(x9:NPB x10:VP) x11:CC x12:NP))))))))))) -> "大会" "议事" x1 "第" x0 x2 x3 x10 x11 x12 x4 x5 x6 x8 x9 x7
+NN("assessment") -> "分摊"
+NP-C(x0:NPB) -> "但是" "," x0
+IN("in") -> "进行"
+S-C(NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") NNP(NNP("ogata") NNP("@-@") NNP("volcker")) x1:NN)))) VP(VBD("[") NP-C(NPB(CD("2") NN("]") NN("/")) x2:VP))) -> "绪" "方" "-" "沃" "尔" "克" x2 x1 x0
+NN("contribution") -> "会费"
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1 "算"
+VP(VP(VBZ("refers") SG-C(VP(TO("to") VP-C(VB("rule") NP-C(NPB(CD("160")) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(IN("of") NP-C(NPB(DT("the") NNP("general") NNP("assembly"))))))))))))) CC("and") x0:VP) -> "因此" x0
+JJ("large") -> "庞大"
+JJ("same") -> "相同"
+S-C(NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") NNP(NNP("ogata") NNP("@-@") NNP("volcker")) x1:NN)))) VP(VBD("[") NP-C(NPB(CD("2") NN("]") NN("/")) x2:VP))) -> "绪" "方" "-" "沃" "尔" "克" x2 "的" x1 "内" x0
+NP(NPB(NNS("expectations")) PP(IN("of") x0:NP-C)) -> "对" x0 "的" "期望"
+NX(NP(NPB(x0:PRP$ x1:JJ x2:NNS) VP(VBG("resulting") PP(IN("from") NP-C(x3:NPB PP(x4:IN NP-C(NPB(NNP("security") NNP("council") x5:NNS))))))) x6:PP) -> x0 "因" "安全理事会" x6 x5 x3 "受到" x4 x1 x2 ","
+VBN("collected") -> "收集"
+VP(x0:VBZ VP-C(x1:VBN x2:PP)) -> "的" x1 x0 "," x2
+NPB(x0:NN) -> "价格" x0
+NP-C(x0:NPB) -> "应当" "以" x0
+VP(MD("should") VP-C(VB("be") VP-C(VBN("assessed") ADVP(RB("independently")) ,(",") PP(x0:IN x1:NP-C)))) -> "因此" x0 "应当" x1 "摊" "款"
+ADJP(x0:ADJP x1:PP) -> x1 x0
+NPB(x0:DT x1:NNPS) -> x0 x1
+RB("before") -> "以前"
+VP(x0:VBP x1:RB x2:VP-C) -> x0 x1 x2
+NN("floor") -> "最低" "限额"
+JJ("previous") -> "以前"
+RB("readily") -> "可以" "随时"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> "的" x1 x0 x2 x3 x7 x8 x10 x9 "损失" "而" x6 x5 x4
+NX(NP(NPB(x0:PRP$ x1:JJ x2:NNS) VP(VBG("resulting") PP(IN("from") NP-C(x3:NPB PP(x4:IN NP-C(NPB(NNP("security") NNP("council") x5:NNS))))))) x6:PP) -> x0 "因" "安全理事会" x6 x5 x3 "而" "受到" x4 x1 x2 ","
+PP(IN("of") x0:NP-C) -> "额" "时" "应当" x0
+S(x0:S x1:: x2:S x3:.) -> x0 x1 x2 x3
+PP(TO("to") NP-C(NPB(DT("the") x0:NNS))) -> "使" x0
+NPB(NNP("member") NNPS("states")) -> "会员国" "的"
+SG(x0:VP) -> x0 "能力"
+NNS("restrictions") -> "限制"
+PP(x0:IN NP-C(x1:NPB PP(JJ("such") IN("as") x2:NP-C))) -> "如" "编制" x0 x2 x1
+JJ("own") -> "本国"
+NP-C(x0:NPB NP(NPB(ADJP(CD("[") CD("4") NN("]")) NN("/")))) -> x0
+VP(VBD("was") VP-C(VBN("held") x0:PP x1:PP)) -> "于" x1 x0 "举行"
+-RRB-(")") -> ")"
+NNP("market") -> "市场"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> x1 x0 x2 x3 x7 x8 x10 x9 "而" x6 x5 x4
+JJ("45.") -> "45."
+SBAR-C(IN("that") x0:S-C) -> "价格" x0
+VP(x0:VP x1:CC x2:VP) -> x0 x1 "并没" x2
+NPB(DT("a") x0:NN) -> "的" x0
+S(x0:NP-C VP(x1:VBZ x2:VP-C) x3:.) -> x1 x0 "使用" x2 x3
+IN("for") -> "为"
+NNS("obligations") -> "义务"
+NP-C(x0:NPB x1:SG) -> x1 "能力" x0
+ADJP(x0:RB x1:RB x2:JJ) -> x0 x1 x2
+IN("for") -> "进行"
+NPB(x0:DT x1:NN) -> x0 "项" x1
+S(NP-C(NPB(PRP("it"))) VP(VBD("was") VP-C(x0:VBD ,(",") ADVP(RB("however")) x1:, x2:SBAR-C)) x3:.) -> "但是" x1 "有人" x0 x2 "处" x3
+ADJP(RB("centrally") VBN("planned")) -> "计划经济"
+NP-C(x0:NPB) -> x0 "国民收入"
+NPB(x0:DT x1:NNS) -> x0 x1
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3
+PP(IN("in") x0:NP-C) -> "的" x0
+RB("economically") -> "符合" "经济"
+NP(x0:NPB x1:PP) -> x0 x1 "的"
+VP(x0:VBZ ADJP(JJ("difficult")) SG-C(VP(TO("to") x1:VP-C))) -> x0 "难以" x1
+NPB(DT("the") x0:NNS) -> x0 "第"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "的" "货物" "和" "劳务" "那样" x16
+VP(x0:VBZ VP-C(x1:VBN x2:PP)) -> x1 x0 x2
+ADVP(x0:RBR) -> x0
+VP(x0:VP x1:CC x2:VP) -> x0 x1 x2 "的"
+NN("scale") -> "额" "表"
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 x1 x2 "的" "货物" "和" "劳务"
+JJ("financial") -> "金融"
+S(x0:NP-C x1:VP x2:.) -> x0 "问题" x1 x2
+PP(IN("in") x0:NP-C) -> x0 "》"
+VP-C(x0:VB x1:NP-C x2:PP) -> x0 x2 x1
+NPB(x0:DT x1:NN x2:NN) -> x0 x1 x2
+ADJP(x0:RB x1:VBN) -> x0 x1
+DT("a") -> "只有"
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 x1 x2 "的"
+NNP("33.") -> "33."
+PRP("it") -> "它"
+IN("with") -> "关于"
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "货物" "和" "劳务"
+NN("number") -> "几"
+NP-C(NPB(x0:DT x1:NN) x2:PP) -> x1 "比" x2 x0
+NP-C(x0:NPB) -> "对" "计算" x0 "处"
+PP(x0:IN x1:NP-C) -> x0 x1 "作"
+VP-C(x0:VBN PP(x1:TO x2:NP-C)) -> x2 "内" x0 x1
+IN("through") -> "办法" "来"
+VP(VBN("held") x0:PP) -> x0
+JJ("available") -> "得到"
+NNS("circumstances") -> "情况"
+,(",") -> "》"
+VBG("determining") -> "确定"
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 "所" x1 x2 "的" "货物"
+JJR("earlier") -> "前"
+VB("time") -> "时间"
+IN("in") -> ","
+IN("of") -> "对"
+VP(x0:VB PRT(RP("up")) PP(TO("to") x1:NP-C)) -> x0 "达" x1
+NNS("states") -> "个" "国家"
+NP-C(x0:NPB) -> x0 "方面"
+NN("determination") -> "的确" "定"
+NPB(x0:NNS) -> x0 "上"
+S(x0:NP-C x1:VP) -> x0 "的" x1
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NN("exchange") NNS("rates")) x2:PP))) -> x2 "汇率" x0 x1
+PP(x0:IN x1:NP-C x2:NP) -> x2 x1 x0
+VP(x0:VBN x1:PP) -> x1 x0 "的"
+MD("would") -> "将"
+NNS("details") -> "详" "述"
+SBAR-C(IN("that") x0:S-C) -> x0 "处"
+PP(IN("of") x0:NP-C) -> x0 "的" "情况"
+NPB(x0:NNS x1:POS) -> x0 x1
+NNS("consequences") -> "结果"
+S(x0:NP-C VP(x1:VBZ VP-C(x2:VBN x3:VP-C)) x4:.) -> x1 x2 x0 x3 x4
+JJ("made") -> "人为"
+RB("sometimes") -> "有时候" "会"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "和" "劳务" "那样" x16
+NPB(x0:DT x1:JJ x2:NN) -> "造成" x0 x1 x2
+VB("reflect") -> "的"
+JJ("inflated") -> "夸大"
+NPB(x0:JJ x1:NNS x2:CC x3:NNS) -> x0 x1 x2 x3
+VP(x0:VBN x1:PP) -> x1 x0
+IN("of") -> "的"
+JJ("sovereign") -> "主权国"
+VP(x0:VBP x1:RB x2:VP-C) -> x0 x1 x2 "内"
+NPB(x0:JJ) -> x0 "事项"
+VBP("exist") -> "具有"
+NP-C(x0:NPB VP(x1:VBN x2:PP)) -> x2 x0 x1
+NP-C(NPB(x0:JJ x1:NN) PP(x2:IN x3:NP-C)) -> "在" x3 x0 x2 x1
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0 "算" "出" "的"
+IN("by") -> "出"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") x1:CD NNP("member") NNPS("states"))))) -> x1 "个" "会员国" x0 "国家"
+NPB(x0:NN x1:NNS) -> x0 "额" x1 "处"
+NN("application") -> "使用"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "货物" "和" "劳务" "那样" x16
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" x0 "处" x1 x2 "处"
+S(NP-C(NPB(PRP("it"))) VP(VBZ("is") x0:RB x1:VP-C)) -> "因此" x0 x1 "内" ","
+PP(x0:IN x1:NP-C) -> x0 x1 ","
+NP-C(NPB(DT("the") NNS("effects")) x0:PP) -> x0
+NN("level") -> "性"
+NPB(x0:$ x1:CD) -> x0 x1
+S(x0:PP x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 x4
+VP-C(x0:VB x1:PP) -> x0 "第" x1 ","
+NN("result") -> "因"
+NP-C(x0:NPB x1:, x2:NP x3:, x4:NP) -> x0 x1 x2 x3 x4
+NP(x0:NPB x1:PP) -> "尔" x1 x0
+JJ("operational") -> "付诸实施"
+NP-C(NPB(x0:DT x1:NN) PP(IN("of") NP-C(x2:NPB x3:PP))) -> x3 x1 x2 x0
+VP-C(x0:VB x1:PP) -> x1 "的" x0
+PP(x0:IN x1:NP-C) -> x0 x1 "的"
+NP-C(x0:NPB x1:VP) -> x1 x0 "而"
+NNP("slovak") -> "洛" "伐" "克"
+PP(x0:IN x1:SBAR-C) -> x0 x1
+S(x0:NP-C x1:VP) -> x0 x1
+NNP("estonia") -> "爱沙尼亚"
+JJ("former") -> "前"
+PP(IN("in") NP-C(NPB(NN("principle")))) -> "原则上" "是"
+NN("health") -> "保健"
+PP(IN("of") x0:NP-C) -> x0
+VP(VBZ("is") RB("not") x0:VP-C) -> "未" "有效" x0
+NP(NPB(DT("the") NNP("committee") ADJP(x0:RB VBN("reviewed") NP(x1:NPB PP(IN("of") NP-C(NPB(DT("the") x2:JJ NN("scale")))))) x3:NN) PP(x4:IN NP-C(NPB(NN("preparation")) x5:PP))) -> "委员会" x4 x5 "时" x0 "审查" "了" x2 "比" "额" "表" "编制" x3 x1
+SBAR(WHNP(WDT("that")) SG-C(VP(VBP("have") VP-C(VBN("suffered") NP-C(x0:NPB x1:PP))))) -> x1 "而" "遭受" x0 "的"
+NPB(DT("the") NNP("international") NNP("monetary") NNP("fund")) -> "国际货币基金"
+PRP("they") -> "但是" "它"
+ADJP(JJ("concerned") x0:PP) -> x0
+IN("of") -> "为"
+PP(IN("with") NP-C(x0:NPB PP(x1:IN NP-C(NPB(JJ("other") x2:NNPS) x3:PP)))) -> "与其" "他" x3 x2 x1 x0 "作"
+DT("these") -> "这些"
+VBN("considered") -> "考虑"
+NPB(x0:NN x1:NNS) -> "对" "计算" x0 "额" x1 "处"
+VP-C(x0:VB x1:PP) -> x0 x1
+PRN(x0:-LRB- x1:NP x2:-RRB-) -> x0 x1 x2
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 "所" x1 x2 "的" "货物" "和"
+RB("not") -> "不容"
+SBAR-C(IN("that") x0:S-C) -> "因此" x0
+NP-C(x0:NPB PP(IN("of"))) -> x0
+VBP("are") -> "是"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> "的" x1 x0 x2 x3 x7 x8 x10 "所" x9 "损失" "而" x6 x5 x4
+JJ("internal") -> "内部"
+JJ("practical") -> "实际"
+NPB(x0:NPB x1:NN) -> x0 x1
+NPB(x0:DT CD("22") NNP("member") NNPS("states")) -> x0
+NN("compilation") -> "编纂"
+NPB(x0:DT x1:JJ x2:NNS) -> "在" x0 x1 "的" x2
+SBAR(WHNP(WDT("that")) x0:SG-C) -> x0
+NP-C(x0:NPB) -> "时" "应当" "以" x0
+ADJP(x0:RB x1:JJ x2:PP) -> x0 x2 "作" x1
+NPB(DT("this") NN("year")) -> "今年"
+ADVP(x0:RB x1:RB) -> x1 x0
+S(x0:NP-C x1:VP x2:.) -> "价格" x0 x1 x2
+VP(x0:MD x1:VP-C) -> "便" x0 x1 "算"
+NN("account") -> "到"
+VP(x0:RB x1:NP-C) -> x1 "则" x0 "处"
+NPB(x0:DT x1:NNS x2:CC x3:NNS) -> "联盟" x0 x1 x2 x3
+VP(x0:VBP x1:NP-C x2:PP ADJP(x3:JJ PP(x4:CC PP(x5:IN NP-C(NPB(x6:PRP x7:CC x8:JJ NNPS("states")))) ,(",") PP(ADVP(ADVP(RB("as") RB("well")) PP(IN("as") NP-C(x9:NPB PP(x10:IN NP-C(x11:NPB PP(IN("for") NP-C(NPB(x12:DT x13:JJ x14:NNP)))))))) IN("before")) CC("and") PP(IN("after") x15:NP-C)))) -> x0 x3 x2 x4 x6 x7 x8 "家" x5 x1 "以及" x13 "这些" x14 x15 "前后" x12 x11 x9 x10
+NP-C(x0:NPB) -> x0 "而"
+NNP("socialist") -> "社会主义"
+NPB(x0:NPB x1:NNP) -> x0 x1
+S-C(NP-C(NPB(x0:JJ x1:NNS)) VP(MD("may") VP-C(VB("have") VP-C(x2:VBN SBAR(x3:IN S-C(NP-C(x4:NPB PP(IN("in") NP-C(NP(NPB(x5:JJ x6:NNS) x7:PP) x8:CC NP(x9:NPB PP(x10:IN NP-C(NPB(x11:JJ x12:NNS) x13:PP)))))) VP(VBP("are") NP-C(NPB(DT("an") NN("indication")))))))))) -> x3 x7 x6 x1 "国家" x2 x4 x8 x13 x5 x12 "有" x9 x10 "汇率" "便" x0 x11
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 x6 "国家" x7 "国民收入" x5 x3 "而" x0 "的" ":" x9 x10 x11 x4 x13 x12
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0 "算" "出"
+RB("also") -> "同时"
+NX(NP(NPB(x0:PRP$ x1:JJ x2:NNS) VP(VBG("resulting") PP(IN("from") NP-C(x3:NPB PP(x4:IN NP-C(NPB(NNP("security") NNP("council") x5:NNS))))))) x6:PP) -> x0 "因" "安全理事会" x6 x5 x3 x4 x1 x2
+JJ("country") -> "跨国" "家"
+VBN("elaborated") -> "拟订"
+S(x0:PP x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 "的" "汇率" x4
+JJ(JJ("price") JJ("@-@") JJ("adjusted")) -> "价格" "调整"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "下列" "情况" x6 "国家" x7 "国民收入" x5 x3 "而" x0 "的" ":" x9 x10 x11 x4 x13 "的" x12
+NN("education") -> "教育"
+DT("36.") -> "36."
+NPB(DT("the") x0:NNP JJ("nuclear") NN("power") NN("plant")) -> "尔" x0 "核电厂"
+PP(x0:IN NP-C(NPB(NPB(x1:DT x2:NN x3:POS) x4:ADJP x5:NN))) -> x1 x2 x0 x4 x5 "方面" x3
+PP(IN("as") NP-C(NPB(DT("a") JJ("new") NNP("member") x0:NNP))) -> "它" "当作" "新会员" x0
+S-C(x0:NP-C) -> x0
+NP(NPB(DT("the") NNP("committee") ADJP(x0:RB VBN("reviewed") NP(x1:NPB PP(IN("of") NP-C(NPB(DT("the") x2:JJ NN("scale")))))) x3:NN) PP(x4:IN NP-C(NPB(NN("preparation")) x5:PP))) -> "委员会" x4 x5 x0 "审查" "了" x2 "比" "额" "表" "编制" x3 "的" x1
+NP-C(x0:NPB) -> "额" "时" "应当" "以" x0
+PP(x0:IN x1:NP-C) -> x0 x1 "内"
+VBN("planned") -> "计划经济"
+NNS("losses") -> "损失"
+PRP$("its") -> "其实"
+VP(x0:TO VP-C(x1:VB NP-C(NPB(x2:JJ x3:, x4:NN NN("alia"))) x5:, PP(IN("from") x6:NP-C))) -> x2 x3 x4 "其他" "外" x5 x6 x0 x1
+NN("dollar") -> "美元"
+PP(x0:IN NP-C(x1:NPB x2:VP)) -> x2 "的" x0 x1
+VP(VBZ("has") RB("not") VP-C(VBN("been") VP-C(x0:ADVP x1:VBN CC("nor") VBN("made") x2:ADVP))) -> "制订" "不" x0 x1 "也" "未" x2
+NP-C(NPB(DT("the") NN("scheme")) x0:PP) -> x0
+PP(IN("in") x0:NP-C) -> x0 "内"
+VP(VBZ("has") ADVP(RB("never")) x0:VP-C) -> x0
+VB("replace") -> "取代"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT x2:JJ NNP("union")) x3:PP))) -> x2 x3 x0 x1
+VP(x0:VBZ VP-C(x1:VBN x2:PP)) -> "的" x1 x0 x2
+NNS("statistics") -> "统计" "数字"
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2 "出" "的"
+NP-C(x0:NPB x1:PP) -> x1 x0 "第"
+RB("well") -> "十分"
+JJ("same") -> "同样"
+NNP("13.") -> "13."
+NP-C(x0:NPB x1:PP) -> x1 "造成" x0
+NPB(JJ("national") NN("income")) -> "," "国民收入"
+NPB(JJ("foreign") NN("currency")) -> "外币"
+S-C(x0:NP-C x1:VP) -> x0 "统计" x1
+NPB(DT("the") x0:NNP JJ("nuclear") NN("power") NN("plant")) -> "切" "尔" x0 "核电厂"
+NN("resolution") -> "决议"
+VBP("affect") -> "影响" "到"
+JJ("imputed") -> "估算"
+NN("factor") -> "要素"
+IN("with") -> "具有"
+NP-C(x0:NPB) -> x0 "》" "的"
+VP(x0:VBG ADVP(RB("instead")) x1:NP-C) -> x0 x1
+NN("investment") -> "投资"
+NP-C(x0:NPB) -> x0 "算" "出"
+IN("from") -> "来自"
+SG-C(x0:VP) -> x0 ","
+S(NP-C(NPB(DT("the") NN("note"))) x0:ADVP VP(VP(VBZ("contains") NP-C(NPB(NN("summary") x1:NNS) PP(x2:IN x3:NP-C)) x4:ADJP) x5:CC VP(x6:VBZ VP-C(VBN("used") PP(IN("in") NP-C(x7:NPB PP(IN("of") NP-C(NP(x8:NPB VP(x9:VP x10:CC x11:VP)) x12:, x13:NP x14:, x15:NP))))))) x16:.) -> "其中" "载" x1 x2 x7 x8 x3 x4 x5 x6 x0 "将" x9 x10 x12 x13 x14 x11 x15 x16
+NPB(x0:PRP$ x1:JJ x2:NN) -> "的" x0 x1 x2
+NPB(x0:DT x1:NN) -> x0 x1 ","
+S-C(NP-C(NPB(x0:DT x1:VBN x2:NN) SG(VP(TO("to") VP-C(x3:VB x4:PP)))) x5:VP) -> "斯" x4 x0 x3 x2 x5 x1
+NN("mandate") -> "职务"
+NP-C(x0:NPB) -> "的" x0
+NPB(x0:PRP) -> "," x0
+NPB(x0:JJ x1:NNS) -> "以" x0 x1
+CD("46") -> "46"
+PP(TO("to") x0:NP-C) -> "使用" x0
+,(",") -> "时"
+NPB(NNS("united_states") x0:NNS) -> x0
+JJ("consolidated") -> "联邦"
+NN("consideration") -> "考虑" "到"
+DT("the") -> "该"
+NPB(x0:DT NN("purpose")) -> x0
+NNS("concerns") -> "问题"
+NNS("purposes") -> "目的"
+NNS("receipts") -> "收" "款"
+TO("to") -> "以致"
+NNS("remittances") -> "汇款"
+WHADVP(x0:WRB) -> x0
+NPB(x0:NN) -> "例如" x0
+DT("this") -> "这" "项"
+NNS("differences") -> "不同"
+JJ("further") -> "作" "进一步"
+NP-C(x0:NPB) -> x0 "的" "情况"
+NPB(x0:PRP) -> "使" x0
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "和" "劳务" "那样" x16
+NP-C(x0:NPB) -> "额" "时" x0
+PP(IN("of") x0:NP-C) -> "乌" x0
+RB("only") -> "只有"
+VBN("received") -> "收到"
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3 "算" "出" "的"
+JJ("different") -> "不同"
+NN("income") -> "收入"
+CC("and") -> "和"
+VP(x0:VBZ x1:S-C) -> x0 "斯" x1
+VP(x0:MD x1:VP-C) -> "便" x0 x1 "出"
+PP(IN("as") x0:NP-C) -> x0 "所"
+JJ("net") -> "净" "额"
+JJ(JJ("10") JJ("@-@") JJ("year")) -> "10年"
+JJ("external") -> "而外"
+NP-C(NPB(x0:DT x1:NNS) VP(x2:VBN x3:PP x4:PP)) -> x3 x2 x0 x4 x1
+SBAR(x0:SG-C) -> x0
+JJ("social") -> "社会"
+VP(VBD("sympathized") PP(IN("with") x0:NP-C)) -> x0 "有" "同感"
+NPB(x0:JJ x1:NN) -> x0 x1 "的"
+NNS("members") -> "成员"
+PP(JJ("such") IN("as") x0:NP-C) -> "(" "例如" x0
+JJ("available") -> "取得"
+NPB(x0:DT x1:JJ x2:NN x3:NNS) -> x0 x1 x2 x3
+VP(x0:VBN x1:PP) -> x1 "内" x0
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" x0 x1 x2 "处"
+NN("government") -> "国" "政府"
+NN("subsistence") -> "自给"
+NP-C(NPB(x0:DT x1:NN) x2:PP) -> x1 x2 x0
+S(x0:NP-C VP(x1:VBZ NP-C(x2:NPB SBAR(x3:IN S-C(NP-C(NPB(DT("the") NNS("rates")) PP(IN("of") NP-C(NPB(NN("assessment"))))) VP(VP(x4:MD VP-C(VB("be") VP-C(VBN("achieved") PP(IN("through") NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:JJ x7:JJ x8:NNS x9:CC JJ("reliable") ,(",") JJ("verifiable") NNS("data"))))))))) CC("and") VP(VP(MD("must")) ,(",") PRN(PP(TO("to") NP-C(NPB(DT("the") JJS("greatest") NN("extent")) ADJP(JJ("possible"))))) x10:, VP(x11:VB ADVP(RB("accurately")) NP-C(NPB(NPB(DT("a") NNP("member") NNP("state") POS("'s")) NN("capacity")) SG(VP(TO("to") VP-C(VB("pay")))))))))))) .(".")) -> x0 x1 x2 x3 x4 "通过" x5 x6 x7 x8 x9 "可靠" "而又" "可" "核实" "的" "数据" x11 "办法" "来" "确定" "分摊" "比率" x10 "并" "必须" "尽可能" "准确" "反映" "会员国" "的" "支付" "能力" "."
+PP(IN("on") x0:NP-C) -> x0
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 "所" x1 x2 "的" "货物" "和" "劳务"
+PP(IN("for") NP-C(NPB(DT("the") NN("scale")))) -> "额" "表"
+VP(x0:VB x1:NP-C) -> x0 x1
+PP(IN("with") NP-C(x0:NPB PP(x1:IN NP-C(NPB(JJ("other") x2:NNPS) x3:PP)))) -> "与其" "他" x3 x2 x1 x0
+S(x0:NP-C x1:VP x2:.) -> x0 x1 "出" "的" x2
+NPB(x0:NNP) -> x0
+NNS("united_nations") -> "联合国"
+NN("wealth") -> "财富"
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NP x2:CC x3:NP))) -> x1 x0 x2 "切" x3
+PP(x0:IN NP-C(x1:NPB PP(x2:IN x3:NP-C))) -> x3 x0 x1 "上" x2
+SBAR-C(x0:S-C) -> x0
+VP(x0:VBG x1:NP-C) -> x0 x1 "的"
+S-C(x0:NP-C x1:VP) -> x0 "汇率" x1
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "情况" x6 "国家" x7 "国民收入" x5 x3 "而" x0 "的" ":" x9 x10 x11 x4 x13 x12
+NPB(x0:DT x1:ADJP x2:NN) -> x0 x1 "的" x2
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" "计算" x0 "处" x1 x2 "处"
+NNP("russian") -> "俄罗斯"
+NN("world") -> "世界"
+VP(VBN("faced") PP(IN("in") x0:NP-C)) -> x0 "所" "面对"
+VBZ("invokes") -> "援引"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "货物" "和" "劳务" "那样" x16
+JJ("last") -> "上"
+DT("this") -> "这"
+NPB(x0:CD) -> x0 "以来" "国民收入"
+NN("relief") -> "减免"
+JJ("global") -> "全球"
+S(x0:SBAR x1:, NP-C(NPB(x2:DT x3:JJ x4:NNS)) VP(x5:VBP x6:ADJP x7:PP) x8:.) -> x0 "内" x1 x2 x7 x6 x3 "的" x4 x5 x8
+TO("to") -> "为"
+NPB(x0:NNP x1:NNP) -> x0 x1
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 x1 x2 "的" "货物"
+NPB(NNP("united_states") NN("dollar") NNS("values")) -> "美元" "等值"
+NP(x0:NPB x1:PP) -> x0 x1
+S(x0:NP-C x1:VP x2:.) -> x0 x1 "问题" x2
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "劳务" "那样" x16
+NNP("imf") -> "货币" "基金" "组织"
+NP-C(x0:NP x1:CC x2:NP) -> "使用" x0 x1 x2
+S(x0:NP-C VP(x1:VBP x2:VP-C) x3:.) -> x2 x0 x1 x3
+NP-C(x0:NPB) -> "了" x0 "的"
+NP-C(x0:NPB) -> "," "价格" x0
+NP-C(NPB(x0:PRP$ x1:NN) x2:SG) -> "是" x0 x2 x1
+IN("below") -> "低" "于"
+NNS("prices") -> "价格"
+VB("publish") -> "公布"
+JJ("national") -> "国家"
+PP(x0:IN NP-C(NPB(x1:NNP x2:NNS))) -> x1 x0 x2
+NPB(NNP("united_states") NNS("dollars")) -> "美元"
+VP(x0:VBP x1:S-C x2:PP) -> x0 x1 x2
+NP(x0:NPB) -> "使用" x0
+PP(x0:VBG x1:PP-C) -> x0 x1
+DT("a") -> "一个"
+VP(VBZ("has") VP-C(VBN("been") x0:NP-C x1:PP)) -> x1 "以来" "国民收入" "一直" x0
+NPB(DT("the") x0:JJ x1:JJ x2:NNPS) -> x0 x1 x2
+NPB(x0:VBN x1:NNS) -> x0 x1
+S-C(NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") NNP(NNP("ogata") NNP("@-@") NNP("volcker")) x1:NN)))) VP(VBD("[") NP-C(NPB(CD("2") NN("]") NN("/")) x2:VP))) -> "绪" "方" "-" "沃" "尔" "克" x2 x1 "内" x0
+NPB(x0:JJ x1:NNS) -> "额" "时" "应当" "以" x0 x1
+NPB(DT("the") ADJP(RBS("least") JJ("developed")) NNS("countries")) -> "最" "不" "发达国家"
+NP-C(x0:NPB) -> "了" x0
+NN("factor") -> "因素"
+NN("ceiling") -> "最高" "限额"
+``("32.") -> "32."
+S-C(x0:NP-C x1:VP) -> x0 "统计" x1 "内"
+NPB(x0:JJ x1:NN x2:NNS) -> x0 "的" x1 x2 "算" "出"
+NPB(NNP("kazakhstan") POS("'s")) -> "哈萨克斯坦"
+VP-C(x0:VBN PP(x1:TO x2:NP-C)) -> x2 x0 x1
+RB("specially") -> "特别"
+PP(x0:IN x1:NP-C) -> x0 x1 "也"
+JJ(JJ("cross") JJ("@-@") JJ("country")) -> "跨国" "家"
+:(";") -> ","
+ADJP(x0:JJ) -> x0
+S-C(x0:NP-C VP(VBD("did") RB("not") VP-C(VB("have") NP-C(x1:NPB x2:PP x3:SG)))) -> x2 "未" x1 "," "使" x0 x3
+DT("both") -> "这" "两"
+VP(TO("to") x0:VP-C) -> x0 "能力"
+NN("inflation") -> "通货膨胀" "率"
+VP(x0:ADVP x1:VBN PP(x2:IN x3:NP-C)) -> x3 x0 x1 x2
+NP-C(x0:NPB) -> "额" x0
+NNS("rules") -> "规则"
+NNP("statistical") -> "统计"
+SBAR(x0:SG-C) -> x0 ","
+NPB(x0:NNS) -> x0 "而"
+NPB(x0:NN x1:NNS) -> "的" x0 x1 "损失"
+VP(x0:VBZ x1:SBAR-C) -> x0 x1
+DT("the") -> "会费"
+VP(VP(VBZ("refers") SG-C(VP(TO("to") VP-C(VB("rule") NP-C(NPB(CD("160")) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(IN("of") NP-C(NPB(DT("the") NNP("general") NNP("assembly"))))))))))))) CC("and") x0:VP) -> x0
+NP-C(x0:NPB) -> x0 "算"
+NN("need") -> "需要"
+NP-C(x0:NPB) -> x0 "的" "制订"
+NNS("countries") -> "个" "国家"
+NP-C(x0:NPB x1:NP) -> x0 x1
+NNS("rates") -> "汇率"
+NPB(x0:NNS x1:CC x2:NNS) -> x0 x1 x2 "的"
+NPB(x0:NNS x1:CC x2:NNS) -> x0 x1 x2
+NP-C(x0:NPB x1:PP x2:PP) -> x1 x0 x2
+VBN("assessed") -> "分摊"
+NP-C(x0:NPB x1:VP) -> "所" x1 x0 "损失"
+NPB(x0:DT x1:NN) -> x0 x1 "来" "确定" "其"
+NP(x0:NPB) -> x0
+NX(x0:NNP x1:NNP) -> x0 x1
+NPB(x0:CD) -> x0
+NN("stage") -> "阶段"
+JJ("occupied") -> "占领"
+NP-C(NPB(x0:NN x1:CD) PRN(x2:-LRB- S(LST(LS("c") -RRB-(")")) x3:PP x4:NP-C VP(JJ("221"))) NNP("b"))) -> x4 "221B" "号" x3 x1 x2 ")" x0
+ADJP(x0:RB x1:JJ x2:PP) -> x0 "可" x2 x1
+NP-C(NPB(x0:DT JJ("same") NN("type")) PP(x1:IN x2:NP-C) SBAR(WHNP(WDT("that")) SG-C(VP(VBZ("is") x3:VP-C)))) -> x0 x3 x2 "是" "同样" x1
+PRP$("their") -> "各"
+NNS("differentials") -> "差别"
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 "的" x2 "而" x1 x0 x6 x7 x8
+WDT("that") -> "出"
+S(ADVP(RB("previously")) ,(",") NP-C(x0:NPB PP(IN("for") NP-C(NPB(x1:DT x2:JJ x3:JJ x4:NNPS)))) VP(x5:VBD x6:PP ADJP(DT("the") x7:JJ PP(x8:IN x9:NP-C) x10:SBAR)) x11:.) -> x1 x5 "," x2 x3 x4 x9 x0 x6 x7 x8 x10 x11
+VP(VBG("resulting") PP(IN("from") x0:NP-C)) -> "因" x0
+S(x0:NP-C x1:ADVP x2:VP x3:.) -> x0 x1 x2 x3
+VP-C(x0:VB x1:NP-C) -> x0 "上" "的" x1
+VP(x0:VBD x1:NP-C) -> x0 "了" x1
+NN("lack") -> "缺乏"
+NP-C(NPB(DT("a") NN("position")) x0:SBAR) -> x0 ","
+NN("basis") -> "根据"
+NP-C(x0:NPB) -> x0 "便"
+NPB(x0:DT x1:NN) -> x0 x1 "的"
+DT("the") -> "有关"
+VP(x0:VBG x1:NP-C) -> x0 "比" x1
+MD("would") -> "能"
+VB("reflect") -> "反映"
+VBN("defined") -> "定义"
+VBN("employed") -> "采用"
+NP-C(NPB(x0:DT x1:VBG x2:NN x3:CD) PP(IN("of") NP-C(x4:NPB PP(IN("of") NP-C(NPB(NN("procedure")) PP(IN("of") NP-C(NPB(x5:DT NNP("general") NNP("assembly") x6:, x7:NNP)))))))) -> x0 x5 x1 "大会" "议事" x4 x3 x2 "时" x6 x7
+JJ("resulting") -> "因"
+S-C(x0:NP-C VP(VBD("did") RB("not") VP-C(VB("have") NP-C(x1:NPB x2:PP x3:SG)))) -> x2 "未" x1 "," x0 x3
+NP(x0:NPB x1:PP) -> "切" "尔" x1 x0 "而"
+VBN("informed") -> "获悉"
+IN("on") -> "对"
+NP-C(x0:NP x1:CC x2:NP) -> "的" x0 x1 x2
+NPB(JJ("high") NN("quality")) -> "好的"
+,(",") -> ","
+VB("quantify") -> "数量" "表示"
+NNP("moldova") -> "亚"
+PP(IN("of") x0:NP-C) -> "额" "时" "应当" "以" x0
+VP(VBZ("asks") PP(IN("for") x0:NP-C)) -> "要求" x0
+NP(x0:NPB) -> x0 "的"
+ADJP(x0:RB x1:JJ x2:PP) -> x0 "可" x2 "作" x1
+NN("report") -> "报告"
+S(x0:NP-C VP(x1:VP x2:, x3:SBAR) x4:.) -> "它" x1 x0 x2 x3 x4
+NN("period") -> "应"
+NNS("indices") -> "指数"
+NP-C(NPB(DT("the") NN("scale") x0:NN) PP(x1:RB x2:IN NP-C(NPB(DT("the") NN("ad") NN("hoc") x3:NN) x4:PP))) -> x2 "额" "表" x0 "为" "根据" x1 "以" "特别" x3 x4
+IN("at") -> "在"
+NPB(x0:JJ) -> x0
+NN("session") -> "届" "会议"
+VP(VBZ("notes") x0:ADJP x1:SBAR-C) -> x0 x1
+NPB(x0:DT x1:NNS) -> x0 x1 "是"
+PRP("them") -> "它们"
+NN("representation") -> "意见"
+S(x0:ADVP x1:, x2:SBAR x3:, x4:NP-C x5:VP x6:.) -> x0 x1 x2 x3 x4 x5 x6
+SBAR(x0:IN x1:S-C) -> ";" x0 x1
+NN("distribution") -> "分配"
+NNP("23.") -> "23."
+NPB(JJ("national") NN("income") x0:CC x1:NN x2:NNS) -> "国民收入" x0 x1 "的" x2
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2 "的"
+IN("that") -> "," "即"
+VP(VP(VBD("did") RB("not") VP-C(VB("intend") SG-C(VP(TO("to") VP-C(x0:VB x1:NP-C ADVP(RBR("further"))))))) CC("and") VP(x2:MD x3:RB x4:VP-C)) -> "不" "打算" "再" x0 x1 "," "也" x3 "再" x2 x4
+NP(x0:NPB x1:PP) -> "切" "尔" x1 x0
+NP-C(NPB(NNP("yugoslavia")) x0:PRN) -> x0
+NN("request") -> "请求"
+PRN(-LRB-("(") NP(NPB(NNP("imf"))) -RRB-(")")) -> "组织"
+NP(x0:NPB x1:PP) -> x1 x0
+NNP("chernobyl") -> "诺" "贝利"
+DT("an") -> "的"
+NPB(x0:DT x1:NN) -> x0 x1 "来" "确定"
+S(x0:SG x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 x4
+NPB(x0:NNS) -> x0
+NPB(x0:NNS) -> "上" "的" x0
+DT("the") -> "经"
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3 "算" "出"
+S(ADVP(RB("previously")) ,(",") NP-C(x0:NPB PP(IN("for") NP-C(NPB(x1:DT x2:JJ x3:JJ x4:NNPS)))) VP(x5:VBD x6:PP ADJP(DT("the") x7:JJ PP(x8:IN x9:NP-C) x10:SBAR)) x11:.) -> x1 x5 "," x2 x3 x4 x9 x0 x6 "是" x7 x8 x10 x11
+NNP("state") -> "国"
+RB("not") -> "不能"
+VP(x0:MD x1:VP-C) -> "便" x0 x1 "算" "出" "的"
+S-C(x0:NP-C x1:ADJP) -> x0 "是" x1
+RBR("more") -> "更"
+NPB(DT("the") x0:NN x1:NN) -> "比" x0 x1
+NPB(PRP$("their") JJ("current") x0:NN NNS("rates")) -> x0
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> x1 x0 x2 x3 x7 x8 x10 "所" x9 "损失" "而" x6 x5 x4
+NPB(DT("the") x0:JJ x1:CD x2:NNS) -> x0 x1 "比" x2
+NP-C(x0:NPB x1:VP) -> x1 x0 ","
+NPB(DT("the") x0:JJ x1:NN) -> x0 x1 "内"
+VP-C(x0:VBN PP(x1:IN x2:NP-C) x3:PP) -> x0 x1 x3 x2
+PP(x0:IN NP-C(x1:NPB x2:PP)) -> x2 x0 x1
+VP(x0:VP x1:CC x2:VP) -> x0 "," x1 x2
+RBR("further") -> "进一步"
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NPB PP(IN("of") NP-C(NPB(NN("procedure")) PP(IN("of") NP-C(NPB(DT("the") NNP("general") NNP("assembly") x2:CC x3:NNS x4:NN) PP(IN("of") NP-C(NPB(x5:DT x6:JJ x7:NN) PP(x8:IN NP-C(NP(x9:NPB x10:VP) x11:CC x12:NP))))))))))) -> "大会" "议事" x1 x0 x2 x3 x10 x11 x12 x4 x5 x6 x8 x9 x7
+NPB(DT("the") JJ(JJ("fifty") JJ("@-@") JJ("third")) x0:NN) -> "第" "五十三" x0
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" x0 "处" x1 x2 "处"
+JJ("available") -> "包括"
+IN("from") -> "从"
+S-C(x0:NP-C VP(x1:TO VP-C(VB("compensate") PP(IN("for") NP-C(x2:NPB x3:PP PRN(-LRB-("(") NP(NP(NPB(NN("e.g.")) x4:, x5:NP) x6:, x7:NP x8:, x9:NP) x10:-RRB-)))))) -> x4 x0 x1 "补偿" x3 x2 x5 x6 x7 x8 x9 x10
+NPB(x0:PRP$ x1:NN x2:NNS) -> x0 x1 x2
+VB("prevent") -> "使"
+PP(IN("of") x0:NP-C) -> "编制" x0
+VP(VBZ("has") VP-C(VBN("been") x0:NP-C x1:PP)) -> x1 "一直" x0 "要素"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT x2:JJ NNP("union")) x3:PP))) -> x2 x3 x0 "来" "确定" "其" x1
+NP-C(NPB(DT("the") x0:NN x1:NN) PP(IN("of") NP-C(NPB(DT("the") x2:JJ NNP("union")) PP(IN("of") NP-C(NPB(NP(NPB(x3:NNP x4:NNP NNPS("republics") x5:CC NNP("ukraine") POS("'s"))) NN("unwillingness")) SG(VP(TO("to") x6:VP-C))))))) -> x2 x3 x4 "共和国" "联盟" x0 x1 "的" "根据" "," x5 "乌克兰" "不愿" "意" x6
+NPB(x0:NNP x1:NNP x2:NNPS) -> x0 x1 x2
+NP-C(x0:NPB) -> "以" x0
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 x6 "国家" x7 "国民收入" x5 x3 "而" x0 "的" ":" x9 x10 x11 x4 x13 "的" x12
+VP(VBN("contained") PP(IN("in") x0:NP-C)) -> x0 "内" "所" "载"
+NP-C(x0:NPB) -> x0 "," "也"
+IN("if") -> "如果"
+S(x0:NP-C VP(x1:VBZ VP-C(x2:VBN VP-C(x3:VBN ADJP(x4:RB x5:JJ)))) x6:.) -> x4 x0 x1 x5 x2 x3 x6
+VP(VBD("made") NP-C(NPB(NNS("extrapolations")) PP(IN("for") NP-C(x0:NPB PP(IN("at") NP-C(x1:NPB PP(IN("of") NP-C(NPB(x2:DT x3:NNPS)))))))) x4:VP-C) -> x2 x4 x3 x1 "也" "推断" x0
+NPB(x0:JJ x1:JJ JJ("foreign") NN("exchange") NN("rate") x2:NNS) -> x0 x1 "的" "汇率" x2
+VP-C(x0:VB x1:PP) -> x1 x0
+NP(NPB(x0:DT x1:NN) PP(x2:IN NP-C(x3:NPB VP(x4:VBN PP(x5:IN x6:NP-C) PP(IN("in") NP-C(NPB(PRP$("its") NN("work")))) x7:, x8:SBAR)))) -> x0 x6 x4 x5 x3 x2 x1 ")" x7 x8
+NP-C(x0:NPB) -> x0 "是"
+VP(VBD("made") NP-C(NPB(NNS("extrapolations")) PP(IN("for") NP-C(x0:NPB PP(IN("at") NP-C(x1:NPB PP(IN("of") NP-C(NPB(x2:DT x3:NNPS)))))))) x4:VP-C) -> x2 x4 x3 x1 "也" "推断" x0 "汇率"
+NN("capacity") -> "能力"
+DT("the") -> "各项"
+NNS("parts") -> "地方"
+NPB(x0:NN) -> x0 "使用"
+JJ("monetary") -> "货币"
+NPB(x0:DT x1:CD x2:NNP x3:NNPS) -> x1 x2 x3 x0
+ADJP(x0:JJ x1:CC x2:JJ) -> x0 "性" "的" x1 "因此" "不" x2
+NN("use") -> "使用"
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6 "出"
+VP(x0:VBZ x1:NP-C) -> "是" x0 x1
+NN("use") -> "用"
+NPB(DT("the") JJ("next") x0:NN) -> "下" "一个" x0 "时"
+NP(x0:NPB x1:SG x2:.) -> x0 x1 x2
+S-C(x0:NP-C VP(x1:TO VP-C(VB("compensate") PP(IN("for") NP-C(x2:NPB x3:PP PRN(-LRB-("(") NP(NP(NPB(NN("e.g.")) x4:, x5:NP) x6:, x7:NP x8:, x9:NP) x10:-RRB-)))))) -> x4 x0 x1 "补偿" x3 x2 "(" "例如" x5 x6 x7 x8 x9 x10
+SBAR(x0:IN x1:S-C) -> x0 x1 "内"
+JJ("individual") -> "个别"
+VBZ("is") -> "因此"
+NP-C(x0:NP x1:, NP(NPB(NNP("azerbaijan"))) ,(",") x2:NP ,(",") NP(NPB(NNP("georgia"))) ,(",") NP(NPB(NNP("kazakhstan"))) ,(",") x3:NP x4:, x5:NP x6:, x7:NP x8:, x9:NP x10:, x11:NP x12:, x13:NP x14:, x15:NP) -> x0 x1 "对" "其" x2 x3 "与" "支付" "能力" "不" "相符" "一" "事" "进行" "审查" "的" "共同" "意见" x4 "亚美尼亚" x14 "阿" "塞" "拜" "疆" "、" "白俄罗斯" "、" "格鲁吉亚" "、" "哈萨克斯坦" "、" "吉尔吉斯斯坦" "、" x5 x6 x7 x8 x9 x10 x11 x12 x13 "、" x15
+NP-C(x0:NPB x1:VP) -> x1 "的" x0 "损失" "而"
+NPB(PRP$("its") x0:NNP x1:NNP x2:NNPS) -> x0 x1 x2 "》"
+PP(x0:IN x1:NP-C) -> x0 x1 "来"
+PP(IN("in") x0:NP-C) -> x0 "的"
+SBAR(x0:IN x1:S-C) -> x0 x1 "的" "货物" "和" "劳务"
+VP-C(VBN("made") x0:PP) -> x0
+VBZ("employs") -> "使用"
+NPB(x0:NN x1:NN) -> x0 x1
+VP(x0:VBP x1:PP) -> x1 x0 "的"
+NN("mitigation") -> "减少" "比率"
+NPB(DT("the") NNP("czech") x0:NNP) -> "捷克" x0
+DT("a") -> "给予"
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0 "的"
+VBP("are") -> "的"
+S(x0:NP-C x1:VP) -> x0 "制订" x1
+ADJP(JJ("mindful") PP(IN("of") NP-C(NPB(DT("the") x0:NN) x1:SG))) -> "注意" "到" x0 x1
+NN("cost") -> "费用"
+NP-C(NPB(x0:DT x1:NN) PP(IN("of") NP-C(NPB(DT("the") NN("exchange") NN("rate")) VP(x2:VBN PP(IN("in") NP-C(NPB(x3:DT NN("conversion")) x4:PP PP(TO("to") x5:NP-C))) x6:, x7:SG)))) -> x0 x4 "转换" "为" x5 x2 "的" "汇率" "是" x1 x3 x6 "因而" x7
+VBG("invoking") -> "援引"
+NPB(x0:DT x1:NN) -> x0 x1 "来"
+NPB(JJ("convertible") NN("currency")) -> "可" "兑换货币"
+MD("might") -> "可能"
+NN("capital") -> "流动资本"
+VP(x0:MD x1:RB x2:VP-C) -> x0 x1 x2 "问题"
+JJ("fair") -> "公平"
+SBAR(x0:IN x1:S-C) -> x0 x1 "劳务" "那样"
+S(NP-C(x0:NPB PP(x1:IN PP-C(IN("for") NP-C(x2:NPB SBAR(WHNP(WDT("that")) SG-C(VP(x3:VBP PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT x7:JJ x8:NN)))))))))))) VP(x9:VBD x10:, x11:S-C) x12:.) -> x0 x1 x3 x6 x4 x9 x7 x8 x5 x2 "以外" x10 x11 x12
+JJ("controlled") -> "受" "管制"
+NN("transition") -> "过渡"
+VP(TO("to") x0:VP-C) -> x0
+NPB(x0:DT x1:ADJP x2:NN) -> x0 "被" x1 x2
+NP-C(x0:NPB PP(x1:IN x2:NP-C)) -> x2 x0 x1
+VP(x0:VBZ x1:RB x2:VP-C) -> x0 x1 x2
+NP-C(x0:NPB x1:PP) -> x1 x0 "问题"
+DT("no") -> "不"
+VP(VBG("resulting") PP(IN("from") x0:NP-C)) -> "因" x0 "而"
+NNP("monetary") -> "货币"
+JJ("critical") -> "重要"
+NP-C(x0:NPB x1:PP) -> x0 x1 "所"
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NP x2:CC x3:NP))) -> x1 x0 x2 "切" "尔" x3 "而"
+NP-C(x0:NPB x1:PP) -> x1 x0 "的"
+NNPS("republics") -> "共和国" "联盟"
+CD("two") -> "两" "个"
+PP(IN("of") x0:NP-C) -> "额" "时" x0
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 x2 "而" x1 x0 x6 x7 x8
+NPB(x0:JJ) -> x0 "事项" "表示"
+NP-C(x0:NPB x1:VP) -> x1 x0 "的"
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" "时" "应当" x11 x12 x13 x9 "汇率" "和平" "等" x14 x15 x16
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3 "出"
+NN("base") -> "基准"
+NP-C(x0:NPB) -> "," x0
+NPB(x0:NN x1:CC x2:NN x3:NNS) -> x0 x1 x2 x3
+NPB(x0:NN x1:NN) -> "的" x0 x1
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6 "出" "的"
+PP(IN("of") NP-C(NPB(NNP("moldova")))) -> "摩尔多瓦"
+NP-C(x0:NPB) -> "但是" x0
+NP(x0:NP x1:CC x2:NP) -> x0 x1 x2
+NP(NPB(x0:NPB x1:JJ x2:NN x3:NNS NX(x4:NX x5:CC NX(x6:NNS x7:NN))) PP(IN("of") NP-C(x8:NPB x9:PP)) x10:.) -> x0 x1 x2 x3 x4 "," x5 x6 x9 x7 x8 x10
+NNS("periods") -> "期"
+NP-C(x0:NPB) -> x0 "汇率"
+NPB(x0:DT x1:JJ x2:NN) -> x0 x1 x2 "是"
+NN("payment") -> "付款"
+S-C(NP-C(NPB(PRP("it"))) x0:VP) -> "因此" x0
+DT("an") -> "了"
+NP-C(NPB(x0:DT x1:JJ x2:NN) PP(IN("of") NP-C(x3:NPB PP(IN("in") NP-C(NPB(NN("accordance")) PP(IN("with") x4:NP-C))))) SG(VP(TO("to") x5:VP-C))) -> x0 "无法" "根据" x5 x4 "来" "对" x3 x1 x2
+,(",") -> ")"
+VBN("defined") -> "所" "确定"
+VP(x0:VBG NP-C(NPB(DT("the") JJ("next") x1:NN)) PP(IN("on") NP-C(x2:NPB PP(IN("of") NP-C(NPB(DT("a") x3:JJ x4:NN)))))) -> x2 x3 "的" x4 x0 "下" "一个" "比" x1
+VP(VBZ("is") RB("not") x0:ADJP) -> "并" "不" x0
+PP(IN("for") x0:NP-C) -> x0 "时"
+NNS("countries") -> "家"
+S(x0:SG x1:, x2:NP-C x3:VP x4:.) -> x0 x1 "但是" "," x2 x3 x4
+PP(TO("to") x0:NP-C) -> x0
+RB("not") -> "未"
+IN("on") -> "在"
+JJ("fixed") -> "固定"
+NNP("armenia") -> "国家"
+PP(IN("with") x0:NP-C) -> "第" x0 ","
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 x1 x2 "的" "货物" "和" "劳务" "那样"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> x1 x0 x2 x3 x7 x8 x10 x9 x6 x5 x4
+VP(VBP("are") ADJP(JJ("free") x0:PP)) -> "有" x0
+VBG("underlying") -> "作为"
+NPB(x0:DT) -> x0 "便"
+MD("would") -> "才"
+NNS("republics") -> "共和国"
+NP(x0:NPB x1:PP) -> x0 x1 "情况"
+NP(x0:NPB x1:PP) -> "(" "例如" x0 x1
+DT("that") -> "该"
+NP-C(x0:NPB x1:PP) -> x0 x1 "的"
+VP-C(x0:VB x1:SBAR-C) -> x0 x1 "出"
+NP-C(NPB(x0:JJ x1:NN) PP(x2:IN x3:NP-C)) -> x3 x0 x2 x1
+NPB(JJ("national") NN("income")) -> "国民收入"
+CC("minus") -> "减" "去"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "下列" "情况" x6 "国家" x7 "国民收入" x5 x3 "而" x0 "的" ":" x9 x10 x11 x4 x13 x12
+NN("exchange") -> "汇率"
+DT("the") -> "这个"
+NP(x0:NPB) -> "上" x0
+S(x0:`` x1:PP ,(",") x2:NP-C x3:VP x4:.) -> x0 x2 "的" x1 x3 x4
+JJ("alternative") -> "其他"
+SBAR(x0:IN x1:S-C) -> x0 x1 "的" "货物"
+SBAR(x0:IN x1:S-C) -> "," x0 x1
+PP(IN("with") x0:NP-C) -> x0 ","
+NNS("sources") -> "来源"
+VP(VP(VBD("did") RB("not") VP-C(VB("intend") SG-C(VP(TO("to") VP-C(x0:VB x1:NP-C ADVP(RBR("further"))))))) CC("and") VP(x2:MD x3:RB x4:VP-C)) -> "不" "打算" "再" x0 x1 "也" x3 "再" x2 x4
+VP(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0
+RB("equally") -> "同样" "地"
+VP-C(x0:VB x1:NP-C x2:PP) -> x1 x0 x2
+NNS("purposes") -> "有用"
+NNS("standards") -> "标准"
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6 "算" "出" "的"
+NNP("czechoslovakia") -> "捷克斯洛伐克"
+CD("1945") -> "1945年"
+VP-C(VP(VBN("claimed") SG-C(VP(TO("to") VP-C(VB("be") NP-C(NPB(DT("a") NN("successor")) PP(TO("to") NP-C(NPB(DT("the") JJ("former") NNP("union")) PP(IN("of") NP-C(NPB(NNP("soviet") NNP("socialist") NNPS("republics"))))))))))) CC("and") ,(",") x0:PRN) -> x0
+NN("decision") -> "决定"
+VP(VBD("was") RB("not") x0:PP) -> "未能" x0 ","
+NN("reference") -> "提及"
+NN("representation") -> "意见" "书"
+JJ("concerned") -> "有关"
+NN("successor") -> "继承" "国"
+NP-C(x0:NPB x1:PP) -> x0 x1
+NPB(x0:PRP$ x1:JJ JJ("national") NN("income") x2:NNS) -> x0 x1 "的" "国民收入" x2
+NPB(x0:CD NNS("koruna") NNS("devaluations")) -> "克" "朗" x0 "贬值"
+NN("inter") -> "除"
+RB("also") -> "并"
+NNS("economies") -> "经济" "体"
+CD("14") -> "14"
+S(x0:NP-C VP(x1:VP x2:, x3:SBAR) x4:.) -> x1 x0 "情况" x2 x3 x4
+NNS("parts") -> "各"
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2 "算" "出" "的"
+DT("31.") -> "31."
+,(",") -> "要求"
+NPB(x0:NN x1:NNS) -> x0 x1 "损失" "而"
+NPB(NN("exchange") NNS("rates")) -> "汇率" "方面" "的"
+DT("an") -> "即"
+NN("interpretation") -> "作" "解释"
+NPB(x0:NNS) -> "价格" x0
+NP-C(NPB(x0:NN x1:CD) PRN(x2:-LRB- S(LST(LS("c") -RRB-(")")) x3:PP x4:NP-C VP(JJ("221"))) NNP("b"))) -> x4 "221B" "号" x3 "第" x1 x2 ")" x0
+PRN(ADVP(RB("therefore")) ,(",") x0:VP) -> "因此" x0
+NPB(x0:CD x1:CC x2:CD) -> "了" x0 x1 x2
+SBAR(x0:IN x1:S-C) -> x0 x1 "和" "劳务" "那样"
+VP(VBD("noted") SBAR-C(IN("that") x0:S-C)) -> "指出" x0
+VP(x0:MD x1:VP-C) -> "便" x0 x1 "的"
+DT("those") -> "所"
+SBAR(x0:IN x1:S-C) -> x0 x1 "那样"
+VP(VBG("taking") PP(IN("into") x0:NP-C) x1:NP-C) -> "考虑" x0 x1
+VP(TO("to") VP-C(VB("continue") x0:NP-C)) -> "继续" x0
+VP(VBP("affect") NP-C(NPB(x0:PRP$ x1:NN) SG(VP(TO("to") x2:VP-C)))) -> "影响" "到" x0 x2 x1
+NP-C(x0:NPB x1:PP x2:VP) -> x2 x1 "进行" x0
+NPB(x0:DT x1:NN) -> "能力" x0 x1
+NPB(DT("the") x0:NNP x1:NNP) -> "斯" x0 x1
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 "所" x1 x2 "的" "货物" "和" "劳务" "那样"
+NPB(DT("the") JJ("next") x0:NN) -> "下" "一个" x0
+JJ("sovereign") -> "主权"
+NNS("questions") -> "问题"
+NPB(x0:DT CD("five") NNS("years")) -> x0 "五年"
+S(x0:NP-C x1:VP x2:.) -> x0 x1 x2
+PP(IN("for") x0:NP-C) -> x0 "的"
+JJ("actual") -> "实际"
+ADJP(x0:RB x1:JJ x2:PP) -> x0 x2 x1
+NPB(x0:JJ x1:NNS) -> x0 x1 "的"
+NPB(x0:PRP) -> x0 "问题"
+SG(x0:VP) -> "的" x0
+NNP("government") -> "政府"
+PP(IN("of") x0:NP-C) -> "斯" x0
+JJ("negative") -> "不利"
+JJ(JJ("cross") JJ("@-@") JJ("country")) -> "进行" "的" "跨国" "家"
+NPB(x0:JJ x1:NN) -> x0 x1
+NP-C(x0:NPB) -> "对" "计算" x0
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "和" "劳务" "那样"
+IN("that") -> ","
+WHNP(x0:WDT) -> "制订" x0
+VBN("described") -> "叙" "述" "了"
+NNS("workers") -> "工人"
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3 "的"
+NP-C(x0:NPB x1:VP) -> x1 x0 "损失" "而"
+NNP("37.") -> "37."
+NPB(NN("exchange") NNS("rates")) -> "汇率" "方面"
+JJ(JJ("price") JJ("@-@") JJ("level")) -> "价格" "水平" "方面" "的"
+VBG("being") -> "是"
+PRP$("its") -> "第"
+VB("benefit") -> "有利于"
+,(",") -> ";"
+PP(IN("by") x0:NP-C) -> x0
+NNP("montenegro") -> "黑山"
+VP-C(x0:VB x1:SBAR-C) -> x0 x1 "算"
+NPB(VBN("fixed") NN("capital")) -> "固定资本"
+NN("shortage") -> "缺乏"
+IN("than") -> "比"
+SBAR(x0:IN x1:S-C) -> x0 x1 "货物" "和" "劳务"
+VP-C(VP(x0:VBN x1:NP-C PP(x2:IN SG-C(VP(x3:VBG x4:ADVP PP(NP-C(NPB(x5:DT x6:JJ x7:NNS) PP(x8:IN NP-C(NPB(NNS("countries")) PP(x9:IN x10:NP-C)))) x11:IN x12:NP-C))))) x13:CC VP(VBN("burdened") PP(IN("by") NP-C(x14:NPB x15:PP)))) -> x0 x1 x9 x7 x10 x11 x12 x15 x13 x14 x8 x6 x5 "国民收入" x2 x4 x3
+SBAR(x0:WHNP x1:SG-C) -> x0 x1
+NP-C(NPB(x0:PRP$ NN("ability")) SG(VP(TO("to") x1:VP-C))) -> "," x0 "能" x1
+ADJP(x0:JJ x1:PP) -> "可" x1 x0
+NPB(x0:NNS x1:CC x2:NNS) -> x0 x1 x2 ","
+VP(VBZ("has") VP-C(VBN("been") x0:NP-C x1:PP)) -> x1 "以来" "国民收入" "一直" x0 "要素"
+NN("interest") -> "利息"
+NPB(x0:NPB x1:JJ x2:JJ x3:NNS) -> x0 x1 x2 x3
+VP(VBD("made") NP-C(NPB(NNS("extrapolations")) PP(IN("for") NP-C(x0:NPB PP(IN("at") NP-C(x1:NPB PP(IN("of") NP-C(NPB(x2:DT x3:NNPS)))))))) x4:VP-C) -> x2 x4 x3 x1 "也" "推断" x0 "的"
+VP(VBD("did") RB("not") x0:VP-C) -> "未" x0
+NP-C(x0:NPB) -> "比" x0
+NPB(x0:ADJP x1:NNS) -> x0 x1 "所"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(NNS("assessments"))))) -> x0
+VP(x0:VBG x1:NP-C x2:PP) -> x0 x1 x2
+NPB(x0:DT x1:JJ x2:NN) -> x0 x1 x2 ","
+NPB(x0:JJ x1:NNS) -> "时" "应当" "以" x0 x1
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1 "算" "出" "的"
+DT("the") -> "将"
+NPB(DT("these") NNPS("states")) -> "乌" "兹"
+S(x0:S x1:, x2:CC x3:S x4:.) -> x0 x1 x2 x3 x4
+VP-C(x0:VB x1:NP-C) -> x0 "上" x1
+NN("mandate") -> "任务"
+NP(x0:NPB x1:PP) -> "尔" x1 x0 "而"
+NPB(DT("the") x0:NN x1:NN) -> x0 x1
+PP(x0:IN x1:NP-C) -> "可" x0 x1 "作"
+PRP("they") -> "这些"
+NP-C(x0:NPB x1:PP) -> x0 x1 "时"
+NN("number") -> "多少"
+NPB(x0:NNS x1:NNS) -> x0 x1
+PP(x0:IN x1:NP-C) -> x0 x1 "进行" "的"
+NNS("payments") -> "付款"
+NPB(x0:NNP x1:NNP x2:NN) -> x0 x1 x2
+NPB(x0:NNP) -> x0 "的"
+NP(x0:NPB) -> "上" "的" x0
+JJ("inherent") -> "作法"
+NPB(x0:NNS) -> "的" x0
+VP(VBZ("states") x0:SBAR-C) -> "因此" x0
+NP-C(NPB(x0:DT x1:NN) PP(IN("of") NP-C(x2:NPB PP(IN("of") NP-C(NPB(x3:DT x4:NNS))) x5:NP))) -> x4 x5 x2 x1 "购买力" "平价" x3 "概念" x0 "制定"
+WHNP(x0:WDT) -> x0
+NP-C(x0:NPB) -> "在" x0 "进行"
+PP(IN("with") x0:NP-C) -> "第" x0
+VP(x0:VP x1:, x2:VP) -> x0 x1 x2
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "那样"
+-LRB-("(") -> "(" "c"
+JJ("many") -> "许多"
+NP(x0:NPB x1:VP) -> x1 x0
+NP-C(x0:NPB) -> "比" x0 "的"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "劳务" "那样" x16
+S(x0:NP-C VP(x1:VBZ VP-C(x2:VBN x3:VP-C)) x4:.) -> x1 x2 "向" x0 x3 x4
+VP(x0:VBN x1:ADVP x2:PP) -> x2 x1 x0
+NP-C(x0:NPB) -> x0 "》"
+IN("for") -> "对于"
+NPB(x0:NPB x1:NNS x2:, NN("current")) -> x0 x1 x2
+IN("although") -> "虽然"
+NP-C(x0:NP x1:CC NP(x2:NPB PP(IN("of") NP-C(x3:NPB x4:VP)))) -> x4 x0 x1 x2 x3
+JJ("long") -> "长期" "以来"
+NP-C(x0:NPB) -> x0 "进行" "的"
+VP(x0:MD VP-C(x1:VB NP-C(x2:NPB x3:PP))) -> x3 x0 x1 x2
+VP-C(x0:VBN x1:PP) -> x0 x1 ","
+NNS("positions") -> "立场"
+IN("on") -> "于"
+S(x0:`` x1:NP-C x2:VP x3:.) -> x0 x1 x2 x3
+$("$") -> "$"
+S(x0:NP-C x1:VP x2:.) -> x0 "的" x1 x2
+VBZ("has") -> "它"
+VP(VBG("distinguishing") PP(IN("between") x0:NP-C)) -> x0 "区分"
+NN("rate") -> "汇率"
+NN("information") -> "资料"
+NNS("investments") -> "投资"
+SBAR(WHNP(WDT("that")) x0:SG-C) -> x0 "的"
+CC("and") -> "同时"
+VP(VBZ("states") x0:SBAR-C) -> x0
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" "计算" x0 "处" x1 x2
+NN("comparability") -> "可" "比" "性"
+RB("downward") -> "向下"
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1 "出" "的"
+NPB(x0:DT x1:ADJP x2:NN) -> x0 "被" x1 "的" x2
+PP(IN("for") x0:NP-C) -> x0
+NN("situation") -> "状况"
+VP(x0:VP x1:CC x2:VP) -> x0 x1 x2 "的" "汇率"
+ADJP(x0:ADJP x1:PP) -> "比例" x1 x0
+NP-C(NPB(x0:DT JJ("same") NN("type")) PP(x1:IN x2:NP-C) SBAR(WHNP(WDT("that")) SG-C(VP(VBZ("is") x3:VP-C)))) -> x0 "汇率" x3 x2 "是" "同样" x1
+VBN("included") -> "包括"
+S(x0:ADVP x1:, x2:PP ,(",") NP-C(NPB(PRP("they"))) VP(VBP("have") RB("not") ADVP(RB("yet")) VP-C(VBN("been") x3:VP-C)) x4:.) -> x0 x1 x2 "制定" "还" "没有" x3 x4
+NN("development") -> "发展"
+NPB(x0:DT x1:ADJP x2:NN) -> x0 x1 x2
+NP-C(x0:NPB) -> "于" x0
+NPB(x0:DT x1:NN) -> x0 x1 "而" "受到"
+NPB(DT("the") NNP("czech") x0:NNP x1:NNS) -> "捷克" x0 x1
+NPB(DT("the") x0:NNP x1:NNP) -> x0 x1
+NNS("rights") -> "权利"
+RB("so") -> "如此"
+NP(x0:NPB x1:PP) -> "切" x1 x0 "而"
+NN("reference") -> "参照"
+NPB(x0:NN x1:NN x2:, x3:NN x4:, x5:NN x6:CC x7:DT x8:NN) -> x7 x0 x1 x2 x3 x4 x5 x6 x8
+NPB(x0:DT x1:JJ x2:NN x3:NN) -> x0 x1 "的" x2 x3
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0 "出"
+NPB(x0:NN) -> x0 "第"
+VP(VBP("do") RB("not") x0:VP-C) -> "汇率" "不符" x0
+S(x0:NP-C VP(x1:VP x2:, x3:SBAR) x4:.) -> "它" x1 x0 "情况" x2 x3 x4
+VP(x0:MD x1:VP-C) -> x0 x1 "算" "出" "的"
+NPB(DT("the") NNP("committee")) -> "," "委员会"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> x1 x0 x2 x3 x7 x8 x10 x9 "损失" "而" x6 x5 x4
+NPB(x0:NNS) -> x0 "下列" "情况"
+SBAR-C(IN("that") x0:S-C) -> "价格" x0 "处"
+NNP("latvia") -> "拉脱维亚"
+NPB(x0:DT x1:NN) -> x0 x1 "的" "制订"
+VP(x0:VBD x1:PP) -> x1 "为" x0
+NP-C(x0:NPB x1:PP x2:VP) -> x2 x1 "的" x0
+JJ("lengthy") -> "漫长"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 x16
+NN("case") -> "理由"
+NPB(x0:PRP) -> x0
+NNP("turkmenistan") -> "土库曼斯坦"
+NPB(DT("the") x0:JJ x1:JJ x2:JJ x3:NN) -> x0 x1 x2 x3
+NPB(x0:JJ x1:NN) -> x1 x0
+NPB(JJ("foreign") NN("currency")) -> "外币" "的" "情况"
+POS("'s") -> "央"
+ADJP(x0:JJ x1:PP) -> x1 "作" x0
+NP-C(x0:NPB x1:VP) -> "所" x1 x0 "损失" "而"
+JJ("other") -> "他国"
+IN("since") -> "自"
+JJ(JJ("cost") JJ("@-@") JJ("benefit")) -> "成本" "、" "收益"
+PRN(ADVP(RB("therefore")) ,(",") x0:VP) -> x0
+S-C(x0:NP-C VP(VBD("did") RB("not") VP-C(VB("have") NP-C(x1:NPB x2:PP x3:SG)))) -> x2 "未" x1 x0 x3
+IN("that") -> "指出"
+SBAR(x0:IN x1:S-C) -> x0 x1 "和" "劳务"
+NP-C(NPB(x0:DT x1:NNS) VP(x2:VBN x3:PP x4:PP)) -> x3 x2 x0 x4 "的" x1
+NP-C(x0:NPB) -> "斯" x0
+NN("context") -> "根据"
+VP(x0:VP x1:CC x2:VP) -> x0 "内" x1 x2
+VBZ("is") -> "它"
+S(x0:NP-C x1:VP x2:.) -> x0 "便" x1 x2
+NP-C(x0:NPB) -> x0 "使用"
+VP(x0:ADVP x1:VBN x2:ADVP) -> x0 x2 x1
+NPB(x0:NNP JJ("national") NN("income")) -> x0 "国民收入"
+NNP("federation") -> "联邦"
+PP(x0:IN x1:NP-C) -> x1 x0
+TO("to") -> "于"
+NP-C(x0:NPB) -> x0 "来"
+NP-C(x0:NPB) -> "时" "应当" x0
+SBAR(x0:IN x1:S-C) -> x0 x1
+NP-C(x0:NPB) -> "同时" "," x0
+JJ("national") -> "民"
+NP-C(x0:NPB) -> x0 "内" ","
+NNS("countries") -> "具有"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "的" "货物" "和" "劳务" "那样" x16
+NNP("34.") -> "34."
+S-C(x0:NP-C x1:ADJP) -> x0 x1
+NN("parity") -> "平价"
+IN("although") -> "但是"
+DT("the") -> "捷克"
+S-C(x0:NP-C x1:VP) -> x0 x1 "内"
+VBD("provided") -> "提供"
+NN("scale") -> "分摊" "比" "额"
+S(NP-C(NPB(PRP("it"))) VP(VBD("was") VP-C(x0:VBD ,(",") ADVP(RB("however")) x1:, x2:SBAR-C)) x3:.) -> "但是" x1 "有人" x0 "价格" x2 "处" x3
+NP-C(x0:NPB x1:SG) -> x0 x1
+NPB(DT("the") x0:NNS) -> x0
+NPB(DT("a") x0:NN) -> x0
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 "所" x1 x2
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6
+S(x0:NP-C ,(",") x1:SG x2:, x3:VP x4:.) -> x0 "的" x1 x2 x3 "要素" x4
+S(x0:NP-C x1:VP x2:.) -> x0 x1 "算" "出" "的" x2
+S-C(x0:NP-C VP(x1:TO VP-C(VB("compensate") PP(IN("for") NP-C(x2:NPB x3:PP PRN(-LRB-("(") NP(NP(NPB(NN("e.g.")) x4:, x5:NP) x6:, x7:NP x8:, x9:NP) x10:-RRB-)))))) -> x4 x0 x1 "补偿" x3 x2 "(" x5 x6 x7 x8 x9 x10
+NNS("countries") -> "国家"
+NP-C(NP(x0:NPB x1:PP) x2:CC x3:NP) -> x1 x2 x3 x0
+NNS("mers") -> "市场" "汇率"
+NP(x0:NPB PP(x1:IN NP-C(x2:NPB PP(IN("of") NP-C(NPB(DT("the") x3:NN x4:CC x5:NN x6:NN) x7:PP))))) -> x1 x3 x2 x0 x4 x5 x6 x7
+VBN("made") -> "用"
+NN("quota") -> "限额"
+NPB(x0:JJ x1:NNS) -> "进行" x0 x1
+VBG("differing") -> "不同"
+NNS("representations") -> "意见"
+NPB(PRP$("its") x0:NNP x1:NNP x2:NNPS) -> x0 x1 x2 "》" "的"
+PP(x0:IN x1:NP-C) -> x0 x1 "内" ","
+MD("could") -> "便" "能"
+NP-C(x0:NPB) -> "对" x0 "处"
+PP(IN("for") x0:NP-C) -> "了" x0
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0 "算"
+NNP("financial") -> "财政"
+NPB(x0:DT x1:JJ x2:NNS) -> "在" x0 x1 "的" x2 "进行"
+NP-C(x0:NP x1:CC x2:NP) -> x0 x1 x2
+NPB(x0:NN x1:NNS) -> x0 "额" x1
+NNS("requests") -> "要求"
+NPB(x0:CD) -> x0 "以来"
+NN("scale") -> "额" "表" "编制"
+NPB(PRP$("its") x0:NNP x1:NNP x2:NNPS) -> x0 x1 x2
+NNPS("states") -> "国家"
+ADJP(x0:RB x1:JJ) -> x0 x1
+VP(VBP("are") RB("not") x0:ADJP) -> "仍" x0
+,(",") -> "、"
+VBZ("is") -> "很"
+NP-C(NPB(x0:DT NN("guarantee")) SBAR(IN("that") x1:S-C)) -> x0 "保证" x1
+VBZ("makes") -> "也" "提出"
+PP(IN("at") x0:NP-C) -> "尔" x0
+NNS("notes") -> "指出"
+NPB(x0:DT x1:NN x2:POS) -> x0 x1 x2
+NPB(x0:DT x1:NNS) -> "的" x0 x1
+DT("the") -> "的"
+VB("address") -> "处理"
+CC("but") -> "但"
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" "时" "应当" "以" x11 x12 x13 x9 "汇率" "和平" "等" x14 x15 x16
+NNS("statistics") -> "统计"
+NNS("headquarters") -> "总部"
+NPB(DT("the") x0:CD x1:NNP x2:NNPS) -> x0 x1 x2 "制订"
+NPB(x0:NNP x1:NNP NN("exchange") NNS("rates")) -> x0 x1 "汇率"
+VB("do") -> "做"
+NPB(x0:NPB x1:JJ x2:NNS) -> x0 x1 x2
+VP(x0:VBG x1:NP-C) -> x0 "比" x1 "的"
+PP(x0:IN NP-C(x1:NPB x2:PP)) -> x2 x0 x1 "造成"
+VBG("calculating") -> "计算"
+PP(IN("with") NP-C(x0:NPB PP(x1:IN NP-C(NPB(JJ("other") x2:NNPS) x3:PP)))) -> "可" "与其" "他" x3 x2 x1 x0
+VB("develop") -> "制订"
+VB("serve") -> "不能" "用来"
+PP(IN("on") NP-C(NPB(NNP("contributions")))) -> "会费"
+S(NP-C(NPB(PRP("it"))) VP(VBZ("is") x0:RB x1:VP-C)) -> "因此" x0 x1 ","
+NN("processing") -> "处理"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT x2:JJ NNP("union")) x3:PP))) -> x2 x3 x0 "确定" "其" x1
+NPB(x0:NN x1:CD) -> "第" x1 x0
+NP-C(NPB(x0:DT JJ("wide") NN("range")) PP(IN("of") SG-C(VP(VBG("diverging") x1:NP-C x2:PP)))) -> x2 x0 "许多" "不同" "的" x1
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NNS("concerns")) VP(VBN("expressed"))))) -> "对" x0 "事项" "表示" x1 "关切"
+IN("in") -> "内"
+SBAR(IN("for") x0:S-C) -> x0
+IN("as") -> "以"
+NNS("conclusions") -> "结论"
+IN("of") -> "性"
+VBG("requesting") -> "要求"
+VP-C(VBN("used") PP(IN("for") x0:NP-C)) -> "汇率" "与" "用以" x0
+ADVP(x0:RB) -> "的" x0
+NPB(x0:DT x1:NN) -> x0 x1
+NP-C(NPB(DT("a") NN("position")) x0:SBAR) -> x0
+DT("this") -> "这" "一"
+VP-C(x0:VB x1:SBAR-C) -> x0 x1
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> "的" x1 x0 x2 x3 x7 x8 x10 x9 x6 x5 x4
+NPB(DT("the") NN("exchange") NNS("rates")) -> "汇率"
+NPB(x0:NNS) -> x0 "("
+NPB(x0:JJ x1:NNS) -> "进行" "的" x0 x1
+DT("an") -> "一个"
+IN("by") -> "于" "这些"
+NN("rule") -> "条"
+IN("for") -> "需要"
+PP(x0:IN NP-C(x1:NPB PP(x2:IN x3:NP-C))) -> x3 x0 x1 x2
+NNS("consequences") -> "影响"
+NPB(x0:NNP x1:POS) -> x0 x1
+PP(x0:IN x1:NP-C) -> x0 x1 "国民收入"
+SBAR(x0:IN x1:S-C) -> x0 x1 "的"
+ADJP(x0:ADJP x1:CC x2:ADJP) -> x0 x1 "可" x2
+NPB(JJ("foreign") NN("currency")) -> "外币" "的"
+JJ("separate") -> "个别"
+VP(VBN("provided") PP(TO("to") x0:NP-C)) -> "向" x0
+VP-C(x0:VB x1:PP) -> x1 x0 "能力"
+NN("government") -> "政府"
+NPB(x0:JJ x1:JJ x2:NNS) -> x0 x1 x2 "内" ","
+NP(NPB(DT("the") NNP("committee") ADJP(x0:RB VBN("reviewed") NP(x1:NPB PP(IN("of") NP-C(NPB(DT("the") x2:JJ NN("scale")))))) x3:NN) PP(x4:IN NP-C(NPB(NN("preparation")) x5:PP))) -> "委员会" x4 x5 x0 "审查" "了" x2 "比" "额" "表" "编制" x3 x1
+NP-C(x0:NPB x1:PP) -> x0 x1 "则"
+NP-C(x0:NP x1:CC x2:NP) -> "上" x0 x1 x2
+SBAR(x0:IN x1:S-C) -> x0 x1 "货物" "和"
+VBD("added") -> "加重"
+RB("rather") -> "而" "非"
+S(x0:ADVP x1:, x2:PP ,(",") NP-C(NPB(PRP("they"))) VP(VBP("have") RB("not") ADVP(RB("yet")) VP-C(VBN("been") x3:VP-C)) x4:.) -> x0 x1 x2 "还" "没有" x3 x4
+JJ("specific") -> "具体"
+NP-C(x0:NPB) -> "乌" x0
+VP(x0:VBN x1:CC x2:VBN) -> x0 x1 x2
+NPB(NN("interest") NNS("rates")) -> "利率"
+SBAR(x0:IN x1:S-C) -> x0 x1 "的" "货物" "和" "劳务" "那样"
+NN("component") -> "组成"
+NPB(x0:DT ADJP(VBN("guided") PP(IN("by") NP-C(NPB(DT("the") NNP("general") NNP("assembly") NN("mandate")) VP(VBN("contained") PP(x1:IN NP-C(NPB(x2:NN x3:CD x4:NNS))))))) JJ("221") NNP("b")) -> x0 "按照" "大会" "第" x3 x4 "221B" x2 "规定" x1 "职务"
+NNS("rates") -> "比率"
+NN("availability") -> "提供"
+VP(VBD("were") x0:VP-C) -> x0
+NP-C(x0:NPB) -> "计算" x0
+DT("this") -> "这个"
+NP-C(x0:NPB x1:VP) -> x1 "的" x0 "而"
+NPB(x0:DT ADJP(RBS("most") JJ("serious")) x1:NN) -> x0 "严重" x1 "就是"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "那样" x16
+NN("concept") -> "概念"
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "劳务"
+MD("may") -> "可以"
+NPB(x0:PRP) -> "," "使" x0
+SBAR(x0:IN x1:S-C) -> x0 x1 "货物"
+NP-C(NPB(DT("the") VBN("shared") NNS("views")) x0:PP) -> x0
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" "时" "应当" "以" x11 x12 x13 x9 "汇率" "和平" "等" x14 "编制" x15 x16
+PP(TO("to") NP-C(NPB(DT("the") x0:NNS))) -> "使" x0 "更"
+.(".") -> "."
+NN("comparability") -> "可" "比"
+VP(x0:VBP x1:ADJP) -> x0 x1
+VP(VBG("doing") ADVP(RB("so"))) -> "这样" "做" "时"
+NP-C(NPB(x0:DT x1:NN) x2:PP) -> x1 "比" x2 x0 "要素"
+NNS("pares") -> "调整" "汇率"
+NP(x0:NPB x1:PP) -> "切" x1 x0
+SBAR(WHNP(WDT("that")) SG-C(VP(VBP("have") VP-C(VBN("suffered") NP-C(x0:NPB x1:PP))))) -> x1 "而" "遭受" x0
+JJ("serious") -> "严重"
+NX(x0:NX x1:PRN) -> x0 x1
+NP-C(x0:NPB x1:, x2:NP) -> x0 x1 x2
+NP(x0:NPB x1:PP) -> "例如" x0 x1
+NP-C(x0:NPB) -> x0 "算" "出" "的"
+VP(x0:MD x1:VP-C) -> x0 x1 "的"
+NNP("income") -> "收入"
+PP(IN("of") x0:NP-C) -> "以" x0
+NPB(DT("the") x0:JJ x1:NNS) -> x0 "的" x1
+NNS("scales") -> "额" "表"
+SBAR(x0:IN x1:S-C) -> x0 "," x1
+VBD("were") -> "以前"
+VBN("damaged") -> "破坏"
+JJ("current") -> "现行"
+NP-C(x0:NPB) -> x0 "进行"
+NNP("ppps") -> "购买力" "平价"
+S(x0:NP-C VP(x1:VP x2:, x3:SBAR) x4:.) -> x1 x0 "的" "情况" x2 x3 x4
+PRP$("its") -> "的"
+NPB(x0:NNP x1:NNP x2:NNPS) -> x0 x1 x2 "的"
+NPB(DT("the") NNS("united_states")) -> "美国"
+ADVP(x0:RB) -> x0
+NP-C(x0:NPB) -> "在" x0
+VP-C(VBN("elaborated") ADVP(RB("operationally"))) -> "加以" "拟订"
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0
+VBZ("notes") -> "指出"
+PP(IN("with") NP-C(x0:NPB PP(x1:IN NP-C(NPB(JJ("other") x2:NNPS) x3:PP)))) -> "可" "与其" "他" x3 x2 x1 x0 "作"
+VP(VBD("was") x0:ADVP x1:VP-C) -> x0 x1
+NNS("differences") -> "差别"
+NPB(x0:JJ x1:JJ x2:NNS) -> x0 x1 x2 "内"
+VBN("lost") -> "损失"
+NPB(JJ("international") NNS("standards")) -> "国际标准"
+PP(IN("of") NP-C(NPB(NN("procedure")) x0:PP)) -> x0 "议事"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "情况" x6 "国家" x7 "国民收入" x5 x3 "而" x0 "的" ":" x9 x10 x11 x4 x13 "的" x12
+NPB(x0:DT x1:NNS) -> "内" x0 x1
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> "的" x1 x0 x2 x3 x7 x8 x10 x9 "而" x6 x5 x4
+CD("46.") -> "46."
+VP-C(x0:VB x1:PP) -> x0 x1 ","
+NP(x0:NPB x1:, x2:NP x3:.) -> x0 x1 x2 x3
+NPB(ADJP(x0:JJ PP(IN("per") NP-C(NPB(NN("capita"))))) x1:JJ NNS("incomes")) -> x0 x1 "平均" "收入"
+NPB(x0:JJ x1:NN x2:NNS) -> x0 "的" x1 x2
+NP-C(x0:NPB) -> "应当" x0
+PP(IN("in") NP-C(NPB(DT("a") x0:ADJP x1:NN))) -> "以" x0 x1
+IN("for") -> "数"
+NN("suitability") -> "用" "性"
+NN("economy") -> "经济"
+NN("implementation") -> "执行"
+NN("attention") -> "注意"
+NNS("elements") -> "组成部分"
+S(x0:NP-C x1:ADVP x2:VP x3:.) -> "同时" x0 x1 x2 x3
+S(ADVP(RB("previously")) ,(",") NP-C(x0:NPB PP(IN("for") NP-C(NPB(x1:DT x2:JJ x3:JJ x4:NNPS)))) VP(x5:VBD x6:PP ADJP(DT("the") x7:JJ PP(x8:IN x9:NP-C) x10:SBAR)) x11:.) -> x1 x5 "," x2 x3 x4 x9 x0 x6 x7 x8 ";" x10 x11
+NPB(x0:DT x1:JJ NN("exchange") NN("rate")) -> x0 x1 "的" "汇率"
+IN("of") -> "共和国"
+NNP("june") -> "6月"
+SG-C(x0:VP) -> x0
+NPB(x0:DT VBG("purchasing") NN("power") x1:NN) -> x0 "购买力" x1
+VP(x0:VBN x1:CC x2:VBN) -> x0 x1 x2 "的"
+S-C(x0:NP-C x1:VP) -> x0 x1 "处"
+NP-C(x0:NPB) -> "价格" x0
+JJ("level") -> "价格" "水平" "方面"
+VP(x0:VBZ x1:NP-C) -> x0 x1
+JJ("such") -> "这些"
+VBZ("concepts") -> "概念"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "下列" "情况" x6 "国家" x7 "国民收入" x5 x3 x0 "的" ":" x9 x10 x11 x4 x13 "的" x12
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "劳务" "那样"
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "和"
+NPB(x0:PRP$ x1:JJ x2:NN) -> x0 x1 x2
+NPB(x0:JJ x1:NNS) -> x0 "的" x1
+IN("as") -> "是"
+NN("agriculture") -> "农业"
+VBG("assuring") -> "确保"
+``("8.") -> "8."
+PP(x0:IN x1:SG-C) -> x0 x1
+NNS("transfers") -> "转移"
+NPB(x0:JJ x1:NN x2:NNS) -> x0 x1 x2 "的"
+NP-C(x0:NPB PP(x1:IN x2:NP-C) PP(x3:ADVP x4:IN NP-C(NPB(NN("effect"))))) -> x2 x3 x0 x1 x4
+NPB(x0:JJ x1:NNS) -> "应当" "以" x0 x1
+NNP("kyrgyzstan") -> "分摊" "比率"
+NP-C(NPB(x0:PRP$ x1:NN) x2:SG) -> x0 x2 x1
+VBZ("concerns") -> "问题"
+NP(NPB(DT("the") NNP("committee") ADJP(x0:RB VBN("reviewed") NP(x1:NPB PP(IN("of") NP-C(NPB(DT("the") x2:JJ NN("scale")))))) x3:NN) PP(x4:IN NP-C(NPB(NN("preparation")) x5:PP))) -> "委员会" x4 x5 "时" x0 "审查" "了" x2 "比" "额" "表" "编制" x3 "的" x1
+PP(x0:IN x1:SG-C) -> x0 x1 "的"
+NN("rate") -> "分摊" "比率"
+VP(x0:VBZ x1:NP-C) -> x1 x0
+NP-C(x0:NPB) -> "尔" x0
+NN("need") -> "有" "需要"
+SBAR(x0:IN x1:S-C) -> x0 x1 "劳务"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "情况" x6 "国家" x7 "国民收入" x5 x3 x0 "的" ":" x9 x10 x11 x4 x13 "的" x12
+ADJP(x0:JJ x1:CC x2:JJ) -> "被" x0 x1 x2 "的"
+NNS("provisions") -> "规定"
+S(NP-C(NPB(PRP("it"))) VP(VBD("was") VP-C(x0:VBD ,(",") ADVP(RB("however")) x1:, x2:SBAR-C)) x3:.) -> "但是" x1 "有人" x0 "价格" x2 x3
+JJ("necessary") -> "必要"
+VP(x0:VBP x1:NP-C x2:PP ADJP(x3:JJ PP(x4:CC PP(x5:IN NP-C(NPB(x6:PRP x7:CC x8:JJ NNPS("states")))) ,(",") PP(ADVP(ADVP(RB("as") RB("well")) PP(IN("as") NP-C(x9:NPB PP(x10:IN NP-C(x11:NPB PP(IN("for") NP-C(NPB(x12:DT x13:JJ x14:NNP)))))))) IN("before")) CC("and") PP(IN("after") x15:NP-C)))) -> "问题" x0 x3 x2 x4 x6 x7 x8 "家" x5 x1 "以及" x13 "这些" x14 x15 "前后" x12 x11 x9 x10
+VP(x0:TO VP-C(x1:VB NP-C(NPB(x2:JJ x3:, x4:NN NN("alia"))) x5:, PP(IN("from") x6:NP-C))) -> x2 x3 x4 "其他" "外" x5 x6 "而" x0 x1
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" x0 x1 x2
+NPB(x0:DT x1:JJ x2:NNS) -> x0 x1 "的" x2
+NPB(x0:JJ NNS("amounts")) -> x0
+S(NP-C(NPB(NPB(NNP("20.") NNP("azerbaijan") POS("'s")) NN("representation"))) x0:VP x1:.) -> "因此" x0 x1
+NPB(x0:DT NNP("member") NNPS("states")) -> x0 "会员国"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NNS("concerns")) VP(VBN("expressed"))))) -> "对" x0 "表示" x1 "关切"
+TO("to") -> "以"
+PP(x0:IN NP-C(NPB(NPB(x1:NNP x2:POS) x3:NN) SG(VP(TO("to") VP-C(x4:VB PP(x5:IN NP-C(x6:NPB PP(x7:IN x8:NP-C) x9:PP))))))) -> x7 x2 x8 x6 x9 x5 x0 x1 x4 x3
+NN("measurement") -> "计算"
+SBAR(x0:IN x1:S-C) -> ";" x0 "," x1
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "的" "货物" "和" "劳务" "那样"
+NPB(x0:DT x1:JJ x2:NNS) -> x0 x1 x2 "的" "汇率"
+DT("a") -> "有"
+NNS("services") -> "劳务"
+NN("provision") -> "规定"
+NP-C(x0:NPB) -> "计算" x0 "处"
+PP(IN("as") x0:NP-C) -> "," x0
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" "计算" x0 x1 x2 "处"
+VP-C(VBN("used") PP(IN("for") x0:NP-C)) -> "与" "用以" x0
+DT("all") -> "所有"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 x6 "国家" x7 "国民收入" x5 x3 x0 "的" ":" x9 x10 x11 x4 x13 "的" x12
+ADJP(x0:JJ x1:PP) -> x1 x0
+VP-C(x0:VBN x1:SBAR-C) -> x0 x1
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "货物"
+PP(IN("in") NP-C(NPB(NN("principle")))) -> "原则上"
+JJ("foreign") -> "外国"
+NN("calculation") -> "计算"
+VP(x0:MD x1:RB x2:VP-C) -> x0 x1 x2
+VP(x0:VBP x1:VP-C) -> "它" x0 x1
+NP-C(NPB(x0:NPB JJ("current") x1:NN) x2:SG) -> x0 x2 x1
+VP(VBD("were") RB("not") ADJP(JJ("available"))) -> "缺乏"
+NP-C(NPB(x0:DT x1:JJ x2:NN) PP(IN("of") NP-C(x3:NPB PP(IN("in") NP-C(NPB(NN("accordance")) PP(IN("with") x4:NP-C))))) SG(VP(TO("to") x5:VP-C))) -> x0 "无法" "根据" x5 x4 "来" "对" x3 "作" x1 x2
+VP(MD("should") VP-C(VB("be") VP-C(VBN("assessed") ADVP(RB("independently")) ,(",") PP(x0:IN x1:NP-C)))) -> x0 "应当" x1 "摊" "款"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> x1 x0 x2 x3 x7 x8 x10 "所" x9 x6 x5 x4
+ADJP(x0:JJ x1:PP) -> x0 x1
+NPB(x0:NN x1:NNS) -> "的" x0 x1
+VP(VBZ("has") VP-C(VBN("been") x0:NP-C x1:PP)) -> x1 "一直" x0
+NP-C(x0:NPB x1:PP) -> x1 x0 "而"
+NNS("activities") -> "活动"
+NPB(DT("the") NNP("committee")) -> "委员会"
+NPB(x0:NNS) -> x0 "作"
+VB("address") -> "正视"
+NN("paragraph") -> "段"
+PP(x0:IN NP-C(x1:NPB VP(x2:ADVP x3:VBN PP(x4:IN x5:NP-C)) x6:PRN)) -> x2 x5 x6 x3 x4 x0 x1
+RB("however") -> "但是"
+VBG("preparing") -> "编制"
+S(x0:PP x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 "汇率" x4
+VP(VBZ("is") RB("not") x0:VP-C) -> "未" "有效" "地" x0
+VB("meet") -> "合"
+``("1.") -> "1."
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "劳务" "那样" x16
+NPB(x0:NNS) -> x0 "来"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "下列" "情况" x6 "国家" x7 "国民收入" x5 x3 x0 "的" ":" x9 x10 x11 x4 x13 x12
+VBZ("explains") -> "说明" "为什么"
+VP(x0:VBP x1:NP-C PP(PP(x2:IN NP-C(x3:NP x4:CC x5:NP)) ,(",") x6:PP x7:, x8:CONJP x9:PP)) -> x0 x3 x2 x1 x4 x5 x6 x7 x8 x9
+CD("22") -> "22"
+VP(x0:VBG) -> x0
+VP(x0:VBN PP(x1:IN x2:NP-C)) -> x2 "而" x0 x1
+NN("dissolution") -> "解散"
+NPB(x0:JJ x1:NN) -> "于" x0 x1
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "的" "货物" "和" "劳务" "那样" x16
+NPB(x0:NN x1:CD) -> x1 x0
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3 "出" "的"
+NPB(DT("the") x0:JJ JJ("national") NN("income") x1:NNS) -> "使用" x0 "的" "国民收入" x1
+VP(TO("to") VP-C(VB("be") VP-C(x0:VBN x1:PP))) -> "将" x1 "来" x0
+VP(x0:MD x1:VP-C) -> "便" x0 x1
+IN("without") -> "不"
+PP(x0:PP PP(TO("to") NP-C(NPB(x1:CD x2:NNP x3:CD)))) -> x3 x0 x2 x1
+NN("population") -> "人口"
+IN("over") -> "在"
+NP-C(x0:NPB) -> x0 "出" "的"
+NP-C(x0:NPB) -> "向" x0
+JJ("large") -> "大量"
+NPB(x0:NNP) -> x0 "进行" "的"
+VP(VBN("used") PP(IN("in") x0:SG-C)) -> "用以" x0
+NPB(x0:NNP JJ("national") NN("income")) -> x0 "国民收入" "的"
+NNPS("states") -> "会员国"
+JJ("disposable") -> "可" "支配"
+,(",") -> ":"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 x16
+S(x0:S x1:CC x2:S) -> x0 "内" "," x1 x2
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "货物" "和"
+DT("the") -> "("
+NP-C(x0:NPB x1:PP) -> "了" x1 x0
+DT("the") -> "这"
+VB("explain") -> "解释"
+PP(TO("to") x0:NP-C) -> x0 "内"
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 "所" x1 x2 "的"
+NNS("distortions") -> "不正" "常"
+VP(VBZ("has") VP-C(VBN("been") x0:NP-C x1:PP)) -> x1 "国民收入" "一直" x0 "要素"
+NNS("conversions") -> "换算"
+VBG("providing") -> "通过"
+NP-C(NPB(NNS("data")) x0:VP) -> x0
+VBD("revealed") -> "显示"
+RB("carefully") -> "仔细"
+NNP("state") -> "国家"
+VP(x0:VBZ VP-C(x1:VBN PP(IN("as") NP-C(x2:NP x3:CC NP(x4:NPB PP(IN("of") NP-C(x5:NPB VP(x6:VBN SG(VP(x7:TO VP-C(x8:VB x9:NP-C))))))))) x10:PP)) -> "的" x1 x0 x2 x3 x7 x8 x10 "所" x9 "而" x6 x5 x4
+NPB(x0:NNP x1:NNP x2:POS) -> x0 x1 x2
+JJ("national") -> "国民"
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 "的" x2 x1 "的" x0 x6 x7 x8
+NN("income") -> "收"
+NN("product") -> "产品"
+CD("1985") -> "1985年"
+VBP("reflect") -> "反映"
+NNP("belarus") -> "现行"
+VBG("concerning") -> "关于"
+NNP("44.") -> "44."
+IN("about") -> "关于"
+NN("preparation") -> "在编" "制"
+VB("suffer") -> "受到"
+NPB(x0:DT x1:NN) -> x0 x1 "而"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP))) x2:PP) -> x1 x2 "所" x0 "到" "的"
+VP(VBD("was") RB("not") x0:PP) -> "未能" x0
+NPB(DT("the") x0:NN x1:NNS) -> x0 x1 "的"
+VBN("reduced") -> "有所" "减少"
+NN("debt") -> "债"
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" x0 x1 x2 "处"
+RB("internationally") -> "国际"
+VP(x0:VBN x1:PP) -> "的" x0 x1
+NN("possibility") -> "可能性"
+ADJP(x0:RB JJ("sound")) -> x0
+ADJP(x0:RBR JJ("relevant") PP(IN("for") x1:NP-C)) -> x0 "适合" "于" x1
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT x2:JJ NNP("union")) x3:PP))) -> x2 x3 x0 "其" x1
+JJ("technical") -> "技术性"
+NP-C(x0:NPB x1:PP) -> "是" x1 x0
+PP(x0:IN x1:NP-C) -> "在" x1 x0
+VBZ("reiterates") -> "重申"
+NNP("39.") -> "39."
+PP(x0:IN NP-C(x1:NPB PP(JJ("such") IN("as") x2:NP-C))) -> "比例" "如" "编制" x0 x2 "的" x1
+ADJP(x0:JJ x1:CC x2:JJ) -> "被" x0 x1 x2
+CD(CD("1989") CD("@-@") CD("1994")) -> "1989-1994年"
+IN("for") -> "有利于"
+NPB(DT("a") ADJP(RB("centrally") x0:VBN)) -> "央" x0
+NP-C(x0:NPB x1:VP) -> x1 "的" x0
+DT("the") -> "《"
+DT("the") -> "在"
+NP(x0:NPB x1:SBAR x2:.) -> x0 x1 x2
+RB("previously") -> "以前"
+DT("the") -> "是"
+JJ("alternative") -> "备" "选"
+NPB(x0:JJ x1:NN x2:NNS) -> "的" x0 x1 x2
+NPB(x0:DT x1:NNS) -> x0 x1 "作"
+RB("conceptually") -> "在" "概念" "上"
+NPB(DT("the") x0:JJ x1:NN) -> x0 x1
+JJ("adjusted") -> "价格" "调整"
+VP(VBZ("is") VP-C(VBN("carried") PRT(RP("out")) x0:PP)) -> "是" x0
+VP(x0:MD x1:VP-C) -> x0 x1 "算" "出"
+NNP("gdp") -> "国内" "总产值"
+PP(x0:ADVP x1:IN x2:NP-C) -> x0 x1 x2
+VP(VBZ("has") RB("not") VP-C(VBN("been") VP-C(x0:ADVP x1:VBN CC("nor") VBN("made") x2:ADVP))) -> "不" x0 x1 "也" "未" x2
+NP-C(x0:NPB) -> x0 "制订"
+NNS("goods") -> "货物"
+JJ("implicit") -> "必然"
+JJ("high") -> "高"
+VP(VBZ("has") RB("not") VP-C(VBN("been") VP-C(x0:ADVP x1:VBN CC("nor") VBN("made") x2:ADVP))) -> "的" "制订" "不" x0 x1 "也" "未" x2
+VP(VBZ("has") VP-C(VBN("been") x0:NP-C x1:PP)) -> x1 "国民收入" "一直" x0
+S(x0:PP x1:, x2:NP-C ADVP(RB("also")) VP(VBD("was") x3:ADJP) x4:.) -> x0 x1 x2 "也" x3 x4
+PP(x0:IN NP-C(x1:NPB PP(JJ("such") IN("as") x2:NP-C))) -> "如" "编制" x0 x2 "的" x1
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" x0 x1 x2
+NNS("disasters") -> "灾害"
+NP-C(x0:NPB x1:PP x2:PP) -> x1 x2 x0 "是"
+NP-C(x0:NPB x1:PP) -> "了" x1 "的" x0
+VP-C(VBN("based") PP(IN("on") x0:NP-C)) -> "根据" x0 "出" "的"
+VBD("used") -> "所" "使用"
+NP(NPB(x0:NPB x1:JJ x2:NN x3:NNS NX(x4:NX x5:CC NX(x6:NNS x7:NN))) PP(IN("of") NP-C(x8:NPB x9:PP)) x10:.) -> x0 x1 x2 x3 x4 x5 x6 x9 x7 x8 x10
+NPB(x0:NNS) -> "的" x0 "而"
+S(NP-C(x0:NPB ADJP(x1:JJ x2:PP)) VP(x3:VBZ SBAR-C(x4:IN S-C(x5:NP-C x6:VP))) x7:.) -> x2 x0 x3 x4 x5 x1 x6 x7
+S(x0:`` x1:NP x2:, NP-C(x3:NP x4:CC NP(NPB(NNP("uzbekistan")))) VP(VBZ("focuses") x5:PP x6:PP) x7:.) -> x0 x1 x2 x3 x4 x5 x6 "克" "斯坦" x7
+VP-C(VB("result") x0:PP) -> x0
+NN("study") -> "研究"
+NN("rest") -> "其他" "地方"
+NP-C(x0:NPB x1:PP) -> "将" x0 x1
+VP-C(VBN("made") x0:PP) -> "使用" x0
+NPB(x0:NN x1:NNS) -> "的" x0 x1 "损失" "而"
+NP-C(x0:NPB) -> "," "使" x0
+VP-C(x0:VBN x1:PP x2:NP-C) -> x0 x1 x2
+NN("problem") -> "问题"
+S(x0:NP-C x1:VP x2:.) -> x0 "便" x1 "算" "出" "的" x2
+NPB(x0:DT x1:NNS) -> "将" x0 x1
+JJ("sustainable") -> "可" "持续"
+NN("basis") -> "确定"
+VBD("noted") -> "指出"
+RB("centrally") -> "集中"
+NNS("problems") -> "问题"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "那样" x16
+NNS("deficiencies") -> "缺陷"
+PP(IN("for") x0:NP-C) -> "了" x0 "的"
+VP(x0:VBN x1:PP) -> x0 x1
+NNS("appeals") -> "要求"
+VP-C(x0:VBN x1:ADVP) -> x1 x0
+NP(x0:NPB) -> "," x0
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" "时" x11 x12 x13 x9 "汇率" "和平" "等" x14 x15 x16
+NNS("loans") -> "贷款"
+NP-C(x0:NPB PP(x1:IN x2:NP-C) PP(x3:ADVP x4:IN NP-C(NPB(NN("effect"))))) -> x2 "的" x3 x0 x1 x4
+VP(x0:VBP x1:NP-C) -> x0 x1
+SG-C(x0:VP) -> x0 "的"
+NN("adjustment") -> "调整"
+VP-C(x0:VBN x1:PP) -> x0 x1
+VP-C(VP(VBN("claimed") SG-C(VP(TO("to") VP-C(VB("be") NP-C(NPB(DT("a") NN("successor")) PP(TO("to") NP-C(NPB(DT("the") JJ("former") NNP("union")) PP(IN("of") NP-C(NPB(NNP("soviet") NNP("socialist") NNPS("republics"))))))))))) CC("and") ,(",") x0:PRN) -> "因此" x0
+NPB(x0:JJR x1:CC JJ("later") NNS("years")) -> x0 "几" "年" x1 "后几年"
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" x11 x12 x13 x9 "汇率" "和平" "等" x14 "编制" x15 x16
+NPB(DT("the") x0:NNP JJ("nuclear") NN("power") NN("plant")) -> x0 "核电厂"
+VBP("remain") -> "仍" "存在"
+VP(VBZ("has") x0:NP-C) -> x0
+IN("with") -> "与"
+NPB(x0:PRP$ x1:NN x2:NNS) -> x0 x1 x2 "作"
+:(";") -> ";"
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1 "的"
+VB("have") -> "有"
+RB("also") -> "也"
+NNS("effects") -> "影响"
+JJ(JJ("man") JJ("@-@") JJ("made")) -> "人为"
+JJ("current") -> "目前"
+PP(IN("on") NP-C(NPB(NNPS("contributions")))) -> "会费"
+NPB(x0:JJ x1:NN x2:NN) -> x1 x2 x0
+JJ("joint") -> "联合"
+NP-C(NPB(x0:NN x1:CD) PRN(x2:-LRB- S(LST(LS("c") -RRB-(")")) x3:PP x4:NP-C VP(JJ("221"))) NNP("b"))) -> "第" x4 "221B" "号" x3 "第" x1 x2 ")" x0
+PP(IN("of") NP-C(NPB(DT("the") x0:JJ NNP("union")) x1:PP)) -> x0 x1 "的"
+VP(x0:VBP x1:PP) -> x1 x0
+NX(NP(NPB(x0:PRP$ x1:JJ x2:NNS) VP(VBG("resulting") PP(IN("from") NP-C(x3:NPB PP(x4:IN NP-C(NPB(NNP("security") NNP("council") x5:NNS))))))) x6:PP) -> x0 "因" "安全理事会" x6 x5 x3 "受到" x4 x1 x2
+PP(IN("among") NP-C(NPB(DT("the") x0:CD NNP("member") NNPS("states")))) -> x0 "个" "会员国" "之间"
+NN("consumption") -> "消耗"
+VP(x0:VBD x1:NP-C) -> "也" x0 x1
+NNS("views") -> "意见"
+IN("as") -> "因为"
+NP-C(x0:NPB x1:CONJP) -> x0 x1
+``("41.") -> "41."
+JJ("annexed") -> "兼并"
+VBP("are") -> "也"
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NP x2:CC x3:NP))) -> x1 x0 x2 x3
+NPB(x0:CD x1:NN) -> x0 x1 "所"
+PP(IN("on") x0:NP-C) -> "乌" x0
+VP(x0:VBN x1:CC x2:VBN) -> "所" x0 x1 x2 "的"
+NNP("mitigation") -> "减免" "办法"
+NNP("committee") -> "委员会"
+SBAR(x0:IN x1:S-C) -> x0 x1 "和"
+NPB(x0:PRP) -> "同时" "," x0
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NPB PP(x2:TO NP-C(x3:NP x4:CC x5:NP))))) -> x1 x2 x3 x0 x4 x5
+ADJP(x0:JJ x1:CC x2:JJ) -> "是" x0 "性" "的" x1 "因此" "不" x2
+WHNP(x0:WDT) -> x0 "情况"
+VBZ("does") -> "并"
+NPB(x0:VBN x1:NNS) -> x0 "的" x1
+PP(IN("of") x0:NP-C) -> x0 "时"
+VBD("calculated") -> "计算"
+IN("for") -> "的"
+NPB(x0:DT x1:NN) -> x0 "分配" x1
+NNS("constraints") -> "限制"
+NN("production") -> "生产"
+NP-C(x0:NPB x1:VP) -> "所" x1 x0 "而"
+VBN("provided") -> "提供"
+NPB(x0:NN x1:NNS) -> x0 x1
+NPB(x0:NN) -> x0
+VP(x0:VBZ x1:S-C) -> x0 x1
+NPB(x0:DT x1:JJ x2:NN) -> x0 x1 x2 "," "使"
+NP-C(x0:NP x1:PP) -> x0 x1
+NP-C(x0:NPB) -> x0 "则"
+NPB(x0:JJ x1:JJ x2:NN) -> x0 x1 x2
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NP x2:CC x3:NP))) -> x1 x0 x2 x3 "而"
+NP-C(x0:NPB x1:SBAR) -> x1 x0
+S(NP-C(x0:NPB PP(x1:IN PP-C(IN("for") NP-C(x2:NPB SBAR(WHNP(WDT("that")) SG-C(VP(x3:VBP PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT x7:JJ x8:NN)))))))))))) VP(x9:VBD x10:, x11:S-C) x12:.) -> x0 x1 x3 x6 x4 x9 x7 x8 x5 x2 x10 x11 x12
+S-C(NP-C(NPB(x0:DT x1:VBN x2:NN) SG(VP(TO("to") VP-C(x3:VB x4:PP)))) x5:VP) -> x4 x0 x3 x2 x5 x1
+SBAR-C(x0:WHADVP x1:S-C) -> x0 x1 "算" "出"
+RB("better") -> "适当"
+NNS("quantities") -> "数量"
+S(NP-C(NPB(DT("the") NN("note"))) x0:ADVP VP(VP(VBZ("contains") NP-C(NPB(NN("summary") x1:NNS) PP(x2:IN x3:NP-C)) x4:ADJP) x5:CC VP(x6:VBZ VP-C(VBN("used") PP(IN("in") NP-C(x7:NPB PP(IN("of") NP-C(NP(x8:NPB VP(x9:VP x10:CC x11:VP)) x12:, x13:NP x14:, x15:NP))))))) x16:.) -> "其中" "载" x1 x2 x7 x8 x3 x4 x5 x6 x0 x9 x10 x12 x13 x14 x11 x15 x16
+DT("the") -> "了"
+NPB(x0:DT x1:NNP) -> x0 x1
+S(x0:NP-C x1:ADVP x2:VP x3:.) -> "同时" "," x0 x1 x2 x3
+NP-C(NPB(x0:DT JJ("same") NN("type")) PP(x1:IN x2:NP-C) SBAR(WHNP(WDT("that")) SG-C(VP(VBZ("is") x3:VP-C)))) -> x0 "汇率" "与" x3 x2 "是" "同样" x1
+S(x0:NP-C ,(",") x1:SG x2:, x3:VP x4:.) -> x0 x1 x2 x3 "要素" x4
+NPB(x0:PRP$ x1:NN) -> x0 x1
+CD("14") -> "14日"
+NN("inflation") -> "通货膨胀"
+CD("one") -> "一个"
+VBZ("endorses") -> "核准"
+NPB(DT("the") x0:NN x1:NNS) -> x0 x1
+S(x0:SBAR x1:, NP-C(NPB(x2:DT x3:JJ x4:NNS)) VP(x5:VBP x6:ADJP x7:PP) x8:.) -> x0 x1 x2 "," x7 x6 x3 "的" x4 x5 x8
+NP-C(x0:NPB VP(x1:VBN x2:PP x3:SBAR)) -> x2 x1 x0 x3
+SG-C(x0:VP) -> x0 "也"
+S-C(NP-C(NPB(x0:JJ x1:NNS)) VP(MD("may") VP-C(VB("have") VP-C(x2:VBN SBAR(x3:IN S-C(NP-C(x4:NPB PP(IN("in") NP-C(NP(NPB(x5:JJ x6:NNS) x7:PP) x8:CC NP(x9:NPB PP(x10:IN NP-C(NPB(x11:JJ x12:NNS) x13:PP)))))) VP(VBP("are") NP-C(NPB(DT("an") NN("indication")))))))))) -> "," x3 x7 x6 x1 "国家" x2 x4 x8 x13 x5 x12 "有" x9 x10 "汇率" "便" x0 x11
+SBAR(x0:WHNP x1:SG-C) -> x0 "情况" x1
+NX(NP(NPB(x0:PRP$ x1:JJ x2:NNS) VP(VBG("resulting") PP(IN("from") NP-C(x3:NPB PP(x4:IN NP-C(NPB(NNP("security") NNP("council") x5:NNS))))))) x6:PP) -> x0 "因" "安全理事会" x6 x5 x3 x4 x1 x2 ","
+VBN("used") -> "所" "使用"
+PP(IN("of") x0:NP-C) -> "额" x0
+VP(x0:VBN x1:PP) -> x1 "内" x0 "的"
+RB("conceptually") -> "概念"
+NPB(x0:JJ x1:NNS) -> "的" x0 x1
+SG(x0:VP) -> "因而" x0
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "的" "货物" "和"
+NPB(x0:CD x1:CC x2:CD) -> x0 x1 x2
+CD("two") -> "两" "次"
+NNP("division") -> "司"
+S(x0:NP-C x1:VP .(".")) -> x0 x1
+IN("from") -> "从中"
+PP(IN("of") x0:NP-C) -> "时" "应当" x0
+NPB(x0:DT NNP("state") POS("'s")) -> x0 "国"
+NP-C(x0:NPB x1:VP) -> "所" x1 "的" x0 "损失"
+PP(IN("at") x0:NP-C) -> "切" "尔" x0
+NPB(x0:DT JJ("necessary") x1:NNS) -> x0 x1
+PP(IN("of") x0:NP-C) -> "切" "尔" x0
+NNS("indicators") -> "指数"
+NP-C(x0:NPB x1:PP) -> x1 x0
+NP-C(x0:NPB) -> x0 ","
+CD("1993") -> "1993年"
+NNPS("statistics") -> "统计" "数字"
+NP-C(NPB(x0:JJ x1:NN) PP(x2:IN x3:NP-C)) -> x3 "进行" x0 x2 x1
+ADJP(x0:RBR JJ("relevant") PP(IN("for") x1:NP-C)) -> x0 "适合" x1
+DT("a") -> "这个"
+VBG("adjusting") -> "调整"
+NP-C(x0:NPB) -> x0 "也"
+VP-C(x0:VBN x1:PP) -> x0 x1 "内"
+NNS("concepts") -> "概念"
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2 "算" "出"
+-LRB-("(") -> "("
+NNS("reforms") -> "改革"
+IN("by") -> "的"
+VP(VBZ("is") RB("not") x0:VP-C) -> "未" x0
+RB("not") -> "不是"
+ADVP(x0:RB) -> x0 "将"
+NP(x0:NPB) -> "的" x0
+IN("on") -> "关于"
+NPB(x0:JJ x1:NNS) -> x0 x1 "则"
+NN("discussion") -> "讨论"
+NP-C(NPB(x0:DT x1:NN) x2:PP) -> x1 x2 x0 "要素"
+NP-C(x0:NPB x1:PP) -> "切" x1 x0
+NP(NPB(NNS("expectations")) PP(IN("of") x0:NP-C)) -> "对" x0 "期望"
+IN("between") -> "之间"
+NPB(x0:NNS) -> x0 "(" "例如"
+NP-C(x0:NPB x1:VP) -> x1 x0 "作"
+NP-C(x0:NPB x1:PP) -> "尔" x1 x0
+VP(VBN("contained") PP(IN("in") x0:NP-C)) -> "第" x0 "内" "所" "载"
+WDT("which") -> "因为" "这些"
+RB("adequately") -> "适当"
+NP(x0:NPB PP(x1:IN NP-C(x2:NPB PP(IN("of") NP-C(NPB(DT("the") x3:NN x4:CC x5:NN x6:NN) x7:PP))))) -> x1 x3 x2 "生产" x0 x4 x5 x6 x7
+NP-C(x0:NPB x1:PP) -> x1 "第" x0
+S(x0:NP-C ,(",") x1:SG x2:, x3:VP x4:.) -> x0 x1 x2 x3 x4
+NNS("governments") -> "政府"
+PP(IN("of") x0:NP-C) -> "比" x0
+PP(x0:IN NP-C(x1:NPB x2:VP)) -> x2 x0 x1
+S-C(x0:NP-C VP(x1:VBZ x2:VP-C)) -> x2 x0 x1
+NP-C(NPB(x0:NNP x1:NNP) x2:VP) -> x0 x2 x1 "的"
+NPB(x0:CD x1:CC x2:CD) -> x0 x1 x2 "的"
+VBD("was") -> "就"
+NNS("calculations") -> "计算" "方法"
+TO("to") -> "到"
+S(x0:NP-C x1:VP x2:.) -> x0 x1 "的" x2
+NP(NPB(DT("the") JJ("limited") NN("capacity")) SG(VP(TO("to") x0:VP-C))) -> "无法" x0
+NP-C(x0:NPB) -> x0 "的"
+NN("amount") -> "数量"
+NN("cornerstone") -> "是"
+NNS("comparisons") -> "比较"
+ADVP(x0:JJ) -> x0
+VP(VP(x0:NNS x1:PP PP(x2:IN NP-C(x3:NPB PP(IN("of") NP-C(NPB(x4:PRP$ x5:NN) PP(IN("of") NP-C(NP(x6:NPB x7:PP) x8:CC x9:NP))))))) x10:CC x11:VP) -> x0 x1 x7 x8 x9 x10 x11 x2 x3 x4 x6 x5
+S(x0:SBAR x1:, NP-C(NPB(x2:DT x3:JJ x4:NNS)) VP(x5:VBP x6:ADJP x7:PP) x8:.) -> x0 "内" x1 x2 "," x7 x6 x3 "的" x4 x5 x8
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" x0 "处" x1 x2
+PP(IN("as") x0:NP-C) -> x0
+POS("'s") -> "的"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "货物" "和" "劳务" "那样" x16
+NPB(x0:PRP$ x1:JJ x2:NN) -> x0 x1 x2 "造成"
+VP(VP(VBZ("emphasizes") SBAR-C(SBAR(IN("that") x0:S-C) ,(",") SBAR(IN("that") S-C(NP-C(NPB(PRP("it"))) ADVP(RB("never")) VP(x1:VBD x2:NP-C))))) ,(",") x3:CC VP(VBZ("is") RB("not") NP-C(NPB(x4:DT x5:NN) PP(TO("to") NP-C(x6:NPB PP(x7:IN x8:, NP-C(NPB(DT("the") JJ("former") NN("union")) PP(IN("of") NP-C(NPB(NNP("soviet") NNP("socialist") NNPS("republics"))))))))))) -> "强调" x0 "," "从来" x1 "不是" "前" "苏维埃" "社会主义" x7 "联盟" x6 x4 x2 x3 x5 x8
+NPB(x0:VBG JJ("foreign") NN("exchange") x1:NNS) -> x0 "的" "外汇" x1
+NP-C(x0:NPB) -> x0 "问题"
+NPB(x0:PRP) -> x0 "汇率"
+S-C(x0:NP-C x1:VP) -> x0 x1
+PP(IN("with") NP-C(NPB(DT("the") NN("help")) PP(x0:IN NP-C(x1:NPB VP(VBG("reflecting") x2:NP-C))))) -> "以" "反映" x2 x0 x1
+NNS("changes") -> "改变"
+NPB(x0:NN) -> x0 "也"
+CC("and") -> ","
+NNP("ppp") -> "购买力" "平价"
+NNS("incomes") -> "即将"
+DT("the") -> "对"
+IN("as") -> "即" "如"
+NN("data") -> "数据"
+WRB("when") -> "时"
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 x11 x12 x13 x9 "汇率" "和平" "等" x14 x15 x16
+IN("for") -> "来"
+``("14.") -> "14."
+VP(x0:VBZ x1:RB x2:VP-C) -> x0 x1 x2 "内"
+VP(VBP("affect") NP-C(NPB(x0:PRP$ x1:NN) SG(VP(TO("to") x2:VP-C)))) -> "情况" "影响" "到" x0 x2 x1
+NN("resolution") -> "号" "决议"
+VBN("been") -> "受到"
+NP(x0:NPB x1:PP) -> "(" x0 x1
+CONJP(RB("as") RB("well") IN("as")) -> "以及"
+VBN("concerned") -> "有关"
+NPB(DT("the") NNP("general") NNP("assembly")) -> "大会"
+NPB(x0:DT NN("exchange") NNS("rates")) -> x0 "汇率"
+DT("some") -> "一些"
+S(x0:SBAR x1:, NP-C(NPB(x2:DT x3:JJ x4:NNS)) VP(x5:VBP x6:ADJP x7:PP) x8:.) -> x0 x1 x2 x7 x6 x3 "的" x4 x5 x8
+NPB(x0:CD x1:CC x2:CD) -> "了" x0 x1 x2 "的"
+NN("artificiality") -> "虚构"
+NN("approach") -> "办法" "来"
+VP(x0:MD x1:VP-C) -> x0 x1 "算"
+NP-C(NPB(DT("the") VBN("shared") NNS("views")) x0:PP) -> "乌" x0
+NPB(DT("a") JJ("limited") x0:NN) -> "少数" x0
+NP-C(x0:NPB x1:VP) -> "第" x1 x0
+VP-C(VBN("used") PP(IN("for") x0:NP-C) PP(x1:PP x2:CC x3:PP)) -> "用以" x1 x0 x2 x3
+NP-C(x0:NPB) -> x0 "内"
+SBAR(x0:IN x1:S-C) -> x0 x1 "货物" "和" "劳务" "那样"
+VBD("was") -> "是"
+NP-C(NPB(x0:DT JJ("wide") NN("range")) PP(IN("of") SG-C(VP(VBG("diverging") x1:NP-C x2:PP)))) -> x2 x0 "许多" "不同" x1
+NNP("serbia") -> "塞尔维亚"
+S(NP-C(NPB(x0:DT x1:NN x2:NNS x3:NN) PP(IN("of") NP-C(x4:NPB PP(IN("on") NP-C(x5:NPB x6:PP))))) VP(x7:VBD PP(x8:TO NP-C(NPB(DT("the") x9:NNP x10:NNP x11:CC x12:NNS))) x13:NP-C) x14:.) -> x0 x1 x2 x5 x8 x9 x10 x7 x6 x3 x4 x11 x12 x13 x14
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "和" "劳务" "那样" x16
+PRP$("its") -> "它"
+S(x0:S x1:CC x2:S) -> x0 x1 x2
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 "的" x2 "而" x1 "的" x0 x6 x7 x8
+NNS("transactions") -> "交易"
+S(x0:NP-C x1:VP x2:.) -> x0 "便" x1 "的" x2
+CD("1994") -> "1989-1994年"
+JJ("base") -> "基准"
+TO("to") -> "致"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "和" "劳务" "那样" x16
+NN("application") -> "应用"
+NPB(x0:NNP x1:NN) -> x1 "的" x0
+VBN("added") -> "加"
+NP-C(NPB(NN("assessment")) x0:PP) -> x0
+NNS("resolutions") -> "决议"
+S(NP-C(NPB(PRP("it"))) VP(VBD("was") VP-C(x0:VBD ,(",") ADVP(RB("however")) x1:, x2:SBAR-C)) x3:.) -> "但是" x1 "有人" x0 x2 x3
+VP(VBZ("has") ADVP(RB("never")) x0:VP-C) -> "因此" x0
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "货物" "和" "劳务" "那样"
+NPB(x0:NNS) -> "," "价格" x0
+NPB(DT("a") x0:ADJP) -> x0
+NP-C(x0:NPB x1:VP) -> x1 "的" x0 "损失"
+S(x0:NP-C VP(x1:VP x2:, x3:SBAR) x4:.) -> x1 x0 x2 x3 x4
+NP(NPB(DT("the") JJ("limited") NN("capacity")) SG(VP(TO("to") x0:VP-C))) -> "无法" x0 "而"
+VB("help") -> "有" "助"
+NN("country") -> "国家"
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" "时" "应当" x11 x12 x13 x9 "汇率" "和平" "等" x14 "编制" x15 x16
+CC("plus") -> "加上"
+NP-C(x0:NPB x1:PP x2:VP) -> x2 x1 x0
+NP-C(x0:NPB) -> x0 "处"
+PRP("they") -> "它们"
+NN("/") -> "/"
+VBN("used") -> "使用"
+VBP("consider") -> "认为"
+NP-C(x0:NPB x1:SBAR) -> x1 "的" x0
+IN("in") -> "根据"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NNS("concerns")) VP(VBN("expressed"))))) -> "对" x0 x1 "关切" "有"
+NP-C(x0:NPB) -> "对" x0
+NP-C(x0:NPB x1:PP) -> x1 "的" x0 "而"
+NNS("components") -> "部分"
+VP(x0:RB x1:NP-C) -> x1 x0 "处"
+CC("and") -> "又"
+NPB(DT("the") x0:NN x1:NN) -> x0 x1 "的"
+NPB(JJ("convertible") NN("currency")) -> "可" "兑换货币" "而"
+JJ("proper") -> "适当"
+VB("acquire") -> "取得"
+PRP$("their") -> "其"
+VP(VBZ("has") x0:VP-C) -> x0
+,(",") -> "内"
+JJ("unrealistic") -> "不切实际"
+CD("1990") -> "1990年"
+S(x0:NP-C x1:VP) -> x0 "的" "制订" x1
+VP(x0:VBD x1:PP) -> x1 "更" "为" x0
+S(NP-C(NPB(PRP("it"))) VP(VBZ("is") x0:RB x1:VP-C)) -> "因此" x0 x1
+JJ("domestic") -> "本国"
+S(x0:NP x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 x4
+PP(x0:IN x1:NP-C) -> x0 x1 "以来"
+NP-C(NPB(NNS("sanctions")) PP(IN("against") x0:NP-C)) -> "制裁" x0
+VP(VP(VBZ("emphasizes") SBAR-C(SBAR(IN("that") x0:S-C) ,(",") SBAR(IN("that") S-C(NP-C(NPB(PRP("it"))) ADVP(RB("never")) VP(x1:VBD x2:NP-C))))) ,(",") x3:CC VP(VBZ("is") RB("not") NP-C(NPB(x4:DT x5:NN) PP(TO("to") NP-C(x6:NPB PP(x7:IN x8:, NP-C(NPB(DT("the") JJ("former") NN("union")) PP(IN("of") NP-C(NPB(NNP("soviet") NNP("socialist") NNPS("republics"))))))))))) -> "强调" x0 "," "从来" x1 "不是" "前" "苏维埃" "社会主义" x7 x6 x4 x2 x3 x5 x8
+NPB(x0:NN NNS("purposes")) -> x0
+NP-C(x0:NPB) -> "切" x0
+VP-C(x0:VB x1:PP) -> x1 "的" x0 "能力"
+VBN("processed") -> "处理"
+NNP("member") -> "个"
+NN("impact") -> "影响"
+NP-C(NPB(x0:NN x1:CD) PRN(x2:-LRB- S(LST(LS("c") -RRB-(")")) x3:PP x4:NP-C VP(JJ("221"))) NNP("b"))) -> "第" x4 "221B" "号" x3 x1 x2 ")" x0
+NN("derivation") -> "计算"
+VBD("decided") -> "决定"
+VP(x0:TO VP-C(x1:VB x2:PP x3:NP-C)) -> x2 x0 x1 x3
+PP(x0:IN NP-C(x1:NPB x2:SBAR)) -> x2 x0 x1
+NPB(x0:DT x1:JJ x2:NN) -> x0 x1 x2
+JJ(JJ("price") JJ("@-@") JJ("level")) -> "价格" "水平" "方面"
+NP-C(x0:NP x1:CC x2:NP) -> x0 x1 x2 "的" "情况"
+S-C(NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") x1:NNS)))) x2:VP) -> x1 x2 x0 "的"
+S(x0:NP-C VP(x1:VP x2:, x3:SBAR) x4:.) -> "它" x1 x0 "的" "情况" x2 x3 x4
+NN("representation") -> "意见" "书" "着重"
+NPB(x0:NN x1:NNS) -> "计算" x0 "额" x1
+S-C(NP-C(NPB(x0:DT x1:VBN x2:NN) SG(VP(TO("to") VP-C(x3:VB x4:PP)))) x5:VP) -> "斯" x4 x0 x3 x2 x5 "而" x1
+NPB(x0:NN x1:NNS) -> "对" "计算" x0 "额" x1
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2
+NPB(x0:NNS) -> x0 "问题"
+JJ("statistical") -> "统计"
+NP-C(x0:NPB) -> x0 "统计"
+SG-C(x0:VP) -> "情况" x0
+JJ("international") -> "国际"
+VP-C(VBN("used") PP(IN("for") x0:NP-C) PP(x1:PP x2:CC x3:PP)) -> "用以" x1 "的" x0 x2 x3
+NN("source") -> "来源"
+NP(x0:NPB x1:PP) -> x0 x1 "的" "情况"
+NN("deduction") -> "减" "掉"
+PP(IN("of") x0:SG-C) -> x0
+S(x0:SBAR x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 x4
+NNS("assets") -> "资产"
+VP(x0:VBD x1:SG-C) -> x0 x1
+NP-C(x0:NPB x1:VP) -> "所" x1 "的" x0 "损失" "而"
+NN("advantage") -> "好处"
+VBG("owing") -> "由于"
+S-C(NP-C(NPB(x0:DT x1:VBN x2:NN) SG(VP(TO("to") VP-C(x3:VB x4:PP)))) x5:VP) -> x4 x0 x3 x2 x5 "而" x1
+PP(x0:IN x1:NP-C) -> "可" x0 x1
+IN("by") -> "作"
+JJ("new") -> "新"
+VP-C(x0:VB PP(x1:IN x2:NP-C) PP(x3:IN x4:NP-C)) -> x1 x4 x2 x3 x0
+SBAR(RB("even") IN("if") x0:S-C) -> "即使" x0
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(QP(x1:RB JJR("more") IN("than") x2:CD) x3:NN) PP(x4:IN x5:NP-C)))) -> x5 x1 x0 "超过" x2 x3 x4
+NP-C(NPB(NN("review")) x0:PP) -> x0
+S(x0:PP x1:, NP-C(NPB(EX("there"))) VP(VBZ("is") x2:NP-C) x3:.) -> x0 x1 "则" x2 x3
+IN("of") -> "估计"
+VP-C(VBN("elaborated") ADVP(RB("operationally"))) -> "地" "加以" "拟订"
+JJ("second") -> "第" "二" "份"
+NN("position") -> "立场"
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NP x2:CC x3:NP))) -> x1 x0 x2 "切" x3 "而"
+NNP("ukraine") -> "乌克兰"
+NN("suitability") -> "实用性"
+CC("or") -> "或"
+S(x0:PP x1:, NP-C(NPB(PRP("it"))) VP(VBZ("has") x2:VP-C) x3:.) -> x0 x1 "有" x2 x3
+NP-C(NPB(x0:DT x1:VBG x2:NN x3:CD) PP(IN("of") NP-C(x4:NPB PP(IN("of") NP-C(NPB(NN("procedure")) PP(IN("of") NP-C(NPB(x5:DT NNP("general") NNP("assembly") x6:, x7:NNP)))))))) -> x0 x5 x1 "大会" "议事" x4 "第" x3 x2 "时" x6 x7
+VP(x0:VBZ x1:NP-C x2:, x3:SBAR) -> x0 x1 x2 x3 "算"
+VP-C(x0:VB x1:NP-C) -> x0 x1
+NP-C(NPB(x0:NNP NN("exchange") NNS("rates")) x1:PP) -> x0 x1 "计算" "的" "汇率"
+NP(x0:NPB x1:VP) -> x0 x1
+NP-C(NPB(x0:DT NNP("federal") NNP("republic")) x1:PP) -> "南斯拉夫" x1 x0
+RB("directly") -> "直接"
+NPB(x0:NN) -> "的" x0
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "那样" x16
+NN("assessment") -> "别"
+CD("7") -> "7"
+NNS("units") -> "单位"
+VBN("appended") -> "所" "附"
+VP(x0:VBP x1:RB x2:VP-C) -> "统计" x0 x1 x2
+VBP("include") -> "包括"
+PP(IN("with") x0:NP-C) -> x0
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 x2 x1 "的" x0 x6 x7 x8
+PP(x0:IN x1:NP-C) -> x0 x1 "进行"
+VBN("included") -> "载入"
+VP(x0:VP x1:CC x2:VP) -> x0 x1 x2 "汇率"
+DT("19.") -> "19."
+VP(x0:VBD x1:NP-C) -> x0 x1
+NPB(x0:NNP x1:NNS) -> x0 "的" x1
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2 "算"
+PP(IN("of") x0:NP-C) -> "应当" x0
+NPB(x0:ADJP x1:NNP NN("exchange") NNS("rates")) -> x0 "的" x1 "的" "汇率"
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "和" "劳务"
+IN("after") -> "后"
+VBG("notwithstanding") -> "尽管"
+VB("discuss") -> "讨论"
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 x1 x2 "的" "货物" "和"
+NN("area") -> "方面"
+S-C(x0:NP-C VP(x1:VBP ADVP(x2:RB x3:RB x4:RB) VP-C(x5:VBN PP(x6:IN NP-C(NPB(DT("the") x7:NNS) PP(IN("of") NP-C(NPB(x8:DT NN("scale")) PP(IN("of") NP-C(NPB(NNS("assessments"))))))))))) -> x6 "编制" "分摊" "比" "额" "表" x7 x0 x2 x8 x5 x1 x3 x4
+NPB(x0:ADJP x1:NNS) -> x0 x1
+VP(x0:VBP x1:PP) -> x0 x1
+S(x0:PP x1:, x2:NP-C x3:VP x4:.) -> "在" x0 x1 x2 x3 x4
+NPB(x0:NNS) -> x0 "下列"
+POS("'") -> "的"
+S(x0:`` x1:NP x2:, NP-C(x3:NP x4:CC NP(NPB(NNP("uzbekistan")))) VP(VBZ("focuses") x5:PP x6:PP) x7:.) -> x0 x1 x2 x3 x4 "乌" x5 x6 "克" "斯坦" x7
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "的" "货物"
+VBZ("is") -> "是"
+PP(IN("of") x0:NP-C) -> "切" x0
+NN("category") -> "类别"
+VBZ("draws") -> "提" "请"
+CC("and") -> "与其"
+VBZ("estimates") -> "概" "数"
+PP(IN("of") x0:NP-C) -> "时" x0
+PP(IN("in") x0:NP-C) -> "是" x0
+S(x0:ADVP x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 x3 x4
+VP-C(x0:ADVP x1:VBN x2:SG) -> x0 x1 x2
+VP(VBZ("is") RB("not") x0:ADJP) -> "未" x0
+IN("with") -> ","
+NP-C(NPB(x0:DT x1:NN) x2:PP) -> x0 x2 x1
+VB("pay") -> "支付"
+NNS("policies") -> "政策"
+NPB(DT("the") x0:NNP x1:NNP x2:NNP x3:NNPS) -> x0 "《" x1 x2 x3
+NNS("patterns") -> "类型"
+VP(x0:VBG ADVP(RB("instead")) x1:NP-C) -> "因而" x0 x1
+S-C(x0:NP-C x1:VP) -> "价格" x0 x1 "处"
+IN("by") -> "了"
+NPB(DT("the") x0:JJ x1:NNP) -> x0 x1
+S-C(x0:ADVP x1:, x2:NP-C x3:VP) -> x0 x1 x2 x3
+``("12.") -> "12."
+NPB(x0:DT x1:JJ x2:NNS) -> x0 x1 "的" x2 "进行"
+NNP("financial") -> "金融"
+NNS("years") -> "几" "年" "内"
+NNP("july") -> "7月"
+JJ(JJ("cross") JJ("@-@") JJ("country")) -> "的" "跨国" "家"
+DT("the") -> "下列" "各国" "的"
+JJ("annual") -> "年"
+DT("the") -> "各"
+NP-C(x0:NPB) -> x0 "方面" "的"
+PRP("it") -> "其"
+NNS("rates") -> "费" "率"
+RB("well") -> "好的"
+CC("and") -> "与"
+NN("manner") -> "方式"
+NPB(x0:CD x1:NNS) -> x0 x1
+NPB(x0:DT x1:NNS) -> x0 x1 ","
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "劳务" "那样" x16
+VP(x0:MD x1:VP-C) -> "便" x0 x1 "出" "的"
+NP-C(x0:NPB x1:VP) -> "第" x1 x0 ","
+NPB(NN("transportation") NNS("systems")) -> "运输系统"
+S(x0:PP x1:, x2:NP-C x3:VP x4:.) -> x0 x1 x2 "是" x3 x4
+NNS("estimates") -> "估计" "数"
+VBD("posed") -> "引起" "了"
+VP(x0:VP x1:CC x2:VP) -> x0 x1 x2
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NNS("concerns")) VP(VBN("expressed"))))) -> "对" x0 "表示" x1 "关切" "有"
+NPB(x0:PRP$ x1:NN x2:NN) -> x0 x1 x2
+NN("debt") -> "债务"
+VP(x0:RB x1:NP-C) -> x1 x0
+NNS("markets") -> "市场"
+S-C(x0:NP-C VP(x1:TO VP-C(VB("compensate") PP(IN("for") NP-C(x2:NPB x3:PP PRN(-LRB-("(") NP(NP(NPB(NN("e.g.")) x4:, x5:NP) x6:, x7:NP x8:, x9:NP) x10:-RRB-)))))) -> x4 x0 x1 "补偿" x3 x2 "例如" x5 x6 x7 x8 x9 x10
+NP-C(x0:NP x1:PP) -> "," x0 x1
+PP(IN("from") x0:NP-C) -> x0
+JJ("further") -> "进一步"
+NNP("commission") -> "委员会"
+NN("housing") -> "住房"
+PP(TO("to") NP-C(NPB(DT("the") x0:NNS))) -> "使" x0 "更" "为"
+PP(IN("in") x0:NP-C) -> x0 "制定"
+NPB(x0:DT x1:NN) -> x0 x1 "内"
+NPB(x0:DT x1:NNS) -> x0 x1 "而"
+DT("the") -> "乌克兰"
+TO("to") -> "向"
+NPB(x0:DT x1:NNS) -> x0 x1 "," "也"
+ADJP(x0:JJ x1:PP) -> "可" x1 "作" x0
+IN("in") -> "在"
+NNS("elaborated") -> "拟订"
+NP-C(x0:NPB) -> x0 "情况"
+NNS("types") -> "种"
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6 "算" "出"
+PP(IN("of") x0:NP-C) -> x0 "的"
+VP(MD("can") ADVP(RB("only")) VP-C(VP(VB("serve") x0:NP-C) x1:CC x2:VP)) -> "只能" "对" "计算" x0 x1 x2
+PP(IN("in") x0:NP-C) -> x0
+NP-C(x0:NPB PP(IN("of") NP-C(x1:NPB PP(x2:TO NP-C(x3:NP x4:CC x5:NP))))) -> x1 x2 x3 x0 x4 x5 "而"
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 x2 x1 x0 x6 x7 x8
+NPB(x0:DT x1:JJ x2:NNS) -> x0 x1 x2
+MD("must") -> "必要"
+IN("from") -> "至"
+RB("readily") -> "易"
+VP(x0:VBP x1:VP-C) -> x0 x1
+VP(VBD("coincided") PP(IN("with") x0:NP-C)) -> "时" "正好" "是" x0
+SBAR(x0:S-C) -> x0
+NNS("limits") -> "限额" "办法"
+NN("recognition") -> "确认"
+VP-C(VBN("elaborated") ADVP(RB("operationally"))) -> "有效" "地" "加以" "拟订"
+JJ("natural") -> "自然灾害"
+VB("add") -> "合计"
+S-C(x0:NP-C VP(x1:VBP ADVP(x2:RB x3:RB x4:RB) VP-C(x5:VBN PP(x6:IN NP-C(NPB(DT("the") x7:NNS) PP(IN("of") NP-C(NPB(x8:DT NN("scale")) PP(IN("of") NP-C(NPB(NNS("assessments"))))))))))) -> x6 "编制" "分摊" "比" "额" "表" x7 "," "价格" x0 x2 x8 x5 x1 x3 x4
+WRB("why") -> "为什么"
+NPB(x0:JJ x1:JJ NNS("rates")) -> x0 x1
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 "的" x2 x1 x0 x6 x7 x8
+NP(x0:NPB VP(x1:VBN PP(IN("for") NP-C(x2:NPB PP(x3:IN NP-C(NPB(x4:JJ x5:NN x6:CC x7:JJ x8:NN))))))) -> x3 x4 x5 x2 "而" x1 "的" x0 x6 x7 x8
+NP-C(x0:NPB x1:VP) -> "所" x1 "的" x0 "而"
+JJ("special") -> "特别"
+NPB(DT("the") x0:CD x1:NNP x2:NNPS) -> x0 x1 x2
+S-C(x0:NP-C x1:VP) -> "价格" x0 x1
+NP-C(NPB(DT("each")) x0:PP) -> x0
+VP-C(x0:VBN x1:NP-C) -> x0 x1
+JJ("large") -> "大"
+JJ("low") -> "低"
+PP(x0:CC x1:NP-C) -> x0 x1
+PP(IN("in") x0:NP-C) -> x0 ","
+NPB(x0:PRP) -> x0 "统计"
+S(x0:NP-C ,(",") x1:SG x2:, x3:VP x4:.) -> x0 "的" x1 x2 x3 x4
+RB("recently") -> "最近"
+VBZ("stresses") -> "强调"
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 x15 "的" "货物" "和" "劳务" "那样" x16
+VBN("adjusted") -> "调整"
+NPB(x0:NN x1:NNS) -> x0 x1 "损失"
+VP(VBP("do") RB("not") x0:VP-C) -> "不符" x0
+VP-C(x0:VBN x1:PP) -> x0 x1 "内" ","
+IN("among") -> "各"
+VBP("reflect") -> "反映" "出国"
+NX(NP(NPB(x0:PRP$ x1:JJ x2:NNS) VP(VBG("resulting") PP(IN("from") NP-C(x3:NPB PP(x4:IN NP-C(NPB(NNP("security") NNP("council") x5:NNS))))))) x6:PP) -> x0 "因" "安全理事会" x6 x5 x3 "而" "受到" x4 x1 x2
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" "时" x11 x12 x13 x9 "汇率" "和平" "等" x14 "编制" x15 x16
+VBD("were") -> "是"
+NPB(DT("the") x0:JJ JJ("national") NN("income") x1:NNS) -> x0 "的" "国民收入" x1
+NPB(x0:JJ x1:JJ x2:NNS) -> x0 x1 x2
+NPB(x0:JJ) -> "中" x0
+NN("market") -> "市场"
+NPB(x0:NNS x1:CC x2:NN x3:NNS) -> x0 x1 x2 x3
+VBN("traded") -> "进行"
+NP-C(NPB(x0:PRP$ NN("ability")) SG(VP(TO("to") x1:VP-C))) -> x0 "能" x1
+VP(x0:RB x1:NP-C) -> x1 "则" x0
+NP-C(x0:NPB x1:PP x2:VP) -> x2 x1 "进行" "的" x0
+NNS("criteria") -> "准则"
+JJ("conceptual") -> "基本" "概念"
+,(",") -> "."
+SBAR-C(x0:IN x1:S-C) -> x0 x1
+NPB(x0:JJ x1:, x2:JJ NN("exchange") NNS("rates")) -> x0 x1 x2 "的" "汇率"
+NPB(x0:CD x1:NN) -> x0 x1
+NN("establishment") -> "确定"
+SBAR(x0:IN x1:S-C) -> x0 x1 "的" "货物" "和"
+JJ("several") -> "若干"
+NNS("tables") -> "有用"
+CD("one") -> "一"
+NP-C(x0:NPB) -> "额" "时" "应当" x0
+SBAR(WHNP(x0:NP WHPP(x1:IN WHNP(WDT("which")))) SG-C(VP(VBZ("is") x2:VP-C))) -> "即" x0 x1 "数" "是" x2 "出"
+PP(x0:TO x1:NP-C) -> x0 x1
+S(x0:`` x1:PP x2:, NP-C(NPB(PRP$("its") NNS("components"))) VP(VBD("were") VP-C(VBN("divided") PP(IN("into") NP-C(NPB(CD("three") NNS("areas")) :(":") NP(NPB(NN("income") NNS("concepts")) :(";") NP(NP(NPB(NN("conversion")) PP(IN("of") NP-C(NPB(JJ("national") NN("income")))) PP(TO("to") x3:NP-C)) x4:: x5:CC x6:NP) x7:, SBAR(WHNP(WDT("that")) SG-C(VP(VBZ("is") ,(",") FRAG(NP(NPB(JJ("statistical") JJ("base") x8:NN)) ,(",") NP(NPB(JJ("low") ADJP(IN("per") NN("capita")) NN("income") NN("allowance") CC("and") NN("scheme")) PP(IN("of") NP-C(NPB(NNS("limits")))))))))))))) .(".")) -> x0 x1 x2 "其" "各" "部分" x8 "分" "成" "三" "个" "领域" ":" "收入" "概念" ";" "将" "国民收入" "换算" "为" x3 x4 x5 x6 x7 "即" "统计" "基准" "期" "、" "低" "人" "均" "收入" "宽" "减" "额" "和" "限额" "办法" "."
+S(NP-C(NPB(PRP("it"))) VP(VBZ("is") x0:RB x1:VP-C)) -> "因此" x0 x1 "内"
+VB("depend") -> "取决"
+VBD("considered") -> "考虑"
+VP(VBP("are") ADJP(JJ("free") x0:PP)) -> "并没" "有" x0
+MD("would") -> "则"
+VP-C(x0:VBN x1:NP-C x2:PP) -> x1 x2 x0
+VP(x0:MD x1:VP-C) -> x0 x1 "出"
+NN("accident") -> "事故"
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "的" "货物" "和" "劳务"
+S-C(x0:NP-C x1:, x2:SBAR ,(",") VP(VBP("do") RB("not") ADVP(RB("necessarily")) VP-C(x3:VP x4:CC x5:ADVP x6:VP))) -> x0 x2 "未必" x3 x1 x4 x5 x6 "的"
+NN("price") -> "价格"
+S(x0:S x1:CC x2:S) -> x0 "," x1 x2
+PP(IN("in") NP-C(NPB(NN("fact")))) -> "实际上"
+PP(x0:IN x1:NP-C) -> x0 x1
+RB("furthermore") -> "此外"
+RB("not") -> "不"
+S(x0:NP-C x1:VP x2:.) -> x0 "便" x1 "出" "的" x2
+NNS("contributions") -> "会费"
+,(",") -> "和"
+PP(x0:IN x1:NP-C) -> "," x0 x1
+VP(x0:MD x1:VP-C) -> x0 x1
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 x6 "国家" x7 "国民收入" x5 x3 x0 "的" ":" x9 x10 x11 x4 x13 x12
+ADJP(x0:ADJP x1:CC x2:ADJP) -> x0 x1 x2
+NNP("lithuania") -> "立陶宛"
+NPB(x0:NNS) -> x0 "以外"
+NNS("years") -> "几" "年"
+NP-C(x0:NPB) -> "使" x0
+NPB(x0:DT) -> x0
+NN("review") -> "审查"
+VP(x0:VBZ x1:NP-C) -> x1 "的" x0
+NPB(x0:DT NN("determination")) -> x0
+NNP("tajikistan") -> "塔吉克斯坦"
+S-C(NP-C(x0:NPB PP(x1:IN NP-C(x2:NPB x3:PP)) SBAR(x4:WHNP SG-C(x5:ADVP VP(x6:VBP NP-C(NPB(x7:PRP$ JJ("current") x8:NN) x9:SG))))) VP(MD("could") ADVP(RB("only")) VP-C(VB("be") VP-C(VBN("achieved") PP(IN("in") NP-C(x10:NPB PP(IN("of") NP-C(NPB(DT("a") x11:JJ NN("scale")) PP(IN("of") NP-C(NPB(NNS("assessments")))))))))))) -> x0 x10 x11 "的" "分摊" "比" "额" "表" "才能" x3 "制订" x4 x5 x6 x7 x9 x8 x1 x2
+NN("methodology") -> "办法"
+VBN("appended") -> "附" "有关"
+VP(x0:VBD x1:VP-C) -> x0 x1
+VB("increase") -> "增加"
+DT("every") -> "每"
+PP(IN("at") x0:NP-C) -> "切" x0
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 "额" x11 x12 x13 x9 "汇率" "和平" "等" x14 x15 x16
+S-C(x0:NP-C VP(x1:VBP ADVP(x2:RB x3:RB x4:RB) VP-C(x5:VBN PP(x6:IN NP-C(NPB(DT("the") x7:NNS) PP(IN("of") NP-C(NPB(x8:DT NN("scale")) PP(IN("of") NP-C(NPB(NNS("assessments"))))))))))) -> x6 "编制" "分摊" "比" "额" "表" x7 "," x0 x2 x8 x5 x1 x3 x4
+S(NP-C(NPB(NPB(NNP("20.") NNP("azerbaijan") POS("'s")) NN("representation"))) x0:VP x1:.) -> x0 x1
+S(x0:ADVP x1:, x2:SG-C x3:VP x4:.) -> x0 x1 x2 "也" x3 x4
+S(x0:ADVP x1:, x2:SG-C x3:VP x4:.) -> x0 x1 x2 x3 x4
+PP(IN("of") x0:NP-C) -> x0 "情况"
+VP(VBD("made") NP-C(NPB(NNS("extrapolations")) PP(IN("for") NP-C(x0:NPB PP(IN("at") NP-C(x1:NPB PP(IN("of") NP-C(NPB(x2:DT x3:NNPS)))))))) x4:VP-C) -> x2 x4 x3 x1 "也" "推断" x0 "的" "汇率"
+SBAR-C(WHADVP(WRB("how")) S-C(NP-C(NPB(PRP("it"))) VP(x0:VBZ VP-C(x1:VBN x2:ADVP)))) -> x2 x0 "如何" x1
+S(NP-C(NPB(JJ("national") NN("income") x0:CC x1:NN NNS("data"))) VP(VBP("are") x2:VP-C) x3:.) -> x2 "国民收入" x0 x1 "的" "数据" x3
+VP(VBP("are") x0:VP-C) -> x0
+VP(x0:MD x1:VP-C) -> x0 x1 "出" "的"
+NPB(x0:JJ x1:NN x2:NNS) -> x0 "的" x1 x2 "算" "出" "的"
+VBG("reviewing") -> "审查"
+VP(x0:VBG x1:NP-C) -> x0 x1
+NPB(DT("a") x0:NN x1:NN) -> x0 x1
+VP-C(x0:VB x1:NP-C) -> x0 x1 "问题"
+CD("6,000") -> "6000"
+VBN("developed") -> "健全"
+CC("and") -> "而"
+NP-C(NPB(x0:DT x1:NNS) VP(x2:VBN x3:PP x4:PP)) -> x3 x2 x0 x4 "》" "的" x1
+CD("2") -> "2日"
+SBAR-C(IN("that") x0:S-C) -> x0
+NPB(DT("the") x0:NNS x1:NX) -> x0 x1
+NP-C(x0:NPB x1:PP x2:PP) -> x0 x1 x2
+CC("and") -> "并"
+S-C(NP-C(x0:NPB PP(x1:IN NP-C(x2:NPB x3:PP)) SBAR(x4:WHNP SG-C(x5:ADVP VP(x6:VBP NP-C(NPB(x7:PRP$ JJ("current") x8:NN) x9:SG))))) VP(MD("could") ADVP(RB("only")) VP-C(VB("be") VP-C(VBN("achieved") PP(IN("in") NP-C(x10:NPB PP(IN("of") NP-C(NPB(DT("a") x11:JJ NN("scale")) PP(IN("of") NP-C(NPB(NNS("assessments")))))))))))) -> x0 x10 x11 "的" "分摊" "比" "额" "表" "才能" x3 x4 x5 x6 x7 x9 x8 x1 x2
+VBG("according") -> "根据"
+PP(x0:IN x1:NP-C) -> x0 x1 "以来" "国民收入"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(x1:DT NNS("concerns")) VP(VBN("expressed"))))) -> "对" x0 "事项" "表示" x1 "关切" "有"
+JJ("own") -> "本身"
+NP-C(x0:NP x1:CC x2:NP CC("and") NP(NPB(NNS("receipts")) PP(x3:IN NP-C(NPB(x4:NN x5:NN x6:CC NN("transfer")) x7:PP))) CC("and") x8:NP) -> x0 x1 x2 x4 x5 x3 "收支" x6 x7 x8
+NP-C(x0:NPB) -> x0 "第"
+NNS("facilities") -> "设施"
+VP-C(x0:VB x1:NP-C) -> x0 x1 "而"
+PP-C(x0:TO x1:NP-C) -> x1 x0
+DT("a") -> "的"
+NPB(x0:NPB x1:NNS) -> x0 x1
+IN("for") -> "以"
+NP-C(x0:NPB x1:PP) -> x1 "的" x0
+NP(x0:NPB SBAR(IN("that") S-C(x1:NP-C x2:VP))) -> x2 x0 x1
+NN("view") -> "认为"
+PP(x0:IN x1:NP-C) -> x0 x1 "制订"
+NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") x1:CD NNP("member") NNPS("states"))))) -> x1 "个" "会员国" "中" x0 "国家"
+NN("existence") -> "有"
+NN("work") -> "工作"
+NN("pare") -> "调整" "汇率"
+NP-C(x0:NPB x1:PP x2:PP) -> x1 x2 x0
+TO("to") -> "来"
+VP(VP(VBD("did") RB("not") VP-C(VB("intend") SG-C(VP(TO("to") VP-C(x0:VB x1:NP-C ADVP(RBR("further"))))))) CC("and") VP(x2:MD x3:RB x4:VP-C)) -> "不" "打算" "再" x0 x1 x3 "再" x2 x4
+IN("in") -> "于"
+TO("to") -> "能" "在"
+VP(x0:VBN x1:CC x2:VBN) -> "所" x0 x1 x2
+NPB(x0:DT x1:NN) -> x1 x0
+NPB(x0:DT x1:CD x2:NNS) -> x0 x1 x2
+NPB(RB("also") x0:JJ x1:JJ x2:NNS) -> x0 "的" x1 x2
+NNS("difficulties") -> "困难"
+DT("a") -> "一"
+VB("deal") -> "讨论"
+VP-C(x0:VBN) -> x0
+VP(VBD("sympathized") PP(IN("with") x0:NP-C)) -> x0 "同感"
+NN("capital") -> "资本"
+JJ("benefit") -> "成本" "、" "收益"
+IN("between") -> "间"
+VP(x0:VBG x1:SG-C) -> x0 x1
+ADJP(x0:RB x1:VBN) -> x0 x1 "的"
+IN("under") -> "下"
+NPB(x0:JJ x1:NN x2:NN) -> "生产" x1 x2 x0
+VBN("expressed") -> "所" "表示"
+NNP("international") -> "国际"
+NP-C(x0:NP x1:CC x2:NP) -> "上" "的" x0 x1 x2
+NPB(DT("a") x0:JJ x1:JJ x2:NN) -> x0 "的" x1 x2
+NNP("28.") -> "28."
+VP(TO("to") x0:VP-C) -> x0 ","
+NP-C(x0:NPB) -> x0
+NP-C(x0:NPB x1:VP) -> "所" x1 x0
+JJ("severe") -> "严重"
+DT("the") -> "但是"
+NP-C(x0:NPB x1:PP) -> "切" "尔" x1 x0
+RB("necessarily") -> "未必"
+VBN("developed") -> "制定"
+VP(VBD("concluded") SBAR-C(IN("that") x0:S-C)) -> "认为" x0
+S(x0:`` NP-C(x1:NPB PP(x2:IN x3:NP-C)) VP(x4:VBZ VP-C(x5:VBN PP(x6:IN NP-C(x7:NPB PP(IN("of") NP-C(x8:NPB PP(x9:IN NP-C(NPB(NPB(x10:DT NN("country") x11:POS) NN("currency")) VP(VBN("required") SG-C(VP(TO("to") VP-C(x12:VB x13:NP-C x14:PP x15:SBAR)))))))))))) x16:.) -> x0 x3 x1 x11 x5 x4 x14 "内" x2 x6 x7 x8 x9 x10 "国货" "币" "才能" x12 x13 "," x15 "那样" x16
+JJ("relative") -> "相对"
+VP-C(x0:VBN PP(IN("by") NP-C(NPB(DT("the") x1:NNP x2:NNP))) PP(IN("in") NP-C(NPB(NN("response")) PP(TO("to") NP-C(x3:NPB PP(x4:IN NP-C(x5:NPB PP(IN("of") NP-C(NPB(x6:DT JJ("national") NNS("incomes")) PP(x7:IN NP-C(x8:NPB PP(x9:IN NP-C(x10:NP x11:CC x12:NP)))) x13:SBAR))))))))) -> x1 x2 "因" x8 "情况" x6 "国家" x7 "国民收入" x5 x3 x0 "的" ":" x9 x10 x11 x4 x13 x12
+NNPS("statistics") -> "统计" "资料"
+S-C(x0:NP-C VP(x1:MD VP-C(x2:VB x3:PP))) -> x3 x0 x1 x2
+NP-C(x0:NPB x1:VP) -> x1 x0
+NP-C(x0:NP x1:CC x2:NP) -> x0 x1 x2 "的"
+NPB(x0:JJ x1:NN x2:NNS) -> x0 "的" x1 x2 "算"
+NNP("soviet") -> "苏维埃"
+NN("part") -> "部分"
+PP(IN("of") x0:NP-C) -> "应当" "以" x0
+VP-C(x0:VB x1:ADVP x2:NP) -> x2 x1 x0
+NPB(x0:PRP$ x1:JJ x2:NNS) -> x0 x1 "的" x2
+SG(x0:VP) -> x0
+VP-C(x0:VB x1:SBAR-C) -> x0 x1 "出" "的"
+NP-C(NPB(DT("the") NN("scale") x0:NN) PP(x1:RB x2:IN NP-C(NPB(DT("the") NN("ad") NN("hoc") x3:NN) x4:PP))) -> "编制" x2 "额" "表" x0 "为" "根据" x1 "以" "特别" x3 x4
+NN("rate") -> "比率"
+S-C(NP-C(x0:NPB PP(IN("of") NP-C(NPB(DT("the") NNP(NNP("ogata") NNP("@-@") NNP("volcker")) x1:NN)))) VP(VBD("[") NP-C(NPB(CD("2") NN("]") NN("/")) x2:VP))) -> "绪" "方" "-" "沃" "尔" "克" x2 "的" x1 x0
+NN("period") -> "期"
+``("47.") -> "47.一个"
+VP(x0:VBD x1:PP) -> x1 x0
+RB("together") -> "起来"
+SBAR(x0:IN x1:S-C) -> "," x0 x1 "的"
+NPB(DT("the") NNP("committee")) -> "但是" "," "委员会"
+NPB(DT("the") x0:NN) -> x0
+NP(x0:NPB x1:PP) -> x1 x0 "而"
+S(NP-C(NPB(x0:DT x1:NN x2:NNS x3:NN) PP(IN("of") NP-C(x4:NPB PP(IN("on") NP-C(x5:NPB x6:PP))))) VP(x7:VBD PP(x8:TO NP-C(NPB(DT("the") x9:NNP x10:NNP x11:CC x12:NNS))) x13:NP-C) x14:.) -> x0 x1 x2 x5 x8 x9 x10 x7 x6 "来" x3 x4 x11 x12 x13 x14
+NPB(x0:DT x1:JJ x2:JJ x3:NNPS) -> x0 x1 x2 x3
+NPB(x0:JJ x1:NNS) -> x0 x1
+VP(VBP("emphasize") SBAR-C(IN("that") x0:S-C)) -> "强调" x0
+IN("in") -> "的"
+CD("160") -> "一六○"
+NP(NPB(x0:DT x1:VBG NN("rule") x2:CD) PP(IN("of") NP-C(NPB(DT("the") NNS("rules")) PP(IN("of") NP-C(NPB(NN("procedure")) PP(x3:IN NP-C(NP(NPB(DT("the") NNP("general") NNP("assembly") x4:, x5:NNP x6:NNS x7:NN) PP(x8:IN NP-C(NPB(x9:DT x10:NN) x11:PP))) x12:, NP(NP(NPB(x13:ADJP JJ("foreign") NN("exchange") NNS("rates"))) CC("and") NP(NPB(JJ("equal") x14:NN) x15:PP)))))))) x16:.) -> x0 "在" x1 "大会" "议事" "规则" "第" x2 x3 "时" x4 x5 x6 x8 x10 "会费" x7 x11 x12 x13 x9 "汇率" "和平" "等" x14 "编制" x15 x16

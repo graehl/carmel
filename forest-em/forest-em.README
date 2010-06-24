@@ -1,0 +1,12 @@
+change(v17): fixed bug where temperature was ignored in --crp
+change(v16): --crp Gibbs sampling
+change(v12): input and output filename options use zlib compression if filenames end in ".gz"
+change(v11): if creating a new header, start it with "filetype=rule version=1.0" - steve pointed out that our docs require this :)
+change(v11): check for "$$$" instead of just "$" on the first line to identify a header, in case you supply a file without a header but with the first rule starting with "$"
+change(v10): hash table storage for overflows (should allow accumulation of e^-2 and up no matter how big total count gets) - (This means EM should be possible (using a 4gig machine) on 300 million + parameters without losing any information around count=e^15)
+change(v10): --double-precision runtime flag selecting double (float is default)
+change(v5): double precision floats (counts won't stop accumulating at around 2 million or e^14.5)
+change: better error message when bad normgroups, and print command line
+change: new qsh
+
+build from https://nlg0.isi.edu/svn/sbmt/tags/forest-em/
