@@ -7,7 +7,8 @@
 #include <graehl/shared/periodic.hpp>
 #include <graehl/shared/segments.hpp>
 #include <graehl/shared/time_space_report.hpp>
-
+#define GRAEHL__DEBUG_PRINT_MAIN
+#include <graehl/shared/debugprint.hpp>
 //#define DEBUGTRAIN
 
 namespace graehl {

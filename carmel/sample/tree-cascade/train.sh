@@ -1,74 +1,89 @@
 #!/bin/bash
+verbose=
+hidden=hidden.fsa
+given="observed1 observed2"
+channel=observed0
+observed="$given $channel"
+
 function tofile {
-#    cat > $tofile
-    tee $tofile
+    if [ "$verbose" ] ; then
+        echo to $1: 2>&1
+        tee "$1"
+    else
+        cat > "$1"
+    fi
+}
+function desc {
+    echo
+    echo "$@"
+    echo =============
 }
 
+
+if [ "$verbose" = 1 ] ; then
+    mflag=-m
+    echo verbose mode enabled
+else
+    mflag=
+fi
+desc $source produces $observed - training $source and $channel
+
 set -e
-set -x
 set -o pipefail
 carmel=${carmel:-~/trunk/graehl/carmel/bin/zergling/carmel.debug}
 dir=${dir:-`pwd`}
 cd $dir || exit
-src=source.fsa
-chan=channel.fst
-data=channel.data
-nbias=2
-#$carmel -i bias1.data > bias1.data.fsa
+
 biases=
 biasesnorm=
-for i in `seq 1 $nbias`; do
-    b=bias$i
-    bdata=$b.data
-    bchan=$b.fst
-#    bchanl=$b.fst.locked
-#    $carmel -N 0 $bchan | tofile $bchanl
-    bchanl=$bchan
-    bsrc=$b.source.fsa
-    $carmel --project-right --project-identity-fsa $src | tofile $bsrc
-    if ! $carmel --normby=J --train-cascade $bdata $bsrc $bchanl ; then
-        set +x
-        echo failed to train for $b
-        echo composition:
-        $carmel -m $bsrc $bchanl
-        exit
-        echo
-        echo training:
-        cat $bdata
-        echo likelihood:
-        $carmel -S $bdata $bsrc $bchanl
-        echo random gen:
-        $carmel -g 5 $bsrc $bchanl
-        echo kbest:
-        $carmel -kIOE 5 $bsrc $bchanl
-        tail $bdata $bsrc $bchanl
-        exit
-    fi
-    lbs=$bsrc.locked
-    $carmel -N 0 $bsrc > $lbs
-    biases+=" $lbs"
+desc 'building p(observed data|hidden) wfsas'
+for ob in $given; do
+    bdata=$ob.data
+    bchan=$ob.fst
+    normchan=$bchan.conditional
+    $carmel $mflag -n $bchan | tofile $normchan
+    bsrc=$ob.fsa
+    desc "p(hidden|$bdata)*constant to $bsrc"
+    $carmel $mflag -ri $bchan $bdata | tofile $bsrc.unlocked
+    $carmel $mflag --project-left --project-identity-fsa -N 0 $bsrc.unlocked | tofile $bsrc
+    biases+=" $bsrc"
     biasesnorm+=N
 done
-tail -n 2 $src $biases
+tail $src $biases
 
-#todo: multiplying the fixed bias-trained src identity wfsas' probs with what's trained gives us a result ($biased) that's deficient ... renormalizing after might be ok.
-#todo: decide whether multiplying p(src|data)*p(src|bdata1)*... is better than aggregating the counts then normalizing.  i suspect it is.
-$carmel --normby=J$biasesnorm --train-cascade $data $src $biases $chan
-biased=biased.source.fsa.trained
-tail $src $src.trained $biases
-$carmel -n $src.trained $biases | tofile $biased
-exit
+#todo: think about biasing training by using dirichlet pseudocount prior instead (ad hoc)
+data=$channel.data.train
+(echo;cat $channel.data) > $data
+
+desc possible hidden given $given "(excluding $channel data)":
+$carmel $hidden $biases -Ok 10
+chan=$channel.fst
+desc training hidden $hidden and channel $chan - should produce argmax "P(hidden|$observed data)"
+$carmel $mflag --normby=J${biasesnorm}C --train-cascade $data $hidden $biases $chan
+biased=$hidden.trained
 #unbiased for comparison
-$carmel --train-cascade $data $src $chan
-unbiased=$src.trained
+unbhidden=$hidden.unbiased
+cp $hidden $unbhidden
+desc training just hidden and channel, ignoring other givne data
+$carmel --train-cascade $data $unbhidden $chan
+unbiased=$unbhidden.trained
 
+$carmel --project-right --project-identity-fsa $biased > $biased.id
+$carmel --project-right --project-identity-fsa $unbiased > $unbiased.id
 #show likelihood of bias-observations under biased and unbiased (should be higher for biased)
-for i in `seq 1 $nbias`; do
-    b=bias$i
-    bdata=$b.data
-
-    echo biased $i
-    $carmel -S $bdata $biased
-    echo unbiased $i
-    $carmel -S $bdata $biased
+for ob in $observed; do
+    bdata=$ob.data
+    bchan=$ob.fst
+if [ "$verbose" = 1 ] ; then
+    desc kbest derivations for $ob under biased
+    $carmel -kir 5 $biased.id $bchan $bdata
+    desc kbest derivations for $ob under unbiased
+    $carmel -kir 5 $unbiased.id $bchan $bdata
+fi
+    desc likelihood for $ob under biased $ob
+    $carmel -br $biased $bchan $bdata
+    desc likelihood for $ob under unbiased $ob
+    $carmel -br $unbiased $bchan $bdata
 done
+
+tail $biased $chan.trained

@@ -2,6 +2,8 @@
 #define GRAEHL_CARMEL__DERIVATIONS_H
 
 #define DERIVPRUNE 1
+//FIXME: figure out if warning about pruning not allowing goal detection still applies
+//#define DERIVPRUNE 0
 
 #ifdef DEBUGDERIVATIONS
 # define DEBUG_DERIVATIONS_PRUNE
@@ -17,6 +19,8 @@ NOTE: grapharc data field is an unsigned index into an arcs_table (which has the
 believe/check: only one (composed) arc between any 2 states, because each state is cascade-state-tuple,i-pos,o-pos.  change in i,o pos determines label of arc.  with -a composition, that means only one cascade arc between any 2 deriv states.
 
 */
+//#define GRAEHL__DEBUG_print
+#include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/weight.h>
 #include <boost/utility.hpp>
 #include <graehl/shared/myassert.h>
@@ -544,7 +548,7 @@ struct derivations //: boost::noncopyable
             fin=*pfin;
         no_goal=(pfin==NULL);
         if (no_goal) {
-#if true || defined(DEBUGDERIVATIONS)
+#if defined(DEBUGDERIVATIONS)
           Config::debug()<<"goal "<<goal<<" not found:\n";
           Config::debug()<<id_of_state<<'\n';
 #endif
@@ -712,6 +716,7 @@ struct derivations //: boost::noncopyable
         // new state = src - already added by insert above
 //        add(id_of_state,d,src); // NOTE: very important that we've added this before we start taking self-epsilons.
         g.push_back();
+//        DBPC2("deriving",d);
 #if DERIVPRUNE
         remove.push_back(false);
 #endif
@@ -719,9 +724,13 @@ struct derivations //: boost::noncopyable
         bool dead=(d!=goal);
         if (add_arcs(io,atab,EPS,EPS,d.i,d.o,fs,src)) dead=false;
         bool useO=d.o<out.size(),useI=d.i<in.size();
+//        DBPC4("use O I",d,useO,useI);
         unsigned o1=d.o+1,i1=d.i+1;
-        if (useO)
-            if (add_arcs(io,atab,EPS,out[d.o],d.i,o1,fs,src)) dead=false;
+        if (useO) {
+//          DBP(out[d.o]);
+          if (add_arcs(io,atab,EPS,out[d.o],d.i,o1,fs,src)) dead=false;
+        }
+
         if (useI) {
             Sym si=in[d.i];
             if (add_arcs(io,atab,si,EPS,i1,d.o,fs,src)) dead=false;
@@ -741,12 +750,15 @@ struct derivations //: boost::noncopyable
     {
         typedef typename wfst_io_index::for_io for_io;
         bool reachgoal=false;
+//        DBPC4("looking for arcs",source,IOPair(s_in,s_out),fs);
         if (for_io const* match=find_second(fs,IOPair(s_in,s_out)))
             for (typename for_io::const_iterator i=match->begin(),e=match->end();i!=e;++i) {
                 unsigned id=*i;
                 ++global_stats.pre.arcs;
                 FSTArc *a=atab[id].arc;
-                unsigned dst=derive(io,atab,deriv_state(i_in,a->dest,i_out));
+                deriv_state ds(i_in,a->dest,i_out);
+//                DBPC3("source ->",source,ds);
+                unsigned dst=derive(io,atab,ds);
 // note: use g[source] rather than caching the iterator, because recursion may invalidate any previously taken iterator
 #if DERIVPRUNE
                 if (!remove[dst])
