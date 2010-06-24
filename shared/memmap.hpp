@@ -186,7 +186,7 @@ public:
 #endif
 
                 if (length == max_length ||
-                    (::SetFilePointer(handle_,sizelow,&sizehigh,FILE_BEGIN) == INVALID_SET_FILE_POINTER && ::GetLastError!=NO_ERROR)  ||
+                    (::SetFilePointer(handle_,sizelow,&sizehigh,FILE_BEGIN) == INVALID_SET_FILE_POINTER && ::GetLastError()!=NO_ERROR)  ||
                     !::SetEndOfFile(handle_))
                     throw ios::failure(string("couldn't set size to ").append(boost::lexical_cast<std::string>(filesize)).append(": ").append(last_error_string()));
             }

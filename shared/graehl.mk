@@ -391,6 +391,9 @@ distclean: clean
 allclean: distclean
 	-rm -rf -- $(BASEOBJ)* $(BASEBIN) $(BASESHAREDOBJ)
 
+$(BIN)/text-to-cc: text-to-cc.cpp
+	g++ $(LDFLAGS) $(CXXFLAGS) $< -o $@
+
 ifeq ($(MAKECMDGOALS),depend)
 DEPEND=1
 endif
