@@ -1,7 +1,9 @@
-carmel: finite state transducer toolkit (and k-best graph paths)
- (see carmel/README and carmel/carmel-tutorial).  To build, cd carmel; make install
+carmel: finite state transducer toolkit (and k-best graph paths).
+ EM and gibbs training
+ (see carmel/README and carmel/carmel-tutorial).
+ To build, cd carmel; make install
 
-tt: tree transducer toolkit (and derivation forests EM training) - not included in carmel distribution
+forest-em: derivation forests EM and gibbs (dirichlet prior bayesian) training
 
 shared: generic routines used by both
 
@@ -11,14 +13,13 @@ Make sure the environment variable ARCH (or BUILDSUB) is set to something
 for example:
 
 cd carmel
-BUILDSUB=linux INSTALL_PREFIX=/usr/local ARCH_FLAGS="-m32 -march=pentium4" make -j 4 install
+BUILDSUB=linux INSTALL_PREFIX=/usr/local ARCH_FLAGS="-m32" make -j 4 install
 
 or, to build without installing (look in bin/$BUILDSUB for binaries)
 
 BUILDSUB=linux  make -j 4
 
-Requires GNU make (unfortunately, version 3.80 or greater is required due to
-some bugs with earlier versions' $(eval)), and a recent C++ compiler (gcc 3.4 is
+Requires GNU make 3.80 or later, and a recent C++ compiler (gcc 3.4 is
 known good, as is Microsoft Visual C++ 7.1)
 
 Also requires Boost (http://boost.org) in your standard include directory (you
@@ -26,7 +27,7 @@ can just use the boost directory in this distribution) - set
 BOOST_DIR=/path/to/boost if you have located your Boost elsewhere.
 
 cd carmel
-ARCH=linux 
+ARCH=linux
 export ARCH
 make
 
@@ -36,4 +37,4 @@ static binaries will be built, since the platform doesn't seem to support it).
 
 If you're mystified by what's going on in the build, look at shared/graehl.mk
 
-
+"make depend" may be necessary.
