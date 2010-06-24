@@ -1,0 +1,9 @@
+The graphical "tree cascade" model you described can be learned by carmel.
+
+If x is a hidden string (POS tags + sentence boundaries for your corpus) with an untrained source model p(x), and there are 1 or more models p_i(z|x) and observed {z_i}, and the parameters of models p and p_0 are to be learned while the other p_i are known, then carmel can learn the best (MAP) model for p(x|{z_i}) = k*p(x)*prod_i{p(z_i|x)}, where k is constant since the {z_i} are all known.
+
+A script and some small models/data are attached.
+
+>From what I heard, you want to incorporate some (vague) expectation as to e.g. what portion in the whole corpus of tags are NN etc.  Actually using an observation of e.g. 40000 NN in a large corpus will result in a huge p(x|z_NN) model, because the FSA would need at least 40000 states.  A more exponential model would be more efficient.  You can definitely just explicitly encode a p(x) multiplicative prior - just place it in the cascade and don't normalize it (--normby=...N...) or lock the arcs with "-N 0".  I also wonder whether an additive prior might be good if you just want to bias the initialization a little (I presume to help with the identification problem with evaluating unsupervised tags/parses)
+
+To simultaneously train more than one of the conditional models would probably require modifying carmel or exporting to forest-em (the program I mentioned that handles derivation forests and more explicitly encodes the identity and normalization of parameters, rather than relying on carmel's odd "tied parameter group" facility).
