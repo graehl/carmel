@@ -4,6 +4,6 @@ sdest=$dest/include/graehl/shared
 echo installing graehl/shared into $sdest
 mkdir -p $sdest
 cd shared
-for f in *.h *.hpp *.hh *.cc *.C; do
+for f in *.h *.hpp *.hh *.cc *.cpp *.C; do
  cp $f $sdest
 done

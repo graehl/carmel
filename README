@@ -7,34 +7,41 @@ forest-em: derivation forests EM and gibbs (dirichlet prior bayesian) training
 
 shared: generic routines used by both
 
-Make sure the environment variable ARCH (or BUILDSUB) is set to something
-(e.g. cygwin,linux,solaris).
+PREREQUISITES:
 
-for example:
+Boost (http://boost.org - usually already installed in /usr)
 
-cd carmel
-BUILDSUB=linux INSTALL_PREFIX=/usr/local ARCH_FLAGS="-m32" make -j 4 install
+BUILDING:
 
-or, to build without installing (look in bin/$BUILDSUB for binaries)
+If this directory is not called 'graehl', then either rename it, or make sure
+there's a symlink from . to graehl (ln -s . graehl) in this directory.  This is
+necessary for the headers <graehl/shared/X> to be located - or you can install
+the headers with
 
-BUILDSUB=linux  make -j 4
+    ./install.sh /usr/local
 
-Requires GNU make 3.80 or later, and a recent C++ compiler (gcc 3.4 is
+To specify where to install built binaries, do for e.g. Carmel:
+
+    cd carmel
+    INSTALL_PREFIX=/usr/local ARCH_FLAGS="-m32" make -j 4 install
+
+or, to build without installing (look in bin/`hostname`for binaries)
+
+    make -j 4
+
+You can have the binaries built in bin/YOURDIR by:
+
+    make -j 4 ARCH=YOURDIR
+
+If your system can't build static executables, you can:
+
+   make -j 4 NOSTATIC=1
+
+Static executables are already excluded if ARCH=macosx
+
+Requires GNU make 3.80 or later, and a recent C++ compiler (gcc 4.3 is
 known good, as is Microsoft Visual C++ 7.1)
-
-Also requires Boost (http://boost.org) in your standard include directory (you
-can just use the boost directory in this distribution) - set
-BOOST_DIR=/path/to/boost if you have located your Boost elsewhere.
-
-cd carmel
-ARCH=linux
-export ARCH
-make
-
-ARCH can be whatever you like - it's not used for anything except to keep object
-files and binaries segregated.  (exception: if you build with ARCH=macosx, no
-static binaries will be built, since the platform doesn't seem to support it).
 
 If you're mystified by what's going on in the build, look at shared/graehl.mk
 
-"make depend" may be necessary.
+"make depend" should run automatically.
