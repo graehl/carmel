@@ -1,3 +1,7 @@
+Carmel Version 6.5 (Jun 24 2010):
+
+canonical source: http://www.isi.edu/licensed-sw/carmel/
+
 /*******************************************************************************
 * This software ("Carmel") is licensed for research use only, as described in  *
 * the LICENSE file in this distribution.  The software can be downloaded from  *
@@ -7,18 +11,9 @@
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
 
-note: carmel/src/config.hpp currently has USE_OPENFST defined.  to build, either
-undefine it, or extract http://www.openfst.org so that the directory "fst"
-(containing "fst/lib") is a sibling of "graehl" (or ensure that "fst" is in your
-include path)
 
-openfst is used to allow determinization/minimization
-
-
-Carmel Version 6.5:
-
-This version of carmel is released on . For changes and
-additions to Carmel, see carmel --help and http://github.com/graehl/carmel/
+For changes and additions to Carmel, see carmel --help or view the source
+revisions at http://github.com/graehl/carmel/ (the development version)
 
 Table of Contents:
 --------------------
