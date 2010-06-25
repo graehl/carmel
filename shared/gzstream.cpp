@@ -21,14 +21,14 @@
 // Revision      : $Revision$
 // Revision_date : $Date$
 // Author(s)     : Deepak Bandyopadhyay, Lutz Kettner
-// 
-// Standard streambuf implementation following Nicolai Josuttis, "The 
+//
+// Standard streambuf implementation following Nicolai Josuttis, "The
 // Standard C++ Library".
 // ============================================================================
 
 #include <graehl/shared/gzstream.h>
 #include <iostream>
-#include <string.h>  // for memcpy
+#include <cstring>
 #include <stdexcept>
 
 namespace graehl {
@@ -58,9 +58,9 @@ gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
     *fmodeptr++ = 'b';
     *fmodeptr = '\0';
     file = gzopen( name, fmode);
+    if (!file) handle_gzerror();
     if (file == 0)
-        handle_gzerror();    
-    //    return (gzstreambuf*)0;
+      return (gzstreambuf*)0;
     opened = 1;
     return this;
 }
@@ -81,7 +81,7 @@ void gzstreambuf::handle_gzerror() {
     int errnum;
     const char *errmsg=gzerror(file,&errnum);
     if (errnum==Z_DATA_ERROR) errmsg="CRC error reading gzip";
-    throw std::runtime_error(std::string("gzstreambuf error: ")+errmsg);    
+    throw std::runtime_error(std::string("gzstreambuf error: ")+errmsg);
 }
 
 
@@ -104,14 +104,14 @@ int gzstreambuf::underflow() { // used for input buffer only
             return EOF;
         handle_gzerror();
     }
-    
+
     // reset buffer pointers
     setg( buffer + (4 - n_putback),   // beginning of putback area
           buffer + 4,                 // read position
           buffer + 4 + num);          // end of buffer
 
     // return next character
-    return * reinterpret_cast<unsigned char *>( gptr());    
+    return * reinterpret_cast<unsigned char *>( gptr());
 }
 
 int gzstreambuf::flush_buffer() {
