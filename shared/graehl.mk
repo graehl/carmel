@@ -186,6 +186,7 @@ LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDI
 #-lpthread
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
 INC += $(TRUNK)
+INC += ..
 CPPFLAGS := $(addprefix -I,$(INC)) $(CPPFLAGS)
 
 ifdef PEDANTIC
