@@ -15,10 +15,10 @@ include path)
 openfst is used to allow determinization/minimization
 
 
-Carmel Version 3.2:
+Carmel Version 6.5:
 
-This version of carmel is released on 2007-06-20. For changes and
-additions to Carmel, see ChangeLog.
+This version of carmel is released on . For changes and
+additions to Carmel, see carmel --help and http://github.com/graehl/carmel/
 
 Table of Contents:
 --------------------
@@ -38,6 +38,7 @@ includes the following directories and files:
 	bin/	Carmel executables.
 	sample/	The examples for Carmel tutorial. The tutorial can be
 		found  in the doc/ directory.
+    ../shared/ Headers
 	LICENSE	The license agreement for this software.
 	README	This file.
 
@@ -56,39 +57,37 @@ This should create the main directory structure for carmel.
 Part III: Compiling Carmel:
 ----------------------------
 
-Carmel now requires GCC version 3 to compile.  You can download the source to GCC
-and install it into your home directory, and use it to compile carmel by editing the Makefile.
+Carmel now requires GCC version 4 and Make 3.8 or higher to compile.  You can
+download the source to GCC and install it into your home directory, and use it
+to compile carmel by editing the Makefile.
 
 A Makefile  is included in this distribution. The Makefile can be
 found in the main carmel directory. Follow these steps for
 installation:
 
-1. create an empty file in the main carmel directory and call that
-file dependencies.ARCH
+1. If the parent directory of carmel is not called graehl, ensure a symlink exists inside it, alongside carmel:
 
-ARCH may be:
-solaris
-cygwin
-linux
-freebsd
+    ln -s . graehl
 
-(or others you create by editing the Makefile)
+2. Build and install carmel.  If INSTALL_PREFIX is omitted, the default is your home directory.  Or, you can just "make" and find the binaries in bin/$ARCH or bin/`hostname`:
 
-you may need to set CC.$ARCH to point to your version 3 or greater g++
-(on some systems it will be called g++30 or similar)
+    cd carmel; make INSTALL_PREFIX=/usr/local -j 4 install
 
+3. If dependencies weren't built, try:
 
-You should probably use GNU make (3.8 or later)
+    make depend
 
-2. Create the dependency structure, to do that type:
+    And go to 2.
 
-   % make depend
+4. Optionally build with OpenFST sources.  Get OpenFST and make sure
+"fst/lib/compat.h" etc. are in the include path (make INC+=openfst/) or
+otherwise symlinked.  Edit carmel/src/config.hpp and #define USE_OPENFST, or:
 
-3. Compile carmel
+    make CPPFLAGS+=USE_OPENFST
 
-   % make 
+OpenFST's implementation of weighted minimization and determinization are then usable from carmel.
 
-Carmel also compiles with the latest Microsoft Visual C++ (.NET currently).
+Carmel used to compile with the latest Microsoft Visual C++ (.NET currently).
 A project file is included in the msvc++ directory.  *This hasn't been checked lately!*
 
 Part IV: Carmel File Formats:
@@ -100,9 +99,11 @@ the documentation directory doc/ .
 Part V: Running Carmel:
 ------------------------
 Carmel take its options on the command line. The list of valid options
-can be obtained by typing "carmel" with no command line options.
-The valid options are explained below:
+can be obtained by typing "carmel --help | more" with no command line options.
+The output of carmel --help is below (this may be out of date).
 
+Note that long options e.g. --normby=C aren't spelling checked, and the = is
+mandatory.
 
 usage: carmel [switches] [file1 file2 ... filen]
 
@@ -139,22 +140,25 @@ result to the standard output.
 		second input, as -i consumes the first
 -n		normalize the weights of arcs so that for each state, the
 		weights all of the arcs with the same input symbol add to one
+-j		Perform joint rather than conditional normalization
+-+ a		Using alpha a (recommended: 0), perform pseudo-Dirichlet-process normalization:
+		exp(digamma(alpha+w_i))/exp(digamma(alpha+sum{w_j}) instead of just w_i/sum{w_j}
 -t		given pairs of input/output sequences, as in -S, adjust the
 		weights of the transducer so as to approximate the conditional
 		distribution of the output sequences given the input sequences
 		optionally, an extra line preceeding an input/output pair may
-		contain a floating point number for how many times the 
+		contain a floating point number for how many times the
 		input/output pair should count in training (default is 1)
 -e w		w is the convergence criteria for training (the minimum
-		change in an arc's weight to trigger another iteration) - 
+		change in an arc's weight to trigger another iteration) -
 		default w is 1E-4 (or, -4log)
 -X w		w is a perplexity convergence ratio between 0 and 1,
 		with 1 being the strictest (default w=.999)
--f w		w is a per-training example floor weight used for training,
+-f w		w is a count added to every arc before normalizing for train (-t)ing,
 		added to the counts for all arcs, immediately before normalization -
 		(this implements so-called "Dirichlet prior" smoothing)
--U		use the initial weights of non-locked arcs as per-example prior counts
-		(in the same way as, and in addition to, -f)
+-U		use the initial weights of non-locked arcs as prior counts
+		(in addition to -f)
 -M n		n is the maximum number of training iterations that will be
 		performed, regardless of whether the convergence criteria is
 		met - default n is 256
@@ -163,7 +167,7 @@ result to the standard output.
 -c		list only statistics on the transducer to stdout
 -F filename	write the final transducer to a file (in lieu of stdout)
 -v		invert the resulting transducer by swapping the input and
-		output symbols 
+		output symbols
 -d		do not reduce (eliminate dead-end states) created
 -C		consolidate arcs with same source, destination, input and
 		output, with a total weight equal to the sum (clamped to a
@@ -189,20 +193,19 @@ result to the standard output.
 -L n		while generating input/output pairs with -g or -G, give up if
 		final state isn't reached after n steps (default n=1000)
 -T n		during composition, index arcs in a hash table when the
-		product of the number of arcs of two states is greater than n 
+		product of the number of arcs of two states is greater than n
 		(by default, n = 32)
--N n		assign each arc in the result transducer a unique group number
+-N n		assign each arc in the result transducer a unique parameter-tie group number
 		starting at n and counting up.  If n is 0 (the special group
 		for unchangeable arcs), all the arcs are assigned to group 0
 		if n is negative, all group numbers are removed
--j		Perform joint rather than conditional normalization
 -A		the weights in the first transducer (depending on -l or -r, as
 		with -b, -S, and -t) are assigned to the result, by arc group
 		number.  Arcs with group numbers for which there is no
 		corresponding group in the first transducer are removed
 -m		give meaningful names to states created in composition
 		rather than just numbers
--a		during composition, keep the identity of matching arcs from
+-a		(may SIGNIFICANTLY speed up --train-cascade) during composition, keep the identity of matching arcs from
 		the two transducers separate, assigning the same arc group
 		number to arcs in the result as the arc in the transducer it
 		came from.  This will create more states, and possibly less
@@ -218,7 +221,11 @@ result to the standard output.
 -K		Assume state names are integer indexes (when the final state is an integer)
 -o g		Use learning rate growth factor g (>= 1) (default=1)
 -1		randomly scale weights (of unlocked arcs) after composition uniformly by (0..1]
--! n		perform n additional random initializations of arcs for training, keeping the lowest perplexity
+-! n		perform n additional random restarts (initializations of arcs) for training, keeping the lowest perplexity
+-?		cache EM derivations in memory for faster iterations
+-:		cache em derivations including reverse structure (faster but uses even more memory)
+-= 2.0		raise weights to 2.0th power, *after* normalization.
+
 
 some formatting switches for paths from -k or -G:
 	-I	show input symbols only
@@ -227,6 +234,8 @@ some formatting switches for paths from -k or -G:
 		ending with an asterisk (e.g. "*e*"))
 	-Q	if -I or -O is specified, omit outermost quotes of symbol names
 	-W	do not show weights for paths
+	-%	Skip arcs that are optimal, showing only sidetracks
+
 
 Weight output format switches
 		(by default, small/large weights are written as logarithms):
@@ -239,5 +248,101 @@ Weight output format switches
 Transducer output format switches:
 	-H	One arc per line (by default one state and all its arcs per line)
 	-J	Don't omit output=input or Weight=1
+--restart-tolerance=w : like -X w, but applied to the first iteration of each random start.
+a random start is rejected unless its perplexity is within (log likelihood ratio) w of the best start so far.
+w=1.1 allows a start up to 10% worse than the best, .9 demands a 10% improvement.
+
+--final-restart-tolerance=w : vary --restart-tolerance from its initial value to this
+
+--final-restart=N : the 1st...Nth random restart move from --restart-tolerance to
+--final-restart-tolerance (exponentially) and then holds constant from restarts N,N+1,...
+
+
+--final-sink : if needed, add a new final state with no outgoing arcs
+
+--consolidate-max : for -C, use max instead of sum for duplicate arcs
+
+--consolidate-unclamped : for -C sums, clamp result to max of 1
+
+--project-left : replace arc x:y with x:*e*
+
+--project-right : replace arc x:y with *e*:y
+
+--project-identity-fsa : modifies either projection so result is an identity arc (left means keep the input symbol, right the output)
+
+--random-set : like -1 but ignore previous weights and set a new weight on (0..1]
+
+--train-cascade : train simultaneously a list of transducers composed together
+; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.
+
+--matrix-fb : use a n*m*s matrix (n=input sentence length, m=output len, s=# states) for training, rather than a sparse derivations lattice (not recommended, but may be faster in some cases without caching i.e. -: or -?)
+--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes
+
+--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)
+--cache-no-prune : don't prune unreachable states in derivation cache (not recommended).
+
+--exponents=2,.1 : comma separated list of exponents, applied left to right to the input WFSTs (including stdin if -s).  if more inputs than exponents, use (noop) exponent of 1.  this differs from -=, which exponentiates the weights of the resulting (output) WFST.
+
+--post-b=transducerfile : in conjunction with -b, a parallel sequence of inputs to be composed with the result (left or right composition depending on -l / -r.  compare to -S except 2 parallel files instead of alternating lines, and gives best paths like -b.  also may succeed for compositions that wouldn't fit in memory under -S
+
+--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.
+
+--digamma=0,,0.5 : (train-cascade) comma separated components for each transducer in the cascade; if the component is the empty string, do the usual num/denom normalization; if given a number alpha (as opposed to the empty string), do exp(digamma(num+alpha))/exp(digamma(denom+alpha)).  the variational bayes approximation requires exp(digamma(denom+N*alpha)) where N is the size of the normgroup; this can be achieved by setting --digamma=0 and --priors=x.
+--normby=JCCN : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional, N=none (every arc stays at original prob; in --crp for now, this means a probability of 1 is used for N normalized arcs)
+--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization
+
+
+forest-em export/import:
+--load-fem-param=infile: restore params onto cascade from forest-em params file
+--write-loaded=suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite 'inputN', not 'inputN.')
+--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0
+--fem-param=outfile: write forest-em params file for the input cascade
+--fem-norm=outfile : write a forest-em normgroups file for the input cascade
+--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM
+--fem-alpha=outfile : write a (parallel to --fem-param) list of per-parameter alpha (as in --crp --priors=.01,.0001).  locked arcs and --normby=N parameters get alpha -1 (which is also understood by forest-em --crp to lock)
+--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)
+
+
+gibbs sampling / incremental em options:
+--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual
+--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights).  typical settings are --burnin=2000 -M 10000
+--crp-restarts : number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights
+--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised
+--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)
+--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)
+--crp-exclude-prior : when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts
+--crp-argmax-sum : instead of multiplying the sample probs together and choosing the best, sum (average) them
+--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples
+--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them
+--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)
+--print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example
+--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #
+--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)
+--norm-order : print counts in gibbs param id order (different from fst file order for conditional); params for a normgroup will always be consecutive
+--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)
+--print-counts-rich : show cascade arc associated with each count
+--width : for --print-counts, truncate numbers to this many chars wide
+--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts
+--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights
+--cache-prob : show the true probability according to cache model for each sample
+--sample-prob : show the sample prob given model, previous sample
+--no-prob : show no probability for --crp
+--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1.  the default --priors is now 1 instead of 0. proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1
+--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...
+--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values
+--prior-inference-start : on iterations [start,end) do hyperparam inference; default is to do inference starting from --burnin, but this overrides that
+--prior-inference-end : default is to continue inference until the final sample, but this overrides that (e.g. you may wish inference to conclude at burnin)
+--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.
+--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts
+--expectation: use full forward/backward fractional counts instead of a single count=1 random sample
+--random-start: for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course.
+--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)
+
+
+--help : more detailed help
+
 
 Confused?  Think you've found a bug?  If all else fails, e-mail graehl@isi.edu or knight@isi.edu
+
+
+See doc/FORMATS for a description of the transducer file format.

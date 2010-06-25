@@ -2,7 +2,7 @@
 * This software ("Carmel") is licensed for research use only, as described in  *
 * the LICENSE file in this distribution.  The software can be downloaded from  *
 * http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Yaser Al-Onaizan (yaser@isi.edu) or Kevin Knight (knight@isi.edu)    *
+* contact Kevin Knight (knight@isi.edu) or Jonathan Graehl (graehl@isi.edu)    *
 * with questions about the software or commercial licensing.  All software is  *
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
@@ -62,10 +62,19 @@ left) :
 (source-state (destination-state input output weight)*)
 (source-state (destination-state (input output weight)*)*)
 
-if right parentheses following "weight" is immediately preceded by an
+Reminder: except for input and output symbols starting with * or ", or
+containing parentheses or spaces, quotes are not necessary.
+
+If right parentheses following "weight" is immediately preceded by an
 exclamation point ('!'), then that weight will be locked and unchanged by
-normalization or training (however, the arc may still be eliminated by
-reduction (absence of -d) or consolidation (-C) operations)
+normalization or training (however, the arc may still be eliminated by reduction
+(absence of -d) or consolidation (-C) operations).  If that ! is followed by a
+positive integer, all such arcs sharing the same integer id are constrained to
+have the same weight in normalization (and thus, training).  Hint: -N 0 will
+lock all the arcs, and -N 1 will number them sequentially starting at 1.
+Intersecting with a locked weighted identity transducer can give a
+multiplicative prior for training (as opposed to the normal additive Dirichlet
+prior from -+).
 
 The initial state is the source-state mentioned in the first such expression.
 "weight" can be omitted, for a default weight of one.  "output" can also be
@@ -97,7 +106,7 @@ implicit intermediate transducer used to eliminate redundant paths using empty
 When -k number-of-paths is used without limiting the output with -i or -o,
 paths are displayed as a list of space-separated, parenthesized arcs:
 
-(input-symbol : output-symbol / weight -> destination-state) 
+(input-symbol : output-symbol / weight -> destination-state)
 
 followed by the path weight (the product of the weights in the sequence) at
 the end of the line.
