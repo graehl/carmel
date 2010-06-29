@@ -9,4 +9,127 @@ change(v5): double precision floats (counts won't stop accumulating at around 2 
 change: better error message when bad normgroups, and print command line
 change: new qsh
 
-build from https://nlg0.isi.edu/svn/sbmt/tags/forest-em/
+built from http://github.com/graehl/carmel (forest-em subdir).
+
+All these are legal input (and output) probabilities in carmel and forest-em:
+
+0
+e^-2.68116e+11
+-2.68116e+11ln
+0.0952381
+e^-4086.42
+-4086.42ln
+0.047619
+1
+
+DERIVATION FOREST EM TRAINING
+
+You supply normalization groups, derivation forests, and optionally initial
+parameter weights.  Out comes a vector of parameter weights (probabilities).
+Weights can also be inserted into an input file which references parameters by
+the string "id=N".  The viterbi (highest probability) derivation trees used for
+the training forests can also be reported.
+
+You can also ask for periodic dumps of weights, counts, and viterbi derivations
+after the first and subsequent iterations (to files named with
+--checkpoint-prefix).  Normally those are produced only upon convergence.
+
+Random restarts and automatic optimization over them are supported.
+
+Furthermore, gibbs sampling (instead of EM) is available, with the same options
+as in carmel.
+
+The preferred input/output for weights is e^[exponent], e.g. e^-2.  That is, 1
+should be written e^(ln 1)=e^0.  You can get regular floating point numbers with
+the --human-probs option.
+
+Parameters are indexed from 1 up to some maximum rule index.  Memory required
+does scale with maximum rule index, although you may have many unused indices if
+you please.
+
+Normalization groups are parameter indices (natural numbers) whose weights are
+constrained to sum to 1.  They are listed like this: ((1 2 3) (5 8) (9 10))
+Where (1 2 3) is a normalization group, as is (5 8), as is (9 10).  It's an
+error for a rule index to occur in more than one normalization group.  Rules
+that don't appear in any normalization group will keep their initial weights.
+
+Forests are of the format described at
+http://twiki.isi.edu/NLP/DerivationTrees, for example:
+
+(OR #1(OR 1 1) #1 (2 3) (3 3))
+
+You can specify the amount of memory reserved to hold forests and normalization
+groups through the parameters --max-forest-nodes and --max-normgroup-size -
+abbreviations like 100m for 100 million, and 10k for 10 thousand are
+understood. If input exceeds that limit, then disk is used to swap out the
+working set to disk, which will slow things incredibly.  You may also need to
+specify a larger maximum-single-forest size limit if you have some incredibly
+large forests or normalization groups.  You can tell forest-em where to put
+those swap files with --tempfile-prefix.
+
+Both forests and normalization groups must be uncompressed disk files.
+
+Rules files (with "id=N" triggering the insertion of the weights and
+unnormalized counts for parameter N) are specified with the --byid* options and
+STDIN/STDOUT are indicated with a filename of '-'.  A header line starting with
+'$$$' will have e.g. "forest-em-version=1.0 forest-em-cmdline={{{forest-em -b -
+-B - -i 0}}}" appended to the output rules file (a header line will be inserted
+if none existed in the input).
+
+Two types of priors are available: constant prior counts per rule, and add-k to
+the denominator during normalization (the latter makes room for "unknown rules",
+and pushes down the weights of normalization groups that have only rare rules).
+
+It is okay to mention parameters in forests which don't appear in any
+normalization groups - in that case the parameter's value will be used but never
+adjusted (you'll probably want to supply defaults for these values with -p, or
+else they'll be given weight 1/cost 0).
+
+The format for the (optional) initial parameter weights file is: ( param1 param2
+param3 ... ) - (where param1 is the Weight used for a "1" occurring in a
+forest).  This is also the output parameter file format.
+
+Various interesting statistics and progress information can be generated,
+including reporting the top rules for some normalization group (however, the
+--rules-file used for this must be ordered by rule id).
+
+Reported avg-logprobs are base e (which doesn't matter for convergence, which is
+based on relative avg-logprobs, not absolute).  Should you care to get a
+per-example perplexity, just raise e to the reported per-example avg-logprob.
+
+If you're providing initial parameters, note that they won't be normalized for
+you before the first iteration, unless you explicitly specify "-N".  If your
+initial parameters are inconsistent (norm groups sum to > 1), this may give a
+corpus probability higher than any of the true probability distributions yielded
+by EM iterations, and so you'd get your initial (unnormalized) parameters as
+output.
+
+Examples:
+
+forest-em -n normgroups -f forests -o params
+
+ ... computes optimal params (given normgroups) for maximizing forests likelihood
+
+forest-em -n normgroups2 -i 0 -N -p params -f /dev/null -o params_renormalized
+
+ ... normalizes params according to normgroups2 and stores the result in
+params_normalized
+
+echo '()' | forest-em -o /dev/null -i 1 -n - -p params -f forests
+
+ ... calculates the perplexity (=e^avg-logprob) of forests using params (this
+provides a dummy normalization group file)
+
+forest-em -b - -B - -i 0 -I weights.file -F weight_field_name
+
+ ... takes weights.file and rules on stdin, and writes the rules to stdout,
+ inserting "weight_field_name=weights.file[N]" whenever "id=N" is seen in the
+ input.
+
+gunzip -c untrained.rules.gz | forest-em -u -b - -B - -V 1 -o output.weights -O output.counts -v output.viterbi -n normalization.groups -t /tmp/ -T 10000 -f derivation.forests -i 51 -X 3 -W 10 -l  logfile -x checkpoint.filename.prefix -c | gzip -c > trained.rules.gz
+
+ ... takes a compressed rules file, normalization groups, and derivation
+ forests, initializes all parameters to 1 for the first iteration, and dumps
+ per-iteration outputs to checkpoint.filename.prefix.* for the first iteration
+ and every 10 thereafter.  Outputs are stored in output.viterbi, output.counts,
+ output.weights, and also the modified rules end up in trained.rules.gz.

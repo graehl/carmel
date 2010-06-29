@@ -16,6 +16,7 @@ struct time_space_change
     {
         o << tc << ", memory " << mc;
     }
+
     typedef time_space_change self_type;
     TO_OSTREAM_PRINT
 };
