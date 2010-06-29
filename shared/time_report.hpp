@@ -3,6 +3,7 @@
 
 #include <graehl/shared/auto_report.hpp>
 #include <graehl/shared/stopwatch.hpp>
+#include <graehl/shared/print_read.hpp>
 
 namespace graehl {
 
@@ -17,8 +18,8 @@ struct time_change
     {
         o << const_cast<stopwatch&>(time).recent_total_time() << " sec";
     }
-    typedef time_change self_type;
 
+    typedef time_change self_type;
     TO_OSTREAM_PRINT
 };
 

@@ -7,6 +7,17 @@
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
 
+All these are legal input (and output) probabilities in carmel and forest-em:
+
+0
+e^-2.68116e+11
+-2.68116e+11ln
+0.0952381
+e^-4086.42
+-4086.42ln
+0.047619
+1
+
 A weighted finite state transducer (WFST) is a directed graph with weighted
 arcs, and an input and output label on each arc.  Each vertex is called a
 "state", and one state is designated as the initial state and another as the
