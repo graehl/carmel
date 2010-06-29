@@ -1,5 +1,5 @@
-#ifndef MEMORY_STATS_HPP
-#define MEMORY_STATS_HPP
+#ifndef GRAEHL_SHARED__MEMORY_STATS_HPP
+#define GRAEHL_SHARED__MEMORY_STATS_HPP
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define _MACOSX 1
