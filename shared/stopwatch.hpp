@@ -1,5 +1,5 @@
-#ifndef __STOPWATCH_HPP__
-#define __STOPWATCH_HPP__
+#ifndef GRAEHL__SHARED__STOPWATCH_HPP
+#define GRAEHL__SHARED__STOPWATCH_HPP
 
 #include <stdexcept>
 
@@ -45,7 +45,7 @@ class stopwatch
     {
         reset(start_running);
     }
-    void start() 
+    void start()
     {
         running = true;
 #ifndef _WIN32
@@ -55,7 +55,7 @@ class stopwatch
     }
 
     /// pauses
-    void stop() 
+    void stop()
     {
         if (running)
             EACH_TIMER_TYPE(i)
@@ -64,37 +64,37 @@ class stopwatch
     }
 
     //clears
-    void reset(bool start_running=true) 
+    void reset(bool start_running=true)
     {
         EACH_TIMER_TYPE(i)
             totals[i]=0;
         if (start_running)
             start();
     }
-    
+
 #undef EACH_TIMER_TYPE
-    static bool valid_type(timer_type type) 
+    static bool valid_type(timer_type type)
     {
         return type >= WALL_TIME && type < TYPE_MAX;
     }
     template <class Time>
-    static double sec(const Time &t) 
+    static double sec(const Time &t)
     {
         return t.tv_sec+t.tv_usec/(1000000.);
     }
     template <class Time>
-    static double elapsed_sec(const Time &now,const Time &then) 
+    static double elapsed_sec(const Time &now,const Time &then)
     {
         return sec(now)-sec(then);
     }
 #ifndef _WIN32
-    static void measure_usage(rusage &r) 
+    static void measure_usage(rusage &r)
     {
         if (-1==getrusage (RUSAGE_SELF, &r))
             throw std::runtime_error("getrusage failed");
     }
 #endif
-    static void measure_wallclock(timeval &tv) 
+    static void measure_wallclock(timeval &tv)
     {
         if (-1==gettimeofday(&tv, 0))
             throw std::runtime_error("gettimeofday failed");
@@ -158,7 +158,7 @@ class stopwatch
         if (!valid_type(type))
             throw std::runtime_error("stopwatch: invalid timer type");
         if (!running) return 0;
-        switch (type) { 
+        switch (type) {
         case WALL_TIME:
             return recent_wall_time();
         case TOTAL_TIME:
@@ -175,7 +175,7 @@ class stopwatch
     }
 
     template <class Ostream>
-    void print(Ostream &os) const 
+    void print(Ostream &os) const
     {
         os << '[' << total_time(WALL_TIME) << " wall sec, " << total_time(USER_TIME) << " user sec, " << total_time(SYSTEM_TIME) << " system sec, " << total_time(PAGEFAULTS) << " major page faults]";
     }
@@ -183,10 +183,10 @@ class stopwatch
     TO_OSTREAM_PRINT
     template <class Ostream>
     friend Ostream & operator <<(Ostream &os,stopwatch const& t) {
-        t.print(os);    
+        t.print(os);
         return os;
     }
-  
+
  private:
 
 #ifdef _WIN32
@@ -202,7 +202,7 @@ class stopwatch
         tv->tv_usec = (long) ((now.ns100 / 10LL) % 1000000LL);
         tv->tv_sec = (long) ((now.ns100 - 116444736000000000LL) / 10000000LL);
         return (0);
-} 
+}
 #endif
 
     bool running;
@@ -212,8 +212,7 @@ class stopwatch
 #endif
     timeval then_wallclock;
 
-    double totals[TYPE_MAX];    
-//    std::vector<double> totals;
+    double totals[TYPE_MAX];
 };
 
 }//graehl
