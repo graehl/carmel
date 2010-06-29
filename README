@@ -31,7 +31,7 @@ or, to build without installing (look in bin/`hostname`for binaries)
 
 You can have the binaries built in bin/YOURDIR by:
 
-    make -j 4 ARCH=YOURDIR
+    make -j 4 BUILDSUB=YOURDIR
 
 If your system can't build static executables, you can:
 
