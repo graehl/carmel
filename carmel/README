@@ -54,7 +54,7 @@ installation:
 
     ln -s . graehl
 
-2. Build and install carmel.  If INSTALL_PREFIX is omitted, the default is your home directory.  Or, you can just "make" and find the binaries in bin/$ARCH or bin/`hostname`:
+2. Build and install carmel.  If INSTALL_PREFIX is omitted, the default is your home directory.  Or, you can just "make" and find the binaries in bin/$BUILDSUB or bin/`hostname`:
 
     cd carmel; make INSTALL_PREFIX=/usr/local -j 4 install
 
