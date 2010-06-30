@@ -1,6 +1,13 @@
 #ifndef GRAEHL__SHARED__STOPWATCH_HPP
 #define GRAEHL__SHARED__STOPWATCH_HPP
 
+/*
+  stopwatch can track recent and total elapsed time and pagefaults.
+
+  Windows emulation of [recent_]wall_time() and total_time() - note: total = user+system
+  - most appropriate for benchmarking.
+ */
+
 #include <stdexcept>
 
 #ifdef _WIN32
@@ -17,7 +24,7 @@
 #include <sys/resource.h>
 #endif
 
-#include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/print_read.hpp>
 
 namespace graehl {
 
@@ -201,7 +208,7 @@ class stopwatch
         GetSystemTimeAsFileTime (&now.ft);
         tv->tv_usec = (long) ((now.ns100 / 10LL) % 1000000LL);
         tv->tv_sec = (long) ((now.ns100 - 116444736000000000LL) / 10000000LL);
-        return (0);
+        return 0;
 }
 #endif
 
