@@ -2,7 +2,6 @@
 #ifndef GRAEHL_SHARED__HASH_HPP
 #define GRAEHL_SHARED__HASH_HPP
 
-#include <pair>
 #include <stdexcept>
 #include <utility> // this is just to get stlport macros in
 
@@ -76,9 +75,9 @@ void set_val(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
 }
 
 // adds default val to table if key wasn't found, returns ref to val
-template <class H>
-void get_default(H &ht,typename H::key_type const& k,typename H::data_type const& v) {
-  return const_cast<V &>(ht.insert(typename H::value_type(k,v)).first->second);
+template <class H,class K>
+void get_default(H &ht,K const& k,typename H::data_type const& v) {
+  return const_cast<typename H::data_type &>(ht.insert(typename H::value_type(k,v)).first->second);
 }
 
 }
