@@ -16,7 +16,7 @@ struct first_
 
 // H is a hash_set<pair<K,V> > with hash/equal based only on K
 template <class HashSet>
-struct map_from_set 
+struct map_from_set
 {
     typedef HashSet HT;
     typedef typename HT::value_type pair_type;
@@ -25,14 +25,13 @@ struct map_from_set
 
     typedef typename pair_type::first_type key_type;
     typedef typename pair_type::second_type data_type;
-    
+
     typedef std::pair<iterator,bool> insert_ret;
-    
+
 //    typedef key_type K;
     // key type is templated to avoid implicit type conversions for multi_index?  or does the conversion happen anyway?
     typedef data_type V;
 
-    
     template <class K>
     inline static
     data_type & get(HT &ht,K const& k)
@@ -46,9 +45,9 @@ struct map_from_set
     {
         insert_ret i=ht.insert(pair_type(k,V()));
         is_new=i.second;
-        return const_cast<V &>(i.first->second);        
+        return const_cast<V &>(i.first->second);
     }
-    
+
     template <class K>
     inline static
     V & get_default(HT &ht,K const& k,V const& v)
@@ -64,7 +63,7 @@ struct map_from_set
         is_new=i.second;
         return const_cast<V &>(i.first->second);
     }
-    
+
     template <class K>
     inline static
     V &get_existing(HT const&ht,K const& key)
@@ -81,7 +80,7 @@ struct map_from_set
     {
         return ht.insert(value_type(key,v));
     }
-    
+
     template <class K>
     inline static
     void set(HT &ht,K const& key,V const &v=V())
@@ -90,7 +89,7 @@ struct map_from_set
         if (!r.second)
             const_cast<V&>(r.first->second)=v;
     }
-    
+
     template <class K>
     inline static
     V * get_ptr(HT &ht,K const& key)
@@ -104,11 +103,11 @@ struct map_from_set
     V const* get_ptr(HT const& ht,K const& key)
     {
         return get_ptr(const_cast<HT&>(ht),key);
-    }    
+    }
 
 };
 
-    
+
 template <class H>
 typename H::value_type::second_type &
 map_get(H &h
