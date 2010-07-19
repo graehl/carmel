@@ -1,27 +1,52 @@
 // (unused) wrapper for the (non-STL-standard) vendor hash_map
-#ifndef HASH_HPP
-#define HASH_HPP
+#ifndef GRAEHL_SHARED__HASH_HPP
+#define GRAEHL_SHARED__HASH_HPP
 
-#ifdef __GNUC__
-      #if __GNUC__ < 3
-        #include <hash_map.h>
-        namespace stdext { using ::hash_map; }; // inherit globals
-      #else
-        #include <ext/hash_map>
-        #if __GNUC_MINOR__ == 0
-          namespace stdext = std;               // GCC 3.0
-        #else
-          namespace stdext = ::__gnu_cxx;       // GCC 3.1 and later
-        #endif
-      #endif
-#else      // ...  there are other compilers, right?
-//#include <hash_map>
-//#if !(defined(_MSC_VER))
-//&& _MSC_VER >= 1300)
-//namespace stdext = std;
-//#endif
+#include <pair>
+#include <stdexcept>
+#include <utility> // this is just to get stlport macros in
 
-#endif // GNUC
+#if defined(_STLPORT_VERSION) || defined(__SGI_STL_PORT)
+# include <hash_map>
+# ifndef stdext_ns_alias_defined
+#  define stdext_ns_alias_defined
+   namespace stdext = ::std;
+   namespace stdextp = ::std;
+# endif
+#else
+# ifdef __GNUC__
+#  if __GNUC__ < 3
+#   include <hash_map.h>
+     namespace stdext { using ::hash_map; }; // inherit globals
+#  else
+#   ifdef __GXX_EXPERIMENTAL_CXX0X__
+#    include <tr1/unordered_map>
+#    define stdext::hash_map std::tr1::unordered_map
+#   else
+#    include <ext/hash_map>
+#    if __GNUC__ == 3 && __GNUC_MINOR__ == 0
+      namespace stdext = ::std;               // GCC 3.0
+#    else
+      namespace stdext = ::__gnu_cxx;       // GCC 3.1 and later
+#    endif
+      namespace stdextp = ::std;
+#   endif
+#  endif
+# else      // ...  there are other compilers, right?
+#  if defined(_MSC_VER)
+#   if MSC_VER >= 1500)
+#   include <unordered_map>
+#   define stdext::hash_map ::std::unordered_map
+#   else
+#    if MSC_VER >= 1300)
+#     include <hash_map>
+       namespace stdext = ::std;
+#    endif
+#   endif
+#  endif
+# endif
+#endif
+
 //using stdext::hash_map;
 //using stdext::hash_set;
 
@@ -29,29 +54,55 @@
 #include <graehl/shared/test.hpp>
 #endif
 
-#ifdef TWO_HASH_H
-/*template <class K,class V> typename HashTable<K,V>::value_type::second_type *find_second(const HashTable<K,V>& ht,const K& k) {return ht.find_second(k);}
-*/
-#endif
-/*
-template <class H,class K>
-typename H::value_type::second_type *find_second(const H& ht,const K& k)
+namespace graehl {
+// like ht[k]=v, but you want to check your belief that ht[k] didn't exist before.  also may be faster
+template <class K,class V,class H,class E,class A>
+void add_new(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
 {
-  if (h::iterator_type i=ht.find(k) != ht.end())
-    return &(h->second);
-  else
-    return NULL;
+  typedef stdext::hash_map<K,V,H,E,A> HT;
+  stdextp::pair<typename HT::iterator,bool> r=ht.insert(typename HT::value_type(key,value));
+  if (!r.second)
+    throw std::runtime_error("Key already existed in oa_hash_map::add_new(key,val)");
+}
+
+// equivalent to ht[k]=v, may be faster (not likely)
+template <class K,class V,class H,class E,class A>
+void set_val(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
+{
+  typedef stdext::hash_map<K,V,H,E,A> HT;
+  stdextp::pair<typename HT::iterator,bool> r=ht.insert(typename HT::value_type(key,value));
+  if (!r.second)
+    const_cast<V&>(r.first->second)=value;
+}
+
+// adds default val to table if key wasn't found, returns ref to val
+template <class H>
+void get_default(H &ht,typename H::key_type const& k,typename H::data_type const& v) {
+  return const_cast<V &>(ht.insert(typename H::value_type(k,v)).first->second);
+}
+
+}
+
+/*
+V * find_second(K const& key)
+{
+  typename HT::iterator i=ht().find(key);
+  return i==ht().end() ? 0 : &const_cast<V&>(i->second);
+}
+V const* find_second(K const& key) const
+{
+  return const_cast<self_type *>(this)->find_second(key);
 }
 */
 
 #ifdef TEST
-#include <graehl/shared/../carmel/src/stringkey.h>
-
-
+#define USE_GNU_HASH_MAP
+#include <graehl/shared/stringkey.h>
 
 BOOST_AUTO_TEST_CASE( hash)
 {
   stdext::hash_map<int,int> hm;
+  using namespace graehl;
   hm[0]=1;
   BOOST_CHECK(hm.find(0)!=hm.end());
   BOOST_CHECK(hm.find(1)==hm.end());
@@ -60,6 +111,12 @@ BOOST_AUTO_TEST_CASE( hash)
   sm["yes"]=0;
   sm[s]=1;
   sm["maybe"]=2;
+  add_new(sm,StringKey("feel"),3);
+  BOOST_CHECK(sm["feel"] == 3);
+  graehl::set_val(sm,graehl::StringKey("feel"),4);
+  BOOST_CHECK(sm["feel"] == 4);
+  set_val(sm,StringKey("good"),5);
+  BOOST_CHECK(sm["good"] == 5);
   BOOST_CHECK(sm["no"] == 1);
   BOOST_CHECK(sm.find("maybe") != sm.end());
   BOOST_CHECK(sm.find("asdf") == sm.end());

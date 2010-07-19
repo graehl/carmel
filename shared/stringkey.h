@@ -15,25 +15,24 @@ struct StringKey {
     static StringKey empty;
     StringKey() : str(empty.str) {}
     explicit StringKey(unsigned i) : str(static_itoa(i)) {} // big trouble if you try to kill() one of these
-    StringKey(const char *c) : str(const_cast<char *>(c)) {}
+    StringKey(char const* s) : str(const_cast<char *>(s)) {}
     StringKey(StringKey const& o) : str(o.str) {}
-    
     // warning: if s is temporary, it must last until you clone or stop using this:
     StringKey(std::string const& s) : str(const_cast<char *>(s.c_str())) {}
-    
+
     // note: pass in string length (extra '\0' added for you)
     static inline
-    char * alloc(unsigned len) 
+    char * alloc(unsigned len)
     {
         return (char *)::operator new(sizeof(char)*(len+1));
     }
 
     static inline
-    void dealloc(char *p) 
+    void dealloc(char *p)
     {
         ::operator delete(p);
     }
-    
+
     void clone()
     {
 //        char *old = str;
@@ -49,12 +48,12 @@ struct StringKey {
     //operator char * () { return str; }
     //	char * operator =(char * c) { char *t = str; str = c; return t; } // returns old value: why?
     char * operator=(char *c) { return str=c; }
-    StringKey const& operator=(StringKey  const& o) 
+    StringKey const& operator=(StringKey  const& o)
     {
         str=o.str;
         return *this;
     }
-    
+
     bool operator < ( const StringKey &a) const // for Dinkum / MS .NET 2003 hash table (buckets sorted by key, takes an extra comparison since a single valued < is used rather than a 3 value strcmp
     {
         return strcmp(str,a.str)<0;
@@ -63,7 +62,7 @@ struct StringKey {
     {
         return strcmp(str, a.str)==0;
     }
-    int cmp( const StringKey &a ) const 
+    int cmp( const StringKey &a ) const
     {
         return strcmp(str, a.str);
     }
@@ -71,7 +70,7 @@ struct StringKey {
     bool isDefault() const { return str == empty.str; }
     size_t hash() const
     {
-        return cstr_hash(str);	
+        return cstr_hash(str);
     }
     template <class O> void print(O&o) const
     {

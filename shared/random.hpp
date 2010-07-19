@@ -80,7 +80,7 @@ inline double random01() // returns uniform random number on [0..1)
 {
 # ifdef USE_STD_RAND
 
-    return ((double)std::rand()) *        (1. /((double)RAND_MAX+1.));
+    return ((double)std::rand()) * (1. /((double)RAND_MAX+1.));
 # else
     return g_random01();
 # endif
@@ -138,7 +138,6 @@ inline bool random_bool()
 inline size_t random_up_to(size_t limit) {
     return random_less_than(limit+1);
 }
-
 
 
 #define GRAEHL_RANDOM__NLETTERS 26

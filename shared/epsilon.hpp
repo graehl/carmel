@@ -12,7 +12,7 @@ namespace graehl {
 
 # ifndef EPSILON
 static const double EPSILON=FLOAT_EPSILON;
-# endif 
+# endif
 static const double ONE_PLUS_EPSILON=1+EPSILON;
 #endif
 
@@ -57,12 +57,11 @@ inline bool same_within_abs_epsilon(double a,double b,double epsilon=EPSILON) {
     return std::fabs(a-b) < epsilon;
 }
 
-inline bool close_by_first(double a,double b,double epsilon=EPSILON) 
+inline bool close_by_first(double a,double b,double epsilon=EPSILON)
 {
     return std::fabs(a-b) <= epsilon*std::fabs(a);
 }
 
-//DONE: cache fabs(a-b) instead of recomputing for a-b and b-a
 inline bool very_close(double a,double b,double epsilon=EPSILON)
 {
     using std::fabs;
@@ -78,7 +77,6 @@ inline bool close_enough(double a,double b,double epsilon=EPSILON)
     return diff<=epsilon*fabs(a) || diff<=epsilon*fabs(b);
 //    return close_by_first(a,b,epsilon) || close_by_first(b,a,epsilon);
 }
-
 
 }
 
