@@ -8,9 +8,9 @@ namespace graehl {
 template <class KeyT>
 struct first_
 {
-    typedef KeyT result_type;
+    typedef KeyT const& result_type;
     template <class Pair>
-    KeyT const& operator()(Pair const& pair) const
+    result_type operator()(Pair const& pair) const
     { return pair.first; }
 };
 
