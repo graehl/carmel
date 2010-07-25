@@ -28,7 +28,7 @@
 namespace graehl {
 
 template <class S>
-S chomp(S const &s) 
+S chomp(S const &s)
 {
     std::string ws="\n\t ";
     typename S::size_type b,e;
@@ -41,7 +41,7 @@ S chomp(S const &s)
 
 
 template <class I>
-std::string get_string_terminated(I &i,char terminator='\n') 
+std::string get_string_terminated(I &i,char terminator='\n')
 {
     std::stringstream s;
     char c;
@@ -56,19 +56,19 @@ std::string get_string_terminated(I &i,char terminator='\n')
 
 
 template <class Str> inline
-void erase_begin(Str &s,unsigned n) 
+void erase_begin(Str &s,unsigned n)
 {
     s.erase(0,n);
 }
 
 template <class Str> inline
-void erase_end(Str &s,unsigned n) 
+void erase_end(Str &s,unsigned n)
 {
     s.erase(s.length()-n,n);
 }
 
 template <class Str>
-typename Str::size_type replace(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
+typename Str::size_type replace(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0)
 {
     pos=in.find(oldsub,pos);
     if (pos==Str::npos)
@@ -79,19 +79,19 @@ typename Str::size_type replace(Str &in,Str const& oldsub,Str const& newsub,type
 
 // returns true if one was replaced
 template <class Str>
-bool replace_one(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
+bool replace_one(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0)
 {
     return replace(in,oldsub,newsub,pos) != Str::npos;
 }
 
 // returns number of types we replaced
 template <class Str>
-unsigned replace_all(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0) 
+unsigned replace_all(Str &in,Str const& oldsub,Str const& newsub,typename Str::size_type pos=0)
 {
     unsigned n=0;
     while ((pos=replace(in,oldsub,newsub,pos))!=Str::npos)
         ++n;
-    return n;    
+    return n;
 }
 
 
@@ -183,7 +183,7 @@ bool equal_safe(I1 b1,I1 e1,I2 b2,I2 e2)
 
 //oops: didn't notice that I'd already implemented this before starts_with.  two implementations for testing anyway ;)
 template <class Istr, class Isubstr> inline
-bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
+bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 {
     while (bsub != esub) {
         if (bstr == estr)
@@ -195,13 +195,13 @@ bool match_begin(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 }
 
 template <class Istr, class Prefix> inline
-bool match_begin(Istr bstr,Istr estr,Prefix prefix) 
+bool match_begin(Istr bstr,Istr estr,Prefix const& prefix)
 {
     return match_begin(bstr,estr,prefix.begin(),prefix.end());
 }
 
 template <class Istr, class Isubstr> inline
-bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub) 
+bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 {
     while (bsub != esub) {
         if (bstr == estr)
@@ -213,7 +213,7 @@ bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 }
 
 template <class Istr, class Suffix> inline
-bool match_end(Istr bstr,Istr estr,Suffix suffix) 
+bool match_end(Istr bstr,Istr estr,Suffix suffix)
 {
     return match_end(bstr,estr,suffix.begin(),suffix.end());
 }
@@ -240,7 +240,7 @@ bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end)
 /*
 //FIXME: provide skip-first-whitespace or skip-no-whitespace iterators.
 template <class Ch,class Tr,class CharIt> inline
-bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end) 
+bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end)
 {
     typedef std::istream_iterator<Ch> II;
     II ibeg(i),iend;
@@ -249,7 +249,7 @@ bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end)
 */
 
 template <class Ch,class Tr,class CharIt> inline
-bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end,bool skip_first_ws=true) 
+bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end,bool skip_first_ws=true)
 {
     if (begin==end) return true;
     Ch c;
@@ -264,8 +264,8 @@ bool expect_consuming(std::basic_istream<Ch,Tr> &i,CharIt begin,CharIt end,bool 
         if (c!=*begin)
             return false;
     }
-    return true;  
-/* //NOTE: whitespace will be ignored!  so don't include space in expectation ...    
+    return true;
+/* //NOTE: whitespace will be ignored!  so don't include space in expectation ...
     typedef std::istream_iterator<Ch> II;
     II ibeg(i),iend;
     return match_begin(ibeg,iend,begin,end);
@@ -281,44 +281,43 @@ bool expect_consuming(std::basic_istream<Ch,Tr> &i,const Str &str,bool skip_firs
 
 template <class Str>
 inline
-bool starts_with(const Str &str,const Str &prefix) 
+bool starts_with(const Str &str,const Str &prefix)
 {
     return starts_with(str.begin(),str.end(),prefix.begin(),prefix.end());
 }
 
 template <class Str>
 inline
-bool ends_with(const Str &str,const Str &suffix) 
+bool ends_with(const Str &str,const Str &suffix)
 {
 //        return starts_with(str.rbegin(),str.rend(),suffix.rbegin(),suffix.rend());
         return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
-
 }
 
 template <class Str>
 inline
-bool starts_with(const Str &str,char const*prefix) 
+bool starts_with(const Str &str,char const*prefix)
 {
     return starts_with(str.begin(),str.end(),cstr_const_iterator(prefix),cstr_const_iterator());
 //    return starts_with(str,std::string(prefix));
 }
 
 template <class Istr, class Prefix> inline
-bool starts_with(Istr bstr,Istr estr,Prefix prefix) 
+bool starts_with(Istr bstr,Istr estr,Prefix prefix)
 {
     return starts_with(bstr,estr,prefix.begin(),prefix.end());
 }
 
 template <class Str>
 inline
-bool ends_with(const Str &str,char const*suffix) 
+bool ends_with(const Str &str,char const*suffix)
 {
     return ends_with(str.begin(),str.end(),cstr_const_iterator(suffix),cstr_const_iterator());
 //    return ends_with(str,std::string(suffix));
 }
 
 template <class Istr, class Suffix> inline
-bool ends_with(Istr bstr,Istr estr,Suffix suffix) 
+bool ends_with(Istr bstr,Istr estr,Suffix suffix)
 {
     return ends_with(bstr,estr,suffix.begin(),suffix.end());
 }
@@ -343,17 +342,17 @@ void parse_until(const std::string &term,In &in,Func func)
 }
 
 template <class In,class Cont> inline
-void push_back_until(const std::string &term,In &in,Cont & cont) 
+void push_back_until(const std::string &term,In &in,Cont & cont)
 {
     parse_until(term,in,make_push_backer(cont));
 }
 
 template <class F> inline
-void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':') 
+void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char key_val_sep=':')
 {
     typedef typename F::key_type Key;
     typedef typename F::data_type Data;
-    using namespace std;    
+    using namespace std;
     typedef pair<Key,Data> Component;
     typedef string::size_type Pos;
     typedef string::const_iterator It;
@@ -370,7 +369,7 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
         }
         for (It val_beg=++i; ;++i) {
             TOKENIZE_KEY_VAL_IF_DBG(
-                if (i==e) DBPC2("<END>",i-s.begin());                    
+                if (i==e) DBPC2("<END>",i-s.begin());
                 DBP2(*i,i-s.begin());
                 );
             if (i == e || *i == pair_sep) {
@@ -417,17 +416,17 @@ BOOST_AUTO_TEST_CASE( TEST_FUNCS )
     BOOST_CHECK(!ends_with(s1,string("str*")));
     BOOST_CHECK(!starts_with(s1,string("*tr1")));
     for (unsigned i=0;i<4;++i) {
-        string starts(TEST_starts_with[i]),ends(TEST_ends_with[i]);        
+        string starts(TEST_starts_with[i]),ends(TEST_ends_with[i]);
         BOOST_CHECK(starts_with(s1,starts));
         BOOST_CHECK(ends_with(s1,ends));
         BOOST_CHECK(match_begin(s1.begin(),s1.end(),starts.begin(),starts.end()));
         BOOST_CHECK(match_end(s1.begin(),s1.end(),ends.begin(),ends.end()));
-        if (i!=3) {            
+        if (i!=3) {
             BOOST_CHECK(!starts_with(s1,ends));
-            BOOST_CHECK(!ends_with(s1,starts));        
+            BOOST_CHECK(!ends_with(s1,starts));
             BOOST_CHECK(!match_end(s1.begin(),s1.end(),starts.begin(),starts.end()));
             BOOST_CHECK(!match_begin(s1.begin(),s1.end(),ends.begin(),ends.end()));
-        }        
+        }
     }
     string s2(" s t  r1");
     BOOST_CHECK(equal_strings_as_seq<char>(s1,s2));
@@ -438,7 +437,7 @@ BOOST_AUTO_TEST_CASE( TEST_FUNCS )
     string s4("str1a");
     BOOST_CHECK(!equal_strings_as_seq<string>(s1,s4));
     BOOST_CHECK(!equal_strings_as_seq<char>(s1,s4));
-    BOOST_CHECK(!equal_strings_as_seq<char>(s4,s1));    
+    BOOST_CHECK(!equal_strings_as_seq<char>(s4,s1));
 }
 
 #endif

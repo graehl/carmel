@@ -13,6 +13,7 @@
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/hash_jenkins.hpp>
+#include <graehl/shared/bit_arithmetic.hpp>
 
 namespace graehl {
 
@@ -359,6 +360,7 @@ inline hash64_t hash_pod_vector(Vec const& v,hash64_t seed=golden_ratio_fraction
 
 /* Paul Hsieh: http://www.azillionmonkeys.com/qed/hash.html - faster than Jenkins (and has same good properties) but only 32 bit hash value, no seed chaining (although chaining would be a minor tweak)
  */
+
 inline uint32_t hash_bytes_32 (void const* k, int len) {
     char const* data=(char const* )k;
     uint32_t hash = len, tmp;
