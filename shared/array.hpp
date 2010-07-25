@@ -10,25 +10,25 @@ namespace graehl {
 
 ///WARNING: only use for std::vector and similar
 template <class Vec>
-typename Vec::value_type * array_begin(Vec & v) 
+typename Vec::value_type * array_begin(Vec & v)
 {
     return &*v.begin();
 }
 
 template <class Vec>
-typename Vec::value_type const* array_begin(Vec const& v) 
+typename Vec::value_type const* array_begin(Vec const& v)
 {
     return &*v.begin();
 }
 
 template <class Vec>
-unsigned index_of(Vec const& v,typename Vec::value_type const* p) 
+unsigned index_of(Vec const& v,typename Vec::value_type const* p)
 {
     return p-array_begin(v);
 }
 
 template <class C> inline
-void resize_up_for_index(C &c,std::size_t i) 
+void resize_up_for_index(C &c,std::size_t i)
 {
     const std::size_t newsize=i+1;
     if (newsize > c.size())
@@ -55,7 +55,7 @@ void remove_marked_swap(Vec & v,bool marked[]) {
 
 // o[i]=j where v[i] before remove_marked(v,marked) == v[j] after.  o[i]=-1 if marked[i]. returns size after removing (max o[i]+1)
 template <class O>
-unsigned indices_after_remove_marked(O o,bool marked[],unsigned N) 
+unsigned indices_after_remove_marked(O o,bool marked[],unsigned N)
 {
     int f=0;
     for (unsigned i=0; i <  N;++i)
@@ -73,26 +73,26 @@ struct remove_not_marked
 {
     typedef remove_not_marked<AB> self_type;
     AB i;
-    
-    bool operator *() const 
+
+    bool operator *() const
     {
         return !*i;
     }
-    void operator++() 
+    void operator++()
     {
         ++i;
     }
-    bool operator ==(self_type const& o) 
+    bool operator ==(self_type const& o)
     {
         return i==o.i;
     }
 };
 
-    
+
 
 // outputs sequence to out iterator, of new indices for each element i, corresponding to deleting element i from an array when remove[i] is true (-1 if it was deleted, new index otherwise), returning one-past-end of out (the return value = # of elements left after deletion)
 template <class REMOVE,class REMOVEe,class O>
-unsigned new_indices(REMOVE i, REMOVEe end,O out) {
+unsigned new_indices(REMOVE i, REMOVEe end,O out,bool remove=true) {
     unsigned f=0;
     while (i!=end)
         *out++ = *i++ ? (unsigned)-1 : f++;
@@ -100,7 +100,7 @@ unsigned new_indices(REMOVE i, REMOVEe end,O out) {
 };
 
 template <class It,class RemoveIf,class O>
-unsigned new_indices_remove_if_n(unsigned n,It i,RemoveIf const& r,O out) 
+unsigned new_indices_remove_if_n(unsigned n,It i,RemoveIf const& r,O out)
 {
     unsigned f=0;
     while(n--)
@@ -110,7 +110,7 @@ unsigned new_indices_remove_if_n(unsigned n,It i,RemoveIf const& r,O out)
 
 template <class REMOVE,class O>
 unsigned new_indices(REMOVE remove,O out) {
-    return new_indices(remove.begin(),remove.end());
+  return new_indices(remove.begin(),remove.end(),out);
 }
 
 // given a vector and a parallel sequence of bools where true means remove, remove the marked elements while maintaining order
@@ -133,7 +133,7 @@ struct indices_after_removing
         map=(unsigned *)::operator new(sizeof(unsigned)*n_mapped);
         n_kept=new_indices_remove_if_n(n_mapped,r,map);
     }
-    
+
 
     template <class AB,class ABe>
     void init(AB i, ABe end) {
@@ -145,28 +145,28 @@ struct indices_after_removing
             map=NULL;
     }
     template <class A>
-    void init(A const& a) 
+    void init(A const& a)
     {
         init(a.begin(),a.end());
     }
-    
+
     template <class A>
-    indices_after_removing(A const& a) 
+    indices_after_removing(A const& a)
     {
         init(a.begin(),a.end());
     }
     indices_after_removing() : n_mapped(0) {}
-    ~indices_after_removing() 
+    ~indices_after_removing()
     {
         if (n_mapped)
             ::operator delete((void*)map);
     }
-    bool removing(unsigned i) const 
+    bool removing(unsigned i) const
     {
         return map[i] == REMOVED;
     }
-    
-    unsigned operator[](unsigned i) const 
+
+    unsigned operator[](unsigned i) const
     {
         return map[i];
     }
@@ -193,30 +193,30 @@ struct indices_after_removing
         for (;i<n_mapped&&!removing(i);++i) ;
         for(;i<n_mapped;++i)
             if (!removing(i))
-                std::swap(v[map[i]],v[i]);        
+                std::swap(v[map[i]],v[i]);
         v.resize(n_kept);
     }
-    
+
  private:
-    indices_after_removing(indices_after_removing const& o) 
+    indices_after_removing(indices_after_removing const& o)
     {
         map=NULL;
     }
 };
-    
+
 
 // return index of one past last rewritten element.  moves v[i] to v[ttable[i]], and calls Rewrite(v[ttable[i]],t) where ttable[i] is the new index in v.  if ttable[i] == -1, then swaps v[i] to the end, calling Rewrite(v[ttable[i]])
 template <class T,class Rewrite>
-unsigned shuffle_removing(T *v,indices_after_removing const& ttable,Rewrite &r) 
+unsigned shuffle_removing(T *v,indices_after_removing const& ttable,Rewrite &r)
 {
     using std::swap;
     unsigned to, i = 0, sz= ttable.n_mapped;
 //    if (sz==0) return 0;
     for ( ; i < sz && !ttable.removing(i) ;++i )
         r(v[i],ttable);
-    
+
     to = i; // find first marked (don't need to move anything below it)
-    while (i<sz) {   
+    while (i<sz) {
         if (ttable.removing(i)) {
             r(v[i]); // rewrite for deletion
             ++i;
