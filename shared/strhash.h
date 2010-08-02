@@ -20,7 +20,7 @@ namespace graehl {
 
 class StringPool {
     typedef HashTable<StringKey, unsigned> HT;
-    
+
 #ifdef STRINGPOOL
     static HT counts;
 #endif
@@ -89,12 +89,12 @@ class Alphabet {
     Alphabet(Sym c) {
         add(c,0);
     }
-    Alphabet(Sym c,Sym d) 
+    Alphabet(Sym c,Sym d)
     {
         add(c,0);
         add(d,1);
     }
-    
+
     Alphabet(const Alphabet &a) {
 #ifdef NODELETE
         memcpy(this, &a, sizeof(Alphabet));
@@ -132,19 +132,19 @@ class Alphabet {
         memcpy(this, &a, s);
         memcpy(&a, swapTemp, s);
     }
-    
-    unsigned add(Sym const& s) 
+
+    unsigned add(Sym const& s)
     {
         unsigned ret=names.size();
         add(s,ret);
         return ret;
     }
-    
+
     unsigned add_make_unique(Sym const& s)
     {
         if (!have(s))
             return add(s);
-        
+
         std::stringstream b;
         b << s.c_str();
         while (have(b.str()))
@@ -153,19 +153,19 @@ class Alphabet {
         return add(b.str());
     }
 
-    bool have(Sym const& s) 
+    bool have(Sym const& s)
     {
         return find_second(ht,s);
     }
-    
-    
+
+
     // s must be new, and added at index n
     void add(Sym s,unsigned n) {
         Assert(find(s) == NULL);
 #ifdef DEBUG_STRINGPOOL
         Config::debug() << "\nadding to alphabet: " <<s;
-#endif 
-        
+#endif
+
         if (!StrPool::is_noop)
             s = StrPool::borrow(s);
         //ht[s]=names.size();
@@ -173,11 +173,11 @@ class Alphabet {
         graehl::add(ht,s,names.size());
 #ifdef DEBUG_STRINGPOOL
         Config::debug() << " index="<<names.size();
-#endif 
+#endif
         names.push_back(s);
 #ifdef DEBUG_STRINGPOOL
         Config::debug() << " token="<<names.back() << " lookup_index(token)="<<*find(s)<<std::endl;
-#endif 
+#endif
     }
     void reserve(unsigned n) {
         names.reserve(n);
@@ -204,7 +204,7 @@ class Alphabet {
         }
 #ifdef DEBUG_STRINGPOOL
         Config::debug() << "got token="<<ht.find(s)->first << " lookup_index(token)="<<ht.find(s)->second<<std::endl;
-#endif 
+#endif
         return it.first->second;
     }
     Sym operator[](unsigned pos) const {
@@ -240,7 +240,7 @@ class Alphabet {
                 Assert(!find_second(ht,s));
 #ifdef DEBUG_STRINGPOOL
                 Config::debug() << "removing from alphabet: " << s<<std::endl;
-#endif 
+#endif
 #ifndef NODELETE
                 if (!StrPool::is_noop)
                     StrPool::giveBack(s);
@@ -296,21 +296,21 @@ class Alphabet {
     }
 
 #ifdef TEST
-    BOOST_AUTO_TEST_CASE( TEST_static_itoa )
+    BOOST_AUTO_TEST_CASE( TEST_static_utoa )
     {
-        BOOST_CHECK(!strcmp(static_itoa(0),"0"));
-        BOOST_CHECK(!strcmp(static_itoa(3),"3"));
-        BOOST_CHECK(!strcmp(static_itoa(10),"10"));
-        BOOST_CHECK(!strcmp(static_itoa(109),"109"));
-        BOOST_CHECK(!strcmp(static_itoa(190),"190"));
-        BOOST_CHECK(!strcmp(static_itoa(199),"199"));
-        BOOST_CHECK(!strcmp(static_itoa(1534567890),"1534567890"));
+        BOOST_CHECK(!strcmp(static_utoa(0),"0"));
+        BOOST_CHECK(!strcmp(static_utoa(3),"3"));
+        BOOST_CHECK(!strcmp(static_utoa(10),"10"));
+        BOOST_CHECK(!strcmp(static_utoa(109),"109"));
+        BOOST_CHECK(!strcmp(static_utoa(190),"190"));
+        BOOST_CHECK(!strcmp(static_utoa(199),"199"));
+        BOOST_CHECK(!strcmp(static_utoa(1534567890),"1534567890"));
     }
 
 #endif
 
 }
-    
+
 #ifdef GRAEHL__SINGLE_MAIN
 #include <graehl/shared/strhash.cc>
 #endif
