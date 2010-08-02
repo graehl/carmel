@@ -78,7 +78,7 @@ struct Symbol {
   static Symbol empty;
   static Symbol ZERO;
   Symbol() : str(empty.str) {}
-  explicit Symbol(unsigned i) : str(intern(static_itoa(i)))
+  explicit Symbol(unsigned i) : str(intern(static_utoa(i)))
   {
         //str=intern(static_itoa(i));
   }
@@ -174,14 +174,14 @@ struct Symbol {
                     case '\t':case '\r':case '\n':case ' ':
 #ifndef GRAPHVIZ_SYMBOL
                     case '^':case ';':    //FIXME: think this breaks treeviz.cpp (but it's needed for transducer.hpp)
-#endif 
+#endif
 //case '#':
 //case '$':
 //case ':':
                         in.unget();
                         goto donewhile;
                     case '\\':
-                        EXPECTI(in.get(c));                      
+                        EXPECTI(in.get(c));
 //fallthrough
                     default:
                         g_buf.push_back(c);
