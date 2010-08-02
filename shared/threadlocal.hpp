@@ -2,6 +2,10 @@
 #ifndef THREADLOCAL_HPP
 #define THREADLOCAL_HPP
 
+#ifndef SETLOCAL_SWAP
+# define SETLOCAL_SWAP 0
+#endif
+
 #ifdef BOOST_NO_MT
 
 #define THREADLOCAL
@@ -13,6 +17,7 @@
 #define THREADLOCAL __declspec(thread)
 #else
 
+//FIXME: why is this disabled?
 #if 1
 #define THREADLOCAL
 #else
@@ -36,7 +41,7 @@ struct SaveLocal {
     D old_value;
     SaveLocal(D& val) : value(val), old_value(val) {}
     ~SaveLocal() {
-#ifdef SETLOCAL_SWAP
+#if SETLOCAL_SWAP
       swap(value,old_value);
 #else
       value=old_value;
@@ -49,20 +54,20 @@ struct SetLocal {
     D &value;
     D old_value;
     SetLocal(D& val,const D &new_value) : value(val), old_value(
-#ifdef SETLOCAL_SWAP
+#if SETLOCAL_SWAP
       new_value
 #else
       val
 #endif
       ) {
-#ifdef SETLOCAL_SWAP
+#if SETLOCAL_SWAP
       swap(value,old_value);
 #else
       value=new_value;
 #endif
     }
     ~SetLocal() {
-#ifdef SETLOCAL_SWAP
+#if SETLOCAL_SWAP
       swap(value,old_value);
 #else
       value=old_value;
