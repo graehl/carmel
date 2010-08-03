@@ -217,7 +217,7 @@ class Alphabet {
         unsigned iNum = pos;
         if (names.at_grow(iNum).isDefault()) {
             // decimal string for int
-            Sym k = static_itoa(iNum);
+            Sym k = static_utoa(iNum);
             if (!StrPool::is_noop)
                 k = StrPool::borrow(k);
             names[iNum] = k;

@@ -1154,7 +1154,7 @@ class WFST {
         if (named_states)
             return stateNames[i].c_str();
         else
-            return static_itoa(i);
+            return static_utoa(i);
     }
     Weight sumOfAllPaths(List<int> &inSeq, List<int> &outSeq);
     // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
