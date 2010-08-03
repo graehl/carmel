@@ -14,7 +14,7 @@ struct StringKey {
     const char *c_str() const { return str; }
     static StringKey empty;
     StringKey() : str(empty.str) {}
-    explicit StringKey(unsigned i) : str(static_itoa(i)) {} // big trouble if you try to kill() one of these
+    explicit StringKey(unsigned i) : str(static_utoa(i)) {} // big trouble if you try to kill() one of these
     StringKey(char const* s) : str(const_cast<char *>(s)) {}
     StringKey(StringKey const& o) : str(o.str) {}
     // warning: if s is temporary, it must last until you clone or stop using this:
