@@ -54,6 +54,7 @@
 #endif
 
 namespace graehl {
+
 // like ht[k]=v, but you want to check your belief that ht[k] didn't exist before.  also may be faster
 template <class K,class V,class H,class E,class A>
 void add_new(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
@@ -74,10 +75,11 @@ void set_val(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
     const_cast<V&>(r.first->second)=value;
 }
 
+
 // adds default val to table if key wasn't found, returns ref to val
 template <class H,class K>
-void get_default(H &ht,K const& k,typename H::data_type const& v) {
-  return const_cast<typename H::data_type &>(ht.insert(typename H::value_type(k,v)).first->second);
+typename H::mapped_type & get_default(H &ht,K const& k,typename H::mapped_type const& v) {
+  return const_cast<typename H::mapped_type &>(ht.insert(typename H::value_type(k,v)).first->second);
 }
 
 }
