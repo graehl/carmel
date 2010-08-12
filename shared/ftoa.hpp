@@ -1,6 +1,24 @@
 #ifndef GRAEHL_SHARED__FTOA_HPP
 #define GRAEHL_SHARED__FTOA_HPP
 
+//TODO: implement roundtrip option (compile time or flag?)  compile time seems most sensible
+#ifndef FTOA_ROUNDTRIP
+# define FTOA_ROUNDTRIP 0
+#endif
+
+#ifndef FTOA_DEBUG
+# define FTOA_DEBUG 1
+#endif
+
+
+#if FTOA_DEBUG
+# define FTOADBG(x) std::cerr<<"\nFTOA: " #x "="<<x<<"\n"
+# define FTOADBG2(x0,x1) std::cerr<<"\nFTOA: " #x0 "="<<x0<<" " #x1 "="<<x1 <<"\n"
+#else
+# define FTOADBG(x)
+# define FTOADBG2(x0,x1)
+#endif
+
 //TODO: handle NAN +INF -INF
 
 /* DECIMAL_FOR_WHOLE ; ftos(123)
@@ -47,17 +65,19 @@ struct ftoa_traits {
 //eP10,
 // sigd decimal places normally printed, roundtripd needed so that round-trip float->string->float is identity
 
-#define DEFINE_FTOA_TRAITS(FLOATT,INTT,P10,sigd,roundtripd,small,large)  \
+#define DEFINE_FTOA_TRAITS(FLOATT,INTT,P10,sigd,roundtripd,small,large,used)    \
 template <> \
 struct ftoa_traits<FLOATT> { \
   typedef INTT int_t; \
   typedef u ## INTT uint_t; \
   typedef FLOATT float_t; \
-  enum { digits10=std::numeric_limits<INTT>::digits10, chars_block=P10, sigdig=sigd, roundtripdig=roundtripd, bufsize=roundtripdig+7 };    \
+  enum { digits10=std::numeric_limits<INTT>::digits10, chars_block=P10, usedig=used, sigdig=sigd, roundtripdig=roundtripd, bufsize=roundtripdig+7 }; \
   static const double pow10_block = 1e ## P10; \
   static const float_t small_f = small; \
   static const float_t large_f = large; \
-  static inline int sprintf(char *buf,double f) { return std::sprintf(buf,"%." #sigd "g",f); } \
+  static inline int sprintf(char *buf,double f) { return std::sprintf(buf,"%." #used "g",f); } \
+  static inline int sprintf_sci(char *buf,double f) { return std::sprintf(buf,"%." #used "e",f); } \
+  static inline int sprintf_nonsci(char *buf,double f) { return std::sprintf(buf,"%." #used "f",f); } \
   static inline uint_t fracblock(double frac) { assert(frac>=0 && frac<1); double f=frac*pow10_block;uint_t i=(uint_t)f;assert(i<pow10_block);return i; } \
   static inline float_t mantexp10(float_t f,int &exp) { float_t e=std::log10(f);float_t ec=std::ceil(e); exp=ec; return f/std::pow((float_t)10,ec); } \
   static inline bool use_sci_abs(float_t fa) { return fa<small || fa>large; } \
@@ -66,9 +86,16 @@ struct ftoa_traits<FLOATT> { \
 //TODO: decide on computations in double (would hurt long double) or in native float type - any advantage?  more precision is usually better.
 
 //10^22 = 0x1.0f0cf064dd592p73 is the largest exactly representable power of 10 in the binary64 format.  but round down to 18 so int64_t can hold it.
-DEFINE_FTOA_TRAITS(double,int64_t,18,15,17,1e-9,1e8)
+
+#if FTOA_ROUNDTRIP
+#define DEFINE_FTOA_TRAITS_ROUNDTRIP(FLOATT,INTT,P10,sigd,roundtripd,small,large) DEFINE_FTOA_TRAITS(FLOATT,INTT,P10,sigd,roundtripd,small,large,roundtripd)
+#else
+#define DEFINE_FTOA_TRAITS_ROUNDTRIP(FLOATT,INTT,P10,sigd,roundtripd,small,large) DEFINE_FTOA_TRAITS(FLOATT,INTT,P10,sigd,roundtripd,small,large,sigd)
+#endif
+
+DEFINE_FTOA_TRAITS_ROUNDTRIP(double,int64_t,18,15,17,1e-9,1e8)
 //i've heard that 1e10 is fine for float.  but we only have 1e9 (9 decimal places) in int32.
-DEFINE_FTOA_TRAITS(float,int32_t,9,7,9,1e-5,1e4)
+DEFINE_FTOA_TRAITS_ROUNDTRIP(float,int32_t,9,6,9,1e-5,1e4)
 
 
 template <class F>
@@ -138,20 +165,33 @@ inline char *append_pos_frac(char *p,F frac) {
   return append_pos_frac_digits(p,frac);
 }
 
-
 template <class F>
 inline char *prepend_frac(char *p,F frac,bool positive_sign=false) {
   if (frac==0) {
     *--p='0';
   } else if (frac<0) {
-    p=prepend_pos_frac_digits(p,-frac);
+    p=prepend_pos_frac(p,-frac);
     *--p='-';
   } else {
-    p=prepend_pos_frac_digits(p,frac);
+    p=prepend_pos_frac(p,frac);
     if (positive_sign)
       *--p='+';
   }
   return p;
+}
+
+template <class F>
+inline char *append_sign(char *p,F f,bool positive_sign=false) {
+  if (f<0) {
+    *p++='-';
+  } else if (positive_sign)
+    *p++='+';
+  return p;
+}
+
+template <class F>
+inline char *append_frac(char *p,F f,bool positive_sign=false) {
+  return append_pos_frac(append_sign(p,f,positive_sign),f);
 }
 
 //TODO: append_frac, append_pos_sci, append_sci.  notice these are all composed according to a pattern (but reversing order of composition in pre vs app).  or can implement with copy from the other directly.
@@ -162,6 +202,7 @@ inline char *prepend_sci(char *p,F f,bool positive_sign_mant=false,bool positive
   typedef ftoa_traits<F> FT;
   int e10;
   F mant=FT::mantexp10(f,e10);
+  FTOADBG2(mant,e10);
   assert(mant<1.00001);
   if (mant>=1.) {
     e10-=1;
@@ -171,7 +212,6 @@ inline char *prepend_sci(char *p,F f,bool positive_sign_mant=false,bool positive
   *--p='e';
   return prepend_frac(p,mant,positive_sign_mant);
 }
-
 
 // modf docs for negative aren't very well defined (would have to test).  so handle sign externally
 template <class F>
@@ -211,9 +251,29 @@ inline char *prepend_nonsci(char *p,F f,bool positive_sign=false) {
   return p;
 }
 
-//TODO: implement roundtrip option
+template <class F>
+inline char *append_nonsci(char *p,F f,bool positive_sign=false) {
+  if (positive_sign&&f>=0) *p++='+';
+  return p+ftoa_traits<F>::sprintf_nonsci(p,f);
+}
+
+template <class F>
+inline char *append_sci(char *p,F f,bool positive_sign=false) {
+  if (positive_sign&&f>=0) *p++='+';
+  return p+ftoa_traits<F>::sprintf_sci(p,f);
+}
+
+template <class F>
+inline char *append_ftoa(char *p,F f,bool positive_sign=false) {
+  if (positive_sign&&f>=0) *p++='+';
+  return p+ftoa_traits<F>::sprintf(p,f);
+}
+
+
+
 
 // writes left->right so can be used to append. returns position of null terminator (end of string) (will assert bomb and return 0 if somehow float is not IEEE and exponent is out of range). [outbuf,outbuf+ftoa_bufsize) must be writable.
+/*
 template <class F>
 inline char *append_ftoa(char *outbuf,F f,bool roundtrip=false)
 {
@@ -231,33 +291,46 @@ inline char *append_ftoa(char *outbuf,F f,bool roundtrip=false)
   }
   return outbuf+FT::sprintf(outbuf,f);
 }
+*/
 
 template <class F>
-inline char *prepend_ftoa(char *p,F f,bool roundtrip=false)
+inline char *prepend_ftoa(char *p,F f)
 {
   typedef ftoa_traits<F> FT;
-  return (roundtrip || FT::use_sci(f)) ?
-    prepend_sci(p,f,roundtrip) :
-    prepend_nonsci(p,f);
+  return FT::use_sci(f) ? prepend_sci(p,f) : prepend_nonsci(p,f);
 }
 
 template <class F>
-inline std::string ftos_from_append(F f,bool roundtrip=false) {
+inline std::string ftos_append(F f) {
   typedef ftoa_traits<F> FT;
   char buf[FT::bufsize];
-  return std::string(buf,append_ftoa(buf,f,roundtrip));
+  return std::string(buf,append_ftoa(buf,f));
 }
 
 template <class F>
-inline std::string ftos(F f,bool roundtrip=false) {
+inline std::string ftos_prepend(F f) {
+  typedef ftoa_traits<F> FT;
+  char buf[FT::bufsize];
+  char *end=buf+FT::bufsize;
+  return std::string(prepend_ftoa(end,f),end);
+}
+
+
+template <class F>
+inline std::string ftos(F f) {
+#if 0
+  // trust RVO?  no extra copies?
+  return FTOA_ONLY_SPRINTF ? ftos_append(f) : ftos_prepend(f);
+#else
   typedef ftoa_traits<F> FT;
   char buf[FT::bufsize];
   if (FTOA_ONLY_SPRINTF) {
-    return std::string(buf,append_ftoa(buf,f,roundtrip));
+    return std::string(buf,append_ftoa(buf,f));
   } else {
     char *end=buf+FT::bufsize;
-    return std::string(prepend_ftoa(end,f,roundtrip),end);
+    return std::string(prepend_ftoa(end,f),end);
   }
+#endif
 }
 
 namespace {
@@ -266,14 +339,14 @@ namespace {
 }
 
 // not even THREADLOCAL - don't use.
-inline char *static_ftoa(float f,bool roundtrip=false)
+inline char *static_ftoa(float f)
 {
   if (FTOA_ONLY_SPRINTF) {
-    append_ftoa(ftoa_outbuf,f,roundtrip);
+    append_ftoa(ftoa_outbuf,f);
     return ftoa_outbuf;
   } else {
     char *end=ftoa_outbuf+ftoa_bufsize;
-    return prepend_ftoa(end,f,roundtrip);
+    return prepend_ftoa(end,f);
   }
 }
 
@@ -289,11 +362,23 @@ using namespace graehl;
 int main(int argc,char *argv[]) {
   printf("d U d U d U\n");
   for (int i=1;i<argc;++i) {
-    double n;
-    sscanf(argv[i],"%lf",&n);
-    float f=n;
-    cerr<<n<<" ->float= "<<f<<endl;
-    cerr <<f<<" ->ftoa= "<<static_ftoa(f)<<endl;
+    double d;
+    sscanf(argv[i],"%lf",&d);
+    float f=d;
+    cerr <<d<<" ->float= "<<f<<endl;
+    cerr <<f<<" ->ftoa(f)= "<<ftos(f)<<" "<<" ->ftoa(d)="<<ftos(d);
+    cerr <<" ->ftoa_pre(f)= "<<ftos(f)<<" "<<" ->ftoa_post(f)="<<ftos_append(f);
+    cerr <<" ->ftoa_pre(d)= "<<ftos(d)<<" "<<" ->ftoa_post(d)="<<ftos_append(d);
+    float frac=modf(f);
+    double dfrac=modf(d);
+    cerr << " frac="<<frac<<" dfrac="<<dfrac;
+    char buf[50];
+    char *p=buf+50;
+
+    cerr << " pre_pos_frac="<<string(prepend_pos_frac(p,frac),p) << " app_pos_frac="<<string(buf,append_pos_frac(buf,frac));
+    cerr << " pre_frac="<<string(prepend_frac(p,frac),p) << " app_frac="<<string(buf,append_frac(buf,frac));
+    cerr << " pre_frac="<<string(prepend_sci(p,frac),p) << " app_frac="<<string(buf,append_frac(buf,frac));
+    cerr << endl;
   }
   return 0;
 }
