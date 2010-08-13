@@ -18,21 +18,19 @@
 #ifndef USE_FTOA
 #define USE_FTOA 1
 #endif
+#ifndef HAVE_STRTOUL
+# define HAVE_STRTOUL 1
+#endif
 
 #include <string>
 #include <sstream>
 #include <stdexcept>
 #include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/itoa.hpp>
-
-#ifndef HAVE_STRTOUL
-# define HAVE_STRTOUL 1
-#endif
-
-#include <cstdlib>
 #if USE_FTOA
 # include <graehl/shared/ftoa.hpp>
 #endif
+#include <cstdlib>
 
 namespace graehl {
 
@@ -225,25 +223,28 @@ inline unsigned long& string_into(char const* s,unsigned long &x) {
  */
 inline std::string to_string_roundtrip(float x) {
   char buf[17];
-  sprintf(buf,"%.9g",x);
+  return std::string(buf,buf+sprintf(buf,"%.9g",x));
+
 }
 inline std::string to_string(float x) {
 #if USE_FTOA
   return ftos(x);
 #else
   char buf[15];
-  sprintf(buf,"%.7g",x);
+  return std::string(buf,buf+sprintf(buf,"%.7g",x));
 #endif
 }
 inline std::string to_string_roundtrip(double x) {
   char buf[32];
-  sprintf(buf,"%.17g",x);
-  return buf;
+  return std::string(buf,buf+sprintf(buf,"%.17g",x));
 }
 inline std::string to_string(double x) {
+#if USE_FTOA
+  return ftos(x);
+#else
   char buf[30];
-  sprintf(buf,"%.15g",x);
-  return buf;
+  return std::string(buf,buf+sprintf(buf,"%.15g",x));
+#endif
 }
 
 inline double& string_into(std::string const& s,double &x) {
