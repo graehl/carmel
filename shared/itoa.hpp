@@ -97,6 +97,7 @@ char *utoa(char *buf,Int n_) {
 inline void left_pad(char *left,char *buf,char pad='0') {
   while (buf>left)
     *--buf=pad;
+  // return buf;
 }
 
 template <class Int>
@@ -121,7 +122,6 @@ char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
     Uint rem;
     while (n) {
       NDIV10MOD(rem,n);
-      ++n_skipped;
       if (rem) {
         *--buf = digit_to_char(rem);
         // some non-0 trailing digits; now output all digits.
@@ -131,6 +131,7 @@ char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
         }
         return buf;
       }
+      ++n_skipped;
     }
     assert(0);
     return 0;
