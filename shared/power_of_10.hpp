@@ -29,6 +29,8 @@
  */
 #include <stdint.h>
 
+// these two lists could be generated via a combinator loop thingy: FOLDC22C(F,C,Z) =F(C,... F(C,F(C,Z))...)
+
 #define TIMES0TIMES(x) 1
 #define TIMES1TIMES(x) x
 #define TIMES2TIMES(x) TIMES1TIMES(x)*x

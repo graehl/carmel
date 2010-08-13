@@ -25,9 +25,6 @@
 # define DBFTOA2(x0,x1)
 #endif
 
-//TODO: handle NAN +INF -INF
-
-
 /* DECIMAL_FOR_WHOLE ; ftos(123)
    0 ; 123
    1 ; 123
@@ -216,7 +213,7 @@ inline char *append_frac(char *p,F f,bool positive_sign=false) {
 }
 
 
-//TODO: append_frac, append_pos_sci, append_sci.  notice these are all composed according to a pattern (but reversing order of composition in pre vs app).  or can implement with copy from the other directly.
+//append_frac, append_pos_sci, append_sci.  notice these are all composed according to a pattern (but reversing order of composition in pre vs app).  or can implement with copy through buffer
 
 /* will switch to sci notation if integer part is too big for the int type. but for very small values, will simply display 0 (i.e. //TODO: find out log10 and leftpad 0s then convert rest) */
 template <class F>
