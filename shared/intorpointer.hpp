@@ -5,6 +5,15 @@
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/genio.h>
 
+#ifndef IOP_CHECK_LSB
+# define IOP_CHECK_LSB 1
+#endif
+#if IOP_CHECK_LSB
+# define iop_assert(x) Assert(x)
+#else
+# define iop_assert(x)
+#endif
+
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #endif
@@ -29,8 +38,8 @@ struct IntOrPointer {
     bool is_integer() const { return i & 1; }
     bool is_pointer() const { return !is_integer(); }
     value_type & pointer() { return p; }
-    const value_type & pointer() const { Assert(is_pointer()); return p; }
-    integer_type integer() const { Assert(is_integer()); return i >> 1; }
+    const value_type & pointer() const { iop_assert(is_pointer()); return p; }
+    integer_type integer() const { iop_assert(is_integer()); return i >> 1; }
     /// if sizeof(C) is even, could subtract sizeof(C)/2 bytes from base and add directly i * sizeof(C)/2 bytes
     template <class C>
     C* offset_integer(C *base) {
@@ -43,20 +52,22 @@ struct IntOrPointer {
     }
     void operator=(unsigned j) { i = 2*(integer_type)j+1; }
     void operator=(int j) { i = 2*(integer_type)j+1; }
+  void set_integer(Int j) { i=2*j+1; }
     template <class C>
     void operator=(C j) { i = 2*(integer_type)j+1; }
     void operator=(value_type v) { p=v; }
     IntOrPointer() {}
     IntOrPointer(const self_type &s) : p(s.p) {}
     void operator=(const self_type &s) { p=s.p; }
-    template <class C>
-    bool operator ==(C* v) { return p==v; }
-    template <class C>
-    bool operator ==(const C* v) { return p==v; }
-    template <class C>
-    bool operator ==(C j) { return integer() == j; }
-    bool operator ==(self_type s) { return p==s.p; }
-    bool operator !=(self_type s) { return p!=s.p; }
+  template <class C>
+  bool operator ==(C* v) const { return p==v; }
+  template <class C>
+  bool operator ==(const C* v) const { return p==v; }
+  template <class C>
+  bool operator ==(C j) const { return integer() == j; }
+  bool operator ==(self_type s) const { return p==s.p; }
+  bool operator !=(self_type s) const { return p!=s.p; }
+
     template <class O> void print(O&o) const
     {
         if (is_integer())
