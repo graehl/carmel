@@ -73,7 +73,7 @@ SHARED=../shared
 endif
 ifndef BOOST_DIR
 # note: BOOST_DIR not used for anything now, we assume boost somewhere in std include
-BOOST_DIR:=../boost
+#BOOST_DIR:=../boost
 #BOOST_DIR=~/isd/$(HOST)/include
 endif
 ifndef BASEOBJ
