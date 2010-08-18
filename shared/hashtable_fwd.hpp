@@ -2,13 +2,15 @@
 #ifndef GRAEHL_SHARED_HASHTABLE_FWD_HPP
 #define GRAEHL_SHARED_HASHTABLE_FWD_HPP
 
+#define MEMBER_HASH friend inline std::size_t hash_value(self_type const& x) { return x.hash(); }
+
 #define GOLDEN_MEAN_FRACTION 2654435769U
 
 #ifdef USE_GRAEHL_HASH_MAP
 #  ifdef USE_GNU_HASH_MAP
 #   undef USE_GRAEHL_HASH_MAP
-#  endif 
-#else 
+#  endif
+#else
 # define USE_GNU_HASH_MAP
 #endif
 
@@ -23,16 +25,16 @@
 # endif
 # include <ext/hash_map>
 # define HashTable __gnu_cxx::hash_map
-# define HASHNS  __gnu_cxx::          
+# define HASHNS  __gnu_cxx::
 # define HASHNS_B namespace __gnu_cxx {
 # define HASHNS_E }
 # include <string>
 HASHNS_B
 template <class Char,class T,class A>
-struct hash<std::basic_string<Char,T,A> > 
+struct hash<std::basic_string<Char,T,A> >
 {
     typedef std::basic_string<Char,T,A> arg_type;
-    const std::size_t operator()( const  arg_type &s ) const 
+    const std::size_t operator()( const  arg_type &s ) const
     {
                 std::size_t h=0;
 //        return cstr_hash(s.c_str());
@@ -50,7 +52,7 @@ HASHNS_E
 #include <boost/unordered_map.hpp>
 // no template typedef so ...
 #define HashTable boost::unordered_map
-#define HASHNS boost::          
+#define HASHNS boost::
 #define HASHNS_B namespace boost {
 #define HASHNS_E }
 
@@ -72,7 +74,7 @@ namespace graehl {
         typedef typename H::iterator find_return_type;
         typedef std::pair<find_return_type,bool> insert_return_type;
     };
-        
+
 template <class Map,class Key> inline
 bool has_key(const Map &map,const Key &key)
 {
@@ -123,7 +125,7 @@ inline V *find_second(const HashTable<K,V,H,P,A>& ht,const K& first)
 template <class T> struct hash;
 
   template <class C>
-  struct hash { std::size_t operator()(const C &c) const { return boost::hash_value(c); } };
+  struct hash { std::size_t operator()(const C &c) const { using namespace boost; return hash_value(c); } };
 #endif
 
 template<class T1,class T2,class T3,class T4,class T5,class A,class B>
@@ -152,7 +154,7 @@ template <class C,class H=
 >
 struct hash_container
 {
-    const std::size_t operator()(const C& c) const 
+    const std::size_t operator()(const C& c) const
     {
         return hash_range(c.begin(),c.end(),H());
     }
@@ -166,7 +168,7 @@ inline
 }
 
 template <class InsertRet>
-inline bool was_inserted(const InsertRet &insert_ret) 
+inline bool was_inserted(const InsertRet &insert_ret)
 {
     return insert_ret.second;
 }

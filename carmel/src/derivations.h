@@ -52,12 +52,13 @@ struct deriv_state
         os<<')';
     }
     uint32_t i,s,o; // input,state,output
-    std::size_t hash() const
+    uint32_t hash() const
     {
         //return hash_quads_64(&i,sizeof(deriv_state)/sizeof(i));
         return hash3(i,s,o);
 //hash_bytes_32((void *)this,sizeof(deriv_state));
     }
+  MEMBER_HASH
     bool operator !=(deriv_state const& r)  const
     {
         return !(*this==r);
@@ -71,6 +72,14 @@ struct deriv_state
     deriv_state(uint32_t i,uint32_t s,uint32_t o) : i(i),s(s),o(o) {}
 };
 
+//inline uint32_t hash_value(deriv_state const& d) { return d.hash(); }
+}
+// above would suffice for boost::hash, but we're still 'flexible' and want to put in the same namespace as hashtable impl so it gets found by default, so:
+
+//BEGIN_HASH_VAL(graehl::deriv_state) {	return x.hash(); } END_HASH
+
+
+namespace graehl {
 
 // temporary counts etc. for deriv arcs.  see cascade.h for how weights are pushed back to original wfsts
 template <class arc_counts>
@@ -814,6 +823,5 @@ struct derivations //: boost::noncopyable
 
 }
 
-BEGIN_HASH_VAL(graehl::deriv_state) {	return x.hash(); } END_HASH
 
 #endif
