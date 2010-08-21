@@ -9,7 +9,6 @@
 namespace graehl {
 
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
-// FIXME: possible for this to not be valid for any object with a default constructor :-(
 template <typename T,class Alloc> class dynamic_array : public array<T,Alloc> {
 public:
   typedef unsigned size_type;
@@ -150,6 +149,9 @@ public:
     return endv;
   }
   const T* const_end() const {
+    return endv;
+  }
+  const T* cend() const {
     return endv;
   }
   typedef typename array<T,Alloc>::iterator iterator;
