@@ -180,7 +180,7 @@ template <class Int>
 inline std::string utos(Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
   char *end=buf+signed_for_int<Int>::toa_bufsize;
-  char *p=itoa(end,n);
+  char *p=utoa(end,n);
   return std::string(p,end);
 }
 
