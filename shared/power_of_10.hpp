@@ -2,21 +2,8 @@
 #define GRAEHL_SHARED__POWER_OF_10_HPP
 
 
-#ifndef HAVE_GCC_4_4
-#undef HAVE_DIAGNOSTIC_PUSH
-#if __GNUC__ > 4 || __GNUC__==4 && __GNUC_MINOR__ > 3
-# define HAVE_GCC_4_4 1
-# define HAVE_DIAGNOSTIC_PUSH 1
-#else
-# define HAVE_GCC_4_4 0
-# define HAVE_DIAGNOSTIC_PUSH 0
-#endif
-#endif
-
 //FIXME: according to docs, push/pop should work.  but in 4.3 it has no effect.
-#if HAVE_DIAGNOSTIC_PUSH
-# pragma GCC diagnostic push
-#endif
+#include <graehl/shared/warning_push.hpp>
 
 #pragma GCC diagnostic ignored "-Woverflow"
 //anon namespace - so no need to define in just one linkage
@@ -119,8 +106,6 @@ MAKE_POWERS_OF_10(double,22) // 10^22 = 0x1.0f0cf064dd592p73 is the largest exac
 }//ns
 
 
-#if HAVE_DIAGNOSTIC_PUSH
-# pragma GCC diagnostic pop
-#endif
+#include <graehl/shared/warning_pop.hpp>
 
 #endif

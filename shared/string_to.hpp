@@ -247,6 +247,14 @@ inline std::string to_string(double x) {
 #endif
 }
 
+inline double& string_into(char const* s,double &x) {
+  x=std::atof(s);
+  return x;
+}
+inline float& string_into(char const* s,float &x) {
+  x=std::atof(s);
+  return x;
+}
 inline double& string_into(std::string const& s,double &x) {
   x=std::atof(s.c_str());
   return x;
