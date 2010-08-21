@@ -15,6 +15,7 @@
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <string>
+#include <cstring>
 #include <new>
 #include <cassert>
 #include <memory>
@@ -216,7 +217,7 @@ public:
     }
 
     void copyto(T *to,unsigned n) {
-        memcpy(to,vec,bytes(n));
+      std::memcpy(to,vec,bytes(n));
     }
 
     void copyto(T *to) {
@@ -397,6 +398,7 @@ template <typename T,typename Alloc=std::allocator<T> > class dynamic_array;
 template <typename T,typename Alloc=std::allocator<T> > class fixed_array : public auto_array<T,Alloc> {
 public:
     typedef auto_array<T,Alloc> Super;
+  typedef array<T,Alloc> Array;
     explicit fixed_array() : Super(0) {  }
     typedef unsigned size_type;
     explicit fixed_array(size_type sp) : Super(sp) {
@@ -470,7 +472,7 @@ public:
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read) {
         this->destroy();
         this->dealloc();
-        return read_imp(this,in,read);
+        return read_imp((Array *)this,in,read);
     }
     template <class charT, class Traits>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in) {
