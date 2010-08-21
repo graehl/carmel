@@ -1,30 +1,60 @@
-#ifndef GRAEHL__SHARED__dynarray_hpp
-#define GRAEHL__SHARED__dynarray_hpp
+#ifndef GRAEHL__SHARED__aligned_dynarray_hpp
+#define GRAEHL__SHARED__aligned_dynarray_hpp
 
 // like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).
 // historical justification: when Carmel was first written, STL wasn't supported by gcc.
 
-#include <graehl/shared/fixed_array.hpp>
+#include <graehl/shared/dynamic_array.hpp>
+#include <stdint.h>
+#include <algorithm>
 
 namespace graehl {
 
+//TODO: this is copy/paste from dynamic_array.hpp.  CRTP implementation in terms of padding, or make dynamic_array = aligned_dynamic_array (oblivious to default template args)
+
+// the doubling of active storage amount may be bad given padding in terms of heap frag.  change to padding-aware increased size request?
+
 // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs; only works when memcpy can move you
-// default Alloc defined in fixed_array.hpp
-template <typename T,class Alloc> class dynamic_array : public array<T,Alloc> {
+// asks for an extra 2*byte_multiple bytes when allocating, so that we can place vec[aligned_offset] on an exact multiple of byte_multiple.  that is, the raw space will have some padding because we can't predict the alignment of allocated storage
+template <class T,class Alloc=std::allocator<T>,unsigned aligned_index=0,unsigned byte_multiple=64>
+class aligned_dynamic_array : public array<T,Alloc> {
 public:
   typedef unsigned size_type;
+  static inline unsigned byte_offset_0(void *a) { // a is whatever we got from allocator
+    return byte_multiple + (uintptr_t)a % byte_multiple - (sizeof(T)*aligned_index)%byte_multiple;
+  }
+  static const unsigned extra_alloc_bytes=byte_multiple*2-1;
+  static const unsigned extra_alloc_i=(extra_alloc_bytes+sizeof(T)-1)/sizeof(T); // ceil (extra_alloc_bytes/sizeof(T))
 private:
-  typedef dynamic_array<T,Alloc> self_type;
-  //size_type int sz;
+  T *begin_alloc;
+  unsigned alloc_sz;
   T *endv;
   typedef array<T,Alloc> Base;
+  typedef aligned_dynamic_array<T,Alloc,aligned_index,byte_multiple> self_type;
+  T *allocate(T *& begin_alloc,unsigned sp) {
+    alloc_sz=sp+extra_alloc_i;
+    begin_alloc=Base::allocate(alloc_sz);
+    return begin_alloc+byte_offset_0(begin_alloc);
+  }
+  void alloc(unsigned sp) {
+    if (sp) {
+      this->vec=allocate(begin_alloc,sp);
+      this->endspace=this->vec+sp;
+    } else {
+      this->vec=0; // this is what you check when you go to dealloc
+    }
+  }
+
 private:
-  dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
+  aligned_dynamic_array& operator = (const aligned_dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
 public:
+
   void swap(self_type &b) throw()
   {
     Base::swap(b);
     std::swap(endv,b.endv);
+    std::swap(begin_alloc,b.begin_alloc);
+    std::swap(alloc_sz,b.alloc_sz);
   }
 
   inline friend void swap(self_type &a,self_type &b) throw()
@@ -32,63 +62,97 @@ public:
     a.swap(b);
   }
 
-  explicit dynamic_array (const char *c) {
+  explicit aligned_dynamic_array (const char *c) {
     std::istringstream(c) >> *this;
   }
 
-  // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
-  explicit dynamic_array(size_type sp = 4) : array<T,Alloc>(sp), endv(Base::vec) { dynarray_assert(this->invariant()); }
-
-  // creates vector holding sp copies of t; does initialize
-  template <class V>
-  explicit dynamic_array(size_type sp,const V& t) : array<T,Alloc>(sp) {
-    construct(t);
-    dynarray_assert(invariant());
-  }
-
-  void construct() {
-    array<T,Alloc>::construct();
-    endv=this->endspace;
-  }
-  void construct(const T& t) {
-    array<T,Alloc>::construct(t);
-    endv=this->endspace;
-  }
-
-  void reinit(size_type sp,const T& t=T()) {
-    clear();
-    reserve(sp);
-    T *real_es=this->endspace;
-    endv=this->endspace=this->vec+sp;
-    array<T,Alloc>::construct(t);
-    this->endspace=real_es;
-  }
-  void reinit_nodestroy(size_type sp,const T& t=T()) {
-    reserve(sp);
-    T *real_es=this->endspace;
-    endv=this->endspace=this->vec+sp;
-    array<T,Alloc>::construct(t);
-    this->endspace=real_es;
+  template <class I>
+  aligned_dynamic_array(I source,unsigned n,unsigned sp) {
+    assert(sp>=n);
+    alloc(sp);
+    endv=this->vec+n;
+    uninitialized_copy_n(source,n,this->vec);
   }
 
   static inline void uninitialized_copy_n(T const* from,unsigned n,T *to) {
     std::memcpy(to,from,n*sizeof(T));
   }
 
-  dynamic_array(const dynamic_array &a)  {
-    size_type sz=a.size();
-    this->alloc(sz);
-    uninitialized_copy_n(a.begin(),sz,this->begin());
-    endv=this->endspace;
+  template <class I>
+  aligned_dynamic_array(T const* p,unsigned n,unsigned sp) {
+    assert(sp>=n);
+    alloc(sp);
+    endv=this->vec+n;
+    uninitialized_copy_n(p,n,this->vec);
+  }
+
+  // creates vector with CAPACITY for sp elements; size()==0; doesn't initialize (still use push_back etc)
+  explicit aligned_dynamic_array(size_type sp = 4) {
+    alloc(sp);
+    endv=this->vec;
+  }
+
+  // creates vector holding sp copies of t; does initialize
+  template <class V>
+  explicit aligned_dynamic_array(size_type sp,const V& t) {
+    alloc(sp);
+    endv=this->vec+sp;
+    construct(t);
+    dynarray_assert(invariant());
+  }
+
+  void construct() {
+    for (T *p=this->vec;p<endv;++p)
+      new(p) T();
+    dynarray_assert(p==endv);
+  }
+  void construct(const T& t) {
+    for (T *p=this->vec;p<endv;++p)
+      new(p) T(t);
+    dynarray_assert(p==endv);
+  }
+
+  void reinit(size_type sp,const T& t=T()) {
+    clear();
+    reinit_nodestroy(sp,t);
+  }
+  void reinit_nodestroy(size_type sp,const T& t=T()) {
+    reserve(sp);
+    endv=this->vec+sp;
+    construct(t);
+  }
+
+  aligned_dynamic_array(const self_type &a) {
+//      size_type sz=a.size();
+    //alloc(sz);
+    alloc(a.size());
+    endv=std::uninitialized_copy(a.begin(),a.end(),this->vec);
     dynarray_assert(this->invariant());
   }
 
   template<class RIT>
-  dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b) : array<T,Alloc>(b-a)
+  aligned_dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b)
   {
-    std::uninitialized_copy(a,b,this->begin());
-    endv=this->endspace;
+    alloc(b-a);
+    endv=std::uninitialized_copy(a,b,this->begin());
     dynarray_assert(this->invariant());
+  }
+
+  template<class Iter>
+  void append_n(Iter a,unsigned n) {
+    reserve(size()+n);
+    endv=uninitialized_copy_n(a,n,endv);
+  }
+
+  template<class Iter>
+  void append_ra(Iter a,Iter const& b) {
+    append_n(a,b-a);
+  }
+
+  template <class C>
+  void append(C const& c) {
+    unsigned n=c.size();
+    append_n(c.begin(),n);
   }
 
   template<class Iter>
@@ -114,10 +178,10 @@ public:
     append(c.begin(),c.end());
   }
 
-
   // warning: stuff will still be destructed!
   void copyto(T *to,T * from,size_type n) {
-    memcpy(to,from,bytes(n));
+    uninitialized_copy_n(from,n,to);
+//    memcpy(to,from,bytes(n));
   }
   void copyto(T *to,size_type n) {
     copyto(to,this->vec,n);
@@ -160,6 +224,7 @@ public:
     return endv;
   }
   typedef typename array<T,Alloc>::iterator iterator;
+
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
   void move_rest_to(T *to,iterator i) {
     dynarray_assert(i >= this->begin() && i < end());
@@ -167,11 +232,10 @@ public:
     endv=i;
   }
 
-
   T & at(size_type index) const { // run-time bounds-checked
     T *r=this->vec+index;
     if (!(r < end()) )
-      throw std::out_of_range("dynamic_array index out of bounds");
+      throw std::out_of_range("aligned_dynamic_array index out of bounds");
     return *r;
   }
   bool exists(size_type index) const
@@ -373,21 +437,16 @@ protected:
   }
 
   void realloc_up(size_type new_cap) {
-    //     we are somehow allowing 0-capacity vectors now?, so add 1
-    //if (new_cap==0) new_cap=1;
     size_type sz=size();
     dynarray_assert(new_cap > this->capacity());
-    // may be used when we've increased endv past endspace, in order to fix things
-    T *newVec = this->allocate(new_cap); // can throw but we've made no changes yet
-    memcpy(newVec, this->vec, bytes(sz));
-    dealloc_safe();
-    set_begin(newVec);this->set_capacity(new_cap);set_size(sz);
-    // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
+    self_type bigger((T const*)this->vec,sz,new_cap);
+    bigger.swap(*this);
   }
   void dealloc_safe() {
-    size_type oldcap=this->capacity();
-    if (oldcap)
-      this->deallocate(this->vec,oldcap); // can't throw
+    if (this->vec) {
+      Base::deallocate(begin_alloc,alloc_sz);
+      this->vec=0;
+    }
   }
 public:
 
@@ -412,7 +471,7 @@ public:
   }
 
 #endif
-  // doesn't compact (allocate smaller space).  call compact()
+  // doesn't compact (allocate smaller space).  call compact().  does call destructors
   void resize(size_type newSz) {
     dynarray_assert(invariant());
     //    if (newSz==0) newSz=1;
@@ -450,30 +509,6 @@ public:
     }
   }
 
-  //iterator_tags<Input> == random_access_iterator_tag
-  template <class Input>
-  void append_ra(Input from,Input to)
-  {
-    /*
-      size_type n_new=to-from;
-      reserve(size()+n_new);
-      while (from!=to)
-      new(endv++) T(*from++);
-      dynarray_assert(invariant());
-    */
-    append_n(from,to-from);
-  }
-
-  //iterator_tags<Input> == random_access_iterator_tag
-  template <class Input>
-  void append_n(Input from,size_type n)
-  {
-    reserve(size()+n);
-    while (n-- > 0)
-      new(endv++) T(*from++);
-//        dynarray_assert(invariant());
-  }
-
   // could just use copy, back_inserter
   template <class Input>
   void append_push_back(Input from,Input to)
@@ -487,25 +522,11 @@ public:
     return sizeof(T)*n;
   }
 
-
   void compact() {
+    size_type sz=size();
+    self_type bigger((T const*)this->vec,sz,sz);
+    bigger.swap(*this);
     dynarray_assert(invariant());
-    if (endv==this->endspace) return;
-    //equivalent to resize(size());
-    size_type newSpace=size();
-    //    if (newSpace==0) newSpace=1; // have decided that 0-length dynarray is impossible
-    if(newSpace) {
-      T *newVec = this->allocate(newSpace); // can throw but we've made no changes yet
-      memcpy(newVec, this->vec, bytes(newSpace));
-      dealloc_safe();
-      //set_begin(newVec);
-      //set_capacity(newSpace);set_size(sz);
-      this->vec=newVec;
-      this->endspace=endv=this->vec+newSpace;
-    } else {
-      dealloc_safe();
-      this->vec=endv=this->endspace=0;
-    }
   }
 
   // doesn't dealloc *into
@@ -527,6 +548,7 @@ public:
     if (newSpace > this->capacity())
       realloc_up(newSpace);
   }
+
   void reserve_at_least(size_type req) {
     size_type newcap=this->capacity();
     if (req > newcap) {
@@ -578,13 +600,10 @@ public:
       i->~T();
     clear_dealloc_nodestroy();
   }
-  ~dynamic_array() {
+  ~aligned_dynamic_array() {
     clear();
-//      if(this->vec) // to allow for exception in constructor
-    this->dealloc();
-    //vec = NULL;space=0; // don't really need but would be safer
+    dealloc_safe();
   }
-
 
   template <class charT, class Traits>
   std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,bool multiline=false,bool dummy=false,bool dummy2=false) const
@@ -669,45 +688,12 @@ public:
   }
   TO_OSTREAM_PRINT
   FROM_ISTREAM_READ
-};
+  friend inline void push_back(self_type &v) {
+    v.push_back();
+  }
 
-template <typename T,class A>
-void push_back(dynamic_array<T,A> &v)
-{
-  v.push_back();
-}
-
-
-
-template <typename T,typename Alloc,class charT, class Traits, class Reader>
-//std::ios_base::iostate array<T,Alloc>::read(std::basic_istream<charT,Traits>& in,Reader read)
-std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve)
-{
-  dynamic_array<T,Alloc> s(reserve);
-  std::ios_base::iostate ret=s.read(in,read);
-  s.compact_giving(*a); // transfers to a
-  return ret;
-}
-
-#if 0
-template <class charT, class Traits,class L,class A>
-std::basic_istream<charT,Traits>&
-operator >>
-(std::basic_istream<charT,Traits>& is, dynamic_array<L,A> &arg)
-{
-  return gen_extractor(is,arg);
-}
-
-template <class charT, class Traits,class L,class A>
-std::basic_ostream<charT,Traits>&
-operator <<
-(std::basic_ostream<charT,Traits>& os, const dynamic_array<L,A> &arg)
-{
-  return gen_inserter(os,arg);
-}
-#endif
-
-#define ARRAYEQIMP                                      \
+#undef ALIGNED_ARRAYEQIMP
+#define ALIGNED_ARRAYEQIMP                         \
   if (l.size() != r.size()) return false;               \
   typename L::const_iterator il=l.begin(),iend=l.end(); \
   typename R::const_iterator ir=r.begin();              \
@@ -715,76 +701,33 @@ operator <<
     if (!(*il++ == *ir++)) return false;                \
   return true;
 
-
-template<class Lt,class A,class L2,class A2>
-bool operator ==(const dynamic_array<Lt,A> &l, const dynamic_array<L2,A2> &r)
-{
-  typedef dynamic_array<Lt,A> L;
-  typedef dynamic_array<L2,A2> R;
-  ARRAYEQIMP;
+template <class L,class A,unsigned a,unsigned b>
+friend inline bool operator==(self_type const& l,aligned_dynamic_array<L,A,a,b> const& r)  {
+  typedef self_type L;
+  typedef aligned_dynamic_array<L,A,a,b> R;
+  ALIGNED_ARRAYEQIMP;
 }
 
-
-template<class Lt,class A,class L2,class A2>
-bool operator ==(const dynamic_array<Lt,A> &l, const array<L2,A2> &r)
-{
-  typedef dynamic_array<Lt,A> L;
-  typedef array<L2,A2> R;
-  ARRAYEQIMP;
+#define ALIGNED_EQ_OTHER_ARRAY(otype) template <class L,class A> \
+friend inline bool operator==(self_type const& l,otype<L,A> const& r) { \
+  typedef self_type L;typedef otype<L,A> R;ALIGNED_ARRAYEQIMP \
+} \
+template <class L,class A> \
+friend inline bool operator==(otype<L,A> const& r,self_type const& l) {        \
+  typedef self_type L;typedef otype<L,A> R;ALIGNED_ARRAYEQIMP \
 }
 
-template<class Lt,class A,class L2,class A2>
-bool operator ==(const array<Lt,A> &l, const dynamic_array<L2,A2> &r)
-{
-  typedef array<Lt,A> L;
-  typedef dynamic_array<L2,A2> R;
-  ARRAYEQIMP;
-}
+ALIGNED_EQ_OTHER_ARRAY(dynamic_array)
+ALIGNED_EQ_OTHER_ARRAY(array)
 
 
-template<class Lt,class A,class L2,class A2>
-bool operator ==(const array<Lt,A> &l, const array<L2,A2> &r)
-{
-  typedef array<Lt,A> L;
-  typedef array<L2,A2> R;
-  ARRAYEQIMP;
-}
-
-
-template <class L,class A>
-void read(std::istream &in,array<L,A> &x,StackAlloc &a)
-// throw(genio_exception,StackAlloc::Overflow)
-{
-  x.vec=a.aligned_next<L>();
-  function_output_iterator<boost::reference_wrapper<StackAlloc> > out(boost::ref(a));
-  range_read(in,out,DefaultReader<L>());
-  x.endspace=a.next<L>();
-}
-
+};
 
 
 #ifdef TEST
 
 //FIXME: deallocate everything to make running valgrind on tests less painful
-
-bool rm1[] = { 0,1,1,0,0,1,1 };
-bool rm2[] = { 1,1,0,0,1,0,0 };
-unsigned a[] = { 1,2,3,4,5,6,7 };
-unsigned a1[] = { 1, 4, 5 };
-unsigned a2[] = {3,4,6,7};
-#include <algorithm>
-#include <iterator>
-struct plus_one_reader {
-  typedef unsigned value_type;
-  template <class charT, class Traits>
-  std::basic_istream<charT,Traits>&
-  operator()(std::basic_istream<charT,Traits>& in,unsigned &l) const {
-    in >> l;
-    ++l;
-    return in;
-  }
-};
-BOOST_AUTO_TEST_CASE( test_dynarray )
+BOOST_AUTO_TEST_CASE( test_aligned_dynarray )
 {
   using namespace std;
   {
@@ -837,7 +780,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     BOOST_CHECK(ba[1][0]==2);
   }
   {
-    dynamic_array<unsigned> a;
+    aligned_dynamic_array<unsigned> a;
     a.at_grow(5)=1;
     BOOST_CHECK(a.size()==5+1);
     BOOST_CHECK(a[5]==1);
@@ -846,7 +789,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
   }
   const unsigned sz=7;
   {
-    dynamic_array<unsigned> a(sz);
+    aligned_dynamic_array<unsigned> a(sz);
     a.push_back_n(sz,sz*3);
     BOOST_CHECK(a.size() == sz*3);
     BOOST_CHECK(a.capacity() >= sz*3);
@@ -854,7 +797,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
   }
 
   {
-    dynamic_array<unsigned> a(sz*3,sz);
+    aligned_dynamic_array<unsigned> a(sz*3,sz);
     BOOST_CHECK(a.size() == sz*3);
     BOOST_CHECK(a.capacity() == sz*3);
     BOOST_CHECK(a[sz]==sz);
@@ -863,8 +806,8 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
   using namespace std;
   array<unsigned> aa(sz);
   BOOST_CHECK_EQUAL(aa.capacity(),sz);
-  dynamic_array<unsigned> da;
-  dynamic_array<unsigned> db(sz);
+  aligned_dynamic_array<unsigned> da;
+  aligned_dynamic_array<unsigned> db(sz);
   BOOST_CHECK(db.capacity() == sz);
   copy(a,a+sz,aa.begin());
   copy(a,a+sz,back_inserter(da));
@@ -904,7 +847,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
 
 // remove_marked_swap
   std::vector<unsigned> ea(aa.begin(),aa.end());
-  dynamic_array<unsigned> eb(ea.begin(),ea.end());
+  aligned_dynamic_array<unsigned> eb(ea.begin(),ea.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(ea.begin(),ea.end(),aa.begin(),aa.end());
   remove_marked_swap(ea,rm1); // removeMarked
   BOOST_REQUIRE(ea.size()==sz1);
@@ -936,7 +879,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
   std::string emptyb="()";
   {
     array<unsigned> a;
-    dynamic_array<unsigned> b;
+    aligned_dynamic_array<unsigned> b;
     istringstream iea(emptya);
     iea >> a;
     stringstream o;
@@ -955,9 +898,9 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
     o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);} while(0)
 
   EQIOTEST(array,array);
-  EQIOTEST(array,dynamic_array);
-  EQIOTEST(dynamic_array,array);
-  EQIOTEST(dynamic_array,dynamic_array);
+  EQIOTEST(array,aligned_dynamic_array);
+  EQIOTEST(aligned_dynamic_array,array);
+  EQIOTEST(aligned_dynamic_array,aligned_dynamic_array);
 }
 #endif
 
@@ -967,7 +910,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
 //FIXME: overriding std::swap is technically illegal, but this allows some dumb std::sort to swap, which it should have found in graehl::swap by arg. dependent lookup.
 namespace std {
 template <class T,class A>
-void swap(graehl::dynamic_array<T,A> &a,graehl::dynamic_array<T,A> &b) throw()
+void swap(graehl::aligned_dynamic_array<T,A> &a,graehl::aligned_dynamic_array<T,A> &b) throw()
 {
   a.swap(b);
 }
