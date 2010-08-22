@@ -52,6 +52,12 @@
 
 namespace graehl {
 
+template <class T,class A> class array;
+
+template <typename T,typename Alloc,class charT, class Traits, class Reader>
+//std::ios_base::iostate array<T,Alloc>::read(std::basic_istream<charT,Traits>& in,Reader read)
+std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve=1000);
+
 
 // doesn't manage its own space (use alloc(n) and dealloc() yourself).  0 length
 // allowed.  you must construct and deconstruct elements yourself.  raw dynamic
@@ -62,7 +68,7 @@ template <typename T,typename Alloc=std::allocator<T> > class array : protected 
  public:
     typedef T value_type;
     typedef value_type *iterator;
-    typedef const value_type *const_iterator;
+    typedef value_type const* const_iterator;
     typedef T &reference;
     typedef const T& const_reference;
     typedef unsigned size_type;
