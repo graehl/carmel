@@ -1,12 +1,15 @@
 #ifndef GRAEHL__SHARED__aligned_dynarray_hpp
 #define GRAEHL__SHARED__aligned_dynarray_hpp
 
+#define DBG_ALIGNED_DYN(x) x
 // like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).
 // historical justification: when Carmel was first written, STL wasn't supported by gcc.
 
+#include <graehl/shared/show.hpp>
 #include <graehl/shared/dynamic_array.hpp>
 #include <stdint.h>
 #include <algorithm>
+#include <graehl/shared/umod.hpp>
 
 namespace graehl {
 
@@ -18,23 +21,43 @@ namespace graehl {
 // asks for an extra 2*byte_multiple bytes when allocating, so that we can place vec[aligned_offset] on an exact multiple of byte_multiple.  that is, the raw space will have some padding because we can't predict the alignment of allocated storage
 template <class T,class Alloc=std::allocator<T>,unsigned aligned_index=0,unsigned byte_multiple=64>
 class aligned_dynamic_array : public array<T,Alloc> {
+/*
+  From Pentium IV, System Programming Guide, Section 9.1, Page 9-2,
+Table 9-1. Order # 245472
+
+L1 Data Cache - Pentium 4 and Intel Xeon processors: 8 KBytes, 4-way set
+associative, 64-byte cache line size.
+
+L2 Unified Cache - Pentium 4 and Intel Xeon processors: 256 KBytes 8-way set
+associative, sectored, 64-byte cache line size.
+
+The point is that according to the specs both L1 and L2 cacheline sizes are
+64-byte.
+*/
 public:
-  typedef unsigned size_type;
+  typedef array<T,Alloc> Base;
+  typedef aligned_dynamic_array<T,Alloc,aligned_index,byte_multiple> self_type;
+  typedef typename Base::iterator iterator;
+  typedef typename Base::const_iterator const_iterator;
+  typedef typename Base::const_reverse_iterator const_reverse_iterator;
+  typedef typename Base::reverse_iterator reverse_iterator;
+  typedef typename Base::size_type size_type;
   static inline unsigned byte_offset_0(void *a) { // a is whatever we got from allocator
-    return byte_multiple + (uintptr_t)a % byte_multiple - (sizeof(T)*aligned_index)%byte_multiple;
+    /* The binary % operator yields the remainder from the division of the first expression by the second. .... If both operands are nonnegative then the remainder is nonnegative; if not, the sign of the remainder is implementation-defined - seriously, wtf. */
+    return unegmod((uintptr_t)a+(sizeof(T)*aligned_index),byte_multiple);
   }
-  static const unsigned extra_alloc_bytes=byte_multiple*2-1;
+  static const unsigned extra_alloc_bytes=byte_multiple-1;
   static const unsigned extra_alloc_i=(extra_alloc_bytes+sizeof(T)-1)/sizeof(T); // ceil (extra_alloc_bytes/sizeof(T))
 private:
   T *begin_alloc;
   unsigned alloc_sz;
   T *endv;
-  typedef array<T,Alloc> Base;
-  typedef aligned_dynamic_array<T,Alloc,aligned_index,byte_multiple> self_type;
   T *allocate(T *& begin_alloc,unsigned sp) {
     alloc_sz=sp+extra_alloc_i;
     begin_alloc=Base::allocate(alloc_sz);
-    return begin_alloc+byte_offset_0(begin_alloc);
+    size_type offset=byte_offset_0(begin_alloc);
+    SHOW7(DBG_ALIGNED_DYN,alloc_sz,begin_alloc,(uintptr_t)begin_alloc % byte_multiple,offset,offset/sizeof(T),((uintptr_t)begin_alloc+offset+aligned_index*sizeof(T))%byte_multiple,byte_multiple);
+    return (T*)((char *)begin_alloc+offset);
   }
   void alloc(unsigned sp) {
     if (sp) {
@@ -200,8 +223,6 @@ public:
     return endv;
   }
 
-  typedef typename Base::const_reverse_iterator const_reverse_iterator;
-  typedef typename Base::reverse_iterator reverse_iterator;
 
   const_reverse_iterator rbegin() const
   {
@@ -223,7 +244,6 @@ public:
   const T* cend() const {
     return endv;
   }
-  typedef typename array<T,Alloc>::iterator iterator;
 
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
   void move_rest_to(T *to,iterator i) {
@@ -695,26 +715,26 @@ public:
 #undef ALIGNED_ARRAYEQIMP
 #define ALIGNED_ARRAYEQIMP                         \
   if (l.size() != r.size()) return false;               \
-  typename L::const_iterator il=l.begin(),iend=l.end(); \
-  typename R::const_iterator ir=r.begin();              \
+  LI il=l.begin(),iend=l.end(); \
+  RI ir=r.begin();              \
   while (il!=iend)                                      \
     if (!(*il++ == *ir++)) return false;                \
   return true;
 
 template <class L,class A,unsigned a,unsigned b>
 friend inline bool operator==(self_type const& l,aligned_dynamic_array<L,A,a,b> const& r)  {
-  typedef self_type L;
-  typedef aligned_dynamic_array<L,A,a,b> R;
+  typedef const_iterator LI;
+  typedef typename aligned_dynamic_array<L,A,a,b>::const_iterator RI;
   ALIGNED_ARRAYEQIMP;
 }
 
 #define ALIGNED_EQ_OTHER_ARRAY(otype) template <class L,class A> \
 friend inline bool operator==(self_type const& l,otype<L,A> const& r) { \
-  typedef self_type L;typedef otype<L,A> R;ALIGNED_ARRAYEQIMP \
+    typedef const_iterator LI;typedef typename otype<L,A>::const_iterator RI;ALIGNED_ARRAYEQIMP    \
 } \
 template <class L,class A> \
 friend inline bool operator==(otype<L,A> const& r,self_type const& l) {        \
-  typedef self_type L;typedef otype<L,A> R;ALIGNED_ARRAYEQIMP \
+    typedef const_iterator LI;typedef typename otype<L,A>::const_iterator RI;ALIGNED_ARRAYEQIMP    \
 }
 
 ALIGNED_EQ_OTHER_ARRAY(dynamic_array)
@@ -729,6 +749,7 @@ ALIGNED_EQ_OTHER_ARRAY(array)
 //FIXME: deallocate everything to make running valgrind on tests less painful
 BOOST_AUTO_TEST_CASE( test_aligned_dynarray )
 {
+  SHOW4(DBG_ALIGNED_DYN,-1,2,umod(-1,2),-1%2 );
   using namespace std;
   {
     const unsigned N=10;
@@ -810,12 +831,18 @@ BOOST_AUTO_TEST_CASE( test_aligned_dynarray )
   aligned_dynamic_array<unsigned> db(sz);
   BOOST_CHECK(db.capacity() == sz);
   copy(a,a+sz,aa.begin());
-  copy(a,a+sz,back_inserter(da));
+//  SHOW2(DBG_ALIGNED_DYN,aa,da);
+//  copy(a,a+sz,back_inserter(da));
+  for (int k=1;k<=7;++k) {
+    da.push_back(k);SHOW(DBG_ALIGNED_DYN,da);
+  }
   copy(a,a+sz,back_inserter(db));
+  SHOW3(DBG_ALIGNED_DYN,aa,da,db);
   BOOST_CHECK(db.capacity() == sz); // shouldn't have grown
   BOOST_CHECK(search(a,a+sz,aa.begin(),aa.end())==a); // really just tests begin,end as proper iterators
   BOOST_CHECK(da.size() == sz);
   BOOST_CHECK(da.capacity() >= sz);
+  SHOW2(DBG_ALIGNED_DYN,aa,da);
   BOOST_CHECK(search(a,a+sz,da.begin(),da.end())==a); // tests push_back
   BOOST_CHECK(search(a,a+sz,db.begin(),db.end())==a); // tests push_back
   BOOST_CHECK(search(da.begin(),da.end(),aa.begin(),aa.end())==da.begin());
