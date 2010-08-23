@@ -69,7 +69,7 @@ struct hashed_value : public Val
   hashed_value(Val const &v/*,Hasher const& h=Hasher()*/)
     : Val(v),hash(Hasher()(v)) {}
   hashed_value(Val const &v,Hasher const& h)
-    : Val(v),hash(h)(v)) {}
+    : Val(v),hash(h(v)) {}
 
   explicit hashed_value(as_null)  {
     set_null();
