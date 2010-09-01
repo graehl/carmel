@@ -6,6 +6,13 @@
 #define SHOWS std::cerr
 #endif
 
+
+#define SELF_TYPE_PRINT \
+    template <class O> \
+    friend O & operator <<(O &o, self_type const& me)     \
+    { me.print(o);return o; } \
+    typedef self_type has_print;
+
 #undef SHOWALWAYS
 #define SHOWALWAYS(x) x
 

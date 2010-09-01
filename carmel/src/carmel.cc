@@ -40,7 +40,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "6.7"
+#define CARMEL_VERSION "6.8"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -373,6 +373,8 @@ struct carmel_main
             gopt.cheap_prob=have_opt("sample-prob");
             if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=have_opt("no-prob");
             gopt.uniformp0=have_opt("uniform-p0");
+            gopt.init_from_p0=have_opt("init-from-p0");
+            gopt.dirichlet_p0=have_opt("dirichlet-p0");
             gopt.final_counts=have_opt("final-counts");
         }
     }
@@ -1979,6 +1981,8 @@ cout <<         "\n"
         "--width : for --print-counts, truncate numbers to this many chars wide\n"
         "--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts\n"
         "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
+      "--init-from-p0 : For the initial sample: normally previous blocks' cache is used for proposal prob.  With this option, each block is generated independently from the base distribution alone (resampling is unchanged).\n"
+      "--dirichlet-p0 : use the input WFST weights, UNNORMALIZED, as the dirichlet prior pseudocounts - this way different normgroups can have different effective alphas.  Note: alpha argument still further scales the initial psuedocounts, so set alpha=1.\n"
         "--cache-prob : show the true probability according to cache model for each sample\n"
         "--sample-prob : show the sample prob given model, previous sample\n"
         "--no-prob : show no probability for --crp\n"
