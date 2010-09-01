@@ -263,6 +263,7 @@ struct gibbs_base
     typedef gibbs_param gp_t;
     typedef fixed_array<double> normsum_t;
     typedef normsum_t saved_counts_t;
+  // this is the result of block resampling; a sparse parallel vector of paramid,optional wt
     struct block_delta
     {
         Weight prob;
@@ -273,6 +274,7 @@ struct gibbs_base
         ids_t id;
         wts_t wt;
 
+      // only used for --expectation (online-em)
         void randomize()
         {
             force_weights();

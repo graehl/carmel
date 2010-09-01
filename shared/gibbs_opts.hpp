@@ -103,6 +103,10 @@ struct gibbs_opts
                  "With init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)")
                 ("uniform-p0",defaulted_value(&uniformp0)->zero_tokens(),
                  "Use a uniform base probability model for --crp, even when the input WFST have weights.  --em-p0 overrides this.")
+              ("init-from-p0",defaulted_value(&init_from_p0)->zero_tokens(),
+               "For the initial sample: normally previous blocks' cache is used for proposal prob.  With this option, each block is generated independently from the base distribution alone (resampling is unchanged).")
+              ("dirichlet-p0",defaulted_value(&dirichlet_p0)->zero_tokens(),
+               "Use the input WFST weights, UNNORMALIZED, as the dirichlet prior pseudocounts - this way different normgroups can have different effective alphas.  Note: alpha argument still further scales the initial psuedocounts, so set alpha=1.")
                 ("norm-order",defaulted_value(&norm_order)->zero_tokens(),
                  "Print arc counts in normgroup (consecutive gibbs param id) order rather than WFST file order")
                 ("expectation",defaulted_value(&expectation)->zero_tokens(),
@@ -152,6 +156,8 @@ struct gibbs_opts
     unsigned init_em;
     bool em_p0;
     bool uniformp0;
+  bool dirichlet_p0;
+  bool init_from_p0;
     unsigned print_from,print_to; // which blocks to print
 
     //forest-em only:
@@ -218,7 +224,7 @@ struct gibbs_opts
         print_counts_sparse=0;
         print_counts_from=print_counts_to=0;
         print_norms_from=print_norms_to=0;
-        uniformp0=false;
+        uniformp0=dirichlet_p0=init_from_p0=false;
         cheap_prob=false;
         no_prob=false;
         cache_prob=true;

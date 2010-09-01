@@ -180,6 +180,8 @@ struct carmel_gibbs : public gibbs_base
 
                    these are the same, because prob=a.weight/sum
                 */
+                if (gopt.dirichlet_p0)
+                  sum=1;
                 if (cond)
                     for (U::const_reverse_iterator i=unlocked.rbegin(),e=unlocked.rend();i!=e;++i) {
                         FSTArc &a=**i;
@@ -351,10 +353,10 @@ struct carmel_gibbs : public gibbs_base
             blockd=&b;
             b.prob=d.collect_counts_gibbs(*this);
         } else {
-            if (init_prob)
-                d.random_path(p_init(*this),power);
+            if (init_prob) // if iteration==0
+              d.random_path(p_init(*this),power); // because init sample distribution may be different from p0 e.g. from EM.  this also means we aren't using cache to generate first sample at all
             else
-                d.random_path(*this,power);
+              d.random_path(*this,power);
         }
 
         OUTGIBBS3('\n')
@@ -417,7 +419,7 @@ struct carmel_gibbs : public gibbs_base
 
     void init_run(unsigned r)
     {
-        init_prob = r==0 && pinit_differs_p0;
+      init_prob = (r==0 && pinit_differs_p0);
         if (init_prob && init_sample_weights && cascade.trivial)
             composed.restore_weights(*init_sample_weights);
     }
@@ -442,23 +444,27 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
     gibbs_opts gopt=gopt1;
     gopt.iter=topt.max_iter;
     bool em=gopt.init_em>0;
-    bool restore=em && !gopt.em_p0;
+    bool restore=(em && !gopt.em_p0) || gopt.init_from_p0;
     saved_weights_t saved,init_sample_weights;
-//    cascade.normalize(m2);  // not necessary because we divide a.weight by sum when adding gibbs params
+//    cascade.normalize(m2);  // not necessary because we divide a.weight by sum when adding gibbs params.  also, this allows the dirichlet to be specified per-normgroup with different effective concentration,alpha
     if (restore)
         cascade.save_weights(saved);
-    if (em) {
+    if (em||gopt.init_from_p0) {
         NormalizeMethods m2=methods;
         for (NormalizeMethods::iterator i=m2.begin(),e=m2.end();i!=e;++i)
             i->add_count=0;
-        train_opts t2=topt;
-        t2.max_iter=gopt.init_em;
-        // EM:
-        train(cascade,corpus,m2,false,0,0,1,t2,true);
+        if (em) {
+          train_opts t2=topt;
+          t2.max_iter=gopt.init_em;
+          // EM:
+          train(cascade,corpus,m2,false,0,0,1,t2,true);
+        } else if (gopt.init_from_p0) {
+          cascade.normalize(m2);
+        }
     }
     if (restore) {
-        save_weights(init_sample_weights);
-        cascade.restore_weights(saved);
+        save_weights(init_sample_weights); // will be used in first iteration
+        cascade.restore_weights(saved); // to get the p0 back
     }
     //restore old weights; can't do gibbs init before em because groupId gets overwritten; em needs that id from composition
     carmel_gibbs g(*this,cascade,corpus,methods,topt,gopt,printer,restore?&init_sample_weights:0);
