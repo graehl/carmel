@@ -1,6 +1,8 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
+#include <sys/types.h>
+
 // required now!  because values are never moved in memory from the singly linked nodes they live on.  so no assign/copy needed - can have hash_map of containers efficiently
 #define USE_GRAEHL_HASH_MAP
 // with stdext::hash_map, copies may be made of values (not tested lately)
