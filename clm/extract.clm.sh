@@ -2,22 +2,26 @@
 . ~graehl/isd/hints/bashlib.sh
 . ~graehl/t/utilities/make.lm.sh
 
+makebig=${makebig:-1}
+makelw=${makelw:-1}
 phrasal=${phrasal:-$d/phrasal-clm-events}
 yield=${yield:$d/e-parse-yield.pl}
 stripef=${stripef:-$d/stripEF.pl}
 [ -x $stripef ] || stripef=cat
 
-extract=${extract:-`which extract`}
+extract=${extract:-/auto/nlg-02/graehl/xrs-extract/bin/extract}
+#`which extract`
 extract=`realpath $extract`
 
-[ "$numclass" ] && enumclass=1
-[ "$numclass" ] && fnumclass=1
+numclass=${numclass:-1}
+[ "$numclass" = 1 ] && enumclass=1
+[ "$numclass" = 1 ] && fnumclass=1
 showvars enumclass fnumclass binary
 
 sleeptime=0
 
 case  `hostname | /usr/bin/tr -d '\r\n'` in
-   hpc*) sleeptime=1
+    hpc*) sleeptime=1
 esac
 
 function delay {
@@ -74,82 +78,82 @@ function clm_from_counts {
 
 function main {
 #TODO: pipe preproc straight to ngram-count w/o intermediate file?
-#    set -x
-grf=${grf:-giraffe}
-ix=${ix:-training}
-ox=${ox:-x}
-chunksz=${chunksz:-100000}
-if [ "$binary" ] ; then
-    chunksum="binary (phrasal) "
-else
-nl=${head:-`nlines $ix.e-parse`}
-if [ $chunksz -gt $nl ] ; then
-     chunksz=$nl
-fi
-nc=$(((nl+chunksz-1)/chunksz))
-chunksum="$((nc)) chunks of $chunksz ea. for $nl lines. "
-fi
-N=${N:-3}
-bign=${bign:-0}
-banner "$chunksum$N-gram i=$ix o=$ox bign=$bign"
-set -e
-lfiles=""
-rfiles=""
-rm -f $ox.c*.{left,right}
-
-if ! skip_files 1 $ox.left.bz2 $ox.right.bz2 ; then
-    if [ "$binary" ]; then
-        $phrasal -w $ox.left -W $ox.right -N $N -r $ix
-        for d in left right; do
-         bocounts $ox.$d | one | bzip2 -c > $ox.$d.bz2 && rm $ox.$d
-        done
+    set -x
+    grf=${grf:-giraffe}
+    ix=${ix:-training}
+    ox=${ox:-x}
+    chunksz=${chunksz:-100000}
+    if [ "$binary" ] ; then
+        chunksum="binary (phrasal) "
     else
-        for i in `seq 1 $nc`; do
-            el=$((chunksz*i))
-            sl=$((el-chunksz+1))
+        nl=${head:-`nlines $ix.e-parse`}
+        if [ $chunksz -gt $nl ] ; then
+            chunksz=$nl
+        fi
+        nc=$(((nl+chunksz-1)/chunksz))
+        chunksum="$((nc)) chunks of $chunksz ea. for $nl lines. "
+    fi
+    N=${N:-3}
+    bign=${bign:-0}
+    banner "$chunksum$N-gram i=$ix o=$ox bign=$bign"
+    set -e
+    lfiles=""
+    rfiles=""
+    rm -f $ox.c*.{left,right}
+
+    if ! skip_files 1 $ox.left.bz2 $ox.right.bz2 ; then
+        if [ "$binary" ]; then
+            $phrasal -w $ox.left -W $ox.right -N $N -r $ix
+            for d in left right; do
+                bocounts $ox.$d | one | bzip2 -c > $ox.$d.bz2 && rm $ox.$d
+            done
+        else
+            for i in `seq 1 $nc`; do
+                el=$((chunksz*i))
+                sl=$((el-chunksz+1))
 #    showvars_required nc chunksz el sl
-            oxi=$ox.c$i
+                oxi=$ox.c$i
     #empirically (100sent) verififed to not change uniqued locations over minimal: -G - (wsd), $bign>0, -T
-            echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
+                echo $extract "$@" -s $sl -e $el -w $oxi.left -W $oxi.right -N $N -r $ix -z -x /dev/null  -g 1 -l 1000:$bign -m 5000 -O -i -X
             # -U 0 would disable ambiguous unaligned word attachment but we want to use the same setting as in real pipeline extraction
-        done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
+            done | $grf - > log.extract.`filename_from $ox`.giraffe 2>&1
 
-        header DONE WITH GHKM
-        delay
+            header DONE WITH GHKM
+            delay
 
-        for d in left right; do
-            (
-                dpz=$ox.$d.bz2
-                dfiles=$ox.c*.$d
-                showvars_required dfiles
-                sort $dfiles | uniq | filt | bzip2 -c > $dpz
-                tbz=$ox.$d.ghkm.tar.bz2
-                rm -f $tbz
-                tar -cjf $tbz $dfiles && rm $dfiles
-            )
-        done
+            for d in left right; do
+                (
+                    dpz=$ox.$d.bz2
+                    dfiles=$ox.c*.$d
+                    showvars_required dfiles
+                    sort $dfiles | uniq | filt | bzip2 -c > $dpz
+                    tbz=$ox.$d.ghkm.tar.bz2
+                    rm -f $tbz
+                    tar -cjf $tbz $dfiles && rm $dfiles
+                )
+            done
 
+        fi
     fi
-fi
 
-for d in left right; do
-    dpz=$ox.$d.bz2
-    ulm=$ox.$N.srilm.$d
-    stripEF=1 clm_from_counts $dpz $ulm
-done
-for d in left right; do
+    for d in left right; do
+        dpz=$ox.$d.bz2
+        ulm=$ox.$N.srilm.$d
+        stripEF=1 clm_from_counts $dpz $ulm
+    done
+    for d in left right; do
     #redundant loop, but get srilm out no matter what fails in conversion
-    ulm=$ox.$N.srilm.$d
-    if [ "$makelw" ] ; then
-        outl=`LWfromSRI $ulm`
-        newer_than=$ulm skip_files 3 $outl || lwlm_from_srilm $ulm $outl
-    fi
-    if [ "$makebig" ] ; then
-        outb=`bigfromSRI $ulm`
-        newer_than=$ulm skip_files 4 $outb || ngram=$N biglm_from_srilm $ulm $outb
-    fi
-done
+        ulm=$ox.$N.srilm.$d
+        if [ "$makelw" = 1 ] ; then
+            outl=`LWfromSRI $ulm`
+            newer_than=$ulm skip_files 3 $outl || lwlm_from_srilm $ulm $outl
+        fi
+        if [ "$makebig" = 1 ] ; then
+            outb=`bigfromSRI $ulm`
+            newer_than=$ulm skip_files 4 $outb || ngram=$N biglm_from_srilm $ulm $outb
+        fi
+    done
 #wait
 }
 
-[ "$nomain" ] || main; exit
+[ "$nomain" ] || main "$@"; exit
