@@ -18,7 +18,7 @@ const cat_size_t default_bufsz=256*1024;
 const cat_size_t max_bufsz=512*1024*1024; // 512MB buffer (huge) - keep it small enough for stack
 
 // cp rfd->wfd (blocking), up to the first max bytes. return number of bytes written
-cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max=0,cat_size_t bufsz=default_bufsz) {
+cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,cat_size_t bufsz) {
   char buf[bufsz];
   cat_size_t totalw=0;
   ssize_t nr,nw;
@@ -38,7 +38,7 @@ cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max=0,cat_size_t bufsz=default_bu
 }
 
 // err unless whole string is used (no whitespace allowed)
-unsigned long long ull_or_die(char const* c,int argi,unsigned long long max=0,char const* name="int") {
+unsigned long long ull_or_die(char const* c,int argi,unsigned long long max,char const* name) {
   char *end;
   errno=0;
   unsigned long long i=strtoull(c,&end,0);
@@ -52,7 +52,7 @@ unsigned long long ull_or_die(char const* c,int argi,unsigned long long max=0,ch
 int main(int argc, char *argv[]) {
   cat_size_t max=0;
   cat_size_t bufsz=default_bufsz;
-  bool err_incomplete=false;
+  int err_incomplete=0;
 
   //arg parsing:
   int ai=0;
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     if (max==0) return 0; // else we'll use max==0 to indicate no limit
   }
   if (++ai<argc) {
-    if (argv[ai][0]=='1') err_incomplete=true;
+    if (argv[ai][0]=='1') err_incomplete=1;
   }
   if (++ai<argc) {
     errno=0;
