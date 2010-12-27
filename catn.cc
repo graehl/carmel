@@ -1,6 +1,6 @@
 /*
   catn: copy stdin to stdout - must be blocking FDs.
-  minimal library usage so as to fork/exec faster. C99 or C++
+  minimal library usage so as to fork/exec faster. build: gcc -O3 -std=c99 or g++ -O3
 
   optional arg1=N: exit after N bytes (N < 2^64). 0 = no limit.
   optional arg2=k: k=0 (default) exit w/ no error on stdin EOF or N bytes. k=1 exit w/ error code 2 on eof w/ less than N bytes read.
@@ -44,7 +44,7 @@ unsigned long long ull_or_die(char const* c,int argi,unsigned long long max,char
   unsigned long long i=strtoull(c,&end,0);
   char const *errmsg="arg %d - wanted unsigned %s but got '%s'";
   if (*end || !*c) errx(1,errmsg,argi,name,c);
-  if (errno) err(1,errmsg,argi,name,c);
+  if (errno) err(1,errmsg,argi,name,c); // should just be ERANGE in C99
   if (max && i>max) errx(1,"arg %d (%s) too large - max allowed is %llu",argi,name,max);
   return i;
 }
