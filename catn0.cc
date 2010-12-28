@@ -20,6 +20,8 @@ Starting with Linux 2.6.31, all the filesystems support splicing both in read an
   optional arg5=j: j=0 (default) try 0-copy splice; j=1 (optional) force read/write.
 */
 
+const int verbose=1;
+
 #define FALLBACK_TO_RW 1
 // define to 0 for smaller binary that won't work with files on NFS (just TCP sockets and local files)
 
@@ -41,7 +43,7 @@ const splice_size_t largest_splice=256*1024; // xfer up to this much at a time i
 #include <stdlib.h> //strtoull
 #include <limits.h> // UINT_MAX
 #include <errno.h>
-
+#include <time.h> // time_t t=time(0)
 // cp rfd->wfd (blocking), up to the first max bytes. return number of bytes written
 
 /* a bug in kernel 2.6.31 that makes the first splice() call hang when you ask for all of the data on the socket. The Samba guys worked around this by simply limiting the data read from the socket to 16k
@@ -67,13 +69,24 @@ bool can_splice(int fd1,int fd2) {
 }
 const cat_size_t default_bufsz=128*1024;
 
+// sleep until time(0)-t0 >= done/bps
+void throttle(time_t t0,cat_size_t done,double bps) {
+  time_t shouldbe=t0+done/bps+1;
+  time_t t=time(0);
+  if (t>shouldbe) {
+    time_t need=shouldbe-t;
+    if (verbose) warnx("catn0: throttling with sleep %lu",need);
+    sleep(need);
+  }
+}
+
+
 // use read/write as a fallback.
-cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size_t bps,cat_size_t bufsz=default_bufsz) {
+cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,double bps,cat_size_t bufsz=default_bufsz) {
 //  warnx("using read/write instead of splice");
   char buf[bufsz];
   cat_size_t totalw=0;
   ssize_t nr,nw;
-
   struct sigaction act,oldact;
   timeout_handler_sec=timeout_sec;
   if (timeout_sec) {
@@ -83,7 +96,8 @@ cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size
     sigaction(SIGALRM,&act,&oldact);
   }
 
-  for(;;) {
+  time_t t0=time(0);
+  for(;;throttle(t0,totalw,bps)) {
     if (max && totalw+bufsz>max) bufsz=max-totalw; // never read or write more than max if set.
     if (timeout_sec) alarm(timeout_sec);
     nr=read(rfd,buf,bufsz);
@@ -103,13 +117,12 @@ cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size
 
 #endif
 
-cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,cat_size_t bps) {
+cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,double bps) {
   cat_size_t totalw=0; // return value
 
   int pipefd[2]; // man 2 pipe - kernel buffer for 0 copy splice
   if (pipe(pipefd)==-1)
     err(6,"catn0 failed to create pipe() for splice kernel buffer");
-
 
   if (FALLBACK_TO_RW) {
     goto check_fallback;
@@ -148,7 +161,8 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,cat_s
     sigaction(SIGALRM,&act,&oldact);
   }
 
-  for(;;) {
+  time_t t0=time(0);
+  for(;;throttle(t0,totalw,bps)) {
     if (timeout_sec) alarm(timeout_sec);
     splice_size_t tryread=remain>largest_splice?largest_splice:remain;
 //    warnx("trying to read %u",tryread);
