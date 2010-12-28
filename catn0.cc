@@ -100,7 +100,7 @@ cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size
 
 #endif
 
-cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
+cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,size_t max_bytes) {
   int pipefd[2]; // man 2 pipe - kernel buffer for 0 copy splice
   if (pipe(pipefd)==-1)
     err(6,"catn0 failed to create pipe() for splice kernel buffer");
@@ -111,6 +111,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
     goto start;
     fallback:
       warn("catn0: falling back to read/write because of no support for splice on reader or writer e.g. NFS file");
+//      if (timeout_sec) alarm(0);
       close(pipefd[0]);close(pipefd[1]);
       return n_xfered+cat_fd_n(rfd,wfd,max,timeout_sec);
   start:
@@ -143,6 +144,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
   for(;;) {
     if (timeout_sec) alarm(timeout_sec);
     nr=splice(rfd, 0, pipefd[1], 0, remain>largest_splice?largest_splice:remain, spliceflags);
+    if (timeout_sec) alarm(0);
     if (nr==-1) {
       if (FALLBACK_TO_RW && errno==EINVAL) {
         goto fallback;
@@ -152,7 +154,6 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
         err(4,"catn0 failed splice from fd %d to pipe %d",rfd,pipefd[1]);
       }
     }
-    if (timeout_sec) alarm(0);
 
     if (nr==0) break; //EOF
     if (max) remain-=nr;
@@ -214,7 +215,7 @@ int main(int argc, char *argv[]) {
     timeout_sec=ull_or_die(argv[ai],ai,UINT_MAX,"timeout-sec");
 
   //action:
-  cat_size_t nout=cat_fd_n_splice(STDIN_FILENO,STDOUT_FILENO,max,timeout_sec);
+  cat_size_t nout=cat_fd_n_splice(STDIN_FILENO,STDOUT_FILENO,timeout_sec,max);
   if (err_incomplete && nout<max)
     return 2;
 
