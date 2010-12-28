@@ -27,7 +27,7 @@ void timeout_handler(int signum) {
 }
 
 // cp rfd->wfd (blocking), up to the first max bytes. return number of bytes written
-cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,cat_size_t bufsz,unsigned timeout_sec) {
+cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size_t bufsz) {
   char buf[bufsz];
   cat_size_t totalw=0;
   ssize_t nr,nw;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     bufsz=ull_or_die(argv[ai],ai,max_bufsz,"buffer-size");
 
   //action:
-  cat_size_t nout=cat_fd_n(STDIN_FILENO,STDOUT_FILENO,max,bufsz,timeout_sec);
+  cat_size_t nout=cat_fd_n(STDIN_FILENO,STDOUT_FILENO,max,timeout_sec,bufsz);
   if (err_incomplete && nout<max)
     return 2;
 
