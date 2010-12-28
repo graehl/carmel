@@ -1,5 +1,5 @@
 /*
-  catn0: copy stdin to stdout - must be blocking FDs. requires linux 2.16.x or later for splice 0-copy; for TCP sockets:
+  catn0: copy stdin to stdout - must be blocking FDs. requires linux 2.16.x or later for splice 0-copy; for TCP sockets, 2.6.25.
 
   "Linux has had support for splicing from a TCP socket since 2.6.25 (commit 9c55e01c0), so if you're using an earlier version, you're out of luck"
 
@@ -16,6 +16,8 @@ Starting with Linux 2.6.31, all the filesystems support splicing both in read an
   optional arg1=N: exit after N bytes (N < 2^64). 0 = no limit.
   optional arg2=k: k=0 (default) exit w/ no error on stdin EOF or N bytes. k=1 exit w/ error code 2 on eof w/ less than N bytes read.
   optional arg3=s: timeout of s seconds (0=default means no timeout) - if no data received in last s seconds, exit with error code 3
+  optional arg4=Bps: rate limit (64 bit unsigned int max) of bytes per sec. 0 = no limit
+  optional arg5=j: j=0 (default) try 0-copy splice; j=1 (optional) force read/write.
 */
 
 #define FALLBACK_TO_RW 1
@@ -66,7 +68,8 @@ bool can_splice(int fd1,int fd2) {
 const cat_size_t default_bufsz=128*1024;
 
 // use read/write as a fallback.
-cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size_t bufsz=default_bufsz) {
+cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size_t bps,cat_size_t bufsz=default_bufsz) {
+//  warnx("using read/write instead of splice");
   char buf[bufsz];
   cat_size_t totalw=0;
   ssize_t nr,nw;
@@ -100,21 +103,22 @@ cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size
 
 #endif
 
-cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
+cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,cat_size_t bps) {
+  cat_size_t totalw=0; // return value
+
   int pipefd[2]; // man 2 pipe - kernel buffer for 0 copy splice
   if (pipe(pipefd)==-1)
     err(6,"catn0 failed to create pipe() for splice kernel buffer");
 
-  cat_size_t n_xfered=0; // for fallback
 
   if (FALLBACK_TO_RW) {
-    goto start;
+    goto check_fallback;
     fallback:
-      warn("catn0: falling back to read/write because of no support for splice on reader or writer e.g. NFS file");
+      warnx("catn0: falling back to read/write.");
 //      if (timeout_sec) alarm(0);
       close(pipefd[0]);close(pipefd[1]);
-      return n_xfered+cat_fd_n(rfd,wfd,max,timeout_sec);
-  start:
+      return totalw+cat_fd_n(rfd,wfd,max?max-totalw:0,timeout_sec,bps,default_bufsz);
+  check_fallback:
     bool use_rw=false;
     if (!can_splice(rfd,pipefd[1])) {
       warn("can't splice from fd %d; fallback to read/write",rfd);
@@ -143,10 +147,13 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
 
   for(;;) {
     if (timeout_sec) alarm(timeout_sec);
-    nr=splice(rfd, 0, pipefd[1], 0, remain>largest_splice?largest_splice:remain, spliceflags);
+    splice_size_t tryread=remain>largest_splice?largest_splice:remain;
+//    warnx("trying to read %u",tryread);
+    nr=splice(rfd, 0, pipefd[1], 0, tryread, spliceflags);
     if (timeout_sec) alarm(0);
     if (nr==-1) {
       if (FALLBACK_TO_RW && errno==EINVAL) {
+        if (timeout_sec) sigaction(SIGALRM,&oldact,0); // restore old handler
         goto fallback;
       } else {
 //      if (errno==EINTR) continue;
@@ -157,7 +164,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
 
     if (nr==0) break; //EOF
     if (max) remain-=nr;
-    n_xfered+=nr;
+    totalw+=nr;
 
     for (;nr;nr-=nw) {
       nw=splice(pipefd[0],0,wfd,0,nr,spliceflags);
@@ -171,6 +178,8 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
           for (;nr;nr-=nw)
             if ((nw=write(wfd,bufend-nr,nr))==-1 || nw==0)
               err(7,"catn0: while falling back to write instead of splice, failed writing the bytes we got (read already succeeded)");
+          warnx("catn0: falling back after splice to write fh failed; no data should be lost; transfered %llu so far",totalw);
+          if (timeout_sec) sigaction(SIGALRM,&oldact,0); // restore old handler
           goto fallback;
         } else {
           //if (nw==-1&&errno==EINTR) continue; // we don't allow interrupts! die!
@@ -183,7 +192,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
   }
   if (timeout_sec) sigaction(SIGALRM,&oldact,0); // restore old handler
   close(pipefd[0]);close(pipefd[1]);
-  return n_xfered;
+  return totalw;
 }
 
 // err unless whole string is used (no whitespace allowed)
@@ -199,8 +208,8 @@ unsigned long long ull_or_die(char const* c,int argi,unsigned long long max,char
 }
 
 int main(int argc, char *argv[]) {
-  cat_size_t max=0;
-  int err_incomplete=0;
+  cat_size_t max=0,bps=0;
+  int err_incomplete=0,force_rw=0;
   unsigned timeout_sec=0;
 
   //arg parsing:
@@ -213,9 +222,16 @@ int main(int argc, char *argv[]) {
     if (argv[ai][0]=='1') err_incomplete=1;
   if (++ai<argc)
     timeout_sec=ull_or_die(argv[ai],ai,UINT_MAX,"timeout-sec");
+  if (++ai<argc)
+    bps=ull_or_die(argv[ai],ai,0,"max-length");
+  if (++ai<argc)
+    if (argv[ai][0]=='1') force_rw=1;
 
   //action:
-  cat_size_t nout=cat_fd_n_splice(STDIN_FILENO,STDOUT_FILENO,timeout_sec,max);
+
+  cat_size_t nout=force_rw ?
+    cat_fd_n(STDIN_FILENO,STDOUT_FILENO,max,timeout_sec,bps,default_bufsz)
+    : cat_fd_n_splice(STDIN_FILENO,STDOUT_FILENO,max,timeout_sec,bps);
   if (err_incomplete && nout<max)
     return 2;
 
