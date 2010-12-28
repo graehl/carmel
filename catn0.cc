@@ -60,9 +60,9 @@ void throttle(time_t t0,double done,double ps) {
   time_t shouldbe=1+t0+done/ps;
   time_t t=time(0);
   time_t elapsed=t-t0;
-  if (verbose>=2) warnx("catn0: t=%ld t0=%ld (t-t0)=%ld done=%g ps(limit)=%g",t-0,t0-0,elapsed-0,done,ps);
+  if (verbose>=2) warnx("catn0: t=%ld t0=%ld (t-t0)=%ld done=%g ps(limit)=%g shouldbe=%ld need=%ld",t-0,t0-0,elapsed-0,done,ps,shouldbe-0,shouldbe-t);
   if (verbose) warnx("catn0: measured bps=%g",done/elapsed);
-  if (t>shouldbe) {
+  if (t<shouldbe) {
     time_t need=shouldbe-t;
     if (verbose) warnx("catn0: throttling with sleep %lu",need);
     sleep(need);
