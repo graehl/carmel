@@ -117,7 +117,10 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,cat_s
       warnx("catn0: falling back to read/write.");
 //      if (timeout_sec) alarm(0);
       close(pipefd[0]);close(pipefd[1]);
-      return totalw+cat_fd_n(rfd,wfd,max?max-totalw:0,timeout_sec,bps,default_bufsz);
+      if (max&&totalw==max) {
+        return totalw;
+      }
+      return cat_fd_n(rfd,wfd,max?max-totalw:0,timeout_sec,bps,default_bufsz) ;
   check_fallback:
     bool use_rw=false;
     if (!can_splice(rfd,pipefd[1])) {
