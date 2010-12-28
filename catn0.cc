@@ -18,11 +18,13 @@ Starting with Linux 2.6.31, all the filesystems support splicing both in read an
   optional arg3=s: timeout of s seconds (0=default means no timeout) - if no data received in last s seconds, exit with error code 3
   optional arg4=Bps: rate limit (64 bit unsigned int max) of bytes per sec. 0 = no limit
   optional arg5=j: j=0 (default) try 0-copy splice; j=1 (optional) force read/write.
+  optional arg6=v: v=0,1, or 2 - amount of stderr info (errors get exit code already, and always print to stderr)
 */
 
-const int verbose=1;
+int verbose=2;
 
 #define FALLBACK_TO_RW 1
+#define BUGGY_SPLICE_LEN_0_CHECK 0
 // define to 0 for smaller binary that won't work with files on NFS (just TCP sockets and local files)
 
 #ifndef _GNU_SOURCE
@@ -52,6 +54,18 @@ const splice_size_t largest_splice=256*1024; // xfer up to this much at a time i
 
 
 
+// sleep until time(0)-t0 >= done/bps
+void throttle(time_t t0,double done,double bps) {
+  time_t shouldbe=1+t0+done/bps;
+  time_t t=time(0);
+  if (verbose) warnx("catn0: measured bps=%d",done/(t-t0));
+  if (t>shouldbe) {
+    time_t need=shouldbe-t;
+    if (verbose) warnx("catn0: throttling with sleep %lu",need,done/(t-t0));
+    sleep(need);
+  }
+}
+
 unsigned timeout_handler_sec;
 void timeout_handler(int signum) {
   errx(3,"catn: timed out after reading no data for %u sec",timeout_handler_sec);
@@ -59,27 +73,16 @@ void timeout_handler(int signum) {
 
 typedef unsigned long long cat_size_t;
 
-
 #if FALLBACK_TO_RW
 // this is useless: doesn't actually check if you can splice unless bytes read/written >0. so fallback has to be able to handle read already happening but write can't splice.
+# if BUGGY_SPLICE_LEN_0_CHECK
 bool can_splice(int fd1,int fd2) {
   if (splice(fd1,0,fd2,0,0,spliceflags)==-1)
     if (errno==EINVAL) return false;
   return true;
 }
+# endif
 const cat_size_t default_bufsz=128*1024;
-
-// sleep until time(0)-t0 >= done/bps
-void throttle(time_t t0,cat_size_t done,double bps) {
-  time_t shouldbe=t0+done/bps+1;
-  time_t t=time(0);
-  if (t>shouldbe) {
-    time_t need=shouldbe-t;
-    if (verbose) warnx("catn0: throttling with sleep %lu",need);
-    sleep(need);
-  }
-}
-
 
 // use read/write as a fallback.
 cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,double bps,cat_size_t bufsz=default_bufsz) {
@@ -124,30 +127,16 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,doubl
   if (pipe(pipefd)==-1)
     err(6,"catn0 failed to create pipe() for splice kernel buffer");
 
-  if (FALLBACK_TO_RW) {
-    goto check_fallback;
-    fallback:
-      warnx("catn0: falling back to read/write.");
-//      if (timeout_sec) alarm(0);
-      close(pipefd[0]);close(pipefd[1]);
-      if (max&&totalw==max) {
-        return totalw;
-      }
-      return cat_fd_n(rfd,wfd,max?max-totalw:0,timeout_sec,bps,default_bufsz) ;
-  check_fallback:
-    bool use_rw=false;
+#if FALLBACK_TO_RW && BUGGY_SPLICE_LEN_0_CHECK
     if (!can_splice(rfd,pipefd[1])) {
       warn("can't splice from fd %d; fallback to read/write",rfd);
-      use_rw=true;
+      goto fallback;
     }
     if (!can_splice(pipefd[0],wfd)) {
       warn("can't splice to fd %d; fallback to read/write",wfd);
-      use_rw=true;
-    }
-    if (use_rw) {
       goto fallback;
     }
-  }
+#endif
 
   cat_size_t remain=max?max:largest_splice;
   splice_size_t nr,nw;
@@ -178,10 +167,10 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,doubl
         err(4,"catn0 failed splice from fd %d to pipe %d",rfd,pipefd[1]);
       }
     }
-
+    totalw+=nr;
+    if (verbose>=2) warnx("catn0: read %u bytes into kernel buffer; %llu total",nr,totalw);
     if (nr==0) break; //EOF
     if (max) remain-=nr;
-    totalw+=nr;
 
     for (;nr;nr-=nw) {
       nw=splice(pipefd[0],0,wfd,0,nr,spliceflags);
@@ -202,14 +191,23 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,doubl
           //if (nw==-1&&errno==EINTR) continue; // we don't allow interrupts! die!
           err(5,"catn0 failed splice from pipe %d to fd %d",pipefd[0],wfd);
         }
-
       }
+      if (verbose>=2) warnx("catn0: wrote %u bytes; %llu total",nr,totalw);
+
     }
     if (remain==0) break;
   }
   if (timeout_sec) sigaction(SIGALRM,&oldact,0); // restore old handler
   close(pipefd[0]);close(pipefd[1]);
   return totalw;
+fallback:
+  warnx("catn0: falling back to read/write.");
+//      if (timeout_sec) alarm(0);
+  close(pipefd[0]);close(pipefd[1]);
+  if (max&&totalw==max) {
+    return totalw;
+  }
+  return cat_fd_n(rfd,wfd,max?max-totalw:0,timeout_sec,bps,default_bufsz) ;
 }
 
 // err unless whole string is used (no whitespace allowed)
@@ -243,6 +241,12 @@ int main(int argc, char *argv[]) {
     bps=ull_or_die(argv[ai],ai,0,"max-length");
   if (++ai<argc)
     if (argv[ai][0]=='1') force_rw=1;
+  if (++ai<argc)
+    verbose=ull_or_die(argv[ai],ai,INT_MAX,"verbose");
+
+  if (verbose)
+    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%llu max-bytes/sec=%llu force_rw=%d"
+         ,max,err_incomplete,timeout_sec,bps,force_rw);
 
   //action:
 
