@@ -100,7 +100,7 @@ cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,unsigned timeout_sec,cat_size
 
 #endif
 
-cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,size_t max_bytes) {
+cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec) {
   int pipefd[2]; // man 2 pipe - kernel buffer for 0 copy splice
   if (pipe(pipefd)==-1)
     err(6,"catn0 failed to create pipe() for splice kernel buffer");
