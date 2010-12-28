@@ -55,10 +55,13 @@ const splice_size_t largest_splice=256*1024; // xfer up to this much at a time i
 
 
 // sleep until time(0)-t0 >= done/bps
-void throttle(time_t t0,double done,double bps) {
-  time_t shouldbe=1+t0+done/bps;
+void throttle(time_t t0,double done,double ps) {
+  if (ps<=0) return;
+  time_t shouldbe=1+t0+done/ps;
   time_t t=time(0);
-  if (verbose) warnx("catn0: measured bps=%g",done/(t-t0));
+  time_t elapsed=t-t0;
+  if (verbose>=2) warnx("catn0: t=%ld t0=%ld (t-t0)=%ld done=%g ps(limit)=%g",t-0,t0-0,elapsed-0,done,ps);
+  if (verbose) warnx("catn0: measured bps=%g",done/elapsed);
   if (t>shouldbe) {
     time_t need=shouldbe-t;
     if (verbose) warnx("catn0: throttling with sleep %lu",need);
@@ -244,8 +247,8 @@ int main(int argc, char *argv[]) {
     verbose=ull_or_die(argv[ai],ai,INT_MAX,"verbose");
 
   if (verbose)
-    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%u max-bytes/sec=%llu force_rw=%d"
-         ,max,err_incomplete,timeout_sec,bps,force_rw);
+    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%u max-bytes/sec=%llu force_rw=%d verbose=%d"
+          ,max,err_incomplete,timeout_sec,bps,force_rw,verbose);
 
   //action:
 
