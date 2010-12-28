@@ -28,17 +28,19 @@ void timeout_handler(int signum) {
 
 // cp rfd->wfd (blocking), up to the first max bytes. return number of bytes written
 cat_size_t cat_fd_n(int rfd,int wfd,cat_size_t max,cat_size_t bufsz,unsigned timeout_sec) {
-  timeout_handler_sec=timeout_sec;
   char buf[bufsz];
   cat_size_t totalw=0;
   ssize_t nr,nw;
+
   struct sigaction act,oldact;
+  timeout_handler_sec=timeout_sec;
   if (timeout_sec) {
     act.sa_handler=timeout_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags=0;
     sigaction(SIGALRM,&act,&oldact);
   }
+
   for(;;) {
     if (max && totalw+bufsz>max) bufsz=max-totalw; // never read or write more than max if set.
     if (timeout_sec) alarm(timeout_sec);
