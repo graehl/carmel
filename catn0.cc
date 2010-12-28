@@ -58,10 +58,10 @@ const splice_size_t largest_splice=256*1024; // xfer up to this much at a time i
 void throttle(time_t t0,double done,double bps) {
   time_t shouldbe=1+t0+done/bps;
   time_t t=time(0);
-  if (verbose) warnx("catn0: measured bps=%d",done/(t-t0));
+  if (verbose) warnx("catn0: measured bps=%g",done/(t-t0));
   if (t>shouldbe) {
     time_t need=shouldbe-t;
-    if (verbose) warnx("catn0: throttling with sleep %lu",need,done/(t-t0));
+    if (verbose) warnx("catn0: throttling with sleep %lu",need);
     sleep(need);
   }
 }
@@ -153,8 +153,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,doubl
   time_t t0=time(0);
   for(;;throttle(t0,totalw,bps)) {
     if (timeout_sec) alarm(timeout_sec);
-    splice_size_t tryread=remain>largest_splice?largest_splice:remain;
-//    warnx("trying to read %u",tryread);
+    splice_size_t tryread=remain>(cat_size_t)largest_splice?largest_splice:remain;
     nr=splice(rfd, 0, pipefd[1], 0, tryread, spliceflags);
     if (timeout_sec) alarm(0);
     if (nr==-1) {
@@ -168,7 +167,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,doubl
       }
     }
     totalw+=nr;
-    if (verbose>=2) warnx("catn0: read %u bytes into kernel buffer; %llu total",nr,totalw);
+    if (verbose>=2) warnx("catn0: read %ld bytes into kernel buffer; %llu total",nr,totalw);
     if (nr==0) break; //EOF
     if (max) remain-=nr;
 
@@ -192,7 +191,7 @@ cat_size_t cat_fd_n_splice(int rfd,int wfd,size_t max,unsigned timeout_sec,doubl
           err(5,"catn0 failed splice from pipe %d to fd %d",pipefd[0],wfd);
         }
       }
-      if (verbose>=2) warnx("catn0: wrote %u bytes; %llu total",nr,totalw);
+      if (verbose>=2) warnx("catn0: wrote %ld bytes; %llu total",nr,totalw);
 
     }
     if (remain==0) break;
@@ -245,7 +244,7 @@ int main(int argc, char *argv[]) {
     verbose=ull_or_die(argv[ai],ai,INT_MAX,"verbose");
 
   if (verbose)
-    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%llu max-bytes/sec=%llu force_rw=%d"
+    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%u max-bytes/sec=%llu force_rw=%d"
          ,max,err_incomplete,timeout_sec,bps,force_rw);
 
   //action:
