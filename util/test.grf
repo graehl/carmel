@@ -1,0 +1,5 @@
+wc -l giraffe
+wc -l giraffe.david
+wc -l giraffe.split
+wc -l libgraehl.pl
+wc -l test.grf
