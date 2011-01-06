@@ -1,0 +1,120 @@
+#!/usr/bin/env perl
+#
+# Author: graehl
+
+use strict;
+use warnings;
+my ($scriptdir,$scriptname);
+
+### OPTIONS:
+use POSIX qw/ceil/;
+
+my ($froms,$tos,$chunkids,$chunkszs,$files)=('FROMLINE','TOLINE','ICHUNK','CHUNKSZ','FILEWC');
+my ($inclusive,$indexstarts,$exactfinal)=(1,1,1);
+my ($lines,$wclines,$command,$nchunks,$midword,$giraffe);
+my ($chunksize)=100;
+my $giraffebin;
+
+my @options=(
+    qq{output a giraffe commands file (one command per line) with positional arguments from-line to-line added.
+
+        USAGE: echo 'command -f FROMLINE -t TOLINE -o out.FROMLINE-TOLINE' | giraffe.split [-from=FROMLINE] [-to=TOLINE] [options...] | giraffe -
+
+        where FROMLINE and TOLINE are strings that will be replaced by the 1-based inclusive ranges for each subcommand
+        },
+    ["midword!"=>\$midword,'allow replacement mid-word (rarely needed; -a=FROMLINE will treat FROMLINE as a word'],
+    ["fromlinestr=s"=>\$froms,'string to be replaced by starting line number'],
+    ["tolinestr=s"=>\$tos,'string to be replaced by ending line number'],
+    ["ichunkstr=s"=>\$chunkids,'string to be replaced by chunk number'],
+    ["chunkszstr=s"=>\$chunkszs,'string to be replaced by chunk size'],
+    ["filewcstr=s"=>\$files,'string to be replaced by -wclines-filename'],
+    ["1index=i"=>\$indexstarts,'index of first line/chunk (usually 0 or 1)'],
+    ["inclusive!"=>\$inclusive,'TOLINE is included in range (otherwise TOLINE-1 is the last)'],
+    ["exactfinal!"=>\$exactfinal,'let the final chunk have a different size'],
+    ["wclines=s"=>\$wclines,'count the lines in this file (instead of -lines n)'],
+    ["lines=i"=>\$lines,'number of lines',1],
+    ["n|nchunks=i"=>\$nchunks,'split lines into n chunks. supercedes -chunksize'],
+    ["size=i"=>\$chunksize,'use chunks of this size',1],
+    ["c|command=s"=>\$command,'use this command instead of reading from stdin'],
+    ["giraffe!"=>\$giraffe,'pipe stdout to giraffe -'],
+    sub {
+        if ($wclines)
+        {
+            $lines=nlines($wclines);
+        }
+        if ($nchunks)
+        {
+            $chunksize = ceil($lines/$nchunks);
+        }
+        $nchunks=ceil($lines/$chunksize);
+
+        $command=<> unless $command;
+        error("no -command (or STDIN)") unless $command;
+        chomp $command;
+
+        if ($giraffe) {
+            $giraffebin=which_dir('giraffe',$scriptdir);
+        }
+    }
+    );
+
+### LIBS:
+
+use File::Basename;
+use File::Spec;
+my $BLOBS;
+
+BEGIN {
+    $scriptdir = &File::Basename::dirname($0);
+    $scriptdir = File::Spec->rel2abs($scriptdir);
+    ($scriptname) = &File::Basename::fileparse($0);
+    push @INC, $scriptdir; # now you can say: require "blah.pl" from the current directory
+    $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
+    $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
+    $BLOBS=$ENV{BLOBS};
+    my $libgraehl="$BLOBS/libgraehl/unstable";
+    push @INC,$libgraehl if -d $libgraehl;
+}
+
+require "libgraehl.pl";
+&use_carp;
+
+###
+
+&show_cmdline;
+my ($usagep,@opts)=getoptions_usage(@options);
+
+show_opts(@opts);
+sub repl {
+    $midword ? &search_replace : &search_replace_b
+}
+sub indexs {
+    $indexstarts+$_[0]
+}
+repl(\$command,$files,$wclines) if $wclines;
+my $lasti0=$nchunks-1;
+if ($giraffebin) {
+    open G,"|$giraffebin - " || die $giraffebin;
+}
+for my $i0 (0..$lasti0)
+{
+    my $from0=$chunksize*$i0;
+    if ($i0==$lasti0 && $exactfinal)
+    {
+        $chunksize=$lines-$from0;
+    }
+    my $to0=$from0+$chunksize;
+    $to0-=1 if $inclusive;
+    my $c=$command;
+    repl(\$c,$froms,indexs($from0));
+    repl(\$c,$tos,indexs($to0));
+    repl(\$c,$chunkids,indexs($i0));
+    repl(\$c,$chunkszs,$chunksize);
+    my $co="$c\n";
+    if ($giraffe) {
+        print G $co
+    } else {
+        print $co;
+}
+    print STDERR $co;
+}
