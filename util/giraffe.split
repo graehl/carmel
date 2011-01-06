@@ -12,7 +12,7 @@ use POSIX qw/ceil/;
 my ($froms,$tos,$chunkids,$chunkszs,$files)=('FROMLINE','TOLINE','ICHUNK','CHUNKSZ','FILEWC');
 my ($inclusive,$indexstarts,$exactfinal)=(1,1,1);
 my ($lines,$wclines,$command,$nchunks,$midword,$giraffe);
-my ($chunksize)=100;
+my ($chunksize)=10000;
 my $giraffebin;
 
 my @options=(
