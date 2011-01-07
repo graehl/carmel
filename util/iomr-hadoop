@@ -1,7 +1,7 @@
 #!/bin/bash
-export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
 export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/scratch/hadoop/conf}
-. ${BLOBS:-~graehl/blobs}/bashlib/unstable/bashlib.sh
+BLOBS=${BLOBS:-~graehl/blobs}
+. $BLOBS/bashlib/unstable/bashlib.sh
 
 #hadfs() {
 #    $d/fhadoop "$@"
@@ -25,19 +25,6 @@ usage() {
     in and out should be dir-less filenames or '-' for stdin/stdout (local only)
 EOF
     exit 1
-}
-
-previewf()
-{
-    if [ "$local" ] ; then
-        if [[ $1 != - ]]  ; then
-            preview2 "$1"
-        fi
-    else
-        hadfs -cat "$1" | preview2
-    fi
-    echo2
-    true
 }
 
 main() {
@@ -76,13 +63,13 @@ main() {
       fi
       [[ $out = - ]] && out="stdin.`nanotime`" && outfs=-
       hadrmf "$out"
-      previewf "$in"
+      hadpreview "$in"
       set -x
       $HADOOP_HOME/bin/hadoop jar $HADOOP_HOME/contrib/streaming/hadoop-streaming.jar \
           -input "$in" -output "$out" -mapper "$map" -reducer "$reduce" $filearg "$@"
       set +x
       echo2
-      previewf "$out"
+      hadpreview "$out"
       [[ $outfs ]] && hadfs -cat "$out" | catz_to "$outfs"
   fi
 }

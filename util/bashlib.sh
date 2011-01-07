@@ -1,6 +1,42 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 export TEMP=${TEMP:-/tmp}
 export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
+
+previewf() {
+    if [[ $1 != - ]]  ; then
+        preview "$@"
+    fi
+}
+
+hadpreview() {
+    if [[ $1 != - ]]  ; then
+        if [ "$local" ] ; then
+            preview "$1"
+        else
+            hadfs -cat "$1" | preview
+        fi
+    fi
+}
+hadput() {
+    require_file "$1"
+    if [[ ! $local ]] ; then
+        hadfs -put "$1" $(basename "$1")
+    fi
+}
+hadget() {
+    local rpath=$(basename "$1")
+    if [[ ! $local ]] ; then
+        hadfs -put "$1" "$rpath"
+    fi
+    require_file "$rpath"
+}
+hadcat() {
+    if [[ $local ]] ; then
+        catz "$1"
+    else
+        hadfs -cat "$1"
+    fi
+}
 hadfs() {
     $HADOOP_HOME/bin/hadoop fs "$@"
 }
