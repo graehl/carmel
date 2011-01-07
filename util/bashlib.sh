@@ -5,6 +5,28 @@ BLOBS=${BLOBS:-/home/nlg-01/blobs}
 libg=$BLOBS/libgraehl/latest
 mkdir -p $libg
 export BLOBS
+WHOAMI=`whoami`
+HOST=${HOST:-$(hostname)}
+make_nodefile() {
+    if ! [[ "$PBS_NODEFILE" && -r "$PBS_NODEFILE" ]]; then
+        export PBS_NODEFILE=$(mktemp /$TEMP/pbs_nodefile.XXXXXX)
+        local i
+        for i in $(seq 1 ${NODEFILE_N:-1}); do
+         echo $HOST
+        done > $PBS_NODEFILE
+    fi
+#    echo $PBS_NODEFILE
+}
+
+scratchdir() {
+    if [[ "$SCRATCH" && -d "$SCRATCH" ]] ; then
+        echo $SCRATCH
+    elif [ -d /scratch ] ; then
+        echo /scratch
+    else
+        echo $(mktemp -d "$TEMP/scratch.XXXXXX")
+    fi
+}
 
 save1() {
     #pipe stderr to out, saving original out to file arg1, for cmd arg2...argN
@@ -22,6 +44,19 @@ save12() {
     echo2 `relpath ~ $out`
 }
 
+
+
+#keep error code but no output
+silently() {
+    "$@" 2>/dev/null >/dev/null
+}
+
+#no output, no error code
+shush() {
+    silently "$@" || /bin/true
+}
+
+#show output/log ONLY if error code (like silently but you get the filenames if something goes wrong)
 quietly() {
     if [ "$verbose" -o "$showcmd" ] ; then
         echo +++ "$@"
@@ -1154,7 +1189,6 @@ require_files() {
  return 0
 }
 
-WHOAMI=`whoami`
 have_remote_file() {
     #env remote: ssh host. arg1: absolute path on remote.  return true if file exists
     local r=${remote:-hpc.usc.edu}
