@@ -2,10 +2,30 @@
 export TEMP=${TEMP:-/tmp}
 export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
 
+rwhich() {
+    realpath $(which_default "$@")
+}
+
 previewf() {
     if [[ $1 != - ]]  ; then
         preview "$@"
     fi
+}
+hadls() {
+    hadfs -lsr "$@"
+}
+hadtest() {
+    if [[ $local ]] ; then
+        $1 "$2"
+    else
+        ! silently hadfs -test $1 "$2"
+    fi
+}
+hadisdir() {
+    hadtest -d "$@"
+}
+hadexists() {
+    hadtest -e "$@"
 }
 
 hadpreview() {
@@ -13,7 +33,7 @@ hadpreview() {
         if [ "$local" ] ; then
             preview "$1"
         else
-            hadfs -cat "$1" | preview
+            hadcat "$1" | preview
         fi
     fi
 }
@@ -34,7 +54,7 @@ hadcat() {
     if [[ $local ]] ; then
         catz "$1"
     else
-        hadfs -cat "$1"
+        hadfs -cat "$1/part-*"
     fi
 }
 hadfs() {
