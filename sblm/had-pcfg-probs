@@ -1,0 +1,41 @@
+#!/bin/bash
+BLOBS=${BLOBS:-~graehl/blobs}
+. $BLOBS/bashlib/unstable/bashlib.sh
+
+usage()
+{
+cat << EOF
+usage: $0 in(etrees) [out(pcfg events]
+
+etrees are same format as input to extract (radu, heads, score 0.0)
+
+format of output events:
+LHS, TAB, CHILD1 CHILD2 ... CHILDN, TAB, count, TAB, sum(lhs count), NEWLINE
+
+out is grouped by event.
+EOF
+exit 1
+}
+
+in=$1
+shift
+out=$2
+shift
+[[ $in ]] || usage
+pre=${pre:-$in.}
+counted=${counted:-${pre}counted}
+sums=${sums:-${pre}pcfg.lhs-sums}
+showvars_required in out counted sums
+showvars_optional infs outfs pre
+exit
+
+
+save_outfs=$outfs
+unset outfs
+
+iomr-hadoop "$in" "$counted" $d/pcfg-map $d/count.py
+
+save_infs=$infs
+unset infs
+
+iomr-hadoop "$

@@ -1,0 +1,13 @@
+#!/usr/bin/env perl
+
+# input: LHS ...
+# (any whitespace terminates LHS)
+
+# output: LHS\t...
+
+# could have made output repeat LHS (preserve original line incl. exact whitespace). but didn't.
+
+while(<>) {
+    my ($r,$rest)=split ' ',$_,2;
+    print $r,"\t",$rest;
+}
