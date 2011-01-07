@@ -1,0 +1,26 @@
+#!/usr/bin/env perl
+
+sub usage() {
+    print qq{
+usage: $0 lhs-sums-file [pcfg-events-with-counts-file or STDIN]
+
+output: pcfg-events file with TAB sum pasted onto end (by lhs which is first word of events). you will do division/smoothing yourself later if you like.
+    };
+    print @_,"\n";
+    exit -1;
+}
+
+my $sumsf=shift @ARGV;
+open S,'<',$sumsf or &usage($sumsf);
+my %c;
+while(<S>) {
+    my ($lhs,$sum,@rest)=split;
+    die "bad format of lhs-sums file (line $.: $_)\n - lines should be LHS sum" if scalar @rest;
+    $c{$lhs}+=$sum;
+}
+while(<>) {
+    chomp;
+    my ($lhs)=split;
+    die "no count for lhs '$lhs' in lhs-sums file $sumsf (line $.: $_)" unless exists $c{$lhs};
+    print "$_\t$c{$lhs}"\n";
+}

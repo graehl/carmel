@@ -1,0 +1,54 @@
+#!/usr/bin/env perl
+
+### script info ##################################################
+use File::Basename;
+my $scriptdir; # location of script
+my $scriptname; # filename of script
+my $BLOBS;
+BEGIN {
+   $scriptdir = &File::Basename::dirname($0);
+   ($scriptname) = &File::Basename::fileparse($0);
+    push @INC, $scriptdir;
+    $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
+    $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
+    $BLOBS=$ENV{BLOBS};
+    my $libgraehl="$BLOBS/libgraehl/unstable";
+    push @INC,$libgraehl if -d $libgraehl;
+}
+
+require "libgraehl.pl";
+###
+#TODO: remove ;libgraehl junk above after done debugging
+
+# faster: fast-lhs-sums-map | sort | count.py
+# warning: set high enough timeout! you will see no output until end.
+# TODO:
+# TODO: cause output to happen every N sec. instead, stderr progress
+
+# slower: lhs-sums-map | precombine.py | count.py | sort | count.py
+
+# input: LHS ...
+# (any whitespace terminates LHS)
+
+# output: LHS\t...
+
+# could have made output repeat LHS (preserve original line incl. exact whitespace). but didn't.
+
+my %c;
+my $lil=100;
+my $big=$lil*70;
+select STDERR;
+$|=1;
+select STDOUT;
+while(<>) {
+    print STDERR "." unless $. % $lil;
+    print STDERR "$.\n" unless $. % $big;
+    my ($r,$rest)=split ' ',$_,2;
+    $rest =~ /\t(\S+)$/ or die "expected TAB,count,NEWLINE in $_";
+    $c{r}+=$1;
+    &debug("$.",$r,$1,"count=$c{r}");
+}
+for (keys %c) {
+    print "$_\t$c{$_}\n";
+}
+
