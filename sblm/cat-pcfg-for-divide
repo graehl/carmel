@@ -22,5 +22,5 @@ while(<>) {
     chomp;
     my ($lhs)=split;
     die "no count for lhs '$lhs' in lhs-sums file $sumsf (line $.: $_)" unless exists $c{$lhs};
-    print "$_\t$c{$lhs}"\n";
+    print "$_\t$c{$lhs}\n";
 }
