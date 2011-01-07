@@ -1,13 +1,15 @@
 #!/usr/bin/env python2.6
 #-*- python -*-
 
-#hadoop mapper for PCFG: sbmt training format tree input -> parent children\t1
+#hadoop mapper for PCFG:
+#sbmt training format trees on stdin (or -input)
+#print PARENT CHILDREN+\t1\n
 
 version="0.1"
 
 test=True
-test_in='1000.eng-parse'
-default_in=None
+test_in='10.eng-parse'
+default_in='-'
 
 import os,sys
 sys.path.append(os.path.dirname(sys.argv[0]))
@@ -20,14 +22,31 @@ import optparse
 from graehl import *
 from dumpx import *
 
+def raduparse(t):
+    t=radu2ptb(t)
+    return tree.str_to_tree(t)
+
 ### main:
+
+def print_pcfg_event(t,out=sys.stdout):
+    if t.is_terminal(): return
+    out.write(t.label_lrb())
+    for c in t.children:
+        out.write(' '+c.label_sbmt())
+    out.write("\t1\n")
+
 
 def main(opts):
     log("pcfg-map v%s"%version)
     log(' '.join(sys.argv))
+    for line in open_in(opts.input):
+        t=raduparse(line)
+        for n in t.preorder():
+            if len(n.children):
+                print_pcfg_event(n)
 
 import optfunc
-@optfunc.arghelp('input','input file here (None = STDIN should be default in production)')
+@optfunc.arghelp('input','input file here (- means STDIN, which should be default in production)')
 
 def options(input=default_in,test=test):
     if test:
