@@ -22,11 +22,9 @@ from dumpx import *
 
 ### main:
 
-
 def main(opts):
     log("pcfg-map v%s"%version)
     log(' '.join(sys.argv))
-
 
 import optfunc
 @optfunc.arghelp('input','input file here (None = STDIN should be default in production)')
