@@ -1,0 +1,20 @@
+#!/bin/bash
+#usage: `start-hadoop [-opts] [hadoop-dir]`
+# to set up environment
+. ~graehl/isd/hints/bashlib.sh
+pbshad=/home/nlg-02/pust/bin/pbs_hadoop.py
+ourhad=$d/pbs_hadoop.py
+[[ -x $ourhad && ! -x $pbshad ]] && pbshad=ourhad
+export HADOOP_DIR=$(scratchdir)/hadoop
+
+make_nodefile #needs more work; e.g.: export PBS_ENVIRONMENT=PBS_INTERACTIVE
+
+exportenv() {
+ echo export HADOOP_CONF_DIR=$HADOOP_DIR/conf
+ echo export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
+}
+`exportenv`
+showvars_required pbshad HADOOP_DIR HADOOP_CONF_DIR
+exportenv
+$pbshad "$@" $HADOOP_DIR 1>&2
+

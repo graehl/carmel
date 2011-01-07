@@ -1,0 +1,89 @@
+#!/bin/bash
+export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
+export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/scratch/hadoop/conf}
+. ${BLOBS:-~graehl/blobs}/bashlib/unstable/bashlib.sh
+
+#hadfs() {
+#    $d/fhadoop "$@"
+#}
+
+hadrmf() {
+    local in=$1
+    if silently hadfs -stat -e "$in" ; then
+        if [ "$noclobber" ] ;then
+            error HDFS: $in already exists
+        else
+            echo2 HDFS: removing existing $in
+            hadfs -rmr "$in"
+        fi
+    fi
+}
+
+usage() {
+    cat<<EOF
+    usage: [local=1 [savemap=map.output]] [noclobber=1] [file=file-cp-to-wd] [combine=1] $0 in out map reduce [hadoop args]
+    in and out should be dir-less filenames or '-' for stdin/stdout (local only)
+EOF
+    exit 1
+}
+
+previewf()
+{
+    if [ "$local" ] ; then
+        if [[ $1 != - ]]  ; then
+            preview2 "$1"
+        fi
+    else
+        hadfs -cat "$1" | preview2
+    fi
+    echo2
+    true
+}
+
+main() {
+  set -e
+  local in=$1
+  [[ $in ]] || usage
+  local out=$2
+  local map=$3
+  local reduce=$4
+  shift
+  shift
+  shift
+  shift
+  showvars_required in out map
+  [[ $combine ]] && map="sh -c '$map | $d/precombine.py -b ${buflines:=100000} | $reduce'"
+  if [[ ! $reduce ]] ; then
+      reduce=NONE
+  fi
+  [ "$file" ] && filearg="-file '$file'"
+  showvars_optional local file combine buflines filearg noclobber infs outfs
+  showvars_required in out map reduce
+  if [[ $local ]] ; then
+      if [[ $infs ]] ; then cp "$infs" "$in"; fi
+      previewf "$in"
+      echo2 "catz $in | $map | mapsort | $reduce | catz_to $out"
+      echo2
+      catz "$in" | $map | mapsort | $reduce | catz_to "$out"
+      if [[ $outfs ]] ; then  cp "$out" "$outfs"; fi
+      previewf "$out"
+  else
+      [[ $in = - ]] && in="stdin.`nanotime`" && $infs=-
+      if [[ $infs ]] ; then
+          hadrmf "$in"
+          set -x
+          hadfs -put "$infs" "$in"
+      fi
+      [[ $out = - ]] && out="stdin.`nanotime`" && outfs=-
+      hadrmf "$out"
+      previewf "$in"
+      set -x
+      $HADOOP_HOME/bin/hadoop jar $HADOOP_HOME/contrib/streaming/hadoop-streaming.jar \
+          -input "$in" -output "$out" -mapper "$map" -reducer "$reduce" $filearg "$@"
+      set +x
+      echo2
+      previewf "$out"
+      [[ $outfs ]] && hadfs -cat "$out" | catz_to "$outfs"
+  fi
+}
+main "$@"
