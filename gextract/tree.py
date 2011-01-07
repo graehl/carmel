@@ -288,7 +288,8 @@ class Node:
     #terminals are double quoted (no interior double quotes allowed unless it's a single char). nonterms are -LRB- not (.
     def label_sbmt(self):
         if self.is_terminal():
-            assert(self.label.find('"')==-1 or len(self.label)==1)
+#            assert(self.label.find('"')==-1 or len(self.label)==1)
+# actually, tokens are just whitespace sep. no internal ws is allowed. weird. problems if parens get put next to terminals, though.
             return '"%s"'%self.label
         return self.label_lrb()
 
@@ -322,6 +323,7 @@ tokenizer = re.compile(r"\(|\)|[^()\s]+")
 
 def str_to_tree(s):
     toks=tokenizer.findall(s)
+    if len(toks)<2: return None
     if toks[1]=='(' and toks[-2]==')': #berkeley parse ( (tree) )
         toks=toks[1:-1]
     (tree, n) = scan_tree(toks, 0)

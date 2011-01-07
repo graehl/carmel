@@ -41,9 +41,10 @@ def main(opts):
     log(' '.join(sys.argv))
     for line in open_in(opts.input):
         t=raduparse(line)
+        if t is None:
+            continue
         for n in t.preorder():
-            if len(n.children):
-                print_pcfg_event(n)
+            print_pcfg_event(n)
 
 import optfunc
 @optfunc.arghelp('input','input file here (- means STDIN, which should be default in production)')
