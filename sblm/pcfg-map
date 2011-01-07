@@ -31,11 +31,11 @@ def main(opts):
 import optfunc
 @optfunc.arghelp('input','input file here (None = STDIN should be default in production)')
 
-def optfunc_map(input=default_in,test=True):
+def options(input=default_in,test=True):
     if test:
         sys.argv=sys.argv[0:1]
         input=test_in
     main(Locals())
 
-optfunc.main(optfunc_map)
+optfunc.main(options)
 
