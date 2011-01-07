@@ -1,0 +1,4 @@
+#!/bin/bash
+d=$(readlink -nfs $(dirname $0))
+buflines=${buflines:-1000000}
+$d/pcfg-map  | $d/precombine.py -b $buflines | $d/count.py

@@ -48,7 +48,7 @@ def main(opts):
 import optfunc
 @optfunc.arghelp('input','input file here (- means STDIN, which should be default in production)')
 
-def options(input=default_in,test=test):
+def options(input=default_in,test=False):
     if test:
         sys.argv=sys.argv[0:1]
         input=test_in
