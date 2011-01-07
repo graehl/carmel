@@ -630,7 +630,7 @@ def span_str(s):
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
 #radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
 #radu_rrb=re.compile(r'\((-RRB-(-\d+)?) \)\)')
-sym_rrb=re.compile(r'\((\S+(-\d+)?) (\(|\)|[^) ]+)\)(?= |$)')
+sym_rrb=re.compile(r'\((\S+(-\d+)?) (\(|\)|[^) ]+)\)(?= |$)') #complicated, but necessary
 rparen=re.compile(r'\)')
 lparen=re.compile(r'\(')
 def escape_paren(s):
@@ -639,9 +639,8 @@ def escape_paren(s):
 def rrb_repl(match):
     return '(%s %s)'%(match.group(1),escape_paren(match.group(3)))
 def radu2ptb(t,strip_head=True):
-    "radu format: all close parens that indicate tree structure are followed by space or end, so that () are legal within symbols - we escape them to -LRB- -RRB- for handling by tree.py.  also, we strip head info"
+    "radu format: all close parens that indicate tree structure are followed by space or end, so that () are legal within symbols -   also, we strip head info.  we escape them to -LRB- -RRB- for handling by tree.py."
     if strip_head: t=radu_drophead.sub(r'(\1',t)
-#    t=radu_lrb.sub(r'(\1 -LRB-)',t)
-#    t=radu_rrb.sub(r'(\1 -RRB-)',t)
     t=sym_rrb.sub(rrb_repl,t)
     return t
+

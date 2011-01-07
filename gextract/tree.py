@@ -8,6 +8,13 @@
 
 import re
 
+#FIXME: not precisely reversible; we assume -LRB- and -RRB- do not appear in regular text
+def paren2lrb(s):
+    return s.replace('(','-LRB-').replace(')','-RRB-')
+
+def lrb2paren(s):
+    return s.replace('-LRB-','(').replace('-RRB-',')')
+
 class Node:
     "Tree node.  length is # of nodes.  self.parent.children[self.order]=self"
     def __init__(self, label, children=None):
@@ -155,8 +162,7 @@ class Node:
         else:
             s = str(self.label)
             if not radu_paren:
-                s = re.sub("\(", "-LRB-", s)
-                s = re.sub("\)", "-RRB-", s)
+                return paren2lrb(s)
             return s
 
     def descendant(self, addr):
@@ -276,6 +282,16 @@ class Node:
     def is_preterminal(self):
         return len(self.children) == 1 and self.children[0].is_terminal()
 
+    def label_lrb(self):
+        return paren2lrb(str(self.label))
+
+    #terminals are double quoted (no interior double quotes allowed unless it's a single char). nonterms are -LRB- not (.
+    def label_sbmt(self):
+        if self.is_terminal:
+            assert(self.label.find('"')==-1 or len(self.label)==1)
+            return '"%s"'%self.label
+        return self.label_lrb()
+
 def scan_tree(tokens, pos):
     try:
         if tokens[pos] == "(":
@@ -297,9 +313,7 @@ def scan_tree(tokens, pos):
         elif tokens[pos] == ")":
             return (None, pos)
         else:
-            label = tokens[pos]
-            label = label.replace("-LRB-", "(")
-            label = label.replace("-RRB-", ")")
+            label = lrb2paren(tokens[pos])
             return (Node(label,[]), pos+1)
     except IndexError:
         return (None, pos)
@@ -312,4 +326,5 @@ def str_to_tree(s):
         toks=toks[1:-1]
     (tree, n) = scan_tree(toks, 0)
     return tree
+
 
