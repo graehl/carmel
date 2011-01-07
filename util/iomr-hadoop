@@ -9,7 +9,7 @@ BLOBS=${BLOBS:-~graehl/blobs}
 
 hadrmf() {
     local in=$1
-    if silently hadfs -stat -e "$in" ; then
+    if hadexists "$in" ; then
         if [ "$noclobber" ] ;then
             error HDFS: $in already exists
         else
@@ -27,6 +27,25 @@ EOF
     exit 1
 }
 
+filex() {
+    local map=$1
+    local wmap=`which $map`
+    [[ -x $wmap ]] && files+=" $wmap"
+}
+
+realx() {
+    local map=$1
+    shift
+    if [[ -x $map ]] ; then
+        false
+    else
+        local wmap=$(rwhich $map)
+        [[ $wmap != $map ]] && echo2 resolved $map to $wmap for hadoop.
+        xcmd="$wmap $@"
+        [[ $wmap != $map ]]
+    fi
+}
+
 main() {
   set -e
   local in=$1
@@ -39,13 +58,29 @@ main() {
   shift
   shift
   showvars_required in out map
-  [[ $combine ]] && map="sh -c '$map | $d/precombine.py -b ${buflines:=100000} | $reduce'"
   if [[ ! $reduce ]] ; then
       reduce=NONE
   fi
-  [ "$file" ] && filearg="-file '$file'"
-  showvars_optional local file combine buflines filearg noclobber infs outfs
+
+  showvars_optional local file combine buflines stage noclobber infs outfs
   showvars_required in out map reduce
+
+  files=$file
+  if [ "$stage" ] ; then
+      filex $map || true
+      filex $reduce || true
+  else
+      if realx $map ; then map=$xcmd ; fi
+      if realx $reduce ; then reduce=$xcmd ; fi
+  fi
+  showvars_optional file
+  for f in $files ; do
+      filearg+=" -file \"$f\""
+      showvars_required f filearg
+  done
+
+  [[ $combine ]] && map="sh -c '$map | $d/precombine.py -b ${buflines:=100000} | $reduce'"
+
   if [[ $local ]] ; then
       if [[ $infs ]] ; then cp "$infs" "$in"; fi
       previewf "$in"
@@ -58,10 +93,13 @@ main() {
       [[ $in = - ]] && in="stdin.`nanotime`" && $infs=-
       if [[ $infs ]] ; then
           hadrmf "$in"
-          set -x
           hadfs -put "$infs" "$in"
+      elif ! hadexists "$in" ; then
+          require_file "$in"
+          echo2 using implicit infs=$in - copying local file to hadoop
+          hadfs -put "$in" "$in"
       fi
-      [[ $out = - ]] && out="stdin.`nanotime`" && outfs=-
+      [[ $out = - ]] && out="stdout.`nanotime`" && outfs=-
       hadrmf "$out"
       hadpreview "$in"
       set -x
@@ -70,7 +108,7 @@ main() {
       set +x
       echo2
       hadpreview "$out"
-      [[ $outfs ]] && hadfs -cat "$out" | catz_to "$outfs"
+      [[ $outfs ]] && hadcat "$out" | catz_to "$outfs"
   fi
 }
 main "$@"

@@ -17,6 +17,11 @@ EOF
 }
 
 main() {
+        set -e
+        bind=${bind:-`abspath $d`}
+        sumsmap=$bind/lhs-sums-map
+        sumsmap=$bind/fast-lhs-sums-map
+
         in=$1
         out=${2:--}
 #        shift
@@ -31,16 +36,17 @@ main() {
 
         unset outfs
 
-        iomr-hadoop "$in" "$counted" $d/pcfg-map $d/count.py
+        iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py
 
         save_infs=$infs
         unset infs
 
-        iomr-hadoop "$counted" "$sums" $d/lhs-sums-map $d/count.py
+        iomr-hadoop "$counted" "$sums" $sumsmap $bind/count.py
         hadget "$sums"
 
         showvars_required out
-        hadcat "$counted" | $d/cat-pcfg-for-divide "$sums" | catz_to "$out"
+        catdiv=$bind/cat-pcfg-for-divide
+        hadcat "$counted" | $catdiv "$sums" | catz_to "$out"
         previewf "$out"
     }
 
