@@ -287,7 +287,7 @@ class Node:
 
     #terminals are double quoted (no interior double quotes allowed unless it's a single char). nonterms are -LRB- not (.
     def label_sbmt(self):
-        if self.is_terminal:
+        if self.is_terminal():
             assert(self.label.find('"')==-1 or len(self.label)==1)
             return '"%s"'%self.label
         return self.label_lrb()
