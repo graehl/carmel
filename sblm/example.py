@@ -5,8 +5,8 @@
 
 version="0.1"
 
-test=True
 test_in='1000.eng-parse'
+default_in=test_in
 default_in=None
 
 import os,sys
@@ -29,7 +29,7 @@ def main(opts):
 import optfunc
 @optfunc.arghelp('input','input file here (None = STDIN should be default in production)')
 
-def options(input=default_in,test=test):
+def options(input=default_in,test=True):
     if test:
         sys.argv=sys.argv[0:1]
         input=test_in
