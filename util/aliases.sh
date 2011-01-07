@@ -1211,10 +1211,10 @@ alias apc="/var/www/twiki/apachectl"
 alias apcd="/var/www/twiki/apachectl-devel"
 
 function    comm() {
-    cvs commit -m "$*"
+    svn commit -m "$*"
  }
 function    comml() {
-    cvs commit -l -m "$*"
+    svn commit -l -m "$*"
  }
 #alias rtt="pdq ~/dev/shared;cvs update;popd;pdq ~/dev/tt;cvs update;make;popd
 #alias comm="cvs commit -m ''"
