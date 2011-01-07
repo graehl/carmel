@@ -1,5 +1,9 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 export TEMP=${TEMP:-/tmp}
+export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
+hadfs() {
+    $HADOOP_HOME/bin/hadoop fs "$@"
+}
 BLOBS=${BLOBS:-/home/nlg-01/blobs}
 [ -d $BLOBS ] || BLOBS=~/blobs
 libg=$BLOBS/libgraehl/latest
@@ -7,6 +11,22 @@ mkdir -p $libg
 export BLOBS
 WHOAMI=`whoami`
 HOST=${HOST:-$(hostname)}
+
+tabsort() {
+    local tab=$(echo -e '\t')
+    sort -t "$tab" "$@"
+}
+
+mapsort() {
+    if [[ $savemap ]] ; then
+        catz_to "$savemap"
+        preview2 "$savemap"
+        tabsort -k 1 "$savemap"
+    else
+        tabsort -k 1
+    fi
+}
+
 make_nodefile() {
     if ! [[ "$PBS_NODEFILE" && -r "$PBS_NODEFILE" ]]; then
         export PBS_NODEFILE=$(mktemp /$TEMP/pbs_nodefile.XXXXXX)
@@ -688,7 +708,7 @@ abspath() {
 }
 
 catz() {
-  if [ -z "$1" ] ; then
+  if [ -z "$1" -o "$1" = - ] ; then
    gunzip -f -c
   else
    while [ "$1" ] ; do
@@ -711,7 +731,7 @@ catz() {
  }
 
 catz_to() {
-  if [ -z "$1" ] ; then
+  if [ -z "$1" -o "$1" = - ] ; then
    cat
   else
     if [ "${1%.gz}" != "$1" -o "${1%.tgz}" != "$1" ] ; then
