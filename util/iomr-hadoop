@@ -14,14 +14,15 @@ hadrmf() {
             error HDFS: $in already exists
         else
             echo2 HDFS: removing existing $in
-            hadfs -rmr "$in"
+#            hadfs -rmr "$in"
+            hadrm "$in"
         fi
     fi
 }
 
 usage() {
     cat<<EOF
-    usage: [local=1 [savemap=map.output]] [noclobber=1] [file=file-cp-to-wd] [combine=1] $0 in out map reduce [hadoop args]
+    usage: [local=1 [savemap=map.output]] [noclobber=1] [rmin=1] [file=file-cp-to-wd] [combine=1] $0 in out map reduce [hadoop args]
     in and out should be dir-less filenames or '-' for stdin/stdout (local only)
 EOF
     exit 1
@@ -29,20 +30,28 @@ EOF
 
 filex() {
     local map=$1
-    local wmap=`which $map`
-    [[ -x $wmap ]] && files+=" $wmap"
+    if [[ $map != ${map#/} ]] ; then
+        local wmap=`which $map`
+        if [[ -x $wmap && ${wmap#/bin} = $wmap && ${wmap#/usr/bin} = $wmap ]] ; then
+            files+=" $wmap"
+            echo2 "copying $wmap to $map for hadoop - is . in PATH?"
+        fi
+    fi
 }
 
 realx() {
     local map=$1
+    local omap=$map
     shift
-    if [[ -x $map ]] ; then
-        false
+    if ! [[ -x $map ]] ; then
+        map=$(rwhich $map)
+        [[ $omap != $map ]] && echo2 resolved $omap to $map for hadoop.
+    fi
+    if [ "$*" ] ; then
+        xcmd="sh -c '$map $@'"
+        true
     else
-        local wmap=$(rwhich $map)
-        [[ $wmap != $map ]] && echo2 resolved $map to $wmap for hadoop.
-        xcmd="$wmap $@"
-        [[ $wmap != $map ]]
+        false
     fi
 }
 
@@ -62,16 +71,20 @@ main() {
       reduce=NONE
   fi
 
-  showvars_optional local file combine buflines stage noclobber infs outfs
+  showvars_optional local file combine buflines stage infs outfs noclobber rmin
   showvars_required in out map reduce
 
   files=$file
   if [ "$stage" ] ; then
-      filex $map || true
-      filex $reduce || true
+      filex $map
+      if [[ $reduce != NONE ]] ; then
+          filex $reduce
+      fi
   else
       if realx $map ; then map=$xcmd ; fi
-      if realx $reduce ; then reduce=$xcmd ; fi
+      if [[ $reduce != NONE ]] ; then
+          if realx $reduce ; then reduce=$xcmd ; fi
+      fi
   fi
   showvars_optional file
   for f in $files ; do
@@ -105,6 +118,7 @@ main() {
       set -x
       $HADOOP_HOME/bin/hadoop jar $HADOOP_HOME/contrib/streaming/hadoop-streaming.jar \
           -input "$in" -output "$out" -mapper "$map" -reducer "$reduce" $filearg "$@"
+      [[ $rmin ]] && echo2 "rmin=1 so hadrm $in" && hadrm "$in"
       set +x
       echo2
       hadpreview "$out"

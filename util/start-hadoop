@@ -7,7 +7,7 @@ ourhad=$d/pbs_hadoop.py
 [[ -x $ourhad && ! -x $pbshad ]] && pbshad=ourhad
 export HADOOP_DIR=$(scratchdir)/hadoop
 
-make_nodefile #needs more work; e.g.: export PBS_ENVIRONMENT=PBS_INTERACTIVE
+#make_nodefile #needs more work; e.g.: export PBS_ENVIRONMENT=PBS_INTERACTIVE
 
 exportenv() {
  echo export HADOOP_CONF_DIR=$HADOOP_DIR/conf

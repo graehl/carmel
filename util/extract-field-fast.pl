@@ -6,15 +6,13 @@ use strict;
 use warnings;
 use Getopt::Long;
 
-my $blobbase="/home/hpc-22/dmarcu/nlg/blobs";
-
 ### script info ##################################################
 use FindBin;
 use lib $FindBin::RealBin;
 my $BLOBS;
 
 BEGIN {
-    $ENV{BLOBS}='/home/hpc-22/dmarcu/nlg/blobs' unless exists $ENV{BLOBS};
+    $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
     $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
     $BLOBS=$ENV{BLOBS};
     my $libgraehl="$BLOBS/libgraehl/unstable";

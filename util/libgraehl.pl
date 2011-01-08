@@ -2261,7 +2261,7 @@ sub is_numeric {
 
 sub is_numeric_or_ehat {
     my($v)=@_;
-    $v=~s/^e\^//;
+    $v=~s/^(e|10)\^//;
     return is_numeric($v);
 }
 
@@ -2594,9 +2594,17 @@ sub log10 {
 }
 use warnings 'redefine';
 
+sub log10_to_ln {
+    $_[0]*2.302585092994; #*$ln_of_10
+}
+
+sub ln_to_log10 {
+    $_[0]*0.434294481903252 #/$ln_of_10
+}
+
 sub exp10 {
     my $n=shift;
-    return exp($n*$ln_of_10);
+    exp($n*2.302585092994) #*$ln_of_10);
 }
 sub intlog10 {
     return int &log10; # same as length int $_[0]
@@ -2844,13 +2852,6 @@ sub read_srilm_unigrams {
     }
 }
 
-sub log10_to_ln {
-    return $_[0]*$ln_of_10;
-}
-
-sub ln_to_log10 {
-    return $_[0]/$ln_of_10;
-}
 
 my $default_precision=13;
 sub set_default_precision {
@@ -2875,12 +2876,23 @@ sub log10_to_ln_prec {
     return real_prec(log10_to_ln($log10));
 }
 
+#prob -> prob
 sub log10_to_ehat {
     return "e^".&log10_to_ln_prec;
 }
 
+#cost -> prob
 sub real_to_ehat {
     return "e^".real_prec(&getln);
+}
+
+#take a number and return it unmodified (a cost). or see 10^-cost or e^-c and return cost or ln_to_log10(
+sub to_cost {
+    local ($_)=@_;
+    $_=-ln_to_log10($1) if /^e\^(.*)/;
+    $_=-$1 if /^10\^(.*)/;
+    s/^\+//;
+    $_
 }
 
 
