@@ -2,6 +2,9 @@
 BLOBS=${BLOBS:-~graehl/blobs}
 . $BLOBS/bashlib/unstable/bashlib.sh
 
+iomapred=$BLOBS/hadoop/unstable/iomr-hadoop
+[[ -x $iomapred ]] || iomapred=`which iomr-hadoop`
+
 usage() {
     cat << EOF
 usage: $0 in(etrees) [out(pcfg events]
@@ -41,19 +44,20 @@ main() {
         infs=$infs outfs= step 1 iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py
 
         infs= outfs= step 2 iomr-hadoop "$counted" "$sums" $sumsmap $bind/count.py
-set -x
+
         hadget "$sums"
 
         showvars_required out
         catdiv=$bind/cat-pcfg-for-divide
 
-        if [[ $local || $outfs ]] ; then
-            out=$outfs
-            hadcat "$counted" | $catdiv "$sums" | catz_to "$out"
-        else
-            infs= outfs=$out step 3 iomr-hadoop "$counted" "$out" "$catdiv $sums" NONE
-        fi
+        infs= outfs=$out step 3 iomr-hadoop "$counted" "$out" "$catdiv $sums" NONE
+
         hadpreview "$out"
     }
 
 main "$@";exit
+
+#        if [[ $local || $outfs ]] ; then
+#            out=$outfs
+#            hadcat "$counted" | $catdiv "$sums" | catz_to "$out"
+#        else

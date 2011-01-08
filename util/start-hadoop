@@ -1,7 +1,10 @@
 #!/bin/bash
 #usage: `start-hadoop [-opts] [hadoop-dir]`
-# to set up environment
-. ~graehl/isd/hints/bashlib.sh
+# to set up environment. NOTE BACKTICKS.
+
+BLOBS=${BLOBS:-~graehl/blobs}
+. $BLOBS/bashlib/unstable/bashlib.sh
+
 pbshad=/home/nlg-02/pust/bin/pbs_hadoop.py
 ourhad=$d/pbs_hadoop.py
 [[ -x $ourhad && ! -x $pbshad ]] && pbshad=ourhad
