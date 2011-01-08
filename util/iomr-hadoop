@@ -48,7 +48,8 @@ realx() {
         [[ $omap != $map ]] && echo2 resolved $omap to $map for hadoop.
     fi
     if [ "$*" ] ; then
-        xcmd="sh -c '$map $@'"
+        xcmd="sh -c '$map $(realpath "$@")'"
+#note: this will fail if realpath has any items w/ spaces in them. hard to fix.
         true
     else
         false
@@ -118,8 +119,8 @@ main() {
       set -x
       $HADOOP_HOME/bin/hadoop jar $HADOOP_HOME/contrib/streaming/hadoop-streaming.jar \
           -input "$in" -output "$out" -mapper "$map" -reducer "$reduce" $filearg "$@"
-      [[ $rmin ]] && echo2 "rmin=1 so hadrm $in" && hadrm "$in"
       set +x
+      [[ $rmin ]] && echo2 "rmin=1 so hadrm $in" && hadrm "$in"
       echo2
       hadpreview "$out"
       [[ $outfs ]] && hadcat "$out" | catz_to "$outfs"
