@@ -98,6 +98,16 @@ echo2 using blobtype=$blobtype
   done
 }
 
+#run from blobdir
+blobrunmake() {
+    local final
+    for makesh in makeblob.sh make.sh ../make.sh ../makeblob.sh ; do
+        [ -f $makesh ] && final=$makesh
+    done
+    echo2 running make: $final
+    [ -f $final ] && (source ./$final)
+}
+
 #usage run from blobdir
 #reblob 1 : updates scripts/links
 reblob() {
@@ -112,9 +122,7 @@ reblob() {
 
 
     chmod_notlinks u+w .
-    for makesh in makeblob.sh make.sh ../make.sh ../makeblob.sh ; do
-        [ -f $makesh ] && (source ./$makesh)
-    done
+    blobrunmake
     rm -f BLOB
 
     echo
@@ -227,18 +235,17 @@ initblob()
     (
         set -x
         set -e
-        [ "$1" ] && cd $BLOBS/$1
+        dest=.
+        [ "$1" ] && dest=$BLOBS/$1
+        if [ "$2" ] ; then
+            cp $2 $dest/make.sh
+        fi
+        cd $dest
         if ! [ -d v1 ] ; then
             rm -rf first
             mkdir first
             cd first
-            if [ "$2" ] && [ -x $2 ] ; then
-                cp $2 ./makeblob.sh
-            else
-                cp ../makeblob.sh .
-            fi
-            chmod +x makeblob.sh
-            ./makeblob.sh
+            blobrunmake
             cd ..
             mv first v1
             cp -pr v1 v2
