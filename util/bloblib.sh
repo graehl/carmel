@@ -199,6 +199,11 @@ newlatest() {
     blobtype=unstable reblob unstable
 }
 
+bupdate() {
+    ( set -e;
+    foreach blob_update "$@"
+    )
+}
 blob_update() {
 ( set -e;
     local which
@@ -237,6 +242,7 @@ initblob()
         set -e
         dest=.
         [ "$1" ] && dest=$BLOBS/$1
+        mkdir -p $dest
         if [ "$2" ] ; then
             cp $2 $dest/make.sh
         fi

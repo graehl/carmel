@@ -1,2 +1,5 @@
+had-pcfg-probs - hadoop driver. to test: local=1 ~/blobs/sblm/latest/had-pcfg-probs 1000.eng-parse
+1000.eng-parse - some trees in ghkm-input format.
 pcfg-map - output sblm pcfg events
-1000.eng-parse - first 100 lines of input to rule-prep (ghkm) format trees
+fast-lhs-sums-map - produce sblm lhs counts
+cat-pcfg-for-divide - produce event count lhs-sum
