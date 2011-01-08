@@ -21,6 +21,7 @@ import optparse
 
 from graehl import *
 from dumpx import *
+from pcfg import *
 
 def raduparse(t):
     t=radu2ptb(t)
@@ -29,10 +30,15 @@ def raduparse(t):
 ### main:
 
 def print_pcfg_event(t,out=sys.stdout):
-    if t.is_terminal(): return
-    out.write(t.label_lrb())
-    for c in t.children:
-        out.write(' '+c.label_sbmt())
+    if False:
+        if t.is_terminal(): return
+        out.write(t.label_lrb())
+        for c in t.children:
+            out.write(' '+c.label_sbmt())
+    else:
+        ev=parse_pcfg_event(t)
+        if ev is None: return
+        out.write(event2str(ev))
     out.write("\t1\n")
 
 
