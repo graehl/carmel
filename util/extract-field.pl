@@ -15,13 +15,11 @@ my $BLOBS;
 BEGIN {
    $scriptdir = &File::Basename::dirname($0);
    ($scriptname) = &File::Basename::fileparse($0);
-    $ENV{BLOBS}='/home/hpc-22/dmarcu/nlg/blobs' unless exists $ENV{BLOBS};
+    $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
    $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
     $BLOBS=$ENV{BLOBS};
     my $libgraehl="$BLOBS/libgraehl/unstable";
     unshift @INC,$libgraehl if -d $libgraehl;
-    my $decoder="$BLOBS/decoder/unstable";
-    unshift @INC,$decoder if -d $decoder;
     unshift @INC, $scriptdir;
 }
 
@@ -43,6 +41,7 @@ my $numdefault=0;
 my $doavg=0;
 my $doprint=1;
 my $whole_lines;
+my $normalize_cost;
 
 my @options=(
              "extract val with fieldname={{{val}}} or fieldname=val",
@@ -62,6 +61,7 @@ my @options=(
              ["whole-lines=s" => \$whole_lines,"any lines with matching --fieldnames are listed to this file intheir entirety. like --paste-with-separator but to different file"],
              ["outfile=s" => \$outfile_name,"Write output here (can be .gz)"],
              ["infile=s" => \$infile_name,"Take <file> as input (as well as the rest of ARGV)"],
+    ["normalize-cost!" => \$normalize_cost,"accept N, 10^-N, e^-(2.3...*N) as the same"],
             );
 
 
@@ -94,8 +94,8 @@ $wholeto=openz_out($whole_lines) if $whole_lines;
 
 my $capture_3brackets='{{{(.*?)}}}';
 my $capture_natural='(\d+)';
-my $capture_int='(-?\d+)';
-my $capture_cost='(\d+\S*)';
+my $capture_int='(+?-?\d+)';
+my $capture_cost='([-+e0-9]\S*)';
 
 my $N=0;
 my %sums;
@@ -116,6 +116,8 @@ while (<>) {
             &debug($1,$2,$3,$4);
             $braces = 1 if defined $3;
             my $val=($braces ? $3 : $4);
+            &debug($val,to_cost($val)) if $normalize_cost;
+            $val=to_cost($val) if $normalize_cost;
             if ($addnum && is_numeric($val) && $whole_num) {
                 no warnings 'uninitialized';
                 $whole+=$val;

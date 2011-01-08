@@ -23,31 +23,37 @@ main() {
         sumsmap=$bind/fast-lhs-sums-map
 
         in=$1
-        out=${2:--}
+        out=$2
 #        shift
 #        shift
         [[ $in ]] || usage
-        pre=${pre:-${in%.eng-parse}.}
+        inbase=${in%.eng-parse}
+        showvars_optional inbase predot
+        predot=${predot:-$inbase}
+        pre=${pre:-$predot.}
         counted=${counted:-${pre}counted}
         sums=${sums:-${pre}lhs-sums}
+        out=${out:-${pre}for-norm}
         showvars_required in out counted sums
-        showvars_optional infs pre
-#        exit
+        showvars_optional infs pre start_at
 
-        unset outfs
+        nostepexit=1
+        infs=$infs outfs= step 1 iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py
 
-        iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py
-
-        save_infs=$infs
-        unset infs
-
-        iomr-hadoop "$counted" "$sums" $sumsmap $bind/count.py
+        infs= outfs= step 2 iomr-hadoop "$counted" "$sums" $sumsmap $bind/count.py
+set -x
         hadget "$sums"
 
         showvars_required out
         catdiv=$bind/cat-pcfg-for-divide
-        hadcat "$counted" | $catdiv "$sums" | catz_to "$out"
-        previewf "$out"
+
+        if [[ $local || $outfs ]] ; then
+            out=$outfs
+            hadcat "$counted" | $catdiv "$sums" | catz_to "$out"
+        else
+            infs= outfs=$out step 3 iomr-hadoop "$counted" "$out" "$catdiv $sums" NONE
+        fi
+        hadpreview "$out"
     }
 
-    main "$@"
+main "$@";exit

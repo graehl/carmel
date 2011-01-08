@@ -572,9 +572,6 @@ buildpipe() {
 buildxrs() {
     pushd ~/t;svn update;bjam $sbmtargs utilities//install ;popd
     }
-rwhich() {
-    realpath `which_default "$@"`
-}
 alias grep="/bin/grep --color -n"
 alias savecvs="/usr/bin/rsync -Lptave ssh ~/isd/cvs hpc.usc.edu:isd/cvs"
 alias buildfem="pushd ~/t/graehl/tt;make clean;make BOOST_SUFFIX= -j 4 install;popd"
@@ -2041,10 +2038,10 @@ export DISPLAY=true.isi.edu:0.0
 
 function xhosts
 {
-xhost +hpc-opteron.usc.edu
-xhost +hpc-master.usc.edu
-xhost +bauhaus.isi.edu
-xhost +cage.isi.edu
+    xhost +hpc-opteron.usc.edu
+    xhost +hpc-master.usc.edu
+    xhost +bauhaus.isi.edu
+    xhost +cage.isi.edu
 }
 
 function lennonbin

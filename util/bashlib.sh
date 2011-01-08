@@ -1,24 +1,31 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
+BLOBS=${BLOBS:-/home/nlg-01/blobs}
+[ -d $BLOBS ] || BLOBS=~/blobs
+export BLOBS
+WHOAMI=`whoami`
+HOST=${HOST:-$(hostname)}
 export TEMP=${TEMP:-/tmp}
 export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
 
-rwhich() {
-    realpath $(which_default "$@")
-}
-
-previewf() {
-    if [[ $1 != - ]]  ; then
-        preview "$@"
-    fi
+hadlsr() {
+    hadfs -lsr "$@"
 }
 hadls() {
-    hadfs -lsr "$@"
+    hadfs -ls "$@"
 }
 hadtest() {
     if [[ $local ]] ; then
         $1 "$2"
     else
-        ! silently hadfs -test $1 "$2"
+#        hadfs -test $1 "$2"
+#BUGGY. BUGGY BUGGY. terrible
+        if [[ $1 = -e ]] ; then
+            silently hadfs -stat "$2"
+        elif [[ $1 = -d ]] ; then
+            silently hadfs -ls "$2/*"
+        else
+            error "hadfs -test is buggy. I support -e and -d with stat and ls only"
+        fi
     fi
 }
 hadisdir() {
@@ -27,13 +34,24 @@ hadisdir() {
 hadexists() {
     hadtest -e "$@"
 }
-
+#hadempty() {
+#    hadtest -z "$@"
+#}
+hadrm() {
+    if [[ $1 != - ]]  ; then
+        if [ "$local" ] ; then
+            rm -f "$1"
+        else
+            hadfs -rmr "$1"
+        fi
+    fi
+}
 hadpreview() {
     if [[ $1 != - ]]  ; then
         if [ "$local" ] ; then
-            preview "$1"
+            preview1 "$1" "local: $1"
         else
-            hadcat "$1" | preview
+            hadcat "$1" 2>/dev/null | preview1 - "hadfs: $1" || true
         fi
     fi
 }
@@ -46,7 +64,14 @@ hadput() {
 hadget() {
     local rpath=$(basename "$1")
     if [[ ! $local ]] ; then
-        hadfs -put "$1" "$rpath"
+        if hadexists "$1" ; then
+            rm -f "$rpath"
+            cmd=getmerge
+            if hadisdir "$1" ; then
+                cmd=getmerge
+            fi
+            hadfs -$cmd "$1" "$rpath"
+        fi
     fi
     require_file "$rpath"
 }
@@ -60,13 +85,29 @@ hadcat() {
 hadfs() {
     $HADOOP_HOME/bin/hadoop fs "$@"
 }
-BLOBS=${BLOBS:-/home/nlg-01/blobs}
-[ -d $BLOBS ] || BLOBS=~/blobs
+
+step() {
+    local i=$1
+    shift
+    if [[ ${start_at:-0} -le $i ]] ; then
+        echo2 "running step $i: $*"
+        "$@"
+    else
+        echo2 "skipping step $i (start_at=$start_at): $*"
+        false || [[ $nostepexit ]]
+    fi
+}
+rwhich() {
+    realpath $(which_default "$@")
+}
+previewf() {
+    if [[ $1 != - ]]  ; then
+        preview1 "$@"
+    fi
+}
+
 libg=$BLOBS/libgraehl/latest
 mkdir -p $libg
-export BLOBS
-WHOAMI=`whoami`
-HOST=${HOST:-$(hostname)}
 
 tabsort() {
     local tab=$(echo -e '\t')
@@ -84,7 +125,7 @@ mapsort() {
 }
 
 make_nodefile() {
-    if ! [[ "$PBS_NODEFILE" && -r "$PBS_NODEFILE" ]]; then
+    if [[ $PBS_NODEFILE && -r $PBS_NODEFILE ]]; then
         export PBS_NODEFILE=$(mktemp /$TEMP/pbs_nodefile.XXXXXX)
         local i
         for i in $(seq 1 ${NODEFILE_N:-1}); do
@@ -993,16 +1034,18 @@ local tmp2=`tmpnam $tmp2`
 }
 
 bwhich() {
-        which_quiet
+        which_quiet "$@"
         local syswhich=`/usr/bin/which "$@"`
         [ -f $syswhich ] && ls -l $f 1>&2
 }
 
 which_quiet() {
-    builtin type "$@" | perl -n -e 'if (m#(?: is (/.*)|aliased to \`(.*)\'\'')$#) { print "$1$2\n";exit 0; }'
+    builtin type -a "$@" | perl -n -e 'if (m#(?: is (/.*)|aliased to \`(.*)\'\'')$#) { print "$1$2\n";exit 0; };if (m#(.*)( is a function)#) { print "$1$2\n";print while(<>)}'
 #cut -d' ' -f3-
 }
-
+qwhich() {
+    which_quiet "$@"
+}
 where() {
 	builtin type -a "$@"
 }
@@ -1117,6 +1160,7 @@ greplines() {
  grep -n "$@" | cut -f1 -d:
 }
 
+# see ~graehl/bin/extract-field*
 getfield() {
  perl -e "push @INC,'$BLOBS/libgraehl/latest';require 'libgraehl.pl';&argvz;"'$f=shift;while(<>) {$v=&getfield($f,$_);print "$v\n" if defined $v;}' -- "$@"
 }
@@ -1595,9 +1639,23 @@ non_nbest() {
  catz "$@" |  non_finalize | grep -v "^NBEST "
 }
 
+preview_banner() {
+    echo "==> $* <=="
+}
+
 preview() {
+    forall preview1 "$@"
+}
+preview1() {
  tailn=${tailn:-6}
- head -v -n $tailn "$@"
+ if [[ $2 ]] ; then
+     preview_banner $2
+ fi
+ if [[ $1 = - ]] ; then
+     head -n $tailn
+ else
+     head -v -n $tailn "$@"
+ fi
 }
 
 preview2() {
