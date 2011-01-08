@@ -2,7 +2,8 @@
 BLOBS=${BLOBS:-~graehl/blobs}
 . $BLOBS/bashlib/unstable/bashlib.sh
 
-iomapred=$BLOBS/hadoop/unstable/iomr-hadoop
+iomapred=$d/../util/iomr-hadoop
+[[ -x $iomapred ]] || iomapred=$BLOBS/hadoop/unstable/iomr-hadoop
 [[ -x $iomapred ]] || iomapred=`which iomr-hadoop`
 
 usage() {
@@ -38,7 +39,7 @@ main() {
         sums=${sums:-${pre}lhs-sums}
         out=${out:-${pre}for-norm}
         showvars_required in out counted sums
-        showvars_optional infs pre start_at
+        showvars_optional infs pre start_at bind
 
         nostepexit=1
         infs=$infs outfs= step 1 iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py

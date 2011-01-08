@@ -1648,13 +1648,15 @@ preview() {
 }
 preview1() {
  tailn=${tailn:-6}
+ local v="-v"
  if [[ $2 ]] ; then
      preview_banner $2
+     v=
  fi
  if [[ $1 = - ]] ; then
      head -n $tailn
  else
-     head -v -n $tailn "$@"
+     head $v -n $tailn "$1"
  fi
 }
 

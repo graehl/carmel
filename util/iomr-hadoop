@@ -100,8 +100,12 @@ main() {
       previewf "$in"
       echo2 "catz $in | $map | mapsort | $reduce | catz_to $out"
       echo2
-      catz "$in" | $map | mapsort | $reduce | catz_to "$out"
-      if [[ $outfs ]] ; then  cp "$out" "$outfs"; fi
+      if [[ $reduce = NONE ]] ; then
+          reduce=cat
+      fi
+      echo2 reduce=$reduce
+      catz "$in" | eval $map | mapsort | $reduce | catz_to "$out"
+      if [[ $outfs && $outfs != $out ]] ; then  cp "$out" "$outfs"; fi
       previewf "$out"
   else
       [[ $in = - ]] && in="stdin.`nanotime`" && $infs=-
