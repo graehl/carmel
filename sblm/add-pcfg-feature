@@ -1,0 +1,115 @@
+#!/usr/bin/env python2.6
+#-*- python -*-
+
+#hadoop mapper for PCFG: sbmt training format tree input -> parent children\t1
+
+version="0.1"
+
+test=True
+test_in='1000.eng-parse'
+
+import os,sys
+sys.path.append(os.path.dirname(sys.argv[0]))
+
+from pcfg import *
+
+import unittest
+
+import tree
+import optparse
+
+from graehl import *
+from dumpx import *
+
+rule_arrow=re.compile(r"\s*\-\>\s*")
+rhs_word_s=r"\S*(\"\"|x\d+\b)"
+rhs_word=re.compile(rhs_word_s)
+rule_rhs=re.compile('('+rhs_word_s+r")*")
+rule_bangs_s=r"\s*###\s*"
+rule_bangs=re.compile(rule_bangs_s)
+featval=r"{{{.*?}}}|\S+"
+featname=r"[^ =]+"
+rule_feat=re.compile(r'\s*('+featname+')=('+featval+')')
+rule_id_s=r"\bid=(-?\d+)\b"
+rule_id=re.compile(rule_id_s)
+find_id_whole_rule=re.compile(rule_bangs_s+".*"+rule_id_s)
+
+# return (tree,[rhs-tokens],unparsed features string)
+def parse_sbmt_rule(s,require_bangs=True): #bangs = the ### sep. maybe you want to parse rule w/o any features.
+    (t,pos)=tree.scan_tree(s)
+    if t is None:
+        return (None,None,s)
+    assert(s[pos]==')')
+    pos+=1
+    rhs=[]
+    while True:
+        m=rhs_word.match(s,pos)
+        if not m: break
+        pos=m.end()
+        r=m.group(1)
+        rhs.append(r)
+    m=rule_bangs.match(s,pos)
+    if m:
+        pos=m.end()
+    else:
+        assert(not require_bangs)
+    (t,rhs,s[pos:])
+
+### main:
+
+def cost2str(val,asprob=False):
+    if asprob:
+        return '10^%s' % -val
+    else:
+        return str(val)
+
+#return [(name,val)] or [] if sparse
+def feats_pairlist(name,val,opts):
+    if name and (not opts.sparse or val):
+        return [(name,cost2str(val,opts.asprob))]
+    else:
+        return []
+
+def main(opts):
+    log("add-pcfg-feature v%s"%version)
+    log(' '.join(sys.argv))
+    p=PCFG(opts.pcfg)
+    out=open_out(opts.output)
+    for line in open_in(opts.input):
+        (t,rhs,featstr)=parse_sbmt_rule(line)
+        if t is None:
+            continue
+        m=find_id.find(featstr)
+        assert(m)
+        id=m.group(1)
+        cost=0
+        missing=0
+        for ev in [lhs_pcfg_event(n) for n in t.preorder()]:
+            if ev:
+                key=event2str(ev)
+                c=p.cost(key)
+                if c is None:
+                    missing+=1
+                    warn("missing PCFG event %s"%key)
+                else:
+                    cost+=c
+        feats=feats_pairlist(opts.costf,cost,opts)+feats_pairlist(opts.missingf,missing,opts)
+        if len(feats):
+            out.write("id=%s\t%s\n"%(id,pairlist_str(feats)))
+            #TODO: should we always write id=n\t\n even if all feats were sparse?
+
+import optfunc
+
+default_in='-'
+default_out='-'
+
+@optfunc.arghelp('input','input file here (None = STDIN should be default in production)')
+def options(input=default_in,output=default_out,pcfg='',costf='pcfg',missingf='pcfg_missing',sparse=True,asprob=False,test=False):
+#    if test:
+#        sys.argv=sys.argv[0:1]
+#        input=test_in
+#        pcfg=test_pcfg
+    main(Locals())
+
+optfunc.main(options)
+
