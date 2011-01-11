@@ -107,8 +107,7 @@ def assertne(a,b,*r):
 
 def x(s="debug stop."):
     raise Exception("x: "+s)
-def warn(msg,pre="WARNING: "):
-    sys.stderr.write(pre+str(msg)+"\n")
+
 def flat_single(l):
     if (len(l)==1):
         return l[0]

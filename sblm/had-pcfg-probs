@@ -32,26 +32,28 @@ main() {
 #        shift
         [[ $in ]] || usage
         inbase=${in%.eng-parse}
+        [ -f $in ] || in=$inbase.eng-parse
         showvars_optional inbase predot
         predot=${predot:-$inbase}
         pre=${pre:-$predot.}
         counted=${counted:-${pre}counted}
         sums=${sums:-${pre}lhs-sums}
-        out=${out:-${pre}for-norm}
+        out=${out:-${pre}pcfg-counts}
         showvars_required in out counted sums
-        showvars_optional infs pre start_at bind
+        showvars_optional infs pre start_at bind save1 save2 save3
 
         nostepexit=1
-        infs=$infs outfs= step 1 iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py
+        set -x
+        infs=$infs outfs= savemap=$save1 step 1 iomr-hadoop "$in" "$counted" $bind/pcfg-map $bind/count.py
 
-        infs= outfs= step 2 iomr-hadoop "$counted" "$sums" $sumsmap $bind/count.py
+        infs= outfs= savemap=$save2 step 2 iomr-hadoop "$counted" "$sums" $sumsmap $bind/count.py
 
         hadget "$sums"
 
         showvars_required out
         catdiv=$bind/cat-pcfg-for-divide
 
-        infs= outfs=$out step 3 iomr-hadoop "$counted" "$out" "$catdiv $sums" NONE
+        infs= outfs=$out savemap=$save3 step 3 iomr-hadoop "$counted" "$out" "$catdiv $sums" NONE
 
         hadpreview "$out"
     }

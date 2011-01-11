@@ -106,6 +106,8 @@ def default_generator(gen,default=None):
     else:
         for x in gen: yield x
 
+def except_str():
+    return sys.exc_type+':'+sys.exc_value
 
 def close_file(f):
     if f is not sys.stdin and f is not sys.stderr and f is not sys.stdout:
@@ -158,14 +160,27 @@ def log_prob(p):
     return math.log(p)
 
 n_warn=0
+warncount=IntDict()
 
-def warn(msg,pre="WARNING: "):
-    global n_warn
+def warn(msg,post=None,pre="WARNING: "):
+    global n_warn,warncount
     n_warn+=1
-    sys.stderr.write(pre+str(msg)+"\n")
+    p='\n'
+    if post is not None:
+        p=' '+str(post)+p
+    warncount[msg]+=1
+    sys.stderr.write(pre+str(msg)+p)
 
-def info_summary(msg=''):
-    warn("%s - %d total warnings"%(msg,n_warn))
+def warncount_sorted():
+    w=[(c,k) for (k,c) in warncount.iteritems()]
+    return sorted(w,reverse=True)
+
+def info_summary(pre='',warn_details=True):
+    if n_warn and warn_details:
+        log('N\twarning')
+        for w in warncount_sorted():
+            log("%s\t%s"%w)
+    log("%s%d total warnings"%(pre,n_warn))
 
 def report_zeroprobs():
     "print (and return) any zero probs since last call"
@@ -531,7 +546,10 @@ def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private
 
 def attr_str(obj,names=None,types=pod_types):
     "return string: a1=v1 a2=v2 for attr_pairlist"
-    return ' '.join(["%s=%s"%p for p in attr_pairlist(obj,names,types)])
+    return pairlist_str(attr_pairlist(obj,names,types))
+
+def pairlist_str(pairlist):
+    return ' '.join(["%s=%s"%p for p in pairlist])
 
 def writeln(line,file=sys.stdout):
     f.write(f)

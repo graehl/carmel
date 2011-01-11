@@ -1,0 +1,373 @@
+"""	2	230
+"'s"	3	230
+"("	1	230
+")"	1	230
+","	13	230
+"."	7	230
+"1.092"	1	230
+"130"	1	230
+"14.7"	1	230
+"17.8"	1	230
+"20"	1	230
+"20.9"	1	230
+"23"	1	230
+"24"	1	230
+"3.1"	1	230
+"444"	1	230
+"490"	1	230
+"74"	1	230
+";"	1	230
+"@-@"	2	230
+"a"	2	230
+"about"	1	230
+"according"	1	230
+"agency"	2	230
+"also"	2	230
+"an"	1	230
+"ancient"	1	230
+"and"	2	230
+"approved"	1	230
+"as"	2	230
+"authorities"	1	230
+"beijing"	2	230
+"belt"	1	230
+"between"	2	230
+"billion"	5	230
+"brought"	1	230
+"business"	1	230
+"businesses"	1	230
+"but"	2	230
+"by"	6	230
+"canal"	2	230
+"compared"	4	230
+"corridor"	1	230
+"dollars"	6	230
+"dropped"	1	230
+"economic"	1	230
+"economy"	1	230
+"end"	1	230
+"exports"	1	230
+"february"	2	230
+"formation"	1	230
+"grand"	2	230
+"hangzhou"	1	230
+"has"	1	230
+"having"	2	230
+"hong"	1	230
+"import"	1	230
+"important"	1	230
+"in"	4	230
+"increase"	1	230
+"increased"	2	230
+"industry"	1	230
+"investment"	2	230
+"investments"	2	230
+"is"	1	230
+"kong"	1	230
+"last"	6	230
+"mainland"	3	230
+"million"	1	230
+"ministry"	1	230
+"more"	1	230
+"news"	2	230
+"north"	1	230
+"not"	1	230
+"nowadays"	1	230
+"number"	2	230
+"of"	9	230
+"only"	1	230
+"percent"	2	230
+"plays"	1	230
+"presented"	1	230
+"projects"	1	230
+"proposals"	1	230
+"rd"	1	230
+"resulting"	1	230
+"revealed"	1	230
+"role"	1	230
+"rose"	1	230
+"shores"	1	230
+"south"	1	230
+"statistics"	2	230
+"surplus"	1	230
+"taiwan"	5	230
+"taiwanese"	2	230
+"tending"	1	230
+"th"	1	230
+"than"	1	230
+"that"	1	230
+"the"	12	230
+"this"	1	230
+"thriving"	1	230
+"to"	3	230
+"totaled"	1	230
+"trade"	2	230
+"transportation"	1	230
+"two"	1	230
+"us"	6	230
+"value"	4	230
+"volume"	2	230
+"was"	4	230
+"with"	5	230
+"xinhua"	2	230
+"year"	6	230
+''-0 """	2	2
+(TOTAL_LEX)	230	230
+(TOTAL_NT)	538	538
+,-0 ","	13	13
+-LRB--0 "("	1	1
+-RRB--0 ")"	1	1
+.-0 "."	7	7
+:-0 ";"	1	1
+@ADJP-0-BAR HYPH-0 NNP-3	1	2
+@ADJP-0-BAR NNP-3 @ADJP-0-BAR	1	2
+@FRAG-0-BAR ,-0 @FRAG-0-BAR	1	3
+@FRAG-0-BAR ,-0 NP-0	1	3
+@FRAG-0-BAR NP-0 @FRAG-0-BAR	1	3
+@NML-0-BAR HYPH-0 NNP-2	1	1
+@NP-0-BAR NPB-1 ,-0	1	1
+@NP-C-1-BAR NP-0 CC-0	1	1
+@NPB-0-BAR ''-0 NNS-0	1	1
+@NPB-1-BAR NN-1 NNS-0	1	1
+@NPB-2-BAR ''-0 NN-3	1	11
+@NPB-2-BAR ADJP-0 @NPB-2-BAR	1	11
+@NPB-2-BAR CD-0 NNS-0	1	11
+@NPB-2-BAR JJ-1 @NPB-2-BAR	2	11
+@NPB-2-BAR JJ-1 NN-3	2	11
+@NPB-2-BAR JJ-1 NNP-1	1	11
+@NPB-2-BAR NN-1 NN-3	2	11
+@NPB-2-BAR NNP-1 @NPB-2-BAR	1	11
+@NPB-3-BAR NN-1 NNP-0	2	2
+@PRN-0-BAR -LRB--0 NN-2	1	1
+@QP-0-BAR @QP-0-BAR CD-0	1	2
+@QP-0-BAR IN-1 CD-0	1	2
+@S-0-BAR @S-0-BAR CC-0	1	3
+@S-0-BAR @S-2-BAR :-0	1	3
+@S-0-BAR S-0 ,-0	1	3
+@S-1-BAR ,-0 @S-2-BAR	2	5
+@S-1-BAR ,-0 S-0	1	5
+@S-1-BAR ADVP-0 VP-2	1	5
+@S-1-BAR NP-0 VP-2	1	5
+@S-2-BAR @S-0-BAR S-0	2	11
+@S-2-BAR ADVP-0 @S-2-BAR	1	11
+@S-2-BAR NP-0 @S-1-BAR	1	11
+@S-2-BAR NP-C-0 @S-1-BAR	2	11
+@S-2-BAR NP-C-0 VP-2	3	11
+@S-2-BAR PP-0 @S-1-BAR	2	11
+@SG-0-BAR ,-0 VP-0	1	1
+@VP-0-BAR @VP-0-BAR ,-0	3	11
+@VP-0-BAR @VP-0-BAR NP-0	2	11
+@VP-0-BAR VBD-0 NP-C-0	5	11
+@VP-0-BAR VBD-0 PP-0	1	11
+@VP-1-BAR VP-2 ,-0	1	1
+@VP-2-BAR @VP-1-BAR CC-0	1	3
+@VP-2-BAR CONJP-0 @VP-2-BAR	1	3
+@VP-2-BAR VP-0 CC-0	1	3
+@VP-3-BAR VBZ-0 ADVP-0	1	1
+@VP-C-1-BAR @VP-C-1-BAR ,-0	1	5
+@VP-C-1-BAR @VP-C-1-BAR NP-C-1	1	5
+@VP-C-1-BAR VBN-0 PP-0	2	5
+@VP-C-1-BAR VBN-0 PRT-0	1	5
+ADJP-0 CD-0 JJ-0	1	2
+ADJP-0 JJ-1 @ADJP-0-BAR	1	2
+ADVP-0 RB-0	3	3
+CC-0 "and"	2	4
+CC-0 "but"	2	4
+CD-0 "1.092"	1	19
+CD-0 "130"	1	19
+CD-0 "14.7"	1	19
+CD-0 "17.8"	1	19
+CD-0 "20"	1	19
+CD-0 "20.9"	1	19
+CD-0 "23"	1	19
+CD-0 "24"	1	19
+CD-0 "3.1"	1	19
+CD-0 "444"	1	19
+CD-0 "490"	1	19
+CD-0 "74"	1	19
+CD-0 "billion"	5	19
+CD-0 "million"	1	19
+CD-0 "two"	1	19
+CONJP-0 RB-1 RB-1	1	1
+DT-0 "this"	1	1
+DT-1 "a"	2	15
+DT-1 "an"	1	15
+DT-1 "the"	12	15
+FRAG-0 NP-0 @FRAG-0-BAR	1	1
+HYPH-0 "@-@"	2	2
+IN-0 "between"	2	27
+IN-0 "by"	6	27
+IN-0 "in"	4	27
+IN-0 "of"	9	27
+IN-0 "to"	1	27
+IN-0 "with"	5	27
+IN-1 "as"	2	4
+IN-1 "than"	1	4
+IN-1 "that"	1	4
+JJ-0 "th"	1	1
+JJ-1 "ancient"	1	12
+JJ-1 "economic"	1	12
+JJ-1 "grand"	2	12
+JJ-1 "important"	1	12
+JJ-1 "last"	6	12
+JJ-1 "thriving"	1	12
+JJ-2 "taiwan"	1	3
+JJ-2 "taiwanese"	2	3
+JJR-0 "more"	1	1
+NML-0 NNP-2 @NML-0-BAR	1	1
+NN-0 "economy"	1	15
+NN-0 "mainland"	1	15
+NN-0 "taiwan"	4	15
+NN-0 "trade"	2	15
+NN-0 "transportation"	1	15
+NN-0 "year"	6	15
+NN-1 "business"	1	7
+NN-1 "import"	1	7
+NN-1 "industry"	1	7
+NN-1 "investment"	2	7
+NN-1 "news"	2	7
+NN-2 "end"	1	13
+NN-2 "formation"	1	13
+NN-2 "mainland"	2	13
+NN-2 "number"	2	13
+NN-2 "percent"	2	13
+NN-2 "value"	3	13
+NN-2 "volume"	2	13
+NN-3 "belt"	1	6
+NN-3 "corridor"	1	6
+NN-3 "ministry"	1	6
+NN-3 "role"	1	6
+NN-3 "surplus"	1	6
+NN-3 "value"	1	6
+NNP-0 "agency"	2	3
+NNP-0 "kong"	1	3
+NNP-1 "canal"	2	2
+NNP-2 "hong"	1	5
+NNP-2 "north"	1	5
+NNP-2 "south"	1	5
+NNP-2 "xinhua"	2	5
+NNP-3 "beijing"	2	5
+NNP-3 "february"	2	5
+NNP-3 "hangzhou"	1	5
+NNS-0 "authorities"	1	16
+NNS-0 "businesses"	1	16
+NNS-0 "dollars"	5	16
+NNS-0 "exports"	1	16
+NNS-0 "investments"	2	16
+NNS-0 "projects"	1	16
+NNS-0 "proposals"	1	16
+NNS-0 "rd"	1	16
+NNS-0 "shores"	1	16
+NNS-0 "statistics"	2	16
+NP-0 @NP-0-BAR NP-0	1	20
+NP-0 NPB-0	5	20
+NP-0 NPB-0 PP-0	2	20
+NP-0 NPB-1	6	20
+NP-0 NPB-1 ADJP-0	1	20
+NP-0 NPB-1 NP-0	5	20
+NP-C-0 NP-0 VP-0	1	24
+NP-C-0 NPB-0 PP-0	6	24
+NP-C-0 NPB-1	16	24
+NP-C-0 NPB-1 NP-0	1	24
+NP-C-1 @NP-C-1-BAR NP-0	1	23
+NP-C-1 NPB-0	15	23
+NP-C-1 NPB-0 PP-0	6	23
+NP-C-1 NPB-0 S-0	1	23
+NPB-0 CD-0 NNS-0	1	35
+NPB-0 DT-1 @NPB-2-BAR	4	35
+NPB-0 DT-1 NN-2	9	35
+NPB-0 JJ-1 NN-0	4	35
+NPB-0 JJ-2 @NPB-1-BAR	1	35
+NPB-0 JJ-2 NNS-0	2	35
+NPB-0 NN-0	3	35
+NPB-0 NN-0 @NPB-0-BAR	1	35
+NPB-0 NNS-0	6	35
+NPB-0 NPB-2 @NPB-2-BAR	1	35
+NPB-0 NPB-2 NN-3	1	35
+NPB-0 NPB-2 NNS-0	1	35
+NPB-0 QP-0	1	35
+NPB-1 CD-0	2	30
+NPB-1 CD-0 NN-2	2	30
+NPB-1 DT-0 NN-2	1	30
+NPB-1 DT-1 @NPB-2-BAR	2	30
+NPB-1 JJ-1 NN-0	2	30
+NPB-1 NML-0 NN-0	1	30
+NPB-1 NN-0	1	30
+NPB-1 NN-1 NNS-0	2	30
+NPB-1 NNP-2 @NPB-3-BAR	2	30
+NPB-1 NNP-2 NNP-0	1	30
+NPB-1 NNP-3	2	30
+NPB-1 NNS-0	1	30
+NPB-1 PRP-0	6	30
+NPB-1 QP-0	5	30
+NPB-2 NN-0 POS-0	3	3
+POS-0 "'s"	3	3
+PP-0 IN-0 NP-C-0	8	28
+PP-0 IN-0 NP-C-1	15	28
+PP-0 IN-1 PP-C-0	2	28
+PP-0 VBG-0 PP-C-0	1	28
+PP-0 VBN-0 PP-C-0	2	28
+PP-C-0 IN-0 NP-C-1	4	7
+PP-C-0 TO-0 NP-C-1	1	7
+PP-C-0 VBN-0 PP-C-0	2	7
+PRN-0 @PRN-0-BAR -RRB--0	1	1
+PRP-0 "us"	6	6
+PRT-0 RP-0	1	1
+QP-0 CD-0 CD-0	5	6
+QP-0 JJR-0 @QP-0-BAR	1	6
+RB-0 "also"	2	3
+RB-0 "nowadays"	1	3
+RB-1 "not"	1	2
+RB-1 "only"	1	2
+RP-0 "about"	1	1
+S-0 NP-C-0 VP-2	5	5
+S-1 @S-2-BAR .-0	7	7
+S-C-0 NP-C-0 VP-2	1	1
+SBAR-C-0 IN-1 S-C-0	1	1
+SG-0 NP-0 @SG-0-BAR	1	4
+SG-0 VP-1	3	4
+SG-C-0 VP-1	1	1
+TO-0 "to"	2	2
+TOP FRAG-0	1	10
+TOP PRN-0	1	10
+TOP S-1	7	10
+TOP SG-0	1	10
+VB-0 "increase"	1	1
+VBD-0 "dropped"	1	8
+VBD-0 "revealed"	1	8
+VBD-0 "rose"	1	8
+VBD-0 "totaled"	1	8
+VBD-0 "was"	4	8
+VBG-0 "according"	1	5
+VBG-0 "having"	2	5
+VBG-0 "resulting"	1	5
+VBG-0 "tending"	1	5
+VBN-0 "approved"	1	9
+VBN-0 "brought"	1	9
+VBN-0 "compared"	4	9
+VBN-0 "increased"	2	9
+VBN-0 "presented"	1	9
+VBZ-0 "dollars"	1	4
+VBZ-0 "has"	1	4
+VBZ-0 "is"	1	4
+VBZ-0 "plays"	1	4
+VP-0 @VP-2-BAR VP-0	1	4
+VP-0 NNP-3 NP-C-1	1	4
+VP-0 VBN-0 PP-0	2	4
+VP-1 TO-0 VP-C-1	1	4
+VP-1 VBG-0 PP-0	1	4
+VP-1 VBG-0 VP-C-0	2	4
+VP-2 @VP-0-BAR NP-0	2	13
+VP-2 @VP-0-BAR PP-0	2	13
+VP-2 @VP-0-BAR SG-0	2	13
+VP-2 @VP-2-BAR VP-2	1	13
+VP-2 @VP-3-BAR VP-C-0	1	13
+VP-2 VBD-0 PP-0	1	13
+VP-2 VBD-0 SBAR-C-0	1	13
+VP-2 VBZ-0 NP-C-1	1	13
+VP-2 VBZ-0 PP-0	1	13
+VP-2 VBZ-0 VP-C-0	1	13
+VP-C-0 @VP-C-1-BAR PP-0	2	4
+VP-C-0 @VP-C-1-BAR SG-0	1	4
+VP-C-0 VBG-0 SG-C-0	1	4
+VP-C-1 VB-0	1	1

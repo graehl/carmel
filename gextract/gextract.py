@@ -12,7 +12,7 @@ drop_0counts=True
 # save memory.
 
 import os,sys
-sys.path.append(os.path.dirname(sys.argv[0]))
+sys.path.append(os.path.realpath(os.path.dirname(sys.argv[0])))
 
 version="0.96"
 

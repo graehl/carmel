@@ -1,10 +1,16 @@
 #!/usr/bin/env perl
+use warnings;
+use strict;
 
 sub usage() {
     print qq{
 usage: $0 lhs-sums-file [pcfg-events-with-counts-file or STDIN]
 
 output: pcfg-events file with TAB sum pasted onto end (by lhs which is first word of events). you will do division/smoothing yourself later if you like.
+
+note: assumption is that some NTs are preterminals and may have only words under them. backoff checks type (pre vs non) and uses separate unigram distributions for each.
+
+note: events with an empty rhs are backoff unigram probs (i.e. 2nd number is total number of events)
     };
     print @_,"\n";
     exit -1;
@@ -13,14 +19,35 @@ output: pcfg-events file with TAB sum pasted onto end (by lhs which is first wor
 my $sumsf=shift @ARGV;
 open S,'<',$sumsf or &usage($sumsf);
 my %c;
+my $cnt=0.;
+my $clex=0.;
+sub islex {
+    my ($lhs)=@_;
+    substr($lhs,0,1) eq '"'
+}
 while(<S>) {
     my ($lhs,$sum,@rest)=split;
     die "bad format of lhs-sums file (line $.: $_)\n - lines should be LHS sum" if scalar @rest;
-    $c{$lhs}+=$sum;
+    if (islex($lhs)) {
+        $clex+=$sum;
+    } else {
+        $c{$lhs}+=$sum;
+        $cnt+=$sum;
+    }
 }
+
+print "(TOTAL_NT)\t$cnt\t$cnt\n";
+print "(TOTAL_LEX)\t$clex\t$clex\n";
 while(<>) {
     chomp;
-    my ($lhs)=split;
-    die "no count for lhs '$lhs' in lhs-sums file $sumsf (line $.: $_)" unless exists $c{$lhs};
-    print "$_\t$c{$lhs}\n";
+    my ($ev)=split "\t",$_,2;
+    my $s;
+    if (islex($ev)) {
+        $s=$clex;
+    } else {
+        my ($lhs)=split / /,$ev,2;
+        die "no count for lhs '$lhs' in lhs-sums file $sumsf (line $.: $_)" unless exists $c{$lhs};
+        $s=$c{$lhs};
+    }
+    print "$_\t$s\n";
 }

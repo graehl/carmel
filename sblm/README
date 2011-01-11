@@ -2,4 +2,5 @@ had-pcfg-probs - hadoop driver. to test: local=1 ~/blobs/sblm/latest/had-pcfg-pr
 1000.eng-parse - some trees in ghkm-input format.
 pcfg-map - output sblm pcfg events
 fast-lhs-sums-map - produce sblm lhs counts
-cat-pcfg-for-divide - produce event count lhs-sum
+cat-pcfg-for-divide - produce event count lhs-sum. prefaced with (TOTAL_NT) and (TOTAL_LEX) sums for unigram bo.
+add-pcfg-feature - for had-rules, output id\tfeats\n

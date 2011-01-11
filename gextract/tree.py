@@ -285,48 +285,51 @@ class Node:
     def label_lrb(self):
         return paren2lrb(str(self.label))
 
-    #terminals are double quoted (no interior double quotes allowed unless it's a single char). nonterms are -LRB- not (.
-    def label_sbmt(self):
-        if self.is_terminal():
-#            assert(self.label.find('"')==-1 or len(self.label)==1)
-# actually, tokens are just whitespace sep. no internal ws is allowed. weird. problems if parens get put next to terminals, though.
-            return '"%s"'%self.label
-        return self.label_lrb()
-
-def scan_tree(tokens, pos):
+def scan_tree(tokens, pos, paren_after_root=False):
     try:
-        if tokens[pos] == "(":
-            if tokens[pos+1] == "(":
-                label = ""
-                pos += 1
-            else:
-                label = tokens[pos+1]
-                pos += 2
-            children = []
-            (child, pos) = scan_tree(tokens, pos)
-            while child != None:
-                children.append(child)
-                (child, pos) = scan_tree(tokens, pos)
-            if tokens[pos] == ")":
-                return (Node(label, children), pos+1)
-            else:
-                return (None, pos)
-        elif tokens[pos] == ")":
+        if tokens[pos] == ")":
             return (None, pos)
+        if paren_after_root:
+            if tokens[pos]=='(':
+                label=''
+                pos+=1
+            else:
+                label=lrb2paren(tokens[pos])
+                if tokens[pos+1]=='(':
+                    pos+=2
+                else:
+                    return (Node(label,[]),pos+1)
         else:
-            label = lrb2paren(tokens[pos])
-            return (Node(label,[]), pos+1)
+            if tokens[pos] == "(":
+                if tokens[pos+1] == "(":
+                    label = ""
+                    pos += 1
+                else:
+                    label = lrb2paren(tokens[pos+1])
+                    pos += 2
+            else:
+                label = lrb2paren(tokens[pos])
+                return (Node(label,[]), pos+1)
+        children = []
+        while True:
+            (child, pos) = scan_tree(tokens, pos, paren_after_root)
+            if child is None: break
+            children.append(child)
+        if tokens[pos] == ")":
+            return (Node(label, children), pos+1)
+        else:
+            return (None, pos)
+
     except IndexError:
         return (None, pos)
 
 tokenizer = re.compile(r"\(|\)|[^()\s]+")
 
-def str_to_tree(s):
+def str_to_tree(s,paren_after_root=False):
     toks=tokenizer.findall(s)
-    if len(toks)<2: return None
-    if toks[1]=='(' and toks[-2]==')': #berkeley parse ( (tree) )
+    if len(toks)>2 and toks[1]=='(' and toks[-2]==')': #berkeley parse ( (tree) )
         toks=toks[1:-1]
-    (tree, n) = scan_tree(toks, 0)
+    (tree, n) = scan_tree(toks, 0,paren_after_root)
     return tree
 
 

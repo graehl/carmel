@@ -53,7 +53,7 @@ def main(opts):
             print_pcfg_event(n)
 
 import optfunc
-@optfunc.arghelp('input','input file here (- means STDIN, which should be default in production)')
+@optfunc.arghelp('input','input file here (- means STDIN)')
 
 def options(input=default_in,test=False):
     if test:

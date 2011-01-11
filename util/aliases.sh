@@ -1,4 +1,9 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
+ffox() {
+    pkill firefox
+    find .mozilla -name '*lock' -exec rm {} \;
+    firefox "$@"
+}
 rpdf() {
     cd /tmp
     scp hpc.usc.edu:$1 . && acrord32 `basename $1`
@@ -7,7 +12,7 @@ cpipe() {
     svn commit ~/pipe/ -m "$*"
 }
 cgraehl() {
-    svn commit ~/t/utilities/libgraehl.pl -m "$*"
+    svn commit ~/t/graehl/ -m "$*"
 }
 alias rot13="tr '[A-Za-z]' '[N-ZA-Mn-za-m]'"
 cpdir() {
