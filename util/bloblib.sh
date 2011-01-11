@@ -201,7 +201,7 @@ newlatest() {
 
 bupdate() {
     ( set -e;
-    foreach blob_update "$@"
+    forall blob_update "$@"
     )
 }
 blob_update() {

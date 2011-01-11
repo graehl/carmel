@@ -74,7 +74,9 @@ main() {
 
   showvars_optional local file combine buflines stage infs outfs noclobber rmin
   showvars_required in out map reduce
-
+  if [[ ! $local ]] ; then
+      showvars_required HADOOP_CONF_DIR
+  fi
   files=$file
   if [ "$stage" ] ; then
       filex $map
@@ -93,7 +95,9 @@ main() {
       showvars_required f filearg
   done
 
-  [[ $combine ]] && map="sh -c '$map | $d/precombine.py -b ${buflines:=100000} | $reduce'"
+  if [[ $combine ]] ; then
+      map="sh -c '$map | $d/precombine.py -b ${buflines:=100000} | $reduce'"
+  fi
 
   if [[ $local ]] ; then
       if [[ $infs ]] ; then cp "$infs" "$in"; fi
@@ -108,7 +112,10 @@ main() {
       if [[ $outfs && $outfs != $out ]] ; then  cp "$out" "$outfs"; fi
       previewf "$out"
   else
-      [[ $in = - ]] && in="stdin.`nanotime`" && $infs=-
+      if [[ $in = - ]]; then
+          in="stdin.`nanotime`"
+          $infs=-
+      fi
       if [[ $infs ]] ; then
           hadrmf "$in"
           hadfs -put "$infs" "$in"
@@ -117,17 +124,25 @@ main() {
           echo2 using implicit infs=$in - copying local file to hadoop
           hadfs -put "$in" "$in"
       fi
-      [[ $out = - ]] && out="stdout.`nanotime`" && outfs=-
+      if [[ $out = - ]] ; then
+          out="stdout.`nanotime`"
+          outfs=-
+      fi
       hadrmf "$out"
       hadpreview "$in"
       set -x
       $HADOOP_HOME/bin/hadoop jar $HADOOP_HOME/contrib/streaming/hadoop-streaming.jar \
           -input "$in" -output "$out" -mapper "$map" -reducer "$reduce" $filearg "$@"
       set +x
-      [[ $rmin ]] && echo2 "rmin=1 so hadrm $in" && hadrm "$in"
+      if [[ $rmin ]] ; then
+          echo2 "rmin=1 so hadrm $in"
+          hadrm "$in"
+      fi
       echo2
       hadpreview "$out"
-      [[ $outfs ]] && hadcat "$out" | catz_to "$outfs"
+      if [[ $outfs ]] ; then
+          hadcat "$out" | catz_to "$outfs"
+      fi
   fi
 }
 main "$@"

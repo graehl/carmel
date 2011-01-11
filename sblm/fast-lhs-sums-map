@@ -23,12 +23,13 @@ select STDOUT;
 while(<>) {
     print STDERR "." unless $. % $lil;
     print STDERR "$.\n" unless $. % $big;
-    my ($r,$rest)=split ' ',$_,2;
-    /^(\S+).*\t(\S+)\s*$/ or die "expected lhs,SPACE,...,TAB,count,NEWLINE in $_";
+#    my ($r,$rest)=split / /,$_,2;
+    /^(\S+).*\t(\S+)\s*$/ or die "expected lhs,...,TAB,count,NEWLINE in $_";
     $c{$1}+=$2;
 }
 print STDERR "\nDONE.\n";
 for (keys %c) {
+#    &debug('event',$_,$c{$_});
     print "$_\t$c{$_}\n";
 }
 

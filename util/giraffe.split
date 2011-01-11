@@ -14,6 +14,7 @@ my ($inclusive,$indexstarts,$exactfinal)=(1,1,1);
 my ($lines,$wclines,$command,$nchunks,$midword,$giraffe);
 my ($chunksize)=10000;
 my $giraffebin;
+my $from=0;
 
 my @options=(
     qq{output a giraffe commands file (one command per line) with positional arguments from-line to-line added.
@@ -34,14 +35,16 @@ my @options=(
     ["wclines=s"=>\$wclines,'count the lines in this file (instead of -lines n)'],
     ["lines=i"=>\$lines,'number of lines',1],
     ["n|nchunks=i"=>\$nchunks,'split lines into n chunks. supercedes -chunksize'],
-    ["size=i"=>\$chunksize,'use chunks of this size',1],
+    ["s|size=i"=>\$chunksize,'use chunks of this size',1],
     ["c|command=s"=>\$command,'use this command instead of reading from stdin'],
+    ["from=i"=>\$from,'start the first chunk on this line number (this is always 0-indexed, i.e. 0 to skip no lines)'],
     ["giraffe!"=>\$giraffe,'pipe stdout to giraffe -'],
     sub {
         if ($wclines)
         {
             $lines=nlines($wclines);
         }
+        $lines-=$from;
         if ($nchunks)
         {
             $chunksize = ceil($lines/$nchunks);
@@ -106,8 +109,8 @@ for my $i0 (0..$lasti0)
     my $to0=$from0+$chunksize;
     $to0-=1 if $inclusive;
     my $c=$command;
-    repl(\$c,$froms,indexs($from0));
-    repl(\$c,$tos,indexs($to0));
+    repl(\$c,$froms,indexs($from0)+$from);
+    repl(\$c,$tos,indexs($to0)+$from);
     repl(\$c,$chunkids,indexs($i0));
     repl(\$c,$chunkszs,$chunksize);
     my $co="$c\n";
