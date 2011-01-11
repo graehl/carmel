@@ -1,7 +1,17 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
+upd() {
+    for f; do
+        blob_update $f
+    done
+}
+new() {
+    for f; do
+        blob_new_latest $f
+    done
+}
 ffox() {
     pkill firefox
-    find .mozilla -name '*lock' -exec rm {} \;
+    find ~/.mozilla \( -name '*lock' -o -name 'places.sqlite*' \) -exec rm {} \;
     firefox "$@"
 }
 rpdf() {
