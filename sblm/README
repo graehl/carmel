@@ -4,3 +4,5 @@ pcfg-map - output sblm pcfg events
 fast-lhs-sums-map - produce sblm lhs counts
 cat-pcfg-for-divide - produce event count lhs-sum. prefaced with (TOTAL_NT) and (TOTAL_LEX) sums for unigram bo.
 add-pcfg-feature - for had-rules, output id\tfeats\n
+
+had-rules --pcfg=training.pcfg-counts
