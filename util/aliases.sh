@@ -19,7 +19,10 @@ rpdf() {
     scp hpc.usc.edu:$1 . && acrord32 `basename $1`
 }
 cpipe() {
-    svn commit ~/pipe/ -m "$*"
+    (pushd ~/pipe/
+
+    svn commit -m "$*"
+)
 }
 cgraehl() {
     (
