@@ -235,17 +235,16 @@ numre=re.compile(r"[0-9]")
 def maybe_num2at(s,num2at=True):
     return numre.sub('@',s)  if num2at else s
 
+# quote is quoted as """,  "" as """"". no other " are allowed. so just surround by " "
 def pcfg_quote_terminal(s,num2at=True):
     return '"'+maybe_num2at(s,num2at)+'"'
 
-def parse_sbmt_label(t,num2at=True):
-    if t.is_terminal(): pcfg_quote_terminal(t.label)
-    return t.label_lrb()
+def sbmt_lhs_label(t,num2at=True):
+    return pcfg_quote_terminal(t.label,num2at) if t.is_terminal() else t.label_lrb()
 
 #pcfg event is a nonempty list of [lhs]+[children]. this should be called on raw eng-parse, not sbmt rule lhs, which have already quoted leaves. we include terminal -> [] because we want unigram prob backoffs
-def parse_pcfg_event(t,num2at=True):
-    if t.is_terminal(): return [pcfg_quote_terminal(t.label)]
-    return [t.label_lrb()]+[parse_sbmt_label(c) for c in t.children]
+def sbmt_lhs_pcfg_event(t,num2at=True):
+    return [sbmt_lhs_label(c) for c in [t]+t.children]
 
 varre=re.compile(r"^x\d+:")
 def strip_var(l):

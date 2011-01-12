@@ -30,7 +30,7 @@ def raduparse(t):
 ### main:
 
 def print_pcfg_event(t,digit2at=True,out=sys.stdout):
-    ev=parse_pcfg_event(t,digit2at)
+    ev=sbmt_lhs_pcfg_event(t,digit2at)
 #    if ev is None: return
     out.write(event2str(ev))
     out.write("\t1\n")

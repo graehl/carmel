@@ -38,12 +38,20 @@ hadexists() {
 #    hadtest -z "$@"
 #}
 hadrm() {
+    forall hadrm1 "$@"
+}
+hadrm1() {
     if [[ $1 != - ]]  ; then
         if [ "$local" ] ; then
             rm -f "$1"
         else
             hadfs -rmr "$1"
         fi
+    fi
+}
+hadrmhad() {
+    if ! [[ $local ]] ; then
+        hadrm "$@"
     fi
 }
 hadpreview() {
@@ -79,7 +87,7 @@ hadcat() {
     if [[ $local ]] ; then
         catz "$1"
     else
-        hadfs -cat "$1/part-*"
+        hadfs -cat "$1/part-*" 2>/dev/null
     fi
 }
 hadfs() {

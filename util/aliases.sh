@@ -22,7 +22,11 @@ cpipe() {
     svn commit ~/pipe/ -m "$*"
 }
 cgraehl() {
-    svn commit ~/t/graehl/ -m "$*"
+    (
+        pushd ~/t/graehl/
+        set -x
+    svn commit  -m "$*"
+)
 }
 alias rot13="tr '[A-Za-z]' '[N-ZA-Mn-za-m]'"
 cpdir() {
