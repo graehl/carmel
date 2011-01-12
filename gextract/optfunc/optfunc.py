@@ -129,7 +129,7 @@ def resolve_args(func, argv):
         setattr(options, name, args[i])
         args[i] = None
 
-    fargs, _, _, _ = inspect.getargspec(func)
+    fargs, varargs, varkw, defaults = inspect.getargspec(func)
     if 'rest_' in fargs:
         args = filter( lambda x: x is not None, args )
         setattr(options, 'rest_', tuple(args))

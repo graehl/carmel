@@ -51,11 +51,13 @@ import optfunc
 
 default_in='-'
 default_out='-'
-
+rest_=[]
 @optfunc.arghelp('input','input file here (None = STDIN should be default in production)')
-def options(input=default_in,output=default_out,pcfg='',featname='pcfg',asprob=True,test=False):
-    if len(sys.argv)>1:
-        pcfg=sys.argv[1]
+def options(pcfg='',input=default_in,output=default_out,featname='pcfg',asprob=True,test=False,rest_=()):
+    if rest_:
+        dump('rest_=',rest_)
+        assert(len(rest_)==1)
+        pcfg=rest_[0]
 #    if test:
 #        sys.argv=sys.argv[0:1]
 #        input=test_in
