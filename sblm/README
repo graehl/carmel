@@ -1,3 +1,5 @@
+lexical items are quoted as in sbmt rules. they're lexical because they're non-variable tree leaves. but in the event file we strip off the variable prefix. so we leave the quotes to distinguish the 2 in PCFG rhs
+
 had-pcfg-probs - hadoop driver. to test: local=1 ~/blobs/sblm/latest/had-pcfg-probs 1000.eng-parse
 1000.eng-parse - some trees in ghkm-input format.
 pcfg-map - output sblm pcfg events
