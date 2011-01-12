@@ -38,7 +38,8 @@ main() {
         if [[ $nodigit2at = 1 || $digit2at = 0 ]] ; then
             atarg='--nodigit2at'
         else
-            atarg='--digit2at'
+            atarg=''
+#            atarg='--digit2at'
         fi
         predot=${predot:-$inbase}
         pre=${pre:-$predot.}
@@ -59,7 +60,15 @@ main() {
         showvars_required out
         catdiv=$bind/cat-pcfg-for-divide
 
-        infs= outfs=$out savemap=$save3 step 3 iomr-hadoop "$counted" "$out" "$catdiv $atarg $sums" NONE
+        if [[ $cleanup ]] ; then
+            hadcat "$counted" | $catdiv $atarg "$sums" > "$out"
+            hadrm "$counted"
+            if ! [[ $local ]] ; then
+                hadrm "$sums"
+            fi
+        else
+            infs= outfs=$out savemap=$save3 step 3 iomr-hadoop "$counted" "$out" "$catdiv $atarg $sums" NONE
+        fi
 
         hadpreview "$out"
     }

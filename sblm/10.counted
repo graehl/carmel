@@ -104,12 +104,12 @@
 "with"	5
 "xinhua"	2
 "year"	6
-''-0 "	2
-,-0 ,	13
--LRB--0 -LRB-	1
--RRB--0 -RRB-	1
-.-0 .	7
-:-0 ;	1
+''-0 """	2
+,-0 ","	13
+-LRB--0 "("	1
+-RRB--0 ")"	1
+.-0 "."	7
+:-0 ";"	1
 @ADJP-0-BAR HYPH-0 NNP-3	1
 @ADJP-0-BAR NNP-3 @ADJP-0-BAR	1
 @FRAG-0-BAR ,-0 @FRAG-0-BAR	1
@@ -162,94 +162,87 @@
 ADJP-0 CD-0 JJ-0	1
 ADJP-0 JJ-1 @ADJP-0-BAR	1
 ADVP-0 RB-0	3
-CC-0 and	2
-CC-0 but	2
-CD-0 1.092	1
-CD-0 130	1
-CD-0 14.7	1
-CD-0 17.8	1
-CD-0 20	1
-CD-0 20.9	1
-CD-0 23	1
-CD-0 24	1
-CD-0 3.1	1
-CD-0 444	1
-CD-0 490	1
-CD-0 74	1
-CD-0 billion	5
-CD-0 million	1
-CD-0 two	1
+CC-0 "and"	2
+CC-0 "but"	2
+CD-0 "@.@"	1
+CD-0 "@.@@@"	1
+CD-0 "@@"	4
+CD-0 "@@.@"	3
+CD-0 "@@@"	3
+CD-0 "billion"	5
+CD-0 "million"	1
+CD-0 "two"	1
 CONJP-0 RB-1 RB-1	1
-DT-0 this	1
-DT-1 a	2
-DT-1 an	1
-DT-1 the	12
+DT-0 "this"	1
+DT-1 "a"	2
+DT-1 "an"	1
+DT-1 "the"	12
 FRAG-0 NP-0 @FRAG-0-BAR	1
-HYPH-0 @-@	2
-IN-0 between	2
-IN-0 by	6
-IN-0 in	4
-IN-0 of	9
-IN-0 to	1
-IN-0 with	5
-IN-1 as	2
-IN-1 than	1
-IN-1 that	1
-JJ-0 th	1
-JJ-1 ancient	1
-JJ-1 economic	1
-JJ-1 grand	2
-JJ-1 important	1
-JJ-1 last	6
-JJ-1 thriving	1
-JJ-2 taiwan	1
-JJ-2 taiwanese	2
-JJR-0 more	1
+HYPH-0 "@-@"	2
+IN-0 "between"	2
+IN-0 "by"	6
+IN-0 "in"	4
+IN-0 "of"	9
+IN-0 "to"	1
+IN-0 "with"	5
+IN-1 "as"	2
+IN-1 "than"	1
+IN-1 "that"	1
+JJ-0 "th"	1
+JJ-1 "ancient"	1
+JJ-1 "economic"	1
+JJ-1 "grand"	2
+JJ-1 "important"	1
+JJ-1 "last"	6
+JJ-1 "thriving"	1
+JJ-2 "taiwan"	1
+JJ-2 "taiwanese"	2
+JJR-0 "more"	1
 NML-0 NNP-2 @NML-0-BAR	1
-NN-0 economy	1
-NN-0 mainland	1
-NN-0 taiwan	4
-NN-0 trade	2
-NN-0 transportation	1
-NN-0 year	6
-NN-1 business	1
-NN-1 import	1
-NN-1 industry	1
-NN-1 investment	2
-NN-1 news	2
-NN-2 end	1
-NN-2 formation	1
-NN-2 mainland	2
-NN-2 number	2
-NN-2 percent	2
-NN-2 value	3
-NN-2 volume	2
-NN-3 belt	1
-NN-3 corridor	1
-NN-3 ministry	1
-NN-3 role	1
-NN-3 surplus	1
-NN-3 value	1
-NNP-0 agency	2
-NNP-0 kong	1
-NNP-1 canal	2
-NNP-2 hong	1
-NNP-2 north	1
-NNP-2 south	1
-NNP-2 xinhua	2
-NNP-3 beijing	2
-NNP-3 february	2
-NNP-3 hangzhou	1
-NNS-0 authorities	1
-NNS-0 businesses	1
-NNS-0 dollars	5
-NNS-0 exports	1
-NNS-0 investments	2
-NNS-0 projects	1
-NNS-0 proposals	1
-NNS-0 rd	1
-NNS-0 shores	1
-NNS-0 statistics	2
+NN-0 "economy"	1
+NN-0 "mainland"	1
+NN-0 "taiwan"	4
+NN-0 "trade"	2
+NN-0 "transportation"	1
+NN-0 "year"	6
+NN-1 "business"	1
+NN-1 "import"	1
+NN-1 "industry"	1
+NN-1 "investment"	2
+NN-1 "news"	2
+NN-2 "end"	1
+NN-2 "formation"	1
+NN-2 "mainland"	2
+NN-2 "number"	2
+NN-2 "percent"	2
+NN-2 "value"	3
+NN-2 "volume"	2
+NN-3 "belt"	1
+NN-3 "corridor"	1
+NN-3 "ministry"	1
+NN-3 "role"	1
+NN-3 "surplus"	1
+NN-3 "value"	1
+NNP-0 "agency"	2
+NNP-0 "kong"	1
+NNP-1 "canal"	2
+NNP-2 "hong"	1
+NNP-2 "north"	1
+NNP-2 "south"	1
+NNP-2 "xinhua"	2
+NNP-3 "beijing"	2
+NNP-3 "february"	2
+NNP-3 "hangzhou"	1
+NNS-0 "authorities"	1
+NNS-0 "businesses"	1
+NNS-0 "dollars"	5
+NNS-0 "exports"	1
+NNS-0 "investments"	2
+NNS-0 "projects"	1
+NNS-0 "proposals"	1
+NNS-0 "rd"	1
+NNS-0 "shores"	1
+NNS-0 "statistics"	2
 NP-0 @NP-0-BAR NP-0	1
 NP-0 NPB-0	5
 NP-0 NPB-0 PP-0	2
@@ -292,7 +285,7 @@ NPB-1 NNS-0	1
 NPB-1 PRP-0	6
 NPB-1 QP-0	5
 NPB-2 NN-0 POS-0	3
-POS-0 's	3
+POS-0 "'s"	3
 PP-0 IN-0 NP-C-0	8
 PP-0 IN-0 NP-C-1	15
 PP-0 IN-1 PP-C-0	2
@@ -302,15 +295,15 @@ PP-C-0 IN-0 NP-C-1	4
 PP-C-0 TO-0 NP-C-1	1
 PP-C-0 VBN-0 PP-C-0	2
 PRN-0 @PRN-0-BAR -RRB--0	1
-PRP-0 us	6
+PRP-0 "us"	6
 PRT-0 RP-0	1
 QP-0 CD-0 CD-0	5
 QP-0 JJR-0 @QP-0-BAR	1
-RB-0 also	2
-RB-0 nowadays	1
-RB-1 not	1
-RB-1 only	1
-RP-0 about	1
+RB-0 "also"	2
+RB-0 "nowadays"	1
+RB-1 "not"	1
+RB-1 "only"	1
+RP-0 "about"	1
 S-0 NP-C-0 VP-2	5
 S-1 @S-2-BAR .-0	7
 S-C-0 NP-C-0 VP-2	1
@@ -318,30 +311,30 @@ SBAR-C-0 IN-1 S-C-0	1
 SG-0 NP-0 @SG-0-BAR	1
 SG-0 VP-1	3
 SG-C-0 VP-1	1
-TO-0 to	2
+TO-0 "to"	2
 TOP FRAG-0	1
 TOP PRN-0	1
 TOP S-1	7
 TOP SG-0	1
-VB-0 increase	1
-VBD-0 dropped	1
-VBD-0 revealed	1
-VBD-0 rose	1
-VBD-0 totaled	1
-VBD-0 was	4
-VBG-0 according	1
-VBG-0 having	2
-VBG-0 resulting	1
-VBG-0 tending	1
-VBN-0 approved	1
-VBN-0 brought	1
-VBN-0 compared	4
-VBN-0 increased	2
-VBN-0 presented	1
-VBZ-0 dollars	1
-VBZ-0 has	1
-VBZ-0 is	1
-VBZ-0 plays	1
+VB-0 "increase"	1
+VBD-0 "dropped"	1
+VBD-0 "revealed"	1
+VBD-0 "rose"	1
+VBD-0 "totaled"	1
+VBD-0 "was"	4
+VBG-0 "according"	1
+VBG-0 "having"	2
+VBG-0 "resulting"	1
+VBG-0 "tending"	1
+VBN-0 "approved"	1
+VBN-0 "brought"	1
+VBN-0 "compared"	4
+VBN-0 "increased"	2
+VBN-0 "presented"	1
+VBZ-0 "dollars"	1
+VBZ-0 "has"	1
+VBZ-0 "is"	1
+VBZ-0 "plays"	1
 VP-0 @VP-2-BAR VP-0	1
 VP-0 NNP-3 NP-C-1	1
 VP-0 VBN-0 PP-0	2
