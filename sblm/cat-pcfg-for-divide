@@ -4,7 +4,7 @@ use strict;
 
 sub usage() {
     print qq{
-usage: $0 lhs-sums-file [pcfg-events-with-counts-file or STDIN]
+usage: $0 [--[no]digit2at] lhs-sums-file [pcfg-events-with-counts-file or STDIN]
 
 output: pcfg-events file with TAB sum pasted onto end (by lhs which is first word of events). you will do division/smoothing yourself later if you like.
 
@@ -16,6 +16,17 @@ note: events with an empty rhs are backoff unigram probs (i.e. 2nd number is tot
     exit -1;
 }
 
+usage unless scalar @ARGV;
+my $a=shift @ARGV;
+my $digit2at=1;
+if ($a =~ /^--?n/) {
+    $digit2at=0;
+} elsif ($a =~ /^--?d/) {
+    $digit2at=1;
+} else {
+    unshift @ARGV,$a;
+}
+usage unless scalar @ARGV;
 my $sumsf=shift @ARGV;
 open S,'<',$sumsf or &usage($sumsf);
 my %c;

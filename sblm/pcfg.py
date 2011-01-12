@@ -229,13 +229,22 @@ class PCFG(object):
         if root is None:
             return 'pcfg_bo_NONE'
         return 'pcfg_bo_'+root
-def parse_sbmt_label(t):
-    if t.is_terminal(): return '"%s"'%t.label
+
+numre=re.compile(r"[0-9]")
+
+def maybe_num2at(s,num2at=True):
+    return numre.sub('@',s)  if num2at else s
+
+def pcfg_quote_terminal(s,num2at=True):
+    return '"'+maybe_num2at(s,num2at)+'"'
+
+def parse_sbmt_label(t,num2at=True):
+    if t.is_terminal(): pcfg_quote_terminal(t.label)
     return t.label_lrb()
 
 #pcfg event is a nonempty list of [lhs]+[children]. this should be called on raw eng-parse, not sbmt rule lhs, which have already quoted leaves. we include terminal -> [] because we want unigram prob backoffs
-def parse_pcfg_event(t):
-    if t.is_terminal(): return ['"%s"'%t.label]
+def parse_pcfg_event(t,num2at=True):
+    if t.is_terminal(): return [pcfg_quote_terminal(t.label)]
     return [t.label_lrb()]+[parse_sbmt_label(c) for c in t.children]
 
 varre=re.compile(r"^x\d+:")

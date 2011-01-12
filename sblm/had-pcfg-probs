@@ -33,7 +33,13 @@ main() {
         [[ $in ]] || usage
         inbase=${in%.eng-parse}
         [ -f $in ] || in=$inbase.eng-parse
-        showvars_optional inbase predot
+        digit2at=${digit2at:-1}
+        showvars_optional inbase predot nodigit2at
+        if [[ $nodigit2at = 1 || $digit2at = 0 ]] ; then
+            atarg='--nodigit2at'
+        else
+            atarg='--digit2at'
+        fi
         predot=${predot:-$inbase}
         pre=${pre:-$predot.}
         counted=${counted:-${pre}counted}
@@ -53,7 +59,7 @@ main() {
         showvars_required out
         catdiv=$bind/cat-pcfg-for-divide
 
-        infs= outfs=$out savemap=$save3 step 3 iomr-hadoop "$counted" "$out" "$catdiv $sums" NONE
+        infs= outfs=$out savemap=$save3 step 3 iomr-hadoop "$counted" "$out" "$catdiv $atarg $sums" NONE
 
         hadpreview "$out"
     }
