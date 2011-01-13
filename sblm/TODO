@@ -1,0 +1,21 @@
+test everything.
+
+had-* works
+add-* works
+
+what about had-rules pipeline integration? - test it, may work. argument is had-rules --pcfg=training.pcfg-counts or had-rules -p training.pcfg-counts
+
+length distribution in pcfg backoff - exponential p(stop)?
+
+unigram backoff given parent, child index -> parent,* -> *
+
+no. either you saw rewrite
+
+backoff features get fixed weight, or some fixed method?
+
+SGT? other smoothing of counts per lhs? binned counts? #1count pcfg rewrites feat?
+
+nice thing about non-tuned params: measure ppx of data
+
+validate smoothing methods using held-out trees.
+
