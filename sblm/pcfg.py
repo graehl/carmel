@@ -1,3 +1,41 @@
+#!/usr/bin/env python2.6
+"""
+a simple PCFG. more complicated than you'd think.
+
+papers: collins 97, bikel ('intricacies')
+accurate unlexicalized parsing (klein+manning)
+
+p(l->rhs|l) - but need smoothing
+
+allow unseen terminals? yes (green rules)
+unseen terminals and digit->@ trick both potentially give sum(prob)>1. but this is ok.
+
+sri ngram style backoff - most specific prob, unsmoothed (pre-discounted)? context dependent backoff cost. (use indicator feature for bo cost, but not one for discounting unsmoothed). can xform linear weighted interpolation to sri style by precomputing the sums for all non-0count events.
+
+witten-bell smoothing instead of indicators? witten-bell: c_ctx' = c_ctx/(c_ctx+k*u_ctx) where u_ctx is number of types that occur in ctx and c_ctx is the count of a particular type. k=5 in collins. actually he used c'=c(c+j+k*u), with (j,k)=(0,5) for everything, except for subcat=(5,0) and for p(w|')=(1,0).
+
+indicator features for OOV terminals, (# of digits - no thanks).
+
+allow unseen nonterminals? no (closed class). any new NT would be a bug.
+
+hard rule: 2 types of nonterminals: preterminals and regular. preterminals generate exactly a single terminal; regular NTs never generate any terminals. so backoff from preterminal l vs nt l is different
+
+backoff options:
+
+usually generate lex|preterm, but if it's a new tag for the word, backoff to unigram p(lex).
+
+order-n markov model for sequence l,r[1],r[2]...r[n],STOP. (simplest). always include l (optional: l-parent) in conditioning? always include r[1]?
+
+or choose length n given l, then choose r[1..n] indepednently or order-n
+
+remember to backoff to unigram p(nt|*) in worst case. count-based, not uniform (assumes training includes counts for all NTs).
+
+and backoff to smoothed geometric dist. p(len|l), or else histogram p(len|*) w/ recourse to smoothed geom at last resort.
+
+option: extend reach of production to height 2 when preterms are involved (i.e. treat tag/term as single node). still need same backoff (to height 1 etc)
+
+"""
+
 import re
 import tree
 from graehl import *
@@ -141,10 +179,12 @@ featspecial=re.compile(r'[=\s]')
 def escape_featurename(s):
     return featspecial.sub('_',s)
 
+
 #no smoothing yet; expect every event in rules to also occur in training data (EXCEPT GREEN RULES etc). we will return count of not-found events when we score a rule (sep. feature)
 # also note: assumes lex items can only occur under preterms, which can only have a single lex child. otherwise overstates unigram bo prob.
 total_nt="(TOTAL_NT)"
 total_lex="(TOTAL_LEX)"
+
 class PCFG(object):
     def read(self,file,pcfg_featname_pre='pcfg'):
         "set probabilities according to file lines: @ADJP-0-BAR @ADJP-0-BAR ADJP-0	6	377 (event TAB count TAB norm-lhs-sum)"
