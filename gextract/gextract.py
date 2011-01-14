@@ -215,33 +215,6 @@ def cnstr(n):
 def cnstrs(*ns):
     return map(cnstr,ns)
 
-class Histogram(object):
-    """dict counting occurrences of keys; will provide sorted list of (key,count) or output to gnuplot format"""
-    def __init__(self):
-        self.c=dict()
-    def count(self,k,d=1):
-        "by setting d to some arbitrary number, you can have any (x,y) to be graphed as a histogram or line"
-        c=self.c
-        if k in c:
-            c[k]+=d
-        else:
-            c[k]=d
-        assert(c[k]>=0)
-        return c[k]
-    def get_sorted(self):
-        "return sorted list of (key,count)"
-        return [(k,self.c[k]) for k in sorted(self.c.iterkeys())]
-    def get_binned(self,binwidth=10):
-        "assuming numeric keys, return sorted list ((min,max),count) grouped by [min,min+binwidth),[min+binwidth,min+binwidth*2) etc."
-        assert False
-    def text_gnuplot(self,binwidth=None,line=False):
-        "returns a gnuplot program that uses bars if line is False, and bins if binwidth isn't None"
-        assert binwidth is None
-
-        assert False
-    def __str__(self):
-        return str(self.get_sorted())
-
 class Counts(object):
     """track counts and sum of counts for groups on the fly.
     TODO: integerize groups (root nonterminals).

@@ -1,6 +1,7 @@
-NP-0(NN-2 ("volume") x0:NNS-0) -> "pommes" "frites" x0 ### count=3 id=122
+NP-0(NESTED(JJ("bonus") PIG("pig") NESTED(JJ("bonus") x1:NP-0)) NN-2 ("volume") x0:NNS-0) -> "pommes" "frites" x0 ### count=3 id=122
+NP-0(NESTED(JJ("bonus") PIG("pig") NESTED(JJ("bonus") x0:NP-0)) NN-2 ("volume") x1:NNS-0) -> "pommes" x1 "frites" x0 ### count=3 id=121
 NP-0(NNP-0 ("agency") NNS-0("proposals")) -> "frites" ### id=124 count=1
 NP-0(NNP-0( "agency") NNS-0("proposals")) -> "pommes" "frites" ### id=123 count=3
-NP-0(NNP-0( "agency") NNS-0("proposals")) -> "frites" ### id=124 count=1
+NP-0(NNP-0( "agency") NNS-0("proposals")) -> "frites" ### id=125 count=1
 NPB-0(NNP-0( "agency") NNS-0("proposals")) -> "pommes" "frites" ### id=126 count=3
 NPB-0(NNP-0( "agency") NNS-0("proposals")) -> "frites" ### id=127 count=1

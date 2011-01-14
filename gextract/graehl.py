@@ -20,6 +20,50 @@ class IntDict(collections.defaultdict):
     def __init__(self,*a,**kw):
         collections.defaultdict.__init__(self,int,*a,**kw)
 
+
+class Histogram(object):
+    """dict counting occurrences of keys; will provide sorted list of (key,count) or output to gnuplot format"""
+    def __init__(self):
+        self.c=dict()
+        self.N=0.0 # total number of counts
+    def count(self,k,d=1):
+        "by setting d to some arbitrary number, you can have any (x,y) to be graphed as a histogram or line"
+        self.N+=d
+        c=self.c
+        if k in c:
+            c[k]+=d
+        else:
+            c[k]=d
+        assert(c[k]>=0)
+        return c[k]
+    def prob(self,k):
+        return self.c.get(k,0.)/self.N
+    def get_sorted(self):
+        "return sorted list of (key,count)"
+        return [(k,self.c[k]) for k in sorted(self.c.iterkeys())]
+    def get_binned(self,binwidth=10):
+        "assuming numeric keys, return sorted list ((min,max),count) grouped by [min,min+binwidth),[min+binwidth,min+binwidth*2) etc."
+        assert False
+    def text_gnuplot(self,binwidth=None,line=False):
+        "returns a gnuplot program that uses bars if line is False, and bins if binwidth isn't None"
+        assert binwidth is None
+        assert False
+    def __str__(self):
+        return str(self.get_sorted())
+
+class LengthDistribution(object):
+    def __init__(self,geometric_backoff=1.0):
+        self.hist=Histogram()
+        self.sum_length=0 # for computing mean length
+        #note: shifted geometric distribution - if p(STOP)=p, then E_p[length]=1/p. this is how we will fit the geometric backoff.
+        self.bo=geometric_backoff
+    def count(self,length,d=1):
+        self.sum_length+=d*length
+        self.hist.count(length,d)
+    def fit_geometric(shifted=True): #
+        "return p so that the mean value is the same as histogram - https://secure.wikimedia.org/wikipedia/en/wiki/Geometric_distribution - shifted means support is 1,2,... = avg. number of trials until success. unshifted means 0,... = avg. number of failures before success"
+        return len(self.c)/self.sum
+
 def mismatch_text(xs,ys,xname='xs',yname='ys',pre='mismatch: '):
     if xs==ys:
         return ''
