@@ -1,4 +1,10 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
+upa() {
+    (pushd ~/t/graehl/util;
+        svn update *.sh
+        )
+    sa
+}
 coma() {
     (pushd ~/t/graehl/util;
         svn commit *.sh -m sh
