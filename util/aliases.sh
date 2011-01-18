@@ -1,4 +1,9 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
+coma() {
+    (pushd ~/t/graehl/util;
+        svn commit *.sh -m sh
+        )
+}
 upd() {
     for f; do
         blob_update $f
@@ -2650,6 +2655,9 @@ tohost() {
     shift
     host=$host forall tohost1 "$@"
 }
+fromhpc() {
+    fromhost $HPCHOST "$@"
+    }
 tonlg1() {
     (
         set -e
