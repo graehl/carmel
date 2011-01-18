@@ -1,4 +1,17 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
+HPF="$USER@$HPCHOST"
+browser=${browser:-chrome}
+
+safepath() {
+    if [[ $ONCYGWIN ]] ; then
+        cygpath -m -a "$@"
+    else
+        abspath "$@"
+    fi
+    }
+web() {
+        $browser file://$(safepath "$@")
+}
 upa() {
     (pushd ~/t/graehl/util;
         svn update *.sh
@@ -2663,6 +2676,9 @@ tohost() {
 }
 fromhpc() {
     fromhost $HPCHOST "$@"
+    }
+fromhpc1() {
+    fromhost1 $HPCHOST "$@"
     }
 tonlg1() {
     (
