@@ -2642,7 +2642,7 @@ fromhost1() {
         cd
     mkdest "$@"
     user=${user:-`userfor $host`}
-    echo scp -r "$user\@$host:$1" "$dest"
+    echo scp -r "$user@$host:$1" "$dest"
     scp -r $user@$host:"$1" "$dest"
 )
 }
@@ -2678,7 +2678,7 @@ fromhpc() {
     fromhost $HPCHOST "$@"
     }
 fromhpc1() {
-    fromhost1 $HPCHOST "$@"
+    host=$HPCHOST fromhost1 "$@"
     }
 tonlg1() {
     (

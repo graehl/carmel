@@ -1,0 +1,117 @@
+Windows Registry Editor Version 5.00
+;
+; Use at your OWN RISK. The Windows Registry is a compendium of bad
+; ideas implemented on top of bad code. Assume the worst will happen.
+;
+; This file, when properly modified for your environment, can help you
+; use Emacs (any variety!) with Microsoft Windows. You can even use it
+; with gnuserve (gnuclientw.exe) if you change the emacsclientw to
+; gnuclientw.
+;
+; NOTE: Look for every line with a path and change it to suit your
+; needs. My path is not your path. Do not try to walk it!
+;
+; - Nelson Ingersoll
+
+;
+; This puts "emacs" into the right-click menu in Windows Explorer.
+;
+[HKEY_CLASSES_ROOT\*\shell]
+@=""
+[HKEY_CLASSES_ROOT\*\shell\emacs]
+@="&emacs"
+[HKEY_CLASSES_ROOT\*\shell\emacs\command]
+@="C:\\Program Files (x86)\\emacs-23.2\\bin\\emacsclientw.exe -n \"%1\""
+
+;
+; File types to be opened by Emacs. By defining the files this way,
+; two things occur.
+;
+; 1. Double clicking the file or saying OPEN in a file dialog uses
+; Emacs, via emacsclientw.exe, to open the file.
+;
+; 2. The EmacsFile entry, below, also has an associated icon which
+; these will display, as appropriate, in file lists like Windows
+; Explorer.
+;
+[HKEY_CLASSES_ROOT\.]
+@="EmacsFile"
+EditFlags=0x10000
+[HKEY_CLASSES_ROOT\.bas]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.cc]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.cls]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.cpp]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.cxx]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.dcl]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.el]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.h]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.hpp]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.hxx]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.idl]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.java]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.mak]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.pas]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.pm]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.sgml]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.sql]
+"PerceivedType"="text"
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.tex]
+@="EmacsFile"
+[HKEY_CLASSES_ROOT\.text]
+@="EmacsFile"
+"PerceivedType"="text"
+
+;
+; This defines the value of the data item "emacsclientw.exe"
+;
+[HKEY_CLASSES_ROOT\Applications\emacsclientw.exe]
+[HKEY_CLASSES_ROOT\Applications\emacsclientw.exe\shell]
+[HKEY_CLASSES_ROOT\Applications\emacsclientw.exe\shell\open]
+[HKEY_CLASSES_ROOT\Applications\emacsclientw.exe\shell\open\command]
+@="C:\\Program Files (x86)\\emacs-23.2\\bin\\emacsclientw.exe -n \"%1\""
+
+;
+; What "EmacsFile" means. I.e. use emacsclientw.exe to open the file.
+;
+[HKEY_CLASSES_ROOT\EmacsFile]
+@="Emacs File"
+EditFlags=0x10000
+; don't warn about downloaded files being malicious.
+[HKEY_CLASSES_ROOT\EmacsFile\DefaultIcon]
+@="C:\\Program Files (x86)\\emacs-23.2\\bin\\emacsclientw.exe,0"
+[HKEY_CLASSES_ROOT\EmacsFile\shell]
+[HKEY_CLASSES_ROOT\EmacsFile\shell\open]
+[HKEY_CLASSES_ROOT\EmacsFile\shell\open\command]
+@="C:\\Program Files (x86)\\emacs-23.2\\bin\\emacsclientw.exe -n \"%1\""
+
+;
+; Anything defined as a "txtfile" is also treated to Emacs!
+;
+[HKEY_CLASSES_ROOT\txtfile\shell]
+@=""
+[HKEY_CLASSES_ROOT\txtfile\shell\open]
+[HKEY_CLASSES_ROOT\txtfile\shell\open\command]
+@="C:\\Program Files (x86)\\emacs-23.2\\bin\\emacsclientw.exe -n \"%1\""
