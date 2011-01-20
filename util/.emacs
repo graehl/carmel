@@ -4105,3 +4105,4 @@ loaded as such.)"
  '(comint-input-ignoredups t)           ; no duplicates in command history
  '(comint-completion-addsuffix t)       ; insert space/slash after file completion
  )
+(remove-hook 'kill-buffer-query-functions 'server-kill-buffer-query-function)
