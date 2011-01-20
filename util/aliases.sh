@@ -10,7 +10,7 @@ safepath() {
     fi
     }
 web() {
-        $browser file://$(safepath "$@")
+        $browser "file://$(safepath "$@")"
 }
 upa() {
     (pushd ~/t/graehl/util;
