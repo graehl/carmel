@@ -1,5 +1,5 @@
 #!/bin/bash
 . ~graehl/isd/hints/bashlib.sh
 unset PBS_O_WORKDIR
-echo $d/giraffe.david $(realpath "$@")
-exec $d/giraffe.david $(realpath "$@")
+echo $d/giraffe.0.3 $(realpath "$@")
+exec $d/giraffe.0.3 $(realpath "$@")

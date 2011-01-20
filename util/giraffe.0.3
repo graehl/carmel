@@ -1,0 +1,491 @@
+#!/usr/bin/env perl 
+#
+## giraffe.pl
+## Alex Fraser (fraser at isi dot edu)
+## Jens V&ouml;ckler (voeckler at isi dot edu)
+## Jason Riesa (riesa at isi dot edu) 01-19-11: fixed --cpus bug
+#
+use 5.006;
+use strict;
+use Carp;
+use Getopt::Long;
+use Cwd qw(cwd);
+use Sys::Hostname ();
+
+## Set this to zero if your shell is Bourne, or one for C-shell family 
+# Note: You really don't need to set this one unlike the original script.
+# Note: Only set, if auto-detect consistently fails (uncomment one):
+#$main::use_csh = 0; # Bourne-style shells (sh,ash,jsh,ksh,bash)
+#$main::use_csh = 1; # C-style shells (csh,tcsh,ntcsh)
+
+my $debug = 0;
+my $grmblftz = 0;
+
+sub usage {
+    # purpose: print usage and exit with failure
+    #
+    print << "EOF";
+Usage: $0 [options] JOBFILE [sleep]
+Runs m jobs across a set of n PBS-allocated job-nodes. 
+
+Optional arguments:
+ --list x,y,z         execute specific job numbers (NOTE: untested)
+ --start m --end n    execute jobs m through n, inclusive. (NOTE: untested)
+ --part i --of i      ??? (ask Alex)
+ --debug              increase verbosity level
+ --cpus               allocate CPUs instead of machines. This may fill
+                      multiple jobs onto the same machine. Process on each node
+                      share physical memory, and all processes on all nodes share 
+                      the same /scratch space. 
+		      NOTE: Will use PBS-allocated CPUs as determined by the
+		      -l nodes=n:ppn=m PBS option.
+ --grmblftz           if set, enforce undef LANG and LC_ALL=C. This is
+                      important, if you call sort on chinese. 
+ --exclude-master     exclude master node, because PVFS will keep it busy
+ -e|--errexit         if set, exit immediatly on a failed child with failure
+
+EOF
+   exit 1;
+}
+
+sub stamp(;$) {
+    # purpose: format naive time stamp w/o requiring POSIX module
+    # paramtr: $now (opt. IN): alternative epoch seconds
+    # returns: formatted time stamp
+    #
+    my @now = localtime( shift || time() );
+    $now[5] += 1900;
+    $now[4] += 1;
+    sprintf( '%04u-%02u-%02u %02u:%02u:%02u', @now[5,4,3,2,1,0] );
+}
+
+sub pbs_jobid() {
+    # purpose: determine the PBS job identifier
+    # returns: job id or undef
+    #
+    $ENV{'PBS_JOBID'};
+}
+
+sub pbs_workdir() {
+    # purpose: determine the PBS job working directory
+    # returns: value of workdir, or current working directory
+    #
+    $main::workdir = cwd() unless defined $main::workdir; # singleton
+    $ENV{'PBS_O_WORKDIR'} || $main::workdir;
+}
+
+sub pbs_tmpdir(;$) {
+    # purpose: determine PBS-created temporary directory
+    # paramtr: $overide (opt. IN): alternate directory, if missing TMPDIR
+    # returns: value for tmpdir, or overide, or cwd (in that order)
+    #
+    my $overide = shift;
+    $ENV{TMPDIR} || $overide || pbs_workdir();
+}
+
+sub get_cmd_string($$) {
+    # purpose: Construct a job execution string
+    # paramtr: $machine (IN): job node to execute on
+    #          $job (IN): job specification to execute
+    # globals: $USING_CSH (IN): type of user's login shell
+    #          $debug (IN): debug state
+    # warning: YOU will have to do the proper job command quoting!!!
+    # effects: Reflects command string onto stderr in debug mode
+    # returns: executable command to run job remotely 
+    #
+    my $machine = shift || croak "get_cmd_string needs a machine name";
+    my $job = shift || croak "get_cmd_string needs a job specification";
+    my $pbs_jobid = pbs_jobid();
+    my $pbs_workdir = pbs_workdir();
+    my $tmpdir = pbs_tmpdir($pbs_workdir);
+
+    my ($cmd);
+    if ( defined $pbs_jobid ) {
+	# FIXME: Use /usr/bin/env A=b C=d $job and get rid of $main::use_csh
+	if ( $main::use_csh ) {
+	    $cmd = "ssh -x $machine \"setenv TMPDIR $tmpdir;";
+	    $cmd .= "setenv PBS_JOBID $pbs_jobid;";
+	    $cmd .= 'unset LANG;setenv LC_ALL C;' if $grmblftz;
+	} else {
+	    $cmd = "ssh -x $machine \"TMPDIR=$tmpdir;PBS_JOBID=$pbs_jobid;";
+	    if ( $grmblftz ) {
+		$cmd .= 'unset LANG;LC_ALL=C;export TMPDIR PBS_JOBID LC_ALL;';
+	    } else {
+		$cmd .= 'export TMPDIR PBS_JOBID;';
+	    }
+	}
+	$cmd .= "cd $pbs_workdir;$job\"";
+    } else {
+	# FIXME: no TMPDIR? 
+	warn "Warning: Unable to set environment variables!\n";
+	$cmd = "ssh -x $machine \"cd $pbs_workdir;$job\"";
+    }
+
+    syswrite( STDERR, "# @{[stamp()]} $cmd\n" ) if $debug;
+    $cmd;
+}
+
+sub spawn($$;$) {
+    # purpose: run a remote command in a child process
+    # paramtr: $machine (IN): where to run
+    #          $job (IN): what to run
+    #          $sleep (opt. IN): amount to sleep before execution
+    # returns: pid of child process
+    #
+    my $machine = shift || croak;
+    my $job = shift || croak;
+    my $sleep = shift || 0;
+
+    my $pid = fork;
+    die "FATAL: [$$] fork: $!\n" unless defined $pid;
+
+    unless ( $pid ) {
+	# child
+	sleep($sleep) if $sleep;
+	my $cmd = get_cmd_string($machine, $job);
+	exec $cmd;		# propagates errors
+	exit 127;		# should never be reached
+    }
+
+    $pid;			# parent returns pid
+}
+
+sub hostname {
+    # purpose: determine short hostname (no domain)
+    # returns: short hostname
+    #
+    my $host = $ENV{HOSTNAME} || `uname -n`;
+    $host =~ s/[\015\012]+$//;
+    $host =~ s/\..*$//;
+    $host;
+}
+
+sub get_responding_machines($$$$) {
+    # purpose: Obtain list of dependable hosts to run jobs on
+    # paramtr: $no_scratch (IN): if set, omit host verification
+    #          $broken_processor_tolerance (IN): How many bad permissable
+    #          Note: This actually (always) refers to machines, not cpus
+    #          $p_cpus (IN): if true, return cpus, not machines
+    # returns: list of good machines (or nodes) with intact PVFS
+    #
+    my $no_scratch = shift;
+    my $broken_processor_tolerance = shift;
+    my $p_cpus = shift || 0;	# optional
+    my $exclude_self = shift || 0; # optional
+
+    ## obtain list of unique hostnames
+    local(*NODEFILE);
+    my $nodefile_fn = $ENV{PBS_NODEFILE} || 
+	die "PBS_NODEFILE environment variable is not defined\n";
+    die "PBS_NODEFILE is not readable\n" unless -r $nodefile_fn;
+    open( NODEFILE, "<$nodefile_fn" ) || 
+	die "ERROR: open $nodefile_fn: $!\n";
+    my %machines = ();
+    my @pbs_cpus = ();
+    while ( <NODEFILE> ) {
+	s/[\015\012]*$//;
+	warn "# $nodefile_fn [$.] $_\n" if $debug > 1;
+	die "Found whitespace in node file [$.]: |$_|\n" if /\s+/;
+	$machines{$_} = 1;
+	push( @pbs_cpus, $_ );
+    }
+    close(NODEFILE) || die "close $nodefile_fn: $!\n";
+    my @machines = sort keys %machines;
+    my $num_processors_allocated = scalar(@machines);
+
+    my @cpus = ();
+    unless ( $no_scratch ) {
+	warn "# @{[stamp]} Sanity checking PBS setup\n";
+	my $scratch = '/scratch';
+	$scratch = '.' unless -e '/scratch';
+
+	foreach my $m ( @machines ) {
+	    my $fn = "$scratch/tmp_kill_testing_$m";
+	    if ( -e $fn ) {
+		unlink $fn || warn "Warning: rm $fn: $!\n";
+	    }
+	}
+
+	## sequentially command machines to mkdir (this is atomic on NFS?)
+	my %tested_machine;
+	foreach my $m (@machines) {
+	    next if exists $tested_machine{$m};
+	    $tested_machine{$m} = 1;
+
+	    # OLD: note that we don't put pbs_workdir here
+	    # NEW: copy cpuinfo so we can detect real cpus not what PBS
+	    # deigns to hand down
+	    my $job = "cp /proc/cpuinfo $scratch/tmp_kill_testing_$m";
+	    if ( 1 ) {
+		# use consistency
+		my $pid = spawn( $m, $job );
+		waitpid( $pid, 0 ) == $pid || 
+		    warn "WARNING: Unable to reap process $pid: $!\n";
+	    } else {
+		# use legibility
+		my $cmd = get_cmd_string($m, $job);
+		system "$cmd";
+	    }
+	}
+
+	# wait for NFS to catch up, this takes ridiculously long at HPC
+	# (this will crash if you set it to ? seconds!)
+	# FIXME: Try issuing a NFS-sync-forcing statement like
+	# (a) lock and unlock (which may block stupid Linux kernels)
+	# (b) touch command utime(2)
+	sleep(30) unless -e "/scratch";
+
+	# check files once for each processor (decrement so we can
+	# remove from list)
+	my $broken_processors = 0;
+	for ( my $decr = @machines-1; $decr >= 0; $decr-- ) {
+	    my $m = $machines[$decr];
+	    my $fn = "$scratch/tmp_kill_testing_$m";
+	    if ( -e $fn ) {
+		open( C, "<$fn" ) || die "FATAL: open $fn: $!\n";
+		while ( <C> ) {
+		    push( @cpus, $m ) if /^processor\s+/;
+		}
+		close C;
+	    } else {
+		warn "WARNING: machine $m did not respond\n";
+		$broken_processors++;
+		splice(@machines, $decr, 1);
+	    }
+	}
+
+	if ( $p_cpus ) {
+	    warn( "# @{[stamp]} PBS gave us ", @pbs_cpus+0, 
+		  " CPUs, but found ", @cpus+0, " CPUs\n" );
+	}
+
+	if ( $exclude_self ) { 
+	    my $self = Sys::Hostname::hostname();
+	    $self .= s/\..*$//;# cut off domain
+
+	    warn( "# @{[stamp]} removing $self from list\n" );
+	    @cpus = grep { index($_,$self) != 0 } @cpus;
+	    @machines = grep { index($_,$self) != 0 } @machines;
+	}
+
+	# are we OK?
+	if ( $broken_processors > 0 ) {
+	    # FIXME: Isn't this a redundant if construct that can be 
+	    # super-ceded by the next construct? 
+	    if ( $broken_processor_tolerance == 0 ) {
+		warn "FATAL: requested $num_processors_allocated processors but $broken_processors processors did not respond\n";
+		warn "WARNING: sleeping 120 before crashing\n";
+		sleep(120);
+		die "\n";
+	    }
+
+	    my $allowable_broken_processors = int($num_processors_allocated * $broken_processor_tolerance);
+	    if ( $broken_processors > $allowable_broken_processors ) {
+		warn "FATAL: requested $num_processors_allocated processors but $broken_processors processors did not respond, this exceeds max allowable of $allowable_broken_processors\n";
+		warn "WARNING: sleeping 120 before crashing\n";
+		sleep(120);
+		die "\n";
+	    }
+	}
+
+	# delete test files
+	foreach my $m ( keys %tested_machine ) {
+	    my $fn = "$scratch/tmp_kill_testing_$m";
+	    if ( -e $fn ) {
+		unlink $fn || warn "Warning: rm $fn: $!\n";
+	    }
+	}
+	warn "# @{[stamp]} Done with PBS sanity checks\n";
+    } else {
+	@cpus = @pbs_cpus;
+    }
+
+    $p_cpus ? @pbs_cpus : @machines;
+}
+
+#
+# --- main ------------------------------------------------------
+#
+usage() unless @ARGV;
+
+my $my_start;
+my $my_end;
+my $comma_list;
+my $my_part;
+my $my_of;
+my $tolerance = 0;
+my $no_scratch = 0;
+my $p_cpus = 0;
+my $errexit = 0;
+my $exclude_self = 0; 
+GetOptions( 'start:i' => \$my_start
+	  , 'end:i' => \$my_end
+	  , 'list:s' => \$comma_list
+          , 'part:i' => \$my_part
+          , 'of:i' => \$my_of
+	  , 'help|h' => \&usage
+	  , 'debug|d+' => \$debug
+	  , 'cpus' => \$p_cpus
+	  , 'grmblftz!' => \$grmblftz
+	  , 'exclude-master|exclude-self|exclude!' => \$exclude_self
+	  , 'errexit|e' => \$errexit
+          , 'broken_processor_tolerance:s' => \$tolerance
+          , 'no_scratch' => \$no_scratch )
+    || usage();
+
+# remaining arguments
+my $job_fn = shift || usage();
+my $sleep_seconds = shift || 0;
+my $what = $p_cpus ? 'CPUs' : 'machines';
+
+# sanity checks
+if ( defined($my_part) ^ defined($my_of) ) {
+    die "FATAL: You must define both, --part and --of\n";
+}
+
+unless ( defined $main::use_csh ) {
+    # auto-detect account login shell
+    $main::use_csh = ( ( (getpwuid($>))[8] || $ENV{SHELL} ) =~ /csh$/ )+0;
+    warn "# @{[stamp]} USING_CSH=$main::use_csh\n";
+}
+
+# PBS-level sanity checks
+warn "WARNING: PBS_JOBID is not defined, not passing to jobs\n"
+    unless defined pbs_jobid();
+
+if ( exists $ENV{'PBS_O_WORKDIR'} ) {
+    my $here = $ENV{'PBS_O_WORKDIR'};
+    chdir($here) || die "FATAL: chdir $here: $!\n";
+} else {
+    my $here = pbs_workdir();
+    warn "WARNING: PBS_O_WORKDIR is not defined, using $here\n";
+}
+
+# must come after PBS_O_WORKDIR
+if ( $job_fn ne '-' ) {
+    die "FATAL: job file $job_fn does not exist\n" 
+	unless -e $job_fn;
+    die "FATAL: job file $job_fn is not readable\n"
+	unless -r $job_fn;
+}
+
+# read full jobs file into memory (sigh)
+warn "# @{[stamp()]} reading from $job_fn\n" if $debug;
+open( JOBS, "<$job_fn" ) ||
+    die "ERROR: open $job_fn: $!\nPWD is $ENV{PWD}\n";
+
+my @all_jobs;
+while ( <JOBS> ) {
+    print STDERR "# $.: $_" if ( $debug > 1 );
+    next if /^\#/;		# skip comments
+    chomp;
+    push( @all_jobs, $_ );
+}
+warn "# @{[stamp()]} found ", @all_jobs+0, " total jobs in $. total lines\n"
+    if $debug;
+close(JOBS);
+
+warn "WARNING: TMPDIR is not defined, passing pbs_workdir to jobs\n"
+    unless exists $ENV{TMPDIR};
+
+my @machines = get_responding_machines( $no_scratch, $tolerance, $p_cpus, $exclude_self );
+warn "# @{[stamp]} Found ", @machines+0, " usable $what\n";
+
+
+
+
+my %desired_jobs;
+if (defined($comma_list)) {
+    my @work = split(',', $comma_list);
+    for (my $i = 0; $i < @work; $i++) {
+	my $forced_int = $work[$i]*1.0;
+	$desired_jobs{$forced_int} = 1;
+    }
+}
+
+if ( defined $my_part && defined $my_of ) {
+    my $total_jobs = @all_jobs;
+    
+    if ($my_part == 1) {
+	$my_start = 1;
+    } else {
+	$my_start = int( ($my_part-1) * $total_jobs / $my_of) + 1;
+    }
+
+    if ($my_part == $my_of) {
+	$my_end = $total_jobs;
+    } else {
+	$my_end = int( $my_part * $total_jobs / $my_of);
+    }
+
+    print STDERR "processing job numbers $my_start to $my_end\n";
+}
+
+my @jobs;
+my $job_line_num = 0;
+foreach my $job ( @all_jobs ) {
+    $job_line_num++;
+
+    if (defined($comma_list)) {
+	next unless exists $desired_jobs{$job_line_num};
+    }
+    if (defined($my_start) and $my_start > $job_line_num) {
+	next;
+    }
+    if (defined($my_end) and $my_end < $job_line_num) {
+	last;
+    }
+    push( @jobs, $job );
+}
+close(JOBS);
+warn "# @{[stamp()]} found ", @jobs+0, " commands in $job_line_num lines\n"
+    if $debug;
+
+my %pid_to_machine;
+warn "# @{[stamp()]} Starting user processes\n";
+my $nkids=0;
+my $job_index = -1;
+for ( my $i = 0; $i < @machines; $i++ ) {
+    my $machine = $machines[$i];
+    last unless defined $jobs[$i];
+
+    my $job = $jobs[$i];
+    my $pid = spawn( $machine, $job, $sleep_seconds*$nkids );
+    $pid_to_machine{$pid} = $machine;
+    $nkids++;
+}
+
+my $next_job = scalar @machines;
+print STDERR "# @{[stamp()]} Created $nkids child processes\n";
+
+my $errors = 0;
+while ( $nkids > 0 ) { 
+    my $finished_pid = wait;
+    my $status = $?;
+    $nkids--;
+    my $machine = $pid_to_machine{$finished_pid};
+    ++$errors if $status; 
+
+    if ( $next_job < @jobs ) {
+	my $job = $jobs[$next_job];
+	$next_job++;
+	my $pid = spawn( $machine, $job );
+	$pid_to_machine{$pid} = $machine;
+	$nkids++;
+	print STDERR "# @{[stamp()]} ";
+    } else {
+	print STDERR "# @{[stamp()]} No job for $machine, ";
+    }
+    
+    print STDERR "rc=", $status >> 8, "/", $status & 127, ', ';
+    print STDERR "$nkids active processes";
+
+    if ( @jobs - $next_job > 0 ) {
+	print STDERR ", ", scalar(@jobs)-$next_job, " jobs left";
+    }
+    print STDERR "\n";
+    last if ( $errors && $errexit ); 
+}
+
+print STDERR "# @{[stamp()]} DONE, $errors ERRORS\n";
+exit( $errors ? 1 : 0 );
