@@ -40,7 +40,7 @@
 
 using namespace graehl;
 
-#define CARMEL_VERSION "6.8"
+#define CARMEL_VERSION "6.9"
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -1418,14 +1418,10 @@ main(int argc, char *argv[]){
                 break;
             }
 
-            *line_in >> ws;
-            getline(*line_in,buf);
-
-            if ( !*line_in )
+            //*line_in >> ws; // changed in Carmel 6.9 - don't skip empty lines; we want to treat them as the same as a line with *e* on it (empty string)
+            if (!getline(*line_in,buf))
                 goto fail_ntarget;
-
-//            if ( input_lineno != 0 )                chain[nTarget].~WFST(); // we do this at the e
-            int length ;
+            int length;
             if (flags['P']){ // need a permutation lattice instead
                 PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
             } else { // no permutation, just need input acceptor
@@ -1569,7 +1565,8 @@ main(int argc, char *argv[]){
             result->listAlphabet(cout, 0);
         } else if ( flags['y'] ) {
             result->listAlphabet(cout, 1);
-        } else if ( flags['c'] ) {
+        }
+        if ( flags['c'] ) {
             cm.stats(cout,result,"result");
         }
 
@@ -1855,7 +1852,7 @@ void usageHelp(void)
     cout << "\n-?\t\tcache EM derivations in memory for faster iterations";
     cout << "\n-:\t\tcache em derivations including reverse structure (faster but uses even more memory)";
 
-    cout << "\n-= 2.0\t\traise weights to 2.0th power, *after* normalization.\n";
+    cout << "\n-= 2.0\t\traise weights to 2.0th power, *after* normalization. e.g. -= 0 removes all weights\n";
     cout << "\n\n";
     cout << "some formatting switches for paths from -k or -G:\n\t-I\tshow input symbols ";
     cout << "only\n\t-O\tshow output symbols only\n\t-E\tif -I or -O is speci";

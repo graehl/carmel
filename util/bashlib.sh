@@ -6,7 +6,18 @@ WHOAMI=`whoami`
 HOST=${HOST:-$(hostname)}
 export TEMP=${TEMP:-/tmp}
 export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
-
+wordsn() {
+    for i in $(seq 1 ${2:-1}); do
+        echo -n "$1 "
+    done
+    echo
+}
+repn() {
+    for i in $(seq 1 ${2:-1}); do
+        echo -n "$1"
+    done
+    echo
+}
 hadlsr() {
     hadfs -lsr "$@"
 }
