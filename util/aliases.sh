@@ -2,6 +2,16 @@ libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
 
+buildpypy() {
+    (set -e
+        #http://codespeak.net/pypy/dist/pypy/doc/getting-started-python.html
+        opt=jit
+        opt=2
+        cd pypy/translator/goal
+        python translate.py --opt=$opt targetpypystandalone.py
+        ./pypy-c --help
+        )
+}
 safepath() {
     if [[ $ONCYGWIN ]] ; then
         cygpath -m -a "$@"
