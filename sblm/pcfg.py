@@ -40,6 +40,11 @@ import re
 import tree
 from graehl import *
 from dumpx import *
+
+def raduparse(t):
+    t=radu2ptb(t)
+    return tree.str_to_tree(t)
+
 def scan_sbmt_lhs(tokens,pos):
     "return (t,pos') with pos' one past end of recognized t"
 

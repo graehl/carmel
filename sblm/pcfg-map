@@ -23,9 +23,6 @@ from graehl import *
 from dumpx import *
 from pcfg import *
 
-def raduparse(t):
-    t=radu2ptb(t)
-    return tree.str_to_tree(t)
 
 ### main:
 
