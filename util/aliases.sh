@@ -1,7 +1,12 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
-
+tohpc() {
+    cp2 $HPCHOST "$@"
+}
+cp2hpc() {
+    cp2 $HPCHOST "$@"
+}
 buildpypy() {
     (set -e
         #http://codespeak.net/pypy/dist/pypy/doc/getting-started-python.html
