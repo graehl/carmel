@@ -1,0 +1,17 @@
+#!/usr/bin/env python2.6
+#-*- python -*-
+
+# using backoff.py toolkit (should eventually allow mapreduce) for training and evaluating a simple PCFG sblm
+
+import os,sys
+sys.path.append(os.path.realpath(os.path.dirname(sys.argv[0])))
+
+from graehl import *
+from dumpx import *
+from pcfg import *
+from backoff import *
+
+class PCFG(Model):
+    pass
+
+optfunc.main(backoff_main_opts)
