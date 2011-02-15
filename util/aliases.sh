@@ -1841,7 +1841,7 @@ function sbmt_build
 {(
 echo2 sbmt_build "$@"
 branch=${branch:-trunk}
-cd $SBMT_BASE/branch
+cd $SBMT_BASE/$branch
 local mycflags
 if [ "$1" ] && [ ! -d "$1" ] ; then
  echo adding to CFLAGS - you should probably export reconfig=1: $1
@@ -1908,7 +1908,8 @@ popd
 done
 )}
 
-SBMTALL="RuleReader sbmt_decoder itg-binarizer utilities"
+#RuleReader
+SBMTALL="sbmt_decoder itg-binarizer utilities"
 sbmt_static_build() {
  makeargs=LDFLAGS+=-all-static sbmt_build "$@"
 }

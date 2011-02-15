@@ -40,6 +40,7 @@ import re
 import tree
 from graehl import *
 from dumpx import *
+from ngram import *
 
 def raduparse(t):
     t=radu2ptb(t)
@@ -184,6 +185,12 @@ featspecial=re.compile(r'[=\s]')
 def escape_featurename(s):
     return featspecial.sub('_',s)
 
+class sblm_bigram(object):
+    start_parent_pre='P='
+    end_parent_pre='/'+start_parent_pre
+    def __init__(self,order=2):
+        self.order=order
+        self.ng=ngram(order)
 
 #no smoothing yet; expect every event in rules to also occur in training data (EXCEPT GREEN RULES etc). we will return count of not-found events when we score a rule (sep. feature)
 # also note: assumes lex items can only occur under preterms, which can only have a single lex child. otherwise overstates unigram bo prob.
@@ -308,3 +315,4 @@ def lhs_label(t):
 def lhs_pcfg_event(t):
     assert(not t.is_terminal())
     return [t.label_lrb()]+[lhs_label(c) for c in t.children]
+
