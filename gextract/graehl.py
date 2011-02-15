@@ -7,6 +7,9 @@ import sys,re,random,math,os,collections
 
 from itertools import izip
 
+def intern_tuple(seq):
+    return tuple(intern(x) for x in seq)
+
 class RDict(dict):
     """perl's autovivification for dict of dict of ..."""
     def __getitem__(self, item):
@@ -588,12 +591,18 @@ def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private
     return [(a,b) for (a,b) in avs if not ((skip_callable and callable(b)) or (types is not None and type(b) not in types))]
     #+[(i,obj[i]) for i in indices]
 
-def attr_str(obj,names=None,types=pod_types):
-    "return string: a1=v1 a2=v2 for attr_pairlist"
-    return pairlist_str(attr_pairlist(obj,names,types))
+import pprint
 
-def pairlist_str(pairlist):
+def attr_str(obj,names=None,types=pod_types,pretty=True):
+    "return string: a1=v1 a2=v2 for attr_pairlist"
+    return pairlist_str(attr_pairlist(obj,names,types,True,True),pretty)
+
+def pairlist_str(pairlist,pretty=True):
+    if pretty: pairlist=[(a,pprint.pformat(b,1,80,3)) for (a,b) in pairlist]
     return ' '.join(["%s=%s"%p for p in pairlist])
+
+def obj2str(obj,names=None,types=pod_types,pretty=True):
+    return '[%s %s]'%(obj.__class__.__name__,attr_str(obj,names,types,pretty))
 
 def writeln(line,file=sys.stdout):
     f.write(f)
@@ -688,6 +697,11 @@ def span_str(s):
         return "[]"
     return "[%d,%d]"%s
 
+import string
+d2at_trans=string.maketrans('0123456789','@@@@@@@@@@')
+def digit2at(s):
+    return s.translate(d2at_trans)
+
 
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
 #radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')
@@ -706,3 +720,5 @@ def radu2ptb(t,strip_head=True):
     t=sym_rrb.sub(rrb_repl,t)
     return t
 
+def shellquote(s):
+    return "'" + s.replace("'", "'\\''") + "'"
