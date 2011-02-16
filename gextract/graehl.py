@@ -7,6 +7,11 @@ import sys,re,random,math,os,collections
 
 from itertools import izip
 
+def is_iter(x):
+    try: it = iter(x)
+    except TypeError: return False
+    return True
+
 def intern_tuple(seq):
     return tuple(intern(x) for x in seq)
 
