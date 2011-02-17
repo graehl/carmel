@@ -42,9 +42,9 @@ from graehl import *
 from dumpx import *
 from ngram import *
 
-def raduparse(t):
+def raduparse(t,intern_labels=False):
     t=radu2ptb(t)
-    return tree.str_to_tree(t)
+    return tree.str_to_tree(t,intern_labels=intern_labels)
 
 def scan_sbmt_lhs(tokens,pos):
     "return (t,pos') with pos' one past end of recognized t"
@@ -185,12 +185,6 @@ featspecial=re.compile(r'[=\s]')
 def escape_featurename(s):
     return featspecial.sub('_',s)
 
-class sblm_bigram(object):
-    start_parent_pre='P='
-    end_parent_pre='/'+start_parent_pre
-    def __init__(self,order=2):
-        self.order=order
-        self.ng=ngram(order)
 
 #no smoothing yet; expect every event in rules to also occur in training data (EXCEPT GREEN RULES etc). we will return count of not-found events when we score a rule (sep. feature)
 # also note: assumes lex items can only occur under preterms, which can only have a single lex child. otherwise overstates unigram bo prob.
@@ -315,4 +309,142 @@ def lhs_label(t):
 def lhs_pcfg_event(t):
     assert(not t.is_terminal())
     return [t.label_lrb()]+[lhs_label(c) for c in t.children]
+
+def gen_pcfg_events_radu(t,terminals=False,terminals_unigram=False,digit2at=False):
+    if type(t)==str:
+        t=raduparse(t,intern_labels=True)
+#        dump(t)
+    if t is None:
+        return
+#    dump(type(t),t)
+    for n in t.preorder():
+        ev=sbmt_lhs_pcfg_event(n,digit2at)
+        use=False
+#        term='terminal'
+# return a tuple to distinguish terminals
+        if n.is_terminal():
+            if terminals_unigram: yield (ev,)
+        elif n.is_preterminal():
+            yield (ev,)
+        else:
+            yield ev
+
+class tag_word_unigram(object):
+    "p(word|tag), with smoothing (by default OOV words are logp_unk=0, i.e. free)"
+    def __init__(self,alphaword=0.1):
+        self.tagword=IntDict()
+        self.word=IntDict()
+        self.alphaword=alphaword
+        self.alphaword_for_tag=dict()
+        self.logp_unk=0.0 # penalty added per unk word
+        self.have_counts=True
+        self.have_p=False
+        self.have_logp=False
+    def count_tw(self,tw):
+        self.word[tw[1]]+=1
+        self.word[tw]+=1
+    def count(self,tag,word):
+        self.word[word]+=1
+        self.tagword[(tag,word)]+=1
+    def train(self,witten_bell=True,unkword='<unk>'):
+        "unkword = None to not reserve prob mass for unk words"
+        self.normalize(witten_bell,unkword)
+        self.precompute_interp()
+        self.to_logp()
+    def normalize(self,witten_bell=True,unkword='<unk>'):
+        tsums=FloatDict()
+        ttypes=IntDict()
+        wsum=0.0
+        nw1=0.0
+        for (t,w),c in self.tagword.iteritems():
+            sums[t]+=c
+            ttypes[t]+=1 # for witten-bell
+            wsum+=c
+            if c==1:
+                nw1+=1
+        if unkword is not None:
+            wsum+=nw1
+        logwsum=math.log(wsum)
+        for w in self.word.iterkeys():
+            c=self.word[w]
+            self.word[w]=math.log(c)-wsum
+        for t in tsums.iterkeys():
+            tsums[t]=math.log(tsums[t])
+        for tw in self.tagword.iterkeys():
+            t=tw[0]
+            self.tagword[tw]=math.log(self.tagword[tw])-tsums[t]
+        for t in ttypes.iterkeys():
+            if witten_bell:
+                sum=tsums[t]
+                ntype=ttypes[t]
+                self.alphaword_for_tag[t]=ntype/sum
+            else:
+                self.alphaword_for_tag[t]=self.alphaword
+        if unkword is not None:
+            self.word[unkword]=self.logp_unk=math.log(nw1/wsum)
+
+    def precompute_interp(self):
+        "if you don't call this, then inconsistent model results"
+        assert self.have_p
+        for tw,p in self.tagword:
+            t,w=tw
+            a=self.alphaword_for_tag[t]
+            oldp=self.tagword[tw]
+            self.tagword[tw]=(1-a)*oldp+a*self.word[w]
+    def to_p(self):
+        assert self.have_logp
+        self.have_logp=False
+        for k,p in self.word.iteritems():
+            self.word[k]=math.exp(p)
+        for k,p in self.tagword.iteritems():
+            self.tagword[k]=math.exp(p)
+        self.have_p=True
+    def to_logp(self):
+        assert self.have_p
+        self.have_p=False
+        for k,p in self.word.iteritems():
+            self.word[k]=math.log(p)
+        for k,p in self.tagword.iteritems():
+            self.tagword[k]=math.log(p)
+        self.have_logp=True
+
+import tempfile
+class sblm_ngram(object):
+    parent_se_pre=('<+','<-')
+    def __init__(self,order=2,digit2at=False):
+        self.digit2at=digit2at
+        self.order=order
+        self.ng=ngram(order)
+        self.terminals=tag_word_unigram()
+    def read_radu(self,input):
+        if type(input)==str: input=open(input)
+        spre,epre = sblm_ngram.parent_se_pre
+        for line in input:
+            t=raduparse(line,intern_labels=True)
+            for n in t.preorder():
+                e=sbmt_lhs_pcfg_event(n,self.digit2at)
+                if n.is_terminal():
+                    pass
+                elif n.is_preterminal():
+                    self.terminals.count(n.label,n.children[0].label)
+                else:
+                    if len(e)==0: continue
+                    p=e[0]
+                    sent=[spre+p]+e[1:]+[epre+p]
+                    self.ng.count_text(sent,None,None,1,self.digit2at)
+    def train_lm(self,prefix=None,lmf=None):
+        if prefix is not None:
+            prefix+='.pcfg'
+        return self.ng.read_lm(self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf))
+
+def pcfg_ngram_main(n=2,parses='data/dev.e-parse',rules='rules'):
+    sb=sblm_ngram(n)
+    sb.read_radu(parses)
+    sri=sb.train_lm(parses)
+    dump(sri.name)
+    callv(['head',sri.name])
+
+
+if __name__ == "__main__":
+    pcfg_ngram_main()
 

@@ -10,7 +10,7 @@ default_ngram_count='ngram-count'
 #intention: just those of a given order
 class ngram_counts(object):
     def __init__(self,order=1):
-        self.count=IntDict()
+        self.counts=IntDict()
         self.order=order
         self.om1=order-1
         self.ncountn=None
@@ -23,19 +23,19 @@ class ngram_counts(object):
             self.add(vec[i-self.om1:i+1])
     def add(self,seq):
         key=intern_tuple(seq)
-        self.count[key]+=1
-#        dump('add',seq,self.count[key])
+        self.counts[key]+=1
+#        dump('add',seq,self.counts[key])
     def __repr__(self):
         return obj2str(self,['order','count'],None)
-    def count_of_counts(self,max=4):
+    def counts_of_counts(self,max=4):
         ncountn=[0]*(max+1)
-        for c in self.count.itervalues():
+        for c in self.counts.itervalues():
             if c<=max:
                 ncountn[c]+=1
         return ncountn
     def compute_ncountn(self,max=4):
         if self.ncountn is None or len(self.ncountn)<=max:
-            self.ncountn=self.count_of_counts(max)
+            self.ncountn=self.counts_of_counts(max)
         return self.ncountn
     def write_kn_discounts(self,out,mincount=1):
         if type(out)==str: out=open(out,'w')
@@ -54,12 +54,12 @@ class ngram_counts(object):
         def wf(ngram,val):
             out.write(' '.join(ngram)+' '+str(val)+'\n')
         if sort:
-            keys=self.count.keys()
+            keys=self.counts.keys()
             keys.sort()
             for k in keys:
-                wf(k,self.count[k])
+                wf(k,self.counts[k])
         else:
-            for (ng,c) in self.count.iteritems():
+            for (ng,c) in self.counts.iteritems():
                 wf(ng,c)
         out.flush()
     def write_counts_kndisc(self,prefix,sort=True):
@@ -68,6 +68,31 @@ class ngram_counts(object):
         self.write_counts(cf,sort)
         self.write_kn_discounts(kf)
         return (cf,kf)
+    def witten_bell_bos(self,log10=True):
+        "return dict[context]=bo_prob"
+        types=IntDict()
+        sums=FloatDict()
+        for k,count in self.counts.iteritems():
+            c=k[:-1]
+            types[c]+=1
+            sums[c]+=count
+        for k,t in types.iteritems():
+            p=t/(t+sums[k])
+            types[k]=math.log10(p) if log10 else p
+        return types
+    def sum_counts(self):
+        return sum(float(x) for x in self.counts.itervalues())
+    def probs(self,log10=True,preserve_counts=True):
+        if preserve_counts: c=self.counts.copy()
+        self.to_probs(log10)
+        r=self.counts
+        if preserve_counts: self.counts=c
+        return r
+    def to_probs(self,log10=True):
+        sum=self.sum_counts()
+        for k,count in self.counts.iteritems():
+            self.counts[k]/=sum
+
 
 class ngram_logprob(object):
     def __init__(self,order=3):
@@ -78,11 +103,11 @@ def shorten_context(t):
     return t[1:]
 
 class ngram(object):
+    #log10(prob) and log10(bow)
     sos='<s>'
     eos='</s>'
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
-
     def __init__(self,order=2):
         self.order=order
         self.om1=order-1
@@ -123,8 +148,15 @@ class ngram(object):
         for o in range(0,self.order):
             r.append(self.ngrams[o].write_counts_kndisc('%s.%sgram'%(prefix,o+1),sort))
         return r
-    def train_lm(self,prefix,sri_ngram_count=True,sort=True):
-        lmf='%s.%sgram.srilm'%(prefix,self.order)
+    def train_lm(self,prefix=None,sri_ngram_count=True,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,always_write=False):
+        "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or always_Write=True"
+        if lmf is None and (sri_ngram_count or always_write):
+            if prefix is None:
+                tf=tempfile.NamedTemporaryFile()
+                lmf=tf.name
+                close(tf)
+            else:
+                lmf='%s.%sgram.srilm'%(prefix,self.order)
         if sri_ngram_count==True:
             sri_ngram_count=default_ngram_count
             cks=self.write_counts_kndisc(prefix,sort)
@@ -134,13 +166,32 @@ class ngram(object):
             knns=['-kn%s %s'%(i+1,shellquote(kfs[i])) for i in range(0,self.order)]
             knargs=' '.join(knns)
             #            knargs='-kndiscount'
-            cmd="cat %s | %s -order %s -interpolate -read - %s -lm %s"%(' '.join(cfs),sri_ngram_count,self.order,knargs,shellquote(lmf))
+            smoothargs=knargs
+            cmd="cat %s | %s -order %s -interpolate -read - %s -lm %s"%(' '.join(cfs),sri_ngram_count,self.order,smoothargs,shellquote(lmf))
             log(cmd)
             os.system(cmd)
+            if read_lm:
+                self.read_lm(lmf,clear_counts)
         else:
-            assert False
+            for o in range(0,self.order-1):
+                if witten_bell:
+                    self.bow[o]=self.ngrams[o+1].witten_bell_bos(log10=True)
+                else:
+                    assert False
+            for o in range(0,self.order):
+                self.logp[o]=self.ngrams[o].probs(log10=True,preserve_counts=not clear_counts)
+            if lmf:
+                self.write_lm(lmf)
+        if clear_counts:
+            self.clear_counts()
         return lmf
-
+    def write_vocab(self,file):
+        if type(file)==str: file=open(file,'w')
+        counts=self.counts[0]
+        if not len(counts):
+            counts=self.bow[0]
+        for k in counts.iterkeys():
+            file.write(k+'\n')
     def read_lm(self,file,clear_counts=True):
         if clear_counts:
             self.clear_counts()
@@ -170,12 +221,12 @@ class ngram(object):
                         b=0. #because </s> has no bow
                         if len(fields)>2:
                             b=fields[2]
-                        elif phrase!=(ngram.eos,):
-                                warn("missing bow for (non-</s>) phrase "+fields[1])
+                        elif phrase!=(ngram.eos,) and phrase!=(ngram.sos,):
+                                warn("missing bow for (non-<s>-or-</s>) phrase "+fields[1])
                         bow[phrase]=float(b)
             else:
                 if logp is not None and len(line): warn("skipped nonempty line "+line)
-                pass
+        return file
 
     def write_lm(self,file,sort=True):
         if type(file)==str: file=open(file,'w')
@@ -209,22 +260,13 @@ class ngram(object):
                 for k in logp.iterkeys():
                     wkey(k)
 
-def callv(l):
-    #subprocess.check_call(l)
-    os.system(' '.join(l))
-
 if __name__ == "__main__":
     order=2
     n=ngram(order)
     txt='test.txt'
     n.count_file(txt,'<s>','</s>')
-    r=n.write_counts_kndisc('test')
-    head='c:/cygwin/bin/head.exe'
     head='head'
-    callv([head]+[a for (a,b) in r])
-    callv([head]+[b for (a,b) in r])
-    lm1=n.train_lm(txt)
-    n.read_lm(lm1)
+    lm1=n.train_lm(txt,sri_ngram_count=False,read_lm=True,clear_counts=True,always_write=True,witten_bell=True)
     lm2=txt+'.rewritten.srilm'
     n.write_lm(lm2)
     callv([head,lm1,lm2])
