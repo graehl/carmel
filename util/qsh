@@ -1,0 +1,366 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+
+### script info ##################################################
+my $scriptdir; # location of script
+my $scriptname; # filename of script
+my $BLOBS;
+
+use File::Basename;
+
+BEGIN {
+   $scriptdir = &File::Basename::dirname($0);
+   ($scriptname) = &File::Basename::fileparse($0);
+   push @INC, $scriptdir; # now you can say: require "blah.pl" from the current directory
+   $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
+   $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
+    $BLOBS=$ENV{BLOBS};
+    my $libgraehl="$BLOBS/libgraehl/unstable";
+    push @INC,$libgraehl if -d $libgraehl;
+}
+
+require "libgraehl.pl";
+
+
+my $MAXJOBNAME=20;
+my $QSUB='qsub';
+my $QUEUE='isi';
+my $MEM='1000mb';
+my $NODES=1;
+my $WALLTIME='200:00:00';
+my $JOBSDIR=$ENV{HOME}.'/isd/jobs'; # $curdir/jobs
+$JOBSDIR=$ENV{HOME}.'/jobs' unless -d $JOBSDIR;
+my $SLEEPTIME=5;
+my $ARCH='x86_64';
+my $OUTWAIT=65; # after job is marked R, how long until output file appears?
+my $background=0;
+my $JOBNAME='';
+my $JOBSHELL="$BLOBS/bash3/bin/bash";
+$JOBSHELL = '/bin/bash' unless -x $JOBSHELL;
+my $BASHLIB="$BLOBS/bashlib/unstable/bashlib.sh";
+my $SOURCELIB=-f $BASHLIB ? ". $BASHLIB\nnoexit=\n" : '';
+my $AFTER;
+my $PBS_SETTINGS='';
+
+use Getopt::Long qw(:config require_order);
+use Pod::Usage;
+
+my $tail=0;
+
+use Fcntl ':flock'; # import LOCK_* constants
+sub lock_file {
+    my ($file)=@_;
+    open THELOCKFILE,">>",$file or die "couldn't open lock $file: $!";
+    flock(THELOCKFILE,LOCK_EX);
+    # and, in case someone appended
+    # while we were waiting...
+#    seek(\$fh, 0, 2);
+}
+
+sub unlock_file {
+    flock(THELOCKFILE,LOCK_UN);
+    close(THELOCKFILE);
+}
+
+### arguments ####################################################
+#&usage() if (($#ARGV+1) < 1); # die if too few args
+my $fakeqsub=$ENV{fakeqsub};
+my $email;
+my $foreground;
+my @opts=("help" => \&usage,
+           "queue:s" => \$QUEUE,
+           "arch:s" => \$ARCH,
+           "mem:s" => \$MEM,
+           "nodes:s" => \$NODES,
+           "walltime:s" => \$WALLTIME,
+           "background!" => \$background,
+           "foreground!" => \$foreground,
+           "tail!" => \$tail,
+           "jobsdir:s" => \$JOBSDIR,
+           "name:s" => \$JOBNAME,
+           "after:s" => \$AFTER,
+           "pbsargs:s" => \$PBS_SETTINGS,
+          "email=s" => \$email,
+
+           "usefakeqsub!" => \$fakeqsub,
+           );
+GetOptions(@opts) or die "GetOptions";
+
+sub usage() {
+    pod2usage(-exitstatus => 0, -verbose => 2);
+    exit(1);
+}
+
+
+
+
+### main program ################################################
+$background=$background || (!$tail && !$foreground);
+
+$PBS_SETTINGS=~s/\b\s*-/\n#PBS -/ unless $PBS_SETTINGS =~ /\#PBS/;
+if (defined $AFTER) {
+    &debug($AFTER);
+    my $DEPENDSEP="\n#PBS -W depend=afterok:";
+    my $n=0;
+    my $DEPENDPERIOD=1;
+    while ($AFTER =~ /(\d[^:\s]*)/g) {
+        $PBS_SETTINGS.= (($n % $DEPENDPERIOD == 0) ? $DEPENDSEP : ':').$1;
+        ++$n;
+    }
+}
+$PBS_SETTINGS.="\n";
+if ($email) {
+    $PBS_SETTINGS.="#PBS -m ea\n#PBS -M $email\n";
+}
+$PBS_SETTINGS.="\n";
+
+my $curdir=&getcd;
+info("TO CHECK JOB STATUS:\n$scriptdir/cj -j ".abspath($JOBSDIR)) if $JOBSDIR;
+$JOBSDIR="$curdir/$JOBSDIR" unless $JOBSDIR =~ /^\//;
+#-d $curdir or die $!;
+
+&debug($curdir);
+
+mkdir_force($JOBSDIR);
+
+
+my $cmd=join ' ',@ARGV;
+if (!scalar @ARGV) {
+    print STDERR "No command line supplied - enter job command(s) then EOF (ctrl-D):\n";
+    my @lines=<>;
+    $cmd="@lines";
+}
+
+my ($fname,$pathname)=&normalize_jobname($cmd,$JOBSDIR);
+&debug("FNAME,PATHNAME",$fname,$pathname);
+
+if (scalar @ARGV) {
+    my $argvjobname='';
+    for (join ' ',@ARGV) {
+        next unless ($argvjobname or ! /\=/);
+        s|^.*/|| unless ($argvjobname);
+        $argvjobname.="$_ ";
+    }
+    &superchomp(\$argvjobname);
+    $argvjobname =~ s/\W+/./g;
+    $argvjobname =~ s/^\d+/N/g;
+    $JOBNAME=$argvjobname unless $JOBNAME;
+} else {
+    my $pname=$cmd;
+    my $shellarg=qr{'[^']*'|"(?:[^\\"]|\\.)*"|[^'"]\S*};
+    $JOBNAME = ($pname =~ /(?:\S*(?:$shellarg)\=(?:$shellarg)?)*\s+(.*)$/) ? $1 : $fname
+      unless $JOBNAME;
+}
+#$JOBNAME=~s/^[._]*//;
+#$JOBNAME=~s/[._]//g;
+$JOBNAME=substr "$JOBNAME",0,$MAXJOBNAME;
+&debug("JOBNAME=",$JOBNAME);
+$PBS_SETTINGS .= "#PBS -N $JOBNAME" if $JOBNAME;
+$PBS_SETTINGS =~ s/\n//gm;
+$PBS_SETTINGS .= "\n";
+
+my $jobfile;
+my $i=1;
+my $pathpre=undef;
+&lock_file("$pathname.lock");
+sub dieunlock {
+    &unlock_file;
+    die @_;
+}
+while(1) {
+  if ($i>1) {
+    $pathpre="$pathname.$i";
+  } else {
+    $pathpre="$pathname";
+  }
+  &debug($pathpre);
+  ++$i;
+#  &dieunlock("maximum path length $MAXPATH exceeded with $pathpre") if length($pathpre) > $MAXPATH+5;
+  $jobfile="$pathpre.sh";
+  next if (-f $jobfile);
+  open S,">",$jobfile or dieunlock($!);
+  last;
+}
+&unlock_file;
+
+##PBS -e $pathpre.err
+
+#PBS -k oe
+# overrides -o, -e -j oe
+
+#while($PBS_SETTINGS =~ s/\n\n//gs) {}
+#
+print S<<"EOF";
+#!$JOBSHELL
+#PBS -j oe
+#PBS -o $pathpre.out
+#PBS -l nodes=$NODES
+#PBS -l walltime=$WALLTIME
+#PBS -l mem=$MEM
+#PBS -l arch=$ARCH
+#PBS -q $QUEUE
+#PBS -V
+$PBS_SETTINGS
+
+. ~/.bashrc
+
+unset LANG || true
+unset JAVA_HOME || true
+unset SUPPORTED || true
+unset LANGVAR || true
+
+ulimit -c 0
+
+$SOURCELIB
+
+cd $curdir
+
+
+(hostname; date; top b n 1) >> $pathpre.start   # note start
+
+$cmd   # actual job
+
+
+(date;echo "job/children user system times:";times) > $pathpre.finish    # note finish
+
+
+EOF
+
+close S;
+
+my $pid;
+print STDERR "$QSUB $pathpre.sh\n";
+print STDERR "with command: $cmd\n";
+if ($pid=open(QS,'-|')) {
+    die $! unless defined $pid;
+} else {
+    if ($fakeqsub) {
+        print "1234.fake\n";
+        exit;
+    }
+    exec $QSUB,"$pathpre.sh";
+    die $!;
+}
+my @qsub=<QS> or die $!;
+close QS;
+print STDERR "qsub output: ",@qsub;
+print @qsub;
+open QSF,'>',"$pathpre.qsub" or die;
+print QSF $_ for @qsub;
+close QSF;
+my $job;
+$job=$1 if $qsub[0] =~ /^(\d+)\./;
+my ($jobname) =split(' ',$qsub[0]);
+chomp $jobname;
+die unless $job;
+#`echo job $job >> $pathpre.start`;
+unless ($background) {
+    print STDERR "waiting for job $jobname (job # $job) to start ...\n";
+        while(1) {
+            my $status=&jobstatus($job);
+            &debug($job,$status);
+            sleep($SLEEPTIME);
+            if (!defined $status) {
+                last if -f "$pathpre.out";
+                die "no job status for $job";
+            }
+            last if $status =~ /^R/;
+        }
+#sleep($OUTWAIT);
+    print STDERR "waiting for output $pathpre.out to appear ...";
+    while( ! -f "$pathpre.out" ) {
+        sleep($SLEEPTIME);
+#    print STDERR ".";
+    }
+system 'qstat','-u',`whoami`;
+    if ($tail) {
+        print STDERR "\ntail -f $pathpre.out (ctrl-c when done):\n";
+        system 'tail','-s',$SLEEPTIME,'-F','-n','10000',"$pathpre.out";
+    }
+    if ($foreground) {
+        my $i=0;
+        my $status=1;
+        while(1) {
+            ++$i;
+            last if ( -f "$pathpre.finish" );
+            last unless $status;
+            if ($i%10==0) {
+                $status=&jobstatus($job);
+            }
+            sleep($SLEEPTIME);
+        }
+        print STDERR "\nDONE.\n";
+        system 'cat',"$pathpre.finish";
+    }
+}
+
+sub jobstatus
+{
+    my ($job)=@_;
+    my @status=`qstat $job`;
+    if (defined $status[2]) {
+        &debug($status[2]);
+        return $1 if $status[2] =~ /\Q$job\E\S+\s+\S+\s+\S+\s+\S+\s+(\S+)/;
+    }
+    return undef;
+}
+__END__
+
+=head1 NAME
+
+    qsh.pl
+
+=head1 SYNOPSIS
+
+    qsh.pl [options] command line -with -options etc
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+    Print a brief help message and exits.
+
+=item B<-jobsdir> dirname
+
+    Default ~/jobs
+
+=item B<-t>
+
+    Submit and tail -f the job's output (unless -b is specified)
+
+=item B<-queue isi, -mem 1000m, -walltime 10:00:00, -nodes:0>
+
+    These qsub options are recognized and passed through
+
+=item B<-pbsargs "-arg val -switch -etc">
+
+    Arbitrary PBS options (like those you give to qsub) can also be given,
+    e.g. -p "-p 10" would set priority 10
+
+=item B<-after "23478.hpc.usc.edu 23479.hpc.usc.edu">
+
+    Job to run only after the succesful completion of the listed jobs (separated
+    by whitespace and/or colons) - job ids as printed to stdout by qsh, of
+    course.
+
+    For example, you may use backticks to capture the job ids
+
+    qsh.pl -after `qsh.pl 'echo a >1';qsh.pl 'echo b >2'` cat 1 2
+
+
+=back
+
+=head1 DESCRIPTION
+
+    Submits a job and optionally waits for the output.  Naturally, you need to
+    protect characters you want to be part of your job from interpretation by
+    the shell, e.g. qsh.pl ls \| head or qsh.pl 'ls -l | head'
+
+    It is recommended to create a file with the commands if escaping becomes too
+    problematic - you can use ". /path/to/script/file" as the qsh command.
+
+=cut

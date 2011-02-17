@@ -1,0 +1,382 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+
+my $QUEUE='isi';
+my $JOBSDIR=$ENV{HOME}.'/isd/jobs'; # $curdir/jobs
+$JOBSDIR=$ENV{HOME}.'/jobs' unless -d $JOBSDIR;
+my $ntop=12;
+my $ntopskip=4;
+
+use Getopt::Long qw(:config require_order);
+use Pod::Usage;
+use File::Basename;
+
+### script info ##################################################
+my $scriptdir; # location of script
+my $scriptname; # filename of script
+my $BLOBS;
+
+BEGIN {
+   $scriptdir = &File::Basename::dirname($0);
+   ($scriptname) = &File::Basename::fileparse($0);
+   push @INC, $scriptdir; # now you can say: require "blah.pl" from the current directory
+   $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
+    $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
+    $BLOBS=$ENV{BLOBS};
+    my $libgraehl="$BLOBS/libgraehl/unstable";
+    push @INC,$libgraehl if -d $libgraehl;
+}
+
+require "libgraehl.pl";
+
+
+my $DEBUG=$ENV{DEBUG};
+
+### arguments ####################################################
+
+my $nrecent=1;
+#my $path='';
+my $maxlines;
+my $delay=0;
+my $runningonly=0;
+my $kill=0;
+my $checkaborted=0;
+my $archive;
+my $filterinput;
+my $listjobs=0;
+my $brief=0;
+my $status=0;
+my $cd;
+my $tail;
+my $oldest_first=0;
+my $execpbs='';
+my $grep=undef;
+my $email;
+
+my @opts=("help" => \&usage,
+           "nrecent=i" => \$nrecent,
+#           "path=s" => \$path,
+           "tail=i" => \$tail,
+           "maxlines=i" => \$maxlines,
+           "jobsdir=s" => \$JOBSDIR,
+           "queue=s" => \$QUEUE,
+           "delay" => \$delay,
+           "postpone" => \$delay,
+           "runningonly" => \$runningonly,
+           "kill" => \$kill,
+#           "oldest-first!" => \$oldest_first, #FIXME: how is that ambiguous           with -n"?
+#"checkaborted" => \$checkaborted,
+           "archive=s"=>\$archive,
+           "filterinput=s"=>\$filterinput,
+           "listjobs"=>\$listjobs,
+           "brief"=>\$brief,
+#           "status"=>\$status,
+           "cd=s" => \$cd,
+           "exec-pbs-command=s" => \$execpbs,
+           "grep=s" => \$grep,
+           );
+GetOptions(@opts) or die "GetOptions";
+
+if ($filterinput) {
+    show_output($filterinput);
+    exit;
+}
+
+
+
+
+my $cmd=join ' ',@ARGV;
+
+
+1;
+######
+$maxlines=0 if ($kill);
+my ($fname,$pathname)=&normalize_jobname($cmd,$JOBSDIR);
+my ($jdir,$jbase)=&dir_file($pathname);
+&debug("FNAME,PATHNAME,DIR,BASE",$fname,$pathname,$jdir,$jbase);
+
+my $doy=`date +%Y.%m.%d`;
+chomp $doy;
+
+my @recent;
+@recent=ls_mtime($jdir,qr/^\Q$jbase\E.*\.sh$/);
+&debug(@recent);
+@recent= reverse @recent if $oldest_first;
+@recent = grep /$grep/o,@recent if (defined $grep);
+if ($archive) {
+    my $archivedir="$JOBSDIR/${archive}_$doy";
+    mkdir $archivedir unless -d $archivedir;
+    for (@recent) {
+        chomp;
+#        print STDERR "Archiving $_\n";
+        s/\.sh$//;
+        `mv $_.* $archivedir`;
+    }
+    exit;
+}
+die if $?;
+#&debug(@recent);
+my $nseen=0;
+for (@recent) {
+    /^(.*)\.sh$/ or die;
+    last if $nseen >= $nrecent;
+    ++$nseen;
+    my $base=$1;
+    my $qsub="$base.qsub";
+    my $jobname='';
+    if (-f $qsub) {
+        open QSUB,$qsub or die;
+        $jobname=<QSUB>;
+        chomp $jobname;
+        close QSUB;
+    }
+    my $jobstat='';
+    my $jobid=undef;
+    $jobstat=&jobstatus($jobid=$1) if ($jobname =~ /^(\d+)/);
+    open R, $_;
+    my $jobprint="\n---------------------------------JOB: $jobname\n";
+    my $jobcd;
+    my $jobcmd;
+    my $qp='';
+    while(<R>) {
+        if (/^cd (.*)/) {
+            $jobcd=$1;
+            $jobprint .= "cd $1\n";
+            $qp = "cd $1 && " unless $brief;
+        }
+        if (/^(.*) +# actual job/) {
+            my $jline=$1;
+            if ($jline =~ /\S/) {
+                $jobcmd=$jline."\n";
+            } else {
+                $jobcmd=<R>;
+            }
+            my $qcom=$jobcmd;
+            chomp $qcom;
+            $qp="$qp$qcom\n";
+            $jobprint = $jobprint .  $jobcmd;
+        }
+    }
+    next if (defined $cd && expand_symlink($cd) ne expand_symlink($jobcd));
+    if ($brief && $listjobs) {
+        print $qp;
+        next;
+    }
+    my $start="$base.start";
+    my $aborted="$base.aborted";
+    my $killed="$base.killed";
+    my $finish="$base.finish";
+    my $out="$base.out";
+    if ($kill) {
+        `touch $killed`;
+        if (defined($jobstat)) {
+            print "Killing job $jobid: ";
+            print `qdel $jobid`;
+            print "\n";
+        } else {
+            print "Can't kill job $jobid since queue doesn't know about it.\n" unless -f $killed;
+        }
+        next;
+    }
+    if ($execpbs) {
+        if (defined($jobstat)) {
+            print "Running $execpbs $jobid";
+            system "$execpbs $jobid";
+            print "\n";
+        } else {
+            print "Can't affect job $jobid since queue doesn't know about it.\n";;
+        }
+        next;
+    }
+    if (-f $start) {
+        my $host=`head -n 1 $start 2>/dev/null`;
+        chomp $host;
+        &debug("host",$host,"base",$base);
+        $jobprint = $jobprint .  "on host: $host\n";
+        if ( -f $finish) {
+            if ($listjobs) {
+                print "F $qp";
+                next;
+            }
+            if ($runningonly) {
+                --$nseen;
+            } else {
+                print $jobprint;
+                print "Job finished - output (from $out):\n";
+                &show_output($out);
+            }
+        } elsif($host) {
+            if ($listjobs) {
+                print defined($jobstat) ? "$jobstat $qp" : "ERROR $qp";
+                next;
+            }
+            &debug("notfound finish",$finish);
+            print $jobprint;
+            my $nh=$ntop+$ntopskip;
+            if (!defined($jobstat)) {
+                print "Job startfile exists; finishfile doesn't; job not in queue.  Therefore, there is probably a shell syntax error in your job commandline.\n";
+            }
+            print `ssh $host 'top b n 1 | head -n $nh | tail -n $ntop'`;
+            print "Output so far (from $out):\n";
+            &show_output($out);
+        } elsif ($listjobs) {
+            print "R $qp";
+        }
+    } else {
+        &debug("notfound start",$start);
+        if ($listjobs) {
+            print (defined($jobstat) ? "$jobstat" : (-f $killed ? "KILLED" : "ERROR").$qp);
+            next;
+        }
+        if (-f $killed) {
+            print $jobprint;
+            print "Job was killed per your request.\n";
+        } elsif (!$checkaborted && -f $aborted) {
+            --$nseen;
+            next;
+        } else {
+            print $jobprint;
+            if (!defined($jobstat)) {
+                print "ALERT: Unstarted job - doesn't exist in queue either (check shell syntax?).\n";
+                `touch "$aborted"`;
+            } elsif ($jobstat =~ /^Q/) {
+                print "Job still queued.\n";
+                if ($delay) {
+                    print "Postponing job (moving to back of queue $QUEUE)...\n";
+                    print `qmove $QUEUE $1`;
+                }
+            } else{
+                print "Job starting.\n";
+            }
+        }
+    }
+}
+
+#FIXME: copied from qsh.pl
+sub jobstatus
+{
+    my ($job)=@_;
+    my @status=`qstat $job 2>/dev/null`;
+    return undef if $?;
+    if (defined $status[2]) {
+        &debug($status[2]);
+        return $1 if $status[2] =~ /\Q$job\E\S+\s+\S+\s+\S+\s+\S+\s+(\S+)/;
+    }
+    return undef;
+}
+##
+
+sub usage() {
+    pod2usage(-exitstatus => 0, -verbose => 2);
+    exit(1);
+}
+
+sub show_R {
+    my $state=0;
+    <R>;
+    my $nlines=0;
+    my @tails=();
+    while(<R>) {
+        &debug($state,$_);
+        if ($state==0) {
+            if (/^----------------------------------------/) {
+                $_=<R>;
+                if (/^\QWarning: no access to tty (Bad file descriptor).\E/) {
+                    $_=<R>;
+                    if (/^\QThus no job control in this shell.\E/) {
+                        $_=<R>;
+                    }
+                }
+                $state=1;
+            }
+        }
+        if ($state==1) {
+            &debug($state,$_);
+            if (/^----------------------------------------/) {
+                $state=2;
+            } else {
+                ++$nlines;
+                $tails[$nlines % $tail] = $_ if defined $tail;
+                if (defined $maxlines && $nlines > $maxlines) {
+                    print "------------- $maxlines line limit reached; run without -maxlines option to see rest\n";
+                    last;
+                }
+                print unless defined $tail;
+            }
+        }
+    }
+    if (defined $tail) {
+        my $i=$nlines-($tail-1);
+        if ($i <= 1) {
+            $i = 1;
+        } else {
+            print "------------- $tail (tail) line limit reached; run without -tail option to see more output\n";
+        }
+        while ($i <= $nlines) {
+            print $tails[$i % $tail];
+            ++$i;
+        }
+    }
+}
+
+sub show_output {
+    return if $kill;
+    my ($out)=@_;
+    if (open R,$out) {
+        &show_R;
+    } else {
+        print "(output file doesn't exist yet)\n";
+    }
+}
+__END__
+
+=head1 NAME
+
+    $scriptname
+
+=head1 SYNOPSIS
+
+    $scriptname [options] [command prefix]
+
+=head1 OPTIONS
+
+=over 2
+
+=item B<-filterinput <pbsoutfile>> just strip PBS prologue/epilogue from pbsoutfile (printing -> STDOUT)
+
+=item B<-jobsdir <dirname>>  - default ~/jobs
+
+=item B<-nrecent <n>>  -show n newest matching path*.sh - default 1
+
+=item B<-maxlines <n>> - show only first n lines of output for finished jobs
+
+=item B<-listjobs> - just show the command issued (and cd unless -brief) (no output, no status)
+
+=item B<-postpone> -push any jobs that have yet to run to the back of the queue (how polite of you!)
+
+=item B<-runningonly> -show only status for jobs that haven't finished (are currently running).
+
+=item B<-kill> -kill jobs if they're still queued
+
+=item B<-archive <dirname>> - move (an unlimited number of) jobs files to $JOBSDIR/dirname_date_of_year
+
+=item B<-brief>
+
+=item B<-cd </directory>> - restrict to jobs run from /directory
+
+=item B<-exec-pbs-command <command>> - run <command> <jobid> for the selected
+jobs (e.g. command=qhold, command=qrls)
+
+=back
+
+=head1 DESCRIPTION
+
+    Status on jobs submitted with qsh.pl - supply some (possibly empty) prefix
+    of the command you sent to qsh.  Visits jobs matching prefix from newest to
+    oldest, up to -n of them.  By default, the status of the job is examined;
+    -postpone will delay jobs that haven't begun running, and -kill will cancel
+    (qdel) running or queued jobs.
+
+=cut
