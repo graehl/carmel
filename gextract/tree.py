@@ -33,6 +33,11 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def intern(self):
+        self.label=intern(self.label)
+        for c in self.children:
+            c.intern()
+
     def is_top(self):
         'is self TOP(X(...)) for some TOP,X?'
         return self is not None and self.parent is None and len(self.children)==1
@@ -285,7 +290,8 @@ class Node:
     def label_lrb(self):
         return paren2lrb(str(self.label))
 
-def scan_tree(tokens, pos, paren_after_root=False):
+def scan_tree(tokens, pos, paren_after_root=False, intern_labels=False):
+    inter = intern if intern_labels else (lambda x: x)
     try:
         if tokens[pos] == ")":
             return (None, pos)
@@ -305,10 +311,10 @@ def scan_tree(tokens, pos, paren_after_root=False):
                     label = ""
                     pos += 1
                 else:
-                    label = lrb2paren(tokens[pos+1])
+                    label = inter(lrb2paren(tokens[pos+1]))
                     pos += 2
             else:
-                label = lrb2paren(tokens[pos])
+                label = inter(lrb2paren(tokens[pos]))
                 return (Node(label,[]), pos+1)
         children = []
         while True:
@@ -316,7 +322,7 @@ def scan_tree(tokens, pos, paren_after_root=False):
             if child is None: break
             children.append(child)
         if tokens[pos] == ")":
-            return (Node(label, children), pos+1)
+            return (Node(inter(label), children), pos+1)
         else:
             return (None, pos)
 
@@ -325,11 +331,11 @@ def scan_tree(tokens, pos, paren_after_root=False):
 
 tokenizer = re.compile(r"\(|\)|[^()\s]+")
 
-def str_to_tree(s,paren_after_root=False):
+def str_to_tree(s,paren_after_root=False,intern_labels=False):
     toks=tokenizer.findall(s)
     if len(toks)>2 and toks[1]=='(' and toks[-2]==')': #berkeley parse ( (tree) )
         toks=toks[1:-1]
-    (tree, n) = scan_tree(toks, 0,paren_after_root)
+    (tree, n) = scan_tree(toks,0,paren_after_root,intern_labels)
     return tree
 
 

@@ -244,7 +244,7 @@ class PCFG(object):
             return (self.prob[evs],0,None)
         bo=0
         oov=0
-        warn("PCFG backoff: "+evs)
+        warn("PCFG backoff:",evs,max=10)
         for r in ev[1:]:
             if r in self.prob:
                 bo+=self.prob[r]
@@ -348,21 +348,21 @@ class tag_word_unigram(object):
         return not w in self.word
     def count_tw(self,tw):
         self.word[tw[1]]+=1
-        self.word[tw]+=1
+        self.tagword[tw]+=1
     def count(self,tag,word):
         self.word[word]+=1
         self.tagword[(tag,word)]+=1
     def logp(self,t,w):
         return self.logp_tw((t,w))
     def logp_tw(self,tw):
-        if tw in self.tagword:
-            return self.tagword[tw]
-        else:
-            return self.logp_unk
+        return self.logp_tw_known(tw)[0]
     def logp_tw_known(self,tw):
         if tw in self.tagword:
             return (self.tagword[tw],1)
         else:
+            t,w=tw
+            if w in self.word:
+                return (self.bo_for_tag[t]+self.word[w],1)
             return (self.logp_unk,0)
     def train(self,witten_bell=True,unkword='<unk>'):
         "unkword = None to not reserve prob mass for unk words"
@@ -443,14 +443,16 @@ class sblm_ngram(object):
     def eval_pcfg_event(self,e):
         "return (logp,n) where n is 1 if the pcfg rewrite was scored, 0 otherwise (because we skip unknown terminals, those get 0)"
         if type(e)==tuple:
-            e=e[0]
+            e=tuple(e[0])
             assert len(e)==2
-            return self.terminals.logp_tw_known(tuple(e))
+            warn("eval_pcfg terminal",e,max=10)
+            return self.terminals.logp_tw_known(e)
         else:
             p=e[0]
             spre,epre = sblm_ngram.parent_se_pre
             sent=[spre+p]+e[1:]+[epre+p]
             s=sum(self.ng.score_text(sent,i=1))
+            warn("eval_pcfg rewrite",'%s=%s'%(sent,s),max=10)
             return (s,1)
     def eval_radu(self,input):
         if type(input)==str: input=open(input)
@@ -458,17 +460,19 @@ class sblm_ngram(object):
         logp=0.
         n=0
         nunk=0
+        unkwords=IntDict()
         for line in input:
             for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
                 lp,nknown=self.eval_pcfg_event(e)
                 logp+=lp
                 if nknown==0:
-                    warn("unk sblm_ngram eval terminal:",e,max=10)
+                    #warn("unk sblm_ngram eval terminal:",e,max=10)
+                    unkwords[tuple(e[0])]+=1
                     nunk+=1
                 else:
                     assert nknown==1
                     n+=1
-        return (logp,n,nunk)
+        return dict(logprob=logp,ntokens=n,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
     def read_radu(self,input):
         if type(input)==str: input=open(input)
         spre,epre = sblm_ngram.parent_se_pre
@@ -482,8 +486,9 @@ class sblm_ngram(object):
 #                elif n.is_preterminal():
 #                    self.terminals.count(n.label,n.children[0].label)
                 if type(e)==tuple:
-                    e=e[0]
-                    self.terminals.count(e[0],e[1])
+                    e=tuple(e[0])
+#                    warn("sblm_ngram train terminal",e,max=10)
+                    self.terminals.count_tw(e)
                 else:
                     if len(e)==0: continue
                     p=e[0]
@@ -506,8 +511,12 @@ def pcfg_ngram_main(n=2,parses='data/dev.e-parse',rules='rules',test='data/test.
         dump(sri.name)
         callv(['head',sri.name])
         print str(sb)
-    print sb.eval_radu(test)
+    e=sb.eval_radu(test)
+    e['logprob/ntokens']=e['logprob']/e['ntokens']
+    out_dict(e)
 
-if __name__ == "__main__":
-    pcfg_ngram_main()
+import optfunc
+optfunc.main(pcfg_ngram_main)
+#if __name__ == "__main__":
+#    pcfg_ngram_main()
 
