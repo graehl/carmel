@@ -102,22 +102,51 @@ class ngram_logprob(object):
 def shorten_context(t):
     return t[1:]
 
+def copy_map_key(dic,mapf=identity):
+    r=dict()
+    for k,v in dic.iteritems():
+        r[mapf(k)]=v
+    return r
+
+def first_safe(s):
+    return s[0] if is_nonstring_iter(s) else s
+
+def build_2gram(logp2,logp1,bow1,digit2at=False,unkword=None,logp_unk=0.0):
+    n=ngram(2,digit2at=digit2at,unkword=unkword,logp_unk=logp_unk)
+    n.logp[1]=logp2
+    n.logp[0]=copy_map_key(logp1,first_safe)
+    n.bow[0]=copy_map_key(bow1,first_safe)
+    return n
+
+def build_2gram_counts(c2,c1=None,include_c2_ctx_in_c1=True,digit2at=False,unkword=None,logp_unk=0.0):
+    n=ngram(2,digit2at=digit2at,unkword=unkword,logp_unk=logp_unk)
+    if c1==None:
+        c1=IntDict()
+    if include_c2_ctx_in_c1:
+        for k,count in c2.iteritems():
+            ctx=k[0]
+            c1[ctx]+=count
+    n.ngrams[1]=c2
+    n.ngrams[0]=copy_map_key(c1,first_safe)
+
 class ngram(object):
     #log10(prob) and log10(bow)
     sos='<s>'
     eos='</s>'
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
-    def __init__(self,order=2):
+    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=0.0):
+        self.unkword=unkword
+        self.logp_unk=logp_unk
+        self.digit2at=digit2at
         self.order=order
         self.om1=order-1
         self.logp=[dict() for o in range(0,order)]
         self.bow=[dict() for o in range(0,order)] # last bow is empty dict
         self.clear_counts()
-    def count_text(self,text,pre=None,post=None,i=0,digit2at=False):
+    def count_text(self,text,i=0,pre=None,post=None):
         if type(text)==str: text=text.split()
-        if digit2at:
-            text=map(digit2at,text)
+        if self.digit2at: text=map(digit2at,text)
         if pre is not None:
             text=[pre]+text
             i+=1
@@ -131,10 +160,31 @@ class ngram(object):
             start=i if pre is None else i+1
             for w in range(i,l):
                 cn.add_i(text,w)
-    def count_file(self,file,pre='<s>',post='</s>',digit2at=False):
+    def score_word(self,text,i):
+        "private (perform digit2at yourself) returns (logp,bo) for most specific ngram, where bo is the total of contexts' backoffs. text is a tuple"
+        c=max(0,i-self.om1)
+        e=i+1
+        bo=0.
+        maxom1=min(self.om1,i)
+        for o in range(maxom1,0-1,-1):
+            l=i-o
+            phrase=tuple(text[l:e])
+            lp=self.logp[o]
+            if phrase in lp:
+                return (lp[phrase],bo)
+            elif o>0:
+                bo+=self.bow[o-1].get(text[l:i],0.0)
+            else:
+                return (self.logp_unk,bo)
+    def score_text(self,text,i=0,pre=None,post=None):
+        "returns list of score,bo,score,bo (2x length of text[i:-1])"
+        if self.digit2at: text=map(digit2at,text)
+        text=intern_tuple(text)
+        return flatten(self.score_word(text,j) for j in range(i,len(text)))
+    def count_file(self,file,pre='<s>',post='</s>'):
         if type(file)==str: file=open(file)
         for l in file:
-            self.count_text(l,pre,post)
+            self.count_text(l,0,pre,post)
     def __str__(self):
         return self.str(False)
 #        return obj2str(self,['order'])
@@ -229,7 +279,9 @@ class ngram(object):
         return file
 
     def write_lm(self,file,sort=True):
-        if type(file)==str: file=open(file,'w')
+        if type(file)==str:
+            warn("writing SRI lm => ",file)
+            file=open(file,'w')
         def wf(*f):
             if is_iter(f):
                 file.write('\t'.join(map(str,f))+'\n')
@@ -249,7 +301,7 @@ class ngram(object):
                 lp=logp[k]
 #                dump(k,lp)
                 ks=' '.join(k)
-                if n==self.om1:
+                if n==self.om1 or k not in self.bow:
                     wf(lp,ks)
                 else:
                     wf(lp,ks,bow[k])

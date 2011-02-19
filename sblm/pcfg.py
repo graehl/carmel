@@ -331,21 +331,39 @@ def gen_pcfg_events_radu(t,terminals=False,terminals_unigram=False,digit2at=Fals
 
 class tag_word_unigram(object):
     "p(word|tag), with smoothing (by default OOV words are logp_unk=0, i.e. free)"
-    def __init__(self,alphaword=0.1):
+    def __init__(self,bo=0.1,digit2at=False):
+        self.digit2at=digit2at
         self.tagword=IntDict()
         self.word=IntDict()
-        self.alphaword=alphaword
-        self.alphaword_for_tag=dict()
+        self.bo=bo
+        self.bo_for_tag=dict()
         self.logp_unk=0.0 # penalty added per unk word
         self.have_counts=True
         self.have_p=False
         self.have_logp=False
+    def write_lm(self,out,sort=True):
+        n=build_2gram(self.tagword,self.word,self.bo_for_tag,digit2at=self.digit2at,logp_unk=self.logp_unk)
+        n.write_lm(out,sort=sort)
+    def oov(self,w):
+        return not w in self.word
     def count_tw(self,tw):
         self.word[tw[1]]+=1
         self.word[tw]+=1
     def count(self,tag,word):
         self.word[word]+=1
         self.tagword[(tag,word)]+=1
+    def logp(self,t,w):
+        return self.logp_tw((t,w))
+    def logp_tw(self,tw):
+        if tw in self.tagword:
+            return self.tagword[tw]
+        else:
+            return self.logp_unk
+    def logp_tw_known(self,tw):
+        if tw in self.tagword:
+            return (self.tagword[tw],1)
+        else:
+            return (self.logp_unk,0)
     def train(self,witten_bell=True,unkword='<unk>'):
         "unkword = None to not reserve prob mass for unk words"
         self.normalize(witten_bell,unkword)
@@ -374,9 +392,9 @@ class tag_word_unigram(object):
             if witten_bell:
                 sum=tsums[t]
                 ntype=ttypes[t]
-                self.alphaword_for_tag[t]=ntype/sum
+                self.bo_for_tag[t]=ntype/sum
             else:
-                self.alphaword_for_tag[t]=self.alphaword
+                self.bo_for_tag[t]=self.bo
         if unkword is not None:
             punk=nw1/wsum
             self.word[unkword]=punk
@@ -387,7 +405,7 @@ class tag_word_unigram(object):
         assert self.have_p
         for tw,p in self.tagword.iteritems():
             t,w=tw
-            a=self.alphaword_for_tag[t]
+            a=self.bo_for_tag[t]
             oldp=self.tagword[tw]
             self.tagword[tw]=(1-a)*oldp+a*self.word[w]
     def to_p(self):
@@ -407,6 +425,9 @@ class tag_word_unigram(object):
         for k,p in self.tagword.iteritems():
             if not p>0: warn("0 prob tag/word: p(%s)=%s"%(k,p))
             self.tagword[k]=log_prob(p)
+        for k,p in self.bo_for_tag.iteritems():
+            if not p>0: warn("0 prob tag backoff: p(%s)=%s"%(k,p))
+            self.bo_for_tag[k]=log_prob(p)
         self.have_logp=True
     def __str__(self,head=10):
         return ''.join(head_sorted_str(x.iteritems(),reverse=True,key=lambda x:x[1],head=head) for x in [self.tagword,self.word])
@@ -417,24 +438,57 @@ class sblm_ngram(object):
     def __init__(self,order=2,digit2at=False):
         self.digit2at=digit2at
         self.order=order
-        self.ng=ngram(order)
-        self.terminals=tag_word_unigram()
+        self.ng=ngram(order,digit2at=False)
+        self.terminals=tag_word_unigram(digit2at) #simplify: use an ngram for terminals. tag_word_unigram is functionally equiv to bigram lm anyway
+    def eval_pcfg_event(self,e):
+        "return (logp,n) where n is 1 if the pcfg rewrite was scored, 0 otherwise (because we skip unknown terminals, those get 0)"
+        if type(e)==tuple:
+            e=e[0]
+            assert len(e)==2
+            return self.terminals.logp_tw_known(tuple(e))
+        else:
+            p=e[0]
+            spre,epre = sblm_ngram.parent_se_pre
+            sent=[spre+p]+e[1:]+[epre+p]
+            s=sum(self.ng.score_text(sent,i=1))
+            return (s,1)
+    def eval_radu(self,input):
+        if type(input)==str: input=open(input)
+        #FIXME: use gen_pcfg_events_radu
+        logp=0.
+        n=0
+        nunk=0
+        for line in input:
+            for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
+                lp,nknown=self.eval_pcfg_event(e)
+                logp+=lp
+                if nknown==0:
+                    warn("unk sblm_ngram eval terminal:",e,max=10)
+                    nunk+=1
+                else:
+                    assert nknown==1
+                    n+=1
+        return (logp,n,nunk)
     def read_radu(self,input):
         if type(input)==str: input=open(input)
         spre,epre = sblm_ngram.parent_se_pre
         for line in input:
-            t=raduparse(line,intern_labels=True)
-            for n in t.preorder():
-                e=sbmt_lhs_pcfg_event(n,self.digit2at)
-                if n.is_terminal():
-                    pass
-                elif n.is_preterminal():
-                    self.terminals.count(n.label,n.children[0].label)
+            for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
+#            t=raduparse(line,intern_labels=True)
+#            for n in t.preorder():
+#                e=sbmt_lhs_pcfg_event(n,self.digit2at)
+#                if n.is_terminal():
+#                    pass
+#                elif n.is_preterminal():
+#                    self.terminals.count(n.label,n.children[0].label)
+                if type(e)==tuple:
+                    e=e[0]
+                    self.terminals.count(e[0],e[1])
                 else:
                     if len(e)==0: continue
                     p=e[0]
                     sent=[spre+p]+e[1:]+[epre+p]
-                    self.ng.count_text(sent,None,None,1,self.digit2at)
+                    self.ng.count_text(sent,i=1)
     def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False):
         if prefix is not None:
             prefix+='.pcfg'
@@ -443,14 +497,16 @@ class sblm_ngram(object):
     def __str__(self):
         return str(self.terminals)
 
-def pcfg_ngram_main(n=2,parses='data/dev.e-parse',rules='rules'):
+def pcfg_ngram_main(n=2,parses='data/dev.e-parse',rules='rules',test='data/test.e-parse'):
     sb=sblm_ngram(n)
     sb.read_radu(parses)
     sri=sb.train_lm(parses)
-    if False:
+    sb.terminals.write_lm(parses+'.terminals')
+    if True:
         dump(sri.name)
         callv(['head',sri.name])
         print str(sb)
+    print sb.eval_radu(test)
 
 if __name__ == "__main__":
     pcfg_ngram_main()
