@@ -108,14 +108,17 @@ def copy_map_key(dic,mapf=identity):
         r[mapf(k)]=v
     return r
 
-def first_safe(s):
-    return s[0] if is_nonstring_iter(s) else s
+def untuple_safe(s):
+    return s[0] if type(s)==tuple else s
+
+def entuple_safe(x):
+    return x if type(x)==tuple else (x,)
 
 def build_2gram(logp2,logp1,bow1,digit2at=False,unkword=None,logp_unk=0.0):
     n=ngram(2,digit2at=digit2at,unkword=unkword,logp_unk=logp_unk)
     n.logp[1]=logp2
-    n.logp[0]=copy_map_key(logp1,first_safe)
-    n.bow[0]=copy_map_key(bow1,first_safe)
+    n.logp[0]=copy_map_key(logp1,entuple_safe)
+    n.bow[0]=copy_map_key(bow1,entuple_safe)
     return n
 
 def build_2gram_counts(c2,c1=None,include_c2_ctx_in_c1=True,digit2at=False,unkword=None,logp_unk=0.0):
@@ -127,7 +130,7 @@ def build_2gram_counts(c2,c1=None,include_c2_ctx_in_c1=True,digit2at=False,unkwo
             ctx=k[0]
             c1[ctx]+=count
     n.ngrams[1]=c2
-    n.ngrams[0]=copy_map_key(c1,first_safe)
+    n.ngrams[0]=copy_map_key(c1,entuple_safe)
 
 class ngram(object):
     #log10(prob) and log10(bow)
