@@ -357,22 +357,19 @@ class tag_word_unigram(object):
         wsum=0.0
         nw1=0.0
         for (t,w),c in self.tagword.iteritems():
-            sums[t]+=c
+            tsums[t]+=c
             ttypes[t]+=1 # for witten-bell
             wsum+=c
             if c==1:
                 nw1+=1
         if unkword is not None:
             wsum+=nw1
-        logwsum=math.log(wsum)
         for w in self.word.iterkeys():
             c=self.word[w]
-            self.word[w]=math.log(c)-wsum
-        for t in tsums.iterkeys():
-            tsums[t]=math.log(tsums[t])
+            self.word[w]=c/wsum
         for tw in self.tagword.iterkeys():
             t=tw[0]
-            self.tagword[tw]=math.log(self.tagword[tw])-tsums[t]
+            self.tagword[tw]=self.tagword[tw]/tsums[t]
         for t in ttypes.iterkeys():
             if witten_bell:
                 sum=tsums[t]
@@ -381,12 +378,14 @@ class tag_word_unigram(object):
             else:
                 self.alphaword_for_tag[t]=self.alphaword
         if unkword is not None:
-            self.word[unkword]=self.logp_unk=math.log(nw1/wsum)
-
+            punk=nw1/wsum
+            self.word[unkword]=punk
+            self.logp_unk=log_prob(punk)
+        self.have_p=True
     def precompute_interp(self):
         "if you don't call this, then inconsistent model results"
         assert self.have_p
-        for tw,p in self.tagword:
+        for tw,p in self.tagword.iteritems():
             t,w=tw
             a=self.alphaword_for_tag[t]
             oldp=self.tagword[tw]
@@ -403,10 +402,14 @@ class tag_word_unigram(object):
         assert self.have_p
         self.have_p=False
         for k,p in self.word.iteritems():
-            self.word[k]=math.log(p)
+            if not p>0: warn("0 prob word: p(%s)=%s"%(k,p))
+            self.word[k]=log_prob(p)
         for k,p in self.tagword.iteritems():
-            self.tagword[k]=math.log(p)
+            if not p>0: warn("0 prob tag/word: p(%s)=%s"%(k,p))
+            self.tagword[k]=log_prob(p)
         self.have_logp=True
+    def __str__(self,head=10):
+        return ''.join(head_sorted_str(x.iteritems(),reverse=True,key=lambda x:x[1],head=head) for x in [self.tagword,self.word])
 
 import tempfile
 class sblm_ngram(object):
@@ -432,18 +435,22 @@ class sblm_ngram(object):
                     p=e[0]
                     sent=[spre+p]+e[1:]+[epre+p]
                     self.ng.count_text(sent,None,None,1,self.digit2at)
-    def train_lm(self,prefix=None,lmf=None):
+    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False):
         if prefix is not None:
             prefix+='.pcfg'
+        self.terminals.train(uni_witten_bell,uni_unkword)
         return self.ng.read_lm(self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf))
+    def __str__(self):
+        return str(self.terminals)
 
 def pcfg_ngram_main(n=2,parses='data/dev.e-parse',rules='rules'):
     sb=sblm_ngram(n)
     sb.read_radu(parses)
     sri=sb.train_lm(parses)
-    dump(sri.name)
-    callv(['head',sri.name])
-
+    if False:
+        dump(sri.name)
+        callv(['head',sri.name])
+        print str(sb)
 
 if __name__ == "__main__":
     pcfg_ngram_main()

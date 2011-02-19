@@ -166,7 +166,7 @@ class ngram(object):
             knns=['-kn%s %s'%(i+1,shellquote(kfs[i])) for i in range(0,self.order)]
             knargs=' '.join(knns)
             #            knargs='-kndiscount'
-            smoothargs=knargs
+            smoothargs='-wbdiscount' if witten_bell else knargs
             cmd="cat %s | %s -order %s -interpolate -read - %s -lm %s"%(' '.join(cfs),sri_ngram_count,self.order,smoothargs,shellquote(lmf))
             log(cmd)
             os.system(cmd)
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     txt='test.txt'
     n.count_file(txt,'<s>','</s>')
     head='head'
-    lm1=n.train_lm(txt,sri_ngram_count=False,read_lm=True,clear_counts=True,always_write=True,witten_bell=True)
+    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=True,always_write=True,witten_bell=True)
     lm2=txt+'.rewritten.srilm'
     n.write_lm(lm2)
     callv([head,lm1,lm2])
