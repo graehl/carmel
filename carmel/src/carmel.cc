@@ -39,8 +39,13 @@
 #include <graehl/shared/random.hpp>
 
 using namespace graehl;
+#ifdef USE_OPENFST
+# define OPENFST_VERSION "+openfst"
+#else
+# define OPENFST_VERSION ""
+#endif
 
-#define CARMEL_VERSION "6.9"
+#define CARMEL_VERSION "6.10" OPENFST_VERSION
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -1621,7 +1626,8 @@ main(int argc, char *argv[]){
                     cm.write_trained("trained");
                 }
             } else if ( nGenerate > 0 ) {
-                cm.shrink(result,true,true,long_opts["minimize"],"\n");
+              bool minimize=long_opts["minimize"] or long_opts["minimize-sum"] or long_opts["minimize-determinize"] or long_opts["minimize-determinize-only"] or long_opts["minimize-rmepsilon"] or long_opts["minimize-pairs"] or long_opts["minimize-pairs-no-epsilon"];
+                cm.shrink(result,true,true,minimize,"\n");
 //                cm.minimize(result);
                 if ( maxGenArcs == 0 )
                     maxGenArcs = DEFAULT_MAX_GEN_ARCS;
