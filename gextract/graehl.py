@@ -5,11 +5,45 @@
 
 import sys,re,random,math,os,collections,subprocess
 
-#from itertools import izip
 from itertools import *
 
+def implies(a,b):
+    if not a: return True
+    return b
+
+def forall(gen,pred=None):
+    if pred is None:
+        for x in gen:
+            if not x:
+                return False
+        return True
+    for x in gen:
+        if not pred(x):
+            return False
+        return True
+
+def exists(gen,pred=None):
+    if pred is None:
+        for x in gen:
+            if x:
+                return True
+        return False
+    for x in gen:
+        if not pred(x):
+            return True
+        return False
+
+def nonempty(gen):
+    "consumes an item from gen. returns True iff there was an item"
+    for x in gen:
+        return True
+    return False
+
+all=forall
+any=exists
+
 def out_dict(d,out=sys.stdout):
-    out_tabsep(d.iteritems() if type(d)==dict else d)
+    out_tabsep(d.iteritems() if type(d)==dict else d,out=out)
 
 def out_tabsep(pairs,out=sys.stdout):
     if type(out)==str: out=open(out,'w')
@@ -256,6 +290,19 @@ def log_prob(p):
         return log_zero
     return math.log(p)
 
+def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_list='\n'):
+    if type(out)==str:
+        out=open(out,'w')
+    if type(l)!=list:
+        l=list(l)
+    if header:
+        out.write('(N=%d) %s:%s'%(len(l),name,after_item))
+    for x in l:
+        out.write(str(x))
+        out.write(after_item)
+    out.write(after_list)
+    return out
+
 n_warn=0
 warncount=IntDict()
 
@@ -457,7 +504,33 @@ else:
             return rhs+math.log(1.+math.exp(diff))
         return lhs+math.log(1.+math.exp(-diff))
 
+def log10_interp(a,b,wt_10a):
+    return math.log10(wt_10a*10.**a+(1.-wt_10a)*10.**b)
+
+#TODO: work even if exp(a), exp(b) out of float range
+def log_interp(a,b,wt_ea):
+    return math.log(wt_ea*math.exp(a)+(1.-wt_ea)*math.exp(b))
+
+log_of_10=math.log(10)
+log10_of_e=1./log_of_10
+def log10tolog(e10):
+    return e10*log_of_10
+def logtolog10(ee):
+    return ee*log10_of_e
+
+def log10add_toe(a,b):
+    return log10_of_e*logadd(log_of_10*a,log_of_10*b)
+def log10add(lhs,rhs):
+        "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
+        diff=lhs-rhs
+        if diff > 15: return lhs # e^36 or more overflows double floats.
+        if diff < 0: #rhs is bigger
+            if diff < -15: return rhs
+            return rhs+math.log10(1.+10.**diff)
+        return lhs+math.log(1.+10.**(-diff))
+
 def logadd_plus(a,b):
+    "for debugging logadd; not otherwise useful"
     return math.exp(logadd(math.log(a),math.log(b)))
 
 def choosep(p_item_list):
@@ -754,6 +827,16 @@ d2at_trans=string.maketrans('0123456789','@@@@@@@@@@')
 def digit2at(s):
     return s.translate(d2at_trans)
 
+
+def filename_from(s):
+    r=re.sub(r'[^a-zA-Z0-9_-]','.',s)
+    if r[0]=='.':
+        return '_'+r[1:]
+    return r
+
+def filename_from_1to1(s):
+    return filename_from(s)
+#TODO: ensure non-collision (quote w/ escape of quote-strings)
 
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
 #radu_lrb=re.compile(r'\((-LRB-(-\d+)?) \(\)')

@@ -333,7 +333,7 @@ class tag_word_unigram(object):
     "p(word|tag), with smoothing (by default OOV words are logp_unk=0, i.e. free)"
     def __init__(self,bo=0.1,digit2at=False):
         self.digit2at=digit2at
-        self.tagword=IntDict()
+        self.tagword=IntDict() # IntDicts are reused as probs once normalized
         self.word=IntDict()
         self.bo=bo
         self.bo_for_tag=dict()
@@ -341,6 +341,11 @@ class tag_word_unigram(object):
         self.have_counts=True
         self.have_p=False
         self.have_logp=False
+    def preterminal_vocab(self):
+        "must have trained"
+        return self.bo_for_tag.iterkeys()
+    def terminal_vocab(self):
+        return self.word.iterkeys()
     def write_lm(self,out,sort=True):
         n=build_2gram(self.tagword,self.word,self.bo_for_tag,digit2at=self.digit2at,logp_unk=self.logp_unk)
         n.write_lm(out,sort=sort)
@@ -432,14 +437,56 @@ class tag_word_unigram(object):
     def __str__(self,head=10):
         return ''.join(head_sorted_str(x.iteritems(),reverse=True,key=lambda x:x[1],head=head) for x in [self.tagword,self.word])
 
+#from collections import defaultdict
 import tempfile
 class sblm_ngram(object):
-    parent_se_pre=('<+','<-')
-    def __init__(self,order=2,digit2at=False):
+    "require all tags in vocabulary. learn ngram model of sequence of children given parent (separate ngram model for each parent tag). interpolated with non-parent-specific ngram, which is not interpolated w/ 0-gram because every tag 1gram is observed somewhere in the whole training."
+    spre='<s:'
+    spost='>'
+    end=intern('</s>')
+    unk='<unk>'
+    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99):
+        self.parent=parent #distinct ngrams for each parent; backoff to indistinct
         self.digit2at=digit2at
         self.order=order
         self.ng=ngram(order,digit2at=False)
+        self.png=dict()
         self.terminals=tag_word_unigram(digit2at) #simplify: use an ngram for terminals. tag_word_unigram is functionally equiv to bigram lm anyway
+        self.set_parent_alpha(parent_alpha)
+    def interp_no_parent(self,no_parent,with_parent):
+        return math.log10(self.wt*10.**no_parent+self.pwt*10.**with_parent) #TODO: preinterpolate self.ng into self.png before taking logp and normalizing. or just preinterp for speed
+    def set_parent_alpha(self,parent_alpha=0.99):
+        self.pwt=parent_alpha
+        if not self.parent: self.pwt=0.0
+        self.wt=1.-self.pwt
+    def preterminal_vocab(self):
+        return self.terminals.preterminal_vocab()
+    def nonterminal_vocab(self):
+        return self.ng.vocab_ctx()
+    def terminal_vocab(self):
+        return self.terminals.terminal_vocab()
+    def sent_for_event(self,p,ch):
+        sent=[intern('<s:'+p+'>')]+ch
+        sent.append(sblm_ngram.end)
+        return sent
+    def score_children(self,p,ch):
+        sent=self.sent_for_event(p,ch)
+        bo=self.ng
+        warn("score_children",'%s'%sent,max=10)
+        if self.parent:
+            dist=self.png[p]
+            s=0.
+            pa=self.pwt
+            for i in range(1,len(sent)):
+                pp,pbo=dist.score_word(sent,i)
+                warn("score given parent",'%s=%s+%s=%s'%(sent[0:i+1],pp,pbo,pp+pbo),max=10)
+                bp,bbo=bo.score_word(sent,i)
+                warn("score forgetting parent",'%s=%s+%s=%s'%(sent[0:i+1],bp,bbo,bp+bbo),max=10)
+                s+=log10_interp(pp+pbo,bp+bbo,pa)
+#                s+=dist.score_word_interp(sent,i,bo,parent_alpha)
+            return s
+        else:
+            return bo.score_text(sent,i=1)
     def eval_pcfg_event(self,e):
         "return (logp,n) where n is 1 if the pcfg rewrite was scored, 0 otherwise (because we skip unknown terminals, those get 0)"
         if type(e)==tuple:
@@ -448,12 +495,7 @@ class sblm_ngram(object):
             warn("eval_pcfg terminal",e,max=10)
             return self.terminals.logp_tw_known(e)
         else:
-            p=e[0]
-            spre,epre = sblm_ngram.parent_se_pre
-            sent=[spre+p]+e[1:]+[epre+p]
-            s=sum(self.ng.score_text(sent,i=1))
-            warn("eval_pcfg rewrite",'%s=%s'%(sent,s),max=10)
-            return (s,1)
+            return (self.score_children(e[0],e[1:]),1)
     def eval_radu(self,input):
         if type(input)==str: input=open(input)
         #FIXME: use gen_pcfg_events_radu
@@ -463,6 +505,7 @@ class sblm_ngram(object):
         unkwords=IntDict()
         for line in input:
             for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
+                warn('pcfg_events_radu',e,max=10)
                 lp,nknown=self.eval_pcfg_event(e)
                 logp+=lp
                 if nknown==0:
@@ -475,16 +518,8 @@ class sblm_ngram(object):
         return dict(logprob=logp,ntokens=n,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
     def read_radu(self,input):
         if type(input)==str: input=open(input)
-        spre,epre = sblm_ngram.parent_se_pre
         for line in input:
             for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
-#            t=raduparse(line,intern_labels=True)
-#            for n in t.preorder():
-#                e=sbmt_lhs_pcfg_event(n,self.digit2at)
-#                if n.is_terminal():
-#                    pass
-#                elif n.is_preterminal():
-#                    self.terminals.count(n.label,n.children[0].label)
                 if type(e)==tuple:
                     e=tuple(e[0])
 #                    warn("sblm_ngram train terminal",e,max=10)
@@ -492,31 +527,89 @@ class sblm_ngram(object):
                 else:
                     if len(e)==0: continue
                     p=e[0]
-                    sent=[spre+p]+e[1:]+[epre+p]
+                    sent=self.sent_for_event(p,e[1:])
                     self.ng.count_text(sent,i=1)
-    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False):
+                    if self.parent:
+                        pngs=self.png
+                        if p not in pngs:
+                            pn=ngram(self.order,digit2at=False)
+                            pngs[p]=pn
+                        else:
+                            pn=pngs[p]
+                        pn.count_text(sent,i=1)
+    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False):
         if prefix is not None:
             prefix+='.pcfg'
         self.terminals.train(uni_witten_bell,uni_unkword)
-        return self.ng.read_lm(self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf))
+        all=self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count)
+        if self.parent:
+            for nt,png in self.png.iteritems():
+                #self.nonterminal_vocab()
+                nt=intern(nt)
+                pnt=filename_from_1to1('%s.%s'%(prefix,nt))
+                png=self.png[nt]
+                plmf=None if lmf is None else filename_from_1to1('%s.%s'%(lmf,nt))
+                pntf=png.train_lm(prefix=pnt,sort=True,lmf=plmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count)
+                dump('lm for',nt,plmf)
     def __str__(self):
         return str(self.terminals)
 
-def pcfg_ngram_main(n=2,parses='data/dev.e-parse',rules='rules',test='data/test.e-parse'):
-    sb=sblm_ngram(n)
+dev='data/dev.e-parse'
+train='data/train.e-parse'
+fakedev='data/fake.dev.e-parse'
+faketrain='data/fake.train.e-parse'
+
+def pcfg_ngram_main(n=2,
+#                    parses=train
+                    parses=dev
+                    ,test=dev
+                    ,parent=True
+                    ,alpha=0.995
+                    ,witten_bell=False
+                    ,logfile="ppx.dev.txt"
+                    ,sri_ngram_count=False
+                    ):
+    log('pcfg_ngram')
+    log(str(Locals()))
+    sb=sblm_ngram(order=n,parent=parent,parent_alpha=alpha)
     sb.read_radu(parses)
-    sri=sb.train_lm(parses)
+    sb.train_lm(parses,sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell)
     sb.terminals.write_lm(parses+'.terminals')
     if True:
-        dump(sri.name)
-        callv(['head',sri.name])
+        write_list(sb.preterminal_vocab(),name='preterminals')
+        write_list(sb.png.keys(),name='parents(NTs)')
+#        write_list(sb.nonterminal_vocab(),name='nonterminals')
+#        dump(sri.name)
+#        callv(['head',sri.name])
         print str(sb)
     e=sb.eval_radu(test)
     e['logprob/ntokens']=e['logprob']/e['ntokens']
     out_dict(e)
+    if logfile is not None:
+        logfile=open(logfile,'a')
+        logfile.write("### %s\n"%Locals())
+        out_dict(e,out=logfile)
+        logfile.write("\n\n")
 
 import optfunc
 optfunc.main(pcfg_ngram_main)
 #if __name__ == "__main__":
 #    pcfg_ngram_main()
 
+"""
+TODO:
+
+debug no-sri vs sri difference
+
+load/save trained sblm and raw counts?
+
+1-to-1 NT->filename mapping
+
+decoder feature
+
+check rules for @NP-BAR -> NP mapping
+
+learn how to linear-interp (not loglinear) a bo-structure ngram. also loglinear. or just use srilm tool
+
+heuristic+early scoring for parts of linear-interp models, where backoffs can be scored earlier? can do for loglinear-interp, maybe not linear-interp
+"""

@@ -4010,7 +4010,7 @@ loaded as such.)"
 (setq compile-command "bash -c '. ~/.bashrc;cd /nfs/topaz/graehl/sbmt/trunk/graehl/carmel && ecage make bin/cage/carmel.debug'")
 (setq compile-command "bash --login -c 'cmakews'")
 (setq compile-command "bash --login -c 'ecage dmakews'")
-
+(setq compile-command "bash --login -c 'ecage \"cd t/graehl/sblm;./pcfg.py\"'")
 (require 'google-c-style)
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)

@@ -82,22 +82,16 @@ class ngram_counts(object):
         return types
     def sum_counts(self):
         return sum(float(x) for x in self.counts.itervalues())
-    def probs(self,log10=True,preserve_counts=True):
+    def probs(self,preserve_counts=True):
         if preserve_counts: c=self.counts.copy()
-        self.to_probs(log10)
+        self.to_probs()
         r=self.counts
         if preserve_counts: self.counts=c
         return r
-    def to_probs(self,log10=True):
+    def to_probs(self):
         sum=self.sum_counts()
         for k,count in self.counts.iteritems():
             self.counts[k]/=sum
-
-
-class ngram_logprob(object):
-    def __init__(self,order=3):
-        self.order=order
-        self.logp=dict()
 
 def shorten_context(t):
     return t[1:]
@@ -136,9 +130,22 @@ class ngram(object):
     #log10(prob) and log10(bow)
     sos='<s>'
     eos='</s>'
+    unk='<unk>'
+    specials=set((sos,eos,unk))
+    @classmethod
+    def is_special(w):
+        return w in specials
+    #w==ngram.sos || w==ngram.eos
+    def compute_uniform(self):
+        self.uniform_p=1./len(self.logp)
+        self.uniform_log10p=math.log10(self.uniform_p)
+    def uniform_p(self,word):
+        return self.uniform_p
+    def uniform_log10p(self,word):
+        return self.uniform_log10p
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
-    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=0.0):
+    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=float('-inf')):
         self.unkword=unkword
         self.logp_unk=logp_unk
         self.digit2at=digit2at
@@ -176,14 +183,21 @@ class ngram(object):
             if phrase in lp:
                 return (lp[phrase],bo)
             elif o>0:
-                bo+=self.bow[o-1].get(text[l:i],0.0)
+                bo+=self.bow[o-1].get(tuple(text[l:i]),0.0)
             else:
                 return (self.logp_unk,bo)
-    def score_text(self,text,i=0,pre=None,post=None):
+    def score_word_combined(self,text,i):
+        p,bo=self.score_word(text,i)
+        return p+bo
+    def score_word_interp(self,text,i,other_lm,self_wt):
+        return log10_interp(self.score_word_combined(text,i),other_lm.score_word_combined(text,i),self_wt)
+    def score_text_detail(self,text,i=0,pre=None,post=None):
         "returns list of score,bo,score,bo (2x length of text[i:-1])"
         if self.digit2at: text=map(digit2at,text)
         text=intern_tuple(text)
         return flatten(self.score_word(text,j) for j in range(i,len(text)))
+    def score_text(self,text,i=0,pre=None,post=None):
+        return sum(self.score_text_detail(text,i=i,pre=pre,post=post))
     def count_file(self,file,pre='<s>',post='</s>'):
         if type(file)==str: file=open(file)
         for l in file:
@@ -201,7 +215,7 @@ class ngram(object):
         for o in range(0,self.order):
             r.append(self.ngrams[o].write_counts_kndisc('%s.%sgram'%(prefix,o+1),sort))
         return r
-    def train_lm(self,prefix=None,sri_ngram_count=True,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,always_write=False):
+    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,always_write=False):
         "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or always_Write=True"
         if lmf is None and (sri_ngram_count or always_write):
             if prefix is None:
@@ -232,13 +246,28 @@ class ngram(object):
                 else:
                     assert False
             for o in range(0,self.order):
-                self.logp[o]=self.ngrams[o].probs(log10=True,preserve_counts=not clear_counts)
+                self.logp[o]=self.ngrams[o].probs(preserve_counts=not clear_counts)
             if lmf:
                 self.write_lm(lmf)
         if clear_counts:
             self.clear_counts()
+        self.prepare()
         return lmf
+    def vocab(self,exclude_specials=True):
+        "pre: trained"
+        s=set(x[0] for x in self.logp[0].iterkeys())
+        if exclude_specials: s-=ngram.specials
+        return s
+    def vocab_ctx(self,exclude_specials=True):
+        "pre: trained"
+        s=set(x[0] for x in self.bow[0].iterkeys())
+        if exclude_specials: s-=ngram.specials
+        return s
+#        for w in self.counts[0].iterkeys():
+#            if not ngram.is_special(w):
+#                yield w
     def write_vocab(self,file):
+        "pre: counts not cleared"
         if type(file)==str: file=open(file,'w')
         counts=self.counts[0]
         if not len(counts):
@@ -279,8 +308,10 @@ class ngram(object):
                         bow[phrase]=float(b)
             else:
                 if logp is not None and len(line): warn("skipped nonempty line "+line)
+        self.prepare()
         return file
-
+    def prepare(self):
+        self.compute_uniform()
     def write_lm(self,file,sort=True):
         if type(file)==str:
             warn("writing SRI lm => ",file)
