@@ -7,6 +7,8 @@ import os
 
 default_ngram_count='ngram-count'
 
+log10_0=-99
+
 #intention: just those of a given order
 class ngram_counts(object):
     def __init__(self,order=1):
@@ -74,24 +76,32 @@ class ngram_counts(object):
         sums=FloatDict()
         for k,count in self.counts.iteritems():
             c=k[:-1]
+            warn("wb bo count",'k=%s,count=%s,c=%s'%(k,count,c),max=10)
             types[c]+=1
             sums[c]+=count
         for k,t in types.iteritems():
             p=t/(t+sums[k])
             types[k]=math.log10(p) if log10 else p
+            warn("wb bo",'k=%s,t=%s,bo[k]=%s'%(k,t,types[k]),max=10)
         return types
     def sum_counts(self):
         return sum(float(x) for x in self.counts.itervalues())
-    def probs(self,preserve_counts=True):
+    def sum_counts_ctx(self):
+        sums=FloatDict()
+        for k,count in self.counts.iteritems():
+            sums[k[:-1]]+=count
+        return sums
+    def probs(self,preserve_counts=True,log10=True):
         if preserve_counts: c=self.counts.copy()
-        self.to_probs()
+        self.to_probs(log10=log10)
         r=self.counts
         if preserve_counts: self.counts=c
         return r
-    def to_probs(self):
-        sum=self.sum_counts()
+    def to_probs(self,log10=True):
+        sumc=self.sum_counts_ctx()
         for k,count in self.counts.iteritems():
-            self.counts[k]/=sum
+            s=sumc[k[:-1]]
+            self.counts[k]=math.log10(count/s) if log10 else (count/s)
 
 def shorten_context(t):
     return t[1:]
@@ -136,6 +146,20 @@ class ngram(object):
     def is_special(w):
         return w in specials
     #w==ngram.sos || w==ngram.eos
+    def interp(self):
+        "store as p(w|ctx): bo(ctx)*p(w|ctx[0:-1])+(1-bo(ctx)*p(w|ctx)"
+        for o in range(0,self.om1):
+            h=o+1
+            lp=self.logp[h]
+            bo=self.bow[o]
+            bop=self.logp[o]
+            for k,l in lp.iteritems():
+                ctx=k[:-1]
+                kb=k[1:]
+                lp[k]=log10_interp(bop[kb],l,10.**bo[ctx])
+                warn('interp',typedvals(k,kb,ctx,bop[kb],l,bo[ctx],lp[k]),max=10)
+    def uninterp(self):
+        "undo the effect of self.interp()"
     def compute_uniform(self):
         self.uniform_p=1./len(self.logp)
         self.uniform_log10p=math.log10(self.uniform_p)
@@ -215,7 +239,7 @@ class ngram(object):
         for o in range(0,self.order):
             r.append(self.ngrams[o].write_counts_kndisc('%s.%sgram'%(prefix,o+1),sort))
         return r
-    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,always_write=False):
+    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,always_write=False,interpolate=True):
         "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or always_Write=True"
         if lmf is None and (sri_ngram_count or always_write):
             if prefix is None:
@@ -233,8 +257,11 @@ class ngram(object):
             knns=['-kn%s %s'%(i+1,shellquote(kfs[i])) for i in range(0,self.order)]
             knargs=' '.join(knns)
             #            knargs='-kndiscount'
+            nosmoothargs='-prune 0 -addsmooth 0 -cdiscount 0 -gtmin 0 -gtmax 0 -no-sos -no-eos'
             smoothargs='-wbdiscount' if witten_bell else knargs
-            cmd="cat %s | %s -order %s -interpolate -read - %s -lm %s"%(' '.join(cfs),sri_ngram_count,self.order,smoothargs,shellquote(lmf))
+            smoothargs=nosmoothargs+' '+smoothargs
+            interpargs='-interpolate' if interpolate else ''
+            cmd="cat %s | %s -order %s %s -read - %s -lm %s"%(' '.join(cfs),sri_ngram_count,self.order,interpargs,smoothargs,shellquote(lmf))
             log(cmd)
             os.system(cmd)
             if read_lm:
@@ -246,7 +273,9 @@ class ngram(object):
                 else:
                     assert False
             for o in range(0,self.order):
-                self.logp[o]=self.ngrams[o].probs(preserve_counts=not clear_counts)
+                self.logp[o]=self.ngrams[o].probs(preserve_counts=not clear_counts,log10=True)
+            if interpolate:
+                self.interp()
             if lmf:
                 self.write_lm(lmf)
         if clear_counts:
@@ -312,6 +341,10 @@ class ngram(object):
         return file
     def prepare(self):
         self.compute_uniform()
+    def ngramkeys(self,order):
+        order-=1
+        assert(order>=0 and order<=self.om1)
+        return self.logp[order].iterkeys() if order==self.om1 else iterkeys2(self.logp[order],self.bow[order])
     def write_lm(self,file,sort=True):
         if type(file)==str:
             warn("writing SRI lm => ",file)
@@ -324,35 +357,46 @@ class ngram(object):
 
         wf()
         wf("\\data\\")
+        for n in range(1,len(self.logp)+1):
+            wf("ngram %d=%d"%(n,iterlen(self.ngramkeys(n))))
         for n in range(0,len(self.logp)):
-            wf("ngram %d=%d"%(n+1,len(self.logp[n])))
-        wf()
-        for n in range(0,len(self.logp)):
-            wf("\\%d-grams:"%(n+1))
+            wf("\n\\%d-grams:"%(n+1))
             logp=self.logp[n]
             bow=self.bow[n]
+            sum=FloatDict()
             def wkey(k):
-                lp=logp[k]
+                lp=log10_0
+                if k in logp:
+                    lp=logp[k]
+                    sum[k[:-1]]+=10**lp
+#                lp=logp[k] if k in logp else log10_0
 #                dump(k,lp)
                 ks=' '.join(k)
-                if n==self.om1 or k not in self.bow:
+                if n==self.om1:
                     wf(lp,ks)
                 else:
                     wf(lp,ks,bow[k])
-            if sort:
-                for k in sorted(logp.iterkeys()):
-                    wkey(k)
-            else:
-                for k in logp.iterkeys():
-                    wkey(k)
+            ks=self.ngramkeys(n+1)
+            if sort: ks=sorted(ks)
+            for k in ks:
+                wkey(k)
+#            dump('sum %d-gram probs'%n,str(sum))
 
-if __name__ == "__main__":
-    order=2
+
+def ngram_main(order=2,txt='train.txt',test='test.txt',head='head',logfile='ngram.log.txt',interpolate=True,witten_bell=True):
     n=ngram(order)
-    txt='test.txt'
     n.count_file(txt,'<s>','</s>')
+    warn('#eos',n.ngrams[0].counts[(ngram.eos,)])
     head='head'
-    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=True,always_write=True,witten_bell=True)
-    lm2=txt+'.rewritten.srilm'
-    n.write_lm(lm2)
-    callv([head,lm1,lm2])
+    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=False,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
+    lm4=txt+'.rewritten.srilm'
+    n.write_lm(lm4)
+    pylm=txt+'.python'
+    lm2=n.train_lm(pylm,sri_ngram_count=False,read_lm=True,clear_counts=True,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
+    lm3=pylm+'.rewritten.srilm'
+    n.write_lm(lm3)
+    callv([head,'-50',lm1,lm2,lm3,lm4])
+
+import optfunc
+optfunc.main(ngram_main)
+

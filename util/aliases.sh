@@ -1388,6 +1388,16 @@ cd $p
 $*
 EOF
 }
+epro() {
+ local p=`homepwd`
+ ssh -t prokofiev.isi.edu -l graehl <<EOF
+cd $p
+$*
+EOF
+}
+pro() {
+    ssh prokofiev.isi.edu -l graehl
+}
 dhelp() {
  decoder --help 2>&1 | grep "$@"
 }

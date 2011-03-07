@@ -7,6 +7,29 @@ import sys,re,random,math,os,collections,subprocess
 
 from itertools import *
 
+
+def typedvals(*l):
+    return ' '.join(['%s:%s'%(type(x).__name__,x) for x in l])
+
+
+def append_logfile(logfile,writefn=None,header='',prefix='### '):
+    if logfile is not None:
+        logfile=open(logfile,'a')
+        logfile.write("### %s\n"%header)
+        writefn(logfile)
+        logfile.write("\n\n")
+        logfile.close()
+
+def iterkeys2(a,b):
+    for x in a.iterkeys():
+        yield x
+    for x in b.iterkeys():
+        if x not in a:
+            yield x
+
+def iterlen(a):
+    return sum(1.0 for x in a)
+
 def implies(a,b):
     if not a: return True
     return b
@@ -306,7 +329,7 @@ def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_li
 n_warn=0
 warncount=IntDict()
 
-def warn(msg,post=None,pre="WARNING: ",max=None):
+def warn(msg,post=None,pre="WARNING: ",max=10):
     global n_warn,warncount
     n_warn+=1
     p='\n'
@@ -505,6 +528,7 @@ else:
         return lhs+math.log(1.+math.exp(-diff))
 
 def log10_interp(a,b,wt_10a):
+    assert(0<=wt_10a<=1)
     return math.log10(wt_10a*10.**a+(1.-wt_10a)*10.**b)
 
 #TODO: work even if exp(a), exp(b) out of float range
