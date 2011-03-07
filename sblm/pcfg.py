@@ -443,9 +443,12 @@ class sblm_ngram(object):
     "require all tags in vocabulary. learn ngram model of sequence of children given parent (separate ngram model for each parent tag). interpolated with non-parent-specific ngram, which is not interpolated w/ 0-gram because every tag 1gram is observed somewhere in the whole training."
     spre='<s:'
     spost='>'
+    start=intern('<s>')
     end=intern('</s>')
     unk='<unk>'
-    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99):
+    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False):
+        self.parent_start=parent_start
+        self.cond_parent=cond_parent
         self.parent=parent #distinct ngrams for each parent; backoff to indistinct
         self.digit2at=digit2at
         self.order=order
@@ -465,8 +468,10 @@ class sblm_ngram(object):
         return self.ng.vocab_ctx()
     def terminal_vocab(self):
         return self.terminals.terminal_vocab()
+    def start_for_parent(self,p):
+        return intern('<s:'+p+'>') if self.parent_start else sblm_ngram.start
     def sent_for_event(self,p,ch):
-        sent=[intern('<s:'+p+'>')]+ch
+        sent=[self.start_for_parent(p)]+ch
         sent.append(sblm_ngram.end)
         return sent
     def score_children(self,p,ch):
@@ -563,10 +568,11 @@ def pcfg_ngram_main(n=2,
 #                    parses=train
                     parses=dev
                     ,test=dev
-                    ,parent=True
+                    ,parent=False
                     ,alpha=0.995
-                    ,witten_bell=False
-                    ,logfile="ppx.dev.txt"
+                    ,witten_bell=True
+#                    ,logfile="ppx.dev.txt"
+                    ,logfile="test.sri.txt"
                     ,sri_ngram_count=False
                     ):
     log('pcfg_ngram')
@@ -585,11 +591,8 @@ def pcfg_ngram_main(n=2,
     e=sb.eval_radu(test)
     e['logprob/ntokens']=e['logprob']/e['ntokens']
     out_dict(e)
-    if logfile is not None:
-        logfile=open(logfile,'a')
-        logfile.write("### %s\n"%Locals())
-        out_dict(e,out=logfile)
-        logfile.write("\n\n")
+    del e['top_unk']
+    append_logfile(logfile,lambda x:out_dict(e,out=x),header=Locals())
 
 import optfunc
 optfunc.main(pcfg_ngram_main)
