@@ -3,9 +3,27 @@
  figure out python logging lib
 """
 
-import sys,re,random,math,os,collections,subprocess,errno
+import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
+
+class Stopwatch(object):
+    def reset(self,clear_total=True):
+        self.started=time.time()
+        if clear_total: self.total=0.
+    def __init__(self,name='Time'):
+        self.reset(clear_total=True)
+        self.name=name
+    def elapsed(self):
+        return 0 if self.started is None else time.time()-self.started
+    def pause(self):
+        total+=elapsed()
+        self.started=None
+    def total_elapsed(self):
+        return self.elapsed()+self.total
+    def __str__(self):
+        e=self.total_elapsed()
+        return "%s: %s s"%(self.name,e)
 
 def mkdir_p(path):
     try:

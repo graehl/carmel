@@ -562,6 +562,7 @@ class sblm_ngram(object):
                         pn.count_text(sent,i=1)
         return n
     def check(self,epsilon=1e-5,uninterp=True):
+        sum1=[]
         for p,n in chain(self.png.iteritems(),[('nts',self.ng),('preterm(word)',self.terminals.ngram_lm())]):
             n1,nlt1,gt1=n.check_sums(epsilon=epsilon,uninterp=uninterp)
             total=float(n1+nlt1+len(gt1))
@@ -569,7 +570,11 @@ class sblm_ngram(object):
                 warn("PCFG (%s): ngram sums for context >1:"%p)
                 write_kv(gt1.iteritems(),out=sys.stderr)
             if total:
-                log("PCFG (%s): sum=1:%d/(N=%d)=%s sum<1:%d/N=%s sum>1:%d/N=%s sum>1"%(p,n1,total,n1/total,nlt1,nlt1/total,len(gt1),len(gt1)/total))
+                if total==n1:
+                    sum1.append(p)
+                else:
+                    log("PCFG (%s): sum=1:%d/(N=%d)=%s sum<1:%d/N=%s sum>1:%d/N=%s sum>1"%(p,n1,total,n1/total,nlt1,nlt1/total,len(gt1),len(gt1)/total))
+        log("PCFG sum=1: "+' '.join(sum1))
     def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False):
         if prefix is not None:
             prefix+='.pcfg'
@@ -584,17 +589,18 @@ class sblm_ngram(object):
                 png=self.png[nt]
                 plmf=None if lmf is None else filename_from_1to1('%s.%s'%(lmf,nt))
                 pntf=png.train_lm(prefix=pnt,sort=True,lmf=plmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=write_lm)
-                dump('lm for',nt,plmf)
+                #dump('lm for',nt,plmf)
     def __str__(self):
         return str(self.terminals)
 
 dev='data/dev.e-parse'
 test='data/test.e-parse'
 train='data/train.e-parse'
+dev_test='data/dev+test.e-parse'
 fakedev='data/fake.dev.e-parse'
 dev1='data/dev1.e-parse'
 faketrain='data/fake.train.e-parse'
-train=dev
+train=dev_test
 
 def pcfg_ngram_main(n=5,
                     train=train
@@ -613,7 +619,9 @@ def pcfg_ngram_main(n=5,
     sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha)
     ntrain=sb.read_radu(train)
 
+    s=Stopwatch('Train')
     sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm)
+    warn(s)
     if write_lm:
         sb.terminals.write_lm(train+'.terminals')
     sb.check(epsilon=1e-5)
@@ -625,7 +633,9 @@ def pcfg_ngram_main(n=5,
        callv(['head',sri.name])
        print str(sb)
     for t in [dev,test]:
+        s=Stopwatch('Score '+t)
         e=sb.eval_radu(t)
+        warn(s)
         e['ntrain']=ntrain
         e['logprob_2']=log10_tobase(e['logprob'],2)
         e['logprob_2/nnode']=e['logprob_2']/e['nnode']
