@@ -2568,24 +2568,25 @@ sub add_to_n_list {
 my $ln_of_10=log(10);
 #fixme: use POSIX will define this already.
 no warnings 'redefine';
-use List::Util qw(max min);
-#sub max(@) {
-    # my $x=shift;
-    # local $_;
-    # for (@_) {
-    #     $x=$_ if $x<$_;
-    # }
-    # $x
-#}
+#eval "use List::Util;1"
+#use List::Util qw(max min);
+sub max(@) {
+    my $x=shift;
+    local $_;
+    for (@_) {
+        $x=$_ if $x<$_;
+    }
+    $x
+}
 
-#sub min(@) {
-    # my $x=shift;
-    # local $_;
-    # for (@_) {
-    #     $x=$_ if $x>$_;
-    # }
-    # $x
-#}
+sub min(@) {
+    my $x=shift;
+    local $_;
+    for (@_) {
+        $x=$_ if $x>$_;
+    }
+    $x
+}
 
 sub log10 {
         #/$ln_of_10; #slower
