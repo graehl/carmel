@@ -19,7 +19,7 @@ buildpypy() {
     (set -e
         #http://codespeak.net/pypy/dist/pypy/doc/getting-started-python.html
         opt=jit
-        opt=2
+        [[ $jit ]] || opt=2
         # mar 2010 opt=2 is default (jit is 32-bit only)
         cd pypy/translator/goal
         ${python:-python} translate.py --opt=$opt targetpypystandalone.py
