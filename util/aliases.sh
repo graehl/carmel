@@ -1,6 +1,11 @@
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
+radutrees() {
+    local t=$1
+    require_file $t
+    perl -ne '++$nnt while (/~\d+~\d+/g); ++$nw while (/\(\S+ \S+\)/g);END{print "NT=$nnt WORDS=$nw TOTAL=",$nw*2+$nnt,"\n";}' $t
+}
 tohpc() {
     cp2 $HPCHOST "$@"
 }

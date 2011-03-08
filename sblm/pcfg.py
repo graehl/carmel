@@ -325,7 +325,7 @@ def gen_pcfg_events_radu(t,terminals=False,terminals_unigram=False,digit2at=Fals
         if n.is_terminal():
             if terminals_unigram: yield (ev,)
         elif n.is_preterminal():
-            yield (ev,)
+            yield (ev,) #ret[0] = ev = (preterm,term)
         else:
             yield ev
 
@@ -426,13 +426,13 @@ class tag_word_unigram(object):
         self.have_p=False
         for k,p in self.word.iteritems():
             if not p>0: warn("0 prob word: p(%s)=%s"%(k,p))
-            self.word[k]=log_prob(p)
+            self.word[k]=log10_prob(p)
         for k,p in self.tagword.iteritems():
             if not p>0: warn("0 prob tag/word: p(%s)=%s"%(k,p))
-            self.tagword[k]=log_prob(p)
+            self.tagword[k]=log10_prob(p)
         for k,p in self.bo_for_tag.iteritems():
             if not p>0: warn("0 prob tag backoff: p(%s)=%s"%(k,p))
-            self.bo_for_tag[k]=log_prob(p)
+            self.bo_for_tag[k]=log10_prob(p)
         self.have_logp=True
     def __str__(self,head=10):
         return ''.join(head_sorted_str(x.iteritems(),reverse=True,key=lambda x:x[1],head=head) for x in [self.tagword,self.word])
@@ -500,31 +500,41 @@ class sblm_ngram(object):
             warn("eval_pcfg terminal",e,max=10)
             return self.terminals.logp_tw_known(e)
         else:
-            return (self.score_children(e[0],e[1:]),1)
+            return (self.score_children(e[0],e[1:]),1) #len(e)-1
     def eval_radu(self,input):
         if type(input)==str: input=open(input)
         #FIXME: use gen_pcfg_events_radu
         logp=0.
         n=0
+        nnode=0
         nunk=0
+        nw=0
         unkwords=IntDict()
         for line in input:
-            for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
-                warn('pcfg_events_radu',e,max=10)
+#            n+=1 #TOP
+            t=raduparse(line,intern_labels=True)
+            if t is not None:
+                nnode+=t.size()
+                nw+=len(t)
+            for e in gen_pcfg_events_radu(t,terminals=False,digit2at=self.digit2at):
                 lp,nknown=self.eval_pcfg_event(e)
+#                warn('pcfg_events_radu','p(%s)=%s%s'%(e,lp,'' if nknown else ' unk'),max=100)
                 logp+=lp
                 if nknown==0:
                     #warn("unk sblm_ngram eval terminal:",e,max=10)
                     unkwords[tuple(e[0])]+=1
                     nunk+=1
                 else:
-                    assert nknown==1
-                    n+=1
-        return dict(logprob=logp,ntokens=n,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
+                    n+=nknown
+        return dict(logprob=logp,nnode=nnode,nevents=n,nwords=nw,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
     def read_radu(self,input):
         if type(input)==str: input=open(input)
+        n=0
         for line in input:
-            for e in gen_pcfg_events_radu(line,terminals=True,digit2at=self.digit2at):
+            t=raduparse(line,intern_labels=True)
+            if t is not None:
+                n+=t.size()
+            for e in gen_pcfg_events_radu(t,terminals=True,digit2at=self.digit2at):
                 if type(e)==tuple:
                     e=tuple(e[0])
 #                    warn("sblm_ngram train terminal",e,max=10)
@@ -542,9 +552,11 @@ class sblm_ngram(object):
                         else:
                             pn=pngs[p]
                         pn.count_text(sent,i=1)
+        return n
     def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False):
         if prefix is not None:
             prefix+='.pcfg'
+        mkdir_parent(prefix)
         self.terminals.train(uni_witten_bell,uni_unkword)
         all=self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count)
         if self.parent:
@@ -562,13 +574,14 @@ class sblm_ngram(object):
 dev='data/dev.e-parse'
 train='data/train.e-parse'
 fakedev='data/fake.dev.e-parse'
+dev1='data/dev1.e-parse'
 faketrain='data/fake.train.e-parse'
+#train=dev
 
-def pcfg_ngram_main(n=2,
-#                    parses=train
-                    parses=dev
+def pcfg_ngram_main(n=5,
+                    parses=train
                     ,test=dev
-                    ,parent=False
+                    ,parent=True
                     ,alpha=0.995
                     ,witten_bell=True
 #                    ,logfile="ppx.dev.txt"
@@ -578,8 +591,8 @@ def pcfg_ngram_main(n=2,
     log('pcfg_ngram')
     log(str(Locals()))
     sb=sblm_ngram(order=n,parent=parent,parent_alpha=alpha)
-    sb.read_radu(parses)
-    sb.train_lm(parses,sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell)
+    ntrain=sb.read_radu(parses)
+    sb.train_lm(prefix=parses+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell)
     sb.terminals.write_lm(parses+'.terminals')
     if True:
         write_list(sb.preterminal_vocab(),name='preterminals')
@@ -589,7 +602,10 @@ def pcfg_ngram_main(n=2,
 #        callv(['head',sri.name])
         print str(sb)
     e=sb.eval_radu(test)
-    e['logprob/ntokens']=e['logprob']/e['ntokens']
+#    e['logprob/ntokens']=e['logprob']/e['ntokens']
+    e['ntrain']=ntrain
+    e['logprob_2']=log10_tobase(e['logprob'],2)
+    e['logprob_2/nnode']=e['logprob_2']/e['nnode']
     out_dict(e)
     del e['top_unk']
     append_logfile(logfile,lambda x:out_dict(e,out=x),header=Locals())
@@ -602,11 +618,11 @@ optfunc.main(pcfg_ngram_main)
 """
 TODO:
 
-debug no-sri vs sri difference
+debug no-sri vs sri difference (done for now: close, but </s> gets diff unigram prob.)
 
 load/save trained sblm and raw counts?
 
-1-to-1 NT->filename mapping
+1-to-1 NT->filename mapping (for decoder feature)
 
 decoder feature
 

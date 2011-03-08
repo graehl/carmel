@@ -3,10 +3,20 @@
  figure out python logging lib
 """
 
-import sys,re,random,math,os,collections,subprocess
+import sys,re,random,math,os,collections,subprocess,errno
 
 from itertools import *
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
+
+def mkdir_parent(file):
+    mkdir_p(os.path.dirname(file))
 
 def typedvals(*l):
     return ' '.join(['%s:%s'%(type(x).__name__,x) for x in l])
@@ -72,6 +82,12 @@ def out_tabsep(pairs,out=sys.stdout):
     if type(out)==str: out=open(out,'w')
     for kv in pairs:
         out.write('\t'.join(map(str,kv))+'\n')
+
+def system_force(*a,**kw):
+    r=os.system(*a,**kw)
+    if r!=0:
+        warn("FAILED: os.system(%s) EXIT=%d"%(' '.join(a),r))
+        if not ('warn' in kw and kw['warn']): sys.exit(r)
 
 def callv(l):
     #subprocess.check_call(l)
@@ -313,6 +329,12 @@ def log_prob(p):
         return log_zero
     return math.log(p)
 
+log10_0prob=-99
+def log10_prob(p):
+    if p==0:
+        return log10_0prob
+    return math.log10(p)
+
 def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_list='\n'):
     if type(out)==str:
         out=open(out,'w')
@@ -541,6 +563,13 @@ def log10tolog(e10):
     return e10*log_of_10
 def logtolog10(ee):
     return ee*log10_of_e
+def log_rebase(l,a,b):
+    "return q such that b^q = a^l"
+    return l*math.log(a)/math.log(b)
+def ln_tobase(l,b):
+    return l/math.log(b)
+def log10_tobase(l,b):
+    return l/math.log10(b)
 
 def log10add_toe(a,b):
     return log10_of_e*logadd(log_of_10*a,log_of_10*b)
@@ -1035,3 +1064,4 @@ def random_combination_with_replacement(iterable, r):
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))
     return tuple(pool[i] for i in indices)
+

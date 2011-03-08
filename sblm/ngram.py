@@ -7,7 +7,6 @@ import os
 
 default_ngram_count='ngram-count'
 
-log10_0=-99
 
 #intention: just those of a given order
 class ngram_counts(object):
@@ -76,13 +75,13 @@ class ngram_counts(object):
         sums=FloatDict()
         for k,count in self.counts.iteritems():
             c=k[:-1]
-            warn("wb bo count",'k=%s,count=%s,c=%s'%(k,count,c),max=10)
+#            warn("wb bo count",'k=%s,count=%s,c=%s'%(k,count,c),max=10)
             types[c]+=1
             sums[c]+=count
         for k,t in types.iteritems():
             p=t/(t+sums[k])
             types[k]=math.log10(p) if log10 else p
-            warn("wb bo",'k=%s,t=%s,bo[k]=%s'%(k,t,types[k]),max=10)
+#            warn("wb bo",'k=%s,t=%s,bo[k]=%s'%(k,t,types[k]),max=10)
         return types
     def sum_counts(self):
         return sum(float(x) for x in self.counts.itervalues())
@@ -101,6 +100,7 @@ class ngram_counts(object):
         sumc=self.sum_counts_ctx()
         for k,count in self.counts.iteritems():
             s=sumc[k[:-1]]
+#            if k[-1]=='</s>': warn('p[%s]=%s/%s=%s'%(k,count,s,count/s))
             self.counts[k]=math.log10(count/s) if log10 else (count/s)
 
 def shorten_context(t):
@@ -138,9 +138,9 @@ def build_2gram_counts(c2,c1=None,include_c2_ctx_in_c1=True,digit2at=False,unkwo
 
 class ngram(object):
     #log10(prob) and log10(bow)
-    sos='<s>'
-    eos='</s>'
-    unk='<unk>'
+    sos=intern('<s>')
+    eos=intern('</s>')
+    unk=intern('<unk>')
     specials=set((sos,eos,unk))
     @classmethod
     def is_special(w):
@@ -152,14 +152,26 @@ class ngram(object):
             h=o+1
             lp=self.logp[h]
             bo=self.bow[o]
-            bop=self.logp[o]
+            lpbo=self.logp[o]
             for k,l in lp.iteritems():
                 ctx=k[:-1]
                 kb=k[1:]
-                lp[k]=log10_interp(bop[kb],l,10.**bo[ctx])
-                warn('interp',typedvals(k,kb,ctx,bop[kb],l,bo[ctx],lp[k]),max=10)
+                lp[k]=log10_interp(lpbo[k[1:]],l,10.**bo[k[:-1]])
+#                warn('interp',typedvals(k,ctx,l,lp[k]),max=10)
     def uninterp(self):
         "undo the effect of self.interp()"
+        for o in reversed(range(0,self.om1)):
+            h=o+1
+            lp=self.logp[h]
+            bow=self.bow[o]
+            lpbo=self.logp[o]
+            for k,l in lp.iteritems():
+                pcomb=10.**l
+                b=10.**lpbo[k[1:]]
+                bo=10.**bow[k[:-1]]
+                p=(pcomb-bo*b)/(1.-bo)
+                warn("uninterp",'p_uninterp(%s)=[%s-%s*%s]/(1.-%s)=%s'%(k,pcomb,bo,b,bo,p))
+                lp[k]=math.log10(p)
     def compute_uniform(self):
         self.uniform_p=1./len(self.logp)
         self.uniform_log10p=math.log10(self.uniform_p)
@@ -196,14 +208,14 @@ class ngram(object):
                 cn.add_i(text,w)
     def score_word(self,text,i):
         "private (perform digit2at yourself) returns (logp,bo) for most specific ngram, where bo is the total of contexts' backoffs. text is a tuple"
-        c=max(0,i-self.om1)
         e=i+1
         bo=0.
         maxom1=min(self.om1,i)
-        for o in range(maxom1,0-1,-1):
+        for o in range(maxom1,-1,-1):
             l=i-o
             phrase=tuple(text[l:e])
             lp=self.logp[o]
+            warn('score_word','(text=%s i=%s o=%s phrase=%s %s'%(text,i,o,phrase,phrase in lp),max=10)
             if phrase in lp:
                 return (lp[phrase],bo)
             elif o>0:
@@ -257,13 +269,14 @@ class ngram(object):
             knns=['-kn%s %s'%(i+1,shellquote(kfs[i])) for i in range(0,self.order)]
             knargs=' '.join(knns)
             #            knargs='-kndiscount'
-            nosmoothargs='-prune 0 -addsmooth 0 -cdiscount 0 -gtmin 0 -gtmax 0 -no-sos -no-eos'
+            #-cdiscount 0 -addsmooth 0
+            nosmoothargs='-prune 0 -gtmin 0 -gtmax 0 -no-sos -no-eos'
             smoothargs='-wbdiscount' if witten_bell else knargs
             smoothargs=nosmoothargs+' '+smoothargs
             interpargs='-interpolate' if interpolate else ''
             cmd="cat %s | %s -order %s %s -read - %s -lm %s"%(' '.join(cfs),sri_ngram_count,self.order,interpargs,smoothargs,shellquote(lmf))
             log(cmd)
-            os.system(cmd)
+            system_force(cmd)
             if read_lm:
                 self.read_lm(lmf,clear_counts)
         else:
@@ -365,17 +378,17 @@ class ngram(object):
             bow=self.bow[n]
             sum=FloatDict()
             def wkey(k):
-                lp=log10_0
+                lp=log10_0prob
                 if k in logp:
                     lp=logp[k]
                     sum[k[:-1]]+=10**lp
-#                lp=logp[k] if k in logp else log10_0
+#                lp=logp[k] if k in logp else log10_0prob
 #                dump(k,lp)
                 ks=' '.join(k)
                 if n==self.om1:
                     wf(lp,ks)
                 else:
-                    wf(lp,ks,bow[k])
+                    wf(lp,ks,bow[k] if k in bow else 0)
             ks=self.ngramkeys(n+1)
             if sort: ks=sorted(ks)
             for k in ks:
@@ -388,14 +401,17 @@ def ngram_main(order=2,txt='train.txt',test='test.txt',head='head',logfile='ngra
     n.count_file(txt,'<s>','</s>')
     warn('#eos',n.ngrams[0].counts[(ngram.eos,)])
     head='head'
-    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=False,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
-    lm4=txt+'.rewritten.srilm'
-    n.write_lm(lm4)
+#    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=False,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
+#    lm4=txt+'.rewritten.srilm'
+#    n.write_lm(lm4)
     pylm=txt+'.python'
     lm2=n.train_lm(pylm,sri_ngram_count=False,read_lm=True,clear_counts=True,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
-    lm3=pylm+'.rewritten.srilm'
-    n.write_lm(lm3)
-    callv([head,'-50',lm1,lm2,lm3,lm4])
+#    lm3=pylm+'.uninterp.srilm'
+#    n.uninterp()
+#    n.write_lm(lm3)
+#    callv([head,'-10',lm1,lm2,lm3])
+    s=intern_tuple(('<s>','I','together.','</s>'))
+    dump(n.score_word(s,1),n.score_word(s,2),n.score_word(s,3))
 
 import optfunc
 optfunc.main(ngram_main)
