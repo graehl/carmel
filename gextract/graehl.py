@@ -10,7 +10,8 @@ from itertools import *
 def mkdir_p(path):
     try:
         os.makedirs(path)
-    except OSError as exc: # Python >2.5
+    except OSError,exc:
+        pass
         if exc.errno == errno.EEXIST:
             pass
         else: raise
@@ -335,7 +336,7 @@ def log10_prob(p):
         return log10_0prob
     return math.log10(p)
 
-def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_list='\n'):
+def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_list='\n',xform=identity):
     if type(out)==str:
         out=open(out,'w')
     if type(l)!=list:
@@ -343,10 +344,13 @@ def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_li
     if header:
         out.write('(N=%d) %s:%s'%(len(l),name,after_item))
     for x in l:
-        out.write(str(x))
+        out.write(str(xform(x)))
         out.write(after_item)
     out.write(after_list)
     return out
+
+def write_kv(l,**kw):
+    write_list(l,xform=lambda x:"%s = %s"%x,**kw)
 
 n_warn=0
 warncount=IntDict()
@@ -366,12 +370,12 @@ def warncount_sorted():
     w=[(c,k) for (k,c) in warncount.iteritems()]
     return sorted(w,reverse=True)
 
-def info_summary(pre='',warn_details=True):
+def info_summary(pre='',warn_details=True,out=sys.stderr):
     if n_warn and warn_details:
-        log('N\twarning')
+        log('N\twarning',out=out)
         for w in warncount_sorted():
-            log("%s\t%s"%w)
-    log("%s%d total warnings"%(pre,n_warn))
+            log("%s\t%s"%w,out=out)
+    log("%s%d total warnings"%(pre,n_warn),out=out)
 
 def report_zeroprobs():
     "print (and return) any zero probs since last call"
@@ -551,7 +555,7 @@ else:
 
 def log10_interp(a,b,wt_10a):
     assert(0<=wt_10a<=1)
-    return math.log10(wt_10a*10.**a+(1.-wt_10a)*10.**b)
+    return log10_prob(wt_10a*10.**a+(1.-wt_10a)*10.**b)
 
 #TODO: work even if exp(a), exp(b) out of float range
 def log_interp(a,b,wt_ea):
@@ -699,8 +703,8 @@ def log_continue(s):
     sys.stderr.write(s)
 def log_finish(s):
     sys.stderr.write(s+"\n")
-def log(s):
-    sys.stderr.write("### "+s+"\n")
+def log(s,out=sys.stderr):
+    out.write("### "+s+"\n")
 import time
 def logtime(s=""):
     log(time.ctime()+(": "+s if s else ""))
