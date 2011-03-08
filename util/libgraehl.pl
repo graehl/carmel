@@ -2570,7 +2570,7 @@ my $ln_of_10=log(10);
 no warnings 'redefine';
 #eval "use List::Util;1"
 #use List::Util qw(max min);
-sub max(@) {
+sub max {
     my $x=shift;
     local $_;
     for (@_) {
@@ -2579,7 +2579,7 @@ sub max(@) {
     $x
 }
 
-sub min(@) {
+sub min {
     my $x=shift;
     local $_;
     for (@_) {
