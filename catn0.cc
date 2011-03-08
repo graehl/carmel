@@ -19,6 +19,7 @@ Starting with Linux 2.6.31, all the filesystems support splicing both in read an
   optional arg4=Bps: rate limit (64 bit unsigned int max) of bytes per sec. 0 = no limit
   optional arg5=j: j=0 (default) try 0-copy splice; j=1 (optional) force read/write.
   optional arg6=v: v=0,1, or 2 - amount of stderr info (errors get exit code already, and always print to stderr)
+  optional arg7=w: w=0xFFFFFFFF (default). write timeout of w sec (0 means no timeout, 0xFFFFFFFF means same timeout as read timeout)
 */
 
 int verbose=2;
@@ -270,8 +271,8 @@ int main(int argc, char *argv[]) {
   if (++ai<argc)
     write_timeout_sec=ull_or_die(argv[ai],ai,UINT_MAX,"write-timeout-sec");
   if (verbose)
-    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%u max-bytes/sec=%llu force_rw=%d verbose=%d"
-          ,max,err_incomplete,timeout_sec,bps,force_rw,verbose);
+    warnx("catn0 args: max=%llu err_incomplete=%d timeout_sec=%u max-bytes/sec=%llu force_rw=%d verbose=%d write_timeout_sec=%u"
+          ,max,err_incomplete,timeout_sec,bps,force_rw,verbose,write_timeout_sec);
 
   //action:
 
