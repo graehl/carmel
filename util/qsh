@@ -233,6 +233,7 @@ close S;
 my $pid;
 print STDERR "$QSUB $pathpre.sh\n";
 print STDERR "with command: $cmd\n";
+print STDERR "name: $JOBNAME\n";
 if ($pid=open(QS,'-|')) {
     die $! unless defined $pid;
 } else {

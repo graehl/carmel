@@ -1,3 +1,6 @@
+blib=$d/bloblib.sh
+[ -r $blib ] && . $blib
+
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
@@ -667,8 +670,6 @@ buildboost() {(
 )}
 alias gmap='/local/bin/sudo ~/bin/append-gridmap'
 alias buildextract="pushd ~/xrs-extract/c++-src;cvs update;make;popd"
-
-. ~/isd/hints/bloblib.sh
 
 PUZZLEBASE=~/puzzle
 #PUZZLETO='graehl@isi.edu'
