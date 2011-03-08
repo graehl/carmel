@@ -346,8 +346,10 @@ class tag_word_unigram(object):
         return self.bo_for_tag.iterkeys()
     def terminal_vocab(self):
         return self.word.iterkeys()
+    def ngram_lm(self):
+        return build_2gram(self.tagword,self.word,self.bo_for_tag,digit2at=self.digit2at,logp_unk=self.logp_unk)
     def write_lm(self,out,sort=True):
-        n=build_2gram(self.tagword,self.word,self.bo_for_tag,digit2at=self.digit2at,logp_unk=self.logp_unk)
+        n=self.ngram_lm()
         n.write_lm(out,sort=sort)
     def oov(self,w):
         return not w in self.word
@@ -477,17 +479,20 @@ class sblm_ngram(object):
     def score_children(self,p,ch):
         sent=self.sent_for_event(p,ch)
         bo=self.ng
-        warn("score_children",'%s'%sent,max=10)
-        if self.parent:
+#        warn("score_children",'%s'%sent,max=10)
+        if self.parent and p in self.png:
             dist=self.png[p]
             s=0.
             pa=self.pwt
             for i in range(1,len(sent)):
                 pp,pbo=dist.score_word(sent,i)
-                warn("score given parent",'%s=%s+%s=%s'%(sent[0:i+1],pp,pbo,pp+pbo),max=10)
+#                warn("score given parent",'%s=%s+%s=%s'%(sent[0:i+1],pp,pbo,pp+pbo),max=10)
                 bp,bbo=bo.score_word(sent,i)
-                warn("score forgetting parent",'%s=%s+%s=%s'%(sent[0:i+1],bp,bbo,bp+bbo),max=10)
-                s+=log10_interp(pp+pbo,bp+bbo,pa)
+                                        #                warn("score forgetting parent",'%s=%s+%s=%s'%(sent[0:i+1],bp,bbo,bp+bbo),max=10)
+                li=log10_interp(pp+pbo,bp+bbo,pa)
+                if li==log10_0prob:
+                    warn("score_children 0 interpolated prob","alpha=%s, p(%s|%s)=%s+%s p(|*)=%s+%s"%(pa,sent[:i+1],p,pp,pbo,bp,bbo))
+                s+=li
 #                s+=dist.score_word_interp(sent,i,bo,parent_alpha)
             return s
         else:
@@ -497,7 +502,7 @@ class sblm_ngram(object):
         if type(e)==tuple:
             e=tuple(e[0])
             assert len(e)==2
-            warn("eval_pcfg terminal",e,max=10)
+#            warn("eval_pcfg terminal",e,max=10)
             return self.terminals.logp_tw_known(e)
         else:
             return (self.score_children(e[0],e[1:]),1) #len(e)-1
@@ -509,13 +514,16 @@ class sblm_ngram(object):
         nnode=0
         nunk=0
         nw=0
+        ntrees=0
         unkwords=IntDict()
         for line in input:
 #            n+=1 #TOP
             t=raduparse(line,intern_labels=True)
-            if t is not None:
-                nnode+=t.size()
-                nw+=len(t)
+            if t is None:
+                next
+            nnode+=t.size()
+            nw+=len(t)
+            ntrees+=1
             for e in gen_pcfg_events_radu(t,terminals=False,digit2at=self.digit2at):
                 lp,nknown=self.eval_pcfg_event(e)
 #                warn('pcfg_events_radu','p(%s)=%s%s'%(e,lp,'' if nknown else ' unk'),max=100)
@@ -526,7 +534,7 @@ class sblm_ngram(object):
                     nunk+=1
                 else:
                     n+=nknown
-        return dict(logprob=logp,nnode=nnode,nevents=n,nwords=nw,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
+        return dict(logprob=logp,nnode=nnode,nevents=n,ntrees=ntrees,nwords=nw,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
     def read_radu(self,input):
         if type(input)==str: input=open(input)
         n=0
@@ -553,12 +561,21 @@ class sblm_ngram(object):
                             pn=pngs[p]
                         pn.count_text(sent,i=1)
         return n
-    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False):
+    def check(self,epsilon=1e-5,uninterp=True):
+        for p,n in chain(self.png.iteritems(),[('nts',self.ng),('preterm(word)',self.terminals.ngram_lm())]):
+            n1,nlt1,gt1=n.check_sums(epsilon=epsilon,uninterp=uninterp)
+            total=float(n1+nlt1+len(gt1))
+            if gt1:
+                warn("PCFG (%s): ngram sums for context >1:"%p)
+                write_kv(gt1.iteritems(),out=sys.stderr)
+            if total:
+                log("PCFG (%s): sum=1:%d/(N=%d)=%s sum<1:%d/N=%s sum>1:%d/N=%s sum>1"%(p,n1,total,n1/total,nlt1,nlt1/total,len(gt1),len(gt1)/total))
+    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False):
         if prefix is not None:
             prefix+='.pcfg'
         mkdir_parent(prefix)
         self.terminals.train(uni_witten_bell,uni_unkword)
-        all=self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count)
+        all=self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=write_lm)
         if self.parent:
             for nt,png in self.png.iteritems():
                 #self.nonterminal_vocab()
@@ -566,49 +583,56 @@ class sblm_ngram(object):
                 pnt=filename_from_1to1('%s.%s'%(prefix,nt))
                 png=self.png[nt]
                 plmf=None if lmf is None else filename_from_1to1('%s.%s'%(lmf,nt))
-                pntf=png.train_lm(prefix=pnt,sort=True,lmf=plmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count)
+                pntf=png.train_lm(prefix=pnt,sort=True,lmf=plmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=write_lm)
                 dump('lm for',nt,plmf)
     def __str__(self):
         return str(self.terminals)
 
 dev='data/dev.e-parse'
+test='data/test.e-parse'
 train='data/train.e-parse'
 fakedev='data/fake.dev.e-parse'
 dev1='data/dev1.e-parse'
 faketrain='data/fake.train.e-parse'
-#train=dev
+train=dev
 
 def pcfg_ngram_main(n=5,
-                    parses=train
-                    ,test=dev
+                    train=train
+                    ,dev=dev
+                    ,test=test
                     ,parent=True
-                    ,alpha=0.995
+                    ,parent_alpha=0.999
                     ,witten_bell=True
 #                    ,logfile="ppx.dev.txt"
                     ,logfile="test.sri.txt"
                     ,sri_ngram_count=False
+                    ,write_lm=False
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
-    sb=sblm_ngram(order=n,parent=parent,parent_alpha=alpha)
-    ntrain=sb.read_radu(parses)
-    sb.train_lm(prefix=parses+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell)
-    sb.terminals.write_lm(parses+'.terminals')
-    if True:
-        write_list(sb.preterminal_vocab(),name='preterminals')
-        write_list(sb.png.keys(),name='parents(NTs)')
-#        write_list(sb.nonterminal_vocab(),name='nonterminals')
-#        dump(sri.name)
-#        callv(['head',sri.name])
-        print str(sb)
-    e=sb.eval_radu(test)
-#    e['logprob/ntokens']=e['logprob']/e['ntokens']
-    e['ntrain']=ntrain
-    e['logprob_2']=log10_tobase(e['logprob'],2)
-    e['logprob_2/nnode']=e['logprob_2']/e['nnode']
-    out_dict(e)
-    del e['top_unk']
-    append_logfile(logfile,lambda x:out_dict(e,out=x),header=Locals())
+    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha)
+    ntrain=sb.read_radu(train)
+
+    sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm)
+    if write_lm:
+        sb.terminals.write_lm(train+'.terminals')
+    sb.check(epsilon=1e-5)
+    if False:
+       write_list(sb.preterminal_vocab(),name='preterminals')
+       write_list(sb.png.keys(),name='parents(NTs)')
+       write_list(sb.nonterminal_vocab(),name='nonterminals')
+       dump(sri.name)
+       callv(['head',sri.name])
+       print str(sb)
+    for t in [dev,test]:
+        e=sb.eval_radu(t)
+        e['ntrain']=ntrain
+        e['logprob_2']=log10_tobase(e['logprob'],2)
+        e['logprob_2/nnode']=e['logprob_2']/e['nnode']
+        out_dict(e)
+        del e['top_unk']
+        append_logfile(logfile,lambda x:out_dict(e,out=x),header=Locals())
+    info_summary()
 
 import optfunc
 optfunc.main(pcfg_ngram_main)

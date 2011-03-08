@@ -215,7 +215,7 @@ class ngram(object):
             l=i-o
             phrase=tuple(text[l:e])
             lp=self.logp[o]
-            warn('score_word','(text=%s i=%s o=%s phrase=%s %s'%(text,i,o,phrase,phrase in lp),max=10)
+            # warn('score_word','(text=%s i=%s o=%s phrase=%s %s'%(text,i,o,phrase,phrase in lp),max=10)
             if phrase in lp:
                 return (lp[phrase],bo)
             elif o>0:
@@ -251,9 +251,9 @@ class ngram(object):
         for o in range(0,self.order):
             r.append(self.ngrams[o].write_counts_kndisc('%s.%sgram'%(prefix,o+1),sort))
         return r
-    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,always_write=False,interpolate=True):
-        "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or always_Write=True"
-        if lmf is None and (sri_ngram_count or always_write):
+    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,write_lm=False,interpolate=True):
+        "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or write_lm=True"
+        if lmf is None and (sri_ngram_count or write_lm):
             if prefix is None:
                 tf=tempfile.NamedTemporaryFile()
                 lmf=tf.name
@@ -358,6 +358,29 @@ class ngram(object):
         order-=1
         assert(order>=0 and order<=self.om1)
         return self.logp[order].iterkeys() if order==self.om1 else iterkeys2(self.logp[order],self.bow[order])
+    def check_sums(self,epsilon=1e-5,uninterp=False):
+        """less than 1 sum given context is ok in a pre-interpolated LM or a BO LM; more than 1 is never ok.
+        return (# =~ 1, # < 1, [dict[ctx]=sum>1])
+        """
+        if uninterp: self.uninterp()
+        sum=FloatDict()
+        for o in range(0,self.order):
+            lp=self.logp[o]
+            for k,lp in lp.iteritems():
+                if lp!=log10_0prob:
+                    sum[k[:-1]]+=10.**lp
+        n1=0
+        nlt1=0
+        gt1=dict()
+        for k,z in sum.iteritems():
+            if approx_equal(z,1,epsilon):
+                n1+=1
+            elif definitely_gt(z,1,epsilon):
+                gt1[k]=z
+            else:
+                nlt1+=1
+        if uninterp: self.interp()
+        return (n1,nlt1,gt1)
     def write_lm(self,file,sort=True):
         if type(file)==str:
             warn("writing SRI lm => ",file)
@@ -401,11 +424,11 @@ def ngram_main(order=2,txt='train.txt',test='test.txt',head='head',logfile='ngra
     n.count_file(txt,'<s>','</s>')
     warn('#eos',n.ngrams[0].counts[(ngram.eos,)])
     head='head'
-#    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=False,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
+#    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=False,write_lm=True,witten_bell=witten_bell,interpolate=interpolate)
 #    lm4=txt+'.rewritten.srilm'
 #    n.write_lm(lm4)
     pylm=txt+'.python'
-    lm2=n.train_lm(pylm,sri_ngram_count=False,read_lm=True,clear_counts=True,always_write=True,witten_bell=witten_bell,interpolate=interpolate)
+    lm2=n.train_lm(pylm,sri_ngram_count=False,read_lm=True,clear_counts=True,write_lm=True,witten_bell=witten_bell,interpolate=interpolate)
 #    lm3=pylm+'.uninterp.srilm'
 #    n.uninterp()
 #    n.write_lm(lm3)

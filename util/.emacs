@@ -3760,6 +3760,7 @@ configuration to the state it was in beforehand."
 	    (uncomment-region (mark) (point))
 	  (comment-region (mark) (point)))))))
 (global-set-key (kbd "C-/") 'tweakemacs-comment-dwim-region-or-one-line)
+(global-set-key (kbd "M-;") 'comment-dwim)
 (global-set-key (kbd "M-,") 'transpose-sexps)
 ;m-z = zap-to-char
 
