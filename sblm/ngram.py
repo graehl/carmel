@@ -170,7 +170,7 @@ class ngram(object):
                 b=10.**lpbo[k[1:]]
                 bo=10.**bow[k[:-1]]
                 p=(pcomb-bo*b)/(1.-bo)
-                warn("uninterp",'p_uninterp(%s)=[%s-%s*%s]/(1.-%s)=%s'%(k,pcomb,bo,b,bo,p))
+#                warn("uninterp",'p_uninterp(%s)=[%s-%s*%s]/(1.-%s)=%s'%(k,pcomb,bo,b,bo,p))
                 lp[k]=math.log10(p)
     def compute_uniform(self):
         self.uniform_p=1./len(self.logp)
