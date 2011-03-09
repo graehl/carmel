@@ -449,6 +449,14 @@ class sblm_ngram(object):
     end=intern('</s>')
     unk='<unk>'
     def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False):
+        """
+        parent: use parent_alpha*p(children|parent)+(1-parent_alpha)*p(children)
+
+        parent_start: make the <s> symbol <s:NP> - not needed if you use cond_parent or parent
+
+        cond_parent: ngram c[0]...c[i-1] PARENT c[i] for each i you score. backs off to c[i]|PARENT and c[i]. overrides parent. (this is fine; they aim toward the same purpose)
+
+        """
         self.parent_start=parent_start
         self.cond_parent=cond_parent
         self.parent=parent #distinct ngrams for each parent; backoff to indistinct
@@ -473,14 +481,28 @@ class sblm_ngram(object):
     def start_for_parent(self,p):
         return intern('<s:'+p+'>') if self.parent_start else sblm_ngram.start
     def sent_for_event(self,p,ch):
+        # these come from already-interned tree labels
         sent=[self.start_for_parent(p)]+ch
         sent.append(sblm_ngram.end)
         return sent
     def score_children(self,p,ch):
         sent=self.sent_for_event(p,ch)
         bo=self.ng
-#        warn("score_children",'%s'%sent,max=10)
-        if self.parent and p in self.png:
+        warn("score_children",'%s => %s'%(p,sent),max=10)
+        if self.cond_parent:
+            s=0.
+            ng=self.ng
+            i=len(sent)
+            sent.append(None)
+            while i>1: # don't predict <s> | parent
+                sent[i]=sent[i-1]
+                sent[i-1]=p
+                warn("score_children cond_parent","%s"%(sent[:i+1]),max=10)
+                lprob,bo=ng.score_word(sent,i)
+                s+=(lprob+bo)
+                i-=1
+            return s
+        elif self.parent and p in self.png:
             dist=self.png[p]
             s=0.
             pa=self.pwt
@@ -524,6 +546,7 @@ class sblm_ngram(object):
             nnode+=t.size()
             nw+=len(t)
             ntrees+=1
+            warn("eval_radu",t,max=10)
             for e in gen_pcfg_events_radu(t,terminals=False,digit2at=self.digit2at):
                 lp,nknown=self.eval_pcfg_event(e)
 #                warn('pcfg_events_radu','p(%s)=%s%s'%(e,lp,'' if nknown else ' unk'),max=100)
@@ -551,15 +574,25 @@ class sblm_ngram(object):
                     if len(e)==0: continue
                     p=e[0]
                     sent=self.sent_for_event(p,e[1:])
-                    self.ng.count_text(sent,i=1)
-                    if self.parent:
-                        pngs=self.png
-                        if p not in pngs:
-                            pn=ngram(self.order,digit2at=False)
-                            pngs[p]=pn
-                        else:
-                            pn=pngs[p]
-                        pn.count_text(sent,i=1)
+                    if self.cond_parent:
+                        i=len(sent)
+                        sent.append(None)
+                        while i>1:
+                            sent[i]=sent[i-1]
+                            sent[i-1]=p
+                            warn("read_radu cond_parent","%s => %s i=%s"%(p,sent[:i+1],i))
+                            self.ng.count_word(sent,i)
+                            i-=1
+                    else:
+                        self.ng.count_text(sent,i=1)
+                        if self.parent:
+                            pngs=self.png
+                            if p not in pngs:
+                                pn=ngram(self.order,digit2at=False)
+                                pngs[p]=pn
+                            else:
+                                pn=pngs[p]
+                                pn.count_text(sent,i=1)
         return n
     def check(self,epsilon=1e-5,uninterp=True):
         sum1=[]
@@ -608,6 +641,7 @@ def pcfg_ngram_main(n=5,
                     ,test=test
                     ,parent=True
                     ,parent_alpha=0.999
+                    ,cond_parent=False
                     ,witten_bell=True
 #                    ,logfile="ppx.dev.txt"
                     ,logfile="test.sri.txt"
@@ -616,9 +650,8 @@ def pcfg_ngram_main(n=5,
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
-    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha)
+    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent)
     ntrain=sb.read_radu(train)
-
     s=Stopwatch('Train')
     sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm)
     warn(s)
