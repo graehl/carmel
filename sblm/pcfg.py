@@ -657,7 +657,7 @@ def pcfg_ngram_main(n=5,
     warn(s)
     if write_lm:
         sb.terminals.write_lm(train+'.terminals')
-    sb.check(epsilon=1e-5)
+    #sb.check(epsilon=1e-5)
     if False:
        write_list(sb.preterminal_vocab(),name='preterminals')
        write_list(sb.png.keys(),name='parents(NTs)')
