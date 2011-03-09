@@ -17,10 +17,7 @@ class ngram_counts(object):
         self.ncountn=None
     def add_i(self,vec,i):
 #        dump('add_i',i,vec[i],self.om1)
-        if i<self.om1:
-#            dump('empty ngram',self.order,i)
-            pass
-        else:
+        if i>=self.om1:
             self.add(vec[i-self.om1:i+1])
     def add(self,seq):
         key=intern_tuple(seq)
@@ -198,14 +195,17 @@ class ngram(object):
             i+=1
         if post is not None: text.append(post)
         l=len(text)
-        for o in range(0,self.order):
-            cn=self.ngrams[o]
-            start=i
-            if pre is None:
-                start+=o
-            start=i if pre is None else i+1
-            for w in range(i,l):
-                cn.add_i(text,w)
+        for w in range(i,l):
+            self.count_word(text,w)
+        # for o in range(0,self.order):
+        #     cn=self.ngrams[o]
+        #     start=o if pre is None else o+1
+        #     for w in range(start,l):
+        #         cn.add_i(text,w)
+    def count_word(self,text,i):
+        # warn('count_word',text[:i+1])
+        for o in range(0,min(self.order,i+1)):
+            self.ngrams[o].add_i(text,i)
     def score_word(self,text,i):
         "private (perform digit2at yourself) returns (logp,bo) for most specific ngram, where bo is the total of contexts' backoffs. text is a tuple"
         e=i+1

@@ -3732,6 +3732,14 @@ configuration to the state it was in beforehand."
   (move-to-column previous-column))
 (global-set-key (kbd "M-o") 'nuke-line)
 
+(defun nuke-line ()
+  "Delete current line."
+  (interactive)
+  (setq previous-column (current-column))
+  (delete-region (line-beginning-position) (line-end-position))
+  (delete-char 1)
+  (move-to-column previous-column))
+
 (defun tweakemacs-move-one-line-downward ()
   "Move current line downward once."
   (interactive)
