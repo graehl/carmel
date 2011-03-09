@@ -633,7 +633,7 @@ dev_test='data/dev+test.e-parse'
 fakedev='data/fake.dev.e-parse'
 dev1='data/dev1.e-parse'
 faketrain='data/fake.train.e-parse'
-train=dev_test
+#train=dev_test
 
 def pcfg_ngram_main(n=5,
                     train=train
@@ -641,7 +641,7 @@ def pcfg_ngram_main(n=5,
                     ,test=test
                     ,parent=True
                     ,parent_alpha=0.999
-                    ,cond_parent=False
+                    ,cond_parent=True
                     ,witten_bell=True
 #                    ,logfile="ppx.dev.txt"
                     ,logfile="test.sri.txt"
