@@ -497,7 +497,7 @@ class sblm_ngram(object):
             while i>1: # don't predict <s> | parent
                 sent[i]=sent[i-1]
                 sent[i-1]=p
-                warn("score_children cond_parent","%s"%(sent[:i+1]),max=10)
+                # warn("score_children cond_parent","%s"%(sent[:i+1]),max=10)
                 lprob,bo=ng.score_word(sent,i)
                 s+=(lprob+bo)
                 i-=1
@@ -580,7 +580,7 @@ class sblm_ngram(object):
                         while i>1:
                             sent[i]=sent[i-1]
                             sent[i-1]=p
-                            warn("read_radu cond_parent","%s => %s i=%s"%(p,sent[:i+1],i))
+                            # warn("read_radu cond_parent","%s => %s i=%s"%(p,sent[:i+1],i))
                             self.ng.count_word(sent,i)
                             i-=1
                     else:
