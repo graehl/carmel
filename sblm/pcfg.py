@@ -488,7 +488,7 @@ class sblm_ngram(object):
     def score_children(self,p,ch):
         sent=self.sent_for_event(p,ch)
         bo=self.ng
-        warn("score_children",'%s => %s'%(p,sent),max=10)
+        # warn("score_children",'%s => %s'%(p,sent),max=10)
         if self.cond_parent:
             s=0.
             ng=self.ng
@@ -543,10 +543,11 @@ class sblm_ngram(object):
             t=raduparse(line,intern_labels=True)
             if t is None:
                 next
+            if t.size()<=1: warn("eval_radu small tree",t,line,max=None)
             nnode+=t.size()
             nw+=len(t)
             ntrees+=1
-            warn("eval_radu",t,max=10)
+            # warn("eval_radu",t,max=10)
             for e in gen_pcfg_events_radu(t,terminals=False,digit2at=self.digit2at):
                 lp,nknown=self.eval_pcfg_event(e)
 #                warn('pcfg_events_radu','p(%s)=%s%s'%(e,lp,'' if nknown else ' unk'),max=100)
@@ -654,6 +655,7 @@ def pcfg_ngram_main(n=5,
     ntrain=sb.read_radu(train)
     s=Stopwatch('Train')
     sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm)
+    log('# training nodes: %s'%ntrain)
     warn(s)
     if write_lm:
         sb.terminals.write_lm(train+'.terminals')
@@ -669,11 +671,12 @@ def pcfg_ngram_main(n=5,
         s=Stopwatch('Score '+t)
         e=sb.eval_radu(t)
         warn(s)
-        e['ntrain']=ntrain
-        e['logprob_2']=log10_tobase(e['logprob'],2)
-        e['logprob_2/nnode']=e['logprob_2']/e['nnode']
-        out_dict(e)
+        e['corpus']=t
+        e['ngram-order']=n
+        e['-logprob_2']=-log10_tobase(e['logprob'],2)
+        e['-logprob_2/nnode']=e['-logprob_2']/e['nnode']
         del e['top_unk']
+        out_dict(e)
         append_logfile(logfile,lambda x:out_dict(e,out=x),header=Locals())
     info_summary()
 
