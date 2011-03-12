@@ -367,6 +367,13 @@ def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_li
     out.write(after_list)
     return out
 
+def write_lines(l,out=sys.stdout):
+    if type(out)==str:
+        out=open(out,'w')
+    for x in l:
+        out.write(str(x)+'\n')
+    return out.name
+
 def write_kv(l,**kw):
     write_list(l,xform=lambda x:"%s = %s"%x,**kw)
 
