@@ -677,7 +677,11 @@ def pcfg_ngram_main(n=5,
         e['-logprob_2/nnode']=e['-logprob_2']/e['nnode']
         del e['top_unk']
         out_dict(e)
-        append_logfile(logfile,lambda x:out_dict(e,out=x),header=Locals())
+        head=str(Locals())
+        def outd(x):
+            out_dict(e,out=x)
+            x.write('\n')
+        append_logfile(logfile,outd,header=head)
     info_summary()
 
 import optfunc
