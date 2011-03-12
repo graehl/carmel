@@ -270,7 +270,8 @@ class ngram(object):
             knargs=' '.join(knns)
             #            knargs='-kndiscount'
             #-cdiscount 0 -addsmooth 0
-            nosmoothargs='-prune 0 -gtmin 0 -gtmax 0 -no-sos -no-eos'
+            nosmoothargs='-prune 0 -gtmin 0 -gtmax 0'
+            #'-no-sos -no-eos'
             smoothargs='-wbdiscount' if witten_bell else knargs
             smoothargs=nosmoothargs+' '+smoothargs
             interpargs='-interpolate' if interpolate else ''
