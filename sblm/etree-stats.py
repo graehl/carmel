@@ -13,16 +13,18 @@ from dumpx import *
 from ngram import *
 from pcfg import *
 
+small=False
+
 dev='data/dev.e-parse'
 test='data/test.e-parse'
 train='data/train.e-parse'
+inpre=dev if small else train
 binsuf='.binarized.linkdel.with_head_info'
-bin=train+binsuf
+bin=inpre+binsuf
 ntsuf='.vocab.nts'
 ptsuf='.vocab.pts'
 parents='.parents'
 
-small=True
 
 def strip_n(s):
     return s
@@ -41,7 +43,7 @@ def yield_node_ancestors(t,node_pred,passed=None):
         for p in yield_node_ancestors(c,node_pred,passed):
             yield p
 
-def etree_stats_main(inpre=(dev if small else train)
+def etree_stats_main(inpre=inpre
                     ,outpre=''
                     ,bin=bin
                     ,compare_bin=True
@@ -94,15 +96,15 @@ def etree_stats_main(inpre=(dev if small else train)
                     if ps[tl][pl]==0:
                         log('treebank ancestor differs - %s >= %s'%(tl,pl))
                         if pl!=strip_bar(tl):
-                            warn('treebank ancestor differs and not just by dropping -BAR: ','%s >= %s in tree %s'%(tl,pl,tself))
+                            warn('treebank ancestor differs and not just by dropping -BAR: ','%s >= %s in tree %s'%(tl,pl,tself),max=None)
                 ps[tl][pl]+=1
-        outp=open(outsuf+parents,'w')
+        outp=open(outpre+parents,'w')
         #outp=sys.stdout
         for t in sorted(ps.keys()):
             log('parents of %s=t',out=outp)
             pst=ps[t]
             if len(pst)>1:
-                warn("node has more than 1 parent: ",t,max=None)
+                warn("tag type has more than 1 parent tag type: ",t,max=None)
             out_dict(pst,out=outp)
             outp.write('\n')
     info_summary()
