@@ -20,7 +20,6 @@ test='data/test.e-parse'
 train='data/train.e-parse'
 inpre=dev if small else train
 binsuf='.binarized.linkdel.with_head_info' if small else '.binarized.linkdel'
-bin=inpre+binsuf
 ntsuf='.vocab.nts'
 ptsuf='.vocab.pts'
 parents='.parents'
@@ -45,7 +44,7 @@ def yield_node_ancestors(t,node_pred,passed=None):
 
 def etree_stats_main(inpre=inpre
                     ,outpre=''
-                    ,bin=bin
+                    ,bin=''
                     ,binsuf=binsuf
                     ,compare_bin=True
                     ,strip_catsplit=True
