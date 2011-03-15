@@ -95,7 +95,7 @@ all=forall
 any=exists
 
 def out_dict(d,out=sys.stdout):
-    out_tabsep(d.iteritems() if type(d)==dict else d,out=out)
+    out_tabsep(d.iteritems() if isinstance(d,dict) else d,out=out)
 
 def out_tabsep(pairs,out=sys.stdout):
     if type(out)==str: out=open(out,'w')
@@ -445,9 +445,9 @@ def componentwise(xs,ys,s=sum):
 
 def set_agreement(test,gold):
     "return (true pos,false pos,false neg), i.e. (|test intersect gold|,|test - gold|,|gold - test|).  these can be vector_summed"
-    if type(test) is not set:
+    if not isinstance(test,set):
         test=set(test)
-    if type(gold) is not set:
+    if not isinstance(gold,set):
         gold=set(gold)
     falsepos=len(test-gold)
     truepos=len(test)-falsepos

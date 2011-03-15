@@ -13,7 +13,7 @@ from dumpx import *
 from ngram import *
 from pcfg import *
 
-small=False
+small=True
 
 dev='data/dev.e-parse'
 test='data/test.e-parse'
@@ -100,8 +100,9 @@ def etree_stats_main(inpre=inpre
                 ps[tl][pl]+=1
         outp=open(outpre+parents,'w')
         #outp=sys.stdout
+        dump(ps)
         for t in sorted(ps.keys()):
-            log('parents of %s=t',out=outp)
+            outp.write('%s under:\n'%t)
             pst=ps[t]
             if len(pst)>1:
                 warn("tag type has more than 1 parent tag type: ",t,max=None)
