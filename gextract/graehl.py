@@ -387,7 +387,7 @@ def warn(msg,post=None,pre="WARNING: ",max=10):
     if post is not None:
         p=' '+str(post)+p
     warncount[msg]+=1
-    if max is not None and warncount[msg]<=max:
+    if max is None or warncount[msg]<=max:
         lastw=max is not None and warncount[msg]==max
         sys.stderr.write(pre+str(msg)+(" (max=%s shown; no more) "%max if lastw else "")+p)
 
