@@ -45,8 +45,7 @@ from ngram import *
 headindex_re=re.compile(r'([^~]+)~(\d+)~(\d+)')
 raduhead_skips=set(['.',"''",'``'])
 raduhead_moreskips=set([':',','])
-raduhead_noskip_parents=set()
-#['NPB'])
+raduhead_noskip_parents=set(['NPB'])
 #,'NML','ADJP'
 raduhead_fullskips=raduhead_skips.union(raduhead_moreskips)
 def raduhead(t,dbgmsg='',noskip_parent=raduhead_noskip_parents):
