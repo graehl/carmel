@@ -42,9 +42,45 @@ from graehl import *
 from dumpx import *
 from ngram import *
 
-def raduparse(t,intern_labels=False,strip_head=True):
-    t=radu2ptb(t)
-    return tree.str_to_tree(t,intern_labels=intern_labels,strip_head=strip_head)
+headindex_re=re.compile(r'([^~]+)~(\d+)~(\d+)')
+raduhead_skips=set(['.',"''",'``'])
+raduhead_moreskips=set([':',','])
+raduhead_noskip_parents=set(['NPB'])
+#,'NML','ADJP'
+raduhead_fullskips=raduhead_skips.union(raduhead_moreskips)
+def raduhead(t,dbgmsg='',noskip_parent=raduhead_noskip_parents):
+    m=headindex_re.match(t.label)
+    t.label_orig=t.label
+    if m is None: return
+    label,n,head=m.group(1,2,3)
+    #warn('raduhead','%s=%s,%s,%s'%(t.label,label,head,n))
+    t.head=int(head)
+    n=int(n)
+    i=0
+    inosym=0
+    cn=[]
+    skips=(raduhead_skips if label in raduhead_noskip_parents else raduhead_fullskips)
+    for c in t.children:
+        if i==0 and c.label==':' or c.label not in skips:
+            cn.append(c)
+            inosym+=1
+        i+=1
+    t.children_nosym=cn
+    if n!=inosym:
+        warn('wrong head index for %s'%label,('%s!=%s %s => %s %s')%(n,inosym,t.label,[c.label_orig for c in t.children],dbgmsg),max=None)
+    t.label=label
+    return
+
+
+
+def raduparse(tline,intern_labels=False,strip_head=True):
+    t=radu2ptb(tline,strip_head=strip_head)
+    t=tree.str_to_tree(t,intern_labels=intern_labels)
+    if not strip_head:
+        #warn('raduparse','%s=%s'%(tline,t.str(square=True)))
+        for n in t.postorder():
+            raduhead(n,dbgmsg=tline)
+    return t
 
 def scan_sbmt_lhs(tokens,pos):
     "return (t,pos') with pos' one past end of recognized t"
