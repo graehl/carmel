@@ -921,6 +921,8 @@ def filename_from_1to1(s):
 #TODO: ensure non-collision (quote w/ escape of quote-strings)
 
 radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
+radu_keephead=re.compile(r'\((\S+)\s+(-?[.0123456789]+)')
+radu_keephead=re.compile(r'\(([^~]+~\d+~\d+)\s+(-?[.0123456789]+)')
 sym_rrb=re.compile(r'\((\S+) (\S+)\)')
 rparen=re.compile(r'\)')
 lparen=re.compile(r'\(')
@@ -931,7 +933,7 @@ def rrb_repl(match):
     return '(%s %s)'%(match.group(1),escape_paren(match.group(2)))
 def radu2ptb(t,strip_head=True):
     "radu format: all close parens that indicate tree structure are followed by space or end, so that () are legal within symbols -   also, we strip head info.  we escape them to -LRB- -RRB- for handling by tree.py."
-    if strip_head: t=radu_drophead.sub(r'(\1',t)
+    t=(radu_drophead if strip_head else radu_keephead).sub(r'(\1',t)
     t=sym_rrb.sub(rrb_repl,t)
     return t
 

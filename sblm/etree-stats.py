@@ -64,7 +64,7 @@ def etree_stats_main(inpre=inpre
     else:
         for line in input:
             # warn('tree line',line,max=1)
-            t=raduparse(line,intern_labels=False)
+            t=raduparse(line,intern_labels=False,strip_head=False)
             # warn('tree parsed',t,max=1)
             if t is None:
                 continue
