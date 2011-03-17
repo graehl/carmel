@@ -42,9 +42,9 @@ from graehl import *
 from dumpx import *
 from ngram import *
 
-def raduparse(t,intern_labels=False):
+def raduparse(t,intern_labels=False,strip_head=True):
     t=radu2ptb(t)
-    return tree.str_to_tree(t,intern_labels=intern_labels)
+    return tree.str_to_tree(t,intern_labels=intern_labels,strip_head=strip_head)
 
 def scan_sbmt_lhs(tokens,pos):
     "return (t,pos') with pos' one past end of recognized t"

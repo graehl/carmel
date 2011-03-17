@@ -42,6 +42,11 @@ upa() {
         )
     sa
 }
+comg() {
+    (pushd ~/t/graehl/
+        svn commit -m "$*"
+)
+    }
 coma() {
     (pushd ~/t/graehl/util;
         svn commit *.sh -m sh
