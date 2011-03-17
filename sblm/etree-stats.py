@@ -63,7 +63,9 @@ def etree_stats_main(inpre=inpre
         nt=set(l.strip() for l in open(inpre+ntsuf))
     else:
         for line in input:
+            # warn('tree line',line,max=1)
             t=raduparse(line,intern_labels=False)
+            # warn('tree parsed',t,max=1)
             if t is None:
                 continue
             for n in t.preorder():
@@ -100,7 +102,7 @@ def etree_stats_main(inpre=inpre
                 ps[tl][pl]+=1
         outp=open(outpre+parents,'w')
         #outp=sys.stdout
-        dump(ps)
+        #dump(ps)
         for t in sorted(ps.keys()):
             outp.write('%s under:\n'%t)
             pst=ps[t]
