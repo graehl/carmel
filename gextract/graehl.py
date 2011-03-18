@@ -7,6 +7,18 @@ import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
 
+def disjoint_add_dict(tod,fromd,ignore_conflict=True,warn_conflict=True,desc='disjoint_add_dict'):
+    #warn('disjoint_add %s pre-size'%desc,len(tod))
+    for k,v in fromd.iteritems():
+        #warn('disjoint_add %s '%desc,'%s=%s, exists-already=%s'%(k,v,k in tod),max=10)
+        if k in tod:
+            if warn_conflict:
+                warn("%s disjoint_add conflict"%desc,k,max=None)
+                assert(ignore_conflict)
+        else:
+            tod[k]=v
+    #warn('disjoint_add %s post-size'%desc,len(tod))
+
 class Stopwatch(object):
     def reset(self,clear_total=True):
         self.started=time.time()
