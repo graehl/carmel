@@ -4,6 +4,7 @@ from dumpx import *
 import re
 import subprocess
 import os
+import tempfile
 
 default_ngram_count='ngram-count'
 
@@ -15,6 +16,9 @@ class ngram_counts(object):
         self.order=order
         self.om1=order-1
         self.ncountn=None
+    def disjoint_add(self,ng,ignore_conflict=True,warn_conflict=True):
+        "ng has ngrams that are disjoint from ours. add them. ignore = keep our values"
+        disjoint_add_dict(self.counts,ng.counts,ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram_counts disjoint_add')
     def add_i(self,vec,i):
 #        dump('add_i',i,vec[i],self.om1)
         if i>=self.om1:
@@ -139,6 +143,13 @@ class ngram(object):
     eos=intern('</s>')
     unk=intern('<unk>')
     specials=set((sos,eos,unk))
+    def disjoint_add_lm(self,ng,ignore_conflict=True,warn_conflict=True):
+        "ng has ngrams that are disjoint from ours. add them. ignore = keep our values"
+        for o in range(0,min(self.order,ng.order)):
+            self.ngrams[o].disjoint_add(ng.ngrams[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict)
+            disjoint_add_dict(self.logp[o],ng.logp[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram logp order=%s'%(o+1))
+            disjoint_add_dict(self.bow[o],ng.bow[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram bow order=%s'%(o+1))
+
     @classmethod
     def is_special(w):
         return w in specials
@@ -251,15 +262,20 @@ class ngram(object):
         for o in range(0,self.order):
             r.append(self.ngrams[o].write_counts_kndisc('%s.%sgram'%(prefix,o+1),sort))
         return r
-    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,write_lm=False,interpolate=True):
-        "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or write_lm=True"
-        if lmf is None and (sri_ngram_count or write_lm):
+    def lmfile(self,prefix=None):
+        if self.lmf is None:
             if prefix is None:
                 tf=tempfile.NamedTemporaryFile()
-                lmf=tf.name
-                close(tf)
+                self.lmf=tf.name
+                tf.close()
             else:
-                lmf='%s.%sgram.srilm'%(prefix,self.order)
+                self.lmf='%s.%sgram.srilm'%(prefix,self.order)
+        return self.lmf
+    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,write_lm=False,interpolate=True):
+        "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or write_lm=True"
+        self.lmf=lmf
+        if lmf is None and (sri_ngram_count or write_lm):
+            lmf=self.lmfile(prefix)
         if sri_ngram_count==True:
             sri_ngram_count=default_ngram_count
             cks=self.write_counts_kndisc(prefix,sort)
@@ -382,7 +398,10 @@ class ngram(object):
                 nlt1+=1
         if uninterp: self.interp()
         return (n1,nlt1,gt1)
-    def write_lm(self,file,sort=True):
+    def write_lm(self,file=None,sort=True,prefix=None):
+        #warn('write_lm','file=%s prefix=%s'%(file,prefix))
+        if file is None:
+            file=self.lmfile(prefix)
         if type(file)==str:
             warn("writing SRI lm => ",file)
             file=open(file,'w')

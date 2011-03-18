@@ -384,9 +384,9 @@ class tag_word_unigram(object):
         return self.word.iterkeys()
     def ngram_lm(self):
         return build_2gram(self.tagword,self.word,self.bo_for_tag,digit2at=self.digit2at,logp_unk=self.logp_unk)
-    def write_lm(self,out,sort=True):
+    def write_lm(self,file,sort=True):
         n=self.ngram_lm()
-        n.write_lm(out,sort=sort)
+        n.write_lm(file=file,sort=sort)
     def oov(self,w):
         return not w in self.word
     def count_tw(self,tw):
@@ -645,12 +645,16 @@ class sblm_ngram(object):
                 else:
                     log("PCFG (%s): sum=1:%d/(N=%d)=%s sum<1:%d/N=%s sum>1:%d/N=%s sum>1"%(p,n1,total,n1/total,nlt1,nlt1/total,len(gt1),len(gt1)/total))
         log("PCFG sum=1: "+' '.join(sum1))
-    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False):
+    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False,merge_terminals=True,sort=True):
         if prefix is not None:
             prefix+='.pcfg'
         mkdir_parent(prefix)
         self.terminals.train(uni_witten_bell,uni_unkword)
-        all=self.ng.train_lm(prefix=prefix,sort=True,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=write_lm)
+        all=self.ng.train_lm(prefix=prefix,sort=sort,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=(write_lm and not merge_terminals))
+        if merge_terminals:
+            self.ng.disjoint_add_lm(self.terminals.ngram_lm())
+            if write_lm:
+                self.ng.write_lm(lmf,prefix=prefix,sort=sort)
         if self.parent:
             for nt,png in self.png.iteritems():
                 #self.nonterminal_vocab()
@@ -674,6 +678,7 @@ faketrain='data/fake.train.e-parse'
 
 def pcfg_ngram_main(n=5,
                     train=train
+                    ,eval=True
                     ,dev=dev
                     ,test=test
                     ,parent=True
@@ -683,19 +688,21 @@ def pcfg_ngram_main(n=5,
 #                    ,logfile="ppx.dev.txt"
                     ,logfile="test.sri.txt"
                     ,sri_ngram_count=False
-                    ,write_lm=False
+                    ,write_lm=True
+                    ,merge_terminals=True
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
     sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent)
     ntrain=sb.read_radu(train)
     s=Stopwatch('Train')
-    sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm)
+    sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm,merge_terminals=merge_terminals)
     log('# training nodes: %s'%ntrain)
+    log('lm file: %s'%sb.ng.lmfile())
     warn(s)
-    if write_lm:
+    if write_lm and (not merge_terminals or True):
         sb.terminals.write_lm(train+'.terminals')
-    #sb.check(epsilon=1e-5)
+    #if not merge_terminals: sb.check(epsilon=1e-5)
     if False:
        write_list(sb.preterminal_vocab(),name='preterminals')
        write_list(sb.png.keys(),name='parents(NTs)')
@@ -703,21 +710,22 @@ def pcfg_ngram_main(n=5,
        dump(sri.name)
        callv(['head',sri.name])
        print str(sb)
-    for t in [dev,test]:
-        s=Stopwatch('Score '+t)
-        e=sb.eval_radu(t)
-        warn(s)
-        e['corpus']=t
-        e['ngram-order']=n
-        e['-logprob_2']=-log10_tobase(e['logprob'],2)
-        e['-logprob_2/nnode']=e['-logprob_2']/e['nnode']
-        del e['top_unk']
-        out_dict(e)
-        head=str(Locals())
-        def outd(x):
-            out_dict(e,out=x)
-            x.write('\n')
-        append_logfile(logfile,outd,header=head)
+    if eval:
+        for t in [dev,test]:
+            s=Stopwatch('Score '+t)
+            e=sb.eval_radu(t)
+            warn(s)
+            e['corpus']=t
+            e['ngram-order']=n
+            e['-logprob_2']=-log10_tobase(e['logprob'],2)
+            e['-logprob_2/nnode']=e['-logprob_2']/e['nnode']
+            del e['top_unk']
+            out_dict(e)
+            head=str(Locals())
+            def outd(x):
+                out_dict(e,out=x)
+                x.write('\n')
+            append_logfile(logfile,outd,header=head)
     info_summary()
 
 import optfunc
