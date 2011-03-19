@@ -654,8 +654,8 @@ buildcar() {
     pushd ~/t/graehl/carmel
     [ "$noclean" ] || make clean
     set -x
-    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j 4
-    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
+    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j 4
+    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
     set +x
     popd
     if [ "$1" ] ; then
