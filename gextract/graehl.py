@@ -7,6 +7,9 @@ import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
 
+def no_none(x,default):
+    return default if x is None else x
+
 def disjoint_add_dict(tod,fromd,ignore_conflict=True,warn_conflict=True,desc='disjoint_add_dict'):
     #warn('disjoint_add %s pre-size'%desc,len(tod))
     for k,v in fromd.iteritems():
@@ -157,14 +160,18 @@ def head_sorted_dict_val(d,reverse=False,key=identity,head=None):
 def head_sorted_dict_val_str(d,reverse=False,key=identity,head=None):
     return head_str(head_sorted_dict_val(d,reverse=reverse,key=key,head=head),head=head)
 
+
 class RDict(dict):
     """perl's autovivification for dict of dict of ..."""
-    def __getitem__(self, item):
-        try:
-            return dict.__getitem__(self, item)
-        except KeyError:
-            value = self[item] = type(self)()
-            return value
+    def __missing__(self,key):
+        r=self[key]=RDict()
+        return r
+    # def __getitem__(self, item):
+    #     try:
+    #         return dict.__getitem__(self, item)
+    #     except KeyError:
+    #         value = self[item] = type(self)()
+    #         return value
 
 class IntDict(collections.defaultdict):
     def __init__(self,*a,**kw):
