@@ -29,7 +29,7 @@ struct log_message_exception : public LogMessage
 # undef LOG
 # define LOG(type) graehl::log_message_exception(#type).stream()
 
-# include "fst/lib/vector-fst.h"
+# include "fst/vector-fst.h"
 
 # ifdef GRAEHL__SINGLE_MAIN
 // these header are only used in carmel.cc:
@@ -40,6 +40,7 @@ struct log_message_exception : public LogMessage
 
 // this saves us linking to a separately built lib:
 #include "fst/lib/fst.cc"
+#include "fst/lib/flags.cc"
 #include "fst/lib/properties.cc"
 #include "fst/lib/symbol-table.cc"
 #include "fst/lib/compat.cc"
