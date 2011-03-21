@@ -7,6 +7,12 @@ import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
 
+def append_attr(obj,attr,val):
+    if hasattr(obj,attr):
+        getattr(obj,attr).append(val)
+    else:
+        setattr(obj,attr,[val])
+
 def no_none(x,default):
     return default if x is None else x
 
