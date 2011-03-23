@@ -49,11 +49,15 @@ def etree_stats_main(inpre=inpre
                     ,compare_bin=True
                     ,strip_catsplit=True
                      ,load_vocab=False
+                     ,heads=True
+                     ,head_words=False
                     ):
     log('etree-stats')
     log(str(Locals()))
     nt=set()
     pt=set()
+    headwords=defaultdict(lambda:IntDict())
+    headtags=defaultdict(lambda:IntDict())
     input=open(inpre)
     if not len(outpre):
         outpre=inpre
@@ -69,6 +73,15 @@ def etree_stats_main(inpre=inpre
             if t is None:
                 continue
             for n in t.preorder():
+                if heads and hasattr(n,'head_children'):
+                    hc=n.head_children
+                    nc=len(n.children)
+                    cat=n.label
+                    hw=n.headword
+                    if not n.good_head:
+                        hw=('BADHEAD','badhead')
+                    if head_words: headwords[cat][hw]+=1
+                    headtags[cat][hw[0]]+=1
                 if n.is_terminal():
                     pass
                 else:
@@ -108,8 +121,17 @@ def etree_stats_main(inpre=inpre
             pst=ps[t]
             if len(pst)>1:
                 warn("tag type has more than 1 parent tag type: ",t,max=None)
-            out_dict(pst,out=outp)
+            write_dict(pst,out=outp)
             outp.write('\n')
+
+    if heads:
+        htag,hword=('.headtag','.headword')
+        outhtag=open(outpre+htag,'w')
+        write_dict(headtags)
+        write_dict(headtags,out=outhtag)
+        if head_words:
+            outhword=open(outpre+hword,'w')
+            write_dict(headwords,out=outhword)
     info_summary()
 
 import optfunc

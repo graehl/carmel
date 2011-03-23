@@ -32,7 +32,7 @@ def stats_main(input='numbers.txt',mean=True,variance=True,stddev=True,error=Tru
     if sparse:
         for s in v.itervalues():
             s.N=N
-    out_dict(v)
+    write_dict(v)
 
 import optfunc
 optfunc.main(stats_main)
