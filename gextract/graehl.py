@@ -269,10 +269,10 @@ def nonempty(gen):
 all=forall
 any=exists
 
-def out_dict(d,out=sys.stdout):
-    out_tabsep(d.iteritems() if isinstance(d,dict) else d,out=out)
+def write_dict(d,out=sys.stdout):
+    write_tabsep(d.iteritems() if isinstance(d,dict) else d,out=out)
 
-def out_tabsep(pairs,out=sys.stdout):
+def write_tabsep(pairs,out=sys.stdout):
     if type(out)==str: out=open(out,'w')
     for kv in pairs:
         out.write('\t'.join(map(str,kv))+'\n')

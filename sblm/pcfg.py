@@ -48,30 +48,32 @@ raduhead_moreskips=set([':',','])
 raduhead_noskip_parents=set(['NPB'])
 #,'NML','ADJP'
 raduhead_fullskips=raduhead_skips.union(raduhead_moreskips)
-def raduhead(t,dbgmsg='',noskip_parent=raduhead_noskip_parents):
+def raduhead(t,dbgmsg='',noskip_parent=raduhead_noskip_parents,headword=True):
     m=headindex_re.match(t.label)
     t.label_orig=t.label
-    if m is None: return
+    if m is None:
+        if headword and t.is_preterminal():
+            t.headword=(t.label,t.children[0].label)
+        return
     label,n,head=m.group(1,2,3)
+    skips=(raduhead_skips if label in raduhead_noskip_parents else raduhead_fullskips)
     #warn('raduhead','%s=%s,%s,%s'%(t.label,label,head,n))
-    t.head=int(head)
+    t.head=head=int(head)
     n=int(n)
     i=0
-    inosym=0
     cn=[]
-    skips=(raduhead_skips if label in raduhead_noskip_parents else raduhead_fullskips)
     for c in t.children:
         if i==0 and c.label==':' or c.label not in skips:
             cn.append(c)
-            inosym+=1
         i+=1
-    t.children_nosym=cn
-    if n!=inosym:
-        warn('wrong head index for %s'%label,('%s!=%s %s => %s %s')%(n,inosym,t.label,[c.label_orig for c in t.children],dbgmsg),max=None)
+    t.head_children=cn
+    t.good_head=(n==len(cn) and head<=n and  head>0)
+    if not t.good_head:
+        warn('wrong head index for %s'%label,('%s!=%s %s => %s %s')%(n,len(cn),t.label,[c.label_orig for c in t.children],dbgmsg),max=None)
+        if headword: t.headword=t.head_children[-1].headword
+    elif headword:
+        t.headword=t.head_children[head-1].headword
     t.label=label
-    return
-
-
 
 def raduparse(tline,intern_labels=False,strip_head=True):
     t=radu2ptb(tline,strip_head=strip_head)
@@ -720,10 +722,10 @@ def pcfg_ngram_main(n=5,
             e['-logprob_2']=-log10_tobase(e['logprob'],2)
             e['-logprob_2/nnode']=e['-logprob_2']/e['nnode']
             del e['top_unk']
-            out_dict(e)
+            write_dict(e)
             head=str(Locals())
             def outd(x):
-                out_dict(e,out=x)
+                write_dict(e,out=x)
                 x.write('\n')
             append_logfile(logfile,outd,header=head)
     info_summary()
