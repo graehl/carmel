@@ -7,6 +7,118 @@ import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
 
+statfact=dict()
+class Stat(object):
+    def __init__(self,name='N'):
+        self.name=name
+        statfact[name]=self.__class__
+    def __iadd__(self,x):
+        self.count(x)
+    def count(self,x):
+        pass
+    def pairlist(self):
+        return []
+    def __repr__(self):
+        return '[%s: %s]'%(self.name,self.strs())
+    def strs(self):
+        return ' '.join(map(pairstrf,self.pairlist()))
+
+def pairstr(p):
+    return "%s=%s"%p
+
+def pairstrf(p):
+    return "%s=%.4g"%p
+
+class Stats(Stat):
+    def __init__(self,name='stats',stats=None):
+        Stat.__init__(self,name)
+        stat.stats=[] if stats is None else stats
+    def count(self,x):
+        Stat.count(self,x)
+        for s in self.stats:
+            s.count(x)
+    def pairlist(self):
+        return flatten(s.pairlist() for s in self.stats)
+
+class Mean(Stat):
+    def __init__(self,name='mean'):
+        Stat.__init__(self,name)
+        self.sum=0.
+        self.N=0.
+    def count(self,x):
+        self.N+=1
+        self.sum+=x
+    def pairlist(self):
+        return [('N',self.N),('mean',self.sum/self.N)]
+
+class Variance(Mean):
+    def __init__(self,name='stddev',mean=True,stddev=True,stderror=True,variance=False):
+        Mean.__init__(self,name)
+        self.sumsq=0.
+        self.mean=mean
+        self.stddev=stddev
+        self.stderror=stderror
+        self.variance=variance
+    def sample_variance(self):
+        variance=(self.sumsq-self.sum**2/self.N)/(self.N-1) if self.N>1 else 0
+        if variance==0:
+            return (0,0,0)
+        stddev=math.sqrt(variance)
+        return (variance,stddev,stddev/math.sqrt(self.N))
+    def pairlist(self):
+        if self.mean: r=Mean.pairlist(self)
+        else: r=[('N',self.N)]
+        variance,stddev,stderror=self.sample_variance()
+        if self.variance: r.append(('variance',variance))
+        if self.stddev: r.append(('stddev',stddev))
+        if self.stderror: r.append(('stderror',stderror))
+        return r
+    def count(self,x):
+        Mean.count(self,x)
+        self.sumsq+=x*x
+
+class Bounds(Stat):
+    def __init__(self,name='bounds',min=True,max=True,N=True,index=True):
+        Stat.__init__(self,name)
+        self.usemin=min
+        self.usemax=max
+        self.index=index
+        self.useN=N
+        self.min=None
+        self.mini=None
+        self.max=None
+        self.maxi=None
+        self.N=0
+    def count(self,x):
+        if self.min is None or x<self.min:
+            self.mini=self.N
+            self.min=x
+        if self.max is None or x>self.max:
+            self.maxi=self.N
+            self.max=x
+        self.N+=1
+    def pairlist(self):
+        r=[]
+        if self.useN:
+            r.append(('N',self.N))
+        if self.min is not None:
+            r.append(('min',self.min))
+            if self.index: r.append(('imin',self.mini))
+        if self.max is not None:
+            r.append(('max',self.max))
+            if self.index: r.append(('imax',self.maxi))
+        return r
+
+class Stats(Variance):
+    def __init__(self,name='stats',mean=True,stddev=True,stderror=True,variance=False,min=True,max=True,index=True):
+        Variance.__init__(self,name=name,mean=mean,stddev=stddev,stderror=stderror,variance=variance)
+        self.bounds=Bounds(min=min,max=max,N=False,index=index)
+    def count(self,x):
+        Variance.count(self,x)
+        self.bounds.count(x)
+    def pairlist(self):
+        return Variance.pairlist(self)+self.bounds.pairlist()
+
 def invert_copy_dict(dst,src):
     for k,v in src.iteritems():
         dst[v]=k
@@ -873,7 +985,7 @@ def attr_str(obj,names=None,types=pod_types,pretty=True):
 
 def pairlist_str(pairlist,pretty=True):
     if pretty: pairlist=[(a,pprint.pformat(b,1,80,3)) for (a,b) in pairlist]
-    return ' '.join(["%s=%s"%p for p in pairlist])
+    return ' '.join(map(pairstr,pairlist))
 
 def obj2str(obj,names=None,types=pod_types,pretty=True):
     return '[%s %s]'%(obj.__class__.__name__,attr_str(obj,names,types,pretty))
