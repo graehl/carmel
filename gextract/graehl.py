@@ -7,6 +7,48 @@ import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
 
+def invert_copy_dict(dst,src):
+    for k,v in src.iteritems():
+        dst[v]=k
+
+def invert_dict(src):
+    dst=dict()
+    invert_copy_dict(dst,src)
+    return dst
+
+def invert_dictid_to_list(src):
+    dst=[None]*len(src)
+    invert_copy_dict(dst,src)
+    return dst
+
+class IDs(dict):
+    def __init__(self,inverse=True):
+        dict.__init__(self)
+        self.id=0
+        self.inverse=[] if inverse else None
+    def __missing__(self,key):
+        id=self.id
+        self[key]=id
+        if self.inverse is not None:
+            self.inverse.append(key)
+        self.id+=1
+        return id
+    def drop_inverse(self):
+        self.inverse=None
+    def cache_inverse(self):
+        self.inverse=invert_dictid_tolist(self)
+    def token(self,id):
+        if self.inverse is None:
+            self.cache_inverse()
+        return self.inverse[id]
+
+strid=IDs()
+def str2id(s):
+    return strid[s]
+
+def id2str(id):
+    return strid.token(id)
+
 def append_attr(obj,attr,val):
     if hasattr(obj,attr):
         getattr(obj,attr).append(val)
