@@ -127,11 +127,11 @@ def etree_stats_main(inpre=inpre
     if heads:
         htag,hword=('.headtag','.headword')
         outhtag=open(outpre+htag,'w')
-        write_dict(headtags)
-        write_dict(headtags,out=outhtag)
+        #write_nested_counts(headtags)
+        write_nested_counts(headtags,out=outhtag)
         if head_words:
             outhword=open(outpre+hword,'w')
-            write_dict(headwords,out=outhword)
+            write_nested_counts(headwords,out=outhword)
     info_summary()
 
 import optfunc
