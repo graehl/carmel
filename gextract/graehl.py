@@ -3,6 +3,9 @@
  figure out python logging lib
 """
 
+def identity(x):
+    return x
+
 import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
@@ -24,7 +27,7 @@ class Stat(object):
         return ' '.join(map(pairstrf,self.pairlist()))
 
 def pairstr(p):
-    return "%s=%s"%p
+    return '='.join(map(str,p))
 
 def pairstrf(p):
     return "%s=%.4g"%p
@@ -269,13 +272,31 @@ def nonempty(gen):
 all=forall
 any=exists
 
-def write_dict(d,out=sys.stdout):
-    write_tabsep(d.iteritems() if isinstance(d,dict) else d,out=out)
+#from dumpx import *
 
-def write_tabsep(pairs,out=sys.stdout):
+def write_dict(d,out=sys.stdout,mappair=identity,mapk=identity,mapv=identity):
+    write_tabsep(d.iteritems() if isinstance(d,dict) else d,out,mappair,mapk,mapv)
+
+def write_tabsep(pairs,out=sys.stdout,mappair=identity,mapk=identity,mapv=identity):
+    if isinstance(pairs,dict): pairs=pairs.iteritems()
     if type(out)==str: out=open(out,'w')
     for kv in pairs:
+        #dump('tabsep',type(kv),kv)
+        kv=mappair(kv)
+        if type(kv)==tuple and len(kv)==2:
+            kv=(mapk(kv[0]),mapv(kv[1]))
+        #dump('tabsep post-map',type(kv),kv)
         out.write('\t'.join(map(str,kv))+'\n')
+
+
+def val_sorted(pairs,reverse=True):
+    if isinstance(pairs,dict): pairs=pairs.iteritems()
+    r=sorted(pairs,key=lambda x:x[1],reverse=reverse)
+    #dump('val_sorted',r)
+    return r
+
+def write_nested_counts(d,out=sys.stdout):
+    write_dict(d,out=out,mapv=lambda x:pairlist_str(val_sorted(x)))
 
 def system_force(*a,**kw):
     r=os.system(*a,**kw)
@@ -297,9 +318,6 @@ def is_nonstring_iter(x):
 
 def intern_tuple(seq):
     return tuple(intern(x) for x in seq)
-
-def identity(x):
-    return x
 
 def firstn(l,head=None):
     return l if head is None else l[0:head]
@@ -984,7 +1002,7 @@ def attr_str(obj,names=None,types=pod_types,pretty=True):
     return pairlist_str(attr_pairlist(obj,names,types,True,True),pretty)
 
 def pairlist_str(pairlist,pretty=True):
-    if pretty: pairlist=[(a,pprint.pformat(b,1,80,3)) for (a,b) in pairlist]
+    if pretty and len(pairlist) and len(pairlist[0])==2: pairlist=[(a,pprint.pformat(b,1,80,3)) for (a,b) in pairlist]
     return ' '.join(map(pairstr,pairlist))
 
 def obj2str(obj,names=None,types=pod_types,pretty=True):
