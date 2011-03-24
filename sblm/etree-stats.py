@@ -132,6 +132,7 @@ def etree_stats_main(inpre=inpre
         if head_words:
             outhword=open(outpre+hword,'w')
             write_nested_counts(headwords,out=outhword)
+        callv(['head','-10',outhtag,outhword])
     info_summary()
 
 import optfunc
