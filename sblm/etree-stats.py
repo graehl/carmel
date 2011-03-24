@@ -50,7 +50,7 @@ def etree_stats_main(inpre=inpre
                     ,strip_catsplit=True
                      ,load_vocab=False
                      ,heads=True
-                     ,head_words=False
+                     ,head_words=True
                     ):
     log('etree-stats')
     log(str(Locals()))
