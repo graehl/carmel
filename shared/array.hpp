@@ -9,6 +9,8 @@
 
 namespace graehl {
 
+
+
 ///WARNING: only use for std::vector and similar
 template <class Vec>
 typename Vec::value_type * array_begin(Vec & v)

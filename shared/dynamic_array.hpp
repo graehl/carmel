@@ -1,7 +1,7 @@
-#ifndef GRAEHL__SHARED__dynarray_hpp
-#define GRAEHL__SHARED__dynarray_hpp
+#ifndef GRAEHL__SHARED__dynamic_array_hpp
+#define GRAEHL__SHARED__dynamic_array_hpp
 
-// like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).
+// like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient). works for nested dynamic_arrays as long as the bottom level is memcpy move/swappable
 // historical justification: when Carmel was first written, STL wasn't supported by gcc.
 
 #include <graehl/shared/fixed_array.hpp>
@@ -21,6 +21,9 @@ private:
 private:
   dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
 public:
+  friend std::size_t hash_value(dynamic_array const& x) {
+    return boost_hash_range(x.begin(),x.end());
+  }
   void swap(self_type &b) throw()
   {
     Base::swap(b);
@@ -75,6 +78,30 @@ public:
     std::memcpy(to,from,n*sizeof(T));
   }
 
+  //FIXME: test:
+  template <class RIT>
+  dynamic_array(RIT b,RIT e,size_type extra_pre,size_type extra_post) : array<T,Alloc>(e-b+extra_pre+extra_post) {
+//    uninitialized_copy_n(a.begin(),sz,this->begin()+extra_pre);
+    std::uninitialized_copy(b,e,this->begin()+extra_pre);
+    endv=this->endspace;
+    dynarray_assert(this->invariant());
+  }
+  dynamic_array(T const* a,size_type sz,size_type extra_pre,size_type extra_post)  {
+    size_type extra_reserve=extra_pre+extra_post;
+    this->alloc(sz+extra_reserve);
+    uninitialized_copy_n(a,sz,this->begin()+extra_pre);
+    endv=this->endspace;
+    dynarray_assert(this->invariant());
+  }
+  dynamic_array(const dynamic_array &a,size_type extra_pre,size_type extra_post)  {
+    size_type sz=a.size();
+    size_type extra_reserve=extra_pre+extra_post;
+    this->alloc(sz+extra_reserve);
+    uninitialized_copy_n(a.begin(),sz,this->begin()+extra_pre);
+    endv=this->endspace;
+    dynarray_assert(this->invariant());
+  }
+
   dynamic_array(const dynamic_array &a)  {
     size_type sz=a.size();
     this->alloc(sz);
@@ -83,7 +110,7 @@ public:
     dynarray_assert(this->invariant());
   }
 
-  template<class RIT>
+  template <class RIT>
   dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b) : array<T,Alloc>(b-a)
   {
     std::uninitialized_copy(a,b,this->begin());
@@ -91,15 +118,21 @@ public:
     dynarray_assert(this->invariant());
   }
 
-  template<class Iter>
+  //FIXME: test:
+  template <class Iter>
   void append(Iter a,Iter const& b)
   {
     for (;a!=b;++a) {
       push_back(*a);
     }
   }
+  template <class C>
+  void append(C const& c)
+  {
+    append(c.begin(),c.end());
+  }
 
-  template<class Iter>
+  template <class Iter>
   void set(Iter a,Iter const& b)
   {
     clear();
@@ -179,6 +212,10 @@ public:
     return this->begin()+index < end();
   }
 
+  T & at_assert (size_type index) const {
+    assert(this->vec+index < end());
+    return (this->vec)[index];
+  }
   T & operator[] (size_type index) const {
     dynarray_assert(this->invariant());
     dynarray_assert(this->vec+index < end());

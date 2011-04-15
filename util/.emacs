@@ -4115,3 +4115,14 @@ loaded as such.)"
  '(comint-completion-addsuffix t)       ; insert space/slash after file completion
  )
 (remove-hook 'kill-buffer-query-functions 'server-kill-buffer-query-function)
+(global-set-key [f12] 'next-error)
+(defun search-next-error ()
+  (interactive)
+  (pop-to-buffer "*compilation*")
+  (search-forward "error: "))
+(global-set-key [(shift f12)] 'search-next-error)
+(defun next-error-nof (&optional arg reset)
+  "don't jump to file"
+  (interactive)
+  (let ((next-error-function (lambda (x y) t)))
+    (next-error arg reset)))

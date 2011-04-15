@@ -43,12 +43,12 @@ from dumpx import *
 from ngram import *
 
 headindex_re=re.compile(r'([^~]+)~(\d+)~(\d+)')
-raduhead_skips=set(['.',"''",'``'])
-raduhead_moreskips=set([':',','])
-raduhead_noskip_parents=set(['NPB'])
+raduhead_base_skips=set(['.',"''",'``'])
+raduhead_more_skips=set([':',','])
+raduhead_skips=raduhead_base_skips.union(raduhead_more_skips)
+raduhead_npb_skips=raduhead_base_skips
 #,'NML','ADJP'
-raduhead_fullskips=raduhead_skips.union(raduhead_moreskips)
-def raduhead(t,dbgmsg='',noskip_parent=raduhead_noskip_parents,headword=True):
+def raduhead(t,dbgmsg='',headword=True):
     m=headindex_re.match(t.label)
     t.label_orig=t.label
     if m is None:
@@ -56,14 +56,15 @@ def raduhead(t,dbgmsg='',noskip_parent=raduhead_noskip_parents,headword=True):
             t.headword=(t.label,t.children[0].label)
         return
     label,n,head=m.group(1,2,3)
-    skips=(raduhead_skips if label in raduhead_noskip_parents else raduhead_fullskips)
+    skips=(raduhead_npb_skips if label=='NPB' else raduhead_skips)
     #warn('raduhead','%s=%s,%s,%s'%(t.label,label,head,n))
     t.head=head=int(head)
     n=int(n)
     i=0
+    #i==0 and c.label==':' or
     cn=[]
     for c in t.children:
-        if i==0 and c.label==':' or c.label not in skips:
+        if c.label not in skips:
             cn.append(c)
         i+=1
     t.head_children=cn

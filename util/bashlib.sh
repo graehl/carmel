@@ -1,4 +1,5 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
+#export LC_ALL=C
 BLOBS=${BLOBS:-/home/nlg-01/blobs}
 [ -d $BLOBS ] || BLOBS=~/blobs
 export BLOBS

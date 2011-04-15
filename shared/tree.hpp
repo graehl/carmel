@@ -2,13 +2,13 @@
 #ifndef GRAEHL_SHARED__TREE_HPP
 #define GRAEHL_SHARED__TREE_HPP
 
-#define TREE_SINGLETON_OPT
+#define GRAEHL_TREE_UNARY_OPTIMIZATION
 namespace graehl {
 typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (can't be unsigned type)
 }
 
 #ifndef SATISFY_VALGRIND
-//FIXME: make SATISFY_VALGRIND + TREE_SINGLETON_OPT compile
+//FIXME: make SATISFY_VALGRIND + GRAEHL_TREE_UNARY_OPTIMIZATION compile
 // program is still correct w/o this defined, but you get bogus valgrind warnings if not
 //# define SATISFY_VALGRIND
 #endif
@@ -41,6 +41,7 @@ namespace lambda=boost::lambda;
 //template <class L, class A> struct Tree;
 
 // Tree owns its own child pointers list but not trees it points to! - routines for creating trees through new and recurisvely deleting are provided outside the class.  Reading from a stream does create children using new.  finish with dealloc_recursive()
+// alloc builds child vectors on heap.
 // FIXME: need two allocators (or always rebind/copy from one) instead of just new/deleting self_type ... that is, shared_tree nodes are coming off usual heap, but we act interested in how we get the child pointer vectors.  really, if you care about one, you probably care about the other.
 namespace graehl {
 
@@ -49,19 +50,28 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     typedef L Label;
     Label label;
     rank_type rank;
+  friend inline void swap(self_type &a,self_type &b) {
+    using namespace std;
+    swap(a.label,b.label);
+    rank_type r=b.rank;b.rank=a.rank;a.rank=r;
+    self_type **children=b.c.children;b.c.children=a.c.children;a.c.children=children;
+//    swap(a.rank,b.rank);
+//    swap(a.c.children,b.c.children); //FIXME: diff pointer types? then detect based on rank
+  }
+
  protected:
     //shared_tree(const self_type &t) : {}
-    union children_or_child 
+    union children_or_child
     {
         self_type **children;
         self_type *child;
     };
-    
-        
+
+
     children_or_child c;
 
  public:
-    bool is_leaf() const 
+    bool is_leaf() const
     {
         return rank==0;
     }
@@ -73,8 +83,8 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
         T data;
         related_child() {}
     };
-    
-        
+
+
     template<class T>
     T &leaf_data() {
         Assert(rank==0);
@@ -105,26 +115,26 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     shared_tree() : rank(0)
 #ifdef SATISFY_VALGRIND
                   , children(0)
-#endif 
+#endif
     {}
     explicit shared_tree (const Label &l) : label(l),rank(0)
 #ifdef SATISFY_VALGRIND
                   , children(0)
-#endif 
-        
+#endif
+
     {  }
     shared_tree (const Label &l,rank_type n) : label(l) { alloc(n); }
     explicit shared_tree (std::string const& s) : rank(0)
 #ifdef SATISFY_VALGRIND
                   , children(0)
-#endif 
+#endif
 
     {
         std::istringstream ic(s);ic >> *this;
     }
     void alloc(rank_type _rank) {
         rank=_rank;
-#ifdef TREE_SINGLETON_OPT
+#ifdef GRAEHL_TREE_UNARY_OPTIMIZATION
         if (rank>1)
 #else
             if (rank)
@@ -133,10 +143,10 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
 #ifdef SATISFY_VALGRIND
             else
                 children=0;
-#endif 
+#endif
     }
     template <class to_type>
-    void copy_deep(to_type &to) const 
+    void copy_deep(to_type &to) const
     {
         to.clear();
         to.label=label;
@@ -146,7 +156,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
             (*i)->copy_deep(*(*t=new to_type));
         }
     }
-    
+
     shared_tree(rank_type _rank) {
         alloc(_rank);
     }
@@ -160,12 +170,12 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
         dealloc();
         alloc(n);
     }
-    void clear() 
+    void clear()
     {
         dealloc();
     }
     void dealloc() {
-#ifdef TREE_SINGLETON_OPT
+#ifdef GRAEHL_TREE_UNARY_OPTIMIZATION
         if (rank>1)
 #else
             if (rank)
@@ -186,7 +196,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     typedef const const_value_type *const_iterator;
 
     value_type & child(rank_type i) {
-#ifdef TREE_SINGLETON_OPT
+#ifdef GRAEHL_TREE_UNARY_OPTIMIZATION
         if (rank == 1) {
             Assert(i==0);
             return c.child;
@@ -198,12 +208,12 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     value_type & child(rank_type i) const {
         return const_cast<self_type*>(this)->child(i);
     }
-    
+
     value_type & operator [](rank_type i) { return child(i); }
     value_type & operator [](rank_type i) const { return child(i); }
 
     iterator begin() {
-#ifdef TREE_SINGLETON_OPT
+#ifdef GRAEHL_TREE_UNARY_OPTIMIZATION
         if (rank == 1)
             return &c.child;
         else
@@ -211,7 +221,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
             return c.children;
     }
     iterator end() {
-#ifdef TREE_SINGLETON_OPT
+#ifdef GRAEHL_TREE_UNARY_OPTIMIZATION
         if (rank == 1)
             return &c.child+1;
         else
@@ -277,7 +287,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
             o << ')';
         }
     }
-    
+
     /*
       template <class charT, class Traits, class Writer>
       std::ios_base::iostate print_graphviz(std::basic_ostream<charT,Traits>& o,Writer writer, const char *treename="T") const {
@@ -300,7 +310,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     BOOST_STATIC_CONSTANT(style_type,UNKNOWN=0);
     BOOST_STATIC_CONSTANT(style_type,PAREN_FIRST=1);
     BOOST_STATIC_CONSTANT(style_type,HEAD_FIRST=2);
-    
+
     //template <class T, class charT, class Traits>  friend
     template <class charT, class Traits, class Reader>
     static self_type *read_tree(std::basic_istream<charT,Traits>& in,Reader r,style_type style=UNKNOWN) {
@@ -353,7 +363,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
             } else
                 style=HEAD_FIRST;
             I_COMMENT(in.get(c));
-            // to disambiguate (1 (2) 3 (4)) vs. 1( 2 3(4)) ... should be (1 2 3 4) and not (1 2 (3 4)) ... in other words open paren must follow root label.  but now we allow space by fixing style at root 
+            // to disambiguate (1 (2) 3 (4)) vs. 1( 2 3(4)) ... should be (1 2 3 4) and not (1 2 (3 4)) ... in other words open paren must follow root label.  but now we allow space by fixing style at root
             if (in.eof()) // since c!='(' before in>>c, can almost not test for this - but don't want to unget() if nothing was read.
                 goto good;
             if (!in)
@@ -388,7 +398,7 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
         } catch(...) {
             goto fail;
         }
-        
+
     fail:
         for (typename dynamic_array<self_type *>::iterator i=in_children.begin(),end=in_children.end();i!=end;++i)
             (*i)->dealloc_recursive();
@@ -402,14 +412,14 @@ template <class L, class Alloc=std::allocator<void *> > struct shared_tree : pri
     template <class charT, class Traits>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in)
     {
-        return read(in,DefaultReader<L>());    
+        return read(in,DefaultReader<L>());
     }
-    void set_no_children() 
+    void set_no_children()
     {
         for (iterator i=begin(),e=end();i!=e;++i)
             *i=NULL;
     }
-    
+
     FROM_ISTREAM_READ
 };
 
@@ -424,6 +434,10 @@ template <class L, class Alloc=std::allocator<void *> > struct tree : public sha
     {
         o.copy_deep(*this);
     }
+  tree(shared const& o,bool /*move construct*/) {
+    swap(*(shared *)this,o);
+  }
+
     tree(self_type const& o)
     {
         o.copy_deep(*this);
@@ -437,13 +451,13 @@ template <class L, class Alloc=std::allocator<void *> > struct tree : public sha
     typedef const self_type *const_value_type;
     typedef const const_value_type *const_iterator;
 
-    void operator=(self_type &o) 
+    void operator=(self_type &o)
     {
         o.clear();
         this->copy_deep(o);
     }
 
-    value_type &child(rank_type i) 
+    value_type &child(rank_type i)
     {
         return (value_type &)shared::child(i);
     }
@@ -459,23 +473,23 @@ template <class L, class Alloc=std::allocator<void *> > struct tree : public sha
     {
         return (iterator)shared::end();
     }
-    const_iterator begin() const 
+    const_iterator begin() const
     {
         return (const_iterator)shared::begin();
     }
-    const_iterator end() const 
+    const_iterator end() const
     {
         return (const_iterator)shared::end();
     }
-    
-    void clear() 
+
+    void clear()
     {
         for (iterator i=begin(),e=end();i!=e;++i)
             if (*i)
                 delete *i;
         this->dealloc();
     }
-    
+
     TO_OSTREAM_PRINT
     template <class charT, class Traits, class Reader>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in,Reader read)
@@ -486,13 +500,13 @@ template <class L, class Alloc=std::allocator<void *> > struct tree : public sha
     template <class charT, class Traits>
     std::ios_base::iostate read(std::basic_istream<charT,Traits>& in)
     {
-        return read(in,DefaultReader<L>());    
+        return read(in,DefaultReader<L>());
     }
 
     FROM_ISTREAM_READ
-    
+
 };
-    
+
 
 
 
@@ -500,7 +514,7 @@ template <class C>
 void delete_arg(C
 #ifndef DEBUG
                 const
-#endif 
+#endif
                 &c) {
   delete c;
 #ifdef DEBUG
@@ -859,7 +873,7 @@ BOOST_AUTO_TEST_CASE( test_tree )
   delete d;
   delete h;
   delete g;
-  
+
 //  delete_tree(c);
 //  delete_tree(d);
 //  delete_tree(g);
