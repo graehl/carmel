@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <limits>
+#include <cassert>
 
 // define this if you're paranoid about converting 0-9 (int) to 0-9 (char) by adding to '0', which is safe for ascii, utf8, etc.
 #ifndef DIGIT_LOOKUP_TABLE

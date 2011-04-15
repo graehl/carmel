@@ -200,6 +200,12 @@ bool match_begin(Istr bstr,Istr estr,Prefix const& prefix)
     return match_begin(bstr,estr,prefix.begin(),prefix.end());
 }
 
+template <class Str, class Prefix> inline
+bool match_begin(Str str,Prefix const& prefix)
+{
+  return match_begin(str.begin(),str.end(),prefix.begin(),prefix.end());
+}
+
 template <class Istr, class Isubstr> inline
 bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 {
@@ -213,9 +219,15 @@ bool match_end(Istr bstr,Istr estr,Isubstr bsub,Isubstr esub)
 }
 
 template <class Istr, class Suffix> inline
-bool match_end(Istr bstr,Istr estr,Suffix suffix)
+bool match_end(Istr bstr,Istr estr,Suffix const& suffix)
 {
     return match_end(bstr,estr,suffix.begin(),suffix.end());
+}
+
+template <class Str, class Suffix> inline
+bool match_end(Str const& str,Suffix const& suffix)
+{
+  return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
 }
 
 template <class It1,class It2,class Pred> inline

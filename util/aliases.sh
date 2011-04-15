@@ -4,6 +4,25 @@ blib=$d/bloblib.sh
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
+flv2aac() {
+    local f=${1%.flv}
+    set -o pipefail
+    local t=`mktemp /tmp/flvatype.XXXXXX`
+    local ext
+    local codec=copy
+    ffmpeg -i "$1" 2>$t || true
+    if fgrep -q 'Audio: aac' $t; then
+        ext=m4a
+    elif fgrep -q 'Audio: mp3' $t; then
+        ext=mp3
+    else
+        ext=wav
+        codec=pcm_s16le
+    fi
+    set -x
+    ffmpeg -i "$1" -vn -acodec $codec "$f.$ext"
+    set +x
+}
 radutrees() {
     local t=$1
     require_file $t
@@ -2016,7 +2035,7 @@ set -x
 #
 #--boost-location=$BOOST_SRCDIR
 #-d 4
-bjam -j $nproc $target variant=$variant  toolset=gcc --build-dir=${build:-$h} --prefix=$installprefix $linking  "$@"
+bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=${build:-$h} --prefix=$installprefix $linking  "$@"
 set +x
 popd
 }
@@ -3210,3 +3229,9 @@ function toisi {
     scp -r "${ARGV[@]}" graehl@prokofiev.isi.edu:$to
     set +x
 }
+alias ..="cd .."
+alias c=cd
+alias l="ls -CF --color=auto"
+alias k=colormake
+alias g=git
+alias s=svn

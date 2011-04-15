@@ -38,6 +38,7 @@
 #include <boost/config.hpp>
 
 #include <graehl/shared/array.hpp>
+#include <graehl/shared/hash_functions.hpp>
 
 #ifdef TEST
 # include <graehl/shared/test.hpp>
@@ -79,6 +80,9 @@ protected:
     T *vec;
     T *endspace;
 public:
+  friend std::size_t hash_value(array const& x) {
+    return boost_hash_range(x.begin(),x.end());
+  }
     static inline size_type bytes(size_type n)
     {
         return sizeof(T)*n;

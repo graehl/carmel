@@ -15,6 +15,7 @@
 #include <graehl/shared/hash_jenkins.hpp>
 #include <graehl/shared/hash_murmur.hpp>
 #include <graehl/shared/bit_arithmetic.hpp>
+#include <boost/functional/hash/hash.hpp>
 
 namespace graehl {
 
@@ -330,6 +331,22 @@ inline std::size_t hash_range(I1 i,I2 end,Hval h,std::size_t seed=0)
     }
     return seed;
 }
+
+template <class I1,class I2>
+inline std::size_t boost_hash_range(I1 i,I2 end,std::size_t seed=0)
+{
+  using namespace boost;
+  for (;i!=end;++i) {
+    seed=mix_hash(seed,hash_value(*i));
+  }
+  return seed;
+}
+
+template <class I1,class I2>
+inline std::size_t hash_range(I1 i,I2 end) {
+  return boost_hash_range(i,end,0);
+}
+
 
 /// warning: due to the impossibility of detecting padding, only call this when
 /// sizeof(Val) is the actual initialized extent (i.e. no padding).
