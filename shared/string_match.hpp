@@ -230,6 +230,12 @@ bool match_end(Str const& str,Suffix const& suffix)
   return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
 }
 
+template <class Str, class Suffix> inline
+bool match_end(Str const& str,char const* suffix)
+{
+  return match_end(str,std::string(suffix));
+}
+
 template <class It1,class It2,class Pred> inline
 bool starts_with(It1 str,It1 str_end,It2 prefix,It2 prefix_end,Pred equals)
 {
