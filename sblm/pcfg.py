@@ -506,7 +506,7 @@ class sblm_ngram(object):
     start=intern('<s>')
     end=intern('</s>')
     unk='<unk>'
-    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False):
+    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False,skip_bar=True,unsplit_subcat=True):
         """
         parent: use parent_alpha*p(children|parent)+(1-parent_alpha)*p(children)
 
@@ -523,6 +523,11 @@ class sblm_ngram(object):
         self.ng=ngram(order,digit2at=False)
         self.png=dict()
         self.terminals=tag_word_unigram(digit2at) #simplify: use an ngram for terminals. tag_word_unigram is functionally equiv to bigram lm anyway
+        self.unsplit_subcat=unsplit_subcat
+        self.skip_bar=skip_bar
+        self.unsplit_map=strip_subcat if unsplit_subcat else identity
+        self.skip_map=strip_bar if skip_bar else identity
+        self.label_map=lambda l: self.skip_map(self.unsplit_map(l))
         self.set_parent_alpha(parent_alpha)
     def interp_no_parent(self,no_parent,with_parent):
         return math.log10(self.wt*10.**no_parent+self.pwt*10.**with_parent) #TODO: preinterpolate self.ng into self.png before taking logp and normalizing. or just preinterp for speed
@@ -586,6 +591,8 @@ class sblm_ngram(object):
             return self.terminals.logp_tw_known(e)
         else:
             return (self.score_children(e[0],e[1:]),1) #len(e)-1
+    def tree_from_line(self,line):
+        return raduparse(line,intern_labels=True).map_skipping(self.label_map)
     def eval_radu(self,input):
         if type(input)==str: input=open(input)
         #FIXME: use gen_pcfg_events_radu
@@ -598,7 +605,7 @@ class sblm_ngram(object):
         unkwords=IntDict()
         for line in input:
 #            n+=1 #TOP
-            t=raduparse(line,intern_labels=True)
+            t=self.tree_from_line(line)
             if t is None:
                 next
             if t.size()<=1: warn("eval_radu small tree",t,line,max=None)
@@ -725,11 +732,12 @@ def pcfg_ngram_main(n=5,
                     ,write_lm=True
                     ,merge_terminals=True
                     ,skip_bar=True
-                    ,unsplit_subcat=True
+                    ,unsplit=True
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
-    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent)
+    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent,skip_bar=skip_bar,unsplit_subcat=unsplit_subcat)
+    #dumpx(str(sb.tree_from_line('(S-2 (@S-BAR (A "a"  ) (B-2 "b"  ) ) )')))
     ntrain=sb.read_radu(train)
     s=Stopwatch('Train')
     sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm,merge_terminals=merge_terminals)
