@@ -22,7 +22,7 @@ INC=$(SRC) $(SHARED)
 LIB =
 CPP_EXT=cc
 
-LDFLAGS = -lpthread
+LDFLAGS += -lpthread -ldl -pthread
 BASECXXFLAGS= -ffast-math
 CPPFLAGS += -Wno-deprecated
 ifeq ($(HOST),cage)

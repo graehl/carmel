@@ -8,7 +8,6 @@ import tempfile
 
 default_ngram_count='ngram-count'
 
-
 #intention: just those of a given order
 class ngram_counts(object):
     def __init__(self,order=1):
@@ -143,12 +142,14 @@ class ngram(object):
     eos=intern('</s>')
     unk=intern('<unk>')
     specials=set((sos,eos,unk))
-    def disjoint_add_lm(self,ng,ignore_conflict=True,warn_conflict=True):
+    def disjoint_add_lm(self,ng,ignore_conflict=True,warn_conflict=True,conflict_take_bow_only=False,merge_logp=take_first,merge_bow=take_first):
+        if conflict_take_bow_only:
+            merge_bow=merge_logp=take_first
         "ng has ngrams that are disjoint from ours. add them. ignore = keep our values"
         for o in range(0,min(self.order,ng.order)):
             self.ngrams[o].disjoint_add(ng.ngrams[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict)
-            disjoint_add_dict(self.logp[o],ng.logp[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram logp order=%s'%(o+1))
-            disjoint_add_dict(self.bow[o],ng.bow[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram bow order=%s'%(o+1))
+            disjoint_add_dict(self.logp[o],ng.logp[o],merge_fn=merge_logp,ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram logp order=%s'%(o+1))
+            disjoint_add_dict(self.bow[o],ng.bow[o],merge_fn=merge_bow,ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram bow order=%s'%(o+1))
 
     @classmethod
     def is_special(w):
