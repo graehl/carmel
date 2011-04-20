@@ -36,6 +36,9 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def map(self,f):
+        return Node(f(self.label),[c.map(f) for c in self.children])
+
     def map_skipping_node(self,l,f):
         n=Node(l)
         self.map_skipping_children(f,n.children)
@@ -48,15 +51,15 @@ class Node:
         if l is None:
             self.map_skipping_children(f,outlist)
         else:
-            outlist.append(map_skipping_node(l,f))
+            outlist.append(self.map_skipping_node(l,f))
 
     def map_skipping_children(self,f,outlist):
         for c in self.children:
-            map_skipping_outlist(f,outlist)
+            c.map_skipping_outlist(f,outlist)
 
     def map_skipping(self, f):
         "return t with t.label=f(self.label) - may be None, and children replaced by map_skipping_list"
-        return map_skipping_node(f(self.label),f)
+        return self.map_skipping_node(f(self.label),f)
 
     def map_skipping_list(self,f):
         r=[]
