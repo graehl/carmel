@@ -39,6 +39,7 @@ struct log_message_exception : public LogMessage
 #include "fst/connect.h"
 
 // this saves us linking to a separately built lib:
+#include "fst/lib/util.cc"
 #include "fst/lib/fst.cc"
 #include "fst/lib/flags.cc"
 #include "fst/lib/properties.cc"

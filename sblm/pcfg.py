@@ -85,6 +85,25 @@ def raduparse(tline,intern_labels=False,strip_head=True):
             raduhead(n,dbgmsg=tline)
     return t
 
+def is_bar(s):
+    return len(s)>5 and s[0]=='@' and s[-4:]=='-BAR'
+
+def strip_bar(s):
+    if len(s)<5: return s
+    if s[0]=='@' and s[-4:]=='-BAR': return s[1:-4]
+    return s
+
+def no_bar(s):
+    return None if is_bar(s) else s
+
+subcat_s=r'-\d+(?=$|-BAR)'
+subcat_re=re.compile(subcat_s)
+def is_subcat(s):
+    return subcat_re.match(s)
+
+def strip_subcat(s):
+    return subcat_re.sub('',s)
+
 def scan_sbmt_lhs(tokens,pos):
     "return (t,pos') with pos' one past end of recognized t"
 
@@ -649,13 +668,25 @@ class sblm_ngram(object):
                     log("PCFG (%s): sum=1:%d/(N=%d)=%s sum<1:%d/N=%s sum>1:%d/N=%s sum>1"%(p,n1,total,n1/total,nlt1,nlt1/total,len(gt1),len(gt1)/total))
         log("PCFG sum=1: "+' '.join(sum1))
     def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False,merge_terminals=True,sort=True):
+        prefixterm=None
         if prefix is not None:
+            prefixterm='.terminals'
             prefix+='.pcfg'
         mkdir_parent(prefix)
-        self.terminals.train(uni_witten_bell,uni_unkword)
+        self.terminals.train(uni_witten_bell,uni_unkword,prefix=prefixterm)
         all=self.ng.train_lm(prefix=prefix,sort=sort,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=(write_lm and not merge_terminals))
         if merge_terminals:
-            self.ng.disjoint_add_lm(self.terminals.ngram_lm())
+            self.ng.disjoint_add_lm(self.terminals.ngram_lm(),conflict_take_bow_only=True) #NOTE: for preterms, we want the bow from the terminal model, and the backed off unigram prob from the PCFG rewrite model
+            # without doing this we have from pcfg sblm (in merged result): -2.51869334212  VBP-0   -2.59911856506
+            # but from terminal 2gram: -99     VBP-0   -2.73926926467
+            # we want to use the -2.73 BO
+            #anomolies: -0.000219339811938      <s> VBP-0 @VBP-0-BAR    -2.81056852922
+            # should mean: VBP-0(@VBP-0-BAR ...)
+            # -3.1224484856   @VBP-0-BAR VBP-0 DT-1   0
+            # VBP-0(DT-1 @VBP-0-BAR)
+            # -0.0103815795832        @VBP-0-BAR VBP-0 VBP-0  -3.11260500153
+            # VBP-0(@VBP-0-BAR VBP-0)
+            # what we could do if we wanted to make counts of as-NT vs as-PT compete: keep unigram backoff events for lex vs nonlex sep, but otherwise let bigram (given parent) compete? also need to choose-one-child <s> "lex" </s>?
             if write_lm:
                 self.ng.write_lm(lmf,prefix=prefix,sort=sort)
         if self.parent:
@@ -689,10 +720,12 @@ def pcfg_ngram_main(n=5,
                     ,cond_parent=True
                     ,witten_bell=True
 #                    ,logfile="ppx.dev.txt"
-                    ,logfile="test.sri.txt"
+                    ,eval_logfile="test.sri.txt"
                     ,sri_ngram_count=False
                     ,write_lm=True
                     ,merge_terminals=True
+                    ,skip_bar=True
+                    ,unsplit_subcat=True
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
@@ -728,7 +761,7 @@ def pcfg_ngram_main(n=5,
             def outd(x):
                 write_dict(e,out=x)
                 x.write('\n')
-            append_logfile(logfile,outd,header=head)
+            append_logfile(eval_logfile,outd,header=head)
     info_summary()
 
 import optfunc

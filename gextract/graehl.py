@@ -10,6 +10,34 @@ import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
 
+class Progress(object):
+    def __init__(self,max=None,out=sys.stderr,big=10000,small=None):
+        self.out=open(out,'w') if type(out)==str else out
+        self.big=big
+        self.small=big/10 if small is None else small
+        self.n=0
+        self.max=max
+    def inc(self):
+        self.n+=1
+        n=self.n
+        out=self.out
+        if self.max is not None and n==max:
+            out.write("%s\n"%n)
+        elif n%self.big==0:
+            out.write(str(n))
+        elif n%self.small==0:
+            out.write('.')
+        out.flush()
+    def done(self):
+        self.out.write("(done, N=%s)\n"%self.n)
+
+
+if __name__ == "__main__":
+    p=Progress(max=30,big=20)
+    for x in range(10,50):
+        p.inc()
+    p.done()
+
 statfact=dict()
 class Stat(object):
     def __init__(self,name='N'):
@@ -173,12 +201,21 @@ def append_attr(obj,attr,val):
 def no_none(x,default):
     return default if x is None else x
 
-def disjoint_add_dict(tod,fromd,ignore_conflict=True,warn_conflict=True,desc='disjoint_add_dict'):
+def take_first(a,b):
+    return a
+
+def take_second(a,b):
+    return b
+
+def disjoint_add_dict(tod,fromd,merge_fn=None,ignore_conflict=True,warn_conflict=True,desc='disjoint_add_dict'):
+    """tod,fromd ; tod[k]=merge_fn(tod[k],fromd[k]) if defined, else use ignore_conflict/warn_conflict. merge_fn=None => tod[k] left alone on conflict."""
     #warn('disjoint_add %s pre-size'%desc,len(tod))
     for k,v in fromd.iteritems():
         #warn('disjoint_add %s '%desc,'%s=%s, exists-already=%s'%(k,v,k in tod),max=10)
         if k in tod:
-            if warn_conflict:
+            if merge_fn is not None:
+                tod[k]=merge_fn(tod[k],v)
+            elif warn_conflict or ignore_conflict:
                 warn("%s disjoint_add conflict"%desc,k,max=None)
                 assert(ignore_conflict)
         else:

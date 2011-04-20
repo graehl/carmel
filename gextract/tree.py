@@ -6,7 +6,7 @@
 # reserved. Do not redistribute without permission from the
 # author. Not for commercial use.
 
-import re
+import re,itertools
 
 #FIXME: not precisely reversible; we assume -LRB- and -RRB- do not appear in regular text
 def paren2lrb(s):
@@ -22,16 +22,46 @@ class Node:
         if children is None:
             self.children = []
         else:
-            self.children = children
-        self.length = 0
-        for i in range(len(self.children)):
-            self.children[i].parent = self
-            self.children[i].order = i
-            self.length += self.children[i].length
-        if len(self.children) == 0:
-            self.length = 1
+            self.children = children if type(children)==list else list(children)
+        self.update_children()
+
+    def update_children(self):
+        i=0
+        self.length = 1
+        for c in self.children:
+            c.parent=self
+            c.order=i
+            self.length += c.length
+            i+=1
         self.parent = None
         self.order = 0
+
+    def map_skipping_node(self,l,f):
+        n=Node(l)
+        self.map_skipping_children(f,n.children)
+        n.update_children()
+        return n
+
+    def map_skipping_outlist(self, f, outlist):
+        "append to outlist trees where label=f(t.label) is not None"
+        l=f(self.label)
+        if l is None:
+            self.map_skipping_children(f,outlist)
+        else:
+            outlist.append(map_skipping_node(l,f))
+
+    def map_skipping_children(self,f,outlist):
+        for c in self.children:
+            map_skipping_outlist(f,outlist)
+
+    def map_skipping(self, f):
+        "return t with t.label=f(self.label) - may be None, and children replaced by map_skipping_list"
+        return map_skipping_node(f(self.label),f)
+
+    def map_skipping_list(self,f):
+        r=[]
+        self.map_skipping_outlist(f,r)
+        return r
 
     def intern(self):
         self.label=intern(self.label)
