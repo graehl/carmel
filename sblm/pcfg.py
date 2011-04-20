@@ -506,7 +506,7 @@ class sblm_ngram(object):
     start=intern('<s>')
     end=intern('</s>')
     unk='<unk>'
-    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False,skip_bar=True,unsplit_subcat=True):
+    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False,skip_bar=True,unsplit=True):
         """
         parent: use parent_alpha*p(children|parent)+(1-parent_alpha)*p(children)
 
@@ -523,9 +523,9 @@ class sblm_ngram(object):
         self.ng=ngram(order,digit2at=False)
         self.png=dict()
         self.terminals=tag_word_unigram(digit2at) #simplify: use an ngram for terminals. tag_word_unigram is functionally equiv to bigram lm anyway
-        self.unsplit_subcat=unsplit_subcat
+        self.unsplit=unsplit
         self.skip_bar=skip_bar
-        self.unsplit_map=strip_subcat if unsplit_subcat else identity
+        self.unsplit_map=strip_subcat if unsplit else identity
         self.skip_map=strip_bar if skip_bar else identity
         self.label_map=lambda l: self.skip_map(self.unsplit_map(l))
         self.set_parent_alpha(parent_alpha)
@@ -736,7 +736,7 @@ def pcfg_ngram_main(n=5,
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
-    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent,skip_bar=skip_bar,unsplit_subcat=unsplit_subcat)
+    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent,skip_bar=skip_bar,unsplit=unsplit)
     #dumpx(str(sb.tree_from_line('(S-2 (@S-BAR (A "a"  ) (B-2 "b"  ) ) )')))
     ntrain=sb.read_radu(train)
     s=Stopwatch('Train')
