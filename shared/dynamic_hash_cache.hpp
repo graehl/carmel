@@ -28,7 +28,7 @@ namespace graehl {
 template <class Backing,class Locking=graehl::no_locking>
 struct dynamic_hash_cache
 #ifdef DYNAMIC_HASH_CACHE_SINGLE_LOCK
-    : private Locking
+  : private Locking::mutex_type
 #endif
 {
     typedef typename Backing::result_type result_type;

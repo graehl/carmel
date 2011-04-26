@@ -432,3 +432,11 @@ include $(ALL_DEPENDS)
 endif
 endif
 endif
+
+# you can say things like "make echo-CC" to see what the variable CC is set to
+
+echo-%:
+	@echo $* == "\"$($*)\""
+
+echoraw-%:
+	@echo "$($*)"
