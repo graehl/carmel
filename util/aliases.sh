@@ -2035,7 +2035,7 @@ set -x
 #
 #--boost-location=$BOOST_SRCDIR
 #-d 4
-bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=${build:-$h} --prefix=$installprefix $linking  "$@"
+bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=${build:-$h} --prefix=$installprefix $linking  "$@" -v ${verbose:-1}
 set +x
 popd
 }

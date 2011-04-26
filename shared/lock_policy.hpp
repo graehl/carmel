@@ -8,13 +8,13 @@
 intent:
 
 template <class Locking=graehl::no_locking> // or graehl::locking
-struct collection : private Locking
+struct collection : private Locking::mutex_type
 {
 void some_operation()
 {
-    typename Locking::lock(*this);
+    typename Locking::guard_type lock(*this);
 // or    bool do_lock=...;
-//    typename Locking::scoped_lock(*this,do_lock);
+//    typename Locking::guard_type lock(*this,do_lock);
     // (locks if do_lock)
 }
 };
