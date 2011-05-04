@@ -680,7 +680,7 @@ class sblm_ngram(object):
             prefixterm='.terminals'
             prefix+='.pcfg'
         mkdir_parent(prefix)
-        self.terminals.train(uni_witten_bell,uni_unkword,prefix=prefixterm)
+        self.terminals.train(uni_witten_bell,uni_unkword)
         all=self.ng.train_lm(prefix=prefix,sort=sort,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=(write_lm and not merge_terminals))
         if merge_terminals:
             self.ng.disjoint_add_lm(self.terminals.ngram_lm(),conflict_take_bow_only=True) #NOTE: for preterms, we want the bow from the terminal model, and the backed off unigram prob from the PCFG rewrite model
@@ -719,7 +719,7 @@ faketrain='data/fake.train.e-parse'
 
 def pcfg_ngram_main(n=5,
                     train=train
-                    ,eval=True
+                    ,eval=False
                     ,dev=dev
                     ,test=test
                     ,parent=True
@@ -733,19 +733,21 @@ def pcfg_ngram_main(n=5,
                     ,merge_terminals=True
                     ,skip_bar=True
                     ,unsplit=True
+                    ,outpre=""
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
     sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent,skip_bar=skip_bar,unsplit=unsplit)
+    if len(outpre)==0: outpre=train
     #dumpx(str(sb.tree_from_line('(S-2 (@S-BAR (A "a"  ) (B-2 "b"  ) ) )')))
     ntrain=sb.read_radu(train)
     s=Stopwatch('Train')
-    sb.train_lm(prefix=train+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm,merge_terminals=merge_terminals)
+    sb.train_lm(prefix=outpre+'.sblm/sblm',sri_ngram_count=sri_ngram_count,ngram_witten_bell=witten_bell,write_lm=write_lm,merge_terminals=merge_terminals)
     log('# training nodes: %s'%ntrain)
     log('lm file: %s'%sb.ng.lmfile())
     warn(s)
     if write_lm and (not merge_terminals or True):
-        sb.terminals.write_lm(train+'.terminals')
+        sb.terminals.write_lm(outpre+'.terminals')
     #if not merge_terminals: sb.check(epsilon=1e-5)
     if False:
        write_list(sb.preterminal_vocab(),name='preterminals')
