@@ -369,8 +369,6 @@ def lhs_pcfg_event(t):
     return [t.label_lrb()]+[lhs_label(c) for c in t.children]
 
 def gen_pcfg_events_radu(t,terminals=False,terminals_unigram=False,digit2at=False):
-    if type(t)==str:
-        t=raduparse(t,intern_labels=True)
 #        dump(t)
     if t is None:
         return
@@ -526,7 +524,7 @@ class sblm_ngram(object):
         self.unsplit=unsplit
         self.skip_bar=skip_bar
         self.unsplit_map=strip_subcat if unsplit else identity
-        self.skip_map=strip_bar if skip_bar else identity
+        self.skip_map=no_bar if skip_bar else identity
         self.label_map=lambda l: self.skip_map(self.unsplit_map(l))
         self.set_parent_alpha(parent_alpha)
     def interp_no_parent(self,no_parent,with_parent):
@@ -628,7 +626,7 @@ class sblm_ngram(object):
         if type(input)==str: input=open(input)
         n=0
         for line in input:
-            t=raduparse(line,intern_labels=True)
+            t=self.tree_from_line(line)
             if t is not None:
                 n+=t.size()
             for e in gen_pcfg_events_radu(t,terminals=True,digit2at=self.digit2at):
@@ -677,7 +675,7 @@ class sblm_ngram(object):
     def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False,merge_terminals=True,sort=True):
         prefixterm=None
         if prefix is not None:
-            prefixterm='.terminals'
+            prefixterm=prefix+'.terminals'
             prefix+='.pcfg'
         mkdir_parent(prefix)
         self.terminals.train(uni_witten_bell,uni_unkword)
@@ -696,6 +694,8 @@ class sblm_ngram(object):
             # what we could do if we wanted to make counts of as-NT vs as-PT compete: keep unigram backoff events for lex vs nonlex sep, but otherwise let bigram (given parent) compete? also need to choose-one-child <s> "lex" </s>?
             if write_lm:
                 self.ng.write_lm(lmf,prefix=prefix,sort=sort)
+        if write_lm and prefixterm is not None:
+            self.terminals.write_lm(prefixterm)
         if self.parent:
             for nt,png in self.png.iteritems():
                 #self.nonterminal_vocab()
@@ -708,14 +708,10 @@ class sblm_ngram(object):
     def __str__(self):
         return str(self.terminals)
 
-dev='data/dev.e-parse'
-test='data/test.e-parse'
-train='data/train.e-parse'
-dev_test='data/dev+test.e-parse'
-fakedev='data/fake.dev.e-parse'
-dev1='data/dev1.e-parse'
-faketrain='data/fake.train.e-parse'
-#train=dev_test
+dev='sample/dev.e-parse'
+test='sample/test.e-parse'
+train='sample/training.e-parse'
+#train='training.e-parse'
 
 def pcfg_ngram_main(n=5,
                     train=train
@@ -746,8 +742,7 @@ def pcfg_ngram_main(n=5,
     log('# training nodes: %s'%ntrain)
     log('lm file: %s'%sb.ng.lmfile())
     warn(s)
-    if write_lm and (not merge_terminals or True):
-        sb.terminals.write_lm(outpre+'.terminals')
+    #if write_lm and (not merge_terminals or True): sb.terminals.write_lm(outpre+'.terminals')
     #if not merge_terminals: sb.check(epsilon=1e-5)
     if False:
        write_list(sb.preterminal_vocab(),name='preterminals')
