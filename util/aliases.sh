@@ -2014,30 +2014,44 @@ cpimd() {
 
 function boostsbmt
 {
+(
 set -x
+set -e
 local h=${host:-$HOST}
 nproc_default=5
-[ "$h" = cage ] && nproc_default=7
+if [[ "$h" = cage ]] ; then
+    nproc_default=7
+fi
 nproc=${nproc:-$nproc_default}
 variant=${variant:-release}
 local linking="link=static"
-[ "$dynamic" ] && linking=
 linking=
 branch=${branch:-trunk}
 trunkdir=${trunkdir:-$SBMT_BASE/$branch}
 showvars_required branch trunkdir
 pushd $trunkdir
 mkdir -p $h
-installprefix=${installprefix:-$FIRST_PREFIX}
+local prefix=${prefix:-$FIRST_PREFIX}
 [ "$utility" ] && target="utilities//$utility"
 target=${target:-install-pipeline}
-set -x
 #
 #--boost-location=$BOOST_SRCDIR
 #-d 4
-bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=${build:-$h} --prefix=$installprefix $linking  "$@" -d+${verbose:-2}
+local barg boostdir
+local builddir=${build:-$h}
+if [[ $boost ]] ; then
+    boostdir=$HOME/src/boost_$boost
+    builddir="$builddir_$boost"
+fi
+if [[ $boostdir ]] ; then
+    [[ -d $boostdir ]]
+    barg="--boost=$boostdir"
+fi
+
+bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix $linking $barg  "$@" -d+${verbose:-2}
 set +x
 popd
+)
 }
 
 function bsbmt
