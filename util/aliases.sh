@@ -2041,7 +2041,7 @@ local barg boostdir
 local builddir=${build:-$h}
 if [[ $boost ]] ; then
     boostdir=$HOME/src/boost_$boost
-    builddir="$builddir_$boost"
+    builddir="${builddir}_$boost"
 fi
 if [[ $boostdir ]] ; then
     [[ -d $boostdir ]]
