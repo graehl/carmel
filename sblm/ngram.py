@@ -412,8 +412,7 @@ class ngram(object):
             else:
                 file.write(str(f)+'\n')
 
-        wf()
-        wf("\\data\\")
+        wf("\n\\data\\")
         for n in range(1,len(self.logp)+1):
             wf("ngram %d=%d"%(n,iterlen(self.ngramkeys(n))))
         for n in range(0,len(self.logp)):
@@ -437,6 +436,7 @@ class ngram(object):
             if sort: ks=sorted(ks)
             for k in ks:
                 wkey(k)
+        wf("\n\\end\\")
 #            dump('sum %d-gram probs'%n,str(sum))
 
 
