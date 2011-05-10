@@ -4,6 +4,9 @@ blib=$d/bloblib.sh
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
+ld() {
+    l -d "$@"
+}
 flv2aac() {
     local f=${1%.flv}
     set -o pipefail
@@ -587,16 +590,30 @@ csub() {
 }
 casub() {
     ( set -e;
+    if [ "$2" ] ; then ln -s $1 $1.$2
+        echo "$@" > $1/NOTES
+    fi
     pushd $1
+
     shift
     local d=`echo *.dag`
     [ -f $d ]
     echo ${d%.dag} $d
     set -x
     rm -f $d.{condor.sub,dagman.log,lib.out,lib.err,rescue}
-    vds-submit-dag "$@" $d
+    vds-submit-dag $d
     popd
     )
+}
+casubs() {
+    for f in "$@"; do
+        ( set -e
+     for d in *$f*0000; do
+         [ -d $d ]
+         casub $d
+     done
+     )
+    done
 }
 cjobs() {
     perl -ne '$j{$1}=1 if /\((\d+)\.000\.000\)/; END { print "$_ " for (keys %j) }' "$@"
