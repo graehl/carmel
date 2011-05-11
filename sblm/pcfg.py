@@ -711,7 +711,7 @@ class sblm_ngram(object):
 dev='sample/dev.e-parse'
 test='sample/test.e-parse'
 train='sample/training.e-parse'
-#train='training.e-parse'
+train='training.e-parse'
 
 def pcfg_ngram_main(n=5,
                     train=train
