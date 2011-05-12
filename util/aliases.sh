@@ -68,7 +68,12 @@ comg() {
     (pushd ~/t/graehl/
         svn commit -m "$*"
 )
-    }
+}
+comt() {
+    (pushd ~/t/
+        svn commit -m "$*"
+    )
+}
 coma() {
     (pushd ~/t/graehl/util;
         svn commit *.sh -m sh
@@ -2058,7 +2063,7 @@ local barg boostdir
 local builddir=${build:-$h}
 if [[ $boost ]] ; then
     boostdir=$HOME/src/boost_$boost
-    builddir="${builddir}_$boost"
+    builddir="${builddir}_boost_$boost"
 fi
 if [[ $boostdir ]] ; then
     [[ -d $boostdir ]]
