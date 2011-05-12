@@ -593,9 +593,12 @@ csub() {
     vds-submit-dag `basename $1`
     popd
 }
+casubr() {
+    casub `ls -dtr *00* | tail -1` "$@"
+}
 casub() {
     ( set -e;
-    if [ "$2" ] ; then ln -s $1 $1.$2
+    if [ "$2" ] ; then ln -sf $1 $1.$2
         echo "$@" > $1/NOTES
     fi
     pushd $1
