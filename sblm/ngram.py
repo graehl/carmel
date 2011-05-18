@@ -101,7 +101,7 @@ class ngram_counts(object):
         for k,count in self.counts.iteritems():
             s=sumc[k[:-1]]
 #            if k[-1]=='</s>': warn('p[%s]=%s/%s=%s'%(k,count,s,count/s))
-            self.counts[k]=math.log10(count/s) if log10 else (count/s)
+            self.counts[k]=log10_prob(count/s) if log10 else (count/s)
 
 def shorten_context(t):
     return t[1:]
@@ -298,9 +298,14 @@ class ngram(object):
             if read_lm:
                 self.read_lm(lmf,clear_counts)
         else:
-            for o in range(0,self.order-1):
+            for o in range(self.order-2,-1,-1):
                 if witten_bell:
-                    self.bow[o]=self.ngrams[o+1].witten_bell_bos(log10=True)
+                    bos=self.ngrams[o+1].witten_bell_bos(log10=True)
+                    self.bow[o]=bos
+                    ps=self.ngrams[o]
+                    for k in bos.iterkeys():
+                        if not k in ps:
+                            ps[k]=0 # feed this forward without setting a bogus prob entry?
                 else:
                     assert False
             for o in range(0,self.order):
