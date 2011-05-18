@@ -190,8 +190,8 @@ class ngram(object):
         return self.uniform_log10p
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
-    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=float('-inf')):
-        self.unkword=unkword
+    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=log10_0prob):
+        self.unkword=ngram.unk if unkword is None else unkword
         self.logp_unk=logp_unk
         self.digit2at=digit2at
         self.order=order
@@ -240,7 +240,7 @@ class ngram(object):
     def score_word_interp(self,text,i,other_lm,self_wt):
         return log10_interp(self.score_word_combined(text,i),other_lm.score_word_combined(text,i),self_wt)
     def score_text_detail(self,text,i=0,pre=None,post=None):
-        "returns list of score,bo,score,bo (2x length of text[i:-1])"
+        "returns list of score,bo,score,bo (2x length of text[i:-1]). applies digit2at"
         if self.digit2at: text=map(digit2at,text)
         text=intern_tuple(text)
         return flatten(self.score_word(text,j) for j in range(i,len(text)))
@@ -399,7 +399,16 @@ class ngram(object):
                 nlt1+=1
         if uninterp: self.interp()
         return (n1,nlt1,gt1)
-    def write_lm(self,file=None,sort=True,prefix=None):
+    def set_logp_unk(self,logp_unk=None):
+        if logp_unk is None:
+            logp_unk=self.logp_unk
+        else:
+            self.logp_unk=logp_unk
+        k=(self.unkword,)
+        self.logp[0][k]=logp_unk
+        self.bow[0][k]=0
+    def write_lm(self,file=None,sort=True,prefix=None,unkp=True):
+        self.set_logp_unk()
         #warn('write_lm','file=%s prefix=%s'%(file,prefix))
         if file is None:
             file=self.lmfile(prefix)
@@ -423,15 +432,15 @@ class ngram(object):
             def wkey(k):
                 lp=log10_0prob
                 if k in logp:
-                    lp=logp[k]
-                    sum[k[:-1]]+=10**lp
+                    lp=max(lp,logp[k])
+                    #sum[k[:-1]]+=10**lpl
 #                lp=logp[k] if k in logp else log10_0prob
 #                dump(k,lp)
                 ks=' '.join(k)
                 if n==self.om1:
                     wf(lp,ks)
                 else:
-                    wf(lp,ks,bow[k] if k in bow else 0)
+                    wf(lp,ks,max(log10_0prob,bow[k]) if k in bow else 0)
             ks=self.ngramkeys(n+1)
             if sort: ks=sorted(ks)
             for k in ks:

@@ -387,13 +387,13 @@ def gen_pcfg_events_radu(t,terminals=False,terminals_unigram=False,digit2at=Fals
 
 class tag_word_unigram(object):
     "p(word|tag), with smoothing (by default OOV words are logp_unk=0, i.e. free)"
-    def __init__(self,bo=0.1,digit2at=False):
+    def __init__(self,bo=0.1,digit2at=False,logp_unk=0.0):
         self.digit2at=digit2at
         self.tagword=IntDict() # IntDicts are reused as probs once normalized
         self.word=IntDict()
-        self.bo=bo
+        self.bo=bo # witten bell constant
         self.bo_for_tag=dict()
-        self.logp_unk=0.0 # penalty added per unk word
+        self.logp_unk=logp_unk # penalty added per unk word
         self.have_counts=True
         self.have_p=False
         self.have_logp=False
@@ -504,7 +504,7 @@ class sblm_ngram(object):
     start=intern('<s>')
     end=intern('</s>')
     unk='<unk>'
-    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False,skip_bar=True,unsplit=True):
+    def __init__(self,order=2,parent=False,digit2at=False,parent_alpha=0.99,cond_parent=False,parent_start=False,skip_bar=True,unsplit=True,logp_unk=0.0,witten_bo=0.1):
         """
         parent: use parent_alpha*p(children|parent)+(1-parent_alpha)*p(children)
 
@@ -518,9 +518,9 @@ class sblm_ngram(object):
         self.parent=parent #distinct ngrams for each parent; backoff to indistinct
         self.digit2at=digit2at
         self.order=order
-        self.ng=ngram(order,digit2at=False)
+        self.ng=ngram(order,digit2at=False,logp_unk=logp_unk)
         self.png=dict()
-        self.terminals=tag_word_unigram(digit2at) #simplify: use an ngram for terminals. tag_word_unigram is functionally equiv to bigram lm anyway
+        self.terminals=tag_word_unigram(bo=witten_bo,digit2at=digit2at,logp_unk=logp_unk) #simplify: use an ngram for terminals. tag_word_unigram is functionally equiv to bigram lm anyway
         self.unsplit=unsplit
         self.skip_bar=skip_bar
         self.unsplit_map=strip_subcat if unsplit else identity
@@ -711,7 +711,7 @@ class sblm_ngram(object):
 dev='sample/dev.e-parse'
 test='sample/test.e-parse'
 train='sample/training.e-parse'
-train='training.e-parse'
+#train='training.e-parse'
 
 def pcfg_ngram_main(n=5,
                     train=train
@@ -725,15 +725,18 @@ def pcfg_ngram_main(n=5,
 #                    ,logfile="ppx.dev.txt"
                     ,eval_logfile="test.sri.txt"
                     ,sri_ngram_count=False
+                    ,digit2at=True
                     ,write_lm=True
                     ,merge_terminals=True
                     ,skip_bar=True
                     ,unsplit=True
                     ,outpre=""
+                    ,logp_unk=-10.0
+                    ,bo_witten=0.1
                     ):
     log('pcfg_ngram')
     log(str(Locals()))
-    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent,skip_bar=skip_bar,unsplit=unsplit)
+    sb=sblm_ngram(order=n,parent=parent,parent_alpha=parent_alpha,cond_parent=cond_parent,skip_bar=skip_bar,unsplit=unsplit,digit2at=digit2at,witten_bo=bo_witten,logp_unk=logp_unk)
     if len(outpre)==0: outpre=train
     #dumpx(str(sb.tree_from_line('(S-2 (@S-BAR (A "a"  ) (B-2 "b"  ) ) )')))
     ntrain=sb.read_radu(train)
