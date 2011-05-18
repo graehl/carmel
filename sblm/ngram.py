@@ -15,6 +15,9 @@ class ngram_counts(object):
         self.order=order
         self.om1=order-1
         self.ncountn=None
+    def add_zero(self,k):
+        if not k in self.counts:
+            self.counts[k]=0
     def disjoint_add(self,ng,ignore_conflict=True,warn_conflict=True):
         "ng has ngrams that are disjoint from ours. add them. ignore = keep our values"
         disjoint_add_dict(self.counts,ng.counts,ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram_counts disjoint_add')
@@ -302,7 +305,7 @@ class ngram(object):
                 if witten_bell:
                     bos=self.ngrams[o+1].witten_bell_bos(log10=True)
                     self.bow[o]=bos
-                    ps=self.ngrams[o]
+                    ps=self.ngrams.counts[o]
                     for k in bos.iterkeys():
                         if not k in ps:
                             ps[k]=0 # feed this forward without setting a bogus prob entry?
