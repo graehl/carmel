@@ -2286,7 +2286,9 @@ diffwei() {
 }
 
 ngr() {
-    ngram -ppl - -debug 1 -lm $1
+    local lm=$1
+    shift
+    ngram -ppl - -debug 1 -lm $lm "$@"
 }
 
 
