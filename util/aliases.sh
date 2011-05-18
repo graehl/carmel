@@ -2196,7 +2196,7 @@ fi
 function vgx
 {
 (
-lennonbin
+#lennonbin
 local outarg smlarg out vgprog dbarg leakcheck
 [ "$out" ] && outarg="--log-file-exactly=$out"
 [ "$xml" ] && xmlarg="--xml=yes"
