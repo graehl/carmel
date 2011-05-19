@@ -19,8 +19,15 @@ private:
   T *endv;
   typedef array<T,Alloc> Base;
 private:
-  dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
+//  dynamic_array& operator = (const dynamic_array &a){std::cerr << "unauthorized assignment of a dynamic array\n";dynarray_assert(0);}
 public:
+  self_type& operator = (const dynamic_array &a) {
+    if (this!=&a) {
+      this->~dynamic_array();
+      new(this) self_type(a);
+    }
+    return *this;
+  }
   friend std::size_t hash_value(dynamic_array const& x) {
     return boost_hash_range(x.begin(),x.end());
   }
@@ -60,52 +67,64 @@ public:
 
   void reinit(size_type sp,const T& t=T()) {
     clear();
-    reserve(sp);
-    T *real_es=this->endspace;
-    endv=this->endspace=this->vec+sp;
-    array<T,Alloc>::construct(t);
-    this->endspace=real_es;
+    reinit_nodestroy(sp,t);
   }
   void reinit_nodestroy(size_type sp,const T& t=T()) {
     reserve(sp);
-    T *real_es=this->endspace;
-    endv=this->endspace=this->vec+sp;
-    array<T,Alloc>::construct(t);
-    this->endspace=real_es;
+    endv=this->vec+sp;
+    for (T *p=this->vec;p!=this->endv;++p)
+      new(p) T(t);
+  }
+
+  static inline void uninitialized_copy_n_pod(T const* from,unsigned n,T *to) {
+    std::memcpy(to,from,n*sizeof(T)); // use only if T is pod.
   }
 
   static inline void uninitialized_copy_n(T const* from,unsigned n,T *to) {
-    std::memcpy(to,from,n*sizeof(T));
+    for(unsigned i=0;i<n;++i) {
+      new(to+i)T(from[i]);
+    }
   }
 
   //FIXME: test:
   template <class RIT>
   dynamic_array(RIT b,RIT e,size_type extra_pre,size_type extra_post) : array<T,Alloc>(e-b+extra_pre+extra_post) {
-//    uninitialized_copy_n(a.begin(),sz,this->begin()+extra_pre);
-    std::uninitialized_copy(b,e,this->begin()+extra_pre);
+//    uninitialized_copy_n(a.begin(),sz,this->vec+extra_pre);
+    std::uninitialized_copy(b,e,this->vec+extra_pre);
     endv=this->endspace;
+    imp_construct_extra(this->vec,endv,extra_pre,extra_post);
     dynarray_assert(this->invariant());
   }
+private:
+  void imp_init(T const* a,size_type sz,size_type extra_pre,size_type extra_post)  {
+    size_type extra_reserve=extra_pre+extra_post;
+    this->alloc(sz+extra_reserve);
+    T *b=this->vec,*e=this->endspace;
+    uninitialized_copy_n(a,sz,this->vec+extra_pre);
+    endv=this->endspace;
+    imp_construct_extra(this->vec,endv,extra_pre,extra_post);
+    dynarray_assert(this->invariant());
+  }
+  void imp_construct_extra(T *b,T *e,size_type extra_pre,size_type extra_post) {
+    for(T *be=b+extra_pre;b<be;++b)
+      new(b)T();
+    --e;
+    for(T *ee=e-extra_post;e>ee;--e) {
+      new(e)T();
+    }
+  }
+public:
   dynamic_array(T const* a,size_type sz,size_type extra_pre,size_type extra_post)  {
-    size_type extra_reserve=extra_pre+extra_post;
-    this->alloc(sz+extra_reserve);
-    uninitialized_copy_n(a,sz,this->begin()+extra_pre);
-    endv=this->endspace;
-    dynarray_assert(this->invariant());
+    imp_init(a,sz,extra_pre,extra_post);
   }
-  dynamic_array(const dynamic_array &a,size_type extra_pre,size_type extra_post)  {
+  dynamic_array(self_type const& a,size_type extra_pre,size_type extra_post)  {
     size_type sz=a.size();
-    size_type extra_reserve=extra_pre+extra_post;
-    this->alloc(sz+extra_reserve);
-    uninitialized_copy_n(a.begin(),sz,this->begin()+extra_pre);
-    endv=this->endspace;
-    dynarray_assert(this->invariant());
+    imp_init(a.begin(),a.size(),extra_pre,extra_post);
   }
-
-  dynamic_array(const dynamic_array &a)  {
+  dynamic_array(self_type const& a)  {
     size_type sz=a.size();
     this->alloc(sz);
-    uninitialized_copy_n(a.begin(),sz,this->begin());
+    uninitialized_copy_n(a.begin(),sz,this->vec);
     endv=this->endspace;
     dynarray_assert(this->invariant());
   }
@@ -113,7 +132,7 @@ public:
   template <class RIT>
   dynamic_array(typename boost::disable_if<boost::is_arithmetic<RIT>,RIT>::type const& a,RIT const& b) : array<T,Alloc>(b-a)
   {
-    std::uninitialized_copy(a,b,this->begin());
+    std::uninitialized_copy(a,b,this->vec);
     endv=this->endspace;
     dynarray_assert(this->invariant());
   }
@@ -129,6 +148,7 @@ public:
   template <class C>
   void append(C const& c)
   {
+    reserve(size()+c.size());
     append(c.begin(),c.end());
   }
 
@@ -195,7 +215,7 @@ public:
   typedef typename array<T,Alloc>::iterator iterator;
   // move a chunk [i,end()) off the back, leaving the vector as [vec,i)
   void move_rest_to(T *to,iterator i) {
-    dynarray_assert(i >= this->begin() && i < end());
+    dynarray_assert(i >= this->vec && i < end());
     copyto(to,i,this->end()-i);
     endv=i;
   }
@@ -209,7 +229,7 @@ public:
   }
   bool exists(size_type index) const
   {
-    return this->begin()+index < end();
+    return this->vec+index < end();
   }
 
   T & at_assert (size_type index) const {
@@ -222,7 +242,7 @@ public:
     return (this->vec)[index];
   }
   size_type index_of(T *t) const {
-    dynarray_assert(t>=this->begin() && t<end());
+    dynarray_assert(t>=this->vec && t<end());
     return (size_type)(t-this->vec);
   }
 
@@ -341,7 +361,7 @@ public:
   }
   const T& front()  const {
 //        dynarray_assert(size());
-    return *this->begin();
+    return *this->vec;
   }
   const T& back() const {
 //        dynarray_assert(size());
@@ -350,7 +370,7 @@ public:
 
   T& front() {
     dynarray_assert(size());
-    return *this->begin();
+    return *this->vec;
   }
   T& back() {
     dynarray_assert(size());
@@ -605,13 +625,13 @@ public:
   }
   void clear() {
     dynarray_assert(invariant());
-    for ( T *i=this->begin(),*e=end();i!=e;++i)
+    for ( T *i=this->vec,*e=end();i!=e;++i)
       i->~T();
     clear_nodestroy();
   }
   void clear_dealloc() {
     dynarray_assert(invariant());
-    for ( T *i=this->begin();i!=end();++i)
+    for ( T *i=this->vec;i!=end();++i)
       i->~T();
     clear_dealloc_nodestroy();
   }

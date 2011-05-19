@@ -305,7 +305,7 @@ class ngram(object):
                 if witten_bell:
                     bos=self.ngrams[o+1].witten_bell_bos(log10=True)
                     self.bow[o]=bos
-                    ps=self.ngrams.counts[o]
+                    ps=self.ngrams[o].counts
                     for k in bos.iterkeys():
                         if not k in ps:
                             ps[k]=0 # feed this forward without setting a bogus prob entry?
