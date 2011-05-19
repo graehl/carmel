@@ -144,6 +144,12 @@ public:
       push_back(*a);
     }
   }
+  template <class Iter>
+  void append_ra(Iter a,Iter const& b)
+  {
+    reserve(size()+(b-a));
+    endv=std::uninitialized_copy(a,b,endv);
+  }
   template <class C>
   void append(C const& c)
   {
@@ -157,6 +163,12 @@ public:
     clear();
     append(a,b);
   }
+  template <class Iter>
+  void set_ra(Iter a,Iter const& b)
+  {
+    clear();
+    append_ra(a,b);
+  }
 
   template <class C>
   void set(C const& c)
@@ -165,7 +177,6 @@ public:
     reserve(c.size());
     append(c.begin(),c.end());
   }
-
 
   // warning: stuff will still be destructed!
   void copyto(T *to,T * from,size_type n) {
@@ -330,9 +341,7 @@ public:
   }
   bool empty() const {
     return size()==0;
-    //    return vec==endvec;
   }
-
 
   template <class Better_than_pred>
   void push_keeping_front_best(T &t,Better_than_pred better)
@@ -507,18 +516,18 @@ public:
   }
 
   //iterator_tags<Input> == random_access_iterator_tag
+    /*
   template <class Input>
   void append_ra(Input from,Input to)
   {
-    /*
       size_type n_new=to-from;
       reserve(size()+n_new);
       while (from!=to)
       new(endv++) T(*from++);
       dynarray_assert(invariant());
-    */
     append_n(from,to-from);
   }
+    */
 
   //iterator_tags<Input> == random_access_iterator_tag
   template <class Input>
