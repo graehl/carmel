@@ -968,7 +968,13 @@ function vg() {
     local darg=
     [ "$debug" ] && darg="--db-attach=yes"
     [ "$sup" ] && suparg="--gen-suppressions=yes"
-    GLIBCXX_FORCE_NEW=1 valgrind $darg  $suparg --leak-check=yes --tool=memcheck $VGARGS "$@"
+    local lc=
+    if [ "$noleak" ] ; then
+        lc=no
+    else
+        lc=yes
+    fi
+    GLIBCXX_FORCE_NEW=1 valgrind $darg  $suparg --leak-check=$lc --tool=memcheck $VGARGS "$@"
 }
 vgf() {
     vg "$@"
