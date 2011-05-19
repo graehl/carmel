@@ -4,6 +4,13 @@ blib=$d/bloblib.sh
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
+comjam() {
+    (
+        set +e
+        cd ~/t
+     mv Jamroot Jamroot.works2; cp Jamroot.svn Jamroot; svn commit -m "$*"; cp Jamroot.works2 Jamroot
+)
+}
 ld() {
     l -d "$@"
 }
