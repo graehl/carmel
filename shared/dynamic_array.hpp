@@ -99,7 +99,6 @@ private:
   void imp_init(T const* a,size_type sz,size_type extra_pre,size_type extra_post)  {
     size_type extra_reserve=extra_pre+extra_post;
     this->alloc(sz+extra_reserve);
-    T *b=this->vec,*e=this->endspace;
     uninitialized_copy_n(a,sz,this->vec+extra_pre);
     endv=this->endspace;
     imp_construct_extra(this->vec,endv,extra_pre,extra_post);
