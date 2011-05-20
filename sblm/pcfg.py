@@ -731,7 +731,7 @@ def pcfg_ngram_main(n=5,
                     ,skip_bar=True
                     ,unsplit=True
                     ,outpre=""
-                    ,logp_unk=-10.0
+                    ,logp_unk=0.0
                     ,bo_witten=0.1
                     ):
     log('pcfg_ngram')
