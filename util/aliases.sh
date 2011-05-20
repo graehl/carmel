@@ -11,6 +11,13 @@ comjam() {
      mv Jamroot Jamroot.works2; cp Jamroot.svn Jamroot; svn commit -m "$*"; cp Jamroot.works2 Jamroot
 )
 }
+upjam() {
+    (
+        set +e
+        cd ~/t
+     mv Jamroot Jamroot.works2; cp Jamroot.svn Jamroot; svn update; cp Jamroot.works2 Jamroot
+)
+}
 ld() {
     l -d "$@"
 }
