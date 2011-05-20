@@ -732,6 +732,7 @@ def pcfg_ngram_main(n=5,
                     ,unsplit=True
                     ,outpre=""
                     ,logp_unk=0.0
+                    #,logp_glue=0.0 #what about GLUE0 etc?
                     ,bo_witten=0.1
                     ):
     log('pcfg_ngram')
