@@ -103,8 +103,9 @@ class ngram_counts(object):
         sumc=self.sum_counts_ctx()
         for k,count in self.counts.iteritems():
             s=sumc[k[:-1]]
+            prob=count/s if s else 0
 #            if k[-1]=='</s>': warn('p[%s]=%s/%s=%s'%(k,count,s,count/s))
-            self.counts[k]=log10_prob(count/s) if log10 else (count/s)
+            self.counts[k]=log10_prob(prob) if log10 else prob
 
 def shorten_context(t):
     return t[1:]
