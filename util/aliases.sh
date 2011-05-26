@@ -988,7 +988,9 @@ function vg() {
     else
         lc=yes
     fi
+    set -x
     GLIBCXX_FORCE_NEW=1 valgrind $darg  $suparg --leak-check=$lc --tool=memcheck $VGARGS "$@"
+    set +x
 }
 vgf() {
     vg "$@"
