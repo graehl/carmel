@@ -42,6 +42,7 @@
 
 #ifdef TEST
 # include <graehl/shared/test.hpp>
+# define GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT
 #endif
 
 #ifdef GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT

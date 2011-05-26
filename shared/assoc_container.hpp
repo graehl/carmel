@@ -41,7 +41,7 @@ template <class Map,class Key,class Val,class AccumF>
 inline void accumulate(Map &table,const Key &key,const Val &val,AccumF accum_f) {
 #ifdef GRAEHL__DBG_ASSOC
     DBPC3("accumulate-pre",key,val);
-#endif 
+#endif
     std::pair<typename Map::iterator,bool> was_inserted
         =table.insert(typename Map::value_type(key,val));
     if (!was_inserted.second)
@@ -49,7 +49,7 @@ inline void accumulate(Map &table,const Key &key,const Val &val,AccumF accum_f) 
 #ifdef GRAEHL__DBG_ASSOC
     assert(table.find(key)!=table.end());
     DBPC3("accumulate-post",key,table[key]);
-#endif 
+#endif
 }
 
 template <class AssocDest,class It,class AccumF>
@@ -91,11 +91,11 @@ inline void maybe_increase_max(Map &table,const Key &key,const Val &val) {
     } else {
 //                INFOL(30,"maybe_increase_max",key << " val=" << val);
     }
-//    return was_inserted->first->second;    
+//    return was_inserted->first->second;
 }
 
 template <class Vector> inline
-typename Vector::value_type &at_expand(Vector &vec,std::size_t i,const typename Vector::value_type &default_value) 
+typename Vector::value_type &at_expand(Vector &vec,std::size_t i,const typename Vector::value_type &default_value)
 {
     std::size_t sz=vec.size();
     if (i>=sz)
@@ -104,14 +104,15 @@ typename Vector::value_type &at_expand(Vector &vec,std::size_t i,const typename 
 }
 
 template <class Vector> inline
-typename Vector::value_type &at_expand(Vector &vec,std::size_t i) 
+typename Vector::value_type &at_expand(Vector &vec,std::size_t i)
 {
     resize_up_for_index(vec,i);
     return vec[i];
 }
 
+//for boost ptr containers - http://www.boost.org/doc/libs/1_39_0/libs/ptr_container/doc/ptr_container.html
 template <class C> inline
-void ptr_resize_up_for_index(C &c,std::size_t i) 
+void ptr_resize_up_for_index(C &c,std::size_t i)
 {
     const std::size_t newsize=i+1;
     if (newsize > c.size()) {
@@ -122,7 +123,7 @@ void ptr_resize_up_for_index(C &c,std::size_t i)
 }
 
 template <class Vector> inline
-typename Vector::reference ptr_at_expand(Vector &vec,std::size_t i) 
+typename Vector::reference ptr_at_expand(Vector &vec,std::size_t i)
 {
     ptr_resize_up_for_index(vec,i);
     return vec[i];
@@ -130,7 +131,7 @@ typename Vector::reference ptr_at_expand(Vector &vec,std::size_t i)
 
 
 template <class Vector,class DefaultInit> inline
-typename Vector::value_type &at_expand_lazy_default(Vector &vec,std::size_t index,DefaultInit di) 
+typename Vector::value_type &at_expand_lazy_default(Vector &vec,std::size_t index,DefaultInit di)
 {
     std::size_t sz=vec.size();
     if (index>=sz) {
@@ -147,11 +148,11 @@ typename Vector::value_type const& at_default(Vector const& vec,std::size_t inde
     std::size_t sz=vec.size();
     if (index>=sz)
         return default_value;
-    return vec[index];    
+    return vec[index];
 }
 
 template <class Vector> inline
-void maybe_decrease_min_at(Vector &vec,unsigned index,const typename Vector::value_type &decrease_to,const typename Vector::value_type &infinity=HUGE_VAL) 
+void maybe_decrease_min_at(Vector &vec,unsigned index,const typename Vector::value_type &decrease_to,const typename Vector::value_type &infinity=HUGE_VAL)
 {
     typename Vector::value_type &f=at_expand(vec,index,infinity);
     if (f > decrease_to)
@@ -159,7 +160,7 @@ void maybe_decrease_min_at(Vector &vec,unsigned index,const typename Vector::val
 }
 
 template <class Vector> inline
-void maybe_increase_max_at(Vector &vec,unsigned index,const typename Vector::value_type &increase_to,const typename Vector::value_type &min_inf=0) 
+void maybe_increase_max_at(Vector &vec,unsigned index,const typename Vector::value_type &increase_to,const typename Vector::value_type &min_inf=0)
 {
     typename Vector::value_type &f=at_expand(vec,index,min_inf);
     if (f < increase_to)
@@ -175,7 +176,7 @@ void accumulate_at(Vector &table,const Key &key,const Val &val,AccumF accum_f) {
     accum_f(at_expand_lazy_default(table,key,accum_f),val);
 #ifdef GRAEHL__DBG_ASSOC
     DBPC3("accumulate-post",key,table[key]);
-#endif 
+#endif
 }
 
 template <class Vector,class It,class AccumF> inline
@@ -190,7 +191,7 @@ void accumulate_at_pairs(Vector &table,Pairs const &source,AccumF accum_f)
 {
     accumulate_at_pairs(table,source.begin(),source.end(),accum_f);
 }
-    
+
 
 }//graehl
 

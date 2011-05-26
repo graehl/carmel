@@ -117,14 +117,13 @@ public:
     imp_init(a,sz,extra_pre,extra_post);
   }
   dynamic_array(self_type const& a,size_type extra_pre,size_type extra_post)  {
-    size_type sz=a.size();
     imp_init(a.begin(),a.size(),extra_pre,extra_post);
   }
   dynamic_array(self_type const& a)  {
     size_type sz=a.size();
     this->alloc(sz);
-    uninitialized_copy_n(a.begin(),sz,this->vec);
     endv=this->endspace;
+    uninitialized_copy_n(a.begin(),sz,this->vec);
     dynarray_assert(this->invariant());
   }
 

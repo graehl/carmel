@@ -22,7 +22,7 @@ struct word_spacer {
     {
         return space_string;
     }
-    const char *get_string() 
+    const char *get_string()
     {
         if (first) {
             first=false;
@@ -31,7 +31,7 @@ struct word_spacer {
             return space();
         }
     }
-    void reset() 
+    void reset()
     {
         first=true;
     }
@@ -43,9 +43,9 @@ struct word_spacer {
         else
             o << space_string[0];
     }
-    
+
     template <class C,class T>
-    friend inline std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T>& o,word_spacer &me) 
+    friend inline std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T>& o,word_spacer &me)
     {
         me.print(o);
         return o;
@@ -76,12 +76,12 @@ template <char sep=' '>
 struct word_spacer_c {
     bool first;
     word_spacer_c() : first(true) {}
-    void reset() 
+    void reset()
     {
         first=true;
     }
     template <class C, class T>
-    void print(std::basic_ostream<C,T>& o) 
+    void print(std::basic_ostream<C,T>& o)
     {
         if (first)
             first=false;
@@ -91,13 +91,47 @@ struct word_spacer_c {
     typedef word_spacer_c<sep> Self;
     static const char seperator=sep;
 
-    template <class C, class T> 
-    friend inline std::basic_ostream<C,T>& 
-    operator<<(std::basic_ostream<C,T>& o,Self &me) 
+    template <class C, class T>
+    friend inline std::basic_ostream<C,T>&
+    operator<<(std::basic_ostream<C,T>& o,Self &me)
     {
         me.print(o);
         return o;
     }
+};
+
+template <char sep=' '>
+struct spacesep {
+  bool squelch;
+  spacesep() : squelch(true) {}
+  template <class O>
+  void print(O& o)
+  {
+    if (squelch)
+      squelch=false;
+    else
+      o << sep;
+  }
+  template <class C, class T>
+  friend inline std::basic_ostream<C,T>&
+  operator<<(std::basic_ostream<C,T>& o,spacesep<sep> &me)
+  {
+    me.print(o);
+    return o;
+  }
+};
+
+struct sep {
+  char const* s;
+  bool squelch;
+  sep(char const* s=" ") : s(s),squelch(true) {  }
+  operator char const* ()  {
+    if (squelch) {
+      squelch=false;
+      return "";
+    } else
+      return s;
+  }
 };
 
 }

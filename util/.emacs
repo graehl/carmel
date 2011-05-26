@@ -322,7 +322,10 @@ No more \"End of file during parsing\" horrors!"
 ;(gnu-font "Courier New")
 (and on-win32 (gnu-font "Bitstream Vera Sans Mono"))
 (and on-win32
-(gnu-font "Consolas"))
+;(gnu-font "Inconsolata-dz")
+     (gnu-font "Droid Sans Mono")
+(gnu-font "Consolas")
+)
 ;(gnu-font "Anonymous Pro")
 ;(gnu-font "Georgia")
 ;; --------------------------------------------------------------------
