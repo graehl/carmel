@@ -18,7 +18,7 @@
 namespace graehl {
 
 template <class Ch, class Tr,class Alloc>
-inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss) 
+inline void rewind(std::basic_stringstream<Ch,Tr,Alloc> &ss)
 {
     ss.clear();
     ss.seekg(0,std::ios::beg);
@@ -83,10 +83,10 @@ inline void out_quote(std::basic_ostream<Ch,Tr> &out, const C& data,IsSpecial is
                 out.put(escape_char);
             out.put(c);
         }
-        out << quote_char;        
+        out << quote_char;
     } else {
 //        std::copy(i_iter(s),end,o_iter(out));
-        /*        
+        /*
         for (i_iter i(s);i!=end;++i)
             out.put(*i);
         */
@@ -162,9 +162,41 @@ inline Output copy_escaping(Input in,Input in_end,Output out,SpecialChar is_spec
         char c=*in;
         if (need_quote(c))
             *out++=escape_char;
-        *out++=c;
+        *out=c;++out;
     }
     return out;
+}
+
+template <class I,class O>
+O copy_unescaping(I i,I end,O o,char escape_char='\\') {
+  for (;i!=end;++i) {
+    char c=*i;
+    if (c==escape_char) {
+      ++i;
+      if (i==end) throw std::runtime_error("end of input after escape char "+std::string(1,escape_char));
+    }
+    *o=*i;++o;
+  }
+}
+
+
+std::string unescape(std::string const& s,char escape_char='\\') {
+  std::ostringstream o;
+  copy_unescaping(s.begin(),s.end(),std::ostream_iterator<char>(o),escape_char);
+  return o.str();
+}
+
+template <class SpecialChar>
+std::string escape(std::string const& s,SpecialChar is_special,char escape_char='\\') {
+  std::ostringstream o;
+  copy_escaping(s.begin(),s.end(),std::ostream_iterator<char>(o),is_special,escape_char);
+  return o.str();
+}
+
+std::string escape(std::string const& s,char s1,char s2,char escape_char='\\') {
+  std::ostringstream o;
+  copy_escaping(s.begin(),s.end(),std::ostream_iterator<char>(o),true_for_chars(s1,s2),escape_char);
+  return o.str();
 }
 
 //todo: template traits - but shouldn't matter for output!
@@ -172,8 +204,8 @@ template <class Ch,class Tr=std::char_traits<Ch> >
 struct printed_stringstream : public std::basic_stringstream<Ch,Tr>
 {
     typedef std::basic_stringstream<Ch,Tr> stream;
-    typedef std::istreambuf_iterator<Ch,Tr> iterator;    
-    stream& as_stream() 
+    typedef std::istreambuf_iterator<Ch,Tr> iterator;
+    stream& as_stream()
     {
         return *(stream *)this;
     }
@@ -190,7 +222,7 @@ struct printed_stringstream : public std::basic_stringstream<Ch,Tr>
     static iterator end()
     {
         return iterator();
-    }    
+    }
     template <class Data>
     printed_stringstream(const Data &data)
     {
