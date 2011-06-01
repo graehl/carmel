@@ -323,7 +323,6 @@ void memcpy(void *out,small_vector<T,M> const& v) {
 
 #ifdef TEST
 
-# include <graehl/shared/test.hpp>
 typedef graehl::small_vector<int,2> SmallVectorInt;
 
 BOOST_AUTO_TEST_CASE( test_small_vector_larger_than_2 ) {
