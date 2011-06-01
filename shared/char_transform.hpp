@@ -38,7 +38,7 @@ struct char_transform
   std::size_t count(I i,I2 end) const {
     std::size_t s=0;
     for(;i!=end;++i)
-      if (table[*i])
+      if (table[(unsigned char)*i])
         ++s;
     return s;
   }
