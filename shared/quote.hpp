@@ -177,6 +177,7 @@ O copy_unescaping(I i,I end,O o,char escape_char='\\') {
     }
     *o=*i;++o;
   }
+  return o;
 }
 
 
