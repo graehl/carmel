@@ -15,6 +15,8 @@
 #include <new>
 #include <graehl/shared/swap_pod.hpp>
 #include <boost/functional/hash.hpp>
+#include <graehl/shared/io.hpp>
+#include <graehl/shared/genio.h>
 #include <graehl/shared/test.hpp>
 
 //sizeof(T)/sizeof(T*)>1?sizeof(T)/sizeof(T*):1
@@ -157,6 +159,11 @@ class small_vector {
   bool empty() const { return size_ == 0; }
   size_t size() const { return size_; }
 
+  inline void reserve(size_type sz) {
+    if (size_<=SV_MAX) return;
+    ensure_capacity(sz);
+  }
+
   inline void ensure_capacity(size_type min_size) {
     assert(min_size > SV_MAX);
     if (min_size < capacity_) return;
@@ -177,13 +184,24 @@ private:
   }
   inline void ptr_to_small() {
     assert(size_<=SV_MAX);
-    int *tmp=data_.ptr;
-    for (int i=0;i<size_;++i)
+    T *tmp=data_.ptr;
+    for (size_type i=0;i<size_;++i)
       data_.vals[i]=tmp[i];
     delete[] tmp;
   }
 
 public:
+
+  template <class I>
+  inline void append(I i,I end) {
+    for (;i!=end;++i)
+      push_back(*i);
+  }
+
+  template <class I>
+  inline void append_ra(I i,I end) {
+    reserve(size_+(end-i));
+  }
 
   inline void push_back(T const& v) {
     if (size_ < SV_MAX) {
@@ -299,6 +317,20 @@ public:
     return hash_range(data_.ptr,data_.ptr+size_);
   }
 //template <class O> friend inline O& operator<<(O &o,small_vector const& x) { return o; }
+  typedef void has_print_writer;
+  template <class charT, class Traits>
+  std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,bool multiline=false) const
+  {
+    return range_print(o,begin(),end(),DefaultWriter(),multiline);
+  }
+  template <class charT, class Traits, class Writer >
+  std::basic_ostream<charT,Traits>& print(std::basic_ostream<charT,Traits>& o,Writer w,bool multiline=false) const
+  {
+    return range_print(o,begin(),end(),w,multiline);
+  }
+  typedef small_vector<T,SV_MAX> self_type;
+  TO_OSTREAM_PRINT
+
  private:
   union StorageType {
     T vals[SV_MAX];
