@@ -1,6 +1,8 @@
 blib=$d/bloblib.sh
 [ -r $blib ] && . $blib
-
+em() {
+    nohup emacs ~/t/sbmt_decoder/include/sbmt/io/logging_macros.hpp ~/t/sblm/sblm_info.hpp &
+}
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
