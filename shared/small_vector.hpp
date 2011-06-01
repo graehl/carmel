@@ -17,7 +17,6 @@
 #include <boost/functional/hash.hpp>
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/genio.h>
-#include <graehl/shared/test.hpp>
 
 //sizeof(T)/sizeof(T*)>1?sizeof(T)/sizeof(T*):1
 
@@ -358,7 +357,8 @@ void memcpy(void *out,small_vector<T,M> const& v) {
 
 }//ns
 
-#ifdef TEST
+#if defined(TEST) && 0
+#include <graehl/shared/test.hpp>
 
 typedef graehl::small_vector<int,2> SmallVectorInt;
 
