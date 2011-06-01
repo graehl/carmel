@@ -13,7 +13,6 @@
 #include <cassert>
 #include <stdint.h>
 #include <new>
-#include <stdint.h>
 #include <graehl/shared/swap_pod.hpp>
 #include <boost/functional/hash.hpp>
 #include <graehl/shared/test.hpp>
@@ -44,25 +43,28 @@ class small_vector {
   typedef T value_type;
   typedef T &reference;
   typedef T const& const_reference;
-
+  typedef uint16_t size_type;
+  static const size_type size_max=(size_type)-1;
   T *begin() { return size_>SV_MAX?data_.ptr:data_.vals; }
   T const* begin() const { return const_cast<Self*>(this)->begin(); }
   T *end() { return begin()+size_; }
   T const* end() const { return begin()+size_; }
 
   explicit small_vector(size_t s) {
+    assert(s<=size_max);
     Alloc(s);
     if (s <= SV_MAX) {
-      for (int i = 0; i < s; ++i) new(&data_.vals[i]) T();
+      for (size_type i = 0; i < s; ++i) new(&data_.vals[i]) T();
     } //TODO: if alloc were raw space, construct here.
   }
 
   small_vector(size_t s, T const& v) {
+    assert(s<=size_max);
     Alloc(s);
     if (s <= SV_MAX) {
-      for (int i = 0; i < s; ++i) data_.vals[i] = v;
+      for (size_type i = 0; i < s; ++i) data_.vals[i] = v;
     } else {
-      for (int i = 0; i < size_; ++i) data_.ptr[i] = v;
+      for (size_type i = 0; i < size_; ++i) data_.ptr[i] = v;
     }
   }
 
@@ -70,11 +72,12 @@ class small_vector {
   template <class I>
   small_vector(I const* begin,I const* end) {
     int s=end-begin;
+    assert(s<=size_max);
     Alloc(s);
     if (s <= SV_MAX) {
-      for (int i = 0; i < s; ++i,++begin) data_.vals[i] = *begin;
+      for (size_type i = 0; i < s; ++i,++begin) data_.vals[i] = *begin;
     } else
-      for (int i = 0; i < s; ++i,++begin) data_.ptr[i] = *begin;
+      for (size_type i = 0; i < s; ++i,++begin) data_.ptr[i] = *begin;
   }
 
   small_vector(const Self& o) : size_(o.size_) {
@@ -154,10 +157,10 @@ class small_vector {
   bool empty() const { return size_ == 0; }
   size_t size() const { return size_; }
 
-  inline void ensure_capacity(uint16_t min_size) {
+  inline void ensure_capacity(size_type min_size) {
     assert(min_size > SV_MAX);
     if (min_size < capacity_) return;
-    uint16_t new_cap = std::max(static_cast<uint16_t>(capacity_ << 1), min_size);
+    size_type new_cap = std::max(static_cast<size_type>(capacity_ << 1), min_size);
     T* tmp = new T[new_cap];
     std::memcpy(tmp, data_.ptr, capacity_ * sizeof(T));
     delete[] data_.ptr;
@@ -213,21 +216,23 @@ public:
   }
 
   // size must be <= size_ - TODO: test
-  void compact(uint16_t size) {
-    assert(size<=size_);
+  void compact(size_type size) {
+    assert(size_<=size_);
     if (size_>SV_MAX) {
       size_=size;
-      if (size<=SV_MAX)
+      if (size_<=SV_MAX)
         ptr_to_small();
     } else
       size_=size;
   }
 
   void resize(size_t s, int v = 0) {
+    assert(v<=size_max);
+    assert(size_<=size_max);
     if (s <= SV_MAX) {
       if (size_ > SV_MAX) {
         T *tmp=data_.ptr;
-        for (int i = 0; i < s; ++i) data_.vals[i] = tmp[i];
+        for (size_type i = 0; i < s; ++i) data_.vals[i] = tmp[i];
         delete[] tmp;
         size_ = s;
         return;
@@ -236,7 +241,7 @@ public:
         size_ = s;
         return;
       } else {
-        for (int i = size_; i < s; ++i)
+        for (size_type i = size_; i < s; ++i)
           data_.vals[i] = v;
         size_ = s;
         return;
@@ -247,7 +252,7 @@ public:
       if (s > capacity_)
         ensure_capacity(s);
       if (s > size_) {
-        for (int i = size_; i < s; ++i)
+        for (size_type i = size_; i < s; ++i)
           data_.ptr[i] = v;
       }
       size_ = s;
@@ -300,8 +305,8 @@ public:
     T* ptr;
   };
   StorageType data_;
-  uint16_t size_;
-  uint16_t capacity_;  // only defined when size_ > SV_MAX
+  size_type size_;
+  size_type capacity_;  // only defined when size_ > SV_MAX
 };
 
 template <class T,int M>
