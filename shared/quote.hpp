@@ -181,7 +181,7 @@ O copy_unescaping(I i,I end,O o,char escape_char='\\') {
 }
 
 
-std::string unescape(std::string const& s,char escape_char='\\') {
+inline std::string unescape(std::string const& s,char escape_char='\\') {
   std::ostringstream o;
   copy_unescaping(s.begin(),s.end(),std::ostream_iterator<char>(o),escape_char);
   return o.str();
@@ -194,7 +194,7 @@ std::string escape(std::string const& s,SpecialChar is_special,char escape_char=
   return o.str();
 }
 
-std::string escape(std::string const& s,char s1,char s2,char escape_char='\\') {
+inline std::string escape(std::string const& s,char s1,char s2,char escape_char='\\') {
   std::ostringstream o;
   copy_escaping(s.begin(),s.end(),std::ostream_iterator<char>(o),true_for_chars(s1,s2),escape_char);
   return o.str();
