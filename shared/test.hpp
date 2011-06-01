@@ -136,12 +136,12 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
 
-#ifndef EXPECT_TRUE
+//#ifndef EXPECT_TRUE
 #define EXPECT_TRUE(c) BOOST_CHECK(c);
-#endif
-#ifndef EXPECT_EQ
+                                     //#endif
+//#ifndef EXPECT_EQ
 # define EXPECT_EQ(a,b) BOOST_CHECK_EQUAL(a,b)
-#endif
+  //#endif
 }
 
 #endif
