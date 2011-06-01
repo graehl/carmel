@@ -90,6 +90,7 @@ struct char_transform
         *o=c;++o;
       }
     }
+    return o;
   }
 
 private:
