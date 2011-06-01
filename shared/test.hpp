@@ -64,7 +64,7 @@ struct test_counter {
 template <class S,class C> inline
 bool test_extract(S &s,C &c,bool whine=true) {
     std::istringstream is(s);
-    try {      
+    try {
         is >> c;
     } catch (std::ios_base::failure &e) {
         if (whine)
@@ -104,9 +104,9 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
   return 1;
 }
 
-  
+
   template <class C>
-  struct expect_visitor 
+  struct expect_visitor
   {
       const C *array_expected;
       unsigned next;
@@ -119,23 +119,29 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
           ++next;
           return true;
       }
-      unsigned n_visited() const 
+      unsigned n_visited() const
       {
           return next;
       }
   };
 
   template <class C>
-  expect_visitor<C> make_expect_visitor(const C *exp) 
+  expect_visitor<C> make_expect_visitor(const C *exp)
   {
       return expect_visitor<C>(exp);
   }
-  
-      
+
+
 #define CHECK_EQUAL_STRING(a,b) BOOST_CHECK_EQUAL(std::string(a),std::string(b))
 #define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
 #define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
 
+#ifndef EXPECT_TRUE
+#define EXPECT_TRUE(c) BOOST_CHECK(c);
+#endif
+#ifndef EXPECT_EQ
+# define EXPECT_EQ(a,b) BOOST_CHECK_EQUAL(a,b)
+#endif
 }
 
 #endif
