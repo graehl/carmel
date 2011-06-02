@@ -6,6 +6,9 @@ em() {
 libzpre=/nfs/topaz/graehl/isd/cage/lib
 HPF="$USER@$HPCHOST"
 browser=${browser:-chrome}
+ltd() {
+    lt -d "$@"
+    }
 comjam() {
     (
         set +e
