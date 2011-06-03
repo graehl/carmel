@@ -6,11 +6,17 @@
 def identity(x):
     return x
 
-import sys,re,random,math,os,collections,subprocess,errno,time,operator
+import sys,re,random,math,os,collections,errno,time,operator
 
 from itertools import *
 #from dumpx import *
 
+#should be builtin already
+#all=forall
+#any=exists
+
+def readfrom(infile):
+    return open(infile) if type(infile)==str else infile
 
 def pretty_float(x,digits=16):
     s='%.*g'%(digits,x)
@@ -82,10 +88,10 @@ def pairstr(p):
 def pairstrf(p):
     return "%s=%.4g"%p
 
-class Stats(Stat):
+class Multistats(Stat):
     def __init__(self,name='stats',stats=None):
         Stat.__init__(self,name)
-        stat.stats=[] if stats is None else stats
+        self.stats=[] if stats is None else stats
     def count(self,x):
         Stat.count(self,x)
         for s in self.stats:
@@ -192,16 +198,16 @@ class IDs(dict):
         self.id=0
         self.inverse=[] if inverse else None
     def __missing__(self,key):
-        id=self.id
-        self[key]=id
+        r=self.id
+        self[key]=r
         if self.inverse is not None:
             self.inverse.append(key)
         self.id+=1
-        return id
+        return r
     def drop_inverse(self):
         self.inverse=None
     def cache_inverse(self):
-        self.inverse=invert_dictid_tolist(self)
+        self.inverse=invert_dictid_to_list(self)
     def token(self,id):
         if self.inverse is None:
             self.cache_inverse()
@@ -223,10 +229,10 @@ def append_attr(obj,attr,val):
 def no_none(x,default):
     return default if x is None else x
 
-def take_first(a,b):
+def take_first(a,_):
     return a
 
-def take_second(a,b):
+def take_second(_,b):
     return b
 
 def disjoint_add_dict(tod,fromd,merge_fn=None,ignore_conflict=True,warn_conflict=True,desc='disjoint_add_dict'):
@@ -254,7 +260,7 @@ class Stopwatch(object):
     def elapsed(self):
         return 0 if self.started is None else time.time()-self.started
     def pause(self):
-        total+=elapsed()
+        self.total+=self.elapsed()
         self.started=None
     def total_elapsed(self):
         return self.elapsed()+self.total
@@ -281,7 +287,7 @@ def typedvals(*l):
 def append_logfile(logfile,writefn=None,header='',prefix='### '):
     if logfile is not None:
         logfile=open(logfile,'a')
-        logfile.write("### %s\n"%header)
+        logfile.write(prefix+header+"\n")
         writefn(logfile)
         logfile.write("\n\n")
         logfile.close()
@@ -294,7 +300,7 @@ def iterkeys2(a,b):
             yield x
 
 def iterlen(a):
-    return sum(1.0 for x in a)
+    return sum(1.0 for _ in a)
 
 def implies(a,b):
     if not a: return True
@@ -324,12 +330,10 @@ def exists(gen,pred=None):
 
 def nonempty(gen):
     "consumes an item from gen. returns True iff there was an item"
-    for x in gen:
+    for _ in gen:
         return True
     return False
 
-all=forall
-any=exists
 
 def write_dict(d,out=sys.stdout,mappair=identity,mapk=identity,mapv=identity):
     write_tabsep(d.iteritems() if isinstance(d,dict) else d,out,mappair,mapk,mapv)
@@ -362,11 +366,12 @@ def system_force(*a,**kw):
         if not ('warn' in kw and kw['warn']): sys.exit(r)
 
 def callv(l):
+    #import subprocess
     #subprocess.check_call(l)
     os.system(' '.join(l))
 
 def is_iter(x):
-    try: it = iter(x)
+    try: _ = iter(x)
     except TypeError: return False
     return True
 
@@ -422,6 +427,8 @@ class Histogram(object):
     def __init__(self):
         self.c=dict()
         self.N=0.0 # total number of counts
+    def mean(self):
+        return len(self.c)/self.N
     def count(self,k,d=1):
         "by setting d to some arbitrary number, you can have any (x,y) to be graphed as a histogram or line"
         self.N+=d
@@ -450,15 +457,14 @@ class Histogram(object):
 class LengthDistribution(object):
     def __init__(self,geometric_backoff=1.0):
         self.hist=Histogram()
-        self.sum_length=0 # for computing mean length
         #note: shifted geometric distribution - if p(STOP)=p, then E_p[length]=1/p. this is how we will fit the geometric backoff.
         self.bo=geometric_backoff
     def count(self,length,d=1):
-        self.sum_length+=d*length
         self.hist.count(length,d)
-    def fit_geometric(shifted=True): #
+    def fit_geometric(self,shifted=True): #TODO
         "return p so that the mean value is the same as histogram - https://secure.wikimedia.org/wikipedia/en/wiki/Geometric_distribution - shifted means support is 1,2,... = avg. number of trials until success. unshifted means 0,... = avg. number of failures before success"
-        return len(self.c)/self.sum
+        mean=self.hist.mean()
+        return None #
 
 def mismatch_text(xs,ys,xname='xs',yname='ys',pre='mismatch: '):
     if xs==ys:
@@ -518,6 +524,7 @@ def definitely_lt(x,a,epsilon=epsilon):
 # scala-like itertools extensions from 9.7.2. itertools Recipes
 
 def take(n,gen):
+    "Return first n items of the iterable as a list"
     i=0
     for x in gen:
         if i>=n: break
@@ -743,7 +750,7 @@ class Alignment(object):
         r.efpairs=[(b,a) for (a,b) in self.efpairs]
         return r
     def is_identity(self):
-        return self.ne==self.nf and len(self.efpairs)==self.ne and all((a,a)==b for (a,b) in itertools.izip(itertools.count(0),sorted(self.efpairs)))
+        return self.ne==self.nf and len(self.efpairs)==self.ne and all((a,a)==b for (a,b) in izip(count(0),sorted(self.efpairs)))
     def includes_identity(self):
         if self.ne!=self.nf: return False
         s=self.efpairs_set()
@@ -760,7 +767,7 @@ class Alignment(object):
         self.efpairs=list(set((bound(e+rdistort(p,d),self.ne),bound(f+rdistort(p,d),self.nf)) for e,f in self.efpairs))
     def str_agreement(self,gold,alpha_precision=.6):
         ag=self.agreement(gold)
-        return Alignment.agreestr(ag)
+        return Alignment.agreestr(ag,alpha_precision)
     def agreement(self,gold):
         "returns (true pos,false pos,false neg) vs. gold"
         return set_agreement(self.efpairs,gold.efpairs)
@@ -811,26 +818,16 @@ def unordered_pairs(xs):
     # yuck, for x in X for y in f(x) is just like for x in X: for y in f(y): - should be backwards.
 
 PYTHON26=sys.version >= '2.6'
-
+assert(PYTHON26)
 # could be more concise; but hope that this is efficient.  note: on python 2.6 i saw no numerical difference when logadding 1e-15 and 1
-if PYTHON26:
-    def logadd(lhs,rhs):
-        "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
-        diff=lhs-rhs
-        if diff > 36: return lhs # e^36 or more overflows double floats.
-        if diff < 0: #rhs is bigger
-            if diff < -36: return rhs
-            return rhs+math.log1p(math.exp(diff))
-        return lhs+math.log1p(math.exp(-diff))
-else:
-    def logadd(lhs,rhs):
-        "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
-        diff=lhs-rhs
-        if diff > 36: return lhs # e^36 or more overflows double floats.
-        if diff < 0: #rhs is bigger
-            if diff < -36: return rhs
-            return rhs+math.log(1.+math.exp(diff))
-        return lhs+math.log(1.+math.exp(-diff))
+def logadd(lhs,rhs):
+    "return log(exp(a)+exp(b)), i.e. if a and b are logprobs, returns the logprob of their probs' sum"
+    diff=lhs-rhs
+    if diff > 36: return lhs # e^36 or more overflows double floats.
+    if diff < 0: #rhs is bigger
+        if diff < -36: return rhs
+        return rhs+math.log1p(math.exp(diff))
+    return lhs+math.log1p(math.exp(-diff))
 
 def log10_interp(a,b,wt_10a):
     assert(0<=wt_10a<=1)
@@ -956,7 +953,7 @@ class Record(object):
     def update(self,d):
         """make fields of object for dict or object d.  FIXME: int keys in dict can't make int records (would have to hack Record to be indexable"""
         if (hasattr(d,'__dict__')):
-            d=getattr(d,'__dict__')
+            d=d.__dict__
         self.__dict__.update(d)
     def __str__(self):
         return attr_str(self)
@@ -984,7 +981,6 @@ def log_finish(s):
     sys.stderr.write(s+"\n")
 def log(s,out=sys.stderr):
     out.write("### "+s+"\n")
-import time
 def logtime(s=""):
     log(time.ctime()+(": "+s if s else ""))
 
@@ -1009,15 +1005,20 @@ def log_time_since(key="",extra="",N=1):
 def test_since(key="test"):
     for i in range(0,10):
         log_time_since(key,i,i)
-        for j in range(0,100000): a=1
+        for _ in range(0,100000): _=1
 
 def dict_slice(d,keys):
     return dict((k,d[k]) for k in keys)
 
+#reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5)
+# If the optional initializer is present, it is placed before the items of the iterable in the calculation, and serves as a default when the iterable is empty
 def fold(f,z,list):
-    for x in list:
-        z=f(z,x)
-    return z
+    return reduce(f,list,z)
+
+# def fold(f,z,list):
+#     for x in list:
+#         z=f(z,x)
+#     return z
 
 def scan(f,z,list):
     result=[z]
@@ -1026,10 +1027,6 @@ def scan(f,z,list):
         result.append(z)
     return result
 
-#reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5)
-# If the optional initializer is present, it is placed before the items of the iterable in the calculation, and serves as a default when the iterable is empty
-def fold(f,z,list):
-    return reduce(f,list,z)
 
 
 def cartesian_product(a,b):
@@ -1066,8 +1063,8 @@ def obj2str(obj,names=None,types=pod_types,pretty=True):
     return '[%s %s]'%(obj.__class__.__name__,attr_str(obj,names,types,pretty))
 
 def writeln(line,file=sys.stdout):
-    f.write(f)
-    f.write('\n')
+    file.write(line)
+    file.write('\n')
 
 def open_in(fname):
     "if fname is '-', return sys.stdin, else return open(fname,'r')"
@@ -1089,7 +1086,7 @@ def open_out_prefix(prefix,name):
 
 def adjlist(pairs,na):
     "return adjacency list indexed by [a]=[x,...,z] for pairs (a,x) ... (a,z)"
-    adj=[[] for row in xrange(na)]
+    adj=[[] for _ in xrange(na)]
     for a,b in pairs:
         adj[a].append(b)
     return adj
@@ -1136,7 +1133,7 @@ def span_points_except(s,points):
     return [x for x in ss if x is not None]
 
 def unmarked_span(s):
-    return [False for x in range(s[0],s[1])]
+    return [False for _ in range(s[0],s[1])]
 
 def fresh_mark(marks,i):
     if not marks[i]:
@@ -1194,9 +1191,9 @@ def radu2ptb(t,strip_head=True):
 def shellquote(s):
     return "'" + s.replace("'", "'\\''") + "'"
 
-def take(n, iterable):
-    "Return first n items of the iterable as a list"
-    return list(islice(iterable, n))
+# def take(n, iterable):
+#     "Return first n items of the iterable as a list"
+#     return list(islice(iterable, n))
 
 def tabulate(function, start=0):
     "Return function(0), function(1), ..."
@@ -1265,8 +1262,8 @@ def roundrobin(*iterables):
     nexts = cycle(iter(it).next for it in iterables)
     while pending:
         try:
-            for next in nexts:
-                yield next()
+            for n in nexts:
+                yield n()
         except StopIteration:
             pending -= 1
             nexts = cycle(islice(nexts, pending))
@@ -1331,7 +1328,7 @@ def random_product(*args, **kwds):
 def random_permutation(iterable, r=None):
     "Random selection from itertools.permutations(iterable, r)"
     pool = tuple(iterable)
-    r = len(pool) if r is None else r
+    if r is None: r=len(pool)
     return tuple(random.sample(pool, r))
 
 def random_combination(iterable, r):

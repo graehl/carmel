@@ -14,7 +14,7 @@ def callerstring(level=1):
     #if there is a self variable in the caller's local namespace then
     #we'll make the assumption that the caller is a class method
     obj = f.f_locals.get("self", None)
-    functionName = f.f_code.co_name
+    #functionName = f.f_code.co_name
     if obj:
         callStr = obj.__class__.__name__+"::"+f.f_code.co_name+" (line "+str(f.f_lineno)+")"
     else:
@@ -28,7 +28,7 @@ def fileline(file,line):
     f=open(file)
     for _ in range(1,line):
         r=f.readline()
-    close(f)
+    f.close()
     return r
 
 def assertv(expected, actual, type='', message='', trans=(lambda x: x)):
@@ -44,8 +44,8 @@ def assertvs(expected, actual, type='', message=''):
 def assertfail(back,*a):
     framei=1+back
     call=callerstring(framei)
-    frame=inspect.currentframe()
-    frames=inspect.getouterframes(frame)
+    #frame=inspect.currentframe()
+    #frames=inspect.getouterframes(frame)
     caller=callerinfo(framei)
     cframe,cfile,cline,cfun,_,_=caller
     #srcline=fileline(cfile,cline)
@@ -138,7 +138,7 @@ def interrogate(item):
      else:
          print "No"
      if hasattr(item, '__doc__'):
-         doc = getattr(item, '__doc__')
+         doc=item.__doc__
  	 doc = doc.strip()   # Remove leading/trailing whitespace.
  	 firstline = doc.split('\n')[0]
  	 print "DOC:     ", firstline

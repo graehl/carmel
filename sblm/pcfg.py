@@ -161,7 +161,6 @@ def tokenize(re,s,until_token=None,pos=0,allow_space=True):
     #     sep=not sep
     # return r
 
-from dumpx import *
 
 # return (tree,start-rhs-pos,end-tree-pos)
 def parse_sbmt_lhs(s,require_arrow=True):
@@ -347,7 +346,7 @@ def sbmt_lhs_label(t,num2at=True):
 
 #pcfg event is a nonempty list of [lhs]+[children]. this should be called on raw eng-parse, not sbmt rule lhs, which have already quoted leaves. we include terminal -> [] because we want unigram prob backoffs
 def sbmt_lhs_pcfg_event(t,num2at=True):
-    return [sbmt_lhs_label(c) for c in [t]+t.children]
+    return [sbmt_lhs_label(c,num2at) for c in [t]+t.children]
 
 varre=re.compile(r"^x\d+:")
 def strip_var(l):
@@ -367,18 +366,17 @@ def lhs_pcfg_event(t):
     assert(not t.is_terminal())
     return [t.label_lrb()]+[lhs_label(c) for c in t.children]
 
-def gen_pcfg_events_radu(t,terminals=False,terminals_unigram=False,digit2at=False):
+def gen_pcfg_events_radu(t,terminals=False,digit2at=False):
 #        dump(t)
     if t is None:
         return
 #    dump(type(t),t)
     for n in t.preorder():
         ev=sbmt_lhs_pcfg_event(n,digit2at)
-        use=False
 #        term='terminal'
 # return a tuple to distinguish terminals
         if n.is_terminal():
-            if terminals_unigram: yield (ev,)
+            if terminals: yield (ev,)
         elif n.is_preterminal():
             yield (ev,) #ret[0] = ev = (preterm,term)
         else:
@@ -403,9 +401,9 @@ class tag_word_unigram(object):
         return self.word.iterkeys()
     def ngram_lm(self):
         return build_2gram(self.tagword,self.word,self.bo_for_tag,digit2at=self.digit2at,logp_unk=self.logp_unk)
-    def write_lm(self,file,sort=True):
+    def write_lm(self,outfile,sort=True):
         n=self.ngram_lm()
-        n.write_lm(file=file,sort=sort)
+        n.write_lm(outfile,sort=sort)
     def oov(self,w):
         return not w in self.word
     def count_tw(self,tw):
@@ -452,9 +450,9 @@ class tag_word_unigram(object):
             self.tagword[tw]=self.tagword[tw]/tsums[t]
         for t in ttypes.iterkeys():
             if witten_bell:
-                sum=tsums[t]
+                s=tsums[t]
                 ntype=ttypes[t]
-                self.bo_for_tag[t]=ntype/sum
+                self.bo_for_tag[t]=ntype/s
             else:
                 self.bo_for_tag[t]=self.bo
         if unkword is not None:
@@ -491,8 +489,10 @@ class tag_word_unigram(object):
             if not p>0: warn("0 prob tag backoff: p(%s)=%s"%(k,p))
             self.bo_for_tag[k]=log10_prob(p)
         self.have_logp=True
-    def __str__(self,head=10):
+    def str(self,head=10):
         return ''.join(head_sorted_str(x.iteritems(),reverse=True,key=lambda x:x[1],head=head) for x in [self.tagword,self.word])
+    def __str__(self):
+        return self.str()
 
 #from collections import defaultdict
 import tempfile
@@ -590,8 +590,8 @@ class sblm_ngram(object):
             return (self.score_children(e[0],e[1:]),1) #len(e)-1
     def tree_from_line(self,line):
         return raduparse(line,intern_labels=True).map_skipping(self.label_map)
-    def eval_radu(self,input):
-        if type(input)==str: input=open(input)
+    def eval_radu(self,infile):
+        if type(infile)==str: infile=open(infile)
         #FIXME: use gen_pcfg_events_radu
         logp=0.
         n=0
@@ -600,11 +600,11 @@ class sblm_ngram(object):
         nw=0
         ntrees=0
         unkwords=IntDict()
-        for line in input:
+        for line in infile:
 #            n+=1 #TOP
             t=self.tree_from_line(line)
             if t is None:
-                next
+                continue
             if t.size()<=1: warn("eval_radu small tree",t,line,max=None)
             nnode+=t.size()
             nw+=len(t)
@@ -621,14 +621,14 @@ class sblm_ngram(object):
                 else:
                     n+=nknown
         return dict(logprob=logp,nnode=nnode,nevents=n,ntrees=ntrees,nwords=nw,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
-    def read_radu(self,input):
-        if type(input)==str: input=open(input)
+    def read_radu(self,infile):
+        if type(infile)==str: infile=open(infile)
         n=0
-        for line in input:
+        for line in infile:
             t=self.tree_from_line(line)
             if t is not None:
                 n+=t.size()
-            for e in gen_pcfg_events_radu(t,terminals=True,digit2at=self.digit2at):
+            for e in gen_pcfg_events_radu(t,terminals=False,digit2at=self.digit2at):
                 if type(e)==tuple:
                     e=tuple(e[0])
 #                    warn("sblm_ngram train terminal",e,max=10)
@@ -671,7 +671,7 @@ class sblm_ngram(object):
                 else:
                     log("PCFG (%s): sum=1:%d/(N=%d)=%s sum<1:%d/N=%s sum>1:%d/N=%s sum>1"%(p,n1,total,n1/total,nlt1,nlt1/total,len(gt1),len(gt1)/total))
         log("PCFG sum=1: "+' '.join(sum1))
-    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,check=True,write_lm=False,merge_terminals=True,sort=True,terminals=True):
+    def train_lm(self,prefix=None,lmf=None,uni_witten_bell=True,uni_unkword=None,ngram_witten_bell=False,sri_ngram_count=False,write_lm=False,merge_terminals=True,sort=True,terminals=True):
         prefixterm=None
         if prefix is not None:
             prefixterm=prefix+'.terminals'
@@ -679,7 +679,7 @@ class sblm_ngram(object):
         mkdir_parent(prefix)
         if (terminals):
             self.terminals.train(uni_witten_bell,uni_unkword)
-        all=self.ng.train_lm(prefix=prefix,sort=sort,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=(write_lm and not merge_terminals))
+        self.ng.train_lm(prefix=prefix,sort=sort,lmf=lmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=(write_lm and not merge_terminals))
         if terminals and merge_terminals:
             self.ng.disjoint_add_lm(self.terminals.ngram_lm(),conflict_take_bow_only=True) #NOTE: for preterms, we want the bow from the terminal model, and the backed off unigram prob from the PCFG rewrite model
             # without doing this we have from pcfg sblm (in merged result): -2.51869334212  VBP-0   -2.59911856506
@@ -703,22 +703,23 @@ class sblm_ngram(object):
                 pnt=filename_from_1to1('%s.%s'%(prefix,nt))
                 png=self.png[nt]
                 plmf=None if lmf is None else filename_from_1to1('%s.%s'%(lmf,nt))
-                pntf=png.train_lm(prefix=pnt,sort=True,lmf=plmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=write_lm)
+                #pntf=
+                png.train_lm(prefix=pnt,sort=True,lmf=plmf,witten_bell=ngram_witten_bell,read_lm=True,sri_ngram_count=sri_ngram_count,write_lm=write_lm)
                 #dump('lm for',nt,plmf)
     def __str__(self):
         return "PCFG[...]"
 
-dev='sample/dev.e-parse'
-test='sample/test.e-parse'
-train='sample/training.e-parse'
-#train='training.e-parse'
+devf='sample/dev.e-parse'
+testf='sample/test.e-parse'
+trainf='sample/training.e-parse'
+#trainf='training.e-parse'
 @optfunc.arghelp('t_train','input radu parses one per line')
 @optfunc.arghelp('terminals','include PRETERM("terminal") events')
 def pcfg_ngram_main(n=5,
-                    t_train=train
+                    t_train=trainf
                     ,eval=False
-                    ,dev=dev
-                    ,test=test
+                    ,dev=devf
+                    ,test=testf
                     ,p_parent=True
                     ,parent_alpha=0.999
                     ,c_cond_parent=True
@@ -732,7 +733,7 @@ def pcfg_ngram_main(n=5,
                     ,terminals=True
                     ,skip_bar=True
                     ,unsplit=True
-                    ,o_outpre=""
+                    ,o_outpre="pcfg"
                     ,logp_unk=0.0
                     #,logp_glue=0.0 #what about GLUE0 etc?
                     ,bo_witten=0.1
@@ -741,7 +742,7 @@ def pcfg_ngram_main(n=5,
     log(str(Locals()))
     sb=sblm_ngram(order=n,parent=p_parent,parent_alpha=parent_alpha,cond_parent=c_cond_parent,skip_bar=skip_bar,unsplit=unsplit,digit2at=digit2at,witten_bo=bo_witten,logp_unk=logp_unk)
     outpre=o_outpre
-    if len(outpre)==0: outpre=train
+    if len(outpre)==0: outpre=trainf
     #dumpx(str(sb.tree_from_line('(S-2 (@S-BAR (A "a"  ) (B-2 "b"  ) ) )')))
     ntrain=sb.read_radu(t_train)
     s=Stopwatch('Train')
@@ -755,8 +756,6 @@ def pcfg_ngram_main(n=5,
        write_list(sb.preterminal_vocab(),name='preterminals')
        write_list(sb.png.keys(),name='parents(NTs)')
        write_list(sb.nonterminal_vocab(),name='nonterminals')
-       dump(sri.name)
-       callv(['head',sri.name])
        print str(sb)
     if eval:
         for t in [dev,test]:
