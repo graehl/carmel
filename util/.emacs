@@ -1257,19 +1257,6 @@ into one long file name and places it in the directory given by backup-file-dir.
 
 
 ;(or recent-emacs (progn
-(require 'python-mode)
-;(add-hook 'python-mode-hook '(lambda () (require 'pyvirtualenv)))
-(setq-default py-indent-offset 4)
-
-;;; Electric Pairs
-(add-hook 'python-mode-hook
-     (lambda ()
-;      (define-key py-mode-map "\"" 'electric-pair)
-;      (define-key py-mode-map "\'" 'electric-pair)
-;      (define-key py-mode-map "(" 'electric-pair)
-;      (define-key py-mode-map "[" 'electric-pair)
-;      (define-key py-mode-map "{" 'electric-pair)
-       ))
 
 (defun electric-pair ()
   "Insert character pair without sournding spaces"
@@ -1277,40 +1264,6 @@ into one long file name and places it in the directory given by backup-file-dir.
   (let (parens-require-spaces)
     (insert-pair)))
 
-;;
-;; We want to emulate Python mode's highlighting
-;;
-(defvar python-shell-font-lock-keywords
-  (append '(("[][(){}]" . font-lock-constant-face))
-          '(("^python%\\|^>\\|^(pdb)" . font-lock-constant-face))
-          python-font-lock-keywords
-          ))
-
-;;
-;; python -- creates a subprocess running Python. Stolen from python-mode.el
-;;
-(defun python ()
-  (interactive)
-  (switch-to-buffer-other-window
-   (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
-  (make-local-variable 'comint-prompt-regexp)
-  (make-local-variable 'font-lock-defaults)
-  (setq comint-prompt-regexp "^python% \\|^> \\|^(pdb) "
-        font-lock-defaults '(python-shell-font-lock-keywords t))
-  (add-hook 'comint-output-filter-functions 'py-comint-output-filter-function)
-  (set-syntax-table py-mode-syntax-table)
-  (use-local-map py-shell-map)
-  (local-set-key "\C-a" 'comint-bol)
-  (local-set-key "\C-c\C-a" 'beginning-of-line)
-  (python-mode)
-  (font-lock-mode))
-
-(add-hook 'python-mode-hook (lambda ()
-  (local-set-key (kbd "<M-right>") 'py-shift-region-right)
-  (local-set-key (kbd "<M-left>") 'py-shift-region-left)
-  (local-set-key "\C-m" 'newline-and-indent)
-  (eldoc-mode 1)
-))
 ;;))
 ;;
 ;; Matlab
@@ -2115,22 +2068,8 @@ and initial semicolons."
 ;;
 ;; python
 ;;
-(defun my-python-mode-hook ()
-  ;;(auto-fill-mode nil)
-  ;;  (filladapt-mode t)
-  (font-lock-mode t)
-  (show-paren-mode t)
-  (make-local-variable 'adaptive-fill-regexp)
-  (setq adaptive-fill-regexp "^[     ]*# ")
-  (local-set-key [return] 'newline-and-indent)
-  (local-set-key [(control return)] 'newline)
-  (local-set-key [( control ?\( )] 'my-matching-paren)
-  (make-local-variable 'parens-require-spaces)
-  (setq parens-require-spaces nil)
-  (setq fill-column 132)
-  )
 
-(add-hook 'python-mode-hook 'my-python-mode-hook)
+
 
 ;;
 ;; restructured text
@@ -4129,3 +4068,121 @@ loaded as such.)"
   (interactive)
   (let ((next-error-function (lambda (x y) t)))
     (next-error arg reset)))
+
+
+(setq large-file-warning-threshold 50000000)
+
+
+;(define-key py-mode-map "C-;" 'my-python-send-region)
+;(global-set-key "\C-m" 'newline-and-indent)
+;(global-set-key (kbd "C-;") 'my-python-send-region)
+;(require 'python)
+
+
+(require 'whole-line-or-region)
+
+(defun whole-line-or-region-comment-dwim (prefix)
+  "Call `comment-dwim' on region or PREFIX whole lines."
+  (interactive "*p")
+  (whole-line-or-region-call-with-prefix 'comment-dwim prefix nil t))
+(global-set-key (kbd "C-;") 'whole-line-or-region-comment-dwim)
+
+;;
+;;  What this version does is override the normal behavior of the
+;;  prefix arg to `comment-dwim', and instead uses it to indicate how
+;;  many lines the whole-line version will comment out -- no prefix
+;;  value is passed to the original function in this case.  This is
+;;  the version that I use, as it's just more intuitive for me.
+
+;;
+;; PYTHON
+;;
+(defvar use-python-mode 1)
+
+(defun my-python-mode-hook ()
+  ;;(auto-fill-mode nil)
+  ;;  (filladapt-mode t)
+  (font-lock-mode t)
+  (show-paren-mode t)
+  (make-local-variable 'adaptive-fill-regexp)
+  (setq adaptive-fill-regexp "^[     ]*# ")
+  (local-set-key [return] 'newline-and-indent)
+  (local-set-key [(control return)] 'newline)
+  (local-set-key [( control ?\( )] 'my-matching-paren)
+  (make-local-variable 'parens-require-spaces)
+  (setq parens-require-spaces nil)
+  (setq fill-column 132)
+  )
+
+(defun my-python-send-region (beg end)
+  (interactive "r")
+  (if (eq beg end)
+      (python-send-region (point-at-bol) (point-at-eol))
+      (python-send-region beg end)))
+
+(defun my-python-send-region2 (&optional beg end)
+  (interactive)
+  (let ((beg (cond (beg)
+                   ((region-active-p)
+                    (region-beginning))
+                   (t (line-beginning-position))))
+        (end (cond (end)
+                   ((region-active-p)
+                    (copy-marker (region-end)))
+                   (t (line-end-position)))))
+    (python-send-region beg end)))
+
+(if use-python-mode
+    (progn
+      (require 'python-mode)
+(defun py-hook ()
+  (interactive)
+  (local-set-key (kbd "<M-right>") 'py-shift-region-right)
+  (local-set-key (kbd "<M-left>") 'py-shift-region-left)
+;  (local-set-key (kbd "C-;") 'my-python-send-region2)
+  (local-set-key "\C-m" 'newline-and-indent)
+  (eldoc-mode 1)
+)
+(add-hook 'python-mode-hook 'py-hook)
+
+      (add-hook 'python-mode-hook 'my-python-mode-hook)
+                                        ;(add-hook 'python-mode-hook '(lambda () (require 'pyvirtualenv)))
+      (setq-default py-indent-offset 4)
+
+;;; Electric Pairs
+      (add-hook 'python-mode-hook
+                (lambda ()
+                                        ;      (define-key py-mode-map "\"" 'electric-pair)
+                                        ;      (define-key py-mode-map "\'" 'electric-pair)
+                                        ;      (define-key py-mode-map "(" 'electric-pair)
+                                        ;      (define-key py-mode-map "[" 'electric-pair)
+                                        ;      (define-key py-mode-map "{" 'electric-pair)
+                  ))
+      )
+  (progn
+    (require 'python)
+    ;;
+    ;; python -- creates a subprocess running Python. Stolen from python-mode.el
+    ;;
+    (defvar python-shell-font-lock-keywords
+      (append '(("[][(){}]" . font-lock-constant-face))
+              '(("^python%\\|^>\\|^(pdb)" . font-lock-constant-face))
+              python-font-lock-keywords
+              ))
+    (defun python ()
+      (interactive)
+      (switch-to-buffer-other-window
+       (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
+      (make-local-variable 'comint-prompt-regexp)
+      (make-local-variable 'font-lock-defaults)
+      (setq comint-prompt-regexp "^python% \\|^> \\|^(pdb) "
+            font-lock-defaults '(python-shell-font-lock-keywords t))
+      (add-hook 'comint-output-filter-functions 'py-comint-output-filter-function)
+      (set-syntax-table py-mode-syntax-table)
+      (use-local-map py-shell-map)
+      (local-set-key "\C-a" 'comint-bol)
+      (local-set-key "\C-c\C-a" 'beginning-of-line)
+      (python-mode)
+      (font-lock-mode))
+
+    ))

@@ -9,6 +9,30 @@ def identity(x):
 import sys,re,random,math,os,collections,subprocess,errno,time
 
 from itertools import *
+#from dumpx import *
+
+
+def pretty_float(x,digits=16):
+    s='%.*g'%(digits,x)
+    if digits<16:
+        return s
+    d=s.find('.')
+    if d<0:
+        return s
+    else:
+        e=s[-2:]
+        if e=='.99' or e=='.01':
+            return '%.*g'%(digits-1,x)
+        return s
+        # n=float(s[d+1:])
+        # dump(e,s[0:d+1],n,r)
+        # rounded='%0*.0'%(r,n)
+        # dump(s[0:d+1],rounded,s[0:d+1]+rounded)
+        # return s[0:d+1]+rounded
+
+if __name__ == "__main__":
+    for f in [1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:
+        print pretty_float(1e100*(1+f)),pretty_float(1e10*(1+f)),pretty_float(1+f),pretty_float(1-f),pretty_float(1-2*f)
 
 class Progress(object):
     def __init__(self,max=None,out=sys.stderr,big=10000,small=None):
@@ -31,12 +55,10 @@ class Progress(object):
     def done(self):
         self.out.write("(done, N=%s)\n"%self.n)
 
-
-if __name__ == "__main__":
-    p=Progress(max=30,big=20)
-    for x in range(10,50):
-        p.inc()
-    p.done()
+#    p=Progress(max=30,big=20)
+#    for x in range(10,50):
+#        p.inc()
+#    p.done()
 
 statfact=dict()
 class Stat(object):
@@ -308,8 +330,6 @@ def nonempty(gen):
 
 all=forall
 any=exists
-
-#from dumpx import *
 
 def write_dict(d,out=sys.stdout,mappair=identity,mapk=identity,mapv=identity):
     write_tabsep(d.iteritems() if isinstance(d,dict) else d,out,mappair,mapk,mapv)
@@ -1327,4 +1347,3 @@ def random_combination_with_replacement(iterable, r):
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))
     return tuple(pool[i] for i in indices)
-
