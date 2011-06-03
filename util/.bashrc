@@ -1,5 +1,6 @@
 HOME=$(echo ~)
 shdir=$HOME/t/graehl/util
+. $shdir/bashlib.sh
 if false && [ "$TERM" = dumb ] ; then
     PS1='$ '
     exit
@@ -411,7 +412,6 @@ fi
  export CXXFLAGS="$CFLAGS"
 }
 
-. $shdir/bashlib.sh
 qsippn=2
 #512M stack!
 ulimitsafe 524288 s

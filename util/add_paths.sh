@@ -19,9 +19,14 @@ fi
 
 function add_pypath
 {
-    if [[ $1 ]] ; then
-        export PYTHONPATH+=" $1"
-    fi
+    local f
+    for f in "$@"; do
+        if [[ -d $f ]] ; then
+            if ! echo $PYTHONPATH | grep -q $f ; then
+                export PYTHONPATH+=":$f"
+            fi
+        fi
+    done
 }
 function prepend_path
 {
@@ -44,7 +49,7 @@ fi
  export C_INCLUDE_PATH="$subinc:$C_INCLUDE_PATH"
  export CPPFLAGS="-I$subinc $CPPFLAGS"
  add_ldpath $sublib
- add_pypath $subpy
+ add_pypath $subpy $subpy/bzrlib
  if [ "$ON64" ] ; then
   local sublib64=$prefix/lib64
   mkdir -p $sublib64

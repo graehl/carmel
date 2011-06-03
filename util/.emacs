@@ -4134,6 +4134,7 @@ loaded as such.)"
 
 (if use-python-mode
     (progn
+      (push "~/elisp/python-mode" load-path)
       (require 'python-mode)
 (defun py-hook ()
   (interactive)
