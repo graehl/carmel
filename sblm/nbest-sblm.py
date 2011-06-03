@@ -16,7 +16,8 @@ from ngram import *
 from pcfg import *
 
 
-@optfunc.arghelp('terminals','include PRETERM("terminal") events')
+@optfunc.arghelp('lm','SRI ngram trained by pcfg.py')
+@optfunc.arghelp('nbest','sbmt_decoder nbest list (optionally with sblm score debugging logs before each nbest)')
 def nbest_sblm_main(lm='nbest.pcfg.srilm',
                     nbest='nbest.txt',
                     ):
@@ -24,5 +25,6 @@ def nbest_sblm_main(lm='nbest.pcfg.srilm',
     dump(n.str())
     outlm='rewrite.'+lm
     n.write_lm(outlm)
+
 import optfunc
 optfunc.main(nbest_sblm_main)

@@ -154,10 +154,9 @@ class ngram(object):
             self.ngrams[o].disjoint_add(ng.ngrams[o],ignore_conflict=ignore_conflict,warn_conflict=warn_conflict)
             disjoint_add_dict(self.logp[o],ng.logp[o],merge_fn=merge_logp,ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram logp order=%s'%(o+1))
             disjoint_add_dict(self.bow[o],ng.bow[o],merge_fn=merge_bow,ignore_conflict=ignore_conflict,warn_conflict=warn_conflict,desc='ngram bow order=%s'%(o+1))
-
-    @classmethod
+    @staticmethod
     def is_special(w):
-        return w in specials
+        return w in ngram.specials
     #w==ngram.sos || w==ngram.eos
     def interp(self):
         "store as p(w|ctx): bo(ctx)*p(w|ctx[0:-1])+(1-bo(ctx)*p(w|ctx)"

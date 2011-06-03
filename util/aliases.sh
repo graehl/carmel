@@ -1,5 +1,11 @@
 blib=$d/bloblib.sh
 [ -r $blib ] && . $blib
+cmpy() {
+    python setup.py ${target:-install} --home $FIRST_PREFIX
+}
+cmpyh() {
+    python setup.py ${target:-install} --home ~
+}
 em() {
     nohup emacs ~/t/sbmt_decoder/include/sbmt/io/logging_macros.hpp ~/t/sblm/sblm_info.hpp &
 }
