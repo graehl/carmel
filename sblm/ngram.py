@@ -194,15 +194,24 @@ class ngram(object):
         return self.uniform_log10p
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
-    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=log10_0prob):
+    def set_order(self,o):
+#        dump("set_order",o)
+        self.order=o
+        self.om1=o-1
+        self.logp=[dict() for _ in range(0,o)]
+        self.bow=[dict() for _ in range(0,o)] # last bow is empty dict
+        self.clear_counts()
+        asserteq(len(self.logp),self.order)
+        asserteq(len(self.bow),self.order)
+    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=log10_0prob,lm=None):
         self.unkword=ngram.unk if unkword is None else unkword
         self.logp_unk=logp_unk
         self.digit2at=digit2at
         self.order=order
-        self.om1=order-1
-        self.logp=[dict() for o in range(0,order)]
-        self.bow=[dict() for o in range(0,order)] # last bow is empty dict
-        self.clear_counts()
+        if lm is not None:
+            self.read_lm(lm,clear_counts=True)
+        else:
+            self.set_order(order)
     def count_text(self,text,i=0,pre=None,post=None):
         if type(text)==str: text=text.split()
         if self.digit2at: text=map(digit2at,text)
@@ -258,7 +267,7 @@ class ngram(object):
         return self.str(False)
 #        return obj2str(self,['order'])
     def str(self,show_counts=True):
-        attr=['order']
+        attr=['order','logp_unk']
         if show_counts:
             attr.append('ngrams')
         return obj2str(self,attr,None)
@@ -343,18 +352,29 @@ class ngram(object):
             counts=self.bow[0]
         for k in counts.iterkeys():
             file.write(k+'\n')
-    def read_lm(self,file,clear_counts=True):
-        if clear_counts:
+    def read_lm(self,file,clear_counts=True,order=None,read_unkp=True):
+        if order is not None and order!=self.order:
+            self.set_order(order)
+        elif clear_counts:
             self.clear_counts()
         if type(file)==str: file=open(file)
         grams=re.compile(r'\\(\d+)-grams:\s*')
+        headgrams=re.compile(r'^ngram (\d+)=(\d+)')
         n=0
         logp=None
         bow=None
         for line in file:
             line=line.rstrip()
+            if logp is None:
+                h=headgrams.match(line)
+                if h:
+                    maxo=int(h.group(1))
+                    dump(h,maxo)
+                    continue
             m=grams.match(line)
             if m:
+                if logp is None and order is None:
+                    self.set_order(maxo)
                 n=int(m.group(1))
                 log("reading %d-grams ..."%n)
                 logp=self.logp[n-1]
@@ -378,6 +398,7 @@ class ngram(object):
             else:
                 if logp is not None and len(line): warn("skipped nonempty line "+line)
         self.prepare()
+        self.get_logp_unk_from_ngram(self.logp_unk)
         return file
     def prepare(self):
         self.compute_uniform()
@@ -416,8 +437,13 @@ class ngram(object):
         k=(self.unkword,)
         self.logp[0][k]=logp_unk
         self.bow[0][k]=0
-    def write_lm(self,file=None,sort=True,prefix=None,unkp=True):
-        self.set_logp_unk()
+    def get_logp_unk_from_ngram(self,default=0):
+        k=(self.unkword,)
+        self.logp_unk=self.logp[0].get(k,default)
+        return self.logp_unk
+    def write_lm(self,file=None,sort=True,prefix=None,unkp=True,digits=16):
+        if unkp:
+            self.set_logp_unk()
         #warn('write_lm','file=%s prefix=%s'%(file,prefix))
         if file is None:
             file=self.lmfile(prefix)
@@ -433,6 +459,8 @@ class ngram(object):
         wf("\n\\data\\")
         for n in range(1,len(self.logp)+1):
             wf("ngram %d=%d"%(n,iterlen(self.ngramkeys(n))))
+        asserteq(len(self.logp),self.order)
+        asserteq(len(self.bow),self.order)
         for n in range(0,len(self.logp)):
             wf("\n\\%d-grams:"%(n+1))
             logp=self.logp[n]
@@ -442,14 +470,12 @@ class ngram(object):
                 lp=log10_0prob
                 if k in logp:
                     lp=max(lp,logp[k])
-                    #sum[k[:-1]]+=10**lpl
-#                lp=logp[k] if k in logp else log10_0prob
-#                dump(k,lp)
+                lp=pretty_float(lp,digits)
                 ks=' '.join(k)
                 if n==self.om1:
                     wf(lp,ks)
                 else:
-                    wf(lp,ks,max(log10_0prob,bow[k]) if k in bow else 0)
+                    wf(lp,ks,pretty_float(max(log10_0prob,bow[k]),digits) if k in bow else 0)
             ks=self.ngramkeys(n+1)
             if sort: ks=sorted(ks)
             for k in ks:
