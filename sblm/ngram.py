@@ -166,10 +166,7 @@ class ngram(object):
             bo=self.bow[o]
             lpbo=self.logp[o]
             for k,l in lp.iteritems():
-                ctx=k[:-1]
-                kb=k[1:]
                 lp[k]=log10_interp(lpbo[k[1:]],l,10.**bo[k[:-1]])
-#                warn('interp',typedvals(k,ctx,l,lp[k]),max=10)
     def uninterp(self):
         "undo the effect of self.interp()"
         for o in reversed(range(0,self.om1)):
@@ -251,16 +248,16 @@ class ngram(object):
         return p+bo
     def score_word_interp(self,text,i,other_lm,self_wt):
         return log10_interp(self.score_word_combined(text,i),other_lm.score_word_combined(text,i),self_wt)
-    def score_text_detail(self,text,i=0,pre=None,post=None):
+    def score_text_detail(self,text,i=0):
         "returns list of score,bo,score,bo (2x length of text[i:-1]). applies digit2at"
         if self.digit2at: text=map(digit2at,text)
         text=intern_tuple(text)
         return flatten(self.score_word(text,j) for j in range(i,len(text)))
-    def score_text(self,text,i=0,pre=None,post=None):
-        return sum(self.score_text_detail(text,i=i,pre=pre,post=post))
-    def count_file(self,file,pre='<s>',post='</s>'):
-        if type(file)==str: file=open(file)
-        for l in file:
+    def score_text(self,text,i=0):
+        return sum(self.score_text_detail(text,i=i))
+    def count_file(self,inf,pre='<s>',post='</s>'):
+        if type(inf)==str: inf=open(inf)
+        for l in inf:
             self.count_text(l,0,pre,post)
     def __str__(self):
         return self.str(False)
@@ -289,11 +286,11 @@ class ngram(object):
         self.lmf=lmf
         if lmf is None and (sri_ngram_count or write_lm):
             lmf=self.lmfile(prefix)
-        if sri_ngram_count==True:
+        if sri_ngram_count:
             sri_ngram_count=default_ngram_count
             cks=self.write_counts_kndisc(prefix,sort)
             cfs=[c for (c,k) in cks]
-            scfs=map(shellquote,cfs)
+            #scfs=map(shellquote,cfs)
             kfs=[k for (c,k) in cks]
             knns=['-kn%s %s'%(i+1,shellquote(kfs[i])) for i in range(0,self.order)]
             knargs=' '.join(knns)
@@ -343,26 +340,26 @@ class ngram(object):
 #        for w in self.counts[0].iterkeys():
 #            if not ngram.is_special(w):
 #                yield w
-    def write_vocab(self,file):
+    def write_vocab(self,outf):
         "pre: counts not cleared"
-        if type(file)==str: file=open(file,'w')
-        counts=self.counts[0]
+        if type(outf)==str: outf=open(outf,'w')
+        counts=self.ngrams[0]
         if not len(counts):
             counts=self.bow[0]
         for k in counts.iterkeys():
-            file.write(k+'\n')
-    def read_lm(self,file,clear_counts=True,order=None,read_unkp=True):
+            outf.write(k+'\n')
+    def read_lm(self,infile,clear_counts=True,order=None,read_unkp=True):
         if order is not None and order!=self.order:
             self.set_order(order)
         elif clear_counts:
             self.clear_counts()
-        if type(file)==str: file=open(file)
+        if type(infile)==str: infile=open(infile)
         grams=re.compile(r'\\(\d+)-grams:\s*')
         headgrams=re.compile(r'^ngram (\d+)=(\d+)')
         n=0
         logp=None
         bow=None
-        for line in file:
+        for line in infile:
             line=line.rstrip()
             if logp is None:
                 h=headgrams.match(line)
@@ -397,8 +394,11 @@ class ngram(object):
             else:
                 if logp is not None and len(line): warn("skipped nonempty line "+line)
         self.prepare()
-        self.get_logp_unk_from_ngram(self.logp_unk)
-        return file
+        if read_unkp:
+            self.get_logp_unk_from_ngram(self.logp_unk)
+        else:
+            self.set_logp_unk()
+        return infile
     def prepare(self):
         self.compute_uniform()
     def ngramkeys(self,order):
@@ -410,16 +410,16 @@ class ngram(object):
         return (# =~ 1, # < 1, [dict[ctx]=sum>1])
         """
         if uninterp: self.uninterp()
-        sum=FloatDict()
+        S=FloatDict()
         for o in range(0,self.order):
             lp=self.logp[o]
             for k,lp in lp.iteritems():
                 if lp!=log10_0prob:
-                    sum[k[:-1]]+=10.**lp
+                    S[k[:-1]]+=10.**lp
         n1=0
         nlt1=0
         gt1=dict()
-        for k,z in sum.iteritems():
+        for k,z in S.iteritems():
             if approx_equal(z,1,epsilon):
                 n1+=1
             elif definitely_gt(z,1,epsilon):
@@ -440,20 +440,20 @@ class ngram(object):
         k=(self.unkword,)
         self.logp_unk=self.logp[0].get(k,default)
         return self.logp_unk
-    def write_lm(self,file=None,sort=True,prefix=None,unkp=True,digits=16):
+    def write_lm(self,outfile=None,sort=True,prefix=None,unkp=True,digits=16):
         if unkp:
             self.set_logp_unk()
-        #warn('write_lm','file=%s prefix=%s'%(file,prefix))
-        if file is None:
-            file=self.lmfile(prefix)
-        if type(file)==str:
-            warn("writing SRI lm => ",file)
-            file=open(file,'w')
+        #warn('write_lm','outfile=%s prefix=%s'%(outfile,prefix))
+        if outfile is None:
+            outfile=self.lmfile(prefix)
+        if type(outfile)==str:
+            warn("writing SRI lm => ",outfile)
+            outfile=open(outfile,'w')
         def wf(*f):
             if is_iter(f):
-                file.write('\t'.join(map(str,f))+'\n')
+                outfile.write('\t'.join(map(str,f))+'\n')
             else:
-                file.write(str(f)+'\n')
+                outfile.write(str(f)+'\n')
 
         wf("\n\\data\\")
         for n in range(1,len(self.logp)+1):
@@ -464,7 +464,6 @@ class ngram(object):
             wf("\n\\%d-grams:"%(n+1))
             logp=self.logp[n]
             bow=self.bow[n]
-            sum=FloatDict()
             def wkey(k):
                 lp=log10_0prob
                 if k in logp:
@@ -480,7 +479,6 @@ class ngram(object):
             for k in ks:
                 wkey(k)
         wf("\n\\end\\")
-#            dump('sum %d-gram probs'%n,str(sum))
 
 
 def ngram_main(order=2,txt='train.txt',test='test.txt',head='head',logfile='ngram.log.txt',interpolate=True,witten_bell=True):
