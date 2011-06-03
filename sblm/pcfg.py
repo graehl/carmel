@@ -189,7 +189,7 @@ def parse_sbmt_rule(s,require_arrow=True,require_bangs=True): #bangs = the ### s
             rhs.pop()
             (_,p3)=rspans[-2]
         elif require_bangs:
-            raise Exception("sbmt rule RHS wasn't terminated in %s: %s"%(rule_bangs_s,s[pos:]))
+            raise Exception("sbmt rule RHS wasn't terminated in %s: %s"%(rule_bangs_s,rhs))
         else:
             p3=p4
     else:
@@ -329,10 +329,9 @@ class PCFG(object):
     # sparse pairlist [(fid,fval)]
     def cost_feats(self,ev):
         (c,boc,oov,bolhs)=self.cost(ev)
-    def boname(root):
-        if root is None:
-            return 'pcfg_bo_NONE'
-        return 'pcfg_bo_'+root
+    @staticmethod
+    def boname(root): #unused
+        return 'pcfg_bo_'+(root or 'NONE')
 
 numre=re.compile(r"[0-9]")
 

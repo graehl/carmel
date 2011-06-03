@@ -1,4 +1,5 @@
 HOME=$(echo ~)
+export PYTHON_PATH=$HOME/lib/python:$PYTHON_PATH
 shdir=$HOME/t/graehl/util
 . $shdir/bashlib.sh
 if false && [ "$TERM" = dumb ] ; then
