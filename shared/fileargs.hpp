@@ -113,6 +113,10 @@ struct file_arg
     bool none;
  public:
     operator pointer_type() const { return pointer; }
+  bool operator==(Stream const& s) const { return get()==&s; }
+  bool operator==(file_arg const& s) const { return get()==s.get(); }
+  bool operator!=(Stream const& s) const { return get()!=&s; }
+  bool operator!=(file_arg const& s) const { return get()!=s.get(); }
     Stream &operator *() const { return *pointer; }
     Stream *get() const
     {
