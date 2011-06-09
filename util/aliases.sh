@@ -2105,8 +2105,11 @@ if [[ $boostdir ]] ; then
     [[ -d $boostdir ]]
     barg="--boost=$boostdir"
 fi
-
-bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix $linking $barg  "$@" -d+${verbose:-2}
+execpre=${execpre:-$FIRST_PREFIX}
+if [[ $variant = debug ]] ; then
+    execpre+=/debug
+fi
+bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
 set +x
 popd
 )
