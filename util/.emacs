@@ -3962,6 +3962,7 @@ loaded as such.)"
 (setq compile-command "bash --login -c 'cmakews'")
 (setq compile-command "bash --login -c 'ecage dmakews'")
 (setq compile-command "bash --login -c 'ecage \"cd t/graehl/sblm;./pcfg.py\"'")
+(setq compile-command "ssh hpc1506 'boost=1_35_0 target=sblm//install boostsbmt'")
 (require 'google-c-style)
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
