@@ -3,6 +3,8 @@
 
 /* REQUIRES that T is POD (can be memcpy).  won't work (yet) due to union with SMALL_VECTOR_POD==0 - may be possible to handle movable types that have ctor/dtor, by using  explicit allocation, ctor/dtor calls.  but for now JUST USE THIS FOR no-meaningful ctor/dtor POD types.
 
+   TODO: need to implement SMALL_VECTOR_POD=0 (will guarantee ctor/dtor calls in that case, incl copy ctor when changing between heap and inline). right now things are assigned, or memcpyd, without ctor/dtor care at all
+
    stores small element (<=SV_MAX items) vectors inline.  recommend SV_MAX=sizeof(T)/sizeof(T*)>1?sizeof(T)/sizeof(T*):1.  may not work if SV_MAX==0.
  */
 
@@ -25,14 +27,25 @@ namespace graehl {
 template <class T,int SV_MAX=2>
 class small_vector {
 //  typedef unsigned short uint16_t;
-  void Alloc(size_t s) {
+  void Alloc(size_t s) { // doesn't free old; for ctor. sets size_
     size_=s;
-    assert(s < 0xA000);
+    assert(s <= size_max);
     if (s>SV_MAX) {
       capacity_ = s;
-      size_ = s;
-      data_.ptr = new T[s]; // TODO: replace this with allocator or ::operator new(sizeof(T)*s) everywhere
+      Alloc_heap();
     }
+  }
+  void Alloc_heap() {
+    data_.ptr=new T[capacity_];  // TODO: replace this with allocator or ::operator new(sizeof(T)*s) everywhere
+  }
+  void Free_heap() {
+    delete[] data_.ptr;
+  }
+  T *Alloc_heap(size_t s) {
+    return new T[s];
+  }
+  void Free_heap(T *a) {
+    delete[] a;
   }
 
  public:
@@ -45,7 +58,12 @@ class small_vector {
   typedef T &reference;
   typedef T const& const_reference;
   typedef uint16_t size_type;
-  static const size_type size_max=(size_type)-1;
+  static const size_type size_max=
+#ifdef NDEBUG
+    (size_type)-1;
+#else
+  ((size_type)-1)/2;
+#endif
   T *begin() { return size_>SV_MAX?data_.ptr:data_.vals; }
   T const* begin() const { return const_cast<Self*>(this)->begin(); }
   T *end() { return begin()+size_; }
@@ -69,7 +87,7 @@ class small_vector {
     }
   }
 
-  //TODO: figure out iterator traits to allow this to be selcted for any iterator range
+  //TODO: figure out iterator traits to allow this to be selcted for any iterator range.
   template <class I>
   small_vector(I const* begin,I const* end) {
     int s=end-begin;
@@ -80,15 +98,21 @@ class small_vector {
     } else
       for (size_type i = 0; i < s; ++i,++begin) data_.ptr[i] = *begin;
   }
+  small_vector(T const* i,T const* end) {
+    int s=end-i;
+    assert(s<=size_max);
+    Alloc(s);
+    std::memcpy(this->begin(),i,s*sizeof(T));
+  }
 
   small_vector(const Self& o) : size_(o.size_) {
     if (size_ <= SV_MAX) {
       std::memcpy(data_.vals,o.data_.vals,size_*sizeof(T));
 //      for (int i = 0; i < size_; ++i) data_.vals[i] = o.data_.vals[i];
     } else {
-      capacity_ = size_ = o.size_;
-      data_.ptr = new T[capacity_];
-      std::memcpy(data_.ptr, o.data_.ptr, size_ * sizeof(T));
+      capacity_ = size_;
+      Alloc_heap();
+      memcpy_heap(o.data_.ptr);
     }
   }
 
@@ -108,7 +132,11 @@ class small_vector {
     }
     return begin()+nbefore;
   }
-
+  void memcpy_heap(T *p) {
+    assert(size_<=size_max);
+    assert(capacity_>=size_);
+    std::memcpy(data_.ptr,p,size_*sizeof(T));
+  }
   const Self& operator=(const Self& o) {
     if (size_ <= SV_MAX) {
       if (o.size_ <= SV_MAX) {
@@ -116,21 +144,22 @@ class small_vector {
         for (int i = 0; i < SV_MAX; ++i) data_.vals[i] = o.data_.vals[i];
       } else {
         capacity_ = size_ = o.size_;
-        data_.ptr = new T[capacity_];
-        std::memcpy(data_.ptr, o.data_.ptr, size_ * sizeof(T));
+        Alloc_heap();
+        memcpy_heap(o.data_.ptr);
       }
     } else {
       if (o.size_ <= SV_MAX) {
-        delete[] data_.ptr;
+        Free_heap();
         size_ = o.size_;
         for (int i = 0; i < size_; ++i) data_.vals[i] = o.data_.vals[i];
       } else {
         if (capacity_ < o.size_) {
-          delete[] data_.ptr;
+          Free_heap();
           capacity_ = o.size_;
-          data_.ptr = new T[capacity_];
+          Alloc_heap();
         }
         size_ = o.size_;
+        memcpy_heap(o.data_ptr);
         for (int i = 0; i < size_; ++i)
           data_.ptr[i] = o.data_.ptr[i];
       }
@@ -141,17 +170,13 @@ class small_vector {
   ~small_vector() {
     if (size_ <= SV_MAX) {
       // skip if pod?  yes, we required pod anyway.  no need to destruct
-#if !SMALL_VECTOR_POD
-      for (int i=0;i<size_;++i) data_.vals[i].~T();
-#endif
     } else
-      delete[] data_.ptr;
+      Free_heap();
   }
 
   void clear() {
-    if (size_ > SV_MAX) {
-      delete[] data_.ptr;
-    }
+    if (size_ > SV_MAX)
+      Free_heap();
     size_ = 0;
   }
 
@@ -167,9 +192,9 @@ class small_vector {
     assert(min_size > SV_MAX);
     if (min_size < capacity_) return;
     size_type new_cap = std::max(static_cast<size_type>(capacity_ << 1), min_size);
-    T* tmp = new T[new_cap];
+    T* tmp = Alloc_heap(new_cap);
     std::memcpy(tmp, data_.ptr, capacity_ * sizeof(T));
-    delete[] data_.ptr;
+    Free_heap();
     data_.ptr = tmp;
     capacity_ = new_cap;
   }
@@ -183,10 +208,10 @@ private:
   }
   inline void ptr_to_small() {
     assert(size_<=SV_MAX);
-    T *tmp=data_.ptr;
-    for (size_type i=0;i<size_;++i)
+    T *tmp=data_.ptr; // should be no problem with memory access order (strict aliasing) because of safe access through union
+    for (size_type i=0;i<size_;++i) // no need to memcpy for small size
       data_.vals[i]=tmp[i];
-    delete[] tmp;
+    Free_heap(tmp);
   }
 
 public:
@@ -233,18 +258,18 @@ public:
   }
 
   // size must be <= size_ - TODO: test
-  void compact(size_type size) {
-    assert(size_<=size_);
-    if (size_>SV_MAX) {
-      size_=size;
-      if (size_<=SV_MAX)
+  void compact(size_type newsz) {
+    assert(newsz<=size_);
+    if (size_>SV_MAX) { // was heap
+      size_=newsz;
+      if (newsz<=SV_MAX) // now small
         ptr_to_small();
-    } else
-      size_=size;
+    } else // was small already
+      size_=newsz;
   }
 
   void resize(size_t s, int v = 0) {
-    assert(v<=size_max);
+    assert(s<=size_max);
     assert(size_<=size_max);
     if (s <= SV_MAX) {
       if (size_ > SV_MAX) {
@@ -331,7 +356,7 @@ public:
   TO_OSTREAM_PRINT
 
  private:
-  union StorageType {
+  union StorageType { // should be safe from strict-aliasing optimizations
     T vals[SV_MAX];
     T* ptr;
   };
