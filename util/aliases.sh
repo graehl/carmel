@@ -1,3 +1,8 @@
+check1best() {
+     perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers($1); log_numbers("dup$consec: $1") if $n{$1}++; }  } END { all_summary() }' decoder-*.1best
+#     perl1p 'while(<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n{$1}++; }  } END { all_summary() }' decoder-*.1best
+}
+
 blib=$d/bloblib.sh
 [ -r $blib ] && . $blib
 cmpy() {
@@ -634,6 +639,9 @@ casub() {
     echo ${d%.dag} $d
     set -x
     rm -f $d.{condor.sub,dagman.log,lib.out,lib.err,rescue}
+    if [ "$hex" ] ; then
+        sed -ie 's/quadcore/hexcore/g' *.sub
+    fi
     vds-submit-dag $d
     popd
     )
