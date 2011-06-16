@@ -136,6 +136,9 @@ class small_vector {
   void memcpy_to(T *p) {
     std::memcpy(p,begin(),size_*sizeof(T));
   }
+  void memcpy_small(T const* p,size_type n) {
+    std::memcpy(data_.vals,p,n*sizeof(T));
+  }
   void memcpy_heap(T const* p) {
     assert(size_<=size_max);
     assert(capacity_>=size_);
@@ -183,10 +186,21 @@ class small_vector {
   }
 
   void clear() {
-    if (size_ > SV_MAX)
-      Free_heap();
+    Free();
     size_ = 0;
   }
+
+  void set(T const* i,T const* end) {
+    Free();
+    size_=end-i;
+    if (size_>SV_MAX) {
+      capacity_=size_;
+      Alloc_heap();
+      memcpy_heap(i);
+    } else
+      memcpy_small(i,size_);
+  }
+
 
   bool empty() const { return size_ == 0; }
   size_t size() const { return size_; }
@@ -207,6 +221,19 @@ class small_vector {
   }
 
 private:
+  void Free() {
+    if (size_ > SV_MAX)
+      Free_heap();
+  }
+  void Alloc(size_type s) {
+    size_=s;
+    if (s > SV_MAX) {
+      capacity_=s;
+      Alloc_heap();
+    }
+  }
+
+
   void reserve_up_big(size_type s) {
     assert(s>SV_MAX);
     if (size_>SV_MAX) {
