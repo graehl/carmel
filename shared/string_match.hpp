@@ -25,20 +25,56 @@
 #include <graehl/shared/debugprint.hpp>
 #endif
 
+namespace {  //anon
+static std::string whitespace="\n\t ";
+}
+
 namespace graehl {
 
+// return w/ removed trailing '\r' '\n' or '\r\n', if any
 template <class S>
-S chomp(S const &s)
+S chomp(S const& s) {
+  if (s.empty()) return s;
+  typename S::const_iterator b=s.begin(),i=s.end()-1;
+  if (i==b) return *i=='\n'?S():s;
+  if (*i=='\n') --i;
+  if (*i=='\r') --i;
+  return S(b,i+1);
+}
+
+template <class S>
+S rtrim(S const &s,std::string const&ws=whitespace)
 {
-    std::string ws="\n\t ";
+    typename S::size_type e;
+    e=s.find_last_not_of(ws);
+//    if (e==S::npos) return S(); //npos is -1, so -1+1 = 0
+    assert(e!=S::npos || e+1==0);
+    return S(s.begin(),s.begin()+e+1);
+}
+
+template <class S>
+S ltrim(S const &s,std::string const&ws=whitespace)
+{
+//    std::string ws="\n\t ";
+    typename S::size_type b;
+    b=s.find_first_not_of(ws);
+    if (b==S::npos)
+        return S();
+    return S(s.begin()+b,s.end());
+}
+
+template <class S>
+S trim(S const &s,std::string const&ws=whitespace)
+{
+//    std::string ws="\n\t ";
     typename S::size_type b,e;
     b=s.find_first_not_of(ws);
     if (b==S::npos)
         return S();
     e=s.find_last_not_of(ws);
-    return s.substr(b,e);
+    assert(e!=S::npos);
+    return S(s.begin()+b,s.begin()+e+1);
 }
-
 
 template <class I>
 std::string get_string_terminated(I &i,char terminator='\n')
@@ -456,6 +492,27 @@ BOOST_AUTO_TEST_CASE( TEST_FUNCS )
     BOOST_CHECK(!equal_strings_as_seq<string>(s1,s4));
     BOOST_CHECK(!equal_strings_as_seq<char>(s1,s4));
     BOOST_CHECK(!equal_strings_as_seq<char>(s4,s1));
+    string s5("ab \t\n ");
+    string s5t("ab");
+    string s6("\t a \r\n");
+    string s6c("\t a ");
+    string s6t("a");
+    string s6rt("\t a");
+    string s6lt("a \r\n");
+    EXPECT_EQ(s5t,trim(s5));
+    EXPECT_EQ(s5t,trim(s5t));
+    EXPECT_EQ(s5t,rtrim(s5));
+    EXPECT_EQ(s5t,rtrim(s5t));
+    EXPECT_EQ(s6t,trim(s6));
+    EXPECT_EQ(s6t,trim(s6t));
+    EXPECT_EQ(s6rt,rtrim(s6));
+    EXPECT_EQ(s6rt,rtrim(s6rt));
+    EXPECT_EQ(s6lt,ltrim(s6));
+    EXPECT_EQ(s6lt,ltrim(s6lt));
+    EXPECT_EQ(s6c,chomp(s6));
+    EXPECT_EQ(s6c,chomp(s6c));
+    EXPECT_EQ(s6rt,chomp(s6rt));
+    EXPECT_EQ("",chomp(string("\n")));
 }
 
 #endif
