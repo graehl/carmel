@@ -103,7 +103,7 @@ class small_vector {
     int s=end-i;
     assert(s<=size_max);
     Alloc(s);
-    memcpy(i);
+    memcpy_from(i);
   }
 
   small_vector(const Self& o) : size_(o.size_) {
@@ -136,18 +136,19 @@ class small_vector {
   void memcpy_to(T *p) {
     std::memcpy(p,begin(),size_*sizeof(T));
   }
-  void memcpy_small(T const* p,size_type n) {
-    std::memcpy(data_.vals,p,n*sizeof(T));
-  }
-  void memcpy_heap(T const* p) {
+  void memcpy_heap(T const* from) {
     assert(size_<=size_max);
     assert(capacity_>=size_);
-    std::memcpy(data_.ptr,p,size_*sizeof(T));
+    std::memcpy(data_.ptr,from,size_*sizeof(T));
   }
-  void memcpy(T const* p) {
+  void memcpy_from(T const* from) {
     assert(size_<=size_max);
-    std::memcpy(this->begin(),p,size_*sizeof(T));
+    std::memcpy(this->begin(),from,size_*sizeof(T));
   }
+  static inline void memcpy_n(T *to,T const* from,size_type n) {
+    std::memcpy(to,from,n*sizeof(T));
+  }
+
   const Self& operator=(const Self& o) {
     if (size_ <= SV_MAX) {
       if (o.size_ <= SV_MAX) {
@@ -189,16 +190,23 @@ class small_vector {
     Free();
     size_ = 0;
   }
-
   void set(T const* i,T const* end) {
     Free();
-    size_=end-i;
-    if (size_>SV_MAX) {
-      capacity_=size_;
-      Alloc_heap();
-      memcpy_heap(i);
-    } else
-      memcpy_small(i,size_);
+    size_type n=end-i;
+    memcpy_n(Realloc(n),i,n);
+  }
+  template <class I>
+  void set_ra(I i,I end) {
+    Free();
+    T *o=Realloc(end-i);
+    for (;i!=end;++i)
+      *o++=*i;
+  }
+  template <class I>
+  void set(I i,I end) {
+    clear();
+    for(;i!=end;++i)
+      push_back(*i);
   }
 
 
@@ -225,6 +233,19 @@ private:
     if (size_ > SV_MAX)
       Free_heap();
   }
+  T *Realloc(size_type s) {
+    if (s==size_)
+      return begin();
+    Free();
+    size_=s;
+    if (s>SV_MAX) {
+      capacity_=size_;
+      Alloc_heap();
+      return data_.ptr;
+    } else
+      return data_.vals;
+  }
+
   void Alloc(size_type s) {
     size_=s;
     if (s > SV_MAX) {
@@ -242,7 +263,7 @@ private:
     } else {
       capacity_=s;
       T* tmp = Alloc_heap(s);
-      std::memcpy(tmp, data_.vals, SV_MAX*sizeof(T)); // const instead of size_
+      memcpy_n(tmp, data_.vals, SV_MAX); // const instead of size_
       data_.ptr=tmp;
     }
   }
@@ -253,7 +274,7 @@ private:
     if (min_size < capacity_) return;
     size_type new_cap = std::max(static_cast<size_type>(capacity_ << 1), min_size);
     T* tmp = Alloc_heap(new_cap);
-    std::memcpy(tmp, data_.ptr, size_ * sizeof(T));
+    memcpy_n(tmp, data_.ptr, size_);
     Free_heap();
     data_.ptr = tmp;
     capacity_ = new_cap;
@@ -263,7 +284,7 @@ private:
     assert(size_<=SV_MAX);
     capacity_ = SV_MAX * 2;
     T* tmp = Alloc_heap(capacity_);
-    std::memcpy(tmp,data_.vals,SV_MAX*sizeof(T)); // may copy more than actual size_. ok. constant should be more optimizable
+    memcpy_n(tmp,data_.vals,SV_MAX); // may copy more than actual size_. ok. constant should be more optimizable
     data_.ptr = tmp;
     // only call if you're going to immediately increase size_ to >SV_MAX
   }
@@ -294,11 +315,11 @@ public:
       *b=*i;
     }
   }
-  inline void append_ra(T const* i,T const* end) {
+  inline void append(T const* i,T const* end) {
     size_type s=size_;
     size_type n=end-i;
     resize_up(size_+n);
-    std::memcpy(begin()+s,i,n*sizeof(T));
+    memcpy_n(begin()+s,i,n);
   }
 
   inline void push_back(T const& v) {
@@ -438,11 +459,6 @@ inline std::size_t hash_value(small_vector<T,M> const& x) {
 template <class T,int M>
 inline void swap(small_vector<T,M> &a,small_vector<T,M> &b) {
   a.swap(b);
-}
-
-template <class T,int M>
-void memcpy(void *out,small_vector<T,M> const& v) {
-  std::memcpy(out,v.begin(),v.size()*sizeof(T));
 }
 
 }//ns
