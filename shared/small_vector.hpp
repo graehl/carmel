@@ -579,6 +579,20 @@ BOOST_AUTO_TEST_CASE( test_small_vector_small )
   v3.append_ra((int const *)v4.begin(),(int const *)v4.end());
   EXPECT_EQ(v3.size(),12);
   EXPECT_EQ(v3[11],11);
+  SmallVectorInt v5(10);
+  EXPECT_EQ(v5[1],0);
+  EXPECT_EQ(v5.size(),10);
+  v3.set(v4.begin(),v4.end());
+  EXPECT_EQ(v3,v4);
+  int i=2;
+
+  v4.set(&i,&i);
+  EXPECT_EQ(v4.size(),0);
+  v4.set(v1.begin(),v1.end());
+  EXPECT_EQ(v4,v1);
+  v4.set(&i,&i+1);
+  EXPECT_EQ(v4.size(),1);
+  EXPECT_EQ(v4[0],i);
 //  cerr << "sizeof SmallVectorInt="<<sizeof(SmallVectorInt) << endl;
 //  cerr << "sizeof vector="<<sizeof(vector<int>) << endl;
 }
