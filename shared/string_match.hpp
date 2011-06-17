@@ -26,7 +26,7 @@
 #endif
 
 namespace {  //anon
-static std::string whitespace="\n\t ";
+static std::string ascii_whitespace="\n\r\t ";
 }
 
 namespace graehl {
@@ -43,7 +43,7 @@ S chomp(S const& s) {
 }
 
 template <class S>
-S rtrim(S const &s,std::string const&ws=whitespace)
+S rtrim(S const &s,std::string const&ws=ascii_whitespace)
 {
     typename S::size_type e;
     e=s.find_last_not_of(ws);
@@ -53,7 +53,7 @@ S rtrim(S const &s,std::string const&ws=whitespace)
 }
 
 template <class S>
-S ltrim(S const &s,std::string const&ws=whitespace)
+S ltrim(S const &s,std::string const&ws=ascii_whitespace)
 {
 //    std::string ws="\n\t ";
     typename S::size_type b;
@@ -64,7 +64,7 @@ S ltrim(S const &s,std::string const&ws=whitespace)
 }
 
 template <class S>
-S trim(S const &s,std::string const&ws=whitespace)
+S trim(S const &s,std::string const&ws=ascii_whitespace)
 {
 //    std::string ws="\n\t ";
     typename S::size_type b,e;
