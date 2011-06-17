@@ -644,7 +644,8 @@ casub() {
     set -x
     rm -f $d.{condor.sub,dagman.log,lib.out,lib.err,rescue}
     if [ "$hex" ] ; then
-        sed -ie 's/quadcore/hexcore/g' *.sub
+        perl -i -pe 's/quadcore/hexcore/g' *.sub
+        grep hexcore *.sub
     fi
     vds-submit-dag $d
     popd
