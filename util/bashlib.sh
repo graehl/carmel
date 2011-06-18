@@ -1958,4 +1958,92 @@ traperr
 getrealprog
 [ -f $libg/libgraehl.pl ] || lnreal ~/t/utilities/libgraehl.pl $libg/
 
+radutrees() {
+    local t=$1
+    require_file $t
+    perl -ne '++$nnt while (/~\d+~\d+/g); ++$nw while (/\(\S+ \S+\)/g);END{print "NT=$nnt WORDS=$nw TOTAL=",$nw*2+$nnt,"\n";}' $t
+}
+
+diffweights() {
+    ~/graehl/bin/diffweights.pl "$@"
+}
+
+mycond() {
+    condor_q -format "%s " Iwd -format "%d " ClusterId -format '%d' DAGManJobId -format '\n' nofieldph $USER
+}
+
+rgrep()
+{
+ local a=$1
+ shift
+ if [ "$*" ] ; then
+  find "$@" -exec egrep "$a" {} \; -print
+ else
+  find . -exec egrep "$a" {} \; -print
+ fi
+}
+
+# must be called with files, not stdin
+getnbest() {
+ if [ 0 != `catz "$@" | grep -c '^NBEST '` ] ; then
+  getpassf "$@"
+ else
+  getpass1 "$@"
+ fi
+}
+
+getbests() {
+    catz "$@" | grep '^NBEST sent'
+}
+
+getbestfull() {
+    catz "$@" | egrep '^NBEST sent=[^ ]* nbest=0'
+}
+get10best() {
+    catz "$@" | egrep '^NBEST sent=[^ ]* nbest=[0-9] '
+}
+
+getbest() {
+    getbestfull "$@" |  perl -pe 's/ tree={{{[^}]*}}} derivation={{{[^}]*}}}//;s/ inside-cost\=\S+//;s/ +/ /g;'
+}
+
+escapetree() {
+  perl -pe '
+s/(-RRB-) *\)/$1 RRBPAREN/g;
+s/(-LRB-) *\(/$2 LRBPAREN/g;
+s/([()])/ $1 /g;s/ /  /g;
+s/ " / "\\"" /g;
+s/ ([^ ()"]+?) / "$1" /g;
+s/ +/ /g;s/ +/ /g;s/ +/ /g;
+s/ +\)/\)/g; s/\( +/\(/g;
+s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
+'  "$@"
+}
+
+
+
+decode-sum() {
+    local dirs="$*"
+    dirs=${dirs:-.}
+    (
+        for d in $dirs; do
+            echo $d
+            egrep -i "exception|in total, |best score: |retry|command line: toplevel" $d/logs/??/decoder.log | summarize_num.pl -p 4 2>/dev/null
+            bleuparse $d/ibmbleu.out
+        done
+    ) 2>&1 | tee decode-sum.log
+}
+bleulr() {
+    perl -ne '/BLEUr4n4\[\%\] (\S*).*lengthRatio: (\S*)/; ($b,$l)=($1,$2);$_=$ARGV; s|/ibmbleu.out||; print "$_ $b $l\n"' "$@"
+}
+bleuparse1() {
+    if [ -f "$1" ] ; then
+     echo -n BLEU:
+     bleulr "$1"
+    else
+     warn "$1 not found (bleu score file)"
+    fi
+
+}
+
 true

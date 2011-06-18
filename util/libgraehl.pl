@@ -2626,7 +2626,7 @@ sub significant_digits {
 my $NUMBER_SUMMARY_PREC=13;
 
 sub set_number_summary_prec {
-    $NUMBER_SUMMARY_PREC=defined $_[0] ? $_[0] : 5;
+    $NUMBER_SUMMARY_PREC=defined $_[0] ? $_[0] : 7;
 }
 
 sub print_number_summary {
@@ -2648,7 +2648,7 @@ sub print_number_summary {
           map {
             my ($min,$sum,$max)=($pMin->[$_],$pSum->[$_],$pMax->[$_]);
             my $avg=$sum/$n;
-            my $ndigits=max(significant_digits($min),significant_digits($sum),significant_digits($max))+max(1,intlog10($n));
+            my $ndigits=min($NUMBER_SUMMARY_PREC,max(significant_digits($min),significant_digits($sum),significant_digits($max))+max(1,intlog10($n)));
             #&debug('number summary #digits',$ndigits,$min,$sum,$max);
             my ($pmin,$pavg,$pmax,$psum)=map {real_prec($_,$ndigits) } ($min,$avg,$max,$sum);
             $show_sums ? ("[$psum ($pavg)]") : ($min==$max ? $min : "[$pmin/$pavg/$pmax]")}

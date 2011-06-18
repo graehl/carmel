@@ -60,11 +60,6 @@ flv2aac() {
     ffmpeg -i "$1" -vn -acodec $codec "$f.$ext"
     set +x
 }
-radutrees() {
-    local t=$1
-    require_file $t
-    perl -ne '++$nnt while (/~\d+~\d+/g); ++$nw while (/\(\S+ \S+\)/g);END{print "NT=$nnt WORDS=$nw TOTAL=",$nw*2+$nnt,"\n";}' $t
-}
 tohpc() {
     cp2 $HPCHOST "$@"
 }
@@ -441,9 +436,6 @@ nthpr() {
 bigclm() {
     perl -i~ -pe ' s/lw/big/g if /clm-lr/' *.sh
 }
-bleulr() {
-perl -ne '/(.*)-sct0000.*BLEUr4n4\[\%\] (\S*).*lengthRatio: (\S*)/; print "$1 $2 $3\n"' "$@"
-}
 scts() {
     local l=${1:-ara}
     grep BLEU detok $l-*/$l-decode-iter-*/ibmbleu.out | bleulr
@@ -473,13 +465,6 @@ but0() {
       sleep 3
       casub $f
     done
-}
-aramira0() {
-    local l=ara
-    local m=$l-mira0000
-    exh rm -rf $m
-    . mira.sh
-    casub $m
 }
 chimira0() {
     local l=chi
@@ -543,26 +528,19 @@ split() {
 }
 
 
-diffweights() {
-    ~/graehl/bin/diffweights.pl "$@"
-}
-mycond() {
-    condor_q -format "%s " Iwd -format "%d " ClusterId -format '%d' DAGManJobId -format '\n' nofieldph graehl
-}
-function cdr
+cdr()
 {
     cd $(realpath "$@")
 }
-function cdw
+cdw()
 {
     cd $WFHOME/workflow/tune
 }
-mirasum() {
+mirasums() {
     for d in ${*:-.}; do
-     find $d -name '*mira000*' -print -exec mira-summary.sh {} \;
+     find $d -name '*mira00*' -print -exec mira-summary.sh {} \;
     done
 }
-
 miras() {
     local a=""
     for d in ${*:-.}; do
@@ -585,18 +563,18 @@ miradirs() {
     done
 }
 ln0() {
-mkdir -p $2
-pushd $2
-for f in ../$1/*-*0000; do ln -s $f .; done
-[ "$3" ] && rm *-$3*0000
-ls
-popd
+    mkdir -p $2
+    pushd $2
+    for f in ../$1/*-*0000; do ln -s $f .; done
+    [ "$3" ] && rm *-$3*0000
+    ls
+    popd
 }
 
 cpsh() {
-mkdir -p $2
-cp $1/*.sh $2
-ssh $HPCHOST "cd `pwdh` && mkdir -p $2"
+    mkdir -p $2
+    cp $1/*.sh $2
+    ssh $HPCHOST "cd `pwdh` && mkdir -p $2"
 }
 cprules() {
     cpsh $1 $2
@@ -833,11 +811,7 @@ set -x
  set +x
  )
 }
-function time()
-{
-/usr/bin/time "$@"
-}
-function rgrep()
+rgrep()
 {
  local a=$1
  shift
@@ -1807,47 +1781,10 @@ fi
 popd
 }
 
-sync_sdwei() {
-syncdev syntax-decoder-wei "$@"
-}
-
 sync_shared() {
 syncdev shared "$@"
 }
 
-sync_rr() {
-syncdev lib/RuleReader "$@"
-}
-
-sync_radu() {
-syncdev lib/radu-parser "$@"
-}
-
-sync_all() {
-if [ -z "$nosync" ] ; then
-sync_sdwei "$@"
-sync_shared "$@"
-sync_rr "$@"
-sync_radu "$@"
-fi
-}
-
-sync_sdwei_shared() {
-sync_sdwei "$@"
-sync_shared "$@"
-}
-
-build_wei() {
-sync_all
-#pushd $SSHDEV/lib/RuleReader/src && make -j 4 && popd &&
-ssh $SSHBASE 'set -x; pushd $SSHDEV/syntax-decoder-wei && make -j 4 "$@"; cp bin/linux/decoder* ~/blobs/decoder-bin/unstable'
-}
-
-clean_wei() {
-sync_all "$@"
-ssh $SSHBASE 'cd $SSHDEV/lib/RuleReader/src && make clean'
-ssh $SSHBASE 'cd $SSHDEV/syntax-decoder-wei && make clean'
-}
 
 sbmtdir=$SBMT_TRUNK/sbmt_decoder
 
@@ -2421,29 +2358,6 @@ getpassf() {
 catz "$@" | grep '^NBEST '
 }
 
-# must be called with files, not stdin
-getnbest() {
- if [ 0 != `catz "$@" | grep -c '^NBEST '` ] ; then
-  getpassf "$@"
- else
-  getpass1 "$@"
- fi
-}
-
-getbests() {
-    catz "$@" | grep '^NBEST sent'
-}
-
-getbestfull() {
-    catz "$@" | egrep '^NBEST sent=[^ ]* nbest=0'
-}
-get10best() {
-    catz "$@" | egrep '^NBEST sent=[^ ]* nbest=[0-9] '
-}
-
-getbest() {
-    getbestfull "$@" |  perl -pe 's/ tree={{{[^}]*}}} derivation={{{[^}]*}}}//;s/ inside-cost\=\S+//;s/ +/ /g;'
-}
 getbestpp() {
     diffnbest.pl "$@"
 }
@@ -2574,18 +2488,6 @@ EOF
 )
 }
 
-escapetree() {
-  perl -pe '
-s/(-RRB-) *\)/$1 RRBPAREN/g;
-s/(-LRB-) *\(/$2 LRBPAREN/g;
-s/([()])/ $1 /g;s/ /  /g;
-s/ " / "\\"" /g;
-s/ ([^ ()"]+?) / "$1" /g;
-s/ +/ /g;s/ +/ /g;s/ +/ /g;
-s/ +\)/\)/g; s/\( +/\(/g;
-s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
-'  "$@"
-}
 
 utility() {
 nproc=6 utility=$1 boostsbmt
