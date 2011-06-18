@@ -2053,6 +2053,9 @@ bleuparse1() {
     fi
 
 }
+bleuparse() {
+    forall bleuparse1 "$@"
+}
 mira-log-sum() {
     local dirs="$*"
     dirs=${dirs:-.}
