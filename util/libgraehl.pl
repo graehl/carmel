@@ -2507,7 +2507,7 @@ sub to_mega {
     return $num;
 }
 
-my $num_match=qr/[+\-]?(?:[.]\d+|\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/;
+my $num_match=qr/[+\-]?(?:[.]\d+|\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/;
 my $loose_num_match=qr/($num_match$mega_suffix_class?)(?=sec|s|)\b/;
 my $integer_match=qr/\b[+\-]?\d+\b/;
 my $natural_match=qr/\b\+?\d+\b/;
@@ -2631,7 +2631,7 @@ sub set_number_summary_prec {
 
 sub print_number_summary {
     return unless scalar keys %summary_list_n_sum_max_min;
-    my ($fh,$show_sums,$no_header)=@_;
+    my ($fh,$show_sums,$no_header,$avgonly)=@_;
     $fh=$info_fh unless defined $fh;
     $show_sums=0 unless $show_sums;
     my($old) = select($fh);
@@ -2651,7 +2651,7 @@ sub print_number_summary {
             my $ndigits=min($NUMBER_SUMMARY_PREC,max(significant_digits($min),significant_digits($sum),significant_digits($max))+max(1,intlog10($n)));
             #&debug('number summary #digits',$ndigits,$min,$sum,$max);
             my ($pmin,$pavg,$pmax,$psum)=map {real_prec($_,$ndigits) } ($min,$avg,$max,$sum);
-            $show_sums ? ("[$psum ($pavg)]") : ($min==$max ? $min : "[$pmin/$pavg/$pmax]")}
+            $show_sums ? ("[$psum ($pavg)]") : ($min==$max ? $min : ($avgonly ? $pavg : "[$pmin/$pavg/$pmax]"))}
           (0..$#$pSum));
         print "$avgorsum(N=$n): $restore_avg\n";
     }

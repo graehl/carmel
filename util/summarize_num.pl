@@ -28,6 +28,7 @@ my $template_string='{sOmEnUm}';
 my $raw_out;
 my $sum_out=\*STDOUT;
 my $sums;
+my $avgonly;
 my $grep;
 my $N;
 my $prec=8;
@@ -36,6 +37,7 @@ my @options=(
 #             ["template-string=s"=>\$template_string,"Unique string that won't occur anywhere in the input"],
              ["raw-numbers-out=s"=>\$raw_out,"Write any recognized numbers to this file"],
              ["sums!"=>\$sums,"Compute sums"],
+    ["avgonly!"=>\$avgonly,"Output average only"],
              ["grep=s"=>\$grep,"Regexp filtering input lines"],
              ["n=i"=>\$N,"Only record first n (matching) lines"],
     ["prec=i"=>\$prec,"digits of precision"],
@@ -77,4 +79,4 @@ while(<>) {
 }
 
 
-&print_number_summary($sum_out,$sums,1);
+&print_number_summary($sum_out,$sums,1,$avgonly);

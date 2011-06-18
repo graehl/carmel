@@ -2022,14 +2022,22 @@ s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
 
 
 
+decode-log-sum() {
+    local namearg=-h
+    local boundarg=-avgonly
+    [ "$names" ] && namearg=-H
+    [ "$bounds" ] && boundarg=
+    egrep $namearg -i '\[warning\]|\berror\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize_num.pl $boundarg -p 4 2>/dev/null
+}
 decode-sum() {
     local dirs="$*"
     dirs=${dirs:-.}
     (
         for d in $dirs; do
             echo $d
-            egrep -i "exception|in total, |best score: |retry|command line: toplevel" $d/logs/??/decoder.log | summarize_num.pl -p 4 2>/dev/null
+            decode-log-sum $d/logs/??/decoder.log
             bleuparse $d/ibmbleu.out
+            echo
         done
     ) 2>&1 | tee decode-sum.log
 }
@@ -2045,5 +2053,16 @@ bleuparse1() {
     fi
 
 }
-
+mira-log-sum() {
+    local dirs="$*"
+    dirs=${dirs:-.}
+    (
+        for d in $dirs; do
+            echo $d
+            [ "$nosum" ] || (cd $d; mira-sum)
+            decode-log-sum $d/logs/deco*.log
+            echo
+        done
+    ) 2>&1 | tee mira-log-sum.log
+}
 true
