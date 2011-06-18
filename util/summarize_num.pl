@@ -30,19 +30,21 @@ my $sum_out=\*STDOUT;
 my $sums;
 my $grep;
 my $N;
-
+my $prec=8;
 my @options=(
 "Any lines containing integer or floating point numbers are normalized and averages over each unique line (after normalization) are reported",
-             ["template-string=s"=>\$template_string,"Unique string that won't occur anywhere in the input"],
+#             ["template-string=s"=>\$template_string,"Unique string that won't occur anywhere in the input"],
              ["raw-numbers-out=s"=>\$raw_out,"Write any recognized numbers to this file"],
              ["sums!"=>\$sums,"Compute sums"],
              ["grep=s"=>\$grep,"Regexp filtering input lines"],
              ["n=i"=>\$N,"Only record first n (matching) lines"],
+    ["prec=i"=>\$prec,"digits of precision"],
             );
 
 
 my $cmdline=&escaped_cmdline;
 my ($usagep,@opts)=getoptions_usage(@options);
+&set_number_summary_prec($prec);
 info("COMMAND LINE:");
 info($cmdline);
 show_opts(@opts);
