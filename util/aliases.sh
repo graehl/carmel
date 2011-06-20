@@ -1,4 +1,69 @@
+backupsbmt() {
+    rsync --verbose --max-size=500K --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude config\* --exclude Makefile\* --exclude auto\* --exclude aclocal.m4 -lprt  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+#  cp -a $SBMT_TRUNK $dev/sbmt.bak
+}
+build_sbmt_variant()
+{
+    #target=check
+    variant=debug boostsbmt "$@"
+}
 
+boostsbmt()
+{
+    (
+        set -x
+        set -e
+        local h=${host:-$HOST}
+        nproc_default=5
+        if [[ "$h" = cage ]] ; then
+            nproc_default=7
+        fi
+        nproc=${nproc:-$nproc_default}
+        variant=${variant:-release}
+        local linking="link=static"
+        linking=
+        branch=${branch:-trunk}
+        trunkdir=${trunkdir:-$SBMT_BASE/$branch}
+        showvars_required branch trunkdir
+        pushd $trunkdir
+        mkdir -p $h
+        local prefix=${prefix:-$FIRST_PREFIX}
+        [ "$utility" ] && target="utilities//$utility"
+        target=${target:-install-pipeline}
+#
+#--boost-location=$BOOST_SRCDIR
+#-d 4
+        local barg boostdir
+        local builddir=${build:-$h}
+        if [[ $boost ]] ; then
+            boostdir=$HOME/src/boost_$boost
+            builddir="${builddir}_boost_$boost"
+        fi
+        if [[ $boostdir ]] ; then
+            [[ -d $boostdir ]]
+            barg="--boost=$boostdir"
+        fi
+        execpre=${execpre:-$FIRST_PREFIX}
+        if [[ $variant = debug ]] ; then
+            execpre+=/debug
+        fi
+        bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
+        set +x
+        popd
+    )
+}
+tmpsbmt() {
+    local tmpdir=/tmp/trunk.graehl
+    backupsbmt $tmpdir
+    cp
+    trunkdir=$tmpdir/trunk boost=${boost:-1_35_0} boostsbmt "$@"
+}
+dusort() {
+    perl -e 'require "$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl";while(<>){$n=()=m#/#g;push @{$a[$n]},$_;} for(reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
+}
+realwhich() {
+    whichreal "$@"
+}
 check1best() {
     perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers($1); if ($n{$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1")  } }  } END { all_summary() }' decoder-*.1best
     grep -i "bad_alloc" logs/*/decoder.log
@@ -938,11 +1003,6 @@ set -x
 set +x
 }
 
-function build_sbmt_variant
-{
-#target=check
-variant=debug boostsbmt "$@"
-}
 
 function sbmt_test
 {
@@ -1792,10 +1852,6 @@ sbmt() {
 pushd $sbmtdir
 }
 
-backupsbmt() {
-rsync --verbose --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude build-linux --exclude tmp --exclude .libs --exclude config\* --exclude Makefile\* --exclude auto\* --exclude aclocal.m4 -lprt  $SBMT_TRUNK $dev/sbmt.bak
-#  cp -a $SBMT_TRUNK $dev/sbmt.bak
-}
 
 SBMT_STAGE=$ARCHBASE/sbmt
 sbmtcp() {
@@ -2020,50 +2076,6 @@ cpimd() {
  touch $d/../unstable
 }
 
-function boostsbmt
-{
-(
-set -x
-set -e
-local h=${host:-$HOST}
-nproc_default=5
-if [[ "$h" = cage ]] ; then
-    nproc_default=7
-fi
-nproc=${nproc:-$nproc_default}
-variant=${variant:-release}
-local linking="link=static"
-linking=
-branch=${branch:-trunk}
-trunkdir=${trunkdir:-$SBMT_BASE/$branch}
-showvars_required branch trunkdir
-pushd $trunkdir
-mkdir -p $h
-local prefix=${prefix:-$FIRST_PREFIX}
-[ "$utility" ] && target="utilities//$utility"
-target=${target:-install-pipeline}
-#
-#--boost-location=$BOOST_SRCDIR
-#-d 4
-local barg boostdir
-local builddir=${build:-$h}
-if [[ $boost ]] ; then
-    boostdir=$HOME/src/boost_$boost
-    builddir="${builddir}_boost_$boost"
-fi
-if [[ $boostdir ]] ; then
-    [[ -d $boostdir ]]
-    barg="--boost=$boostdir"
-fi
-execpre=${execpre:-$FIRST_PREFIX}
-if [[ $variant = debug ]] ; then
-    execpre+=/debug
-fi
-bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
-set +x
-popd
-)
-}
 
 function bsbmt
 {

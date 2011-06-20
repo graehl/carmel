@@ -2465,7 +2465,7 @@ sub restore_extract {
     my ($text,$template,@vals)=@_;
     $template=$default_template unless defined $template;
     my $i;
-    return subst($text,qr/\Q$template\E/,sub { $vals[$i++] });
+    subst($text,qr/\Q$template\E/,sub { $vals[$i++] });
 }
 
 my $mega_suffix_class=qr/[kKmMgGtT]/;
@@ -2485,10 +2485,28 @@ sub from_mega {
     my ($num)=@_;
     if ($num =~ s/($mega_suffix_class)$//) {
         my $suffix=$1;
-        debug($suffix);
         $num *= $mega_suffix{$suffix};
     }
-    return $num;
+    $num;
+}
+
+sub first_mega {
+    my ($m)=split ' ',$_[0];
+    &from_mega($m);
+}
+sub sort_by_num {
+    my ($by,$lref,$reverse)=@_;
+    return () unless defined $lref;
+    return $reverse ?
+        (map { $_->[0] } sort { $b->[1] <=> $a->[1] } map { [$_,$by->($_)] } @$lref) :
+        (map { $_->[0] } sort { $a->[1] <=> $b->[1] } map { [$_,$by->($_)] } @$lref);
+}
+sub sort_by {
+    my ($by,$lref,$reverse)=@_;
+    return () unless defined $lref;
+    return $reverse ?
+        map { $_->[0] } sort { $b->[1] cmp $a->[1] } map { [$_,$by->($_)] } $lref :
+        map { $_->[0] } sort { $a->[1] cmp $b->[1] } map { [$_,$by->($_)] } $lref;
 }
 
 #base10 means 10^3k, base2 means 2^10k
@@ -2632,8 +2650,8 @@ sub set_number_summary_prec {
 sub print_number_summary {
     return unless scalar keys %summary_list_n_sum_max_min;
     my ($fh,$show_sums,$no_header,$avgonly)=@_;
+    &debug;
     $fh=$info_fh unless defined $fh;
-    $show_sums=0 unless $show_sums;
     my($old) = select($fh);
     my @temps=sort keys %summary_list_n_sum_max_min;
     my $avgorsum=$show_sums?"sum":"avg";
