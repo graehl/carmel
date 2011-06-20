@@ -1,5 +1,8 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+summarize-num() {
+    perl ~graehl/t/graehl/util/summarize_num.pl "$@"
+}
 BLOBS=${BLOBS:-/home/nlg-01/blobs}
 [ -d $BLOBS ] || BLOBS=~/blobs
 export BLOBS
@@ -351,7 +354,7 @@ lengths() {
 }
 
 sum_lengths() {
-    lengths "$@" | summarize_num.pl
+    lengths "$@" | summarize-num
 }
 tab() {
   echo -ne "\t$*"
@@ -2027,19 +2030,24 @@ decode-log-sum() {
     local boundarg=-avgonly
     [ "$names" ] && namearg=-H
     [ "$bounds" ] && boundarg=
-    egrep $namearg -i '\[warning\]|\berror\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize_num.pl $boundarg -p 4 2>/dev/null
+    [[ $full ]] && boundarg+=" -full $full"
+    showvars_optional names bounds full
+    egrep $namearg -i '\[warning\]|error\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize-num $boundarg -p 4 2>/dev/null
 }
 decode-sum() {
     local dirs="$*"
+    local out=${out:-.}
+    mkdir -p $out
     dirs=${dirs:-.}
     (
         for d in $dirs; do
             echo $d
-            decode-log-sum $d/logs/??/decoder.log
+            local full=$out/`basename $d`.decode.min-avg-max.log
+            full=$full decode-log-sum $d/logs/??/decoder.log
             bleuparse $d/ibmbleu.out
             echo
         done
-    ) 2>&1 | tee decode-sum.log
+    ) 2>&1 | tee $out/decode.avg.log
 }
 bleulr() {
     perl -ne '/BLEUr4n4\[\%\] (\S*).*lengthRatio: (\S*)/; ($b,$l)=($1,$2);$_=$ARGV; s|/ibmbleu.out||; print "$_ $b $l\n"' "$@"
@@ -2063,9 +2071,9 @@ mira-log-sum() {
         for d in $dirs; do
             echo $d
             [ "$nosum" ] || (cd $d; mira-sum)
-            decode-log-sum $d/logs/deco*.log
+            decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
         done
-    ) 2>&1 | tee mira-log-sum.log
+    ) 2>&1 | tee mira-log-sum.`filename_from $*`.log
 }
 true
