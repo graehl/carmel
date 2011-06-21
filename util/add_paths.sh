@@ -49,7 +49,7 @@ fi
  export C_INCLUDE_PATH="$subinc:$C_INCLUDE_PATH"
  export CPPFLAGS="-I$subinc $CPPFLAGS"
  add_ldpath $sublib
- add_pypath $subpy $subpy/bzrlib
+ add_pypath $subpy $subpy/bzrlib ${subpy}2.6/site-packages
  if [ "$ON64" ] ; then
   local sublib64=$prefix/lib64
   mkdir -p $sublib64
