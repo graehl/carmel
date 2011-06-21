@@ -1373,7 +1373,7 @@ sub unquote {
 sub filename_from {
     my ($fname)=@_;
    &superchomp(\$fname);
-   $fname =~ s|[^a-zA-Z0-9_-]+|.|g;
+   $fname =~ s|[^a-zA-Z0-9_=-]+|.|g;
    $fname =~ s|^\.|_|;
     return $fname;
 }

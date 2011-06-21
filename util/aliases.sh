@@ -679,47 +679,6 @@ csub() {
 casubr() {
     casub `ls -dtr *00* | tail -1` "$@"
 }
-casub() {
-    ( set -e;
-    if [ "$2" ] ; then ln -sf $1 $1.$2
-        echo "$@" > $1/NOTES
-    fi
-    pushd $1
-
-    shift
-    local d=`echo *.dag`
-    [ -f $d ]
-    echo ${d%.dag} $d
-    set -x
-    rm -f $d.{condor.sub,dagman.log,lib.out,lib.err,rescue}
-    if [ "$hex" ] ; then
-        perl -i -pe 's/quadcore/hexcore/g' *.sub
-        grep hexcore *.sub
-    fi
-    vds-submit-dag $d
-    popd
-    )
-}
-casubs() {
-    for f in "$@"; do
-        ( set -e
-     for d in *$f*0000; do
-         [ -d $d ]
-         casub $d
-     done
-     )
-    done
-}
-cjobs() {
-    perl -ne '$j{$1}=1 if /\((\d+)\.000\.000\)/; END { print "$_ " for (keys %j) }' "$@"
-    echo
-}
-kjobs() {
-    for j in `cjobs $1/*.dagman.log`; do
-        echo $j
-        condor_rm $j
-    done
-}
 kajobs() {
     for d in $1/*0000; do
         echo killing: $d
