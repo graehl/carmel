@@ -1,5 +1,12 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+lastn() {
+    local n=$1
+    shift
+    local darg=-d
+    [ "$*" ] || darg=
+    ls -rt $darg "$@" | tail -$n
+}
 envtofile() {
    perl -e 'push @INC,"'$BLOBS'/libgraehl/unstable";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
 }
@@ -2093,6 +2100,7 @@ decode-log-sum() {
     [[ $full ]] && boundarg+=" -full $full"
     showvars_optional names bounds full
     egrep $namearg -i '\[warning\]|error\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize-num $boundarg -p 4 2>/dev/null
+    [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
     local dirs="$*"
@@ -2108,6 +2116,8 @@ decode-sum() {
             echo
         done
     ) 2>&1 | tee $out/decode.avg.log
+    grep mismatch $out/*.decode.min-avg-max.log
+    echo $dirs
 }
 bleulr() {
     perl -ne '/BLEUr4n4\[\%\] (\S*).*lengthRatio: (\S*)/; ($b,$l)=($1,$2);$_=$ARGV; s|/ibmbleu.out||; print "$_ $b $l\n"' "$@"

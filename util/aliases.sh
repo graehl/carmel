@@ -11,7 +11,8 @@ cmpyh() {
 }
 backupsbmt() {
     #--exclude Makefile\* --exclude auto\* --exclude config\*
-    rsync --verbose --max-size=500K --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs    --exclude aclocal.m4 -lprt  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+    rsync --modify-window=5 --verbose --max-size=500K --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+    #-lprt
 #  cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
 build_sbmt_variant()
