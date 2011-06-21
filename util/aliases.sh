@@ -10,8 +10,10 @@ cmpyh() {
     python setup.py ${target:-install} --home ~
 }
 backupsbmt() {
+    mkdir -p $1
     #--exclude Makefile\* --exclude auto\* --exclude config\*
-    rsync --modify-window=5 --verbose --max-size=500K --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+    #--size-only
+    rsync --modify-window=0 --verbose --max-size=500K  --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
     #-lprt
 #  cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
@@ -24,7 +26,6 @@ build_sbmt_variant()
 boostsbmt()
 {
     (
-        set -x
         set -e
         local h=${host:-$HOST}
         nproc_default=5
@@ -66,9 +67,8 @@ boostsbmt()
     )
 }
 tmpsbmt() {
-    local tmpdir=/tmp/trunk.graehl
+    local tmpdir=/tmp/trunk.graehl.$HOST
     backupsbmt $tmpdir
-    cp
     trunkdir=$tmpdir/trunk boost=${boost:-1_35_0} boostsbmt "$@"
 }
 dusort() {

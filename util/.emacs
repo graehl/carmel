@@ -4213,3 +4213,14 @@ loaded as such.)"
         (term-send-raw-string (kbd "C-l"))
         )))
 (define-key term-raw-map (kbd "C-j") 'term-switch-to-shell-mode)
+
+(add-hook 'compilation-finish-functions 'my-change-tmp-to-nfs)
+(defun my-change-tmp-to-nfs (buffer &optional stat)
+  "change tmp to nfs"
+  (interactive "b")
+  (save-excursion
+    (set-buffer buffer)
+    (goto-char (point-min))
+    (let ((buffer-read-only nil))
+      (while (re-search-forward "/tmp/trunk.graehl/trunk/" nil t)
+        (replace-match "~/t/")))))
