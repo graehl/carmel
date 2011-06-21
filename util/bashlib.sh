@@ -177,6 +177,7 @@ save1() {
 
 save12() {
     local out="$1"
+    [[ -f $out ]] && mv "$out" "$out~"
     shift
     echo2 saving output $out
     "$@" 2>&1 | tee $out | ${page:=cat}

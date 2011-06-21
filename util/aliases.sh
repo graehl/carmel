@@ -1,5 +1,17 @@
+#simpler than pychecker
+pycheck() {
+    python -c "import ${1%.py}"
+}
+
+cmpy() {
+    python setup.py ${target:-install} --home $FIRST_PREFIX
+}
+cmpyh() {
+    python setup.py ${target:-install} --home ~
+}
 backupsbmt() {
-    rsync --verbose --max-size=500K --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude config\* --exclude Makefile\* --exclude auto\* --exclude aclocal.m4 -lprt  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+    #--exclude Makefile\* --exclude auto\* --exclude config\*
+    rsync --verbose --max-size=500K --size-only --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs    --exclude aclocal.m4 -lprt  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
 #  cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
 build_sbmt_variant()
@@ -74,12 +86,6 @@ check1best() {
 
 blib=$d/bloblib.sh
 [ -r $blib ] && . $blib
-cmpy() {
-    python setup.py ${target:-install} --home $FIRST_PREFIX
-}
-cmpyh() {
-    python setup.py ${target:-install} --home ~
-}
 em() {
     nohup emacs ~/t/sbmt_decoder/include/sbmt/io/logging_macros.hpp ~/t/sblm/sblm_info.hpp &
 }
@@ -2761,18 +2767,20 @@ rfromlo() {
     }
 tcmi() {
     local d=$1
+    local f=$1
     d=${d%.tar.bz2}
     d=${d%.tar.gz}
     d=${d%.tgz}
     d=${d%.tar.xz}
     shift
-    tarxzf $1 && cd $d && cmi "$@"
+    set -x
+    tarxzf "$f" && cd "$d" && cmi "$@"
 }
 wtx() {
  wget "$1" && tarxzf $(basename $1)
 }
 wcmi() {
-    wget "$1" && tcmi $(basename $1)
+    wget "$1" && tcmi "$(basename $1)"
 }
 cmi() {
     if ./configure $CONFIG "$@"; then
