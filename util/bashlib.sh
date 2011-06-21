@@ -1,8 +1,67 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+envtofile() {
+   perl -e 'push @INC,"'$BLOBS'/libgraehl/unstable";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
+}
+absp() {
+    readlink -nfs "$@"
+}
+absdirname() {
+    local b=${1:-.}
+    dirname $(readlink -nfs "$b")
+}
 summarize-num() {
     perl ~graehl/t/graehl/util/summarize_num.pl "$@"
 }
+casub() {
+    ( set -e;
+    local d=$1
+[[ -f $1 ]] && d=`dirname $d`
+    if [ "$2" ] ; then ln -sf $d $d.$2
+        echo "$@" > $d/NOTES
+    fi
+    pushd $d
+
+    shift
+
+if [[ -f $1 ]] ; then
+ d=`basename $1`
+else
+ d=`echo *.dag`
+fi
+    [[ -f $d ]]
+    echo ${d%.dag} $d
+    set -x
+    rm -f $d.{condor.sub,dagman.log,lib.out,lib.err,rescue}
+    if [ "$hex" ] ; then
+        perl -i -pe 's/quadcore/hexcore/g' *.sub
+        grep hexcore *.sub
+    fi
+    vds-submit-dag $d
+    popd
+    )
+}
+casubs() {
+    for f in "$@"; do
+        ( set -e
+     for d in *$f*0000; do
+         [ -d $d ]
+         casub $d
+     done
+     )
+    done
+}
+cjobs() {
+    perl -ne '$j{$1}=1 if /\((\d+)\.000\.000\)/; END { print "$_ " for (keys %j) }' "$@"
+    echo
+}
+kjobs() {
+    for j in `cjobs $1/*.dagman.log`; do
+        echo $j
+        condor_rm $j
+    done
+}
+
 BLOBS=${BLOBS:-/home/nlg-01/blobs}
 [ -d $BLOBS ] || BLOBS=~/blobs
 export BLOBS
