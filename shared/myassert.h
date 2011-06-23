@@ -6,10 +6,18 @@
 #include <graehl/shared/breakpoint.hpp>
 #include <graehl/shared/config.h>
 
+#ifdef DEBUG
+
+#define GRAEHL_ASSERT 1
+#endif
+#ifndef GRAEHL_ASSERT
+# define GRAEHL_ASSERT 0
+#endif
+
 #ifndef DEBUG
 # ifndef NDEBUG
 //# define NDEBUG
-#endif 
+#endif
 #endif
 
 #include <cassert>
@@ -28,7 +36,7 @@ inline static void _my_assert(const char *file,unsigned line,const T&t,const cha
   BREAKPOINT;
 }
 
-#ifdef DEBUG
+#if GRAEHL_ASSERT
 # define Assert(expr) (expr) ? (void)0 :   \
                  _my_assert(__FILE__,__LINE__,#expr)
 // WARNING: expr occurs twice (repeated computation)
