@@ -184,9 +184,9 @@ class ngram(object):
     def compute_uniform(self):
         self.uniform_p=1./len(self.logp)
         self.uniform_log10p=math.log10(self.uniform_p)
-    def uniform_p(self,word):
+    def uniform_p(self,_):
         return self.uniform_p
-    def uniform_log10p(self,word):
+    def uniform_log10p(self,_):
         return self.uniform_log10p
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
@@ -481,20 +481,12 @@ class ngram(object):
         wf("\n\\end\\")
 
 
-def ngram_main(order=2,txt='train.txt',test='test.txt',head='head',logfile='ngram.log.txt',interpolate=True,witten_bell=True):
+def ngram_main(order=2,txt='train.txt',interpolate=True,witten_bell=True):
     n=ngram(order)
     n.count_file(txt,'<s>','</s>')
     warn('#eos',n.ngrams[0].counts[(ngram.eos,)])
-    head='head'
-#    lm1=n.train_lm(txt,sri_ngram_count=True,read_lm=True,clear_counts=False,write_lm=True,witten_bell=witten_bell,interpolate=interpolate)
-#    lm4=txt+'.rewritten.srilm'
-#    n.write_lm(lm4)
     pylm=txt+'.python'
-    lm2=n.train_lm(pylm,sri_ngram_count=False,read_lm=True,clear_counts=True,write_lm=True,witten_bell=witten_bell,interpolate=interpolate)
-#    lm3=pylm+'.uninterp.srilm'
-#    n.uninterp()
-#    n.write_lm(lm3)
-#    callv([head,'-10',lm1,lm2,lm3])
+    n.train_lm(pylm,sri_ngram_count=False,read_lm=True,clear_counts=True,write_lm=True,witten_bell=witten_bell,interpolate=interpolate)
     s=intern_tuple(('<s>','I','together.','</s>'))
     dump(n.score_word(s,1),n.score_word(s,2),n.score_word(s,3))
 

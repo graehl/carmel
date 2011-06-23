@@ -4159,6 +4159,7 @@ loaded as such.)"
                                         ;      (define-key py-mode-map "(" 'electric-pair)
                                         ;      (define-key py-mode-map "[" 'electric-pair)
                                         ;      (define-key py-mode-map "{" 'electric-pair)
+                  (define-key py-mode-map [(shift f10)] 'py-pychecker-run)
                   ))
       )
   (progn

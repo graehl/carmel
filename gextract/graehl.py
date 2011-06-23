@@ -446,10 +446,12 @@ class Histogram(object):
         return [(k,self.c[k]) for k in sorted(self.c.iterkeys())]
     def get_binned(self,binwidth=10):
         "assuming numeric keys, return sorted list ((min,max),count) grouped by [min,min+binwidth),[min+binwidth,min+binwidth*2) etc."
+        assert binwidth is None
         assert False
     def text_gnuplot(self,binwidth=None,line=False):
         "returns a gnuplot program that uses bars if line is False, and bins if binwidth isn't None"
         assert binwidth is None
+        assert line is None
         assert False
     def __str__(self):
         return str(self.get_sorted())
@@ -464,6 +466,8 @@ class LengthDistribution(object):
     def fit_geometric(self,shifted=True): #TODO
         "return p so that the mean value is the same as histogram - https://secure.wikimedia.org/wikipedia/en/wiki/Geometric_distribution - shifted means support is 1,2,... = avg. number of trials until success. unshifted means 0,... = avg. number of failures before success"
         mean=self.hist.mean()
+        assert mean is None
+        assert shifted is None
         return None #
 
 def mismatch_text(xs,ys,xname='xs',yname='ys',pre='mismatch: '):
