@@ -2099,7 +2099,7 @@ decode-log-sum() {
     [ "$bounds" ] && boundarg=
     [[ $full ]] && boundarg+=" -full $full"
     showvars_optional names bounds full
-    egrep $namearg -i '\[warning\]|error\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'assertion|\[warning\]|error\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
