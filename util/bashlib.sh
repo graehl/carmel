@@ -2103,12 +2103,14 @@ decode-log-sum() {
     local boundarg=-avgonly
     [ "$names" ] && namearg=-H
     [ "$bounds" ] && boundarg=
+    local unsum
     if [[ $full ]] ; then
         mkdir -p `dirname $full`
         boundarg+=" -full $full"
+        unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'assertion|\[warning\]|\berror\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | cols=${cols:-500} droplong | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'assertion|\[warning\]|\berror\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2150,17 +2152,24 @@ mira-log-sum() {
     if [[ $out ]] ; then
         mkdir -p $out
         op=$out/
-    else
-        op=
     fi
+    local log=$op/mira-log-sum.`filename_from $*`.log
+    local logs=$log
     (
+        set -e
         for d in $dirs; do
             echo $d
             local full=$op`basename $d`.mira.min-avg-max.log
-            [ "$nosum" ] || (cd $d; mira-sum | tee mira-sum.log)
+            logs+=" $full"
+            local mirasum=$(abspath ${op}`basename $d`.mira-sum)
+            showvars_required mirasum full log
+            if ! [ "$nosum" ] ; then
+                (cd $d; mira-sum | tee mira-sum.log | tee $mirasum)
+            fi
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
         done
-    ) 2>&1 | tee $op/mira-log-sum.`filename_from $*`.log
+    ) 2>&1 | tee $log
+    echo tail -100 $logs
 }
 true
