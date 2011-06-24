@@ -2,6 +2,7 @@
 #define GRAEHL__SHARED__EPSILON_HPP
 
 #include <cmath>
+#include <algorithm>
 
 #ifndef ONE_PLUS_EPSILON
 # ifndef FLOAT_EPSILON
@@ -75,6 +76,15 @@ inline bool close_enough(double a,double b,double epsilon=EPSILON)
     using std::fabs;
     double diff=fabs(a-b);
     return diff<=epsilon*fabs(a) || diff<=epsilon*fabs(b);
+//    return close_by_first(a,b,epsilon) || close_by_first(b,a,epsilon);
+}
+
+inline bool close_enough_min_scale(double a,double b,double epsilon=EPSILON,double min_scale=1.) // use max(fabs(a),fabs(b),min_scale), epsilon is relative difference vs that
+{
+    using std::fabs;
+    double diff=fabs(a-b);
+    double scale=std::max(min_scale,std::max(fabs(a),fabs(b));
+    return diff<=epsilon*scale;
 //    return close_by_first(a,b,epsilon) || close_by_first(b,a,epsilon);
 }
 
