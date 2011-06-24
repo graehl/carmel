@@ -83,7 +83,7 @@ inline bool close_enough_min_scale(double a,double b,double epsilon=EPSILON,doub
 {
     using std::fabs;
     double diff=fabs(a-b);
-    double scale=std::max(min_scale,std::max(fabs(a),fabs(b));
+    double scale=std::max(min_scale,std::max(fabs(a),fabs(b)));
     return diff<=epsilon*scale;
 //    return close_by_first(a,b,epsilon) || close_by_first(b,a,epsilon);
 }
