@@ -2091,15 +2091,24 @@ s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
 }
 
 
+sniplong() {
+    perl -e '$long=$ENV{cols} || 110; while(<>) { chomp;print (substr $_,0,$long),"\n" }' "$@"
+}
+droplong() {
+    perl -e '$long=$ENV{cols} || 110; ++$long; while(<>) { print unless length > $long; }' "$@"
+}
 
 decode-log-sum() {
     local namearg=-h
     local boundarg=-avgonly
     [ "$names" ] && namearg=-H
     [ "$bounds" ] && boundarg=
-    [[ $full ]] && boundarg+=" -full $full"
+    if [[ $full ]] ; then
+        mkdir -p `dirname $full`
+        boundarg+=" -full $full"
+    fi
     showvars_optional names bounds full
-    egrep $namearg -i 'assertion|\[warning\]|error\b|\binf\b|\bnan\b|parse forest has|exception|in total, |best score: |retry|command line: toplevel' -- "$@" | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'assertion|\[warning\]|\berror\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | cols=${cols:-500} droplong | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2137,13 +2146,21 @@ bleuparse() {
 mira-log-sum() {
     local dirs="$*"
     dirs=${dirs:-.}
+    local op
+    if [[ $out ]] ; then
+        mkdir -p $out
+        op=$out/
+    else
+        op=
+    fi
     (
         for d in $dirs; do
             echo $d
-            [ "$nosum" ] || (cd $d; mira-sum)
-            decode-log-sum $d/logs/mira.log $d/logs/deco*.log
+            local full=$op`basename $d`.mira.min-avg-max.log
+            [ "$nosum" ] || (cd $d; mira-sum | tee mira-sum.log)
+            full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
         done
-    ) 2>&1 | tee mira-log-sum.`filename_from $*`.log
+    ) 2>&1 | tee $op/mira-log-sum.`filename_from $*`.log
 }
 true
