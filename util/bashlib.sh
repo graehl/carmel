@@ -2092,7 +2092,7 @@ s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
 
 
 sniplong() {
-    perl -e '$long=$ENV{cols} || 110; while(<>) { chomp;print (substr $_,0,$long),"\n" }' "$@"
+    perl -e '$long=$ENV{cols} || 110; print STDERR "$long\n";while(<>) { chomp;$_=substr($_,0,$long-3)."..." if length($_)>$long;print "$_\n" }' "$@"
 }
 droplong() {
     perl -e '$long=$ENV{cols} || 110; ++$long; while(<>) { print unless length > $long; }' "$@"

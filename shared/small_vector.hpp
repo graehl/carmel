@@ -24,7 +24,7 @@
 
 namespace graehl {
 
-template <class T,int SV_MAX=2>
+template <class T,int SV_MAX=2,class SIZE=uint16_t>
 class small_vector {
 //  typedef unsigned short uint16_t;
   void Alloc(size_t s) { // doesn't free old; for ctor. sets size_
@@ -57,7 +57,7 @@ class small_vector {
   typedef T value_type;
   typedef T &reference;
   typedef T const& const_reference;
-  typedef uint16_t size_type;
+  typedef SIZE size_type;
   static const size_type size_max=
 #ifdef NDEBUG
     (size_type)-1;
