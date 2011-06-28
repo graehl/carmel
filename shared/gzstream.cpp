@@ -166,7 +166,7 @@ void gzstreambase::open(const char* name, int open_mode) {
 }
 
 void gzstreambase::close() {
-    if (buf.opened)
+  if (buf.is_open())
         if (!buf.close())
             clear(rdstate() | std::ios::badbit);
 }
