@@ -21,8 +21,8 @@
 // Revision      : $Revision$
 // Revision_date : $Date$
 // Author(s)     : Deepak Bandyopadhyay, Lutz Kettner
-// 
-// Standard streambuf implementation following Nicolai Josuttis, "The 
+//
+// Standard streambuf implementation following Nicolai Josuttis, "The
 // Standard C++ Library".
 // ============================================================================
 
@@ -63,14 +63,14 @@ public:
         setp( buffer, buffer + (bufferSize-1));
         setg( buffer + 4,     // beginning of putback area
               buffer + 4,     // read position
-              buffer + 4);    // end position      
+              buffer + 4);    // end position
         // ASSERT: both input & output capabilities will not be used together
     }
     int is_open() { return opened; }
     gzstreambuf* open( const char* name, int open_mode);
     gzstreambuf* close();
-    ~gzstreambuf() { close(); }
-    
+  virtual ~gzstreambuf() { close(); } /* in a derived class, if your base class has a virtual destructor, your own destructor is automatically virtual. You might need an explicit destructor for other reasons, but there's no need to redeclare a destructor simply to make sure it is virtual. No matter whether you declare it with the virtual keyword, declare it without the virtual keyword, or don't declare it at all, it's still virtual. */
+
     virtual int     overflow( int c = EOF);
     virtual int     underflow();
     virtual int     sync();
@@ -90,15 +90,15 @@ public:
 
 // ----------------------------------------------------------------------------
 // User classes. Use igzstream and ogzstream analogously to ifstream and
-// ofstream respectively. They read and write files based on the gz* 
+// ofstream respectively. They read and write files based on the gz*
 // function interface of the zlib. Files are compatible with gzip compression.
 // ----------------------------------------------------------------------------
 
 class igzstream : public gzstreambase, public std::istream {
 public:
-    igzstream() : std::istream( &buf) {} 
+    igzstream() : std::istream(&buf) {}
     igzstream( const char* name, int open_mode = std::ios::in)
-        : gzstreambase( name, std::ios::in | open_mode), std::istream( &buf) {}  
+        : gzstreambase( name, std::ios::in | open_mode), std::istream( &buf) {}
     gzstreambuf* rdbuf() { return gzstreambase::rdbuf(); }
     void open( const char* name, int open_mode = std::ios::in) {
         gzstreambase::open( name, open_mode);
@@ -109,7 +109,7 @@ class ogzstream : public gzstreambase, public std::ostream {
 public:
     ogzstream() : std::ostream( &buf) {}
     ogzstream( const char* name, int mode =  std::ios::out)
-        : gzstreambase( name, std::ios::out | mode), std::ostream( &buf) {}  
+        : gzstreambase( name, std::ios::out | mode), std::ostream( &buf) {}
     gzstreambuf* rdbuf() { return gzstreambase::rdbuf(); }
     void open( const char* name, int open_mode = std::ios::out) {
         gzstreambase::open( name, open_mode);
