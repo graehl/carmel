@@ -146,16 +146,22 @@ struct file_arg
         throw std::runtime_error("FAILED("+filename+"): "+msg);
     }
 
-    enum { delete_after=1,no_delete_after=0 };
+  enum { delete_after=1,no_delete_after=0 };
 
+  void clear() {
+    pointer.reset();
+    buf.reset();
+  }
     void set(Stream &s,std::string const& filename="",bool destroy=no_delete_after,std::string const& fail_msg="invalid stream")
     {
+      clear();
         if (!s)
             throw_fail(filename,fail_msg);
         if (destroy)
             pointer.reset(&s);
         else
             pointer.reset(&s,null_deleter());
+        /*  The object pointed to is guaranteed to be deleted when the last shared_ptr pointing to it is destroyed or reset */
         name=filename;
     }
 
@@ -174,9 +180,9 @@ struct file_arg
     template <class filestream>
     void set_new(std::string const& filename,std::string const& fail_msg="Couldn't open file")
     {
-        std::auto_ptr<filestream> f(new filestream(filename.c_str(),std::ios::binary));
-        set_checked(*f,filename,delete_after,fail_msg);
-        f.release(); // w/o delete
+      std::auto_ptr<filestream> f(new filestream(filename.c_str(),std::ios::binary)); // will delete if we have an exception
+      set_checked(*f,filename,delete_after,fail_msg);
+      f.release(); // w/o delete
     }
 
     // set_new_buf is nearly a copy of set_new, except that apparently you can't open the file first then set buffer:
@@ -205,11 +211,11 @@ the buffer will be back to 8k.
     void set_new_buf(std::string const& filename,std::string const& fail_msg="Couldn't open file",bool large_buf=true)
     {
         std::auto_ptr<filestream> f(new filestream());
-        set_checked(*f,filename,delete_after,fail_msg);
+        set_checked(*f,filename,delete_after,fail_msg); // exception safety
+        f.release(); // w/o delete
         if (large_buf) give_large_buf();
         const bool read=stream_traits<filestream>::read;
         f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
-        f.release(); // w/o delete
     }
 
     void give_large_buf()
@@ -219,8 +225,9 @@ the buffer will be back to 8k.
 
     enum { ALLOW_NULL=1,NO_NULL=0 };
 
-    void set_gzfile(std::string const&s)
+  void set_gzfile(std::string const&s,bool large_buf=true)
     {
+      (void)large_buf; // gzstream has a static 256k buffer already. big enough.
         const bool read=stream_traits<Stream>::read;
         std::string fail_msg="Couldn't open compressed input file";
         try {
@@ -247,8 +254,8 @@ the buffer will be back to 8k.
             throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");
         } if (!file_only && s == "-") {
             if (read) {
-                set_checked(GRAEHL__DEFAULT_IN,s);
-                if (large_buf) give_large_buf();
+              set_checked(GRAEHL__DEFAULT_IN,s);
+              if (large_buf) give_large_buf();
             } else {
                 set_checked(GRAEHL__DEFAULT_OUT,s);
                 // I don't recommend making a huge output buffer by default, because people are used to watching output
