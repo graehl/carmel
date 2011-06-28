@@ -67,7 +67,7 @@ gzstreambuf* gzstreambuf::open(const char* name, int open_mode) {
 
 gzstreambuf * gzstreambuf::close() {
     if (is_open()) {
-        sync();
+        sync(); // gzclose flushes its internal buffer, but we may have stuff WE buffered we need to push out
         opened = 0;
         if (gzclose(file) == Z_OK)
             return this;
