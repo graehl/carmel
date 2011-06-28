@@ -1,3 +1,7 @@
+vgnorm() {
+    perl -i~ -pe 's|^==\d+== ?||;s|\b0x[0-9A-F]+||g' "$@"
+}
+
 #simpler than pychecker
 pycheck() {
     python -c "import ${1%.py}"
@@ -61,7 +65,7 @@ boostsbmt()
         if [[ $variant = debug ]] ; then
             execpre+=/debug
         fi
-        bjam cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
+        bjam cflags=-Wno-parentheses cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
         set +x
         popd
     )
@@ -1012,8 +1016,12 @@ function vg() {
     else
         lc=yes
     fi
+    if [ "$reach" ] ; then
+        lc=full
+        reacharg="--show-reachable=yes"
+    fi
     set -x
-    GLIBCXX_FORCE_NEW=1 valgrind $darg  $suparg --leak-check=$lc --tool=memcheck $VGARGS "$@"
+    GLIBCXX_FORCE_NEW=1 valgrind $darg  $suparg --leak-check=$lc $reacharg --tool=memcheck $VGARGS "$@"
     set +x
 }
 vgf() {
