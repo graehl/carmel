@@ -42,7 +42,7 @@ namespace graehl {
 // --------------------------------------
 
 gzstreambuf* gzstreambuf::open(const char* name, int open_mode) {
-    if (is_open())
+    if (opened)
         return (gzstreambuf*)0;
     mode = open_mode;
     // no append nor read/write mode
@@ -66,7 +66,7 @@ gzstreambuf* gzstreambuf::open(const char* name, int open_mode) {
 }
 
 gzstreambuf * gzstreambuf::close() {
-    if (is_open()) {
+    if (opened) {
         sync(); // gzclose flushes its internal buffer, but we may have stuff WE buffered we need to push out
         opened = 0;
         if (gzclose(file) == Z_OK)

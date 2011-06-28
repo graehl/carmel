@@ -47,7 +47,7 @@ private:
 
     gzFile           file;               // file handle for compressed file
     char             buffer[bufferSize]; // data buffer
-    char             opened;             // open/close state of stream
+    bool             opened;             // open/close state of stream
     int              mode;               // I/O mode
 
     int flush_buffer();
@@ -66,7 +66,7 @@ public:
               buffer + 4);    // end position
         // ASSERT: both input & output capabilities will not be used together
     }
-    int is_open() { return opened; }
+    bool is_open() { return opened; }
     gzstreambuf* open( const char* name, int open_mode);
     gzstreambuf* close();
   virtual ~gzstreambuf() { close(); } /* in a derived class, if your base class has a virtual destructor, your own destructor is automatically virtual. You might need an explicit destructor for other reasons, but there's no need to redeclare a destructor simply to make sure it is virtual. No matter whether you declare it with the virtual keyword, declare it without the virtual keyword, or don't declare it at all, it's still virtual. */
@@ -76,7 +76,7 @@ public:
     virtual int     sync();
 };
 
-class gzstreambase : virtual public std::ios {
+class gzstreambase : virtual public std::ios { // because istream, ostream also have virtual public ios base. want it shared.
 protected:
     gzstreambuf buf;
 public:
