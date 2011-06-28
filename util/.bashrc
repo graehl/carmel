@@ -404,7 +404,7 @@ local bsufarg
 if [ "$HOST" = zergling ] ; then
  export CFLAGS="$CPPFLAGS -O0 -ggdb -Wall $*"
 else
- export CFLAGS="$CPPFLAGS -O3 -ggdb -Wall $*"
+ export CFLAGS="$CPPFLAGS -O3 -ggdb -Wall -Wno-parentheses $*"
 fi
 #endif
 #-Wno-deprecated
