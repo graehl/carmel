@@ -2525,7 +2525,7 @@ sub to_mega {
     return $num;
 }
 
-my $num_match=qr/[+\-]?(?:[.]\d+|\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/;
+my $num_match=qr/[+\-]?(?:\.\d+|\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/;
 my $loose_num_match=qr/($num_match$mega_suffix_class?)(?=sec|s|)\b/;
 my $integer_match=qr/\b[+\-]?\d+\b/;
 my $natural_match=qr/\b\+?\d+\b/;
