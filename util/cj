@@ -31,7 +31,6 @@ BEGIN {
 
 require "libgraehl.pl";
 
-
 my $DEBUG=$ENV{DEBUG};
 
 ### arguments ####################################################

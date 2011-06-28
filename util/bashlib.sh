@@ -1,6 +1,5 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
-
 sniplong() {
     perl -e '$long=$ENV{cols} || 110; print STDERR "$long\n";while(<>) { chomp;$_=substr($_,0,$long-3)."..." if length($_)>$long;print "$_\n" }' "$@"
 }
@@ -2125,7 +2124,7 @@ decode-log-sum() {
         unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'assertion|\[warning\]|\berror\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'assertion|\[warning\]|\bwarning:|\berror\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2179,7 +2178,7 @@ mira-log-sum() {
             local mirasum=$(abspath ${op}`basename $d`.mira-sum)
             showvars_required mirasum full log
             if ! [ "$nosum" ] ; then
-                (cd $d; mira-sum | tee mira-sum.log | tee $mirasum)
+                (cd $d; ~graehl/bin/mira-sum-time | tee mira-sum.log | tee $mirasum)
             fi
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
