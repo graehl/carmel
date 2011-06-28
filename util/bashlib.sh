@@ -1,5 +1,13 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+ntimes() {
+    local i
+    local n=$1
+    shift
+    for i in $(seq 1 $n); do
+        catz "$@"
+    done
+}
 lastn() {
     local n=$1
     shift
