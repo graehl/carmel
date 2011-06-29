@@ -1,13 +1,13 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
 sniplong() {
-    perl -e '$long=$ENV{cols} || 110; print STDERR "$long\n";while(<>) { chomp;$_=substr($_,0,$long-3)."..." if length($_)>$long;print "$_\n" }' "$@"
+    perl -e '$long=$ENV{cols} || 80; while(<>) { chomp;$_=substr($_,0,$long-3)."..." if length($_)>$long;print "$_\n" }' "$@"
 }
 trimlong() {
     sniplong "$@"
 }
 droplong() {
-    perl -e '$long=$ENV{cols} || 110; ++$long; while(<>) { print unless length > $long; }' "$@"
+    perl -e '$long=$ENV{cols} || 80; ++$long; while(<>) { print unless length > $long; }' "$@"
 }
 filterlong() {
     droplong "$@"

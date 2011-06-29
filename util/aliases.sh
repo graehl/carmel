@@ -65,6 +65,9 @@ boostsbmt()
         if [[ $variant = debug ]] ; then
             execpre+=/debug
         fi
+        if [[ $variant = release ]] ; then
+            execpre+=/valgrind
+        fi
         bjam cflags=-Wno-parentheses cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
         set +x
         popd
@@ -74,6 +77,9 @@ tmpsbmt() {
     local tmpdir=/tmp/trunk.graehl.$HOST
     backupsbmt $tmpdir
     trunkdir=$tmpdir/trunk boost=${boost:-1_35_0} boostsbmt "$@"
+}
+vgsbmt() {
+    variant=release tmpsbmt
 }
 dusort() {
     perl -e 'require "$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl";while(<>){$n=()=m#/#g;push @{$a[$n]},$_;} for(reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
