@@ -376,14 +376,14 @@ template <class Str>
 inline
 bool ends_with(const Str &str,char const*suffix)
 {
-    return ends_with(str.begin(),str.end(),cstr_const_iterator(suffix),cstr_const_iterator());
+    return match_end(str.begin(),str.end(),cstr_const_iterator(suffix),cstr_const_iterator());
 //    return ends_with(str,std::string(suffix));
 }
 
 template <class Istr, class Suffix> inline
 bool ends_with(Istr bstr,Istr estr,Suffix suffix)
 {
-    return ends_with(bstr,estr,suffix.begin(),suffix.end());
+    return match_end(bstr,estr,suffix.begin(),suffix.end());
 }
 
 // func(const Func::argument_type &val) - assumes val can be parsed from string tokenization (no whitespace)

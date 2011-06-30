@@ -2,6 +2,14 @@ vgnorm() {
     perl -i~ -pe 's|^==\d+== ?||;s|\b0x[0-9A-F]+||g' "$@"
 }
 
+pycheckers() {
+    (
+    [ -f setup.sh ] && . setup.sh
+    for f in "$@" ; do
+        pychecker --stdlib --limit=1000 $f 2>&1 | tee $f.check
+    done
+    )
+}
 #simpler than pychecker
 pycheck() {
     python -c "import ${1%.py}"
