@@ -61,7 +61,7 @@ inline std::string get_proc_field(std::string const& field,std::istream &in,bool
 }
 
 inline std::string get_proc_field(std::string const& field,std::string const& filename="/proc/self/status",bool required=true) {
-  std::ifstream i(filename);
+  std::ifstream i(filename.c_str());
   return get_proc_field(field,i,required);
 }
 #endif
