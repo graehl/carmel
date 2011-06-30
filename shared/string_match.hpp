@@ -376,8 +376,8 @@ template <class Str>
 inline
 bool ends_with(const Str &str,char const*suffix)
 {
-    return match_end(str.begin(),str.end(),cstr_const_iterator(suffix),cstr_const_iterator());
-//    return ends_with(str,std::string(suffix));
+//  return match_end(str.begin(),str.end(),null_terminated_rbegin(suffix),null_terminated_rend(suffix));
+  return ends_with(str,std::string(suffix));
 }
 
 template <class Istr, class Suffix> inline
@@ -465,7 +465,7 @@ const char *TEST_ends_with[]={
 };
 // NOTE: could use substring but that's more bug-prone ;D
 
-BOOST_AUTO_TEST_CASE( TEST_FUNCS )
+BOOST_AUTO_TEST_CASE( TEST_STRING_MATCH )
 {
     using namespace std;
     string s1("str1"),emptystr;
@@ -475,6 +475,7 @@ BOOST_AUTO_TEST_CASE( TEST_FUNCS )
     BOOST_CHECK(ends_with(emptystr,emptystr));
     BOOST_CHECK(!starts_with(s1,"str11"));
     BOOST_CHECK(!ends_with(s1,string("sstr1")));
+    BOOST_CHECK(!ends_with(s1,"sstr1"));
     BOOST_CHECK(!starts_with(s1,string("str*")));
     BOOST_CHECK(!ends_with(s1,string("*tr1")));
     BOOST_CHECK(!ends_with(s1,string("str*")));
@@ -482,7 +483,9 @@ BOOST_AUTO_TEST_CASE( TEST_FUNCS )
     for (unsigned i=0;i<4;++i) {
         string starts(TEST_starts_with[i]),ends(TEST_ends_with[i]);
         BOOST_CHECK(starts_with(s1,starts));
+        BOOST_CHECK(starts_with(s1,starts.c_str()));
         BOOST_CHECK(ends_with(s1,ends));
+        BOOST_CHECK(ends_with(s1,ends.c_str()));
         BOOST_CHECK(match_begin(s1.begin(),s1.end(),starts.begin(),starts.end()));
         BOOST_CHECK(match_end(s1.begin(),s1.end(),ends.begin(),ends.end()));
         if (i!=3) {

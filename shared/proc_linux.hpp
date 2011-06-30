@@ -35,9 +35,18 @@ PROCNAME(Threads);
 //there are more ...
 #undef PROCNAME
 
+namespace {
+const std::string kB="kB";
+}
+
 // doesn't wokr for stabrak/brk/stastk which are in hex
 inline double proc_bytes(std::string const& val) {
-  if (ends_with(val,"kB"))
+#if 0
+  if (ends_with(val,kB))
+#else
+    std::size_t s=val.size();
+  if (s>2 && val[s-1]=='B' && val[s-2]=='k')
+#endif
     return 1024.*string_to<double>(std::string(val.begin(),val.end()-2));
   else
     return string_to<double>(val);
