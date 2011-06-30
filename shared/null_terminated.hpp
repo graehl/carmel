@@ -6,7 +6,7 @@
 #include <cstring>
 
 namespace graehl {
-    
+
 
 template <class C>
 class null_terminated_iterator :
@@ -16,16 +16,16 @@ class null_terminated_iterator :
         boost::bidirectional_traversal_tag>
 {
  public:
-    
+
     // end is default constructed
     null_terminated_iterator(C *p=0) : p(p) {}
-    
+
     static inline null_terminated_iterator<C> end()
     { return null_terminated_iterator<C>(); }
-    
+
  private:
     C *p;
-    
+
     friend class boost::iterator_core_access;
 
     void increment()
@@ -33,14 +33,18 @@ class null_terminated_iterator :
         if (is_null(++p))
             p=0;
     }
-    
+  void decrement()
+    {
+      --p;
+    }
+
     C& dereference() const { return *p; }
-    
+
     bool equal(null_terminated_iterator<C> const& other) const
     {
         return p==other.p;
     }
-};  
+};
 
 typedef null_terminated_iterator<char> cstr_iterator;
 typedef null_terminated_iterator<char const> const_cstr_iterator;
