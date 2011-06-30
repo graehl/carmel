@@ -96,7 +96,8 @@ realwhich() {
     whichreal "$@"
 }
 check1best() {
-    perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers($1); if ($n{$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1")  } }  } END { all_summary() }' decoder-*.1best
+    echo 'grep decoder-*.1best :'
+    perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers("sent=$1"); if ($n{$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1")  } }  } END { all_summary() }' decoder-*.1best
     grep -i "bad_alloc" logs/*/decoder.log
     grep -i "succesful parse" logs/*/decoder.log | summarize_num.pl
     grep -i "pushing grammar" logs/*/decoder.log | summarize_num.pl
