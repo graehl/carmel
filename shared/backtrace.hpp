@@ -14,7 +14,7 @@
 #include <exception>
 #include <iostream>
 
-#ifdef HAVE_LINUX_BACKTRACE
+#ifdef __linux__
 #include <signal.h>
 #include <execinfo.h>
 #endif
@@ -75,7 +75,7 @@ public:
             o << std::endl;
         }
     }
-    void print() 
+    void print()
     {
         print(std::cerr);
     }

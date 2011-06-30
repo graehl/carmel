@@ -13,7 +13,7 @@
 #include <algorithm> // min for boost/random
 #include <boost/random.hpp>
 #ifdef USE_NONDET_RANDOM
-# ifndef LINUX
+# ifndef __linux__
 #  undef USE_NONDET_RANDOM
 # else
 #  include <boost/nondet_random.hpp>

@@ -5,6 +5,10 @@
 #define _MACOSX 1
 #endif
 
+#ifdef __linux__
+# include <graehl/shared/string_to.hpp>
+# include <graehl/shared/proc_linux.hpp>
+#endif
 #include <cstdlib>
 #if defined(__unix__)
 # include <unistd.h>
@@ -30,6 +34,9 @@ typedef struct mstats malloc_info;
 struct memory_stats  {
 #if defined(__unix__) || defined(_MACOSX)
     malloc_info info;
+#endif
+#ifdef __linux__
+  double vmused; //bytes
 #endif
 #if defined(__unix__)
     long pagesize() const
@@ -75,6 +82,9 @@ struct memory_stats  {
 #elif defined(_MACOSX)
         info=mstats();
 #endif
+#ifdef __linux__
+        vmused=graehl::proc_bytes(graehl::get_proc_field(graehl::VmSize));
+#endif
     }
 #if defined(__unix__) || defined(_MACOSX)
     operator const malloc_info & () const {
@@ -112,6 +122,9 @@ struct memory_stats  {
     // may only grown monotonically (may not reflect free())
     size_type system_allocated() const
     {
+#ifdef __linux__
+      return size_type(vmused);
+#else
 #if defined(__unix__)
         return process_data_end;
 //        return size_type((unsigned)info.arena);
@@ -119,6 +132,7 @@ struct memory_stats  {
         return size_type(info.bytes_total);
 #else
         return 0;
+#endif
 #endif
     }
 

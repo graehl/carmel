@@ -33,6 +33,16 @@ namespace graehl {
 
 // return w/ removed trailing '\r' '\n' or '\r\n', if any
 template <class S>
+typename S::const_iterator chomp_end(S const& s) {
+  if (s.empty()) return s.end();
+  typename S::const_iterator b=s.begin(),i=s.end()-1;
+  if (i==b) return *i=='\n'?S():s;
+  if (*i=='\n') --i;
+  if (*i=='\r') --i;
+  return i+1;
+}
+
+template <class S>
 S chomp(S const& s) {
   if (s.empty()) return s;
   typename S::const_iterator b=s.begin(),i=s.end()-1;
