@@ -1860,8 +1860,6 @@ g1() {
         local source=$1
         shift
   local out=${OUT:-$source.$HOST.`filename_from "$@"`}
-        local dev=$HOME/dev
-    #    if [ $ARCH = cygwin ] ; then dev=/cache;    fi
         set -x
         local flags="$CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDE"
 showvars_optional MOREFLAGS flags
