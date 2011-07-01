@@ -73,14 +73,16 @@ inline C const* null_terminated_end(C const* s)
     return s;
 }
 
+
+/*
 inline std::reverse_iterator<char const*> null_terminated_rbegin(char const* s)
 {
-  return null_terminated_end(s);
+  return std::reverse_iterator<char const*>(null_terminated_end(s));
 }
 
 inline std::reverse_iterator<char const*> null_terminated_rend(char const* s)
 {
-  return s;
+  return std::reverse_iterator<char const*>(s);
 }
 
 template <class C>
@@ -94,6 +96,7 @@ inline std::reverse_iterator<C const*> null_terminated_rend(C const* s)
 {
   return s;
 }
+*/
 
 //nonconst (copies of above)
 inline char * null_terminated_end(char * s)
