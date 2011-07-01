@@ -1,3 +1,16 @@
+imira() {
+    local hm=$HOME/hiero-mira
+    rm -rf $hm
+    mkdir -p $hm
+    local m=$HOME/mira
+    local b=/home/nlg-03/mt-apps/hiero-mira/20110627
+    set -x
+    cp -pR $b/* $hm/
+    for f in $m/{genhyps,log,trainer,sbmt_decoder}.py; do
+        cp -p $f $hm/
+    done
+}
+
 vgnorm() {
     perl -i~ -pe 's|^==\d+== ?||;s|\b0x[0-9A-F]+||g' "$@"
 }
