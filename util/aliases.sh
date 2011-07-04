@@ -1,3 +1,7 @@
+clines() {
+    tr ',' '\n' "$@"
+}
+
 imira() {
     local hm=$HOME/hiero-mira
     rm -rf $hm
@@ -9,6 +13,11 @@ imira() {
     for f in $m/{genhyps,log,trainer,sbmt_decoder}.py; do
         cp -p $f $hm/
     done
+    (
+        cd
+        cd $hm
+        pycheckers *.py
+    )
 }
 
 vgnorm() {
