@@ -2124,7 +2124,7 @@ decode-log-sum() {
         unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2170,18 +2170,20 @@ mira-log-sum() {
     local log=$op/mira-log-sum.`filename_from $*`.log
     local logs=$log
     (
-        set -e
         for d in $dirs; do
+            (
+                set -e
             echo $d
             local full=$op`basename $d`.mira.min-avg-max.log
             logs+=" $full"
             local mirasum=$(abspath ${op}`basename $d`.mira-sum)
             showvars_required mirasum full log
             if ! [ "$nosum" ] ; then
-                (cd $d; ~graehl/bin/mira-sum-time | tee mira-sum.log | tee $mirasum)
+                (set -e;set -x;cd $d && mira-sum-time 2>&1 | tee $mirasum)
             fi
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
+            )
         done
     ) 2>&1 | tee $log
     echo tail -100 $logs
