@@ -1670,6 +1670,7 @@ sub mean {
 
 sub variance {
     my ($sum,$sumsq,$n)=@_;
+    return 0 if ($n<=1);
     my $v=($sumsq-$sum*$sum/$n)/($n-1); # = sample variance (unbiased) - see http://en.wikipedia.org/wiki/Bessel%27s_correction
     return ($v>0?$v:0);
 }
