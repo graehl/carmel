@@ -1,5 +1,29 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+getrpath() {
+    chrpath -l "$1" | perl -ne 'if (/RPATH=(.*)/) {
+@r=split(/:/,$1);
+print join(":",grep { -d $_ } @r);
+}'
+}
+addrpath() {
+    local f=$1
+    shift
+    local p=$(getrpath $f)
+    (
+    set -e
+    if [ "$*" ] ; then
+        for d in "$@"; do
+            require_dir $d
+            p="$d:$p"
+        done
+    elif [[ $nocd != 1 ]] ; then
+        p="$(dirreal $f):$p"
+    fi
+    showvars_required p f
+    chrpath -r "$p" "$f"
+    )
+}
 sniplong() {
     perl -e '$long=$ENV{cols} || 80; while(<>) { chomp;$_=substr($_,0,$long-3)."..." if length($_)>$long;print "$_\n" }' "$@"
 }
@@ -1615,6 +1639,14 @@ whichreal() {
     fi
 }
 
+basereal() {
+    basename $(realpath "$@")
+}
+
+dirreal() {
+    dirname $(realpath "$@")
+}
+
 skipfirst() {
    catz | (read;cat)
 }
@@ -2124,7 +2156,7 @@ decode-log-sum() {
         unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'CAUGHT|_error|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2174,6 +2206,7 @@ mira-log-sum() {
             (
                 set -e
             echo $d
+            echo
             local full=$op`basename $d`.mira.min-avg-max.log
             logs+=" $full"
             local mirasum=$(abspath ${op}`basename $d`.mira-sum)
@@ -2181,6 +2214,7 @@ mira-log-sum() {
             if ! [ "$nosum" ] ; then
                 (set -e;set -x;cd $d && mira-sum-time 2>&1 | tee $mirasum)
             fi
+#            echo $d/logs/mira.log $d/logs/deco*.log
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
             )

@@ -1,7 +1,13 @@
 clines() {
-    tr ',' '\n' "$@"
+    catz "$@" | tr ',' '\n'
 }
 
+getwt()
+{
+    local f="$1"
+    shift
+    clines "$@" | fgrep -- "$f"
+}
 imira() {
     local hm=$HOME/hiero-mira
     rm -rf $hm
@@ -16,7 +22,7 @@ imira() {
     (
         cd
         cd $hm
-        pycheckers *.py
+        pycheckers {genhyps,log,trainer,sbmt_decoder}.py
     )
 }
 
