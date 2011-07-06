@@ -23,7 +23,7 @@ require "libgraehl.pl";
 
 ### arguments ####################################################
 
-my ($fieldnames,$concat,$pass,$num,$list,$paste)=qw(hyp 1);
+my ($fieldnames,$concat,$pass,$num,$list,$paste)=('',1);
 
 my $concatsep=' ';
 my $addnum;
@@ -46,10 +46,13 @@ my $hypfield="hyp";
 my $nbestfield="nbest";
 my $maxuniquehyp;
 my $maxnbest;
+my $re;
+my $prec=7;
 
 my @options=(
              "extract val with fieldname={{{val}}} or fieldname=val",
              ["fieldnames-to-files=s"=>\$fieldnames,"comma separated list of fieldname[:outfile], with no outfile -> STDOUT, indicating where each value is written, e.g. 'hyp:hyp-file,sent:sent-file,lm-cost'look for fieldname=s (multiple names may be given, separated by comma, e.g. 'hyp,tree' (trailing/leading commas ignored)"],
+    ["regexp-fieldname=s"=>\$re,"for avgs only"],
              ["print-fieldnames!"=>\$printfieldname,"don't remove the fieldname= part"],
              ["show-zeros!"=>\$printzeros,"show 0 values (note: unless printing fieldname, ALWAYS show 0"],
              ["skip-lines-notfound!"=>\$omitblank,"Don't print anything if none of the fields were found on that line"],
@@ -61,6 +64,7 @@ my @options=(
              ["sent-fieldname=s"=>\$sentfield,"(used by renumber-sents-from)"],
              ["max-nbest=i"=>\$maxnbest,"Special case for 'nbest' fieldname - skip line if value is > i"],
              ["unique-hyps=i"=>\$maxuniquehyp,"Special case for 'hyp' fieldname - skip line if hyp has already been seen for this sent-fieldname"],
+    ["prec=i"=>\$prec,"digits precision for avgs"],
             );
 
 
@@ -70,7 +74,6 @@ info("COMMAND LINE:");
 info($cmdline);
 show_opts(@opts);
 $missingas=0 unless $printfieldname;
-
 my @f=split /,/,$fieldnames;
 my @fields;
 my %lookfor;
@@ -118,11 +121,13 @@ set_outenc($tenc);
 
 my $N=0;
 my $Nskip=0;
-my %sums;
 my %hypuniq;
 my $nuniq;
 my $lastsent;
 my $sentno=0;
+my %sums;
+my %sumsq;
+my %nonzero;
 
 while (<>) {
     if (defined $maxnbest && /\bnbest=(\d+)\b/ && $1 > $maxnbest) {
@@ -133,13 +138,21 @@ while (<>) {
     my $anyfound=0;
     my $line=$_;
     my %found=();
-    while ($line =~ /\b([\w\-]+)=({{{(.*?)}}}|([^{]\S*))/go) {
+    my $any;
+    while ($line =~ /\b([\w\-][^=]*)=({{{(.*?)}}}|([^{]\S*))/go) {
         my $key=$1;
-        next unless $lookfor{$key};
+        my $look=$lookfor{$key};
+        next unless $re || $look;
         $braces = 1 if defined $3;
 #        my $val=($braces ? $3 : $4);
-        $found{$key}=defined $3 ? $3 : $4;
-#        &debug($1,$2,$3,$4);
+        my $val=defined $3 ? $3 : $4;
+        $found{$key}=$val if $look;
+        next unless ($re && $key =~ /^$re$/o);
+        no warnings 'uninitialized';
+        $sums{$key}+=$val if $doavg;
+        $sumsq{$key}+=$val*$val if $doavg;
+        $nonzero{$key}+=1 if $doavg && $val!=0;
+        $any=1;
     }
     my $sr=\$found{$sentfield};
     if (defined $$sr) {
@@ -192,3 +205,13 @@ while (<>) {
 
 &info("output $N lines with the requested fields");
 &info("skipped $Nskip lines") if $Nskip;
+if ($doavg && $N) {
+    &info("Averages (N=$N):\n");
+    for (keys %sums) {
+        my $s=$sums{$_};
+        my $sq=exists $sumsq{$_} ? $sumsq{$_} : 0;
+        my $nz=exists $nonzero{$_} ? $nonzero{$_} : 0;
+        print "$_=",real_prec($s/$N,$prec)," stddev=",real_prec(sqrt(variance($s,$sq,$N)),$prec)," nonzero=$nz/$N\n";
+    }
+}
+

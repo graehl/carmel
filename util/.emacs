@@ -788,7 +788,7 @@ No more \"End of file during parsing\" horrors!"
 (set-face-foreground 'font-lock-function-name-face "red")
 (set-face-foreground 'font-lock-variable-name-face "magenta4")
 
-
+(global-auto-revert-mode nil)
 ;; Automatically reload files after they've been modified
 ;; (typically in Visual C++)
 (or on-xemacs (progn (require 'autorevert)
@@ -3956,6 +3956,7 @@ loaded as such.)"
       (insert "/* ")
     )))
 (require 'wrap-region)
+(wrap-region-global-mode nil)
 (wrap-region-global-mode t)
 
 (setq compile-command "bash -c '. ~/.bashrc;cd /nfs/topaz/graehl/sbmt/trunk/graehl/carmel && ecage make bin/cage/carmel.debug'")
