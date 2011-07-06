@@ -1,3 +1,41 @@
+jens2sh1() {
+    perl -ne '
+require "$ENV{HOME}/t/graehl/util/libgraehl.pl";
+BEGIN{print "set -e\n"}
+END{print $_,"\n" for (@c)}
+$c=$1 if m{<file name="([^"]+)">};
+$c.=" ".escape_shell($1) if m{<arg nr="\d+">(.*?)</arg>};
+push @c,$c if m{</argument-vector>};
+' "$@"
+}
+jens2sh() {
+    local c=`relhome .`
+    local gs=""
+    for f in "$@"; do
+        local g="${f%.out.000}.sh"
+        gs+=" $g"
+        jens2sh1 "$f" > "$g"
+        tohpc "$g"
+        chmod +x "$g"
+    done
+    preview $gs
+    for g in $gs; do
+        echo "cd $c && ./$g"
+    done
+}
+
+ehpc() {
+    local cdir=`pwd`
+    local lodir=`relhome $cdir`
+    ssh $HPCHOST -l graehl ". .bashrc;. t/graehl/util/bashlib.sh . t/graehl/util/aliases.sh;cd $lodir && $*"
+}
+reltohpc() {
+    local cdir=`pwd`
+    local lodir=`relhome $cdir`
+    ssh $HPCHOST -l graehl "mkdir -p $lodir"
+    scp "$@" graehl@$HPCHOST:$lodir
+}
+
 clines() {
     catz "$@" | tr ',' '\n'
 }
@@ -1499,11 +1537,6 @@ EOF
 #"/home/hpc-22/dmarcu/nlg/blobs/bash3/bin/bash"' --login -c "'"$*"'"'
 }
 
-ehpc() {
-    local cdir=`pwd`
-    local lodir=`relhome $cdir`
-    ssh $HPCHOST -l graehl ". .bashrc;. isd/hints/aliases.sh;cd $lodir && $*"
-}
 enlg() {
  ehost enlg "$@"
 }
@@ -2742,7 +2775,8 @@ fromlo() {
 tohost1() {
     (
         set -e
-        f=`relpath ~ $1`
+   #     f=`relpath ~ $1`
+        f=`relhome $1`
     cd
     local u
     user=${user:-`userfor $host`}
