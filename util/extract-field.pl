@@ -100,6 +100,7 @@ my $capture_cost='([-+e0-9]\S*)';
 my $N=0;
 my %sums;
 my %sumsq;
+my %nonzero;
 
 while (<>) {
     &debug($_);
@@ -145,8 +146,10 @@ while (<>) {
             }
             $anyfound=1;
             $found{$field}=$whole if $numsum;
+            no warnings 'uninitialized';
             $sums{$field}+=$whole if $doavg;
             $sumsq{$field}+=$whole*$whole if $doavg;
+            $nonzero{$field}+=1 if $doavg && $whole!=0;
         }
     }
     if ($anyfound) {
@@ -171,6 +174,11 @@ while (<>) {
 &info("found $N lines with the requested fields");
 if ($doavg && $N) {
     print "Averages (N=$N):\n";
-    print "$_=",$sums{$_}/$N," stddev=",variance($sums{$_},$sumsq{$_},$N),"\n" for @fields;
+    for (@fields) {
+        my $s=exists $sums{$_} ? $sums{$_} : 0;
+        my $sq=exists $sumsq{$_} ? $sumsq{$_} : 0;
+        my $nz=exists $nonzero{$_} ? $nonzero{$_} : 0;
+        print "$_=",$s/$N," stddev=",sqrt(variance($s,$sq,$N))," N=$N N_nonzero=$nz\n";
+    }
 }
 &print_number_summary if $numsum;

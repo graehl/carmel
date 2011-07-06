@@ -10,12 +10,18 @@ getwt()
 }
 imira() {
     local hm=$HOME/hiero-mira
+    local m=$HOME/mira
     rm -rf $hm
     mkdir -p $hm
-    local m=$HOME/mira
     local b=/home/nlg-03/mt-apps/hiero-mira/20110627
     set -x
     cp -pR $b/* $hm/
+    qmira
+}
+qmira()
+{
+    local hm=$HOME/hiero-mira
+    local m=$HOME/mira
     for f in $m/{genhyps,log,trainer,sbmt_decoder}.py; do
         cp -p $f $hm/
     done
@@ -24,8 +30,8 @@ imira() {
         cd $hm
         pycheckers {genhyps,log,trainer,sbmt_decoder}.py
     )
-}
 
+}
 vgnorm() {
     perl -i~ -pe 's|^==\d+== ?||;s|\b0x[0-9A-F]+||g' "$@"
 }
