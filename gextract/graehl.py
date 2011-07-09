@@ -6,7 +6,7 @@
 def identity(x):
     return x
 
-import sys,re,random,math,os,collections,errno,time,operator
+import sys,re,random,math,os,collections,errno,time,operator,datetime
 
 from itertools import *
 #from dumpx import *
@@ -14,6 +14,9 @@ from itertools import *
 #should be builtin already
 #all=forall
 #any=exists
+
+def datetoday():
+    '%s'%datetime.datetime.today()
 
 def readfrom(infile):
     return open(infile) if type(infile)==str else infile
