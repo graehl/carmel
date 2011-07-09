@@ -1,5 +1,82 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+min() {
+        bound1 '<' "$@"
+}
+max() {
+        bound1 '>' "$@"
+}
+bound1() {
+    local op=$1
+    shift
+        local m
+        for x in "$@"; do
+            if [ -z $m ] || [ $x $op $m ] ; then
+                m=$x
+            fi
+        done
+        echo "$m"
+}
+reduce() {
+    local z=$1
+    local f=$2
+    shift
+    shift
+    for x in "$@"; do
+        z=$($f $x $z)
+    done
+    echo "$z"
+}
+vecop() {
+    local op=$1
+    shift
+    perl -e 'die "need 2 args: @ARGV ".scalar(@ARGV) unless @ARGV==2;$a=$ARGV[0];$b=$ARGV[1];@a=split " ",$a;@b=split " ",$b;$n=$#a>$#b?$#a:$#b;for (0..$n) { print " " if $_; print ($a[$_]'"$op"'$b[$_]);}print "\n";'  "$@"
+}
+vecdiff() {
+    vecop - "$@"
+}
+vecsum() {
+    vecop + "$@"
+}
+duration() {
+    for f in "$@"; do
+        mod_changed_diff "$(dirname $f)" "$f"
+    done
+}
+oldest_modified() {
+    min $(modified "$@")
+}
+newest_modified() {
+    max $(modified "$@")
+}
+span_modified() {
+    expr $(newest_modified "$@") - $(oldest_modified "$@")
+}
+hspanning() {
+    sec2h $(span_modified "$@")
+}
+divfloat() {
+    perl -e "print ($2 ? $1 / $2 : 0)"',"\n"'
+}
+sec2h() {
+    divfloat "$1" 3600.
+}
+mod_changed_diff() {
+    echo2 "$*"
+    vecdiff "$(modified $*)" "$(changed $*)"
+}
+modified() {
+    # time of last write (not including inode changes)
+    /usr/bin/stat -L -c %Y "$@"
+}
+changed() {
+    # time of last inode change (mv chgrp creation) OR modification
+    /usr/bin/stat -L -c %Z "$@"
+}
+accessed() {
+    # time of last read
+    /usr/bin/stat -L -c %X "$@"
+}
 getrpath() {
     chrpath -l "$1" | perl -ne 'if (/RPATH=(.*)/) {
 @r=split(/:/,$1);
@@ -2156,7 +2233,7 @@ decode-log-sum() {
         unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'CAUGHT|_error|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'Connectivity is broken|Max retransmit retries|req status|CAUGHT|_error|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2215,6 +2292,7 @@ mira-log-sum() {
                 (set -e;set -x;cd $d && mira-sum-time 2>&1 | tee $mirasum)
             fi
 #            echo $d/logs/mira.log $d/logs/deco*.log
+#            set -x
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
             )
