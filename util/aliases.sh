@@ -117,7 +117,7 @@ boostsbmt()
             nproc_default=7
         fi
         nproc=${nproc:-$nproc_default}
-        variant=${variant:-release}
+        variant=${variant:-$releasevariant}
         local linking="link=static"
         linking=
         branch=${branch:-trunk}
@@ -806,7 +806,8 @@ alias gpi="grid-proxy-init -valid 99999:00"
 alias 1but="cd 1btn0000 && vds-submit-dag 1button.dag; cd .."
 alias rm0="rm -rf *000?"
 alias lsd="ls -al | egrep '^d'"
-variant="release debug-symbols=on --allocator=tbb"
+releasevariant="release debug-symbols=on --allocator=tbb"
+variant=$releasevariant
 qsi2() {
     local n=${1:-1}
     shift
