@@ -1,5 +1,7 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+
+#for LD search path: (RPATH)
 min() {
         bound1 '<' "$@"
 }
@@ -101,6 +103,22 @@ addrpath() {
     chrpath -r "$p" "$f"
     )
 }
+
+relpathr() {
+    relpath `realpath "$1"` `realpath "$2"`
+}
+relhome() {
+    local r=`realpath "$@"`
+    if [ "$workflowreal" ] ; then
+      local s=${r#$workflowreal}
+      if [  "$s" != "$r" ] ; then
+       echo workflow/$s
+       return
+      fi
+    fi
+    relpath $homereal $r
+}
+
 sniplong() {
     perl -e '$long=$ENV{cols} || 80; while(<>) { chomp;$_=substr($_,0,$long-3)."..." if length($_)>$long;print "$_\n" }' "$@"
 }
@@ -2139,20 +2157,6 @@ ncores() {
 workflowp=~/workflow
 [ -d $workflowp ] &&  workflowreal=`realpath $workflowp`
 homereal=`realpath ~`
-relpathr() {
-    relpath `realpath "$1"` `realpath "$2"`
-}
-relhome() {
-    local r=`realpath "$@"`
-    if [ "$workflowreal" ] ; then
-      local s=${r#$workflowreal}
-      if [  "$s" != "$r" ] ; then
-       echo workflow/$s
-       return
-      fi
-    fi
-    relpath $homereal $r
-}
 traperr
 getrealprog
 [ -f $libg/libgraehl.pl ] || lnreal ~/t/utilities/libgraehl.pl $libg/

@@ -1,561 +1,550 @@
-[sbmt.app.xrs_info_decoder][info]: command-line: /auto/nlg-02/graehl/isd/hpc-opteron/bin/xrs_info_decoder --use-info sblm --sblm-ngram lw[@][/home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm] --sblm-skip-bar 1 --sblm-unsplit 1 --sblm-bigram-indicators 0 --sbmt.sblm.level=verbose --limit-syntax-length 40 --sbmt.search.level=terse --span-max-edges 3000 --unary-span-max-edges 0 --ngram-cache-size 100000 --keep-align false --merge-heap-decode true --merge-heap-lookahead 10 --sbmt.app.grammar-args.level verbose --nbests 2 --per-estring-nbests 1 --prior-file /home/nlg-03/graehl/workflow/gale-baseline/taglex/rules/grammar.nts --prior-bonus-count 100 --use-cube-heap true --quote-never true --multi-thread --instruction-file decode.ins --grammar-archive /home/nlg-03/graehl/workflow/gale-baseline/taglex/chi-corpus-prep-p5-nw-sct0000/tmp/global.gar.gz --sbmt.forest.level=verbose --sbmt.file=- -o -0 --nbest-output -
-[sbmt.app.grammar-args][verbose]: feature weights:
-[sbmt.app.grammar-args][terse]: Grammar loaded: 7.03556 (wall) sec, memory +21.29M (1.619M -> 22.91M); from OS: +21.27M (98.01M -> 119.3M)
-[sbmt.app.grammar-args][verbose]: feature weights: clm-left:0.5,clm-right:0.5,deplm1:1,derivation-size:-1,distortion:1.5,glue-rule:7,green:-5,gt_prob:1,identity:6,is_lexicalized:-0.8,lef:0.5,lex_pef:1,lex_pfe:1.5,lfe:1,lm1:1.5,lm2:2,maroon:15,missingWord:5,model1inv:1,model1nrm:0.5,nonmonotone:1,rule-head:1,rule-head-unk:5,rule-length:0.5,sb[JJ][CC]:-0.1,sb[TO][VP-C]:-10,sblm:0.5,spuriousWord:2.5,text-length:-6,trivial_cond_prob:1,unk-rule:6,var-length:0.5
+RUNNING WITH OPTIONAL VARIABLES:
+sblm=1
+sblmind=1
+sblmterm=1
+UNSET: sblmsplit
+UNSET: ntimes
+verbose=verbose
+UNSET: gdb
+
+++ LD_LIBRARY_PATH=/home/nlg-02/graehl/isd/hpc-opteron//lib:/home/rcf-12/graehl/isd/hpc-opteron/lib:/home/rcf-12/graehl/isd/hpc-opteron/lib64
+++ /home/nlg-02/graehl/isd/hpc-opteron//bin/xrs_info_decoder --use-info sblm '--sblm-ngram=lw[@][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm]' --sblm-skip-bar 1 --sblm-unsplit 1 --sblm-terminals=1 --sblm-bigram-indicators 1 --sbmt.sblm.level=verbose --sblm-greedy 0 --limit-syntax-length 40 --sbmt.search.level=verbose --span-max-edges 30 --unary-span-max-edges 0 --ngram-cache-size 100000 --keep-align false --merge-heap-decode true --merge-heap-lookahead 10 --sbmt.app.grammar-args.level verbose --nbests 2 --per-estring-nbests 1 --prior-file /home/nlg-03/graehl/workflow/gale-baseline/taglex/rules/grammar.nts --prior-bonus-count 100 --use-cube-heap true --quote-never true --multi-thread --instruction-file decode.ins --grammar-archive /home/nlg-03/graehl/workflow/gale-baseline/taglex/chi-corpus-prep-p5-nw-sct0000/tmp/global.gar.gz --sbmt.forest.level=verbose --sbmt.file=-2 --sbmt.lm.level=info
+[sbmt.app.xrs_info_decoder][info]: command-line: /home/nlg-02/graehl/isd/hpc-opteron//bin/xrs_info_decoder --use-info sblm --sblm-ngram=lw[@][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm] --sblm-skip-bar 1 --sblm-unsplit 1 --sblm-terminals=1 --sblm-bigram-indicators 1 --sbmt.sblm.level=verbose --sblm-greedy 0 --limit-syntax-length 40 --sbmt.search.level=verbose --span-max-edges 30 --unary-span-max-edges 0 --ngram-cache-size 100000 --keep-align false --merge-heap-decode true --merge-heap-lookahead 10 --sbmt.app.grammar-args.level verbose --nbests 2 --per-estring-nbests 1 --prior-file /home/nlg-03/graehl/workflow/gale-baseline/taglex/rules/grammar.nts --prior-bonus-count 100 --use-cube-heap true --quote-never true --multi-thread --instruction-file decode.ins --grammar-archive /home/nlg-03/graehl/workflow/gale-baseline/taglex/chi-corpus-prep-p5-nw-sct0000/tmp/global.gar.gz --sbmt.forest.level=verbose --sbmt.file=-2 --sbmt.lm.level=info
+
+[sbmt.app.grammar-args][terse]: Grammar loaded: 6.69415 (wall) sec, memory +21.29M (1.625M -> 22.92M); from OS: +443.4M (107.2M -> 550.6M)
+[sbmt.app.grammar-args][verbose]: setting feature weights: clm-left:0.5,clm-right:0.5,deplm1:1,derivation-size:-1,distortion:1.5,glue-rule:7,green:-5,gt_prob:1,identity:6,is_lexicalized:-0.8,lef:0.5,lex_pef:1,lex_pfe:1.5,lfe:1,lm1:1.5,lm2:2,maroon:15,missingWord:5,model1inv:1,model1nrm:0.5,nonmonotone:1,rule-head:1,rule-head-unk:5,rule-length:0.5,sb[JJ][CC]:-0.1,sb[TO][VP-C]:-10,sblm:0.5,spuriousWord:2.5,text-length:-6,trivial_cond_prob:1,unk-rule:6,var-length:0.5
 [sbmt.app.grammar-args][terse]: pushing grammar from '/auto/nlg-03/graehl/workflow/gale-baseline/taglex/chi-corpus-prep-p5-nw-tune0000/tmp/11/76/rules.far.gz'
-[sbmt.app.grammar-args][terse]: Grammar pushed: 0.609224 (wall) sec, memory +1.375M (22.91M -> 24.29M); from OS: +1.449M (119.3M -> 120.7M)
-[sbmt.ngram_constructor][info]: loading dynamic language model from spec: lw[@][/home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm]
-[sbmt.lm][terse]: Loading dynamic LM from spec: lw[@][/home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm]
+[sbmt.app.grammar-args][terse]: Grammar pushed: 0.686651 (wall) sec, memory +1.376M (22.92M -> 24.30M); from OS: +4.750M (551.6M -> 556.3M)
+[sbmt.ngram_constructor][info]: loading dynamic language model from spec: lw[@][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm]
+[sbmt.lm][terse]: Loading dynamic LM from spec: lw[@][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm]
 [sbmt.lm][info]: Loading dynamic LM of type lw with options [@c]
-[sbmt.lm][info]: Loading lw LM from file /home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm
-[sbmt.lm][info]: Loaded LM: lm=lw[@c][/home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm] weight lm=0
-[sbmt.lm][info]: Loaded LM lw[@c] 0.34655 (wall) sec, memory +11.14M (24.29M -> 35.43M); from OS: +11.14M (120.7M -> 131.9M)
-[sbmt.ngram_constructor][info]: LM loaded: 0.34699 (wall) sec, memory +11.14M (24.29M -> 35.43M); from OS: +11.14M (120.7M -> 131.9M)
-[sbmt.sblm][info]: loaded SBLM ngram model lw[@][/home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm] reports order=5
-[sbmt.lm][warning]: No feature weight found for LM lm; using default: 1
-[sbmt.lm][info]: From weight lm-unk=0, (closed-class) p_lm(<unk>)=10^-0
-[sbmt.lm][terse]: flushed cache for lm lm=lw[@c][/home/nlg-02/pust/v8.1zh/sri.sblm/sblm.pcfg.5gram.lwlm]
+[sbmt.lm][info]: Loading lw LM from file /home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm
+[sbmt.lm][terse]: set_ids(unk_id)=1 (LW Vocab constant)
+[sbmt.lm][terse]: set_ids(start_id)=2 (LW Vocab constant)
+[sbmt.lm][terse]: set_ids(end_id)=3 (LW Vocab constant)
+[sbmt.lm][info]: Loaded LM: lm=lw[@c][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm] weight lm=0
+[sbmt.lm][info]: Loaded LM lw[@c] 0.425212 (wall) sec, memory +12.48M (24.30M -> 36.78M); from OS: +45.96M (556.3M -> 602.3M)
+[sbmt.ngram_constructor][info]: LM loaded: 0.42615 (wall) sec, memory +12.48M (24.30M -> 36.78M); from OS: +45.96M (556.3M -> 602.3M)
+[sbmt.sblm][info]: loaded SBLM ngram model lw[@][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm] reports order=5
+[sbmt.sblm][info]: greedy=0 bigram-indicators=1 categories=skip-bar=1 [NP(@NP-BAR(A B) C)->NP(A B C)] ; unsplit=1 [NP-2 -> NP] ; score-terminals=1
+[sbmt.lm][terse]: No feature weight found for LM lm; using default: 1
+[sbmt.lm][terse]: flushed cache for lm lm=lw[@c][/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm]
 [sbmt.lm][info]: Using weight for lm=1
-[sbmt.lm][info]: From weight sblm-unk=0, (closed-class) p_sblm(<unk>)=10^-0
-[sbmt.search.cky][terse]: binary-filter: predicate_edge_filter=poplimit_histogram_predicate{top_n=3000; poplimit=30000; softlimit=3000}
+[sbmt.lm][info]: forcing weight for ngram LM sblm=1
+[sbmt.sblm][info]: sblm factory weight=0.5
+[sbmt.search.cky][terse]: binary-filter: predicate_edge_filter=poplimit_histogram_predicate{top_n=30; poplimit=300; softlimit=30}
 [sbmt.search.cky][terse]: unary-filter: fuzzless_edge_filter:predicate_edge_filter=poplimit_histogram_predicate{top_n=0; poplimit=0; softlimit=0}
-[sbmt.search.cky][terse]: length 1 spans processed. 36 edges and 0 equivalences created in 0.000827074 (wall) sec, memory +32 (268.8M -> 268.8M); from OS: 0 (365.2M -> 365.2M)
-[sbmt.search.cky][terse]: length 2 spans processed. 4457 edges and 2362 equivalences created in 0.065254 (wall) sec, memory +360.0K (268.8M -> 269.1M); from OS: +408.0K (365.2M -> 365.6M)
-[sbmt.search.cky][terse]: length 3 spans processed. 13761 edges and 6002 equivalences created in 0.225365 (wall) sec, memory +1.156M (269.1M -> 270.3M); from OS: +1.094M (365.6M -> 366.7M)
-[sbmt.search.cky][terse]: length 4 spans processed. 8085 edges and 3002 equivalences created in 0.258624 (wall) sec, memory +344.0K (270.3M -> 270.6M); from OS: +408.0K (366.7M -> 367.1M)
-[sbmt.search.cky][terse]: length 5 spans processed. 276 edges and 2 equivalences created in 0.0120091 (wall) sec, memory 0 (270.6M -> 270.6M); from OS: 0 (367.1M -> 367.1M)
-[sbmt.search.cky][terse]: In total, 26615 edges and 11368 equivalences created 0.841872 sec, memory +201.9M (68.74M -> 270.6M); from OS: +201.9M (165.2M -> 367.1M)
+[sbmt.search.filter][verbose]: [0,1]: unary span applications exhausted after 0 pops
+[sbmt.search.cky][info]: [0,1] processed in 0.000226974 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: [1,2]: unary span applications aborted by filter after 0 pops
+[sbmt.search.cky][info]: [1,2] processed in 0.000338078 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: [2,3]: unary span applications aborted by filter after 0 pops
+[sbmt.search.cky][info]: [2,3] processed in 0.000247002 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: [3,4]: unary span applications aborted by filter after 1 pops
+[sbmt.search.cky][info]: [3,4] processed in 0.000293016 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: [4,5]: unary span applications aborted by filter after 0 pops
+[sbmt.search.cky][info]: [4,5] processed in 0.000276089 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.cky][terse]: length 1 spans processed. 35 edges and 0 equivalences created in 0.00223804 (wall) sec, memory +32 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span exhausted
+[sbmt.search.filter][verbose]: [0,2]: unary span applications exhausted after 0 pops
+[sbmt.search.cky][info]: [0,2] processed in 0.000791073 (wall) sec, memory +576 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span aborted by filter
+[sbmt.search.filter][verbose]: span aborted by filter
+[sbmt.search.filter][verbose]: [2,4]: unary span applications aborted by filter after 1 pops
+[sbmt.search.cky][info]: [2,4] processed in 0.0039289 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: [1,3]: unary span applications aborted by filter after 15 pops
+[sbmt.search.cky][info]: [1,3] processed in 0.00460601 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: -8.000K (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span aborted by filter
+[sbmt.search.filter][verbose]: [3,5]: unary span applications aborted by filter after 3 pops
+[sbmt.search.cky][info]: [3,5] processed in 0.004421 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.cky][terse]: length 2 spans processed. 658 edges and 91 equivalences created in 0.00693202 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span exhausted
+[sbmt.search.filter][verbose]: [0,3]: unary span applications exhausted after 0 pops
+[sbmt.search.cky][info]: [0,3] processed in 0.00131702 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span aborted by filter
+[sbmt.search.filter][verbose]: span aborted by filter
+[sbmt.search.filter][verbose]: [2,5]: unary span applications aborted by filter after 0 pops
+[sbmt.search.cky][info]: [2,5] processed in 0.00585079 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: -8.000K (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: [1,4]: unary span applications aborted by filter after 0 pops
+[sbmt.search.cky][info]: [1,4] processed in 0.00720406 (wall) sec, memory -576 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.cky][terse]: length 3 spans processed. 618 edges and 62 equivalences created in 0.0075779 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span exhausted
+[sbmt.search.filter][verbose]: [0,4]: unary span applications exhausted after 0 pops
+[sbmt.search.cky][info]: [0,4] processed in 0.00155592 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span aborted by filter
+[sbmt.search.filter][verbose]: [1,5]: unary span applications aborted by filter after 0 pops
+[sbmt.search.cky][info]: [1,5] processed in 0.00853515 (wall) sec, memory -576 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.cky][terse]: length 4 spans processed. 442 edges and 32 equivalences created in 0.00889683 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.filter][verbose]: span exhausted
+[sbmt.search.filter][verbose]: [0,5]: unary span applications exhausted after 0 pops
+[sbmt.search.cky][info]: [0,5] processed in 0.00296783 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.cky][terse]: length 5 spans processed. 67 edges and 2 equivalences created in 0.00332308 (wall) sec, memory 0 (270.1M -> 270.1M); from OS: 0 (5.305G -> 5.305G)
+[sbmt.search.cky][terse]: In total, 1820 edges and 187 equivalences created 0.044994 sec, memory +200.0M (70.08M -> 270.1M); from OS: +400.1M (936.1M -> 1.305G)
 [sbmt.app.output-args][info]: Succesful parse of sent=1176
-[sbmt.app.output-args][info]: parse forest has (loops excluded) 18501 trees in 127 items connected by 373 edges.
+[sbmt.app.output-args][info]: parse forest has (loops excluded) 7000 trees in 57 items connected by 134 edges.
 [sbmt.app.output-args][info]: Enumerating (up to) 2 best derivations:
-best score: 10^36.9597
+best score: 10^42.1963
 [sbmt.forest][verbose]: Printing NBEST sent=1176 nbest=0  ...
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=285198690]={{{
-	inside=10^-3.84078 h=10^0 complete_result_h=10^-1.06985
-	skipped_root=0
-	NPB -> DT NN
-	DT -> "the"
-	NN -> "price"
-	NPB-0(DT-1("the") NN-2("price")) -> "涨" ### id=285198690
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "price" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","NN","\"price\"")=10^-2.84025
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: NN -> "price" score=10^-2.84025 (inside)
-[sbmt.ngram][verbose]: p_sblm("NPB")=10^-1.06985
-[sbmt.sblm][debug]: complete_result_h=10^-1.06985 result=NPB -> DT NN
-[sbmt.sblm][debug]: scored id=285198690 inside=10^-3.84078 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=198436077]={{{
-	inside=10^-2.37514 h=10^0 complete_result_h=10^-1.31847
-	skipped_root=0
-	NN -> "number"
-	NN-2("number") -> "多少" ### id=198436077
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"number\"")=10^-2.37514
-[sbmt.sblm][debug]: score id=198436077 ; rewrite: NN -> "number" score=10^-2.37514 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"price\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=199036167 ; rewrite: NN -> "price" score=10^-3.31457 (inside)
 [sbmt.ngram][verbose]: p_sblm("NN")=10^-1.31847
-[sbmt.sblm][debug]: complete_result_h=10^-1.31847 result=NN -> "number"
-[sbmt.sblm][debug]: scored id=198436077 inside=10^-2.37514 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=218268346]={{{
-	inside=10^-2.31491 h=10^0 complete_result_h=10^-1.16591
-	skipped_root=0
-	NP-C -> NPB PP
-	NPB -> DT NN
-	DT -> "the"
-	PP -> IN NP-C
-	IN -> "of"
-	NP-C -> NPB
-	NP-C-0(NPB-0(DT-1("the") x0:NN-2) PP-0(IN-0("of") NP-C-1(x1:NPB-0))) -> x1 x0 ### id=218268346
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","PP")=10^-0.634424
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: NP-C -> NPB PP score=10^-0.656642 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
+[sbmt.sblm][debug]: scored id=199036167 inside=10^-3.31457 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "number" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"number\"")=10^-2.37514
+[sbmt.ngram][verbose]: p_sblm("<s>","\"number\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: NN -> "number" score=10^-2.84946 (inside)
+[sbmt.ngram][verbose]: p_sblm("NPB")=10^-1.06984
+[sbmt.sblm][debug]: scored id=285550478 inside=10^-4.41338 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB PP </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","PP")=10^-0.634422
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","PP","NP-C","</s>")=10^-0.021532
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: NP-C -> NPB PP score=10^-0.678172 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=PP ; <s> -> IN NP-C </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","PP","IN")=10^-0.031938
-[sbmt.ngram][verbose]: p_sblm("<s>","IN","PP","NP-C")=10^-0.0326007
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: PP -> IN NP-C score=10^-0.0645387 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","PP","NP-C")=10^-0.0325994
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","NP-C","PP","</s>")=10^-0.00063682
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: PP -> IN NP-C score=10^-0.0651742 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=IN ; <s> -> "of" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","IN","\"of\"")=10^-0.570979
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: IN -> "of" score=10^-0.570979 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: NP-C -> NPB score=10^-0.0222183 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"of\"","IN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: IN -> "of" score=10^-1.0453 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","</s>")=10^-0.162481
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: NP-C -> NPB score=10^-0.184699 (inside)
 [sbmt.ngram][verbose]: p_sblm("NP-C")=10^-1.16591
-[sbmt.sblm][debug]: complete_result_h=10^-1.16591 result=NP-C -> NPB PP
-[sbmt.sblm][debug]: scored id=218268346 inside=10^-2.31491 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=185165479]={{{
-	inside=10^-8.17325 h=10^0 complete_result_h=10^-2.23911
-	skipped_root=0
-	ADJP -> JJ CC JJ
-	JJ -> "fit"
-	CC -> "and"
-	JJ -> "proper"
-	ADJP-0(JJ-0("fit") CC-0("and") JJ-1("proper")) -> "合适" ### id=185165479
-}}}
+[sbmt.sblm][debug]: scored id=218681923 inside=10^-3.53726 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=ADJP ; <s> -> JJ CC JJ </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","ADJP","JJ")=10^-0.29572
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","ADJP","CC")=10^-0.739523
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","ADJP","CC")=10^-0.739522
 [sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","ADJP","JJ")=10^-0.0280051
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: ADJP -> JJ CC JJ score=10^-1.06325 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","JJ","ADJP","</s>")=10^-0.0218124
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: ADJP -> JJ CC JJ score=10^-1.08506 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=JJ ; <s> -> "fit" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"fit\"")=10^-4.01762
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "fit" score=10^-4.01762 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"fit\"","JJ","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "fit" score=10^-4.49194 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=CC ; <s> -> "and" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","CC","\"and\"")=10^-0.0511488
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: CC -> "and" score=10^-0.0511488 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"and\"","CC","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: CC -> "and" score=10^-0.52547 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=JJ ; <s> -> "proper" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"proper\"")=10^-3.04123
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "proper" score=10^-3.04123 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"proper\"","JJ","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "proper" score=10^-3.51555 (inside)
 [sbmt.ngram][verbose]: p_sblm("ADJP")=10^-2.23911
-[sbmt.sblm][debug]: complete_result_h=10^-2.23911 result=ADJP -> JJ CC JJ
-[sbmt.sblm][debug]: scored id=185165479 inside=10^-8.17325 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=444170192]={{{
-	inside=10^-3.51405 h=10^0 complete_result_h=10^-2.22258
-	skipped_root=0
-	S-C -> NP-C VP
-	VP -> TO VP-C
-	TO -> "to"
-	VP-C -> VB ADJP
-	VB -> "be"
-	S-C-0(x0:NP-C-0 VP-1(TO-0("to") VP-C-1(VB-1("be") x1:ADJP-0))) -> x0 x1 ### id=444170192
-}}}
+[sbmt.sblm][debug]: scored id=185165479 inside=10^-9.61802 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=S-C ; <s> -> NP-C VP </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C","NP-C")=10^-0.0619854
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","S-C","VP")=10^-0.0415492
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: S-C -> NP-C VP score=10^-0.103535 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","S-C","VP")=10^-0.0415483
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","VP","S-C","</s>")=10^-0.000225209
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: S-C -> NP-C VP score=10^-0.103759 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP ; <s> -> TO VP-C </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VP","TO")=10^-0.870674
-[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP","VP-C")=10^-0.0121154
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP -> TO VP-C score=10^-0.88279 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP","VP-C")=10^-0.0121144
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP-C","VP","</s>")=10^-0.000334276
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP -> TO VP-C score=10^-0.883123 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=TO ; <s> -> "to" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","TO","\"to\"")=10^-2.11065e-05
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: TO -> "to" score=10^-2.11065e-05 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"to\"","TO","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: TO -> "to" score=10^-0.474342 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP-C ; <s> -> VB ADJP </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VP-C","VB")=10^-0.270467
 [sbmt.ngram][verbose]: p_sblm("<s>","VB","VP-C","ADJP")=10^-1.43913
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP-C -> VB ADJP score=10^-1.7096 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","VB","ADJP","VP-C","</s>")=10^-0.15011
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP-C -> VB ADJP score=10^-1.85971 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VB ; <s> -> "be" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VB","\"be\"")=10^-0.818102
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VB -> "be" score=10^-0.818102 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"be\"","VB","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VB -> "be" score=10^-1.29242 (inside)
 [sbmt.ngram][verbose]: p_sblm("S-C")=10^-2.22258
-[sbmt.sblm][debug]: complete_result_h=10^-2.22258 result=S-C -> NP-C VP
-[sbmt.sblm][debug]: scored id=444170192 inside=10^-3.51405 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=129596]={{{
-	inside=10^-1.66425 h=10^0 complete_result_h=10^-1.93813
-	skipped_root=0
-	. -> "?"
-	.-0("?") -> "?" ### id=129596
-}}}
+[sbmt.sblm][debug]: scored id=444170192 inside=10^-4.61335 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=. ; <s> -> "?" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>",".","\"?\"")=10^-1.66425
-[sbmt.sblm][debug]: score id=129596 ; rewrite: . -> "?" score=10^-1.66425 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"?\"",".","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=129596 ; rewrite: . -> "?" score=10^-2.13857 (inside)
 [sbmt.ngram][verbose]: p_sblm(".")=10^-1.93813
-[sbmt.sblm][debug]: complete_result_h=10^-1.93813 result=. -> "?"
-[sbmt.sblm][debug]: scored id=129596 inside=10^-1.66425 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=429693942]={{{
-	inside=10^-7.27694 h=10^0 complete_result_h=10^-1.87171
-	skipped_root=0
-	S -> S-C , '' NP-C VP .
-	, -> ","
-	'' -> """
-	NP-C -> NPB
-	NPB -> DT NN
-	DT -> "the"
-	NN -> "spokesman"
-	VP -> VBD
-	VBD -> "said"
-	S-1(x0:S-C-0 ,-0(",") ''-0(""") NP-C-0(NPB-0(DT-1("the") NN-2("spokesman"))) VP-2(VBD-0("said")) x1:.-0) -> x0 x1 ### id=429693942
-}}}
+[sbmt.sblm][debug]: scored id=129596 inside=10^-2.13857 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=S ; <s> -> S-C , '' NP-C VP . </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","S","S-C")=10^-1.77353
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C","S",",")=10^-0.0361048
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","S","''")=10^-0.447468
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","S","''")=10^-0.447469
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","S","NP-C")=10^-0.00190014
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","S","VP")=10^-0.0132131
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP","S",".")=10^-0.0266395
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: S -> S-C , '' NP-C VP . score=10^-2.29886 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP","S",".")=10^-0.0266347
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP",".","S","</s>")=10^-0.0127218
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: S -> S-C , '' NP-C VP . score=10^-2.31158 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=, ; <s> -> "," </s>
 [sbmt.ngram][verbose]: p_sblm("<s>",",","\",\"")=10^-0.000184094
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: , -> "," score=10^-0.000184094 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\",\"",",","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: , -> "," score=10^-0.474505 (inside)
+[sbmt.sblm][debug]: pcfg_score: p='' ; <s> -> """ </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","''","\"\"\"")=10^-0.00336274
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: '' -> """ score=10^-0.00336274 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NP-C -> NPB score=10^-0.0222183 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"\"\"","''","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: '' -> """ score=10^-0.477684 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","</s>")=10^-0.162481
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NP-C -> NPB score=10^-0.184699 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "spokesman" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","NN","\"spokesman\"")=10^-2.35616
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NN -> "spokesman" score=10^-2.35616 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"spokesman\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NN -> "spokesman" score=10^-2.83048 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP ; <s> -> VBD </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VP","VBD")=10^-0.720251
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: VP -> VBD score=10^-0.720251 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","VBD","VP","</s>")=10^-1.08127
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: VP -> VBD score=10^-1.80152 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VBD ; <s> -> "said" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VBD","\"said\"")=10^-0.875371
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: VBD -> "said" score=10^-0.875371 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"said\"","VBD","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: VBD -> "said" score=10^-1.34969 (inside)
 [sbmt.ngram][verbose]: p_sblm("S")=10^-1.87171
-[sbmt.sblm][debug]: complete_result_h=10^-1.87171 result=S -> S-C , '' NP-C VP .
-[sbmt.sblm][debug]: scored id=429693942 inside=10^-7.27694 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=1 sblm_string[id=1010100014]={{{
-	inside=10^-0.13516 h=10^0 complete_result_h=10^-7.45368
-	skipped_root=0
-	TOP -> S
-	TOP(x0:S-1) -> "<foreign-sentence>" x0 ### id=1010100014
-}}}
+[sbmt.sblm][debug]: scored id=429693942 inside=10^-10.9941 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=TOP ; <s> -> S </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","TOP","S")=10^-0.13516
+[sbmt.ngram][verbose]: p_sblm("<s>","S","TOP","</s>")=10^-5.10129e-14
 [sbmt.sblm][debug]: score id=1010100014 ; rewrite: TOP -> S score=10^-0.13516 (inside)
-[sbmt.ngram][verbose]: p_sblm("TOP")=10^-7.45368
-[sbmt.sblm][debug]: complete_result_h=10^-7.45368 result=TOP -> S
+[sbmt.ngram][verbose]: p_sblm("TOP")=0
 [sbmt.sblm][debug]: scored id=1010100014 inside=10^-0.13516 h=10^0
-NBEST sent=1176 nbest=0 totalcost=-36.9597 hyp={{{the number of the price to be fit and proper , " the spokesman said ?}}} tree={{{(TOP (S-1 (S-C-0 (NP-C-0 (NPB-0 (DT-1 the) (NN-2 number)) (PP-0 (IN-0 of) (NP-C-1 (NPB-0 (DT-1 the) (NN-2 price))))) (VP-1 (TO-0 to) (VP-C-1 (VB-1 be) (ADJP-0 (JJ-0 fit) (CC-0 and) (JJ-1 proper))))) (,-0 ,) (''-0 ") (NP-C-0 (NPB-0 (DT-1 the) (NN-2 spokesman))) (VP-2 (VBD-0 said)) (.-0 ?)))}}} derivation={{{(1010100014 (429693942 (444170192 (218268346 285198690 198436077) 185165479) 129596))}}} binarized-derivation={{{([-33.2329,-36.9597][0,5]1010100014 ([-33.2173,-36.0273][1,5]429693942 ([-12.1328,-15.3582][1,4]444170192 ([-2.90024,-4.88958][1,3]218268346 [3.50935,1.711][1,2]285198690 [2.3789,-0.0799166][2,3]198436077 ) [-2.82098,-6.07669][3,4]185165479 ) [-1.76296,-4.56883][4,5]129596 ) )}}} foreign-tree={{{(1010100014:TOP <foreign-sentence> (429693942:S-1 (444170192:S-C-0 (218268346:NP-C-0 (285198690:NPB-0 涨) (198436077:NN-2 多少)) (185165479:ADJP-0 合适)) (129596:.-0 ?)))}}} used-rules={{{129596 185165479 198436077 218268346 285198690 429693942 444170192 1010100014}}} sbtm-cost=-51.607 text-length=16 count=38694 corpora-LDC2005T10=0.374258 corpora-LDC2006E24=0.301634 corpora-LDC2006E34=0.0274237 corpora-LDC2006E26=0.0080074 corpora-LDC2005E83=0.00777538 corpora-LDC2006E92=0.089495 corpora-LDC2004T08_HK_News=1.13601 corpora-LDC2007E87=0.309072 corpora-LDC2006E85=0.0172123 corpora-LDC2008G06=0.112654 corpora-LDC2007E06=0.0142208 corpora-LDC2006E93=0.0348829 corpora-LDC2007E101=0.639674 corpora-LDC2006G05=1.2846 corpora-LDC2008E40=0.0216215 corpora-LDC2007E103=2.50221 genre-web=0.0899282 genre-bn=0.402925 genre-wl=0.0112942 genre-bc=0.456837 genre-nw=6.00404 n_var=6 comma_nodes=1 comma_insertion=1 count_category_5=5 trivial_cond_prob=5.78056 lef.stem=23.8061 phrase_pfe=7.84237 gt_prob=33.5613 model1nrm=24.376 lfe.stem=6.18636 model1inv=5.46316 nomodel1inv=3 is_lexicalized=7 phrase_pef=17.9236 taglex.nrm=23.46 derivation-size=8 corpora-LDC2005T06=0.0125547 corpora-LDC2008G05=0.0503627 genre-ng=0.0134922 adjp_nodes=1 corpora-LDC2003E07=0.0214881 genre-treebank=0.0214881 cc_nodes=1 corpora-LDC2007E46=0.0315113 dt_nodes=3 the_insertion=2 to_nodes=1 to_insertion=1 corpora-LDC2006E86=0.00334073 in_nodes=1 of_insertion=1 jj_nodes=2 nn_nodes=3 rquote_nodes=1 rquote_insertion=1 npb_nodes=3 vp_nodes=2 period_nodes=1 pp_nodes=1 np_c_nodes=3 vbd_nodes=1 s_nodes=1 vp_c_nodes=1 vb_nodes=1 be_insertion=1 adjp_rooted=1 np_c_rooted=1 npb_rooted=1 s_rooted=1 s_c_rooted=1 s_c_nodes=1 nonmonotone=1 foreign-length=5 top-prob=0.147244 top-rule=1 nn_rooted=1 sblm=29.2945 taglex.nrm.LDC2004E12=1.44 taglex.nrm.LDC2008G06=0.64 taglex.nrm.LDC2006E85=1.36 taglex.nrm.LDC2007E08=0.47 taglex.nrm.ng=1.71 taglex.nrm.LDC2003E07=0.6 taglex.nrm.LDC2005E83=1.62 taglex.nrm.LDC2007E103=0.38 taglex.nrm.CUDongaOct06=0.43 taglex.nrm.CUDongaOct07=0.32 taglex.nrm.un=1.5 taglex.nrm.LDC2006E34=-0.0100001 taglex.nrm.LDC2005T10=0.64 taglex.nrm.LDC2005T06=-0.44 taglex.nrm.LDC2006G05=1.62 taglex.nrm.wl=0.54 taglex.nrm.treebank=0.6 taglex.inv.wl=1.22 taglex.inv.LDC2002E18=1.19 taglex.inv.un=2.61 taglex.inv.LDC2006E86=0.88 taglex.inv.LDC2006E85=0.62 taglex.inv.LDC2004E12=2.37 taglex.inv.LDC2005T34=0.81 taglex.inv.bc=-1.06 taglex.inv.bn=-0.13 taglex.inv.CUDongaOct07=1.17 taglex.inv.LDC2005T06=-0.46 taglex.inv.LDC2006G05=2.07 taglex.inv.LDC2004T08_HK_News=1.48 taglex.inv.LDC2003E07=0.9 taglex.inv.LDC2006E24=-0.36 taglex.inv.LDC2006E26=1.61 taglex.inv.treebank=0.9 taglex.inv.LDC2008G06=1.63 taglex.inv.LDC2008G05=0.85 taglex.inv.LDC2007E101=-0.42 taglex.inv.ng=0.58 taglex.inv.LDC2005E83=1.04 taglex.inv.LDC2006E92=0.57 taglex.inv=5.82 taglex.inv.lexicon=0.7 taglex.inv.LDC2005T10=-0.51 taglex.inv.LDC2008E40=2.08 taglex.inv.LDC2007E06=1.14 taglex.inv.LDC2006E34=0.64 taglex.nrm.LDC2008G05=0.36 taglex.nrm.LDC2007E06=2.52 taglex.nrm.web=1.31 taglex.nrm.LDC2004T08_HK_News=0.25 taglex.nrm.LDC2007E46=1.79 taglex.nrm.LDC2006E93=0.7 taglex.nrm.LDC2006E24=1.18 taglex.nrm.bc=1.47 taglex.nrm.LDC2007E101=1.64 taglex.inv.Wikipedia=1.12 taglex.inv.government=0.51 taglex.inv.LDC2007E46=0.6 taglex.inv.LDC2007E87=-0.47 taglex.inv.LDC2006E93=0.63 taglex.inv.LDC2004T08=0.51 taglex.inv.web=1 taglex.inv.LDC2007E08=0.76 period_rooted=1 taglex.nrm.nw=0.52 taglex.nrm.LDC2006E92=2.48 taglex.nrm.bn=0.78 taglex.inv.LDC2007E103=0.45 taglex.nrm.LDC2007E87=1.55 taglex.inv.CUDongaOct06=0.62 taglex.inv.ADSO_v5=1.32 taglex.nrm.LDC2002L27=0.35 taglex.nrm.lexicon=0.31 taglex.nrm.LDC2008E40=0.62 count_category_4=1 taglex.nrm.LDC2002E18=-0.38 count_category_3=1  headmarker={{{R(H(D(D(H(DH)D(HD(H(DH))))H(HD(HD(HDD))))DDD(H(DH))H(H)D))}}}
+NBEST sent=1176 nbest=0 totalcost=-42.1963 hyp={{{the price of the number to be fit and proper , " the spokesman said ?}}} tree={{{(TOP (S-1 (S-C-0 (NP-C-0 (NPB-0 (DT-1 the) (NN-2 price)) (PP-0 (IN-0 of) (NP-C-1 (NPB-0 (DT-1 the) (NN-2 number))))) (VP-1 (TO-0 to) (VP-C-1 (VB-1 be) (ADJP-0 (JJ-0 fit) (CC-0 and) (JJ-1 proper))))) (,-0 ,) (''-0 ") (NP-C-0 (NPB-0 (DT-1 the) (NN-2 spokesman))) (VP-2 (VBD-0 said)) (.-0 ?)))}}} derivation={{{(1010100014 (429693942 (444170192 (218681923 199036167 285550478) 185165479) 129596))}}} binarized-derivation={{{([inf,-42.1963][0,5]1010100014 ([-38.4539,-41.2639][1,5]429693942 ([-19.4651,-22.6905][1,4]444170192 ([-1.40457,-3.3939][1,3]218681923 [7.20957,4.75075][1,2]199036167 [-1.04554,-2.8439][2,3]285550478 ) [-2.1986,-5.45431][3,4]185165479 ) [-1.5258,-4.33167][4,5]129596 ) )}}} foreign-tree={{{(1010100014:TOP <foreign-sentence> (429693942:S-1 (444170192:S-C-0 (218681923:NP-C-0 (199036167:NN-2 涨) (285550478:NPB-0 多少)) (185165479:ADJP-0 合适)) (129596:.-0 ?)))}}} used-rules={{{129596 185165479 199036167 218681923 285550478 429693942 444170192 1010100014}}} sbtm-cost=-51.4785 text-length=16 count=32952 corpora-LDC2005T10=0.85236 corpora-LDC2006E24=0.145892 corpora-LDC2006E34=0.037925 corpora-LDC2006E26=0.00557431 corpora-LDC2005E83=0.00552322 corpora-LDC2006E92=0.0889923 corpora-LDC2004T08_HK_News=0.611677 corpora-LDC2007E87=0.151768 corpora-LDC2006E85=0.0181562 corpora-LDC2008G06=0.108085 corpora-LDC2007E06=0.00894634 corpora-LDC2006E93=0.0270043 corpora-LDC2007E101=0.327069 corpora-LDC2006G05=1.28278 corpora-LDC2008E40=0.0172188 corpora-LDC2007E103=3.20668 genre-web=0.0801025 genre-bn=0.236682 genre-wl=0.00719662 genre-bc=0.298125 genre-nw=6.34621 n_var=6 comma_nodes=1 comma_insertion=1 count_category_5=5 trivial_cond_prob=6.49264 lef.stem=23.8061 phrase_pfe=7.98245 gt_prob=33.9777 model1nrm=24.376 lfe.stem=6.18636 model1inv=5.46316 nomodel1inv=3 is_lexicalized=7 phrase_pef=17.8041 taglex.nrm=23.46 derivation-size=8 corpora-LDC2005T06=0.00332535 corpora-LDC2008G05=0.0530156 genre-ng=0.0173769 adjp_nodes=1 corpora-LDC2003E07=0.0143076 genre-treebank=0.0143076 cc_nodes=1 corpora-LDC2007E46=0.0315308 dt_nodes=3 the_insertion=2 to_nodes=1 to_insertion=1 corpora-LDC2006E86=0.00216381 in_nodes=1 of_insertion=1 jj_nodes=2 nn_nodes=3 rquote_nodes=1 rquote_insertion=1 npb_nodes=3 vp_nodes=2 period_nodes=1 pp_nodes=1 np_c_nodes=3 vbd_nodes=1 s_nodes=1 vp_c_nodes=1 vb_nodes=1 be_insertion=1 adjp_rooted=1 np_c_rooted=1 npb_rooted=1 s_rooted=1 s_c_rooted=1 s_c_nodes=1 foreign-length=5 top-prob=0.147244 top-rule=1 nn_rooted=1 sb[JJ][CC]=1 sb[TO][VP-C]=1 sblm=38.7644 taglex.nrm.LDC2004E12=1.44 taglex.nrm.LDC2008G06=0.64 taglex.nrm.LDC2006E85=1.36 taglex.nrm.LDC2007E08=0.47 taglex.nrm.ng=1.71 taglex.nrm.LDC2003E07=0.6 taglex.nrm.LDC2005E83=1.62 taglex.nrm.LDC2007E103=0.38 taglex.nrm.CUDongaOct06=0.43 taglex.nrm.CUDongaOct07=0.32 taglex.nrm.un=1.5 taglex.nrm.LDC2006E34=-0.0100001 taglex.nrm.LDC2005T10=0.64 taglex.nrm.LDC2005T06=-0.44 taglex.nrm.LDC2006G05=1.62 taglex.nrm.wl=0.54 taglex.nrm.treebank=0.6 taglex.inv.wl=1.22 taglex.inv.LDC2002E18=1.19 taglex.inv.un=2.61 taglex.inv.LDC2006E86=0.88 taglex.inv.LDC2006E85=0.62 taglex.inv.LDC2004E12=2.37 taglex.inv.LDC2005T34=0.81 taglex.inv.bc=-1.06 taglex.inv.bn=-0.13 taglex.inv.CUDongaOct07=1.17 taglex.inv.LDC2005T06=-0.46 taglex.inv.LDC2006G05=2.07 taglex.inv.LDC2004T08_HK_News=1.48 taglex.inv.LDC2003E07=0.9 taglex.inv.LDC2006E24=-0.36 taglex.inv.LDC2006E26=1.61 taglex.inv.treebank=0.9 taglex.inv.LDC2008G06=1.63 taglex.inv.LDC2008G05=0.85 taglex.inv.LDC2007E101=-0.42 taglex.inv.ng=0.58 taglex.inv.LDC2005E83=1.04 taglex.inv.LDC2006E92=0.57 taglex.inv=5.82 taglex.inv.lexicon=0.7 taglex.inv.LDC2005T10=-0.51 taglex.inv.LDC2008E40=2.08 taglex.inv.LDC2007E06=1.14 taglex.inv.LDC2006E34=0.64 taglex.nrm.LDC2008G05=0.36 taglex.nrm.LDC2007E06=2.52 taglex.nrm.web=1.31 taglex.nrm.LDC2004T08_HK_News=0.25 taglex.nrm.LDC2007E46=1.79 taglex.nrm.LDC2006E93=0.7 taglex.nrm.LDC2006E24=1.18 taglex.nrm.bc=1.47 taglex.nrm.LDC2007E101=1.64 taglex.inv.Wikipedia=1.12 taglex.inv.government=0.51 taglex.inv.LDC2007E46=0.6 taglex.inv.LDC2007E87=-0.47 taglex.inv.LDC2006E93=0.63 taglex.inv.LDC2004T08=0.51 taglex.inv.web=1 taglex.inv.LDC2007E08=0.76 period_rooted=1 taglex.nrm.nw=0.52 taglex.nrm.LDC2006E92=2.48 taglex.nrm.bn=0.78 taglex.inv.LDC2007E103=0.45 taglex.nrm.LDC2007E87=1.55 taglex.inv.CUDongaOct06=0.62 taglex.inv.ADSO_v5=1.32 taglex.nrm.LDC2002L27=0.35 taglex.nrm.lexicon=0.31 taglex.nrm.LDC2008E40=0.62 count_category_4=2 taglex.nrm.LDC2002E18=-0.38 sb[^(s^)][DT]=3 sb[DT][NN]=3 sb[NN][^(/s^)]=3 sb[^(s^)][NPB]=3 sb[NPB][PP]=1 sb[PP][^(/s^)]=1 sb[^(s^)][IN]=1 sb[IN][NP-C]=1 sb[NP-C][^(/s^)]=1 sb[NPB][^(/s^)]=2 sb[^(s^)][JJ]=1 sb[CC][JJ]=1 sb[JJ][^(/s^)]=1 sb[^(s^)][NP-C]=1 sb[NP-C][VP]=2 sb[VP][^(/s^)]=1 sb[^(s^)][TO]=1 sb[VP-C][^(/s^)]=1 sb[^(s^)][VB]=1 sb[VB][ADJP]=1 sb[ADJP][^(/s^)]=1 sb[^(s^)][S-C]=1 sb[S-C][^/]=1 sb[^/]['']=1 sb[''][NP-C]=1 sb[VP][.]=1 sb[.][^(/s^)]=1 sb[^(s^)][VBD]=1 sb[VBD][^(/s^)]=1 sb[^(s^)][S]=1 sb[S][^(/s^)]=1 headmarker={{{R(H(D(D(H(DH)D(HD(H(DH))))H(HD(HD(HDD))))DDD(H(DH))H(H)D))}}}
 [sbmt.forest][verbose]: Printing NBEST sent=1176 nbest=1  ...
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=285198690]={{{
-	inside=10^-3.84078 h=10^0 complete_result_h=10^-1.06985
-	skipped_root=0
-	NPB -> DT NN
-	DT -> "the"
-	NN -> "price"
-	NPB-0(DT-1("the") NN-2("price")) -> "涨" ### id=285198690
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "price" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","NN","\"price\"")=10^-2.84025
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: NN -> "price" score=10^-2.84025 (inside)
-[sbmt.ngram][verbose]: p_sblm("NPB")=10^-1.06985
-[sbmt.sblm][debug]: complete_result_h=10^-1.06985 result=NPB -> DT NN
-[sbmt.sblm][debug]: scored id=285198690 inside=10^-3.84078 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=42651543]={{{
-	inside=10^-5.77111 h=10^-2.81356 complete_result_h=0
-	skipped_root=1
-	NPB -> JJ NNS
-	JJ -> "respective"
-	NNS -> "numbers"
-	@NPB-2-BAR(JJ-2("respective") NNS-0("numbers")) -> "多少" ### id=42651543
-}}}
-[sbmt.ngram][verbose]: p_sblm("NPB","NPB")=10^-2.11649
-[sbmt.ngram][verbose]: p_sblm("NPB","NPB","JJ")=10^-0.697074
-[sbmt.sblm][debug]: score id=42651543 ; rewrite: NPB -> JJ NNS score=10^-2.81356 (heuristic)
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"respective\"")=10^-2.89984
-[sbmt.sblm][debug]: score id=42651543 ; rewrite: JJ -> "respective" score=10^-2.89984 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NNS","\"numbers\"")=10^-2.87128
-[sbmt.sblm][debug]: score id=42651543 ; rewrite: NNS -> "numbers" score=10^-2.87128 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","JJ")=10^-1.07008
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","NPB","NNS")=10^-0.383997
-[sbmt.sblm][debug]: complete_result_h=0 result=NPB -> JJ NNS
-[sbmt.sblm][debug]: scored id=42651543 inside=10^-5.77111 h=10^-2.81356
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=217154384]={{{
-	inside=10^-1.46798 h=10^-0.440375 complete_result_h=10^-1.16591
-	skipped_root=0
-	NP-C -> NPB PP
-	(partial)NPB -> DT [1]
-	DT -> "the"
-	PP -> IN NP-C
-	IN -> "of"
-	NP-C -> NPB
-	NP-C-0(NPB-0(DT-1("the") x0:@NPB-2-BAR) PP-0(IN-0("of") NP-C-1(x1:NPB-0))) -> x1 x0 ### id=217154384
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","PP")=10^-0.634424
-[sbmt.sblm][debug]: score id=217154384 ; rewrite: NP-C -> NPB PP score=10^-0.656642 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.sblm][debug]: score id=217154384 ; rewrite: NPB -> DT [1] score=10^-0.440375 (heuristic)
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=217154384 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","PP","IN")=10^-0.031938
-[sbmt.ngram][verbose]: p_sblm("<s>","IN","PP","NP-C")=10^-0.0326007
-[sbmt.sblm][debug]: score id=217154384 ; rewrite: PP -> IN NP-C score=10^-0.0645387 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","IN","\"of\"")=10^-0.570979
-[sbmt.sblm][debug]: score id=217154384 ; rewrite: IN -> "of" score=10^-0.570979 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.sblm][debug]: score id=217154384 ; rewrite: NP-C -> NPB score=10^-0.0222183 (inside)
-[sbmt.ngram][verbose]: p_sblm("NP-C")=10^-1.16591
-[sbmt.sblm][debug]: complete_result_h=10^-1.16591 result=NP-C -> NPB PP
-[sbmt.sblm][debug]: scored id=217154384 inside=10^-1.46798 h=10^-0.440375
-[sbmt.sblm][debug]: complete rhsi=1 of 2 rw=NPB -> DT [1] into c=NPB -> DT
-	cps[0]=
-	cps[1]=
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","</s>")=10^-1.53925
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=185165479]={{{
-	inside=10^-8.17325 h=10^0 complete_result_h=10^-2.23911
-	skipped_root=0
-	ADJP -> JJ CC JJ
-	JJ -> "fit"
-	CC -> "and"
-	JJ -> "proper"
-	ADJP-0(JJ-0("fit") CC-0("and") JJ-1("proper")) -> "合适" ### id=185165479
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","ADJP","JJ")=10^-0.29572
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","ADJP","CC")=10^-0.739523
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","ADJP","JJ")=10^-0.0280051
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: ADJP -> JJ CC JJ score=10^-1.06325 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"fit\"")=10^-4.01762
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "fit" score=10^-4.01762 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","CC","\"and\"")=10^-0.0511488
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: CC -> "and" score=10^-0.0511488 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"proper\"")=10^-3.04123
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "proper" score=10^-3.04123 (inside)
-[sbmt.ngram][verbose]: p_sblm("ADJP")=10^-2.23911
-[sbmt.sblm][debug]: complete_result_h=10^-2.23911 result=ADJP -> JJ CC JJ
-[sbmt.sblm][debug]: scored id=185165479 inside=10^-8.17325 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=444170192]={{{
-	inside=10^-3.51405 h=10^0 complete_result_h=10^-2.22258
-	skipped_root=0
-	S-C -> NP-C VP
-	VP -> TO VP-C
-	TO -> "to"
-	VP-C -> VB ADJP
-	VB -> "be"
-	S-C-0(x0:NP-C-0 VP-1(TO-0("to") VP-C-1(VB-1("be") x1:ADJP-0))) -> x0 x1 ### id=444170192
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C","NP-C")=10^-0.0619854
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","S-C","VP")=10^-0.0415492
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: S-C -> NP-C VP score=10^-0.103535 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","VP","TO")=10^-0.870674
-[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP","VP-C")=10^-0.0121154
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP -> TO VP-C score=10^-0.88279 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","TO","\"to\"")=10^-2.11065e-05
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: TO -> "to" score=10^-2.11065e-05 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","VP-C","VB")=10^-0.270467
-[sbmt.ngram][verbose]: p_sblm("<s>","VB","VP-C","ADJP")=10^-1.43913
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP-C -> VB ADJP score=10^-1.7096 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","VB","\"be\"")=10^-0.818102
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VB -> "be" score=10^-0.818102 (inside)
-[sbmt.ngram][verbose]: p_sblm("S-C")=10^-2.22258
-[sbmt.sblm][debug]: complete_result_h=10^-2.22258 result=S-C -> NP-C VP
-[sbmt.sblm][debug]: scored id=444170192 inside=10^-3.51405 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=129596]={{{
-	inside=10^-1.66425 h=10^0 complete_result_h=10^-1.93813
-	skipped_root=0
-	. -> "?"
-	.-0("?") -> "?" ### id=129596
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>",".","\"?\"")=10^-1.66425
-[sbmt.sblm][debug]: score id=129596 ; rewrite: . -> "?" score=10^-1.66425 (inside)
-[sbmt.ngram][verbose]: p_sblm(".")=10^-1.93813
-[sbmt.sblm][debug]: complete_result_h=10^-1.93813 result=. -> "?"
-[sbmt.sblm][debug]: scored id=129596 inside=10^-1.66425 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=429693942]={{{
-	inside=10^-7.27694 h=10^0 complete_result_h=10^-1.87171
-	skipped_root=0
-	S -> S-C , '' NP-C VP .
-	, -> ","
-	'' -> """
-	NP-C -> NPB
-	NPB -> DT NN
-	DT -> "the"
-	NN -> "spokesman"
-	VP -> VBD
-	VBD -> "said"
-	S-1(x0:S-C-0 ,-0(",") ''-0(""") NP-C-0(NPB-0(DT-1("the") NN-2("spokesman"))) VP-2(VBD-0("said")) x1:.-0) -> x0 x1 ### id=429693942
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","S","S-C")=10^-1.77353
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C","S",",")=10^-0.0361048
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","S","''")=10^-0.447468
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","S","NP-C")=10^-0.00190014
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","S","VP")=10^-0.0132131
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP","S",".")=10^-0.0266395
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: S -> S-C , '' NP-C VP . score=10^-2.29886 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>",",","\",\"")=10^-0.000184094
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: , -> "," score=10^-0.000184094 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","''","\"\"\"")=10^-0.00336274
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: '' -> """ score=10^-0.00336274 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NP-C -> NPB score=10^-0.0222183 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"spokesman\"")=10^-2.35616
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NN -> "spokesman" score=10^-2.35616 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","VP","VBD")=10^-0.720251
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: VP -> VBD score=10^-0.720251 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","VBD","\"said\"")=10^-0.875371
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: VBD -> "said" score=10^-0.875371 (inside)
-[sbmt.ngram][verbose]: p_sblm("S")=10^-1.87171
-[sbmt.sblm][debug]: complete_result_h=10^-1.87171 result=S -> S-C , '' NP-C VP .
-[sbmt.sblm][debug]: scored id=429693942 inside=10^-7.27694 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=1 sblm_string[id=1010100014]={{{
-	inside=10^-0.13516 h=10^0 complete_result_h=10^-7.45368
-	skipped_root=0
-	TOP -> S
-	TOP(x0:S-1) -> "<foreign-sentence>" x0 ### id=1010100014
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","TOP","S")=10^-0.13516
-[sbmt.sblm][debug]: score id=1010100014 ; rewrite: TOP -> S score=10^-0.13516 (inside)
-[sbmt.ngram][verbose]: p_sblm("TOP")=10^-7.45368
-[sbmt.sblm][debug]: complete_result_h=10^-7.45368 result=TOP -> S
-[sbmt.sblm][debug]: scored id=1010100014 inside=10^-0.13516 h=10^0
-NBEST sent=1176 nbest=1 totalcost=-36.8454 hyp={{{the respective numbers of the price to be fit and proper , " the spokesman said ?}}} tree={{{(TOP (S-1 (S-C-0 (NP-C-0 (NPB-0 (DT-1 the) (@NPB-2-BAR (JJ-2 respective) (NNS-0 numbers))) (PP-0 (IN-0 of) (NP-C-1 (NPB-0 (DT-1 the) (NN-2 price))))) (VP-1 (TO-0 to) (VP-C-1 (VB-1 be) (ADJP-0 (JJ-0 fit) (CC-0 and) (JJ-1 proper))))) (,-0 ,) (''-0 ") (NP-C-0 (NPB-0 (DT-1 the) (NN-2 spokesman))) (VP-2 (VBD-0 said)) (.-0 ?)))}}} derivation={{{(1010100014 (429693942 (444170192 (217154384 285198690 42651543) 185165479) 129596))}}} binarized-derivation={{{([-33.1185,-36.8454][0,5]1010100014 ([-33.1029,-35.913][1,5]429693942 ([-12.0185,-15.2438][1,4]444170192 ([-2.78589,-4.77523][1,3]217154384 [3.50935,1.711][1,2]285198690 [inf,-0.344671][2,3]42651543 ) [-2.82098,-6.07669][3,4]185165479 ) [-1.76296,-4.56883][4,5]129596 ) )}}} foreign-tree={{{(1010100014:TOP <foreign-sentence> (429693942:S-1 (444170192:S-C-0 (217154384:NP-C-0 (285198690:NPB-0 涨) (42651543:@NPB-2-BAR 多少)) (185165479:ADJP-0 合适)) (129596:.-0 ?)))}}} used-rules={{{129596 42651543 185165479 217154384 285198690 429693942 444170192 1010100014}}} sbtm-cost=-53.757 text-length=17 count=39654 corpora-LDC2005T10=0.35236 corpora-LDC2006E24=0.303036 corpora-LDC2006E34=0.0247359 corpora-LDC2006E26=0.00557431 corpora-LDC2005E83=0.00570118 corpora-LDC2006E92=0.0825716 corpora-LDC2004T08_HK_News=1.19062 corpora-LDC2007E87=0.302453 corpora-LDC2006E85=0.0153897 corpora-LDC2008G06=0.106177 corpora-LDC2007E06=0.0106135 corpora-LDC2006E93=0.0337251 corpora-LDC2007E101=0.629854 corpora-LDC2006G05=1.24762 corpora-LDC2008E40=0.0186089 corpora-LDC2007E103=2.56274 genre-web=0.0883373 genre-bn=0.388293 genre-wl=0.0118152 genre-bc=0.439482 genre-nw=6.04179 n_var=6 comma_nodes=1 comma_insertion=1 count_category_5=5 trivial_cond_prob=5.6479 lef.stem=27.9335 phrase_pfe=7.3067 gt_prob=36.1864 model1nrm=27.3698 lfe.stem=6.47956 model1inv=5.32383 nomodel1inv=3 is_lexicalized=7 phrase_pef=19.396 taglex.nrm=26.71 derivation-size=8 corpora-LDC2005T06=0.0106949 corpora-LDC2008G05=0.0411065 genre-ng=0.0111025 adjp_nodes=1 corpora-LDC2003E07=0.0190523 genre-treebank=0.0190523 cc_nodes=1 corpora-LDC2007E46=0.0312041 dt_nodes=3 the_insertion=2 to_nodes=1 to_insertion=1 corpora-LDC2006E86=0.00602541 in_nodes=1 of_insertion=1 jj_nodes=3 nn_nodes=2 corpora-LDC2003E14=0.000126167 genre-fbis=0.000126167 rquote_nodes=1 rquote_insertion=1 npb_nodes=3 vp_nodes=2 period_nodes=1 pp_nodes=1 np_c_nodes=3 nns_nodes=1 npb_bar_rooted=1 npb_bar_nodes=1 vbd_nodes=1 s_nodes=1 vp_c_nodes=1 vb_nodes=1 be_insertion=1 adjp_rooted=1 np_c_rooted=1 npb_rooted=1 s_rooted=1 s_c_rooted=1 s_c_nodes=1 nonmonotone=1 foreign-length=5 top-prob=0.147244 top-rule=1 sblm=33.8232 taglex.nrm.LDC2004E12=2.37 taglex.nrm.LDC2008G06=1.28 taglex.nrm.LDC2006E85=2.25 taglex.nrm.LDC2007E08=1.04 taglex.nrm.ng=2.71 taglex.nrm.LDC2003E07=0.6 taglex.nrm.LDC2005E83=2.34 taglex.nrm.LDC2007E103=-0.56 taglex.nrm.CUDongaOct06=1 taglex.nrm.CUDongaOct07=0.9 taglex.nrm.un=2.8 taglex.nrm.LDC2006E34=0.7 taglex.nrm.LDC2005T10=1.27 taglex.nrm.LDC2005T06=0.09 taglex.nrm.LDC2006G05=2.78 taglex.nrm.wl=1.11 taglex.nrm.treebank=0.6 taglex.inv.wl=0.75 taglex.inv.LDC2002E18=0.97 taglex.inv.un=2.69 taglex.inv.LDC2006E86=0.42 taglex.inv.LDC2006E85=0.92 taglex.inv.LDC2004E12=2.23 taglex.inv.LDC2005T34=0.81 taglex.inv.bc=-0.56 taglex.inv.bn=-0.19 taglex.inv.CUDongaOct07=1.1 taglex.inv.LDC2005T06=-0.96 taglex.inv.LDC2006G05=2.18 taglex.inv.LDC2004T08_HK_News=1.48 taglex.inv.LDC2003E07=0.38 taglex.inv.LDC2006E24=-0.59 taglex.inv.LDC2006E26=1.71 taglex.inv.treebank=0.38 taglex.inv.LDC2008G06=1.43 taglex.inv.LDC2008G05=1.35 taglex.inv.LDC2007E101=-0.33 taglex.inv.ng=0.58 taglex.inv.LDC2005E83=0.89 taglex.inv.LDC2006E92=0.93 taglex.inv=5.96 taglex.inv.lexicon=0.35 taglex.inv.LDC2005T10=-0.86 taglex.inv.LDC2008E40=1.69 taglex.inv.LDC2007E06=0.99 taglex.inv.LDC2006E34=0.28 taglex.nrm.LDC2008G05=1.37 taglex.nrm.LDC2006E26=0.87 taglex.nrm.LDC2007E06=3.29 taglex.nrm.web=2.28 taglex.nrm.LDC2004T08_HK_News=-0.36 taglex.nrm.LDC2007E46=2.44 taglex.nrm.LDC2006E93=1.67 taglex.nrm.LDC2006E24=2.05 taglex.nrm.bc=2.78 taglex.nrm.LDC2007E101=2.64 taglex.inv.Wikipedia=0.41 taglex.inv.government=0.84 taglex.inv.LDC2007E46=0.6 taglex.inv.LDC2007E87=-0.54 taglex.inv.LDC2006E93=0.63 taglex.inv.LDC2004T08=0.84 taglex.inv.web=1 taglex.inv.LDC2007E08=0.31 period_rooted=1 taglex.nrm.nw=0.12 taglex.nrm.LDC2006E92=3.9 taglex.nrm.bn=1.9 taglex.inv.LDC2007E103=0.12 taglex.nrm.LDC2007E87=2.29 taglex.inv.CUDongaOct06=0.48 taglex.inv.ADSO_v5=0.95 taglex.nrm.LDC2002L27=1.02 taglex.nrm.lexicon=0.98 taglex.nrm.LDC2008E40=1.23 count_category_4=1 taglex.nrm.LDC2002E18=-0.38 count_category_3=1  headmarker={{{R(H(D(D(H(DH(DH))D(HD(H(DH))))H(HD(HD(HDD))))DDD(H(DH))H(H)D))}}}
-[sbmt.forest][verbose]: Lazy forest transcribed for nbest: 0.00420213 (wall) sec, memory 0 (70.58M -> 70.58M); from OS: 0 (167.1M -> 167.1M)
-[sbmt.forest][info]: [Lazy kbest filtered 4 of 10 derivations, leaving 6, or 60.0%]
-[sbmt.app.output-args][info]: Nbest: 0.00433397 (wall) sec, memory 0 (70.58M -> 70.58M); from OS: 0 (167.1M -> 167.1M)
-[sbmt.app.output-args][info]: (After nbest) number of equivalences in memory: 146
-[sbmt.forest][verbose]: Printing NBEST sent=1176 nbest=0  ...
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=285198690]={{{
-	inside=10^-3.84078 h=10^0 complete_result_h=10^-1.06985
-	skipped_root=0
-	NPB -> DT NN
-	DT -> "the"
-	NN -> "price"
-	NPB-0(DT-1("the") NN-2("price")) -> "涨" ### id=285198690
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"price\"")=10^-2.84025
-[sbmt.sblm][debug]: score id=285198690 ; rewrite: NN -> "price" score=10^-2.84025 (inside)
-[sbmt.ngram][verbose]: p_sblm("NPB")=10^-1.06985
-[sbmt.sblm][debug]: complete_result_h=10^-1.06985 result=NPB -> DT NN
-[sbmt.sblm][debug]: scored id=285198690 inside=10^-3.84078 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=198436077]={{{
-	inside=10^-2.37514 h=10^0 complete_result_h=10^-1.31847
-	skipped_root=0
-	NN -> "number"
-	NN-2("number") -> "多少" ### id=198436077
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"number\"")=10^-2.37514
-[sbmt.sblm][debug]: score id=198436077 ; rewrite: NN -> "number" score=10^-2.37514 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"price\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=199036167 ; rewrite: NN -> "price" score=10^-3.31457 (inside)
 [sbmt.ngram][verbose]: p_sblm("NN")=10^-1.31847
-[sbmt.sblm][debug]: complete_result_h=10^-1.31847 result=NN -> "number"
-[sbmt.sblm][debug]: scored id=198436077 inside=10^-2.37514 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=218268346]={{{
-	inside=10^-2.31491 h=10^0 complete_result_h=10^-1.16591
-	skipped_root=0
-	NP-C -> NPB PP
-	NPB -> DT NN
-	DT -> "the"
-	PP -> IN NP-C
-	IN -> "of"
-	NP-C -> NPB
-	NP-C-0(NPB-0(DT-1("the") x0:NN-2) PP-0(IN-0("of") NP-C-1(x1:NPB-0))) -> x1 x0 ### id=218268346
-}}}
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","PP")=10^-0.634424
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: NP-C -> NPB PP score=10^-0.656642 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
+[sbmt.sblm][debug]: scored id=199036167 inside=10^-3.31457 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "number" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"number\"")=10^-2.37514
+[sbmt.ngram][verbose]: p_sblm("<s>","\"number\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: NN -> "number" score=10^-2.84946 (inside)
+[sbmt.ngram][verbose]: p_sblm("NPB")=10^-1.06984
+[sbmt.sblm][debug]: scored id=285550478 inside=10^-4.41338 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB PP </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","PP")=10^-0.634422
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","PP","NP-C","</s>")=10^-0.021532
+[sbmt.sblm][debug]: score id=234254523 ; rewrite: NP-C -> NPB PP score=10^-0.678172 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=PP ; <s> -> IN NP-C </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","PP","IN")=10^-0.031938
-[sbmt.ngram][verbose]: p_sblm("<s>","IN","PP","NP-C")=10^-0.0326007
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: PP -> IN NP-C score=10^-0.0645387 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","PP","NP-C")=10^-0.0325994
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","NP-C","PP","</s>")=10^-0.00063682
+[sbmt.sblm][debug]: score id=234254523 ; rewrite: PP -> IN NP-C score=10^-0.0651742 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=IN ; <s> -> "of" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","IN","\"of\"")=10^-0.570979
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: IN -> "of" score=10^-0.570979 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.sblm][debug]: score id=218268346 ; rewrite: NP-C -> NPB score=10^-0.0222183 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"of\"","IN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=234254523 ; rewrite: IN -> "of" score=10^-1.0453 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","</s>")=10^-0.162481
+[sbmt.sblm][debug]: score id=234254523 ; rewrite: NP-C -> NPB score=10^-0.184699 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=234254523 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=234254523 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
 [sbmt.ngram][verbose]: p_sblm("NP-C")=10^-1.16591
-[sbmt.sblm][debug]: complete_result_h=10^-1.16591 result=NP-C -> NPB PP
-[sbmt.sblm][debug]: scored id=218268346 inside=10^-2.31491 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=185165479]={{{
-	inside=10^-8.17325 h=10^0 complete_result_h=10^-2.23911
-	skipped_root=0
-	ADJP -> JJ CC JJ
-	JJ -> "fit"
-	CC -> "and"
-	JJ -> "proper"
-	ADJP-0(JJ-0("fit") CC-0("and") JJ-1("proper")) -> "合适" ### id=185165479
-}}}
+[sbmt.sblm][debug]: scored id=234254523 inside=10^-3.53726 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=ADJP ; <s> -> JJ CC JJ </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","ADJP","JJ")=10^-0.29572
-[sbmt.ngram][verbose]: p_sblm("<s>","JJ","ADJP","CC")=10^-0.739523
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","ADJP","CC")=10^-0.739522
 [sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","ADJP","JJ")=10^-0.0280051
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: ADJP -> JJ CC JJ score=10^-1.06325 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","JJ","ADJP","</s>")=10^-0.0218124
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: ADJP -> JJ CC JJ score=10^-1.08506 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=JJ ; <s> -> "fit" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"fit\"")=10^-4.01762
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "fit" score=10^-4.01762 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"fit\"","JJ","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "fit" score=10^-4.49194 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=CC ; <s> -> "and" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","CC","\"and\"")=10^-0.0511488
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: CC -> "and" score=10^-0.0511488 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"and\"","CC","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: CC -> "and" score=10^-0.52547 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=JJ ; <s> -> "proper" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"proper\"")=10^-3.04123
-[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "proper" score=10^-3.04123 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"proper\"","JJ","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "proper" score=10^-3.51555 (inside)
 [sbmt.ngram][verbose]: p_sblm("ADJP")=10^-2.23911
-[sbmt.sblm][debug]: complete_result_h=10^-2.23911 result=ADJP -> JJ CC JJ
-[sbmt.sblm][debug]: scored id=185165479 inside=10^-8.17325 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=444170192]={{{
-	inside=10^-3.51405 h=10^0 complete_result_h=10^-2.22258
-	skipped_root=0
-	S-C -> NP-C VP
-	VP -> TO VP-C
-	TO -> "to"
-	VP-C -> VB ADJP
-	VB -> "be"
-	S-C-0(x0:NP-C-0 VP-1(TO-0("to") VP-C-1(VB-1("be") x1:ADJP-0))) -> x0 x1 ### id=444170192
-}}}
+[sbmt.sblm][debug]: scored id=185165479 inside=10^-9.61802 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=S-C ; <s> -> NP-C VP </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C","NP-C")=10^-0.0619854
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","S-C","VP")=10^-0.0415492
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: S-C -> NP-C VP score=10^-0.103535 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","S-C","VP")=10^-0.0415483
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","VP","S-C","</s>")=10^-0.000225209
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: S-C -> NP-C VP score=10^-0.103759 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP ; <s> -> TO VP-C </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VP","TO")=10^-0.870674
-[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP","VP-C")=10^-0.0121154
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP -> TO VP-C score=10^-0.88279 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP","VP-C")=10^-0.0121144
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP-C","VP","</s>")=10^-0.000334276
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP -> TO VP-C score=10^-0.883123 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=TO ; <s> -> "to" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","TO","\"to\"")=10^-2.11065e-05
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: TO -> "to" score=10^-2.11065e-05 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"to\"","TO","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: TO -> "to" score=10^-0.474342 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP-C ; <s> -> VB ADJP </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VP-C","VB")=10^-0.270467
 [sbmt.ngram][verbose]: p_sblm("<s>","VB","VP-C","ADJP")=10^-1.43913
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP-C -> VB ADJP score=10^-1.7096 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","VB","ADJP","VP-C","</s>")=10^-0.15011
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP-C -> VB ADJP score=10^-1.85971 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VB ; <s> -> "be" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VB","\"be\"")=10^-0.818102
-[sbmt.sblm][debug]: score id=444170192 ; rewrite: VB -> "be" score=10^-0.818102 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"be\"","VB","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VB -> "be" score=10^-1.29242 (inside)
 [sbmt.ngram][verbose]: p_sblm("S-C")=10^-2.22258
-[sbmt.sblm][debug]: complete_result_h=10^-2.22258 result=S-C -> NP-C VP
-[sbmt.sblm][debug]: scored id=444170192 inside=10^-3.51405 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=0 sblm_string[id=129596]={{{
-	inside=10^-1.66425 h=10^0 complete_result_h=10^-1.93813
-	skipped_root=0
-	. -> "?"
-	.-0("?") -> "?" ### id=129596
-}}}
+[sbmt.sblm][debug]: scored id=444170192 inside=10^-4.61335 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=. ; <s> -> "?" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>",".","\"?\"")=10^-1.66425
-[sbmt.sblm][debug]: score id=129596 ; rewrite: . -> "?" score=10^-1.66425 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"?\"",".","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=129596 ; rewrite: . -> "?" score=10^-2.13857 (inside)
 [sbmt.ngram][verbose]: p_sblm(".")=10^-1.93813
-[sbmt.sblm][debug]: complete_result_h=10^-1.93813 result=. -> "?"
-[sbmt.sblm][debug]: scored id=129596 inside=10^-1.66425 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=2 sblm_string[id=429693942]={{{
-	inside=10^-7.27694 h=10^0 complete_result_h=10^-1.87171
-	skipped_root=0
-	S -> S-C , '' NP-C VP .
-	, -> ","
-	'' -> """
-	NP-C -> NPB
-	NPB -> DT NN
-	DT -> "the"
-	NN -> "spokesman"
-	VP -> VBD
-	VBD -> "said"
-	S-1(x0:S-C-0 ,-0(",") ''-0(""") NP-C-0(NPB-0(DT-1("the") NN-2("spokesman"))) VP-2(VBD-0("said")) x1:.-0) -> x0 x1 ### id=429693942
-}}}
+[sbmt.sblm][debug]: scored id=129596 inside=10^-2.13857 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=S ; <s> -> S-C , '' NP-C VP . </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","S","S-C")=10^-1.77353
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C","S",",")=10^-0.0361048
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","S","''")=10^-0.447468
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","S","''")=10^-0.447469
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","S","NP-C")=10^-0.00190014
 [sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","S","VP")=10^-0.0132131
-[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP","S",".")=10^-0.0266395
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: S -> S-C , '' NP-C VP . score=10^-2.29886 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP","S",".")=10^-0.0266347
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP",".","S","</s>")=10^-0.0127218
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: S -> S-C , '' NP-C VP . score=10^-2.31158 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=, ; <s> -> "," </s>
 [sbmt.ngram][verbose]: p_sblm("<s>",",","\",\"")=10^-0.000184094
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: , -> "," score=10^-0.000184094 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\",\"",",","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: , -> "," score=10^-0.474505 (inside)
+[sbmt.sblm][debug]: pcfg_score: p='' ; <s> -> """ </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","''","\"\"\"")=10^-0.00336274
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: '' -> """ score=10^-0.00336274 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222183
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NP-C -> NPB score=10^-0.0222183 (inside)
-[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440375
-[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406552
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NPB -> DT NN score=10^-0.846926 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"\"\"","''","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: '' -> """ score=10^-0.477684 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","</s>")=10^-0.162481
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NP-C -> NPB score=10^-0.184699 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: DT -> "the" score=10^-0.153608 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "spokesman" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","NN","\"spokesman\"")=10^-2.35616
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: NN -> "spokesman" score=10^-2.35616 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"spokesman\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NN -> "spokesman" score=10^-2.83048 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP ; <s> -> VBD </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VP","VBD")=10^-0.720251
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: VP -> VBD score=10^-0.720251 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","VBD","VP","</s>")=10^-1.08127
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: VP -> VBD score=10^-1.80152 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VBD ; <s> -> "said" </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","VBD","\"said\"")=10^-0.875371
-[sbmt.sblm][debug]: score id=429693942 ; rewrite: VBD -> "said" score=10^-0.875371 (inside)
+[sbmt.ngram][verbose]: p_sblm("<s>","\"said\"","VBD","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: VBD -> "said" score=10^-1.34969 (inside)
 [sbmt.ngram][verbose]: p_sblm("S")=10^-1.87171
-[sbmt.sblm][debug]: complete_result_h=10^-1.87171 result=S -> S-C , '' NP-C VP .
-[sbmt.sblm][debug]: scored id=429693942 inside=10^-7.27694 h=10^0
-[sbmt.sblm][debug]: compute_info(cps.size=1 sblm_string[id=1010100014]={{{
-	inside=10^-0.13516 h=10^0 complete_result_h=10^-7.45368
-	skipped_root=0
-	TOP -> S
-	TOP(x0:S-1) -> "<foreign-sentence>" x0 ### id=1010100014
-}}}
+[sbmt.sblm][debug]: scored id=429693942 inside=10^-10.9941 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=TOP ; <s> -> S </s>
 [sbmt.ngram][verbose]: p_sblm("<s>","TOP","S")=10^-0.13516
+[sbmt.ngram][verbose]: p_sblm("<s>","S","TOP","</s>")=10^-5.10129e-14
 [sbmt.sblm][debug]: score id=1010100014 ; rewrite: TOP -> S score=10^-0.13516 (inside)
-[sbmt.ngram][verbose]: p_sblm("TOP")=10^-7.45368
-[sbmt.sblm][debug]: complete_result_h=10^-7.45368 result=TOP -> S
+[sbmt.ngram][verbose]: p_sblm("TOP")=0
+[sbmt.sblm][debug]: scored id=1010100014 inside=10^-0.13516 h=10^0
+NBEST sent=1176 nbest=1 totalcost=-42.1689 hyp={{{the number of the price to be fit and proper , " the spokesman said ?}}} tree={{{(TOP (S-1 (S-C-0 (NP-C-0 (NPB-0 (DT-1 the) (NN-2 number)) (PP-0 (IN-0 of) (NP-C-1 (NPB-0 (DT-1 the) (NN-2 price))))) (VP-1 (TO-0 to) (VP-C-1 (VB-1 be) (ADJP-0 (JJ-0 fit) (CC-0 and) (JJ-1 proper))))) (,-0 ,) (''-0 ") (NP-C-0 (NPB-0 (DT-1 the) (NN-2 spokesman))) (VP-2 (VBD-0 said)) (.-0 ?)))}}} derivation={{{(1010100014 (429693942 (444170192 (234254523 199036167 285550478) 185165479) 129596))}}} binarized-derivation={{{([inf,-42.1689][0,5]1010100014 ([-38.4264,-41.2364][1,5]429693942 ([-19.4377,-22.663][1,4]444170192 ([-1.37713,-3.36647][1,3]234254523 [7.20957,4.75075][1,2]199036167 [-1.04554,-2.8439][2,3]285550478 ) [-2.1986,-5.45431][3,4]185165479 ) [-1.5258,-4.33167][4,5]129596 ) )}}} foreign-tree={{{(1010100014:TOP <foreign-sentence> (429693942:S-1 (444170192:S-C-0 (234254523:NP-C-0 (199036167:NN-2 涨) (285550478:NPB-0 多少)) (185165479:ADJP-0 合适)) (129596:.-0 ?)))}}} used-rules={{{129596 185165479 199036167 234254523 285550478 429693942 444170192 1010100014}}} sbtm-cost=-51.451 text-length=16 count=33817 corpora-LDC2005T10=0.85236 corpora-LDC2006E24=0.155029 corpora-LDC2006E34=0.0313194 corpora-LDC2006E26=0.00557431 corpora-LDC2005E83=0.0073335 corpora-LDC2006E92=0.0926128 corpora-LDC2004T08_HK_News=0.611677 corpora-LDC2007E87=0.163146 corpora-LDC2006E85=0.0262587 corpora-LDC2008G06=0.103836 corpora-LDC2007E06=0.015181 corpora-LDC2006E93=0.0361409 corpora-LDC2007E101=0.357006 corpora-LDC2006G05=1.17792 corpora-LDC2008E40=0.0207818 corpora-LDC2007E103=3.22112 genre-web=0.0941518 genre-bn=0.275816 genre-wl=0.013862 genre-bc=0.311055 genre-nw=6.26691 n_var=6 comma_nodes=1 comma_insertion=1 count_category_5=5 trivial_cond_prob=5.79757 lef.stem=23.8061 phrase_pfe=7.97642 gt_prob=33.7002 model1nrm=24.376 lfe.stem=6.18636 model1inv=5.46316 nomodel1inv=3 is_lexicalized=7 phrase_pef=18.2271 taglex.nrm=23.46 derivation-size=8 corpora-LDC2005T06=0.0138693 corpora-LDC2008G05=0.0506064 genre-ng=0.0150507 adjp_nodes=1 corpora-LDC2003E07=0.0231563 genre-treebank=0.0231563 cc_nodes=1 corpora-LDC2007E46=0.0311577 dt_nodes=3 the_insertion=2 to_nodes=1 to_insertion=1 corpora-LDC2006E86=0.00391652 in_nodes=1 of_insertion=1 jj_nodes=2 nn_nodes=3 rquote_nodes=1 rquote_insertion=1 npb_nodes=3 vp_nodes=2 period_nodes=1 pp_nodes=1 np_c_nodes=3 vbd_nodes=1 s_nodes=1 vp_c_nodes=1 vb_nodes=1 be_insertion=1 adjp_rooted=1 np_c_rooted=1 npb_rooted=1 s_rooted=1 s_c_rooted=1 s_c_nodes=1 nonmonotone=1 foreign-length=5 top-prob=0.147244 top-rule=1 nn_rooted=1 sb[JJ][CC]=1 sb[TO][VP-C]=1 sblm=38.7644 taglex.nrm.LDC2004E12=1.44 taglex.nrm.LDC2008G06=0.64 taglex.nrm.LDC2006E85=1.36 taglex.nrm.LDC2007E08=0.47 taglex.nrm.ng=1.71 taglex.nrm.LDC2003E07=0.6 taglex.nrm.LDC2005E83=1.62 taglex.nrm.LDC2007E103=0.38 taglex.nrm.CUDongaOct06=0.43 taglex.nrm.CUDongaOct07=0.32 taglex.nrm.un=1.5 taglex.nrm.LDC2006E34=-0.0100001 taglex.nrm.LDC2005T10=0.64 taglex.nrm.LDC2005T06=-0.44 taglex.nrm.LDC2006G05=1.62 taglex.nrm.wl=0.54 taglex.nrm.treebank=0.6 taglex.inv.wl=1.22 taglex.inv.LDC2002E18=1.19 taglex.inv.un=2.61 taglex.inv.LDC2006E86=0.88 taglex.inv.LDC2006E85=0.62 taglex.inv.LDC2004E12=2.37 taglex.inv.LDC2005T34=0.81 taglex.inv.bc=-1.06 taglex.inv.bn=-0.13 taglex.inv.CUDongaOct07=1.17 taglex.inv.LDC2005T06=-0.46 taglex.inv.LDC2006G05=2.07 taglex.inv.LDC2004T08_HK_News=1.48 taglex.inv.LDC2003E07=0.9 taglex.inv.LDC2006E24=-0.36 taglex.inv.LDC2006E26=1.61 taglex.inv.treebank=0.9 taglex.inv.LDC2008G06=1.63 taglex.inv.LDC2008G05=0.85 taglex.inv.LDC2007E101=-0.42 taglex.inv.ng=0.58 taglex.inv.LDC2005E83=1.04 taglex.inv.LDC2006E92=0.57 taglex.inv=5.82 taglex.inv.lexicon=0.7 taglex.inv.LDC2005T10=-0.51 taglex.inv.LDC2008E40=2.08 taglex.inv.LDC2007E06=1.14 taglex.inv.LDC2006E34=0.64 taglex.nrm.LDC2008G05=0.36 taglex.nrm.LDC2007E06=2.52 taglex.nrm.web=1.31 taglex.nrm.LDC2004T08_HK_News=0.25 taglex.nrm.LDC2007E46=1.79 taglex.nrm.LDC2006E93=0.7 taglex.nrm.LDC2006E24=1.18 taglex.nrm.bc=1.47 taglex.nrm.LDC2007E101=1.64 taglex.inv.Wikipedia=1.12 taglex.inv.government=0.51 taglex.inv.LDC2007E46=0.6 taglex.inv.LDC2007E87=-0.47 taglex.inv.LDC2006E93=0.63 taglex.inv.LDC2004T08=0.51 taglex.inv.web=1 taglex.inv.LDC2007E08=0.76 period_rooted=1 taglex.nrm.nw=0.52 taglex.nrm.LDC2006E92=2.48 taglex.nrm.bn=0.78 taglex.inv.LDC2007E103=0.45 taglex.nrm.LDC2007E87=1.55 taglex.inv.CUDongaOct06=0.62 taglex.inv.ADSO_v5=1.32 taglex.nrm.LDC2002L27=0.35 taglex.nrm.lexicon=0.31 taglex.nrm.LDC2008E40=0.62 count_category_4=2 taglex.nrm.LDC2002E18=-0.38 sb[^(s^)][DT]=3 sb[DT][NN]=3 sb[NN][^(/s^)]=3 sb[^(s^)][NPB]=3 sb[NPB][PP]=1 sb[PP][^(/s^)]=1 sb[^(s^)][IN]=1 sb[IN][NP-C]=1 sb[NP-C][^(/s^)]=1 sb[NPB][^(/s^)]=2 sb[^(s^)][JJ]=1 sb[CC][JJ]=1 sb[JJ][^(/s^)]=1 sb[^(s^)][NP-C]=1 sb[NP-C][VP]=2 sb[VP][^(/s^)]=1 sb[^(s^)][TO]=1 sb[VP-C][^(/s^)]=1 sb[^(s^)][VB]=1 sb[VB][ADJP]=1 sb[ADJP][^(/s^)]=1 sb[^(s^)][S-C]=1 sb[S-C][^/]=1 sb[^/]['']=1 sb[''][NP-C]=1 sb[VP][.]=1 sb[.][^(/s^)]=1 sb[^(s^)][VBD]=1 sb[VBD][^(/s^)]=1 sb[^(s^)][S]=1 sb[S][^(/s^)]=1 headmarker={{{R(H(D(D(H(DH)D(HD(H(DH))))H(HD(HD(HDD))))DDD(H(DH))H(H)D))}}}
+[sbmt.forest][verbose]: Lazy forest transcribed for nbest: 0.0194111 (wall) sec, memory +80.03K (70.08M -> 70.16M); from OS: +4.000K (936.1M -> 936.1M)
+[sbmt.forest][info]: [Lazy kbest filtered 4 of 10 derivations, leaving 6, or 60.0%]
+[sbmt.app.output-args][info]: Nbest: 0.0197642 (wall) sec, memory +80.03K (70.08M -> 70.16M); from OS: +4.000K (936.1M -> 936.1M)
+[sbmt.app.output-args][info]: (After nbest) number of equivalences in memory: 99
+[sbmt.forest][verbose]: Printing NBEST sent=1176 nbest=0  ...
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "price" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"price\"")=10^-2.84025
+[sbmt.ngram][verbose]: p_sblm("<s>","\"price\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=199036167 ; rewrite: NN -> "price" score=10^-3.31457 (inside)
+[sbmt.ngram][verbose]: p_sblm("NN")=10^-1.31847
+[sbmt.sblm][debug]: scored id=199036167 inside=10^-3.31457 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "number" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"number\"")=10^-2.37514
+[sbmt.ngram][verbose]: p_sblm("<s>","\"number\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=285550478 ; rewrite: NN -> "number" score=10^-2.84946 (inside)
+[sbmt.ngram][verbose]: p_sblm("NPB")=10^-1.06984
+[sbmt.sblm][debug]: scored id=285550478 inside=10^-4.41338 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB PP </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","PP")=10^-0.634422
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","PP","NP-C","</s>")=10^-0.021532
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: NP-C -> NPB PP score=10^-0.678172 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=PP ; <s> -> IN NP-C </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","PP","IN")=10^-0.031938
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","PP","NP-C")=10^-0.0325994
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","NP-C","PP","</s>")=10^-0.00063682
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: PP -> IN NP-C score=10^-0.0651742 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=IN ; <s> -> "of" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","IN","\"of\"")=10^-0.570979
+[sbmt.ngram][verbose]: p_sblm("<s>","\"of\"","IN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: IN -> "of" score=10^-1.0453 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","</s>")=10^-0.162481
+[sbmt.sblm][debug]: score id=218681923 ; rewrite: NP-C -> NPB score=10^-0.184699 (inside)
+[sbmt.ngram][verbose]: p_sblm("NP-C")=10^-1.16591
+[sbmt.sblm][debug]: scored id=218681923 inside=10^-3.53726 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=ADJP ; <s> -> JJ CC JJ </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","ADJP","JJ")=10^-0.29572
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","ADJP","CC")=10^-0.739522
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","ADJP","JJ")=10^-0.0280051
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","CC","JJ","ADJP","</s>")=10^-0.0218124
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: ADJP -> JJ CC JJ score=10^-1.08506 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=JJ ; <s> -> "fit" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"fit\"")=10^-4.01762
+[sbmt.ngram][verbose]: p_sblm("<s>","\"fit\"","JJ","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "fit" score=10^-4.49194 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=CC ; <s> -> "and" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","CC","\"and\"")=10^-0.0511488
+[sbmt.ngram][verbose]: p_sblm("<s>","\"and\"","CC","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: CC -> "and" score=10^-0.52547 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=JJ ; <s> -> "proper" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","JJ","\"proper\"")=10^-3.04123
+[sbmt.ngram][verbose]: p_sblm("<s>","\"proper\"","JJ","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=185165479 ; rewrite: JJ -> "proper" score=10^-3.51555 (inside)
+[sbmt.ngram][verbose]: p_sblm("ADJP")=10^-2.23911
+[sbmt.sblm][debug]: scored id=185165479 inside=10^-9.61802 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=S-C ; <s> -> NP-C VP </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C","NP-C")=10^-0.0619854
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","S-C","VP")=10^-0.0415483
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","VP","S-C","</s>")=10^-0.000225209
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: S-C -> NP-C VP score=10^-0.103759 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP ; <s> -> TO VP-C </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","VP","TO")=10^-0.870674
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP","VP-C")=10^-0.0121144
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","VP-C","VP","</s>")=10^-0.000334276
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP -> TO VP-C score=10^-0.883123 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=TO ; <s> -> "to" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","TO","\"to\"")=10^-2.11065e-05
+[sbmt.ngram][verbose]: p_sblm("<s>","\"to\"","TO","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: TO -> "to" score=10^-0.474342 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP-C ; <s> -> VB ADJP </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","VP-C","VB")=10^-0.270467
+[sbmt.ngram][verbose]: p_sblm("<s>","VB","VP-C","ADJP")=10^-1.43913
+[sbmt.ngram][verbose]: p_sblm("<s>","VB","ADJP","VP-C","</s>")=10^-0.15011
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VP-C -> VB ADJP score=10^-1.85971 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VB ; <s> -> "be" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","VB","\"be\"")=10^-0.818102
+[sbmt.ngram][verbose]: p_sblm("<s>","\"be\"","VB","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=444170192 ; rewrite: VB -> "be" score=10^-1.29242 (inside)
+[sbmt.ngram][verbose]: p_sblm("S-C")=10^-2.22258
+[sbmt.sblm][debug]: scored id=444170192 inside=10^-4.61335 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=. ; <s> -> "?" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>",".","\"?\"")=10^-1.66425
+[sbmt.ngram][verbose]: p_sblm("<s>","\"?\"",".","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=129596 ; rewrite: . -> "?" score=10^-2.13857 (inside)
+[sbmt.ngram][verbose]: p_sblm(".")=10^-1.93813
+[sbmt.sblm][debug]: scored id=129596 inside=10^-2.13857 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=S ; <s> -> S-C , '' NP-C VP . </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","S","S-C")=10^-1.77353
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C","S",",")=10^-0.0361048
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","S","''")=10^-0.447469
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","S","NP-C")=10^-0.00190014
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","S","VP")=10^-0.0132131
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP","S",".")=10^-0.0266347
+[sbmt.ngram][verbose]: p_sblm("<s>","S-C",",","''","NP-C","VP",".","S","</s>")=10^-0.0127218
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: S -> S-C , '' NP-C VP . score=10^-2.31158 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=, ; <s> -> "," </s>
+[sbmt.ngram][verbose]: p_sblm("<s>",",","\",\"")=10^-0.000184094
+[sbmt.ngram][verbose]: p_sblm("<s>","\",\"",",","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: , -> "," score=10^-0.474505 (inside)
+[sbmt.sblm][debug]: pcfg_score: p='' ; <s> -> """ </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","''","\"\"\"")=10^-0.00336274
+[sbmt.ngram][verbose]: p_sblm("<s>","\"\"\"","''","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: '' -> """ score=10^-0.477684 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NP-C ; <s> -> NPB </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NP-C","NPB")=10^-0.0222178
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","NP-C","</s>")=10^-0.162481
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NP-C -> NPB score=10^-0.184699 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NPB ; <s> -> DT NN </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NPB","DT")=10^-0.440374
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NPB","NN")=10^-0.406551
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","NN","NPB","</s>")=10^-0.0890609
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NPB -> DT NN score=10^-0.935986 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=DT ; <s> -> "the" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","DT","\"the\"")=10^-0.153608
+[sbmt.ngram][verbose]: p_sblm("<s>","\"the\"","DT","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: DT -> "the" score=10^-0.627928 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=NN ; <s> -> "spokesman" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","NN","\"spokesman\"")=10^-2.35616
+[sbmt.ngram][verbose]: p_sblm("<s>","\"spokesman\"","NN","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: NN -> "spokesman" score=10^-2.83048 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VP ; <s> -> VBD </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","VP","VBD")=10^-0.720251
+[sbmt.ngram][verbose]: p_sblm("<s>","VBD","VP","</s>")=10^-1.08127
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: VP -> VBD score=10^-1.80152 (inside)
+[sbmt.sblm][debug]: pcfg_score: p=VBD ; <s> -> "said" </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","VBD","\"said\"")=10^-0.875371
+[sbmt.ngram][verbose]: p_sblm("<s>","\"said\"","VBD","</s>")=10^-0.474321
+[sbmt.sblm][debug]: score id=429693942 ; rewrite: VBD -> "said" score=10^-1.34969 (inside)
+[sbmt.ngram][verbose]: p_sblm("S")=10^-1.87171
+[sbmt.sblm][debug]: scored id=429693942 inside=10^-10.9941 h=10^0
+[sbmt.sblm][debug]: pcfg_score: p=TOP ; <s> -> S </s>
+[sbmt.ngram][verbose]: p_sblm("<s>","TOP","S")=10^-0.13516
+[sbmt.ngram][verbose]: p_sblm("<s>","S","TOP","</s>")=10^-5.10129e-14
+[sbmt.sblm][debug]: score id=1010100014 ; rewrite: TOP -> S score=10^-0.13516 (inside)
+[sbmt.ngram][verbose]: p_sblm("TOP")=0
 [sbmt.sblm][debug]: scored id=1010100014 inside=10^-0.13516 h=10^0
 [sbmt.app.grammar-args][terse]: popping grammar
-[sbmt.app.grammar-args][terse]: Grammar popped: 0.55887 (wall) sec, memory +1.867M (50.98M -> 52.85M); from OS: +1.867M (147.6M -> 149.5M)
+[sbmt.app.grammar-args][terse]: Grammar popped: 0.555464 (wall) sec, memory +1.867M (50.63M -> 52.50M); from OS: +1.992M (897.2M -> 899.2M)
