@@ -1928,12 +1928,18 @@ g1() {
         local source=$1
         shift
   local out=${OUT:-$source.$HOST.`filename_from "$@"`}
+  (
+      set -e
         set -x
         local flags="$CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDE"
 showvars_optional MOREFLAGS flags
-        [ "$OPT" ] || flags="$flags -O0"
-        g++ -ggdb -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags $LDFLAGS "$@" $source -o $out && $gdb ./$out $ARGS
+        if ! [ "$OPT" ] ; then
+            flags="$flags -O0"
+        fi
+        g++ $MOREFLAGS -ggdb -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags $LDFLAGS "$@" $source -o $out && $gdb ./$out $ARGS
         set +x
+        set +e
+        )
 }
 euler() {
     source=${source:-euler$1.cpp}
@@ -1942,7 +1948,7 @@ euler() {
     g++ -O euler$1.cpp $flags -o $out && echo running $out ... && ./$out
 }
 gtest() {
-    MOREFLAGS=$GCPPFLAGS OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DTEST -DINCLUDED_TEST
+    MOREFLAGS="-I$SBMT_TRUNK $GCPPFLAGS" OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DTEST -DINCLUDED_TEST
 # -lboost_unit_test_framework-$BOOST_SUFFIX
 #-lboost_test_exec_monitor-$BOOST_SUFFIX
 #-I/usr/include/db4 -L/usr/local/lib

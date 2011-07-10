@@ -749,6 +749,7 @@ std::ios_base::iostate read_imp(array<T,Alloc> *a,std::basic_istream<charT,Trait
 {
   dynamic_array<T,Alloc> s(reserve);
   std::ios_base::iostate ret=s.read(in,read);
+  a->dealloc();
   s.compact_giving(*a); // transfers to a
   return ret;
 }
@@ -956,15 +957,19 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
   BOOST_REQUIRE(db.size()==sz2);
   for (unsigned i=0;i<sz2;++i)
     BOOST_CHECK(a2[i]==db[i]);
+  unsigned c=0;
+
+  {
   array<int> d1map(sz),d2map(sz);
   BOOST_CHECK(3==new_indices(rm1,rm1+sz,d1map.begin()));
   BOOST_CHECK(4==new_indices(rm2,rm2+sz,d2map.begin()));
-  unsigned c=0;
   for (unsigned i=0;i<d1map.size();++i)
     if (d1map[i]==-1)
       ++c;
     else
       BOOST_CHECK(da[d1map[i]]==aa[i]);
+  d1map.dealloc();d2map.dealloc();
+  }
 
 // remove_marked_swap
   std::vector<unsigned> ea(aa.begin(),aa.end());
@@ -1016,7 +1021,7 @@ BOOST_AUTO_TEST_CASE( test_dynarray )
   string sb="(2 3 4 5 6)";
 
 #define EQIOTEST(A,B)  do { A<unsigned> a;B<unsigned> b;stringstream o;istringstream isa(sa);isa >> a;  \
-    o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);} while(0)
+    o << a;BOOST_CHECK(o.str() == sb);o >> b;BOOST_CHECK(a==b);a.dealloc();b.dealloc();} while(0)
 
   EQIOTEST(array,array);
   EQIOTEST(array,dynamic_array);

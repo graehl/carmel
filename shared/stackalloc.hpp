@@ -43,7 +43,7 @@ struct StackAlloc
         top=graehl::align_up((T*)top);
     }
     template <class T>
-    T* aligned_alloc(unsigned n=1) /* throw descriptors are lame -- michael -- throw(StackAlloc::Overflow) */
+    T* aligned_alloc(unsigned n=1) /* throw(StackAlloc::Overflow) */
     {
         this->align<T>();
         return alloc<T>(n);
@@ -69,7 +69,7 @@ struct StackAlloc
         return ((T*)top);
     }
     template <class T>
-    T* alloc(unsigned n=1) /* they are only enforced at runtime for a performance penalty -- michael --  throw(StackAlloc::Overflow) */
+    T* alloc(unsigned n=1) /* throw(StackAlloc::Overflow) */
     {
         T*& ttop(*(T**)&top);
         Assert(graehl::is_aligned(ttop));
@@ -87,7 +87,7 @@ struct StackAlloc
         return saved_end;
     }
     template <class T>
-    T *alloc_end(unsigned n=1) /* and of course their violation is a disaster --michael -- throw(StackAlloc::Overflow) */
+    T *alloc_end(unsigned n=1) /* throw(StackAlloc::Overflow) */
     {
         end = graehl::align_down((T *)end);
         end = ((T*)end)-1;
