@@ -291,7 +291,8 @@ public:
 
     array(const T *begin, const T *end) : vec(const_cast<T *>(begin)), endspace(const_cast<T *>(end)) { }
     array(const T* buf,unsigned sz) : vec(const_cast<T *>(buf)), endspace(buf+sz) {}
-    explicit array(unsigned sp=4) { alloc(sp); }
+  array() : vec(0),endspace(0) {  }
+    explicit array(unsigned sp) { alloc(sp); }
     array(unsigned sp, const Alloc &a): Alloc(a) { alloc(sp); }
     template<class I>
     array(unsigned n,I begin) { // copy up to n
