@@ -4,6 +4,7 @@
 #include <graehl/shared/auto_report.hpp>
 #include <graehl/shared/stopwatch.hpp>
 #include <graehl/shared/print_read.hpp>
+#include <graehl/shared/print_width.hpp>
 
 namespace graehl {
 
@@ -16,7 +17,8 @@ struct time_change
     template <class O>
     void print(O &o) const
     {
-        o << const_cast<stopwatch&>(time).recent_total_time() << " sec";
+      double t=const_cast<stopwatch&>(time).recent_total_time();
+      print_width(o,t,6) << " sec";
     }
 
     typedef time_change self_type;
