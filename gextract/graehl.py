@@ -16,7 +16,49 @@ from itertools import *
 #any=exists
 
 def datetoday():
-    '%s'%datetime.datetime.today()
+    return str(datetime.datetime.today())
+
+def datenow():
+    return datetime.datetime.now()
+
+def str2date(s):
+    return datetime.datetime.strptime(s,'%Y-%m-%d %H:%M:%S.%f')
+
+datere=re.compile(r'\d+-\d+-\d+ \d+:\d+:\d+\.\d+')
+
+def datediff(since,now=None):
+    if type(since)==str: since=str2date(since)
+    if now is None: now=datenow()
+    if type(now)==str: now=str2date(now)
+    return now-since
+
+def datesin(f):
+    if type(f)==str: f=open(f)
+    for line in f:
+        for m in datere.findall(line):
+            yield str2date(m)
+
+def minandmax(s,l=None,u=None):
+    for x in s:
+        if l is None or x<l: l=x
+        if u is None or x>u: u=x
+    return (l,u)
+
+def ctime(path):
+    return datetime.datetime.fromtimestamp(os.path.getctime(path))
+def mtime(path):
+    return datetime.datetime.fromtimestamp(os.path.getmtime(path))
+def filedaterange(path,usefs=True):
+    mind=None
+    maxd=None
+    if usefs and type(path)==str:
+        mind=ctime(path)
+        maxd=mtime(path)
+    return minandmax(datesin(path),mind,maxd)
+
+def filedatespan(path,usefs=True):
+    a,b=filedaterange(path,usefs)
+    return b-a
 
 def readfrom(infile):
     return open(infile) if type(infile)==str else infile

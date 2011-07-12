@@ -236,7 +236,7 @@ buildpypy() {
         [[ $jit ]] || opt=2
         # mar 2010 opt=2 is default (jit is 32-bit only)
         cd pypy/translator/goal
-        ${python:-python} translate.py --opt=$opt targetpypystandalone.py
+        ${python:-python2.7} translate.py --opt=$opt --cc=gcc targetpypystandalone.py
         ./pypy-c --help
         )
 }
