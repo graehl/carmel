@@ -45,7 +45,7 @@ def log_change(type,olds,news,parnode,*rest):
         sys.stderr.write(type+': old='+pstr(map(cstr,olds))+' new='+pstr(map(cstr,news))+' parnode(after)='+richs(parnode,names=False)+' '+pstr(rest)+'\n')
 
 def richstr(t):
-    if type(t) is tuple and len(t)==2:
+    if isinstance(t, tuple) and len(t)==2:
         return "[%s,%s]"%t
     return string.translate(str(t),parenescape)
 
@@ -624,7 +624,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
         n_t=0
         while gi<ge:
             c=frhs[gi-b]
-            if type(c) is tuple:
+            if isinstance(c, tuple):
                 rhs+=xrs_var(c[0])
                 n_nt+=1
                 newi=c[1].span[1]

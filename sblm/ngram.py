@@ -42,7 +42,7 @@ class ngram_counts(object):
             self.ncountn=self.counts_of_counts(max)
         return self.ncountn
     def write_kn_discounts(self,out,mincount=1):
-        if type(out)==str: out=open(out,'w')
+        if isinstance(out, str): out=open(out,'w')
         def wf(name,val):
             out.write(('%s %s\n'%(name,val)))
         wf('mincount',mincount)
@@ -54,12 +54,11 @@ class ngram_counts(object):
         wf('discount3+',3-4*y*c4/c3)
         out.flush()
     def write_counts(self,out,sort=True):
-        if type(out)==str: out=open(out,'w')
+        if isinstance(out, str): out=open(out,'w')
         def wf(ngram,val):
             out.write(' '.join(ngram)+' '+str(val)+'\n')
         if sort:
-            keys=self.counts.keys()
-            keys.sort()
+            keys=sorted(self.counts.keys())
             for k in keys:
                 wf(k,self.counts[k])
         else:
@@ -117,10 +116,10 @@ def copy_map_key(dic,mapf=identity):
     return r
 
 def untuple_safe(s):
-    return s[0] if type(s)==tuple else s
+    return s[0] if isinstance(s, tuple) else s
 
 def entuple_safe(x):
-    return x if type(x)==tuple else (x,)
+    return x if isinstance(x, tuple) else (x,)
 
 def build_2gram(logp2,logp1,bow1,digit2at=False,unkword=None,logp_unk=0.0):
     n=ngram(2,digit2at=digit2at,unkword=unkword,logp_unk=logp_unk)
@@ -209,7 +208,7 @@ class ngram(object):
         else:
             self.set_order(order)
     def count_text(self,text,i=0,pre=None,post=None):
-        if type(text)==str: text=text.split()
+        if isinstance(text, str): text=text.split()
         if self.digit2at: text=map(digit2at,text)
         if pre is not None:
             text=[pre]+text
@@ -256,7 +255,7 @@ class ngram(object):
     def score_text(self,text,i=0):
         return sum(self.score_text_detail(text,i=i))
     def count_file(self,inf,pre='<s>',post='</s>'):
-        if type(inf)==str: inf=open(inf)
+        if isinstance(inf, str): inf=open(inf)
         for l in inf:
             self.count_text(l,0,pre,post)
     def __str__(self):
@@ -342,7 +341,7 @@ class ngram(object):
 #                yield w
     def write_vocab(self,outf):
         "pre: counts not cleared"
-        if type(outf)==str: outf=open(outf,'w')
+        if isinstance(outf, str): outf=open(outf,'w')
         counts=self.ngrams[0]
         if not len(counts):
             counts=self.bow[0]
@@ -353,7 +352,7 @@ class ngram(object):
             self.set_order(order)
         elif clear_counts:
             self.clear_counts()
-        if type(infile)==str: infile=open(infile)
+        if isinstance(infile, str): infile=open(infile)
         grams=re.compile(r'\\(\d+)-grams:\s*')
         headgrams=re.compile(r'^ngram (\d+)=(\d+)')
         n=0
@@ -446,7 +445,7 @@ class ngram(object):
         #warn('write_lm','outfile=%s prefix=%s'%(outfile,prefix))
         if outfile is None:
             outfile=self.lmfile(prefix)
-        if type(outfile)==str:
+        if isinstance(outfile, str):
             warn("writing SRI lm => ",outfile)
             outfile=open(outfile,'w')
         def wf(*f):

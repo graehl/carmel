@@ -27,13 +27,13 @@ def str2date(s):
 datere=re.compile(r'\d+-\d+-\d+ \d+:\d+:\d+\.\d+')
 
 def datediff(since,now=None):
-    if type(since)==str: since=str2date(since)
+    if isinstance(since, str): since=str2date(since)
     if now is None: now=datenow()
-    if type(now)==str: now=str2date(now)
+    if isinstance(now, str): now=str2date(now)
     return now-since
 
 def datesin(f):
-    if type(f)==str: f=open(f)
+    if isinstance(f, str): f=open(f)
     for line in f:
         for m in datere.findall(line):
             yield str2date(m)
@@ -51,7 +51,7 @@ def mtime(path):
 def filedaterange(path,usefs=True):
     mind=None
     maxd=None
-    if usefs and type(path)==str:
+    if usefs and isinstance(path, str):
         mind=ctime(path)
         maxd=mtime(path)
     return minandmax(datesin(path),mind,maxd)
@@ -61,7 +61,7 @@ def filedatespan(path,usefs=True):
     return b-a
 
 def readfrom(infile):
-    return open(infile) if type(infile)==str else infile
+    return open(infile) if isinstance(infile, str) else infile
 
 def pretty_float(x,digits=16):
     s='%.*g'%(digits,x)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 class Progress(object):
     def __init__(self,max=None,out=sys.stderr,big=10000,small=None):
-        self.out=open(out,'w') if type(out)==str else out
+        self.out=open(out,'w') if isinstance(out, str) else out
         self.big=big
         self.small=big/10 if small is None else small
         self.n=0
@@ -316,7 +316,7 @@ class Stopwatch(object):
 def mkdir_p(path):
     try:
         os.makedirs(path)
-    except OSError,exc:
+    except OSError as exc:
         pass
         if exc.errno == errno.EEXIST:
             pass
@@ -385,11 +385,11 @@ def write_dict(d,out=sys.stdout,mappair=identity,mapk=identity,mapv=identity):
 
 def write_tabsep(pairs,out=sys.stdout,mappair=identity,mapk=identity,mapv=identity):
     if isinstance(pairs,dict): pairs=pairs.iteritems()
-    if type(out)==str: out=open(out,'w')
+    if isinstance(out, str): out=open(out,'w')
     for kv in pairs:
         #dump('tabsep',type(kv),kv)
         kv=mappair(kv)
-        if type(kv)==tuple and len(kv)==2:
+        if isinstance(kv, tuple) and len(kv)==2:
             kv=(mapk(kv[0]),mapv(kv[1]))
         #dump('tabsep post-map',type(kv),kv)
         out.write('\t'.join(map(str,kv))+'\n')
@@ -421,7 +421,7 @@ def is_iter(x):
     return True
 
 def is_nonstring_iter(x):
-    return False if type(x)==str else is_iter(x)
+    return False if isinstance(x, str) else is_iter(x)
 
 def intern_tuple(seq):
     return tuple(intern(x) for x in seq)
@@ -606,7 +606,7 @@ def default_generator(gen,default=None):
         for x in gen: yield x
 
 def except_str():
-    return sys.exc_type+':'+sys.exc_value
+    return sys.exc_info()[0]+':'+sys.exc_info()[1]
 
 def close_file(f):
     if f is not sys.stdin and f is not sys.stderr and f is not sys.stdout:
@@ -665,9 +665,9 @@ def log10_prob(p):
     return math.log10(p)
 
 def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_list='\n',xform=identity):
-    if type(out)==str:
+    if isinstance(out, str):
         out=open(out,'w')
-    if type(l)!=list:
+    if not isinstance(l, list):
         l=list(l)
     if header:
         out.write('(N=%d) %s:%s'%(len(l),name,after_item))
@@ -678,7 +678,7 @@ def write_list(l,out=sys.stdout,name='List',header=True,after_item='\n',after_li
     return out
 
 def write_lines(l,out=sys.stdout):
-    if type(out)==str:
+    if isinstance(out, str):
         out=open(out,'w')
     for x in l:
         out.write(str(x)+'\n')
@@ -1364,7 +1364,7 @@ def iter_except(func, exception, first=None):
     try:
         if first is not None:
             yield first()
-        while 1:
+        while True:
             yield func()
     except exception:
         pass

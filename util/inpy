@@ -29,13 +29,13 @@ except:
 #also from reddit:
 #  ppdict = lambda d:"\n".join(map("%s: %s".__mod__, d.items()))
 def ppdict(d):
-    print '{'
-    keys=d.keys()
+    print('{')
+    keys=list(d.keys())
     keys.sort()
     for k in keys:
         spacing=" " * (16-(len(repr(k))+1))
-        print "%s:%s%s," % (repr(k),spacing,repr(d[k]))
-    print '}'
+        print("%s:%s%s," % (repr(k),spacing,repr(d[k])))
+    print('}')
 
 historyPath = os.path.expanduser("~/.pyhistory")
 

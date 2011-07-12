@@ -84,7 +84,7 @@ def func_to_optionparser(func):
         longn=name.replace('_', '-')
         long_name = '--%s' % longn
         names.append(long_name)
-        if type(example) is bool:
+        if isinstance(example, bool):
             no_name='--no%s'%longn
             opt.add_option(make_option(
                 no_name, action='store_false', dest=name,help = helpdict.get(funcname, 'unset %s'%long_name)
@@ -93,7 +93,7 @@ def func_to_optionparser(func):
         else:
             action = 'store'
         examples=str(example)
-        if type(example) is int:
+        if isinstance(example, int):
             if example==sys.maxint: examples="INFINITY"
             if example==(-sys.maxint-1): examples="-INFINITY"
         help_post=' (default: %s)'%examples
@@ -185,7 +185,7 @@ def run(
     if not errors:
         try:
             return func(**resolved)
-        except Exception, e:
+        except Exception as e:
             if include_func_name_in_errors:
                 stderr.write('%s: ' % func.__name__)
             stderr.write(str(e) + '\n')

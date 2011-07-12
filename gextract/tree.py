@@ -22,7 +22,7 @@ class Node:
         if children is None:
             self.children = []
         else:
-            self.children = children if type(children)==list else list(children)
+            self.children = children if isinstance(children, list) else list(children)
         self.update_children()
 
     def update_children(self):
@@ -264,7 +264,7 @@ class Node:
         return self is node or (self.parent != None and self.parent.is_dominated_by(node))
 
     def dominates(self, arg):
-        if type(arg) is list:
+        if isinstance(arg, list):
             flag = 1
             for node in arg:
                 flag = flag and node.is_dominated_by(self)
