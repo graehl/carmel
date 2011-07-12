@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python2.7
 #-*- python -*-
 
 #hadoop mapper for PCFG: sbmt training format tree input -> parent children\t1
