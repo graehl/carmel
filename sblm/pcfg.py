@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python2.7
 """
 a simple PCFG. more complicated than you'd think.
 

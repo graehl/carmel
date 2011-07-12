@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python2.7
 """
 
 output NT, preterm vocab, (stripping -N cat-split suffixes, optionally), and optionally any restructured node->eventual treebank parent distributions.
