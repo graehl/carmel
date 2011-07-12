@@ -1,3 +1,11 @@
+to3() {
+    #-f ws_comma
+    2to3 -f all -f idioms  -f set_literal "$@"
+}
+to2() {
+    #-f set_literal #python 2.7
+    2to3 -f idioms  -f apply -f except -f ne -f paren -f raise -f sys_exc -f tuple_params -f xreadlines -f types "$@"
+}
 jens2sh1() {
     perl -ne '
 require "$ENV{HOME}/t/graehl/util/libgraehl.pl";

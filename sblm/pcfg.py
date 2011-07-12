@@ -581,7 +581,7 @@ class sblm_ngram(object):
             return bo.score_text(sent,i=1)
     def eval_pcfg_event(self,e):
         "return (logp,n) where n is 1 if the pcfg rewrite was scored, 0 otherwise (because we skip unknown terminals, those get 0)"
-        if type(e)==tuple:
+        if isinstance(e, tuple):
             e=tuple(e[0])
             assert len(e)==2
 #            warn("eval_pcfg terminal",e,max=10)
@@ -591,7 +591,7 @@ class sblm_ngram(object):
     def tree_from_line(self,line):
         return raduparse(line,intern_labels=True).map_skipping(self.label_map)
     def eval_radu(self,infile):
-        if type(infile)==str: infile=open(infile)
+        if isinstance(infile, str): infile=open(infile)
         #FIXME: use gen_pcfg_events_radu
         logp=0.
         n=0
@@ -622,14 +622,14 @@ class sblm_ngram(object):
                     n+=nknown
         return dict(logprob=logp,nnode=nnode,nevents=n,ntrees=ntrees,nwords=nw,nunk=nunk,nunk_types=len(unkwords),top_unk=head_sorted_dict_val_str(unkwords,head=10,reverse=True))
     def read_radu(self,infile):
-        if type(infile)==str: infile=open(infile)
+        if isinstance(infile, str): infile=open(infile)
         n=0
         for line in infile:
             t=self.tree_from_line(line)
             if t is not None:
                 n+=t.size()
             for e in gen_pcfg_events_radu(t,terminals=False,digit2at=self.digit2at):
-                if type(e)==tuple:
+                if isinstance(e, tuple):
                     e=tuple(e[0])
 #                    warn("sblm_ngram train terminal",e,max=10)
                     self.terminals.count_tw(e)
