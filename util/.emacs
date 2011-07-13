@@ -4275,3 +4275,7 @@ loaded as such.)"
 (defalias 'dsm 'desktop-save-mode)
 
 (defalias 'acm 'auto-complete-mode)
+(require 'smex)
+(smex-initialize)
+(global-set-key (kbd "M-x") 'execute-extended-command)
+(global-set-key (kbd "M-x") 'smex)
