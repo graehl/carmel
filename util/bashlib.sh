@@ -2237,7 +2237,7 @@ decode-log-sum() {
         unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'start decoder subprocess|Connectivity is broken|Max retransmit retries|-BLEU=|req status|CAUGHT|_error|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'start decoder subprocess|Connectivity is broken|Max retransmit retries|-BLEU=|req status|CAUGHT|_error|error:|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2297,11 +2297,19 @@ mira-log-sum() {
             fi
 #            echo $d/logs/mira.log $d/logs/deco*.log
 #            set -x
+            local dlog
+            for f in $d/logs/deco*.log ; do
+                if grep -q 'ommand line' $f ; then
+                    true
+                fi
+                dlog=$f
+            done
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
             echo
             )
         done
     ) 2>&1 | tee $log
     echo tail -100 $logs
+    echo less $dlog
 }
 true

@@ -3,6 +3,9 @@
  figure out python logging lib
 """
 
+def nonone(xs):
+    return (x for x in xs if x is not None)
+
 def identity(x):
     return x
 
