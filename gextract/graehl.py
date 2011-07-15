@@ -3,6 +3,9 @@
  figure out python logging lib
 """
 
+def getfield_brace(f,s):
+    pass
+
 def nonone(xs):
     return (x for x in xs if x is not None)
 
