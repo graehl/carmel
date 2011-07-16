@@ -36,6 +36,9 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def mapnode(self,f):
+        return Node(f(self),[c.mapnode(f) for c in self.children])
+
     def map(self,f):
         return Node(f(self.label),[c.map(f) for c in self.children])
 

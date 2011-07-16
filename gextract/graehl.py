@@ -1,10 +1,9 @@
 ### from graehl import *
-"""TODO:
- figure out python logging lib
-"""
+### """TODO:
+### figure out python logging lib
+### """
 
-def getfield_brace(f,s):
-    pass
+
 
 def nonone(xs):
     return (x for x in xs if x is not None)
@@ -13,6 +12,97 @@ def identity(x):
     return x
 
 import sys,re,random,math,os,collections,errno,time,operator,datetime
+
+bracefieldres=r'{{{(.*?)}}}'
+def bracefieldre(f):
+  return re.compile(r' %s=%s'%(f,bracefieldres))
+#use ' ' because \b doesn't work because of foreign-tree \btree
+
+def getfield_brace(f,s,single=True):
+  "single -> return single match else None (even if multiple matches); otherwise return list of matches"
+  res=bracefieldre(f)
+  l=list(res.findall(s))
+  if single:
+    if len(l)!=1:
+      raise Exception("got %s copies of %s={{{...}}}; wanted 1, in %s"%(len(l),f,s))
+    return l[0]
+  return l
+
+def shortest_of(strings):
+    return min(strings, key=len)
+
+def long_substr(strings):
+    substr = ""
+    if not strings:
+        return substr
+    reference = shortest_of(strings) #strings[0]
+    length = len(reference)
+    #find a suitable slice i:j
+    for i in xrange(length):
+        #only consider strings long at least len(substr) + 1
+        for j in xrange(i + len(substr) + 1, length):
+            candidate = reference[i:j]  # is the slice recalculated every time?
+            if all(candidate in text for text in strings):
+                substr = candidate
+    return substr
+
+# def subst1(s,fromsub,tosub=''):
+#   i=string.find(s,fromsub)
+#   if i==-1: return s
+#   return s[0:i]+tosub+s[i+len(fromsub):]
+
+# def subst1(s,fromsub,tosub=''):
+#     return s.replace(fromsub,tosub,count=1)
+
+def subst1_porch(s,substr,elide='...',porch=0):
+   i=string.find(s,fromsub)
+   if i==-1: return s
+   return s[0:max(i-porch,0)]+tosub+s[i+max(0,len(fromsub)-porch)]
+
+def subst_greedy(strings,substr,elide='...',porch=0):
+  return [subst1_porch(x,substr,elide,porch) for x in strings]
+
+def geti_clamped(xs,i):
+  if i<0:
+    return xs[0]
+  if i>=len(xs):
+    return xs[len(xs)-1]
+  return xs[i]
+
+def crossplus(a,b,c):
+  for i in xrange(0,max(len(a),len(b),len(c))):
+    yield geti_clamped(a,i)+geti_clamped(b,i)+geti_clamped(c,i)
+
+def smallest_difference(strings,elide='...',recurse=True,porch=1):
+  if min(len(x) for x in strings)<=len(elide): return strings
+  l=long_substr(strings)
+  if l==elide: return strings
+  ab=[x.split(l,1) for x in strings]
+  pa=l[:porch]
+  pb=l[len(l)-porch:]
+  al=[a+pa for (a,_) in ab]
+  bl=[b+pb for (_,b) in ab]
+  if recurse:
+    al=list(smallest_difference(al,elide,True,porch))
+    bl=list(smallest_difference(bl,elide,True,porch))
+  return crossplus(al,[elide],bl)
+
+def common_prefix(strings):
+    """ Find the longest string that is a prefix of all the strings.
+    """
+    if not strings:
+        return ''
+    prefix = strings[0]
+    for s in strings:
+        if len(s) < len(prefix):
+            prefix = prefix[:len(s)]
+        if not prefix:
+            return ''
+        for i in range(len(prefix)):
+            if prefix[i] != s[i]:
+                prefix = prefix[:i]
+                break
+    return prefix
 
 from itertools import *
 #from dumpx import *
@@ -88,8 +178,11 @@ def pretty_float(x,digits=16):
         # return s[0:d+1]+rounded
 
 if __name__ == "__main__":
-    for f in [1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:
-        print pretty_float(1e100*(1+f)),pretty_float(1e10*(1+f)),pretty_float(1+f),pretty_float(1-f),pretty_float(1-2*f)
+  for x in smallest_difference(['1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:','1e-12,1e-13,15e-14,1e14,1e15,15e-15,1e16,15e-16,1e-17,1e-18,1e18]:']):
+    print x
+
+#    for f in [1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:
+#        print pretty_float(1e100*(1+f)),pretty_float(1e10*(1+f)),pretty_float(1+f),pretty_float(1-f),pretty_float(1-2*f)
 
 class Progress(object):
     def __init__(self,max=None,out=sys.stderr,big=10000,small=None):
