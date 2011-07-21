@@ -18,20 +18,35 @@ from pcfg import *
 from tree import *
 from nbest import *
 
+unks=set([])
+def tounk(x):
+    return '<unk>' if x.startswith('GLUE') or x in unks else x
 
-def check_nbest(l,lm,term=True,strip=True,num2at=True):
+def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest='',maxnodes=999999):
+    output_nbest=None if output_nbest=='' else open(output_nbest,'w')
     trees=getfield_brace('tree',l)
     t=str_to_tree(trees)
+    if t is None:
+        warn("no tree for %s line %s"%(trees,l))
+        return
     rt=str(t)
     if trees!=rt:
-        s=smallest_difference([trees,rt],porch=2)
-        warn('tree={{{\n%s}}} mismatch with str(tree(t))=\n%s\nfull = %s'%(s[0],s[1],trees))
+        s=' '.join(smallest_difference([trees,rt],porch=2))
+        warn('mismatch %s \nfull = %s'%(s,trees))
     def label(x):
-        y=sbmt_lhs_label(x,num2at)
-        return strip_subcat(y) if strip else y
+        return tounk(sbmt_lhs_label(x,num2at))
     tm=t.mapnode(label)
-    sb=inds(l,'sb')
-    pc=inds(l,'spc')
+    def skiplabel(y):
+        #        dump('skiplabel',y)
+        if strip:
+            y=strip_subcat(y)
+        return no_bar(y) if flatten else y
+    tm=tm.map_skipping(skiplabel)
+    fv=getfields_num(l)
+    sb=inds(fv,'sb')
+    pc=inds(fv,'spc')
+    fvd=dict(fv)
+    sent=fvd['sent']
     sbt=IntDict()
     pct=IntDict()
     def vpc(p,c):
@@ -40,11 +55,14 @@ def check_nbest(l,lm,term=True,strip=True,num2at=True):
     def vlr(left,right):
 #        dump(left,right)
         sbt[(left,no_none(right,'</s>'))]+=1
-    dump(str(tm))
+    dump(sent,str(tm))
     tm.visit_pcl(vpc,leaf=False,root=False)
     tm.visit_lrl(vlr,leaf=False,left='<s>',right='</s>')
-    warn_diff(sb,sbt,desc='sb')
-    warn_diff(pc,pct,desc='pc')
+    head='sent=%s tree=%s tree-orig=%s'%(sent,tm,trees)
+    if len(sb):
+        warn_diff(sb,sbt,desc='sb',header=head)
+    if len(pc):
+        warn_diff(pc,pct,desc='pc',header=head)
     #    log(str(tm))
 
 @optfunc.arghelp('lm','SRI ngram trained by pcfg.py')
@@ -52,17 +70,21 @@ def check_nbest(l,lm,term=True,strip=True,num2at=True):
 def nbest_sblm_main(lm='nbest.pcfg.srilm',
                     nbest='nbest.txt',
                     strip=True,
+                    flatten=True,
                     num2at=True,
                     term=True,
+                    output_nbest='',
+                    maxnodes=999999,
                     ):
     n=None
 #    log(escape_indicator('<s>_;_:_[]^'))
 #    n=ngram(lm=lm)
     #outlm='rewrite.'+lm
     #n.write_lm(outlm)
+    dump(nbest)
     for l in open(nbest):
         if l.startswith("NBEST sent="):
-            check_nbest(l,n,term,strip,num2at)
+            check_nbest(l,n,term,strip,flatten,num2at,output_nbest,maxnodes)
 
 import optfunc
 optfunc.main(nbest_sblm_main)
