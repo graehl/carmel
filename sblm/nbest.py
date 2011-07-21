@@ -38,7 +38,11 @@ def getfield_brace(f,s,single=True):
     return l[0]
   return l
 
+#may return int or float! this may cause bugs if you don't expect it
 def getfields_num(s):
+    return [(n,int_equiv(float(v))) for (n,v) in numfieldre.findall(s)]
+
+def getfields_float(s):
     return [(n,float(v)) for (n,v) in numfieldre.findall(s)]
 
 def inds(f,pre):

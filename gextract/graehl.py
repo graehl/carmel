@@ -3,6 +3,9 @@
 ### figure out python logging lib
 ### """
 
+def int_equiv(x):
+    return int(x) if int(x)==x else x
+
 def no_none(x,default):
     return default if x is None else x
 
@@ -23,10 +26,12 @@ def dict_diff(ad,bd,f=entuple,zero=0):
             d[k]=f(zero,v)
     return d
 
-def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None):
+def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header=""):
     if descb is None:
         descb="%s'"%desc
     d=dict_diff(ad,bd,f=f,zero=zero)
+    if len(d):
+        warn('differences %s:'%header)
     for k,v in d.iteritems():
         warn('difference %s->%s [%s] = %s'%(desc,descb,k,v))
 
