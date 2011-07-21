@@ -36,6 +36,52 @@ class Node:
         self.parent = None
         self.order = 0
 
+    def map_bigram(self,f,parent=None,left=None):
+        return Node(f(self,parent,left),
+                    [self.children[i].map_bigram(f,parent=self,left=(left if i==0 else self.children[i-1])) for i in range(len(self.children))])
+
+    def visit_pcl(self,f,parent=None,leaf=True,root=True):
+        "f(parent,self)"
+        ch=self.children
+        if len(ch) or leaf:
+            if root and parent is None:
+                f(None,self.label)
+            elif parent is not None:
+                f(parent.label,self.label)
+            for c in ch:
+                c.visit_pcl(f,self,leaf,root)
+
+    def visit_lrl(self,f,leaf=True,left=None,right=None):
+        "f(left,right)"
+        #f(left=None,right=r,leaf=True) ... f(left=last-child,right=None,leaf=...)
+        ch=self.children
+        if not leaf:
+            if len(ch)==0: return
+            if len(ch[0].children)==0: return
+        l=left
+        for c in ch:
+            f(l,c.label)
+            c.visit_lrl(f,leaf,left,right)
+            l=c.label
+        f(l,right)
+
+
+    def visit_pc(self,f,parent=None,leaf=True,root=True):
+        if (root or parent is not None) and (leaf or len(self.children)>0):
+            f(self,parent)
+        for c in self.children:
+            c.visit_pc(f,self,leaf,root)
+
+    def visit_lr(self,f):
+        #f(left=None,right=r) ... f(left=last-child,right=None)
+        left=None
+        for c in self.children:
+            f(left,c)
+            left=c
+        f(left,None)
+        for c in self.children:
+            c.visit_lr(f)
+
     def mapnode(self,f):
         return Node(f(self),[c.mapnode(f) for c in self.children])
 

@@ -3,7 +3,32 @@
 ### figure out python logging lib
 ### """
 
+def no_none(x,default):
+    return default if x is None else x
 
+def entuple(*xs):
+    return tuple(xs)
+
+def diff(a,b):
+    return b-a
+
+def dict_diff(ad,bd,f=entuple,zero=0):
+    d={}
+    for k,v in ad.iteritems():
+        vb=bd.get(k,zero)
+        if v!=vb:
+            d[k]=f(v,vb)
+    for k,v in bd.iteritems():
+        if k not in ad:
+            d[k]=f(zero,v)
+    return d
+
+def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None):
+    if descb is None:
+        descb="%s'"%desc
+    d=dict_diff(ad,bd,f=f,zero=zero)
+    for k,v in d.iteritems():
+        warn('difference %s->%s [%s] = %s'%(desc,descb,k,v))
 
 def nonone(xs):
     return (x for x in xs if x is not None)
@@ -12,21 +37,6 @@ def identity(x):
     return x
 
 import sys,re,random,math,os,collections,errno,time,operator,datetime
-
-bracefieldres=r'{{{(.*?)}}}'
-def bracefieldre(f):
-  return re.compile(r' %s=%s'%(f,bracefieldres))
-#use ' ' because \b doesn't work because of foreign-tree \btree
-
-def getfield_brace(f,s,single=True):
-  "single -> return single match else None (even if multiple matches); otherwise return list of matches"
-  res=bracefieldre(f)
-  l=list(res.findall(s))
-  if single:
-    if len(l)!=1:
-      raise Exception("got %s copies of %s={{{...}}}; wanted 1, in %s"%(len(l),f,s))
-    return l[0]
-  return l
 
 def shortest_of(strings):
     return min(strings, key=len)
@@ -369,9 +379,6 @@ def append_attr(obj,attr,val):
         getattr(obj,attr).append(val)
     else:
         setattr(obj,attr,[val])
-
-def no_none(x,default):
-    return default if x is None else x
 
 def take_first(a,_):
     return a
