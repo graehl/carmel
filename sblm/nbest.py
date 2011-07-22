@@ -56,6 +56,23 @@ def inds(f,pre):
                 d[tuple(map(unescape_indicator,a))]=v
     return d
 
+def indre(pre):
+    res=r' (?:%s)\[\S*\]=%s'%(pre,numres)
+    dump(res)
+    return re.compile(res)
+
+def stripinds(nbeststr,pre):
+    return indre(pre).sub('',nbeststr)
+
+def ind_quote(k):
+    return ''.join('['+escape_indicator(x)+']' for x in k)
+
+def strind(pre,k,v):
+    return '%s%s=%s'%(pre,ind_quote(k),v)
+
+def strinds(pre,inds):
+    return ' '.join(strind(pre,k,v) for (k,v) in inds.iteritems())
+
 if __name__ == "__main__":
     r=re.compile(numres)
     for x in []: #'a3.4 -5e-10 .1 0 1 1. -3e+40 5e10']:
