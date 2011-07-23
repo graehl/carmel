@@ -2,8 +2,30 @@
 from graehl import *
 from dumpx import *
 from tree import *
+from pcfg import *
 
 import re
+
+lrb_re=re.compile(r'(\(-LRB-(?:-\d+) )\(\)')
+rrb_re=re.compile(r'(\(-RRB-(?:-\d+) )\)\)')
+def lrb_repl(m):
+    return m.group(1)+'-LRB-)'
+def rrb_repl(m):
+    return m.group(1)+'-RRB-)'
+def rb_esc(s):
+    return lrb_re.sub(lrb_repl,rrb_re.sub(rrb_repl,s))
+def nbest_tree(s):
+    s=rb_esc(s)
+    t=str_to_tree_warn(s)
+#    warn('pre ',' '.join(x.label for x in t.preorder()),max=10)
+    for x in t.preorder():
+        if not x.is_terminal():
+#            warn('pre l ',x.label)
+            x.label=tree.paren2lrb(x.label)
+#            warn('post l ',x.label)
+#    warn('post',' '.join(x.label for x in t.preorder()),max=10)
+#    t.relabelnode(lambda x:tree.paren2lrb(x.label) if x.is_cat() else x.label)
+    return t
 
 numres=r'[+\-]?(?:\.\d+|\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)'
 numre=re.compile(numres)
@@ -64,10 +86,10 @@ def indre(pre):
     res=r' (?:%s)\[\S*\]=%s'%(pre,numres)
     return re.compile(res)
 
-def stripinds(nbeststr,pre):
+def stripinds(pre,nbeststr):
     return indre(pre).sub('',nbeststr)
 
-def stripnumfeat(nbeststr,k):
+def stripnumfeat(k,nbeststr):
     return re.sub(r' %s=%s'%(k,numres),'',nbeststr)
 
 def ind_quote(k):

@@ -42,6 +42,16 @@ from graehl import *
 from dumpx import *
 from ngram import *
 
+def str_to_tree_warn(s,paren_after_root=False,max=None):
+    toks=tree.tokenizer.findall(s)
+    if len(toks)>2 and toks[0] == '(' and toks[1]=='(' and toks[-2]==')' and toks[-1]==')': #berkeley parse ( (tree) )
+        toks=toks[1:-1]
+    (t,n)=tree.scan_tree(toks,0,paren_after_root)
+    if t is None:
+        warn("scan_tree failed",": %s of %s: %s ***HERE*** %s"%(n,len(toks),' '.join(toks[:n]),' '.join(toks[n:])),max=max)
+    return t
+
+
 headindex_re=re.compile(r'([^~]+)~(\d+)~(\d+)')
 raduhead_base_skips=set(['.',"''",'``'])
 raduhead_more_skips=set([':',','])
@@ -78,7 +88,9 @@ def raduhead(t,dbgmsg='',headword=True):
 
 def raduparse(tline,intern_labels=False,strip_head=True):
     t=radu2ptb(tline,strip_head=strip_head)
-    t=tree.str_to_tree(t,intern_labels=intern_labels)
+    t=str_to_tree_warn(t)
+    if intern_labels:
+        t.mapinplace(intern)
     if not strip_head:
         #warn('raduparse','%s=%s'%(tline,t.str(square=True)))
         for n in t.postorder():

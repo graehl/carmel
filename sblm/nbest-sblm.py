@@ -21,6 +21,13 @@ from nbest import *
 sbpre='sb'
 pcpre='spc'
 
+def checkunks(xs):
+    for n in xs:
+        e=needsesc(n)
+        if e is not None:
+            warn("reserved char %s in feature name %s"%(e,n),max=1)
+
+
 unks=set([])
 def tounk(x):
     return '<unk>' if x.startswith('GLUE') or x in unks else x
@@ -35,6 +42,7 @@ def pcfg_score(tree,lm,term=True,num2at=True):
             sent[i]=sent[i-1]
             sent[i-1]=p
             s+=lm.score_word_combined(sent,i)
+            i-=1
         dump('score1',p,sent,s)
         return s
     def score(t):
@@ -57,17 +65,18 @@ def sblmunk(tree,lm,word=False,cat=False):
     return tree.reduce(r)
 
 def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxnodes=999999,lineno='?'):
-    trees=getfield_brace('tree',l)
-    t=str_to_tree(trees)
+    l=l.rstrip()
+    tstr=getfield_brace('tree',l)
+    t=nbest_tree(tstr) #str_to_tree_warn(tstr)
     if t is None:
-        warn("no tree for %s line #%s"%(trees,lineno))
+        warn("no tree"," from %s line #%s"%(tstr,lineno))
         return False
     if t.size()>maxnodes:
         return False
-    rt=str(t)
-    if trees!=rt:
-        s=' '.join(smallest_difference([trees,rt],porch=2))
-        warn('mismatch %s \nfull = %s'%(s,trees))
+    rt=t.str_impl(lrb=False)
+    if tstr!=rt:
+        s=' => '.join(smallest_difference([tstr,rt],porch=2))
+        warn('mismatch tree roundtrip (should just be -LRB- and -RRB- terminals',' diff = %s \norig = %s\nroundtrip = %s'%(s,tstr,rt),max=2)
     def label(x):
         return tounk(sbmt_lhs_label(x,num2at))
     tm=t.mapnode(label)
@@ -82,46 +91,21 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
     sb=inds(fv,sbpre)
     pc=inds(fv,pcpre)
     fvd=dict(fv)
+    checkunks(fvd.iterkeys())
 
-    sblm2=pcfg_score(tm,lm,term,num2at)
-    unkword2=sblmunk(tm,lm,word=True)
-    unkcat2=sblmunk(tm,lm,cat=True)
-    nts2=tm.size_nts()
+    line=[l,'']
+    def replfeat(f,v2,suf1='(nbest)',suf2='(python)'):
+        if f in fvd:
+            v=fvd[f]
+            equal_or_warn(v,v2,f,suf1,suf2)
+            line[0]=stripnumfeat(f,line[0])
+        line[1]+=' %s=%s'%(f,v2)
 
-    suf1='(nbest)'
-    suf2='(python)'
-    morefeats=''
+    replfeat('sblm-nts',tm.size_nts())
     if lm is not None:
-        unkn='sblm'
-        if unkn in fvd:
-            sblm=fvd[unkn]
-            if output_nbest is not None: l=stripnumfeat(unkn,l)
-            log('without sblm: %s'%l,max=1)
-            equal_or_warn(sblm,sblm2,unkn,suf1,suf2)
-        morefeats+=' %s=%s'%(unkn,sblm2)
-        unkn='sblm-unkword'
-        morefeats+=' %s=%s'%(unkn,unkword2)
-        if unkn in fvd:
-            unkword=fvd[unkn]
-            if output_nbest is not None: l=stripnumfeat(unkn,l)
-            equal_or_warn(unkword,unkword2,unkn,suf1,suf2)
-        unkn='sblm-unkcat'
-        morefeats+=' %s=%s'%(unkn,unkcat2)
-        if unkn in fvd:
-            unkcat=fvd[unkn]
-            if output_nbest is not None: l=stripnumfeat(unkn,l)
-            equal_or_warn(unkcat,unkcat2,unkn,suf1,suf2)
-    unkn='sblm-nts'
-    morefeats+=' %s=%s'%(unkn,nts2)
-    if unkn in fvd:
-        nts=fvd[unkn]
-        if output_nbest is not None: l=stripnumfeat(unkn,l)
-        equal_or_warn(nts,nts2,unkn,suf1,suf2)
-
-    for n in fvd.iterkeys():
-        e=needsesc(n)
-        if e is not None:
-            warn("reserved char %s in feature name %s"%(e,n),max=1)
+        replfeat('sblm',pcfg_score(tm,lm,term,num2at))
+        replfeat('sblm-unkword',sblmunk(tm,lm,word=True))
+        replfeat('sblm-unkcat',sblmunk(tm,lm,cat=True))
 
     sent=fvd['sent']
     sbt=IntDict()
@@ -132,14 +116,14 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         sbt[(left,no_none(right,'</s>'))]+=1
     tm.visit_pcl(vpc,leaf=False,root=False)
     tm.visit_lrl(vlr,leaf=False,left='<s>',right='</s>')
-    head='sent=%s tree=%s\ntree-orig=%s'%(sent,tm,trees)
+    head='sent=%s tree=%s\ntree-orig=%s'%(sent,tm,tstr)
     if len(sb):
         warn_diff(sb,sbt,desc=sbpre,header=head)
     if len(pc):
         warn_diff(pc,pct,desc=pcpre,header=head)
     if output_nbest is not None:
-        s=stripinds(l.rstrip(),'%s|%s'%(sbpre,pcpre))
-        output_nbest.write('%s %s %s%s\n'%(s,strinds(sbpre,sbt),strinds(pcpre,pct),morefeats))
+        s=stripinds('%s|%s'%(sbpre,pcpre),line[0])
+        output_nbest.write('%s %s %s%s\n'%(s,strinds(sbpre,sbt),strinds(pcpre,pct),line[1]))
     return True
 
 @optfunc.arghelp('lm','SRI ngram trained by pcfg.py')
