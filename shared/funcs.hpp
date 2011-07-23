@@ -647,6 +647,33 @@ void iota(ForwardIterator begin, ForwardIterator end, ValueType value)
     }
 }
 
+template <class I,class F>
+bool all(I i,I end,F const& f) {
+  // return std::find_if(i,end,std::not1(f))==end
+  for(;i!=end;++i)
+    if (!f(*i)) return false;
+  return true;
+}
+
+template <class I,class F>
+bool all(I const& c,F const& f) {
+  return all(c.begin(),c.end(),f);
+}
+
+
+template <class I,class F>
+bool exists(I i,I end,F const& f) {
+  // return std::find_if(i,end,f)!=end
+  for(;i!=end;++i)
+    if (f(*i)) return true;
+  return false;
+}
+
+template <class I,class F>
+bool exists(I const& c,F const& f) {
+  return exists(c.begin(),c.end(),f);
+}
+
 }
 
 #endif
