@@ -67,6 +67,9 @@ def indre(pre):
 def stripinds(nbeststr,pre):
     return indre(pre).sub('',nbeststr)
 
+def stripnumfeat(nbeststr,k):
+    return re.sub(r' %s=%s'%(k,numres),'',nbeststr)
+
 def ind_quote(k):
     return ''.join('['+escape_indicator(x)+']' for x in k)
 

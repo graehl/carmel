@@ -347,6 +347,11 @@ class ngram(object):
             counts=self.bow[0]
         for k in counts.iterkeys():
             outf.write(k+'\n')
+    def is_unk(self,w):
+        counts=self.ngrams[0]
+        if not len(counts):
+            counts=self.bow[0]
+        return w==self.unkword or w not in counts
     def read_lm(self,infile,clear_counts=True,order=None,read_unkp=True):
         if order is not None and order!=self.order:
             self.set_order(order)

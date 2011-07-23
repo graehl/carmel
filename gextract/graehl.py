@@ -674,6 +674,10 @@ neg_epsilon=-epsilon
 def approx_zero(x,epsilon=epsilon):
     return abs(x)<=epsilon
 
+def equal_or_warn(x1,x2,name='',suf1='1',suf2="2",epsilon=epsilon):
+    if not approx_equal(x1,x2,epsilon):
+        warn("%s%s = %s != %s = %s%s"%(name,suf1,x1,x2,name,suf2))
+
 # see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
 def approx_equal(x,a,epsilon=epsilon):
     return abs(x-a) <= (abs(x)+abs(a))*epsilon

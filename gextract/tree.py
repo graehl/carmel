@@ -40,6 +40,10 @@ class Node:
         return Node(f(self,parent,left),
                     [self.children[i].map_bigram(f,parent=self,left=(left if i==0 else self.children[i-1])) for i in range(len(self.children))])
 
+    def reduce(self,f):
+        cv=[c.reduce(f) for c in self.children]
+        return f(self.label,cv)
+
     def visit_pcl(self,f,parent=None,leaf=True,root=True):
         "f(parent,self)"
         ch=self.children
@@ -369,6 +373,14 @@ class Node:
 
     def is_preterminal(self):
         return len(self.children) == 1 and self.children[0].is_terminal()
+
+    def size_cat(self):
+        if self.is_terminal() or self.is_preterminal(): return 0
+        return 1+sum(c.size_cat() for c in self.children)
+
+    def size_nts(self):
+        if self.is_terminal(): return 0
+        return 1+sum(c.size_nts() for c in self.children)
 
     def label_lrb(self):
         return paren2lrb(str(self.label))

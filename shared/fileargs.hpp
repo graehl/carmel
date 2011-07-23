@@ -2,7 +2,7 @@
 // given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
-
+#define BOOST_FILESYSTEM_VERSION 2
 #include <graehl/shared/large_streambuf.hpp>
 #include <graehl/shared/null_deleter.hpp>
 #include <graehl/shared/stream_util.hpp>
