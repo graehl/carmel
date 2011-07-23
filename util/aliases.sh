@@ -2465,6 +2465,7 @@ tviz() {
         fi
         escapetree | treeviz -s -p 'graph [fontsize=12,labelfontsize=10,center=0]; node [fontsize=10,height=.06,margin=".04,.02",nodesep=.02,shape=none] ;'"$*" $captarg > $work.dot
         require_files $work.dot
+        out=$work
         dot -Tpng < $work.dot > $out.png
         require_files $out.png
         rm -f $captionfile
