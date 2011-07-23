@@ -19,6 +19,10 @@ def bracefieldre(f):
 
 indescs=[('^','^^'), ('[','^{'),(']','^}'),(',','^/'),(':','^;'),('<','^('),('>','^)')]
 indescsr=reversed(indescs)
+featescs=set(k for (k,_) in indescs)-set(['[',']','^'])
+def needsesc(n):
+    return first_in(featescs,n)
+
 def escape_indicator(x):
     for (a,b) in indescs:
         x=x.replace(a,b)
@@ -58,7 +62,6 @@ def inds(f,pre):
 
 def indre(pre):
     res=r' (?:%s)\[\S*\]=%s'%(pre,numres)
-    dump(res)
     return re.compile(res)
 
 def stripinds(nbeststr,pre):

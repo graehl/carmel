@@ -49,6 +49,10 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
     sb=inds(fv,sbpre)
     pc=inds(fv,pcpre)
     fvd=dict(fv)
+    for n in fvd.iterkeys():
+        e=needsesc(n)
+        if e is not None:
+            warn("reserved char %s in feature name %s"%(e,n),max=1)
     sent=fvd['sent']
     sbt=IntDict()
     pct=IntDict()
@@ -65,7 +69,6 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         warn_diff(pc,pct,desc=pcpre,header=head)
     if output_nbest is not None:
         s=stripinds(l.rstrip(),'%s|%s'%(sbpre,pcpre))
-        dump(s)
         output_nbest.write('%s %s %s\n'%(s,strinds(sbpre,sbt),strinds(pcpre,pct)))
     return True
 
@@ -95,6 +98,7 @@ def nbest_sblm_main(lm='nbest.pcfg.srilm',
             if check_nbest(l,n,term,strip,flatten,num2at,output_nbest,maxnodes,lineno=n):
                 ng+=1
     log("%s good out of %s NBEST lines"%(ng,n))
+    info_summary()
 
 import optfunc
 optfunc.main(nbest_sblm_main)

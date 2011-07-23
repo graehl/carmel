@@ -3,6 +3,16 @@
 ### figure out python logging lib
 ### """
 
+def first_in(s,xs):
+    for x in xs:
+        if x in s:
+            return x
+    return None
+
+def any_in(s,xs):
+    return first_in(s,xs) is not None
+
+
 def int_equiv(x):
     return int(x) if int(x)==x else x
 
