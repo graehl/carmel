@@ -1356,10 +1356,12 @@ def escape_paren(s):
     return lparen.sub('-LRB-',s)
 def rrb_repl(match):
     return '(%s %s)'%(match.group(1),escape_paren(match.group(2)))
+def escape_rrb(t):
+    return sym_rrb.sub(rrb_repl,t)
 def radu2ptb(t,strip_head=True):
     "radu format: all close parens that indicate tree structure are followed by space or end, so that () are legal within symbols -   also, we strip head info.  we escape them to -LRB- -RRB- for handling by tree.py."
     t=(radu_drophead if strip_head else radu_keephead).sub(r'(\1',t)
-    t=sym_rrb.sub(rrb_repl,t)
+    t=escape_rrb(t)
     return t
 
 def shellquote(s):

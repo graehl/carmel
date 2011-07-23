@@ -92,6 +92,16 @@ class Node:
     def map(self,f):
         return Node(f(self.label),[c.map(f) for c in self.children])
 
+    def relabel(self,f):
+        for c in self.children:
+            c.relabel(f)
+        self.label=f(self.label)
+
+    def relabelnode(self,f):
+        for c in self.children:
+            c.relabelnode(f)
+        self.label=f(self)
+
     def map_skipping_node(self,l,f):
         n=Node(l)
         self.map_skipping_children(f,n.children)
@@ -237,24 +247,24 @@ class Node:
     def str(self,radu=False,square=False):
         return self.str_impl(radu_paren=radu,radu_head=radu,radu_prob=radu,brackets="[]" if square else "()")
 
-    def str_impl(self,radu_paren=False,radu_head=False,radu_prob=False,brackets="()"):
+    def str_impl(self,radu_paren=False,radu_head=False,radu_prob=False,brackets="()",lrb=True):
         if len(self.children) != 0:
             l=str(self.label)
-            s = brackets[0] + (l if radu_paren else paren2lrb(l))
+            s = brackets[0] + (l if (radu_paren or not lrb) else paren2lrb(l))
             nonterm=len(self.children)>1 or len(self.children[0].children)!=0
             if radu_head and nonterm: s+='~0~0'
             if radu_paren: s += ' '
             if radu_prob and nonterm: s+='0.0 '
             for child in self.children:
                 if not radu_paren: s += ' '
-                s += child.str_impl(radu_paren,radu_head,radu_prob,brackets=brackets)
+                s += child.str_impl(radu_paren,radu_head,radu_prob,brackets,lrb)
             s += brackets[1]
             if radu_paren: s += ' '
             return s
         else:
             s = str(self.label)
             if not radu_paren:
-                return paren2lrb(s)
+                return paren2lrb(s) if lrb else s
             return s
 
     def descendant(self, addr):
@@ -374,6 +384,9 @@ class Node:
     def is_preterminal(self):
         return len(self.children) == 1 and self.children[0].is_terminal()
 
+    def is_cat(self):
+        return not (self.is_terminal() or self.is_preterminal())
+
     def size_cat(self):
         if self.is_terminal() or self.is_preterminal(): return 0
         return 1+sum(c.size_cat() for c in self.children)
@@ -385,8 +398,7 @@ class Node:
     def label_lrb(self):
         return paren2lrb(str(self.label))
 
-def scan_tree(tokens, pos, paren_after_root=False, intern_labels=False):
-    inter = intern if intern_labels else (lambda x: x)
+def scan_tree(tokens, pos, paren_after_root=False):
     try:
         if tokens[pos] == ")":
             return (None, pos)
@@ -406,10 +418,10 @@ def scan_tree(tokens, pos, paren_after_root=False, intern_labels=False):
                     label = ""
                     pos += 1
                 else:
-                    label = inter(lrb2paren(tokens[pos+1]))
+                    label = lrb2paren(tokens[pos+1])
                     pos += 2
             else:
-                label = inter(lrb2paren(tokens[pos]))
+                label = lrb2paren(tokens[pos])
                 return (Node(label,[]), pos+1)
         children = []
         while True:
@@ -417,7 +429,7 @@ def scan_tree(tokens, pos, paren_after_root=False, intern_labels=False):
             if child is None: break
             children.append(child)
         if tokens[pos] == ")":
-            return (Node(inter(label), children), pos+1)
+            return (Node(label, children), pos+1)
         else:
             return (None, pos)
 
@@ -426,11 +438,11 @@ def scan_tree(tokens, pos, paren_after_root=False, intern_labels=False):
 
 tokenizer = re.compile(r"\(|\)|[^()\s]+")
 
-def str_to_tree(s,paren_after_root=False,intern_labels=False):
+def str_to_tree(s,paren_after_root=False):
     toks=tokenizer.findall(s)
-    if len(toks)>2 and toks[1]=='(' and toks[-2]==')': #berkeley parse ( (tree) )
+    if len(toks)>2 and toks[0] == '(' and toks[1]=='(' and toks[-2]==')' and toks[-1]==')': #berkeley parse ( (tree) )
         toks=toks[1:-1]
-    (tree, n) = scan_tree(toks,0,paren_after_root,intern_labels)
+    (tree, n) = scan_tree(toks,0,paren_after_root)
     return tree
 
 
