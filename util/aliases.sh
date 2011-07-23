@@ -2453,6 +2453,24 @@ getbestpp() {
 
 ## old syntax decoder end
 
+tviz() {
+    (
+        set -e
+        captarg=
+        work=${work:-tviz}
+        if [ "$caption" ] ; then
+            captionfile=`mktemp /tmp/caption.XXXXXXXX`
+            echo "$caption" > $captionfile
+            captarg="-c $captionfile"
+        fi
+        escapetree | treeviz -s -p 'graph [fontsize=12,labelfontsize=10,center=0]; node [fontsize=10,height=.06,margin=".04,.02",nodesep=.02,shape=none] ;'"$*" $captarg > $work.dot
+        require_files $work.dot
+        dot -Tpng < $work.dot > $out.png
+        require_files $out.png
+        rm -f $captionfile
+        ls $work.{dot,png}
+    )
+}
 treevizn() {
 (
  set -e

@@ -62,7 +62,7 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         sbt[(left,no_none(right,'</s>'))]+=1
     tm.visit_pcl(vpc,leaf=False,root=False)
     tm.visit_lrl(vlr,leaf=False,left='<s>',right='</s>')
-    head='sent=%s tree=%s tree-orig=%s'%(sent,tm,trees)
+    head='sent=%s tree=%s\ntree-orig=%s'%(sent,tm,trees)
     if len(sb):
         warn_diff(sb,sbt,desc=sbpre,header=head)
     if len(pc):
