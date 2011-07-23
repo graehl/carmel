@@ -2470,6 +2470,9 @@ tviz() {
         require_files $out.png
         rm -f $captionfile
         ls $work.{dot,png}
+        if ! [[ $noview ]] ; then
+            firefox $work.png
+        fi
     )
 }
 treevizn() {
