@@ -2207,7 +2207,12 @@ local base=${1:-small}
 cd ~/t/utilities/sample;. ../make.lm.sh;lwlms_train $base.lm.training $base.lm.LW 5
 cp $base.lm.LW* ~/projects/mini
 }
-
+upt()
+{
+    pushd ~/t
+    svn update
+    popd
+}
 function commt
 {
 pushd ~/t
