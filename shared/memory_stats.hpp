@@ -152,7 +152,9 @@ inline memory_stats operator - (memory_stats after,memory_stats before)
 {
     memory_stats ret;
     ret.process_data_end = after.process_data_end-before.process_data_end;
+# ifdef __linux__
     ret.vmused = after.vmused-before.vmused;
+# endif
 GRAEHL__MEMSTAT_DIFF(arena);    /* total space allocated from system */
 GRAEHL__MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
 GRAEHL__MEMSTAT_DIFF(smblks);   /* unused -- always zero */
