@@ -12,6 +12,8 @@
 # INC = .
 ###WARNING: don't set BASEOBJ BASESHAREDOBJ or BASEBIN to directories including other important stuff or they will be nuked by make allclean
 
+#CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
+
 #include $(SHARED)/debugger.mk
 #$(__BREAKPOINT)
 
@@ -37,6 +39,14 @@ ifeq ($(ARCH),cygwin)
 CYGEXE:=.exe
 else
 CYGEXE:=
+endif
+
+ifeq ($(ARCH),cygwin)
+NOSTATIC=1
+CPPFLAGS += -DBOOST_POSIX -DCYGWIN
+#CPPFLAGS += -DBOOST_NO_STD_WSTRING
+#CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
+# somehow that is getting automatically set by boost now (for Boost CVS)
 endif
 
 ifndef ARCH_FLAGS
@@ -118,19 +128,25 @@ BOOST_SERIALIZATION_SRC_DIR = $(BOOST_DIR)/libs/serialization/src
 BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPTIONS_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 BOOST_FILESYSTEM_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
+BOOST_SYSTEM_SRC_DIR = $(BOOST_DIR)/libs/system/src
 
 #wide char archive streams not supported on cygwin so remove *_w*.cpp
-BOOST_SERIALIZATION_SRCS:=$(filter-out utf8_codecvt_facet.cpp,$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp))))
-
-#BOOST_SERIALIZATION_SRCS:=$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp)))
+BOOST_SERIALIZATION_SRCS:=$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp)))
 
 BOOST_TEST_SRCS=$(filter-out cpp_main.cpp,$(notdir $(wildcard $(BOOST_TEST_SRC_DIR)/*.cpp)))
-BOOST_OPTIONS_SRCS=$(filter-out utf8_codecvt_facet.cpp winmain.cpp,$(notdir $(wildcard $(BOOST_OPTIONS_SRC_DIR)/*.cpp)))
+BOOST_OPTIONS_SRCS=$(filter-out  winmain.cpp,$(notdir $(wildcard $(BOOST_OPTIONS_SRC_DIR)/*.cpp)))
+ifdef CPPNOWIDECHAR
+BOOST_OPTIONS_SRCS := $(filter-out utf8_codecvt_facet.cpp,$(BOOST_OPTIONS_SRCS))
+BOOST_SERIALIZATION_SRCS := $(filter-out utf8_codecvt_facet.cpp,$(BOOST_SERIALIZATION_SRCS))
+# problem: multiple codecvt facet in vpath
+endif
 BOOST_FILESYSTEM_SRCS=$(notdir $(wildcard $(BOOST_FILESYSTEM_SRC_DIR)/*.cpp))
+BOOST_SYSTEM_SRCS=$(notdir $(wildcard $(BOOST_SYSTEM_SRC_DIR)/*.cpp))
 
 BOOST_SERIALIZATION_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_SERIALIZATION_SRCS)))
 BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
-BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS)))
+#BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS))) $(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_SYSTEM_SRCS)))
+BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS) $(BOOST_SYSTEM_SRCS)))
 BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
 ifndef BOOST_SUFFIX
@@ -157,11 +173,13 @@ BSUF=
 endif
 
 ifdef BUILD_OWN_BOOST_LIBS
+vpath %.cpp $(BOOST_OPTIONS_SRC_DIR) $(BOOST_SERIALIZATION_SRC_DIR) $(BOOST_TEST_SRC_DIR)  $(BOOST_FILESYSTEM_SRC_DIR) $(BOOST_SYSTEM_SRC_DIR)
 BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
 libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
+INC += $(BOOST_DIR)
 else
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
 BOOST_TEST_LIB=-lboost_unit_test_framework$(BSUF)
@@ -178,7 +196,6 @@ list_src: $(BOOST_SERIALIZATION_SRCS)
 
 
 CXXFLAGS_COMMON += $(ARCH_FLAGS) $(CMDCXXFLAGS)
-#CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
 
 LARGEFILEFLAGS = -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 CPPFLAGS += $(CPPNOWIDECHAR) $(LARGEFILEFLAGS)
@@ -191,6 +208,7 @@ LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDI
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
 INC += $(TRUNK)
 INC += ..
+#INC += ../..
 CPPFLAGS := $(addprefix -I,$(INC)) $(CPPFLAGS)
 
 ifdef PEDANTIC
@@ -216,13 +234,6 @@ ifeq ($(ARCH),linux)
 #-rdynamic: forces global symbol table (could remove for optimized build)
 endif
 
-ifeq ($(ARCH),cygwin)
-NOSTATIC=1
-CPPFLAGS += -DBOOST_POSIX -DCYGWIN
-#CPPFLAGS += -DBOOST_NO_STD_WSTRING
-#CPPNOWIDECHAR = $(addprefix -D,BOOST_NO_CWCHAR BOOST_NO_CWCTYPE BOOST_NO_STD_WSTRING BOOST_NO_STD_WSTREAMBUF)
-# somehow that is getting automatically set by boost now (for Boost CVS)
-endif
 
 
 define PROG_template
