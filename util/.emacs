@@ -4279,3 +4279,5 @@ loaded as such.)"
 (smex-initialize)
 (global-set-key (kbd "M-x") 'execute-extended-command)
 (global-set-key (kbd "M-x") 'smex)
+(require 'ace-jump-mode)
+(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)

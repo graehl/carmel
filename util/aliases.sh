@@ -1,3 +1,6 @@
+hemacs() {
+    nohup ssh -X hpc-login2.usc.edu 'bash --login -c emacs' &
+}
 to3() {
     #-f ws_comma
     2to3 -f all -f idioms  -f set_literal "$@"
