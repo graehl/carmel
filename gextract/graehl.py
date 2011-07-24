@@ -36,12 +36,12 @@ def dict_diff(ad,bd,f=entuple,zero=0):
             d[k]=f(zero,v)
     return d
 
-def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header=""):
+def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header="",post=""):
     if descb is None:
         descb="%s'"%desc
     d=dict_diff(ad,bd,f=f,zero=zero)
     if len(d):
-        warn('differences %s:'%header)
+        warn('differences %s:'%header,post)
     for k,v in d.iteritems():
         warn('difference %s->%s [%s] = %s'%(desc,descb,k,v))
 
@@ -674,9 +674,9 @@ neg_epsilon=-epsilon
 def approx_zero(x,epsilon=epsilon):
     return abs(x)<=epsilon
 
-def equal_or_warn(x1,x2,name='',suf1='1',suf2="2",epsilon=epsilon):
+def equal_or_warn(x1,x2,name='',suf1='1',suf2="2",epsilon=epsilon,pre='',post=''):
     if not approx_equal(x1,x2,epsilon):
-        warn("%s%s = %s != %s = %s%s"%(name,suf1,x1,x2,name,suf2))
+        warn("%s%s%s != %s%s"%(pre,name,suf1,name,suf2),"( %s != %s )%s"%(x1,x2,post))
 
 # see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
 def approx_equal(x,a,epsilon=epsilon,absepsilon=1e-30):
