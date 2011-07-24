@@ -79,7 +79,7 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
     rt=t.str_impl(lrb=False)
     if tstr!=rt:
         s=' => '.join(smallest_difference([tstr,rt],porch=2))
-        warn('mismatch tree roundtrip (should just be -LRB- and -RRB- terminals',' diff = %s \norig = %s\nroundtrip = %s'%(s,tstr,rt),max=2)
+        warn('mismatch tree roundtrip (should just be -LRB- and -RRB- terminals',' diff = %s \norig = %s\nroundtrip = %s'%(s,tstr,rt),max=10)
     def label(x):
         return tounk(sbmt_lhs_label(x,num2at))
     t=t.mapnode(label)

@@ -36,14 +36,14 @@ def dict_diff(ad,bd,f=entuple,zero=0):
             d[k]=f(zero,v)
     return d
 
-def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header="",post=""):
+def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header="",post="",max=None):
     if descb is None:
         descb="%s'"%desc
     d=dict_diff(ad,bd,f=f,zero=zero)
     if len(d):
-        warn('differences %s:'%header,post)
+        warn('%s differences:'%header,post,max=max)
     for k,v in d.iteritems():
-        warn('difference %s->%s [%s] = %s'%(desc,descb,k,v))
+        warn('difference %s->%s [%s]'%(desc,descb,' '.join(k)),' = %s -> %s'%v,max=max)
 
 def nonone(xs):
     return (x for x in xs if x is not None)
@@ -674,9 +674,9 @@ neg_epsilon=-epsilon
 def approx_zero(x,epsilon=epsilon):
     return abs(x)<=epsilon
 
-def equal_or_warn(x1,x2,name='',suf1='1',suf2="2",epsilon=epsilon,pre='',post=''):
+def equal_or_warn(x1,x2,name='',suf1='1',suf2="2",epsilon=epsilon,pre='',post='',max=10):
     if not approx_equal(x1,x2,epsilon):
-        warn("%s%s%s != %s%s"%(pre,name,suf1,name,suf2),"( %s != %s )%s"%(x1,x2,post))
+        warn("%s%s%s != %s%s"%(pre,name,suf1,name,suf2),"( %s != %s )%s"%(x1,x2,post),max=max)
 
 # see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
 def approx_equal(x,a,epsilon=epsilon,absepsilon=1e-30):
@@ -814,6 +814,7 @@ def write_kv(l,**kw):
 
 n_warn=0
 warncount=IntDict()
+#maxcount=set()
 
 def warn(msg,post=None,pre="WARNING: ",max=10):
     global n_warn,warncount
@@ -821,10 +822,12 @@ def warn(msg,post=None,pre="WARNING: ",max=10):
     p='\n'
     if post is not None:
         p=' '+str(post)+p
-    warncount[msg]+=1
-    if max is None or warncount[msg]<=max:
+    c=warncount[msg]
+    warncount[msg]=c+1
+    if max is None or c<max:
         lastw=max is not None and warncount[msg]==max
         sys.stderr.write(pre+str(msg)+(" (max=%s shown; no more) "%max if lastw else "")+p)
+    #if c==max: maxcount.add(msg)
 
 def warncount_sorted():
     w=[(c,k) for (k,c) in warncount.iteritems()]
