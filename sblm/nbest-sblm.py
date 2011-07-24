@@ -67,7 +67,7 @@ def sblmunk(tree,lm,word=False,cat=False):
         return sum(cv)
     return tree.reduce(r)
 
-def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxwords=999999,lineno='?'):
+def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxwords=999999,lineno='?',greedy=True):
     l=l.rstrip()
     tstr=getfield_brace('tree',l)
     t=nbest_tree(tstr) #str_to_tree_warn(tstr)
@@ -96,13 +96,18 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
     fvd=dict(fv)
     checkunks(fvd.iterkeys())
 
+    sent=fvd['sent']
+    sentp=' sent=%s'%sent
+    nbest=fvd['nbest']
+    nbestp='nbest=%s '%nbest
+    check=not greedy or nbest==0
+
     line=[l,'']
     def replfeat(f,v2,suf1='(nbest)',suf2='(python)'):
         if f in fvd:
             v=fvd[f]
-            if v is None or v2 is None:
-                raise Exception("replfeat %s %s %s"%(f,v,v2))
-            equal_or_warn(v,v2,f,suf1,suf2)
+            if v is None or v2 is None: raise Exception("replfeat %s %s %s"%(f,v,v2))
+            if check: equal_or_warn(v,v2,f,suf1,suf2,pre=nbestp,post=sentp)
             line[0]=stripnumfeat(f,line[0])
         line[1]+=' %s=%s'%(f,v2)
 
@@ -112,7 +117,6 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         replfeat('sblm-unkword',sblmunk(t,lm,word=True))
         replfeat('sblm-unkcat',sblmunk(t,lm,cat=True))
 
-    sent=fvd['sent']
     sbt=IntDict()
     pct=IntDict()
     def vpc(p,c):
@@ -121,11 +125,11 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         sbt[(left,no_none(right,'</s>'))]+=1
     t.visit_pcl(vpc,leaf=False,root=False)
     t.visit_lrl(vlr,leaf=False,left='<s>',right='</s>')
-    head='sent=%s tree=%s\ntree-orig=%s'%(sent,t,tstr)
-    if len(sb):
-        warn_diff(sb,sbt,desc=sbpre,header=head)
-    if len(pc):
-        warn_diff(pc,pct,desc=pcpre,header=head)
+    head='sent=%s nbest=%s tree=%s\ntree-orig=%s'%(sent,nbest,t,tstr)
+    if check and len(sb):
+        warn_diff(sb,sbt,desc=sbpre,header=nbestp,post=head)
+    if check and len(pc):
+        warn_diff(pc,pct,desc=pcpre,header=nbestp,post=head)
     if output_nbest is not None:
         s=stripinds('%s|%s'%(sbpre,pcpre),line[0])
         output_nbest.write('%s %s %s%s\n'%(s,strinds(sbpre,sbt),strinds(pcpre,pct),line[1]))
@@ -142,7 +146,8 @@ def nbest_sblm_main(lm='nbest.pcfg.srilm',
                     output_nbest='',
                     maxwords=999999,
                     logp_unk=0.0,
-                    closed=True
+                    closed=True,
+                    greedy=True
                     ):
     lm=None if lm=='' else ngram(lm=lm,closed=closed)
     lm.set_logp_unk(logp_unk)
@@ -152,7 +157,7 @@ def nbest_sblm_main(lm='nbest.pcfg.srilm',
     for l in open(nbest):
         if l.startswith("NBEST sent="):
             n+=1
-            if check_nbest(l,lm,term,strip,flatten,num2at,output_nbest,maxwords,lineno=n):
+            if check_nbest(l,lm,term,strip,flatten,num2at,output_nbest,maxwords,n,greedy):
                 ng+=1
     info_summary()
     log("%s good out of %s NBEST lines"%(ng,n))
