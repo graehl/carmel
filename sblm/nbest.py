@@ -17,14 +17,11 @@ def rb_esc(s):
 def nbest_tree(s):
     s=rb_esc(s)
     t=str_to_tree_warn(s)
-#    warn('pre ',' '.join(x.label for x in t.preorder()),max=10)
-    for x in t.preorder():
-        if not x.is_terminal():
-#            warn('pre l ',x.label)
-            x.label=tree.paren2lrb(x.label)
-#            warn('post l ',x.label)
-#    warn('post',' '.join(x.label for x in t.preorder()),max=10)
-#    t.relabelnode(lambda x:tree.paren2lrb(x.label) if x.is_cat() else x.label)
+    if t is not None:
+        for x in t.preorder():
+            if not x.is_terminal():
+                x.label=tree.paren2lrb(x.label)
+        #    t.relabelnode(lambda x:tree.paren2lrb(x.label) if x.is_cat() else x.label)
     return t
 
 numres=r'[+\-]?(?:\.\d+|\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)'
