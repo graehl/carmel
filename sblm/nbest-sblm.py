@@ -41,9 +41,11 @@ def pcfg_score(tree,lm,term=True,num2at=True):
         while i>1:
             sent[i]=sent[i-1]
             sent[i-1]=p
-            s+=lm.score_word_combined(sent,i)
+            sw=lm.score_word_combined(sent,i)
+            #warn('score1w','%s = %s'%(' '.join(sent[max(0,i-4):i+1]),sw),max=100)
+            s+=sw
             i-=1
-        dump('score1',p,sent,s)
+        #warn('score1','%s %s %s'%(p,' '.join(sent),s),max=10)
         return s
     def score(t):
         if t.is_terminal() or (not term and t.is_preterminal()):
@@ -52,26 +54,27 @@ def pcfg_score(tree,lm,term=True,num2at=True):
         for c in t.children:
             s+=score(c)
         return s
-    return score(tree)
+    #warn('score',str(tree),max=1)
+    return -score(tree)
 
 def sblmunk(tree,lm,word=False,cat=False):
     def r(l,cv):
-        #if lm.is_unk(l): return s+1
         if len(cv):
-            if cat and lm.is_unk(l): return 1
+            if cat and lm.is_unk(l): return sum(cv)+1
         else:
             #'"'+l+'"'
-            if word and lm.is_unk(l): return sum(cv)+1
+            if word and lm.is_unk(l): return 1
+        return sum(cv)
     return tree.reduce(r)
 
-def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxnodes=999999,lineno='?'):
+def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxwords=999999,lineno='?'):
     l=l.rstrip()
     tstr=getfield_brace('tree',l)
     t=nbest_tree(tstr) #str_to_tree_warn(tstr)
     if t is None:
         warn("no tree"," from %s line #%s"%(tstr,lineno))
         return False
-    if t.size()>maxnodes:
+    if len(t)>maxwords:
         return False
     rt=t.str_impl(lrb=False)
     if tstr!=rt:
@@ -79,13 +82,13 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         warn('mismatch tree roundtrip (should just be -LRB- and -RRB- terminals',' diff = %s \norig = %s\nroundtrip = %s'%(s,tstr,rt),max=2)
     def label(x):
         return tounk(sbmt_lhs_label(x,num2at))
-    tm=t.mapnode(label)
+    t=t.mapnode(label)
 
     def skiplabel(y):
         if strip:
             y=strip_subcat(y)
         return no_bar(y) if flatten else y
-    tm=tm.map_skipping(skiplabel)
+    t=t.map_skipping(skiplabel)
 
     fv=getfields_num(l)
     sb=inds(fv,sbpre)
@@ -97,15 +100,17 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
     def replfeat(f,v2,suf1='(nbest)',suf2='(python)'):
         if f in fvd:
             v=fvd[f]
+            if v is None or v2 is None:
+                raise Exception("replfeat %s %s %s"%(f,v,v2))
             equal_or_warn(v,v2,f,suf1,suf2)
             line[0]=stripnumfeat(f,line[0])
         line[1]+=' %s=%s'%(f,v2)
 
-    replfeat('sblm-nts',tm.size_nts())
+    replfeat('sblm-nts',t.size_nts())
     if lm is not None:
-        replfeat('sblm',pcfg_score(tm,lm,term,num2at))
-        replfeat('sblm-unkword',sblmunk(tm,lm,word=True))
-        replfeat('sblm-unkcat',sblmunk(tm,lm,cat=True))
+        replfeat('sblm',pcfg_score(t,lm,term,num2at))
+        replfeat('sblm-unkword',sblmunk(t,lm,word=True))
+        replfeat('sblm-unkcat',sblmunk(t,lm,cat=True))
 
     sent=fvd['sent']
     sbt=IntDict()
@@ -114,9 +119,9 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
         pct[(p,c)]+=1
     def vlr(left,right):
         sbt[(left,no_none(right,'</s>'))]+=1
-    tm.visit_pcl(vpc,leaf=False,root=False)
-    tm.visit_lrl(vlr,leaf=False,left='<s>',right='</s>')
-    head='sent=%s tree=%s\ntree-orig=%s'%(sent,tm,tstr)
+    t.visit_pcl(vpc,leaf=False,root=False)
+    t.visit_lrl(vlr,leaf=False,left='<s>',right='</s>')
+    head='sent=%s tree=%s\ntree-orig=%s'%(sent,t,tstr)
     if len(sb):
         warn_diff(sb,sbt,desc=sbpre,header=head)
     if len(pc):
@@ -135,16 +140,19 @@ def nbest_sblm_main(lm='nbest.pcfg.srilm',
                     num2at=True,
                     term=True,
                     output_nbest='',
-                    maxnodes=999999,
+                    maxwords=999999,
+                    logp_unk=0.0,
+                    closed=True
                     ):
-    lm=None if lm=='' else ngram(lm=lm)
+    lm=None if lm=='' else ngram(lm=lm,closed=closed)
+    lm.set_logp_unk(logp_unk)
     output_nbest=None if output_nbest=='' else open(output_nbest,'w')
     n=0
     ng=0
     for l in open(nbest):
         if l.startswith("NBEST sent="):
             n+=1
-            if check_nbest(l,lm,term,strip,flatten,num2at,output_nbest,maxnodes,lineno=n):
+            if check_nbest(l,lm,term,strip,flatten,num2at,output_nbest,maxwords,lineno=n):
                 ng+=1
     info_summary()
     log("%s good out of %s NBEST lines"%(ng,n))
