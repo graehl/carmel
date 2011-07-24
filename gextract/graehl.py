@@ -679,8 +679,8 @@ def equal_or_warn(x1,x2,name='',suf1='1',suf2="2",epsilon=epsilon):
         warn("%s%s = %s != %s = %s%s"%(name,suf1,x1,x2,name,suf2))
 
 # see knuth for something better, probably.  epsilon should be half of the allowable relative difference.
-def approx_equal(x,a,epsilon=epsilon):
-    return abs(x-a) <= (abs(x)+abs(a))*epsilon
+def approx_equal(x,a,epsilon=epsilon,absepsilon=1e-30):
+    return abs(x-a) <= (absepsilon+(abs(x)+abs(a))*epsilon)
 
 def approx_leq(x,a,epsilon=epsilon):
     return x <= a+epsilon*(abs(x)+abs(a))

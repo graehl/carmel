@@ -198,7 +198,8 @@ class ngram(object):
         self.clear_counts()
         asserteq(len(self.logp),self.order)
         asserteq(len(self.bow),self.order)
-    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=log10_0prob,lm=None):
+    def __init__(self,order=2,digit2at=False,unkword=None,logp_unk=log10_0prob,lm=None,closed=False):
+        self.closed=closed
         self.unkword=ngram.unk if unkword is None else unkword
         self.logp_unk=logp_unk
         self.digit2at=digit2at
@@ -226,8 +227,14 @@ class ngram(object):
         # warn('count_word',text[:i+1])
         for o in range(0,min(self.order,i+1)):
             self.ngrams[o].add_i(text,i)
+    def set_closed(self,closed=True):
+        self.closed=closed
     def score_word(self,text,i):
         "private (perform digit2at yourself) returns (logp,bo) for most specific ngram, where bo is the total of contexts' backoffs. text is a tuple"
+        w=text[i]
+        if self.closed:
+            #warn('closed:unk?','%s = %s'%(w,self.is_unk(w)),max=10)
+            if self.is_unk(w): return (self.logp_unk,0)
         e=i+1
         bo=0.
         maxom1=min(self.om1,i)
@@ -239,7 +246,8 @@ class ngram(object):
             if phrase in lp:
                 return (lp[phrase],bo)
             elif o>0:
-                bo+=self.bow[o-1].get(tuple(text[l:i]),0.0)
+                bos=self.bow[o-1]
+                bo+=bos.get(tuple(text[l:i]),0.0)
             else:
                 return (self.logp_unk,bo)
     def score_word_combined(self,text,i):
@@ -348,10 +356,12 @@ class ngram(object):
         for k in counts.iterkeys():
             outf.write(k+'\n')
     def is_unk(self,w):
-        counts=self.ngrams[0].counts
-        if not len(counts):
-            counts=self.logp[0]
-        return w==self.unkword or w not in counts
+        """only call on trained LM"""
+        return w==self.unkword or (w,) not in self.logp[0]
+        # counts=self.ngrams[0].counts
+        # if not len(counts):
+        #     counts=self.logp[0]
+        # return w==self.unkword or (w,) not in counts
     def read_lm(self,infile,clear_counts=True,order=None,read_unkp=True):
         if order is not None and order!=self.order:
             self.set_order(order)
