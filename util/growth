@@ -4,19 +4,32 @@ from graehl import *
 def mtime_age(path):
     return str(datenow()-mtime(path))
 
-import time
-def main(file='',sleep=600):
-    t=mtime(file)
-    s=filesize(file)
-    print "file=%s sleep=%s start=%s"%(file,sleep,datenow())
-    print "size\tsize/sec\tmtime\tdelta(mtime)"
-    while True:
-        s2=filesize(file)
-        t2=mtime(file)
-        print "%s\t%s\t%s\t%s"%(s,(s2-s)/float(sleep),t,t2-t)
-        t=t2
-        s=s2
-        time.sleep(sleep)
+tsep='\t'
+fsep=' '
 
+import time
+def main(rest_='',sleep=600,fields='SsMm',N=-1):
+    fs=rest_
+    captions={'S':'size','s':'size/sec','M':'mtime','m':'delta(mtime)'}
+    print "sleep=%s"%sleep
+    print "start=%s"%datenow()
+    for f in fs: print "file=%s"%f
+    print tsep.join([captions[f] for f in fields])
+    sleep=float(sleep)
+    s=None
+    n=0
+    a=dict()
+    while True:
+        if N>=0 and n>N: break
+        s2=[(i,mtime(fs[i]),filesize(fs[i])) for i in range(len(fs))]
+        if s is not None:
+            a['M']=[str(x[1]) for x in s2]
+            a['m']=[str(x[1]-s[x[0]][1]) for x in s2]
+            a['S']=[mega(x[2]) for x in s2]
+            a['s']=[mega((x[2]-s[x[0]][2])/sleep) for x in s2]
+            print tsep.join(fsep.join(a[k]) for k in fields)
+            time.sleep(sleep)
+        s=s2
+        n+=1
 import optfunc
 optfunc.main(main)
