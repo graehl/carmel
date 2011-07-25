@@ -1,0 +1,22 @@
+#!/usr/bin/env python2.7
+from graehl import *
+
+def mtime_age(path):
+    return str(datenow()-mtime(path))
+
+import time
+def main(file='',sleep=600):
+    t=mtime(file)
+    s=filesize(file)
+    print "file=%s sleep=%s start=%s"%(file,sleep,datenow())
+    print "size\tsize/sec\tmtime\tdelta(mtime)"
+    while True:
+        s2=filesize(file)
+        t2=mtime(file)
+        print "%s\t%s\t%s\t%s"%(s,(s2-s)/float(sleep),t,t2-t)
+        t=t2
+        s=s2
+        time.sleep(sleep)
+
+import optfunc
+optfunc.main(main)
