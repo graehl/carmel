@@ -3,6 +3,20 @@
 ### figure out python logging lib
 ### """
 
+megastr=['k','m','g','t','p']
+megaf=1000.
+megabstr=[x.lower() for x in megastr]
+megabf=1024.
+def mega(x,dec=4,power2=False):
+    str,f=(megabstr,megabf) if power2 else (megastr,megaf)
+    x=float(x)
+    ps=''
+    for s in str:
+        if x<f: break
+        x/=f
+        ps=s
+    return '%.*g%s'%(dec,x,ps)
+
 def first_in(s,xs):
     for x in xs:
         if x in s:
@@ -1339,7 +1353,6 @@ import string
 d2at_trans=string.maketrans('0123456789','@@@@@@@@@@')
 def digit2at(s):
     return s.translate(d2at_trans)
-
 
 def filename_from(s):
     r=re.sub(r'[^a-zA-Z0-9_-]','.',s)
