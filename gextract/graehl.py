@@ -181,6 +181,9 @@ def filedatespan(path,usefs=True):
     a,b=filedaterange(path,usefs)
     return b-a
 
+def filesize(path):
+    return os.stat(path).st_size
+
 def readfrom(infile):
     return open(infile) if isinstance(infile, str) else infile
 
