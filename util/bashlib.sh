@@ -2295,7 +2295,7 @@ mira-log-sum() {
             if ! [ "$nosum" ] ; then
                 (set -e;cd $d && mira-sum-time 2>&1 | tee $mirasum)
             fi
-            cols=99999 feature-scales $d/logs/mira.log | tee $mirasum | cols=220 sniplong | tail
+            cols=99999 feature-scales $d/logs/mira.log | tee $mirasum | tail -2 | cols=220 sniplong
 #            echo $d/logs/mira.log $d/logs/deco*.log
 #            set -x
             local dlog
