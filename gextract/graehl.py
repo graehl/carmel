@@ -3,6 +3,53 @@
 ### figure out python logging lib
 ### """
 
+def growlist(fill=None):
+    class GrowingList(list):
+        def __setitem__(self, index, value):
+            if index >= len(self):
+                self.extend([fill]*(index + 1 - len(self)))
+            list.__setitem__(self, index, value)
+    return GrowingList
+
+def at_expand(l,index,value,fill=None):
+    if index >= len(l):
+        l.extend([fill]*(index + 1 - len(l)))
+    list.__setitem__(l, index, value)
+
+def indices(sequence):
+    return range(len(sequence))
+
+def iindices(sequence):
+    return xrange(len(sequence))
+
+def ival(sequence):
+    return zip(range(len(sequence)), sequence)
+
+def iival(sequence):
+    return izip(xrange(len(sequence)), sequence)
+
+def maxeq(d,k,v):
+    d[k]=max(d[k],v) if k in d else v
+
+def mineq(d,k,v):
+    d[k]=min(d[k],v) if k in d else v
+
+def reduce1eq(d,k,v,f):
+    d[k]=f(d[k],v) if k in d else v
+
+def pad(l,n,pad='',allow_over=True):
+    p=len(l)<n
+    if p>0:
+        return l+[pad]*p
+    if allow_over:
+        return l
+    return l[:n]
+
+def flatlist(ll):
+    r=[]
+    for l in ll: r+=l
+    return r
+
 megastr=['k','m','g','t','p']
 megaf=1000.
 megabstr=[x.lower() for x in megastr]
@@ -599,6 +646,14 @@ class RDict(dict):
 class IntDict(collections.defaultdict):
     def __init__(self,*a,**kw):
         collections.defaultdict.__init__(self,int,*a,**kw)
+
+class DictDict(collections.defaultdict):
+    def __init__(self,*a,**kw):
+        collections.defaultdict.__init__(self,dict,*a,**kw)
+
+class ListDict(collections.defaultdict):
+    def __init__(self,*a,**kw):
+        collections.defaultdict.__init__(self,list,*a,**kw)
 
 class FloatDict(collections.defaultdict):
     def __init__(self,*a,**kw):
