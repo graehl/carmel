@@ -2,6 +2,19 @@
 #export LC_ALL=C
 
 #for LD search path: (RPATH)
+name1() {
+    perl -e '$_=shift;if (/(.*)=(.*)/) { print "$1\n" } else { print "$_\n" }' "$@"
+}
+val1() {
+    perl -e '$_=shift;$v=shift || 1;if (/(.*)=(.*)/) { print "$2\n" } else { print "$v\n" }' "$@" "${defaultval:-1}"
+}
+names() {
+    forall name1 "$@"
+}
+#defaultval=1
+vals() {
+    forall val1 "$@"
+}
 min() {
         bound1 '<' "$@"
 }
