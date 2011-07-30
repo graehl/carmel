@@ -3,6 +3,81 @@
 ### figure out python logging lib
 ### """
 
+import copy
+
+def addcp(a,b):
+    r=copy.copy(a)
+    r+=b
+    return r
+
+def subcp(a,b):
+    r=copy.copy(a)
+    r-=b
+    return r
+
+def dict_dotprod(a,b,s=0.0):
+    if len(b)<len(a):
+        return dict_dotprod(b,a,s)
+    for k in a.iterkeys():
+        if k in b:
+            s+=a[k]*b[k]
+    return s
+
+def firstline(inf,default=''):
+    r=readfrom(inf)
+    for l in r:
+        return l
+    return default
+
+def str2weights(s,default=0.0,f=float):
+    r={}
+    for w in s.split(','):
+        v=w.split(':')
+        if v[0] in r:
+            warn('str2weights duplicate key ',v[0])
+        r[v[0]]=default if len(v)==1 else f(v[1])
+    return r
+
+def dict2str(d,pairsep=',',kvsep=':',omitv=None):
+    return pairsep.join(kvsep.join(x) for x in d.iteritems() if omitv is None or x[1] != omitv)
+
+def maybestr(x):
+    return '' if x is None else str(x)
+
+def maybeint(x):
+    return int(x) if len(x)>0 else None
+
+def range2str(x):
+    return '%s-%s'%(maybestr(x[0]),maybestr(x[1]))
+
+def str2range(x):
+    "range of ints [a,b], i.e. a<=x<=b, denoted a-b or -b or a- or - for unbounded above/below"
+    f=x.split('-',1)
+    a=maybeint(f[0])
+    if len(f)==1:
+        return (a,a)
+    return (a,maybeint(f[1]))
+
+def any2range(x):
+    "None = infinite range"
+    if x is None or isinstance(x,int): return (x,x)
+    if isinstance(x,tuple) and len(x)==2: return x
+    if isinstance(x,string): return str2range(x)
+    return None
+
+def any2ranges(rs):
+    r=any2range(rs)
+    if r is not None: return r
+    if isinstance(x,string): return str2ranges(x.split(','))
+    return [any2range(r) for r in rs]
+
+def inrange(x,r):
+    a,b=r
+    return (a is None or a<=x) and (b is None or x<=b)
+
+def inranges(x,rs):
+    return any(inrange(x,r) for r in rs)
+
 def growlist(fill=None):
     class GrowingList(list):
         def __setitem__(self, index, value):
@@ -193,9 +268,9 @@ def common_prefix(strings):
 from itertools import *
 #from dumpx import *
 
-#should be builtin already
-#all=forall
-#any=exists
+#python 2.5 on
+#all(x)=forall(x,None)
+#any(x)=exists(x,None)
 
 def datetoday():
     return str(datetime.datetime.today())
@@ -246,7 +321,7 @@ def filesize(path):
     return os.stat(path).st_size
 
 def readfrom(infile):
-    return open(infile) if isinstance(infile, str) else infile
+    return open_in(infile) if isinstance(infile, str) else infile
 
 def pretty_float(x,digits=16):
     s='%.*g'%(digits,x)
@@ -299,7 +374,8 @@ class Progress(object):
 #        p.inc()
 #    p.done()
 
-statfact=dict()
+
+statfact={}
 class Stat(object):
     def __init__(self,name='N'):
         self.name=name
@@ -337,11 +413,19 @@ class Mean(Stat):
         Stat.__init__(self,name)
         self.sum=0.
         self.N=0.
+    def __iadd__(self,o):
+        self.sum+=o.sum
+        self.N+=o.N
+    def __isub__(self,o):
+        self.sum-=o.sum
+        self.N-=o.N
     def count(self,x):
         self.N+=1
         self.sum+=x
+    def avg(self):
+        return self.sum/self.N
     def pairlist(self):
-        return [('N',self.N),('mean',self.sum/self.N)]
+        return [('N',self.N),('mean',self.avg())]
 
 class Variance(Mean):
     def __init__(self,name='stddev',mean=True,stddev=True,stderror=True,variance=False):
@@ -351,6 +435,12 @@ class Variance(Mean):
         self.stddev=stddev
         self.stderror=stderror
         self.variance=variance
+    def __iadd__(self,o):
+        super(Variance,self).__iadd__(o)
+        self.sumsq+=o.sumsq
+    def __isub__(self,o):
+        super(Variance,self).__isub__(o)
+        self.sumsq-=o.sumsq
     def sample_variance(self):
         variance=(self.sumsq-self.sum**2/self.N)/(self.N-1) if self.N>1 else 0
         if variance==0:
@@ -410,6 +500,21 @@ class Stats(Variance):
         self.bounds.count(x)
     def pairlist(self):
         return Variance.pairlist(self)+self.bounds.pairlist()
+
+class PairedDiffs(object):
+    def __init__(self,d=[],statsf=Bounds,aname='a',bname='a'):
+        self.ds=list(d)
+        self.aname=aname
+        self.bname=bname
+        self.ngt=0
+        self.st=statsf()
+    def count(self,a,b):
+        self.ds.append((a,b))
+        if b>a:
+            self.ngt+=1
+        self.st.count(b-a)
+    def __str__(self):
+        return 'Paired[%s %s %s>%s]'%(self.st,self.ngt,self.bname,self.aname)
 
 def invert_copy_dict(dst,src):
     for k,v in src.iteritems():
@@ -554,7 +659,7 @@ def exists(gen,pred=None):
                 return True
         return False
     for x in gen:
-        if not pred(x):
+        if pred(x):
             return True
         return False
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""
+usage="""
 compute sblm score on nbest output
 
 verify stdout from
@@ -147,7 +147,9 @@ def nbest_sblm_main(lm='nbest.pcfg.srilm',
                     maxwords=999999,
                     logp_unk=0.0,
                     closed=True,
-                    greedy=True
+                    greedy=True,
+                    usage_=usage
+#                    rest_=None
                     ):
     lm=None if lm=='' else ngram(lm=lm,closed=closed)
     lm.set_logp_unk(logp_unk)

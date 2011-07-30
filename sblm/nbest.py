@@ -24,6 +24,7 @@ def nbest_tree(s):
         #    t.relabelnode(lambda x:tree.paren2lrb(x.label) if x.is_cat() else x.label)
     return t
 
+nbesthstr='NBEST '
 numres=r'[+\-]?(?:\.\d+|\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)'
 numre=re.compile(numres)
 fieldeqres=r'\s(\S+)='
@@ -60,6 +61,11 @@ def getfield_brace(f,s,single=True):
       raise Exception("got %s copies of %s={{{...}}}; wanted 1, in %s"%(len(l),f,s))
     return l[0]
   return l
+
+def nbests(ns):
+    for l in ns:
+        if l.startswith(nbesthstr):
+            yield (l,getfields_num(l))
 
 #may return int or float! this may cause bugs if you don't expect it
 def getfields_num(s):

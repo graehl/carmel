@@ -1,6 +1,19 @@
+"""
+example:
+
+import optfunc
+@optfunc.arghelp('rest_','input files')
+def main(rest_=['-'],keyfields=1,sep='\t',usage_='-h usage'):
+    "-h usage" # optional: usage_ arg instead
+    pass
+
+"""
+
 from optparse import OptionParser, make_option
 import sys, inspect, re
 
+doc_name='usage_'
+rest_name='rest_' # remaining positional arguments into this function arg as list
 single_char_prefix_re = re.compile('^[a-zA-Z0-9]_')
 
 # Set this to any message you want to be printed
@@ -41,7 +54,17 @@ def func_to_optionparser(func):
     args, varargs, varkw, defaultvals = inspect.getargspec(func)
     defaultvals = defaultvals or ()
     options = dict(zip(args[-len(defaultvals):], defaultvals))
-    options.pop('rest_', None)
+    helpdict = getattr(func, 'optfunc_arghelp', {})
+    def defaulthelp(examples):
+        return ' (default: %s)'%examples
+    posargshelp='\n\t(positional args):\t%s%s'%(helpdict.get(rest_name,''),defaulthelp(options[rest_name])) if rest_name in options else ''
+    options.pop(rest_name, None)
+    ds=func.__doc__
+    if ds is None:
+        ds=''
+    if doc_name in options:
+        ds+=str(options[doc_name])
+        options.pop(doc_name)
     argstart = 0
     if func.__name__ == '__init__':
         argstart = 1
@@ -50,24 +73,23 @@ def func_to_optionparser(func):
     else:
         required_args = args[argstart:]
 
-    args = filter( lambda x: x != 'rest_', args )
+    args = filter( lambda x: x != rest_name, args )
     # Build the OptionParser:
-    opt = ErrorCollectingOptionParser(usage = func.__doc__)
 
-    helpdict = getattr(func, 'optfunc_arghelp', {})
+    opt = ErrorCollectingOptionParser(usage = ds+posargshelp)
 
     # Add the options, automatically detecting their -short and --long names
     shortnames = set(['h'])
     for name,_ in options.items():
         if single_char_prefix_re.match(name):
             shortnames.add(name[0])
-    for funcname, example in options.items():
+    for argname, example in options.items():
         # They either explicitly set the short with x_blah...
-        name = funcname
+        name = argname
         if single_char_prefix_re.match(name):
             short = name[0]
             name = name[2:]
-            opt._custom_names[name] = funcname
+            opt._custom_names[name] = argname
         # Or we pick the first letter from the name not already in use:
         else:
             short=None
@@ -75,7 +97,6 @@ def func_to_optionparser(func):
                 if s not in shortnames:
                     short=s
                     break
-
         names=[]
         if short is not None:
             shortnames.add(short)
@@ -87,7 +108,7 @@ def func_to_optionparser(func):
         if isinstance(example, bool):
             no_name='--no%s'%longn
             opt.add_option(make_option(
-                no_name, action='store_false', dest=name,help = helpdict.get(funcname, 'unset %s'%long_name)
+                no_name, action='store_false', dest=name,help = helpdict.get(argname, 'unset %s'%long_name)
             ))
             action = 'store_true'
         else:
@@ -96,9 +117,9 @@ def func_to_optionparser(func):
         if isinstance(example, int):
             if example==sys.maxint: examples="INFINITY"
             if example==(-sys.maxint-1): examples="-INFINITY"
-        help_post=' (default: %s)'%examples
+        help_post=defaulthelp(examples)
         kwargs=dict(action=action, dest=name, default=example,
-            help = helpdict.get(funcname, '')+help_post,
+            help = helpdict.get(argname, '')+help_post,
             type=optype(type(example)))
         opt.add_option(make_option(*names,**kwargs))
 
@@ -130,9 +151,9 @@ def resolve_args(func, argv):
         args[i] = None
 
     fargs, varargs, varkw, defaults = inspect.getargspec(func)
-    if 'rest_' in fargs:
+    if rest_name in fargs:
         args = filter( lambda x: x is not None, args )
-        setattr(options, 'rest_', tuple(args))
+        setattr(options, rest_name, tuple(args))
 
     return options.__dict__, parser._errors
 
