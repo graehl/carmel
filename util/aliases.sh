@@ -1,3 +1,61 @@
+bl3() {
+(
+        set -e
+        obasep=${obase:-bl3}
+        for tune in 0 1; do
+            i=1
+            fs=
+            bs=
+            if [[ $tune = 1 ]] ; then
+                tunere='\S+\s+'
+                title="overfit "
+                ot=
+            else
+                tunere=
+                title="held-out "
+                ot=".heldout"
+            fi
+            title+="tune BLEU vs epoch"
+            for f in "$@" ; do
+                pushd $f
+                i=$((i+1))
+                name=$(val1 $f $i)
+                f=$(name1 $f)
+                if [[ $name = $i ]] ; then
+                    if [ -f name ] ; then
+                        name=`cat name`
+                        name=$(echo $name)
+                    fi
+                fi
+                #[ -f epoch.scores ] ||
+                mira-sum
+                eot=epoch$ot.bleu
+                perl -ne 'print "$1\t$2\n" if /(\d+)\s+'$tunere'([\d.]+)/' epoch.scores > $eot
+                fs+=" $f/$eot"
+                popd
+                bs+=" $i $name"
+            done
+            obase=$obasep$ot
+            joinleft --npad=1 --padval='""' --nosort $fs > $obase.data
+            tailn=30 preview $obase.data
+            mv $obase.png $obase.png.bak || true
+            showvars_required fs bs
+            title=$title data=$obase.data obase=$obase xlbl="MIRA epoch" graph3 $bs
+        done
+        [[ $noview ]] || firefox $obase{,.heldout}.png
+)
+}
+weights() {
+    local a=
+    local c=cat
+    local ca=-f1-
+    if [[ $abs ]] ; then
+        a='abs($2)."\t".'
+        ca=-f2-
+    fi
+    clines "$@" | perl -pe 's/(.*):(.*)/''"$2\t$1"/e' | sort -rg | cut $ca | unescape_sb | left=1 table2txt
+}
+
 hemacs() {
     nohup ssh -X hpc-login2.usc.edu 'bash --login -c emacs' &
 }
@@ -49,6 +107,9 @@ reltohpc() {
 
 clines() {
     catz "$@" | tr ',' '\n'
+}
+splitcomma() {
+    clines "$@"
 }
 
 getwt()
@@ -693,10 +754,6 @@ doubleinplace() {
         mv $f $f.$suffix
         cat $f.$suffix $f.$suffix > $f && rm $f.$suffix
     done
-}
-
-splitcomma() {
-    cat "$@" | tr , '\n'
 }
 
 split() {
@@ -3133,29 +3190,6 @@ graph() {
 }
 
 
-bl3() {
-    (
-        bs=
-        i=0
-        for f in "$@" ; do
-            n=$(val1 $f $i)
-            f=$(name1 $f)
-            i=$((n+1))
-            pushd $f
-            [ -f epoch.scores ] || mira-sum
-            perl -ne 'print "$1\t$2\n" if /(\d+)\s+([\d.]+)/' epoch.scores > epoch.bleu
-            fs+=" $f/epoch.bleu"
-            popd
-            bs+=" $i $n"
-        done
-        obase=${obase:-bl3}
-        set -x
-        joinleft --npad=1 --nosort $fs > $obase.data
-        preview $obase.data
-        set +x
-        data=$obase.data obase=$obase graph3 $bs
-    )
-}
 
 graph3() {
     local y=$1
@@ -3173,10 +3207,10 @@ graph3() {
     local yrange_arg
     [ "$ymin" ] && yrange_arg="yrange=$ymin $ymax"
     #pointsym=none pointsym2=none
-    title=${title:-$ylbl $ylbl2 $ylbl3 vs. $xlbl}
+    title=${title:-"$ylbl $ylbl2 $ylbl3 vs. $xlbl"}
     xlbl=${xlbl:=x}
     showvars_required obase xlbl ylbl ylbl2 ylbl3
-    showvars_optional yrange yrange_arg
+    showvars_optional yrange yrange_arg title
     require_files $data
     plboth $obase -prefab lines data=$data x=1  "$yrange_arg" y=$y name="$ylbl" y2=$y2 name2="$ylbl2" y3=$y3 name3="$ylbl3" ylbldistance=$ylbldistance xlbl="$xlbl" title="$title" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" linedet3="style=3" -scale ${scale:-1.4}
     echo $of

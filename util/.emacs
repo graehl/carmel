@@ -4281,6 +4281,7 @@ loaded as such.)"
 (global-set-key (kbd "M-x") 'smex)
 (require 'ace-jump-mode)
 (define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
+(define-key global-map (kbd "C-c C-s") 'occur)
 
 (setq cua-enable-cua-keys nil)
 ;; only for rectangles

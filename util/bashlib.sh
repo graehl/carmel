@@ -2286,6 +2286,10 @@ bleuparse() {
     forall bleuparse1 "$@"
 }
 mira-log-sum() {
+    mirasum=${mirasum:-mira-sum-time}
+    if [[ $notime ]] ; then
+        mirasum=mira-sum
+    fi
     local dirs="$*"
     dirs=${dirs:-.}
     local op
@@ -2295,6 +2299,8 @@ mira-log-sum() {
     fi
     local log=$op/mira-log-sum.`filename_from $*`.log
     local logs=$log
+    local dlog
+
     (
         for d in $dirs; do
             (
@@ -2303,15 +2309,15 @@ mira-log-sum() {
             echo
             local full=$op`basename $d`.mira.min-avg-max.log
             logs+=" $full"
-            local mirasum=$(abspath ${op}`basename $d`.mira-sum)
+            local mirasumf=$(abspath ${op}`basename $d`.mira-sum)
             showvars_required mirasum full log
             if ! [ "$nosum" ] ; then
-                (set -e;cd $d && mira-sum-time 2>&1 | tee $mirasum)
+                (set -e;cd $d && $mirasum 2>&1 | tee $mirasumf)
             fi
-            cols=99999 feature-scales $d/logs/mira.log | tee $mirasum | tail -2 | cols=220 sniplong
+            [[ $notime ]] || cols=99999 feature-scales $d/logs/mira.log | tee $mirasum | tail -2 | cols=220 sniplong
 #            echo $d/logs/mira.log $d/logs/deco*.log
 #            set -x
-            local dlog
+            if ! [[ $nolog ]] ; then
             for f in $d/logs/deco*.log ; do
                 if grep -q 'ommand line' $f ; then
                     true
@@ -2319,6 +2325,7 @@ mira-log-sum() {
                 dlog=$f
             done
             full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
+            fi
             echo
             )
         done
