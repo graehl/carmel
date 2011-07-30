@@ -24,7 +24,7 @@ def main(rest_=['-'],keyfields=1,sep='\t',npad=0,allow_over_npad=True,padval='',
         for i in indices[ncols]:
             ncols[k]=max(ncols[k],npad) if allow_over_npad else npad
     for k in keys:
-        print sep.join(list(k)+flatlist(pad(l,ncol[i]) for (i,l) in ival(t[k])))
+        print sep.join(list(k)+flatlist(pad(l,ncol[i],pad=padval) for (i,l) in ival(t[k])))
 
 import optfunc
 optfunc.main(main)
