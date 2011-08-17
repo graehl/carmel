@@ -1,3 +1,10 @@
+stopmira() {
+    for f in "$@"; do
+        touch $f/STOP
+        realpath $f/STOP
+    done
+}
+
 bl3() {
 (
         set -e
@@ -148,9 +155,10 @@ vgnorm() {
 
 pycheckers() {
     (
+        pycheckerarg=${pycheckerarg:- --stdlib --limit=1000}
         [ -f setup.sh ] && . setup.sh
         for f in "$@" ; do
-            pychecker --stdlib --limit=1000 $f 2>&1 | tee $f.check
+            pychecker $pycheckerarg $f 2>&1 | tee $f.check
         done
     )
 }
