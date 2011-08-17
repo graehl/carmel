@@ -3,6 +3,19 @@
 ### figure out python logging lib
 ### """
 
+def cstr_maybe_quote(s):
+    e=cstr_escape(s)
+    return '"%s"'%e if e!=s else s
+
+def cstr_quote(s):
+    return '"%s"'%cstr_escape(s)
+
+def cstr_escape_nows(s):
+    return s.replace('\\','\\\\').replace('"','\\"')
+
+def cstr_escape(s):
+    return cstr_escape_nows(s).replace('\n','\\n').replace('\t','\\t')
+
 import copy
 
 def addcp(a,b):
@@ -78,6 +91,7 @@ def inrange(x,r):
 def inranges(x,rs):
     return any(inrange(x,r) for r in rs)
 
+>>>>>>> .r3467
 def growlist(fill=None):
     class GrowingList(list):
         def __setitem__(self, index, value):
@@ -127,13 +141,13 @@ def flatlist(ll):
 
 megastr=['k','m','g','t','p']
 megaf=1000.
-megabstr=[x.lower() for x in megastr]
+megabstr=[x_mega.lower() for x_mega in megastr]
 megabf=1024.
 def mega(x,dec=4,power2=False):
-    str,f=(megabstr,megabf) if power2 else (megastr,megaf)
+    suf,f=(megabstr,megabf) if power2 else (megastr,megaf)
     x=float(x)
     ps=''
-    for s in str:
+    for s in suf:
         if x<f: break
         x/=f
         ps=s
@@ -216,9 +230,9 @@ def long_substr(strings):
 #     return s.replace(fromsub,tosub,count=1)
 
 def subst1_porch(s,substr,elide='...',porch=0):
-   i=string.find(s,fromsub)
+   i=string.find(s,substr)
    if i==-1: return s
-   return s[0:max(i-porch,0)]+tosub+s[i+max(0,len(fromsub)-porch)]
+   return s[0:max(i-porch,0)]+elide+s[i+max(0,len(substr)-porch)]
 
 def subst_greedy(strings,substr,elide='...',porch=0):
   return [subst1_porch(x,substr,elide,porch) for x in strings]
@@ -342,8 +356,12 @@ def pretty_float(x,digits=16):
         # return s[0:d+1]+rounded
 
 if __name__ == "__main__":
-  for x in smallest_difference(['1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:','1e-12,1e-13,15e-14,1e14,1e15,15e-15,1e16,15e-16,1e-17,1e-18,1e18]:']):
-    print x
+    print datetoday()
+    print str(str2date(datetoday()))
+    for x in ['"\\a"',"2","'",'"',r'\a\b\c\"','"a\tb\nEND"']:
+        print x,cstr_maybe_quote(x),cstr_quote(x),cstr_escape(x),cstr_escape_nows(x)
+  # for x in smallest_difference(['1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:','1e-12,1e-13,15e-14,1e14,1e15,15e-15,1e16,15e-16,1e-17,1e-18,1e18]:']):
+  #   print x
 
 #    for f in [1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:
 #        print pretty_float(1e100*(1+f)),pretty_float(1e10*(1+f)),pretty_float(1+f),pretty_float(1-f),pretty_float(1-2*f)
