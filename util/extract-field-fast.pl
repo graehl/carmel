@@ -65,6 +65,7 @@ my @options=(
              ["max-nbest=i"=>\$maxnbest,"Special case for 'nbest' fieldname - skip line if value is > i"],
              ["unique-hyps=i"=>\$maxuniquehyp,"Special case for 'hyp' fieldname - skip line if hyp has already been seen for this sent-fieldname"],
     ["prec=i"=>\$prec,"digits precision for avgs"],
+    ["avg!"=>\$doavg,"compute average vals for regexp-fieldname"],
             );
 
 
