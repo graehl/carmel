@@ -36,10 +36,18 @@ def dict_dotprod(a,b,s=0.0):
             s+=a[k]*b[k]
     return s
 
-def firstline(inf,default=''):
+def firstline(inf,default='',n=1):
     r=readfrom(inf)
-    for l in r:
-        return l
+    if n==1:
+        for l in r:
+            return l
+    else:
+        b=''
+        for l in r:
+            if n<=0:
+                return b
+            b+=l
+            n-=1
     return default
 
 def str2weights(s,default=0.0,f=float):
@@ -91,7 +99,6 @@ def inrange(x,r):
 def inranges(x,rs):
     return any(inrange(x,r) for r in rs)
 
->>>>>>> .r3467
 def growlist(fill=None):
     class GrowingList(list):
         def __setitem__(self, index, value):
