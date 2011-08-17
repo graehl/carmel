@@ -4,7 +4,7 @@ usage="""
 """
 from graehl import *
 from dumpx import *
-def main(pre='',epsilon=0,weights='',rest_=[],printfeats=False):
+def main(pre='',epsilon=0,weights='',rest_=[],printfeats=False,usage_=usage):
     if len(weights):
         l=firstline(weights)
         fvs=[str2weights(l)]

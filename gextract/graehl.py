@@ -182,6 +182,9 @@ def entuple(*xs):
 def diff(a,b):
     return b-a
 
+def absdiff(a,b):
+    return abs(b-a)
+
 def dict_diff(ad,bd,f=entuple,zero=0):
     d={}
     for k,v in ad.iteritems():
@@ -201,6 +204,14 @@ def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header="",post="",ma
         warn('%s differences:'%header,post,max=max)
     for k,v in d.iteritems():
         warn('difference %s->%s [%s]'%(desc,descb,' '.join(k)),' = %s -> %s'%v,max=max)
+
+def negate(x):
+    return -x
+
+def sort_diff(ad,bd,key=identity,f=diff,zero=0):
+    "return list of (key,diff) values sorted by key(d)"
+    dd=dict_diff(ad,bd,f,zero)
+    return sorted(dd.iteritems(),key=key)
 
 def nonone(xs):
     return (x for x in xs if x is not None)

@@ -1,0 +1,17 @@
+from graehl import *
+from nbest import *
+usage="""
+given two input files, print sorted (optionally absolute) differences between their numeric f=val.
+(note: multiply appearing keys use the last value)
+"""
+
+def main(rest_=[],absval=False,
+         usage_=usage):
+    fs=map(readfrom,rest_)
+    if len(fs)!=2:
+       error(usage)
+    desc='%s-%s'%fs
+    ds=[flatten(dict(yieldfields_num(l) for l in readfrom(f))) for f in fs]
+    dd=sort_diff(ds[0],ds[1],key=abs if absval else identity)
+    for d in dd.iteritems():
+       print '%s=%s'%d
