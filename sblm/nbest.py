@@ -68,6 +68,10 @@ def nbests(ns):
             yield (l,getfields_num(l))
 
 #may return int or float! this may cause bugs if you don't expect it
+def yieldfields_num(s):
+    for (n,v) in numfieldre.findall(s):
+        yield (n,float(v))
+
 def getfields_num(s):
     return [(n,int_equiv(float(v))) for (n,v) in numfieldre.findall(s)]
 
