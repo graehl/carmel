@@ -12,7 +12,7 @@ def main(rest_=[],sortabs=False,bypercent=False,alphabetical=False,usage_=usage,
    fs=map(readfrom,fnames)
    if len(fs)!=2:
       error(usage)
-   desc='%s-%s'%fnames
+   desc='NAME\t[%s] - [%s]\tPERCENT CHANGE'%fnames
    ds=[]
    for f in fs:
       d=dict()
