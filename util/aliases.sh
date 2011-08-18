@@ -1,4 +1,10 @@
-
+svnln() {
+    forall svnln1 "$@"
+}
+svnln1() {
+    ln -s $1 .
+    svn add $(basename $1)
+}
 
 stopmira() {
     for f in "$@"; do
