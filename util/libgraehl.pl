@@ -37,6 +37,13 @@ use strict;
 
 use Carp;
 
+sub printw {
+    print join(' ',@_),"\n";
+}
+sub printj {
+    print join(' ',@_);
+}
+
 sub warn_summary {
     &all_summary();
     &Carp::cluck
@@ -1668,20 +1675,84 @@ sub mean {
     return $sum/$n;
 }
 
+sub statcounts {
+    my $sum=0;
+    my $sumsq=0;
+    my $n=scalar @_;
+    for my $x (@_) {
+        $sum+=$x;
+        $sumsq+=$x*$x;
+    }
+    ($sum,$sumsq,$n)
+}
 sub variance {
     my ($sum,$sumsq,$n)=@_;
     return 0 if ($n<=1);
     my $v=($sumsq-$sum*$sum/$n)/($n-1); # = sample variance (unbiased) - see http://en.wikipedia.org/wiki/Bessel%27s_correction
     return ($v>0?$v:0);
 }
-
+sub realvariance {
+    my ($sum,$sumsq,$n)=@_;
+    return 0 if ($n<=1);
+    my $v=($sumsq-$sum*$sum/$n)/$n;
+    return ($v>0?$v:0);
+}
+sub dotprod {
+    my ($xl,$yl)=@_;
+    my $s=0.;
+    for my $i (0..$#$xl) {
+        $s+=$xl->[$i]*$yl->[$i];
+        #debug($#$xl,$s,$xl->[$i],$yl->[$i]);
+    }
+    $s
+}
+use List::Util qw(sum);
+sub covariance {
+    my ($xl,$yl,$xsum,$ysum)=@_;
+    my $n=scalar @$xl;
+    die unless $n == scalar @$yl;
+    if (!defined($xsum)) {
+        $xsum=sum(@$xl);
+        $ysum=sum(@$yl);
+    }
+    covariance_counts(dotprod($xl,$yl),$xsum,$ysum,$n)
+}
+sub covariance_counts {
+    my ($dotprod,$xsum,$ysum,$n)=@_;
+    ($dotprod-($xsum/$n)*$ysum)/$n
+}
+sub linear_regress {
+    #return (b,a) so y=x*b+a+(error) with min sum squared error
+    #$yl undefined -> (0...$#$xl)
+    my ($xl,$yl)=@_;
+    ($xl,$yl)=([0..$#$xl],$xl) if !defined($yl);
+    my $n=scalar @$xl;
+    die unless scalar @$yl == $n;
+    return (0,$xl->[0]) if $n<2;
+    my ($xs,$xs2)=statcounts(@$xl);
+    my $ys=sum(@$yl);
+    linear_regress_counts(dotprod($xl,$yl),$xs,$xs2,$ys,$n);
+}
+sub linear_regress_counts {
+    my ($dotprod,$xs,$xs2,$ys,$n)=@_;
+    my $b=covariance_counts($dotprod,$xs,$ys,$n)/realvariance($xs,$xs2,$n);
+    my $a=($ys-$b*$xs)/$n;
+    ($b,$a)
+}
+sub linear_regress_range {
+    #generalization of max{y}-min{y}
+    my ($xl,$yl)=@_;
+    my $n=scalar @$xl;
+    my ($b,$a)=linear_regress($xl,$yl);
+    ($n-1)*$b
+}
 sub stddev {
-    return sqrt(&variance(@_));
+    sqrt(&variance(@_))
 }
 
 sub stderror {
     my ($sum,$sumsq,$n)=@_;
-    return &stddev(@_)/sqrt($n);
+    &stddev/sqrt($n)
 }
 
 #returns array of indices from input string of form 1,2,3-10,... (sorted!)

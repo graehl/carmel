@@ -27,7 +27,7 @@ def nbest_tree(s):
 nbesthstr='NBEST '
 numres=r'[+\-]?(?:\.\d+|\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)'
 numre=re.compile(numres)
-fieldeqres=r'\s(\S+)='
+fieldeqres=r'(?:\s|^)(\S+)='
 numfieldres=fieldeqres+'('+numres+')'
 numfieldre=re.compile(numfieldres)
 bracketres=r'\[([^\]]*)\]'

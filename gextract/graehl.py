@@ -3,6 +3,74 @@
 ### figure out python logging lib
 ### """
 
+def percent(frac):
+    return '%.2f'%(frac*100)+'%'
+
+def percent_change(frac):
+
+    return ('+' if frac>=0 else '')+percent(frac)
+
+def frac_change(a,b):
+    if a==0 and b==0: return 0
+    return (b-a)/max(abs(a),abs(b))
+
+def sumsq(xs):
+    "sum(x*x for x in xs)"
+    s=0.
+    for x in xs:
+        s+=x*x
+    return s
+
+def covariancec(dotprod,xsum,ysum,n):
+    n=float(n)
+    return (dotprod-(xsum/n)*ysum)/n
+
+def covariance(xs,ys):
+    n=len(xs)
+    if len(ys)!=n:
+        raise Exception("covariance of different-length lists")
+    return covariancec(dotproduct(xs,ys),sum(xs),sum(ys),n)
+
+def statc(xs):
+    return (sum(xs),sumsq(xs),len(xs))
+
+def variancec(xs,xs2,n):
+    return 0. if len(xs<2) else xs2-(xs/n*xs)/float(n)
+
+def sample_variancec(xs,xs2,n):
+    return 0. if len(xs)<2 else xs2-(xs/n*xs)/(n-1.)
+
+def variance(xs):
+    return variancec(*statc(xs))
+
+def sample_variance(xs):
+    return sample_variancec(*statc(xs))
+
+def linear_regressc(dotprod,xs,xs2,ys,n):
+    b=covariancec(dotprod,xs,ys,n)/variancec(xs,xs2,n)
+    a=(ys-b*xs)/n
+    return (b,a)
+
+def linear_regress(xs,ys=None):
+    "return (b,a) so y=x*b+a+(error) with min sum squared error"
+    if ys is None:
+        xs,ys=range(0,len(xs)),xs
+    if len(ys)!=n:
+        raise Exception("regression of different-length lists")
+    n=len(xs)
+    return linear_regressc(dotproduct(xs,ys),sum(xs),sumsq(xs),sum(ys),n)
+    # b=covariance(xs,ys,xsum,ysum)/variance(xs,xs2,n)
+    # a=(ysum-b*xsum)/n
+    # return (b,a)
+
+def linear_regress_range(xs,ys=None):
+    "generalization of max{y}-min{y}"
+    return (len(xs)-1)*linear_regress(xs,ys)[0]
+
+def linear_regress_rangec(dotprod,xs,xs2,ys,n):
+    "generalization of max{y}-min{y}"
+    return (n-1)*linear_regressc(dotprod,xs,xs2,ys,n)[0]
+
 def cstr_maybe_quote(s):
     e=cstr_escape(s)
     return '"%s"'%e if e!=s else s
@@ -185,7 +253,7 @@ def absdiff(a,b):
     return abs(b-a)
 
 def dict_diff(ad,bd,f=entuple,zero=0):
-    d={}
+    d=dict()
     for k,v in ad.iteritems():
         vb=bd.get(k,zero)
         if v!=vb:

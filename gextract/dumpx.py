@@ -1,6 +1,6 @@
 import os,pprint,sys,inspect
 dbg=os.environ.get('DEBUG')
-#dbg=True
+dbg=True
 
 def callerinfo(back):
     "returns frame,file,line,fun,?,?"
