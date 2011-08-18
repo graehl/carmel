@@ -1,3 +1,5 @@
+
+
 stopmira() {
     for f in "$@"; do
         touch $f/STOP

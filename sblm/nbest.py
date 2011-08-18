@@ -2,7 +2,7 @@
 from graehl import *
 from dumpx import *
 from tree import *
-from pcfg import *
+from etree import *
 
 import re
 
@@ -62,6 +62,9 @@ def getfield_brace(f,s,single=True):
     return l[0]
   return l
 
+def getfields_num(s):
+    return [(n,int_equiv(float(v))) for (n,v) in numfieldre.findall(s)]
+
 def nbests(ns):
     for l in ns:
         if l.startswith(nbesthstr):
@@ -72,8 +75,6 @@ def yieldfields_num(s):
     for (n,v) in numfieldre.findall(s):
         yield (n,float(v))
 
-def getfields_num(s):
-    return [(n,int_equiv(float(v))) for (n,v) in numfieldre.findall(s)]
 
 def getfields_float(s):
     return [(n,float(v)) for (n,v) in numfieldre.findall(s)]

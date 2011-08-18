@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""
+usage="""
 the purpose of this script.
 """
 
@@ -8,7 +8,7 @@ from collections import defaultdict
 import optfunc
 
 @optfunc.arghelp('rest_','input files')
-def main(rest_=['-'],keyfields=1,sep='\t'):
+def main(rest_=['-'],keyfields=1,sep='\t',usage_=usage):
     """-h usage"""
     for f in rest_:
         for l in open_in(f):

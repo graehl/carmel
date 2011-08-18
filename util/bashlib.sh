@@ -1893,8 +1893,58 @@ preview_banner() {
     echo "==> $* <=="
 }
 
+headtail() {
+    forall headtail1 "$@"
+}
+htpreview1() {
+    if [[ $2 ]] ; then
+        preview_banner $2
+    else
+        preview_banner $1
+    fi
+    headtail1 "$1"
+}
+htpreview() {
+    forall htpreview "$@"
+}
 preview() {
     forall preview1 "$@"
+}
+head1() {
+    local n=${tailn:-6}
+    if [[ $2 ]] ; then
+        n=$1
+        shift
+    fi
+    if [[ $1 = - ]] ; then
+        head -n $n
+    else
+        head $tailarg -n $n "$1"
+    fi
+}
+tail1() {
+    local n=${tailn:-6}
+    if [[ $2 ]] ; then
+        n=$1
+        shift
+    fi
+    if [[ $1 = - ]] ; then
+        tail -n $n
+    else
+        tail $tailarg -n $n "$1"
+    fi
+}
+headtail1() {
+    local n=$(nlines "$1")
+    local m=$((2 * ${tailn:-6}))
+    #showvars_required n m
+    if [ $n -le $m ] ; then
+        cat "$1"
+    else
+        head1 ${tailn:-6} "$1"
+        echo ...
+        tail1 ${tailn:-6} "$1"
+    fi
 }
 preview1() {
  tailn=${tailn:-6}
@@ -1903,13 +1953,8 @@ preview1() {
      preview_banner $2
      v=
  fi
- if [[ $1 = - ]] ; then
-     head -n $tailn
- else
-     head $v -n $tailn "$1"
- fi
+ tailarg=$v head1 $tailn "$@"
 }
-
 preview2() {
  preview "$@" 1>&2
 }
