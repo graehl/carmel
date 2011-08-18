@@ -157,11 +157,11 @@ class Node:
             return self
         return self.children[gornaddr[0]][gornaddr[1:]]
 
-    def filter_inplace(self):
+    def filter_inplace(self,keep):
         "top down, remove subtree with root node t unless keep(t).  returns new tree (destructive update of old one)"
         if not keep(self):
             return None
-        return filter_inplace_children(keep)
+        return self.filter_inplace_children(keep)
 
     def filter_inplace_children(self,keep):
         "like filter_inplace, but always keep root"

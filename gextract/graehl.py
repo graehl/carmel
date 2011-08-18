@@ -89,7 +89,6 @@ def any2range(x):
 def any2ranges(rs):
     r=any2range(rs)
     if r is not None: return r
-    if isinstance(x,string): return str2ranges(x.split(','))
     return [any2range(r) for r in rs]
 
 def inrange(x,r):
@@ -208,6 +207,9 @@ def warn_diff(ad,bd,f=entuple,zero=0,desc='dict',descb=None,header="",post="",ma
 def negate(x):
     return -x
 
+def identity(x):
+    return x
+
 def sort_diff(ad,bd,key=identity,f=diff,zero=0):
     "return list of (key,diff) values sorted by key(d)"
     dd=dict_diff(ad,bd,f,zero)
@@ -216,8 +218,6 @@ def sort_diff(ad,bd,key=identity,f=diff,zero=0):
 def nonone(xs):
     return (x for x in xs if x is not None)
 
-def identity(x):
-    return x
 
 import sys,re,random,math,os,collections,errno,time,operator,datetime
 
@@ -1559,25 +1559,6 @@ def filename_from(s):
 def filename_from_1to1(s):
     return filename_from(s)
 #TODO: ensure non-collision (quote w/ escape of quote-strings)
-
-radu_drophead=re.compile(r'\(([^~]+)~(\d+)~(\d+)\s+(-?[.0123456789]+)')
-radu_keephead=re.compile(r'\((\S+)\s+(-?[.0123456789]+)')
-radu_keephead=re.compile(r'\(([^~]+~\d+~\d+)\s+(-?[.0123456789]+)')
-sym_rrb=re.compile(r'\((\S+) (\S+)\)')
-rparen=re.compile(r'\)')
-lparen=re.compile(r'\(')
-def escape_paren(s):
-    s=rparen.sub('-RRB-',s)
-    return lparen.sub('-LRB-',s)
-def rrb_repl(match):
-    return '(%s %s)'%(match.group(1),escape_paren(match.group(2)))
-def escape_rrb(t):
-    return sym_rrb.sub(rrb_repl,t)
-def radu2ptb(t,strip_head=True):
-    "radu format: all close parens that indicate tree structure are followed by space or end, so that () are legal within symbols -   also, we strip head info.  we escape them to -LRB- -RRB- for handling by tree.py."
-    t=(radu_drophead if strip_head else radu_keephead).sub(r'(\1',t)
-    t=escape_rrb(t)
-    return t
 
 def shellquote(s):
     return "'" + s.replace("'", "'\\''") + "'"

@@ -26,13 +26,13 @@ import unittest
 
 from graehl import *
 from dumpx import *
-
+from etree import *
 
 toplabel='TOP'
 viz='viz-tree-string-pair.pl'
 
 def rulefrag(t):
-    return filter_children(t,lambda x:x.span is not None)
+    return t.filter_children(lambda x:x.span is not None)
 
 import string
 parenescape=string.maketrans('()','[]')
@@ -483,7 +483,7 @@ class Counts(object):
         checkt(parnode)
 
     def __str__(self):
-        return "\n".join(rules.itervalues())
+        return "\n".join(self.rules.itervalues())
 
 class Translation(object):
     def __init__(self,etree,estring,a,f,info,lineno=None):
@@ -601,7 +601,6 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
 #            p*=pow(basemodel.pchild,nc-1)*basemodel.pendchild
         for c in t.children:
             if c.span is not None:
-                l=c.span[0]
                 fi=c.span[0]-fbase
 #                assert span_in(c.span,parent.span),richs(parent)
 #                assertindex(fi,foreign)
@@ -843,7 +842,7 @@ foreign_whole_sentence[fbase:x], i.e. index 0 in foreign is at the first word in
                 fe[p]=t
 
     def set_f2enode(self):
-        fe=[None for x in range(0,self.nf)]
+        fe=[None for _ in range(0,self.nf)]
         Translation.f2enode(self.etree,fe)
         self.f2enode=fe
 
@@ -931,8 +930,8 @@ class Training(object):
     #todo: randomize order of reader inputs in memory for interestingly different gibbs runs?
     def gibbs(self):
         self.gibbs_prep()
-        for iter in range(0,self.opts.iter):
-            self.gibbs_iter(iter)
+        for it in range(0,self.opts.iter):
+            self.gibbs_iter(it)
         report_zeroprobs()
 
     def gibbs_prep(self):
@@ -941,7 +940,7 @@ class Training(object):
         log("Using gibbs sampling starting from minimal ghkm.")
         counts=self.counts
         if opts.randomize:
-            random.shuffle(examples)
+            random.shuffle(self.examples)
         xs=self.examples
         self.nf=sum(x.nf for x in xs)
         self.netree=sum(x.netree for x in xs)
@@ -1066,8 +1065,8 @@ class Training(object):
         if opts.header:
             print "###",header,t,("full-align={{{%s}}}"%(fa) if opts.header_full_align else '')
         if opts.rules:
-            for (r,p,_),id in izip(t.all_rules(self.basemodel,opts.quote),itertools.count(0)):
-                print r+(" ### logbaseprob=%g line=%d id=%d"%(p,t.lineno,id) if opts.features else "")
+            for (r,p,_),rid in izip(t.all_rules(self.basemodel,opts.quote),itertools.count(0)):
+                print r+(" ### logbaseprob=%g line=%d id=%d"%(p,t.lineno,rid) if opts.features else "")
         if opts.derivation:
             print t.derivation_tree()
 
@@ -1101,7 +1100,7 @@ def gextract(opts):
     log(' '.join(sys.argv))
     assert(opts.alignment_out or opts.alignments_every==0)
     if opts.header:
-        justnames=['terminals','quote','attr','derivation','inbase']
+        #justnames=['terminals','quote','attr','derivation','inbase']
         print "### gextract %s minimal %s"%(version,attr_str(opts))
         #"terminals=%s quote=%s attr=%s derivation=%s inbase=%s"%(opts.terminals,opts.quote,opts.attr,opts.derivation,opts.inbase)
     inbase=opts.inbase
