@@ -1903,9 +1903,10 @@ htpreview1() {
         preview_banner $1
     fi
     headtail1 "$1"
+    echo
 }
 htpreview() {
-    forall htpreview "$@"
+    forall htpreview1 "$@"
 }
 preview() {
     forall preview1 "$@"
@@ -1934,16 +1935,25 @@ tail1() {
         tail $tailarg -n $n "$1"
     fi
 }
+headtailp() {
+    #todo: use fixed sized queue
+    perl -e '$n=shift||5;@l=<>;$nl=scalar @l;if ($n<=nl) { print @l } else { print @l[0..$n-1],"...\n",@l[scalar -$n..-1] }' "$@"
+}
 headtail1() {
-    local n=$(nlines "$1")
-    local m=$((2 * ${tailn:-6}))
-    #showvars_required n m
-    if [ $n -le $m ] ; then
-        cat "$1"
+    local n=${tailn:-6}
+    if true || [[ $1 = - ]] ; then
+        headtailp $n "$1"
     else
-        head1 ${tailn:-6} "$1"
-        echo ...
-        tail1 ${tailn:-6} "$1"
+        local n=$(nlines "$1")
+        local m=$((2 * $n))
+    #showvars_required n m
+        if [ $n -le $m ] ; then
+            cat "$1"
+        else
+            head1 $n "$1"
+            echo ...
+            tail1 $n "$1"
+        fi
     fi
 }
 preview1() {

@@ -1,18 +1,41 @@
 #!/usr/bin/env python2.7
 from graehl import *
 from nbest import *
+from dumpx import *
 usage="""
 given two input files, print sorted (optionally absolute) differences between their numeric f=val.
 (note: multiply appearing keys use the last value)
 """
 
-def main(rest_=[],absval=False,
-         usage_=usage):
-    fs=map(readfrom,rest_)
-    if len(fs)!=2:
-       error(usage)
-    desc='%s-%s'%fs
-    ds=[flatten(dict(yieldfields_num(l) for l in readfrom(f))) for f in fs]
-    dd=sort_diff(ds[0],ds[1],key=abs if absval else identity)
-    for d in dd.iteritems():
-       print '%s=%s'%d
+def main(rest_=[],sortabs=False,bypercent=False,alphabetical=False,usage_=usage,header=True):
+   fnames=rest_
+   fs=map(readfrom,fnames)
+   if len(fs)!=2:
+      error(usage)
+   desc='%s-%s'%fnames
+   ds=[]
+   for f in fs:
+      d=dict()
+      for l in readfrom(f):
+         for k,v in yieldfields_num(l):
+            d[k]=float(v)
+      ds.append(d)
+   #ds=[dict(flatten(yieldfields_num(l) for l in readfrom(f))) for f in fs] #dict to remove dups. flatten to combine across all file lines
+   da,db=ds
+   absf=abs if sortabs else identity
+   dd=[(k,v,v/max(abs(da.get(k,0.)),abs(db.get(k,0.)))) for (k,v) in dict_diff(da,db,diff).iteritems()]
+   if alphabetical:
+      keyf=identity
+   elif percent:
+      keyf=lambda x:(absf(x[2]),absf(x[1]))
+   else:
+      keyf=lambda x:absf(x[1])
+   dd.sort(key=keyf)
+   if header:
+      print desc
+   else:
+      info(desc)
+   for k,v,frac in dd:
+      print '%s\t%s\t%s'%(k,v,percent_change(frac))
+import optfunc
+optfunc.main(main)

@@ -48,6 +48,8 @@ my $maxuniquehyp;
 my $maxnbest;
 my $re;
 my $prec=7;
+my $dostddev;
+my $sentstddev;
 
 my @options=(
              "extract val with fieldname={{{val}}} or fieldname=val",
@@ -66,6 +68,8 @@ my @options=(
              ["unique-hyps=i"=>\$maxuniquehyp,"Special case for 'hyp' fieldname - skip line if hyp has already been seen for this sent-fieldname"],
     ["prec=i"=>\$prec,"digits precision for avgs"],
     ["avg!"=>\$doavg,"compute average vals for regexp-fieldname"],
+    ["stddev!"=>\$dostddev,"also compute stddev over all vals"],
+    ["same-sent-slope!"=>\$sentstddev,"compute beta of least squares regression across repeats for same sentence, in order for same sent. can supply two 1best files"],
             );
 
 
@@ -212,7 +216,9 @@ if ($doavg && $N) {
         my $s=$sums{$_};
         my $sq=exists $sumsq{$_} ? $sumsq{$_} : 0;
         my $nz=exists $nonzero{$_} ? $nonzero{$_} : 0;
-        print "$_=",real_prec($s/$N,$prec)," stddev=",real_prec(sqrt(variance($s,$sq,$N)),$prec)," nonzero=$nz/$N\n";
+        print "$_=",real_prec($s/$N,$prec);
+        print " stddev=",real_prec(sqrt(variance($s,$sq,$N)),$prec) if $dostddev;
+        print " nonzero=$nz/$N\n";
     }
 }
 
