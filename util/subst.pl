@@ -40,9 +40,11 @@ my $firstonly;
 my $verbose;
 my $substre;
 my @substs;
+my $abspath=1;
 
 my @options=(
 "Global or regexp search and replace from a translation file (list of tab-separated source/replacement pairs)",
+["abspath!"=>\$abspath,"for inplace, modify pointed to file by absolute path (don't remove symlink)"],
 ["translations-file=s"=>\$ttable,"list of tab-separated source/replacement pairs"],
 ["reverse!"=>\$reverse,"reverse: replace second column in translations-file with first column"],
 ["inplace!"=>\$inplace,"in-place edit (note: cannot handle compressed inputs)"],
@@ -114,7 +116,9 @@ if ($inplace) {
         }
         close LOOKFOR;
     }
-    @ARGV=keys %modify_files;
+@ARGV=keys %modify_files;
+@ARGV=uniq(map { abspath{$_} } @ARGV) if $abspath;
+info("modifying $_") for (@ARGV);
     &debug(@ARGV);
     if ($hadargs && scalar @ARGV == 0) {
         fatal("None of the input files match any patterns in $ttable for in-place edit - no change");
