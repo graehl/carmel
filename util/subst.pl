@@ -134,6 +134,7 @@ sub count_subst {
     if ($n) {
         my $rec="$ARGV: $desc";
         count_info($rec,$n);
+        count_info("BEFORE: $pre",$n);
         info("$rec\n\tBEFORE: $pre") if $verbose;
         print if $dryrun;
     }
