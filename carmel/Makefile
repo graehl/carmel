@@ -14,7 +14,7 @@ SRC=$(DIR)/src
 CP_PROGS=$(wildcard $(SRC)/*.pl)
 SHARED=$(DIR)/../shared
 PROGS=carmel
-carmel_SRC=carmel.cc fst.cc train.cc derivations.cc gibbs.cc
+carmel_SRC=carmel.cc fst.cc train.cc gibbs.cc
 carmel_NOTEST=1
 vpath %.cc $(SRC):$(SHARED)
 VPATH=$(SRC):$(SHARED)
