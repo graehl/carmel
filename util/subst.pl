@@ -92,7 +92,7 @@ if ($inplace) {
     my %modify_files;
     my $hadargs=scalar @ARGV;
     file: for my $file (@ARGV) {
-        open LOOKFOR,'<',$file or die;
+        open LOOKFOR,'<',$file or die "$file: ".`ls -l $file`;
         while(my $line=<LOOKFOR>) {
             for my $sd (@rewrites) {
                 my $source=$sd->[0];
