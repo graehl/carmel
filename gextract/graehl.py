@@ -3,6 +3,21 @@
 ### figure out python logging lib
 ### """
 
+import sys,re,random,math,os,collections,errno,time,operator,datetime
+
+def commandline():
+    return ' '.join(map(shell_maybe_quote,sys.argv))
+
+def logcmd(locals=True,pre='COMMAND LINE: '):
+    log(pre+commandline())
+    if locals:
+        loc=Locals(1)
+        l=''
+        if hasattr(loc,'rest_'):
+            l+='arguments=%s '%(loc.rest_,)
+        l+='%s'%loc
+        log(l)
+
 def percent(frac):
     return '%.2f'%(frac*100)+'%'
 
@@ -55,9 +70,9 @@ def linear_regress(xs,ys=None):
     "return (b,a) so y=x*b+a+(error) with min sum squared error"
     if ys is None:
         xs,ys=range(0,len(xs)),xs
+    n=len(xs)
     if len(ys)!=n:
         raise Exception("regression of different-length lists")
-    n=len(xs)
     return linear_regressc(dotproduct(xs,ys),sum(xs),sumsq(xs),sum(ys),n)
     # b=covariance(xs,ys,xsum,ysum)/variance(xs,xs2,n)
     # a=(ysum-b*xsum)/n
@@ -70,6 +85,16 @@ def linear_regress_range(xs,ys=None):
 def linear_regress_rangec(dotprod,xs,xs2,ys,n):
     "generalization of max{y}-min{y}"
     return (n-1)*linear_regressc(dotprod,xs,xs2,ys,n)[0]
+
+#TODO: ensure non-collision (quote w/ escape of quote-strings)
+
+def shell_maybe_quote(s):
+    if s.count("'"):
+        return shellquote(s)
+    return s
+
+def shellquote(s):
+    return "'" + s.replace("'", "'\\''") + "'"
 
 def cstr_maybe_quote(s):
     e=cstr_escape(s)
@@ -285,9 +310,6 @@ def sort_diff(ad,bd,key=identity,f=diff,zero=0):
 
 def nonone(xs):
     return (x for x in xs if x is not None)
-
-
-import sys,re,random,math,os,collections,errno,time,operator,datetime
 
 def shortest_of(strings):
     return min(strings, key=len)
@@ -1498,10 +1520,10 @@ import inspect
 
 pod_types=[int,float,long,complex,str,unicode,bool]
 
-def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private=True):
+def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private=True,skip_trailing_underscore=True):
     """return a list of tuples (a1,v1)... if names is a list ["a1",...], or all the attributes if names is None.  if types is not None, then filter the tuples to those whose value's type is in types'"""
     if not names:
-        names=[a for a in map(str,dir(obj)) if not (skip_private and a[0:2] == '__')]
+        names=[a for a in map(str,dir(obj)) if not (skip_private and a[0:2] == '__') and not (skip_trailing_underscore and a[-1:] == '_')]
     #    attrs,indices=filter2(names,lambda x:type(x) is str)
     avs=[(k,getattr(obj,k)) for k in names if hasattr(obj,k)]
     return [(a,b) for (a,b) in avs if not ((skip_callable and callable(b)) or (types is not None and type(b) not in types))]
@@ -1509,9 +1531,9 @@ def attr_pairlist(obj,names=None,types=pod_types,skip_callable=True,skip_private
 
 import pprint
 
-def attr_str(obj,names=None,types=pod_types,pretty=True):
+def attr_str(obj,names=None,types=pod_types,pretty=True,skip_trailing_underscore=True):
     "return string: a1=v1 a2=v2 for attr_pairlist"
-    return pairlist_str(attr_pairlist(obj,names,types,True,True),pretty)
+    return pairlist_str(attr_pairlist(obj,names,types,True,True,skip_trailing_underscore),pretty)
 
 def pairlist_str(pairlist,pretty=True):
     if pretty and len(pairlist) and len(pairlist[0])==2: pairlist=[(a,pprint.pformat(b,1,80,3)) for (a,b) in pairlist]
@@ -1626,10 +1648,6 @@ def filename_from(s):
 
 def filename_from_1to1(s):
     return filename_from(s)
-#TODO: ensure non-collision (quote w/ escape of quote-strings)
-
-def shellquote(s):
-    return "'" + s.replace("'", "'\\''") + "'"
 
 # def take(n, iterable):
 #     "Return first n items of the iterable as a list"

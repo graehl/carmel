@@ -1,4 +1,5 @@
 #!/usr/bin/env pypy
+#-*- python -*-
 #TODO: approx #lines/sec (look in new bytes only)
 from graehl import *
 
@@ -10,9 +11,10 @@ fsep=' '
 
 import time
 def main(rest_='',sleep=600,fields='SsMm',N=-1):
+    logcmd()
     fs=rest_
     captions={'S':'size','s':'size/sec','M':'mtime','m':'delta(mtime)'}
-    print "sleep=%s"%sleep
+    #print "sleep=%s"%sleep
     print "start=%s"%datenow()
     for f in fs: print "file=%s"%f
     print tsep.join([captions[f] for f in fields])

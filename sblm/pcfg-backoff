@@ -1,4 +1,3 @@
-#!/usr/bin/env pypy
 #-*- python -*-
 
 # using backoff.py toolkit (should eventually allow mapreduce) for training and evaluating a simple PCFG sblm

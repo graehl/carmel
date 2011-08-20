@@ -23,10 +23,10 @@ usage.set_defaults(inbase="astronauts",outbase="-",monotone=False,begin=0,end=sy
 
 from graehl import *
 from dumpx import *
+from etree import *
 
 #warn(' '.join(sys.argv))
 
-import tree
 def raduparse(t):
     t=radu2ptb(t)
     return tree.str_to_tree(t)
