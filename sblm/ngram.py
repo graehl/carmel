@@ -407,6 +407,7 @@ class ngram(object):
                         bow[phrase]=float(b)
             else:
                 if logp is not None and len(line): warn("skipped nonempty line "+line)
+        #self.logp=logp
         self.prepare()
         if read_unkp:
             self.get_logp_unk_from_ngram(self.logp_unk)

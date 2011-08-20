@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env pypy
 from graehl import *
 from collections import defaultdict
 def stats_main(input='numbers.txt',mean=True,variance=True,stddev=True,error=True,sparse=True,skipblank=True):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env pypy
 """
 toolkit for training and evaluating distributions where conditioning context and predicted values are both opaquely identified by symbol sequences.
 

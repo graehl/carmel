@@ -1,3 +1,23 @@
+buildopenssh() {
+    local v=${1:-0.9.8r}
+    (
+        set -e
+        set -x
+    cd ~/src
+    local tgzd=openssl-$v
+    local tgz=$tgzd.tar.gz
+    [ -f $tgz ] || wget http://www.openssl.org/source/openssl-$v.tar.gz
+    rm -rf $tgzd
+    tar xzvf $tgz
+    local df=openssl-0.9.8l-symbolVersioning.diff
+    cd $tgzd
+    wget http://www.isi.edu/~graehl/$df
+    patch -p1 < $df
+    ./config shared zlib --prefix=$FIRST_PREFIX
+    make # test
+    make install
+    )
+}
 svnln() {
     forall svnln1 "$@"
 }
