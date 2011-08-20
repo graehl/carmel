@@ -69,14 +69,14 @@ class Vertices(dict):
 def dfs(v,adj,visit_pre=None,visit_post=None,yield_pre=False,yield_post=False):
     """pre: all reachable v color were false before recursing with dfs. post: yields visited nodes in """
     if v.color: return
-    yield=yield_pre or yield_post
+    yield_either=yield_pre or yield_post
     if yield_pre: yield v
     if visit_pre: visit(v)
     v.color=1
     for e in adj[v]:
         u,c=e.other_v(v)
         if u.color: continue
-        if yield:
+        if yield_either:
             for v in dfs(u,adj,visit_pre,visit_post,yield_pre,yield_post):
                 yield v
         else:

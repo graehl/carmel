@@ -1,5 +1,6 @@
 #!/usr/bin/env pypy
 """
+TODO!
 toolkit for training and evaluating distributions where conditioning context and predicted values are both opaquely identified by symbol sequences.
 
 symbol sequences are lists of intern(s) strings
