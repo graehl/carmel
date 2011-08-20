@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env pypy
 version=".9"
 doc="""create reduced .a .e-parse .f limited to shorter lines, from line M to N, optionally f cloned from e string with (nearly) monotone alignment
 """

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env pypy
 doc="""Minimal ghkm rule extraction w/ ambiguous attachment (unaligned f words) -> highest possible node.  Line numbers start at 0.  Headers start with ###.  Alignments are e-f 0-indexed.  Confusing characters in tokens are presumed to be removed already from input parses/strings; no escaping.
 
 TODO: better base models, incl modelN ttable or other alignment probs

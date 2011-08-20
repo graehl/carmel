@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env pypy
 from graehl import *
 import sys
 

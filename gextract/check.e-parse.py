@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env pypy
 # Dyer's etrees have bare SYM or NNP etc. when it should be (SYM @) or (NNP @)
 
 import os,sys

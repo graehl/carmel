@@ -1,6 +1,9 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
 
+runmain() {
+        main "$@" 2>&1 | tee $0.log ; exit $?
+}
 #for LD search path: (RPATH)
 name1() {
     perl -e '$_=shift;if (/(.*)=(.*)/) { print "$1\n" } else { print "$_\n" }' "$@"
@@ -97,6 +100,9 @@ getrpath() {
 @r=split(/:/,$1);
 print join(":",grep { -d $_ } @r);
 }'
+}
+objrpath() {
+    objdump -x "$1" | grep -i rpath
 }
 addrpath() {
     local f=$1
@@ -1937,7 +1943,7 @@ tail1() {
 }
 headtailp() {
     #todo: use fixed sized queue
-    perl -e '$n=shift||5;@l=<>;$nl=scalar @l;if ($n<=nl) { print @l } else { print @l[0..$n-1],"...\n",@l[scalar -$n..-1] }' "$@"
+    perl -e '$n=shift||5;@l=<>;$nl=scalar @l;if ($nl<=2*$n+1) { print @l } else { print @l[0..$n-1],"...\n",@l[scalar -$n..-1] }' "$@"
 }
 headtail1() {
     local n=${tailn:-6}
@@ -1945,7 +1951,7 @@ headtail1() {
         headtailp $n "$1"
     else
         local n=$(nlines "$1")
-        local m=$((2 * $n))
+        local m=$((2 * $n + 1))
     #showvars_required n m
         if [ $n -le $m ] ; then
             cat "$1"

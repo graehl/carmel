@@ -117,8 +117,8 @@ if ($inplace) {
         close LOOKFOR;
     }
 @ARGV=keys %modify_files;
-@ARGV=uniq(map { abspath{$_} } @ARGV) if $abspath;
-info("modifying $_") for (@ARGV);
+@ARGV=uniq(map { abspath($_) } @ARGV) if $abspath;
+count_info("modifying $_") for (@ARGV);
     &debug(@ARGV);
     if ($hadargs && scalar @ARGV == 0) {
         fatal("None of the input files match any patterns in $ttable for in-place edit - no change");
@@ -130,27 +130,29 @@ info("modifying $_") for (@ARGV);
 
 
 sub count_subst {
-    my ($desc,$n)=@_;
+    my ($desc,$pre,$n)=@_;
     if ($n) {
         my $rec="$ARGV: $desc";
         count_info($rec,$n);
-        info($rec) if $verbose;
+        info("$rec\n\tBEFORE: $pre") if $verbose;
         print if $dryrun;
     }
 }
 
 while(<>) {
+    my $pre=$_;
+    chomp($pre);
     for my $sdd (@rewrites) {
         my ($source,$dest,$desc)=@{$sdd};
         my $n=s/$source/$dest/g;
 #        &debug($desc,$n,$_);
-        count_subst($desc,$n);
+        count_subst($desc,$pre,$n);
         last if $firstonly && $n;
     }
     for my $sd (@substs) {
         my ($s,$desc)=@{$sd};
         my $n=$s->();
-        count_subst($desc,$n);
+        count_subst($desc,$pre,$n);
         last if $firstonly && $n;
     }
     print unless $dryrun;

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env pypy
 usage="""
 compute sblm score on nbest output
 
@@ -137,7 +137,8 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
 
 @optfunc.arghelp('lm','SRI ngram trained by pcfg.py')
 @optfunc.arghelp('nbest','sbmt_decoder nbest list (optionally with sblm score debugging logs before each nbest)')
-def nbest_sblm_main(lm='nbest.pcfg.srilm',
+def nbest_sblm_main(lm='/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwlm',
+                    #lm='nbest.pcfg.srilm',
                     nbest='nbest.txt',
                     strip=True,
                     flatten=True,
