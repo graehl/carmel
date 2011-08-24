@@ -272,10 +272,10 @@ def entuple(*xs):
     return tuple(xs)
 
 def diff(a,b):
-    return b-a
+    return a-b
 
 def absdiff(a,b):
-    return abs(b-a)
+    return abs(a-b)
 
 def dict_diff(ad,bd,f=entuple,zero=0):
     d=dict()

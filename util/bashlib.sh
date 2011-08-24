@@ -1,6 +1,8 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
-
+nonblanks() {
+    catz "$@" | grep -v ^$
+}
 runmain() {
         main "$@" 2>&1 | tee $0.log ; exit $?
 }
@@ -1212,11 +1214,31 @@ get "$@"
 
 # sort stdin lines with key following first argument.  e.g. sortbynum id= would sort lines by id=N
 sortby() {
- perl -e '@l=<>;@w=map {$$_[0]} sort { $$a[1] cmp $$b[1] } map {/\Q'"$1"'\E(\S+)/;[$_,$1]} @l; print @w'
+ perl -e '@l=<>;@w=map {$_->[0]} sort { $a->[1] cmp $b->[1] } map {/\Q'"$1"'\E(\S+)/;[$_,$1]} @l; print @w'
 }
 sortbynum() {
- perl -e '@l=<>;@w=map {$$_[0]} sort { $$a[1] <=> $$b[1] } map {/\Q'"$1"'\E(\S+)/;[$_,$1]} @l; print @w'
+ perl -e '@l=<>;@w=map {$_->[0]} sort { $a->[1] <=> $b->[1] } map {/\Q'"$1"'\E(\S+)/;[$_,$1]} @l; print @w'
 }
+sortdefbynum() {
+ perl -e '@l=<>;@w=map {$_->[0]} sort { $a->[1] <=> $b->[1] } grep { defined($_->[1]) } map {/\Q'"$1"'\E(\S+)/;[$_,$1]} @l; print @w'
+}
+sortdefby() {
+ perl -e '@l=<>;@w=map {$_->[0]} sort { $a->[1] cmp $b->[1] } grep { defined($_->[1]) } map {/\Q'"$1"'\E(\S+)/;[$_,$1]} @l; print @w'
+}
+sortbynumabsinterp() { # alpha*f1+f2
+ perl -e '@l=<>;@w=map {$_->[0]} sort { $a->[1] <=> $b->[1] } grep { defined($_->[1]) } map {/\Q'"$2"'\E(\S+)/;$x='"$1"'*abs($1);/\Q'"$3"'\E(\S+)/;[$_,$x+$1]} @l; print @w'
+}
+sortbynumprod() { # f1*f2
+ perl -e 'sub makenum {
+local($_)=@_;
+defined ($_) ? $_ : -1e100
+}
+@l=<>;
+@w=map {$_->[0]} sort { $a->[1] <=> $b->[1] } grep { defined($_->[1]) }
+map {/\Q'"$1"'\E(\S+)/;$x=&makenum($1);/\Q'"$2"'\E(\S+)/;[$_,$x*&makenum($1)]} @l; print @w'
+}
+
+
 getparams() {
     catz "$@" | perl -e 'while(<>) { last if /^COMMAND LINE/; } <>; while(<>) { last if /^>>>* PARAMETERS/; print $_; }'
 }
@@ -1797,7 +1819,16 @@ forall() {
         $cmd "$f"
     done
 }
-
+forall0() {
+    #if args empty, call cmd with no args once
+    local cmd=$1
+    shift
+    if [ "$*" ] ; then
+        forall $cmd "$@"
+    else
+        $cmd
+    fi
+}
 map() {
  local cmd=$1
  shift
@@ -1900,7 +1931,7 @@ preview_banner() {
 }
 
 headtail() {
-    forall headtail1 "$@"
+    forall0 headtail1 "$@"
 }
 htpreview1() {
     if [[ $2 ]] ; then
@@ -1947,8 +1978,8 @@ headtailp() {
 }
 headtail1() {
     local n=${tailn:-6}
-    if true || [[ $1 = - ]] ; then
-        headtailp $n "$1"
+    if true || ! [[ $1 ]] || [[ $1 = - ]] ; then
+        headtailp $n "$@"
     else
         local n=$(nlines "$1")
         local m=$((2 * $n + 1))
@@ -2348,9 +2379,9 @@ bleuparse() {
 }
 mira-log-sum() {
     mirasum=${mirasum:-mira-sum-time}
-    if [[ $notime ]] ; then
-        mirasum=mira-sum
-    fi
+    # if [[ $notime ]] ; then
+    #     mirasum=mira-sum
+    # fi
     local dirs="$*"
     dirs=${dirs:-.}
     local op

@@ -1,8 +1,8 @@
 #!/usr/bin/env pypy
+#-*- python -*-
 usage="""
 the purpose of this script.
 """
-#-*- python -*-
 
 from graehl import *
 from collections import defaultdict
