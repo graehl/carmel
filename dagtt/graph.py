@@ -80,7 +80,7 @@ def dfs(v,adj,visit_pre=None,visit_post=None,yield_pre=False,yield_post=False):
             for v in dfs(u,adj,visit_pre,visit_post,yield_pre,yield_post):
                 yield v
         else:
-            dfs(u,adj,visit_pre,visit_post,yield_pre,yield_post):
+            dfs(u,adj,visit_pre,visit_post,yield_pre,yield_post)
     v.color=2
     if yield_post: yield v
     if visit_post: visit(v)

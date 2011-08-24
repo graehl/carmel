@@ -1,4 +1,5 @@
 #!/usr/bin/env pypy
+#-*- python -*-
 from graehl import *
 from nbest import *
 from dumpx import *

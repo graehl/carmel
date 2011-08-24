@@ -35,7 +35,7 @@ my $fenc='raw';
 my $tenc='raw';
 my $numsum=0;
 my $numdefault=0;
-my $doavg=1;
+my $doavg;
 my $doprint=1;
 my $printzeros=1;
 my $missingas;
@@ -49,7 +49,8 @@ my $maxnbest;
 my $re;
 my $prec=7;
 my $dostddev;
-my $sentstddev;
+my $sentslope;
+my $nofailed=1;
 
 my @options=(
              "extract val with fieldname={{{val}}} or fieldname=val",
@@ -69,7 +70,8 @@ my @options=(
     ["prec=i"=>\$prec,"digits precision for avgs"],
     ["avg!"=>\$doavg,"compute average vals for regexp-fieldname"],
     ["stddev!"=>\$dostddev,"also compute stddev over all vals"],
-    ["same-sent-slope!"=>\$sentstddev,"compute beta of least squares regression across repeats for same sentence, in order for same sent. can supply two 1best files"],
+    ["sentslope!"=>\$sentslope,"compute beta of least squares regression across repeats for same sentence, in order for same sent. can supply two 1best files"],
+    ["nofailed!"=>\$nofailed,"skip failed-parse=1 lines"],
             );
 
 
@@ -133,11 +135,22 @@ my $sentno=0;
 my %sums;
 my %sumsq;
 my %nonzero;
+my %fsentvals; # {fname}{sent}[occurence#]=x
+my %nsent;
+my $Ngradient=0;
 
 while (<>) {
-    if (defined $maxnbest && /\bnbest=(\d+)\b/ && $1 > $maxnbest) {
+    my $nbest=$1 if /\bnbest=(\d+)\b/;
+    my $sent=$1 if /\bsent=(\d+)\b/;
+    my $inbest; # position in occurences of htis sent @ any nbest not skipped
+    if (/^\s*$/ || $nofailed && /\bfailed-parse=1\b/ || defined($maxnbest) && defined($nbest) && $nbest > $maxnbest) {
         ++$Nskip;
         next;
+    }
+    if (defined($sent)) {
+        no warnings 'uninitialized';
+        $inbest=$nsent{$sent}++;
+        $Ngradient++ if ($inbest==1);
     }
     my $braces=0;
     my $anyfound=0;
@@ -154,6 +167,8 @@ while (<>) {
         $found{$key}=$val if $look;
         next unless ($re && $key =~ /^$re$/o);
         no warnings 'uninitialized';
+        my $l=exists $fsentvals{$key}{$sent} ? $fsentvals{$key}{$sent} : ($fsentvals{$key}{$sent}=[]);
+        at_grow_default($l,$inbest,0,$val) if ($sentslope && defined $sent);
         $sums{$key}+=$val if $doavg;
         $sumsq{$key}+=$val*$val if $doavg;
         $nonzero{$key}+=1 if $doavg && $val!=0;
@@ -165,11 +180,11 @@ while (<>) {
             ++$sentno;
             if (!defined($lastsent) && defined($renumbersent)) {
                 $sentno=$renumbersent;
+                info("Renumbered new sentence $lastsent to $sentno");
             }
             %hypuniq=();
             $nuniq=0;
             $lastsent=$$sr;
-            info("Renumbered new sentence $lastsent to $sentno");
         } else { # same sent
         }
         if (defined $maxuniquehyp) {
@@ -221,4 +236,30 @@ if ($doavg && $N) {
         print " nonzero=$nz/$N\n";
     }
 }
-
+if ($sentslope && $N) {
+    print "Feature gradients (avg over N=$Ngradient sents with >1 nbest out of $N):\n";
+    for my $f (keys %fsentvals) {
+        my $sv=$fsentvals{$f};
+        my $n=0;
+        my $sum=0;
+        for my $sent (keys %$sv) {
+            my $vl=$sv->{$sent};
+            if (scalar @$vl > 1) {
+                my ($slope,$intercept)=linear_regress($vl);
+                $sum+=$slope;
+                ++$n;
+            } else {
+#                count_info_gen("No gradient for sent=[$sent] (only 1 nbest)");
+            }
+                #TODO: incremental regression w/ linear_regress_counts - don't remember specific values
+        }
+        if ($n>0) {
+            my $avg=$n ? $sum/$n : 0;
+            $avg=real_prec($avg,$prec);
+            print "$f delta=$avg N=$n\n";
+        } else {
+#            warn("No gradient for $f (no sentence with >1 nbest)");
+            count_info("only 1 nbest for feature - no gradient");
+        }
+    }
+}

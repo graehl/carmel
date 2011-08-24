@@ -1,4 +1,5 @@
 #!/usr/bin/env pypy
+#-*- python -*-
 usage="""
 (from file weights, or from positional arguments (nbests)) take weight vector or nbest features, and print number of features starting with pre with abs(weight or value)>=epsilon
 """

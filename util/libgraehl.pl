@@ -3102,6 +3102,17 @@ sub push_ref {
     }
 }
 
+sub at_grow_default {
+    my ($aref,$index,$default,$v)=@_;
+    $default=0 unless defined $default;
+    my $n=$#$aref;
+    while ($index > $n) {
+        push @{$aref},$default;
+        ++$n;
+    }
+    $aref->[$index]=$v if defined($v);
+    \$aref->[$index]
+}
 sub at_default {
     my ($aref,$index,$default)=@_;
     $default=[] unless defined $default;

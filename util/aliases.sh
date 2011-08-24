@@ -1,3 +1,10 @@
+lnweights() {
+    local w=$1/weights.txt
+    ln -sf $(perl -ne 'print $1 if m{-w (/\S+weights\S*)}' "$1"/record.txt) $w
+    weights $w | sortbynum | headtail
+    ls -l $w
+    grep sblm $w
+}
 buildopenssh() {
     local v=${1:-0.9.8r}
     (
@@ -36,6 +43,7 @@ stopmira() {
 bl3() {
 (
         set -e
+        set -x
         obasep=${obase:-bl3}
         for tune in 0 1; do
             i=1
@@ -63,7 +71,7 @@ bl3() {
                     fi
                 fi
                 #[ -f epoch.scores ] ||
-                mira-sum
+                mira-sum-time
                 eot=epoch$ot.bleu
                 perl -ne 'print "$1\t$2\n" if /(\d+)\s+'$tunere'([\d.]+)/' epoch.scores > $eot
                 fs+=" $f/$eot"
