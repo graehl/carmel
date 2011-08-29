@@ -131,9 +131,6 @@ reltohpc() {
     scp "$@" graehl@$HPCHOST:$lodir
 }
 
-clines() {
-    catz "$@" | tr ',' '\n'
-}
 splitcomma() {
     clines "$@"
 }
