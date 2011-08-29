@@ -1,5 +1,28 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+clines() {
+    catz "$@" | tr ',' '\n'
+}
+weights() {
+    local a=
+    local c=cat
+    local ca=-f1-
+    if [[ $abs ]] ; then
+        a='abs($2)."\t".'
+        ca=-f2-
+    fi
+    clines "$@" | perl -pe 's/(.*):(.*)/''"$2\t$1"/e' | sort -rg | cut $ca | unescape_sb | left=1 table2txt
+}
+lnweights() {
+    forall lnweights1 "$@"
+}
+lnweights1() {
+    local w=$1/weights.txt
+    ln -sf $(perl -ne 'print $1 if m{-w (/\S+weights\S*)}' "$1"/record.txt) $w
+    weights $w | sortbynum | tee $w.sorted | headtail
+    ls -l $w*
+    grep sblm $w.sorted || true
+}
 nonblanks() {
     catz "$@" | grep -v ^$
 }
