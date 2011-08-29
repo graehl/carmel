@@ -1,10 +1,3 @@
-lnweights() {
-    local w=$1/weights.txt
-    ln -sf $(perl -ne 'print $1 if m{-w (/\S+weights\S*)}' "$1"/record.txt) $w
-    weights $w | sortbynum | headtail
-    ls -l $w
-    grep sblm $w
-}
 buildopenssh() {
     local v=${1:-0.9.8r}
     (
@@ -87,16 +80,6 @@ bl3() {
         done
         [[ $noview ]] || firefox $obase{,.heldout}.png
 )
-}
-weights() {
-    local a=
-    local c=cat
-    local ca=-f1-
-    if [[ $abs ]] ; then
-        a='abs($2)."\t".'
-        ca=-f2-
-    fi
-    clines "$@" | perl -pe 's/(.*):(.*)/''"$2\t$1"/e' | sort -rg | cut $ca | unescape_sb | left=1 table2txt
 }
 
 hemacs() {
