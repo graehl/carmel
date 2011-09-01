@@ -244,6 +244,9 @@ class Node:
     def __str__(self):
         return self.str(radu=False)
 
+    def __repr__(self):
+        return self.str()
+
     def str(self,radu=False,square=False):
         return self.str_impl(radu_paren=radu,radu_head=radu,radu_prob=radu,brackets="[]" if square else "()")
 

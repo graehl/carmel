@@ -5,6 +5,32 @@
 
 import sys,re,random,math,os,collections,errno,time,operator,datetime
 
+def withi(l):
+    return [(l[i],i) for i in range(len(l))]
+
+def withi_update(l):
+    for i in xrange(len(l)):
+        l[i]=(l[i],i)
+    return l
+
+def popn(l,n):
+    del l[-n:]
+
+def fill(n,z=None):
+    return [z]*n
+
+def fill2(n,m,z=None): # [n-1][m-1] = row n-1, col m-1
+    return [empty(m,z) for _ in range(n)]
+
+def invert_perm(p):
+    dst=[None]*len(p)
+    for i in xrange(len(p)):
+        dst[p[i]]=i
+    return dst
+
+def compose_perm(p1,p2):
+    return [p2[p1[i]] for i in xrange(len(p1))]
+
 def commandline():
     return ' '.join(map(shell_maybe_quote,sys.argv))
 
