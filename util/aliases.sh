@@ -146,7 +146,7 @@ imira() {
     local m=$HOME/mira
     rm -rf $hm
     mkdir -p $hm
-    local b=/home/nlg-03/mt-apps/hiero-mira/20110627
+    local b=/home/nlg-03/mt-apps/hiero-mira/20110804
     set -x
     cp -pR $b/* $hm/
     qmira
@@ -795,7 +795,7 @@ cdw()
 }
 mirasums() {
     for d in ${*:-.}; do
-        find $d -name '*mira00*' -print -exec mira-summary.sh {} \;
+        find $d -name '*mira0*' -print -exec mira-summary.sh {} \;
     done
 }
 miras() {

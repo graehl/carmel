@@ -181,12 +181,13 @@ class ngram(object):
 #                warn("uninterp",'p_uninterp(%s)=[%s-%s*%s]/(1.-%s)=%s'%(k,pcomb,bo,b,bo,p))
                 lp[k]=math.log10(p)
     def compute_uniform(self):
-        self.uniform_p=1./len(self.logp)
-        self.uniform_log10p=math.log10(self.uniform_p)
-    def uniform_p(self,_):
-        return self.uniform_p
-    def uniform_log10p(self,_):
-        return self.uniform_log10p
+        pass
+    #     self.uniform_p=1./len(self.logp[0])
+    #     self.uniform_log10p=math.log10(self.uniform_p)
+    # def uniform_p(self,_):
+    #     return self.uniform_p
+    # def uniform_log10p(self,_):
+    #     return self.uniform_log10p
     def clear_counts(self):
         self.ngrams=[ngram_counts(o+1) for o in range(0,self.order)] #note: 0-indexed i.e. order of ngrams[0]==1
     def set_order(self,o):
@@ -373,13 +374,14 @@ class ngram(object):
         n=0
         logp=None
         bow=None
+        maxo=1
         for line in infile:
             line=line.rstrip()
             if logp is None:
                 h=headgrams.match(line)
                 if h:
                     maxo=int(h.group(1))
-                    dump(h,maxo)
+                    #dump(h,maxo)
                     continue
             m=grams.match(line)
             if m:
@@ -407,6 +409,9 @@ class ngram(object):
                         bow[phrase]=float(b)
             else:
                 if logp is not None and len(line): warn("skipped nonempty line "+line)
+        if self.logp is None:
+            self.set_order(max(maxo,1 if order is None else order))
+            raise "Couldn't read lm %s"%infile
         #self.logp=logp
         self.prepare()
         if read_unkp:

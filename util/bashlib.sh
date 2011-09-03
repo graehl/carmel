@@ -18,10 +18,12 @@ lnweights() {
 }
 lnweights1() {
     local w=$1/weights.txt
-    ln -sf $(perl -ne 'print $1 if m{-w (/\S+weights\S*)}' "$1"/record.txt) $w
+    local r=$1/record.txt
+    ln -sf $(perl -ne 'print $1 if m{-w (/\S+weights\S*)}' $r) $w
     weights $w | sortbynum | tee $w.sorted | headtail
     ls -l $w*
     grep sblm $w.sorted || true
+    grep sblm-ngram $r || true
 }
 nonblanks() {
     catz "$@" | grep -v ^$
@@ -2365,7 +2367,7 @@ decode-log-sum() {
         unsum=$full.unsum
     fi
     showvars_optional names bounds full
-    egrep $namearg -i 'start decoder subprocess|Connectivity is broken|Max retransmit retries|-BLEU=|req status|CAUGHT|_error|error:|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
+    egrep $namearg -i 'nbest=0 total mismatch|start decoder subprocess|Connectivity is broken|Max retransmit retries|-BLEU=|req status|CAUGHT|_error|error:|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
     [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
 }
 decode-sum() {
@@ -2412,7 +2414,7 @@ mira-log-sum() {
         mkdir -p $out
         op=$out/
     fi
-    local log=$op/mira-log-sum.`filename_from $*`.log
+    local log=${op}mira-log-sum.`filename_from $*`.log
     local logs=$log
     local dlog
 
@@ -2422,7 +2424,7 @@ mira-log-sum() {
                 set -e
             echo $d
             echo
-            local full=$op`basename $d`.mira.min-avg-max.log
+            local full=${op}`basename $d`.mira.min-avg-max.log
             logs+=" $full"
             local mirasumf=$(abspath ${op}`basename $d`.mira-sum)
             showvars_required mirasum full log
