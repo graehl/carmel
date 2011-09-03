@@ -67,7 +67,7 @@ def sblmunk(tree,lm,word=False,cat=False):
         return sum(cv)
     return tree.reduce(r)
 
-def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxwords=999999,lineno='?',greedy=True):
+def check_nbest(l,lm,term=False,pword=True,strip=True,flatten=True,num2at=True,output_nbest=None,maxwords=999999,lineno='?',greedy=True):
     l=l.rstrip()
     tstr=getfield_brace('tree',l)
     t=nbest_tree(tstr) #str_to_tree_warn(tstr)
@@ -106,14 +106,19 @@ def check_nbest(l,lm,term=True,strip=True,flatten=True,num2at=True,output_nbest=
     def replfeat(f,v2,suf1='(nbest)',suf2='(python)'):
         if f in fvd:
             v=fvd[f]
-            if v is None or v2 is None: raise Exception("replfeat %s %s %s"%(f,v,v2))
+            msg="replfeat %s %s %s"%(f,v,v2)
+            if v is None or v2 is None: raise Exception(msg)
             if check: equal_or_warn(v,v2,f,suf1,suf2,pre=nbestp,post=sentp)
             line[0]=stripnumfeat(f,line[0])
         line[1]+=' %s=%s'%(f,v2)
 
     replfeat('sblm-nts',t.size_nts())
     if lm is not None:
-        replfeat('sblm',pcfg_score(t,lm,term,num2at))
+        sblm=pcfg_score(t,lm,True,num2at)
+        sblmnoterm=pcfg_score(t,lm,False,num2at)
+        pword=sblm-sblmnoterm
+        replfeat('sblm',sblm if term else sblmnoterm)
+        replfeat('sblm-pword',pword)
         replfeat('sblm-unkword',sblmunk(t,lm,word=True))
         replfeat('sblm-unkcat',sblmunk(t,lm,cat=True))
 
@@ -143,7 +148,8 @@ def nbest_sblm_main(lm='/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwl
                     strip=True,
                     flatten=True,
                     num2at=True,
-                    term=True,
+                    sblm_terminals=0,
+                    sblm_pword=1,
                     output_nbest='',
                     maxwords=999999,
                     logp_unk=0.0,
@@ -160,7 +166,7 @@ def nbest_sblm_main(lm='/home/nlg-02/pust/v8.1zh/pysblm.sblm/sblm.pcfg.5gram.lwl
     for l in open(nbest):
         if l.startswith("NBEST sent="):
             n+=1
-            if check_nbest(l,lm,term,strip,flatten,num2at,output_nbest,maxwords,n,greedy):
+            if check_nbest(l,lm,sblm_terminals,sblm_pword,strip,flatten,num2at,output_nbest,maxwords,n,greedy):
                 ng+=1
     info_summary()
     log("%s good out of %s NBEST lines"%(ng,n))
