@@ -5,6 +5,67 @@
 
 import sys,re,random,math,os,collections,errno,time,operator,datetime
 
+def normalize(p_list):
+    oos=1.0/sum(x for x in p_list)
+    return [x*oos for x in p_list]
+
+def normalize_choosep(p_item_list):
+    "list of tuples (p,item). return normalized-p copy"
+    oos=1.0/sum(p for (p,v) in p_item_list)
+    return [(p*oos,v) for (p,v) in p_item_list]
+
+# see http://infoweekly.blogspot.com/2011/09/follow-up-sampling-discrete.html
+def compile_choosep(p_item_list):
+    "list of tuples (p,item). p sums to 1. returns 'compiled' for select_choosep"
+    N=len(p_item_list)
+    u=1.0/N
+    r=[]
+    s=[x for x in p_item_list if x[0]<u] # two passes through input list or else two stacks or linked lists of slights and overfulls
+    i=0
+    for (p,v) in p_item_list:
+        if p<u: continue
+        while p>u: # eat up one s until this is empty or small too
+            if i<len(s):
+                ps,vs=s[i]
+                i+=1
+                r.append((ps*N,vs,v))
+                # print '->chopped ',(ps,vs),(p,p-(u-ps),v),i,s[i-1],r[-1]
+                p-=(u-ps)
+            else:
+                r.append((1.0,v,v))
+                p-=u
+        if p==u:
+            # print '->full uniform',v
+            r.append((1.0,v,v))
+        elif p>0:
+            s.append((p,v))
+            # print '->small p',(p,v)
+    if i<len(s):
+        pr,v=s[i]
+        if len(r)<N:
+            # print 'remain',pr,v
+            r.append((1.0,v,v))
+            assert(i+1==len(s))
+        else:
+            assert(pr<1e-8)
+    assert(len(r)==N)
+    return r
+
+def select_choosep(p01,compiled):
+    if len(compiled)==0: return None
+    if p01==1.0:
+        return compiled[-1][1] #TOTALLY ARBITRARY - p01 should be less than 1. feel free to assert/die instead!
+    assert(p01<=1.0 and p01>=0.0)
+    n=len(compiled)
+    pn=p01*n
+    i=int(pn)
+    r=pn-i # check math.modf math.floor performance
+    (p1,v1,v2)=compiled[i] # if we insist on integer (positional) values then goodv is redundant (==i); new compile_choosei select_choosei etc if you like
+    return v1 if r<p1 else v2
+
+def random_choosep(compiled):
+    return select_choosep(random.random(),compiled)
+
 def withi(l):
     return [(l[i],i) for i in range(len(l))]
 
@@ -23,13 +84,16 @@ def fill2(n,m,z=None): # [n-1][m-1] = row n-1, col m-1
     return [empty(m,z) for _ in range(n)]
 
 def invert_perm(p):
+    "permutation of n items as a function from 0...n-1 to self, by what was i becomes p[i]. e.g. 0 1 2 -> 2 1 0 means p=[2 1 0]"
     dst=[None]*len(p)
     for i in xrange(len(p)):
         dst[p[i]]=i
     return dst
 
-def compose_perm(p1,p2):
-    return [p2[p1[i]] for i in xrange(len(p1))]
+def compose_perm(p2,p1):
+    "p2*p1=p1[p2[i]] - normal function composition. annoying. right arg gets applied first."
+#    "ith element of list*p[i] = list[p[i]]; what was i becomes p1*p2[i] p1[p2[i]]; note the opposite order from usual function composition notation"
+    return [p1[p2[i]] for i in xrange(len(p1))]
 
 def commandline():
     return ' '.join(map(shell_maybe_quote,sys.argv))
@@ -490,10 +554,23 @@ def pretty_float(x,digits=16):
         # return s[0:d+1]+rounded
 
 if __name__ == "__main__":
-    print datetoday()
-    print str(str2date(datetoday()))
-    for x in ['"\\a"',"2","'",'"',r'\a\b\c\"','"a\tb\nEND"']:
-        print x,cstr_maybe_quote(x),cstr_quote(x),cstr_escape(x),cstr_escape_nows(x)
+    ps=map(float,sys.argv[1:])
+    print ps
+    ps=normalize(ps)
+    print ps
+    pis=withi(ps)
+    print pis
+    c=compile_choosep(pis)
+    print c
+    div=5
+    ns=len(ps)*div
+    sn=1.0/ns
+    ps=[sn*x for x in range(0,ns+1)]
+    print '\n'.join('%s=>%s'%(p,select_choosep(p,c)) for p in ps)
+    # print datetoday()
+    # print str(str2date(datetoday()))
+    # for x in ['"\\a"',"2","'",'"',r'\a\b\c\"','"a\tb\nEND"']:
+    #     print x,cstr_maybe_quote(x),cstr_quote(x),cstr_escape(x),cstr_escape_nows(x)
   # for x in smallest_difference(['1e-12,1e-13,1e-14,1e14,1e15,1e-15,1e16,1e-16,1e-17,1e-18,1e18]:','1e-12,1e-13,15e-14,1e14,1e15,15e-15,1e16,15e-16,1e-17,1e-18,1e18]:']):
   #   print x
 
