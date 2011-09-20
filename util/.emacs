@@ -1,3 +1,23 @@
+;; Don't display the 'Welcome to GNU Emacs' buffer on startup
+(setq inhibit-startup-message t)
+
+;; Display this instead of "For information about GNU Emacs and the
+;; GNU system, type C-h C-a.". This has been made intentionally hard
+;; to customize in GNU Emacs so I have to resort to hackery.
+(defun display-startup-echo-area-message ()
+  "If it wasn't for this you'd be GNU/Spammed by now"
+  (message ""))
+
+;; Don't insert instructions in the *scratch* buffer
+(setq initial-scratch-message nil)
+(setq show-paren-delay 0.0)
+(setq show-paren-style 'parenthesis)
+
+(defun show-dot-emacs-structure ()
+      "Show the outline-mode structure of ~/.emacs"
+      (interactive)
+      (occur "^;;;;+"))
+
 (defun kill-whole-line ()
   "delete from start of current line instead of cursor as per normal kill-line"
     (interactive)
@@ -4288,3 +4308,31 @@ loaded as such.)"
 (cua-mode t)
 
  (global-set-key (kbd "M-/") 'hippie-expand)
+(iswitchb-mode 1)
+(icomplete-mode 1)
+(setq file-name-shadow-tty-properties '(invisible t))
+(file-name-shadow-mode 1)
+
+(defun backward-delete-whitespace-to-column ()
+      "delete back to the previous column of whitespace, or just one
+    char if that's not possible. This emulates vim's softtabs
+    feature."
+      (interactive)
+      (if indent-tabs-mode
+          (call-interactively 'backward-delete-char-untabify)
+        ;; let's get to work
+        (let ((movement (% (current-column) tab-width))
+              (p (point)))
+          ;; brain freeze, should be easier to calculate goal
+          (when (= movement 0) (setq movement tab-width))
+          (if (save-excursion
+                (backward-char movement)
+                (string-match "^\\s-+$" (buffer-substring-no-properties (point) p)))
+              (delete-region (- p movement) p)
+            (call-interactively 'backward-delete-char-untabify)))))
+
+(global-set-key (kbd "<DEL>") 'backward-delete-whitespace-to-column)
+(require 'ack)
+
+;;;;; ack
+;(defalias 'grep 'ack-grep)
