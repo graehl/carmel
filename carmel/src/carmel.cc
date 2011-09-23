@@ -1822,10 +1822,10 @@ void usageHelp(void)
     cout << "ll arcs with weight less than w";
     cout << "\n-w w\t\tprune states and arcs only used in paths w times worse\n\t\tthan the best path (1 means keep only best path, 10 = keep paths up to 10 times weaker)";
     cout <<"\n-z n\t\tkeep at most n states (those used in highest-scoring paths)";
-    cout << "\n-G n\t\tstochastically generate";
+    cout << "\n-g n\t\tstochastically generate";
     cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
     cout << "itial state to the final state\n\t\toutput is in the same for";
-    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -G output should be a no-op.\n-g n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n"
+    cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -g output should be a no-op.\n-G n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n"
         "-@\t\tFor -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
     cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
     cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
