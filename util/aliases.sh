@@ -1,3 +1,4 @@
+
 buildopenssh() {
     local v=${1:-0.9.8r}
     (
@@ -316,7 +317,19 @@ flv2aac() {
         codec=pcm_s16le
     fi
     set -x
-    ffmpeg -i "$1" -vn -acodec $codec "$f.$ext"
+    local mapa
+    if [[ $stream ]] ; then
+        mapa="-map 0:$stream"
+    fi
+    if [[ $start ]] ;then
+        mapa+=" -ss $start"
+    fi
+    if [[ $time ]] ; then
+        mapa+= " -t $time"
+    fi
+    local f="$1"
+    shift
+    ffmpeg -i "$f" -vn $mapa -ac 2 -acodec $codec "$f.$ext" "$@"
     set +x
 }
 tohpc() {
