@@ -498,3 +498,5 @@ export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
 if ! bash --version | grep -q 2.05 ; then
 . ~/bin/autojump.bash
 fi
+
+export CLOJURE_EXT=~/.clojure

@@ -1,5 +1,52 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+execcp() {
+    if cygwin ; then
+        perl -e '
+for (0..$#ARGV) {
+if ($ARGV[$_] eq "-cp") {
+ $i=$_;
+  $_=$ARGV[$_+1];
+@d=split ":";
+@d=map { $_=`/usr/bin/cygpath --mixed $_`;chomp;$_ } @d;
+$ARGV[$i+1]=join ";",@d;
+}
+}
+print STDERR join(" ",@ARGV),"\n";
+exec @ARGV;
+' "$@"
+    else
+        "$@"
+    fi
+}
+cygpathm() {
+    if [ -x /usr/bin/cygpath ] ; then
+        /usr/bin/cygpath --mixed "$@"
+    else
+        echo "$@"
+    fi
+}
+clj() {
+    local b=clojure.main
+    local a=jline.ConsoleRunner
+    if [ "$*" ] ; then
+        a=
+        b=
+    fi
+    local c=${CLOJURE_EXT:-~/.clojure}
+    execcp ${CLOJURE_JAVA:-java} -cp $c/jline-1.0.jar:$c/clojure.jar:$c/clojure-contrib.jar $a $b "$@"
+}
+clr() {
+    breakchars="(){}[],^%$#@\"\";:''|\\"
+    local c=${CLOJURE_EXT:-~/.clojure}
+    if [ $# -eq 0 ]; then
+         execcp rlwrap --remember -c -b "$breakchars" \
+            -f "$HOME"/.clj_completions \
+             ${CLOJURE_JAVA:-java} -cp $c/jline-1.0.jar:$c/clojure.jar:$c/clojure-contrib.jar clojure.main
+    else
+         execcp ${CLOJURE_JAVA:-java} -cp $c/jline-1.0.jar:$c/clojure.jar:$c/clojure-contrib.jar clojure.main $1 -- "$@"
+    fi
+}
 clines() {
     catz "$@" | tr ',' '\n'
 }
@@ -669,8 +716,12 @@ function seq4
 }
 
 cygwin() {
- local OS=`/bin/uname`
- [ "${OS#CYGWIN}" != "$OS" ] && ONCYGWIN=1
+    if [[ $ONCYGWIN ]] ; then
+        true
+    else
+        local OS=`/bin/uname`
+        [ "${OS#CYGWIN}" != "$OS" ] && ONCYGWIN=1
+    fi
 }
 
 ulimitsafe() {

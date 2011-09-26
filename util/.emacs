@@ -72,9 +72,12 @@
 (add-hook 'scala-mode-hook (lambda () (local-set-key (kbd "M-;") 'my-scala-eval-line) (local-set-key (kbd "M-'") 'scala-eval-region)))
 (add-to-list 'auto-mode-alist '("\\.scala$" . scala-mode))
 
-(defvar emacs23 (string-match "Emacs 23" (emacs-version)))
+
+(defvar emacs24 (string-match "Emacs 24" (emacs-version)))
+(defvar emacs23-only (string-match "Emacs 23" (emacs-version)))
+(defvar emacs23 (or emacs23-only emacs24))
 (require 'cl)
-(require 'cl-19)
+;(require 'cl-19)
 (defun prev-line (n) (forward-line (- n)))
 (defun bufend() (goto-char (point-max)))
 (defun bufstart() (goto-char (point-min)))
@@ -343,7 +346,7 @@ No more \"End of file during parsing\" horrors!"
 (and on-win32 (gnu-font "Bitstream Vera Sans Mono"))
 (and on-win32
 ;(gnu-font "Inconsolata-dz")
-     (gnu-font "Droid Sans Mono")
+     ;(gnu-font "Droid Sans Mono Dotted")
 (gnu-font "Consolas")
 )
 ;(gnu-font "Anonymous Pro")
@@ -3057,10 +3060,15 @@ starts."
 ;                         (gnuserv-start)
 ;                         (setq gnuserv-frame (selected-frame))
 ;                         ))
+(require 'iswitchb)
+(global-set-key [(f6)] 'iswitchb-buffer)
+(iswitchb-mode 1)
+
 (if (and nil emacs-22)
     (progn (require 'ido) (ido-mode t) (global-set-key [(f6)] 'ido-switch-buffer))
-  (progn (require 'iswitchb) (global-set-key [(f6)] 'iswitchb-buffer)) (or recent-xemacs (iswitchb-default-keybindings))
-  )
+  (progn )
+)
+
 
 (global-set-key [f3] 'delete-char)
 (global-set-key [(control h)] 'backward-kill-word)
@@ -4336,3 +4344,43 @@ loaded as such.)"
 
 ;;;;; ack
 ;(defalias 'grep 'ack-grep)
+(push "~/elisp/clojure-mode" load-path)
+(require 'clojure-mode)
+(require 'paredit)
+(defun turn-on-paredit () (paredit-mode 1))
+(add-hook 'clojure-mode-hook 'turn-on-paredit)
+(defun clojure-font-lock-setup ()
+  (interactive)
+  (set (make-local-variable 'lisp-indent-function)
+       'clojure-indent-function)
+  (set (make-local-variable 'lisp-doc-string-elt-property)
+       'clojure-doc-string-elt)
+  (set (make-local-variable 'font-lock-multiline) t)
+
+  (add-to-list 'font-lock-extend-region-functions
+               'clojure-font-lock-extend-region-def t)
+
+  (when clojure-mode-font-lock-comment-sexp
+    (add-to-list 'font-lock-extend-region-functions
+                 'clojure-font-lock-extend-region-comment t)
+    (make-local-variable 'clojure-font-lock-keywords)
+    (add-to-list 'clojure-font-lock-keywords
+                 'clojure-font-lock-mark-comment t)
+    (set (make-local-variable 'open-paren-in-column-0-is-defun-start) nil))
+
+  (setq font-lock-defaults
+        '(clojure-font-lock-keywords    ; keywords
+          nil nil
+          (("+-*/.<>=!?$%_&~^:@" . "w")) ; syntax alist
+          nil
+          (font-lock-mark-block-function . mark-defun)
+          (font-lock-syntactic-face-function
+           . lisp-font-lock-syntactic-face-function))))
+(add-hook 'slime-repl-mode-hook
+          (lambda ()
+            (font-lock-mode nil)
+            (clojure-font-lock-setup)
+            (font-lock-mode t)))
+
+;(add-to-list 'load-path "~/elisp/swank-clojure/src/emacs")
+
