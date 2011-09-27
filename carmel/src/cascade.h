@@ -1,6 +1,9 @@
 #ifndef GRAEHL_CARMEL__CASCADE_H
 #define GRAEHL_CARMEL__CASCADE_H
 
+/* TODO: for --crp with cascade of 1 transducer (set_trivial) make gibbs.cc set_gibbs_params work (set cascade.cascade[0] to original xdcr)
+ */
+
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/dynarray.h>
 #include <graehl/carmel/src/fst.h>
@@ -224,8 +227,8 @@ struct cascade_parameters
 
     WFST *pcomposed;
 //FIXME: to simplify, in trivial case and otherwise, composed should be passed in once so it can be added to single chain (if trivial).  note: this simplification hasn't actually been done yet.
-    void set_composed(WFST &c) {
-        pcomposed=&c;
+    void set_composed(WFST *c) {
+        pcomposed=c;
         if (trivial)
             cascade.reinit(1,pcomposed);
     }
@@ -744,7 +747,7 @@ struct cascade_parameters
         }
     }
 
-    void done_composing(WFST &composed,bool compress_removed_arcs=false)
+    void done_composing(WFST *composed,bool compress_removed_arcs=false)
     {
         set_composed(composed);
         if (trivial) return;
