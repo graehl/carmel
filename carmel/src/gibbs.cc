@@ -434,6 +434,7 @@ struct carmel_gibbs : public gibbs_base
 void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, NormalizeMethods & methods, train_opts const& topt
                        , gibbs_opts const &gopt1, path_print const& printer, double min_prior)
 {
+  cascade.set_composed(this); // FIXME: yes, this is done repeatedly. defensive programming!
     std::ostream &log=Config::log();
     for (NormalizeMethods::iterator i=methods.begin(),e=methods.end();i!=e;++i) {
         if (i->add_count<=0) {

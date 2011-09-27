@@ -45,7 +45,7 @@ using namespace graehl;
 # define OPENFST_VERSION ""
 #endif
 
-#define CARMEL_VERSION "6.11" OPENFST_VERSION
+#define CARMEL_VERSION "6.12" OPENFST_VERSION
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
@@ -556,15 +556,19 @@ struct carmel_main
         if (!opt.empty()) {
             unsigned n=split_noquote(opt,make_putter<Setter>(pr.begin()),isep,pr.size(),false,true);
             if (n>0) {
-                o << "Using input WFST --"<<key<<":\n";
-                unsigned i=0;
-                for (i=0;i<n;++i) {
-                    o << filenames[i];
-                    o << osep << Setter::get(pr[i]);
-                    o << std::endl;
+              o << "Using input WFST --"<<key<<":\n";
+              unsigned i=0;
+              for (i=0;i<n;++i) {
+                if (i>=nInputs) {
+                  std::cerr<<"#inputs "<<nInputs<<" "<<key<<"="<<opt<<std::endl;
+                  throw std::runtime_error("Too many "+key+" for #inputs");
                 }
+                o << filenames[i];
+                o << osep << Setter::get(pr[i]);
                 o << std::endl;
-                return n;
+              }
+              o << std::endl;
+              return n;
             }
         }
         return 0;
@@ -1466,6 +1470,7 @@ main(int argc, char *argv[]){
         unsigned n_compositions=0;
         bool first=true;
         cascade.add(result);
+        bool anycomposed=false;
         for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
 // composition loop
             ++n_compositions;
@@ -1537,8 +1542,11 @@ main(int argc, char *argv[]){
             if (!flags['q'])
                 Config::log() << ")";
             */
-            cascade.done_composing(*result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
+            cascade.done_composing(result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
+            anycomposed=true;
         }
+        if (!anycomposed)
+          cascade.set_composed(result);
         if (!flags['q'])
             Config::log() << std::endl;
 
@@ -1610,9 +1618,8 @@ main(int argc, char *argv[]){
                 } else {
                     corpus.set_null();
                 }
-
                 if (gibbs) {
-                    result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
+                  result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
                 } else {
                     unsigned rr=train_opt.ran_restarts;
                     if (long_opts["final-restart"])

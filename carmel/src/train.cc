@@ -414,7 +414,7 @@ struct forward_backward : public cached_derivs<arc_counts>
         WFST::deriv_cache_opts const& copt=opts.cache;
         odf=copt.out_derivfile;
         prune=copt.prune();
-        cascade.set_composed(x);
+        cascade.set_composed(&x);
         trn=NULL;
         f=b=NULL;
         remove_bad_training=true;
@@ -570,7 +570,7 @@ Weight WFST::train(cascade_parameters &cascade,
 {
     std::ostream &log=Config::log();
     graehl::time_space_report ts(log,"Training took ");
-    cascade.set_composed(*this);
+    cascade.set_composed(this);
     cascade.normalize(methods);
     unsigned ran_restarts=opts.ran_restarts;
     double learning_rate_growth_factor=opts.learning_rate_growth_factor;
