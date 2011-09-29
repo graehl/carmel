@@ -119,6 +119,10 @@ struct logweight {                 // capable of representing nonnegative reals
     {
         return MUCH_BIGGER_LN;
     }
+  static const Real neg_ln10;
+  static const Real ln10;
+  static const Real neg_oo_ln10;
+  static const Real oo_ln10;
     static const int base_index; // handle to ostream iword for LogBase enum (initialized to 0)
     static const int thresh_index; // handle for OutThresh
     static THREADLOCAL int default_base;
@@ -244,11 +248,9 @@ struct logweight {                 // capable of representing nonnegative reals
     }
     Real getNegLog10() const
     {
-        static const Real neg_oo_ln10 = -1./log(10.f);
         return neg_oo_ln10 * weight;
     }
     Real getLog10() const {
-        static const Real oo_ln10 = 1./log(10.f);
         return oo_ln10 * weight;
     }
     bool fitsInReal() const {
@@ -314,12 +316,10 @@ struct logweight {                 // capable of representing nonnegative reals
         weight=w;
     }
     void setLog10(Real w) {
-        static const Real ln10 = log(10.f);
         weight=w*ln10;
     }
     void setNegLog10(Real w) {
-        static const Real negln10 = -log(10.f);
-        weight=w*negln10;
+        weight=w*neg_ln10;
     }
     static self_type ZERO() {
         return self_type();
