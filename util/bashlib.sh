@@ -492,7 +492,7 @@ silently() {
 
 #no output, no error code
 shush() {
-    silently "$@" || /bin/true
+    silently "$@" || true
 }
 
 #show output/log ONLY if error code (like silently but you get the filenames if something goes wrong)
@@ -719,7 +719,7 @@ cygwin() {
     if [[ $ONCYGWIN ]] ; then
         true
     else
-        local OS=`/bin/uname`
+        local OS=`uname`
         [ "${OS#CYGWIN}" != "$OS" ] && ONCYGWIN=1
     fi
 }
@@ -727,7 +727,7 @@ cygwin() {
 ulimitsafe() {
 local want=${1:-131072}
 local type=${2:-s}
-local OS=`/bin/uname`
+local OS=`uname`
 if [ ${OS#CYGWIN} != "$OS" -a "$type" = "s" ] ; then
 # error "cygwin doesn't allow stack ulimit change"
  return
@@ -2330,7 +2330,7 @@ loge() {
     watch $log
 }
 ncpus() {
-    cat /proc/cpuinfo | /bin/grep 'physical id' | sort | uniq -c || /bin/grep ^processor /proc/cpuinfo
+    cat /proc/cpuinfo | grep 'physical id' | sort | uniq -c || grep ^processor /proc/cpuinfo
 }
 ncores() {
     ncpus | nlines

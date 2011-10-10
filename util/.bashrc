@@ -41,7 +41,7 @@ if [ $TERM = "cmd" ]; then
   stty -onlcr ocrnl icrnl
 fi
 #OS=cygwin
-OS=`/bin/uname`
+OS=`uname`
 export USER=`whoami`
 HOST=`echo "$HOSTNAME"`
 if [ ${OS#CYGWIN} != "$OS" ] ; then
@@ -129,7 +129,7 @@ if [ $OS = Darwin ] ; then
  ARCH=macosx
 fi
 export ARCH
-UNAMEA=`/bin/uname -a`
+UNAMEA=`uname -a`
 case "$UNAMEA" in
     *x86_64*)	ON64=1 ;;
 esac
@@ -178,7 +178,7 @@ PS1="\w$gitps\$ "
 PS2='> '
 #fi
 PAGER=less
-EDITOR=emacs
+EDITOR=emacsclient
 VISUAL=$EDITOR
 if false ; then
     case $TERM in
@@ -304,7 +304,7 @@ PATH=$HPCGCC/bin:$PATH
 PATH=/home/nlg-02/graehl/mini_dev/$SBMTARCH/bin:/home/nlg-02/graehl/mini_13.0/$SBMTARCH/bin:$PATH
 PATH=$HPCPERL/bin:$PATH
 add_ldpath $GHOME/lib$S64
-add_ldpath $HPCGCC/lib$S64 || /bin/true
+add_ldpath $HPCGCC/lib$S64 || true
 fi
 CABAL=~/.cabal
 PATH=$CABAL/bin:$PATH
@@ -427,7 +427,6 @@ set_build
 
 if [ "$interactive" ] ; then
 export teeout=1
-alias ls="/bin/ls"
 # from http://www.onerussian.com/Linux/bash_history.phtml
 HISTORYOLD=~/.archive.bash.history
 function archive_history
@@ -469,7 +468,6 @@ tocage='cage.isi.edu:/users/graehl'
 export PYTHONSTARTUP=$shdir/inpy
 
 export SCALA_HOME=${SCALA_HOME:-~/isd/linux}
-/bin/true
 
 function pontus {
    ssh -L 3391:darkstar:3389 peggy@pontus.languageweaver.com -p 4640

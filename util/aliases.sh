@@ -1,4 +1,3 @@
-
 buildopenssh() {
     local v=${1:-0.9.8r}
     (
@@ -937,7 +936,7 @@ buildpipe() {
 buildxrs() {
     pushd ~/t;svn update;bjam $sbmtargs utilities//install ;popd
 }
-alias grep="/bin/grep --color -n"
+alias grep="$(which grep) --color -n"
 alias savecvs="/usr/bin/rsync -Lptave ssh ~/isd/cvs hpc.usc.edu:isd/cvs"
 alias buildfem="pushd ~/t/graehl/tt;make clean;make BOOST_SUFFIX= -j 4 install;popd"
 buildcar() {

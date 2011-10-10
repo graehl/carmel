@@ -281,6 +281,12 @@ No more \"End of file during parsing\" horrors!"
   ;; Your init file should contain only one such instance.
   ;; If there is more than one, they won't work right.
  '(c-block-comment-prefix "")
+ '(comint-completion-addsuffix t)
+ '(comint-completion-autolist t)
+ '(comint-input-ignoredups t)
+ '(comint-move-point-for-output t)
+ '(comint-scroll-show-maximum-output t)
+ '(comint-scroll-to-bottom-on-input t)
  '(compilation-ask-about-save nil)
  '(compilation-auto-jump-to-first-error nil)
  '(compilation-disable-input t)
@@ -300,6 +306,7 @@ No more \"End of file during parsing\" horrors!"
  '(mode-compile-always-save-buffer-p t)
  '(mode-compile-reading-time 0)
  '(mouse-wheel-scroll-amount (quote (10 ((shift) . 1))))
+ '(ns-command-modifier (quote meta))
  '(safe-local-variable-values (quote ((TeX-master . t))))
  '(w32-symlinks-handle-shortcuts t))
 
@@ -4079,14 +4086,7 @@ loaded as such.)"
                                   (lambda () (my-kill-buffer "*Completions*"))
                                   )))
 
-(custom-set-variables
- '(comint-scroll-to-bottom-on-input t)  ; always insert at the bottom
- '(comint-scroll-to-bottom-on-output t) ; always add output at the bottom
- '(comint-scroll-show-maximum-output t) ; scroll to show max possible output
- '(comint-completion-autolist t)        ; show completion list when ambiguous
- '(comint-input-ignoredups t)           ; no duplicates in command history
- '(comint-completion-addsuffix t)       ; insert space/slash after file completion
- )
+
 (remove-hook 'kill-buffer-query-functions 'server-kill-buffer-query-function)
 (global-set-key [f12] 'next-error)
 (defun search-next-error ()
@@ -4386,3 +4386,4 @@ loaded as such.)"
 ;(add-to-list 'load-path "~/elisp/swank-clojure/src/emacs")
 
 ;(set-keyboard-coding-system nil)
+(global-set-key (kbd "s-w") 'kill-ring-save)
