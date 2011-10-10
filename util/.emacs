@@ -852,6 +852,7 @@ No more \"End of file during parsing\" horrors!"
 (require 'dabbrev)
 (require 'shell)
 (global-set-key [f11] 'shell)
+(global-set-key [f13] 'shell)
 ;(global-set-key [(control f11)] 'vc-next-action)
 
                                         ; (global-set-key [f12] 'compile)
@@ -4384,3 +4385,4 @@ loaded as such.)"
 
 ;(add-to-list 'load-path "~/elisp/swank-clojure/src/emacs")
 
+;(set-keyboard-coding-system nil)

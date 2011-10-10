@@ -240,7 +240,7 @@ lastn() {
     ls -rt $darg "$@" | tail -$n
 }
 envtofile() {
-   perl -e 'push @INC,"'$BLOBS'/libgraehl/unstable";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
+   perl -e 'push @INC,"'$BLOBS'/libgraehl/latest";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
 }
 absp() {
     readlink -nfs "$@"
@@ -2340,7 +2340,7 @@ workflowp=~/workflow
 homereal=`realpath ~`
 traperr
 getrealprog
-[ -f $libg/libgraehl.pl ] || lnreal ~/t/utilities/libgraehl.pl $libg/
+[ -f $libg/libgraehl.pl ] || lnreal ~/t/graehl/util/libgraehl.pl $libg/
 
 radutrees() {
     local t=$1

@@ -259,7 +259,7 @@ vgsbmt() {
     variant=release tmpsbmt
 }
 dusort() {
-    perl -e 'require "$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl";while(<>){$n=()=m#/#g;push @{$a[$n]},$_;} for(reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
+    perl -e 'require "$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl";while(<>){$n=()=m#/#g;push @{$a[$n]},$_;} for(reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
 }
 realwhich() {
     whichreal "$@"
@@ -688,7 +688,7 @@ range() {
     local to=${2:-99999999}
     shift
     shift
-    perl -e 'require "$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl";$"=" ";' \
+    perl -e 'require "$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl";$"=" ";' \
         -e '$F=shift;$T=shift;&argvz;$n=0;while(<>) { ++$n;;print if $n>=$F && $n<=$T }' \
         $from $to "$@"
     if false ; then
@@ -1558,9 +1558,9 @@ function cleanr ()
 #    local libgraehl=~/isd/hints/libgraehl.pl
 #    perl -e 'require "'$libgraehl'";' "$@" -e ';print "\n";'
 #}
-alias perl1="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl\";\$\"=\" \";' -e "
-alias perl1p="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl\";\$\"=\" \";END{println();}' -e "
-alias perl1c="perl -ne 'require \"\$ENV{HOME}/blobs/libgraehl/unstable/libgraehl.pl\";\$\"=\" \";END{while((\$k,\$v)=each \%c) { print qq{\$k: \$v  };println();}' -e "
+alias perl1="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";' -e "
+alias perl1p="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{println();}' -e "
+alias perl1c="perl -ne 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{while((\$k,\$v)=each \%c) { print qq{\$k: \$v  };println();}' -e "
 alias clean="rm *~"
 alias nitro="ssh -1 -l graehl nitro.isi.edu"
 alias hpc="ssh -1 -l graehl $HPCHOST"
@@ -1831,30 +1831,9 @@ xscripts() {
     find $1 -name '*.pl*' -exec chmod +x {} \;
     find $1 -name '*.sh*' -exec chmod +x {} \;
 }
-rrp() {
-    enlg comxrs
-    ehpc redo rule-prep/add-xrs-models
-    ehpc redo libgraehl
-    ehpc redo bashlib
-}
-hcpopt() {
-    pushd ~/dev/och
-    cvs update && make opt-nbest.out && cp opt-nbest.out ~/blobs/och/unstable/
-    popd
-}
 export XRSGREP=/nfs/nlg/users/mgalley/mt/xrs-grep
-newopt() {
-    pushd ~/dev/och/src
-    pushd ~/dev/shared
-    cvs update
-    popd
-    cvs update
-    make -j 6 -k opt-nbest.out nbestTool.out && cp nbestTool.out ~/blobs/och/unstable
-    popd
-}
 
 if [ "$ONCYGWIN" ] ; then
-
     sshwrap() {
         local which=$1
         shift
@@ -1873,7 +1852,6 @@ if [ "$ONCYGWIN" ] ; then
     cscp() {
         scp -2 $1 graehl@cage.isi.edu:/users/graehl/$2
     }
-
 fi
 
 

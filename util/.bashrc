@@ -1,8 +1,8 @@
 HOME=$(echo ~)
-set completion-prefix-display-length 2
-set show-all-if-ambiguous on
-set show-all-if-unmodified on
-set completion-map-case on
+#set completion-prefix-display-length 2
+#set show-all-if-ambiguous on
+#set show-all-if-unmodified on
+#set completion-map-case on
 
 export PYTHON_PATH=$HOME/lib/python:$PYTHON_PATH
 shdir=$HOME/t/graehl/util
