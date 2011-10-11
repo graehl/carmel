@@ -178,7 +178,7 @@ PS1="\w$gitps\$ "
 PS2='> '
 #fi
 PAGER=less
-EDITOR=emacsclient
+EDITOR=emacs
 VISUAL=$EDITOR
 if false ; then
     case $TERM in

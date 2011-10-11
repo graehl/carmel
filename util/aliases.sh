@@ -1,3 +1,13 @@
+emacsapp=/Applications/Emacs.app/Contents/MacOS/
+emacssrv=$emacsapp/Emacs
+emacsc() {
+    if [ "$*" ] ; then
+        $emacsapp/bin/emacsclient -a $emacssrv "$@"
+    else
+        $emacssrv &
+    fi
+}
+
 buildopenssh() {
     local v=${1:-0.9.8r}
     (
