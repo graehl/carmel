@@ -98,6 +98,8 @@
       (or (eq system-type 'windows-nt)
           (eq system-type 'cygwin32)
           (eq system-type 'cygwin)))
+(setq on-darwin
+      (eq system-type 'darwin))
 ;(defvar on-win32 (string-match "mingw\\|win32\\|nt5" (emacs-version)))
 (defvar on-win32-xemacs (and on-win32 on-xemacs))
 (defvar on-win32-emacs (and on-win32 on-emacs))
@@ -276,10 +278,10 @@ No more \"End of file during parsing\" horrors!"
 (and (not xemacs-21-5) on-xemacs (progn (push "~/elisp/xemacs" load-path) (push "~/elisp/cc-mode/xemacs" load-path)))
 (require 'cc-mode)
 (custom-set-variables
-  ;; custom-set-variables was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(c-block-comment-prefix "")
  '(comint-completion-addsuffix t)
  '(comint-completion-autolist t)
@@ -287,6 +289,7 @@ No more \"End of file during parsing\" horrors!"
  '(comint-move-point-for-output t)
  '(comint-scroll-show-maximum-output t)
  '(comint-scroll-to-bottom-on-input t)
+ '(comint-use-prompt-regexp t)
  '(compilation-ask-about-save nil)
  '(compilation-auto-jump-to-first-error nil)
  '(compilation-disable-input t)
@@ -308,14 +311,14 @@ No more \"End of file during parsing\" horrors!"
  '(mouse-wheel-scroll-amount (quote (10 ((shift) . 1))))
  '(ns-command-modifier (quote meta))
  '(safe-local-variable-values (quote ((TeX-master . t))))
+ '(shell-prompt-pattern "^\\([^#$%>]*[#$%>] *|\\(\\|PrOmPt\\|.*\\|\\)?[^:]+:[^ ]+ *[#$%>]? *\\)")
  '(w32-symlinks-handle-shortcuts t))
-
 ;(load "files.el")
 (custom-set-faces
-  ;; custom-set-faces was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  )
 
 ;; custom-set-faces was added by Custom -- don't edit or cut/paste it!
@@ -354,7 +357,8 @@ No more \"End of file during parsing\" horrors!"
 (and on-win32
 ;(gnu-font "Inconsolata-dz")
      ;(gnu-font "Droid Sans Mono Dotted")
-(gnu-font "Consolas")
+ (gnu-font "Consolas")
+     ;(gnu-font-sz "Consolas" "15")
 )
 ;(gnu-font "Anonymous Pro")
 ;(gnu-font "Georgia")
@@ -460,9 +464,9 @@ No more \"End of file during parsing\" horrors!"
                                         ;(load-file "~/elisp/tuareg-mode/tuareg.el")
                                         ;(load-file "~/elisp/html-helper-mode.el")
 (load-file "~/elisp/tempo.el")
-(load-file "~/elisp/re-builder.el")
+;(load-file "~/elisp/re-builder.el")
 ;(load-file "~/elisp/live-mode.el")
-
+(require 're-builder+)
 (autoload 'html-helper-mode "html-helper-mode" "Yay HTML" t)
 (setq auto-mode-alist (cons '("\\.html$" . html-helper-mode) auto-mode-alist))
 
@@ -1145,9 +1149,9 @@ No more \"End of file during parsing\" horrors!"
 
 (if (not on-emacs)
     (setq-default message-mail-alias-type nil))
-(setq tab-width 4)
+(setq tab-width 8)
 (setq-default ;; fill-column 80 ;;;;; Maybe narrower is better
-      tab-width 4
+      tab-width 8
       next-line-add-newlines nil
       require-final-newline nil
 
@@ -4387,3 +4391,120 @@ loaded as such.)"
 
 ;(set-keyboard-coding-system nil)
 (global-set-key (kbd "s-w") 'kill-ring-save)
+(defun size-frame (w h)
+  (interactive)
+  (set-frame-position (selected-frame) 0 0)
+  (set-frame-size (selected-frame) w h)
+  )
+(defun maximize-frame ()
+  (interactive)
+  (size-frame 270 76)
+  )
+(and on-darwin (size-frame 200 60))
+
+;(global-set-key (kbd "<C-S-return>") 'maximize-frame)
+
+(defun fullscreen (&optional f)
+  (interactive)
+  ;(maximize-frame)
+  (progn
+  (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))  ;; no toolbar
+;  (menu-bar-mode 1)
+  ;;-1) ;;no menubar
+  (scroll-bar-mode -1) ;; no scroll bar
+  )
+  (if on-darwin
+      (if emacs23-only
+          (set-frame-parameter nil 'fullscreen (if (frame-parameter nil 'fullscreen) nil 'fullboth))
+        (ns-toggle-fullscreen))
+    (progn
+      (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
+                             '(2 "_NET_WM_STATE_MAXIMIZED_VERT" 0))
+      (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
+                             '(2 "_NET_WM_STATE_MAXIMIZED_HORZ" 0)))))
+
+(global-set-key (kbd "<C-S-return>") 'fullscreen)
+(autoload 'ansi-color-for-comint-mode-on "ansi-color" nil t)
+(add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
+(require 'multi-term)
+(setq multi-term-program "/bin/bash")
+   (defun open-localhost ()
+      (interactive)
+      (ansi-term "bash" "localhost"))
+
+    (defun remote-term (new-buffer-name cmd &rest switches)
+      (setq term-ansi-buffer-name (concat "*" new-buffer-name "*"))
+      (setq term-ansi-buffer-name (generate-new-buffer-name term-ansi-buffer-name))
+      (setq term-ansi-buffer-name (apply 'make-term term-ansi-buffer-name cmd nil switches))
+      (set-buffer term-ansi-buffer-name)
+      (term-mode)
+      (term-char-mode)
+      (term-set-escape-char ?\C-x)
+      (switch-to-buffer term-ansi-buffer-name))
+ (defun open-cj ()
+      (interactive)
+      (local-unset-key (kbd "C-o"))
+      (remote-term "cj" "ssh" "graehl@c-jgraehl.languageweaver.com"))
+(setq compile-command "cd ~/x/build && make -j3")
+;(require 'auto-install)
+;(setq auto-install-save-confirm nil)
+;(auto-install-batch "icicles")
+(push "~/.emacs.d/auto-install" load-path)
+;(require 'icicles)
+
+(require 'shell)
+ (require 'term)
+ (defun term-switch-to-shell-mode ()
+  (interactive)
+  (if (equal major-mode 'term-mode)
+      (progn
+        (shell-mode)
+        (set-process-filter  (get-buffer-process (current-buffer)) 'comint-output-filter )
+        (local-set-key (kbd "C-j") 'term-switch-to-shell-mode)
+        (compilation-shell-minor-mode 1)
+        (comint-send-input)
+      )
+    (progn
+        (compilation-shell-minor-mode -1)
+        (font-lock-mode -1)
+        (set-process-filter  (get-buffer-process (current-buffer)) 'term-emulate-terminal)
+        (term-mode)
+        (term-char-mode)
+        (term-send-raw-string (kbd "C-l"))
+        )))
+
+ (setq shell-prompt-pattern "^[^#$%>\n]*[#$%>] *")
+ (setq shell-prompt-pattern "^|PrOmPt|[^|\n]*|[^:\n]+:[^ \n]+ *[#$%>\n]? *")
+ (setq shell-prompt-pattern "^\\(|PrOmPt|[^|\n]*|[^:\n]+:[^ \n]+ *[#$%>\n]?\\|[^#$%>\n]*[#$%>]\\) *")
+
+(require 'dirtrack)
+(shell-dirtrack-mode t)
+(defun dirtrack-filter-out-pwd-prompt (string)
+    "dirtrack-mode doesn't remove the PWD match from the prompt.  This does."
+    ;; TODO: support dirtrack-mode's multiline regexp.
+    (if (and (stringp string) (string-match (first dirtrack-list) string))
+        (replace-match "" t t string 0)
+      string))
+
+(defun my-magic-prompt-bad ()
+  (shell-dirtrack-mode nil)
+              (add-hook 'comint-preoutput-filter-functions
+                        'dirtrack nil t)
+              (add-hook 'comint-preoutput-filter-functions
+                        'dirtrack-filter-out-pwd-prompt t t)
+              )
+
+(defun my-magic-prompt-good ()
+  (shell-dirtrack-mode nil)
+  (dirtrack-mode t)
+  (add-hook 'comint-preoutput-filter-functions
+            'dirtrack-filter-out-pwd-prompt t t)
+  )
+
+(defun my-magic-prompt () "" (interactive)
+  (setq dirtrack-list '("^|PrOmPt|\\([^|]*\\)|" 1 nil))
+  (my-magic-prompt-good))
+
+(add-hook 'shell-mode-hook 'my-magic-prompt)
+
+;(add-to-history 'minibuffer-history shell-prompt-pattern)

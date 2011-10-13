@@ -19,16 +19,12 @@ def commonpath(l1, l2, common=[]):
 
 def relpath(p1, p2):
     (common,l1,l2) = commonpath(pathsplit(p1), pathsplit(p2))
-    #    sys.stderr.write("%s\n%s\n%s\n"%(common,l1,l2))
-    if len(common)==1 and common[0]=='/':
-        p=common+l2
-    else:
-        p = []
-        if len(l1) > 0:
-            p = [ '../' * len(l1) ]
-        p = p + l2
-        if len(p)==0:
-            return '.'
+    p = []
+    if len(l1) > 0:
+        p = [ '../' * len(l1) ]
+    p = p + l2
+    if len(p)==0:
+        return '.'
     return os.path.join( *p )
 
 def test(p1,p2):

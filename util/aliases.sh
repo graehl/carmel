@@ -1,3 +1,150 @@
+racer=~/x
+case $(uname) in
+    Darwin)
+        lwarch=Apple ;;
+    Linux)
+        lwarch=Linux ;;
+    *)
+        lwarch=Windows ;;
+esac
+lsld() {
+    echo $DYLD_LIBRARY_PATH
+}
+addld() {
+    if [[ $lwarch = Apple ]] ; then
+        if ! fgrep "$1" <<< "$DYLD_LIBRARY_PATH" ; then
+            export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$1
+        else
+            echo "$1 already in DYLD_LIBRARY_PATH"
+        fi
+    else
+        if ! fgrep "$1" <<< "$LD_LIBRARY_PATH" ; then
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$1
+        else
+            echo "$1 already in LD_LIBRARY_PATH"
+        fi
+    fi
+}
+dylds() {
+    for f in $racer/3rdparty/$lwarch/*; do
+        if [ -d $f/lib ] ; then
+            echo $f
+            addld $f/lib
+        fi
+    done
+}
+dylds
+
+regress() {
+    cd $racer/RegressionTests
+    for f in "$@"; do
+        pushd $f
+        (
+            set -e
+            ./run.pl
+            #--no-cleanup --verbose
+        )
+        tailn=30 preview $(last1 *.log)
+        popd
+    done
+}
+failed() {
+    racb
+    testlogs $(find . -type d -maxdepth 2)
+}
+testlogs() {
+    for f in "$@"; do
+        local g=$f/Testing/Temporary/LastTestsFailed.log
+        if [ -f $g ] ; then
+            tailn=30 preview $g
+        fi
+    done
+}
+
+chost=c-jgraehl.languageweaver.com
+sc() {
+    ssh $chost "$@"
+}
+tocabs() {
+    tohost $chost "$@"
+}
+toc() {
+    tohostp $chost "$@"
+}
+fromc() {
+    fromhost $chost "$@"
+}
+
+corac() {
+    svn co http://svn.languageweaver.com/svn/repos2/cme/trunk/racerx
+    cd racerx
+}
+racb() {
+    build=${build:-Release}
+    if [[ $debug = 1 ]] ; then
+        build=Debug
+    fi
+    build=${1:-$build}
+    racerbuild=$racer/$build
+    mkdir -p $racerbuild
+    cd $racerbuild
+    local fa=
+    if [ "$*" ] ; then
+        fa="-DCMAKE_CXX_FLAGS='$*'"
+    fi
+    cmarg="-DCMAKE_BUILD_TYPE=$build"
+}
+racd() {
+    cd $racer
+    svn diff -b
+}
+urac() {
+    cd $racer
+    if ! [ "$noup" ] ; then svn update ; fi
+}
+crac() {
+    cd $racer
+    svn commit -m "$*"
+}
+racm() {
+    racb $1
+    shift
+    cd $racerbuild
+    make -j3 VERBOSE=1 "$@"
+    if [[ $test ]] ; then make test ; fi
+}
+racc() {
+    racb $1
+    shift
+    if [ "$debug" = 1 ] ; then
+        dbg="-DCMAKE_BUILD_TYPE=Debug"
+    fi
+    cd $racerbuild
+    ccmake .. $cmarg
+}
+ccmake() {
+    local d=${1:-..}
+    shift
+    rm -f CMakeCache.txt $d/CMakeCache.txt
+    CFLAGS= CXXFLAGS= CPPFLAGS= LDFLAGS= cmake $d "$@"
+}
+clocal() {(
+        set -e
+        if [ "$1" ] ; then cd $1* ; fi
+        ./configure --prefix=/usr/local "$@" && make -j 4 && sudo make install
+        )}
+msudo() {
+    make -j 4 && sudo make install
+}
+cgnu() {
+    for f in "$@"; do
+        g=$f-${ver:-latest}.tar.${bzip:-bz2}
+        (set -e
+            curl -O http://ftp.gnu.org/gnu/$f/$g
+            tarxzf $g
+        )
+    done
+}
 emacsapp=/Applications/Emacs.app/Contents/MacOS/
 emacssrv=$emacsapp/Emacs
 emacsc() {
@@ -1651,7 +1798,7 @@ ehost() {
 cd $p
 "$@"
 EOF
-#"/home/hpc-22/dmarcu/nlg/blobs/bash3/bin/bash"' --login -c "'"$*"'"'
+#"/bin/bash"' --login -c "'"$*"'"'
 }
 
 enlg() {
@@ -2874,23 +3021,37 @@ fromhost() {
 fromlo() {
     user=jgraehl fromhost login.clsp.jhu.edu "$@"
 }
+relhomeby() {
+    ${relpath:-$UTIL/relpath} ~ "$@"
+}
 tohost1() {
     (
         set -e
-   #     f=`relpath ~ $1`
-        f=`relhome $1`
+        f=$(relhomeby $1)
         cd
         local u
         user=${user:-`userfor $host`}
         [ "$user" ] && u="$user@"
         echo scp -r "$f" "$u$host:`dirname $f`"
-        scp -r "$f" "$u$host:`dirname $f`"
+        if [ "$dryrun" ] ; then
+            showvars_optional relpath
+        else
+            scp -r "$f" "$u$host:`dirname $f`"
+        fi
     )
+}
+tohostp1() {
+    relpath=$UTIL/relpathp tohost1 "$@"
 }
 tohost() {
     local host=$1
     shift
     host=$host forall tohost1 "$@"
+}
+tohostp() {
+    local host=$1
+    shift
+    host=$host forall tohostp1 "$@"
 }
 fromhpc() {
     fromhost $HPCHOST "$@"
@@ -3136,10 +3297,10 @@ page() {
 page2() {
     page=most save12 "$@"
 }
-sc() {
+scr() {
     screen -UaARRD
 }
-scls() {
+scrls() {
     screen -list
 }
 
@@ -3396,11 +3557,25 @@ function toisi {
 }
 alias ..="cd .."
 alias c=cd
-alias l="ls -alF --color=auto"
-alias lo="ls -alHLFC --color=auto"
+if [[ $OS = Darwin ]] ; then
+    alias l="ls -alFG"
+    alias lo="ls -alHLFCG"
+    export CLICOLOR=1
+else
+    alias l="ls -alF --color=auto"
+    alias lo="ls -alHLFC --color=auto"
+fi
 alias k=colormake
 alias g=git
 alias s=svn
-
-
-
+getcert() {
+    local REMHOST=$1
+    local REMPORT=${2:-443}
+    echo |\
+openssl s_client -connect ${REMHOST}:${REMPORT} 2>&1 |\
+sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
+}
+showprompt() {
+    echo $PS1 | less -E
+    echo $PROMPT_COMMAND | less -E
+}

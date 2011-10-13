@@ -239,6 +239,9 @@ lastn() {
     [ "$*" ] || darg=
     ls -rt $darg "$@" | tail -$n
 }
+last1() {
+    lastn 1 "$@"
+}
 envtofile() {
    perl -e 'push @INC,"'$BLOBS'/libgraehl/latest";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
 }
@@ -1411,12 +1414,12 @@ echo
 
 
 is_text_file() {
-local t=`tmpnam`
-file "$@" > $t
-grep -q text $t
-local ret=$?
-rm $t
-return $ret
+    local t=`tmpnam`
+    file "$@" > $t
+    grep -q text $t
+    local ret=$?
+    rm $t
+    return $ret
 }
 
 ##### ENVIRONMENT VARIABLES as SCRIPT OPTIONS:
@@ -2075,6 +2078,13 @@ preview1() {
  if [[ $2 ]] ; then
      preview_banner $2
      v=
+ elif [[ $(uname) = Darwin && $v ]] ; then
+     v=
+     if [ "$1" ] ; then
+         preview_banner "$1"
+     else
+         preview_banner "<STDIN>"
+     fi
  fi
  tailarg=$v head1 $tailn "$@"
 }
@@ -2340,7 +2350,7 @@ workflowp=~/workflow
 homereal=`realpath ~`
 traperr
 getrealprog
-[ -f $libg/libgraehl.pl ] || lnreal ~/t/graehl/util/libgraehl.pl $libg/
+[ -f $libg/libgraehl.pl ] || warn missing libgraehl.pl
 
 radutrees() {
     local t=$1
