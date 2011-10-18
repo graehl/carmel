@@ -2340,10 +2340,14 @@ loge() {
     watch $log
 }
 ncpus() {
-    cat /proc/cpuinfo | grep 'physical id' | sort | uniq -c || grep ^processor /proc/cpuinfo
+    if [ -r /proc/cpuinfo ] ; then
+        cat /proc/cpuinfo | grep 'physical id' | sort | grep ^processor /proc/cpuinfo | nlines
+    else
+        echo 2
+    fi
 }
 ncores() {
-    ncpus | nlines
+    ncpus
 }
 workflowp=~/workflow
 [ -d $workflowp ] &&  workflowreal=`realpath $workflowp`

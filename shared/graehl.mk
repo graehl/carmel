@@ -17,6 +17,14 @@
 #include $(SHARED)/debugger.mk
 #$(__BREAKPOINT)
 
+# you can say things like "make echo-CC" to see what the variable CC is set to
+
+echo-%:
+	@echo $* == "\"$($*)\""
+
+echoraw-%:
+	@echo "$($*)"
+
 ifndef BUILD_BASE
 BUILD_BASE:=.
 endif
@@ -209,8 +217,7 @@ LDFLAGS_TEST = $(LDFLAGS)  -ltest
 INC += $(TRUNK)
 INC += ..
 #INC += ../..
-CPPFLAGS := $(addprefix -I,$(INC)) $(CPPFLAGS)
-
+CPPFLAGS := $(addprefix -I,$(INC)) $(addprefix -D,$(DEFS)) $(CPPFLAGS)
 ifdef PEDANTIC
 CPPFLAGS +=  -pedantic
 endif
@@ -262,7 +269,7 @@ OPT_PROGS += $$(BIN)/$(1)$(PROGSUFFIX)$(REVSUFFIX)$(CYGEXE)
 $(1): $$(BIN)/$(1)
 endif
 
-ifneq (${ARCH},macosx)
+ifneq (${ARCH},macosx) # avoid error:ld: library not found for -lcrt0.o
 ifndef NOSTATIC
 ifndef $(1)_NOSTATIC
 $$(BIN)/$(1)$(PROGSUFFIX).static$(REVSUFFIX): $$(addprefix $$(OBJ)/,$$($(1)_OBJ)) $$($(1)_SLIB)
@@ -329,7 +336,7 @@ depend: $(ALL_DEPENDS)
 
 
 install: $(OPT_PROGS) $(STATIC_PROGS) $(DEBUG_PROGS) $(CP_PROGS)
-	mkdir -p $(BIN_PREFIX) ; cp --force $(STATIC_PROGS) $(DEBUG_PROGS) $(OPT_PROGS) $(CP_PROGS) $(BIN_PREFIX)
+	mkdir -p $(BIN_PREFIX) ; cp -f $(STATIC_PROGS) $(DEBUG_PROGS) $(OPT_PROGS) $(CP_PROGS) $(BIN_PREFIX)
 
 check:	test
 
@@ -443,11 +450,3 @@ include $(ALL_DEPENDS)
 endif
 endif
 endif
-
-# you can say things like "make echo-CC" to see what the variable CC is set to
-
-echo-%:
-	@echo $* == "\"$($*)\""
-
-echoraw-%:
-	@echo "$($*)"

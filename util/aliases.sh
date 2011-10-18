@@ -1,3 +1,9 @@
+sconsd() {
+    scons -Q --debug=presub "$@"
+}
+#sudo gem install git_remote_branch --include-dependencies - gives the nice 'grb' git remote branch cmd
+#see aliases in .gitconfig #git what st ci co br df dc lg lol lola ls info ign
+
 racer=~/x
 case $(uname) in
     Darwin)
@@ -7,6 +13,15 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+ncpus() {
+    if [[ $lwarch = Apple ]] ; then
+        echo 2
+    else
+        grep ^processor /proc/cpuinfo | wc -l
+    fi
+}
+MAKEPROC=${MAKEPROC:-$(ncpus)}
+
 lsld() {
     echo $DYLD_LIBRARY_PATH
 }
@@ -28,7 +43,7 @@ addld() {
 dylds() {
     for f in $racer/3rdparty/$lwarch/*; do
         if [ -d $f/lib ] ; then
-            echo $f
+            #echo $f
             addld $f/lib
         fi
     done
@@ -60,21 +75,6 @@ testlogs() {
         fi
     done
 }
-
-chost=c-jgraehl.languageweaver.com
-sc() {
-    ssh $chost "$@"
-}
-tocabs() {
-    tohost $chost "$@"
-}
-toc() {
-    tohostp $chost "$@"
-}
-fromc() {
-    fromhost $chost "$@"
-}
-
 corac() {
     svn co http://svn.languageweaver.com/svn/repos2/cme/trunk/racerx
     cd racerx
@@ -106,12 +106,38 @@ crac() {
     cd $racer
     svn commit -m "$*"
 }
+svndiff()
+{
+    local diffcontext=${diffcontext:-8}
+    svn diff --diff-cmd diff --extensions "-U $diffcontext -b"
+}
+svndifflog() {
+    local lastlog=${1:-5}
+    shift
+    svn log -l $lastlog --incremental "$@"
+    svndiff
+}
+drac() {
+    cd $racer/3rdparty
+    banner 3rdparty svn
+    svndifflog 2 "$@"
+    echo;echo
+    banner racerx svn
+    cd $racer
+    svndifflog 5 "$@"
+}
 racm() {
     racb $1
     shift
     cd $racerbuild
-    make -j3 VERBOSE=1 "$@"
+    make -j$MAKEPROC VERBOSE=1 "$@"
     if [[ $test ]] ; then make test ; fi
+    for t in $tests; do
+        ( set -e;
+            echo $t
+            $t/Test$t 2>&1 | tee $t/log.Test
+        )
+    done
 }
 racc() {
     racb $1
@@ -128,11 +154,31 @@ ccmake() {
     rm -f CMakeCache.txt $d/CMakeCache.txt
     CFLAGS= CXXFLAGS= CPPFLAGS= LDFLAGS= cmake $d "$@"
 }
-clocal() {(
+
+chost=c-jgraehl.languageweaver.com
+phost=pontus.languageweaver.com
+sc() {
+    ssh $chost "$@"
+}
+tocabs() {
+    tohost $chost "$@"
+}
+toc() {
+    tohostp $chost "$@"
+}
+topon() {
+    thostp $phost "$@"
+}
+fromc() {
+    fromhost $chost "$@"
+}
+clocal() {
+    (
         set -e
         if [ "$1" ] ; then cd $1* ; fi
-        ./configure --prefix=/usr/local "$@" && make -j 4 && sudo make install
-        )}
+        ./configure --prefix=/usr/local "$@" && make -j  && sudo make install
+    )
+}
 msudo() {
     make -j 4 && sudo make install
 }
@@ -155,26 +201,6 @@ emacsc() {
     fi
 }
 
-buildopenssh() {
-    local v=${1:-0.9.8r}
-    (
-        set -e
-        set -x
-    cd ~/src
-    local tgzd=openssl-$v
-    local tgz=$tgzd.tar.gz
-    [ -f $tgz ] || wget http://www.openssl.org/source/openssl-$v.tar.gz
-    rm -rf $tgzd
-    tar xzvf $tgz
-    local df=openssl-0.9.8l-symbolVersioning.diff
-    cd $tgzd
-    wget http://www.isi.edu/~graehl/$df
-    patch -p1 < $df
-    ./config shared zlib --prefix=$FIRST_PREFIX
-    make # test
-    make install
-    )
-}
 svnln() {
     forall svnln1 "$@"
 }
@@ -183,15 +209,8 @@ svnln1() {
     svn add $(basename $1)
 }
 
-stopmira() {
-    for f in "$@"; do
-        touch $f/STOP
-        realpath $f/STOP
-    done
-}
-
 bl3() {
-(
+    (
         set -e
         set -x
         obasep=${obase:-bl3}
@@ -236,7 +255,7 @@ bl3() {
             title=$title data=$obase.data obase=$obase xlbl="MIRA epoch" graph3 $bs
         done
         [[ $noview ]] || firefox $obase{,.heldout}.png
-)
+    )
 }
 
 hemacs() {
@@ -557,7 +576,6 @@ rpdf() {
 }
 cpipe() {
     (pushd ~/pipe/
-
         svn commit -m "$*"
     )
 }
@@ -631,17 +649,17 @@ mkstamps() {
         \end{center}
 EOF
 
-        for i in `seq 1 $npages`; do
+for i in `seq 1 $npages`; do
 #        echo '\newpage' >> $stamp
-            echo '\mbox{} \newpage' \
-                >> $stamp
-        done
+    echo '\mbox{} \newpage' \
+        >> $stamp
+done
 
-        echo '\end{document}' >> $stamp
+echo '\end{document}' >> $stamp
 
-        local sbase=${stamp%.tex}
-        lat2pdf $sbase
-        echo $sbase.pdf
+local sbase=${stamp%.tex}
+lat2pdf $sbase
+echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
@@ -812,22 +830,6 @@ pdf1() {
 
 pdfcat1() {
     mapreduce_files pdf1 pdfcat "$@"
-}
-
-pdfhead() {
-    local to=${1:--10}
-    if [ "$1" ] ; then
-        if [ $1 != ${1#+} -o $1 != ${1#-} ] ; then
-            verbose2 +++ pdfhead $1
-            shift
-        fi
-    fi
-    if [ $to -le 0 ] ; then
-        to=$((-$to))
-    else
-        to=$((`nlines "$@"`-$to))
-    fi
-    pdfrange 1 $to "$@"
 }
 
 pdftail() {
@@ -1095,17 +1097,18 @@ buildxrs() {
 }
 alias grep="$(which grep) --color -n"
 alias savecvs="/usr/bin/rsync -Lptave ssh ~/isd/cvs hpc.usc.edu:isd/cvs"
-alias buildfem="pushd ~/t/graehl/tt;make clean;make BOOST_SUFFIX= -j 4 install;popd"
+alias buildfem="pushd ~/t/graehl/tt;make clean;make BOOST_SUFFIX= -j$MAKEPROC install;popd"
 buildcar() {
     pushd ~/t/graehl/carmel
     [ "$noclean" ] || make clean
     set -x
-    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j 4
+    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
     make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
     set +x
     popd
     if [ "$1" ] ; then
         pushd $FIRST_PREFIX/bin
+        cp carmel carmel.$1
         cp carmel.static carmel.$1
         popd
     fi
@@ -1116,7 +1119,7 @@ buildboost() {(
         local withouts
         [ "$without" ] && withouts="--without-mpi --without-python --without-wave"
         [ "$noboot" ] || ./bootstrap.sh --prefix=$FIRST_PREFIX
-        ./bjam --build-type=complete --layout=tagged --prefix=$FIRST_PREFIX $withouts --runtime-debugging=on -j4 install
+        ./bjam --build-type=complete --layout=tagged --prefix=$FIRST_PREFIX $withouts --runtime-debugging=on -j$MAKEPROC install
 #    ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
 #    ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
         )}
@@ -1543,30 +1546,6 @@ alias sl=". ~/isd/hints/bashlib.sh"
 export PBSQUEUE=isi
 alias hrsgodec="pdq ~/ql;hrs godec ql;popd"
 
-tag_sdwei() {
-    ver=$1
-    shift
-    if [ -z "$ver" ] ; then
-        echo please supply version e.g. v1-2 - to move tags let 2nd arg = -F
-    else
-        tag=syntax-decoder-$ver
-        shift
-        for module in graehl/shared RuleReader radu-parser srilm syntax-decoder-wei ; do
-            cvs rtag "$@" $tag $module
-        done
-    fi
-}
-
-cp_sbmt() {
-    local to=$1
-    local sub=$2
-    [ "$sub" ] && sub="/$sub"
-    if [ "$to" ] ; then
-        echo2 copying trunk to $to
-        svn cp -m "trunk->$to" $SBMT_SVNREPO/trunk$sub $SBMT_SVNREPO/$to
-    fi
-}
-
 tag_module() {
     local ver=$1
     local module=${2:-mini_decoder}
@@ -1987,7 +1966,6 @@ xscripts() {
     find $1 -name '*.pl*' -exec chmod +x {} \;
     find $1 -name '*.sh*' -exec chmod +x {} \;
 }
-export XRSGREP=/nfs/nlg/users/mgalley/mt/xrs-grep
 
 if [ "$ONCYGWIN" ] ; then
     sshwrap() {
@@ -2530,11 +2508,6 @@ function redoxy
     popd
 }
 
-function svndiff
-{
-    diffcontext=${diffcontext:-8}
-    svn diff --diff-cmd diff --extensions "-U $diffcontext"
-}
 
 function bak
 {
@@ -2544,8 +2517,8 @@ function bak
 
 function goo2
 {
-    mstsc &
-    ssh -L 3390:192.168.1.200:3389 -p 4640 pontus.languageweaver.com -l peggy "$@"
+    #mstsc &
+    ssh -L 3390:192.168.1.200:3389 -p 4640 pontus.languageweaver.com "$@"
 }
 
 
@@ -2645,26 +2618,6 @@ print;
 
 }
 
-# old syntax decoder:
-getpass1best() {
-    catz "$@" | perl -ne 'print if s/^\(pass 1\) (NBEST sent=[^ ]* nbest=0)/$1/'
-}
-getfinalbest() {
-    catz "$@" | egrep '^NBEST sent=[^ ]* nbest=0'
-}
-
-getpass1() {
-    catz "$@" | perl -ne 'print if s/^\(pass 1\) (NBEST )/$1/'
-}
-getpassf() {
-    catz "$@" | grep '^NBEST '
-}
-
-getbestpp() {
-    diffnbest.pl "$@"
-}
-
-## old syntax decoder end
 
 tviz() {
     (
@@ -2730,95 +2683,6 @@ treevizn() {
 }
 
 
-newscript() {
-    (set -e
-        local name=$1
-        shift
-        local dir=~/bin
-        local f=$dir/$name
-        is_abspath $name && f=$name
-        echo2 "trying to create shell script $f"
-        [ ! -f $f ] || [ "$overwrite" ] ||  error "specify a *new* script name (or delete old script first, or setenv overwrite)"
-        cat>$f<<EOF
-#!/bin/bash
-BLOBS=\${BLOBS:-$BLOBS}
-[ -d $BLOBS ] || BLOBS=~/blobs
-export BLOBS
-d=`dirname -- $0`
-if [ -f $BLOBS/bashlib/unstable/bashlib.sh ] ; then
- . $BLOBS/bashlib/unstable/bashlib.sh
-else
- if [ -f $d/bashlib.sh ] ; then
-  . $d/bashlib.sh
- fi
-fi
-
-## END BOILERPLATE, BEGIN SCRIPT:
-EOF
-        if [ "$*" ] ; then
-            echo "$*" >> $f
-        else
-            echo2 "type in the shell commands (ctrl-D to end)"
-            cat >> $f
-        fi
-        chmod +x $f
-        echo2 "created shell script $f"
-
-    )
-}
-
-newperl() {
-    (set -e
-        local name=$1
-        shift
-        local dir=~/bin
-        local f=$dir/$name
-        is_abspath $name && f=$name
-        echo2 "trying to create perl script $f"
-        [ ! -f $f ] || [ "$overwrite" ] ||  error "specify a *new* script name (or delete old script first, or setenv overwrite)"
-        local perl=`which perl`
-        cat>$f<<EOF
-#!$perl "$@"
-use Getopt::Long;
-use File::Basename;
-
-my \$blobbase="/home/hpc-22/dmarcu/nlg/blobs";
-
-### script info ##################################################
-my \$scriptdir;                  # location of script
-my \$scriptname;                 # filename of script
-my \$BLOBS;
-
-BEGIN {
-   \$scriptdir = &File::Basename::dirname(\$0);
-   (\$scriptname) = &File::Basename::fileparse(\$0);
-    \$ENV{BLOBS}='/home/nlg-01/blobs' unless exists \$ENV{BLOBS};
-   \$ENV{BLOBS}="\$ENV{HOME}/blobs" unless -d \$ENV{BLOBS};
-    \$BLOBS=\$ENV{BLOBS};
-    my \$libgraehl="\$BLOBS/libgraehl/unstable";
-    unshift @INC,\$libgraehl if -d \$libgraehl;
-    unshift @INC, \$scriptdir;
-}
-
-require "libgraehl.pl";
-
-&argvz;
-EOF
-        [ "$STRICT" ] && echo "use strict;use warnings;" >> $f
-        echo2 "type in the shell commands (ctrl-D to end)"
-        cat >> $f
-        chmod +x $f
-        echo2 "created perl script $f"
-    )
-}
-
-
-utility() {
-    nproc=6 utility=$1 boostsbmt
-    cp ~/t/cage/sbmt/utilities/gcc-4.2.0/release/{hoard-allocator-off/,}link-static/$1 $FIRST_PREFIX/bin
-    which $1
-    ls -l `which $1`
-}
 
 spaste() {
     lodgeit.py -l scala $*
@@ -2883,7 +2747,6 @@ clonecar() {
     set +x
 }
 
-MAKEPROC=${MAKEPROC:-3}
 
 testws() {
     cd $WSMT
@@ -3001,6 +2864,7 @@ fromnlg1() {
 fromnlg() {
     forall fromnlg1 "$@"
 }
+
 fromhost1() {
     (
         cd
@@ -3024,6 +2888,13 @@ fromlo() {
 relhomeby() {
     ${relpath:-$UTIL/relpath} ~ "$@"
 }
+
+shost1() {(set -e
+        local portarg=
+        if [[ $port ]] ; then
+            portarg=-P$port
+        fi
+        )}
 tohost1() {
     (
         set -e
@@ -3033,10 +2904,14 @@ tohost1() {
         user=${user:-`userfor $host`}
         [ "$user" ] && u="$user@"
         echo scp -r "$f" "$u$host:`dirname $f`"
+        local portarg=
+        if [[ $port ]] ; then
+            portarg=-P$port
+        fi
         if [ "$dryrun" ] ; then
             showvars_optional relpath
         else
-            scp -r "$f" "$u$host:`dirname $f`"
+            scp $portarg -r "$f" "$u$host:`dirname $f`"
         fi
     )
 }
@@ -3053,6 +2928,7 @@ tohostp() {
     shift
     host=$host forall tohostp1 "$@"
 }
+
 fromhpc() {
     fromhost $HPCHOST "$@"
 }
@@ -3124,13 +3000,14 @@ shortsh() {
 conff=`echo `
 allconff="$conff elisp"
 rsync_exclude="--exclude=.git/ --cvs-exclude"
+
 sync2() {
     (
         cd
         local h=$1
         shift
         local u
-        user=${user:-`userfor $h`}
+        user=${user:-$(userfor $h)}
         [ "$user" ] && u="$user@"
         local f
         local darg
@@ -3139,6 +3016,9 @@ sync2() {
         set -x
         (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) |  rsync $darg -avruz -e ssh --files-from=- $rsyncargs $rsync_exclude . $u$h:${dest:=.}
     )
+}
+syncto() {
+    sync2 "$@"
 }
 userfor() {
     case $1 in
@@ -3319,17 +3199,17 @@ altgcc4() {
         --install "/usr/bin/gcc.exe" "gcc" "/usr/bin/gcc-4.exe" 30 \
         --slave "/usr/bin/ccc.exe" "ccc" "/usr/bin/ccc-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-ccc.exe" "i686-pc-cygwin-ccc" \
-	    "/usr/bin/i686-pc-cygwin-ccc-4.exe" \
+	"/usr/bin/i686-pc-cygwin-ccc-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-gcc.exe" "i686-pc-cygwin-gcc" \
-	    "/usr/bin/i686-pc-cygwin-gcc-4.exe"
+	"/usr/bin/i686-pc-cygwin-gcc-4.exe"
 
     /usr/sbin/update-alternatives \
         --install "/usr/bin/g++.exe" "g++" "/usr/bin/g++-4.exe" 30 \
         --slave "/usr/bin/c++.exe" "c++" "/usr/bin/c++-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-c++.exe" "i686-pc-cygwin-c++" \
-	    "/usr/bin/i686-pc-cygwin-c++-4.exe" \
+	"/usr/bin/i686-pc-cygwin-c++-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-g++.exe" "i686-pc-cygwin-g++" \
-	    "/usr/bin/i686-pc-cygwin-g++-4.exe"
+	"/usr/bin/i686-pc-cygwin-g++-4.exe"
 }
 
 plboth() {

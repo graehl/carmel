@@ -45,7 +45,7 @@ using namespace graehl;
 # define OPENFST_VERSION ""
 #endif
 
-#define CARMEL_VERSION "6.12" OPENFST_VERSION
+#define CARMEL_VERSION "6.13" OPENFST_VERSION
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>

@@ -221,7 +221,7 @@ unset LANGVAR || true
 
 SBMT_SVNREPO='https://nlg0.isi.edu/svn/sbmt'
 SBMT_BASE=$HOME/sbmt
-SBMT_TRUNK=$SBMT_BASE/trunk
+SBMT_TRUNK=$HOME/t
 
 
 function save_default_paths {

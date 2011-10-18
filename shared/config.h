@@ -93,7 +93,7 @@ namespace Config {
 namespace graehl {typedef short unsigned var_type; // 0 = no var, 1,2,3,... = var index
 }
 
-#define COPYRIGHT_YEAR 2008
+#define COPYRIGHT_YEAR 2011
 
 //do this in Makefile for consistency with boost test lib src that don't include me:
 //#define BOOST_DISABLE_THREADS
@@ -138,8 +138,6 @@ namespace graehl {typedef short unsigned var_type; // 0 = no var, 1,2,3,... = va
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
 // definitely needs to be defined for Microsoft (debug or release) now
 
-// allows WFST to be indexed in either direction?  not recommended. or tested lately.
-//#define BIDIRECTIONAL
 
 
 #endif //guard
