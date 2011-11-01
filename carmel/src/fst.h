@@ -559,7 +559,7 @@ class WFST {
     void writeLegible(ostream &,bool include_zero=false);
     void writeLegibleFilename(std::string const& name,bool include_zero=false);
     void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
-    int numStates() const { return states.size(); }
+    unsigned numStates() const { return states.size(); }
     bool isFinal(int s) { return s==final; }
     void setPathArc(PathArc *pArc,const FSTArc &a) const {
         pArc->in = a.in;

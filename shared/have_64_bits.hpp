@@ -1,6 +1,8 @@
 #ifndef GRAEHL_SHARED__HAVE_64_BITS_HPP
 #define GRAEHL_SHARED__HAVE_64_BITS_HPP
 
+#define __STDC_LIMIT_MACROS
+//C++ implementations should define these macros only when __STDC_LIMIT_MACROS is defined before is included
 #include <stdint.h>
 
 // pointer at least 64 bits if 1, exactly 32bits if 0

@@ -287,6 +287,7 @@ No more \"End of file during parsing\" horrors!"
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(c-block-comment-prefix "")
+ '(change-log-default-name "~/x/ChangeLog")
  '(comint-completion-addsuffix t)
  '(comint-completion-autolist t)
  '(comint-input-ignoredups t)
@@ -312,6 +313,8 @@ No more \"End of file during parsing\" horrors!"
  '(mode-compile-always-save-buffer-p t)
  '(mode-compile-reading-time 0)
  '(mouse-wheel-scroll-amount (quote (10 ((shift) . 1))))
+ '(my-namespace-roots (quote (("boost" . boost-copyright) ("fluid" . fluid-copyright) ("x" . lw-copyright))))
+ '(next-error-recenter (quote (4)))
  '(ns-command-modifier (quote meta))
  '(safe-local-variable-values (quote ((TeX-master . t))))
  '(shell-prompt-pattern "^\\(|PrOmPt|[^|
@@ -2208,8 +2211,7 @@ and initial semicolons."
 (defun my-empty-braces ()
   "insert {  }"
   (interactive "*")
-  (insert "{  }")
-  (backward-char)
+  (insert "{}")
   (backward-char)
   (indent-according-to-mode)
   )
@@ -2230,7 +2232,7 @@ and initial semicolons."
   (end-of-line)
   (newline-and-indent))
 
-(setq my-initials "jeg")
+(setq my-initials "LW")
 
 (defun boost-copyright ()
   "Return the appropriate boost copyright for the current user and year"
@@ -2238,6 +2240,10 @@ and initial semicolons."
           ". Distributed under the Boost\n\
 Software License, Version 1.0. (See accompanying\n\
 file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)"))
+
+(defun lw-copyright ()
+  "Return the appropriate boost copyright for the current user and year"
+  "")
 
 (defun sdl-copyright ()
   "Return the appropriate copyright for the current user and year"
@@ -2309,11 +2315,15 @@ is not supplied, the boost copyright is used by default"
   (subseq (my-split-path (buffer-file-name)) 0 -1))
 
 (defcustom my-namespace-roots
-  '(("boost". boost-copyright) ("fluid" . fluid-copyright))
+  '(("boost". boost-copyright) ("fluid" . fluid-copyright) ("x" . lw-copyright))
   "An alist of root directory names and associated copyright
       functions from which to deduce C++ namespace names."
   ':type 'alist )
 
+(defun lw-filter-path-elts (pe)
+  (if (equal (car pe) "x")
+      (cons "LW" (remove "include" (cdr pe)))
+    pe))
 (defun my-prepare-source ()
   (let* ((all-path-elts (my-path-elts))
 
@@ -2358,7 +2368,7 @@ is not supplied, the boost copyright is used by default"
   (interactive)
   (let* ((guard (my-include-guard))
          (source-prep (my-prepare-source))
-         (path-elts (car source-prep))
+         (path-elts (lw-filter-path-elts (car source-prep)))
          (copyright (cdr source-prep)))
 
     (bufstart)
@@ -3774,7 +3784,6 @@ configuration to the state it was in beforehand."
                                         ;(require 'lazy-lock)
                                         ;(setq font-lock-support-mode 'lazy-lock-mode)
 
-(setq case-fold-search t)
 (setq read-buffer-completion-ignore-case t)
 (setq read-file-name-completion-ignore-case t)
 (setq completion-ignore-case t)
@@ -3800,7 +3809,6 @@ configuration to the state it was in beforehand."
 
                                         ;(setq compile-command "SCALA_HOME=c:/scala rebuild= z:/bin/scala-jar.sh breathalyzer.scala z:/puzzle/scala/breathalyzer/hbug.in")
                                         ;(setq compile-command "JAVA=z:/isd/cygwin/bin/java SCALA_HOME=c:/scala z:/bin/scala-jar.sh bayestag")
-(load-file "~/elisp/local")
 (require 'saveplace)
 (setq-default save-place t)
 
@@ -4282,7 +4290,8 @@ loaded as such.)"
 ;; only for rectangles
 (cua-mode t)
 
-(global-set-key (kbd "M-/") 'hippie-expand)
+(global-set-key (kbd "C-M-/") 'hippie-expand)
+(global-set-key (kbd "M-/") 'dabbrev-expand)
 (iswitchb-mode 1)
 (icomplete-mode 1)
 (setq file-name-shadow-tty-properties '(invisible t))
@@ -4591,3 +4600,25 @@ loaded as such.)"
 (autoload 'live-mode "live-mode" "live mode" t)
 
 ;(setq auto-mode-alist (cons '("_log" . live_mode) (cons '("\\.log$" . live-mode) auto-mode-alist)))
+(setq case-fold-search t)
+(setq dabbrev-case-fold-search nil)
+(setq dabbrev-case-distinction nil)
+(load-file "~/elisp/local")
+(require 'cmake-mode)
+
+(defadvice yes-or-no-p (around compilation-always-kill activate)
+  "Minor mode for `compile' to always kill existing compilation."
+  (if (and (boundp 'compilation-always-kill-mode) ;; in case `unload-feature'
+           compilation-always-kill-mode
+           (string-match "A compilation process is running; kill it\\?"
+                         prompt))
+      (setq ad-return-value t)
+    ad-do-it))
+
+(defun my-change-log-entry ()
+  "like add-change-log-entry but uses filename of TODO"
+  (interactive)
+  (add-change-log-entry nil "~/x/ChangeLog" t t)
+  )
+
+(global-set-key (kbd "C-x 4 a") 'my-change-log-entry)

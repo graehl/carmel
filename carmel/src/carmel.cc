@@ -38,6 +38,8 @@
 #include <boost/config.hpp>
 #include <graehl/shared/random.hpp>
 
+#define DEBUG_CASCADE 0
+
 using namespace graehl;
 #ifdef USE_OPENFST
 # define OPENFST_VERSION "+openfst"
@@ -771,15 +773,12 @@ struct carmel_main
             result->prunePaths(max_states,keep_path_ratio);
     }
 
-    // return true if # of arcs change
-    bool minimize(WFST *result)
+    void minimize(WFST *result)
     {
-        unsigned n=result->numArcs();
         if ( flags['C'] )
             result->consolidateArcs(!long_opts["consolidate-max"],!long_opts["consolidate-unclamped"]);
         if ( !flags['d'] )
             result->reduce();
-        return result->numArcs()!=n;
     }
 
     struct shrink_monitor
@@ -806,6 +805,7 @@ struct carmel_main
         }
 
     };
+
 
     bool shrink(WFST *result,bool print=true,bool do_prune=true,bool openfst_min=false,char const* end="\n")
     {
@@ -1293,9 +1293,14 @@ main(int argc, char *argv[]){
     istream *pairStream = NULL;
     cm.parse_opts();
     bool gibbs = cm.gibbs;
-    cascade_parameters cascade(cm.real_cascade(),(unsigned)long_opts["debug-cascade"]);
+    bool remember_cascade=cm.real_cascade();
+    cascade_parameters cascade(remember_cascade,(unsigned)long_opts["debug-cascade"]);
 
-    bool trainc=!cascade.trivial;
+    bool trainc=long_opts["train-cascade"];
+#if DEBUG_CASCADE
+    if (remember_cascade)
+      Config::debug() << "Remembering composition cascade result parameters.\n";
+#endif
     if (trainc)
         flags['t']=1;
     if ( flags['t'] )
@@ -1493,23 +1498,18 @@ main(int argc, char *argv[]){
             //        Config::debug() << "result will be going away - take its alphabet\n";
 #endif
             //      }
-
-            //      if (nTarget != -1) {
-            // &&(result !=  &chain[nTarget]) ){
-            // the above condition was removed - why?  because in -i -P or -b mode, the input transducer needs to be deleted.  was a memory leak.  we protect against deleting the chain twice at the end of main by checking nTarget
 #ifdef DEBUGCOMPOSE
             Config::debug() << "deleting result and replacing it with next\n";
 #endif
             if (!first)
                 delete result;
-            //      }
 #endif
             result = next;
 
             int q_states=result->size();
             int q_arcs=result->numArcs();
             if (!flags['q'])
-                Config::log() << "\n\t(" << result->size() << " states / " << result->numArcs() << " arcs";
+              Config::log() << "\n\t(" << result->size() << " states / " << result->numArcs() << " arcs" << std::flush;
 #ifdef  DEBUGCOMPOSE
             Config::debug() <<"stats for the resulting composition for chain[" << i << "]\n";
             Config::debug() << "Number of states in result: " << result->size() << std::endl;
@@ -1527,7 +1527,10 @@ main(int argc, char *argv[]){
             bool finalcompose = i == (r ? 0 : nChain-1);
             bool om=long_opts["minimize-compositions"]>=n_compositions || long_opts["minimize-all-compositions"];
             bool nok=!(kPaths>0 && finalcompose);
-            bool arcs_changed=cm.shrink(result,true,!(kPaths>0 && finalcompose),nok&&om,")");
+#if DEBUG_CASCADE
+            Config::debug() << " (nok="<<nok<<")";
+#endif
+            bool arcs_changed=cm.shrink(result,true,nok,nok&&om,")");
             /*
             bool arcs_changed=cm.minimize(result);
             if (!flags['q'] && (q_states != result->size() || arcs_changed ))

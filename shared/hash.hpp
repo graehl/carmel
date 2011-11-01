@@ -62,7 +62,7 @@ void add_new(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
   typedef stdext::hash_map<K,V,H,E,A> HT;
   stdextp::pair<typename HT::iterator,bool> r=ht.insert(typename HT::value_type(key,value));
   if (!r.second)
-    throw std::runtime_error("Key already existed in oa_hash_map::add_new(key,val)");
+    throw std::runtime_error("Key already existed in add_new(key,val)");
 }
 
 // equivalent to ht[k]=v, may be faster (not likely)
@@ -74,7 +74,6 @@ void set_val(stdext::hash_map<K,V,H,E,A> & ht,K const& key,V const &value=V())
   if (!r.second)
     const_cast<V&>(r.first->second)=value;
 }
-
 
 // adds default val to table if key wasn't found, returns ref to val
 template <class H,class K>

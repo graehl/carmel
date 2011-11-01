@@ -140,7 +140,6 @@ inline typename std::map<K,V>::mapped_type *find_second(const std::map<K,V>& ht,
     return NULL;
 }
 
-
 template <class K,class V>
 inline
 typename map_traits<std::map<K,V> >::insert_return_type insert(std::map<K,V>& ht,const K& first,const V &v=V())

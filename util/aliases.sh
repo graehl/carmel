@@ -1,3 +1,9 @@
+svndry() {
+    svn merge --dry-run -r BASE:HEAD ${1:-.}
+}
+cregress() {
+    find ~/x/RegressionTests -name '*.log' -exec rm {} \;
+}
 sconsd() {
     scons -Q --debug=presub "$@"
 }
@@ -52,16 +58,21 @@ dylds
 
 regress() {
     cd $racer/RegressionTests
+    if ! [ "$*" ] ; then
+        ./run.pl
+    else
     for f in "$@"; do
         pushd $f
         (
             set -e
-            ./run.pl
-            #--no-cleanup --verbose
+            set -x
+            ./run.pl --nocleanup --verbose
+            set +x
         )
         tailn=30 preview $(last1 *.log)
         popd
     done
+    fi
 }
 failed() {
     racb
@@ -106,6 +117,9 @@ crac() {
     cd $racer
     svn commit -m "$*"
 }
+commx() {
+    crac "$@"
+}
 svndiff()
 {
     local diffcontext=${diffcontext:-8}
@@ -127,6 +141,8 @@ drac() {
     svndifflog 5 "$@"
 }
 racm() {
+    (
+        set -e
     racb $1
     shift
     cd $racerbuild
@@ -135,18 +151,24 @@ racm() {
     for t in $tests; do
         ( set -e;
             echo $t
-            $t/Test$t 2>&1 | tee $t/log.Test
+            td=$(dirname $t)
+            tn=$(basename $t)
+            testexe=$td/Test$tn
+            [[ -x $testexe ]] || testexe=$t/Test$t
+            $testexe 2>&1 | tee $td/$tn.log
         )
     done
+    )
 }
 racc() {
     racb $1
     shift
-    if [ "$debug" = 1 ] ; then
-        dbg="-DCMAKE_BUILD_TYPE=Debug"
-    fi
     cd $racerbuild
     ccmake .. $cmarg
+}
+raccm() {
+    racc $1
+    racm "$@"
 }
 ccmake() {
     local d=${1:-..}

@@ -113,24 +113,26 @@ struct TrioNamer {
 #endif
 
 #ifdef OLDCOMPOSEARC
-#define COMPOSEARC do {       \
-        if ( (pDest = find_second(stateMap,triDest)) ) \
-        { states[sourceState].addArc(FSTArc(in, out, *pDest, weight)); \
-        } else {             \
-            add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;    queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    push_back(states); \
-            if ( namedStates ) {      stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter)); \
-            }  }} while(0)
+#define COMPOSEARC do {                                                                                                 \
+    if ( (pDest = find_second(stateMap,triDest)) )                                                                      \
+    { states[sourceState].addArc(FSTArc(in, out, *pDest, weight));                                                      \
+    } else {                                                                                                            \
+      add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;                                \
+      queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    push_back(states);     \
+      if ( namedStates ) {      stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter));             \
+      }  }} while(0)
 #else
 
-    //uses: stateMap[triDest] states, queue, in, out, weight, [namedStates,stateNames,namer,buf]
+//uses: stateMap[triDest] states, queue, in, out, weight, [namedStates,stateNames,namer,buf]
 
-#define COMPOSEARC_GROUP(g) do {                                          \
-        hash_traits<HashTable<TrioKey,int> >::insert_return_type i; \
-        if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) { \
-            trioID.num=numStates();trioID.tri = triDest;queue.push(trioID);push_back(states); \
-            if ( namedStates ) stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter),trioID.num); \
-        } else trioID.num=i.first->second; \
-        states[sourceState].addArc(FSTArc(in, out, trioID.num, weight,g)); DUMPARC(in, out, trioID.num, weight);} while(0)
+#define COMPOSEARC_GROUP(g) do {                                                                                        \
+    hash_traits<HashTable<TrioKey,int> >::insert_return_type i;                                                         \
+    if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) {                      \
+      trioID.num=numStates();trioID.tri=triDest;queue.push(trioID);push_back(states);                                   \
+      if ( namedStates ) stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter),trioID.num);         \
+    } else                                                                                                              \
+      trioID.num=i.first->second;                                                                                       \
+    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight,g)); DUMPARC(in, out, trioID.num, weight);} while(0)
 
 #define COMPOSEARC COMPOSEARC_GROUP(FSTArc::no_group)
 #endif
@@ -141,8 +143,6 @@ WFST::WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates,bool g
     init_index();
     alph[0]=alph[1]=0;
     owner_alph[0]=owner_alph[1]=0;
-    if (false && groups && !cascade.trivial)
-        throw std::runtime_error("Don't set preserve groups (-a) along with --train-cascade; --train-cascade maps original parameters through a more efficient mechanism.");
     set_compose(cascade,a,b,namedStates,groups);
 }
 
