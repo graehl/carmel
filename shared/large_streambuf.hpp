@@ -2,7 +2,6 @@
 #define GRAEHL_SHARED__LARGE_STREAMBUF_HPP
 
 #include <boost/config.hpp>
-#include <boost/config.hpp>
 #include <fstream>
 #include <new>
 
@@ -15,7 +14,7 @@ struct large_streambuf
     char buf[bufsize];
     large_streambuf() {}
     template <class S>
-    large_streambuf(S &s) 
+    large_streambuf(S &s)
     {
         attach_to_stream(s);
     }
@@ -25,7 +24,7 @@ struct large_streambuf
         if (size)
             s.rdbuf()->pubsetbuf(buf,size);
     }
-    
+
 };
 
 // must have at least the lifetime of the stream you construct this with.  for fstream, you must expand the streambuf *before* opening the file, or the pubsetbuf call has no effect.
@@ -33,10 +32,10 @@ struct bigger_streambuf
 {
     std::size_t size;
     void *buf;
-    
+
     bigger_streambuf(std::size_t size) : size(size),buf(size?::operator new(size):0)
     {}
-    
+
     template <class S>
     bigger_streambuf(std::size_t size,S &s) : size(size),buf(size?::operator new(size):0)
     {
@@ -55,7 +54,7 @@ struct bigger_streambuf
     }
 };
 
-    
+
 
 }
 

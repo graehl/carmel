@@ -11,9 +11,25 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
-#include <iosfwd>
+#include <fstream>
 
 namespace graehl {
+
+inline bool contains(boost::program_options::variables_map const& vm,std::string const& key)
+{ return vm.count(key); }
+
+template <class V>
+inline bool maybe_get(boost::program_options::variables_map const& vm,std::string const& key,V &val) {
+  if (vm.count(key)) {
+    val=vm[key].as<V>();
+    return true;
+  }
+  return false;
+}
+
+inline std::string get_string(boost::program_options::variables_map const& vm,std::string const& key) {
+  return vm[key].as<std::string>();
+}
 
 // change --opt-name=x --opt_name=x for all strings x.  danger: probably the argv from int main isn't supposed to be modified?
 inline
@@ -46,6 +62,13 @@ boost::program_options::typed_value<T>*
 defaulted_value(T *v)
 {
   return boost::program_options::value<T>(v)->default_value(*v);
+}
+
+template <class T>
+boost::program_options::typed_value<T>*
+optional_value(T *v)
+{
+  return boost::program_options::value<T>(v);
 }
 
 inline void program_options_fatal(std::string const& msg) {
@@ -246,46 +269,52 @@ struct printable_options_description
         (*i)->print(o,vm,show_flags);
   }
 
-/// parses arguments, then stores/notifies from opts->vm.  returns unparsed
-/// options and positional arguments, but if not empty, throws exception unless
-/// allow_unrecognized_positional is true
-  std::vector<std::string>
-  parse_options(int argc,char **argv,
-                boost::program_options::variables_map &vm,
-                boost::program_options::positional_options_description *po=NULL,
-                bool allow_unrecognized_positional=false,
-                bool allow_unrecognized_opts=false)
-  {
+  typedef std::vector<std::string> unparsed_args;
+
+  // remember to call store(return,vm) and notify(vm)
+  boost::program_options::parsed_options
+  parse_options(int argc,char * const* argv
+                , boost::program_options::positional_options_description *po=NULL
+                , unparsed_args *unparsed_out=NULL
+                , bool allow_unrecognized_positional=false
+                , bool allow_unrecognized_opts=false
+    ) {
     using namespace boost::program_options;
-    using namespace std;
-    command_line_parser cl(argc,argv);
+    command_line_parser cl(argc,const_cast<char **>(argv));
     cl.options(*this);
     if (po)
       cl.positional(*po);
     if (allow_unrecognized_opts)
       cl.allow_unregistered();
     parsed_options parsed=cl.run();
-    vector<string> unparsed=collect_unrecognized(parsed.options,
+    std::vector<std::string> unparsed=collect_unrecognized(parsed.options,
                                                  po ? exclude_positional : include_positional);
     if (!allow_unrecognized_positional) {
       if (!unparsed.empty())
         program_options_fatal("Unrecognized argument: "+unparsed.front());
     }
-    store(parsed,vm);
-    notify(vm);
-    return unparsed;
+    if (unparsed_out)
+      unparsed_out->swap(unparsed);
+    return parsed;
   }
 
+/// parses arguments, then stores/notifies from opts->vm.  returns unparsed
+/// options and positional arguments, but if not empty, throws exception unless
+/// allow_unrecognized_positional is true
   std::vector<std::string>
-  parse_options(int argc,char const*argv[],
+  parse_options(int argc,char const* argv[],
                 boost::program_options::variables_map &vm,
                 boost::program_options::positional_options_description *po=NULL,
                 bool allow_unrecognized_positional=false,
-                bool allow_unrecognized_opts=false)
+                bool allow_unrecognized_opts=false
+    )
   {
-    return parse_options(argc,const_cast<char **>(argv),vm,po
-                         ,allow_unrecognized_positional,allow_unrecognized_opts);
+    unparsed_args r;
+    store_options(parse_options(argc,argv,po,&r,allow_unrecognized_positional,allow_unrecognized_opts),vm);
+    notify(vm);
+    return r;
   }
+
 
 private:
   groups_type groups;

@@ -16,7 +16,7 @@
 */
 
 #ifndef USE_FTOA
-#define USE_FTOA 1
+#define USE_FTOA 0
 #endif
 #ifndef HAVE_STRTOUL
 # define HAVE_STRTOUL 1

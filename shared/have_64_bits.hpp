@@ -1,7 +1,9 @@
 #ifndef GRAEHL_SHARED__HAVE_64_BITS_HPP
 #define GRAEHL_SHARED__HAVE_64_BITS_HPP
-
+// may need to include this first (before anyone else includes stdint.h)
+#ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
+#endif
 //C++ implementations should define these macros only when __STDC_LIMIT_MACROS is defined before is included
 #include <stdint.h>
 
