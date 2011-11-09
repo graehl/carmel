@@ -1,3 +1,34 @@
+rebuildc() {
+    (set -e
+        s2c
+        ssh $chost ". ~/a;HYPERGRAPH_DBG_LEVEL=${HYPERGRAPH_DBG_LEVEL:-$verbose} tests=${tests:-Hypergraph/Empty} racm Debug"
+    )
+}
+ackc() {
+    ack --ignore-dir=3rdParty --pager="less -R" --cpp "$@"
+}
+freshx() {
+    (set -e; racer=~/c/fresh/racerx; cd $racer ; svn update; raccm ${1:-Debug})
+}
+chost=c-jgraehl.languageweaver.com
+phost=pontus.languageweaver.com
+horse=~/c/horse
+horsem() {
+    (
+    export LW64=1
+    export LWB_JOBS=5
+    cd $horse
+    perl GenerateSolution.pl
+    make
+    )
+}
+s2c() {
+    (cd
+        for d in u t elisp x/Hypergraph x/Util ; do
+          sync2 $chost $d
+        done
+    )
+}
 svndry() {
     svn merge --dry-run -r BASE:HEAD ${1:-.}
 }
@@ -21,7 +52,7 @@ case $(uname) in
 esac
 ncpus() {
     if [[ $lwarch = Apple ]] ; then
-        echo 2
+        echo 3
     else
         grep ^processor /proc/cpuinfo | wc -l
     fi
@@ -36,13 +67,13 @@ addld() {
         if ! fgrep "$1" <<< "$DYLD_LIBRARY_PATH" ; then
             export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$1
         else
-            echo "$1 already in DYLD_LIBRARY_PATH"
+            true || echo "$1 already in DYLD_LIBRARY_PATH"
         fi
     else
         if ! fgrep "$1" <<< "$LD_LIBRARY_PATH" ; then
             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$1
         else
-            echo "$1 already in LD_LIBRARY_PATH"
+            true || echo "$1 already in LD_LIBRARY_PATH"
         fi
     fi
 }
@@ -143,8 +174,8 @@ drac() {
 racm() {
     (
         set -e
-    racb $1
-    shift
+    racb ${1:-Debug}
+    shift || true
     cd $racerbuild
     make -j$MAKEPROC VERBOSE=1 "$@"
     if [[ $test ]] ; then make test ; fi
@@ -161,13 +192,13 @@ racm() {
     )
 }
 racc() {
-    racb $1
-    shift
+    racb ${1:-Debug}
+    shift || true
     cd $racerbuild
     ccmake .. $cmarg
 }
 raccm() {
-    racc $1
+    racc ${1:-Debug}
     racm "$@"
 }
 ccmake() {
@@ -176,9 +207,9 @@ ccmake() {
     rm -f CMakeCache.txt $d/CMakeCache.txt
     CFLAGS= CXXFLAGS= CPPFLAGS= LDFLAGS= cmake $d "$@"
 }
-
-chost=c-jgraehl.languageweaver.com
-phost=pontus.languageweaver.com
+runc() {
+    ssh $chost "$*"
+}
 sc() {
     ssh $chost "$@"
 }
@@ -231,54 +262,6 @@ svnln1() {
     svn add $(basename $1)
 }
 
-bl3() {
-    (
-        set -e
-        set -x
-        obasep=${obase:-bl3}
-        for tune in 0 1; do
-            i=1
-            fs=
-            bs=
-            if [[ $tune = 1 ]] ; then
-                tunere='\S+\s+'
-                title="overfit "
-                ot=
-            else
-                tunere=
-                title="held-out "
-                ot=".heldout"
-            fi
-            title+="tune BLEU vs epoch"
-            for f in "$@" ; do
-                pushd $f
-                i=$((i+1))
-                name=$(val1 $f $i)
-                f=$(name1 $f)
-                if [[ $name = $i ]] ; then
-                    if [ -f name ] ; then
-                        name=`cat name`
-                        name=$(echo $name)
-                    fi
-                fi
-                #[ -f epoch.scores ] ||
-                mira-sum-time
-                eot=epoch$ot.bleu
-                perl -ne 'print "$1\t$2\n" if /(\d+)\s+'$tunere'([\d.]+)/' epoch.scores > $eot
-                fs+=" $f/$eot"
-                popd
-                bs+=" $i $name"
-            done
-            obase=$obasep$ot
-            joinleft --npad=1 --padval='""' --nosort $fs > $obase.data
-            tailn=30 preview $obase.data
-            mv $obase.png $obase.png.bak || true
-            showvars_required fs bs
-            title=$title data=$obase.data obase=$obase xlbl="MIRA epoch" graph3 $bs
-        done
-        [[ $noview ]] || firefox $obase{,.heldout}.png
-    )
-}
 
 hemacs() {
     nohup ssh -X hpc-login2.usc.edu 'bash --login -c emacs' &
@@ -290,31 +273,6 @@ to3() {
 to2() {
     #-f set_literal #python 2.7
     2to3 -f idioms  -f apply -f except -f ne -f paren -f raise -f sys_exc -f tuple_params -f xreadlines -f types "$@"
-}
-jens2sh1() {
-    perl -ne '
-require "$ENV{HOME}/t/graehl/util/libgraehl.pl";
-BEGIN{print "set -e\n"}
-END{print $_,"\n" for (@c)}
-$c=$1 if m{<file name="([^"]+)">};
-$c.=" ".escape_shell($1) if m{<arg nr="\d+">(.*?)</arg>};
-push @c,$c if m{</argument-vector>};
-' "$@"
-}
-jens2sh() {
-    local c=`relhome .`
-    local gs=""
-    for f in "$@"; do
-        local g="${f%.out.000}.sh"
-        gs+=" $g"
-        jens2sh1 "$f" > "$g"
-        tohpc "$g"
-        chmod +x "$g"
-    done
-    preview $gs
-    for g in $gs; do
-        echo "cd $c && ./$g"
-    done
 }
 
 ehpc() {
@@ -391,7 +349,7 @@ backupsbmt() {
     mkdir -p $1
     #--exclude Makefile\* --exclude auto\* --exclude config\*
     #--size-only
-    rsync --modify-window=0 --verbose --max-size=500K  --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+    rsync --modify-window=1 --verbose --max-size=500K  --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
     #-lprt
 #  cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
@@ -1381,10 +1339,13 @@ perlf() {
 alias gc=gnuclientw
 
 
-VGARGS="--num-callers=16  --leak-resolution=high --suppressions=$HOME/isd/hints/valgrind.supp"
+VGARGS="--num-callers=16  --leak-resolution=high --suppressions=$HOME/u/valgrind.supp"
 function vg() {
     local darg=
+    local varg=
+    local suparg=
     [ "$debug" ] && darg="--db-attach=yes"
+    [ "$vgdb" ] && varg="--vgdb=full"
     [ "$sup" ] && suparg="--gen-suppressions=yes"
     local lc=
     if [ "$noleak" ] ; then
@@ -1397,7 +1358,7 @@ function vg() {
         reacharg="--show-reachable=yes"
     fi
     set -x
-    GLIBCXX_FORCE_NEW=1 valgrind $darg  $suparg --leak-check=$lc $reacharg --tool=memcheck $VGARGS "$@"
+    GLIBCXX_FORCE_NEW=1 valgrind $darg $varg $suparg --leak-check=$lc $reacharg --tool=memcheck $VGARGS "$@"
     set +x
 }
 vgf() {
@@ -1563,8 +1524,9 @@ getattr() {
 #,qsh.pl,checkjobs.pl
 alias commh="pdq ~/isd/hints;cvs update && comml;popd"
 alias sb=". ~/.bashrc"
-alias sa=". ~/isd/hints/aliases.sh"
-alias sl=". ~/isd/hints/bashlib.sh"
+alias sa=". ~/u/aliases.sh"
+alias sbl=". ~/u/bashlib.sh"
+alias sl=". ~/local.sh"
 export PBSQUEUE=isi
 alias hrsgodec="pdq ~/ql;hrs godec ql;popd"
 
@@ -3477,7 +3439,8 @@ getcert() {
 openssl s_client -connect ${REMHOST}:${REMPORT} 2>&1 |\
 sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
 }
-showprompt() {
+showprompt()
+{
     echo $PS1 | less -E
     echo $PROMPT_COMMAND | less -E
 }

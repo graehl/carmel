@@ -39,7 +39,7 @@ struct argc_argv : private std::stringbuf
 {
     typedef char const*arg_t;
     typedef arg_t *argv_t;
-    
+
     std::vector<char const*> argvptrs;
     int argc() const
     {
@@ -49,19 +49,19 @@ struct argc_argv : private std::stringbuf
     {
         return argc() ? (argv_t)&(argvptrs[0]) : NULL;
     }
-    bool isspace(char c) 
+    bool isspace(char c)
     {
         //    return std::isspace(c);
         return c==' ' || c=='\n' || c=='\t';
     }
 
-    void throw_escape_eof() const 
+    void throw_escape_eof() const
     {
         throw std::runtime_error("Error parsing: escape char \\ followed by end of stream (expect some character)");
     }
-    
+
     // note: str is from stringbuf.
-    void parse(const std::string &cmdline,char const* progname="ARGV") 
+    void parse(const std::string &cmdline,char const* progname="ARGV")
     {
         argvptrs.clear();
         argvptrs.push_back(progname);
@@ -69,7 +69,7 @@ struct argc_argv : private std::stringbuf
         str(cmdline+" ");  // we'll need space for terminating final arg.
 #else
         str(cmdline);
-        seekoff(0,ios_base::end,ios_base::out);        
+        seekoff(0,ios_base::end,ios_base::out);
         sputc((char)' ');
 #endif
         char *i=gptr(),*end=egptr();
@@ -111,8 +111,8 @@ struct argc_argv : private std::stringbuf
         }
         *o++=0;
     }
-    argc_argv() {}
-    explicit argc_argv(const std::string &cmdline,char const* progname="ARGV") 
+  argc_argv() : argvptrs() {}
+    explicit argc_argv(const std::string &cmdline,char const* progname="ARGV")
     {
         parse(cmdline,progname);
     }
@@ -124,26 +124,26 @@ char const* test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
 BOOST_AUTO_TEST_CASE( TEST_command_line )
 {
     using namespace std;
-    {        
+    {
         string opts="ba a \"b c\" 'd' ' e f ' 123";
         argc_argv args(opts);
-        BOOST_CHECK_EQUAL(args.argc(),7);        
+        BOOST_CHECK_EQUAL(args.argc(),7);
         for (unsigned i=1;i<args.argc();++i) {
             CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
-        }    
+        }
     }
-    {        
+    {
         string opts=" ba a \"\\b c\" 'd' ' e f '123 ";
         argc_argv args(opts);
         BOOST_CHECK_EQUAL(args.argc(),7);
         for (unsigned i=1;i<args.argc();++i) {
             CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
-        }    
+        }
     }
     {
         argc_argv args("");
         BOOST_CHECK_EQUAL(args.argc(),1);
-    }    
+    }
 }
 #endif
 

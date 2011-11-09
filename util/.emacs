@@ -472,7 +472,7 @@ No more \"End of file during parsing\" horrors!"
 (load-file "~/elisp/tempo.el")
                                         ;(load-file "~/elisp/re-builder.el")
                                         ;(load-file "~/elisp/live-mode.el")
-(require 're-builder+)
+;(require 're-builder+)
 (autoload 'html-helper-mode "html-helper-mode" "Yay HTML" t)
 (setq auto-mode-alist (cons '("\\.html$" . html-helper-mode) auto-mode-alist))
 
@@ -2144,7 +2144,7 @@ and initial semicolons."
           ("[Jj]amrules$" . jam-mode)
           ("\\..pp$" . c++-mode)
           ("\\.jerr$" . my-jam-debug-mode)
-          ("\\.m\\'" . matlab-mode)
+          ("\\.m\\'" . octave-mode)
           ("\\.rst$" . rst-mode)
           )
        auto-mode-alist))
@@ -4286,9 +4286,9 @@ loaded as such.)"
 (define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
 (define-key global-map (kbd "C-c C-s") 'occur)
 
-(setq cua-enable-cua-keys nil)
+;(setq cua-enable-cua-keys nil)
 ;; only for rectangles
-(cua-mode t)
+;(cua-mode t)
 
 (global-set-key (kbd "C-M-/") 'hippie-expand)
 (global-set-key (kbd "M-/") 'dabbrev-expand)
@@ -4622,3 +4622,23 @@ loaded as such.)"
   )
 
 (global-set-key (kbd "C-x 4 a") 'my-change-log-entry)
+
+(defun re-cpp-mode ()
+  "text-mode then c++-mode"
+  (interactive)
+  (text-mode)
+  (c++-mode))
+
+(defun indent-cpp-buffer ()
+  "text-mode then c++-mode"
+  (interactive)
+  (re-cpp-mode)
+  (indent-buffer))
+
+(global-set-key (kbd "C-c i") 'indent-buffer)
+(global-set-key (kbd "C-c \\") 'indent-cpp-buffer)
+
+(require 'color-theme-solarized)
+;(load-file "~/elisp/themes/color-theme-solarized.el")
+(color-theme-solarized-dark)
+;(color-theme-solarized-light)

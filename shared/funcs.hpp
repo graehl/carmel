@@ -124,6 +124,21 @@ void sort(Cont &cont,Order order)
     std::sort(cont.begin(),cont.end(),order);
 }
 
+
+template <class Cont> inline
+void sort(Cont &cont)
+{
+    std::sort(cont.begin(),cont.end());
+}
+
+template <class Cont> inline
+void unique(Cont &cont)
+{
+    cont.erase(
+        std::unique(cont.begin(),cont.end()),
+        cont.end());
+}
+
 template <class Cont,class Order> inline
 void unique(Cont &cont,Order order)
 {
@@ -139,24 +154,10 @@ void sort_unique(Cont &cont,Order order)
     unique(cont,order);
 }
 
-template <class Cont> inline
-void sort(Cont &cont)
-{
-    std::sort(cont.begin(),cont.end());
-}
-
 template <class Cont,class Func> inline
 void for_each(Cont &cont,Func func)
 {
     std::for_each(cont.begin(),cont.end(),func);
-}
-
-template <class Cont> inline
-void unique(Cont &cont)
-{
-    cont.erase(
-        std::unique(cont.begin(),cont.end()),
-        cont.end());
 }
 
 template <class Cont> inline

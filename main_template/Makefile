@@ -4,8 +4,10 @@ PROGS=mate
 
 mate_LIB=$(BOOST_OPTIONS_LIB)
 mate_NOTEST=1
-#mate_NOSTATIC=1
-mate_SRC=mate.cpp in_memory_token_storage.cpp
+mate_NOSTATIC=1
+mate_SRC=mate.cpp
+
+#in_memory_token_storage.cpp
 #logmath_io.cpp
 
 SBMT=$(TRUNK)/sbmt_decoder

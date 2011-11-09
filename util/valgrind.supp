@@ -1,0 +1,283 @@
+# Format of this file is:
+# {
+#     name_of_suppression
+#     skin_name:supp_kind
+#     (optional extra info for some suppression types)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+#
+# For Memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8
+#     Free Addr1 Addr2 Addr4 Addr8 Leak
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+#     if Free: name of free-ing fn)
+{
+   malloc/__newlocale(Leak)
+   Addrcheck,Memcheck:Leak
+   fun:malloc
+   fun:__newlocale
+   fun:_ZNSt6locale5facet18_S_create_c_localeERP15__locale_structPKcS2_
+}
+{
+   malloc/realloc/argz_append(Leak)
+   Addrcheck,Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:argz_append
+}
+{
+   string-to-stream(Leak)
+   Addrcheck,Memcheck:Leak
+   fun:__cxa_get_globals
+   fun:_ZSt18uncaught_exceptionv
+   fun:_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E
+}
+{
+   string-to-stream(Leak)
+   Addrcheck,Memcheck:Leak
+   fun:calloc
+   fun:pthread_setspecific
+   fun:__cxa_get_globals
+   fun:_ZSt18uncaught_exceptionv
+   fun:_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E
+}
+{
+   uncaught_excpetion(Leak)
+   Addrcheck,Memcheck:Leak
+   fun:malloc
+   fun:__cxa_get_globals
+   fun:_ZSt18uncaught_exceptionv
+}
+{
+   debug_print_main
+   Memcheck:Cond
+   fun:_ZNSo9_M_insertEPKci
+   fun:_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+   fun:main
+}
+{
+  debug_print_main2
+   Memcheck:Cond
+   fun:_ZNSo9_M_insertIlEERSoT_
+   fun:_ZNSolsEi
+   fun:main
+}
+{
+   openfst
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
+}
+{
+   openfst2
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+}
+
+{
+   openfst3
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
+   obj:/usr/lib/libstdc++.so.6.0.8
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_Z41__static_initialization_and_destruction_0ii
+   obj:/nfs/topaz/graehl/isd/lennon/bin/carmel
+   obj:/nfs/topaz/graehl/isd/lennon/bin/carmel
+   fun:__libc_csu_init
+   fun:__libc_start_main
+}
+{
+   openfst4
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_ZNSt8_Rb_treeISsSt4pairIKSs15FlagDescriptionIxEESt10_Select1stIS4_ESt4lessISsESaIS4_EE9_M_insertEPSt18_Rb_tree_node_baseSC_RKS4_
+   fun:_ZNSt8_Rb_treeISsSt4pairIKSs15FlagDescriptionIxEESt10_Select1stIS4_ESt4lessISsESaIS4_EE13insert_uniqueERKS4_
+   fun:_Z41__static_initialization_and_destruction_0ii
+   obj:/nfs/topaz/graehl/isd/lennon/bin/carmel
+   obj:/nfs/topaz/graehl/isd/lennon/bin/carmel
+   fun:__libc_csu_init
+   fun:__libc_start_main
+}
+
+{
+   dl_1
+   Memcheck:Cond
+   fun:index
+   fun:expand_dynamic_string_token
+   fun:_dl_map_object
+   fun:map_doit
+   fun:_dl_catch_error
+   fun:do_preload
+}
+
+{
+   dl_reloc
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+}
+
+
+{
+   po1
+   Memcheck:Addr8
+   fun:__GI_strlen
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+
+{
+   po2
+   Memcheck:Cond
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   obj:/usr/lib/libstdc++.so.6.0.13
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+
+
+{
+  po3
+   Memcheck:Cond
+   fun:__GI_strlen
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+
+{
+po4
+   Memcheck:Cond
+   obj:/usr/lib/libstdc++.so.6.0.13
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+{
+ po5
+   Memcheck:Cond
+   obj:/usr/lib/libstdc++.so.6.0.13
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+{
+po6
+   Memcheck:Cond
+   fun:memcpy
+   obj:/usr/lib/libstdc++.so.6.0.13
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+{
+pocgen3
+   Memcheck:Cond
+   ...
+   ...
+   ...
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+{
+pocgen2
+   Memcheck:Cond
+   ...
+   ...
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+{
+po8gen3
+   Memcheck:Value8
+   ...
+   ...
+   ...
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+{
+po8gen2
+   Memcheck:Addr8
+   ...
+   ...
+   fun:_ZN5boost15program_options6detail27common_config_file_iterator10add_optionEPKc
+}
+
+{
+srilm1
+   Memcheck:Addr8
+   ...
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+{
+srilm2
+   Memcheck:Addr8
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+{
+srilm3
+   Memcheck:Addr8
+   ...
+   ...
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+
+{
+csrilm1
+   Memcheck:Cond
+   ...
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+{
+csrilm2
+   Memcheck:Cond
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+{
+csrilm3
+   Memcheck:Cond
+   ...
+   ...
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+
+{
+vsrilm1
+   Memcheck:Value8
+   ...
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+{
+vsrilm2
+   Memcheck:Value8
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
+{
+vsrilm3
+   Memcheck:Value8
+   ...
+   ...
+   ...
+   ...
+   fun:_ZN5Vocab7addWordEPKc
+}
