@@ -98,8 +98,6 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 }
 
 
-
-
 // copyable because it's a shared ptr to an ostream, and holds shared ptr to a larger buffer used by it (for non-.gz file input/output) - make sure file is flushed before member buffer is destroyed, though!
 template <class Stream>
 struct file_arg

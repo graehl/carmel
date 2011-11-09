@@ -1,15 +1,12 @@
 #ifndef GRAEHL_SHARED__MAIN_HPP
 #define GRAEHL_SHARED__MAIN_HPP
-// some main() boilerplate w/ microsoft leak detection, which is obsolete w/ valgrind
 
-#include <graehl/shared/config.h>
+// main() boilerplate
+
 #include <graehl/shared/stream_util.hpp>
 #include <locale>
 #include <iostream>
 
-#ifdef _MSC_VER
-# include <graehl/shared/memleak.hpp>
-#endif
 
 namespace graehl {
 
@@ -18,46 +15,31 @@ inline void default_locale()
     std::locale::global(std::locale(""));
 }
 
-#ifdef SYNC_STDIO
-# define UNSYNC_STDIO
+#ifndef UNSYNC_STDIO
+# define UNSYNC_STDIO 1
 #else
+
+#ifndef DEFAULT_LOCALE
+# define DEFAULT_LOCALE 1
+#endif
+
+#if UNSYNC_STDIO
 # define UNSYNC_STDIO graehl::unsync_cout()
-#endif
-
-#define MAIN_DECL int MAINDECL main(int argc, char *argv[])
-
-#ifdef _MSC_VER
-#define MAINDECL __cdecl
 #else
-#define MAINDECL
+# define UNSYNC_STDIO
 #endif
 
-struct MainGuard {
-#ifdef _MSC_VER
-  INITLEAK_DECL
+#if DEFAULT_LOCALE
+# define NO_LOCALE default_locale()
+#else
+# define NO_LOCALE
 #endif
-  unsigned i;
-  MainGuard() : i(0) {
-#ifdef _MSC_VER
-        INITLEAK_DO;
-#endif 
-        unsync_cout();
-//        default_locale();
-    }
-  void checkpoint_memleak() {
-#ifdef _MSC_VER      
-    CHECKLEAK(i);
-#endif 
-    ++i;
-  }
-    ~MainGuard() {
-    }
-};
 
-#define MAIN_BEGIN MAIN_DECL { graehl::MainGuard _mg;   UNSYNC_STDIO;
+#define MAIN_DECL int main(int argc, char *argv[])
+
+#define MAIN_BEGIN MAIN_DECL { UNSYNC_STDIO; NO_LOCALE;
 
 #define MAIN_END }
-
 
 }//graehl
 
