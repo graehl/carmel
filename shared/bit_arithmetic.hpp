@@ -48,57 +48,57 @@ uint64_t bit_rotate_right_64(uint64_t x,uint32_t k)
 
 // bit i=0 = lsb
 template <class I, class J>
-inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits,J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
   I mask=(1<<i);
   bits|=mask;
 }
 
-template <class I, class J>
-inline void set_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+template <class I>
+inline void set_mask(I &bits,I mask) {
   bits|=mask;
 }
 
 template <class I, class J>
-inline void reset(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+inline void reset(typename boost::enable_if<boost::is_integral<I> >::type &bits,J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
   I mask=(1<<i);
   bits&=~mask;
 }
 
-template <class I, class J>
-inline void reset_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+template <class I>
+inline void reset_mask(I &bits,I mask) {
   bits&=~mask;
 }
 
 template <class I, class J>
-inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i,bool to) {
+inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits,J i,bool to) {
   assert(i<(CHAR_BIT*sizeof(I)));
   I mask=(1<<i);
-  if (to) set_mask(bits,mask) else reset_mask(bits,mask);
+  if (to) set_mask(bits,mask); else reset_mask(bits,mask);
+}
+
+template <class I>
+inline void set_mask(I &bits,I mask,bool to) {
+  if (to) set_mask(bits,mask); else reset_mask(bits,mask);
 }
 
 template <class I, class J>
-inline void set_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask,bool to) {
-  if (to) set_mask(bits,mask) else reset_mask(bits,mask);
-}
-
-template <class I, class J>
-inline bool test(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+inline bool test(typename boost::enable_if<boost::is_integral<I> >::type bits,J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
   I mask=(1<<i);
   return mask&bits;
 }
 
 // if any of mask
-template <class I, class J>
-inline bool test_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+template <class I>
+inline bool test_mask(typename boost::enable_if<boost::is_integral<I> >::type bits,I mask) {
   return mask&bits;
 }
 
 // return true if was already set, then set.
 template <class I, class J>
-inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type &bits,J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
   I mask=(1<<i);
   bool r=mask&bits;
@@ -106,15 +106,15 @@ inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type &bits,
   return r;
 }
 
-template <class I, class J>
+template <class I>
 inline bool latch_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
   bool r=mask&bits;
   bits|=mask;
   return r;
 }
 
-template <class I, class J>
-inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+template <class I>
+inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::type bits,I mask) {
   return (mask&bits)==mask;
 }
 

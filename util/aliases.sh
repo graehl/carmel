@@ -1,3 +1,10 @@
+lnshared() {
+    forall lnshared1 "$@"
+}
+lnshared1() {
+    local f=~/t/graehl/shared/"$1"
+    [ -r $f ] && ln $f ~$racer/3rdParty/graehl/shared/
+}
 lnhg() {
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
 }
