@@ -1,3 +1,6 @@
+lnhg() {
+    ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
+}
 rebuildc() {
     (set -e
         s2c
@@ -150,6 +153,12 @@ crac() {
 }
 commx() {
     crac "$@"
+}
+svndifflines()
+{
+    diffcontext=0
+    echo changed wc -l:
+    svndiff | wc -l
 }
 svndiff()
 {

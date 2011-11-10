@@ -92,15 +92,17 @@ struct main {
     bool has_max_ins() const {
       return max_ins>=0;
     }
-    void allow_ins(int max_ins_=-1) {
+    void allow_ins(bool positional=true,int max_ins_=-1) {
       max_ins=max_ins_;
+      positional_in=positional;
     }
     void allow_in(bool positional=true) {
-      add_in_file=positional_in=true;
+      add_in_file=true;
+      positional_in=positional;
     }
-    void require_ins(int max_ins_=-1) {
+    void require_ins(bool positional=true,int max_ins_=-1) {
+      allow_ins(positional,max_ins_);
       min_ins=1;
-      max_ins=max_ins_;
     }
     void validate(in_files const& ins) const {
       validate(ins.size());
@@ -127,7 +129,7 @@ struct main {
   bool help;
   ostream_arg log_file,out_file;
   istream_arg in_file,config_file;
-  in_files ins;
+  in_files ins; // this will also have the single in_file if you bopt.allow_in()
 
   std::string cmdname,cmdline_str;
   std::ostream *log_stream;
@@ -224,7 +226,11 @@ struct main {
 
   void validate_parameters_base()
   {
-    bopt.validate(ins);
+    if (bopt.add_ins())
+      bopt.validate(ins);
+    if (in_file && ins.empty())
+      ins.push_back(in_file);
+
     log_stream=log_file.get();
     if (!log_stream)
       log_stream=&std::cerr;
@@ -367,25 +373,37 @@ struct main {
       run();
     }
     catch(std::bad_alloc& e) {
-      return carp("ran out of memory\nTry descreasing -m or -M, and setting an accurate -P if you're using initial parameters.");
+      return carpexcept("ran out of memory\nTry descreasing -m or -M, and setting an accurate -P if you're using initial parameters.");
     }
     catch(std::exception& e) {
-      return carp(e.what());
+      return carpexcept(e.what());
     }
     catch(char const* e) {
-      return carp(e);
+      return carpexcept(e);
     }
     catch(...) {
-      return carp("Exception of unknown type!");
+      return carpexcept("Exception of unknown type!");
     }
     return 0;
   }
 
+  // for some reason i see segfault with log() when exiting from main. race condition? weird.
+  template <class C>
+  int carpexcept(C const& c) const
+  {
+    std::cerr << "\nERROR: " << c << "\n\n" << "Try '" << cmdname << " -h' for documentation\n";
+    return 1;
+  }
   template <class C>
   int carp(C const& c) const
   {
     log() << "\nERROR: " << c << "\n\n" << "Try '" << cmdname << " -h' for documentation\n";
     return 1;
+  }
+  template <class C>
+  void warn(C const& c) const
+  {
+    log() << "\nWARNING: " << c << std::endl;
   }
 
   virtual ~main() {}

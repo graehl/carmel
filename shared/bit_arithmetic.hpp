@@ -17,7 +17,6 @@ using boost::uint16_t;
 using boost::uint32_t;
 
 
-
 /// while this is covered by the complicated generic thing below, I want to be sure the hash fn. uses the right code
 inline
 uint32_t bit_rotate_left(uint32_t x,uint32_t k)
@@ -30,7 +29,6 @@ uint32_t bit_rotate_right(uint32_t x,uint32_t k)
 {
     return (x>>k) | (x<<(32-k));
 }
-
 
 #ifndef BOOST_NO_INT64_T
 using boost::uint64_t;
@@ -47,6 +45,78 @@ uint64_t bit_rotate_right_64(uint64_t x,uint32_t k)
 }
 
 #endif
+
+// bit i=0 = lsb
+template <class I, class J>
+inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+  assert(i<(CHAR_BIT*sizeof(I)));
+  I mask=(1<<i);
+  bits|=mask;
+}
+
+template <class I, class J>
+inline void set_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+  bits|=mask;
+}
+
+template <class I, class J>
+inline void reset(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+  assert(i<(CHAR_BIT*sizeof(I)));
+  I mask=(1<<i);
+  bits&=~mask;
+}
+
+template <class I, class J>
+inline void reset_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+  bits&=~mask;
+}
+
+template <class I, class J>
+inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i,bool to) {
+  assert(i<(CHAR_BIT*sizeof(I)));
+  I mask=(1<<i);
+  if (to) set_mask(bits,mask) else reset_mask(bits,mask);
+}
+
+template <class I, class J>
+inline void set_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask,bool to) {
+  if (to) set_mask(bits,mask) else reset_mask(bits,mask);
+}
+
+template <class I, class J>
+inline bool test(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+  assert(i<(CHAR_BIT*sizeof(I)));
+  I mask=(1<<i);
+  return mask&bits;
+}
+
+// if any of mask
+template <class I, class J>
+inline bool test_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+  return mask&bits;
+}
+
+// return true if was already set, then set.
+template <class I, class J>
+inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type &bits,unsigned i) {
+  assert(i<(CHAR_BIT*sizeof(I)));
+  I mask=(1<<i);
+  bool r=mask&bits;
+  bits|=mask;
+  return r;
+}
+
+template <class I, class J>
+inline bool latch_mask(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+  bool r=mask&bits;
+  bits|=mask;
+  return r;
+}
+
+template <class I, class J>
+inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::type &bits,I mask) {
+  return (mask&bits)==mask;
+}
 
 //FIXME: make sure this is as fast as macro version - supposed to compile (optimized) to native rotate instruction
 //inline std::size_t bit_rotate_left(std::size_t x, std::size_t k)
