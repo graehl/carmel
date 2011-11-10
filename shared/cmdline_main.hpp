@@ -9,16 +9,25 @@
    then INT_MAIN(yourmain)
 */
 
+#ifndef GRAEHL_CONFIG_FILE
 #define GRAEHL_CONFIG_FILE "config-file"
+#endif
+#ifndef GRAEHL_IN_FILE
 #define GRAEHL_IN_FILE "in-file"
+#endif
+#ifndef GRAEHL_OUT_FILE
 #define GRAEHL_OUT_FILE "out-file"
+#endif
+#ifndef GRAEHL_LOG_FILE
 #define GRAEHL_LOG_FILE "log-file"
+#endif
 
 #ifndef GRAEHL_DEBUGPRINT
 # define GRAEHL_DEBUGPRINT 0
 #endif
 
 #include <graehl/shared/program_options.hpp>
+#include <graehl/shared/itoa.hpp>
 #include <graehl/shared/command_line.hpp>
 #include <graehl/shared/fileargs.hpp>
 #include <graehl/shared/teestream.hpp>
@@ -58,11 +67,68 @@ struct main {
     return version+compiled;
   }
 
+  typedef std::vector<istream_arg> in_files;
+  struct base_options {
+    char const* positional_help() const {
+      return positional_in?"; positional args ok too":"";
+    }
+    std::string input_help() const {
+      std::ostringstream s;
+      if (add_ins()) {
+        s<<"Multiple input files (- for STDIN) at least "<<min_ins;
+        if (has_max_ins())
+          s<<" and at most "+itos(max_ins);
+      } else if (add_in_file)
+        s<<"Input file (- for STDIN)";
+      else
+        return "No input file options";
+      s<<positional_help();
+      return s.str();
+    }
+
+    bool add_ins() const {
+      return min_ins || max_ins;
+    }
+    bool has_max_ins() const {
+      return max_ins>=0;
+    }
+    void allow_ins(int max_ins_=-1) {
+      max_ins=max_ins_;
+    }
+    void allow_in(bool positional=true) {
+      add_in_file=positional_in=true;
+    }
+    void require_ins(int max_ins_=-1) {
+      min_ins=1;
+      max_ins=max_ins_;
+    }
+    void validate(in_files const& ins) const {
+      validate(ins.size());
+    }
+    void validate(int n) const {
+      if (has_max_ins() && n>max_ins)
+        throw std::runtime_error("Too many input files (max="+itos(max_ins)+", had "+itos(n)+")");
+      if (n<min_ins)
+        throw std::runtime_error("Too few input files (min="+itos(min_ins)+", had "+itos(n)+")");
+    }
+
+    int min_ins,max_ins; //multiple inputs 0,1,... if max>min
+    bool add_in_file,add_out_file,add_log_file,add_config_file,add_help,add_debug_level;
+    bool positional_in,positional_out;
+    base_options() {
+      positional_out=positional_in=add_in_file=false;
+      add_log_file=add_help=add_out_file=add_config_file=add_debug_level=true;
+      min_ins=max_ins=0;
+    }
+  };
+  base_options bopt;
 
   int debug_lvl;
   bool help;
   ostream_arg log_file,out_file;
   istream_arg in_file,config_file;
+  in_files ins;
+
   std::string cmdname,cmdline_str;
   std::ostream *log_stream;
   std::auto_ptr<teebuf> teebufptr;
@@ -101,11 +167,6 @@ struct main {
   }
 
   virtual void validate_parameters_extra() {}
-
-  virtual void add_options_base(OD &all)
-  {
-    add_options_base(general,true,true);
-  }
 
   // this should only be called once.  (called after set_defaults)
   virtual void add_options(OD &all)
@@ -163,6 +224,7 @@ struct main {
 
   void validate_parameters_base()
   {
+    bopt.validate(ins);
     log_stream=log_file.get();
     if (!log_stream)
       log_stream=&std::cerr;
@@ -178,41 +240,56 @@ struct main {
 
   }
 
-  void add_options_base(OD &all,bool add_in_file,bool add_out_file=true,bool use_config_file=true)
+  void add_options_base(OD &all)
   {
-    using boost::program_options::bool_switch;
 
+    if (bopt.add_help)
+      all.add_options()
+        ("help,h", boost::program_options::bool_switch(&help),
+         "show usage/documentation")
+        ;
 
-    all.add_options()
-      ("help,h", bool_switch(&help),
-       "show usage/documentation")
-      ;
-
-    if (add_out_file)
+    if (bopt.add_out_file) {
       all.add_options()
         (GRAEHL_OUT_FILE",o",defaulted_value(&out_file),
          "Output here (instead of STDOUT)");
-
-    if (add_in_file) {
-      all.add_options()
-        (GRAEHL_IN_FILE",i",defaulted_value(&in_file),
-         "Output here (instead of STDIN)");
+      if (bopt.positional_out)
+        output_positional();
     }
 
-    if (use_config_file)
+    if (bopt.add_ins()) {
+      all.add_options()
+        (GRAEHL_IN_FILE",i",optional_value(&ins)->multitoken(),
+         bopt.input_help()
+          )
+        ;
+      if (bopt.positional_in)
+        input_positional(bopt.max_ins);
+    } else if (bopt.add_in_file) {
+      all.add_options()
+        (GRAEHL_IN_FILE",i",defaulted_value(&in_file),
+         bopt.input_help());
+      if (bopt.positional_in)
+        input_positional();
+    }
+
+    if (bopt.add_config_file)
       all.add_options()
         (GRAEHL_CONFIG_FILE,optional_value(&config_file),
          "load boost program options config from file");
 
-    all.add_options()
-      (GRAEHL_LOG_FILE",l",defaulted_value(&log_file),
-       "Send logs messages here (as well as to STDERR)");
+    if (bopt.add_log_file)
+      all.add_options()
+        (GRAEHL_LOG_FILE",l",defaulted_value(&log_file),
+         "Send logs messages here (as well as to STDERR)");
+
 #if GRAEHL_DEBUGPRINT
-    all.add_options()
-      ("debug-level,d",defaulted_value(&debug_lvl),
-       "Debugging output level (0 = off, 0xFFFF = max)")
+    if (bopt.add_debug_level)
+      all.add_options()
+        ("debug-level,d",defaulted_value(&debug_lvl),
+         "Debugging output level (0 = off, 0xFFFF = max)")
 #endif
-      ;
+        ;
 
   }
 
@@ -222,8 +299,8 @@ struct main {
   void add_positional(std::string const& name,int n=1) {
     positional.add(name.c_str(),n);
   }
-  void input_positional() {
-    positional.add("in-file",1);
+  void input_positional(int n=1) {
+    positional.add(GRAEHL_IN_FILE,n);
   }
   void output_positional() {
     positional.add("out-file",1);

@@ -8,7 +8,7 @@ ackc() {
     ack --ignore-dir=3rdParty --pager="less -R" --cpp "$@"
 }
 freshx() {
-    (set -e; racer=~/c/fresh/racerx; cd $racer ; svn update; raccm ${1:-Debug})
+    (set -e; racer=~/c/fresh/racerx; cd $racer ; [ "$noup" ] || svn update; raccm ${1:-Debug})
 }
 chost=c-jgraehl.languageweaver.com
 phost=pontus.languageweaver.com

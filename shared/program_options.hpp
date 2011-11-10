@@ -12,6 +12,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <fstream>
+#include <boost/pool/object_pool.hpp>
 
 namespace graehl {
 
@@ -92,6 +93,14 @@ void must_complete_read(I &in,std::string const& msg="Couldn't parse")
     program_options_fatal(msg + " - got extra char: " + std::string(c,1));
 }
 
+template <class Ostream,class C>
+void print_multitoken(Ostream &o,C const& v) {
+  o<<"[";
+  for (typename C::const_iterator i=v.begin(),e=v.end();i!=e;++i)
+    o<<' '<<*i;
+  o<<" ]";
+}
+
 template <class Ostream>
 struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
 {
@@ -103,6 +112,15 @@ struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
     void operator()(Ostream &o,boost::any const& t) const
     {
       o << *boost::any_cast<T const>(&t);
+    }
+  };
+
+  template <class T>
+  struct typed_print<std::vector<T> >
+  {
+    void operator()(Ostream &o,boost::any const& t) const
+    {
+      print_multitoken(o,*boost::any_cast<std::vector<T> const>(&t));
     }
   };
 
@@ -137,7 +155,7 @@ struct any_printer  : public boost::function<void (Ostream &,boost::any const&)>
 // method to value_semantic
 template <class Ostream>
 struct printable_options_description
-  : public boost::program_options::options_description
+  : boost::program_options::options_description
 {
   typedef printable_options_description<Ostream> self_type;
   typedef boost::program_options::options_description options_description;
@@ -171,6 +189,7 @@ struct printable_options_description
   printable_options_description(unsigned line_length = default_linewrap) :
     options_description(line_length) { init(); }
 
+  typedef boost::object_pool<std::string> string_pool;
   printable_options_description(const std::string& caption,
                                 unsigned line_length = default_linewrap)
     : options_description(caption,line_length), caption(caption) { init(); }
@@ -178,10 +197,22 @@ struct printable_options_description
   void init() {
     n_this_level=0;
     n_nonempty_groups=0;
+    descs.reset(new string_pool());
   }
 
   self_type &add_options()
   { return *this; }
+
+
+  boost::shared_ptr<string_pool> descs; // because opts lib only takes char *, hold them here.
+  template <class T,class C>
+  self_type &
+  operator()(char const* name,
+             boost::program_options::typed_value<T,C> *val,
+             std::string const& description)
+  {
+    return (*this)(name,val,descs->construct(description)->c_str());
+  }
 
   std::size_t n_this_level,n_nonempty_groups;
   template <class T,class C>
@@ -195,6 +226,7 @@ struct printable_options_description
     pr_options.push_back(opt);
     return *this;
   }
+
 
   self_type&
   add(self_type const& desc)
@@ -302,7 +334,7 @@ struct printable_options_description
       cl.allow_unregistered();
     parsed_options parsed=cl.run();
     std::vector<std::string> unparsed=collect_unrecognized(parsed.options,
-                                                 po ? exclude_positional : include_positional);
+                                                           po ? exclude_positional : include_positional);
     if (!allow_unrecognized_positional) {
       if (!unparsed.empty())
         program_options_fatal("Unrecognized argument: "+unparsed.front());
