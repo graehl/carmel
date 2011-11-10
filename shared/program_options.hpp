@@ -144,7 +144,6 @@ struct printable_options_description
   typedef boost::program_options::option_description option_description;
   typedef boost::shared_ptr<self_type> group_type;
   typedef std::vector<group_type > groups_type;
-
   struct printable_option
   {
     typedef boost::shared_ptr<option_description> OD;
@@ -170,21 +169,28 @@ struct printable_options_description
   typedef std::vector<printable_option > options_type;
   BOOST_STATIC_CONSTANT(unsigned,default_linewrap=80); // options_description::m_default_line_length
   printable_options_description(unsigned line_length = default_linewrap) :
-    options_description(line_length) {}
+    options_description(line_length) { init(); }
 
   printable_options_description(const std::string& caption,
                                 unsigned line_length = default_linewrap)
-    : options_description(caption,line_length), caption(caption) {}
+    : options_description(caption,line_length), caption(caption) { init(); }
+
+  void init() {
+    n_this_level=0;
+    n_nonempty_groups=0;
+  }
 
   self_type &add_options()
   { return *this; }
 
+  std::size_t n_this_level,n_nonempty_groups;
   template <class T,class C>
   self_type &
   operator()(char const* name,
              boost::program_options::typed_value<T,C> *val,
              char const*description=NULL)
   {
+    ++n_this_level;
     printable_option opt((T *)0,simple_add(name,val,description));
     pr_options.push_back(opt);
     return *this;
@@ -195,11 +201,15 @@ struct printable_options_description
   {
     options_description::add(desc);
     groups.push_back(group_type(new self_type(desc)));
-    for (typename options_type::const_iterator i=desc.pr_options.begin(),e=desc.pr_options.end();
-         i!=e;++i) {
-      pr_options.push_back(*i);
-      pr_options.back().in_group=true;
+    if (desc.size()) {
+      for (typename options_type::const_iterator i=desc.pr_options.begin(),e=desc.pr_options.end();
+           i!=e;++i) {
+        pr_options.push_back(*i);
+        pr_options.back().in_group=true;
+      }
+      ++n_nonempty_groups; // could just not add an empty group. but i choose to allow that.
     }
+
     return *this;
   }
 
@@ -228,6 +238,7 @@ struct printable_options_description
          , SHOW_EMPTY=0x2
          , SHOW_DESCRIPTION=0x4
          ,  SHOW_HIERARCHY=0x8
+         ,  SHOW_EMPTY_GROUPS=0x10
          ,  SHOW_ALL=0x0FFF
          ,  SHOW_HELP=0x1000
   };
@@ -241,10 +252,12 @@ struct printable_options_description
     const bool hierarchy=bool(show_flags & SHOW_HIERARCHY);
     const bool show_empty=bool(show_flags & SHOW_EMPTY);
     const bool show_help=bool(show_flags & SHOW_HELP);
+    const bool show_empty_groups=bool(show_flags & SHOW_EMPTY_GROUPS);
 
     using namespace boost::program_options;
     using namespace std;
-    o << "### " << caption << endl;
+    if (show_empty_groups || n_this_level || n_nonempty_groups>1)
+      o << "### " << caption << endl;
     for (typename options_type::iterator i=pr_options.begin(),e=pr_options.end();
          i!=e;++i) {
       printable_option & opt=*i;
@@ -266,7 +279,8 @@ struct printable_options_description
     if (hierarchy)
       for (typename groups_type::iterator i=groups.begin(),e=groups.end();
            i!=e;++i)
-        (*i)->print(o,vm,show_flags);
+        if (show_empty_groups || (*i)->size())
+          (*i)->print(o,vm,show_flags);
   }
 
   typedef std::vector<std::string> unparsed_args;
@@ -315,6 +329,8 @@ struct printable_options_description
     return r;
   }
 
+  std::size_t ngroups() const { return groups.size(); }
+  std::size_t size() const { return pr_options.size(); }
 
 private:
   groups_type groups;

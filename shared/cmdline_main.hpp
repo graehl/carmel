@@ -3,9 +3,9 @@
 
 /* yourmain inherit from graehl::main (
    overriding:
-     virtual run()
-     add_options_extra()
-     set_defaults() maybe calling set_defaults_base() etc.)
+   virtual run()
+   add_options_extra()
+   set_defaults() maybe calling set_defaults_base() etc.)
    then INT_MAIN(yourmain)
 */
 
@@ -28,8 +28,8 @@
 #endif
 #include <iostream>
 
-#define INT_MAIN(main_class) main_class m;                      \
-  int main(int argc,char **argv) { return m.run(argc,argv); }
+#define INT_MAIN(main_class) main_class m;                              \
+  int main(int argc,char **argv) { return m.run_main(argc,argv); }
 
 #define GRAEHL_MAIN_COMPILED " (compiled " MAKESTR_DATE ")"
 
@@ -71,7 +71,7 @@ struct main {
   std::string appname,version,compiled,usage;
 
   //FIXME: segfault if version is a char const* global in subclass xtor, why?
-  main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",std::string const& compiled=GRAEHL_MAIN_COMPILED)  : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Allowed options"),options_added(false)
+  main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",std::string const& compiled=GRAEHL_MAIN_COMPILED)  : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Options"),options_added(false)
   {
   }
 
@@ -79,9 +79,13 @@ struct main {
   OD general,cosmetic,all_options;
   bool options_added;
 
+  void print_version(std::ostream &o) {
+    o << cmdname << ' ' << version << ' ' << compiled << std::endl;
+  }
+
   virtual void run()
   {
-    out() << cmdname << ' ' << version << ' ' << compiled << std::endl;
+    print_version(out());
   }
 
   virtual void set_defaults()
@@ -93,11 +97,14 @@ struct main {
   virtual void validate_parameters()
   {
     validate_parameters_base();
+    validate_parameters_extra();
   }
+
+  virtual void validate_parameters_extra() {}
 
   virtual void add_options_base(OD &all)
   {
-    add_options_base(all,true,true);
+    add_options_base(general,true,true);
   }
 
   // this should only be called once.  (called after set_defaults)
@@ -148,16 +155,19 @@ struct main {
 
   void log_invocation_base()
   {
-    log() << "### COMMAND LINE:\n" << cmdline_str << "\n\n";
-    log() << "### CHOSEN OPTIONS:\n";
+    log() << "### COMMAND LINE:\n" << cmdline_str << "\n";
+    log() << "### USING OPTIONS:\n";
     all_options.print(log(),vm,OD::SHOW_DEFAULTED | OD::SHOW_HIERARCHY);
+    log() << "###\n";
   }
 
   void validate_parameters_base()
   {
     log_stream=log_file.get();
-    if (!is_default_log(log_file)) // tee to cerr
-    {
+    if (!log_stream)
+      log_stream=&std::cerr;
+    else if (!is_default_log(log_file)) {
+      // tee to cerr
       teebufptr.reset(new teebuf(log_stream->rdbuf(),std::cerr.rdbuf()));
       teestreamptr.reset(log_stream=new std::ostream(teebufptr.get()));
     }
@@ -173,32 +183,32 @@ struct main {
     using boost::program_options::bool_switch;
 
 
-    general.add_options()
+    all.add_options()
       ("help,h", bool_switch(&help),
        "show usage/documentation")
       ;
 
     if (add_out_file)
-      general.add_options()
+      all.add_options()
         (GRAEHL_OUT_FILE",o",defaulted_value(&out_file),
          "Output here (instead of STDOUT)");
 
     if (add_in_file) {
-      general.add_options()
+      all.add_options()
         (GRAEHL_IN_FILE",i",defaulted_value(&in_file),
          "Output here (instead of STDIN)");
     }
 
     if (use_config_file)
-      general.add_options()
+      all.add_options()
         (GRAEHL_CONFIG_FILE,optional_value(&config_file),
-        "load boost program options config from file");
+         "load boost program options config from file");
 
-    general.add_options()
+    all.add_options()
       (GRAEHL_LOG_FILE",l",defaulted_value(&log_file),
        "Send logs messages here (as well as to STDERR)");
 #if GRAEHL_DEBUGPRINT
-    general.add_options()
+    all.add_options()
       ("debug-level,d",defaulted_value(&debug_lvl),
        "Debugging output level (0 = off, 0xFFFF = max)")
 #endif
@@ -246,7 +256,8 @@ struct main {
           //NOTE: this means that cmdline opts have precedence. hooray.
           config_file.close();
         } catch(exception const& e) {
-          throw std::runtime_error("ERROR: while parsing options config file "+config_file.name+" - "+e.what());
+          std::cerr << "ERROR: parsing "<<cmdname<<" config file "<<config_file.name<<" - "<<e.what();
+          throw;
         }
       }
       notify(vm); // are multiple notifies idempotent? depends on user fns registered?
@@ -259,7 +270,7 @@ struct main {
         return false;
       }
     } catch (std::exception &e) {
-      std::cerr << "ERROR:"<<e.what() << "\nTry '" << argv[0] << " -h' for help\n\n";
+      std::cerr << "ERROR: "<<e.what() << " (parsing "<<cmdname<<" options)\nTry '" << argv[0] << " -h' for help\n\n";
       throw;
     }
     return true;
@@ -267,7 +278,7 @@ struct main {
 
 
   //FIXME: defaults cannot change after first parse_args
-  int run(int argc, char** argv)
+  int run_main(int argc, char** argv)
   {
     cmdname=argv[0];
     set_defaults();
@@ -284,21 +295,19 @@ struct main {
     catch(std::exception& e) {
       return carp(e.what());
     }
-    catch(const char * e) {
+    catch(char const* e) {
       return carp(e);
     }
     catch(...) {
-      return carp("FATAL Exception of unknown type!");
+      return carp("Exception of unknown type!");
     }
     return 0;
-
   }
 
   template <class C>
   int carp(C const& c) const
   {
-    log() << "\nERROR: " << c << "\n\n";
-    log() << "Try '" << cmdname << " -h' for documentation\n";
+    log() << "\nERROR: " << c << "\n\n" << "Try '" << cmdname << " -h' for documentation\n";
     return 1;
   }
 
