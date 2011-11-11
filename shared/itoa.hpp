@@ -7,6 +7,10 @@
 #include <limits>
 #include <cassert>
 
+#ifndef HAVE_LONGER_LONG
+# define HAVE_LONGER_LONG 1
+#endif
+
 // define this if you're paranoid about converting 0-9 (int) to 0-9 (char) by adding to '0', which is safe for ascii, utf8, etc.
 #ifndef DIGIT_LOOKUP_TABLE
 # define DIGIT_LOOKUP_TABLE 0
@@ -41,16 +45,20 @@ struct signed_for_int<t> { \
 
 // toa_bufsize will hold enough chars for a c string converting to sign,digits (for both signed and unsigned types), because normally an unsigned would only need 2 extra chars.  we reserve 3 explicitly for the case that itoa(buf,UINT_MAX,true) is called, with output +4......
 
-#define DEFINE_SIGNED_FOR(it) DEFINE_SIGNED_FOR_3(it,it,u ## it)    \
-  DEFINE_SIGNED_FOR_3(u ## it,it,u ## it)
+#define DEFINE_SIGNED_FOR(it) DEFINE_SIGNED_FOR_3(it,it,u ## it) DEFINE_SIGNED_FOR_3(u ## it,it,u ## it)
 
 DEFINE_SIGNED_FOR(int8_t)
 DEFINE_SIGNED_FOR(int16_t)
 DEFINE_SIGNED_FOR(int32_t)
 DEFINE_SIGNED_FOR(int64_t)
-//DEFINE_SIGNED_FOR_3(int,int,unsigned)
-//DEFINE_SIGNED_FOR_3(unsigned,int,unsigned)
-
+#if INT_DIFFERENT_FROM_INTN
+DEFINE_SIGNED_FOR_3(int,int,unsigned)
+DEFINE_SIGNED_FOR_3(unsigned,int,unsigned)
+#endif
+#if HAVE_LONGER_LONG
+DEFINE_SIGNED_FOR_3(long int,long int,long unsigned)
+DEFINE_SIGNED_FOR_3(long unsigned,long int,long unsigned)
+#endif
 /*
 // The largest 32-bit integer is 4294967295, that is 10 chars
 // 1 more for sign, and 1 for 0-termination of string
@@ -74,7 +82,6 @@ inline char digit_to_char(int d) {
     '0'+d;
 #endif
 }
-
 
 // returns n in string [return,num); *num=0 yourself before calling if you want a c_str.  in other words, the sequence [ret,buf) contains the written digits
 template <class Int>

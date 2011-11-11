@@ -2,8 +2,8 @@
 #define GRAEHL__SHARED__STRING_TO_HPP
 
 /*
-   may not be any faster than boost::lexical_cast in later incarnations (see http://accu.org/index.php/journals/1375)
-   but is slightly simpler.  no wide char or locale.
+
+  USAGE:
 
    X string_to<X>(string);
    string to_string(X);
@@ -11,7 +11,20 @@
 
    default implementation via stringstreams (quite slow, I'm sure)
 
-   fast implementation for string, int<->string, unsigned<->string, float<->string, double<->string
+   fast implementation for string, int, unsigned, float, double, and, unless HAVE_LONGER_LONG=0, long
+
+   ----
+
+   may not be any faster than boost::lexical_cast in later incarnations (see http://accu.org/index.php/journals/1375)
+   but is slightly simpler.  no wide char or locale. if you use "C" locale, boost::lexical_cast takes advantage?
+
+   see http://www.boost.org/doc/libs/1_47_0/libs/conversion/lexical_cast.htm#faq for benchmarks. so this should be faster still
+
+   see also boost.spirit and qi for template-parser-generator stuff that should be about as fast!
+
+   http://alexott.blogspot.com/2010/01/boostspirit2-vs-atoi.html
+   and
+   http://stackoverflow.com/questions/6404079/alternative-to-boostlexical-cast/6404331#6404331
 
 */
 
@@ -40,6 +53,92 @@ namespace {
 #include <ctype.h>
 #include <stdlib.h> // access to evil (fast) C isspace etc.
 #include <limits.h> //strtoul
+}
+
+//NOTE: stdlib atoi consumes dead whitespace; these don't
+template <class U>
+inline U atou_fast(const char *p) { // faster than stdlib atoi. doesn't return how much of string was used.
+  U x=0;
+  while (*p >= '0' && *p <= '9') {
+    x*=10;
+    x+=*p-'0';
+    ++p;
+  }
+  return x;
+}
+
+template <class I>
+inline I atoi_fast(const char *p) { // faster than stdlib atoi. doesn't return how much of string was used.
+  I x=0;
+  bool neg=false;
+  if (*p == '-') {
+    neg = true;
+    ++p;
+  }
+  while (*p >= '0' && *p <= '9') {
+    x*=10;
+    x+=*p-'0';
+    ++p;
+  }
+  return neg?-x:x;
+}
+
+// now for any char iter range
+template <class U,class I>
+inline U atou_fast(I i,I end) {
+  U x=0;
+  if (i==end) return x;
+  for (;i!=end;++i) {
+    const char c=*i;
+    if (c<'0' || c>'9') return x;
+    x*=10;
+    x+=c-'0';
+  }
+  return x;
+}
+
+template <class I>
+inline I atou_fast(std::string const& s) { // faster than stdlib atoi. doesn't return how much of string was used.
+  return atou_fast<I>(s.begin(),s.end());
+}
+
+template <class I,class It>
+inline I atoi_fast(It i,It end) {
+  I x=0;
+  if (i==end) return x;
+  bool neg=false;
+  if (*i=='-') {
+    neg=true;
+    ++i;
+  }
+  for (;i!=end;++i) {
+    const char c=*i;
+    if (c<'0' || c>'9') return x;
+    x*=10;
+    x+=c-'0';
+  }
+  return neg?-x:x;
+}
+
+template <class I>
+inline I atoi_fast(std::string const& s) { // faster than stdlib atoi. doesn't return how much of string was used.
+  return atoi_fast<I>(s.begin(),s.end());
+}
+
+inline int atoi_nows(std::string const& s) {
+  return atoi_fast<int>(s);
+}
+
+inline int atoi_nows(char const* s) {
+  return atoi_fast<int>(s);
+}
+
+inline unsigned atou_nows(std::string const& s) {
+  return atou_fast<unsigned>(s);
+}
+
+inline unsigned atou_nows(char const* s) {
+  return atou_fast<unsigned>(s);
 }
 
 inline void throw_string_to(std::string const& msg,char const* prefix="string_to: ") {
@@ -98,7 +197,7 @@ inline std::string to_string(int x) {
   return itos(x);
 }
 
-inline long strtol_complete(char const* s,int base=10) {
+inline long strtol_complete(char const* s,int base=0) {
   char *e;
   if (*s) {
     long r=strtol(s,&e,base);
@@ -110,7 +209,7 @@ inline long strtol_complete(char const* s,int base=10) {
 }
 
 // returns -INT_MAX or INT_MAX if number is too large/small
-inline int strtoi_complete_bounded(char const* s,int base=10) {
+inline int strtoi_complete_bounded(char const* s,int base=0) {
   long l=strtol_complete(s,base);
   if (l<std::numeric_limits<int>::min())
     return std::numeric_limits<int>::min();
@@ -155,7 +254,7 @@ inline long& string_into(char const* s,long &x) {
 
 
 //FIXME: preprocessor separation for tokens int<->unsigned int, long<->unsigned long, strtol<->strtoul ?  massive code duplication
-inline unsigned long strtoul_complete(char const* s,int base=10) {
+inline unsigned long strtoul_complete(char const* s,int base=0) {
   char *e;
   if (*s) {
 #if HAVE_STRTOUL
