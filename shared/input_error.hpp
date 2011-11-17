@@ -1,6 +1,10 @@
 #ifndef GRAEHL__SHARED__INPUT_ERROR_HPP
 #define GRAEHL__SHARED__INPUT_ERROR_HPP
 
+#ifndef INPUT_ERROR_TELLG
+# define INPUT_ERROR_TELLG 0
+#endif
+
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -113,26 +117,25 @@ void show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostream<Oc,Ot>
 }
 
 template <class Ic,class It> inline
-void throw_input_error(std::basic_istream<Ic,It>  &in,const char *error="",const char *item="input",unsigned number=0) {
+void throw_input_error(std::basic_istream<Ic,It> &in,std::string const& error="",const char *item="input",unsigned number=0) {
     std::ostringstream err;
     err << "Error reading";
     if (item)
         err << ' ' << item << " # " << number;
     err << ": " << error << std::endl;
-#ifdef INPUT_ERROR_TELLG
+#if INPUT_ERROR_TELLG
     std::streamoff where(in.tellg());
 #endif
     show_error_context(in,err);
      err
-#ifdef INPUT_ERROR_TELLG
-//   << "(file position " <<  where << ")"
+#if INPUT_ERROR_TELLG
+   << "(file position " <<  where << ")"
 #endif
          << std::endl;
     throw std::runtime_error(err.str());
 }
 
-
-}
+}//ns
 
 
 #endif
