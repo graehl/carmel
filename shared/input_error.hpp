@@ -58,12 +58,12 @@ std::streamoff show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostr
   char c;
   std::streamoff actual_pretext_chars=0;
   typedef std::basic_ifstream<Ic,It> fstrm;
-//    if (fstrm * fs = dynamic_cast<fstrm *>(&in)) {
+//    if (fstrm * fs = dynamic_cast<fstrm *>(&in)) { // try tell/seek always, -1 return if it fails anyway
   bool ineof=in.eof();
   in.clear();
+  std::streamoff before=in.tellg();
   in.unget();
   in.clear();
-  std::streamoff before=in.tellg();
 //    DBP(before);
   if (before>=0) {
     in.seekg(-(int)prechars,std::ios_base::cur);
@@ -73,12 +73,8 @@ std::streamoff show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostr
       in.seekg(after=0);
     }
     actual_pretext_chars=before-after;
-  }
-
-
-//    } else {
-//        actual_pretext_chars=0;
-//    }
+  } else
+    actual_pretext_chars=1; // from unget
   in.clear();
   out << "INPUT ERROR: ";
   if (before>=0)
@@ -92,12 +88,15 @@ std::streamoff show_error_context(std::basic_istream<Ic,It>  &in,std::basic_ostr
   for(ip=0;ip<actual_pretext_chars;++ip) {
     if (in.get(c)) {
       ++ip_lastline;
+#if 1
       out << scrunch_char(c);
-/*        out << c;
+#else
+      //show newlines
+        out << c;
           if (c=='\n') {
           ip_lastline=0;
           }
-*/
+#endif
     } else
       break;
   }
