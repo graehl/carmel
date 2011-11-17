@@ -379,8 +379,8 @@ struct main {
 
       if (help) {
         cout << "\n" << get_name() << "\n\n";
+        cout << usage << "\n\n";
         cout << general_options_desc()<<"\n";
-        cout << usage << "\n";
         cout << all_options << "\n";
         return false;
       }

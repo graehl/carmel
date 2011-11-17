@@ -54,9 +54,10 @@ inline unsigned split_noquote(
     using namespace std;
     string::size_type delim_len=delim.length();
     if (delim_len==0) { // split by characters as special case
-        unsigned i=0,n=csv.size();for (;i<n;++i)
-            if (!f(string(csv,i,1)))
-                return i;
+        unsigned i=0,n=csv.size();
+        for (;i<n;++i)
+          if (!f(string(csv,i,1)))
+            return i;
         return i;
     }
     string::size_type pos=0,nextpos;
