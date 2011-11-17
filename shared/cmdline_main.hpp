@@ -32,6 +32,7 @@
 #include <graehl/shared/fileargs.hpp>
 #include <graehl/shared/teestream.hpp>
 #include <graehl/shared/makestr.hpp>
+#include <graehl/shared/string_to.hpp>
 #if GRAEHL_DEBUGPRINT
 # include <graehl/shared/debugprint.hpp>
 #endif
@@ -105,7 +106,13 @@ struct main {
       min_ins=1;
     }
     void validate(in_files const& ins) const {
-      validate(ins.size());
+      unsigned n=ins.size();
+      validate(n);
+      for (unsigned i=0;i<n;++i)
+        if (!*ins[i]) {
+          THROW_HYPERGRAPH_EXCEPTION("invalid input hg #"<<utos(i+1)<<" file "+ins[i].name);
+        }
+
     }
     void validate(int n) const {
       if (has_max_ins() && n>max_ins)
@@ -117,16 +124,20 @@ struct main {
     int min_ins,max_ins; //multiple inputs 0,1,... if max>min
     bool add_in_file,add_out_file,add_log_file,add_config_file,add_help,add_debug_level;
     bool positional_in,positional_out;
+    bool add_quiet,add_verbose;
     base_options() {
       positional_out=positional_in=add_in_file=false;
       add_log_file=add_help=add_out_file=add_config_file=add_debug_level=true;
       min_ins=max_ins=0;
+      add_verbose=add_quiet=true;
     }
   };
   base_options bopt;
 
   int debug_lvl;
   bool help;
+  bool quiet;
+  int verbose;
   ostream_arg log_file,out_file;
   istream_arg in_file,config_file;
   in_files ins; // this will also have the single in_file if you bopt.allow_in()
@@ -141,6 +152,7 @@ struct main {
   //FIXME: segfault if version is a char const* global in subclass xtor, why?
   main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",std::string const& compiled=GRAEHL_MAIN_COMPILED)  : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Options"),options_added(false)
   {
+    verbose=1;
   }
 
   typedef printable_options_description<std::ostream> OD;
@@ -191,7 +203,8 @@ struct main {
 
   virtual void log_invocation()
   {
-    log_invocation_base();
+    if (verbose>0)
+      log_invocation_base();
   }
 
 
@@ -200,6 +213,8 @@ struct main {
     out_file=stdout_arg();
     log_file=stderr_arg();
     in_file=stdin_arg();
+//    quiet=false;
+//    help=false;
   }
 
   virtual void set_defaults_extra() {}
@@ -226,6 +241,11 @@ struct main {
 
   void validate_parameters_base()
   {
+    if (quiet) {
+      if (verbose>0)
+        log()<<"setting verbose to 0 since --quiet, even though you set it to "<<verbose<<"\n";
+      verbose=0;
+    }
     if (bopt.add_ins())
       bopt.validate(ins);
     if (in_file && ins.empty())
@@ -253,6 +273,18 @@ struct main {
       all.add_options()
         ("help,h", boost::program_options::bool_switch(&help),
          "show usage/documentation")
+        ;
+
+    if (bopt.add_quiet)
+      all.add_options()
+        ("quiet,q", boost::program_options::bool_switch(&quiet),
+         "use log only for warnings - e.g. no banner of command line options used")
+        ;
+
+    if (bopt.add_verbose)
+      all.add_options()
+        ("verbose,v", defaulted_value(&verbose),
+         "e.g. verbosity level >1 means show banner of command line options. 0 means don't")
         ;
 
     if (bopt.add_out_file) {

@@ -213,6 +213,8 @@ the buffer will be back to 8k.
         if (large_buf) give_large_buf();
         const bool read=stream_traits<filestream>::read;
         f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
+        if (!*f)
+          throw_fail(filename,read?"Couldn't open for input.":"Couldn't open for output.");
         f.release(); // delete later so we have valid open pointer
     }
 

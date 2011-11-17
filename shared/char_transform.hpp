@@ -6,6 +6,7 @@
 #include <string>
 #include <cstring>
 #include <boost/config.hpp>
+#include <graehl/insert_to.hpp>
 
 namespace graehl {
 
@@ -67,7 +68,7 @@ struct char_transform
   }
   std::string unescape(std::string const& s) const {
     std::ostringstream o;
-    unescape(s.begin(),s.end(),std::ostream_iterator<char>(o));
+    unescape(s.begin(),s.end(),graehl::insert_to(o));
     return o.str();
   }
   template <class I>

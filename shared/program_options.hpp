@@ -204,6 +204,61 @@ struct printable_options_description
   { return *this; }
 
 
+  template <class V>
+  self_type &
+  multiple(char const* name,
+             V *val,
+             char const* description)
+  {
+    return (*this)(name,optional_value(val)->multitoken(),description);
+  }
+
+  template <class V>
+  self_type &
+  multiple(char const* name,
+             V *val,
+             std::string const& description)
+  {
+    return (*this)(name,optional_value(val)->multitoken(),description);
+  }
+
+  template <class V>
+  self_type &
+  optional(char const* name,
+             V *val,
+             std::string const& description)
+  {
+    return (*this)(name,optional_value(val),description);
+  }
+
+  template <class V>
+  self_type &
+  optional(char const* name,
+             V *val,
+             char const* description)
+  {
+    return (*this)(name,optional_value(val),description);
+  }
+
+
+  template <class V>
+  self_type &
+  defaulted(char const* name,
+             V *val,
+             std::string const& description)
+  {
+    return (*this)(name,defaulted_value(val),description);
+  }
+
+  template <class V>
+  self_type &
+  defaulted(char const* name,
+             V *val,
+             char const* description)
+  {
+    return (*this)(name,defaulted_value(val),description);
+  }
+
   boost::shared_ptr<string_pool> descs; // because opts lib only takes char *, hold them here.
   template <class T,class C>
   self_type &

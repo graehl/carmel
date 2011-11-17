@@ -1,9 +1,15 @@
+
+
 lnshared() {
     forall lnshared1 "$@"
 }
 lnshared1() {
-    local f=~/t/graehl/shared/"$1"
-    [ -r $f ] && ln $f $racer/3rdParty/graehl/shared/
+    local s=~/t/graehl/shared/
+    local f=$s/"$1"
+    local d=$racer/3rdParty/graehl/shared/
+    [ -r $f ] && rm -f $d/$1 && ln $f $d
+    (cd $s; svn add "$1")
+    (cd $d; svn add "$1")
 }
 lnhg() {
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
@@ -20,6 +26,9 @@ ackc() {
 freshx() {
     (set -e; racer=~/c/fresh/racerx; cd $racer ; [ "$noup" ] || svn update; raccm ${1:-Debug})
 }
+linx() {
+    ssh $chost ". ~/a;HYPERGRAPH_DBG_LEVEL=${HYPERGRAPH_DBG:-verbose}_LEVEL test=$test tests=$tests freshx $*"
+}
 chost=c-jgraehl.languageweaver.com
 phost=pontus.languageweaver.com
 horse=~/c/horse
@@ -33,8 +42,9 @@ horsem() {
     )
 }
 s2c() {
+    #elisp x/3rdParty
     (cd
-        for d in u t elisp x/Hypergraph x/Util ; do
+        for d in u t  x/CMakeLists.txt x/Hypergraph x/Util ; do
           sync2 $chost $d
         done
     )
@@ -202,7 +212,7 @@ racm() {
             tn=$(basename $t)
             testexe=$td/Test$tn
             [[ -x $testexe ]] || testexe=$t/Test$t
-            $testexe 2>&1 | tee $td/$tn.log
+            $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
         )
     done
     )
@@ -1378,7 +1388,7 @@ function vg() {
     set +x
 }
 vgf() {
-    vg "$@"
+    vg "$@" | head --bytes=${maxvgf:-9999}
 }
 #--show-reachable=yes
 #alias vgfast="GLIBCXX_FORCE_NEW=1 valgrind --db-attach=yes --leak-check=yes --tool=addrcheck $VGARGS"

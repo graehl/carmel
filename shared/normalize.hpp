@@ -1,4 +1,4 @@
-// normalization to 1 for each group in a disjoint partition of indices
+// normalization to 1 for each group in a disjoint partition of indices - on-disk normalization groups (memmappable) for large scale
 #ifndef GRAEHL_SHARED__NORMALIZE_HPP
 #define GRAEHL_SHARED__NORMALIZE_HPP
 

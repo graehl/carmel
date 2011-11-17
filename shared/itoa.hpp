@@ -7,8 +7,12 @@
 #include <limits>
 #include <cassert>
 
+#ifndef INT_DIFFERENT_FROM_INTN
+# define INT_DIFFERENT_FROM_INTN 0
+#endif
+
 #ifndef HAVE_LONGER_LONG
-# define HAVE_LONGER_LONG 1
+# define HAVE_LONGER_LONG 0
 #endif
 
 // define this if you're paranoid about converting 0-9 (int) to 0-9 (char) by adding to '0', which is safe for ascii, utf8, etc.

@@ -11,7 +11,9 @@
 
    default implementation via stringstreams (quite slow, I'm sure)
 
-   fast implementation for string, int, unsigned, float, double, and, unless HAVE_LONGER_LONG=0, long
+   fast implementation for string, int, unsigned, float, double, and, if HAVE_LONGER_LONG=1, long
+
+   also: to_string calls itos utos etc
 
    ----
 

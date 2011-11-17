@@ -31,7 +31,7 @@ struct hex_int {
   FROM_ISTREAM_READ
   template <class S>
   void print(S &s) const {
-    s<<'0'<<'x'<<std::hex<<U(i);
+    s<<'0'<<'x'<<std::hex<<U(i)<<std::dec;
   }
   template <class S>
   void read(S &s) {
@@ -46,7 +46,7 @@ struct hex_int {
       if (!s.get(c)) return;
       if (c=='x') {
         U u;
-        if (!(s>>std::hex>>u)) return;
+        if (!(s>>std::hex>>u>>std::dec)) return;
         i=u;
       } else {
         s.unget(); // actual number starting with 0. //octal for consistency with string_into.
