@@ -208,14 +208,15 @@ the buffer will be back to 8k.
     template <class filestream>
     void set_new_buf(std::string const& filename,std::string const& fail_msg="Couldn't open file",bool large_buf=true)
     {
-        std::auto_ptr<filestream> f(new filestream());
-        set_checked(*f,filename,delete_after,fail_msg); // exception safety provided by f
-        if (large_buf) give_large_buf();
-        const bool read=stream_traits<filestream>::read;
-        f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
-        if (!*f)
-          throw_fail(filename,read?"Couldn't open for input.":"Couldn't open for output.");
-        f.release(); // delete later so we have valid open pointer
+      filestream *f=new filestream();
+      std::auto_ptr<filestream> fa(f);
+      set_checked(*f,filename,delete_after,fail_msg); // exception safety provided by f
+      fa.release(); // now owned by smart ptr
+      if (large_buf) give_large_buf();
+      const bool read=stream_traits<filestream>::read;
+      f->open(filename.c_str(),std::ios::binary | (read ? std::ios::in : (std::ios::out|std::ios::trunc)));
+      if (!*f)
+        throw_fail(filename,read?"Couldn't open for input.":"Couldn't open for output.");
     }
 
     void give_large_buf()
