@@ -20,7 +20,7 @@
 
 #ifdef WIN32_NAN
 # include <float.h>
-# include <xmath.h>
+//# include <xmath.h>
 namespace {
 const unsigned int graehl_nan[2] = {0xffffffff, 0x7fffffff};
 }

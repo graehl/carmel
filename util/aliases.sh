@@ -1,3 +1,7 @@
+rtok() {
+    cd ~/x/racerx/Tokenizer
+    ./test.sh "$@"
+}
 hgdot() {
     local m=${3:-${1%.gz}}
     HgDraw $1 > $m.dot
@@ -21,19 +25,35 @@ lnshared() {
     forall lnshared1 "$@"
 }
 lnshared1() {
-    local s=~/t/graehl/shared/
+    local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/3rdParty/graehl/shared/
+    local d=$racer/3rdParty/graehl/shared
     local g=$d/$1
-    set -x
+
     if [ -r $f ] ; then
-        if diff -u $f $g ; then
-          rm -f $g && ln $f $g
-        fi
+       if ! [ -r $g ] ; then
+           ln $f $g
+       fi
+       if diff -u $g $f || [[ $force ]] ; then
+          rm -f $g
+          ln $f $g
+       fi
     fi
-    set +x
     (cd $s; svn add "$1")
     (cd $d; svn add "$1")
+}
+racershared1() {
+    local s=~/t/graehl/shared
+    local f=$s/$1
+    local d=$racer/3rdParty/graehl/shared
+    local g=$d/$1
+    if [ -f $g ] ; then
+    if [ "$force" ] ; then
+        diff $f $g
+        rm -f $f
+    fi
+    ln $g $f
+    fi
 }
 usedshared() {
     (cd $racer/3rdParty/graehl/shared/;ls *.hpp)
@@ -52,6 +72,7 @@ relnshared() {
 }
 lnhg() {
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
+    ln -sf $racer/Debug/Tokenizer/*Tokenizer ~/bin
 }
 rebuildc() {
     (set -e
@@ -252,11 +273,16 @@ racm() {
     racb ${1:-Debug}
     shift || true
     cd $racerbuild
-    make -j$MAKEPROC VERBOSE=1 "$@"
+    set -x
     if [ "$*" ] ; then
+        for f in $* ; do
+            rm -f Hypergraph/CMakeFiles/$f.dir/src/$f.cpp.o
+        done
         test=
         tests=
     fi
+    set +x
+    make -j$MAKEPROC VERBOSE=1 "$@"
     if [[ $test ]] ; then make test ; fi
     for t in $tests; do
         ( set -e;

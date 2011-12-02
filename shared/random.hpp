@@ -44,7 +44,7 @@ inline unsigned default_random_seed()
 # ifdef USE_NONDET_RANDOM
     return boost::random_device().operator()();
 # else
-        unsigned pid=get_process_id();
+    unsigned pid=get_process_id();
     return std::time(0) + pid + (pid << 17);
 # endif
 }

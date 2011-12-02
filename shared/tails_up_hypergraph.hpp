@@ -64,10 +64,10 @@
 
 
 namespace graehl {
-DECLARE_DBG_LEVEL_IF(TUHG)
+DECLARE_DBG_LEVEL(TUHG)
 //IFDBG(TUHG,1) { SHOWM2(TUHG,"descr" }
 #define TUHG_SHOWQ(l,n,v) IFDBG(TUHG,l) { SHOWM2(TUHG,n,v,get(mu,v)); }
-#define TUHG_SHOWP(l,n,mu) IFDBG(TUHG,l) { SHOWM(TUHG,n,print(vertices(tu.g),getter(mu))); }
+#define TUHG_SHOWP(l,n,mu) IFDBG(TUHG,l) { SHOWM(TUHG,n,print(vertices(g),getter(mu))); }
 
 struct BestTreeStats {
   std::size_t n_blocked_rereach,n_relax,n_update,n_pop,n_unpopped;
@@ -437,13 +437,15 @@ struct TailsUpHypergraph {
     //skipping unreached tails:
     cost_type recompute_cost(ED e) {
       cost_type c=get(ec,e);
+      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost base",c,print(e,g)); }
       for (Tailr pti=tails(e,g);pti.first!=pti.second;++pti.first) {
         VD t=*pti.first;
         cost_type tc=get(mu,t);
         if (tc!=PT::unreachable())
           c=PT::extend(c,tc); // possibly multiple
-        IFDBG(TUHG,3) { SHOWM3(TUHG,"recompute_cost",t,tc,c); }
+        IFDBG(TUHG,6) { SHOWM3(TUHG,"recompute_cost tail",t,tc,c); }
       }
+      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost final",c,print(e,g)); }
       return c;
     }
 
@@ -482,8 +484,8 @@ struct TailsUpHypergraph {
       }
     }
 
-#define TUHG_SHOWREMAIN(l,n) IFDBG(TUHG,l) {SHOWP(TUHG,"\n" n " (remain,inf):\n");dbgremain();SHOWNL(TUHG);}
-    //IFDBG(TUHG,l) { SHOWP(TUHG,n " (remain,inf):\n");dbgremain();SHOWNL(TUHG); }
+#define TUHG_SHOWREMAIN(l,n) IFDBG(TUHG,l) {SHOWP(TUHG,"\n" n " (remain):\n");dbgremain();SHOWNL(TUHG);}
+    //IFDBG(TUHG,l) { SHOWP(TUHG,n " (remain):\n");dbgremain();SHOWNL(TUHG); }
 
     void dbgremain() const {
       visit(edgeT,g,*this);
@@ -534,13 +536,13 @@ struct TailsUpHypergraph {
     EdgeLeftImpl tr;
     unsigned n;
     Reach(Self &r,VertexReachMap v) : tu(r),vr(v),tr(r.unique_tails),n(0) {
-      //copy_hyperarc_pmap(tu.g,tu.unique_tails_pmap(),tr);
+      //copy_hyperarc_pmap(g,tu.unique_tails_pmap(),tr);
       //instead relying on impl same type (copy ctor)
     }
 
     void init_unreach() {
       typename GT::vertex_iterator i,end;
-      boost::tie(i,end)==vertices(tu.g);
+      boost::tie(i,end)==vertices(g);
       for (;i!=end;++i) {
         put(vr,*i.first,false);
       }
@@ -549,7 +551,7 @@ struct TailsUpHypergraph {
       init_unreach();
       for (typename TerminalArcs::iterator i=tu.terminal_arcs.begin(),end=tu.terminal_arcs.end();i!=end;++i) {
         ED h=*i;
-        VD v=source(h,tu.g);
+        VD v=source(h,g);
         (*this)(v);
       }
     }
@@ -568,7 +570,7 @@ struct TailsUpHypergraph {
       Adj &a=tu[v];
       for(typename Adj::iterator i=a.begin(),end=a.end(); i!=end; ++i) {
         ED ed=i->ed;
-        VD head=source(ed,tu.g);
+        VD head=source(ed,g);
         if (!get(vr,head)) { // not reached yet
           if (--tr[ed]==0)
             (*this)(head); // reach head

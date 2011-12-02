@@ -52,6 +52,7 @@
 #define DECLARE_DBG_LEVEL(ch) DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG_LEVEL)
 #define DECLARE_DBG_LEVEL_IF(ch) ch(DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG_LEVEL))
 #define MACRO_NOT_NULL(IF) (0 IF(||1))
+#define SHV(x) " "#x<<"="<<x
 
 #ifdef NDEBUG
 # define IFDBG(ch,l) if(0)
@@ -59,8 +60,10 @@
 # define IFDBG(ch,l) if(MACRO_NOT_NULL(ch) && ch##_DBG_LEVEL>=(l))
 #endif
 
+#define EIFDBG(ch,l,e) do { IFDBG(ch,l) { e; } }while(0)
+
 #ifdef WIN32
-char * getenv(char const* key) {
+inline char * getenv(char const* key) {
   const DWORD maxch = 65535; // //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
   static char buf[maxch];
   return GetEnvironmentVariableA(key,buf,maxch) ? buf : NULL;

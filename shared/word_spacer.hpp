@@ -164,7 +164,7 @@ struct range_sep {
   }
   template <class O,class I>
   void print(O &o,I const& i) const {
-    print(boost::begin(i),boost::end(i));
+    print(o,boost::begin(i),boost::end(i));
   }
 };
 

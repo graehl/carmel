@@ -9,7 +9,7 @@
 namespace graehl {
 
 template <class R>
-typename range_value<R>::type sum(R const& r,typename range_value<R>::type z=0) {
+typename range_value<R>::type sum(R const& r,typename range_value<R>::type z=typename range_value<R>::type()) {
   return boost::accumulate(r,z);
 }
 
