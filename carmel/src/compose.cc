@@ -126,7 +126,7 @@ struct TrioNamer {
 //uses: stateMap[triDest] states, queue, in, out, weight, [namedStates,stateNames,namer,buf]
 
 #define COMPOSEARC_GROUP(g) do {                                                                                        \
-    hash_traits<HashTable<TrioKey,int> >::insert_return_type i;                                                         \
+    hash_traits<HashTable<TrioKey,int> >::insert_result_type i;                                                         \
     if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) {                      \
       trioID.num=numStates();trioID.tri=triDest;queue.push(trioID);push_back(states);                                   \
       if ( namedStates ) stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter),trioID.num);         \
@@ -253,7 +253,7 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                         mediate.l_dest = la->dest;
                         int mediateState=numStates();
                         typedef HashTable<HalfArcState, int> HAT;
-                        hash_traits<HAT>::insert_return_type ins;
+                        hash_traits<HAT>::insert_result_type ins;
                         if ( (ins = arcStateMap.insert(HAT::value_type(mediate,mediateState))).second ) {
 // populate new mediateState
                             push_back(states);

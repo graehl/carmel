@@ -13,7 +13,7 @@
 #include <algorithm>  // std::max
 #include <cstring>
 #include <cassert>
-#include <stdint.h>
+#include <boost/cstdint.hpp>
 #include <new>
 #include <graehl/shared/swap_pod.hpp>
 #include <boost/functional/hash.hpp>

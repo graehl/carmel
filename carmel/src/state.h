@@ -97,7 +97,7 @@ struct State {
             if (a.isNormal())
                 F::operator()(&a.weight);
             else { //tied
-                HT::insert_return_type it=tied.insert(HT::value_type(a.groupId,0));
+                HT::insert_result_type it=tied.insert(HT::value_type(a.groupId,0));
                 if (it.second) {
                     F::operator()(&a.weight);
                     it.first->second = a.weight;

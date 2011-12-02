@@ -41,7 +41,7 @@ template <class Computes=double,class Returns=Computes>
 struct clamped_time_series : public std::unary_function<double,Returns>
 {
     typedef Computes value_type;
-    typedef Returns return_type;
+    typedef Returns result_type;
     typedef double time_type;
     typedef time_type first_argument_type;
     value_type x0;
@@ -129,9 +129,9 @@ struct clamped_time_series : public std::unary_function<double,Returns>
             return x0*pow(k,t/t_max)+x_origin;
     }
 
-    return_type operator()(time_type t) const
+    result_type operator()(time_type t) const
     {
-        return static_cast<return_type>(value(t));
+        return static_cast<result_type>(value(t));
     }
 
     void print(std::ostream &o) const

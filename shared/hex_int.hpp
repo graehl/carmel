@@ -102,6 +102,8 @@ HEX_USE_STRING_TO(long int)
 
 }//ns
 
+#if 0
+// causes problems with lexical_cast<X>(s) for other X - need some other way to get this found by program_options.
 namespace boost {
 // for program_options - not sure if ADL would have found since it's on return type not args
 template <class I>
@@ -111,5 +113,5 @@ graehl::hex_int<I> lexical_cast(std::string const &s) {
   return ret;
 }
 }
-
+#endif
 #endif

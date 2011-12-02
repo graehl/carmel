@@ -115,6 +115,7 @@
                          (equal (device-type) 'mswindows)))
 (defvar recent-emacs nil)
 (defvar emacs-22 (string-match "Emacs 22." (emacs-version)))
+(defvar emacs-24 (string-match "Emacs 24." (emacs-version)))
 (defvar recent-xemacs on-xemacs)
 (defvar cygwin-xemacs on-xemacs)
 (defvar xemacs-21-5 (string-match "XEmacs 21.5" (emacs-version)))
@@ -3998,7 +3999,8 @@ loaded as such.)"
                                         ;(global-set-key (kbd "C-x C-f") 'ido-fallback-command)
                                         ;(setq ido-auto-merge-work-directories-length -1)
                                         ;(require 'anything)
-(require 'hideshowvis)
+(and emacs-24
+     (progn (require 'hideshowvis)
 (defvar hs-toggle-all-last-val nil)
 (defun hs-toggle-all ()
   (interactive)
@@ -4017,6 +4019,7 @@ loaded as such.)"
 (require 'hideshow-org)
 (global-set-key "\C-cv" 'hideshowvis-minor-mode)
 (global-set-key "\C-ch" 'hs-org/minor-mode)
+))
 
 (setq file-name-shadow-tty-properties '(invisible t))
 (file-name-shadow-mode 1)
@@ -4630,10 +4633,6 @@ loaded as such.)"
 (global-set-key (kbd "C-c i") 'indent-buffer)
 (global-set-key (kbd "C-c \\") 'indent-cpp-buffer)
 
-(require 'color-theme-solarized)
-;(load-file "~/elisp/themes/color-theme-solarized.el")
-(color-theme-solarized-dark)
-;(color-theme-solarized-light)
 
 (defun remote-term (new-buffer-name cmd &rest switches)
   (setq term-ansi-buffer-name (concat "*" new-buffer-name "*"))
@@ -4644,3 +4643,11 @@ loaded as such.)"
   (term-char-mode)
   (term-set-escape-char ?\C-x)
   (switch-to-buffer term-ansi-buffer-name))
+
+(require 'color-theme-solarized)
+;(load-file "~/elisp/themes/color-theme-solarized.el")
+;(color-theme-solarized-light)
+;(add-hook 'c-mode-hook (lambda () (font-lock-add-keywords nil '(("\\<\\(TODO\\):" 1 font-lock-warning-face t)))))
+(require 'fic-mode)
+
+(color-theme-solarized-dark)

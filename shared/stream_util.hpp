@@ -62,5 +62,4 @@ omanip<const char *> trunc(const char *s)
 
 }//graehl
 
-
 #endif

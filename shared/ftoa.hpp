@@ -42,7 +42,7 @@
 #endif
 
 #include <limits>
-#include <stdint.h>
+#include <boost/cstdint.hpp>
 #include <iostream>
 #include <cmath>
 #include <assert.h>

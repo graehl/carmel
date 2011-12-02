@@ -1,7 +1,7 @@
 #ifndef GRAEHL_SHARED__ITOA_H
 #define GRAEHL_SHARED__ITOA_H
 
-#include <stdint.h>
+#include <boost/cstdint.hpp>
 #include <string>
 #include <cstring>
 #include <limits>
@@ -58,10 +58,10 @@ DEFINE_SIGNED_FOR(int64_t)
 #if INT_DIFFERENT_FROM_INTN
 DEFINE_SIGNED_FOR_3(int,int,unsigned)
 DEFINE_SIGNED_FOR_3(unsigned,int,unsigned)
-#endif
 #if HAVE_LONGER_LONG
 DEFINE_SIGNED_FOR_3(long int,long int,long unsigned)
 DEFINE_SIGNED_FOR_3(long unsigned,long int,long unsigned)
+#endif
 #endif
 /*
 // The largest 32-bit integer is 4294967295, that is 10 chars

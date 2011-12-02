@@ -425,7 +425,9 @@ fi
 #-Wno-deprecated
 #-fvisibility-inlines-hidden
 #-Wno-write-strings
- export CXXFLAGS="$CFLAGS -Weffc++"
+ export CXXFLAGS="$CFLAGS "
+ #-Weffc++
+ # not compatible w/ boost really
 }
 
 qsippn=2
@@ -524,3 +526,4 @@ if false && [ "$TERM" = "eterm-color" ]; then
 fi
 
 export CLOJURE_EXT=~/.clojure
+export HYPERGRAPH_DBG_LEVEL=1

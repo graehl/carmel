@@ -71,8 +71,8 @@ namespace graehl {
     template <class H>
     struct hash_traits
     {
-        typedef typename H::iterator find_return_type;
-        typedef std::pair<find_return_type,bool> insert_return_type;
+        typedef typename H::iterator find_result_type;
+        typedef std::pair<find_result_type,bool> insert_result_type;
     };
 
 template <class Map,class Key> inline
@@ -162,7 +162,7 @@ struct hash_container
 
 template <class K,class V,class H,class P,class A>
 inline
-  typename HashTable<K,V,H,P,A>::insert_return_type insert(HashTable<K,V,H,P,A>& ht,const K& first,const V &v=V())
+  typename HashTable<K,V,H,P,A>::insert_result_type insert(HashTable<K,V,H,P,A>& ht,const K& first,const V &v=V())
 {
   return ht.insert(first,v);
 }

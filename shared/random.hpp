@@ -2,8 +2,6 @@
 #ifndef GRAEHL_SHARED__RANDOM_HPP
 #define GRAEHL_SHARED__RANDOM_HPP
 
-#include <graehl/shared/myassert.h>
-
 #ifdef SOLARIS
 //# include <sys/int_types.h>
 //FIXME: needed for boost/random - report bug to boost.org? (actually no, had uint32_t, just bug in pass_through_engine.hpp trying to get uint32_t::base_type
@@ -17,7 +15,8 @@
 #  undef USE_NONDET_RANDOM
 # else
 #  include <boost/nondet_random.hpp>
-# if defined(GRAEHL__SINGLE_MAIN) || defined (RANDOM_SINGLE_MAIN)
+# if defined (RANDOM_SINGLE_MAIN)
+// should be included in boost libraries? this is a locally bugfixed version, but latest boost should work
 #  include "nondet_random.cpp"
 # endif
 #endif
@@ -31,12 +30,10 @@
 
 #include <ctime>
 #include <graehl/shared/os.hpp>
-#include <graehl/shared/verbose_exception.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
 #include <cctype>
-#include <graehl/shared/debugprint.hpp>
 #endif
 
 namespace graehl {
@@ -116,7 +113,6 @@ struct set_random_pos_fraction {
 };
 
 inline size_t random_less_than(size_t limit) {
-    Assert(limit!=0);
     if (limit <= 1)
         return 0;
 #ifdef USE_STD_RAND

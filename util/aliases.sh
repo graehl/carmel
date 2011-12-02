@@ -1,15 +1,54 @@
+hgdot() {
+    local m=${3:-${1%.gz}}
+    HgDraw $1 > $m.dot
+    doto $m.dot $2
+}
+doto() {
+    local t=${2:-pdf}
+    local o=${3:-${1%.dot}}
+    dot -Tpdf -o$o.$t $1 && open $o.$t
+}
+racer=~/x
+#racer=$racer/racerx
+#racer=$racer
+#racers=$racer/racerx
 
-
+dbgemacs() {
+    cd ~/bin/Emacs.contents
+    MacOS/Emacs --debug-init "$@"
+}
 lnshared() {
     forall lnshared1 "$@"
 }
 lnshared1() {
     local s=~/t/graehl/shared/
-    local f=$s/"$1"
+    local f=$s/$1
     local d=$racer/3rdParty/graehl/shared/
-    [ -r $f ] && rm -f $d/$1 && ln $f $d
+    local g=$d/$1
+    set -x
+    if [ -r $f ] ; then
+        if diff -u $f $g ; then
+          rm -f $g && ln $f $g
+        fi
+    fi
+    set +x
     (cd $s; svn add "$1")
     (cd $d; svn add "$1")
+}
+usedshared() {
+    (cd $racer/3rdParty/graehl/shared/;ls *.hpp)
+}
+diffshared1() {
+    local s=~/t/graehl/shared/
+    local f=$s/"$1"
+    local d=$racer/3rdParty/graehl/shared/
+    diff -u -b $f $d/$1
+}
+diffshared() {
+    forall diffshared1 $(usedshared)
+}
+relnshared() {
+    lnshared $(usedshared)
 }
 lnhg() {
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
@@ -41,10 +80,18 @@ horsem() {
     make
     )
 }
+sa2c() {
+    s2c
+    (cd
+        for d in x/racerx/CMakeLists.txt  x/racerx/Hypergraph x/racerx/Util  ; do
+         sync2 $chost $d
+         done
+        )
+}
 s2c() {
     #elisp x/3rdParty
     (cd
-        for d in u t  x/CMakeLists.txt x/Hypergraph x/Util ; do
+        for d in u t  ; do
           sync2 $chost $d
         done
     )
@@ -61,7 +108,7 @@ sconsd() {
 #sudo gem install git_remote_branch --include-dependencies - gives the nice 'grb' git remote branch cmd
 #see aliases in .gitconfig #git what st ci co br df dc lg lol lola ls info ign
 
-racer=~/x
+
 case $(uname) in
     Darwin)
         lwarch=Apple ;;
@@ -148,6 +195,8 @@ racb() {
     fi
     build=${1:-$build}
     racerbuild=$racer/$build
+    racer3=$racer/3rdParty
+    export RACERX_THIRDPARTY_PATH=$racer3
     mkdir -p $racerbuild
     cd $racerbuild
     local fa=
@@ -204,6 +253,10 @@ racm() {
     shift || true
     cd $racerbuild
     make -j$MAKEPROC VERBOSE=1 "$@"
+    if [ "$*" ] ; then
+        test=
+        tests=
+    fi
     if [[ $test ]] ; then make test ; fi
     for t in $tests; do
         ( set -e;
@@ -221,7 +274,7 @@ racc() {
     racb ${1:-Debug}
     shift || true
     cd $racerbuild
-    ccmake .. $cmarg
+    ccmake ../racerx $cmarg
 }
 raccm() {
     racc ${1:-Debug}
@@ -400,6 +453,7 @@ boostsbmt()
         linking=
         branch=${branch:-trunk}
         trunkdir=${trunkdir:-$SBMT_BASE/$branch}
+        [ -d $trunkdir ] || trunkdir=$HOME/t
         showvars_required branch trunkdir
         pushd $trunkdir
         mkdir -p $h
@@ -416,7 +470,7 @@ boostsbmt()
             builddir="${builddir}_boost_$boost"
         fi
         if [[ $boostdir ]] ; then
-            [[ -d $boostdir ]]
+            [[ -d $boostdir ]] || boostdir=/usr/local
             barg="--boost=$boostdir"
         fi
         execpre=${execpre:-$FIRST_PREFIX}
@@ -1104,20 +1158,40 @@ buildxrs() {
 alias grep="$(which grep) --color -n"
 alias savecvs="/usr/bin/rsync -Lptave ssh ~/isd/cvs hpc.usc.edu:isd/cvs"
 alias buildfem="pushd ~/t/graehl/tt;make clean;make BOOST_SUFFIX= -j$MAKEPROC install;popd"
-buildcar() {
-    pushd ~/t/graehl/carmel
+buildgraehl() {
+    local d=$1
+    local v=$2
+    (set -e
+    pushd ~/t/graehl/$d
     [ "$noclean" ] || make clean
     set -x
     make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
     make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
     set +x
     popd
-    if [ "$1" ] ; then
+    if [ "$v" ] ; then
         pushd $FIRST_PREFIX/bin
-        cp carmel carmel.$1
-        cp carmel.static carmel.$1
+        cp carmel carmel.$v
+        cp carmel.static carmel.$v
         popd
     fi
+    )
+}
+buildcar() {
+    buildgraehl carmel "$@"
+    # pushd ~/t/graehl/carmel
+    # [ "$noclean" ] || make clean
+    # set -x
+    # make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
+    # make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
+    # set +x
+    # popd
+    # if [ "$1" ] ; then
+    #     pushd $FIRST_PREFIX/bin
+    #     cp carmel carmel.$1
+    #     cp carmel.static carmel.$1
+    #     popd
+    # fi
 }
 alias buildem='buildcar;buildfem'
 buildboost() {(
@@ -2193,10 +2267,6 @@ hsbmt() {
     hscp ~/isd/erdos/bin/* blobs/mini_decoder/unstable/x86_64
 }
 
-find_bad_lmstring() {
-    perl -I ~graehl/isd/hints -ne 'BEGIN{require "exec_filter.pl";&argvz;}print  if /lm_string=\{\{\{([^}]|\}[^}]|\}\}[^}])*\s"[^"]*\s/' "$@"
-}
-
 
 
 function conf
@@ -2232,91 +2302,6 @@ function dobuild
     fi
 }
 
-function sbmt_build
-{(
-        echo2 sbmt_build "$@"
-        branch=${branch:-trunk}
-        cd $SBMT_BASE/$branch
-        local mycflags
-        if [ "$1" ] && [ ! -d "$1" ] ; then
-            echo adding to CFLAGS - you should probably export reconfig=1: $1
-# reconfig=1
-            mycflags=$1
-            exportflags $1
-            showvars_required CFLAGS CXXFLAGS LDFLAGS
-            shift
-        fi
-
-        while [ -d "$1" ] ; do
-            sub=$1
-            shift
-            subs="$subs $sub"
-        done
-        set -x
-        set -e
-#sbmtcp
-
-        if [ "$1" = clean ] ; then
-            clean=1
-            shift
-        fi
-
-        require_dirs $subs
-        for sub in $subs; do
-            pushd $sub
-            myconfig
-            cd $BUILDDIR
-            if [ "$print" ] ; then
-                make print
-            fi
-            if [ "$clean" ] ; then
-                make clean
-            fi
-            if [ "$relink" ] ; then
-                make clean-binPROGRAMS
-            fi
-            local mymakeargs=$makeargs
-            if [ "$static" ] ; then
-                mymakeargs="$mymakeargs LDFLAGS+=-all-static"
-            fi
-            if [ "$mycflags" ] ; then
-                mymakeargs="$mymakeargs CFLAGS+='$mycflags' CXXFLAGS+='$mycflags' "
-            fi
-            make -j 4 $mymakeargs
-            done_install=0
-            local targs="$*"
-            if [ "$targs" = check ] ; then
-                targs="install check"
-            fi
-            for target in $targs; do
-                set -x
-                make $target $mymakeargs
-                set +x
-                if [ $target = install ] ; then
-                    done_install=1
-                fi
-            done
-            if [ $done_install = 0 ] ; then
-                make install
-            fi
-            popd
-        done
-        )}
-
-#RuleReader
-SBMTALL="sbmt_decoder itg-binarizer utilities"
-sbmt_static_build() {
-    makeargs=LDFLAGS+=-all-static sbmt_build "$@"
-}
-
-sbmt_all_build() {
-    sbmt_build "$@" $SBMTALL
-}
-
-sbmt_all_static_build() {
-#clean=1
-    sbmt_static_build "$@" $SBMTALL
-}
 
 makesrilm_c() {
     make OPTION=_c World
@@ -2366,20 +2351,6 @@ cpimd() {
     touch $d/../unstable
 }
 
-
-function bsbmt
-{
-    sbmt_build "$@" RuleReader sbmt_decoder itg-binarizer utilities
-}
-
-function ssbmt
-{
-    exportflags -O2
-    local c=1
-    [ "$noclean" ] && c=
-    distclean=$c static=1  bsbmt
-#sbmt_build_static "$@" RuleReader sbmt_decoder itg-binarizer utilities
-}
 
 #function sssbmt
 #{

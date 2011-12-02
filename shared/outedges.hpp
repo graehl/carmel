@@ -16,8 +16,8 @@ struct OutEdges;
 
 // see property.hpp for factory
 // must define visit (although default above should be ok)
-template <class G,class T=edge_tag_t,class ContS=VectorS,
-          class VertMapFactory=property_factory<G,vertex_tag_t>
+template <class G,class T=edge_tag,class ContS=VectorS,
+          class VertMapFactory=property_factory<G,vertex_tag>
 >
 struct OutEdges {
   typedef OutEdges<G,T,ContS,VertMapFactory> Self;

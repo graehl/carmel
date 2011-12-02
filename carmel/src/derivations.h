@@ -718,7 +718,7 @@ struct derivations //: boost::noncopyable
     {
         const int EPS=WFST::epsilon_index;
         state_id src=g.size();
-        state_to_id::insert_return_type already=
+        state_to_id::insert_result_type already=
             id_of_state.insert(d,src);
         if (!already.second)
             return already.first->second; // return id if state was previously explored

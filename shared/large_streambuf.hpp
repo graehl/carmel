@@ -2,6 +2,7 @@
 #define GRAEHL_SHARED__LARGE_STREAMBUF_HPP
 
 #include <boost/config.hpp>
+#include <boost/noncopyable.hpp>
 #include <fstream>
 #include <new>
 
@@ -28,7 +29,7 @@ struct large_streambuf
 };
 
 // must have at least the lifetime of the stream you construct this with.  for fstream, you must expand the streambuf *before* opening the file, or the pubsetbuf call has no effect.
-struct bigger_streambuf
+struct bigger_streambuf : boost::noncopyable
 {
     std::size_t size;
     void *buf;

@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <cstring>
 #include <sstream>
-//#include "info_debug.hpp"
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/command_line.hpp>
+#include <graehl/shared/string_to.hpp>
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
 # define OS_WINDOWS
 #else
-#include <unistd.h>
+# include <unistd.h>
 #endif
 
 #if !defined( MEMMAP_IO_WINDOWS ) && !defined( MEMMAP_IO_POSIX )
@@ -30,30 +30,48 @@
 # endif
 #endif
 
-#ifdef DBP_OS_HPP
-#include <graehl/shared/debugprint.hpp>
-#endif
-
 #ifdef OS_WINDOWS
 # include <direct.h>
 #endif
 
 #ifdef MEMMAP_IO_WINDOWS
 # ifndef NOMINMAX
-# define NOMINMAX
+#  define NOMINMAX
 # endif
 # define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 # include <windows.h>
 # undef max
 # undef min
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
-namespace graehl {
+#endif
 
+//static local var means env var is checked once (like singleton)
+#define DECLARE_ENV(fn,var) static int fn() {static const int l=graehl::getenv_int(#var);return l;}
+#define DECLARE_ENV_C(n,f,v) DECLARE_ENV(f,v) static const int n = f();
+#define DECLARE_DBG_LEVEL_C(n,env) DECLARE_ENV_C(n,getenv_##env,env)
+#define DECLARE_DBG_LEVEL(ch) DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG_LEVEL)
+#define DECLARE_DBG_LEVEL_IF(ch) ch(DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG_LEVEL))
+#define MACRO_NOT_NULL(IF) (0 IF(||1))
+
+#ifdef NDEBUG
+# define IFDBG(ch,l) if(0)
+#else
+# define IFDBG(ch,l) if(MACRO_NOT_NULL(ch) && ch##_DBG_LEVEL>=(l))
+#endif
+
+#ifdef WIN32
+char * getenv(char const* key) {
+  const DWORD maxch = 65535; // //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
+  static char buf[maxch];
+  return GetEnvironmentVariableA(key,buf,maxch) ? buf : NULL;
+}
+
+namespace graehl {
 typedef DWORD Error;
 inline long get_process_id() {
     return GetCurrentProcessId();
 }
-}
+}//ns
 
 #else
 # include <unistd.h>
@@ -62,15 +80,19 @@ typedef int Error;
 inline long get_process_id() {
     return getpid();
 }
-}
-
+}//ns
 # include <errno.h>
 # include <string.h>
 #endif
 
 namespace graehl {
 
-inline int system_safe(const std::string &cmd) 
+inline int getenv_int(char const* key) {
+  char const* s = getenv(key);
+  return s ? atoi_nows(s) : 0;
+}
+
+inline int system_safe(const std::string &cmd)
 {
     int ret=::system(cmd.c_str());
     if (ret!=0)
@@ -78,7 +100,7 @@ inline int system_safe(const std::string &cmd)
     return ret;
 }
 
-inline int system_shell_safe(const std::string &cmd) 
+inline int system_shell_safe(const std::string &cmd)
 {
     const char *shell="/bin/sh -c ";
     std::stringstream s;
@@ -124,7 +146,7 @@ inline std::string get_current_dir() {
 }
 
 template <class O>
-void print_current_dir(O&o,const char*header="### CURRENT DIR: ") 
+void print_current_dir(O&o,const char*header="### CURRENT DIR: ")
 {
     if (header)
         o << header;
@@ -227,9 +249,6 @@ struct tmp_fstream
     void choose_name()
     {
         filename=std::tmpnam(NULL);
-#ifdef DBP_OS_HPP
-        DBP(filename);
-#endif
     }
     void open(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc) {
         file.open(filename.c_str(),mode);
@@ -260,13 +279,13 @@ struct tmp_fstream
 
 inline void throw_last_error(const std::string &module="ERROR")
 {
-    throw std::runtime_error(module+": "+last_error_string());    
+    throw std::runtime_error(module+": "+last_error_string());
 }
 
 #define TMPNAM_SUFFIX "XXXXXX"
 #define TMPNAM_SUFFIX_LEN 6
 
-inline bool is_tmpnam_template(const std::string &filename_template) 
+inline bool is_tmpnam_template(const std::string &filename_template)
 {
     unsigned len=filename_template.length();
     return !(len<TMPNAM_SUFFIX_LEN || filename_template.substr(len-TMPNAM_SUFFIX_LEN,TMPNAM_SUFFIX_LEN)!=TMPNAM_SUFFIX);
@@ -277,25 +296,25 @@ inline bool is_tmpnam_template(const std::string &filename_template)
 //FIXME: provide win32 implementations
 
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!).  returns filename created.  if template is missing XXXXXX, it's appended first.
-inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=false) 
+inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=false)
 {
     const unsigned MY_MAX_PATH=1024;
     char tmp[MY_MAX_PATH+1];
     std::strncpy(tmp, filename_template.c_str(),MY_MAX_PATH-TMPNAM_SUFFIX_LEN);
-    
+
     if (!is_tmpnam_template(filename_template))
         std::strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
-    
+
     int fd=::mkstemp(tmp);
 
     if (fd==-1)
         throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
 
     ::close(fd);
-    
+
     if (!keepfile)
         ::unlink(tmp);
-    
+
     return tmp;
 }
 
@@ -307,7 +326,7 @@ inline std::string maybe_tmpnam(const std::string &filename_template="/tmp/safe_
 }
 
 
-inline bool safe_unlink(const std::string &file,bool must_succeed=true) 
+inline bool safe_unlink(const std::string &file,bool must_succeed=true)
 {
     if (::unlink(file.c_str()) == -1) {
         if (must_succeed)
@@ -320,7 +339,7 @@ inline bool safe_unlink(const std::string &file,bool must_succeed=true)
 #endif
 
 //!< returns dir/name unless dir is empty (just name, then).  if name begins with / then just returns name.
-inline std::string joined_dir_file(const std::string &basedir,const std::string &name="",char pathsep='/') 
+inline std::string joined_dir_file(const std::string &basedir,const std::string &name="",char pathsep='/')
 {
     if (!name.empty() && name[0]==pathsep) //absolute name
         return name;
@@ -342,7 +361,7 @@ inline void split_dir_file(const std::string &fullpath,std::string &dir,std::str
     } else {
         dir=fullpath.substr(0,p);
         file=fullpath.substr(p+1,fullpath.length()-(p+1));
-    }   
+    }
 }
 
 } // graehl

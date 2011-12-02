@@ -1,5 +1,5 @@
-#ifndef INTMOD_HPP
-#define INTMOD_HPP
+#ifndef GRAEHL_SHARED_UMOD_HPP
+#define GRAEHL_SHARED_UMOD_HPP
 
     /* The binary % operator yields the remainder from the division of the first expression by the second. .... If both operands are nonnegative then the remainder is nonnegative; if not, the sign of the remainder is implementation-defined - seriously, wtf. */
 // this always returns somethign in [0,m) unlike x % m which for -x can return something in (-m,m)
@@ -9,7 +9,7 @@
 # define HAVE_NEGATIVE_REMAINDER 1
 #endif
 
-#include <stdint.h>
+#include <boost/cstdint.hpp>
 
 template <class I>
 inline I umod(I x,I m) {

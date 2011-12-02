@@ -48,4 +48,29 @@ typedef T self_type;
     template <class Char,class Traits> inline                                                              \
     std::basic_istream<Char,Traits>& operator >>(std::basic_istream<Char,Traits> &i,self_type & me)     \
     { me.read(i);return i; }
+
+namespace graehl {
+template <class Val,class State>
+struct printer {
+  Val v;
+  State s;
+  printer(Val v,State s) : v(v),s(s) {}
+  friend inline std::ostream & operator<<(std::ostream &o,printer<Val,State> const& x) {
+    // must be found by ADL - note: typedefs won't help
+    print(o,x.v,x.s);
+    return o;
+  }
+};
+
+template <class Val,class State>
+printer<Val const&,State const&> print(Val const& v,State const& s) {
+  return printer<Val const&,State const&>(v,s);
+}
+
+template <class Val,class State>
+printer<Val const&,State &> print(Val const& v,State & s) {
+  return printer<Val const&,State &>(v,s);
+}
+}//ns
+
 #endif

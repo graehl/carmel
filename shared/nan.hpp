@@ -1,7 +1,7 @@
 #ifndef GRAEHL_SHARED__NAN_HPP
 #define GRAEHL_SHARED__NAN_HPP
+
 //TODO: switch to C99 isnan isfinite isinf etc. (faster)
-//NOTE: not namespace graehl.
 
 #include <limits>
 

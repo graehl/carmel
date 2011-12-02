@@ -7,7 +7,6 @@
 #include <locale>
 #include <iostream>
 
-
 namespace graehl {
 
 inline void default_locale()
@@ -15,15 +14,15 @@ inline void default_locale()
     std::locale::global(std::locale(""));
 }
 
-#ifndef UNSYNC_STDIO
-# define UNSYNC_STDIO 1
-#else
+#ifndef USE_UNSYNC_STDIO
+# define USE_UNSYNC_STDIO 1
+#endif
 
 #ifndef DEFAULT_LOCALE
 # define DEFAULT_LOCALE 1
 #endif
 
-#if UNSYNC_STDIO
+#if USE_UNSYNC_STDIO
 # define UNSYNC_STDIO graehl::unsync_cout()
 #else
 # define UNSYNC_STDIO

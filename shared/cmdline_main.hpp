@@ -33,6 +33,9 @@
 #include <graehl/shared/teestream.hpp>
 #include <graehl/shared/makestr.hpp>
 #include <graehl/shared/string_to.hpp>
+#include <graehl/shared/random.hpp>
+//#include <graehl/shared/verbose_exception.hpp>
+
 #if GRAEHL_DEBUGPRINT
 # include <graehl/shared/debugprint.hpp>
 #endif
@@ -87,6 +90,10 @@ struct main {
       return s.str();
     }
 
+    bool allow_random() {
+      add_random=true;
+    }
+
     bool add_ins() const {
       return min_ins || max_ins;
     }
@@ -110,9 +117,9 @@ struct main {
       validate(n);
       for (unsigned i=0;i<n;++i)
         if (!*ins[i]) {
-          THROW_HYPERGRAPH_EXCEPTION("invalid input hg #"<<utos(i+1)<<" file "+ins[i].name);
+//          VTHROW_MSG("invalid input #"<<utos(i+1)<<" file "+ins[i].name);
+          throw std::runtime_error("Invalid input file #"+utos(i+1)+" file "+ins[i].name);
         }
-
     }
     void validate(int n) const {
       if (has_max_ins() && n>max_ins)
@@ -125,8 +132,9 @@ struct main {
     bool add_in_file,add_out_file,add_log_file,add_config_file,add_help,add_debug_level;
     bool positional_in,positional_out;
     bool add_quiet,add_verbose;
+    bool add_random;
     base_options() {
-      positional_out=positional_in=add_in_file=false;
+      positional_out=positional_in=add_in_file=add_random=false;
       add_log_file=add_help=add_out_file=add_config_file=add_debug_level=true;
       min_ins=max_ins=0;
       add_verbose=add_quiet=true;
@@ -148,11 +156,22 @@ struct main {
   std::auto_ptr<std::ostream> teestreamptr;
 
   std::string appname,version,compiled,usage;
+  boost::uint32_t random_seed;
 
   //FIXME: segfault if version is a char const* global in subclass xtor, why?
-  main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",std::string const& compiled=GRAEHL_MAIN_COMPILED)  : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Options"),options_added(false)
+  main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",bool multifile=false,bool random=false,bool input=true,std::string const& compiled=GRAEHL_MAIN_COMPILED)  : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Options"),options_added(false)
   {
+    if (random)
+      bopt.allow_random();
+    if (input) {
+      if (multifile) {
+        bopt.require_ins();
+      } else {
+        bopt.allow_in(true);
+      }
+    }
     verbose=1;
+    random_seed=default_random_seed();
   }
 
   typedef printable_options_description<std::ostream> OD;
@@ -178,6 +197,7 @@ struct main {
   {
     validate_parameters_base();
     validate_parameters_extra();
+    set_random_seed(random_seed);
   }
 
   virtual void validate_parameters_extra() {}
@@ -319,7 +339,7 @@ struct main {
     if (bopt.add_log_file)
       all.add_options()
         (GRAEHL_LOG_FILE",l",defaulted_value(&log_file),
-         "Send logs messages here (as well as to STDERR)");
+         "Send log messages here (as well as to STDERR)");
 
 #if GRAEHL_DEBUGPRINT
     if (bopt.add_debug_level)
@@ -327,7 +347,12 @@ struct main {
         ("debug-level,d",defaulted_value(&debug_lvl),
          "Debugging output level (0 = off, 0xFFFF = max)")
 #endif
-        ;
+
+        if (bopt.add_random)
+          all.add_options()
+            ("random-seed,R",defaulted_value(&random_seed),
+             "Random seed")
+            ;
 
   }
 
@@ -359,8 +384,8 @@ struct main {
 
     add_options(all_options);
 
+    cmdline_str=graehl::get_command_line(argc,argv,NULL);
     try {
-      cmdline_str=graehl::get_command_line(argc,argv,NULL);
       parsed_options po=all_options.parse_options(argc,argv,&positional);
       store(po,vm);
       //notify(vm); // variables aren't set until notify?
@@ -385,7 +410,7 @@ struct main {
         return false;
       }
     } catch (std::exception &e) {
-      std::cerr << "ERROR: "<<e.what() << " (parsing "<<cmdname<<" options)\nTry '" << argv[0] << " -h' for help\n\n";
+      std::cerr << "ERROR: "<<e.what() << " while parsing "<<cmdname<<" options:\n"<<cmdline_str<<"\n\n" << argv[0] << " -h\n for help\n\n";
       throw;
     }
     return true;

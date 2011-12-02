@@ -337,21 +337,21 @@ void stringtok (Container &container, std::string const &in, const char * const 
 
 
 
-// requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
+// requirement: P::result_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
 // can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())
 template <class P>
 struct finder
 {
-    typedef typename P::return_type return_type;
+    typedef typename P::result_type result_type;
     typedef finder<P> Self;
 
     P pred;
-    return_type ret;
+    result_type ret;
 
     finder(const P &pred_): pred(pred_),ret() {}
     finder(const Self &o) : pred(o.pred),ret() {}
 
-    void operator()(const return_type& u)
+    void operator()(const result_type& u)
     {
         if (!ret)
             ret = pred(u);

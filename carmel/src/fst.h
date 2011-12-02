@@ -303,7 +303,7 @@ class WFST {
                 State::Arcs &arcs=i->arcs;
                 for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
                     newsym s(l->in,l->out);
-                    tosyms::insert_return_type ins=to.insert(s,syms.size());
+                    tosyms::insert_result_type ins=to.insert(s,syms.size());
                     if (ins.second)
                         syms.push_back(s);
                     l->in=l->out=ins.first->second;

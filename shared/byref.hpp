@@ -1,7 +1,8 @@
-// when you write a template that takes an argument by value, pass a ref(obj) if you don't want a copy of obj made.  tries to autoconvert back to obj's type but can't do that for operators, so e.g. deref(f)(arg) is necessary in your template function.
-// originally contained my own wrap-reference-as-value class until I discovered Boost's.
 #ifndef GRAEHL__SHARED__BYREF_HPP
 #define GRAEHL__SHARED__BYREF_HPP
+// when you write a template that takes an argument by value, pass a ref(obj) if you don't want a copy of obj made.  tries to autoconvert back to obj's type but can't do that for operators, so e.g. deref(f)(arg) is necessary in your template function.
+// originally contained my own wrap-reference-as-value class until I discovered Boost's.
+
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -15,7 +16,7 @@
 
 #include <graehl/shared/dummy.hpp>
 
-    
+
 
 namespace graehl {
 
@@ -69,18 +70,18 @@ deref(const T& t) {
 namespace std {
 
 template<class R>
-struct equal_to<boost::reference_wrapper<R> > 
+struct equal_to<boost::reference_wrapper<R> >
 {
     typedef boost::reference_wrapper<R> arg_type;
     typedef arg_type first_argument_type;
     typedef arg_type second_argument_type;
     typedef bool result_type;
-    
+
     bool operator()(arg_type const& r1,arg_type const& r2) const
     {
         return (R const &)r1 == (R const &)r2;
     }
-    
+
 };
 
 }
@@ -92,11 +93,11 @@ struct hash;
 
 
 template<class R>
-struct hash<boost::reference_wrapper<R> > 
+struct hash<boost::reference_wrapper<R> >
 {
     typedef boost::reference_wrapper<R> arg_type;
     typedef std::size_t result_type;
-    
+
     result_type operator()(arg_type const& r) const
     {
         return hash_value((R const&)r);
@@ -105,7 +106,7 @@ struct hash<boost::reference_wrapper<R> >
 
 }
 
-    
+
 
 
 #ifdef TEST_MAIN

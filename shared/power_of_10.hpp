@@ -14,7 +14,7 @@
 
    defined for Numeric float,double,(u)int{8,16,32,64}_t
  */
-#include <stdint.h>
+#include <boost/cstdint.hpp>
 
 // these two lists could be generated via a combinator loop thingy: FOLDC22C(F,C,Z) =F(C,... F(C,F(C,Z))...)
 
