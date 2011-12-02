@@ -119,10 +119,10 @@ struct pmap_getter {
   P const& p;
   explicit pmap_getter(P const& p) : p(p) {}
   typedef boost::property_traits<P> T;
-  typedef void argument_type;
+  typedef void key_type;
   typedef typename T::value_type const& result_type;
-  template <class argument_type>
-  result_type operator()(argument_type const& k) const {
+  template <class key_type>
+  result_type operator()(key_type const& k) const {
     return get(p,k);
   }
 };
@@ -132,8 +132,55 @@ pmap_getter<P> getter(P const& p) {
   return pmap_getter<P>(p);
 }
 
+template <class K,class V>
+struct map_pair {
+  K k; // unsure if can make these refs in boost transform chain, so copy the val.
+  V v;
+  map_pair(K const& k,V const& v) : k(k),v(v) {}
+  typedef map_pair self_type;
+  template <class O>
+  void print(O &o) const {
+    o<<k<<" -> "<<v;
+  }
+  TO_OSTREAM_PRINT
+};
+
+template <class K,class V>
+map_pair<K,V> mpair(K const& k,V const& v) {
+  return map_pair<K,V>(k,v);
+}
+
+template <class A,class P>
+struct pmap_pair_getter {
+  P const& p;
+  explicit pmap_pair_getter(P const& p) : p(p) {}
+  typedef boost::property_traits<P> T;
+  typedef A key_type;
+  typedef typename T::value_type V;
+  typedef map_pair<key_type,V> result_type;
+//  template <class key_type>
+  result_type operator()(key_type const& k) const {
+    return result_type(k,get(p,k));
+  }
+};
+
+template <class A,class P>
+pmap_pair_getter<A,P> pair_getter_argtype(P const& p) {
+  return pmap_pair_getter<A,P>(p);
+}
+
+template <class P>
+pmap_pair_getter<typename boost::property_traits<P>::key_type,P> pair_getter(P const& p) {
+  return pmap_pair_getter<typename boost::property_traits<P>::key_type,P>(p);
+}
+
 template <class O,class R,class P>
 void print(O &o,R const& r,pmap_getter<P> const& p) {
+  range_sep(multiline).print(o,r|boost::adaptors::transformed(p));
+}
+
+template <class O,class R,class A,class P>
+void print(O &o,R const& r,pmap_pair_getter<A,P> const& p) {
   range_sep(multiline).print(o,r|boost::adaptors::transformed(p));
 }
 

@@ -86,7 +86,7 @@ DECLARE_DBG_LEVEL_IF(TUHG)
 #define SHOWM2(IF,m,x0,x1) SHOWP(IF,m<<": ") SHOW2(IF,x0,x1)
 #define SHOWM3(IF,m,x0,x1,x2) SHOWP(IF,m<<": ") SHOW3(IF,x0,x1,x2)
 #define SHOWM4(IF,m,x0,x1,x2,x3) SHOWP(IF,m<<": ") SHOW4(IF,x0,x1,x2,x3)
-#define SHOWM5(IF,m,x0,x1,x2,x3,x4) SHOWP(IF,m<<": ") SHOW5(IF,x,x0,x1,x2,x3,x4)
+#define SHOWM5(IF,m,x0,x1,x2,x3,x4) SHOWP(IF,m<<": ") SHOW5(IF,x0,x1,x2,x3,x4)
 #define SHOWM6(IF,m,x0,x1,x2,x3,x4,x5) SHOWP(IF,m<<": ") SHOW6(IF,x0,x1,x2,x3,x4,x5)
 #define SHOWM7(IF,m,x0,x1,x2,x3,x4,x5,x6) SHOWP(IF,m<<": ") SHOW7(IF,x0,x1,x2,x3,x4,x5,x6)
 

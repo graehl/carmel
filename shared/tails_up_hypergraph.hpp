@@ -52,6 +52,7 @@
 #include <graehl/shared/property_factory.hpp>
 #include <graehl/shared/hypergraph.hpp>
 #include <graehl/shared/print_read.hpp>
+#include <graehl/shared/word_spacer.hpp>
 #if USE_D_ARY_HEAP
 // should be faster. should also support negative edges
 # include <graehl/shared/d_ary_heap.hpp>
@@ -67,7 +68,7 @@ namespace graehl {
 DECLARE_DBG_LEVEL(TUHG)
 //IFDBG(TUHG,1) { SHOWM2(TUHG,"descr" }
 #define TUHG_SHOWQ(l,n,v) IFDBG(TUHG,l) { SHOWM2(TUHG,n,v,get(mu,v)); }
-#define TUHG_SHOWP(l,n,mu) IFDBG(TUHG,l) { SHOWM(TUHG,n,print(vertices(g),getter(mu))); }
+#define TUHG_SHOWP(l,n,mu) IFDBG(TUHG,l) { SHOWM(TUHG,n,print(vertices(g),pair_getter(mu))); }
 
 struct BestTreeStats {
   std::size_t n_blocked_rereach,n_relax,n_update,n_pop,n_unpopped;
@@ -219,9 +220,6 @@ struct TailsUpHypergraph {
     class VertexPredMap=typename VertMapFactory::template rebind<ED>::reference,
     //dummy_property_map
     class EdgeCostMap=typename EdgeMapFactory::template rebind<cost_type>::reference
-   , class ReachOnceMap=const_sink_property_map<bool>
-    //TODO: reach N times then stop requeuing that head (avoid inf loop)
-    //TODO: for just reach once, D_ARY_HEAP_NULL_INDEX suffices
     //TODO: remove non D_ARY_HEAP branch
   >
   struct BestTree {
@@ -229,6 +227,9 @@ struct TailsUpHypergraph {
 //    typedef typename VertMapFactory::template rebind<cost_type>::impl DefaultMu;
     Self &tu;
     graph const& g;
+
+    unsigned allow_rereach; // allow repeated requeueing of already "best known" popped nodes, this many times (0 means don't need to track, otherwise we instantiate rereachptr). we count to avoid infinite loop if neg cost cycle. this count isn't used until we requeue something we popped; we don't mind if we find new best costs for a tail repeatedly as long as we didn't pop the head of that edge yet.
+
     VertexCostMap mu;
     VertexPredMap pi;
     typedef typename VertMapFactory::template rebind<heap_loc_t> LocFact;
@@ -267,23 +268,32 @@ struct TailsUpHypergraph {
     typedef typename RemainTailsFact::reference RemainTailsPmap;
     RemainTailsPmap remain_pmap;
     EdgeCostMap ec;
-    ReachOnceMap once; // must actually supply real map to avoid bug if neg costs exist.
-    bool already_reached(VD v) {
+
+    typedef built_pmap<vertex_tag,graph,unsigned> Rereach;
+    typedef boost::shared_ptr<Rereach> RereachPtr;
+    typedef typename Rereach::property_map_type RereachP;
+    RereachPtr rereachptr;
+    RereachP rereach;
+
+    unsigned already_reached(VD v) {
 #if USE_D_ARY_HEAP
-      return get(locp,v)==(heap_loc_t)D_ARY_HEAP_NULL_INDEX;
+      return allow_rereach ? get(rereach,v) : get(locp,v)==(heap_loc_t)D_ARY_HEAP_NULL_INDEX;
+      // if we're not allow_rereach tracking, then this is only meaningful for heads, not the tail (which was just popped in every case)
 #else
       return get(once,v);
 #endif
     }
     void mark_reached(VD v) {
 #if USE_D_ARY_HEAP
-      put(locp,v,(heap_loc_t)D_ARY_HEAP_NULL_INDEX); // not possible to have this before being added first time - i cleared it to 0s in building form vert_fact (default construct)
+      if (allow_rereach)
+        ++rereach[v];
+      else
+        put(locp,v,(heap_loc_t)D_ARY_HEAP_NULL_INDEX); // not possible to have this before being added first time - i cleared it to 0s in building form vert_fact (default construct)
 #else
       put(once,v,true);
 #endif
     }
 
-    bool allow_rereach; // may infinite loop if neg cost cycle, if true. true means we allow queueing a new better cost for something that was popped off queue already (reached). we don't mind if we find new best costs for a tail repeatedly as long as we didn't pop the head of that edge yet.
     BestTreeStats stat;
 #if USE_D_ARY_HEAP
     typedef d_ary_heap_indirect<VD,graehl::OPTIMAL_HEAP_ARITY,LocsP,VertexCostMap,updates_cost<graph> > Heap;
@@ -292,24 +302,25 @@ struct TailsUpHypergraph {
     typedef dynamic_array<Key> Heap;
 #endif
     Heap heap;
-    BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec,bool allow_rereach=false,ReachOnceMap once=ReachOnceMap())
+    BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec,unsigned allow_rereach=0)
       :
-      tu(r),
-      g(tu.g),
-      mu(mu_),
-      pi(pi_),
-      loc(tu.vert_fact.template init<heap_loc_t>()),
-      locp(loc),
-      remain(tu.edge_fact.template init<Ntails>()),
-      remain_pmap(remain),
-      ec(ec),
-      once(once),
-      allow_rereach(allow_rereach),
+      tu(r)
+      , g(tu.g)
+      , allow_rereach(allow_rereach)
+      , mu(mu_)
+      , pi(pi_)
+      , loc(tu.vert_fact.template init<heap_loc_t>())
+      , locp(loc)
+      , remain(tu.edge_fact.template init<Ntails>())
+      , remain_pmap(remain)
+      , ec(ec)
+      , rereachptr(allow_rereach?RereachPtr(new Rereach(g,0)):RereachPtr())
+      , rereach(allow_rereach?rereachptr->pmap:RereachP())
 #if USE_D_ARY_HEAP
-      heap(mu,locp)
+      , heap(mu,locp)
 #else
       // semi-tricky: loc should be default initialized (void *) to 0
-      heap(num_vertices(g))
+      , heap(num_vertices(g))
 #endif
     {
       copy_pmap(edgeT,g,remain_pmap,tu.unique_tails_pmap);
@@ -340,11 +351,12 @@ struct TailsUpHypergraph {
       }
     }
 
-    void axiom(VD v,Cost const& c=PT::start(),ED h=ED()) {
-      Cost &mc=mu[v];
+    void axiom(VD axiom,Cost const& c=PT::start(),ED h=ED()) {
+      EIFDBG(TUHG,3,SHOW2(TUHG,axiom,print(axiom,g)));
+      Cost &mc=mu[axiom];
       if (PT::update(c,mc)) {
-        safe_queue(v);
-        put(pi,v,h);
+        safe_queue(axiom);
+        put(pi,axiom,h);
       }
     }
 
@@ -375,7 +387,7 @@ struct TailsUpHypergraph {
 
     void operator()(VD v) { // can be called blindly for all verts. only those with reachable path cost are queued
       //put(locp,v,0); // not necessary: property factory (even new int[N] will always default init
-      if (!was_queued(v) && get(mu,v) != PT::unreachable()) {
+      if (!is_queued(v) && get(mu,v) != PT::unreachable()) {
         add_unsorted(v);
       }
     }
@@ -387,11 +399,11 @@ struct TailsUpHypergraph {
     void safe_queue(VD v) {
       TUHG_SHOWQ(1,"safe_queue",v);
 //      IFDBG(TUHG,1) { SHOWM(TUHG,"safe_queue",v); }
-      if (!was_queued(v))
+      if (!is_queued(v))
         add_unsorted(v);
     }
 
-    bool was_queued(VD v) const {
+    bool is_queued(VD v) const {
 #if USE_D_ARY_HEAP
 //      return get(loc,v) || (!heap.empty() && heap.top()==v); // 0 init relied upon, but 0 is a valid location. could set locs to -1 beforehand instead
       return heap.contains(v);
@@ -417,20 +429,20 @@ struct TailsUpHypergraph {
 #endif
     }
 
-    void relax(VD v,ED h,Cost const& c) {
+    void relax(VD v,ED e,Cost const& c) {
       ++stat.n_relax;
       Cost &m=mu[v];
-      IFDBG(TUHG,3) { TUHG_SHOWQ(3,"relax?",v); SHOW2(TUHG,c,print(h,g)); }
+      EIFDBG(TUHG,3,SHOWM5(TUHG,"relax?",v,print(v,g),c,mu[v],print(e,g)));
       if (PT::update(c,m)) {
         ++stat.n_update;
+        put(pi,v,e);
 #if USE_D_ARY_HEAP
-        IFDBG(TUHG,2) { SHOWM3(TUHG,"relaxed",v,c,heap.loc(v)); }
+        IFDBG(TUHG,2) { SHOWM4(TUHG,"updating-or-adding",v,print(v,g),c,heap.loc(v)); }
         heap.push_or_update(v);
-        IFDBG(TUHG,3) { SHOWM2(TUHG,"new heap position: ",v,heap.loc(v)); }
+        IFDBG(TUHG,3) { SHOWM3(TUHG,"updated-or-added",v,print(v,g),heap.loc(v)); }
 #else
         heapAdjustOrAdd(heap,Key(v));
 #endif
-        put(pi,v,h);
       }
     }
 
@@ -453,23 +465,22 @@ struct TailsUpHypergraph {
       TUHG_SHOWQ(2,"reach",tail)
       const Adj &a=tu[tail];
 //          FOREACH(const TailMult &ad,a) { // for each hyperarc v participates in as a tail
-      bool tail_already=already_reached(tail);
+      bool tail_already=allow_rereach&&already_reached(tail);
       mark_reached(tail);
-      IFDBG(TUHG,2) { SHOW4(TUHG,tail,print(tail,g),mu[tail],tail_already); }
+      IFDBG(TUHG,2) { SHOWM4(TUHG,"reach",tail,print(tail,g),mu[tail],tail_already); }
       for (typename Adj::const_iterator j=a.begin(),ej=a.end();j!=ej;++j) {
         ED e=*j;
         VD head=target(e,g);
-        TUHG_SHOWQ(4,"reach",head);
-        bool already=already_reached(head);
-        IFDBG(TUHG,3) { SHOW3(TUHG,head,already,print(e,g)); }
-        if (already && !allow_rereach) {
+        bool head_already=already_reached(head);
+        IFDBG(TUHG,4) { SHOWM4(TUHG,"satisfying",tail,head,head_already,print(e,g)); }
+        if (head_already && !allow_rereach) {
 // don't even propagate improved costs, because we can't otherwise guarantee no infinite loop.
           ++stat.n_blocked_rereach;
-          IFDBG(TUHG,3) { SHOW2(TUHG,head,stat.n_blocked_rereach); }
+          IFDBG(TUHG,3) { SHOWM2(TUHG,"blocked",head,stat.n_blocked_rereach); }
         } else {
           /* for negative costs: will need to track every tails' cost last used for an edge, or just compute edge cost from scratch every time. or need to remember for each vertex last cost used. */
 //        const TailMult &ad=*j;
-//            ri.cost() = PT::extend(ri.cost(),PT::repeat(get(mu,tail),ad.multiplicity));  // assess the cost of reaching v // only reason to do this early is to have a bound and discard edge forever if head already better-reached. doesn't seem important to do so. TODO: remove cost() member
+//            ri.cost() = PT::extend(ri.cost(),PT::repeat(get(mu,tail),ad.multiplicity));  // assess the cost of reaching v // only reason to do this early is to have a bound and discard edge forever if head head_already better-reached. doesn't seem important to do so. TODO: remove cost() member
           // if v completes the hyperarc, or we allow rereaching, attempt to use it to reach head (more cheaply):
           Ntails &tails_unreached=remain[e];
           if (!tail_already) {
@@ -495,18 +506,20 @@ struct TailsUpHypergraph {
     }
 
     void finish() {
-      TUHG_SHOWP(1,"pre-finish (note: not added->uninit index is ok)",locp);
-#define TUHG_SHOWP_ALL(l,n) TUHG_SHOWP(l,n,mu); TUHG_SHOWP(l,n,pi); TUHG_SHOWREMAIN(l,n);
+      TUHG_SHOWP(1,"pre-finish",locp);
+#define TUHG_SHOWP_ALL(l,n) TUHG_SHOWP(l,n,mu); TUHG_SHOWP(l,n,pi); if (allow_rereach) { TUHG_SHOWP(l,n,rereach); } TUHG_SHOWREMAIN(l,n);
       TUHG_SHOWP_ALL(1,"pre-finish");
 #if USE_D_ARY_HEAP
       heap.heapify();
 #else
       typename Key::SetLocWeight save(boost::ref(loc),mu);
       buildHeap(heap);
+      TUHG_SHOWP(1,"pre-finish heap",locp);
 //      heap.push_back(v);
 #endif
       while(!heap.empty()) {
         VD t=top();
+        EIFDBG(TUHG,5,SHOW3(TUHG,heap.size(),t,print(t,g)));
         pop();
         reach(t);
         TUHG_SHOWP_ALL(9,"post-reach");
