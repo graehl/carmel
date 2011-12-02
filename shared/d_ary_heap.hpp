@@ -1,6 +1,8 @@
 #ifndef GRAEHL_SHARED_D_ARY_HEAP_HPP
 #define GRAEHL_SHARED_D_ARY_HEAP_HPP
 
+//TODO: unit test
+
 /* 4-ary min-heap (faster than 2-ary) with external property-map priorities ("distance") for contained keys, and location (index in heap array) property map.
 
    note: you can update() and maybe_improve() the priority
@@ -14,6 +16,12 @@
 # define DDARY(x)
 #endif
 
+#ifdef NDEBUG
+# define DBG_D_ARY_VERIFY_HEAP 0
+#else
+# define DBG_D_ARY_VERIFY_HEAP 1 // change to 0 after tested
+#endif
+
 #define D_ARY_PUSH_GRAEHL 0 // untested
 #define D_ARY_POP_GRAEHL 0 // untested
 #define D_ARY_DOWN_GRAEHL 0 // untested
@@ -21,7 +29,8 @@
 #define D_ARY_APPEND_ALWAYS_PUSH 1 // heapify (0) is untested.  otherwise switch between push and heapify depending on size (cache effects, existing items vs. # appended ones)
 
 #define D_ARY_TRACK_OUT_OF_HEAP 0 // shouldn't need to track, because in contains() false positives looking up stale or random loc map values are impossible - we just check key.  note: if you enable this, you must init location to D_ARY_HEAP_NULL_INDEX yourself until it's been added or popped. slightly speeds up contains() check if 1.
-#define D_ARY_VERIFY_HEAP 0
+
+#define D_ARY_VERIFY_HEAP DBG_D_ARY_VERIFY_HEAP
 // This is a very expensive test so it should be disabled even when NDEBUG is not defined
 
 # undef D_ARY_HEAP_NULL_INDEX
