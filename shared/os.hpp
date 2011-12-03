@@ -48,9 +48,10 @@
 //static local var means env var is checked once (like singleton)
 #define DECLARE_ENV(fn,var) static int fn() {static const int l=graehl::getenv_int(#var);return l;}
 #define DECLARE_ENV_C(n,f,v) DECLARE_ENV(f,v) static const int n = f();
-#define DECLARE_DBG_LEVEL_C(n,env) DECLARE_ENV_C(n,getenv_##env,env)
-#define DECLARE_DBG_LEVEL(ch) DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG_LEVEL)
-#define DECLARE_DBG_LEVEL_IF(ch) ch(DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG_LEVEL))
+#define DECLARE_ENV_C_LEVEL(n,f,v) DECLARE_ENV(f,v) DECLARE_ENV(f##_LEVEL,v##_LEVEL) static const int n = f()||f##_LEVEL();//
+#define DECLARE_DBG_LEVEL_C(n,env) DECLARE_ENV_C_LEVEL(n,getenv_##env,env)
+#define DECLARE_DBG_LEVEL(ch) DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG)
+#define DECLARE_DBG_LEVEL_IF(ch) ch(DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG))
 #define MACRO_NOT_NULL(IF) (0 IF(||1))
 #define SHV(x) " "#x<<"="<<x
 
@@ -60,7 +61,8 @@
 # define IFDBG(ch,l) if(MACRO_NOT_NULL(ch) && ch##_DBG_LEVEL>=(l))
 #endif
 
-#define EIFDBG(ch,l,e) do { IFDBG(ch,l) { e; } }while(0)
+// ch(IFDBG...) so channel need not be declared if noop #define ch(x)
+#define EIFDBG(ch,l,e) do { ch(IFDBG(ch,l) { e; }) }while(0)
 
 #ifdef WIN32
 inline char * getenv(char const* key) {

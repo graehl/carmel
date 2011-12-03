@@ -9,17 +9,28 @@
 
  */
 
-#include <graehl/shared/show.hpp>
+#ifndef DEBUG_D_ARY_HEAP
+# define DEBUG_D_ARY_HEAP 0
+#endif
+
 #if DEBUG_D_ARY_HEAP
+#include <graehl/shared/show.hpp>
+#include <graehl/shared/os.hpp>
 # define DDARY(x) x
+DECLARE_DBG_LEVEL(DDARY)
 #else
 # define DDARY(x)
+#endif
+
+#ifndef DEFAULT_DBG_D_ARY_VERIFY_HEAP
+# define DEFAULT_DBG_D_ARY_VERIFY_HEAP 0
+// this is very slow if enabled
 #endif
 
 #ifdef NDEBUG
 # define DBG_D_ARY_VERIFY_HEAP 0
 #else
-# define DBG_D_ARY_VERIFY_HEAP 1 // change to 0 after tested
+# define DBG_D_ARY_VERIFY_HEAP DEFAULT_DBG_D_ARY_VERIFY_HEAP
 #endif
 
 #define D_ARY_PUSH_GRAEHL 0 // untested
@@ -50,6 +61,7 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
 
   don't set locmap to -1 when removing from heap (waste of time)
 
+  indices start at 0, not 1:
   // unlike arity=2 case, you don't gain anything by having indices start at 1, with 0-based child indices
   // root @1, A=2, children indices m={0,1}: parent(i)=i/2, child(i,m)=2*i+m
   // root @0: parent(i)=(i-1)/A child(i,n)=i*A+n+1 - can't improve on this except child(i,m)=i*A+m
@@ -232,9 +244,97 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
         set(index_in_heap,data[i],i);
       }
     }
+
+    /*
+The basic building block of "heapify" is a simple procedure which I'd
+call "preserve_heap_property_down". It looks at a node that is not a leaf, and among
+that non-leaf node and its two children, which is largest. Then it
+swap that largest node to the top, so that the node becomes the
+largest among the three---satisfy the "heap property". Clearly,
+constant time.
+
+To heapify the whole tree, we will heapify it from the bottom (so
+"bottom up"). Heapifying a node at the "bottom" (i.e., next to a
+leaf) is trivial; heapifying a node that is not bottom might cause the
+heap property of nodes below to be violated. In that case we will
+have to heapify the node below as well, which might cause a node one
+more level below to violate heap property. So to heapify a node at
+level n, we might need to call preserve_heap_property_down (height-1) times.
+
+Now we show that a whole run of heapify of a tree with n=2^k-1 nodes
+will never call preserve_heap_property_down more than n times. We do it by finding a
+way to charge the calls to preserve_heap_property_down so that each node is never
+charged more than once. Note that we simplify things by always
+considering full binary trees (otherwise, the claim has to be a bit
+more complicated).
+
+Let's consider the bottom layer. To heapify a node with two children,
+we need one call to preserve_heap_property_down. It is charged to left leaf. So we
+have this:
+
+After heapify O
+/ \
+X O
+
+where O shows a node that is not charged yet, and X show a node which
+is already charged. Once all the next-to-bottom nodes have been
+heapified, we start to heapify the next-to-next-to-bottom nodes.
+Before heapifying a node there, we have
+
+Before heapify O
+_/ \_
+O O
+/ \ / \
+X O X O
+
+To heapify this node, we might need two calls to preserve_heap_property_down. We
+charge these two calls to the two uncharged nodes of the left subtree.
+So we get:
+
+After heapify O
+_/ \_
+X O
+/ \ / \
+X X X O
+
+So none of the nodes is charged more than once, and we still have some
+left for the next level, where before heapify the picture is:
+
+Before heapify O
+____/ \____
+O O
+_/ \_ _/ \_
+X O X O
+/ \ / \ / \ / \
+X X X O X X X O
+
+Heapifying at this level requires at most 3 calls to preserve_heap_property_down,
+which are charged again to the left branch. So after that we get
+
+After heapify O
+____/ \____
+X O
+_/ \_ _/ \_
+X X X O
+/ \ / \ / \ / \
+X X X X X X X O
+
+We note a pattern: the path towards the right-most leaf is never
+charged. When heapifying a level, one of the branches will always
+have enough uncharged nodes to pay for the "expensive" heapify at the
+top, while the other branch will still be uncharged to keep the
+pattern. So this pattern is maintained until the end of the heapify
+procedure, making the number of steps to be at most n-k = 2^k - k - 1.
+This is definitely linear to n.
+     */
     void heapify() {
-      for (size_type i=parent(data.size()-1);i>0;--i) // starting from parent of last node, ending at first child of root (i==1)
+      EIFDBG(DDARY,1,SHOWM1(DDARY,"heapify",data.size()));
+      for (size_type i=parent(data.size());i>0;) { // starting from parent of last node, ending at first child of root (i==1)
+        --i;
+        EIFDBG(DDARY,2,SHOWM1(DDARY,"heapify",i));
         preserve_heap_property_down(i);
+      }
+      verify_heap();
     }
 
     void reserve(size_type s) {
@@ -353,7 +453,7 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
       if (D_ARY_TRACK_OUT_OF_HEAP)
         return i != (size_type)D_ARY_HEAP_NULL_INDEX;
       size_type sz=data.size();
-      SHOWM2(DDARY,"d_ary_heap contains",i,data.size());
+      EIFDBG(DDARY,2,SHOWM2(DDARY,"d_ary_heap contains",i,data.size()));
       return i>=0 && i<sz && equal(v,data[i]); // note: size_type may be signed (don't recommend it, though) - thus i>=0 check to catch uninit. data
     }
 //#include "warning_pop.h"
@@ -427,6 +527,9 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
       for (size_t i = 1; i < data.size(); ++i) {
         if (better(get(distance,data[i]), get(distance,data[parent(i)]))) {
           assert (!"Element is smaller than its parent");
+        }
+        if (get(index_in_heap,data[i])!=i) {
+          assert(!"Element is where its index_in_heap doesn't say it is.");
         }
       }
 #endif
@@ -520,11 +623,12 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
     // From the root, swap elements (each one with its smallest child) if there
     // are any parent-child pairs that violate the heap property.  v is placed at data[i], but then pushed down (note: data[i] won't be read explicitly; it will instead be overwritten by percolation).  this also means that v must be a copy of data[i] if it was already at i.
     // e.g. v=data.back(), i=0, sz=data.size()-1 for pop(), implicitly swapping data[i], data.back(), and doing data.pop_back(), then adjusting from 0 down w/ swaps.  updates index_in_heap for v.
-    inline void preserve_heap_property_down(Value const& currently_being_moved,size_type i,size_type heap_size) {
+    inline void preserve_heap_property_down(Value const& currently_being_moved,size_type index,size_type heap_size) {
+      //// hole at index - currently_being_moved to be put here when we find the final hole spot
+      EIFDBG(DDARY,4,SHOWM3(DDARY,"preserve_heap_property_down impl",index,currently_being_moved,heap_size));
       using boost::get;
       distance_type currently_being_moved_dist=get(distance,currently_being_moved);
       Value* data_ptr = &data[0];
-      size_type index = 0; // hole at index - currently_being_moved to be put here when we find the final hole spot
       for (;;) {
         size_type first_child_index = child(index, 0);
         if (first_child_index >= heap_size) break; /* No children */
@@ -565,9 +669,11 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
     }
 
     inline void preserve_heap_property_down(size_type i) {
+      EIFDBG(DDARY,3,SHOWM3(DDARY,"preserve_heap_property_down",i,data[i],data.size()));
       preserve_heap_property_down(data[i],i,data.size());
     }
 
+    // moves what's at root downwards if needed
     void preserve_heap_property_down() {
       using boost::get;
       if (data.empty()) return;

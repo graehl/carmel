@@ -1,4 +1,13 @@
-rtok() {
+acksed() {
+    echo going to replace $1 by $2 - ctrl-c fast!
+    (set -e
+    ack -l $1
+    sleep 3
+    ack -l --print0 --text $1 | xargs -0 -n 1 sed -i -e "s/$1/$2/g"
+    ack $1
+    )
+}
+retok() {
     cd ~/x/racerx/Tokenizer
     ./test.sh "$@"
 }
@@ -2285,7 +2294,7 @@ gtest() {
 gsample() {
     local s=$1
     shift
-    OUT=$s.sample ARGS=""$@"" g1 $s -DSAMPLE
+    GRAEHL_INCLUDE=${GRAEHL_INCLUDE:-$HOME/x/3rdparty} OUT=$s.sample ARGS=""$@"" g1 $s -DSAMPLE
 }
 
 hsbmt() {

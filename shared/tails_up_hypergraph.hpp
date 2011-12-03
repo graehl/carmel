@@ -39,10 +39,20 @@
 #define DEBUG_TAILS_UP_HYPERGRAPH 1
 
 #if DEBUG_TAILS_UP_HYPERGRAPH
-# define DEBUG_D_ARY_HEAP 0
 # define TUHG(x) x
 #else
 # define TUHG(x)
+#endif
+
+//slows down debug mode.
+#define TUHG_CHECK_HEAP 0
+
+#if TUHG_CHECK_HEAP
+#define DEBUG_D_ARY_HEAP 1
+#define TUHG_EXTRA_Q TUHG_EXTRA_QALL("heap")
+#define DEFAULT_DBG_D_ARY_VERIFY_HEAP 0
+#else
+#define TUHG_EXTRA_Q
 #endif
 
 #include <graehl/shared/os.hpp>
@@ -61,11 +71,10 @@
 namespace graehl {
 DECLARE_DBG_LEVEL(TUHG)
 //IFDBG(TUHG,1) { SHOWM2(TUHG,"descr" }
-#define TUHG_EXTRA_Q1 SHOWM1(TUHG,"heap",print(heap,range_sep()));
-#define TUHG_EXTRA_Q2 SHOWM1(TUHG,"heap",print(heap,pair_getter(mu)));
-#define TUHG_EXTRA_Q TUHG_EXTRA_Q1 TUHG_EXTRA_Q2
-//#define TUHG_EXTRA_Q
-#define TUHG_SHOWQ(l,n,v) EIFDBG(TUHG,l,SHOWM2(TUHG,n,v,get(mu,v));TUHG_EXTRA_Q )
+#define TUHG_EXTRA_Q1(n) SHOWM1(TUHG,n,print(heap,range_sep()));
+#define TUHG_EXTRA_Q2(n) SHOWM1(TUHG,n,print(heap,pair_getter(mu)));
+#define TUHG_EXTRA_QALL(n) TUHG_EXTRA_Q1(n) TUHG_EXTRA_Q2(n)
+#define TUHG_SHOWQ(l,n,v) EIFDBG(TUHG,l,SHOWM3(TUHG,n,v,mu[v],heap.loc(v));TUHG_EXTRA_Q )
 #define TUHG_SHOWP(l,n,mu) EIFDBG(TUHG,l,SHOWM(TUHG,n,print(vertices(g),pair_getter(mu))))
 
 struct BestTreeStats {
@@ -351,8 +360,8 @@ struct TailsUpHypergraph {
     }
 
     void add_unsorted(VD v) { // call finish() after
-      TUHG_SHOWQ(1,"add_unsorted",v);
       heap.add_unsorted(v);
+      TUHG_SHOWQ(1,"added_unsorted",v);
     }
 
     struct add_axioms {
@@ -398,16 +407,17 @@ struct TailsUpHypergraph {
       heap.pop();
     }
 
-    void relax(VD v,ED e,Cost const& c) {
+    void relax(VD head,ED e,Cost const& c) {
       ++stat.n_relax;
-      Cost &m=mu[v];
-      EIFDBG(TUHG,3,SHOWM5(TUHG,"relax?",v,print(v,g),c,mu[v],print(e,g)));
+      Cost &m=mu[head];
+      EIFDBG(TUHG,3,SHOWM5(TUHG,"relax?",head,print(head,g),c,mu[head],print(e,g)));
       if (PT::update(c,m)) {
         ++stat.n_update;
-        put(pi,v,e);
-        IFDBG(TUHG,2) { SHOWM4(TUHG,"updating-or-adding",v,print(v,g),c,heap.loc(v)); }
-        heap.push_or_update(v);
-        IFDBG(TUHG,3) { SHOWM3(TUHG,"updated-or-added",v,print(v,g),heap.loc(v)); }
+        put(pi,head,e);
+        IFDBG(TUHG,2) { SHOWM4(TUHG,"updating-or-adding",head,print(head,g),mu[head],heap.loc(head)); }
+        heap.push_or_update(head);
+//        IFDBG(TUHG,3) { SHOWM3(TUHG,"updated-or-added",head,print(head,g),heap.loc(head)); }
+        TUHG_SHOWQ(3,"updated-or-added",head);
       }
     }
 
@@ -471,15 +481,19 @@ struct TailsUpHypergraph {
     }
 
     void finish() {
-      TUHG_SHOWP(1,"pre-finish",locp);
 #define TUHG_SHOWP_ALL(l,n) TUHG_SHOWP(l,n,mu); TUHG_SHOWP(l,n,pi); if (allow_rereach) { TUHG_SHOWP(l,n,rereach); } TUHG_SHOWREMAIN(l,n);
-      TUHG_SHOWP_ALL(1,"pre-finish");
+      TUHG_SHOWP(1,"pre-heapify",locp);
+      EIFDBG(TUHG,5,TUHG_EXTRA_QALL("pre-heapify"));
       heap.heapify();
+      EIFDBG(TUHG,4,TUHG_EXTRA_QALL("post-heapify"));
+      TUHG_SHOWP(1,"post-heapify",locp);
+      TUHG_SHOWP_ALL(1,"pre-finish");
       while(!heap.empty()) {
-        VD t=top();
-        EIFDBG(TUHG,5,SHOW3(TUHG,heap.size(),t,print(t,g)));
+        VD top=this->top();
+        TUHG_SHOWQ(6,"at-top",top);
+        EIFDBG(TUHG,5,SHOW3(TUHG,heap.size(),top,print(top,g)));
         pop();
-        reach(t);
+        reach(top);
         TUHG_SHOWP_ALL(9,"post-reach");
       }
       stat.n_unpopped=heap.size();

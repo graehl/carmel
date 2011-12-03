@@ -526,4 +526,4 @@ if false && [ "$TERM" = "eterm-color" ]; then
 fi
 
 export CLOJURE_EXT=~/.clojure
-export HYPERGRAPH_DBG_LEVEL=1
+export HYPERGRAPH_DBG=1

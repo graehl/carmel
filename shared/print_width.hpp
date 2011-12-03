@@ -184,6 +184,7 @@ print_max_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
 }
 
 #ifdef SAMPLE
+# undef SAMPLE
 # include <fstream>
 # include <iostream>
 using namespace std;
