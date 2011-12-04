@@ -262,7 +262,7 @@ No more \"End of file during parsing\" horrors!"
 (defconst whitespace-eob-newline-regexp "\n\n+\\'"
   "Regular expression which matches newlines at the end of the buffer.")
 
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'before-save-hook 'cleanup-buffer)
 (require 'time-stamp)
 (add-hook 'before-save-hook 'time-stamp)
 

@@ -1,10 +1,42 @@
+gitsub() {
+    git submodule update --init --recursive "$@"
+}
+sitelisp() {
+    cd ~/.emacs.d
+    git submodule add https://github.com/${2:-emacsmirror}/$1.git site-lisp/$1
+}
+gitrmsub() {
+    git rm --cached $1
+    git config -f .git/config --remove-section submodule.$1
+    git config -f .gitmodules --remove-section submodule.$1
+}
+gitco() {
+    git clone --recursive "$@"
+}
+emcom() {
+    cd ~/.emacs.d
+    git add -v *.el defuns/*.el
+    git commit -a
+    gcom "$@"
+}
+gcom() {
+    git commit -a -m "$*"
+    git push
+}
+scom() {
+    svn commit -m "$*"
+}
+gscom() {
+    gcom "$@"
+    scom "$@"
+}
 acksed() {
     echo going to replace $1 by $2 - ctrl-c fast!
     (set -e
-    ack -l $1
-    sleep 3
-    ack -l --print0 --text $1 | xargs -0 -n 1 sed -i -e "s/$1/$2/g"
-    ack $1
+        ack -l $1
+        sleep 3
+        ack -l --print0 --text $1 | xargs -0 -n 1 sed -i -e "s/$1/$2/g"
+        ack $1
     )
 }
 retok() {
@@ -40,13 +72,13 @@ lnshared1() {
     local g=$d/$1
 
     if [ -r $f ] ; then
-       if ! [ -r $g ] ; then
-           ln $f $g
-       fi
-       if diff -u $g $f || [[ $force ]] ; then
-          rm -f $g
-          ln $f $g
-       fi
+        if ! [ -r $g ] ; then
+            ln $f $g
+        fi
+        if diff -u $g $f || [[ $force ]] ; then
+            rm -f $g
+            ln $f $g
+        fi
     fi
     (cd $s; svn add "$1")
     (cd $d; svn add "$1")
@@ -57,11 +89,11 @@ racershared1() {
     local d=$racer/3rdParty/graehl/shared
     local g=$d/$1
     if [ -f $g ] ; then
-    if [ "$force" ] ; then
-        diff $f $g
-        rm -f $f
-    fi
-    ln $g $f
+        if [ "$force" ] ; then
+            diff $f $g
+            rm -f $f
+        fi
+        ln $g $f
     fi
 }
 usedshared() {
@@ -103,26 +135,26 @@ phost=pontus.languageweaver.com
 horse=~/c/horse
 horsem() {
     (
-    export LW64=1
-    export LWB_JOBS=5
-    cd $horse
-    perl GenerateSolution.pl
-    make
+        export LW64=1
+        export LWB_JOBS=5
+        cd $horse
+        perl GenerateSolution.pl
+        make
     )
 }
 sa2c() {
     s2c
     (cd
         for d in x/racerx/CMakeLists.txt  x/racerx/Hypergraph x/racerx/Util  ; do
-         sync2 $chost $d
-         done
-        )
+            sync2 $chost $d
+        done
+    )
 }
 s2c() {
     #elisp x/3rdParty
     (cd
         for d in u t  ; do
-          sync2 $chost $d
+            sync2 $chost $d
         done
     )
 }
@@ -189,17 +221,17 @@ regress() {
     if ! [ "$*" ] ; then
         ./run.pl
     else
-    for f in "$@"; do
-        pushd $f
-        (
-            set -e
-            set -x
-            ./run.pl --nocleanup --verbose
-            set +x
-        )
-        tailn=30 preview $(last1 *.log)
-        popd
-    done
+        for f in "$@"; do
+            pushd $f
+            (
+                set -e
+                set -x
+                ./run.pl --nocleanup --verbose
+                set +x
+            )
+            tailn=30 preview $(last1 *.log)
+            popd
+        done
     fi
 }
 failed() {
@@ -279,30 +311,30 @@ drac() {
 racm() {
     (
         set -e
-    racb ${1:-Debug}
-    shift || true
-    cd $racerbuild
-    set -x
-    if [ "$*" ] ; then
-        for f in $* ; do
-            rm -f Hypergraph/CMakeFiles/$f.dir/src/$f.cpp.o
+        racb ${1:-Debug}
+        shift || true
+        cd $racerbuild
+        set -x
+        if [ "$*" ] ; then
+            for f in $* ; do
+                rm -f Hypergraph/CMakeFiles/$f.dir/src/$f.cpp.o
+            done
+            test=
+            tests=
+        fi
+        set +x
+        make -j$MAKEPROC VERBOSE=1 "$@"
+        if [[ $test ]] ; then make test ; fi
+        for t in $tests; do
+            ( set -e;
+                echo $t
+                td=$(dirname $t)
+                tn=$(basename $t)
+                testexe=$td/Test$tn
+                [[ -x $testexe ]] || testexe=$t/Test$t
+                $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
+            )
         done
-        test=
-        tests=
-    fi
-    set +x
-    make -j$MAKEPROC VERBOSE=1 "$@"
-    if [[ $test ]] ; then make test ; fi
-    for t in $tests; do
-        ( set -e;
-            echo $t
-            td=$(dirname $t)
-            tn=$(basename $t)
-            testexe=$td/Test$tn
-            [[ -x $testexe ]] || testexe=$t/Test$t
-            $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
-        )
-    done
     )
 }
 racc() {
@@ -974,11 +1006,6 @@ mvpre() {
         mv $f `dirname $f`/$pre.`basename $f`
     done
 }
-gcom() {
-    git commit -a -m "$*"
-    git push
-    svn commit -m "$*"
-}
 ofcom() {
     pushd ~/t/graehl/gextract/optfunc
     gcom "$@"
@@ -1197,19 +1224,19 @@ buildgraehl() {
     local d=$1
     local v=$2
     (set -e
-    pushd ~/t/graehl/$d
-    [ "$noclean" ] || make clean
-    set -x
-    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
-    make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
-    set +x
-    popd
-    if [ "$v" ] ; then
-        pushd $FIRST_PREFIX/bin
-        cp carmel carmel.$v
-        cp carmel.static carmel.$v
+        pushd ~/t/graehl/$d
+        [ "$noclean" ] || make clean
+        set -x
+        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
+        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
+        set +x
         popd
-    fi
+        if [ "$v" ] ; then
+            pushd $FIRST_PREFIX/bin
+            cp carmel carmel.$v
+            cp carmel.static carmel.$v
+            popd
+        fi
     )
 }
 buildcar() {
@@ -1710,7 +1737,6 @@ function lastbool
 }
 
 
-
 greph() {
     fgrep "$@" $HISTORYOLD
 }
@@ -2198,7 +2224,6 @@ export LC_ALL=C
 export LC_NUMERIC=C
 
 
-
 comwei() {
     com $DEV/shared
     com $DEV/syntax-decoder-wei
@@ -2261,7 +2286,6 @@ sbmtcp() {
 }
 
 
-
 g1() {
     local source=$1
     shift
@@ -2301,7 +2325,6 @@ hsbmt() {
     hscp ~/isd/strontium/bin/* ~/t/utilities/*.pl blobs/mini_decoder/unstable
     hscp ~/isd/erdos/bin/* blobs/mini_decoder/unstable/x86_64
 }
-
 
 
 function conf
@@ -2699,7 +2722,6 @@ treevizn() {
 }
 
 
-
 spaste() {
     lodgeit.py -l scala $*
 }
@@ -2812,9 +2834,6 @@ grcom() {
         [ "$grtag" ] && git tag -a "$grtag" -m 'tag:$grtag'
     )
 }
-
-
-
 
 
 toy() {
@@ -3215,17 +3234,17 @@ altgcc4() {
         --install "/usr/bin/gcc.exe" "gcc" "/usr/bin/gcc-4.exe" 30 \
         --slave "/usr/bin/ccc.exe" "ccc" "/usr/bin/ccc-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-ccc.exe" "i686-pc-cygwin-ccc" \
-	"/usr/bin/i686-pc-cygwin-ccc-4.exe" \
+        "/usr/bin/i686-pc-cygwin-ccc-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-gcc.exe" "i686-pc-cygwin-gcc" \
-	"/usr/bin/i686-pc-cygwin-gcc-4.exe"
+        "/usr/bin/i686-pc-cygwin-gcc-4.exe"
 
     /usr/sbin/update-alternatives \
         --install "/usr/bin/g++.exe" "g++" "/usr/bin/g++-4.exe" 30 \
         --slave "/usr/bin/c++.exe" "c++" "/usr/bin/c++-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-c++.exe" "i686-pc-cygwin-c++" \
-	"/usr/bin/i686-pc-cygwin-c++-4.exe" \
+        "/usr/bin/i686-pc-cygwin-c++-4.exe" \
         --slave "/usr/bin/i686-pc-cygwin-g++.exe" "i686-pc-cygwin-g++" \
-	"/usr/bin/i686-pc-cygwin-g++-4.exe"
+        "/usr/bin/i686-pc-cygwin-g++-4.exe"
 }
 
 plboth() {
@@ -3270,7 +3289,6 @@ graph() {
     ls -l $obase.* 1>&2
     echo $of
 }
-
 
 
 graph3() {
