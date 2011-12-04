@@ -1,7 +1,7 @@
 #ifndef GRAEHL_SHARED__NAN_HPP
 #define GRAEHL_SHARED__NAN_HPP
+
 //TODO: switch to C99 isnan isfinite isinf etc. (faster)
-//NOTE: not namespace graehl.
 
 #include <limits>
 
@@ -20,7 +20,7 @@
 
 #ifdef WIN32_NAN
 # include <float.h>
-# include <xmath.h>
+//# include <xmath.h>
 namespace {
 const unsigned int graehl_nan[2] = {0xffffffff, 0x7fffffff};
 }

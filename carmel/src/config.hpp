@@ -1,9 +1,10 @@
 #ifndef CARMEL__CONFIG_HPP
 #define CARMEL__CONFIG_HPP
 
-#define USE_OPENFST
+//#define USE_OPENFST
 
 #ifdef USE_OPENFST
+// set this only if you add -I$(OPENFST)/src and have installed headers or also -I$(OPENFST)/src/include
 # include <cstring>
 # include "fst/compat.h"
 # include <stdexcept>
@@ -39,14 +40,17 @@ struct log_message_exception : public LogMessage
 #include "fst/connect.h"
 
 // this saves us linking to a separately built lib:
-#include "fst/lib/util.cc"
-#include "fst/lib/fst.cc"
-#include "fst/lib/flags.cc"
-#include "fst/lib/properties.cc"
-#include "fst/lib/symbol-table.cc"
-#include "fst/lib/compat.cc"
+#include "lib/util.cc"
+#include "lib/fst.cc"
+#include "lib/flags.cc"
+#include "lib/properties.cc"
+#include "lib/symbol-table.cc"
+#include "lib/compat.cc"
 #endif
 
 #endif
+
+// allows WFST to be indexed in either direction?  not recommended. or tested lately.
+//#define BIDIRECTIONAL
 
 #endif

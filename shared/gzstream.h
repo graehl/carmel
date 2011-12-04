@@ -33,6 +33,7 @@
 #include <iostream>
 #include <fstream>
 #include <zlib.h>
+#include <boost/noncopyable.hpp>
 
 namespace graehl {
 
@@ -121,4 +122,3 @@ public:
 #endif // GZSTREAM_H
 // ============================================================================
 // EOF //
-

@@ -1,12 +1,14 @@
 HOME=$(echo ~)
-set completion-prefix-display-length 2
-set show-all-if-ambiguous on
-set show-all-if-unmodified on
-set completion-map-case on
+#set completion-prefix-display-length 2
+#set show-all-if-ambiguous on
+#set show-all-if-unmodified on
+#set completion-map-case on
 
 export PYTHON_PATH=$HOME/lib/python:$PYTHON_PATH
-shdir=$HOME/t/graehl/util
-. $shdir/bashlib.sh
+GRAEHL=~graehl
+UTIL=$GRAEHL/u
+
+. $UTIL/bashlib.sh
 if false && [ "$TERM" = dumb ] ; then
     PS1='$ '
     exit
@@ -41,7 +43,7 @@ if [ $TERM = "cmd" ]; then
   stty -onlcr ocrnl icrnl
 fi
 #OS=cygwin
-OS=`/bin/uname`
+OS=`uname`
 export USER=`whoami`
 HOST=`echo "$HOSTNAME"`
 if [ ${OS#CYGWIN} != "$OS" ] ; then
@@ -129,7 +131,7 @@ if [ $OS = Darwin ] ; then
  ARCH=macosx
 fi
 export ARCH
-UNAMEA=`/bin/uname -a`
+UNAMEA=`uname -a`
 case "$UNAMEA" in
     *x86_64*)	ON64=1 ;;
 esac
@@ -219,7 +221,7 @@ unset LANGVAR || true
 
 SBMT_SVNREPO='https://nlg0.isi.edu/svn/sbmt'
 SBMT_BASE=$HOME/sbmt
-SBMT_TRUNK=$SBMT_BASE/trunk
+SBMT_TRUNK=$HOME/t
 
 
 function save_default_paths {
@@ -238,8 +240,13 @@ function default_paths {
  MAN_PATH=/usr/local/man:$MAN_PATH
  local cygp
  [ "$ONCYGWIN" ] && cygp=/usr/lib:
- PATH=/usr/bin:$cygp/usr/local/bin:$DEFAULT_PATH
- PATH=$isd/bin:~/bin:$PATH:/local/bin:/usr/X11R6/bin:$SBMT_TRUNK
+ PATH=$cygp/usr/local/bin:/usr/bin:$DEFAULT_PATH
+ PATH=$isd/bin:~/bin:$PATH
+if [[ $OS != Darwin ]] ; then
+ PATH=$PATH:/local/bin
+fi
+PATH+=/usr/X11R6/bin
+#:$SBMT_TRUNK
  LDFLAGS="-L/usr/local/lib "
 # --enable-lto
 # LDFLAGS=" -L/usr/local/lib -L/usr/lib"
@@ -254,7 +261,7 @@ default_paths
 
 
 nohostbase=1
-. $shdir/add_paths.sh
+. $UTIL/add_paths.sh
 
 S64=""
 [ "$ON64" ] && S64="64"
@@ -301,13 +308,16 @@ esac
 PERL=$HPCPERL/bin/perl
 
 PATH=$HPCGCC/bin:$PATH
-PATH=/home/nlg-02/graehl/mini_dev/$SBMTARCH/bin:/home/nlg-02/graehl/mini_13.0/$SBMTARCH/bin:$PATH
+#/home/nlg-02/graehl/mini_dev/$SBMTARCH/bin:/home/nlg-02/graehl/mini_13.0/$SBMTARCH/bin:
+PATH=$PATH
 PATH=$HPCPERL/bin:$PATH
 add_ldpath $GHOME/lib$S64
-add_ldpath $HPCGCC/lib$S64 || /bin/true
+add_ldpath $HPCGCC/lib$S64 || true
 fi
 CABAL=~/.cabal
+if [ -d $CABAL/bin ] ; then
 PATH=$CABAL/bin:$PATH
+fi
 export PATH
 }
 
@@ -415,7 +425,9 @@ fi
 #-Wno-deprecated
 #-fvisibility-inlines-hidden
 #-Wno-write-strings
- export CXXFLAGS="$CFLAGS"
+ export CXXFLAGS="$CFLAGS "
+ #-Weffc++
+ # not compatible w/ boost really
 }
 
 qsippn=2
@@ -427,7 +439,6 @@ set_build
 
 if [ "$interactive" ] ; then
 export teeout=1
-alias ls="/bin/ls"
 # from http://www.onerussian.com/Linux/bash_history.phtml
 HISTORYOLD=~/.archive.bash.history
 function archive_history
@@ -466,10 +477,9 @@ tocage='cage.isi.edu:/users/graehl'
 
 
 
-export PYTHONSTARTUP=$shdir/inpy
+export PYTHONSTARTUP=$UTIL/inpy
 
 export SCALA_HOME=${SCALA_HOME:-~/isd/linux}
-/bin/true
 
 function pontus {
    ssh -L 3391:darkstar:3389 peggy@pontus.languageweaver.com -p 4640
@@ -488,15 +498,32 @@ fi
 true
 export PATH=$PATH:~/isd/maven/bin
 
-GRAEHL=~graehl
 . ~/local.sh
-UTIL=$GRAEHL/t/graehl/util
 . $UTIL/aliases.sh
 #. $UTIL/z.sh
 export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
+
+
+set-eterm-dir() {
+    echo -e "\033AnSiTu" "$LOGNAME" # $LOGNAME is more portable than using whoami.
+    echo -e "\033AnSiTc" "$(pwd)"
+    if [ $(uname) = "SunOS" ]; then
+	    # The -f option does something else on SunOS and is not needed anyway.
+       	hostname_options="";
+    else
+        hostname_options="-f";
+    fi
+    echo -e "\033AnSiTh" "$(hostname $hostname_options)" # Using the -f option can cause problems on some OSes.
+    history -a # Write history to disk.
+}
 
 if ! bash --version | grep -q 2.05 ; then
 . ~/bin/autojump.bash
 fi
 
+if false && [ "$TERM" = "eterm-color" ]; then
+        PROMPT_COMMAND="$PROMPT_COMMAND ; set-eterm-dir"
+fi
+
 export CLOJURE_EXT=~/.clojure
+export HYPERGRAPH_DBG=1

@@ -107,7 +107,7 @@ void hash_bench(std::string banner) {
 template <class H>
 void graehl_hash_bench() {
   H ht(D);
-  hash_bench<H,typename H::find_return_type>(ht);
+  hash_bench<H,typename H::find_result_type>(ht);
   cout << "find_second ";
   {
     boost::progress_timer t;

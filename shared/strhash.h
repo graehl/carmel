@@ -29,7 +29,7 @@ class StringPool {
     static StringKey borrow(StringKey s) {
         if (s.isDefault())            return s;
 #ifdef STRINGPOOL
-        hash_traits<HT>::insert_return_type
+        hash_traits<HT>::insert_result_type
             i=counts.insert(HT::value_type(s,1));
         StringKey &canonical=const_cast<StringKey&>(i.first->first);
         if (i.second)
@@ -195,7 +195,7 @@ class Alphabet {
         //Assert(name);
         //Sym s = const_cast<char *>(name);
 
-        typename hash_traits<SymIndex>::insert_return_type it;
+        typename hash_traits<SymIndex>::insert_result_type it;
         if ( (it = ht.insert(typename SymIndex::value_type(s,names.size()))).second ) {
             if (StrPool::is_noop)
                 names.push_back(s);

@@ -58,9 +58,10 @@ gzstreambuf* gzstreambuf::open(const char* name, int open_mode) {
     *fmodeptr++ = 'b';
     *fmodeptr = '\0';
     file = gzopen(name, fmode);
-    if (!file) handle_gzerror();
-    if (file == 0)
+    if (!file) {
+      handle_gzerror();
       return (gzstreambuf*)0;
+    }
     opened = 1;
     return this;
 }
@@ -81,6 +82,7 @@ void gzstreambuf::handle_gzerror() {
     int errnum;
     const char *errmsg=gzerror(file,&errnum);
     if (errnum==Z_DATA_ERROR) errmsg="CRC error reading gzip";
+    if (!errmsg) errmsg=" unknown error (file not found?)";
     throw std::runtime_error(std::string("gzstreambuf error: ")+errmsg);
 }
 

@@ -51,7 +51,7 @@ string usage=MyEnumNames("\n");
 #if NAMED_ENUM_USE_OPTIONAL
 # include <boost/optional.hpp>
 #endif
-#include "utoa.h"
+#include <graehl/shared/itoa.hpp>
 
 inline void throw_enum_error(std::string const& enumtype,std::string const& msg) {
   throw std::runtime_error(enumtype+": "+msg);

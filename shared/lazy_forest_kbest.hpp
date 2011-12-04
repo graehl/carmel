@@ -1,19 +1,56 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+/**
+
+   Uses a top-down, lazy, best-first kbest-derivation from a forest algorithm
+   described at http://www.cis.upenn.edu/~lhuang3/huang-iwpt-correct.pdf.
+   Generating, say, the 1-million best should be no problem.
+
+   Every non-optimal kth-best derivation uses either a non-best edge from an
+   equivalence, or a best edge but using nonoptimal subderivations.  Typically,
+   the kbest list will contain only a small number of unique "sidetracks"
+   (non-optimal edges), but may choose different subsets of them (should they
+   occur in different subtrees, their use is nonconflicting).  So, it is
+   typically best to integrate models into search, or at least provide some
+   forest expansion rescoring, as the size of the kbest list needed to get the
+   desired variation may be huge.
+
+   a lazy_forest (graehl/shared/lazy_forest_kbest.hpp) that is essentially a
+   (non-lazy) copy of the parse forest, with per-or-node priority queues and
+   memo facilitating the lazy kbest generation.
+
+   You can generate kbest items incrementally, on demand.
+**/
+///\{
+
+#ifdef SAMPLE
+# undef SAMPLE
+# define LAZY_FOREST_EXAMPLES
+# define LAZY_FOREST_SAMPLE
+#endif
+#define USE_DEBUGPRINT 0
+
+#if USE_DEBUGPRINT
+#else if ~defined(NESTT)
+# define NESTT
+#endif
+
+#include <graehl/shared/os.hpp>
+#ifdef NDEBUG
+# define LAZYF(x)
+#else
+# define LAZYF(x) x
+#endif
+DECLARE_DBG_LEVEL(LAZYF)
+#include <graehl/shared/show.hpp>
+
 #include <boost/noncopyable.hpp>
 #include <graehl/shared/percent.hpp>
 #include <graehl/shared/assertlvl.hpp>
 
 //#define ENABLE_TEST_INFO /* requires derivations be printable */
 
-#if !defined(_MSC_VER)
-#define GRAEHL_HEAP
-#endif
-
-#ifdef SAMPLE
-# define LAZY_FOREST_EXAMPLES
-#endif
 
 #ifdef TEST
 #  include <graehl/shared/test.hpp>
@@ -21,10 +58,12 @@
 #endif
 
 #if defined(LAZY_FOREST_EXAMPLES) || defined(ENABLE_TEST_INFO)
+# if USE_DEBUGPRINT
 #include <graehl/shared/info_debug.hpp>
 //# include "default_print.hpp"
 //FIXME: doesn't work
 #include <graehl/shared/debugprint.hpp>
+# endif
 # include <iostream>
 # include <string>
 # include <sstream>
@@ -47,13 +86,9 @@
 
 #include <vector>
 #include <stdexcept>
-#ifdef GRAEHL_HEAP
-#include <graehl/shared/2heap.h>
-#else
 #include <algorithm>
 #ifdef __GNUC__
 #include <ext/algorithm> // is_sorted
-#endif
 #endif
 
 namespace graehl {
@@ -457,11 +492,7 @@ class lazy_forest
 
     void sort(bool check_best_is_selfloop=false)
     {
-#ifdef GRAEHL_HEAP
-        heapBuild(pq.begin(),pq.end());
-#else
         std::make_heap(pq.begin(),pq.end());
-#endif
         finish_adding(check_best_is_selfloop);
     }
 
@@ -496,15 +527,11 @@ class lazy_forest
     // note: postpone_selfloop() may make this not true.
     bool is_sorted()
     {
-#ifdef GRAEHL_HEAP
-        return heapVerify(pq.begin(),pq.end());
-#else
 # ifdef _MSC_VER
         return true; //FIXME: implement
 # else
         return __gnu_cxx::is_heap(pq.begin(),pq.end());
 # endif
-#endif
     }
 
     bool done() const {
@@ -539,23 +566,14 @@ class lazy_forest
     }
 
     void push(const hyperedge &e) {
-#ifdef GRAEHL_HEAP
-        //FIXME: use dynarray.h? so you don't have to push on a copy of e first
-        heap_add(pq,e);
-#else
         pq.push_back(e);
         std::push_heap(pq.begin(),pq.end());
         //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
-#endif
     }
     void pop() {
-#ifdef GRAEHL_HEAP
-        heap_pop(pq);
-#else
         pop_heap(pq.begin(),pq.end());
         //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
         pq.pop_back();
-#endif
     }
     const hyperedge &top() const {
         return pq.front();
@@ -634,12 +652,12 @@ struct Result {
         rule=prototype->rule;
         child[0]=prototype->child[0];
         child[1]=prototype->child[1];
-        EXPECT(which_child,<,2);
-        EXPECT(child[which_child],==,old_child);
+        assert(which_child<2);
+        assert(child[which_child]==old_child);
         child[which_child]=new_child;
         cost = prototype->cost + - old_child->cost + new_child->cost;
-        KBESTNESTT;
-        KBESTINFOT("NEW RESULT proto=" << *prototype << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]);
+//        KBESTNESTT;
+//        KBESTINFOT("NEW RESULT proto=" << *prototype << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]);
 
         std::ostringstream newhistory,newtree,newderivtree;
         newhistory << prototype->history << ',' << (which_child ? "R" : "L") << '-' << old_child->cost << "+" << new_child->cost;
@@ -673,11 +691,15 @@ struct Result {
 
 struct ResultPrinter {
     bool operator()(const Result *r,unsigned i) const {
+# if USE_DEBUGPRINT
         KBESTNESTT;
         KBESTINFOT("Visiting result #" << i << " = " << r);
         KBESTINFOT("");
+# endif
         cout << "RESULT #" << i << "=" << *r << "\n";
+# if USE_DEBUGPRINT
         KBESTINFOT("done #:" << i);
+# endif
         return true;
     }
 };
@@ -733,18 +755,19 @@ inline void jonmay_cycle(unsigned N=25,int weightset=0)
     qe.add_sorted(&c,&qo);
     qe.add_sorted(&a,&qe,&qo);
     qe.add_sorted(&b,&qo,&qe);
-    MUST(qe.is_sorted());
+    assert(qe.is_sorted());
 
     qo.add(&e,&qe);
     qo.add(&g);
     qo.add(&d,&qo,&qo);
     qo.add(&f,&qe);
 
-    MUST(!qo.is_sorted());
+    assert(!qo.is_sorted());
     qo.sort();
-    MUST(qo.is_sorted());
-
+    assert(qo.is_sorted());
+# if USE_DEBUGPRINT
     NESTT;
+# endif
     //LK::enumerate_kbest(10,&qo,ResultPrinter());
     qe.enumerate_kbest(N,ResultPrinter());
 }
@@ -761,10 +784,12 @@ inline void simplest_cycle(unsigned N=25)
     q.add(&b,&q);
     q.add(&n,&q);
     q.add(&c);
-    MUST(!q.is_sorted());
+    assert(!q.is_sorted());
     q.sort();
-//    MUST(q.is_sorted());
+//    assert(q.is_sorted());
+# if USE_DEBUGPRINT
     NESTT;
+# endif
     q.enumerate_kbest(N,ResultPrinter());
 }
 
@@ -785,17 +810,19 @@ inline void simple_cycle(unsigned N=25)
     q.add(&a,&q,&q);
     q.add(&b,&q2,&q2);
     q.add(&c);
-    MUST(!q.is_sorted());
+    assert(!q.is_sorted());
     q.sort();
-    MUST(q.is_sorted());
+    assert(q.is_sorted());
     q2.add_sorted(&d,&q);
     q2.add_sorted(&eneg,&q2);
-    DBP2(eneg,d);
-//    MUST(q2.is_sorted());
+//    assert(q2.is_sorted());
 //    q2.sort();
 //    DBP2(*q2.pq[0].derivation,*q2.pq[1].derivation);
-    //   MUST(!q2.is_sorted());
+    //   assert(!q2.is_sorted());
+# if USE_DEBUGPRINT
+    DBP2(eneg,d);
     NESTT;
+# endif
     q.enumerate_kbest(N,ResultPrinter());
 }
 
@@ -821,10 +848,10 @@ inline void jongraehl_example(unsigned N=25)
     c.add_sorted(&rcbf,&b,&f);
     a.add_sorted(&rabc,&b,&c);
     a.add_sorted(&raa,&a);
-    MUST(a.is_sorted());
-    MUST(b.is_sorted());
-    MUST(c.is_sorted());
-    MUST(f.is_sorted());
+    assert(a.is_sorted());
+    assert(b.is_sorted());
+    assert(c.is_sorted());
+    assert(f.is_sorted());
     NESTT;
     LK::throw_on_cycle=true;
     f.enumerate_kbest(1,ResultPrinter());
@@ -853,7 +880,7 @@ BOOST_AUTO_TEST_CASE(TEST_lazy_kbest) {
 
 }//graehl
 
-#ifdef SAMPLE
+#ifdef LAZY_FOREST_SAMPLE
 int main()
 {
     using namespace graehl::lazy_forest_kbest_example;

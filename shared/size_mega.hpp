@@ -5,6 +5,8 @@
 #include <boost/lexical_cast.hpp>
 #include <stdexcept>
 #include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/print_width.hpp>
+#include <graehl/shared/print_read.hpp>
 #include <graehl/shared/program_options.hpp>
 #include <sstream>
 #include <cstddef>

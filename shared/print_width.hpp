@@ -4,7 +4,6 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <graehl/shared/abs_int.hpp>
 
 namespace graehl {
 
@@ -131,9 +130,9 @@ template <class C, class T>
 std::basic_ostream<C,T>&
 print_max_width(std::basic_ostream<C,T>& o, double d, int width=6)
 {
+#if 1
     return print_width(o,d,width);
-//FIXME: TEST below - print_width above actually works.
-    /*
+#else
     typedef std::basic_ostream<C,T> stream_t;
     local_stream_format<stream_t> save(o);
     if (width > 0) {
@@ -141,7 +140,7 @@ print_max_width(std::basic_ostream<C,T>& o, double d, int width=6)
         if (d<0)
             --width;
         int wholes=(int)std::log10(p); //1: log=0, digits=1
-        int need=1 + abs(wholes);
+        int need=1 + (wholes<0?-wholes:wholes);
         if (need > width) {
             int unit_e_exp=1+1+2;
             if (width >= unit_e_exp)
@@ -156,7 +155,7 @@ print_max_width(std::basic_ostream<C,T>& o, double d, int width=6)
         }
     }
     return o << d;
-    */
+#endif
 }
 
 template <class C, class T>
@@ -185,6 +184,7 @@ print_max_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
 }
 
 #ifdef SAMPLE
+# undef SAMPLE
 # include <fstream>
 # include <iostream>
 using namespace std;

@@ -656,7 +656,7 @@ struct cascade_parameters
     {
         if (trivial) return e->groupId; // for -a composition, but also means epsilons with tie groups in regular composition maintain group
         if (chain) return original_id(e);
-        epsilon_map_t::insert_return_type ins=epsilon_chains.insert(e,chains.size()); // can't cache chains.size() for return since we only want to return that if we newly inserted
+        epsilon_map_t::insert_result_type ins=epsilon_chains.insert(e,chains.size()); // can't cache chains.size() for return since we only want to return that if we newly inserted
         if (ins.second) {
             chain_t v=cons(e);
             if (!v)

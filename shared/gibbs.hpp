@@ -14,7 +14,8 @@
 #include <graehl/shared/debugprint.hpp>
 #include <boost/math/distributions/normal.hpp>
 
-#define DEBUG_GIBBS
+//#define DEBUG_GIBBS
+
 #ifdef DEBUG_GIBBS
 #define DGIBBS(a) a;
 #else

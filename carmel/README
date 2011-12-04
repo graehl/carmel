@@ -64,11 +64,7 @@ installation:
 
     And go to 2.
 
-4. Optionally build with OpenFST sources.  Get OpenFST and make sure
-"fst/lib/compat.h" etc. are in the include path (make INC+=openfst/) or
-otherwise symlinked.  Edit carmel/src/config.hpp and #define USE_OPENFST, or:
-
-    make CPPFLAGS+=USE_OPENFST
+4. Optionally build with OpenFST sources.  Uncompress the openfst distribution so that a directory named openfst* exists in this directory (the parent of "carmel"), or otherwise ensure that the "fst/XXX.h" headers and "lib/compat.cc" are in the include path, and make DEFS+=USE_OPENFST
 
 OpenFST's implementation of weighted minimization and determinization are then usable from carmel.
 

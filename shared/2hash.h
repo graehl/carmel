@@ -4,6 +4,7 @@
 #define GRAEHL_SHARED__2HASH_H
 
 #include <graehl/shared/config.h>
+#include <graehl/shared/print_read.hpp>
 #include <ostream>
 #include <memory>
 #include <graehl/shared/byref.hpp>
@@ -233,8 +234,8 @@ template <class K, class V, class H=hash<K>, class P=std::equal_to<K>, class A=s
    typedef HashIter<K,V> const_iterator;
 
    typedef std::pair<const K,V> value_type;
-   typedef HashEntry<K,V> *find_return_type;
-   typedef std::pair<find_return_type,bool> insert_return_type;
+   typedef HashEntry<K,V> *find_result_type;
+   typedef std::pair<find_result_type,bool> insert_result_type;
 
   hasher hash_function() const { return get_hash(); }
   key_equal key_eq() const { return get_eq(); }
@@ -338,7 +339,7 @@ public:
     iterator begin()  {
         return iterator(*this);
     }
-    find_return_type end() const {
+    find_result_type end() const {
         return NULL;
     }
 
@@ -486,13 +487,13 @@ public:
         }
 public:
   // not part of standard!
-    insert_return_type insert(const K& first, const V& second/*=V()*/) {
+    insert_result_type insert(const K& first, const V& second/*=V()*/) {
           std::size_t hv=get_hash()(first);
           std::size_t bucket=hashToPos(hv);
           for ( Node *p = table[bucket]; p ; p = p->next )
                 if ( equal(p->first,first) )
-                  return insert_return_type(
-                      (find_return_type)p
+                  return insert_result_type(
+                      (find_result_type)p
                       ,false);
 
           if ( ++cnt >= growAt ) {
@@ -501,20 +502,20 @@ public:
           }
           Node *next=table[bucket];
           PLACEMENT_NEW (table[bucket] = alloc_node()) Node(first, second, next);
-          return insert_return_type(
-                reinterpret_cast<find_return_type>(table[bucket])
+          return insert_result_type(
+                reinterpret_cast<find_result_type>(table[bucket])
                 ,true);
 
         }
 
     // copied from above
-        insert_return_type insert(const K& first) {
+        insert_result_type insert(const K& first) {
           std::size_t hv=get_hash()(first);
           std::size_t bucket=hashToPos(hv);
           for ( Node *p = table[bucket]; p ; p = p->next )
                 if ( equal(p->first,first) )
-                  return insert_return_type(
-                      (find_return_type)p
+                  return insert_result_type(
+                      (find_result_type)p
                       ,false);
 
           if ( ++cnt >= growAt ) {
@@ -523,22 +524,22 @@ public:
           }
           Node *next=table[bucket];
           PLACEMENT_NEW (table[bucket] = alloc_node()) Node(first,next);
-          return insert_return_type(
-                reinterpret_cast<find_return_type>(table[bucket])
+          return insert_result_type(
+                reinterpret_cast<find_result_type>(table[bucket])
                 ,true);
 
         }
 
-        insert_return_type insert(const value_type &t) {
+        insert_result_type insert(const value_type &t) {
           return insert(t.first,t.second);
         }
 
 
-  find_return_type find(const K &first) const
+  find_result_type find(const K &first) const
     {
       for ( Node *p = table[bucket(first)]; p ; p = p->next )
         if ( equal(p->first,first) )
-          return reinterpret_cast<find_return_type>(p);
+          return reinterpret_cast<find_result_type>(p);
       return NULL;
     }
   V *find_second(const K& first) const
@@ -670,8 +671,8 @@ template <class K,class V,class H,class P,class A>
 struct hash_traits<HashTable<K,V,H,P,A> >
 {
     typedef HashTable<K,V,H,P,A> HT;
-    typedef typename HT::find_return_type find_return_type;
-    typedef typename HT::insert_return_type insert_return_type;
+    typedef typename HT::find_result_type find_result_type;
+    typedef typename HT::insert_result_type insert_result_type;
 };
 
 template <class K,class V,class H,class P,class A,class F>
@@ -692,7 +693,7 @@ template <typename K, typename H=::hash<K>, typename P=std::equal_to<K>, typenam
 
 /*
 template <class K,class V,class H,class P,class A>
-inline typename HashTable<K,V,H,P,A>::find_return_type *find_value(const HashTable<K,V,H,P,A>& ht,const K& first) {
+inline typename HashTable<K,V,H,P,A>::find_result_type *find_value(const HashTable<K,V,H,P,A>& ht,const K& first) {
   return ht.find(first);
 }
 */

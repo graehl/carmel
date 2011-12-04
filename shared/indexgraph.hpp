@@ -87,7 +87,7 @@ struct index_graph {
   }
   vertex_descriptor force(vertex_descriptor from, const key_type &key) { // creates if isn't already there
     vertex_descriptor new_desc=verts.size();
-    typename map_traits<map_type>::insert_return_type ret=insert(verts[from],key,new_desc);
+    typename map_traits<map_type>::insert_result_type ret=insert(verts[from],key,new_desc);
     if (ret.second) { // actually inserted
       verts.push_back();
       return new_desc;

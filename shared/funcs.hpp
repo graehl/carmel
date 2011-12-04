@@ -124,6 +124,21 @@ void sort(Cont &cont,Order order)
     std::sort(cont.begin(),cont.end(),order);
 }
 
+
+template <class Cont> inline
+void sort(Cont &cont)
+{
+    std::sort(cont.begin(),cont.end());
+}
+
+template <class Cont> inline
+void unique(Cont &cont)
+{
+    cont.erase(
+        std::unique(cont.begin(),cont.end()),
+        cont.end());
+}
+
 template <class Cont,class Order> inline
 void unique(Cont &cont,Order order)
 {
@@ -139,24 +154,10 @@ void sort_unique(Cont &cont,Order order)
     unique(cont,order);
 }
 
-template <class Cont> inline
-void sort(Cont &cont)
-{
-    std::sort(cont.begin(),cont.end());
-}
-
 template <class Cont,class Func> inline
 void for_each(Cont &cont,Func func)
 {
     std::for_each(cont.begin(),cont.end(),func);
-}
-
-template <class Cont> inline
-void unique(Cont &cont)
-{
-    cont.erase(
-        std::unique(cont.begin(),cont.end()),
-        cont.end());
 }
 
 template <class Cont> inline
@@ -336,21 +337,21 @@ void stringtok (Container &container, std::string const &in, const char * const 
 
 
 
-// requirement: P::return_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
+// requirement: P::result_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
 // can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())
 template <class P>
 struct finder
 {
-    typedef typename P::return_type return_type;
+    typedef typename P::result_type result_type;
     typedef finder<P> Self;
 
     P pred;
-    return_type ret;
+    result_type ret;
 
     finder(const P &pred_): pred(pred_),ret() {}
     finder(const Self &o) : pred(o.pred),ret() {}
 
-    void operator()(const return_type& u)
+    void operator()(const result_type& u)
     {
         if (!ret)
             ret = pred(u);

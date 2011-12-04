@@ -195,7 +195,7 @@ Config::log() << "erase ";
           BOOST_CHECK(ht.find(i) == ht.end());
           BOOST_CHECK(find_second(ht,i) == NULL);
           if ( i % 2) {
-          HT::insert_return_type insr=ht.insert(std::pair<unsigned,unsigned>(i,i));
+          HT::insert_result_type insr=ht.insert(std::pair<unsigned,unsigned>(i,i));
           BOOST_CHECK(insr.second == true);
           BOOST_CHECK(insr.first->first == i);
           BOOST_CHECK(insr.first->second == i);

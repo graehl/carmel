@@ -1,8 +1,8 @@
 // singly linked list
-// originally from http://pegasus.rutgers.edu/~elflord/cpp/list_howto/
-// erase_iterator changes to allow insert and erase (not just _after) by Jonathan
-#ifndef GRAEHL_SHARED_SLIST_H
-# define GRAEHL_SHARED_SLIST_H
+// erase_iterator allows general (std collection) insert and erase (not just erase_after)
+
+#ifndef GRAEHL_SHARED__SLIST_H
+# define GRAEHL_SHARED__SLIST_H
 
 #include <iterator>
 #include <memory> // for placement new
@@ -693,16 +693,18 @@ class slist_shared :
         return e;
     }
 
-    void erase_after (iterator& x)
+  // erase next element without advancing (returns input unmodified, for symmetry with erase()
+    iterator erase_after (iterator x)
     {
         Node* tmp = x.m_rep->next;
         if (x.m_rep->next)
             x.m_rep->next = x.m_rep->next->next;
         dealloc(tmp);
+        return x;
     }
 
     // insert so *++x=y, and return ++x (repeated x=l.insert_after(x,y) means ys ordered from head to tail
-    iterator insert_after (iterator const& x, const T& y)
+    iterator insert_after (iterator x, const T& y)
     {
         if (x.m_rep==NULL) {
             push_front(y);

@@ -1,12 +1,13 @@
 // visitor-style enumerate for generic containers (and nested_enumerate for nested containers).  also, conatiner selectors (HashS and MapS for lookup tables, VectorS and ListS for sequences) usable as template arguments
-#ifndef CONTAINER_HPP
-#define CONTAINER_HPP
+#ifndef GRAEHL_SHARED__CONTAINER_HPP
+#define GRAEHL_SHARED__CONTAINER_HPP
 
 #include <graehl/shared/byref.hpp>
 #include <map>
 #include <graehl/shared/2hash.h>
 #include <graehl/shared/list.h>
 #include <graehl/shared/dynarray.h>
+#include <graehl/shared/containers.hpp>
 
 #ifdef TEST
 #include <graehl/shared/test.hpp>
@@ -14,15 +15,17 @@
 
 namespace graehl {
 
-template <template<class X,class=std::allocator<X> >class R,class C,class F>
-R<typename F::return_type,typename C::allocator_type::template rebind<typename F::return_type>::type> map(C const& c,F f)
+#if 0
+template <template<class X,class A=std::allocator<X> > class R,class C,class F>
+R<typename F::result_type,typename C::allocator_type::template rebind<typename F::result_type>::type> map(C const& c,F f)
 {
     //
-    R<typename F::return_type,typename C::allocator_type::template rebind<typename F::return_type>::type> ret;
+    R<typename F::result_type,typename C::allocator_type::template rebind<typename F::result_type>::type> ret;
     for (typename C::const_iterator i=c.begin(),e=c.end();i!=e;++i)
         ret.push_back(f(*i));
     return ret;
 }
+#endif
 
 template <class R,class C,class F>
 R map(C const& c,F f)
@@ -78,53 +81,21 @@ void enumerate(M& m,F f) {
 }
 
 
-// Assoc. Maps:
-
+// HashTable
 
 struct HashS {
   template <class K,class V> struct map {
     typedef HashTable<K,V> type;
-    typedef typename type::find_return_type find_return_type;
-    typedef typename type::insert_return_type insert_return_type;
+    typedef typename type::find_result_type find_result_type;
+    typedef typename type::insert_result_type insert_result_type;
   };
 };
-
-
-struct MapS {
-  template <class K,class V> struct map {
-    typedef std::map<K,V> type;
-    typedef typename type::iterator find_return_type;
-    typedef std::pair<typename type::iterator,bool> insert_return_type;
-  };
-};
-
-template <class K>
-struct map_traits;
-
-template <class K,class V>
-struct map_traits<std::map<K,V> > {
-  typedef std::map<K,V> type;
-  typedef typename type::iterator find_return_type;
-  typedef std::pair<typename type::iterator,bool> insert_return_type;
-};
-
-template <class type,class find_return_type>
-inline
-bool found(const type &ht,find_return_type f) {
-  return f==ht.end();
-}
-
-template <class K,class V,class H,class P,class A>
-inline
-bool found(const HashTable<K,V,H,P,A> &ht,typename HashTable<K,V,H,P,A>::find_return_type f) {
-  return f;
-}
 
 template <class K,class V,class H,class P,class A>
 struct map_traits< HashTable<K,V,H,P,A> > {
   typedef HashTable<K,V,H,P,A> type;
-  typedef typename type::find_return_type find_return_type;
-  typedef typename type::insert_return_type insert_return_type;
+  typedef typename type::find_result_type find_result_type;
+  typedef typename type::insert_result_type insert_result_type;
 };
 
 
@@ -138,14 +109,6 @@ inline typename std::map<K,V>::mapped_type *find_second(const std::map<K,V>& ht,
     return (ret *)&(i->second);
   } else
     return NULL;
-}
-
-
-template <class K,class V>
-inline
-typename map_traits<std::map<K,V> >::insert_return_type insert(std::map<K,V>& ht,const K& first,const V &v=V())
-{
-  return ht.insert(std::pair<K,V>(first,v));
 }
 
 template <class T>
@@ -164,16 +127,16 @@ inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator 
 // Containers:
 
 
-struct VectorS {
+struct GVectorS {
   template <class T> struct container {
-        typedef dynamic_array<T> type;
+    typedef dynamic_array<T> type;
   };
 };
 
 
-struct ListS {
+struct GListS {
   template <class T> struct container {
-        typedef List<T> type;
+    typedef List<T> type;
   };
 };
 
@@ -251,7 +214,7 @@ void containertest() {
 int plus1(int x) { return x-10; }
 struct F
 {
-    typedef unsigned return_type;
+    typedef unsigned result_type;
     unsigned operator()(int x) const
     {
         return x-10;

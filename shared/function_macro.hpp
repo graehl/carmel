@@ -1,10 +1,10 @@
 #ifndef GRAEHL__SHARED__FUNCTION_MACRO_HPP
 #define GRAEHL__SHARED__FUNCTION_MACRO_HPP
 
-#define FUNCTION_OBJ_X(name,return_type,expr)        \
+#define FUNCTION_OBJ_X(name,result,expr)        \
 struct name \
 { \
-    typedef return_type result_type; \
+    typedef result result_type; \
     template <class T1> \
     result_type operator()(const T1 &x) const \
     { \
@@ -12,10 +12,10 @@ struct name \
     } \
 }
 
-#define FUNCTION_OBJ_WRAP(funcname,return_type)         \
+#define FUNCTION_OBJ_WRAP(funcname,result)         \
 struct funcname ## _f \
 { \
-    typedef return_type result_type; \
+    typedef result result_type; \
     template <class T1> \
     result_type operator()(const T1 &x) const \
     { \
@@ -24,10 +24,10 @@ struct funcname ## _f \
 }
 
 
-#define FUNCTION_OBJ_X_Y(name,return_type,expr)        \
+#define FUNCTION_OBJ_X_Y(name,result,expr)        \
 struct name \
 { \
-    typedef return_type result_type; \
+    typedef result result_type; \
     template <class T1,class T2> \
     result_type operator()(const T1 &x,const T2 &y) const \
     { \

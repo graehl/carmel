@@ -60,6 +60,7 @@ struct cascade_parameters; // in cascade.h, but we avoid circular dependency by 
 class WFST {
  public:
     typedef Alphabet<StringKey,StringPool> alphabet_type;
+  typedef unsigned state_id;
     enum { DEFAULT_PER_LINE,STATE,ARC } /*Per_Line */;
     enum { DEFAULT_ARC_FORMAT,BRIEF,FULL } /*Arc_Format*/ ;
 #define EPSILON_SYMBOL "*e*"
@@ -74,7 +75,7 @@ class WFST {
         // state used/saved per arc:
         Output output;
         graehl::word_spacer sp;
-        unsigned src;
+        state_id src;
         Weight w;
         path_print() : pout(&Config::out()),O(),I(),Q(),AT(),W(),E() {  }
         path_print(bool const* flags) : pout(&Config::out())
@@ -173,7 +174,7 @@ class WFST {
                     wfst.printArc(arc,src,out);
                 }
             }
-            src=(unsigned)arc.dest;
+            src=(state_id)arc.dest;
         }
         template <class I>
         void operator()(WFST const&w,I i,I end)
@@ -254,7 +255,7 @@ class WFST {
         typedef typename A::Weight W;
         typedef typename A::StateId I;
         fst.DeleteStates();
-        for (unsigned i=0,e=numStates();i!=e;++i) {
+        for (state_id i=0,e=numStates();i!=e;++i) {
             I s=fst.AddState();
             assert(s==i);
             states[i].to_openfst(fst,i);
@@ -302,7 +303,7 @@ class WFST {
                 State::Arcs &arcs=i->arcs;
                 for ( State::Arcs::val_iterator l=arcs.val_begin(),end=arcs.val_end() ; l != end ; ++l ) {
                     newsym s(l->in,l->out);
-                    tosyms::insert_return_type ins=to.insert(s,syms.size());
+                    tosyms::insert_result_type ins=to.insert(s,syms.size());
                     if (ins.second)
                         syms.push_back(s);
                     l->in=l->out=ins.first->second;
@@ -464,7 +465,7 @@ class WFST {
     {
         if (!states[final].size)
             return;
-        unsigned old_final=final;
+        state_id old_final=final;
         final=add_state("FINAL_SINK");
         states[old_final].addArc(FSTArc(epsilon_index,epsilon_index,final,1));
     }
@@ -540,7 +541,8 @@ class WFST {
     }
 
     alphabet_type stateNames;
-    unsigned final;	// final state number - initial state always number 0
+    state_id final;	// final state number - initial state always number 0
+  //bool is_final(state_id stateid) const { return stateid==final; }
     typedef dynamic_array<State> StateVector;
     // note: std::vector<State> doesn't work with State::state_adder because copies by value are made during readLegible
 
@@ -557,7 +559,7 @@ class WFST {
     void writeLegible(ostream &,bool include_zero=false);
     void writeLegibleFilename(std::string const& name,bool include_zero=false);
     void writeGraphViz(ostream &); // see http://www.research.att.com/sw/tools/graphviz/
-    int numStates() const { return states.size(); }
+    unsigned numStates() const { return states.size(); }
     bool isFinal(int s) { return s==final; }
     void setPathArc(PathArc *pArc,const FSTArc &a) const {
         pArc->in = a.in;

@@ -1,6 +1,7 @@
 #ifndef GRAEHL__SHARED__IS_NULL_HPP
 #define GRAEHL__SHARED__IS_NULL_HPP
 
+//global NS (or wherever you include it)
 
 #include <graehl/shared/nan.hpp>
 
@@ -8,8 +9,6 @@
 //#define DOUBLE_NULL HUGE_VAL
 #define FLOAT_NULL float(NAN)
 #define DOUBLE_NULL double(NAN)
-
-
 
 template <class C> inline
 bool is_null(C const &c)
@@ -38,6 +37,10 @@ inline void set_null(double &f)
 {
     f=DOUBLE_NULL;//0./0.;
 }
+
+template <class C> inline
+bool non_null(C const &c)
+{ return !is_null(c); }
 
 struct as_null {};
 // tag for constructors

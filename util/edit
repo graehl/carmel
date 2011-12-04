@@ -1,0 +1,4 @@
+#!/bin/bash
+emacsapp=/Applications/Emacs.app/Contents/MacOS/
+emacssrv=$emacsapp/Emacs
+exec $emacsapp/bin/emacsclient -a $emacssrv -c "$@"

@@ -4,9 +4,6 @@
 #include <iomanip>
 #include <iostream>
 #include <cmath>
-#include <graehl/shared/abs_int.hpp>
-#include <graehl/shared/print_width.hpp>
-#include <graehl/shared/print_read.hpp>
 
 namespace graehl {
 
@@ -64,6 +61,5 @@ omanip<const char *> trunc(const char *s)
 #endif
 
 }//graehl
-
 
 #endif

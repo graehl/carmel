@@ -42,7 +42,7 @@ public:
     //  return i->first.str;
 
 #if 1
-    typename Table::insert_return_type it;
+    typename Table::insert_result_type it;
     if ( (it = interns.insert(typename Table::value_type(s,Empty()))).second ) {
       char *s=alloc.allocate(strlen(string)+1);
       Assert(s >= MIN_LEGAL_ADDRESS);

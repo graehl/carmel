@@ -239,8 +239,11 @@ lastn() {
     [ "$*" ] || darg=
     ls -rt $darg "$@" | tail -$n
 }
+last1() {
+    lastn 1 "$@"
+}
 envtofile() {
-   perl -e 'push @INC,"'$BLOBS'/libgraehl/unstable";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
+   perl -e 'push @INC,"'$BLOBS'/libgraehl/latest";require "libgraehl.pl";print filename_from(join "-",map { $ENV{$_}==1?"$_":"$_=$ENV{$_}" } grep { $ENV{$_} } @ARGV);' "$@"
 }
 absp() {
     readlink -nfs "$@"
@@ -492,7 +495,7 @@ silently() {
 
 #no output, no error code
 shush() {
-    silently "$@" || /bin/true
+    silently "$@" || true
 }
 
 #show output/log ONLY if error code (like silently but you get the filenames if something goes wrong)
@@ -719,7 +722,7 @@ cygwin() {
     if [[ $ONCYGWIN ]] ; then
         true
     else
-        local OS=`/bin/uname`
+        local OS=`uname`
         [ "${OS#CYGWIN}" != "$OS" ] && ONCYGWIN=1
     fi
 }
@@ -727,7 +730,7 @@ cygwin() {
 ulimitsafe() {
 local want=${1:-131072}
 local type=${2:-s}
-local OS=`/bin/uname`
+local OS=`uname`
 if [ ${OS#CYGWIN} != "$OS" -a "$type" = "s" ] ; then
 # error "cygwin doesn't allow stack ulimit change"
  return
@@ -1411,12 +1414,12 @@ echo
 
 
 is_text_file() {
-local t=`tmpnam`
-file "$@" > $t
-grep -q text $t
-local ret=$?
-rm $t
-return $ret
+    local t=`tmpnam`
+    file "$@" > $t
+    grep -q text $t
+    local ret=$?
+    rm $t
+    return $ret
 }
 
 ##### ENVIRONMENT VARIABLES as SCRIPT OPTIONS:
@@ -2075,6 +2078,13 @@ preview1() {
  if [[ $2 ]] ; then
      preview_banner $2
      v=
+ elif [[ $(uname) = Darwin && $v ]] ; then
+     v=
+     if [ "$1" ] ; then
+         preview_banner "$1"
+     else
+         preview_banner "<STDIN>"
+     fi
  fi
  tailarg=$v head1 $tailn "$@"
 }
@@ -2330,17 +2340,21 @@ loge() {
     watch $log
 }
 ncpus() {
-    cat /proc/cpuinfo | /bin/grep 'physical id' | sort | uniq -c || /bin/grep ^processor /proc/cpuinfo
+    if [ -r /proc/cpuinfo ] ; then
+        cat /proc/cpuinfo | grep 'physical id' | sort | grep ^processor /proc/cpuinfo | nlines
+    else
+        echo 2
+    fi
 }
 ncores() {
-    ncpus | nlines
+    ncpus
 }
 workflowp=~/workflow
 [ -d $workflowp ] &&  workflowreal=`realpath $workflowp`
 homereal=`realpath ~`
 traperr
 getrealprog
-[ -f $libg/libgraehl.pl ] || lnreal ~/t/utilities/libgraehl.pl $libg/
+[ -f $libg/libgraehl.pl ] || warn missing libgraehl.pl
 
 radutrees() {
     local t=$1

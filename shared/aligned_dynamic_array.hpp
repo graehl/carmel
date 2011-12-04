@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__aligned_dynarray_hpp
 #define GRAEHL__SHARED__aligned_dynarray_hpp
 
+//TOOD: delete this file. nobody uses it.
+
 #define DBG_ALIGNED_DYN(x) x
 // like std::vector but exposes contiguous-array-implementation  - only for types where you can use memcpy to move/swap (thus, also more efficient).
 // historical justification: when Carmel was first written, STL wasn't supported by gcc.

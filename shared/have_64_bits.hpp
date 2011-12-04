@@ -1,7 +1,11 @@
 #ifndef GRAEHL_SHARED__HAVE_64_BITS_HPP
 #define GRAEHL_SHARED__HAVE_64_BITS_HPP
-
-#include <stdint.h>
+// may need to include this first (before anyone else includes stdint.h)
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS
+#endif
+//C++ implementations should define these macros only when __STDC_LIMIT_MACROS is defined before is included
+#include <boost/cstdint.hpp>
 
 // pointer at least 64 bits if 1, exactly 32bits if 0
 #if !defined(HAVE_64_BITS)

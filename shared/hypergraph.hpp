@@ -1,21 +1,14 @@
-// like Boost Graph Library, but for hypergraphs (one head, multiple tails).  includes algorithms for best B-hypertree (nonnegative costs) and B-reachability.
-#ifndef HYPERGRAPH_HPP
-#define HYPERGRAPH_HPP
-
-// adjacency lists (rules or var+rule leaving state) - should be able to use boost dijkstra
-// reverse var+rule index allowing djikstra-ish best-tree and completely-derivable detection
+#ifndef GRAEHL_SHARED__HYPERGRAPH_HPP
+#define GRAEHL_SHARED__HYPERGRAPH_HPP
+// like Boost Graph Library, but for hypergraphs (one head=target, multiple tails=sources).
 
 /*
-  using Boost Graph Library
-
-  view a transducer or other ordered multi-hypergraph as:
-
-  directed graph of outside edges (from each tail to head, i.e. rhs states to lhs state)
-
+  ordered multi-hypergraph
 
   G       A type that is a model of Graph.
   g       An object of type G.
   v       An object of type boost::graph_traits<G>::vertex_descriptor.
+
   Associated Types
   boost::graph_traits<G>::traversal_category
 
@@ -34,21 +27,69 @@
 */
 
 
-#include <graehl/tt/ttconfig.hpp>
-#include <graehl/shared/property.hpp>
-#include <graehl/tt/transducer.hpp>
-#include <graehl/shared/list.h>
-#include <graehl/shared/dynarray.h>
-#include <graehl/shared/weight.h>
-//#include "byref.hpp"
+//#include <graehl/tt/ttconfig.hpp>
+//#include <graehl/tt/transducer.hpp>
+//#include <graehl/shared/list.h>
+//#include <graehl/shared/dynarray.h>
+//#include <graehl/shared/weight.h>
 #include <boost/ref.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <graehl/shared/adjustableheap.hpp>
-
-#include <graehl/shared/graph.hpp>
+#include <graehl/shared/property_factory.hpp>
+#include <boost/iterator/counting_iterator.hpp>
+//#include <graehl/shared/adjustableheap.hpp>
+//#include <graehl/shared/graph.hpp>
 
 namespace graehl {
 
+template <class G>
+struct path_traits {
+  typedef float cost_type;
+  static const bool viterbi = true; // means updates() sometimes returns false. a<b with combine(a,a)=a would suffice
+  static inline cost_type unreachable() { return std::numeric_limits<cost_type>::infinity(); }
+  static inline cost_type start() { return 0; }
+  static inline cost_type extend(cost_type a,cost_type b) { return a+b; }
+  static inline cost_type combine(cost_type a,cost_type b) { return std::min(a,b); }
+  static inline bool update(cost_type const& a,cost_type &b) {
+    if (a<b) {
+      b=a; return true;
+    }
+    return false;
+  }
+  static inline cost_type repeat(cost_type a,float n) { return a*n; }
+  static inline bool updates(cost_type a,cost_type b) { return a<b; } // note: this may be always true if you want to sum all paths until convergence e.g. combine=logplus(a,b) for LogWeight
+};
+
+// for graphs which have sources and not source - ordered multihypergraphs
+template <class G>
+struct edge_traits {
+  typedef typename path_traits<G>::cost_type cost_type;
+  typedef boost::graph_traits<G> GT;
+  typedef unsigned tail_descriptor;
+  typedef boost::counting_iterator<tail_descriptor> tail_iterator;
+  typedef unsigned tails_size_type; // must always be unsigned. for now
+};
+
+/*
+  free fns (ADL):
+
+
+ */
+
+template <class T>
+struct hypergraph_traits : boost::graph_traits<T>,edge_traits<T> {};
+
+template <class G>
+struct updates_cost {
+  typedef path_traits<G> PT;
+  typedef typename PT::cost_type cost_type;
+  typedef bool result_type;
+  inline bool operator()(cost_type const& a,cost_type const& b) const {
+    return PT::updates(a,b);
+  }
+};
+
+
+#if 0
 template <class T>
 struct hypergraph_traits {
     typedef T graph;
@@ -115,6 +156,7 @@ inline
 typename graph_object<G,hyperarc_tag_t>::iterator_pair begin_end(hyperarc_tag_t t,G &g) {
   return hyperarcs(g);
 }
+#endif
 
 /*
   struct NoWeight {
