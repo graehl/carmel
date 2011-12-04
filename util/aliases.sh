@@ -2780,7 +2780,13 @@ cygbase() {
 export SVNAUTHORS=~/isd/hints/svn.authorsfile
 clonecar() {
     set -x
-    git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile)' https://nlg0.isi.edu/svn/sbmt/trunk/graehl
+    local CR=https://nlg0.isi.edu/svn/sbmt/
+    git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile)' ---trunk=$CR/trunk/graehl  "$@"
+#--tags=$CR/tags --branches=$CR/branches
+#-r 3502 at
+# https://nlg0.isi.edu/svn/sbmt/trunk/graehl@3502
+#e4bd1e594dd7051a9e50561d19bdc31139ba1159
+
     #--no-metadata
     set +x
 }
