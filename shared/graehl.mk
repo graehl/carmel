@@ -212,7 +212,8 @@ ifdef FIRST_PREFIX
 LIBDIR = $(FIRST_PREFIX)/lib
 endif
 endif
-LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR)) -lpthread -pthread
+# major-mode
+LDFLAGS += $(addprefix -l,$(LIB)) -L$(OBJB) $(ARCH_FLAGS) $(addprefix -L,$(LIBDIR)) -lpthread -pthread -lz
 LDFLAGS_TEST = $(LDFLAGS)  -ltest
 INC += $(TRUNK)
 INC += ..
