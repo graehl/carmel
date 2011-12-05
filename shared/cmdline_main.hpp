@@ -57,6 +57,10 @@ namespace graehl {
       return o;
     }
 
+    void allow_random() {
+      add_random=true;
+    }
+
     virtual void print(std::ostream &o) const {
       o << appname<<"-version={{{" << get_version() << "}}} "<<appname<<"-cmdline={{{"<<cmdline_str<<"}}}";
     }

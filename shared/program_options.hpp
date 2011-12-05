@@ -16,8 +16,8 @@
 
 namespace graehl {
 
-  inline bool contains(boost::program_options::variables_map const& vm,std::string const& key)
-  { return vm.count(key); }
+inline bool contains(boost::program_options::variables_map const& vm,std::string const& key)
+{ return (bool)vm.count(key); }
 
   template <class V>
   inline bool maybe_get(boost::program_options::variables_map const& vm,std::string const& key,V &val) {

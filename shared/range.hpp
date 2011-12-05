@@ -2,16 +2,6 @@
 #define GRAEHL_SHARED__NUMERIC_HPP
 
 #include <boost/range.hpp>
-#if 0
-#include <boost/range/concepts.hpp>
-#include <boost/range/begin.hpp>
-#include <boost/range/end.hpp>
-#include <boost/range/empty.hpp>
-#include <boost/range/distance.hpp>
-#include <boost/range/size.hpp>
-#include <boost/range/value_type.hpp>
-//#include <boost/range/as_literal.hpp>
-#endif
 
 namespace graehl {
 

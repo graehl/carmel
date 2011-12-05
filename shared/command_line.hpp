@@ -43,7 +43,7 @@ struct argc_argv : private std::stringbuf
     std::vector<char const*> argvptrs;
     int argc() const
     {
-        return argvptrs.size();
+      return (int)argvptrs.size();
     }
     argv_t argv() const
     {

@@ -16,8 +16,10 @@
 #ifdef BOOST_HAS_SLIST
 #include BOOST_SLIST_HEADER
 # define GRAEHL_STD_SLIST BOOST_STD_EXTENSION_NAMESPACE::slist
+# define GRAEHL_STD_SLIST_IS_LIST 0
 #else
 # define GRAEHL_STD_SLIST std::list
+# define GRAEHL_STD_SLIST_IS_LIST 1
 #endif
 
 #include <vector>
@@ -117,6 +119,7 @@ inline SlistS slistS() {
   return SlistS();
 }
 
+#if !GRAEHL_STD_SLIST_IS_LIST
 template <class T,class A>
 void add(GRAEHL_STD_SLIST<T,A> &v,T const& t) {
   v.push_front(t);
@@ -126,7 +129,7 @@ template <class T,class A>
 T & last_added(GRAEHL_STD_SLIST<T,A> &v) {
   return v.front();
 }
-
+#endif
 
 struct SetS {
   template <class K> struct set {
