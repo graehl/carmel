@@ -207,7 +207,6 @@ No more \"End of file during parsing\" horrors!"
 (define-key emacs-lisp-mode-map [(meta p)] 'pbug)
 
 
-
 (defun my-backward-kill-word ()
   "Kill words backward my way."
   (interactive)
@@ -443,8 +442,6 @@ No more \"End of file during parsing\" horrors!"
 (cond (on-emacs (transient-mark-mode t)))
 
 
-
-
 (setq load-path (cons "~/elisp/tuareg-mode" load-path))
 
                                         ;(or recent-emacs
@@ -473,7 +470,7 @@ No more \"End of file during parsing\" horrors!"
 (load-file "~/elisp/tempo.el")
                                         ;(load-file "~/elisp/re-builder.el")
                                         ;(load-file "~/elisp/live-mode.el")
-;(require 're-builder+)
+                                        ;(require 're-builder+)
 (autoload 'html-helper-mode "html-helper-mode" "Yay HTML" t)
 (setq auto-mode-alist (cons '("\\.html$" . html-helper-mode) auto-mode-alist))
 
@@ -559,7 +556,6 @@ No more \"End of file during parsing\" horrors!"
   "Insert today's date in the current buffer. Dates are in RFC 822 form `Sun, 15 May 1960 15:23:14 CET'."
   (interactive)
   (insert (format-time-string rfc-822-datetime-format)))
-
 
 
 (defun insert-date ()
@@ -651,7 +647,6 @@ No more \"End of file during parsing\" horrors!"
         '(after)))))
 
 
-
 (cond (on-xemacs
        (require 'func-menu)
        (define-key global-map 'f8 'function-menu)
@@ -729,8 +724,6 @@ No more \"End of file during parsing\" horrors!"
 (defun insert-time ()
   (interactive)
   (insert (current-time-string)))
-
-
 
 
 (defun indent-buffer () "whole buffer!" (interactive) (save-excursion (indent-region (point-min) (point-max) nil)))
@@ -885,7 +878,6 @@ No more \"End of file during parsing\" horrors!"
 (setq dabbrev-case-fold-search nil)
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Dave Abrahams' .emacs file. Changelog at bottom.
@@ -951,7 +943,6 @@ No more \"End of file during parsing\" horrors!"
   (concat (mapcar (function (lambda (c)
                               (if (= c ?\\) ?/ c)))
                   filename)))
-
 
 
 ;; Setting your default font
@@ -2006,6 +1997,7 @@ and initial semicolons."
     t))
 (require 'sh-script)
 ;; not very useful
+
 (defun my-sh-electric-close-brace ()
   (interactive "*")
   (let ((indentation
@@ -2013,17 +2005,16 @@ and initial semicolons."
            (delete-region (point)
                           (progn
                             (or (zerop (skip-chars-backward " \t\n"))
-                                (if (sh-quoted-p)
-                                    (forward-char)))
+                                (if (sh-quoted-p)sk
+                                  (forward-char)))
                             (point)))
            (if (equal (char-before) 123) (current-indentation)
              (- (current-indentation) 4)))))
     (newline)
-    (indent-to indentation)
+    (indent-to indentation)bin
     (insert "}")
     (newline)
     (indent-to indentation)))
-
 
 (defun my-jam-debug-mode ()
   (interactive)
@@ -2108,7 +2099,6 @@ and initial semicolons."
 ;;
 ;; python
 ;;
-
 
 
 ;;
@@ -2828,7 +2818,6 @@ starts."
       (cons '("\\.mk1$" . makefile-mode) auto-mode-alist))
 
 
-
 ;;
 ;; Path translation for cygwin
 ;;
@@ -2909,7 +2898,6 @@ starts."
 (global-set-key "\C-xr\C-y" 'my-yank-replace-rectangle)
 (global-set-key "\C-xr\C-w" 'my-save-rectangle)
 (global-set-key "\C-x\M-Q" 'my-force-writable)
-
 
 
 ;; Compilation
@@ -3182,7 +3170,6 @@ starts."
                               ))
 
 
-
 ;; move cursor to the previous line or get previous history item,depending
 ;; on whether we're at a shell mode prompt
 (defun ewd-comint-up (arg)
@@ -3294,13 +3281,13 @@ starts."
                                         ;(require `browse-kill-ring)
 
 ;; Mark ring size
-(setq mark-ring-max 32)			; default is 16
+(setq mark-ring-max 32)                 ; default is 16
 
 ;; Kill ring size
-(setq kill-ring-max 200)			; default is 30
+(setq kill-ring-max 200)                        ; default is 30
 
 ;; Search ring size
-(setq search-ring-max 32)		; default is 16
+(setq search-ring-max 32)               ; default is 16
 
 (auto-compression-mode 1)
 
@@ -3330,8 +3317,6 @@ starts."
 (setq sourcepair-header-path    '( "." "include" "../include" )) ;;"~/t/sbmt_decoder/include/sbmt" "~/t/sbmt_decoder/include/sbmt/ngram"
 (setq sourcepair-recurse-ignore '( "CVS" "Obj" "Debug" "Release" ".svn"))
 ;;    (global-set-key [(meta \`)] 'sourcepair-load)
-
-
 
 
 ;; scratch.el
@@ -3633,7 +3618,7 @@ configuration to the state it was in beforehand."
   (add-hook
    'haskell-mode-hook
    '(lambda ()
-     	;;; use add-to-list rather than push to avoid growing the list for every Haskell file loaded
+        ;;; use add-to-list rather than push to avoid growing the list for every Haskell file loaded
       (add-to-list 'flymake-allowed-file-name-masks
                    '("\\.l?hs$" flymake-Haskell-init flymake-simple-java-cleanup))
       (add-to-list 'flymake-err-line-patterns
@@ -3662,7 +3647,6 @@ configuration to the state it was in beforehand."
 (define-key global-map [(control :)] 'comment-or-uncomment-region)
 (require 'grep-buffers)
 (require 'shebang)
-
 
 
 (defun remove-dos-eol ()
@@ -3729,11 +3713,11 @@ configuration to the state it was in beforehand."
       (comment-dwim arg)
     (save-excursion
       (let ((has-comment? (progn (beginning-of-line) (looking-at (concat "\\s-*" (regexp-quote comment-start))))))
-	(push-mark (point) nil t)
-	(end-of-line)
-	(if has-comment?
-	    (uncomment-region (mark) (point))
-	  (comment-region (mark) (point)))))))
+        (push-mark (point) nil t)
+        (end-of-line)
+        (if has-comment?
+            (uncomment-region (mark) (point))
+          (comment-region (mark) (point)))))))
 (global-set-key (kbd "C-/") 'tweakemacs-comment-dwim-region-or-one-line)
 (global-set-key (kbd "M-;") 'comment-dwim)
 (global-set-key (kbd "M-,") 'transpose-sexps)
@@ -3756,7 +3740,6 @@ configuration to the state it was in beforehand."
                                      (string-match (concat name "\\(\\.~.*\\)?~$") ob-file-name))) )
                           (kill-buffer ob)))))
           (message "This buffer has no file name."))))
-
 
 
 (if on-win32 (progn
@@ -4001,25 +3984,25 @@ loaded as such.)"
                                         ;(require 'anything)
 (and emacs-24
      (progn (require 'hideshowvis)
-(defvar hs-toggle-all-last-val nil)
-(defun hs-toggle-all ()
-  (interactive)
-  (make-local-variable 'hs-toggle-all-last-val)
-  ;; only modify buffer local copy
-  (setq hs-toggle-all-last-val (not hs-toggle-all-last-val))
-  (if hs-toggle-all-last-val
-      (hs-hide-all)
-    (hs-show-all)))
+            (defvar hs-toggle-all-last-val nil)
+            (defun hs-toggle-all ()
+              (interactive)
+              (make-local-variable 'hs-toggle-all-last-val)
+              ;; only modify buffer local copy
+              (setq hs-toggle-all-last-val (not hs-toggle-all-last-val))
+              (if hs-toggle-all-last-val
+                  (hs-hide-all)
+                (hs-show-all)))
 
-(defun my-hs-minor-mode-hook ()
-  (local-set-key (kbd "C-+" ) 'hs-toggle-hiding)
-  (local-set-key (kbd "C-M-+" ) 'hs-toggle-all))
+            (defun my-hs-minor-mode-hook ()
+              (local-set-key (kbd "C-+" ) 'hs-toggle-hiding)
+              (local-set-key (kbd "C-M-+" ) 'hs-toggle-all))
 
-(add-hook 'hs-minor-mode-hook 'my-hs-minor-mode-hook)
-(require 'hideshow-org)
-(global-set-key "\C-cv" 'hideshowvis-minor-mode)
-(global-set-key "\C-ch" 'hs-org/minor-mode)
-))
+            (add-hook 'hs-minor-mode-hook 'my-hs-minor-mode-hook)
+            (require 'hideshow-org)
+            (global-set-key "\C-cv" 'hideshowvis-minor-mode)
+            (global-set-key "\C-ch" 'hs-org/minor-mode)
+            ))
 
 (setq file-name-shadow-tty-properties '(invisible t))
 (file-name-shadow-mode 1)
@@ -4289,9 +4272,9 @@ loaded as such.)"
 (define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
 (define-key global-map (kbd "C-c C-s") 'occur)
 
-;(setq cua-enable-cua-keys nil)
+                                        ;(setq cua-enable-cua-keys nil)
 ;; only for rectangles
-;(cua-mode t)
+                                        ;(cua-mode t)
 
 (global-set-key (kbd "C-M-/") 'hippie-expand)
 (global-set-key (kbd "M-/") 'dabbrev-expand)
@@ -4594,7 +4577,7 @@ loaded as such.)"
 
 (autoload 'live-mode "live-mode" "live mode" t)
 
-;(setq auto-mode-alist (cons '("_log" . live_mode) (cons '("\\.log$" . live-mode) auto-mode-alist)))
+                                        ;(setq auto-mode-alist (cons '("_log" . live_mode) (cons '("\\.log$" . live-mode) auto-mode-alist)))
 (setq case-fold-search t)
 (setq dabbrev-case-fold-search nil)
 (setq dabbrev-case-distinction nil)
@@ -4645,9 +4628,9 @@ loaded as such.)"
   (switch-to-buffer term-ansi-buffer-name))
 
 (require 'color-theme-solarized)
-;(load-file "~/elisp/themes/color-theme-solarized.el")
-;(color-theme-solarized-light)
-;(add-hook 'c-mode-hook (lambda () (font-lock-add-keywords nil '(("\\<\\(TODO\\):" 1 font-lock-warning-face t)))))
+                                        ;(load-file "~/elisp/themes/color-theme-solarized.el")
+                                        ;(color-theme-solarized-light)
+                                        ;(add-hook 'c-mode-hook (lambda () (font-lock-add-keywords nil '(("\\<\\(TODO\\):" 1 font-lock-warning-face t)))))
 (require 'fic-mode)
 
 (color-theme-solarized-dark)
