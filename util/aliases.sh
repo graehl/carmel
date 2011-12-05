@@ -1,6 +1,14 @@
-svntagr() {
-    svn log -v -q --stop-on-copy ${2:-https://nlg0.isi.edu/svn/sbmt/tags/${1:-carmel}} | grep "   A"
+svntaglog() {
+    local proj=${1:-carmel}
+    local spath=${2:-"https://nlg0.isi.edu/svn/sbmt/tags/$proj"}
+    showvars_required proj spath
+    svn log -v -q --stop-on-copy $spath
 }
+
+svntagr() {
+    svntaglog "$@" | grep "   A"
+}
+
 gitsub() {
     git submodule update --init --recursive "$@"
 }
@@ -1696,6 +1704,16 @@ alias sbl=". ~/u/bashlib.sh"
 alias sl=". ~/local.sh"
 export PBSQUEUE=isi
 alias hrsgodec="pdq ~/ql;hrs godec ql;popd"
+
+cp_sbmt() {
+    local to=$1
+    local sub=$2
+    [ "$sub" ] && sub="/$sub"
+    if [ "$to" ] ; then
+        echo2 copying trunk to $to
+        svn cp -m "trunk->$to" $SBMT_SVNREPO/trunk$sub $SBMT_SVNREPO/$to
+    fi
+}
 
 tag_module() {
     local ver=$1
