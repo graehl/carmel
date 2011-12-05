@@ -16,7 +16,6 @@ gitco() {
 emcom() {
     cd ~/.emacs.d
     git add -v *.el defuns/*.el
-    git commit -a
     gcom "$@"
 }
 gcom() {
@@ -1227,8 +1226,10 @@ buildgraehl() {
         pushd ~/t/graehl/$d
         [ "$noclean" ] || make clean
         set -x
-        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
-        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
+#LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
+#LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
+        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include"  BOOST_SUFFIX= -j$MAKEPROC
+        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include"  BOOST_SUFFIX= install
         set +x
         popd
         if [ "$v" ] ; then

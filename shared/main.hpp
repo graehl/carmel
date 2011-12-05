@@ -9,17 +9,17 @@
 
 namespace graehl {
 
-inline void default_locale()
-{
+  inline void default_locale()
+  {
     std::locale::global(std::locale(""));
-}
+  }
 
 #ifndef USE_UNSYNC_STDIO
 # define USE_UNSYNC_STDIO 1
 #endif
 
-#ifndef DEFAULT_LOCALE
-# define DEFAULT_LOCALE 1
+#ifndef HAVE_DEFAULT_LOCALE
+# define HAVE_DEFAULT_LOCALE 1
 #endif
 
 #if USE_UNSYNC_STDIO
@@ -28,7 +28,7 @@ inline void default_locale()
 # define UNSYNC_STDIO
 #endif
 
-#if DEFAULT_LOCALE
+#if HAVE_DEFAULT_LOCALE
 # define NO_LOCALE default_locale()
 #else
 # define NO_LOCALE
