@@ -1,7 +1,9 @@
+
+
 #ifndef GRAEHL_TT__FOREST_EM_PARAMS_HPP
 #define GRAEHL_TT__FOREST_EM_PARAMS_HPP
 
-#define FOREST_EM_VERSION "v18"
+#define FOREST_EM_VERSION "v19"
 
 #include <graehl/shared/em.hpp>
 #include <graehl/shared/myassert.h>
