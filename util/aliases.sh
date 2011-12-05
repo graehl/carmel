@@ -1,3 +1,6 @@
+svntagr() {
+    svn log -v -q --stop-on-copy ${2:-https://nlg0.isi.edu/svn/sbmt/tags/${1:-carmel}} | grep "   A"
+}
 gitsub() {
     git submodule update --init --recursive "$@"
 }
@@ -35,7 +38,8 @@ acksed() {
         ack -l $1
         sleep 3
         ack -l --print0 --text $1 | xargs -0 -n 1 sed -i -e "s/$1/$2/g"
-        ack $1
+        ack $1l
+
     )
 }
 retok() {
@@ -2782,7 +2786,7 @@ export SVNAUTHORS=~/isd/hints/svn.authorsfile
 clonecar() {
     set -x
     local CR=https://nlg0.isi.edu/svn/sbmt/
-    git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile)' ---trunk=$CR/trunk/graehl  "$@"
+    git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile|dagtt)' ---trunk=$CR/trunk/graehl  "$@"
 #--tags=$CR/tags --branches=$CR/branches
 #-r 3502 at
 # https://nlg0.isi.edu/svn/sbmt/trunk/graehl@3502
