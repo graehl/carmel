@@ -1,3 +1,60 @@
+dbgemacs() {
+    ${emacs:-appemacs} --debug-init
+}
+freshemacs() {
+    git clone --recursive git@github.com:graehl/.emacs.d.git
+}
+urlup() {
+#destroys hostname if you go to far
+    perl -e '$_=shift;s|/[^/]+/?$||;print "$_";' "$*"
+}
+svnurl() {
+    svn info | awk '/^URL: / {print $2}'
+}
+svngetrev() {
+    svn ls -v "$@" | awk '{print $1}'
+}
+svnprev() {
+    #co named revision of file in current dir
+    local f=${1?-arg1: file in cdir}
+    local r=$2
+    [[ $r ]] || r=PREV
+    local svnu=`svnurl`
+    #local svnp=`urlup $svnu`
+    local svnp="$svnu"
+    local d=`basename $svnu`
+    local dco="co-$d-r$r"
+    set -e
+    showvars_required svnp dco f r
+    require_file $f
+    local rev=`svngetrev -r "$r" $f`
+    echo ""$f at revision $rev - latest as of requested $r:""
+    ! [[ -d $dco ]] ||  rm -rf $dco/
+    svn checkout -r "$rev" $svnp $dco --depth empty || error "svn checkout -r '$rev' '$svnp' $dco --depth empty" || return
+    pushd $dco
+    svn update -r "$rev" $f || error "svn update $f" || return
+    popd
+    local dest="$f@$r"
+    ln -sf $dco/$f $dest
+    diff -s -u "$dest" "$f"
+    echo diff -s -u "$dest" "$f"
+    echo
+    echo $dest
+}
+svnprevs() {
+    local rev=$1
+    shift
+    for f in "$@"; do
+        (svnprev $f $rev)
+    done
+}
+pids() {
+    grep=${grep:-/usr/bin/grep}
+    ps -ax |  awk '/'$1'/ && !/awk/ {print $1}'
+}
+gituntrack() {
+    git update-index --assume-unchanged "$@"
+}
 svntaglog() {
     local proj=${1:-carmel}
     local spath=${2:-"https://nlg0.isi.edu/svn/sbmt/tags/$proj"}
@@ -30,8 +87,8 @@ emcom() {
     gcom "$@"
 }
 gcom() {
-    git commit -a -m "$*"
-    git push
+    git commit -v -a -m "$*"
+    git push -v
 }
 scom() {
     svn commit -m "$*"
@@ -101,7 +158,7 @@ racershared1() {
     local g=$d/$1
     if [ -f $g ] ; then
         if [ "$force" ] ; then
-            diff $f $g
+            diff -u -w $f $g
             rm -f $f
         fi
         ln $g $f
@@ -114,7 +171,7 @@ diffshared1() {
     local s=~/t/graehl/shared/
     local f=$s/"$1"
     local d=$racer/3rdParty/graehl/shared/
-    diff -u -b $f $d/$1
+    diff -u -w $f $d/$1
 }
 diffshared() {
     forall diffshared1 $(usedshared)
@@ -204,13 +261,13 @@ lsld() {
 }
 addld() {
     if [[ $lwarch = Apple ]] ; then
-        if ! fgrep "$1" <<< "$DYLD_LIBRARY_PATH" ; then
+        if ! fgrep -q "$1" <<< "$DYLD_LIBRARY_PATH" ; then
             export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$1
         else
             true || echo "$1 already in DYLD_LIBRARY_PATH"
         fi
     else
-        if ! fgrep "$1" <<< "$LD_LIBRARY_PATH" ; then
+        if ! fgrep -q "$1" <<< "$LD_LIBRARY_PATH" ; then
             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$1
         else
             true || echo "$1 already in LD_LIBRARY_PATH"
@@ -1228,7 +1285,7 @@ buildpipe() {
 buildxrs() {
     pushd ~/t;svn update;bjam $sbmtargs utilities//install ;popd
 }
-alias grep="$(which grep) --color -n"
+alias grepc="$(which grep) --color -n"
 alias savecvs="/usr/bin/rsync -Lptave ssh ~/isd/cvs hpc.usc.edu:isd/cvs"
 alias buildfem="pushd ~/t/graehl/tt;make clean;make BOOST_SUFFIX= -j$MAKEPROC install;popd"
 buildgraehl() {
