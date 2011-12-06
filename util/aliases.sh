@@ -1,3 +1,24 @@
+gitsubpull1() {
+    (
+        set -e
+        pushd $1
+        local sub=$(basename $1)
+        sub=${sub%/}
+        local gitbranch=${gitbranch:-${2:-master}}
+        banner pulling submodule $1 ....
+        showvars_required sub gitbranch
+        git checkout $gitbranch
+        git pull
+        cd ..
+        git add `basename $1`
+        git commit $sub -m "pulled $1"
+        [[ $nopush ]] || git push
+        banner DONE pulling submodule $1.
+    )
+}
+gitsubpull() {
+    forall gitsubpull1 "$@"
+}
 dbgemacs() {
     ${emacs:-appemacs} --debug-init
 }
