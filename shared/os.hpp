@@ -30,10 +30,6 @@
 # endif
 #endif
 
-#ifdef OS_WINDOWS
-# include <direct.h>
-#endif
-
 #ifdef MEMMAP_IO_WINDOWS
 # ifndef NOMINMAX
 #  define NOMINMAX
@@ -43,6 +39,10 @@
 # undef max
 # undef min
 // WTF, windows?  a "max" macro?  don't you think that might conflict with a max() function or method?
+#endif
+
+#ifdef OS_WINDOWS
+# include <direct.h>
 #endif
 
 //static local var means env var is checked once (like singleton)

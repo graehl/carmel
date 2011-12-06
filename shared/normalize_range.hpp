@@ -52,12 +52,12 @@ O normalize_copy(typename range_value<R>::type sum,R const&r,O o,normalize_optio
 
 template <class R,class O>
 O normalize_copy(R const&r,O o,normalize_options<typename range_value<R>::type > n=normalize_options<typename range_value<R>::type >()) {
-  normalize_copy(sum(r),r,begin(r),n);
+  normalize_copy(sum(r),r,boost::begin(r),n);
 }
 
 template <class R>
 void normalize_sum(typename range_value<R>::type sum,R &r,normalize_options<typename range_value<R>::type > n=normalize_options<typename range_value<R>::type >()) {
-  normalize_copy(sum,r,begin(r),n);
+  normalize_copy(sum,r,boost::begin(r),n);
 }
 
 template <class R>

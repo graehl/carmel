@@ -3,6 +3,10 @@
 
 /**
 
+   note: no predicate is supplied for comparing derivations; instead, it's
+   assumed that worse < better. these things are called "costs" even though
+   lower is worse. (they're negative costs?) sorry.
+
    Uses a top-down, lazy, best-first kbest-derivation from a forest algorithm
    described at http://www.cis.upenn.edu/~lhuang3/huang-iwpt-correct.pdf.
    Generating, say, the 1-million best should be no problem.
@@ -22,6 +26,24 @@
 
    You can generate kbest items incrementally, on demand.
 **/
+
+/*
+     struct Factory
+    {
+        typedef Result *derivation_type;
+        static derivation_type NONE() { return (derivation_type)0;}
+        static derivation_type PENDING() { return (derivation_type)1;}
+        derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index)
+        {
+            return new Result(prototype,old_child,new_child,changed_child_index);
+        }
+    };
+
+    Result(a) < Result(b) iff b is better than a.
+
+    then build a lazy_forest<Factory> binary hypergraph
+*/
+
 ///\{
 
 #ifdef SAMPLE

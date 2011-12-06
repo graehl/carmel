@@ -37,6 +37,7 @@
 # define HAVE_STRTOUL 1
 #endif
 
+#include <limits> //numeric_limits
 #include <string>
 #include <sstream>
 #include <stdexcept>
@@ -55,6 +56,8 @@ namespace {
 #include <ctype.h>
 #include <stdlib.h> // access to evil (fast) C isspace etc.
 #include <limits.h> //strtoul
+#undef min // damn you, windows
+#undef max
 }
 
 //NOTE: stdlib atoi consumes dead whitespace; these don't
