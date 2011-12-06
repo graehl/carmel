@@ -1,3 +1,23 @@
+gitsubuntracked() {
+    awk 'print $0;/^\[submodule / { print "\tignore = untracked\n" }' "$@"
+}
+gitdiffs() {
+    PAGER= git diff
+    PAGER= git diff --submodule
+}
+
+gitsubcommit() {
+    local sub=$(basename $1)
+    shift
+    sub=${sub%/}
+    (set -e
+        pushd $1
+        git commit -a -m "$*"
+        git push
+        cd ..
+        git commit $sub -m "$*"
+    )
+}
 gitsubpull1() {
     (
         set -e
