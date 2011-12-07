@@ -6,35 +6,53 @@ gitdiffs() {
     PAGER= git diff --submodule
 }
 
-gitsubcommit() {
-    local sub=$(basename $1)
+gitsubpush1() {
+    local p=$1
     shift
-    sub=${sub%/}
-    (set -e
-        pushd $1
-        git commit -a -m "$*"
-        git push
-        cd ..
-        git commit $sub -m "$*"
-    )
+    local msg="$*"
+    local sub=$(basename $p)
+    echo git submodule push $p ...
+    if ! [[ -d $p ]] ; then
+        echo gitsubpush skipping non-directory $p ...
+    else
+        sub=${sub%/}
+        (set -e
+            pushd $p
+            gcom "$msg"
+            cd ..
+            git push $sub -m "$msg"
+        )
+    fi
+}
+gitsubpush() {
+    forall gitsubpush1 "$@"
 }
 gitsubpull1() {
+    local p=$1
+    shift
+    local msg="$*"
+    echo git submodule push-pull $p ...
+    if ! [[ -d $p ]] ; then
+        echo gitsubpull skipping non-directory $p ...
+    else
     (
         set -e
-        pushd $1
-        local sub=$(basename $1)
+        pushd $p
+        local sub=$(basename $p)
         sub=${sub%/}
         local gitbranch=${gitbranch:-${2:-master}}
-        banner pulling submodule $1 ....
+        banner pulling submodule $p ....
         showvars_required sub gitbranch
+        ! grep graehl .git/config || gcom "$msg"
         git checkout $gitbranch
         git pull
         cd ..
-        git add `basename $1`
-        git commit $sub -m "pulled $1"
+        git add `basename $p`
+        git commit $sub -m "pulled $p - $msg"
         [[ $nopush ]] || git push
-        banner DONE pulling submodule $1.
+        banner DONE pulling submodule $p.
     )
+    fi
 }
 gitsubpull() {
     forall gitsubpull1 "$@"

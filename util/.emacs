@@ -4499,7 +4499,7 @@ loaded as such.)"
                    (or (getenv "CPPFLAGS") "-DDEBUG=9")
                    (or (getenv "CFLAGS") "-ansi -pedantic -Wall -g")
                    file)))))
-                                        ;(add-hook 'c-mode-hook 'c-default-compile)
+;;(add-hook 'c-mode-hook 'c-default-compile)
 
 (defmacro compilation-recenter-end--with-selected-window (window &rest body)
   (if (eval-when-compile (fboundp 'with-selected-window))
@@ -4519,6 +4519,7 @@ loaded as such.)"
 (add-to-list 'compilation-finish-functions 'compilation-recenter-end-at-finish)
 
 
+;; not used for anything. not tested. could put a flag in modeline. one-file no-makefile scripts usually compile pretty fast, though.
 (defun my-buffer-compiled-since-modified-p (buffer)
   "Is file modification for BUFFER newer than last compilation time? (not perfect at midnight etc)"
   (interactive (list (current-buffer)))
