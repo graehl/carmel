@@ -5,7 +5,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
 #include <cassert>
-#include <allocator>
+#include <memory>
 
 /**
 
@@ -28,12 +28,12 @@ template<class T,class R=unsigned>
 struct intrusive_refcount //: boost::noncopyable
 {
   typedef T pointed_type;
-  friend void intrusive_ptr_add_ref<T>(T const* ptr)
+  friend void intrusive_ptr_add_ref(T const* ptr)
   {
     ++((const intrusive_refcount *)ptr)->refcount;
   }
 
-  friend void intrusive_ptr_release<T>(T const* ptr)
+  friend void intrusive_ptr_release(T const* ptr)
   {
     if (--((const intrusive_refcount *)ptr)->refcount)
       delete ptr;
@@ -57,12 +57,12 @@ template<class T>
 struct atomic_intrusive_refcount //: boost::noncopyable
 {
   typedef T pointed_type;
-  friend void atomic_intrusive_ptr_add_ref<T>(T const* ptr)
+  friend void atomic_intrusive_ptr_add_ref(T const* ptr)
   {
     ++((const atomic_intrusive_refcount *)ptr)->refcount;
   }
 
-  friend void atomic_intrusive_ptr_release<T>(T const* ptr)
+  friend void atomic_intrusive_ptr_release(T const* ptr)
   {
     if (--((const atomic_intrusive_refcount *)ptr)->refcount)
       delete ptr;
@@ -71,21 +71,21 @@ protected:
   atomic_intrusive_refcount(): refcount(0) {}
   ~atomic_intrusive_refcount() { assert(refcount==0); }
 private:
-  typedef boost::detail::atomic_count r;
+  typedef boost::detail::atomic_count R;
   mutable R refcount;
 };
 
 
-struct deleter
+struct delete_any
 {
   template <class V>
-  operator ()(V const* v)
+  void operator()(V const* v) const
   {
     delete v;
   }
 };
 
-template<class T,class D=deleter<T>,class R=unsigned>
+template<class T,class D=delete_any,class R=unsigned>
 struct intrusive_refcount_destroy : protected D //: boost::noncopyable
 {
   typedef T pointed_type;
@@ -94,12 +94,12 @@ struct intrusive_refcount_destroy : protected D //: boost::noncopyable
   intrusive_refcount_destroy() {}
   void set_destroyer(D const& d) { destroyer() = d; }
 // typedef intrusive_refcount_destroy<T> pointed_type;
-  friend void intrusive_ptr_add_ref<T>(T const* ptr)
+  friend void intrusive_ptr_add_ref(T const* ptr)
   {
     ++((const intrusive_refcount_destroy *)ptr)->refcount;
   }
 
-  friend void intrusive_ptr_release<T>(T const* ptr)
+  friend void intrusive_ptr_release(T const* ptr)
   {
     if (--((const intrusive_refcount_destroy *)ptr)->refcount)
       destroyer()(ptr);
