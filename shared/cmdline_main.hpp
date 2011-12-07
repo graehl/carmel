@@ -127,7 +127,10 @@ struct main {
       if (n<min_ins)
         throw std::runtime_error("Too few input files (min="+itos(min_ins)+", had "+itos(n)+")");
     }
-
+    void allow_random(bool val=true)
+    {
+      add_random=val;
+    }
     int min_ins,max_ins; //multiple inputs 0,1,... if max>min
     bool add_in_file,add_out_file,add_log_file,add_config_file,add_help,add_debug_level;
     bool positional_in,positional_out;
@@ -162,7 +165,7 @@ struct main {
   main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",bool multifile=false,bool random=false,bool input=true,std::string const& compiled=GRAEHL_MAIN_COMPILED) : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Options"),options_added(false)
   {
     if (random)
-      bopt.allow_random();
+      allow_random();
     if (input) {
       if (multifile) {
         bopt.require_ins();
