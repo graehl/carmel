@@ -47,12 +47,12 @@ struct normalize_addk {
 template <class R,class O>
 O normalize_copy(typename range_value<R>::type sum,R const&r,O o,normalize_options<typename range_value<R>::type > n=normalize_options<typename range_value<R>::type >()) {
   typedef typename range_value<R>::type V;
-  boost::transform(r,o,normalize_addk<V>(size(r),sum,n));
+  return boost::transform(r,o,normalize_addk<V>(size(r),sum,n));
 }
 
 template <class R,class O>
 O normalize_copy(R const&r,O o,normalize_options<typename range_value<R>::type > n=normalize_options<typename range_value<R>::type >()) {
-  normalize_copy(sum(r),r,boost::begin(r),n);
+  return normalize_copy(sum(r),r,boost::begin(r),n);
 }
 
 template <class R>
