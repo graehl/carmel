@@ -1,3 +1,5 @@
+;;; deprecated - see https://github.com/graehl/.emacs.d/
+
 (push "~/elisp" load-path)
 (require 'compile-)
 (require 'compile)
