@@ -22,7 +22,7 @@
 */
 
 namespace graehl {
-// note: the free functions need to be in boost namespace, OR namespace of involved type. this is the only way to do it.
+// note: the free functions need to be in boost namespace, OR namespace of involved type. it looks like the friend functions will go into T's namespace, so I put this in graehl instead of boost. for now using decls in boost should maintain backward compat (untested)
 
 template<class T,class U=boost::default_user_allocator_new_delete,class R=unsigned>
 struct intrusive_refcount //: boost::noncopyable
