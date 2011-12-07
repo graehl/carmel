@@ -32,7 +32,6 @@ struct nary_tree : public T
 {
   typedef T crtp_type;
   typedef nary_tree self_type;
-  typedef intrusive_refcount<nary_tree,U,R> pointer_type;
   typedef C child_type;
   typedef std::vector<C> children_type;
   typedef children_type Cs;
@@ -45,7 +44,7 @@ struct nary_tree : public T
 #if 1
 template <class T,class U=boost::default_user_allocator_new_delete,class R=boost::detail::atomic_count>
 struct shared_nary_tree
-  : public T,
+  : public T
   , public nary_tree<shared_nary_tree<T,U,R>, boost::intrusive_ptr<shared_nary_tree<T,U,R> > >
   , private intrusive_refcount<shared_nary_tree<T,U,R>,U,R>
 {
