@@ -1,5 +1,58 @@
+#file arg comes first! then cmd, then args
+nonbrew() {
+    find "$1" \! -type l \! -type d -depth 1 | grep -v brew
+}
+safebrew() {
+    local log=/tmp/safebrew.log
+    (
+        saves=$(echo /usr/local/{bin,lib,lib/pkgconfig})
+        mkdir -p $savelib
+        set +e
+        for f in $saves; do
+            mkdir -p $f/unbrew
+            mv `nonbrew $f` $f/unbrew/
+        done
+        mv /usr/local/bin/auto* $savebin
+        export LDFLAGS+=" -L/usr/local/Cellar/libffi/3.0.9/lib"
+        export CPPFLAGS+="-I/usr/local/Cellar/libffi/3.0.9/include"
+        unset DYLD_LIBRARY_PATH
+        set -x
+        brew "$@" || brew doctor
+        set +x
+        savedirs=
+        for f in $saves; do
+            savedirs+=" $f/unbrew"
+            mv -n $f/unbrew/* $f/
+        done
+        echo $savedirs should be empty:
+        ls -l $savedirs
+        echo empty, i hoope
+    ) 2>&1 | tee $log
+    echo cat $log
+}
+awksub() {
+    local s=$1
+    shift
+    local r=$1
+    shift
+    awk '{gsub(/'"$s"'/,"'"$r"'")};1' "$@"
+}
+awki() {
+    local f=$1
+    shift
+    cmdi "$f" awk "$@"
+}
+cmdi() {
+    local f=$1
+    shift
+    local cmd=$1
+    shift
+    ( mv $f $f~ && $cmd "$@" > $f) < $f
+    diff -b -B -- $f~ $f
+}
+
 gitsubuntracked() {
-    awk 'print $0;/^\[submodule / { print "\tignore = untracked\n" }' "$@"
+    awki .gitmodules ' {print}; /^.submodule / { print "\tignore = untracked" }'
 }
 gitdiffs() {
     PAGER= git diff
@@ -20,6 +73,7 @@ gitsubpush1() {
             pushd $p
             gcom "$msg"
             cd ..
+            git commit $sub -m "$msg"
             git push $sub -m "$msg"
         )
     fi
