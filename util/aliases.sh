@@ -1,3 +1,116 @@
+#file arg comes first! then cmd, then args
+nonbrew() {
+    find "$1" \! -type l \! -type d -depth 1 | grep -v brew
+}
+safebrew() {
+    local log=/tmp/safebrew.log
+    (
+        saves=$(echo /usr/local/{bin,lib,lib/pkgconfig})
+        mkdir -p $savelib
+        set +e
+        for f in $saves; do
+            mkdir -p $f/unbrew
+            mv `nonbrew $f` $f/unbrew/
+        done
+        mv /usr/local/bin/auto* $savebin
+        export LDFLAGS+=" -L/usr/local/Cellar/libffi/3.0.9/lib"
+        export CPPFLAGS+="-I/usr/local/Cellar/libffi/3.0.9/include"
+        unset DYLD_LIBRARY_PATH
+        set -x
+        brew "$@" || brew doctor
+        set +x
+        savedirs=
+        for f in $saves; do
+            savedirs+=" $f/unbrew"
+            mv -n $f/unbrew/* $f/
+        done
+        echo $savedirs should be empty:
+        ls -l $savedirs
+        echo empty, i hoope
+    ) 2>&1 | tee $log
+    echo cat $log
+}
+awksub() {
+    local s=$1
+    shift
+    local r=$1
+    shift
+    awk '{gsub(/'"$s"'/,"'"$r"'")};1' "$@"
+}
+awki() {
+    local f=$1
+    shift
+    cmdi "$f" awk "$@"
+}
+cmdi() {
+    local f=$1
+    shift
+    local cmd=$1
+    shift
+    ( mv $f $f~ && $cmd "$@" > $f) < $f
+    diff -b -B -- $f~ $f
+}
+
+gitsubuntracked() {
+    awki .gitmodules ' {print}; /^.submodule / { print "\tignore = untracked" }'
+}
+gitdiffs() {
+    PAGER= git diff
+    PAGER= git diff --submodule
+}
+
+gitsubpush1() {
+    local p=$1
+    shift
+    local msg="$*"
+    local sub=$(basename $p)
+    echo git submodule push $p ...
+    if ! [[ -d $p ]] ; then
+        echo gitsubpush skipping non-directory $p ...
+    else
+        sub=${sub%/}
+        (set -e
+            pushd $p
+            gcom "$msg"
+            cd ..
+            git commit $sub -m "$msg"
+            git push $sub -m "$msg"
+        )
+    fi
+}
+gitsubpush() {
+    forall gitsubpush1 "$@"
+}
+gitsubpull1() {
+    local p=$1
+    shift
+    local msg="$*"
+    echo git submodule push-pull $p ...
+    if ! [[ -d $p ]] ; then
+        echo gitsubpull skipping non-directory $p ...
+    else
+        (
+            set -e
+            pushd $p
+            local sub=$(basename $p)
+            sub=${sub%/}
+            local gitbranch=${gitbranch:-${2:-master}}
+            banner pulling submodule $p ....
+            showvars_required sub gitbranch
+            ! grep graehl .git/config || gcom "$msg"
+            git checkout $gitbranch
+            git pull
+            cd ..
+            git add `basename $p`
+            git commit $sub -m "pulled $p - $msg"
+            [[ $nopush ]] || git push
+            banner DONE pulling submodule $p.
+        )
+    fi
+}
+gitsubpull() {
+    forall gitsubpull1 "$@"
+}
 dbgemacs() {
     ${emacs:-appemacs} --debug-init
 }
@@ -29,7 +142,7 @@ svnprev() {
     require_file $f
     local rev=`svngetrev -r "$r" $f`
     echo ""$f at revision $rev - latest as of requested $r:""
-    ! [[ -d $dco ]] ||  rm -rf $dco/
+    ! [[ -d $dco ]] || rm -rf $dco/
     svn checkout -r "$rev" $svnp $dco --depth empty || error "svn checkout -r '$rev' '$svnp' $dco --depth empty" || return
     pushd $dco
     svn update -r "$rev" $f || error "svn update $f" || return
@@ -50,7 +163,7 @@ svnprevs() {
 }
 pids() {
     grep=${grep:-/usr/bin/grep}
-    ps -ax |  awk '/'$1'/ && !/awk/ {print $1}'
+    ps -ax | awk '/'$1'/ && !/awk/ {print $1}'
 }
 gituntrack() {
     git update-index --assume-unchanged "$@"
@@ -63,7 +176,7 @@ svntaglog() {
 }
 
 svntagr() {
-    svntaglog "$@" | grep "   A"
+    svntaglog "$@" | grep " A"
 }
 
 gitsub() {
@@ -83,11 +196,16 @@ gitco() {
 }
 emcom() {
     cd ~/.emacs.d
-    git add -v *.el defuns/*.el
+    git add -v *.el defuns/*.el site-lisp/*.el
+    git add -v snippets/*/*.yasnippet
     gcom "$@"
 }
+gitchanged() {
+    git status -uno
+}
 gcom() {
-    git commit -v -a -m "$*"
+    gitchanged
+    git commit -a -m "$*"
     git push -v
 }
 scom() {
@@ -213,7 +331,7 @@ horsem() {
 sa2c() {
     s2c
     (cd
-        for d in x/racerx/CMakeLists.txt  x/racerx/Hypergraph x/racerx/Util  ; do
+        for d in x/racerx/CMakeLists.txt x/racerx/Hypergraph x/racerx/Util ; do
             sync2 $chost $d
         done
     )
@@ -221,7 +339,7 @@ sa2c() {
 s2c() {
     #elisp x/3rdParty
     (cd
-        for d in u t  ; do
+        for d in u t ; do
             sync2 $chost $d
         done
     )
@@ -443,7 +561,7 @@ clocal() {
     (
         set -e
         if [ "$1" ] ; then cd $1* ; fi
-        ./configure --prefix=/usr/local "$@" && make -j  && sudo make install
+        ./configure --prefix=/usr/local "$@" && make -j && sudo make install
     )
 }
 msudo() {
@@ -482,11 +600,11 @@ hemacs() {
 }
 to3() {
     #-f ws_comma
-    2to3 -f all -f idioms  -f set_literal "$@"
+    2to3 -f all -f idioms -f set_literal "$@"
 }
 to2() {
     #-f set_literal #python 2.7
-    2to3 -f idioms  -f apply -f except -f ne -f paren -f raise -f sys_exc -f tuple_params -f xreadlines -f types "$@"
+    2to3 -f idioms -f apply -f except -f ne -f paren -f raise -f sys_exc -f tuple_params -f xreadlines -f types "$@"
 }
 
 ehpc() {
@@ -563,9 +681,9 @@ backupsbmt() {
     mkdir -p $1
     #--exclude Makefile\* --exclude auto\* --exclude config\*
     #--size-only
-    rsync --modify-window=1 --verbose --max-size=500K  --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a  $SBMT_TRUNK ${1:-$dev/sbmt.bak}
+    rsync --modify-window=1 --verbose --max-size=500K --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a $SBMT_TRUNK ${1:-$dev/sbmt.bak}
     #-lprt
-#  cp -a $SBMT_TRUNK $dev/sbmt.bak
+# cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
 build_sbmt_variant()
 {
@@ -615,7 +733,7 @@ boostsbmt()
         if [[ $variant = release ]] ; then
             execpre+=/valgrind
         fi
-        bjam cflags=-Wno-parentheses cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant  toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg  "$@" -d+${verbose:-2}
+        bjam cflags=-Wno-parentheses cflags=-Wno-deprecated cflags=-Wno-strict-aliasing -j $nproc $target variant=$variant toolset=gcc --build-dir=$builddir --prefix=$prefix --exec-prefix=$execpre $linking $barg "$@" -d+${verbose:-2}
         set +x
         popd
     )
@@ -636,11 +754,11 @@ realwhich() {
 }
 check1best() {
     echo 'grep decoder-*.1best :'
-    perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers("sent=$1"); if ($n{$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1")  } }  } END { all_summary() }' decoder-*.1best
+    perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers("sent=$1"); if ($n{$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1") } } } END { all_summary() }' decoder-*.1best
     grep -i "bad_alloc" logs/*/decoder.log
     grep -i "succesful parse" logs/*/decoder.log | summarize_num.pl
     grep -i "pushing grammar" logs/*/decoder.log | summarize_num.pl
-#     perl1p 'while(<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n{$1}++; }  } END { all_summary() }' decoder-*.1best
+# perl1p 'while(<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n{$1}++; } } END { all_summary() }' decoder-*.1best
 }
 
 blib=$d/bloblib.sh
@@ -778,7 +896,7 @@ cgraehl() {
     (
         pushd ~/t/graehl/
         set -x
-        svn commit  -m "$*"
+        svn commit -m "$*"
     )
 }
 alias rot13="tr '[A-Za-z]' '[N-ZA-Mn-za-m]'"
@@ -788,7 +906,7 @@ cpdir() {
     set -x
     [ -f "$dest" ] && echo file $dest exists && return 1
     mkdir -p "$dest"
-#    [ -d "$dest" ] || mkdir "$dest"
+# [ -d "$dest" ] || mkdir "$dest"
     cp "$@"
     set +x
 }
@@ -845,7 +963,7 @@ mkstamps() {
 EOF
 
 for i in `seq 1 $npages`; do
-#        echo '\newpage' >> $stamp
+# echo '\newpage' >> $stamp
     echo '\mbox{} \newpage' \
         >> $stamp
 done
@@ -875,10 +993,10 @@ pdfoverlay() {
     # pdftk bot stamp top (1 page at a time)
     (set -e
         local bot=$1
-#    bot=`abspath $bot`
+# bot=`abspath $bot`
         shift
         local top=$1
-#    top=`abspath $top`
+# top=`abspath $top`
         shift
         local out=${1:--}
         shift
@@ -1092,7 +1210,7 @@ chimira0() {
     local l=chi
     local g=$1
     echo genre=$g
-    if [ "$g" ]  ; then
+    if [ "$g" ] ; then
         local m=$l-mira0000
         exh rm -rf $m
         . mira.sh $g-tune
@@ -1271,7 +1389,7 @@ qsi2() {
 #variant=""
 #
 DTOOLS=$HOME/isd/decode-tools-trunk/
-sbmtargs="$variant toolset=gcc -j4  --prefix=$DTOOLS"
+sbmtargs="$variant toolset=gcc -j4 --prefix=$DTOOLS"
 alias pjam="bjam --prefix=$FIRST_PREFIX -j4"
 alias sjam="bjam $sbmtargs"
 buildpipe() {
@@ -1297,8 +1415,8 @@ buildgraehl() {
         set -x
 #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
 #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
-        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include"  BOOST_SUFFIX= -j$MAKEPROC
-        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include"  BOOST_SUFFIX= install
+        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX= -j$MAKEPROC
+        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX= install
         set +x
         popd
         if [ "$v" ] ; then
@@ -1319,10 +1437,10 @@ buildcar() {
     # set +x
     # popd
     # if [ "$1" ] ; then
-    #     pushd $FIRST_PREFIX/bin
-    #     cp carmel carmel.$1
-    #     cp carmel.static carmel.$1
-    #     popd
+    # pushd $FIRST_PREFIX/bin
+    # cp carmel carmel.$1
+    # cp carmel.static carmel.$1
+    # popd
     # fi
 }
 alias buildem='buildcar;buildfem'
@@ -1332,8 +1450,8 @@ buildboost() {(
         [ "$without" ] && withouts="--without-mpi --without-python --without-wave"
         [ "$noboot" ] || ./bootstrap.sh --prefix=$FIRST_PREFIX
         ./bjam --build-type=complete --layout=tagged --prefix=$FIRST_PREFIX $withouts --runtime-debugging=on -j$MAKEPROC install
-#    ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
-#    ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
+# ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
+# ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
         )}
 alias gmap='/local/bin/sudo ~/bin/append-gridmap'
 alias buildextract="pushd ~/xrs-extract/c++-src;cvs update;make;popd"
@@ -1505,7 +1623,7 @@ msum() {
     shift
     mkdir -p sum
     local out=$wh
-    [ "$*" ] &&  out=$wh.`filename_from "$@"`
+    [ "$*" ] && out=$wh.`filename_from "$@"`
     showvars wh out
     echo ~/t/utilities/summarize_multipass.pl -l $wh.log data/$wh.nbest -csv sum/$out.csv "$@"
     ~/t/utilities/summarize_multipass.pl -l $wh.log data/$wh.nbest -csv sum/$out.csv "$@" 2>&1 | tee sum/$out.sum
@@ -1571,7 +1689,7 @@ perlf() {
 alias gc=gnuclientw
 
 
-VGARGS="--num-callers=16  --leak-resolution=high --suppressions=$HOME/u/valgrind.supp"
+VGARGS="--num-callers=16 --leak-resolution=high --suppressions=$HOME/u/valgrind.supp"
 function vg() {
     local darg=
     local varg=
@@ -1619,7 +1737,7 @@ function hscp
     else
         COUNTER=1
         from=''
-        while [  $COUNTER -lt $# ]; do
+        while [ $COUNTER -lt $# ]; do
             echo $from
             echo ${!COUNTER}
 
@@ -1640,7 +1758,7 @@ function hrscp
     else
         COUNTER=1
         from=''
-        while [  $COUNTER -lt $# ]; do
+        while [ $COUNTER -lt $# ]; do
             echo $from
             echo ${!COUNTER}
 
@@ -1661,7 +1779,7 @@ function hrs
     else
         COUNTER=1
         from=''
-        while [  $COUNTER -lt $# ]; do
+        while [ $COUNTER -lt $# ]; do
             echo $from
             echo ${!COUNTER}
 
@@ -1701,11 +1819,11 @@ if [ "$HOST" = twiki ] ; then
 fi
 
 #if [ $HOST = hpc ] ; then
-#    alias make='make CXX=g++3'
+# alias make='make CXX=g++3'
 #fi
 #function rett
 #{
-#    pdq ~/dev/shared && cvs update && cd ../tt && cvs update && make install && popd
+# pdq ~/dev/shared && cvs update && cd ../tt && cvs update && make install && popd
 #}
 function rebin
 {
@@ -1723,12 +1841,12 @@ rsd() {
     cd ~/dev/syntax-decoder/src
     cvs update && make && ARGS="--verbose 9 "$@"" td ./decoder 20
     echo done.
-    echo  cvs update '&&' make '&&' ARGS="--verbose 9 "$@"" td ./decoder 20
+    echo cvs update '&&' make '&&' ARGS="--verbose 9 "$@"" td ./decoder 20
 }
 usd() {
     cd /cache/eclipse/rewrite/syntax-decoder/src
     rsync -t *.h *.cc TODO Makefile ChangeLog ~/dev/syntax-decoder/src
-    echo  cp *.h *.cc TODO Makefile ChangeLog ~/dev/syntax-decoder/src
+    echo cp *.h *.cc TODO Makefile ChangeLog ~/dev/syntax-decoder/src
 
 }
 esd() {
@@ -1828,13 +1946,13 @@ rgrep()
 {
     a=$1
     shift
-    find . \( -type d -and -name .svn -and -prune \) -o  -exec egrep -n -H "$@" "$a" {} \; -print
+    find . \( -type d -and -name .svn -and -prune \) -o -exec egrep -n -H "$@" "$a" {} \; -print
 }
 frgrep()
 {
     a=$1
     shift
-    find . \( -type d -and -name .svn -and -prune \) -o  -exec fgrep -n -H "$@" "$a" {} \; -print
+    find . \( -type d -and -name .svn -and -prune \) -o -exec fgrep -n -H "$@" "$a" {} \; -print
 }
 dos2unix()
 {
@@ -1915,12 +2033,12 @@ function cleanr ()
     find . -name '*~' -exec rm {} \;
 }
 #function perl1 {
-#    local libgraehl=~/isd/hints/libgraehl.pl
-#    perl -e 'require "'$libgraehl'";' "$@" -e ';print "\n";'
+# local libgraehl=~/isd/hints/libgraehl.pl
+# perl -e 'require "'$libgraehl'";' "$@" -e ';print "\n";'
 #}
 alias perl1="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";' -e "
 alias perl1p="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{println();}' -e "
-alias perl1c="perl -ne 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{while((\$k,\$v)=each \%c) { print qq{\$k: \$v  };println();}' -e "
+alias perl1c="perl -ne 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{while((\$k,\$v)=each \%c) { print qq{\$k: \$v };println();}' -e "
 alias clean="rm *~"
 alias nitro="ssh -1 -l graehl nitro.isi.edu"
 alias hpc="ssh -1 -l graehl $HPCHOST"
@@ -1933,10 +2051,10 @@ alias errd="tail -f /etc/httpd-devel/logs/error_log"
 alias apc="/var/www/twiki/apachectl"
 alias apcd="/var/www/twiki/apachectl-devel"
 
-function    comm() {
+function comm() {
     svn commit -m "$*"
 }
-function    comml() {
+function comml() {
     svn commit -l -m "$*"
 }
 #alias rtt="pdq ~/dev/shared;cvs update;popd;pdq ~/dev/tt;cvs update;make;popd
@@ -2286,17 +2404,17 @@ function vizalign
         warn "no lines to vizalign in $f.a"
     fi
     local lang=${lang:-chi}
-#    if [ -f $f.info ] ; then
-#     viz-tree-string-pair.pl -t -l $lang -i $f -a $f.info
-#    else
+# if [ -f $f.info ] ; then
+# viz-tree-string-pair.pl -t -l $lang -i $f -a $f.info
+# else
     quietly viz-tree-string-pair.pl -c "$f" -t -l $lang -i "$f" "$@"
-#    fi
+# fi
     quietly lat2pdf_landscape $f
 }
 function lat
 {
     papertype=${papertype:-letter}
-    latp $1 &&  bibtex $1 && latex $1.tex && ((latex $1.tex && dvips -t $papertype -o $1.ps $1.dvi) 2>&1 | tee log.lat.$1)
+    latp $1 && bibtex $1 && latex $1.tex && ((latex $1.tex && dvips -t $papertype -o $1.ps $1.dvi) 2>&1 | tee log.lat.$1)
     ps2pdf $1.ps $1.pdf
 }
 
@@ -2333,7 +2451,7 @@ syncdev() {
         set -x
 #--exclude '*.o' --exclude '*~' --exclude 'cygwin' --exclude '*cygwin*'
 #-qtprv
-        rsync  --rsh=ssh --exclude '*.o' --exclude '*~' --exclude '*.d' --verbose --size-only -lptav $1/ $SSHBASE:$SSHDEV/$1
+        rsync --rsh=ssh --exclude '*.o' --exclude '*~' --exclude '*.d' --verbose --size-only -lptav $1/ $SSHBASE:$SSHDEV/$1
         set +x
     else
         error directory ~/$1 not found - cannot sync
@@ -2513,7 +2631,7 @@ function uihpcs
     local which=${1:-unstable}
     ehpc svn update t/utilities
     ehpcs sbmt_static_build utilities
-    ehpc  redo mini_decoder $which
+    ehpc redo mini_decoder $which
 }
 
 function svnu
@@ -2528,7 +2646,7 @@ function sssbmt
     local which=${1:-unstable}
     ehpc svnu t
     ehpcs noclean=$noclean ssbmt
-    ehpc  redo mini_decoder $which
+    ehpc redo mini_decoder $which
 }
 
 function retrain_lm
@@ -2608,7 +2726,7 @@ function vgx
         [ "$valk" ] || leakcheck="--leak-check=yes --tool=memcheck"
         [ "$debug" ] && dbarg="--db-attach=yes"
         set -x
-        GLIBCXX_FORCE_NEW=1 $vgprog $xmlarg $leakcheck $dbarg  $VGARGS $outarg "$@"
+        GLIBCXX_FORCE_NEW=1 $vgprog $xmlarg $leakcheck $dbarg $VGARGS $outarg "$@"
         set +x
         [ "$xml" ] && valkyrie --view-log $out
     )
@@ -2700,7 +2818,7 @@ stripbracespace() {
     perl -pe 's/^\s+([{}])/$1/' "$@"
 }
 
-# input is blank-line separated paragraphs.  print first nlines of first nsents paragraphs.  blank=1 -> print separating newline
+# input is blank-line separated paragraphs. print first nlines of first nsents paragraphs. blank=1 -> print separating newline
 firstlines() {
     perl -e '$blank=$ENV{blank};$ns=$ENV{nsents};$ns=999999999 unless defined $ns;$max=1;$max=$ENV{nlines} if exists $ENV{nlines};$nl=0;while(<>) { print if $nl++<$max; if (/^$/) {$nl=0;print "\n" if $blank;last unless $n++ < $ns;} }' "$@"
 }
@@ -2710,15 +2828,15 @@ stripunknown() {
 }
 
 fixochbraces() {
-#   perl -ne '
-#   s/^\s+\{/ \{\n/ if ($lastcond);
-#   s/\s+$//;
-#   print;
-#   $lastcond=/^\s+(if|for|do)/;
-#   print "\n" unless $lastcond;
-#  END {
-#   print "\n" if $lastcond;
-#  }
+# perl -ne '
+# s/^\s+\{/ \{\n/ if ($lastcond);
+# s/\s+$//;
+# print;
+# $lastcond=/^\s+(if|for|do)/;
+# print "\n" unless $lastcond;
+# END {
+# print "\n" if $lastcond;
+# }
 # ' "$@"
     perl -e '$/=undef;$_=<>;print $_
 $ws=q{[ \t]};
@@ -2729,8 +2847,8 @@ s/}\s*else/} else/gs;
 print;
 # @lines=split "\n";
 # for (@lines) {
-#     s#(\b$kw\b$notcomment*)(//.*?)\s*\{\s*$#$1 { $2#;
-#     print "$_\n";
+# s#(\b$kw\b$notcomment*)(//.*?)\s*\{\s*$#$1 { $2#;
+# print "$_\n";
 # }
 ' "$@"
 #s|(\b$kw\b$notcomment*)(//[^\n]*)(\{$ws*)\n|$1$3\n$2\n|gs;
@@ -2772,7 +2890,7 @@ treevizn() {
         showvars_required n f
         require_files $f
         local dir=`dirname -- $f`
-        local file=`basename --  $f`
+        local file=`basename -- $f`
         local outdir=$dir/treeviz.$file
         local workdir=$outdir/work
         mkdir -p $outdir
@@ -2819,7 +2937,7 @@ cplo1() {
     scp -r "$1" jgraehl@login.clsp.jhu.edu:"$dest"
 }
 rfromlo1() {
-#    set -x
+# set -x
     local dest=`relpath ~ $1`
     mkdir -p `dirname $dest`
     echo scp -r jgraehl@login.clsp.jhu.edu:"$dest" "$1"
@@ -2861,7 +2979,7 @@ export SVNAUTHORS=~/isd/hints/svn.authorsfile
 clonecar() {
     set -x
     local CR=https://nlg0.isi.edu/svn/sbmt/
-    git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile|dagtt)' ---trunk=$CR/trunk/graehl  "$@"
+    git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile|dagtt)' ---trunk=$CR/trunk/graehl "$@"
 #--tags=$CR/tags --branches=$CR/branches
 #-r 3502 at
 # https://nlg0.isi.edu/svn/sbmt/trunk/graehl@3502
@@ -2893,7 +3011,7 @@ svncom() {
         )
         git svn rebase
         git svn dcommit
-#    git push
+# git push
     )
 }
 alias wscom="project=$WSMT svncom"
@@ -2903,7 +3021,7 @@ alias c10="pushd $WSMT"
 grcom() {
     (
         set -e
-#    project=~/graehl svncom "$@"
+# project=~/graehl svncom "$@"
         cd ~/t/graehl
         (
             if [ $# = 1 ] ; then
@@ -2913,7 +3031,7 @@ grcom() {
             fi
         )
         cd ~/2git/fromsvn/
-#    git svn fetch
+# git svn fetch
         git svn rebase
         git branch
         git push github master
@@ -2926,7 +3044,7 @@ toy() {
     local h=$1
     shift
     set -x
-    $cdec  -c ${TOYG:-~/toy-grammar}/cdec-$h.ini "$@"
+    $cdec -c ${TOYG:-~/toy-grammar}/cdec-$h.ini "$@"
     set +x
 }
 
@@ -2945,7 +3063,7 @@ par() {
     showvars_required npar parargs logdir
     logarg="-e $logdir"
     set -x
-    $WSMT/vest/parallelize.pl $parextra $parargs $logarg  -- "$@"
+    $WSMT/vest/parallelize.pl $parextra $parargs $logarg -- "$@"
     set +x
 }
 
@@ -3135,7 +3253,7 @@ sync2() {
         [ "$dryrun" ] && darg="-n"
         echo sync2 user=$user host=$h "$@"
         set -x
-        (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) |  rsync $darg -avruz -e ssh --files-from=- $rsyncargs $rsync_exclude . $u$h:${dest:=.}
+        (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) | rsync $darg -avruz -e ssh --files-from=- $rsyncargs $rsync_exclude . $u$h:${dest:=.}
     )
 }
 syncto() {
@@ -3143,7 +3261,7 @@ syncto() {
 }
 userfor() {
     case $1 in
-        login*)  echo -n jgraehl ;;
+        login*) echo -n jgraehl ;;
         *) echo -n graehl ;;
     esac
 }
@@ -3161,18 +3279,18 @@ syncfrom() {
         echo syncFROM user=$user host=$h "$@"
         sleep 2
         set -x
-        (for f in "$@"; do echo $f; done) |  rsync $darg $rsync_exclude -avruz -e ssh --files-from=- $u$h:. .
+        (for f in "$@"; do echo $f; done) | rsync $darg $rsync_exclude -avruz -e ssh --files-from=- $u$h:. .
     )
 }
 conf2() {
     sync2 $1 isd/hints/
-    sync2 $1  .inputrc .screenrc .bashrc .emacs
+    sync2 $1 .inputrc .screenrc .bashrc .emacs
     sync2 $1 elisp/
 }
 conffrom() {
     fromhost $1 isd/hints/
-    fromhost $1  .inputrc .screenrc .bashrc .emacs
-#    syncfrom $1 elisp/
+    fromhost $1 .inputrc .screenrc .bashrc .emacs
+# syncfrom $1 elisp/
 }
 conf2l() {
     conf2 login.clsp.jhu.edu
@@ -3201,11 +3319,11 @@ makews() {
     local dargs
     [ "$debug" ] && dargs="CXXFLAGS+='-O0'"
     [ "$clean" ] && make clean
-    [ "$ONCYGWIN" ] &&  rm gi/posterior-regularisation/prjava/prjava.jar
+    [ "$ONCYGWIN" ] && rm gi/posterior-regularisation/prjava/prjava.jar
     #rm -f $WSMT/decoder/*.o $WSMT/decoder/lib*.a
     set -x
     if [ "$confonly" ] ; then
-        CXXFLAGS="$CXXFLAGS -O0 -ggdb -Wno-sign-compare -Wno-unused-parameter"  ./configure
+        CXXFLAGS="$CXXFLAGS -O0 -ggdb -Wno-sign-compare -Wno-unused-parameter" ./configure
     else
         #-O0 -ggdb
         make CXXFLAGS+="-Wno-sign-compare -Wno-unused-parameter" LIBS+="-loolm -ldstruct -lmisc -lz -lboost_program_options -lpthread -lboost_regex -lboost_thread" -j $MAKEPROC $dargs "$@"
@@ -3398,7 +3516,7 @@ graph3() {
     showvars_required obase xlbl ylbl ylbl2 ylbl3
     showvars_optional yrange yrange_arg title
     require_files $data
-    plboth $obase -prefab lines data=$data x=1  "$yrange_arg" y=$y name="$ylbl" y2=$y2 name2="$ylbl2" y3=$y3 name3="$ylbl3" ylbldistance=$ylbldistance xlbl="$xlbl" title="$title" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" linedet3="style=3" -scale ${scale:-1.4}
+    plboth $obase -prefab lines data=$data x=1 "$yrange_arg" y=$y name="$ylbl" y2=$y2 name2="$ylbl2" y3=$y3 name3="$ylbl3" ylbldistance=$ylbldistance xlbl="$xlbl" title="$title" ystubfmt '%4g' ystubdet="size=6" linedet2="style=1" linedet3="style=3" -scale ${scale:-1.4}
     echo $of
 }
 
@@ -3434,14 +3552,14 @@ config_gcc_bare() {
         #--disable-shared
     local skip="--disable-libssp --disable-libmudflap --disable-nls --disable-decimal-float"
 # --disable-bootstrap
-# gomp: open mp.  ssp: stack corruption mitigation.  mudflap: buffer overflow instrumentation (optional).  nls: non-english text
-    local basegcc=${basegcc:--enable-language=c,c++ --enable-__cxa_atexit --enable-clocale=gnu --enable-threads=posix --disable-multilib   $skip}
+# gomp: open mp. ssp: stack corruption mitigation. mudflap: buffer overflow instrumentation (optional). nls: non-english text
+    local basegcc=${basegcc:--enable-language=c,c++ --enable-__cxa_atexit --enable-clocale=gnu --enable-threads=posix --disable-multilib $skip}
             #--with-gmp-include=`realpath gmp` --with-gmp-lib=`realpath gmp`/.libs
-#        local basegcc=${basegcc:--enable-language=c,c++ --enable-clocale=gnu --enable-shared --enable-threads=posix --disable-multilib}
+# local basegcc=${basegcc:--enable-language=c,c++ --enable-clocale=gnu --enable-shared --enable-threads=posix --disable-multilib}
 
     src=${src:-.}
 
-    echo $src/configure --prefix=$FIRST_PREFIX  $basegcc "$@" > my.config.sh
+    echo $src/configure --prefix=$FIRST_PREFIX $basegcc "$@" > my.config.sh
     . my.config.sh
         #--with-mpfr=$FIRST_PREFIX --with-mpc=$FIRST_PREFIX --with-gmp=$FIRST_PREFIX
 }
