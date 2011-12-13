@@ -51,7 +51,7 @@
 (defun my-scala-eval ()
   "Send the current 'definition' to the Scala interpreter.
    Cursor is on a line that doesn't start w/ ws or }: eval current line
-   or else: find prev and next such line that starts w/ non ws { }.  That's the start/end of a defn.
+   or else: find prev and next such line that starts w/ non ws { }. That's the start/end of a defn.
 "
   (interactive)
   (save-excursion
@@ -67,8 +67,8 @@
       (beginning-of-line)
       (while (and (not (= (point) (point-min)))
                   (looking-at (mapconcat '(lambda (x) x)
-                                         '("^$"       ; empty lines
-                                           "^\\s-+"   ; empty lines or lines that start with whitespace
+                                         '("^$" ; empty lines
+                                           "^\\s-+" ; empty lines or lines that start with whitespace
                                            "^\\s-*}") ; lines that start with a '}'
                                          "\\|")))
         (next-line -1)
@@ -132,25 +132,25 @@
 
 (setq lazy-lock-defer-after-change t)
 (if (fboundp 'global-font-lock-mode)
-    (global-font-lock-mode 1)        ; GNU Emacs
-  (setq font-lock-auto-fontify t))   ; XEmacs
+    (global-font-lock-mode 1) ; GNU Emacs
+  (setq font-lock-auto-fontify t)) ; XEmacs
 
                                         ;(load "~/elisp/xemacs.bak/func-menu.el")
 ;; The docs say that this is deprecated, but so far it's the
-;; only way to make things work right.  Which things?  I don't
-;; remember anymore.  It's certainly breaking things under
-;; XEmacs.  Turned off everywhere until I discover a problem
-                                        ;      (and nil on-emacs (setq directory-sep-char ?/))
+;; only way to make things work right. Which things? I don't
+;; remember anymore. It's certainly breaking things under
+;; XEmacs. Turned off everywhere until I discover a problem
+                                        ; (and nil on-emacs (setq directory-sep-char ?/))
                                         ;(setq directory-sep-char ?/)
 
 ;; font-lock-mode is what implements syntax coloring and hilighting.
-(require 'font-lock)            ; require forces the module to load right away.
+(require 'font-lock) ; require forces the module to load right away.
                                         ; .emacs file font-lock stuff
 
 (defun my-recenter (&optional arg)
   "Centre point in window and run font-lock-fontify-block"
   (interactive "P")
-                                        ;  (my-fontlock)
+                                        ; (my-fontlock)
   (recenter arg)
   (and on-emacs (font-lock-fontify-block (window-height)))
   (and on-xemacs (font-lock-default-fontify-buffer))
@@ -159,7 +159,7 @@
 
 (add-hook 'font-lock-mode-hook
           '(lambda ()
-                                        ;                (my-fontlock)
+                                        ; (my-fontlock)
              (substitute-key-definition
               'recenter 'my-recenter (current-global-map))))
 
@@ -172,10 +172,10 @@ parenthesis or missing quote (so called \"pbug\") is no less annoying than
 pointer chasing in C.
 
 This function divides the buffer into regions and tries evaluating them one
-by one.  It stops at the first region where it fails to evaluate because of
+by one. It stops at the first region where it fails to evaluate because of
 pbug or any other errors. It sets point and mark (and highlights if
 `transient-mark-mode' is on) on the failing region and center its first
-line.  \"^def\" is used to define regions.  You may also `eval-region'
+line. \"^def\" is used to define regions. You may also `eval-region'
 right after pbug is done to let lisp parse pinpoint the bug.
 
 No more \"End of file during parsing\" horrors!"
@@ -227,13 +227,13 @@ No more \"End of file during parsing\" horrors!"
     (fill-paragraph nil)))
 
                                         ;(setq compile-command "bash -c '. ~/.bashrc;ecage variant=debug utility=mini_decoder boostsbmt'")
-                                        ;(setq compile-command "bash -c '. ~/.bashrc;ecage  utility=mini_decoder build_sbmt_variant --mini-ngram-order=3'")
-                                        ;(setq compile-command "bash -c '. ~/.bashrc;ecage \"cd ~/t/graehl/tt &&  make install BOOST_SUFFIX=gcc42\"'")
+                                        ;(setq compile-command "bash -c '. ~/.bashrc;ecage utility=mini_decoder build_sbmt_variant --mini-ngram-order=3'")
+                                        ;(setq compile-command "bash -c '. ~/.bashrc;ecage \"cd ~/t/graehl/tt && make install BOOST_SUFFIX=gcc42\"'")
                                         ;(setq compile-command "bash --login -c make")
-                                        ;     (setq compile-command "bash -c '. ~/.bashrc;eerdos variant=debug boostsbmt --mini-ngram-order=3'")
-                                        ;    (setq compile-command "bash -c '. ~/.bashrc;egrieg \"cd ~/t/graehl/carmel &&  make install BOOST_SUFFIX=gcc42\"'")
-                                        ;    (setq compile-command "bash -c '. ~/.bashrc;ecage \"cd ~/t/graehl/carmel &&  make install BOOST_SUFFIX=gcc42\"'")
-                                        ;     (setq compile-command "ssh nlg0 'cd dev/sbmt_decoder;make -j 2 && cd ~/dev/utilities && make -j 2'")
+                                        ; (setq compile-command "bash -c '. ~/.bashrc;eerdos variant=debug boostsbmt --mini-ngram-order=3'")
+                                        ; (setq compile-command "bash -c '. ~/.bashrc;egrieg \"cd ~/t/graehl/carmel && make install BOOST_SUFFIX=gcc42\"'")
+                                        ; (setq compile-command "bash -c '. ~/.bashrc;ecage \"cd ~/t/graehl/carmel && make install BOOST_SUFFIX=gcc42\"'")
+                                        ; (setq compile-command "ssh nlg0 'cd dev/sbmt_decoder;make -j 2 && cd ~/dev/utilities && make -j 2'")
 
 (setq debug-on-error 't)
 
@@ -275,8 +275,8 @@ No more \"End of file during parsing\" horrors!"
     (progn
       (setenv "PATH" (concat "c:/cygwin/bin;" (getenv "PATH")))
       (setq exec-path (cons "c:/cygwin/bin/" exec-path))
-                                        ;                        (require 'cygwin-mount)
-                                        ;                        (cygwin-mount-activate)
+                                        ; (require 'cygwin-mount)
+                                        ; (cygwin-mount-activate)
       ))
 
                                         ;(push "~/elisp/cc-mode" load-path)
@@ -340,7 +340,7 @@ No more \"End of file during parsing\" horrors!"
       (if emacs23
           (set-frame-font (concat font "-" sz)
                           (condition-case nil
-                                        ;        (progn
+                                        ; (progn
                               (let ((fontpre (concat "-*-" font "-"))
                                     (fontpost (concat "-*-*-" sz "-*-*-*-c-*-*-ansi-")))
                                 (set-default-font "-*-Verdana-normal-r-*-*-12-*-*-*-c-*-*-ansi-")
@@ -349,9 +349,9 @@ No more \"End of file during parsing\" horrors!"
                                 (set-default-font (concat (concat fontpre "normal-r") fontpost))
                                 (set-face-font 'italic (concat (concat fontpre "normal-i") fontpost))
                                 (set-face-font 'bold-italic (concat (concat fontpre "bold-i") fontpost))
-                                        ;          (set-face-font 'italic "-*-Lucida Console-normal-i-*-*-12-96-96-96-c-*-*-1")
-                                        ;          (set-face-font 'bold-italic "-*-Lucida Console-bold-i-*-*-12-96-96-96-c-*-*-1")
-                                        ;       "-*-Proggy Clean-normal-r-*-*-12-*-*-*-c-*-*-ansi-"
+                                        ; (set-face-font 'italic "-*-Lucida Console-normal-i-*-*-12-96-96-96-c-*-*-1")
+                                        ; (set-face-font 'bold-italic "-*-Lucida Console-bold-i-*-*-12-96-96-96-c-*-*-1")
+                                        ; "-*-Proggy Clean-normal-r-*-*-12-*-*-*-c-*-*-ansi-"
                                         ;"-*-Proggy Square-normal-r-*-*-12-*-*-*-c-*-*-ansi-"
 
                                 )
@@ -385,7 +385,7 @@ No more \"End of file during parsing\" horrors!"
                                         ;(set-face-background 'default "white")
 (set-face-background 'default "white")
 (set-face-foreground 'default "black")
-                                        ;(setq initial-frame-alist      '(        (top . 0) (left . 0)        (width . 230) (height . 76)        (background-color . "white")        (foreground-color . "Black")        (cursor-color   . "red3")        ))
+                                        ;(setq initial-frame-alist '( (top . 0) (left . 0) (width . 230) (height . 76) (background-color . "white") (foreground-color . "Black") (cursor-color . "red3") ))
 
 
 (setq fixed-font "Bitstream Vera Sans Mono")
@@ -406,12 +406,12 @@ No more \"End of file during parsing\" horrors!"
   )
 
 (cond (on-xemacs (progn
-                                        ;       (push (expand-file-name "~/dot") load-path)
-                                        ;       (set-face-font 'default "ProggyClean:Regular:8")
-                                        ;       (set-face-font 'default "ProggySquare:Regular:8")
-                                        ;                        (set-face-font 'default "Verdana:Regular:9")
+                                        ; (push (expand-file-name "~/dot") load-path)
+                                        ; (set-face-font 'default "ProggyClean:Regular:8")
+                                        ; (set-face-font 'default "ProggySquare:Regular:8")
+                                        ; (set-face-font 'default "Verdana:Regular:9")
                    (set-face-font 'default fixed-face)
-                                        ;                                               (set-face-font 'default "Bitstream Vera Sans:Regular:8")
+                                        ; (set-face-font 'default "Bitstream Vera Sans:Regular:8")
                    (set-face-font 'modeline "Verdana:Regular:7")
                    )))
 
@@ -422,7 +422,7 @@ No more \"End of file during parsing\" horrors!"
 
 ;; Q3.1.6 How can I have the window title area display the full
 ;; directory/name of the current buffer file and not just the name?
-                                        ;(setq frame-title-format      '("%S: "         (buffer-file-name        "%f" (dired-directory dired-directory "%b"))))
+                                        ;(setq frame-title-format '("%S: " (buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 (defun replace-gud-break ()
   (defun gud-break (arg)
@@ -447,17 +447,17 @@ No more \"End of file during parsing\" horrors!"
 (setq load-path (cons "~/elisp/tuareg-mode" load-path))
 
                                         ;(or recent-emacs
-                                        ;    (require 'compile-)
+                                        ; (require 'compile-)
 
 
-                                        ;    (require 'compile+)
+                                        ; (require 'compile+)
 
-                                        ;    )
+                                        ; )
                                         ;(require 'buffer-move)
-                                        ;(global-set-key (kbd "<C-S-up>")     'buf-move-up)
-                                        ;(global-set-key (kbd "<C-S-down>")   'buf-move-down)
-                                        ;(global-set-key (kbd "<C-S-left>")   'buf-move-left)
-                                        ;(global-set-key (kbd "<C-S-right>")  'buf-move-right)
+                                        ;(global-set-key (kbd "<C-S-up>") 'buf-move-up)
+                                        ;(global-set-key (kbd "<C-S-down>") 'buf-move-down)
+                                        ;(global-set-key (kbd "<C-S-left>") 'buf-move-left)
+                                        ;(global-set-key (kbd "<C-S-right>") 'buf-move-right)
                                         ;(load "highlight-compile-errors.el")
 (load "sourcepair.el")
 
@@ -493,7 +493,7 @@ No more \"End of file during parsing\" horrors!"
 (setq initial-major-mode
       (function (lambda ()
                   (text-mode)
-                                        ;        (turn-on-auto-fill)
+                                        ; (turn-on-auto-fill)
                   )))
                                         ;(setq semantic-load-turn-everything-on t)
                                         ;(require 'semantic-load)
@@ -511,8 +511,8 @@ No more \"End of file during parsing\" horrors!"
 (defun stamp ()
   "Insert at point the dummy time stamp string to activate the time stamp facility."
   (interactive "*")
-  (insert "Time-stamp: <>")             ;insert the bare bones
-  (time-stamp)                          ;call the function to fill it in
+  (insert "Time-stamp: <>") ;insert the bare bones
+  (time-stamp) ;call the function to fill it in
                                         ;where we put it.
   )
 
@@ -521,39 +521,39 @@ No more \"End of file during parsing\" horrors!"
 
 
   ;;; Set the default font and frame size for the initial frame.
-                                        ;    (font . "-*-vt100-r-*-*-*-*-100-*-*-*-*-iso8859-1")
+                                        ; (font . "-*-vt100-r-*-*-*-*-100-*-*-*-*-iso8859-1")
 
-                                        ;             (background-color . "Gray95")
-                                        ;             (foreground-color . "Black")
-                                        ;             (background-color . "light blue")
-                                        ;             (foreground-color . "navy")
-                                        ;             (cursor-color     . "red3")
-                                        ;             ))
+                                        ; (background-color . "Gray95")
+                                        ; (foreground-color . "Black")
+                                        ; (background-color . "light blue")
+                                        ; (foreground-color . "navy")
+                                        ; (cursor-color . "red3")
+                                        ; ))
 
                                         ;(set-scroll-bar-mode nil)
                                         ; or left or right
 
-                                        ;    (set-face-font 'default "vt100:Regular:10")
+                                        ; (set-face-font 'default "vt100:Regular:10")
                                         ;(set-face-font 'default "Verdana:Regular:10")
                                         ;(set-face-font 'default "ProFontWindows:Regular:8::Western")
 
                                         ; BUG: is it iso8601 or 8603????
-(defvar iso-8601-date-format "%Y-%m-%d"  "Date format specified by ISO 8601.")
+(defvar iso-8601-date-format "%Y-%m-%d" "Date format specified by ISO 8601.")
 (defun insert-iso-8601-date ()
   "Insert today's date in the current buffer. Dates are in ISO 8601 form `1960-10-15'."
   (interactive)
   (insert (format-time-string iso-8601-date-format)))
 
-(defvar rfc-822-date-format "%d %b %Y"  "Date format specified by RFC 822.")
+(defvar rfc-822-date-format "%d %b %Y" "Date format specified by RFC 822.")
 (defun insert-rfc-822-date ()
   "Insert today's date in the current buffer. Dates are in RFC 822 form `15 May 1960'."
   (interactive)
   (insert (format-time-string rfc-822-date-format)))
 
 
-(defvar rfc-822-datetime-format "%a, %d %b %Y %H:%M:%S %z"  "Date format specified by RFC 822.")
+(defvar rfc-822-datetime-format "%a, %d %b %Y %H:%M:%S %z" "Date format specified by RFC 822.")
                                         ; ARGL, xemacs hates me :(
-                                        ;                                                   ^^^^^^^^^
+                                        ; ^^^^^^^^^
 (defun insert-rfc-822-datetime ()
   "Insert today's date in the current buffer. Dates are in RFC 822 form `Sun, 15 May 1960 15:23:14 CET'."
   (interactive)
@@ -608,17 +608,17 @@ No more \"End of file during parsing\" horrors!"
 
 (require 'font-lock)
                                         ;(if (and (boundp 'window-system) window-system)
-                                        ;    (set-face-font 'default "Lucida Console:Regular:10"))
+                                        ; (set-face-font 'default "Lucida Console:Regular:10"))
 
 (setq auto-mode-alist
-      (append '(("\\.C$"  . c++-mode)
+      (append '(("\\.C$" . c++-mode)
                 ("\\.cc$" . c++-mode)
                 ("\\.hh$" . c++-mode)
-                ("\\.c$"  . c++-mode)
-                ("\\.h$"  . c++-mode)
+                ("\\.c$" . c++-mode)
+                ("\\.h$" . c++-mode)
                 ("\\.java$" . java-mode) ;jde-mode
-                ("\\.bmf$"  . java-mode)
-                ("\\.rvw$"  . java-mode)
+                ("\\.bmf$" . java-mode)
+                ("\\.rvw$" . java-mode)
                 ("\\,pl$" . perl-mode)
                 )
               auto-mode-alist))
@@ -643,7 +643,7 @@ No more \"End of file during parsing\" horrors!"
                       (if (= (following-char) ?{)
                           (forward-sexp -1))
                       (or (looking-at "\\<do\\>[^_]")
-                          1             ;(looking-at "if[^_]")
+                          1 ;(looking-at "if[^_]")
                           )))
           '()
         '(after)))))
@@ -658,7 +658,7 @@ No more \"End of file during parsing\" horrors!"
 
 
        ;; The Hyperbole information manager package uses (shift button2) and
-       ;; (shift button3) to provide context-sensitive mouse keys.  If you
+       ;; (shift button3) to provide context-sensitive mouse keys. If you
        ;; use this next binding, it will conflict with Hyperbole's setup.
        ;; Choose another mouse key if you use Hyperbole.
        (define-key global-map '(shift button3) 'mouse-function-menu)
@@ -689,8 +689,8 @@ No more \"End of file during parsing\" horrors!"
 
                                         ;
                                         ;(defun recompile ()
-                                        ;  (interactive)
-                                        ;  (compile compile-command))
+                                        ; (interactive)
+                                        ; (compile compile-command))
 
 ;; Perl
 (require 'cperl-mode)
@@ -699,17 +699,17 @@ No more \"End of file during parsing\" horrors!"
   (setq cperl-indent-level 4)
   (setq cperl-hairy nil)
   (setq show-trailing-whitespace nil)
-                                        ;  (local-set-key [{] 'my-electric-braces)
-                                        ;  (local-set-key [?\M-{] "\C-q{")
-                                        ;  (local-set-key [(control ?{)] 'my-empty-braces)
-                                        ;  (local-set-key [;] 'cperl-electric-semi)
-                                        ;  (setq parens-require-spaces nil)
-                                        ;  (setq cperl-auto-newline 1)
-                                        ;  (cperl-toggle-electric 1)
+                                        ; (local-set-key [{] 'my-electric-braces)
+                                        ; (local-set-key [?\M-{] "\C-q{")
+                                        ; (local-set-key [(control ?{)] 'my-empty-braces)
+                                        ; (local-set-key [;] 'cperl-electric-semi)
+                                        ; (setq parens-require-spaces nil)
+                                        ; (setq cperl-auto-newline 1)
+                                        ; (cperl-toggle-electric 1)
   (setq cperl-font-lock 1)
   (setq cperl-electric-parens nil)
-                                        ;  (setq cperl-invalid-face (quote off))
-                                        ;    (setq cperl-highlight-variables-indiscriminately t)
+                                        ; (setq cperl-invalid-face (quote off))
+                                        ; (setq cperl-highlight-variables-indiscriminately t)
   )
 (add-hook 'cperl-mode-hook 'cperl-mode-tweaks)
 
@@ -736,9 +736,9 @@ No more \"End of file during parsing\" horrors!"
 (global-set-key [(meta r)] 'replace-string)
 (global-set-key "\C-\\" 'set-mark-and-goto-line)
 
-                                        ;(global-set-key "\M-\?"       'insert-iso-8601-date)
-                                        ;(global-set-key "\M-["       'insert-rfc-822-date)
-                                        ;(global-set-key "\M-]"       'insert-rfc-822-datetime)
+                                        ;(global-set-key "\M-\?" 'insert-iso-8601-date)
+                                        ;(global-set-key "\M-[" 'insert-rfc-822-date)
+                                        ;(global-set-key "\M-]" 'insert-rfc-822-datetime)
 (global-set-key "\M-\C-h" 'my-backward-kill-word)
 (global-set-key [(control backspace)] 'my-backward-kill-word)
 (global-set-key [(meta backspace)] 'kill-word)
@@ -749,7 +749,7 @@ No more \"End of file during parsing\" horrors!"
 
                                         ;(modify-coding-system-alist 'file "\\.sjs\\'" 'shift_jis)
 
-                                        ;(global-set-key [(control tab)] "\C-q\t")   ; Control tab quotes a tab.
+                                        ;(global-set-key [(control tab)] "\C-q\t") ; Control tab quotes a tab.
                                         ;(global-set-key [(control ?,)] 'load-ecb)
 
 (global-set-key "\M-o" 'switch-to-other-buffer)
@@ -777,15 +777,15 @@ No more \"End of file during parsing\" horrors!"
   )
 (global-set-key "\M-\C-o" 'same-buffer-other-window)
 
-(setq auto-save-default t)              ; Yes auto save good
-(setq auto-save-interval 1000)         ; Number of input chars between auto-saves
-(setq auto-save-timeout 3000)      ; Number of seconds idle time before auto-save
-(setq backup-by-copying t)              ; don't clobber symlinks
+(setq auto-save-default t) ; Yes auto save good
+(setq auto-save-interval 1000) ; Number of input chars between auto-saves
+(setq auto-save-timeout 3000) ; Number of seconds idle time before auto-save
+(setq backup-by-copying t) ; don't clobber symlinks
                                         ;(setq backup-directory-alist '(("." . "~/.backups"))) ; don't litter my fs tree
-(setq delete-old-versions t)            ; clean up a little
-(setq kept-new-versions 6)              ; keep 6 new
-(setq kept-old-versions 2)              ; keep only 2 old
-(setq version-control t)                ; use versioned backups
+(setq delete-old-versions t) ; clean up a little
+(setq kept-new-versions 6) ; keep 6 new
+(setq kept-old-versions 2) ; keep only 2 old
+(setq version-control t) ; use versioned backups
 (defun current-date-and-time ()
   "Insert the current date and time (as given by UNIX date) at dot."
   (interactive)
@@ -810,13 +810,13 @@ No more \"End of file during parsing\" horrors!"
   (interactive)
   (switch-to-buffer (other-buffer)))
 
-                                        ;                  (set-face-foreground 'font-lock-type-face "cyan4")
+                                        ; (set-face-foreground 'font-lock-type-face "cyan4")
                                         ;(set-face-foreground 'font-lock-builtin-face "Purple")
 (set-face-foreground 'font-lock-comment-face "blue")
 (set-face-foreground 'font-lock-type-face "steelblue")
-                                        ;          (set-face-foreground 'font-lock-constant-face "chocolate")
-                                        ;          (set-face-foreground 'font-lock-constant-face "cadetblue")
-                                        ;          (set-face-foreground 'font-lock-keyword-face "DarkGoldenRod")
+                                        ; (set-face-foreground 'font-lock-constant-face "chocolate")
+                                        ; (set-face-foreground 'font-lock-constant-face "cadetblue")
+                                        ; (set-face-foreground 'font-lock-keyword-face "DarkGoldenRod")
 (set-face-foreground 'font-lock-keyword-face "red")
 (set-face-foreground 'font-lock-string-face "green4")
 (set-face-foreground 'font-lock-function-name-face "red")
@@ -840,7 +840,7 @@ No more \"End of file during parsing\" horrors!"
                 ))
 
                                         ;(load-library "paren")
-(and  on-emacs (show-paren-mode t))
+(and on-emacs (show-paren-mode t))
 (setq show-paren-style 'parenthesis)
 (setq bs-cycle-configuration-name "files") ; buffer cycling only between files
 (global-set-key "\C-x\C-b" 'bs-show)
@@ -897,8 +897,8 @@ No more \"End of file during parsing\" horrors!"
 
 
                                         ;(condition-case nil
-                                        ;    (require 'gnus-load)
-                                        ;  (error nil))
+                                        ; (require 'gnus-load)
+                                        ; (error nil))
 
                                         ;(or recent-emacs (progn
 (require 'advice)
@@ -912,15 +912,15 @@ No more \"End of file during parsing\" horrors!"
         "downcases the filenames that result from the builtin directory-files function"
         (setq ad-return-value (mapcar 'downcase ad-return-value)))
 
-      ;;       (defadvice ediff-files3 (before my-ediff3-forward-slashes activate)
-      ;;         (ad-set-arg 0 (my-forward-slashes (ad-get-arg 0)) t)
-      ;;         (ad-set-arg 1 (my-forward-slashes (ad-get-arg 1)) t)
-      ;;         (ad-set-arg 2 (my-forward-slashes (ad-get-arg 2)) t)
-      ;;         )
+      ;; (defadvice ediff-files3 (before my-ediff3-forward-slashes activate)
+      ;; (ad-set-arg 0 (my-forward-slashes (ad-get-arg 0)) t)
+      ;; (ad-set-arg 1 (my-forward-slashes (ad-get-arg 1)) t)
+      ;; (ad-set-arg 2 (my-forward-slashes (ad-get-arg 2)) t)
+      ;; )
 
-      ;;       (defadvice ediff-temp-file (after my-ediff-temp-file-forward-slashes activate compile)
-      ;;         (setq ad-return-value (my-forward-slashes ad-return-value))
-      ;;         )
+      ;; (defadvice ediff-temp-file (after my-ediff-temp-file-forward-slashes activate compile)
+      ;; (setq ad-return-value (my-forward-slashes ad-return-value))
+      ;; )
 
       (defun w32-restore-frame ()
         "Restore a minimized frame"
@@ -955,11 +955,11 @@ No more \"End of file during parsing\" horrors!"
 ;;
 ;; To find the nasty string to use as a fontname, put the cursor on the '*' in the
 ;; following line:
-;;      (w32-select-font) *
+;; (w32-select-font) *
 ;; type C-xC-e to evaluate the lisp expression. Make a choice in the resulting
 ;; dialog, and C-x-b *Messages* to switch to the *Messages* buffer. Copy the line
 ;; you see near the bottom which looks like this:
-;;   "-*-Lucida Console-normal-r-*-*-13-97-96-96-c-*-iso8859-1"
+;; "-*-Lucida Console-normal-r-*-*-13-97-96-96-c-*-iso8859-1"
 ;; that's what you want to paste into the shortcut properties dialog after '-font'.
 
 
@@ -971,11 +971,11 @@ No more \"End of file during parsing\" horrors!"
 
 ;; Changed my mind about this
 ;; (if (not (equal (getenv "COMPUTERNAME") "MOREPIE"))
-;;    (set-background-color "gray85")
+;; (set-background-color "gray85")
 
                                         ; (set-background-color "white")
 
-;;  )
+;; )
 
 ;;
 ;; Override some of the default version-control behavior
@@ -984,7 +984,7 @@ No more \"End of file during parsing\" horrors!"
                                         ;(require 'vc-hooks)
 
 (defun my-force-writable ()
-  "Make this buffer and its file writable.  Has no effect on
+  "Make this buffer and its file writable. Has no effect on
   buffers not associated with a file"
 
   (interactive)
@@ -1049,7 +1049,7 @@ No more \"End of file during parsing\" horrors!"
       ;; If you don't set hscroll-global-mode, emacs will sometimes prevent you from navigating
       ;; to parts of truncated lines which are off the right side of the window (pane). I find
       ;; this incredibly annoying, so I turn it off.
-                                        ;      (hscroll-global-mode 1)
+                                        ; (hscroll-global-mode 1)
 
       ;; This highlights the region (between point and mark) whenever the mark is
       ;; active. It also causes the mark to be able to become inactive (e.g. by
@@ -1079,7 +1079,7 @@ No more \"End of file during parsing\" horrors!"
 (and my-ok (delete-selection-mode 1))
 
 ;; For some reason, XEmacs doesn't let newline insertion do pending
-;; delete by default.  The way its pending-delete-mode works, it
+;; delete by default. The way its pending-delete-mode works, it
 ;; checks each command symbol executed to see if it has the
 ;; 'pending-delete property, so simply adding the property to the
 ;; commands in question gets us where we want to be.
@@ -1093,13 +1093,13 @@ No more \"End of file during parsing\" horrors!"
                                         ;(setq load-path (cons "~/elisp/tramp/lisp/" load-path))
 
 (and nil (cond
-          ((eq system-type 'windows-nt)  ;; on-win32 -- only an older emacs for cygwin
+          ((eq system-type 'windows-nt) ;; on-win32 -- only an older emacs for cygwin
            (let ((root (if (eq system-type 'windows-nt) "c:/" "/cygdrive/c/")))
-                                        ;    (setq-default Info-additional-directory-list
-                                        ;                  (list
-                                        ;                   (concat root "src/emacs/info")
-                                        ;                   (concat root "src/gnus/texi")
-                                        ;                   ))
+                                        ; (setq-default Info-additional-directory-list
+                                        ; (list
+                                        ; (concat root "src/emacs/info")
+                                        ; (concat root "src/gnus/texi")
+                                        ; ))
              (setq load-path
                    (append
                     (if on-emacs
@@ -1113,7 +1113,7 @@ No more \"End of file during parsing\" horrors!"
                    )
              ))))
 
-;; stuff that comes from elsewhere which may get overridden.  At the
+;; stuff that comes from elsewhere which may get overridden. At the
 ;; moment this is just unofficial gnus stuff like ssl.el
                                         ;(setq load-path (append load-path '("~/elisp/unofficial/")))
 
@@ -1133,17 +1133,17 @@ No more \"End of file during parsing\" horrors!"
 ;;; stuff from Brad
 
                                         ;(autoload 'speedbar-frame-mode "speedbar" "Popup a speedbar frame" t)
-                                        ;(autoload 'speedbar-get-focus  "speedbar" "Jump to speedbar frame" t)
+                                        ;(autoload 'speedbar-get-focus "speedbar" "Jump to speedbar frame" t)
 
                                         ; Add a menu entry called Tools where speedbar can live
 (if on-emacs
     (define-key-after (lookup-key global-map [menu-bar tools])
       [speedbar] '("Speedbar" . speedbar-frame-mode) [calendar]))
 
-                                        ;     (setq send-mail-function 'feedmail-send-it)
-                                        ;     (autoload 'feedmail-send-it "feedmail")
+                                        ; (setq send-mail-function 'feedmail-send-it)
+                                        ; (autoload 'feedmail-send-it "feedmail")
 
-                                        ;(condition-case nil  (load-file "~/auth-credentials.el")  (error nil))
+                                        ;(condition-case nil (load-file "~/auth-credentials.el") (error nil))
 
 (if (not on-emacs)
     (setq-default message-mail-alias-type nil))
@@ -1156,13 +1156,13 @@ No more \"End of file during parsing\" horrors!"
  Shell-command-switch "-c"
 
  ;; Mail settings
-                                        ;      user-full-name "David Abrahams"
-                                        ;      user-mail-address "dave@boost-consulting.com"
+                                        ; user-full-name "David Abrahams"
+                                        ; user-mail-address "dave@boost-consulting.com"
  mail-user-agent 'message-user-agent
 
  send-mail-function 'smtpmail-send-it
  message-send-mail-function 'smtpmail-send-it
-                                        ;     message-subject-re-regexp "^[    ]*\\(\\([Rr][Ee]\\|[Aa][Ww]\\)\\(\\[[0-9]*\\]\\)*:[     ]*\\)*[         ]*"
+                                        ; message-subject-re-regexp "^[ ]*\\(\\([Rr][Ee]\\|[Aa][Ww]\\)\\(\\[[0-9]*\\]\\)*:[ ]*\\)*[ ]*"
  message-syntax-checks '((sender . disabled) (long-lines . disabled))
  smtpmail-code-conv-from nil
 
@@ -1172,8 +1172,8 @@ No more \"End of file during parsing\" horrors!"
  ;;
  ;; Printer Settings
  ;;
-                                        ;      ps-printer-name "\\\\ab-east1\\abe_print1"
-                                        ;      printer-name "\\\\ab-east1\\abe_print1"
+                                        ; ps-printer-name "\\\\ab-east1\\abe_print1"
+                                        ; printer-name "\\\\ab-east1\\abe_print1"
 
  ps-landscape-mode t
  ps-font-family 'Courier
@@ -1190,13 +1190,13 @@ No more \"End of file during parsing\" horrors!"
  ps-header-offset 9
  ps-number-of-columns 2
  )
-                                        ;                  (set-face-foreground 'font-lock-type-face "cyan4")
+                                        ; (set-face-foreground 'font-lock-type-face "cyan4")
                                         ;(set-face-foreground 'font-lock-builtin-face "Purple")
 (set-face-foreground 'font-lock-comment-face "blue")
 (set-face-foreground 'font-lock-type-face "steelblue")
-                                        ;          (set-face-foreground 'font-lock-constant-face "chocolate")
-                                        ;          (set-face-foreground 'font-lock-constant-face "cadetblue")
-                                        ;          (set-face-foreground 'font-lock-keyword-face "DarkGoldenRod")
+                                        ; (set-face-foreground 'font-lock-constant-face "chocolate")
+                                        ; (set-face-foreground 'font-lock-constant-face "cadetblue")
+                                        ; (set-face-foreground 'font-lock-keyword-face "DarkGoldenRod")
 (set-face-foreground 'font-lock-keyword-face "red")
 (set-face-foreground 'font-lock-string-face "green4")
 (set-face-foreground 'font-lock-function-name-face "red")
@@ -1207,9 +1207,9 @@ No more \"End of file during parsing\" horrors!"
 (set-face-foreground font-lock-constant-face "slateblue")
 (set-face-foreground font-lock-string-face "darkgreen")
 
-;; (if (not on-emacs)  ; I don't know how to use BBDB yet anyway.
-;;     (require 'bbdb)
-;;   (bbdb-initialize 'gnus 'message 'sc 'w3 'reportmail))
+;; (if (not on-emacs) ; I don't know how to use BBDB yet anyway.
+;; (require 'bbdb)
+;; (bbdb-initialize 'gnus 'message 'sc 'w3 'reportmail))
 
 ;;
 ;; Special stuff for NT
@@ -1307,7 +1307,7 @@ into one long file name and places it in the directory given by backup-file-dir.
 
 ;;
 ;; my-compile, my-recompile - easy compilation with scrolling errors, and easy
-;;      recompilation without worrying about what buffer you're in.
+;; recompilation without worrying about what buffer you're in.
 ;;
 
 ;; Used by my-compile and my-recompile to get back to the bottom of a
@@ -1357,15 +1357,15 @@ so we can watch errors as they come up"
 ;;
 
                                         ; (defun my-tlm-diff-latest()
-                                        ;   "run TLM diff with the current buffer against the latest version under version control."
-                                        ;   (interactive)
-                                        ;   (let ((file-name (file-name-nondirectory (buffer-file-name))))
-                                        ;     (let ((temp-file (concat temporary-file-directory file-name)))
-                                        ;       (shell-command (concat "rm -f " temp-file)) ;; remove any existing temp file
-                                        ;       (shell-command (concat "tlm get " file-name " * " temp-file))
-                                        ;       (shell-command (concat "chmod -w " temp-file)) ;; should not be writable
-                                        ;       (ediff (buffer-file-name) temp-file)
-                                        ;       (delete-file temp-file))))
+                                        ; "run TLM diff with the current buffer against the latest version under version control."
+                                        ; (interactive)
+                                        ; (let ((file-name (file-name-nondirectory (buffer-file-name))))
+                                        ; (let ((temp-file (concat temporary-file-directory file-name)))
+                                        ; (shell-command (concat "rm -f " temp-file)) ;; remove any existing temp file
+                                        ; (shell-command (concat "tlm get " file-name " * " temp-file))
+                                        ; (shell-command (concat "chmod -w " temp-file)) ;; should not be writable
+                                        ; (ediff (buffer-file-name) temp-file)
+                                        ; (delete-file temp-file))))
 
 ;;
 ;; General utilities
@@ -1391,7 +1391,7 @@ modified file"
 (defun my-matching-paren (arg)
   (interactive "P")
   (if arg
-      () ;;(insert "%")  ; insert the character we're bound to
+      () ;;(insert "%") ; insert the character we're bound to
     (cond ((looking-at "[[({]")
            (forward-sexp 1)
            (forward-char -1))
@@ -1399,7 +1399,7 @@ modified file"
            (forward-char 1)
            (forward-sexp -1))
           (t
-           ;; (insert "%")  ; insert the character we're bound to
+           ;; (insert "%") ; insert the character we're bound to
            ))))
 
                                         ; Something for converting DOS files to unix format
@@ -1416,7 +1416,7 @@ modified file"
 
                                         ; return the first non-nil result of applying f to each element of seq
 (defun my-first-non-nil (seq f)
-                                        ;  (message "my-first-non-nil %s %s" seq f)
+                                        ; (message "my-first-non-nil %s %s" seq f)
   (and seq
        (or
         (apply f (list (car seq)))
@@ -1434,7 +1434,7 @@ the values are absolute also.
 If PATTERN is written as a relative file name, it is interpreted
 relative to the current default directory, `default-directory'.
 The file names returned are normally also relative to the current
-default directory.  However, if FULL is non-nil, they are absolute."
+default directory. However, if FULL is non-nil, they are absolute."
   (let* ((nondir (file-name-nondirectory pattern))
          (dirpart (file-name-directory pattern))
          ;; A list of all dirs that DIRPART specifies.
@@ -1446,7 +1446,7 @@ default directory.  However, if FULL is non-nil, they are absolute."
                  (list dirpart)))
          contents)
     (while dirs
-      (when (or (null (car dirs))       ; Possible if DIRPART is not wild.
+      (when (or (null (car dirs)) ; Possible if DIRPART is not wild.
                 (file-directory-p (directory-file-name (car dirs))))
         (let ((this-dir-contents
                ;; Filter out "." and ".."
@@ -1554,16 +1554,16 @@ Calling from program, supply two args START and END, buffer positions."
 
 (defun my-kill-rectangle (start end)
   "Save rectangle with corners at point and mark as last killed one,
-and erase it.  Calling from program, supply two args START and END,
+and erase it. Calling from program, supply two args START and END,
 buffer positions."
   (interactive "r")
   (my-save-rectangle start end)
   (clear-rectangle start end))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;;                    ;;
+;; ;;
 ;; Mode Customization ;;
-;;                    ;;
+;; ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;
@@ -1633,7 +1633,7 @@ buffer positions."
           (interactive "*P")
           (if arg (insert "<")
             (call-interactively
-             (if (is-mark-active)  'sgml-tag-region 'sgml-insert-element))
+             (if (is-mark-active) 'sgml-tag-region 'sgml-insert-element))
             ))
 
         (defun my-psgml-hook ()
@@ -1684,8 +1684,8 @@ buffer positions."
        ( "HTML 4.01 Frameset"
          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\">" )
                                         ; An example of IBMIDDoc SGML DTD
-                                        ;       ( "IBMIDDoc"
-                                        ;        "<!DOCTYPE ibmiddoc PUBLIC \"+//ISBN 0-933186::IBM//DTD IBMIDDoc//EN\" [\n]>")
+                                        ; ( "IBMIDDoc"
+                                        ; "<!DOCTYPE ibmiddoc PUBLIC \"+//ISBN 0-933186::IBM//DTD IBMIDDoc//EN\" [\n]>")
        ( "DOCBOOK XML 4.1.2"
          "<?xml version=\"1.0\"?>\n<!DOCTYPE book PUBLIC \"-//OASIS//DTD DocBook XML V4.2//EN\" \"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd\" [\n]>")
        )
@@ -1769,18 +1769,18 @@ buffer positions."
   (interactive)
   (let* ((file (buffer-file-name))
          (cmd
-          (format "tidy -m -i -wrap 78 --force-output 1 --keep-time 0 --gnu-emacs 1  %s" file) ))
+          (format "tidy -m -i -wrap 78 --force-output 1 --keep-time 0 --gnu-emacs 1 %s" file) ))
 
     (save-some-buffers (not compilation-ask-about-save) nil)
                                         ;compile-internal
     (compilation-start cmd "No more errors")
-                                        ;  (sgml-validate cmd)
+                                        ; (sgml-validate cmd)
     ))
 
 (defun my-convert-html-literals ()
   "convert special characters in the region as follows:
 
-   \"&\" => \"&amp;\"     \"<\" => \"&lt;\"      \">\" => \"&gt;\"    \"\\\"\" => \"&quot;\"
+   \"&\" => \"&amp;\" \"<\" => \"&lt;\" \">\" => \"&gt;\" \"\\\"\" => \"&quot;\"
 This makes a region of source code appear correctly in an HTML file."
   (interactive)
   (save-excursion
@@ -1796,7 +1796,7 @@ This makes a region of source code appear correctly in an HTML file."
   "Surround the region with <pre>...</pre> and convert
 special characters contained within as follows:
 
-   \"&\" => \"&amp;\"     \"<\" => \"&lt;\"      \">\" => \"&gt;\"    \"\\\"\" => \"&quot;\"
+   \"&\" => \"&amp;\" \"<\" => \"&lt;\" \">\" => \"&gt;\" \"\\\"\" => \"&quot;\"
 This makes a region of source code appear correctly in an HTML file."
   (interactive)
   (my-convert-html-literals)
@@ -1817,7 +1817,7 @@ equivalents."
     (defun show-paren-mode (yes)))
 
 (defun my-code-mode-hook ()
-                                        ;  (font-lock-mode t)
+                                        ; (font-lock-mode t)
   (show-paren-mode t)
   (local-set-key [return] 'newline-and-indent)
   (local-set-key [(control return)] 'newline)
@@ -1918,7 +1918,7 @@ and initial semicolons."
               comment-fill-prefix (buffer-substring (match-beginning 0)
                                                     (match-end 0))))
 
-       ;; A line with some code, followed by a comment?  Remember that the
+       ;; A line with some code, followed by a comment? Remember that the
        ;; semi which starts the comment shouldn't be part of a string or
        ;; character.
        ((condition-case nil
@@ -1944,7 +1944,7 @@ and initial semicolons."
         ;; expected) so that filling (doc) strings works sensibly.
         ;; Adding the opening paren to avoid the following sexp being
         ;; filled means that sexps generally aren't filled as normal
-        ;; text, which is probably sensible.  The `;' and `:' stop the
+        ;; text, which is probably sensible. The `;' and `:' stop the
         ;; filled para at following comment lines and keywords
         ;; (typically in `defcustom').
         (let ((paragraph-start (concat paragraph-start
@@ -1960,7 +1960,7 @@ and initial semicolons."
            (save-excursion
              (while (and (zerop (prev-line 1))
                          (looking-at "^[ \t]*#")))
-             ;; We may have gone too far.  Go forward again.
+             ;; We may have gone too far. Go forward again.
              (or (looking-at ".*#")
                  (forward-line 1))
              (point))
@@ -2020,7 +2020,7 @@ and initial semicolons."
 
 (defun my-jam-debug-mode ()
   (interactive)
-  ;;  (compilation-mode)
+  ;; (compilation-mode)
   (local-set-key [(control f10)] 'jam-debug-prev)
   (local-set-key [f10] 'jam-debug-next)
   (local-set-key [(shift f11)] 'jam-debug-finish)
@@ -2032,7 +2032,7 @@ and initial semicolons."
 ;;
 (defun my-html-mode-hook ()
   (local-set-key [f7] 'my-sgml-validate-writeback)
-                                        ;  (local-set-key [\C-f7] 'sgml-validate)
+                                        ; (local-set-key [\C-f7] 'sgml-validate)
   (local-set-key [(control f7)] 'sgml-validate)
   (local-set-key "\C-c\C-c\C-c" 'my-code-tag)
   (local-set-key "\C-c\C-c\C-q" 'my-preformatted)
@@ -2046,12 +2046,12 @@ and initial semicolons."
 ;;
 (defun my-sh-mode-hook ()
   (interactive "*")
-                                        ;  (my-code-mode-hook)
-                                        ;  (auto-fill-mode t)
-                                        ;  (local-set-key [return] 'my-sh-newline-and-indent)
-                                        ;  (local-set-key "{" 'my-sh-electric-open-brace)
-                                        ;  (local-set-key [\S-\M-{] 'my-sh-electric-braces)
-                                        ;  (setq fill-paragraph-function 'my-sh-fill-paragraph)
+                                        ; (my-code-mode-hook)
+                                        ; (auto-fill-mode t)
+                                        ; (local-set-key [return] 'my-sh-newline-and-indent)
+                                        ; (local-set-key "{" 'my-sh-electric-open-brace)
+                                        ; (local-set-key [\S-\M-{] 'my-sh-electric-braces)
+                                        ; (setq fill-paragraph-function 'my-sh-fill-paragraph)
   ;; (local-set-key "}" 'my-sh-electric-close-brace)
   )
 
@@ -2059,7 +2059,7 @@ and initial semicolons."
 
 (defun my-my-jam-mode-hook ()
   (interactive "*")
-                                        ;  (local-set-key ";" 'my-jam-electric-semicolon)
+                                        ; (local-set-key ";" 'my-jam-electric-semicolon)
   (auto-fill-mode)
   )
 
@@ -2116,7 +2116,7 @@ and initial semicolons."
   (setq lazy-lock-stealth-load 100)
 
   ;; AWL guidelines say code blocks must be 65 characters wide or
-  ;; fewer.  Leave 2 spaces for indent.
+  ;; fewer. Leave 2 spaces for indent.
   (setq fill-column 67)
 
   (auto-fill-mode t)
@@ -2142,7 +2142,7 @@ and initial semicolons."
           )
        auto-mode-alist))
 
-                                        ;(condition-case nil (load-library "rst-mode")  (error nil))
+                                        ;(condition-case nil (load-library "rst-mode") (error nil))
 
 
 (setq interpreter-mode-alist
@@ -2202,7 +2202,7 @@ and initial semicolons."
     ))
 
 (defun my-empty-braces ()
-  "insert {  }"
+  "insert { }"
   (interactive "*")
   (insert "{}")
   (backward-char)
@@ -2545,7 +2545,7 @@ file name begins matches PATTERN."
 from the namespace declaration iff the open brace sits on a line by itself."
   (save-excursion
     (if (progn (goto-char (cdr langelem))
-                                        ;               (setq column (current-column))
+                                        ; (setq column (current-column))
                (end-of-line)
                (while (and (search-backward "{" nil t)
                            (assoc 'incomment (c-guess-basic-syntax))))
@@ -2638,7 +2638,7 @@ Works with: template-args-cont."
   space."
   (interactive "*P") ; Require a writable buffer/take a prefix arg in raw form
 
-  ;; Do the regular action.  Perhaps we should be using defadvice here?
+  ;; Do the regular action. Perhaps we should be using defadvice here?
   (c-electric-semi&comma arg)
 
   ;; Insert the space if this comma is the first token on the line, or
@@ -2688,13 +2688,13 @@ starts."
 
 (defconst graehl-style
   '(
-                                        ;        (c-offsets-alist . (
-                                        ;                        (defun-block-intro . 2)
+                                        ; (c-offsets-alist . (
+                                        ; (defun-block-intro . 2)
     ;; ...no exceptions.
-                                        ;                        (substatement-open . 0)
-                                        ;                        (inline-open . 0)
-                                        ;                        (comment-intro . 0)
-                                        ;     ))
+                                        ; (substatement-open . 0)
+                                        ; (inline-open . 0)
+                                        ; (comment-intro . 0)
+                                        ; ))
     (c-electric-pound . t)
     (c-syntactic-indentation-in-macros . t)
     (c-indent-comments-syntactically-p . t)
@@ -2715,14 +2715,14 @@ starts."
   "graehl")
 
 (defun graehl-style-common-hook ()
-                                        ;   (c-add-style "graehl" graehl-style t)
+                                        ; (c-add-style "graehl" graehl-style t)
   )
 
 
 (defun my-c-mode-hook ()
   (c-set-style "bsd")
   (setq c-default-style "bsd"
-                                        ;        c-backspace-function 'c-hungry-delete
+                                        ; c-backspace-function 'c-hungry-delete
                                         ;'backward-delete-char
         c-basic-offset 2
         c-tab-always-indent t)
@@ -2739,9 +2739,9 @@ starts."
   ;; indent access labels public/private/protected by 1 space, as in 'M'. I
   ;; kinda like that.
   (c-set-offset 'access-label -3)
-  (local-set-key [(control tab)]     ; move to next tempo mark
+  (local-set-key [(control tab)] ; move to next tempo mark
                  'tempo-forward-mark)
-                                        ;  (local-set-key (kbd "<delete>") 'c-hungry-delete-forward)
+                                        ; (local-set-key (kbd "<delete>") 'c-hungry-delete-forward)
 
   ;;
   ;;fixup template indentation
@@ -2757,11 +2757,11 @@ starts."
 
   (my-code-mode-hook)
 
-                                        ;  (local-set-key [tab] 'my-c-tab)
-                                        ;  (local-set-key [{] 'my-electric-braces)
+                                        ; (local-set-key [tab] 'my-c-tab)
+                                        ; (local-set-key [{] 'my-electric-braces)
   (local-set-key [?\M-{] "\C-q{")
   (local-set-key [(control ?{)] 'my-empty-braces)
-                                        ;  (local-set-key [(meta \`)] 'my-cpp-toggle-src-hdr)
+                                        ; (local-set-key [(meta \`)] 'my-cpp-toggle-src-hdr)
   (local-set-key [(meta \`)] 'sourcepair-load)
   (local-set-key [(control \`)] 'sourcepair-load)
   (local-set-key [?#] 'my-electric-pound)
@@ -2804,7 +2804,7 @@ starts."
 (defun my-makefile-mode-hook ()
   (font-lock-mode t)
   (show-paren-mode t)
-  (setq indent-tabs-mode t)  ; Makefiles actually _need_ tabs :(
+  (setq indent-tabs-mode t) ; Makefiles actually _need_ tabs :(
   (local-set-key [( control ?\( )] 'my-matching-paren)
   (local-set-key [return] 'newline-and-indent)
   (local-set-key [(control return)] 'newline)
@@ -2844,7 +2844,7 @@ starts."
             (let ((path (car paths))) ; grab the first path
               (setq paths (cdr paths)) ; walk down the list
               (if (and (string-match "/bin/?$" path) ; if it ends with /bin
-                       (file-exists-p                ; and cygwin.bat is in the parent
+                       (file-exists-p ; and cygwin.bat is in the parent
                         (concat
                          (if (string-match "/$" path) path (concat path "/"))
                          "../cygwin.bat")))
@@ -2859,8 +2859,8 @@ starts."
 ;; functionality. In this case, we want to pre-filter the argument to the
 ;; function gud-find-file which is used by the emacs debugging mode to open
 ;; files specified by debug info.
-                                        ;(defadvice gud-find-file (before my-gud-translate-cygwin-paths activate)  (ad-set-arg 0 (my-translate-cygwin-paths (ad-get-arg 0)) t))
-                                        ;(defadvice compilation-find-file (before my-compilation-translate-cygwin-paths activate)  (ad-set-arg 1 (my-translate-cygwin-paths (ad-get-arg 1)) t))
+                                        ;(defadvice gud-find-file (before my-gud-translate-cygwin-paths activate) (ad-set-arg 0 (my-translate-cygwin-paths (ad-get-arg 0)) t))
+                                        ;(defadvice compilation-find-file (before my-compilation-translate-cygwin-paths activate) (ad-set-arg 1 (my-translate-cygwin-paths (ad-get-arg 1)) t))
 (require 'gud)
 (defun my-gud-run-to-cursor ()
   (gud-tbreak)
@@ -2879,7 +2879,7 @@ starts."
 
 
 ;; Navigation to other windows (panes)
-                                        ;(global-set-key "\C-x\C-n" 'other-window)  ; Normally bound to set-goal-column
+                                        ;(global-set-key "\C-x\C-n" 'other-window) ; Normally bound to set-goal-column
 (global-set-key "\C-x\C-p" 'my-other-window-backward) ; Normally bound to mark-page
 (global-set-key "\C-x5a" 'my-add-todo-entry)
 
@@ -2915,14 +2915,14 @@ starts."
 ;; Debugging
 (add-hook 'gud-mode-hook
           '(lambda ()
-             (local-set-key [home]        ; move to beginning of line, after prompt
+             (local-set-key [home] ; move to beginning of line, after prompt
                             'comint-bol)
-             (local-set-key [up]          ; cycle backward through command history
+             (local-set-key [up] ; cycle backward through command history
                             '(lambda () (interactive)
                                (if (comint-after-pmark-p)
                                    (comint-previous-input 1)
                                  (prev-line 1))))
-             (local-set-key [down]        ; cycle forward through command history
+             (local-set-key [down] ; cycle forward through command history
                             '(lambda () (interactive)
                                (if (comint-after-pmark-p)
                                    (comint-next-input 1)
@@ -2963,7 +2963,7 @@ starts."
 (global-set-key [(control tab)] 'tab-to-tab-stop)
 
 ;; Dealing with my incorrigible Windows instincts
-(global-set-key "\C-z" 'undo)   ; Normally this minimizes the emacs window;
+(global-set-key "\C-z" 'undo) ; Normally this minimizes the emacs window;
                                         ; yikes!
 
 ;; I normally use the incantation "Alt-space N" to minimize MSWindows windows
@@ -2971,9 +2971,9 @@ starts."
 ;; defined Meta-control-escape to do the same thing inside emacs.
 (global-set-key [(meta control escape)] 'iconify-or-deiconify-frame)
 
-                                        ;(global-set-key "\C-v" 'yank)   ; I'm always scrolling the window when I mean to paste
-(global-unset-key [(mouse-2)])  ; I hit mouse-2 by mistake too often, pasting junk into my files
-(global-set-key [(down-mouse-2)] 'mouse-drag-region)    ; Make it the same as mouse-1
+                                        ;(global-set-key "\C-v" 'yank) ; I'm always scrolling the window when I mean to paste
+(global-unset-key [(mouse-2)]) ; I hit mouse-2 by mistake too often, pasting junk into my files
+(global-set-key [(down-mouse-2)] 'mouse-drag-region) ; Make it the same as mouse-1
 
 ;; Other useful strokes and commands
 ;; M-: (alt-shift-;) - evaluate lisp expression
@@ -2985,14 +2985,14 @@ starts."
 ;; Changelog
 ;;
 ;; 8/16/01 - Cope with the default Metrowerks error messages, which are more
-;;           descriptive than those you get with -msgstyle gcc. Also added the
-;;           standard MSVC debugging keybindings.
+;; descriptive than those you get with -msgstyle gcc. Also added the
+;; standard MSVC debugging keybindings.
 ;;
 ;; 8/02/01 - Added Matlab mode from Mark R., and fixed the setting of
-;;           user-mail-address for altrabroadband users.
+;; user-mail-address for altrabroadband users.
 ;;
 ;; 7/26/01 - Added a fix for vc-mode losing the writable status of checked-out
-;;           files. Commented out obsolete TLM version control stuff.
+;; files. Commented out obsolete TLM version control stuff.
 ;;
 ;; 7/21/01 - Added auto-fill-mode to my-sh-mode-hook
 ;;
@@ -3069,11 +3069,11 @@ starts."
 
 
                                         ; (and on-win32 (progn
-                                        ;                         (setenv "GNUSERV_SHOW_EMACS" "1")
-                                        ;                         (require 'gnuserv)
-                                        ;                         (gnuserv-start)
-                                        ;                         (setq gnuserv-frame (selected-frame))
-                                        ;                         ))
+                                        ; (setenv "GNUSERV_SHOW_EMACS" "1")
+                                        ; (require 'gnuserv)
+                                        ; (gnuserv-start)
+                                        ; (setq gnuserv-frame (selected-frame))
+                                        ; ))
 (require 'iswitchb)
 (global-set-key [(f6)] 'iswitchb-buffer)
 (iswitchb-mode 1)
@@ -3126,15 +3126,15 @@ starts."
                              (and nil (and on-win32 on-emacs) (progn
                                                                 (setq tramp-methods
                                                                       (cons '("sshj"
-                                                                              (tramp-connection-function  tramp-open-connection-rsh)
-                                        ;             (tramp-rsh-program          "c:\\cygwin\\bin\\ssh.exe")
-                                        ;             (tramp-rcp-program          "c:\\cygwin\\bin\\scp.exe")
-                                                                              (tramp-rsh-program          "ssh")
-                                                                              (tramp-rcp-program          "scp")
-                                                                              (tramp-remote-sh            "/bin/sh")
-                                                                              (tramp-rsh-args     ("-e" "none" "-t" "-t" "-v" "-i" "/cache/.ssh/identity"))
-                                                                              (tramp-rcp-args     ("-i" "/cache/.ssh/identity"))
-                                                                              (tramp-rcp-keep-date-arg    "-p")
+                                                                              (tramp-connection-function tramp-open-connection-rsh)
+                                        ; (tramp-rsh-program "c:\\cygwin\\bin\\ssh.exe")
+                                        ; (tramp-rcp-program "c:\\cygwin\\bin\\scp.exe")
+                                                                              (tramp-rsh-program "ssh")
+                                                                              (tramp-rcp-program "scp")
+                                                                              (tramp-remote-sh "/bin/sh")
+                                                                              (tramp-rsh-args ("-e" "none" "-t" "-t" "-v" "-i" "/cache/.ssh/identity"))
+                                                                              (tramp-rcp-args ("-i" "/cache/.ssh/identity"))
+                                                                              (tramp-rcp-keep-date-arg "-p")
                                                                               ) tramp-methods))
                                                                 (setq tramp-default-method "sshj")
                                                                 )
@@ -3146,7 +3146,7 @@ starts."
                                         ;(setq tramp-encoding-shell "c:/cygwin/bin/bash.exe")
                                         ;/sshx:hpc-master.usc.edu/bin
                                         ;/sshj:hpc-master.usc.edu/bin
-                                        ; (add-to-list      'tramp-multi-connection-function-alist      '("sshf" tramp-multi-connect-rlogin "ssh %h -l %u -i /cache/.ssh/identity %n"))
+                                        ; (add-to-list 'tramp-multi-connection-function-alist '("sshf" tramp-multi-connect-rlogin "ssh %h -l %u -i /cache/.ssh/identity %n"))
                                         ;/[hpc-master.usc.edu]/.emacs
                                         ;/[sshx/hpc-master.usc.edu]/.emacs
 
@@ -3246,14 +3246,14 @@ starts."
 (setq my-kbd-macro 1)
 (if my-kbd-macro
     (progn
-      (global-set-key  [(meta left)] 'backward-sexp)
-      (global-set-key  [(meta right)] 'forward-sexp)
-      (global-set-key  [(control tab)] 'bs-cycle-next)
-      (global-set-key  [(control shift tab)] 'bs-cycle-previous)
-      (global-set-key  [(meta return)] 'dabbrev-expand)
-      (global-set-key  [(control shift tab)] 'bs-cycle-previous)
-      (global-set-key  [(control shift prior)] 'upcase-word)
-      (global-set-key  [(control shift next)] 'downcase-word)
+      (global-set-key [(meta left)] 'backward-sexp)
+      (global-set-key [(meta right)] 'forward-sexp)
+      (global-set-key [(control tab)] 'bs-cycle-next)
+      (global-set-key [(control shift tab)] 'bs-cycle-previous)
+      (global-set-key [(meta return)] 'dabbrev-expand)
+      (global-set-key [(control shift tab)] 'bs-cycle-previous)
+      (global-set-key [(control shift prior)] 'upcase-word)
+      (global-set-key [(control shift next)] 'downcase-word)
       )
   )
 
@@ -3261,7 +3261,7 @@ starts."
   (substitute ?\\ ?/ text))
 
                                         ;(defun fume-add-menubar-entry t)
-                                        ;(defun fume-add-menubar-entry (&optional force)  (interactive) t)
+                                        ;(defun fume-add-menubar-entry (&optional force) (interactive) t)
 
 (defun revert-all-buffers()
   "Refreshs all open buffers from their respective files"
@@ -3283,13 +3283,13 @@ starts."
                                         ;(require `browse-kill-ring)
 
 ;; Mark ring size
-(setq mark-ring-max 32)                 ; default is 16
+(setq mark-ring-max 32) ; default is 16
 
 ;; Kill ring size
-(setq kill-ring-max 200)                        ; default is 30
+(setq kill-ring-max 200) ; default is 30
 
 ;; Search ring size
-(setq search-ring-max 32)               ; default is 16
+(setq search-ring-max 32) ; default is 16
 
 (auto-compression-mode 1)
 
@@ -3301,9 +3301,9 @@ starts."
           (let* ((key (car K)) (fun (cdr K)))
             (define-key iswitchb-mode-map (edmacro-parse-keys key) fun)))
         '(("<right>" . iswitchb-next-match)
-          ("<left>"  . iswitchb-prev-match)
-          ("<up>"    . ignore             )
-          ("<down>"  . ignore             ))))
+          ("<left>" . iswitchb-prev-match)
+          ("<up>" . ignore             )
+          ("<down>" . ignore ))))
 (add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
 ;; /awesome
 
@@ -3312,13 +3312,13 @@ starts."
                                         ;(global-set-key [(meta f1)] 'cvs-status)
 (global-set-key [(control f1)] 'query-replace-regexp)
 
-;;; (setq shell-load-hook        '((lambda ()        (require 'comint-isearch)        (define-key shell-mode-map "\C-r" 'comint-isearch))))
+;;; (setq shell-load-hook '((lambda () (require 'comint-isearch) (define-key shell-mode-map "\C-r" 'comint-isearch))))
 (define-key shell-mode-map "\C-r" 'isearch-backward)
 
-(setq sourcepair-source-path    '( "impl" "." "~/t/sbmt_decoder/src" "../src"))
-(setq sourcepair-header-path    '( "." "include" "../include" )) ;;"~/t/sbmt_decoder/include/sbmt" "~/t/sbmt_decoder/include/sbmt/ngram"
+(setq sourcepair-source-path '( "impl" "." "~/t/sbmt_decoder/src" "../src"))
+(setq sourcepair-header-path '( "." "include" "../include" )) ;;"~/t/sbmt_decoder/include/sbmt" "~/t/sbmt_decoder/include/sbmt/ngram"
 (setq sourcepair-recurse-ignore '( "CVS" "Obj" "Debug" "Release" ".svn"))
-;;    (global-set-key [(meta \`)] 'sourcepair-load)
+;; (global-set-key [(meta \`)] 'sourcepair-load)
 
 
 ;; scratch.el
@@ -3416,8 +3416,8 @@ configuration to the state it was in beforehand."
                                         ;(add-to-list 'auto-mode-alist '("\\.hs\\'" . haskell-mode))
 (setq auto-mode-alist
       (append auto-mode-alist
-              '(("\\.[hg]s$"  . haskell-mode)
-                ("\\.hi$"     . haskell-mode)
+              '(("\\.[hg]s$" . haskell-mode)
+                ("\\.hi$" . haskell-mode)
                 ("\\.l[hg]s$" . literate-haskell-mode))))
 
 (autoload 'haskell-mode "haskell-mode"
@@ -3460,9 +3460,9 @@ configuration to the state it was in beforehand."
 (setq c-auto-newline 1)
 
                                         ; capitalize current word (for example, C constants)
-(global-set-key "\M-u"        '(lambda () (interactive) (backward-word 1) (upcase-word 1)))
-(global-set-key "\M-l"        '(lambda () (interactive) (backward-word 1) (downcase-word 1)))
-(global-set-key "\C-m"        'newline-and-indent)
+(global-set-key "\M-u" '(lambda () (interactive) (backward-word 1) (upcase-word 1)))
+(global-set-key "\M-l" '(lambda () (interactive) (backward-word 1) (downcase-word 1)))
+(global-set-key "\C-m" 'newline-and-indent)
 (global-set-key "\M-\C-u" 'turn-on-auto-capitalize-mode)
 
                                         ; auto-capitalize stuff
@@ -3476,10 +3476,10 @@ configuration to the state it was in beforehand."
 (setq auto-capitalize-words '("I" "Jonathan" "Graehl"))
 ;; Abbreviations
 
-;; M-x edit-abbrevs        allows editing of abbrevs
-;; M-x write-abbrev-file   will save abbrevs to file
-;; C-x a i l               allows us to define a local abbrev
-;; M-x abbrev-mode         turns abbrev-mode on/off
+;; M-x edit-abbrevs allows editing of abbrevs
+;; M-x write-abbrev-file will save abbrevs to file
+;; C-x a i l allows us to define a local abbrev
+;; M-x abbrev-mode turns abbrev-mode on/off
 
 ;; set name of abbrev file with .el extension
 (setq abbrev-file-name "~/.abbrevs.el")
@@ -3490,12 +3490,12 @@ configuration to the state it was in beforehand."
 ;; (abbrev-mode 1)
 ;; quietly read the abbrev file
 ;; (quietly-read-abbrev-file)
-(if (file-exists-p  abbrev-file-name) (quietly-read-abbrev-file abbrev-file-name))
+(if (file-exists-p abbrev-file-name) (quietly-read-abbrev-file abbrev-file-name))
 
                                         ;(global-set-key "\C-h" 'backward-delete-char)
 (add-hook 'emacs-lisp-mode-hook
           '(lambda ()
-             (modify-syntax-entry ?- "w")       ; now '-' is not considered a word-delimiter
+             (modify-syntax-entry ?- "w") ; now '-' is not considered a word-delimiter
              ))
 
 (global-set-key [(meta control backspace)] 'delete-rectangle)
@@ -3519,7 +3519,7 @@ configuration to the state it was in beforehand."
 
 (add-hook 'haskell-mode-hook
           (lambda ()
-                                        ;  (my-code-mode-hook)
+                                        ; (my-code-mode-hook)
             (turn-on-haskell-decl-scan)
             (turn-on-haskell-doc-mode)
                                         ;(turn-on-haskell-simple-indent)
@@ -3543,13 +3543,13 @@ configuration to the state it was in beforehand."
 (require 'haskell-decl-scan)
 (define-key haskell-mode-map (kbd "<C-up>") 'haskell-ds-backward-decl)
 (define-key haskell-mode-map (kbd "<C-down>") 'haskell-ds-forward-decl)
-(define-key haskell-mode-map  [(shift backspace)] 'delete-indentation)
-(define-key haskell-mode-map  [(tab)] 'haskell-indent-cycle)
+(define-key haskell-mode-map [(shift backspace)] 'delete-indentation)
+(define-key haskell-mode-map [(tab)] 'haskell-indent-cycle)
 (define-key haskell-mode-map (kbd "C-c t") 'inferior-haskell-type)
 (require 'rect)
 
 
-(when on-win32 (require 'cygwin-mount)  (setq cygwin-mount-cygwin-bin-directory "C:/cygwin/bin")  (cygwin-mount-activate))
+(when on-win32 (require 'cygwin-mount) (setq cygwin-mount-cygwin-bin-directory "C:/cygwin/bin") (cygwin-mount-activate))
 (column-number-mode t)
 (defun my-height (h)
   (when on-win32
@@ -3566,16 +3566,16 @@ configuration to the state it was in beforehand."
   (defun credmp/flymake-display-err-minibuf ()
     "Displays the error/warning for the current line in the minibuffer"
     (interactive)
-    (let* ((line-no             (flymake-current-line-no))
-           (line-err-info-list  (nth 0 (flymake-find-err-info flymake-err-info line-no)))
-           (count               (length line-err-info-list))
+    (let* ((line-no (flymake-current-line-no))
+           (line-err-info-list (nth 0 (flymake-find-err-info flymake-err-info line-no)))
+           (count (length line-err-info-list))
            )
       (while (> count 0)
         (when line-err-info-list
-          (let* ((file       (flymake-ler-file (nth (1- count) line-err-info-list)))
-                 (full-file  (flymake-ler-full-file (nth (1- count) line-err-info-list)))
+          (let* ((file (flymake-ler-file (nth (1- count) line-err-info-list)))
+                 (full-file (flymake-ler-full-file (nth (1- count) line-err-info-list)))
                  (text (flymake-ler-text (nth (1- count) line-err-info-list)))
-                 (line       (flymake-ler-line (nth (1- count) line-err-info-list))))
+                 (line (flymake-ler-line (nth (1- count) line-err-info-list))))
             (message "[%s] %s" line text)
             )
           )
@@ -3598,7 +3598,7 @@ configuration to the state it was in beforehand."
   (defun flymake-get-Haskell-cmdline (source base-dir)
     (list "ghc"
           (list "--make" "-fbyte-code"
-                (concat "-i"base-dir)  ;;; can be expanded for additional -i options as in the Perl script
+                (concat "-i"base-dir) ;;; can be expanded for additional -i options as in the Perl script
                 source)))
 
   (defvar multiline-flymake-mode nil)
@@ -3633,10 +3633,10 @@ configuration to the state it was in beforehand."
 (split-window-horizontally)
 (when nil
   ;; want two windows at startup
-  (other-window 1)              ;; move to other window
-                                        ;(shell)                       ;; start a shell
+  (other-window 1) ;; move to other window
+                                        ;(shell) ;; start a shell
                                         ;(rename-buffer "shell-first") ;; rename it
-  (other-window 1)              ;; move back to first window
+  (other-window 1) ;; move back to first window
   )
                                         ;(require 'tramp)
 
@@ -3757,7 +3757,7 @@ configuration to the state it was in beforehand."
 (defun mysite-latex-mode-hook ()
   (kill-local-variable 'compile-command)
   )
-(when nil  (setq mode-compile-modes-alist
+(when nil (setq mode-compile-modes-alist
                  (append '((latex-mode . (tex-compile kill-compilation)))
                          mode-compile-modes-alist)))
 
@@ -3776,7 +3776,7 @@ configuration to the state it was in beforehand."
 
 
 ;; Close the compilation window if there was no error at all.
-(when nil  (setq compilation-exit-message-function
+(when nil (setq compilation-exit-message-function
                  (lambda (status code msg)
                    ;; If M-x compile exists with a 0
                    (when (and (eq status 'exit) (zerop code))
@@ -3826,7 +3826,7 @@ found. Trivial modification of zap-to-char from GNU Emacs
                  :relevant-files ("\\.pm$" "\\.t$" "\\.pl$" "\\.PL$"))
 
                (defun h-file-create ()
-                 "Create a new h file.  Insert a infdef/define/endif block"
+                 "Create a new h file. Insert a infdef/define/endif block"
                  (interactive)
                  (let ((bn (buffer-name (current-buffer))))
                    (if (or (equal (substring bn -2 ) ".h")
@@ -3974,7 +3974,7 @@ loaded as such.)"
                                         ;(setq ido-enable-flex-matching t)
                                         ;(setq ido-create-new-buffer 'always)
                                         ;(define-key ido-file-completion-map "\C-w" 'ido-delete-backward-updir)
-                                        ;(setq completion-ignored-extensions      (cons "*.aux" completion-ignored-extensions))
+                                        ;(setq completion-ignored-extensions (cons "*.aux" completion-ignored-extensions))
                                         ;(global-set-key (kbd "C-x f") 'ido-find-file)
                                         ;(global-set-key (kbd "C-x C-f") 'ido-fallback-command)
                                         ;(setq ido-auto-merge-work-directories-length -1)
@@ -4023,7 +4023,7 @@ loaded as such.)"
 (defun run-buffer ()
                                         ;(args)
   (interactive)
-                                        ;  (interactive "sArguments to script: ")
+                                        ; (interactive "sArguments to script: ")
   (let ((args "-h"))
     (save-buffer)
     (shell-command (concat (buffer-file-name (current-buffer)) " " args " &")
@@ -4076,11 +4076,11 @@ loaded as such.)"
 (global-set-key (kbd "C-;") 'whole-line-or-region-comment-dwim)
 
 ;;
-;;  What this version does is override the normal behavior of the
-;;  prefix arg to `comment-dwim', and instead uses it to indicate how
-;;  many lines the whole-line version will comment out -- no prefix
-;;  value is passed to the original function in this case.  This is
-;;  the version that I use, as it's just more intuitive for me.
+;; What this version does is override the normal behavior of the
+;; prefix arg to `comment-dwim', and instead uses it to indicate how
+;; many lines the whole-line version will comment out -- no prefix
+;; value is passed to the original function in this case. This is
+;; the version that I use, as it's just more intuitive for me.
 
 ;;
 ;; PYTHON
@@ -4089,11 +4089,11 @@ loaded as such.)"
 
 (defun my-python-mode-hook ()
   ;;(auto-fill-mode nil)
-  ;;  (filladapt-mode t)
+  ;; (filladapt-mode t)
   (font-lock-mode t)
   (show-paren-mode t)
   (make-local-variable 'adaptive-fill-regexp)
-  (setq adaptive-fill-regexp "^[     ]*# ")
+  (setq adaptive-fill-regexp "^[ ]*# ")
   (local-set-key [return] 'newline-and-indent)
   (local-set-key [(control return)] 'newline)
   (local-set-key [( control ?\( )] 'my-matching-paren)
@@ -4126,9 +4126,9 @@ loaded as such.)"
       (require 'python-mode)
       (defun py-hook ()
         (interactive)
-        (local-set-key (kbd "<M-right>") 'py-shift-region-right)
-        (local-set-key (kbd "<M-left>") 'py-shift-region-left)
-                                        ;  (local-set-key (kbd "C-;") 'my-python-send-region2)
+        (local-set-key (kbd "<C-M-right>") 'py-shift-region-right)
+        (local-set-key (kbd "<C-M-left>") 'py-shift-region-left)
+                                        ; (local-set-key (kbd "C-;") 'my-python-send-region2)
         (local-set-key "\C-m" 'newline-and-indent)
         (eldoc-mode 1)
         )
@@ -4141,11 +4141,11 @@ loaded as such.)"
 ;;; Electric Pairs
       (add-hook 'python-mode-hook
                 (lambda ()
-                                        ;      (define-key py-mode-map "\"" 'electric-pair)
-                                        ;      (define-key py-mode-map "\'" 'electric-pair)
-                                        ;      (define-key py-mode-map "(" 'electric-pair)
-                                        ;      (define-key py-mode-map "[" 'electric-pair)
-                                        ;      (define-key py-mode-map "{" 'electric-pair)
+                                        ; (define-key py-mode-map "\"" 'electric-pair)
+                                        ; (define-key py-mode-map "\'" 'electric-pair)
+                                        ; (define-key py-mode-map "(" 'electric-pair)
+                                        ; (define-key py-mode-map "[" 'electric-pair)
+                                        ; (define-key py-mode-map "{" 'electric-pair)
                   (define-key py-mode-map [(shift f10)] 'py-pychecker-run)
                   ))
       )
@@ -4160,6 +4160,7 @@ loaded as such.)"
               python-font-lock-keywords
               ))
     (defun python ()
+
       (interactive)
       (switch-to-buffer-other-window
        (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
@@ -4187,7 +4188,7 @@ loaded as such.)"
   (if (equal major-mode 'term-mode)
       (progn
         (shell-mode)
-        (set-process-filter  (get-buffer-process (current-buffer)) 'comint-output-filter )
+        (set-process-filter (get-buffer-process (current-buffer)) 'comint-output-filter )
         (local-set-key (kbd "C-j") 'term-switch-to-shell-mode)
         (compilation-shell-minor-mode 1)
         (comint-send-input)
@@ -4195,7 +4196,7 @@ loaded as such.)"
     (progn
       (compilation-shell-minor-mode -1)
       (font-lock-mode -1)
-      (set-process-filter  (get-buffer-process (current-buffer)) 'term-emulate-terminal)
+      (set-process-filter (get-buffer-process (current-buffer)) 'term-emulate-terminal)
       (term-mode)
       (term-char-mode)
       (term-send-raw-string (kbd "C-l"))
@@ -4328,7 +4329,7 @@ loaded as such.)"
     (set (make-local-variable 'open-paren-in-column-0-is-defun-start) nil))
 
   (setq font-lock-defaults
-        '(clojure-font-lock-keywords    ; keywords
+        '(clojure-font-lock-keywords ; keywords
           nil nil
           (("+-*/.<>=!?$%_&~^:@" . "w")) ; syntax alist
           nil
@@ -4362,8 +4363,8 @@ loaded as such.)"
   (interactive)
                                         ;(maximize-frame)
   (progn
-    (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))  ;; no toolbar
-                                        ;  (menu-bar-mode 1)
+    (if (fboundp 'tool-bar-mode) (tool-bar-mode -1)) ;; no toolbar
+                                        ; (menu-bar-mode 1)
     ;;-1) ;;no menubar
     (scroll-bar-mode -1) ;; no scroll bar
     )
@@ -4410,7 +4411,7 @@ loaded as such.)"
   (if (equal major-mode 'term-mode)
       (progn
         (shell-mode)
-        (set-process-filter  (get-buffer-process (current-buffer)) 'comint-output-filter )
+        (set-process-filter (get-buffer-process (current-buffer)) 'comint-output-filter )
         (local-set-key (kbd "C-j") 'term-switch-to-shell-mode)
         (compilation-shell-minor-mode 1)
         (comint-send-input)
@@ -4418,7 +4419,7 @@ loaded as such.)"
     (progn
       (compilation-shell-minor-mode -1)
       (font-lock-mode -1)
-      (set-process-filter  (get-buffer-process (current-buffer)) 'term-emulate-terminal)
+      (set-process-filter (get-buffer-process (current-buffer)) 'term-emulate-terminal)
       (term-mode)
       (term-char-mode)
       (term-send-raw-string (kbd "C-l"))
@@ -4428,7 +4429,7 @@ loaded as such.)"
 (require 'dirtrack)
 (shell-dirtrack-mode t)
 (defun dirtrack-filter-out-pwd-prompt (string)
-  "dirtrack-mode doesn't remove the PWD match from the prompt.  This does."
+  "dirtrack-mode doesn't remove the PWD match from the prompt. This does."
   ;; TODO: support dirtrack-mode's multiline regexp.
   (if (and (stringp string) (string-match (first dirtrack-list) string))
       (replace-match "" t t string 0)
@@ -4465,17 +4466,17 @@ loaded as such.)"
 (global-set-key [end] 'end-of-line)
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 (defun my-on-shell () (interactive)
-                                        ;            (define-key shell-mode-map [up] 'ewd-comint-up)
-                                        ;            (define-key shell-mode-map [down] 'ewd-comint-down)
+                                        ; (define-key shell-mode-map [up] 'ewd-comint-up)
+                                        ; (define-key shell-mode-map [down] 'ewd-comint-down)
   (define-key shell-mode-map [(control k)] 'comint-kill-input)
   (local-set-key [C-a] 'comint-bol))
-                                        ;            (local-set-key [home] 'comint-bol)       ; move to beginning of line, after prompt
-(local-set-key [up]          ; cycle backward through command history
+                                        ; (local-set-key [home] 'comint-bol) ; move to beginning of line, after prompt
+(local-set-key [up] ; cycle backward through command history
                '(lambda () (interactive)
                   (if (comint-after-pmark-p)
                       (comint-previous-input 1)
                     (prev-line 1))))
-(local-set-key [down]        ; cycle forward through command history
+(local-set-key [down] ; cycle forward through command history
                '(lambda () (interactive)
                   (if (comint-after-pmark-p)
                       (comint-next-input 1)
@@ -4485,7 +4486,7 @@ loaded as such.)"
                 (setq comint-completion-addsuffix t)
                 ;; (setq comint-process-echoes t) ;; reported that this is no longer needed
                 (setq comint-eol-on-send t)
-                                        ;          (setq w32-quote-process-args ?\")
+                                        ; (setq w32-quote-process-args ?\")
                 (make-variable-buffer-local 'comint-completion-addsuffix)))
 
 (add-hook 'shell-mode-hook 'my-on-shell)
@@ -4514,10 +4515,10 @@ loaded as such.)"
 (defun compilation-recenter-end-at-finish (buffer string)
   (dolist (window (get-buffer-window-list buffer))
     (compilation-recenter-end--with-selected-window window
-      (when (<= (count-lines (point) (point-max)) 2)
-        (save-excursion
-          (goto-char (point-max))
-          (recenter -1))))))
+                                                    (when (<= (count-lines (point) (point-max)) 2)
+                                                      (save-excursion
+                                                        (goto-char (point-max))
+                                                        (recenter -1))))))
 (add-to-list 'compilation-finish-functions 'compilation-recenter-end-at-finish)
 
 
@@ -4647,7 +4648,7 @@ loaded as such.)"
 ;; enable recent files mode.
 (recentf-mode t)
 
-; 50 files ought to be enough.
+                                        ; 50 files ought to be enough.
 (setq recentf-max-saved-items 50)
 
 (defun ido-recentf-open ()
@@ -4666,9 +4667,9 @@ loaded as such.)"
 (setq dabbrev-case-fold-search t)
 (setq dabbrev-case-distinction 'case-replace)
 (setq dabbrev-abbrev-skip-leading-regexp "[=*]")
-;(setq dabbrev-abbrev-skip-leading-regexp "[=*]")
+                                        ;(setq dabbrev-abbrev-skip-leading-regexp "[=*]")
 (setq dabbrev-abbrev-skip-leading-regexp "[^ ]*[<>=*]")
-;dabbrev-abbrev-char-regexp
+                                        ;dabbrev-abbrev-char-regexp
 (load-file "~/elisp/local")
 (defun gr-try-expand-dabbrev-visible (old) (save-excursion (try-expand-dabbrev-visible old)))
 (defadvice he-substitute-string (after he-paredit-fix)
@@ -4688,47 +4689,47 @@ loaded as such.)"
 
 (defun my-dabbrev-substring-search (pattern &optional reverse limit)
   (let ((result ())
-	(regpat (cond ((not hippie-expand-dabbrev-as-symbol)
-		       (concat (regexp-quote pattern) "\\sw+"))
-		      ((eq (char-syntax (aref pattern 0)) ?_)
-		       (concat (regexp-quote pattern) "\\(\\sw\\|\\s_\\)+"))
-		      (t
-		       (concat (regexp-quote pattern)
-			       "\\(\\sw\\|\\s_\\)+")))))
+        (regpat (cond ((not hippie-expand-dabbrev-as-symbol)
+                       (concat (regexp-quote pattern) "\\sw+"))
+                      ((eq (char-syntax (aref pattern 0)) ?_)
+                       (concat (regexp-quote pattern) "\\(\\sw\\|\\s_\\)+"))
+                      (t
+                       (concat (regexp-quote pattern)
+                               "\\(\\sw\\|\\s_\\)+")))))
     (while (and (not result)
-		(if reverse
-		     (re-search-backward regpat limit t)
-		     (re-search-forward regpat limit t)))
+                (if reverse
+                    (re-search-backward regpat limit t)
+                  (re-search-forward regpat limit t)))
       (setq result (buffer-substring-no-properties (save-excursion
                                                      (goto-char (match-beginning 0))
                                                      (skip-syntax-backward "w_")
                                                      (point))
-						   (match-end 0)))
+                                                   (match-end 0)))
       (if (he-string-member result he-tried-table t)
-	  (setq result nil)))     ; ignore if bad prefix or already in table
+          (setq result nil))) ; ignore if bad prefix or already in table
     result))
 
-;If hippie-expand fails to find any satisfactory expansion, you may want to add a new one by using function `‘inverse-add-global-abbrev’’. The following should probably be the last function in `‘hippie-expand-try-functions-list’’:
+                                        ;If hippie-expand fails to find any satisfactory expansion, you may want to add a new one by using function `‘inverse-add-global-abbrev’’. The following should probably be the last function in `‘hippie-expand-try-functions-list’’:
 
 (defun tags-complete-tag (string predicate what)
-     (save-excursion
-     ;; If we need to ask for the tag table, allow that.
-     (if (eq what t)
-	(all-completions string (tags-completion-table) predicate)
+  (save-excursion
+    ;; If we need to ask for the tag table, allow that.
+    (if (eq what t)
+        (all-completions string (tags-completion-table) predicate)
       (try-completion string (tags-completion-table) predicate))))
 
-    (defun my-try-add-expansion (old)
-      "Add a new global abbrev"
-      (he-init-string (he-dabbrev-beg) (point))
-      (or (inverse-add-global-abbrev 1)
-	  (he-reset-string)))
+(defun my-try-add-expansion (old)
+  "Add a new global abbrev"
+  (he-init-string (he-dabbrev-beg) (point))
+  (or (inverse-add-global-abbrev 1)
+      (he-reset-string)))
 
 (global-set-key "\M-." 'hippie-expand)
 (global-set-key "\M-l" (make-hippie-expand-function '(try-expand-line-all-buffers)))
 (global-set-key "\M-u" (make-hippie-expand-function '(try-my-dabbrev-substring)))
 
 (when nil
-(add-to-list 'load-path "~/elisp/yasnippet")
+  (add-to-list 'load-path "~/elisp/yasnippet")
   (require 'yasnippet)
   (yas/initialize)
   (yas/load-directory "~/elisp/yasnippet/snippets")

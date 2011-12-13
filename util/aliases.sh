@@ -1,20 +1,48 @@
 #file arg comes first! then cmd, then args
+stashx() {
+    cd ~/c
+    local s=~/c/stash.`timestamp`
+    mkdir -p $s
+    cp -pr ~/c/racerx/{3rdParty/graehl,racerx/Hypergraph} $s
+}
+rcompile() {
+    local s=$1
+    shift
+    local flags="-I$BOOST_INCLUDE -I$HOME/x/3rdparty -I$HOME/x -O0 -ggdb"
+    g++ $flags -x c++ -DGRAEHL__SINGLE_MAIN -DHYPERGRAPH_MAIN "$s" "$@"
+}
+brewrehead() {
+    brew remove "$@"
+    safebrew install -d --force -v --use-gcc --HEAD "$@"
+}
+brewhead() {
+    safebrew install -d --force -v --use-gcc --HEAD "$@"
+}
 nonbrew() {
     find "$1" \! -type l \! -type d -depth 1 | grep -v brew
+}
+rebrew() {
+    brew remove "$@"
+    safebrew install "$@"
 }
 safebrew() {
     local log=/tmp/safebrew.log
     (
         saves=$(echo /usr/local/{bin,lib,lib/pkgconfig})
-        mkdir -p $savelib
         set +e
         for f in $saves; do
+            echo mkdir -p $f/unbrew
             mkdir -p $f/unbrew
+            set +x
             mv `nonbrew $f` $f/unbrew/
+            set -x
         done
         mv /usr/local/bin/auto* $savebin
         export LDFLAGS+=" -L/usr/local/Cellar/libffi/3.0.9/lib"
         export CPPFLAGS+="-I/usr/local/Cellar/libffi/3.0.9/include"
+        export PATH=/usr/local/bin:$PATH
+        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+#by default it looks there already. just in case!
         unset DYLD_LIBRARY_PATH
         set -x
         brew "$@" || brew doctor
@@ -180,7 +208,9 @@ svntagr() {
 }
 
 gitsub() {
+    git pull
     git submodule update --init --recursive "$@"
+    git pull
 }
 sitelisp() {
     cd ~/.emacs.d
