@@ -8,7 +8,7 @@
 
   G g;
   typedef typename P::rebind<value> F;
-  typename F::impl impl(F::init<value>(g)); //  - backing which must exist (new or stack) while used. // may or may not have shallow-copy semantics.
+  typename F::impl impl(F::init<value>(g)); // - backing which must exist (new or stack) while used. // may or may not have shallow-copy semantics.
   typename F::reference r=impl; // actually satisfies copyable-by-val property map semantics - may be boost::reference_wrapper<implementation> or similar. shallow-copy semantics.
 
   reminder: boost property maps (namespace usually found by ADL on map type):
@@ -31,7 +31,7 @@ namespace graehl {
 
 template <class G,class ptag>
 struct size_traits {
-//  typedef std::size_t size_type;
+// typedef std::size_t size_type;
 };
 
 template <class G>
@@ -158,7 +158,7 @@ struct pmap_pair_getter {
   typedef A key_type;
   typedef typename T::value_type V;
   typedef map_pair<key_type,V> result_type;
-//  template <class key_type>
+// template <class key_type>
   result_type operator()(key_type const& k) const {
     return result_type(k,get(p,k));
   }

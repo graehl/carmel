@@ -36,9 +36,9 @@ struct intrusive_refcount //: boost::noncopyable
 
   friend void intrusive_ptr_release(T const* ptr)
   {
-    if (--((const intrusive_refcount *)ptr)->refcount) {
+    if (!--((const intrusive_refcount *)ptr)->refcount) {
       ptr->~T();
-      U::free((void *)ptr);
+      U::free((char *)ptr);
     }
   }
 protected:
@@ -68,7 +68,7 @@ struct atomic_intrusive_refcount //: boost::noncopyable
 
   friend void intrusive_ptr_release(T const* ptr)
   {
-    if (--((const atomic_intrusive_refcount *)ptr)->refcount) {
+    if (!--((const atomic_intrusive_refcount *)ptr)->refcount) {
       ptr->~T();
       U::free((void *)ptr);
     }

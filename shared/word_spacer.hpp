@@ -174,6 +174,19 @@ inline void print(O &o,V const& v,range_sep const& r) {
   r.print(o,v);
 }
 
+template <class O>
+struct out_spaced {
+  typedef void result_type;
+  O & o;
+  word_spacer s;
+  out_spaced(O & o,word_spacer const& s=word_spacer()) : o(o),s(s) {}
+  template <class X>
+  result_type operator()(X const& x) const {
+    o<<s;
+    o<<x;
+  }
+};
+
 }//ns
 
 #endif
