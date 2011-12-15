@@ -64,7 +64,7 @@
 #include <graehl/shared/hypergraph.hpp>
 #include <graehl/shared/print_read.hpp>
 #include <graehl/shared/word_spacer.hpp>
-# include <graehl/shared/d_ary_heap.hpp>
+#include <graehl/shared/d_ary_heap.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 //#include <boost/ref.hpp>

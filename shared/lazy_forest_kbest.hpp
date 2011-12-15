@@ -551,8 +551,11 @@ public:
     }
     if (pq.empty())
       return NONE();
-    else
+    else {
+      EIFDBG(LAZYF,2,SHOWM2(LAZYF,"next_best",top().derivation,this));
       return top().derivation;
+    }
+
   }
 
   void set_first_best(derivation_type r)
