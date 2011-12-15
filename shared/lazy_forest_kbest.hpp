@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+//TODO: cycles - if you found a pending, then try not queueing successors until you're added to memo table. but MAYBE our successors first approach makes us handle negative cost improvements more nicely? not sure. if not, then always queue successors afterwards.
+
 //FIXME: uses static (global) state - so only one lazy kbest can be in progress. can't imagine why that would be a problem, but watch out!
 
 /**
@@ -203,6 +205,7 @@ struct dummy_init_type
 
 struct permissive_kbest_filter
 {
+  enum { trivial=1 }; // avoids printing stats on % filtered
   /*
     typedef some_stateful_derivation_predicate filter_type;
     some_type filter_init(); /// used like: typename factory_type::filter_type per_node_filter(factory.filter_init());
@@ -266,8 +269,10 @@ struct lazy_kbest_stats
   typedef std::size_t count_t;
   count_t n_passed;
   count_t n_filtered;
-  void clear()
+  bool trivial_filter;
+  void clear(bool trivial_filt=false)
   {
+    trivial_filter=trivial_filt;
     n_passed=n_filtered=0;
   }
   count_t n_total() const
@@ -280,7 +285,13 @@ struct lazy_kbest_stats
   template <class C, class T>
   void print(std::basic_ostream<C,T> &o) const
   {
-    o << "[Lazy kbest filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "<<n_passed<<", or "<<graehl::percent<5>(n_passed,n_total())<<"]";
+    if (trivial_filter) {
+      assert(!n_filtered);
+      o<<"[Lazy kbest "<<n_passed<<" derivations found]";
+      return;
+    }
+    o << "[Lazy kbest uniqueness-filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "
+      << n_passed<<", or "<<graehl::percent<5>(n_passed,n_total())<<"]";
   }
   typedef lazy_kbest_stats self_type;
 };
@@ -293,17 +304,19 @@ operator<<(std::basic_ostream<C,T>& os, lazy_kbest_stats const& kb)
   return os;
 }
 
+// i've left this copyable even though you should for efficiency's sake only copy empty things, e.g. if you want to compile a vector of them that's fine
 template <class DerivationFactory,class FilterFactory=permissive_kbest_filter_factory>
 class lazy_forest
-  : public FilterFactory::filter_type // empty base class opt.
-// , public boost::noncopyable
+  : public FilterFactory::filter_type // empty base class opt. - may have state e.g. hash of seen strings or trees
 {
 public:
   typedef DerivationFactory derivation_factory_type;
   typedef FilterFactory filter_factory_type;
   typedef typename filter_factory_type::filter_type filter_type;
 
-  lazy_forest() : filter_type(filter_factory.filter_init()) {}
+  lazy_forest() : filter_type(filter_factory.filter_init()) {
+
+  }
 
   typedef typename derivation_factory_type::derivation_type derivation_type;
   typedef derivation_factory_type D;
@@ -316,6 +329,11 @@ public:
     return (derivation_type)derivation_factory.PENDING();
   }
 
+  void clear_stats()
+  {
+    stats.clear(filter_type::trivial);
+  }
+
   /// bool Visitor(derivation,ith) - if returns false, then stop early.
   /// otherwise stop after generating up to k (up to as many as exist in
   /// forest)
@@ -323,7 +341,7 @@ public:
   lazy_kbest_stats enumerate_kbest(unsigned k,Visitor visit=Visitor()) {
     KBESTINFOT("COMPUTING BEST " << k << " for node " << *this);
     KBESTNESTT;
-    stats.clear();
+    clear_stats();
     for (unsigned i=0;i<k;++i) {
       derivation_type ith_best=get_best(i);
       if (ith_best == NONE()) break;
@@ -519,7 +537,7 @@ public:
   /// PRECONDITION: don't call if pq is empty. (if !done()). memo ends with [old top derivation,PENDING].
   derivation_type next_best() {
     assertlvl(11,!done());
-    hyperedge pending=top(); // creating a copy saves so many ugly complexities in trying to make pop_heap / push_heap efficient ...
+    hyperedge pending=top(); // creating a copy saves ugly complexities in trying to make pop_heap / push_heap efficient ...
     KBESTINFOT("GENERATE SUCCESSORS FOR "<<pending);
     pop(); // since we made a copy already into pending...
 

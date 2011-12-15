@@ -1,4 +1,9 @@
 #file arg comes first! then cmd, then args
+withdbg() {
+    local d=$1
+    shift
+    HYPERGRAPH_DBG=$d LAZYK_DBG=$d HGBEST_DBG=$d "$@"
+}
 empull() {
     cd ~/.emacs.d
     git pull
@@ -499,8 +504,9 @@ urac() {
     if ! [ "$noup" ] ; then svn update ; fi
 }
 crac() {
-    cd $racer
+    pushd $racer
     svn commit -m "$*"
+    popd
 }
 commx() {
     crac "$@"
