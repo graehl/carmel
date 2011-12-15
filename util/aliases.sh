@@ -7,7 +7,7 @@ withdbg() {
         gdbc="gdb --args"
     fi
 # TUHG_DBG=$d
-    HYPERGRAPH_DBG=$d LAZYF_DBG=$d HGBEST_DBG=$d $gdbc "$@"
+    TUHG_DBG=$d HYPERGRAPH_DBG=$d LAZYF_DBG=$d HGBEST_DBG=$d $gdbc "$@"
 }
 empull() {
     cd ~/.emacs.d
@@ -550,14 +550,14 @@ racm() {
         cd $racerbuild
         set -x
         local prog=$1
-        shift
         if [ "$prog" ] ; then
-            for f in $* ; do
-                rm -f Hypergraph/CMakeFiles/$f.dir/src/$f.cpp.o
-            done
+            shift
+            rm -f Hypergraph/CMakeFiles/$prog.dir/src/$prog.cpp.o
             if [[ ${prog#Test} = $prog ]] ; then
                 test=
                 tests=
+            else
+                prog=
             fi
         fi
         set +x

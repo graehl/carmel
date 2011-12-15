@@ -68,10 +68,10 @@ DECLARE_DBG_LEVEL_IF(TUHG)
 ({} not optional)
 */
 
-#define SHOWE(x) " "#x<<"="<<x<<" "
+#define SHOWE(x) " "#x<<"="<<(x)<<" "
 #define SHOWP(IF,x) IF(SHOWS<<x;)
 #define SHOWNL(IF) SHOWP(IF,"\n")
-#define SHOWC(IF,x,s) SHOWP(IF,#x<<"="<<x<<s)
+#define SHOWC(IF,x,s) SHOWP(IF,#x<<"="<<(x)<<s)
 #define SHOW(IF,x) SHOWC(IF,x,"\n")
 #define SHOW1(IF,x) SHOWC(IF,x," ")
 #define SHOW2(IF,x,y) SHOW1(IF,x) SHOW(IF,y)

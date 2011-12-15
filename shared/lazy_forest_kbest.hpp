@@ -51,6 +51,18 @@
 
   // Result(a) < Result(b) iff b is better than a.
 
+  or specialize in ns graehl:
+
+  namespace graehl {
+  template<>
+  struct lazy_kbest_derivation_traits<Deriv> {
+    static inline bool better_than(const Deriv &me,const Deriv &than)
+    {
+      return me<than;
+    }
+  {
+
+
   then build a lazy_forest<Factory> binary hypergraph
 */
 
@@ -140,13 +152,14 @@ inline std::ostream & operator <<(std::ostream &o,unsigned bp[2])
   }
 */
 
-// you should probably only override (i.e. specialize) this...
+// you should probably only override (i.e. specialize) this... not sure how ADL will work. default is greater is better.
 template <class Deriv>
 struct lazy_kbest_derivation_traits
 {
+  // Deriv(a) < Deriv(b) iff b is better than a.
   static inline bool better_than(const Deriv &me,const Deriv &than)
   {
-    return me > than;
+    return than < me;
   }
 };
 
@@ -393,7 +406,7 @@ public:
       derivation=_derivation;
     }
     //NB: std::pop_heap puts largest element at top (max-heap)
-    inline bool operator <(const hyperedge &o) const {
+    inline bool operator <(const hyperedge &o) const { // true if o should dominate max-heap
       return derivation_better_than(o.derivation,derivation);
     }
     // means: this<o iff o better than this. good.
