@@ -431,7 +431,7 @@ addld() {
 }
 dylds() {
     for f in $racer/3rdparty/$lwarch/*; do
-        if [ -d $f/lib ] ; then
+        if [[ ${f%log4cxx-10.0.0} == $f ]] &&[ -d $f/lib ] ; then
             #echo $f
             addld $f/lib
         fi
@@ -550,7 +550,11 @@ racm() {
             fi
         fi
         set +x
-        make -j$MAKEPROC VERBOSE=1 "$prog" && (true;$prog "$@")
+        if [[ $prog ]] ; then
+            make -j$MAKEPROC "$prog" && $prog "$@"
+        else
+            make -j$MAKEPROC VERBOSE=1
+        fi
         if [[ $test ]] ; then make test ; fi
         for t in $tests; do
             ( set -e;

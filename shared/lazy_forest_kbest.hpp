@@ -371,10 +371,11 @@ public:
       child[1]=c1;
       derivation=_derivation;
     }
-    // we intend to use a max-heap, so a < b iff b is better than a
+    //NB: std::pop_heap puts largest element at top (max-heap)
     inline bool operator <(const hyperedge &o) const {
       return derivation_better_than(o.derivation,derivation);
     }
+    // means: this<o iff o better than this. good.
 
     template <class O>
     void print(O &o) const
@@ -394,13 +395,13 @@ public:
   void print(O &o) const
   {
     o << "{NODE @" << this << '[' << memo.size() << ']';
-    std::size_t s=size();
-    o << " size()="<<s;
+    std::size_t s=memo_size();
+    o << " #queued="<<pq_size();
     if (s) {
       o << ": " << " first={{{";
       filter().print(o,first_best()); //o<< first_best();
       o<< "}}}";
-      if (memo.size()>1) {
+      if (s>1) {
         o << " last={{{";
         filter().print(o,last_best());// o<< last_best();
         o<< "}}}";
@@ -455,7 +456,7 @@ public:
       if (memo[n] == PENDING()) {
         if (throw_on_cycle)
           throw lazy_derivation_cycle();
-        KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
+        KBESTERRORQ("lazy_forest::get_best","memo entry " << n << " for lazy_forest@0x" << (void*)this<<" is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
         memo[n] = NONE();
       }
       return memo[n]; // may be NONE
@@ -492,7 +493,11 @@ public:
   {
     return !memo.size() || memo.front()==NONE() || memo.front()==PENDING();
   }
-  std::size_t size() const
+  std::size_t pq_size() const
+  {
+    return pq.size();
+  }
+  std::size_t memo_size() const
   {
     std::size_t r=memo.size();
     for (;;) {
