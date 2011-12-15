@@ -1,6 +1,8 @@
 #ifndef GRAEHL_SHARED__TAILS_UP_HYPERGRAPH_HPP
 #define GRAEHL_SHARED__TAILS_UP_HYPERGRAPH_HPP
 
+//TODO: option to stop once you reach goal vertex (this is all-destinations right now)
+
 // (bottom-up) best hypertrees and reachability, using the bottom up [vertex]->[arcs with that tail/rules with that vertex in rhs] index: TailsUpHypergraph
 
 // g: ref to original hypergraph
@@ -348,12 +350,16 @@ struct TailsUpHypergraph {
     }
 
     void axiom(VD axiom,Cost const& c=PT::start(),ED h=ED()) {
-      EIFDBG(TUHG,3,SHOW2(TUHG,axiom,print(axiom,g)));
+      EIFDBG(TUHG,3,SHOW3(TUHG,c,axiom,print(axiom,g)));
       Cost &mc=mu[axiom];
       if (PT::update(c,mc)) {
+        assert(PT::includes(c,get(mu,axiom)));
         safe_queue(axiom);
         put(pi,axiom,h);
+      } else {
+        EIFDBG(TUHG,0,SHOWM4(TUHG,"WARNING: axiom didn't improve mu[axiom]",c,axiom,mu[axiom],print(axiom,g)));
       }
+
     }
 
     void operator()(VD v,Cost const& c) {
@@ -413,27 +419,32 @@ struct TailsUpHypergraph {
       Cost &m=mu[head];
       EIFDBG(TUHG,3,SHOWM5(TUHG,"relax?",head,print(head,g),c,mu[head],print(e,g)));
       if (PT::update(c,m)) {
+        assert(PT::includes(c,get(mu,head)));
         ++stat.n_update;
         put(pi,head,e);
         IFDBG(TUHG,2) { SHOWM4(TUHG,"updating-or-adding",head,print(head,g),mu[head],heap.loc(head)); }
         heap.push_or_update(head);
 // IFDBG(TUHG,3) { SHOWM3(TUHG,"updated-or-added",head,print(head,g),heap.loc(head)); }
-        TUHG_SHOWQ(3,"updated-or-added",head);
+        TUHG_SHOWQ(3,"relaxed",head);
+      } else {
+        EIFDBG(TUHG,3,SHOWM5(TUHG,"failed-relax",head,print(head,g),c,mu[head],print(e,g)));
       }
+
     }
 
     //skipping unreached tails:
     cost_type recompute_cost(ED e) {
       cost_type c=get(ec,e);
-      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost base",c,print(e,g)); }
+      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost:base",c,print(e,g)); }
       for (Tailr pti=tails(e,g);pti.first!=pti.second;++pti.first) {
-        VD t=*pti.first;
+        VD t=tail(*pti.first,e,g);  // possibly multiple instances of tail t
         cost_type tc=get(mu,t);
-        if (tc!=PT::unreachable())
-          c=PT::extend(c,tc); // possibly multiple
-        IFDBG(TUHG,6) { SHOWM3(TUHG,"recompute_cost tail",t,tc,c); }
+        EIFDBG(TUHG,6,SHOWM3(TUHG,"recompute_cost:c'=c*tc",c,tc,t));
+        assert(tc!=PT::unreachable()); //FIXME: maybe we want to allow this (used to be "if")? if we don't, then you can only reach with non-unreachable cost.
+        c=PT::extend(c,tc);
+        IFDBG(TUHG,9) { SHOWM3(TUHG,"recompute_cost:updated c=c*tc",c,tc,t); }
       }
-      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost final",c,print(e,g)); }
+      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost:final",c,print(e,g)); }
       return c;
     }
 

@@ -57,6 +57,8 @@ struct path_traits {
   }
   static inline cost_type repeat(cost_type a,float n) { return a*n; }
   static inline bool updates(cost_type a,cost_type b) { return a<b; } // note: this may be always true if you want to sum all paths until convergence e.g. combine=logplus(a,b) for LogWeight
+  static inline bool includes(cost_type const& a,cost_type const& b) { return !updates(a,b); } // just used for debugging so far
+
 };
 
 // for graphs which have sources and not source - ordered multihypergraphs
@@ -176,12 +178,9 @@ typename graph_object<G,hyperarc_tag_t>::iterator_pair begin_end(hyperarc_tag_t 
   iterator_property_map(Iterator i, OffsetMap m)*/
 
 
-
 /*template <class V,class O>
   struct ArrayPMap;
 */
-
-
 
 
 /*: public ByRef<ArrayPMapImp<V,O> >

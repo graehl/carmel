@@ -2,7 +2,11 @@
 withdbg() {
     local d=$1
     shift
-    HYPERGRAPH_DBG=$d LAZYK_DBG=$d HGBEST_DBG=$d "$@"
+    local gdbc=
+    if [ "$gdb" ] ; then
+        gdbc="gdb --args"
+    fi
+    HYPERGRAPH_DBG=$d LAZYK_DBG=$d HGBEST_DBG=$d TUHG_DBG=$d $gdbc "$@"
 }
 empull() {
     cd ~/.emacs.d
