@@ -19,7 +19,7 @@
 
    or:
 
-   alg.init();  // same as above but also sets pi for terminal arcs
+   alg.init(); // same as above but also sets pi for terminal arcs
    alg.finish();
 
    or:
@@ -116,7 +116,8 @@ struct HTailMult  {
 template <class G,
           class EdgeMapFactory=property_factory<G,edge_tag>,
           class VertMapFactory=property_factory<G,vertex_tag>,
-          class ContS=VectorS >
+          class ContS=VectorS // how we hold the adjacent edges for tail vert.
+>
 struct TailsUpHypergraph {
   //ED: hyperedge descriptor. VD: vertex
   typedef TailsUpHypergraph<G,EdgeMapFactory,VertMapFactory,ContS> Self;
@@ -134,7 +135,7 @@ struct TailsUpHypergraph {
   typedef typename GT::edge_descriptor ED;
   typedef typename GT::vertex_descriptor VD;
 
-//  typedef HTailMult<ED> TailMult;
+// typedef HTailMult<ED> TailMult;
   typedef ED Tail;
 
   typedef typename ContS::template container<ED>::type TerminalArcs;
@@ -192,8 +193,8 @@ struct TailsUpHypergraph {
         Tail const&la=last_added(a);
         if (a.size()&&la == ed) {
           // last hyperarc with same tail = same hyperarc
-//          ++la.multiplicity;
-        } else {          // new (unique) tail
+// ++la.multiplicity;
+        } else { // new (unique) tail
           add(a,Tail(ed)); // default multiplicity=1
           ++ntails_uniq;
         }
@@ -208,7 +209,7 @@ struct TailsUpHypergraph {
   void count_unique_tails(EdgePMap &e) {
     for(typename Adjs::const_iterator i=adj.begin(),e=adj.end();i!=e;++i) {
       for (typename Adj::const_iterator j=i->begin(),ej=i->end();j!=ej;++j) {
-//        const TailMult &ad=*j;
+// const TailMult &ad=*j;
         ++e[*j];
       }
     }
@@ -217,7 +218,7 @@ struct TailsUpHypergraph {
   typedef std::size_t heap_loc_t;
 
   typedef typename PT::cost_type cost_type;
-  // NONNEGATIVE COSTS ONLY!  otherwise may try to adjust the cost of something on heap that was already popped (memory corruption ensues)
+  // NONNEGATIVE COSTS ONLY! otherwise may try to adjust the cost of something on heap that was already popped (memory corruption ensues)
   // costmap must be initialized to initial costs (for start vertices) or infinity (otherwise) by user
   // pi (predecessor map) must also be initialized (to hypergraph_traits<G>::null_hyperarc()?) if you want to detect unreached vertices ... although mu=infty can do as well
   // edgecostmap should be initialized to edge costs
@@ -229,8 +230,8 @@ struct TailsUpHypergraph {
     class EdgeCostMap=typename EdgeMapFactory::template rebind<cost_type>::reference
   >
   struct BestTree {
-//    typedef typename VertMapFactory::template rebind<ED>::impl DefaultPi;
-//    typedef typename VertMapFactory::template rebind<cost_type>::impl DefaultMu;
+// typedef typename VertMapFactory::template rebind<ED>::impl DefaultPi;
+// typedef typename VertMapFactory::template rebind<cost_type>::impl DefaultMu;
     Self &tu;
     graph const& g;
 
@@ -246,8 +247,8 @@ struct TailsUpHypergraph {
     LocsP locp;
 
     //typedef typename boost::unwrap_reference<VertexCostMap>::type::value_type Cost;
-//    typedef typename boost::unwrap_reference<EdgeCostMap>::type::value_type Cost;
-//    typedef typename boost::property_traits<EdgeCostMap>::value_type Cost;
+// typedef typename boost::unwrap_reference<EdgeCostMap>::type::value_type Cost;
+// typedef typename boost::property_traits<EdgeCostMap>::value_type Cost;
     typedef cost_type Cost;
     typedef typename ET::tails_size_type Ntails;
 
@@ -257,8 +258,8 @@ struct TailsUpHypergraph {
       RemainInf(Ntails const& n,Cost const& c) : P(n,c) {}
       Ntails remain() const { return this->first; }
       Cost const& cost() const { return this->second; }
-//      operator Cost() const { return this->second; }
-//      typedef Cost value_type;
+// operator Cost() const { return this->second; }
+// typedef Cost value_type;
       Ntails & remain() { return this->first; }
       Cost & cost() { return this->second; }
       template <class O> void print(O&o) const {
@@ -319,7 +320,7 @@ struct TailsUpHypergraph {
       , heap(mu,locp)
     {
       copy_pmap(edgeT,g,remain_pmap,tu.unique_tails_pmap);
-//      visit(edgeT,g,make_indexed_pair_copier(remain_pmap,tu.unique_tails_pmap,ec)); // pair(rem)<-(tr,ev)
+// visit(edgeT,g,make_indexed_pair_copier(remain_pmap,tu.unique_tails_pmap,ec)); // pair(rem)<-(tr,ev)
       init_costs();
     }
 
@@ -341,7 +342,7 @@ struct TailsUpHypergraph {
         ED h=*i;
         VD v=source(h,g);
         Cost hc=get(ec,h);
-        //        typename unwrap_reference<VertexCostMap>::type &dmu(mu);
+        // typename unwrap_reference<VertexCostMap>::type &dmu(mu);
         axiom(v,hc);
       }
     }
@@ -394,7 +395,7 @@ struct TailsUpHypergraph {
     }
 
     bool is_queued(VD v) const {
-//      return get(loc,v) || (!heap.empty() && heap.top()==v); // 0 init relied upon, but 0 is a valid location. could set locs to -1 beforehand instead
+// return get(loc,v) || (!heap.empty() && heap.top()==v); // 0 init relied upon, but 0 is a valid location. could set locs to -1 beforehand instead
       return heap.contains(v);
     }
     VD top() const {
@@ -403,7 +404,7 @@ struct TailsUpHypergraph {
     void pop() {
       ++stat.n_pop;
       TUHG_SHOWQ(1,"pop",heap.top());
-//      IFDBG(TUHG,1) { SHOWM(TUHG,"pop",heap.top()); }
+// IFDBG(TUHG,1) { SHOWM(TUHG,"pop",heap.top()); }
       heap.pop();
     }
 
@@ -416,7 +417,7 @@ struct TailsUpHypergraph {
         put(pi,head,e);
         IFDBG(TUHG,2) { SHOWM4(TUHG,"updating-or-adding",head,print(head,g),mu[head],heap.loc(head)); }
         heap.push_or_update(head);
-//        IFDBG(TUHG,3) { SHOWM3(TUHG,"updated-or-added",head,print(head,g),heap.loc(head)); }
+// IFDBG(TUHG,3) { SHOWM3(TUHG,"updated-or-added",head,print(head,g),heap.loc(head)); }
         TUHG_SHOWQ(3,"updated-or-added",head);
       }
     }
@@ -439,7 +440,7 @@ struct TailsUpHypergraph {
     void reach(VD tail) {
       TUHG_SHOWQ(2,"reach",tail);
       const Adj &a=tu[tail];
-//          FOREACH(const TailMult &ad,a) { // for each hyperarc v participates in as a tail
+// FOREACH(const TailMult &ad,a) { // for each hyperarc v participates in as a tail
       bool tail_already=tail_already_reached(tail);
       mark_reached(tail);
       IFDBG(TUHG,2) { SHOWM4(TUHG,"reach",tail,print(tail,g),mu[tail],tail_already); }
@@ -454,8 +455,8 @@ struct TailsUpHypergraph {
         } else {
           EIFDBG(TUHG,4,SHOWM3(TUHG,"may yet reach",head,already_reached(head),print(e,g)));
           /* for negative costs: will need to track every tails' cost last used for an edge, or just compute edge cost from scratch every time. or need to remember for each vertex last cost used. */
-//        const TailMult &ad=*j;
-//            ri.cost() = PT::extend(ri.cost(),PT::repeat(get(mu,tail),ad.multiplicity));  // assess the cost of reaching v // only reason to do this early is to have a bound and discard edge forever if head head_already better-reached. doesn't seem important to do so. TODO: remove cost() member
+// const TailMult &ad=*j;
+// ri.cost() = PT::extend(ri.cost(),PT::repeat(get(mu,tail),ad.multiplicity)); // assess the cost of reaching v // only reason to do this early is to have a bound and discard edge forever if head head_already better-reached. doesn't seem important to do so. TODO: remove cost() member
           // if v completes the hyperarc, or we allow rereaching, attempt to use it to reach head (more cheaply):
           Ntails &tails_unreached=remain_pmap[e];
           if (!tail_already) {

@@ -1,4 +1,10 @@
 #file arg comes first! then cmd, then args
+empull() {
+    cd ~/.emacs.d
+    git pull
+    cd site-lisp
+    gitsubpull *
+}
 stashx() {
     cd ~/c
     local s=~/c/stash.`timestamp`
@@ -328,6 +334,7 @@ relnshared() {
     lnshared $(usedshared)
 }
 lnhg() {
+    ln -sf $racer/Debug/Hypergraph/Test* ~/bin
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
     ln -sf $racer/Debug/Tokenizer/*Tokenizer ~/bin
 }
@@ -531,15 +538,19 @@ racm() {
         shift || true
         cd $racerbuild
         set -x
-        if [ "$*" ] ; then
+        local prog=$1
+        shift
+        if [ "$prog" ] ; then
             for f in $* ; do
                 rm -f Hypergraph/CMakeFiles/$f.dir/src/$f.cpp.o
             done
-            test=
-            tests=
+            if [[ ${prog#Test} = $prog ]] ; then
+                test=
+                tests=
+            fi
         fi
         set +x
-        make -j$MAKEPROC VERBOSE=1 "$@"
+        make -j$MAKEPROC VERBOSE=1 "$prog" && (true;$prog "$@")
         if [[ $test ]] ; then make test ; fi
         for t in $tests; do
             ( set -e;

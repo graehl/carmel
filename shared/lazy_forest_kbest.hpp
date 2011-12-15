@@ -1,6 +1,8 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+//FIXME: uses static (global) state - so only one lazy kbest can be in progress. can't imagine why that would be a problem, but watch out!
+
 /**
 
    note: no predicate is supplied for comparing derivations; instead, it's
@@ -39,10 +41,16 @@
   }
   };
 
-  Result(a) < Result(b) iff b is better than a.
+  bool derivation_better_than(derivation_type a,derivation_type b);
+
+  or
+
+  // Result(a) < Result(b) iff b is better than a.
 
   then build a lazy_forest<Factory> binary hypergraph
 */
+
+//TODO: use d_ary_heap.hpp (faster than binary)
 
 ///\{
 
@@ -183,6 +191,16 @@ return new Result(prototype,old_child,new_child,changed_child_index);
 **/
 // TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
 
+struct none_t {};
+struct pending_t {};
+
+struct dummy_init_type
+{
+  template <class Init>
+  dummy_init_type(Init const& g) {}
+};
+
+
 struct permissive_kbest_filter
 {
   /*
@@ -196,6 +214,7 @@ struct permissive_kbest_filter
   };
 
   typedef dummy_init_type init_type;
+  permissive_kbest_filter() {}
   permissive_kbest_filter(init_type const& g) {}
 
   template <class E>
@@ -218,6 +237,29 @@ struct permissive_kbest_filter_factory
   }
 };
 
+template <class filter>
+struct default_filter_factory
+{
+  typedef filter filter_type;
+  filter filter_init() const
+  {
+    return filter();
+  }
+};
+
+template <class filter>
+struct copy_filter_factory
+{
+  typedef filter filter_type;
+  filter f;
+  copy_filter_factory() {}
+  copy_filter_factory(filter const& f) : f(f) {}
+  copy_filter_factory(copy_filter_factory const& o) : f(o.f) {}
+  filter const& filter_init() const
+  {
+    return f;
+  }
+};
 
 struct lazy_kbest_stats
 {
@@ -299,7 +341,7 @@ public:
     memo.swap(o.memo);
   }
 
-  //FIXME: faster heap operations if we put handles to hyperedges on heap instead of copying?
+  //FIXME: faster heap operations if we put handles to hyperedges on heap instead of copying? boost object pool?
   struct hyperedge {
     typedef hyperedge self_type;
     /// antecedent subderivation forest (OR-nodes). if unary,
@@ -338,7 +380,7 @@ public:
     void print(O &o) const
     {
       o << "{hyperedge(";
-      if ( child[0]) {
+      if (child[0]) {
         o << child[0] << '[' << childbp[0] << ']';
         if (child[1])
           o << "," << child[1] << '[' << childbp[1] << ']';
@@ -352,11 +394,13 @@ public:
   void print(O &o) const
   {
     o << "{NODE @" << this << '[' << memo.size() << ']';
-    if (memo.size()) {
+    std::size_t s=size();
+    o << " size()="<<s;
+    if (s) {
       o << ": " << " first={{{";
       filter().print(o,first_best()); //o<< first_best();
       o<< "}}}";
-      if (memo.size()>2) {
+      if (memo.size()>1) {
         o << " last={{{";
         filter().print(o,last_best());// o<< last_best();
         o<< "}}}";
@@ -411,7 +455,7 @@ public:
       if (memo[n] == PENDING()) {
         if (throw_on_cycle)
           throw lazy_derivation_cycle();
-        KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
+        KBESTERRORQ("LazyKBest::get_best","memo entry " << n << " is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
         memo[n] = NONE();
       }
       return memo[n]; // may be NONE
@@ -444,6 +488,21 @@ public:
     assertlvl(11,memo.size()>1);
     return *(memo.end()-2);
   }
+  bool empty() const
+  {
+    return !memo.size() || memo.front()==NONE() || memo.front()==PENDING();
+  }
+  std::size_t size() const
+  {
+    std::size_t r=memo.size();
+    for (;;) {
+      if (r==0) return 0;
+      --r;
+      if ((memo[r]!=NONE() && memo[r]!=PENDING()))
+        return r+1;
+    }
+  }
+
   /// returns best non-DONE derivation (one must exist!)
   derivation_type first_best() const {
     assertlvl(11,memo.size() && memo.front() != NONE() && memo.front() != PENDING());
@@ -539,6 +598,10 @@ public:
   /// optional: if you call only add() on sorted, you must finish_adding(). otherwise don't call, or call sort() instead
   void finish_adding(bool check_best_is_selfloop=false)
   {
+    if (pq.empty()) {
+      set_first_best(NONE());
+      return;
+    }
     if (check_best_is_selfloop && !postpone_selfloop())
       throw lazy_derivation_cycle();
     memo.clear();
