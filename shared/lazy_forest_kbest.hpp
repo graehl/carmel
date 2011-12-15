@@ -3,6 +3,8 @@
 
 //TODO: cycles - if you found a pending, then try not queueing successors until you're added to memo table. but MAYBE our successors first approach makes us handle negative cost improvements more nicely? not sure. if not, then always queue successors afterwards.
 
+//FIXME: see postpone_selfloop for weakness in current cycle handling - apparently want a non-cycle 2nd best, then it's sort of ok?
+
 //FIXME: uses static (global) state - so only one lazy kbest can be in progress. can't imagine why that would be a problem, but watch out!
 
 /**
@@ -343,6 +345,7 @@ public:
     KBESTNESTT;
     clear_stats();
     for (unsigned i=0;i<k;++i) {
+      EIFDBG(LAZYF,2,SHOWM2(LAZYF,"enumerate_kbest-pre",i,*this));
       derivation_type ith_best=get_best(i);
       if (ith_best == NONE()) break;
       if (!visit(ith_best,i)) break;
@@ -396,8 +399,7 @@ public:
     // means: this<o iff o better than this. good.
 
     template <class O>
-    void print(O &o) const
-    {
+    void print(O &o) const {
       o << "{hyperedge(";
       if (child[0]) {
         o << child[0] << '[' << childbp[0] << ']';
@@ -407,19 +409,36 @@ public:
       o << ")=" << derivation;
       o << '}';
     }
+    template <class C,class T>
+    friend std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T> &o, hyperedge const& self)
+    { self.print(o); return o; }
+
   };
 
   template <class O>
   void print(O &o) const
   {
+    print(o,2);
+  }
+
+  template <class O>
+  void print(O &o,unsigned nqueue) const
+  {
     o << "{NODE @" << this << '[' << memo.size() << ']';
     std::size_t s=memo_size();
     o << " #queued="<<pq_size();
-    if (s) {
+    if (nqueue>pq.size())
+      nqueue=pq.size();
+    for (unsigned i=0;i<nqueue;++i) {
+      o<<" q["<<i<<"]={{{";
+      o<<pq[i];
+      o<<"}}}";
+    }
+    if (s>(nqueue?1:0)) {
       o << ": " << " first={{{";
       filter().print(o,first_best()); //o<< first_best();
       o<< "}}}";
-      if (s>1) {
+      if (s>2) {
         o << " last={{{";
         filter().print(o,last_best());// o<< last_best();
         o<< "}}}";
@@ -667,6 +686,7 @@ public:
     derivation_type new_child=(child_node.get_best(++child_i));
     if (new_child!=NONE()) { // has child-succesor
       KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
+      EIFDBG(LAZYF,6,SHOWM7(LAZYF,"generator_successor-child-i",i,pending.childbp[0],pending.childbp[1], old_parent,old_child,new_child,child_node));
       pending.derivation=derivation_factory.make_worse(old_parent,old_child,new_child,i);
       KBESTINFOT("new derivation: "<<pending.derivation);
       push(pending);
