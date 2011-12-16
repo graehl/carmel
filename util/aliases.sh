@@ -1,4 +1,20 @@
 #file arg comes first! then cmd, then args
+withdbg() {
+    local d=$1
+    shift
+    local gdbc=
+    if [ "$gdb" ] ; then
+        gdbc="gdb --args"
+    fi
+# TUHG_DBG=$d
+    TUHG_DBG=$d HYPERGRAPH_DBG=$d LAZYF_DBG=$d HGBEST_DBG=$d $gdbc "$@"
+}
+empull() {
+    cd ~/.emacs.d
+    git pull
+    cd site-lisp
+    gitsubpull *
+}
 stashx() {
     cd ~/c
     local s=~/c/stash.`timestamp`
@@ -328,6 +344,7 @@ relnshared() {
     lnshared $(usedshared)
 }
 lnhg() {
+    ln -sf $racer/Debug/Hypergraph/Test* ~/bin
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
     ln -sf $racer/Debug/Tokenizer/*Tokenizer ~/bin
 }
@@ -424,7 +441,7 @@ addld() {
 }
 dylds() {
     for f in $racer/3rdparty/$lwarch/*; do
-        if [ -d $f/lib ] ; then
+        if [[ ${f%log4cxx-10.0.0} == $f ]] &&[ -d $f/lib ] ; then
             #echo $f
             addld $f/lib
         fi
@@ -492,8 +509,9 @@ urac() {
     if ! [ "$noup" ] ; then svn update ; fi
 }
 crac() {
-    cd $racer
+    pushd $racer
     svn commit -m "$*"
+    popd
 }
 commx() {
     crac "$@"
@@ -531,15 +549,23 @@ racm() {
         shift || true
         cd $racerbuild
         set -x
-        if [ "$*" ] ; then
-            for f in $* ; do
-                rm -f Hypergraph/CMakeFiles/$f.dir/src/$f.cpp.o
-            done
-            test=
-            tests=
+        local prog=$1
+        if [ "$prog" ] ; then
+            shift
+            rm -f Hypergraph/CMakeFiles/$prog.dir/src/$prog.cpp.o
+            if [[ ${prog#Test} = $prog ]] ; then
+                test=
+                tests=
+            else
+                prog=
+            fi
         fi
         set +x
-        make -j$MAKEPROC VERBOSE=1 "$@"
+        if [[ $prog ]] ; then
+            make -j$MAKEPROC "$prog" && $prog "$@"
+        else
+            make -j$MAKEPROC VERBOSE=1
+        fi
         if [[ $test ]] ; then make test ; fi
         for t in $tests; do
             ( set -e;
