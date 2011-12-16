@@ -15,6 +15,9 @@ empull() {
     cd site-lisp
     gitsubpull *
 }
+rmstashx() {
+    rm -rf ~/c/stash.*
+}
 stashx() {
     cd ~/c
     local s=~/c/stash.`timestamp`
@@ -552,7 +555,7 @@ racm() {
         local prog=$1
         if [ "$prog" ] ; then
             shift
-            rm -f Hypergraph/CMakeFiles/$prog.dir/src/$prog.cpp.o
+            rm -f Hypergraph/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
             if [[ ${prog#Test} = $prog ]] ; then
                 test=
                 tests=

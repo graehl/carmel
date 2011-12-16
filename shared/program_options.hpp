@@ -208,36 +208,36 @@ inline bool contains(boost::program_options::variables_map const& vm,std::string
     self_type &
     multiple(char const* name,
              V *val,
-             char const* description)
+             char const* description, bool hidden=false)
     {
-      return (*this)(name,optional_value(val)->multitoken(),description);
+      return (*this)(name,optional_value(val)->multitoken(),description,hidden);
     }
 
     template <class V>
     self_type &
     multiple(char const* name,
              V *val,
-             std::string const& description)
+             std::string const& description, bool hidden=false)
     {
-      return (*this)(name,optional_value(val)->multitoken(),description);
+      return (*this)(name,optional_value(val)->multitoken(),description,hidden);
     }
 
     template <class V>
     self_type &
     optional(char const* name,
              V *val,
-             std::string const& description)
+             std::string const& description, bool hidden=false)
     {
-      return (*this)(name,optional_value(val),description);
+      return (*this)(name,optional_value(val),description,hidden);
     }
 
     template <class V>
     self_type &
     optional(char const* name,
              V *val,
-             char const* description)
+             char const* description, bool hidden=false)
     {
-      return (*this)(name,optional_value(val),description);
+      return (*this)(name,optional_value(val),description,hidden);
     }
 
 
@@ -245,18 +245,18 @@ inline bool contains(boost::program_options::variables_map const& vm,std::string
     self_type &
     defaulted(char const* name,
               V *val,
-              std::string const& description)
+              std::string const& description, bool hidden=false)
     {
-      return (*this)(name,defaulted_value(val),description);
+      return (*this)(name,defaulted_value(val),description,hidden);
     }
 
     template <class V>
     self_type &
     defaulted(char const* name,
               V *val,
-              char const* description)
+              char const* description, bool hidden=false)
     {
-      return (*this)(name,defaulted_value(val),description);
+      return (*this)(name,defaulted_value(val),description,hidden);
     }
 
     boost::shared_ptr<string_pool> descs; // because opts lib only takes char *, hold them here.
@@ -264,9 +264,9 @@ inline bool contains(boost::program_options::variables_map const& vm,std::string
     self_type &
     operator()(char const* name,
                boost::program_options::typed_value<T,C> *val,
-               std::string const& description)
+               std::string const& description,bool hidden=false)
     {
-      return (*this)(name,val,descs->construct(description)->c_str());
+      return (*this)(name,val,descs->construct(description)->c_str(),hidden);
     }
 
     std::size_t n_this_level,n_nonempty_groups;
@@ -274,19 +274,21 @@ inline bool contains(boost::program_options::variables_map const& vm,std::string
     self_type &
     operator()(char const* name,
                boost::program_options::typed_value<T,C> *val,
-               char const*description=NULL)
+               char const*description=NULL,bool hidden=false)
     {
       ++n_this_level;
       printable_option opt((T *)0,simple_add(name,val,description));
-      pr_options.push_back(opt);
+      if (!hidden)
+        pr_options.push_back(opt);
       return *this;
     }
 
 
     self_type&
-    add(self_type const& desc)
+    add(self_type const& desc,bool hidden=false)
     {
       options_description::add(desc);
+      if (hidden) return *this;
       groups.push_back(group_type(new self_type(desc)));
       if (desc.size()) {
         for (typename options_type::const_iterator i=desc.pr_options.begin(),e=desc.pr_options.end();

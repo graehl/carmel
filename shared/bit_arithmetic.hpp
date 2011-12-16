@@ -16,6 +16,22 @@ using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
 
+unsigned count_set_bits(uint32_t i)
+{
+    i = i - ((i >> 1) & 0x55555555);
+    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+    return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+unsigned count_set_bits(int32_t i)
+{
+  return count_set_bits((uint32_t)i);
+}
+
+unsigned count_set_bits(uint64_t x)
+{
+  return count_set_bits((uint32_t)x)+count_set_bits((uint32_t)(x>>32));
+}
 
 /// while this is covered by the complicated generic thing below, I want to be sure the hash fn. uses the right code
 inline
