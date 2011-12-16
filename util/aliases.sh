@@ -501,7 +501,7 @@ racb() {
     if [ "$*" ] ; then
         fa="-DCMAKE_CXX_FLAGS='$*'"
     fi
-    cmarg="-DCMAKE_BUILD_TYPE=$build"
+    cmarg="-DLOG4CXX_ROOT=/usr/local -DCMAKE_BUILD_TYPE=$build"
 }
 racd() {
     cd $racer
