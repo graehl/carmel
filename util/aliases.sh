@@ -303,7 +303,7 @@ lnshared() {
 lnshared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/3rdParty/graehl/shared
+    local d=$racer/graehl/shared
     local g=$d/$1
 
     if [ -r $f ] ; then
@@ -321,7 +321,7 @@ lnshared1() {
 racershared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/3rdParty/graehl/shared
+    local d=$racer/graehl/shared
     local g=$d/$1
     if [ -f $g ] ; then
         if [ "$force" ] ; then
@@ -332,12 +332,12 @@ racershared1() {
     fi
 }
 usedshared() {
-    (cd $racer/3rdParty/graehl/shared/;ls *.hpp)
+    (cd $racer/graehl/shared/;ls *.hpp)
 }
 diffshared1() {
     local s=~/t/graehl/shared/
     local f=$s/"$1"
-    local d=$racer/3rdParty/graehl/shared/
+    local d=$racer/graehl/shared/
     diff -u -w $f $d/$1
 }
 diffshared() {
