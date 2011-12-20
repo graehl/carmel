@@ -252,7 +252,7 @@ absdirname() {
     local b=${1:-.}
     dirname $(readlink -nfs "$b")
 }
-summarize-num() {
+summarize_num() {
     perl ~graehl/t/graehl/util/summarize_num.pl "$@"
 }
 casub() {
@@ -485,7 +485,6 @@ save12() {
     echo2 saved output:
     echo2 `relpath ~ $out`
 }
-
 
 
 #keep error code but no output
@@ -2417,7 +2416,6 @@ s/ +\)/\)/g; s/\( +/\(/g;
 s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
 '  "$@"
 }
-
 
 
 decode-log-sum() {

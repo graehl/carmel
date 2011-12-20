@@ -1,4 +1,20 @@
 #file arg comes first! then cmd, then args
+revx() {
+    local dr=p
+    local sum=$1
+    shift
+    if [[ $dryrun ]] ; then
+        dr="n"
+    fi
+    pushd ~/x
+    set -x
+    if [ "$sum" ] ; then
+        post-review  -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        crac "$sum: $*"
+    fi
+    set +x
+    popd
+}
 withdbg() {
     local d=$1
     shift
@@ -349,7 +365,7 @@ relnshared() {
 lnhg() {
     ln -sf $racer/Debug/Hypergraph/Test* ~/bin
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
-    ln -sf $racer/Debug/Tokenizer/*Tokenizer ~/bin
+    ln -sf $racer/Debug/FsTokenizer/*FsTokenizer* ~/bin
 }
 rebuildc() {
     (set -e
@@ -555,7 +571,7 @@ racm() {
         local prog=$1
         if [ "$prog" ] ; then
             shift
-            rm -f Hypergraph/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
+            rm -f {Hypergraph,FsTokenizer}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
             if [[ ${prog#Test} = $prog ]] ; then
                 test=
                 tests=
