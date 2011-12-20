@@ -14,7 +14,7 @@ nright=${5}
 #showvars_required nleft LEFT nright RIGHT
 # Call the diff command (change the following line to make sense for
 # your merge program).
-$DIFF --label="$nleft" $LEFT --label "$nright" $RIGHT -w -u
+$DIFF  -w -u -b --label="$nleft" $LEFT --label "$nright" $RIGHT
 
 # Return an errorcode of 0 if no differences were detected, 1 if some were.
 # Any other errorcode will be treated as fatal.

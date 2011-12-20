@@ -154,13 +154,13 @@ class stopwatch
 #endif
     }
 
-    double total_time(timer_type type) const
+    double total_time(timer_type type=TOTAL_TIME) const
     {
         if (!valid_type(type))
             throw std::runtime_error("stopwatch: invalid timer type");
         return totals[type] + recent_time(type);
     }
-    double recent_time(timer_type type) const
+    double recent_time(timer_type type=TOTAL_TIME) const
     {
         if (!valid_type(type))
             throw std::runtime_error("stopwatch: invalid timer type");
@@ -225,4 +225,3 @@ class stopwatch
 }//graehl
 
 #endif
-
