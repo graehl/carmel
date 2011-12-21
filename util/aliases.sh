@@ -1,4 +1,8 @@
 #file arg comes first! then cmd, then args
+tokt() {
+pushd ~/x/racerx/FsTokenizer
+./test.sh "$@"
+}
 revx() {
     local dr=p
     local sum=$1
