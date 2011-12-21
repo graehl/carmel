@@ -25,13 +25,18 @@ namespace graehl {
 
 struct time_change
 {
+  static const double ns_to_s=.000000001; // nanoseconds -> frac sec
   static char const* default_desc()
   { return "\nelapsed: "; }
 #if USE_BOOST_TIMER_TIMER
   boost::timer::cpu_timer time;
+  double elapsed_wall() const
+  {
+    return time.elapsed().wall*ns_to_s;
   double elapsed() const
   {
-    return time.elapsed()*1e-9; // nanoseconds -> frac sec
+    boost::timer::cpu_times t=time.elapsed();
+    return ns_to_s*(t.system+t.user);
   }
   void start() {time.start();}
   void resume() {time.resume();}
