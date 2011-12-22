@@ -2742,7 +2742,7 @@ upt()
 }
 function commt
 {
-(set -x
+(set -e
     pushd ~/t
     svn commit -m "$*"
     popd
