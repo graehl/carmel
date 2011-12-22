@@ -2742,12 +2742,14 @@ upt()
 }
 function commt
 {
+(set -x
     pushd ~/t
     svn commit -m "$*"
     popd
     pushd ~/r/graehl/shared
     svn commit -m "$*"
     popd
+)
 }
 
 mlm=~/t/utilities/make.lm.sh
