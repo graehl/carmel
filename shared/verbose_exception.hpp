@@ -83,7 +83,10 @@ struct verbose_exception : public std::exception
     : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2) {}                                                 \
   template <class M1,class M2,class M3>                                                                         \
   type(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3)                     \
-    : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2,m3) {}
+    : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2,m3) {}                                              \
+  template <class M1,class M2,class M3,class M4>                                                                \
+  type(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3,const M4 &m4)        \
+    : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2,m3,m4) {}
 
 #define VERBOSE_EXCEPTION_DECLARE(type) struct type : graehl::verbose_exception { VERBOSE_EXCEPTION_WRAP(type) };
 
