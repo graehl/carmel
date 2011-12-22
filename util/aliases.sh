@@ -1,4 +1,14 @@
 #file arg comes first! then cmd, then args
+tokdot() {
+local t=${1:-2}
+shift
+local s=${1:-9}
+shift
+pushd ~/x/racerx/FsTokenizer
+stopw=$s tokw=$t draw=1 ./test.sh tiny.{vcb,untok}
+hgdot ~/r/FsTokenizer/work/s=$s,t=$t/tiny.vcb.trie.gz
+popd
+}
 tokt() {
 pushd ~/x/racerx/FsTokenizer
 ./test.sh "$@"
