@@ -12,6 +12,11 @@
 
 #include <boost/config.hpp>
 
+#include <limits.h>
+#ifndef CHAR_BIT
+# define CHAR_BIT 8
+#endif
+
 #include <list>
 #ifdef BOOST_HAS_SLIST
 #include BOOST_SLIST_HEADER
@@ -244,6 +249,36 @@ struct ptr_hash {
   }
 };
 
+static const boost::uint32_t golden_ratio_fraction_32u=2654435769U; // (floor of 2^32/golden_ratio)
+inline void uint32_hash_inplace(boost::uint32_t &a)
+{
+    a *= golden_ratio_fraction_32u; // mixes the lower bits into the upper bits, reversible
+    a ^= (a >> 16); // gets some of the goodness back into the lower bits, reversible
+}
+
+inline boost::uint32_t uint32_hash_fast(boost::uint32_t a)
+{
+  uint32_hash_inplace(a);
+  return a;
+}
+
+inline std::size_t hash_rotate_left(std::size_t x)  // there is probably an ASM instruction for this; does -O3 find it?
+{
+  return x<<1 | x>>((sizeof(std::size_t))*CHAR_BIT-1);
+}
+
+inline void mix_hash_inplace(std::size_t &a, std::size_t b)
+{
+    a ^= hash_rotate_left(b);
+}
+
+inline std::size_t mix_hash_fast(std::size_t a, std::size_t b)
+{
+    a ^= hash_rotate_left(b);
+    return a;
+}
+
 }//ns
+
 
 #endif

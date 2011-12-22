@@ -33,6 +33,7 @@ struct time_change
   double elapsed_wall() const
   {
     return time.elapsed().wall*ns_to_s;
+  }
   double elapsed() const
   {
     boost::timer::cpu_times t=time.elapsed();
