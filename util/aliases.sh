@@ -1,17 +1,59 @@
 #file arg comes first! then cmd, then args
+locp=${locp:9922}
+tun1() {
+    local p=${3:-$port}
+    if ! [[ $p ]] ; then
+        p=$locp
+        locp=$((locp+1))
+    fi
+#  ssh -L9922:svn.languageweaver.com:443 -N -t -x pontus.languageweaver.com -p 4640 &
+    set -x
+    ssh -L$p:${1:-c-jgraehl.languageweaver.com}:${2:-22} -N -t -x ${4:-ceto}.languageweaver.com -p 4640
+    set +x
+    lp=localhost:$p
+    echo lp
+    echo $lp
+}
+revboardp=9921
+rxsvnp=9922
+tuns() {
+    if ! [[ $nokill ]]; then
+        for i in `seq 1 10`; do
+            kill %$i
+        done
+    fi
+    tun1 revboard 80 $revboardp &
+    tun1 svn 80 $rxsvnp &
+}
+rxsvn="http://svn.languageweaver.com/svn/repos2/cme/trunk/racerx/racerx"
+rxlocal="http://localhost:$rxsvnp/svn/repos2/cme/trunk/racerx/racerx"
+rxtun() {
+(
+cd ~/r
+set -x
+svn switch --relocate $rxsvn $rxlocal
+)
+}
+rxlw() {
+(
+cd ~/r
+set -x
+svn switch --relocate $rxlocal $rxsvn
+)
+}
 tokdot() {
-local t=${1:-2}
-shift
-local s=${1:-9}
-shift
-pushd ~/x/racerx/FsTokenizer
-stopw=$s tokw=$t draw=1 ./test.sh tiny.{vcb,untok}
-hgdot ~/r/FsTokenizer/work/s=$s,t=$t/tiny.vcb.trie.gz
-popd
+    local t=${1:-2}
+    shift
+    local s=${1:-9}
+    shift
+    pushd ~/x/racerx/FsTokenizer
+    stopw=$s tokw=$t draw=1 ./test.sh tiny.{vcb,untok}
+    hgdot ~/r/FsTokenizer/work/s=$s,t=$t/tiny.vcb.trie.gz
+    popd
 }
 tokt() {
-pushd ~/x/racerx/FsTokenizer
-./test.sh "$@"
+    pushd ~/x/racerx/FsTokenizer
+    ./test.sh "$@"
 }
 revx() {
     local dr=p
@@ -23,8 +65,40 @@ revx() {
     pushd ~/x
     set -x
     if [ "$sum" ] ; then
-        post-review  -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        post-review -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
         crac "$sum: $*"
+    fi
+    set +x
+    popd
+}
+revx() {
+    local dr=p
+    local sum=$1
+    shift
+    if [[ $dryrun ]] ; then
+        dr="n"
+    fi
+    pushd ~/x
+    set -x
+    if [ "$sum" ] ; then
+        post-review -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        crac "$sum: $*"
+    fi
+    set +x
+    popd
+}
+revr() {
+    local dr=p
+    local sum=$1
+    shift
+    if [[ $dryrun ]] ; then
+        dr="n"
+    fi
+    pushd ~/r
+    set -x
+    if [ "$sum" ] ; then
+        post-review -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        svn commit -m "$sum: $*"
     fi
     set +x
     popd
@@ -2752,14 +2826,14 @@ upt()
 }
 function commt
 {
-(set -e
-    pushd ~/t
-    svn commit -m "$*"
-    popd
-    pushd ~/r/graehl/shared
-    svn commit -m "$*"
-    popd
-)
+    (set -e
+        pushd ~/t
+        svn commit -m "$*"
+        popd
+        pushd ~/r/graehl/shared
+        svn commit -m "$*"
+        popd
+    )
 }
 
 mlm=~/t/utilities/make.lm.sh
