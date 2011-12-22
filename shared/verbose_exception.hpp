@@ -14,7 +14,9 @@ struct verbose_exception : public std::exception
   const char *function;
   unsigned line;
   std::string message;
-  verbose_exception(std::string const& msg="unknown verbose_exception") : file(""),function(""),line(),message(msg) {}
+  verbose_exception() : file(""),function(""),line(),message("unspecified verbose_exception") {}
+  template <class M1>
+  verbose_exception(M1 const& m) : file(""),function(""),line(),message(m) {}
   verbose_exception(const char *fun,const char *fil,unsigned lin) : file(fil),function(fun),line(lin) {
     std::stringstream mbuf;
     mbuf << function << "() [" << file << ":" << line << "].";
