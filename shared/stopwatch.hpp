@@ -11,10 +11,17 @@
 #include <stdexcept>
 
 #ifdef _WIN32
-#ifndef NOMINMAX
-#define NOMINMAX
+
+
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
 #endif
-#define WIN32_LEAN_AND_MEAN
+#ifndef VC_EXTRALEAN
+# define VC_EXTRALEAN 1
+#endif
+#ifndef NOMINMAX
+# define NOMINMAX 1
+#endif
 #include <windows.h>
 #undef min
 #undef max

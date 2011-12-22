@@ -31,14 +31,21 @@
 #endif
 
 #ifdef MEMMAP_IO_WINDOWS
-# ifndef NOMINMAX
-# define NOMINMAX
-# endif
-# define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
-# include <windows.h>
-# undef max
-# undef min
-// WTF, windows? a "max" macro? don't you think that might conflict with a max() function or method?
+
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#ifndef VC_EXTRALEAN
+# define VC_EXTRALEAN 1
+#endif
+#ifndef NOMINMAX
+# define NOMINMAX 1
+#endif
+#include <windows.h>
+#undef min
+#undef max
+#undef DELETE
+
 #endif
 
 #ifdef OS_WINDOWS

@@ -58,6 +58,7 @@ namespace {
 #include <limits.h> //strtoul
 #undef min // damn you, windows
 #undef max
+#undef DELETE
 }
 
 //NOTE: stdlib atoi consumes dead whitespace; these don't
