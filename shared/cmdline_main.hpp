@@ -218,7 +218,10 @@ struct main {
 
   virtual void finish_options(OD &all)
   {
-    all.add(general).add(cosmetic);
+    if (general.size())
+      all.add(general);
+    if (cosmetic.size())
+      all.add(cosmetic);
     options_added=true;
   }
 

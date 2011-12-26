@@ -2,6 +2,16 @@
 #ifndef GRAEHL__SHARED__MAKESTR_HPP
 #define GRAEHL__SHARED__MAKESTR_HPP
 
+/* most likely usage:
+string s=MAKESTRE(1<<" "<<c);
+
+equivalent of
+
+string s=boost::lexical_cast<string>(1)+" "+boost::lexical_cast<string>(c)
+
+and likely faster if we use something more C-locale-formatting-constant than ostringstream
+
+*/
 #include <sstream>
 #include <stdexcept>
 

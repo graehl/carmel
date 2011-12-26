@@ -98,14 +98,20 @@ private:
 #endif // __linux__
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-#ifndef NOMINMAX
-#define NOMINMAX
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
 #endif
-#define WIN32_LEAN_AND_MEAN
+#ifndef VC_EXTRALEAN
+# define VC_EXTRALEAN 1
+#endif
+#ifndef NOMINMAX
+# define NOMINMAX 1
+#endif
 #include <windows.h>
 #include <wincrypt.h>
 #undef max
 #undef min
+#undef DELETE
 #include <boost/lexical_cast.hpp>
 
 const char* const boost::random_device::default_token = MS_DEF_PROV;
@@ -177,4 +183,3 @@ unsigned int boost::random_device::operator()()
 {
   return pimpl->next();
 }
-

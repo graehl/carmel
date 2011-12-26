@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <graehl/shared/print_read.hpp>
 
 namespace graehl {
 
@@ -125,6 +126,13 @@ print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
     }
 }
 
+template <class C, class T>
+std::basic_ostream<C,T>&
+print(std::basic_ostream<C,T>& o, double d, int width)
+{
+  print_width(o,d,width);
+  return o;
+}
 
 template <class C, class T>
 std::basic_ostream<C,T>&

@@ -14,7 +14,9 @@ struct verbose_exception : public std::exception
   const char *function;
   unsigned line;
   std::string message;
-  verbose_exception(std::string const& msg="unknown verbose_exception") : file(""),function(""),line(),message(msg) {}
+  verbose_exception() : file(""),function(""),line(),message("unspecified verbose_exception") {}
+  template <class M1>
+  verbose_exception(M1 const& m) : file(""),function(""),line(),message(m) {}
   verbose_exception(const char *fun,const char *fil,unsigned lin) : file(fil),function(fun),line(lin) {
     std::stringstream mbuf;
     mbuf << function << "() [" << file << ":" << line << "].";
@@ -44,6 +46,12 @@ struct verbose_exception : public std::exception
     mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ' ' << m2 << ' ' << m3 << ' ' << m4 << ".";
     message=mbuf.str();
   }
+  template <class M1,class M2,class M3,class M4,class M5>
+  verbose_exception(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3,const M4 &m4,const M5 &m5) : file(fil),function(fun),line(lin) {
+    std::stringstream mbuf;
+    mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ' ' << m2 << ' ' << m3 << ' ' << m4 << ' ' << m5 << ".";
+    message=mbuf.str();
+  }
   ~verbose_exception() throw()
   {
   }
@@ -60,11 +68,13 @@ struct verbose_exception : public std::exception
 #define VTHROW_A_1(type,arg)  throw type(__FUNCTION__,__FILE__,__LINE__,arg)
 #define VTHROW_A_2(type,arg,arg2)  throw type(__FUNCTION__,__FILE__,__LINE__,arg,arg2)
 #define VTHROW_A_3(type,arg,arg2,arg3)  throw type(__FUNCTION__,__FILE__,__LINE__,arg,arg2,arg3)
+#define VTHROW_A_4(type,arg,arg2,arg3,arg4)  throw type(__FUNCTION__,__FILE__,__LINE__,arg,arg2,arg3,arg4)
 
 #define VTHROW VTHROW_A(graehl::verbose_exception)
 #define VTHROW_1(a1) VTHROW_A_1(graehl::verbose_exception,a1)
 #define VTHROW_2(a1,a2) VTHROW_A_2(graehl::verbose_exception,a1,a2)
 #define VTHROW_3(a1,a2,a3) VTHROW_A_3(graehl::verbose_exception,a1,a2,a3)
+#define VTHROW_4(a1,a2,a3,a4) VTHROW_A_4(graehl::verbose_exception,a1,a2,a3,a4)
 
 #define THROW_MSG(type,msg) do { std::stringstream out; out<<msg; throw type(out.str()); } while(0)
 #define VTHROW_A_MSG(type,msg) do { std::stringstream out; out<<msg; throw type(__FUNCTION__,__FILE__,__LINE__,out.str()); } while(0)
@@ -81,10 +91,12 @@ struct verbose_exception : public std::exception
     : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2) {}                                                 \
   template <class M1,class M2,class M3>                                                                         \
   type(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3)                     \
-    : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2,m3) {}
+    : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2,m3) {}                                              \
+  template <class M1,class M2,class M3,class M4>                                                                \
+  type(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3,const M4 &m4)        \
+    : graehl::verbose_exception(fun,fil,lin,#type " ",m1,m2,m3,m4) {}
 
 #define VERBOSE_EXCEPTION_DECLARE(type) struct type : graehl::verbose_exception { VERBOSE_EXCEPTION_WRAP(type) };
-
 
 
 #endif

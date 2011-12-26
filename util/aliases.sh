@@ -1,4 +1,108 @@
 #file arg comes first! then cmd, then args
+locp=${locp:9922}
+tun1() {
+    local p=${3:-$port}
+    if ! [[ $p ]] ; then
+        p=$locp
+        locp=$((locp+1))
+    fi
+#  ssh -L9922:svn.languageweaver.com:443 -N -t -x pontus.languageweaver.com -p 4640 &
+    set -x
+    ssh -L$p:${1:-c-jgraehl.languageweaver.com}:${2:-22} -N -t -x ${4:-ceto}.languageweaver.com -p 4640
+    set +x
+    lp=localhost:$p
+    echo lp
+    echo $lp
+}
+revboardp=9921
+rxsvnp=9922
+tuns() {
+    if ! [[ $nokill ]]; then
+        for i in `seq 1 10`; do
+            kill %$i
+        done
+    fi
+    tun1 revboard 80 $revboardp &
+    tun1 svn 80 $rxsvnp &
+}
+rxsvn="http://svn.languageweaver.com/svn/repos2/cme/trunk/racerx/racerx"
+rxlocal="http://localhost:$rxsvnp/svn/repos2/cme/trunk/racerx/racerx"
+rxtun() {
+(
+cd ~/r
+set -x
+svn switch --relocate $rxsvn $rxlocal
+)
+}
+rxlw() {
+(
+cd ~/r
+set -x
+svn switch --relocate $rxlocal $rxsvn
+)
+}
+tokdot() {
+    local t=${1:-2}
+    shift
+    local s=${1:-9}
+    shift
+    pushd ~/x/racerx/FsTokenizer
+    stopw=$s tokw=$t draw=1 ./test.sh tiny.{vcb,untok}
+    hgdot ~/r/FsTokenizer/work/s=$s,t=$t/tiny.vcb.trie.gz
+    popd
+}
+tokt() {
+    pushd ~/x/racerx/FsTokenizer
+    ./test.sh "$@"
+}
+revx() {
+    local dr=p
+    local sum=$1
+    shift
+    if [[ $dryrun ]] ; then
+        dr="n"
+    fi
+    pushd ~/x
+    set -x
+    if [ "$sum" ] ; then
+        post-review -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        crac "$sum: $*"
+    fi
+    set +x
+    popd
+}
+revx() {
+    local dr=p
+    local sum=$1
+    shift
+    if [[ $dryrun ]] ; then
+        dr="n"
+    fi
+    pushd ~/x
+    set -x
+    if [ "$sum" ] ; then
+        post-review -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        crac "$sum: $*"
+    fi
+    set +x
+    popd
+}
+revr() {
+    local dr=p
+    local sum=$1
+    shift
+    if [[ $dryrun ]] ; then
+        dr="n"
+    fi
+    pushd ~/r
+    set -x
+    if [ "$sum" ] ; then
+        post-review -do$dr --summary="$sum" --description="$*" --username=graehl --password=weaver --target-groups=ScienceCoreModels
+        svn commit -m "$sum: $*"
+    fi
+    set +x
+    popd
+}
 withdbg() {
     local d=$1
     shift
@@ -14,6 +118,9 @@ empull() {
     git pull
     cd site-lisp
     gitsubpull *
+}
+rmstashx() {
+    rm -rf ~/c/stash.*
 }
 stashx() {
     cd ~/c
@@ -300,7 +407,7 @@ lnshared() {
 lnshared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/3rdParty/graehl/shared
+    local d=$racer/racerx/graehl/shared
     local g=$d/$1
 
     if [ -r $f ] ; then
@@ -318,7 +425,7 @@ lnshared1() {
 racershared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/3rdParty/graehl/shared
+    local d=$racer/racerx/graehl/shared
     local g=$d/$1
     if [ -f $g ] ; then
         if [ "$force" ] ; then
@@ -329,12 +436,12 @@ racershared1() {
     fi
 }
 usedshared() {
-    (cd $racer/3rdParty/graehl/shared/;ls *.hpp)
+    (cd $racer/racerx/graehl/shared/;ls *.hpp)
 }
 diffshared1() {
     local s=~/t/graehl/shared/
     local f=$s/"$1"
-    local d=$racer/3rdParty/graehl/shared/
+    local d=$racer/racerx/graehl/shared/
     diff -u -w $f $d/$1
 }
 diffshared() {
@@ -346,7 +453,7 @@ relnshared() {
 lnhg() {
     ln -sf $racer/Debug/Hypergraph/Test* ~/bin
     ln -sf $racer/Debug/Hypergraph/Hg* ~/bin
-    ln -sf $racer/Debug/Tokenizer/*Tokenizer ~/bin
+    ln -sf $racer/Debug/FsTokenizer/*FsTokenizer* ~/bin
 }
 rebuildc() {
     (set -e
@@ -498,7 +605,7 @@ racb() {
     if [ "$*" ] ; then
         fa="-DCMAKE_CXX_FLAGS='$*'"
     fi
-    cmarg="-DCMAKE_BUILD_TYPE=$build"
+    cmarg="-DLOG4CXX_ROOT=/usr/local -DCMAKE_BUILD_TYPE=$build"
 }
 racd() {
     cd $racer
@@ -552,7 +659,7 @@ racm() {
         local prog=$1
         if [ "$prog" ] ; then
             shift
-            rm -f Hypergraph/CMakeFiles/$prog.dir/src/$prog.cpp.o
+            rm -f {Hypergraph,FsTokenizer}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
             if [[ ${prog#Test} = $prog ]] ; then
                 test=
                 tests=
@@ -2719,9 +2826,14 @@ upt()
 }
 function commt
 {
-    pushd ~/t
-    svn commit -m "$*"
-    popd
+    (set -e
+        pushd ~/t
+        svn commit -m "$*"
+        popd
+        pushd ~/r/graehl/shared
+        svn commit -m "$*"
+        popd
+    )
 }
 
 mlm=~/t/utilities/make.lm.sh

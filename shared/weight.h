@@ -882,8 +882,11 @@ inline logweight<Real> operator -(logweight<Real> lhs, logweight<Real> rhs) {
         return lhs;
 
     // lhs > rhs
-
+#ifdef GRAEHL_USE_LOG1P
+    result.weight = (Real)(lhs.weight + log1p(-std::exp(rdiff)));
+#else
     result.weight = (Real)(lhs.weight + std::log(1 - std::exp(rdiff)));
+#endif
     return result;
 }
 
@@ -942,7 +945,6 @@ WEIGHT_FORWARD_OP_RET(<,bool)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
 
 
     template <class Real>

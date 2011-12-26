@@ -9,6 +9,7 @@ template <class Change>
 struct auto_report
 {
     Change change;
+  operator Change & () { return change; }
     std::ostream *o;
     std::string desc;
     bool reported;
@@ -18,12 +19,12 @@ struct auto_report
         : o(o),desc(desc),reported(false) {}
     void report(bool nl=true)
     {
-        if (o) {    
+        if (o) {
             *o << desc << change;
             if (nl)
                 *o << std::endl;
             else
-                *o << std::flush;        
+                *o << std::flush;
             reported=true;
         }
     }

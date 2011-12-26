@@ -62,11 +62,7 @@ struct untracked_pool
     p->~T();
     free(p);
   }
-#ifndef BOOST_NO_TEMPLATE_CV_REF_OVERLOADS
-# include <boost/pool/detail/pool_construct.inc>
-#else
-# include <boost/pool/detail/pool_construct_simple.inc>
-#endif
+#include <graehl/shared/pool_construct.ipp>
 };
 
 template <class T,class U>
@@ -103,11 +99,7 @@ struct intrusive_pool
   enum { has_is_from=false };
   static inline void destroy(pointer_type p) {} //noop!
   //FIXME: can intrusive_ptrs safely destroy early? i.e. do we need to check if count was 0 first and not decrease? if so, implement free/destroy
-#ifndef BOOST_NO_TEMPLATE_CV_REF_OVERLOADS
-# include <boost/pool/detail/pool_construct.inc>
-#else
-# include <boost/pool/detail/pool_construct_simple.inc>
-#endif
+#include <graehl/shared/pool_construct.ipp>
 };
 
 //default traits are good

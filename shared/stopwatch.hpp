@@ -11,10 +11,17 @@
 #include <stdexcept>
 
 #ifdef _WIN32
-#ifndef NOMINMAX
-#define NOMINMAX
+
+
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
 #endif
-#define WIN32_LEAN_AND_MEAN
+#ifndef VC_EXTRALEAN
+# define VC_EXTRALEAN 1
+#endif
+#ifndef NOMINMAX
+# define NOMINMAX 1
+#endif
 #include <windows.h>
 #undef min
 #undef max
@@ -154,13 +161,13 @@ class stopwatch
 #endif
     }
 
-    double total_time(timer_type type) const
+    double total_time(timer_type type=TOTAL_TIME) const
     {
         if (!valid_type(type))
             throw std::runtime_error("stopwatch: invalid timer type");
         return totals[type] + recent_time(type);
     }
-    double recent_time(timer_type type) const
+    double recent_time(timer_type type=TOTAL_TIME) const
     {
         if (!valid_type(type))
             throw std::runtime_error("stopwatch: invalid timer type");
@@ -225,4 +232,3 @@ class stopwatch
 }//graehl
 
 #endif
-
