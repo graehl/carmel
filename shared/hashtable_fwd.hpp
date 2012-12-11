@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <boost/functional/hash/hash.hpp>
 #include <graehl/shared/hash_functions.hpp>
+#include <graehl/shared/container.hpp>
 
 #ifdef USE_GNU_HASH_MAP
 # define USE_STD_HASH_MAP
@@ -67,19 +68,6 @@ inline typename HashTable<K,V,H,P,A>::iterator find_value(const HashTable<K,V,H,
 #endif
 
 namespace graehl {
-
-    template <class H>
-    struct hash_traits
-    {
-        typedef typename H::iterator find_result_type;
-        typedef std::pair<find_result_type,bool> insert_result_type;
-    };
-
-template <class Map,class Key> inline
-bool has_key(const Map &map,const Key &key)
-{
-    return map.find(key)!=map.end();
-}
 
 
 #ifndef USE_GRAEHL_HASH_MAP
@@ -173,6 +161,35 @@ inline bool was_inserted(const InsertRet &insert_ret)
     return insert_ret.second;
 }
 
+struct HashS {
+  template <class K,class V,class H=hash<K>, class P=std::equal_to<K>, class A=std::allocator<char> >
+  struct map {
+    typedef HashTable<K,V,H,P,A> type;
+    typedef typename type::find_result_type find_result_type;
+    typedef typename type::insert_result_type insert_result_type;
+  };
+};
+
+template <class K,class V,class H,class P,class A>
+struct map_traits< HashTable<K,V,H,P,A> > {
+  typedef HashTable<K,V,H,P,A> type;
+  typedef typename type::find_result_type find_result_type;
+  typedef typename type::insert_result_type insert_result_type;
+};
+
+template <class H>
+struct hash_traits
+{
+  typedef typename H::iterator find_result_type;
+  typedef std::pair<find_result_type,bool> insert_result_type;
+};
+
+template <class Map,class Key> inline
+bool has_key(const Map &map,const Key &key)
+{
+    return map.find(key)!=map.end();
+}
+
 }//graehl
 
 #define BEGIN_HASH_VAL(C) \
@@ -180,7 +197,6 @@ HASHNS_B \
 template<> struct hash<C> \
 { \
   std::size_t operator()(const C x) const
-
 
 
 #define BEGIN_HASH(C) \

@@ -1,39 +1,13 @@
-#ifndef GRAEHL_SHARED____SHOW_HPP
-#define GRAEHL_SHARED____SHOW_HPP
+#ifndef GRAEHL_SHARED__SHOW_HPP
+#define GRAEHL_SHARED__SHOW_HPP
 
+/// for debugging prints
 
-//usage: string s=OSTR(1<<" "<<c);
-#define OSTR(expr) ((dynamic_cast<ostringstream &>(ostringstream()<<std::dec<<expr)).str())
-#define OSTRF(f) ((dynamic_cast<ostringstream &>(f(ostringstream()<<std::dec))).str())
-#define OSTRF1(f,x) ((dynamic_cast<ostringstream &>(f(ostringstream()<<std::dec,x))).str())
-#define OSTRF2(f,x1,x2) ((dynamic_cast<ostringstream &>(f(ostringstream()<<std::dec,x1,x2))).str())
-// std::dec (or seekp, or another manip) is needed to convert to std::ostream reference.
-
+/// you can define SHOWS to something else first. needs to support SHOWS<<x for output
 #ifndef SHOWS
 #include <iostream>
 #define SHOWS std::cerr
 #endif
-
-#define SELF_TYPE_PRINT                                                                     \
-    template <class Char,class Traits> \
-    inline friend std::basic_ostream<Char,Traits> & operator <<(std::basic_ostream<Char,Traits> &o, self_type const& me)     \
-    { me.print(o);return o; } \
-    typedef self_type has_print;
-
-#define SELF_TYPE_PRINT_ANY_STREAM \
-    template <class O> \
-    friend inline O & operator <<(O &o, self_type const& me)     \
-    { me.print(o);return o; } \
-    typedef self_type has_print;
-
-#define SELF_TYPE_PRINT_OSTREAM \
-    friend inline std::ostream & operator <<(std::ostream &o, self_type const& me)     \
-    { me.print(o);return o; } \
-    typedef self_type has_print;
-
-#define PRINT_SELF(self) typedef self self_type; SELF_TYPE_PRINT_OSTREAM
-
-
 
 #undef SHOWALWAYS
 #define SHOWALWAYS(x) x
@@ -44,7 +18,6 @@
 #else
 # define IFD(x)
 #endif
-
 
 SHOWS is the stream (std::cerr or whatever - you can define)
 SHOWP is just print.
@@ -61,11 +34,10 @@ careful: none of this is wrapped in a block.  so you can't use one of these macr
 
 e.g.
 
-#include <graehl/shared/os.hpp>
-
-DECLARE_DBG_LEVEL_IF(TUHG)
-// then: //IFDBG(TUHG,1) { SHOWM2(TUHG,"descr" }
-({} not optional)
+#include <graehl/shared/ifdbg.hpp>
+DECLARE_DBG_LEVEL_IF(IFD)
+// then: //IFDBG(IFD,1) { SHOWM2(IFD,"descr"); } //({} not optional)
+// or: //SHOWIF1(IFD,"descr",value)
 */
 
 #define SHOWE(x) " "#x<<"="<<(x)<<" "
@@ -82,6 +54,7 @@ DECLARE_DBG_LEVEL_IF(TUHG)
 #define SHOW7(IF,x,y0,y1,y2,y3,y4,y5) SHOW1(IF,x) SHOW6(IF,y0,y1,y2,y3,y4,y5)
 
 #define SHOWM(IF,m,x) SHOWP(IF,m<<": ") SHOW(IF,x)
+#define SHOWM0(IF,m,x) SHOWP(IF,m)
 #define SHOWM1(IF,m,x) SHOWM(IF,m,x)
 #define SHOWM2(IF,m,x0,x1) SHOWP(IF,m<<": ") SHOW2(IF,x0,x1)
 #define SHOWM3(IF,m,x0,x1,x2) SHOWP(IF,m<<": ") SHOW3(IF,x0,x1,x2)

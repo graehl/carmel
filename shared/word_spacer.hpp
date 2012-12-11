@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <graehl/shared/print_read.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 
@@ -38,8 +39,8 @@ struct word_spacer {
   {
     first=true;
   }
-  template <class C, class T>
-  void print(std::basic_ostream<C,T>& o)
+  template <class O>
+  void print(O& o)
   {
     if (first)
       first=false;
@@ -54,6 +55,21 @@ struct word_spacer {
     return o;
   }
 };
+
+struct word_spacer_f
+{
+  boost::shared_ptr<word_spacer> p;
+  explicit word_spacer_f(char space=' ') : p(new word_spacer(space)) {}
+  template <class O>
+  void print(O &o) const {
+    p->print(o);
+  }
+  template <class C,class T>
+  friend std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T> &o, word_spacer_f const& self)
+  { self.print(o); return o; }
+
+};
+
 
 inline std::string space_sep_words(const std::string &sentence,char space=' ')
 {
@@ -139,8 +155,11 @@ struct sep {
 
 struct singlelineT {};
 struct multilineT {};
-static singlelineT singleline;
-static multilineT multiline;
+
+namespace {
+const singlelineT singleline=singlelineT();
+const multilineT multiline=multilineT();
+}
 
 struct range_sep {
   typedef char const* S;

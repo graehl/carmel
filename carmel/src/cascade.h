@@ -169,7 +169,7 @@ struct cascade_parameters
             chain_t p=(*this)[arcs.ac(a).arc];
             unsigned n=a.dest;
             bool mid=n!=fin;
-            bool nonleaf1=backdef||p&&(p->next||mid); // could postpone decision to use parens if !p (recursive flag passed in)
+            bool nonleaf1=backdef||(p&&(p->next||mid)); // could postpone decision to use parens if !p (recursive flag passed in)
             if (nonleaf1) o<<"(";
             graehl::word_spacer space;
             for (;p;p=p->next)

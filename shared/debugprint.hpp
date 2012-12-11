@@ -43,16 +43,6 @@
 
 namespace graehl {
 
-struct DebugWriter
-{
-  template <class charT, class Traits,class Label>
-  std::basic_ostream<charT,Traits>&
-  operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
-    dbgout(o,l);
-    return o;
-  }
-};
-
 
 /*template<class A>
 static const char * dbgstr(const A &a);
@@ -82,12 +72,6 @@ template<class A>
 inline void dbgout(std::ostream &o,const A &a, typename has_print_plain<A>::type* dummy = 0) {
     (void)dummy;
     deref(a).print(o);
-}
-
-template<class A>
-inline void dbgout(std::ostream &o,const A &a, typename has_print_writer<A>::type* dummy = 0) {
-    (void)dummy;
-    deref(a).print(o,DebugWriter());
 }
 
 template<class A>
@@ -160,7 +144,21 @@ inline void dbgout(std::ostream &o,const A a,typename boost::enable_if<boost::is
   }
 }
 
+struct DebugWriter
+{
+  template <class charT, class Traits,class Label>
+  std::basic_ostream<charT,Traits>&
+  operator()(std::basic_ostream<charT,Traits>& o,const Label &l) const {
+    dbgout(o,l);
+    return o;
+  }
+};
 
+template<class A>
+inline void dbgout(std::ostream &o,const A &a, typename has_print_writer<A>::type* dummy = 0) {
+    (void)dummy;
+    deref(a).print(o,DebugWriter());
+}
 
 
 #define constEmptyString ""

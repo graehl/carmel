@@ -1,14 +1,14 @@
 #ifndef GRAEHL__SHARED__PAIRLIST_HPP
 #define GRAEHL__SHARED__PAIRLIST_HPP
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #  include <graehl/shared/test.hpp>
 #  include <graehl/shared/debugprint.hpp>
 #  include <boost/lexical_cast.hpp>
 #  define PAIRLIST_DEBUG(x) x
 #else
 #  define PAIRLIST_DEBUG(x)
-#endif 
+#endif
 
 #include <sstream>
 #include <list>
@@ -20,7 +20,7 @@
 #include <graehl/shared/stream_whitespace.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/program_options.hpp>
- #include <cctype>
+#include <cctype>
 
 namespace graehl {
 
@@ -55,7 +55,7 @@ void print_pairlist_w1(O &o,W1 const& w1,It b,It end,Def const& default_val,bool
 // to enable parsing of strings, only pair_sep and key_val_sep count as 'whitespace' for the duration.  THIS MAY BE CONFUSING :)
 // stop char may be gobbled up by vN parsing; if so, then add a final separator before it.
 template <class I,class F> inline
-void parse_pairlist(I &in,F const& f,char pair_sep=',',char key_val_sep=':',char stop='\n') 
+void parse_pairlist(I &in,F const& f,char pair_sep=',',char key_val_sep=':',char stop='\n')
 {
     using namespace std;
     local_whitespace<I> lw(in,true_for_chars(pair_sep,key_val_sep));
@@ -75,7 +75,7 @@ void parse_pairlist(I &in,F const& f,char pair_sep=',',char key_val_sep=':',char
                 return;
             if (first) {
                 in.unget();
-                first=false;  
+                first=false;
             } else {
                 throw runtime_error("missing separator before next key in read_pairlist");
             }
@@ -106,7 +106,7 @@ template <class Cont>
 struct insert_value
 {
     template <class C,class V>
-    static inline void insert(C &c,V const& v) 
+    static inline void insert(C &c,V const& v)
     {
         c.push_back(v);
     }
@@ -127,7 +127,7 @@ PAIRLIST_USE_INSERT_4(std::multimap)
 
 //e.g. Pairlist = vector<pair<K,V> >
 template <class Pairlist>
-struct read_pairlist_callback 
+struct read_pairlist_callback
 {
     Pairlist *p;
     typedef typename Pairlist::value_type value_type;
@@ -141,7 +141,7 @@ struct read_pairlist_callback
     void operator()(first_argument_type const& key) const
     {
         (*this)(key,default_val);
-    }   
+    }
     void operator()(first_argument_type const& key,second_argument_type const& val) const
     {
 //        p->push_back(std::make_pair(key,val));
@@ -163,7 +163,7 @@ void read_pairlist(I &in,Pairlist &p,Def const& default_val,char pair_sep=',',ch
 }
 
 template <class List>
-struct read_list_callback 
+struct read_list_callback
 {
     List *p;
     typedef typename List::value_type value_type;
@@ -176,10 +176,10 @@ struct read_list_callback
     void operator()(first_argument_type const& key) const
     {
         p->push_back(key);
-    }   
+    }
     void operator()(first_argument_type const& key,second_argument_type const& val) const
     {
-        p->push_back(key);        
+        p->push_back(key);
     }
 };
 
@@ -206,32 +206,32 @@ class pairlist
     typedef void is_pairlist;
     typedef std::vector<pair_type > list_type;
     list_type l;
-    list_type & list() 
+    list_type & list()
     { return l; }
     list_type const& list() const
-    { return l; }    
+    { return l; }
     typedef typename list_type::iterator iterator;
     typedef typename list_type::value_type value_type;
-    iterator begin() 
+    iterator begin()
     { return list().begin(); }
-    iterator end() 
+    iterator end()
     { return list().end(); }
     V default_val;
     char pair_sep,key_val_sep;
     pairlist(V const& default_val,char pair_sep,char key_val_sep)
         : default_val(default_val),pair_sep(pair_sep),key_val_sep(key_val_sep) {}
-    
+
     template <class I>
-    void read(I &in) 
+    void read(I &in)
     {
         read_pairlist(in,list(),default_val,pair_sep,key_val_sep);
     }
     template <class O>
-    void print(O &o,bool always_print_default=false) const 
+    void print(O &o,bool always_print_default=false) const
     {
         print_pairlist(o,list().begin(),list().end(),default_val,always_print_default,pair_sep,key_val_sep);
     }
-    std::string usage() const 
+    std::string usage() const
     {
         std::ostringstream o;
         o << "list of key"<<key_val_sep<<"val pairs, separated by '"<<pair_sep<<"', with missing "<<key_val_sep<<"val given the default value: "<<default_val<<" - e.g. k1"<<pair_sep<<"k2"<<key_val_sep<<"v2";
@@ -246,7 +246,7 @@ template <class K,class V,char PairSep,char KVSep>
 class pairlist_c : public pairlist<K,V>
 {
     typedef pairlist<K,V> parent_type;
- public:    
+ public:
     pairlist_c() : parent_type(V(),PairSep,KVSep) {}
 };
 
@@ -268,7 +268,7 @@ std::basic_istream<C,T>& operator >>(std::basic_istream<C,T> &in,pairlist_c<K,V,
     me.read(in);
     return in;
 }
-*/  
+*/
 
 }//graehl
 
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(TEST_pairlist) {
     using namespace std;
     using namespace boost;
     using namespace graehl;
-    
+
     typedef pairlist_c<string,string,',',':'> unk_tags_t;
     unk_tags_t unk_tags;
     unk_tags_t::list_type &l=unk_tags.list();
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(TEST_pairlist) {
     BOOST_CHECK(!is.bad());
     BOOST_CHECK(l.front().first=="NNP");
     }
-    
+
     {
     std::istringstream is("NNP:c");
     unk_tags.read(is);
@@ -344,9 +344,9 @@ BOOST_AUTO_TEST_CASE(TEST_pairlist) {
     BOOST_CHECK_EQUAL(f.second,"a");
     BOOST_CHECK_EQUAL(s.first,"NN");
     BOOST_CHECK_EQUAL(s.second,"b");
-    
+
     }
-    
+
 }
 #endif
 

@@ -10,7 +10,7 @@
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/indirect.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -276,7 +276,7 @@ operator >>
 */
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( TEST_POINTEROFFSET )
 {
 }

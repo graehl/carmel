@@ -95,8 +95,8 @@ struct ArrayPMapImp
 #pragma warning( pop )
 #endif
   }
-  template <class O>
-  void print(O &o) const {
+  template <class Os>
+  void print(Os &o) const {
     o<<vals;
   }
   friend inline std::ostream &operator<<(std::ostream &o,Self const& s) { s.print(o); return o; }
@@ -176,7 +176,6 @@ struct RefPMap : public boost::reference_wrapper<Imp>{
   explicit RefPMap(Imp &a) : boost::reference_wrapper<Imp>(a) {}
 };
 */
-
 
 
 template <class P1,class P2>

@@ -12,7 +12,7 @@
 #include <graehl/shared/stringkey.h>
 #include <boost/config.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -295,7 +295,7 @@ class Alphabet {
         return out;
     }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
     BOOST_AUTO_TEST_CASE( TEST_static_utoa )
     {
         BOOST_CHECK(!strcmp(static_utoa(0),"0"));

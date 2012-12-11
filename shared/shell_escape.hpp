@@ -4,63 +4,99 @@
 #include <sstream>
 #include <algorithm>
 #include <string>
+#include <graehl/shared/string_to.hpp>
+#include <vector>
 
 namespace graehl {
 
 template <class C>
 inline bool is_shell_special(C c) {
-    switch(c) {
-    case ' ':case '\t':case '\n':
-    case '\\':
-    case '>':case '<':case '|':
-    case '&':case ';':
-    case '"':case '\'':case '`':
-    case '~':case '*':case '?':case '{':case '}':
-    case '$':case '!':case '(':case ')':
-        return true;
-    default:
-        return false;
-    }
+  switch(c) {
+  case ' ':case '\t':case '\n':
+  case '\\':
+  case '>':case '<':case '|':
+  case '&':case ';':
+  case '"':case '\'':case '`':
+  case '~':case '*':case '?':case '{':case '}':
+  case '$':case '!':case '(':case ')':
+    return true;
+  default:
+    return false;
+  }
 }
 
 template <class C>
 inline bool needs_shell_escape_in_quotes(C c) {
-    switch(c) {
-    case '\\':case '"':case '$':case '`':case '!':
-        return true;
-    default:
-        return false;
-    }
+  switch(c) {
+  case '\\':case '"':case '$':case '`':case '!':
+    return true;
+  default:
+    return false;
+  }
 }
 
 
-template <class C,class Ch, class Tr>
-inline std::basic_ostream<Ch,Tr> & out_shell_quote(std::basic_ostream<Ch,Tr> &out, const C& data) {
-    std::stringstream s;
-    s << data;
-    char c;
-    std::istreambuf_iterator<Ch,Tr> i(s),end;
-    bool no_escape=(find_if(i,end,is_shell_special<char>)==end);
-    s.seekg(0,std::ios::beg);    
-    if (no_escape)
-        std::copy(std::istreambuf_iterator<Ch,Tr>(s),end,std::ostreambuf_iterator<Ch,Tr>(out));
-    else {
-        out << '"';
-        while (s.get(c)) {
-            if (needs_shell_escape_in_quotes(c))
-                out.put('\\');
-            out.put(c);
-        }
-        out << '"';
+//TODO: istreambuf_iterator probably slower than conversion to string
+
+template <class Ch,class Tr>
+struct out_stream
+{
+  std::basic_ostream<Ch,Tr> &o;
+  out_stream(std::basic_ostream<Ch,Tr> &o) : o(o) {}
+  out_stream(out_stream const& o) : o(o.o) {}
+  void operator()(char c) const
+  {
+    o.put(c);
+  }
+  template <class T>
+  void operator()(T const& t) const
+  {
+    o<<t;
+  }
+};
+
+
+template <class CharAcceptor,class CharForwardIter>
+inline CharAcceptor const& shell_quote_chars_iter(CharAcceptor const& chars,CharForwardIter i,CharForwardIter end,bool quote_empty=true)
+{
+  if (i==end) {
+    if (quote_empty) {
+      chars('"');
+      chars('"');
     }
-    return out;
+  } else if (std::find_if(i,end,is_shell_special<char>)==end) {
+    for(;i!=end;++i)
+      chars(*i);
+  } else {
+    chars('"');
+    for(;i!=end;++i) {
+      char c=*i;
+      if (needs_shell_escape_in_quotes(c))
+        chars('\\');
+      chars(c);
+    }
+    chars('"');
+  }
+  return chars;
+}
+
+template <class CharAcceptor,class Str>
+inline CharAcceptor const& shell_quote_chars(CharAcceptor const& chars,Str const& str,bool quote_empty=true)
+{
+  return shell_quote_chars_iter(chars,str.begin(),str.end(),quote_empty);
+}
+
+template <class C,class Ch, class Tr>
+inline std::basic_ostream<Ch,Tr> & out_shell_quote(std::basic_ostream<Ch,Tr> &out, const C& data, bool quote_empty=true) {
+  out_stream<Ch,Tr> chars(out);
+  shell_quote_chars(chars,to_string(data),quote_empty);
+  return out;
 }
 
 template <class C>
-inline std::string shell_quote(const C& data) {
-    std::stringstream s;
-    out_shell_quote(s,data);
-    return s.str();
+inline std::string shell_quote(const C& data, bool quote_empty=true) {
+  string_builder b;
+  return shell_quote_chars(append_string_builder(b),to_string(data),quote_empty).str();
 }
 
 }

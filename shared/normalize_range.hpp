@@ -21,13 +21,22 @@ struct normalize_options {
   void addUnseen(W n) {
     addk_denom+=n*addk_num; // there are n tokens with 0 count; intend addk_num to apply to them also
   }
+  static char const* caption() { return "Probability Normalization"; }
   template <class OD>
-  void add_options(OD &all) {
-    all.add_options()
+  void add_options(OD &optionsDesc) {
+    optionsDesc.add_options()
       .defaulted("addk,k",&addk_num,"add counts of [addk] to every observed event before normalizing")
       .defaulted("denom-addk,K",&addk_denom,"add [denom-addk] to the denominator only when normalizing")
       ;
   }
+  template <class Config>
+  void configure(Config &c)
+  {
+    c.is("add-k normalization");
+    c('k')("addk,k",&addk_num)("add counts of [addk] to every observed event before normalizing");
+    c('K')("denom-addk,K",&addk_denom)("add [denom-addk] to the denominator only when normalizing");
+  }
+
   void validate() {}
 };
 

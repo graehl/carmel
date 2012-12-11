@@ -236,7 +236,7 @@ namespace graehl {
         cmdline_str=graehl::get_command_line(argc,argv,NULL);
         //MAKESTRS(...,print_command_line(os,argc,argv,NULL));
         variables_map vm;
-        all.parse_options(argc,argv,vm);
+        all.parse_options_and_notify(argc,argv,vm);
 
         if (help) {
           cout << "\n" << progname << ' ' << "version " << get_version() << "\n\n";
@@ -246,7 +246,7 @@ namespace graehl {
         }
         log() << "### COMMAND LINE:\n" << cmdline_str << "\n\n";
         log() << "### CHOSEN OPTIONS:\n";
-        all.print(log(),vm,OD::SHOW_DEFAULTED | OD::SHOW_HIERARCHY);
+        all.print(log(),vm,SHOW_DEFAULTED | SHOW_HIERARCHY);
       } catch (std::exception &e) {
         std::cerr << "ERROR:"<<e.what() << "\nTry '" << argv[0] << " -h' for help\n\n";
         throw;

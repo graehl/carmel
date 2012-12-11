@@ -5,7 +5,7 @@
 #include <new>
 #include <stdexcept>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -190,7 +190,7 @@ Assert2(sz1,=sizeof(Data));
 
     
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( TEST_DUAL_MEMPOOL )
 {
     BOOST_CHECK_EQUAL(1,0);

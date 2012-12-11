@@ -14,7 +14,7 @@
 # define iop_assert(x)
 #endif
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -79,7 +79,7 @@ struct IntOrPointer {
     TO_OSTREAM_PRINT
 };
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( TEST_INTORPOINTER )
 {
     int i=3,k;

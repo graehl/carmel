@@ -12,6 +12,9 @@
 #include <graehl/shared/auto_report.hpp>
 #if USE_BOOST_TIMER_TIMER
 //# include <boost/time/cpu_timer.hpp>
+# ifndef BOOST_SYSTEM_NO_DEPRECATED
+#  define BOOST_SYSTEM_NO_DEPRECATED 1
+# endif
 # include <boost/config.hpp>
 # include <boost/chrono/chrono.hpp>
 # include <boost/timer/timer.hpp>
@@ -25,19 +28,18 @@ namespace graehl {
 
 struct time_change
 {
-  static const double ns_to_s=.000000001; // nanoseconds -> frac sec
   static char const* default_desc()
   { return "\nelapsed: "; }
 #if USE_BOOST_TIMER_TIMER
   boost::timer::cpu_timer time;
   double elapsed_wall() const
   {
-    return time.elapsed().wall*ns_to_s;
+    return time.elapsed().wall*.000000001;
   }
   double elapsed() const
   {
     boost::timer::cpu_times t=time.elapsed();
-    return ns_to_s*(t.system+t.user);
+    return .000000001*(t.system+t.user);
   }
   void start() {time.start();}
   void resume() {time.resume();}

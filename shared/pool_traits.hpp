@@ -47,7 +47,7 @@ struct pool_destroyer
 
 // so long as you use pool_traits::pointer_type, this is interface compatible w/ boost object pool except there's no way to force early deallocation or allow cycles - reset those pointers!
 // U has only static malloc, free, size_type
-template <class T,class U=boost::default_user_allocator_new_delete >
+template <class T,class U=alloc_new_delete >
 struct untracked_pool
 {
   typedef T element_type;

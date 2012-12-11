@@ -1,19 +1,12 @@
 #ifndef GRAEHL_SHARED__ITOA_H
 #define GRAEHL_SHARED__ITOA_H
 
-#include <boost/cstdint.hpp>
+#include <graehl/shared/int_types.hpp>
 #include <string>
 #include <cstring>
 #include <limits>
 #include <cassert>
 
-#ifndef INT_DIFFERENT_FROM_INTN
-# define INT_DIFFERENT_FROM_INTN 0
-#endif
-
-#ifndef HAVE_LONGER_LONG
-# define HAVE_LONGER_LONG 0
-#endif
 
 // define this if you're paranoid about converting 0-9 (int) to 0-9 (char) by adding to '0', which is safe for ascii, utf8, etc.
 #ifndef DIGIT_LOOKUP_TABLE
@@ -33,36 +26,6 @@
 namespace graehl {
 
 
-template <class T>
-struct signed_for_int {
-};
-
-
-#define DEFINE_SIGNED_FOR_3(t,it,ut)          \
-template <> \
-struct signed_for_int<t> { \
-  typedef ut unsigned_t; \
-  typedef it signed_t; \
-  typedef t original_t; \
-  enum { toa_bufsize = 3 + std::numeric_limits<t>::digits10, toa_bufsize_minus_1=toa_bufsize-1 }; \
-};
-
-// toa_bufsize will hold enough chars for a c string converting to sign,digits (for both signed and unsigned types), because normally an unsigned would only need 2 extra chars.  we reserve 3 explicitly for the case that itoa(buf,UINT_MAX,true) is called, with output +4......
-
-#define DEFINE_SIGNED_FOR(it) DEFINE_SIGNED_FOR_3(it,it,u ## it) DEFINE_SIGNED_FOR_3(u ## it,it,u ## it)
-
-DEFINE_SIGNED_FOR(int8_t)
-DEFINE_SIGNED_FOR(int16_t)
-DEFINE_SIGNED_FOR(int32_t)
-DEFINE_SIGNED_FOR(int64_t)
-#if INT_DIFFERENT_FROM_INTN
-DEFINE_SIGNED_FOR_3(int,int,unsigned)
-DEFINE_SIGNED_FOR_3(unsigned,int,unsigned)
-#if HAVE_LONGER_LONG
-DEFINE_SIGNED_FOR_3(long int,long int,long unsigned)
-DEFINE_SIGNED_FOR_3(long unsigned,long int,long unsigned)
-#endif
-#endif
 /*
 // The largest 32-bit integer is 4294967295, that is 10 chars
 // 1 more for sign, and 1 for 0-termination of string
@@ -83,11 +46,11 @@ inline char digit_to_char(int d) {
 #ifdef DIGIT_LOOKUP_TABLE
     digits[d];
 #else
-    '0'+d;
+  '0'+d;
 #endif
 }
 
-// returns n in string [return,num); *num=0 yourself before calling if you want a c_str.  in other words, the sequence [ret,buf) contains the written digits
+// returns n in string [return,num); *num=0 yourself before calling if you want a c_str. in other words, the sequence [ret,buf) contains the written digits
 template <class Int>
 char *utoa(char *buf,Int n_) {
   typedef typename signed_for_int<Int>::unsigned_t Uint;
@@ -105,7 +68,7 @@ char *utoa(char *buf,Int n_) {
   return buf;
 }
 
-// left_pad_0(buf,utoa(buf+bufsz,n)) means that [buf,buf+bufsz) is a left-0 padded seq. of digits.  no 0s are added if utoa is already past buf (you must have ensured that this is valid memory, naturally)
+// left_pad_0(buf,utoa(buf+bufsz,n)) means that [buf,buf+bufsz) is a left-0 padded seq. of digits. no 0s are added if utoa is already past buf (you must have ensured that this is valid memory, naturally)
 inline void left_pad(char *left,char *buf,char pad='0') {
   while (buf>left)
     *--buf=pad;
@@ -120,7 +83,7 @@ char *utoa_left_pad(char *buf,char *bufend,Int n, char pad='0') {
   return buf;
 }
 
-// note: 0 -> 0, but otherwise x000000 -> x (x has no trailing 0s).  same conditions as utoa; [ret,buf) gives the sequence of digits
+// note: 0 -> 0, but otherwise x000000 -> x (x has no trailing 0s). same conditions as utoa; [ret,buf) gives the sequence of digits
 // useful for floating point fraction output
 template <class Uint_>
 char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
@@ -151,13 +114,32 @@ char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
 }
 
 // desired feature: itoa(unsigned) = utoa(unsigned)
-// positive sign: 0 -> +0, 1-> +1.  obviously -n -> -n
+// positive sign: 0 -> +0, 1-> +1. obviously -n -> -n
 template <class Int>
 //typename signed_for_int<Int>::original_t instead of Int to give more informative wrong-type message?
 char *itoa(char *buf,Int i,bool positive_sign=false) {
   typename signed_for_int<Int>::unsigned_t n=i;
+#ifdef __clang__
+#include "warning_push.h"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4146 )
+#endif
+
   if (i<0)
-    n=-n; //sidesteps 2s complement issue doing this rather than just u=-n.
+    n=-n;
+  /* above n=-n is because:
+
+     -(int)-2147483648 = (int) -2147483648 - WRONG
+     -((unsigned)-2147483648) = 2147483648 - RIGHT
+
+     and for all other -n representable
+     -(int)-n = (int) n - OK
+     -((unsigned)-n) = n - STILL OK
+
+  */
   char * ret=utoa(buf,n);
   if (i<0) {
     *--ret='-';
@@ -170,7 +152,13 @@ template <class Int>
 char * itoa_left_pad(char *buf,char *bufend,Int i,bool positive_sign=false,char pad='0') {
   typename signed_for_int<Int>::unsigned_t n=i;
   if (i<0) {
-    n=-n; //sidesteps 2s complement issue doing this rather than just u=-n.
+    n=-n; // see comment above for itoa
+#ifdef __clang__
+#include "warning_pop.h"
+#endif
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
     *buf='-';
   } else if (positive_sign)
     *buf='+';

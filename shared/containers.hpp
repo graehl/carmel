@@ -18,6 +18,7 @@
 #endif
 
 #include <list>
+#include <deque>
 #ifdef BOOST_HAS_SLIST
 #include BOOST_SLIST_HEADER
 # define GRAEHL_STD_SLIST BOOST_STD_EXTENSION_NAMESPACE::slist
@@ -35,7 +36,8 @@
 
 #ifndef UNORDERED_NS
 #ifndef USE_TR1_UNORDERED
-#if defined(WIN32)
+#if defined(WIN32) || __clang__
+// mac clang lacks tr1::unordered
 # define USE_TR1_UNORDERED 0
 #else
 # define USE_TR1_UNORDERED 1
@@ -110,8 +112,24 @@ T & last_added(std::list<T,A> &v) {
   return v.back();
 }
 
-inline ListS listS() {
-  return ListS();
+struct DequeS {
+  template <class T> struct container {
+    typedef std::deque<T> type;
+  };
+};
+
+template <class T,class A>
+void add(std::deque<T,A> &v,T const& t) {
+  v.push_back(t);
+}
+
+template <class T,class A>
+T & last_added(std::deque<T,A> &v) {
+  return v.back();
+}
+
+inline DequeS dequeS() {
+  return DequeS();
 }
 
 struct SlistS {
@@ -204,7 +222,7 @@ typename M::mapped_type *find_second(const M& ht,const K& first)
 
 // traits for map-like things that have different find() and insert() results than the usual:
 
-template <class K>
+template <class Map>
 struct map_traits;
 
 template <class K,class V>

@@ -40,7 +40,7 @@
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/hash_functions.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
 # define GRAEHL__DYNAMIC_ARRAY_EXTRA_ASSERT
 #endif
@@ -195,7 +195,7 @@ public:
 
 // Reader passed by value, so can't be stateful (unless itself is a pointer to shared state)
     template <class T2,class Alloc2, class charT, class Traits, class Reader> friend
-    std::ios_base::iostate read_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve=1000);
+    std::ios_base::iostate read_imp(array<T2,Alloc2> *s,std::basic_istream<charT,Traits>& in,Reader read,unsigned reserve);
     template <class L,class A> friend
     void read(std::istream &in,array<L,A> &x,StackAlloc &a);// throw(genio_exception);
 
@@ -386,10 +386,10 @@ private:
     void operator=(const array<T,Alloc> &a) {
         dynarray_assert(0);
     }
+ public:
     typedef auto_array<T,Alloc> self_type;
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
- public:
     inline friend void swap(self_type &a,self_type &b) throw()
     {
         a.swap(b);

@@ -1,5 +1,5 @@
-#ifndef GRAEHL_SHARED_D_ARY_HEAP_HPP
-#define GRAEHL_SHARED_D_ARY_HEAP_HPP
+#ifndef GRAEHL_SHARED__D_ARY_HEAP_HPP
+#define GRAEHL_SHARED__D_ARY_HEAP_HPP
 
 //TODO: unit test
 
@@ -12,10 +12,11 @@
 #ifndef DEBUG_D_ARY_HEAP
 # define DEBUG_D_ARY_HEAP 0
 #endif
-
+//#include <cstring>
+#include <cstddef>
+#include <graehl/shared/ifdbg.hpp>
 #if DEBUG_D_ARY_HEAP
 #include <graehl/shared/show.hpp>
-#include <graehl/shared/os.hpp>
 # define DDARY(x) x
 DECLARE_DBG_LEVEL(DDARY)
 #else
@@ -446,9 +447,12 @@ This is definitely linear to n.
     }
 
 
-//#include "warning_push.h"
-//#pragma GCC diagnostic ignored "-Wtype-limits"
-      // because maybe size_type is signed or unsigned
+#include "warning_push.h"
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
+
     inline bool contains(const Value &v,size_type i) const {
       if (D_ARY_TRACK_OUT_OF_HEAP)
         return i != (size_type)D_ARY_HEAP_NULL_INDEX;
@@ -456,7 +460,7 @@ This is definitely linear to n.
       EIFDBG(DDARY,2,SHOWM2(DDARY,"d_ary_heap contains",i,data.size()));
       return i>=0 && i<sz && equal(v,data[i]); // note: size_type may be signed (don't recommend it, though) - thus i>=0 check to catch uninit. data
     }
-//#include "warning_pop.h"
+#include "warning_pop.h"
 
     inline bool contains(const Value& v) const {
       using boost::get;

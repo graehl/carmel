@@ -126,12 +126,25 @@ print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
     }
 }
 
+struct width
+{
+  int chars;
+  width(int chars=6) : chars(chars) {}
+  width(width const& o) : chars(o.chars) {}
+};
+
 template <class C, class T>
 std::basic_ostream<C,T>&
 print(std::basic_ostream<C,T>& o, double d, int width)
 {
   print_width(o,d,width);
   return o;
+}
+
+template <class O>
+void print(O& o, double d, width const& w)
+{
+  print_width(o,d,w.chars);
 }
 
 template <class C, class T>

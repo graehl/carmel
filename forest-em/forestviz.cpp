@@ -18,7 +18,7 @@
 #include <graehl/shared/genio.h>
 #include <graehl/shared/input_error.hpp>
 
-#ifndef TEST
+#ifndef GRAEHL_TEST
 using namespace boost;
 using namespace std;
 using namespace boost::program_options;

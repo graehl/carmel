@@ -68,7 +68,7 @@ struct identity_offset_map {
   }
 };
 
-std::size_t get(identity_offset_map,std::size_t i) {
+inline std::size_t get(identity_offset_map,std::size_t i) {
   return i;
 }
 

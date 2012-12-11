@@ -259,7 +259,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
         visited[0] = true ;
         for (unsigned int k=0; k < final; k++){
             if (visited[k]){
-                map<const char*, bool, ltstr> taken ;
+              std::map<const char*, bool, ltstr> taken ;
                 for (unsigned int i = 0 ; i < strSymbols.size() ;++i)
                     taken[strSymbols[i].c_str()] = false ;
                 for (int l=0; l < int(strSymbols.size()); l++){

@@ -7,25 +7,49 @@
    add_options_extra()
    set_defaults() maybe calling set_defaults_base() etc.)
    then INT_MAIN(yourmain)
+
+   or (with -DZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE=1)
+
+   instead of add_options_extra, set_defaults, define a template configure()
+   (see configure.hpp)
 */
 
+
+#ifndef GRAEHL_CMDLINE_SAMPLE_MAIN
+# ifdef GRAEHL_G1_MAIN
+#  define ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
+#  define GRAEHL_CMDLINE_SAMPLE_MAIN 1
+# else
+#  define GRAEHL_CMDLINE_SAMPLE_MAIN 0
+# endif
+#endif
+
 #ifndef GRAEHL_CONFIG_FILE
-#define GRAEHL_CONFIG_FILE "config-file"
+#define GRAEHL_CONFIG_FILE "config"
 #endif
 #ifndef GRAEHL_IN_FILE
-#define GRAEHL_IN_FILE "in-file"
+#define GRAEHL_IN_FILE "in"
 #endif
 #ifndef GRAEHL_OUT_FILE
-#define GRAEHL_OUT_FILE "out-file"
+#define GRAEHL_OUT_FILE "out"
 #endif
 #ifndef GRAEHL_LOG_FILE
-#define GRAEHL_LOG_FILE "log-file"
+#define GRAEHL_LOG_FILE "log"
 #endif
 
 #ifndef GRAEHL_DEBUGPRINT
 # define GRAEHL_DEBUGPRINT 0
 #endif
 
+#ifndef ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+# define ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
+#endif
+
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+# include <graehl/shared/configure_program_options.hpp>
+#endif
+
+#include <graehl/shared/assign_traits.hpp>
 #include <graehl/shared/program_options.hpp>
 #include <graehl/shared/itoa.hpp>
 #include <graehl/shared/command_line.hpp>
@@ -41,8 +65,7 @@
 #endif
 #include <iostream>
 
-#define INT_MAIN(main_class) main_class m;                              \
-  int main(int argc,char *argv[]) { return m.run_main(argc,argv); }
+#define INT_MAIN(main_class) int main(int argc,char **argv) { main_class m; return m.run_main(argc,argv); }
 
 #define GRAEHL_MAIN_COMPILED " (compiled " MAKESTR_DATE ")"
 
@@ -75,7 +98,8 @@ struct main {
     return version+compiled;
   }
 
-  typedef std::vector<istream_arg> in_files;
+  typedef istream_arg in_arg;
+  typedef std::vector<in_arg> in_args;
   struct base_options {
     char const* positional_help() const {
       return positional_in?"; positional args ok too":"";
@@ -112,8 +136,8 @@ struct main {
       allow_ins(positional,max_ins_);
       min_ins=1;
     }
-    void validate(in_files const& ins) const {
-      unsigned n=ins.size();
+    void validate(in_args const& ins) const {
+      unsigned n=(unsigned)ins.size();
       validate(n);
       for (unsigned i=0;i<n;++i)
         if (!*ins[i]) {
@@ -143,6 +167,7 @@ struct main {
       add_verbose=add_quiet=true;
     }
   };
+  friend inline void init_default(main &) {}
   base_options bopt;
 
   int debug_lvl;
@@ -151,7 +176,12 @@ struct main {
   int verbose;
   ostream_arg log_file,out_file;
   istream_arg in_file,config_file;
-  in_files ins; // this will also have the single in_file if you bopt.allow_in()
+  in_args ins; // this will also have the single in_file if you bopt.allow_in()
+
+  istream_arg const& first_input() const
+  {
+    return ins.empty() ? in_file : ins[0];
+  }
 
   std::string cmdname,cmdline_str;
   std::ostream *log_stream;
@@ -162,7 +192,13 @@ struct main {
   boost::uint32_t random_seed;
 
   //FIXME: segfault if version is a char const* global in subclass xtor, why?
-  main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",bool multifile=false,bool random=false,bool input=true,std::string const& compiled=GRAEHL_MAIN_COMPILED) : appname(name),version(version),compiled(compiled),usage(usage),general("General options"),cosmetic("Cosmetic options"),all_options("Options"),options_added(false)
+  main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",bool multifile=false,bool random=false,bool input=true,std::string const& compiled=GRAEHL_MAIN_COMPILED)
+    : appname(name),version(version),compiled(compiled),usage(usage)
+    , general("General options"),cosmetic("Cosmetic options"),all_options_("Options"),options_added(false),configure_finished(false)
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+    , to_cerr(),exec(to_cerr,"Options")
+#else
+#endif
   {
     if (random)
       allow_random();
@@ -175,14 +211,31 @@ struct main {
     }
     verbose=1;
     random_seed=default_random_seed();
+    init();
   }
 
   typedef printable_options_description<std::ostream> OD;
-  OD general,cosmetic,all_options;
-  bool options_added;
+  OD general,cosmetic;
+  OD all_options_;
+  OD &all_options()
+  {
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+    return exec.p->opt_desc;
+#else
+    return all_options_;
+#endif
+  }
+
+  bool options_added,configure_finished;
 
   void print_version(std::ostream &o) {
     o << cmdname << ' ' << version << ' ' << compiled << std::endl;
+  }
+
+  virtual int run_exit()
+  {
+    run();
+    return 0;
   }
 
   virtual void run()
@@ -205,27 +258,27 @@ struct main {
 
   virtual void validate_parameters_extra() {}
 
-  // this should only be called once. (called after set_defaults)
-  virtual void add_options(OD &all)
+  virtual void add_options(OD &optionsDesc)
   {
     if (options_added)
       return;
-    add_options_base(all);
-    add_options_extra(all);
-    finish_options(all);
+    add_options_base(optionsDesc);
+    add_options_extra(optionsDesc);
+    finish_options(optionsDesc);
   }
+  // this should only be called once. (called after set_defaults)
+  virtual void add_options_extra(OD &optionsDesc) {}
 
-
-  virtual void finish_options(OD &all)
+  virtual void finish_options(OD &optionsDesc)
   {
+#if !ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     if (general.size())
-      all.add(general);
+      optionsDesc.add(general);
     if (cosmetic.size())
-      all.add(cosmetic);
+      optionsDesc.add(cosmetic);
+#endif
     options_added=true;
   }
-
-  virtual void add_options_extra(OD &all) {}
 
   virtual void log_invocation()
   {
@@ -234,13 +287,18 @@ struct main {
   }
 
 
-  virtual void set_defaults_base()
+  void init()
   {
     out_file=stdout_arg();
     log_file=stderr_arg();
     in_file=stdin_arg();
-    // quiet=false;
-    // help=false;
+    quiet=false;
+    help=false;
+  }
+
+  virtual void set_defaults_base()
+  {
+    init();
   }
 
   virtual void set_defaults_extra() {}
@@ -261,9 +319,15 @@ struct main {
   {
     log() << "### COMMAND LINE:\n" << cmdline_str << "\n";
     log() << "### USING OPTIONS:\n";
-    all_options.print(log(),vm,OD::SHOW_DEFAULTED | OD::SHOW_HIERARCHY);
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+    confs.effective(log(),to_cerr);
+#else
+    all_options().print(log(),get_vm(),SHOW_DEFAULTED | SHOW_HIERARCHY);
+#endif
+    log() << "###\n";
     log() << "###\n";
   }
+
 
   void validate_parameters_base()
   {
@@ -292,29 +356,75 @@ struct main {
 
   }
 
-  void add_options_base(OD &all)
+  template <class Conf> void configure(Conf &c)
   {
-
+    help=false;
+    quiet=false;
+    c.is(appname);
     if (bopt.add_help)
-      all.add_options()
+      c("help",&help)('h').flag()("show usage/documentation").verbose();
+
+    if (bopt.add_quiet)
+      c("quiet",&quiet)('q').flag()(
+        "use log only for warnings - e.g. no banner of command line options used");
+
+    if (bopt.add_verbose)
+      c("verbose",&verbose)('v')(
+        "e.g. verbosity level >1 means show banner of command line options. 0 means don't");
+
+    if (bopt.add_out_file)
+      c(GRAEHL_OUT_FILE,&out_file)('o').positional(bopt.positional_out)(
+        "Output here (instead of STDOUT)").eg("outfile.gz");
+
+    if (bopt.add_ins()) {
+      int nin=bopt.max_ins;
+      if (nin<0) nin=0;
+      c(GRAEHL_IN_FILE,&ins)('i')(bopt.input_help()).eg("infileN.gz").positional(bopt.positional_in,nin);
+    } else if (bopt.add_in_file)
+      c(GRAEHL_IN_FILE,&in_file)('i')(bopt.input_help()).eg("infile.gz").positional(bopt.positional_in);
+
+    if (bopt.add_config_file)
+      c(GRAEHL_CONFIG_FILE,&config_file)('c')(
+        "load boost program options config from file").eg("config.ini");
+
+    if (bopt.add_log_file)
+      c(GRAEHL_LOG_FILE,&log_file)('l')(
+        "Send log messages here (as well as to STDERR)").eg("log.gz");
+
+#if GRAEHL_DEBUGPRINT
+    if (bopt.add_debug_level)
+      c("debug-level",&debug_lvl)('d')(
+        "Debugging output level (0 = off, 0xFFFF = max)");
+#endif
+
+    if (bopt.add_random)
+      c("random-seed",&random_seed)(
+        "Random seed - if specified, reproducible pseudorandomness. Otherwise, seed is random.");
+  }
+
+  void add_options_base(OD &optionsDesc)
+  {
+#if !ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+    if (bopt.add_help)
+      optionsDesc.add_options()
         ("help,h", boost::program_options::bool_switch(&help),
          "show usage/documentation")
         ;
 
     if (bopt.add_quiet)
-      all.add_options()
+      optionsDesc.add_options()
         ("quiet,q", boost::program_options::bool_switch(&quiet),
          "use log only for warnings - e.g. no banner of command line options used")
         ;
 
     if (bopt.add_verbose)
-      all.add_options()
+      optionsDesc.add_options()
         ("verbose,v", defaulted_value(&verbose),
          "e.g. verbosity level >1 means show banner of command line options. 0 means don't")
         ;
 
     if (bopt.add_out_file) {
-      all.add_options()
+      optionsDesc.add_options()
         (GRAEHL_OUT_FILE",o",defaulted_value(&out_file),
          "Output here (instead of STDOUT)");
       if (bopt.positional_out)
@@ -322,7 +432,7 @@ struct main {
     }
 
     if (bopt.add_ins()) {
-      all.add_options()
+      optionsDesc.add_options()
         (GRAEHL_IN_FILE",i",optional_value(&ins)->multitoken(),
          bopt.input_help()
           )
@@ -330,7 +440,7 @@ struct main {
       if (bopt.positional_in)
         input_positional(bopt.max_ins);
     } else if (bopt.add_in_file) {
-      all.add_options()
+      optionsDesc.add_options()
         (GRAEHL_IN_FILE",i",defaulted_value(&in_file),
          bopt.input_help());
       if (bopt.positional_in)
@@ -338,67 +448,166 @@ struct main {
     }
 
     if (bopt.add_config_file)
-      all.add_options()
+      optionsDesc.add_options()
         (GRAEHL_CONFIG_FILE,optional_value(&config_file),
          "load boost program options config from file");
 
     if (bopt.add_log_file)
-      all.add_options()
+      optionsDesc.add_options()
         (GRAEHL_LOG_FILE",l",defaulted_value(&log_file),
          "Send log messages here (as well as to STDERR)");
 
 #if GRAEHL_DEBUGPRINT
     if (bopt.add_debug_level)
-      all.add_options()
+      optionsDesc.add_options()
         ("debug-level,d",defaulted_value(&debug_lvl),
          "Debugging output level (0 = off, 0xFFFF = max)")
 #endif
 
         if (bopt.add_random)
-          all.add_options()
+          optionsDesc.add_options()
             ("random-seed,R",defaulted_value(&random_seed),
              "Random seed")
             ;
-
+#endif
   }
 
+
+  // called once, before any config actions are run
+  void finish_configure()
+  {
+    if (configure_finished)
+      return;
+    configure_finished=true;
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+    SHOWIF1(CONFEXPR,1,"finish_configure",this);
+    // deferred until subclass etc has change to declare postitional etc
+    configurable(this);
+#endif
+    finish_configure_extra();
+  }
+  virtual void finish_configure_extra()
+  {
+  }
+
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+  typedef configure::configure_list configure_list;
+private:
+  configure_list confs;
+public:
+  configure_list &get_confs()
+  {
+    finish_configure();
+    return confs;
+  }
+
+  configure::configure_program_options conf() const
+  {
+    return configure::configure_program_options(exec);
+  }
+
+  template <class Val>
+  void configurable(Val *pval,std::string const& groupname,std::string const& help_prefix="")
+  {
+    configurable(help_prefix,pval,configure::opt_path(1,groupname));
+  }
+
+  template <class Val>
+  void configurable(std::string const& help_prefix,Val *pval,configure::opt_path const& prefix=configure::opt_path())
+  {
+    confs.add(pval,conf(),prefix,help_prefix);
+  }
+
+  template <class Val>
+  void configurable(Val *pval,configure::opt_path const& prefix=configure::opt_path())
+  {
+    confs.add(pval,conf(),prefix);
+  }
+
+  boost::program_options::positional_options_description &get_positional()
+  {
+    return exec.p->positional;
+  }
+  boost::program_options::variables_map &get_vm()
+  {
+    return exec.p->vm;
+  }
+#else
   boost::program_options::variables_map vm;
   boost::program_options::positional_options_description positional;
+  boost::program_options::positional_options_description &get_positional()
+  {
+    return positional;
+  }
+  boost::program_options::variables_map &get_vm()
+  {
+    return vm;
+  }
+#endif
 
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+  // actually, these are set inside configure()
+#else
   void add_positional(std::string const& name,int n=1) {
-    positional.add(name.c_str(),n);
+    get_positional().add(name.c_str(),n);
   }
   void input_positional(int n=1) {
-    positional.add(GRAEHL_IN_FILE,n);
+    get_positional().add(GRAEHL_IN_FILE,n);
   }
   void output_positional() {
-    positional.add("out-file",1);
+    get_positional().add(GRAEHL_OUT_FILE,1);
   }
   void log_positional() {
-    positional.add("log-file",1);
+    get_positional().add(GRAEHL_LOG_FILE,1);
   }
   void all_positional() {
     input_positional();
     output_positional();
     log_positional();
   }
+#endif
 
-  bool parse_args(int argc, char *argv[])
+  void show_help(std::ostream &o)
   {
+    o << "\n" << get_name() << "\n\n";
+    o << usage << "\n\n";
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+    confs.standard_help(o,to_cerr); // currently repeats --help each time since it's shown through po lib
+    o << "\n\n" << appname << " [OPTIONS]:\n";
+    exec->show_po_help(o);
+#else
+    o << general_options_desc()<<"\n";
+    o << all_options() << "\n";
+#endif
+  }
+
+
+  bool parse_args(int argc, char **argv)
+  {
+    set_defaults();
     using namespace std;
     using namespace boost::program_options;
-
-    add_options(all_options);
-
     cmdline_str=graehl::get_command_line(argc,argv,NULL);
+    add_options(all_options());
     try {
-      parsed_options po=all_options.parse_options(argc,argv,&positional);
-      store(po,vm);
-      //notify(vm); // variables aren't set until notify?
-      if (maybe_get(vm,GRAEHL_CONFIG_FILE,config_file)) {
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+      SHOWIF1(CONFEXPR,1,"parse_args",cmdline_str);
+      finish_configure();
+      confs.init(to_cerr);
+      exec->set_main_argv(argc,argv);
+      if (exec->is_help()) {
+        show_help(std::cout);
+        return false;
+      }
+      confs.store(to_cerr);
+#else
+      parsed_options po=all_options().parse_options(argc,argv,&get_positional());
+      store(po,get_vm());
+      //notify(get_vm()); // variables aren't set until notify?
+      if (maybe_get(get_vm(),GRAEHL_CONFIG_FILE,config_file)) {
         try {
-          // config_file.set(get_string(vm,GRAEHL_CONFIG_FILE));
-          store(parse_config_file(*config_file,all_options),vm); /*Stores in 'm' all options that are defined in 'options'. If 'm' already has a non-defaulted value of an option, that value is not changed, even if 'options' specify some value. */
+          // config_file.set(get_string(get_vm(),GRAEHL_CONFIG_FILE));
+          store(parse_config_file(*config_file,all_options()),get_vm()); /*Stores in 'm' all options that are defined in 'options'. If 'm' already has a non-defaulted value of an option, that value is not changed, even if 'options' specify some value. */
           //NOTE: this means that cmdline opts have precedence. hooray.
           config_file.close();
         } catch(exception const& e) {
@@ -406,36 +615,36 @@ struct main {
           throw;
         }
       }
-      notify(vm); // are multiple notifies idempotent? depends on user fns registered?
-
+      notify(get_vm()); // are multiple notifies idempotent? depends on user fns registered?
       if (help) {
-        cout << "\n" << get_name() << "\n\n";
-        cout << usage << "\n\n";
-        cout << general_options_desc()<<"\n";
-        cout << all_options << "\n";
+        show_help(std::cout);
         return false;
       }
+#endif
     } catch (std::exception &e) {
-      std::cerr << "ERROR: "<<e.what() << " while parsing "<<cmdname<<" options:\n"<<cmdline_str<<"\n\n" << argv[0] << " -h\n for help\n\n";
+      std::cerr << "ERROR: "<<e.what() << "\n while parsing "<<cmdname<<" options:\n"<<cmdline_str<<"\n\n" << argv[0] << " -h\n for help\n\n";
+  //show_help(std::cerr);
       throw;
     }
     return true;
   }
 
-
-  //FIXME: defaults cannot change after first parse_args
-  int run_main(int argc, char *argv[])
+#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+  configure::warn_consumer to_cerr; //TODO: set stream to logfile
+  configure::program_options_exec_new exec;
+#endif
+//FIXME: defaults cannot change after first parse_args
+  int run_main(int argc, char **argv)
   {
     cmdname=argv[0];
-    set_defaults();
     try {
       if (!parse_args(argc,argv))
         return 1;
       validate_parameters();
       log_invocation();
-      run();
+      return run_exit();
     }
-    catch(std::bad_alloc& e) {
+    catch(std::bad_alloc&) {
       return carpexcept("ran out of memory\nTry descreasing -m or -M, and setting an accurate -P if you're using initial parameters.");
     }
     catch(std::exception& e) {
@@ -450,7 +659,7 @@ struct main {
     return 0;
   }
 
-  // for some reason i see segfault with log() when exiting from main. race condition? weird.
+// for some reason i see segfault with log() when exiting from main. race condition? weird.
   template <class C>
   int carpexcept(C const& c) const
   {
@@ -472,8 +681,23 @@ struct main {
   virtual ~main() {}
 };
 
+template<>
+struct assign_traits<main,void> : no_assign
+{};
+
 
 }
 
+#if GRAEHL_CMDLINE_SAMPLE_MAIN
+struct sample_main : graehl::main
+{
+};
+graehl::main sample_m;
+
+int main(int argc,char **argv)
+{
+  return sample_m.run_main(argc,argv);
+}
+#endif
 
 #endif

@@ -583,7 +583,7 @@ Weight WFST::train(cascade_parameters &cascade,
     }
 
     // when you just want frac counts or a single iteration:
-    if (opts.max_iter==0 || opts.max_iter==1&&opts.ran_restarts==0) {
+    if (opts.max_iter==0 || (opts.max_iter==1&&opts.ran_restarts==0)) {
         if (opts.max_iter==0)
             log << "0 iterations specified for training; output weights will be unnormalized fractional counts (except locked arcs).\n";
         cascade.update();
@@ -632,7 +632,7 @@ Weight WFST::train(cascade_parameters &cascade,
 #define DWSTAT(a) print_stats(arcs,a)
             arcs_table<arc_counts> const &arcs=fb.arcs;
 #else
-#define DWSTAT
+#define DWSTAT(a)
 #endif
 //            DWSTAT("Before estimate");
             bool cascade_counts=using_cascade && !first_time;

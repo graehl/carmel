@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+cmd = %Q{curl https://gist.github.com/gists -s -L -o /dev/null -w "%{url_effective} " }
+
+files = ARGV.empty? ? Dir["**/*"] : Dir[*ARGV].uniq
+
+files.select { |f| File.file?(f) }.each_with_index do |path, i|
+  cmd << %Q{-F "file_ext[gistfile#{i}]=#{File.extname(path)[1..-1]}" }
+  cmd << %Q{-F "file_name[gistfile#{i}]=#{File.basename(path)}" }
+  cmd << %Q{-F "file_contents[gistfile#{i}]=<#{path}" }
+end
+
+exec cmd

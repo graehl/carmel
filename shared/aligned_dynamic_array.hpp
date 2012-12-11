@@ -746,7 +746,7 @@ ALIGNED_EQ_OTHER_ARRAY(array)
 };
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 //FIXME: deallocate everything to make running valgrind on tests less painful
 BOOST_AUTO_TEST_CASE( test_aligned_dynarray )

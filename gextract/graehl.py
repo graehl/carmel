@@ -826,23 +826,14 @@ class Stopwatch(object):
     def pause(self):
         self.total+=self.elapsed()
         self.started=None
+    def start(self):
+        self.reset(False)
     def total_elapsed(self):
         return self.elapsed()+self.total
     def __str__(self):
         e=self.total_elapsed()
         return "%s: %s s"%(self.name,e)
 
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        pass
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise
-
-def mkdir_parent(file):
-    mkdir_p(os.path.dirname(file))
 
 def typedvals(*l):
     return ' '.join(['%s:%s'%(type(x).__name__,x) for x in l])
@@ -1611,7 +1602,6 @@ def scan(f,z,list):
     return result
 
 
-
 def cartesian_product(a,b):
     "return list of tuples"
     return [(x,y) for x in a for y in b]
@@ -1649,15 +1639,29 @@ def writeln(line,file=sys.stdout):
     file.write(line)
     file.write('\n')
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        pass
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
+
+def mkdir_parent(file):
+    mkdir_p(os.path.dirname(file))
+
 def open_in(fname):
     "if fname is '-', return sys.stdin, else return open(fname,'r')"
     return sys.stdin if fname=='-' else open(fname,'r')
 
-def open_out(fname):
-    "if fname is '-', return sys.stdout, else return open(fname,'w').  not sure if it's ok to close stdout, so let GC close file please."
+def open_out(fname, append=False, mkdir=False):
+    "if fname is '-', return sys.stdout, else return open(fname,'w'). not sure if it's ok to close stdout, so let GC close file please."
     if fname=='-':
         return sys.stdout
-    return open(fname,'w')
+    if mkdir:
+        mkdir_parent(fname)
+    return open(fname,'a' if append else 'w')
 
 def open_out_prefix(prefix,name):
     "open_out prefix+name, or stdout if prefix='-'"
@@ -1751,6 +1755,13 @@ def filename_from(s):
 
 def filename_from_1to1(s):
     return filename_from(s)
+
+digitChars=set('0123456789')
+def varname_from(s):
+    r=re.sub(r'[^a-zA-Z0-9_]+','_',s)
+    if r[0] in digitChars:
+        return '_'+r
+    return r
 
 # def take(n, iterable):
 #     "Return first n items of the iterable as a list"

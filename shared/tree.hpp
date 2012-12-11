@@ -31,7 +31,7 @@ namespace lambda=boost::lambda;
 #include <graehl/shared/byref.hpp>
 #include <graehl/shared/stream_util.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <graehl/shared/string_to.hpp>
 
@@ -816,7 +816,7 @@ tree<L> *read_tree(std::basic_istream<charT,Traits>& in)
   //return tree<L>::read_tree(in);
 }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 template<class T> bool always_equal(const T& a,const T& b) { return true; }
 
@@ -887,8 +887,8 @@ BOOST_AUTO_TEST_CASE( test_tree )
   string s1="(1 2 (3))";
   string s2="(1 2 3)";
   tree<int> t1,t2;
-  string_into(s1,t1);
-  string_into(s2,t2);
+  string_to(s1,t1);
+  string_to(s2,t2);
   BOOST_CHECK_EQUAL(s2,to_string(t2));
   BOOST_CHECK_EQUAL(t1,t2);
   BOOST_CHECK(tree_equal(t1,t2));

@@ -1,11 +1,11 @@
 #ifndef TEMPLATE_HPP
 #define TEMPLATE_HPP
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( TEST_TEMPLATE )
 {
 }

@@ -1,7 +1,16 @@
 #ifndef GRAEHL__SHARED__IS_NULL_HPP
 #define GRAEHL__SHARED__IS_NULL_HPP
 
-//global NS (or wherever you include it)
+#ifdef GRAEHL_TEST
+# include <graehl/shared/test.hpp>
+# include <graehl/shared/debugprint.hpp>
+# include <boost/lexical_cast.hpp>
+# define IS_NULL_DEBUG(x) x
+#else
+# define IS_NULL_DEBUG(x)
+#endif
+
+//find is_null, set_null by ADL (Koenig lookup).
 
 #include <graehl/shared/nan.hpp>
 
@@ -50,5 +59,32 @@ struct as_null {};
 #define MEMBER_SET_NULL     friend bool is_null(self_type const& me) { return me.is_null(); }
 #define MEMBER_IS_NULL     friend void is_null(self_type & me) { return me.set_null(); }
 
+
+#ifdef GRAEHL_TEST
+BOOST_AUTO_TEST_CASE(TEST_is_null) {
+    using namespace std;
+    using namespace boost;
+    using namespace graehl;
+
+    double d=std::numeric_limits<double>::infinity();
+    DBP2(d,is_null(d));
+    BOOST_CHECK_EQUAL(is_null(d),false);
+    BOOST_CHECK_EQUAL(is_nan(d),false);
+    set_null(d);
+    DBP2(d,is_null(d));
+    BOOST_CHECK_EQUAL(is_null(d),true);
+    BOOST_CHECK_EQUAL(is_nan(d),true);
+
+    float f=std::numeric_limits<float>::infinity();
+    DBP2(f,is_null(f));
+    BOOST_CHECK_EQUAL(is_null(f),false);
+    BOOST_CHECK_EQUAL(is_nan(f),false);
+    set_null(f);
+    DBP2(f,is_null(f));
+    BOOST_CHECK_EQUAL(is_null(f),true);
+    BOOST_CHECK_EQUAL(is_nan(f),true);
+
+}
+#endif
 
 #endif

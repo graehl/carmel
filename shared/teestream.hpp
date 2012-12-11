@@ -24,7 +24,7 @@ namespace graehl {
   };
 }
 
- #ifdef TEST_MANUAL
+ #ifdef GRAEHL_TEST_MANUAL
  #include <fstream>
   int main() {
     std::ofstream  logfile("/tmp/logfile.txt");

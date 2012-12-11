@@ -2,7 +2,9 @@
 #pragma warning( pop )
 #else
 #include "warning_compiler.h"
-#if HAVE_DIAGNOSTIC_PUSH
+#ifdef __clang__
+# pragma clang diagnostic pop
+#elif HAVE_DIAGNOSTIC_PUSH
 # pragma GCC diagnostic pop
 #endif
 #endif

@@ -1,0 +1,56 @@
+#!/usr/bin/perl -i~
+my $cfh;
+my $cfile=`echo ~/tmp/collisions.txt`;
+chomp $cfile;
+my $cdir=`dirname $cfile`;
+chomp $cdir;
+`mkdir -p $cdir`;
+my $origline;
+my $orig;
+my $field;
+
+sub cprint {
+    open($cfh,">>",$cfile) if !defined($cfh);
+    print $cfh @_;
+    print STDERR @_;
+}
+
+my %rewrote;
+
+sub collision {
+    my $old=$rewrote{$_};
+    cprint "COLLISION $ARGV:$. #$field: {$old,$orig} => $_\n $origline" if ($old && $old ne $orig);
+    $rewrote{$_}=$orig;
+    $orig=$_;
+}
+
+sub stripcamel {
+  my($pre,$post)=@_;
+  s|^(?:$pre)([A-Z])|lcfirst($1)|e;
+}
+
+sub stripany {
+  my($pre)=@_;
+  s|^$pre||;
+}
+
+#$_ is a variable name
+sub rename {
+    local($_)=@_;
+    $orig=$_;
+    stripany('m_');
+    stripcamel('b|u|str|vec|map|the|sz');
+    s|^iter(?=[A-Z])|i|;
+    &collision;
+    $_
+}
+
+while(<>) {
+    $origline=$_;
+    $field=0;
+    s|\b([a-zA-Z_][a-zA-Z_0-9]+)\b|&rename($1)|ge;
+    if ($origline ne $_) {
+        print STDERR "rewrote:\n< $origline> $_";
+    }
+    print;
+}

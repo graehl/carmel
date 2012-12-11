@@ -7,7 +7,7 @@
 #include <graehl/shared/indexgraph.hpp>
 #include <graehl/shared/container.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -44,7 +44,7 @@ bool is_any_symbol(const Symbol &s)
     return false;
 }
 
-  
+
 template <class C>
 unsigned &get_index(const C& c) {
   return c.phony_int();
@@ -151,8 +151,8 @@ struct treetrie {
     visit_match(node);
     V *np;
     MTree *t=where_subtrees[where];
-    unsigned rank=t->rank();
-    MTree::Label &lab=t->label;
+    unsigned rank=t->rank;
+    //MTree::Label &lab=t->label; // FIXME: why unused?
     typedef MTree::iterator child_it;
     child_it beg=t->begin(),e=t->end();
     // expand @where
@@ -174,7 +174,8 @@ struct treetrie {
       // recursively choose to expand something to the right of us, based on what's in the trie:
       // don't do this: // np=index.find(*np,Symbol(where,Symbol::PHONYINT))
       index.enumerate(*np,ref(*this));
-
+    DONE:
+      assert(0); //TODO
     }
   }
   void operator()(const std::pair<Symbol,V> &where_to) {
@@ -188,7 +189,7 @@ struct treetrie {
 
 }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #endif
 
 #endif

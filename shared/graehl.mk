@@ -167,9 +167,9 @@ BOOST_DEBUG_SUFFIX="-gd"
 endif
 endif
 ifndef NO_THREADS
-#BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)-mt$(BOOST_DEBUG_SUFFIX)
+BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)-mt$(BOOST_DEBUG_SUFFIX)
 else
-#BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)$(BOOST_DEBUG_SUFFIX)
+BOOST_SUFFIX=$(BOOST_SUFFIX_BASE)$(BOOST_DEBUG_SUFFIX)
 CPPFLAGS +=  -DBOOST_DISABLE_THREADS -DBOOST_NO_MT
 endif
 endif
@@ -186,7 +186,7 @@ BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
-libs: $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
+libs: $(BOOST_TIMER_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
 INC += $(BOOST_DIR)
 else
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
@@ -194,7 +194,9 @@ BOOST_TEST_LIB=-lboost_unit_test_framework$(BSUF)
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
 BOOST_SYSTEM_LIB=-lboost_system$(BSUF)
 BOOST_FILESYSTEM_LIB=-lboost_filesystem$(BSUF)
+BOOST_RANDOM_LIB=-lboost_random$(BSUF)
 BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF) $(BOOST_SYSTEM_LIB)
+BOOST_TIMER_LIB=-lboost_timer$(BSUF) $(BOOST_SYSTEM_LIB)
 libs:
 endif
 
@@ -241,7 +243,6 @@ ifeq ($(ARCH),linux)
  #-DLINUX_BACKTRACE -rdynamic
 #-rdynamic: forces global symbol table (could remove for optimized build)
 endif
-
 
 
 define PROG_template

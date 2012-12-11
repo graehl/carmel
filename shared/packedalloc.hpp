@@ -6,7 +6,7 @@
 #include <memory>
 
 #ifndef PACKED_ALLOC_BLOCKSIZE
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #define PACKED_ALLOC_BLOCKSIZE 8
 #else
 #define PACKED_ALLOC_BLOCKSIZE 4096

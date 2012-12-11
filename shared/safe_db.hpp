@@ -13,7 +13,7 @@
 #include <boost/config.hpp>
 #include <graehl/shared/makestr.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
 # include <graehl/shared/debugprint.hpp>
 #endif 
@@ -575,7 +575,7 @@ class safe_db
 #undef MAKE_db_key
 };
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # define CHECKNDATA  BOOST_CHECK_EQUAL(db.n_keys_fast(),n_data);BOOST_CHECK_EQUAL(db.n_keys_fast(),db.n_data_slow())
 template <class SDB>
 void test_safedb_type()

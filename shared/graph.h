@@ -147,6 +147,7 @@ struct Graph {
     {
         for (unsigned i=0;i<nStates;++i)
             start=states[i].restore_weights(s,start);
+        return start;
     }
 };
 
@@ -204,7 +205,6 @@ struct backrefs
         }
     }
 };
-
 
 
 class TopoSort {

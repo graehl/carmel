@@ -577,6 +577,7 @@ class WFST {
         o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : " << outLetter(a.out);
         if (weight) o<< " / " << a.weight;
         o << ")";
+        return o;
     }
 
     /*void insertPathArc(GraphArc *gArc, List<PathArc>*);
@@ -846,7 +847,6 @@ class WFST {
     // yourself when you are done with it
 
 
-
     // Visitor needs to accept GraphArc (from makeGraph ... (FSTArc *)->data gives WFST FSTArc - see kbest.h for visitor description.  deprecated for visit_kbest
     template <class Visitor> void bestPaths(unsigned k,Visitor &v,bool throw_on_cycle=true) {
         Graph graph = makeGraph();
@@ -947,7 +947,6 @@ class WFST {
        produce a subset of all edits
     WFST(std::vector<int> const& string,WFST &edit_distance_to,Weight ins,Weight del,Weight subst,bool epsilon_outer=false,int dir=input)
     */
-
 
 
     struct annotated_path
@@ -1066,8 +1065,6 @@ class WFST {
     */
 
 
-
-
     template <class V>
     void edit_distance_mbr(unsigned search_k,unsigned visit_k,V &v,double alpha=1.,int dir=WFST::input)
     {
@@ -1086,7 +1083,6 @@ class WFST {
         assert(0);
         //TODO
     }
-
 
 
     // best paths to final
@@ -1575,7 +1571,6 @@ class WFST {
     }
 
 
-
  private:
 
 
@@ -1690,7 +1685,6 @@ void warn_no_derivations(WFST const& x,IOSymSeq const& s,unsigned n);
 ostream & operator << (ostream &o, WFST &w);
 
 ostream & operator << (std::ostream &o, List<PathArc> &l);
-
 
 
 }

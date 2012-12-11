@@ -4,7 +4,7 @@
 // originally contained my own wrap-reference-as-value class until I discovered Boost's.
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -65,6 +65,37 @@ deref(const T& t) {
 }
   //return *const_cast<boost::unwrap_reference<T>::type *>&(t);
 
+
+// for containers of containers where you want to visit every element
+template <class M,class F>
+void nested_enumerate(const M& m,F f) {
+    typedef typename M::value_type Inner;
+    for (typename M::const_iterator i=m.begin();i!=m.end();++i)
+        for (typename Inner::const_iterator j=i->begin();j!=i->end();++j)
+            deref(f)(*j);
+}
+
+template <class M,class F>
+void nested_enumerate(M& m,F f) {
+    typedef typename M::value_type Inner;
+    for (typename M::iterator i=m.begin();i!=m.end();++i)
+        for (typename Inner::iterator j=i->begin();j!=i->end();++j)
+            deref(f)(*j);
+}
+
+
+template <class M,class F>
+void enumerate(const M& m,F f) {
+  for (typename M::const_iterator i=m.begin();i!=m.end();++i)
+    deref(f)(*i);
+}
+
+template <class M,class F>
+void enumerate(M& m,F f) {
+  for (typename M::iterator i=m.begin();i!=m.end();++i)
+    deref(f)(*i);
+}
+
 }
 
 namespace std {
@@ -107,9 +138,7 @@ struct hash<boost::reference_wrapper<R> >
 }
 
 
-
-
-#ifdef TEST_MAIN
+#ifdef GRAEHL_TEST_MAIN
 namespace byref_test{
 
 
@@ -129,7 +158,6 @@ void h(C c) {
 }
 
 
-
 BOOST_AUTO_TEST_CASE( TEST_byref )
 {
     using namespace byref_test;
@@ -144,7 +172,6 @@ BOOST_AUTO_TEST_CASE( TEST_byref )
   BOOST_CHECK(t==2);
 }
 #endif
-
 
 
 #endif

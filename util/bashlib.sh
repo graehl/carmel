@@ -1,5 +1,12 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+wordsnl() {
+    perl -e 'print "$_\n" for (@ARGV)' "$@"
+}
+dedupwords() {
+    wordsnl "$@" | sort | uniq
+}
+
 execcp() {
     if cygwin ; then
         perl -e '
@@ -169,32 +176,57 @@ accessed() {
     # time of last read
     /usr/bin/stat -L -c %X "$@"
 }
+
+darwin() {
+    if [[ $ONDARWIN ]] ; then
+        true
+    else
+        local OS=`uname`
+        [ "${OS#Darwin}" != "$OS" ] && ONDARWIN=1
+    fi
+}
 getrpath() {
-    chrpath -l "$1" | perl -ne 'if (/RPATH=(.*)/) {
+    if darwin ; then
+        otool -L "$@"
+    else
+        chrpath -l "$1" | perl -ne 'if (/RPATH=(.*)/) {
 @r=split(/:/,$1);
 print join(":",grep { -d $_ } @r);
 }'
-}
-objrpath() {
-    objdump -x "$1" | grep -i rpath
+    fi
 }
 addrpath() {
     local f=$1
     shift
-    local p=$(getrpath $f)
-    (
-    set -e
-    if [ "$*" ] ; then
+    if darwin ; then
+        local p
         for d in "$@"; do
-            require_dir $d
-            p="$d:$p"
+            if [[ -d $d ]] ; then
+                echo $d
+                p+=" -add_rpath '$d'"
+            fi
         done
-    elif [[ $nocd != 1 ]] ; then
-        p="$(dirreal $f):$p"
+        install_name_tool $p $f
+    else
+        local p=$(getrpath $f)
+        (
+            set -e
+            if [ "$*" ] ; then
+                for d in "$@"; do
+                    if [[ -d $d ]] ; then
+                        echo $d
+                        p="$d:$p"
+                    fi
+                done
+            elif [[ $nocd != 1 ]] ; then
+                p="$(pwd):$p"
+            fi
+            chrpath -r "$p" "$f"
+        )
     fi
-    showvars_required p f
-    chrpath -r "$p" "$f"
-    )
+}
+objrpath() {
+    objdump -x "$1" | grep -i rpath
 }
 
 relpathr() {
@@ -304,8 +336,7 @@ kjobs() {
     done
 }
 
-BLOBS=${BLOBS:-/home/nlg-01/blobs}
-[ -d $BLOBS ] || BLOBS=~/blobs
+BLOBS=$(echo ~/blobs)
 export BLOBS
 WHOAMI=`whoami`
 HOST=${HOST:-$(hostname)}
@@ -725,6 +756,7 @@ cygwin() {
         [ "${OS#CYGWIN}" != "$OS" ] && ONCYGWIN=1
     fi
 }
+
 
 ulimitsafe() {
 local want=${1:-131072}
@@ -1752,7 +1784,7 @@ function skip_done_bg
 }
 
 # usage: newer_than=file skip_files 1 out1 ... || something > out1; skip_done; ... show_new_files
-# first arg: $start_at must be greater than $1 .  remaining args: files that should exist or else regenerate them all.  returns true (0) if you can skip, false (1) if you can't.
+# first arg: $start_at must be lessequal to  $1 or else unset (otherwise we skip). see also stop_at .  remaining args: files that should exist or else regenerate them all.  returns true (0) if you can skip, false (1) if you can't.
 # if first arg is >= stop_at, then don't run (return true) no matter if outputs exist or not
 skip_files() {
 #    echo2 skip_files "$@"
@@ -1784,6 +1816,46 @@ skip_files() {
     fi
     not_skipping "$@"
     skip_status "$r rerunning to produce $*" && return 1
+}
+
+
+# usage: newer_than=file skip_files 1 out1 ... || something > out1; skip_done; ... show_new_files
+# first arg: $start_at must be greater than $1 .  remaining args: files that should exist or else regenerate them all.  returns true (0) if you can skip, false (1) if you can't.
+# if first arg is >= stop_at, then don't run (return true) no matter if outputs exist or not
+have_outputs() {
+#    echo2 skip_files "$@"
+    working_files=
+    working_start=`date +%s`
+    local r=$1
+    shift
+    if ! [ "$*" ]  ; then
+     warn "skip_files has empty list of output files as args.  rerunning command always."
+     return 0
+    fi
+#    echo2 "require $r < $start_at - files: $*"
+    if [ -n "$stop_at" -a $r -ge 0$stop_at ] ; then
+      stale_files="$stale_files $*"
+      skip_status "$r skipping - stop_at=$stop_at is <= $r" && return 1
+    fi
+    if [ 0$start_at -gt $r ] ; then
+# might skip if files are already there:
+        local f
+        for f in "$@"; do
+          if ! have_file $f $newer_than ; then
+           skip_status "$r rerunning, for missing output $f"
+           not_skipping "$@"
+           return 1
+          fi
+        done
+        stale_files="$stale_files $*"
+        skip_status "$r skipping - had all files $*" && return 1
+    fi
+    if [ 0$force_start_at -gt $r ] ; then
+     warn "forcing start at $force_start_at even if files are stale"
+     return 0
+    fi
+    not_skipping "$@"
+    skip_status "$r rerunning to produce $*" && return 0
 }
 
 require_dirs() {
@@ -1840,6 +1912,12 @@ sumff() {
 
 realpath() {
     perl -e "push @INC,'$BLOBS/libgraehl/latest';require 'libgraehl.pl';"'while($_=shift) {$_=abspath_from(".",$_,1) if -e $_; s|^/auto/|/home/|; print $_,"\n"}' -- "$@"
+#    readlink -fs "$@"
+    #FIXME: hpc compute nodes, nlg0 have wrong readlink?
+}
+
+realpaths() {
+    perl -e "push @INC,'$BLOBS/libgraehl/latest';require 'libgraehl.pl';"'while($_=shift) {$_=abspath_from(".",$_,1) if -e $_; s|^/auto/|/home/|; print $_," "}' -- "$@"
 #    readlink -fs "$@"
     #FIXME: hpc compute nodes, nlg0 have wrong readlink?
 }

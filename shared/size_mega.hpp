@@ -11,8 +11,10 @@
 #include <sstream>
 #include <cstddef>
 #include <string>
+
 namespace graehl {
 
+/// maxWidth, if positive, limits total number of characters. decimalThousand selects the 10^(3k) SI suffixes (k m g t) instead of 2^(10k) (K G M T)
 template <class size_type,class outputstream>
 inline outputstream & print_size(outputstream &o,size_type size,bool decimal_thousand=true,int max_width=-1) {
     typedef double size_compute_type;
@@ -80,7 +82,7 @@ inline size_type parse_size(inputstream &i) {
     if (number - (size_type)number > 1)
         throw std::runtime_error(std::string("Overflow - size too big to fit: ").append(boost::lexical_cast<std::string>(number)));
     return (size_type)number;
-fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k,m, or g (10^3,10^6,10^9) suffix, or K, M, or G (2^10,2^20,2^30)."));
+fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k, m, g, or t (10^3,10^6,10^9,10^12) suffix, or K, M, G, or T (2^10,2^20,2^30,2^40), e.g. 1.5G"));
 }
 
 template <class size_type>

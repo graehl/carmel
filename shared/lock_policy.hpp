@@ -5,17 +5,17 @@
 
 /*
 
-intent:
+  intent:
 
-template <class Locking=graehl::no_locking> // or graehl::locking
-struct collection : private Locking::mutex_type
-{
-void some_operation()
-{
-    typename Locking::guard_type lock(*this);
-// or    bool do_lock=...;
+  template <class Locking=graehl::no_locking> // or graehl::locking
+  struct collection : private Locking::mutex_type
+  {
+  void some_operation()
+  {
+  typename Locking::guard_type lock(*this);
+// or bool do_lock=...;
 //    typename Locking::guard_type lock(*this,do_lock);
-    // (locks if do_lock)
+// (locks if do_lock)
 }
 };
 */
@@ -30,15 +30,15 @@ namespace graehl {
 
 struct locking
 {
-    typedef boost::mutex mutex_type;
-    typedef boost::lock_guard<mutex_type> guard_type;
+  typedef boost::mutex mutex_type;
+  typedef boost::lock_guard<mutex_type> guard_type;
 };
 
 struct spin_locking
 {
-    typedef boost::detail::lightweight_mutex mutex_type;
+  typedef boost::detail::lightweight_mutex mutex_type;
 //    typedef boost::lock_guard<mutex_type> guard_type;
-    typedef mutex_type::scoped_lock guard_type;
+  typedef mutex_type::scoped_lock guard_type;
 };
 
 }

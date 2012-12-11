@@ -84,7 +84,7 @@ while(<$fh>) {
 #        my $replacetext=$isregexp ? $replace : qq{\\Q*replace\\E};
         $retext=qq{\\b$retext\\b} if $wholeword;
         &debug($retext);
-        push @rewrites,[eval("qr/$retext/"),$replace,"s/$find/$replace/"];
+        push @rewrites,[eval("qr{$retext}"),$replace,"s{$find}{$replace}"];
     }
 }
 

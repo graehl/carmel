@@ -48,7 +48,7 @@ typedef sparse_vector<std::string,float> named_sparse_vector;
 
 }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include "test.hpp"
 
 BOOST_AUTO_TEST_CASE( TEST_sparse_vector )

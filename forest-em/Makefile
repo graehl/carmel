@@ -1,7 +1,7 @@
 PROGS= forest-em forestviz
 
 forest-em_SRC=forest-em.cpp
-forest-em_LIB=$(BOOST_OPTIONS_LIB)
+forest-em_LIB=$(BOOST_OPTIONS_LIB) $(BOOST_TIMER_LIB) $(BOOST_RANDOM_LIB)
 forest-em_NOTEST=1
 
 text-to-cc_SRC=text-to-cc.cpp
@@ -10,13 +10,13 @@ text-to-cc_NOSTATIC=1
 text-to-cc_NODEBUG=1
 
 forestviz_SRC=forestviz.cpp
-forestviz_LIB=$(BOOST_OPTIONS_LIB)
+forestviz_LIB=$(BOOST_OPTIONS_LIB) $(BOOST_RANDOM_LIB)
 forestviz_NOTEST=1
 #forestviz_NOSTATIC=1
 
 INC= . $(TRUNK)
 LIB=
-CXX:=g++
+#CXX:=g++
 
 CXXFLAGS_COMMON= -ggdb -ffast-math
 CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM

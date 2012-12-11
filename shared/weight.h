@@ -25,6 +25,7 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 */
 
 #include <boost/lexical_cast.hpp>
+#include <graehl/shared/nan.hpp>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/myassert.h>
@@ -35,7 +36,7 @@ Carmel optionally supports the use of base 10 instead: \forall N,Nlog=10^N, but 
 #include <cstdlib>
 #include <limits>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <cctype>
 #include <graehl/shared/debugprint.hpp>
@@ -175,7 +176,6 @@ struct logweight {                 // capable of representing nonnegative reals
     }
 
 
-
     template<class A,class B> static std::basic_ostream<A,B>&
     out_default_base(std::basic_ostream<A,B>& os) { os.iword(base_index) = DEFAULT_BASE; return os; }
     template<class A,class B> static std::basic_ostream<A,B>&
@@ -303,14 +303,7 @@ struct logweight {                 // capable of representing nonnegative reals
             setZero();
     }
     void NaNCheck() const {
-#ifdef DEBUG
-        if(weight!=weight) {
-            *(int*)0=0;
-            Assert(weight==weight);
-        }
-#else
-        assert(weight==weight);
-#endif
+      assert(!is_nan(weight));
     }
     void setLn(Real w) {
         weight=w;
@@ -677,7 +670,6 @@ struct logweight {                 // capable of representing nonnegative reals
 };
 
 
-
 template<class Real>
 inline Real log(logweight<Real> a) {
     return a.getLn();
@@ -724,8 +716,6 @@ inline logweight<Real> operator ^(logweight<Real> const& base,Real exponent) {
   {
   }
 */
-
-
 
 
 /*
@@ -814,8 +804,6 @@ result.weight =  lhs.weight - rhs.weight;
 return result;
 }
 */
-
-
 
 
     template<class Real>
@@ -974,7 +962,7 @@ typedef logweight<WEIGHT_FLOAT_TYPE> Weight;
 #undef WEIGHT_DEFINE_OP
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( TEST_WEIGHT )
 {
     typedef logweight<float> W;

@@ -380,7 +380,6 @@ struct SwapBatch {
 
     void read_all(std::istream &in) {
         BACKTRACE;
-        char c;
         while(in) {
             read_one(in);
         }

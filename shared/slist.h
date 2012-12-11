@@ -13,7 +13,7 @@
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/stream_util.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -829,7 +829,7 @@ template <class T,class A>
       a.swap(b);
   }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 int sla[] = { 1,2,3,4,5,6,7 };
 int sla1[] = { 1, 4, 5 };

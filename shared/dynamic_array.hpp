@@ -445,7 +445,7 @@ protected:
     T *newVec = this->allocate(new_cap); // can throw but we've made no changes yet
     memcpy(newVec, this->vec, bytes(sz));
     dealloc_safe();
-    set_begin(newVec);this->set_capacity(new_cap);set_size(sz);
+    this->set_begin(newVec);this->set_capacity(new_cap);set_size(sz);
     // caveat:  cannot hold arbitrary types T with self or mutual-pointer refs
   }
   void dealloc_safe() {
@@ -735,12 +735,17 @@ public:
   FROM_ISTREAM_READ
 };
 
+struct GVectorS {
+  template <class T> struct container {
+    typedef dynamic_array<T> type;
+  };
+};
+
 template <typename T,class A>
 void push_back(dynamic_array<T,A> &v)
 {
   v.push_back();
 }
-
 
 
 template <typename T,typename Alloc,class charT, class Traits, class Reader>
@@ -827,8 +832,7 @@ void read(std::istream &in,array<L,A> &x,StackAlloc &a)
 }
 
 
-
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 //FIXME: deallocate everything to make running valgrind on tests less painful
 

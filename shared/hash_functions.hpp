@@ -427,7 +427,7 @@ inline uint32_t hash_bytes_32 (void const* k, int len) {
 
 }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
 
 namespace hash_test {

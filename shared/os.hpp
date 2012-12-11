@@ -1,6 +1,6 @@
 // wraps misc. POSIX vs. Windows facilities
-#ifndef OS_HPP
-#define OS_HPP
+#ifndef GRAEHL_SHARED__OS_HPP
+#define GRAEHL_SHARED__OS_HPP
 
 #include <fstream>
 #include <string>
@@ -9,9 +9,8 @@
 #include <stdlib.h>
 #include <cstring>
 #include <sstream>
-#include <graehl/shared/shell_escape.hpp>
-#include <graehl/shared/command_line.hpp>
-#include <graehl/shared/string_to.hpp>
+#include <graehl/shared/atoi_fast.hpp>
+// see also shell.hpp for things relying on unix or cygwin shell
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
 # define OS_WINDOWS
@@ -42,6 +41,7 @@
 # define NOMINMAX 1
 #endif
 #include <windows.h>
+
 #undef min
 #undef max
 #undef DELETE
@@ -50,28 +50,21 @@
 
 #ifdef OS_WINDOWS
 # include <direct.h>
+# ifdef max
+#  undef max
+# endif
+# ifdef min
+#  undef min
+# endif
 #endif
 
 //static local var means env var is checked once (like singleton)
 #define DECLARE_ENV(fn,var) static int fn() {static const int l=graehl::getenv_int(#var);return l;}
 #define DECLARE_ENV_C(n,f,v) DECLARE_ENV(f,v) static const int n = f();
 #define DECLARE_ENV_C_LEVEL(n,f,v) DECLARE_ENV(f,v) DECLARE_ENV(f##_LEVEL,v##_LEVEL) static const int n##_1 = f(); static const int n##_2 = f##_LEVEL(); static const int n=n##_1>n##_2?n##_1:n##_2; //
-#define DECLARE_DBG_LEVEL_C(n,env) DECLARE_ENV_C_LEVEL(n,getenv_##env,env)
-#define DECLARE_DBG_LEVEL(ch) DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG)
-#define DECLARE_DBG_LEVEL_IF(ch) ch(DECLARE_DBG_LEVEL_C(ch##_DBG_LEVEL,ch##_DBG))
-#define MACRO_NOT_NULL(IF) (0 IF(||1))
-#define SHV(x) " "#x<<"="<<x
 
-#ifdef NDEBUG
-# define IFDBG(ch,l) if(0)
-#else
-# define IFDBG(ch,l) if(MACRO_NOT_NULL(ch) && ch##_DBG_LEVEL>=(l))
-#endif
 
-// ch(IFDBG...) so channel need not be declared if noop #define ch(x)
-#define EIFDBG(ch,l,e) do { ch(IFDBG(ch,l) { e; }) }while(0)
-
-#ifdef WIN32
+#ifdef OS_WINDOWS
 const DWORD getenv_maxch = 65535; // //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
 static char getenv_buf[getenv_maxch];
 inline char * getenv(char const* key) {
@@ -86,6 +79,7 @@ inline long get_process_id() {
 }//ns
 
 #else
+
 # include <unistd.h>
 namespace graehl {
 typedef int Error;
@@ -112,37 +106,6 @@ inline int system_safe(const std::string &cmd)
   return ret;
 }
 
-inline int system_shell_safe(const std::string &cmd)
-{
-  const char *shell="/bin/sh -c ";
-  std::stringstream s;
-  s << shell;
-  out_shell_quote(s,cmd);
-  return system_safe(s.str());
-}
-
-inline void copy_file(const std::string &source, const std::string &dest, bool skip_same_size_and_time=false)
-{
-  const char *rsync="rsync -qt";
-  const char *cp="/bin/cp -p";
-  std::stringstream s;
-  s << (skip_same_size_and_time ? rsync : cp) << ' ';
-  out_shell_quote(s,source);
-  s << ' ';
-  out_shell_quote(s,dest);
-// INFOQ("copy_file",s.str());
-  system_safe(s.str());
-}
-
-inline void mkdir_parents(const std::string &dirname)
-{
-  const char *mkdir="/bin/mkdir -p ";
-  std::stringstream s;
-  s << mkdir;
-  out_shell_quote(s,dirname);
-  system_safe(s.str());
-}
-
 
 inline std::string get_current_dir() {
 #ifdef OS_WINDOWS
@@ -167,16 +130,6 @@ void print_current_dir(O&o,const char*header="### CURRENT DIR: ")
     o << std::endl;
 }
 
-
-template <class O,class Argv>
-void print_command_header(O &o, int argc, Argv const& argv)
-{
-  print_command_line(o,argc,argv);
-  print_current_dir(o);
-  o << std::endl;
-}
-
-
 inline Error last_error() {
 #ifdef MEMMAP_IO_WINDOWS
   return ::GetLastError();
@@ -189,13 +142,13 @@ inline std::string error_string(Error err) {
 #ifdef MEMMAP_IO_WINDOWS
   LPVOID lpMsgBuf;
   if (::FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        err,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &lpMsgBuf,
-        0, NULL ) == 0)
+          FORMAT_MESSAGE_ALLOCATE_BUFFER |
+          FORMAT_MESSAGE_FROM_SYSTEM,
+          NULL,
+          err,
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          (LPTSTR) &lpMsgBuf,
+          0, NULL ) == 0)
     throw std::runtime_error("couldn't generate Windows error message string");
   std::string ret((char*) lpMsgBuf);
   ::LocalFree(lpMsgBuf);
@@ -224,7 +177,7 @@ inline bool create_file(const std::string& path,std::size_t size) {
   HANDLE fh=::CreateFileA( path.c_str(),GENERIC_WRITE,FILE_SHARE_DELETE,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,NULL);
   if (fh == INVALID_HANDLE_VALUE)
     return false;
-  if(::SetFilePointer(fh,size,NULL,FILE_BEGIN) != size)
+  if(::SetFilePointer(fh,(LONG)size,NULL,FILE_BEGIN) != size)
     return false;
   if (!::SetEndOfFile(fh))
     return false;
@@ -249,7 +202,7 @@ struct tmp_fstream
     choose_name();
     open();
     file << c;
-// DBP(c);
+    // DBP(c);
     reopen();
   }
   tmp_fstream(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc )
@@ -298,7 +251,7 @@ inline void throw_last_error(const std::string &module="ERROR")
 
 inline bool is_tmpnam_template(const std::string &filename_template)
 {
-  unsigned len=filename_template.length();
+  unsigned len=(unsigned)filename_template.length();
   return !(len<TMPNAM_SUFFIX_LEN || filename_template.substr(len-TMPNAM_SUFFIX_LEN,TMPNAM_SUFFIX_LEN)!=TMPNAM_SUFFIX);
 }
 
@@ -332,8 +285,8 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_t
 inline std::string maybe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true)
 {
   return is_tmpnam_template(filename_template) ?
-    safe_tmpnam(filename_template,keepfile) :
-    filename_template;
+      safe_tmpnam(filename_template,keepfile) :
+      filename_template;
 }
 
 
@@ -377,14 +330,5 @@ inline void split_dir_file(const std::string &fullpath,std::string &dir,std::str
 
 } // graehl
 
-
-#ifdef OS_WINDOWS
-# ifdef max
-# undef max
-# endif
-# ifdef min
-# undef min
-# endif
-#endif
 
 #endif

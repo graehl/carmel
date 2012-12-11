@@ -1,6 +1,11 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 
+// you may override this with a fully namespace qualified type - but be careful to do so consistently before every inclusion!
+// in practice unsigned would be great. who visits > 4billion best?
+#ifndef LAZY_FOREST_KBEST_SIZE
+# define LAZY_FOREST_KBEST_SIZE std::size_t
+#endif
 //TODO: cycles - if you found a pending, then try not queueing successors until you're added to memo table. but MAYBE our successors first approach makes us handle negative cost improvements more nicely? not sure. if not, then always queue successors afterwards.
 
 //FIXME: see postpone_selfloop for weakness in current cycle handling - apparently want a non-cycle 2nd best, then it's sort of ok?
@@ -9,28 +14,41 @@
 
 /**
 
-   note: no predicate is supplied for comparing derivations; instead, it's
-   assumed that worse < better. these things are called "costs" even though
-   lower is worse. (they're negative costs?) sorry.
-
    Uses a top-down, lazy, best-first kbest-derivation from a forest algorithm
    described at http://www.cis.upenn.edu/~lhuang3/huang-iwpt-correct.pdf.
    Generating, say, the 1-million best should be no problem.
 
-   Every non-optimal kth-best derivation uses either a non-best edge from an
-   equivalence, or a best edge but using nonoptimal subderivations. Typically,
-   the kbest list will contain only a small number of unique "sidetracks"
-   (non-optimal edges), but may choose different subsets of them (should they
-   occur in different subtrees, their use is nonconflicting). So, it is
-   typically best to integrate models into search, or at least provide some
-   forest expansion rescoring, as the size of the kbest list needed to get the
-   desired variation may be huge.
+   Every non-optimal kth-best derivation uses either a non-best edge, or a best
+   edge but using nonoptimal subderivations. Typically, the kbest list will
+   contain only a small number of unique "sidetracks" (non-optimal edges), but
+   may choose different subsets of them (should they occur in different
+   subtrees, their use is nonconflicting). So, it is typically best to integrate
+   models into search, or at least provide some forest expansion rescoring, as
+   the size of the kbest list needed to get the desired variation may be huge.
 
    a lazy_forest (graehl/shared/lazy_forest_kbest.hpp) that is essentially a
    (non-lazy) copy of the parse forest, with per-or-node priority queues and
    memo facilitating the lazy kbest generation.
 
    You can generate kbest items incrementally, on demand.
+
+   On consistency: you must populate the priority queues of the lazy_forest such
+   that the first best (memo[0] and pq[0]) is the same as is in your "best
+   derivation" object. If you use add_sorted, first adding the best derivation
+   for each node, then that suffices. If you use sort(), then you probably need
+   to adjust all the derivations with fix_edge to be consistent with the result.
+
+   Subtle point: you may end up violating the heap property depending on how
+   fix_edge works. However, I'm certain that d_ary_heap.hpp doesn't frivolously
+   check for heap property violations.
+
+   TODO: member pointer or recursive function argument pointer to context: deriv
+   factory, filter, stats. currently is thread-unsafe due to static globals.
+
+   TODO: resolve pq vs 1best indeterminacy by forcing user to specify which is
+   best (default = min cost in forest node), then store "to be expanded"
+   hyperedge outside of queue? the fix-best approach may potentially improve the
+   1best slightly.
 **/
 
 /*
@@ -39,29 +57,32 @@
   typedef Result *derivation_type;
   static derivation_type NONE() { return (derivation_type)0;}
   static derivation_type PENDING() { return (derivation_type)1;}
-  derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index)
+  derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, lazy_kbest_index_type changed_child_index)
   {
   return new Result(prototype,old_child,new_child,changed_child_index);
   }
+  void fix_edge(derivation_type &wrong_1best,derivation_type correct_unary_best); // repair errors in non-sorted 1-best derivation
+  void fix_edge(derivation_type &wrong_1best,derivation_type correct_left_best,derivation_type correct_right_best); // repair errors in non-sorted 1-best derivation
   };
+
+  // you also need operator == (used only for assertions)
 
   bool derivation_better_than(derivation_type a,derivation_type b);
 
   or
 
-  // Result(a) < Result(b) iff b is better than a.
+  // Result(a) < Result(b) iff a is better than b.
 
   or specialize in ns graehl:
 
   namespace graehl {
   template<>
   struct lazy_kbest_derivation_traits<Deriv> {
-    static inline bool better_than(const Deriv &me,const Deriv &than)
-    {
-      return me<than;
-    }
+  static inline bool better_than(const Deriv &candidate,const Deriv &than)
   {
-
+  return candidate<than;
+  }
+  {
 
   then build a lazy_forest<Factory> binary hypergraph
 */
@@ -70,18 +91,6 @@
 
 ///\{
 
-#ifdef SAMPLE
-# undef SAMPLE
-# define LAZY_FOREST_EXAMPLES
-# define LAZY_FOREST_SAMPLE
-#endif
-#define USE_DEBUGPRINT 0
-
-#if USE_DEBUGPRINT
-#elif !defined(NESTT)
-# define NESTT
-#endif
-
 #include <graehl/shared/os.hpp>
 #ifdef NDEBUG
 # define LAZYF(x)
@@ -89,26 +98,42 @@
 # define LAZYF(x) x
 #endif
 DECLARE_DBG_LEVEL(LAZYF)
-#include <graehl/shared/show.hpp>
 
+#ifdef SAMPLE
+# undef SAMPLE
+# define LAZY_FOREST_EXAMPLES
+# define LAZY_FOREST_SAMPLE
+#endif
+
+# include <graehl/shared/containers.hpp>
+# include <graehl/shared/indent_level.hpp>
+namespace graehl {
+struct lazy_forest_indent_tag {};
+# define LAZY_FOREST_KBEST_INDENT SCOPED_INDENT(lazy_forest_indent_tag)
+}
+
+#ifndef LAZY_FOREST_KBEST_MSG
+# define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF,LAZY_FOREST_KBEST_INDENT<<msg)
+#endif
+
+#include <graehl/shared/ifdbg.hpp>
+#include <graehl/shared/show.hpp>
 #include <boost/noncopyable.hpp>
 #include <graehl/shared/percent.hpp>
 #include <graehl/shared/assertlvl.hpp>
 
-//#define ENABLE_TEST_INFO /* requires derivations be printable */
 
-
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
 # define LAZY_FOREST_EXAMPLES
 #endif
 
-#if defined(LAZY_FOREST_EXAMPLES) || defined(ENABLE_TEST_INFO)
+#if defined(LAZY_FOREST_EXAMPLES)
 # if USE_DEBUGPRINT
-#include <graehl/shared/info_debug.hpp>
+#  include <graehl/shared/info_debug.hpp>
 //# include "default_print.hpp"
 //FIXME: doesn't work
-#include <graehl/shared/debugprint.hpp>
+#  include <graehl/shared/debugprint.hpp>
 # endif
 # include <iostream>
 # include <string>
@@ -116,13 +141,22 @@ DECLARE_DBG_LEVEL(LAZYF)
 # include <cmath>
 #endif
 
-#ifndef INFOT
-# define KBESTINFOT(x)
+#ifdef LAZY_FOREST_KBEST_MSG
+# define KBESTINFOT(x) LAZY_FOREST_KBEST_MSG(x<<'\n')
+#if defined(NESTT)
+# define KBESTNESTT NESTT
+#else
+#if _MSC_VER
 # define KBESTNESTT
 #else
-# define KBESTINFOT(x) INFOT(x)
-# define KBESTNESTT NESTT
+# define KBESTNESTT SCOPED_INDENT_NEST(lazy_forest_indent_tag)
 #endif
+#endif
+#else
+# define KBESTINFOT(x)
+# define KBESTNESTT
+#endif
+
 #ifndef ERRORQ
 # include <iostream>
 # define KBESTERRORQ(x,y) do{ std::cerr << "\n" << x << ": "<<y<<std::endl; }while(0)
@@ -130,6 +164,7 @@ DECLARE_DBG_LEVEL(LAZYF)
 # define KBESTERRORQ(x,y) ERRORQ(x,y)
 #endif
 
+#include <cstddef>
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
@@ -139,7 +174,9 @@ DECLARE_DBG_LEVEL(LAZYF)
 
 namespace graehl {
 
-inline std::ostream & operator <<(std::ostream &o,unsigned bp[2])
+typedef LAZY_FOREST_KBEST_SIZE lazy_kbest_index_type;
+
+inline std::ostream & operator <<(std::ostream &o,lazy_kbest_index_type bp[2])
 {
   return o << '[' << bp[0] << ','<<bp[1]<<']';
 }
@@ -152,24 +189,30 @@ inline std::ostream & operator <<(std::ostream &o,unsigned bp[2])
   }
 */
 
-// you should probably only override (i.e. specialize) this... not sure how ADL will work. default is greater is better.
+// you should probably only override (i.e. specialize) this... not sure how ADL will work. default is smaller (e.g. lower cost) is better.
 template <class Deriv>
 struct lazy_kbest_derivation_traits
 {
   // Deriv(a) < Deriv(b) iff b is better than a.
-  static inline bool better_than(const Deriv &me,const Deriv &than)
+  static inline bool better_than(const Deriv &candidate,const Deriv &than)
   {
-    return than < me;
+    return candidate < than;
   }
 };
 
-/// but if you overload this you don't need to specialize above, but you may end up less flexible (overloads are always prefered to spec.!)
+/// but if you overload this, then you don't need to specialize above. this is what we actually call
 template <class Deriv> inline
-bool derivation_better_than(const Deriv &me,const Deriv &than)
+bool derivation_better_than(const Deriv &candidate,const Deriv &than)
 {
-  return lazy_kbest_derivation_traits<Deriv>::better_than(me,than);
+  return lazy_kbest_derivation_traits<Deriv>::better_than(candidate,than);
 }
 
+/// but if you overload this, then you don't need to specialize above. this is what we actually call
+template <class Deriv> inline
+bool call_derivation_better_than(const Deriv &candidate,const Deriv &than)
+{
+  return derivation_better_than(candidate,than); //ADL here
+}
 
 struct lazy_derivation_cycle : public std::runtime_error
 {
@@ -188,7 +231,7 @@ struct lazy_derivation_cycle : public std::runtime_error
 
    /// can override derivation_better_than(derivation_type,derivation_type).
    /// derivation_type should be a lightweight (value) object
-   /// if INFOT debug prints are enabled, must also have o << deriv
+   /// if LAZY_FOREST_KBEST_MSG debug prints are enabled, must also have o << deriv
    typedef Result *derivation_type;
 
    friend bool derivation_better_than(derivation_type a,derivation_type b); // override this or lazy_kbest_derivation_traits::better_than. default is a>b
@@ -199,14 +242,14 @@ struct lazy_derivation_cycle : public std::runtime_error
 /// derivation_type must support: initialization by (copy), assignment, ==, !=
 
 /// take an originally better (or best) derivation, substituting for the changed_child_index-th child new_child for old_child (cost difference should usually be computed as (cost(new_child) - cost (old_child)))
-derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index)
+derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, lazy_kbest_index_type changed_child_index)
 {
 return new Result(prototype,old_child,new_child,changed_child_index);
 }
 };
 </code>
 **/
-// TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
+  // TODO: implement unique visitor of all the lazykbest subresults (hash by pointer to derivation?)
 
 struct none_t {};
 struct pending_t {};
@@ -215,6 +258,18 @@ struct dummy_init_type
 {
   template <class Init>
   dummy_init_type(Init const& g) {}
+};
+
+
+// your factory may inherit form this - the do-nothing fix-best should suffice if you're using add_sorted only.
+struct lazy_kbest_derivation_factory_base
+{
+  template <class A>
+  void fix_edge(A &a,A const& unary) {}
+  template <class A>
+  void fix_edge(A &a,A const& left,A const& right) {}
+  template <class A>
+  bool needs_fixing(A &a) { return false; }
 };
 
 
@@ -240,7 +295,7 @@ struct permissive_kbest_filter
   { return true; }
 
   template <class O,class E>
-  void print(O &o,E const& e) const
+  friend inline void print(O &o,E const& e,permissive_kbest_filter const&)
   { o << e; }
 
 };
@@ -265,6 +320,7 @@ struct default_filter_factory
   }
 };
 
+// if you defined a filter which is copyable and supply an empty-state prototype to the factory:
 template <class filter>
 struct copy_filter_factory
 {
@@ -278,6 +334,50 @@ struct copy_filter_factory
     return f;
   }
 };
+
+//a system that passes in projections of children for optimization (maybe avoiding quadratic in sz(deriv) work). but hash key len will grow anyway.
+template <class Deriv,class Projection,class MapSelect=UmapS>
+struct projected_duplicate_filter : Projection
+{
+  typedef projected_duplicate_filter<Deriv,Projection,MapSelect> self_type;
+  enum { trivial=0 };
+  projected_duplicate_filter(projected_duplicate_filter const& o) : Projection(o),maxreps(o.maxreps) {}
+  projected_duplicate_filter(unsigned maxreps=0,Projection const& projection=Projection())
+    : Projection(projection), maxreps(maxreps) {}
+  unsigned maxreps;
+  typedef Deriv derivation_type;
+  typedef typename Projection::result_type projected_type;
+  typedef typename MapSelect::template map<projected_type,unsigned>::type projecteds_type;
+  projecteds_type projecteds;
+  bool permit(derivation_type const& d)
+  {
+    if (!maxreps) return true;
+    projected_type const& projected=Projection::operator()(d);
+    unsigned n=++projecteds[projected];
+    EIFDBG(LAZYF,3,
+           std::ostringstream projstr;
+           print_projection(projstr,d);
+           SHOWM3(LAZYF,"dup-filter permit?",projstr.str(),n,maxreps)
+      );
+    return n<=maxreps;
+  }
+  template <class O>
+  void print_projection(O &o,derivation_type const& d) const
+  {
+    Projection::print_projection(o,d);
+  }
+/*  template <class O>
+  void print(O &o,derivation_type const& d,projected_type const& proj)
+  {
+    o<<"projection for "<<&d<<": "<<&proj;
+    }*/
+
+
+  template <class O>
+  friend inline void print(O &o,derivation_type const& d,self_type const& s)
+  { s.print_projection(o,d); }
+};
+
 
 struct lazy_kbest_stats
 {
@@ -306,7 +406,7 @@ struct lazy_kbest_stats
       return;
     }
     o << "[Lazy kbest uniqueness-filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "
-      << n_passed<<", or "<<graehl::percent<5>(n_passed,n_total())<<"]";
+      << n_passed<<", or "<<graehl::percent<5>((double)n_passed,(double)n_total())<<"]";
   }
   typedef lazy_kbest_stats self_type;
 };
@@ -319,15 +419,31 @@ operator<<(std::basic_ostream<C,T>& os, lazy_kbest_stats const& kb)
   return os;
 }
 
+namespace {
+template <class A,class B,class C>
+void adl_print(A &a,B const& b,C const& c) {
+  print(a,b,c);
+}
+template <class A,class B,class C,class D>
+void adl_print(A &a,B const& b,C const& c,D const& d) {
+  print(a,b,c,d);
+}
+}
+
 // i've left this copyable even though you should for efficiency's sake only copy empty things, e.g. if you want to compile a vector of them that's fine
 template <class DerivationFactory,class FilterFactory=permissive_kbest_filter_factory>
 class lazy_forest
   : public FilterFactory::filter_type // empty base class opt. - may have state e.g. hash of seen strings or trees
 {
+
 public:
+
   typedef DerivationFactory derivation_factory_type;
   typedef FilterFactory filter_factory_type;
   typedef typename filter_factory_type::filter_type filter_type;
+  typedef lazy_forest<derivation_factory_type,filter_factory_type> forest;
+  typedef forest self_type;
+
 
   lazy_forest() : filter_type(filter_factory.filter_init()) {
 
@@ -335,9 +451,10 @@ public:
 
   typedef typename derivation_factory_type::derivation_type derivation_type;
   typedef derivation_factory_type D;
-  derivation_type NONE() const
+  static inline derivation_type NONE()
   {
-    return (derivation_type)derivation_factory.NONE();
+    return (derivation_type)DerivationFactory::NONE(); // nonmember for static is_null
+    //derivation_factory.NONE();
   }
   derivation_type PENDING() const
   {
@@ -353,11 +470,10 @@ public:
   /// otherwise stop after generating up to k (up to as many as exist in
   /// forest)
   template <class Visitor>
-  lazy_kbest_stats enumerate_kbest(unsigned k,Visitor visit=Visitor()) {
-    KBESTINFOT("COMPUTING BEST " << k << " for node " << *this);
-    KBESTNESTT;
+  lazy_kbest_stats enumerate_kbest(lazy_kbest_index_type k,Visitor visit=Visitor()) {
+    EIFDBG(LAZYF,1,KBESTINFOT("COMPUTING BEST " << k << " for node " << *this);KBESTNESTT;);
     clear_stats();
-    for (unsigned i=0;i<k;++i) {
+    for (lazy_kbest_index_type i=0;i<k;++i) {
       EIFDBG(LAZYF,2,SHOWM2(LAZYF,"enumerate_kbest-pre",i,*this));
       derivation_type ith_best=get_best(i);
       if (ith_best == NONE()) break;
@@ -366,8 +482,6 @@ public:
     return stats;
   }
 
-  typedef lazy_forest<derivation_factory_type,filter_factory_type> forest;
-  typedef forest self_type;
 
   void swap(self_type &o)
   {
@@ -383,7 +497,7 @@ public:
     forest *child[2];
     /// index into kth best for that child's OR-node: which of the possible
     /// children we chose (0=best-cost, 1 next-best ...)
-    unsigned childbp[2];
+    lazy_kbest_index_type childbp[2];
     /// the derivation that resulted from choosing the childbp[0]th out of
     /// child[0] and childbp[1]th out of child[1]
     derivation_type derivation;
@@ -406,8 +520,8 @@ public:
       derivation=_derivation;
     }
     //NB: std::pop_heap puts largest element at top (max-heap)
-    inline bool operator <(const hyperedge &o) const { // true if o should dominate max-heap
-      return derivation_better_than(o.derivation,derivation);
+    inline bool operator <(const hyperedge &o) const { // true if o should dominate max-heap, i.e. o is better than us
+      return call_derivation_better_than(o.derivation,derivation);
     }
     // means: this<o iff o better than this. good.
 
@@ -425,8 +539,54 @@ public:
     template <class C,class T>
     friend std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T> &o, hyperedge const& self)
     { self.print(o); return o; }
-
+    bool operator==(hyperedge const& o) const
+    {
+      if (o.child[0]!=child[0]) return false;
+      if (o.child[1]!=child[1]) return false;
+      if (o.childbp[0]!=childbp[0]) return false;
+      if (o.childbp[1]!=childbp[1]) return false;
+      if (o.derivation!=derivation) return false;
+      return true;
+    }
   };
+
+  static inline derivation_type get_child_best(forest const& f)
+  {
+    return f.pq.empty() ? NONE() : f.pq[0].derivation;
+  }
+
+  void fix_hyperedge(hyperedge &edge,bool dfs=true) {
+    forest *c0=edge.child[0];
+    if (c0) {
+      if (dfs) c0->fix_edges(true);
+      forest *c1=edge.child[1];
+      derivation_type const& d0=get_child_best(*c0);
+      if (d0==NONE()) return;
+      if (c1) {
+        if (dfs) c1->fix_edges(true);
+        derivation_type const& d1=get_child_best(*c1);
+        if (d1!=NONE()) {
+          derivation_factory.fix_edge(edge.derivation,d0,get_child_best(*c1));
+          return;
+        }
+      }
+      derivation_factory.fix_edge(edge.derivation,d0);
+    }
+  }
+
+  void fix_edges(bool dfs=true) // only needed if you call sort() and the result may be memo[0] != what you used for best subderivations for that node
+  {
+    if (empty()) return;
+    assert(!memo.empty()&&!pq.empty());
+    hyperedge const& best=top();
+    if (!derivation_factory.needs_fixing(best.derivation))
+      return;
+     // needs_fixing can mark corrected states so calling fix_edge(true) on every state isn't quadratic.
+    assert(pq[0].derivation==memo[0]);
+    for (typename pq_t::iterator i=pq.begin(),e=pq.end();i!=e;++i)
+      fix_hyperedge(*i,dfs);
+    memo[0]=best.derivation;
+  }
 
   template <class O>
   void print(O &o) const
@@ -434,26 +594,28 @@ public:
     print(o,2);
   }
 
+  //INVARIANT: pq[0] contains the last entry added to memo
+  /// (this is true after sort() or first add_sorted())
   template <class O>
-  void print(O &o,unsigned nqueue) const
+  void print(O &o,std::size_t nqueue) const
   {
     o << "{NODE @" << this << '[' << memo.size() << ']';
-    std::size_t s=memo_size();
+    std::size_t s=(std::size_t)memo_size();
     o << " #queued="<<pq_size();
     if (nqueue>pq.size())
       nqueue=pq.size();
-    for (unsigned i=0;i<nqueue;++i) {
-      o<<" q["<<i<<"]={{{";
+    for (std::size_t i=0;i<nqueue;++i) {
+      o<<"\n q["<<i<<"]={{{";
       o<<pq[i];
       o<<"}}}";
     }
-    if (s>(nqueue?1:0)) {
-      o << ": " << " first={{{";
-      filter().print(o,first_best()); //o<< first_best();
+    if (s>(nqueue?0u:0u)) {
+      o << "\n first={{{";
+      adl_print(o,first_best(),filter()); //o<< first_best();
       o<< "}}}";
       if (s>2) {
-        o << " last={{{";
-        filter().print(o,last_best());// o<< last_best();
+        o << "\n last={{{";
+        adl_print(o,last_best(),filter());// o<< last_best();
         o<< "}}}";
       }
 // o << " pq=" << pq;
@@ -472,6 +634,7 @@ public:
   }
 
   /// if you have any state in your factory, assign to it here
+  //TODO: non-static, please (or thread specific/dynamic scoped? passed as arguments)
   static derivation_factory_type derivation_factory;
   static filter_factory_type filter_factory;
   static lazy_kbest_stats stats;
@@ -494,38 +657,45 @@ public:
   /// if the finite # of derivations in the forest is exhausted.
   /// IDEA: LAZY!!
   /// - only do the work of computing succesors to nth best when somebody ASKS
-  /// for n+1thbest INVARIANT: pq[0] contains the last entry added to memo
+  /// for n+1thbest
+
+  /// INVARIANT: pq[0] contains the last finally-computed memo entry. we pop it only when asked for successors to avoid generating 2nd bests everywhere if you only asked for 1-best at top
+
   /// (this is true after sort() or first add_sorted()) IF: a new n is asked
   /// for: must be 1 off the end of memo; push it as PENDING and go to work:
   /// {get succesors to pq[0] and heapify, storing memo[n]=top(). if no more
   /// left, memo[n]=NONE()} You're DONE when: pq is empty, or memo[n] = NONE()
-  derivation_type get_best(unsigned n) {
-    KBESTINFOT("GET_BEST n=" << n << " node=" << *this); // //
-    KBESTNESTT;
+  derivation_type get_best(lazy_kbest_index_type n) {
+    EIFDBG(LAZYF,1,KBESTINFOT("GET_BEST n=" << n << " node=" << *this);
+           KBESTNESTT);
     if (n < memo.size()) {
+      EIFDBG(LAZYF,3,KBESTINFOT("existing "<<this<<"[n="<<n<<"] = "<<memo[n]<<", queue="<<*this));
       if (memo[n] == PENDING()) {
+        KBESTERRORQ("lazy_forest::get_best","memo entry " << n << " for lazy_forest@0x" << (void*)this<<" is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
         if (throw_on_cycle)
           throw lazy_derivation_cycle();
-        KBESTERRORQ("lazy_forest::get_best","memo entry " << n << " for lazy_forest@0x" << (void*)this<<" is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
         memo[n] = NONE();
       }
       return memo[n]; // may be NONE
     } else {
       assertlvl(19,n==memo.size());
+      assert(n>0 && (pq.empty() || memo[n-1]==pq[0].derivation));
       memo.push_back(PENDING());
       derivation_type &d=memo.back();
       for(;;) {
-        if (done())
+        if (pq.empty())
           return (d=NONE());
+        // assert(memo[n-1]==pq[0].derivation); // INVARIANT // no longer true with filtering
         d=next_best();
+        EIFDBG(LAZYF,2,KBESTINFOT(this<<"[n="<<n<<"] = "<<d<<", queue="<<*this));
         if (d==NONE())
           return d;
         if (filter().permit(d)) {
-          KBESTINFOT("passed "<<n<<"th best for "<<*this);//<<": "<<d);
+          EIFDBG(LAZYF,2,KBESTINFOT("passed "<<n<<"th best for "<<*this));
           ++stats.n_passed;
           return d;
-        } // else:
-        KBESTINFOT("filtered candidate "<<n<<"th best for "<<*this);//<<": "<<d);
+        } // else, try again:
+        EIFDBG(LAZYF,2,KBESTINFOT("filtered candidate "<<n<<"th best for "<<*this));
         ++stats.n_filtered;
         d=PENDING();
       }
@@ -547,9 +717,9 @@ public:
   {
     return pq.size();
   }
-  std::size_t memo_size() const
+  lazy_kbest_index_type memo_size() const
   {
-    std::size_t r=memo.size();
+    lazy_kbest_index_type r=(lazy_kbest_index_type)memo.size();
     for (;;) {
       if (r==0) return 0;
       --r;
@@ -566,15 +736,16 @@ public:
 
   /// Get next best derivation, or NONE if no more.
   //// INVARIANT: top() contains the next best entry
-  /// PRECONDITION: don't call if pq is empty. (if !done()). memo ends with [old top derivation,PENDING].
+  /// PRECONDITION: don't call if pq is empty. (if !pq.empty()). memo ends with [old top derivation,PENDING].
   derivation_type next_best() {
-    assertlvl(11,!done());
+    assertlvl(11,!pq.empty());
+
     hyperedge pending=top(); // creating a copy saves ugly complexities in trying to make pop_heap / push_heap efficient ...
-    KBESTINFOT("GENERATE SUCCESSORS FOR "<<pending);
+    EIFDBG(LAZYF,1,KBESTINFOT("GENERATE SUCCESSORS FOR "<<this<<'['<<memo.size()<<"] = "<<pending));
     pop(); // since we made a copy already into pending...
 
     derivation_type old_parent=pending.derivation; // remember this because we'll be destructively updating pending.derivation below
-    assertlvl(19,memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing duplicates: && old_parent==memo[memo.size()-2]
+//    assertlvl(19,memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing duplicates: && old_parent==memo[memo.size()-2]
     if (pending.child[0]) { // increment first
       generate_successor_hyperedge(pending,old_parent,0);
       if (pending.child[1] && pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
@@ -587,12 +758,12 @@ public:
       EIFDBG(LAZYF,2,SHOWM2(LAZYF,"next_best",top().derivation,this));
       return top().derivation;
     }
-
   }
 
+  // doesn't add to queue
   void set_first_best(derivation_type r)
   {
-    assertlvl(29,memo.empty());
+    assert(memo.empty());
     memo.push_back(r);
     if (!filter().permit(r))
       throw std::runtime_error("lazy_forest_kbest: the first-best derivation can never be filtered out");
@@ -602,17 +773,27 @@ public:
   /// may be followed by add() or add_sorted() equivalently
   void add_first_sorted(derivation_type r,forest *left=NULL,forest *right=NULL)
   {
-    assertlvl(9,pq.empty() && memo.empty());
+    assert(pq.empty() && memo.empty());
     set_first_best(r);
     add(r,left,right);
+    EIFDBG(LAZYF,3,KBESTINFOT("add_first_sorted lazy-node="<<this<<": "<<*this));
   }
 
   /// must be added from best to worst order ( r1 > r2 > r3 > ... )
   void add_sorted(derivation_type r,forest *left=NULL,forest *right=NULL) {
-    if (pq.empty()) { // first added
-      set_first_best(r);
+#ifndef NDEBUG
+    if (!pq.empty()) {
+      assert(call_derivation_better_than(pq[0].derivation,r));
+      unsigned i=pq.size();
+      assert(i>0);
+      unsigned p=(i-1);
+      assert(p>=0);
+      assert(call_derivation_better_than(pq[p].derivation,r)); // heap property
     }
+#endif
     add(r,left,right);
+    if (pq.size()==1)
+      set_first_best(r);
   }
 
   void reserve(std::size_t n)
@@ -623,15 +804,16 @@ public:
   /// may add in any order, but must call sort() before any get_best()
   void add(derivation_type r,forest *left=NULL,forest *right=NULL)
   {
-    KBESTINFOT("add this=" << this << " derivation=" << r << " left=" << left << " right=" << right);
+    EIFDBG(LAZYF,2,KBESTINFOT("add lazy-node=" << this << " derivation=" << r << " left=" << left << " right=" << right));
     pq.push_back(hyperedge(r,left,right));
-    KBESTINFOT("done (heap) " << r);
+    EIFDBG(LAZYF,3,KBESTINFOT("done (heap) " << r));
   }
 
   void sort(bool check_best_is_selfloop=false)
   {
     std::make_heap(pq.begin(),pq.end());
     finish_adding(check_best_is_selfloop);
+    EIFDBG(LAZYF,3,KBESTINFOT("sorted lazy-node="<<this<<": "<<*this));
   }
 
   bool best_is_selfloop() const
@@ -653,7 +835,8 @@ public:
     return !best_is_selfloop();
   }
 
-  /// optional: if you call only add() on sorted, you must finish_adding(). otherwise don't call, or call sort() instead
+  /// optional: if you call only add() on sorted, you must finish_adding().
+  /// if you added unsorted, don't call this - call sort() instead
   void finish_adding(bool check_best_is_selfloop=false)
   {
     if (pq.empty()) {
@@ -662,7 +845,6 @@ public:
     }
     if (check_best_is_selfloop && !postpone_selfloop())
       throw lazy_derivation_cycle();
-    memo.clear();
     set_first_best(top().derivation);
   }
 
@@ -676,10 +858,6 @@ public:
 # endif
   }
 
-  bool done() const {
-    return pq.empty();
-  }
-
 // private:
   typedef std::vector<hyperedge> pq_t;
   typedef std::vector<derivation_type> memo_t;
@@ -689,19 +867,20 @@ public:
   memo_t memo;
 
   //try worsening ith (0=left, 1=right) child and adding to queue
-  inline void generate_successor_hyperedge(hyperedge &pending,derivation_type old_parent,unsigned i)  {
+  inline void generate_successor_hyperedge(hyperedge &pending,derivation_type old_parent,lazy_kbest_index_type i)  {
     lazy_forest &child_node=*pending.child[i];
-    unsigned &child_i=pending.childbp[i];
+    lazy_kbest_index_type &child_i=pending.childbp[i];
     derivation_type old_child=child_node.memo[child_i];
+    EIFDBG(LAZYF,2,
     KBESTINFOT("generate_successor_hyperedge #" << i << " @" << this << ": " << " old_parent="<<old_parent<<" old_child=" <<old_child << " NODE="<<*this);
-    KBESTNESTT;
+           KBESTNESTT);
 
     derivation_type new_child=(child_node.get_best(++child_i));
     if (new_child!=NONE()) { // has child-succesor
-      KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
-      EIFDBG(LAZYF,6,SHOWM7(LAZYF,"generator_successor-child-i",i,pending.childbp[0],pending.childbp[1], old_parent,old_child,new_child,child_node));
+      EIFDBG(LAZYF,6,KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
+             SHOWM7(LAZYF,"generator_successor-child-i",i,pending.childbp[0],pending.childbp[1],old_parent,old_child,new_child,child_node));
       pending.derivation=derivation_factory.make_worse(old_parent,old_child,new_child,i);
-      KBESTINFOT("new derivation: "<<pending.derivation);
+      EIFDBG(LAZYF,4,KBESTINFOT("new derivation: "<<pending.derivation));
       push(pending);
     }
     --child_i;
@@ -764,7 +943,7 @@ struct Result {
 // enum { NONE=0,PENDING=1 };
     static derivation_type NONE() { return (derivation_type)0;}
     static derivation_type PENDING() { return (derivation_type)1;}
-    derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, unsigned changed_child_index)
+    derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, lazy_kbest_index_type changed_child_index)
     {
       return new Result(prototype,old_child,new_child,changed_child_index);
     }
@@ -791,7 +970,7 @@ struct Result {
     v.print_tree(o);
     return o<<"}}} history={{{" << v.history << "}}}";
   }
-  Result(Result *prototype, Result *old_child, Result *new_child,unsigned which_child) {
+  Result(Result *prototype, Result *old_child, Result *new_child,lazy_kbest_index_type which_child) {
     rule=prototype->rule;
     child[0]=prototype->child[0];
     child[1]=prototype->child[1];
@@ -799,8 +978,9 @@ struct Result {
     assert(child[which_child]==old_child);
     child[which_child]=new_child;
     cost = prototype->cost + - old_child->cost + new_child->cost;
-// KBESTNESTT;
-// KBESTINFOT("NEW RESULT proto=" << *prototype << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]);
+    EIFDBG(LAZYF,7,
+           KBESTNESTT;
+           KBESTINFOT("NEW RESULT proto=" << *prototype << " old_child=" << *old_child << " new_child=" << *new_child << " childid=" << which_child << " child[0]=" << child[0] << " child[1]=" << child[1]));
 
     std::ostringstream newhistory,newtree,newderivtree;
     newhistory << prototype->history << ',' << (which_child ? "R" : "L") << '-' << old_child->cost << "+" << new_child->cost;
@@ -962,10 +1142,8 @@ inline void simple_cycle(unsigned N=25)
 // q2.sort();
 // DBP2(*q2.pq[0].derivation,*q2.pq[1].derivation);
   // assert(!q2.is_sorted());
-# if USE_DEBUGPRINT
-  DBP2(eneg,d);
-  NESTT;
-# endif
+//  DBP2(eneg,d);
+//  NESTT;
   q.enumerate_kbest(N,ResultPrinter());
 }
 

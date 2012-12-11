@@ -4,13 +4,13 @@
 #include <cmath>
 #include <algorithm>
 
-#ifndef ONE_PLUS_EPSILON
 # ifndef FLOAT_EPSILON
 #  define FLOAT_EPSILON 1e-5
 # endif
 
 namespace graehl {
 
+#ifndef ONE_PLUS_EPSILON
 # ifndef EPSILON
 static const double EPSILON=FLOAT_EPSILON;
 # endif

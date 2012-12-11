@@ -1,0 +1,106 @@
+(require 'ido)
+(ido-mode t)
+
+;; use ido to complete commands via M-X
+(global-set-key
+ "\M-x"
+ (lambda ()
+   (interactive)
+   (call-interactively
+    (intern
+     (ido-completing-read
+      "M-x "
+      (all-completions "" obarray 'commandp))))))
+
+;; Maintain a list of recent files. C-x C-r to open from that list
+(require 'recentf)
+
+;; enable recent files mode.
+(recentf-mode t)
+
+; 50 files ought to be enough.
+(setq recentf-max-saved-items 50)
+
+(defun ido-recentf-open ()
+  "Use `ido-completing-read' to \\[find-file] a recent file"
+  (interactive)
+  (if (find-file (ido-completing-read "Find recent file: " recentf-list))
+      (message "Opening file...")
+    (message "Aborting")))
+
+;; get rid of `find-file-read-only' and replace it with something
+;; more useful.
+(global-set-key (kbd "C-x C-r") 'ido-recentf-open)
+(setq ido-use-virtual-buffers t)
+(color-theme-solarized-dark)
+(setq case-fold-search t)
+(setq dabbrev-case-fold-search t)
+(setq dabbrev-case-distinction 'case-replace)
+(setq dabbrev-abbrev-skip-leading-regexp "[=*]")
+;(setq dabbrev-abbrev-skip-leading-regexp "[=*]")
+(setq dabbrev-abbrev-skip-leading-regexp "[^ ]*[<>=*]")
+;dabbrev-abbrev-char-regexp
+(load-file "~/elisp/local")
+(defun gr-try-expand-dabbrev-visible (old) (save-excursion (try-expand-dabbrev-visible old)))
+(defadvice he-substitute-string (after he-paredit-fix)
+  "remove extra paren when expanding line in paredit"
+  (if (and paredit-mode (equal (substring str -1) ")"))
+      (progn (backward-delete-char 1) (forward-char))))
+
+(setq ido-enable-flex-matching t)
+
+(defun try-my-dabbrev-substring (old)
+  (let ((old-fun (symbol-function 'he-dabbrev-search)))
+    (fset 'he-dabbrev-search (symbol-function 'my-dabbrev-substring-search))
+    (unwind-protect
+        (try-expand-dabbrev old)
+      (fset 'he-dabbrev-search old-fun))))
+
+
+(defun my-dabbrev-substring-search (pattern &optional reverse limit)
+  (let ((result ())
+	(regpat (cond ((not hippie-expand-dabbrev-as-symbol)
+		       (concat (regexp-quote pattern) "\\sw+"))
+		      ((eq (char-syntax (aref pattern 0)) ?_)
+		       (concat (regexp-quote pattern) "\\(\\sw\\|\\s_\\)+"))
+		      (t
+		       (concat (regexp-quote pattern)
+			       "\\(\\sw\\|\\s_\\)+")))))
+    (while (and (not result)
+		(if reverse
+		     (re-search-backward regpat limit t)
+		     (re-search-forward regpat limit t)))
+      (setq result (buffer-substring-no-properties (save-excursion
+                                                     (goto-char (match-beginning 0))
+                                                     (skip-syntax-backward "w_")
+                                                     (point))
+						   (match-end 0)))
+      (if (he-string-member result he-tried-table t)
+	  (setq result nil)))     ; ignore if bad prefix or already in table
+    result))
+
+;If hippie-expand fails to find any satisfactory expansion, you may want to add a new one by using function `‘inverse-add-global-abbrev’’. The following should probably be the last function in `‘hippie-expand-try-functions-list’’:
+
+(defun tags-complete-tag (string predicate what)
+     (save-excursion
+     ;; If we need to ask for the tag table, allow that.
+     (if (eq what t)
+	(all-completions string (tags-completion-table) predicate)
+      (try-completion string (tags-completion-table) predicate))))
+
+    (defun my-try-add-expansion (old)
+      "Add a new global abbrev"
+      (he-init-string (he-dabbrev-beg) (point))
+      (or (inverse-add-global-abbrev 1)
+	  (he-reset-string)))
+
+(global-set-key "\M-." 'hippie-expand)
+(global-set-key "\M-l" (make-hippie-expand-function '(try-expand-line-all-buffers)))
+(global-set-key "\M-u" (make-hippie-expand-function '(try-my-dabbrev-substring)))
+
+(when t
+(add-to-list 'load-path "~/elisp/yasnippet")
+  (require 'yasnippet)
+  (yas/initialize)
+  (yas/load-directory "~/elisp/yasnippet/snippets")
+  )

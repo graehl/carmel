@@ -22,7 +22,7 @@ HashTable<StringKey, unsigned> StringPool::counts;
 #endif
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 struct collide_unsigned {
 #ifndef STATIC_HASHER
   unsigned mask;

@@ -4,7 +4,7 @@
 
 #include <graehl/shared/2hash.h>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -67,7 +67,7 @@ struct MemoFn {
 };
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 struct ExampleF : public MemoFn<int,int> {
   MemoIndex<ExampleF> *memo;

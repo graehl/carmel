@@ -330,6 +330,7 @@ struct carmel_main
       get_default_opt("disk-cache-bufsize",copt.disk_cache_bufsize,"1M");
       Config::log()<<"Disk cache of derivations will be created at "<<copt.disk_cache_filename<<" using read buffer of "<<copt.disk_cache_bufsize<<" bytes.\n";
     }
+    return true;
   }
 
   bool gibbs;
@@ -636,7 +637,7 @@ struct carmel_main
   template <class V>
   V const& get_default_opt(std::string const& key,V &v,std::string const& default_val)
   {
-    return string_into(set_default_text(key,default_val),v);
+    return string_to(set_default_text(key,default_val),v);
   }
 
 
@@ -1021,7 +1022,7 @@ struct carmel_main
 };
 
 
-#ifndef TEST
+#ifndef GRAEHL_TEST
 int
 #ifdef _MSC_VER
 __cdecl
@@ -1303,7 +1304,7 @@ main(int argc, char *argv[]){
       flags['t']=1;
     if ( flags['t'] )
       flags['S'] = 1;
-    if ( nChain < 1 || flags['A'] && nInputs < 2) {
+    if (nChain < 1 || (flags['A'] && nInputs < 2)) {
       Config::warn() << "No inputs supplied.\n";
       return -12;
     }

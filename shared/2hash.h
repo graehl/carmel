@@ -36,6 +36,8 @@
 
 namespace graehl {
 
+// HashTable
+
 const float DEFAULTHASHLOAD = 0.9f;
 template <typename K, typename V> class HashIter ;
 //template <typename K, typename V> class HashConstIter ;

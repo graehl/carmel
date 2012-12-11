@@ -7,9 +7,9 @@
 #include <iostream>
 
 #if defined(GRAEHL__SINGLE_MAIN)
-# define TEST_MAIN
+# define GRAEHL_TEST_MAIN
 #endif
-#ifdef TEST_MAIN
+#ifdef GRAEHL_TEST_MAIN
 # define BOOST_TEST_MAIN
 #endif
 

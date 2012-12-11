@@ -1,8 +1,10 @@
 #ifdef _MSC_VER
-#pragma warning( pop )
+#pragma warning( push )
 #else
 #include "warning_compiler.h"
-#if HAVE_DIAGNOSTIC_PUSH
+#ifdef __clang__
+#pragma clang diagnostic push
+#elif HAVE_DIAGNOSTIC_PUSH
 #pragma GCC diagnostic push
 #endif
 #endif

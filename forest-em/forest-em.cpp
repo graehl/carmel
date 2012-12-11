@@ -8,7 +8,7 @@
 #include <graehl/shared/config.h>
 #include <memory> //auto_ptr
 #include <graehl/shared/main.hpp>
-#ifndef TEST
+#ifndef GRAEHL_TEST
 
 using namespace boost;
 using namespace std;

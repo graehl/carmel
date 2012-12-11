@@ -289,7 +289,7 @@ class ngram(object):
             else:
                 self.lmf='%s.%sgram.srilm'%(prefix,self.order)
         return self.lmf
-    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True,clear_counts=True,write_lm=False,interpolate=True):
+    def train_lm(self,prefix=None,sri_ngram_count=False,sort=True,lmf=None,witten_bell=False,read_lm=True, clear_counts=True,write_lm=False,interpolate=True):
         "mod K-N unless witten_bell. lmf is written if lm!=None or if sri_ngram_count=True or write_lm=True"
         self.lmf=lmf
         if lmf is None and (sri_ngram_count or write_lm):
@@ -512,4 +512,3 @@ def ngram_main(order=2,txt='train.txt',interpolate=True,witten_bell=True):
 
 import optfunc
 optfunc.main(ngram_main)
-

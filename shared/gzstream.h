@@ -18,8 +18,8 @@
 // ============================================================================
 //
 // File          : gzstream.h
-// Revision      : $Revision$
-// Revision_date : $Date$
+// Revision      : $Revision: 3395 $
+// Revision_date : $Date: 2011-06-28 14:10:14 -0700 (Tue, 28 Jun 2011) $
 // Author(s)     : Deepak Bandyopadhyay, Lutz Kettner
 //
 // Standard streambuf implementation following Nicolai Josuttis, "The
@@ -33,7 +33,6 @@
 #include <iostream>
 #include <fstream>
 #include <zlib.h>
-#include <boost/noncopyable.hpp>
 
 namespace graehl {
 

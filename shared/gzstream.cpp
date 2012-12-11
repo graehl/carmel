@@ -1,6 +1,6 @@
 // ============================================================================
 // gzstream, C++ iostream classes wrapping the zlib compression library.
-// Copyright (C) 2001  Deepak Bandyopadhyay, Lutz Kettner
+// Copyright (C) 2001 Deepak Bandyopadhyay, Lutz Kettner
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -9,18 +9,18 @@
 //
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 // ============================================================================
 //
-// File          : gzstream.C
-// Revision      : $Revision$
-// Revision_date : $Date$
-// Author(s)     : Deepak Bandyopadhyay, Lutz Kettner
+// File : gzstream.C
+// Revision : $Revision$
+// Revision_date : $Date: 2011-06-28 14:35:28 -0700 (Tue, 28 Jun 2011) $
+// Author(s) : Deepak Bandyopadhyay, Lutz Kettner
 //
 // Standard streambuf implementation following Nicolai Josuttis, "The
 // Standard C++ Library".
@@ -28,7 +28,9 @@
 
 #include <graehl/shared/gzstream.h>
 #include <iostream>
+#include <string>
 #include <cstring>
+#include <string>
 #include <stdexcept>
 
 namespace graehl {
@@ -42,111 +44,111 @@ namespace graehl {
 // --------------------------------------
 
 gzstreambuf* gzstreambuf::open(const char* name, int open_mode) {
-    if (opened)
-        return (gzstreambuf*)0;
-    mode = open_mode;
-    // no append nor read/write mode
-    if ((mode & std::ios::ate) || (mode & std::ios::app)
-        || ((mode & std::ios::in) && (mode & std::ios::out)))
-        return (gzstreambuf*)0;
-    char  fmode[10];
-    char* fmodeptr = fmode;
-    if (mode & std::ios::in)
-        *fmodeptr++ = 'r';
-    else if (mode & std::ios::out)
-        *fmodeptr++ = 'w';
-    *fmodeptr++ = 'b';
-    *fmodeptr = '\0';
-    file = gzopen(name, fmode);
-    if (!file) {
-      handle_gzerror();
-      return (gzstreambuf*)0;
-    }
-    opened = 1;
-    return this;
+  if (opened)
+    return (gzstreambuf*)0;
+  mode = open_mode;
+  // no append nor read/write mode
+  if ((mode & std::ios::ate) || (mode & std::ios::app)
+      || ((mode & std::ios::in) && (mode & std::ios::out)))
+    return (gzstreambuf*)0;
+  char fmode[10];
+  char* fmodeptr = fmode;
+  if (mode & std::ios::in)
+    *fmodeptr++ = 'r';
+  else if (mode & std::ios::out)
+    *fmodeptr++ = 'w';
+  *fmodeptr++ = 'b';
+  *fmodeptr = '\0';
+  file = gzopen(name, fmode);
+  if (!file) {
+    handle_gzerror();
+    return (gzstreambuf*)0;
+  }
+  opened = 1;
+  return this;
 }
 
 gzstreambuf * gzstreambuf::close() {
-    if (opened) {
-        sync(); // gzclose flushes its internal buffer, but we may have stuff WE buffered we need to push out
-        opened = 0;
-        if (gzclose(file) == Z_OK)
-            return this;
-        else
-            handle_gzerror();
-    }
-    return (gzstreambuf*)0;
+  if (opened) {
+    sync(); // gzclose flushes its internal buffer, but we may have stuff WE buffered we need to push out
+    opened = 0;
+    if (gzclose(file) == Z_OK)
+      return this;
+    else
+      handle_gzerror();
+  }
+  return (gzstreambuf*)0;
 }
 
 void gzstreambuf::handle_gzerror() {
-    int errnum;
-    const char *errmsg=gzerror(file,&errnum);
-    if (errnum==Z_DATA_ERROR) errmsg="CRC error reading gzip";
-    if (!errmsg) errmsg=" unknown error (file not found?)";
-    throw std::runtime_error(std::string("gzstreambuf error: ")+errmsg);
+  int errnum;
+  const char *errmsg=gzerror(file,&errnum);
+  if (errnum==Z_DATA_ERROR) errmsg="CRC error reading gzip";
+  if (!errmsg) errmsg=" unknown error (file not found?)";
+  throw std::runtime_error(std::string("gzstreambuf error: ")+std::string(errmsg));
 }
 
 
 int gzstreambuf::underflow() { // used for input buffer only
-    if (gptr() && (gptr() < egptr()))
-        return * reinterpret_cast<unsigned char *>(gptr());
-
-    if (! (mode & std::ios::in) || !opened)
-        return EOF;
-    // Josuttis' implementation of inbuf
-    int n_putback = gptr() - eback();
-    if (n_putback > 4)
-        n_putback = 4;
-    memcpy(buffer + (4 - n_putback), gptr() - n_putback, n_putback);
-
-    int num = gzread(file, buffer+4, bufferSize-4);
-    if (num <= 0) // ERROR or EOF
-    {
-        if (gzeof(file))
-            return EOF;
-        handle_gzerror();
-    }
-
-    // reset buffer pointers
-    setg(buffer + (4 - n_putback),   // beginning of putback area
-          buffer + 4,                 // read position
-          buffer + 4 + num);          // end of buffer
-
-    // return next character
+  if (gptr() && (gptr() < egptr()))
     return * reinterpret_cast<unsigned char *>(gptr());
+
+  if (! (mode & std::ios::in) || !opened)
+    return EOF;
+  // Josuttis' implementation of inbuf
+  int n_putback = (int)(gptr() - eback());
+  if (n_putback > 4)
+    n_putback = 4;
+  memcpy(buffer + (4 - n_putback), gptr() - n_putback, n_putback);
+
+  int num = gzread(file, buffer+4, bufferSize-4);
+  if (num <= 0) // ERROR or EOF
+  {
+    if (gzeof(file))
+      return EOF;
+    handle_gzerror();
+  }
+
+  // reset buffer pointers
+  setg(buffer + (4 - n_putback), // beginning of putback area
+       buffer + 4, // read position
+       buffer + 4 + num); // end of buffer
+
+  // return next character
+  return * reinterpret_cast<unsigned char *>(gptr());
 }
 
 int gzstreambuf::flush_buffer() {
-    // Separate the writing of the buffer from overflow() and
-    // sync() operation.
-    int w = pptr() - pbase();
-    if (gzwrite(file, pbase(), w) != w)
-        handle_gzerror();
-    pbump(-w);
-    return w;
+  // Separate the writing of the buffer from overflow() and
+  // sync() operation.
+  int w = (int)(pptr() - pbase());
+  if (gzwrite(file, pbase(), w) != w)
+    handle_gzerror();
+  pbump(-w);
+  return w;
 }
 
 int gzstreambuf::overflow(int c) { // used for output buffer only
-    if (! (mode & std::ios::out) || !opened)
-        return EOF;
-    if (c != EOF) {
-        *pptr() = c;
-        pbump(1);
-    }
-    if (flush_buffer() == EOF)
-        return EOF;
-    return c;
+  if (! (mode & std::ios::out) || !opened)
+    return EOF;
+  if (c != EOF) {
+    *pptr() = c;
+    pbump(1);
+  }
+  if (flush_buffer() == EOF)
+    return EOF;
+  return c;
 }
 
 int gzstreambuf::sync() {
-    // Changed to use flush_buffer() instead of overflow(EOF)
-    // which caused improper behavior with std::endl and flush(),
-    // bug reported by Vincent Ricard.
-    if (pptr() && pptr() > pbase()) {
-        if (flush_buffer() == EOF)
-            return -1;
-    }
-    return 0;
+  // Changed to use flush_buffer() instead of overflow(EOF)
+  // which caused improper behavior with std::endl and flush(),
+  // bug reported by Vincent Ricard.
+  if (pptr() && pptr() > pbase()) {
+    if (flush_buffer() == EOF)
+      return -1;
+  }
+  return 0;
 }
 
 // --------------------------------------
@@ -154,23 +156,23 @@ int gzstreambuf::sync() {
 // --------------------------------------
 
 gzstreambase::gzstreambase(const char* name, int mode) {
-    init(&buf);
-    open(name, mode);
+  init(&buf);
+  open(name, mode);
 }
 
 gzstreambase::~gzstreambase() {
-    buf.close();
+  buf.close();
 }
 
 void gzstreambase::open(const char* name, int open_mode) {
-    if (!buf.open(name, open_mode))
-        clear(rdstate() | std::ios::badbit);
+  if (!buf.open(name, open_mode))
+    clear(rdstate() | std::ios::badbit);
 }
 
 void gzstreambase::close() {
   if (buf.is_open())
-        if (!buf.close())
-            clear(rdstate() | std::ios::badbit);
+    if (!buf.close())
+      clear(rdstate() | std::ios::badbit);
 }
 
 } // namespace graehl

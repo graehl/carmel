@@ -9,7 +9,7 @@ namespace graehl {
 
 const std::string default_file_header_prefix="$$$";
 
-template <class String> bool is_file_header(const String &s) 
+template <class String> bool is_file_header(const String &s)
 {
     return match_begin(s.begin(),s.end(),default_file_header_prefix.begin(),default_file_header_prefix.end());
 }
@@ -32,9 +32,10 @@ inline std::string ignore_header(std::istream &i,const std::string &header_strin
 {
     std::string::const_iterator matched_until=match_input(i,header_string);
     char c;
-    if (matched_until==header_string.end())
+    if (matched_until==header_string.end()) {
         while (i.get(c) && c!='\n') ;
-    else
+        return std::string();
+    } else
         return std::string(header_string.begin(),matched_until);
 }
 

@@ -11,7 +11,7 @@
 #include <iostream>
 #include <graehl/shared/genio.h>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <graehl/shared/tree.hpp>
 #endif
@@ -243,7 +243,7 @@ Symbol Symbol::ZERO(0,Symbol::PHONYINT);
 #endif
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 char const* symbol_test_strs[]={"test string","d","el""abc","","e","fall","","e","very very long more than 8","a","b","e",0};
 

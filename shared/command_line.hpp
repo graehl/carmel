@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <cstring>
 #endif
@@ -65,13 +65,7 @@ struct argc_argv : private std::stringbuf
     {
         argvptrs.clear();
         argvptrs.push_back(progname);
-#if 1
         str(cmdline+" ");  // we'll need space for terminating final arg.
-#else
-        str(cmdline);
-        seekoff(0,ios_base::end,ios_base::out);
-        sputc((char)' ');
-#endif
         char *i=gptr(),*end=egptr();
 
         char *o=i;
@@ -118,7 +112,15 @@ struct argc_argv : private std::stringbuf
     }
 };
 
-#ifdef TEST
+template <class O,class Argv>
+void print_command_header(O &o, int argc, Argv const& argv)
+{
+  print_command_line(o,argc,argv);
+  print_current_dir(o);
+  o << std::endl;
+}
+
+#ifdef GRAEHL_TEST
 char const* test_strs[]={"ARGV","ba","a","b c","d"," e f ","123",0};
 
 BOOST_AUTO_TEST_CASE( TEST_command_line )
@@ -128,7 +130,7 @@ BOOST_AUTO_TEST_CASE( TEST_command_line )
         string opts="ba a \"b c\" 'd' ' e f ' 123";
         argc_argv args(opts);
         BOOST_CHECK_EQUAL(args.argc(),7);
-        for (unsigned i=1;i<args.argc();++i) {
+        for (int i=1;i<args.argc();++i) {
             CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
         }
     }
@@ -136,7 +138,7 @@ BOOST_AUTO_TEST_CASE( TEST_command_line )
         string opts=" ba a \"\\b c\" 'd' ' e f '123 ";
         argc_argv args(opts);
         BOOST_CHECK_EQUAL(args.argc(),7);
-        for (unsigned i=1;i<args.argc();++i) {
+        for (int i=1;i<args.argc();++i) {
             CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
         }
     }

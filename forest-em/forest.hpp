@@ -13,10 +13,13 @@
 #include <graehl/shared/list.h>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/threadlocal.hpp>
+#undef THREADLOCAL
+#define THREADLOCAL
+ //disable THREADLOCAL since we have non-pod (should group them all via a single pointer)
 #include <graehl/shared/graphviz.hpp>
 #include <graehl/shared/funcs.hpp>
 #include <graehl/shared/stackalloc.hpp>
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 #define STATIC_HASHER
@@ -79,7 +82,7 @@ CREATE_INSERTER(ForestNode);
 //FIXME: presently must be same type for normalization to work
 template <class Float=FLOAT_TYPE>
 struct FForest {
-    static gibbs_base *gibbs;
+    static THREADLOCAL gibbs_base *gibbs;
     static inline gibbs_base &g()
     {
         return *gibbs;
@@ -130,7 +133,7 @@ struct FForest {
             in.clear_nodestroy();
             return NULL;
         } else
-            return (char*)end;
+            return (char*)end();
     }
 
     void safe_destroy() {
@@ -1062,7 +1065,7 @@ fail:
 }
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #define MAX_TEST_FOREST_NODES 100000
 ForestNode forest_space[MAX_TEST_FOREST_NODES];
 ForestNode *forest_space_end=forest_space+MAX_TEST_FOREST_NODES;

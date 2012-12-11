@@ -6,6 +6,7 @@
 #include <graehl/shared/word_spacer.hpp>
 #include <iterator>
 #include <graehl/shared/simple_serialize.hpp>
+#include <graehl/shared/container.hpp>
 
 #ifdef USE_SLIST
 #include <graehl/shared/slist.h>
@@ -18,6 +19,7 @@
 #include <iostream>
 
 namespace graehl {
+
 
 template <class T,class A=std::allocator<T> >
 class List : public STL_LIST<T,A> {
@@ -102,7 +104,7 @@ public:
   int notEmpty() const { return !isEmpty(); }
   int isEmpty() const { return this->empty(); }
   void push(const T &it) {
-    push_front(it);
+    this->push_front(it);
   }
 
   T &top() {
@@ -156,6 +158,12 @@ public:
     }
     TO_OSTREAM_PRINT
 #endif
+};
+
+struct GListS {
+  template <class T> struct container {
+    typedef List<T> type;
+  };
 };
 
 /*template <class T,class A>
@@ -240,7 +248,6 @@ template <class T,class A >
     };
 #endif
 }
-
 
 
 #endif

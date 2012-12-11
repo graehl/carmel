@@ -49,7 +49,7 @@
 //using stdext::hash_map;
 //using stdext::hash_set;
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -122,7 +122,7 @@ V const* find_second(K const& key) const
 }
 */
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #define USE_GNU_HASH_MAP
 #include <graehl/shared/stringkey.h>
 

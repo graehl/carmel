@@ -74,7 +74,7 @@ inline void throw_enum_error(std::string const& enumtype,std::string const& msg)
 // expansion macro for enum to optional conversion
 #define NAMED_ENUM_STRCMP_OPTIONAL(t,name,assign) if (!std::strcmp(str,#name)) return boost::optional<t>(name);
 
-#define NAMED_ENUM_APPEND_USAGE(t,name,assign) o << #name <<sp; sp=sep;
+#define NAMED_ENUM_APPEND_USAGE(t,name,assign) o << sp << #name; sp=sep;
 
 /// declare the access function and define enum values
 #define DECLARE_NAMED_ENUM_T(DEF,EnumType)                    \

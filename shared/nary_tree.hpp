@@ -1,6 +1,11 @@
 #ifndef GRAEHL_SHARED__NARY_TREE_HPP
 #define GRAEHL_SHARED__NARY_TREE_HPP
 
+// you may override this with a fully namespace qualified type - but be careful to do so consistently before every inclusion!
+#ifndef CHILD_INDEX_TYPE
+# define CHILD_INDEX_TYPE unsigned
+#endif
+
 #include <graehl/shared/intrusive_refcount.hpp>
 #include <boost/pool/pool.hpp>
 #include <vector>
@@ -27,6 +32,8 @@
 
 namespace graehl {
 
+typedef CHILD_INDEX_TYPE child_index;
+
 template <class T,class C>
 struct nary_tree
 {
@@ -36,22 +43,26 @@ struct nary_tree
   typedef std::vector<C> children_type;
   typedef children_type Cs;
   Cs children;
-
   nary_tree() {}
   nary_tree(nary_tree const& o) : children(o.children) {}
-  nary_tree(unsigned n) : children(n) {}
+  nary_tree(child_index n) : children(n) {}
 };
 
 //TODO: use pool_traits?
 
-template <class T,class U=boost::default_user_allocator_new_delete,class R=boost::detail::atomic_count>
+template <class T,class R=atomic_count,class U=alloc_new_delete>
 struct shared_nary_tree
-  : public nary_tree<T, boost::intrusive_ptr<T> >
-  , private intrusive_refcount<T,U,R>
+  : nary_tree<T, boost::intrusive_ptr<T> >
+  , /* private */ intrusive_refcount<T,R,U> // if private need to friend intrusive_refcount
 {
+  friend struct intrusive_refcount<T,R,U>;
   typedef nary_tree<T, boost::intrusive_ptr<T> > TreeBase;
+  typedef shared_nary_tree self_type;
+  friend void intrusive_ptr_add_ref(self_type *p) { p->add_ref();  }
+  friend void intrusive_ptr_release(self_type *p) { p->release(p); }
+
   shared_nary_tree() {}
-  shared_nary_tree(unsigned n) : TreeBase(n) {}
+  shared_nary_tree(child_index n) : TreeBase(n) {}
   shared_nary_tree(shared_nary_tree const& o) : TreeBase(o) {} // note: refcount doesn't get copied - so T needs to deep copy its data
 
 };

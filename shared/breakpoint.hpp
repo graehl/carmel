@@ -3,13 +3,13 @@
 
 #ifndef BREAKPOINT
 
-#if defined(_MSC_VER) && defined(_WIN32) && !defined(_WIN64)
+#if defined(_MSC_VER) && defined(_WIN32)
 # define BREAKPOINT __asm int 3
 #else
-# ifdef __i386__
-#  define BREAKPOINT asm("   int $3")
+# if defined(__i386__) || defined(__x86_64__)
+#  define BREAKPOINT asm("int $3")
 # else
-#  define BREAKPOINT   *(int *)0 = 0
+#  define BREAKPOINT   do{ volatile int *p=0;*p=0;} while(0)
 # endif
 #endif
 

@@ -4,7 +4,7 @@
 #include <memory>
 #include <new>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -149,7 +149,7 @@ struct triangular_array : protected Alloc
 };
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( triangular_array_test )
 {
     typedef triangular_array<unsigned> A;

@@ -54,7 +54,7 @@ struct ilinenostream:
     linenobuf m_sbuf;
 };
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
  #include <fstream>
   int main() {
       return 0;

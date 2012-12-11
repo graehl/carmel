@@ -3,6 +3,7 @@
 
 /// COULD TEMPLATE FOR WIDE CHARS (lazy)
 
+#include <limits.h>
 #include <graehl/shared/predicate_compose.hpp>
 #include <locale>
 #include <string>
@@ -12,9 +13,9 @@ namespace graehl {
 
 
 // worth making into bitfield?
-struct char_table 
+struct char_table
 {
-    BOOST_STATIC_CONSTANT(unsigned,size=std::ctype<char>::table_size);  
+    BOOST_STATIC_CONSTANT(unsigned,size=UCHAR_MAX+1);   //std::ctype<char>::table_size
     bool table[size];
     typedef bool * iterator;
     typedef iterator const_iterator;
@@ -23,14 +24,14 @@ struct char_table
     { return const_cast<bool*>(table); }
     iterator end() const
     { return begin()+size; }
-    
-    void operator |= (char_table const& o) 
+
+    void operator |= (char_table const& o)
     {
         for (unsigned i=0;i<size;++i)
             if (o.table[i])
                 table[i]=true;
     }
-    void operator &= (char_table const& o) 
+    void operator &= (char_table const& o)
     {
         for (unsigned i=0;i<size;++i)
             if (!o.table[i])
@@ -39,14 +40,14 @@ struct char_table
     void negate()
     {
         for (unsigned i=0;i<size;++i)
-            table[i]=!table[i];    
+            table[i]=!table[i];
     }
 
     void yes(char c)
     { me()[c]=true; }
     void no(char c)
     { me()[c]=false; }
-    
+
     bool & operator[](char c)
     { return table[(unsigned char)c]; }
     bool operator()(char c) const
@@ -79,17 +80,17 @@ struct char_table
     {
         set_in_excl(str.begin(),str.end(),set_to);
     }
-    
+
  private:
-    char_table & me() 
+    char_table & me()
     { return *this; }
 };
 
 struct char_predicate : public char_table,public std::unary_function<char,bool> {
     char_predicate() : char_table() {} // ensures!  init of table array to false
-    char_predicate(char t1) : char_table() 
+    char_predicate(char t1) : char_table()
     { yes(t1); }
-    char_predicate(char t1,char t2) : char_table() 
+    char_predicate(char t1,char t2) : char_table()
     { yes(t1);yes(t2); }
     template <class It>
     char_predicate(It begin,It end,bool set_to=true)
@@ -107,8 +108,8 @@ struct char_predicate : public char_table,public std::unary_function<char,bool> 
     }
 };
 
-typedef predicate_ref<char_predicate> char_predicate_ref;    
-    
+typedef predicate_ref<char_predicate> char_predicate_ref;
+
     //boost::integer_traits<char>::max+1;
 
 // : public std::unary_function<char,bool>
@@ -132,9 +133,9 @@ struct false_for_all_chars
 {
     bool operator()(char c) const {
         return false;
-    }    
+    }
 };
-    
+
 template <class F>
 struct or_true_for_char : public F {
     typedef or_true_for_char<F> self;
@@ -174,7 +175,6 @@ struct true_for_chars {
         return c == C1 || c == C2;
     }
 };
-
 
 
 } //graehl

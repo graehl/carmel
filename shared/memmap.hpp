@@ -10,7 +10,7 @@
 #define GRAEHL_SHARED__MEMMAP_HPP
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/backtrace.hpp>
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -314,7 +314,9 @@ public:
 #else
             if (!is_open()) return true;
             errno = 0;
-            ::munmap(reinterpret_cast<char *>(data_), size_);
+            char *data=reinterpret_cast<char *>(data_);
+            ::msync(data, size_, MS_SYNC); // for NFS
+            ::munmap(data, size_);
             ::close(handle_);
             status=!errno;
 #endif
@@ -340,7 +342,7 @@ public:
 
 };
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 //#include <stdio.h>
 
 BOOST_AUTO_TEST_CASE( TEST_MEMMAP )
@@ -372,4 +374,3 @@ BOOST_AUTO_TEST_CASE( TEST_MEMMAP )
 
 }
 #endif
-

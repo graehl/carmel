@@ -6,6 +6,9 @@
 
 
 #include <boost/graph/graph_traits.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
 //#include <boost/iterator/counting_iterator.hpp>
 //#include <graehl/shared/byref.hpp>
 //#include <graehl/shared/property_factory.hpp>
@@ -13,25 +16,14 @@
 
 namespace graehl {
 
-/*
-if graphs had iterator_range
-graph traits had (edge|vertex)::descriptor, (edge|vertex)::iterator
-template <class E,class G,class F>
-void visit(G &g,F f) {
-  typedef typename E::iterator ei;
-  std::pair<ei,ei> eis=iterator_range<E>(g);
-  for (ei i=eis.first;i!=eis.second;++i)
-        f(*i);
-}
-*/
-
 struct edge_tag {};
-
-static edge_tag edgeT;
 
 struct vertex_tag {};
 
-static vertex_tag vertexT;
+namespace {
+edge_tag edgeT;
+vertex_tag vertexT;
+}
 
 template <class G,class T> struct graph_object;
 
@@ -39,13 +31,13 @@ template <class G,class T> struct graph_object;
 template <class G> struct graph_object<G,edge_tag> {
     typedef typename boost::graph_traits<G>::edge_descriptor descriptor;
     typedef typename boost::graph_traits<G>::edge_iterator iterator;
-    typedef std::pair<iterator,iterator> iterator_pair;
+    typedef boost::iterator_range<iterator> iterator_pair;
 };
 
 template <class G> struct graph_object<G,vertex_tag> {
     typedef typename boost::graph_traits<G>::vertex_descriptor descriptor;
     typedef typename boost::graph_traits<G>::vertex_iterator iterator;
-    typedef std::pair<iterator,iterator> iterator_pair;
+    typedef boost::iterator_range<iterator> iterator_pair;
    };
 
 template <class Tag,class G,class E,class F>
@@ -88,39 +80,39 @@ typename graph_object<G,Tag>::iterator_pair begin_end(edge_tag ,G const&g) {
 
 template <class G,class T,class F>
 inline void visit(T ,G &g,F const& f) {
-  for (typename graph_object<G,T>::iterator_pair pi=
+  using namespace boost;
+  typename graph_object<G,T>::iterator_pair pi=
          vertices(g);
-       pi.first!=pi.second;
-       ++pi.first)
-    f(*(pi.first));
+  for (typename graph_object<G,T>::iterator i=begin(pi),e=end(pi);i!=e;++i)
+    f(*i);
 }
 
 template <class G,class T,class F>
 inline void visit(T ,G &g,F &f) {
-  for (typename graph_object<G,T>::iterator_pair pi=
+  using namespace boost;
+  typename graph_object<G,T>::iterator_pair pi=
          vertices(g);
-       pi.first!=pi.second;
-       ++pi.first)
-    f(*(pi.first));
+  for (typename graph_object<G,T>::iterator i=begin(pi),e=end(pi);i!=e;++i)
+    f(*i);
 }
 
 // const g
 template <class G,class T,class F>
 inline void visit(T ,G const&g,F const& f) {
-  for (typename graph_object<G,T>::iterator_pair pi=
+  using namespace boost;
+  typename graph_object<G,T>::iterator_pair pi=
          vertices(g);
-       pi.first!=pi.second;
-       ++pi.first)
-    f(*(pi.first));
+  for (typename graph_object<G,T>::iterator i=begin(pi),e=end(pi);i!=e;++i)
+    f(*i);
 }
 
 template <class G,class T,class F>
 inline void visit(T ,G const&g,F &f) {
-  for (typename graph_object<G,T>::iterator_pair pi=
+  using namespace boost;
+  typename graph_object<G,T>::iterator_pair pi=
          vertices(g);
-       pi.first!=pi.second;
-       ++pi.first)
-    f(*(pi.first));
+  for (typename graph_object<G,T>::iterator i=begin(pi),e=end(pi);i!=e;++i)
+    f(*i);
 }
 
 }//ns
@@ -149,19 +141,19 @@ struct graph_types {
    struct object<edge_tag> {
     typedef typename graph_traits<G>::edge_descriptor descriptor;
     typedef typename graph_traits<G>::edge_iterator iterator;
-    typedef std::pair<iterator,iterator> iterator_pair;
+    typedef boost::iterator_range<iterator> iterator_pair;
    };
   template <>
    struct object<hyperarc_tag> {
     typedef typename graph_traits<G>::hyperarc_descriptor descriptor;
     typedef typename graph_traits<G>::hyperarc_iterator iterator;
-    typedef std::pair<iterator,iterator> iterator_pair;
+    typedef boost::iterator_range<iterator> iterator_pair;
    };
   template <>
    struct object<vertex_tag> {
     typedef typename graph_traits<G>::vertex_descriptor descriptor;
     typedef typename graph_traits<G>::vertex_iterator iterator;
-    typedef std::pair<iterator,iterator> iterator_pair;
+    typedef boost::iterator_range<iterator> iterator_pair;
    };
 };
 */

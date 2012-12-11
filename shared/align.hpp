@@ -4,7 +4,7 @@
 #include <boost/type_traits/alignment_traits.hpp>
 #include <graehl/shared/myassert.h>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -50,7 +50,7 @@ bool is_aligned(T *p)
 }
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 
 inline char *topointer(size_t i) 
 {

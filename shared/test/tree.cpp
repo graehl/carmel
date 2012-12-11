@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     }
     tree<int> t;
     std::string s(argv[1]);
-    string_into(argv[1],t);
+    string_to(argv[1],t);
     cout << t << "\n";
     return 0;        
 }

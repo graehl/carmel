@@ -53,7 +53,7 @@ class basic_memory_streambuf:
     }
     
     const static size_type DEFAULT_BUFSIZE=
-#ifdef TEST
+#ifdef GRAEHL_TEST
         1;
 #else 
         64*1024;
@@ -170,7 +170,7 @@ class basic_memory_stream:
 typedef basic_memory_stream<char>    memory_stream;
 typedef basic_memory_stream<wchar_t> wmemory_stream; 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include "array_stream.hpp"
 BOOST_AUTO_TEST_CASE( TEST_memory_stream )
 {

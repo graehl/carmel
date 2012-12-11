@@ -15,12 +15,12 @@ and likely faster if we use something more C-locale-formatting-constant than ost
 #include <sstream>
 #include <stdexcept>
 
+/// this is necessary to turn ints into c-strings using preprocessor, e.g. MAKESTR_FILE_LINE
 #define MAKESTR_STRINGIZE(str) #str
 #define MAKESTR_EXPAND_STRINGIZE(expr) MAKESTR_STRINGIZE(expr)
 #define MAKESTR_FILE_LINE "(" __FILE__  ":" MAKESTR_EXPAND_STRINGIZE(__LINE__)  ")"
 #define MAKESTR_DATE __DATE__ " " __TIME__
 
-// __FILE__  ":"  __LINE__  "): failed to write " #expr
 // usage: MAKESTRS(str,os << 1;os << 2) => str="12"
 #define MAKESTRS2(string,o,expr) do {std::ostringstream o;expr;if (!o) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write" #expr);string=o.str();}while(0)
 #define MAKESTRS(string,expr) MAKESTRS2(string,o,expr)
@@ -29,25 +29,25 @@ and likely faster if we use something more C-locale-formatting-constant than ost
 #define MAKESTRTO(string,expr) MAKESTRS(string,o << expr)
 #define MAKESTRFL(string,expr) MAKESTRTO(string,MAKESTR_FILE_LINE << expr)
 
+// (obviously, no comma/newlines allowed in expr unless you protect them using above COMMA() macro)
+
 //usage: string s=MAKESTRE(1<<" "<<c);
-#define MAKESTRE(expr) ((dynamic_cast<ostringstream &>(ostringstream()<<std::dec<<expr)).str())
+#define MAKESTRE(expr) ((dynamic_cast<std::ostringstream &>(std::ostringstream()<<std::dec<<expr)).str())
 // std::dec (or seekp, or another manip) is needed to convert to std::ostream reference.
 
-#define OSTR(expr) ((dynamic_cast<ostringstream &>(ostringstream()<<std::dec<<expr)).str())
-#define OSTRF(f) ((dynamic_cast<ostringstream &>(f(ostringstream()<<std::dec))).str())
-#define OSTRF1(f,x) ((dynamic_cast<ostringstream &>(f(ostringstream()<<std::dec,x))).str())
-#define OSTRF2(f,x1,x2) ((dynamic_cast<ostringstream &>(f(ostringstream()<<std::dec,x1,x2))).str())
+//usage: string s=OSTR(1<<" "<<c);
+#define OSTR(expr) ((dynamic_cast<std::ostringstream &>(std::ostringstream()<<std::dec<<expr)).str())
+#define OSTRF(f) ((dynamic_cast<std::ostringstream &>(f(std::ostringstream()<<std::dec))).str())
+#define OSTRF1(f,x) ((dynamic_cast<std::ostringstream &>(f(std::ostringstream()<<std::dec,x))).str())
+#define OSTRF2(f,x1,x2) ((dynamic_cast<std::ostringstream &>(f(std::ostringstream()<<std::dec,x1,x2))).str())
+// std::dec (or seekp, or another manip) is needed to convert to std::ostream reference.
 
-//DOESN'T WORK!
-//#define MAKESTRE(expr) static_cast<std::ostringstream &>((*(std::ostringstream *)&std::ostringstream()) << "" <<  expr).str()
-
-//TEST THIS BEFORE USING (note: MAKECSTRE is from a temporary object, so probably shouldn't even be used as a function argument)
-#define MAKECSTRE(expr) MAKESTRE(expr).c_str()
-
-// (obviously, no comma/newlines allowed in expr)
+#ifndef COMMA
+# define COMMA() ,
+#endif
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 
 BOOST_AUTO_TEST_CASE( makestring )

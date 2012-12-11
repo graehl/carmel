@@ -1,7 +1,12 @@
 #ifndef GRAEHL_SHARED__SWAP_POD
 #define GRAEHL_SHARED__SWAP_POD
 
-//for swapping objects of the same concrete type where just swapping their bytes will work.  will at least work on plain old data.
+/** \file
+
+    for swapping objects of the same concrete type where just swapping their
+    bytes will work.  will at least work on plain old data. memcpy is usually a
+    fast intrinsic optimized by the compiler
+*/
 
 namespace graehl {
 

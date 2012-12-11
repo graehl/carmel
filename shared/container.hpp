@@ -2,30 +2,54 @@
 #ifndef GRAEHL_SHARED__CONTAINER_HPP
 #define GRAEHL_SHARED__CONTAINER_HPP
 
-#include <graehl/shared/byref.hpp>
+#include <vector>
+#include <deque>
+#include <list>
 #include <map>
-#include <graehl/shared/2hash.h>
-#include <graehl/shared/list.h>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/range.hpp>
 #include <graehl/shared/containers.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
 namespace graehl {
 
-#if 0
-template <template<class X,class A=std::allocator<X> > class R,class C,class F>
-R<typename F::result_type,typename C::allocator_type::template rebind<typename F::result_type>::type> map(C const& c,F f)
-{
-    //
-    R<typename F::result_type,typename C::allocator_type::template rebind<typename F::result_type>::type> ret;
-    for (typename C::const_iterator i=c.begin(),e=c.end();i!=e;++i)
-        ret.push_back(f(*i));
-    return ret;
+template <class C,class V>
+inline void add(C &c,V const& v) {
+  c.insert(v);
 }
-#endif
+
+template <class V,class A,class Val>
+inline void add(std::vector<V,A> &c,Val const& v) {
+  c.push_back(v);
+}
+
+template <class V,class A,class Val>
+inline void add(std::deque<V,A> &c,Val const& v) {
+  c.push_back(v);
+}
+
+template <class V,class A,class Val>
+inline void add(std::list<V,A> &c,Val const& v) {
+  c.push_back(v);
+}
+
+template <class Key,class Findable>
+bool contains(Findable const& set,Key const& key)
+{
+  return set.find(key)!=set.end();
+}
+
+template <class C,class S>
+inline void append(C &c,S const& begin,S const& end) {
+  c.insert(c.end(),begin,end);
+}
+
+template <class C,class Range>
+inline void append(C &c,Range const& range) {
+  c.insert(c.end(),boost::begin(range),boost::end(range));
+}
 
 template <class R,class C,class F>
 R map(C const& c,F f)
@@ -48,56 +72,6 @@ void enumerate(M& m,F &f,Tag t) {
     for (typename M::iterator i=m.begin();i!=m.end();++i)
         f.visit(*i,t);
 }
-
-
-// for containers of containers where you want to visit every element
-template <class M,class F>
-void nested_enumerate(const M& m,F f) {
-    typedef typename M::value_type Inner;
-    for (typename M::const_iterator i=m.begin();i!=m.end();++i)
-        for (typename Inner::const_iterator j=i->begin();j!=i->end();++j)
-            deref(f)(*j);
-}
-
-template <class M,class F>
-void nested_enumerate(M& m,F f) {
-    typedef typename M::value_type Inner;
-    for (typename M::iterator i=m.begin();i!=m.end();++i)
-        for (typename Inner::iterator j=i->begin();j!=i->end();++j)
-            deref(f)(*j);
-}
-
-
-template <class M,class F>
-void enumerate(const M& m,F f) {
-  for (typename M::const_iterator i=m.begin();i!=m.end();++i)
-    deref(f)(*i);
-}
-
-template <class M,class F>
-void enumerate(M& m,F f) {
-  for (typename M::iterator i=m.begin();i!=m.end();++i)
-    deref(f)(*i);
-}
-
-
-// HashTable
-
-struct HashS {
-  template <class K,class V> struct map {
-    typedef HashTable<K,V> type;
-    typedef typename type::find_result_type find_result_type;
-    typedef typename type::insert_result_type insert_result_type;
-  };
-};
-
-template <class K,class V,class H,class P,class A>
-struct map_traits< HashTable<K,V,H,P,A> > {
-  typedef HashTable<K,V,H,P,A> type;
-  typedef typename type::find_result_type find_result_type;
-  typedef typename type::insert_result_type insert_result_type;
-};
-
 
 template <class V,class K>
 inline typename std::map<K,V>::mapped_type *find_second(const std::map<K,V>& ht,const K& first)
@@ -127,22 +101,12 @@ inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator 
 // Containers:
 
 
-struct GVectorS {
-  template <class T> struct container {
-    typedef dynamic_array<T> type;
-  };
-};
+#ifdef GRAEHL_TEST
+#include <graehl/shared/dynarray.h>
+#include <graehl/shared/list.h>
+#include <graehl/shared/2hash.h>
+#include <graehl/shared/byref.hpp>
 
-
-struct GListS {
-  template <class T> struct container {
-    typedef List<T> type;
-  };
-};
-
-
-
-#ifdef TEST
 template <class S>
 void maptest() {
   typedef typename S::template map<int,int>::type map;

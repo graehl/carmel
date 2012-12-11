@@ -9,6 +9,7 @@
 #include <string>
 #include <iterator>
 #include <stdexcept>
+#include <locale>
 
 //#define TOKENIZE_KEY_VAL_DEBUG
 
@@ -19,7 +20,7 @@
 # define TOKENIZE_KEY_VAL_IF_DBG(a)
 #endif
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <cctype>
 #include <graehl/shared/debugprint.hpp>
@@ -31,6 +32,26 @@ static std::string ascii_whitespace="\n\r\t ";
 
 namespace graehl {
 
+template<typename charT>
+struct ci_equal {
+  ci_equal( const std::locale& loc ) : loc_(loc) {}
+  bool operator()(charT ch1, charT ch2) {
+    return std::toupper(ch1, loc_) == std::toupper(ch2, loc_);
+  }
+private:
+  const std::locale& loc_;
+};
+
+// find substring start index or -1 if not found (case insensitive)
+template<typename T>
+typename T::size_type ci_find_substr( const T& str, const T& substr, const std::locale& loc = std::locale() )
+{
+  typename T::const_iterator it =
+    std::search(str.begin(),str.end(),
+                substr.begin(),substr.end(),
+                ci_equal<typename T::value_type>(loc));
+  return it==str.end() ? -1 : it - str.begin();
+}
 // return w/ removed trailing '\r' '\n' or '\r\n', if any
 template <class S>
 typename S::const_iterator chomp_end(S const& s) {
@@ -100,7 +121,6 @@ std::string get_string_terminated(I &i,char terminator='\n')
 }
 
 
-
 template <class Str> inline
 void erase_begin(Str &s,unsigned n)
 {
@@ -141,9 +161,8 @@ unsigned replace_all(Str &in,Str const& oldsub,Str const& newsub,typename Str::s
 }
 
 
-
 template <class Str,class Sub>
-bool contains(Str const& str,Sub const& sub,typename Str::size_type pos=0)
+bool contains_substring(Str const& str,Sub const& sub,typename Str::size_type pos=0)
 {
     return str.find(sub,pos)!=Str::npos;
 }
@@ -358,6 +377,17 @@ bool ends_with(const Str &str,const Str &suffix)
         return match_end(str.begin(),str.end(),suffix.begin(),suffix.end());
 }
 
+template <class Str,class StrSuffix>
+inline
+bool strip_suffix(Str &str,const StrSuffix &suffix)
+{
+  if (match_end(str.begin(),str.end(),suffix.begin(),suffix.end())) {
+    str.erase(str.end()-suffix.size(),str.end());
+    return true;
+  } else
+    return false;
+}
+
 template <class Str>
 inline
 bool starts_with(const Str &str,char const*prefix)
@@ -400,7 +430,7 @@ void parse_until(const std::string &term,In &in,Func func)
         if (s.empty())
             break;
         typename Func::argument_type val;
-        string_into(s,val);
+        string_to(s,val);
         func(val);
     }
 }
@@ -427,7 +457,7 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
             TOKENIZE_KEY_VAL_IF_DBG(DBP2(*i,i-s.begin()));
             if (*i == key_val_sep) { // [last,i) is key
                 TOKENIZE_KEY_VAL_IF_DBG(DBPC2("key",string(key_beg,i)));
-                string_into(string(key_beg,i),to_add.first);
+                string_to(string(key_beg,i),to_add.first);
                 break; // done key, expect val
             }
         }
@@ -438,7 +468,7 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
                 );
             if (i == e || *i == pair_sep) {
                 TOKENIZE_KEY_VAL_IF_DBG(DBPC2("val",string(val_beg,i)));
-                string_into(string(val_beg,i),to_add.second);
+                string_to(string(val_beg,i),to_add.second);
                 f(to_add);
                 if (i==e) return;
                 ++i;
@@ -449,7 +479,82 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
 }
 
 
-#ifdef TEST
+/**
+   return whether ' ' is found in [s.begin()+advance,s.begin()+at_most). updates
+   advance to <= at_most but > advance, with advance pointing at the rightmost
+   possible ' ' if any. note: requires at_most<s.size()
+*/
+inline bool indent_split_left(std::string const& s,std::string::size_type &advance,std::string::size_type at_most) {
+  assert(at_most<s.size());
+  std::string::size_type at=s.rfind(' ',at_most); //TODO: rfind bounded on more_than?
+  if (at==std::string::npos || at<=advance) {
+    advance=at_most;
+    return false;
+  }
+  advance = at;
+  assert(s[at]==' ');
+  return true;
+}
+
+/**
+   return s.size() (ending column after newline).
+*/
+
+template <class Ostream>
+unsigned newline_out(Ostream &out,std::string const& s) {
+  out<<'\n'<<s;
+  return (unsigned)s.size();
+}
+
+/**
+   print s (splitting words on 1 or more ' ' including opening and closing ' ',
+   with word wrap on or before indent_column. returns ending column, starting at
+   at_column. continuation lines when spaces aren't found.
+*/
+template <class Ostream>
+unsigned print_indent(Ostream &out,std::string const& s
+                      ,unsigned at_column,unsigned max_column
+                      ,std::string const& nl_indent_str=      "    "
+                      ,std::string const& continue_indent_str=" ...")
+{
+  using std::string;
+  typedef string::size_type strpos;
+  strpos i=0,end=s.find_last_not_of(' ');
+  if (end==std::string::npos)
+    return at_column;
+  ++end;
+  string::const_iterator sbeg=s.begin();
+  while(i<end) {
+    i=s.find_first_not_of(' ',i); // skip space(s)
+    if (i==string::npos) break;
+    strpos remain=max_column-at_column;
+    strpos from=i,upto=i+remain;
+    if (upto>=end) {
+      out<<string(sbeg+from,sbeg+end);
+      at_column+=(unsigned)(end-from);
+      break;
+    } else {
+      if (!remain) {
+        at_column=newline_out(out,nl_indent_str);
+        continue;
+      }
+      if (indent_split_left(s,i,upto)) { //advances i
+        // to a found space
+        out<<string(sbeg+from,sbeg+i);
+        at_column=newline_out(out,nl_indent_str);
+        ++i; // move past the found space
+      } else {
+        out<<string(sbeg+from,sbeg+i);
+        at_column=newline_out(out,continue_indent_str);
+      }
+    }
+    assert(i>from);
+  }
+  return at_column;
+}
+
+
+#ifdef GRAEHL_TEST
 const char *TEST_starts_with[]={
     "s",
     "st",

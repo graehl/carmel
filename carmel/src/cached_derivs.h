@@ -35,7 +35,7 @@ struct cached_derivs
     cached_derivs(WFST &x,cascade_parameters const& cascade,training_corpus &corpus,WFST::deriv_cache_opts const& copt)
         : x(x),derivs(copt.use_disk(),copt.disk_cache_filename,true,copt.disk_cache_bufsize),arcs(x),out_derivfile(copt.out_derivfile),cascade(cascade),corpus(corpus),copt(copt)
     {
-        if (cached=copt.cache())
+        if ((cached=copt.cache()))
             cache_derivations();
         first=true; // for non-caching
     }

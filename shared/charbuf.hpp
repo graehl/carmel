@@ -8,7 +8,7 @@
 #define CHARBUF_INIT_SIZE 4096
 #endif
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
@@ -49,7 +49,7 @@ extern CharBuf g_buf;
 
 // doesn't include newline terminator - returns true if was terminated, false otherwise (check in.status)
 template <char NL>
-inline bool & getline_chomped(std::istream &in,CharBuf &buf=g_buf) 
+inline bool getline_chomped(std::istream &in,CharBuf &buf=g_buf)
 {
     char c;
     while (in.get(c)) {
@@ -57,7 +57,7 @@ inline bool & getline_chomped(std::istream &in,CharBuf &buf=g_buf)
             return true;
         buf.push_back(c);
     }
-    return false;        
+    return false;
 }
 
 #ifdef GRAEHL__SINGLE_MAIN
@@ -68,7 +68,7 @@ CharBuf g_buf(CHARBUF_INIT_SIZE);
 #endif
 
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( charbuf )
 {
   BOOST_CHECK((char_buf())().size() == 0);

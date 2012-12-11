@@ -49,19 +49,23 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
                 cum.setZero();
                 for(a = begin ; a != end; ++a){
                     if ( (cum += (*a)->weight) >= which ) {
-                        if ( (*a)->in )
-                            if ( i >= maxArcs )
-                                goto bad;
-                            else
-                                inSeq[i++] = (*a)->in;
-                        if ( (*a)->out )
-                            if ( o >= maxArcs )
-                                goto bad;
-                            else
-                                outSeq[o++] = (*a)->out;
-                        s = (*a)->dest;
-                        ++nArcs;
-                        break;
+                      if ( (*a)->in ) {
+                        if ( i >= maxArcs )
+                          goto bad;
+                        else
+                          inSeq[i++] = (*a)->in;
+                      }
+
+                      if ( (*a)->out ) {
+                        if ( o >= maxArcs )
+                          goto bad;
+                        else
+                          outSeq[o++] = (*a)->out;
+                      }
+
+                      s = (*a)->dest;
+                      ++nArcs;
+                      break;
                     }
                 }
                 if ( a == end ) {
@@ -76,8 +80,7 @@ int WFST::generate(int *inSeq, int *outSeq, int minArcs, int bufLen)
 
 template <class charT, class Traits>
 std::basic_ostream<charT,Traits>&
-operator <<
-              (std::basic_ostream<charT,Traits>& os, const NormGroupIter &arg)
+operator << (std::basic_ostream<charT,Traits>& os, const NormGroupIter &arg)
 {
     return gen_inserter(os,arg);
 }
@@ -559,7 +562,6 @@ ostream & operator << (ostream &o, WFST &w) {
 }
 
 
-
 List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
 {
     Assert(valid());
@@ -585,4 +587,3 @@ List<List<PathArc> > * WFST::randomPaths(int k,int max_len)
 #include <graehl/carmel/src/wfstio.cc>
 
 #include <graehl/carmel/src/compose.cc>
-

@@ -5,11 +5,12 @@
 
   ALSO default init to 0 :)
 
-  (actual octal handling for 0123 - who uses that anyway? maybe a feature not to have it. but consistency with string_into which uses strtoul etc.)
+  (actual octal handling for 0123 - who uses that anyway? maybe a feature not to have it. but consistency with string_to which uses strtoul etc.)
  */
 
 #include <boost/lexical_cast.hpp>
 #include <graehl/shared/print_read.hpp>
+#include <graehl/shared/type_string.hpp>
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/have_64_bits.hpp>
 #include <iomanip>
@@ -20,9 +21,25 @@ template <class I>
 struct hex_int {
   typedef typename signed_for_int<I>::unsigned_t U;
   I i;
+#if 0
+  template <class Config>
+  void configure(Config &c) {
+    c.is("(hexadecimal) integer");
+    c(i);
+  }
+#else
+  typedef void leaf_configure;
+  friend inline void string_to_impl(std::string const& s,hex_int &me) {
+    string_to(s,me.i);
+  }
+  friend inline std::string type_string(hex_int const& me) {
+    return "(hexadecimal) "+type_string(me.i);
+  }
+#endif
+
   hex_int() : i() {}
   explicit hex_int(I i) : i(i) {}
-  explicit hex_int(std::string const& s) {string_into(s,i);}
+  explicit hex_int(std::string const& s) {string_to(s,i);}
   operator I() const { return i; }
   operator I&() { return i; }
 
@@ -35,10 +52,6 @@ struct hex_int {
   }
   template <class S>
   void read(S &s) {
-/*    std::string r; //TODO: peek into stream 1 char at a time to detect base using normal istream ops?
-    s>>r;
-    string_into(r,i.i); //TODO: set istream bad instead of exception, if wrong format? also don't require whitespace at end of number?
-*/
     char c;
     if (!s.get(c)) return;
     if (c=='0') {
@@ -49,7 +62,7 @@ struct hex_int {
         if (!(s>>std::hex>>u>>std::dec)) return;
         i=u;
       } else {
-        s.unget(); // actual number starting with 0. //octal for consistency with string_into.
+        s.unget(); // actual number starting with 0. //octal for consistency with string_to.
         if (isdigit(c))
           s>>std::oct>>i;
       }
@@ -68,7 +81,7 @@ hex_int<I> hex(I i) {
 
 #define DEFINE_HEX_INT(i) typedef hex_int<i> hex_##i;
 #define DEFINE_HEX_INTS(i) DEFINE_HEX_INTS(i) DEFINE_HEX_INTS(u##i)
-// these are brought into global namespace by string_into - deal, or use boost::intN_t instead
+// these are brought into global namespace by string_to - deal, or use boost::intN_t instead
 DEFINE_HEX_INT(int8_t);
 DEFINE_HEX_INT(int16_t);
 DEFINE_HEX_INT(int32_t);
@@ -76,20 +89,20 @@ DEFINE_HEX_INT(int32_t);
 DEFINE_HEX_INT(int64_t);
 #endif
 
-#if 0 // redundant with default string_into
+#if 0 // redundant with default string_to
 template <class S,class I>
-void string_into(S const& s,hex_int<I> &i) {
+void string_to(S const& s,hex_int<I> &i) {
   std::istringstream in(s);
   in>>i;
   return i;
 }
 #endif
 
-//only have to int and long with hex using string_into - e.g. int64_t - check strtoull existing?
+//only have to int and long with hex using string_to - e.g. int64_t - check strtoull existing?
 #define HEX_USE_STRING_TO(unsigned) \
 template <class S> \
-void string_into(S const& s,hex_int<unsigned> &i) { \
-  string_into(s,i.i); \
+void string_to(S const& s,hex_int<unsigned> &i) { \
+  string_to(s,i.i); \
 }
 #if 0
 HEX_USE_STRING_TO(unsigned)
@@ -109,7 +122,7 @@ namespace boost {
 template <class I>
 graehl::hex_int<I> lexical_cast(std::string const &s) {
   graehl::hex_int<I> ret;
-  string_into(s,ret);
+  string_to(s,ret);
   return ret;
 }
 }

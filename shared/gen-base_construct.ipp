@@ -15,7 +15,7 @@ intended to forward constructor args to parent
 
 will be unnecessary in C++11
 
-no include guard (intentional - include it inside your class that definese these:
+no include guard (intentional - include it inside your class that defines these:
 
 typedef A self_type;
 typedef B base_type;

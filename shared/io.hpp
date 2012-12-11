@@ -17,7 +17,7 @@
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/split.hpp>
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <cstring>
 #endif

@@ -18,6 +18,7 @@ SHARED=$(GRAEHL)/shared
 PROGS=carmel
 carmel_SRC=carmel.cc fst.cc train.cc gibbs.cc
 carmel_NOTEST=1
+carmel_LIB=$(BOOST_TIMER_LIB) $(BOOST_RANDOM_LIB)
 vpath %.cc $(SRC):$(SHARED)
 VPATH=$(SRC):$(SHARED)
 DEFS=
@@ -33,7 +34,7 @@ CXXFLAGS= $(BASECXXFLAGS) -O
 LDFLAGS += -lstdc++
 # -pg
 else
-CXXFLAGS= $(BASECXXFLAGS) -O2
+CXXFLAGS= $(BASECXXFLAGS) -O3
 endif
 #FIXME: crashes with -O3 on kbest output
 CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb

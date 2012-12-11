@@ -66,7 +66,7 @@ inline void array_load(As &a,Data &d)
     i & d;
 }
 
-#ifdef TEST
+#ifdef GRAEHL_TEST
 # include "test.hpp"
 
 template <class T>

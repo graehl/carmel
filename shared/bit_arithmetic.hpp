@@ -10,12 +10,14 @@
 #ifndef CHAR_BIT
 # define CHAR_BIT 8
 #endif
+
 namespace graehl {
 
 using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
 
+inline
 unsigned count_set_bits(uint32_t i)
 {
     i = i - ((i >> 1) & 0x55555555);
@@ -23,11 +25,13 @@ unsigned count_set_bits(uint32_t i)
     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
+inline
 unsigned count_set_bits(int32_t i)
 {
   return count_set_bits((uint32_t)i);
 }
 
+inline
 unsigned count_set_bits(uint64_t x)
 {
   return count_set_bits((uint32_t)x)+count_set_bits((uint32_t)(x>>32));

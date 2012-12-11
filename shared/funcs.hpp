@@ -124,6 +124,15 @@ void sort(Cont &cont,Order order)
     std::sort(cont.begin(),cont.end(),order);
 }
 
+// Order e.g. less_typeless
+template <class Cont,class Order> inline
+typename Cont::iterator sortFirstN(Cont &cont,std::size_t N,Order order)
+{
+  typename Cont::iterator mid=std::min(cont.begin()+N,cont.end());
+  std::partial_sort(cont.begin(),mid,cont.end(),order);
+  return mid;
+}
+
 
 template <class Cont> inline
 void sort(Cont &cont)
@@ -335,8 +344,6 @@ void stringtok (Container &container, std::string const &in, const char * const 
 }
 
 
-
-
 // requirement: P::result_type value semantics, default initializes to boolean false (operator !), and P itself copyable (value)
 // can then pass finder<P>(P()) to enumerate() just like find(beg,end,P())
 template <class P>
@@ -534,7 +541,6 @@ struct progress_ticker {
 */
 
 
-
 template <class Forest>
 struct self_destruct {
     Forest *me;
@@ -566,7 +572,6 @@ both_functors_byref<A,B> make_both_functors_byref(A &a_,B &b_)
 }
 
 
-
 template <class T>
 inline std::string concat(const std::string &s,const T& suffix) {
     return s+boost::lexical_cast<std::string>(suffix);
@@ -576,7 +581,6 @@ template <class S,class T>
 inline std::string concat(const S &s,const T& suffix) {
     return boost::lexical_cast<std::string>(s)+boost::lexical_cast<std::string>(suffix);
 }
-
 
 
 struct set_one {

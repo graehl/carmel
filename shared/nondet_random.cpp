@@ -10,7 +10,7 @@
  * software for any purpose. It is provided "as is" without express or
  * implied warranty.
  *
- * $Id$
+ * $Id: nondet_random.cpp 3574 2011-12-22 01:56:57Z graehl $
  *
  */
 
