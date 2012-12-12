@@ -12,7 +12,7 @@ default: mydefault
 DIR=.
 SRC=$(DIR)/src
 CP_PROGS=$(wildcard $(SRC)/*.pl)
-GRAEHL=$(DIR)/..
+GRAEHL ?= $(DIR)/..
 OPENFSTSRC=$(firstword $(wildcard $(GRAEHL)/openfst*/src) $(wildcard $(GRAEHL)/../openfst*/src))
 SHARED=$(GRAEHL)/shared
 PROGS=carmel

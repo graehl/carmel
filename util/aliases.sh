@@ -1,3 +1,4 @@
+GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
 gitcontinue() {
  git mergetool && git rebase --continue
@@ -41,6 +42,11 @@ useclang() {
     local ccache="/usr/local/bin/ccache "
     export CC="$ccache /usr/bin/cc"
     export CXX="$ccache /usr/bin/c++"
+}
+usegcc() {
+    local ccache="/usr/local/bin/ccache "
+    export CC="$ccache gcc"
+    export CXX="$ccache g++"
 }
 usellvm() {
     local ccache="/usr/local/bin/ccache "
@@ -2018,7 +2024,7 @@ s2c() {
     #elisp x/3rdParty
     (cd
         set -e
-        for d in u bugs t .emacs.d .gitconfig ; do
+        for d in u bugs g .emacs.d .gitconfig ; do
             sync2 $chost $d
         done
     )
@@ -3115,7 +3121,12 @@ buildgraehl() {
     local d=$1
     local v=$2
     (set -e
-        pushd ~/t/graehl/$d
+        pushd $GRAEHLSRC/$1
+        #export GRAEHL=$GRAEHLSRC
+        #export TRUNK=$GRAEHLSRC
+        #export SHARED=$TRUNK/shared
+        export BOOST=$BOOST_INCLUDE
+        [ "$clean" ] && make clean
         [ "$noclean" ] || make clean
         set -x
 #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"

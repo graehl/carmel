@@ -83,7 +83,7 @@ BIN_PREFIX=$(INSTALL_PREFIX)/bin
 endif
 
 ifndef TRUNK
-TRUNK=../..
+TRUNK=..
 endif
 
 ifndef SHARED
