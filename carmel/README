@@ -1,6 +1,11 @@
-Carmel Version 6.5 (Jun 24 2010):
+Carmel Version 6.14 (2011):
 
-canonical source: http://www.isi.edu/licensed-sw/carmel/
+Unfortunately, the code in this directory is still licensed for research/non-commercial only: 
+http://www.isi.edu/licensed-sw/carmel/ - the version there is actually slightly out of date.
+
+USC will license it to you if you ask and pay. But OpenFST by now has many advantages
+(except perhaps in the EM/Bayesian training department) so you'd probably do better 
+with that for commerical purposes.
 
 For changes and additions to Carmel, see carmel --help or view the source
 revisions at http://github.com/graehl/carmel/ (the development version)
@@ -128,10 +133,10 @@ result to the standard output.
 		weights of the transducer so as to approximate the conditional
 		distribution of the output sequences given the input sequences
 		optionally, an extra line preceeding an input/output pair may
-		contain a floating point number for how many times the
+		contain a floating point number for how many times the 
 		input/output pair should count in training (default is 1)
 -e w		w is the convergence criteria for training (the minimum
-		change in an arc's weight to trigger another iteration) -
+		change in an arc's weight to trigger another iteration) - 
 		default w is 1E-4 (or, -4log)
 -X w		w is a perplexity convergence ratio between 0 and 1,
 		with 1 being the strictest (default w=.999)
@@ -148,7 +153,7 @@ result to the standard output.
 -c		list only statistics on the transducer to stdout
 -F filename	write the final transducer to a file (in lieu of stdout)
 -v		invert the resulting transducer by swapping the input and
-		output symbols
+		output symbols 
 -d		do not reduce (eliminate dead-end states) created
 -C		consolidate arcs with same source, destination, input and
 		output, with a total weight equal to the sum (clamped to a
@@ -157,13 +162,13 @@ result to the standard output.
 -w w		prune states and arcs only used in paths w times worse
 		than the best path (1 means keep only best path, 10 = keep paths up to 10 times weaker)
 -z n		keep at most n states (those used in highest-scoring paths)
--G n		stochastically generate n input/output pairs by following
+-g n		stochastically generate n input/output pairs by following
 		random paths (first choosing an input symbol with uniform
 		probability, then using the weights to choose an output symbol
 		and destination) from the initial state to the final state
 		output is in the same form accepted in -t and -S.
-		Training a transducer with conditional normalization on its own -G output should be a no-op.
--g n		stochastically generate n paths by randomly picking an arc
+		Training a transducer with conditional normalization on its own -g output should be a no-op.
+-G n		stochastically generate n paths by randomly picking an arc
 		leaving the current state, by joint normalization
 		until the final state is reached.
 		same output format as -k best paths
@@ -174,7 +179,7 @@ result to the standard output.
 -L n		while generating input/output pairs with -g or -G, give up if
 		final state isn't reached after n steps (default n=1000)
 -T n		during composition, index arcs in a hash table when the
-		product of the number of arcs of two states is greater than n
+		product of the number of arcs of two states is greater than n 
 		(by default, n = 32)
 -N n		assign each arc in the result transducer a unique parameter-tie group number
 		starting at n and counting up.  If n is 0 (the special group
@@ -205,7 +210,7 @@ result to the standard output.
 -! n		perform n additional random restarts (initializations of arcs) for training, keeping the lowest perplexity
 -?		cache EM derivations in memory for faster iterations
 -:		cache em derivations including reverse structure (faster but uses even more memory)
--= 2.0		raise weights to 2.0th power, *after* normalization.
+-= 2.0		raise weights to 2.0th power, *after* normalization. e.g. -= 0 removes all weights
 
 
 some formatting switches for paths from -k or -G:
@@ -293,7 +298,7 @@ gibbs sampling / incremental em options:
 --final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)
 --crp-exclude-prior : when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts
 --crp-argmax-sum : instead of multiplying the sample probs together and choosing the best, sum (average) them
---crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, use best entropy over all post --burnin samples
+--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, take the best (avg cache-prob post --burnin)
 --init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them
 --em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)
 --print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example
@@ -305,6 +310,8 @@ gibbs sampling / incremental em options:
 --width : for --print-counts, truncate numbers to this many chars wide
 --print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts
 --uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights
+--init-from-p0 : For the initial sample: normally previous blocks' cache is used for proposal prob.  With this option, each block is generated independently from the base distribution alone (resampling is unchanged).
+--dirichlet-p0 : use the input WFST weights, UNNORMALIZED, as the dirichlet prior pseudocounts - this way different normgroups can have different effective alphas.  Note: alpha argument still further scales the initial psuedocounts, so set alpha=1.
 --cache-prob : show the true probability according to cache model for each sample
 --sample-prob : show the sample prob given model, previous sample
 --no-prob : show no probability for --crp
@@ -324,6 +331,11 @@ gibbs sampling / incremental em options:
 
 
 Confused?  Think you've found a bug?  If all else fails, e-mail graehl@isi.edu or knight@isi.edu
+
+
+See carmel/doc/FORMATS for a description of the transducer file format.
+
+Confused?  Think you've found a bug?  If all else fails, e-mail graehl (gmail.com) or knight@isi.edu
 
 
 See doc/FORMATS for a description of the transducer file format.
