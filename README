@@ -1,7 +1,8 @@
 carmel: finite state transducer toolkit (and k-best graph paths).
- EM and gibbs training
+ EM and gibbs-sampled (pseudo-Bayesian) training
  (see carmel/README and carmel/carmel-tutorial).
  To build, cd carmel; make install
+ (see carmel/LICENSE - free for research/non-commercial)
 
 forest-em: derivation forests EM and gibbs (dirichlet prior bayesian) training
 
