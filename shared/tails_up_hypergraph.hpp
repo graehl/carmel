@@ -373,7 +373,7 @@ struct TailsUpHypergraph {
     }
 
     BestTreeStats stat;
-    typedef d_ary_heap_indirect<VD,graehl::OPTIMAL_HEAP_ARITY,LocsP,VertexCostMap,better_cost<graph> > Heap;
+    typedef d_ary_heap_indirect<VD,graehl::OPTIMAL_HEAP_ARITY,VertexCostMap,LocsP,better_cost<graph> > Heap;
     Heap heap;
     BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec,BestTreeOptionsParsed const& bestOpt=BestTreeOptions())
       :

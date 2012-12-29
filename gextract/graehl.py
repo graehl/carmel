@@ -5,6 +5,50 @@
 
 import sys,re,random,math,os,collections,errno,time,operator,datetime
 
+def chomp(s):
+    return s.rstrip('\r\n')
+
+def log(s,out=sys.stderr):
+    out.write("### "+s+"\n")
+
+def stripext(fname):
+    return os.path.splitext(fname)[0]
+
+basename=os.path.basename
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        pass
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
+
+def mkdir_parent(file):
+    mkdir_p(os.path.dirname(file))
+
+import gzip
+
+def is_terminal_fname(fname):
+    "return if fname is '-' or '' or none - for stdin or stdout"
+    return (fname is None) or fname=='-' or fname==''
+
+def open_in(fname):
+    "if fname is '-', return sys.stdin, else return open(fname,'rb') (or if fname ends in .gz, gzip.open it)"
+    return sys.stdin if is_terminal_fname(fname) else (gzip.open if fname.endswith('.gz') else open)(fname,'rb')
+
+def open_out(fname, append=False, mkdir=False):
+    """if fname is '-' or '' or none, return sys.stdout, else return open(fname,'w').
+      not sure if it's ok to close stdout, so let GC close file please."""
+    if is_terminal_fname(fname):
+        return sys.stdout
+    if mkdir:
+        mkdir_parent(fname)
+    return (gzip.open if fname.endswith('.gz') else open)(fname,'b'+'a' if append else 'w')
+
+##
+
 def normalize(p_list):
     oos=1.0/sum(x for x in p_list)
     return [x*oos for x in p_list]
@@ -1639,37 +1683,6 @@ def writeln(line,file=sys.stdout):
     file.write(line)
     file.write('\n')
 
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        pass
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise
-
-def mkdir_parent(file):
-    mkdir_p(os.path.dirname(file))
-
-def open_in(fname):
-    "if fname is '-', return sys.stdin, else return open(fname,'r')"
-    return sys.stdin if fname=='-' else open(fname,'r')
-
-def open_out(fname, append=False, mkdir=False):
-    "if fname is '-', return sys.stdout, else return open(fname,'w'). not sure if it's ok to close stdout, so let GC close file please."
-    if fname=='-':
-        return sys.stdout
-    if mkdir:
-        mkdir_parent(fname)
-    return open(fname,'a' if append else 'w')
-
-def open_out_prefix(prefix,name):
-    "open_out prefix+name, or stdout if prefix='-'"
-    if prefix=='-':
-        return sys.stdout
-    if prefix=='-0' or prefix=='/dev/null':
-        return os.devnull
-    return open_out(prefix+name)
 
 def adjlist(pairs,na):
     "return adjacency list indexed by [a]=[x,...,z] for pairs (a,x) ... (a,z)"

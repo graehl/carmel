@@ -3,6 +3,12 @@ GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
 conf64() {
   ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
 }
+cpfrom() {
+  cp "$2" "$1"
+}
+conflicts() {
+ perl -ne 'print "$1 " if /^CONFLICT.* in (.*)$/; print "$1 " if /^(.*): needs merge$/' "$@"
+}
 gitcontinue() {
  git mergetool && git rebase --continue
 }
@@ -78,7 +84,7 @@ withcc() {
     )
 }
 xmtx=/home/graehl/x
-if [[ $HOST = c-jgraehl ]] || [[ $HOST = graehl.local ]] ; then
+if [[ $HOST = c-jgraehl ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
  xmtx=/Users/graehl/x
 fi
 substxmt() {
@@ -102,7 +108,8 @@ linjen() {
     cd $xmtx
     local branch=$(git_branch)
     mend
-    (cjg macget $branch
+    (set -e;
+        cjg macget $branch
         cjg threads=$threads jen "$@" 2>&1) | tee ~/tmp/linjen.$branch  | filter-gcc-errors
 }
 jen() {
@@ -122,8 +129,8 @@ gitdiff() {
     git difftool --tool=opendiff "$@"
 }
 ret() {
-    cpshared
-    commt shared
+    #cpshared
+    commt "$@"
 }
 shortstamp() {
     date +%m.%d_%H.%M
@@ -339,7 +346,7 @@ linbuild() {
     cd $xmtx
     local branch=$(git_branch)
     mend
-    cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp`
+    cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
 }
 bakre() {
     bakthis ${1:-1}
@@ -360,7 +367,7 @@ unhyphenate() {
 }
 cpshared() {
     for f in $xmtx/xmt/graehl/shared/*; do
-        cp $f ~/t/graehl/shared
+        cp $f ~/g/shared
     done
 }
 commshared() {
@@ -368,10 +375,14 @@ commshared() {
     commt "$@"
 }
 pgrep() {
-    ps -axw | fgrep "$@" | grep -v fgrep
+    local flags=-ax
+    if [[ `uname` = Linux ]] ; then
+      flags=-ax
+    fi
+    ps $flags | fgrep "$@" | grep -v fgrep
 }
 pgrepn() {
-    pgrep "$@" | cut -f 1 -d ' '
+    pgrep "$@" | cut -f1 -d' '
 }
 pgrepkill() {
     local name=$1
@@ -537,13 +548,15 @@ commt()
 {
     (set -e
         pushd $racer/xmt/graehl/shared
-        gsh=~/t/graehl/shared
+        gsh=~/g/shared
         for f in *.?pp; do
             rm -f $gsh/$f
             cp $f $gsh/$f
         done
-        pushd ~/t
-        svn commit -m "$*"
+        pushd ~/g
+        git co master
+        git commit -a -m "$*"
+        git push
         popd
         popd
     )
@@ -597,7 +610,7 @@ yreg() {
         set -x
         THREADS=`ncpus`
         MINTHREADS=2 # unreliable with 1
-        MAXTHREADS=4
+        MAXTHREADS=6
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
         fi
@@ -949,6 +962,9 @@ makerun() {
             fi
         fi
     )
+}
+makex() {
+    norun=1 makerun "$@"
 }
 makejust() {
     norun=1 makerun "$@"
@@ -1956,6 +1972,9 @@ rpathhg() {
 }
 lnhg() {
     local b=${1:-Debug}
+    lnhg1 $racer/$b ProcessYAML/ProcessYAML
+    lnhg1 $racer/$b ProcessYAML/ProcessYAML
+    lnhg1 $racer/$b ProcessYAML/Test
     lnhg1 $racer/$b RuleDumper/RuleDumper
     lnhg1 $racer/$b SyntaxBased/Test
     lnhg1 $racer/$b LanguageModel/LMQuery/LMQuery
