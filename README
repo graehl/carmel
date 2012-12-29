@@ -1,4 +1,7 @@
 carmel: finite state transducer toolkit (and k-best graph paths).
+
+ http://www.isi.edu/licensed-sw/carmel/
+
  EM and gibbs-sampled (pseudo-Bayesian) training
  (see carmel/README and carmel/carmel-tutorial).
  To build, cd carmel; make install
