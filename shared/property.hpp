@@ -114,6 +114,38 @@ void put(ArrayPMapImp<V,O> &p,typename ArrayPMapImp<V,O>::key_type k,V v) {
   p[k]=v;
 }
 
+/// constant property map. ignores puts and returns same constant on get
+template <class V>
+struct ConstPropertyMap {
+  typedef boost::writable_property_map_tag category;
+  V val;
+  explicit ConstPropertyMap(V const& val)
+      : val(val) {}
+};
+
+template <class V,class Key>
+V const& get(ConstPropertyMap<V> const& pmap,Key const&) {
+  return pmap.val;
+}
+
+
+template <class V,class Key>
+void put(ConstPropertyMap<V> const& pmap,Key const&,V const& ) {}
+
+/// constant property map. ignores puts and returns same constant on get
+template <class V>
+struct NullPropertyMap {
+  typedef boost::writable_property_map_tag category;
+};
+
+template <class V,class Key>
+V get(NullPropertyMap<V> const& pmap,Key const&) {
+  return V();
+}
+
+template <class V,class Key>
+void put(NullPropertyMap<V> const& pmap,Key const&,V const& ) {}
+
 
 /*
 template <class V,class O=boost::identity_property_map>
