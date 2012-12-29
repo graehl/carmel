@@ -1,22 +1,25 @@
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
 conf64() {
-  ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
+    ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
+}
+zillaq() {
+    perl -n -e 'print $1,"\n" if m#<LocalFile>(.*)/[^/]*</LocalFile>#' "$@" | sort | uniq -c
 }
 cpfrom() {
-  cp "$2" "$1"
+    cp "$2" "$1"
 }
 conflicts() {
- perl -ne 'print "$1 " if /^CONFLICT.* in (.*)$/; print "$1 " if /^(.*): needs merge$/' "$@"
+    perl -ne 'print "$1 " if /^CONFLICT.* in (.*)$/; print "$1 " if /^(.*): needs merge$/' "$@"
 }
 gitcontinue() {
- git mergetool && git rebase --continue
+    git mergetool && git rebase --continue
 }
 gitrebase() {
-  (set -e
-  local last=${1:?usage: from-branch [HEAD]}
-  git rebase "$@" || gitcontinue
-  )
+    (set -e
+        local last=${1:?usage: from-branch [HEAD]}
+        git rebase "$@" || gitcontinue
+    )
 }
 filtergcc() {
     "$@" 2>&1 | filter-gcc-errors
@@ -85,7 +88,7 @@ withcc() {
 }
 xmtx=/home/graehl/x
 if [[ $HOST = c-jgraehl ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
- xmtx=/Users/graehl/x
+    xmtx=/Users/graehl/x
 fi
 substxmt() {
     (
@@ -110,7 +113,7 @@ linjen() {
     mend
     (set -e;
         cjg macget $branch
-        cjg threads=$threads jen "$@" 2>&1) | tee ~/tmp/linjen.$branch  | filter-gcc-errors
+        cjg threads=$threads jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -377,7 +380,7 @@ commshared() {
 pgrep() {
     local flags=-ax
     if [[ `uname` = Linux ]] ; then
-      flags=-ax
+        flags=-ax
     fi
     ps $flags | fgrep "$@" | grep -v fgrep
 }
