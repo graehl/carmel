@@ -290,12 +290,12 @@ sub mkdir_isnew {
 }
 
 
-use DB_File;
-    use Fcntl;
-sub make_db_hash {
-    my ($file,$hash)=@_;
-    tie %{$hash},'DB_File',$file,O_RDWR|O_CREAT,0664,$DB_HASH || croak "creating DB_File $file";
-}
+# sub make_db_hash {
+#     use DB_File;
+#     use Fcntl;
+#     my ($file,$hash)=@_;
+#     tie %{$hash},'DB_File',$file,O_RDWR|O_CREAT,0664,$DB_HASH || croak "creating DB_File $file";
+# }
 
 sub count_ws {
     local ($_)=@_;
@@ -476,7 +476,7 @@ sub set_debug_fh {
     return $oldfh;
 }
 
-require 'dumpvar.pl';
+#require 'dumpvar.pl';
 
 my %mathsym=(
     '<=','leq',
@@ -2311,7 +2311,6 @@ sub show_opts_all {
 }
 
 
-
 #use FileHandle;
 my $usage_was_called=0;
 # for handling END{} blocks gracefully
@@ -2785,7 +2784,6 @@ sub extract_numbers_pre_post {
 }
 
 
-
 sub generalize_brackets {
     my ($text)=@_;
     $text =~ s/\[[^\[\]]*\]/[]/g;
@@ -3235,4 +3233,3 @@ sub multi_args($@) {
 }
 
 1
-

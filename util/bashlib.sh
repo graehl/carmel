@@ -762,7 +762,7 @@ ulimitsafe() {
 local want=${1:-131072}
 local type=${2:-s}
 local OS=`uname`
-if [ ${OS#CYGWIN} != "$OS" -a "$type" = "s" ] ; then
+if [ ${OS#CYGWIN} != "$OS" -a "$type" = "s" ] || [[ ${OS#MINGW} != $OS ]] ; then
 # error "cygwin doesn't allow stack ulimit change"
  return
 fi

@@ -1,5 +1,8 @@
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
+conf64() {
+  ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
+}
 gitcontinue() {
  git mergetool && git rebase --continue
 }
@@ -2046,7 +2049,7 @@ sconsd() {
 
 
 ncpus() {
-    if [[ $lwarch = Apple ]] ; then
+    if [[ $lwarch = Apple ]] || ! [[ -f /proc/cpuinfo ]] ; then
         if [[ $usecpus ]] ; then
             echo $usecpus
         else

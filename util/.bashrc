@@ -95,14 +95,10 @@ case "$UNAMEA" in
 esac
 export ON64
 
-if [ ! "$ONCYGWIN" ]; then
-    if [ ! "$ONHPC" ]; then
-        ulimit -f unlimited
-        ulimit -t unlimited
-        ulimit -d unlimited
+        #ulimit -f unlimited
+        #ulimit -t unlimited
+        #ulimit -d unlimited
     #ulimit -s 65536
-    fi
-fi
 
 isd=$HOME/isd
 
@@ -462,3 +458,5 @@ export CLOJURE_EXT=~/.clojure
 export HYPERGRAPH_DBG=1
 
 . ~/local.sh
+if [[ $INSIDE_EMACS ]] ; then export PS1='|PrOmPt|\w|\w $ '; fi
+if [[ $INSIDE_EMACS ]] ; then export PS1='\w $ '; fi
