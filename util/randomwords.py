@@ -64,20 +64,16 @@ def lenbetween(words,minlen=0,maxlen=None):
 import argparse
 
 
-parser=argparse.ArgumentParser(description='translate (utf8) input file lines to C header files (without include guards or namespaces)')
+parser=argparse.ArgumentParser(description='generate lines using random words from dict file')
 addarg(parser,'-d',str,'dictionary','input words file (like /usr/share/dict/words, one word per line)',metavar='FILE')
 addarg(parser,'-o', str, 'output', 'output file')
 addarg(parser,'-s', str, 'space', 'insert this string between words');
-#parser.add_argument('-w','--word', type=str, help='supplements the word list from input with the given word', nargs='*'),
-#parser.add_argument('-p','--pword', type=float, help='probability of choosing from word instead of from dict'),
-#parser.add_argument('-l','--lines', type=int, help='number of lines to generate'),
-#parser.add_argument('-c','--cols', type=int, help='number of columns per line minimum'),
 addarg(parser,'-w',str,'word','supplements the word list from input with the given word',nargs='*')
 addarg(parser,'-p',float,'pword','probability of choosing from word instead of from dict')
 addarg(parser,'-l',int,'lines', 'number of lines to generate')
 addarg(parser,'-c',int,'cols', 'number of columns (minimum) per line to generate')
 addarg(parser,'-m',int,'maxlen','discard words over this many chars long')
-parser.set_defaults(input='-', output='-', word=['\x11'], space='', pword=.2, cols=70, lines=1000, maxlen=5)
+parser.set_defaults(dictionary='-', output='-', word=['\x11'], space='', pword=.2, cols=70, lines=1000, maxlen=5)
 
 import random
 
