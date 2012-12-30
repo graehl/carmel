@@ -1,5 +1,12 @@
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
+showbest() {
+    for f in "$@" ; do
+        echo $f 1>&2
+        HgBest -n 1 $f -y 1 -Y 1 2>/dev/null
+        echo
+    done
+}
 conf64() {
     ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
 }
