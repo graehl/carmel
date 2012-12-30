@@ -1,5 +1,34 @@
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
+tunhost="pontus.languageweaver.com"
+tunport=4640
+clonex() {
+    (set -x
+        set -e
+        git clone ssh://localhost:29418/xmt x
+        cd x
+        machost=192.168.1.7
+        git remote add macw ssh://$machost:22/users/graehl/c/xmt
+        scp $machost:/users/graehl/c/xmt/.git/config/commit-msg .git/config/commit-msg
+    )
+}
+tunsocks() {
+# ssh -f -N -D 1080 -p $tunport $tunhost "$@"
+    #ssh -D 1082 -f -C -q -N -p $tunport $tunhost
+    ssh -f -C -q -N -D 12345 -p $tunport $tunhost
+}
+tunport() {
+    local port=${1:?usage: port [host] via tunhost:tunport $tunhost:$tunport}
+    local host=${2:-git02.languageweaver.com}
+    ssh -N -L $port:$host:$port -p $tunport $tunhost "$@"
+}
+tunmac() {
+    tunport 22 192.168.15.15
+}
+tungerrit() {
+    #tunport 29418 git02.languageweaver.com
+    ssh -L 29418:git02.languageweaver.com:29418 -L 3391:172.20.1.122:3389 -p $tunport $tunhost -N
+}
 conf64() {
     ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
 }
@@ -474,18 +503,18 @@ cjg() {
     ssh $chost "$@"
 }
 macget() {
-    local branch=${1:?args branch [target] [Debug|Release]}
-    (
-        set -e
-        cd $xmtx
-        echo branch $branch tar $tar
-        git fetch mac
-        if false && [[ $HOST = c-jgraehl ]] ; then
-            git branch -D $branch || true
-            git checkout -b $branch remotes/mac/$branch
-        fi
-        git checkout remotes/mac/$branch
-    )
+    local branch=${1:?args: branch]}
+(
+    set -e
+    cd $xmtx
+    echo branch $branch tar $tar
+    git fetch mac
+    if [[ $force ]] ; then
+        git branch -D $branch || true
+        git checkout -b $branch remotes/mac/$branch
+    fi
+    git checkout remotes/mac/$branch
+)
 }
 macbuild() {
     local branch=${1:?args branch [target] [Debug|Release]}
