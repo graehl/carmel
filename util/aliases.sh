@@ -1,11 +1,20 @@
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
+gpush() {
+    (set -e
+        pushd ~/g
+        gcom "$@"
+        git pull
+        git push
+    )
+}
 showbest() {
     for f in "$@" ; do
         echo $f 1>&2
         HgBest -n 1 $f -y 1 -Y 1 2>/dev/null
         echo
     done
+}
 tunhost="pontus.languageweaver.com"
 tunport=4640
 clonex() {
