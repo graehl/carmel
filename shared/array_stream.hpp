@@ -462,7 +462,7 @@ void TEST_check_array_stream(C &i1)
   const char *tarrs=TESTARRAYSTR.c_str();
   i1.set_array(tarrs,TESTARRAYSTR.size());
   string tstr=tarrs;
-  unsigned slen=tstr.length();
+  unsigned slen=(unsigned)tstr.length();
   string s;
   BOOST_CHECK(i1>>s);
   BOOST_CHECK(s==TESTARRAYSTR1);
@@ -473,16 +473,16 @@ void TEST_check_array_stream(C &i1)
   for (i=0;i<slen;++i) {
     int t;
     i1.seekg(i,ios_base::beg);
-    t=i1.tellg();
+    t=(int)i1.tellg();
     BOOST_CHECK(t==(int)i);
     i1.seekg(0);
     BOOST_CHECK(i1.tellg()==0);
     i1.seekg(i);
-    t=i1.tellg();
+    t=(int)i1.tellg();
     BOOST_CHECK(t==(int)i);
     int c=i1.get();
     BOOST_CHECK(c==tstr[i]);
-    int e=-i-1;
+    int e=(int)(-i-1);
     BOOST_CHECK(i1.seekg(e,ios_base::end));
     t=i1.tellg();
     int p=slen+e;

@@ -4,8 +4,7 @@
 /* factory objects for boost property_maps (which have typed values) - e.g. # of states for vertex id -> X map */
 
 #include <boost/version.hpp>
-//#include <boost/property_map/shared_array_property_map.hpp> // new A[n]
-//#include <boost/property_map/iterator_property_map.hpp>
+#include <boost/ref.hpp>
 #if BOOST_VERSION >= 104000
 #include <boost/property_map/property_map.hpp> //boost 1.40
 #else
@@ -25,16 +24,10 @@ struct OffsetMap {
   K begin;
   unsigned index(K p) const {
     Assert(p>=begin);
-    //Assert(p<begin+values.size());
     return (unsigned)(p-begin);
   }
   explicit OffsetMap(K beg) : begin(beg) {
   }
-  /* // default constructor
-  OffsetMap(const OffsetMap<K> &o) : begin(o.begin) {
-    //DBPC("OffSetMap copy",begin);
-  }
-  */
   typedef boost::readable_property_map_tag category;
   typedef unsigned value_type;
   typedef K key_type;
@@ -81,6 +74,7 @@ struct ArrayPMapImp
   typedef std::vector<value_type> Vals;
   Vals vals; // copyable!
 
+  explicit ArrayPMapImp(unsigned size=0) : ind(), vals(size) {}
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
   operator Vals & ()  {
     return vals;
@@ -101,7 +95,6 @@ struct ArrayPMapImp
   }
   friend inline std::ostream &operator<<(std::ostream &o,Self const& s) { s.print(o); return o; }
 private:
-  //  ArrayPMapImp(Self &s) : vals(s.vals) {}
 };
 
 template <class V,class O>
@@ -143,34 +136,8 @@ V get(NullPropertyMap<V> const& pmap,Key const&) {
   return V();
 }
 
-template <class V,class Key>
-void put(NullPropertyMap<V> const& pmap,Key const&,V const& ) {}
-
-
-/*
-template <class V,class O=boost::identity_property_map>
-struct ArrayPMap {
-  typedef ArrayPMapImp<V,O> Imp;
-  typedef boost::boost::reference_wrapper<Imp> type;
-};
-*/
-
-/*
-template <class V,class O>
-struct ArrayPMap {
-  typedef boost::reference_type<ArrayPMapImp<V,O> > type;
-};
-*/
-
-/* usage:
- Factory factory;
- typedef typename Factory::rebind<DataType> DFactory;
- typedef typename DFactory::implementation Imp;
- typedef typename DFactory::reference PMap;
- Imp imp(max_size,factory);
- PMap pmap(imp);
- ... use pmap
- */
+template <class V,class Key,class Val2>
+void put(NullPropertyMap<V> const& pmap,Key const&,Val2 const& ) {}
 
 template <class offset_map=boost::identity_property_map>
 struct ArrayPMapFactory : public std::pair<unsigned,offset_map> {
@@ -180,36 +147,13 @@ struct ArrayPMapFactory : public std::pair<unsigned,offset_map> {
   struct rebind {
     typedef ArrayPMapImp<R,offset_map> implementation;
     typedef boost::reference_wrapper<implementation> reference;
-    // reference(implementation &i) constructor exists
-    /*static reference pmap(implementation &i) {
-      return reference(i);
-    }*/
   };
 };
 
 
-/*
-template<class V,class O>
-struct property_traits<boost::reference_wrapper<ArrayPMapImp<V,O> > {
-  typedef ArrayPMapImp<V,O> Imp;
-  typedef typename Imp::category category;
-  typedef typename Imp::key_type key_type;
-  typedef typename Imp::value_type value_type;
-
-};
+/**
+   visitor for copying (by index) from one property map to another
 */
-
-/*
-template <class Imp>
-struct RefPMap : public boost::reference_wrapper<Imp>{
-  typedef typename Imp::category category;
-  typedef typename Imp::key_type key_type;
-  typedef typename Imp::value_type value_type;
-  explicit RefPMap(Imp &a) : boost::reference_wrapper<Imp>(a) {}
-};
-*/
-
-
 template <class P1,class P2>
 struct IndexedCopier : public std::pair<P1,P2> {
   IndexedCopier(P1 a_,P2 b_) : std::pair<P1,P2>(a_,b_) {}
@@ -223,6 +167,7 @@ template <class P1,class P2>
 IndexedCopier<P1,P2> make_indexed_copier(P1 a,P2 b) {
   return IndexedCopier<P1,P2>(a,b);
 }
+
 }
 
 namespace boost {
@@ -232,7 +177,7 @@ struct property_traits<boost::reference_wrapper<Imp> > {
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;
 };
-};
+}
 
 
 #endif

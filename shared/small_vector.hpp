@@ -5,14 +5,15 @@
 /** \file
 
     space and cache-efficient small vectors (like std::vector). for small size,
-    elements are stored without indirection. template for that size. also
-    templated for alternative to std::size_t (e.g. uint32_t or uint16_t) for
-    element indices and sizes.
+    elements are stored without indirection on the stack. over that size,
+    they're stored on the heap as with a regular std::vector. specify the
+    maximum 'small size' as a template constant. also specify an alternative to
+    std::size_t (e.g. uint32_t or uint16_t) for element indices and sizes.
 
-    same iterator invalidations as std::vector except that erasing will also
-    invalidate (when size transitions from >kMaxInlineSize to
-    <=kMaxInlineSize). further, reserve won't prevent iterator invalidations
-    on adding elements, unless size is already >kMaxInlineSize
+    offers same iterator invalidations as std::vector with one exception:
+    erasing will also invalidate (when size transitions from >kMaxInlineSize to
+    <=kMaxInlineSize). further, reserve won't prevent iterator invalidations on
+    adding elements, unless size is already >kMaxInlineSize
 
     vectors indexed by size_type SIZE (if your element type T is small, then it
     pays to make SIZE small also). in debug mode you'll get assertions if you
@@ -46,7 +47,7 @@
 
 #define GRAEHL_SMALL_VECTOR_POD_ONLY 1
 
-# include <stdlib.h>
+#include <stdlib.h>
 
 /**
    if 1, complete valgrind safety at the cost of speed. if 0, code is still
@@ -356,12 +357,12 @@ struct small_vector {
   }
 
   void assign(T const* i,T const* end) {
-    size_type n=end-i;
+    size_type n=(size_type)(end-i);
     memcpy_n(realloc(n),i,n);
   }
   template <class I>
   void assign(I i,I end) {
-    T *o=realloc(std::distance(i,end));
+    T *o=realloc((size_type)std::distance(i,end));
     for (;i!=end;++i)
       *o++=*i;
   }
@@ -478,14 +479,14 @@ struct small_vector {
     if (where==end())
       append(i,e);
     else
-      insert_index(where-begin(),i,e);
+      insert_index((size_type)(where-begin()),i,e);
   }
 
   inline void insert(iterator where, T const* i, T const* e) {
     if (where==end())
       append(i,e);
     else
-      insert_index(where-begin(),i,e);
+      insert_index((size_type)(where-begin()),i,e);
   }
 
   template <class ForwardIter>
@@ -497,7 +498,7 @@ struct small_vector {
   }
 
   inline void insert_index(size_type atIndex, T const* i, T const* e) {
-    size_type N=e-i;
+    size_type N=(size_type)(e-i);
     memcpy_n(insert_hole_index(atIndex,N),i,N);
   }
 

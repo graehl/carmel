@@ -192,7 +192,8 @@ function default_paths {
     local cygp
     [ "$ONCYGWIN" ] && cygp=/usr/lib:
     PATH=$cygp/usr/local/bin:/usr/bin:$DEFAULT_PATH
-    PATH=$isd/bin:~/bin:$PATH
+    mkdir -p ~/script
+    PATH=$isd/bin:~/bin:~/script:$PATH
     if [[ $OS != Darwin ]] ; then
         PATH=$PATH:/local/bin
     fi
