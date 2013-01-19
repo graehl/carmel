@@ -219,6 +219,7 @@ jen() {
     local build=${1:-${BUILD:-Release}}
     shift
     local log=$HOME/tmp/jen.log.`timestamp`
+    . xmtpath.sh
     jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
@@ -482,9 +483,9 @@ commshared() {
 pgrep() {
     local flags=-ax
     if [[ `uname` = Linux ]] ; then
-        flags=-ax
+        flags=-x
     fi
-    ps $flags | fgrep "$@" | grep -v fgrep
+    ps $flags | fgrep "$@" | grep -v grep
 }
 pgrepn() {
     pgrep "$@" | cut -f1 -d' '
