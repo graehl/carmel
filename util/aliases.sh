@@ -47,6 +47,10 @@ gpush() {
         git push
     )
 }
+bakre() {
+    bakthis ${1:-prebase}
+    upre
+}
 showbest() {
     for f in "$@" ; do
         echo $f 1>&2
@@ -453,10 +457,6 @@ linbuild() {
     local branch=$(git_branch)
     mend
     cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
-}
-bakre() {
-    bakthis ${1:-1}
-    upre
 }
 splitape() {
     local file=${1%.ape}
