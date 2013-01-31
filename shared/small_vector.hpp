@@ -317,7 +317,7 @@ struct small_vector {
     std::memmove(to,from,n*sizeof(T));
   }
 
-  small_vector const& operator=(small_vector const& o) {
+  small_vector & operator=(small_vector const& o) {
     if (data.stack.sz_ <= kMaxInlineSize) {
       if (o.data.stack.sz_ <= kMaxInlineSize) {
         data.stack.sz_ = o.data.stack.sz_;

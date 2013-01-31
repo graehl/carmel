@@ -1,10 +1,13 @@
+mp3split() {
+ mp3splt "$@"
+}
 ontunnel=
 if [[ $HOST = graehl.local ]] ; then
-  ontunnel=1
-  /sbin/ifconfig > /tmp/ifcfg
-  if grep -q 10.110 /tmp/ifcfg; then
-   ontunnel=
-  fi
+    ontunnel=1
+    /sbin/ifconfig > /tmp/ifcfg
+    if grep -q 10.110 /tmp/ifcfg; then
+        ontunnel=
+    fi
 fi
 cjg() {
     if [[ $ontunnel ]] ; then
@@ -12,6 +15,9 @@ cjg() {
     else
         ssh $chost "$@"
     fi
+}
+printyaml() {
+  ruby -ryaml -e 'y '"$*"
 }
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
@@ -47,9 +53,20 @@ gpush() {
         git push
     )
 }
+mendre() {
+    cd ~/x
+    mend
+    bakre "$@"
+}
 bakre() {
     bakthis ${1:-prebase}
     upre
+}
+upre() {
+    (set -e
+        up
+        git rebase master
+    ) || git rebase --continue
 }
 showbest() {
     for f in "$@" ; do
@@ -625,6 +642,10 @@ macreg() {
 soup() {
     ssh $souph "$@"
 }
+rebases() {
+    perl -ne 'print "$1 " if /^(.*): needs merge/g'
+    echo
+}
 rebasece() {
     (
         cd $xmtx
@@ -820,12 +841,6 @@ upfrom() {
     (set -e
         up $pullfrom
         git rebase $pullfrom
-    )
-}
-upre() {
-    (set -e
-        up
-        git rebase master
     )
 }
 breview() {
