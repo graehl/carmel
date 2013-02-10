@@ -215,9 +215,15 @@ public:
   Stream *operator ->() const { return get(); }
 
   std::string name;
-  char const* desc()
+
+  char const* desc() const
   {
     return name.c_str();
+  }
+
+  std::string const& desc_str() const
+  {
+    return name;
   }
 
   void close()

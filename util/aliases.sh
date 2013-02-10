@@ -1,3 +1,24 @@
+mp3split() {
+ mp3splt "$@"
+}
+ontunnel=
+if [[ $HOST = graehl.local ]] ; then
+    ontunnel=1
+    /sbin/ifconfig > /tmp/ifcfg
+    if grep -q 10.110 /tmp/ifcfg; then
+        ontunnel=
+    fi
+fi
+cjg() {
+    if [[ $ontunnel ]] ; then
+        sshvia $chost "$@"
+    else
+        ssh $chost "$@"
+    fi
+}
+printyaml() {
+  ruby -ryaml -e 'y '"$*"
+}
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
 maco=10.110.5.15
@@ -22,6 +43,30 @@ gitpf() {
     gitp fetch http://localhost:29418/xmt "$@"
 }
 
+giteol() {
+    if ! [[ -f .gitattributes ]] ; then
+        echo '* text=auto' > .gitattributes
+        git add .gitattributes
+        git commit -m 'auto line-end'
+    fi
+    git rm --cached -r .
+# Remove everything from the index.
+
+    git reset --hard
+# Write both the index and working directory from git's database.
+
+    git add .
+# Prepare to make a commit by staging all the files that will get normalized.
+
+# This is your chance to inspect which files were never normalized. You should
+# get lots of messages like: "warning: CRLF will be replaced by LF in file."
+
+    git commit -m "Normalize line endings"
+# Commit
+}
+spd() {
+    ~/x/scripts/speedtest-stat-tok.sh "$@"
+}
 gpush() {
     (set -e
         pushd ~/g
@@ -29,6 +74,21 @@ gpush() {
         git pull
         git push
     )
+}
+mendre() {
+    cd ~/x
+    mend
+    bakre "$@"
+}
+bakre() {
+    bakthis ${1:-prebase}
+    upre
+}
+upre() {
+    (set -e
+        up
+        git rebase master
+    ) || git rebase --continue
 }
 showbest() {
     for f in "$@" ; do
@@ -39,6 +99,22 @@ showbest() {
 }
 tunhost="pontus.languageweaver.com"
 tunport=4640
+randomport() {
+    perl -e 'print int(12000+rand(10000))'
+}
+ssht() {
+    ssh -p $tunport $tunhost "$@"
+}
+sshvia() {
+    local lport=`randomport`
+    local rhost=$1
+    shift
+    echo via $lport to $rhost 1>&2
+    set -x
+    local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
+    ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh -p $lport localhost "$@"
+    set +x
+}
 clonex() {
     (set -x
         set -e
@@ -189,7 +265,11 @@ jen() {
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
     shift
-    jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@"
+    local log=$HOME/tmp/jen.log.`timestamp`
+    . xmtpath.sh
+    jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
+    echo
+    echo $log
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -421,10 +501,6 @@ linbuild() {
     mend
     cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
 }
-bakre() {
-    bakthis ${1:-1}
-    upre
-}
 splitape() {
     local file=${1%.ape}
     file=${file%.}
@@ -450,9 +526,9 @@ commshared() {
 pgrep() {
     local flags=-ax
     if [[ `uname` = Linux ]] ; then
-        flags=-ax
+        flags=-x
     fi
-    ps $flags | fgrep "$@" | grep -v fgrep
+    ps $flags | fgrep "$@" | grep -v grep
 }
 pgrepn() {
     pgrep "$@" | cut -f1 -d' '
@@ -540,9 +616,6 @@ jenkinsb() {
     CXX=${CXX:-g++} $WORKSPACE/jenkins/jenkins_buildscript $b $c $a
 }
 souph=98.158.26.222
-cjg() {
-    ssh $chost "$@"
-}
 macget() {
     local branch=${1:?args: branch]}
 (
@@ -594,6 +667,10 @@ macreg() {
 }
 soup() {
     ssh $souph "$@"
+}
+rebases() {
+    perl -ne 'print "$1 " if /^(.*): needs merge/g'
+    echo
 }
 rebasece() {
     (
@@ -790,12 +867,6 @@ upfrom() {
     (set -e
         up $pullfrom
         git rebase $pullfrom
-    )
-}
-upre() {
-    (set -e
-        up
-        git rebase master
     )
 }
 breview() {
@@ -2119,7 +2190,7 @@ s2c() {
     #elisp x/3rdParty
     (cd
         set -e
-        for d in u bugs g .emacs.d .gitconfig ; do
+        for d in u script bugs g .emacs.d .gitconfig ; do
             sync2 $chost $d
         done
     )

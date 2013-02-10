@@ -244,9 +244,13 @@ boost::program_options::typed_value<std::vector<std::string> > *multiple_strings
 template <class Value>
 boost::program_options::typed_value<std::vector<std::string> > *multiple_strings(
   Value *v,bool defaulted
-  ,notify_base<Value> const& notify)
+  ,notify_base<Value> const& notify
+  , bool allow_zero_tokens=true)
 {
-  return defaulted ? multiple_strings_defaulted(v,notify) : multiple_strings(v,notify);
+  boost::program_options::typed_value<std::vector<std::string> > *r = defaulted ? multiple_strings_defaulted(v,notify) : multiple_strings(v,notify);
+  if (allow_zero_tokens)
+    r->zero_tokens();
+  return r;
 }
 
 template <class Value>
@@ -293,7 +297,7 @@ struct multiple_for_container<Val,typename boost::enable_if<is_nonstring_contain
   typedef option_options<strings_value> options;
   static inline typed_value *strings(Val *val,bool defaulted,notify_base<Val> const& notify)
   {
-    return defaulted ? multiple_strings_defaulted(val,notify) : multiple_strings(val,notify);
+    return multiple_strings(val,defaulted,notify,true);
   }
 };
 

@@ -666,7 +666,7 @@ public:
   /// {get succesors to pq[0] and heapify, storing memo[n]=top(). if no more
   /// left, memo[n]=NONE()} You're DONE when: pq is empty, or memo[n] = NONE()
   derivation_type get_best(lazy_kbest_index_type n) {
-    EIFDBG(LAZYF,1,KBESTINFOT("GET_BEST n=" << n << " node=" << *this);
+    EIFDBG(LAZYF,2,KBESTINFOT("GET_BEST n=" << n << " node=" << *this);
            KBESTNESTT);
     if (n < memo.size()) {
       EIFDBG(LAZYF,3,KBESTINFOT("existing "<<this<<"[n="<<n<<"] = "<<memo[n]<<", queue="<<*this));

@@ -41,6 +41,7 @@ struct pool_destroyer
   void operator()(typename T::pointer_type p) const
   {
     t.destroy(p);
+    // warning: boost object_pool destroy is O(n)!
   }
 };
 

@@ -73,7 +73,7 @@ addarg(parser,'-p',float,'pword','probability of choosing from word instead of f
 addarg(parser,'-l',int,'lines', 'number of lines to generate')
 addarg(parser,'-c',int,'cols', 'number of columns (minimum) per line to generate')
 addarg(parser,'-m',int,'maxlen','discard words over this many chars long')
-parser.set_defaults(dictionary='-', output='-', word=['\x11'], space='', pword=.2, cols=70, lines=1000, maxlen=5)
+parser.set_defaults(dictionary='-', output='-', word=['\x11'], space='', pword=.2, cols=70, lines=1000, maxlen=20)
 
 import random
 

@@ -52,8 +52,8 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 # define GRSTRINGTO(x)
 #endif
 
-#ifndef USE_FTOA
-#define USE_FTOA 0
+#ifndef GRAEHL_USE_FTOA
+#define GRAEHL_USE_FTOA 0
 #endif
 #ifndef HAVE_STRTOUL
 # define HAVE_STRTOUL 1
@@ -73,14 +73,14 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <graehl/shared/nan.hpp>
 #include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/atoi_fast.hpp>
 #include <graehl/shared/itoa.hpp>
 #include <graehl/shared/is_container.hpp>
-#if USE_FTOA
+#if GRAEHL_USE_FTOA
 # include <graehl/shared/ftoa.hpp>
 #endif
-
 
 
 namespace graehl {
@@ -216,7 +216,7 @@ inline std::string to_string_roundtrip(float x) {
 
 }
 inline std::string to_string_impl(float x) {
-#if USE_FTOA
+#if GRAEHL_USE_FTOA
   return ftos(x);
 #else
   char buf[15];
@@ -228,7 +228,7 @@ inline std::string to_string_roundtrip(double x) {
   return std::string(buf,buf+sprintf(buf,"%.17g",x));
 }
 inline std::string to_string_impl(double x) {
-#if USE_FTOA
+#if GRAEHL_USE_FTOA
   return ftos(x);
 #else
   char buf[30];
@@ -237,16 +237,22 @@ inline std::string to_string_impl(double x) {
 }
 
 inline void string_to_impl(char const* s,double &x) {
-  x=std::atof(s);
+  if (s[0]=='n'&&s[1]=='o'&&s[2]=='n'&&s[3]=='e'&&s[4]==0)
+    x=(double)NAN;
+  else
+    x=std::atof(s);
 }
 inline void string_to_impl(char const* s,float &x) {
-  x=(float)std::atof(s);
+  if (s[0]=='n'&&s[1]=='o'&&s[2]=='n'&&s[3]=='e'&&s[4]==0)
+    x=(float)NAN;
+  else
+    x=(float)std::atof(s);
 }
 inline void string_to_impl(std::string const& s,double &x) {
-  x=std::atof(s.c_str());
+  string_to_impl(s.c_str(),x);
 }
 inline void string_to_impl(std::string const& s,float &x) {
-  x=(float)std::atof(s.c_str());
+  string_to_impl(s.c_str(),x);
 }
 
 

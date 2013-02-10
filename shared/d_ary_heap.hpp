@@ -7,12 +7,19 @@
 
    note: you can update() and maybe_improve() the priority
 
+   min-heap: default std::less is better (smallest distance is at top())
+
  */
 
 #ifndef DEBUG_D_ARY_HEAP
 # define DEBUG_D_ARY_HEAP 0
 #endif
-//#include <cstring>
+#include <boost/static_assert.hpp>
+#include <boost/smart_ptr/shared_array.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <string>
+#include <functional>
+#include <memory>
 #include <cstddef>
 #include <graehl/shared/ifdbg.hpp>
 #if DEBUG_D_ARY_HEAP
@@ -115,7 +122,7 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
 #include <cassert>
 #include <boost/static_assert.hpp>
 #include <boost/shared_array.hpp>
-#include <boost/property_map/property_map.hpp>
+
 
   // D-ary heap using an indirect compare operator (use identity_property_map
   // as DistanceMap to get a direct compare operator).  This heap appears to be
@@ -144,9 +151,9 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
   //
   template <typename Value,
             std::size_t Arity,
-            typename IndexInHeapPropertyMap,
             typename DistanceMap,
-            typename Better = std::less<Value>,
+            typename IndexInHeapPropertyMap,
+            typename Better = std::less<typename DistanceMap::value_type>,
             typename Container = std::vector<Value>,
             typename Size = typename Container::size_type,
             typename Equal = std::equal_to<Value> >
@@ -545,6 +552,10 @@ This is definitely linear to n.
       preserve_heap_property_up(currently_being_moved,index,get(distance,currently_being_moved));
     }
 
+/**
+   disabled because distance map may not be writable. would need traits to enable
+*/
+    /*
     inline void preserve_heap_property_up_set_dist(Value const& currently_being_moved,distance_type dbetter) {
       using boost::get;
       using boost::put;
@@ -552,6 +563,7 @@ This is definitely linear to n.
       preserve_heap_property_up(currently_being_moved,get(index_in_heap,currently_being_moved),dbetter);
       verify_heap();
     }
+    */
 
     void preserve_heap_property_up(Value const& currently_being_moved,size_type index,distance_type currently_being_moved_dist) {
       using boost::put;
@@ -572,7 +584,7 @@ This is definitely linear to n.
         move_heap_element(currently_being_moved,index); // note: it's ok not to return early on index==0 at start, even if self-assignment isn't supported by Value - because currently_being_moved is a copy.
       } else {
         put(index_in_heap,currently_being_moved,index);
-        put(distance,currently_being_moved,currently_being_moved_dist);
+        //put(distance,currently_being_moved,currently_being_moved_dist);
         preserve_heap_property_up(index);
       }
     }
@@ -677,6 +689,7 @@ This is definitely linear to n.
       preserve_heap_property_down(data[i],i,data.size());
     }
 
+   public:
     // moves what's at root downwards if needed
     void preserve_heap_property_down() {
       using boost::get;
@@ -700,7 +713,6 @@ This is definitely linear to n.
         distance_type smallest_child_dist = get(distance, child_base_ptr[smallest_child_index]);
         if (first_child_index + Arity <= heap_size) {
           for (size_t i = 1; i < Arity; ++i) { // can be unrolled completely.
-
             D_ARY_MAYBE_IMPROVE_CHILD_I
           }
         } else {
