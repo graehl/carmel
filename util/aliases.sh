@@ -1,5 +1,27 @@
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
+maco=10.110.5.15
+macl=192.168.1.7
+tunrdp() {
+    ssh -L33391:$1:3389 -p 4640 graehl@pontus.languageweaver.com
+}
+tsp() {
+    tunrdp tsp-xp1
+}
+lagra() {
+ #tunrdp lagraeh02
+    tunrdp 10.110.5.5
+}
+sox() {
+    connect -S 127.0.0.1:12345 "$@"
+}
+gitp() {
+    GIT_PROXY_COMMAND=c:/msys/bin/sox.bat git "$@"
+}
+gitpf() {
+    gitp fetch http://localhost:29418/xmt "$@"
+}
+
 gpush() {
     (set -e
         pushd ~/g
@@ -37,12 +59,15 @@ tunport() {
     local host=${2:-git02.languageweaver.com}
     ssh -N -L $port:$host:$port -p $tunport $tunhost "$@"
 }
+ssht() {
+    ssh -p $tunport $tunhost "$@"
+}
 tunmac() {
-    tunport 22 192.168.15.15
+    tunport 22 $maco
 }
 tungerrit() {
     #tunport 29418 git02.languageweaver.com
-    ssh -L 29418:git02.languageweaver.com:29418 -L 3391:172.20.1.122:3389 -p $tunport $tunhost -N
+    ssh -L 29418:git02.languageweaver.com:29418 -L 3391:172.20.1.122:3389 -p $tunport $tunhost -N &
 }
 conf64() {
     ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
@@ -125,6 +150,7 @@ withcc() {
         exe=${exe%.c}
         local bexe=$sdir/$exe
         local cxx=${CXX:-/usr/local/gcc-4.7.1/bin/g++}
+        [[ -x $cxx ]] || cxx=/mingw/bin/g++
         [[ -x $cxx ]] || cxx=g++
         set -x
         $cxx --std=c++11 $source -o $bexe && $bexe "$@"
@@ -5231,4 +5257,13 @@ showprompt()
 {
     echo $PS1 | less -E
     echo $PROMPT_COMMAND | less -E
+}
+ming() {
+ local src=$1
+ shift
+ local exe=$src
+ exe=${exe%.cc}
+ exe=${exe%.cpp}
+ exe=${exe%.c}
+ /mingw/bin/g++ --std=c++11 $src -o $exe "$@" && ./$exe
 }
