@@ -282,7 +282,11 @@ withcc() {
         [[ -x $cxx ]] || cxx=/mingw/bin/g++
         [[ -x $cxx ]] || cxx=g++
         set -x
-        $cxx --std=c++11 $source -o $bexe && $bexe "$@"
+        set -e
+        $cxx --std=c++11 $source -o $bexe
+        if [ "$run $*" ] ; then
+            $bexe "$@"
+        fi
     )
 }
 xmtx=/home/graehl/x
