@@ -1,0 +1,233 @@
+%    mainfont=Constantia
+%    sansfont=Corbel
+%    monofont=Consolas
+%    fontsize=11pt
+% Consolas, Calibri, Cambria, Candara, Constantia and Corbel - distributed with the free Powerpoint 2007 Viewer or the Microsoft Office Compatibility Pack
+
+\documentclass[$if(fontsize)$$fontsize$,$endif$$if(lang)$$lang$,$endif$]{$documentclass$}
+
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+
+\ifxetex
+  \usepackage{fontspec,xltxtra,xunicode}
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+$if(mainfont)$
+  \setmainfont{$mainfont$}
+$endif$
+$if(sansfont)$
+  \setsansfont{$sansfont$}
+$endif$
+$if(monofont)$
+  \setmonofont{$monofont$}
+$endif$
+$if(mathfont)$
+  \setmathfont{$mathfont$}
+$endif$
+\else
+  \ifluatex
+    \usepackage{fontspec}
+    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+    \newcommand{\euro}{€}
+$if(mainfont)$
+    \setmainfont{$mainfont$}
+$endif$
+$if(sansfont)$
+    \setsansfont{$sansfont$}
+$endif$
+$if(monofont)$
+    \setmonofont{$monofont$}
+$endif$
+$if(mathfont)$
+    \setmathfont{$mathfont$}
+$endif$
+  \else
+    \usepackage[utf8]{inputenc}
+% Code2000 may be used if better utf-8 support is needed, see http://tex.stackexchange.com/a/73563/3860:
+%     \setmainfont{Code2000}
+$if(euro)$
+    \usepackage{eurosym}
+$endif$
+  \fi
+\fi
+
+$if(geometry)$
+\usepackage[verbose]{geometry}
+\newgeometry{$for(geometry)$$geometry$$sep$,$endfor$}
+$endif$
+
+\usepackage{sectsty}
+\allsectionsfont{\bfseries\sffamily}
+\usepackage{fullpage}
+\usepackage{changepage}
+
+% Redefine labelwidth for lists; otherwise, the enumerate package will cause
+% markers to extend beyond the left margin.
+\makeatletter\AtBeginDocument{%
+  \renewcommand{\@listi}
+    {\setlength{\labelwidth}{4em}}
+}\makeatother
+
+\usepackage{enumerate}
+
+$if(sansfont)$
+ \newfontfamily\headingfont[]{$sansfont$}
+ \usepackage{titling}
+ \renewcommand{\maketitlehooka}{\headingfont}
+$endif$
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{12pt plus 2pt minus 1pt}
+\linespread{1.2}
+
+$if(natbib)$
+\usepackage{natbib}
+\bibliographystyle{plainnat}
+$endif$
+$if(biblatex)$
+\usepackage{biblatex}
+$if(biblio-files)$
+\bibliography{$biblio-files$}
+$endif$
+$endif$
+
+\usepackage{listings}
+\PassOptionsToPackage{dvipsnames,usenames}{color}
+\usepackage{color}
+
+\definecolor{lightgray}{rgb}{.95,.95,.95}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+\definecolor{YellowOrange}{rgb}{.7,.6,0}
+
+\lstdefinelanguage{xmtLang}{
+  keywords={},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={basis, overlay, replace, category, module, resource, pipeline},
+  ndkeywordstyle=\color{purple},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{darkgray}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstset{
+   language=xmtLang,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\normalsize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false
+}
+
+\setcounter{secnumdepth}{-1}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,%
+    citecolor=YellowOrange,%
+    filecolor=YellowOrange,%
+    linkcolor=YellowOrange,%
+    urlcolor=YellowOrange
+}
+
+\usepackage{ctable}
+\usepackage{float} % provides the H option for float placement
+
+$if(graphics)$
+\usepackage{graphicx}
+% We will generate all images so they have a width \maxwidth. This means
+% that they will get their normal width if they fit onto the page, but
+% are scaled down if they would overflow the margins.
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=\maxwidth]{#1}}
+$endif$
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setlength{\columnsep}{.4in}
+
+$if(title)$
+\title{$title$}
+$endif$
+$if(author)$
+\author{$for(author)$$author$$sep$ \and $endfor$}
+$endif$
+
+$if(numbersections)$
+$else$
+\setcounter{secnumdepth}{0}
+$endif$
+
+$if(verbatim-in-note)$
+\VerbatimFootnotes % allows verbatim text in footnotes
+$endif$
+$if(lang)$
+\ifxetex
+  \usepackage{polyglossia}
+  \setmainlanguage{$mainlang$}
+\else
+  \usepackage[$lang$]{babel}
+\fi
+$endif$
+
+$for(header-includes)$
+$header-includes$
+$endfor$
+
+\usepackage[compact]{titlesec}
+\titlespacing{\section}{0pt}{*0}{*-1}
+\titlespacing{\subsection}{0pt}{*0}{*-1}
+\titlespacing{\subsubsection}{0pt}{*1}{*-1}
+
+\begin{document}
+$if(title)$
+\maketitle
+$endif$
+
+$for(include-before)$
+$include-before$
+
+$endfor$
+$if(toc)$
+\tableofcontents
+
+$endif$
+$body$
+
+$if(natbib)$
+$if(biblio-files)$
+$if(biblio-title)$
+$if(book-class)$
+\renewcommand\bibname{$biblio-title$}
+$else$
+\renewcommand\refname{$biblio-title$}
+$endif$
+$endif$
+\bibliography{$biblio-files$}
+
+$endif$
+$endif$
+$if(biblatex)$
+\printbibliography$if(biblio-title)$[title=$biblio-title$]$endif$
+
+$endif$
+$for(include-after)$
+$include-after$
+
+$endfor$
+\end{document}

@@ -1,5 +1,65 @@
+rstudiopandoc() {
+Rscript -e '
+options(rstudio.markdownToHTML =
+  function(inputFile, outputFile) {
+    system(paste("pandoc", shQuote(inputFile), "--webtex", "--latex-engine=xelatex", "--self-contained", "-o", shQuote(outputFile)))
+  }
+)
+'
+}
+panpdf() {
+    local in=${1?in}
+    local inbase=${in%.md}
+    local out=${2:-$inbase.pdf}
+(
+    texpath
+    if [[ ! -f $in ]] ; then
+        in=$inbase.md
+    fi
+set -e
+require_file $in
+set -x
+    pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-11pt} -V documentclass=${documentclass:-article} -V geometry=${paper:-letter}paper -V geometry=margin=${margin:-2cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt} $in
+    if [[ $open ]] ; then
+        open $out
+    fi
+)
+}
+rmd() {
+ RMDFILE=${1?missing RMDFILE.rmd}
+ RMDFILE=${RMDFILE%.rmd}
+(
+ set -e
+ set -x
+ cd `dirname $RMDFILE`
+ RMDFILE=`basename $RMDFILE`
+ Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
+#markdownToHTML('$RMDFILE.md', '$RMDFILE.html', options=c('use_xhml'))
+ pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
+ if [[ $pdf ]] ; then
+     panpdf $RMDFILE.md
+ else
+     [[ $open ]] && open $RMDFILE.html
+ fi
+)
+}
+gitgrep() {
+    local expr=$1
+    shift
+    echo2 $expr
+    git rev-list --all -- "$@"
+    git rev-list --all -- "$@" | (
+        while read revision; do
+            git grep -e "$expr" $revision -- "$@"
+        done
+    )
+# git rev-list --all -- "$@" | xargs -I {} git grep -e "$expr" {} -- "$@"
+}
+subsync() {
+    git submodule sync "$@"
+}
 mp3split() {
- mp3splt "$@"
+    mp3splt "$@"
 }
 ontunnel=
 if [[ $HOST = graehl.local ]] ; then
@@ -17,7 +77,7 @@ cjg() {
     fi
 }
 printyaml() {
-  ruby -ryaml -e 'y '"$*"
+    ruby -ryaml -e 'y '"$*"
 }
 GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
 GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
@@ -158,13 +218,6 @@ gitreplace() {
         git commit -m "replace $to by $branch by merging"
         git checkout $to
         git merge $branch
-    )
-}
-gitgrep() {
-    git rev-list --all | (
-        while read revision; do
-            git grep -F "$@" $revision
-        done
     )
 }
 gitrecycle() {
@@ -606,7 +659,7 @@ macget() {
 }
 macbuild() {
     local branch=${1:?args branch [target] [Debug|Release]}
-    local tar=${2:-xmtShell}
+    local tar=$2
     local build=${3:-${build:-Debug}}
     (
         set -e
@@ -1088,7 +1141,11 @@ makejust() {
     norun=1 makerun "$@"
 }
 makeh() {
-    makerun $1 --help
+    if [[ $1 ]] ; then
+        makerun $1 --help
+    else
+        makerun
+    fi
 }
 hncomment() {
     fold -w 77 -s | sed "s/^/   /" | pbcopy
@@ -1450,7 +1507,7 @@ pandcrapall()
     done
 }
 texpath() {
-    export PATH=/usr/local/texlive/2011/bin/x86_64-darwin/:/usr/local/texlive/2011/bin/universal-darwin/:$PATH
+    export PATH=/usr/local/texlive/2012/bin/x86_64-darwin/:/usr/local/texlive/2012/bin/universal-darwin/:$PATH
 }
 sshut() {
     local dnsarg=
@@ -2245,25 +2302,29 @@ corac() {
 }
 racb() {
     build=${build:-Release}
+    build=${1:-$build}
+    shift || true
     if [[ $debug = 1 ]] ; then
         build=Debug
     fi
-    build=${1:-$build}
     racerbuild=$racer/$build
     racer3=$racer/3rdParty
     export XMT_EXTERNALS_PATH=$racerext
     mkdir -p $racerbuild
     cd $racerbuild
-    local fa=
-    if [ "$*" ] ; then
-        fa="-DCMAKE_CXX_FLAGS='$*'"
-    fi
     local buildtyped=Release
     if [[ ${build#Debug} != $build ]] ; then
         buildtyped=Debug
     fi
-
-    cmarg="-DLOG4CXX_ROOT=/usr/local -DCMAKE_BUILD_TYPE=${buildtype:-$buildtyped}"
+    local allarg=
+    local allhg=1
+    if [[ $allhg ]] ; then
+        allarg="-DAllHgBins=1"
+    fi
+    if [[ $nohg ]] ; then
+        allarg=
+    fi
+    cmarg="-DLOG4CXX_ROOT=/usr/local -DCMAKE_BUILD_TYPE=${buildtype:-$buildtyped} $allarg $*"
 }
 racd() {
     cd $racer
