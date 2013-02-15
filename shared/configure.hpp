@@ -10,7 +10,7 @@
 //TODO: pretty word wrap + indent
 
 #include <graehl/shared/ifdbg.hpp>
-#define DEBUG_CONFIGURE_EXPR 1
+#define DEBUG_CONFIGURE_EXPR 0
 #if DEBUG_CONFIGURE_EXPR
 #include <graehl/shared/show.hpp>
 # define CONFEXPR(x) x
@@ -955,7 +955,7 @@ public:
 
   ~conf_expr() // destructor makes things happen; however, we want to take final action only in context of caller and all of caller's overrides (when name and superceding parent values are known)
   {
-    subconfig_deleter.reset(); // ensure that final child config action executes first
+    drop();
     if (skip_help()) return;
     if (is_init(action))
       opt->apply_init(pval);
@@ -971,20 +971,28 @@ public:
     return depth==0;
   }
 
+  void hold(conf_expr_destroy *destroyOnDrop) const {
+    subconfig_deleter.reset(destroyOnDrop);
+  }
+
+  void drop() const {
+    subconfig_deleter.reset(); // trigger previous action
+  }
+
   //requirement: Backend(Backend const&, string subname)
   template <class Vchild>
   conf_expr<Backend,Action,Vchild> const&
   operator()(std::string const& name,Vchild *pchild) const {
-    subconfig_deleter.reset(); // trigger previous action
+    drop();
     check_name(name);
-    conf_expr<Backend,Action,Vchild> *ret=new conf_expr<Backend,Action,Vchild>(
-      *this,action,pchild,conf_expr_base(*this,name));
-    subconfig_deleter.reset(ret);
+    typedef conf_expr<Backend,Action,Vchild> SubConfExpr;
+    SubConfExpr *ret=
+        new SubConfExpr(*this,action,pchild,conf_expr_base(*this,name));
+    hold(ret);
     return *ret;
   }
 
   conf_expr const& eg(std::string const& eg) const { opt->eg=eg; return *this; }
-  //std::string const& is() const { return opt->is.get_value_or(""); }
   conf_expr const& is_also(std::string const& is) {
     if (opt->is) opt->is=*opt->is+", "+is;
     else opt->is=is;
@@ -1020,7 +1028,6 @@ public:
 
   // similar concept to implicit except that you have the --key implicit true, and --no-key implicit false
   conf_expr const& flag(bool init_to=false) const {
-    //remember_flag=true;
     if (!can_assign_bool<Val>::value)
       throw config_exception("flag specified for non-boolean option");
     Val v=init_to; // so we store the right type of boost::any
@@ -1071,7 +1078,6 @@ public:
     return *this;
   }
 
-  // validator(Val &)
   template <class V2>
   conf_expr const& validate(V2 const& validator) const
   {

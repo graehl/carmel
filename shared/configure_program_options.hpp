@@ -282,24 +282,6 @@ void program_options_action(program_options_exec_new const& popt,Action const& a
   configure_action(configure_program_options(popt,default_verbose_max),action,val,popt.p->warn);
 }
 
-#if 0
-
-namespace {
-struct noop
-{
-  template <class T>
-  void operator()(T const&) const {}
-};
-}
-
-
-template <class Action,class RootVal>
-void program_options_action(program_options_exec &popt,Action const& action,RootVal *val,string_consumer const& warn_to=warn_consumer())
-{
-  program_options_action(program_options_exec_new(&popt,noop()),action,val,warn_to);
-}
-#endif
-
 template <class RootVal>
 bool program_options_maybe_help(std::ostream &o,program_options_exec_new const& popt,RootVal *pval,string_consumer const& warn_to=warn_consumer())
 {

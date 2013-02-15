@@ -92,12 +92,12 @@ inline U atou_fast_advance_nooverflow(Str const& s,I &i,I end) {
     const char c=*i;
     if (c<'0' || c>'9') return x;
     if (x>maxTenth)
-      VTHROW_A_MSG(string_to_exception,"ascii to unsigned overflow on char "<<c<<" in '"<<s<<"': "<<x<<"*10 > "<<boost::integer_traits<U>::const_max);
+      THROW_MSG(string_to_exception,"ascii to unsigned overflow on char "<<c<<" in '"<<s<<"': "<<x<<"*10 > "<<boost::integer_traits<U>::const_max);
     x*=10;
     U prev=x;
     x+=c-'0';
     if (x<prev)
-      VTHROW_A_MSG(string_to_exception,"ascii to unsigned overflow on char "<<c<<" in '"<<s<<"': "<<prev<<" * 10 + "<<c<<" => (overflow) "<<x);
+      THROW_MSG(string_to_exception,"ascii to unsigned overflow on char "<<c<<" in '"<<s<<"': "<<prev<<" * 10 + "<<c<<" => (overflow) "<<x);
   }
   return x;
 }
@@ -106,7 +106,7 @@ template <class U,class Str,class I>
 inline U atou_fast_complete(Str const& s,I begin,I end) {
   I i=begin;
   U r=atou_fast_advance_nooverflow<U>(s,i,end);
-  if (i!=end) VTHROW_A_MSG(string_to_exception,"ascii to unsigned incomplete - only used first "<<i-begin<<" characters of '"<<s<<"' => "<<r<<" - trim whitespace too");
+  if (i!=end) THROW_MSG(string_to_exception,"ascii to unsigned incomplete - only used first "<<i-begin<<" characters of '"<<s<<"' => "<<r<<" - trim whitespace too");
   return r;
 }
 
@@ -173,7 +173,7 @@ inline long strtol_complete(char const* s,int base=0) {
     char c=*e;
     if (!c || std::isspace(c)) //simplifying assumption: we're happy if there's other stuff in the string, so long as the number ends in a space or eos. TODO: loop consuming spaces until end?
       return r;
-    VTHROW_A_MSG(string_to_exception,"integer from string '"<<s<<"' => "<<r<<" had extra chars: '"<<e<<"'");
+    THROW_MSG(string_to_exception,"integer from string '"<<s<<"' => "<<r<<" had extra chars: '"<<e<<"'");
   }
   // empty string => 0
   return 0;
@@ -199,7 +199,7 @@ inline int strtoi_complete_bounded(char const* s,int base=0) {
 inline int strtoi_complete_exact(char const* s,int base=10) {
   long l=strtol_complete(s,base);
   if (l<std::numeric_limits<int>::min() || l>std::numeric_limits<int>::max())
-    VTHROW_A_MSG(string_to_exception,"Out of range for int " INTRANGE_STR ": '"<<s<<"'");
+    THROW_MSG(string_to_exception,"Out of range for int " INTRANGE_STR ": '"<<s<<"'");
   return l;
 }
 
@@ -220,7 +220,7 @@ inline unsigned long strtoul_complete(char const* s,int base=0) {
       return r;
 #endif
   }
-  VTHROW_A_MSG(string_to_exception,"can't get integer from '"<<s<<"'");
+  THROW_MSG(string_to_exception,"can't get integer from '"<<s<<"'");
   return 0; // quiet, warning!
 
 }
@@ -244,7 +244,7 @@ inline unsigned strtou_complete_bounded(char const* s,int base=10) {
 inline unsigned strtou_complete_exact(char const* s,int base=10) {
   unsigned long l=strtoul_complete(s,base);
   if (l<std::numeric_limits<unsigned>::min() || l>std::numeric_limits<unsigned>::max())
-    VTHROW_A_MSG(string_to_exception,"Out of range for unsigned int " UINTRANGE_STR ": '"<<s<<"'");
+    THROW_MSG(string_to_exception,"Out of range for unsigned int " UINTRANGE_STR ": '"<<s<<"'");
   return l;
 }
 

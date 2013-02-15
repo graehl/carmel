@@ -112,20 +112,20 @@ struct verbose_exception : public std::exception
 #define VTHROW_MSG(msg) VTHROW_A_MSG(graehl::verbose_exception,msg)
 
 #define VERBOSE_EXCEPTION_WRAP(etype)                                                                            \
-  etype(std::string const& msg=#etype)                                                                            \
-    : graehl::verbose_exception(msg) {}                                                                         \
+  etype(std::string const& msg="error")                                                                          \
+    : graehl::verbose_exception("(" #etype ") "+msg) {}                                                          \
   etype(const char *fun,const char *fil,unsigned lin)                                                            \
-    : graehl::verbose_exception(fun,fil,lin,#etype ": ") {}                                                      \
+    : graehl::verbose_exception(fun,fil,lin,"(" #etype ") ") {}                                                  \
   template <class M1> etype(const char *fun,const char *fil,unsigned lin,const M1 &m1)                           \
-    : graehl::verbose_exception(fun,fil,lin,#etype " ",m1) {}                                                    \
+    : graehl::verbose_exception(fun,fil,lin,"(" #etype ") ",m1) {}                                               \
   template <class M1,class M2> etype(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2)     \
-    : graehl::verbose_exception(fun,fil,lin,#etype " ",m1,m2) {}                                                 \
-  template <class M1,class M2,class M3>                                                                         \
+    : graehl::verbose_exception(fun,fil,lin,"(" #etype ") ",m1,m2) {}                                            \
+  template <class M1,class M2,class M3>                                                                          \
   etype(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3)                     \
-    : graehl::verbose_exception(fun,fil,lin,#etype " ",m1,m2,m3) {}                                              \
-  template <class M1,class M2,class M3,class M4>                                                                \
+    : graehl::verbose_exception(fun,fil,lin,"(" #etype ") ",m1,m2,m3) {}                                         \
+  template <class M1,class M2,class M3,class M4>                                                                 \
   etype(const char *fun,const char *fil,unsigned lin,const M1 &m1,const M2 &m2,const M3 &m3,const M4 &m4)        \
-    : graehl::verbose_exception(fun,fil,lin,#etype " ",m1,m2,m3,m4) {}
+    : graehl::verbose_exception(fun,fil,lin,"(" #etype ") ",m1,m2,m3,m4) {}
 
 #define VERBOSE_EXCEPTION_DECLARE(etype) struct etype : graehl::verbose_exception { VERBOSE_EXCEPTION_WRAP(etype) };
 
