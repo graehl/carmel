@@ -40,7 +40,7 @@ void addWord(string const& word) {
   string lcWord((word));
   std::transform(lcWord.begin(), lcWord.end(), lcWord.begin(), asciiLower);
   pair<string,unsigned> p(word,lineno);
-  pair<WordLine::iterator,bool> iNew=wordLine.insert(WordLine::value_type(word,p));
+  pair<WordLine::iterator,bool> iNew=wordLine.insert(WordLine::value_type(lcWord,p));
   if (!iNew.second)
     iNew.first->second.second=kRepeated;
 }
@@ -65,7 +65,7 @@ void write(ostream &out) {
   for (WordLine::const_iterator i=wordLine.begin(),e=wordLine.end();i!=e;++i) {
     WordLine::mapped_type const& p=i->second;
     if (p.second!=kRepeated)
-      out<<p.second<<' '<<p.second<<'\n';
+      out<<p.first<<' '<<p.second<<'\n';
   }
 }
 
@@ -80,7 +80,7 @@ int main(int argc,char *argv[]) {
   cin.tie(0);
   cin.rdbuf()->pubsetbuf(buf,bufsz);
 
-  wordLine.reserve(1000*1000);
+  //wordLine.reserve(1000*1000);
 
   read(cin);
   write(cout);
