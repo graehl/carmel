@@ -1,5 +1,26 @@
+UTIL=${UTIL:-$(echo ~graehl/u)}
+. $UTIL/add_paths.sh
+. $UTIL/bashlib.sh
+
+macboost() {
+    BOOST_VERSION=1_50_0
+    BOOST_SUFFIX=
+    if true ; then
+        BOOST_SUFFIX=-xgcc42-mt-d-1_49
+        BOOST_VERSION=1_49_0
+    fi
+    if [[ -d $XMT_EXTERNALS_PATH ]] ; then
+        BOOST_INCLUDE=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/include
+        BOOST_LIB=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/lib
+        add_ldpath $BOOST_LIB
+    fi
+}
+tokeng() {
+    ${xmt:-$xmtx/Release/xmt/xmt} -c $xmtx/RegressionTests/RegexTokenizer/xmt.eng.yml -p eng-tokenize --log-config $xmtx/scripts/no.log.xml "$@"
+}
+
 rstudiopandoc() {
-Rscript -e '
+    Rscript -e '
 options(rstudio.markdownToHTML =
   function(inputFile, outputFile) {
     system(paste("pandoc", shQuote(inputFile), "--webtex", "--latex-engine=xelatex", "--self-contained", "-o", shQuote(outputFile)))
@@ -11,37 +32,37 @@ panpdf() {
     local in=${1?in}
     local inbase=${in%.md}
     local out=${2:-$inbase.pdf}
-(
-    texpath
-    if [[ ! -f $in ]] ; then
-        in=$inbase.md
-    fi
-set -e
-require_file $in
-set -x
-    pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-11pt} -V documentclass=${documentclass:-article} -V geometry=${paper:-letter}paper -V geometry=margin=${margin:-2cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt} $in
-    if [[ $open ]] ; then
-        open $out
-    fi
-)
+    (
+        texpath
+        if [[ ! -f $in ]] ; then
+            in=$inbase.md
+        fi
+        set -e
+        require_file $in
+        set -x
+        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-11pt} -V documentclass=${documentclass:-article} -V geometry=${paper:-letter}paper -V geometry=margin=${margin:-2cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt} $in
+        if [[ $open ]] ; then
+            open $out
+        fi
+    )
 }
 rmd() {
- RMDFILE=${1?missing RMDFILE.rmd}
- RMDFILE=${RMDFILE%.rmd}
-(
- set -e
- set -x
- cd `dirname $RMDFILE`
- RMDFILE=`basename $RMDFILE`
- Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
+    RMDFILE=${1?missing RMDFILE.rmd}
+    RMDFILE=${RMDFILE%.rmd}
+    (
+        set -e
+        set -x
+        cd `dirname $RMDFILE`
+        RMDFILE=`basename $RMDFILE`
+        Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
 #markdownToHTML('$RMDFILE.md', '$RMDFILE.html', options=c('use_xhml'))
- pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
- if [[ $pdf ]] ; then
-     panpdf $RMDFILE.md
- else
-     [[ $open ]] && open $RMDFILE.html
- fi
-)
+        pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
+        if [[ $pdf ]] ; then
+            panpdf $RMDFILE.md
+        else
+            [[ $open ]] && open $RMDFILE.html
+        fi
+    )
 }
 gitgrep() {
     local expr=$1
@@ -4315,18 +4336,6 @@ function lat
     ps2pdf $1.ps $1.pdf
 }
 
-BOOST_VERSION=1_50_0
-BOOST_SUFFIX=
-if true ; then
-    BOOST_SUFFIX=-xgcc42-mt-d-1_49
-    BOOST_VERSION=1_49_0
-fi
-if [[ -d $XMT_EXTERNALS_PATH ]] ; then
-    BOOST_INCLUDE=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/include
-    BOOST_LIB=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/lib
-    add_ldpath $BOOST_LIB
-fi
-
 g1() {
     program_options_lib="-lboost_program_options$BOOST_SUFFIX -lboost_system$BOOST_SUFFIX"
     local source=$1
@@ -4739,28 +4748,6 @@ svncom() {
 alias wscom="project=$WSMT svncom"
 
 alias c10="pushd $WSMT"
-
-grcom() {
-    (
-        set -e
-# project=~/graehl svncom "$@"
-        cd ~/t/graehl
-        (
-            if [ $# = 1 ] ; then
-                svn commit -m "$1"
-            elif [ $# -gt 0 ] ; then
-                svn commit "$@"
-            fi
-        )
-        cd ~/2git/fromsvn/
-# git svn fetch
-        git svn rebase
-        git branch
-        git push github master
-        [ "$grtag" ] && git tag -a "$grtag" -m 'tag:$grtag'
-    )
-}
-
 
 toy() {
     local h=$1
@@ -5395,11 +5382,11 @@ showprompt()
     echo $PROMPT_COMMAND | less -E
 }
 ming() {
- local src=$1
- shift
- local exe=$src
- exe=${exe%.cc}
- exe=${exe%.cpp}
- exe=${exe%.c}
- /mingw/bin/g++ --std=c++11 $src -o $exe "$@" && ./$exe
+    local src=$1
+    shift
+    local exe=$src
+    exe=${exe%.cc}
+    exe=${exe%.cpp}
+    exe=${exe%.c}
+    /mingw/bin/g++ --std=c++11 $src -o $exe "$@" && ./$exe
 }

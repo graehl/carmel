@@ -1164,28 +1164,32 @@ abspath() {
  echo $abspath
 }
 
-catz() {
-  if [ -z "$1" -o "$1" = - ] ; then
-   gunzip -f -c
-  else
-   while [ "$1" ] ; do
-    if [ ! -f "$1" ] ; then
-         echo "input file $1 not found" 1>&2
-         exit -1
-    fi
-    if [ "${1%.gz}" != "$1" -o "${1%.tgz}" != "$1" ] ; then
-        gunzip -f -c "$1"
+catz1() {
+    if [ -z "$1" -o "$1" = - ] ; then
+        gunzip -f -c
     else
-        if [ "${1%.bz2}" != "$1" ] ; then
-            bunzip2 -c "$1"
-        else
-            cat "$1"
-        fi
+        while [ "$1" ] ; do
+            if [ ! -f "$1" ] ; then
+                echo "input file $1 not found" 1>&2
+                exit -1
+            fi
+            if [ "${1%.gz}" != "$1" -o "${1%.tgz}" != "$1" ] ; then
+                gunzip -f -c "$1"
+            else
+                if [ "${1%.bz2}" != "$1" ] ; then
+                    bunzip2 -c "$1"
+                else
+                    cat "$1"
+                fi
+            fi
+            shift
+        done
     fi
-    shift
-   done
-  fi
- }
+}
+
+catz() {
+  forall catz1 "$@"
+}
 
 catz_to() {
   if [ -z "$1" -o "$1" = - ] ; then

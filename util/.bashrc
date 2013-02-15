@@ -10,7 +10,6 @@ export PYTHON_PATH=$LOCAL_PYTHON_PATH:$PYTHON_PATH
 GRAEHL=~graehl
 UTIL=$GRAEHL/u
 
-. $UTIL/bashlib.sh
 if false && [ "$TERM" = dumb ] ; then
     PS1='$ '
     exit
@@ -383,8 +382,6 @@ function set_build {
 }
 
 qsippn=2
-#512M stack!
-ulimitsafe 524288 s
 
 set_build
 
@@ -429,8 +426,6 @@ export GOOS=linux
 
 export MONO_USE_LLVM=1
 
-. $UTIL/aliases.sh
-#. $UTIL/z.sh
 export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
 
 
@@ -458,7 +453,10 @@ fi
 export CLOJURE_EXT=~/.clojure
 export HYPERGRAPH_DBG=1
 
+. $UTIL/aliases.sh
 . ~/local.sh
+ulimitsafe 262144 s
+
 if [[ $INSIDE_EMACS ]] ; then export PS1='|PrOmPt|\w|\w $ '; fi
 if [[ $INSIDE_EMACS ]] ; then export PS1='\w $ '; fi
 if [[ -f ~/.git-completion.bash ]] ; then
