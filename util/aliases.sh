@@ -7,8 +7,7 @@ re() {
 dedup() {
 local f="$(filename_from $*)"
 catz "$@" | sort | uniq > $f.uniq
-wc $*
-wc $f.uniq
+(wc $* ; wc $f.uniq) | tee $f.uniq.wc
 }
 savedo() {
     local dir=${1:?arg1: dir to save .do outputs to}
