@@ -53,14 +53,14 @@ $endif$
   \fi
 \fi
 
-$if(geometry)$
-\usepackage[verbose]{geometry}
-\newgeometry{$for(geometry)$$geometry$$sep$,$endfor$}
-$endif$
 
 \usepackage{sectsty}
 \allsectionsfont{\bfseries\sffamily}
 \usepackage{fullpage}
+\usepackage[verbose,margin=1cm,hmargin=1cm,vmargin=1.7cm,footskip=15pt]{geometry}
+$if(geometry)$
+\newgeometry{$for(geometry)$$geometry$$sep$,$endfor$}
+$endif$
 \usepackage{changepage}
 
 % Redefine labelwidth for lists; otherwise, the enumerate package will cause
@@ -94,9 +94,6 @@ $endif$
 $endif$
 
 \usepackage{listings}
-\PassOptionsToPackage{dvipsnames,usenames}{color}
-\usepackage{color}
-
 \definecolor{lightgray}{rgb}{.95,.95,.95}
 \definecolor{darkgray}{rgb}{.4,.4,.4}
 \definecolor{purple}{rgb}{0.65, 0.12, 0.82}
@@ -111,8 +108,8 @@ $endif$
   sensitive=false,
   comment=[l]{//},
   morecomment=[s]{/*}{*/},
-  commentstyle=\color{darkgray}\ttfamily,
-  stringstyle=\color{red}\ttfamily,
+%  commentstyle=\color{darkgray}\ttfamily,
+%  stringstyle=\color{red}\ttfamily,
   morestring=[b]',
   morestring=[b]"
 }

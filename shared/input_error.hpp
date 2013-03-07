@@ -118,8 +118,8 @@ std::streamoff show_error_context(std::basic_istream<Ic,It> &in,std::basic_ostre
   return before>=0?before:-1;
 }
 
-template <class Ic,class It> inline
-void throw_input_error(std::basic_istream<Ic,It> &in,std::string const& error="",const char *item="input",std::size_t number=0) {
+template <class Exception,class Ic,class It>
+void throw_input_exception(std::basic_istream<Ic,It> &in,std::string const& error="",const char *item="input",std::size_t number=0) {
   std::ostringstream err;
   err << "Error reading";
   if (item)
@@ -131,7 +131,12 @@ void throw_input_error(std::basic_istream<Ic,It> &in,std::string const& error=""
     err << "(file position " << where << ")";
 #endif
   err << std::endl;
-  throw std::runtime_error(err.str());
+  throw Exception(err.str());
+}
+
+template <class Ic,class It>
+void throw_input_error(std::basic_istream<Ic,It> &in,std::string const& error="",const char *item="input",std::size_t number=0) {
+  throw_input_exception<std::runtime_error>(in,error,item,number);
 }
 
 }//ns

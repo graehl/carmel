@@ -146,12 +146,15 @@ inline void string_to_impl(char const* s,long &x) {
   x=strtol_complete(s);
 }
 
+#ifndef XMT_32 // size_t == unsigned int, avoid signature collision
 inline void string_to_impl(std::string const& s,unsigned &x) {
   x=atou_fast_complete<unsigned>(s.c_str());
 }
+
 inline void string_to_impl(char const* s,unsigned &x) {
   x=atou_fast_complete<unsigned>(s);
 }
+#endif
 
 inline void string_to_impl(std::string const& s,std::size_t &x) {
   x=atou_fast_complete<std::size_t>(s.c_str());

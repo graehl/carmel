@@ -12,19 +12,23 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
 
 using namespace std;
 
 void usage() {
-  cerr<<"input (stdin): space separated words\noutput (stdout): for all the one-count (downcased) words, lines of (original case) 'word line#'\n";
+  cerr<<"optional argument >0: # of lines from first occurrence of word that subsequent mentions don't count (0 is default).\ninput (stdin): space separated words\noutput (stdout): for all the one-count (downcased) words, lines of (original case) 'word line#'\n";
+  exit(-1);
 }
 
 unsigned const bufsz=1024*32;
 char buf[bufsz];
 
 unsigned const kRepeated=0;
+unsigned skipLines=0;
 
-typedef unordered_map<string,pair<string,unsigned> > WordLine; // or kRepeated if it appeared >1
+typedef pair<string,unsigned> Occurence;
+typedef unordered_map<string,Occurence> WordLine; // or kRepeated if it appeared >1
 
 WordLine wordLine;
 
@@ -39,10 +43,13 @@ char asciiLower(char c) {
 void addWord(string const& word) {
   string lcWord((word));
   std::transform(lcWord.begin(), lcWord.end(), lcWord.begin(), asciiLower);
-  pair<string,unsigned> p(word,lineno);
-  pair<WordLine::iterator,bool> iNew=wordLine.insert(WordLine::value_type(lcWord,p));
-  if (!iNew.second)
-    iNew.first->second.second=kRepeated;
+  WordLine::iterator i=wordLine.find(lcWord); // instead of insert, fast path is non-1-count word
+  if (i!=wordLine.end()) {
+    Occurence &oc=i->second;
+    if (lineno >= oc.second+skipLines)
+      oc.second=kRepeated; //note: ok to not explicitly check for oc.second was kRepeated already
+  } else
+    wordLine.insert(WordLine::value_type(lcWord,Occurence(word,lineno)));
 }
 
 void read(istream &in)
@@ -71,10 +78,11 @@ void write(ostream &out) {
 
 
 int main(int argc,char *argv[]) {
-  if (argc==2 && argv[1][0]=='-' && (argv[1][1]=='h' || argv[1][1]=='-' && argv[1][2]=='h')) {
+  if (argc==2 && argv[1][0]=='-' && (argv[1][1]=='h' || argv[1][1]=='-' && argv[1][2]=='h'))
     usage();
-    return 1;
-  }
+  if (argc==2)
+    if (!(skipLines=atoi(argv[1])))
+      usage();
 
   ios_base::sync_with_stdio(false);
   cin.tie(0);

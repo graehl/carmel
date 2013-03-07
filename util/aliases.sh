@@ -1,7 +1,45 @@
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
-
+re() {
+    redo-ifchange "$@"
+}
+dedup() {
+local f="$(filename_from $*)"
+catz "$@" | sort | uniq > $f.uniq
+wc $*
+wc $f.uniq
+}
+savedo() {
+    local dir=${1:?arg1: dir to save .do outputs to}
+    mkdir -p $dir
+    local cmd=cp
+    local cmdargs=-a
+    if [[ $mv ]] ; then
+        cmd=mv
+        cmdargs=
+    fi
+    for f in `find . -name '*.do'`; do
+        local o=${f%.do}
+        if [[ -f $o ]] ; then
+            set -x
+            cp -a $f $dir/$f
+            $cmd $cmdargs $o $dir/$o
+            ls -l $dir/$f $dir/$o
+        fi
+    done
+}
+sherp() {
+    local CT=${CT:-/home/graehl/ct/main}
+    cd `dirname $1`
+    local apex=`basename $1`
+    shift
+    nohup $CT/sherpa/App/sherpa --apex=$apex "$@" &
+    mv nohup.out $apex.nohup.out
+}
+clonect() {
+    git clone http://git02.languageweaver.com:29418/coretraining ct
+}
 macboost() {
     BOOST_VERSION=1_50_0
     BOOST_SUFFIX=
@@ -40,7 +78,8 @@ panpdf() {
         set -e
         require_file $in
         set -x
-        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-11pt} -V documentclass=${documentclass:-article} -V geometry=${paper:-letter}paper -V geometry=margin=${margin:-2cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt} $in
+        local geom="-V geometry=${paper:-letter}paper -V geometry=margin=${margin:-0.5cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}"
+        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
         if [[ $open ]] ; then
             open $out
         fi
@@ -59,8 +98,8 @@ rmd() {
         pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
         if [[ $pdf ]] ; then
             panpdf $RMDFILE.md
-        else
-            [[ $open ]] && open $RMDFILE.html
+        elif [[ $open ]] ; then
+            open $RMDFILE.html
         fi
     )
 }
@@ -165,6 +204,19 @@ bakre() {
     bakthis ${1:-prebase}
     upre
 }
+tryre() {
+    local branch=$(git_branch)
+    (set -e
+        local to=$branch.re
+        git branch -D $to || true
+        git checkout -b $to
+        up
+        git rebase master || git rebase --abort
+        co $branch
+        git branch -D $to
+    )
+}
+
 upre() {
     (set -e
         up
@@ -298,19 +350,20 @@ withcc() {
         local exe=$(basename $source .cc)
         exe=${exe%.cpp}
         exe=${exe%.c}
-        local bexe=$sdir/$exe
+        local bexe=${bindir:-$sdir}/$exe
         local cxx=${CXX:-/usr/local/gcc-4.7.1/bin/g++}
         [[ -x $cxx ]] || cxx=/mingw/bin/g++
         [[ -x $cxx ]] || cxx=g++
         set -x
         set -e
-        $cxx --std=c++11 $source -o $bexe
+        $cxx -O3 --std=c++${cxxstd:-11} $source -o $bexe
         if [ "$run $*" ] ; then
             $bexe "$@"
         fi
     )
 }
 xmtx=/home/graehl/x
+xmtr=$xmtx/RegressionTests
 if [[ $HOST = c-jgraehl ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
 fi
@@ -814,11 +867,10 @@ rebasec() {
     git add "$@"
     git rebase --continue
 }
+
 mend() {
     (
-        pushd $xmtx
-        git commit -a --amend --no-edit
-        popd
+        git commit -a -C HEAD --amend
     )
 }
 
@@ -2081,7 +2133,7 @@ gitchanged() {
 gcom() {
     gitchanged
     git commit -a -m "$*"
-    git push -v
+    git push -v || true
 }
 scom() {
     svn commit -m "$*"
@@ -4124,12 +4176,6 @@ wxzf() {
 }
 
 
-redo() {
-    local blob=$1
-    local which=$2
-    (cd $BLOBS/$blob && reblob $2 && realpath $2)
-
-}
 pdq() {
     local err=`mktemp /tmp/pdq.XXXXXX`
     pushd "$@" 2>$err || cat $err 1>&2
@@ -4425,17 +4471,9 @@ function dobuild
     fi
 }
 
-
 makesrilm_c() {
     make OPTION=_c World
 }
-
-makedb() {
-    cd build_unix
-    make distclean
-    ../dist/configure --enable-cxx --prefix=$ARCHBASE
-}
-
 
 set_i686() {
     set_build i686
@@ -4443,37 +4481,6 @@ set_i686() {
 set_i686_debug() {
     set_build i686 -O0
 }
-
-chpc() {
-    hscp ~/$1 $1
-}
-
-cpmd() {
-    local v=${2:-latest}
-    local d=${3:-~/blobs/mini_decoder/$v}
-    require_files $1
-    require_dirs $d
-    chmod -R +w $d $d
-    cp -f $1 $d
-    cp -f $1 $d/x86_64
-    chmod -R -w $d $d
-    touch $d/../unstable
-}
-
-cpimd() {
-    local v=${2:-latest}
-    local d=${3:-~/blobs/mini_decoder/$v}
-    local f=~/isd/hpc/bin/$1
-    local f64=~/isd/hpc-opteron/bin/$1
-    require_files $f $f64
-    require_dirs $d
-    chmod -R +w $d $d
-    cp -f $f $d
-    cp -f $f64 $d/x86_64
-    chmod -R -w $d $d
-    touch $d/../unstable
-}
-
 
 upt()
 {

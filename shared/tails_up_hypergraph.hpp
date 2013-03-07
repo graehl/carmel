@@ -128,15 +128,6 @@ struct BestTreeOptions
     c("convergence",&convergence_epsilon_str)("if empty or 0, only stop on maximum # of rereaches or 0 change anywhere. else stop if change is below this amount").is("epsilon - a small nonnegative real");
   }
 
-  template <class OD>
-  void add_options(OD &options_desc)
-  {
-    options_desc.add_options()
-      .defaulted("rereach",&allow_rereach,"mostly for handling lattices with net-negative-cost edges: in best-first allow the 'best' path to a node to be reached this many times (may be needed if edge costs are negative more than sum of best paths to all-but-one tail is positive). if every edge has a net-postivie cost, this can be 0, which saves memory")
-      .defaulted("throw-on-max-rereach",&throw_on_rereach_limit,"if a node is popped more than rereach+1 times, throw a BestTreeRereachException immediately)")
-      .defaulted("convergence",&convergence_epsilon_str,"if empty or 0, only stop on maximum # of rereaches or 0 change anywhere. else stop if change is below this amount")
-      ;
-  }
 };
 
 /* we're going to store these indexed by tail vertex for the purpose of bottom-up reachability (topo-sort-like)

@@ -22,7 +22,7 @@ static inline int isnan(float f)
 }
 // TODO: fix for double also
 # else
-#  if defined(_STLPORT_VERSION)
+#  if defined(_STLPORT_VERSION) || defined(ANDROID)
 #   include <math.h>
 #   define GRAEHL_ISNAN(x) isnan(x) // in stlport, only c99 version of isnan is available
 #  else

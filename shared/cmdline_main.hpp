@@ -164,7 +164,8 @@ struct main {
       positional_out=positional_in=add_in_file=add_random=false;
       add_log_file=add_help=add_out_file=add_config_file=add_debug_level=true;
       min_ins=max_ins=0;
-      add_verbose=add_quiet=true;
+      add_verbose=false;
+      add_quiet=true;
     }
   };
   friend inline void init_default(main &) {}
