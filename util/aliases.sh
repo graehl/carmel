@@ -1,6 +1,28 @@
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
+expsh() {
+ perl -ne 'chomp;print qq{echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
+}
+condorexp() {
+ local f=$1/jobs.condor
+ require_file $f
+ condor_submit $f
+ echo ls log/$f/
+}
+exp() {
+  local f=${1%.sh}
+  (set -e
+  require_file $f.sh
+  create-dir.pl $f
+  condorexp $f
+  )
+}
+reall() {
+   for f in *.do; do
+     redo-ifchange ${f%.do}
+   done
+}
 re() {
     redo-ifchange "$@"
 }

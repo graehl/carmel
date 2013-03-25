@@ -65,7 +65,10 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 
 #include <boost/optional.hpp>
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
-#include <boost/lexical_cast.hpp>
+# ifndef BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
+#  define BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
+# endif
+# include <boost/lexical_cast.hpp>
 #endif
 #include <boost/type_traits/remove_reference.hpp>
 #include <limits> //numeric_limits

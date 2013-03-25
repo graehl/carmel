@@ -4,7 +4,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
-#include <boost/pool/pool.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <cassert>
 #include <memory>

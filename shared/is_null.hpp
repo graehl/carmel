@@ -4,7 +4,6 @@
 #ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
 # include <graehl/shared/debugprint.hpp>
-# include <boost/lexical_cast.hpp>
 # define IS_NULL_DEBUG(x) x
 #else
 # define IS_NULL_DEBUG(x)

@@ -7,7 +7,6 @@
 #endif
 
 #include <graehl/shared/intrusive_refcount.hpp>
-#include <boost/pool/pool.hpp>
 #include <vector>
 
 /*

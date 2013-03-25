@@ -8,7 +8,6 @@
   (actual octal handling for 0123 - who uses that anyway? maybe a feature not to have it. but consistency with string_to which uses strtoul etc.)
  */
 
-#include <boost/lexical_cast.hpp>
 #include <graehl/shared/print_read.hpp>
 #include <graehl/shared/type_string.hpp>
 #include <graehl/shared/string_to.hpp>
@@ -21,13 +20,6 @@ template <class I>
 struct hex_int {
   typedef typename signed_for_int<I>::unsigned_t U;
   I i;
-#if 0
-  template <class Config>
-  void configure(Config &c) {
-    c.is("(hexadecimal) integer");
-    c(i);
-  }
-#else
   typedef void leaf_configure;
   friend inline void string_to_impl(std::string const& s,hex_int &me) {
     string_to(s,me.i);
@@ -35,7 +27,6 @@ struct hex_int {
   friend inline std::string type_string(hex_int const& me) {
     return "(hexadecimal) "+type_string(me.i);
   }
-#endif
 
   hex_int() : i() {}
   explicit hex_int(I i) : i(i) {}
@@ -89,42 +80,13 @@ DEFINE_HEX_INT(int32_t);
 DEFINE_HEX_INT(int64_t);
 #endif
 
-#if 0 // redundant with default string_to
-template <class S,class I>
-void string_to(S const& s,hex_int<I> &i) {
-  std::istringstream in(s);
-  in>>i;
-  return i;
-}
-#endif
-
 //only have to int and long with hex using string_to - e.g. int64_t - check strtoull existing?
 #define HEX_USE_STRING_TO(unsigned) \
 template <class S> \
 void string_to(S const& s,hex_int<unsigned> &i) { \
   string_to(s,i.i); \
 }
-#if 0
-HEX_USE_STRING_TO(unsigned)
-HEX_USE_STRING_TO(int)
-#if HAVE_LONGER_LONG
-HEX_USE_STRING_TO(long unsigned)
-HEX_USE_STRING_TO(long int)
-#endif
-#endif
 
 }//ns
 
-#if 0
-// causes problems with lexical_cast<X>(s) for other X - need some other way to get this found by program_options.
-namespace boost {
-// for program_options - not sure if ADL would have found since it's on return type not args
-template <class I>
-graehl::hex_int<I> lexical_cast(std::string const &s) {
-  graehl::hex_int<I> ret;
-  string_to(s,ret);
-  return ret;
-}
-}
-#endif
 #endif

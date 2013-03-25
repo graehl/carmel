@@ -1,7 +1,6 @@
 #ifndef GRAEHL_SHARED__POOL_TRAITS
 #define GRAEHL_SHARED__POOL_TRAITS
 
-#include <boost/pool/object_pool.hpp>
 #include <boost/shared_ptr.hpp>
 #include <graehl/shared/intrusive_refcount.hpp>
 

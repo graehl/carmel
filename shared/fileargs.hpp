@@ -4,8 +4,9 @@
 #define GRAEHL__SHARED__FILEARGS_HPP
 
 #ifndef GRAEHL__VALIDATE_INFILE
-//program options validation for fileargs: istream_arg, ostream_arg, ifstream_arg, ofstream_arg
-# define GRAEHL__VALIDATE_INFILE 1
+// if 1, program options validation for shared_ptr<Stream>
+# define GRAEHL__VALIDATE_INFILE 0
+// else, just for file_arg<Stream>
 #endif
 
 #ifndef GRAEHL_USE_GZSTREAM
@@ -674,8 +675,9 @@ inline OutDiskfile outdiskfile(const std::string &s)
 # include <graehl/shared/fileargs.cpp>
 #endif
 
-#ifdef GRAEHL__VALIDATE_INFILE
-namespace boost {    namespace program_options {
+namespace boost { namespace program_options {
+
+#if GRAEHL__VALIDATE_INFILE
 /* Overload the 'validate' function for boost::shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
@@ -706,8 +708,18 @@ inline void validate(boost::any& v,
 {
   v=boost::any(graehl::indiskfile(graehl::get_single_arg(v,values)));
 }
-}} // boost::program_options
+
+#else
+
+template <class Stream>
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     graehl::file_arg<Stream>* target_type, int)
+{
+  v = boost::any(graehl::file_arg<Stream>(graehl::get_single_arg(v, values)));
+}
 #endif
 
+}} // boost::program_options
 
 #endif

@@ -2,7 +2,6 @@
 #define GRAEHL__SHARED__SIZE_MEGA_HPP
 
 #include <iomanip>
-#include <boost/lexical_cast.hpp>
 #include <stdexcept>
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/print_width.hpp>
@@ -11,6 +10,7 @@
 #include <sstream>
 #include <cstddef>
 #include <string>
+#include <cstdio>
 
 namespace graehl {
 
@@ -79,8 +79,11 @@ inline size_type parse_size(inputstream &i) {
     char c;
     if (i.get(c))
       return (size_type)scale_mega(c,number);
-    if (number - (size_type)number > 1)
-        throw std::runtime_error(std::string("Overflow - size too big to fit: ").append(boost::lexical_cast<std::string>(number)));
+    if (number - (size_type)number > 1) {
+      char buf[100];
+      int len=std::sprintf(buf,"Overflow - size too big to fit: %g",number);
+      throw std::runtime_error(std::string(buf,len));
+    }
     return (size_type)number;
 fail:    throw std::runtime_error(std::string("Expected nonnegative number followed by optional k, m, g, or t (10^3,10^6,10^9,10^12) suffix, or K, M, G, or T (2^10,2^20,2^30,2^40), e.g. 1.5G"));
 }

@@ -29,7 +29,6 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <boost/noncopyable.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/detail/atomic_count.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/static_assert.hpp>
 
 #include <graehl/shared/assign_traits.hpp>
