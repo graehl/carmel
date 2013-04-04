@@ -38,6 +38,9 @@ struct cost_path_traits
   static inline bool includes(cost_type candidate,cost_type best) { // update(you can assert this after update)
     return !(candidate<best);
   }
+  /**
+     \return candidate isn't (much) better (lower) than best
+  */
   static inline bool includes(cost_type candidate,cost_type best,float delta_relative) {
     assert(delta_relative>=0);
     float delta=delta_relative;
@@ -47,7 +50,12 @@ struct cost_path_traits
       delta*=candidate;
     return !(candidate+delta<best);
   }
-  static inline bool close_enough(cost_type a,cost_type b,float delta_relative=FLOAT_EPSILON) { return includes(a,b,delta_relative)&&includes(b,a,delta_relative); } // also for debugging
+  /**
+     \return a and b
+  */
+  static inline bool close_enough(cost_type a,cost_type b) {
+    return few_ieee_apart(a,b,100); // 100 floats distance ~ 1 part in 100,000
+  }
   // may be different from includes in the same way that better is different from update:
   static inline bool converged(cost_type improver,cost_type incumbent
                                ,cost_type epsilon)
@@ -61,13 +69,13 @@ struct path_traits : cost_path_traits<float> {
 };
 
 /*
-template <class G>
-static inline bool converged(typename path_traits<G>::cost_type const& improver,typename path_traits<G>::cost_type const& incumbent
+  template <class G>
+  static inline bool converged(typename path_traits<G>::cost_type const& improver,typename path_traits<G>::cost_type const& incumbent
   ,typename path_traits<G>::cost_type const& epsilon)
-{
+  {
   typedef path_traits<G> PT;
   return PT::better(incumbent,PT::combine(improver,epsilon));
-}
+  }
 */
 
 // for graphs which have edges with sources (plural) and not source - ordered multihypergraphs

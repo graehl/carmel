@@ -83,6 +83,8 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #include <graehl/shared/is_container.hpp>
 #if GRAEHL_USE_FTOA
 # include <graehl/shared/ftoa.hpp>
+#else
+# include <cstdlib>
 #endif
 
 

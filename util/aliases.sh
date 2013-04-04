@@ -1,35 +1,111 @@
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
+bakdocs() {
+    (
+        cd ~/x/docs
+        scp *.r *.rmd *.md *.txt c-jgraehl:projects/docs
+    )
+}
+cuesplit() {
+    local cue=${1:?args file.cue [file.flac]}
+    local flac=${2:-${cue%.cue}.flac}
+    require_files $cue $flac
+    shntool split -f $cue -o 'flac flac --output-name=%f -' -t '%n-%p-%t' $flac
+}
+stripx() {
+    strip "$@"
+    upx "$@"
+}
+cpstripx() {
+    local from=$1
+    local to=${2:?from to}
+    (set -e
+        require_file $from
+        cp $from $to
+        chmod +x $to
+        stripx $to
+    )
+}
+topps() {
+    local pid=${1?args PID N secperN}
+    save12 ${out:-top.$pid} top -b -n ${2:-1000} -d ${3:-10} -p $pid
+}
+toppsq() {
+    topps "$@" 2>/dev/null >/dev/null
+}
+lnccache() {
+    local f
+    local ccache="/usr/local/bin/ccache"
+    for f in "$@" ; do
+        local g=/usr/local/bin/ccache-`basename $f`
+        cat > $g <<EOF
+#!/bin/bash
+exec $ccache $f "\$@"
+EOF
+        chmod +x $g
+        echo $g
+    done
+}
+findsize1() {
+    tailn=100 preview `find . -name '*pp' -size 1` > ~/tmp/size1
+}
 expsh() {
- perl -ne 'chomp;print qq{echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
+    perl -ne 'chomp;print qq{echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
 }
 condorexp() {
- local f=$1/jobs.condor
- require_file $f
- condor_submit $f
- echo ls log/$f/
+    local f=$1/jobs.condor
+    require_file $f
+    condor_submit $f
+    echo ls log/$f/
 }
 exp() {
-  local f=${1%.sh}
-  (set -e
-  require_file $f.sh
-  create-dir.pl $f
-  condorexp $f
-  )
+    local f=${1%.sh}
+    (set -e
+        require_file $f.sh
+        create-dir.pl $f
+        condorexp $f
+    )
+}
+redodo() {
+    for f in "$@"; do
+        redo-ifchange ${f%.do}
+    done
+}
+reallr() {
+    redodo `find ${*:-.} -name '*.do'`
+}
+cleanall() {
+    noredo=1 clean=1 reall "$@"
 }
 reall() {
-   for f in *.do; do
-     redo-ifchange ${f%.do}
-   done
+    local redos
+    for d in ${*:-.}; do
+        for f in $d/*.do; do
+            redos+=" ${f%.do}"
+        done
+    done
+    if [[ $clean ]] ; then
+        rm -fv $redos
+        for f in $redos; do
+            rm -fv $f.redo?.tmp
+        done
+    fi
+    if ! [[ $noredo ]] ; then
+        (
+            set -x
+            redo-ifchange $redos
+            set +x
+        )
+    fi
 }
 re() {
     redo-ifchange "$@"
 }
 dedup() {
-local f="$(filename_from $*)"
-catz "$@" | sort | uniq > $f.uniq
-(wc $* ; wc $f.uniq) | tee $f.uniq.wc
+    local f="$(filename_from $*)"
+    catz "$@" | sort | uniq > $f.uniq
+    (wc $* ; wc $f.uniq) | tee $f.uniq.wc
 }
 savedo() {
     local dir=${1:?arg1: dir to save .do outputs to}
@@ -54,9 +130,18 @@ sherp() {
     local CT=${CT:-/home/graehl/ct/main}
     cd `dirname $1`
     local apex=`basename $1`
-    shift
-    nohup $CT/sherpa/App/sherpa --apex=$apex "$@" &
-    mv nohup.out $apex.nohup.out
+    if [[ -f $apex.apex ]] ; then
+        apex=$apex.apex
+    fi
+    local dir=${apex%.apex}
+    if [[ $cleancondor ]] && [[ -d $dir ]] ; then
+        echo rm -rf $dir
+        rm -rf $dir
+    fi
+    $CT/sherpa/App/sherpa --apex=$apex "$@"
+}
+resherp() {
+    cleancondor=1 sherp "$@"
 }
 clonect() {
     git clone http://git02.languageweaver.com:29418/coretraining ct
@@ -343,17 +428,15 @@ gitrecycle() {
     git log --diff-filter=D --summary | grep delete
 }
 useclang() {
-    local ccache="/usr/local/bin/ccache "
-    export CC="$ccache /usr/bin/cc"
-    export CXX="$ccache /usr/bin/c++"
+    export CC="/usr/local/bin/ccache-cc$GCC_SUFFIX"
+    export CXX="/usr/local/bin/ccache-c++$GCC_SUFFIX"
 }
 usegcc() {
-    local ccache="/usr/local/bin/ccache "
-    export CC="$ccache gcc"
-    export CXX="$ccache g++"
+    export CC="/usr/local/bin/ccache-gcc$GCC_SUFFIX"
+    export CXX="/usr/local/bin/ccache-g++$GCC_SUFFIX"
 }
 usellvm() {
-    local ccache="/usr/local/bin/ccache "
+    local ccache="/usr/local/bin/ccache"
     local gcc=$GCC_PREFIX
     local llvm=/usr/local/llvm
     export PATH=$llvm/bin:$llvm/sbin:$PATH
@@ -419,6 +502,7 @@ jen() {
     shift
     local log=$HOME/tmp/jen.log.`timestamp`
     . xmtpath.sh
+    usegcc
     jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
@@ -455,8 +539,13 @@ raccmsave() {
 pkill() {
     local prefile=`mktemp /tmp/pgrep.pre.XXXXXX`
     pgrep "$@" > $prefile
-    cat $prefile | cut -c1-5 | xargs kill
     cat $prefile
+    kill `cat $prefile | cut -c1-5`
+# | xargs kill
+    echo before:
+    cat $prefile
+    sleep 1
+    echo now:
     pgrep "$@"
     rm $prefile
 }
@@ -676,10 +765,7 @@ commshared() {
     commt "$@"
 }
 pgrep() {
-    local flags=-ax
-    if [[ `uname` = Linux ]] ; then
-        flags=-x
-    fi
+    local flags=ax
     ps $flags | fgrep "$@" | grep -v grep
 }
 pgrepn() {
@@ -2441,7 +2527,7 @@ racb() {
         buildtyped=Debug
     fi
     local allarg=
-    local allhg=1
+    local allhg=
     if [[ $allhg ]] ; then
         allarg="-DAllHgBins=1"
     fi
@@ -2553,24 +2639,23 @@ raccm() {
 ccmake() {
     local d=${1:-..}
     shift
-    rm -f CMakeCache.txt $d/CMakeCache.txt
-    if [[ $llvm ]] ; then
-        usellvm
-    fi
-    local ccache=/usr/local/bin/ccache
-    [[ -x $ccache ]] || ccache=
-    local cxx=${CXX:-$ccache g++}
-    local cc=${CC:-$ccache gcc}
-    local cxxf=$cxxflags
-    if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
-        cxx="$ccache clang++"
-        cc="$ccache clang"
-        cxxf=-fmacro-backtrace-limit=100
-    fi
-    set -x
-
-    CC=$cc CXX=$cxx CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
-    set +x
+    (
+        rm -f CMakeCache.txt $d/CMakeCache.txt
+        if [[ $llvm ]] ; then
+            usellvm
+        fi
+        local ccache=/usr/local/bin/ccache
+        [[ -x $ccache ]] || ccache=
+        usegcc
+        local cxxf=$cxxflags
+        if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
+            useclang
+            cxxf=-fmacro-backtrace-limit=100
+        fi
+        set -x
+        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
+        set +x
+    )
 }
 runc() {
     ssh $chost "$*"
@@ -3000,17 +3085,17 @@ mkstamps() {
         \end{center}
 EOF
 
-for i in `seq 1 $npages`; do
+        for i in `seq 1 $npages`; do
 # echo '\newpage' >> $stamp
-    echo '\mbox{} \newpage' \
-        >> $stamp
-done
+            echo '\mbox{} \newpage' \
+                >> $stamp
+        done
 
-echo '\end{document}' >> $stamp
+        echo '\end{document}' >> $stamp
 
-local sbase=${stamp%.tex}
-lat2pdf $sbase
-echo $sbase.pdf
+        local sbase=${stamp%.tex}
+        lat2pdf $sbase
+        echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
@@ -4404,7 +4489,16 @@ function lat
 }
 
 g1() {
-    program_options_lib="-lboost_program_options$BOOST_SUFFIX -lboost_system$BOOST_SUFFIX"
+    local ccmd="g++"
+    local linkcmd="g++"
+    local archarg=
+    if [[ $OS = Darwin ]] ; then
+        ccmd="g++"
+        linkcmd="g++"
+        archarg="-arch x86_64"
+        macboost
+    fi
+    local program_options_lib="-lboost_program_options$BOOST_SUFFIX -lboost_system$BOOST_SUFFIX"
     local source=$1
     shift
     [ -f "$source" ] || cd $GRAEHL_INCLUDE/graehl/shared
@@ -4419,18 +4513,11 @@ g1() {
         if ! [ "$OPT" ] ; then
             flags="$flags -O0"
         fi
-        local ccmd="g++"
-        local linkcmd="g++"
-        local archarg=
-        if [[ $OS = Darwin ]] ; then
-            ccmd="g++"
-            linkcmd="g++"
-            archarg="-arch x86_64"
-        fi
         set -x
         #$ccmd $archarg $MOREFLAGS -ggdb -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -c -o $out.o
         #$linkcmd $archarg $LDFLAGS $out.o -o $out $program_options_lib 2>/tmp/g1.ld.log
-        $ccmd $program_options_lib -L$BOOST_LIB $archarg $MOREFLAGS -ggdb -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -o $out
+        $ccmd $program_options_lib -L$BOOST_LIB $MOREFLAGS $archarg -g -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -o $out
+#$archarg
         LD_RUN_PATH=$BOOST_LIB $gdb ./$out $ARGS
         if [[ $cleanup = 1 ]] ; then
             rm -f $out.o $out
@@ -4446,16 +4533,12 @@ euler() {
     g++ -O euler$1.cpp $flags -o $out && echo running $out ... && ./$out
 }
 gtest() {
-#"-I$SBMT_TRUNK
     MOREFLAGS="$GCPPFLAGS" OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DGRAEHL_TEST -DINCLUDED_TEST -ffast-math -lboost_unit_test_framework${BOOST_SUFFIX:-mt} -lboost_random${BOOST_SUFFIX:-mt}
-#
-#
-#-I/usr/include/db4 -L/usr/local/lib
 }
 gsample() {
     local s=$1
     shift
-    OUT=$s.sample ARGS=""$@"" g1 $s -DSAMPLE
+    OUT=$s.sample ARGS=""$@"" g1 $s -DGRAEHL_SAMPLE
 }
 
 

@@ -2500,38 +2500,6 @@ s/"RRBPAREN"/\"\)\"/g;s/"LRBPAREN"/\"\(\"/g;
 }
 
 
-decode-log-sum() {
-    local namearg=-h
-    local boundarg=-avgonly
-    [ "$names" ] && namearg=-H
-    [ "$bounds" ] && boundarg=
-    local unsum
-    if [[ $full ]] ; then
-        mkdir -p `dirname $full`
-        boundarg+=" -full $full"
-        unsum=$full.unsum
-    fi
-    showvars_optional names bounds full
-    egrep $namearg -i 'nbest=0 total mismatch|start decoder subprocess|Connectivity is broken|Max retransmit retries|-BLEU=|req status|CAUGHT|_error|error:|bad_alloc|assertion|\[warning\]|\bwarning:|error\b|\binf\b|\bnan\b|parse forest has|exception:|in total, |best score: |retry|command line: |toplevel' -- "$@" | fgrep -v "inconsistent states" | fgrep -v " reference: " | cols=${cols:-500} droplong | tee $unsum | summarize-num $boundarg -p 4 2>/dev/null
-    [[ $full ]] && egrep '\bnan\b|\binf\b|mismatch' $full
-}
-decode-sum() {
-    local dirs="$*"
-    local out=${out:-.}
-    mkdir -p $out
-    dirs=${dirs:-.}
-    (
-        for d in $dirs; do
-            echo $d
-            local full=$out/`basename $d`.decode.min-avg-max.log
-            full=$full decode-log-sum $d/logs/??/decoder.log
-            bleuparse $d/ibmbleu.out
-            echo
-        done
-    ) 2>&1 | tee $out/decode.avg.log
-    grep mismatch $out/*.decode.min-avg-max.log
-    echo $dirs
-}
 bleulr() {
     perl -ne '/BLEUr4n4\[\%\] (\S*).*lengthRatio: (\S*)/; ($b,$l)=($1,$2);$_=$ARGV; s|/ibmbleu.out||; print "$_ $b $l\n"' "$@"
 }

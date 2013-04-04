@@ -1,5 +1,13 @@
-//FIXME: maybe because of large buffer change, writing to a non-.gz file seems to produce no output when a filearg is copied (even though we're using shared_ptr
-// given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library
+/** \file
+
+    given a filename, creates a (reference counted) input/output file/stream object, with "-" = STDIN/STDOUT, and ".gz" appropriately (de)compressed using gzstream.h - also, parameter parsing for Boost (command-line) Options library
+
+    '-' means stdin/stdout, '-2' stderr, '-0' /dev/null
+
+    all files are opened in binary mode (though cin/cout are the default)
+*/
+
+//
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
 
@@ -22,6 +30,8 @@
 #ifndef BOOST_FILESYSTEM_VERSION
 # define BOOST_FILESYSTEM_VERSION 3
 #endif
+
+
 /*
   Boost.Filesystem.v2 (afaik removed completely in
 1.48 so you'll need to merge from the old release), it is better designed
@@ -166,6 +176,7 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 }
 
 
+
 // copyable because it's a shared ptr to an ostream, and holds shared ptr to a larger buffer used by it (for non-.gz file input/output) - make sure file is flushed before member buffer is destroyed, though!
 template <class Stream>
 struct file_arg
@@ -173,7 +184,7 @@ struct file_arg
 private:
   typedef large_streambuf<> buf_type;
   typedef boost::shared_ptr<buf_type> buf_p_type; // because iostreams don't destroy their streambufs
-  buf_p_type buf;
+  buf_p_type buf; // this will be destroyed *after* stream pointer (and constructed before).
   typedef stream_traits<Stream> traits;
   typedef boost::shared_ptr<Stream> pointer_type;
   pointer_type pointer; // this will get destroyed before buf (constructed after), which may be necessary since we don't require explicit flush.
@@ -222,7 +233,7 @@ public:
     return name.c_str();
   }
 
-  std::string const& desc_str() const
+  std::string const& str() const
   {
     return name;
   }
@@ -240,7 +251,7 @@ public:
   }
 
   file_arg() { set_none(); }
-  explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL,bool large_buf=false)
+  explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL,bool large_buf=true)
   {  set(s,null_allowed,large_buf); }
   void throw_fail(std::string const& filename,std::string const& msg="")
   {
@@ -251,7 +262,7 @@ public:
   enum { delete_after=1,no_delete_after=0 };
 
   void clear() {
-    pointer.reset();
+    pointer.reset(); // pointer to stream must go before its large buf goes
     buf.reset();
     name="";
   }
@@ -346,12 +357,12 @@ public:
     if (s.empty()) {
       throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");
     } if (!file_only && s == "-") {
+      // note that we don't attempt to supply a large buffer for either cin or cout,
+      // since they're likely to already be in use by others
       if (read) {
         set_checked(GRAEHL__DEFAULT_IN,s);
-        if (large_buf) give_large_buf();
       } else {
         set_checked(GRAEHL__DEFAULT_OUT,s);
-        // I don't recommend making a huge output buffer by default, because people are used to watching output
       }
     } else if (!file_only && !read && s== "-2") {
       set_checked(GRAEHL__DEFAULT_LOG,s);
@@ -379,11 +390,11 @@ public:
   }
 
   explicit file_arg(Stream &s,std::string const& name) :
-    pointer_type(*s,null_deleter()),name(name) {}
+    pointer(*s,null_deleter()),name(name) {}
 
   template <class Stream2>
   file_arg(file_arg<Stream2> const& o) :
-    pointer_type(o.pointer),name(o.name),buf(o.buf) {}
+    pointer(o.pointer),name(o.name),buf(o.buf) {}
 
   void set_none()
   { none=true;set_null_file_arg(pointer);buf.reset();name="-0"; }
