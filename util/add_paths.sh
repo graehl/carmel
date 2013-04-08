@@ -37,36 +37,35 @@ function prepend_path
  local subbin=$prefix/bin
  local subman=$prefix/man
  local subinc=$prefix/include
-if [ "$HOST" != maybe ] ; then
- mkdir -p $prefix
- mkdir -p $sublib
- mkdir -p $subbin
- mkdir -p $subman
- mkdir -p $subinc
-fi
  export PATH="$subbin:$PATH"
  export MAN_PATH="$subman:$MAN_PATH"
  export C_INCLUDE_PATH="$subinc:$C_INCLUDE_PATH"
  export CPPFLAGS="-I$subinc $CPPFLAGS"
  add_ldpath $sublib
  add_pypath $subpy $subpy/bzrlib ${subpy}2.6/site-packages
- if [ "$ON64" ] ; then
   local sublib64=$prefix/lib64
-  mkdir -p $sublib64
+if  [[ $mkpathdirs ]] ; then
+ if [[ $ON64 ]] ; then
+   mkdir -p $sublib64
+ fi
+ mkdir -p $prefix
+ mkdir -p $sublib
+ mkdir -p $subbin
+ mkdir -p $subman
+ mkdir -p $subinc
+fi
+ if [[ $ON64 ]] ; then
   add_ldpath $sublib64
  fi
  fi
 }
 
 prepend_paths() {
-dirs="$*"
+    local dirs="$*"
 
-[ "$nohostbase" ] || dirs="~graehl/isd/$HOSTNAME $dirs"
+    [ "$nohostbase" ] || dirs=$(echo ~graehl/isd/$HOSTNAME $dirs)
 
-for f in $dirs; do
-#echo prepending path base: $f
-prepend_path $f
-done
+    for f in $dirs; do
+        prepend_path $f
+    done
 }
-
-prepend_paths $*

@@ -462,7 +462,6 @@ previewf() {
 }
 
 libg=$BLOBS/libgraehl/latest
-mkdir -p $libg
 
 tabsort() {
     local tab=$(echo -e '\t')
@@ -2435,7 +2434,9 @@ workflowp=~/workflow
 homereal=`realpath ~`
 traperr
 getrealprog
-[ -f $libg/libgraehl.pl ] || warn missing libgraehl.pl
+if ! [[ -d $libg ]] || ! [[ -f $libg/libgraehl.pl ]] ; then
+  warn missing libgraehl.pl
+fi
 
 radutrees() {
     local t=$1
@@ -2514,53 +2515,5 @@ bleuparse1() {
 }
 bleuparse() {
     forall bleuparse1 "$@"
-}
-mira-log-sum() {
-    mirasum=${mirasum:-mira-sum-time}
-    # if [[ $notime ]] ; then
-    #     mirasum=mira-sum
-    # fi
-    local dirs="$*"
-    dirs=${dirs:-.}
-    local op
-    if [[ $out ]] ; then
-        mkdir -p $out
-        op=$out/
-    fi
-    local log=${op}mira-log-sum.`filename_from $*`.log
-    local logs=$log
-    local dlog
-
-    (
-        for d in $dirs; do
-            (
-                set -e
-            echo $d
-            echo
-            local full=${op}`basename $d`.mira.min-avg-max.log
-            logs+=" $full"
-            local mirasumf=$(abspath ${op}`basename $d`.mira-sum)
-            showvars_required mirasum full log
-            if ! [ "$nosum" ] ; then
-                (set -e;cd $d && $mirasum 2>&1 | tee $mirasumf)
-            fi
-            [[ $notime ]] || cols=99999 feature-scales $d/logs/mira.log | tee $mirasum | tail -2 | cols=220 sniplong
-#            echo $d/logs/mira.log $d/logs/deco*.log
-#            set -x
-            if ! [[ $nolog ]] ; then
-            for f in $d/logs/deco*.log ; do
-                if grep -q 'ommand line' $f ; then
-                    true
-                fi
-                dlog=$f
-            done
-            full=$full decode-log-sum $d/logs/mira.log $d/logs/deco*.log
-            fi
-            echo
-            )
-        done
-    ) 2>&1 | tee $log
-    echo tail -100 $logs
-    echo less $dlog
 }
 true
