@@ -1,6 +1,105 @@
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
+HOST=${HOST:-$(hostname)}
+CXX11=g++-4.7
+DROPBOX=$(echo ~/dropbox)
+gjam() {
+    GJAMDIR=$DROPBOX/jam/qual/b
+    local in=$1
+    shift
+    local cc=$1
+    (
+    [[ -f $cc ]] || cc=solve.cc
+    [[ -s $cc ]] || cd $GJAMDIR
+    shift
+    if [[ $in ]] ; then
+        cp $in in
+    fi
+    require_file in
+    set -e
+    set -x
+    $CXX11 -O3 -g --std=c++11 $cc -o solve
+    ./solve
+    set +x
+    out=out
+    if [[ $in ]] ; then
+        basein=`basename $in`
+        out=${basein%.in}.out
+        cp out $out
+    else
+        in=in
+    fi
+    tailn=20 preview $in $out
+    wc -l $in $out
+    )
+}
+savecppch() {
+    local OUT=${2:-$HOME/tmp/cppcheck-$(basename $CODE_PATH)}
+    save12 $OUT cppch $1
+}
+cppch() {
+    # Suppressions are comments of the form "// cppcheck-suppress ErrorType" on the line preceeding the error
+    # see https://www.icts.uiowa.edu/confluence/pages/viewpage.action?pageId=63471714
+    local code_path=${1:-.}
+    local extra_include_paths=${extra_include_paths:-$code_path}
+    if [[ $cppcheck_externals ]] ; then
+        EXTRA_INCLUDE_PATHS+=" $(echo $XMT_EXTERNALS_PATH/libraries/*/include)"
+    fi
+    local extrachecks=${extrachecks:-performance}
+    if [[ $extrachecks = none ]] ; then
+        extrachecks=
+    fi
+    local ignoreargs
+    local ignorefiles="" # list of (basename) filenames to skip
+    if [[ $ignorefiles ]] ; then
+        for f in $ignores ; do
+            ignoreargs+=" -i $f"
+        done
+    fi
+    local includeargs
+    if [[ $extra_include_paths ]] ; then
+        for f in $extra_include_paths ; do
+            includeargs+=" -I $f"
+        done
+    fi
+    local extraargs
+    if [[ $extrachecks ]] ; then
+        for f in $extracheck ; do
+            extraargs+=" --enable=$f"
+        done
+    fi
+    cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
+        --template '{file}:{line}: {severity},{id},{message}' \
+        $includeargs $ignoreargs "$code_path" --error-exitcode=2"
+    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
+        --template '{file}:{line}: {severity},{id},{message}' \
+        $includeargs $ignoreargs "$code_path" --error-exitcode=2
+}
+coma() {
+    git commit -a -m "$*"
+}
+assume() {
+    git update-index --assume-unchanged "$@"
+}
+unassume() {
+    git update-index --no-assume-unchanged "$@"
+}
+assumed() {
+    git ls-files -v | grep ^h | cut -c 3-
+}
+snapshot() {
+    git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
+}
+
+pepignores=E501
+#,E401
+flake() {
+    flake8 --ignore=$pepignores "$@"
+}
+pep() {
+    pep8 --ignore=$pepignores "$@"
+}
 bakdocs() {
     (
         cd ~/x/docs
@@ -897,7 +996,7 @@ macall() {
     all=1 mactest "$@"
 }
 macreg() {
-    local branch=${1:-?args branch [regr-pat] [target] [Debug|Release]}
+    local branch=${1:-?args branch [regr-pat] [target] [Debug|Release|RelWithDebuInfo]}
     shift
     local regs=$1
     shift
@@ -2522,7 +2621,7 @@ racb() {
     export XMT_EXTERNALS_PATH=$racerext
     mkdir -p $racerbuild
     cd $racerbuild
-    local buildtyped=Release
+    local buildtyped=$build
     if [[ ${build#Debug} != $build ]] ; then
         buildtyped=Debug
     fi
@@ -2785,7 +2884,7 @@ pycheckers() {
         pycheckerarg=${pycheckerarg:- --stdlib --limit=1000}
         [ -f setup.sh ] && . setup.sh
         for f in "$@" ; do
-            pychecker $pycheckerarg $f 2>&1 | tee $f.check
+            pychecker $pycheckerarg $f 2>&1 | grep -v 'Warnings...' | grep -v 'Processing module ' | tee $f.check
         done
     )
 }
@@ -2986,11 +3085,6 @@ comt() {
         svn commit -m "$*"
     )
 }
-coma() {
-    (pushd ~/t/graehl/util;
-        svn commit *.sh -m sh
-    )
-}
 upd() {
     for f; do
         blob_update $f
@@ -3085,17 +3179,17 @@ mkstamps() {
         \end{center}
 EOF
 
-        for i in `seq 1 $npages`; do
+for i in `seq 1 $npages`; do
 # echo '\newpage' >> $stamp
-            echo '\mbox{} \newpage' \
-                >> $stamp
-        done
+    echo '\mbox{} \newpage' \
+        >> $stamp
+done
 
-        echo '\end{document}' >> $stamp
+echo '\end{document}' >> $stamp
 
-        local sbase=${stamp%.tex}
-        lat2pdf $sbase
-        echo $sbase.pdf
+local sbase=${stamp%.tex}
+lat2pdf $sbase
+echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {

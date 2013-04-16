@@ -51,3 +51,5 @@
 	ignorecase = true
 	excludesfile = /Users/graehl/.gitignore_global
 	pager = gitpager
+[diff]
+	algorithm = patience
