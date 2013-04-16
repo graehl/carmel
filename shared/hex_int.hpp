@@ -54,7 +54,7 @@ struct hex_int {
         i=u;
       } else {
         s.unget(); // actual number starting with 0. //octal for consistency with string_to.
-        if (isdigit(c))
+        if (std::isdigit(c))
           s>>std::oct>>i;
       }
     } else {

@@ -1,0 +1,20 @@
+#!/usr/bin/perl -i~
+while(<>) {
+    if (/^( +)}\s*$/) {
+        print $delay if ($delay);
+        $indentlvl = length $1;
+        $delay=$_;
+    } else {
+        if ($delay) {
+            if (/^( +)(else.*)$/ && length($1)==$indentlvl) {
+                $_="$1} $2\n";
+            } else {
+                print $delay;
+            }
+            $delay=undef;
+        }
+        s/ (if|for|while|switch|foreach)\(/ $1 (/;
+        s/(?<=\S){/ {/;
+        print;
+    }
+}
