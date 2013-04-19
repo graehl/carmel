@@ -2586,7 +2586,7 @@ sub to_mega {
     $prec=4 unless $prec;
     if (is_numeric($num)) {
         my $last=$num;
-        for my $s qw(T G M K) {
+        for my $s ('T', 'G', 'M', 'K') {
             my $unit=$base10 ? lc($s) : $s;
             my $div=$mega_suffix{$unit};
             my $amount=$num/$div;

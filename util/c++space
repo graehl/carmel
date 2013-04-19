@@ -15,6 +15,7 @@ while(<>) {
         }
         s/ (if|for|while|switch|foreach)\(/ $1 (/;
         s/(?<=\S){/ {/;
+        s/\):/) :/;
         print;
     }
 }

@@ -10,7 +10,7 @@
 [svn]
 	authorsfile = /Users/graehl/t/graehl/util/.svn.authorsfile
 [color]
-	ui = auto
+	ui = on
 [color "branch"]
     current = yellow reverse
     local = yellow
@@ -50,6 +50,5 @@
 [core]
 	ignorecase = true
 	excludesfile = /Users/graehl/.gitignore_global
-	pager = gitpager
 [diff]
 	algorithm = patience

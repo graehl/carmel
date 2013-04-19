@@ -103,7 +103,7 @@ pep() {
 bakdocs() {
     (
         cd ~/x/docs
-        scp *.r *.rmd *.md *.txt c-jgraehl:projects/docs
+        scp *.r *.rmd *.md *.txt $chost:projects/docs
     )
 }
 cuesplit() {
@@ -567,7 +567,7 @@ withcc() {
 }
 xmtx=/home/graehl/x
 xmtr=$xmtx/RegressionTests
-if [[ $HOST = c-jgraehl ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
+if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
 fi
 substxmt() {
@@ -886,7 +886,11 @@ dryreg() {
     (set -e;
         cd $xmtx/RegressionTests
         set -x
-        if [[ $1 ]] ; then
+        if [[ -d $1 ]] ; then
+            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v "$@"
+        elif [[ -f $1 ]] ; then
+            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y "$(basename $1)"
+        elif [[ $1 ]] ; then
             ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y \*$1\*
         else
             ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v
@@ -1089,13 +1093,16 @@ xmend() {
 }
 
 yreg() {
+    if [[ $xmtShell ]] ; then
+        makeh xmtShell
+    fi
     local args="$yargs"
 # -t 2
     (set -e;
         cd $xmtx/RegressionTests
         set -x
         THREADS=`ncpus`
-        MINTHREADS=2 # unreliable with 1
+        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
         MAXTHREADS=6
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
@@ -1970,7 +1977,7 @@ tun1() {
     fi
 # ssh -L9922:svn.languageweaver.com:443 -N -t -x pontus.languageweaver.com -p 4640 &
     set -x
-    ssh -L$p:${1:-c-jgraehl.languageweaver.com}:${2:-22} -N -t -x ${4:-ceto}.languageweaver.com -p 4640
+    ssh -L$p:${1:-$chost.languageweaver.com}:${2:-22} -N -t -x ${4:-ceto}.languageweaver.com -p 4640
     set +x
     lp=localhost:$p
     echo lp
@@ -2506,7 +2513,7 @@ cmexx() {
     ssh $cmehost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests raccm $*"
 }
 
-chost=c-jgraehl.languageweaver.com
+chost=q.languageweaver.com
 phost=pontus.languageweaver.com
 horse=~/c/horse
 horsem() {
