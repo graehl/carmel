@@ -2,8 +2,91 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 HOST=${HOST:-$(hostname)}
-CXX11=g++-4.7
+if [[ $HOST = graehl.local ]] ; then
+    CXX11=g++-4.7
+else
+    CXX11=g++
+fi
+chost=c-jgraehl.languageweaver.com
+phost=pontus.languageweaver.com
+if [[ $HOST = $chost ]] ; then
+    export USE_BOOST_1_50=1
+fi
 DROPBOX=$(echo ~/dropbox)
+
+racm() {
+    (
+        set -e
+        racb ${1:-Debug}
+        shift || true
+        cd $racerbuild
+        set -x
+        local prog=$1
+        local maketar=
+        if [ "$prog" ] ; then
+            shift
+            #rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
+            if [[ ${prog#Test} = $prog ]] ; then
+                test=
+                tests=
+            else
+                maketar=$prog
+                prog=
+            fi
+        fi
+        if [[ $test ]] ; then
+            make check
+        elif [[ $prog ]] && [[ "$*" ]]; then
+            make -j$MAKEPROC $prog && $prog "$@"
+        else
+            make -j$MAKEPROC $maketar VERBOSE=1
+        fi
+        set +x
+        for t in $tests; do
+            ( set -e;
+                echo $t
+                td=$(dirname $t)
+                tn=$(basename $t)
+                testexe=$td/Test$tn
+                [[ -x $testexe ]] || testexe=$t/Test$t
+                $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
+            )
+        done
+    )
+}
+racc() {
+    racb ${1:-Debug}
+    shift || true
+    cd $racerbuild
+    if [[ $HOST = $chost ]] ; then
+        export USE_BOOST_1_50=1
+    fi
+    ccmake ../xmt "$@"
+}
+raccm() {
+    racc ${1:-Debug}
+    racm "$@"
+}
+ccmake() {
+    local d=${1:-..}
+    shift
+    (
+        rm -f CMakeCache.txt $d/CMakeCache.txt
+        if [[ $llvm ]] ; then
+            usellvm
+        fi
+        usegcc
+        local cxxf=$cxxflags
+        if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
+            useclang
+            cxxf=-fmacro-backtrace-limit=100
+        fi
+        set -x
+        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
+        set +x
+    )
+}
+
 gjam() {
     GJAMDIR=$DROPBOX/jam/qual/b
     local in=$1
@@ -565,7 +648,7 @@ withcc() {
         fi
     )
 }
-xmtx=/home/graehl/x
+xmtx=/.auto/home/graehl/x
 xmtr=$xmtx/RegressionTests
 if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
@@ -581,7 +664,7 @@ linwith() {
         cd ~/x;mend;
         local branch=$(git_branch)
         cjg macget $branch
-        cjg "$@"
+        cjg USE_BOOST_1_50=1 "$@"
     )
 }
 linregr() {
@@ -593,7 +676,7 @@ linjen() {
     mend
     (set -e;
         cjg macget $branch
-        cjg threads=$threads jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        cjg threads=$threads USE_BOOST_1_50=1 jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -602,6 +685,9 @@ jen() {
     local log=$HOME/tmp/jen.log.`timestamp`
     . xmtpath.sh
     usegcc
+    if [[ $HOST = $chost ]] ; then
+        export USE_BOOST_1_50=1
+    fi
     jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
@@ -2513,8 +2599,6 @@ cmexx() {
     ssh $cmehost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests raccm $*"
 }
 
-chost=q.languageweaver.com
-phost=pontus.languageweaver.com
 horse=~/c/horse
 horsem() {
     (
@@ -2691,77 +2775,6 @@ drac() {
     banner racerx svn
     cd $racer
     svndifflog 5 "$@"
-}
-racm() {
-    (
-        set -e
-        racb ${1:-Debug}
-        shift || true
-        cd $racerbuild
-        set -x
-        local prog=$1
-        local maketar=
-        if [ "$prog" ] ; then
-            shift
-            rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
-            if [[ ${prog#Test} = $prog ]] ; then
-                test=
-                tests=
-            else
-                maketar=$prog
-                prog=
-            fi
-        fi
-        if [[ $test ]] ; then
-            make check
-        elif [[ $prog ]] && [[ "$*" ]]; then
-            make -j$MAKEPROC $prog && $prog "$@"
-        else
-            make -j$MAKEPROC $maketar VERBOSE=1
-        fi
-        set +x
-        for t in $tests; do
-            ( set -e;
-                echo $t
-                td=$(dirname $t)
-                tn=$(basename $t)
-                testexe=$td/Test$tn
-                [[ -x $testexe ]] || testexe=$t/Test$t
-                $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
-            )
-        done
-    )
-}
-racc() {
-    racb ${1:-Debug}
-    shift || true
-    cd $racerbuild
-    ccmake ../xmt $cmarg
-}
-raccm() {
-    racc ${1:-Debug}
-    racm "$@"
-}
-ccmake() {
-    local d=${1:-..}
-    shift
-    (
-        rm -f CMakeCache.txt $d/CMakeCache.txt
-        if [[ $llvm ]] ; then
-            usellvm
-        fi
-        local ccache=/usr/local/bin/ccache
-        [[ -x $ccache ]] || ccache=
-        usegcc
-        local cxxf=$cxxflags
-        if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
-            useclang
-            cxxf=-fmacro-backtrace-limit=100
-        fi
-        set -x
-        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
-        set +x
-    )
 }
 runc() {
     ssh $chost "$*"
@@ -4988,25 +5001,11 @@ par() {
     set +x
 }
 
-cmakews() {
-    (cd $WSMT
-        [ "$HOST" = zergling ] || svn update
-        makews "$@"
-    )
-}
-
-cmakevest() {
-    cmakebin decoder libcdec.a
-    cmakebin vest
-}
 qjhu() {
     SGE_ROOT=/usr/local/share/SGE /usr/local/share/SGE/bin/lx24-x86/qlogin -l mem_free=9g
 }
 qelo() {
     elo qjhu
-}
-w10com() {
-    project=$WSMT svncom "$@"
 }
 mkdest() {
     if [ "$2" ] ; then
@@ -5015,14 +5014,6 @@ mkdest() {
         dest=`dirname "$1"`
         mkdir -p "$dest"
     fi
-}
-fromnlg1() {
-    mkdest "$@"
-    echo scp -r 'graehl@nlg0.isi.edu:'"$1" "$dest"
-    scp -r graehl@nlg0.isi.edu:"$1" "$dest"
-}
-fromnlg() {
-    forall fromnlg1 "$@"
 }
 
 fromhost1() {
@@ -5034,16 +5025,10 @@ fromhost1() {
         scp -r $user@$host:"$1" "$dest"
     )
 }
-fromlo1() {
-    user=jgraehl host=login.clsp.jhu.edu fromhost1 "$@"
-}
 fromhost() {
     local host=$1
     shift
     host=$host forall fromhost1 "$@"
-}
-fromlo() {
-    user=jgraehl fromhost login.clsp.jhu.edu "$@"
 }
 relhomeby() {
     ${relpath:-$UTIL/relpath} ~ "$@"
@@ -5094,24 +5079,6 @@ fromhpc() {
 }
 fromhpc1() {
     host=$HPCHOST fromhost1 "$@"
-}
-tonlg1() {
-    (
-        set -e
-        f=`relpath ~ $1`
-        cd
-        echo scp -r "$f" 'graehl@nlg0.isi.edu:'"`dirname $f`"
-        scp -r "$f" 'graehl@nlg0.isi.edu:'"`dirname $f`"
-    )
-}
-tonlg() {
-    forall tonlg1 "$@"
-}
-cplo() {
-    forall cplo1 "$@"
-}
-rfromlo() {
-    forall rfromlo1 "$@"
 }
 tcmi() {
     local d=$1
