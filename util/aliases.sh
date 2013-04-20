@@ -7,7 +7,8 @@ if [[ $HOST = graehl.local ]] ; then
 else
     CXX11=g++
 fi
-chost=c-jgraehl.languageweaver.com
+chost=c-jgraehl
+chostfull=$chost.languageweaver.com
 phost=pontus.languageweaver.com
 if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
@@ -419,9 +420,9 @@ if [[ $HOST = graehl.local ]] ; then
 fi
 cjg() {
     if [[ $ontunnel ]] ; then
-        sshvia $chost "$@"
+        sshvia $chost "$*"
     else
-        ssh $chost "$@"
+        ssh $chost "$*"
     fi
 }
 printyaml() {
