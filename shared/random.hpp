@@ -13,6 +13,11 @@
 
 #include <cmath> // also needed for boost/random :( (pow)
 #include <algorithm> // min for boost/random
+
+
+#include "warning_push.h"
+GCC_DIAG_IGNORE(attributes)
+
 //#include <boost/random.hpp>
 #include <boost/random/uniform_01.hpp>
 #include <boost/random/lagged_fibonacci.hpp>
@@ -21,6 +26,8 @@
 #if GRAEHL_USE_RANDOM_DEVICE
 #include <boost/random/random_device.hpp>
 #endif
+
+#include "warning_pop.h"
 
 #if GRAEHL_GLOBAL_RANDOM_USE_STD
 # include <cstdlib>
@@ -68,6 +75,9 @@ struct random_seed {
   template <class Configure>
   void configure(Configure &c) {
     c("random-seed",&seed)("if set, use as initial seed for RNG");
+  }
+  void operator = (random_seed_type x) {
+    seed = x;
   }
   operator random_seed_type() const { return seed ? *seed : default_random_seed(); }
 };

@@ -1173,9 +1173,14 @@ void test_small_vector_2()
   assert(!v3.empty());
   EXPECT_EQ(v3.size(),2);
   VectorInt v4=v3;
+  VectorInt v3b=v3;
   v3.append(v4.begin()+1,v4.end());
   EXPECT_EQ(v3.size(),3);
   EXPECT_EQ(v3[2],11);
+  v3b.insert(v3b.end(),v4.begin()+1,v4.end());
+  EXPECT_EQ(v3b.size(),3);
+  EXPECT_EQ(v3b[2],11);
+
   v4=v3; // avoid aliasing
   v3.append(v4.begin(),v4.end());
   v4=v3;

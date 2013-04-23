@@ -52,3 +52,7 @@
 	excludesfile = /Users/graehl/.gitignore_global
 [diff]
 	algorithm = patience
+	renameLimit = 500
+[merge]
+	conflictstyle = diff3
+	rename-threshold = 80
