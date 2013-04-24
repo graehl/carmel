@@ -15,7 +15,26 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
+interactive() {
+    [[ $- =~ i ]]
+}
+bashcmdprompt() {
+    unset PROMPT_COMMAND
+    case $HOST in
+        graehl.local)
+            DISPLAYHOST=mac ;;
+        c-skohli*)
+            DISPLAYHOST=kohli ;;
+        c-jgraehl*)
+            DISPLAYHOST=g ;;
+        *)
+            DISPLAYHOST=$HOST
+    esac
 
+    export PS1="\e]0;[$DISPLAYHOST] \w\007[$DISPLAYHOST] \w\$ "
+    set -T
+    trap 'printf "\\e]0;[$DISPLAYHOST] %s\\007" "$BASH_COMMAND"' DEBUG
+}
 to5star() {
     mv "$@" ~/music/local/[5star]/
 }
@@ -29,9 +48,9 @@ sk() {
     chost=c-skohli sc
 }
 kwith() {
-(set -x
-    chost=c-skohli linwith "$@"
-)
+    (set -x
+        chost=c-skohli linwith "$@"
+    )
 }
 kjen() {
     chost=c-skohli linjen "$@"
@@ -673,6 +692,9 @@ xmtx=/.auto/home/graehl/x
 xmtr=$xmtx/RegressionTests
 if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
+fi
+if [[ $HOST = c-skohli ]] ; then
+    xmtx=/.auto/home/graehl/x
 fi
 substxmt() {
     (
@@ -1991,6 +2013,14 @@ view() {
     fi
 }
 realgit=`which git`
+substigrep() {
+    local repl=$1
+    (set -e
+        require_file "$repl"
+        shift
+        substi $repl $(ag -l "$@")
+    )
+}
 substi() {
     (set -e
         local tr=$1

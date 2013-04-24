@@ -442,10 +442,6 @@ set-eterm-dir() {
     history -a # Write history to disk.
 }
 
-if ! bash --version | grep -q 2.05 ; then
-    . ~/bin/autojump.bash
-fi
-
 if false && [ "$TERM" = "eterm-color" ]; then
     PROMPT_COMMAND="$PROMPT_COMMAND ; set-eterm-dir"
 fi
