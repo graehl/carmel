@@ -7,6 +7,7 @@ if [[ $HOST = graehl.local ]] ; then
 else
     CXX11=g++
 fi
+export CCACHE_BASEDIR=$(realpath ~/x)
 chost=c-jgraehl
 chostfull=$chost.languageweaver.com
 phost=pontus.languageweaver.com
@@ -859,7 +860,7 @@ save12() {
     [[ -f $out ]] && mv "$out" "$out~"
     shift
     echo2 saving output $out
-    ( if [[ $header ]] ; then
+    ( if ! [[ $quiet ]] ; then
         echo "$@";echo
         fi
         "$@" 2>&1) | tee $out | ${page:=cat}
