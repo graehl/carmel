@@ -227,9 +227,9 @@ toppsq() {
 }
 lnccache() {
     local f
-    local ccache="/usr/local/bin/ccache"
+    local ccache=$(echo ~/bin/ccache)
     for f in "$@" ; do
-        local g=/usr/local/bin/ccache-`basename $f`
+        local g=$ccache-`basename $f`
         cat > $g <<EOF
 #!/bin/bash
 exec $ccache $f "\$@"
@@ -619,15 +619,17 @@ gitrecycle() {
     git log --diff-filter=D --summary | grep delete
 }
 useclang() {
-    export CC="/usr/local/bin/ccache-cc$GCC_SUFFIX"
-    export CXX="/usr/local/bin/ccache-c++$GCC_SUFFIX"
+    local ccache=${ccache:-$(echo ~/bin/ccache)}
+    export CC="$ccache-cc$GCC_SUFFIX"
+    export CXX="$ccache-c++$GCC_SUFFIX"
 }
 usegcc() {
     if [[ $HOST = graehl.local ]] ; then
         usegccnocache
     else
-        export CC="/usr/local/bin/ccache-gcc$GCC_SUFFIX"
-        export CXX="/usr/local/bin/ccache-g++$GCC_SUFFIX"
+        local ccache=${ccache:-$(echo ~/bin/ccache)}
+        export CC="$ccache-gcc$GCC_SUFFIX"
+        export CXX="$ccache-g++$GCC_SUFFIX"
     fi
     echo2 CC=$CC CXX=$CXX
 }
@@ -636,7 +638,7 @@ usegccnocache() {
     export CXX="g++"
 }
 usellvm() {
-    local ccache="/usr/local/bin/ccache"
+    local ccache=${ccache:-$(echo ~/bin/ccache)}
     local gcc=$GCC_PREFIX
     local llvm=/usr/local/llvm
     export PATH=$llvm/bin:$llvm/sbin:$PATH
@@ -1526,10 +1528,11 @@ if [[ $HOST = graehl.local ]] ; then
 fi
 gcc47() {
     if [[ $HOST = graehl.local ]] ; then
+        local ccache=${ccache:-$(echo ~/bin/ccache)}
         prepend_path $GCC_PREFIX
         add_ldpath $GCC_PREFIX/lib
-        export CC="/usr/local/bin/ccache $GCC_BIN/gcc"
-        export CXX="/usr/local/bin/ccache $GCC_BIN/g++"
+        export CC="$ccache $GCC_BIN/gcc"
+        export CXX="$ccache $GCC_BIN/g++"
     fi
 }
 maketest() {
