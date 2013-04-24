@@ -15,889 +15,858 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 
-
-gjam() {
-    GJAMDIR=$DROPBOX/jam/qual/b
-    local in=$1
-    shift
-    local cc=$1
+to5star() {
+    mv "$@" ~/music/local/[5star]/
+}
+toscraps() {
+    mv "$@" ~/dropbox/music-scraps/
+}
+stt() {
+    StatisticalTokenizerTrain "$@"
+}
+hgtrie() {
+    StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
+        --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
+}
+macflex() {
+    LDFLAGS+=" -L/usr/local/opt/flex/lib"
+    CPPFLAGS+=" -I/usr/local/opt/flex/include"
+    CFLAGS+=" -I/usr/local/opt/flex/include"
+    export LDFLAGS CPPFLAGS CFLAGS
+}
+racm() {
     (
-        [[ -f $cc ]] || cc=solve.cc
-        [[ -s $cc ]] || cd $GJAMDIR
-        shift
-        if [[ $in ]] ; then
-            cp $in in
-        fi
-        require_file in
         set -e
-        set -x
-        $CXX11 -O3 -g --std=c++11 $cc -o solve
-        ./solve
-        set +x
-        out=out
-        if [[ $in ]] ; then
-            basein=`basename $in`
-            out=${basein%.in}.out
-            cp out $out
-        else
-            in=in
-        fi
-        tailn=20 preview $in $out
-        wc -l $in $out
-        )
-    }
-    to5star() {
-        mv "$@" ~/music/local/[5star]/
-    }
-    toscraps() {
-        mv "$@" ~/dropbox/music-scraps/
-    }
-    stt() {
-        StatisticalTokenizerTrain "$@"
-    }
-    hgtrie() {
-        StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
-            --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
-    }
-    macflex() {
-        LDFLAGS+=" -L/usr/local/opt/flex/lib"
-        CPPFLAGS+=" -I/usr/local/opt/flex/include"
-        CFLAGS+=" -I/usr/local/opt/flex/include"
-        export LDFLAGS CPPFLAGS CFLAGS
-    }
-    racm() {
-        (
-            set -e
-            racb ${1:-Debug}
-            shift || true
-            cd $racerbuild
-            set -x
-            local prog=$1
-            local maketar=
-            if [ "$prog" ] ; then
-                shift
-            #rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
-                if [[ ${prog#Test} = $prog ]] ; then
-                    test=
-                    tests=
-                else
-                    maketar=$prog
-                    prog=
-                fi
-            fi
-            if [[ $test ]] ; then
-                make check
-            elif [[ $prog ]] && [[ "$*" ]]; then
-                make -j$MAKEPROC $prog && $prog "$@"
-            else
-                make -j$MAKEPROC $maketar VERBOSE=1
-            fi
-            set +x
-            for t in $tests; do
-                ( set -e;
-                    echo $t
-                    td=$(dirname $t)
-                    tn=$(basename $t)
-                    testexe=$td/Test$tn
-                    [[ -x $testexe ]] || testexe=$t/Test$t
-                    $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
-                )
-            done
-        )
-    }
-    racc() {
         racb ${1:-Debug}
         shift || true
         cd $racerbuild
-        if [[ $HOST = $chost ]] ; then
-            export USE_BOOST_1_50=1
+        set -x
+        local prog=$1
+        local maketar=
+        if [ "$prog" ] ; then
+            shift
+            #rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
+            if [[ ${prog#Test} = $prog ]] ; then
+                test=
+                tests=
+            else
+                maketar=$prog
+                prog=
+            fi
         fi
-        ccmake ../xmt $cmarg "$@"
-    }
-    raccm() {
-        racc ${1:-Debug}
-        racm "$@"
-    }
-    ccmake() {
-        local d=${1:-..}
-        shift
-        (
-            rm -f CMakeCache.txt $d/CMakeCache.txt
-            if [[ $llvm ]] ; then
-                usellvm
-            fi
-            usegcc
-            local cxxf=$cxxflags
-            if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
-                useclang
-                cxxf=-fmacro-backtrace-limit=100
-            fi
-            set -x
-            CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
-            set +x
-        )
-    }
-    savecppch() {
-        local OUT=${2:-$HOME/tmp/cppcheck-$(basename $CODE_PATH)}
-        save12 $OUT cppch $1
-    }
-    cppch() {
+        if [[ $test ]] ; then
+            make check
+        elif [[ $prog ]] && [[ "$*" ]]; then
+            make -j$MAKEPROC $prog && $prog "$@"
+        else
+            make -j$MAKEPROC $maketar VERBOSE=1
+        fi
+        set +x
+        for t in $tests; do
+            ( set -e;
+                echo $t
+                td=$(dirname $t)
+                tn=$(basename $t)
+                testexe=$td/Test$tn
+                [[ -x $testexe ]] || testexe=$t/Test$t
+                $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
+            )
+        done
+    )
+}
+racc() {
+    racb ${1:-Debug}
+    shift || true
+    cd $racerbuild
+    if [[ $HOST = $chost ]] ; then
+        export USE_BOOST_1_50=1
+    fi
+    ccmake ../xmt $cmarg "$@"
+}
+raccm() {
+    racc ${1:-Debug}
+    racm "$@"
+}
+ccmake() {
+    local d=${1:-..}
+    shift
+    (
+        rm -f CMakeCache.txt $d/CMakeCache.txt
+        if [[ $llvm ]] ; then
+            usellvm
+        fi
+        usegcc
+        local cxxf=$cxxflags
+        if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
+            useclang
+            cxxf=-fmacro-backtrace-limit=100
+        fi
+        set -x
+        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
+        set +x
+    )
+}
+savecppch() {
+    local OUT=${2:-$HOME/tmp/cppcheck-$(basename `realpath $CODE_PATH`)}
+    save12 $OUT cppch $1
+}
+cppch() {
     # Suppressions are comments of the form "// cppcheck-suppress ErrorType" on the line preceeding the error
     # see https://www.icts.uiowa.edu/confluence/pages/viewpage.action?pageId=63471714
-        local code_path=${1:-.}
-        local extra_include_paths=${extra_include_paths:-$code_path}
-        if [[ $cppcheck_externals ]] ; then
-            EXTRA_INCLUDE_PATHS+=" $(echo $XMT_EXTERNALS_PATH/libraries/*/include)"
-        fi
-        local extrachecks=${extrachecks:-performance}
-        if [[ $extrachecks = none ]] ; then
-            extrachecks=
-        fi
-        local ignoreargs
-        local ignorefiles="" # list of (basename) filenames to skip
-        if [[ $ignorefiles ]] ; then
-            for f in $ignores ; do
-                ignoreargs+=" -i $f"
-            done
-        fi
-        local includeargs
-        if [[ $extra_include_paths ]] ; then
-            for f in $extra_include_paths ; do
-                includeargs+=" -I $f"
-            done
-        fi
-        local extraargs
-        if [[ $extrachecks ]] ; then
-            for f in $extracheck ; do
-                extraargs+=" --enable=$f"
-            done
-        fi
-        cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
+    local code_path=${1:-.}
+    local extra_include_paths=${extra_include_paths:-$code_path}
+    if [[ $cppcheck_externals ]] ; then
+        EXTRA_INCLUDE_PATHS+=" $(echo $XMT_EXTERNALS_PATH/libraries/*/include)"
+    fi
+    local extrachecks=${extrachecks:-performance}
+    if [[ $extrachecks = none ]] ; then
+        extrachecks=
+    fi
+    local ignoreargs
+    local ignorefiles="" # list of (basename) filenames to skip
+    if [[ $ignorefiles ]] ; then
+        for f in $ignores ; do
+            ignoreargs+=" -i $f"
+        done
+    fi
+    local includeargs
+    if [[ $extra_include_paths ]] ; then
+        for f in $extra_include_paths ; do
+            includeargs+=" -I $f"
+        done
+    fi
+    local extraargs
+    if [[ $extrachecks ]] ; then
+        for f in $extracheck ; do
+            extraargs+=" --enable=$f"
+        done
+    fi
+    cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
         --template '{file}:{line}: {severity},{id},{message}' \
         $includeargs $ignoreargs "$code_path" --error-exitcode=2"
-        cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
-            --template '{file}:{line}: {severity},{id},{message}' \
-            $includeargs $ignoreargs "$code_path" --error-exitcode=2
-    }
-    coma() {
-        git commit -a -m "$*"
-    }
-    assume() {
-        git update-index --assume-unchanged "$@"
-    }
-    unassume() {
-        git update-index --no-assume-unchanged "$@"
-    }
-    assumed() {
-        git ls-files -v | grep ^h | cut -c 3-
-    }
-    snapshot() {
-        git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
-    }
+    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
+        --template '{file}:{line}: {severity},{id},{message}' \
+        $includeargs $ignoreargs "$code_path" --error-exitcode=2
+}
+coma() {
+    git commit -a -m "$*"
+}
+assume() {
+    git update-index --assume-unchanged "$@"
+}
+unassume() {
+    git update-index --no-assume-unchanged "$@"
+}
+assumed() {
+    git ls-files -v | grep ^h | cut -c 3-
+}
+snapshot() {
+    git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
+}
 
-    pepignores=E501
+pepignores=E501
 #,E401
-    flake() {
-        flake8 --ignore=$pepignores "$@"
-    }
-    pep() {
-        pep8 --ignore=$pepignores "$@"
-    }
-    bakdocs() {
-        (
-            cd ~/x/docs
-            scp *.r *.rmd *.md *.txt $chost:projects/docs
-        )
-    }
-    cuesplit() {
-        local cue=${1:?args file.cue [file.flac]}
-        local flac=${2:-${cue%.cue}.flac}
-        require_files $cue $flac
-        shntool split -f $cue -o 'flac flac --output-name=%f -' -t '%n-%p-%t' $flac
-    }
-    stripx() {
-        strip "$@"
-        upx "$@"
-    }
-    cpstripx() {
-        local from=$1
-        local to=${2:?from to}
-        (set -e
-            require_file $from
-            cp $from $to
-            chmod +x $to
-            stripx $to
-        )
-    }
-    topps() {
-        local pid=${1?args PID N secperN}
-        save12 ${out:-top.$pid} top -b -n ${2:-1000} -d ${3:-10} -p $pid
-    }
-    toppsq() {
-        topps "$@" 2>/dev/null >/dev/null
-    }
-    lnccache() {
-        local f
-        local ccache="/usr/local/bin/ccache"
-        for f in "$@" ; do
-            local g=/usr/local/bin/ccache-`basename $f`
-            cat > $g <<EOF
+flake() {
+    flake8 --ignore=$pepignores "$@"
+}
+pep() {
+    pep8 --ignore=$pepignores "$@"
+}
+bakdocs() {
+    (
+        cd ~/x/docs
+        scp *.r *.rmd *.md *.txt $chost:projects/docs
+    )
+}
+cuesplit() {
+    local cue=${1:?args file.cue [file.flac]}
+    local flac=${2:-${cue%.cue}.flac}
+    require_files $cue $flac
+    shntool split -f $cue -o 'flac flac --output-name=%f -' -t '%n-%p-%t' $flac
+}
+stripx() {
+    strip "$@"
+    upx "$@"
+}
+cpstripx() {
+    local from=$1
+    local to=${2:?from to}
+    (set -e
+        require_file $from
+        cp $from $to
+        chmod +x $to
+        stripx $to
+    )
+}
+topps() {
+    local pid=${1?args PID N secperN}
+    save12 ${out:-top.$pid} top -b -n ${2:-1000} -d ${3:-10} -p $pid
+}
+toppsq() {
+    topps "$@" 2>/dev/null >/dev/null
+}
+lnccache() {
+    local f
+    local ccache="/usr/local/bin/ccache"
+    for f in "$@" ; do
+        local g=/usr/local/bin/ccache-`basename $f`
+        cat > $g <<EOF
 #!/bin/bash
 exec $ccache $f "\$@"
 EOF
         chmod +x $g
         echo $g
+    done
+}
+findsize1() {
+    tailn=100 preview `find . -name '*pp' -size 1` > ~/tmp/size1
+}
+expsh() {
+    perl -ne 'chomp;print qq{echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
+}
+condorexp() {
+    local f=$1/jobs.condor
+    require_file $f
+    condor_submit $f
+    echo ls log/$f/
+}
+exp() {
+    local f=${1%.sh}
+    (set -e
+        require_file $f.sh
+        create-dir.pl $f
+        condorexp $f
+    )
+}
+redodo() {
+    for f in "$@"; do
+        redo-ifchange ${f%.do}
+    done
+}
+reallr() {
+    redodo `find ${*:-.} -name '*.do'`
+}
+cleanall() {
+    noredo=1 clean=1 reall "$@"
+}
+reall() {
+    local redos
+    for d in ${*:-.}; do
+        for f in $d/*.do; do
+            redos+=" ${f%.do}"
         done
-    }
-    findsize1() {
-        tailn=100 preview `find . -name '*pp' -size 1` > ~/tmp/size1
-    }
-    expsh() {
-        perl -ne 'chomp;print qq{echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
-    }
-    condorexp() {
-        local f=$1/jobs.condor
-        require_file $f
-        condor_submit $f
-        echo ls log/$f/
-    }
-    exp() {
-        local f=${1%.sh}
-        (set -e
-            require_file $f.sh
-            create-dir.pl $f
-            condorexp $f
+    done
+    if [[ $clean ]] ; then
+        rm -fv $redos
+        for f in $redos; do
+            rm -fv $f.redo?.tmp
+        done
+    fi
+    if ! [[ $noredo ]] ; then
+        (
+            set -x
+            redo-ifchange $redos
+            set +x
         )
-    }
-    redodo() {
-        for f in "$@"; do
-            redo-ifchange ${f%.do}
-        done
-    }
-    reallr() {
-        redodo `find ${*:-.} -name '*.do'`
-    }
-    cleanall() {
-        noredo=1 clean=1 reall "$@"
-    }
-    reall() {
-        local redos
-        for d in ${*:-.}; do
-            for f in $d/*.do; do
-                redos+=" ${f%.do}"
-            done
-        done
-        if [[ $clean ]] ; then
-            rm -fv $redos
-            for f in $redos; do
-                rm -fv $f.redo?.tmp
-            done
+    fi
+}
+re() {
+    redo-ifchange "$@"
+}
+dedup() {
+    local f="$(filename_from $*)"
+    catz "$@" | sort | uniq > $f.uniq
+    (wc $* ; wc $f.uniq) | tee $f.uniq.wc
+}
+savedo() {
+    local dir=${1:?arg1: dir to save .do outputs to}
+    mkdir -p $dir
+    local cmd=cp
+    local cmdargs=-a
+    if [[ $mv ]] ; then
+        cmd=mv
+        cmdargs=
+    fi
+    for f in `find . -name '*.do'`; do
+        local o=${f%.do}
+        if [[ -f $o ]] ; then
+            set -x
+            cp -a $f $dir/$f
+            $cmd $cmdargs $o $dir/$o
+            ls -l $dir/$f $dir/$o
         fi
-        if ! [[ $noredo ]] ; then
-            (
-                set -x
-                redo-ifchange $redos
-                set +x
-            )
-        fi
-    }
-    re() {
-        redo-ifchange "$@"
-    }
-    dedup() {
-        local f="$(filename_from $*)"
-        catz "$@" | sort | uniq > $f.uniq
-        (wc $* ; wc $f.uniq) | tee $f.uniq.wc
-    }
-    savedo() {
-        local dir=${1:?arg1: dir to save .do outputs to}
-        mkdir -p $dir
-        local cmd=cp
-        local cmdargs=-a
-        if [[ $mv ]] ; then
-            cmd=mv
-            cmdargs=
-        fi
-        for f in `find . -name '*.do'`; do
-            local o=${f%.do}
-            if [[ -f $o ]] ; then
-                set -x
-                cp -a $f $dir/$f
-                $cmd $cmdargs $o $dir/$o
-                ls -l $dir/$f $dir/$o
-            fi
-        done
-    }
-    sherp() {
-        local CT=${CT:-/home/graehl/ct/main}
-        cd `dirname $1`
-        local apex=`basename $1`
-        if [[ -f $apex.apex ]] ; then
-            apex=$apex.apex
-        fi
-        local dir=${apex%.apex}
-        if [[ $cleancondor ]] && [[ -d $dir ]] ; then
-            echo rm -rf $dir
-            rm -rf $dir
-        fi
-        $CT/sherpa/App/sherpa --apex=$apex "$@"
-    }
-    resherp() {
-        cleancondor=1 sherp "$@"
-    }
-    clonect() {
-        git clone http://git02.languageweaver.com:29418/coretraining ct
-    }
-    macboost() {
-        BOOST_VERSION=1_50_0
-        BOOST_SUFFIX=
-        if true ; then
-            BOOST_SUFFIX=-xgcc42-mt-d-1_49
-            BOOST_VERSION=1_49_0
-        fi
-        if [[ -d $XMT_EXTERNALS_PATH ]] ; then
-            BOOST_INCLUDE=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/include
-            BOOST_LIB=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/lib
-            add_ldpath $BOOST_LIB
-        fi
-    }
-    tokeng() {
-        ${xmt:-$xmtx/Release/xmt/xmt} -c $xmtx/RegressionTests/RegexTokenizer/xmt.eng.yml -p eng-tokenize --log-config $xmtx/scripts/no.log.xml "$@"
-    }
+    done
+}
+sherp() {
+    local CT=${CT:-/home/graehl/ct/main}
+    cd `dirname $1`
+    local apex=`basename $1`
+    if [[ -f $apex.apex ]] ; then
+        apex=$apex.apex
+    fi
+    local dir=${apex%.apex}
+    if [[ $cleancondor ]] && [[ -d $dir ]] ; then
+        echo rm -rf $dir
+        rm -rf $dir
+    fi
+    $CT/sherpa/App/sherpa --apex=$apex "$@"
+}
+resherp() {
+    cleancondor=1 sherp "$@"
+}
+clonect() {
+    git clone http://git02.languageweaver.com:29418/coretraining ct
+}
+macboost() {
+    BOOST_VERSION=1_50_0
+    BOOST_SUFFIX=
+    if true ; then
+        BOOST_SUFFIX=-xgcc42-mt-d-1_49
+        BOOST_VERSION=1_49_0
+    fi
+    if [[ -d $XMT_EXTERNALS_PATH ]] ; then
+        BOOST_INCLUDE=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/include
+        BOOST_LIB=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/lib
+        add_ldpath $BOOST_LIB
+    fi
+}
+tokeng() {
+    ${xmt:-$xmtx/Release/xmt/xmt} -c $xmtx/RegressionTests/RegexTokenizer/xmt.eng.yml -p eng-tokenize --log-config $xmtx/scripts/no.log.xml "$@"
+}
 
-    rstudiopandoc() {
-        Rscript -e '
+rstudiopandoc() {
+    Rscript -e '
 options(rstudio.markdownToHTML =
   function(inputFile, outputFile) {
     system(paste("pandoc", shQuote(inputFile), "--webtex", "--latex-engine=xelatex", "--self-contained", "-o", shQuote(outputFile)))
   }
 )
 '
-    }
-    panpdf() {
-        local in=${1?in}
-        local inbase=${in%.md}
-        local out=${2:-$inbase.pdf}
-        (
-            texpath
-            if [[ ! -f $in ]] ; then
-                in=$inbase.md
-            fi
-            set -e
-            require_file $in
-            set -x
-            local geom="-V geometry=${paper:-letter}paper -V geometry=margin=${margin:-0.5cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}"
-            pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
-            if [[ $open ]] ; then
-                open $out
-            fi
-        )
-    }
-    rmd() {
-        RMDFILE=${1?missing RMDFILE.rmd}
-        RMDFILE=${RMDFILE%.rmd}
-        (
-            set -e
-            set -x
-            cd `dirname $RMDFILE`
-            RMDFILE=`basename $RMDFILE`
-            Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
+}
+panpdf() {
+    local in=${1?in}
+    local inbase=${in%.md}
+    local out=${2:-$inbase.pdf}
+    (
+        texpath
+        if [[ ! -f $in ]] ; then
+            in=$inbase.md
+        fi
+        set -e
+        require_file $in
+        set -x
+        local geom="-V geometry=${paper:-letter}paper -V geometry=margin=${margin:-0.5cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}"
+        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
+        if [[ $open ]] ; then
+            open $out
+        fi
+    )
+}
+rmd() {
+    RMDFILE=${1?missing RMDFILE.rmd}
+    RMDFILE=${RMDFILE%.rmd}
+    (
+        set -e
+        set -x
+        cd `dirname $RMDFILE`
+        RMDFILE=`basename $RMDFILE`
+        Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
 #markdownToHTML('$RMDFILE.md', '$RMDFILE.html', options=c('use_xhml'))
-            pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
-            if [[ $pdf ]] ; then
-                panpdf $RMDFILE.md
-            elif [[ $open ]] ; then
-                open $RMDFILE.html
-            fi
-        )
-    }
-    gitgrep() {
-        local expr=$1
-        shift
-        echo2 $expr
-        git rev-list --all -- "$@"
-        git rev-list --all -- "$@" | (
-            while read revision; do
-                git grep -e "$expr" $revision -- "$@"
-            done
-        )
+        pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
+        if [[ $pdf ]] ; then
+            panpdf $RMDFILE.md
+        elif [[ $open ]] ; then
+            open $RMDFILE.html
+        fi
+    )
+}
+gitgrep() {
+    local expr=$1
+    shift
+    echo2 $expr
+    git rev-list --all -- "$@"
+    git rev-list --all -- "$@" | (
+        while read revision; do
+            git grep -e "$expr" $revision -- "$@"
+        done
+    )
 # git rev-list --all -- "$@" | xargs -I {} git grep -e "$expr" {} -- "$@"
-    }
-    subsync() {
-        git submodule sync "$@"
-    }
-    mp3split() {
-        mp3splt "$@"
-    }
-    ontunnel=
-    if [[ $HOST = graehl.local ]] ; then
-        ontunnel=1
-        /sbin/ifconfig > /tmp/ifcfg
-        if grep -q 10.110 /tmp/ifcfg; then
-            ontunnel=
-        fi
+}
+subsync() {
+    git submodule sync "$@"
+}
+mp3split() {
+    mp3splt "$@"
+}
+ontunnel=
+if [[ $HOST = graehl.local ]] ; then
+    ontunnel=1
+    /sbin/ifconfig > /tmp/ifcfg
+    if grep -q 10.110 /tmp/ifcfg; then
+        ontunnel=
     fi
-    cjg() {
-        if [[ $ontunnel ]] ; then
-            sshvia $chost ". ~/.e;$*"
-        else
-            ssh $chost ". ~/.e;$*"
-        fi
-    }
-    printyaml() {
-        ruby -ryaml -e 'y '"$*"
-    }
-    GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
-    GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
-    maco=10.110.5.15
-    macl=192.168.1.7
-    tunrdp() {
-        ssh -L33391:$1:3389 -p 4640 graehl@pontus.languageweaver.com
-    }
-    tsp() {
-        tunrdp tsp-xp1
-    }
-    lagra() {
+fi
+cjg() {
+    if [[ $ontunnel ]] ; then
+        sshvia $chost ". ~/.e;$*"
+    else
+        ssh $chost ". ~/.e;$*"
+    fi
+}
+printyaml() {
+    ruby -ryaml -e 'y '"$*"
+}
+GRAEHLSRC=${GRAEHLSRC:-`echo ~/g`}
+GLOBAL_REGTEST_YAML_ARGS="-c -n -v --dump-on-error"
+maco=10.110.5.15
+macl=192.168.1.7
+tunrdp() {
+    ssh -L33391:$1:3389 -p 4640 graehl@pontus.languageweaver.com
+}
+tsp() {
+    tunrdp tsp-xp1
+}
+lagra() {
  #tunrdp lagraeh02
-        tunrdp 10.110.5.5
-    }
-    sox() {
-        connect -S 127.0.0.1:12345 "$@"
-    }
-    gitp() {
-        GIT_PROXY_COMMAND=c:/msys/bin/sox.bat git "$@"
-    }
-    gitpf() {
-        gitp fetch http://localhost:29418/xmt "$@"
-    }
+    tunrdp 10.110.5.5
+}
+sox() {
+    connect -S 127.0.0.1:12345 "$@"
+}
+gitp() {
+    GIT_PROXY_COMMAND=c:/msys/bin/sox.bat git "$@"
+}
+gitpf() {
+    gitp fetch http://localhost:29418/xmt "$@"
+}
 
-    giteol() {
-        if ! [[ -f .gitattributes ]] ; then
-            echo '* text=auto' > .gitattributes
-            git add .gitattributes
-            git commit -m 'auto line-end'
-        fi
-        git rm --cached -r .
+giteol() {
+    if ! [[ -f .gitattributes ]] ; then
+        echo '* text=auto' > .gitattributes
+        git add .gitattributes
+        git commit -m 'auto line-end'
+    fi
+    git rm --cached -r .
 # Remove everything from the index.
 
-        git reset --hard
+    git reset --hard
 # Write both the index and working directory from git's database.
 
-        git add .
+    git add .
 # Prepare to make a commit by staging all the files that will get normalized.
 
 # This is your chance to inspect which files were never normalized. You should
 # get lots of messages like: "warning: CRLF will be replaced by LF in file."
 
-        git commit -m "Normalize line endings"
+    git commit -m "Normalize line endings"
 # Commit
-    }
-    spd() {
-        ~/x/scripts/speedtest-stat-tok.sh "$@"
-    }
-    gpush() {
-        (set -e
-            pushd ~/g
-            gcom "$@"
-            git pull
-            git push
-        )
-    }
-    mendre() {
-        cd ~/x
-        mend
-        bakre "$@"
-    }
-    bakre() {
-        bakthis ${1:-prebase}
-        upre
-    }
-    tryre() {
-        local branch=$(git_branch)
-        (set -e
-            local to=$branch.re
-            git branch -D $to || true
-            git checkout -b $to
-            up
-            git rebase master || git rebase --abort
-            co $branch
-            git branch -D $to
-        )
-    }
+}
+spd() {
+    ~/x/scripts/speedtest-stat-tok.sh "$@"
+}
+gpush() {
+    (set -e
+        pushd ~/g
+        gcom "$@"
+        git pull
+        git push
+    )
+}
+mendre() {
+    cd ~/x
+    mend
+    bakre "$@"
+}
+bakre() {
+    bakthis ${1:-prebase}
+    upre
+}
+tryre() {
+    local branch=$(git_branch)
+    (set -e
+        local to=$branch.re
+        git branch -D $to || true
+        git checkout -b $to
+        up
+        git rebase master || git rebase --abort
+        co $branch
+        git branch -D $to
+    )
+}
 
-    upre() {
-        (set -e
-            up
-            git rebase master
-        ) || git rebase --continue
-    }
-    showbest() {
-        for f in "$@" ; do
-            echo $f 1>&2
-            HgBest -n 1 $f -y 1 -Y 1 2>/dev/null
-            echo
-        done
-    }
-    tunhost="pontus.languageweaver.com"
-    tunport=4640
-    randomport() {
-        perl -e 'print int(12000+rand(10000))'
-    }
-    ssht() {
-        ssh -p $tunport $tunhost "$@"
-    }
-    sshvia() {
-        local lport=`randomport`
-        local rhost=$1
-        shift
-        echo via $lport to $rhost 1>&2
-        set -x
-        local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
-        ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh -p $lport localhost "$@"
-        set +x
-    }
-    clonex() {
-        (set -x
-            set -e
-            git clone ssh://localhost:29418/xmt x
-            cd x
-            machost=192.168.1.7
-            git remote add macw ssh://$machost:22/users/graehl/c/xmt
-            scp $machost:/users/graehl/c/xmt/.git/config/commit-msg .git/config/commit-msg
-        )
-    }
-    tunsocks() {
+upre() {
+    (set -e
+        up
+        git rebase master
+    ) || git rebase --continue
+}
+showbest() {
+    for f in "$@" ; do
+        echo $f 1>&2
+        HgBest -n 1 $f -y 1 -Y 1 2>/dev/null
+        echo
+    done
+}
+tunhost="pontus.languageweaver.com"
+tunport=4640
+randomport() {
+    perl -e 'print int(12000+rand(10000))'
+}
+ssht() {
+    ssh -p $tunport $tunhost "$@"
+}
+sshvia() {
+    local lport=`randomport`
+    local rhost=$1
+    shift
+    echo via $lport to $rhost 1>&2
+    set -x
+    local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
+    ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh -p $lport localhost "$@"
+    set +x
+}
+clonex() {
+    (set -x
+        set -e
+        git clone ssh://localhost:29418/xmt x
+        cd x
+        machost=192.168.1.7
+        git remote add macw ssh://$machost:22/users/graehl/c/xmt
+        scp $machost:/users/graehl/c/xmt/.git/config/commit-msg .git/config/commit-msg
+    )
+}
+tunsocks() {
 # ssh -f -N -D 1080 -p $tunport $tunhost "$@"
     #ssh -D 1082 -f -C -q -N -p $tunport $tunhost
-        ssh -f -C -q -N -D 12345 -p $tunport $tunhost
-    }
-    tunport() {
-        local port=${1:?usage: port [host] via tunhost:tunport $tunhost:$tunport}
-        local host=${2:-git02.languageweaver.com}
-        ssh -N -L $port:$host:$port -p $tunport $tunhost "$@"
-    }
-    ssht() {
-        ssh -p $tunport $tunhost "$@"
-    }
-    tunmac() {
-        tunport 22 $maco
-    }
-    tungerrit() {
+    ssh -f -C -q -N -D 12345 -p $tunport $tunhost
+}
+tunport() {
+    local port=${1:?usage: port [host] via tunhost:tunport $tunhost:$tunport}
+    local host=${2:-git02.languageweaver.com}
+    ssh -N -L $port:$host:$port -p $tunport $tunhost "$@"
+}
+ssht() {
+    ssh -p $tunport $tunhost "$@"
+}
+tunmac() {
+    tunport 22 $maco
+}
+tungerrit() {
     #tunport 29418 git02.languageweaver.com
-        ssh -L 29418:git02.languageweaver.com:29418 -L 3391:172.20.1.122:3389 -p $tunport $tunhost -N &
-    }
-    conf64() {
-        ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
-    }
-    zillaq() {
-        perl -n -e 'print $1,"\n" if m#<LocalFile>(.*)/[^/]*</LocalFile>#' "$@" | sort | uniq -c
-    }
-    cpfrom() {
-        cp "$2" "$1"
-    }
-    conflicts() {
-        perl -ne 'print "$1 " if /^CONFLICT.* in (.*)$/; print "$1 " if /^(.*): needs merge$/' "$@"
-    }
-    gitcontinue() {
-        git mergetool && git rebase --continue
-    }
-    gitrebase() {
-        (set -e
-            local last=${1:?usage: from-branch [HEAD]}
-            git rebase "$@" || gitcontinue
-        )
-    }
-    filtergcc() {
-        "$@" 2>&1 | filter-gcc-errors
-    }
-    gitstashun() {
-        echo stashing unadded changes only so you can commit part
-        git stash --keep-index
-    }
-    gitreplace() {
-        local branch=$(git_branch)
-        local to=${1:?arg1: destination branch e.g. master. replace by current branch}
-        (
-            set -e
-            showvars_required branch to
-            git merge --strategy=ours --no-commit $to
-            git commit -m "replace $to by $branch by merging"
-            git checkout $to
-            git merge $branch
-        )
-    }
-    gitrecycle() {
-        git log --diff-filter=D --summary | grep delete
-    }
-    useclang() {
-        export CC="/usr/local/bin/ccache-cc$GCC_SUFFIX"
-        export CXX="/usr/local/bin/ccache-c++$GCC_SUFFIX"
-    }
-    usegcc() {
-        if [[ $HOST = graehl.local ]] ; then
-            usegccnocache
-        else
-            export CC="/usr/local/bin/ccache-gcc$GCC_SUFFIX"
-            export CXX="/usr/local/bin/ccache-g++$GCC_SUFFIX"
-        fi
-        echo2 CC=$CC CXX=$CXX
-    }
-    usegccnocache() {
-        export CC="gcc"
-        export CXX="g++"
-    }
-    usellvm() {
-        local ccache="/usr/local/bin/ccache"
-        local gcc=$GCC_PREFIX
-        local llvm=/usr/local/llvm
-        export PATH=$llvm/bin:$llvm/sbin:$PATH
-        local gccm=$gcc/lib/gcc/x86_64-apple-darwin11.4.0
-        export LIBRARY_PATH=$llvm/lib:$gccarch/4.7.1:$gcc/lib/gcc:$gcc/lib
-        export CC="$ccache $llvm/bin/clang"
-        export CXX="$ccache $llvm/bin/clang++"
-    }
-    withcc() {
-        local source=$1
-        require_file $source
-        shift
-        (local sdir=`dirname $source`
-            cd $sdir
-            local exe=$(basename $source .cc)
-            exe=${exe%.cpp}
-            exe=${exe%.c}
-            local bexe=${bindir:-$sdir}/$exe
-            local cxx=${CXX:-/usr/local/gcc-4.7.1/bin/g++}
-            [[ -x $cxx ]] || cxx=/mingw/bin/g++
-            [[ -x $cxx ]] || cxx=g++
-            set -x
-            set -e
-            $cxx -O3 --std=c++${cxxstd:-11} $source -o $bexe
-            if [ "$run $*" ] ; then
-                $bexe "$@"
-            fi
-        )
-    }
-    xmtx=/.auto/home/graehl/x
-    xmtr=$xmtx/RegressionTests
-    if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
-        xmtx=/Users/graehl/x
+    ssh -L 29418:git02.languageweaver.com:29418 -L 3391:172.20.1.122:3389 -p $tunport $tunhost -N &
+}
+conf64() {
+    ./configure --prefix=/msys --host=x86_64-w64-mingw32 "$@"
+}
+zillaq() {
+    perl -n -e 'print $1,"\n" if m#<LocalFile>(.*)/[^/]*</LocalFile>#' "$@" | sort | uniq -c
+}
+cpfrom() {
+    cp "$2" "$1"
+}
+conflicts() {
+    perl -ne 'print "$1 " if /^CONFLICT.* in (.*)$/; print "$1 " if /^(.*): needs merge$/' "$@"
+}
+gitcontinue() {
+    git mergetool && git rebase --continue
+}
+gitrebase() {
+    (set -e
+        local last=${1:?usage: from-branch [HEAD]}
+        git rebase "$@" || gitcontinue
+    )
+}
+filtergcc() {
+    "$@" 2>&1 | filter-gcc-errors
+}
+gitstashun() {
+    echo stashing unadded changes only so you can commit part
+    git stash --keep-index
+}
+gitreplace() {
+    local branch=$(git_branch)
+    local to=${1:?arg1: destination branch e.g. master. replace by current branch}
+    (
+        set -e
+        showvars_required branch to
+        git merge --strategy=ours --no-commit $to
+        git commit -m "replace $to by $branch by merging"
+        git checkout $to
+        git merge $branch
+    )
+}
+gitrecycle() {
+    git log --diff-filter=D --summary | grep delete
+}
+useclang() {
+    export CC="/usr/local/bin/ccache-cc$GCC_SUFFIX"
+    export CXX="/usr/local/bin/ccache-c++$GCC_SUFFIX"
+}
+usegcc() {
+    if [[ $HOST = graehl.local ]] ; then
+        usegccnocache
+    else
+        export CC="/usr/local/bin/ccache-gcc$GCC_SUFFIX"
+        export CXX="/usr/local/bin/ccache-g++$GCC_SUFFIX"
     fi
-    substxmt() {
-        (
-            cd $xmtx/xmt
-            substi "$@" $(ack --ignore-dir=LWUtil --ignore-dir=graehl --cpp -f)
-        )
-    }
-    linwith() {
-        (set -e;
-            cd ~/x;mend;
-            local branch=$(git_branch)
-            cjg macget $branch
-            cjg USE_BOOST_1_50=1 "$@"
-        )
-    }
-    linregr() {
-        cjg yregr "$@"
-    }
-    linjen() {
-        cd $xmtx
+    echo2 CC=$CC CXX=$CXX
+}
+usegccnocache() {
+    export CC="gcc"
+    export CXX="g++"
+}
+usellvm() {
+    local ccache="/usr/local/bin/ccache"
+    local gcc=$GCC_PREFIX
+    local llvm=/usr/local/llvm
+    export PATH=$llvm/bin:$llvm/sbin:$PATH
+    local gccm=$gcc/lib/gcc/x86_64-apple-darwin11.4.0
+    export LIBRARY_PATH=$llvm/lib:$gccarch/4.7.1:$gcc/lib/gcc:$gcc/lib
+    export CC="$ccache $llvm/bin/clang"
+    export CXX="$ccache $llvm/bin/clang++"
+}
+withcc() {
+    local source=$1
+    require_file $source
+    shift
+    (local sdir=`dirname $source`
+        cd $sdir
+        local exe=$(basename $source .cc)
+        exe=${exe%.cpp}
+        exe=${exe%.c}
+        local bexe=${bindir:-$sdir}/$exe
+        local cxx=${CXX:-/usr/local/gcc-4.7.1/bin/g++}
+        [[ -x $cxx ]] || cxx=/mingw/bin/g++
+        [[ -x $cxx ]] || cxx=g++
+        set -x
+        set -e
+        $cxx -O3 --std=c++${cxxstd:-11} $source -o $bexe
+        if [ "$run $*" ] ; then
+            $bexe "$@"
+        fi
+    )
+}
+xmtx=/.auto/home/graehl/x
+xmtr=$xmtx/RegressionTests
+if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
+    xmtx=/Users/graehl/x
+fi
+substxmt() {
+    (
+        cd $xmtx/xmt
+        substi "$@" $(ack --ignore-dir=LWUtil --ignore-dir=graehl --cpp -f)
+    )
+}
+linwith() {
+    (set -e;
+        cd ~/x;mend;
         local branch=$(git_branch)
-        mend
-        (set -e;
-            cjg macget $branch
-            cjg threads=$threads USE_BOOST_1_50=1 jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
-    }
-    jen() {
-        cd $xmtx
-        local build=${1:-${BUILD:-Release}}
-        shift
-        local log=$HOME/tmp/jen.log.`timestamp`
-        . xmtpath.sh
-        usegcc
-        if [[ $HOST = $chost ]] ; then
-            export USE_BOOST_1_50=1
-        fi
-        jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
-        echo
-        echo $log
-    }
-    rmautosave() {
-        find . -name '\#*' -exec rm {} \;
-    }
-    gitdiffsub() {
-        PAGER= git diff "$@"
-        PAGER= git diff --submodule "$@"
-    }
-    gitdiff() {
-        git difftool --tool=opendiff "$@"
-    }
-    ret() {
+        cjg macget $branch
+        cjg USE_BOOST_1_50=1 "$@"
+    )
+}
+linregr() {
+    cjg yregr "$@"
+}
+linjen() {
+    cd $xmtx
+    local branch=$(git_branch)
+    mend
+    (set -e;
+        cjg macget $branch
+        cjg threads=$threads USE_BOOST_1_50=1 jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+}
+jen() {
+    cd $xmtx
+    local build=${1:-${BUILD:-Release}}
+    shift
+    local log=$HOME/tmp/jen.log.`timestamp`
+    . xmtpath.sh
+    usegcc
+    if [[ $HOST = $chost ]] ; then
+        export USE_BOOST_1_50=1
+    fi
+    jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
+    echo
+    echo $log
+}
+rmautosave() {
+    find . -name '\#*' -exec rm {} \;
+}
+gitdiffsub() {
+    PAGER= git diff "$@"
+    PAGER= git diff --submodule "$@"
+}
+gitdiff() {
+    git difftool --tool=opendiff "$@"
+}
+ret() {
     #cpshared
-        commt "$@"
-    }
-    shortstamp() {
-        date +%m.%d_%H.%M
-    }
-    raccmsave() {
-        local BUILD=${1:-Release}
-        cd $xmtx
-        local gbranch=$(git_branch)
-        if [[ $gbranch = "(no branch)" ]] ; then
-            gbranch=${branch:-headless}
-        fi
-        local binf=~/bin/xmt.$gbranch.`shortstamp`
-        BUILD=$BUILD makeh xmt && cp $xmtx/$BUILD/xmt/xmt $binf && ls -al $binf && [[ $clean ]] && rm ~/bin/xmt.$gbranch.* && cp $xmtx/$BUILD/xmt/xmt $binf
-        echo $binf
-        newxmt=$binf
-    }
-    pkill() {
-        local prefile=`mktemp /tmp/pgrep.pre.XXXXXX`
-        pgrep "$@" > $prefile
-        cat $prefile
-        kill `cat $prefile | cut -c1-5`
+    commt "$@"
+}
+shortstamp() {
+    date +%m.%d_%H.%M
+}
+raccmsave() {
+    local BUILD=${1:-Release}
+    cd $xmtx
+    local gbranch=$(git_branch)
+    if [[ $gbranch = "(no branch)" ]] ; then
+        gbranch=${branch:-headless}
+    fi
+    local binf=~/bin/xmt.$gbranch.`shortstamp`
+    BUILD=$BUILD makeh xmt && cp $xmtx/$BUILD/xmt/xmt $binf && ls -al $binf && [[ $clean ]] && rm ~/bin/xmt.$gbranch.* && cp $xmtx/$BUILD/xmt/xmt $binf
+    echo $binf
+    newxmt=$binf
+}
+pkill() {
+    local prefile=`mktemp /tmp/pgrep.pre.XXXXXX`
+    pgrep "$@" > $prefile
+    cat $prefile
+    kill `cat $prefile | cut -c1-5`
 # | xargs kill
-        echo before:
-        cat $prefile
-        sleep 1
-        echo now:
-        pgrep "$@"
-        rm $prefile
-    }
-    gccopt3() {
-        local f=$1
-        shift
-        local ofile=~/tmp/gopt3.E.`basename $f`
-        ${CXX:-g++} -fdump-tree-all -O${optimize:-3} -c "$f" "$@" -E -o $ofile
-        echo $ofile
+    echo before:
+    cat $prefile
+    sleep 1
+    echo now:
+    pgrep "$@"
+    rm $prefile
+}
+gccopt3() {
+    local f=$1
+    shift
+    local ofile=~/tmp/gopt3.E.`basename $f`
+    ${CXX:-g++} -fdump-tree-all -O${optimize:-3} -c "$f" "$@" -E -o $ofile
+    echo $ofile
 
-    }
-    gccasm3() {
-        local f=$1
-        shift
-        local ofile=~/tmp/gasm3.`basename $f`.s
-        local lfile=~/tmp/gasm3.`basename $f`.lst
-        ${CXX:-g++} -S -fverbose-asm -O${optimize:-3} -c "$f" "$@" -o $ofile
-        if [[ $lwarch = Apple ]] ; then
-            cp $ofile $lfile
+}
+gccasm3() {
+    local f=$1
+    shift
+    local ofile=~/tmp/gasm3.`basename $f`.s
+    local lfile=~/tmp/gasm3.`basename $f`.lst
+    ${CXX:-g++} -S -fverbose-asm -O${optimize:-3} -c "$f" "$@" -o $ofile
+    if [[ $lwarch = Apple ]] ; then
+        cp $ofile $lfile
+    else
+        as -alhnd $ofile > $lfile
+    fi
+    echo $lfile
+}
+sortk3() {
+    local f=$1
+    if [[ -f $f ]] && ! [[ $2 ]] ; then
+        local sf=$f.sorted
+        sort -k3 -n "$f" > $sf
+        if ! diff -q $sf $f ; then
+            echo sorted
+            mv $sf $f
         else
-            as -alhnd $ofile > $lfile
+            echo was already sorted
+            rm $sf
         fi
-        echo $lfile
-    }
-    sortk3() {
-        local f=$1
-        if [[ -f $f ]] && ! [[ $2 ]] ; then
-            local sf=$f.sorted
-            sort -k3 -n "$f" > $sf
-            if ! diff -q $sf $f ; then
-                echo sorted
-                mv $sf $f
-            else
-                echo was already sorted
-                rm $sf
-            fi
-        fi
-    }
-    xmtinstall() {
-        (set -e
-            cd $xmtx
-            local gitbranch=${gitbranch:-${2:-master}}
-            stamp=$gitbranch.`shortstamp`
-            raccm Release
-            cp $xmtx/Release/xmt/xmt ~/bin/xmt.$stamp
-            installed=$xmtx/Release.$stamp
-            cp -a $xmtx/Release $installed
-            find $installed -name CMakeFiles -exec rm -rf {} \; || true
-            find $installed -name Makefile -exec rm {} \;
-            find $installed -name \*.cmake -exec rm {} \;
-            ls -lr $xmtx/Release.$stamp
-        )
-    }
-    mv1() {
-        local to=$1
-        shift
-        if [[ $2 ]] ; then
-            echo2 'mv1 expects 1 or 2 args (last is source file, first is dest)'
+    fi
+}
+xmtinstall() {
+    (set -e
+        cd $xmtx
+        local gitbranch=${gitbranch:-${2:-master}}
+        stamp=$gitbranch.`shortstamp`
+        raccm Release
+        cp $xmtx/Release/xmt/xmt ~/bin/xmt.$stamp
+        installed=$xmtx/Release.$stamp
+        cp -a $xmtx/Release $installed
+        find $installed -name CMakeFiles -exec rm -rf {} \; || true
+        find $installed -name Makefile -exec rm {} \;
+        find $installed -name \*.cmake -exec rm {} \;
+        ls -lr $xmtx/Release.$stamp
+    )
+}
+mv1() {
+    local to=$1
+    shift
+    if [[ $2 ]] ; then
+        echo2 'mv1 expects 1 or 2 args (last is source file, first is dest)'
+    else
+        if [[ $1 ]] ; then
+            mv "$1" $to
         else
-            if [[ $1 ]] ; then
-                mv "$1" $to
-            else
-                mv "$1" .
-            fi
+            mv "$1" .
         fi
-    }
-    forpaste() {
-        local f
-        while read f; do
-            "$@" $f
-        done
-    }
-    yregr() {
-        BUILD=Release yreg "$@"
-    }
-    rexmt() {
-        (set -e
-            cd $xmtx
-            git pull --rebase
-            racm "$@"
-        )
-    }
-    rexmtr() {
-        BUILD=Release rexmt
-    }
-    rexmty() {
-        (set -e
-            rexmt
-            yreg "$@"
-        )
-    }
-    rexmtry() {
-        BUILD=Release rexmty
-    }
-    echo2() {
-        echo "$@" 1>&2
-    }
-    save12() {
-        local out="$1"
-        [[ -f $out ]] && mv "$out" "$out~"
-        shift
-        echo2 saving output $out
-        "$@" 2>&1 | tee $out | ${page:=cat}
-        echo2 saved output:
-        echo2 $out
-    }
-    atime() {
-        local proga=$1
-        shift
-        outa=`mktemp /tmp/$(basename $proga).out.XXXXXX`
-        $proga "$@" >$outa 2>&1
-        echo2 $proga "$@" "> $outa"
-        echo2 ::::::::: nrep=$nrep
-        time (for i in `seq 1 ${nrep:-1}`; do $proga "$@" >/dev/null 2>/dev/null; done ) 2>&1
-        echo2 "$proga done (exit=$?)"
-        echo2 =========
-    }
-    reptime() {
-        width=$1
-        shift
-        height=${1}
-        shift
-        input=$1
-        shift
-        proga=${1:?usage: reptime [repeat-width] [repeat-height] [input-file] [program] [args] ...}
-        shift
-        repn $width $input | replinen $height | atime $proga "$@"
-    }
-    abtime() {
-        proga=$1
-        progb=$2
-        shift
-        shift
-        atime $proga "$@"
-        atime $progb "$@"
-    }
-    replinen() {
-        perl -e '
+    fi
+}
+forpaste() {
+    local f
+    while read f; do
+        "$@" $f
+    done
+}
+yregr() {
+    BUILD=Release yreg "$@"
+}
+rexmt() {
+    (set -e
+        cd $xmtx
+        git pull --rebase
+        racm "$@"
+    )
+}
+rexmtr() {
+    BUILD=Release rexmt
+}
+rexmty() {
+    (set -e
+        rexmt
+        yreg "$@"
+    )
+}
+rexmtry() {
+    BUILD=Release rexmty
+}
+echo2() {
+    echo "$@" 1>&2
+}
+save12() {
+    local out="$1"
+    [[ -f $out ]] && mv "$out" "$out~"
+    shift
+    echo2 saving output $out
+    "$@" 2>&1 | tee $out | ${page:=cat}
+    echo2 saved output:
+    echo2 $out
+}
+atime() {
+    local proga=$1
+    shift
+    outa=`mktemp /tmp/$(basename $proga).out.XXXXXX`
+    $proga "$@" >$outa 2>&1
+    echo2 $proga "$@" "> $outa"
+    echo2 ::::::::: nrep=$nrep
+    time (for i in `seq 1 ${nrep:-1}`; do $proga "$@" >/dev/null 2>/dev/null; done ) 2>&1
+    echo2 "$proga done (exit=$?)"
+    echo2 =========
+}
+reptime() {
+    width=$1
+    shift
+    height=${1}
+    shift
+    input=$1
+    shift
+    proga=${1:?usage: reptime [repeat-width] [repeat-height] [input-file] [program] [args] ...}
+    shift
+    repn $width $input | replinen $height | atime $proga "$@"
+}
+abtime() {
+    proga=$1
+    progb=$2
+    shift
+    shift
+    atime $proga "$@"
+    atime $progb "$@"
+}
+replinen() {
+    perl -e '
 $n=shift;
 $m=$n;
 ($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
@@ -907,9 +876,9 @@ while(<>) {
   print;
  }
 }' "$@"
-    }
-    repn() {
-        perl -e '
+}
+repn() {
+    perl -e '
 $n=shift;
 $m=$n;
 ($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
@@ -923,9 +892,9 @@ while(<>) {
  }
 }
 ' "$@"
-    }
-    expn() {
-        perl -e '
+}
+expn() {
+    perl -e '
 $n=shift;
 $m=$n;
 ($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
@@ -938,153 +907,153 @@ while(<>) {
  }
 }
 ' "$@"
-    }
-    vocab() {
-        perl -ne 'chomp;for (split) {
+}
+vocab() {
+    perl -ne 'chomp;for (split) {
 push @w,$_ unless ($v{$_}++);
 }
 END { print "$v{$_} $_\n" for (@w) }
 ' "$@"
-    }
-    xmtspeed() {
-        logf=${logf:-~/tmp/xmtspeed.`shortstamp`}
-        save12 $logf xmt -c /c07_data/mhopkins/trainings/eng-chi-xmt/EC.mrx.pbmt.noisy.sep10.DeTok/XMTConfig.yml -p final-decode-no-cap-detok -i /home/akariuki/CA/Tests/CA-7xxx/xline.in.txt -o xline.out.txt 2>&1
-    }
-    linbuild() {
-        cd $xmtx
-        local branch=$(git_branch)
-        mend
-        cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
-    }
-    splitape() {
-        local file=${1%.ape}
-        file=${file%.}
-        (
-            set -e
-            set -x
-            cuebreakpoints "$file.cue" > "$file.offsets.txt"
-            shntool split -f "$file.offsets.txt" -o ape -n "$file" "$file.ape"
-        )
-    }
-    unhyphenate() {
-        perl -pe 's/(?<=\w\w)- (?=\w+)//' "$@"
-    }
-    cpshared() {
-        for f in $xmtx/xmt/graehl/shared/*; do
-            cp $f ~/g/shared
-        done
-    }
-    commshared() {
-        cpshared
-        commt "$@"
-    }
-    pgrep() {
-        local flags=ax
-        ps $flags | fgrep "$@" | grep -v grep
-    }
-    pgrepn() {
-        pgrep "$@" | cut -f1 -d' '
-    }
-    pgrepkill() {
-        local name=$1
-        shift
-        pgrepn "$1" | xargs -I PID kill "$@" PID
-    }
-    overwrite() {
-        if [[ $3 ]] ; then
-            echo error: should be overwrite target src = cp src target
-        fi
-        cp "${2}" "${1%,}"
-    }
-    dryreg() {
-        local args=${dryargs:--d}
-        (set -e;
-            cd $xmtx/RegressionTests
-            set -x
-            if [[ -d $1 ]] ; then
-                ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v "$@"
-            elif [[ -f $1 ]] ; then
-                ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y "$(basename $1)"
-            elif [[ $1 ]] ; then
-                ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y \*$1\*
-            else
-                ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v
-            fi
-            set +x
-        )
-    }
-
-    bakthis() {
-        local branch=$(git_branch)
-        if [[ $1 ]] ; then
-            local suf=
-            if [[ $1 ]] ; then
-                suf=".$1"
-            fi
-            local to=$branch.b$suf
-            killbranch $to
-            git checkout -b "$to"
-            git checkout $branch
-        fi
-    }
-
-    savethis() {
-        local branch=$(git_branch)
-        if [[ $1 ]] ; then
-            git checkout -b "$1"
-            git checkout $branch
-        fi
-    }
-    killbranch() {
-        forall killbranch1 "$@"
-    }
-    killbranch1() {
-        git branch -D "$1"
-    }
-    case $(uname) in
-        Darwin)
-            lwarch=Apple ;;
-        Linux)
-            lwarch=FC12 ;;
-        *)
-            lwarch=Windows ;;
-    esac
-    racer=$(echo $xmtx)
-    export WORKSPACE=$racer
-    racerext=$(echo ~/c/xmt-externals/$lwarch)
-    racerlib=$racerext/libraries
-    export WORKSPACE=$racer
-    export XMT_EXTERNALS_PATH=$racerext
-    GRAEHL_INCLUDE=$racer/xmt
-
-    ffmpegaudio1() {
-        local input=$1
-        ffmpeg -i "$input" -acodec copy "${input%.mp4}.aac"
-    }
-    ffmpegaudio() {
-        forall ffmpegaudio1 "$@"
-    }
-
-    jenkinsb() {
-        local b=${BUILD:-Debug}
-        local c=${2:---no-cleanup}
-        local a=${3:---no-archive}
-        CXX=${CXX:-g++} $WORKSPACE/jenkins/jenkins_buildscript $b $c $a
-    }
-    souph=98.158.26.222
-    macget() {
-        local branch=${1:?args: branch]}
+}
+xmtspeed() {
+    logf=${logf:-~/tmp/xmtspeed.`shortstamp`}
+    save12 $logf xmt -c /c07_data/mhopkins/trainings/eng-chi-xmt/EC.mrx.pbmt.noisy.sep10.DeTok/XMTConfig.yml -p final-decode-no-cap-detok -i /home/akariuki/CA/Tests/CA-7xxx/xline.in.txt -o xline.out.txt 2>&1
+}
+linbuild() {
+    cd $xmtx
+    local branch=$(git_branch)
+    mend
+    cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
+}
+splitape() {
+    local file=${1%.ape}
+    file=${file%.}
     (
         set -e
-        cd $xmtx
-        echo branch $branch tar $tar
-        git fetch mac
-        if [[ $force ]] ; then
-            git branch -D $branch || true
-            git checkout -b $branch remotes/mac/$branch
-        fi
-        git checkout remotes/mac/$branch
+        set -x
+        cuebreakpoints "$file.cue" > "$file.offsets.txt"
+        shntool split -f "$file.offsets.txt" -o ape -n "$file" "$file.ape"
     )
+}
+unhyphenate() {
+    perl -pe 's/(?<=\w\w)- (?=\w+)//' "$@"
+}
+cpshared() {
+    for f in $xmtx/xmt/graehl/shared/*; do
+        cp $f ~/g/shared
+    done
+}
+commshared() {
+    cpshared
+    commt "$@"
+}
+pgrep() {
+    local flags=ax
+    ps $flags | fgrep "$@" | grep -v grep
+}
+pgrepn() {
+    pgrep "$@" | cut -f1 -d' '
+}
+pgrepkill() {
+    local name=$1
+    shift
+    pgrepn "$1" | xargs -I PID kill "$@" PID
+}
+overwrite() {
+    if [[ $3 ]] ; then
+        echo error: should be overwrite target src = cp src target
+    fi
+    cp "${2}" "${1%,}"
+}
+dryreg() {
+    local args=${dryargs:--d}
+    (set -e;
+        cd $xmtx/RegressionTests
+        set -x
+        if [[ -d $1 ]] ; then
+            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v "$@"
+        elif [[ -f $1 ]] ; then
+            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y "$(basename $1)"
+        elif [[ $1 ]] ; then
+            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y \*$1\*
+        else
+            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v
+        fi
+        set +x
+    )
+}
+
+bakthis() {
+    local branch=$(git_branch)
+    if [[ $1 ]] ; then
+        local suf=
+        if [[ $1 ]] ; then
+            suf=".$1"
+        fi
+        local to=$branch.b$suf
+        killbranch $to
+        git checkout -b "$to"
+        git checkout $branch
+    fi
+}
+
+savethis() {
+    local branch=$(git_branch)
+    if [[ $1 ]] ; then
+        git checkout -b "$1"
+        git checkout $branch
+    fi
+}
+killbranch() {
+    forall killbranch1 "$@"
+}
+killbranch1() {
+    git branch -D "$1"
+}
+case $(uname) in
+    Darwin)
+        lwarch=Apple ;;
+    Linux)
+        lwarch=FC12 ;;
+    *)
+        lwarch=Windows ;;
+esac
+racer=$(echo $xmtx)
+export WORKSPACE=$racer
+racerext=$(echo ~/c/xmt-externals/$lwarch)
+racerlib=$racerext/libraries
+export WORKSPACE=$racer
+export XMT_EXTERNALS_PATH=$racerext
+GRAEHL_INCLUDE=$racer/xmt
+
+ffmpegaudio1() {
+    local input=$1
+    ffmpeg -i "$input" -acodec copy "${input%.mp4}.aac"
+}
+ffmpegaudio() {
+    forall ffmpegaudio1 "$@"
+}
+
+jenkinsb() {
+    local b=${BUILD:-Debug}
+    local c=${2:---no-cleanup}
+    local a=${3:---no-archive}
+    CXX=${CXX:-g++} $WORKSPACE/jenkins/jenkins_buildscript $b $c $a
+}
+souph=98.158.26.222
+macget() {
+    local branch=${1:?args: branch]}
+(
+    set -e
+    cd $xmtx
+    echo branch $branch tar $tar
+    git fetch mac
+    if [[ $force ]] ; then
+        git branch -D $branch || true
+        git checkout -b $branch remotes/mac/$branch
+    fi
+    git checkout remotes/mac/$branch
+)
 }
 macbuild() {
     local branch=${1:?args branch [target] [Debug|Release]}
@@ -3232,17 +3201,17 @@ mkstamps() {
         \end{center}
 EOF
 
-for i in `seq 1 $npages`; do
+        for i in `seq 1 $npages`; do
 # echo '\newpage' >> $stamp
-    echo '\mbox{} \newpage' \
-        >> $stamp
-done
+            echo '\mbox{} \newpage' \
+                >> $stamp
+        done
 
-echo '\end{document}' >> $stamp
+        echo '\end{document}' >> $stamp
 
-local sbase=${stamp%.tex}
-lat2pdf $sbase
-echo $sbase.pdf
+        local sbase=${stamp%.tex}
+        lat2pdf $sbase
+        echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
@@ -5601,4 +5570,37 @@ ming() {
     exe=${exe%.cpp}
     exe=${exe%.c}
     /mingw/bin/g++ --std=c++11 $src -o $exe "$@" && ./$exe
+}
+
+gjam() {
+    GJAMDIR=$DROPBOX/jam/qual/b
+    local in=$1
+    shift
+    local cc=$1
+    if ! [[ -f $cc ]] ; then
+        cc=solve.cc
+    fi
+    if ! [[ -s $cc ]] ; then
+        cd $GJAMDIR
+        shift
+    fi
+    if [[ $in ]] ; then
+        cp $in in
+    fi
+    require_file in
+    set -e
+    set -x
+    $CXX11 -O3 -g --std=c++11 $cc -o solve
+    ./solve
+    set +x
+    out=out
+    if [[ $in ]] ; then
+        basein=$(basename $in)
+        out=${basein%.in}.out
+        cp out $out
+    else
+        in=in
+    fi
+    tailn=20 preview $in $out
+    wc -l $in $out
 }
