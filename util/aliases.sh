@@ -14,91 +14,7 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
-stt() {
-    StatisticalTokenizerTrain "$@"
-}
-hgtrie() {
-    StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
-        --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
-}
-macflex() {
-    LDFLAGS+=" -L/usr/local/opt/flex/lib"
-    CPPFLAGS+=" -I/usr/local/opt/flex/include"
-    CFLAGS+=" -I/usr/local/opt/flex/include"
-    export LDFLAGS CPPFLAGS CFLAGS
-}
-racm() {
-    (
-        set -e
-        racb ${1:-Debug}
-        shift || true
-        cd $racerbuild
-        set -x
-        local prog=$1
-        local maketar=
-        if [ "$prog" ] ; then
-            shift
-            #rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
-            if [[ ${prog#Test} = $prog ]] ; then
-                test=
-                tests=
-            else
-                maketar=$prog
-                prog=
-            fi
-        fi
-        if [[ $test ]] ; then
-            make check
-        elif [[ $prog ]] && [[ "$*" ]]; then
-            make -j$MAKEPROC $prog && $prog "$@"
-        else
-            make -j$MAKEPROC $maketar VERBOSE=1
-        fi
-        set +x
-        for t in $tests; do
-            ( set -e;
-                echo $t
-                td=$(dirname $t)
-                tn=$(basename $t)
-                testexe=$td/Test$tn
-                [[ -x $testexe ]] || testexe=$t/Test$t
-                $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
-            )
-        done
-    )
-}
-racc() {
-    racb ${1:-Debug}
-    shift || true
-    cd $racerbuild
-    if [[ $HOST = $chost ]] ; then
-        export USE_BOOST_1_50=1
-    fi
-    ccmake ../xmt $cmarg "$@"
-}
-raccm() {
-    racc ${1:-Debug}
-    racm "$@"
-}
-ccmake() {
-    local d=${1:-..}
-    shift
-    (
-        rm -f CMakeCache.txt $d/CMakeCache.txt
-        if [[ $llvm ]] ; then
-            usellvm
-        fi
-        usegcc
-        local cxxf=$cxxflags
-        if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
-            useclang
-            cxxf=-fmacro-backtrace-limit=100
-        fi
-        set -x
-        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
-        set +x
-    )
-}
+
 
 gjam() {
     GJAMDIR=$DROPBOX/jam/qual/b
@@ -128,6 +44,97 @@ gjam() {
         fi
         tailn=20 preview $in $out
         wc -l $in $out
+        )
+    }
+    to5star() {
+        mv "$@" ~/music/local/[5star]/
+    }
+    toscraps() {
+        mv "$@" ~/dropbox/music-scraps/
+    }
+    stt() {
+        StatisticalTokenizerTrain "$@"
+    }
+    hgtrie() {
+        StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
+            --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
+    }
+    macflex() {
+        LDFLAGS+=" -L/usr/local/opt/flex/lib"
+        CPPFLAGS+=" -I/usr/local/opt/flex/include"
+        CFLAGS+=" -I/usr/local/opt/flex/include"
+        export LDFLAGS CPPFLAGS CFLAGS
+    }
+    racm() {
+        (
+            set -e
+            racb ${1:-Debug}
+            shift || true
+            cd $racerbuild
+            set -x
+            local prog=$1
+            local maketar=
+            if [ "$prog" ] ; then
+                shift
+            #rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
+                if [[ ${prog#Test} = $prog ]] ; then
+                    test=
+                    tests=
+                else
+                    maketar=$prog
+                    prog=
+                fi
+            fi
+            if [[ $test ]] ; then
+                make check
+            elif [[ $prog ]] && [[ "$*" ]]; then
+                make -j$MAKEPROC $prog && $prog "$@"
+            else
+                make -j$MAKEPROC $maketar VERBOSE=1
+            fi
+            set +x
+            for t in $tests; do
+                ( set -e;
+                    echo $t
+                    td=$(dirname $t)
+                    tn=$(basename $t)
+                    testexe=$td/Test$tn
+                    [[ -x $testexe ]] || testexe=$t/Test$t
+                    $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
+                )
+            done
+        )
+    }
+    racc() {
+        racb ${1:-Debug}
+        shift || true
+        cd $racerbuild
+        if [[ $HOST = $chost ]] ; then
+            export USE_BOOST_1_50=1
+        fi
+        ccmake ../xmt $cmarg "$@"
+    }
+    raccm() {
+        racc ${1:-Debug}
+        racm "$@"
+    }
+    ccmake() {
+        local d=${1:-..}
+        shift
+        (
+            rm -f CMakeCache.txt $d/CMakeCache.txt
+            if [[ $llvm ]] ; then
+                usellvm
+            fi
+            usegcc
+            local cxxf=$cxxflags
+            if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
+                useclang
+                cxxf=-fmacro-backtrace-limit=100
+            fi
+            set -x
+            CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
+            set +x
         )
     }
     savecppch() {
