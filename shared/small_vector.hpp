@@ -322,6 +322,7 @@ struct small_vector {
   }
 
   small_vector & operator=(small_vector const& o) {
+    if (&o == this) return *this;
     if (data.stack.sz_ <= kMaxInlineSize) {
       if (o.data.stack.sz_ <= kMaxInlineSize) {
         data.stack.sz_ = o.data.stack.sz_;

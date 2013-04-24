@@ -24,6 +24,24 @@ toscraps() {
 stt() {
     StatisticalTokenizerTrain "$@"
 }
+sk() {
+    chost=c-skohli sc
+}
+kwith() {
+(set -x
+    chost=c-skohli linwith "$@"
+)
+}
+kjen() {
+    chost=c-skohli linjen "$@"
+}
+gjen() {
+    (set -e
+        macget ${1:?mac-branch [jen args]}
+        shift
+        jen "$@"
+    )
+}
 hgtrie() {
     StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
         --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
@@ -664,7 +682,7 @@ linwith() {
         cd ~/x;mend;
         local branch=$(git_branch)
         cjg macget $branch
-        cjg USE_BOOST_1_50=1 "$@"
+        cjg "$@"
     )
 }
 linregr() {
@@ -676,7 +694,7 @@ linjen() {
     mend
     (set -e;
         cjg macget $branch
-        cjg threads=$threads USE_BOOST_1_50=1 jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        cjg threads=$threads jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -691,6 +709,12 @@ jen() {
     jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
+    grep FAIL $log | sort > $log.fails
+    cp $log.fails /tmp/last-fails
+    echo
+    cat /tmp/last-fails
+    echo
+    echo $log.fails
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -833,7 +857,10 @@ save12() {
     [[ -f $out ]] && mv "$out" "$out~"
     shift
     echo2 saving output $out
-    "$@" 2>&1 | tee $out | ${page:=cat}
+    ( if [[ $header ]] ; then
+        echo "$@";echo
+        fi
+        "$@" 2>&1) | tee $out | ${page:=cat}
     echo2 saved output:
     echo2 $out
 }
@@ -3206,17 +3233,17 @@ mkstamps() {
         \end{center}
 EOF
 
-        for i in `seq 1 $npages`; do
+for i in `seq 1 $npages`; do
 # echo '\newpage' >> $stamp
-            echo '\mbox{} \newpage' \
-                >> $stamp
-        done
+    echo '\mbox{} \newpage' \
+        >> $stamp
+done
 
-        echo '\end{document}' >> $stamp
+echo '\end{document}' >> $stamp
 
-        local sbase=${stamp%.tex}
-        lat2pdf $sbase
-        echo $sbase.pdf
+local sbase=${stamp%.tex}
+lat2pdf $sbase
+echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
