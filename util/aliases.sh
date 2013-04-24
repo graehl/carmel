@@ -107,8 +107,10 @@ ccmake() {
     )
 }
 savecppch() {
-    local OUT=${2:-$HOME/tmp/cppcheck-$(basename `realpath $CODE_PATH`)}
-    save12 $OUT cppch $1
+    local code_path=${1:-.}
+    local OUT=${2:-$HOME/tmp/cppcheck-$(basename `realpath $code_path`)}
+    save12 $OUT cppch "$code_path"
+    echo2 $cppcheck_cmd
 }
 cppch() {
     # Suppressions are comments of the form "// cppcheck-suppress ErrorType" on the line preceeding the error
@@ -2648,8 +2650,11 @@ ncpus() {
             echo 1
         fi
     else
-        grep ^processor /proc/cpuinfo | head -n ${maxcpus:-10} | wc -l
+        echo $((`countcpus` + 2))
     fi
+}
+countcpus() {
+    grep ^processor /proc/cpuinfo | wc -l
 }
 MAKEPROC=${MAKEPROC:-$(ncpus)}
 
