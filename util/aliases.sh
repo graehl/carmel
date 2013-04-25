@@ -19,6 +19,49 @@ interactive() {
     [[ $- =~ i ]]
 }
 
+yreg() {
+    if [[ $xmtShell ]] ; then
+        makeh xmtShell
+    fi
+    local args="$yargs"
+# -t 2
+    (set -e;
+        local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
+        cd $xmtx/RegressionTests
+        set -x
+        THREADS=`ncpus`
+        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
+        MAXTHREADS=6
+        if [[ $THREADS -gt $MAXTHREADS ]] ; then
+            THREADS=$MAXTHREADS
+        fi
+        if [[ $THREADS -lt $MINTHREADS ]] ; then
+            THREADS=$MINTHREADS
+        fi
+        set -x
+        local STDERR_REGTEST
+        if [[ $verbose ]] ; then
+            STDERR_REGTEST="--dump-stderr"
+        fi
+        REGTESTPARAMS="-b $racer/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
+        if [[ $1 ]] ; then
+            if [[ -d $1 ]] ; then
+                save12 $logfile ./runYaml.py $args $REGTESTPARAMS "$@"
+            elif [[ -f $1 ]] ; then
+                save12 $logfile ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"
+            else
+                save12 $logfile ./runYaml.py $args $REGTESTPARAMS -y \*$1\*ml
+            fi
+        else
+            save12 $logfile ./runYaml.py $args $REGTESTPARAMS
+        fi
+        set +x
+        echo saved log:
+        echo
+        echo $logfile
+    )
+}
+
 #TODO: screws up line editing
 bashcmdprompt() {
     unset PROMPT_COMMAND
@@ -161,7 +204,7 @@ cppch() {
     local code_path=${1:-.}
     local extra_include_paths=${extra_include_paths:-$code_path}
     if [[ $cppcheck_externals ]] ; then
-        EXTRA_INCLUDE_PATHS+=" $(echo $XMT_EXTERNALS_PATH/libraries/*/include)"
+        extra_include_paths+=" $(echo $XMT_EXTERNALS_PATH/libraries/*/include)"
     fi
     local extrachecks=${extrachecks:-performance}
     if [[ $extrachecks = none ]] ; then
@@ -1014,9 +1057,7 @@ pgrepn() {
     pgrep "$@" | cut -f1 -d' '
 }
 pgrepkill() {
-    local name=$1
-    shift
-    pgrepn "$1" | xargs -I PID kill "$@" PID
+    pkill "$@"
 }
 overwrite() {
     if [[ $3 ]] ; then
@@ -1235,44 +1276,6 @@ xmend() {
     )
 }
 
-yreg() {
-    if [[ $xmtShell ]] ; then
-        makeh xmtShell
-    fi
-    local args="$yargs"
-# -t 2
-    (set -e;
-        cd $xmtx/RegressionTests
-        set -x
-        THREADS=`ncpus`
-        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
-        MAXTHREADS=6
-        if [[ $THREADS -gt $MAXTHREADS ]] ; then
-            THREADS=$MAXTHREADS
-        fi
-        if [[ $THREADS -lt $MINTHREADS ]] ; then
-            THREADS=$MINTHREADS
-        fi
-        set -x
-        local STDERR_REGTEST
-        if [[ $verbose ]] ; then
-            STDERR_REGTEST="--dump-stderr"
-        fi
-        REGTESTPARAMS="-b $racer/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
-        if [[ $1 ]] ; then
-            if [[ -d $1 ]] ; then
-                ./runYaml.py $args $REGTESTPARAMS "$@"
-            elif [[ -f $1 ]] ; then
-                ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"
-            else
-                ./runYaml.py $args $REGTESTPARAMS -y \*$1\*ml
-            fi
-        else
-            ./runYaml.py $args $REGTESTPARAMS
-        fi
-        set +x
-    )
-}
 
 fastreg() {
     (set -e;
@@ -1576,20 +1579,25 @@ maketest() {
 }
 makerun() {
     local exe=$1
+    if [[ $exe = test ]] ; then
+        exe=check
+    fi
     shift
     (set -e
         set -x
         cd $xmtx/${BUILD:-Debug}
         make $exe VERBOSE=1 -j$(ncpus)
-        set +x
-        local f=$(echo */$exe)
-        if [[ -x $f ]] ; then
-            if ! [[ $pathrun ]] ; then
-                if ! [[ $norun ]] ; then
-                    $f "$@" || exit $?
+        if [[ $exe != test ]] ; then
+            set +x
+            local f=$(echo */$exe)
+            if [[ -x $f ]] ; then
+                if ! [[ $pathrun ]] ; then
+                    if ! [[ $norun ]] ; then
+                        $f "$@" || exit $?
+                    fi
+                else
+                    $exe "$@" || exit $?
                 fi
-            else
-                $exe "$@" || exit $?
             fi
         fi
     )

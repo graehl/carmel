@@ -32,8 +32,8 @@
 namespace graehl {
 
 typedef CHILD_INDEX_TYPE child_index;
-
 template <class T,class C>
+// cppcheck-suppress mallocOnClassError
 struct nary_tree
 {
   typedef T crtp_type;

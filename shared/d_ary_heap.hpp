@@ -249,6 +249,7 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
     // warning: this is many fewer instructions but, at some point (when heap doesn't fit in Lx cache) it will become slower than repeated push().
     void set_index_in_heap(std::size_t i=0) {
       for (std::size_t e=data.size();i<e;++i) {
+        // cppcheck-suppress unusedScopedObject
         set(index_in_heap,data[i],i);
       }
     }
