@@ -758,25 +758,28 @@ cygwin() {
 
 
 ulimitsafe() {
-local want=${1:-131072}
-local type=${2:-s}
-local OS=`uname`
-if [ ${OS#CYGWIN} != "$OS" -a "$type" = "s" ] || [[ ${OS#MINGW} != $OS ]] ; then
+    local want=${1:-131072}
+    local type=${2:-s}
+    local OS=`uname`
+    if [[ ${OS#CYGWIN} != $OS ]] && [[ $type = s ]] ; then
 # error "cygwin doesn't allow stack ulimit change"
- return
-fi
-# fix stack limits
-local soft=`ulimit -S$type`
-if [ ! "$soft" = 'unlimited' ]; then
-    local hard=`ulimit -H$type`
-    if [ "$hard" = 'unlimited' ]; then
-        ulimit -S$type $want
-    elif [ $hard -gt $want ]; then
-        ulimit -S$type $want
-    else
-        ulimit -S$type $hard
+        return
     fi
-fi
+    if [[ ${OS#MINGW} != $OS ]] ; then
+        return
+    fi
+# fix stack limits
+    local soft=`ulimit -S$type`
+    if [ ! "$soft" = 'unlimited' ]; then
+        local hard=`ulimit -H$type`
+        if [ "$hard" = 'unlimited' ]; then
+            ulimit -S$type $want
+        elif [ $hard -gt $want ]; then
+            ulimit -S$type $want
+        else
+            ulimit -S$type $hard
+        fi
+    fi
 }
 
 balanced() {
@@ -2434,6 +2437,7 @@ workflowp=~/workflow
 homereal=`realpath ~`
 traperr
 getrealprog
+libg=$(echo ~/u)
 if ! [[ -d $libg ]] || ! [[ -f $libg/libgraehl.pl ]] ; then
   warn missing libgraehl.pl
 fi

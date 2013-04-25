@@ -453,8 +453,10 @@ export HYPERGRAPH_DBG=1
 . ~/local.sh
 ulimitsafe 262144 s
 
-if [[ $INSIDE_EMACS ]] ; then export PS1='|PrOmPt|\w|\w $ '; fi
-if [[ $INSIDE_EMACS ]] ; then export PS1='\w $ '; fi
+#if [[ $INSIDE_EMACS ]] ; then export PS1='|PrOmPt|\w|\w $ '; fi
+if [[ $INSIDE_EMACS ]] ; then
+ export PS1='\w $ '
+fi
 if [[ -f ~/.git-completion.bash ]] ; then
  . ~/.git-completion.bash
 fi

@@ -32,8 +32,8 @@ bashcmdprompt() {
     esac
 
     export PS1="\e]0;[$DISPLAYHOST] \w\007[$DISPLAYHOST] \w\$ "
-    set -T
-    trap 'printf "\\e]0;[$DISPLAYHOST] %s\\007" "$BASH_COMMAND"' DEBUG
+    #set -T
+    trap 'printf "\\e]0;[$DISPLAYHOST] %b\\007" "$BASH_COMMAND"' DEBUG
 }
 to5star() {
     mv "$@" ~/music/local/[5star]/
@@ -2711,7 +2711,8 @@ ncpus() {
             echo 1
         fi
     else
-        echo $((`countcpus` + 2))
+        local actual=`countcpus`
+        echo $((local+2))
     fi
 }
 countcpus() {
