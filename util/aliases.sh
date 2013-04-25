@@ -18,6 +18,8 @@ DROPBOX=$(echo ~/dropbox)
 interactive() {
     [[ $- =~ i ]]
 }
+
+#TODO: screws up line editing
 bashcmdprompt() {
     unset PROMPT_COMMAND
     case $HOST in
@@ -33,7 +35,7 @@ bashcmdprompt() {
 
     export PS1="\e]0;[$DISPLAYHOST] \w\007[$DISPLAYHOST] \w\$ "
     #set -T
-    trap 'printf "\\e]0;[$DISPLAYHOST] %b\\007" "$BASH_COMMAND"' DEBUG
+    trap 'printf "\\e]0;[$DISPLAYHOST] %b\\007" $BASH_COMMAND' DEBUG
 }
 to5star() {
     mv "$@" ~/music/local/[5star]/
@@ -65,6 +67,9 @@ gjen() {
 hgtrie() {
     StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
         --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
+}
+hgbest() {
+    xmt --input-type FHG --pipeline Best "$@"
 }
 macflex() {
     LDFLAGS+=" -L/usr/local/opt/flex/lib"
@@ -2712,7 +2717,7 @@ ncpus() {
         fi
     else
         local actual=`countcpus`
-        echo $((local+2))
+        echo $((actual+2))
     fi
 }
 countcpus() {
