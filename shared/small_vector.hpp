@@ -214,7 +214,7 @@ struct small_vector {
     init_range(range.begin(),range.end());
   }
  protected:
-  void init(size_type s, T v) {
+  void init(size_type s, T const& v) {
     assert(s<=kMaxSize);
     alloc(s);
     if (s <= kMaxInlineSize) {
@@ -352,8 +352,7 @@ struct small_vector {
   }
 
   ~small_vector() {
-    if (data.stack.sz_ > kMaxInlineSize)
-      free_heap();
+    free();
   }
 
   void clear() {
@@ -380,6 +379,10 @@ struct small_vector {
     clear();
     for(;i!=end;++i)
       push_back(*i);
+  }
+  void assign(size_type n, T const& v) {
+    free();
+    init(n, v);
   }
 
 

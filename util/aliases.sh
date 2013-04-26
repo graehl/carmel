@@ -28,7 +28,6 @@ yreg() {
     (set -e;
         local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
         cd $xmtx/RegressionTests
-        set -x
         THREADS=`ncpus`
         MINTHREADS=${MINTHREADS:-1} # unreliable with 1
         MAXTHREADS=6
@@ -692,7 +691,7 @@ useclang() {
     export CXX="$ccache-c++$GCC_SUFFIX"
 }
 usegcc() {
-    if [[ $HOST = graehl.local ]] ; then
+    if false && [[ $HOST = graehl.local ]] ; then
         usegccnocache
     else
         local ccache=${ccache:-$(echo ~/bin/ccache)}
@@ -2692,9 +2691,11 @@ sa2c() {
     )
 }
 s2c() {
+
     #elisp x/3rdParty
     (cd
         set -e
+        toc x/run.sh
         for d in u script bugs g .emacs.d .gitconfig ; do
             sync2 $chost $d
         done
