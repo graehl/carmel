@@ -28,7 +28,6 @@ yreg() {
     (set -e;
         local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
         cd $xmtx/RegressionTests
-        set -x
         THREADS=`ncpus`
         MINTHREADS=${MINTHREADS:-1} # unreliable with 1
         MAXTHREADS=6
