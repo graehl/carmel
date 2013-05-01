@@ -33,18 +33,27 @@ def is_terminal_fname(fname):
     "return if fname is '-' or '' or none - for stdin or stdout"
     return (fname is None) or fname=='-' or fname==''
 
-def open_in(fname):
-    "if fname is '-', return sys.stdin, else return open(fname,'rb') (or if fname ends in .gz, gzip.open it)"
-    return sys.stdin if is_terminal_fname(fname) else (gzip.open if fname.endswith('.gz') else open)(fname,'rb')
 
-def open_out(fname, append=False, mkdir=False):
-    """if fname is '-' or '' or none, return sys.stdout, else return open(fname,'w').
+def open_in(filename, openflags='b'):
+    """if filename is '-', return sys.stdin, else return open(filename,'rb')
+    (or if filename ends in .gz, gzip.open it)
+
+    """
+    if not filename: raise Exception("no input filename provided (sdllabs.io.open_in)")
+    if is_terminal_filename(filename):
+        return sys.stdin
+    return (gzip.open if filename.endswith('.gz') else open)(filename,'r'+openflags)
+
+
+def open_out(filename, append=False, mkdir=False, openflags='b'):
+    """if filename is '-' or '' or none, return sys.stdout, else return open(filename,'w').
       not sure if it's ok to close stdout, so let GC close file please."""
-    if is_terminal_fname(fname):
+    if not filename: raise Exception("no output filename provided (sdllabs.io.open_out)")
+    if is_terminal_filename(filename):
         return sys.stdout
     if mkdir:
-        mkdir_parent(fname)
-    return (gzip.open if fname.endswith('.gz') else open)(fname,'b'+'a' if append else 'w')
+        mkdir_parent(filename)
+    return (gzip.open if filename.endswith('.gz') else open)(filename, ('a' if append else 'w')+openflags)
 
 ##
 

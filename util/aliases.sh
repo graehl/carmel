@@ -19,6 +19,13 @@ interactive() {
     [[ $- =~ i ]]
 }
 
+pytest() {
+    local TERM=$TERM
+    if [[ $INSIDE_EMACS ]] ; then
+        TERM=dumb
+    fi
+    TERM=$TERM py.test --assert=reinterp "$@"
+}
 yreg() {
     if [[ $xmtShell ]] ; then
         makeh xmtShell
@@ -1582,24 +1589,21 @@ makerun() {
         exe=check
     fi
     shift
-    (set -e
-        set -x
-        cd $xmtx/${BUILD:-Debug}
-        make $exe VERBOSE=1 -j$(ncpus)
-        if [[ $exe != test ]] ; then
-            set +x
-            local f=$(echo */$exe)
-            if [[ -x $f ]] ; then
-                if ! [[ $pathrun ]] ; then
-                    if ! [[ $norun ]] ; then
-                        $f "$@" || exit $?
-                    fi
-                else
-                    $exe "$@" || exit $?
+    cd $xmtx/${BUILD:-Debug}
+    make $exe VERBOSE=1 -j$(ncpus)
+    if [[ $exe != test ]] ; then
+        set +x
+        local f=$(echo */$exe)
+        if [[ -x $f ]] ; then
+            if ! [[ $pathrun ]] ; then
+                if ! [[ $norun ]] ; then
+                    $f "$@" || exit $?
                 fi
+            else
+                $exe "$@" || exit $?
             fi
         fi
-    )
+    fi
 }
 makex() {
     norun=1 makerun "$@"
@@ -5654,7 +5658,7 @@ ming() {
 }
 
 gjam() {
-    GJAMDIR=$DROPBOX/jam/qual/b
+    GJAMDIR=$DROPBOX/jam/1a/a
     local in=$1
     shift
     local cc=$1
@@ -5675,6 +5679,8 @@ gjam() {
     ./solve
     set +x
     out=out
+    expect=$in.expect
+    [ -f $expect ] || expect=
     if [[ $in ]] ; then
         basein=$(basename $in)
         out=${basein%.in}.out
@@ -5682,6 +5688,18 @@ gjam() {
     else
         in=in
     fi
-    tailn=20 preview $in $out
+    tailn=20 preview $in $out $expect
     wc -l $in $out
 }
+
+addpythonpath() {
+    if ! [[ $PYTHONPATH = *$1* ]] ; then
+        if [[ $PYTHONPATH ]] ; then
+            export PYTHONPATH=$1:$PYTHONPATH
+        else
+            export PYTHONPATH=$1
+        fi
+    fi
+}
+
+addpythonpath $xmtx/python
