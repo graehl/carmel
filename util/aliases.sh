@@ -16,7 +16,11 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 interactive() {
-    [[ $- =~ i ]]
+    if [[ $- == *i* ]] ; then
+        true
+    else
+        false
+    fi
 }
 
 yreg() {
@@ -2054,7 +2058,7 @@ substrac() {
 }
 substcpp() {
     (
-        substi "$@" $(ack --cpp -f)
+        substi "$@" $(find . -name '*.?pp')
     )
 }
 substyml() {
