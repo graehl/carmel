@@ -195,15 +195,16 @@ struct small_vector {
     init((size_type)s,v);
   }
 
+
+  small_vector(T const* i,T const* end) {
+    init_range(i,end);
+  }
+
   template <class Iter>
   small_vector(Iter const& i,Iter const& end
                , typename enable_type<typename Iter::value_type>::type *enable=0)
       // couldn't SFINAE on std::iterator_traits<Iter> in gcc (for Iter=int)
   {
-    init_range(i,end);
-  }
-
-  small_vector(T const* i,T const* end) {
     init_range(i,end);
   }
 

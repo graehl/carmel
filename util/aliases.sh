@@ -15,6 +15,11 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
+
+launder() {
+  xattr -d com.apple.quarantine "$@"
+  xattr -d com.apple.metadata:kMDItemWhereFroms "$@"
+}
 interactive() {
     if [[ $- == *i* ]] ; then
         true
@@ -22,7 +27,14 @@ interactive() {
         false
     fi
 }
-
+githistory() {
+    gitstat "$@"
+}
+gitstat() {
+    local file=$1
+    shift
+    git log --stat "$@" -- "$file"
+}
 pytest() {
     local TERM=$TERM
     if [[ $INSIDE_EMACS ]] ; then
@@ -1130,8 +1142,10 @@ case $(uname) in
 esac
 racer=$(echo $xmtx)
 export WORKSPACE=$racer
-racerext=$(echo ~/c/xmt-externals/$lwarch)
+racerextbase=$(echo ~/c/xmt-externals)
+racerext=$racerextbase/$lwarch
 racerlib=$racerext/libraries
+racerlibshared=$racerextbase/Shared/cpp/libraries
 export WORKSPACE=$racer
 export XMT_EXTERNALS_PATH=$racerext
 GRAEHL_INCLUDE=$racer/xmt
@@ -1594,7 +1608,9 @@ makerun() {
     fi
     shift
     cd $xmtx/${BUILD:-Debug}
-    make $exe VERBOSE=1 -j$(ncpus)
+    local cpus=$(ncpus)
+    echo2 "$cpus cpus ... -j$cpus"
+    make $exe VERBOSE=1 -j$cpus
     if [[ $exe != test ]] ; then
         set +x
         local f=$(echo */$exe)
@@ -1833,6 +1849,7 @@ showcpp() {
             pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DTIXML_USE_TICPP -DBOOST_TEST_DYN_LINK -DHAVE_SRILM -DHAVE_KENLM -DHAVE_OPENFST -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$racerlib/utf8 -I$racerlib/boost_1_49_0/include -I$racerlib/lexertl-2012-07-26 -I$racerlib/log4cxx-0.10.0/include -I$racerlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$racerlib/BerkeleyDB.4.3/include -I/usr/local/include -I$racerlib/openfst-1.2.10/src -I$racerlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
                 -I $racerlib/db-5.3.15 \
                 -I $racerlib/yaml-cpp-0.3.0-newapi/include \
+                -I$racerlibshared/utf8 -I$racerlibshared/openfst-1.2.10/src -I$racerlibshared/tinyxmlcpp-2.5.4/include \
                 -E -x c++ -o $o -c "$f" && emacs $o
             popd
         done
@@ -2734,7 +2751,9 @@ ncpus() {
         fi
     else
         local actual=`countcpus`
-        echo $((actual+2))
+        local r=$((actual+3))
+        echo $r
+        #echo2 "using -j$r, actual cpus=$actual"
     fi
 }
 countcpus() {
@@ -5706,4 +5725,4 @@ addpythonpath() {
     fi
 }
 
-addpythonpath $xmtx/python
+addpythonpath $xmtx/python $racerextbase/Shared/python
