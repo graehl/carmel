@@ -16,6 +16,10 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 
+fork() {
+    (setsid "$@" &)
+}
+
 launder() {
   xattr -d com.apple.quarantine "$@"
   xattr -d com.apple.metadata:kMDItemWhereFroms "$@"
