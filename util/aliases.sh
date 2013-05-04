@@ -1,3 +1,58 @@
+gjam() {
+    GJAMROUND=$DROPBOX/jam/1b
+    GJAMDIR=$GJAMROUND/a
+    local in=$1
+    local basein=`basename $in`
+    if [[ $basein = A-* ]] ; then
+        GJAMDIR=$GJAMROUND/a
+    elif [[ $basein = B-* ]] ; then
+        GJAMDIR=$GJAMROUND/b
+    elif [[ $basein = C-* ]] ; then
+        GJAMDIR=$GJAMROUND/c
+    fi
+
+    shift
+    local cc=$1
+    if ! [[ -f $cc ]] ; then
+        cc=solve.cc
+    fi
+    if ! [[ -s $cc ]] ; then
+        cd $GJAMDIR
+        shift
+    fi
+    if [[ $in ]] ; then
+        cp $in in
+    fi
+    require_file in
+    set -e
+    set -x
+    if [[ $no11 ]] ; then
+        g++ -O -g  $cc -o solve
+    else
+        $CXX11 -O -g --std=c++11 $cc -o solve
+    fi
+    ./solve
+    set +x
+    out=out
+    expect=$in.expect
+    [ -f $expect ] || expect=
+    if [[ $in ]] ; then
+        basein=$(basename $in)
+        out=${basein%.in}.out
+        cp out $out
+    else
+        in=in
+    fi
+    wrong=${out%.out}.wrong
+    tailn=20 preview $in $out $expect
+    wc -l $in $out
+if [[ -f $wrong ]] ; then
+    set -x
+    diff -u $out $wrong
+    set +x
+fi
+}
+
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
@@ -5684,40 +5739,6 @@ ming() {
     /mingw/bin/g++ --std=c++11 $src -o $exe "$@" && ./$exe
 }
 
-gjam() {
-    GJAMDIR=$DROPBOX/jam/1a/a
-    local in=$1
-    shift
-    local cc=$1
-    if ! [[ -f $cc ]] ; then
-        cc=solve.cc
-    fi
-    if ! [[ -s $cc ]] ; then
-        cd $GJAMDIR
-        shift
-    fi
-    if [[ $in ]] ; then
-        cp $in in
-    fi
-    require_file in
-    set -e
-    set -x
-    $CXX11 -O3 -g --std=c++11 $cc -o solve
-    ./solve
-    set +x
-    out=out
-    expect=$in.expect
-    [ -f $expect ] || expect=
-    if [[ $in ]] ; then
-        basein=$(basename $in)
-        out=${basein%.in}.out
-        cp out $out
-    else
-        in=in
-    fi
-    tailn=20 preview $in $out $expect
-    wc -l $in $out
-}
 
 addpythonpath() {
     if ! [[ $PYTHONPATH = *$1* ]] ; then
