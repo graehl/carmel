@@ -1,58 +1,3 @@
-gjam() {
-    GJAMROUND=$DROPBOX/jam/1b
-    GJAMDIR=$GJAMROUND/a
-    local in=$1
-    local basein=`basename $in`
-    if [[ $basein = A-* ]] ; then
-        GJAMDIR=$GJAMROUND/a
-    elif [[ $basein = B-* ]] ; then
-        GJAMDIR=$GJAMROUND/b
-    elif [[ $basein = C-* ]] ; then
-        GJAMDIR=$GJAMROUND/c
-    fi
-
-    shift
-    local cc=$1
-    if ! [[ -f $cc ]] ; then
-        cc=solve.cc
-    fi
-    if ! [[ -s $cc ]] ; then
-        cd $GJAMDIR
-        shift
-    fi
-    if [[ $in ]] ; then
-        cp $in in
-    fi
-    require_file in
-    set -e
-    set -x
-    if [[ $no11 ]] ; then
-        g++ -O -g  $cc -o solve
-    else
-        $CXX11 -O -g --std=c++11 $cc -o solve
-    fi
-    ./solve
-    set +x
-    out=out
-    expect=$in.expect
-    [ -f $expect ] || expect=
-    if [[ $in ]] ; then
-        basein=$(basename $in)
-        out=${basein%.in}.out
-        cp out $out
-    else
-        in=in
-    fi
-    wrong=${out%.out}.wrong
-    tailn=20 preview $in $out $expect
-    wc -l $in $out
-if [[ -f $wrong ]] ; then
-    set -x
-    diff -u $out $wrong
-    set +x
-fi
-}
-
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
@@ -70,6 +15,38 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
+
+gdbargs() {
+    local prog=$1
+    shift
+    gdb --fullname -ex "set args $*; r" $prog
+}
+rebasenext() {
+    cd ~/x
+    rebasece `git rebase --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
+    git rebase --continue
+    local adds=`git rebase --continue 2>&1 | perl -ne 'if (/^(.*): needs update/) { print $1," " }'`
+    echo adds $adds
+    git add -- $adds
+}
+agsrc() {
+    ag -G '\.(h|c|hh|cc|hpp|cpp|scala|py|pl|perl)$' "$@"
+}
+agsrce() {
+    ag --nogroup --nocolor -G '\.(h|c|hh|cc|hpp|cpp|scala|py|pl|perl)$' "$@"
+}
+
+pepall() {
+    pep `find . -name '*.py'`
+}
+
+flakeall() {
+    flake `find . -name '*.py'`
+}
+
+pycheckall() {
+    pychecker `find . -name '*.py'`
+}
 
 fork() {
     (setsid "$@" &)
@@ -173,13 +150,24 @@ stt() {
 sk() {
     chost=c-skohli sc
 }
+sd() {
+    chost=c-mdreyer sc
+}
 kwith() {
     (set -x
         chost=c-skohli linwith "$@"
     )
 }
+kwith() {
+    (set -x
+        chost=c-mdreyer linwith "$@"
+    )
+}
 kjen() {
     chost=c-skohli linjen "$@"
+}
+djen() {
+    chost=c-mdreyer linjen "$@"
 }
 gjen() {
     (set -e
@@ -642,9 +630,17 @@ gpush() {
     )
 }
 mendre() {
+(set -e
     cd ~/x
     mend
     bakre "$@"
+)
+}
+bakx() {
+    (set -e
+        cd ~/x
+        bakthis "$@"
+    )
 }
 bakre() {
     bakthis ${1:-prebase}
@@ -772,10 +768,15 @@ useclang() {
     export CC="$ccache-cc$GCC_SUFFIX"
     export CXX="$ccache-c++$GCC_SUFFIX"
 }
+gcc47=1
 usegcc() {
     if false && [[ $HOST = graehl.local ]] ; then
         usegccnocache
+        #don't have right gdb for gcc 4.7 on my mac
     else
+        if [[ $gcc47 ]] ; then
+            GCC_SUFFIX=-4.7
+        fi
         local ccache=${ccache:-$(echo ~/bin/ccache)}
         export CC="$ccache-gcc$GCC_SUFFIX"
         export CXX="$ccache-g++$GCC_SUFFIX"
@@ -1642,11 +1643,11 @@ if [[ $HOST = graehl.local ]] ; then
 fi
 gcc47() {
     if [[ $HOST = graehl.local ]] ; then
-        local ccache=${ccache:-$(echo ~/bin/ccache)}
+        GCC_SUFFIX=4.7
+        export CC=ccache-gcc-4.7
+        export CXX=ccache-g++-4.7
         prepend_path $GCC_PREFIX
         add_ldpath $GCC_PREFIX/lib
-        export CC="$ccache $GCC_BIN/gcc"
-        export CXX="$ccache $GCC_BIN/g++"
     fi
 }
 maketest() {
@@ -1657,7 +1658,11 @@ maketest() {
         elif [[ $2 ]] ; then
             targ="-t $2"
         fi
-        make VERBOSE=1 Test$1 && */Test$1 $targ
+        if [[ $vg ]] ; then
+            local valgrind='valgrind --db-attach=yes --tool=memcheck'
+        fi
+        local test=`find . -name Test$1`
+        make VERBOSE=1 Test$1 && $valgrind $test $targ
     )
 }
 makerun() {
@@ -1669,6 +1674,7 @@ makerun() {
     cd $xmtx/${BUILD:-Debug}
     local cpus=$(ncpus)
     echo2 "$cpus cpus ... -j$cpus"
+(set -e
     make $exe VERBOSE=1 -j$cpus
     if [[ $exe != test ]] ; then
         set +x
@@ -1683,6 +1689,7 @@ makerun() {
             fi
         fi
     fi
+)
 }
 makex() {
     norun=1 makerun "$@"
@@ -2780,6 +2787,7 @@ s2c() {
     (cd
         set -e
         toc x/run.sh
+        toc x/xmtpath.sh
         for d in u script bugs g .emacs.d .gitconfig ; do
             sync2 $chost $d
         done
@@ -5737,6 +5745,61 @@ ming() {
     exe=${exe%.cpp}
     exe=${exe%.c}
     /mingw/bin/g++ --std=c++11 $src -o $exe "$@" && ./$exe
+}
+
+gjam() {
+    GJAMROUND=$DROPBOX/jam/1c
+    GJAMDIR=$GJAMROUND/a
+    local in=$1
+    local basein=`basename $in`
+    if [[ $basein = A-* ]] ; then
+        GJAMDIR=$GJAMROUND/a
+    elif [[ $basein = B-* ]] ; then
+        GJAMDIR=$GJAMROUND/b
+    elif [[ $basein = C-* ]] ; then
+        GJAMDIR=$GJAMROUND/c
+    fi
+
+    shift
+    local cc=$1
+    if ! [[ -f $cc ]] ; then
+        cc=solve.cc
+    fi
+    if ! [[ -s $cc ]] ; then
+        cd $GJAMDIR
+        shift
+    fi
+    if [[ $in ]] ; then
+        cp $in in
+    fi
+    require_file in
+    set -e
+    set -x
+    if [[ $no11 ]] ; then
+        g++ -O -g  $cc -o solve
+    else
+        $CXX11 -O3 --std=c++11 $cc -o solve
+    fi
+    time ./solve
+    set +x
+    out=out
+    expect=$in.expect
+    [ -f $expect ] || expect=
+    if [[ $in ]] ; then
+        basein=$(basename $in)
+        out=${basein%.in}.out
+        cp out $out
+    else
+        in=in
+    fi
+    wrong=${out%.out}.wrong
+    tailn=20 preview $out $expect
+    wc -l $in $out
+if [[ -f $wrong ]] ; then
+    set -x
+    diff -u $out $wrong
+    set +x
+fi
 }
 
 

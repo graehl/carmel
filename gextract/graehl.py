@@ -58,12 +58,14 @@ def open_out(filename, append=False, mkdir=False, openflags='b'):
 ##
 
 def normalize(p_list):
-    oos=1.0/sum(x for x in p_list)
-    return [x*oos for x in p_list]
+    oos = sum(p for p in p_list)
+    oos = 1.0/oos if sum>0 else 0
+    return [p*oos for p in p_list]
 
 def normalize_choosep(p_item_list):
     "list of tuples (p,item). return normalized-p copy"
-    oos=1.0/sum(p for (p,v) in p_item_list)
+    oos = sum(p for (p,_) in p_item_list)
+    oos = 1.0/oos if sum>0 else 0
     return [(p*oos,v) for (p,v) in p_item_list]
 
 # see http://infoweekly.blogspot.com/2011/09/follow-up-sampling-discrete.html

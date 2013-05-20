@@ -32,16 +32,20 @@
     layout (without pulling it outside the union entirely, which would lose the
     ability to have size/capacity next to each other for large format.
 
-    TODO: need to implement handling for non-pod (guarantee ctor/dtor calls in
-    that case, incl copy ctor when changing between heap and inline).
+    TODO: need to implement tests/handling for non-pod (guarantee ctor/dtor
+    calls in that case, incl copy ctor when changing between heap and inline). for now assume that T must be POD.
 
-    REQUIRES that T is POD (can be memcpy - but memcmp comparable isn't necessary
-    - we use ==, <).
+    REQUIRES that T is POD (specifically - it's part of a union, so must be. all
+    we really require is that memmove/memcpy is allowed rather than copy
+    construct + destroy old
 
-    you can check for the happy day when non-pod small_vector are supported with:
-    #if !GRAEHL_SMALL_VECTOR_POD_ONLY - it's just some extra bookkeeping and
-    traits usage to meticulously call copy ctor and dtor instead of memcpy and
-    nothing respectively
+    memcmp comparable isn't necessary - we use ==, <.
+
+    you can check for the happy day when non-pod small_vector are supported
+    with: #if !GRAEHL_SMALL_VECTOR_POD_ONLY - it's just some extra bookkeeping
+    and traits usage to meticulously call copy ctor and dtor instead of memcpy
+    and nothing respectively (assuming the compiler allows your non-pod to exist
+    in a union)
 
 */
 
@@ -153,6 +157,10 @@ struct small_vector {
   small_vector() {
     data.stack.sz_ = 0;
   }
+  /**
+     default constructed T() * s. since T is probably POD, this means its pod
+     members are default constructed (i.e. set to 0). If T isn't POD but can be memmoved, then you probably really wanted the constructor called.
+  */
   explicit small_vector(size_type s) {
     assert(s<=kMaxSize);
     alloc(s);
@@ -456,8 +464,21 @@ struct small_vector {
     push_back(v);
   }
 
+  /**
+     increase size without calling default ctor.
+  */
   inline void append_uninit(size_type N) {
     resize_up(data.stack.sz_+N);
+  }
+
+  /**
+     change size without calling default ctor.
+  */
+  inline void resize_uninit(size_type N) {
+    if (data.stack.sz_ > N)
+      resize(N);
+    else
+      resize_up(N);
   }
 
   /**

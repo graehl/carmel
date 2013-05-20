@@ -722,6 +722,37 @@ inline void validate(boost::any& v,
 
 #else
 
+# ifdef _MSC_VER
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     graehl::file_arg<std::istream>* target_type, int)
+{
+  v = boost::any(graehl::file_arg<std::istream>(graehl::get_single_arg(v, values)));
+}
+
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     graehl::file_arg<std::ostream>* target_type, int)
+{
+  v = boost::any(graehl::file_arg<std::ostream>(graehl::get_single_arg(v, values)));
+}
+
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     graehl::file_arg<std::ifstream>* target_type, int)
+{
+  v = boost::any(graehl::file_arg<std::ifstream>(graehl::get_single_arg(v, values)));
+}
+
+
+inline void validate(boost::any& v,
+                     const std::vector<std::string>& values,
+                     graehl::file_arg<std::ofstream>* target_type, int)
+{
+  v = boost::any(graehl::file_arg<std::ofstream>(graehl::get_single_arg(v, values)));
+}
+
+# else
 template <class Stream>
 inline void validate(boost::any& v,
                      const std::vector<std::string>& values,
@@ -729,6 +760,7 @@ inline void validate(boost::any& v,
 {
   v = boost::any(graehl::file_arg<Stream>(graehl::get_single_arg(v, values)));
 }
+# endif
 #endif
 
 }} // boost::program_options

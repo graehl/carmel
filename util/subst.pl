@@ -61,8 +61,8 @@ my @options=(
 
 my $cmdline=&escaped_cmdline;
 my ($usagep,@opts)=getoptions_usage(@options);
-info("COMMAND LINE:");
-info($cmdline);
+#info("COMMAND LINE:");
+#info($cmdline);
 show_opts(@opts);
 
 my @rewrites;
