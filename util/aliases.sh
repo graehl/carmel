@@ -708,13 +708,14 @@ tunsocks() {
 tunport() {
     local port=${1:?usage: port [host] via tunhost:tunport $tunhost:$tunport}
     local host=${2:-git02.languageweaver.com}
-    ssh -N -L $port:$host:$port -p $tunport $tunhost "$@"
+    local lport=${3:-$port}
+    ssh -N -L $port:$host:$lport -p $tunport $tunhost "$@"
 }
 ssht() {
     ssh -p $tunport $tunhost "$@"
 }
 tunmac() {
-    tunport 22 $maco
+    tunport 22 $maco &
 }
 tungerrit() {
     #tunport 29418 git02.languageweaver.com
@@ -1836,6 +1837,11 @@ nsinclude() {
 }
 gitsubpulls() {
 #-q
+    git submodule foreach git pull -q origin master
+}
+esubpulls() {
+#-q
+    cd ~/.emacs.d
     git submodule foreach git pull -q origin master
 }
 sitelisp() {
