@@ -41,7 +41,7 @@
     # Show files ignored by git:
     ign = ls-files -o -i --exclude-standard
 [core]
-	#autocrlf = true # suck it, windows people
+	#autocrlf = true
 [alias]
     lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
 	lcrev = log --reverse --no-merges --stat @{1}..
@@ -56,3 +56,4 @@
 [merge]
 	conflictstyle = diff3
 	rename-threshold = 80
+	ignore-space-change = 1
