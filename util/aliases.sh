@@ -775,7 +775,7 @@ usegcc() {
         usegccnocache
         #don't have right gdb for gcc 4.7 on my mac
     else
-        if [[ $gcc47 ]] && -x `which gcc-4.7` ; then
+        if [[ $gcc47 ]] && [[ -x `which gcc-4.7` ]] ; then
             GCC_SUFFIX=-4.7
         fi
         local ccache=${ccache:-$(echo ~/bin/ccache)}
