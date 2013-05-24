@@ -95,30 +95,34 @@ memcheck() {
     fi
 }
 
+skiptest() {
+    echo "skipping memcheck of $basetest (MEMCHECKALL=1 to include it)"
+    echo $hr
+    return 1
+}
+
 memchecktest() {
-    local basetest=`basename $1`
+    basetest=`basename $1`
     if [[ $MEMCHECKALL = 0 ]] ; then
         case ${basetest#Test} in
             #recommendation: exclude tests only if there are currently no errors and execution time is >10s
             LexicalRewrite)
-                ;&
-            RegexTokenizer)
-                ;&
-            Optimization)
-                ;&
-            Hypergraph)
-                ;&
-            Copy)
-                ;&
-            Concat)
-                ;&
-            BlockWeight)
-                ;&
-            OCRC)
-                echo "skipping memcheck of $basetest (--memcheckall to include it)"
-                echo $hr
-                return 1
+                skiptest
                 ;;
+            RegexTokenizer)
+                skiptest; ;;
+            Optimization)
+                skiptest; ;;
+            Hypergraph)
+                skiptest; ;;
+            Copy)
+                skiptest; ;;
+            Concat)
+                skiptest; ;;
+            BlockWeight)
+                skiptest; ;;
+            OCRC)
+                skiptest; ;;
             *)
                 return 0
                 ;;
@@ -297,7 +301,7 @@ kwith() {
         chost=c-skohli linwith "$@"
     )
 }
-kwith() {
+dwith() {
     (set -x
         chost=c-mdreyer linwith "$@"
     )
@@ -307,6 +311,12 @@ kjen() {
 }
 djen() {
     chost=c-mdreyer linjen "$@"
+}
+cjen() {
+    chost=c-jgraehl linjen "$@"
+}
+cwith() {
+    chost=c-jgraehl linwith "$@"
 }
 gjen() {
     (set -e
