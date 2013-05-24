@@ -537,7 +537,7 @@ struct small_vector {
   }
 
   inline void insert(iterator where, T const& t) {
-    insert_index(where-begin(),t);
+    insert_index((size_type)(where-begin()),t);
   }
 
   /**

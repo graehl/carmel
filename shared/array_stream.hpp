@@ -484,7 +484,7 @@ void TEST_check_array_stream(C &i1)
     BOOST_CHECK(c==tstr[i]);
     int e=(int)(-i-1);
     BOOST_CHECK(i1.seekg(e,ios_base::end));
-    t=i1.tellg();
+    t=(int)i1.tellg();
     int p=slen+e;
     BOOST_CHECK(t==p);
     BOOST_CHECK(i1.get()==tstr[p]);
@@ -494,9 +494,9 @@ void TEST_check_array_stream(C &i1)
   for (i=0;i<slen;++i) {
     BOOST_CHECK((int)i1.tellg()==(int)i);
     BOOST_CHECK((int)i1.tellp()==(int)i);
-    BOOST_CHECK(i1.put(i));
-    BOOST_CHECK(i==i1.get());
-    BOOST_CHECK(i1.begin()[i]==i);
+    BOOST_CHECK(i1.put((char)i));
+    BOOST_CHECK((char)i==i1.get());
+    BOOST_CHECK(i1.begin()[i]==(char)i);
   }
 }
 

@@ -16,6 +16,104 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 
+
+findx() {
+  find . "$@" -type f -perm -u+x
+}
+
+find_tests() {
+    findx -name Test\*
+}
+
+valgrind=`which valgrind`
+[[ -x $valgrind ]] || valgrind=
+
+
+timerss() {
+    echo "time $*" 1>&2
+    if [[ -x /usr/bin/time ]] ; then
+        /usr/bin/time -f '%Es - %Mkb peak' "$*"
+    else
+        TIMEFORMAT='%3lR'
+        time "$*"
+    fi
+}
+
+save1timeram() {
+    local save1="$1"
+    shift
+    echo "time $*" 1>&2
+    if [[ -x /usr/bin/time ]] ; then
+        /usr/bin/time -f '%Es - %Mkb peak' "$*" >$save1
+    else
+        TIMEFORMAT='%3lR'
+        time "$*" >$save1
+    fi
+}
+
+save12timeram() {
+    local save1="$1"
+    shift
+    echo "time $*" 1>&2
+    if [[ -x /usr/bin/time ]] ; then
+        local timeout=`mktemp /tmp/timeram.out.XXXXXX`
+        /usr/bin/time -o $timeout -f '%Es - %Mkb peak' "$*" 2>&1 >$save1
+        cat $timeout
+    else
+        TIMEFORMAT='%3lR'
+        time "$*" 2>&1 >$save1
+    fi
+}
+
+memcheck() {
+    local test=`basename $1`
+    if [[ $valgrind ]] ; then
+        local memlog=`mktemp /tmp/memcheck.$test.err.XXXXXX`
+        local memout=`mktemp /tmp/memcheck.$test.out.XXXXXX`
+        #TODO: could use --log-fd=3 >/dev/null 2>/dev/null 3>&2
+        # need to test order of redirections, though
+        save12timeram $memout valgrind -q --tool=memcheck --leak-check=no --track-origins=yes --log-file=$memlog "$@"
+        local rc=$?
+        if [[ $rc -ne 0 ]] || [[ -s $memlog ]] ; then
+            echo "memcheck $test failed:"
+            cat $memlog
+            echo $memlog $memout
+            memcheckrc=88
+            memcheckfailed+=" $test"
+        else
+            rm $memout
+            rm $memlog
+        fi
+    fi
+}
+
+memchecktests() {
+    if [[ $valgrind ]] ; then
+        local tests=`find_tests`
+        echo "Running memcheck on unit tests:"
+        echo $tests
+        echo
+        memcheckrc=0
+        memcheckfailed=''
+        for test in $tests; do
+            echo $hr
+            echo memcheck $test ...
+            echo $hr
+            memcheck $test
+            echo
+            echo passed: memcheck $test
+            echo $hr
+        done
+        if [[ $memcheckrc -ne 0 ]] ; then
+            #FINALRC=$memcheckrc
+            #TODO: enable only once failures are fixed in master
+            echo "memcheck failed for:$memcheckfailed"
+        fi
+    else
+        echo "WARNING: valgrind not found. skipping MEMCHECKUNITTEST"
+    fi
+}
+
 gdbargs() {
     local prog=$1
     shift

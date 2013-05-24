@@ -16,7 +16,9 @@
 
 
 #include "warning_push.h"
+#if HAVE_GCC_DIAG_OFF
 GCC_DIAG_IGNORE(attributes)
+#endif
 
 //#include <boost/random.hpp>
 #include <boost/random/uniform_01.hpp>
