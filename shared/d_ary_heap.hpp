@@ -375,6 +375,9 @@ This is definitely linear to n.
       data.clear();
     }
 
+    /**
+       you must have put v's distance in the DistanceMap before pushing
+    */
     void push(const Value& v) {
       if (D_ARY_PUSH_GRAEHL) {
         size_type i = data.size();

@@ -42,6 +42,7 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <graehl/shared/validate.hpp>
 #include <graehl/shared/leaf_configurable.hpp>
 #include <graehl/shared/string_match.hpp>
+#include <graehl/shared/configure_init.hpp>
 
 #include <algorithm>
 #include <string>
@@ -56,6 +57,8 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 //TODO: overridable free fn for default usage string, e.g. longer explanation of enum type meaning
 
 namespace configure {
+
+typedef std::map<std::string, std::string> unrecognized_opts;
 
 // validate_config(warn) is an action that follows store because we may want repeated stores from multiple sources. this means you need to explicitly call it after store (with validate_stored)
 
@@ -339,7 +342,6 @@ struct select_configure_policy<Val2,typename boost::enable_if<map_leaf_configura
 struct conf_opt
 {
   typedef std::string string;
-  typedef std::map<string,string> unrecognized_opts;
 
   typedef boost::optional<char> maybe_char;
   typedef boost::optional<int> maybe_int;
@@ -521,7 +523,7 @@ struct conf_opt
     bool warn;
     std::string help;
 
-    allow_unrecognized_args(bool enable=true,bool warn=false,conf_opt::unrecognized_opts *unrecognized_storage=0
+    allow_unrecognized_args(bool enable=true,bool warn=false, unrecognized_opts *unrecognized_storage=0
                             ,std::string const& help="allows unrecognized string key:val options") : enable(enable),unrecognized_storage(unrecognized_storage),warn(warn),help(help) {}
     template <class O>
     void print(O &o) const {
@@ -1011,7 +1013,7 @@ public:
   conf_expr const& verbose(int verbosity=1) const { opt->verbose=verbosity; return *this; }
   conf_expr const& positional(bool enable=true,int max=1) const {
     opt->positional=conf_opt::positional_args(enable,max); return *this; }
-  conf_expr const& allow_unrecognized(bool enable=true,bool warn=false,conf_opt::unrecognized_opts *unrecognized_storage=0) const {
+  conf_expr const& allow_unrecognized(bool enable=true,bool warn=false,unrecognized_opts *unrecognized_storage=0) const {
     opt->allow_unrecognized=conf_opt::allow_unrecognized_args(enable,warn,unrecognized_storage); return *this; }
   conf_expr const& require(bool enable=true,bool just_warn=false) const {
     opt->require=conf_opt::require_args(enable,just_warn); return *this; }
@@ -1641,9 +1643,9 @@ public:
   void tree_action_unrecognized(show_effective_config effective,Val *pval,conf_expr_base const& conf) const {
     conf_opt const& opt=*conf.opt;
     if (opt.allows_unrecognized()) {
-      conf_opt::unrecognized_opts const* unrecognized=opt.allow_unrecognized->unrecognized_storage;
+      unrecognized_opts const* unrecognized=opt.allow_unrecognized->unrecognized_storage;
       if (unrecognized)
-        for (conf_opt::unrecognized_opts::const_iterator i=unrecognized->begin(),e=unrecognized->end();i!=e;++i)
+        for (unrecognized_opts::const_iterator i=unrecognized->begin(),e=unrecognized->end();i!=e;++i)
           sub().print_name_val_line(effective,i->first,i->second,conf_expr_base(conf,i->first));
     }
   }

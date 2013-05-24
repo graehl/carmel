@@ -141,7 +141,7 @@ struct program_options_exec : boost::noncopyable
       SHOWIF3(CONFEXPR,1,"allow unk complain?",key,val,allow);
       if (allow.warn)
         unrecognized_complaint(arg,parent);
-      conf_opt::unrecognized_opts *store=allow.unrecognized_storage;
+      unrecognized_opts *store=allow.unrecognized_storage;
       if (store)
         (*store)[key]=val;
     }

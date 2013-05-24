@@ -17,8 +17,9 @@ fi
 DROPBOX=$(echo ~/dropbox)
 
 
+
 findx() {
-  find . "$@" -type f -perm -u+x
+    find . "$@" -type f -perm -u+x
 }
 
 find_tests() {
@@ -28,14 +29,14 @@ find_tests() {
 valgrind=`which valgrind`
 [[ -x $valgrind ]] || valgrind=
 
-
+# if you don't have /usr/bin/time, 'sudo yum install time'
 timerss() {
     echo "time $*" 1>&2
     if [[ -x /usr/bin/time ]] ; then
-        /usr/bin/time -f '%Es - %Mkb peak' "$*"
+        /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
     else
         TIMEFORMAT='%3lR'
-        time "$*"
+        time "$@"
     fi
 }
 
@@ -44,10 +45,10 @@ save1timeram() {
     shift
     echo "time $*" 1>&2
     if [[ -x /usr/bin/time ]] ; then
-        /usr/bin/time -f '%Es - %Mkb peak' "$*" >$save1
+        /usr/bin/time -f '%Es - %Mkb peak' -- "$@" >$save1
     else
         TIMEFORMAT='%3lR'
-        time "$*" >$save1
+        time "$@" >$save1
     fi
 }
 
@@ -57,11 +58,11 @@ save12timeram() {
     echo "time $*" 1>&2
     if [[ -x /usr/bin/time ]] ; then
         local timeout=`mktemp /tmp/timeram.out.XXXXXX`
-        /usr/bin/time -o $timeout -f '%Es - %Mkb peak' "$*" 2>&1 >$save1
+        /usr/bin/time -o $timeout -f '%Es - %Mkb peak' -- "$@" >$save1 2>&1
         cat $timeout
     else
         TIMEFORMAT='%3lR'
-        time "$*" 2>&1 >$save1
+        time "$@" >$save1 2>&1
     fi
 }
 
@@ -72,18 +73,58 @@ memcheck() {
         local memout=`mktemp /tmp/memcheck.$test.out.XXXXXX`
         #TODO: could use --log-fd=3 >/dev/null 2>/dev/null 3>&2
         # need to test order of redirections, though
-        save12timeram $memout valgrind -q --tool=memcheck --leak-check=no --track-origins=yes --log-file=$memlog "$@"
+        local valgrindargs="-q --tool=memcheck --leak-check=no --track-origins=yes"
+        save12timeram $memout valgrind $valgrindargs --log-file=$memlog "$@"
         local rc=$?
         if [[ $rc -ne 0 ]] || [[ -s $memlog ]] ; then
-            echo "memcheck $test failed:"
-            cat $memlog
-            echo $memlog $memout
+            echo $hr
+            echo "memcheck $test [FAIL]"
+            echo $hr
+            echo "cd `pwd` && valgrind $valgrindargs $1"
+            ls -l $memout $memlog
+            head -4 $memlog
+            echo ...
+            echo $memlog
             memcheckrc=88
             memcheckfailed+=" $test"
+            echo $hr
         else
             rm $memout
             rm $memlog
         fi
+    fi
+}
+
+memchecktest() {
+    local basetest=`basename $1`
+    if [[ $MEMCHECKALL = 0 ]] ; then
+        case ${basetest#Test} in
+            #recommendation: exclude tests only if there are currently no errors and execution time is >10s
+            LexicalRewrite)
+                ;&
+            RegexTokenizer)
+                ;&
+            Optimization)
+                ;&
+            Hypergraph)
+                ;&
+            Copy)
+                ;&
+            Concat)
+                ;&
+            BlockWeight)
+                ;&
+            OCRC)
+                echo "skipping memcheck of $basetest (--memcheckall to include it)"
+                echo $hr
+                return 1
+                ;;
+            *)
+                return 0
+                ;;
+        esac
+    else
+        return 0
     fi
 }
 
@@ -96,13 +137,11 @@ memchecktests() {
         memcheckrc=0
         memcheckfailed=''
         for test in $tests; do
-            echo $hr
-            echo memcheck $test ...
-            echo $hr
-            memcheck $test
-            echo
-            echo passed: memcheck $test
-            echo $hr
+            if memchecktest $test ; then
+                echo memcheck $test ...
+                memcheck $test
+                echo $hr
+            fi
         done
         if [[ $memcheckrc -ne 0 ]] ; then
             #FINALRC=$memcheckrc
@@ -113,6 +152,8 @@ memchecktests() {
         echo "WARNING: valgrind not found. skipping MEMCHECKUNITTEST"
     fi
 }
+
+####
 
 gdbargs() {
     local prog=$1
@@ -1960,12 +2001,10 @@ emsubcom() {
 }
 empull() {
     (
-        set -x
         cd ~/.emacs.d
         git pull
         cd site-lisp
         gitsubpull *
-        set +x
     )
 }
 uext() {
