@@ -17,6 +17,12 @@ fi
 DROPBOX=$(echo ~/dropbox)
 
 
+cp2cbin() {
+  scp "$@" c-jgraehl:/c01_data/graehl/bin/
+}
+
+valgrind=`which valgrind`
+[[ -x $valgrind ]] || valgrind=
 
 findx() {
     find . "$@" -type f -perm -u+x
@@ -25,9 +31,6 @@ findx() {
 find_tests() {
     findx -name Test\*
 }
-
-valgrind=`which valgrind`
-[[ -x $valgrind ]] || valgrind=
 
 # if you don't have /usr/bin/time, 'sudo yum install time'
 timerss() {
@@ -102,33 +105,44 @@ skiptest() {
 }
 
 memchecktest() {
+    ### TODO@JG: put these shell fns in a shell script and use GNU parallel (an
+    ### awesome 150kb perl script) to do #threads - then we can run some of hte
+    ### slower ones for validation. postponed due to decisions about accumulating
+    ### failed tests' outputs (can't use shell vars)
+
     basetest=`basename $1`
     if [[ $MEMCHECKALL = 0 ]] ; then
         case ${basetest#Test} in
             #recommendation: exclude tests only if there are currently no errors and execution time is >10s
+            LWUtil) # for some reason this one takes several minutes; the rest are 20-30 sec affairs
+                skiptest ;;
+            FeatureBot)
+                skiptest ;;
+            Vocabulary)
+                skiptest ;;
+            WordAligner)
+                skiptest ;;
+            SpellChecker)
+                skiptest ;;
             LexicalRewrite)
-                skiptest
-                ;;
+                skiptest ;;
             RegexTokenizer)
-                skiptest; ;;
+                skiptest ;;
             Optimization)
-                skiptest; ;;
+                skiptest ;;
             Hypergraph)
-                skiptest; ;;
+                skiptest ;;
             Copy)
-                skiptest; ;;
+                skiptest ;;
             Concat)
-                skiptest; ;;
+                skiptest ;;
             BlockWeight)
-                skiptest; ;;
+                skiptest ;;
             OCRC)
-                skiptest; ;;
+                skiptest ;;
             *)
-                return 0
                 ;;
         esac
-    else
-        return 0
     fi
 }
 
