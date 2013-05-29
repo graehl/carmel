@@ -17,6 +17,12 @@ fi
 DROPBOX=$(echo ~/dropbox)
 
 
+creg() {
+  cwith yreg "$@"
+}
+cregr() {
+  cwith yregr "$@"
+}
 cp2cbin() {
   scp "$@" c-jgraehl:/c01_data/graehl/bin/
 }
@@ -1025,7 +1031,17 @@ jen() {
     if [[ $HOST = $chost ]] ; then
         export USE_BOOST_1_50=1
     fi
-    jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
+    if [[ $memcheck ]] ; then
+        MEMCHECKUNITTEST=1
+    else
+        MEMCHECKUNITTEST=0
+    fi
+    if [[ $memcheckall ]] ; then
+        MEMCHECKALL=1
+    else
+        MEMCHECKALL=0
+    fi
+    MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
     grep FAIL $log | sort > $log.fails
@@ -1822,11 +1838,12 @@ maketest() {
         elif [[ $2 ]] ; then
             targ="-t $2"
         fi
-        if [[ $vg ]] ; then
-            local valgrind='valgrind --db-attach=yes --tool=memcheck'
+        local valgrindpre=
+        if [[ $vg ]] && [[ $valgrind ]] ; then
+            valgrindpre="$valgrind --db-attach=yes --tool=memcheck"
         fi
         local test=`find . -name Test$1`
-        make VERBOSE=1 Test$1 && $valgrind $test $targ
+        make VERBOSE=1 Test$1 && $valgrindpre $test $targ
     )
 }
 makerun() {
