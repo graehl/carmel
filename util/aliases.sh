@@ -30,6 +30,7 @@ cto() {
     )
 }
 ccp() {
+    #uses: $chost for scp
     local n=$#
     local dst=${@:$n:$n}
     (set -e
@@ -40,6 +41,7 @@ ccp() {
         fi
         for f in "${@:1:$n}"; do
             echo scp $chost:"$f" "$dst"
+            scp $chost:"$f" "$dst"
         done
     fi
     )
@@ -51,10 +53,10 @@ csave() {
     save12 ~/tmp/cjg.`filename_from $1 $2` cjg "$@"
 }
 creg() {
-    cwith yreg "$@"
+    save12 ~/tmp/creg.`filename_from "$@"` cwith yreg "$@"
 }
 cregr() {
-    cwith yregr "$@"
+    save12 ~/tmp/cregr.`filename_from "$@"` cwith yregr "$@"
 }
 cp2cbin() {
     scp "$@" c-jgraehl:/c01_data/graehl/bin/
@@ -1080,8 +1082,8 @@ jen() {
     MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
-    fgrep '... FAIL' $log | cut -d' ' -f1 | grep -v postagger | sort | uniq > $log.fails
-    nfails=`wc -l $log.fails`
+    fgrep '... FAIL' $log | grep -v postagger | sort > $log.fails
+    nfails=`cut -d' ' -f1 $log.fails | uniq -c | wc -l`
     cp $log.fails /tmp/last-fails
     echo
     cat /tmp/last-fails
