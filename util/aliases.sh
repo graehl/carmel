@@ -29,6 +29,21 @@ cto() {
         done
     )
 }
+ccp() {
+    local n=$#
+    local dst=${@:$n:$n}
+    (set -e
+    require_dir `dirname "$dst"`
+    if [[ $(( -- n )) -gt 0 ]] ; then
+        if [[ $n -gt 1 ]] ; then
+            require_dir "$dst"
+        fi
+        for f in "${@:1:$n}"; do
+            echo scp $chost:"$f" "$dst"
+        done
+    fi
+    )
+}
 ccat() {
     cjg cat "$*"
 }
