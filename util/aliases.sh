@@ -16,15 +16,33 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 
-
+gto() {
+    local dst=.
+    if [[ $2 ]] ; then
+        dst=$1
+        shift
+    fi
+    (
+        require_dir $dst
+        for f in "$@"; do
+            scp $chost:"$f" $dst
+        done
+    )
+}
+gcat() {
+    cjg cat "$*"
+}
+gsave() {
+    save12 ~/tmp/cjg.`filename_from $1 $2` cjg "$@"
+}
 creg() {
-  cwith yreg "$@"
+    cwith yreg "$@"
 }
 cregr() {
-  cwith yregr "$@"
+    cwith yregr "$@"
 }
 cp2cbin() {
-  scp "$@" c-jgraehl:/c01_data/graehl/bin/
+    scp "$@" c-jgraehl:/c01_data/graehl/bin/
 }
 
 valgrind=`which valgrind`
@@ -219,8 +237,8 @@ fork() {
 }
 
 launder() {
-  xattr -d com.apple.quarantine "$@"
-  xattr -d com.apple.metadata:kMDItemWhereFroms "$@"
+    xattr -d com.apple.quarantine "$@"
+    xattr -d com.apple.metadata:kMDItemWhereFroms "$@"
 }
 interactive() {
     if [[ $- == *i* ]] ; then
@@ -249,7 +267,7 @@ yreg() {
         makeh xmtShell
     fi
     local args="$yargs"
-# -t 2
+    # -t 2
     (set -e;
         local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
         cd $xmtx/RegressionTests
@@ -700,7 +718,7 @@ rmd() {
         cd `dirname $RMDFILE`
         RMDFILE=`basename $RMDFILE`
         Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
-#markdownToHTML('$RMDFILE.md', '$RMDFILE.html', options=c('use_xhml'))
+        #markdownToHTML('$RMDFILE.md', '$RMDFILE.html', options=c('use_xhml'))
         pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
         if [[ $pdf ]] ; then
             panpdf $RMDFILE.md
@@ -719,7 +737,7 @@ gitgrep() {
             git grep -e "$expr" $revision -- "$@"
         done
     )
-# git rev-list --all -- "$@" | xargs -I {} git grep -e "$expr" {} -- "$@"
+    # git rev-list --all -- "$@" | xargs -I {} git grep -e "$expr" {} -- "$@"
 }
 subsync() {
     git submodule sync "$@"
@@ -756,7 +774,7 @@ tsp() {
     tunrdp tsp-xp1
 }
 lagra() {
- #tunrdp lagraeh02
+    #tunrdp lagraeh02
     tunrdp 10.110.5.5
 }
 sox() {
@@ -776,19 +794,19 @@ giteol() {
         git commit -m 'auto line-end'
     fi
     git rm --cached -r .
-# Remove everything from the index.
+    # Remove everything from the index.
 
     git reset --hard
-# Write both the index and working directory from git's database.
+    # Write both the index and working directory from git's database.
 
     git add .
-# Prepare to make a commit by staging all the files that will get normalized.
+    # Prepare to make a commit by staging all the files that will get normalized.
 
-# This is your chance to inspect which files were never normalized. You should
-# get lots of messages like: "warning: CRLF will be replaced by LF in file."
+    # This is your chance to inspect which files were never normalized. You should
+    # get lots of messages like: "warning: CRLF will be replaced by LF in file."
 
     git commit -m "Normalize line endings"
-# Commit
+    # Commit
 }
 spd() {
     ~/x/scripts/speedtest-stat-tok.sh "$@"
@@ -802,11 +820,11 @@ gpush() {
     )
 }
 mendre() {
-(set -e
-    cd ~/x
-    mend
-    bakre "$@"
-)
+    (set -e
+        cd ~/x
+        mend
+        bakre "$@"
+    )
 }
 bakx() {
     (set -e
@@ -873,7 +891,7 @@ clonex() {
     )
 }
 tunsocks() {
-# ssh -f -N -D 1080 -p $tunport $tunhost "$@"
+    # ssh -f -N -D 1080 -p $tunport $tunhost "$@"
     #ssh -D 1082 -f -C -q -N -p $tunport $tunhost
     ssh -f -C -q -N -D 12345 -p $tunport $tunhost
 }
@@ -1047,7 +1065,7 @@ jen() {
     MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
-    grep FAIL $log | cut -d' ' -f1 | grep -v postagger | sort | uniq > $log.fails
+    fgrep '... FAIL' $log | cut -d' ' -f1 | grep -v postagger | sort | uniq > $log.fails
     nfails=`wc -l $log.fails`
     cp $log.fails /tmp/last-fails
     echo
@@ -1091,7 +1109,7 @@ pkill() {
     pgrep "$@" > $prefile
     cat $prefile
     kill `cat $prefile | cut -c1-5`
-# | xargs kill
+    # | xargs kill
     echo before:
     cat $prefile
     sleep 1
@@ -1790,7 +1808,7 @@ gamend() {
     if [[ "$*" ]] ; then
         local marg=
         local arg=--no-edit
-# since git 1.7.9 only.
+        # since git 1.7.9 only.
         if [[ "$*" ]] ; then
             marg="-m"
             arg="$*"
@@ -1861,22 +1879,22 @@ makerun() {
     cd $xmtx/${BUILD:-Debug}
     local cpus=$(ncpus)
     echo2 "$cpus cpus ... -j$cpus"
-(set -e
-    make $exe VERBOSE=1 -j$cpus || exit $?
-    if [[ $exe != test ]] ; then
-        set +x
-        local f=$(echo */$exe)
-        if [[ -x $f ]] ; then
-            if ! [[ $pathrun ]] ; then
-                if ! [[ $norun ]] ; then
-                    $f "$@" || exit $?
+    (set -e
+        make $exe VERBOSE=1 -j$cpus || exit $?
+        if [[ $exe != test ]] ; then
+            set +x
+            local f=$(echo */$exe)
+            if [[ -x $f ]] ; then
+                if ! [[ $pathrun ]] ; then
+                    if ! [[ $norun ]] ; then
+                        $f "$@" || exit $?
+                    fi
+                else
+                    $exe "$@" || exit $?
                 fi
-            else
-                $exe "$@" || exit $?
             fi
         fi
-    fi
-)
+    )
 }
 makex() {
     norun=1 makerun "$@"
@@ -1965,7 +1983,7 @@ lwlmcat() {
     cat $out
 }
 pyprof() {
-#easy_install -U memory_profiler
+    #easy_install -U memory_profiler
     python -m memory_profiler -l -v "$@"
 }
 macpageoff() {
@@ -2022,11 +2040,11 @@ nsinclude() {
     done
 }
 gitsubpulls() {
-#-q
+    #-q
     git submodule foreach git pull -q origin master
 }
 esubpulls() {
-#-q
+    #-q
     cd ~/.emacs.d
     git submodule foreach git pull -q origin master
 }
@@ -2115,15 +2133,15 @@ showcpp() {
     )
 }
 pdfsettings() {
-# MS fonts - distributed with the free Powerpoint 2007 Viewer or the Microsoft Office Compatibility Pack
-#    mainfont=Cambria
+    # MS fonts - distributed with the free Powerpoint 2007 Viewer or the Microsoft Office Compatibility Pack
+    #    mainfont=Cambria
 
-#no effect?
+    #no effect?
     margin=2cm
     hmargin=2cm
     vmargin=2cm
 
-#effect:
+    #effect:
     paper=letter
     fontsize=11pt
     mainfont=${mainfont:-Constantia}
@@ -2138,7 +2156,7 @@ panda() {
     hmargin=1cm
     vmargin=1cm
 
-#    mainfont=Cambria
+    #    mainfont=Cambria
     mainfont=Constantia
     sansfont=Corbel
     monofont=Consolas
@@ -2192,16 +2210,16 @@ panda() {
                 pandoc $params $tocparams -t latex -w latex -o "$tf" $ltarg --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-11pt} -V documentclass=${documentclass:-article} -V geometry=${paper:-letter}paper -V geometry=margin=${margin:-2cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt} "$sources"
                 (
                     echo generating $fpdf
-                #TODO: fix all latex errors. xelatex is crashing on RegexTokenizer-userdoc
+                    #TODO: fix all latex errors. xelatex is crashing on RegexTokenizer-userdoc
                     xelatex -interaction=nonstopmode "$tf"
                     if [[ $toc = 1 ]] ; then
                         xelatex -interaction=nonstopmode "$tf"
                     fi
                 ) || echo latex exit code $?
             fi
-# I tried all of these in an attempt to adjust the pdf margins more aggressively, but neither did anything beyond just setting margin:
+            # I tried all of these in an attempt to adjust the pdf margins more aggressively, but neither did anything beyond just setting margin:
 
-# -V geometry=margin=$margin -V margin=$margin -V hmargin=$hmargin -V vmargin=$vmargin -V geometry=margin=$margin -V geometry=vmargin=$vmargin -V geometry=hmargin=$hmargin -V geometry=bmargin=$vmargin -V geometry=tmargin=$vmargin -V geometry=lmargin=$hmargin -V geometry=rmargin=$hmargin
+            # -V geometry=margin=$margin -V margin=$margin -V hmargin=$hmargin -V vmargin=$vmargin -V geometry=margin=$margin -V geometry=vmargin=$vmargin -V geometry=hmargin=$hmargin -V geometry=bmargin=$vmargin -V geometry=tmargin=$vmargin -V geometry=lmargin=$hmargin -V geometry=rmargin=$hmargin
             if [[ $open = 1 ]] ; then
                 open $doc.pdf
             fi
@@ -2226,13 +2244,13 @@ pandcrap() {
             texpath
             set -x
             set -e
-# --read=markdown
+            # --read=markdown
             if [[ $os = pdf ]] ; then
                 latextemplate=${latextemplate:-$(echo ~/.pandoc/template/xetex.template)}
                 pandoc --webtex $f -o $o --latex-engine=xelatex --self-contained --template=$latextemplate --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-11pt} -V documentclass=${documentclass:-article} -V geometry=${paper:-letter}paper -V geometry=margin=${margin:-2cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}
             else
                 pandoc $f -o $o --latex-engine=xelatex --self-contained
-#--webtex
+                #--webtex
             fi
             if [[ "$open" ]] ; then open $o; fi
         )
@@ -2415,7 +2433,7 @@ tun1() {
         p=$locp
         locp=$((locp+1))
     fi
-# ssh -L9922:svn.languageweaver.com:443 -N -t -x pontus.languageweaver.com -p 4640 &
+    # ssh -L9922:svn.languageweaver.com:443 -N -t -x pontus.languageweaver.com -p 4640 &
     set -x
     ssh -L$p:${1:-$chost.languageweaver.com}:${2:-22} -N -t -x ${4:-ceto}.languageweaver.com -p 4640
     set +x
@@ -2519,7 +2537,7 @@ tokt() {
 }
 revx() {
     local dr=
-#p
+    #p
     local sum=$1
     shift
     if [[ $dryrun ]] ; then
@@ -2557,7 +2575,7 @@ withdbg() {
     if [ "$gdb" ] ; then
         gdbc="gdb --args"
     fi
-# TUHG_DBG=$d
+    # TUHG_DBG=$d
     TUHG_DBG=$d HYPERGRAPH_DBG=$d LAZYF_DBG=$d HGBEST_DBG=$d $gdbc "$@"
 }
 rmstashx() {
@@ -2606,7 +2624,7 @@ safebrew() {
         export CPPFLAGS+="-I/usr/local/Cellar/libffi/3.0.9/include"
         export PATH=/usr/local/bin:$PATH
         export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-#by default it looks there already. just in case!
+        #by default it looks there already. just in case!
         unset DYLD_LIBRARY_PATH
         set -x
         brew -v "$@" || brew doctor
@@ -2706,7 +2724,7 @@ freshemacs() {
     git clone --recursive git@github.com:graehl/.emacs.d.git
 }
 urlup() {
-#destroys hostname if you go to far
+    #destroys hostname if you go to far
     perl -e '$_=shift;s|/[^/]+/?$||;print "$_";' "$*"
 }
 svnurl() {
@@ -3292,7 +3310,7 @@ backupsbmt() {
     #--size-only
     rsync --modify-window=1 --verbose --max-size=500K --cvs-exclude --exclude '*~' --exclude libtool --exclude .deps --exclude \*.Po --exclude \*.la --exclude hpc\* --exclude tmp --exclude .libs --exclude aclocal.m4 -a $SBMT_TRUNK ${1:-$dev/sbmt.bak}
     #-lprt
-# cp -a $SBMT_TRUNK $dev/sbmt.bak
+    # cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
 build_sbmt_variant()
 {
@@ -3322,9 +3340,9 @@ boostsbmt()
         local prefix=${prefix:-$FIRST_PREFIX}
         [ "$utility" ] && target="utilities//$utility"
         target=${target:-install-pipeline}
-#
-#--boost-location=$BOOST_SRCDIR
-#-d 4
+        #
+        #--boost-location=$BOOST_SRCDIR
+        #-d 4
         local barg boostdir
         local builddir=${build:-$h}
         if [[ $boost ]] ; then
@@ -3367,7 +3385,7 @@ check1best() {
     grep -i "bad_alloc" logs/*/decoder.log
     grep -i "succesful parse" logs/*/decoder.log | summarize_num.pl
     grep -i "pushing grammar" logs/*/decoder.log | summarize_num.pl
-# perl1p 'while(<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n{$1}++; } } END { all_summary() }' decoder-*.1best
+    # perl1p 'while(<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n{$1}++; } } END { all_summary() }' decoder-*.1best
 }
 
 blib=$d/bloblib.sh
@@ -3510,7 +3528,7 @@ cpdir() {
     set -x
     [ -f "$dest" ] && echo file $dest exists && return 1
     mkdir -p "$dest"
-# [ -d "$dest" ] || mkdir "$dest"
+    # [ -d "$dest" ] || mkdir "$dest"
     cp "$@"
     set +x
 }
@@ -3567,7 +3585,7 @@ mkstamps() {
 EOF
 
 for i in `seq 1 $npages`; do
-# echo '\newpage' >> $stamp
+    # echo '\newpage' >> $stamp
     echo '\mbox{} \newpage' \
         >> $stamp
 done
@@ -3597,10 +3615,10 @@ pdfoverlay() {
     # pdftk bot stamp top (1 page at a time)
     (set -e
         local bot=$1
-# bot=`abspath $bot`
+        # bot=`abspath $bot`
         shift
         local top=$1
-# top=`abspath $top`
+        # top=`abspath $top`
         shift
         local out=${1:--}
         shift
@@ -3723,7 +3741,7 @@ function currydef
 
 function curry
 {
-   #fixme: global output variable curryout, since can't print curryout and capture in `` because def would be lost.
+    #fixme: global output variable curryout, since can't print curryout and capture in `` because def would be lost.
     curryout=`gensym $*`
     eval currydef $curryout "$@"
 }
@@ -4020,8 +4038,8 @@ buildgraehl() {
         [ "$clean" ] && make clean
         [ "$noclean" ] || make clean
         set -x
-#LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
-#LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
+        #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
+        #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt -j$MAKEPROC
         make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt install
         set +x
@@ -4059,8 +4077,8 @@ buildboost() {(
         [ "$without" ] && withouts="--without-mpi --without-python --without-wave"
         [ "$noboot" ] || ./bootstrap.sh --prefix=$FIRST_PREFIX
         ./bjam --build-type=complete --layout=tagged --prefix=$FIRST_PREFIX $withouts --runtime-debugging=on -j$MAKEPROC install
-# ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
-# ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
+        # ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
+        # ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
         )}
 
 PUZZLEBASE=~/puzzle
@@ -4109,7 +4127,7 @@ function spuzzle()
         set -x
         puz=$1
         dist=$SCALABASE/$1
-# require_dir $dist
+        # require_dir $dist
         cd $dist
         slib=scala-library.jar
         plib=$puz.jar
@@ -4128,7 +4146,7 @@ function spuzzle()
         else
             all="$all $plib"
         fi
-# [ "$SCALA_HOME" ] && scala-jar.sh $1
+        # [ "$SCALA_HOME" ] && scala-jar.sh $1
         pwd
         require_files $all
         tar czf $tar $all
@@ -4290,7 +4308,7 @@ alias gc=gnuclientw
 
 function callgrind() {
     local exe=${1:?callgrind program args. env cache=1 branch=1 cgf=outfilename}
-#dumpbefore dumpafter zerobefore = fn-name, or dumpevery=1000000
+    #dumpbefore dumpafter zerobefore = fn-name, or dumpevery=1000000
     local base=`basename $1`
     shift
     local cgf=${cgf:-/tmp/callgrind.$base.`shortstamp`}
@@ -4304,7 +4322,7 @@ function callgrind() {
         brancharg=--branch-sim=yes
     fi
     valgrind --tool=callgrind $cachearg $brancharg --callgrind-out-file=$cgf --dump-instr=yes -- $exe "$@"
-#&& /Applications/qcachegrind.app $cgf
+    #&& /Applications/qcachegrind.app $cgf
     echo $cgf
     tail -2 $cgf
 }
@@ -4336,7 +4354,7 @@ function vg() {
 }
 vgf() {
     vg "$@"
-# | head --bytes=${maxvgf:-9999}
+    # | head --bytes=${maxvgf:-9999}
 }
 #--show-reachable=yes
 #alias vgfast="GLIBCXX_FORCE_NEW=1 valgrind --db-attach=yes --leak-check=yes --tool=addrcheck $VGARGS"
@@ -4713,7 +4731,7 @@ EOF
 }
 ercage() {
     local p=`homepwd`
-# ssh -t cage.isi.edu -l graehl <<EOF
+    # ssh -t cage.isi.edu -l graehl <<EOF
     rsh -l graehl cage bash <<EOF
 cd $p
 "$@"
@@ -4955,11 +4973,11 @@ function vizalign
         warn "no lines to vizalign in $f.a"
     fi
     local lang=${lang:-chi}
-# if [ -f $f.info ] ; then
-# viz-tree-string-pair.pl -t -l $lang -i $f -a $f.info
-# else
+    # if [ -f $f.info ] ; then
+    # viz-tree-string-pair.pl -t -l $lang -i $f -a $f.info
+    # else
     quietly viz-tree-string-pair.pl -c "$f" -t -l $lang -i "$f" "$@"
-# fi
+    # fi
     quietly lat2pdf_landscape $f
 }
 function lat
@@ -4998,7 +5016,7 @@ g1() {
         #$ccmd $archarg $MOREFLAGS -ggdb -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -c -o $out.o
         #$linkcmd $archarg $LDFLAGS $out.o -o $out $program_options_lib 2>/tmp/g1.ld.log
         $ccmd $program_options_lib -L$BOOST_LIB $MOREFLAGS $archarg -g -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -o $out
-#$archarg
+        #$archarg
         LD_RUN_PATH=$BOOST_LIB $gdb ./$out $ARGS
         if [[ $cleanup = 1 ]] ; then
             rm -f $out.o $out
@@ -5086,7 +5104,7 @@ function cwhich
 function vgx
 {
     (
-#lennonbin
+        #lennonbin
         local outarg smlarg out vgprog dbarg leakcheck
         [ "$out" ] && outarg="--log-file-exactly=$out"
         [ "$xml" ] && xmlarg="--xml=yes"
@@ -5100,7 +5118,7 @@ function vgx
         set +x
         [ "$xml" ] && valkyrie --view-log $out
     )
-#--show-reachable=yes
+    #--show-reachable=yes
 }
 
 function bak
@@ -5156,16 +5174,16 @@ stripunknown() {
 }
 
 fixochbraces() {
-# perl -ne '
-# s/^\s+\{/ \{\n/ if ($lastcond);
-# s/\s+$//;
-# print;
-# $lastcond=/^\s+(if|for|do)/;
-# print "\n" unless $lastcond;
-# END {
-# print "\n" if $lastcond;
-# }
-# ' "$@"
+    # perl -ne '
+    # s/^\s+\{/ \{\n/ if ($lastcond);
+    # s/\s+$//;
+    # print;
+    # $lastcond=/^\s+(if|for|do)/;
+    # print "\n" unless $lastcond;
+    # END {
+    # print "\n" if $lastcond;
+    # }
+    # ' "$@"
     perl -e '$/=undef;$_=<>;print $_
 $ws=q{[ \t]};
 $kw=q{(?:if|for|while|else)};
@@ -5179,7 +5197,7 @@ print;
 # print "$_\n";
 # }
 ' "$@"
-#s|(\b$kw\b$notcomment*)(//[^\n]*)(\{$ws*)\n|$1$3\n$2\n|gs;
+    #s|(\b$kw\b$notcomment*)(//[^\n]*)(\{$ws*)\n|$1$3\n$2\n|gs;
 
 }
 
@@ -5260,7 +5278,7 @@ cplo1() {
     scp -r "$1" jgraehl@login.clsp.jhu.edu:"$dest"
 }
 rfromlo1() {
-# set -x
+    # set -x
     local dest=`relpath ~ $1`
     mkdir -p `dirname $dest`
     echo scp -r jgraehl@login.clsp.jhu.edu:"$dest" "$1"
@@ -5278,7 +5296,7 @@ elo() {
     local cdir=`pwd`
     local lodir=`relpath ~ $cdir`
     ssh login.clsp.jhu.edu -l jgraehl ". .bashrc;. isd/hints/aliases.sh;cd $lodir && $*"
-# "$@"
+    # "$@"
 }
 eboth() {
     echo "$@"
@@ -5303,10 +5321,10 @@ clonecar() {
     set -x
     local CR=https://nlg0.isi.edu/svn/sbmt/
     git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile|dagtt)' ---trunk=$CR/trunk/graehl "$@"
-#--tags=$CR/tags --branches=$CR/branches
-#-r 3502 at
-# https://nlg0.isi.edu/svn/sbmt/trunk/graehl@3502
-#e4bd1e594dd7051a9e50561d19bdc31139ba1159
+    #--tags=$CR/tags --branches=$CR/branches
+    #-r 3502 at
+    # https://nlg0.isi.edu/svn/sbmt/trunk/graehl@3502
+    #e4bd1e594dd7051a9e50561d19bdc31139ba1159
 
     #--no-metadata
     set +x
@@ -5334,7 +5352,7 @@ svncom() {
         )
         git svn rebase
         git svn dcommit
-# git push
+        # git push
     )
 }
 alias wscom="project=$WSMT svncom"
@@ -5545,7 +5563,7 @@ conf2() {
 conffrom() {
     fromhost $1 isd/hints/
     fromhost $1 .inputrc .screenrc .bashrc .emacs
-# syncfrom $1 elisp/
+    # syncfrom $1 elisp/
 }
 conf2l() {
     conf2 login.clsp.jhu.edu
@@ -5759,7 +5777,7 @@ graph3() {
     local obase=${obase:-$opre$name.x_`filename_from $xlbl`.$y.`filename_from $ylbl`.$y2.`filename_from $ylbl2`.$y3.`filename_from $ylbl3`}
     local of=$obase.png
     local ops=$obase.ps
-        #yrange=0
+    #yrange=0
     local yrange_arg
     [ "$ymin" ] && yrange_arg="yrange=$ymin $ymax"
     #pointsym=none pointsym2=none
@@ -5801,19 +5819,19 @@ first_gcc() {
 config_gcc_bare() {
     first_gcc
     local nomp=--disable-libgomp
-        #--disable-shared
+    #--disable-shared
     local skip="--disable-libssp --disable-libmudflap --disable-nls --disable-decimal-float"
-# --disable-bootstrap
-# gomp: open mp. ssp: stack corruption mitigation. mudflap: buffer overflow instrumentation (optional). nls: non-english text
+    # --disable-bootstrap
+    # gomp: open mp. ssp: stack corruption mitigation. mudflap: buffer overflow instrumentation (optional). nls: non-english text
     local basegcc=${basegcc:--enable-language=c,c++ --enable-__cxa_atexit --enable-clocale=gnu --enable-threads=posix --disable-multilib $skip}
-            #--with-gmp-include=`realpath gmp` --with-gmp-lib=`realpath gmp`/.libs
-# local basegcc=${basegcc:--enable-language=c,c++ --enable-clocale=gnu --enable-shared --enable-threads=posix --disable-multilib}
+    #--with-gmp-include=`realpath gmp` --with-gmp-lib=`realpath gmp`/.libs
+    # local basegcc=${basegcc:--enable-language=c,c++ --enable-clocale=gnu --enable-shared --enable-threads=posix --disable-multilib}
 
     src=${src:-.}
 
     echo $src/configure --prefix=$FIRST_PREFIX $basegcc "$@" > my.config.sh
     . my.config.sh
-        #--with-mpfr=$FIRST_PREFIX --with-mpc=$FIRST_PREFIX --with-gmp=$FIRST_PREFIX
+    #--with-mpfr=$FIRST_PREFIX --with-mpc=$FIRST_PREFIX --with-gmp=$FIRST_PREFIX
 }
 
 config_gcc() {
@@ -5885,7 +5903,7 @@ fastflags() {
     CFLAGS+=-Ofast
     CXXFLAGS+=-Ofast
     export CFLAGS CXXFLAGS
-# turns on fast-math, and maybe some unsafe opts beyond -O3
+    # turns on fast-math, and maybe some unsafe opts beyond -O3
 }
 
 slowflags() {
@@ -5966,7 +5984,7 @@ gjam() {
     set -e
     set -x
     if [[ $no11 ]] ; then
-        g++ -O -g  $cc -o solve
+        g++ -O -g $cc -o solve
     else
         $CXX11 -O3 --std=c++11 $cc -o solve
     fi
@@ -5985,11 +6003,11 @@ gjam() {
     wrong=${out%.out}.wrong
     tailn=20 preview $out $expect
     wc -l $in $out
-if [[ -f $wrong ]] ; then
-    set -x
-    diff -u $out $wrong
-    set +x
-fi
+    if [[ -f $wrong ]] ; then
+        set -x
+        diff -u $out $wrong
+        set +x
+    fi
 }
 
 
