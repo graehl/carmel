@@ -38,6 +38,7 @@ find_tests() {
     findx -name Test\*
 }
 
+
 # if you don't have /usr/bin/time, 'sudo yum install time'
 timerss() {
     echo "time $*" 1>&2
@@ -82,7 +83,8 @@ memcheck() {
         local memout=`mktemp /tmp/memcheck.$test.out.XXXXXX`
         #TODO: could use --log-fd=3 >/dev/null 2>/dev/null 3>&2
         # need to test order of redirections, though
-        local valgrindargs="-q --tool=memcheck --leak-check=no --track-origins=yes"
+        local supp=$xmtx/jenkins/valgrind.fc12.debug.supp
+        local valgrindargs="-q --tool=memcheck --leak-check=no --track-origins=yes --suppressions=$supp"
         save12timeram $memout valgrind $valgrindargs --log-file=$memlog "$@"
         local rc=$?
         if [[ $rc -ne 0 ]] || [[ -s $memlog ]] ; then
@@ -91,7 +93,7 @@ memcheck() {
             echo $hr
             echo "cd `pwd` && valgrind $valgrindargs $1"
             ls -l $memout $memlog
-            head -4 $memlog
+            head -40 $memlog
             echo ...
             echo $memlog
             memcheckrc=88
@@ -103,6 +105,7 @@ memcheck() {
         fi
     fi
 }
+
 
 skiptest() {
     echo "skipping memcheck of $basetest (MEMCHECKALL=1 to include it)"
@@ -1044,12 +1047,15 @@ jen() {
     MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build "$@" 2>&1 | tee $log
     echo
     echo $log
-    grep FAIL $log | sort > $log.fails
+    grep FAIL $log | cut -d' ' -f1 | grep -v postagger | sort | uniq > $log.fails
+    nfails=`wc -l $log.fails`
     cp $log.fails /tmp/last-fails
     echo
     cat /tmp/last-fails
     echo
     echo $log.fails
+    echo "#fails = $nfails"
+    echo "#fails = $nfails" >> $log.fails
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -1856,7 +1862,7 @@ makerun() {
     local cpus=$(ncpus)
     echo2 "$cpus cpus ... -j$cpus"
 (set -e
-    make $exe VERBOSE=1 -j$cpus
+    make $exe VERBOSE=1 -j$cpus || exit $?
     if [[ $exe != test ]] ; then
         set +x
         local f=$(echo */$exe)
