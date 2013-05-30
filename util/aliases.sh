@@ -16,7 +16,7 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 
-gto() {
+cto() {
     local dst=.
     if [[ $2 ]] ; then
         dst=$1
@@ -29,10 +29,10 @@ gto() {
         done
     )
 }
-gcat() {
+ccat() {
     cjg cat "$*"
 }
-gsave() {
+csave() {
     save12 ~/tmp/cjg.`filename_from $1 $2` cjg "$@"
 }
 creg() {
