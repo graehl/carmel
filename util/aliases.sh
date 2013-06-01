@@ -308,7 +308,11 @@ yreg() {
         if [[ $verbose ]] ; then
             STDERR_REGTEST="--dump-stderr"
         fi
-        REGTESTPARAMS="-b $racer/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
+        local memcheckparam
+        if [[ $memcheck ]] || [[ $MEMCHECKREGTEST -eq 1 ]] ; then
+            memcheckparam=--memcheck
+        fi
+        local REGTESTPARAMS="$REGTESTPARAMS $memcheckparam -b $racer/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
         if [[ $1 ]] ; then
             if [[ -d $1 ]] ; then
                 save12 $logfile ./runYaml.py $args $REGTESTPARAMS "$@"
