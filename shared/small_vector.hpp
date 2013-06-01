@@ -401,13 +401,15 @@ struct small_vector {
   // our true capacity is never less than kMaxInlineSize, but since capacity talks about allocated space,
   // we may as well return 0; however, docs on std::vector::capacity imply capacity>=size.
 
-  inline void resize_up(size_type s) { // like reserve, but because of capacity_ undef if data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_ immediately or we lose invariant
+  /// does not initialize w/ default ctor.
+  inline void resize_up_unconstructed(size_type s) { // like reserve, but because of capacity_ undef if data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_ immediately or we lose invariant
     assert(s>=data.stack.sz_);
     if (s>kMaxInlineSize)
       reserve_up_big(s);
     data.stack.sz_ = s;
   }
-  void resize_up_big(size_type s) {
+  void resize_up_big_unconstructed(size_type s) {
+    assert(s>kMaxInlineSize);
     reserve_up_big(s);
     data.stack.sz_ = s;
   }
@@ -443,7 +445,7 @@ struct small_vector {
     size_type N=(size_type)std::distance(i,e);
     size_type s=data.stack.sz_;
     size_type addsz=(size_type)(e-i);
-    resize_up(s+addsz);
+    resize_up_unconstructed(s+addsz);
     for (T *b=begin()+s;i<e;++i,++b)
       *b=*i;
   }
@@ -451,7 +453,7 @@ struct small_vector {
   inline void append(T const* i,T const* end) {
     size_type s=data.stack.sz_;
     size_type n=(size_type)(end-i);
-    append_uninit(n);
+    append_unconstructed(n);
     memcpy_n(begin()+s,i,n);
   }
 
@@ -467,18 +469,18 @@ struct small_vector {
   /**
      increase size without calling default ctor.
   */
-  inline void append_uninit(size_type N) {
-    resize_up(data.stack.sz_+N);
+  inline void append_unconstructed(size_type N) {
+    resize_up_unconstructed(data.stack.sz_+N);
   }
 
   /**
      change size without calling default ctor.
   */
-  inline void resize_uninit(size_type N) {
+  inline void resize_unconstructed(size_type N) {
     if (data.stack.sz_ > N)
       resize(N);
-    else
-      resize_up(N);
+    else if (data.stack.sz_ < N)
+      resize_up_unconstructed(N);
   }
 
   /**
@@ -486,7 +488,7 @@ struct small_vector {
   */
   inline void insert_hole(iterator where, size_type N) {
     if (where==end())
-      append_uninit(N);
+      append_unconstructed(N);
     else
       insert_hole_index(where-begin(),N);
   }
@@ -497,7 +499,7 @@ struct small_vector {
   inline T *insert_hole_index(size_type i, size_type N) {
     size_type s=data.stack.sz_;
     size_type snew=s+N;
-    resize_up(snew);
+    resize_up_unconstructed(snew);
     //TODO: optimize for snew,s inline/not
     T *v=begin();
     memmove_n(v+i+N,v+i,s-i);
@@ -775,6 +777,10 @@ struct small_vector {
   template <class Ch,class Tr>
   friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, small_vector const& self)
   { self.print(o); return o; }
+  void init_unconstructed(size_type s) {
+    assert(data.stack.sz_ == 0);
+    alloc(s);
+  }
  private:
   void alloc(size_type s) { // doesn't free old; for ctor. sets sz_
     data.stack.sz_ = s;
@@ -785,17 +791,17 @@ struct small_vector {
     }
   }
   static inline T* alloc_impl(size_type sz) {
-    return new T[sz];
+    return (T*)std::malloc(sizeof(T)*sz);
   }
   static void free_impl(T *alloced) {
-    delete[] alloced;
+    std::free(alloced);
   }
   //pre: capacity_ is set
   void alloc_heap() {
-    data.heap.begin_=new T[data.heap.capacity_];  // TODO: boost user_allocator static template
+    data.heap.begin_ = alloc_impl(data.heap.capacity_);  // TODO: boost user_allocator static template
   }
   void free_heap() const {
-    delete[] data.heap.begin_;
+    free_impl(data.heap.begin_);
   }
   void free() {
     if (data.stack.sz_ > kMaxInlineSize)
@@ -814,6 +820,7 @@ struct small_vector {
       return data.stack.vals_;
   }
 
+
   void reserve_up_big(size_type s) {
     assert(s>kMaxInlineSize);
     if (data.stack.sz_>kMaxInlineSize) {
@@ -821,9 +828,9 @@ struct small_vector {
         ensure_capacity_grow(s);
     } else {
       T* tmp = alloc_impl(s);
-      memcpy_n(tmp, data.stack.vals_, kMaxInlineSize); // const instead of size_
-      data.heap.capacity_=s; // note: these must be set AFTER copying from data.stack.vals_
-      data.heap.begin_=tmp;
+      memcpy_n(tmp, data.stack.vals_, data.stack.sz_);
+      data.heap.capacity_ = s; // note: these must be set AFTER copying from data.stack.vals_
+      data.heap.begin_ = tmp;
     }
   }
   void ensure_capacity(size_type min_size) {

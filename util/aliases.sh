@@ -58,6 +58,12 @@ creg() {
 cregr() {
     save12 ~/tmp/cregr.`filename_from "$@"` cwith yregr "$@"
 }
+treg() {
+    save12 /tmp/reg yreg "$@"
+}
+tregr() {
+    save12 /tmp/reg yregr "$@"
+}
 cp2cbin() {
     scp "$@" c-jgraehl:/c01_data/graehl/bin/
 }
