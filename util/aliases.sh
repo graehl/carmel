@@ -16,6 +16,13 @@ if [[ $HOST = $chost ]] ; then
 fi
 DROPBOX=$(echo ~/dropbox)
 
+commg() {
+    ( set -e
+        cd ~/g
+        gcom "$@"
+    )
+}
+
 cto() {
     local dst=.
     if [[ $2 ]] ; then
@@ -5827,7 +5834,7 @@ clear_gcc() {
 first_gcc() {
     clear_gcc
     export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
-    export C_INCLUDE_PATH=$FIRST_PREFIX/include
+#    export C_INCLUDE_PATH=$FIRST_PREFIX/include
     export CXXFLAGS="-I$FIRST_PREFIX/include"
     export LDFLAGS="-L$FIRST_PREFIX/lib -L$FIRST_PREFIX/lib64"
 }
