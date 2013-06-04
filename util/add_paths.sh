@@ -39,7 +39,8 @@ function prepend_path
  local subinc=$prefix/include
  export PATH="$subbin:$PATH"
  export MAN_PATH="$subman:$MAN_PATH"
- export C_INCLUDE_PATH="$subinc:$C_INCLUDE_PATH"
+ #export C_INCLUDE_PATH="$subinc:$C_INCLUDE_PATH"
+ #breaks rvm / ruby
  export CPPFLAGS="-I$subinc $CPPFLAGS"
  add_ldpath $sublib
  add_pypath $subpy $subpy/bzrlib ${subpy}2.6/site-packages

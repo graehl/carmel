@@ -4,9 +4,6 @@
 [github]
 	user = graehl
 	token = c16024811fee18c08ac842ba3d4547c5
-[remote "optfunc"]
-	url = git@github.com:graehl/optfunc/optfunc.py.git
-	fetch = +refs/heads/*:refs/remotes/optfunc/*
 [svn]
 	authorsfile = /Users/graehl/t/graehl/util/.svn.authorsfile
 [color]

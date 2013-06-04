@@ -15,6 +15,28 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
+rakes() {
+    (set -e
+        cd ~/src/octopress
+        rake generate
+        rake deploy
+    )
+}
+newdraft() {
+    (set -e
+        cd ~/src/octopress
+        rake draft["$*"]
+        rake generate[unpublished] &
+        rake preview
+        open 'http://localhost:4000'
+    )
+}
+newdraft() {
+    (set -e
+        cd ~/src/octopress
+        rake new_post["$*"]
+    )
+}
 splitflac() {
     #git clone git://github.com/ftrvxmtrx/split2flac.git
     split2flac "$@"
