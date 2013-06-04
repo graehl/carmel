@@ -50,6 +50,14 @@ overflow() {
     require_dir "$overflow"
     mv "$@" "$overflow"
 }
+
+commg() {
+    ( set -e
+        cd ~/g
+        gcom "$@"
+    )
+}
+
 cto() {
     local dst=.
     if [[ $2 ]] ; then
@@ -295,7 +303,11 @@ pycheckall() {
 }
 
 fork() {
-    (setsid "$@" &)
+    if [[ $ARCH = cygwin ]] ; then
+        "$@" &
+    else
+        (setsid "$@" &)
+    fi
 }
 
 launder() {
@@ -943,7 +955,7 @@ sshvia() {
     echo via $lport to $rhost 1>&2
     set -x
     local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
-    ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh -p $lport localhost "$@"
+    ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh $permit -p $lport localhost "$@"
     set +x
 }
 clonex() {
@@ -972,6 +984,12 @@ ssht() {
 }
 tunmac() {
     tunport 22 $maco &
+}
+sshtun() {
+    ssh -f -N tun
+}
+sshmaster() {
+    fork ssh -MNn $chost
 }
 tungerrit() {
     #tunport 29418 git02.languageweaver.com
@@ -2496,6 +2514,7 @@ fontsmooth() {
 }
 locp=${locp:9922}
 tun1() {
+#eg tun1 revboard 80 9921
     local p=${3:-$port}
     if ! [[ $p ]] ; then
         p=$locp
@@ -2509,26 +2528,8 @@ tun1() {
     echo lp
     echo $lp
 }
-revboardp=9921
-rxsvnp=9922
-tunrev() {
-    tun1 revboard 80 $revboardp
-}
 tunsvn() {
     tun1 svn 80 $rxsvnp
-}
-tuns() {
-    if ! [[ $nokill ]]; then
-        for i in `seq 1 10`; do
-            kill %$i
-        done
-        killall $revboardp
-        killall $rxsvnp
-    fi
-    if ! [[ $nostart ]] ; then
-        tunrev &
-        tunsvn &
-    fi
 }
 lwsvnhost=svn.languageweaver.com
 localsvnhost=localhost:$rxsvnp
@@ -5878,7 +5879,7 @@ clear_gcc() {
 first_gcc() {
     clear_gcc
     export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
-    export C_INCLUDE_PATH=$FIRST_PREFIX/include
+#    export C_INCLUDE_PATH=$FIRST_PREFIX/include
     export CXXFLAGS="-I$FIRST_PREFIX/include"
     export LDFLAGS="-L$FIRST_PREFIX/lib -L$FIRST_PREFIX/lib64"
 }
@@ -6079,7 +6080,7 @@ gjam() {
 
 
 addpythonpath() {
-    if ! [[ $PYTHONPATH = *$1* ]] ; then
+    if ! [[ $PYTHONPATH ]] || ! [[ $PYTHONPATH = *$1* ]] ; then
         if [[ $PYTHONPATH ]] ; then
             export PYTHONPATH=$1:$PYTHONPATH
         else
