@@ -183,6 +183,7 @@ memcheck() {
             memcheckfailed+=" $test"
             echo $hr
         else
+            cat $memlog 1>&2
             rm $memout
             rm $memlog
         fi
