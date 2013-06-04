@@ -1931,11 +1931,11 @@ if [[ $HOST = graehl.local ]] ; then
     GCC_PREFIX=/usr/local/gcc-4.8.1
     GCC_BIN=$GCC_PREFIX/bin
 fi
-gcc47() {
+gcc48() {
     if [[ $HOST = graehl.local ]] ; then
-        GCC_SUFFIX=4.8
-        export CC=ccache-gcc-4.8
-        export CXX=ccache-g++-4.8
+        GCC_SUFFIX=-4.8
+        export CC=ccache-gcc$GCC_SUFFIX
+        export CXX=ccache-g++$GCC_SUFFIX
         prepend_path $GCC_PREFIX
         add_ldpath $GCC_PREFIX/lib
     fi
@@ -3060,7 +3060,7 @@ s2c() {
         set -e
         toc x/run.sh
         toc x/xmtpath.sh
-        for d in u script bugs g .emacs.d .gitconfig ; do
+        for d in u g script bugs .gitconfig ; do
             sync2 $chost $d
         done
     )

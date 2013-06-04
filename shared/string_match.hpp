@@ -448,7 +448,6 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
     typedef typename F::data_type Data;
     using namespace std;
     typedef pair<Key,Data> Component;
-    typedef string::size_type Pos;
     typedef string::const_iterator It;
     Component to_add;
     for (It i=s.begin(),e=s.end();;) {
