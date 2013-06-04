@@ -15,7 +15,41 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
+flacgain() {
+    echo2 flac replay gain "$@"
+    metaflac --no-utf8-convert --dont-use-padding --preserve-modtime --with-filename  --add-replay-gain "$@"
+}
+mp3m4again() {
+    echo2 mp3 or m4a replay gain "$@"
+    aacgain -r -k -p "$@"
+}
+gains() {
+    for f in "$@"; do
+        if [[ ${f%.flac} = $f ]] ; then
+            mp3m4again "$f"
+        else
+            flacgain "$f"
+        fi
+    done
+}
+gitrmsub() {
+    local sub=${1:?submodule path}
+    git status || return
+    git config -f .git/config --remove-section submodule.$1
+    git config -f .gitmodules --remove-section submodule.$1
+    rm -rf $1
+    git rm --cached -f $1
+    git commit -a -m 'rm submodule $1'
+    rm -rf $1 .git/modules/$1 .git/modules/path/to/$1
+}
 
+alias edbg="open /Applications/Emacs.app --args --debug-init"
+alias cedbg="/Applications/Emacs.app/Contents/MacOS/Emacs  -nw --debug-init"
+overflow() {
+    local overflow=`echo ~/music/music-overflow`
+    require_dir "$overflow"
+    mv "$@" "$overflow"
+}
 cto() {
     local dst=.
     if [[ $2 ]] ; then
@@ -228,13 +262,18 @@ gdbargs() {
     shift
     gdb --fullname -ex "set args $*; r" $prog
 }
+rebaseadds() {
+    local adds=`git rebase --continue 2>&1 | perl -ne 'if (/^(.*): needs update/) { print $1," " }'`
+    echo adds=$adds
+    if [[ $adds ]] ; then
+        git add -- $adds
+    fi
+    git rebase --continue
+}
 rebasenext() {
     cd ~/x
     rebasece `git rebase --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
-    git rebase --continue
-    local adds=`git rebase --continue 2>&1 | perl -ne 'if (/^(.*): needs update/) { print $1," " }'`
-    echo adds $adds
-    git add -- $adds
+    rebaseadds
 }
 agsrc() {
     ag -G '\.(h|c|hh|cc|hpp|cpp|scala|py|pl|perl)$' "$@"
@@ -986,13 +1025,15 @@ useclang() {
     export CC="$ccache-cc$GCC_SUFFIX"
     export CXX="$ccache-c++$GCC_SUFFIX"
 }
-gcc47=1
+gcc48=1
 usegcc() {
     if false && [[ $HOST = graehl.local ]] ; then
         usegccnocache
         #don't have right gdb for gcc 4.7 on my mac
     else
-        if [[ $gcc47 ]] && [[ -x `which gcc-4.7` ]] ; then
+        if [[ $gcc48 ]] && [[ -x `which gcc-4.8` ]] ; then
+            GCC_SUFFIX=-4.8
+        elif [[ $gcc47 ]] && [[ -x `which gcc-4.7` ]] ; then
             GCC_SUFFIX=-4.7
         fi
         local ccache=${ccache:-$(echo ~/bin/ccache)}
@@ -1869,14 +1910,14 @@ linxreg() {
 
 export PYTHONIOENCODING=utf_8
 if [[ $HOST = graehl.local ]] ; then
-    GCC_PREFIX=/usr/local/gcc-4.7.1
+    GCC_PREFIX=/usr/local/gcc-4.8.1
     GCC_BIN=$GCC_PREFIX/bin
 fi
 gcc47() {
     if [[ $HOST = graehl.local ]] ; then
-        GCC_SUFFIX=4.7
-        export CC=ccache-gcc-4.7
-        export CXX=ccache-g++-4.7
+        GCC_SUFFIX=4.8
+        export CC=ccache-gcc-4.8
+        export CXX=ccache-g++-4.8
         prepend_path $GCC_PREFIX
         add_ldpath $GCC_PREFIX/lib
     fi
@@ -2066,11 +2107,11 @@ nsinclude() {
         nsincludes "$f"
     done
 }
-gitsubpulls() {
+gitpullsub() {
     #-q
     git submodule foreach git pull -q origin master
 }
-esubpulls() {
+espullsub() {
     #-q
     cd ~/.emacs.d
     git submodule foreach git pull -q origin master
@@ -2085,18 +2126,18 @@ emcom() {
     git add -v snippets/*/*.yasnippet
     gcom "$@"
 }
-emsubcom() {
+ecomsub() {
     cd ~/.emacs.d
     git pull
     cd site-lisp
-    gitsubpush *
+    gitpushsub *
 }
 empull() {
     (
         cd ~/.emacs.d
         git pull
         cd site-lisp
-        gitsubpull *
+        gitpullsub *
     )
 }
 uext() {
@@ -2692,7 +2733,7 @@ gitsubuntracked() {
     awki .gitmodules ' {print}; /^.submodule / { print "\tignore = untracked" }'
 }
 
-gitsubpush1() {
+gitpush1sub() {
     local p=$1
     shift
     local msg="$*"
@@ -2711,16 +2752,16 @@ gitsubpush1() {
         )
     fi
 }
-gitsubpush() {
-    forall gitsubpush1 "$@"
+gitpushsub() {
+    forall gitpushsub1 "$@"
 }
-gitsubpull1() {
+gitpullsub1() {
     local p=$1
     shift
     local msg="$*"
     echo git submodule push-pull $p ...
     if ! [[ -d $p ]] ; then
-        echo gitsubpull skipping non-directory $p ...
+        echo gitpullsub skipping non-directory $p ...
     else
         (
             set -e
@@ -2741,8 +2782,8 @@ gitsubpull1() {
         )
     fi
 }
-gitsubpull() {
-    forall gitsubpull1 "$@"
+gitpullsub() {
+    forall gitpullsub1 "$@"
 }
 dbgemacs() {
     ${emacs:-appemacs} --debug-init
@@ -2816,11 +2857,6 @@ gitsub() {
     git pull
     git submodule update --init --recursive "$@"
     git pull
-}
-gitrmsub() {
-    git rm --cached $1
-    git config -f .git/config --remove-section submodule.$1
-    git config -f .gitmodules --remove-section submodule.$1
 }
 gitco() {
     git clone --recursive "$@"
@@ -3234,7 +3270,11 @@ emacsapp=/Applications/Emacs.app/Contents/MacOS/
 emacssrv=$emacsapp/Emacs
 emacsc() {
     if [ "$*" ] ; then
-        $emacsapp/bin/emacsclient -a $emacssrv "$@"
+        if [[ -x ~/bin/eclient.sh ]] ; then
+            ~/bin/eclient.sh "$@"
+        else
+            $emacsapp/bin/emacsclient -a $emacssrv "$@"
+        fi
     else
         $emacssrv &
     fi

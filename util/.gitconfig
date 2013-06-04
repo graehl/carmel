@@ -57,3 +57,7 @@
 	conflictstyle = diff3
 	rename-threshold = 80
 	ignore-space-change = 1
+[help]
+	autocorrect = 10
+[gc]
+	reflogexpire = 300
