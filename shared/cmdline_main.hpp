@@ -611,7 +611,7 @@ public:
           store(parse_config_file(*config_file,all_options()),get_vm()); /*Stores in 'm' all options that are defined in 'options'. If 'm' already has a non-defaulted value of an option, that value is not changed, even if 'options' specify some value. */
           //NOTE: this means that cmdline opts have precedence. hooray.
           config_file.close();
-        } catch(exception const& e) {
+        } catch(exception &e) {
           std::cerr << "ERROR: parsing "<<cmdname<<" config file "<<config_file.name<<" - "<<e.what();
           throw;
         }

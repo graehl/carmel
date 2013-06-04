@@ -15,9 +15,13 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
+splitflac() {
+    #git clone git://github.com/ftrvxmtrx/split2flac.git
+    split2flac "$@"
+}
 flacgain() {
     echo2 flac replay gain "$@"
-    metaflac --no-utf8-convert --dont-use-padding --preserve-modtime --with-filename  --add-replay-gain "$@"
+    metaflac --no-utf8-convert --dont-use-padding --preserve-modtime --with-filename --add-replay-gain "$@"
 }
 mp3m4again() {
     echo2 mp3 or m4a replay gain "$@"
@@ -44,7 +48,7 @@ gitrmsub() {
 }
 
 alias edbg="open /Applications/Emacs.app --args --debug-init"
-alias cedbg="/Applications/Emacs.app/Contents/MacOS/Emacs  -nw --debug-init"
+alias cedbg="/Applications/Emacs.app/Contents/MacOS/Emacs -nw --debug-init"
 overflow() {
     local overflow=`echo ~/music/music-overflow`
     require_dir "$overflow"
@@ -76,16 +80,16 @@ ccp() {
     local n=$#
     local dst=${@:$n:$n}
     (set -e
-    require_dir `dirname "$dst"`
-    if [[ $(( -- n )) -gt 0 ]] ; then
-        if [[ $n -gt 1 ]] ; then
-            require_dir "$dst"
+        require_dir `dirname "$dst"`
+        if [[ $(( -- n )) -gt 0 ]] ; then
+            if [[ $n -gt 1 ]] ; then
+                require_dir "$dst"
+            fi
+            for f in "${@:1:$n}"; do
+                echo scp $chost:"$f" "$dst"
+                scp $chost:"$f" "$dst"
+            done
         fi
-        for f in "${@:1:$n}"; do
-            echo scp $chost:"$f" "$dst"
-            scp $chost:"$f" "$dst"
-        done
-    fi
     )
 }
 ccat() {
@@ -604,11 +608,25 @@ bakdocs() {
         scp *.r *.rmd *.md *.txt $chost:projects/docs
     )
 }
+metaflacs() {
+    for f in *.flac; do
+        metaflac --with-filename --preserve-modtime --dont-use-padding "$@" "$f"
+    done
+}
 cuesplit() {
     local cue=${1:?args file.cue [file.flac]}
     local flac=${2:-${cue%.cue}.flac}
-    require_files $cue $flac
-    shntool split -f $cue -o 'flac flac --output-name=%f -' -t '%n-%p-%t' $flac
+    showvars_required cue flac
+    require_files "$cue" "$flac"
+    mkdir -p split
+    shntool split -f "$cue" -o 'flac flac --output-name=%f -' -t '%n-%p-%t' "$flac"
+    for f in *.flac; do
+        if [[ "$f" != "$flac" ]] ; then
+            flacgain "$f"
+            mv "$f" split
+        fi
+    done
+    #    shntool split -f "$cue" -o 'flac flacandgain %f' "$flac"
 }
 stripx() {
     strip "$@"
@@ -2515,7 +2533,7 @@ fontsmooth() {
 }
 locp=${locp:9922}
 tun1() {
-#eg tun1 revboard 80 9921
+    #eg tun1 revboard 80 9921
     local p=${3:-$port}
     if ! [[ $p ]] ; then
         p=$locp
@@ -5880,7 +5898,7 @@ clear_gcc() {
 first_gcc() {
     clear_gcc
     export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
-#    export C_INCLUDE_PATH=$FIRST_PREFIX/include
+    #    export C_INCLUDE_PATH=$FIRST_PREFIX/include
     export CXXFLAGS="-I$FIRST_PREFIX/include"
     export LDFLAGS="-L$FIRST_PREFIX/lib -L$FIRST_PREFIX/lib64"
 }

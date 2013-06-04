@@ -4,9 +4,5 @@ if [[ $CONSOLE ]] ; then
 else
     emacsapp=/Applications/Emacs.app/Contents/MacOS/
     emacssrv=$emacsapp/Emacs
-    if [[ -x ~/bin/eclient.sh ]] ; then
-        exec ~/bin/eclient.sh "$@"
-    else
-        exec $emacsapp/bin/emacsclient -a $emacssrv "$@"
-    fi
+    exec $emacsapp/bin/emacsclient -a $emacssrv "$@"
 fi
