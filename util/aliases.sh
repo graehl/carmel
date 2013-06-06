@@ -14,10 +14,23 @@ phost=pontus.languageweaver.com
 if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
-DROPBOX=$(echo ~/dropbox)
-octo=$(echo ~/src/octopress)
+HOME=${HOME:-$(echo ~)}
+DROPBOX=$HOME/dropbox
+octo=$HOME/src/octopress
 jgpem=$octo/aws/jonathan.graehl.org.pem
 jgip=ec2-54-218-0-133.us-west-2.compute.amazonaws.com
+emacsd=$HOME/.emacs.d
+carmeld=$HOME/g
+overflowd=$HOME/music/music-overflow/
+gitroots="$emacsd $octo $carmeld $overflowd"
+pulls() {
+    (set -e
+        for f in $gitroots; do
+            cd $f; git pull || (git stash; git pull; git stash pop || true)
+        done
+        empull
+    )
+}
 sshjg() {
   ssh -i $jgpem ec2-user@$jgip "$@"
 }
@@ -40,8 +53,9 @@ rakedeploy() {
         set -x
         rake generate
         rake deploy
+        git add -v -N source/_posts/*.markdown
         git commit -a -m 'deploy'
-        git push
+        git push origin
     )
 }
 rakepreview() {
