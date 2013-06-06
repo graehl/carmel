@@ -22,13 +22,27 @@ jgip=ec2-54-218-0-133.us-west-2.compute.amazonaws.com
 emacsd=$HOME/.emacs.d
 carmeld=$HOME/g
 overflowd=$HOME/music/music-overflow/
+puzzled=$HOME/puzzle
+edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd"
+#puzzled edud
+# doesn't include ~/x on purpose (often in weird branch/rebase state)
+forcepull() {
+    git pull --rebase || (git stash; git pull --rebase; git stash pop || true)
+}
 pulls() {
     (set -e
         for f in $gitroots; do
-            cd $f; git pull || (git stash; git pull; git stash pop || true)
+            (cd $f; forcepull)
         done
         empull
+    )
+}
+pushes() {
+    (set -e
+        for f in $gitroots; do
+            (cd $f; forcepull; git commit -a -m push; git push)
+        done
     )
 }
 sshjg() {
