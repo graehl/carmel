@@ -21,6 +21,12 @@ jgip=ec2-54-218-0-133.us-west-2.compute.amazonaws.com
 sshjg() {
   ssh -i $jgpem ec2-user@$jgip "$@"
 }
+gitlsuntracked() {
+ git ls-files --others --exclude-standard "$@"
+}
+gitexecuntracked() {
+gitlsuntracked -z |  xargs -0 --replace={} "$@"
+}
 gitsync() {
 (set -e
   git pull --rebase
@@ -103,6 +109,17 @@ overflow() {
     local overflow=`echo ~/music/music-overflow`
     require_dir "$overflow"
     mv "$@" "$overflow"
+}
+
+xsnap() {
+    (set -e;
+        cd $xmtx
+        git stash && git stash apply
+    )
+}
+
+gitsnap() {
+    git stash && git stash apply
 }
 
 commg() {
