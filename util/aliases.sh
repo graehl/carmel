@@ -22,9 +22,10 @@ jgip=ec2-54-218-0-133.us-west-2.compute.amazonaws.com
 emacsd=$HOME/.emacs.d
 carmeld=$HOME/g
 overflowd=$HOME/music/music-overflow/
+composed=$HOME/music/compose.rpp
 puzzled=$HOME/puzzle
 edud=$HOME/edu
-gitroots="$emacsd $octo $carmeld $overflowd"
+gitroots="$emacsd $octo $carmeld $overflowd $composed"
 #puzzled edud
 # doesn't include ~/x on purpose (often in weird branch/rebase state)
 forcepull() {
@@ -38,21 +39,49 @@ pulls() {
         empull
     )
 }
+forcepush() {
+    echo pushing `pwd` message = "$*"
+    git commit -a -m "$*"
+    forcepull
+    git push
+}
+#modified including untracked. also includes ?? line noise output
+gitmod() {
+    git status --porcelain -- "*$1"
+#    git ls-files -mo
+}
+gitmodbase() {
+    local ext=${1:?.extension}
+    for f in `gitmod $ext`; do
+        if [[ $f != '??' ]] && [[ $f != A ]] && [[ $f != M ]] ; then
+            basename "$f" "$ext"
+        fi
+    done
+}
+octopush() {
+    (
+        cd $octo
+        set -e
+        git add source/_posts/*.markdown || true
+        forcepush `gitmodbase .markdown`
+    )
+}
 pushes() {
     (set -e
         for f in $gitroots; do
-            (cd $f; forcepull; git commit -a -m push; git push)
+            (cd $f; forcepush push)
         done
     )
+    octopush
 }
 sshjg() {
   ssh -i $jgpem ec2-user@$jgip "$@"
 }
 gitlsuntracked() {
- git ls-files --others --exclude-standard "$@"
+    git ls-files --others --exclude-standard "$@"
 }
 gitexecuntracked() {
-gitlsuntracked -z |  xargs -0 --replace={} "$@"
+    gitlsuntracked -z |  xargs -0 --replace={} "$@"
 }
 gitsync() {
 (set -e
@@ -2546,7 +2575,7 @@ substi() {
     )
 }
 substigrepq() {
- substi $1 `ag -l $(basename $1)`
+    substi $1 `ag -l $(basename $1)`
 }
 substrac() {
     (
@@ -3769,17 +3798,17 @@ mkstamps() {
         \end{center}
 EOF
 
-for i in `seq 1 $npages`; do
-    # echo '\newpage' >> $stamp
-    echo '\mbox{} \newpage' \
-        >> $stamp
-done
+        for i in `seq 1 $npages`; do
+            # echo '\newpage' >> $stamp
+            echo '\mbox{} \newpage' \
+                >> $stamp
+        done
 
-echo '\end{document}' >> $stamp
+        echo '\end{document}' >> $stamp
 
-local sbase=${stamp%.tex}
-lat2pdf $sbase
-echo $sbase.pdf
+        local sbase=${stamp%.tex}
+        lat2pdf $sbase
+        echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
