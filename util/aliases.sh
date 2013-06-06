@@ -15,26 +15,54 @@ if [[ $HOST = $chost ]] ; then
     export USE_BOOST_1_50=1
 fi
 DROPBOX=$(echo ~/dropbox)
-rakes() {
-    (set -e
+octo=$(echo ~/src/octopress)
+jgpem=$octo/aws/jonathan.graehl.org.pem
+jgip=ec2-54-218-0-133.us-west-2.compute.amazonaws.com
+sshjg() {
+  ssh -i $jgpem ec2-user@$jgip "$@"
+}
+gitsync() {
+(set -e
+  git pull --rebase
+  git push
+)
+}
+rakedeploy() {
+    (
         cd ~/src/octopress
+        set -e
+        set -x
         rake generate
         rake deploy
+        git commit -a -m 'deploy'
+        git push
     )
 }
-newdraft() {
-    (set -e
+rakepreview() {
+    (
+        set +e
+        set -x
         cd ~/src/octopress
-        rake draft["$*"]
         rake generate[unpublished] &
         rake preview
         open 'http://localhost:4000'
     )
 }
-newdraft() {
-    (set -e
+rakedraft() {
+    (
+        set -x
         cd ~/src/octopress
+        set -e
+        rake draft["$*"]
+    )
+    rakepreview
+}
+rakepost() {
+    (
+        cd ~/src/octopress
+        set -e
         rake new_post["$*"]
+        rakepreview
     )
 }
 splitflac() {
@@ -2471,6 +2499,9 @@ substi() {
         sleep 5
         subst.pl "$@" --inplace --tr "$tr"
     )
+}
+substigrepq() {
+ substi $1 `ag -l $(basename $1)`
 }
 substrac() {
     (

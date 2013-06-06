@@ -666,11 +666,11 @@ This is definitely linear to n.
             }
         if (first_child_index + Arity <= heap_size) {
           // avoid repeated heap_size boundcheck (should test if this is really a speedup - instruction cache tradeoff - could use upperbound = min(Arity,heap_size-first_child_index) instead.  but this optimizes to a fixed number of iterations (compile time known) so probably worth it
-          for (size_t i = 1; i < Arity; ++i) {
+          for (size_type i = 1; i < Arity; ++i) {
             D_ARY_MAYBE_IMPROVE_CHILD_I
           }
         } else {
-          for (size_t i = 1,e=heap_size - first_child_index; i < e; ++i) {
+          for (size_type i = 1,e=heap_size - first_child_index; i < e; ++i) {
             D_ARY_MAYBE_IMPROVE_CHILD_I
           }
         }
@@ -716,11 +716,11 @@ This is definitely linear to n.
         size_type smallest_child_index = 0;
         distance_type smallest_child_dist = get(distance, child_base_ptr[smallest_child_index]);
         if (first_child_index + Arity <= heap_size) {
-          for (size_t i = 1; i < Arity; ++i) { // can be unrolled completely.
+          for (size_type i = 1; i < Arity; ++i) { // can be unrolled completely.
             D_ARY_MAYBE_IMPROVE_CHILD_I
           }
         } else {
-          for (size_t i = 1,e=heap_size - first_child_index; i < e; ++i) {
+          for (size_type i = 1,e=heap_size - first_child_index; i < e; ++i) {
             D_ARY_MAYBE_IMPROVE_CHILD_I
           }
         }
