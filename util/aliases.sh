@@ -93,6 +93,9 @@ gitsync() {
   git push
 )
 }
+web() {
+    browse "$@"
+}
 rakedeploy() {
     (
         cd ~/src/octopress
@@ -115,7 +118,7 @@ rakegen() {
     (
         cd ~/src/octopress
         rake generate[unpublished]
-        rake preview
+        web public/index.html
     )
 }
 rakepreview() {
@@ -3701,9 +3704,6 @@ safepath() {
     else
         abspath "$@"
     fi
-}
-web() {
-    browse "file://$(safepath "$@")"
 }
 upa() {
     (pushd ~/t/graehl/util;
