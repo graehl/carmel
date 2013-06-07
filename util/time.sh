@@ -17,10 +17,26 @@ preview1() {
     echo
 }
 
+have_linuxtime() {
+    [[ -x /usr/bin/time ]]
+}
+UNAME=`uname`
+linuxtime() {
+    if [[ UNAME = Darwin ]] ; then
+        /usr/bin/time -lp "$@"
+    else
+        /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
+    fi
+}
+
+full_linuxtime() {
+    linuxtime && [[ UNAME != Darwin ]]
+}
+
 timerss() {
     echo "time $*" 1>&2
-    if [[ -x /usr/bin/time ]] ; then
-        /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
+    if have_linuxtime ; then
+        linuxtime
     else
         TIMEFORMAT='%3lR'
         time "$@"
@@ -31,13 +47,13 @@ save12timeram() {
     local save1="$1"
     shift
     echo "time $*" 1>&2
-    if [[ -x /usr/bin/time ]] ; then
+    if full_linuxtime ; then
         local timeout=`mktemp /tmp/timeram.out.XXXXXX`
         /usr/bin/time -o $timeout -f '%Es - %Mkb peak' -- "$@" >$save1 2>&1
         cat $timeout
     else
         TIMEFORMAT='%3lR'
-        time "$@" >$save1 2>&1
+        (time "$@" >$save1) 2>&1
     fi
 }
 
@@ -46,14 +62,18 @@ atime() {
 #appends to globals timeouts timerams timecmds
     local nrep=${nrep:-1}
     local proga=$1
-    local timedir=${timedir:-`mktemp /tmp/time.$(basename $proga).XXXXXX`}
+    [[ -x $proga ]] || proga=`which $proga`
+    local timedir=${timedir:-`mktemp -d /tmp/time.$(basename $proga).XXXXXX`}
     mkdir -p $timedir
     local stripa=$timedir/`basename $proga`
-    cp -a $proga $stripa
+    cp -f $proga $stripa
+    echo "$proga => $stripa"
+    chmod +rx $stripa
+    chmod u+w $stripa
+    strip "$stripa" || true
+    upx "$stripa" || true
     proga=$stripa
     shift
-    strip "$proga" || true
-    upx "$proga" || true
     $proga "$@" >$proga.out 2>&1
     timeouts+=" $proga.out"
     echo2 $proga "$@" "> $outa"
@@ -75,19 +95,22 @@ save1timeram() {
     local save1="$1"
     shift
     echo "time $*" 1>&2
-    if [[ -x /usr/bin/time ]] ; then
-        /usr/bin/time -f '%Es - %Mkb peak' -- "$@" >$save1
+    if full_linuxtime ; then
+        linuxtime  >$save1 2>&1
     else
         TIMEFORMAT='%3lR'
-        time "$@" >$save1
+        time "$@"  >$save1  2>&1
     fi
 }
 
 
 abtime() {
+(
+set -e
     proga=$1
     progb=$2
-    local timedir=${timedir:-`mktemp /tmp/time.$(basename $proga)-$(basename $progb).XXXXXX`}
+    local timedir=${timedir:-`mktemp -d /tmp/time.$(basename $proga)-$(basename $progb).XXXXXX`}
+    mkdir -p $timedir
     shift
     shift
     timeouts=
@@ -97,6 +120,7 @@ abtime() {
     timedir=$timedir/B atime $progb "$@"
     echo
     preview $timeouts $timecmds $timerams
+)
 }
 
 replinen() {
