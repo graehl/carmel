@@ -28,6 +28,10 @@ edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
 #puzzled edud
 # doesn't include ~/x on purpose (often in weird branch/rebase state)
+overflow() {
+    echo mv "$@" ~/music/music-overflow/
+    mv "$@" ~/music/music-overflow/
+}
 forcepull() {
     git pull --rebase || (git stash; git pull --rebase; git stash pop || true)
 }
@@ -101,14 +105,27 @@ rakedeploy() {
         git push origin
     )
 }
+chrometab() {
+    open -a 'Google Chrome Canary' "$@"
+}
+browse() {
+    open -a 'Google Chrome Canary' "$@"
+}
+rakegen() {
+    (
+        cd ~/src/octopress
+        rake generate[unpublished]
+        rake preview
+    )
+}
 rakepreview() {
     (
-        set +e
         set -x
         cd ~/src/octopress
+        set -e
         rake generate[unpublished] &
         rake preview
-        open 'http://localhost:4000'
+        chrometab 'http://localhost:4000'
     )
 }
 rakedraft() {
@@ -3686,7 +3703,7 @@ safepath() {
     fi
 }
 web() {
-    $browser "file://$(safepath "$@")"
+    browse "file://$(safepath "$@")"
 }
 upa() {
     (pushd ~/t/graehl/util;
