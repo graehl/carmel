@@ -28,6 +28,9 @@ edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
 #puzzled edud
 # doesn't include ~/x on purpose (often in weird branch/rebase state)
+nolog12() {
+save12 "$@" --log-config ~/x/scripts/warn.log.xml
+}
 overflow() {
     echo mv "$@" ~/music/music-overflow/
     mv "$@" ~/music/music-overflow/
