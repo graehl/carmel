@@ -81,8 +81,10 @@ atime() {
     fi
     proga=$stripa
     shift || true
-    echo "$proga $* >$proga.out 2>&1"
-    $proga "$@" >$proga.out 2>&1
+    if [[ $warm ]] ; then
+      echo "$proga $* >$proga.out 2>&1"
+      $proga "$@" >$proga.out 2>&1
+    fi
     timeouts+=" $proga.out"
     echo2 $proga "$@" "> $outa"
     echo2 ::::::::: nrep=$nrep
