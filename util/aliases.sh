@@ -26,10 +26,15 @@ composed=$HOME/music/compose.rpp
 puzzled=$HOME/puzzle
 edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
+
+brewhead() {
+  brew unlink "$@"
+  brew install "$@" --HEAD
+}
 #puzzled edud
 # doesn't include ~/x on purpose (often in weird branch/rebase state)
 nolog12() {
-save12 "$@" --log-config ~/x/scripts/warn.log.xml
+save12 "$@" --log-config ~/x/scripts/no.log.xml
 }
 overflow() {
     echo mv "$@" ~/music/music-overflow/
@@ -881,7 +886,6 @@ savedo() {
     for f in `find . -name '*.do'`; do
         local o=${f%.do}
         if [[ -f $o ]] ; then
-            set -x
             cp -a $f $dir/$f
             $cmd $cmdargs $o $dir/$o
             ls -l $dir/$f $dir/$o
@@ -945,7 +949,6 @@ panpdf() {
         fi
         set -e
         require_file $in
-        set -x
         local geom="-V geometry=${paper:-letter}paper -V geometry=margin=${margin:-0.5cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}"
         pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
         if [[ $open ]] ; then
@@ -958,7 +961,6 @@ rmd() {
     RMDFILE=${RMDFILE%.rmd}
     (
         set -e
-        set -x
         cd `dirname $RMDFILE`
         RMDFILE=`basename $RMDFILE`
         Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
@@ -1119,10 +1121,8 @@ sshvia() {
     local rhost=$1
     shift
     echo via $lport to $rhost 1>&2
-    set -x
     local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
     ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh $permit -p $lport localhost "$@"
-    set +x
 }
 clonex() {
     (set -x
