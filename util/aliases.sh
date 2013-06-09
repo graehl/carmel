@@ -1,6 +1,7 @@
 UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
+. $UTIL/time.sh
 HOST=${HOST:-$(hostname)}
 if [[ $HOST = graehl.local ]] ; then
     CXX11=g++-4.7
@@ -277,43 +278,6 @@ find_tests() {
     findx -name Test\*
 }
 
-
-# if you don't have /usr/bin/time, 'sudo yum install time'
-timerss() {
-    echo "time $*" 1>&2
-    if [[ -x /usr/bin/time ]] ; then
-        /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
-    else
-        TIMEFORMAT='%3lR'
-        time "$@"
-    fi
-}
-
-save1timeram() {
-    local save1="$1"
-    shift
-    echo "time $*" 1>&2
-    if [[ -x /usr/bin/time ]] ; then
-        /usr/bin/time -f '%Es - %Mkb peak' -- "$@" >$save1
-    else
-        TIMEFORMAT='%3lR'
-        time "$@" >$save1
-    fi
-}
-
-save12timeram() {
-    local save1="$1"
-    shift
-    echo "time $*" 1>&2
-    if [[ -x /usr/bin/time ]] ; then
-        local timeout=`mktemp /tmp/timeram.out.XXXXXX`
-        /usr/bin/time -o $timeout -f '%Es - %Mkb peak' -- "$@" >$save1 2>&1
-        cat $timeout
-    else
-        TIMEFORMAT='%3lR'
-        time "$@" >$save1 2>&1
-    fi
-}
 
 memcheck() {
     local test=`basename $1`
