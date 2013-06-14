@@ -28,14 +28,33 @@ puzzled=$HOME/puzzle
 edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
 
+compush() {
+    (set -e
+        git commit -a -m "$*"
+        git pull --rebase
+        git push
+    )
+}
+pushover() {
+    (set -e
+        cd ~/music/overflow
+        git add *
+        git commit -a -m more
+        git push
+    )
+}
+mean() {
+    sudo nice -n-20 ionice -c1 -n0 sudo -u $USER "$@"
+}
+
 brewhead() {
-  brew unlink "$@"
-  brew install "$@" --HEAD
+    brew unlink "$@"
+    brew install "$@" --HEAD
 }
 #puzzled edud
 # doesn't include ~/x on purpose (often in weird branch/rebase state)
 nolog12() {
-save12 "$@" --log-config ~/x/scripts/no.log.xml
+    save12 "$@" --log-config ~/x/scripts/no.log.xml
 }
 overflow() {
     echo mv "$@" ~/music/music-overflow/
@@ -61,7 +80,7 @@ forcepush() {
 #modified including untracked. also includes ?? line noise output
 gitmod() {
     git status --porcelain -- "*$1"
-#    git ls-files -mo
+    #    git ls-files -mo
 }
 gitmodbase() {
     local ext=${1:?.extension}
@@ -88,7 +107,7 @@ pushes() {
     octopush
 }
 sshjg() {
-  ssh -i $jgpem ec2-user@$jgip "$@"
+    ssh -i $jgpem ec2-user@$jgip "$@"
 }
 gitlsuntracked() {
     git ls-files --others --exclude-standard "$@"
@@ -97,16 +116,20 @@ gitexecuntracked() {
     gitlsuntracked -z |  xargs -0 --replace={} "$@"
 }
 gitsync() {
-(set -e
-  git pull --rebase
-  git push
-)
+    (set -e
+        git pull --rebase
+        git push
+    )
 }
 web() {
     browse "$@"
 }
+uservm() {
+    [[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
+}
 rakedeploy() {
     (
+        uservm
         cd ~/src/octopress
         set -e
         set -x
@@ -125,6 +148,7 @@ browse() {
 }
 rakegen() {
     (
+        uservm
         cd ~/src/octopress
         rake generate[unpublished]
         web public/index.html
@@ -132,7 +156,7 @@ rakegen() {
 }
 rakepreview() {
     (
-        set -x
+        uservm
         cd ~/src/octopress
         set -e
         rake generate[unpublished] &
@@ -142,15 +166,19 @@ rakepreview() {
 }
 rakedraft() {
     (
-        set -x
+        uservm
         cd ~/src/octopress
         set -e
         rake draft["$*"]
     )
     rakepreview
 }
+newpost() {
+    rakepost "$@"
+}
 rakepost() {
     (
+        uservm
         cd ~/src/octopress
         set -e
         rake new_post["$*"]
@@ -1179,9 +1207,9 @@ usegcc() {
         usegccnocache
         #don't have right gdb for gcc 4.7 on my mac
     else
-        if [[ $gcc48 ]] && [[ -x `which gcc-4.8` ]] ; then
+        if [[ $gcc48 ]] && [[ -x `which gcc-4.8 2>/dev/null` ]] ; then
             GCC_SUFFIX=-4.8
-        elif [[ $gcc47 ]] && [[ -x `which gcc-4.7` ]] ; then
+        elif [[ $gcc47 ]] && [[ -x `which gcc-4.7 2>/dev/null` ]] ; then
             GCC_SUFFIX=-4.7
         fi
         local ccache=${ccache:-$(echo ~/bin/ccache)}
@@ -1256,7 +1284,7 @@ linjen() {
     mend
     (set -e;
         cjg macget $branch
-        cjg threads=$threads jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        cjg threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -1867,7 +1895,6 @@ breview() {
     local rev=$branch-review
     git commit -a --amend # in case you forgot something
     (set -e
-        set -x
         if [[ $force ]] ; then
             forcebranch $rev
         else
@@ -1894,7 +1921,6 @@ git_branch() {
 }
 rebase() {
     local branch=$(git_branch)
-    set -x
     git stash
     (set -e
         remaster
@@ -2071,7 +2097,7 @@ gcc48() {
     fi
 }
 maketest() {
-    (set -x
+    (
         cd $xmtx/${BUILD:-Debug}
         if [[ $3 ]] ; then
             targ="-t $2/$3"
@@ -2103,10 +2129,10 @@ makerun() {
             if [[ -x $f ]] ; then
                 if ! [[ $pathrun ]] ; then
                     if ! [[ $norun ]] ; then
-                        $f "$@" || exit $?
+                        $f "$@"
                     fi
                 else
-                    $exe "$@" || exit $?
+                    $exe "$@"
                 fi
             fi
         fi
@@ -2161,7 +2187,6 @@ regress1p() {
         for dir in "$@"; do
             local run=./RegressionTests/$dir/run.pl
             if [[ -x $run ]] ; then
-                set -x
                 BUILD=${BUILD:-Debug} $run --verbose --no-cleanup
                 set +x
             fi
@@ -2217,7 +2242,6 @@ rrpath() {
         r=${2:-'$ORIGIN'}
         echo adding rpath "$r" to $f
         [ -f "$f" ]
-        set -x
         addrpathb "$f" "$r" "$f".rpath && mv "$f"{,.rpath.orig} && mv "$f"{.rpath,}
     )
 }
@@ -2335,7 +2359,6 @@ showcpp() {
             os+=" $o"
             rm -f $o
             f=$(realpath $f)
-            set -x
             pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DTIXML_USE_TICPP -DBOOST_TEST_DYN_LINK -DHAVE_SRILM -DHAVE_KENLM -DHAVE_OPENFST -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$racerlib/utf8 -I$racerlib/boost_1_49_0/include -I$racerlib/lexertl-2012-07-26 -I$racerlib/log4cxx-0.10.0/include -I$racerlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$racerlib/BerkeleyDB.4.3/include -I/usr/local/include -I$racerlib/openfst-1.2.10/src -I$racerlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
                 -I $racerlib/db-5.3.15 \
                 -I $racerlib/yaml-cpp-0.3.0-newapi/include \
@@ -2404,7 +2427,6 @@ panda() {
             params="--webtex --latex-engine=$tex --self-contained"
             html="$doc.html"
             echo generating $html for browser
-            set -x
             pandoc $params $tocparams -t html5 -o "$html" "$sources"
             if [[ $epub = 1 ]] ; then
                 local coverarg
@@ -2458,7 +2480,6 @@ pandcrap() {
         local o=$g.$os
         (
             texpath
-            set -x
             set -e
             # --read=markdown
             if [[ $os = pdf ]] ; then
@@ -2506,7 +2527,6 @@ fsmshow() {
     local f=$1
     require_file $f
     local g=$f.dot
-    set -x
     HgFsmDraw "$f" > $g
     dotshow $g
 }
@@ -2654,7 +2674,6 @@ tun1() {
         locp=$((locp+1))
     fi
     # ssh -L9922:svn.languageweaver.com:443 -N -t -x pontus.languageweaver.com -p 4640 &
-    set -x
     ssh -L$p:${1:-$chost.languageweaver.com}:${2:-22} -N -t -x ${4:-ceto}.languageweaver.com -p 4640
     set +x
     lp=localhost:$p
@@ -2690,7 +2709,6 @@ svnswitchhost() {
     local r=$(svnroot)
     local u=$(svnswitchurl "$@")
     echo "$r => $u"
-    set -x
     if [[ $svnpass ]] ; then
         local sparg="--password $svnpass"
     fi
@@ -2709,7 +2727,6 @@ svnswitchlocal() {
 rxtun() {
     (
         cd $racer
-        set -x
         svn relocate $rxsvn $rxlocal
         revboardrc
     )
@@ -2718,7 +2735,6 @@ rxtun() {
 rxlw() {
     (
         cd $racer
-        set -x
         svn relocate $rxlocal $rxsvn
         revboardrc
     )
@@ -2746,7 +2762,6 @@ revx() {
         dr="n"
     fi
     pushd $racer
-    set -x
     local dry=1
     local carg=
     if [[ $change ]] ; then carg="--svn-changelist=$change"; fi
@@ -2819,7 +2834,6 @@ safebrew() {
             mkdir -p $f/unbrew
             set +x
             mv `nonbrew $f` $f/unbrew/
-            set -x
         done
         mv /usr/local/bin/auto* $savebin
         export LDFLAGS+=" -L/usr/local/Cellar/libffi/3.0.9/lib"
@@ -2828,7 +2842,6 @@ safebrew() {
         export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
         #by default it looks there already. just in case!
         unset DYLD_LIBRARY_PATH
-        set -x
         brew -v "$@" || brew doctor
         set +x
         savedirs=

@@ -19,6 +19,25 @@
 #endif
 namespace graehl {
 
+/**
+   like boost::identity_map but for non-std::size_t types too
+*/
+template <class K>
+struct IdentityMap {
+  //      : boost::put_get_helper<K, IdentityMap> .
+  typedef K key_type;
+  typedef K value_type;
+  typedef K const& reference;
+  typedef boost::readable_property_map_tag category;
+  inline K const& operator[](K const& key) const { return key; }
+};
+
+template <class K>
+K const& get(IdentityMap<K>, K const& key) {
+  return key;
+}
+
+
 template <class K>  // for random access iterator or integral key K - e.g. you have vertex_descriptor = pointer to array of verts and want an external property map (ArrayPMapImp)
 struct OffsetMap {
   K begin;

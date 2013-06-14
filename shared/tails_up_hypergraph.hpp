@@ -399,8 +399,13 @@ struct TailsUpHypergraph {
       using namespace boost;
       for (Vi i=begin(verts),e=end(verts);i!=e;++i) {
         VD v=*i;
-        put(locp,v,0); // I'm only doing this because I can't tell if new int[100] calls int(). it should
         put(mu,*i,cinit);
+        put(locp,v,0);
+        // this should not be necessary for shared_array_property_map (new int[]
+        // default-inits), but it turns out that it actually is necessary. anyway we should support all pmaps
+
+        assert(get(locp,v) == 0);
+        assert(get(pi,v) == 0);
       }
     }
     void init() { // fill from hg terminal arcs
@@ -512,7 +517,7 @@ struct TailsUpHypergraph {
         cost_type tc=get(mu,t);
         EIFDBG(TUHG,6,SHOWM3(TUHG,"recompute_cost:c'=c*tc",c,tc,t));
         assert(tc!=PT::unreachable()); //FIXME: maybe we want to allow this (used to be "if")? if we don't, then you can only reach with non-unreachable cost.
-        c=PT::extend(c,tc);
+        PT::extendBy(tc, c);
         IFDBG(TUHG,9) { SHOWM3(TUHG,"recompute_cost:updated c=c*tc",c,tc,t); }
       }
       IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost:final",c,print(e,g)); }

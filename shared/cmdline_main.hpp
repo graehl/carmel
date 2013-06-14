@@ -192,6 +192,8 @@ struct main {
   std::string appname,version,compiled,usage;
   boost::uint32_t random_seed;
 
+  int help_exitcode;
+
   //FIXME: segfault if version is a char const* global in subclass xtor, why?
   main(std::string const& name="main",std::string const& usage="usage undocumented\n",std::string const& version="v1",bool multifile=false,bool random=false,bool input=true,std::string const& compiled=GRAEHL_MAIN_COMPILED)
     : appname(name),version(version),compiled(compiled),usage(usage)
@@ -201,6 +203,7 @@ struct main {
 #else
 #endif
   {
+    help_exitcode=0;
     if (random)
       allow_random();
     if (input) {
@@ -583,7 +586,8 @@ public:
   }
 
 
-  bool parse_args(int argc, char **argv)
+  /// \return false = help, true = success (else exception)
+  int parse_args(int argc, char **argv)
   {
     set_defaults();
     using namespace std;
@@ -640,7 +644,7 @@ public:
     cmdname=argv[0];
     try {
       if (!parse_args(argc,argv))
-        return 1;
+        return help_exitcode; // help is ok!
       validate_parameters();
       log_invocation();
       return run_exit();

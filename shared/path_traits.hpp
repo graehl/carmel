@@ -21,6 +21,7 @@ struct cost_path_traits
   static inline cost_type unreachable() { return std::numeric_limits<cost_type>::infinity(); }
   static inline cost_type start() { return 0; }
   static inline cost_type extend(cost_type a,cost_type b) { return a+b; }
+  static inline cost_type extendBy(cost_type delta,cost_type &b) { return b+=delta; }
   static inline cost_type retract(cost_type a,cost_type b) { return a-b; }
   static inline cost_type combine(cost_type a,cost_type b) { return std::min(a,b); }
   static inline bool better(cost_type a,cost_type const&b)

@@ -176,7 +176,8 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
       )
       : better(better), data(), distance(distance),
         index_in_heap(index_in_heap),equal(equal) {
-      data.reserve(container_reserve);
+      if (container_reserve)
+        data.reserve(container_reserve);
     }
     /* Implicit copy constructor */
     /* Implicit assignment operator */
@@ -231,8 +232,16 @@ static const std::size_t OPTIMAL_HEAP_ARITY=4;
       data.push_back(v);
     }
 
+    /**
+       doesn't maintain heap property for you. so unless you added in sorted order, you must call finish_adding() after
+    */
+    template <class V>
+    void add(V const& v) {
+      put(index_in_heap,v,data.size()); // allows contains() and heapify() to function properly
+      data.push_back(v);
+    }
+
     void finish_adding() {
-//      set_index_in_heap(0); // already maintained by add_unsorted
       heapify();
     }
 
@@ -400,6 +409,18 @@ This is definitely linear to n.
     const Value& top() const {
       return data[0];
     }
+
+    /**
+       as with top(), take care not to invalidate heap property or item<->location map
+    */
+    Value& operator[](size_type i) {
+      return data[i];
+    }
+
+    Value const& operator[](size_type i) const {
+      return data[i];
+    }
+
 
     void pop() {
       using boost::put;
@@ -694,6 +715,13 @@ This is definitely linear to n.
     }
 
    public:
+    /**
+       if you modify top() and might need to move element down since it's no longer the least.
+    */
+    void adjust_top() {
+      this->preserve_heap_property_down();
+    }
+
     // moves what's at root downwards if needed
     void preserve_heap_property_down() {
       using boost::get;

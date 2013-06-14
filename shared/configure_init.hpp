@@ -51,6 +51,11 @@ struct init_expr
   {
     return init(false);
   }
+  template <class V2>
+  init_expr const& inits(V2 const& v2) {
+    *val = v2;
+    return *this;
+  }
 
   init_expr(Val *val)
       : val(val)

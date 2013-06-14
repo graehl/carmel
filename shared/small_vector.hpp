@@ -126,6 +126,31 @@ struct small_vector {
   typedef small_vector Self;
   typedef Size size_type;
 
+  /**
+     may leak (if you don't free yourself)
+  */
+  void clear_nodestroy() {
+    data.stack.sz_ = 0;
+  }
+
+#if __cplusplus >= 201103L || CPP11
+  small_vector(small_vector && o)
+  {
+    std::memcpy(this, &o, sizeof(small_vector));
+    o.clear_nodestroy();
+  }
+
+  small_vector & operator=(small_vector && o)
+  {
+    if (&o != this) {
+      free();
+      std::memcpy(this, &o, sizeof(small_vector));
+      o.clear_nodestroy();
+    }
+    return *this;
+  }
+#endif
+
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   template <class Archive>
   void save(Archive & ar, const unsigned int) const {

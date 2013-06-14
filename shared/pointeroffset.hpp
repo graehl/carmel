@@ -1,6 +1,6 @@
 // idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.  Modern CPUs are pretty fast about base+(size*index) access (usually it's free, similar cost to as base or at least base+offset)
-#ifndef POINTEROFFSET_HPP
-#define POINTEROFFSET_HPP
+#ifndef GRAEHL_SHARED__POINTEROFFSET_HPP
+#define GRAEHL_SHARED__POINTEROFFSET_HPP
 
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/myassert.h>
@@ -100,7 +100,7 @@ struct PointerOffset {
     void set_ptrdiff(const C*a,const C*b) {
         offset=offset_ptrdiff(a,b);
     }
-    void set_index(size_t i) 
+    void set_index(size_t i)
     {
         offset=index_to_offset<C>(i);
     }
@@ -275,12 +275,6 @@ operator >>
 }
 */
 
-
-#ifdef GRAEHL_TEST
-BOOST_AUTO_TEST_CASE( TEST_POINTEROFFSET )
-{
-}
-#endif
 
 }
 

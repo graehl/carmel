@@ -331,60 +331,7 @@ exportflags
 
 
 #i686
-function set_build {
-    SBMT_INCLUDE=$SBMT_TRUNK/sbmt_decoder/include
-    RR_INCLUDE=$SBMT_TRUNK/RuleReader/include
-    GRAEHL_INCLUDE=$SBMT_TRUNK
-    BOOST_INCLUDE=$BOOST
-    local target=$1
-    shift
-    local suffix=""
-    if [ "$target" ] ; then
-        suffix=-`filename_from $target`
-        PREFIX=$isd/$HOST$suffix
-        if [ "$target" = i686 ] ; then
-            ARCHPREFIX=$ARCHBASE
-        fi
-        CONFIG="--target $target"
-    else
-        PREFIX=""
-        CONFIG=""
-        MARGS=""
-    fi
-    BUILDDIR=$HOST$suffix
-    set_extra_paths $ARCHPREFIX $PREFIX
-    SRILMDIR=$HOME/src/srilm
-    CONFIG="$CONFIG --prefix=$FIRST_PREFIX"
-    local bsufarg
-    [ "$BOOST_SUFFIX" ] && bsufarg="--with-boost-suffix=$BOOST_SUFFIX"
-    CONFIGBOOST="$CONFIG $bsufarg"
-    CONFIGSRILM="$CONFIG --with-srilm=$SRILMDIR"
-    if [ "$static" ] ; then
-        export LDFLAGS="-static $LDFLAGS"
-    fi
-#-I$BOOST_INCLUDE
-    export OPTFLAGS="-march=native -mtune=native -ffast-math -Wunsafe-loop-optimizations -funsafe-loop-optimizations -funsafe-math-optimizations"
-#-I$SBMT_INCLUDE -I$RR_INCLUDE -I$GRAEHL_INCLUDE
-    export GCPPFLAGS="-I$SBMT_INCLUDE -I$RR_INCLUDE -I$GRAEHL_INCLUDE $CPPFLAGS"
-    export CPPFLAGS="$CPPFLAGS"
-    if [ "$HOST" = zergling ] ; then
-        export CFLAGS="$CPPFLAGS -O0 -ggdb -Wall $*"
-    else
-        export CFLAGS="$CPPFLAGS -O3 -ggdb -Wall -Wno-parentheses $*"
-    fi
-#endif
-#-Wno-deprecated
-#-fvisibility-inlines-hidden
-#-Wno-write-strings
-    export CXXFLAGS="$CFLAGS "
- #-Weffc++
- # not compatible w/ boost really
-}
-
-qsippn=2
-
-set_build
-
+OPTFLAGS="-march=native -mtune=native -ffast-math -Wunsafe-loop-optimizations -funsafe-loop-optimizations -funsafe-math-optimizations"
 
 if [ "$interactive" ] ; then
     export teeout=1

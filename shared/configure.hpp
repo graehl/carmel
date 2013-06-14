@@ -1078,6 +1078,14 @@ public:
       opt->init=boost::none;
     return *this;
   }
+  /**
+     like self_init, but configure_init.hpp treats this differently (actually
+     assigns v2, for default constructors)
+  */
+  template <class V2>
+  conf_expr const& inits(V2 const& v2) {
+    return self_init(true);
+  }
 
   template <class V2>
   conf_expr const& validate(V2 const& validator) const
