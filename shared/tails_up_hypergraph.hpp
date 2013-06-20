@@ -202,7 +202,7 @@ struct TailsUpHypergraph {
   }
   TailsUpHypergraph(graph const& g_)
     : g(g_)
-    ,vert_fact(VertMapFactory(g))
+    , vert_fact(VertMapFactory(g))
     , edge_fact(EdgeMapFactory(g))
     , adj(vert_fact.template init<Adj>())
     , unique_tails(edge_fact.template init<unsigned>())

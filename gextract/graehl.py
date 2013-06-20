@@ -8,13 +8,47 @@ import sys,re,random,math,os,collections,errno,time,operator,datetime
 def chomp(s):
     return s.rstrip('\r\n')
 
-def log(s,out=sys.stderr):
-    out.write("### "+s+"\n")
-
 def stripext(fname):
     return os.path.splitext(fname)[0]
 
 basename=os.path.basename
+
+class IntDict(collections.defaultdict):
+    def __init__(self,*a,**kw):
+        collections.defaultdict.__init__(self,int,*a,**kw)
+
+
+def log(s,out=sys.stderr):
+    out.write("### "+s+"\n")
+
+n_warn=0
+warncount=IntDict()
+
+def warn(msg, post=None, pre="WARNING: ", max=10):
+    global n_warn, warncount
+    n_warn += 1
+    p = '\n'
+    if post is not None:
+        p = ' '+str(post)+p
+    c=warncount[msg]
+    warncount[msg]=c+1
+    if max is None or c<max:
+        lastw = max is not None and warncount[msg]==max
+        sys.stderr.write(pre + str(msg) + (" (max=%s shown; no more) "%max if lastw else "") + p)
+
+def warncount_sorted():
+    w=[(c,k) for (k,c) in warncount.iteritems()]
+    return sorted(w, reverse=True)
+
+def warn_recap(pre='' ,warn_details=True ,out=sys.stderr):
+    if n_warn and warn_details:
+        log('N\twarning', out=out)
+        for w in warncount_sorted():
+            log("%s\t%s" % w, out=out)
+    log("%s%d total warnings" % (pre, n_warn), out=out)
+
+info_summary = warn_recap
+
 
 def mkdir_p(path):
     try:
@@ -1022,10 +1056,6 @@ class RDict(dict):
     #         value = self[item] = type(self)()
     #         return value
 
-class IntDict(collections.defaultdict):
-    def __init__(self,*a,**kw):
-        collections.defaultdict.__init__(self,int,*a,**kw)
-
 class DictDict(collections.defaultdict):
     def __init__(self,*a,**kw):
         collections.defaultdict.__init__(self,dict,*a,**kw)
@@ -1263,33 +1293,6 @@ def write_lines(l,out=sys.stdout):
 def write_kv(l,**kw):
     write_list(l,xform=lambda x:"%s = %s"%x,**kw)
 
-n_warn=0
-warncount=IntDict()
-#maxcount=set()
-
-def warn(msg,post=None,pre="WARNING: ",max=10):
-    global n_warn,warncount
-    n_warn+=1
-    p='\n'
-    if post is not None:
-        p=' '+str(post)+p
-    c=warncount[msg]
-    warncount[msg]=c+1
-    if max is None or c<max:
-        lastw=max is not None and warncount[msg]==max
-        sys.stderr.write(pre+str(msg)+(" (max=%s shown; no more) "%max if lastw else "")+p)
-    #if c==max: maxcount.add(msg)
-
-def warncount_sorted():
-    w=[(c,k) for (k,c) in warncount.iteritems()]
-    return sorted(w,reverse=True)
-
-def info_summary(pre='',warn_details=True,out=sys.stderr):
-    if n_warn and warn_details:
-        log('N\twarning',out=out)
-        for w in warncount_sorted():
-            log("%s\t%s"%w,out=out)
-    log("%s%d total warnings"%(pre,n_warn),out=out)
 
 def report_zeroprobs():
     "print (and return) any zero probs since last call"

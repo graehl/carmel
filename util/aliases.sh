@@ -28,6 +28,34 @@ puzzled=$HOME/puzzle
 edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
 
+boostmerge1() {
+    (set -e;
+        set -x
+        cd ~/src/boost
+        git fetch upstream
+        git co "$1"
+        git merge remotes/upstream/master
+        git push
+    )
+}
+boostmaster() {
+    (set -e;
+        set -x
+        cd ~/src/boost
+        git fetch upstream
+        git co master
+        git rebase remotes/upstream/master
+        git push
+    )
+}
+boostmerge() {
+
+    boostmerge1 object_pool-constant-time-free
+    boostmerge1 dynamic_bitset
+}
+reveal() {
+    open -R "$@"
+}
 compush() {
     (set -e
         git commit -a -m "$*"
@@ -992,10 +1020,11 @@ if [[ $HOST = graehl.local ]] ; then
     fi
 fi
 cjg() {
+    local fwdenv="gccfilter=$gccfilter"
     if [[ $ontunnel ]] ; then
-        sshvia $chost ". ~/.e;$*"
+        sshvia $chost ". ~/.e;$fwdenv $*"
     else
-        ssh $chost ". ~/.e;$*"
+        ssh $chost ". ~/.e;$fwdenv $*"
     fi
 }
 printyaml() {
@@ -1261,6 +1290,14 @@ fi
 if [[ $HOST = c-skohli ]] ; then
     xmtx=/.auto/home/graehl/x
 fi
+dumbmake() {
+    if [[ $DUMB ]] ; then
+        /usr/bin/make VERBOSE=1 "$@" 2>&1
+        #| sed -e 's%^.*: error: .*$%\x1b[37;41m&\x1b[m%' -e 's%^.*: warning: .*$%\x1b[30;43m&\x1b[m%'
+    else
+        /usr/bin/make "$@"
+    fi
+}
 substxmt() {
     (
         cd $xmtx/xmt
@@ -1466,6 +1503,20 @@ save12() {
         "$@" 2>&1) | tee $out | ${page:=cat}
     echo2 saved output:
     echo2 $out
+}
+save2() {
+    local out="$1"
+    [[ -f $out ]] && mv "$out" "$out~"
+    shift
+    echo2 saving output $out
+    ( if ! [[ $quiet ]] ; then
+        echo2 "$@";echo2
+        fi
+        "$@" ) 2>&1 2>$out.stdout | tee $out | ${page:=cat}
+    echo
+    tail $out $out.stdout
+    echo2 saved output:
+    echo2 $out $out.stdout
 }
 atime() {
     local proga=$1
@@ -2122,7 +2173,7 @@ makerun() {
     local cpus=$(ncpus)
     echo2 "$cpus cpus ... -j$cpus"
     (set -e
-        make $exe VERBOSE=1 -j$cpus || exit $?
+        dumbmake $exe VERBOSE=1 -j$cpus || exit $?
         if [[ $exe != test ]] ; then
             set +x
             local f=$(echo */$exe)
@@ -3320,6 +3371,8 @@ racb() {
     if [[ $HOST = graehl.local ]] || [[ $OS = Darwin ]] ; then
         cmarg+=" -DLOG4CXX_ROOT=/usr/local"
     fi
+    CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF}
+    cmarg+=" $CMAKEARGS"
 }
 racd() {
     cd $racer
@@ -3795,17 +3848,17 @@ mkstamps() {
         \end{center}
 EOF
 
-        for i in `seq 1 $npages`; do
-            # echo '\newpage' >> $stamp
-            echo '\mbox{} \newpage' \
-                >> $stamp
-        done
+for i in `seq 1 $npages`; do
+    # echo '\newpage' >> $stamp
+    echo '\mbox{} \newpage' \
+        >> $stamp
+done
 
-        echo '\end{document}' >> $stamp
+echo '\end{document}' >> $stamp
 
-        local sbase=${stamp%.tex}
-        lat2pdf $sbase
-        echo $sbase.pdf
+local sbase=${stamp%.tex}
+lat2pdf $sbase
+echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
