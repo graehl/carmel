@@ -28,6 +28,56 @@ puzzled=$HOME/puzzle
 edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
 
+ctestlast() {
+(
+    cd ~/x/${BUILD:-Debug}
+    echo 'CTEST_CUSTOM_POST_TEST("cat Testing/Temporary/LastTest.log")' > CTestCustom.test
+    make test
+)
+}
+xmtfails() {
+    d=~/tmp
+    cut -d' ' -f1 $d/fails > $d/fails.all
+    cd ~/x/RegressionTests/; grep -l xmt/xmt `cat $d/fails.all` > $d/fails.xmt
+    cd ~/x/RegressionTests/; grep -L xmt/xmt `cat $d/fails.all` > $d/fails.nonxmt
+    tailn=20 preview $d/fails.xmt $d/fails.nonxmt
+}
+uncache() {
+  sudo bash -c "sync; echo 3 > /proc/sys/vm/drop_caches"
+}
+fixgerrit() {
+  ssh git02 "/local/gerrit/bin/gerrit.sh restart || /local/gerrit/bin/gerrit.sh start"
+}
+upext() {
+    (set -e
+        cd ~/c/xmt-externals
+        git fetch origin
+        git pull --rebase
+    )
+}
+gitshow() {
+    sh -c "git show $*"
+}
+gitdiff() {
+    sh -c "git diff $*"
+}
+pytimeit() {
+    echo "$@"
+    for py in pypy python ; do
+        echo -n "$py: "
+        $py -mtimeit -s"$@"
+    done
+}
+gitunrm1() {
+    if [[ -f "$1" ]] ; then
+        warn "$1" already exists. remove it and try again?
+    else
+        git checkout $(git rev-list -n 1 HEAD -- "$1")^ -- "$1"
+    fi
+}
+macxhosts() {
+    sudo vi /etc/X0.hosts
+}
 boostmerge1() {
     (set -e;
         set -x
@@ -63,11 +113,19 @@ compush() {
         git push
     )
 }
+mvover() {
+(set -e
+    mv "$@" $overflowd/
+    cd $overflowd
+    git add *
+)
+}
 pushover() {
     (set -e
         cd ~/music/overflow
         git add *
         git commit -a -m more
+        git pull --rebase
         git push
     )
 }
@@ -531,7 +589,7 @@ yreg() {
         if [[ $THREADS -lt $MINTHREADS ]] ; then
             THREADS=$MINTHREADS
         fi
-        set -x
+#        set -x
         local STDERR_REGTEST
         if [[ $verbose ]] ; then
             STDERR_REGTEST="--dump-stderr"
@@ -593,12 +651,12 @@ sd() {
     chost=c-mdreyer sc
 }
 kwith() {
-    (set -x
+    (
         chost=c-skohli linwith "$@"
     )
 }
 dwith() {
-    (set -x
+    (
         chost=c-mdreyer linwith "$@"
     )
 }
@@ -640,7 +698,6 @@ racm() {
         racb ${1:-Debug}
         shift || true
         cd $racerbuild
-        set -x
         local prog=$1
         local maketar=
         if [ "$prog" ] ; then
@@ -701,9 +758,7 @@ ccmake() {
             useclang
             cxxf=-fmacro-backtrace-limit=100
         fi
-        set -x
         CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
-        set +x
     )
 }
 savecppch() {
@@ -880,9 +935,7 @@ reall() {
     fi
     if ! [[ $noredo ]] ; then
         (
-            set -x
             redo-ifchange $redos
-            set +x
         )
     fi
 }
@@ -1118,8 +1171,8 @@ tryre() {
 
 upre() {
     (set -e
-        up
-        git rebase master
+        git fetch origin
+        git rebase origin/master
     ) || git rebase --continue
 }
 showbest() {
@@ -1146,7 +1199,7 @@ sshvia() {
     ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh $permit -p $lport localhost "$@"
 }
 clonex() {
-    (set -x
+    (
         set -e
         git clone ssh://localhost:29418/xmt x
         cd x
@@ -1274,7 +1327,6 @@ withcc() {
         local cxx=${CXX:-/usr/local/gcc-4.7.1/bin/g++}
         [[ -x $cxx ]] || cxx=/mingw/bin/g++
         [[ -x $cxx ]] || cxx=g++
-        set -x
         set -e
         $cxx -O3 --std=c++${cxxstd:-11} $source -o $bexe
         if [ "$run $*" ] ; then
@@ -1613,7 +1665,6 @@ splitape() {
     file=${file%.}
     (
         set -e
-        set -x
         cuebreakpoints "$file.cue" > "$file.offsets.txt"
         shntool split -f "$file.offsets.txt" -o ape -n "$file" "$file.ape"
     )
@@ -1650,7 +1701,6 @@ dryreg() {
     local args=${dryargs:--d}
     (set -e;
         cd $xmtx/RegressionTests
-        set -x
         if [[ -d $1 ]] ; then
             ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v "$@"
         elif [[ -f $1 ]] ; then
@@ -1660,7 +1710,6 @@ dryreg() {
         else
             ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v
         fi
-        set +x
     )
 }
 
@@ -3529,7 +3578,6 @@ imira() {
     rm -rf $hm
     mkdir -p $hm
     local b=/home/nlg-03/mt-apps/hiero-mira/20110804
-    set -x
     cp -pR $b/* $hm/
     qmira
 }
@@ -3698,7 +3746,6 @@ flv2aac() {
         ext=wav
         codec=pcm_s16le
     fi
-    set -x
     local mapa
     if [[ $stream ]] ; then
         mapa="-map 0:$stream"
@@ -3712,7 +3759,6 @@ flv2aac() {
     local f="$1"
     shift
     ffmpeg -i "$f" -vn $mapa -ac 2 -acodec $codec "$f.$ext" "$@"
-    set +x
 }
 tohpc() {
     cp2 $HPCHOST "$@"
@@ -3772,18 +3818,6 @@ ffox() {
 rpdf() {
     cd /tmp
     scp hpc.usc.edu:$1 . && acrord32 `basename $1`
-}
-cpipe() {
-    (pushd ~/pipe/
-        svn commit -m "$*"
-    )
-}
-cgraehl() {
-    (
-        pushd ~/t/graehl/
-        set -x
-        svn commit -m "$*"
-    )
 }
 alias rot13="tr '[A-Za-z]' '[N-ZA-Mn-za-m]'"
 cpdir() {
@@ -4478,32 +4512,6 @@ diffother1() {
     diff -u "$@" $f $o
 }
 
-SBMT_TEST=~/t/$HOST/sbmt/sbmt_decoder/gcc/debug/link-static/sbmt_tests
-
-cagepath() {
-    variant=${variant:-debug}
-    export PATH=/nfs/topaz/graehl/t/cage/sbmt/utilities/gcc-3.4.4/$variant/hoard-allocator-off:$PATH
-    export PATH=/nfs/topaz/graehl/t/cage/sbmt/utilities/gcc-3.4.4/$variant/hoard-allocator-off/mini-ngram-max-order-7/mini-ngram-order-3:$PATH
-}
-
-tagmd() {
-    set -x
-    local to=$SBMT_SVNREPO/tags/mini_decoder/version-$1
-    if [ "$force" ] ; then
-        svn rm -m "redo $1" $to
-    fi
-    svn cp $SBMT_SVNREPO/branches/version-13.x $SBMT_SVNREPO/tags/mini_decoder/version-$1 -m "mini_decoder $1"
-    set +x
-}
-
-svnmc() {
-    svn commit -F svnmerge-commit-message.txt
-}
-
-svnmu() {
-    svnmerge -S ../trunk merge
-}
-
 lastlog() {
     "$@" 2>&1 | tee ~/tmp/lastlog
 }
@@ -4518,14 +4526,6 @@ msum() {
     echo ~/t/utilities/summarize_multipass.pl -l $wh.log data/$wh.nbest -csv sum/$out.csv "$@"
     ~/t/utilities/summarize_multipass.pl -l $wh.log data/$wh.nbest -csv sum/$out.csv "$@" 2>&1 | tee sum/$out.sum
 }
-
-function clean_carmel
-{
-    pushd $SBMT_TRUNK/graehl/carmel
-    make distclean
-    popd
-}
-
 
 function build_carmel
 {
@@ -4542,9 +4542,7 @@ function build_carmel
     [ -d "$install" ] || install=$HOME/isd/$install
     buildsub=${buildsub:-$ARCH}
     [ "$linux32" -o "$buildsub" = linux ] && archf="-m32 -march=i686"
-    set -x
     BUILDSUB=$buildsub INSTALL_PREFIX=$install ARCH_FLAGS=$archf make -j $nproc $args "$@"
-    set +x
 }
 
 
@@ -4612,9 +4610,7 @@ function vg() {
         lc=full
         reacharg="--show-reachable=yes"
     fi
-    set -x
     GLIBCXX_FORCE_NEW=1 valgrind $darg $varg $suparg --leak-check=$lc $reacharg --tool=memcheck $VGARGS "$@"
-    set +x
 }
 vgf() {
     vg "$@"
@@ -5147,7 +5143,6 @@ if [ "$ONCYGWIN" ] ; then
     sshwrap() {
         local which=$1
         shift
-        set -x
         /usr/bin/$which -i c:/cache/.ssh/id_dsa "$@"
     }
 
@@ -5270,13 +5265,11 @@ g1() {
     local out=${OUT:-$source.`filename_from $HOST "$*"`}
     (
         set -e
-        #set -x
         local flags="$CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDE -DGRAEHL_G1_MAIN"
         showvars_optional ARGS MOREFLAGS flags
         if ! [ "$OPT" ] ; then
             flags="$flags -O0"
         fi
-        set -x
         #$ccmd $archarg $MOREFLAGS -ggdb -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -c -o $out.o
         #$linkcmd $archarg $LDFLAGS $out.o -o $out $program_options_lib 2>/tmp/g1.ld.log
         $ccmd $program_options_lib -L$BOOST_LIB $MOREFLAGS $archarg -g -fno-inline-functions -x c++ -DDEBUG -DGRAEHL__SINGLE_MAIN $flags "$@" $source -o $out
@@ -5285,7 +5278,6 @@ g1() {
         if [[ $cleanup = 1 ]] ; then
             rm -f $out.o $out
         fi
-        set +x
         set +e
     )
 }
@@ -5377,9 +5369,7 @@ function vgx
         [ "$valk" ] && vgprog=valkyrie
         [ "$valk" ] || leakcheck="--leak-check=yes --tool=memcheck"
         [ "$debug" ] && dbarg="--db-attach=yes"
-        set -x
         GLIBCXX_FORCE_NEW=1 $vgprog $xmlarg $leakcheck $dbarg $VGARGS $outarg "$@"
-        set +x
         [ "$xml" ] && valkyrie --view-log $out
     )
     #--show-reachable=yes
@@ -5542,7 +5532,6 @@ cplo1() {
     scp -r "$1" jgraehl@login.clsp.jhu.edu:"$dest"
 }
 rfromlo1() {
-    # set -x
     local dest=`relpath ~ $1`
     mkdir -p `dirname $dest`
     echo scp -r jgraehl@login.clsp.jhu.edu:"$dest" "$1"
@@ -5575,14 +5564,11 @@ cygbase() {
     local f=$1
     shift
     [ -f "$f" ] || f=c:/cygwin/bin/$f
-    set -x
     rebase -v -d -b $BaseAddress -o $Offset $f "$@"
-    set +x
 }
 
 export SVNAUTHORS=~/isd/hints/svn.authorsfile
 clonecar() {
-    set -x
     local CR=https://nlg0.isi.edu/svn/sbmt/
     git config svn.authorsfile $SVNAUTHORS && git svn --authors-file=$SVNAUTHORS clone --username=graehl --ignore-paths='^(NOTES.*|scraps|syscom|tt|xrsmodels|Jamfile|dagtt)' ---trunk=$CR/trunk/graehl "$@"
     #--tags=$CR/tags --branches=$CR/branches
@@ -5591,7 +5577,6 @@ clonecar() {
     #e4bd1e594dd7051a9e50561d19bdc31139ba1159
 
     #--no-metadata
-    set +x
 }
 
 
@@ -5606,7 +5591,6 @@ svncom() {
         cd $proj
         echo $project $proj
         set -e
-        set -x
         (
             if [ $# = 1 ] ; then
                 git commit -a -m "$1"
@@ -5626,9 +5610,7 @@ alias c10="pushd $WSMT"
 toy() {
     local h=$1
     shift
-    set -x
     $cdec -c ${TOYG:-~/toy-grammar}/cdec-$h.ini "$@"
-    set +x
 }
 
 feo() {
@@ -5645,9 +5627,7 @@ par() {
     mkdir -p "$logdir"
     showvars_required npar parargs logdir
     logarg="-e $logdir"
-    set -x
     $WSMT/vest/parallelize.pl $parextra $parargs $logarg -- "$@"
-    set +x
 }
 
 qjhu() {
@@ -5737,7 +5717,6 @@ tcmi() {
     d=${d%.tgz}
     d=${d%.tar.xz}
     shift
-    set -x
     tarxzf "$f" && cd "$d" && cmi "$@"
 }
 wtx() {
@@ -5852,28 +5831,6 @@ gitundorm() {
     git stash drop
 }
 alias comlo=ws10com
-makews() {
-    local dargs
-    [ "$debug" ] && dargs="CXXFLAGS+='-O0'"
-    [ "$clean" ] && make clean
-    [ "$ONCYGWIN" ] && rm gi/posterior-regularisation/prjava/prjava.jar
-    #rm -f $WSMT/decoder/*.o $WSMT/decoder/lib*.a
-    set -x
-    if [ "$confonly" ] ; then
-        CXXFLAGS="$CXXFLAGS -O0 -ggdb -Wno-sign-compare -Wno-unused-parameter" ./configure
-    else
-        #-O0 -ggdb
-        make CXXFLAGS+="-Wno-sign-compare -Wno-unused-parameter" LIBS+="-loolm -ldstruct -lmisc -lz -lboost_program_options -lpthread -lboost_regex -lboost_thread" -j $MAKEPROC $dargs "$@"
-    fi
-    set +x
-}
-cdecmake() {
-    (
-        set -e
-        cd $WSMT/decoder
-        makews decoder "$@"
-    )
-}
 gitcom() {
     git commit -a -m "$*"
 }

@@ -39,10 +39,15 @@ endif
 #FIXME: crashes with -O3 on kbest output
 CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST
+
 ifeq ($(OPENFSTSRC),)
+# openfst sources not found - don't enable
 else
 INC+=$(OPENFSTSRC)/include $(OPENFSTSRC)
-DEFS+=USE_OPENFST
+#DEFS+=USE_OPENFST
+
+#add USE_OPENFST def to enable openfst (note: we attempt to build the appropriate sources
+#directly, which might break with newer openfst versions - see OPENFSTSRC)
 endif
 
 default: mydefault

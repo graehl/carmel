@@ -2,6 +2,7 @@
 #define CARMEL__CONFIG_HPP
 
 //#define USE_OPENFST
+// we usually enable this from Makefile
 
 #ifdef USE_OPENFST
 // set this only if you add -I$(OPENFST)/src and have installed headers or also -I$(OPENFST)/src/include

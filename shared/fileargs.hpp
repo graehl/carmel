@@ -396,6 +396,10 @@ public:
   file_arg(file_arg<Stream2> const& o) :
     pointer(o.pointer),name(o.name),buf(o.buf) {}
 
+  bool is_stdin() const {
+    return name == "-";
+  }
+
   void set_none()
   { none=true;set_null_file_arg(pointer);buf.reset();name="-0"; }
 

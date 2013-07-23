@@ -2175,7 +2175,7 @@ preview1() {
     tailarg=$v head1 $tailn "$@"
 }
 preview2() {
-    preview "$@" 1>&2
+    tailn=$tailn preview "$@" 1>&2
 }
 
 diff_filter() {

@@ -464,7 +464,7 @@ struct lazier_forest : FilterFactory::filter_type // empty base class opt. - may
     //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
   }
   void pop() {
-    pop_heap(pq.begin(), pq.end());
+    std::pop_heap(pq.begin(), pq.end());
     //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
     pq.pop_back();
   }

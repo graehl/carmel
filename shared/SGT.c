@@ -112,7 +112,7 @@
                 else
                         analyseInput();
                 }
-        return(TRUE);
+        return 0;
         }
 
  double sq(double x)
@@ -230,7 +230,7 @@
 
         printf("0\t%.4g\n", PZero);
         for (i = 0; i < rows; ++i)
-                printf("%d\t%.4g\n", r[i], p[i]);
+          printf("%d\t%.4g\t%.4g\n", r[i], p[i], rStar[i]);
         }
 
  void analyseInput(void)

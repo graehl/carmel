@@ -10,8 +10,6 @@
 
 //FIXME: see postpone_selfloop for weakness in current cycle handling - apparently want a non-cycle 2nd best, then it's sort of ok?
 
-//FIXME: uses static (global) state - so only one lazy kbest can be in progress. can't imagine why that would be a problem, but watch out!
-
 /**
 
    Uses a top-down, lazy, best-first kbest-derivation from a forest algorithm
@@ -416,6 +414,7 @@ void adl_print(A &a, B const& b, C const& c, D const& d) {
 }
 }
 
+
 // i've left this copyable even though you should for efficiency's sake only copy empty things, e.g. if you want to compile a vector of them that's fine
 template <class DerivationFactory, class FilterFactory = permissive_kbest_filter_factory>
 class lazy_forest
@@ -423,16 +422,39 @@ class lazy_forest
 {
 
  public:
-
   typedef DerivationFactory derivation_factory_type;
   typedef FilterFactory filter_factory_type;
+  /**
+     formerly global; now thread safe by passing Environment & around. this is
+     the minimal refactor that achieves the goal; an alternative would be to put
+     more of the code inside this struct (which manages individual lazy_forest
+     objects) and make it the primary interface
+  */
+  struct Environment {
+    derivation_factory_type derivation_factory;
+    filter_factory_type filter_factory;
+    lazy_kbest_stats stats;
+    void set_derivation_factory(derivation_factory_type const &df)
+    {
+      derivation_factory = df;
+    }
+    void set_filter_factory(filter_factory_type const &f)
+    {
+      filter_factory = f;
+    }
+    bool throw_on_cycle;
+    Environment()
+        : throw_on_cycle(true)
+    {}
+  };
+
   typedef typename filter_factory_type::filter_type filter_type;
   typedef lazy_forest<derivation_factory_type, filter_factory_type> forest;
   typedef forest self_type;
 
 
-  lazy_forest()
-      : filter_type(filter_factory.filter_init())
+  lazy_forest(Environment &env)
+      : filter_type(env.filter_factory.filter_init())
   {}
 
   typedef typename derivation_factory_type::derivation_type derivation_type;
@@ -446,27 +468,26 @@ class lazy_forest
     return (derivation_type)DerivationFactory::PENDING();
   }
 
-  void clear_stats()
+  void clear_stats(Environment &env)
   {
-    stats.clear(filter_type::trivial);
+    env.stats.clear(filter_type::trivial);
   }
 
   /// bool Visitor(derivation,ith) - if returns false, then stop early.
   /// otherwise stop after generating up to k (up to as many as exist in
   /// forest)
   template <class Visitor>
-  lazy_kbest_stats enumerate_kbest(lazy_kbest_index_type k, Visitor visit = Visitor()) {
+  lazy_kbest_stats enumerate_kbest(Environment &env, lazy_kbest_index_type k, Visitor visit = Visitor()) {
     EIFDBG(LAZYF, 1, KBESTINFOT("COMPUTING BEST " << k << " for node " << *this); KBESTNESTT;);
-    clear_stats();
+    clear_stats(env);
     for (lazy_kbest_index_type i = 0; i<k; ++i) {
       EIFDBG(LAZYF, 2, SHOWM2(LAZYF,"enumerate_kbest-pre", i, *this));
-      derivation_type ith_best = get_best(i);
+      derivation_type ith_best = get_best(env, i);
       if (ith_best == NONE()) break;
       if (!visit(ith_best, i)) break;
     }
-    return stats;
+    return env.stats;
   }
-
 
   void swap(self_type &o)
   {
@@ -544,36 +565,36 @@ class lazy_forest
     return f.pq.empty() ? NONE() : f.pq[0].derivation;
   }
 
-  void fix_hyperedge(hyperedge &edge, bool dfs = true) {
+  void fix_hyperedge(Environment &env, hyperedge &edge, bool dfs = true) {
     forest *c0 = edge.child[0];
     if (c0) {
-      if (dfs) c0->fix_edges(true);
+      if (dfs) c0->fix_edges(env, true);
       forest *c1 = edge.child[1];
       derivation_type const& d0 = get_child_best(*c0);
       if (d0==NONE()) return;
       if (c1) {
-        if (dfs) c1->fix_edges(true);
+        if (dfs) c1->fix_edges(env, true);
         derivation_type const& d1 = get_child_best(*c1);
         if (d1!=NONE()) {
-          derivation_factory.fix_edge(edge.derivation, d0, get_child_best(*c1));
+          env.derivation_factory.fix_edge(edge.derivation, d0, get_child_best(*c1));
           return;
         }
       }
-      derivation_factory.fix_edge(edge.derivation, d0);
+      env.derivation_factory.fix_edge(edge.derivation, d0);
     }
   }
 
-  void fix_edges(bool dfs = true) // only needed if you call sort() and the result may be memo[0] != what you used for best subderivations for that node
+  void fix_edges(Environment &env, bool dfs = true) // only needed if you call sort() and the result may be memo[0] != what you used for best subderivations for that node
   {
     if (empty()) return;
     assert(!memo.empty()&&!pq.empty());
     hyperedge const& best = top();
-    if (!derivation_factory.needs_fixing(best.derivation))
+    if (!env.derivation_factory.needs_fixing(best.derivation))
       return;
     // needs_fixing can mark corrected states so calling fix_edge(true) on every state isn't quadratic.
     assert(pq[0].derivation==memo[0]);
     for (typename pq_t::iterator i = pq.begin(), e = pq.end(); i!=e; ++i)
-      fix_hyperedge(*i, dfs);
+      fix_hyperedge(env, *i, dfs);
     memo[0] = best.derivation;
   }
 
@@ -613,24 +634,11 @@ class lazy_forest
     o << '}';
   }
 
-  static void set_derivation_factory(derivation_factory_type const &df)
-  {
-    derivation_factory = df;
-  }
-  static void set_filter_factory(filter_factory_type const &f)
-  {
-    filter_factory = f;
-  }
 
   /// if you have any state in your factory, assign to it here
   //TODO: non-static, please (or thread specific/dynamic scoped? passed as arguments)
-  static derivation_factory_type derivation_factory;
-  static filter_factory_type filter_factory;
-  static lazy_kbest_stats stats;
 
   /// set this to true if you want negative cost cycles to throw rather than silently stop producing successors
-  static bool throw_on_cycle;
-
   static bool is_null(derivation_type d)
   {
     return d==NONE();
@@ -654,14 +662,14 @@ class lazy_forest
   /// for: must be 1 off the end of memo; push it as PENDING and go to work:
   /// {get succesors to pq[0] and heapify, storing memo[n]=top(). if no more
   /// left, memo[n]=NONE()} You're DONE when: pq is empty, or memo[n] = NONE()
-  derivation_type get_best(lazy_kbest_index_type n) {
+  derivation_type get_best(Environment &env, lazy_kbest_index_type n) {
     EIFDBG(LAZYF, 2, KBESTINFOT("GET_BEST n=" << n << " node=" << *this);
            KBESTNESTT);
     if (n < memo.size()) {
       EIFDBG(LAZYF, 3, KBESTINFOT("existing "<<this<<"[n="<<n<<"] = "<<memo[n]<<", queue="<<*this));
       if (memo[n] == PENDING()) {
         KBESTERRORQ("lazy_forest::get_best","memo entry " << n << " for lazy_forest@0x" << (void*)this<<" is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
-        if (throw_on_cycle)
+        if (env.throw_on_cycle)
           throw lazy_derivation_cycle();
         memo[n] = NONE();
       }
@@ -675,17 +683,17 @@ class lazy_forest
         if (pq.empty())
           return (d = NONE());
         // assert(memo[n-1]==pq[0].derivation); // INVARIANT // no longer true with filtering
-        d = next_best();
+        d = next_best(env);
         EIFDBG(LAZYF, 2, KBESTINFOT(this<<"[n="<<n<<"] = "<<d<<", queue="<<*this));
         if (d==NONE())
           return d;
         if (filter().permit(d)) {
           EIFDBG(LAZYF, 2, KBESTINFOT("passed "<<n<<"th best for "<<*this));
-          ++stats.n_passed;
+          ++env.stats.n_passed;
           return d;
         } // else, try again:
         EIFDBG(LAZYF, 2, KBESTINFOT("filtered candidate "<<n<<"th best for "<<*this));
-        ++stats.n_filtered;
+        ++env.stats.n_filtered;
         d = PENDING();
       }
     }
@@ -726,7 +734,7 @@ class lazy_forest
   /// Get next best derivation, or NONE if no more.
   //// INVARIANT: top() contains the next best entry
   /// PRECONDITION: don't call if pq is empty. (if !pq.empty()). memo ends with [old top derivation,PENDING].
-  derivation_type next_best() {
+  derivation_type next_best(Environment &env) {
     assertlvl(11, !pq.empty());
 
     hyperedge pending = top(); // creating a copy saves ugly complexities in trying to make pop_heap / push_heap efficient ...
@@ -736,9 +744,9 @@ class lazy_forest
     derivation_type old_parent = pending.derivation; // remember this because we'll be destructively updating pending.derivation below
     //    assertlvl(19,memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing duplicates: && old_parent==memo[memo.size()-2]
     if (pending.child[0]) { // increment first
-      generate_successor_hyperedge(pending, old_parent, 0);
+      generate_successor_hyperedge(env, pending, old_parent, 0);
       if (pending.child[1] && pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
-        generate_successor_hyperedge(pending, old_parent, 1);
+        generate_successor_hyperedge(env, pending, old_parent, 1);
       }
     }
     if (pq.empty())
@@ -750,26 +758,26 @@ class lazy_forest
   }
 
   // doesn't add to queue
-  void set_first_best(derivation_type r)
+  void set_first_best(Environment &env, derivation_type r)
   {
     assert(memo.empty());
     memo.push_back(r);
     if (!filter().permit(r))
       throw std::runtime_error("lazy_forest_kbest: the first-best derivation can never be filtered out");
-    ++stats.n_passed;
+    ++env.stats.n_passed;
   }
 
   /// may be followed by add() or add_sorted() equivalently
-  void add_first_sorted(derivation_type r, forest *left = NULL, forest *right = NULL)
+  void add_first_sorted(Environment &env, derivation_type r, forest *left = NULL, forest *right = NULL)
   {
     assert(pq.empty() && memo.empty());
-    set_first_best(r);
+    set_first_best(env, r);
     add(r, left, right);
     EIFDBG(LAZYF, 3, KBESTINFOT("add_first_sorted lazy-node="<<this<<": "<<*this));
   }
 
   /// must be added from best to worst order ( r1 > r2 > r3 > ... )
-  void add_sorted(derivation_type r, forest *left = NULL, forest *right = NULL) {
+  void add_sorted(Environment &env, derivation_type r, forest *left = NULL, forest *right = NULL) {
 #ifndef NDEBUG
     if (!pq.empty()) {
       assert(call_derivation_better_than(pq[0].derivation, r));
@@ -782,7 +790,7 @@ class lazy_forest
 #endif
     add(r, left, right);
     if (pq.size()==1)
-      set_first_best(r);
+      set_first_best(env, r);
   }
 
   void reserve(std::size_t n)
@@ -798,10 +806,10 @@ class lazy_forest
     EIFDBG(LAZYF, 3, KBESTINFOT("done (heap) " << r));
   }
 
-  void sort(bool check_best_is_selfloop = false)
+  void sort(Environment &env, bool check_best_is_selfloop = false)
   {
     std::make_heap(pq.begin(), pq.end());
-    finish_adding(check_best_is_selfloop);
+    finish_adding(env, check_best_is_selfloop);
     EIFDBG(LAZYF, 3, KBESTINFOT("sorted lazy-node="<<this<<": "<<*this));
   }
 
@@ -826,25 +834,20 @@ class lazy_forest
 
   /// optional: if you call only add() on sorted, you must finish_adding().
   /// if you added unsorted, don't call this - call sort() instead
-  void finish_adding(bool check_best_is_selfloop = false)
+  void finish_adding(Environment &env, bool check_best_is_selfloop = false)
   {
-    if (pq.empty()) {
-      set_first_best(NONE());
-      return;
-    }
-    if (check_best_is_selfloop && !postpone_selfloop())
+    if (pq.empty())
+      set_first_best(env, NONE());
+    else if (check_best_is_selfloop && !postpone_selfloop())
       throw lazy_derivation_cycle();
-    set_first_best(top().derivation);
+    else
+      set_first_best(env, top().derivation);
   }
 
   // note: postpone_selfloop() may make this not true.
   bool is_sorted()
   {
-# ifdef _MSC_VER
-    return true; //FIXME: implement
-# else
-    return __gnu_cxx::is_heap(pq.begin(), pq.end());
-# endif
+    return true; //TODO: implement
   }
 
   // private:
@@ -856,7 +859,7 @@ class lazy_forest
   memo_t memo;
 
   //try worsening ith (0=left, 1=right) child and adding to queue
-  inline void generate_successor_hyperedge(hyperedge &pending, derivation_type old_parent, lazy_kbest_index_type i)  {
+  inline void generate_successor_hyperedge(Environment &env, hyperedge &pending, derivation_type old_parent, lazy_kbest_index_type i)  {
     lazy_forest &child_node=*pending.child[i];
     lazy_kbest_index_type &child_i = pending.childbp[i];
     derivation_type old_child = child_node.memo[child_i];
@@ -864,11 +867,11 @@ class lazy_forest
            KBESTINFOT("generate_successor_hyperedge #" << i << " @" << this << ": " << " old_parent="<<old_parent<<" old_child=" <<old_child << " NODE="<<*this);
            KBESTNESTT);
 
-    derivation_type new_child = (child_node.get_best(++child_i));
+    derivation_type new_child = (child_node.get_best(env, ++child_i));
     if (new_child!=NONE()) { // has child-succesor
       EIFDBG(LAZYF, 6, KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
              SHOWM7(LAZYF,"generator_successor-child-i", i, pending.childbp[0], pending.childbp[1], old_parent, old_child, new_child, child_node));
-      pending.derivation = derivation_factory.make_worse(old_parent, old_child, new_child, i);
+      pending.derivation = env.derivation_factory.make_worse(old_parent, old_child, new_child, i);
       EIFDBG(LAZYF, 4, KBESTINFOT("new derivation: "<<pending.derivation));
       push(pending);
     }
@@ -882,7 +885,7 @@ class lazy_forest
     //This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of all elements in the range [begin(), end()-1), with the result that all elements in the range [begin(), end()) will form the new heap. Hence, before applying this algorithm, you should make sure you have a heap in v, and then add the new element to the end of v via the push_back member function.
   }
   void pop() {
-    pop_heap(pq.begin(), pq.end());
+    std::pop_heap(pq.begin(), pq.end());
     //This algorithm exchanges the elements at begin() and end()-1, and then rebuilds the heap over the range [begin(), end()-1). Note that the element at position end()-1, which is no longer part of the heap, will nevertheless still be in the vector v, unless it is explicitly removed.
     pq.pop_back();
   }
@@ -910,18 +913,6 @@ operator<<(std::basic_ostream<C, T>& os, typename lazy_forest<DF, FF>::hyperedge
   return os;
 }
 #endif
-
-
-//FIXME: have to pass these all as params (recursively) to allow concurrent kbests of same type
-template <class D,class F>
-D lazy_forest<D,F>::derivation_factory;
-template <class D,class F>
-F lazy_forest<D,F>::filter_factory;
-template <class D,class F>
-lazy_kbest_stats lazy_forest<D,F>::stats;
-template <class D,class F>
-bool lazy_forest<D,F>::throw_on_cycle=false;
-
 
 }//ns
 

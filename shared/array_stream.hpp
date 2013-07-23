@@ -115,6 +115,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   {
     setg(buf,buf,buf+sz);
   }
+
   /**
      seek read to beginning, set maximum readable to the length of what was written.
 
@@ -133,6 +134,14 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     set_gpos(0);
     set_ppos(0);
   }
+
+  /**
+     doesn't shrink the "written" region - use if you want to repeatedly write stuff and then get it with begin(),end()
+  */
+  void reset_write() {
+    set_ppos(0);
+  }
+
   /**
      seek read position, leaving end of readable area as is
   */
@@ -247,6 +256,10 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     if (which & std::ios_base::in)
       set_gpos(pos);
     return pos;
+  }
+
+  void *data() const {
+    return (void*)buf;
   }
 
   iterator begin() const

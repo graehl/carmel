@@ -1,5 +1,5 @@
 #!/bin/bash
-UNAMEA=${UNAMEA:-`/bin/uname -a`}
+UNAMEA=${UNAMEA:-`uname -a`}
 case "$UNAMEA" in
     *x86_64*)	ON64=1 ;;
 esac
