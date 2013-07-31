@@ -41,6 +41,7 @@ my $verbose;
 my $substre;
 my @substs;
 my $abspath=1;
+my $sizeMax;
 
 my @options=(
 "Global or regexp search and replace from a translation file (list of tab-separated source/replacement pairs)",
@@ -54,6 +55,7 @@ my @options=(
 ["dryrun!"=>\$dryrun,"show substituted lines on STDOUT (no inplace)"],
 ["firstonly!"=>\$firstonly,"don't process subsequent translations after the first matching per line"],
 ["verbose!"=>\$verbose,"show each applied substitution"],
+["size-max=s"=>\$sizeMax,"skip files smaller than this #bytes"],
 #["substflags=s"=>\$substflags,"flags for s///flags, e.g. e for expression"],
 #["parallel!"=>\$parallel,"perform at most one replacement per matched section"],
 );
@@ -118,6 +120,11 @@ if ($inplace) {
     }
 @ARGV=keys %modify_files;
 @ARGV=uniq(map { abspath($_) } @ARGV) if $abspath;
+if (defined($sizeMax)) {
+    use File::stat;
+    @ARGV=grep{stat($_[0])->size <= $sizeMax} @ARGV;
+
+}
 count_info("modifying $_") for (@ARGV);
     &debug(@ARGV);
     if ($hadargs && scalar @ARGV == 0) {

@@ -2,6 +2,15 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
+case $(uname) in
+    Darwin)
+        lwarch=Apple ;;
+    Linux)
+        lwarch=FC12 ;;
+    *)
+        lwarch=Windows ;;
+esac
+
 HOST=${HOST:-$(hostname)}
 if [[ $HOST = graehl.local ]] ; then
     CXX11=g++-4.7
@@ -27,13 +36,198 @@ composed=$HOME/music/compose.rpp
 puzzled=$HOME/puzzle
 edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
+nospace() {
+  catz "$@" | tr -d ' '
+}
+spacechars() {
+    catz "$@" | perl -e 'use open qw(:std :utf8); while(<>) {chomp;@chars = split //, $_; print join(" ", @chars),"\n"; }'
+}
+supertrims() {
+    catz "$@" | perl -pe 'chomp;s/^\s+//;s/\s+$//;s/\s+/ /g;$_+="\n"'
+}
+trims() {
+    catz "$@" | perl -pe 'chomp;s/^\s+//;s/\s+$//;$_+="\n"'
+}
+rtrims() {
+    catz "$@" | perl -pe 'chomp;s/\s+$//;$_+="\n"'
+}
+translit() {
+    lang=$1
+    shift
+    xmt --config ~/x/RegressionTests/SimpleTransliterator/XMTConfig.yml -p translit-$lang --log-config ~/x/scripts/no.log.xml
+}
+loch() {
+    if [ "x$JAVA_HOME" == "x" ]; then
+        export JAVA_HOME=/home/hadoop/jdk1.6.0_24
+        export PATH=$JAVA_HOME/bin:$PATH
+    fi
+    # hadoop variables needed to run utilities at the command line, e.g., pig/hadoop
+    export HADOOP_INSTALL=/home/hadoop/hadoop/hadoop-2.0.0-cdh4.2.1
+    export PATH=$HADOOP_INSTALL/bin:$PATH
+    export HADOOP_CONF_DIR=/home/hadoop/loch2-client-conf
+    export HADOOP_HOME=$HADOOP_INSTALL
+    export PIG_HADOOP_VERSION=20
+    export PIG_CLASSPATH=$HADOOP_CONF_DIR:/home/hadoop/hadoop/hadoop-2.0.0-cdh4.2.1/lib/pig/lib/jython-2.5.0.jar
+}
+bog() {
+    if [ "x$JAVA_HOME" == "x" ]; then
+        export JAVA_HOME=/home/hadoop/jdk1.6.0_24
+        export PATH=$JAVA_HOME/bin:$PATH
+    fi
+    # hadoop variables needed to run utilities at the command line, e.g., pig/hadoop
+    export HADOOP_INSTALL=/home/hadoop/hadoop/hadoop-2.0.0-cdh4.3.0
+    export PATH=$HADOOP_INSTALL/bin:$PATH
+    export HADOOP_CONF_DIR=/home/hadoop/loch2-client-conf
+    export HADOOP_HOME=$HADOOP_INSTALL
+    export PIG_HADOOP_VERSION=20
+    export PIG_CLASSPATH=$HADOOP_CONF_DIR:/home/hadoop/hadoop/hadoop-2.0.0-cdh4.3.0/lib/pig/lib/jython-standalone-2.5.2.jar
+}
+bak() {
+    ( set -x
+        local bak=${bakdir:-bak}
+        mkdir -p $bak
+        for f in "$@"; do
+            local b=`basename $f`
+            local o=$bak/$b
+            if [ -r $o ] ; then
+                for i in `seq 1 9`; do
+                    o=$bak/$b.$i
+                    [ -r $o ] || break
+                done
+                if [ -r $o ] ; then
+                    o=$bak/$b.`timestamp`
+                fi
+                if [ -r $o ] ; then
+                    rm -rf $o
+                fi
+            fi
+            echo "$f => $o"
+            mv $f $o
+        done
+    )
+}
+xpublish() {
+    publish=1 pdf=1 save12 ~/tmp/publish ~/x/scripts/make-docs.sh
+}
+pmvover() {
+    mvover "$@"
+    pushover
+}
 
+forcecpan() {
+    perl -MCPAN -e "CPAN::Shell->force(qw(install $*"
+}
+
+#e.g. makedo ce.tab uniqc 'sort $in | uniq -c'
+makedo() {
+    in=$1
+    shift
+    suf=.$1
+    shift
+    cat <<EOF > $in$suf.do
+in=\${1%$suf}
+redo-ifchange \$in
+$*
+EOF
+    git add $in$suf.do
+    echo $in$suf.do
+}
+do_sort() {
+    makedo $1 sort 'sort $in'
+}
+do_shuf() {
+    makedo $1 shuf 'sort -R $in'
+}
+do_uniqc() {
+    do_sort $1 sort
+    makedo $1.sort uniqc 'uniq -c $in'
+}
+do_uniq() {
+    do_sort $1 sort
+    makedo $1.sort uniq 'uniq $in'
+}
+editdistance() {
+    local ed=${ed:-EditDistance}
+    $ed --flag-segment=${chars:-false} --file1 "$1" --file2 "$2" $3
+}
+lc() {
+  catz "$@" | tr A-Z a-z
+}
+do_lc() {
+    makedo $1 lc 'tr A-Z a-z < $in'
+}
+do_hasuc() {
+    makedo $1 hasuc 'grep [A-Z] $in'
+}
+
+sum() {
+    perl -ne '@f=split " ",$_; $s+=$_ for (@f); END {print $s,"\n"}' "$@"
+}
+
+statbytes() {
+    if [[ $# = 0 ]] ; then
+        echo 0
+    else
+        if [[ $lwarch = Apple ]] ; then
+            stat -f %z "$@"
+        else
+            stat -c %s "$@"
+        fi
+    fi
+}
+totalbytes() {
+    statbytes "$@" | sum
+}
+justfiles() {
+    for f in "$@"; do
+        [[ -f $f ]] && echo $f
+    done
+}
+filestatbytes() {
+    statbytes `justfiles "$@"`
+}
+totalfilebytes() {
+    totalbytes `justfiles "$@"`
+}
+maybeshortlines() {
+    if [[ $linelen ]] ; then
+        shortlines $linelen "$@"
+    else
+        cat "$@"
+    fi
+}
+shortlines() {
+    local linelen=${1:-80}
+    shift
+    local continuation=${continuation:-...}
+    perl -ne 'BEGIN{$linelen=shift;$continuation=shift;$clen=$linelen-length($continuation);}
+chomp;$c=length($_); print $c<=$linelen ? $_ : substr($_,0,$clen).$continuation, "\n"
+' "$linelen" "$continuation" "$@"
+}
+#args must be files, not stdin (this is not a streaming algorithm)
+sample() {
+    local nlines=${1:-20}
+    shift
+    local linelen=${linelen:-132}
+    local name=${name:-0}
+    local sz=$(totalfilebytes "$@")
+    #TODO: use linelen as hint or to print first whatever chars
+    perl -ne 'BEGIN{$sz=shift;$nlines=shift;$name=shift;} use bytes;
+if ($nlines) { $lines++; $cpre=$c||0; $c+=length($_); $left=$sz-$c; $avglen=$c/$lines || 1e100; $lineleft=$left/$avglen; if (!$lineleft || rand() < $nlines/$lineleft) { --$nlines; print "$ARGV: " if $name; print; } }
+' "$sz" "$nlines" "$name" "$@" | shortlines $linelen
+}
+psample() {
+    perl -ne 'BEGIN{$p=shift}print if rand() < $p' "$@"
+}
+pevery() {
+    perl -ne 'BEGIN{$p=1./shift}print if rand() < $p' "$@"
+}
 ctestlast() {
-(
-    cd ~/x/${BUILD:-Debug}
-    echo 'CTEST_CUSTOM_POST_TEST("cat Testing/Temporary/LastTest.log")' > CTestCustom.test
-    make test
-)
+    (
+        cd ~/x/${BUILD:-Debug}
+        echo 'CTEST_CUSTOM_POST_TEST("cat Testing/Temporary/LastTest.log")' > CTestCustom.test
+        make test
+    )
 }
 xmtfails() {
     d=~/tmp
@@ -43,10 +237,10 @@ xmtfails() {
     tailn=20 preview $d/fails.xmt $d/fails.nonxmt
 }
 uncache() {
-  sudo bash -c "sync; echo 3 > /proc/sys/vm/drop_caches"
+    sudo bash -c "sync; echo 3 > /proc/sys/vm/drop_caches"
 }
 fixgerrit() {
-  ssh git02 "/local/gerrit/bin/gerrit.sh restart || /local/gerrit/bin/gerrit.sh start"
+    ssh git02 "/local/gerrit/bin/gerrit.sh restart || /local/gerrit/bin/gerrit.sh start"
 }
 upext() {
     (set -e
@@ -114,15 +308,15 @@ compush() {
     )
 }
 mvover() {
-(set -e
-    mv "$@" $overflowd/
-    cd $overflowd
-    git add *
-)
+    (set -e
+        mv "$@" $overflowd/
+        cd $overflowd
+        git add *
+    )
 }
 pushover() {
     (set -e
-        cd ~/music/overflow
+        cd $overflowd/
         git add *
         git commit -a -m more
         git pull --rebase
@@ -581,7 +775,7 @@ yreg() {
         local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
         cd $xmtx/RegressionTests
         THREADS=`ncpus`
-        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
+        MINTHREADS=${MINTHREADS:-2} # unreliable with 1
         MAXTHREADS=6
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
@@ -589,7 +783,7 @@ yreg() {
         if [[ $THREADS -lt $MINTHREADS ]] ; then
             THREADS=$MINTHREADS
         fi
-#        set -x
+        #        set -x
         local STDERR_REGTEST
         if [[ $verbose ]] ; then
             STDERR_REGTEST="--dump-stderr"
@@ -966,7 +1160,7 @@ savedo() {
     done
 }
 sherp() {
-    local CT=${CT:-/home/graehl/ct/main}
+    local CT=${CT:-~/c/ct/main}
     cd `dirname $1`
     local apex=`basename $1`
     if [[ -f $apex.apex ]] ; then
@@ -1740,14 +1934,6 @@ killbranch() {
 killbranch1() {
     git branch -D "$1"
 }
-case $(uname) in
-    Darwin)
-        lwarch=Apple ;;
-    Linux)
-        lwarch=FC12 ;;
-    *)
-        lwarch=Windows ;;
-esac
 racer=$(echo $xmtx)
 export WORKSPACE=$racer
 racerextbase=$(echo ~/c/xmt-externals)
@@ -4025,20 +4211,17 @@ WFHOME=/lfs/bauhaus/graehl/workflow
 WFHPC='~/workflow'
 
 
-function gensym
-{
+gensym() {
     perl -e '$"=" ";$_="gensym @ARGV";s/\W+/_/g;print;' "$@" `nanotime`
 }
 
-function currydef
-{
+currydef() {
     local curryfn=$1
     shift
     eval function $curryfn { "$@" '$*'\; }
 }
 
-function curry
-{
+curry() {
     #fixme: global output variable curryout, since can't print curryout and capture in `` because def would be lost.
     curryout=`gensym $*`
     eval currydef $curryout "$@"
@@ -4845,12 +5028,6 @@ function ssltelnet()
     $openssl s_client -connect "$@"
 }
 
-function bak()
-{
-    for x in "$@"; do
-        cp $x ${x}`timestamp`
-    done
-}
 function m()
 {
     clear
@@ -5351,14 +5528,12 @@ upt()
 mlm=~/t/utilities/make.lm.sh
 [ -f $mlm ] && . $mlm
 
-function cwhich
-{
+cwhich() {
     l `which "$@"`
     cat `which "$@"`
 }
 
-function vgx
-{
+vgx() {
     (
         #lennonbin
         local outarg smlarg out vgprog dbarg leakcheck
@@ -5375,20 +5550,7 @@ function vgx
     #--show-reachable=yes
 }
 
-function bak
-{
-    local ext=${2:-bak}
-    [ -f "$1" ] && mv $1 $1.$ext
-}
-
-function goo2
-{
-    #mstsc &
-    ssh -L 3390:192.168.1.200:3389 -p 4640 pontus.languageweaver.com "$@"
-}
-
-function unshuffle
-{
+unshuffle() {
     perl -e 'while(<>){print;$_=<>;die unless $_;print STDERR $_}' "$@"
 }
 

@@ -96,6 +96,9 @@ codecvt argument, too
 
 
 namespace graehl {
+
+namespace fs = boost::filesystem;
+
 #if GRAEHL_USE_GZSTREAM
 # if GRAEHL_USE_LZ4
 #  define GRAEHL_GZ_USAGE "(.gz or .lz4 allowed)"
@@ -176,7 +179,6 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 }
 
 
-
 // copyable because it's a shared ptr to an ostream, and holds shared ptr to a larger buffer used by it (for non-.gz file input/output) - make sure file is flushed before member buffer is destroyed, though!
 template <class Stream>
 struct file_arg
@@ -190,6 +192,10 @@ private:
   pointer_type pointer; // this will get destroyed before buf (constructed after), which may be necessary since we don't require explicit flush.
   bool none;
 public:
+  std::size_t filesize() {
+    return name.empty() ? 0 : (std::size_t)fs::file_size(fs::path(name));
+  }
+
   typedef void leaf_configure; // configure.hpp
   friend std::string const& to_string_impl(file_arg const& fa)
   {
@@ -586,8 +592,6 @@ inline InDiskfile indiskfile(const std::string &s)
   return ifstream_arg(s);
 }
 
-namespace fs = boost::filesystem;
-
 inline fs::path full_path(const std::string &relative)
 {
   return fs::system_complete(fs::path(relative)); //fs::path( relative, fs::native ) //V2
@@ -681,6 +685,26 @@ inline Outfile outfile(const std::string &s)
 inline OutDiskfile outdiskfile(const std::string &s)
 {
   return ofstream_arg(s);
+}
+
+
+inline boost::shared_ptr<std::string> streambufContents(std::streambuf *sbuf) {
+  typedef std::istreambuf_iterator<char> Iter;
+  return boost::shared_ptr<std::string>(new std::string(Iter(sbuf), Iter()));
+}
+
+inline boost::shared_ptr<std::string> streamContents(std::istream &istream) {
+  return streambufContents(istream.rdbuf());
+}
+
+template <class Istream>
+inline boost::shared_ptr<std::string> fileContents(file_arg<Istream> const& file) {
+  std::size_t sz = file.filesize();
+  if (sz) {
+    boost::shared_ptr<std::string> r(new std::string(sz, '\0'));
+    file->rdbuf()->sgetn(&(*r)[0], sz);
+  } else
+    return streamContents(*file);
 }
 
 

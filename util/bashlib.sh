@@ -1653,6 +1653,9 @@ chmod_notlinks() {
     find $dir \( -type f -o -type d \) -exec chmod -f $mode {} \;
 }
 
+interleave() {
+    paste -d'\n' "$@" /dev/null
+}
 
 sidebyside() {
     local files=''
