@@ -90,13 +90,13 @@ while(<$fh>) {
     }
 }
 
+my $hadargs=scalar @ARGV;
 if (defined($sizeMax)) {
     use File::stat;
-    @ARGV=grep{stat($_[0])->size <= $sizeMax} @ARGV;
+    @ARGV=grep{stat($_)->size <= $sizeMax} @ARGV;
 }
 if ($inplace) {
     my %modify_files;
-    my $hadargs=scalar @ARGV;
     file: for my $file (@ARGV) {
         open LOOKFOR,'<',$file or die "$file: ".`ls -l $file`;
         print STDERR " $file" if $verbose;
@@ -128,12 +128,13 @@ print STDERR "\n" if $verbose;
 @ARGV=uniq(map { abspath($_) } @ARGV) if $abspath;
 count_info("modifying $_") for (@ARGV);
     &debug(@ARGV);
-    if ($hadargs && scalar @ARGV == 0) {
-        fatal("None of the input files match any patterns in $ttable for in-place edit - no change");
-    }
     $^I = "~" unless $dryrun;
 } else {
     &argvz;
+}
+
+if ($hadargs && scalar @ARGV == 0) {
+    fatal("None of the input files match any patterns in $ttable for in-place edit - no change");
 }
 
 
