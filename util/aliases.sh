@@ -2858,12 +2858,14 @@ substi() {
     (set -e
         local tr=$1
         shift
-        subst.pl "$@" --dryrun --inplace --tr "$tr"
-        echo
+        if ! [[ $nodryrun ]] ; then
+            subst.pl "$@" --dryrun --inplace --tr "$tr"
+            echo
+        fi
         cat $tr
         echo
         echo ctrl-c to abort
-        sleep 5
+        sleep 3
         subst.pl "$@" --inplace --tr "$tr"
     )
 }

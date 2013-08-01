@@ -90,11 +90,16 @@ while(<$fh>) {
     }
 }
 
+if (defined($sizeMax)) {
+    use File::stat;
+    @ARGV=grep{stat($_[0])->size <= $sizeMax} @ARGV;
+}
 if ($inplace) {
     my %modify_files;
     my $hadargs=scalar @ARGV;
     file: for my $file (@ARGV) {
         open LOOKFOR,'<',$file or die "$file: ".`ls -l $file`;
+        print STDERR " $file" if $verbose;
         while(my $line=<LOOKFOR>) {
             for my $sd (@rewrites) {
                 my $source=$sd->[0];
@@ -118,13 +123,9 @@ if ($inplace) {
         }
         close LOOKFOR;
     }
+print STDERR "\n" if $verbose;
 @ARGV=keys %modify_files;
 @ARGV=uniq(map { abspath($_) } @ARGV) if $abspath;
-if (defined($sizeMax)) {
-    use File::stat;
-    @ARGV=grep{stat($_[0])->size <= $sizeMax} @ARGV;
-
-}
 count_info("modifying $_") for (@ARGV);
     &debug(@ARGV);
     if ($hadargs && scalar @ARGV == 0) {
