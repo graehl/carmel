@@ -6643,3 +6643,7 @@ complete -o filenames -C '_z --complete "$COMP_LINE"' ${_Z_CMD:-z}
         PROMPT_COMMAND="$PROMPT_COMMAND"$'\n''_z --add "$(pwd '$_Z_RESOLVE_SYMLINKS' 2>/dev/null)" 2>/dev/null;'
     }
 }
+
+jpgclean() {
+ exiftool -all= ${*:-*.jpg}
+}
