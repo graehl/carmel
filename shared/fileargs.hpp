@@ -257,6 +257,10 @@ public:
   }
 
   file_arg() { set_none(); }
+  explicit file_arg(fs::path const& path,bool null_allowed=ALLOW_NULL,bool large_buf=true)
+  {  set(path.string(),null_allowed,large_buf); }
+  explicit file_arg(char const* s,bool null_allowed=ALLOW_NULL,bool large_buf=true)
+  {  set(s,null_allowed,large_buf); }
   explicit file_arg(std::string const& s,bool null_allowed=ALLOW_NULL,bool large_buf=true)
   {  set(s,null_allowed,large_buf); }
   void throw_fail(std::string const& filename,std::string const& msg="")

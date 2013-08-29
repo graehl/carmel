@@ -52,25 +52,27 @@ typename T::size_type ci_find_substr( const T& str, const T& substr, const std::
                 ci_equal<typename T::value_type>(loc));
   return it==str.end() ? -1 : it - str.begin();
 }
-// return w/ removed trailing '\r' '\n' or '\r\n', if any
+
+/// return new end() that would remove trailing '\r' '\n' or '\r\n', if any
 template <class S>
 typename S::const_iterator chomp_end(S const& s) {
   if (s.empty()) return s.end();
-  typename S::const_iterator b=s.begin(),i=s.end()-1;
-  if (i==b) return *i=='\n'?S():s;
-  if (*i=='\n') --i;
-  if (*i=='\r') --i;
-  return i+1;
+  typename S::const_iterator b=s.begin(), i=s.end()-1;
+  if (i==b) return *i=='\n' || *i=='\r' ? i : ++i;
+  if (*i == '\n') --i;
+  if (*i == '\r') --i;
+  return ++i;
 }
 
+/// return w/ removed trailing '\r' '\n' or '\r\n', if any
 template <class S>
 S chomp(S const& s) {
   if (s.empty()) return s;
   typename S::const_iterator b=s.begin(),i=s.end()-1;
-  if (i==b) return *i=='\n'?S():s;
+  if (i==b) return *i=='\n' || *i=='\r' ? S() : s;
   if (*i=='\n') --i;
   if (*i=='\r') --i;
-  return S(b,i+1);
+  return S(b, ++i);
 }
 
 template <class S>

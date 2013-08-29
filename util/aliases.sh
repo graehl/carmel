@@ -11,6 +11,36 @@ case $(uname) in
         lwarch=Windows ;;
 esac
 
+testpys() {
+  find . -name 'test*.py' -exec python {} \;
+}
+com() {
+    git commit --allow-empty -m "$*"
+}
+branchnew() {
+    branchthis "$@"
+    co "$@"
+    git commit --allow-empty -m "$*"
+}
+nbuild() {
+    local host=$1
+    shift
+    ssh ${host:-gitbuild1} -l nbuild -i ~/.ssh/nbuild "$@"
+}
+nbuild2() {
+    nbuild gitbuild2 "$@"
+}
+nbuild1() {
+    nbuild gitbuild1 "$@"
+}
+externals() {
+    local ncmd="cd /jenkins/xmt-externals; git checkout master; git pull"
+    for host in localhost c-jgraehl c-skohli c-mdreyer; do
+        ssh $host "cd c/xmt-externals; git pull"
+    done
+    nbuild1 $ncmd
+    nbuild2 $ncmd
+}
 HOST=${HOST:-$(hostname)}
 if [[ $HOST = graehl.local ]] ; then
     CXX11=g++-4.7
@@ -37,7 +67,7 @@ puzzled=$HOME/puzzle
 edud=$HOME/edu
 gitroots="$emacsd $octo $carmeld $overflowd $composed"
 nospace() {
-  catz "$@" | tr -d ' '
+    catz "$@" | tr -d ' '
 }
 spacechars() {
     catz "$@" | perl -e 'use open qw(:std :utf8); while(<>) {chomp;@chars = split //, $_; print join(" ", @chars),"\n"; }'
@@ -107,7 +137,10 @@ bak() {
     )
 }
 xpublish() {
-    publish=1 pdf=1 save12 ~/tmp/publish ~/x/scripts/make-docs.sh
+    publish=1 pdf=1 save12 ~/tmp/xpublish ~/x/scripts/make-docs.sh "$@"
+}
+xhtml() {
+    open=1 publish= save12 ~/tmp/xhtml ~/x/scripts/make-docs.sh "$@"
 }
 pmvover() {
     mvover "$@"
@@ -151,7 +184,7 @@ editdistance() {
     $ed --flag-segment=${chars:-false} --file1 "$1" --file2 "$2" $3
 }
 lc() {
-  catz "$@" | tr A-Z a-z
+    catz "$@" | tr A-Z a-z
 }
 do_lc() {
     makedo $1 lc 'tr A-Z a-z < $in'
@@ -1477,7 +1510,9 @@ useclang() {
     export CC="$ccache-cc$GCC_SUFFIX"
     export CXX="$ccache-c++$GCC_SUFFIX"
 }
-gcc48=1
+gcc48=
+gcc47=1
+#TestWeight release optimizer problem
 usegcc() {
     if false && [[ $HOST = graehl.local ]] ; then
         usegccnocache
@@ -2082,7 +2117,7 @@ rebasec() {
 
 mend() {
     (
-        git commit -a -C HEAD --amend
+        git commit --allow-empty -a -C HEAD --amend
     )
 }
 
@@ -5085,41 +5120,10 @@ alias nlg0="ssh -1 -l graehl nlg0.isi.edu"
 alias more=less
 alias h="history 25"
 alias jo="jobs -l"
-alias err="tail -f /etc/httpd/logs/error_log"
-alias errd="tail -f /etc/httpd-devel/logs/error_log"
-alias apc="/var/www/twiki/apachectl"
-alias apcd="/var/www/twiki/apachectl-devel"
-
-function comm() {
-    svn commit -m "$*"
-}
-function comml() {
-    svn commit -l -m "$*"
-}
-#alias rtt="pdq ~/dev/shared;cvs update;popd;pdq ~/dev/tt;cvs update;make;popd
-#alias comm="cvs commit -m ''"
 
 alias cpup="cp -vRdpu"
 # alias hem="pdq ~/dev/tt; hscp addfield.pl forest-em-button.sh dev/tt; popd"
 
-coml() {
-    for f; do
-        echo commiting $f
-        pushd $f && comml
-        popd
-    done
-}
-com() {
-    for f; do
-        echo commiting $f
-        pushd $f && comm
-        popd
-    done
-}
-ch() {
-    e nlg0.isi.edu coml "$@"
-    e $HPCHOST up "$@"
-}
 # alias ls="/bin/ls"
 RCFILES=~/isd/hints/{.bashrc,aliases.sh,bloblib.sh,bashlib.sh,add_paths.sh,inpy,dir_patt.py,.emacs}
 alias hb="scp $RCFILES graehl@$HPCHOST:isd/hints"
@@ -5144,7 +5148,7 @@ ehost() {
 cd $p
 "$@"
 EOF
-#"/bin/bash"' --login -c "'"$*"'"'
+    #"/bin/bash"' --login -c "'"$*"'"'
 }
 
 enlg() {

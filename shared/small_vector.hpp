@@ -241,12 +241,6 @@ struct small_vector {
     init_range(i,end);
   }
 
-  template <class Range>
-  small_vector(Range const& range
-               , typename enable_type<typename Range::value_type>::type *enable=0)
-  {
-    init_range(range.begin(),range.end());
-  }
  protected:
   void init(size_type s, T const& v) {
     assert(s<=kMaxSize);

@@ -14,7 +14,9 @@
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
 # define OS_WINDOWS
+# include <io.h>
 #else
+# include <sys/stat.h>
 # include <unistd.h>
 #endif
 
@@ -165,15 +167,6 @@ inline std::string last_error_string() {
 
 inline bool create_file(const std::string& path,std::size_t size) {
 #ifdef _WIN32
-#if 0
-  //VC++ only, unfortunately
-  int fd=::_open(path.c_str(),_O_CREAT|_O_SHORT_LIVED);
-  if (fd == -1)
-    return false;
-  if (::_chsize(fd,size) == -1)
-    return false;
-  return ::_close(fd) != -1;
-#else
   HANDLE fh=::CreateFileA( path.c_str(),GENERIC_WRITE,FILE_SHARE_DELETE,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,NULL);
   if (fh == INVALID_HANDLE_VALUE)
     return false;
@@ -182,7 +175,6 @@ inline bool create_file(const std::string& path,std::size_t size) {
   if (!::SetEndOfFile(fh))
     return false;
   return ::CloseHandle(fh);
-#endif
 #else
   return ::truncate(path.c_str(),size) != -1;
 #endif
@@ -256,11 +248,10 @@ inline bool is_tmpnam_template(const std::string &filename_template)
 }
 
 
-#ifndef OS_WINDOWS
-//FIXME: provide win32 implementations
-
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!). returns filename created. if template is missing XXXXXX, it's appended first.
-inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=false)
+inline std::string safe_tmpnam(const std::string &filename_template="/tmp/tmp.safe_tmpnam.XXXXXX",
+                               bool keepfile=false,
+                               bool worldReadable=false)
 {
   const unsigned MY_MAX_PATH=1024;
   char tmp[MY_MAX_PATH+1];
@@ -269,15 +260,24 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/safe_t
   if (!is_tmpnam_template(filename_template))
     std::strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
 
-  int fd=::mkstemp(tmp);
+#ifdef OS_WINDOWS
+  int err = ::_mktemp_s(tmp, ::strlen(tmp)); // this does not create the file, sadly. alternative (with many retries: http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32/6036308#6036308 )
+  if (err)
+    throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
+#else
+  int fd = ::mkstemp(tmp);
 
   if (fd==-1)
     throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
+
+  if (worldReadable)
+    ::fchmod(fd, 0644);
 
   ::close(fd);
 
   if (!keepfile)
     ::unlink(tmp);
+#endif
 
   return tmp;
 }
@@ -292,7 +292,14 @@ inline std::string maybe_tmpnam(const std::string &filename_template="/tmp/safe_
 
 inline bool safe_unlink(const std::string &file,bool must_succeed=true)
 {
-  if (::unlink(file.c_str()) == -1) {
+  if (
+#ifdef OS_WINDOWS
+      std::remove
+#else
+      ::unlink
+#endif
+         (file.c_str()) == -1)
+  {
     if (must_succeed)
       throw_last_error(std::string("couldn't remove ").append(file));
     return false;
@@ -300,7 +307,6 @@ inline bool safe_unlink(const std::string &file,bool must_succeed=true)
     return true;
   }
 }
-#endif
 
 //!< returns dir/name unless dir is empty (just name, then). if name begins with / then just returns name.
 inline std::string joined_dir_file(const std::string &basedir,const std::string &name="",char pathsep='/')

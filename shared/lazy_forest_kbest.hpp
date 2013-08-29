@@ -366,13 +366,17 @@ struct projected_duplicate_filter : Projection
 struct lazy_kbest_stats
 {
   typedef std::size_t count_t;
+  /// number generated passed and visited at the root
+  count_t n_visited;
+
+  /// passed vs. filtered = total (generated at all levels of forest, not just root)
   count_t n_passed;
   count_t n_filtered;
   bool trivial_filter;
   void clear(bool trivial_filt = false)
   {
     trivial_filter = trivial_filt;
-    n_passed = n_filtered = 0;
+    n_passed = n_filtered = n_visited = 0;
   }
   count_t n_total() const
   {
@@ -384,12 +388,13 @@ struct lazy_kbest_stats
   template <class C, class T>
   void print(std::basic_ostream<C, T> &o) const
   {
+    o<<"[Lazy kbest visited "<<n_visited<<" derivations; ";
     if (trivial_filter) {
       assert(!n_filtered);
-      o<<"[Lazy kbest "<<n_passed<<" derivations found]";
+      o<<n_passed<<" derivations found]";
       return;
     }
-    o << "[Lazy kbest uniqueness-filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "
+    o<<"uniqueness-filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "
       << n_passed<<", or "<<graehl::percent<5>((double)n_passed, (double)n_total())<<"]";
   }
   typedef lazy_kbest_stats self_type;
@@ -480,12 +485,14 @@ class lazy_forest
   lazy_kbest_stats enumerate_kbest(Environment &env, lazy_kbest_index_type k, Visitor visit = Visitor()) {
     EIFDBG(LAZYF, 1, KBESTINFOT("COMPUTING BEST " << k << " for node " << *this); KBESTNESTT;);
     clear_stats(env);
-    for (lazy_kbest_index_type i = 0; i<k; ++i) {
+    lazy_kbest_index_type i = 0;
+    for (; i<k; ++i) {
       EIFDBG(LAZYF, 2, SHOWM2(LAZYF,"enumerate_kbest-pre", i, *this));
       derivation_type ith_best = get_best(env, i);
       if (ith_best == NONE()) break;
       if (!visit(ith_best, i)) break;
     }
+    env.stats.n_visited = i;
     return env.stats;
   }
 
