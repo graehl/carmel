@@ -2072,9 +2072,7 @@ g1po() {
         ARGS='--a.xs 1 2 --b.xs 2 --death-year=2011 --a.str 2 --b.str abc' cleanup=1 g1 configure_program_options.hpp -DGRAEHL_CONFIGURE_SAMPLE_MAIN=1
     )
 }
-commt()
-{
-    (set -e
+overt() {
         pushd $racer/xmt/graehl/shared
         gsh=~/g/shared
         for f in *.?pp; do
@@ -2082,9 +2080,12 @@ commt()
             cp $f $gsh/$f
         done
         pushd ~/g
-        git co master
-        git commit -a -m "$*"
-        git push
+}
+commt()
+{
+    (set -e
+        overt
+        compush "$@"
         popd
         popd
     )
