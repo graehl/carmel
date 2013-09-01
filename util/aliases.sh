@@ -12,7 +12,7 @@ case $(uname) in
 esac
 
 testpys() {
-  find . -name 'test*.py' -exec python {} \;
+    find . -name 'test*.py' -exec python {} \;
 }
 com() {
     git commit --allow-empty -m "$*"
@@ -2073,13 +2073,13 @@ g1po() {
     )
 }
 overt() {
-        pushd $racer/xmt/graehl/shared
-        gsh=~/g/shared
-        for f in *.?pp; do
-            rm -f $gsh/$f
-            cp $f $gsh/$f
-        done
-        pushd ~/g
+    pushd $racer/xmt/graehl/shared
+    gsh=~/g/shared
+    for f in *.?pp; do
+        rm -f $gsh/$f
+        cp $f $gsh/$f
+    done
+    pushd ~/g
 }
 commt()
 {
@@ -6449,12 +6449,12 @@ complete -o default -o nospace -F _jump jump
 #         set $_Z_EXCLUDE_DIRS to an array of directories to exclude.
 #
 # USE:
-#     * z foo     # cd to most frecent dir matching foo
+#     * z foo # cd to most frecent dir matching foo
 #     * z foo bar # cd to most frecent dir matching foo and bar
-#     * z -r foo  # cd to highest ranked dir matching foo
-#     * z -t foo  # cd to most recently accessed dir matching foo
-#     * z -l foo  # list matches instead of cd
-#     * z -c foo  # restrict matches to subdirs of $PWD
+#     * z -r foo # cd to highest ranked dir matching foo
+#     * z -t foo # cd to most recently accessed dir matching foo
+#     * z -l foo # list matches instead of cd
+#     * z -c foo # restrict matches to subdirs of $PWD
 
 [ -d "${_Z_DATA:-$HOME/.z}" ] && {
     echo "ERROR: z.sh's datafile (${_Z_DATA:-$HOME/.z}) is a directory."
@@ -6537,30 +6537,30 @@ _z() {
     else
         # list/go
         while [ "$1" ]; do case "$1" in
-            --) while [ "$1" ]; do shift; local fnd="$fnd $1";done;;
-            -*) local opt=${1:1}; while [ "$opt" ]; do case ${opt:0:1} in
-                    c) local fnd="^$PWD $fnd";;
-                    h) echo "${_Z_CMD:-z} [-chlrtx] args" >&2; return;;
-                    x) sed -i "\:^${PWD}|.*:d" "$datafile";;
-                    l) local list=1;;
-                    r) local typ="rank";;
-                    t) local typ="recent";;
-                esac; opt=${opt:1}; done;;
-             *) local fnd="$fnd $1";;
-        esac; local last=$1; shift; done
-        [ "$fnd" -a "$fnd" != "^$PWD " ] || local list=1
+                --) while [ "$1" ]; do shift; local fnd="$fnd $1";done;;
+                -*) local opt=${1:1}; while [ "$opt" ]; do case ${opt:0:1} in
+                            c) local fnd="^$PWD $fnd";;
+                            h) echo "${_Z_CMD:-z} [-chlrtx] args" >&2; return;;
+                            x) sed -i "\:^${PWD}|.*:d" "$datafile";;
+                            l) local list=1;;
+                            r) local typ="rank";;
+                            t) local typ="recent";;
+                        esac; opt=${opt:1}; done;;
+                *) local fnd="$fnd $1";;
+            esac; local last=$1; shift; done
+            [ "$fnd" -a "$fnd" != "^$PWD " ] || local list=1
 
         # if we hit enter on a completion just go there
-        case "$last" in
+            case "$last" in
             # completions will always start with /
-            /*) [ -z "$list" -a -d "$last" ] && cd "$last" && return;;
-        esac
+                /*) [ -z "$list" -a -d "$last" ] && cd "$last" && return;;
+            esac
 
         # no file yet
-        [ -f "$datafile" ] || return
+            [ -f "$datafile" ] || return
 
-        local cd
-        cd="$(while read line; do
+            local cd
+            cd="$(while read line; do
             [ -d "${line%%\|*}" ] && echo $line
         done < "$datafile" | awk -v t="$(date +%s)" -v list="$list" -v typ="$typ" -v q="$fnd" -F"|" '
             function frecent(rank, time) {
@@ -6630,8 +6630,8 @@ _z() {
                 }
             }
         ')"
-        [ $? -gt 0 ] && return
-        [ "$cd" ] && cd "$cd"
+            [ $? -gt 0 ] && return
+            [ "$cd" ] && cd "$cd"
     fi
 }
 
@@ -6650,5 +6650,25 @@ complete -o filenames -C '_z --complete "$COMP_LINE"' ${_Z_CMD:-z}
 }
 
 jpgclean() {
- exiftool -all= ${*:-*.jpg}
+    exiftool -all= ${*:-*.jpg}
+}
+
+bd() {
+    local OLDPWD=`pwd`
+    local NEWPWD=
+    local index=
+    if [ "$1" = "-s" ] ; then
+        NEWPWD=`echo $OLDPWD | sed 's|\(.*/'$2'[^/]*/\).*|\1|'`
+        index=`echo $NEWPWD | awk '{ print index($1,"/'$2'"); }'`
+    else
+        NEWPWD=`echo $OLDPWD | sed 's|\(.*/'$1'/\).*|\1|'`
+        index=`echo $NEWPWD | awk '{ print index($1,"/'$1'/"); }'`
+    fi
+
+    if [ $index -eq 0 ] ; then
+        echo "No such occurrence."
+    fi
+
+    echo $NEWPWD
+    cd "$NEWPWD"
 }
