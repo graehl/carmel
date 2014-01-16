@@ -6,6 +6,9 @@
 #include <boost/filesystem.hpp>
 #include <graehl/shared/verbose_exception.hpp>
 #include <graehl/shared/from_strings.hpp>
+#include <vector>
+#include <map>
+#include <boost/optional.hpp>
 
 namespace configure {
 
@@ -100,23 +103,13 @@ struct one_of
 };
 
 
-template <class T>
-void validate(T &)
-{
 }
 
-template <class T>
-void validate(std::vector<T> const& v)
-{
-  for (typename std::vector<T>::const_iterator i=v.begin(),e=v.end();i!=e;++i)
-    validate(*i);
-}
+namespace adl {
 
 template <class T>
-void validate(boost::optional<T> const& i)
+void validate(T &, void *lowerPriorityMatch = 0)
 {
-  if (i)
-    validate(*i);
 }
 
 /// you can call this from outside our namespace to get the more specific version via ADL if it exists
@@ -126,7 +119,30 @@ void adl_validate(T &t)
   validate(t);
 }
 
+}
 
+namespace std {
+template <class T>
+void validate(std::vector<T> const& v)
+{
+  for (typename std::vector<T>::const_iterator i=v.begin(),e=v.end();i!=e;++i)
+    adl::adl_validate(*i);
+}
+template <class Key,class T>
+void validate(std::map<Key, T> const& v)
+{
+  for (typename std::map<Key, T>::const_iterator i=v.begin(),e=v.end();i!=e;++i)
+    adl::adl_validate(i->second);
+}
+}
+
+namespace boost {
+template <class T>
+void validate(boost::optional<T> const& i)
+{
+  if (i)
+    adl::adl_validate(*i);
+}
 }
 
 #endif // VALIDATE_JG2012725_HPP

@@ -10,10 +10,6 @@
     also, destructors won't necessarily be called for thread specific data. so use THREADLOCAL only on pointers and plain-old-data
 */
 
-#ifndef GRAEHL_SETLOCAL_SWAP
-# define GRAEHL_SETLOCAL_SWAP 0
-#endif
-
 #include <boost/utility.hpp> // for BOOST_NO_MT
 
 #ifdef BOOST_NO_MT
@@ -44,47 +40,56 @@
 
 namespace graehl {
 
-template <class D>
+template <class D, class Old = D>
 struct SaveLocal {
-    D &value;
-    D old_value;
-    SaveLocal(D& val) : value(val), old_value(val) {}
-    ~SaveLocal() {
-#if GRAEHL_SETLOCAL_SWAP
-      using namespace std;
-      swap(value,old_value);
-#else
-      value=old_value;
-#endif
-    }
+  D &value;
+  Old old_value;
+  SaveLocal(D& val) : value(val), old_value(val) {}
+  ~SaveLocal() {
+    value = old_value;
+  }
+};
+
+template <class D, class Old = D>
+struct SetLocal {
+  D &value;
+  Old old_value;
+  template <class NewValue>
+  SetLocal(D& val, NewValue const& new_value) : value(val), old_value(val) {
+    value = new_value;
+  }
+  ~SetLocal() {
+    value = old_value;
+  }
 };
 
 template <class D>
-struct SetLocal {
-    D &value;
-    D old_value;
-    SetLocal(D& val,const D &new_value) : value(val), old_value(
-#if GRAEHL_SETLOCAL_SWAP
-      new_value
-#else
-      val
-#endif
-      ) {
-#if GRAEHL_SETLOCAL_SWAP
-      using namespace std;
-      swap(value,old_value);
-#else
-      value=new_value;
-#endif
-    }
-    ~SetLocal() {
-#if GRAEHL_SETLOCAL_SWAP
-      using namespace std;
-      swap(value,old_value);
-#else
-      value=old_value;
-#endif
-    }
+struct SaveLocalSwap {
+  D &value;
+  D old_value;
+  SaveLocalSwap(D& val) : value(val), old_value(val) {}
+  ~SaveLocalSwap() {
+    using namespace std;
+    swap(value, old_value);
+  }
+};
+
+template <class D>
+struct SetLocalSwap {
+  D &value;
+  D old_value;
+  template <class NewValue>
+  SetLocalSwap(D& val, NewValue const& new_value)
+      : value(val)
+      , old_value(new_value)
+  {
+    using namespace std;
+    swap(value, old_value);
+  }
+  ~SetLocalSwap() {
+    using namespace std;
+    swap(value, old_value);
+  }
 };
 
 

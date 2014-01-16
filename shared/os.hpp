@@ -100,6 +100,10 @@ inline int getenv_int(char const* key) {
   return s ? atoi_nows(s) : 0;
 }
 
+inline char * getenv_str(char const* key) {
+  return getenv(key);
+}
+
 inline int system_safe(const std::string &cmd)
 {
   int ret=::system(cmd.c_str());
@@ -204,7 +208,16 @@ struct tmp_fstream
   }
   void choose_name()
   {
-    filename=std::tmpnam(NULL);
+
+#include <graehl/shared/warning_push.h>
+#if HAVE_GCC_4_6
+    GCC_DIAG_IGNORE(deprecated-declarations)
+#endif
+    CLANG_DIAG_IGNORE(deprecated-declarations)
+
+    filename = std::tmpnam(NULL);
+
+#include <graehl/shared/warning_pop.h>
   }
   void open(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc) {
     file.open(filename.c_str(),mode);

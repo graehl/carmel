@@ -102,10 +102,7 @@ inline bool container_equal(const T &v1, const T &v2,typename T::const_iterator 
 
 
 #ifdef GRAEHL_TEST
-#include <graehl/shared/dynarray.h>
-#include <graehl/shared/list.h>
-#include <graehl/shared/2hash.h>
-#include <graehl/shared/byref.hpp>
+#include <graehl/shared/small_vector.hpp>
 
 template <class S>
 void maptest() {
@@ -122,10 +119,6 @@ void maptest() {
   BOOST_CHECK(m.find(3)->second == 4);
   BOOST_CHECK(find_second(m,3) == &m.find(3)->second);
   BOOST_CHECK(m.find(0)==m.end());
-  test_counter n;
-  enumerate(m,n);
-  BOOST_CHECK(n.n==2);
-
 }
 
 template <class S>
@@ -133,10 +126,9 @@ void containertest() {
   typedef typename S::template container<unsigned>::type cont;
   cont c;
   BOOST_CHECK(c.size()==0);
-  c.push(10);
-  c.push(9);
+  c.push_back(10);
+  c.push_back(9);
   BOOST_CHECK(c.size()==2);
-  BOOST_CHECK(c.top()==9);
   {
 
   bool nine=false,ten=false;
@@ -148,12 +140,9 @@ void containertest() {
     else
       BOOST_CHECK(false);
   }
-  test_counter n;
-  enumerate(c,n);
-  BOOST_CHECK(n.n==2);
 
   BOOST_CHECK(nine&&ten);
-}
+  }
   {
 
   bool nine=false,ten=false;
@@ -165,9 +154,6 @@ void containertest() {
     else
       BOOST_CHECK(false);
   }
-  test_counter n;
-  enumerate(c,n);
-  BOOST_CHECK(n.n==2);
 
   BOOST_CHECK(nine&&ten);
 }
@@ -188,14 +174,12 @@ struct F
 
 BOOST_AUTO_TEST_CASE( TEST_CONTAINER )
 {
-  maptest<HashS>();
   maptest<MapS>();
   containertest<ListS>();
   containertest<VectorS>();
-  dynamic_array<int> a(10,2);
+  small_vector<int> a(10,2);
   a[1]=1;
-  std::cout << a << "\n" << map<dynamic_array<int> >(a,plus1) << "\n";
-  std::cout << a << "\n" << map<dynamic_array>(a,F()) << "\n";
+  std::cout << a << "\n" << map<small_vector<int> >(a,plus1) << "\n";
 }
 #endif
 }

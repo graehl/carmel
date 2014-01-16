@@ -18,6 +18,15 @@ struct word_spacer {
   bool first;
   char space_string[2];
   word_spacer(char space=' ') : first(true) { space_string[0]=space;space_string[1]=0;}
+
+  template <class PushBackChar>
+  void append(PushBackChar &str) {
+    if (first)
+      first = false;
+    else
+      str.push_back(space_string[0]);
+  }
+
   const char *empty() const
   {
     return space_string+1;

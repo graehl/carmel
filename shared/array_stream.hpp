@@ -56,6 +56,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
 {
  public:
   typedef cT_Traits traits;
+  typedef std::basic_string<cT, traits> string_type;
   typedef std::basic_streambuf<cT, traits> base;
   typedef basic_array_streambuf<cT, traits> self_type;
   typedef typename traits::char_type char_type;
@@ -88,7 +89,12 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   {
     set_array(p,sz);
   }
-  inline void set_array(const char_type * p=0, size_type sz = 0)
+
+  void set_array(string_type const& str) {
+    set_array((char_type const*)str.data(), str.size());
+  }
+
+  void set_array(const char_type * p=0, size_type sz = 0)
   {
     buf = const_cast<char_type *>(p);
     bufend = buf+sz;
@@ -106,6 +112,11 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   inline void set_array(const void * p=0, size_type sz = 0)
   {
     set_array((char const*)p,sz);
+  }
+
+  explicit
+  basic_array_streambuf(string_type const& str) {
+    set_array(str);
   }
 
   /**

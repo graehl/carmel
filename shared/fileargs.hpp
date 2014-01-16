@@ -400,7 +400,9 @@ public:
   }
 
   explicit file_arg(Stream &s,std::string const& name) :
-    pointer(*s,null_deleter()),name(name) {}
+    pointer(&s,null_deleter()),name(name) {
+    none = name == "-0";
+  }
 
   template <class Stream2>
   file_arg(file_arg<Stream2> const& o) :

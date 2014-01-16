@@ -306,6 +306,13 @@ struct small_vector {
   T const* begin() const { return const_cast<small_vector*>(this)->begin(); }
   T *end() { return begin() + data.stack.sz_; }
   T const* end() const { return begin() + data.stack.sz_; }
+  typedef std::pair<T const*, T const*> slice_type;
+  slice_type slice() const {
+    return data.stack.sz_ > kMaxInlineSize ?
+        slice_type(data.heap.begin_, data.heap.begin_ + data.stack.sz_) :
+        slice_type(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
+  }
+
   typedef std::reverse_iterator<iterator> reverse_iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
@@ -469,6 +476,12 @@ struct small_vector {
       *b=*i;
   }
 
+  inline void append(T const* i, size_type n) {
+    size_type s=data.stack.sz_;
+    append_unconstructed(n);
+    memcpy_n(begin()+s,i,n);
+  }
+
   inline void append(T const* i,T const* end) {
     size_type s=data.stack.sz_;
     size_type n=(size_type)(end-i);
@@ -479,6 +492,10 @@ struct small_vector {
   template <class Set>
   inline void append(Set const& set) {
     append(set.begin(),set.end());
+  }
+
+  inline void append(small_vector const& set) {
+    append(set.begin(), set.data.stack.sz_);
   }
 
   inline void insert(T const& v) {
@@ -764,6 +781,8 @@ struct small_vector {
   }
 
   void swap(small_vector& o) {
+    assert(this);
+    assert(&o);
     swap_pod(*this,o);
   }
   friend inline void swap(small_vector &a,small_vector &b) {

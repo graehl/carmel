@@ -55,7 +55,7 @@ struct cost_path_traits
      \return a and b
   */
   static inline bool close_enough(cost_type a,cost_type b) {
-    return few_ieee_apart(a,b,100); // 100 floats distance ~ 1 part in 100,000
+    return few_ieee_apart(a,b,200); // 200 floats distance ~ 1 part in 50,000
   }
   // may be different from includes in the same way that better is different from update:
   static inline bool converged(cost_type improver,cost_type incumbent

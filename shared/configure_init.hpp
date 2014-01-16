@@ -20,6 +20,8 @@
 #ifndef CONFIGURE_INIT_JG_2013_05_23_HPP
 #define CONFIGURE_INIT_JG_2013_05_23_HPP
 
+#include <string>
+
 namespace configure {
 
 template <class Val>

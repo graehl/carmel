@@ -22,10 +22,11 @@
 #undef DELETE
 
 #include <graehl/shared/verbose_exception.hpp>
-
-VERBOSE_EXCEPTION_DECLARE(string_to_exception)
+#include <algorithm>
 
 namespace graehl {
+
+VERBOSE_EXCEPTION_DECLARE(string_to_exception)
 
 
 //NOTE: stdlib atoi consumes dead whitespace; these don't
@@ -56,18 +57,71 @@ inline I atoi_fast(const char *p) { // faster than stdlib atoi. doesn't return h
   return neg?-x:x;
 }
 
-// now for any char iter range
-template <class U,class I>
-inline U atou_fast(I i,I end) {
-  U x=0;
-  if (i==end) return x;
-  for (;i!=end;++i) {
-    const char c=*i;
-    if (c<'0' || c>'9') return x;
-    x*=10;
-    x+=c-'0';
+template <class CharIt>
+struct PutChars {
+  CharIt begin, end;
+  PutChars(CharIt begin, CharIt end)
+      : begin(begin)
+      , end(end)
+  {}
+  friend inline std::ostream& operator<<(std::ostream &out, PutChars const& self) {
+    self.print(out);
+    return out;
   }
-  return x;
+  void print(std::ostream &out) const {
+    for (CharIt i = begin; i != end; ++i)
+      out.put(*i);
+  }
+};
+
+template <class CharIt>
+PutChars<CharIt> putChars(CharIt begin, CharIt end) {
+  return PutChars<CharIt>(begin, end);
+}
+
+
+template <class U>
+inline U hextou(char const* begin, char const* end, bool complete = true) {
+  char const* p = begin;
+  U x = 0;
+  for(;;) {
+    if (*p >= '0' && *p <= '9') {
+      x *= 16;
+      x += *p - '0';
+    } else if (*p >= 'a' && *p <= 'f') {
+      x *= 16;
+      x += 10 + *p - 'a';
+    } else if (*p >= 'A' && *p <= 'F') {
+      x *= 16;
+      x += 10 + *p - 'A';
+    } else {
+      if (complete)
+        THROW_MSG(string_to_exception,
+                  "hexidecimal string '" << putChars(begin, end) << "' had extra characters - value so far is " << x);
+      return x;
+    }
+    if (++p == end)
+      return x;
+  }
+}
+
+template <class U>
+inline U octaltou(char const* begin, char const* end, bool complete = true) {
+  char const* p = begin;
+  U x = 0;
+  for(;;) {
+    if (*p >= '0' && *p <= '7') {
+      x *= 8;
+      x += *p - '0';
+    } else {
+      if (complete)
+        THROW_MSG(string_to_exception,
+                  "hexidecimal string '" << putChars(begin, end) << "' had extra characters - value so far is " << x);
+      return x;
+    }
+    if (++p == end)
+      return x;
+  }
 }
 
 template <class U,class I>
@@ -83,8 +137,14 @@ inline U atou_fast_advance(I &i,I end) {
   return x;
 }
 
-template <class U,class Str,class I>
-inline U atou_fast_advance_nooverflow(Str const& s,I &i,I end) {
+template <class U,class I>
+inline U atou_fast(I i, I end) {
+  return atou_fast_advance<U>(i, end);
+}
+
+template <class U,class I>
+inline U atou_fast_advance_nooverflow(I &i, I end) {
+  I begin = i;
   const U maxTenth=boost::integer_traits<U>::const_max/10;
   U x=0;
   if (i==end) return x;
@@ -92,32 +152,49 @@ inline U atou_fast_advance_nooverflow(Str const& s,I &i,I end) {
     const char c=*i;
     if (c<'0' || c>'9') return x;
     if (x>maxTenth)
-      THROW_MSG(string_to_exception,"ascii to unsigned overflow on char "<<c<<" in '"<<s<<"': "<<x<<"*10 > "<<boost::integer_traits<U>::const_max);
+      THROW_MSG(string_to_exception,
+                "ascii to unsigned overflow on char "<<c<<" in '"<<
+                putChars(begin, end)<<"': "<<x<<"*10 > "<<boost::integer_traits<U>::const_max);
     x*=10;
     U prev=x;
     x+=c-'0';
     if (x<prev)
-      THROW_MSG(string_to_exception,"ascii to unsigned overflow on char "<<c<<" in '"<<s<<"': "<<prev<<" * 10 + "<<c<<" => (overflow) "<<x);
+      THROW_MSG(string_to_exception,
+                "ascii to unsigned overflow on char "<<c<<" in '"<<
+                putChars(begin, end)<<"': "<<prev<<" * 10 + "<<c<<" => (overflow) "<<x);
   }
   return x;
 }
 
 template <class U,class Str,class I>
-inline U atou_fast_complete(Str const& s,I begin,I end) {
-  I i=begin;
-  U r=atou_fast_advance_nooverflow<U>(s,i,end);
-  if (i!=end) THROW_MSG(string_to_exception,"ascii to unsigned incomplete - only used first "<<i-begin<<" characters of '"<<s<<"' => "<<r<<" - trim whitespace too");
+inline U atou_fast_advance_nooverflow(Str const& s,I &i,I end) {
+  return atou_fast_advance_nooverflow<U>(i, end);
+}
+
+template <class U,class It>
+inline U atou_fast_complete(It begin, It end) {
+  It i = begin;
+  U r = atou_fast_advance<U>(i, end);
+  if (i != end) THROW_MSG(string_to_exception,
+                          "ascii to unsigned incomplete - only used first "<<i-begin<<
+                          " characters of '"<<putChars(begin, end)<<"' => "<<r<<" - trim whitespace too");
   return r;
+}
+
+
+template <class U,class Str,class I>
+inline U atou_fast_complete(Str const& s,I begin,I end) {
+  return atou_fast_complete<U>(begin, end);
 }
 
 template <class U,class Str>
 inline U atou_fast_complete(Str const& s) {
-  return atou_fast_complete<U>(s,s.begin(),s.end());
+  return atou_fast_complete<U>(s.begin(),s.end());
 }
 
 template <class U>
 inline U atou_fast_complete(char const* s) {
-  return atou_fast_complete<U>(s,s,s+std::strlen(s));
+  return atou_fast_complete<U>(s, s+std::strlen(s)); //TODO: could skip strlen call w/ a few more lines of code
 }
 
 
@@ -127,7 +204,7 @@ inline I atou_fast(std::string const& s) { // faster than stdlib atoi. doesn't r
 }
 
 template <class I,class It>
-inline I atoi_fast(It i,It end) {
+inline I atoi_fast_advance(It &i, It end) {
   I x=0;
   if (i==end) return x;
   bool neg=false;
@@ -142,6 +219,22 @@ inline I atoi_fast(It i,It end) {
     x+=c-'0';
   }
   return neg?-x:x;
+}
+
+template <class I,class It>
+inline I atoi_fast(It i, It end) {
+  return atoi_fast_advance<I>(i, end);
+}
+
+
+template <class I,class It>
+inline I atoi_fast_complete(It begin, It end) {
+  It i = begin;
+  I r = atoi_fast_advance<I>(i, end);
+  if (i != end) THROW_MSG(string_to_exception,
+                          "ascii to int incomplete - only used first "<<i-begin<<
+                          " characters of '"<<putChars(begin, end)<<"' => "<<r<<" - trim whitespace too");
+  return r;
 }
 
 template <class I>
@@ -247,6 +340,204 @@ inline unsigned strtou_complete_exact(char const* s,int base=10) {
     THROW_MSG(string_to_exception,"Out of range for unsigned int " UINTRANGE_STR ": '"<<s<<"'");
   return l;
 }
+
+
+struct StrCursor {
+  char const* p;
+  char const* end;
+  bool operator !() const {
+    return p == end;
+  }
+  operator bool() const {
+    return p != end;
+  }
+  template <class Str>
+  StrCursor(Str const& str)
+      : p(&*str.begin())
+      , end(&*str.end())
+  {}
+  StrCursor(char const* cstr)
+      : p(cstr)
+      , end(cstr + std::strlen(cstr))
+  {}
+  StrCursor(char const* begin, char const* end)
+      : p(begin)
+      , end(end)
+  {}
+};
+
+struct CstrCursor {
+  char const* p;
+  bool operator !() const {
+    return !*p;
+  }
+  operator bool() const {
+    return *p;
+  }
+  CstrCursor(char const* cstr)
+      : p(cstr)
+  {}
+};
+
+
+inline bool space_or_tab(char c) {
+  return c == ' ' || c == '\t';
+}
+
+inline bool digit_char(char c) {
+  return c >= '0' && c <= '9';
+}
+
+/**
+   \return a Float (e.g. float or double) from a string - assumes valid regular
+   (not nan, inf, -inf, etc) real numbers like -1.23E-20
+
+   std::strtod has the deficiency that the string is assumed to be
+   null-terminated. if we have a Field (a char * pair) rather than a std::string
+   we need this
+
+   the next-fastest alternative is the heavier-to-compile Boost spirit
+
+*/
+template <class Float, class StrCursor>
+Float scan_real(StrCursor &c, bool skip_leading_space=false) {
+  if (!c) return (Float)0;
+
+  if (skip_leading_space)
+    while (space_or_tab(*c.p)) {
+      ++c.p; if (!c) return (Float)0;
+    }
+
+  // optional sign
+  bool negative = false;
+  if (*c.p == '-') {
+    negative = true;
+    ++c.p; if (!c) return (Float)0;
+  } else if (*c.p == '+') {
+    ++c.p; if (!c) return (Float)0;
+  }
+
+  // before decimal
+  Float value = (Float)0;
+  while(digit_char(*c.p)) {
+    value = value * (Float)10 + (*c.p - '0');
+    ++c.p; if (!c) return negative ? -value : value;
+  }
+
+  // optional decimal, after decimal
+  if (*c.p == '.') {
+    ++c.p;
+    if (!c) return negative ? -value : value;
+    Float value_of_digit = (Float)0.1;
+    while (digit_char(*c.p)) {
+      value += (*c.p - '0') * value_of_digit;
+      ++c.p; if (!c) return negative ? -value : value;
+      value_of_digit *= (Float)0.1;
+    }
+  }
+
+  if (negative)
+    value = -value;
+
+  // optional exponent
+  if (c && ((*c.p == 'e') || (*c.p == 'E'))) {
+    ++c.p; if (!c) return value;
+
+    // optional exponent sign
+    bool const negative_exponent = (*c.p == '-');
+    if (negative_exponent) {
+      ++c.p; if (!c) return value;
+    } else if (*c.p == '+') {
+      ++c.p; if (!c) return value;
+    }
+
+    unsigned exponent = 0;
+    while(digit_char(*c.p)) {
+      exponent = exponent * 10 + (*c.p - '0');
+      ++c.p; if (!c) break;
+    }
+
+    if (exponent > std::numeric_limits<Float>::max_exponent)
+      return negative_exponent ? (Float)0 : std::numeric_limits<Float>::infinity();
+
+    // more numerically accurate than std::pow10 and about as fast (since |exponent| is never large)
+    if (negative_exponent) {
+      while (exponent >= 8) { value *= (Float)1e-8; exponent -= 8; }
+      while (exponent > 0) { value *= (Float)1e-1; exponent -= 1; }
+    } else {
+      while (exponent >= 8) { value *= (Float)1e8; exponent -= 8; }
+      while (exponent > 0) { value *= (Float)1e1; exponent -= 1; }
+    }
+  }
+
+  return value;
+}
+
+template <class Float, class StrCursor>
+Float cursor_to_real(StrCursor str) {
+  return scan_real(str);
+}
+
+template <class Float>
+Float parse_real(char const* p, char const* end, bool require_complete = true) {
+  StrCursor str(p, end);
+  if (require_complete) {
+    Float r = scan_real<Float>(str);
+    if (str)
+      THROW_MSG(string_to_exception,
+                "conversion to real number from '"<<putChars(p, end)<<"' leaves unused characters "<<putChars(str.p, end));
+    return r;
+  } else
+    return scan_real<Float>(str);
+}
+
+inline float parse_float(char const* p, char const* end, bool require_complete = true) {
+  return parse_real<float>(p, end, require_complete);
+}
+
+inline double parse_double(char const* p, char const* end, bool require_complete = true) {
+  return parse_real<double>(p, end, require_complete);
+}
+
+
+template <class Float>
+Float parse_real(char const* cstr, bool require_complete = true) {
+  CstrCursor str(cstr);
+  if (require_complete) {
+    Float r = scan_real<Float>(str);
+    if (str)
+      THROW_MSG(string_to_exception,
+                "conversion to real number from '"<<cstr<<"' leaves unused characters "<<str.p);
+    return r;
+  } else
+    return scan_real<Float>(str);
+}
+
+inline float parse_float(char const* cstr, bool require_complete = true) {
+  return parse_real<float>(cstr, require_complete);
+}
+
+inline double parse_double(char const* cstr, bool require_complete = true) {
+  return parse_real<double>(cstr, require_complete);
+}
+
+#ifdef GRAEHL_TEST
+BOOST_AUTO_TEST_CASE(test_scan_real)
+{
+  BOOST_CHECK_EQUAL(parse_float("1.25"), 1.25f);
+  BOOST_CHECK_THROW(parse_float("1.25a"), string_to_exception);
+  BOOST_CHECK_THROW(parse_float("1.25 "), string_to_exception);
+  BOOST_CHECK_EQUAL(parse_float("1.25 ", false), 1.25f);
+  BOOST_CHECK_EQUAL(parse_float("1.25e10"), 1.25e10f);
+  BOOST_CHECK_EQUAL(parse_float("1.25e+10"), 1.25e10f);
+  BOOST_CHECK_EQUAL(parse_float("1.25e-10"), 1.25e-10f);
+  BOOST_CHECK_EQUAL(parse_float("1e10"), 1e10f);
+  BOOST_CHECK_EQUAL(parse_float("1e+10"), 1e10f);
+  BOOST_CHECK_EQUAL(parse_float("1e-10"), 1e-10f);
+  BOOST_CHECK_EQUAL(parse_float("123456"), 123456.f);
+  BOOST_CHECK_EQUAL(parse_float("0.001953125"), 0.001953125f);
+}
+#endif
 
 }
 

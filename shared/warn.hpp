@@ -27,17 +27,17 @@ struct warn_consumer // a string_consumer
 };
 
 struct ignore {
+  ignore() {}
   template <class V>
   void operator()(V const&) const {}
 };
 
-
 // append_string_builder_newline is also a string_consumer
 
 namespace {
-warn_consumer cerr_warnings;
-ignore ignore_warnings;
-string_consumer default_warn_consumer=cerr_warnings; // compilation unit local
+warn_consumer const cerr_warnings;
+ignore const ignore_warnings;
+string_consumer const default_warn_consumer = cerr_warnings;
 }
 
 template <class Msg>

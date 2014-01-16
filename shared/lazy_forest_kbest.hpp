@@ -151,10 +151,6 @@ struct lazy_forest_indent_tag {};
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
-#ifdef __GNUC__
-#include <ext/algorithm> // is_sorted
-#endif
-
 
 namespace graehl {
 
@@ -458,7 +454,7 @@ class lazy_forest
   typedef forest self_type;
 
 
-  lazy_forest(Environment &env)
+  lazy_forest(Environment const& env)
       : filter_type(env.filter_factory.filter_init())
   {}
 

@@ -6,6 +6,11 @@
 # define PTRDIFF_DIFFERENT_FROM_INTN 0
 #endif
 
+# if !__clang__ && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC__MINOR >= 8)
+#  define INT_DIFFERENT_FROM_INTN 1
+#  define PTRDIFF_DIFFERENT_FROM_INTN 1
+# endif
+
 #ifndef INT_DIFFERENT_FROM_INTN
 # define INT_DIFFERENT_FROM_INTN 0
 #endif
@@ -31,8 +36,21 @@
 
 namespace graehl {
 
+using boost::int8_t;
+using boost::uint8_t;
+using boost::int16_t;
+using boost::uint16_t;
+using boost::int32_t;
+using boost::uint32_t;
+using boost::int64_t;
+using boost::uint64_t;
+
 template <class T>
 struct signed_for_int {
+  typedef T original_t;
+  typedef T signed_t;
+  typedef unsigned unsigned_t;
+  enum { toa_bufsize = 20 };
 };
 
 
@@ -48,6 +66,9 @@ struct signed_for_int {
 // toa_bufsize will hold enough chars for a c string converting to sign,digits (for both signed and unsigned types), because normally an unsigned would only need 2 extra chars. we reserve 3 explicitly for the case that itoa(buf,UINT_MAX,true) is called, with output +4......
 
 #define DEFINE_SIGNED_FOR(it) DEFINE_SIGNED_FOR_3(it,it,u ## it) DEFINE_SIGNED_FOR_3(u ## it,it,u ## it)
+#define DEFINE_SIGNED_FOR_NS(ns,it) \
+  DEFINE_SIGNED_FOR_3(ns::it, ns::it, ns::u ## it) \
+  DEFINE_SIGNED_FOR_3(ns::u ## it, ns::it, ns::u ## it)
 #define DEFINE_SIGNED_FOR_2(sig,unsig) DEFINE_SIGNED_FOR_3(sig,sig,unsig) DEFINE_SIGNED_FOR_3(unsig,sig,unsig)
 
 DEFINE_SIGNED_FOR(int8_t)

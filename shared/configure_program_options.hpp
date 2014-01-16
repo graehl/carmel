@@ -223,6 +223,11 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   {
     leaf_action(a,pval,conf);
   }
+  template <class Val>
+  void set_action(init_config const& a,Val *pval,conf_expr_base const& conf) const
+  {
+    leaf_action(a,pval,conf);
+  }
 
   template <class Val>
   void tree_action(init_config,Val *pval,conf_expr_base const& conf) const
@@ -376,7 +381,7 @@ struct Thing {
     c("An example of mapping configuration options to an object tree. This should be word wrapped at 80 columns, I hope. Hereisaverylongwordwithnospaceswhichshouldalsobewordwrappedsinceitwouldbesadifitwerentabletofitinour80columnterminal!.ok!");
     c.is("Thing");
     c.allow_unrecognized(true); // true=warn
-    c("death-year",&deceasedYear).desire().positional().validate(configure::bounded_range(1900,2012));
+    c("death-year",&deceasedYear).desire().positional(); // .validate(configure::bounded_range(1900,2012));
     c("multiple-of-2",&even)('m').eg(4).init(2)("an even number"); // if not specified,error. short cmdline name = -m
     c("verbose",&verbose).flag()("Log more status."); // flag() is a hint to provide no-value shorthand for command line options parsers: no-value --verbose or --no-verbose flags. for YAML, flag() should be ignored (you still have to specify a true or false value)
     c("year",&deceasedYear).eg(1995).deprecate("in favor of --death-year"); // instead of checking if the int has its default value still, this allows you to know for sure that the default was used. note that eg merely needs to boost::lexical_cast<string>

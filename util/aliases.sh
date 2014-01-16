@@ -1,9 +1,46 @@
-UTIL=${UTIL:-$(echo ~graehl/u)}
-. $UTIL/add_paths.sh
-. $UTIL/bashlib.sh
-. $UTIL/time.sh
-py=$(echo ~/x/python)
-#IFS="`printf '\n\t'`"
+xmtx=/.auto/home/graehl/x
+cruns() {
+    ( set -e
+    for chost in c-ydong c-jgraehl c-mdreyer; do
+        echo2 chost=$chost crun "$@"
+        chost=$chost crun "$@"
+    done
+    )
+}
+newbranches() {
+    cruns "cd ~/x;newbranch $1"
+}
+uprelocal() {
+    upre localhost
+}
+upsdirect() {
+    local b=${1:-`git_branch`}
+    git branch --set-upstream-to origin/$b $b
+}
+upslocal() {
+    local b=${1:-`git_branch`}
+    git branch --set-upstream-to localhost/$b $b
+}
+save12pre() {
+    local pre=$1
+    shift
+    pre+=".$(filename_from $*)"
+    save12 "$pre" "$@"
+    echo2 $pre
+}
+cregs() {
+    save12pre ~/tmp/cregs crun yreg "$@"
+}
+kregs() {
+    save12pre ~/tmp/kregs krun yregr "$@"
+}
+if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
+    xmtx=/Users/graehl/x
+fi
+if [[ $HOST = c-ydong ]] ; then
+    xmtx=/.auto/home/graehl/x
+fi
+xmtr=$xmtx/RegressionTests
 case $(uname) in
     Darwin)
         lwarch=Apple
@@ -15,6 +52,253 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+export WORKSPACE=$xmtx
+export XMT_EXTERNALS_PATH=$racerext
+
+touchnewerfile=/tmp/graehl.newer.than
+touchnewer() {
+    rmnewer
+    touch $touchnewerfile
+}
+rmnewer() {
+    rm -f $touchnewerfile
+}
+binelse() {
+    if [[ -x `which $1` ]]  ; then
+        echo $1
+    elif [[ -x `which $2` ]] ; then
+        echo $2
+    else
+        echo $1
+    fi
+}
+extra_include=$xmtx
+cpps_code_path=$xmtx/xmt
+cpps_defines="-DMAX_LMS=2"
+cppparses() {
+    (
+        set -e
+        local newerarg=
+        if [[ -f $touchnewerfile ]] ; then
+            newerarg="-newer $touchnewerfile"
+        fi
+        if [[ $force ]] ; then
+            newerarg=
+        fi
+        for f in "$@" `find $xmtx/xmt $newerarg -name '*.cpp'`; do
+            echo cppparse "$f" 1>&2
+            cppparse "$f"
+        done
+        touchnewer
+    )
+}
+showparses() {
+    (set -e
+        local out=${1:-~/tmp/cparse.last.cpp}
+        save12 $out cppparses
+        edit $out
+    )
+}
+cppparse() {
+    local cpps_code_path=${cpps_code_path:-.}
+    cpps_code_path+=" $extra_include"
+    local xmtshared=$XMT_EXTERNALS_PATH/../Shared/cpp/libraries
+    local xmtarch=$XMT_EXTERNALS_PATH/libraries
+    if [[ -d $XMT_EXTERNALS_PATH ]] ; then
+        cpps_code_path+=" $(echo $xmtarch/lexertl-2012-07-26 $xmtarch/*/include $xmtshared/*/include $xmtshared/utf8)"
+    fi
+    local includeargs
+    if [[ $cpps_code_path ]] ; then
+        for f in $cpps_code_path ; do
+            includeargs+=" -I $f"
+        done
+    fi
+    local cc=`binelse clang g++`
+    local warnarg=-Wall
+    if [[ $cc = clang ]] ; then
+        warnarg+=" -Wno-attributes -Wno-logical-op-parentheses -Wno-reorder"
+    fi
+    local ccarg="-x c++ -fsyntax-only $includeargs $warnarg $cpps_defines"
+    [[ $verbose ]] && echo $cc $ccarg "$@" 1>&2
+    TERM=dumb $cc $ccarg "$@"
+}
+remaster() {
+    ( set -e
+        set -x
+        git fetch origin
+        git reset --hard origin/master
+        git checkout origin/master
+        git branch -D master || true
+        git checkout -b master origin/master
+    )
+}
+yregs() {
+    for i in `seq 1 10`; do save12 /tmp/krun.$i krun yregr CompoundSplitter/regtest-fin.yml | grep FAIL ; done
+}
+krun() {
+    chost=c-ydong crun "$@"
+}
+drun() {
+    chost=c-mdreyer crun "$@"
+}
+sd() {
+    chost=c-mdreyer sc "$@"
+}
+if [[ $INSIDE_EMACS ]] ; then
+    gitnopager="--no-pager"
+else
+    gitnopager=
+fi
+macco() {
+    local branch=${1:?args: branch}
+    (
+        set -e
+        cd $xmtx
+        git reset --hard $branch
+        git log -n 1
+    )
+}
+newbranch() {
+    if [[ "$1" ]] ; then
+        git fetch origin
+        git reset --hard origin/master
+        branchthis "$1"
+    fi
+}
+pushc() {
+    (
+        cd ~/x
+        local b=${1:-`git_branch`}
+
+        set -e
+        if true || [[ $force ]] ; then
+            # avoid non-fast fwd msg
+            git push -u ${chost:-c-jgraehl} :$b || crun "cd x;newbranch $b;git co master"
+        fi
+        git push -u ${chost:-c-jgraehl} $b
+    )
+}
+lintests() {
+    cwith test=1 raccm
+}
+linvgtest() {
+    linmake Test$1 vgTest$1
+}
+lintest() {
+    linmake Test$1 Test$1
+}
+gitmsg() {
+    git log -n 1 "$@"
+}
+rebaseonmaster() {
+    (set -x
+        set -e
+        local branch=`git_branch`
+        local bak=$branch-for-rebase
+        branchthis $bak
+        local remote=${remote:-localhost}
+        local onbranch=$remote-master-for-$branch
+        killbranch $onbranch
+        git fetch $remote
+        git checkout -b $onbranch $remote/master
+        git merge --squash --strategy=recursive -Xtheirs $bak
+        gitmsg $bak
+        git commit -a
+    )
+}
+femacs() {
+    local emacs=${emacs:-emacs}
+    local emacs24=/usr/bin/emacs-24.2
+    if [[ -x $emacs24 ]] ; then
+        emacs=$emacs24
+    fi
+    fork $emacs "$@"
+}
+sync2emacs() {
+    (
+        set -x
+        find ~/.emacs.d -name '*.elc' -exec rm {} \;
+        sync2 $chost .emacs.d
+    )
+}
+directssh() {
+    (
+        local sshdir=`echo ~/.ssh`
+        cd ~/.ssh
+        set -x
+        cp -af $sshdir/config.direct $sshdir/config
+    )
+}
+tunssh() {
+    (
+        local sshdir=`echo ~/.ssh`
+        cd ~/.ssh
+        set -x
+        set -e
+        cp -af $sshdir/config.tun $sshdir/config
+        ssh -f -N tun
+    )
+}
+less2() {
+    local page=${page:-less}
+    ( if ! [[ $quiet ]] ; then
+        echo "$@"; echo
+        fi
+        "$@" 2>&1) | $page
+    echo2 saved output:
+    echo2 $out
+}
+nolog12() {
+    save12 "$@" --log-config ~/x/scripts/no.log.xml
+}
+dmacs() {
+    fork dbus-launch --exit-with-session emacs
+}
+brewclang() {
+    brew install --HEAD --with-clang "$@"
+}
+clangxmt() {
+    save12 ~/tmp/clangxmt.hpp raccm DebugClang
+}
+catgit() {
+    local f=$1
+    shift
+    (set -e;
+        if [ $# -gt 0 ] ; then
+            echo -n "$@" > "$f"
+        else
+            cat > "$f"
+        fi
+        git add "$f"
+    )
+}
+
+gitbin=`which git`
+git() {
+    (
+        $gitbin $gitnopager "$@"
+    )
+}
+touchadd() {
+    (set -e;
+        touch "$@"
+        git add "$@"
+    )
+}
+UTIL=${UTIL:-$(echo ~graehl/u)}
+. $UTIL/add_paths.sh
+. $UTIL/bashlib.sh
+. $UTIL/time.sh
+err() {
+    echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $@" >&2
+}
+py=$(echo ~/x/python)
+pkills() {
+    for f in c-ydong c-jgraehl c-mdreyer gitbuild1 gitbuild2; do
+        ssh $f ". ~/u/aliases.sh;pkill '$*'"
+    done
+}
+#IFS="`printf '\n\t'`"
 sshperm() {
     chmod go-w ~/
     chmod 700 ~/.ssh
@@ -23,29 +307,32 @@ sshperm() {
 setjavahome() {
     local jh=$JAVA_HOME
     if ! [[ -d $jh ]] ; then
-    case $lwarch in
-        Apple)
-            jh=$(/usr/libexec/java_home)
-            ;;
-        *)
-            ;;
-    esac
+        case $lwarch in
+            Apple)
+                jh=$(/usr/libexec/java_home)
+                ;;
+            *)
+                ;;
+        esac
     fi
     export JAVA_HOME=$jh
 }
 setjavahome
+mendgraehl() {
+    mend --author=graehl
+}
 hangs() {
-  for i in `seq -w 1 26`; do echo -n "$i "; /bin/ls /c"$i"_data | wc -l; done
-# hangs at the aforementioned numbers
+    for i in `seq -w 1 26`; do echo -n "$i "; /bin/ls /c"$i"_data | wc -l; done
+    # hangs at the aforementioned numbers
 }
 upmaster() {
     local b=`git_branch`
-(
-    git stash
-    git checkout master
-    git pull
-    git stash pop
-)
+    (
+        git stash
+        git checkout master
+        git pull
+        git stash pop
+    )
 }
 grunt() {
     pig -x local "$@" -
@@ -58,7 +345,7 @@ com() {
 }
 branchnew() {
     git fetch origin
-    git co -b "$1" origin/master
+    git checkout -b "$1" origin/master
     git commit --allow-empty -m "$*"
 }
 nbuild() {
@@ -74,10 +361,14 @@ nbuild1() {
 }
 externals() {
     local ncmd="cd /jenkins/xmt-externals; git checkout master; git pull"
-    for host in localhost c-jgraehl c-ydong c-mdreyer; do
-        ssh $host "cd c/xmt-externals; git pull"
+    for host in c-jgraehl c-ydong c-mdreyer; do
+        #localhost
+        banner $host
+        ssh $host "cd c/xmt-externals; git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
     done
+    banner nbuild1
     nbuild1 $ncmd
+    banner nbuild2
     nbuild2 $ncmd
 }
 HOST=${HOST:-$(hostname)}
@@ -87,7 +378,6 @@ else
     CXX11=g++
 fi
 export CCACHE_BASEDIR=$(realpath ~/x)
-chost=c-jgraehl
 chostfull=$chost.languageweaver.com
 phost=pontus.languageweaver.com
 if [[ $HOST = $chost ]] ; then
@@ -109,7 +399,7 @@ nospace() {
     catz "$@" | tr -d ' '
 }
 spacechars() {
-    catz "$@" | perl -e 'use open qw(:std :utf8); while(<>) {chomp;@chars = split //, $_; print join(" ", @chars),"\n"; }'
+    catz "$@" | perl -e 'use open qw(:std :utf8); while (<>) {chomp;@chars = split //,$_; print join(" ",@chars),"\n"; }'
 }
 supertrims() {
     catz "$@" | perl -pe 'chomp;s/^\s+//;s/\s+$//;s/\s+/ /g;$_+="\n"'
@@ -130,7 +420,7 @@ loch() {
         export JAVA_HOME=/home/hadoop/jdk1.6.0_24
         export PATH=$JAVA_HOME/bin:$PATH
     fi
-    # hadoop variables needed to run utilities at the command line, e.g., pig/hadoop
+    # hadoop variables needed to run utilities at the command line,e.g.,pig/hadoop
     export HADOOP_INSTALL=/home/hadoop/hadoop/hadoop-2.0.0-cdh4.2.1
     export PATH=$HADOOP_INSTALL/bin:$PATH
     export HADOOP_CONF_DIR=/home/hadoop/loch2-client-conf
@@ -143,7 +433,7 @@ bog() {
         export JAVA_HOME=/home/hadoop/jdk1.6.0_24
         export PATH=$JAVA_HOME/bin:$PATH
     fi
-    # hadoop variables needed to run utilities at the command line, e.g., pig/hadoop
+    # hadoop variables needed to run utilities at the command line,e.g.,pig/hadoop
     export HADOOP_INSTALL=/home/hadoop/hadoop/hadoop-2.0.0-cdh4.3.0
     export PATH=$HADOOP_INSTALL/bin:$PATH
     export HADOOP_CONF_DIR=/home/hadoop/loch2-client-conf
@@ -201,8 +491,8 @@ in=\${1%$suf}
 redo-ifchange \$in
 $*
 EOF
-    git add $in$suf.do
-    echo $in$suf.do
+git add $in$suf.do
+echo $in$suf.do
 }
 do_sort() {
     makedo $1 sort 'sort $in'
@@ -272,11 +562,11 @@ shortlines() {
     local linelen=${1:-80}
     shift
     local continuation=${continuation:-...}
-    perl -ne 'BEGIN{$linelen=shift;$continuation=shift;$clen=$linelen-length($continuation);}
-chomp;$c=length($_); print $c<=$linelen ? $_ : substr($_,0,$clen).$continuation, "\n"
+    perl -ne 'BEGIN {$linelen=shift;$continuation=shift;$clen=$linelen-length($continuation);}
+chomp;$c=length($_); print $c<=$linelen ? $_ : substr($_,0,$clen).$continuation,"\n"
 ' "$linelen" "$continuation" "$@"
 }
-#args must be files, not stdin (this is not a streaming algorithm)
+#args must be files,not stdin (this is not a streaming algorithm)
 sample() {
     local nlines=${1:-20}
     shift
@@ -284,15 +574,15 @@ sample() {
     local name=${name:-0}
     local sz=$(totalfilebytes "$@")
     #TODO: use linelen as hint or to print first whatever chars
-    perl -ne 'BEGIN{$sz=shift;$nlines=shift;$name=shift;} use bytes;
+    perl -ne 'BEGIN {$sz=shift;$nlines=shift;$name=shift;} use bytes;
 if ($nlines) { $lines++; $cpre=$c||0; $c+=length($_); $left=$sz-$c; $avglen=$c/$lines || 1e100; $lineleft=$left/$avglen; if (!$lineleft || rand() < $nlines/$lineleft) { --$nlines; print "$ARGV: " if $name; print; } }
 ' "$sz" "$nlines" "$name" "$@" | shortlines $linelen
 }
 psample() {
-    perl -ne 'BEGIN{$p=shift}print if rand() < $p' "$@"
+    perl -ne 'BEGIN {$p=shift}print if rand() < $p' "$@"
 }
 pevery() {
-    perl -ne 'BEGIN{$p=1./shift}print if rand() < $p' "$@"
+    perl -ne 'BEGIN {$p=1./shift}print if rand() < $p' "$@"
 }
 ctestlast() {
     (
@@ -349,7 +639,7 @@ boostmerge1() {
 
         cd ~/src/boost
         git fetch upstream
-        git co "$1"
+        git checkout "$1"
         git merge remotes/upstream/master
         git push
     )
@@ -359,7 +649,7 @@ boostmaster() {
 
         cd ~/src/boost
         git fetch upstream
-        git co master
+        git checkout master
         git rebase remotes/upstream/master
         git push
     )
@@ -402,11 +692,6 @@ mean() {
 brewhead() {
     brew unlink "$@"
     brew install "$@" --HEAD
-}
-#puzzled edud
-# doesn't include ~/x on purpose (often in weird branch/rebase state)
-nolog12() {
-    save12 "$@" --log-config ~/x/scripts/no.log.xml
 }
 overflow() {
     echo mv "$@" ~/music/music-overflow/
@@ -465,7 +750,7 @@ gitlsuntracked() {
     git ls-files --others --exclude-standard "$@"
 }
 gitexecuntracked() {
-    gitlsuntracked -z |  xargs -0 --replace={} "$@"
+    gitlsuntracked -z |  xargs -0 --replace= {} "$@"
 }
 gitsync() {
     (set -e
@@ -549,6 +834,15 @@ mp3m4again() {
     echo2 mp3 or m4a replay gain "$@"
     aacgain -r -k -p "$@"
 }
+emailgains() {
+    (
+        set -e
+        cd ~/documents/email
+        for f in *.mp3; do
+            mp3m4again "$f"
+        done
+    )
+}
 mp3gains() {
     for f in "$@"; do
         mp3m4again "$f"
@@ -631,10 +925,10 @@ ccp() {
     )
 }
 ccat() {
-    cjg cat "$*"
+    crun cat "$*"
 }
 csave() {
-    save12 ~/tmp/cjg.`filename_from $1 $2` cjg "$@"
+    save12 ~/tmp/crun.`filename_from $1 $2` crun "$@"
 }
 creg() {
     save12 ~/tmp/creg.`filename_from "$@"` cwith yreg "$@"
@@ -670,10 +964,10 @@ memcheck() {
         local memlog=`mktemp /tmp/memcheck.$test.err.XXXXXX`
         local memout=`mktemp /tmp/memcheck.$test.out.XXXXXX`
         #TODO: could use --log-fd=3 >/dev/null 2>/dev/null 3>&2
-        # need to test order of redirections, though
+        # need to test order of redirections,though
         local supp=$xmtx/jenkins/valgrind.fc12.debug.supp
         local valgrindargs="-q --tool=memcheck --leak-check=no --track-origins=yes --suppressions=$supp"
-        save12timeram $memout valgrind $valgrindargs --log-file=$memlog "$@"
+        save12 timeram $memout valgrind $valgrindargs --log-file=$memlog "$@"
         local rc=$?
         if [[ $rc -ne 0 ]] || [[ -s $memlog ]] ; then
             echo $hr
@@ -852,7 +1146,7 @@ yreg() {
         local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
         cd $xmtx/RegressionTests
         THREADS=`ncpus`
-        MINTHREADS=${MINTHREADS:-2} # unreliable with 1
+        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
         MAXTHREADS=6
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
@@ -869,16 +1163,23 @@ yreg() {
             memcheckparam=--memcheck
         fi
         local REGTESTPARAMS="$REGTESTPARAMS $memcheckparam -b $racer/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
+        if [[ $exitfail != 0 ]] ; then
+            REGTESTPARAMS_=" -X"
+        fi
+        if [[ $monitor ]] ; then
+            REGTESTPARAMS+=" --monitor-stderr"
+        fi
+        local python=${python:-python}
         if [[ $1 ]] ; then
             if [[ -d $1 ]] ; then
-                save12 $logfile ./runYaml.py $args $REGTESTPARAMS "$@"
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS "$@"
             elif [[ -f $1 ]] ; then
-                save12 $logfile ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"
             else
-                save12 $logfile ./runYaml.py $args $REGTESTPARAMS -y \*$1\*ml
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y reg\*$1\*ml
             fi
         else
-            save12 $logfile ./runYaml.py $args $REGTESTPARAMS
+            save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS
         fi
         set +x
         echo saved log:
@@ -930,6 +1231,11 @@ dwith() {
         chost=c-mdreyer linwith "$@"
     )
 }
+cwith() {
+    (
+        chost=c-jgraehl linwith "$@"
+    )
+}
 kjen() {
     chost=c-ydong linjen "$@"
 }
@@ -939,8 +1245,14 @@ djen() {
 cjen() {
     chost=c-jgraehl linjen "$@"
 }
-cwith() {
-    chost=c-jgraehl linwith "$@"
+kmk() {
+    chost=c-ydong linmake "$@"
+}
+dmk() {
+    chost=c-mdreyer linmake "$@"
+}
+cmk() {
+    chost=c-jgraehl linmake "$@"
 }
 gjen() {
     (set -e
@@ -981,12 +1293,15 @@ racm() {
                 prog=
             fi
         fi
+        MAKEPROC=${MAKEPROC:-$(ncpus)}
+        echo2 MAKEPROC=$MAKEPROC
         if [[ $test ]] ; then
             make check
         elif [[ $prog ]] && [[ "$*" ]]; then
             make -j$MAKEPROC $prog && $prog "$@"
         else
-            make -j$MAKEPROC $maketar VERBOSE=1
+            make -j$MAKEPROC $maketar
+            #VERBOSE=1
         fi
         set +x
         for t in $tests; do
@@ -1028,7 +1343,8 @@ ccmake() {
             useclang
             cxxf=-fmacro-backtrace-limit=100
         fi
-        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d "$@"
+        echo "cmake = $(which cmake)"
+        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d -Wno-dev "$@"
     )
 }
 savecppch() {
@@ -1069,10 +1385,10 @@ cppch() {
         done
     fi
     cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
-        --template '{file}:{line}: {severity},{id},{message}' \
+        --template ' {file}: {line}: {severity},{id},{message}' \
         $includeargs $ignoreargs "$code_path" --error-exitcode=2"
     cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
-        --template '{file}:{line}: {severity},{id},{message}' \
+        --template ' {file}: {line}: {severity},{id},{message}' \
         $includeargs $ignoreargs "$code_path" --error-exitcode=2
 }
 coma() {
@@ -1088,7 +1404,7 @@ assumed() {
     git ls-files -v | grep ^h | cut -c 3-
 }
 snapshot() {
-    git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
+    git stash save "snapshot: $(date)" && git stash apply "stash@ {0}"
 }
 
 pepignores=E501
@@ -1163,7 +1479,7 @@ findsize1() {
     tailn=100 preview `find . -name '*pp' -size 1` > ~/tmp/size1
 }
 expsh() {
-    perl -ne 'chomp;print qq{echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
+    perl -ne 'chomp;print qq {echo "$_"; pwd; hostname; date; $_; echo "No errors from $_" 1>&2\n}'
 }
 condorexp() {
     local f=$1/jobs.condor
@@ -1275,8 +1591,8 @@ tokeng() {
 rstudiopandoc() {
     Rscript -e '
 options(rstudio.markdownToHTML =
-  function(inputFile, outputFile) {
-    system(paste("pandoc", shQuote(inputFile), "--webtex", "--latex-engine=xelatex", "--self-contained", "-o", shQuote(outputFile)))
+  function(inputFile,outputFile) {
+    system(paste("pandoc",shQuote(inputFile),"--webtex","--latex-engine=xelatex","--self-contained","-o",shQuote(outputFile)))
   }
 )
 '
@@ -1293,7 +1609,9 @@ panpdf() {
         set -e
         require_file $in
         local geom="-V geometry=${paper:-letter}paper -V geometry=margin=${margin:-0.5cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}"
-        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+implicit_figures -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
+        #+implicit_figures
+        #+line_blocks
+        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+line_blocks -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
         if [[ $open ]] ; then
             open $out
         fi
@@ -1306,8 +1624,8 @@ rmd() {
         set -e
         cd `dirname $RMDFILE`
         RMDFILE=`basename $RMDFILE`
-        Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd', '$RMDFILE.md');"
-        #markdownToHTML('$RMDFILE.md', '$RMDFILE.html', options=c('use_xhml'))
+        Rscript -e "require(knitr); require(markdown); require(ggplot2); require(reshape); knit('$RMDFILE.rmd','$RMDFILE.md');"
+        #markdownToHTML('$RMDFILE.md','$RMDFILE.html',options=c('use_xhml'))
         pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $RMDFILE.html -c ~/u/pandoc.css $RMDFILE.md
         if [[ $pdf ]] ; then
             panpdf $RMDFILE.md
@@ -1333,22 +1651,6 @@ subsync() {
 }
 mp3split() {
     mp3splt "$@"
-}
-ontunnel=
-if [[ $HOST = graehl.local ]] ; then
-    ontunnel=1
-    /sbin/ifconfig > /tmp/ifcfg
-    if grep -q 10.110 /tmp/ifcfg; then
-        ontunnel=
-    fi
-fi
-cjg() {
-    local fwdenv="gccfilter=$gccfilter"
-    if [[ $ontunnel ]] ; then
-        sshvia $chost ". ~/.e;$fwdenv $*"
-    else
-        ssh $chost ". ~/.e;$fwdenv $*"
-    fi
 }
 printyaml() {
     ruby -ryaml -e 'y '"$*"
@@ -1440,9 +1742,10 @@ tryre() {
 }
 
 upre() {
+    local remote=${1:-origin}
     (set -e
-        git fetch origin
-        git rebase origin/master
+        git fetch $remote
+        git rebase $remote/master
     ) || git rebase --continue
 }
 showbest() {
@@ -1452,21 +1755,11 @@ showbest() {
         echo
     done
 }
-tunhost="pontus.languageweaver.com"
-tunport=4640
 randomport() {
     perl -e 'print int(12000+rand(10000))'
 }
 ssht() {
     ssh -p $tunport $tunhost "$@"
-}
-sshvia() {
-    local lport=`randomport`
-    local rhost=$1
-    shift
-    echo via $lport to $rhost 1>&2
-    local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
-    ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh $permit -p $lport localhost "$@"
 }
 clonex() {
     (
@@ -1553,14 +1846,14 @@ gitrecycle() {
 }
 useclang() {
     local ccache=${ccache:-$(echo ~/bin/ccache)}
-    export CC="$ccache-cc$GCC_SUFFIX"
-    export CXX="$ccache-c++$GCC_SUFFIX"
+    export CC="$ccache-cc"
+    export CXX="$ccache-c++"
 }
 gcc48=
 gcc47=1
 #TestWeight release optimizer problem
 usegcc() {
-    if false && [[ $HOST = graehl.local ]] ; then
+    if [[ $HOST = graehl.local ]] ; then
         usegccnocache
         #don't have right gdb for gcc 4.7 on my mac
     else
@@ -1573,7 +1866,6 @@ usegcc() {
         export CC="$ccache-gcc$GCC_SUFFIX"
         export CXX="$ccache-g++$GCC_SUFFIX"
     fi
-    echo2 CC=$CC CXX=$CXX
 }
 usegccnocache() {
     export CC="gcc"
@@ -1609,14 +1901,6 @@ withcc() {
         fi
     )
 }
-xmtx=/.auto/home/graehl/x
-xmtr=$xmtx/RegressionTests
-if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
-    xmtx=/Users/graehl/x
-fi
-if [[ $HOST = c-ydong ]] ; then
-    xmtx=/.auto/home/graehl/x
-fi
 dumbmake() {
     if [[ $DUMB ]] ; then
         /usr/bin/make VERBOSE=1 "$@" 2>&1
@@ -1633,23 +1917,49 @@ substxmt() {
 }
 linwith() {
     (set -e;
-        cd ~/x;mend;
-        local branch=$(git_branch)
-        cjg macget $branch
-        cjg "$@"
+        touchnewer
+        chost=${chost:-c-jgraehl}
+        cd ~/x; mend;
+        local branch=`git_branch`
+        pushc $branch
+        crun macco $branch
+        crun "$@"
     )
 }
+linmake() {
+    local tar=${1?target}
+    shift
+    (set -e;
+        cd ~/x; mend;
+        local branch=`git_branch`
+        pushc $branch
+        crun macco $branch
+        if [[ "$*" ]] ; then
+            crun BUILD=${BUILD:-Debug} makeh $tar '&&' "$@"
+        else
+            crun BUILD=${BUILD:-Debug} makeh $tar
+        fi
+    )
+}
+linmaker() {
+    BUILD=Release linmake "$@"
+}
+kmaker() {
+    chost=c-ydong BUILD=Release linmake "$@"
+}
+kmake() {
+    chost=c-ydong BUILD=Debug linmake "$@"
+}
 linregr() {
-    cjg yregr "$@"
+    crun yregr "$@"
 }
 linjen() {
-    cd $xmtx
-    local branch=$(git_branch)
-    mend
+    cd ~/x; mend;
+    local branch=`git_branch`
+    pushc $branch
     (set -e;
-
-        cjg macget $branch
-        cjg nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        crun macco $branch
+        crun UPDATE=${UPDATE:-0} nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -1719,16 +2029,20 @@ raccmsave() {
 }
 pkill() {
     local prefile=`mktemp /tmp/pgrep.pre.XXXXXX`
-    pgrep "$@" > $prefile
+    pgrep "$@" | grep -v pkill | grep -v ssh | grep -v macs > $prefile
     cat $prefile
-    kill `cat $prefile | cut -c1-5`
-    # | xargs kill
-    echo before:
-    cat $prefile
-    sleep 1
+    if [[ -x /usr/bin/pkill ]] ; then
+        /usr/bin/pkill "$@";
+    else
+        kill `cat $prefile | cut -c1-5`
+        # | xargs kill
+        echo before:
+        cat $prefile
+        sleep 1
+    fi
+    rm $prefile
     echo now:
     pgrep "$@"
-    rm $prefile
 }
 gccopt3() {
     local f=$1
@@ -1784,7 +2098,7 @@ mv1() {
     local to=$1
     shift
     if [[ $2 ]] ; then
-        echo2 'mv1 expects 1 or 2 args (last is source file, first is dest)'
+        echo2 'mv1 expects 1 or 2 args (last is source file,first is dest)'
     else
         if [[ $1 ]] ; then
             mv "$1" $to
@@ -1836,9 +2150,9 @@ save12() {
     shift
     echo2 saving output $out
     ( if ! [[ $quiet ]] ; then
-        echo "$@";echo
+        echo "$@"; echo
         fi
-        "$@" 2>&1) | tee $out | ${page:=cat}
+        "$@" 2>&1) | tee $out | ${page:-cat}
     echo2 saved output:
     echo2 $out
 }
@@ -1848,9 +2162,9 @@ save2() {
     shift
     echo2 saving output $out
     ( if ! [[ $quiet ]] ; then
-        echo2 "$@";echo2
+        echo2 "$@"; echo2
         fi
-        "$@" ) 2>&1 2>$out.stdout | tee $out | ${page:=cat}
+        "$@" ) 2>&1 2>$out.stdout | tee $out | ${page:-cat}
     echo
     tail $out $out.stdout
     echo2 saved output:
@@ -1892,7 +2206,7 @@ $n=shift;
 $m=$n;
 ($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
 print STDERR "$m-$n vertical repeats of each line...\n";
-while(<>) {
+while (<>) {
  for $i (1..$n) {
   print;
  }
@@ -1904,7 +2218,7 @@ $n=shift;
 $m=$n;
 ($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
 print STDERR "$m-$n horizontal repeats of each line...\n";
-while(<>) {
+while (<>) {
  chomp;
  $one=$_;
  for $i (1..$n) {
@@ -1920,7 +2234,7 @@ $n=shift;
 $m=$n;
 ($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
 print STDERR "$m...$n doublings of each line...\n";
-while(<>) {
+while (<>) {
  chomp;
  for $i (1..$n) {
   print "$_\n" if $i>=$m;
@@ -1931,9 +2245,9 @@ while(<>) {
 }
 vocab() {
     perl -ne 'chomp;for (split) {
-push @w,$_ unless ($v{$_}++);
+push @w,$_ unless ($v {$_}++);
 }
-END { print "$v{$_} $_\n" for (@w) }
+END { print "$v {$_} $_\n" for (@w) }
 ' "$@"
 }
 xmtspeed() {
@@ -1944,7 +2258,7 @@ linbuild() {
     cd $xmtx
     local branch=$(git_branch)
     mend
-    cjg build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
+    crun build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
 }
 splitape() {
     local file=${1%.ape}
@@ -2021,10 +2335,10 @@ savethis() {
     fi
 }
 killbranch() {
-    forall killbranch1 "$@"
+    forall killbranch1 "$@" || true
 }
 killbranch1() {
-    git branch -D "$1"
+    git branch -D "$1" || true
 }
 racer=$(echo $xmtx)
 export WORKSPACE=$racer
@@ -2032,8 +2346,6 @@ racerextbase=$(echo ~/c/xmt-externals)
 racerext=$racerextbase/$lwarch
 racerlib=$racerext/libraries
 racerlibshared=$racerextbase/Shared/cpp/libraries
-export WORKSPACE=$racer
-export XMT_EXTERNALS_PATH=$racerext
 if [[ $HOST = c-ydong ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/tools/cmake/bin:$PATH
 fi
@@ -2055,17 +2367,17 @@ jenkinsb() {
 souph=98.158.26.222
 macget() {
     local branch=${1:?args: branch}
-(
-    set -e
-    cd $xmtx
-    echo branch $branch tar $tar
-    git fetch mac
-    if [[ $force ]] ; then
-        git branch -D $branch || true
-        git checkout -b $branch remotes/mac/$branch
-    fi
-    git checkout remotes/mac/$branch
-)
+    (
+        set -e
+        cd $xmtx
+        echo branch $branch tar $tar
+        git fetch mac
+        if [[ $force ]] ; then
+            git branch -D $branch || true
+            git checkout -b $branch remotes/mac/$branch
+        fi
+        git checkout remotes/mac/$branch
+    )
 }
 macbuild() {
     local branch=${1:?args branch [target] [Debug|Release]}
@@ -2150,7 +2462,10 @@ commt()
     )
 }
 branchthis() {
-    [[ $1 ]] && git checkout -b "$1"
+    if [[ $1 ]] ; then
+        killbranch "$1"
+        git checkout -b "$@"
+    fi
 }
 linuxfonts() {
     (set -e
@@ -2174,19 +2489,27 @@ rebasec() {
     git add "$@"
     git rebase --continue
 }
-
 mend() {
     (
-        git commit --allow-empty -a -C HEAD --amend
+        if [[ -x $xmtx/.git/rebase-apply ]] ; then
+            echo2 mid-rebase already
+            git rebase --continue
+        else
+            git commit --allow-empty -a -C HEAD --amend "$@"
+        fi
     )
 }
-
 xmend() {
-    (
-        pushd $xmtx
-        git commit -a --amend
-        popd
-    )
+    if [[ -x $xmtx/.git/rebase-apply ]] ; then
+        echo2 mid-rebase already
+        git rebase --continue
+    else
+        (
+            pushd $xmtx
+            git commit -a --amend
+            popd
+        )
+    fi
 }
 
 
@@ -2333,7 +2656,7 @@ gitlog() {
     if [ $# -gt 0 ]; then
         git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -p -$1
     else
-        git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${ncommits:-30}
+        git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${ncommits:-25}
         echo
     fi
 }
@@ -2346,11 +2669,11 @@ gerritxmt() {
     git push $gerritorigin HEAD:refs/for/master
 }
 gerrit() {
-    local gerritorigin=origin
+    local gerritorigin=${1:-origin}
     echo git push $gerritorigin HEAD:refs/for/master
     git push $gerritorigin HEAD:refs/for/master
 }
-gerritfor() {
+gerritfor () {
     local gerritorigin=origin
     local rbranch=${1:-remote-branch}
     echo git push $gerritorigin HEAD:refs/for/$rbranch
@@ -2408,13 +2731,14 @@ up() {
 }
 newmaster() {
     (
-git fetch origin
-co origin/master
-killbranch master || true
-set -e
-git branch master --track origin/master
-git co master
-)
+        git fetch origin
+        git reset --hard origin/master
+        git checkout origin/master
+        killbranch master || true
+        set -e
+        git branch master --track origin/master
+        git checkout master
+    )
 }
 remaster() {
     (set -e
@@ -2472,7 +2796,7 @@ tea() {
     shift
     local msg="$*"
     [[ $msg ]] || msg="TEA TIME!"
-    (date;sleep $time;growlnotify -m "$msg ($time sec)";date) &
+    (date; sleep $time; growlnotify -m "$msg ($time sec)"; date) &
 }
 
 linxreg() {
@@ -2567,7 +2891,7 @@ fregress() {
 regressdirs() {
     (
         cd $1
-        for f in RegressionTests/*/run.pl ;do
+        for f in RegressionTests/*/run.pl ; do
             if [[ -f $f ]] ; then
                 f=${f%/run.pl}
                 f=${f#RegressionTests/}
@@ -2631,7 +2955,7 @@ macpageon() {
     sudo launchctl load -wF /System/Library/LaunchDaemons/com.apple.dynamic_pager.plist
 }
 
-#file arg comes first! then cmd, then args
+#file arg comes first! then cmd,then args
 javaperf="-XX:+UseNUMA -XX:+TieredCompilation -server -XX:+DoEscapeAnalysis"
 rrpath() {
     (set -e
@@ -2639,7 +2963,7 @@ rrpath() {
         r=${2:-'$ORIGIN'}
         echo adding rpath "$r" to $f
         [ -f "$f" ]
-        addrpathb "$f" "$r" "$f".rpath && mv "$f"{,.rpath.orig} && mv "$f"{.rpath,}
+        addrpathb "$f" "$r" "$f".rpath && mv "$f" {,.rpath.orig} && mv "$f" {.rpath,}
     )
 }
 svnchmodx() {
@@ -2852,7 +3176,7 @@ panda() {
                     fi
                 ) || echo latex exit code $?
             fi
-            # I tried all of these in an attempt to adjust the pdf margins more aggressively, but neither did anything beyond just setting margin:
+            # I tried all of these in an attempt to adjust the pdf margins more aggressively,but neither did anything beyond just setting margin:
 
             # -V geometry=margin=$margin -V margin=$margin -V hmargin=$hmargin -V vmargin=$vmargin -V geometry=margin=$margin -V geometry=vmargin=$vmargin -V geometry=hmargin=$hmargin -V geometry=bmargin=$vmargin -V geometry=tmargin=$vmargin -V geometry=lmargin=$hmargin -V geometry=rmargin=$hmargin
             if [[ $open = 1 ]] ; then
@@ -2956,7 +3280,6 @@ view() {
         xzgv "$@"
     fi
 }
-realgit=`which git`
 substigrep() {
     local repl=$1
     (set -e
@@ -3004,18 +3327,11 @@ substcmake() {
         substi "$@" $(ack --cmake -f)
     )
 }
-git() {
-    if [[ $INSIDE_EMACS ]] ; then
-        $realgit --no-pager "$@" | head -80
-    else
-        $realgit "$@"
-    fi
-}
 gitchange() {
     git --no-pager log --format="%ai %aN %n%n%x09* %s%d%n"
 }
 mflist() {
-    perl -e 'while(<>) { if (/<td align="left">([^<]+)</td>/) { $n=$1; $l=1; } else { $l=0; } }'
+    perl -e 'while (<>) { if (/<td align="left">([^<]+)</td>/) { $n=$1; $l=1; } else { $l=0; } }'
 }
 showlib() {
     (
@@ -3144,7 +3460,7 @@ tokdot() {
     local s=${1:-9}
     shift
     pushd $xmtx/xmt/FsTokenizer
-    stopw=$s tokw=$t draw=1 ./test.sh tiny.{vcb,untok}
+    stopw=$s tokw=$t draw=1 ./test.sh tiny. {vcb,untok}
     hgdot ~/r/FsTokenizer/work/s=$s,t=$t/tiny.vcb.trie.gz
     popd
 }
@@ -3226,31 +3542,36 @@ rebrew() {
 safebrew() {
     local log=/tmp/safebrew.log
     (
-        saves=$(echo /usr/local/{bin,lib,lib/pkgconfig})
-        set +e
-        for f in $saves; do
-            echo mkdir -p $f/unbrew
-            mkdir -p $f/unbrew
-            set +x
-            mv `nonbrew $f` $f/unbrew/
-        done
-        mv /usr/local/bin/auto* $savebin
+        if false ; then
+            saves=$(echo /usr/local/{bin,lib,lib/pkgconfig})
+            set +e
+            for f in $saves; do
+                echo mkdir -p $f/unbrew
+                mkdir -p $f/unbrew
+                set +x
+                mv `nonbrew $f` $f/unbrew/
+            done
+            savebin=/usr/local/bin/unbrew/
+            mv /usr/local/bin/auto* $savebin
+        fi
         export LDFLAGS+=" -L/usr/local/Cellar/libffi/3.0.9/lib"
         export CPPFLAGS+="-I/usr/local/Cellar/libffi/3.0.9/include"
         export PATH=/usr/local/bin:$PATH
         export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
         #by default it looks there already. just in case!
-        unset DYLD_LIBRARY_PATH
+        unset DYLD_FALLBACK_LIBRARY_PATH
         brew -v "$@" || brew doctor
         set +x
-        savedirs=
-        for f in $saves; do
-            savedirs+=" $f/unbrew"
-            mv -n $f/unbrew/* $f/
-        done
-        echo $savedirs should be empty:
-        ls -l $savedirs
-        echo empty, i hoope
+        if false ; then
+            savedirs=
+            for f in $saves; do
+                savedirs+=" $f/unbrew"
+                mv -n $f/unbrew/* $f/
+            done
+            echo $savedirs should be empty:
+            ls -l $savedirs
+            echo empty,i hoope
+        fi
     ) 2>&1 | tee $log
     echo cat $log
 }
@@ -3259,7 +3580,7 @@ awksub() {
     shift
     local r=$1
     shift
-    awk '{gsub(/'"$s"'/,"'"$r"'")};1' "$@"
+    awk ' {gsub(/'"$s"'/,"'"$r"'")};1' "$@"
 }
 awki() {
     local f=$1
@@ -3276,7 +3597,7 @@ cmdi() {
 }
 
 gitsubuntracked() {
-    awki .gitmodules ' {print}; /^.submodule / { print "\tignore = untracked" }'
+    awki .gitmodules ' {print}; /^.submodule /{ print "\tignore = untracked" }'
 }
 
 gitpush1sub() {
@@ -3342,10 +3663,10 @@ urlup() {
     perl -e '$_=shift;s|/[^/]+/?$||;print "$_";' "$*"
 }
 svnurl() {
-    svn info | awk '/^URL: / {print $2}'
+    svn info | awk '/^URL: /{print $2}'
 }
 svngetrev() {
-    svn ls -v "$@" | awk '{print $1}'
+    svn ls -v "$@" | awk ' {print $1}'
 }
 svnprev() {
     #co named revision of file in current dir
@@ -3383,7 +3704,7 @@ svnprevs() {
 }
 pids() {
     grep=${grep:-/usr/bin/grep}
-    ps -ax | awk '/'$1'/ && !/awk/ {print $1}'
+    ps -ax | awk '/'$1'/ && !/awk/{print $1}'
 }
 gituntrack() {
     git update-index --assume-unchanged "$@"
@@ -3490,7 +3811,7 @@ racershared1() {
     fi
 }
 usedshared() {
-    (cd $racer/xmt/graehl/shared/;ls *.?pp)
+    (cd $racer/xmt/graehl/shared/; ls *.?pp)
 }
 diffshared1() {
     local s=~/t/graehl/shared/
@@ -3505,20 +3826,21 @@ relnshared() {
     lnshared $(usedshared)
 }
 lnhg1() {
-    local d=$1
-    shift
+    local branch=${branch:-Debug}
+    local d=$xmtx/$branch
     local pre=$1
     shift
     rpathsh=$racerlib/rpath.sh
     echo "$d" > ~/bin/racerbuild.dirname
     for f in $d/$pre*; do
-        $rpathsh $f 1
+        [[ -x $pathsh ]] && $rpathsh $f 1
         if [[ ${f%.log} = $f ]] ; then
             basename $f
             local b=`basename $f`
             for t in $b egdb$b gdb$b vg$b; do
                 echo $t
                 ln -sf $racer/run.sh ~/bin/$t
+                ln -sf $racer/run.sh ~/bin/${t}Release
             done
         fi
     done
@@ -3529,27 +3851,37 @@ rpathhg() {
     find $racer/$b -type f -exec $rpathsh {} \;
 }
 lnhg() {
-    local b=${1:-Debug}
-    lnhg1 $racer/$b ProcessYAML/ProcessYAML
-    lnhg1 $racer/$b ProcessYAML/ProcessYAML
-    lnhg1 $racer/$b ProcessYAML/Test
-    lnhg1 $racer/$b RuleDumper/RuleDumper
-    lnhg1 $racer/$b SyntaxBased/Test
-    lnhg1 $racer/$b LanguageModel/LMQuery/LMQuery
-    lnhg1 $racer/$b LWUtil/Test
-    lnhg1 $racer/$b Grammar/Test
-    lnhg1 $racer/$b FeatureBot/Test
-    lnhg1 $racer/$b Utf8Normalize/Utf8Normalize
-    lnhg1 $racer/$b BasicShell/xmt
-    lnhg1 $racer/$b OCRC/OCRC
-    lnhg1 $racer/$b AutoRule/Test
-    lnhg1 $racer/$b RuleSerializer/Test
-    lnhg1 $racer/$b Hypergraph/Test
-    lnhg1 $racer/$b Config/Test
-    lnhg1 $racer/$b Hypergraph/Hg
-    lnhg1 $racer/$b StatisticalTokenizer/StatisticalTokenizer
-    lnhg1 $racer/$b LmCapitalize/LmCapitalize
-    lnhg1 $racer/$b ValidateConfig/ValidateConfig
+    lnhg1 "$1"/"$1"
+}
+lntest() {
+    lnhg1 "$1"/Test
+}
+lnhgs() {
+    (
+        branch=${1:-Debug}
+        lnhg1 ProcessYAML/ProcessYAML
+        lnhg1 ProcessYAML/ProcessYAML
+        lnhg1 ProcessYAML/Test
+        lnhg1 RuleDumper/RuleDumper
+        lnhg1 SyntaxBased/Test
+        lnhg1 LanguageModel/LMQuery/LMQuery
+        lnhg1 LWUtil/Test
+        lnhg1 Grammar/Test
+        lnhg1 FeatureBot/Test
+        lnhg1 Utf8Normalize/Utf8Normalize
+        lnhg1 BasicShell/xmt
+        lnhg1 OCRC/OCRC
+        lnhg1 AutoRule/Test
+        lnhg1 RuleSerializer/Test
+        lnhg1 Hypergraph/Test
+        lnhg1 Config/Test
+        lnhg1 Hypergraph/Hg
+        lnhg1 StatisticalTokenizer/StatisticalTokenizer
+        lnhg1 LmCapitalize/LmCapitalize
+        lnhg1 ValidateConfig/ValidateConfig
+        lntest Preorderer
+        lntest SearchReplace
+    )
 }
 rebuildc() {
     (set -e
@@ -3567,7 +3899,7 @@ linx() {
     ssh $chost ". ~/.e;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests freshx $*"
 }
 linxx() {
-    (cd;sync2 $chost x/xmt x/RegressionTests x/docs)
+    (cd; sync2 $chost x/xmt x/RegressionTests x/docs)
     ssh $chost ". ~/.e;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests raccm $*"
 }
 
@@ -3576,7 +3908,7 @@ cmex() {
     ssh $cmehost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests freshx $*"
 }
 cmexx() {
-    (cd;sync2 $cmehost x/xmt x/RegressionTests x/docs)
+    (cd; sync2 $cmehost x/xmt x/RegressionTests x/docs)
     ssh $cmehost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests raccm $*"
 }
 
@@ -3635,9 +3967,12 @@ ncpus() {
         fi
     else
         local actual=`countcpus`
-        local r=$((actual+3))
+        local r=$((actual * 2))
+        if [[ `hostname` = c-mdreyer ]]; then
+            r=$actual
+        fi
         echo $r
-        #echo2 "using -j$r, actual cpus=$actual"
+        #echo2 "using -j$r,actual cpus=$actual"
     fi
 }
 countcpus() {
@@ -3645,34 +3980,30 @@ countcpus() {
 }
 MAKEPROC=${MAKEPROC:-$(ncpus)}
 
-lsld() {
-    echo $DYLD_LIBRARY_PATH
-}
+
 addld() {
     if [[ $lwarch = Apple ]] ; then
-        if ! fgrep -q "$1" <<< "$DYLD_LIBRARY_PATH" ; then
-            export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$1
+        if ! fgrep -q "$1" <<< "$DYLD_FALLBACK_LIBRARY_PATH" ; then
+            export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$1
         else
-            true || echo "$1 already in DYLD_LIBRARY_PATH"
+            true || echo2 "$1 already in DYLD_FALLBACK_LIBRARY_PATH"
         fi
     else
         if ! fgrep -q "$1" <<< "$LD_LIBRARY_PATH" ; then
             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$1
         else
-            true || echo "$1 already in LD_LIBRARY_PATH"
+            true || echo2 "$1 already in LD_LIBRARY_PATH"
         fi
     fi
 }
-dylds() {
 
-    for f in $racerlib/*; do
-        if [ -d $f/lib ] ; then #[[ ${f%log4cxx-10.0.0} == $f ]] &&
-            #echo $f
-            addld $f/lib
-        fi
-    done
+showlds() {
+    if [[ $lwarch = Apple ]] ; then
+        env | grep DYLD_ 2>&1
+    else
+        env | grep LD_LIBRARY_PATH 2>&1
+    fi
 }
-dylds
 
 failed() {
     racb
@@ -3767,7 +4098,7 @@ drac() {
     cd $racer/3rdparty
     banner 3rdparty svn
     svndifflog 2 "$@"
-    echo;echo
+    echo; echo
     banner racerx svn
     cd $racer
     svndifflog 5 "$@"
@@ -3988,18 +4319,18 @@ vgsbmt() {
     variant=release tmpsbmt
 }
 dusort() {
-    perl -e 'require "$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl";while(<>){$n=()=m#/#g;push @{$a[$n]},$_;} for(reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
+    perl -e 'require "$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl";while (<>) {$n=()=m#/#g;push @ {$a[$n]},$_;} for (reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
 }
 realwhich() {
     whichreal "$@"
 }
 check1best() {
     echo 'grep decoder-*.1best :'
-    perl1p 'while(<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers("sent=$1"); if ($n{$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1") } } } END { all_summary() }' decoder-*.1best
+    perl1p 'while (<>) { if (/sent=(\d+)/) { $consec=($1==$last)?"(consecutive)":""; $last=$1; log_numbers("sent=$1"); if ($n {$1}++) { count_info_gen("dup consecutive $ARGV [sent=$1 line=$.]");log_numbers("dup $ARGV $consec: $1") } } } END { all_summary() }' decoder-*.1best
     grep -i "bad_alloc" logs/*/decoder.log
     grep -i "succesful parse" logs/*/decoder.log | summarize_num.pl
     grep -i "pushing grammar" logs/*/decoder.log | summarize_num.pl
-    # perl1p 'while(<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n{$1}++; } } END { all_summary() }' decoder-*.1best
+    # perl1p 'while (<>) { if (/sent=(\d+)/) { next if ($1==$last); $last=$1; log_numbers($1); log_numbers("dup: $1") if $n {$1}++; } } END { all_summary() }' decoder-*.1best
 }
 
 blib=$d/bloblib.sh
@@ -4049,7 +4380,7 @@ flv2aac() {
     if [[ $stream ]] ; then
         mapa="-map 0:$stream"
     fi
-    if [[ $start ]] ;then
+    if [[ $start ]] ; then
         mapa+=" -ss $start"
     fi
     if [[ $time ]] ; then
@@ -4133,7 +4464,7 @@ jobseq() {
     seq -f %7.0f "$@"
 }
 lcext() {
-    perl -e 'for (@ARGV) { $o=$_; s/(\.[^. ]+)$/lc($1)/e; if ($o ne $_) { print "mv $o $_\n";rename $o,$_ unless $ENV{DEBUG};} }' -- "$@"
+    perl -e 'for (@ARGV) { $o=$_; s/(\.[^. ]+)$/lc($1)/e; if ($o ne $_) { print "mv $o $_\n";rename $o,$_ unless $ENV {DEBUG};} }' -- "$@"
 }
 
 mkstamps() {
@@ -4153,45 +4484,45 @@ mkstamps() {
         local rightmargin=${rightmargin:-$leftmargin}
         showvars_required papertype npages stamp
         cat > "$stamp" <<EOF
-        \documentclass[${papertype}paper,english]{article}
+        \documentclass[${papertype}paper,english] {article}
         %,9pt
-        \usepackage[T1]{fontenc}
-        \usepackage{pslatex} % needed for fonts
-        \usepackage[latin1]{inputenc}
-        \usepackage{babel}
-        \usepackage{fancyhdr}
-        %\usepackage{color}
-        %\usepackage{transparent}
-        \usepackage[left=$leftmargin,top=$botmargin,right=$leftmargin,bottom=$botmargin,${papertype}paper]{geometry}
-        \title{$title}
-        %\pagestyle{plain}
-        \fancyhead{}
-        \fancyhead[$headpg]{\thepage}
-        \fancyfoot{}
-        \fancyfoot[$footpg]{\thepage}
-        \renewcommand{\headrulewidth}{0pt}
-        \renewcommand{\footrulewidth}{0pt}
-        \pagestyle{fancy}
-        \begin{document}
+        \usepackage[T1] {fontenc}
+        \usepackage {pslatex} % needed for fonts
+        \usepackage[latin1] {inputenc}
+        \usepackage {babel}
+        \usepackage {fancyhdr}
+        %\usepackage {color}
+        %\usepackage {transparent}
+        \usepackage[left=$leftmargin,top=$botmargin,right=$leftmargin,bottom=$botmargin,${papertype}paper] {geometry}
+        \title {$title}
+        %\pagestyle {plain}
+        \fancyhead {}
+        \fancyhead[$headpg] {\thepage}
+        \fancyfoot {}
+        \fancyfoot[$footpg] {\thepage}
+        \renewcommand {\headrulewidth} {0pt}
+        \renewcommand {\footrulewidth} {0pt}
+        \pagestyle {fancy}
+        \begin {document}
         %\maketitle
-        %\thispagestyle{empty}
-        \begin{center}
+        %\thispagestyle {empty}
+        \begin {center}
         \footnotesize
         %\copyright 2008 Some Institute. Add your copyright message here.
-        \end{center}
+        \end {center}
 EOF
 
-for i in `seq 1 $npages`; do
-    # echo '\newpage' >> $stamp
-    echo '\mbox{} \newpage' \
-        >> $stamp
-done
+        for i in `seq 1 $npages`; do
+            # echo '\newpage' >> $stamp
+            echo '\mbox {} \newpage' \
+                >> $stamp
+        done
 
-echo '\end{document}' >> $stamp
+        echo '\end {document}' >> $stamp
 
-local sbase=${stamp%.tex}
-lat2pdf $sbase
-echo $sbase.pdf
+        local sbase=${stamp%.tex}
+        lat2pdf $sbase
+        echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
@@ -4335,7 +4666,7 @@ currydef() {
 }
 
 curry() {
-    #fixme: global output variable curryout, since can't print curryout and capture in `` because def would be lost.
+    #fixme: global output variable curryout,since can't print curryout and capture in `` because def would be lost.
     curryout=`gensym $*`
     eval currydef $curryout "$@"
 }
@@ -4375,8 +4706,8 @@ range() {
     local to=${2:-99999999}
     shift
     shift
-    perl -e 'require "$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl";$"=" ";' \
-        -e '$F=shift;$T=shift;&argvz;$n=0;while(<>) { ++$n;;print if $n>=$F && $n<=$T }' \
+    perl -e 'require "$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl";$"=" ";' \
+        -e '$F=shift;$T=shift;&argvz;$n=0;while (<>) { ++$n;;print if $n>=$F && $n<=$T }' \
         $from $to "$@"
     if false ; then
         if [ "$from" -lt 0 ] ; then
@@ -4388,11 +4719,11 @@ range() {
 }
 
 lastpr() {
-    perl -ne 'while (/(P=\S+ R=\S+)/g) { $first=$1 unless $first;$last=$1};END{print "[corpus ",($first eq $last?$last:"$last (i=0: $first)"),"]\n"}' "$@"
+    perl -ne 'while (/(P=\S+ R=\S+)/g) { $first=$1 unless $first;$last=$1};END {print "[corpus ",($first eq $last?$last:"$last (i=0: $first)"),"]\n"}' "$@"
 }
 
 nthpr() {
-    perl -ne '$n=shift;while (/(P=\S+ R=\S+)/g) { $first=$1 unless $first;$last=$1;last if --$n==0;};END{print "[corpus ",($first eq $last?$last:"$last (i=0: $first)"),"]\n"}' "$@"
+    perl -ne '$n=shift;while (/(P=\S+ R=\S+)/g) { $first=$1 unless $first;$last=$1;last if --$n==0;};END {print "[corpus ",($first eq $last?$last:"$last (i=0: $first)"),"]\n"}' "$@"
 }
 bigclm() {
     perl -i~ -pe ' s/lw/big/g if /clm-lr/' *.sh
@@ -4413,7 +4744,7 @@ ofcom() {
     gcom "$@"
 }
 obut0() {
-    rm -rf 1btn0000;. master.sh; rm -rf *0001;casub 1btn0000
+    rm -rf 1btn0000; . master.sh; rm -rf *0001; casub 1btn0000
 }
 but0() {
     for f in *1btn0000; do
@@ -4531,7 +4862,7 @@ cpsh() {
 cprules() {
     cpsh $1 $2
     pushd $2
-    ln -s ../$1/*{xrsdb0000,rules0000} .
+    ln -s ../$1/* {xrsdb0000,rules0000} .
     popd
 }
 srescue() {
@@ -4610,14 +4941,14 @@ alias pjam="bjam --prefix=$FIRST_PREFIX -j4"
 alias sjam="bjam $sbmtargs"
 buildpipe() {
     mkdir -p $DTOOLS
-    pushd ~/t;svn update;bjam $sbmtargs install-pipeline ;popd
+    pushd ~/t; svn update; bjam $sbmtargs install-pipeline ; popd
     pushd $DTOOLS
-    ln -sf . x86_64;ln -sf . tbb
-    cp $FIRST_PREFIX/lib/libtbb{,malloc}.* lib
+    ln -sf . x86_64; ln -sf . tbb
+    cp $FIRST_PREFIX/lib/libtbb {,malloc}.* lib
     popd
 }
 buildxrs() {
-    pushd ~/t;svn update;bjam $sbmtargs utilities//install ;popd
+    pushd ~/t; svn update; bjam $sbmtargs utilities//install ; popd
 }
 alias grepc="$(which grep) --color -n"
 buildgraehl() {
@@ -4701,7 +5032,7 @@ function puzzle()
         pushd $puzzledir
         if make || [ ! -f Makefile ] ; then
             local tar=$puzzle.tar.gz
-            tar czf $tar `ls Makefile $puzzle $puzzle.{ml,py,cc,cpp,c} 2>/dev/null`
+            tar czf $tar `ls Makefile $puzzle $puzzle. {ml,py,cc,cpp,c} 2>/dev/null`
             tar tzf $tar
 
             [ "$dryrun" ] || EMAIL=$MYEMAIL mutt -s $puzzle -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
@@ -4797,7 +5128,7 @@ diffother() {
 other1() {
     local f=${1:?'returns $other1dir/$1 with $other1dir in place of the first part of $1'}
     showvars_required other1dir
-    other1=$other1 perl -e 'for(@ARGV) { s|^/?[^/]+/|$ENV{other1}/|; print "$_\n"}' "$@"
+    other1=$other1 perl -e 'for (@ARGV) { s|^/?[^/]+/|$ENV {other1}/|; print "$_\n"}' "$@"
 }
 
 diffother1() {
@@ -4866,7 +5197,7 @@ alias gc=gnuclientw
 
 function callgrind() {
     local exe=${1:?callgrind program args. env cache=1 branch=1 cgf=outfilename}
-    #dumpbefore dumpafter zerobefore = fn-name, or dumpevery=1000000
+    #dumpbefore dumpafter zerobefore = fn-name,or dumpevery=1000000
     local base=`basename $1`
     shift
     local cgf=${cgf:-/tmp/callgrind.$base.`shortstamp`}
@@ -5026,7 +5357,7 @@ alias pd=pdq
 getattr() {
     attr=$1
     shift
-    perl -ne '/\Q'"$attr"'\E=\{\{\{([^}]+)\}\}\}/ or next;print "$ARGV:" if ($ARGV ne '-'); print $.,": ",$1,"\n";close ARGV if eof' "$@"
+    perl -ne '/\Q'"$attr"'\E=\ {\ {\ {([^}]+)\}\}\}/ or next;print "$ARGV:" if ($ARGV ne '-'); print $.,": ",$1,"\n";close ARGV if eof' "$@"
 }
 #,qsh.pl,checkjobs.pl
 alias commh="pdq ~/isd/hints;cvs update && comml;popd"
@@ -5116,7 +5447,7 @@ dos2unix()
 }
 isdos()
 {
-    perl -e 'while(<>) { if (y/\r/\r/) { print $ARGV,"\n"; last; } }' "$@"
+    perl -e 'while (<>) { if (y/\r/\r/) { print $ARGV,"\n"; last; } }' "$@"
 }
 psgn1()
 {
@@ -5124,7 +5455,7 @@ psgn1()
 }
 psgn()
 {
-    psg $1 | awk '{print $2}'
+    psg $1 | awk ' {print $2}'
 }
 openssl=/usr/local/ssl/bin/openssl
 certauth=/web/conf/ssl.crt/ca.crt
@@ -5186,9 +5517,9 @@ function cleanr ()
 # local libgraehl=~/isd/hints/libgraehl.pl
 # perl -e 'require "'$libgraehl'";' "$@" -e ';print "\n";'
 #}
-alias perl1="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";' -e "
-alias perl1p="perl -e 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{println();}' -e "
-alias perl1c="perl -ne 'require \"\$ENV{HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END{while((\$k,\$v)=each \%c) { print qq{\$k: \$v };println();}' -e "
+alias perl1="perl -e 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";' -e "
+alias perl1p="perl -e 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END {println();}' -e "
+alias perl1c="perl -ne 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END {while ((\$k,\$v)=each \%c) { print qq {\$k: \$v };println();}' -e "
 alias clean="rm *~"
 alias nitro="ssh -1 -l graehl nitro.isi.edu"
 alias hpc="ssh -1 -l graehl $HPCHOST"
@@ -5633,7 +5964,7 @@ vgx() {
 }
 
 unshuffle() {
-    perl -e 'while(<>){print;$_=<>;die unless $_;print STDERR $_}' "$@"
+    perl -e 'while (<>) {print;$_=<>;die unless $_;print STDERR $_}' "$@"
 }
 
 ngr() {
@@ -5655,16 +5986,16 @@ ogetbleu() {
 
 
 hypfromdata() {
-    perl -e '$whole=$ENV{whole};$ns=$ENV{nsents};$ns=999999999 unless defined $ns;while(<>) { if (/^(\d+) -1 \# \# (.*) \# \#/) { if ($l ne $1) { print ($whole ? $_ : "$2\n");last unless $n++ < $ns; $l=$1; } } } ' "$@"
+    perl -e '$whole=$ENV {whole};$ns=$ENV {nsents};$ns=999999999 unless defined $ns;while (<>) { if (/^(\d+) -1 \# \# (.*) \# \#/) { if ($l ne $1) { print ($whole ? $_ : "$2\n");last unless $n++ < $ns; $l=$1; } } } ' "$@"
 }
 
 stripbracespace() {
-    perl -pe 's/^\s+([{}])/$1/' "$@"
+    perl -pe 's/^\s+([ {}])/$1/' "$@"
 }
 
 # input is blank-line separated paragraphs. print first nlines of first nsents paragraphs. blank=1 -> print separating newline
 firstlines() {
-    perl -e '$blank=$ENV{blank};$ns=$ENV{nsents};$ns=999999999 unless defined $ns;$max=1;$max=$ENV{nlines} if exists $ENV{nlines};$nl=0;while(<>) { print if $nl++<$max; if (/^$/) {$nl=0;print "\n" if $blank;last unless $n++ < $ns;} }' "$@"
+    perl -e '$blank=$ENV {blank};$ns=$ENV {nsents};$ns=999999999 unless defined $ns;$max=1;$max=$ENV {nlines} if exists $ENV {nlines};$nl=0;while (<>) { print if $nl++<$max; if (/^$/) {$nl=0;print "\n" if $blank;last unless $n++ < $ns;} }' "$@"
 }
 
 stripunknown() {
@@ -5673,7 +6004,7 @@ stripunknown() {
 
 fixochbraces() {
     # perl -ne '
-    # s/^\s+\{/ \{\n/ if ($lastcond);
+    # s/^\s+\ {/ \ {\n/ if ($lastcond);
     # s/\s+$//;
     # print;
     # $lastcond=/^\s+(if|for|do)/;
@@ -5683,19 +6014,19 @@ fixochbraces() {
     # }
     # ' "$@"
     perl -e '$/=undef;$_=<>;print $_
-$ws=q{[ \t]};
-$kw=q{(?:if|for|while|else)};
-$notcomment=q{(?:[^/\n]|/(?=[^/\n]))};
-s#(\b$kw\b$notcomment+)$ws*(?:(//[^\n]*\n)|\n)$ws*\{$ws*#$1 { $2#gs;
+$ws=q {[ \t]};
+$kw=q {(?:if|for|while|else)};
+$notcomment=q {(?:[^/\n]|/(?=[^/\n]))};
+s#(\b$kw\b$notcomment+)$ws*(?:(//[^\n]*\n)|\n)$ws*\ {$ws*#$1 { $2#gs;
 s/}\s*else/} else/gs;
 print;
 # @lines=split "\n";
 # for (@lines) {
-# s#(\b$kw\b$notcomment*)(//.*?)\s*\{\s*$#$1 { $2#;
+# s#(\b$kw\b$notcomment*)(//.*?)\s*\ {\s*$#$1 { $2#;
 # print "$_\n";
 # }
 ' "$@"
-    #s|(\b$kw\b$notcomment*)(//[^\n]*)(\{$ws*)\n|$1$3\n$2\n|gs;
+    #s|(\b$kw\b$notcomment*)(//[^\n]*)(\ {$ws*)\n|$1$3\n$2\n|gs;
 
 }
 
@@ -5716,7 +6047,7 @@ tviz() {
         dot -Tpng < $work.dot > $out.png
         require_files $out.png
         rm -f $captionfile
-        ls $work.{dot,png}
+        ls $work. {dot,png}
         if ! [[ $noview ]] ; then
             firefox $work.png
         fi
@@ -5981,7 +6312,7 @@ cpanforce() {
 }
 
 bleulog() {
-    perl -ne 'BEGIN{$x=shift};print "$x\t$1\n" if /BLEU(?: score)? = ([\d.]+)/' -- "$@"
+    perl -ne 'BEGIN {$x=shift};print "$x\t$1\n" if /BLEU(?: score)? = ([\d.]+)/' -- "$@"
 }
 
 firstnum() {
@@ -5991,15 +6322,14 @@ firstnum() {
 }
 
 shortsh1() {
-    perl -i~ -pe 's/^\s*function\s+(\w+)\s*\{/\1() {/' -- "$@"
+    perl -i~ -pe 's/^\s*function\s+(\w+)\s*\ {/\1() {/' -- "$@"
 }
 shortsh() {
     shortsh1 *.sh "$@"
 }
 conff=`echo `
 allconff="$conff elisp"
-rsync_exclude="--exclude=.git/ --cvs-exclude"
-
+rsync_exclude="-C --exclude=.git/ --cvs-exclude"
 sync2() {
     (
         cd
@@ -6019,7 +6349,7 @@ sync2() {
 syncto() {
     sync2 "$@"
 }
-userfor() {
+userfor () {
     case $1 in
         login*) echo -n jgraehl ;;
         *) echo -n graehl ;;
@@ -6104,12 +6434,12 @@ refargs() {
 }
 makesrilm() {
     (set -e;
-        if [ -f "$1" ] ;then
+        if [ -f "$1" ] ; then
             mkdir -p srilm
             cd srilm
             tarxzf ../$1
             local d=`realpath .`
-            perl -i -pe 's{# SRILM = .*}{SRILM = '$d'}' Makefile
+            perl -i -pe 's {# SRILM = .*} {SRILM = '$d'}' Makefile
             shift
         fi
         head Makefile
@@ -6368,7 +6698,7 @@ fastflags() {
     CFLAGS+=-Ofast
     CXXFLAGS+=-Ofast
     export CFLAGS CXXFLAGS
-    # turns on fast-math, and maybe some unsafe opts beyond -O3
+    # turns on fast-math,and maybe some unsafe opts beyond -O3
 }
 
 slowflags() {
@@ -6498,10 +6828,10 @@ bd() {
     local index=
     if [ "$1" = "-s" ] ; then
         NEWPWD=`echo $OLDPWD | sed 's|\(.*/'$2'[^/]*/\).*|\1|'`
-        index=`echo $NEWPWD | awk '{ print index($1,"/'$2'"); }'`
+        index=`echo $NEWPWD | awk ' { print index($1,"/'$2'"); }'`
     else
         NEWPWD=`echo $OLDPWD | sed 's|\(.*/'$1'/\).*|\1|'`
-        index=`echo $NEWPWD | awk '{ print index($1,"/'$1'/"); }'`
+        index=`echo $NEWPWD | awk ' { print index($1,"/'$1'/"); }'`
     fi
 
     if [ $index -eq 0 ] ; then
@@ -6516,4 +6846,59 @@ diffbranch() {
     sh -c "cd `pwd`; git diff $1 $1^1 -- > $diff"
     head -100 $diff
     echo $diff
+}
+if [[ -x $xmtx/xmtpath.sh ]] ; then
+    . $xmtx/xmtpath.sh
+fi
+
+### ssh tunnel:
+
+chost=c-jgraehl
+ontunnel=
+if [[ $HOST = graehl.local ]] ; then
+    ontunnel=1
+    /sbin/ifconfig > /tmp/ifcfg
+    if grep -q 10.110 /tmp/ifcfg; then
+        ontunnel=
+    fi
+fi
+trremotesubdir=/local/c-jgraehl/xmt
+trhomesubdir=x
+trhome() {
+    perl -e '
+$remotesubdir=shift;
+$homesubdir=shift;
+$homesubdir="$homesubdir/" if $homesubdir;
+if ($remotesubdir) {
+  for (@ARGV) { $_ =~ s{(/Users/graehl|/home/graehl|\~)/$homesubdir}{$remotesubdir/}; }
+}
+print join(" ",@ARGV)' -- "$@"
+}
+trhomedir() {
+trhome ${remotehome:-'~'} '' "$@"
+}
+tunhost="pontus.languageweaver.com"
+tunport=4640
+sshvia() {
+    local lport=`randomport`
+    local rhost=$1
+    shift
+    echo via $lport to $rhost: ssh "$@" 1>&2
+    local permit="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
+    ssh -f -L $lport:$rhost:22 -p $tunport $tunhost "sleep 6" && ssh $permit -p $lport localhost "$@"
+}
+sshlog() {
+    echo ssh "$@" 1>&2
+    ssh "$@"
+}
+crun() {
+    local chost=${chost:-c-jgraehl}
+    local fwdenv="gccfilter=$gccfilter"
+    local pre=". ~/.e;touchnewer"
+    local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
+    if [[ $ontunnel ]] ; then
+        sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
+    else
+        sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
+    fi
 }

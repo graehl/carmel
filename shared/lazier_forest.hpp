@@ -421,13 +421,8 @@ struct lazier_forest : FilterFactory::filter_type // empty base class opt. - may
   // note: postpone_selfloop() may make this not true.
   bool is_sorted()
   {
-# ifdef _MSC_VER
     return true; //FIXME: implement
-# else
-    return __gnu_cxx::is_heap(pq.begin(), pq.end());
-# endif
   }
-
 
   // private:
   typedef std::vector<derivation_type> memo_t; // derivation_type may not be POD

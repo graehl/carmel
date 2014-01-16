@@ -3,7 +3,6 @@
 
 #ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
-# include <graehl/shared/debugprint.hpp>
 # define IS_NULL_DEBUG(x) x
 #else
 # define IS_NULL_DEBUG(x)
@@ -66,20 +65,16 @@ BOOST_AUTO_TEST_CASE(TEST_is_null) {
     using namespace graehl;
 
     double d=std::numeric_limits<double>::infinity();
-    DBP2(d,is_null(d));
     BOOST_CHECK_EQUAL(is_null(d),false);
     BOOST_CHECK_EQUAL(is_nan(d),false);
     set_null(d);
-    DBP2(d,is_null(d));
     BOOST_CHECK_EQUAL(is_null(d),true);
     BOOST_CHECK_EQUAL(is_nan(d),true);
 
     float f=std::numeric_limits<float>::infinity();
-    DBP2(f,is_null(f));
     BOOST_CHECK_EQUAL(is_null(f),false);
     BOOST_CHECK_EQUAL(is_nan(f),false);
     set_null(f);
-    DBP2(f,is_null(f));
     BOOST_CHECK_EQUAL(is_null(f),true);
     BOOST_CHECK_EQUAL(is_nan(f),true);
 

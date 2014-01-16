@@ -35,6 +35,7 @@
 
 */
 
+#include <cstdio>
 #include <iostream>
 #include <algorithm>
 #include <iterator>
@@ -60,7 +61,7 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #endif
 
 #ifndef GRAEHL_USE_BOOST_LEXICAL_CAST
-# define GRAEHL_USE_BOOST_LEXICAL_CAST 1
+# define GRAEHL_USE_BOOST_LEXICAL_CAST 0
 #endif
 
 #include <boost/optional.hpp>
@@ -68,7 +69,10 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 # ifndef BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
 #  define BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
 # endif
+# include <graehl/shared/warning_compiler.h>
+GCC_DIAG_OFF(maybe-uninitialized)
 # include <boost/lexical_cast.hpp>
+GCC_DIAG_ON(maybe-uninitialized)
 #endif
 #include <boost/type_traits/remove_reference.hpp>
 #include <limits> //numeric_limits
@@ -76,6 +80,7 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/nan.hpp>
 #include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/atoi_fast.hpp>
@@ -84,9 +89,10 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #if GRAEHL_USE_FTOA
 # include <graehl/shared/ftoa.hpp>
 #else
-# include <cstdlib>
+#include <cstdlib>
 #endif
 
+#include <LWUtil/Sprintf.hpp>
 
 namespace graehl {
 
@@ -168,19 +174,61 @@ inline void string_to_impl(char const* s,std::size_t &x) {
   x=atou_fast_complete<std::size_t>(s);
 }
 
+
 namespace {
-const std::string str_1="1",str_true="true",str_yes="yes",str_on="on";
-const std::string str_0="0",str_false="false",str_no="no",str_off="off";
+const std::string str_true="true", str_false="false";
+
+inline char uc(char lc) {
+  return lc + ('A' - 'a');
 }
 
-// because the int version is favored over the template/stream one:
-inline void string_to_impl(std::string const& s,bool &x) {
-  if (s==str_1||s==str_true||s==str_yes||s==str_on)
-    x=true;
-  else if (s==str_0||s==str_false||s==str_no||s==str_off)
-    x=false;
-  else
-    VTHROW_A_MSG(string_to_exception,"'"<<s<<"': not boolean ({true,1,yes,on} or {false,0,no,off}.");
+inline bool islc(char c, char lc) {
+  return c == lc || c == uc(lc);
+}
+
+/**
+   \return bool if string [p,p+len) is a yaml boolean or c++ printed boolean,
+   else throw string_to_exception
+
+   although this code is a bit obnoxious, it should be significantly faster than
+   checking membership in a map<string> or serially comparing against a bunch of
+   strings.
+*/
+inline bool parse_bool(char const* p, unsigned len) {
+  switch(len) {
+    case 1:
+      if (*p == 'y' || *p == 'Y' || *p == '1') return true; // y or 1
+      if (*p == 'n' || *p == 'N' || *p == '0') return false; // n or 0
+      break;
+    case 2:
+      if (islc(*p, 'o')) {
+        if (islc(p[1], 'n')) return true; // on
+      } else if (islc(*p, 'n') && islc(p[1], 'o')) return false; // no
+      break;
+    case 3:
+      if (islc(*p, 'y')) {
+        if (islc(p[1], 'e') && islc(p[2], 's')) return true; // yes
+      } else if (islc(*p, 'o') && islc(p[1], 'f') && islc(p[2], 'f')) return false; // off
+      break;
+    case 4:
+      if (islc(*p, 't') && islc(p[1], 'r') && islc(p[2], 'u') && islc(p[3], 'e')) return true; //true
+      break;
+    case 5:
+      if (islc(*p, 'f') && islc(p[1], 'a') && islc(p[2], 'l') && islc(p[3], 's') && islc(p[4], 'e')) return false; //false
+      break;
+  }
+  VTHROW_A_MSG(string_to_exception,"'"<<std::string(p, p+len)<<"': not boolean - must be {1|y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE} or {0|false|False|FALSE|on|On|ON|off|Off|OFF}.");
+  return false;
+}
+
+}//ns
+
+/**
+   \return bool if string [p,p+len) is a yaml boolean or c++ printed boolean,
+   else throw string_to_exception
+*/
+inline void string_to_impl(std::string const& s, bool &x) {
+  x = parse_bool((char const*)s.data(), (unsigned)s.size());
 }
 
 inline void string_to_impl(std::string const& s,char &x) {
@@ -215,32 +263,47 @@ inline void string_to_impl(char const* s,unsigned long &x) {
 //FIXME: end code duplication
 
 
+typedef char const* const PrintfFormat;
+typedef unsigned const PrintfBytes;
+
+PrintfFormat fmt_double_for_float_roundtrip = "%.9g";
+PrintfFormat fmt_double_for_float_default = "%.7g";
+PrintfFormat fmt_double_roundtrip = "%.17g";
+PrintfFormat fmt_double_default = "%.15g";
+
+/**
+   enough space to printf 0-terminated -1.238945783e-301 or whatever the max is
+*/
+PrintfBytes bytes_double_for_float_roundtrip = 17;
+PrintfBytes bytes_double_for_float_default = 15;
+PrintfBytes bytes_double_roundtrip = 32;
+PrintfBytes bytes_double_default = 30;
+
 /* 9 decimal places needed to avoid rounding error in float->string->float. 17 for double->string->double
    in terms of usable decimal places, there are 6 for float and 15 for double
 */
 inline std::string to_string_roundtrip(float x) {
-  char buf[17];
-  return std::string(buf,buf+sprintf(buf,"%.9g",x));
-
+  char buf[bytes_double_for_float_roundtrip];
+  return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
 }
 inline std::string to_string_impl(float x) {
 #if GRAEHL_USE_FTOA
   return ftos(x);
 #else
-  char buf[15];
-  return std::string(buf,buf+sprintf(buf,"%.7g",x));
+  char buf[bytes_double_for_float_default];
+  return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
 #endif
 }
 inline std::string to_string_roundtrip(double x) {
-  char buf[32];
-  return std::string(buf,buf+sprintf(buf,"%.17g",x));
+  char buf[bytes_double_roundtrip];
+  return std::string(buf,buf+std::sprintf(buf, fmt_double_roundtrip ,x));
 }
 inline std::string to_string_impl(double x) {
 #if GRAEHL_USE_FTOA
   return ftos(x);
 #else
-  char buf[30];
-  return std::string(buf,buf+sprintf(buf,"%.15g",x));
+  char buf[bytes_double_default];
+  return std::string(buf,buf+std::sprintf(buf, fmt_double_default, x));
 #endif
 }
 
@@ -277,6 +340,17 @@ inline std::string const& to_string_impl(std::string const& d)
 }
 
 // ADL participates in closest-match
+
+template <class To>
+void string_to_impl(char const* str,To &to) {
+  return string_to_impl(std::string(str), to);
+}
+
+template <class To>
+void string_to_impl(char *str,To &to) {
+  return string_to_impl(std::string(str), to);
+}
+
 
 template <class From,class To>
 void string_to_impl(From const& from,To &to)
@@ -497,9 +571,64 @@ typedef std::vector<char> string_buffer;
 
 struct string_builder : string_buffer
 {
+  bool operator == (std::string const& str) {
+    std::size_t len = str.size();
+    return len == size() && !std::memcmp(begin(), &str[0], len);
+  }
+
+  typedef char const* const_iterator;
+
+  typedef char * iterator;
+  iterator begin() {
+    return &*string_buffer::begin();
+  }
+  const_iterator begin() const {
+    return &*string_buffer::begin();
+  }
+  iterator end() {
+    return &*string_buffer::end();
+  }
+  const_iterator end() const {
+    return &*string_buffer::end();
+  }
+
+  std::pair<char const*, char const*> slice() const {
+    return std::pair<char const*, char const*>(begin(), end());
+  }
+
+  /**
+     for backtracking.
+  */
+  struct unappend {
+    string_buffer &builder;
+    std::size_t size;
+    unappend(string_buffer &builder)
+        : builder(builder)
+        , size(builder.size())
+    {}
+    ~unappend() {
+      assert(builder.size() >= size);
+      builder.resize(size);
+    }
+  };
+
+  string_builder & shrink(std::size_t oldsize) {
+    assert(oldsize <= size());
+    this->resize(oldsize);
+    return *this;
+  }
+
+  template <class Val>
+  string_builder & operator<<(Val const& val) {
+    return (*this)(val);
+  }
+
   string_builder() { this->reserve(80); }
+  string_builder(unsigned reserveChars) { this->reserve(reserveChars); }
   explicit string_builder(std::string const& str)
       : string_buffer(str.begin(),str.end()) {}
+  string_builder & clear() {
+    string_buffer::clear(); return *this; }
   template <class S>
   string_builder & append(S const& s)
   {
@@ -510,14 +639,79 @@ struct string_builder : string_buffer
   {
     return (*this)(s1,s2);
   }
+  template <class S>
+  string_builder & range(S const& s, word_spacer &sp)
+  {
+    return range(s.begin(), s.end(), sp);
+  }
+  template <class S>
+  string_builder & range(S s1, S const& s2, word_spacer &sp)
+  {
+    for (; s1 != s2; ++s1) {
+      sp.append(*this);
+      (*this)(*s1);
+    }
+    return *this;
+  }
+  template <class S>
+  string_builder & range(S const& s)
+  {
+    word_spacer sp;
+    return range(s.begin(), s.end(), sp);
+  }
+  template <class S>
+  string_builder & range(S s1, S const& s2)
+  {
+    word_spacer sp;
+    return range(s1, s2, sp);
+  }
+  /**
+     for printing simple numeric values - maxLen must be sufficient or else
+     nothing is appended. also note that printf format strings need to match the
+     Val type precisely - explicit cast or template arg may make this more
+     obvious but compiler should know how to warn/error on mismatch
+  */
+  template <class Val>
+  string_builder & printf(char const* fmt, Val val, unsigned maxLen=40)
+  {
+    std::size_t sz = this->size();
+    this->resize(sz + maxLen);
+    // For Windows, snprintf is provided by Sprintf.hpp (in global namespace)
+    unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val);
+    if (written >= maxLen) written = 0;
+    this->resize(sz + written);
+    return *this;
+  }
+  /**
+     enough digits that you get the same value back when parsing the text.
+  */
+  string_builder & roundtrip(float x)
+  {
+    return printf(fmt_double_for_float_roundtrip, (double)x, 15);
+    return *this; }
+  /**
+     enough digits that you get the same value back when parsing the text.
+  */
+  string_builder & roundtrip(double x)
+  {
+    return printf(fmt_double_roundtrip, x, 32);
+    return *this; }
   string_builder & operator()(char c)
   {
     this->push_back(c);
     return *this; }
+  string_builder & operator()(string_builder const& o)
+  {
+    (*this)(o.begin(), o.end());
+    return *this; }
   template <class CharIter>
   string_builder & operator()(CharIter i,CharIter end)
   {
-    this->insert(this->end(),i,end);
+    this->insert(string_buffer::end(),i,end);
+    return *this; }
+  string_builder & operator()(std::pair<char const*, char const*> word)
+  {
+    this->insert(string_buffer::end(), word.first, word.second);
     return *this; }
   string_builder & operator()(std::string const& s)
   {
@@ -528,6 +722,9 @@ struct string_builder : string_buffer
     for (;*s;++s)
       this->push_back(*s);
     return *this; }
+  string_builder & operator()(char const* s, unsigned len)
+  { return (*this)(s, s+len); }
+
   template <class T>
   string_builder & operator()(T const& t)
   {
@@ -544,9 +741,21 @@ struct string_builder : string_buffer
   {
     return (*this)(*i.rdbuf());
   }
+  std::string &assign(std::string &str) const
+  {
+    return str.assign(this->begin(),this->end());
+  }
   std::string str() const
   {
     return std::string(this->begin(),this->end());
+  }
+  std::string *new_str() const
+  {
+    return new std::string(this->begin(),this->end());
+  }
+  std::string strSkipPrefix(std::size_t prefixLen) const
+  {
+    return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());
   }
   std::string str(std::size_t len) const
   {
@@ -561,6 +770,17 @@ struct string_builder : string_buffer
     return std::string(this->begin(),this->begin()+(n-drop_suffix_chars));
   }
 
+  /**
+     append space the second and subsequent times this is called with each
+     initial 'bool first = true' (or every time if first == false)
+  */
+  string_builder & space_except_first(bool &first, char space=' ') {
+    if (!first)
+      operator()(space);
+    first = false;
+    return *this;
+  }
+
   string_builder & append_space(std::string const& space)
   {
     if (!this->empty())
@@ -570,6 +790,14 @@ struct string_builder : string_buffer
   {
     if (!this->empty())
       operator()(space);
+    return *this; }
+
+  string_builder & append_2space(char space=' ')
+  {
+    if (!this->empty()) {
+      operator()(space);
+      operator()(space);
+    }
     return *this; }
 
   string_builder & word(std::string const& t,std::string const& space)
@@ -583,6 +811,63 @@ struct string_builder : string_buffer
     return append_space(space)(t);
   }
 
+
+  string_builder &escape_char(char c) {
+    char const quote = '"';
+    char const backslash = '\\';
+    if (c == quote || c== backslash)
+      this->push_back(backslash);
+    return (*this)(c);
+  }
+
+  template <class CharIter>
+  string_builder &quoted(CharIter i, CharIter const& end) {
+    char const quote = '"';
+    this->push_back(quote);
+    for (; i!=end; ++i)
+      escape_char(*i);
+    this->push_back(quote);
+    return *this;
+  }
+
+  template <class Chars>
+  string_builder &quoted(Chars const& str) {
+    return quoted(str.begin(), str.end());
+  }
+
+  template <class S>
+  string_builder & range_quoted(S const& s, word_spacer &sp)
+  {
+    return range_quoted(s.begin(), s.end(), sp);
+  }
+  template <class S>
+  string_builder & range_quoted(S s1, S const& s2, word_spacer &sp)
+  {
+    for (; s1 != s2; ++s1) {
+      sp.append(*this);
+      quoted(*s1);
+    }
+    return *this;
+  }
+  template <class S>
+  string_builder & range_quoted(S const& s)
+  {
+    word_spacer sp;
+    return range_quoted(s.begin(), s.end(), sp);
+  }
+  template <class S>
+  string_builder & range_quoted(S s1, S const& s2)
+  {
+    word_spacer sp;
+    return range_quoted(s1, s2, sp);
+  }
+  template <class Out>
+  void print(Out &out) const {
+    out.write(begin(), string_buffer::size());
+  }
+  template <class Ch,class Tr>
+  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &out, string_builder const& self)
+  { self.print(out); return out; }
 };
 
 // function object pointing to string_builder or buffer. cheap copy
@@ -687,6 +972,16 @@ struct to_string_select<V,typename boost::enable_if<is_nonstring_container<V> >:
   }
 };
 
+#ifdef GRAEHL_TEST
+BOOST_AUTO_TEST_CASE(test_string_to)
+{
+  BOOST_CHECK_EQUAL("1.5", to_string(1.5f));
+  BOOST_CHECK_EQUAL("15000000", to_string(15000000.f));
+  BOOST_CHECK_EQUAL("1e+10", to_string(1e10f));
+  BOOST_CHECK_EQUAL("123456", to_string(123456.f));
+  BOOST_CHECK_EQUAL("0.001953125", to_string(0.001953125f));
+}
+#endif
 
 }
 

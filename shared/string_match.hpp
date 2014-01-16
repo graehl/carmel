@@ -11,19 +11,9 @@
 #include <stdexcept>
 #include <locale>
 
-//#define TOKENIZE_KEY_VAL_DEBUG
-
-#ifdef TOKENIZE_KEY_VAL_DEBUG
-# include <graehl/shared/debugprint.hpp>
-# define TOKENIZE_KEY_VAL_IF_DBG(a) a;
-#else
-# define TOKENIZE_KEY_VAL_IF_DBG(a)
-#endif
-
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #include <cctype>
-#include <graehl/shared/debugprint.hpp>
 #endif
 
 namespace {  //anon
@@ -455,20 +445,13 @@ void tokenize_key_val_pairs(const std::string &s, F &f,char pair_sep=',',char ke
     for (It i=s.begin(),e=s.end();;) {
         for(It key_beg=i; ;++i) {
             if (i==e) return;
-            TOKENIZE_KEY_VAL_IF_DBG(DBP2(*i,i-s.begin()));
             if (*i == key_val_sep) { // [last,i) is key
-                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("key",string(key_beg,i)));
                 string_to(string(key_beg,i),to_add.first);
                 break; // done key, expect val
             }
         }
         for (It val_beg=++i; ;++i) {
-            TOKENIZE_KEY_VAL_IF_DBG(
-                if (i==e) DBPC2("<END>",i-s.begin());
-                DBP2(*i,i-s.begin());
-                );
             if (i == e || *i == pair_sep) {
-                TOKENIZE_KEY_VAL_IF_DBG(DBPC2("val",string(val_beg,i)));
                 string_to(string(val_beg,i),to_add.second);
                 f(to_add);
                 if (i==e) return;

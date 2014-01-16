@@ -47,6 +47,7 @@
 
 #if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
 # include <graehl/shared/configure_program_options.hpp>
+# include <graehl/shared/configurable.hpp>
 #endif
 
 #include <graehl/shared/assign_traits.hpp>
@@ -203,6 +204,7 @@ struct main {
 #else
 #endif
   {
+    help = false;
     help_exitcode=0;
     if (random)
       allow_random();
@@ -600,10 +602,8 @@ public:
       finish_configure();
       confs.init(to_cerr);
       exec->set_main_argv(argc,argv);
-      if (exec->is_help()) {
-        show_help(std::cout);
+      if (bopt.add_help && exec->maybe_po_help(std::cout))
         return false;
-      }
       confs.store(to_cerr);
 #else
       parsed_options po=all_options().parse_options(argc,argv,&get_positional());

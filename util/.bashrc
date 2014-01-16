@@ -291,17 +291,18 @@ case $HOST in
 esac
 
 if [ "$ON64" ] ; then
-    [ "$ONHPC" ] && HOSTBASE=$isd/hpc-opteron
     ARCH64BASE=${ARCHBASE}64
     HOST32BASE=${HOSTBASE}-i686
     PREFIXES="$ARCHBASE $ARCH64BASE $HOSTBASE"
 else
-    [ "$ONHPC" ] && HOSTBASE=$isd/hpc
     ARCH64BASE=""
     HOST32BASE=""
     PREFIXES="$ARCHBASE $ARCH64BASE $HOST32BASE $HOSTBASE"
 fi
 
+if [[ -d /usr/x11/bin ]] ; then
+  PREFIXES+=" /usr/x11/bin"
+fi
 
 function set_extra_paths {
     set_paths $PREFIXES $*

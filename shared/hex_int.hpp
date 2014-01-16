@@ -21,8 +21,16 @@ struct hex_int {
   typedef typename signed_for_int<I>::unsigned_t U;
   I i;
   typedef void leaf_configure;
-  friend inline void string_to_impl(std::string const& s,hex_int &me) {
-    string_to(s,me.i);
+  void assign(std::string const& s, bool complete = true) {
+    std::string::size_type const sz = s.size();
+    if (sz >= 2 && s[0]=='0' && s[1] == 'x')
+      i = (I)hextou<U>(&s[2], &s[sz]);
+    else
+      string_to(s, i);
+  }
+
+  friend inline void string_to_impl(std::string const& s, hex_int &me) {
+    me.assign(s);
   }
   friend inline std::string type_string(hex_int const& me) {
     return "(hexadecimal) "+type_string(me.i);
@@ -30,9 +38,9 @@ struct hex_int {
 
   hex_int() : i() {}
   explicit hex_int(I i) : i(i) {}
-  explicit hex_int(std::string const& s) {string_to(s,i);}
-  operator I() const { return i; }
-  operator I&() { return i; }
+  explicit hex_int(std::string const& s) { assign(s); }
+  operator I const& () const { return i; }
+  operator I& () { return i; }
 
   typedef hex_int<I> self_type;
   TO_OSTREAM_PRINT
@@ -63,6 +71,7 @@ struct hex_int {
       s>>i;
     }
   }
+
 };
 
 template <class I>
@@ -80,12 +89,12 @@ DEFINE_HEX_INT(int32_t);
 DEFINE_HEX_INT(int64_t);
 #endif
 
-//only have to int and long with hex using string_to - e.g. int64_t - check strtoull existing?
-#define HEX_USE_STRING_TO(unsigned) \
-template <class S> \
-void string_to(S const& s,hex_int<unsigned> &i) { \
-  string_to(s,i.i); \
-}
+DEFINE_HEX_INT(uint8_t);
+DEFINE_HEX_INT(uint16_t);
+DEFINE_HEX_INT(uint32_t);
+#if HAVE_64_BITS
+DEFINE_HEX_INT(uint64_t);
+#endif
 
 }//ns
 

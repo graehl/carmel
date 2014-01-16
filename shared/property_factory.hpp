@@ -85,15 +85,27 @@ struct property_traits<graehl::identity_offset_map> : graehl::identity_offset_ma
 
 namespace graehl {
 
+template <class T, class Size = unsigned>
+struct array_pmap : boost::put_get_helper<T&, array_pmap<T> >, boost::shared_array<T>
+{
+  typedef Size size_type;
+  typedef Size key_type;
+  typedef T value_type;
+  typedef T& reference;
+  typedef boost::lvalue_property_map_tag category;
+  array_pmap() {}
+  explicit array_pmap(Size n)
+      : boost::shared_array<T>(new T[n])
+  {}
+};
+
 // specialize, unless you have integral [0...size) descriptors
 template <class G,class ptag>
 struct property_factory {
-protected:
-  typedef identity_offset_map offset_map;
 public:
   typedef typename size_traits<G,ptag>::size_type init_type;
   init_type N;
-  explicit /* for implicit copy */ property_factory(G const& g) : N(size(g,ptag())) {}
+  explicit property_factory(G const& g) : N(size(g,ptag())) {}
   template <class V>
   init_type init() const {
     return N;
@@ -104,9 +116,13 @@ public:
     rebind(property_factory const& p) : p(p) {}
     rebind(rebind const& o) : p(o.p) {}
     init_type init() const { return p.template init<V>(); }
-    typedef boost::shared_array_property_map<V,offset_map> reference;
+    typedef array_pmap<V, init_type> reference;
     typedef reference impl;
   };
+  template <class Val>
+  typename rebind<Val>::reference construct() const {
+    typename rebind<Val>::reference(N);
+  }
 };
 
 template <class V,class G,class ptag>

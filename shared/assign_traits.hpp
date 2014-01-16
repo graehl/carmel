@@ -32,7 +32,7 @@ void assign_impl(T &t,T const& from)
 template <class T>
 void assign_any_impl(T &t,boost::any const& from)
 {
-  t=boost::any_cast<T>(from);
+  t = boost::any_cast<T>(from);
 }
 
 struct assign_traits_exception : std::exception

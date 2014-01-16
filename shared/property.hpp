@@ -95,6 +95,7 @@ struct ArrayPMapImp
 
   explicit ArrayPMapImp(unsigned size=0) : ind(), vals(size) {}
   ArrayPMapImp(unsigned size,offset_map o) : ind(o), vals(size) {}
+  explicit ArrayPMapImp(std::pair<unsigned,offset_map> const& init) : ind(init.second), vals(init.first) {}
   operator Vals & ()  {
     return vals;
   }
@@ -167,6 +168,10 @@ struct ArrayPMapFactory : public std::pair<unsigned,offset_map> {
     typedef ArrayPMapImp<R,offset_map> implementation;
     typedef boost::reference_wrapper<implementation> reference;
   };
+  template <class Val>
+  typename rebind<Val>::reference construct() const {
+    typename rebind<Val>::reference(rebind<Val>::implementation(*this));
+  }
 };
 
 
