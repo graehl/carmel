@@ -16,17 +16,19 @@
 
 namespace graehl {
 
-struct edge_tag {};
+struct edge_tag { edge_tag() {} };
 
-struct vertex_tag {};
+struct vertex_tag { vertex_tag() {} };
 
+#include <graehl/shared/warning_compiler.h>
+CLANG_DIAG_OFF(unused-variable)
 namespace {
-edge_tag edgeT;
-vertex_tag vertexT;
+edge_tag const edgeT;
+vertex_tag const vertexT;
 }
+CLANG_DIAG_ON(unused-variable)
 
 template <class G,class T> struct graph_object;
-
 
 template <class G> struct graph_object<G,edge_tag> {
     typedef typename boost::graph_traits<G>::edge_descriptor descriptor;

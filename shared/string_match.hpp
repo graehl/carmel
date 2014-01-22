@@ -197,8 +197,8 @@ equal_streams_as_seq(Istream &i1,Istream &i2)
     */
     ParseAs v1,v2;
     for (;;) {
-        bool got1=i1>>v1;
-        bool got2=i2>>v2;
+        bool got1 = (bool)(i1>>v1);
+        bool got2 = (bool)(i2>>v2);
         if (got1) {
             if (!got2) return false; //2 ended first
         } else {

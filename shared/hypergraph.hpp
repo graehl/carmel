@@ -42,10 +42,11 @@
 namespace graehl {
 
 struct hyperarc_tag {
+  hyperarc_tag() {}
 };
 
 namespace {
-hyperarc_tag hyperarcT;
+hyperarc_tag const hyperarcT;
 }
 
 

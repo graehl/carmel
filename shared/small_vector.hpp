@@ -468,7 +468,6 @@ struct small_vector {
 
   template <class ForwardIter>
   inline void append(ForwardIter i,ForwardIter e) {
-    size_type N=(size_type)std::distance(i,e);
     size_type s=data.stack.sz_;
     size_type addsz=(size_type)(e-i);
     resize_up_unconstructed(s+addsz);

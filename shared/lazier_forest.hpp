@@ -13,6 +13,8 @@
 #include <graehl/shared/int_hash_map.hpp>
 #include <boost/pool/pool.hpp>
 
+#include <graehl/shared/warning_compiler.h>
+CLANG_DIAG_OFF(unused-variable)
 namespace graehl {
 
 template <class Derivation>
@@ -470,5 +472,6 @@ struct lazier_forest : FilterFactory::filter_type // empty base class opt. - may
 
 
 }
+CLANG_DIAG_ON(unused-variable)
 
 #endif // GRAEHL_SHARED__LAZIER_FOREST_HPP

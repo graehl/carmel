@@ -1,14 +1,168 @@
-xmtx=/.auto/home/graehl/x
-cruns() {
+case $(uname) in
+    Darwin)
+        lwarch=Apple
+        ;;
+    Linux)
+        lwarch=FC12
+        shopt -s globstar || true
+        ;;
+    *)
+        lwarch=Windows ;;
+esac
+xmtx=$(echo ~/x)
+if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
+    xmtx=/Users/graehl/x
+fi
+if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
+    xmtx=/.auto/home/graehl/x
+fi
+py=$(echo ~/x/python)
+export WORKSPACE=$xmtx
+xmtextbase=$(echo ~/c/xmt-externals)
+xmtext=$xmtextbase/$lwarch
+export XMT_EXTERNALS_PATH=$xmtext
+xmtlib=$xmtext/libraries
+xmtlibshared=$xmtextbase/Shared/cpp/libraries
+c-sync() {
+    sync2 $chost "$@"
+}
+home-c-sync() {
+    (cd
+    sync2 $chost "$@"
+    )
+}
+c-make() {
+    local tar=${1?target}
+    shift
+    (set -e;
+        cd ~/x; mend;
+        local branch=`git_branch`
+        pushc $branch
+        c-s macco $branch
+        if [[ "$*" ]] ; then
+            c-s BUILD=${BUILD:-Debug} threads=$threads makeh $tar '&&' "$@"
+        else
+            c-s BUILD=${BUILD:-Debug} threads=$threads makeh $tar
+        fi
+    )
+}
+cc-for() {
     ( set -e
-    for chost in c-ydong c-jgraehl c-mdreyer; do
-        echo2 chost=$chost crun "$@"
-        chost=$chost crun "$@"
-    done
+        for chost in c-ydong c-jgraehl c-mdreyer; do
+            echo2 chost=$chost "$@"
+            chost=$chost "$@"
+        done
+    )
+}
+cc-to() {
+    cc-for c-to "$@"
+}
+c-s() {
+    local chost=${chost:-c-jgraehl}
+    local fwdenv="gccfilter=$gccfilter"
+    local pre=". ~/.e"
+    local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
+    if [[ $ontunnel ]] ; then
+        sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
+    else
+        sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
+    fi
+}
+cc-s() {
+    forcs c-s "$@"
+}
+c-compile() {
+    c-s BUILD=$BUILD x-compile "$@"
+}
+c-xmtcompile() {
+    c-s BUILD=$BUILD xmtcompile "$@"
+}
+b-r() {
+    BUILD=Release
+}
+b-d() {
+    BUILD=Debug
+}
+x-compile() {
+    (
+        set -e
+        cd $xmtx/${BUILD:-Release}
+        local dir=$1/CMakeFiles/$2.dir
+        require_dir $dir
+        make -f $dir/build.make $dir/src/$2.cpp.o
+    )
+}
+xmtcompile() {
+    x-compile xmt XMT
+}
+addpythonpath() {
+    if ! [[ $PYTHONPATH ]] || ! [[ $PYTHONPATH = *$1* ]] ; then
+        if [[ $PYTHONPATH ]] ; then
+            export PYTHONPATH=$1:$PYTHONPATH
+        else
+            export PYTHONPATH=$1
+        fi
+    fi
+}
+fieldn() {
+    awk '{ print $'${1:-1}'; }'
+}
+countcpus() {
+    grep ^processor /proc/cpuinfo | wc -l | fieldn 1
+}
+ncpus() {
+    if [[ $lwarch = Apple ]] || ! [[ -r /proc/cpuinfo ]] ; then
+        if [[ $usecpus ]] ; then
+            echo $usecpus
+        else
+            echo 1
+        fi
+    else
+        local actual=`countcpus`
+        local r=$((actual*2))
+        if [[ `hostname` = c-mdreyer ]]; then
+            r=$actual
+        fi
+        echo $r
+        #echo "using -j$r,actual cpus=$actual" 1>&2
+    fi
+}
+MAKEPROC=${MAKEPROC:-$(ncpus)}
+shuf() {
+    awk 'BEGIN { srand() } { print rand() "\t" $0 }' | sort -n | cut -f2-
+}
+dtest() {
+    chost=c-mdreyer c-test "$@"
+}
+ktest() {
+    chost=c-ydong c-test "$@"
+}
+stun() {
+    ssh -f -N tun
+}
+addpythonpath $xmtx/python $xmtextbase/Shared/python
+c-c() {
+    chost=c-jgraehl
+}
+k-c() {
+    chost=c-ydong
+}
+d-c() {
+    chost=c-mdreyer
+}
+tocabs() {
+    tohost $chost "$@"
+}
+c-to() {
+    tohostp $chost "$@"
+}
+home-c-to() {
+    (cd ~
+        c-to "$@"
     )
 }
 newbranches() {
-    cruns "cd ~/x;newbranch $1"
+    cc-s "cd ~/x;newbranch $1"
 }
 uprelocal() {
     upre localhost
@@ -29,31 +183,12 @@ save12pre() {
     echo2 $pre
 }
 cregs() {
-    save12pre ~/tmp/cregs crun yreg "$@"
+    save12pre ~/tmp/cregs c-s yreg "$@"
 }
 kregs() {
     save12pre ~/tmp/kregs krun yregr "$@"
 }
-if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
-    xmtx=/Users/graehl/x
-fi
-if [[ $HOST = c-ydong ]] ; then
-    xmtx=/.auto/home/graehl/x
-fi
 xmtr=$xmtx/RegressionTests
-case $(uname) in
-    Darwin)
-        lwarch=Apple
-        ;;
-    Linux)
-        lwarch=FC12
-        shopt -s globstar || true
-        ;;
-    *)
-        lwarch=Windows ;;
-esac
-export WORKSPACE=$xmtx
-export XMT_EXTERNALS_PATH=$racerext
 
 touchnewerfile=/tmp/graehl.newer.than
 touchnewer() {
@@ -74,23 +209,46 @@ binelse() {
 }
 extra_include=$xmtx
 cpps_code_path=$xmtx/xmt
-cpps_defines="-DMAX_LMS=2"
+cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I/users/graehl/x/xmt/TinyXMLCPP -I/users/graehl/x/xmt/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
+cpps_flags="-std=c++11 -DCPP11 -ftemplate-depth=255"
 cppparses() {
     (
         set -e
         local newerarg=
         if [[ -f $touchnewerfile ]] ; then
-            newerarg="-newer $touchnewerfile"
+            newerarg="! -neweraa $touchnewerfile"
+        else
+            touch $touchnewerfile
         fi
         if [[ $force ]] ; then
             newerarg=
         fi
-        for f in "$@" `find $xmtx/xmt $newerarg -name '*.cpp'`; do
-            echo cppparse "$f" 1>&2
-            cppparse "$f"
+        echo "find $xmtx/xmt $newerarg -name '*.cpp'"
+        ls -ul $touchnewerfile
+        touch $touchnewerfile.newest
+        local shuf=shuf
+        if [[ $noshuf ]] ; then
+            shuf=cat
+        fi
+        for f in "$@" `find $xmtx/xmt $newerarg -name '*.cpp' | $shuf`; do
+            if [[ -f $touchnewerfile.newest ]] ; then
+                mv -f $touchnewerfile.newest $touchnewerfile
+            fi
+            local b=`basename $f`
+            if [[ ${b#trash} = $b ]] && [[ $b != HgToReplaceFst.cpp ]] &&
+                [[ $b != cmph.cpp ]] &&
+                [[ $b != kenlm.cpp ]] &&
+                [[ ${b%Mapper.cpp} = $b ]] &&
+                [[ ${b%biglm.cpp} = $b ]] &&
+                [[ $b != TestLatticeMinBayesRisk.cpp ]]
+            then
+              ls -ul $f
+              echo cppparse "$f" 1>&2
+              cppparse "$f"
+              touch $f
+            fi
         done
-        touchnewer
-    )
+    ) 2>&1 | tee ~/tmp/cppparses.hpp
 }
 showparses() {
     (set -e
@@ -118,7 +276,7 @@ cppparse() {
     if [[ $cc = clang ]] ; then
         warnarg+=" -Wno-attributes -Wno-logical-op-parentheses -Wno-reorder"
     fi
-    local ccarg="-x c++ -fsyntax-only $includeargs $warnarg $cpps_defines"
+    local ccarg="-x c++ -fsyntax-only $includeargs $warnarg $cpps_defines $cpps_flags"
     [[ $verbose ]] && echo $cc $ccarg "$@" 1>&2
     TERM=dumb $cc $ccarg "$@"
 }
@@ -136,10 +294,10 @@ yregs() {
     for i in `seq 1 10`; do save12 /tmp/krun.$i krun yregr CompoundSplitter/regtest-fin.yml | grep FAIL ; done
 }
 krun() {
-    chost=c-ydong crun "$@"
+    chost=c-ydong c-s "$@"
 }
 drun() {
-    chost=c-mdreyer crun "$@"
+    chost=c-mdreyer c-s "$@"
 }
 sd() {
     chost=c-mdreyer sc "$@"
@@ -173,19 +331,19 @@ pushc() {
         set -e
         if true || [[ $force ]] ; then
             # avoid non-fast fwd msg
-            git push -u ${chost:-c-jgraehl} :$b || crun "cd x;newbranch $b;git co master"
+            git push -u ${chost:-c-jgraehl} :$b || c-s "cd x;newbranch $b;git co master"
         fi
         git push -u ${chost:-c-jgraehl} $b
     )
 }
-lintests() {
+c-tests() {
     cwith test=1 raccm
 }
-linvgtest() {
-    linmake Test$1 vgTest$1
+c-vgtest() {
+    c-make Test$1 vgTest$1
 }
-lintest() {
-    linmake Test$1 Test$1
+c-test() {
+    c-make Test$1 Test$1
 }
 gitmsg() {
     git log -n 1 "$@"
@@ -292,7 +450,6 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 err() {
     echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $@" >&2
 }
-py=$(echo ~/x/python)
 pkills() {
     for f in c-ydong c-jgraehl c-mdreyer gitbuild1 gitbuild2; do
         ssh $f ". ~/u/aliases.sh;pkill '$*'"
@@ -619,9 +776,9 @@ gitdiff() {
 }
 pytimeit() {
     echo "$@"
-    for py in pypy python ; do
-        echo -n "$py: "
-        $py -mtimeit -s"$@"
+    for f in pypy python ; do
+        echo -n "$f: "
+        $f -mtimeit -s"$@"
     done
 }
 gitunrm1() {
@@ -925,10 +1082,10 @@ ccp() {
     )
 }
 ccat() {
-    crun cat "$*"
+    c-s cat "$*"
 }
 csave() {
-    save12 ~/tmp/crun.`filename_from $1 $2` crun "$@"
+    save12 ~/tmp/c-s.`filename_from $1 $2` c-s "$@"
 }
 creg() {
     save12 ~/tmp/creg.`filename_from "$@"` cwith yreg "$@"
@@ -1162,7 +1319,7 @@ yreg() {
         if [[ $memcheck ]] || [[ $MEMCHECKREGTEST -eq 1 ]] ; then
             memcheckparam=--memcheck
         fi
-        local REGTESTPARAMS="$REGTESTPARAMS $memcheckparam -b $racer/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
+        local REGTESTPARAMS="$REGTESTPARAMS $memcheckparam -b $xmtx/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
         if [[ $exitfail != 0 ]] ; then
             REGTESTPARAMS_=" -X"
         fi
@@ -1223,17 +1380,17 @@ sd() {
 }
 kwith() {
     (
-        chost=c-ydong linwith "$@"
+        chost=c-ydong c-with "$@"
     )
 }
 dwith() {
     (
-        chost=c-mdreyer linwith "$@"
+        chost=c-mdreyer c-with "$@"
     )
 }
 cwith() {
     (
-        chost=c-jgraehl linwith "$@"
+        chost=c-jgraehl c-with "$@"
     )
 }
 kjen() {
@@ -1246,13 +1403,13 @@ cjen() {
     chost=c-jgraehl linjen "$@"
 }
 kmk() {
-    chost=c-ydong linmake "$@"
+    chost=c-ydong c-make "$@"
 }
 dmk() {
-    chost=c-mdreyer linmake "$@"
+    chost=c-mdreyer c-make "$@"
 }
 cmk() {
-    chost=c-jgraehl linmake "$@"
+    chost=c-jgraehl c-make "$@"
 }
 gjen() {
     (set -e
@@ -1279,7 +1436,7 @@ racm() {
         set -e
         racb ${1:-Debug}
         shift || true
-        cd $racerbuild
+        cd $xmtbuild
         local prog=$1
         local maketar=
         if [ "$prog" ] ; then
@@ -1319,7 +1476,7 @@ racm() {
 racc() {
     racb ${1:-Debug}
     shift || true
-    cd $racerbuild
+    cd $xmtbuild
     if [[ $HOST = $chost ]] ; then
         export USE_BOOST_1_50=1
     fi
@@ -1915,51 +2072,38 @@ substxmt() {
         substi "$@" $(ack --ignore-dir=LWUtil --ignore-dir=graehl --cpp -f)
     )
 }
-linwith() {
+c-with() {
     (set -e;
-        touchnewer
+        #touchnewer
         chost=${chost:-c-jgraehl}
         cd ~/x; mend;
         local branch=`git_branch`
         pushc $branch
-        crun macco $branch
-        crun "$@"
-    )
-}
-linmake() {
-    local tar=${1?target}
-    shift
-    (set -e;
-        cd ~/x; mend;
-        local branch=`git_branch`
-        pushc $branch
-        crun macco $branch
+        c-s macco $branch
         if [[ "$*" ]] ; then
-            crun BUILD=${BUILD:-Debug} makeh $tar '&&' "$@"
-        else
-            crun BUILD=${BUILD:-Debug} makeh $tar
+            c-s "$@"
         fi
     )
 }
-linmaker() {
-    BUILD=Release linmake "$@"
+c-maker() {
+    BUILD=Release c-make "$@"
 }
 kmaker() {
-    chost=c-ydong BUILD=Release linmake "$@"
+    chost=c-ydong BUILD=Release c-make "$@"
 }
 kmake() {
-    chost=c-ydong BUILD=Debug linmake "$@"
+    chost=c-ydong BUILD=Debug c-make "$@"
 }
 linregr() {
-    crun yregr "$@"
+    c-s yregr "$@"
 }
 linjen() {
     cd ~/x; mend;
     local branch=`git_branch`
     pushc $branch
     (set -e;
-        crun macco $branch
-        crun UPDATE=${UPDATE:-0} nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        c-s macco $branch
+        c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=${UPDATE:-0} nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -1985,7 +2129,10 @@ jen() {
     if [[ $nightly ]] ; then
         nightlyargs="--memcheck --speedtest"
     fi
-    MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads ${threads:-`ncpus`} --no-cleanup --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    local threads=${threads:-`ncpus`}
+    set -x
+    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$DUPATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    set +x
     echo
     echo $log
     fgrep '... FAIL' $log | grep -v postagger | sort > $log.fails
@@ -2258,7 +2405,7 @@ linbuild() {
     cd $xmtx
     local branch=$(git_branch)
     mend
-    crun build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
+    c-s build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
 }
 splitape() {
     local file=${1%.ape}
@@ -2302,13 +2449,13 @@ dryreg() {
     (set -e;
         cd $xmtx/RegressionTests
         if [[ -d $1 ]] ; then
-            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v "$@"
+            ./runYaml.py $args -b $xmtx/${BUILD:-Debug} -n -v "$@"
         elif [[ -f $1 ]] ; then
-            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y "$(basename $1)"
+            ./runYaml.py $args -b $xmtx/${BUILD:-Debug} -n -v -y "$(basename $1)"
         elif [[ $1 ]] ; then
-            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v -y \*$1\*
+            ./runYaml.py $args -b $xmtx/${BUILD:-Debug} -n -v -y \*$1\*
         else
-            ./runYaml.py $args -b $racer/${BUILD:-Debug} -n -v
+            ./runYaml.py $args -b $xmtx/${BUILD:-Debug} -n -v
         fi
     )
 }
@@ -2341,15 +2488,10 @@ killbranch1() {
     git branch -D "$1" || true
 }
 racer=$(echo $xmtx)
-export WORKSPACE=$racer
-racerextbase=$(echo ~/c/xmt-externals)
-racerext=$racerextbase/$lwarch
-racerlib=$racerext/libraries
-racerlibshared=$racerextbase/Shared/cpp/libraries
 if [[ $HOST = c-ydong ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/tools/cmake/bin:$PATH
 fi
-GRAEHL_INCLUDE=$racer/xmt
+GRAEHL_INCLUDE=$xmtx/xmt
 
 ffmpegaudio1() {
     local input=$1
@@ -2444,7 +2586,7 @@ g1po() {
     )
 }
 overt() {
-    pushd $racer/xmt/graehl/shared
+    pushd $xmtx/xmt/graehl/shared
     gsh=~/g/shared
     for f in *.?pp; do
         rm -f $gsh/$f
@@ -2457,8 +2599,6 @@ commt()
     (set -e
         overt
         compush "$@"
-        popd
-        popd
     )
 }
 branchthis() {
@@ -2840,8 +2980,8 @@ makerun() {
     fi
     shift
     cd $xmtx/${BUILD:-Debug}
-    local cpus=$(ncpus)
-    echo2 "$cpus cpus ... -j$cpus"
+    local cpus=${threads:-`ncpus`}
+    echo2 "makerun $cpus cpus ... -j$cpus"
     (set -e
         dumbmake $exe VERBOSE=1 -j$cpus || exit $?
         if [[ $exe != test ]] ; then
@@ -2977,7 +3117,7 @@ lc() {
 lnxmtlib() {
     d=${1?arg1: dest dir}
     mkdir -p $d
-    for f in `find $racerext/libraries -name libd -prune -o -name '*.so'`; do
+    for f in `find $xmtext/libraries -name libd -prune -o -name '*.so'`; do
         echo $f
         force=1 lnreal $f $d/
     done
@@ -3034,7 +3174,7 @@ empull() {
     )
 }
 uext() {
-    cd $racerext
+    cd $xmtext
     svn update
 }
 comdocs() {
@@ -3080,10 +3220,10 @@ showcpp() {
             os+=" $o"
             rm -f $o
             f=$(realpath $f)
-            pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DTIXML_USE_TICPP -DBOOST_TEST_DYN_LINK -DHAVE_SRILM -DHAVE_KENLM -DHAVE_OPENFST -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$racerlib/utf8 -I$racerlib/boost_1_49_0/include -I$racerlib/lexertl-2012-07-26 -I$racerlib/log4cxx-0.10.0/include -I$racerlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$racerlib/BerkeleyDB.4.3/include -I/usr/local/include -I$racerlib/openfst-1.2.10/src -I$racerlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
-                -I $racerlib/db-5.3.15 \
-                -I $racerlib/yaml-cpp-0.3.0-newapi/include \
-                -I$racerlibshared/utf8 -I$racerlibshared/openfst-1.2.10/src -I$racerlibshared/tinyxmlcpp-2.5.4/include \
+            pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DTIXML_USE_TICPP -DBOOST_TEST_DYN_LINK -DHAVE_SRILM -DHAVE_KENLM -DHAVE_OPENFST -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlib/utf8 -I$xmtlib/boost_1_49_0/include -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
+                -I $xmtlib/db-5.3.15 \
+                -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
+                -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include \
                 -E -x c++ -o $o -c "$f" && emacs $o
             popd
         done
@@ -3270,9 +3410,6 @@ homers() {
     homer Hypergraph
     homer LWUtil
 }
-#racer=$racer/xmt
-#racer=$racer
-#racers=$racer/xmt
 view() {
     if [[ $lwarch = Apple ]] ; then
         open "$@"
@@ -3308,7 +3445,7 @@ substigrepq() {
 }
 substrac() {
     (
-        pushd $racer/xmt
+        pushd $xmtx/xmt
         substi "$@" $(ack --cpp -f)
     )
 }
@@ -3441,7 +3578,7 @@ svnswitchlocal() {
 }
 rxtun() {
     (
-        cd $racer
+        cd $xmtx
         svn relocate $rxsvn $rxlocal
         revboardrc
     )
@@ -3449,7 +3586,7 @@ rxtun() {
 #switch --relocate
 rxlw() {
     (
-        cd $racer
+        cd $xmtx
         svn relocate $rxlocal $rxsvn
         revboardrc
     )
@@ -3476,7 +3613,7 @@ revx() {
     if [[ $dryrun ]] ; then
         dr="n"
     fi
-    pushd $racer
+    pushd $xmtx
     local dry=1
     local carg=
     if [[ $change ]] ; then carg="--svn-changelist=$change"; fi
@@ -3494,7 +3631,7 @@ rerevx() {
     revxcmd -r "$@"
 }
 revxcmd() {
-    pushd $racer
+    pushd $xmtx
     if [[ $change ]] ; then carg="--svn-changelist=$change"; fi
     post-review "$@" $carg --username=graehl --password=cheese
     set +x
@@ -3778,7 +3915,7 @@ lnshared() {
 lnshared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/xmt/graehl/shared
+    local d=$xmtx/xmt/graehl/shared
     local g=$d/$1
 
     if ! [ -r $f ] ; then
@@ -3800,7 +3937,7 @@ lnshared1() {
 racershared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$racer/xmt/graehl/shared
+    local d=$xmtx/xmt/graehl/shared
     local g=$d/$1
     if [ -f $g ] ; then
         if [ "$force" ] ; then
@@ -3811,12 +3948,12 @@ racershared1() {
     fi
 }
 usedshared() {
-    (cd $racer/xmt/graehl/shared/; ls *.?pp)
+    (cd $xmtx/xmt/graehl/shared/; ls *.?pp)
 }
 diffshared1() {
     local s=~/t/graehl/shared/
     local f=$s/"$1"
-    local d=$racer/xmt/graehl/shared/
+    local d=$xmtx/xmt/graehl/shared/
     diff -u -w $f $d/$1
 }
 diffshared() {
@@ -3830,7 +3967,7 @@ lnhg1() {
     local d=$xmtx/$branch
     local pre=$1
     shift
-    rpathsh=$racerlib/rpath.sh
+    rpathsh=$xmtlib/rpath.sh
     echo "$d" > ~/bin/racerbuild.dirname
     for f in $d/$pre*; do
         [[ -x $pathsh ]] && $rpathsh $f 1
@@ -3839,16 +3976,16 @@ lnhg1() {
             local b=`basename $f`
             for t in $b egdb$b gdb$b vg$b; do
                 echo $t
-                ln -sf $racer/run.sh ~/bin/$t
-                ln -sf $racer/run.sh ~/bin/${t}Release
+                ln -sf $xmtx/run.sh ~/bin/$t
+                ln -sf $xmtx/run.sh ~/bin/${t}Release
             done
         fi
     done
 }
 rpathhg() {
-    rpathsh=$racer/3rdParty/Apple/rpath.sh
+    rpathsh=$xmtx/3rdParty/Apple/rpath.sh
     local b=${1:-Debug}
-    find $racer/$b -type f -exec $rpathsh {} \;
+    find $xmtx/$b -type f -exec $rpathsh {} \;
 }
 lnhg() {
     lnhg1 "$1"/"$1"
@@ -3893,7 +4030,7 @@ ackc() {
     ack --ignore-dir=3rdParty --pager="less -R" --cpp "$@"
 }
 freshx() {
-    (set -e;  racer=~/c/fresh/xmt; cd $racer ; [ "$noup" ] || svn update; raccm ${1:-Debug}; cd $racer; RegressionTests/run.pl)
+    (set -e;  racer=~/c/fresh/xmt; cd $xmtx ; [ "$noup" ] || svn update; raccm ${1:-Debug}; cd $xmtx; RegressionTests/run.pl)
 }
 linx() {
     ssh $chost ". ~/.e;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests freshx $*"
@@ -3931,12 +4068,11 @@ sa2c() {
     )
 }
 s2c() {
-
     #elisp x/3rdParty
-    (cd
+    (cd ~
         set -e
-        toc x/run.sh
-        toc x/xmtpath.sh
+        tocs x/run.sh
+        tocs x/xmtpath.sh
         for d in u g script bugs .gitconfig ; do
             sync2 $chost $d
         done
@@ -3956,31 +4092,6 @@ sconsd() {
 }
 #sudo gem install git_remote_branch --include-dependencies - gives the nice 'grb' git remote branch cmd
 #see aliases in .gitconfig #git what st ci co br df dc lg lol lola ls info ign
-
-
-ncpus() {
-    if [[ $lwarch = Apple ]] || ! [[ -f /proc/cpuinfo ]] ; then
-        if [[ $usecpus ]] ; then
-            echo $usecpus
-        else
-            echo 1
-        fi
-    else
-        local actual=`countcpus`
-        local r=$((actual * 2))
-        if [[ `hostname` = c-mdreyer ]]; then
-            r=$actual
-        fi
-        echo $r
-        #echo2 "using -j$r,actual cpus=$actual"
-    fi
-}
-countcpus() {
-    grep ^processor /proc/cpuinfo | wc -l
-}
-MAKEPROC=${MAKEPROC:-$(ncpus)}
-
-
 addld() {
     if [[ $lwarch = Apple ]] ; then
         if ! fgrep -q "$1" <<< "$DYLD_FALLBACK_LIBRARY_PATH" ; then
@@ -4029,11 +4140,11 @@ racb() {
     if [[ $debug = 1 ]] ; then
         build=Debug
     fi
-    racerbuild=$racer/$build
-    racer3=$racer/3rdParty
-    export XMT_EXTERNALS_PATH=$racerext
-    mkdir -p $racerbuild
-    cd $racerbuild
+    racerbuild=$xmtx/$build
+    racer3=$xmtx/3rdParty
+    export XMT_EXTERNALS_PATH=$xmtext
+    mkdir -p $xmtxbuild
+    cd $xmtxbuild
     local buildtyped=$build
     if [[ ${build#Debug} != $build ]] ; then
         buildtyped=Debug
@@ -4054,17 +4165,17 @@ racb() {
     cmarg+=" $CMAKEARGS"
 }
 racd() {
-    cd $racer
+    cd $xmtx
     svn diff -b
 }
 urac() {
     (
-        cd $racer
+        cd $xmtx
         if ! [ "$noup" ] ; then svn update ; fi
     )
 }
 crac() {
-    pushd $racer
+    pushd $xmtx
     local dryc=
     if [[ $dryrun ]] ; then
         dryc=echo
@@ -4095,12 +4206,12 @@ svndifflog() {
     svndiff
 }
 drac() {
-    cd $racer/3rdparty
+    cd $xmtx/3rdparty
     banner 3rdparty svn
     svndifflog 2 "$@"
     echo; echo
     banner racerx svn
-    cd $racer
+    cd $xmtx
     svndifflog 5 "$@"
 }
 runc() {
@@ -4113,12 +4224,6 @@ sc() {
     else
         LANG=$enutf8 mosh --server="LANG=$enutf8 mosh-server" $chost "$@"
     fi
-}
-tocabs() {
-    tohost $chost "$@"
-}
-toc() {
-    tohostp $chost "$@"
 }
 topon() {
     thostp $phost "$@"
@@ -4512,17 +4617,17 @@ mkstamps() {
         \end {center}
 EOF
 
-        for i in `seq 1 $npages`; do
-            # echo '\newpage' >> $stamp
-            echo '\mbox {} \newpage' \
-                >> $stamp
-        done
+for i in `seq 1 $npages`; do
+    # echo '\newpage' >> $stamp
+    echo '\mbox {} \newpage' \
+        >> $stamp
+done
 
-        echo '\end {document}' >> $stamp
+echo '\end {document}' >> $stamp
 
-        local sbase=${stamp%.tex}
-        lat2pdf $sbase
-        echo $sbase.pdf
+local sbase=${stamp%.tex}
+lat2pdf $sbase
+echo $sbase.pdf
     ) | tail -n 1
 }
 pdfnpages() {
@@ -6252,11 +6357,11 @@ tohost1() {
         local u
         user=${user:-`userfor $host`}
         [ "$user" ] && u="$user@"
-        echo scp -r "$f" "$u$host:`dirname $f`"
         local portarg=
         if [[ $port ]] ; then
             portarg=-P$port
         fi
+        echo scp $portarg -r "$f" "$u$host:`dirname $f`/"
         if [ "$dryrun" ] ; then
             showvars_optional relpath
         else
@@ -6806,18 +6911,6 @@ gjam() {
 }
 
 
-addpythonpath() {
-    if ! [[ $PYTHONPATH ]] || ! [[ $PYTHONPATH = *$1* ]] ; then
-        if [[ $PYTHONPATH ]] ; then
-            export PYTHONPATH=$1:$PYTHONPATH
-        else
-            export PYTHONPATH=$1
-        fi
-    fi
-}
-
-addpythonpath $xmtx/python $racerextbase/Shared/python
-
 jpgclean() {
     exiftool -all= ${*:-*.jpg}
 }
@@ -6875,7 +6968,7 @@ if ($remotesubdir) {
 print join(" ",@ARGV)' -- "$@"
 }
 trhomedir() {
-trhome ${remotehome:-'~'} '' "$@"
+    trhome ${remotehome:-'~'} '' "$@"
 }
 tunhost="pontus.languageweaver.com"
 tunport=4640
@@ -6890,15 +6983,4 @@ sshvia() {
 sshlog() {
     echo ssh "$@" 1>&2
     ssh "$@"
-}
-crun() {
-    local chost=${chost:-c-jgraehl}
-    local fwdenv="gccfilter=$gccfilter"
-    local pre=". ~/.e;touchnewer"
-    local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
-    if [[ $ontunnel ]] ; then
-        sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
-    else
-        sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
-    fi
 }

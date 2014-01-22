@@ -320,6 +320,8 @@ inline unsigned long strtoul_complete(char const* s,int base=0) {
 
 inline unsigned strtou_complete_bounded(char const* s,int base=10) {
   unsigned long l=strtoul_complete(s,base);
+#include <graehl/shared/warning_compiler.h>
+  CLANG_DIAG_OFF(tautological-compare)
   if (l<std::numeric_limits<unsigned>::min())
     return std::numeric_limits<unsigned>::min();
   if (l>std::numeric_limits<unsigned>::max())
@@ -338,6 +340,7 @@ inline unsigned strtou_complete_exact(char const* s,int base=10) {
   unsigned long l=strtoul_complete(s,base);
   if (l<std::numeric_limits<unsigned>::min() || l>std::numeric_limits<unsigned>::max())
     THROW_MSG(string_to_exception,"Out of range for unsigned int " UINTRANGE_STR ": '"<<s<<"'");
+  CLANG_DIAG_ON(tautological-compare)
   return l;
 }
 

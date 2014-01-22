@@ -152,6 +152,8 @@ struct lazy_forest_indent_tag {};
 #include <stdexcept>
 #include <algorithm>
 
+#include <graehl/shared/warning_compiler.h>
+CLANG_DIAG_OFF(unused-variable)
 namespace graehl {
 
 typedef LAZY_FOREST_KBEST_SIZE lazy_kbest_index_type;
@@ -454,7 +456,7 @@ class lazy_forest
   typedef forest self_type;
 
 
-  lazy_forest(Environment const& env)
+  explicit lazy_forest(Environment &env)
       : filter_type(env.filter_factory.filter_init())
   {}
 
@@ -918,6 +920,6 @@ operator<<(std::basic_ostream<C, T>& os, typename lazy_forest<DF, FF>::hyperedge
 #endif
 
 }//ns
-
+CLANG_DIAG_ON(unused-variable)
 
 #endif
