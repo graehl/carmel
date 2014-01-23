@@ -40,9 +40,9 @@ c-make() {
         pushc $branch
         c-s macco $branch
         if [[ "$*" ]] ; then
-            c-s BUILD=${BUILD:-Debug} threads=$threads makeh $tar '&&' "$@"
+            c-s BUILD=${BUILD:-Debug} makeh $tar '&&' "$@"
         else
-            c-s BUILD=${BUILD:-Debug} threads=$threads makeh $tar
+            c-s BUILD=${BUILD:-Debug} makeh $tar
         fi
     )
 }
@@ -127,7 +127,6 @@ ncpus() {
         #echo "using -j$r,actual cpus=$actual" 1>&2
     fi
 }
-MAKEPROC=${MAKEPROC:-$(ncpus)}
 shuf() {
     awk 'BEGIN { srand() } { print rand() "\t" $0 }' | sort -n | cut -f2-
 }
@@ -4071,11 +4070,9 @@ s2c() {
     #elisp x/3rdParty
     (cd ~
         set -e
-        tocs x/run.sh
-        tocs x/xmtpath.sh
-        for d in u g script bugs .gitconfig ; do
-            sync2 $chost $d
-        done
+        c-sync u g script bugs .gitconfig
+        cc-to x/run.sh
+        cc-to x/xmtpath.sh
     )
 }
 syncc() {
@@ -6984,3 +6981,4 @@ sshlog() {
     echo ssh "$@" 1>&2
     ssh "$@"
 }
+MAKEPROC=${MAKEPROC:-4}
