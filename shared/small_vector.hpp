@@ -889,10 +889,10 @@ struct small_vector {
     data.heap.capacity_ = new_cap; // set after free_heap (though current allocator doesn't need old capacity)
   }
 
-
   void copy_vals_to_ptr() {
     assert(data.stack.sz_<=kMaxInlineSize);
-    T* newHeapVals = alloc_impl(kInitHeapSize); //note: must use tmp to not destroy data.stack.vals_
+#ifndef __clang_analyzer__
+    T* const newHeapVals = alloc_impl(kInitHeapSize); //note: must use tmp to not destroy data.stack.vals_
     memcpy_n(newHeapVals, data.stack.vals_,
 #if GRAEHL_VALGRIND
              data.stack.sz_
@@ -902,7 +902,8 @@ struct small_vector {
              );
     ;
     data.heap.capacity_ = kInitHeapSize;
-    data.heap.begin_=newHeapVals;
+    data.heap.begin_ = newHeapVals;
+#endif
     // only call if you're going to immediately increase size_ to >kMaxInlineSize
   }
   void ptr_to_small() {

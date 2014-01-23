@@ -9,6 +9,18 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+gerritlog() {
+    chost=git02 c-s tail -${1:-80} /local/gerrit/logs/error_log
+}
+xmtscanf() {
+    save12 ~/tmp/xmtscan.cpp c-with rm -rf ~/x/DebugScan \; xmtcm DebugScan
+}
+xmtscan() {
+    save12 ~/tmp/xmtscan.cpp c-with xmtcm DebugScan
+}
+xscan() {
+    save12 ~/tmp/xmtscan.cpp c-s xmtm DebugScan
+}
 xmtx=$(echo ~/x)
 if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
@@ -23,6 +35,9 @@ xmtext=$xmtextbase/$lwarch
 export XMT_EXTERNALS_PATH=$xmtext
 xmtlib=$xmtext/libraries
 xmtlibshared=$xmtextbase/Shared/cpp/libraries
+c-cat() {
+    c-s catz "$@"
+}
 c-sync() {
     sync2 $chost "$@"
 }
@@ -481,9 +496,11 @@ setjavahome() {
                 jh=$(/usr/libexec/java_home)
                 ;;
             *)
+                export JAVA_HOME=/home/hadoop/jdk1.6.0_24
                 ;;
         esac
     fi
+    export PATH=$JAVA_HOME/bin:$PATH
     export JAVA_HOME=$jh
 }
 setjavahome
@@ -772,9 +789,8 @@ fixgerrit() {
 }
 upext() {
     (set -e
-        cd ~/c/xmt-externals
-        git fetch origin
-        git pull --rebase
+        cd $xmtext
+        remaster
     )
 }
 gitshow() {
@@ -1440,6 +1456,8 @@ macflex() {
     CFLAGS+=" -I/usr/local/opt/flex/include"
     export LDFLAGS CPPFLAGS CFLAGS
 }
+
+scanbuildargs="-v" #-analyzer-headers
 xmtm() {
     (
         set -e
@@ -1462,15 +1480,19 @@ xmtm() {
         MAKEPROC=${MAKEPROC:-$(ncpus)}
         echo2 MAKEPROC=$MAKEPROC
         local premake
+        identifybuild
         if [[ $scanbuild ]] ; then
-            premake=scan-build
+            premake="scan-build -k $scanbuildargs"
         fi
         if [[ $test ]] ; then
             make check
         elif [[ $prog ]] && [[ "$*" ]]; then
             $premake make -j$MAKEPROC $prog && $prog "$@"
         else
-            $premake make -j$MAKEPROC $maketar
+            (
+                set -x
+                CCC_CC=$CCC_CC CCC_CXX=$CCC_CXX $premake make -j$MAKEPROC $maketar VERBOSE=1
+            )
             #VERBOSE=1
         fi
         set +x
@@ -1486,6 +1508,7 @@ xmtm() {
         done
     )
 }
+
 xmtc() {
     racb ${1:-Debug}
     shift || true
@@ -1496,23 +1519,27 @@ xmtcm() {
     xmtc ${1:-Debug}
     xmtm "$@"
 }
+identifybuild() {
+    buildcxxflags=$cxxflags
+    usegcc
+    if [[ $llvm ]] ; then
+        usellvm
+    fi
+    if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
+        useclang
+        buildxcxxflags=-fmacro-backtrace-limit=200
+    fi
+    if [[ $scanbuild ]] || [[ ${build%Scan} != $build ]] ; then
+        usescanbuild
+    fi
+}
 ccmake() {
     local d=${1:-..}
     shift
     (
         rm -f CMakeCache.txt $d/CMakeCache.txt
-        if [[ $llvm ]] ; then
-            usellvm
-        fi
-        usegcc
+        identifybuild
         local cxxf=$cxxflags
-        if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
-            useclang
-            cxxf=-fmacro-backtrace-limit=200
-        fi
-        if [[ $scanbuild ]] || [[ ${build%Scan} != $build ]] ; then
-            usescanbuild
-        fi
         echo "cmake = $(which cmake)"
         CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d -Wno-dev "$@"
     )
@@ -2112,7 +2139,7 @@ linjen() {
     pushc $branch
     (set -e;
         c-s macco $branch
-        c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=${UPDATE:-0} nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 jen() {
     cd $xmtx
@@ -2887,15 +2914,6 @@ newmaster() {
         set -e
         git branch master --track origin/master
         git checkout master
-    )
-}
-remaster() {
-    (set -e
-        co master
-        git fetch origin
-        git pull --stat
-        git rebase
-        [[ $1 ]] && git checkout $1
     )
 }
 squash() {
@@ -4122,6 +4140,7 @@ corac() {
 }
 #sets cmarg
 racb() {
+    setjavahome
     build=${build:-Release}
     build=${1:-$build}
     shift || true
@@ -4130,8 +4149,8 @@ racb() {
     fi
     xmtbuild=$xmtx/$build
     export XMT_EXTERNALS_PATH=$xmtext
-    mkdir -p $xmtxbuild
-    cd $xmtxbuild
+    mkdir -p $xmtbuild
+    cd $xmtbuild
     local buildtyped=$build
     if [[ ${build#Debug} != $build ]] ; then
         buildtyped=Debug
@@ -4151,8 +4170,16 @@ racb() {
     if [[ $HOST = graehl.local ]] || [[ $OS = Darwin ]] ; then
         cmarg+=" -DLOG4CXX_ROOT=/usr/local"
     fi
-    CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX}
+    CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF}
     cmarg+=" $CMAKEARGS"
+    if false ; then
+    if [[ $CC ]] ; then
+        cmarg+="  -DCMAKE_C_COMPILER=$CC"
+    fi
+    if [[ $CXX ]] ; then
+        cmarg+="  -DCMAKE_CXX_COMPILER=$CXX"
+    fi
+    fi
 }
 racd() {
     cd $xmtx
@@ -6974,4 +7001,4 @@ sshlog() {
     echo ssh "$@" 1>&2
     ssh "$@"
 }
-MAKEPROC=${MAKEPROC:-4}
+MAKEPROC=${MAKEPROC:-8}

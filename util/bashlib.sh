@@ -843,8 +843,8 @@ function showargs
 
 is_interactive() {
     case "$-" in
-        *i*)	 return 0 ;;
-        *)	 return 1 ;;
+        *i*)   return 0 ;;
+        *)   return 1 ;;
     esac
 }
 
@@ -1441,7 +1441,7 @@ qwhich() {
     which_quiet "$@"
 }
 where() {
-	  builtin type -a "$@"
+    builtin type -a "$@"
 }
 
 # echocsv 1 2 3 => 1, 2, 3
@@ -2457,7 +2457,7 @@ workflowp=~/workflow
 homereal=`realpath ~`
 traperr
 getrealprog
-libg=$(echo ~/u)
+libg=$(echo ~graehl/u)
 if ! [[ -d $libg ]] || ! [[ -f $libg/libgraehl.pl ]] ; then
     warn missing libgraehl.pl
 fi

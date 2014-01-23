@@ -336,7 +336,7 @@ defaulted_value(T *v,std::string const& default_string)
 
 
 inline void program_options_fatal(std::string const&) NORETURN;
-inline void program_options_fatal(std::string const& msg) {
+inline void program_options_fatal(std::string const& msg) ANALYZER_NORETURN {
   throw std::runtime_error(msg);
 }
 
