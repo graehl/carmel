@@ -40,9 +40,9 @@ c-make() {
         pushc $branch
         c-s macco $branch
         if [[ "$*" ]] ; then
-            c-s BUILD=${BUILD:-Debug} makeh $tar '&&' "$@"
+            c-s BUILD=${BUILD:-Debug} threads=8 makeh $tar '&&' "$@"
         else
-            c-s BUILD=${BUILD:-Debug} makeh $tar
+            c-s BUILD=${BUILD:-Debug} threads=8 makeh $tar
         fi
     )
 }
@@ -71,11 +71,24 @@ c-s() {
 cc-s() {
     forcs c-s "$@"
 }
+c-with() {
+    (set -e;
+        #touchnewer
+        chost=${chost:-c-jgraehl}
+        cd ~/x; mend;
+        local branch=`git_branch`
+        pushc $branch
+        c-s macco $branch
+        if [[ "$*" ]] ; then
+            c-s "$@"
+        fi
+    )
+}
 c-compile() {
-    c-s BUILD=$BUILD x-compile "$@"
+    c-with BUILD=$BUILD x-compile "$@"
 }
 c-xmtcompile() {
-    c-s BUILD=$BUILD xmtcompile "$@"
+    c-with BUILD=$BUILD xmtcompile "$@"
 }
 b-r() {
     BUILD=Release
@@ -336,7 +349,7 @@ pushc() {
     )
 }
 c-tests() {
-    cwith test=1 raccm
+    cwith test=1 xmtcm
 }
 c-vgtest() {
     c-make Test$1 vgTest$1
@@ -415,7 +428,7 @@ brewclang() {
     brew install --HEAD --with-clang "$@"
 }
 clangxmt() {
-    save12 ~/tmp/clangxmt.hpp raccm DebugClang
+    save12 ~/tmp/clangxmt.hpp xmtcm DebugClang
 }
 catgit() {
     local f=$1
@@ -536,9 +549,6 @@ fi
 export CCACHE_BASEDIR=$(realpath ~/x)
 chostfull=$chost.languageweaver.com
 phost=pontus.languageweaver.com
-if [[ $HOST = $chost ]] ; then
-    export USE_BOOST_1_50=1
-fi
 HOME=${HOME:-$(echo ~)}
 DROPBOX=$HOME/dropbox
 octo=$HOME/src/octopress
@@ -1329,8 +1339,8 @@ yreg() {
         if [[ $1 ]] ; then
             if [[ -d $1 ]] ; then
                 save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS "$@"
-            elif [[ -f $1 ]] ; then
-                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"
+            elif [[ -f $1 ]] || [[ ${1#reg} != $1 ]] ; then
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"\*
             else
                 save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y reg\*$1\*ml
             fi
@@ -1430,7 +1440,7 @@ macflex() {
     CFLAGS+=" -I/usr/local/opt/flex/include"
     export LDFLAGS CPPFLAGS CFLAGS
 }
-racm() {
+xmtm() {
     (
         set -e
         racb ${1:-Debug}
@@ -1451,12 +1461,16 @@ racm() {
         fi
         MAKEPROC=${MAKEPROC:-$(ncpus)}
         echo2 MAKEPROC=$MAKEPROC
+        local premake
+        if [[ $scanbuild ]] ; then
+            premake=scan-build
+        fi
         if [[ $test ]] ; then
             make check
         elif [[ $prog ]] && [[ "$*" ]]; then
-            make -j$MAKEPROC $prog && $prog "$@"
+            $premake make -j$MAKEPROC $prog && $prog "$@"
         else
-            make -j$MAKEPROC $maketar
+            $premake make -j$MAKEPROC $maketar
             #VERBOSE=1
         fi
         set +x
@@ -1472,18 +1486,15 @@ racm() {
         done
     )
 }
-racc() {
+xmtc() {
     racb ${1:-Debug}
     shift || true
     cd $xmtbuild
-    if [[ $HOST = $chost ]] ; then
-        export USE_BOOST_1_50=1
-    fi
     ccmake ../xmt $cmarg "$@"
 }
-raccm() {
-    racc ${1:-Debug}
-    racm "$@"
+xmtcm() {
+    xmtc ${1:-Debug}
+    xmtm "$@"
 }
 ccmake() {
     local d=${1:-..}
@@ -1497,7 +1508,10 @@ ccmake() {
         local cxxf=$cxxflags
         if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
             useclang
-            cxxf=-fmacro-backtrace-limit=100
+            cxxf=-fmacro-backtrace-limit=200
+        fi
+        if [[ $scanbuild ]] || [[ ${build%Scan} != $build ]] ; then
+            usescanbuild
         fi
         echo "cmake = $(which cmake)"
         CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d -Wno-dev "$@"
@@ -2005,6 +2019,15 @@ useclang() {
     export CC="$ccache-cc"
     export CXX="$ccache-c++"
 }
+usescanbuild() {
+    local ccache=${ccache:-$(echo ~/bin/ccache)}
+    scanbuild=1
+    export CCC_CC=clang
+    export CCC_CXX=clang++
+    export PATH=/usr/libexec/clang-analyzer/scan-build/:$PATH
+    export CC="ccc-analyzer"
+    export CXX="c++-analyzer"
+}
 gcc48=
 gcc47=1
 #TestWeight release optimizer problem
@@ -2069,19 +2092,6 @@ substxmt() {
     (
         cd $xmtx/xmt
         substi "$@" $(ack --ignore-dir=LWUtil --ignore-dir=graehl --cpp -f)
-    )
-}
-c-with() {
-    (set -e;
-        #touchnewer
-        chost=${chost:-c-jgraehl}
-        cd ~/x; mend;
-        local branch=`git_branch`
-        pushc $branch
-        c-s macco $branch
-        if [[ "$*" ]] ; then
-            c-s "$@"
-        fi
     )
 }
 c-maker() {
@@ -2161,7 +2171,7 @@ ret() {
 shortstamp() {
     date +%m.%d_%H.%M
 }
-raccmsave() {
+xmtcmsave() {
     local BUILD=${1:-Release}
     cd $xmtx
     local gbranch=$(git_branch)
@@ -2230,7 +2240,7 @@ xmtinstall() {
         cd $xmtx
         local gitbranch=${gitbranch:-${2:-master}}
         stamp=$gitbranch.`shortstamp`
-        raccm Release
+        xmtcm Release
         cp $xmtx/Release/xmt/xmt ~/bin/xmt.$stamp
         installed=$xmtx/Release.$stamp
         cp -a $xmtx/Release $installed
@@ -2266,7 +2276,7 @@ rexmt() {
     (set -e
         cd $xmtx
         git pull --rebase
-        racm "$@"
+        xmtm "$@"
     )
 }
 rexmtr() {
@@ -2528,11 +2538,11 @@ macbuild() {
         set -e
         macget $branch
         if [[ $test ]] ; then
-            test=1 raccm $build
+            test=1 xmtcm $build
         fi
         BUILD=$build makeh $tar
         if [[ $all ]] ; then
-            raccm $build
+            xmtcm $build
         fi
         if [[ $reg ]] ; then
             BUILD=$build yreg $regs
@@ -4022,30 +4032,11 @@ lnhgs() {
 rebuildc() {
     (set -e
         s2c
-        ssh $chost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose} tests=${tests:-Hypergraph/Empty} racm Debug"
+        ssh $chost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose} tests=${tests:-Hypergraph/Empty} xmtm Debug"
     )
 }
 ackc() {
     ack --ignore-dir=3rdParty --pager="less -R" --cpp "$@"
-}
-freshx() {
-    (set -e;  racer=~/c/fresh/xmt; cd $xmtx ; [ "$noup" ] || svn update; raccm ${1:-Debug}; cd $xmtx; RegressionTests/run.pl)
-}
-linx() {
-    ssh $chost ". ~/.e;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests freshx $*"
-}
-linxx() {
-    (cd; sync2 $chost x/xmt x/RegressionTests x/docs)
-    ssh $chost ". ~/.e;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests raccm $*"
-}
-
-cmehost=cme01.languageweaver.com
-cmex() {
-    ssh $cmehost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests freshx $*"
-}
-cmexx() {
-    (cd; sync2 $cmehost x/xmt x/RegressionTests x/docs)
-    ssh $cmehost ". ~/a;HYPERGRAPH_DBG=${HYPERGRAPH_DBG:-$verbose}_LEVEL test=$test tests=$tests raccm $*"
 }
 
 horse=~/c/horse
@@ -4137,15 +4128,17 @@ racb() {
     if [[ $debug = 1 ]] ; then
         build=Debug
     fi
-    racerbuild=$xmtx/$build
-    racer3=$xmtx/3rdParty
+    xmtbuild=$xmtx/$build
     export XMT_EXTERNALS_PATH=$xmtext
     mkdir -p $xmtxbuild
     cd $xmtxbuild
     local buildtyped=$build
     if [[ ${build#Debug} != $build ]] ; then
         buildtyped=Debug
+    elif [[ ${build#Release} != $build ]] ; then
+        buildtyped=Release
     fi
+
     local allarg=
     local allhg=
     if [[ $allhg ]] ; then
@@ -4158,7 +4151,7 @@ racb() {
     if [[ $HOST = graehl.local ]] || [[ $OS = Darwin ]] ; then
         cmarg+=" -DLOG4CXX_ROOT=/usr/local"
     fi
-    CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF}
+    CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX}
     cmarg+=" $CMAKEARGS"
 }
 racd() {

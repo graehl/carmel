@@ -654,15 +654,15 @@ struct string_builder : string_buffer
     return *this;
   }
   template <class S>
-  string_builder & range(S const& s)
+  string_builder & range(S const& s, char space = ' ')
   {
-    word_spacer sp;
+    word_spacer sp(space);
     return range(s.begin(), s.end(), sp);
   }
   template <class S>
-  string_builder & range(S s1, S const& s2)
+  string_builder & range(S s1, S const& s2, char space = ' ')
   {
-    word_spacer sp;
+    word_spacer sp(space);
     return range(s1, s2, sp);
   }
   /**
