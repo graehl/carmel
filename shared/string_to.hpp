@@ -572,13 +572,27 @@ typedef std::vector<char> string_buffer;
 struct string_builder : string_buffer
 {
   bool operator == (std::string const& str) {
-    std::size_t len = str.size();
-    return len == size() && !std::memcmp(begin(), &str[0], len);
+    std::size_t const len = str.size();
+    return len == size() && !std::memcmp(begin(), &*str.begin(), len);
   }
 
   typedef char const* const_iterator;
 
   typedef char * iterator;
+#if _WIN32 && (!defined(_SECURE_SCL) || _SECURE_SCL)
+  iterator begin() {
+    return empty() ? 0 : &*string_buffer::begin();
+  }
+  const_iterator begin() const {
+    return empty() ? 0 : &*string_buffer::begin();
+  }
+  iterator end() {
+    return empty() ? 0 : &*string_buffer::begin() + string_buffer::size();
+  }
+  const_iterator end() const {
+    return empty() ? 0 : &*string_buffer::begin() + string_buffer::size();
+  }
+#else
   iterator begin() {
     return &*string_buffer::begin();
   }
@@ -591,6 +605,7 @@ struct string_builder : string_buffer
   const_iterator end() const {
     return &*string_buffer::end();
   }
+#endif
 
   std::pair<char const*, char const*> slice() const {
     return std::pair<char const*, char const*>(begin(), end());

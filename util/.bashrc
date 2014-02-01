@@ -358,7 +358,6 @@ if [ "$interactive" ] ; then
         archive_history
         builtin exit
     }
-    alias x="exit"
 #export CURBASHSTART=`grep -v "^[ \t]*$" $HISTFILE | wc -l | awk '{print $1}'` CURBASHDATE=`date`
     shopt -s cmdhist histappend
 

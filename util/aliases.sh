@@ -1,3 +1,16 @@
+UTIL=${UTIL:-$(echo ~graehl/u)}
+. $UTIL/add_paths.sh
+. $UTIL/bashlib.sh
+. $UTIL/time.sh
+toarpa() {
+    (
+    cd `dirname $1`
+    b=`basename $1`
+    c-s lwlmcat `pwd`/$b > $b.arpa
+    git add $b.arpa
+    wc -l $b.arpa
+    )
+}
 case $(uname) in
     Darwin)
         lwarch=Apple
@@ -9,17 +22,48 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+pictest() {
+    readelf --relocs $1 | egrep '(GOT|PLT|JU?MP_SLOT)' > /dev/null
+    if [[ $? != 0 ]]; then
+        echo "PIC disabled: No relocatable sections found"
+    else
+        echo "PIC enabled!"
+    fi
+}
+s-pushconfig() {
+    c-s pushconfig
+}
+pushconfig() {
+    (set -e
+        cd /local/c-jgraehl/xmt-config
+        #git reset --hard HEAD
+        git checkout config
+        git commit -a -m "$*"
+        git pull --rebase origin refs/meta/config
+        git push origin HEAD:refs/meta/config
+    )
+}
+chostdomain=languageweaver.com
+c-scan-view() {
+    local port=8891
+    local chostfull="$chost.$chostdomain"
+    local url="http://$chostfull:$port"
+    echo $url
+    browse $url
+    c-s pgkill scan-view
+    c-s scan-view --host=$chostfull --port=$port --allow-all-hosts --no-browser "$@"
+}
 gerritlog() {
     chost=git02 c-s tail -${1:-80} /local/gerrit/logs/error_log
 }
 xmtscanf() {
-    save12 ~/tmp/xmtscan.cpp c-with rm -rf ~/x/DebugScan \; xmtcm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf ~/x/DebugScan \; scanbuildnull=$scanbuildnull  scanbuildh=$scanbuildh xmtcm DebugScan
 }
 xmtscan() {
-    save12 ~/tmp/xmtscan.cpp c-with xmtcm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
 }
 xscan() {
-    save12 ~/tmp/xmtscan.cpp c-s xmtm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtm DebugScan
 }
 xmtx=$(echo ~/x)
 if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
@@ -55,9 +99,9 @@ c-make() {
         pushc $branch
         c-s macco $branch
         if [[ "$*" ]] ; then
-            c-s BUILD=${BUILD:-Debug} threads=8 makeh $tar '&&' "$@"
+            c-s BUILD=${BUILD:-Debug} threads=13 makeh $tar '&&' "$@"
         else
-            c-s BUILD=${BUILD:-Debug} threads=8 makeh $tar
+            c-s BUILD=${BUILD:-Debug} threads=13 makeh $tar
         fi
     )
 }
@@ -83,6 +127,12 @@ c-s() {
         sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     fi
 }
+k-s() {
+    (k-c; c-s "$@")
+}
+d-s() {
+    (d-c; c-s "$@")
+}
 cc-s() {
     forcs c-s "$@"
 }
@@ -98,6 +148,12 @@ c-with() {
             c-s "$@"
         fi
     )
+}
+d-with() {
+    (d-c; c-with "$@")
+}
+k-with() {
+    (k-c; c-with "$@")
 }
 c-compile() {
     c-with BUILD=$BUILD x-compile "$@"
@@ -136,7 +192,7 @@ fieldn() {
     awk '{ print $'${1:-1}'; }'
 }
 countcpus() {
-    grep ^processor /proc/cpuinfo | wc -l | fieldn 1
+    grep '^processor' /proc/cpuinfo | wc -l
 }
 ncpus() {
     if [[ $lwarch = Apple ]] || ! [[ -r /proc/cpuinfo ]] ; then
@@ -152,7 +208,6 @@ ncpus() {
             r=$actual
         fi
         echo $r
-        #echo "using -j$r,actual cpus=$actual" 1>&2
     fi
 }
 shuf() {
@@ -236,7 +291,7 @@ binelse() {
 }
 extra_include=$xmtx
 cpps_code_path=$xmtx/xmt
-cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I/users/graehl/x/xmt/TinyXMLCPP -I/users/graehl/x/xmt/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
+cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I$XMT_EXTERNALS_PATH/../Shared/cpp/libraries/tinyxmlcpp-2.5.4 -I/users/graehl/x/xmt/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
 cpps_flags="-std=c++11 -DCPP11 -ftemplate-depth=255"
 cppparses() {
     (
@@ -367,10 +422,14 @@ c-tests() {
     cwith test=1 xmtcm
 }
 c-vgtest() {
-    c-make Test$1 vgTest$1
+    local test=$1
+    shift
+    c-make Test$test "$@" vgTest$test
 }
 c-test() {
-    c-make Test$1 Test$1
+    local test=$1
+    shift
+    c-make Test$test "$@" Test$test
 }
 gitmsg() {
     git log -n 1 "$@"
@@ -470,10 +529,6 @@ touchadd() {
         git add "$@"
     )
 }
-UTIL=${UTIL:-$(echo ~graehl/u)}
-. $UTIL/add_paths.sh
-. $UTIL/bashlib.sh
-. $UTIL/time.sh
 err() {
     echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $@" >&2
 }
@@ -505,7 +560,7 @@ setjavahome() {
 }
 setjavahome
 mendgraehl() {
-    mend --author=graehl
+    mend --reset-author
 }
 hangs() {
     for i in `seq -w 1 26`; do echo -n "$i "; /bin/ls /c"$i"_data | wc -l; done
@@ -960,10 +1015,10 @@ rakedeploy() {
     )
 }
 chrometab() {
-    open -a 'Google Chrome Canary' "$@"
+    open -a 'Google Chrome' "$@"
 }
 browse() {
-    open -a 'Google Chrome Canary' "$@"
+    open -a 'Google Chrome' "$@"
 }
 rakegen() {
     (
@@ -1327,9 +1382,9 @@ yreg() {
     (set -e;
         local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
         cd $xmtx/RegressionTests
-        THREADS=`ncpus`
+        THREADS=${MAKEPROC:-`ncpus`}
         MINTHREADS=${MINTHREADS:-1} # unreliable with 1
-        MAXTHREADS=6
+        MAXTHREADS=8
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
         fi
@@ -1418,6 +1473,49 @@ cwith() {
         chost=c-jgraehl c-with "$@"
     )
 }
+
+jen() {
+    cd $xmtx
+    local build=${1:-${BUILD:-Release}}
+    shift
+    local log=$HOME/tmp/jen.log.`timestamp`
+    . xmtpath.sh
+    usegcc
+    if [[ $HOST = $chost ]] ; then
+        export USE_BOOST_1_50=1
+    fi
+    if [[ $memcheck ]] ; then
+        MEMCHECKUNITTEST=1
+    else
+        MEMCHECKUNITTEST=0
+    fi
+    if [[ $memcheckall ]] ; then
+        MEMCHECKALL=1
+    else
+        MEMCHECKALL=0
+    fi
+    local nightlyargs
+    if [[ $nightly ]] ; then
+        nightlyargs="--memcheck --speedtest"
+    fi
+    local threads=${MAKEPROC:-`ncpus`}
+    set -x
+    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    set +x
+    echo
+    echo $log
+    fgrep '... FAIL' $log | grep -v postagger | sort > $log.fails
+    nfails=`cut -d' ' -f1 $log.fails | uniq -c | wc -l`
+    cp $log.fails /tmp/last-fails
+    echo
+    cat /tmp/last-fails
+    echo
+    echo $log.fails
+    echo "#fails = $nfails"
+    echo "#fails = $nfails" >> $log.fails
+}
+
+
 kjen() {
     chost=c-ydong linjen "$@"
 }
@@ -1457,7 +1555,6 @@ macflex() {
     export LDFLAGS CPPFLAGS CFLAGS
 }
 
-scanbuildargs="-v" #-analyzer-headers
 xmtm() {
     (
         set -e
@@ -1482,7 +1579,14 @@ xmtm() {
         local premake
         identifybuild
         if [[ $scanbuild ]] ; then
-            premake="scan-build -k $scanbuildargs"
+            premake="scan-build -k"
+            if [[ $scanbuildh ]] ; then
+                premake+=" -analyzer-headers" # -v
+            fi
+            if [[ $scanbuildnull ]] ; then
+                premake+="-Xanalyzer -analyzer-disable-checker=core.NullDereference"
+# -Xanalyzer -analyzer-disable-checker=core.NonNullParamChecker
+            fi
         fi
         if [[ $test ]] ; then
             make check
@@ -1491,7 +1595,7 @@ xmtm() {
         else
             (
                 set -x
-                CCC_CC=$CCC_CC CCC_CXX=$CCC_CXX $premake make -j$MAKEPROC $maketar VERBOSE=1
+                CCC_CC=$CCC_CC CCC_CXX=$CCC_CXX $premake make -j$MAKEPROC $maketar VERBOSE=${verbose:-0}
             )
             #VERBOSE=1
         fi
@@ -2005,7 +2109,7 @@ cpfrom() {
     cp "$2" "$1"
 }
 ccpfrom() {
-    scp c-jgraehl:"$2" "$1"
+    scp $chost:"$2" "$1"
 }
 conflicts() {
     perl -ne 'print "$1 " if /^CONFLICT.* in (.*)$/; print "$1 " if /^(.*): needs merge$/' "$@"
@@ -2141,46 +2245,6 @@ linjen() {
         c-s macco $branch
         c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
-jen() {
-    cd $xmtx
-    local build=${1:-${BUILD:-Release}}
-    shift
-    local log=$HOME/tmp/jen.log.`timestamp`
-    . xmtpath.sh
-    usegcc
-    if [[ $HOST = $chost ]] ; then
-        export USE_BOOST_1_50=1
-    fi
-    if [[ $memcheck ]] ; then
-        MEMCHECKUNITTEST=1
-    else
-        MEMCHECKUNITTEST=0
-    fi
-    if [[ $memcheckall ]] ; then
-        MEMCHECKALL=1
-    else
-        MEMCHECKALL=0
-    fi
-    local nightlyargs
-    if [[ $nightly ]] ; then
-        nightlyargs="--memcheck --speedtest"
-    fi
-    local threads=${threads:-`ncpus`}
-    set -x
-    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$DUPATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
-    set +x
-    echo
-    echo $log
-    fgrep '... FAIL' $log | grep -v postagger | sort > $log.fails
-    nfails=`cut -d' ' -f1 $log.fails | uniq -c | wc -l`
-    cp $log.fails /tmp/last-fails
-    echo
-    cat /tmp/last-fails
-    echo
-    echo $log.fails
-    echo "#fails = $nfails"
-    echo "#fails = $nfails" >> $log.fails
-}
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
 }
@@ -2210,11 +2274,11 @@ xmtcmsave() {
     echo $binf
     newxmt=$binf
 }
-pkill() {
+pgkill() {
     local prefile=`mktemp /tmp/pgrep.pre.XXXXXX`
     pgrep "$@" | grep -v pkill | grep -v ssh | grep -v macs > $prefile
     cat $prefile
-    if [[ -x /usr/bin/pkill ]] ; then
+    if false || [[ -x /usr/bin/pkill ]] ; then
         /usr/bin/pkill "$@";
     else
         kill `cat $prefile | cut -c1-5`
@@ -2327,15 +2391,27 @@ page12() {
 psave12() {
     page=less save12 "$@"
 }
+filterblock() {
+    if [[ $blockclang ]] ; then
+        blockline="clang: error: linker command failed with exit code"
+    fi
+    if [[ $blockline ]] ; then
+        grep -v "$blockline" --line-buffered
+    else
+        cat
+    fi
+}
 save12() {
     local out="$1"
+    local filter=cat
+    local filterarg=''
     [[ -f $out ]] && mv "$out" "$out~"
     shift
     echo2 saving output $out
     ( if ! [[ $quiet ]] ; then
         echo "$@"; echo
         fi
-        "$@" 2>&1) | tee $out | ${page:-cat}
+        "$@" 2>&1) | filterblock | tee $out | ${page:-cat}
     echo2 saved output:
     echo2 $out
 }
@@ -2907,8 +2983,8 @@ up() {
 }
 newmaster() {
     (
+        set -e
         git fetch origin
-        git reset --hard origin/master
         git checkout origin/master
         killbranch master || true
         set -e
@@ -3106,10 +3182,13 @@ regress1() {
 regress2() {
     regress1 Hypergraph2
 }
+skip1blank() {
+   perl -ne '++$have if /^\S/; $blank=/^\s*$/; print unless $have == 1 && $blank' "$@"
+}
 lwlmcat() {
     out=${2:-${1%.lwlm}.arpa}
     [[ -f $out ]] || LangModel -sa2text -lm-in $1 -lm-out "$out" -tmp ${TMPDIR:-/tmp}
-    cat $out
+    cat $out | skipblank
 }
 pyprof() {
     #easy_install -U memory_profiler
@@ -7001,4 +7080,4 @@ sshlog() {
     echo ssh "$@" 1>&2
     ssh "$@"
 }
-MAKEPROC=${MAKEPROC:-8}
+MAKEPROC=${MAKEPROC:-10}

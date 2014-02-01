@@ -36,7 +36,7 @@
 
 #ifndef UNORDERED_NS
 #ifndef USE_TR1_UNORDERED
-#if defined(WIN32) || __clang__
+#if defined(_WIN32) || __clang__
 // mac clang lacks tr1::unordered
 # define USE_TR1_UNORDERED 0
 #else

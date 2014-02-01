@@ -456,7 +456,7 @@ class lazy_forest
   typedef forest self_type;
 
 
-  explicit lazy_forest(Environment &env)
+  explicit lazy_forest(Environment const& env)
       : filter_type(env.filter_factory.filter_init())
   {}
 

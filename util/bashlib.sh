@@ -2442,16 +2442,6 @@ loge() {
     nohup env "$@" > $log 2>&1 &
     watch $log
 }
-ncpus() {
-    if [ -r /proc/cpuinfo ] ; then
-        cat /proc/cpuinfo | grep 'physical id' | sort | grep ^processor /proc/cpuinfo | nlines
-    else
-        echo 2
-    fi
-}
-ncores() {
-    ncpus
-}
 workflowp=~/workflow
 [ -d $workflowp ] &&  workflowreal=`realpath $workflowp`
 homereal=`realpath ~`

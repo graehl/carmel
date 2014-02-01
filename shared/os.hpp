@@ -15,6 +15,7 @@
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
 # define OS_WINDOWS
 # include <io.h>
+# include <windows.h>
 #else
 # include <sys/stat.h>
 # include <unistd.h>
