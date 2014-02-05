@@ -275,7 +275,7 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/tmp.sa
     std::strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
 
 #ifdef OS_WINDOWS
-  int err = ::_mktemp_s(tmp, ::strlen(tmp)); // this does not create the file, sadly. alternative (with many retries: http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32/6036308#6036308 )
+  int err = ::_mktemp_s(tmp, ::strlen(tmp) + 1); // this does not create the file, sadly. alternative (with many retries: http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32/6036308#6036308 )
   if (err)
     throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
 #else

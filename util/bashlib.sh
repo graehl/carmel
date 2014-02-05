@@ -714,7 +714,11 @@ header() {
 
 
 banner() {
-    header "$@" "[`basename $0`]"
+    local prog=""
+    if [[ $0 ]] && [[ $0 != -bash ]] ; then
+        prog="[$(basename -- $0)]"
+    fi
+    header "$@" $prog
 }
 
 pmem_mb() {
