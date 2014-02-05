@@ -1,8 +1,7 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
 have-linux-readlink()  {
-    readlink -nfs / 2>&1 >/dev/null
-#    [[ `uname` != Darwin ]]
+    [[ `uname` != Darwin ]] && readlink -nfs / 2>&1 >/dev/null
 }
 wordsnl() {
     perl -e 'print "$_\n" for (@ARGV)' "$@"

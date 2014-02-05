@@ -8,8 +8,8 @@
     range [begin(),end()) of chars written so far
 
     NOTE: unlike the usual streambuf used in stringstream, the end-of-readable
-    marker isn't increased when you write; to switch from reading to writing,
-    call reset_read(size())
+    marker isn't increased when you write; to switch from write to read, call
+    reset_read(size())
 */
 
 #ifndef GRAEHL_SHARED__ARRAY_STREAM_HPP
@@ -31,7 +31,7 @@ namespace graehl {
 */
 template <class cT, class cT_Traits>
 inline std::size_t size_out(std::basic_streambuf<cT, cT_Traits> &sbuf) {
-  return (std::size_t)sbuf.pubseekoff(0,std::ios::end,std::ios_base::out);
+  return (std::size_t)sbuf.pubseekoff(0, std::ios::end, std::ios_base::out);
 }
 
 /**
@@ -40,7 +40,7 @@ inline std::size_t size_out(std::basic_streambuf<cT, cT_Traits> &sbuf) {
 */
 template <class cT, class cT_Traits>
 inline std::size_t size_in(std::basic_streambuf<cT, cT_Traits> &sbuf) {
-  return (std::size_t)sbuf.pubseekoff(0,std::ios::end,std::ios_base::in);
+  return (std::size_t)sbuf.pubseekoff(0, std::ios::end, std::ios_base::in);
 }
 
 /**
@@ -48,7 +48,18 @@ inline std::size_t size_in(std::basic_streambuf<cT, cT_Traits> &sbuf) {
 */
 template <class cT, class cT_Traits>
 inline void rewind_in(std::basic_streambuf<cT, cT_Traits> &sbuf) {
-  sbuf.pubseekpos(0,std::ios_base::in);
+  sbuf.pubseekpos(0, std::ios_base::in);
+}
+
+/// for stringstream type buf where you haven't read yet (if you did, call rewind_in first)
+template <class VecBytes, class cT, class cT_Traits>
+inline void copy_written(VecBytes *vec, std::basic_streambuf<cT, cT_Traits> &buf) {
+  std::streamsize const sz = buf.pubseekoff(0, std::ios::end, std::ios_base::out);
+  vec->resize(sz);
+  if (sz) {
+    std::streamsize const got = buf.sgetn((char*)&*vec->begin(), sz);
+    assert(got==sz);
+  }
 }
 
 template<class cT, class cT_Traits = std::char_traits<cT> >
@@ -73,28 +84,28 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   void print(O *o) const
   {
     o << "array_streambuf[" << capacity() << "]=[";
-    for (typename self_type::iterator i=begin(),e=end();i!=e;++i)
+    for (typename self_type::iterator i = begin(), e = end(); i!=e; ++i)
       o->put(*i);
     o << "]";
   }
-  template <class Ch,class Tr>
-  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, basic_array_streambuf const& self)
+  template <class Ch, class Tr>
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, basic_array_streambuf const& self)
   { self.print(o); return o; }
 
   /**
      initialize to an existing array, ready to read/write starting form beginning
   */
   explicit
-  basic_array_streambuf(const char_type * p=0, size_type sz = 0)
+  basic_array_streambuf(const char_type * p = 0, size_type sz = 0)
   {
-    set_array(p,sz);
+    set_array(p, sz);
   }
 
   void set_array(string_type const& str) {
     set_array((char_type const*)str.data(), str.size());
   }
 
-  void set_array(const char_type * p=0, size_type sz = 0)
+  void set_array(const char_type * p = 0, size_type sz = 0)
   {
     buf = const_cast<char_type *>(p);
     bufend = buf+sz;
@@ -107,11 +118,11 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   explicit
   basic_array_streambuf(const void * p, size_type sz = 0)
   {
-    set_array(p,sz);
+    set_array(p, sz);
   }
-  inline void set_array(const void * p=0, size_type sz = 0)
+  inline void set_array(const void * p = 0, size_type sz = 0)
   {
-    set_array((char const*)p,sz);
+    set_array((char const*)p, sz);
   }
 
   explicit
@@ -124,7 +135,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   inline void reset_read(size_type sz)
   {
-    setg(buf,buf,buf+sz);
+    setg(buf, buf, buf+sz);
   }
 
   /**
@@ -134,7 +145,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   inline void reset_read()
   {
-    base::setg(buf,buf,end());
+    base::setg(buf, buf, end());
   }
 
   /**
@@ -142,7 +153,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   void reset()
   {
-    set_gpos(0);
+    base::setg(buf, buf, buf);
     set_ppos(0);
   }
 
@@ -165,7 +176,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   void set_end(iterator end_)
   {
-    base::setp(end_,bufend);
+    base::setp(end_, bufend);
   }
   /**
      write seek.
@@ -180,7 +191,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   inline void set_read_size(size_type sz)
   {
-    base::setg(buf,gptr(),buf+sz);
+    base::setg(buf, gptr(), buf+sz);
   }
   inline void set_write_size(size_type sz)
   {
@@ -228,7 +239,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   // below defined for speedup (no repeated virtual get/put one char at a time)
   virtual std::streamsize xsputn(const char_type * from, std::streamsize sz)
   {
-  if(out_avail()<sz)
+  if (out_avail()<sz)
   return 0;
   traits::copy(pptr(), from, sz);
   pbump(sz);
@@ -251,10 +262,10 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
                            std::ios_base::seekdir dir,
                            std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
   {
-    pos_type pos=offset;
-    if(dir == std::ios_base::cur)
+    pos_type pos = offset;
+    if (dir == std::ios_base::cur)
       pos += ((which&std::ios_base::out) ? pptr():gptr()) - buf;
-    else if(dir == std::ios_base::end)
+    else if (dir == std::ios_base::end)
       pos += ((which&std::ios_base::out) ? epptr() : egptr()) - buf;
     // else ios_base::beg
     return seekpos(pos, which);
@@ -262,7 +273,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   virtual pos_type seekpos(pos_type pos,
                            std::ios_base::openmode which = std::ios_base::in | std::ios_base::out)
   {
-    if(which & std::ios_base::out)
+    if (which & std::ios_base::out)
       set_ppos(pos);
     if (which & std::ios_base::in)
       set_gpos(pos);
@@ -328,7 +339,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     if (*end()!=traits::eos()) {
       if (full())
         throw std::runtime_error("fixed size array_stream full - couldn't NUL-terminate c_str()");
-      *end()=traits::eos();
+      *end() = traits::eos();
     }
     return begin();
   }
@@ -340,11 +351,11 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   using base::egptr;
   using base::gbump;
   basic_array_streambuf(const basic_array_streambuf&);
-  basic_array_streambuf& operator=(const basic_array_streambuf&);
+  basic_array_streambuf& operator = (const basic_array_streambuf&);
  protected:
-  virtual self_type *setbuf(char_type *p,size_type n)
+  virtual self_type *setbuf(char_type *p, size_type n)
   {
-    set_array(p,n);
+    set_array(p, n);
     return this;
   }
   char_type *buf, *bufend;
@@ -362,27 +373,27 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
   typedef std::streamsize size_type;
   typedef cT value_type;
   typedef value_type *iterator; //NOTE: you can count on iterator being a pointer
-  typedef basic_array_stream<cT,traits> self_type;
+  typedef basic_array_stream<cT, traits> self_type;
 
   template <class O>
-  void print(O&o) const {o<<m_sbuf;}
-  template <class Ch,class Tr>
-  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, basic_array_stream const& self)
+  void print(O&o) const {o<<m_sbuf; }
+  template <class Ch, class Tr>
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, basic_array_stream const& self)
   { self.print(o); return o; }
 
   basic_array_stream() : base(&m_sbuf)
   {}
   explicit
   basic_array_stream(const value_type * p, size_type size)
-      :	base(&m_sbuf)
+      : base(&m_sbuf)
   {
-    set_array(p,size);
+    set_array(p, size);
     base::rdbuf(&m_sbuf);
   }
   template <class C>
   explicit
   basic_array_stream(const C& c)
-      :	base(&m_sbuf)
+      : base(&m_sbuf)
   {
     set_array(c);
     base::rdbuf(&m_sbuf);
@@ -483,10 +494,10 @@ void TEST_check_array_stream(C &i1)
   std::string const TESTARRAYSTR1("eruojdcv53341");
   std::string const TESTARRAYSTR2("0asd");
   std::string const TESTARRAYSTR(" "+TESTARRAYSTR1+"\n "+TESTARRAYSTR2+"\t");
-  const char *tarrs=TESTARRAYSTR.c_str();
-  i1.set_array(tarrs,TESTARRAYSTR.size());
-  string tstr=tarrs;
-  unsigned slen=(unsigned)tstr.length();
+  const char *tarrs = TESTARRAYSTR.c_str();
+  i1.set_array(tarrs, TESTARRAYSTR.size());
+  string tstr = tarrs;
+  unsigned slen = (unsigned)tstr.length();
   string s;
   BOOST_CHECK(i1>>s);
   BOOST_CHECK(s==TESTARRAYSTR1);
@@ -494,28 +505,28 @@ void TEST_check_array_stream(C &i1)
   BOOST_CHECK(s==TESTARRAYSTR2);
 
   streambuf::off_type i;
-  for (i=0;i<slen;++i) {
+  for (i = 0; i<slen; ++i) {
     int t;
-    i1.seekg(i,ios_base::beg);
-    t=(int)i1.tellg();
+    i1.seekg(i, ios_base::beg);
+    t = (int)i1.tellg();
     BOOST_CHECK(t==(int)i);
     i1.seekg(0);
     BOOST_CHECK(i1.tellg()==0);
     i1.seekg(i);
-    t=(int)i1.tellg();
+    t = (int)i1.tellg();
     BOOST_CHECK(t==(int)i);
-    int c=i1.get();
+    int c = i1.get();
     BOOST_CHECK(c==tstr[i]);
-    int e=(int)(-i-1);
-    BOOST_CHECK(i1.seekg(e,ios_base::end));
-    t=(int)i1.tellg();
-    int p=slen+e;
+    int e = (int)(-i-1);
+    BOOST_CHECK(i1.seekg(e, ios_base::end));
+    t = (int)i1.tellg();
+    int p = slen+e;
     BOOST_CHECK(t==p);
     BOOST_CHECK(i1.get()==tstr[p]);
   }
   i1.seekp(0);
   i1.seekg(0);
-  for (i=0;i<slen;++i) {
+  for (i = 0; i<slen; ++i) {
     BOOST_CHECK((int)i1.tellg()==(int)i);
     BOOST_CHECK((int)i1.tellp()==(int)i);
     BOOST_CHECK(i1.put((char)i));
@@ -525,18 +536,18 @@ void TEST_check_array_stream(C &i1)
 }
 
 template <class C>
-inline void TEST_check_memory_stream1(C &o,char *buf,unsigned n)
+inline void TEST_check_memory_stream1(C &o, char *buf, unsigned n)
 {
-  const unsigned M=13;
-  for(unsigned i=0;i<n;++i) {
-    char c=i%M+'a';
-    buf[i]=c;
+  const unsigned M = 13;
+  for (unsigned i = 0; i<n; ++i) {
+    char c = i%M+'a';
+    buf[i] = c;
   }
-  o.write(buf,n);
+  o.write(buf, n);
   BOOST_REQUIRE(o);
   //    BOOST_CHECK_EQUAL_COLLECTIONS(buf,buf+n,o.begin(),o.end());
-  for(unsigned i=0;i<n;++i)
-    buf[i]=0;
+  for (unsigned i = 0; i<n; ++i)
+    buf[i] = 0;
   /*
     o.read(buf,n);
     BOOST_REQUIRE(o);
@@ -546,22 +557,22 @@ inline void TEST_check_memory_stream1(C &o,char *buf,unsigned n)
 }
 
 template <class C>
-inline void TEST_check_memory_stream2(C &o,char *buf,unsigned n)
+inline void TEST_check_memory_stream2(C &o, char *buf, unsigned n)
 {
-  const unsigned M=13;
-  for(unsigned i=0;i<n;++i) {
+  const unsigned M = 13;
+  for (unsigned i = 0; i<n; ++i) {
     BOOST_CHECK(o.put(i%M));
-    BOOST_CHECK_EQUAL(o.begin()[i],i%M);
-    BOOST_CHECK_EQUAL(o.size(),i+1);
+    BOOST_CHECK_EQUAL(o.begin()[i], i%M);
+    BOOST_CHECK_EQUAL(o.size(), i+1);
   }
 }
 
 template <class C>
-inline void TEST_check_memory_stream(C &o,char *buf,unsigned n)
+inline void TEST_check_memory_stream(C &o, char *buf, unsigned n)
 {
-  TEST_check_memory_stream1(o,buf,n);
+  TEST_check_memory_stream1(o, buf, n);
   o.reset();
-  TEST_check_memory_stream2(o,buf,n);
+  TEST_check_memory_stream2(o, buf, n);
 }
 
 
@@ -570,11 +581,11 @@ BOOST_AUTO_TEST_CASE( TEST_array_stream )
   array_stream i1;
   TEST_check_array_stream(i1);
 
-  const unsigned N=20;
-  char buf[N],buf2[N];
+  const unsigned N = 20;
+  char buf[N], buf2[N];
 
-  array_stream o2(buf,N);
-  TEST_check_memory_stream(o2,buf2,N);
+  array_stream o2(buf, N);
+  TEST_check_memory_stream(o2, buf2, N);
 }
 
 }}//ns

@@ -2,13 +2,33 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
+cxj() {
+    ( set -e;
+        cd ~/c/xmt-externals
+        mend
+        #c-s 'cd ~/c/xmt-externals && git reset --hard master && git config receive.denyCurrentBranch ignore'
+        git push $chost
+        c-s 'cd ~/c/xmt-externals && git reset --hard HEAD && git clean -xf'
+        cjen ${1:-Debug}
+    )
+}
+whichq() {
+    which "$@" 2>/dev/null || true
+}
 toarpa() {
     (
-    cd `dirname $1`
-    b=`basename $1`
-    c-s lwlmcat `pwd`/$b > $b.arpa
-    git add $b.arpa
-    wc -l $b.arpa
+        cd `dirname $1`
+        d=`pwd`
+        b=`basename $1`
+        c=${b%.gz}
+        if [[ $c != $b ]] ; then
+            c-s gunzip $d/$b
+            b=$c
+        fi
+        c-s lwlmcat $d/$b > $b.arpa
+        gzip $b.arpa
+        wc -l $b.arpa
+        git add $b.arpa.gz
     )
 }
 case $(uname) in
@@ -30,8 +50,12 @@ pictest() {
         echo "PIC enabled!"
     fi
 }
-s-pushconfig() {
-    c-s pushconfig
+pullconfig() {
+    (set -e
+        cd /local/c-jgraehl/xmt-config
+        git checkout config
+        git pull --rebase origin refs/meta/config
+    )
 }
 pushconfig() {
     (set -e
@@ -57,7 +81,7 @@ gerritlog() {
     chost=git02 c-s tail -${1:-80} /local/gerrit/logs/error_log
 }
 xmtscanf() {
-    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf ~/x/DebugScan \; scanbuildnull=$scanbuildnull  scanbuildh=$scanbuildh xmtcm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf ~/x/DebugScan \; scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
 }
 xmtscan() {
     blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
@@ -87,7 +111,7 @@ c-sync() {
 }
 home-c-sync() {
     (cd
-    sync2 $chost "$@"
+        sync2 $chost "$@"
     )
 }
 c-make() {
@@ -121,7 +145,7 @@ c-s() {
     local fwdenv="gccfilter=$gccfilter"
     local pre=". ~/.e"
     local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
-    if [[ $ontunnel ]] ; then
+    if false || [[ $ontunnel ]] ; then
         sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     else
         sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
@@ -324,10 +348,10 @@ cppparses() {
                 [[ ${b%biglm.cpp} = $b ]] &&
                 [[ $b != TestLatticeMinBayesRisk.cpp ]]
             then
-              ls -ul $f
-              echo cppparse "$f" 1>&2
-              cppparse "$f"
-              touch $f
+                ls -ul $f
+                echo cppparse "$f" 1>&2
+                cppparse "$f"
+                touch $f
             fi
         done
     ) 2>&1 | tee ~/tmp/cppparses.hpp
@@ -517,7 +541,8 @@ catgit() {
     )
 }
 
-gitbin=`which git`
+valgrind=`whichq valgrind`
+gitbin=`whichq git`
 git() {
     (
         $gitbin $gitnopager "$@"
@@ -1183,9 +1208,6 @@ cp2cbin() {
     scp "$@" c-jgraehl:/c01_data/graehl/bin/
 }
 
-valgrind=`which valgrind`
-[[ -x $valgrind ]] || valgrind=
-
 findx() {
     find . "$@" -type f -perm -u+x
 }
@@ -1585,7 +1607,7 @@ xmtm() {
             fi
             if [[ $scanbuildnull ]] ; then
                 premake+="-Xanalyzer -analyzer-disable-checker=core.NullDereference"
-# -Xanalyzer -analyzer-disable-checker=core.NonNullParamChecker
+                # -Xanalyzer -analyzer-disable-checker=core.NonNullParamChecker
             fi
         fi
         if [[ $test ]] ; then
@@ -3077,29 +3099,31 @@ maketest() {
     )
 }
 makerun() {
-    local exe=$1
-    if [[ $exe = test ]] ; then
-        exe=check
-    fi
-    shift
-    cd $xmtx/${BUILD:-Debug}
-    local cpus=${threads:-`ncpus`}
-    echo2 "makerun $cpus cpus ... -j$cpus"
-    (set -e
-        dumbmake $exe VERBOSE=1 -j$cpus || exit $?
-        if [[ $exe != test ]] ; then
-            set +x
-            local f=$(echo */$exe)
-            if [[ -x $f ]] ; then
-                if ! [[ $pathrun ]] ; then
-                    if ! [[ $norun ]] ; then
-                        $f "$@"
+    (
+        local exe=$1
+        if [[ $exe = test ]] ; then
+            exe=check
+        fi
+        shift
+        cd $xmtx/${BUILD:-Debug}
+        local cpus=${threads:-`ncpus`}
+        echo2 "makerun $cpus cpus ... -j$cpus"
+        (set -e
+            dumbmake $exe VERBOSE=1 -j$cpus || exit $?
+            if [[ $exe != test ]] ; then
+                set +x
+                local f=$(echo */$exe)
+                if [[ -x $f ]] ; then
+                    if ! [[ $pathrun ]] ; then
+                        if ! [[ $norun ]] ; then
+                            $f "$@"
+                        fi
+                    else
+                        $exe "$@"
                     fi
-                else
-                    $exe "$@"
                 fi
             fi
-        fi
+        )
     )
 }
 makex() {
@@ -3183,12 +3207,12 @@ regress2() {
     regress1 Hypergraph2
 }
 skip1blank() {
-   perl -ne '++$have if /^\S/; $blank=/^\s*$/; print unless $have == 1 && $blank' "$@"
+    perl -ne '++$have if /^\S/; $blank=/^\s*$/; print unless $have == 1 && $blank' "$@"
 }
 lwlmcat() {
     out=${2:-${1%.lwlm}.arpa}
     [[ -f $out ]] || LangModel -sa2text -lm-in $1 -lm-out "$out" -tmp ${TMPDIR:-/tmp}
-    cat $out | skipblank
+    cat $out | skip1blank
 }
 pyprof() {
     #easy_install -U memory_profiler
@@ -4161,6 +4185,7 @@ s2c() {
         c-sync u g script bugs .gitconfig
         cc-to x/run.sh
         cc-to x/xmtpath.sh
+        #chost=ceto c-sync u g script bugs .gitconfig
     )
 }
 syncc() {
@@ -4252,12 +4277,12 @@ racb() {
     CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF}
     cmarg+=" $CMAKEARGS"
     if false ; then
-    if [[ $CC ]] ; then
-        cmarg+="  -DCMAKE_C_COMPILER=$CC"
-    fi
-    if [[ $CXX ]] ; then
-        cmarg+="  -DCMAKE_CXX_COMPILER=$CXX"
-    fi
+        if [[ $CC ]] ; then
+            cmarg+="  -DCMAKE_C_COMPILER=$CC"
+        fi
+        if [[ $CXX ]] ; then
+            cmarg+="  -DCMAKE_CXX_COMPILER=$CXX"
+        fi
     fi
 }
 racd() {
@@ -7081,3 +7106,6 @@ sshlog() {
     ssh "$@"
 }
 MAKEPROC=${MAKEPROC:-10}
+if [[ -d $XMT_EXTERNALS_PATH ]] ; then
+    export PATH=$XMT_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
+fi

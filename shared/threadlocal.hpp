@@ -20,6 +20,7 @@
 //MSVC - see http://msdn.microsoft.com/en-us/library/9w1sdazb.aspx
 ///WARNING: doesn't work with DLLs ... use boost thread specific pointer instead (http://www.boost.org/libs/thread/doc/tss.html)
 #  define THREADLOCAL __declspec(thread)
+#  define HAVE_THREADLOCAL 1 // TODO: test that it works
 # else
 #  if __APPLE__
 //APPLE: __thread even with gcc -pthread isn't allowed:
@@ -32,11 +33,14 @@
 #  else
 //GCC - see http://gcc.gnu.org/onlinedocs/gcc-4.6.2/gcc/Thread_002dLocal.html
 #   define THREADLOCAL __thread
+#   define HAVE_THREADLOCAL 1
 #  endif
 # endif
-
 #endif
 
+#ifndef HAVE_THREADLOCAL
+# define HAVE_THREADLOCAL 0
+#endif
 
 namespace graehl {
 
@@ -92,6 +96,18 @@ struct SetLocalSwap {
   }
 };
 
+template <class Val, class Tag=void>
+struct ThreadLocalSingleton {
+  static THREADLOCAL Val *val;
+  static inline Val &get() {
+    if (!val)
+      val = new Val;
+    return *val;
+  }
+};
+
+template <class Val, class Tag>
+THREADLOCAL Val *ThreadLocalSingleton<Val, Tag>::val;
 
 }
 

@@ -221,6 +221,8 @@ public:
   }
 
   operator pointer_type() const { return pointer; }
+  void operator=(std::string const& name) { set(name); }
+
   bool operator==(Stream const& s) const { return get()==&s; }
   bool operator==(file_arg const& s) const { return get()==s.get(); }
   bool operator!=(Stream const& s) const { return get()!=&s; }

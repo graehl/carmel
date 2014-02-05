@@ -576,9 +576,11 @@ struct string_builder : string_buffer
     return len == size() && !std::memcmp(begin(), &*str.begin(), len);
   }
 
+
   typedef char const* const_iterator;
 
   typedef char * iterator;
+
 #if _WIN32 && (!defined(_SECURE_SCL) || _SECURE_SCL)
   iterator begin() {
     return empty() ? 0 : &*string_buffer::begin();
@@ -883,6 +885,16 @@ struct string_builder : string_buffer
   template <class Ch,class Tr>
   friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &out, string_builder const& self)
   { self.print(out); return out; }
+
+  /// can't append anything else unless you first pop_back to remove the '\0'
+  char * c_str() {
+    this->push_back((char)0);
+    return begin();
+  }
+
+  const_iterator data() const {
+    return begin();
+  }
 };
 
 // function object pointing to string_builder or buffer. cheap copy

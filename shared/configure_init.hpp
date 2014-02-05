@@ -21,6 +21,7 @@
 #define CONFIGURE_INIT_JG_2013_05_23_HPP
 
 #include <string>
+#include <graehl/shared/assign_traits.hpp>
 
 namespace configure {
 
@@ -34,6 +35,7 @@ struct init_expr
   template <class V2>
   init_expr const& init(V2 const& v2) const {
     *val = v2;
+    //    graehl::assign_traits<T>::assign_impl(t, v2)
     return *this;
   }
   template <class V2>
