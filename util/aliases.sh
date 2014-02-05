@@ -2,13 +2,15 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
+xmtx=$(echo ~/x)
+xmtextbase=$(echo ~/c/xmt-externals)
 cxj() {
     ( set -e;
-        cd ~/c/xmt-externals
+        cd $xmtextbase
         mend
         #c-s 'cd ~/c/xmt-externals && git reset --hard master && git config receive.denyCurrentBranch ignore'
         git push $chost
-        c-s 'cd ~/c/xmt-externals && git reset --hard HEAD && git clean -xf'
+        c-s "cd $xmtextbase && git reset --hard HEAD && git clean -xf"
         cjen ${1:-Debug}
     )
 }
@@ -81,7 +83,7 @@ gerritlog() {
     chost=git02 c-s tail -${1:-80} /local/gerrit/logs/error_log
 }
 xmtscanf() {
-    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf ~/x/DebugScan \; scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf $xmtx/DebugScan \; scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
 }
 xmtscan() {
     blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
@@ -89,16 +91,14 @@ xmtscan() {
 xscan() {
     blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtm DebugScan
 }
-xmtx=$(echo ~/x)
 if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
 fi
 if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
     xmtx=/.auto/home/graehl/x
 fi
-py=$(echo ~/x/python)
+py=$(echo $xmtx/python)
 export WORKSPACE=$xmtx
-xmtextbase=$(echo ~/c/xmt-externals)
 xmtext=$xmtextbase/$lwarch
 export XMT_EXTERNALS_PATH=$xmtext
 xmtlib=$xmtext/libraries
@@ -118,10 +118,10 @@ c-make() {
     local tar=${1?target}
     shift
     (set -e;
-        cd ~/x; mend;
+        cd $xmtx; mend;
         local branch=`git_branch`
         pushc $branch
-        c-s macco $branch
+        c-s forceco $branch
         if [[ "$*" ]] ; then
             c-s BUILD=${BUILD:-Debug} threads=13 makeh $tar '&&' "$@"
         else
@@ -164,10 +164,10 @@ c-with() {
     (set -e;
         #touchnewer
         chost=${chost:-c-jgraehl}
-        cd ~/x; mend;
+        cd $xmtx; mend;
         local branch=`git_branch`
         pushc $branch
-        c-s macco $branch
+        c-s forceco $branch
         if [[ "$*" ]] ; then
             c-s "$@"
         fi
@@ -268,7 +268,7 @@ home-c-to() {
     )
 }
 newbranches() {
-    cc-s "cd ~/x;newbranch $1"
+    cc-s "cd $xmtx;newbranch $1"
 }
 uprelocal() {
     upre localhost
@@ -413,7 +413,7 @@ if [[ $INSIDE_EMACS ]] ; then
 else
     gitnopager=
 fi
-macco() {
+forceco() {
     local branch=${1:?args: branch}
     (
         set -e
@@ -431,7 +431,14 @@ newbranch() {
 }
 pushc() {
     (
-        cd ~/x
+        cd $xmtx
+        lock=.git/index.lock
+        if [[ -f $lock ]] ; then
+            echo git lock $lock exists - waiting ...
+            sleep 5
+            rm -f $lock
+        fi
+        mend
         local b=${1:-`git_branch`}
 
         set -e
@@ -517,7 +524,7 @@ less2() {
     echo2 $out
 }
 nolog12() {
-    save12 "$@" --log-config ~/x/scripts/no.log.xml
+    save12 "$@" --log-config $xmtx/scripts/no.log.xml
 }
 dmacs() {
     fork dbus-launch --exit-with-session emacs
@@ -627,11 +634,12 @@ nbuild1() {
 }
 externals() {
     local newmastercmd="git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
-    local ncmd="cd /jenkins/xmt-externals; $newmastercmd"
+    local ncmd="cd /jenkins/xmt-externals && ($newmastercmd)"
+    bash -c "cd $xmtextbase && ($newmastercmd)"
     for host in c-jgraehl c-ydong c-mdreyer; do
         #localhost
         banner $host
-        ssh $host "cd c/xmt-externals; $newmastercmd"
+        ssh $host "cd c/xmt-externals && ($newmastercmd)"
     done
     banner nbuild1
     nbuild1 $ncmd
@@ -644,7 +652,7 @@ if [[ $HOST = graehl.local ]] ; then
 else
     CXX11=g++
 fi
-export CCACHE_BASEDIR=$(realpath ~/x)
+export CCACHE_BASEDIR=$(realpath $xmtx)
 chostfull=$chost.languageweaver.com
 phost=pontus.languageweaver.com
 HOME=${HOME:-$(echo ~)}
@@ -677,7 +685,7 @@ rtrims() {
 translit() {
     lang=$1
     shift
-    xmt --config ~/x/RegressionTests/SimpleTransliterator/XMTConfig.yml -p translit-$lang --log-config ~/x/scripts/no.log.xml
+    xmt --config $xmtx/RegressionTests/SimpleTransliterator/XMTConfig.yml -p translit-$lang --log-config $xmtx/scripts/no.log.xml
 }
 loch() {
     if [ "x$JAVA_HOME" == "x" ]; then
@@ -730,10 +738,10 @@ bak() {
     )
 }
 xpublish() {
-    publish=1 pdf=1 save12 ~/tmp/xpublish ~/x/scripts/make-docs.sh "$@"
+    publish=1 pdf=1 save12 ~/tmp/xpublish $xmtx/scripts/make-docs.sh "$@"
 }
 xhtml() {
-    open=1 publish= save12 ~/tmp/xhtml ~/x/scripts/make-docs.sh "$@"
+    open=1 publish= save12 ~/tmp/xhtml $xmtx/scripts/make-docs.sh "$@"
 }
 pmvover() {
     mvover "$@"
@@ -850,7 +858,7 @@ pevery() {
 }
 ctestlast() {
     (
-        cd ~/x/${BUILD:-Debug}
+        cd $xmtx/${BUILD:-Debug}
         echo 'CTEST_CUSTOM_POST_TEST("cat Testing/Temporary/LastTest.log")' > CTestCustom.test
         make test
     )
@@ -858,8 +866,8 @@ ctestlast() {
 xmtfails() {
     d=~/tmp
     cut -d' ' -f1 $d/fails > $d/fails.all
-    cd ~/x/RegressionTests/; grep -l xmt/xmt `cat $d/fails.all` > $d/fails.xmt
-    cd ~/x/RegressionTests/; grep -L xmt/xmt `cat $d/fails.all` > $d/fails.nonxmt
+    cd $xmtx/RegressionTests/; grep -l xmt/xmt `cat $d/fails.all` > $d/fails.xmt
+    cd $xmtx/RegressionTests/; grep -L xmt/xmt `cat $d/fails.all` > $d/fails.nonxmt
     tailn=20 preview $d/fails.xmt $d/fails.nonxmt
 }
 uncache() {
@@ -1339,7 +1347,7 @@ rebaseadds() {
     git rebase --continue
 }
 rebasenext() {
-    cd ~/x
+    cd $xmtx
     rebasece `git rebase --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
     rebaseadds
 }
@@ -1741,7 +1749,7 @@ pep() {
 }
 bakdocs() {
     (
-        cd ~/x/docs
+        cd $xmtx/docs
         scp *.r *.rmd *.md *.txt $chost:projects/docs
     )
 }
@@ -2025,7 +2033,7 @@ giteol() {
     # Commit
 }
 spd() {
-    ~/x/scripts/speedtest-stat-tok.sh "$@"
+    $xmtx/scripts/speedtest-stat-tok.sh "$@"
 }
 gpush() {
     (set -e
@@ -2037,14 +2045,14 @@ gpush() {
 }
 mendre() {
     (set -e
-        cd ~/x
+        cd $xmtx
         mend
         bakre "$@"
     )
 }
 bakx() {
     (set -e
-        cd ~/x
+        cd $xmtx
         bakthis "$@"
     )
 }
@@ -2261,11 +2269,11 @@ linregr() {
     c-s yregr "$@"
 }
 linjen() {
-    cd ~/x; mend;
+    cd $xmtx; mend;
     local branch=`git_branch`
     pushc $branch
     (set -e;
-        c-s macco $branch
+        c-s forceco $branch
         c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
 }
 rmautosave() {
@@ -2923,7 +2931,7 @@ grout() {
 }
 xlog() {
     (
-        cd ~/x
+        cd $xmtx
         gitlog
     )
 }
