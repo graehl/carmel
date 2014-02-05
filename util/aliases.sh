@@ -626,11 +626,12 @@ nbuild1() {
     nbuild gitbuild1 "$@"
 }
 externals() {
-    local ncmd="cd /jenkins/xmt-externals; git checkout master; git pull"
+    local newmastercmd="git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
+    local ncmd="cd /jenkins/xmt-externals; $newmastercmd"
     for host in c-jgraehl c-ydong c-mdreyer; do
         #localhost
         banner $host
-        ssh $host "cd c/xmt-externals; git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
+        ssh $host "cd c/xmt-externals; $newmastercmd"
     done
     banner nbuild1
     nbuild1 $ncmd
