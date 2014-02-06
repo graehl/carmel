@@ -65,7 +65,6 @@ struct option_options_base
   template <class typed_value>
   typed_value *apply(typed_value *tv) const
   {
-//#if (BOOST_VERSION / 100000)>=1 && ((BOOST_VERSION/100)%1000)>=50
 #if BOOST_VERSION >= 105000
     if (is)
       tv->value_name("["+*is+"]");

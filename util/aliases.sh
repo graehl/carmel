@@ -2,8 +2,38 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
+case $(uname) in
+    Darwin)
+        lwarch=Apple
+        ;;
+    Linux)
+        lwarch=FC12
+        shopt -s globstar || true
+        ;;
+    *)
+        lwarch=Windows ;;
+esac
 xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
+
+########################
+function tabname {
+  printf "\e]1;$*\a"
+}
+
+function winname {
+  printf "\e]2;$*\a"
+}
+
+title() {
+    if [[ $lwarch == Apple ]] ; then
+        tabname "$@"
+        winname "$@"
+    else
+        banner "$@"
+    fi
+}
+
 xgerrit() {
     (
         cd $xmtx
@@ -40,17 +70,6 @@ toarpa() {
         git add $b.arpa.gz
     )
 }
-case $(uname) in
-    Darwin)
-        lwarch=Apple
-        ;;
-    Linux)
-        lwarch=FC12
-        shopt -s globstar || true
-        ;;
-    *)
-        lwarch=Windows ;;
-esac
 pictest() {
     readelf --relocs $1 | egrep '(GOT|PLT|JU?MP_SLOT)' > /dev/null
     if [[ $? != 0 ]]; then
@@ -123,6 +142,7 @@ home-c-sync() {
 }
 c-make() {
     local tar=${1?target}
+    ctitle $tar "$@"
     shift
     (set -e;
         cd $xmtx; mend;
@@ -2275,10 +2295,14 @@ kmake() {
 linregr() {
     c-s yregr "$@"
 }
+ctitle() {
+    title $chost: "$@"
+}
 linjen() {
     cd $xmtx; mend;
     local branch=`git_branch`
     pushc $branch
+    ctitle jen "$@"
     (set -e;
         c-s forceco $branch
         c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
