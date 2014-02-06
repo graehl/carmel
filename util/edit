@@ -1,8 +1,27 @@
 #!/bin/bash
+case $(uname) in
+    Darwin)
+        lwarch=Apple
+        ;;
+    Linux)
+        lwarch=FC12
+        shopt -s globstar || true
+        ;;
+    *)
+        lwarch=Windows ;;
+esac
+
+if [[ $lwarch = Windows ]] ; then
+    emacscli=emacsclient
+    emacssrv=Emacs
+else
+    emacsapp=/Applications/Emacs.app/Contents/MacOS/
+    emacscli=$emacsapp/bin/emacsclient
+    emacssrv=$emacsapp/Emacs
+fi
+
 if [[ $CONSOLE ]] ; then
     exec /usr/bin/emacs -nw "$@"
 else
-    emacsapp=/Applications/Emacs.app/Contents/MacOS/
-    emacssrv=$emacsapp/Emacs
-    exec $emacsapp/bin/emacsclient -a $emacssrv "$@"
+    exec $emacscli -a $emacssrv "$@"
 fi
