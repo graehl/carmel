@@ -4,6 +4,13 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/time.sh
 xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
+xgerrit() {
+    (
+        cd $xmtx
+        mend
+        gerrit
+    )
+}
 cxj() {
     ( set -e;
         cd $xmtextbase
