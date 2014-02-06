@@ -762,6 +762,10 @@ struct string_builder : string_buffer
   {
     return str.assign(this->begin(),this->end());
   }
+  std::string &to(std::string &str) const
+  {
+    return str.assign(this->begin(),this->end());
+  }
   std::string str() const
   {
     return std::string(this->begin(),this->end());

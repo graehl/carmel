@@ -17,18 +17,33 @@ xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
 
 ########################
-function tabname {
+
+tabname() {
   printf "\e]1;$*\a"
+  if [[ $sleepname ]] ; then sleep $sleepname ; fi
 }
 
-function winname {
+winname() {
   printf "\e]2;$*\a"
+  if [[ $sleepname ]] ; then sleep $sleepname ; fi
+}
+
+tabwinname() {
+    local name=$1
+    shift
+    if [[ $name ]] ; then
+        tabname $name
+    fi
+    if [[ $1 ]] ; then
+        winname "$@"
+    fi
 }
 
 title() {
-    if [[ $lwarch == Apple ]] ; then
+    if [[ $INSIDE_EMACS ]] ; then
+        banner "$@"
+    elif [[ $lwarch == Apple ]] ; then
         tabname "$@"
-        winname "$@"
     else
         banner "$@"
     fi
