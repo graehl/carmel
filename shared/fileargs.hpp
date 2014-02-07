@@ -183,7 +183,7 @@ inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 template <class Stream>
 struct file_arg
 {
-private:
+protected:
   typedef large_streambuf<> buf_type;
   typedef boost::shared_ptr<buf_type> buf_p_type; // because iostreams don't destroy their streambufs
   buf_p_type buf; // this will be destroyed *after* stream pointer (and constructed before).
@@ -218,6 +218,12 @@ public:
     //TODO: assert or traits so only for ostreams
     if (!none)
       *pointer<<s<<std::endl;
+  }
+
+  void set(pointer_type const& pstream, std::string const& name) {
+    none = false;
+    this->pointer = pstream;
+    this->name = name;
   }
 
   operator pointer_type() const { return pointer; }

@@ -156,8 +156,8 @@ home-c-sync() {
     )
 }
 c-make() {
+    ctitle "$@"
     local tar=${1?target}
-    ctitle $tar "$@"
     shift
     (set -e;
         cd $xmtx; mend;
@@ -2311,7 +2311,7 @@ linregr() {
     c-s yregr "$@"
 }
 ctitle() {
-    title $chost: "$@"
+    title "$chost:" "$@"
 }
 linjen() {
     cd $xmtx; mend;
