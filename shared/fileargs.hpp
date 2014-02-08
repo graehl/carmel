@@ -220,6 +220,17 @@ public:
       *pointer<<s<<std::endl;
   }
 
+  void set(Stream * newstream, std::string const& name) {
+    none = false;
+    this->pointer.reset(newstream);
+    this->name = name;
+  }
+
+  template <class Ptr>
+  void setPtr(Ptr const& ptr, std::string const& name) {
+    set(boost::dynamic_pointer_cast<Stream>(ptr), name);
+  }
+
   void set(pointer_type const& pstream, std::string const& name) {
     none = false;
     this->pointer = pstream;

@@ -161,7 +161,11 @@ typedef boost::shared_ptr<program_options_exec> program_options_exec_ptr;
 struct program_options_exec_new  {
   program_options_exec_ptr p;
   program_options_exec *operator ->() const { return p.get(); }
-  explicit program_options_exec_new(string_consumer const& warn,std::string const& caption) : p(new program_options_exec(warn,caption)) {}
+  program_options_exec_new() {}
+  void init(string_consumer const& warn, std::string const& caption) {
+    p.reset(new program_options_exec(warn, caption));
+  }
+  program_options_exec_new(string_consumer const& warn,std::string const& caption) : p(new program_options_exec(warn,caption)) {}
   program_options_exec_new(program_options_exec_new const& o) : p(o.p) {}
 };
 

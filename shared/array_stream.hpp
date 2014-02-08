@@ -149,7 +149,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   }
 
   /**
-     simply seek to the beginning.
+     set no readable area but leave buffer alone
   */
   void reset()
   {
@@ -407,11 +407,11 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
   {
     m_sbuf.set_array(p, traits::length(p));
   }
-  inline void set_array(const value_type * p, size_type size)
+  inline void set_array(const value_type * p , size_type size)
   {
     m_sbuf.set_array(p, size);
   }
-  inline void set_array(const void * p, size_type size)
+  inline void set_array(const void * p = 0, size_type size = 0)
   {
     m_sbuf.set_array(p, size);
   }
