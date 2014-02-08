@@ -376,7 +376,7 @@ export MONO_USE_LLVM=1
 export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
 
 
-set-eterm-dir() {
+set_eterm_dir() {
     echo -e "\033AnSiTu" "$LOGNAME" # $LOGNAME is more portable than using whoami.
     echo -e "\033AnSiTc" "$(pwd)"
     if [ $(uname) = "SunOS" ]; then
