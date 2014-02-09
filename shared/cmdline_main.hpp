@@ -11,7 +11,7 @@
 
    add_options_extra()
 
-   or (with -DZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE=1)
+   or (with -DGRAEHL_CMDLINE_MAIN_USE_CONFIGURE=1)
 
    and this->configurable(my_configurable)
 
@@ -21,7 +21,7 @@
 
 #ifndef GRAEHL_CMDLINE_SAMPLE_MAIN
 # ifdef GRAEHL_G1_MAIN
-#  define ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
+#  define GRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
 #  define GRAEHL_CMDLINE_SAMPLE_MAIN 1
 # else
 #  define GRAEHL_CMDLINE_SAMPLE_MAIN 0
@@ -45,11 +45,11 @@
 # define GRAEHL_DEBUGPRINT 0
 #endif
 
-#ifndef ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
-# define ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
+#ifndef GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+# define GRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
 #endif
 
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
 # include <graehl/shared/configure_program_options.hpp>
 # include <graehl/shared/configurable.hpp>
 #endif
@@ -195,6 +195,8 @@ struct main_options : base_options {
 };
 
 struct main {
+  typedef std::vector<istream_arg> istream_args;
+
   main_options opt;
 
   void validate() {
@@ -255,11 +257,13 @@ struct main {
 
   int help_exitcode;
 
+  /// using this constructor, you must call init before any other methods (e.g. configurable)
   main()
+      : general("General options"), cosmetic("Cosmetic options"), all_options_("Options")
   {}
 
   void init() {
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     exec.init(to_cerr, "Options");
 #endif
     opt.init();
@@ -304,7 +308,7 @@ struct main {
   OD all_options_;
   OD &all_options()
   {
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     return exec.p->opt_desc;
 #else
     return all_options_;
@@ -356,7 +360,7 @@ struct main {
 
   virtual void finish_options(OD &optionsDesc)
   {
-#if !ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if !GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     if (general.size())
       optionsDesc.add(general);
     if (cosmetic.size())
@@ -391,11 +395,15 @@ struct main {
     return *out_file;
   }
 
+  std::string outName() const {
+    return out_file.name;
+  }
+
   void log_invocation_base()
   {
     log() << "### COMMAND LINE:\n" << cmdline_str << "\n";
     log() << "### USING OPTIONS:\n";
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     confs.effective(log(), to_cerr);
 #else
     all_options().print(log(), get_vm(), SHOW_DEFAULTED | SHOW_HIERARCHY);
@@ -447,16 +455,16 @@ struct main {
       c("verbose", &verbose)('v')(
           "e.g. verbosity level >1 means show banner of command line options. 0 means don't");
 
-    if (opt.add_out_file)
-      c(GRAEHL_OUT_FILE, &out_file)('o').positional(opt.positional_out)(
-          "Output here (instead of STDOUT)").eg("outfile.gz");
-
     if (opt.add_ins()) {
       int nin = opt.max_ins;
       if (nin<0) nin = 0;
       c(GRAEHL_IN_FILE, &ins)('i')(opt.input_help()).eg("infileN.gz").positional(opt.positional_in, nin);
     } else if (opt.add_in_file)
       c(GRAEHL_IN_FILE, &in_file)('i')(opt.input_help()).eg("infile.gz").positional(opt.positional_in);
+
+    if (opt.add_out_file)
+      c(GRAEHL_OUT_FILE, &out_file)('o').positional(opt.positional_out)(
+          "Output here (instead of STDOUT)").eg("outfile.gz");
 
     if (opt.add_config_file)
       c(GRAEHL_CONFIG_FILE, &config_file)('c')(
@@ -468,7 +476,7 @@ struct main {
 
 #if GRAEHL_DEBUGPRINT
     if (opt.add_debug_level)
-      c("debug-level", &debug_lvl)('d')(
+      c("debug-level", &debug_lvl)(
           "Debugging output level (0 = off, 0xFFFF = max)");
 #endif
 
@@ -479,7 +487,7 @@ struct main {
 
   void add_options_base(OD &optionsDesc)
   {
-#if !ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if !GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     if (opt.add_help)
       optionsDesc.add_options()
           ("help,h", boost::program_options::bool_switch(&help),
@@ -554,18 +562,20 @@ struct main {
     if (configure_finished)
       return;
     configure_finished = true;
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     SHOWIF1(CONFEXPR, 1,"finish_configure", this);
     // deferred until subclass etc has change to declare postitional etc
     configurable(this);
 #endif
     finish_configure_extra();
+    declare_configurable();
   }
   virtual void finish_configure_extra()
-  {
-  }
+  {}
+  virtual void declare_configurable()
+  {}
 
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
   typedef configure::configure_list configure_list;
  private:
   configure_list confs;
@@ -620,7 +630,7 @@ struct main {
   }
 #endif
 
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
   // actually, these are set inside configure()
 #else
   void add_positional(std::string const& name, int n = 1) {
@@ -647,7 +657,7 @@ struct main {
   {
     o << "\n" << name_version() << "\n\n";
     o << opt.usage << "\n\n";
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     confs.standard_help(o, to_cerr); // currently repeats --help each time since it's shown through po lib
     o << "\n\n" << opt.name << " [OPTIONS]:\n";
     exec->show_po_help(o);
@@ -667,7 +677,7 @@ struct main {
     cmdline_str = graehl::get_command_line(argc, argv, NULL);
     add_options(all_options());
     try {
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
       SHOWIF1(CONFEXPR, 1,"parse_args", cmdline_str);
       finish_configure();
       confs.init(to_cerr);
@@ -704,7 +714,7 @@ struct main {
     return true;
   }
 
-#if ZGRAEHL_CMDLINE_MAIN_USE_CONFIGURE
+#if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
   configure::warn_consumer to_cerr; //TODO: set stream to logfile
   configure::program_options_exec_new exec;
 #endif

@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <stdexcept>
+#include <cassert>
 
 namespace graehl {
 
