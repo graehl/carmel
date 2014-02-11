@@ -263,9 +263,22 @@ public:
     this->name = name;
   }
 
-  operator pointer_type() const { return pointer; }
-  void operator = (std::string const& name) { set(name); }
+  file_arg(file_arg const& o)
+      : buf(o.buf)
+      , pointer(o.pointer)
+      , none(o.none)
+      , name(o.name)
+  {}
 
+  void operator=(file_arg const& o) {
+    buf = o.buf;
+    pointer = o.pointer;
+    none = o.none;
+    name = o.name;
+  }
+
+  operator pointer_type() const { return pointer; }
+  void operator=(std::string const& name) { set(name); }
   bool operator==(Stream const& s) const { return get()==&s; }
   bool operator==(file_arg const& s) const { return get()==s.get(); }
   bool operator!=(Stream const& s) const { return get()!=&s; }
@@ -316,11 +329,19 @@ public:
 
   enum { delete_after = 1, no_delete_after = 0 };
 
+  bool is_file() const {
+    return !none && !special_output_filename(name);
+  }
+
+ protected:
   void clear() {
+    none = true;
     pointer.reset(); // pointer to stream must go before its large buf goes
     buf.reset();
     name="";
   }
+ public:
+
   void set(Stream &s, std::string const& filename="", bool destroy = no_delete_after, std::string const& fail_msg="invalid stream")
   {
     clear();

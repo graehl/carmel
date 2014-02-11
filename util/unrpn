@@ -1,6 +1,22 @@
-#!/usr/bin/perl -i~
+#!/usr/bin/perl
+my $membersuffix = $ENV{membersuffix} || '';
+my $dryrun = $ENV{dryrun};
+my $outdir = $ENV{outdir} || `echo ~`;
+
+sub say {
+    my $s = join(' ',@_);
+    chomp $s;
+    print STDERR $s,"\n";
+}
+if ($dryrun) {
+} else {
+  $^I = '~';
+}
+say "membersuffix=$membersuffix dryrun=$dryrun -i=$^I";
 my $cfh;
-my $cfile=`echo ~/tmp/collisions.txt`;
+my $cfile="$outdir/tmp/collisions.txt";
+my $cfilesfile="$outdir/tmp/collision.files.txt";
+my $renamesfile="$outdir/tmp/renames.txt";
 chomp $cfile;
 my $cdir=`dirname $cfile`;
 chomp $cdir;
@@ -9,17 +25,22 @@ my $origline;
 my $orig;
 my $field;
 
+my %collisionfiles;
+
 sub cprint {
+    ++$collisionfiles{$ARGV};
     open($cfh,">>",$cfile) if !defined($cfh);
     print $cfh @_;
-    print STDERR @_;
+    say(@_);
 }
 
 my %rewrote;
 
 sub collision {
     my $old=$rewrote{$_};
-    cprint "COLLISION $ARGV:$. #$field: {$old,$orig} => $_\n $origline" if ($old && $old ne $orig);
+    if ($old && $old ne $orig) {
+        cprint "COLLISION $ARGV:$. #$field: {$old,$orig} => $_\n $origline"
+    }
     $rewrote{$_}=$orig;
     $orig=$_;
 }
@@ -34,15 +55,27 @@ sub stripany {
   s|^$pre||;
 }
 
+my %renames;
+sub renamed {
+    my ($pre,$post)=@_;
+    $renames{$pre} = $post;
+}
+
 #$_ is a variable name
 sub rename {
     local($_)=@_;
     $orig=$_;
-    stripany('m_');
+    $_ .= $membersuffix if stripany('m_');
     stripcamel('b|u|str|vec|map|the|sz');
+    stripcamel('the');
     s|^iter(?=[A-Z])|i|;
+    renamed($orig,$_) if ($orig ne $_);
     &collision;
     $_
+}
+
+sub rewroteline {
+    print STDERR "rewrote:\n< $origline> $_";
 }
 
 while(<>) {
@@ -50,7 +83,21 @@ while(<>) {
     $field=0;
     s|\b([a-zA-Z_][a-zA-Z_0-9]+)\b|&rename($1)|ge;
     if ($origline ne $_) {
-        print STDERR "rewrote:\n< $origline> $_";
+        rewroteline($origline,$_);
     }
-    print;
+    print unless $dryrun;
 }
+
+
+say '---';
+say 'RENAMES:';
+say "$_\t$renames{$_}\n" for (keys %renames);
+
+open RENAMES,">", $renamesfile;
+print RENAMES "$_\t$renames{$_}\n" for (keys %renames);
+
+say '---';
+say 'COLLISIONS:';
+say "$collisionfiles{$_}\t$_\n" for (keys %collisionfiles);
+open CFILES,">", $cfilesfile;
+print CFILES "$_\n" for (keys %collisionfiles);

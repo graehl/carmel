@@ -18,6 +18,26 @@ xmtextbase=$(echo ~/c/xmt-externals)
 
 ########################
 
+cleantmp() {
+    df -h /tmp
+    rm -rf /tmp/* 2>/dev/null
+    df -h /tmp
+}
+forns() {
+(
+for i in `seq 1 6`; do
+  f=gitbuild$i
+  nbuild $f "$@"
+done
+)
+}
+forcns() {
+    forcs "$@"
+    forns "$@"
+}
+rmtmps() {
+    forcns cleantmp
+}
 tabname() {
   printf "\e]1;$*\a"
   if [[ $sleepname ]] ; then sleep $sleepname ; fi
@@ -184,7 +204,7 @@ cc-to() {
 }
 c-s() {
     local chost=${chost:-c-jgraehl}
-    local fwdenv="gccfilter=$gccfilter"
+    local fwdenv="gccfilter=$gccfilter BUILD=$BUILD"
     local pre=". ~/.e"
     local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
     if false || [[ $ontunnel ]] ; then
@@ -195,6 +215,9 @@ c-s() {
 }
 k-s() {
     (k-c; c-s "$@")
+}
+kr-s() {
+    (k-c; b-r; c-s "$@")
 }
 d-s() {
     (d-c; c-s "$@")
@@ -226,6 +249,17 @@ c-compile() {
 }
 c-xmtcompile() {
     c-with BUILD=$BUILD xmtcompile "$@"
+}
+kr-make() {
+    (kr-c;c-make "$@")
+}
+kr-c() {
+    b-r
+    k-c
+}
+cd-c() {
+    b-d
+    c-c
 }
 b-r() {
     BUILD=Release
@@ -498,6 +532,9 @@ c-vgtest() {
     local test=$1
     shift
     c-make Test$test "$@" vgTest$test
+}
+k-test() {
+    (b-r;k-c;c-test "$@")
 }
 c-test() {
     local test=$1
@@ -1589,7 +1626,7 @@ jen() {
 }
 
 
-kjen() {
+kjen(){
     chost=c-ydong linjen "$@"
 }
 djen() {
@@ -7160,7 +7197,13 @@ sshlog() {
     echo ssh "$@" 1>&2
     ssh "$@"
 }
-MAKEPROC=${MAKEPROC:-10}
+if ! [[ $MAKEPROC ]] ; then
+    MAKEPROC=2
+    [[ $lwarch = Apple ]] || MAKEPROC=10
+fi
+mjen() {
+    UPDATE=0 jen ${BUILD:-Debug}
+}
 if [[ -d $XMT_EXTERNALS_PATH ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
 fi

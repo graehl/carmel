@@ -416,13 +416,6 @@ struct main {
   void validate_parameters_base()
   {
     validate();
-    if (quiet) {
-      if (verbose>0)
-        log()<<"setting verbose to 0 since --quiet, even though you set it to "<<verbose<<"\n";
-      verbose = 0;
-    }
-    if (in_file && ins.empty())
-      ins.push_back(in_file);
 
     log_stream = log_file.get();
     if (!log_stream)
@@ -432,6 +425,11 @@ struct main {
       teebufptr.reset(new teebuf(log_stream->rdbuf(), std::cerr.rdbuf()));
       teestreamptr.reset(log_stream = new std::ostream(teebufptr.get()));
     }
+    if (quiet)
+      verbose = 0;
+    if (in_file && ins.empty())
+      ins.push_back(in_file);
+
 #if GRAEHL_DEBUGPRINT && defined(DEBUG)
     DBP::set_logstream(&log());
     DBP::set_loglevel(log_level);
