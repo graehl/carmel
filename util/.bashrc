@@ -1,4 +1,4 @@
-HOME=$(echo ~)
+HOME=`echo ~`
 #set completion-prefix-display-length 2
 #set show-all-if-ambiguous on
 #set show-all-if-unmodified on
@@ -7,7 +7,7 @@ HOME=$(echo ~)
 LOCAL_PYTHON_PATH=$HOME/lib/python
 mkdir -p $LOCAL_PYTHON_PATH
 export PYTHON_PATH=$LOCAL_PYTHON_PATH:$PYTHON_PATH
-GRAEHL=~graehl
+GRAEHL=`echo ~graehl`
 UTIL=$GRAEHL/u
 
 if false && [ "$TERM" = dumb ] ; then
@@ -169,11 +169,6 @@ export LC_ALL=$lc
 #export JAVA_HOME=""
 
 
-SBMT_SVNREPO='https://nlg0.isi.edu/svn/sbmt'
-SBMT_BASE=$HOME/sbmt
-SBMT_TRUNK=$HOME/t
-
-
 function save_default_paths {
     if [ ! "$DEFAULTS_SAVED" ] ; then
         DEFAULTS_SAVED=1
@@ -225,50 +220,11 @@ function add_path
     prepend_path $prefix
 }
 
-HPCBLOBS=/home/nlg-01/blobs
-HPCGCC=/usr/usc/gnu/gcc/gcc4-default
-
-
-HPCPERL32=$HPCBLOBS/perl/v5.8.8
-HPCPERL64=/home/nlg-03/voeckler/perl/x86_64
-
-SBMTARCH=i386
-[ "$ON64" ] && SBMTARCH=x86_64
-
 function finalize_paths {
 #[ "$ON64" ] && PATH=/usr/bin:$PATH
 #[ `/usr/bin/whoami` = root ] && PATH=/sbin:/usr/sbin:/usr/local/sbin:$PATH
 
 #[ "$ONCYGWIN" ] && PATH=/usr/local/ssh-bin:$PATH
-    if [ "$ONHPC" ] ; then
-        case "`uname -m`" in
-            i[3456]86)
-                HPCPERL=$HPCPERL32
-                PERLV=5.8.8
-                export PERL5LIB=~voeckler/lib/perl:$HPCPERL/lib/$PERLV:$HPCPERL/lib/site_perl/$PERLV:$HPCPERL/lib/site_perl
-                ;;
-            x86_64)
-                HPCPERL=$HPCPERL64
-                unset PERL5LIB
-                ;;
-            *)
-                echo "WARNING: Unsupported architecture `uname -m`" 1>&2
-# exit 42
-                ;;
-        esac
-        PERL=$HPCPERL/bin/perl
-
-        PATH=$HPCGCC/bin:$PATH
-#/home/nlg-02/graehl/mini_dev/$SBMTARCH/bin:/home/nlg-02/graehl/mini_13.0/$SBMTARCH/bin:
-        PATH=$PATH
-        PATH=$HPCPERL/bin:$PATH
-        add_ldpath $GHOME/lib$S64
-        add_ldpath $HPCGCC/lib$S64 || true
-    fi
-    CABAL=~/.cabal
-    if [ -d $CABAL/bin ] ; then
-        PATH=$CABAL/bin:$PATH
-    fi
     export PATH
 }
 
@@ -323,13 +279,10 @@ function exportflags {
     [ "$HOST" = "cage" ] && export BOOST_SUFFIX=
     [ "$HOST" = "maybe" ] && export BOOST_SUFFIX=gcc34-mt
     export BOOST_SRCDIR=~/isd/boost
-    export HOSTBASE ARCH64BASE ARCHBASE HOST32BASE SBMT_TRUNK
+    export HOSTBASE ARCH64BASE ARCHBASE HOST32BASE
 }
 
 exportflags
-
-#CMPH_INCLUDE=-I$SBMT_TRUNK/biglm/cmph/src
-
 
 #i686
 OPTFLAGS="-march=native -mtune=native -ffast-math -Wunsafe-loop-optimizations -funsafe-loop-optimizations -funsafe-math-optimizations"
@@ -397,7 +350,7 @@ export CLOJURE_EXT=~/.clojure
 export HYPERGRAPH_DBG=1
 
 . $UTIL/aliases.sh
-. ~/local.sh
+. $GRAEHL/local.sh
 ulimitsafe 262144 s
 
 #if [[ $INSIDE_EMACS ]] ; then export PS1='|PrOmPt|\w|\w $ '; fi

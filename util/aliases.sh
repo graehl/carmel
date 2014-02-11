@@ -21,13 +21,14 @@ xmtextbase=$(echo ~/c/xmt-externals)
 cleantmp() {
     df -h /tmp
     rm -rf /tmp/* 2>/dev/null
+    du -h /tmp
     df -h /tmp
 }
 forns() {
 (
 for i in `seq 1 6`; do
   f=gitbuild$i
-  nbuild $f "$@"
+  n-s $f "$@"
 done
 )
 }
@@ -700,16 +701,20 @@ branchnew() {
     git checkout -b "$1" origin/master
     git commit --allow-empty -m "$*"
 }
-nbuild() {
-    local host=$1
-    shift
-    ssh ${host:-gitbuild1} -l nbuild -i ~/.ssh/nbuild-laptop "$@"
+n-s() {
+    local host=${nhost:-gitbuild1}
+    local args="$host -l nbuild -i $HOME/.ssh/nbuild-laptop"
+    if [[ "$@" ]] ; then
+        ssh $args ". ~graehl/.e; $@"
+    else
+        ssh $args
+    fi
 }
-nbuild2() {
-    nbuild gitbuild2 "$@"
+n2-s() {
+    n-host=gitbuild2 n-s "$@"
 }
-nbuild1() {
-    nbuild gitbuild1 "$@"
+n1-s() {
+    n-host=gitbuild1 n-s "$@"
 }
 externals() {
     local newmastercmd="git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
