@@ -9,7 +9,7 @@ namespace graehl {
 struct linenobuf:
   public std::streambuf
 {
-    linennobuf(std::streambuf* sbuf): m_sbuf(sbuf), m_lineno(1) {}
+    linenobuf(std::streambuf* sbuf): m_sbuf(sbuf), m_lineno(1) {}
     int lineno() const { return m_lineno; }
 
  private:
@@ -42,8 +42,8 @@ struct ilinenostream:
 {
     ilinenostream(std::istream& stream):
       std::ios(&m_sbuf),
-      std::istream(&m_sbuf)
-        m_sbuf(stream.rdbuf())
+      std::istream(&m_sbuf),
+      m_sbuf(stream.rdbuf())
     {
         init(&m_sbuf);
     }
