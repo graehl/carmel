@@ -19,12 +19,26 @@ xmtextbase=$(echo ~/c/xmt-externals)
 ########################
 
 cleantmp() {
+    (
     df -h /tmp
-    rm -rf /tmp/* 2>/dev/null
+    rm -rf /tmp/*
     du -h /tmp
     df -h /tmp
+    ) 2>/dev/null
 }
-forns() {
+cs-for() {
+    ( set -e
+        for i in `seq 1 6`; do
+            nhost=gitbuild$i
+            echo2 nhost=$nhost "$@"
+            nhost=$nhost "$@"
+        done
+    )
+}
+cs-s() {
+    cs-for n-s "$@"
+}
+ns-for() {
 (
 for i in `seq 1 6`; do
   f=gitbuild$i
@@ -33,8 +47,8 @@ done
 )
 }
 forcns() {
-    forcs "$@"
-    forns "$@"
+    cs-s "$@"
+    ns-s "$@"
 }
 rmtmps() {
     forcns cleantmp
@@ -192,7 +206,7 @@ c-make() {
         fi
     )
 }
-cc-for() {
+cs-for() {
     ( set -e
         for chost in c-ydong c-jgraehl c-mdreyer; do
             echo2 chost=$chost "$@"
@@ -200,15 +214,15 @@ cc-for() {
         done
     )
 }
-cc-to() {
-    cc-for c-to "$@"
+cs-to() {
+    cs-for c-to "$@"
 }
 c-s() {
     local chost=${chost:-c-jgraehl}
     local fwdenv="gccfilter=$gccfilter BUILD=$BUILD"
     local pre=". ~/.e"
     local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
-    if false || [[ $ontunnel ]] ; then
+    if [[ $ontunnel ]] ; then
         sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     else
         sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
@@ -223,8 +237,8 @@ kr-s() {
 d-s() {
     (d-c; c-s "$@")
 }
-cc-s() {
-    forcs c-s "$@"
+cs-s() {
+    cs-for c-s "$@"
 }
 c-with() {
     (set -e;

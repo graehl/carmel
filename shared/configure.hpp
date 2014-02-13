@@ -1272,14 +1272,6 @@ struct conf_expr
   {
     return init(true, v2);
   }
-  conf_expr const& init_true() const // this is no different than the simple init(true). remove?
-  {
-    return init(true, true);
-  }
-  conf_expr const& init_false() const
-  {
-    return init(true, false);
-  }
   conf_expr const& self_init(bool enable = true) const
   {
     if (enable)
