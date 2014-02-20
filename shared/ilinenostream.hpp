@@ -7,58 +7,58 @@
 namespace graehl {
 
 struct linenobuf:
-  public std::streambuf
+      public std::streambuf
 {
-    linennobuf(std::streambuf* sbuf): m_sbuf(sbuf), m_lineno(1) {}
-    int lineno() const { return m_lineno; }
+  linenobuf(std::streambuf* sbuf): sbuf_(sbuf), lineno_(1) {}
+  int lineno() const { return lineno_; }
 
  private:
-    int_type underflow() { return m_sbuf->sgetc(); }
-    int_type uflow()
-    {
-        int_type rc = m_sbuf->sbumpc();
-        if (traits_type::eq_int_type(rc, traits_type::to_int_type('\n')))
-            ++m_lineno;
-        return rc;
-    }
+  int_type underflow() { return sbuf_->sgetc(); }
+  int_type uflow()
+  {
+    int_type rc = sbuf_->sbumpc();
+    if (traits_type::eq_int_type(rc, traits_type::to_int_type('\n')))
+      ++lineno_;
+    return rc;
+  }
 
-    std::streambuf* m_sbuf;
-    int             m_lineno;
-}; 
+  std::streambuf* sbuf_;
+  int lineno_;
+};
 
 /* Thanks to Dietmar Kuehl:
-   
-  Instead of dealing with each
-character individually, you can setup a buffer in the 'underflow()'
-method (see 'std::streambuf::setg()') which is filled using 'sgetn()'
-on the underlying stream buffer. In this case you would not use 'uflow()'
-at all (this method is only used for unbuffered input stream buffers).
-A huge buffer is read into the internal buffer which is chopped up at
-line breaks such that 'underflow()' is called if a line break is hit.
+
+   Instead of dealing with each
+   character individually, you can setup a buffer in the 'underflow()'
+   method (see 'std::streambuf::setg()') which is filled using 'sgetn()'
+   on the underlying stream buffer. In this case you would not use 'uflow()'
+   at all (this method is only used for unbuffered input stream buffers).
+   A huge buffer is read into the internal buffer which is chopped up at
+   line breaks such that 'underflow()' is called if a line break is hit.
 */
 
 struct ilinenostream:
-  public std::istream
+      public std::istream
 {
-    ilinenostream(std::istream& stream):
-      std::ios(&m_sbuf),
-      std::istream(&m_sbuf)
-        m_sbuf(stream.rdbuf())
-    {
-        init(&m_sbuf);
-    }
+  ilinenostream(std::istream& stream):
+      std::ios(&sbuf_),
+      std::istream(&sbuf_)
+      sbuf_(stream.rdbuf())
+  {
+    init(&sbuf_);
+  }
 
-    int lineno() { return m_sbuf.lineno(); }
+  int lineno() { return sbuf_.lineno(); }
 
  private:
-    linenobuf m_sbuf;
+  linenobuf sbuf_;
 };
 
 #ifdef GRAEHL_TEST
- #include <fstream>
-  int main() {
-      return 0;
-  }
+#include <fstream>
+int main() {
+  return 0;
+}
 #endif
 }
 

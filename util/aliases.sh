@@ -24,6 +24,38 @@ gitmodified() {
 removecr() {
     sed -i 's/\r//g' "$@"
 }
+githash() {
+    git rev-parse --short HEAD
+}
+changeid() {
+    local cid=`git log -1 | grep Change-Id: | cut -d':' -f2`
+    echo $cid
+}
+xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer xmt/lib/libxmt_shared.so"
+bakxmt() {
+( set -e;
+    cd $xmtx/${BUILD:-Release}
+    local changeid=`changeid`
+    local hash=`githash`
+    local pub=~/pub
+    local out=$pub/$changeid
+    mkdir -p $out/$hash
+    ln -sf $changeid/$hash $pub/$hash
+    ls -l $pub/$hash
+    ln -sf $pub/$hash $pub/latest
+    ls -l $pub/latest
+    for f in $xmtbins; do
+      local b=`basename $f`
+      ls -l $f
+      cpstripx $f $out/$hash
+      ln -sf $hash/$b $out/$b
+      ln -sf $hash/$b $pub/$b
+      ls -l $out/$b
+      ls -l $pub/$b
+    done
+    $out/$hash/xmt --help
+)
+}
 cleantmp() {
     (
     df -h /tmp
@@ -1538,17 +1570,23 @@ yreg() {
         if [[ $exitfail != 0 ]] ; then
             REGTESTPARAMS_=" -X"
         fi
+        if [[ $regverbose != 0 ]] ; then
+            REGTESTPARAMS_=" -v"
+        fi
         if [[ $monitor ]] ; then
             REGTESTPARAMS+=" --monitor-stderr"
         fi
         local python=${python:-python}
         if [[ $1 ]] ; then
+            local f=$1
             if [[ -d $1 ]] ; then
                 save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS "$@"
             elif [[ -f $1 ]] || [[ ${1#reg} != $1 ]] ; then
-                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y "$(basename $1)"\*
+                shift
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y "$(basename $f)"\* "$@"
             else
-                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y reg\*$1\*ml
+                shift
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y reg\*$f\*ml "$@"
             fi
         else
             save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS
@@ -1884,11 +1922,14 @@ stripx() {
 cpstripx() {
     local from=$1
     local to=${2:?from to}
+    if [[ -d $to ]] ; then
+        to+="/$(basename $from)"
+    fi
     (set -e
-        require_file $from
-        cp $from $to
-        chmod +x $to
-        stripx $to
+        require_file "$from"
+        cp "$from" "$to"
+        chmod +x "$to"
+        stripx "$to"
     )
 }
 topps() {
@@ -2382,7 +2423,7 @@ linjen() {
     ctitle jen "$@"
     (set -e;
         c-s forceco $branch
-        c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$branch | filter-gcc-errors
+        c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -4300,8 +4341,8 @@ s2c() {
     (cd ~
         set -e
         c-sync u g script bugs .gitconfig
-        cc-to x/run.sh
-        cc-to x/xmtpath.sh
+        c-to x/run.sh
+        c-to x/xmtpath.sh
         #chost=ceto c-sync u g script bugs .gitconfig
     )
 }
