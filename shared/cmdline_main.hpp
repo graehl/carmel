@@ -63,7 +63,6 @@
 #include <graehl/shared/makestr.hpp>
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/random.hpp>
-//#include <graehl/shared/verbose_exception.hpp>
 
 #if GRAEHL_DEBUGPRINT
 # include <graehl/shared/debugprint.hpp>
@@ -121,7 +120,6 @@ struct base_options {
       validate(n);
       for (unsigned i = 0; i<n; ++i)
         if (!*ins[i]) {
-          // VTHROW_MSG("invalid input #"<<utos(i+1)<<" file "+ins[i].name);
           throw std::runtime_error("Invalid input file #"+utos(i+1)+" file "+ins[i].name);
         }
     }
@@ -268,7 +266,6 @@ struct main {
 #endif
     opt.init();
     options_added = configure_finished = false;
-    help = false;
     help_exitcode = 0;
     verbose = 1;
     random_seed = default_random_seed();
@@ -439,8 +436,6 @@ struct main {
 
   template <class Conf> void configure(Conf &c)
   {
-    help = false;
-    quiet = false;
     c.is(opt.name);
     if (opt.add_help)
       c("help", &help)('h').flag()("show usage/documentation").verbose();
@@ -685,12 +680,15 @@ struct main {
       confs.store(to_cerr);
 #else
       parsed_options po = all_options().parse_options(argc, argv, &get_positional());
-      store(po, get_vm());
-      //notify(get_vm()); // variables aren't set until notify?
-      if (maybe_get(get_vm(), GRAEHL_CONFIG_FILE, config_file)) {
+      variables_map &vm = get_vm();
+      store(po, vm);
+      if (vm.count("help")) {
+        show_help(std::cout);
+        return false;
+      }
+      if (maybe_get(vm, GRAEHL_CONFIG_FILE, config_file)) {
         try {
-          // config_file.set(get_string(get_vm(),GRAEHL_CONFIG_FILE));
-          store(parse_config_file(*config_file, all_options()), get_vm()); /*Stores in 'm' all options that are defined in 'options'. If 'm' already has a non-defaulted value of an option, that value is not changed, even if 'options' specify some value. */
+          store(parse_config_file(*config_file, all_options()), vm); /*Stores in 'm' all options that are defined in 'options'. If 'm' already has a non-defaulted value of an option, that value is not changed, even if 'options' specify some value. */
           //NOTE: this means that cmdline opts have precedence. hooray.
           config_file.close();
         } catch(exception &e) {
@@ -698,7 +696,7 @@ struct main {
           throw;
         }
       }
-      notify(get_vm()); // are multiple notifies idempotent? depends on user fns registered?
+      notify(vm); // are multiple notifies idempotent? depends on user fns registered?
       if (help) {
         show_help(std::cout);
         return false;
@@ -706,7 +704,6 @@ struct main {
 #endif
     } catch (std::exception &e) {
       std::cerr << "ERROR: "<<e.what() << "\n while parsing "<<opt.name<<" options:\n"<<cmdline_str<<"\n\n" << argv[0] << " -h\n for help\n\n";
-      //show_help(std::cerr);
       throw;
     }
     return true;

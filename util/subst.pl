@@ -71,6 +71,7 @@ my @rewrites;
 my $fh=openz($ttable);
 while(<$fh>) {
     chomp;
+    y/\013//d;
     if ($substre) {
         push @substs,[eval "sub { $_ }",$_];
     } else {

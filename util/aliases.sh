@@ -18,6 +18,12 @@ xmtextbase=$(echo ~/c/xmt-externals)
 
 ########################
 
+gitmodified() {
+    git diff --name-only "$@"
+}
+removecr() {
+    sed -i 's/\r//g' "$@"
+}
 cleantmp() {
     (
     df -h /tmp
