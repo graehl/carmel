@@ -35,25 +35,30 @@ xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer xmt/lib/libxmt_
 bakxmt() {
 ( set -e;
     cd $xmtx/${BUILD:-Release}
-    local changeid=`changeid`
+    local change=`changeid`
     local hash=`githash`
-    local pub=~/pub
-    local out=$pub/$changeid
-    mkdir -p $out/$hash
-    ln -sf $changeid/$hash $pub/$hash
-    ls -l $pub/$hash
+    local pub=$(echo ~/pub)
+    rm -rf $pub/$hash
+    mkdir -p $pub/$hash
+    mkdir -p $pub/$change
+    ln -sf $pub/$hash $pub/$change/$hash
+    rm -f $pub/latest $pub/$change/latest
     ln -sf $pub/$hash $pub/latest
-    ls -l $pub/latest
     for f in $xmtbins; do
       local b=`basename $f`
       ls -l $f
-      cpstripx $f $out/$hash
-      ln -sf $hash/$b $out/$b
+      if true || [[ ${f%.so} != $f ]] ; then
+          cpstripx $f $pub/$hash/$b
+      else
+          cp -af $f $pub/$hash/$b
+      fi
       ln -sf $hash/$b $pub/$b
-      ls -l $out/$b
-      ls -l $pub/$b
+      ln -sf ../$hash $changeid/latest
+      ln -sf ../$hash/$b $pub/$change/$b
     done
-    $out/$hash/xmt --help
+    set -x
+    $pub/$hash/xmt --help
+    set +x
 )
 }
 cleantmp() {
@@ -260,7 +265,7 @@ c-s() {
     local fwdenv="gccfilter=$gccfilter BUILD=$BUILD"
     local pre=". ~/.e"
     local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
-    if [[ $ontunnel ]] ; then
+    if false || [[ $ontunnel ]] ; then
         sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     else
         sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
@@ -761,6 +766,18 @@ n-s() {
     else
         ssh $args
     fi
+}
+n6-s() {
+    n-host=gitbuild6 n-s "$@"
+}
+n5-s() {
+    n-host=gitbuild5 n-s "$@"
+}
+n4-s() {
+    n-host=gitbuild4 n-s "$@"
+}
+n3-s() {
+    n-host=gitbuild3 n-s "$@"
 }
 n2-s() {
     n-host=gitbuild2 n-s "$@"
