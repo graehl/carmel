@@ -53,7 +53,7 @@ bakxmt() {
           cp -af $f $pub/$hash/$b
       fi
       ln -sf $hash/$b $pub/$b
-      ln -sf ../$hash $changeid/latest
+      ln -sf ../$hash $change/latest
       ln -sf ../$hash/$b $pub/$change/$b
     done
     set -x
@@ -265,7 +265,7 @@ c-s() {
     local fwdenv="gccfilter=$gccfilter BUILD=$BUILD"
     local pre=". ~/.e"
     local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
-    if false || [[ $ontunnel ]] ; then
+    if false && [[ $ontunnel ]] ; then
         sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     else
         sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
@@ -1690,7 +1690,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL PUBLISH=${PUBLISH:-1} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
     set +x
     echo
     echo $log
