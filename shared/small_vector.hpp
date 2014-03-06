@@ -95,6 +95,7 @@
 #define GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(v) BOOST_SERIALIZATION_NVP(v)
 
 
+#include <vector>
 #include <iterator>
 #include <functional>
 #include <boost/serialization/array.hpp>
@@ -119,9 +120,12 @@ struct enable_type {
   typedef void type;
 };
 
+enum { kDefaultMaxInlineSize = 3 };
+typedef unsigned small_vector_default_size_type;
+
 // recommend an odd number for kMaxInlineSize on 64-bit (check sizeof to see
 // that you get the extra element for free)
-template <class T,unsigned kMaxInlineSize=3,class Size=unsigned>
+template <class T, unsigned kMaxInlineSize=kDefaultMaxInlineSize, class Size=small_vector_default_size_type>
 struct small_vector {
   typedef small_vector Self;
   typedef Size size_type;
@@ -968,6 +972,17 @@ struct small_vector {
     // (otherwise it would be simpler to move sz_ outside the union
   };
   storage_union_variants data;
+};
+
+template <class T, bool UseSmall = true, unsigned kMaxInlineSize=kDefaultMaxInlineSize, class Size=small_vector_default_size_type>
+struct use_small_vector {
+  typedef small_vector<T, kMaxInlineSize, Size> type;
+};
+
+
+template <class T, unsigned kMaxInlineSize, class Size>
+struct use_small_vector<T, false, kMaxInlineSize, Size> {
+  typedef std::vector<T> type;
 };
 
 }//ns

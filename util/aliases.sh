@@ -1690,7 +1690,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL PUBLISH=${PUBLISH:-1} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH={EARLY_PUBLISH:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
     set +x
     echo
     echo $log
@@ -2440,6 +2440,8 @@ linjen() {
     ctitle jen "$@"
     (set -e;
         c-s forceco $branch
+        log=~/tmp/linjen.$chost.$branch
+        mv $log ${log}2 || true
         c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
 }
 rmautosave() {
@@ -3525,7 +3527,7 @@ showcpp() {
             os+=" $o"
             rm -f $o
             f=$(realpath $f)
-            pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DTIXML_USE_TICPP -DBOOST_TEST_DYN_LINK -DHAVE_SRILM -DHAVE_KENLM -DHAVE_OPENFST -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlib/utf8 -I$xmtlib/boost_1_49_0/include -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
+            pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlib/utf8 -I$xmtlib/boost_1_49_0/include -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
                 -I $xmtlib/db-5.3.15 \
                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
                 -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include \
