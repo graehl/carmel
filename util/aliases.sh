@@ -38,26 +38,34 @@ bakxmt() {
     local change=`changeid`
     local hash=`githash`
     local pub=$(echo ~/pub)
+    local bindir=$pub/$hash
     rm -rf $pub/$hash
     mkdir -p $pub/$hash
+    git log -n 1 > $bindir/README
     mkdir -p $pub/$change
     ln -sf $pub/$hash $pub/$change/$hash
     rm -f $pub/latest $pub/$change/latest
-    ln -sf $pub/$hash $pub/latest
+    ln -sf $bindir $pub/latest
+    ln -sf $pub/$change $pub/latest-changeid
     for f in $xmtbins; do
       local b=`basename $f`
       ls -l $f
-      if true || [[ ${f%.so} != $f ]] ; then
-          cpstripx $f $pub/$hash/$b
+      if true || [[ ${f%.so} = $f ]] ; then
+          local bin=$bindir/$b
+          #cpstripx $f $bin
+          cp -af $f $bindir/$b
+          (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec $bin "'"$@"') > $bin.sh
+          chmod +x $bin.sh
       else
-          cp -af $f $pub/$hash/$b
+          cp -af $f $bindir/$b
       fi
       ln -sf $hash/$b $pub/$b
-      ln -sf ../$hash $change/latest
+      ln -sf ../$hash $pub/$change/latest
       ln -sf ../$hash/$b $pub/$change/$b
     done
+    $xmtx/scripts/rpath.sh strip $bindir
     set -x
-    $pub/$hash/xmt --help
+    $bindir/xmt.sh --help
     set +x
 )
 }
