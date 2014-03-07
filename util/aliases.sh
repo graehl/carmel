@@ -71,7 +71,7 @@ bakxmt() {
           local bin=$bindir/$b
           #cpstripx $f $bin
           cp -af $f $bindir/$b
-          (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec $bin "'"$@"') > $bin.sh
+          (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec $pre $bin "'"$@"') > $bin.sh
           chmod +x $bin.sh
       else
           cp -af $f $bindir/$b
@@ -597,7 +597,7 @@ pushc() {
             sleep 5
             rm -f $lock
         fi
-        if git diff --no-color --exit-code ; then
+        if git diff --exit-code ; then
             echo no changes
         else
             echo changes ... amending first

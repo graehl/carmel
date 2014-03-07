@@ -15,9 +15,10 @@ if [[ $lwarch = Windows ]] ; then
     emacscli=emacsclient
     emacssrv=Emacs
 else
-    emacsapp=/Applications/Emacs.app/Contents/MacOS/
+#    emacsapp=/Applications/Emacs.app/Contents/MacOS/
+    emacsapp=/usr/local
     emacscli=$emacsapp/bin/emacsclient
-    emacssrv=$emacsapp/Emacs
+    emacssrv=$emacsapp/bin/emacs
 fi
 
 if [[ $CONSOLE ]] ; then
