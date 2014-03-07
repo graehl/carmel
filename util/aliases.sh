@@ -31,6 +31,23 @@ changeid() {
     local cid=`git log -1 | grep Change-Id: | cut -d':' -f2`
     echo $cid
 }
+rmrpath() {
+    $xmtx/scripts/rpath.sh strip "$@"
+}
+forcelink() {
+    local usage="usage: forcelink src trg where trg is not a directory"
+    if [[ $3 ]] || ! [[ $2 ]] ; then
+        echo $usage
+        return 1
+    else
+        if [[ -L "$2" ]] ; then rm -f "$2"; fi
+        if [[ -d "$2" ]] ; then
+            echo $usage
+            return 2
+        fi
+        ln -sf "$@"
+    fi
+}
 xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer xmt/lib/libxmt_shared.so"
 bakxmt() {
 ( set -e;
@@ -43,10 +60,10 @@ bakxmt() {
     mkdir -p $pub/$hash
     git log -n 1 > $bindir/README
     mkdir -p $pub/$change
-    ln -sf $pub/$hash $pub/$change/$hash
+    forcelink $pub/$hash $pub/$change/$hash
     rm -f $pub/latest $pub/$change/latest
-    ln -sf $bindir $pub/latest
-    ln -sf $pub/$change $pub/latest-changeid
+    forcelink $bindir $pub/latest
+    forcelink $pub/$change $pub/latest-changeid
     for f in $xmtbins; do
       local b=`basename $f`
       ls -l $f
@@ -59,14 +76,14 @@ bakxmt() {
       else
           cp -af $f $bindir/$b
       fi
-      ln -sf $hash/$b $pub/$b
-      ln -sf ../$hash $pub/$change/latest
-      ln -sf ../$hash/$b $pub/$change/$b
+      forcelink $hash/$b $pub/$b
+      forcelink ../$hash $pub/$change/latest
+      forcelink ../$hash/$b $pub/$change/$b
     done
-    $xmtx/scripts/rpath.sh strip $bindir
-    set -x
+    rmrpath $bindir
     $bindir/xmt.sh --help
-    set +x
+    cat $bindir/README
+    [[ $1 ]] && forcelink $bindir $pub/$1 && ls -l $pub/$1
 )
 }
 cleantmp() {
@@ -580,15 +597,20 @@ pushc() {
             sleep 5
             rm -f $lock
         fi
-        mend
+        if git diff --no-color --exit-code ; then
+            echo no changes
+        else
+            echo changes ... amending first
+            mend
+        fi
         local b=${1:-`git_branch`}
 
         set -e
-        if true || [[ $force ]] ; then
+        if [[ $force ]] ; then
             # avoid non-fast fwd msg
-            git push -u ${chost:-c-jgraehl} :$b || c-s "cd x;newbranch $b;git co master"
+            git push ${chost:-c-jgraehl} :$b || c-s "cd x;newbranch $b;git co master"
         fi
-        git push -u ${chost:-c-jgraehl} $b
+        git push ${chost:-c-jgraehl} +$b
     )
 }
 c-tests() {
@@ -2442,7 +2464,7 @@ ctitle() {
     title "$chost:" "$@"
 }
 linjen() {
-    cd $xmtx; mend;
+    cd $xmtx
     local branch=`git_branch`
     pushc $branch
     ctitle jen "$@"
