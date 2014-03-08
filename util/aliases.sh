@@ -48,7 +48,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer xmt/lib/libxmt_shared.so"
+xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer"
 bakxmt() {
 ( set -e;
     cd $xmtx/${BUILD:-Release}
@@ -64,7 +64,7 @@ bakxmt() {
     rm -f $pub/latest $pub/$change/latest
     forcelink $bindir $pub/latest
     forcelink $pub/$change $pub/latest-changeid
-    for f in $xmtbins; do
+    for f in $xmtbins xmt/lib/*.so; do
       local b=`basename $f`
       ls -l $f
       if true || [[ ${f%.so} = $f ]] ; then

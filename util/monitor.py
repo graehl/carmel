@@ -59,7 +59,7 @@ def run(args):
         args = args[2:] # remove the args
     pre = env('pre', "/tmp/%s"%time.time())
     monitor = env('monitor', "0")
-    maxepoch = env('maxepoch', '1000')
+    maxepoch = env('maxepoch', '10000000')
     outf = "%s.out.txt" % pre
     outfd = os.open(outf,  os.O_TRUNC | os.O_CREAT | os.O_WRONLY)
     err = open("%s.err.txt" % pre, "w+") if monitor == "0" else None
@@ -76,11 +76,14 @@ def run(args):
     cnt = 0
     interval = int(env('interval', '10'))
     epochbase = float(env('epochbase', '1.2'))
+    epochwidth = int(env('epochwidth', '1000'))
+    epochlines = int(env('epochlines', '1'))
     LOG.debug("monitor=%s interval=%s maxepoch=%s  epochbase=%s"%(monitor, interval, maxepoch, epochbase))
     wait_times = wait_secs / interval
     LOG.debug('Will wait for {0} secs ({1} times) before probing memory'.format(wait_secs, wait_times))
     peaks = []
     epoch = 1
+    lastepoch = 0
     while True:
         rss, vms = p.get_memory_info()
         proc.poll()
@@ -103,6 +106,8 @@ def run(args):
             peaks.append(peak)
             epoch = max(epoch + 1, int(epoch * epochbase))
             epoch = min(epoch, maxepoch)
+            if epoch - lastepoch > epochwidth:
+                epoch += epochwidth - (epoch % epochwidth)
 
     print("Resident memory max: %.2f GB" % (int(max_rss) / 1073741824.0), file=sys.stderr)
     print("                avg: %.2f GB" % ((int(sum_rss) / cnt) / 1073741824.0), file=sys.stderr)
