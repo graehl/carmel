@@ -64,10 +64,10 @@ def run(args):
     outfd = os.open(outf,  os.O_TRUNC | os.O_CREAT | os.O_WRONLY)
     err = open("%s.err.txt" % pre, "w+") if monitor == "0" else None
     sec = open("%s.seconds.txt" % pre, "w")
-    LOG.info("ls %s*" % pre)
+    LOG.info(" pre=%s out=%s: ls %s*" % (pre, outf, pre))
     LOG.info(' '.join(map(str, args)))
 
-    proc = subprocess.Popen(args, stdout=outfd, stderr=err, close_fds=True)
+    proc = subprocess.Popen(args, stdout=outfd, stderr=err, close_fds=False)
     p = psutil.Process(proc.pid)
     max_rss = 0
     max_vms = 0
@@ -79,7 +79,7 @@ def run(args):
     epochwidth = int(env('epochwidth', '1000'))
     epochlines = int(env('epochlines', '1'))
     LOG.debug("monitor=%s interval=%s maxepoch=%s  epochbase=%s"%(monitor, interval, maxepoch, epochbase))
-    wait_times = wait_secs / interval
+    wait_times = int(wait_secs / interval)
     LOG.debug('Will wait for {0} secs ({1} times) before probing memory'.format(wait_secs, wait_times))
     peaks = []
     epoch = 1

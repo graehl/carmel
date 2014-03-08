@@ -71,7 +71,7 @@ bakxmt() {
           local bin=$bindir/$b
           #cpstripx $f $bin
           cp -af $f $bindir/$b
-          (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec $pre $bin "'"$@"') > $bin.sh
+          (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
           chmod +x $bin.sh
       else
           cp -af $f $bindir/$b
