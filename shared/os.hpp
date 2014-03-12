@@ -17,6 +17,9 @@
 # include <io.h>
 # include <windows.h>
 #else
+# include <sys/types.h>
+# include <fcntl.h>
+# include <signal.h>
 # include <sys/stat.h>
 # include <unistd.h>
 #endif
@@ -347,6 +350,83 @@ inline void split_dir_file(const std::string &fullpath,std::string &dir,std::str
     file=fullpath.substr(p+1,fullpath.length()-(p+1));
   }
 }
+
+#ifdef OS_WINDOWS
+//TODO: popen2, popen3
+#else
+
+/**
+   \param out fd[0,1,2] get stdin, stdout, stderr; cmd is 0 terminated. fd[2] is set only if stderrToFd2
+
+   write to fd[0] to send to child stdin, read from fd[1] and fd[2] stdout and stderr
+
+   \return pid on success (in which case caller must close fd[0] fd[1] and if stderrToFd2 fd[2], -1 on failure
+
+   \param stderrToFd2 - if false, just set fd[0] and fd[1] (stderr is parent's original)
+
+   if you want just one of stdin or stdout, use the regular unix popen
+*/
+inline pid_t popen3(int *fd, const char **const cmd,
+                    bool stderrToFd2 = true)
+{
+  int p[3][2]; // 3 pipes; 0 is read and 1 is write end
+  pid_t pid;
+
+  int npipes = 0;
+  for (int maxpipes = stderrToFd2 ? 3 : 2; npipes < maxpipes; ++npipes)
+    if (pipe(p[npipes]))
+      goto fail;
+
+  if ((pid = fork())) {
+    if (-1 == pid)
+      goto fail;
+    // parent process:
+    // write to fd[0] to send to child stdin, read from fd[1] and fd[2] stdout and stderr
+    fd[STDIN_FILENO] = p[STDIN_FILENO][1];
+    close(p[STDIN_FILENO][0]);
+    fd[STDOUT_FILENO] = p[STDOUT_FILENO][0];
+    close(p[STDOUT_FILENO][1]);
+    if (stderrToFd2) {
+      fd[STDERR_FILENO] = p[STDERR_FILENO][0];
+      close(p[STDERR_FILENO][1]);
+    }
+    return pid;
+  } else {
+    // child:
+    dup2(p[STDIN_FILENO][0], STDIN_FILENO);
+    close(p[STDIN_FILENO][1]);
+    dup2(p[STDOUT_FILENO][1], STDOUT_FILENO);
+    close(p[STDOUT_FILENO][0]);
+    if (stderrToFd2) {
+      dup2(p[STDERR_FILENO][1], STDERR_FILENO);
+      close(p[STDERR_FILENO][0]);
+    }
+
+    execvp(*cmd, const_cast<char*const*>(cmd)); // doesn't return (normally)
+
+    perror("Couldn't execvp command");
+    fprintf(stderr, " \"%s\"\n", *cmd);
+    _exit(EXIT_FAILURE);
+  }
+fail:
+  int save_errno = errno;
+  for (int i = 0; i < npipes; i++) {
+    close(p[i][0]);
+    close(p[i][1]);
+  }
+  errno = save_errno;
+  return (pid_t)-1;
+}
+
+/**
+   \param[out] fd[0] gets stdin of child (write to this), fd[1] gets stdout (read from this).
+
+   \param cmd is 0 terminated execvp
+*/
+inline pid_t popen2(int *fd, const char **const cmd) {
+  return popen3(fd, cmd, false);
+}
+#endif
 
 } // graehl
 

@@ -15,8 +15,45 @@ case $(uname) in
 esac
 xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
+alias gh='cd ~'
+
+# output '0' if no matches (not using -q because PIPEFAIL might not work)
+useHistory() {
+    egrep -v '^top$|^pwd$|^ls$|^ll$|^l$|^lt$|^dir$|^cd |^h$|^gh$|^h |^bg$|^fg$|^qsm$|^quser$|^cStat|^note |^mutt|^std ' | wc -l | tr -d ' \n'
+}
+owner() {
+    ls -ld "${1:-$PWD}" | awk '{print $3}'
+}
+lasthistoryline() {
+    history | tail -1 | sed 's:^ *[0-9]* *::g'
+}
+localHistory()
+{
+    if [[ `owner` = "$USER" ]] ; then
+        local useful=`lasthistoryline | useHistory | tr -d '\n'`
+        if [[ $useful != 0 ]] ; then
+            # date hostname cmd >> $PWD/.history
+            ((date +%F.%H-%M-%S.; echo "$HOST ") | tr -d '\n' ; lasthistoryline) >>.history 2>/dev/null
+        fi
+    fi
+}
+addPromptCommand() {
+    if [[ $PROMPT_COMMAND != *$1* ]] ; then
+        if [[ $PROMPT_COMMAND ]] ; then
+            PROMPT_COMMAND+=" ; $1"
+        else
+            PROMPT_COMMAND=$1
+        fi
+        export PROMPT_COMMAND
+    fi
+}
+# convenience cmd for searching: h blah => anything matching blah in current local history
+alias h='cat .history | grep --binary-file=text'
+alias gh='cd ~'
 
 ########################
+xmtvg="valgrind --leak-check=no --track-origins=yes --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp --num-callers=16 --leak-resolution=high"
+xmtmassif="valgrind --tool=massif --depth=16 --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp"
 
 gitmodified() {
     git diff --name-only "$@"
@@ -49,12 +86,37 @@ forcelink() {
     fi
 }
 xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer"
+xmtpub=$(echo ~/pub)
+
+rmxmt1() {
+    (
+        set -e
+    cd $xmtpub
+    if [[ -L $1 ]] ; then
+        local d=`readlink $1`
+        require_dir $d
+        echo rm hash $d alias $1
+        rm -rf $d
+        rm $1
+        local b=`basename $d`
+        for f in ?????????????*/$b; do
+            local change=${f%/$b}
+            require_dir $change
+            echo rm changeid $change alias $1
+            rm -rf $change
+        done
+    fi
+    )
+}
+rmxmt() {
+    forall rmxmt1 "$@"
+}
 bakxmt() {
 ( set -e;
     cd $xmtx/${BUILD:-Release}
     local change=`changeid`
     local hash=`githash`
-    local pub=$(echo ~/pub)
+    local pub=${pub:-xmtpub}
     local bindir=$pub/$hash
     rm -rf $pub/$hash
     mkdir -p $pub/$hash
@@ -67,25 +129,27 @@ bakxmt() {
     for f in $xmtbins xmt/lib/*.so; do
       local b=`basename $f`
       ls -l $f
-      if true || [[ ${f%.so} = $f ]] ; then
-          local bin=$bindir/$b
-          #cpstripx $f $bin
-          cp -af $f $bindir/$b
-          (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
-          chmod +x $bin.sh
-      else
-          cp -af $f $bindir/$b
-      fi
+      local bin=$bindir/$b
+      cp -af $f $bindir/$b
+      (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+      chmod +x $bin.sh
       forcelink $hash/$b $pub/$b
       forcelink ../$hash $pub/$change/latest
       forcelink ../$hash/$b $pub/$change/$b
     done
     rmrpath $bindir
-    $bindir/xmt.sh --help
     cat $bindir/README
-    [[ $1 ]] && forcelink $bindir $pub/$1 && ls -l $pub/$1
+    local pub2=~/bugs/leak
+    if [[ $1 ]] ; then
+        forcelink $bindir $pub/$1 && ls -l $pub/$1
+        if [[ -d $pub2 ]] ; then
+            forcelink $pub/$1 $pub2/
+        fi
+    fi
+    $bindir/xmt.sh --help
 )
 }
+
 cleantmp() {
     (
     df -h /tmp
@@ -336,9 +400,16 @@ c-xmtcompile() {
 kr-make() {
     (kr-c;c-make "$@")
 }
+dr-make() {
+    (dr-c;c-make "$@")
+}
 kr-c() {
     b-r
     k-c
+}
+dr-c() {
+    b-r
+    d-c
 }
 cd-c() {
     b-d
@@ -1529,8 +1600,11 @@ rebaseadds() {
     fi
     git rebase --continue
 }
-rebasenext() {
+rebasex() {
     cd $xmtx
+    rebasenext
+}
+rebasenext() {
     rebasece `git rebase --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
     rebaseadds
 }
@@ -1720,7 +1794,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=$cmake CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH={EARLY_PUBLISH:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    cmake=$cmake BUILDSUBDIR=${BUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH={EARLY_PUBLISH:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
     set +x
     echo
     echo $log
@@ -2472,7 +2546,7 @@ linjen() {
         c-s forceco $branch
         log=~/tmp/linjen.$chost.$branch
         mv $log ${log}2 || true
-        c-s CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
+        c-s BUILDSUBDIR=1 CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -2841,13 +2915,6 @@ ffmpegaudio1() {
 ffmpegaudio() {
     forall ffmpegaudio1 "$@"
 }
-jenkinsb() {
-    local b=${BUILD:-Debug}
-    local c=${2:---no-cleanup}
-    local a=${3:---no-archive}
-    CXX=${CXX:-g++} $WORKSPACE/jenkins/jenkins_buildscript $b $c $a
-}
-souph=98.158.26.222
 macget() {
     local branch=${1:?args: branch}
     (
@@ -2906,7 +2973,6 @@ rebases() {
 }
 rebasece() {
     (
-        cd $xmtx
         for f in "$@"; do
             edit $f
         done

@@ -357,6 +357,12 @@ ulimitsafe 262144 s
 if [[ $INSIDE_EMACS ]] ; then
  export PS1='\w $ '
 fi
-if [[ -f ~/.git-completion.bash ]] ; then
+
+if false && [[ -f ~/.git-completion.bash ]] ; then
  . ~/.git-completion.bash
+fi
+
+if [[ -f $UTIL/localhistory.sh ]] ; then
+    . $UTIL/localhistory.sh
+    addPromptCommand localHistory
 fi

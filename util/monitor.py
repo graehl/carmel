@@ -55,7 +55,7 @@ def nlines(f):
 
 def run(args):
     wait_secs = get_wait_secs(args)
-    if wait_secs:
+    if wait_secs > 0:
         args = args[2:] # remove the args
     pre = env('pre', "/tmp/%s"%time.time())
     monitor = env('monitor', "0")
