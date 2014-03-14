@@ -15,45 +15,78 @@ case $(uname) in
 esac
 xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
-alias gh='cd ~'
 
-# output '0' if no matches (not using -q because PIPEFAIL might not work)
-useHistory() {
-    egrep -v '^top$|^pwd$|^ls$|^ll$|^l$|^lt$|^dir$|^cd |^h$|^gh$|^h |^bg$|^fg$|^qsm$|^quser$|^cStat|^note |^mutt|^std ' | wc -l | tr -d ' \n'
-}
-owner() {
-    ls -ld "${1:-$PWD}" | awk '{print $3}'
-}
-lasthistoryline() {
-    history | tail -1 | sed 's:^ *[0-9]* *::g'
-}
-localHistory()
-{
-    if [[ `owner` = "$USER" ]] ; then
-        local useful=`lasthistoryline | useHistory | tr -d '\n'`
-        if [[ $useful != 0 ]] ; then
-            # date hostname cmd >> $PWD/.history
-            ((date +%F.%H-%M-%S.; echo "$HOST ") | tr -d '\n' ; lasthistoryline) >>.history 2>/dev/null
-        fi
-    fi
-}
-addPromptCommand() {
-    if [[ $PROMPT_COMMAND != *$1* ]] ; then
-        if [[ $PROMPT_COMMAND ]] ; then
-            PROMPT_COMMAND+=" ; $1"
-        else
-            PROMPT_COMMAND=$1
-        fi
-        export PROMPT_COMMAND
-    fi
-}
-# convenience cmd for searching: h blah => anything matching blah in current local history
-alias h='cat .history | grep --binary-file=text'
 alias gh='cd ~'
+addline() {
+    file=$1
+    shift
+    if ! fgrep -q "$*" $file ; then
+        echo "$*" >> $file
+        tail $file
+    fi
+}
+rpmdiffg() {
+    USER=graehl rpmdiff c-jgraehl | grep ^+
+}
+yuminst() {
+    which "$1"
+    if fgrep -q "$1" ~/.yuminst ; then
+        echo already have $1
+    else
+        #yum search "$1"
+        sleep 1
+        (set -e
+            yum install "$1".x86_64 || yum install "$1".noarch
+            addline ~/.yuminst "$@"
+            rpmdiffg
+        )
+    fi
+}
+stripversion() {
+  cut -d. -f1 "$@"
+}
+rpmnormalize() {
+    stripversion | sort
+}
+rpmdiff() {
+    local rpm1=`mktemp /tmp/rpm1.XXXXXX`
+    local rpm2=`mktemp /tmp/rpm2.XXXXXX`
+    rpm -qa | rpmnormalize > $rpm1
+    ssh $USER@$1 'rpm -qa' | rpmnormalize > $rpm2
+    diff --suppress-common-lines -u0 $rpm1 $rpm2
+}
+p1() {
+  perl -lpE "$@"
+}
+n1() {
+  perl -lnE "$@"
+}
+replines() {
+  local n=${1:?[replines] repeats of input(s)}
+  shift
+  n1 'for$i(1..'$n'){say}' -- "$@"
+}
+
+nosleep() {
+    sudo pmset -b sleep 0
+}
+
+# standby = hibernate / shutdown. messes w/ ssh
+nostandby() {
+    sudo pmset -b standby 0
+}
 
 ########################
 xmtvg="valgrind --leak-check=no --track-origins=yes --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp --num-callers=16 --leak-resolution=high"
 xmtmassif="valgrind --tool=massif --depth=16 --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp"
+
+withvg() {
+  prexmtsh=$xmtvg "$@"
+}
+
+withmassif() {
+  prexmtsh=$xmtmassif "$@"
+}
 
 gitmodified() {
     git diff --name-only "$@"
@@ -116,7 +149,7 @@ bakxmt() {
     cd $xmtx/${BUILD:-Release}
     local change=`changeid`
     local hash=`githash`
-    local pub=${pub:-xmtpub}
+    local pub=${pub:-$xmtpub}
     local bindir=$pub/$hash
     rm -rf $pub/$hash
     mkdir -p $pub/$hash
@@ -143,7 +176,7 @@ bakxmt() {
     if [[ $1 ]] ; then
         forcelink $bindir $pub/$1 && ls -l $pub/$1
         if [[ -d $pub2 ]] ; then
-            forcelink $pub/$1 $pub2/
+            forcelink $pub/$1 $pub2/$1
         fi
     fi
     $bindir/xmt.sh --help
@@ -7388,3 +7421,7 @@ mjen() {
 if [[ -d $XMT_EXTERNALS_PATH ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
 fi
+
+cp2ken() {
+  build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
+}

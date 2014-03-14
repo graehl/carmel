@@ -6,7 +6,7 @@ owner() {
     ls -ld "${1:-$PWD}" | awk '{print $3}'
 }
 lasthistoryline() {
-    history | tail -1 | sed 's:^ *[0-9]* *::g'
+    history 1 | sed 's:^ *[0-9]* *::g'
 }
 localHistory()
 {
@@ -21,7 +21,7 @@ localHistory()
 addPromptCommand() {
     if [[ $PROMPT_COMMAND != *$1* ]] ; then
         if [[ $PROMPT_COMMAND ]] ; then
-            PROMPT_COMMAND+=" ; $1"
+            PROMPT_COMMAND+="$1; "
         else
             PROMPT_COMMAND=$1
         fi

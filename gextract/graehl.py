@@ -1942,3 +1942,56 @@ def random_combination_with_replacement(iterable, r):
     n = len(pool)
     indices = sorted(random.randrange(n) for i in xrange(r))
     return tuple(pool[i] for i in indices)
+
+
+def quoted_list(cmdstring):
+    '''Take a the given command string and parse it into a list using
+    space delimiters but respecting (one layer of) quotes.'''
+
+    tokens = []
+    for arg in cmdstring.split(' '):
+        if '' != arg:
+            tokens.append(arg)
+            pass
+        continue
+
+    firsts = map(lambda x: x[0], tokens)
+    lasts = map(lambda x: x[-1], tokens)
+
+    quoteIndex = -1
+    quoteMark = None
+    for f in firsts:
+        quoteIndex += 1
+        if f == '"' or f == "'":
+            quoteMark = f
+            break;
+        continue
+
+    if quoteMark is None:
+        return tokens
+
+    endIndex = 0
+    endFound = None
+    for l in lasts:
+        endIndex += 1
+        if l == quoteMark:
+            endFound = True
+            break
+        continue
+
+    if not endFound:
+        raise ValueError, "end quote not found"
+
+    return tokens[:quoteIndex] + [' '.join(tokens[quoteIndex:endIndex])[1:-1]] + tokens[endIndex:]
+
+import argparse
+
+class hexact(argparse.Action):
+    'An argparse.Action that handles hex string input'
+    def __call__(self,parser, namespace, values, option_string=None):
+        #print '%r %r %r' % (namespace, values, option_string)
+        base = 10
+        if '0x' in values: base = 16
+        setattr(namespace, self.dest, int(values,base))
+        return
+    pass
