@@ -1,20 +1,20 @@
 # output '0' if no matches (not using -q because PIPEFAIL might not work)
 useHistory() {
-    egrep -v '^top$|^pwd$|^ls$|^ll$|^l$|^lt$|^dir$|^cd |^h$|^gh$|^h |^bg$|^fg$|^qsm$|^quser$|^cStat|^note |^mutt|^std ' | wc -l | tr -d ' \n'
+    \egrep -v '^top$|^pwd$|^ls$|^ll$|^l$|^lt$|^cd |^h |^bg$|^fg$' | wc -l | tr -d ' \n'
 }
 owner() {
-    ls -ld "${1:-$PWD}" | awk '{print $3}'
+    \ls -ld "${1:-$PWD}" | awk '{print $3}'
 }
 lasthistoryline() {
-    history 1 | sed 's:^ *[0-9]* *::g'
+    history 1 | HISTTIMEFORMAT= sed 's:^ *[0-9]* *::'
 }
 localHistory()
 {
-    if [[ `owner` = "$USER" ]] ; then
+    if [[ `owner` = ${USER:=$(whoami)} ]] ; then
         local useful=`lasthistoryline | useHistory | tr -d '\n'`
         if [[ $useful != 0 ]] ; then
             # date hostname cmd >> $PWD/.history
-            ((date +%F.%H-%M-%S.; echo "$HOST ") | tr -d '\n' ; lasthistoryline) >>.history 2>/dev/null
+            (\date +"%FT%T.${HOST:=$(uname -n)} " | \tr -d '\n' ; lasthistoryline) >>.history 2>/dev/null
         fi
     fi
 }
@@ -28,8 +28,22 @@ addPromptCommand() {
         export PROMPT_COMMAND
     fi
 }
-# convenience cmd for searching: h blah => anything matching blah in current local history
-alias h='cat .history | grep --binary-file=text'
+function h() {
+    # look for something in your cwd's .history file
+    if [[ -r .history ]]; then
+        if ! [[ $1 ]]; then
+            \cat .history
+        else
+            # permit looking for multiple things: h 'foo bar' baz
+            local f
+            for f in "$@"; do
+                \grep -a "$f" .history
+            done
+        fi
+    else
+        echo "Warning: .history not accessible" 1>&2
+    fi
+}
 
 ### to enable,
 # addPromptCommand localHistory
