@@ -28,7 +28,7 @@ addPromptCommand() {
         export PROMPT_COMMAND
     fi
 }
-function h() {
+h() {
     # look for something in your cwd's .history file
     if [[ -r .history ]]; then
         if ! [[ $1 ]]; then
