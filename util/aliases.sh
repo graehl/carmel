@@ -295,14 +295,14 @@ pictest() {
 }
 pullconfig() {
     (set -e
-        cd /local/c-jgraehl/xmt-config
+        cd /local/graehl/xmt-config
         git checkout config
         git pull --rebase origin refs/meta/config
     )
 }
 pushconfig() {
     (set -e
-        cd /local/c-jgraehl/xmt-config
+        cd /local/graehl/xmt-config
         #git reset --hard HEAD
         git checkout config
         git commit -a -m "$*"
@@ -373,7 +373,7 @@ c-make() {
 }
 cs-for() {
     ( set -e
-        for chost in c-ydong c-jgraehl c-mdreyer; do
+        for chost in c-ydong c-graehl c-mdreyer; do
             echo2 chost=$chost "$@"
             chost=$chost "$@"
         done
@@ -383,7 +383,7 @@ cs-to() {
     cs-for c-to "$@"
 }
 c-s() {
-    local chost=${chost:-c-jgraehl}
+    local chost=${chost:-c-graehl}
     local fwdenv="gccfilter=$gccfilter BUILD=$BUILD"
     local pre=". ~/.e"
     local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
@@ -408,7 +408,7 @@ cs-s() {
 c-with() {
     (set -e;
         #touchnewer
-        chost=${chost:-c-jgraehl}
+        chost=${chost:-c-graehl}
         cd $xmtx; mend;
         local branch=`git_branch`
         pushc $branch
@@ -511,7 +511,7 @@ stun() {
 }
 addpythonpath $xmtx/python $xmtextbase/Shared/python
 c-c() {
-    chost=c-jgraehl
+    chost=c-graehl
 }
 k-c() {
     chost=c-ydong
@@ -712,9 +712,9 @@ pushc() {
         set -e
         if [[ $force ]] ; then
             # avoid non-fast fwd msg
-            git push ${chost:-c-jgraehl} :$b || c-s "cd x;newbranch $b;git co master"
+            git push ${chost:-c-graehl} :$b || c-s "cd x;newbranch $b;git co master"
         fi
-        git push ${chost:-c-jgraehl} +$b
+        git push ${chost:-c-graehl} +$b
     )
 }
 c-tests() {
@@ -836,7 +836,7 @@ err() {
     echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $@" >&2
 }
 pkills() {
-    for f in c-ydong c-jgraehl c-mdreyer gitbuild1 gitbuild2; do
+    for f in c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2; do
         ssh $f ". ~/u/aliases.sh;pkill '$*'"
     done
 }
@@ -923,7 +923,7 @@ externals() {
     local newmastercmd="git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
     local ncmd="cd /jenkins/xmt-externals && ($newmastercmd)"
     bash -c "cd $xmtextbase && ($newmastercmd)"
-    for host in c-jgraehl c-ydong c-mdreyer; do
+    for host in c-graehl c-ydong c-mdreyer; do
         #localhost
         banner $host
         ssh $host "cd c/xmt-externals && ($newmastercmd)"
@@ -1501,7 +1501,7 @@ tregr() {
     save12 /tmp/reg yregr "$@"
 }
 cp2cbin() {
-    scp "$@" c-jgraehl:/c01_data/graehl/bin/
+    scp "$@" c-graehl:/c01_data/graehl/bin/
 }
 
 findx() {
@@ -1760,7 +1760,7 @@ bashcmdprompt() {
             DISPLAYHOST=mac ;;
         c-ydong*)
             DISPLAYHOST=kohli ;;
-        c-jgraehl*)
+        c-graehl*)
             DISPLAYHOST=g ;;
         *)
             DISPLAYHOST=$HOST
@@ -1797,7 +1797,7 @@ dwith() {
 }
 cwith() {
     (
-        chost=c-jgraehl c-with "$@"
+        chost=c-graehl c-with "$@"
     )
 }
 
@@ -1850,7 +1850,7 @@ djen() {
     chost=c-mdreyer linjen "$@"
 }
 cjen() {
-    chost=c-jgraehl linjen "$@"
+    chost=c-graehl linjen "$@"
 }
 kmk() {
     chost=c-ydong c-make "$@"
@@ -1859,7 +1859,7 @@ dmk() {
     chost=c-mdreyer c-make "$@"
 }
 cmk() {
-    chost=c-jgraehl c-make "$@"
+    chost=c-graehl c-make "$@"
 }
 gjen() {
     (set -e
@@ -6057,7 +6057,6 @@ alias nitro="ssh -1 -l graehl nitro.isi.edu"
 alias hpc="ssh -1 -l graehl $HPCHOST"
 alias nlg0="ssh -1 -l graehl nlg0.isi.edu"
 alias more=less
-alias h="history 25"
 alias jo="jobs -l"
 
 alias cpup="cp -vRdpu"
@@ -7373,7 +7372,7 @@ fi
 
 ### ssh tunnel:
 
-chost=c-jgraehl
+chost=c-graehl
 ontunnel=
 if [[ $HOST = graehl.local ]] ; then
     ontunnel=1
@@ -7382,7 +7381,7 @@ if [[ $HOST = graehl.local ]] ; then
         ontunnel=
     fi
 fi
-trremotesubdir=/local/c-jgraehl/xmt
+trremotesubdir=/local/graehl/xmt
 trhomesubdir=x
 trhome() {
     perl -e '
