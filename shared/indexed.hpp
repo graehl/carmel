@@ -65,7 +65,7 @@ inline boost::uint64_t next_power_of_2(boost::uint64_t x) {
 template <class I>
 I hash_capacity_for_size(I sz) {
   I atleast = (I)(sz * kOneOverMaxIndexedHashLoad);
-  return next_power_of_2(atleast);
+  return next_power_of_2(atleast + 1);
 }
 
 template <class T>
@@ -168,6 +168,7 @@ struct indexed : HashEqualsTraits {
 
   void rehash_pow2(I capacityPowerOf2) {
     init_empty_hash(capacityPowerOf2);
+    setGrowAt(capacityPowerOf2);
     for (I vali = 0, valn = vals_.size(); vali < valn; ++vali)
       add_index(vali, vals_[vali]);
     check();
@@ -277,11 +278,15 @@ struct indexed : HashEqualsTraits {
     if (!index_ || mask_ < newmask) {
       free_hash();
       mask_ = newmask;
-      growAt = (I)(kMaxIndexedHashLoad * capacityPowerOf2);
-      if (growAt >= mask_) growAt = mask_ - 1;
       index_ = (Indices)::operator new(sizeof(I) * capacityPowerOf2);
+      setGrowAt(capacityPowerOf2);
     }
     clear_hash();
+  }
+
+  void setGrowAt(I capacityPowerOf2) {
+    growAt = (I)(kMaxIndexedHashLoad * capacityPowerOf2);
+    if (growAt >= mask_) growAt = mask_ - 1;
   }
 
   void clear_hash() {

@@ -54,7 +54,6 @@ HOST=${HOST%.usc.edu}
 HOST=${HOST%.languageweaver.com}
 export HOST
 
-# if [ $HOST = TRUE ] && xhost +nlg0.isi.edu > /dev/null 2>&1
 case $HOST in
     hpc*) ONHPC=1 ;;
     cage*) ONCAGE=1 ;;

@@ -44,3 +44,4 @@ screen
 hg
 texlive-dejavu
 dejavu-sans-mono-fonts
+cabextract

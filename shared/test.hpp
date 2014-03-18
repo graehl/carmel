@@ -20,7 +20,7 @@
 
 //included/
 //#include <boost/test/unit_test_framework.hpp>
-#ifdef INCLUDED_TEST
+#ifdef GRAEHL_INCLUDED_TEST
 #include <boost/test/included/unit_test.hpp>
 #else
 #include <boost/test/unit_test.hpp>

@@ -17,6 +17,49 @@ xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
 
 alias gh='cd ~'
+
+abspathf() {
+    if [[ -r "$f" ]] ; then
+        f=`abspath "$f"`
+    elif [[ $f = -* ]] && [[ $f = *=* ]] ; then
+        local p
+        local second=0
+        parts=`echo "$f" | tr = ' '`
+        f=''
+        for p in $parts; do
+            if [[ $second = 1 ]] ; then
+                f+="$(abspath $p)"
+            else
+                f+="$p="
+                second=1
+            fi
+        done
+    fi
+}
+sep0() {
+    sepisfirst=1
+}
+sep() {
+    if [[ $sepisfirst ]] ; then
+        sepisfirst=0
+        echo -n ' '
+    fi
+}
+abspaths() {
+    sep0
+    for f in "$@"; do
+        sep
+        abspathf
+        echo -n "$f"
+    done
+    echo
+}
+shufi() {
+    if [[ -f "$1" ]] ; then
+        echo "shuf < $1 > $1.shuf"
+        shuf < "$1" > "$1".shuf && mv "$1".shuf "$1"
+    fi
+}
 addline() {
     file=$1
     shift
@@ -149,7 +192,7 @@ bakxmt() {
     cd $xmtx/${BUILD:-Release}
     local change=`changeid`
     local hash=`githash`
-    local pub=${pub:-$xmtpub}
+    local pub=${pub:-$xmtpub/$BUILD}
     local bindir=$pub/$hash
     rm -rf $pub/$hash
     mkdir -p $pub/$hash
@@ -430,23 +473,30 @@ c-compile() {
 c-xmtcompile() {
     c-with BUILD=$BUILD xmtcompile "$@"
 }
+cr-make() {
+    (cr-c;c-make "$@")
+}
 kr-make() {
     (kr-c;c-make "$@")
 }
 dr-make() {
     (dr-c;c-make "$@")
 }
-kr-c() {
+cr-c() {
+    c-c
     b-r
+}
+kr-c() {
     k-c
+    b-r
 }
 dr-c() {
-    b-r
     d-c
+    b-r
 }
 cd-c() {
-    b-d
     c-c
+    b-d
 }
 b-r() {
     BUILD=Release
@@ -1805,6 +1855,10 @@ jen() {
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
     shift
+    local pub2=$1
+    if [[ $pub2 ]] ; then
+        shift
+    fi
     local log=$HOME/tmp/jen.log.`timestamp`
     . xmtpath.sh
     usegcc
@@ -1827,7 +1881,10 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=$cmake BUILDSUBDIR=${BUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH={EARLY_PUBLISH:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    cmake=$cmake BUILDSUBDIR=${BUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
+    if [[ $pub2 ]] ; then
+        BUILD=$build bakxmt $pub2
+    fi
     set +x
     echo
     echo $log
@@ -1840,6 +1897,7 @@ jen() {
     echo $log.fails
     echo "#fails = $nfails"
     echo "#fails = $nfails" >> $log.fails
+
 }
 
 
@@ -2743,6 +2801,8 @@ save12() {
     local filterarg=''
     [[ -f $out ]] && mv "$out" "$out~"
     shift
+    local cmd=`abspaths "$@"`
+    echo2 "$cmd"
     echo2 saving output $out
     ( if ! [[ $quiet ]] ; then
         echo "$@"; echo
@@ -2750,6 +2810,7 @@ save12() {
         "$@" 2>&1) | filterblock | tee $out | ${page:-cat}
     echo2 saved output:
     echo2 $out
+    echo2 "$cmd"
 }
 save2() {
     local out="$1"
@@ -3656,7 +3717,10 @@ showcpp() {
             os+=" $o"
             rm -f $o
             f=$(realpath $f)
-            pushd /Users/graehl/x/Debug/Hypergraph && /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlib/utf8 -I$xmtlib/boost_1_49_0/include -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
+#pushd /Users/graehl/x/Debug/Hypergraph &&
+            local xmtlib=$xmtextbase/FC12/libraries
+
+            /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
                 -I $xmtlib/db-5.3.15 \
                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
                 -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include \
@@ -5533,7 +5597,8 @@ buildboost() {(
         local withouts
         [ "$without" ] && withouts="--without-mpi --without-python --without-wave"
         [ "$noboot" ] || ./bootstrap.sh --prefix=$FIRST_PREFIX
-        ./bjam --build-type=complete --layout=tagged --prefix=$FIRST_PREFIX $withouts --runtime-debugging=on -j$MAKEPROC install
+        ./bjam cxxflags=-fPIC --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts --runtime-debugging=off -j$MAKEPROC install
+#--layout=tagged --build-type=complete
         # ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
         # ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
         )}
@@ -6409,7 +6474,7 @@ euler() {
     g++ -O euler$1.cpp $flags -o $out && echo running $out ... && ./$out
 }
 gtest() {
-    MOREFLAGS="$GCPPFLAGS" OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DGRAEHL_TEST -DINCLUDED_TEST -ffast-math -lboost_unit_test_framework${BOOST_SUFFIX:-mt} -lboost_random${BOOST_SUFFIX:-mt}
+    MOREFLAGS="$GCPPFLAGS" OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DGRAEHL_TEST -DGRAEHL_INCLUDED_TEST -ffast-math -lboost_unit_test_framework${BOOST_SUFFIX:-mt} -lboost_random${BOOST_SUFFIX:-mt}
 }
 gsample() {
     local s=$1

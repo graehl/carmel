@@ -1,7 +1,7 @@
 #!/home/nbuild/local/bin/python
 # -*- coding: utf-8 -*-
 
-# Markus Dreyer, mdreyer@sdl.com
+# graehl@gmail.com, mdreyer@sdl.com
 
 from __future__ import print_function
 from __future__ import division
