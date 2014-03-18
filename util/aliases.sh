@@ -18,6 +18,22 @@ xmtextbase=$(echo ~/c/xmt-externals)
 
 alias gh='cd ~'
 
+bxmt() {
+    if [[ $1 = d* ]] ; then
+        BUILD=Debug bakxmt "$@"
+    elif [[ $1 = r* ]] ; then
+        BUILD=RelWithDebInfo bakxmt "$@"
+    else
+        BUILD=Release bakxmt "$@"
+    fi
+}
+dothead() {
+    if [[ -f "$1" ]] && [[ $2 -gt 0 ]] ; then
+        head -$2 "$1" > "$1.$2"
+    else
+        error dothead file N
+    fi
+}
 abspathf() {
     if [[ -r "$f" ]] ; then
         f=`abspath "$f"`
@@ -28,7 +44,11 @@ abspathf() {
         f=''
         for p in $parts; do
             if [[ $second = 1 ]] ; then
-                f+="$(abspath $p)"
+                if [[ -r $p ]] ; then
+                    f+="$(abspath $p)"
+                else
+                    f+=$p
+                fi
             else
                 f+="$p="
                 second=1
@@ -48,6 +68,15 @@ sep() {
 abspaths() {
     sep0
     for f in "$@"; do
+        sep
+        abspathf
+        echo -n "$f"
+    done
+    echo
+}
+cmdabs() {
+    sep0
+    for f in $*; do
         sep
         abspathf
         echo -n "$f"
@@ -189,11 +218,14 @@ rmxmt() {
 }
 bakxmt() {
 ( set -e;
-    cd $xmtx/${BUILD:-Release}
+    echo ${BUILD:=Release}
+    cd $xmtx/$BUILD
     local change=`changeid`
     local hash=`githash`
     local pub=${pub:-$xmtpub/$BUILD}
+    echo $pub/$1
     local bindir=$pub/$hash
+    echo $bindir
     rm -rf $pub/$hash
     mkdir -p $pub/$hash
     git log -n 1 > $bindir/README
@@ -202,6 +234,8 @@ bakxmt() {
     rm -f $pub/latest $pub/$change/latest
     forcelink $bindir $pub/latest
     forcelink $pub/$change $pub/latest-changeid
+    echo "export LD_LIBRARY_PATH=$bindir:$pub/lib" > $bindir/env.sh
+    cp -af $xmtx/RegressionTests/launch_server.py $bindir/
     for f in $xmtbins xmt/lib/*.so; do
       local b=`basename $f`
       ls -l $f

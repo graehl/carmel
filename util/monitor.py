@@ -123,6 +123,7 @@ def run(args):
     for peak in peaks:
         print(peakstr(peak))
     print("Return code: %d" % proc.returncode, file=sys.stderr)
+    sys.exit(proc.returncode)
 
 def main(argv):
     run_timed(argv)
