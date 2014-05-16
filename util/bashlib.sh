@@ -1181,7 +1181,7 @@ catz1() {
     if [ -z "$1" -o "$1" = - ] ; then
         gunzip -f -c
     else
-        while [ "$1" ] ; do
+        while [[ ${1:-} ]] ; do
             if [ ! -f "$1" ] ; then
                 echo "input file $1 not found" 1>&2
                 exit -1
@@ -1934,6 +1934,7 @@ realpath() {
     if have-linux-readlink ; then
         for f in "$@"; do
             readlink -nfs $(cd "$(dirname $f)"; pwd)/"$(basename $f)"
+            echo
         done
     else
         for f in "$@"; do
@@ -2181,10 +2182,10 @@ headtail1() {
 preview1() {
     tailn=${tailn:-6}
     local v="-v"
-    if [[ $2 ]] ; then
+    if [[ ${2:-} ]] ; then
         preview_banner $2
         v=
-    elif [[ $(uname) = Darwin && $v ]] ; then
+    elif [[ $(uname) = Darwin && ${v:-} ]] ; then
         v=
         if [ "$1" ] ; then
             preview_banner "$1"
@@ -2533,5 +2534,8 @@ bleuparse1() {
 bleuparse() {
     forall bleuparse1 "$@"
 }
+
+UTIL=$(echo ~/u)
+[[ -d $UTIL ]] && export PATH=$UTIL:$PATH
 
 true

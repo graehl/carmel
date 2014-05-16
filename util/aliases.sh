@@ -17,11 +17,90 @@ xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
 
 alias gh='cd ~'
+gitundomaster() {
+    (
+        set -e
+        set -x
+        git reset --hard ${1:-HEAD^1}
+        git rebase -f master
+        git push -f origin HEAD:master
+    )
+}
+kregr() {
+    k-s yregr "$@"
+}
+overk() {
+    (
+        k-c
+        overc "$@"
+    )
+}
+overc() {
+    (
+        set -e
+        b=${3-~/bugs/over$chost}
+        f=${2:-`basename $1`}
+        d=$b/$f
+        mkdir -p $d
+        cd $d
+        ccp $1 j
+        s=$d/do.sh
+        echo         chost=$chost > $s
+        ccps j >> $s
+        echo        . $s
+        sleep 3
+        . $s
+    )
+}
+bstart() {
+    bsearchin=$1
+    shift
+    bsearchcmd="$*"
+    showvars_required bsearchin bsearchcmd
+    brun
+}
+brun() {
+(set -e
+    if [[ -s $bsearchin ]] ; then
+        splitutf8.pl $bsearchin >$bsearchin=0 2>$bsearchin=1
+        if [[ -s $bsearchin=1 ]] ; then
+            banner "0: $bsearchcmd $bsearchin=0 "
+            $bsearchcmd $bsearchin=0 2>&1 | tee $bsearchin.log0 || true
+            echo .....
+            sleep 1
+            banner "1: $bsearchcmd $bsearchin=1 "
+            $bsearchcmd $bsearchin=1 2>&1 | tee $bsearchin.log1 || true
+            preview $bsearchin.log0 $bsearchin.log1
+            ls -l $bsearchin=0 $bsearchin=1
+            [[ $nowc ]] || wc -w $bsearchin=0 $bsearchin=1
+            banner "now bchoose 0 or bchoose 1 according to which log you like"
+        else
+            banner done: $bsearchin
+        fi
+    else
+        echo no input
+    fi
+)
+}
+bchoose() {
+    local bb="$bsearchin=$1"
+    require_file $bb
+    echo chose $1: $bb
+    bsearchin=$bb
+    brun
+}
+uncache() {
+    sudo 'sync; echo 3 > /proc/sys/vm/drop_caches'
+}
+reregr() {
+    c-s cat $1 > $2
+    c-with yregr ${regtest:-syntax}
+}
 
 bxmt() {
     if [[ $1 = d* ]] ; then
         BUILD=Debug bakxmt "$@"
-    elif [[ $1 = r* ]] ; then
+    elif [[ $1 = w* ]] ; then
         BUILD=RelWithDebInfo bakxmt "$@"
     else
         BUILD=Release bakxmt "$@"
@@ -178,7 +257,7 @@ rmrpath() {
 }
 forcelink() {
     local usage="usage: forcelink src trg where trg is not a directory"
-    if [[ $3 ]] || ! [[ $2 ]] ; then
+    if [[ ${3:-} ]] || ! [[ ${2:-} ]] ; then
         echo $usage
         return 1
     else
@@ -216,37 +295,47 @@ rmxmt1() {
 rmxmt() {
     forall rmxmt1 "$@"
 }
+guesstbbver() {
+    if [[ `chrpath "$1" | grep tbb-4.0` ]] ; then
+        tbbver=4.0
+    elif [[ `chrpath "$1" | grep tbb-4.2.3` ]] ; then
+        tbbver=4.2
+    else
+        tbbver=42oss
+    fi
+}
 bakxmt() {
 ( set -e;
     echo ${BUILD:=Release}
     cd $xmtx/$BUILD
     local change=`changeid`
     local hash=`githash`
-    local pub=${pub:-$xmtpub/$BUILD}
+    local pub=${pub:-$xmtpub}
     echo $pub/$1
-    local bindir=$pub/$hash
+    local bindir=$pub/$BUILD/$HOST/$hash
     echo $bindir
+    mkdir -p $bindir
     rm -rf $pub/$hash
-    mkdir -p $pub/$hash
     git log -n 1 > $bindir/README
     mkdir -p $pub/$change
     forcelink $pub/$hash $pub/$change/$hash
     rm -f $pub/latest $pub/$change/latest
     forcelink $bindir $pub/latest
     forcelink $pub/$change $pub/latest-changeid
-    echo "export LD_LIBRARY_PATH=$bindir:$pub/lib" > $bindir/env.sh
     cp -af $xmtx/RegressionTests/launch_server.py $bindir/
     for f in $xmtbins xmt/lib/*.so; do
       local b=`basename $f`
       ls -l $f
       local bin=$bindir/$b
       cp -af $f $bindir/$b
-      (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+      [[ ${tbbver:-} ]] ||  guesstbbver $f
+      (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib:$pub/tbb-${tbbver:-4.0}"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
       chmod +x $bin.sh
       forcelink $hash/$b $pub/$b
       forcelink ../$hash $pub/$change/latest
       forcelink ../$hash/$b $pub/$change/$b
     done
+    grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
     rmrpath $bindir
     cat $bindir/README
     local pub2=~/bugs/leak
@@ -278,7 +367,7 @@ cs-for() {
     )
 }
 cs-s() {
-    cs-for n-s "$@"
+    cs-for c-s "$@"
 }
 ns-for() {
 (
@@ -287,6 +376,9 @@ for i in `seq 1 6`; do
   n-s $f "$@"
 done
 )
+}
+ns-s() {
+  ns-for n-s "$@"
 }
 forcns() {
     cs-s "$@"
@@ -297,12 +389,12 @@ rmtmps() {
 }
 tabname() {
   printf "\e]1;$*\a"
-  if [[ $sleepname ]] ; then sleep $sleepname ; fi
+  if [[ ${sleepname:-} ]] ; then sleep $sleepname ; fi
 }
 
 winname() {
   printf "\e]2;$*\a"
-  if [[ $sleepname ]] ; then sleep $sleepname ; fi
+  if [[ ${sleepname:-} ]] ; then sleep $sleepname ; fi
 }
 
 tabwinname() {
@@ -391,23 +483,23 @@ chostdomain=languageweaver.com
 c-scan-view() {
     local port=8891
     local chostfull="$chost.$chostdomain"
-    local url="http://$chostfull:$port"
+    local url="http://$chostfull:${port:-}"
     echo $url
     browse $url
     c-s pgkill scan-view
-    c-s scan-view --host=$chostfull --port=$port --allow-all-hosts --no-browser "$@"
+    c-s scan-view --host=$chostfull --port=${port:-} --allow-all-hosts --no-browser "$@"
 }
 gerritlog() {
     chost=git02 c-s tail -${1:-80} /local/gerrit/logs/error_log
 }
 xmtscanf() {
-    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf $xmtx/DebugScan \; scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf $xmtx/DebugScan \; scanbuildnull=${scanbuildnull:-} scanbuildh=${scanbuildh:-} xmtcm DebugScan
 }
 xmtscan() {
-    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtcm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=${scanbuildnull:-} scanbuildh=${scanbuildh:-} xmtcm DebugScan
 }
 xscan() {
-    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=$scanbuildnull scanbuildh=$scanbuildh xmtm DebugScan
+    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=${scanbuildnull:-} scanbuildh=${scanbuildh:-} xmtm DebugScan
 }
 if [[ $HOST = $chost ]] || [[ $HOST = graehl.local ]] || [[ $HOST = graehl ]] ; then
     xmtx=/Users/graehl/x
@@ -423,6 +515,9 @@ xmtlib=$xmtext/libraries
 xmtlibshared=$xmtextbase/Shared/cpp/libraries
 c-cat() {
     c-s catz "$@"
+}
+k-cat() {
+    k-s catz "$@"
 }
 c-sync() {
     sync2 $chost "$@"
@@ -461,9 +556,9 @@ cs-to() {
 }
 c-s() {
     local chost=${chost:-c-graehl}
-    local fwdenv="gccfilter=$gccfilter BUILD=$BUILD"
+    local fwdenv="gccfilter=${gccfilter:-} BUILD=${BUILD:-}"
     local pre=". ~/.e"
-    local cdto=$(remotehome=/home/graehl trhomedir "$(pwd)")
+    local cdto=${cdto:-$(remotehome=/home/graehl trhomedir "$(pwd)")}
     if false && [[ $ontunnel ]] ; then
         sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     else
@@ -502,13 +597,19 @@ k-with() {
     (k-c; c-with "$@")
 }
 c-compile() {
-    c-with BUILD=$BUILD x-compile "$@"
+    c-with BUILD=${BUILD:-} x-compile "$@"
 }
 c-xmtcompile() {
-    c-with BUILD=$BUILD xmtcompile "$@"
+    c-with BUILD=${BUILD:-} xmtcompile "$@"
 }
 cr-make() {
     (cr-c;c-make "$@")
+}
+cw-make() {
+    (cw-c;c-make "$@")
+}
+k-make() {
+    (k-c;c-make "$@")
 }
 kr-make() {
     (kr-c;c-make "$@")
@@ -520,6 +621,11 @@ cr-c() {
     c-c
     b-r
 }
+cw-c() {
+    c-c
+    b-w
+}
+
 kr-c() {
     k-c
     b-r
@@ -534,6 +640,9 @@ cd-c() {
 }
 b-r() {
     BUILD=Release
+}
+b-w() {
+    BUILD=RelWithDebInfo
 }
 b-d() {
     BUILD=Debug
@@ -794,7 +903,7 @@ pushc() {
         local b=${1:-`git_branch`}
 
         set -e
-        if [[ $force ]] ; then
+        if [[ ${force:-} ]] ; then
             # avoid non-fast fwd msg
             git push ${chost:-c-graehl} :$b || c-s "cd x;newbranch $b;git co master"
         fi
@@ -807,15 +916,26 @@ c-tests() {
 c-vgtest() {
     local test=$1
     shift
-    c-make Test$test "$@" vgTest$test
+    c-make Test${test:-} "$@" vgTest$test
 }
 k-test() {
+    (b-d;k-c;c-test "$@")
+}
+kr-test() {
     (b-r;k-c;c-test "$@")
+}
+d-test() {
+    (b-d;d-c;c-test "$@")
+}
+dr-test() {
+    (b-r;d-c;c-test "$@")
 }
 c-test() {
     local test=$1
     shift
-    c-make Test$test "$@" Test$test
+    local rel
+    [[ ${BUILD:-} = Release ]] && rel=Release
+    c-make Test${test:-} Test$test$rel "$@"
 }
 gitmsg() {
     git log -n 1 "$@"
@@ -871,7 +991,7 @@ tunssh() {
 }
 less2() {
     local page=${page:-less}
-    ( if ! [[ $quiet ]] ; then
+    ( if ! [[ ${quiet:-} ]] ; then
         echo "$@"; echo
         fi
         "$@" 2>&1) | $page
@@ -976,32 +1096,36 @@ branchnew() {
     git checkout -b "$1" origin/master
     git commit --allow-empty -m "$*"
 }
+nuser=nbuild
+nidentity=$HOME/.ssh/nbuild-laptop
+cuser=
+cidentitty=
 n-s() {
     local host=${nhost:-gitbuild1}
-    local args="$host -l nbuild -i $HOME/.ssh/nbuild-laptop"
+    local args="$host -l $nuser -i $nidentity"
     if [[ "$@" ]] ; then
-        ssh $args ". ~graehl/.e; $@"
+        ssh $args ". ~graehl/.e; $*"
     else
         ssh $args
     fi
 }
 n6-s() {
-    n-host=gitbuild6 n-s "$@"
+    nhost=gitbuild6 n-s "$@"
 }
 n5-s() {
-    n-host=gitbuild5 n-s "$@"
+    nhost=gitbuild5 n-s "$@"
 }
 n4-s() {
-    n-host=gitbuild4 n-s "$@"
+    nhost=gitbuild4 n-s "$@"
 }
 n3-s() {
-    n-host=gitbuild3 n-s "$@"
+    nhost=gitbuild3 n-s "$@"
 }
 n2-s() {
-    n-host=gitbuild2 n-s "$@"
+    nhost=gitbuild2 n-s "$@"
 }
 n1-s() {
-    n-host=gitbuild1 n-s "$@"
+    nhost=gitbuild1 n-s "$@"
 }
 externals() {
     local newmastercmd="git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
@@ -1560,11 +1684,27 @@ ccp() {
                 require_dir "$dst"
             fi
             for f in "${@:1:$n}"; do
-                echo scp $chost:"$f" "$dst"
-                scp $chost:"$f" "$dst"
+                local cuserpre
+                if [[ $cuser ]] ; then
+                    cuserpre="$cuser@"
+                fi
+                local cargs
+                if [[ ${cidentity:-} ]] ; then
+                    cargs="-i $cidentity"
+                fi
+                echo scp $cargs $cuserpre$chost:"$f" "$dst"
+                scp $cargs $cuserpre$chost:"$f" "$dst"
+                #cd $xmtx
+                # dst=`realpath $dst`
+                #local p=`relpath $xmtx $dst`
+                #echo "cd $xmtx;git add $p"
+                #git add $p
             done
         fi
     )
+}
+ncp() {
+    chost=$nhost cidentity=$nidentity cuser=$nuser ccp "$@"
 }
 ccat() {
     c-s cat "$*"
@@ -1610,7 +1750,7 @@ memcheck() {
         local rc=$?
         if [[ $rc -ne 0 ]] || [[ -s $memlog ]] ; then
             echo $hr
-            echo "memcheck $test [FAIL]"
+            echo "memcheck ${test:-} [FAIL]"
             echo $hr
             echo "cd `pwd` && valgrind $valgrindargs $1"
             ls -l $memout $memlog
@@ -1686,8 +1826,8 @@ memchecktests() {
         memcheckrc=0
         memcheckfailed=''
         for test in $tests; do
-            if memchecktest $test ; then
-                echo memcheck $test ...
+            if memchecktest ${test:-} ; then
+                echo memcheck ${test:-} ...
                 memcheck $test
                 echo $hr
             fi
@@ -1779,13 +1919,14 @@ pytest() {
     TERM=$TERM py.test --assert=reinterp "$@"
 }
 yreg() {
-    if [[ $xmtShell ]] ; then
+    if [[ ${xmtShell:-} ]] ; then
         makeh xmtShell
     fi
-    local args="$yargs"
+    local args=${yargs:-}
     # -t 2
     (set -e;
-        local logfile=/tmp/yreg.`filename_from "$@" $BUILD`
+        bdir=${bdir:-$xmtx/${BUILD:=Debug}}
+        local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
         cd $xmtx/RegressionTests
         THREADS=${MAKEPROC:-`ncpus`}
         MINTHREADS=${MINTHREADS:-1} # unreliable with 1
@@ -1797,25 +1938,25 @@ yreg() {
             THREADS=$MINTHREADS
         fi
         local STDERR_REGTEST
-        if [[ $verbose ]] ; then
+        if [[ ${verbose:-} ]] ; then
             STDERR_REGTEST="--dump-stderr"
         fi
         local memcheckparam
-        if [[ $memcheck ]] || [[ $MEMCHECKREGTEST -eq 1 ]] ; then
+        if [[ ${memcheck:-} ]] || [[ ${MEMCHECKREGTEST:-} -eq 1 ]] ; then
             memcheckparam=--memcheck
         fi
-        local REGTESTPARAMS="$REGTESTPARAMS $memcheckparam -b $xmtx/${BUILD:-Debug} -t $THREADS -x regtest_tmp_$USER_$BUILD $GLOBAL_REGTEST_YAML_ARGS $STDERR_REGTEST"
-        if [[ $exitfail != 0 ]] ; then
+        local REGTESTPARAMS="${REGTESTPARAMS:-} ${memcheckparam:-} -b $bdir -t $THREADS -x regtest_tmp_${USER}_${BUILD} ${GLOBAL_REGTEST_YAML_ARGS:-} ${STDERR_REGTEST:-}"
+        if [[ ${exitfail:-} != 0 ]] ; then
             REGTESTPARAMS_=" -X"
         fi
-        if [[ $regverbose != 0 ]] ; then
+        if [[ ${regverbose:-} != 0 ]] ; then
             REGTESTPARAMS_=" -v"
         fi
-        if [[ $monitor ]] ; then
+        if [[ ${monitor:-} ]] ; then
             REGTESTPARAMS+=" --monitor-stderr"
         fi
         local python=${python:-python}
-        if [[ $1 ]] ; then
+        if [[ ${1:-} ]] ; then
             local f=$1
             if [[ -d $1 ]] ; then
                 save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS "$@"
@@ -1889,49 +2030,54 @@ jen() {
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
     shift
-    local pub2=$1
-    if [[ $pub2 ]] ; then
+    local pub2
+    if [[ ${1:-} ]] ; then
+        pub2=$1
         shift
     fi
-    local log=$HOME/tmp/jen.log.`timestamp`
+    local log=$HOME/tmp/jen.log.${HOST:=`hostname`}.`timestamp`
     . xmtpath.sh
     usegcc
     if [[ $HOST = $chost ]] ; then
         export USE_BOOST_1_50=1
     fi
-    if [[ $memcheck ]] ; then
+    if [[ ${memcheck:-} ]] ; then
         MEMCHECKUNITTEST=1
     else
         MEMCHECKUNITTEST=0
     fi
-    if [[ $memcheckall ]] ; then
+    if [[ ${memcheckall:-} ]] ; then
         MEMCHECKALL=1
     else
         MEMCHECKALL=0
     fi
     local nightlyargs
-    if [[ $nightly ]] ; then
+    if [[ ${nightly:-} ]] ; then
         nightlyargs="--memcheck --speedtest"
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=$cmake BUILDSUBDIR=${BUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build $nightlyargs "$@" 2>&1 | tee $log
-    if [[ $pub2 ]] ; then
+    cmake=${cmake:-} BUILDSUBDIR=${BUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
     set +x
     echo
     echo $log
     fgrep '... FAIL' $log | grep -v postagger | sort > $log.fails
-    nfails=`cut -d' ' -f1 $log.fails | uniq -c | wc -l`
+    uniqfails=$log.fails.uniq
+    catz $log.fails | cut -d' ' -f1 $log.fails | uniq > $uniqfails
+    nfails=`wc -l $uniqfails`
     cp $log.fails /tmp/last-fails
     echo
     cat /tmp/last-fails
     echo
     echo $log.fails
     echo "#fails = $nfails"
+    echo
+    catz $uniqfails >> $log.fails
     echo "#fails = $nfails" >> $log.fails
-
+    echo overk $log
 }
 
 
@@ -1940,6 +2086,9 @@ kjen(){
 }
 djen() {
     chost=c-mdreyer linjen "$@"
+}
+rcjen() {
+    chost=c-jgraehl linjen Release "$@"
 }
 cjen() {
     chost=c-graehl linjen "$@"
@@ -1980,9 +2129,9 @@ xmtm() {
         racb ${1:-Debug}
         shift || true
         cd $xmtbuild
-        local prog=$1
+        local prog=${1:-}
         local maketar=
-        if [ "$prog" ] ; then
+        if [[ ${prog:-} ]] ; then
             shift
             #rm -f {Autorule,Hypergraph,FsTokenize,LmCapitalize}/CMakeFiles/$prog.dir/{src,test}/$prog.cpp.o
             if [[ ${prog#Test} = $prog ]] ; then
@@ -1997,17 +2146,17 @@ xmtm() {
         echo2 MAKEPROC=$MAKEPROC
         local premake
         identifybuild
-        if [[ $scanbuild ]] ; then
+        if [[ ${scanbuild:-} ]] ; then
             premake="scan-build -k"
-            if [[ $scanbuildh ]] ; then
+            if [[ ${scanbuildh:-} ]] ; then
                 premake+=" -analyzer-headers" # -v
             fi
-            if [[ $scanbuildnull ]] ; then
+            if [[ ${scanbuildnull:-} ]] ; then
                 premake+="-Xanalyzer -analyzer-disable-checker=core.NullDereference"
                 # -Xanalyzer -analyzer-disable-checker=core.NonNullParamChecker
             fi
         fi
-        if [[ $test ]] ; then
+        if [[ ${test:-} ]] ; then
             make check
         elif [[ $prog ]] && [[ "$*" ]]; then
             $premake make -j$MAKEPROC $prog && $prog "$@"
@@ -2043,16 +2192,16 @@ xmtcm() {
     xmtm "$@"
 }
 identifybuild() {
-    buildcxxflags=$cxxflags
+    buildcxxflags=${cxxflags:-}
     usegcc
-    if [[ $llvm ]] ; then
+    if [[ ${llvm:-} ]] ; then
         usellvm
     fi
-    if [[ $clang ]] || [[ ${build%Clang} != $build ]] ; then
+    if [[ ${clang:-} ]] || [[ ${build%Clang} != $build ]] ; then
         useclang
         buildxcxxflags=-fmacro-backtrace-limit=200
     fi
-    if [[ $scanbuild ]] || [[ ${build%Scan} != $build ]] ; then
+    if [[ ${scanbuild:-} ]] || [[ ${build%Scan} != $build ]] ; then
         usescanbuild
     fi
 }
@@ -2062,9 +2211,9 @@ ccmake() {
     (
         rm -f CMakeCache.txt $d/CMakeCache.txt
         identifybuild
-        local cxxf=$cxxflags
+        local cxxf=${cxxflags:-}
         echo "cmake = $(which cmake)"
-        CFLAGS= CXXFLAGS=$cxxf CPPFLAGS= LDFLAGS=-v cmake $d -Wno-dev "$@"
+        CFLAGS= CXXFLAGS=${cxxf:-} CPPFLAGS= LDFLAGS=-v cmake $d -Wno-dev "$@"
     )
 }
 savecppch() {
@@ -2502,8 +2651,8 @@ tunsocks() {
 tunport() {
     local port=${1:?usage: port [host] via tunhost:tunport $tunhost:$tunport}
     local host=${2:-git02.languageweaver.com}
-    local lport=${3:-$port}
-    ssh -N -L $port:$host:$lport -p $tunport $tunhost "$@"
+    local lport=${3:-${port:-}}
+    ssh -N -L ${port:-}:$host:$lport -p $tunport $tunhost "$@"
 }
 ssht() {
     ssh -p $tunport $tunhost "$@"
@@ -2595,8 +2744,8 @@ usegcc() {
             GCC_SUFFIX=-4.7
         fi
         local ccache=${ccache:-$(echo ~/bin/ccache)}
-        export CC="$ccache-gcc$GCC_SUFFIX"
-        export CXX="$ccache-g++$GCC_SUFFIX"
+        export CC="$ccache-gcc${GCC_SUFFIX:-}"
+        export CXX="$ccache-g++${GCC_SUFFIX:-}"
     fi
 }
 usegccnocache() {
@@ -2634,7 +2783,7 @@ withcc() {
     )
 }
 dumbmake() {
-    if [[ $DUMB ]] ; then
+    if [[ ${DUMB:-} ]] ; then
         /usr/bin/make VERBOSE=1 "$@" 2>&1
         #| sed -e 's%^.*: error: .*$%\x1b[37;41m&\x1b[m%' -e 's%^.*: warning: .*$%\x1b[30;43m&\x1b[m%'
     else
@@ -2671,7 +2820,7 @@ linjen() {
         c-s forceco $branch
         log=~/tmp/linjen.$chost.$branch
         mv $log ${log}2 || true
-        c-s BUILDSUBDIR=1 CLEANUP=$CLEANUP cmake=$cmake UPDATE=0 nightly=$nightly threads=$threads VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
+        c-s BUILDSUBDIR=1 CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -2698,7 +2847,7 @@ xmtcmsave() {
         gbranch=${branch:-headless}
     fi
     local binf=~/bin/xmt.$gbranch.`shortstamp`
-    BUILD=$BUILD makeh xmt && cp $xmtx/$BUILD/xmt/xmt $binf && ls -al $binf && [[ $clean ]] && rm ~/bin/xmt.$gbranch.* && cp $xmtx/$BUILD/xmt/xmt $binf
+    BUILD=${BUILD:-} makeh xmt && cp $xmtx/$BUILD/xmt/xmt $binf && ls -al $binf && [[ $clean ]] && rm ~/bin/xmt.$gbranch.* && cp $xmtx/$BUILD/xmt/xmt $binf
     echo $binf
     newxmt=$binf
 }
@@ -2820,10 +2969,10 @@ psave12() {
     page=less save12 "$@"
 }
 filterblock() {
-    if [[ $blockclang ]] ; then
+    if [[ ${blockclang:-} ]] ; then
         blockline="clang: error: linker command failed with exit code"
     fi
-    if [[ $blockline ]] ; then
+    if [[ ${blockline:-} ]] ; then
         grep -v "$blockline" --line-buffered
     else
         cat
@@ -2838,7 +2987,7 @@ save12() {
     local cmd=`abspaths "$@"`
     echo2 "$cmd"
     echo2 saving output $out
-    ( if ! [[ $quiet ]] ; then
+    ( if ! [[ ${quiet:-} ]] ; then
         echo "$@"; echo
         fi
         "$@" 2>&1) | filterblock | tee $out | ${page:-cat}
@@ -2851,7 +3000,7 @@ save2() {
     [[ -f $out ]] && mv "$out" "$out~"
     shift
     echo2 saving output $out
-    ( if ! [[ $quiet ]] ; then
+    ( if ! [[ ${quiet:-} ]] ; then
         echo2 "$@"; echo2
         fi
         "$@" ) 2>&1 2>$out.stdout | tee $out | ${page:-cat}
@@ -2948,7 +3097,7 @@ linbuild() {
     cd $xmtx
     local branch=$(git_branch)
     mend
-    c-s build=$build branch=$branch regs=$regs test=$test all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
+    c-s build=$build branch=$branch regs=$regs test=${test:-} all=$all reg=$reg macbuild $branch "$@" 2>&1 | tee ~/tmp/linbuild.$branch.`shortstamp` | filter-gcc-errors
 }
 splitape() {
     local file=${1%.ape}
@@ -3064,7 +3213,7 @@ macbuild() {
     (
         set -e
         macget $branch
-        if [[ $test ]] ; then
+        if [[ ${test:-} ]] ; then
             test=1 xmtcm $build
         fi
         BUILD=$build makeh $tar
@@ -3327,13 +3476,11 @@ xlog() {
         gitlog
     )
 }
+gitlogp() {
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -p -$1
+}
 gitlog() {
-    if [ $# -gt 0 ]; then
-        git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -p -$1
-    else
-        git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${ncommits:-25}
-        echo
-    fi
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${1:-30}
 }
 gitreview() {
     git review "$@"
@@ -3496,7 +3643,7 @@ maketest() {
             valgrindpre="$valgrind --db-attach=yes --tool=memcheck"
         fi
         local test=`find . -name Test$1`
-        make VERBOSE=1 Test$1 && $valgrindpre $test $targ
+        make VERBOSE=1 Test$1 && $valgrindpre ${test:-} $targ
     )
 }
 makerun() {
@@ -3515,8 +3662,8 @@ makerun() {
                 set +x
                 local f=$(echo */$exe)
                 if [[ -x $f ]] ; then
-                    if ! [[ $pathrun ]] ; then
-                        if ! [[ $norun ]] ; then
+                    if ! [[ ${pathrun:-} ]] ; then
+                        if ! [[ ${norun:-} ]] ; then
                             $f "$@"
                         fi
                     else
@@ -3534,7 +3681,14 @@ makejust() {
     norun=1 makerun "$@"
 }
 makeh() {
-    if [[ $1 ]] ; then
+    if [[ $1 = xmt ]] ; then
+        makerun xmtShell --help
+        makerun XMTStandaloneClient --help
+        makerun XMTStandaloneServer --help
+        if [[ ${2:-} ]] ; then
+            bakxmt $2
+        fi
+    elif [[ $1 ]] ; then
         makerun $1 --help
     else
         makerun
@@ -3737,7 +3891,7 @@ svnpdf() {
     svnmime application/pdf *.pdf
 }
 xhostc() {
-    xhost +192.168.131.135
+    xhost +192.168.131.99
 }
 showdefines() {
     ${CC:-g++} -dM -E "${1:--}" < /dev/null
@@ -3963,7 +4117,7 @@ substi() {
     (set -e
         local tr=$1
         shift
-        if ! [[ $nodryrun ]] ; then
+        if ! [[ ${nodryrun:-} ]] ; then
             subst.pl "$@" --dryrun --inplace --tr "$tr"
             echo
         fi
@@ -4054,7 +4208,7 @@ fontsmooth() {
 locp=${locp:9922}
 tun1() {
     #eg tun1 revboard 80 9921
-    local p=${3:-$port}
+    local p=${3:-${port:-}}
     if ! [[ $p ]] ; then
         p=$locp
         locp=$((locp+1))
@@ -4068,22 +4222,6 @@ tun1() {
 }
 tunsvn() {
     tun1 svn 80 $rxsvnp
-}
-lwsvnhost=svn.languageweaver.com
-localsvnhost=localhost:$rxsvnp
-rxsvn="http://svn.languageweaver.com/svn/repos2"
-rxlocal="http://localhost:$rxsvnp/svn/repos2"
-cmerepo="http://svn.languageweaver.com/svn/repos2"
-cmelocal="http://localhost:$rxsvnp/svn/repos2"
-rblocal="http://localhost:$revboardp/"
-rblw="http://revboard/"
-
-revboardrc() {
-    local rb=$rblw
-    if [[ $local ]] ; then
-        rb=$rblocal
-    fi
-    (echo "REPOSITORY = \"$cmerepo\""; echo "REVIEWBOARD_URL = \"$rb\"") > .reviewboardrc
 }
 svnroot() {
     svn info | grep ^Repository\ Root | cut -f 3 -d ' '
@@ -4109,92 +4247,6 @@ svnswitchlocal() {
     else
         svnswitchhost $localsvnhost $lwsvnhost
     fi
-}
-rxtun() {
-    (
-        cd $xmtx
-        svn relocate $rxsvn $rxlocal
-        revboardrc
-    )
-}
-#switch --relocate
-rxlw() {
-    (
-        cd $xmtx
-        svn relocate $rxlocal $rxsvn
-        revboardrc
-    )
-}
-tokdot() {
-    local t=${1:-2}
-    shift
-    local s=${1:-9}
-    shift
-    pushd $xmtx/xmt/FsTokenizer
-    stopw=$s tokw=$t draw=1 ./test.sh tiny. {vcb,untok}
-    hgdot ~/r/FsTokenizer/work/s=$s,t=$t/tiny.vcb.trie.gz
-    popd
-}
-tokt() {
-    pushd $xmtx/xmt/FsTokenizer
-    ./test.sh "$@"
-}
-revx() {
-    local dr=
-    #p
-    local sum=$1
-    shift
-    if [[ $dryrun ]] ; then
-        dr="n"
-    fi
-    pushd $xmtx
-    local dry=1
-    local carg=
-    if [[ $change ]] ; then carg="--svn-changelist=$change"; fi
-    if [[ $commit ]] ; then dry=; fi
-    if [ "$sum" ] ; then
-        post-review -do$dr $carg --summary="$sum" --description="$*" --username=graehl --password=cheese --target-groups=ScienceCoreModels
-        dryrun=$dry crac "$sum: $*"
-        echo "crac '$sum: $*'" > $xmtx/commit.sh
-        chmod +x $xmtx/commit.sh
-    fi
-    set +x
-    popd
-}
-rerevx() {
-    revxcmd -r "$@"
-}
-revxcmd() {
-    pushd $xmtx
-    if [[ $change ]] ; then carg="--svn-changelist=$change"; fi
-    post-review "$@" $carg --username=graehl --password=cheese
-    set +x
-    popd
-}
-withdbg() {
-    local d=$1
-    shift
-    local gdbc=
-    if [ "$gdb" ] ; then
-        gdbc="gdb --args"
-    fi
-    # TUHG_DBG=$d
-    TUHG_DBG=$d HYPERGRAPH_DBG=$d LAZYF_DBG=$d HGBEST_DBG=$d $gdbc "$@"
-}
-rmstashx() {
-    rm -rf ~/c/stash.*
-}
-stashx() {
-    cd ~/c
-    local s=~/c/stash.`shortstamp`
-    mkdir -p $s
-    cp -pr ~/c/xmt/{3rdParty/graehl,racerx/Hypergraph} $s
-}
-rcompile() {
-    local s=$1
-    shift
-    local flags="-I$BOOST_INCLUDE -I$HOME/x/3rdparty -I$HOME/x -O0 -ggdb"
-    g++ $flags -x c++ -DGRAEHL__SINGLE_MAIN -DHYPERGRAPH_MAIN "$s" "$@"
 }
 brewrehead() {
     brew remove "$@"
@@ -4496,6 +4548,16 @@ diffshared() {
 relnshared() {
     lnshared $(usedshared)
 }
+lnhgforce() {
+    for b in "$@"; do
+        for t in $b egdb$b gdb$b vg$b; do
+            echo $t
+            ln -sf $xmtx/run.sh ~/bin/$t
+            ln -sf $xmtx/run.sh ~/bin/${t}Release
+            ln -sf $xmtx/run.sh ~/bin/${t}RelWithDebInfo
+        done
+    done
+}
 lnhg1() {
     local branch=${branch:-Debug}
     local d=$xmtx/$branch
@@ -4508,11 +4570,7 @@ lnhg1() {
         if [[ ${f%.log} = $f ]] ; then
             basename $f
             local b=`basename $f`
-            for t in $b egdb$b gdb$b vg$b; do
-                echo $t
-                ln -sf $xmtx/run.sh ~/bin/$t
-                ln -sf $xmtx/run.sh ~/bin/${t}Release
-            done
+            lnhgforce $b
         fi
     done
 }
@@ -4652,7 +4710,7 @@ racb() {
     build=${build:-Release}
     build=${1:-$build}
     shift || true
-    if [[ $debug = 1 ]] ; then
+    if [[ ${debug:-} = 1 ]] ; then
         build=Debug
     fi
     xmtbuild=$xmtx/$build
@@ -4668,13 +4726,13 @@ racb() {
 
     local allarg=
     local allhg=
-    if [[ $allhg ]] ; then
+    if [[ ${allhg:-} ]] ; then
         allarg="-DAllHgBins=1"
     fi
-    if [[ $nohg ]] ; then
+    if [[ ${nohg:-} ]] ; then
         allarg=
     fi
-    cmarg="-DCMAKE_BUILD_TYPE=${buildtype:-$buildtyped} $allarg $*"
+    cmarg="-DCMAKE_BUILD_TYPE=${buildtype:-$buildtyped} ${allarg:-} $*"
     if [[ $HOST = graehl.local ]] || [[ $OS = Darwin ]] ; then
         cmarg+=" -DLOG4CXX_ROOT=/usr/local"
     fi
@@ -4702,7 +4760,7 @@ urac() {
 crac() {
     pushd $xmtx
     local dryc=
-    if [[ $dryrun ]] ; then
+    if [[ ${dryrun:-} ]] ; then
         dryc=echo
     fi
     local carg=
@@ -4744,11 +4802,8 @@ runc() {
 }
 enutf8=en_US.UTF-8
 sc() {
-    if [[ $term != xterm-256color ]] ; then
-        ssh $chost "$@"
-    else
-        LANG=$enutf8 mosh --server="LANG=$enutf8 mosh-server" $chost "$@"
-    fi
+    ssh $chost "$@"
+#        LANG=$enutf8 mosh --server="LANG=$enutf8 mosh-server" $chost "$@"
 }
 topon() {
     thostp $phost "$@"
@@ -5551,7 +5606,7 @@ cprogress() {
     true
 }
 
-[ "$ONHPC" ] && alias qme="qstat -u graehl"
+[[ ${ONHPC:-} ]] && alias qme="qstat -u graehl"
 alias gpi="grid-proxy-init -valid 99999:00"
 alias 1but="cd 1btn0000 && vds-submit-dag 1button.dag; cd .."
 alias rm0="rm -rf *000?"
@@ -5666,7 +5721,7 @@ function puzzle()
             tar czf $tar `ls Makefile $puzzle $puzzle. {ml,py,cc,cpp,c} 2>/dev/null`
             tar tzf $tar
 
-            [ "$dryrun" ] || EMAIL=$MYEMAIL mutt -s $puzzle -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
+            [ "${dryrun:-}" ] || EMAIL=$MYEMAIL mutt -s $puzzle -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
             set +x
         fi
         popd
@@ -5708,7 +5763,7 @@ function spuzzle()
         tar czf $tar $all
         tar tzf $tar
 
-        [ "$dryrun" ] || EMAIL=$MYEMAIL mutt -s $puz -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
+        [ "${dryrun:-}" ] || EMAIL=$MYEMAIL mutt -s $puz -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
         set +x
     )
 }
@@ -6359,7 +6414,7 @@ xscripts() {
     find $1 -name '*.sh*' -exec chmod +x {} \;
 }
 
-if [ "$ONCYGWIN" ] ; then
+if [[ ${ONCYGWIN:=} ]] ; then
     sshwrap() {
         local which=$1
         shift
@@ -6785,45 +6840,6 @@ clonecar() {
 }
 
 
-testws() {
-    cd $WSMT
-    makews && ./tests/run-system-tests.pl
-}
-
-svncom() {
-    (
-        proj=${project:-$WSMT}
-        cd $proj
-        echo $project $proj
-        set -e
-        (
-            if [ $# = 1 ] ; then
-                git commit -a -m "$1"
-            else
-                git commit -a "$@"
-            fi
-        )
-        git svn rebase
-        git svn dcommit
-        # git push
-    )
-}
-alias wscom="project=$WSMT svncom"
-
-alias c10="pushd $WSMT"
-
-toy() {
-    local h=$1
-    shift
-    $cdec -c ${TOYG:-~/toy-grammar}/cdec-$h.ini "$@"
-}
-
-feo() {
-    local tt=${1:-hiero}
-    shift
-    echo 'eso perro feo .' | toy $tt "$@"
-}
-
 par() {
     local npar=${npar:-20}
     local parargs=${parargs:-"-p 9g -j $npar"}
@@ -6833,13 +6849,6 @@ par() {
     showvars_required npar parargs logdir
     logarg="-e $logdir"
     $WSMT/vest/parallelize.pl $parextra $parargs $logarg -- "$@"
-}
-
-qjhu() {
-    SGE_ROOT=/usr/local/share/SGE /usr/local/share/SGE/bin/lx24-x86/qlogin -l mem_free=9g
-}
-qelo() {
-    elo qjhu
 }
 mkdest() {
     if [ "$2" ] ; then
@@ -6870,8 +6879,8 @@ relhomeby() {
 
 shost1() {(set -e
         local portarg=
-        if [[ $port ]] ; then
-            portarg=-P$port
+        if [[ ${port:-} ]] ; then
+            portarg=-P${port:-}
         fi
         )}
 tohost1() {
@@ -6883,11 +6892,11 @@ tohost1() {
         user=${user:-`userfor $host`}
         [ "$user" ] && u="$user@"
         local portarg=
-        if [[ $port ]] ; then
-            portarg=-P$port
+        if [[ ${port:-} ]] ; then
+            portarg=-P${port:-}
         fi
         echo scp $portarg -r "$f" "$u$host:`dirname $f`/"
-        if [ "$dryrun" ] ; then
+        if [ "${dryrun:-}" ] ; then
             showvars_optional relpath
         else
             scp $portarg -r "$f" "$u$host:`dirname $f`"
@@ -6970,10 +6979,10 @@ sync2() {
         [ "$user" ] && u="$user@"
         local f
         local darg
-        [ "$dryrun" ] && darg="-n"
+        [ "${dryrun:-}" ] && darg="-n"
         echo sync2 user=$user host=$h "$@"
 
-        (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) | rsync $darg -avruz -e ssh --files-from=- $rsyncargs $rsync_exclude . $u$h:${dest:=.}
+        (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) | rsync $darg -avruz -e ssh --files-from=- ${rsyncargs:-} ${rsync_exclude:-} . $u$h:${dest:=.}
     )
 }
 syncto() {
@@ -6995,30 +7004,13 @@ syncfrom() {
         [ "$user" ] && u="$user@"
         local f
         local darg
-        [ "$dryrun" ] && darg="-n"
+        [[ ${dryrun:-} ]] && darg="-n"
         echo syncFROM user=$user host=$h "$@"
         sleep 2
 
-        (for f in "$@"; do echo $f; done) | rsync $darg $rsync_exclude -avruz -e ssh --files-from=- $u$h:. .
+        (for f in "$@"; do echo $f; done) | rsync $darg ${rsync_exclude:-} -avruz -e ssh --files-from=- $u$h:. .
     )
 }
-conf2() {
-    sync2 $1 isd/hints/
-    sync2 $1 .inputrc .screenrc .bashrc .emacs
-    sync2 $1 elisp/
-}
-conffrom() {
-    fromhost $1 isd/hints/
-    fromhost $1 .inputrc .screenrc .bashrc .emacs
-    # syncfrom $1 elisp/
-}
-conf2l() {
-    conf2 login.clsp.jhu.edu
-}
-alias lob="(cd;cplo isd/hints/{aliases.sh,bashlib.sh};cplo .inputrc .bashrc .emacs )"
-alias loa="(cd;cplo1 isd/hints/aliases.sh)"
-alias froma="(cd;fromlo1 isd/hints/aliases.sh)"
-alias loe="(cd;cplo .emacs elisp)"
 alias qs="qstat -f -j"
 qdelrange() {
     for i in `seq -f "%.0f" "$@"`; do
@@ -7149,7 +7141,7 @@ altgcc4() {
 plboth() {
     local o=$1
     local oarg="-landscape"
-    [ "$portrait" ] && oarg=
+    [ "${port:-}rait" ] && oarg=
     shift
     pl -png -o $o.png "$@"
     pl -ps -o $o.ps $oarg "$@"
@@ -7523,3 +7515,4 @@ fi
 cp2ken() {
   build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
 }
+[[ $INSIDE_EMACS ]] || INSIDE_EMACS=

@@ -1,6 +1,7 @@
 [user]
 	name = graehl
 	email = graehl@gmail.com
+	logallrefupdates = true
 [github]
 	user = graehl
 	token = c16024811fee18c08ac842ba3d4547c5
@@ -61,3 +62,5 @@
 	reflogexpire = 300
 [apply]
 	whitespace = nowarn
+[rerere]
+	enabled = true

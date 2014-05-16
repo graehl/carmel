@@ -3,7 +3,7 @@ useHistory() {
     \egrep -v '^top$|^pwd$|^ls$|^ll$|^l$|^lt$|^cd |^h |^bg$|^fg$'
 }
 owner() {
-    \ls -ld "${1:-$PWD}" | \awk '{print $3}'
+    \ls -ld "${1:-.}" | \awk '{print $3}'
 }
 lastHistoryLine() {
     history 1 | HISTTIMEFORMAT= \sed 's:^ *[0-9]* *::'
@@ -20,18 +20,16 @@ localHistory()
 }
 addPromptCommand() {
     # convenience command to enable adding of the prompt
-    if [[ $PROMPT_COMMAND != *$1* ]]; then
-        if [[ $PROMPT_COMMAND ]]; then
-            # exists with content
-            if [[ $PROMPT_COMMAND =~ \;[\ \ ]*$ ]]; then
-                # already ends in semicolon and space or tab
-                PROMPT_COMMAND+="$1"
-            else
-                # does not end in semicolon
-                PROMPT_COMMAND+=" ; $1"
-            fi
+    if ! [[ ${PROMPT_COMMAND:-} ]]; then
+        export PROMPT_COMMAND="$1"
+    elif [[ $PROMPT_COMMAND != *$1* ]]; then
+        # exists with content
+        if [[ $PROMPT_COMMAND =~ \;[\ \ ]*$ ]]; then
+            # already ends in semicolon and space or tab
+            PROMPT_COMMAND+="$1"
         else
-            PROMPT_COMMAND="$1"
+            # does not end in semicolon
+            PROMPT_COMMAND+=" ; $1"
         fi
         export PROMPT_COMMAND
     fi

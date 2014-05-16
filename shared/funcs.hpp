@@ -108,7 +108,7 @@ void grow(Container &cont,std::size_t size,const typename Container::value_type 
 {
     std::size_t contsz=cont.size();
     if (size > contsz)
-        cont.resize(size,default_value); //       cont.insert(cont.end()+size,size-contsz,default_value);
+        cont.resize(size,default_value);
 }
 
 template <class Container,class Iter> inline

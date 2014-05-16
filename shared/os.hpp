@@ -22,6 +22,7 @@
 # include <signal.h>
 # include <sys/stat.h>
 # include <unistd.h>
+# include <stdlib.h>
 #endif
 
 #if !defined( MEMMAP_IO_WINDOWS ) && !defined( MEMMAP_IO_POSIX )
@@ -69,12 +70,30 @@
 #define DECLARE_ENV_C(n,f,v) DECLARE_ENV(f,v) static const int n = f();
 #define DECLARE_ENV_C_LEVEL(n,f,v) DECLARE_ENV(f,v) DECLARE_ENV(f##_LEVEL,v##_LEVEL) static const int n##_1 = f(); static const int n##_2 = f##_LEVEL(); static const int n=n##_1>n##_2?n##_1:n##_2; //
 
+namespace graehl {
+
+/// you must std::free this
+inline char *cstr_copy(std::string const& str) {
+  std::size_t sz = str.size();
+  char *copy = (char *)std::malloc(sz + 1);
+  std::memcpy(copy, str.data(), sz);
+  copy[sz] = 0;
+  return copy;
+}
+
+}
+
 
 #ifdef OS_WINDOWS
 const DWORD getenv_maxch = 65535; // //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
 static char getenv_buf[getenv_maxch];
 inline char * getenv(char const* key) {
+  //TODO: thread-safe version of getenv
   return GetEnvironmentVariableA(key,getenv_buf,getenv_maxch) ? getenv_buf : NULL;
+}
+inline char* putenv_copy(char const* key) {
+  //TODO
+  return 0;
 }
 
 namespace graehl {
@@ -106,6 +125,21 @@ inline int getenv_int(char const* key) {
 
 inline char * getenv_str(char const* key) {
   return getenv(key);
+}
+
+/// you may free return value only at program exit since it's part of process
+/// environment. \param name_equals_val is e.g. PATH=. - if no = then returns
+/// null (removing name from env)
+inline char * putenv_copy(std::string const& name_equals_val) {
+  if (name_equals_val.find_first_of('=') != std::string::npos) {
+    char *r = cstr_copy(name_equals_val);
+    putenv(r);
+    return r;
+  } else {
+    // remove from environment - no copy needed
+    putenv((char *)name_equals_val.c_str());
+    return 0;
+  }
 }
 
 inline int system_safe(const std::string &cmd)

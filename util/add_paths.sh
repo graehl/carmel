@@ -1,7 +1,7 @@
 #!/bin/bash
 UNAMEA=${UNAMEA:-`uname -a`}
 case "$UNAMEA" in
-    *x86_64*)	ON64=1 ;;
+    *x86_64*) ON64=1 ;;
 esac
 
 HOSTNAME=${HOSTNAME:-`hostname`}
@@ -45,8 +45,8 @@ function prepend_path
  add_ldpath $sublib
  add_pypath $subpy $subpy/bzrlib ${subpy}2.6/site-packages
   local sublib64=$prefix/lib64
-if  [[ $mkpathdirs ]] ; then
- if [[ $ON64 ]] ; then
+if  [[ ${mkpathdirs:-} ]] ; then
+ if [[ ${ON64:-} ]] ; then
    mkdir -p $sublib64
  fi
  mkdir -p $prefix
@@ -55,7 +55,7 @@ if  [[ $mkpathdirs ]] ; then
  mkdir -p $subman
  mkdir -p $subinc
 fi
- if [[ $ON64 ]] ; then
+ if [[ ${ON64:-} ]] ; then
   add_ldpath $sublib64
  fi
  fi

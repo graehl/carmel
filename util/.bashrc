@@ -30,6 +30,7 @@ HOSTNAME=`hostname | /usr/bin/tr -d '\r\n'`
 
 umask 22
 
+interactive=
 case "$-" in
     *i*) interactive=1 ;;
 esac
@@ -164,7 +165,7 @@ unset LANGVAR || true
 
 export LANG=en_US.UTF-8
 enutf8=en_US.UTF-8
-export LC_ALL=$lc
+export LC_ALL=
 #export JAVA_HOME=""
 
 
@@ -184,7 +185,7 @@ function default_paths {
     MAN_PATH=/usr/local/man:$MAN_PATH
     local cygp
     [ "$ONCYGWIN" ] && cygp=/usr/lib:
-    PATH=$cygp/usr/local/bin:/usr/bin:$DEFAULT_PATH
+    PATH=${cygp:-}/usr/local/bin:/usr/bin:$DEFAULT_PATH
     mkdir -p ~/script
     PATH=$isd/bin:~/bin:~/script:$PATH
     if [[ $OS != Darwin ]] ; then
@@ -266,12 +267,13 @@ function set_extra_paths {
 set_extra_paths
 
 function exportflags {
-    if [ "$static" ] ; then
+    if [[ ${static:-} ]] ; then
         staticargs="-static"
+        LDFLAGS="$LDFLAGS $staticargs "
     fi
     export CFLAGS="$CFLAGS $*"
     export CXXFLAGS="$CFLAGS $*"
-    export LDFLAGS="$LDFLAGS $staticargs "
+    export LDFLAGS
     export BOOST_SUFFIX=
     [ "$HOST" = "strontium" ] && export BOOST_SUFFIX=gcc41-mt
     [ "$HOST" = "grieg" ] && export BOOST_SUFFIX=gcc41-mt
@@ -286,33 +288,41 @@ exportflags
 #i686
 OPTFLAGS="-march=native -mtune=native -ffast-math -Wunsafe-loop-optimizations -funsafe-loop-optimizations -funsafe-math-optimizations"
 
-if [ "$interactive" ] ; then
-    export teeout=1
+function archive_history
+{
+    # HISTORYOLD=${HISTFILE}.archive
+    CURTIME=`date`
+    CURTTY=`tty`
+    if [[ ! ${HISTDUMPED:-} ]]; then
+        echo "#-${HOSTNAME}-- ${CURBASHDATE} - ${CURTIME} ($CURTTY) ----" >> $HISTORYOLD
+        local n=$(($HISTCMD-${CURBASHSTART-0}))
+        if [[ $n -gt 0 ]] ; then
+            history $n | sed -e 's/^[ ]*[0-9][0-9]* [ ]*//g' >> $HISTORYOLD
+        fi
+        export HISTDUMPED=1
+    fi
+    chmod go-r $HISTORYOLD
+}
+function historycmd {
+    history $* | cut -b8-
+}
+CURBASHDATE=`date`
+
+if [[ ${interactive:-} ]] ; then
+    export CURBASHSTART=`grep -v "^[ \t]*$" $HISTFILE | wc -l | awk '{print $1}'`
+
+# for bashlib.sh exec_safe
+    teeout=1
+
 # from http://www.onerussian.com/Linux/bash_history.phtml
     HISTORYOLD=~/.archive.bash.history
-    function archive_history
-    {
-# HISTORYOLD=${HISTFILE}.archive
-        CURTIME=`date`
-        CURTTY=`tty`
-        if [ x$HISTDUMPPED = x ]; then
-            echo "#-${HOSTNAME}-- ${CURBASHDATE} - ${CURTIME} ($CURTTY) ----" >> $HISTORYOLD
-            history $(($HISTCMD-${CURBASHSTART-0})) | sed -e 's/^[ ]*[0-9][0-9]* [ ]*//g' >> $HISTORYOLD
-            export HISTDUMPPED=1
-        fi
-        chmod go-r $HISTORYOLD
-    }
-    function historycmd {
-        history $* | cut -b8-
-    }
+#export CURBASHSTART=`grep -v "^[ \t]*$" $HISTFILE | wc -l | awk '{print $1}'` CURBASHDATE=`date`
+    shopt -s cmdhist histappend
     function exit
     {
         archive_history
         builtin exit
     }
-#export CURBASHSTART=`grep -v "^[ \t]*$" $HISTFILE | wc -l | awk '{print $1}'` CURBASHDATE=`date`
-    shopt -s cmdhist histappend
-
 fi
 
 export PYTHONSTARTUP=$UTIL/inpy

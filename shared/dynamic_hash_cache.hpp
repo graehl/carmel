@@ -112,7 +112,7 @@ struct dynamic_hash_cache
     }
     dynamic_hash_cache(Backing const& b,unsigned max_len,unsigned cache_size=10000)
         :
-        cachesize(next_doubled_prime(cache_size))
+        cachesize(prime_upper_bound(cache_size))
         , max_len(max_len)
         , cache(cachesize,max_len+graehl::n_unsigned(sizeof(cache_entry)))
         , b(b)
