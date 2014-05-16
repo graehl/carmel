@@ -272,12 +272,12 @@ PrintfFormat fmt_double_roundtrip = "%.17g";
 PrintfFormat fmt_double_default = "%.15g";
 
 /**
-   enough space to printf 0-terminated -1.238945783e-301 or whatever the max is
+   enough space to printf 0-terminated -1.238945783e+0301 or whatever the max is
 */
-PrintfBytes bytes_double_for_float_roundtrip = 17;
-PrintfBytes bytes_double_for_float_default = 15;
-PrintfBytes bytes_double_roundtrip = 32;
-PrintfBytes bytes_double_default = 30;
+PrintfBytes bytes_double_for_float_roundtrip = 24;
+PrintfBytes bytes_double_for_float_default = 20;
+PrintfBytes bytes_double_roundtrip = 36;
+PrintfBytes bytes_double_default = 32;
 
 /* 9 decimal places needed to avoid rounding error in float->string->float. 17 for double->string->double
    in terms of usable decimal places, there are 6 for float and 15 for double
@@ -286,18 +286,21 @@ inline std::string to_string_roundtrip(float x) {
   char buf[bytes_double_for_float_roundtrip];
   return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
 }
+
 inline std::string to_string_impl(float x) {
 #if GRAEHL_USE_FTOA
   return ftos(x);
 #else
   char buf[bytes_double_for_float_default];
-  return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
+  return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_default, (double)x));
 #endif
 }
+
 inline std::string to_string_roundtrip(double x) {
   char buf[bytes_double_roundtrip];
   return std::string(buf,buf+std::sprintf(buf, fmt_double_roundtrip ,x));
 }
+
 inline std::string to_string_impl(double x) {
 #if GRAEHL_USE_FTOA
   return ftos(x);
@@ -1007,7 +1010,8 @@ struct to_string_select<V,typename boost::enable_if<is_nonstring_container<V> >:
 BOOST_AUTO_TEST_CASE(test_string_to)
 {
   BOOST_CHECK_EQUAL("1.5", to_string(1.5f));
-  BOOST_CHECK_EQUAL("15000000", to_string(15000000.f));
+  std::string mil = to_string(15000000.f);
+  BOOST_CHECK(mil == "15000000" || mil == "1.5e+07");
   BOOST_CHECK_EQUAL("1e+10", to_string(1e10f));
   BOOST_CHECK_EQUAL("123456", to_string(123456.f));
   BOOST_CHECK_EQUAL("0.001953125", to_string(0.001953125f));

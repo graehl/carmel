@@ -19,13 +19,13 @@ struct configure_info {
 template <class Val>
 struct is_expr
 {
-  is_expr const& is(std::string const& is) const { if (pinfo) pinfo->is = is; return *this; }
-  is_expr const& is_also(std::string const& is) const { if (pinfo) pinfo->also = is; return *this; }
-  is_expr const& operator()(std::string const& usage) const { if (pinfo) pinfo->usage = usage; return *this; }
+  is_expr const& is(std::string const& is) const { info.is = is; return *this; }
+  is_expr const& is_also(std::string const& is) const { info.also = is; return *this; }
+  is_expr const& operator()(std::string const& usage) const { info.usage = usage; return *this; }
 
   template <class Child>
   is_expr<Child> operator()(std::string const& name, Child *child) const {
-    return is_expr<Child>(child, 0);
+    return is_expr<Child>(child);
   }
   template <class V2>
   is_expr const& init(V2 const& v2) const {
@@ -45,7 +45,7 @@ struct is_expr
     return *this;
   }
 
-  is_expr(Val *val, configure_info *pinfo)
+  is_expr(Val *val, configure_info *pinfo = 0)
       : val(val), pinfo(pinfo)
   {}
 
@@ -77,6 +77,14 @@ struct is_expr
 };
 
 template <class Val>
+configure_info configure_info(Val *val) {
+  configure_info r;
+  is_expr<Val> config(val, &r);
+  val->configure(config);
+  return r;
+}
+
+template <class Val>
 struct configure_info_for : configure_info {
   Val val;
   configure_info_for() {
@@ -85,22 +93,10 @@ struct configure_info_for : configure_info {
   }
 };
 
-template <class Val>
-configure_info configinfo(Val *val) {
-  configure_info r;
-  is_expr<Val> config(val, &r);
-  val->configure(config);
-  return r;
-}
 
 template <class Val>
-std::string configure_is() {
-  return configure_info_for<Val>().is;
-}
-
-template <class Val>
-std::string configure_usage() {
-  return configure_info_for<Val>().usage;
+std::string configure_is(Val *val) {
+  return configure_info(val).is;
 }
 
 

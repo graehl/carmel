@@ -447,7 +447,15 @@ struct small_vector {
     if (data.stack.sz_ > kMaxInlineSize)
       reserve_up_big(s);
   }
+  static inline void construct_range(T *v, size_type begin, size_type end) {
+    for (size_type i = begin; i < end; ++i)
+      new(&v[i]) T();
+  }
 
+  static inline void construct_range(T *v, size_type begin, size_type end, T const& val) {
+    for (size_type i = begin; i < end; ++i)
+      new(&v[i]) T(val);
+  }
 
   // aliasing warning: if append is within self, undefined result (because we invalidate iterators as we grow)
   /**
@@ -670,6 +678,59 @@ struct small_vector {
       }
     }
     data.stack.sz_ = s;
+  }
+
+
+  T& at_grow(size_type i) {
+    size_type const oldsz = data.stack.sz_;
+    if (i >= oldsz) {
+      size_type newsz = i+1;
+      resize_up_unconstructed(newsz);
+      construct_range(begin(), oldsz, newsz);
+    }
+    return (*this)[i];
+  }
+
+  T& at_grow(size_type i, T const& zero) {
+    size_type const oldsz = data.stack.sz_;
+    if (i >= oldsz) {
+      size_type newsz = i+1;
+      resize_up_unconstructed(newsz);
+      construct_range(begin(), oldsz, newsz, zero);
+    }
+    return (*this)[i];
+  }
+
+  friend inline T& atExpand(small_vector &v, size_type i) {
+    return v.at_grow(i);
+  }
+
+  friend inline T& atExpand(small_vector &v, size_type i, T const& zero) {
+    return v.at_grow(i, zero);
+  }
+
+  void set_grow(size_type i, T const& val) {
+    size_type const oldsz = data.stack.sz_;
+    if (i >= oldsz) {
+      size_type newsz = i+1;
+      resize_up_unconstructed(newsz);
+      T *v = begin();
+      construct_range(v, oldsz, i);
+      new(&v[i]) T(val);
+    } else
+      (*this)[i] = val;
+  }
+
+  void set_grow(size_type i, T const& val, T const& zero) {
+    size_type const oldsz = data.stack.sz_;
+    if (i >= oldsz) {
+      size_type newsz = i+1;
+      resize_up_unconstructed(newsz);
+      T *v = begin();
+      construct_range(v, oldsz, i, zero);
+      new(&v[i]) T(val);
+    } else
+      (*this)[i] = val;
   }
 
   T& operator[](size_type i) {

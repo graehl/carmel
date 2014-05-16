@@ -5,20 +5,15 @@
 
 // Check windows
 #if defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN64)
-#define HAVE_64_BITS 1
+# if defined(_WIN64)
+#  define HAVE_64_BITS 1
+# else
+#  define HAVE_64_BITS 0
+# endif
+#elif __x86_64__ || __ppc64__
+# define HAVE_64_BITS 1
 #else
-#define HAVE_64_BITS 0
-#endif
-#endif
-
-// Check GNU
-#if __GNUC__
-#if __x86_64__ || __ppc64__
-#define HAVE_64_BITS 1
-#else
-#define HAVE_64_BITS 0
-#endif
+# define HAVE_64_BITS 0
 #endif
 
 #endif // HAVE_64_BITS
