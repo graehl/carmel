@@ -4,23 +4,14 @@
 
     uint32_t hash = MurmurHash(val, sizeof(val), seed) [optional uint32_t seed defaults to 0]
 
-    uint64_t widehash = WideMurmurHash(val, sizeof(val), seed) (equally fast as 32 for a 16 byte key on x64 but probably a bit slower / higher latency for odd sizes)
+    uint64_t widehash = WideMurmurHash(val, sizeof(val), seed) (equally fast as 32 for a 16 byte key on x64 but probably a bit slower / higher latency for odd sizes) - value differs across 32 and 64 bit
 */
 
 #ifndef GRAEHL__SHARED__HASH_MURMUR_HPP
 #define GRAEHL__SHARED__HASH_MURMUR_HPP
 
-//NOTE: quite fast, nice collision properties, but endian dependent hash values
-
 #include <graehl/shared/have_64_bits.hpp>
-
-#if defined(_MSC_VER) && (_MSC_VER < 1600)
-typedef unsigned char uint8_t;
-typedef unsigned int uint32_t;
-typedef unsigned __int64 uint64_t;
-#else
-# include <stdint.h>
-#endif
+#include <graehl/shared/bit_arithmetic.hpp>
 
 namespace graehl {
 
@@ -28,209 +19,6 @@ typedef uint32_t MurmurHashResult;
 typedef uint32_t MurmurSeed;
 
 static const MurmurSeed GRAEHL_MURMUR_DEFAULT_SEED = 0U;
-
-// MurmurHash2, by Austin Appleby
-
-
-#if HAVE_64_BITS
-
-inline uint64_t MurmurHash64( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
-{
-  const uint64_t m = 0xc6a4a7935bd1e995;
-  const int r = 47;
-
-  uint64_t h = seed ^ (len * m);
-
-#if defined(__arm) || defined(__arm__)
-  const size_t ksize = sizeof(uint64_t);
-  const unsigned char * data = (const unsigned char *)key;
-  const unsigned char * end = data + (std::size_t)(len/8) * ksize;
-#else
-  const uint64_t * data = (const uint64_t *)key;
-  const uint64_t * end = data + (len/8);
-#endif
-
-  while (data != end)
-  {
-#if defined(__arm) || defined(__arm__)
-    uint64_t k;
-    memcpy(&k, data, ksize);
-    data += ksize;
-#else
-    uint64_t k = *data++;
-#endif
-
-    k *= m;
-    k ^= k >> r;
-    k *= m;
-
-    h ^= k;
-    h *= m;
-  }
-
-  const unsigned char * data2 = (const unsigned char*)data;
-
-  switch(len & 7)
-  {
-    case 7: h ^= uint64_t(data2[6]) << 48;
-    case 6: h ^= uint64_t(data2[5]) << 40;
-    case 5: h ^= uint64_t(data2[4]) << 32;
-    case 4: h ^= uint64_t(data2[3]) << 24;
-    case 3: h ^= uint64_t(data2[2]) << 16;
-    case 2: h ^= uint64_t(data2[1]) << 8;
-    case 1: h ^= uint64_t(data2[0]);
-      h *= m;
-  };
-
-  h ^= h >> r;
-  h *= m;
-  h ^= h >> r;
-
-  return h;
-}
-
-inline uint32_t MurmurHash32(void const *key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
-{
-  return (uint32_t) MurmurHash64(key, len, seed);
-}
-
-
-#else
-// 32-bit
-
-// Note - This code makes a few assumptions about how your machine behaves -
-// 1. We can read a 4-byte value from any address without crashing
-// 2. sizeof(int) == 4
-inline uint32_t MurmurHash32 ( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
-{
-  // 'm' and 'r' are mixing constants generated offline.
-  // They're not really 'magic', they just happen to work well.
-
-  const uint32_t m = 0x5bd1e995;
-  const int r = 24;
-
-  // Initialize the hash to a 'random' value
-
-  uint32_t h = seed ^ len;
-
-  // Mix 4 bytes at a time into the hash
-
-  const unsigned char * data = (const unsigned char *)key;
-
-  while (len >= 4)
-  {
-    uint32_t k = *(uint32_t *)data;
-
-    k *= m;
-    k ^= k >> r;
-    k *= m;
-
-    h *= m;
-    h ^= k;
-
-    data += 4;
-    len -= 4;
-  }
-
-  // Handle the last few bytes of the input array
-
-  switch(len)
-  {
-    case 3: h ^= data[2] << 16;
-    case 2: h ^= data[1] << 8;
-    case 1: h ^= data[0];
-      h *= m;
-  };
-
-  // Do a few final mixes of the hash to ensure the last few
-  // bytes are well-incorporated.
-
-  h ^= h >> 13;
-  h *= m;
-  h ^= h >> 15;
-
-  return h;
-}
-
-inline MurmurHashResult MurmurHash ( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED) {
-  return MurmurHash32(key, len, seed);
-}
-
-// 64-bit hash for 32-bit platforms
-
-inline uint64_t MurmurHash64 ( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
-{
-  const unsigned m = 0x5bd1e995;
-  const int r = 24;
-
-  unsigned h1 = seed ^ len;
-  unsigned h2 = 0;
-
-#if defined(__arm) || defined(__arm__)
-  size_t ksize = sizeof(unsigned int);
-  const unsigned char * data = (const unsigned char *)key;
-#else
-  const unsigned * data = (const unsigned *)key;
-#endif
-
-  unsigned k1, k2;
-  while (len >= 8)
-  {
-#if defined(__arm) || defined(__arm__)
-    memcpy(&k1, data, ksize);
-    data += ksize;
-    memcpy(&k2, data, ksize);
-    data += ksize;
-#else
-    k1 = *data++;
-    k2 = *data++;
-#endif
-
-    k1 *= m; k1 ^= k1 >> r; k1 *= m;
-    h1 *= m; h1 ^= k1;
-    len -= 4;
-
-    k2 *= m; k2 ^= k2 >> r; k2 *= m;
-    h2 *= m; h2 ^= k2;
-    len -= 4;
-  }
-
-  if (len >= 4)
-  {
-#if defined(__arm) || defined(__arm__)
-    memcpy(&k1, data, ksize);
-    data += ksize;
-#else
-    k1 = *data++;
-#endif
-    k1 *= m; k1 ^= k1 >> r; k1 *= m;
-    h1 *= m; h1 ^= k1;
-    len -= 4;
-  }
-
-  switch(len)
-  {
-    case 3: h2 ^= ((unsigned char*)data)[2] << 16;
-    case 2: h2 ^= ((unsigned char*)data)[1] << 8;
-    case 1: h2 ^= ((unsigned char*)data)[0];
-      h2 *= m;
-  };
-
-  h1 ^= h2 >> 18; h1 *= m;
-  h2 ^= h1 >> 22; h2 *= m;
-  h1 ^= h2 >> 17; h1 *= m;
-  h2 ^= h1 >> 19; h2 *= m;
-
-  uint64_t h = h1;
-
-  h = (h << 32) | h2;
-
-  return h;
-}
-
-#endif
-//32bit
-
 
 // Note - The x86 and x64 versions do _not_ produce the same results, as the
 // algorithms are optimized for their respective platforms. You can still
@@ -242,39 +30,6 @@ inline uint64_t MurmurHash64 ( const void * key, int len, MurmurSeed seed = GRAE
 
 // Microsoft Visual Studio
 
-#if defined(_MSC_VER)
-
-#define GRAEHL_FORCE_INLINE __forceinline
-
-#include <stdlib.h>
-
-#define GRAEHL_ROTL32(x,y)  _rotl(x,y)
-#define GRAEHL_ROTL64(x,y)  _rotl64(x,y)
-
-#define GRAEHL_BIG_CONSTANT(x) (x)
-
-// Other compilers
-
-#else // defined(_MSC_VER)
-
-#define GRAEHL_FORCE_INLINE inline __attribute__((always_inline))
-
-inline uint32_t rotl32 ( uint32_t x, int8_t r )
-{
-  return (x << r) | (x >> (32 - r));
-}
-
-inline uint64_t rotl64 ( uint64_t x, int8_t r )
-{
-  return (x << r) | (x >> (64 - r));
-}
-
-#define GRAEHL_ROTL32(x,y)  rotl32(x,y)
-#define GRAEHL_ROTL64(x,y)  rotl64(x,y)
-
-#define GRAEHL_BIG_CONSTANT(x) (x##LLU)
-
-#endif // !defined(_MSC_VER)
 
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
@@ -642,12 +397,213 @@ inline uint64_t WideMurmurHash(void const *key, int len, MurmurSeed seed = GRAEH
 #endif
 }
 
-
 inline void MurmurHash3_x86_32 ( const void * key, int len,
                           uint32_t seed, void * out )
 {
   *(uint32_t*)out = MurmurHash(key, len, seed);
 }
+
+
+// MurmurHash2, by Austin Appleby
+
+#if HAVE_64_BITS
+
+inline uint64_t MurmurHash64( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
+{
+  const uint64_t m = 0xc6a4a7935bd1e995;
+  const int r = 47;
+
+  uint64_t h = seed ^ (len * m);
+
+#if defined(__arm) || defined(__arm__)
+  const size_t ksize = sizeof(uint64_t);
+  const unsigned char * data = (const unsigned char *)key;
+  const unsigned char * end = data + (std::size_t)(len/8) * ksize;
+#else
+  const uint64_t * data = (const uint64_t *)key;
+  const uint64_t * end = data + (len/8);
+#endif
+
+  while (data != end)
+  {
+#if defined(__arm) || defined(__arm__)
+    uint64_t k;
+    memcpy(&k, data, ksize);
+    data += ksize;
+#else
+    uint64_t k = *data++;
+#endif
+
+    k *= m;
+    k ^= k >> r;
+    k *= m;
+
+    h ^= k;
+    h *= m;
+  }
+
+  const unsigned char * data2 = (const unsigned char*)data;
+
+  switch(len & 7)
+  {
+    case 7: h ^= uint64_t(data2[6]) << 48;
+    case 6: h ^= uint64_t(data2[5]) << 40;
+    case 5: h ^= uint64_t(data2[4]) << 32;
+    case 4: h ^= uint64_t(data2[3]) << 24;
+    case 3: h ^= uint64_t(data2[2]) << 16;
+    case 2: h ^= uint64_t(data2[1]) << 8;
+    case 1: h ^= uint64_t(data2[0]);
+      h *= m;
+  };
+
+  h ^= h >> r;
+  h *= m;
+  h ^= h >> r;
+
+  return h;
+}
+
+inline uint32_t MurmurHash32(void const *key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
+{
+  return (uint32_t) MurmurHash64(key, len, seed);
+}
+
+
+#else
+// 32-bit
+
+// Note - This code makes a few assumptions about how your machine behaves -
+// 1. We can read a 4-byte value from any address without crashing
+// 2. sizeof(int) == 4
+inline uint32_t MurmurHash32 ( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
+{
+  // 'm' and 'r' are mixing constants generated offline.
+  // They're not really 'magic', they just happen to work well.
+
+  const uint32_t m = 0x5bd1e995;
+  const int r = 24;
+
+  // Initialize the hash to a 'random' value
+
+  uint32_t h = seed ^ len;
+
+  // Mix 4 bytes at a time into the hash
+
+  const unsigned char * data = (const unsigned char *)key;
+
+  while (len >= 4)
+  {
+    uint32_t k = *(uint32_t *)data;
+
+    k *= m;
+    k ^= k >> r;
+    k *= m;
+
+    h *= m;
+    h ^= k;
+
+    data += 4;
+    len -= 4;
+  }
+
+  // Handle the last few bytes of the input array
+
+  switch(len)
+  {
+    case 3: h ^= data[2] << 16;
+    case 2: h ^= data[1] << 8;
+    case 1: h ^= data[0];
+      h *= m;
+  };
+
+  // Do a few final mixes of the hash to ensure the last few
+  // bytes are well-incorporated.
+
+  h ^= h >> 13;
+  h *= m;
+  h ^= h >> 15;
+
+  return h;
+}
+
+inline MurmurHashResult MurmurHash ( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED) {
+  return MurmurHash32(key, len, seed);
+}
+
+// 64-bit hash for 32-bit platforms
+
+inline uint64_t MurmurHash64 ( const void * key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED)
+{
+  const unsigned m = 0x5bd1e995;
+  const int r = 24;
+
+  unsigned h1 = seed ^ len;
+  unsigned h2 = 0;
+
+#if defined(__arm) || defined(__arm__)
+  size_t ksize = sizeof(unsigned int);
+  const unsigned char * data = (const unsigned char *)key;
+#else
+  const unsigned * data = (const unsigned *)key;
+#endif
+
+  unsigned k1, k2;
+  while (len >= 8)
+  {
+#if defined(__arm) || defined(__arm__)
+    memcpy(&k1, data, ksize);
+    data += ksize;
+    memcpy(&k2, data, ksize);
+    data += ksize;
+#else
+    k1 = *data++;
+    k2 = *data++;
+#endif
+
+    k1 *= m; k1 ^= k1 >> r; k1 *= m;
+    h1 *= m; h1 ^= k1;
+    len -= 4;
+
+    k2 *= m; k2 ^= k2 >> r; k2 *= m;
+    h2 *= m; h2 ^= k2;
+    len -= 4;
+  }
+
+  if (len >= 4)
+  {
+#if defined(__arm) || defined(__arm__)
+    memcpy(&k1, data, ksize);
+    data += ksize;
+#else
+    k1 = *data++;
+#endif
+    k1 *= m; k1 ^= k1 >> r; k1 *= m;
+    h1 *= m; h1 ^= k1;
+    len -= 4;
+  }
+
+  switch(len)
+  {
+    case 3: h2 ^= ((unsigned char*)data)[2] << 16;
+    case 2: h2 ^= ((unsigned char*)data)[1] << 8;
+    case 1: h2 ^= ((unsigned char*)data)[0];
+      h2 *= m;
+  };
+
+  h1 ^= h2 >> 18; h1 *= m;
+  h2 ^= h1 >> 22; h2 *= m;
+  h1 ^= h2 >> 17; h1 *= m;
+  h2 ^= h1 >> 19; h2 *= m;
+
+  uint64_t h = h1;
+
+  h = (h << 32) | h2;
+
+  return h;
+}
+
+#endif
+//32bit
 
 
 }

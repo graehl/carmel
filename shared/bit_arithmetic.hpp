@@ -11,11 +11,45 @@
 # define CHAR_BIT 8
 #endif
 
+#if defined(_MSC_VER)
+
+#define GRAEHL_FORCE_INLINE __forceinline
+
+#include <stdlib.h>
+
+#define GRAEHL_ROTL32(x,y)  _rotl(x,y)
+#define GRAEHL_ROTL64(x,y)  _rotl64(x,y)
+
+#define GRAEHL_BIG_CONSTANT(x) (x)
+
+#else
+
+#define GRAEHL_FORCE_INLINE inline __attribute__((always_inline))
+
+#define GRAEHL_ROTL32(x,y)  graehl::rotl32(x,y)
+#define GRAEHL_ROTL64(x,y)  graehl::rotl64(x,y)
+
+#define GRAEHL_BIG_CONSTANT(x) (x##LLU)
+
+#endif
+
+
 namespace graehl {
+
+GRAEHL_FORCE_INLINE uint32_t rotl32 ( uint32_t x, int8_t r )
+{
+  return (x << r) | (x >> (32 - r));
+}
+
+GRAEHL_FORCE_INLINE uint64_t rotl64 ( uint64_t x, int8_t r )
+{
+  return (x << r) | (x >> (64 - r));
+}
 
 using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
+using boost::uint64_t;
 
 inline
 unsigned count_set_bits(uint32_t i)
