@@ -1,6 +1,7 @@
 #ifndef GRAEHL__SHARED__BIT_ARITHMETIC_HPP
 #define GRAEHL__SHARED__BIT_ARITHMETIC_HPP
 
+#include <cassert>
 #include <limits>
 #include <boost/cstdint.hpp>
 #include <boost/utility/enable_if.hpp>
@@ -26,8 +27,8 @@
 
 #define GRAEHL_FORCE_INLINE inline __attribute__((always_inline))
 
-#define GRAEHL_ROTL32(x,y)  graehl::rotl32(x,y)
-#define GRAEHL_ROTL64(x,y)  graehl::rotl64(x,y)
+#define GRAEHL_ROTL32(x,y)  graehl::bit_rotate_left(x,y)
+#define GRAEHL_ROTL64(x,y)  graehl::bit_rotate_left(x,y)
 
 #define GRAEHL_BIG_CONSTANT(x) (x##LLU)
 
@@ -36,20 +37,54 @@
 
 namespace graehl {
 
-GRAEHL_FORCE_INLINE uint32_t rotl32 ( uint32_t x, int8_t r )
-{
-  return (x << r) | (x >> (32 - r));
-}
-
-GRAEHL_FORCE_INLINE uint64_t rotl64 ( uint64_t x, int8_t r )
-{
-  return (x << r) | (x >> (64 - r));
-}
-
 using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
 using boost::uint64_t;
+
+#ifndef BOOST_NO_INT64_T
+using boost::uint64_t;
+#endif
+
+inline void mixbits(uint64_t &h) {
+  h ^= h >> 23;
+  h *= 0x2127599bf4325c37ULL;
+  h ^= h >> 47;
+}
+
+template <class Int>
+inline bool is_power_of_2(Int i) {
+  return (i & (i-1)) == 0;
+}
+
+/// return power of 2 >= x
+inline uint32_t next_power_of_2(uint32_t x) {
+  assert(x <= (1 << 30));
+  --x;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  ++x;
+  assert(is_power_of_2(x));
+  return x;
+}
+
+/// return power of 2 >= x
+inline uint64_t next_power_of_2(uint64_t x) {
+  assert(x <= (1ULL << 60));
+  --x;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  x |= x >> 32;
+  ++x;
+  assert(is_power_of_2(x));
+  return x;
+}
 
 inline
 unsigned count_set_bits(uint32_t i)
@@ -73,29 +108,36 @@ unsigned count_set_bits(uint64_t x)
 
 /// while this is covered by the complicated generic thing below, I want to be sure the hash fn. uses the right code
 inline
-uint32_t bit_rotate_left(uint32_t x, uint32_t k)
+uint32_t bit_rotate_left(uint32_t x, int8_t k)
 {
-    return (x<<k) | (x>>(32-k));
+#ifdef _MSC_VER
+  return _rotl(x, k);
+#else
+  return (x<<k) | (x>>(32-k));
+#endif
 }
 
 inline
-uint32_t bit_rotate_right(uint32_t x, uint32_t k)
+uint32_t bit_rotate_right(uint32_t x, int8_t k)
 {
     return (x>>k) | (x<<(32-k));
 }
 
 #ifndef BOOST_NO_INT64_T
-using boost::uint64_t;
-inline
-uint64_t bit_rotate_left_64(uint64_t x, uint32_t k)
+GRAEHL_FORCE_INLINE
+uint64_t bit_rotate_left_64(uint64_t x, int8_t k)
 {
-    return (x<<k) | (x>>(64-k));
+#ifdef _MSC_VER
+  return _rotl64(x, k);
+#else
+  return (x<<k) | (x>>(64-k));
+#endif
 }
 
-inline
-uint64_t bit_rotate_right_64(uint64_t x, uint32_t k)
+GRAEHL_FORCE_INLINE
+uint64_t bit_rotate_right_64(uint64_t x, int8_t k)
 {
-    return (x>>k) | (x<<(64-k));
+  return (x>>k) | (x<<(64-k));
 }
 
 #endif

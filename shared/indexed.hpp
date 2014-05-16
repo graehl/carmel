@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cassert>
 #include <boost/cstdint.hpp>
+#include <graehl/shared/bit_arithmetic.hpp>
 
 #ifndef INDEXED_EXTRA_ASSERT
 # define INDEXED_EXTRA_ASSERT 0
@@ -21,46 +22,6 @@ namespace graehl {
 
 double const kMaxIndexedHashLoad = 0.7; // will double capacity when load reaches this
 double const kOneOverMaxIndexedHashLoad = 1. / kMaxIndexedHashLoad;
-
-inline void mixbits(boost::uint64_t &h) {
-  h ^= h >> 23;
-  h *= 0x2127599bf4325c37ULL;
-  h ^= h >> 47;
-}
-
-template <class Int>
-inline bool is_power_of_2(Int i) {
-  return (i & (i-1)) == 0;
-}
-
-/// return power of 2 >= x
-inline boost::uint32_t next_power_of_2(boost::uint32_t x) {
-  assert(x <= (1 << 30));
-  --x;
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  ++x;
-  assert(is_power_of_2(x));
-  return x;
-}
-
-/// return power of 2 >= x
-inline boost::uint64_t next_power_of_2(boost::uint64_t x) {
-  assert(x <= (1ULL << 60));
-  --x;
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  x |= x >> 32;
-  ++x;
-  assert(is_power_of_2(x));
-  return x;
-}
 
 template <class I>
 I hash_capacity_for_size(I sz) {
