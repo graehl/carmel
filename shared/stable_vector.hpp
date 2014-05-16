@@ -434,7 +434,7 @@ void shrink_destroy(std::vector<T> &v, std::size_t sz) {
 #include <graehl/shared/test.hpp>
 #include <graehl/shared/small_vector.hpp>
 
-namespace graehl { namespace test {
+namespace graehl { namespace unit_test {
 
 typedef stable_vector<int, std::size_t, 8, true> StableVector1;
 typedef stable_vector<std::size_t, unsigned, 2, false> StableVector2;

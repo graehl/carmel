@@ -486,7 +486,7 @@ typedef basic_array_stream<wchar_t> warray_stream;
 # include <graehl/shared/test.hpp>
 # include <cstring>
 
-namespace graehl { namespace test {
+namespace graehl { namespace unit_test {
 
 template <class C>
 void TEST_check_array_stream(C &i1)

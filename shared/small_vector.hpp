@@ -1123,7 +1123,7 @@ struct tracking_level<graehl::small_vector<V,MaxInline,Size> >
 
 #define EXPECT_EQ_NOPRINT(x,y) BOOST_CHECK((x)==(y))
 
-namespace graehl { namespace test {
+namespace graehl { namespace unit_test {
 
 std::size_t const test_archive_flags=boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking;
 

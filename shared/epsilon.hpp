@@ -295,7 +295,7 @@ within_epsilon_or_ieee_apart(double a, double b
 
 #ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
-namespace graehl { namespace test {
+namespace graehl { namespace unit_test {
 
 template <class Float>
 void testEpsilon(Float f, unsigned n, double max_ieee_apart_per_n= 0.2) {
