@@ -41,14 +41,11 @@ using boost::uint8_t;
 using boost::uint16_t;
 using boost::uint32_t;
 using boost::uint64_t;
-
-#ifndef BOOST_NO_INT64_T
 using boost::uint64_t;
-#endif
 
 inline void mixbits(uint64_t &h) {
   h ^= h >> 23;
-  h *= 0x2127599bf4325c37ULL;
+  h *= GRAEHL_BIG_CONSTANT(0x2127599bf4325c37);
   h ^= h >> 47;
 }
 
@@ -89,9 +86,9 @@ inline uint64_t next_power_of_2(uint64_t x) {
 inline
 unsigned count_set_bits(uint32_t i)
 {
-    i = i - ((i >> 1) & 0x55555555);
-    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-    return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+  i = i - ((i >> 1) & 0x55555555);
+  i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+  return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
 inline
@@ -120,10 +117,9 @@ uint32_t bit_rotate_left(uint32_t x, int8_t k)
 inline
 uint32_t bit_rotate_right(uint32_t x, int8_t k)
 {
-    return (x>>k) | (x<<(32-k));
+  return (x>>k) | (x<<(32-k));
 }
 
-#ifndef BOOST_NO_INT64_T
 GRAEHL_FORCE_INLINE
 uint64_t bit_rotate_left_64(uint64_t x, int8_t k)
 {
@@ -139,8 +135,6 @@ uint64_t bit_rotate_right_64(uint64_t x, int8_t k)
 {
   return (x>>k) | (x<<(64-k));
 }
-
-#endif
 
 // bit i=0 = lsb
 template <class I, class J>
@@ -214,16 +208,6 @@ inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::typ
   return (mask&bits)==mask;
 }
 
-//inline std::size_t bit_rotate_left(std::size_t x, std::size_t k)
-// {
-//    return ((x<<k) | (x>>(std::numeric_limits<std::size_t>::digits-k)));
-//}
-
-//inline std::size_t bit_rotate_right(std::size_t x, std::size_t k)
-// {
-//    return ((x<<(std::numeric_limits<std::size_t>::digits-k)) | (x>>k));
-//}
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // the reason for the remove_cv stuff is that the compiler wants to turn
@@ -237,38 +221,38 @@ inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::typ
 ////////////////////////////////////////////////////////////////////////////////
 template <class I, class J>
 inline typename boost::enable_if< typename boost::is_integral<I>
-                                , typename boost::remove_cv<I>::type
-                                >::type
+                                  , typename boost::remove_cv<I>::type
+                                  >::type
 bit_rotate_left(I x, J k)
 {
-    typedef typename boost::remove_cv<I>::type IT;
-    assert(k < std::numeric_limits<IT>::digits);
-    assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-    return ((x<<k) | (x>>(std::numeric_limits<IT>::digits-k)));
+  typedef typename boost::remove_cv<I>::type IT;
+  assert(k < std::numeric_limits<IT>::digits);
+  assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
+  return ((x<<k) | (x>>(std::numeric_limits<IT>::digits-k)));
 }
 
 template <class I, class J>
 inline typename boost::enable_if< typename boost::is_integral<I>
-                                , typename boost::remove_cv<I>::type
-                                >::type
+                                  , typename boost::remove_cv<I>::type
+                                  >::type
 bit_rotate_right(I x, J k)
 {
-    typedef typename boost::remove_cv<I>::type IT;
-    assert(k < std::numeric_limits<IT>::digits);
-    assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-    return ((x<<(std::numeric_limits<IT>::digits-k)) | (x>>k));
+  typedef typename boost::remove_cv<I>::type IT;
+  assert(k < std::numeric_limits<IT>::digits);
+  assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
+  return ((x<<(std::numeric_limits<IT>::digits-k)) | (x>>k));
 }
 
 /// interpret the two bytes at d as a uint16 in little endian order
 inline uint16_t unpack_uint16_little(void const*d)
 {
-//FIXME: test if the #ifdef optimization is even needed (compiler may optimize portable to same?)
-#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
+  //FIXME: test if the #ifdef optimization is even needed (compiler may optimize portable to same?)
+#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__)    \
   || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
-return *((const uint16_t *) (d));
+  return *((const uint16_t *) (d));
 #else
-return ((((uint32_t)(((const uint8_t *)(d))[1])) << CHAR_BIT)\
-        +(uint32_t)(((const uint8_t *)(d))[0]) );
+  return ((((uint32_t)(((const uint8_t *)(d))[1])) << CHAR_BIT)\
+          +(uint32_t)(((const uint8_t *)(d))[0]) );
 #endif
 }
 
