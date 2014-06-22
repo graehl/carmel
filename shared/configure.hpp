@@ -243,7 +243,7 @@ struct leaf_configurable
 // can't add a member "typedef void leaf_configurable;"
 
 template<class T1> struct leaf_configurable<boost::optional<T1>, void> : leaf_configurable<T1> {};
-//template<class T1> struct leaf_configurable<boost::shared_ptr<T1>, void> : leaf_configurable<T1> {};
+template<class T1> struct leaf_configurable<boost::shared_ptr<T1>, void> : leaf_configurable<T1> {};
 
 template <class Val, class Enable = void>
 struct scalar_leaf_configurable : leaf_configurable<Val> {};
@@ -290,9 +290,6 @@ struct can_assign_bool
 
 template <class Val>
 struct can_assign_bool<boost::optional<Val>, void> : can_assign_bool<Val> {};
-
-//template <class Val> struct can_assign_bool<boost::shared_ptr<Val>, void> : can_assign_bool<Val> {};
-
 
 typedef boost::optional<std::string> maybe_string; // syntax like string*
 
@@ -733,6 +730,7 @@ struct conf_opt
   maybe_char charname; // single char option
   maybe_string eg, is, usage;
   maybe_bool init_default;
+  bool alias; //TODO: allow ignoring part of the (back end managed, so tricky) pathname for backward compat
   maybe_int verbose;
   maybe_int limit; // max amount of children allowed - e.g. max=1 means it's a variant
   maybe_bool todo; // don't actually allow parsing the option, or add it to usage
@@ -749,6 +747,7 @@ struct conf_opt
   {
 #   define CONFIGURE_INIT_OPTIONAL_MEMBERS(m) m = (boost::none);
     CONFIGURE_OPTIONAL_MEMBERS(CONFIGURE_INIT_OPTIONAL_MEMBERS);
+    alias = false;
   }
 
   conf_opt() { clear(); }
@@ -1214,6 +1213,7 @@ struct conf_expr
   conf_expr const& init_default(bool enable = true) const { opt->init_default = enable; return *this; }
   conf_expr const& todo(bool enable = true) const { opt->todo = enable; return *this; }
   conf_expr const& verbose(int verbosity = 1) const { opt->verbose = verbosity; return *this; }
+  conf_expr const& alias() const { opt->alias = true; return *this; }
   /// -1 means unlimited
   conf_expr const& limit(int limitTo = 1) const {
     if (limitTo >= 0)

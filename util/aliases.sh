@@ -13,10 +13,108 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+foreverdir=$HOME/forever
+forever() {
+mkdir -p $foreverdir
+foreverlast=$foreverdir/`filename_from "$@"`
+foreverthis=$foreverdir/`filename_from "$@"`.run
+local i=0
+while true; do
+    i=$((i+1))
+    echo $foreverthis.$i
+    echo
+    echo ---
+    "$@" 2>&1 | cat > $foreverthis.$i
+    (echo; echo $foreverthis.$i) >> $foreverthis.$i
+    echo
+    echo ...
+    sleep 5
+    mv $foreverthis.$i $foreverlast
+    echo $foreverlast
+    if [[ $i = 1 ]] ; then
+        visual $foreverlast
+    fi
+done
+}
+visual() {
+#--create-frame -e '(lower-frame)'
+    $VISUAL --no-wait  "$@"
+}
+edit12() {
+    out12 "$@"
+    visual "$1"
+}
+kills() {
+    for f in "$@"; do
+        pgrepkill $f
+        pkill $f
+    done
+}
+killxmt() {
+    kills xmt cc1plus ld cmake python java
+}
+nohupf() {
+    nohupf "$@" > nohup.`filename_from "$@"` &
+}
+cp3add() {
+    cp "$1"/$2 $3
+    git add $3
+}
+cpadd() {
+    cp "$@"
+    git add $2
+}
+vg12() {
+    save12 ~/tmp/vg12 c-s vg"$@"
+}
+diffs() {
+    git diff ${1:-HEAD^1} --stat
+}
+cpnplm() {
+    cp ~/x/xmt/LanguageModel/KenLM/lm/wrappers/nplm* ~/src/kenlm/lm/wrappers/
+}
+comxmtken() {
+    (set -e;
+        cd ~/src/kenlm
+        cp -a lm util ~/x/xmt/LanguageModel/KenLM/
+        cd ~/x/xmt/LanguageModel/KenLM/
+        git add lm util
+        git commit -a -m 'kenlm'
+    )
+}
+mgif() {
+    (
+        set -x
+        set -e
+        cd ~/downloads
+        mv *.gif ~/movies/_g/ || true
+        rm *' (1)'.jp* || true
+        for f in png jpg jpeg; do
+            mv *.$f ~/dropbox/r/ || true
+        done
+    )
+}
+mpics() {
+    mgif
+}
 xmtx=$(echo ~/x)
 xmtextbase=$(echo ~/c/xmt-externals)
-
+blame() {
+    git blame -wM "$@"
+}
 alias gh='cd ~'
+afterline() {
+    perl -e '$pat=shift;while(<>) { last if m{$pat}o; };while(<>) {print}' "$@"
+}
+midway() {
+    perl -e '$pat=shift;while(<>) { if (m{$pat}o) { print; last}  };while(<>) {print}' "$@"
+}
+fafterline() {
+    perl -e '$pat=shift;while(<>) { last if m{\Q$pat\E}o; };while(<>) {print}' "$@"
+}
+fmidway() {
+    perl -e '$pat=shift;while(<>) { if (m{\Q$pat\E}o) { print; last}  };while(<>) {print}' "$@"
+}
 gitundomaster() {
     (
         set -e
@@ -45,10 +143,11 @@ overc() {
         cd $d
         ccp $1 j
         s=$d/do.sh
-        echo         chost=$chost > $s
+        echo chost=$chost > $s
         ccps j >> $s
-        echo        . $s
+        echo . $s
         sleep 3
+        cd $xmtx
         . $s
     )
 }
@@ -60,27 +159,27 @@ bstart() {
     brun
 }
 brun() {
-(set -e
-    if [[ -s $bsearchin ]] ; then
-        splitutf8.pl $bsearchin >$bsearchin=0 2>$bsearchin=1
-        if [[ -s $bsearchin=1 ]] ; then
-            banner "0: $bsearchcmd $bsearchin=0 "
-            $bsearchcmd $bsearchin=0 2>&1 | tee $bsearchin.log0 || true
-            echo .....
-            sleep 1
-            banner "1: $bsearchcmd $bsearchin=1 "
-            $bsearchcmd $bsearchin=1 2>&1 | tee $bsearchin.log1 || true
-            preview $bsearchin.log0 $bsearchin.log1
-            ls -l $bsearchin=0 $bsearchin=1
-            [[ $nowc ]] || wc -w $bsearchin=0 $bsearchin=1
-            banner "now bchoose 0 or bchoose 1 according to which log you like"
+    (set -e
+        if [[ -s $bsearchin ]] ; then
+            splitutf8.pl $bsearchin >$bsearchin=0 2>$bsearchin=1
+            if [[ -s $bsearchin=1 ]] ; then
+                banner "0: $bsearchcmd $bsearchin=0 "
+                $bsearchcmd $bsearchin=0 2>&1 | tee $bsearchin.log0 || true
+                echo .....
+                sleep 1
+                banner "1: $bsearchcmd $bsearchin=1 "
+                $bsearchcmd $bsearchin=1 2>&1 | tee $bsearchin.log1 || true
+                preview $bsearchin.log0 $bsearchin.log1
+                ls -l $bsearchin=0 $bsearchin=1
+                [[ $nowc ]] || wc -w $bsearchin=0 $bsearchin=1
+                banner "now bchoose 0 or bchoose 1 according to which log you like"
+            else
+                banner done: $bsearchin
+            fi
         else
-            banner done: $bsearchin
+            echo no input
         fi
-    else
-        echo no input
-    fi
-)
+    )
 }
 bchoose() {
     local bb="$bsearchin=$1"
@@ -194,7 +293,7 @@ yuminst() {
     fi
 }
 stripversion() {
-  cut -d. -f1 "$@"
+    cut -d. -f1 "$@"
 }
 rpmnormalize() {
     stripversion | sort
@@ -207,15 +306,15 @@ rpmdiff() {
     diff --suppress-common-lines -u0 $rpm1 $rpm2
 }
 p1() {
-  perl -lpE "$@"
+    perl -lpE "$@"
 }
 n1() {
-  perl -lnE "$@"
+    perl -lnE "$@"
 }
 replines() {
-  local n=${1:?[replines] repeats of input(s)}
-  shift
-  n1 'for$i(1..'$n'){say}' -- "$@"
+    local n=${1:?[replines] repeats of input(s)}
+    shift
+    n1 'for$i(1..'$n'){say}' -- "$@"
 }
 
 nosleep() {
@@ -232,11 +331,11 @@ xmtvg="valgrind --leak-check=no --track-origins=yes --suppressions=$xmtx/jenkins
 xmtmassif="valgrind --tool=massif --depth=16 --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp"
 
 withvg() {
-  prexmtsh=$xmtvg "$@"
+    prexmtsh=$xmtvg "$@"
 }
 
 withmassif() {
-  prexmtsh=$xmtmassif "$@"
+    prexmtsh=$xmtmassif "$@"
 }
 
 gitmodified() {
@@ -275,21 +374,21 @@ xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
         set -e
-    cd $xmtpub
-    if [[ -L $1 ]] ; then
-        local d=`readlink $1`
-        require_dir $d
-        echo rm hash $d alias $1
-        rm -rf $d
-        rm $1
-        local b=`basename $d`
-        for f in ?????????????*/$b; do
-            local change=${f%/$b}
-            require_dir $change
-            echo rm changeid $change alias $1
-            rm -rf $change
-        done
-    fi
+        cd $xmtpub
+        if [[ -L $1 ]] ; then
+            local d=`readlink $1`
+            require_dir $d
+            echo rm hash $d alias $1
+            rm -rf $d
+            rm $1
+            local b=`basename $d`
+            for f in ?????????????*/$b; do
+                local change=${f%/$b}
+                require_dir $change
+                echo rm changeid $change alias $1
+                rm -rf $change
+            done
+        fi
     )
 }
 rmxmt() {
@@ -305,56 +404,58 @@ guesstbbver() {
     fi
 }
 bakxmt() {
-( set -e;
-    echo ${BUILD:=Release}
-    cd $xmtx/$BUILD
-    local change=`changeid`
-    local hash=`githash`
-    local pub=${pub:-$xmtpub}
-    echo $pub/$1
-    local bindir=$pub/$BUILD/$HOST/$hash
-    echo $bindir
-    mkdir -p $bindir
-    rm -rf $pub/$hash
-    git log -n 1 > $bindir/README
-    mkdir -p $pub/$change
-    forcelink $pub/$hash $pub/$change/$hash
-    rm -f $pub/latest $pub/$change/latest
-    forcelink $bindir $pub/latest
-    forcelink $pub/$change $pub/latest-changeid
-    cp -af $xmtx/RegressionTests/launch_server.py $bindir/
-    for f in $xmtbins xmt/lib/*.so; do
-      local b=`basename $f`
-      ls -l $f
-      local bin=$bindir/$b
-      cp -af $f $bindir/$b
-      [[ ${tbbver:-} ]] ||  guesstbbver $f
-      (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib:$pub/tbb-${tbbver:-4.0}"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
-      chmod +x $bin.sh
-      forcelink $hash/$b $pub/$b
-      forcelink ../$hash $pub/$change/latest
-      forcelink ../$hash/$b $pub/$change/$b
-    done
-    grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
-    rmrpath $bindir
-    cat $bindir/README
-    local pub2=~/bugs/leak
-    if [[ $1 ]] ; then
-        forcelink $bindir $pub/$1 && ls -l $pub/$1
-        if [[ -d $pub2 ]] ; then
-            forcelink $pub/$1 $pub2/$1
+    ( set -e;
+        echo ${BUILD:=Release}
+        cd $xmtx/$BUILD
+        local change=`changeid`
+        local hash=`githash`
+        local pub=${pub:-$xmtpub}
+        echo $pub/$1
+        local bindir=$pub/$BUILD/$HOST/$hash
+        echo $bindir
+        mkdir -p $bindir
+        rm -rf $pub/$hash
+        git log -n 1 > $bindir/README
+        mkdir -p $pub/$change
+        forcelink $pub/$hash $pub/$change/$hash
+        rm -f $pub/latest $pub/$change/latest
+        forcelink $bindir $pub/latest
+        forcelink $pub/$change $pub/latest-changeid
+        cp -af $xmtx/RegressionTests/launch_server.py $bindir/
+        for f in $xmtbins xmt/lib/*.so; do
+            local b=`basename $f`
+            ls -l $f
+            local bin=$bindir/$b
+            cp -af $f $bindir/$b
+            [[ ${tbbver:-} ]] ||  guesstbbver $f
+            #:$pub/boost-${boostver:-1_55_0}
+            #:$pub/tbb-${tbbver:-4.2.3}
+            (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+            chmod +x $bin.sh
+            forcelink $hash/$b $pub/$b
+            forcelink ../$hash $pub/$change/latest
+            forcelink ../$hash/$b $pub/$change/$b
+        done
+        grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
+        rmrpath $bindir
+        cat $bindir/README
+        local pub2=~/bugs/leak
+        if [[ $1 ]] ; then
+            forcelink $bindir $pub/$1 && ls -l $pub/$1
+            if [[ -d $pub2 ]] ; then
+                forcelink $pub/$1 $pub2/$1
+            fi
         fi
-    fi
-    $bindir/xmt.sh --help
-)
+        $bindir/xmt.sh --help
+    )
 }
 
 cleantmp() {
     (
-    df -h /tmp
-    rm -rf /tmp/*
-    du -h /tmp
-    df -h /tmp
+        df -h /tmp
+        rm -rf /tmp/*
+        du -h /tmp
+        df -h /tmp
     ) 2>/dev/null
 }
 cs-for() {
@@ -370,15 +471,15 @@ cs-s() {
     cs-for c-s "$@"
 }
 ns-for() {
-(
-for i in `seq 1 6`; do
-  f=gitbuild$i
-  n-s $f "$@"
-done
-)
+    (
+        for i in `seq 1 6`; do
+            f=gitbuild$i
+            n-s $f "$@"
+        done
+    )
 }
 ns-s() {
-  ns-for n-s "$@"
+    ns-for n-s "$@"
 }
 forcns() {
     cs-s "$@"
@@ -388,13 +489,13 @@ rmtmps() {
     forcns cleantmp
 }
 tabname() {
-  printf "\e]1;$*\a"
-  if [[ ${sleepname:-} ]] ; then sleep $sleepname ; fi
+    printf "\e]1;$*\a"
+    if [[ ${sleepname:-} ]] ; then sleep $sleepname ; fi
 }
 
 winname() {
-  printf "\e]2;$*\a"
-  if [[ ${sleepname:-} ]] ; then sleep $sleepname ; fi
+    printf "\e]2;$*\a"
+    if [[ ${sleepname:-} ]] ; then sleep $sleepname ; fi
 }
 
 tabwinname() {
@@ -527,6 +628,10 @@ home-c-sync() {
         sync2 $chost "$@"
     )
 }
+d-make() {
+    shift
+    c-with "$@"
+}
 c-make() {
     ctitle "$@"
     local tar=${1?target}
@@ -568,6 +673,9 @@ c-s() {
 k-s() {
     (k-c; c-s "$@")
 }
+j-s() {
+    (j-c; c-s "$@")
+}
 kr-s() {
     (k-c; b-r; c-s "$@")
 }
@@ -595,6 +703,9 @@ d-with() {
 }
 k-with() {
     (k-c; c-with "$@")
+}
+j-with() {
+    (j-c; c-with "$@")
 }
 c-compile() {
     c-with BUILD=${BUILD:-} x-compile "$@"
@@ -711,6 +822,9 @@ k-c() {
 }
 d-c() {
     chost=c-mdreyer
+}
+j-c() {
+    chost=c-jmay
 }
 tocabs() {
     tohost $chost "$@"
@@ -977,6 +1091,7 @@ directssh() {
         cd ~/.ssh
         set -x
         cp -af $sshdir/config.direct $sshdir/config
+        stun
     )
 }
 tunssh() {
@@ -1673,10 +1788,14 @@ cto() {
         done
     )
 }
+gerrit2local() {
+    perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;print' "$@"
+}
 ccp() {
     #uses: $chost for scp
     local n=$#
     local dst=${@:$n:$n}
+    dst=`gerrit2local $dst`
     (set -e
         require_dir `dirname "$dst"`
         if [[ $(( -- n )) -gt 0 ]] ; then
@@ -1699,9 +1818,24 @@ ccp() {
                 #local p=`relpath $xmtx $dst`
                 #echo "cd $xmtx;git add $p"
                 #git add $p
+                preview "$dst"
             done
         fi
     )
+    if [[ $ccpgitadd = 1 ]] ; then
+    (
+        cd `dirname $dst`
+        git add `basename $dst`
+    )
+    fi
+}
+ccpa() {
+    ccpgitadd=1 ccp "$@"
+}
+ccp1() {
+    local n=$#
+    local dst=${@:$n:$n}
+    ccp "$1" "$dst"
 }
 ncp() {
     chost=$nhost cidentity=$nidentity cuser=$nuser ccp "$@"
@@ -1929,7 +2063,7 @@ yreg() {
         local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
         cd $xmtx/RegressionTests
         THREADS=${MAKEPROC:-`ncpus`}
-        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
+        MINTHREADS=${MINTHREADS:-2} # unreliable with 1
         MAXTHREADS=8
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
@@ -2004,6 +2138,9 @@ toscraps() {
 stt() {
     StatisticalTokenizerTrain "$@"
 }
+sj() {
+    chost=c-jmay sc
+}
 sk() {
     chost=c-ydong sc
 }
@@ -2057,7 +2194,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=${cmake:-} BUILDSUBDIR=${BUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-1} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -2083,6 +2220,9 @@ jen() {
 
 kjen(){
     chost=c-ydong linjen "$@"
+}
+jjen(){
+    chost=c-jmay linjen "$@"
 }
 djen() {
     chost=c-mdreyer linjen "$@"
@@ -2820,7 +2960,7 @@ linjen() {
         c-s forceco $branch
         log=~/tmp/linjen.$chost.$branch
         mv $log ${log}2 || true
-        c-s BUILDSUBDIR=1 CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
+        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -2991,6 +3131,23 @@ save12() {
         echo "$@"; echo
         fi
         "$@" 2>&1) | filterblock | tee $out | ${page:-cat}
+    echo2 saved output:
+    echo2 $out
+    echo2 "$cmd"
+}
+out12() {
+    local out="$1"
+    local filter=cat
+    local filterarg=''
+    [[ -f $out ]] && mv "$out" "$out~"
+    shift
+    local cmd=`abspaths "$@"`
+    echo2 "$cmd"
+    echo2 saving output $out
+    ( if ! [[ ${quiet:-} ]] ; then
+        echo "$@"; echo
+        fi
+        "$@" 2>&1) | filterblock > $out
     echo2 saved output:
     echo2 $out
     echo2 "$cmd"
@@ -3905,7 +4062,7 @@ showcpp() {
             os+=" $o"
             rm -f $o
             f=$(realpath $f)
-#pushd /Users/graehl/x/Debug/Hypergraph &&
+            #pushd /Users/graehl/x/Debug/Hypergraph &&
             local xmtlib=$xmtextbase/FC12/libraries
 
             /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
@@ -4803,7 +4960,7 @@ runc() {
 enutf8=en_US.UTF-8
 sc() {
     ssh $chost "$@"
-#        LANG=$enutf8 mosh --server="LANG=$enutf8 mosh-server" $chost "$@"
+    #        LANG=$enutf8 mosh --server="LANG=$enutf8 mosh-server" $chost "$@"
 }
 topon() {
     thostp $phost "$@"
@@ -5687,7 +5844,7 @@ buildboost() {(
         [ "$without" ] && withouts="--without-mpi --without-python --without-wave"
         [ "$noboot" ] || ./bootstrap.sh --prefix=$FIRST_PREFIX
         ./bjam cxxflags=-fPIC --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts --runtime-debugging=off -j$MAKEPROC install
-#--layout=tagged --build-type=complete
+        #--layout=tagged --build-type=complete
         # ./bjam --threading=multi --runtime-link=static,shared --runtime-debugging=on --variant=debug --layout=tagged --prefix=$FIRST_PREFIX $withouts install -j4
         # ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
         )}
@@ -7513,6 +7670,6 @@ if [[ -d $XMT_EXTERNALS_PATH ]] ; then
 fi
 
 cp2ken() {
-  build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
+    build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
 }
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=

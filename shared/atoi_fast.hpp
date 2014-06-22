@@ -23,6 +23,7 @@
 
 #include <graehl/shared/verbose_exception.hpp>
 #include <algorithm>
+#include <iterator>
 
 namespace graehl {
 
@@ -126,10 +127,11 @@ inline U octaltou(char const* begin, char const* end, bool complete = true) {
 
 template <class U,class I>
 inline U atou_fast_advance(I &i,I end) {
+  typedef typename std::iterator_traits<I>::value_type Char;
   U x=0;
   if (i==end) return x;
   for (;i!=end;++i) {
-    const char c=*i;
+    const Char c=*i;
     if (c<'0' || c>'9') return x;
     x*=10;
     x+=c-'0';
@@ -144,12 +146,13 @@ inline U atou_fast(I i, I end) {
 
 template <class U,class I>
 inline U atou_fast_advance_nooverflow(I &i, I end) {
+  typedef typename std::iterator_traits<I>::value_type Char;
   I begin = i;
   const U maxTenth=boost::integer_traits<U>::const_max/10;
   U x=0;
   if (i==end) return x;
   for (;i!=end;++i) {
-    const char c=*i;
+    const Char c=*i;
     if (c<'0' || c>'9') return x;
     if (x>maxTenth)
       THROW_MSG(string_to_exception,
@@ -205,6 +208,7 @@ inline I atou_fast(std::string const& s) { // faster than stdlib atoi. doesn't r
 
 template <class I,class It>
 inline I atoi_fast_advance(It &i, It end) {
+  typedef typename std::iterator_traits<It>::value_type Char;
   I x=0;
   if (i==end) return x;
   bool neg=false;
@@ -213,7 +217,7 @@ inline I atoi_fast_advance(It &i, It end) {
     ++i;
   }
   for (;i!=end;++i) {
-    const char c=*i;
+    const Char c=*i;
     if (c<'0' || c>'9') return x;
     x*=10;
     x+=c-'0';

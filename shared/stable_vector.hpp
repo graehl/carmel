@@ -23,11 +23,14 @@ namespace graehl {
 template <class T>
 inline void reinit(T &val) {
   val.~T();
-  new (&val) T;
+  new (&val) T();
 }
 
 template <class T, class IndexT = unsigned, unsigned Log2ChunkSize = 6, bool UseSmallVector = false>
 struct stable_vector {
+  /// if true, then shrinking the vector ensures that subsequent grow() still
+  /// gets default constructed T(). false would be faster if you didn't mind
+  /// leaving the old values in place
   enum { kRemoveDestroys = true };
   typedef IndexT I;
   typedef T value_type;
@@ -234,9 +237,11 @@ struct stable_vector {
       capacity = newchunks * chunksize;
       if (destroy && newchunks) {
         assert(!chunks.empty());
-        Chunk &chunk = chunks.back();
-        for (I pos = sz & posmask; pos < chunksize; ++pos)
-          reinit(chunk[pos]);
+        Chunk &chunk = chunks[newchunks - 1];
+        I pos = sz & posmask;
+        if (pos) // fits exactly into #chunks => nothing to clear
+          for (; pos < chunksize; ++pos)
+            reinit(chunk[pos]);
       }
       size_ = sz;
     }
@@ -316,9 +321,15 @@ struct stable_vector {
     size_ = size;
   }
 
+  void resizeLarger(I n) {
+    assert(n > size_);
+    reserve(n);
+    size_ = n;
+  }
+
   T &growImpl(I i) {
     if (i >= size_)
-      reserve((size_ = i + 1));
+      resizeLarger(i + 1);
     return (*this)[i];
   }
 
@@ -347,7 +358,7 @@ struct stable_vector {
     I i = 0;
     try {
       for (; i < chunksize; ++i)
-        new (&c[i]) T;
+        new (&c[i]) T(); // () gives 0 init for primitives
       return c;
     } catch (...) {
       while (i)
@@ -357,6 +368,8 @@ struct stable_vector {
       return 0;
     }
   }
+
+  // return chunk w/ first sz elements set to initial (rest default constructed)
   static Chunk new_chunk(T const& initial, I sz = chunksize) {
     Chunk c = (Chunk)::operator new(sizeof(T)*chunksize);
     I i = 0;
@@ -364,7 +377,7 @@ struct stable_vector {
       for (; i < sz; ++i)
         new (&c[i]) T(initial);
       for (; i < chunksize; ++i)
-        new (&c[i]) T;
+        new (&c[i]) T(); // () gives 0 init for primitives
       return c;
     } catch (...) {
       while (i)
@@ -396,8 +409,7 @@ struct stable_vector {
   }
 
   static void free_chunk(Chunk c) {
-    I i = chunksize;
-    while (i)
+    for (I i = chunksize; i; )
       c[--i].~T();
     ::operator delete((void*)c);
   }

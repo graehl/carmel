@@ -1031,7 +1031,7 @@ def head_sorted(l,key=identity,reverse=False,head=None):
     return firstn(sorted(l,key=key,reverse=reverse),head=head)
 
 def head_str(l,head=None):
-    return ('All[\n' if head is None else 'First-%d\n'%head)+'\n'.join(map(str,l))+'\n'
+    return ('All[\n' if head is None else 'First-%d\n'%head)+'\n'.join(map(str, firstn(l, head=head)))+'\n'
 
 def head_sorted_str(l,key=identity,reverse=False,head=None):
     return head_str(head_sorted(l,key=key,reverse=reverse,head=head),head=head)
@@ -1995,3 +1995,21 @@ class hexact(argparse.Action):
         setattr(namespace, self.dest, int(values,base))
         return
     pass
+
+
+def strlines(lines, newline='\n', limit=None, elipsis=True, tail=False):
+    if limit is not None:
+        lines = list(lines)
+        if len(lines) > limit:
+            lines = lines[-limit:] if tail else lines[:limit]
+        if elipsis:
+            lines.append("... (showed %s %d only)" % ('last' if tail else 'first', limit))
+    return ''.join((x + newline if newline is not None and len(x) > 0 and x[-1] != newline
+                    else x) for x in lines)
+
+def writelines(path, lines, newline='\n'):
+    with open(path, 'w') as outfile:
+        for line in lines:
+            if newline is not None and len(line) > 0 and line[-1] != newline:
+                line += newline
+            outfile.write(line)

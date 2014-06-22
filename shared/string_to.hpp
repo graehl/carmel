@@ -65,6 +65,8 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #endif
 
 #include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/make_shared.hpp>
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
 # ifndef BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
 #  define BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
@@ -387,7 +389,16 @@ boost::optional<Val>& string_to_optional(std::string const& str,boost::optional<
     opt.reset();
   else
     opt=string_to<Val>(str);
-  //  SHOWIF2(GRSTRINGTO,0,"(free fn) STRING to optional",str,opt);
+  return opt;
+}
+
+template <class Val>
+boost::shared_ptr<Val>& string_to_shared_ptr(std::string const& str,boost::shared_ptr<Val>& opt)
+{
+  if (str=="none" || str.empty())
+    opt.reset();
+  else
+    opt = boost::make_shared<Val>(string_to<Val>(str));
   return opt;
 }
 
@@ -552,7 +563,19 @@ template <class V>
 struct is_optional<boost::optional<V> >
 {
   enum { value=1 };
-  //typedef V optional_value_type;
+};
+
+
+template <class V>
+struct is_shared_ptr
+{
+  enum { value=0 };
+};
+
+template <class V>
+struct is_shared_ptr<boost::shared_ptr<V> >
+{
+  enum { value=1 };
 };
 
 
@@ -566,6 +589,19 @@ struct to_string_select<V,typename boost::enable_if<is_optional<V> >::type> {
   static inline void string_to(Str const &s,V &v)
   {
     string_to_optional(s,v);
+  }
+};
+
+template <class V>
+struct to_string_select<V,typename boost::enable_if<is_shared_ptr<V> >::type> {
+  static inline std::string to_string(V const &opt)
+  {
+    return opt ? graehl::to_string(*opt) : "none";
+  }
+  template <class Str>
+  static inline void string_to(Str const &s,V &v)
+  {
+    string_to_shared_ptr(s,v);
   }
 };
 
@@ -1010,9 +1046,8 @@ struct to_string_select<V,typename boost::enable_if<is_nonstring_container<V> >:
 BOOST_AUTO_TEST_CASE(test_string_to)
 {
   BOOST_CHECK_EQUAL("1.5", to_string(1.5f));
-  std::string mil = to_string(15000000.f);
-  BOOST_CHECK(mil == "15000000" || mil == "1.5e+07");
-  BOOST_CHECK_EQUAL("1e+10", to_string(1e10f));
+  std::string mil = to_string(1500000.f);
+  BOOST_CHECK(mil == "1500000" || mil == "1.5e+06" || mil == "1.5e+006");
   BOOST_CHECK_EQUAL("123456", to_string(123456.f));
   BOOST_CHECK_EQUAL("0.001953125", to_string(0.001953125f));
 }
