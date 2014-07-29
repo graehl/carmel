@@ -13,31 +13,57 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+gitcherrytheirs() {
+    git cherry-pick --strategy=recursive -X theirs "$@"
+}
+c12() {
+    (
+        local o=$(echo ~/tmp/c12)
+        out12 "$o" c-s "$@"
+        preview "$o"
+    )
+}
+makesvm() {
+    (
+        set -e
+        cd /Users/graehl/c/xmt-externals-source/svmtool++/svmtool++
+        ./build.sh
+    )
+}
 foreverdir=$HOME/forever
+forc() {
+    for chost in c-graehl c-jmay c-ydong; do
+        chost=$chost c-s "$@"
+    done
+}
+rmforever() {
+    rm $foreverdir/*.run.*
+    forc rm -rf /var/tmp/regtest*
+}
 forever() {
-mkdir -p $foreverdir
-foreverlast=$foreverdir/`filename_from "$@"`
-foreverthis=$foreverdir/`filename_from "$@"`.run
-local i=0
-while true; do
-    i=$((i+1))
-    echo $foreverthis.$i
-    echo
-    echo ---
-    "$@" 2>&1 | cat > $foreverthis.$i
-    (echo; echo $foreverthis.$i) >> $foreverthis.$i
-    echo
-    echo ...
-    sleep 5
-    mv $foreverthis.$i $foreverlast
-    echo $foreverlast
-    if [[ $i = 1 ]] ; then
-        visual $foreverlast
-    fi
-done
+    mkdir -p $foreverdir
+    foreverlast=$foreverdir/`filename_from "$@"`
+    foreverthis=$foreverdir/`filename_from "$@"`.run
+    local i=0
+    while true; do
+        i=$((i+1))
+        echo $foreverthis.$i
+        echo
+        echo ---
+        "$@" 2>&1 | cat > $foreverthis.$i
+        (echo; echo $foreverthis.$i) >> $foreverthis.$i
+        echo
+        echo ...
+        sleep 5
+        mv $foreverthis.$i $foreverlast
+        echo $foreverlast
+        if [[ $i = 1 ]] ; then
+            visual $foreverlast
+        fi
+    done
 }
 visual() {
-#--create-frame -e '(lower-frame)'
+    #--create-frame -e '(lower-frame)'
     $VISUAL --no-wait  "$@"
 }
 edit12() {
@@ -93,6 +119,13 @@ mgif() {
             mv *.$f ~/dropbox/r/ || true
         done
     )
+}
+detumblr() {
+    ls tumblr_* | perl -e '$re=q{^tumblr_(.*?)_(\d+)\.};
+while(<>){chomp;push @l,$_;
+$m{$1}=$2 if (/$re/ && $2 > $m{$1}) }
+for(@l) {  print "rm $_\n" if (/$re/ && $m{$1} > $2) }
+'
 }
 mpics() {
     mgif
@@ -725,6 +758,9 @@ k-make() {
 kr-make() {
     (kr-c;c-make "$@")
 }
+jr-make() {
+    (jr-c;c-make "$@")
+}
 dr-make() {
     (dr-c;c-make "$@")
 }
@@ -739,6 +775,10 @@ cw-c() {
 
 kr-c() {
     k-c
+    b-r
+}
+jr-c() {
+    j-c
     b-r
 }
 dr-c() {
@@ -1050,6 +1090,9 @@ c-test() {
     local rel
     [[ ${BUILD:-} = Release ]] && rel=Release
     c-make Test${test:-} Test$test$rel "$@"
+}
+jr-test() {
+    (b-r;j-c;c-test "$@")
 }
 gitmsg() {
     git log -n 1 "$@"
@@ -7232,28 +7275,6 @@ makesrilm() {
         make $a64 World OPTION=_c "$@"
     )
 }
-allhosts="login.clsp.jhu.edu hpc.usc.edu"
-conf2all() {
-    local h
-    for h in $allhosts; do
-        conf2 $h
-    done
-}
-cp2() {
-    tohost "$@"
-}
-cp2all() {
-    local h
-    for h in $allhosts; do
-        cp2 $h "$@"
-    done
-}
-c2() {
-    sync2 "$@"
-}
-vgd() {
-    debug=1 vg "$@"
-}
 page() {
     "$@" 2>&1 | more
 }
@@ -7275,24 +7296,6 @@ altinstall() {
     local f=/usr/bin/$b-$ver$exe
     showvars_required b ver f
     require_file $f && /usr/sbin/update-alternatives --install /usr/bin/$b$exe $b $f 30
-}
-
-altgcc4() {
-    /usr/sbin/update-alternatives \
-        --install "/usr/bin/gcc.exe" "gcc" "/usr/bin/gcc-4.exe" 30 \
-        --slave "/usr/bin/ccc.exe" "ccc" "/usr/bin/ccc-4.exe" \
-        --slave "/usr/bin/i686-pc-cygwin-ccc.exe" "i686-pc-cygwin-ccc" \
-        "/usr/bin/i686-pc-cygwin-ccc-4.exe" \
-        --slave "/usr/bin/i686-pc-cygwin-gcc.exe" "i686-pc-cygwin-gcc" \
-        "/usr/bin/i686-pc-cygwin-gcc-4.exe"
-
-    /usr/sbin/update-alternatives \
-        --install "/usr/bin/g++.exe" "g++" "/usr/bin/g++-4.exe" 30 \
-        --slave "/usr/bin/c++.exe" "c++" "/usr/bin/c++-4.exe" \
-        --slave "/usr/bin/i686-pc-cygwin-c++.exe" "i686-pc-cygwin-c++" \
-        "/usr/bin/i686-pc-cygwin-c++-4.exe" \
-        --slave "/usr/bin/i686-pc-cygwin-g++.exe" "i686-pc-cygwin-g++" \
-        "/usr/bin/i686-pc-cygwin-g++-4.exe"
 }
 
 plboth() {

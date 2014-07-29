@@ -328,18 +328,40 @@ struct small_vector {
   T *erase(T *b) {
     return erase(b,b+1);
   }
+
+  void movelen(size_type to, size_type from, size_type len) {
+    T *b = begin();
+    std::memmove(b + to, b + from, len * sizeof(T));
+  }
+
+  // memmove instead of memcpy for case when someone erases middle of vector and
+  // so source, destination ranges overlap
+  static void movelen(T *to, T const* from, size_type len) {
+    std::memmove(to, from, len * sizeof(T));
+  }
+
+  void erase(size_type ibegin, size_type iend) {
+    size_type sz = data.stack.sz_;
+    if (iend == sz) {
+      resize(ibegin);
+    } else {
+      size_type nafter = sz - iend;
+      movelen(ibegin, iend, nafter);
+      resize(ibegin + nafter);
+    }
+  }
+
   T *erase(T *b,T* e) { // remove [b,e) and return pointer to element e
-    T *tb=begin(),*te=end();
-    size_type nbefore=(size_type)(b-tb);
+    T *tb = begin(), *te = end();
+    size_type nbefore = (size_type)(b-tb);
     if (e==te) {
       resize(nbefore);
     } else {
-      size_type nafter=(size_type)(te-e);
-      std::memmove(b,e,nafter*sizeof(T));
-      // memmove instead of memcpy for case when someone erases middle of vector and so source, destination ranges overlap
-      resize(nbefore+nafter);
+      size_type nafter = (size_type)(te-e);
+      movelen(b, e, nafter);
+      resize(nbefore + nafter);
     }
-    return begin()+nbefore;
+    return begin() + nbefore;
   }
   void memcpy_to(T *p) {
     std::memcpy(p,begin(),data.stack.sz_*sizeof(T));
