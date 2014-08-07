@@ -93,6 +93,7 @@ GCC_DIAG_ON(maybe-uninitialized)
 #else
 #include <cstdlib>
 #endif
+#include <graehl/shared/snprintf.hpp>
 
 namespace graehl {
 
@@ -730,7 +731,7 @@ struct string_builder : string_buffer
   {
     std::size_t sz = this->size();
     this->resize(sz + maxLen);
-    // For Windows, snprintf is provided by Sprintf.hpp (in global namespace)
+    // For Windows, snprintf is provided by shared/sprintf.hpp (in global namespace)
     unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val);
     if (written >= maxLen) written = 0;
     this->resize(sz + written);
