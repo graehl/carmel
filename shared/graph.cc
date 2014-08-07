@@ -272,19 +272,17 @@ void printGraph(const Graph g, std::ostream &out)
 std::istream & operator >> (std::istream &istr, GraphArc &a)
 {
   char c;
-  int i;
-  istr >> c;			// open paren
+  istr >> c;      // open paren
   istr >> a.src;
   istr >> a.dest;
   istr >> a.weight;
-  istr >> c;			// close paren
+  istr >> c;      // close paren
   a.data = NULL;
   return istr;
 }
 
 std::istream & operator >> (std::istream &istr, GraphState &s)
 {
-  char c;
   return istr;
 }
 

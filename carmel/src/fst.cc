@@ -85,10 +85,6 @@ operator << (std::basic_ostream<charT,Traits>& os, const NormGroupIter &arg)
     return gen_inserter(os,arg);
 }
 
-static void NaNCheck(const Weight *w) {
-    w->NaNCheck();
-}
-
 void WFST::normalize(NormalizeMethod const& method,bool uniform_zero_normgroups)
 {
     norm_group_by group=method.group;

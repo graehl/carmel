@@ -402,14 +402,15 @@ public:
     base_alloc(a) {
           init(sz);
         }
-  HashTable(const HashTable<K,V,H,P,A> &ht) : siz(ht.siz), growAt(ht.growAt)
+  HashTable(const HashTable<K,V,H,P,A> &ht) : base_alloc((base_alloc &)ht)
+                                            , siz(ht.siz)
+                                            , growAt(ht.growAt)
 #ifndef STATIC_HASHER
                                             , hash(ht.hash)
 #endif
 #ifndef STATIC_HASH_EQUAL
-                                            , m_eq(ht.m_eq),
+                                            , m_eq(ht.m_eq)
 #endif
-            , base_alloc((base_alloc &)ht)
     {
 //        Assert(0 == "don't copy hash tables, please");
         alloc_table(bucket_count());

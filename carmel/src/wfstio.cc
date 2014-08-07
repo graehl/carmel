@@ -16,42 +16,42 @@ namespace graehl {
 void WFST::output_format(bool *flags,std::ostream *fstout)
 {
     if (fstout) {
-        if ( flags['B'] )
+        if ( flags[(unsigned)'B'] )
             Weight::out_log10(*fstout);
-        else if (flags['2'])
+        else if (flags[(unsigned)'2'])
             Weight::out_ln(*fstout);
         else
             Weight::out_exp(*fstout);
-        if ( flags['Z'] )
+        if ( flags[(unsigned)'Z'] )
             Weight::out_always_log(*fstout);
         else
             Weight::out_sometimes_log(*fstout);
-        if ( flags['D'] )
+        if ( flags[(unsigned)'D'] )
             Weight::out_never_log(*fstout);
-        if ( flags['J'] )
+        if ( flags[(unsigned)'J'] )
             out_arc_full(*fstout);
         else
             out_arc_brief(*fstout);
-        if ( flags['H'] )
+        if ( flags[(unsigned)'H'] )
             out_arc_per_line(*fstout);
         else
             out_state_per_line(*fstout);
         //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
     }
-    if ( flags['B'] )
+    if ( flags[(unsigned)'B'] )
         Weight::default_log10();
-    else if (flags['2'])
+    else if (flags[(unsigned)'2'])
         Weight::default_ln();
     else
         Weight::default_exp();
-    if ( flags['Z'] )
+    if ( flags[(unsigned)'Z'] )
         Weight::default_always_log();
     else
         Weight::default_sometimes_log();
-    if ( flags['D'] )
+    if ( flags[(unsigned)'D'] )
         Weight::default_never_log();
-    set_arc_default_format(flags['J'] ? FULL : BRIEF);
-    set_arc_default_per(flags['H'] ? ARC : STATE);
+    set_arc_default_format(flags[(unsigned)'J'] ? FULL : BRIEF);
+    set_arc_default_per(flags[(unsigned)'H'] ? ARC : STATE);
     //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
 }
 
@@ -174,11 +174,11 @@ struct ltstr // Yaser 8-3-200
     }
 };
 
-bool isNonNegInt(const char * p){
-    //FIXME: was p+1 and not p++ intended??? would be ignoring 1st char ...
-    const char *q = p++ + strlen(p);
-    while((p < q ) && isdigit(*p)){p++;}
-    return(p==q);
+bool isNonNegInt(const char * p) {
+    const char *q = p + strlen(p);
+    if (p == q) return false;
+    while(isdigit(*p)) { if (++p == q) return true; }
+    return false;
 }
 
 
@@ -344,7 +344,7 @@ int WFST::readLegible(istream &istr,bool alwaysNamed)
         named_states=1;
         int stateNumber, destState, inL, outL;
         Weight weight;
-        char c, d;
+        char c;
         char buf[DEFAULTSTRBUFSIZE],buf2[DEFAULTSTRBUFSIZE];
 //        string buf,buf2; // FIXME: rewrite getString to use growing buffer?
         skip_comment(istr,COMMENT_CHAR);

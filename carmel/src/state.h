@@ -40,8 +40,8 @@ inline bool operator == (const IOPair l, const IOPair r) {
 
 }//ns
 
-BEGIN_HASH_VAL(graehl::IntKey) {	return x.hash(); } END_HASH
-BEGIN_HASH_VAL(graehl::IOPair) {	return x.hash(); } END_HASH
+BEGIN_HASH_VAL(graehl::IntKey) {  return x.hash(); } END_HASH
+BEGIN_HASH_VAL(graehl::IOPair) {  return x.hash(); } END_HASH
 
 namespace graehl {
 
@@ -110,7 +110,7 @@ struct State {
     Arcs arcs;
     int size;
 #ifdef BIDIRECTIONAL
-    int hitcount;			// how many times index is used, negative for index on input, positive for index on output
+    int hitcount;     // how many times index is used, negative for index on input, positive for index on output
 #endif
     typedef HashTable<IntKey, List<HalfArc> > Index;
 
@@ -159,7 +159,6 @@ struct State {
     }
 //fixme: push back
     void indexBy(int dir = 0) {
-        List<HalfArc> *list;
         if ( dir ) {
 #ifdef BIDIRECTIONAL
             if ( hitcount++ > 0 )
@@ -275,7 +274,7 @@ struct State {
         }
     }
 
-    void reduce(bool sum=true,bool clamp=false) {		// consolidate all duplicate arcs
+    void reduce(bool sum=true,bool clamp=false) {   // consolidate all duplicate arcs
         flush();
         HashTable<UnArc, Weight *> hWeights;
         UnArc un;

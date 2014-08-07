@@ -2,6 +2,7 @@
 #ifndef GRAEHL_SHARED__OS_HPP
 #define GRAEHL_SHARED__OS_HPP
 
+#include <graehl/shared/warning_compiler.h>
 #include <fstream>
 #include <string>
 #include <cstdio>

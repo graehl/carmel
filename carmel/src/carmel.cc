@@ -73,42 +73,42 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
   return;
   /*
     if (fstout) {
-    if ( flags['B'] )
+    if ( flags[(unsigned)'B'] )
     Weight::out_log10(*fstout);
-    else if (flags['2'])
+    else if (flags[(unsigned)'2'])
     Weight::out_ln(*fstout);
     else
     Weight::out_exp(*fstout);
-    if ( flags['Z'] )
+    if ( flags[(unsigned)'Z'] )
     Weight::out_always_log(*fstout);
     else
     Weight::out_sometimes_log(*fstout);
-    if ( flags['D'] )
+    if ( flags[(unsigned)'D'] )
     Weight::out_never_log(*fstout);
-    if ( flags['J'] )
+    if ( flags[(unsigned)'J'] )
     WFST::out_arc_full(*fstout);
     else
     WFST::out_arc_brief(*fstout);
-    if ( flags['H'] )
+    if ( flags[(unsigned)'H'] )
     WFST::out_arc_per_line(*fstout);
     else
     WFST::out_state_per_line(*fstout);
     //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
     }
-    if ( flags['B'] )
+    if ( flags[(unsigned)'B'] )
     Weight::default_log10();
-    else if (flags['2'])
+    else if (flags[(unsigned)'2'])
     Weight::default_ln();
     else
     Weight::default_exp();
-    if ( flags['Z'] )
+    if ( flags[(unsigned)'Z'] )
     Weight::default_always_log();
     else
     Weight::default_sometimes_log();
-    if ( flags['D'] )
+    if ( flags[(unsigned)'D'] )
     Weight::default_never_log();
-    WFST::set_arc_default_format(flags['J'] ? WFST::FULL : WFST::BRIEF);
-    WFST::set_arc_default_per(flags['H'] ? WFST::ARC : WFST::STATE);
+    WFST::set_arc_default_format(flags[(unsigned)'J'] ? WFST::FULL : WFST::BRIEF);
+    WFST::set_arc_default_per(flags[(unsigned)'H'] ? WFST::ARC : WFST::STATE);
     //    fstout->clear(); //FIXME: trying to eliminate valgrind uninit when doing output to Config::debug().  will this help?
     */
 }
@@ -133,7 +133,7 @@ void readParam(T *t, char const*from, char sw) {
 }
 
 template <class T>
-bool readParam(bool *argflags,T *t, char const*from, char sw) {
+bool readParam(bool *argflags,T *t, char const*from, unsigned char sw) {
   if (argflags[sw]) {
     argflags[sw]=false;
     readParam(t,from,sw);
@@ -188,11 +188,11 @@ struct wfst_paths_printer {
     unsigned src; //FIXME: if sidetracks_only then you don't show the real arc source, but the end of last sidetrack.
     wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags):wfst(_wfst),out(_out),flags(_flags) {
     n_paths=0;
-    SIDETRACKS_ONLY=flags['%'];
+    SIDETRACKS_ONLY=flags[(unsigned)'%'];
     }*/
   WFST::path_print pp;
   wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags)
-    : SIDETRACKS_ONLY(_flags['%']),wfst(_wfst),pp(_flags) {
+      : SIDETRACKS_ONLY(_flags[(unsigned)'%']),wfst(_wfst),pp(_flags) {
     pp.set_out(_out);
     n_paths=0;
   }
@@ -211,14 +211,14 @@ struct wfst_paths_printer {
   void end_path() {
     pp.finish(wfst);
     /*
-      if (flags['@'] ) {
+      if (flags[(unsigned)'@'] ) {
       out << endl;
       sp.reset();
       for (Output::const_iterator i=output.begin(),e=output.end();i!=e;++i)
       out << sp << wfst.outLetter(*i);
       out << endl;
       } else {
-      if (!flags['W'])
+      if (!flags[(unsigned)'W'])
       out << sp << w;
       out << endl;
       }
@@ -231,18 +231,18 @@ struct wfst_paths_printer {
     pp.arc(wfst,arc);
     /*
     //        path.push_back(&arc);
-    if (flags['@'] ) {
+    if (flags[(unsigned)'@'] ) {
     int inid=arc.in,outid=arc.out;
     if (outid!=WFST::epsilon_index)
     output.push_back(outid);
     if (inid!=WFST::epsilon_index)
     out << sp << wfst.inLetter(inid);
     } else {
-    if ( flags['O'] || flags['I'] ) {
-    int id = flags['O'] ? arc.out : arc.in;
-    if ( !(flags['E'] && id==WFST::epsilon_index) ) {
+    if ( flags[(unsigned)'O'] || flags[(unsigned)'I'] ) {
+    int id = flags[(unsigned)'O'] ? arc.out : arc.in;
+    if ( !(flags[(unsigned)'E'] && id==WFST::epsilon_index) ) {
     out << sp;
-    out_maybe_quote(flags['O'] ? wfst.outLetter(id) : wfst.inLetter(id),out,!flags['Q']);
+    out_maybe_quote(flags[(unsigned)'O'] ? wfst.outLetter(id) : wfst.inLetter(id),out,!flags[(unsigned)'Q']);
     }
     } else {
     out << sp;
@@ -265,13 +265,13 @@ void printPath(bool *flags,const List<PathArc> *pli) {
 
     for (List<PathArc>::const_iterator li=pli->const_begin(),end=pli->const_end(); li != end; ++li ) {
     const WFST *f=li->wfst;
-    if ( flags['O'] || flags['I'] ) {
-    if ( flags['O'] )
+    if ( flags[(unsigned)'O'] || flags[(unsigned)'I'] ) {
+    if ( flags[(unsigned)'O'] )
     outSym = f->outLetter(li->out);
     else
     outSym = f->inLetter(li->in);
-    if ( !(flags['E'] && isSpecial(outSym)) ) {
-    if ( flags['Q'] )
+    if ( !(flags[(unsigned)'E'] && isSpecial(outSym)) ) {
+    if ( flags[(unsigned)'Q'] )
     outWithoutQuotes(outSym, cout);
     else
     cout << outSym;
@@ -282,7 +282,7 @@ void printPath(bool *flags,const List<PathArc> *pli) {
     }
     w = w * li->weight;
     }
-    if ( !flags['W'] )
+    if ( !flags[(unsigned)'W'] )
     cout << w;
     cout << "\n";
   */
@@ -315,14 +315,14 @@ struct carmel_main
 
   void force_cascade_derivs()
   {
-    flags['t']=true;
+    flags[(unsigned)'t']=true;
     long_opts["train-cascade"]=1;
   }
 
   bool parse_cache_opts()
   {
     WFST::deriv_cache_opts &copt=topt.cache;
-    copt.cache_level=have_opt("matrix-fb") ? WFST::matrix_fb : (flags[':'] ? WFST::cache_forward_backward : (flags['?'] ? WFST::cache_forward : WFST::cache_nothing));
+    copt.cache_level=have_opt("matrix-fb") ? WFST::matrix_fb : (flags[(unsigned)':'] ? WFST::cache_forward_backward : (flags[(unsigned)'?'] ? WFST::cache_forward : WFST::cache_nothing));
     copt.do_prune=!have_opt("cache-no-prune");
     if (have_opt("disk-cache-derivations")) {
       copt.cache_level=WFST::cache_disk;
@@ -486,7 +486,7 @@ struct carmel_main
       n_0prob++;
     }
     for ( unsigned fill = 0 ; fill < kPathsLeft ; ++fill ) {
-      if ( !(flags['W']||flags['@']) )
+      if ( !(flags[(unsigned)'W']||flags[(unsigned)'@']) )
         cout << 0;
       cout << "\n";
     }
@@ -649,7 +649,7 @@ struct carmel_main
 
   bool prunePath() const
   {
-    return flags['w'] || flags['z'];
+    return flags[(unsigned)'w'] || flags[(unsigned)'z'];
   }
 
   void normalize(WFST *result)
@@ -659,7 +659,7 @@ struct carmel_main
 
   void post_train_normalize(WFST *result)
   {
-    if (flags['t']&&(flags['p'] || prunePath()))
+    if (flags[(unsigned)'t']&&(flags[(unsigned)'p'] || prunePath()))
       result->normalize(norm_method);
 
   }
@@ -711,10 +711,10 @@ struct carmel_main
         return false;
       }
       WFST *p=result;
-      if (flags['r'])
-        result=new WFST(pb,*p,flags['m'],flags['a']);
+      if (flags[(unsigned)'r'])
+        result=new WFST(pb,*p,flags[(unsigned)'m'],flags[(unsigned)'a']);
       else
-        result=new WFST(*p,pb,flags['m'],flags['a']);
+        result=new WFST(*p,pb,flags[(unsigned)'m'],flags[(unsigned)'a']);
       if (!result->valid()) {
         ++n_0prob;
         return false;
@@ -731,9 +731,9 @@ struct carmel_main
 
     maybe_constant_weight(result);
     maybe_sink(result);
-    if ( flags['v'] )
+    if ( flags[(unsigned)'v'] )
       result->invert();
-    if ( flags['1'] ) {
+    if ( flags[(unsigned)'1'] ) {
       show_seed();
       result->randomScale();
     }
@@ -741,7 +741,7 @@ struct carmel_main
       show_seed();
       result->randomSet();
     }
-    if (flags['n'])
+    if (flags[(unsigned)'n'])
       normalize(result);
 
     return true;
@@ -758,7 +758,7 @@ struct carmel_main
   {
     //        if (long_opts["test-as-pairs"])  WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
     maybe_project(result);
-    if ( flags ['Y'] )
+    if ( flags [(unsigned)'Y'] )
       result->writeGraphViz(o);
     else {
       result->writeLegible(o,show0);
@@ -767,7 +767,7 @@ struct carmel_main
 
   void prune(WFST *result)
   {
-    if ( flags['p'] )
+    if ( flags[(unsigned)'p'] )
       result->pruneArcs(prune_wt);
     if ( prunePath() )
       result->prunePaths(max_states,keep_path_ratio);
@@ -775,9 +775,9 @@ struct carmel_main
 
   void minimize(WFST *result)
   {
-    if ( flags['C'] )
+    if ( flags[(unsigned)'C'] )
       result->consolidateArcs(!long_opts["consolidate-max"],!long_opts["consolidate-unclamped"]);
-    if ( !flags['d'] )
+    if ( !flags[(unsigned)'d'] )
       result->reduce();
   }
 
@@ -811,7 +811,7 @@ struct carmel_main
   {
     WFST &w=*result;
     bool changed=false;
-    print=print&&!flags['q'];
+    print=print&&!flags[(unsigned)'q'];
     {
       shrink_monitor m("reduce",w,print,changed);
       minimize(result);
@@ -832,7 +832,7 @@ struct carmel_main
   void openfst_minimize_type(WFST *result)
   {
 #ifdef USE_OPENFST
-    if (!flags['q'])
+    if (!flags[(unsigned)'q'])
       Config::log() << " openfst " <<
         (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
     if (!result->minimize_openfst<OpenFST>(
@@ -846,7 +846,7 @@ struct carmel_main
                                            )
         )
       Config::log() << " (FST not input-determinized, try --minimize-determinize, which may not terminate)";
-    if (!flags['q']) Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";
+    if (!flags[(unsigned)'q']) Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";
 #endif
   }
 
@@ -863,7 +863,7 @@ struct carmel_main
   void openfst_roundtrip(WFST *result)
   {
 #ifdef USE_OPENFST
-    if (!flags['q']) Config::log() << "performing (meaningless test) carmel->openfst->carmel round trip\n";
+    if (!flags[(unsigned)'q']) Config::log() << "performing (meaningless test) carmel->openfst->carmel round trip\n";
     result->roundtrip_openfst<fst::StdVectorFst>();
 #endif
   }
@@ -934,7 +934,6 @@ struct carmel_main
 
   void fem_add(WFST *w,char const* filename)
   {
-    unsigned i=fems.size();
     fems.add(w);
     fem_filenames.push_back(filename);
   }
@@ -1222,8 +1221,8 @@ main(int argc, char *argv[]){
               cm.norm_method.group = WFST::NONE;
             else if ( *pc == '=' )
               exponent_flag=true;
-            flags[*pc] = 1;
-            argflags[*pc] = 1;
+            flags[(unsigned)*pc] = 1;
+            argflags[(unsigned)*pc] = 1;
           }
         }
       } else {
@@ -1235,7 +1234,6 @@ main(int argc, char *argv[]){
       WFSTformatHelp();
       return 0;
     }
-    bool prunePath = flags['w'] || flags['z'];
 
     srand(seed);
     set_random_seed(seed);
@@ -1243,17 +1241,17 @@ main(int argc, char *argv[]){
     setOutputFormat(flags,&cout);
     setOutputFormat(flags,&cerr);
     WFST::setIndexThreshold(thresh);
-    if ( flags['h'] ) {
+    if ( flags[(unsigned)'h'] ) {
       cout << endl << endl;
       usageHelp();
       return 0;
     }
-    if (flags['V']){
+    if (flags[(unsigned)'V']){
       std::cout << "Carmel Version: " << CARMEL_VERSION ;
       std::cout << ". Copyright C " << COPYRIGHT_YEAR << ", the University of Southern California.\n";
       return 0 ;
     }
-    if ( flags['b'] && kPaths < 1 )
+    if ( flags[(unsigned)'b'] && kPaths < 1 )
       kPaths = 1;
     istream **inputs, **files, **newed_inputs;
     char const**filenames;
@@ -1263,14 +1261,14 @@ main(int argc, char *argv[]){
     initModels();
     int nModels=(int)Models.size();
 #endif
-    if ( flags['s'] ) {
+    if ( flags[(unsigned)'s'] ) {
       nChain=nInputs = nParms + 1;
 #ifdef MARCU
       nChain+=(int)Models.size();
 #endif
       newed_inputs = inputs = NEW istream *[nInputs];
       alloced_filenames = filenames = NEW char const*[nChain];
-      if ( flags['r'] ) {
+      if ( flags[(unsigned)'r'] ) {
         inputs[nParms] = &cin;
         filenames[nParms] = "stdin";
         for ( i = 0 ; i < nParms ; ++i )
@@ -1301,10 +1299,10 @@ main(int argc, char *argv[]){
       Config::debug() << "Remembering composition cascade result parameters.\n";
 #endif
     if (trainc)
-      flags['t']=1;
-    if ( flags['t'] )
-      flags['S'] = 1;
-    if (nChain < 1 || (flags['A'] && nInputs < 2)) {
+      flags[(unsigned)'t']=1;
+    if ( flags[(unsigned)'t'] )
+      flags[(unsigned)'S'] = 1;
+    if (nChain < 1 || (flags[(unsigned)'A'] && nInputs < 2)) {
       Config::warn() << "No inputs supplied.\n";
       return -12;
     }
@@ -1325,13 +1323,13 @@ main(int argc, char *argv[]){
         return -9;
       }
     }
-    if ( flags['S'] ) {
-      flags['b'] = flags['x'] = flags['y'] = 0;
+    if ( flags[(unsigned)'S'] ) {
+      flags[(unsigned)'b'] = flags[(unsigned)'x'] = flags[(unsigned)'y'] = 0;
       kPaths = 0;
       if (nInputs > 1) {
         --nInputs;
         --nChain;
-        if ( flags['r'] )
+        if ( flags[(unsigned)'r'] )
           pairStream = inputs[nInputs];
         else {
           pairStream = inputs[0];
@@ -1339,7 +1337,7 @@ main(int argc, char *argv[]){
           ++inputs;
         }
       }
-      if ( flags['s'] )
+      if ( flags[(unsigned)'s'] )
         ++files;
       else
         --nParms;
@@ -1358,18 +1356,18 @@ main(int argc, char *argv[]){
 #endif
     int nTarget = -1; // chain[nTarget] is the linear acceptor built from input sequences
     istream *line_in=NULL;
-    if ( flags['i'] || flags['b']||flags['P']) {// flags['P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
-      nTarget = flags['r'] ? nInputs-1 : 0;
+    if ( flags[(unsigned)'i'] || flags[(unsigned)'b']||flags[(unsigned)'P']) {// flags[(unsigned)'P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
+      nTarget = flags[(unsigned)'r'] ? nInputs-1 : 0;
       line_in=inputs[nTarget];
     }
     for ( i = 0 ; i < nInputs ; ++i ) {
       if ( i != nTarget ) {
         WFST *w=chain+i;
-        PLACEMENT_NEW (w) WFST(*inputs[i],!flags['K']);
+        PLACEMENT_NEW (w) WFST(*inputs[i],!flags[(unsigned)'K']);
         cm.fem_add(w,filenames[i]);
         if (i < exponents.size())
           w->raisePower(exponents[i]);
-        if ( !flags['m'] && nInputs > 1 )
+        if ( !flags[(unsigned)'m'] && nInputs > 1 )
           w->unNameStates();
         if ( inputs[i] != &cin ) {
 #ifdef DEBUG
@@ -1392,10 +1390,10 @@ main(int argc, char *argv[]){
 
     WFST *result = NULL;
     WFST *weightSource = NULL; // assign waits from this transducer to result by tie groups
-    if ( flags['A'] ) {
+    if ( flags[(unsigned)'A'] ) {
       --nInputs;
       --nChain;
-      if ( !flags['r'] ) {
+      if ( !flags[(unsigned)'r'] ) {
         weightSource = chain;
         ++chain;
       } else
@@ -1410,7 +1408,7 @@ main(int argc, char *argv[]){
     chain-=nModels;
     nTarget+=nModels;
     for (int j=0;j<nModels;++j) {
-      PLACEMENT_NEW (&chain[j]) WFST(Models[j],!flags['K']);
+      PLACEMENT_NEW (&chain[j]) WFST(Models[j],!flags[(unsigned)'K']);
       filenames[j] = "Models.builtin";
     }
 #endif
@@ -1435,7 +1433,7 @@ main(int argc, char *argv[]){
           if (!getline(*line_in,buf))
             goto fail_ntarget;
           int length;
-          if (flags['P']){ // need a permutation lattice instead
+          if (flags[(unsigned)'P']){ // need a permutation lattice instead
             PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
           } else { // no permutation, just need input acceptor
             PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str());
@@ -1446,7 +1444,7 @@ main(int argc, char *argv[]){
           CHECKLEAK(input_lineno);
           ++input_lineno;
 
-          if (!flags['q'])
+          if (!flags[(unsigned)'q'])
             Config::log() << "Input line " << input_lineno << ": " << buf.c_str();
 #ifdef  DEBUGCOMPOSE
           Config::debug() << "\nprocessing input line " << input_lineno << ": " << buf.c_str() << " storing in chain[" << nTarget << "]\n";
@@ -1458,7 +1456,7 @@ main(int argc, char *argv[]){
         }
 
 
-        bool r=flags['r'];
+        bool r=flags[(unsigned)'r'];
         result = (r ? &chain[nChain-1] :&chain[0]);
         cm.minimize(result);
         if (nInputs < 2)
@@ -1489,7 +1487,7 @@ main(int argc, char *argv[]){
             cascade.prepare_compose(r);
           WFST &t1=(r ? chain[i] : *result);
           WFST &t2=(r ? *result : chain[i]);
-          WFST *next = NEW WFST(cascade,t1,t2, flags['m'], flags['a']);
+          WFST *next = NEW WFST(cascade,t1,t2, flags[(unsigned)'m'], flags[(unsigned)'a']);
 #ifndef NODELETE
           //      if (nTarget != -1) {
           //        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
@@ -1505,9 +1503,7 @@ main(int argc, char *argv[]){
 #endif
           result = next;
 
-          int q_states=result->size();
-          int q_arcs=result->numArcs();
-          if (!flags['q'])
+          if (!flags[(unsigned)'q'])
             Config::log() << "\n\t(" << result->size() << " states / " << result->numArcs() << " arcs" << std::flush;
 #ifdef  DEBUGCOMPOSE
           Config::debug() <<"stats for the resulting composition for chain[" << i << "]\n";
@@ -1532,16 +1528,16 @@ main(int argc, char *argv[]){
           bool arcs_changed=cm.shrink(result,true,nok,nok&&om,")");
           /*
             bool arcs_changed=cm.minimize(result);
-            if (!flags['q'] && (q_states != result->size() || arcs_changed ))
+            if (!flags[(unsigned)'q'] && (q_states != result->size() || arcs_changed ))
             Config::log()  << " reduce-> " << result->size() << "/" << result->numArcs();
             if (!(kPaths>0 && finalcompose)) { // pruning is at least as hard (and includes) finding best paths already; why duplicate effort?
             q_states=result->size();
             q_arcs=result->numArcs();
             cm.prune(result);
-            if (!flags['q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
+            if (!flags[(unsigned)'q'] && (q_states != result->size() || q_arcs !=result->numArcs()))
             Config::log()  << " prune-> " << result->size() << "/" << result->numArcs();
             }
-            if (!flags['q'])
+            if (!flags[(unsigned)'q'])
             Config::log() << ")";
           */
           cascade.done_composing(result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
@@ -1549,7 +1545,7 @@ main(int argc, char *argv[]){
         }
         if (!anycomposed)
           cascade.set_composed(result);
-        if (!flags['q'])
+        if (!flags[(unsigned)'q'])
           Config::log() << std::endl;
 
 
@@ -1562,11 +1558,11 @@ main(int argc, char *argv[]){
         }
         if (!cm.post_compose(result))
           goto nextInput;
-        if ( flags['A'] ) {
+        if ( flags[(unsigned)'A'] ) {
           Assert(weightSource);
           result->assignWeights(*weightSource);
         }
-        if ( flags['N'] ) {
+        if ( flags[(unsigned)'N'] ) {
           if (labelStart > 0)
             result->numberArcsFrom(labelStart);
           else if ( labelStart == 0 )
@@ -1576,19 +1572,19 @@ main(int argc, char *argv[]){
         }
         if ( kPaths > 0  ) {
           cm.print_kbest(kPaths,result);
-        } else if ( flags['x'] ) {
+        } else if ( flags[(unsigned)'x'] ) {
           result->listAlphabet(cout, 0);
-        } else if ( flags['y'] ) {
+        } else if ( flags[(unsigned)'y'] ) {
           result->listAlphabet(cout, 1);
         }
-        if ( flags['c'] ) {
+        if ( flags[(unsigned)'c'] ) {
           cm.stats(cout,result,"result");
         }
 
-        if ( flags['t'] )
-          flags['S'] = 0;
-        if ( !flags['b'] ) {
-          if ( flags['S'] ) {
+        if ( flags[(unsigned)'t'] )
+          flags[(unsigned)'S'] = 0;
+        if ( !flags[(unsigned)'b'] ) {
+          if ( flags[(unsigned)'S'] ) {
             n_pairs=0;
             if (pairStream) {
               for ( ; ; ) {
@@ -1612,7 +1608,7 @@ main(int argc, char *argv[]){
               n_pairs=1;
               cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
             }
-          } else if ( flags['t'] ) {
+          } else if ( flags[(unsigned)'t'] ) {
             show_seed();
             training_corpus corpus;
             if (pairStream) {
@@ -1628,7 +1624,7 @@ main(int argc, char *argv[]){
                 rr=(unsigned)long_opts["final-restart"];
               WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
               train_opt.ra=ran_accept;
-              result->train(cascade,corpus,nms,flags['U'],smoothFloor,converge, converge_pp_ratio, train_opt);
+              result->train(cascade,corpus,nms,flags[(unsigned)'U'],smoothFloor,converge, converge_pp_ratio, train_opt);
             }
 
             if (trainc) {
@@ -1640,12 +1636,12 @@ main(int argc, char *argv[]){
             //                cm.minimize(result);
             if ( maxGenArcs == 0 )
               maxGenArcs = DEFAULT_MAX_GEN_ARCS;
-            if ( flags['G'] ) {
+            if ( flags[(unsigned)'G'] ) {
               show_seed();
               for (int i=0; i<nGenerate; ) {
                 List<PathArc> l;
                 if (result->randomPath(&l) != -1) {
-                  if (flags['@']) {
+                  if (flags[(unsigned)'@']) {
                     WFST::print_training_pair(cout,l);
                   } else {
                     printPath(flags,&l);
@@ -1678,8 +1674,8 @@ main(int argc, char *argv[]){
             }
           }
 
-          if ( (!flags['k'] && !flags['x'] && !flags['y'] && !flags['S'] && !flags['c'] && !flags['g'] && !flags['G'] && !trainc)
-               || flags['F'] ) {
+          if ( (!flags[(unsigned)'k'] && !flags[(unsigned)'x'] && !flags[(unsigned)'y'] && !flags[(unsigned)'S'] && !flags[(unsigned)'c'] && !flags[(unsigned)'g'] && !flags[(unsigned)'G'] && !trainc)
+               || flags[(unsigned)'F'] ) {
             cm.shrink(result,true,true,long_opts["minimize"]||long_opts["minimize-determinize-only"],"\n");
             //                cm.prune(result);
             cm.post_train_normalize(result);
@@ -1717,7 +1713,7 @@ main(int argc, char *argv[]){
         if (nTarget != -1) { // if to construct a finite state from input
           chain[nTarget].~WFST();
         }
-        if ( !flags['b'] )
+        if ( !flags[(unsigned)'b'] )
           break;
       } // end of all input
       cm.report_batch();
@@ -1725,7 +1721,7 @@ main(int argc, char *argv[]){
 
     cm.fem_out();
 
-    if ( flags['S'] && input_lineno > 0) {
+    if ( flags[(unsigned)'S'] && input_lineno > 0) {
       Config::log() << "-S corpus ";
       cm.log_ppx(n_pairs,prod_prob);
     }
@@ -1734,12 +1730,12 @@ main(int argc, char *argv[]){
     for ( i = 0 ; i < nChain ; ++i )
       if (i!=nTarget)
         chainMemory[i].~WFST();
-    //  if ( flags['A'] )
+    //  if ( flags[(unsigned)'A'] )
     //    chainMemory[i].~WFST();
 #endif
     ::operator delete(chainMemory);
     delete[] parm; // alias filenames unless -s
-    if(flags['s'])
+    if(flags[(unsigned)'s'])
       delete[] alloced_filenames;
     if(nTarget != -1) {
       if(line_in != &cin)

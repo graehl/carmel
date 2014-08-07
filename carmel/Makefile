@@ -18,7 +18,7 @@ SHARED=$(GRAEHL)/shared
 PROGS=carmel
 carmel_SRC=carmel.cc fst.cc train.cc gibbs.cc
 carmel_NOTEST=1
-carmel_LIB=$(BOOST_RANDOM_LIB)
+carmel_LIB=$(BOOST_RANDOM_LIB) $(BOOST_TIMER_LIB)
 vpath %.cc $(SRC):$(SHARED)
 VPATH=$(SRC):$(SHARED)
 DEFS=
@@ -28,7 +28,7 @@ CPP_EXT=cc
 
 LDFLAGS += -lpthread -ldl -pthread
 BASECXXFLAGS= -ffast-math
-CPPFLAGS += -Wno-deprecated
+CPPFLAGS += -Wno-deprecated -Wall
 ifeq ($(HOST),cage)
 CXXFLAGS= $(BASECXXFLAGS) -O
 LDFLAGS += -lstdc++

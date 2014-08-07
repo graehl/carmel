@@ -1,5 +1,5 @@
-#ifndef ATOI_FAST_JG2012615_HPP
-#define ATOI_FAST_JG2012615_HPP
+#ifndef GRAEHL__ATOI_FAST_JG2012615_HPP
+#define GRAEHL__ATOI_FAST_JG2012615_HPP
 
 #ifndef HAVE_STRTOUL
 #ifdef _MSC_VER
@@ -9,6 +9,8 @@
 #endif
 #endif
 
+#include <graehl/shared/warning_compiler.h>
+#include <graehl/shared/verbose_exception.hpp>
 #include <boost/integer_traits.hpp>
 #include <limits>
 #include <cstdlib>
@@ -21,14 +23,12 @@
 #undef max
 #undef DELETE
 
-#include <graehl/shared/verbose_exception.hpp>
 #include <algorithm>
 #include <iterator>
 
 namespace graehl {
 
 VERBOSE_EXCEPTION_DECLARE(string_to_exception)
-
 
 //NOTE: stdlib atoi consumes dead whitespace; these don't
 template <class U>

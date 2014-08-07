@@ -77,19 +77,19 @@ class WFST {
         graehl::word_spacer sp;
         state_id src;
         Weight w;
-        path_print() : pout(&Config::out()),O(),I(),Q(),AT(),W(),E() {  }
+        path_print() : O(),I(),Q(),AT(),W(),E(),pout(&Config::out()) {  }
         path_print(bool const* flags) : pout(&Config::out())
         {
             set_flags(flags);
         }
         void set_flags(bool const* flags)
         {
-            O=flags['O'];
-            I=flags['I'];
-            Q=flags['Q'];
-            AT=flags['@'];
-            W=flags['W'];
-            E=flags['E'];
+            O=flags[(unsigned)'O'];
+            I=flags[(unsigned)'I'];
+            Q=flags[(unsigned)'Q'];
+            AT=flags[(unsigned)'@'];
+            W=flags[(unsigned)'W'];
+            E=flags[(unsigned)'E'];
         }
         std::ostream &out() const { return *pout; }
         void set_out(std::ostream &o) { pout=&o; }
@@ -541,7 +541,7 @@ class WFST {
     }
 
     alphabet_type stateNames;
-    state_id final;	// final state number - initial state always number 0
+    state_id final; // final state number - initial state always number 0
   //bool is_final(state_id stateid) const { return stateid==final; }
     typedef dynamic_array<State> StateVector;
     // note: std::vector<State> doesn't work with State::state_adder because copies by value are made during readLegible
@@ -549,11 +549,11 @@ class WFST {
     StateVector states;
 
     //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
-    //  WFST(WFST &) {}		// disallow copy constructor - Yaser commented this ow to allow copy constructors
+    //  WFST(WFST &) {}   // disallow copy constructor - Yaser commented this ow to allow copy constructors
     //  WFST & operator = (WFST &){return *this;} Yaser
     //WFST & operator = (WFST &){std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
-    int abort();			// called on a bad read
-    int readLegible(istream &,bool alwaysNamed=false);	// returns 0 on failure (bad input)
+    int abort();      // called on a bad read
+    int readLegible(istream &,bool alwaysNamed=false);  // returns 0 on failure (bad input)
     int readLegible(const string& str, bool alwaysNamed=false);
     void writeArc(ostream &os, const FSTArc &a,bool GREEK_EPSILON=false); // for graphviz
     void writeLegible(ostream &,bool include_zero=false);
@@ -756,8 +756,8 @@ class WFST {
 
     WFST(const char *buf); // make a simple transducer representing an input sequence
     WFST(const char *buf, int& length,bool permuteNumbers); // make a simple transducer representing an input sequence lattice - Yaser
-    WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);	// a composed with b
-    WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false,bool preserveGroups = false);	// a composed with b, but remembering in cascade the identities.  preserveGroups is meaningless since cascade keeps refs to original arcs anyway
+    WFST(WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);  // a composed with b
+    WFST(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false,bool preserveGroups = false); // a composed with b, but remembering in cascade the identities.  preserveGroups is meaningless since cascade keeps refs to original arcs anyway
     void set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedStates = false, bool preserveGroups = false);
     // resulting WFST has only reference to input/output alphabets - use ownAlphabet()
     // if the original source of the alphabets must be deleted
@@ -828,8 +828,8 @@ class WFST {
 #endif
                     s=li->dest;
                     ++len;
-                    //				if (!(i))
-                    //					return -1;
+                    //        if (!(i))
+                    //          return -1;
                     goto next_arc;
                 }
             }
@@ -1317,11 +1317,11 @@ class WFST {
 //    Weight trainFinish();
     // stop if greatest change in arc weight, or per-example perplexity is less than criteria, or after set number of iterations.
 
-    void invert();		// switch input letters for output letters
-    void reduce();		// eliminate all states not along a path from
+    void invert();    // switch input letters for output letters
+    void reduce();    // eliminate all states not along a path from
                                 // initial state to final state
-    void consolidateArcs(bool sum=true,bool clamp=true);	// combine identical arcs, with combined weight = sum, or just max if sum=false.  sum clamped to max of 1 if clamp=true
-    void pruneArcs(Weight thresh);	// remove all arcs with weight < thresh
+    void consolidateArcs(bool sum=true,bool clamp=true);  // combine identical arcs, with combined weight = sum, or just max if sum=false.  sum clamped to max of 1 if clamp=true
+    void pruneArcs(Weight thresh);  // remove all arcs with weight < thresh
     enum {UNLIMITED=-1};
     void prunePaths(int max_states=UNLIMITED,Weight keep_paths_within_ratio=Weight::INF());
     // throw out rank states by the weight of the best path through them, keeping only max_states of them (or all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less than (best_path/keep_paths_within_ratio)
@@ -1329,7 +1329,7 @@ class WFST {
 
     void assignWeights(const WFST &weightSource); // for arcs in this transducer with the same group number as an arc in weightSource, assign the weight of the arc in weightSource.  if no arc having same group number in weightSource is found, remove the arc from *this
     unsigned numberArcsFrom(unsigned labelStart=1); // sequentially number each arc (placing it into that group) starting at labelStart - labelStart must be >= 1.  returns next available label
-    void lockArcs();		// put all arcs in group 0 (weights are locked)
+    void lockArcs();    // put all arcs in group 0 (weights are locked)
     //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<IntKey, int>; }
     void unTieGroups();
 
@@ -1446,7 +1446,8 @@ class WFST {
         unsigned r=states.size();
         states.push_back();
         if (named_states) {
-            unsigned equals_r=stateNames.add_make_unique(name);
+          GRAEHL_IF_ASSERT(unsigned equals_r=)
+                stateNames.add_make_unique(name);
             Assert(equals_r==r);
         }
         return r;
@@ -1574,7 +1575,7 @@ class WFST {
  private:
 
 
-    //	lastChange = train_maximize(method);
+    //  lastChange = train_maximize(method);
     // counts must have been filled in (happens in trainFinish) so not useful to public
     Weight train_maximize(NormalizeMethod const& method,double delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
 
@@ -1583,7 +1584,7 @@ class WFST {
         deleteAlphabet();
     }
 
-    void invalidate() {		// make into empty/invalid transducer
+    void invalidate() {   // make into empty/invalid transducer
         clear();
     }
 };

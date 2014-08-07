@@ -37,6 +37,7 @@ inline static void _my_assert(const char *file,unsigned line,const T&t,const cha
 }
 
 #if GRAEHL_ASSERT
+# define GRAEHL_IF_ASSERT(x) x
 # define Assert(expr) (expr) ? (void)0 :   \
                  _my_assert(__FILE__,__LINE__,#expr)
 // WARNING: expr occurs twice (repeated computation)
@@ -46,6 +47,7 @@ inline static void _my_assert(const char *file,unsigned line,const T&t,const cha
             } while(0)
 # define Paranoid(a) do { a; } while (0)
 #else
+# define GRAEHL_IF_ASSERT(x)
 # define Assert(a)
 # define Assert2(a,b)
 # define Paranoid(a)

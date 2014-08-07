@@ -105,7 +105,6 @@ template <typename T> inline void heapAdjustUp(T heapStart, T element)
 // *heapStart may need to be moved up toward the bottom of the heap.  fix.
 template <typename T> inline void heapAdjustDown(T heapStart, T heapEnd, T element)
 {
-  std::size_t current = element - heapStart + 1;
   heapify(heapStart, heapSize(heapStart, heapEnd), element-heapStart+1);
 }
 

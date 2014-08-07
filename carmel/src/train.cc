@@ -342,7 +342,7 @@ struct forward_backward : public cached_derivs<arc_counts>
     }
 
     //     newPerplexity = train_estimate();
-    //	lastChange = train_maximize(method);
+    //  lastChange = train_maximize(method);
     //    Weight train_estimate(Weight &unweighted_corpus_prob,bool remove_bad_training=true); // accumulates counts, returns perplexity of training set = 2^(- avg log likelihood) = 1/(Nth root of product of model probabilities of N-weight training examples)  - optionally deletes training examples that have no accepting path
     //    Weight train_maximize(NormalizeMethods const& methods,FLOAT_TYPE delta_scale=1); // normalize then exaggerate (then normalize again), returning maximum change
 
@@ -604,7 +604,6 @@ Weight WFST::train(cascade_parameters &cascade,
     // multiple iterations and keep the best of possibly many random restarts
     Weight bestPerplexity;
     bestPerplexity.setInfinity();
-    bool very_first_time=true;
     bool using_cascade=!cascade.trivial;
     if (using_cascade) {
         if (learning_rate_growth_factor!=1) {
@@ -755,7 +754,6 @@ void forward_backward::matrix_compute(int nIn,int *inLet,int nOut,int *outLet,in
     IOPair IO;
 
     typedef matrix_io_index::for_io for_io;
-    for_io *pLDW;
 
     for ( i = 0 ; i <= nIn ; ++i ) {
         for ( o = 0 ; o <= nOut ; ++o ) {
@@ -835,7 +833,6 @@ Weight forward_backward::estimate_matrix(Weight &unweighted_corpus_prob)
 
 
     typedef matrix_io_index::for_io for_io;
-    for_io *pLDW;
     IOPair io;
 
 

@@ -3492,7 +3492,7 @@ g1po() {
 overt() {
     pushd $xmtx/xmt/graehl/shared
     gsh=~/g/shared
-    for f in *.?pp; do
+    for f in *.?pp *.h; do
         rm -f $gsh/$f
         cp $f $gsh/$f
     done
@@ -5872,7 +5872,6 @@ buildgraehl() {
     local d=$1
     local v=$2
     (set -e
-        set -x
         pushd $GRAEHLSRC/$1
         #export GRAEHL=$GRAEHLSRC
         #export TRUNK=$GRAEHLSRC
@@ -5883,6 +5882,8 @@ buildgraehl() {
 
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
+        set -x
+        pwd
         make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt -j$MAKEPROC
         make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt install
         set +x

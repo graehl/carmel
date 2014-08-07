@@ -185,8 +185,8 @@ struct backref
 
 struct backrefs
 {
-    fixed_array<backref> ids;
     Graph g;
+    fixed_array<backref> ids;
     unsigned nextid;
     backrefs(Graph g,unsigned root,unsigned startid=1) : g(g),ids(g.nStates),nextid(startid)
     {

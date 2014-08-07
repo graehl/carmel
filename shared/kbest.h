@@ -36,10 +36,8 @@ struct GraphHeap {
     static const int newBlocksize;
     static List<GraphHeap *> usedBlocks;
     // custom new is mandatory, because of how freeAll works (and we do rely on freeAll)!
-    void *operator new(size_t s)
+    void *operator new(size_t)
         {
-            size_t dummy = s;
-            dummy = dummy;
             GraphHeap *ret, *max;
             if (freeList) {
                 ret = freeList;
@@ -84,7 +82,7 @@ struct EdgePath {
         else
             return node->arcHeap[heapPos];
     }
-    
+
     EdgePath *last;
     FLOAT_TYPE weight;
 };
@@ -118,7 +116,7 @@ struct BestPathsPrinter {
     void start_path(unsigned k,FLOAT_TYPE cost) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
         *pout<<cost;
     }
-    
+
     void end_path() {
         *pout<<'\n';
     }
@@ -132,12 +130,12 @@ struct BestPathsPrinter {
 };
 
 static inline void telescope_cost(GraphArc &w,FLOAT_TYPE *dist)
-{    
+{
     w.weight = w.weight - (dist[w.src] - dist[w.dest]);
 }
 
 static inline void untelescope_cost(GraphArc &w,FLOAT_TYPE *dist)
-{    
+{
     w.weight = w.weight + (dist[w.src] - dist[w.dest]);
 }
 
@@ -174,7 +172,7 @@ void insertShortPath(int src, int dest, Visitor &v, taken_arc_type *cycle_detect
 }
 
 
-    
+
 // throw_on_cycle, if false, will avoid checking for cycles but could infinitely loop
 template <class Visitor>
 void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v,bool throw_on_cycle=true) {
@@ -185,7 +183,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v,boo
 
     taken_arc_type cycle_detect;
     taken_arc_type * p_cycle_hash=throw_on_cycle ? &cycle_detect : 0;
-    
+
 #ifdef DEBUGKBEST
     Config::debug() << "Calling KBest with k: "<<k<<'\n' << graph;
 #endif
@@ -275,7 +273,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v,boo
                             untelescope_cost(*cutarc,dist);
                         v.visit_sidetrack_arc(*cutarc);
                         if (!v.SIDETRACKS_ONLY)
-                            telescope_cost(*cutarc,dist);                        
+                            telescope_cost(*cutarc,dist);
                     }
 
                     insertShortPath(srcState, dest, v, p_cycle_hash); // connect end of last sidetrack to dest state
@@ -347,7 +345,7 @@ void bestPaths(Graph graph,unsigned src, unsigned dest,unsigned k,Visitor &v,boo
 
     freeGraph(shortPathGraph);
     delete[] dist;
-    
+
 }
 
 }

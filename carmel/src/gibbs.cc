@@ -79,8 +79,9 @@ struct carmel_gibbs : public gibbs_base
     {
         for (unsigned i=0,N=cascade.size();i<N;++i) {
             WFST &w=*cascade.cascade[i];
-            WFST::NormalizeMethod const& nm=methods[i];
-//            visit_wfst_params(*this,w,nm);
+#if 0
+            visit_wfst_params(*this,w,methods[i]);
+#endif
             w.visit_arcs(*this);
         }
     }
@@ -144,7 +145,6 @@ struct carmel_gibbs : public gibbs_base
                 w.indexInput();
             Weight ac=nm.add_count;
             double alpha=ac.getReal();
-            bool uniformp0=gopt.uniformp0;
             typedef dynamic_array<FSTArc *> U;
             U unlocked; // we need to reverse arcs if conditional
             for (NormGroupIter g(nm.group,w); g.moreGroups(); g.nextGroup()) {
@@ -435,7 +435,6 @@ void WFST::train_gibbs(cascade_parameters &cascade, training_corpus &corpus, Nor
                        , gibbs_opts const &gopt1, path_print const& printer, double min_prior)
 {
   cascade.set_composed(this); // FIXME: yes, this is done repeatedly. defensive programming!
-    std::ostream &log=Config::log();
     for (NormalizeMethods::iterator i=methods.begin(),e=methods.end();i!=e;++i) {
         if (i->add_count<=0) {
             Config::warn() << "Gibbs sampling requires positive --priors for base model / initial sample.  Setting to "<<min_prior<<"\n";

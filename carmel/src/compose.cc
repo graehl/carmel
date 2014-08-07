@@ -29,7 +29,7 @@ struct TrioNamer {
         limit=buf+capacity-6; // shoudl be 4: end of string, | <filter-state> |.  but 6 to be safe.
         Assert(limit>buf);
         std::memset((char*)special,0,sizeof(bool)*n_char);
-        special[escape]=special[' ']=special['(']=special[')']=1;
+        special[(unsigned)escape]=special[(unsigned)' ']=special[(unsigned)'(']=special[(unsigned)')']=1;
         needs_escape=false;
     }
     ~TrioNamer()
@@ -71,8 +71,8 @@ struct TrioNamer {
     void append_safe(char *&p,char const* str)
     {
         for (; *str && p<limit;++str ) {
-            if (special[*p++ = *str])
-                needs_escape=true;
+          if (special[(unsigned)(*p++ = *str)])
+            needs_escape=true;
         }
 
         if ( *str )
