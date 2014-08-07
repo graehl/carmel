@@ -40,6 +40,13 @@ rmforever() {
     rm $foreverdir/*.run.*
     forc rm -rf /var/tmp/regtest*
 }
+cr-test() {
+    (
+        c-c
+        b-r
+        c-test "$@"
+    )
+}
 forever() {
     mkdir -p $foreverdir
     foreverlast=$foreverdir/`filename_from "$@"`
@@ -470,7 +477,7 @@ bakxmt() {
             forcelink ../$hash/$b $pub/$change/$b
         done
         grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
-        rmrpath $bindir
+        rmrpath $bindir || true
         cat $bindir/README
         local pub2=~/bugs/leak
         if [[ $1 ]] ; then
@@ -1834,6 +1841,11 @@ cto() {
 gerrit2local() {
     perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;print' "$@"
 }
+nblanklines() {
+    if grep -c -q ^$ "$@"; then
+        echo `grep -c ^$ "$@"` "blank lines in $*"
+    fi
+}
 ccp() {
     #uses: $chost for scp
     local n=$#
@@ -1862,6 +1874,7 @@ ccp() {
                 #echo "cd $xmtx;git add $p"
                 #git add $p
                 preview "$dst"
+                nblanklines "$dst"
             done
         fi
     )
@@ -2103,6 +2116,7 @@ yreg() {
     # -t 2
     (set -e;
         bdir=${bdir:-$xmtx/${BUILD:=Debug}}
+        export LD_LIBRARY_PATH=$bdir:$bdir/xmt:$bdir/xmt/lib:$LD_LIBRARY_PATH
         local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
         cd $xmtx/RegressionTests
         THREADS=${MAKEPROC:-`ncpus`}
@@ -2132,6 +2146,10 @@ yreg() {
         if [[ ${monitor:-} ]] ; then
             REGTESTPARAMS+=" --monitor-stderr"
         fi
+        if [[ ${xmtbin:-} ]] ; then
+            args+=" --xmt-bin $xmtbin"
+        fi
+
         local python=${python:-python}
         if [[ ${1:-} ]] ; then
             local f=$1
@@ -2354,10 +2372,12 @@ xmtm() {
         for t in $tests; do
             ( set -e;
                 echo $t
+                ts=
+                [[ $BUILD = Debug ]] || ts=Release
                 td=$(dirname $t)
                 tn=$(basename $t)
                 testexe=$td/Test$tn
-                [[ -x $testexe ]] || testexe=$t/Test$t
+                [[ -x $testexe ]] || testexe=$t/Test$tn
                 $testgdb $testexe ${testarg:---catch_system_errors=no} 2>&1 | tee $td/$tn.log
             )
         done
@@ -5001,6 +5021,18 @@ runc() {
     ssh $chost "$*"
 }
 enutf8=en_US.UTF-8
+c-l() {
+    ssh $chost "$@"
+}
+gl() {
+    chost=c-graehl c-l "$@"
+}
+jl() {
+    chost=c-jmay c-l "$@"
+}
+kl() {
+    chost=c-skohli c-l "$@"
+}
 sc() {
     ssh $chost "$@"
     #        LANG=$enutf8 mosh --server="LANG=$enutf8 mosh-server" $chost "$@"
@@ -5840,6 +5872,7 @@ buildgraehl() {
     local d=$1
     local v=$2
     (set -e
+        set -x
         pushd $GRAEHLSRC/$1
         #export GRAEHL=$GRAEHLSRC
         #export TRUNK=$GRAEHLSRC

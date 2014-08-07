@@ -382,6 +382,22 @@ struct small_vector {
     std::memmove(to,from,n*sizeof(T));
   }
 
+  /// like C++11 move but explicit
+  void steal(small_vector &o) {
+    if (data.stack.sz_ <= kMaxInlineSize) {
+      data.stack.sz_ = o.data.stack.sz_;
+      // unsigned instead of size_type because kMaxInlineSize is unsigned
+      for (unsigned i = 0; i < kMaxInlineSize; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
+    } else {
+      std::memcpy(this, &o, sizeof(o));
+    }
+    o.clear_nodestroy();
+  }
+
+  friend inline void moveAssign(small_vector &to, small_vector &from) {
+    to.steal(from);
+  }
+
   small_vector & operator=(small_vector const& o) {
     if (&o == this) return *this;
     if (data.stack.sz_ <= kMaxInlineSize) {
