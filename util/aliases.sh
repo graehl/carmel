@@ -2,6 +2,13 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
+set -b
+shopt -s checkwinsize
+shopt -s cdspell
+
+export LESS='-d-e-F-X-R'
+HOST=${HOST:-`hostname`}
+
 case $(uname) in
     Darwin)
         lwarch=Apple
@@ -2148,6 +2155,9 @@ yreg() {
         fi
         if [[ ${xmtbin:-} ]] ; then
             args+=" --xmt-bin $xmtbin"
+        fi
+        if [[ ${xmtdir:-} ]] ; then
+            args+=" --xmt-bin ~/pub/$xmtdir/xmt.sh"
         fi
 
         local python=${python:-python}
@@ -5331,41 +5341,6 @@ safepath() {
         abspath "$@"
     fi
 }
-upa() {
-    (pushd ~/t/graehl/util;
-        svn update *.sh
-    )
-    sa
-}
-comg() {
-    (pushd ~/t/graehl/
-        svn commit -m "$*"
-    )
-}
-comt() {
-    (pushd ~/t/
-        svn commit -m "$*"
-    )
-}
-upd() {
-    for f; do
-        blob_update $f
-    done
-}
-new() {
-    for f; do
-        blob_new_latest $f
-    done
-}
-ffox() {
-    pkill firefox
-    find ~/.mozilla \( -name '*lock' -o -name 'places.sqlite*' \) -exec rm {} \;
-        firefox "$@"
-}
-rpdf() {
-    cd /tmp
-    scp hpc.usc.edu:$1 . && acrord32 `basename $1`
-}
 alias rot13="tr '[A-Za-z]' '[N-ZA-Mn-za-m]'"
 cpdir() {
     local dest
@@ -5660,27 +5635,6 @@ ofcom() {
     pushd ~/t/graehl/gextract/optfunc
     gcom "$@"
 }
-obut0() {
-    rm -rf 1btn0000; . master.sh; rm -rf *0001; casub 1btn0000
-}
-but0() {
-    for f in *1btn0000; do
-        echo $f
-        sleep 3
-        casub $f
-    done
-}
-chimira0() {
-    local l=chi
-    local g=$1
-    echo genre=$g
-    if [ "$g" ] ; then
-        local m=$l-mira0000
-        exh rm -rf $m
-        . mira.sh $g-tune
-        casub $m
-    fi
-}
 
 pwdh() {
     local d=`pwd`
@@ -5736,32 +5690,7 @@ cdw()
 {
     cd $WFHOME/workflow/tune
 }
-mirasums() {
-    for d in ${*:-.}; do
-        find $d -name '*mira0*' -print -exec mira-summary.sh {} \;
-    done
-}
-miras() {
-    local a=""
-    for d in ${*:-.}; do
-        a="$a $d/*mira*"
-    done
-    miradirs $a
-}
-miradirs() {
-    for d in ${*:-*mira000}; do
-        if [ -d $d ] ; then
-            echo -n $d
-            if grep -q /home/nlg-02/data07/eng/agile-p4/lm $d/record.txt; then
-                echo -n " AGILE LM"
-            fi
-            echo
-            mira-summary.sh $d
 
-            echo
-        fi
-    done
-}
 ln0() {
     mkdir -p $2
     pushd $2
@@ -5808,35 +5737,6 @@ csub() {
 casubr() {
     casub `ls -dtr *00* | tail -1` "$@"
 }
-kajobs() {
-    for d in $1/*0000; do
-        echo killing: $d
-        kjobs $d
-    done
-}
-kalljobs() {
-    for d in "$@"; do
-        kajobs $d
-    done
-}
-progress() {
-    [ "$3" ] && pushd $3
-    local jd=*decode-iter-$2-${1}0000
-    rm -rf $jd
-    . progress.sh $1 $2
-    casub $jd
-    [ "$3" ] && popd
-    true
-}
-cprogress() {
-    [ "$3" ] && pushd $3
-    local jd=chi-decode-$2-${1}0000
-    exh rm -rf $jd
-    . progress.sh $1 $2
-    casub $jd
-    [ "$3" ] && popd
-    true
-}
 
 [[ ${ONHPC:-} ]] && alias qme="qstat -u graehl"
 alias gpi="grid-proxy-init -valid 99999:00"
@@ -5852,21 +5752,8 @@ qsi2() {
 }
 #variant=""
 #
-DTOOLS=$HOME/isd/decode-tools-trunk/
-sbmtargs="$variant toolset=gcc -j4 --prefix=$DTOOLS"
 alias pjam="bjam --prefix=$FIRST_PREFIX -j4"
 alias sjam="bjam $sbmtargs"
-buildpipe() {
-    mkdir -p $DTOOLS
-    pushd ~/t; svn update; bjam $sbmtargs install-pipeline ; popd
-    pushd $DTOOLS
-    ln -sf . x86_64; ln -sf . tbb
-    cp $FIRST_PREFIX/lib/libtbb {,malloc}.* lib
-    popd
-}
-buildxrs() {
-    pushd ~/t; svn update; bjam $sbmtargs utilities//install ; popd
-}
 alias grepc="$(which grep) --color -n"
 buildgraehl() {
     local d=$1
@@ -5898,19 +5785,6 @@ buildgraehl() {
 }
 buildcar() {
     buildgraehl carmel "$@"
-    # pushd ~/t/graehl/carmel
-    # [ "$noclean" ] || make clean
-    # set -x
-    # make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= -j$MAKEPROC
-    # make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib" BOOST_SUFFIX= install
-    # set +x
-    # popd
-    # if [ "$1" ] ; then
-    # pushd $FIRST_PREFIX/bin
-    # cp carmel carmel.$1
-    # cp carmel.static carmel.$1
-    # popd
-    # fi
 }
 buildfem() {
     buildgraehl forest-em
@@ -5931,17 +5805,12 @@ PUZZLEBASE=~/puzzle
 MYEMAIL='graehl@gmail.com'
 export EMAIL=$MYEMAIL
 PUZZLETO='1051962371@facebook.com'
-#PUZZLETO=$MYEMAIL
 function testp()
 {
     pw=`pwd`
     ~/puzzle/test.pl ./`basename $pw` test.expect
 }
 
-function ocb()
-{
-    OCAMLLIB=/usr/lib/ocaml /usr/bin/ocamlbrowser &
-}
 function puzzle()
 {
     (
@@ -6001,6 +5870,7 @@ function spuzzle()
         set +x
     )
 }
+
 rgrep()
 {
     local a=$1
@@ -6012,14 +5882,14 @@ rgrep()
     fi
 }
 
-function frgrep()
+frgrep()
 {
     local a=$1
     shift
     find . -exec fgrep "$@" "$a" {} \; -print
 }
 
-function findpie ()
+findpie()
 {
     local pattern=$1
     shift
@@ -6062,52 +5932,6 @@ diffother1() {
 lastlog() {
     "$@" 2>&1 | tee ~/tmp/lastlog
 }
-
-msum() {
-    local wh=$1
-    shift
-    mkdir -p sum
-    local out=$wh
-    [ "$*" ] && out=$wh.`filename_from "$@"`
-    showvars wh out
-    echo ~/t/utilities/summarize_multipass.pl -l $wh.log data/$wh.nbest -csv sum/$out.csv "$@"
-    ~/t/utilities/summarize_multipass.pl -l $wh.log data/$wh.nbest -csv sum/$out.csv "$@" 2>&1 | tee sum/$out.sum
-}
-
-function build_carmel
-{
-    cd $SBMT_TRUNK/graehl/carmel
-
-    nproc_default=3
-    [ "$h" = cage ] && nproc_default=7
-    nproc=${nproc:-$nproc_default}
-    local archf
-    local args
-    args=""
-    [ "$install" ] && $args="install"
-    local install=${install:-$FIRST_PREFIX}
-    [ -d "$install" ] || install=$HOME/isd/$install
-    buildsub=${buildsub:-$ARCH}
-    [ "$linux32" -o "$buildsub" = linux ] && archf="-m32 -march=i686"
-    BUILDSUB=$buildsub INSTALL_PREFIX=$install ARCH_FLAGS=$archf make -j $nproc $args "$@"
-}
-
-
-function sbmt_test
-{
-    gdb --args $SBMT_TEST
-}
-
-function hoard()
-{
-    export LD_PRELOAD="$FIRST_PREFIX/lib/libhoard.so"
-}
-
-function nohoard()
-{
-    export LD_PRELOAD=
-}
-
 
 perlf() {
     perldoc -f "$@" | cat
@@ -6171,54 +5995,6 @@ alias massif="valgrind --tool=massif --depth=5"
 gpp() {
     g++ -x c++ -E "$@"
 }
-alias jane="ssh 3jane.dyndns.org -l jonathan"
-alias shpc="ssh $HPCHOST -l graehl -X"
-alias sh2="ssh $HPC64 -l graehl -X"
-alias snlg="ssh nlg0.isi.edu -l graehl"
-
-alias rs="rsync --size-only -Lptave ssh"
-
-function hscp
-{
-    if [ $# = 1 ] ; then
-        from=$1
-        to=.
-    else
-        COUNTER=1
-        from=''
-        while [ $COUNTER -lt $# ]; do
-            echo $from
-            echo ${!COUNTER}
-
-            from="$from ${!COUNTER}"
-            let COUNTER=COUNTER+1
-        done
-        to=${!#}
-    fi
-    echo scp \"$from\" $shpchost:$to
-    scp -r $from $shpchost:$to
-}
-
-function hrscp
-{
-    if [ $# = 1 ] ; then
-        from=$1
-        to=.
-    else
-        COUNTER=1
-        from=''
-        while [ $COUNTER -lt $# ]; do
-            echo $from
-            echo ${!COUNTER}
-
-            from="$from ${!COUNTER}"
-            let COUNTER=COUNTER+1
-        done
-        to=${!#}
-    fi
-    echo scp \"$shpchost:$from\" $to
-    scp -r $shpchost:$from $to
-}
 
 function hrs
 {
@@ -6251,21 +6027,11 @@ qsd() {
 }
 
 
-function xe
-{
-    xemacs "$@" &
-    disown
-}
-
 function xt
 {
     xterm -sb -ls -fn fixed "$@" &
     disown
 }
-HOST=${HOST:-`hostname`}
-if [ "$HOST" = twiki ] ; then
-    alias sudo=/local/bin/sudo
-fi
 
 function rebin
 {
@@ -6273,29 +6039,14 @@ function rebin
     for f in ../dev/tt/scripts/* ; do ln -s $f . ; done
     popd
 }
-alias pd=pdq
 getattr() {
     attr=$1
     shift
     perl -ne '/\Q'"$attr"'\E=\ {\ {\ {([^}]+)\}\}\}/ or next;print "$ARGV:" if ($ARGV ne '-'); print $.,": ",$1,"\n";close ARGV if eof' "$@"
 }
-#,qsh.pl,checkjobs.pl
-alias commh="pdq ~/isd/hints;cvs update && comml;popd"
-alias sb=". ~/.bashrc"
 alias sa=". ~/u/aliases.sh"
 alias sbl=". ~/u/bashlib.sh"
 alias sl=". ~/local.sh"
-export PBSQUEUE=isi
-
-cp_sbmt() {
-    local to=$1
-    local sub=$2
-    [ "$sub" ] && sub="/$sub"
-    if [ "$to" ] ; then
-        echo2 copying trunk to $to
-        svn cp -m "trunk->$to" $SBMT_SVNREPO/trunk$sub $SBMT_SVNREPO/$to
-    fi
-}
 
 tag_module() {
     local ver=$1
@@ -6324,19 +6075,8 @@ tag_mini() {
     tag_module "$@"
 }
 
-set -b
-shopt -s checkwinsize
-shopt -s cdspell
 
-hpcquota() {
-    ssh almaak.usc.edu /opt/SUNWsamfs/bin/squota -U graehl
-}
-
-
-export LESS='-d-e-F-X-R'
-
-
-function lastbool
+lastbool()
 {
     echo $?
 }
@@ -6433,32 +6173,16 @@ function cleanr ()
 {
     find . -name '*~' -exec rm {} \;
 }
-#function perl1 {
-# local libgraehl=~/isd/hints/libgraehl.pl
-# perl -e 'require "'$libgraehl'";' "$@" -e ';print "\n";'
-#}
 alias perl1="perl -e 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";' -e "
 alias perl1p="perl -e 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END {println();}' -e "
 alias perl1c="perl -ne 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END {while ((\$k,\$v)=each \%c) { print qq {\$k: \$v };println();}' -e "
 alias clean="rm *~"
-alias nitro="ssh -1 -l graehl nitro.isi.edu"
-alias hpc="ssh -1 -l graehl $HPCHOST"
-alias nlg0="ssh -1 -l graehl nlg0.isi.edu"
-alias more=less
-alias jo="jobs -l"
 
 alias cpup="cp -vRdpu"
 # alias hem="pdq ~/dev/tt; hscp addfield.pl forest-em-button.sh dev/tt; popd"
 
 # alias ls="/bin/ls"
 RCFILES=~/isd/hints/{.bashrc,aliases.sh,bloblib.sh,bashlib.sh,add_paths.sh,inpy,dir_patt.py,.emacs}
-alias hb="scp $RCFILES graehl@$HPCHOST:isd/hints"
-alias fb="scp $RCFILES graehl@false.isi.edu:isd/hints"
-alias dp=`/usr/bin/which d 2>/dev/null`
-alias d="d -c-"
-sd="~/dev/syntax-decoder/src"
-sds=$sd/../scripts
-alias hsds="coml $sds;hup $sds"
 e() {
     local host=$1
     shift
@@ -6476,69 +6200,9 @@ cd $p
 EOF
     #"/bin/bash"' --login -c "'"$*"'"'
 }
-
-enlg() {
-    ehost enlg "$@"
-}
 function homepwd
 {
     perl -e '$_=`pwd`;s|^/cygdrive/z|~|;print'
-}
-eerdos() {
-    local p=`homepwd`
-    ssh -t erdos.isi.edu -l graehl <<EOF
-cd $p
-"$@"
-EOF
-}
-estrontium() {
-    local p=`homepwd`
-    ssh -t strontium.isi.edu -l graehl <<EOF
-cd $p
-"$@"
-EOF
-}
-ercage() {
-    local p=`homepwd`
-    # ssh -t cage.isi.edu -l graehl <<EOF
-    rsh -l graehl cage bash <<EOF
-cd $p
-"$@"
-EOF
-}
-egrieg() {
-    local p=`homepwd`
-    ssh -t grieg.isi.edu -l graehl <<EOF
-cd $p
-"$@"
-EOF
-}
-ecage() {
-    local p=`homepwd`
-    ssh -t cage.isi.edu -l graehl <<EOF
-cd $p
-$*
-EOF
-}
-epro() {
-    local p=`homepwd`
-    ssh -t prokofiev.isi.edu -l graehl <<EOF
-cd $p
-$*
-EOF
-}
-pro() {
-    ssh prokofiev.isi.edu -l graehl
-}
-dhelp() {
-    decoder --help 2>&1 | grep "$@"
-}
-
-grepnpb() {
-    catz "$@" | egrep '^NPB\(x0:NN\) -> x0 \#'
-}
-perfnbest() {
-    perfs "$@" | grep 'best derivations in '
 }
 tarxzf() {
     catz "$@" | tar xvf -
@@ -6549,7 +6213,6 @@ wxzf() {
     tarxzf $b
 }
 
-
 pdq() {
     local err=`mktemp /tmp/pdq.XXXXXX`
     pushd "$@" 2>$err || cat $err 1>&2
@@ -6557,57 +6220,6 @@ pdq() {
 }
 pawd() {
     perl1p "print &abspath_from qw(. . 1)"
-}
-comsd() {
-    com ~/dev/syntax-decoder/"$@"
-}
-comtt() {
-    coml ~/dev/shared
-    coml ~/dev/tt
-    coml ~/dev/xrsmodels
-}
-comh() {
-    coml ~/isd/hints
-}
-comxrs() {
-    coml ~/dev/xrsmodels
-    coml ~/isd/hints
-    coml ~/dev/shared
-}
-comdec() {
-    comh
-    comsd
-    comsd
-    comxrs
-}
-comall() {
-    comh
-    comsd
-    comtt
-}
-redodecb() {
-    redo decoder/decoder-bin
-}
-redodec() {
-    redo bashlib
-    redo libgraehl
-    redo decoder
-}
-rdec() {
-    comdec
-    ehpc redodec
-}
-rdecs() {
-    coml ~/dev/syntax-decoder/scripts
-    ehpc redo decoder
-}
-rdecb() {
-    coml ~/dev/syntax-decoder/src
-    ehpc redo decoder/decoder-bin
-}
-rtt() {
-    enlg comtt
-    ehpc redo forest-em
 }
 alias sl=". ~/isd/hints/bashlib.sh"
 alias hh="comh;huh"
@@ -6663,9 +6275,6 @@ if [[ ${ONCYGWIN:=} ]] ; then
         sshwrap scp "$@"
     }
 
-    cscp() {
-        scp -2 $1 graehl@cage.isi.edu:/users/graehl/$2
-    }
 fi
 
 
