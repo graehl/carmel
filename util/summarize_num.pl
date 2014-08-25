@@ -58,8 +58,8 @@ show_opts(@opts);
 
 &argvz;
 
-my $loose_num_match=qr/((?:[+\-]|\b)[0123456789]+(?:[.][0123456789]*(?:[eE][0123456789\-+]*)?)?)\b/;
-
+# my $loose_num_match=qr/((?:[+\-]|\b)[0123456789]+(?:[.][0123456789]*(?:[eE][0123456789\-+]*)?)?)\b/;
+my $loose_num_match=qr/([+\-]?[0123456789]+(?:[.][0123456789]*(?:[eE][0123456789\-+]*)?)?)/;
 my $RAW=openz_out($raw_out) if $raw_out;
 
 my $l=0;
@@ -71,7 +71,7 @@ while(<>) {
         last;
     } else {
         if ($raw_out) {
-            while (/$loose_num_match/g) {
+            while (/$loose_num_match/go) {
                 print $RAW $1,"\t" if $raw_out;
             }
             print $RAW "\n";

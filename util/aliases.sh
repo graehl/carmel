@@ -5,10 +5,122 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 set -b
 shopt -s checkwinsize
 shopt -s cdspell
-
+CT=${CT:-`echo ~/c/ct/main`}
+CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
+CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
+[[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 HOST=${HOST:-`hostname`}
+bmdb() {
+(
+cd ~/c/mdb/libraries/liblmdb/
+export TERM=dumb
+dbroot=$XMT_EXTERNALS_PATH/libraries/db-5.3.15
+make mdb_from_db CC=${CC:-gcc} OPT="-O3" XCFLAGS="-I$dbroot/include" LDFLAGS+="-L$dbroot/lib" LDLIBS="-ldb"
+#gdb --fullname --args ~/c/mdb/libraries/liblmdb/mdb_from_db -T /tmp/foo.db
+if [[ "$*" ]] ; then
+/Users/graehl/c/mdb/libraries/liblmdb/mdb_from_db "$@"
+fi
+#mdb_dump -n -a /tmp/foo.mdb
+)
+}
+gitshowcommit() {
+    git show | head -1 || true
+}
+gitrecordcommit() {
+    gitshowcommit > ORIGIN.git.commit
+}
+macmdb() {
+(
+set -x
+set -e
+mdb=c/mdb/libraries/liblmdb/
+lmdb=c/lmdb
+cd ~
+cp $mdb/*.c $lmdb/mdb
+cd ~/c/mdbbuild
+cmake -G 'Unix Makefiles' ../lmdb && make && cp *mdb* ~/bin
+ll=$XMT_EXTERNALS_PATH/libraries/lmdb
+lib=$ll/lib
+bin=$ll/bin
+mkdir -p $lib
+mkdir -p $bin
+cp *.dylib *.a $lib
+cp mdb_* $bin
+cd $lib
+git add *.dylib *.a
+cd $bin
+git add mdb_*
+)
+}
+upmdb() {
+(
+set -x
+set -e
+macmdb
+HOME=$(echo ~)
+c=$(echo ~/c)
+mdb=c/mdb/libraries/liblmdb/
+cd $HOME/$mdb
+git commit --allow-empty -a -C HEAD --amend
+git pull --rebase
+gitrecordcommit
+libver=lmdb
+smdb=c/xmt-externals-source/$libver
+cp ORIGIN.* *.c *.h $HOME/$smdb/mdb/
+cd $HOME/$smdb/mdb
+#git pull --rebase
+git add *.c *.h ORIGIN.*
 
+
+xlib=$XMT_EXTERNALS_PATH/../FC12/libraries
+slib=$XMT_EXTERNALS_PATH/../Shared/cpp
+ll=$xlib/lmdb/lib
+bl=$xlib/lmdb/bin
+mkdir -p $ll
+mkdir -p $bl
+chost=c-mdreyer
+cb=c/build-$libver
+rm -f $HOME/$smdb/*.o
+rm -f $HOME/$smdb/*.a
+scp -r $HOME/$smdb $chost:c/
+c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make"
+scp $chost:$cb/\*.so  $ll
+scp $chost:$cb/\*.a  $ll
+scp $chost:$cb/mdb_\*  $bl
+incl=$slib/libraries/lmdb/include
+cp $HOME/$smdb/mdb/lmdb.h $incl
+cd $ll
+#git check-ignore -v *.so *.a || true
+git add *.so *.a
+cd $bl
+git add mdb_*
+git add $incl/*.h
+[[ $mend ]] && mend
+)
+}
+
+
+yumshow() {
+    rpm -ql "$@"
+}
+findnongit() {
+    find .
+}
+gitapplyforce() {
+(
+set -e
+    echo $1 ${2?gitapplyforce REV1 REV2}
+    forcediff=`mktemp ~/tmp/gitapplyforce.$1-$2.XXXXXX`
+    set -x
+    git diff $1 $2 --binary > $forcediff
+    git apply $forcediff
+    git add -A
+)
+}
+cerr() {
+  tailn=30 save12 ~/tmp/cerr preview `find . -name '*.err*'`
+}
 case $(uname) in
     Darwin)
         lwarch=Apple
@@ -20,12 +132,90 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
+fireinstall() {
+adb stop-server
+adb start-server
+adb connect 192.168.1.113
+adb install "$@"
+}
+jcp() {
+    chost=c-jmay ccp "$@"
+}
+justbleu() {
+    perl -ne 'print "$1-ref %BLEU: $2 (len=$3)\n" if (/BLEUr(\d+)n\S+ (\S+) .*lengthRatio: (\S+)/)' "$@"
+}
+shortenbleu() {
+    perl -pe '$_ = "$1-ref %BLEU: $2 (len=$3)\n" if (/BLEUr(\d+)n\S+ (\S+) .*lengthRatio: (\S+)/)' "$@"
+}
+aganon() {
+    ag --no-numbers --nogroup "$@" | perl -pe 's/^\S+://'
+}
+printarg1() {
+    echo -n "$1: "
+}
+perseg() {
+    perl -ne 'if (m{Total: processed.*taking (\S+)s .* per segment}) { print "$1 sec/seg\n" }' "$@"
+}
+avgperseg() {
+    perseg "$@" | summarize_num.pl --prec 5 --avgonly  2>/dev/null
+}
+showtune() {
+    local report=tunereport.`filename_from "@@"`
+(
+    local tunedir
+    for tunedir in "$@"; do
+        #$tunedir/tune_slot/tune_work/report.txt
+        echo -n "$tunedir - eval:"
+        justbleu  $tunedir/evalresults/test-results.txt
+    done
+    for tunedir in "$@"; do
+        echo -n "$tunedir - eval: "
+        avgperseg $tunedir/eval_slot/trans_work/translate_xmt/test/condor/translate*.err.*
+        echo -n '            - tune:'
+        avgperseg $tunedir/tune_slot/condor/tune/iter_0/condor_decode_job/tune*.err.*
+    done
+) | tee $tunereport
+preview $tunereport
+}
+cstrings() {
+    ldd "$@"
+    nm "$@" | c++filt
+}
+cprs() {
+    if [[ $2 ]] ; then
+        set -x
+        cp -Rs `abspath "$1"` $2
+        set +x
+    fi
+}
+sedlns() {
+    perl -pne '
+BEGIN { $from=shift; $to=shift; }
+chomp; $f=$_;$l=readlink($_);print "\n$f@ -> $l\n";
+if ($f && $l =~ s{$from}{$to}oe) { @a=("ln", "-sfT", $l, $f); print join(" ",@a),"\n"; $ENV{dryrun} || system(@a); }
+' "$@"
+}
+sedlinks() {
+    find . -type l | sedlns "$@"
+}
 gitcherrytheirs() {
     git cherry-pick --strategy=recursive -X theirs "$@"
 }
+csuf() {
+    echo ${chost#c-}
+}
+m12() {
+    chost=c-mdreyer c12 "$@"
+}
+j12() {
+    chost=c-jmay c12 "$@"
+}
+y12() {
+    chost=c-ydong c12 "$@"
+}
 c12() {
     (
-        local o=$(echo ~/tmp/c12)
+        local o=$(echo ~/tmp/c12.`csuf`)
         out12 "$o" c-s "$@"
         preview "$o"
     )
@@ -105,7 +295,7 @@ cpadd() {
     git add $2
 }
 vg12() {
-    save12 ~/tmp/vg12 c-s vg"$@"
+    save12 ~/tmp/vg12.`csuf` c-s vg"$@"
 }
 diffs() {
     git diff ${1:-HEAD^1} --stat
@@ -127,7 +317,7 @@ mgif() {
         set -x
         set -e
         cd ~/downloads
-        mv *.gif ~/movies/_g/ || true
+        mv *.gif ~/email/_g/ || true
         rm *' (1)'.jp* || true
         for f in png jpg jpeg; do
             mv *.$f ~/dropbox/r/ || true
@@ -399,7 +589,8 @@ changeid() {
     echo $cid
 }
 rmrpath() {
-    $xmtx/scripts/rpath.sh strip "$@"
+    perl $xmtx/scripts/rpath.pl strip ${1:-.}
+    perl $xmtx/scripts/rpath.pl show ${1:-.}
 }
 forcelink() {
     local usage="usage: forcelink src trg where trg is not a directory"
@@ -415,7 +606,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer"
+xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize"
 xmtpub=$(echo ~/pub)
 
 rmxmt1() {
@@ -711,11 +902,14 @@ c-s() {
     local fwdenv="gccfilter=${gccfilter:-} BUILD=${BUILD:-}"
     local pre=". ~/.e"
     local cdto=${cdto:-$(remotehome=/home/graehl trhomedir "$(pwd)")}
+    local i=
+    for i in `seq 1 ${crepeat:-1}`; do
     if false && [[ $ontunnel ]] ; then
         sshvia $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     else
         sshlog $chost "$pre; $fwdenv $(trhome "$trremotesubdir" "$trhomesubdir" "$@")"
     fi
+    done
 }
 k-s() {
     (k-c; c-s "$@")
@@ -750,6 +944,12 @@ d-with() {
 }
 k-with() {
     (k-c; c-with "$@")
+}
+y-with() {
+    chost=c-ydong c-with "$@"
+}
+m-with() {
+    chost=c-mdreyer c-with "$@"
 }
 j-with() {
     (j-c; c-with "$@")
@@ -2115,6 +2315,11 @@ pytest() {
     fi
     TERM=$TERM py.test --assert=reinterp "$@"
 }
+yregs() {
+    for f in "$@"; do
+        yreg $f || return 1
+    done
+}
 yreg() {
     if [[ ${xmtShell:-} ]] ; then
         makeh xmtShell
@@ -2127,7 +2332,7 @@ yreg() {
         local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
         cd $xmtx/RegressionTests
         THREADS=${MAKEPROC:-`ncpus`}
-        MINTHREADS=${MINTHREADS:-2} # unreliable with 1
+        MINTHREADS=${MINTHREADS:-1} # unreliable with 1
         MAXTHREADS=8
         if [[ $THREADS -gt $MAXTHREADS ]] ; then
             THREADS=$MAXTHREADS
@@ -2153,24 +2358,39 @@ yreg() {
         if [[ ${monitor:-} ]] ; then
             REGTESTPARAMS+=" --monitor-stderr"
         fi
+        xmtbins=
         if [[ ${xmtbin:-} ]] ; then
-            args+=" --xmt-bin $xmtbin"
+            xmtbins+=",$xmtbin"
         fi
+        xmtpubdir=${xmtpubdir:-`echo ~/pub/`}
         if [[ ${xmtdir:-} ]] ; then
-            args+=" --xmt-bin ~/pub/$xmtdir/xmt.sh"
+            xmtbins+=",$xmtpubdir/$xmtdir/xmt.sh"
         fi
-
+        if [[ ${xmtdirs:-} ]] ; then
+            for f in $xmtdirs; do
+                xmtbins+=",$xmtpubdir/$f/xmt.sh"
+            done
+        fi
         local python=${python:-python}
         if [[ ${1:-} ]] ; then
-            local f=$1
-            if [[ -d $1 ]] ; then
-                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS "$@"
-            elif [[ -f $1 ]] || [[ ${1#reg} != $1 ]] ; then
-                shift
-                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y "$(basename $f)"\* "$@"
+            local regr=$1
+            shift
+            for f in "$@"; do
+                xmtbins+=",$xmtpubdir/$f/xmt.sh"
+            done
+            if [[ $xmtbins ]] ; then
+                args+=" --xmt-bin $xmtbins"
+            fi
+            if [[ -d $regr ]] ; then
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS "$regr"
             else
-                shift
-                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y reg\*$f\*ml "$@"
+                if ! [[ -f $regr ]] ; then
+                    regr=${regr#regtest-}
+                    regr=${regr%.yml}
+                    regr=regtest-$regr.yml
+                fi
+                regr=$(basename $regr)
+                save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS -y $regr
             fi
         else
             save12 $logfile $python ./runYaml.py $args $REGTESTPARAMS
@@ -2285,7 +2505,7 @@ jen() {
     echo
     catz $uniqfails >> $log.fails
     echo "#fails = $nfails" >> $log.fails
-    echo overk $log
+    echo overc $log
 }
 
 
@@ -2637,7 +2857,7 @@ savedo() {
     done
 }
 sherp() {
-    local CT=${CT:-~/c/ct/main}
+    local CT=${CT:-`echo ~/c/ct/main`}
     cd `dirname $1`
     local apex=`basename $1`
     if [[ -f $apex.apex ]] ; then
@@ -2648,7 +2868,12 @@ sherp() {
         echo rm -rf $dir
         rm -rf $dir
     fi
-    $CT/sherpa/App/sherpa --apex=$apex "$@"
+    (
+        shift
+        set -x
+        PATH=`dirname $CTPERL`:$PATH $CTPERL $CTPERLLIB $CT/sherpa/App/sherpa --apex=$apex "$@"
+        sleep 3
+    )
 }
 resherp() {
     cleancondor=1 sherp "$@"
@@ -3031,9 +3256,9 @@ linjen() {
     ctitle jen "$@"
     (set -e;
         c-s forceco $branch
-        log=~/tmp/linjen.$chost.$branch
+        log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
-        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.$chost.$branch | filter-gcc-errors
+        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -3410,7 +3635,7 @@ killbranch1() {
     git branch -D "$1" || true
 }
 racer=$(echo $xmtx)
-if [[ $HOST = c-ydong ]] ; then
+if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/tools/cmake/bin:$PATH
 fi
 GRAEHL_INCLUDE=$xmtx/xmt
@@ -3506,6 +3731,7 @@ overt() {
         rm -f $gsh/$f
         cp $f $gsh/$f
     done
+    ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
     pushd ~/g
 }
 commt()
@@ -4377,6 +4603,11 @@ substyml() {
         substi "$@" $(ag -g '\.ya?ml$')
     )
 }
+substxml() {
+    (
+        substi "$@" $(ag -g '\.xml$')
+    )
+}
 substcmake() {
     (
         substi "$@" $(ack --cmake -f)
@@ -5042,6 +5273,9 @@ jl() {
 }
 kl() {
     chost=c-skohli c-l "$@"
+}
+ml() {
+    chost=c-mdreyer c-l "$@"
 }
 sc() {
     ssh $chost "$@"

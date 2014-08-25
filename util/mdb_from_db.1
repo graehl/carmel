@@ -1,0 +1,107 @@
+.TH MDB_FROM_DB 1 "2014/06/20" "LMDB 0.9.14"
+.\" Copyright 2014 Howard Chu, Symas Corp. All Rights Reserved.
+.\" Copying restrictions apply.  See COPYRIGHT/LICENSE.
+.SH NAME
+mdb_from_db \- LMDB environment translate from Berkeley DB environment tool
+.SH SYNOPSIS
+.B mdb_from_db
+.BR \ berkeley.db
+.BR \ envpath
+[\c
+.BR \-V ]
+[\c
+.BR \-n ]
+[\c
+.BI \-s \ subdb\fR]
+[\c
+.BI \-b \ batchsize\fR]
+[\c
+.BI \-h \ berkeley-db-homedir\fR]
+[\c
+.BR \-N ]
+[\c
+.BR \-T ]
+.SH DESCRIPTION
+The
+.B mdb_from_db
+utility reads from a Berkeley DB environment
+.BR berkeley.db
+and from_dbs all its subdatabases, or just the specified
+.BR subdb
+, into the
+LMDB environment
+.BR envpath .
+
+Additionally,
+.B mdb_from_db
+may write in the
+.B -T
+plain text format understood by
+.BR mdb_load (1)
+which can only understand a single subdatabase at a time.
+
+.SH OPTIONS
+.TP
+.BR \-V
+Write the library version number to the standard output, and exit.
+.TP
+.BR \-n
+From_Db an LMDB database which does not use subdirectories.
+.TP
+.BR \-s \ subdb
+From_Db a specific subdatabase. If no database is specified, data is from_dbed into the main database.
+.TP
+.BR \-m \ mapMB
+Create mdb with .B mapMB megabytes maximum size (probably won't use this much physical disk). Default is 2048 (2GB)
+.TP
+.BR \-N
+Don't overwrite existing records when from_dbing into an already existing database; just skip them.
+.TP
+.BR \-b \ sz
+Commit LMDB records
+.B sz
+at a time.
+.TP
+.BR \-h \ db_homedir
+Treat input db path as relative to this homedir (see the Berkeley DB docs). Default is '.'
+.TP
+.BR \-B
+Perform a nonblocking Berkeley DB open.
+.TP
+.BR \-T
+Write the key/data into a single simple text file (stderr messages
+would allow segmenting the output into separate files for each
+subdatabase). The input will be paired lines of text, where the first
+line of the pair is the key item, and the second line of the pair is
+its corresponding data item. If more than one database is read then
+refer to the counts reported on stderr.
+
+A simple escape mechanism, where newline and backslash (\\) characters
+are special, is applied to the text input. Newline characters are
+interpreted as record separators.  Backslash characters in the text
+will be interpreted in one of two ways: If the backslash character
+precedes another backslash character, the pair will be interpreted as
+a literal backslash. If the backslash character precedes any other
+character, the two characters following the backslash will be
+interpreted as a hexadecimal specification of a single character; for
+example, \\0a is a newline character in the ASCII character set.
+
+For this reason, any backslash or newline characters that naturally
+occur in the text input must be escaped to avoid misinterpretation by
+.BR mdb_load.
+
+.SH DIAGNOSTICS
+Exit status is zero if no errors occur.
+Errors result in a non-zero exit status and
+a diagnostic message being written to standard error.
+
+Information about each subdatabase processed, and the total number of
+records is also written to standard error.
+
+.SH "SEE ALSO"
+.BR mdb_load (1)
+.BR mdb_dump (1)
+.BR db_dump (1)
+
+.SH AUTHOR
+Jonathan Graehl <graehl@gmail.com>
