@@ -201,7 +201,7 @@ inline void set_null_file_arg(boost::shared_ptr<S> &p)
 
 inline void set_null_file_arg(boost::shared_ptr<std::ostream> &p)
 {
-  p.reset(new null_ostream()); //(&the_null_ostream,null_deleter());
+  p.reset(new null_ostream()); //(&the_null_ostream, null_deleter());
 }
 
 
@@ -243,7 +243,7 @@ public:
   {
     //TODO: assert or traits so only for ostreams
     if (!none)
-      *pointer<<s<<std::endl;
+      *pointer << s<<std::endl;
   }
 
   void set(Stream * newstream, std::string const& name) {
@@ -361,7 +361,7 @@ public:
     try {
       set(dynamic_cast<Stream &>(fs), filename, destroy, fail_msg);
     } catch (std::bad_cast &) {
-      throw_fail(filename," was not of the right stream type");
+      throw_fail(filename, " was not of the right stream type");
     }
   }
   BOOST_STATIC_CONSTANT(std::size_t, bufsize = 256*1024);
@@ -380,8 +380,8 @@ public:
     Yes --- this was what Jens found. So, for the following code
 
     ifstream in;
-    char buffer[1<<20];
-    in.rdbuf()->pubsetbuf(buffer, 1<<20);
+    char buffer[1 << 20];
+    in.rdbuf()->pubsetbuf(buffer, 1 << 20);
     in.open("bb");
     string str;
     while (getline(in, str)) {   }
@@ -389,8 +389,8 @@ public:
     the buffer will be set to be 1M. But if I change it to the following code,
 
     ifstream in("bb");
-    char buffer[1<<20];
-    in.rdbuf()->pubsetbuf(buffer, 1<<20);
+    char buffer[1 << 20];
+    in.rdbuf()->pubsetbuf(buffer, 1 << 20);
     string str;
     while (getline(in, str)) {   }
 
@@ -458,9 +458,9 @@ public:
 #endif
     else {
       if (read)
-        set_new_buf<std::ifstream>(s,"Couldn't open input file", large_buf);
+        set_new_buf<std::ifstream>(s, "Couldn't open input file", large_buf);
       else
-        set_new_buf<std::ofstream>(s,"Couldn't create output file", large_buf);
+        set_new_buf<std::ofstream>(s, "Couldn't create output file", large_buf);
     }
     none = false;
   }

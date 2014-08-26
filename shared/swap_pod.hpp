@@ -14,16 +14,16 @@ namespace graehl {
 #include <cstring>
 
 template <class T>
-inline void swap_pod(T &a,T &b) {
+inline void swap_pod(T &a, T &b) {
   using namespace std;
   const unsigned s=sizeof(T);
   char tmp[s];
   void *pt=(void*)tmp;
   void *pa=(void*)&a;
   void *pb=(void*)&b;
-  memcpy(pt,pa,s);
-  memcpy(pa,pb,s);
-  memcpy(pb,pt,s);
+  memcpy(pt, pa, s);
+  memcpy(pa, pb, s);
+  memcpy(pb, pt, s);
 }
 
 }

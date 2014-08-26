@@ -8,7 +8,7 @@
 #endif
 
 #if DEBUG_GRAEHL_INDENT
-# define GRAEHL_INDENT_DBG_MSG(x) std::cerr<<x<<'\n'
+# define GRAEHL_INDENT_DBG_MSG(x) std::cerr << x<<'\n'
 #else
 # define GRAEHL_INDENT_DBG_MSG
 #endif
@@ -24,7 +24,7 @@ struct indent_level {
   {
      return lvl<=maxlvl;
   }
-  indent_level(char tab_=' ',char const* bullet_="") { reset(tab_,bullet_); }
+  indent_level(char tab_=' ',char const* bullet_="") { reset(tab_, bullet_); }
   void reset(char tab_=' ',char const* bullet_="")
   {
     lvl=0;
@@ -60,8 +60,8 @@ struct indent_level {
     if (bullet) // in case of using this in static inits, lack of init => bullet is NULL
       o << bullet;
   }
-  template <class C,class T>
-  friend std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T> &o, indent_level & self)
+  template <class C, class T>
+  friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, indent_level & self)
   { self.print(o); return o; }
 };
 
@@ -89,7 +89,7 @@ struct indent {
     if (i==0) return;
     typedef my_ns::my_indent_class Indent;
     SCOPED_INDENT_NEST(Indent);
-    cout<<SCOPED_INDENT(Indent)<<i<<endl;
+    cout << SCOPED_INDENT(Indent) << i<<endl;
     recurse(i-1);
   }
 */
@@ -100,16 +100,16 @@ struct static_indent
   struct scoped_indent : indent
   {
     scoped_indent() : indent(indentlvl) {
-      GRAEHL_INDENT_DBG_MSG("nest-indenting -> "<<indentlvl.lvl);
+      GRAEHL_INDENT_DBG_MSG("nest-indenting -> " << indentlvl.lvl);
     }
   };
   template <class O>
   void print(O &o) const {
-    GRAEHL_INDENT_DBG_MSG("print-indenting -> "<<indentlvl.lvl);
+    GRAEHL_INDENT_DBG_MSG("print-indenting -> " << indentlvl.lvl);
     indentlvl.print(o);
   }
-  template <class C,class Tr>
-  friend std::basic_ostream<C,Tr>& operator<<(std::basic_ostream<C,Tr> &o, scoped_indent const& self)
+  template <class C, class Tr>
+  friend std::basic_ostream<C, Tr>& operator<<(std::basic_ostream<C, Tr> &o, scoped_indent const& self)
   { self.print(o); return o; }
 };
 
@@ -117,8 +117,8 @@ template <class Tag> graehl::indent_level graehl::static_indent<Tag>::indentlvl;
 
 #define SCOPED_INDENT_NEST(T) graehl::static_indent<T> static_indent_line_ ## __LINE__
 #define SCOPED_INDENT(T) graehl::static_indent<T>::indentlvl
-#define IF_LIMIT_INDENT(T,maxdepth) if (SCOPED_INDENT(T)<=maxdepth)
-#define PRINT_LIMIT_INDENT(T,maxdepth,printerfn,msg) do{ IF_LIMIT_INDENT(T,maxdepth) { printerfn(msg); } }while(0)
+#define IF_LIMIT_INDENT(T, maxdepth) if (SCOPED_INDENT(T)<=maxdepth)
+#define PRINT_LIMIT_INDENT(T, maxdepth, printerfn, msg) do{ IF_LIMIT_INDENT(T, maxdepth) { printerfn(msg); } }while(0)
 
 }//graehl
 

@@ -51,18 +51,18 @@ struct test_counter {
   void  operator()() { ++n;  }
   template <class A1>
   void  operator()(const A1 &a) { ++n;  }
-  template <class A1,class A2>
-  void  operator()(const A1 &a,const A2 &a2) { ++n;  }
-  template <class A1,class A2,class A3>
-  void  operator()(const A1 &a,const A2 &a2,const A3 &a3) { ++n;  }
+  template <class A1, class A2>
+  void  operator()(const A1 &a, const A2 &a2) { ++n;  }
+  template <class A1, class A2, class A3>
+  void  operator()(const A1 &a, const A2 &a2, const A3 &a3) { ++n;  }
 };
 
 #ifdef GRAEHL__SINGLE_MAIN
   unsigned test_counter::n;
 #endif
 
-template <class S,class C> inline
-bool test_extract(S &s,C &c,bool whine=true) {
+template <class S, class C> inline
+bool test_extract(S &s, C &c, bool whine=true) {
     std::istringstream is(s);
     try {
         is >> c;
@@ -74,8 +74,8 @@ bool test_extract(S &s,C &c,bool whine=true) {
     return !is.fail();
 }
 
-template <class S,class C> inline
-bool test_extract_insert(S &s,C &c,bool whine=true) {
+template <class S, class C> inline
+bool test_extract_insert(S &s, C &c, bool whine=true) {
   std::istringstream is(s);
   try {
       is >> c; // string to var
@@ -86,7 +86,7 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
       if (o.str() != s) {
 //      DBP(o.str());
 //      DBP(o2.str());
-          std::cerr << "Output after writing and rereading: "<<o.str()<<std::endl<<" ... didn't match original: " << s << std::endl;
+          std::cerr << "Output after writing and rereading: " << o.str() << std::endl << " ... didn't match original: " << s << std::endl;
           return 0;
       }
   } catch (std::ios_base::failure &e) {
@@ -110,12 +110,12 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
   {
       const C *array_expected;
       unsigned next;
-      expect_visitor(const C * e) : array_expected(e),next(0) {}
-      expect_visitor(const expect_visitor &o) : array_expected(o.array_expected),next(o.next) {}
+      expect_visitor(const C * e) : array_expected(e), next(0) {}
+      expect_visitor(const expect_visitor &o) : array_expected(o.array_expected), next(o.next) {}
       template <class D>
       bool operator()(const D& d)
       {
-          BOOST_CHECK_EQUAL(array_expected[next],d);
+          BOOST_CHECK_EQUAL(array_expected[next], d);
           ++next;
           return true;
       }
@@ -132,15 +132,15 @@ bool test_extract_insert(S &s,C &c,bool whine=true) {
   }
 
 
-#define CHECK_EQUAL_STRING(a,b) BOOST_CHECK_EQUAL(std::string(a),std::string(b))
-#define CHECK_EXTRACT(s,c) BOOST_CHECK(test_extract((s),(c)))
-#define FAIL_EXTRACT(s,c) BOOST_CHECK(!test_extract((s),(c),false))
+#define CHECK_EQUAL_STRING(a, b) BOOST_CHECK_EQUAL(std::string(a), std::string(b))
+#define CHECK_EXTRACT(s, c) BOOST_CHECK(test_extract((s), (c)))
+#define FAIL_EXTRACT(s, c) BOOST_CHECK(!test_extract((s), (c), false))
 
 //#ifndef EXPECT_TRUE
 #define EXPECT_TRUE(c) BOOST_CHECK(c);
                                      //#endif
 //#ifndef EXPECT_EQ
-# define EXPECT_EQ(a,b) BOOST_CHECK_EQUAL(a,b)
+# define EXPECT_EQ(a, b) BOOST_CHECK_EQUAL(a, b)
   //#endif
 }
 

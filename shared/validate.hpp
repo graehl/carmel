@@ -12,15 +12,15 @@
 
 namespace configure {
 
-SIMPLE_EXCEPTION_PREFIX(config_exception,"configure: ");
+SIMPLE_EXCEPTION_PREFIX(config_exception, "configure: ");
 
 template <class I>
 struct bounded_range_validate
 {
-  I begin,end;
+  I begin, end;
   std::string desc;
-  bounded_range_validate(I const& begin,I const& end,std::string const& desc)
-    : begin(begin),end(end),desc(desc) {}
+  bounded_range_validate(I const& begin, I const& end, std::string const& desc)
+    : begin(begin), end(end), desc(desc) {}
   template <class I2>
   void operator()(I2 const& i2)
   {
@@ -30,16 +30,16 @@ struct bounded_range_validate
 };
 
 template <class I>
-bounded_range_validate<I> bounded_range(I const& begin,I const& end,std::string const& desc="value out of bounds") {
-  return bounded_range_validate<I>(begin,end,desc); }
+bounded_range_validate<I> bounded_range(I const& begin, I const& end, std::string const& desc="value out of bounds") {
+  return bounded_range_validate<I>(begin, end, desc); }
 
 template <class I>
 struct bounded_range_inclusive_validate
 {
-  I begin,end;
+  I begin, end;
   std::string desc;
-  bounded_range_inclusive_validate(I const& begin,I const& end,std::string const& desc)
-    : begin(begin),end(end),desc(desc) {}
+  bounded_range_inclusive_validate(I const& begin, I const& end, std::string const& desc)
+    : begin(begin), end(end), desc(desc) {}
   template <class I2>
   void operator()(I2 const& i2)
   {
@@ -49,8 +49,8 @@ struct bounded_range_inclusive_validate
 };
 
 template <class I>
-bounded_range_inclusive_validate<I> bounded_range_inclusive(I const& begin,I const& end,std::string const& desc="value out of bounds") {
-  return bounded_range_inclusive_validate<I>(begin,end,desc); }
+bounded_range_inclusive_validate<I> bounded_range_inclusive(I const& begin, I const& end, std::string const& desc="value out of bounds") {
+  return bounded_range_inclusive_validate<I>(begin, end, desc); }
 
 struct exists
 {
@@ -93,12 +93,12 @@ struct one_of
   template <class Key>
   void operator()(Key const& key) const
   {
-    if (std::find(allowed.begin(),allowed.end(),key)==allowed.end())
+    if (std::find(allowed.begin(), allowed.end(), key)==allowed.end())
       throw config_exception(to_string(key)+" not allowed - must be one of "+to_string(*this));
   }
   friend inline std::string to_string(one_of<Val> const& one)
   {
-    return "["+graehl::to_string_sep(one.allowed,"|")+"]";
+    return "["+graehl::to_string_sep(one.allowed, "|")+"]";
   }
 };
 
@@ -125,13 +125,13 @@ namespace std {
 template <class T>
 void validate(std::vector<T> const& v)
 {
-  for (typename std::vector<T>::const_iterator i=v.begin(),e=v.end();i!=e;++i)
+  for (typename std::vector<T>::const_iterator i=v.begin(), e=v.end();i!=e;++i)
     adl::adl_validate(*i);
 }
-template <class Key,class T>
+template <class Key, class T>
 void validate(std::map<Key, T> const& v)
 {
-  for (typename std::map<Key, T>::const_iterator i=v.begin(),e=v.end();i!=e;++i)
+  for (typename std::map<Key, T>::const_iterator i=v.begin(), e=v.end();i!=e;++i)
     adl::adl_validate(i->second);
 }
 }

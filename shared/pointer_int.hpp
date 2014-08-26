@@ -33,13 +33,13 @@ inline std::size_t pointer_int(void *p) {
 
 inline void *int_pointer(std::size_t n) {
   assert(n<=pointer_int_max);
-  return (void*)(n<<1 | 1);
+  return (void*)(n << 1 | 1);
 }
 
 template <class Val>
 inline void set_pointer_int(Val *&p, std::size_t n) {
   assert(n<=pointer_int_max);
-  p = (Val*)(n<<1 | 1);
+  p = (Val*)(n << 1 | 1);
 }
 
 struct PointerInt {

@@ -25,8 +25,8 @@ struct program_options_exec : boost::noncopyable
 {
   bool allow_unrecognized_opts;
   string_consumer warn;
-  program_options_exec(string_consumer const& warn,std::string const& caption)
-    : allow_unrecognized_opts(true)                                                                                                 , warn(warn),opt_desc(caption),argv0("main")
+  program_options_exec(string_consumer const& warn, std::string const& caption)
+    : allow_unrecognized_opts(true)                                                                                                 , warn(warn), opt_desc(caption), argv0("main")
     , finished_store(false) {}
   typedef graehl::printable_options_description<std::ostream> ostream_options_description; //TODO: directly generate regular options_description, use config facility for printing instead
   boost::program_options::positional_options_description positional;
@@ -34,7 +34,7 @@ struct program_options_exec : boost::noncopyable
   ostream_options_description opt_desc;
   std::set<opt_path> specified_options; //TODO: needed to check duplicates?
   typedef conf_opt::allow_unrecognized_args allow_unrecognized_args;
-  typedef std::map<std::string,allow_unrecognized_args> unrecognized_map;
+  typedef std::map<std::string, allow_unrecognized_args> unrecognized_map;
   unrecognized_map allow_unk_paths; //TODO: most specific parent so you can have unrecognized nested stuff?
   typedef std::vector<std::string> strings;
   strings args;
@@ -59,20 +59,20 @@ struct program_options_exec : boost::noncopyable
   }
   void show_po_help(std::ostream &o) const
   {
-    o<<opt_desc<<'\n';
+    o << opt_desc<<'\n';
   }
   bool is_help() const // after args set by e.g. set_main_argv
   {
-    for (strings::const_iterator i=args.begin(),e=args.end();i!=e;++i)
+    for (strings::const_iterator i=args.begin(), e=args.end();i!=e;++i)
       if (*i=="-h"||*i=="--help")
         return true;
     return false;
   }
 
 //TODO: allow program_options config files too?
-  void check_required(graehl::string_consumer const& o,strings const& names,bool warn_only)
+  void check_required(graehl::string_consumer const& o, strings const& names, bool warn_only)
   {
-    for (strings::const_iterator i=names.begin(),e=names.end();i!=e;++i) {
+    for (strings::const_iterator i=names.begin(), e=names.end();i!=e;++i) {
       std::string const& name=*i;
       if (!vm.count(name) || vm[name].defaulted()) {
         std::string complaint="missing configuration key "+*i;
@@ -89,26 +89,26 @@ struct program_options_exec : boost::noncopyable
     finished_store=true;
     using namespace boost::program_options;
     parsed_options po=
-      opt_desc.parse_options(args,&positional,&unrecognized_options,allow_unrecognized_opts,false,argv0);
-    store(po,vm);
+      opt_desc.parse_options(args, &positional, &unrecognized_options, allow_unrecognized_opts, false, argv0);
+    store(po, vm);
     notify(vm);
-    check_required(warn,warn_missing,true);
-    check_required(warn,error_missing,false);
+    check_required(warn, warn_missing, true);
+    check_required(warn, error_missing, false);
     check_unrecognized();
   }
 
-  void allow_unrecognized(std::string const& pathname,allow_unrecognized_args const& args)
+  void allow_unrecognized(std::string const& pathname, allow_unrecognized_args const& args)
   {
-    SHOWIF2(CONFEXPR,1,"allow_unrecognized",pathname,args);
+    SHOWIF2(CONFEXPR,1, "allow_unrecognized", pathname, args);
     if (args.enable) {
       if (pathname.empty()) {
-        SHOWIF1(CONFEXPR,1,"allow_unrecognized root",pathname);
+        SHOWIF1(CONFEXPR,1, "allow_unrecognized root", pathname);
         allow_unrecognized_opts=true;
       }
       allow_unk_paths[pathname]=args;
     }
   }
-  std::string unrecognized_complaint(std::string arg,std::string parent,std::string prefix="")
+  std::string unrecognized_complaint(std::string arg, std::string parent, std::string prefix="")
   {
     std::string complaint=prefix+arg+" is an unknown option and parent "+parent+" doesn't like those!";
     warning(complaint);
@@ -123,24 +123,24 @@ struct program_options_exec : boost::noncopyable
   void check_unrecognized()
   {
     using namespace std;
-    for (size_t i=0,n=unrecognized_options.size();i!=n;++i) {
+    for (size_t i=0, n=unrecognized_options.size();i!=n;++i) {
       string const& arg=unrecognized_options[i];
       if (arg.size()<2 || arg[0]!='-' || arg[1]!='-')
         throw config_exception("ERROR: unrecognized command line argument is not of the form --key[=val] if this is an option value then use --key=val rather than --key val.");
       string::const_iterator start=arg.begin();
       string::size_type equals=arg.find('=');
       bool no_val=equals==string::npos;
-      string key(start+2,no_val?arg.end():start+equals);
+      string key(start+2, no_val?arg.end():start+equals);
       std::string parent=parent_option_name(key);
-      SHOWIF2(CONFEXPR,1,"allow unk?",key,parent);
+      SHOWIF2(CONFEXPR,1, "allow unk?", key, parent);
       unrecognized_map::const_iterator f=allow_unk_paths.find(parent);
       if (f==allow_unk_paths.end())
-        throw config_exception(unrecognized_complaint(arg,parent,"ERROR: "));
+        throw config_exception(unrecognized_complaint(arg, parent, "ERROR: "));
       allow_unrecognized_args const& allow=f->second;
-      std::string val=no_val?string():string(start+equals+1,arg.end());
-      SHOWIF3(CONFEXPR,1,"allow unk complain?",key,val,allow);
+      std::string val=no_val?string():string(start+equals+1, arg.end());
+      SHOWIF3(CONFEXPR,1, "allow unk complain?", key, val, allow);
       if (allow.warn)
-        unrecognized_complaint(arg,parent);
+        unrecognized_complaint(arg, parent);
       unrecognized_opts *store=allow.unrecognized_storage;
       if (store)
         (*store)[key]=val;
@@ -149,8 +149,8 @@ struct program_options_exec : boost::noncopyable
 
   //TODO: short names override by parent? or enable parent only?
   void print(std::ostream &o) const {
-    o<<"&"<<&opt_desc<<":\n";
-    opt_desc.print(o,vm,graehl::SHOW_ALL);
+    o << "&"<<&opt_desc << ":\n";
+    opt_desc.print(o, vm, graehl::SHOW_ALL);
   }
   friend std::ostream& operator<<(std::ostream &o, program_options_exec const& self)
   { self.print(o); return o; }
@@ -165,7 +165,7 @@ struct program_options_exec_new  {
   void init(string_consumer const& warn, std::string const& caption) {
     p.reset(new program_options_exec(warn, caption));
   }
-  program_options_exec_new(string_consumer const& warn,std::string const& caption) : p(new program_options_exec(warn,caption)) {}
+  program_options_exec_new(string_consumer const& warn, std::string const& caption) : p(new program_options_exec(warn, caption)) {}
   program_options_exec_new(program_options_exec_new const& o) : p(o.p) {}
 };
 
@@ -177,14 +177,14 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   FORWARD_BASE_CONFIGURE_ACTIONS(base)
   program_options_exec_ptr popt;
   configure_program_options(configure_program_options const& o) : base(o), popt(o.popt) {}
-  configure_program_options(program_options_exec_new const& popt_,string_consumer const& warn_to,int verbose_max=default_verbose_max) : base(warn_to,verbose_max),popt(popt_.p) {
+  configure_program_options(program_options_exec_new const& popt_, string_consumer const& warn_to, int verbose_max=default_verbose_max) : base(warn_to, verbose_max), popt(popt_.p) {
     popt->warn=warn_to;
   }
-  explicit configure_program_options(program_options_exec_new const& popt_,int verbose_max=default_verbose_max) : base(popt_.p->warn,verbose_max),popt(popt_.p) {}
+  explicit configure_program_options(program_options_exec_new const& popt_, int verbose_max=default_verbose_max) : base(popt_.p->warn, verbose_max), popt(popt_.p) {}
 
 
   template <class Val>
-  graehl::option_options<Val> po(std::string const& pathname,conf_opt const& opt,Val *) const
+  graehl::option_options<Val> po(std::string const& pathname, conf_opt const& opt, Val *) const
   {
     graehl::option_options<Val> po;
     if (opt.is_implicit())
@@ -196,8 +196,8 @@ struct configure_program_options : configure_backend_base<configure_program_opti
       po.required=true; //TODO: we actually check this ourselves, but it's ok to have p opt lib check it too (unless we want to support multiple sources. this way it knows to require >=1 arg?
 
     if (opt.is_deprecated()) {
-      po.notify0=opt.deprecate->get_notify0(warn,pathname);
-      SHOWIF2(CONFEXPR,1,"deprecated ",pathname,opt);
+      po.notify0=opt.deprecate->get_notify0(warn, pathname);
+      SHOWIF2(CONFEXPR,1, "deprecated ", pathname, opt);
     }
     po.is=opt.is;
     po.hidden=opt.is_too_verbose(verbose_max);
@@ -205,36 +205,36 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   }
 
   template <class Val>
-  void leaf_action(init_config,Val *pval,conf_expr_base const& conf) const
+  void leaf_action(init_config, Val *pval, conf_expr_base const& conf) const
   {
-    this->check_leaf_impl(pval,conf);
+    this->check_leaf_impl(pval, conf);
     conf_opt const& opt=*conf.opt;
     std::string pathname=conf.path_name();
     using graehl::add;
     if (opt.is_required_warn())
-      add(popt->warn_missing,pathname);
+      add(popt->warn_missing, pathname);
     if (opt.is_required_err())
-      add(popt->error_missing,pathname);
-    popt->opt_desc.option(poname(conf),pval,opt.get_usage()+opt.get_init_or_eg_suffix_quote(*this),po(pathname,opt,pval));
-    SHOWIF3(CONFEXPR,1,"declare: option added: ",pval,pathname,conf);
+      add(popt->error_missing, pathname);
+    popt->opt_desc.option(poname(conf), pval, opt.get_usage()+opt.get_init_or_eg_suffix_quote(*this), po(pathname, opt, pval));
+    SHOWIF3(CONFEXPR,1, "declare: option added: ", pval, pathname, conf);
     if (opt.is_positional()) {
-      SHOWIF2(CONFEXPR,1,"positional ",pathname,conf);
-      popt->positional.add(conf.path_name().c_str(),opt.positional->max<=0?-1:opt.positional->max); // ok to pass c_str() since it's stored in a string immediately
+      SHOWIF2(CONFEXPR,1, "positional ", pathname, conf);
+      popt->positional.add(conf.path_name().c_str(), opt.positional->max<=0?-1:opt.positional->max); // ok to pass c_str() since it's stored in a string immediately
     }
   }
   template <class Val>
-  void sequence_action(init_config const& a,Val *pval,conf_expr_base const& conf) const
+  void sequence_action(init_config const& a, Val *pval, conf_expr_base const& conf) const
   {
-    leaf_action(a,pval,conf);
+    leaf_action(a, pval, conf);
   }
   template <class Val>
-  void set_action(init_config const& a,Val *pval,conf_expr_base const& conf) const
+  void set_action(init_config const& a, Val *pval, conf_expr_base const& conf) const
   {
-    leaf_action(a,pval,conf);
+    leaf_action(a, pval, conf);
   }
 
   template <class Val>
-  void tree_action(init_config,Val *pval,conf_expr_base const& conf) const
+  void tree_action(init_config, Val *pval, conf_expr_base const& conf) const
   {
     conf_opt const& opt=*conf.opt;
     if (opt.allows_unrecognized())
@@ -249,21 +249,21 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   bool init_action(store_config) const
   {
     popt->finish_store();
-    //SHOWIF1(CONFEXPR,1,"stored",*popt);
+    //SHOWIF1(CONFEXPR,1, "stored",*popt);
     return false;
   }
 
   bool init_action(help_config const& c) const
   {
     popt->show_po_help(*c.o);
-    //SHOWIF1(CONFEXPR,1,"helped",*popt);
+    //SHOWIF1(CONFEXPR,1, "helped",*popt);
     return false;
   }
 
   template <class Val>
-  void leaf_action(show_example_config a,Val *pval,conf_expr_base const& conf) const {
-    base::leaf_action(a,pval,conf);
-    //*usage.o<<conf.opt->get_leaf_value(*pval," --"+conf.path_name()+"=","\n");
+  void leaf_action(show_example_config a, Val *pval, conf_expr_base const& conf) const {
+    base::leaf_action(a, pval, conf);
+    //*usage.o << conf.opt->get_leaf_value(*pval, " --"+conf.path_name()+"=","\n");
   }
 
 
@@ -279,23 +279,23 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   }
 };
 
-template <class Action,class RootVal>
-void program_options_action(program_options_exec_new const& popt,Action const& action,RootVal *val,string_consumer const& warn_to)
+template <class Action, class RootVal>
+void program_options_action(program_options_exec_new const& popt, Action const& action, RootVal *val, string_consumer const& warn_to)
 {
-  configure_action(configure_program_options(popt,warn_to),action,val,warn_to);
+  configure_action(configure_program_options(popt, warn_to), action, val, warn_to);
 }
 
-template <class Action,class RootVal>
-void program_options_action(program_options_exec_new const& popt,Action const& action,RootVal *val)
+template <class Action, class RootVal>
+void program_options_action(program_options_exec_new const& popt, Action const& action, RootVal *val)
 {
-  configure_action(configure_program_options(popt,default_verbose_max),action,val,popt.p->warn);
+  configure_action(configure_program_options(popt, default_verbose_max), action, val, popt.p->warn);
 }
 
 template <class RootVal>
-bool program_options_maybe_help(std::ostream &o,program_options_exec_new const& popt,RootVal *pval,string_consumer const& warn_to=warn_consumer())
+bool program_options_maybe_help(std::ostream &o, program_options_exec_new const& popt, RootVal *pval, string_consumer const& warn_to=warn_consumer())
 {
   if (popt.p->is_help()) {
-    program_options_action(popt,help_config(o),pval,warn_to);
+    program_options_action(popt, help_config(o), pval, warn_to);
     return true;
   }
   return false;
@@ -323,14 +323,14 @@ using namespace std;
 using namespace boost;
 using namespace graehl;
 
-enum AB { kA,kB };
+enum AB { kA, kB };
 
 inline std::string to_string_impl(AB ab)
 {
   return ab==kA ? "A" : "B";
 }
 
-inline void string_to_impl(std::string const& abstr,AB &ab)
+inline void string_to_impl(std::string const& abstr, AB &ab)
 {
   ab=abstr=="A"?kA:kB;
 }
@@ -342,8 +342,8 @@ struct Thing {
   void print(O &o) const {
     throw "Thing is not a leaf!";
   }
-  template <class Ch,class Tr>
-  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, Thing const& self)
+  template <class Ch, class Tr>
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, Thing const& self)
   { self.print(o); return o; }
 
   struct SubThing
@@ -352,12 +352,12 @@ struct Thing {
     string str;
     template <class Config> void configure(Config &c) {
       c.is("SubThing"); // used to describe this type in usage.
-      c("str",&str).positional(1).desire(); // desire = like require but just warn on abscence, don't throw
-      c("xs",&xs)('X').eg("abc:2").is("2 102 4 ... (even numbers)").require(); // short option name 'X' synonym (single char)
+      c("str", &str).positional(1).desire(); // desire = like require but just warn on abscence, don't throw
+      c("xs", &xs)('X').eg("abc:2").is("2 102 4 ... (even numbers)").require(); // short option name 'X' synonym (single char)
       /* require in this context means at least one element must be provided (since xs is a vector)
          note that command line --a.xs 2 4 --b.xs 4 is equivalent to --a.xs 2 --b.xs 4 --a.xs 4, and you may need to use -- to terminate a vector option so that positional arguments aren't consumed.
        */
-      //note: c(key,&val)(string): string is description for usage. is(string) is a name for the type of value only.
+      //note: c(key, &val)(string): string is description for usage. is(string) is a name for the type of value only.
     }
   };
   struct LeafThing
@@ -369,30 +369,30 @@ struct Thing {
     typedef void leaf_configure; // this means the following 3 free functions are used instead of a .configure(...)
     friend std::string to_string_impl(LeafThing const& x) {
       return lexical_cast<string>(x.i); } // overrides for leaf_configure
-    friend void string_to_impl(string const& str,LeafThing & x) { graehl::string_to(str,x.i); }
+    friend void string_to_impl(string const& str, LeafThing & x) { graehl::string_to(str, x.i); }
     friend string type_string(LeafThing const& x) { return "LeafThing"; } //TODO: ADL
   };
 
-  SubThing a,b;
+  SubThing a, b;
   optional<int> deceasedYear; // note: helpful to tell if the user specified the option or not
   bool verbose;
   LeafThing leaf; // default constructed
   int even;
   AB ab;
-  std::map<string,string> otherKeyVals;
+  std::map<string, string> otherKeyVals;
   template <class Config> void configure(Config &c)
   {
     c("An example of mapping configuration options to an object tree. This should be word wrapped at 80 columns, I hope. Hereisaverylongwordwithnospaceswhichshouldalsobewordwrappedsinceitwouldbesadifitwerentabletofitinour80columnterminal!.ok!");
     c.is("Thing");
     c.allow_unrecognized(true); // true=warn
-    c("death-year",&deceasedYear).desire().positional(); // .validate(configure::bounded_range(1900,2012));
-    c("multiple-of-2",&even)('m').eg(4).init(2)("an even number"); // if not specified,error. short cmdline name = -m
-    c("verbose",&verbose).flag()("Log more status."); // flag() is a hint to provide no-value shorthand for command line options parsers: no-value --verbose or --no-verbose flags. for YAML, flag() should be ignored (you still have to specify a true or false value)
-    c("year",&deceasedYear).eg(1995).deprecate("in favor of --death-year"); // instead of checking if the int has its default value still, this allows you to know for sure that the default was used. note that eg merely needs to boost::lexical_cast<string>
-    c("a",&a); // this means we have command line options --a.numbers --a.xys, and YAML paths a.numbers and a.xys
-    c("b",&b).is("SubThing 2").allow_unrecognized(); // overrides default "SubThing" as "SubThing 2". gives us b-numbers and b-xys.
-    c("leaf",&leaf).init_default(); // just like: int x; c("leaf",&x).is("LeafThing"); init_default() means init_default(LeafThing &) will be called, which at least default-constructs
-    c("ab",&ab)("an enum!").init(kB);
+    c("death-year", &deceasedYear).desire().positional(); // .validate(configure::bounded_range(1900,2012));
+    c("multiple-of-2", &even)('m').eg(4).init(2)("an even number"); // if not specified, error. short cmdline name = -m
+    c("verbose", &verbose).flag()("Log more status."); // flag() is a hint to provide no-value shorthand for command line options parsers: no-value --verbose or --no-verbose flags. for YAML, flag() should be ignored (you still have to specify a true or false value)
+    c("year", &deceasedYear).eg(1995).deprecate("in favor of --death-year"); // instead of checking if the int has its default value still, this allows you to know for sure that the default was used. note that eg merely needs to boost::lexical_cast<string>
+    c("a", &a); // this means we have command line options --a.numbers --a.xys, and YAML paths a.numbers and a.xys
+    c("b", &b).is("SubThing 2").allow_unrecognized(); // overrides default "SubThing" as "SubThing 2". gives us b-numbers and b-xys.
+    c("leaf", &leaf).init_default(); // just like: int x; c("leaf", &x).is("LeafThing"); init_default() means init_default(LeafThing &) will be called, which at least default-constructs
+    c("ab", &ab)("an enum!").init(kB);
   }
 };
 }
@@ -400,27 +400,27 @@ struct Thing {
 //LEAF_CONFIGURABLE_EXTERNAL(my::AB)
 
 
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
   using namespace std;
   using namespace boost;
-  configure::program_options_exec_new exec(configure::warn_consumer(),"SAMPLE");
+  configure::program_options_exec_new exec(configure::warn_consumer(), "SAMPLE");
   using my::Thing;
   Thing thing;
-  typedef map<string,int> map_;
+  typedef map<string, int> map_;
   graehl::warn_consumer to_cerr;
   try {
-    cout<<"default help:\n\n";
-    configure::help(cout,&thing);
-    cout<<"\ndefault help done.\n\n";
-    configure::program_options_action(exec,configure::init_config(),&thing,to_cerr);
-    exec.p->set_main_argv(argc,argv);
-    if (program_options_maybe_help(cout,exec,&thing,to_cerr)) return 0;    configure::program_options_action(exec,configure::store_config(),&thing,to_cerr);
-    configure::validate_stored(&thing,to_cerr);
-    cout<<"\neffective:\n";
-    configure::show_effective(cout,&thing);
+    cout << "default help:\n\n";
+    configure::help(cout, &thing);
+    cout << "\ndefault help done.\n\n";
+    configure::program_options_action(exec, configure::init_config(), &thing, to_cerr);
+    exec.p->set_main_argv(argc, argv);
+    if (program_options_maybe_help(cout, exec, &thing, to_cerr)) return 0;    configure::program_options_action(exec, configure::store_config(), &thing, to_cerr);
+    configure::validate_stored(&thing, to_cerr);
+    cout << "\neffective:\n";
+    configure::show_effective(cout, &thing);
   } catch(std::exception &e) {
-    cerr<<"ERROR: "<<e.what()<<"\n";
+    cerr << "ERROR: " << e.what() << "\n";
   }
   return 0;
 }

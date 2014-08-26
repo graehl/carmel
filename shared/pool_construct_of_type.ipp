@@ -9,7 +9,7 @@
 //  Do NOT include directly!
 //  Do NOT edit!
 
-template <typename element_type,typename T0>
+template <typename element_type, typename T0>
 element_type * construct(T0 & a0)
 {
   element_type * const ret = (malloc)();
@@ -19,7 +19,7 @@ element_type * construct(T0 & a0)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0>
+template <typename element_type, typename T0>
 element_type * construct(const T0 & a0)
 {
   element_type * const ret = (malloc)();
@@ -29,7 +29,7 @@ element_type * construct(const T0 & a0)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0>
+template <typename element_type, typename T0>
 element_type * construct(volatile T0 & a0)
 {
   element_type * const ret = (malloc)();
@@ -39,7 +39,7 @@ element_type * construct(volatile T0 & a0)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0>
+template <typename element_type, typename T0>
 element_type * construct(const volatile T0 & a0)
 {
   element_type * const ret = (malloc)();
@@ -49,7 +49,7 @@ element_type * construct(const volatile T0 & a0)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(T0 & a0, T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -59,7 +59,7 @@ element_type * construct(T0 & a0, T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const T0 & a0, T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -69,7 +69,7 @@ element_type * construct(const T0 & a0, T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(volatile T0 & a0, T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -79,7 +79,7 @@ element_type * construct(volatile T0 & a0, T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const volatile T0 & a0, T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -89,7 +89,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(T0 & a0, const T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -99,7 +99,7 @@ element_type * construct(T0 & a0, const T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const T0 & a0, const T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -109,7 +109,7 @@ element_type * construct(const T0 & a0, const T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(volatile T0 & a0, const T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -119,7 +119,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const volatile T0 & a0, const T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -129,7 +129,7 @@ element_type * construct(const volatile T0 & a0, const T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(T0 & a0, volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -139,7 +139,7 @@ element_type * construct(T0 & a0, volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const T0 & a0, volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -149,7 +149,7 @@ element_type * construct(const T0 & a0, volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(volatile T0 & a0, volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -159,7 +159,7 @@ element_type * construct(volatile T0 & a0, volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const volatile T0 & a0, volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -169,7 +169,7 @@ element_type * construct(const volatile T0 & a0, volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(T0 & a0, const volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -179,7 +179,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const T0 & a0, const volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -189,7 +189,7 @@ element_type * construct(const T0 & a0, const volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(volatile T0 & a0, const volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -199,7 +199,7 @@ element_type * construct(volatile T0 & a0, const volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1>
+template <typename element_type, typename T0, typename T1>
 element_type * construct(const volatile T0 & a0, const volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
@@ -209,7 +209,7 @@ element_type * construct(const volatile T0 & a0, const volatile T1 & a1)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -219,7 +219,7 @@ element_type * construct(T0 & a0, T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -229,7 +229,7 @@ element_type * construct(const T0 & a0, T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -239,7 +239,7 @@ element_type * construct(volatile T0 & a0, T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -249,7 +249,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -259,7 +259,7 @@ element_type * construct(T0 & a0, const T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -269,7 +269,7 @@ element_type * construct(const T0 & a0, const T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -279,7 +279,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -289,7 +289,7 @@ element_type * construct(const volatile T0 & a0, const T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -299,7 +299,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -309,7 +309,7 @@ element_type * construct(const T0 & a0, volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -319,7 +319,7 @@ element_type * construct(volatile T0 & a0, volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -329,7 +329,7 @@ element_type * construct(const volatile T0 & a0, volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -339,7 +339,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -349,7 +349,7 @@ element_type * construct(const T0 & a0, const volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -359,7 +359,7 @@ element_type * construct(volatile T0 & a0, const volatile T1 & a1, T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -369,7 +369,7 @@ element_type * construct(const volatile T0 & a0, const volatile T1 & a1, T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -379,7 +379,7 @@ element_type * construct(T0 & a0, T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -389,7 +389,7 @@ element_type * construct(const T0 & a0, T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -399,7 +399,7 @@ element_type * construct(volatile T0 & a0, T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -409,7 +409,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -419,7 +419,7 @@ element_type * construct(T0 & a0, const T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -429,7 +429,7 @@ element_type * construct(const T0 & a0, const T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -439,7 +439,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -449,7 +449,7 @@ element_type * construct(const volatile T0 & a0, const T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -459,7 +459,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -469,7 +469,7 @@ element_type * construct(const T0 & a0, volatile T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -479,7 +479,7 @@ element_type * construct(volatile T0 & a0, volatile T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -489,7 +489,7 @@ element_type * construct(const volatile T0 & a0, volatile T1 & a1, const T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -499,7 +499,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -509,7 +509,7 @@ element_type * construct(const T0 & a0, const volatile T1 & a1, const T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -519,7 +519,7 @@ element_type * construct(volatile T0 & a0, const volatile T1 & a1, const T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const volatile T1 & a1, const T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -529,7 +529,7 @@ element_type * construct(const volatile T0 & a0, const volatile T1 & a1, const T
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -539,7 +539,7 @@ element_type * construct(T0 & a0, T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -549,7 +549,7 @@ element_type * construct(const T0 & a0, T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -559,7 +559,7 @@ element_type * construct(volatile T0 & a0, T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -569,7 +569,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -579,7 +579,7 @@ element_type * construct(T0 & a0, const T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -589,7 +589,7 @@ element_type * construct(const T0 & a0, const T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -599,7 +599,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -609,7 +609,7 @@ element_type * construct(const volatile T0 & a0, const T1 & a1, volatile T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -619,7 +619,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -629,7 +629,7 @@ element_type * construct(const T0 & a0, volatile T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -639,7 +639,7 @@ element_type * construct(volatile T0 & a0, volatile T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -649,7 +649,7 @@ element_type * construct(const volatile T0 & a0, volatile T1 & a1, volatile T2 &
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -659,7 +659,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -669,7 +669,7 @@ element_type * construct(const T0 & a0, const volatile T1 & a1, volatile T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -679,7 +679,7 @@ element_type * construct(volatile T0 & a0, const volatile T1 & a1, volatile T2 &
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -689,7 +689,7 @@ element_type * construct(const volatile T0 & a0, const volatile T1 & a1, volatil
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -699,7 +699,7 @@ element_type * construct(T0 & a0, T1 & a1, const volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -709,7 +709,7 @@ element_type * construct(const T0 & a0, T1 & a1, const volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -719,7 +719,7 @@ element_type * construct(volatile T0 & a0, T1 & a1, const volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -729,7 +729,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, const volatile T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -739,7 +739,7 @@ element_type * construct(T0 & a0, const T1 & a1, const volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -749,7 +749,7 @@ element_type * construct(const T0 & a0, const T1 & a1, const volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -759,7 +759,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, const volatile T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -769,7 +769,7 @@ element_type * construct(const volatile T0 & a0, const T1 & a1, const volatile T
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -779,7 +779,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, const volatile T2 & a2)
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -789,7 +789,7 @@ element_type * construct(const T0 & a0, volatile T1 & a1, const volatile T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -799,7 +799,7 @@ element_type * construct(volatile T0 & a0, volatile T1 & a1, const volatile T2 &
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -809,7 +809,7 @@ element_type * construct(const volatile T0 & a0, volatile T1 & a1, const volatil
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(T0 & a0, const volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -819,7 +819,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, const volatile T2 & a2
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const T0 & a0, const volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -829,7 +829,7 @@ element_type * construct(const T0 & a0, const volatile T1 & a1, const volatile T
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(volatile T0 & a0, const volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
@@ -839,7 +839,7 @@ element_type * construct(volatile T0 & a0, const volatile T1 & a1, const volatil
   catch (...) { (free)(ret); throw; }
   return ret;
 }
-template <typename element_type,typename T0, typename T1, typename T2>
+template <typename element_type, typename T0, typename T1, typename T2>
 element_type * construct(const volatile T0 & a0, const volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();

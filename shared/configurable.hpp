@@ -159,11 +159,11 @@ struct configure_any : configurable
     p->validate(warn, prefix);
   }
   virtual void help(std::ostream &o, string_consumer const& warn) const {
-    o<<help_prefix;
+    o << help_prefix;
     p->help(o, warn, prefix);
   }
   virtual void standard_help(std::ostream &o, string_consumer const& warn) const {
-    o<<help_prefix;
+    o << help_prefix;
     p->standard_help(o, warn, prefix);
   }
   virtual void effective(std::ostream &o, string_consumer const& warn) const {
@@ -185,11 +185,11 @@ struct configure_any : configurable
     p->store(warn, root_path);
   }
   virtual void help(std::ostream &o, string_consumer const& warn, opt_path const& root_path) const {
-    o<<help_prefix;
+    o << help_prefix;
     p->help(o, warn, root_path);
   }
   virtual void standard_help(std::ostream &o, string_consumer const& warn, opt_path const& root_path) const {
-    o<<help_prefix;
+    o << help_prefix;
     p->standard_help(o, warn, root_path);
   }
   virtual void effective(std::ostream &o, string_consumer const& warn, opt_path const& root_path) const {

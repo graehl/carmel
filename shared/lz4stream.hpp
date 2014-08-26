@@ -26,11 +26,11 @@ template <class Impl>
 struct ilz4stream : filtering_istream
 {
 public:
-  void open(std::string const& name,int open_mode=std::ios::in)
+  void open(std::string const& name, int open_mode=std::ios::in)
   {
     assert(!opened);
     opened=true;
-    push(file_sink(name,open_mode|std::ios::binary));
+    push(file_sink(name, open_mode|std::ios::binary));
   }
 
   void close()
@@ -46,11 +46,11 @@ template <class Impl>
 struct olz4stream : filtering_istream
 {
 public:
-  void open(std::string const& name,int open_mode=std::ios::in)
+  void open(std::string const& name, int open_mode=std::ios::in)
   {
     assert(!opened);
     opened=true;
-    push(file_sink(name,open_mode|std::ios::binary));
+    push(file_sink(name, open_mode|std::ios::binary));
   }
 
   void close()

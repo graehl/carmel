@@ -77,7 +77,7 @@ struct hypergraph_traits : boost::graph_traits<T>,edge_traits<T> {
 };
 
 #if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
-template <class G> struct graph_object<G,hyperarc_tag> {
+template <class G> struct graph_object<G, hyperarc_tag> {
   typedef typename hypergraph_traits<G>::hyperarc_descriptor descriptor;
   typedef typename hypergraph_traits<G>::hyperarc_iterator iterator;
   typedef boost::iterator_range<iterator> iterator_pair;
@@ -85,7 +85,7 @@ template <class G> struct graph_object<G,hyperarc_tag> {
 
 template <class G>
 inline
-typename graph_object<G,hyperarc_tag>::iterator_pair begin_end(hyperarc_tag,G &g) {
+typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G &g) {
   return hyperarcs(g);
 }
 #endif
@@ -98,7 +98,7 @@ typename graph_object<G,hyperarc_tag>::iterator_pair begin_end(hyperarc_tag,G &g
 
 // use boost::iterator_property_map<RandomAccessIterator, OffsetMap, T, R> with OffsetMap doing the index mapping
 // usually: K = key *, you have array of key at key *: vec ... vec+size
-// construct OffsetArrayPmap(vec,vec+size) and get an array of size Vs (default constructed)
+// construct OffsetArrayPmap(vec, vec+size) and get an array of size Vs (default constructed)
 
 /*Iterator Must be a model of Random Access Iterator.
   OffsetMap Must be a model of Readable Property Map and the value type must be convertible to the difference type of the iterator.
@@ -108,14 +108,14 @@ typename graph_object<G,hyperarc_tag>::iterator_pair begin_end(hyperarc_tag,G &g
   iterator_property_map(Iterator i, OffsetMap m)*/
 
 
-/*template <class V,class O>
+/*template <class V, class O>
   struct ArrayPMap;
 */
 
 
-/*: public ByRef<ArrayPMapImp<V,O> >
+/*: public ByRef<ArrayPMapImp<V, O> >
   {
-  typedef ArrayPMapImp<V,O> Imp;
+  typedef ArrayPMapImp<V, O> Imp;
   typedef typename Imp::category category;
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;
@@ -127,15 +127,15 @@ typename graph_object<G,hyperarc_tag>::iterator_pair begin_end(hyperarc_tag,G &g
 // e.g.
 /*
   typedef typename boost::graph_traits<G>::hyperarc_index_map HaIndex;
-  typedef ArrayPMap<unsigned,HaIndex> PMap;
-  typename PMap::Imp arc_remain(num_hyperarcs(g),HaIndex(g));
-  TailsUpHypergraph<G,PMap> r(g,PMap(arc_remain));
+  typedef ArrayPMap<unsigned, HaIndex> PMap;
+  typename PMap::Imp arc_remain(num_hyperarcs(g), HaIndex(g));
+  TailsUpHypergraph<G, PMap> r(g, PMap(arc_remain));
 */
 
 /*
-  template <class G,class P1,class P2>
-  void copy_hyperarc_pmap(G &g,P1 a,P2 b) {
-  visit(hyperarc_tag,make_indexed_copier(a,b));
+  template <class G, class P1, class P2>
+  void copy_hyperarc_pmap(G &g, P1 a, P2 b) {
+  visit(hyperarc_tag, make_indexed_copier(a, b));
   }
 */
 

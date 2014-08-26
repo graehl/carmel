@@ -12,7 +12,7 @@ const std::string fail_out="Couldn't create compressed output file";
 }
 
 template <class Stream>
-void file_arg<Stream>::set_gzfile(std::string const& s,bool /*large_buf*/)
+void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
 // gzstream has a static 256k buffer already. big enough.
 {
   const bool read=stream_traits<Stream>::read;
@@ -20,14 +20,14 @@ void file_arg<Stream>::set_gzfile(std::string const& s,bool /*large_buf*/)
   try {
     if (read) {
       fail_msg=fail_in;
-      set_new<igzstream>(s,fail_msg);
+      set_new<igzstream>(s, fail_msg);
     } else {
       fail_msg=fail_out;
-      set_new<ogzstream>(s,fail_msg);
+      set_new<ogzstream>(s, fail_msg);
     }
   } catch (std::exception &e) {
     fail_msg.append(" - exception: ").append(e.what());
-    throw_fail(s,fail_msg);
+    throw_fail(s, fail_msg);
   }
 }
 

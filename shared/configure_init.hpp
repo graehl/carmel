@@ -7,7 +7,7 @@
 
     template <class Config>
     void configure(Config &c) {
-    c("val",&val).init(1);
+    c("val", &val).init(1);
     }
 
     so that this->val = 1

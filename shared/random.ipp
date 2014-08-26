@@ -16,7 +16,7 @@ inline double random_pos_fraction() // returns uniform random number on (0..1]
 #endif
 }
 
-template <class V1,class V2>
+template <class V1, class V2>
 inline V1 random_half_open(const V1 &v1, const V2 &v2)
 {
   return v1+random01()*(v2-v1);
@@ -77,8 +77,8 @@ inline std::string random_alpha_string(unsigned len) {
 }
 
 // P(*It) = double probability (unnormalized).
-template <class It,class P>
-It choose_p(It begin,It end,P const& p)
+template <class It, class P>
+It choose_p(It begin, It end, P const& p)
 {
   if (begin==end) return end;
   double sum=0.;
@@ -95,8 +95,8 @@ It choose_p(It begin,It end,P const& p)
 }
 
 // P(*It) = double probability (unnormalized).
-template <class Sum,class It,class P>
-It choose_p_sum(It begin,It end,P const& p)
+template <class Sum, class It, class P>
+It choose_p_sum(It begin, It end, P const& p)
 {
   if (begin==end) return end;
   Sum sum=0.;
@@ -113,8 +113,8 @@ It choose_p_sum(It begin,It end,P const& p)
 }
 
 // as above but already normalized
-template <class It,class P>
-It choose_p01(It begin,It end,P const& p)
+template <class It, class P>
+It choose_p01(It begin, It end, P const& p)
 {
   double sum=0.;
   double choice=random01();
@@ -129,7 +129,7 @@ It choose_p01(It begin,It end,P const& p)
 
 
 template <class It>
-void randomly_permute(It begin,It end)
+void randomly_permute(It begin, It end)
 {
   using std::swap;
   size_t N=end-begin;
@@ -144,6 +144,6 @@ void randomly_permute(V &vec)
   using std::swap;
   size_t N=vec.size();
   for (size_t i=0;i<N;++i) {
-    swap(vec[i],vec[random_up_to(i)]);
+    swap(vec[i], vec[random_up_to(i)]);
   }
 }

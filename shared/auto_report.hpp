@@ -13,11 +13,11 @@ struct auto_report
   std::ostream *o;
   std::string desc;
   bool reported;
-  auto_report(std::ostream &o,std::string const& desc=Change::default_desc())
-    : o(&o),desc(desc),reported(false) {}
-  auto_report(std::ostream *o=NULL,std::string const& desc=Change::default_desc())
-    : o(o),desc(desc),reported(false) {}
-  void set(std::ostream &out,std::string const& descr=Change::default_desc())
+  auto_report(std::ostream &o, std::string const& desc=Change::default_desc())
+    : o(&o), desc(desc), reported(false) {}
+  auto_report(std::ostream *o=NULL, std::string const& desc=Change::default_desc())
+    : o(o), desc(desc), reported(false) {}
+  void set(std::ostream &out, std::string const& descr=Change::default_desc())
   {
     o=&out;
     desc=descr;

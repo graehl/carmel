@@ -6,7 +6,7 @@
 
 namespace graehl {
 
-// e.g. T=boost::object_pool<O,A> >
+// e.g. T=boost::object_pool<O, A> >
 
 template <class T>
 struct pool_traits_default
@@ -47,7 +47,7 @@ struct pool_destroyer
 
 // so long as you use pool_traits::pointer_type, this is interface compatible w/ boost object pool except there's no way to force early deallocation or allow cycles - reset those pointers!
 // U has only static malloc, free, size_type
-template <class T,class U=alloc_new_delete >
+template <class T, class U=alloc_new_delete >
 struct untracked_pool
 {
   typedef T element_type;
@@ -65,10 +65,10 @@ struct untracked_pool
 #include <graehl/shared/pool_construct.ipp>
 };
 
-template <class T,class U>
-struct pool_destroyer<untracked_pool<T,U> >
+template <class T, class U>
+struct pool_destroyer<untracked_pool<T, U> >
 {
-  typedef untracked_pool<T,U> pool_type;
+  typedef untracked_pool<T, U> pool_type;
   typedef typename T::pointer_type pointer_type;
   void operator()(typename T::pointer_type p) const
   {
@@ -76,8 +76,8 @@ struct pool_destroyer<untracked_pool<T,U> >
   }
 };
 
-template <class T,class U>
-struct pool_traits<untracked_pool<T,U> > : public pool_traits_default<T>
+template <class T, class U>
+struct pool_traits<untracked_pool<T, U> > : public pool_traits_default<T>
 {
   enum { has_is_from = false };
 };

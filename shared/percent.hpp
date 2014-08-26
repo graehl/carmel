@@ -11,23 +11,23 @@ struct percent
 {
     double frac;
     percent(double f) : frac(f) {}
-    percent(double num,double den) : frac(num/den) {}
+    percent(double num, double den) : frac(num/den) {}
     double get_percent() const
     {
         return frac*100;
     }
     template <class C, class T>
-    void print(std::basic_ostream<C,T>& o) const
+    void print(std::basic_ostream<C, T>& o) const
     {
-        print_max_width_small(o,get_percent(),width-1);
+        print_max_width_small(o, get_percent(), width-1);
         o << '%';
     }
     typedef percent<width> self_type;
 };
 
 template <class C, class T, int W>
-std::basic_ostream<C,T>&
-operator << (std::basic_ostream<C,T>& os, percent<W> const& p)
+std::basic_ostream<C, T>&
+operator<<(std::basic_ostream<C, T>& os, percent<W> const& p)
 {
     p.print(os);
     return os;
@@ -36,9 +36,9 @@ operator << (std::basic_ostream<C,T>& os, percent<W> const& p)
 template <int width=5>
 struct portion
 {
-    double num,den;
+    double num, den;
 
-    portion(double num,double den) : num(num),den(den) {}
+    portion(double num, double den) : num(num), den(den) {}
 
     double get_fraction() const
     {
@@ -46,17 +46,17 @@ struct portion
     }
 
     template <class C, class T>
-    void print(std::basic_ostream<C,T>& o) const
+    void print(std::basic_ostream<C, T>& o) const
     {
-        o << percent<width>(num,den);
-        o << " ("<<num<<"/"<<den<<")";
+        o << percent<width>(num, den);
+        o << " (" << num << "/" << den << ")";
     }
 
 };
 
 template <class C, class T, int W>
-std::basic_ostream<C,T>&
-operator << (std::basic_ostream<C,T>& os, portion<W> const& p)
+std::basic_ostream<C, T>&
+operator<<(std::basic_ostream<C, T>& os, portion<W> const& p)
 {
     p.print(os);
     return os;

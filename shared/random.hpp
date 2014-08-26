@@ -76,7 +76,7 @@ struct random_seed {
   boost::optional<random_seed_type> seed;
   template <class Configure>
   void configure(Configure &c) {
-    c("random-seed",&seed)("if set, use as initial seed for RNG");
+    c("random-seed", &seed)("if set, use as initial seed for RNG");
   }
   void operator = (random_seed_type x) {
     seed = x;
@@ -87,7 +87,7 @@ struct random_seed {
 typedef boost::lagged_fibonacci607 random_generator;
 // lagged_fibonacci607 is the fastest for generating random floats and only 20% slower for ints - see http://www.boost.org/doc/libs/1_52_0/doc/html/boost_random/performance.html
 typedef boost::uniform_01<double> uniform_01_dist;
-typedef boost::variate_generator<random_generator,uniform_01_dist> random_01_generator;
+typedef boost::variate_generator<random_generator, uniform_01_dist> random_01_generator;
 
 
 #if !GRAEHL_GLOBAL_RANDOM_USE_STD
@@ -95,7 +95,7 @@ typedef boost::variate_generator<random_generator,uniform_01_dist> random_01_gen
 namespace {
 //random_generator g_random_gen(default_random_seed());
 }
-random_01_generator g_random01((random_generator(default_random_seed())),uniform_01_dist());
+random_01_generator g_random01((random_generator(default_random_seed())), uniform_01_dist());
 #else
 extern random_01_generator g_random01;
 #endif
@@ -143,7 +143,7 @@ struct random {
     return random01();
   }
   random(random_seed_type seed=default_random_seed())
-      : random01(random_generator(seed),uniform_01_dist())
+      : random01(random_generator(seed), uniform_01_dist())
   {}
   inline void set_random_seed(random_seed_type value=default_random_seed())
   {

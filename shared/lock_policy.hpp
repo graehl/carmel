@@ -14,7 +14,7 @@
   {
   typename Locking::guard_type lock(*this);
 // or bool do_lock=...;
-//    typename Locking::guard_type lock(*this,do_lock);
+//    typename Locking::guard_type lock(*this, do_lock);
 // (locks if do_lock)
 }
 };

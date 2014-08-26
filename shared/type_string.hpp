@@ -140,8 +140,8 @@ struct type_string_traits<std::pair<K, T> > {
 #define GRAEHL_TYPE_STRING_TEMPLATE_1(T, prefix) template <class T1> struct type_string_traits<T<T1> > \
   { static std::string get() { return std::string(prefix) + type_string(*(T1 const*)0); } };
 
-GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector,"sequence of ")
-GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional,"optional ")
+GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector, "sequence of ")
+GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional, "optional ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(boost::shared_ptr,"")
 
 

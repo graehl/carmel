@@ -18,8 +18,8 @@
 
 #include <stdlib.h>
 
-#define GRAEHL_ROTL32(x,y)  _rotl(x,y)
-#define GRAEHL_ROTL64(x,y)  _rotl64(x,y)
+#define GRAEHL_ROTL32(x, y)  _rotl(x, y)
+#define GRAEHL_ROTL64(x, y)  _rotl64(x, y)
 
 #define GRAEHL_BIG_CONSTANT(x) (x)
 
@@ -27,8 +27,8 @@
 
 #define GRAEHL_FORCE_INLINE inline __attribute__((always_inline))
 
-#define GRAEHL_ROTL32(x,y)  graehl::bit_rotate_left(x,y)
-#define GRAEHL_ROTL64(x,y)  graehl::bit_rotate_left(x,y)
+#define GRAEHL_ROTL32(x, y)  graehl::bit_rotate_left(x, y)
+#define GRAEHL_ROTL64(x, y)  graehl::bit_rotate_left(x, y)
 
 #define GRAEHL_BIG_CONSTANT(x) (x##LLU)
 
@@ -110,14 +110,14 @@ uint32_t bit_rotate_left(uint32_t x, int8_t k)
 #ifdef _MSC_VER
   return _rotl(x, k);
 #else
-  return (x<<k) | (x>>(32-k));
+  return (x << k) | (x>>(32-k));
 #endif
 }
 
 inline
 uint32_t bit_rotate_right(uint32_t x, int8_t k)
 {
-  return (x>>k) | (x<<(32-k));
+  return (x>>k) | (x << (32-k));
 }
 
 GRAEHL_FORCE_INLINE
@@ -126,21 +126,21 @@ uint64_t bit_rotate_left_64(uint64_t x, int8_t k)
 #ifdef _MSC_VER
   return _rotl64(x, k);
 #else
-  return (x<<k) | (x>>(64-k));
+  return (x << k) | (x>>(64-k));
 #endif
 }
 
 GRAEHL_FORCE_INLINE
 uint64_t bit_rotate_right_64(uint64_t x, int8_t k)
 {
-  return (x>>k) | (x<<(64-k));
+  return (x>>k) | (x << (64-k));
 }
 
 // bit i=0 = lsb
 template <class I, class J>
 inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits, J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
-  I mask = (1<<i);
+  I mask = (1 << i);
   bits |= mask;
 }
 
@@ -152,7 +152,7 @@ inline void set_mask(I &bits, I mask) {
 template <class I, class J>
 inline void reset(typename boost::enable_if<boost::is_integral<I> >::type &bits, J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
-  I mask = (1<<i);
+  I mask = (1 << i);
   bits &= ~mask;
 }
 
@@ -164,7 +164,7 @@ inline void reset_mask(I &bits, I mask) {
 template <class I, class J>
 inline void set(typename boost::enable_if<boost::is_integral<I> >::type &bits, J i, bool to) {
   assert(i<(CHAR_BIT*sizeof(I)));
-  I mask = (1<<i);
+  I mask = (1 << i);
   if (to) set_mask(bits, mask); else reset_mask(bits, mask);
 }
 
@@ -176,7 +176,7 @@ inline void set_mask(I &bits, I mask, bool to) {
 template <class I, class J>
 inline bool test(typename boost::enable_if<boost::is_integral<I> >::type bits, J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
-  I mask = (1<<i);
+  I mask = (1 << i);
   return mask&bits;
 }
 
@@ -190,7 +190,7 @@ inline bool test_mask(typename boost::enable_if<boost::is_integral<I> >::type bi
 template <class I, class J>
 inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type &bits, J i) {
   assert(i<(CHAR_BIT*sizeof(I)));
-  I mask = (1<<i);
+  I mask = (1 << i);
   bool r = mask&bits;
   bits |= mask;
   return r;
@@ -228,7 +228,7 @@ bit_rotate_left(I x, J k)
   typedef typename boost::remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-  return ((x<<k) | (x>>(std::numeric_limits<IT>::digits-k)));
+  return ((x << k) | (x>>(std::numeric_limits<IT>::digits-k)));
 }
 
 template <class I, class J>
@@ -240,7 +240,7 @@ bit_rotate_right(I x, J k)
   typedef typename boost::remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-  return ((x<<(std::numeric_limits<IT>::digits-k)) | (x>>k));
+  return ((x << (std::numeric_limits<IT>::digits-k)) | (x>>k));
 }
 
 /// interpret the two bytes at d as a uint16 in little endian order

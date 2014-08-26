@@ -26,13 +26,13 @@
   own/copy
 
 
-  struct my : nary_tree<my,my *> { int label; }
+  struct my : nary_tree<my, my *> { int label; }
 */
 
 namespace graehl {
 
 typedef CHILD_INDEX_TYPE child_index;
-template <class T,class C>
+template <class T, class C>
 // cppcheck-suppress mallocOnClassError
 struct nary_tree
 {
@@ -49,12 +49,12 @@ struct nary_tree
 
 //TODO: use pool_traits?
 
-template <class T,class R=atomic_count,class U=alloc_new_delete>
+template <class T, class R=atomic_count, class U=alloc_new_delete>
 struct shared_nary_tree
   : nary_tree<T, boost::intrusive_ptr<T> >
-  , /* private */ intrusive_refcount<T,R,U> // if private need to friend intrusive_refcount
+  , /* private */ intrusive_refcount<T, R, U> // if private need to friend intrusive_refcount
 {
-  friend struct intrusive_refcount<T,R,U>;
+  friend struct intrusive_refcount<T, R, U>;
   typedef nary_tree<T, boost::intrusive_ptr<T> > TreeBase;
   typedef shared_nary_tree self_type;
   friend void intrusive_ptr_add_ref(self_type *p) { p->add_ref();  }

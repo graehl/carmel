@@ -27,7 +27,7 @@ struct local_precision
     typedef Stream stream_type;
     stream_type *pstream;
     std::streamsize saved_prec;
-    local_precision(stream_type &stream,unsigned prec) : pstream(&stream), saved_prec(stream.precision(prec)) {}
+    local_precision(stream_type &stream, unsigned prec) : pstream(&stream), saved_prec(stream.precision(prec)) {}
     local_precision(stream_type &stream) : pstream(&stream), saved_prec(stream.precision()) {}
     ~local_precision()
     {
@@ -40,15 +40,15 @@ struct local_stream_format
 {
     local_stream_flags<O> f;
     local_precision<O> p;
-    local_stream_format(O &o) : f(o),p(o) {}
+    local_stream_format(O &o) : f(o), p(o) {}
 };
 
 // similar to print_width but only works (well) for 10000>d>1 i.e. for size_mega
 template <class C, class T>
-std::basic_ostream<C,T>&
-print_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
+std::basic_ostream<C, T>&
+print_width_small(std::basic_ostream<C, T>& o, double d, int width=4)
 {
-    typedef std::basic_ostream<C,T> stream_t;
+    typedef std::basic_ostream<C, T> stream_t;
     local_stream_format<stream_t> save(o);
     int p=0;
     if (width>0) {
@@ -69,7 +69,7 @@ print_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
 
 
 // for a positive exponent!
-inline unsigned sig_for_exp(unsigned width,unsigned exp)
+inline unsigned sig_for_exp(unsigned width, unsigned exp)
 {
     unsigned dexp=(exp<100?2:3);
     int r=width-dexp-3; // . and e and +- (+ is mandatory w/ scientific, as is padding exp to 2 digits)
@@ -87,18 +87,18 @@ bug (w/ g++ lib): scientific forces minimum precision=2
 */
 // minprec sig digits within at most width chars
 template <class C, class T>
-std::basic_ostream<C,T>&
-print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
+std::basic_ostream<C, T>&
+print_width(std::basic_ostream<C, T>& o, double d, int width=6, int minprec=0)
 {
     const double epsilon=1e-8;
 //    return o << std::setprecision(width) << d;
     if (width>=20 || d==0. || width <=0) {
-        o<<d;
+        o << d;
         return o;
     }
     if (minprec<0)
         minprec=width/3;
-    typedef std::basic_ostream<C,T> stream_t;
+    typedef std::basic_ostream<C, T> stream_t;
     local_stream_format<stream_t> save(o);
     double p=d;
     if (d<0) {
@@ -107,19 +107,19 @@ print_width(std::basic_ostream<C,T>& o, double d, int width=6, int minprec=0)
     }
     double wholes=std::log10(p*(1+epsilon)); //1: log=0, digits=1
     if (wholes<=width && d==(double)(int)d)
-        return o<<d;
+        return o << d;
     if (p<1) {
         int a=(int)-wholes;
         const int dot0=2;
         int need=dot0+minprec+a;
         if (need >= width)
-            return o << std::scientific << std::setprecision(sig_for_exp(width,a)-1) << d;
+            return o << std::scientific << std::setprecision(sig_for_exp(width, a)-1) << d;
         return o << std::setprecision(width-dot0-a) << d;
     } else {
         int a=(int)wholes;
         int need=1+a;
         if (need > width)
-            return o << std::scientific << std::setprecision(sig_for_exp(width,a)-1) << d;
+            return o << std::scientific << std::setprecision(sig_for_exp(width, a)-1) << d;
         o << std::fixed;
         int need_dot=need+1;
         return o << std::setprecision(need_dot<width?width-need_dot:0) << d;
@@ -134,27 +134,27 @@ struct width
 };
 
 template <class C, class T>
-std::basic_ostream<C,T>&
-print(std::basic_ostream<C,T>& o, double d, int width)
+std::basic_ostream<C, T>&
+print(std::basic_ostream<C, T>& o, double d, int width)
 {
-  print_width(o,d,width);
+  print_width(o, d, width);
   return o;
 }
 
 template <class O>
 void print(O& o, double d, width const& w)
 {
-  print_width(o,d,w.chars);
+  print_width(o, d, w.chars);
 }
 
 template <class C, class T>
-std::basic_ostream<C,T>&
-print_max_width(std::basic_ostream<C,T>& o, double d, int width=6)
+std::basic_ostream<C, T>&
+print_max_width(std::basic_ostream<C, T>& o, double d, int width=6)
 {
 #if 1
-    return print_width(o,d,width);
+    return print_width(o, d, width);
 #else
-    typedef std::basic_ostream<C,T> stream_t;
+    typedef std::basic_ostream<C, T> stream_t;
     local_stream_format<stream_t> save(o);
     if (width > 0) {
         double p=std::fabs(d);
@@ -180,10 +180,10 @@ print_max_width(std::basic_ostream<C,T>& o, double d, int width=6)
 }
 
 template <class C, class T>
-std::basic_ostream<C,T>&
-print_max_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
+std::basic_ostream<C, T>&
+print_max_width_small(std::basic_ostream<C, T>& o, double d, int width=4)
 {
-    typedef std::basic_ostream<C,T> stream_t;
+    typedef std::basic_ostream<C, T> stream_t;
     local_stream_format<stream_t> save(o);
     int p=0;
     if (width>0) {
@@ -210,31 +210,31 @@ print_max_width_small(std::basic_ostream<C,T>& o, double d, int width=4)
 # include <iostream>
 using namespace std;
 using namespace graehl;
-void d(double d,unsigned w=5)
+void d(double d, unsigned w=5)
 {
-    print_width(cout,d,w);cout << " .\n";
+    print_width(cout, d, w);cout << " .\n";
 }
 
 int main()
 {
-//    cout<<fixed<<setprecision(0)<<1.234;cout<<" .\n";
-//    cout<<scientific<<setprecision(0)<<1.234e4;cout << " .\n";
+//    cout << fixed << setprecision(0) << 1.234;cout << " .\n";
+//    cout << scientific << setprecision(0) << 1.234e4;cout << " .\n";
     d(.0008123,5);
 
     double b=10;
     for (unsigned w=4;w<8;++w) {
         double x=5.4321;
-        cout << "\n\nwidth="<<w<<":\n";
-        for (unsigned i=0;i<8;++i,x*=b) {
-            print_width(cout,x,w);
+        cout << "\n\nwidth=" << w<<":\n";
+        for (unsigned i=0;i<8;++i, x*=b) {
+            print_width(cout, x, w);
             cout << '\t';
-            print_width(cout,1e99*x,w);
+            print_width(cout,1e99*x, w);
             cout << '\t';
-            print_width(cout,1/x,w);
+            print_width(cout,1/x, w);
             cout << '\t';
-            print_width(cout,-x,w);
+            print_width(cout,-x, w);
             cout << '\t';
-            print_width(cout,-1/x,w);
+            print_width(cout,-1/x, w);
             cout << "\t.\n";
         }
     }

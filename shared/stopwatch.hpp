@@ -97,7 +97,7 @@ class stopwatch
         return t.tv_sec+t.tv_usec/(1000000.);
     }
     template <class Time>
-    static double elapsed_sec(const Time &now,const Time &then)
+    static double elapsed_sec(const Time &now, const Time &then)
     {
         return sec(now)-sec(then);
     }
@@ -120,7 +120,7 @@ class stopwatch
         if (!running) return 0;
         rusage now_usage;
         measure_usage(now_usage);
-        return elapsed_sec(now_usage.ru_utime,then_usage.ru_utime);
+        return elapsed_sec(now_usage.ru_utime, then_usage.ru_utime);
 #else
 		return 0; // TODO: implement Win32 version
 #endif
@@ -131,7 +131,7 @@ class stopwatch
         if (!running) return 0;
         rusage now_usage;
         measure_usage(now_usage);
-        return elapsed_sec(now_usage.ru_stime,then_usage.ru_stime);
+        return elapsed_sec(now_usage.ru_stime, then_usage.ru_stime);
 #else
 		return 0; // TODO: implement Win32 version
 #endif
@@ -146,7 +146,7 @@ class stopwatch
         if (!running) return 0;
         timeval now_wallclock;
         measure_wallclock(now_wallclock);
-        return elapsed_sec(now_wallclock,then_wallclock);
+        return elapsed_sec(now_wallclock, then_wallclock);
     }
 
     double recent_major_pagefaults() const
@@ -196,7 +196,7 @@ class stopwatch
     typedef stopwatch self_type;
     TO_OSTREAM_PRINT
     template <class Ostream>
-    friend Ostream & operator <<(Ostream &os,stopwatch const& t) {
+    friend Ostream & operator <<(Ostream &os, stopwatch const& t) {
         t.print(os);
         return os;
     }

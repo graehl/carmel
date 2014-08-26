@@ -24,7 +24,7 @@ struct push_backer
 };
 
 template <class Cont> inline
-push_backer<Cont> make_push_backer(Cont &container) 
+push_backer<Cont> make_push_backer(Cont &container)
 {
     return push_backer<Cont>(container);
 }
@@ -46,7 +46,7 @@ struct outputter
 };
 
 template <class Cont> inline
-outputter<typename Cont::iterator> make_outputter_cont(Cont &container) 
+outputter<typename Cont::iterator> make_outputter_cont(Cont &container)
 {
     return outputter<typename Cont::iterator>(container.begin());
 }

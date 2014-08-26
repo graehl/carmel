@@ -67,9 +67,9 @@
 #endif
 
 //static local var means env var is checked once (like singleton)
-#define DECLARE_ENV(fn,var) static int fn() {static const int l=graehl::getenv_int(#var);return l;}
-#define DECLARE_ENV_C(n,f,v) DECLARE_ENV(f,v) static const int n = f();
-#define DECLARE_ENV_C_LEVEL(n,f,v) DECLARE_ENV(f,v) DECLARE_ENV(f##_LEVEL,v##_LEVEL) static const int n##_1 = f(); static const int n##_2 = f##_LEVEL(); static const int n=n##_1>n##_2?n##_1:n##_2; //
+#define DECLARE_ENV(fn, var) static int fn() {static const int l=graehl::getenv_int(#var);return l;}
+#define DECLARE_ENV_C(n, f, v) DECLARE_ENV(f, v) static const int n = f();
+#define DECLARE_ENV_C_LEVEL(n, f, v) DECLARE_ENV(f, v) DECLARE_ENV(f##_LEVEL, v##_LEVEL) static const int n##_1 = f(); static const int n##_2 = f##_LEVEL(); static const int n=n##_1>n##_2?n##_1:n##_2; //
 
 namespace graehl {
 
@@ -90,7 +90,7 @@ const DWORD getenv_maxch = 65535; // //Limit according to http://msdn.microsoft.
 static char getenv_buf[getenv_maxch];
 inline char * getenv(char const* key) {
   //TODO: thread-safe version of getenv
-  return GetEnvironmentVariableA(key,getenv_buf,getenv_maxch) ? getenv_buf : NULL;
+  return GetEnvironmentVariableA(key, getenv_buf, getenv_maxch) ? getenv_buf : NULL;
 }
 inline char* putenv_copy(char const* key) {
   //TODO
@@ -166,7 +166,7 @@ inline std::string get_current_dir() {
 }
 
 template <class O>
-void print_current_dir(O&o,const char*header="### CURRENT DIR: ")
+void print_current_dir(O&o, const char*header="### CURRENT DIR: ")
 {
   if (header)
     o << header;
@@ -208,18 +208,18 @@ inline std::string last_error_string() {
 }
 
 
-inline bool create_file(const std::string& path,std::size_t size) {
+inline bool create_file(const std::string& path, std::size_t size) {
 #ifdef _WIN32
-  HANDLE fh=::CreateFileA( path.c_str(),GENERIC_WRITE,FILE_SHARE_DELETE,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,NULL);
+  HANDLE fh=::CreateFileA( path.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);
   if (fh == INVALID_HANDLE_VALUE)
     return false;
-  if(::SetFilePointer(fh,(LONG)size,NULL,FILE_BEGIN) != size)
+  if(::SetFilePointer(fh, (LONG)size, NULL, FILE_BEGIN) != size)
     return false;
   if (!::SetEndOfFile(fh))
     return false;
   return ::CloseHandle(fh);
 #else
-  return ::truncate(path.c_str(),size) != -1;
+  return ::truncate(path.c_str(), size) != -1;
 #endif
 }
 
@@ -259,7 +259,7 @@ struct tmp_fstream
 #include <graehl/shared/warning_pop.h>
   }
   void open(std::ios::openmode mode=std::ios::in | std::ios::out | std::ios::trunc) {
-    file.open(filename.c_str(),mode);
+    file.open(filename.c_str(), mode);
     if (!file)
       throw std::ios::failure(std::string("couldn't open temporary file ").append(filename));
   }
@@ -296,7 +296,7 @@ inline void throw_last_error(const std::string &module="ERROR")
 inline bool is_tmpnam_template(const std::string &filename_template)
 {
   unsigned len=(unsigned)filename_template.length();
-  return !(len<TMPNAM_SUFFIX_LEN || filename_template.substr(len-TMPNAM_SUFFIX_LEN,TMPNAM_SUFFIX_LEN)!=TMPNAM_SUFFIX);
+  return !(len<TMPNAM_SUFFIX_LEN || filename_template.substr(len-TMPNAM_SUFFIX_LEN, TMPNAM_SUFFIX_LEN)!=TMPNAM_SUFFIX);
 }
 
 
@@ -307,10 +307,10 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/tmp.sa
 {
   const unsigned MY_MAX_PATH=1024;
   char tmp[MY_MAX_PATH+1];
-  std::strncpy(tmp, filename_template.c_str(),MY_MAX_PATH-TMPNAM_SUFFIX_LEN);
+  std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH-TMPNAM_SUFFIX_LEN);
 
   if (!is_tmpnam_template(filename_template))
-    std::strcpy(tmp+filename_template.length(),TMPNAM_SUFFIX);
+    std::strcpy(tmp+filename_template.length(), TMPNAM_SUFFIX);
 
 #ifdef OS_WINDOWS
   int err = ::_mktemp_s(tmp, ::strlen(tmp) + 1); // this does not create the file, sadly. alternative (with many retries: http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32/6036308#6036308 )
@@ -337,12 +337,12 @@ inline std::string safe_tmpnam(const std::string &filename_template="/tmp/tmp.sa
 inline std::string maybe_tmpnam(const std::string &filename_template="/tmp/safe_tmpnam.XXXXXX", bool keepfile=true)
 {
   return is_tmpnam_template(filename_template) ?
-      safe_tmpnam(filename_template,keepfile) :
+      safe_tmpnam(filename_template, keepfile) :
       filename_template;
 }
 
 
-inline bool safe_unlink(const std::string &file,bool must_succeed=true)
+inline bool safe_unlink(const std::string &file, bool must_succeed=true)
 {
   if (
 #ifdef OS_WINDOWS
@@ -361,7 +361,7 @@ inline bool safe_unlink(const std::string &file,bool must_succeed=true)
 }
 
 //!< returns dir/name unless dir is empty (just name, then). if name begins with / then just returns name.
-inline std::string joined_dir_file(const std::string &basedir,const std::string &name="",char pathsep='/')
+inline std::string joined_dir_file(const std::string &basedir, const std::string &name="", char pathsep='/')
 {
   if (!name.empty() && name[0]==pathsep) //absolute name
     return name;
@@ -373,7 +373,7 @@ inline std::string joined_dir_file(const std::string &basedir,const std::string 
 }
 
 //FIXME: test
-inline void split_dir_file(const std::string &fullpath,std::string &dir,std::string &file,char pathsep='/')
+inline void split_dir_file(const std::string &fullpath, std::string &dir, std::string &file, char pathsep='/')
 {
   using namespace std;
   string::size_type p=fullpath.rfind(pathsep);
@@ -381,8 +381,8 @@ inline void split_dir_file(const std::string &fullpath,std::string &dir,std::str
     dir=".";
     file=fullpath;
   } else {
-    dir=fullpath.substr(0,p);
-    file=fullpath.substr(p+1,fullpath.length()-(p+1));
+    dir=fullpath.substr(0, p);
+    file=fullpath.substr(p+1, fullpath.length()-(p+1));
   }
 }
 

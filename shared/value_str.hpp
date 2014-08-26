@@ -12,19 +12,19 @@ struct value_str
   std::string str; // because we want to print without having the type around, and this is simpler than a boost::function
 
   value_str() {}
-  value_str(value_str const& o) : value(o.value),str(o.str) {}
+  value_str(value_str const& o) : value(o.value), str(o.str) {}
   template <class T>
   explicit value_str(T const& t)
   {
     *this=t;
   }
   template <class T>
-  value_str(T const& t,std::string as_string)  :  value(t),str(as_string) {}
+  value_str(T const& t, std::string as_string)  :  value(t), str(as_string) {}
 
   template <class T>
   void assign_to(T &t) const // must be same type as stored in value
   {
-    assign_traits<T>::assign_any(t,value);
+    assign_traits<T>::assign_any(t, value);
   }
   template <class T>
   T get() const { return boost::any_cast<T>(value); }
@@ -36,10 +36,10 @@ struct value_str
   }
   template <class O>
   void print(O &o) const {
-    o<<str;
+    o << str;
   }
-  template <class Ch,class Tr>
-  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, value_str const& self)
+  template <class Ch, class Tr>
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, value_str const& self)
   { self.print(o); return o; }
 };
 

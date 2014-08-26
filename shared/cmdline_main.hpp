@@ -85,14 +85,14 @@ struct base_options {
   std::string input_help() const {
     std::ostringstream s;
     if (add_ins()) {
-      s<<"Multiple input files (- for STDIN) at least "<<min_ins;
+      s << "Multiple input files (- for STDIN) at least " << min_ins;
       if (has_max_ins())
-        s<<" and at most "+itos(max_ins);
+        s << " and at most "+itos(max_ins);
     } else if (add_in_file)
-      s<<"Input file (- for STDIN)";
+      s << "Input file (- for STDIN)";
     else
       return "No input file options";
-    s<<positional_help();
+    s << positional_help();
     return s.str();
   }
 
@@ -213,7 +213,7 @@ struct main {
   }
 
   virtual void print(std::ostream &o) const {
-    o << opt.name<<"-version= {{ {" << get_version() << "}}} "<<opt.name<<"-cmdline= {{ {"<<cmdline_str<<"}}}";
+    o << opt.name << "-version= {{ {" << get_version() << "}}} " << opt.name << "-cmdline= {{ {" << cmdline_str << "}}}";
   }
 
   std::string const& name() const {
@@ -556,7 +556,7 @@ struct main {
       return;
     configure_finished = true;
 #if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
-    SHOWIF1(CONFEXPR, 1,"finish_configure", this);
+    SHOWIF1(CONFEXPR, 1, "finish_configure", this);
     // deferred until subclass etc has change to declare postitional etc
     configurable(this);
 #endif
@@ -655,7 +655,7 @@ struct main {
     o << "\n\n" << opt.name << " [OPTIONS]:\n";
     exec->show_po_help(o);
 #else
-    o << general_options_desc()<<"\n";
+    o << general_options_desc() << "\n";
     o << all_options() << "\n";
 #endif
   }
@@ -671,7 +671,7 @@ struct main {
     add_options(all_options());
     try {
 #if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
-      SHOWIF1(CONFEXPR, 1,"parse_args", cmdline_str);
+      SHOWIF1(CONFEXPR, 1, "parse_args", cmdline_str);
       finish_configure();
       confs.init(to_cerr);
       exec->set_main_argv(argc, argv);
@@ -692,7 +692,7 @@ struct main {
           //NOTE: this means that cmdline opts have precedence. hooray.
           config_file.close();
         } catch(exception &e) {
-          std::cerr << "ERROR: parsing "<<name<<" config file "<<config_file.name<<" - "<<e.what();
+          std::cerr << "ERROR: parsing " << name << " config file " << config_file.name << " - " << e.what();
           throw;
         }
       }
@@ -703,7 +703,7 @@ struct main {
       }
 #endif
     } catch (std::exception &e) {
-      std::cerr << "ERROR: "<<e.what() << "\n while parsing "<<opt.name<<" options:\n"<<cmdline_str<<"\n\n" << argv[0] << " -h\n for help\n\n";
+      std::cerr << "ERROR: " << e.what() << "\n while parsing " << opt.name << " options:\n" << cmdline_str << "\n\n" << argv[0] << " -h\n for help\n\n";
       throw;
     }
     return true;

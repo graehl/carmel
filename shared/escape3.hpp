@@ -24,7 +24,7 @@ inline void append_escape3(char *&out, unsigned char c) {
     *out++ = k_hex[c & 0xf];
   }
 }
-std::size_t reserve_escape3(std::size_t len) {
+inline std::size_t reserve_escape3(std::size_t len) {
   return len * 3;
 }
 

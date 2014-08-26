@@ -8,7 +8,7 @@
 
 namespace graehl {
 
-inline std::string prefix_option(std::string opt,std::string const& prefix="")
+inline std::string prefix_option(std::string opt, std::string const& prefix="")
 {
   if (prefix.empty()) return opt;
   std::string::size_type nopt=opt.size();
@@ -17,7 +17,7 @@ inline std::string prefix_option(std::string opt,std::string const& prefix="")
   return prefix+opt;
 }
 
-inline std::string suffix_option(std::string opt,std::string const& suffix="")
+inline std::string suffix_option(std::string opt, std::string const& suffix="")
 {
   if (suffix.empty()) return opt;
   std::string::size_type nopt=opt.size();

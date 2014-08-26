@@ -57,15 +57,15 @@
   static derivation_type PENDING() { return (derivation_type)1;}
   derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, lazy_kbest_index_type changed_child_index)
   {
-  return new Result(prototype,old_child,new_child,changed_child_index);
+  return new Result(prototype, old_child, new_child, changed_child_index);
   }
-  void fix_edge(derivation_type &wrong_1best,derivation_type correct_unary_best); // repair errors in non-sorted 1-best derivation
-  void fix_edge(derivation_type &wrong_1best,derivation_type correct_left_best,derivation_type correct_right_best); // repair errors in non-sorted 1-best derivation
+  void fix_edge(derivation_type &wrong_1best, derivation_type correct_unary_best); // repair errors in non-sorted 1-best derivation
+  void fix_edge(derivation_type &wrong_1best, derivation_type correct_left_best, derivation_type correct_right_best); // repair errors in non-sorted 1-best derivation
   };
 
   // you also need operator == (used only for assertions)
 
-  bool derivation_better_than(derivation_type a,derivation_type b);
+  bool derivation_better_than(derivation_type a, derivation_type b);
 
   or
 
@@ -76,7 +76,7 @@
   namespace graehl {
   template<>
   struct lazy_kbest_derivation_traits<Deriv> {
-  static inline bool better_than(const Deriv &candidate,const Deriv &than)
+  static inline bool better_than(const Deriv &candidate, const Deriv &than)
   {
   return candidate<than;
   }
@@ -109,7 +109,7 @@ struct lazy_forest_indent_tag {};
 }
 
 #ifndef LAZY_FOREST_KBEST_MSG
-# define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT<<msg)
+# define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT << msg)
 #endif
 
 #include <memory>
@@ -142,7 +142,7 @@ struct lazy_forest_indent_tag {};
 
 #ifndef ERRORQ
 # include <iostream>
-# define KBESTERRORQ(x, y) do{ std::cerr << "\n" << x << ": "<<y<<std::endl; }while(0)
+# define KBESTERRORQ(x, y) do{ std::cerr << "\n" << x << ": " << y<<std::endl; }while(0)
 #else
 # define KBESTERRORQ(x, y) ERRORQ(x, y)
 #endif
@@ -165,7 +165,7 @@ inline std::ostream & operator <<(std::ostream &o, lazy_kbest_index_type bp[2])
 
 /*
   template <class Deriv> inline
-  bool derivation_better_than(const Deriv &me,const Deriv &than)
+  bool derivation_better_than(const Deriv &me, const Deriv &than)
   {
   return me > than;
   }
@@ -211,12 +211,12 @@ struct lazy_derivation_cycle : public std::runtime_error
    {
 
 
-   /// can override derivation_better_than(derivation_type,derivation_type).
+   /// can override derivation_better_than(derivation_type, derivation_type).
    /// derivation_type should be a lightweight (value) object
    /// if LAZY_FOREST_KBEST_MSG debug prints are enabled, must also have o << deriv
    typedef Result *derivation_type;
 
-   friend bool derivation_better_than(derivation_type a,derivation_type b); // override this or lazy_kbest_derivation_traits::better_than. default is a>b
+   friend bool derivation_better_than(derivation_type a, derivation_type b); // override this or lazy_kbest_derivation_traits::better_than. default is a>b
 
    /// special derivation values (not used for normal derivations) (may be of different type but convertible to derivation_type)
    static derivation_type PENDING();
@@ -226,7 +226,7 @@ struct lazy_derivation_cycle : public std::runtime_error
    /// take an originally better (or best) derivation, substituting for the changed_child_index-th child new_child for old_child (cost difference should usually be computed as (cost(new_child) - cost (old_child)))
    derivation_type make_worse(derivation_type prototype, derivation_type old_child, derivation_type new_child, lazy_kbest_index_type changed_child_index)
    {
-   return new Result(prototype,old_child,new_child,changed_child_index);
+   return new Result(prototype, old_child, new_child, changed_child_index);
    }
    };
    </code>
@@ -339,7 +339,7 @@ struct projected_duplicate_filter : Projection
     EIFDBG(LAZYF, 3,
            std::ostringstream projstr;
            print_projection(projstr, d);
-           SHOWM3(LAZYF,"dup-filter permit?", projstr.str(), n, maxreps)
+           SHOWM3(LAZYF, "dup-filter permit?", projstr.str(), n, maxreps)
            );
     return n<=maxreps;
   }
@@ -349,9 +349,9 @@ struct projected_duplicate_filter : Projection
     Projection::print_projection(o, d);
   }
   /*  template <class O>
-      void print(O &o,derivation_type const& d,projected_type const& proj)
+      void print(O &o, derivation_type const& d, projected_type const& proj)
       {
-      o<<"projection for "<<&d<<": "<<&proj;
+      o << "projection for "<<&d << ": "<<&proj;
       }*/
 
 
@@ -386,14 +386,14 @@ struct lazy_kbest_stats
   template <class C, class T>
   void print(std::basic_ostream<C, T> &o) const
   {
-    o<<"[Lazy kbest visited "<<n_visited<<" derivations; ";
+    o << "[Lazy kbest visited " << n_visited << " derivations; ";
     if (trivial_filter) {
       assert(!n_filtered);
-      o<<n_passed<<" derivations found]";
+      o << n_passed << " derivations found]";
       return;
     }
-    o<<"uniqueness-filtered "<<n_filtered<<" of "<<n_total()<<" derivations, leaving "
-      << n_passed<<", or "<<graehl::percent<5>((double)n_passed, (double)n_total())<<"]";
+    o << "uniqueness-filtered " << n_filtered << " of " << n_total() << " derivations, leaving "
+      << n_passed << ", or " << graehl::percent<5>((double)n_passed, (double)n_total()) << "]";
   }
   typedef lazy_kbest_stats self_type;
 };
@@ -476,7 +476,7 @@ class lazy_forest
     env.stats.clear(filter_type::trivial);
   }
 
-  /// bool Visitor(derivation,ith) - if returns false, then stop early.
+  /// bool Visitor(derivation, ith) - if returns false, then stop early.
   /// otherwise stop after generating up to k (up to as many as exist in
   /// forest)
   template <class Visitor>
@@ -485,7 +485,7 @@ class lazy_forest
     clear_stats(env);
     lazy_kbest_index_type i = 0;
     for (; i<k; ++i) {
-      EIFDBG(LAZYF, 2, SHOWM2(LAZYF,"enumerate_kbest-pre", i, *this));
+      EIFDBG(LAZYF, 2, SHOWM2(LAZYF, "enumerate_kbest-pre", i, *this));
       derivation_type ith_best = get_best(env, i);
       if (ith_best == NONE()) break;
       if (!visit(ith_best, i)) break;
@@ -500,8 +500,8 @@ class lazy_forest
     memo.swap(o.memo);
   }
 
-  template <class Ch,class Tr>
-  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, lazy_forest const& self)
+  template <class Ch, class Tr>
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, lazy_forest const& self)
   { self.print(o); return o; }
 
   //FIXME: faster heap operations if we put handles to hyperedges on heap instead of copying? boost object pool?
@@ -550,8 +550,8 @@ class lazy_forest
       o << ")=" << derivation;
       o << '}';
     }
-    template <class Ch,class Tr>
-    friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &o, hyperedge const& self)
+    template <class Ch, class Tr>
+    friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, hyperedge const& self)
     { self.print(o); return o; }
 
     bool operator==(hyperedge const& o) const
@@ -616,13 +616,13 @@ class lazy_forest
   {
     o << "{NODE @" << this << '[' << memo.size() << ']';
     std::size_t s = (std::size_t)memo_size();
-    o << " #queued="<<pq_size();
+    o << " #queued=" << pq_size();
     if (nqueue>pq.size())
       nqueue = pq.size();
     for (std::size_t i = 0; i<nqueue; ++i) {
-      o<<"\n q["<<i<<"]={{{";
-      o<<pq[i];
-      o<<"}}}";
+      o << "\n q[" << i<<"]={{{";
+      o << pq[i];
+      o << "}}}";
     }
     if (s>(nqueue?0u:0u)) {
       o << "\n first={{{";
@@ -671,9 +671,9 @@ class lazy_forest
     EIFDBG(LAZYF, 2, KBESTINFOT("GET_BEST n=" << n << " node=" << *this);
            KBESTNESTT);
     if (n < memo.size()) {
-      EIFDBG(LAZYF, 3, KBESTINFOT("existing "<<this<<"[n="<<n<<"] = "<<memo[n]<<", queue="<<*this));
+      EIFDBG(LAZYF, 3, KBESTINFOT("existing " << this << "[n=" << n<<"] = " << memo[n] << ", queue="<<*this));
       if (memo[n] == PENDING()) {
-        KBESTERRORQ("lazy_forest::get_best","memo entry " << n << " for lazy_forest@0x" << (void*)this<<" is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
+        KBESTERRORQ("lazy_forest::get_best","memo entry " << n << " for lazy_forest@0x" << (void*)this << " is pending - there must be a negative cost (or maybe 0-cost) cycle - returning NONE instead (this means that we don't generate any nbest above " << n << " for this node."); //=" << memo[n-1]
         if (env.throw_on_cycle)
           throw lazy_derivation_cycle();
         memo[n] = NONE();
@@ -689,15 +689,15 @@ class lazy_forest
           return (d = NONE());
         // assert(memo[n-1]==pq[0].derivation); // INVARIANT // no longer true with filtering
         d = next_best(env);
-        EIFDBG(LAZYF, 2, KBESTINFOT(this<<"[n="<<n<<"] = "<<d<<", queue="<<*this));
+        EIFDBG(LAZYF, 2, KBESTINFOT(this << "[n=" << n<<"] = " << d<<", queue="<<*this));
         if (d==NONE())
           return d;
         if (filter().permit(d)) {
-          EIFDBG(LAZYF, 2, KBESTINFOT("passed "<<n<<"th best for "<<*this));
+          EIFDBG(LAZYF, 2, KBESTINFOT("passed " << n<<"th best for "<<*this));
           ++env.stats.n_passed;
           return d;
         } // else, try again:
-        EIFDBG(LAZYF, 2, KBESTINFOT("filtered candidate "<<n<<"th best for "<<*this));
+        EIFDBG(LAZYF, 2, KBESTINFOT("filtered candidate " << n<<"th best for "<<*this));
         ++env.stats.n_filtered;
         d = PENDING();
       }
@@ -738,26 +738,26 @@ class lazy_forest
 
   /// Get next best derivation, or NONE if no more.
   //// INVARIANT: top() contains the next best entry
-  /// PRECONDITION: don't call if pq is empty. (if !pq.empty()). memo ends with [old top derivation,PENDING].
+  /// PRECONDITION: don't call if pq is empty. (if !pq.empty()). memo ends with [old top derivation, PENDING].
   derivation_type next_best(Environment &env) {
     assertlvl(11, !pq.empty());
 
     hyperedge pending = top(); // creating a copy saves ugly complexities in trying to make pop_heap / push_heap efficient ...
-    EIFDBG(LAZYF, 1, KBESTINFOT("GENERATE SUCCESSORS FOR "<<this<<'['<<memo.size()<<"] = "<<pending));
+    EIFDBG(LAZYF, 1, KBESTINFOT("GENERATE SUCCESSORS FOR " << this<<'['<<memo.size() << "] = " << pending));
     pop(); // since we made a copy already into pending...
 
     derivation_type old_parent = pending.derivation; // remember this because we'll be destructively updating pending.derivation below
-    //    assertlvl(19,memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing duplicates: && old_parent==memo[memo.size()-2]
+    //    assertlvl(19, memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing duplicates: && old_parent==memo[memo.size()-2]
     if (pending.child[0]) { // increment first
       generate_successor_hyperedge(env, pending, old_parent, 0);
-      if (pending.child[1] && pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a,b)
+      if (pending.child[1] && pending.childbp[0]==0) { // increment second only if first is initial - one path to any (a, b)
         generate_successor_hyperedge(env, pending, old_parent, 1);
       }
     }
     if (pq.empty())
       return NONE();
     else {
-      EIFDBG(LAZYF, 2, SHOWM2(LAZYF,"next_best", top().derivation, this));
+      EIFDBG(LAZYF, 2, SHOWM2(LAZYF, "next_best", top().derivation, this));
       return top().derivation;
     }
   }
@@ -778,7 +778,7 @@ class lazy_forest
     assert(pq.empty() && memo.empty());
     set_first_best(env, r);
     add(r, left, right);
-    EIFDBG(LAZYF, 3, KBESTINFOT("add_first_sorted lazy-node="<<this<<": "<<*this));
+    EIFDBG(LAZYF, 3, KBESTINFOT("add_first_sorted lazy-node=" << this << ": "<<*this));
   }
 
   /// must be added from best to worst order ( r1 > r2 > r3 > ... )
@@ -815,7 +815,7 @@ class lazy_forest
   {
     std::make_heap(pq.begin(), pq.end());
     finish_adding(env, check_best_is_selfloop);
-    EIFDBG(LAZYF, 3, KBESTINFOT("sorted lazy-node="<<this<<": "<<*this));
+    EIFDBG(LAZYF, 3, KBESTINFOT("sorted lazy-node=" << this << ": "<<*this));
   }
 
   bool best_is_selfloop() const
@@ -869,15 +869,15 @@ class lazy_forest
     lazy_kbest_index_type &child_i = pending.childbp[i];
     derivation_type old_child = child_node.memo[child_i];
     EIFDBG(LAZYF, 2,
-           KBESTINFOT("generate_successor_hyperedge #" << i << " @" << this << ": " << " old_parent="<<old_parent<<" old_child=" <<old_child << " NODE="<<*this);
+           KBESTINFOT("generate_successor_hyperedge #" << i << " @" << this << ": " << " old_parent=" << old_parent << " old_child=" <<old_child << " NODE="<<*this);
            KBESTNESTT);
 
     derivation_type new_child = (child_node.get_best(env, ++child_i));
     if (new_child!=NONE()) { // has child-succesor
       EIFDBG(LAZYF, 6, KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ',' << pending.childbp[1] << "]");
-             SHOWM7(LAZYF,"generator_successor-child-i", i, pending.childbp[0], pending.childbp[1], old_parent, old_child, new_child, child_node));
+             SHOWM7(LAZYF, "generator_successor-child-i", i, pending.childbp[0], pending.childbp[1], old_parent, old_child, new_child, child_node));
       pending.derivation = env.derivation_factory.make_worse(old_parent, old_child, new_child, i);
-      EIFDBG(LAZYF, 4, KBESTINFOT("new derivation: "<<pending.derivation));
+      EIFDBG(LAZYF, 4, KBESTINFOT("new derivation: " << pending.derivation));
       push(pending);
     }
     --child_i;

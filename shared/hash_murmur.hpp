@@ -100,10 +100,10 @@ inline void MurmurHash3_x86_128 ( const void * key, const int len,
 
   for(int i = -nblocks; i; i++)
   {
-    uint32_t k1 = getblock32(blocks,i*4+0);
-    uint32_t k2 = getblock32(blocks,i*4+1);
-    uint32_t k3 = getblock32(blocks,i*4+2);
-    uint32_t k4 = getblock32(blocks,i*4+3);
+    uint32_t k1 = getblock32(blocks, i*4+0);
+    uint32_t k2 = getblock32(blocks, i*4+1);
+    uint32_t k3 = getblock32(blocks, i*4+2);
+    uint32_t k4 = getblock32(blocks, i*4+3);
 
     k1 *= c1; k1  = GRAEHL_ROTL32(k1,15); k1 *= c2; h1 ^= k1;
 
@@ -201,8 +201,8 @@ inline void MurmurHash3_x64_128 ( const void * key, const int len,
 
   for(int i = 0; i < nblocks; i++)
   {
-    uint64_t k1 = getblock64(blocks,i*2+0);
-    uint64_t k2 = getblock64(blocks,i*2+1);
+    uint64_t k1 = getblock64(blocks, i*2+0);
+    uint64_t k2 = getblock64(blocks, i*2+1);
 
     k1 *= c1; k1  = GRAEHL_ROTL64(k1,31); k1 *= c2; h1 ^= k1;
 
@@ -282,7 +282,7 @@ inline MurmurHashResult MurmurHash(void const *key, int len, MurmurSeed seed = G
 
   for(int i = -nblocks; i; i++)
   {
-    uint32_t k1 = getblock32(blocks,i);
+    uint32_t k1 = getblock32(blocks, i);
 
     k1 *= c1;
     k1 = GRAEHL_ROTL32(k1,15);
@@ -336,8 +336,8 @@ inline uint64_t WideMurmurHash(void const *key, int len, MurmurSeed seed = GRAEH
 
   for(int i = 0; i < nblocks; i++)
   {
-    uint64_t k1 = getblock64(blocks,i*2+0);
-    uint64_t k2 = getblock64(blocks,i*2+1);
+    uint64_t k1 = getblock64(blocks, i*2+0);
+    uint64_t k2 = getblock64(blocks, i*2+1);
 
     k1 *= c1; k1  = GRAEHL_ROTL64(k1,31); k1 *= c2; h1 ^= k1;
 

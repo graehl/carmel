@@ -4,11 +4,11 @@
 
    char const* s="ab";
 
-   cstr_const_iterator(s),cstr_const_iterator()
+   cstr_const_iterator(s), cstr_const_iterator()
 
    or
 
-   null_terminated_begin(s),null_terminated_end(s)
+   null_terminated_begin(s), null_terminated_end(s)
 */
 #include <boost/iterator/iterator_facade.hpp>
 #include <graehl/shared/is_null.hpp>

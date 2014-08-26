@@ -49,7 +49,7 @@ struct alloc_new_delete
 
 
 //or U=boost::default_user_allocator_new_delete - but make sure to construct objects in space provided by U::malloc()
-template<class T,class R=atomic_count,class U=alloc_new_delete>
+template<class T, class R=atomic_count, class U=alloc_new_delete>
 struct intrusive_refcount //: boost::noncopyable
 {
   typedef void is_refcounted_enable; // for is_refcounted
@@ -106,7 +106,7 @@ private:
 };
 
 
-template <typename UserAlloc,typename element_type>
+template <typename UserAlloc, typename element_type>
 element_type * construct()
 {
 
@@ -118,7 +118,7 @@ element_type * construct()
   return ret;
 }
 
-template <typename UserAlloc,typename element_type>
+template <typename UserAlloc, typename element_type>
 element_type * construct_copy(element_type const& copy_me)
 {
   element_type * const ret = (element_type *)UserAlloc::malloc(sizeof(element_type));
@@ -141,14 +141,14 @@ struct intrusive_traits
 
 
 /// this trait means you have add_ref() and release(p) members and is used to prevent making a refcount around a refcount
-template <class T,class Enable=void>
+template <class T, class Enable=void>
 struct is_refcounted
 {
   enum {value=0};
 };
 
 template <class T>
-struct is_refcounted<T,typename T::is_refcounted_enable>
+struct is_refcounted<T, typename T::is_refcounted_enable>
 {
   enum {value=1};
 };
@@ -176,14 +176,14 @@ inline typename boost::enable_if<graehl::is_refcounted<T> >::type intrusive_ptr_
 
 namespace graehl {
 
-template <class T,class Enable=void>
+template <class T, class Enable=void>
 struct shared_ptr_maybe_intrusive
 {
   typedef boost::shared_ptr<T> type;
 };
 
 template <class T>
-struct shared_ptr_maybe_intrusive<T,typename boost::enable_if<is_refcounted<T> >::type>
+struct shared_ptr_maybe_intrusive<T, typename boost::enable_if<is_refcounted<T> >::type>
 {
   typedef boost::intrusive_ptr<T> type;
 };
@@ -193,7 +193,7 @@ template <class T>
 //typename boost::enable_if<is_refcountend<T>,T>::type
 inline T *intrusive_clone(T const& x) // result has refcount of 0 - must delete yourself or use to build an intrusive_ptr
 {
-  return construct_copy<typename intrusive_traits<T>::user_allocator,T>(x);
+  return construct_copy<typename intrusive_traits<T>::user_allocator, T>(x);
 }
 
 template <class T>
@@ -219,7 +219,7 @@ void
 intrusive_make_valid_unique(boost::intrusive_ptr<T> & p)
 {
   if (!p)
-    p.reset(construct<typename intrusive_traits<T>::user_allocator,T>());
+    p.reset(construct<typename intrusive_traits<T>::user_allocator, T>());
   else if (!p->unique())
     p.reset(intrusive_clone(*p));
 }

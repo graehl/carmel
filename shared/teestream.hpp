@@ -28,7 +28,7 @@ namespace graehl {
  #include <fstream>
   int main() {
     std::ofstream  logfile("/tmp/logfile.txt");
-    graehl::teebuf teebuf(logfile.rdbuf(),std::cerr.rdbuf());
+    graehl::teebuf teebuf(logfile.rdbuf(), std::cerr.rdbuf());
     std::ostream   log(&teebuf);
     // write log messages to 'log'
     log << "Hello, dude.  check /tmp/logfile.txt\n";

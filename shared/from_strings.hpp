@@ -9,21 +9,21 @@
 
 namespace graehl {
 
-template <class Val,class enable=void>
+template <class Val, class enable=void>
 struct select_from_strings
 {
   enum { container = 0 };
   typedef std::string string_or_strings;
   typedef std::vector<std::string> strings_type;
   typedef Val value_type;
-  static inline void from_strings(std::vector<std::string> const& s,Val &val) {
+  static inline void from_strings(std::vector<std::string> const& s, Val &val) {
     if (s.size()==1)
-      string_to(s.front(),val);
+      string_to(s.front(), val);
     else
       throw std::runtime_error("from_strings: non-container value expected exactly one source string");
   }
   static inline std::vector<std::string> to_strings(Val const& val) {
-    return strings_type(1,graehl::to_string(val));
+    return strings_type(1, graehl::to_string(val));
   }
   static inline std::string to_string(Val const& val
                                       ,std::string const& sep_each=" "
@@ -44,33 +44,33 @@ inline std::string range_to_string(Container const& container
   std::vector<char> o;
   o.reserve(20*container.size());
   bool first=true;
-  for (typename Container::const_iterator i=container.begin(),e=container.end();i!=e;++i) {
+  for (typename Container::const_iterator i=container.begin(), e=container.end();i!=e;++i) {
     if (first)
       first=false;
     else
-      append(o,sep_each);
-    append(o,pre_each);
-    append(o,graehl::to_string(*i));
+      append(o, sep_each);
+    append(o, pre_each);
+    append(o, graehl::to_string(*i));
   }
-  return std::string(o.begin(),o.end());
+  return std::string(o.begin(), o.end());
 }
 
 template <class Container>
-struct select_from_strings<Container,typename boost::enable_if<is_nonstring_container<Container> >::type >
+struct select_from_strings<Container, typename boost::enable_if<is_nonstring_container<Container> >::type >
 {
   enum { container = 1 };
   typedef std::vector<std::string> strings_type;
   typedef strings_type string_or_strings;
   typedef typename Container::value_type value_type;
-  static inline void from_strings(std::vector<std::string> const& s,Container &container) {
+  static inline void from_strings(std::vector<std::string> const& s, Container &container) {
     container.clear();
-    for (typename std::vector<std::string>::const_iterator i=s.begin(),e=s.end();i!=e;++i)
-      add(container,string_to<value_type>(*i));
+    for (typename std::vector<std::string>::const_iterator i=s.begin(), e=s.end();i!=e;++i)
+      add(container, string_to<value_type>(*i));
   }
   static inline std::vector<std::string> to_strings(Container const& container) {
     strings_type r;
-    for (typename Container::const_iterator i=container.begin(),e=container.end();i!=e;++i)
-      add(r,graehl::to_string(*i));
+    for (typename Container::const_iterator i=container.begin(), e=container.end();i!=e;++i)
+      add(r, graehl::to_string(*i));
     return r;
   }
   static inline std::string to_string(Container const& container
@@ -78,7 +78,7 @@ struct select_from_strings<Container,typename boost::enable_if<is_nonstring_cont
                                       ,std::string const& pre_each=""
     )
   {
-    return range_to_string(container,sep_each,pre_each);
+    return range_to_string(container, sep_each, pre_each);
   }
   static inline string_or_strings to_string_or_strings(Container const& container)
   { return to_strings(container); }
@@ -91,20 +91,20 @@ inline typename select_from_strings<V>::string_or_strings to_string_or_strings(V
 }
 
 template <class V>
-inline std::string to_string_sep(V const& v,std::string const& sep_each=" ",std::string const& pre_each="")
+inline std::string to_string_sep(V const& v, std::string const& sep_each=" ", std::string const& pre_each="")
 {
-  return select_from_strings<V>::to_string(v,sep_each,pre_each);
+  return select_from_strings<V>::to_string(v, sep_each, pre_each);
 }
 
 
 struct store_from_strings
 {
   virtual void from_strings(std::vector<std::string> const& s) = 0;
-  virtual std::string to_string(std::string const& pre_each="",std::string const& sep_each=" ") const = 0;
+  virtual std::string to_string(std::string const& pre_each="", std::string const& sep_each=" ") const = 0;
   virtual bool container() const = 0;
 };
 
-template <class Ptr,class enable=void>
+template <class Ptr, class enable=void>
 struct ptr_from_strings : store_from_strings
 {
   Ptr p;
@@ -121,10 +121,10 @@ struct ptr_from_strings : store_from_strings
     ensure_ptr();
     select_from_strings<value_type>::from_strings(s,*p);
   }
-  std::string to_string(std::string const& pre_each="",std::string const& sep_each=" ") const
+  std::string to_string(std::string const& pre_each="", std::string const& sep_each=" ") const
   {
     ensure_ptr();
-    return select_from_strings<value_type>::to_string(*p,pre_each,sep_each);
+    return select_from_strings<value_type>::to_string(*p, pre_each, sep_each);
   }
   bool container() const
   {

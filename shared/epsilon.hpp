@@ -17,7 +17,7 @@
 # endif
 
 # ifndef GRAEHL_DEFAULT_IEEE_APART
-/// for within_epsilon_or_(floats|doubles|ieee)_apart(a,b,epsilon): check approx
+/// for within_epsilon_or_(floats|doubles|ieee)_apart(a, b, epsilon): check approx
 /// equality by the number of representable IEEE float/double between two
 /// numbers
 #  define GRAEHL_DEFAULT_IEEE_APART 8
@@ -305,8 +305,8 @@ void testEpsilon(Float f, unsigned n, double max_ieee_apart_per_n= 0.2) {
     sum+=x;
   Float nx=x*n;
   unsigned max_ieee_apart = (unsigned)(max_ieee_apart_per_n * n);
-  BOOST_CHECK_MESSAGE(ieee_apart(nx,sum)<=max_ieee_apart,
-                      "ieee_apart larger than "<<max_ieee_apart<<": x="<<x<<" n="<<n<<" x*n="<<nx<<" (x+...+x)(n times)="<<sum<<" ieee_apart="<<ieee_apart(nx,sum));
+  BOOST_CHECK_MESSAGE(ieee_apart(nx, sum)<=max_ieee_apart,
+                      "ieee_apart larger than " << max_ieee_apart << ": x=" << x<<" n=" << n<<" x*n=" << nx << " (x+...+x)(n times)=" << sum << " ieee_apart=" << ieee_apart(nx, sum));
 }
 
 BOOST_AUTO_TEST_CASE( TEST_epsilon )

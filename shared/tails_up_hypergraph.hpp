@@ -14,9 +14,9 @@
 /* usage:
    typedef TailsUpHypergraph<H> T;
    T t(g);
-   T::template BestTree<> alg(t,mu,pi);
+   T::template BestTree<> alg(t, mu, pi);
    for each final (tail) vertex v with final cost f:
-   alg.axiom(v,f);
+   alg.axiom(v, f);
    alg.finish();
 
    or:
@@ -79,28 +79,28 @@ namespace graehl {
 VERBOSE_EXCEPTION_DECLARE(BestTreeRereachException)
 
 DECLARE_DBG_LEVEL(TUHG)
-//IFDBG(TUHG,1) { SHOWM2(TUHG,"descr" }
-#define TUHG_EXTRA_Q1(n) SHOWM1(TUHG,n,print(heap,range_sep()));
-#define TUHG_EXTRA_Q2(n) SHOWM1(TUHG,n,print(heap,pair_getter(mu)));
+//IFDBG(TUHG,1) { SHOWM2(TUHG, "descr" }
+#define TUHG_EXTRA_Q1(n) SHOWM1(TUHG, n, print(heap, range_sep()));
+#define TUHG_EXTRA_Q2(n) SHOWM1(TUHG, n, print(heap, pair_getter(mu)));
 #define TUHG_EXTRA_QALL(n) TUHG_EXTRA_Q1(n) TUHG_EXTRA_Q2(n)
-#define TUHG_SHOWQ(l,n,v) EIFDBG(TUHG,l,SHOWM3(TUHG,n,v,mu[v],heap.loc(v));TUHG_EXTRA_Q )
-#define TUHG_SHOWP(l,n,mu) EIFDBG(TUHG,l,SHOWM(TUHG,n,print(vertices(g),pair_getter(mu))))
+#define TUHG_SHOWQ(l, n, v) EIFDBG(TUHG, l, SHOWM3(TUHG, n, v, mu[v], heap.loc(v));TUHG_EXTRA_Q )
+#define TUHG_SHOWP(l, n, mu) EIFDBG(TUHG, l, SHOWM(TUHG, n, print(vertices(g), pair_getter(mu))))
 
 struct BestTreeStats {
-  std::size_t n_blocked_rereach,n_relax,n_update,n_converged_inexact,n_pop,n_unpopped;
-  BestTreeStats() : n_blocked_rereach(),n_relax(),n_update(),n_converged_inexact(),n_pop(),n_unpopped() {}
+  std::size_t n_blocked_rereach, n_relax, n_update, n_converged_inexact, n_pop, n_unpopped;
+  BestTreeStats() : n_blocked_rereach(), n_relax(), n_update(), n_converged_inexact(), n_pop(), n_unpopped() {}
   typedef BestTreeStats self_type;
   template <class O>
   void print(O &o) const {
-    o<<"BestTreeStats:"
-     <<" blocked "<<n_blocked_rereach<<" negative-cost improvements"
-     <<"; evaluated "<<n_relax<<" edges"
-     <<" and improved "<<n_update<<" of those";
+    o << "BestTreeStats:"
+     <<" blocked " << n_blocked_rereach << " negative-cost improvements"
+     <<"; evaluated " << n_relax << " edges"
+     <<" and improved " << n_update << " of those";
     if (n_converged_inexact)
-      o<<", skipping re-queueing of "<<n_converged_inexact<<" by within-epsilon convergence";
-    o<<"; found best cost of "<<n_pop<<" vertices";
+      o << ", skipping re-queueing of " << n_converged_inexact << " by within-epsilon convergence";
+    o << "; found best cost of " << n_pop << " vertices";
     if (n_unpopped)
-      o<<" and left "<<n_unpopped<<" reachable vertices unused";
+      o << " and left " << n_unpopped << " reachable vertices unused";
     o << ".";
   }
   TO_OSTREAM_PRINT
@@ -110,7 +110,7 @@ struct BestTreeOptions
 {
   unsigned allow_rereach; // allow repeated requeueing of already "best known" popped nodes, this many times (0 means don't need to track, otherwise we instantiate rereachptr). we count to avoid infinite loop if neg cost cycle. this count isn't used until we requeue something we popped; we don't mind if we find new best costs for a tail repeatedly as long as we didn't pop the head of that edge yet.
   bool throw_on_rereach_limit; // throw exception on excess of allow_rereach if true, otherwise just increment stat.n_blocked_rereach
-  std::string convergence_epsilon_str;  // if set, stop before allow_rereach limit if PT::converged(improvement,previous,convergence_epsilon) - that is, plus(improvement,previous)<convergence_epsilon.
+  std::string convergence_epsilon_str;  // if set, stop before allow_rereach limit if PT::converged(improvement, previous, convergence_epsilon) - that is, plus(improvement, previous)<convergence_epsilon.
   BestTreeOptions() {
     defaults();
   }
@@ -123,9 +123,9 @@ struct BestTreeOptions
   template <class Conf> void configure(Conf &c)
   {
     c.is("Best tree");
-    c("rereach",&allow_rereach)("mostly for handling lattices with net-negative-cost edges: in best-first allow the 'best' path to a node to be reached this many times (may be needed if edge costs are negative more than sum of best paths to all-but-one tail is positive). if every edge has a net-postivie cost, this can be 0, which saves memory");
-    c("throw-on-max-rereach",&throw_on_rereach_limit)("if a node is popped more than rereach+1 times, throw a BestTreeRereachException immediately)");
-    c("convergence",&convergence_epsilon_str)("if empty or 0, only stop on maximum # of rereaches or 0 change anywhere. else stop if change is below this amount").is("epsilon - a small nonnegative real");
+    c("rereach", &allow_rereach)("mostly for handling lattices with net-negative-cost edges: in best-first allow the 'best' path to a node to be reached this many times (may be needed if edge costs are negative more than sum of best paths to all-but-one tail is positive). if every edge has a net-postivie cost, this can be 0, which saves memory");
+    c("throw-on-max-rereach", &throw_on_rereach_limit)("if a node is popped more than rereach+1 times, throw a BestTreeRereachException immediately)");
+    c("convergence", &convergence_epsilon_str)("if empty or 0, only stop on maximum # of rereaches or 0 change anywhere. else stop if change is below this amount").is("epsilon - a small nonnegative real");
   }
 
 };
@@ -143,20 +143,20 @@ struct HTailMult {
     o<<'"';
     ed->print(o);
     o<<'"';
-    o << "\"x"<<multiplicity;
+    o << "\"x" << multiplicity;
   }
   TO_OSTREAM_PRINT
 };
 
 // stores G ref
 template <class G,
-          class EdgeMapFactory=property_factory<G,edge_tag>,
-          class VertMapFactory=property_factory<G,vertex_tag>,
+          class EdgeMapFactory=property_factory<G, edge_tag>,
+          class VertMapFactory=property_factory<G, vertex_tag>,
           class ContS=VectorS // how we hold the adjacent edges for tail vert.
           >
 struct TailsUpHypergraph {
   //ED: hyperedge descriptor. VD: vertex
-  typedef TailsUpHypergraph<G,EdgeMapFactory,VertMapFactory,ContS> Self;
+  typedef TailsUpHypergraph<G, EdgeMapFactory, VertMapFactory, ContS> Self;
   typedef G graph;
 
   graph const&g;
@@ -212,38 +212,38 @@ struct TailsUpHypergraph {
     record_edges();
   }
   void record_edges() {
-    visit(edgeT,g,*this);
+    visit(edgeT, g,*this);
   }
   Adj &operator[](VD v) {
     return adj[v];
   }
   void operator()(ED ed) {
-    Tailr tailr=tails(ed,g);
+    Tailr tailr=tails(ed, g);
     using namespace boost;
-    Ti i=begin(tailr),e=end(tailr);
+    Ti i=begin(tailr), e=end(tailr);
     if (i==e) {
       terminal_arcs.push_back(ed);
     } else {
       unsigned ntails_uniq=0;
       do {
-        Adj &a=adj[tail(*i,ed,g)];
+        Adj &a=adj[tail(*i, ed, g)];
         if (a.size()&&last_added(a) == ed) {
           // last hyperarc with same tail = same hyperarc
         } else { // new (unique) tail
-          add(a,Tail(ed)); // default multiplicity=1
+          add(a, Tail(ed)); // default multiplicity=1
           ++ntails_uniq;
         }
         ++i;
       } while (i!=e);
-      put(unique_tails_pmap,ed,ntails_uniq);
+      put(unique_tails_pmap, ed, ntails_uniq);
     }
   }
 
   // caller must init to 0
   template <class EdgePMap>
   void count_unique_tails(EdgePMap &e) {
-    for(typename Adjs::const_iterator i=adj.begin(),e=adj.end();i!=e;++i) {
-      for (typename Adj::const_iterator j=i->begin(),ej=i->end();j!=ej;++j) {
+    for(typename Adjs::const_iterator i=adj.begin(), e=adj.end();i!=e;++i) {
+      for (typename Adj::const_iterator j=i->begin(), ej=i->end();j!=ej;++j) {
 // const TailMult &ad=*j;
         ++e[*j];
       }
@@ -275,7 +275,7 @@ struct TailsUpHypergraph {
     {
       use_convergence=!convergence_epsilon_str.empty();
       if (use_convergence) {
-        string_to(convergence_epsilon_str,convergence_epsilon);
+        string_to(convergence_epsilon_str, convergence_epsilon);
         if (convergence_epsilon==PT::start())
           use_convergence=false;
       }
@@ -287,7 +287,7 @@ struct TailsUpHypergraph {
   // edgecostmap should be initialized to edge costs
   template <
     class VertexCostMap=typename VertMapFactory::template rebind<cost_type>::reference,
-    //class VertexPredMap=property_factory<graph,VD>::template rebind<ED>::reference
+    //class VertexPredMap=property_factory<graph, VD>::template rebind<ED>::reference
     class VertexPredMap=typename VertMapFactory::template rebind<ED>::reference,
     //dummy_property_map
     class EdgeCostMap=typename EdgeMapFactory::template rebind<cost_type>::reference
@@ -315,10 +315,10 @@ struct TailsUpHypergraph {
 
     typedef typename ET::tails_size_type Ntails;
 
-    struct RemainInf : public std::pair<Ntails,Cost> {
-      typedef std::pair<Ntails,Cost> P;
-      RemainInf() : P(0,PT::start()) {}
-      RemainInf(Ntails const& n,Cost const& c) : P(n,c) {}
+    struct RemainInf : public std::pair<Ntails, Cost> {
+      typedef std::pair<Ntails, Cost> P;
+      RemainInf() : P(0, PT::start()) {}
+      RemainInf(Ntails const& n, Cost const& c) : P(n, c) {}
       Ntails remain() const { return this->first; }
       Cost const& cost() const { return this->second; }
 // operator Cost() const { return this->second; }
@@ -339,19 +339,19 @@ struct TailsUpHypergraph {
     RemainTailsPmap remain_pmap;
     EdgeCostMap ec;
 
-    typedef built_pmap<vertex_tag,graph,unsigned> Rereach;
+    typedef built_pmap<vertex_tag, graph, unsigned> Rereach;
     typedef boost::shared_ptr<Rereach> RereachPtr;
     typedef typename Rereach::property_map_type RereachP;
     RereachPtr rereachptr;
     RereachP rereach;
 
     unsigned tail_already_reached(VD v) const {
-      return opt.allow_rereach && get(rereach,v);
+      return opt.allow_rereach && get(rereach, v);
     }
 
 
     unsigned already_reached(VD v) const {
-      return opt.allow_rereach ? get(rereach,v) : get(locp,v)==(heap_loc_t)D_ARY_HEAP_NULL_INDEX;
+      return opt.allow_rereach ? get(rereach, v) : get(locp, v)==(heap_loc_t)D_ARY_HEAP_NULL_INDEX;
       // if we're not allow_rereach tracking, then this is only meaningful for heads, not the tail (which was just popped in every case)
     }
     void mark_reached(VD v) {
@@ -360,13 +360,13 @@ struct TailsUpHypergraph {
 #ifdef NDEBUG
       else // we don't use locp for anything if allow_rereach. but this pretties up the debug output
 #endif
-        put(locp,v,(heap_loc_t)D_ARY_HEAP_NULL_INDEX); // not possible to have this before being added first time - i cleared it to 0s in building form vert_fact (default construct)
+        put(locp, v, (heap_loc_t)D_ARY_HEAP_NULL_INDEX); // not possible to have this before being added first time - i cleared it to 0s in building form vert_fact (default construct)
     }
 
     BestTreeStats stat;
-    typedef d_ary_heap_indirect<VD,graehl::OPTIMAL_HEAP_ARITY,VertexCostMap,LocsP,better_cost<graph> > Heap;
+    typedef d_ary_heap_indirect<VD, graehl::OPTIMAL_HEAP_ARITY, VertexCostMap, LocsP, better_cost<graph> > Heap;
     Heap heap;
-    BestTree(Self &r,VertexCostMap mu_,VertexPredMap pi_, EdgeCostMap ec,BestTreeOptionsParsed const& bestOpt=BestTreeOptions())
+    BestTree(Self &r, VertexCostMap mu_, VertexPredMap pi_, EdgeCostMap ec, BestTreeOptionsParsed const& bestOpt=BestTreeOptions())
       :
       tu(r)
       , g(tu.g)
@@ -380,16 +380,16 @@ struct TailsUpHypergraph {
       , ec(ec)
       , rereachptr(opt.allow_rereach?RereachPtr(new Rereach(g,0)):RereachPtr())
       , rereach(opt.allow_rereach?rereachptr->pmap:RereachP())
-      , heap(mu,locp)
+      , heap(mu, locp)
     {
       opt.parse();
-      copy_pmap(edgeT,g,remain_pmap,tu.unique_tails_pmap);
-// visit(edgeT,g,make_indexed_pair_copier(remain_pmap,tu.unique_tails_pmap,ec)); // pair(rem)<-(tr,ev)
+      copy_pmap(edgeT, g, remain_pmap, tu.unique_tails_pmap);
+// visit(edgeT, g, make_indexed_pair_copier(remain_pmap, tu.unique_tails_pmap, ec)); // pair(rem)<-(tr, ev)
       init_costs();
     }
 
     void init_pi(ED null=ED()) {
-      graehl::init_pmap(vertexT,g,pi,null);
+      graehl::init_pmap(vertexT, g, pi, null);
     }
 
     typedef typename GT::vertex_iterator Vi;
@@ -397,53 +397,53 @@ struct TailsUpHypergraph {
     void init_costs(Cost cinit=PT::unreachable()) {
       Vertices verts=vertices(g);
       using namespace boost;
-      for (Vi i=begin(verts),e=end(verts);i!=e;++i) {
+      for (Vi i=begin(verts), e=end(verts);i!=e;++i) {
         VD v=*i;
-        put(mu,*i,cinit);
-        put(locp,v,0);
+        put(mu,*i, cinit);
+        put(locp, v,0);
         // this should not be necessary for shared_array_property_map (new int[]
         // default-inits), but it turns out that it actually is necessary. anyway we should support all pmaps
 
-        assert(get(locp,v) == 0);
-        assert(get(pi,v) == 0);
+        assert(get(locp, v) == 0);
+        assert(get(pi, v) == 0);
       }
     }
     void init() { // fill from hg terminal arcs
-      for (typename TerminalArcs::iterator i=tu.terminal_arcs.begin(),end=tu.terminal_arcs.end();i!=end;++i) {
+      for (typename TerminalArcs::iterator i=tu.terminal_arcs.begin(), end=tu.terminal_arcs.end();i!=end;++i) {
         ED h=*i;
-        VD v=source(h,g);
-        Cost hc=get(ec,h);
+        VD v=source(h, g);
+        Cost hc=get(ec, h);
         // typename unwrap_reference<VertexCostMap>::type &dmu(mu);
-        axiom(v,hc);
+        axiom(v, hc);
       }
     }
 
     void safe_queue(VD v) {
-      TUHG_SHOWQ(2,"safe_queue",v);
+      TUHG_SHOWQ(2, "safe_queue", v);
       if (!is_queued(v))
         add_unsorted(v);
     }
 
-    void axiom(VD axiom,Cost const& c=PT::start(),ED h=ED()) {
-      EIFDBG(TUHG,3,SHOW3(TUHG,c,axiom,print(axiom,g)));
+    void axiom(VD axiom, Cost const& c=PT::start(), ED h=ED()) {
+      EIFDBG(TUHG,3, SHOW3(TUHG, c, axiom, print(axiom, g)));
       Cost &mc=mu[axiom];
-      if (PT::update(c,mc)) {
-        assert(PT::includes(c,mc));
+      if (PT::update(c, mc)) {
+        assert(PT::includes(c, mc));
         safe_queue(axiom);
-        put(pi,axiom,h);
+        put(pi, axiom, h);
       } else {
-        EIFDBG(TUHG,0,SHOWM4(TUHG,"WARNING: axiom didn't improve mu[axiom]",c,axiom,mu[axiom],print(axiom,g)));
+        EIFDBG(TUHG,0, SHOWM4(TUHG, "WARNING: axiom didn't improve mu[axiom]", c, axiom, mu[axiom], print(axiom, g)));
       }
 
     }
 
-    void operator()(VD v,Cost const& c) {
-      axiom(v,c);
+    void operator()(VD v, Cost const& c) {
+      axiom(v, c);
     }
 
     void add_unsorted(VD v) { // call finish() after
       heap.add_unsorted(v);
-      TUHG_SHOWQ(1,"added_unsorted",v);
+      TUHG_SHOWQ(1, "added_unsorted", v);
     }
 
     struct add_axioms {
@@ -459,19 +459,19 @@ struct TailsUpHypergraph {
     }
 
     void operator()(VD v) { // can be called blindly for all verts. only those with reachable path cost are queued
-      //put(locp,v,0); // not necessary: property factory (even new int[N] will always default init
-      if (!is_queued(v) && get(mu,v) != PT::unreachable()) {
+      //put(locp, v,0); // not necessary: property factory (even new int[N] will always default init
+      if (!is_queued(v) && get(mu, v) != PT::unreachable()) {
         add_unsorted(v);
       }
     }
 
     // must have no duplicates, and have already set mu
     void queue_all() {
-      visit(vertexT,g,*this);
+      visit(vertexT, g,*this);
     }
 
     bool is_queued(VD v) const {
-// return get(loc,v) || (!heap.empty() && heap.top()==v); // 0 init relied upon, but 0 is a valid location. could set locs to -1 beforehand instead
+// return get(loc, v) || (!heap.empty() && heap.top()==v); // 0 init relied upon, but 0 is a valid location. could set locs to -1 beforehand instead
       return heap.contains(v);
     }
     VD top() const {
@@ -479,116 +479,116 @@ struct TailsUpHypergraph {
     }
     void pop() {
       ++stat.n_pop;
-      TUHG_SHOWQ(1,"pop",heap.top());
-// IFDBG(TUHG,1) { SHOWM(TUHG,"pop",heap.top()); }
+      TUHG_SHOWQ(1, "pop", heap.top());
+// IFDBG(TUHG,1) { SHOWM(TUHG, "pop", heap.top()); }
       heap.pop();
     }
 
-    void relax(VD head,ED e,Cost const& c) {
+    void relax(VD head, ED e, Cost const& c) {
       ++stat.n_relax;
       Cost &m=mu[head];
       Cost mu_prev=m;
-      EIFDBG(TUHG,3,SHOWM5(TUHG,"relax?",head,print(head,g),c,mu[head],print(e,g)));
-      if (PT::update(c,m)) {
-        put(pi,head,e);
-        assert(PT::includes(c,m));
-        if (opt.use_convergence && PT::converged(c,mu_prev,opt.convergence_epsilon)) {
-          IFDBG(TUHG,2) { SHOWM5(TUHG,"converged",head,print(head,g),mu_prev,mu[head],opt.convergence_epsilon); }
+      EIFDBG(TUHG,3, SHOWM5(TUHG, "relax?", head, print(head, g), c, mu[head], print(e, g)));
+      if (PT::update(c, m)) {
+        put(pi, head, e);
+        assert(PT::includes(c, m));
+        if (opt.use_convergence && PT::converged(c, mu_prev, opt.convergence_epsilon)) {
+          IFDBG(TUHG,2) { SHOWM5(TUHG, "converged", head, print(head, g), mu_prev, mu[head], opt.convergence_epsilon); }
           ++stat.n_converged_inexact;
         } else {
           ++stat.n_update;
-          IFDBG(TUHG,2) { SHOWM5(TUHG,"updating-or-adding",head,print(head,g),mu_prev,mu[head],heap.loc(head)); }
+          IFDBG(TUHG,2) { SHOWM5(TUHG, "updating-or-adding", head, print(head, g), mu_prev, mu[head], heap.loc(head)); }
           heap.push_or_update(head);
         }
-        TUHG_SHOWQ(3,"relaxed",head);
+        TUHG_SHOWQ(3, "relaxed", head);
       } else {
-        EIFDBG(TUHG,3,SHOWM5(TUHG,"no improvement",head,print(head,g),c,mu[head],print(e,g)));
+        EIFDBG(TUHG,3, SHOWM5(TUHG, "no improvement", head, print(head, g), c, mu[head], print(e, g)));
       }
     }
 
     //skipping unreached tails:
     cost_type recompute_cost(ED e) {
-      cost_type c=get(ec,e);
-      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost:base",c,print(e,g)); }
-      Tailr tailr=tails(e,g);
+      cost_type c=get(ec, e);
+      IFDBG(TUHG,3) { SHOWM2(TUHG, "recompute_cost:base", c, print(e, g)); }
+      Tailr tailr=tails(e, g);
       using namespace boost;
-      for (Ti i=begin(tailr),ei=end(tailr);i!=ei;++i) {
-        VD t=tail(*i,e,g);  // possibly multiple instances of tail t
-        cost_type tc=get(mu,t);
-        EIFDBG(TUHG,6,SHOWM3(TUHG,"recompute_cost:c'=c*tc",c,tc,t));
+      for (Ti i=begin(tailr), ei=end(tailr);i!=ei;++i) {
+        VD t=tail(*i, e, g);  // possibly multiple instances of tail t
+        cost_type tc=get(mu, t);
+        EIFDBG(TUHG,6, SHOWM3(TUHG, "recompute_cost:c'=c*tc", c, tc, t));
         assert(tc!=PT::unreachable()); //FIXME: maybe we want to allow this (used to be "if")? if we don't, then you can only reach with non-unreachable cost.
         PT::extendBy(tc, c);
-        IFDBG(TUHG,9) { SHOWM3(TUHG,"recompute_cost:updated c=c*tc",c,tc,t); }
+        IFDBG(TUHG,9) { SHOWM3(TUHG, "recompute_cost:updated c=c*tc", c, tc, t); }
       }
-      IFDBG(TUHG,3) { SHOWM2(TUHG,"recompute_cost:final",c,print(e,g)); }
+      IFDBG(TUHG,3) { SHOWM2(TUHG, "recompute_cost:final", c, print(e, g)); }
       return c;
     }
 
     void reach(VD tail) {
-      TUHG_SHOWQ(2,"reach",tail);
+      TUHG_SHOWQ(2, "reach", tail);
       const Adj &a=tu[tail];
-// FOREACH(const TailMult &ad,a) { // for each hyperarc v participates in as a tail
+// FOREACH(const TailMult &ad, a) { // for each hyperarc v participates in as a tail
       bool tail_already=tail_already_reached(tail);
       mark_reached(tail);
-      IFDBG(TUHG,2) { SHOWM4(TUHG,"reach",tail,print(tail,g),mu[tail],tail_already); }
-      for (typename Adj::const_iterator j=a.begin(),ej=a.end();j!=ej;++j) {
+      IFDBG(TUHG,2) { SHOWM4(TUHG, "reach", tail, print(tail, g), mu[tail], tail_already); }
+      for (typename Adj::const_iterator j=a.begin(), ej=a.end();j!=ej;++j) {
         ED e=*j;
-        VD head=target(e,g);
-        IFDBG(TUHG,4) { SHOWM3(TUHG,"satisfying",tail,head,print(e,g)); }
+        VD head=target(e, g);
+        IFDBG(TUHG,4) { SHOWM3(TUHG, "satisfying", tail, head, print(e, g)); }
         if (already_reached(head) > opt.allow_rereach) { // we don't know reach count of head
 // don't even propagate improved costs, because we can't otherwise guarantee no infinite loop.
           ++stat.n_blocked_rereach;
-          IFDBG(TUHG,1) { SHOWM3(TUHG,"blocked",head,already_reached(head),stat.n_blocked_rereach); }
+          IFDBG(TUHG,1) { SHOWM3(TUHG, "blocked", head, already_reached(head), stat.n_blocked_rereach); }
           if (opt.throw_on_rereach_limit)
-            VTHROW_A_3(BestTreeRereachException,"Exceeded rereach limit (improving an already-would-be-best-without-negative-costs path-tree for a vertex). If increasing rereach limit doesn't stop this, you may have a negative-cost cycle (so no best tree).",already_reached(head),opt.allow_rereach);
+            VTHROW_A_3(BestTreeRereachException, "Exceeded rereach limit (improving an already-would-be-best-without-negative-costs path-tree for a vertex). If increasing rereach limit doesn't stop this, you may have a negative-cost cycle (so no best tree).", already_reached(head), opt.allow_rereach);
         } else {
-          EIFDBG(TUHG,4,SHOWM3(TUHG,"may yet reach",head,already_reached(head),print(e,g)));
+          EIFDBG(TUHG,4, SHOWM3(TUHG, "may yet reach", head, already_reached(head), print(e, g)));
           /* for negative costs: will need to track every tails' cost last used for an edge, or just compute edge cost from scratch every time. or need to remember for each vertex last cost used. */
 // const TailMult &ad=*j;
-// ri.cost() = PT::extend(ri.cost(),PT::repeat(get(mu,tail),ad.multiplicity)); // assess the cost of reaching v // only reason to do this early is to have a bound and discard edge forever if head head_already better-reached. doesn't seem important to do so. TODO: remove cost() member
+// ri.cost() = PT::extend(ri.cost(), PT::repeat(get(mu, tail), ad.multiplicity)); // assess the cost of reaching v // only reason to do this early is to have a bound and discard edge forever if head head_already better-reached. doesn't seem important to do so. TODO: remove cost() member
           // if v completes the hyperarc, or we allow rereaching, attempt to use it to reach head (more cheaply):
           Ntails &tails_unreached=remain_pmap[e];
           if (!tail_already) {
             assert(tails_unreached > 0);
             --tails_unreached;
-            EIFDBG(TUHG,4,SHOWM4(TUHG,"Decreased tails_unreached",tail,e,tails_unreached,print(e,g)));
+            EIFDBG(TUHG,4, SHOWM4(TUHG, "Decreased tails_unreached", tail, e, tails_unreached, print(e, g)));
           }
           if (!tails_unreached)
-            relax(head,e,recompute_cost(e)); // may re-relax if already reached. may infinite loop if we allow re-reaching
+            relax(head, e, recompute_cost(e)); // may re-relax if already reached. may infinite loop if we allow re-reaching
           //TODO: incremental recompute cost due to just improving tail v (need to store last weight used for v before improvement)
         }
       }
     }
 
-#define TUHG_SHOWREMAIN(l,n) IFDBG(TUHG,l) {SHOWP(TUHG,"\n" n " (remain):\n");dbgremain();SHOWNL(TUHG);}
-    //IFDBG(TUHG,l) { SHOWP(TUHG,n " (remain):\n");dbgremain();SHOWNL(TUHG); }
+#define TUHG_SHOWREMAIN(l, n) IFDBG(TUHG, l) {SHOWP(TUHG, "\n" n " (remain):\n");dbgremain();SHOWNL(TUHG);}
+    //IFDBG(TUHG, l) { SHOWP(TUHG, n " (remain):\n");dbgremain();SHOWNL(TUHG); }
 
     void dbgremain() const {
-      visit(edgeT,g,*this);
+      visit(edgeT, g,*this);
     }
     void operator()(ED e) const {
-      SHOW3(TUHG,e,remain_pmap[e],print(e,g));
+      SHOW3(TUHG, e, remain_pmap[e], print(e, g));
     }
 
     void finish() {
-#define TUHG_SHOWP_ALL(l,n) TUHG_SHOWP(l,n,mu); TUHG_SHOWP(l,n,pi); if (opt.allow_rereach) { TUHG_SHOWP(l,n,rereach); } TUHG_SHOWREMAIN(l,n);
-      //TUHG_SHOWP(1,"pre-heapify",locp);
-      //EIFDBG(TUHG,5,TUHG_EXTRA_QALL("pre-heapify"));
+#define TUHG_SHOWP_ALL(l, n) TUHG_SHOWP(l, n, mu); TUHG_SHOWP(l, n, pi); if (opt.allow_rereach) { TUHG_SHOWP(l, n, rereach); } TUHG_SHOWREMAIN(l, n);
+      //TUHG_SHOWP(1, "pre-heapify", locp);
+      //EIFDBG(TUHG,5, TUHG_EXTRA_QALL("pre-heapify"));
       heap.heapify();
-      //EIFDBG(TUHG,4,TUHG_EXTRA_QALL("post-heapify"));
-      //TUHG_SHOWP(1,"post-heapify",locp);
-      TUHG_SHOWP_ALL(1,"pre-finish");
+      //EIFDBG(TUHG,4, TUHG_EXTRA_QALL("post-heapify"));
+      //TUHG_SHOWP(1, "post-heapify", locp);
+      TUHG_SHOWP_ALL(1, "pre-finish");
       while(!heap.empty()) {
         VD top=this->top();
-        TUHG_SHOWQ(6,"at-top",top);
-        EIFDBG(TUHG,5,SHOW3(TUHG,heap.size(),top,print(top,g)));
+        TUHG_SHOWQ(6, "at-top", top);
+        EIFDBG(TUHG,5, SHOW3(TUHG, heap.size(), top, print(top, g)));
         pop();
         reach(top);
-        TUHG_SHOWP_ALL(9,"post-reach");
+        TUHG_SHOWP_ALL(9, "post-reach");
       }
       stat.n_unpopped=heap.size();
-      TUHG_SHOWP_ALL(5,"post-finish");
-      EIFDBG(TUHG,1,SHOW(TUHG,stat));
+      TUHG_SHOWP_ALL(5, "post-finish");
+      EIFDBG(TUHG,1, SHOW(TUHG, stat));
     }
     void go()
     {
@@ -610,23 +610,23 @@ struct TailsUpHypergraph {
     VertexReachMap vr;
     EdgeLeftImpl tr;
     unsigned n;
-    Reach(Self &r,VertexReachMap v) : tu(r),vr(v),tr(r.unique_tails),n(0) {
-      //copy_hyperarc_pmap(g,tu.unique_tails_pmap(),tr);
+    Reach(Self &r, VertexReachMap v) : tu(r), vr(v), tr(r.unique_tails), n(0) {
+      //copy_hyperarc_pmap(g, tu.unique_tails_pmap(), tr);
       //instead relying on impl same type (copy ctor)
     }
 
     void init_unreach() {
-      typename GT::vertex_iterator i,end;
-      boost::tie(i,end)==vertices(g);
+      typename GT::vertex_iterator i, end;
+      boost::tie(i, end)==vertices(g);
       for (;i!=end;++i) {
-        put(vr,*i.first,false);
+        put(vr,*i.first, false);
       }
     }
     void init() {
       init_unreach();
-      for (typename TerminalArcs::iterator i=tu.terminal_arcs.begin(),end=tu.terminal_arcs.end();i!=end;++i) {
+      for (typename TerminalArcs::iterator i=tu.terminal_arcs.begin(), end=tu.terminal_arcs.end();i!=end;++i) {
         ED h=*i;
-        VD v=source(h,g);
+        VD v=source(h, g);
         (*this)(v);
       }
     }
@@ -638,15 +638,15 @@ struct TailsUpHypergraph {
       finish();
     }
     void operator()(VD v) {
-      if (get(vr,v))
+      if (get(vr, v))
         return;
       ++n;
-      put(vr,v,true); // mark reached
+      put(vr, v, true); // mark reached
       Adj &a=tu[v];
-      for(typename Adj::iterator i=a.begin(),end=a.end(); i!=end; ++i) {
+      for(typename Adj::iterator i=a.begin(), end=a.end(); i!=end; ++i) {
         ED ed=i->ed;
-        VD head=source(ed,g);
-        if (!get(vr,head)) { // not reached yet
+        VD head=source(ed, g);
+        if (!get(vr, head)) { // not reached yet
           if (--tr[ed]==0)
             (*this)(head); // reach head
         }
@@ -660,15 +660,15 @@ struct TailsUpHypergraph {
   };
 
   template <class P>
-  unsigned reach(VD start,P p) {
-    Reach<P> alg(*this,p);
+  unsigned reach(VD start, P p) {
+    Reach<P> alg(*this, p);
     alg(start);
     return alg.n;
   }
-  template <class B,class E,class VertexReachMap>
-  unsigned reach(B begin,E end,VertexReachMap p) {
-    Reach<VertexReachMap> alg(*this,p);
-    std::for_each(begin,end,boost::ref(alg));
+  template <class B, class E, class VertexReachMap>
+  unsigned reach(B begin, E end, VertexReachMap p) {
+    Reach<VertexReachMap> alg(*this, p);
+    std::for_each(begin, end, boost::ref(alg));
     return alg.n;
   }
 #endif

@@ -65,18 +65,18 @@ BOOST_AUTO_TEST_CASE(TEST_is_null) {
     using namespace graehl;
 
     double d=std::numeric_limits<double>::infinity();
-    BOOST_CHECK_EQUAL(is_null(d),false);
-    BOOST_CHECK_EQUAL(is_nan(d),false);
+    BOOST_CHECK_EQUAL(is_null(d), false);
+    BOOST_CHECK_EQUAL(is_nan(d), false);
     set_null(d);
-    BOOST_CHECK_EQUAL(is_null(d),true);
-    BOOST_CHECK_EQUAL(is_nan(d),true);
+    BOOST_CHECK_EQUAL(is_null(d), true);
+    BOOST_CHECK_EQUAL(is_nan(d), true);
 
     float f=std::numeric_limits<float>::infinity();
-    BOOST_CHECK_EQUAL(is_null(f),false);
-    BOOST_CHECK_EQUAL(is_nan(f),false);
+    BOOST_CHECK_EQUAL(is_null(f), false);
+    BOOST_CHECK_EQUAL(is_nan(f), false);
     set_null(f);
-    BOOST_CHECK_EQUAL(is_null(f),true);
-    BOOST_CHECK_EQUAL(is_nan(f),true);
+    BOOST_CHECK_EQUAL(is_null(f), true);
+    BOOST_CHECK_EQUAL(is_nan(f), true);
 
 }
 #endif

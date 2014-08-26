@@ -13,14 +13,14 @@
 
 namespace graehl {
 
-template <class O,class Argv>
+template <class O, class Argv>
 O & print_command_line(O &out, int argc, Argv const& argv, const char *header="### COMMAND LINE:\n") {
     if (header)
         out << header;
     graehl::word_spacer_c<' '> sep;
     for (int i=0;i<argc;++i) {
         out << sep;
-        out_shell_quote(out,argv[i]);
+        out_shell_quote(out, argv[i]);
     }
     if (header)
         out << std::endl;
@@ -31,7 +31,7 @@ O & print_command_line(O &out, int argc, Argv const& argv, const char *header="#
 template <class Argv>
 inline std::string get_command_line( int argc, Argv const& argv, const char *header="COMMAND LINE:\n") {
     std::ostringstream os;
-    print_command_line(os,argc,argv,header);
+    print_command_line(os, argc, argv, header);
     return os.str();
 }
 
@@ -61,7 +61,7 @@ struct argc_argv : private std::stringbuf
     }
 
     // note: str is from stringbuf.
-    void parse(const std::string &cmdline,char const* progname="ARGV")
+    void parse(const std::string &cmdline, char const* progname="ARGV")
     {
         argvptrs.clear();
         argvptrs.push_back(progname);
@@ -106,16 +106,16 @@ struct argc_argv : private std::stringbuf
         *o++=0;
     }
   argc_argv() : argvptrs() {}
-    explicit argc_argv(const std::string &cmdline,char const* progname="ARGV")
+    explicit argc_argv(const std::string &cmdline, char const* progname="ARGV")
     {
-        parse(cmdline,progname);
+        parse(cmdline, progname);
     }
 };
 
-template <class O,class Argv>
+template <class O, class Argv>
 void print_command_header(O &o, int argc, Argv const& argv)
 {
-  print_command_line(o,argc,argv);
+  print_command_line(o, argc, argv);
   print_current_dir(o);
   o << std::endl;
 }
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE( TEST_command_line )
         argc_argv args(opts);
         BOOST_CHECK_EQUAL(args.argc(),7);
         for (int i=1;i<args.argc();++i) {
-            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
+            CHECK_EQUAL_STRING(test_strs[i], args.argv()[i]);
         }
     }
     {
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE( TEST_command_line )
         argc_argv args(opts);
         BOOST_CHECK_EQUAL(args.argc(),7);
         for (int i=1;i<args.argc();++i) {
-            CHECK_EQUAL_STRING(test_strs[i],args.argv()[i]);
+            CHECK_EQUAL_STRING(test_strs[i], args.argv()[i]);
         }
     }
     {

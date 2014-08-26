@@ -14,14 +14,14 @@
 
 namespace graehl {
 
-inline bool split_first_rest(std::string const& s,std::string &first,std::string &rest,std::string const& delim=",")
+inline bool split_first_rest(std::string const& s, std::string &first, std::string &rest, std::string const& delim=",")
 {
   using namespace std;
   string::size_type pos=s.find(delim);
   if (pos!=string::npos) {
-    first.assign(s,0,pos);
+    first.assign(s,0, pos);
     pos+=delim.size();
-    rest.assign(s,pos,s.size()-pos);
+    rest.assign(s, pos, s.size()-pos);
     return true;
   } else {
     first=s;
@@ -30,14 +30,14 @@ inline bool split_first_rest(std::string const& s,std::string &first,std::string
   }
 }
 
-inline bool split_rest_last(std::string const& s,std::string &rest,std::string &last,std::string const& delim=",")
+inline bool split_rest_last(std::string const& s, std::string &rest, std::string &last, std::string const& delim=",")
 {
   using namespace std;
   string::size_type pos=s.rfind(delim);
   if (pos!=string::npos) {
-    rest.assign(s,0,pos);
+    rest.assign(s,0, pos);
     pos+=delim.size();
-    last.assign(s,pos,s.size()-pos);
+    last.assign(s, pos, s.size()-pos);
     return true;
   } else {
     rest=s;
@@ -88,24 +88,24 @@ inline std::size_t split_noquote(
   using namespace std;
   string::size_type delim_len=delim.length();
   if (delim_len==0) { // split by characters as special case
-    string::size_type i=0,n=csv.size();
+    string::size_type i=0, n=csv.size();
     for (;i<n;++i)
-      if (!f(string(csv,i,1)))
+      if (!f(string(csv, i,1)))
         return i;
     return i;
   }
-  string::size_type pos=0,nextpos;
+  string::size_type pos=0, nextpos;
   std::size_t n=0;
-  while(n<N&&(!leave_tail||n+1<N)&&(nextpos=csv.find(delim,pos)) != string::npos) {
-    if (! f(string(csv,pos,nextpos-pos)) )
+  while(n<N&&(!leave_tail||n+1<N)&&(nextpos=csv.find(delim, pos)) != string::npos) {
+    if (! f(string(csv, pos, nextpos-pos)) )
       return n;
     ++n;
     pos=nextpos+delim_len;
   }
   if (csv.length()!=0) {
     if (must_complete && n+1!=N)
-      throw_parse_error(csv,"Expected exactly "+to_string(N)+" "+delim+" separated fields",pos);
-    if (!f(string(csv,pos,csv.length()-pos)))
+      throw_parse_error(csv, "Expected exactly "+to_string(N)+" "+delim+" separated fields", pos);
+    if (!f(string(csv, pos, csv.length()-pos)))
       return n;
     ++n;
   }
@@ -119,7 +119,7 @@ inline std::size_t split_into(
   std::string const& delim=","
   )
 {
-  return split_noquote(str,split_push_back<Cont>(c),delim);
+  return split_noquote(str, split_push_back<Cont>(c), delim);
 }
 
 template <class Cont>
@@ -129,7 +129,7 @@ inline Cont split_string(
   )
 {
   Cont c;
-  split_noquote(str,split_string_push_back<Cont>(c),delim);
+  split_noquote(str, split_string_push_back<Cont>(c), delim);
   return c;
 }
 
@@ -138,22 +138,22 @@ inline std::vector<std::string> split(
   std::string const& delim=","
   )
 {
-  return split_string<std::vector<std::string> >(str,delim);
+  return split_string<std::vector<std::string> >(str, delim);
 }
 
 
 #ifdef GRAEHL_TEST
-char const* split_strs[]={"",",a","",0};
+char const* split_strs[]={"",", a","",0};
 char const* seps[]={";",";;",",,"," ","=,",",=",0};
-char const* split_chrs[]={";",",","a",";"};
+char const* split_chrs[]={";",", ","a",";"};
 
 BOOST_AUTO_TEST_CASE( TEST_io )
 {
   using namespace std;
   {
     std::string str=";,a;";
-    split_noquote(str,make_expect_visitor(split_chrs),"");
-    split_noquote(str,make_expect_visitor(split_strs),";");
+    split_noquote(str, make_expect_visitor(split_chrs),"");
+    split_noquote(str, make_expect_visitor(split_strs), ";");
     for (char const **p=seps;*p;++p) {
       string s;
       char const* sep=*p;
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE( TEST_io )
         if (q[1])
           s.append(sep);
       }
-      //split_noquote(s,make_expect_visitor(split_strs),seps);
+      //split_noquote(s, make_expect_visitor(split_strs), seps);
       //cout << sep << "\t"<< s << endl;
     }
   }

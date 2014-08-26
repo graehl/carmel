@@ -47,7 +47,7 @@ struct hex_int {
   FROM_ISTREAM_READ
   template <class S>
   void print(S &s) const {
-    s<<'0'<<'x'<<std::hex<<U(i)<<std::dec;
+    s<<'0'<<'x'<<std::hex << U(i) << std::dec;
   }
   template <class S>
   void read(S &s) {

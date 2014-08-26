@@ -5,7 +5,7 @@
     the streambuf (array_streambuf is for char).
 
     NOTE: end() returns the current write position (i.e. forms the end of the
-    range [begin(),end()) of chars written so far
+    range [begin(), end()) of chars written so far
 
     NOTE: unlike the usual streambuf used in stringstream, the end-of-readable
     marker isn't increased when you write; to switch from write to read, call
@@ -159,7 +159,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   }
 
   /**
-     doesn't shrink the "written" region - use if you want to repeatedly write stuff and then get it with begin(),end()
+     doesn't shrink the "written" region - use if you want to repeatedly write stuff and then get it with begin(), end()
   */
   void reset_write() {
     set_ppos(0);
@@ -290,7 +290,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     return buf;
   }
   /**
-     same as tellp (put position). so [begin(),end()) are bytes written so far
+     same as tellp (put position). so [begin(), end()) are bytes written so far
   */
   iterator end() const
   {
@@ -312,7 +312,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     return end()-begin();
   }
   /**
-     show current position without a wasteful seekoff(0,ios::cur)
+     show current position without a wasteful seekoff(0, ios::cur)
   */
   size_type tellg() const
   {
@@ -377,7 +377,7 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
   typedef basic_array_stream<cT, traits> self_type;
 
   template <class O>
-  void print(O&o) const {o<<m_sbuf; }
+  void print(O&o) const {o << m_sbuf; }
   template <class Ch, class Tr>
   friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, basic_array_stream const& self)
   { self.print(o); return o; }
@@ -546,14 +546,14 @@ inline void TEST_check_memory_stream1(C &o, char *buf, unsigned n)
   }
   o.write(buf, n);
   BOOST_REQUIRE(o);
-  //    BOOST_CHECK_EQUAL_COLLECTIONS(buf,buf+n,o.begin(),o.end());
+  //    BOOST_CHECK_EQUAL_COLLECTIONS(buf, buf+n, o.begin(), o.end());
   for (unsigned i = 0; i<n; ++i)
     buf[i] = 0;
   /*
-    o.read(buf,n);
+    o.read(buf, n);
     BOOST_REQUIRE(o);
     BOOST_CHECK(o.gcount()==n);
-    BOOST_CHECK_EQUAL_COLLECTIONS(buf,buf+n,o.begin(),o.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(buf, buf+n, o.begin(), o.end());
   */
 }
 

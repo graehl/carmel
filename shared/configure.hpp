@@ -94,17 +94,17 @@ template <class O, class T, class Sep>
 inline void print_opt(O &o, std::string const& name, boost::optional<T> const& opt, Sep const& sep)
 {
   if (opt)
-    o<<sep<<name<<'='<<*opt;
+    o << sep << name<<'='<<*opt;
 }
 
 template <class O, class T>
 inline void print_opt_else(O &o, std::string const& name, boost::optional<T> const& opt, std::string const& none="NONE")
 {
-  o<<name<<'=';
+  o << name<<'=';
   if (opt)
     o<<*opt;
   else
-    o<<none;
+    o << none;
 }
 
 inline std::string concat_optional(std::string const& a, std::string const& pre_if_b_nonempty, std::string const& b, std::string const& post_if_b_nonempty="")
@@ -546,7 +546,7 @@ struct conf_opt
 
   maybe_string get_usage_optional() const
   {
-    return usage ? concat_optional_skip_empty(*usage," (", is,")") : is;
+    return usage ? concat_optional_skip_empty(*usage, " (", is, ")") : is;
   }
 
   std::string get_is_suffix() const
@@ -583,7 +583,7 @@ struct conf_opt
   {
     typedef leaf_configurable<Val> leaf_val;
     if (!leaf_val::value) return "";
-    SHOWIF1(CONFEXPR, 1,"leaf_value", graehl::to_string(val));
+    SHOWIF1(CONFEXPR, 1, "leaf_value", graehl::to_string(val));
     return graehl::to_string(val);
   }
 
@@ -594,11 +594,11 @@ struct conf_opt
     positional_args(bool enable, int max) : enable(enable), max(max) {}
     template <class O>
     void print(O &o) const {
-      o<<(enable?"(on)":"(off)");
+      o << (enable?"(on)":"(off)");
       if (max>0)
-        o<<max;
+        o << max;
       else
-        o<<"unlimited";
+        o << "unlimited";
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, positional_args const& self)
@@ -621,10 +621,10 @@ struct conf_opt
     template <class O>
     void print(O &o) const {
       if (enable)
-        o<<" allow unrecognized (";
-      o<<(unrecognized_storage?"save, ":"");
-      o<<(warn?"quiet":"warn");
-      o<<")";
+        o << " allow unrecognized (";
+      o << (unrecognized_storage?"save, ":"");
+      o << (warn?"quiet":"warn");
+      o << ")";
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, allow_unrecognized_args const& self)
@@ -637,8 +637,8 @@ struct conf_opt
     require_args(bool enable, bool just_warn) : enable(enable), just_warn(just_warn) {}
     template <class O>
     void print(O &o) const {
-      o<<(enable?"(on)":"(off)");
-      o<<(just_warn?"fatal":"warn");
+      o << (enable?"(on)":"(off)");
+      o << (just_warn?"fatal":"warn");
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, require_args const& self)
@@ -652,7 +652,7 @@ struct conf_opt
     template <class O>
     void print(O &o) const {
       if (enable)
-        o<<"DEPRECATED: "<<info;
+        o << "DEPRECATED: " << info;
     }
     struct deprecate_callback
     {
@@ -681,7 +681,7 @@ struct conf_opt
     template <class O>
     void print(O &o) const {
       if (enable)
-        o<<" implicit value of no-argument option="<<value;
+        o << " implicit value of no-argument option=" << value;
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, implicit_args const& self)
@@ -696,7 +696,7 @@ struct conf_opt
     template <class O>
     void print(O &o) const {
       if (enable)
-        o<<" default value="<<value;
+        o << " default value=" << value;
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, init_args const& self)
@@ -835,7 +835,7 @@ inline char const* name(config_action_type type) {
   };
 }
 
-inline std::ostream &operator << (std::ostream &out, config_action_type type) {
+inline std::ostream &operator<<(std::ostream &out, config_action_type type) {
   return out << name(type);
 }
 
@@ -969,7 +969,7 @@ inline std::string join_opt_path(opt_path const& p, char sep = path_sep)
   std::ostringstream o;
   graehl::word_spacer sp(sep);
   for (opt_path::const_iterator i = p.begin(), e = p.end(); i!=e; ++i)
-    o<<sp<<*i;
+    o << sp<<*i;
   return o.str();
 }
 
@@ -977,8 +977,8 @@ inline std::string join_opt_path(opt_path const& p, std::string last, char sep =
 {
   std::ostringstream o;
   for (opt_path::const_iterator i = p.begin(), e = p.end(); i!=e; ++i)
-    o<<*i<<sep;
-  o<<last;
+    o<<*i << sep;
+  o << last;
   return o.str();
 }
 
@@ -1051,16 +1051,16 @@ struct conf_expr_base
   template <class Val>
   std::string description(Val const& val) const
   {
-    return concat_optional(name()," - ", opt->get_usage(val));
+    return concat_optional(name(), " - ", opt->get_usage(val));
   }
   std::string description() const
   {
-    return concat_optional(name()," - ", opt->get_usage());
+    return concat_optional(name(), " - ", opt->get_usage());
   }
 
   template <class O>
   void print(O &o) const {
-    o<<path_name()<<": "<<*opt;
+    o << path_name() << ": "<<*opt;
   }
   template <class Ch, class Tr>
   friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, conf_expr_base const& self)
@@ -1146,8 +1146,8 @@ struct conf_expr
     Backend::do_init(action, pval, base());
     init_tree_return = configure_policy::init_tree(backend(), action, pval, base());
     configure_policy::configure(pval, *this); // unless leaf, call pval->configure(*this);
-    //requirement: template<class action> Backend.init(action,Val *pval,conf_opt_base &conf)
-    SHOWIF1(CONFEXPR, 1,"<conf_expr>", base());
+    //requirement: template<class action> Backend.init(action, Val *pval, conf_opt_base &conf)
+    SHOWIF1(CONFEXPR, 1, "<conf_expr>", base());
   }
 
   bool skip_help() const
@@ -1163,7 +1163,7 @@ struct conf_expr
       opt->apply_init(pval); // only works on leaves for now
     if (opt->is_todo()) return;
     configure_policy::action(backend(), action, pval, base());
-    SHOWIF1(CONFEXPR, 1,"</conf_expr>", base());
+    SHOWIF1(CONFEXPR, 1, "</conf_expr>", base());
   }
 
  public:
@@ -1230,7 +1230,7 @@ struct conf_expr
   conf_expr const& desire(bool enable = true) const { return require(enable, true); }
 
   /* TODO:
-     #. `.flag(bool enable=true,boost::optional<bool> init_to=false)` - hint to
+     #. `.flag(bool enable=true, boost::optional<bool> init_to=false)` - hint to
      command line parser to use `--key` and `--no-key` zero-argument flags. `Val`
      should be `bool` or `optional<bool>`, or integer (gets 0 or 1 per normal
      C++). For all backends, if `init_to` is not `boost::none`, then the value is
@@ -1332,7 +1332,7 @@ unsigned indent_line(O &o, unsigned depth)
   unsigned indent = depth*(unsigned)tab.size();
   while(depth) {
     --depth;
-    o<<tab;
+    o << tab;
   }
   return indent;
 }
@@ -1465,7 +1465,7 @@ conf_expr_base get_default_conf(Val *pval, conf_expr_base const& conf = conf_exp
     struct YOUR_BACKEND : configure_backend_base<YOUR_BACKEND> {
     FORWARD_BASE_CONFIGURE_ACTIONS(configure_backend_base<YOUR_BACKEND>)
     template <class Val>
-    void leaf_action(configure::store_action,Val *val,configure::conf_expr_base const& conf) const {
+    void leaf_action(configure::store_action, Val *val, configure::conf_expr_base const& conf) const {
     }
     };
 
@@ -1600,9 +1600,9 @@ struct configure_backend_base : configure_backend {
       .configure()) are mutually exclusive.  your map_action and sequence_action
       should likely pval->clear() on store_config (unless you want configuration
       to be merged with existing contents), and should ultimately recurse with
-      configure::configure_action_from_base(*this,configure::store_config(),&subval,subconf)
+      configure::configure_action_from_base(*this, configure::store_config(), &subval, subconf)
       after adding subval to the map or sequence. you can call
-      defer_ {map,sequence}_action to do the recursion.
+      defer_ {map, sequence}_action to do the recursion.
   */
   template <class Action, class Val>
   void do_sequence_action(Action const& a, Val *pval, conf_expr_base const& conf) const {
@@ -1722,7 +1722,7 @@ struct configure_backend_base : configure_backend {
   }
   template <class Val>
   void header_line_end(help_config const& help, Val *pval, conf_expr_base const& conf) const {
-    *help.o<<prefix_optional(" - ", conf.opt->get_usage_optional());
+    *help.o << prefix_optional(" - ", conf.opt->get_usage_optional());
   }
   std::string unrecognized() const {
     return "[*]";
@@ -1738,7 +1738,7 @@ struct configure_backend_base : configure_backend {
     }
     if (SHOW_ROOT_USAGE_CODA && conf.depth==0) {
       if (opt.usage)
-        *help.o<<"\n "<<*opt.usage<<"\n\n";
+        *help.o << "\n "<<*opt.usage << "\n\n";
     }
   }
 
@@ -1794,9 +1794,9 @@ struct configure_backend_base : configure_backend {
     std::string header = sub().option_name(conf);
     if (!header.empty())
       header+=":";
-    out<<header;
+    out << header;
     unsigned column = indent_column+(unsigned)header.size();
-    out<<suffix;
+    out << suffix;
     column += (unsigned)suffix.size();
     if (usage)
       column = sub().print_usage(out, *usage, column, indent_column);
@@ -1829,7 +1829,7 @@ struct configure_backend_base : configure_backend {
       out<<' ';
       ++start_column;
     }
-    SHOWIF3(CONFEXPR, 10,"print_usage (default)", usage, start_column, indent_column);
+    SHOWIF3(CONFEXPR, 10, "print_usage (default)", usage, start_column, indent_column);
     std::string nl_indent(indent_column,' ');
     std::string hanging(hanging_column_offset(sub()),' ');
     return graehl::print_indent(out, usage, start_column, max_column(sub()), nl_indent+hanging, nl_indent+"... ");
@@ -1837,7 +1837,7 @@ struct configure_backend_base : configure_backend {
 
   void print_name_val(std::ostream &o, std::string const& name, std::string const& val) const
   {
-    o<<"--"<<name<<"="<<val;
+    o << "--" << name << "=" << val;
   }
 
   template <class Action>
@@ -1848,7 +1848,7 @@ struct configure_backend_base : configure_backend {
 
   void header(std::ostream &o, std::string const& name) const
   {
-    o<<name<<":";
+    o << name << ":";
   }
 
   void header_conf(std::ostream &o, conf_expr_base const& conf) const
@@ -1912,7 +1912,7 @@ struct configure_backend_base : configure_backend {
   void tree_action_unrecognized(show_example_config example, Val *pval, conf_expr_base const& conf) const {
     conf_opt const& opt=*conf.opt;
     if (opt.allows_unrecognized())
-      sub().print_name_val_line(example,"[ANY-STRING]: ","ANY-STRING-VALUE", conf);
+      sub().print_name_val_line(example, "[ANY-STRING]: ","ANY-STRING-VALUE", conf);
   }
   template <class Val>
   void tree_action_unrecognized(show_effective_config effective, Val *pval, conf_expr_base const& conf) const {

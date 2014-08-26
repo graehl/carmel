@@ -31,13 +31,13 @@ throw_parse_error(std::string const& context,
   if (pos==string::npos)
     o << context;
   else
-    o << string(context,0,pos)<<"<ERROR HERE>"<<string(context,pos);
+    o << string(context,0, pos) << "<ERROR HERE>" << string(context, pos);
   throw runtime_error(o.str());
 }
 
 template <class C>
 inline
-C scrunch_char(C c,char with='/')
+C scrunch_char(C c, char with='/')
 {
   switch(c) {
   case '\n':case '\t':
@@ -47,15 +47,15 @@ C scrunch_char(C c,char with='/')
   }
 }
 
-template <class O,class C> inline
-void output_n(O &o,const C &c,unsigned n)
+template <class O, class C> inline
+void output_n(O &o, const C &c, unsigned n)
 {
   for (unsigned i=0;i<n;++i)
     o << c;
 }
 
-template <class Ic,class It,class Oc,class Ot> inline
-std::streamoff show_error_context(std::basic_istream<Ic,It> &in,std::basic_ostream<Oc,Ot> &out,unsigned prechars=GRAEHL__ERROR_PRETEXT_CHARS,unsigned postchars=GRAEHL__ERROR_CONTEXT_CHARS) {
+template <class Ic, class It, class Oc, class Ot> inline
+std::streamoff show_error_context(std::basic_istream<Ic, It> &in, std::basic_ostream<Oc, Ot> &out, unsigned prechars=GRAEHL__ERROR_PRETEXT_CHARS, unsigned postchars=GRAEHL__ERROR_CONTEXT_CHARS) {
   char c;
   std::streamoff actual_pretext_chars=0;
 // if (fstrm * fs = dynamic_cast<fstrm *>(&in)) { // try tell/seek always, -1 return if it fails anyway
@@ -66,7 +66,7 @@ std::streamoff show_error_context(std::basic_istream<Ic,It> &in,std::basic_ostre
   in.clear();
 // DBP(before);
   if (before>=0) {
-    in.seekg(-(int)prechars,std::ios_base::cur);
+    in.seekg(-(int)prechars, std::ios_base::cur);
     std::streamoff after(in.tellg());
     if (!in) {
       in.clear();
@@ -84,7 +84,7 @@ std::streamoff show_error_context(std::basic_istream<Ic,It> &in,std::basic_ostre
   out << " (^ marks the read position):\n";
   const unsigned indent=3;
   output_n(out,'.',indent);
-  unsigned ip,ip_lastline=0;
+  unsigned ip, ip_lastline=0;
   for(ip=0;ip<actual_pretext_chars;++ip) {
     if (in.get(c)) {
       ++ip_lastline;
@@ -117,14 +117,14 @@ std::streamoff show_error_context(std::basic_istream<Ic,It> &in,std::basic_ostre
   return before>=0?before:-1;
 }
 
-template <class Exception,class Ic,class It>
-void throw_input_exception(std::basic_istream<Ic,It> &in,std::string const& error="",const char *item="input",std::size_t number=0) {
+template <class Exception, class Ic, class It>
+void throw_input_exception(std::basic_istream<Ic, It> &in, std::string const& error="", const char *item="input", std::size_t number=0) {
   std::ostringstream err;
   err << "Error reading";
   if (item)
     err << ' ' << item << " # " << number;
   err << ": " << error << std::endl;
-  std::streamoff where=show_error_context(in,err);
+  std::streamoff where=show_error_context(in, err);
 #if INPUT_ERROR_TELLG
   if (where>=0)
     err << "(file position " << where << ")";
@@ -133,9 +133,9 @@ void throw_input_exception(std::basic_istream<Ic,It> &in,std::string const& erro
   throw Exception(err.str());
 }
 
-template <class Ic,class It>
-void throw_input_error(std::basic_istream<Ic,It> &in,std::string const& error="",const char *item="input",std::size_t number=0) {
-  throw_input_exception<std::runtime_error>(in,error,item,number);
+template <class Ic, class It>
+void throw_input_error(std::basic_istream<Ic, It> &in, std::string const& error="", const char *item="input", std::size_t number=0) {
+  throw_input_exception<std::runtime_error>(in, error, item, number);
 }
 
 }//ns

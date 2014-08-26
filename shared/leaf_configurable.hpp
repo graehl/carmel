@@ -31,7 +31,7 @@
 
      void init_impl(T &t) // default destroys and reconstructs
 
-     void assign_impl(T &to,T const& from) // default to=from
+     void assign_impl(T &to, T const& from) // default to=from
 
      note that std::string, boost::optional, enums, integral, and floating point
      are already supported in configure.hpp (so providing a
@@ -40,13 +40,13 @@
 */
 
 namespace configure {
-template <class Val,class Enable=void>
+template <class Val, class Enable=void>
 struct leaf_configurable;
 }
 
 /** Use macro at global scope with fully qualified t. */
 #define LEAF_CONFIGURABLE_EXTERNAL(t) namespace configure { \
-  template<> struct leaf_configurable<t,void> { typedef bool value_type; enum {value=1}; }; }
+  template<> struct leaf_configurable<t, void> { typedef bool value_type; enum {value=1}; }; }
 
 
 #endif // LEAF_CONFIGURABLE_JG2012919_HPP

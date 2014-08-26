@@ -82,7 +82,7 @@ gzstreambuf * gzstreambuf::close() {
 
 void gzstreambuf::handle_gzerror() {
   int errnum;
-  const char *errmsg=gzerror(file,&errnum);
+  const char *errmsg=gzerror(file, &errnum);
   if (errnum==Z_DATA_ERROR) errmsg="CRC error reading gzip";
   if (!errmsg) errmsg=" unknown error (file not found?)";
   throw std::runtime_error(std::string("gzstreambuf error: ")+std::string(errmsg));

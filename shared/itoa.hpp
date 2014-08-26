@@ -17,10 +17,10 @@
 //TODO: benchmark these two (also, some assembly that does effectively divmod?)
 #if 1
 // maybe this is faster than mod because we are already dividing
-#define NDIV10MOD(rem,n) rem = n; n /= 10; rem -= 10*n;
+#define NDIV10MOD(rem, n) rem = n; n /= 10; rem -= 10*n;
 #else
 // or maybe optimizer does it just as well or better with this:
-#define NDIV10MOD(rem,n) rem = n%10; n = n/10;
+#define NDIV10MOD(rem, n) rem = n%10; n = n/10;
 #endif
 
 namespace graehl {
@@ -50,9 +50,9 @@ inline char digit_to_char(int d) {
 #endif
 }
 
-// returns n in string [return,num); *num=0 yourself before calling if you want a c_str. in other words, the sequence [ret,buf) contains the written digits
+// returns n in string [return, num); *num=0 yourself before calling if you want a c_str. in other words, the sequence [ret, buf) contains the written digits
 template <class Int>
-char *utoa(char *buf,Int n_) {
+char *utoa(char *buf, Int n_) {
   typedef typename signed_for_int<Int>::unsigned_t Uint;
   Uint n=n_;
   if (!n) {
@@ -61,32 +61,32 @@ char *utoa(char *buf,Int n_) {
     Uint rem;
     // 3digit lookup table, divide by 1000 faster?
     while (n) {
-      NDIV10MOD(rem,n);
+      NDIV10MOD(rem, n);
       *--buf = digit_to_char(rem);
     }
   }
   return buf;
 }
 
-// left_pad_0(buf,utoa(buf+bufsz,n)) means that [buf,buf+bufsz) is a left-0 padded seq. of digits. no 0s are added if utoa is already past buf (you must have ensured that this is valid memory, naturally)
-inline void left_pad(char *left,char *buf,char pad='0') {
+// left_pad_0(buf, utoa(buf+bufsz, n)) means that [buf, buf+bufsz) is a left-0 padded seq. of digits. no 0s are added if utoa is already past buf (you must have ensured that this is valid memory, naturally)
+inline void left_pad(char *left, char *buf, char pad='0') {
   while (buf>left)
     *--buf=pad;
   // return buf;
 }
 
 template <class Int>
-char *utoa_left_pad(char *buf,char *bufend,Int n, char pad='0') {
-  char *r=utoa(bufend,n);
+char *utoa_left_pad(char *buf, char *bufend, Int n, char pad='0') {
+  char *r=utoa(bufend, n);
   assert(buf<=r);
-  left_pad(buf,r,pad);
+  left_pad(buf, r, pad);
   return buf;
 }
 
-// note: 0 -> 0, but otherwise x000000 -> x (x has no trailing 0s). same conditions as utoa; [ret,buf) gives the sequence of digits
+// note: 0 -> 0, but otherwise x000000 -> x (x has no trailing 0s). same conditions as utoa; [ret, buf) gives the sequence of digits
 // useful for floating point fraction output
 template <class Uint_>
-char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
+char *utoa_drop_trailing_0(char *buf, Uint_ n_, unsigned &n_skipped) {
   typedef typename signed_for_int<Uint_>::unsigned_t Uint;
   Uint n=n_;
   n_skipped=0;
@@ -96,12 +96,12 @@ char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
   } else {
     Uint rem;
     while (n) {
-      NDIV10MOD(rem,n);
+      NDIV10MOD(rem, n);
       if (rem) {
         *--buf = digit_to_char(rem);
         // some non-0 trailing digits; now output all digits.
         while (n) {
-          NDIV10MOD(rem,n);
+          NDIV10MOD(rem, n);
           *--buf = digit_to_char(rem);
         }
         return buf;
@@ -117,7 +117,7 @@ char *utoa_drop_trailing_0(char *buf,Uint_ n_, unsigned &n_skipped) {
 // positive sign: 0 -> +0, 1-> +1. obviously -n -> -n
 template <class Int>
 //typename signed_for_int<Int>::original_t instead of Int to give more informative wrong-type message?
-char *itoa(char *buf,Int i,bool positive_sign=false) {
+char *itoa(char *buf, Int i, bool positive_sign=false) {
   typename signed_for_int<Int>::unsigned_t n=i;
 #ifdef __clang__
 #include "warning_push.h"
@@ -140,7 +140,7 @@ char *itoa(char *buf,Int i,bool positive_sign=false) {
      -((unsigned)-n) = n - STILL OK
 
   */
-  char * ret=utoa(buf,n);
+  char * ret=utoa(buf, n);
   if (i<0) {
     *--ret='-';
   } else if (positive_sign)
@@ -149,7 +149,7 @@ char *itoa(char *buf,Int i,bool positive_sign=false) {
 }
 
 template <class Int>
-char * itoa_left_pad(char *buf,char *bufend,Int i,bool positive_sign=false,char pad='0') {
+char * itoa_left_pad(char *buf, char *bufend, Int i, bool positive_sign=false, char pad='0') {
   typename signed_for_int<Int>::unsigned_t n=i;
   if (i<0) {
     n=-n; // see comment above for itoa
@@ -162,9 +162,9 @@ char * itoa_left_pad(char *buf,char *bufend,Int i,bool positive_sign=false,char 
     *buf='-';
   } else if (positive_sign)
     *buf='+';
-  char * r=utoa(bufend,n);
+  char * r=utoa(bufend, n);
   assert(buf<r);
-  left_pad(buf+1,r,pad);
+  left_pad(buf+1, r, pad);
   return buf;
 }
 
@@ -172,26 +172,26 @@ template <class Int>
 inline std::string itos(Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
   char *end=buf+signed_for_int<Int>::toa_bufsize;
-  char *p=itoa(end,n);
-  return std::string(p,end);
+  char *p=itoa(end, n);
+  return std::string(p, end);
 }
 
 template <class Int>
 inline std::string utos(Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
   char *end=buf+signed_for_int<Int>::toa_bufsize;
-  char *p=utoa(end,n);
-  return std::string(p,end);
+  char *p=utoa(end, n);
+  return std::string(p, end);
 }
 
 //returns position of '\0' terminating number written starting at to
 template <class Int>
-inline char* append_utoa(char *to,typename signed_for_int<Int>::unsigned_t n) {
+inline char* append_utoa(char *to, typename signed_for_int<Int>::unsigned_t n) {
   char buf[signed_for_int<Int>::toa_bufsize];
   char *end=buf+signed_for_int<Int>::toa_bufsize;
-  char *p=itoa(end,n);
+  char *p=itoa(end, n);
   int ns=end-p;
-  std::memcpy(to,p,ns);
+  std::memcpy(to, p, ns);
   to+=ns;
   *to=0;
   return to;
@@ -199,12 +199,12 @@ inline char* append_utoa(char *to,typename signed_for_int<Int>::unsigned_t n) {
 
 //returns position of '\0' terminating number written starting at to
 template <class Int>
-inline char* append_itoa(char *to,typename signed_for_int<Int>::signed_t n) {
+inline char* append_itoa(char *to, typename signed_for_int<Int>::signed_t n) {
   char buf[signed_for_int<Int>::toa_bufsize];
   char *end=buf+signed_for_int<Int>::toa_bufsize;
-  char *p=utoa(end,n);
+  char *p=utoa(end, n);
   int ns=end-p;
-  std::memcpy(to,p,ns);
+  std::memcpy(to, p, ns);
   to+=ns;
   *to=0;
   return to;

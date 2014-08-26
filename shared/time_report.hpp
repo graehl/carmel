@@ -65,7 +65,7 @@ struct time_change
   template <class O>
   void print(O &o) const
   {
-    print_width(o,elapsed(),6) << " sec";
+    print_width(o, elapsed(),6) << " sec";
   }
 
   typedef time_change self_type;

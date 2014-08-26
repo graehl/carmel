@@ -14,7 +14,7 @@
   {
   typename Locking::lock(*this);
 // or bool do_lock=...;
-//    typename Locking::scoped_lock(*this,do_lock);
+//    typename Locking::scoped_lock(*this, do_lock);
 // (locks if do_lock)
 }
 };
@@ -29,7 +29,7 @@ struct no_locking
   struct guard_type
   {
     guard_type(self_type const& l) {}
-    guard_type(self_type const& l,bool b) {}
+    guard_type(self_type const& l, bool b) {}
   };
 };
 

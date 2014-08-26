@@ -24,6 +24,22 @@ fi
 #mdb_dump -n -a /tmp/foo.mdb
 )
 }
+tree2() {
+(set -e
+    to=$1
+    shift
+    echo to=$to
+    require_dir $to
+    for f in "$@"; do
+        if [[ -f $f ]] ; then
+            dst=$to/$f
+            mkdir -p `dirname $dst`
+            echo             cp -a $f $dst
+            cp -a $f $dst
+        fi
+    done
+)
+}
 gitshowcommit() {
     git show | head -1 || true
 }
@@ -114,8 +130,13 @@ set -e
     forcediff=`mktemp ~/tmp/gitapplyforce.$1-$2.XXXXXX`
     set -x
     git diff $1 $2 --binary > $forcediff
-    git apply $forcediff
-    git add -A
+    if [[ $gitclean ]]  ; then
+        gitclean 1
+        git apply $forcediff
+        git add -A :/ # adds too much
+    else
+        git apply $forcediff
+    fi
 )
 }
 cerr() {
@@ -317,7 +338,7 @@ mgif() {
         set -x
         set -e
         cd ~/downloads
-        mv *.gif ~/email/_g/ || true
+        mv *.gif ~/documents/email/_g/ || true
         rm *' (1)'.jp* || true
         for f in png jpg jpeg; do
             mv *.$f ~/dropbox/r/ || true
@@ -3731,7 +3752,7 @@ overt() {
         rm -f $gsh/$f
         cp $f $gsh/$f
     done
-    ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
+    cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
     pushd ~/g
 }
 commt()

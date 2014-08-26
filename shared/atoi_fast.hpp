@@ -125,8 +125,8 @@ inline U octaltou(char const* begin, char const* end, bool complete = true) {
   }
 }
 
-template <class U,class I>
-inline U atou_fast_advance(I &i,I end) {
+template <class U, class I>
+inline U atou_fast_advance(I &i, I end) {
   typedef typename std::iterator_traits<I>::value_type Char;
   U x=0;
   if (i==end) return x;
@@ -139,12 +139,12 @@ inline U atou_fast_advance(I &i,I end) {
   return x;
 }
 
-template <class U,class I>
+template <class U, class I>
 inline U atou_fast(I i, I end) {
   return atou_fast_advance<U>(i, end);
 }
 
-template <class U,class I>
+template <class U, class I>
 inline U atou_fast_advance_nooverflow(I &i, I end) {
   typedef typename std::iterator_traits<I>::value_type Char;
   I begin = i;
@@ -156,43 +156,43 @@ inline U atou_fast_advance_nooverflow(I &i, I end) {
     if (c<'0' || c>'9') return x;
     if (x>maxTenth)
       THROW_MSG(string_to_exception,
-                "ascii to unsigned overflow on char "<<c<<" in '"<<
-                putChars(begin, end)<<"': "<<x<<"*10 > "<<boost::integer_traits<U>::const_max);
+                "ascii to unsigned overflow on char " << c<<" in '"<<
+                putChars(begin, end) << "': " << x<<"*10 > " << boost::integer_traits<U>::const_max);
     x*=10;
     U prev=x;
     x+=c-'0';
     if (x<prev)
       THROW_MSG(string_to_exception,
-                "ascii to unsigned overflow on char "<<c<<" in '"<<
-                putChars(begin, end)<<"': "<<prev<<" * 10 + "<<c<<" => (overflow) "<<x);
+                "ascii to unsigned overflow on char " << c<<" in '"<<
+                putChars(begin, end) << "': " << prev << " * 10 + " << c<<" => (overflow) " << x);
   }
   return x;
 }
 
-template <class U,class Str,class I>
-inline U atou_fast_advance_nooverflow(Str const& s,I &i,I end) {
+template <class U, class Str, class I>
+inline U atou_fast_advance_nooverflow(Str const& s, I &i, I end) {
   return atou_fast_advance_nooverflow<U>(i, end);
 }
 
-template <class U,class It>
+template <class U, class It>
 inline U atou_fast_complete(It begin, It end) {
   It i = begin;
   U r = atou_fast_advance<U>(i, end);
   if (i != end) THROW_MSG(string_to_exception,
-                          "ascii to unsigned incomplete - only used first "<<i-begin<<
-                          " characters of '"<<putChars(begin, end)<<"' => "<<r<<" - trim whitespace too");
+                          "ascii to unsigned incomplete - only used first " << i-begin<<
+                          " characters of '" << putChars(begin, end) << "' => " << r<<" - trim whitespace too");
   return r;
 }
 
 
-template <class U,class Str,class I>
-inline U atou_fast_complete(Str const& s,I begin,I end) {
+template <class U, class Str, class I>
+inline U atou_fast_complete(Str const& s, I begin, I end) {
   return atou_fast_complete<U>(begin, end);
 }
 
-template <class U,class Str>
+template <class U, class Str>
 inline U atou_fast_complete(Str const& s) {
-  return atou_fast_complete<U>(s.begin(),s.end());
+  return atou_fast_complete<U>(s.begin(), s.end());
 }
 
 template <class U>
@@ -203,10 +203,10 @@ inline U atou_fast_complete(char const* s) {
 
 template <class I>
 inline I atou_fast(std::string const& s) { // faster than stdlib atoi. doesn't return how much of string was used.
-  return atou_fast<I>(s.begin(),s.end());
+  return atou_fast<I>(s.begin(), s.end());
 }
 
-template <class I,class It>
+template <class I, class It>
 inline I atoi_fast_advance(It &i, It end) {
   typedef typename std::iterator_traits<It>::value_type Char;
   I x=0;
@@ -225,25 +225,25 @@ inline I atoi_fast_advance(It &i, It end) {
   return neg?-x:x;
 }
 
-template <class I,class It>
+template <class I, class It>
 inline I atoi_fast(It i, It end) {
   return atoi_fast_advance<I>(i, end);
 }
 
 
-template <class I,class It>
+template <class I, class It>
 inline I atoi_fast_complete(It begin, It end) {
   It i = begin;
   I r = atoi_fast_advance<I>(i, end);
   if (i != end) THROW_MSG(string_to_exception,
-                          "ascii to int incomplete - only used first "<<i-begin<<
-                          " characters of '"<<putChars(begin, end)<<"' => "<<r<<" - trim whitespace too");
+                          "ascii to int incomplete - only used first " << i-begin<<
+                          " characters of '" << putChars(begin, end) << "' => " << r<<" - trim whitespace too");
   return r;
 }
 
 template <class I>
 inline I atoi_fast(std::string const& s) { // faster than stdlib atoi. doesn't return how much of string was used.
-  return atoi_fast<I>(s.begin(),s.end());
+  return atoi_fast<I>(s.begin(), s.end());
 }
 
 inline int atoi_nows(std::string const& s) {
@@ -263,22 +263,22 @@ inline unsigned atou_nows(char const* s) {
 }
 
 
-inline long strtol_complete(char const* s,int base=0) {
+inline long strtol_complete(char const* s, int base=0) {
   char *e;
   if (*s) {
-    long r=strtol(s,&e,base);
+    long r=strtol(s, &e, base);
     char c=*e;
     if (!c || std::isspace(c)) //simplifying assumption: we're happy if there's other stuff in the string, so long as the number ends in a space or eos. TODO: loop consuming spaces until end?
       return r;
-    THROW_MSG(string_to_exception,"integer from string '"<<s<<"' => "<<r<<" had extra chars: '"<<e<<"'");
+    THROW_MSG(string_to_exception, "integer from string '" << s<<"' => " << r<<" had extra chars: '" << e<<"'");
   }
   // empty string => 0
   return 0;
 }
 
 // returns -INT_MAX or INT_MAX if number is too large/small
-inline int strtoi_complete_bounded(char const* s,int base=0) {
-  long l=strtol_complete(s,base);
+inline int strtoi_complete_bounded(char const* s, int base=0) {
+  long l=strtol_complete(s, base);
   if (l<std::numeric_limits<int>::min())
     return std::numeric_limits<int>::min();
   if (l>std::numeric_limits<int>::max())
@@ -293,37 +293,37 @@ inline int strtoi_complete_bounded(char const* s,int base=0) {
 #endif
 
 // throw if out of int range
-inline int strtoi_complete_exact(char const* s,int base=10) {
-  long l=strtol_complete(s,base);
+inline int strtoi_complete_exact(char const* s, int base=10) {
+  long l=strtol_complete(s, base);
   if (l<std::numeric_limits<int>::min() || l>std::numeric_limits<int>::max())
-    THROW_MSG(string_to_exception,"Out of range for int " INTRANGE_STR ": '"<<s<<"'");
+    THROW_MSG(string_to_exception, "Out of range for int " INTRANGE_STR ": '" << s<<"'");
   return l;
 }
 
 //FIXME: preprocessor separation for tokens int<->unsigned int, long<->unsigned long, strtol<->strtoul ? massive code duplication
-inline unsigned long strtoul_complete(char const* s,int base=0) {
+inline unsigned long strtoul_complete(char const* s, int base=0) {
   unsigned long r;
   if (*s) {
 #if HAVE_STRTOUL
     char *e;
-    r=strtoul(s,&e,base);
+    r=strtoul(s, &e, base);
     char c=*e;
     if (!c || std::isspace(c)) //simplifying assumption: we're happy if there's other stuff in the string, so long as the number ends in a space or eos. TODO: loop consuming spaces until end?
       return r;
 #else
   int nchars;
-// unsigned long r=strtol(s,&e,base); //FIXME: not usually safe
-    if (sscanf(s,"%lu%n",&r,&nchars) && s[nchars]=='\0')
+// unsigned long r=strtol(s, &e, base); //FIXME: not usually safe
+    if (sscanf(s, "%lu%n", &r, &nchars) && s[nchars]=='\0')
       return r;
 #endif
   }
-  THROW_MSG(string_to_exception,"can't get integer from '"<<s<<"'");
+  THROW_MSG(string_to_exception, "can't get integer from '" << s<<"'");
   return 0; // quiet, warning!
 
 }
 
-inline unsigned strtou_complete_bounded(char const* s,int base=10) {
-  unsigned long l=strtoul_complete(s,base);
+inline unsigned strtou_complete_bounded(char const* s, int base=10) {
+  unsigned long l=strtoul_complete(s, base);
 #include <graehl/shared/warning_compiler.h>
   CLANG_DIAG_OFF(tautological-compare)
   if (l<std::numeric_limits<unsigned>::min())
@@ -340,10 +340,10 @@ inline unsigned strtou_complete_bounded(char const* s,int base=10) {
 #endif
 
 // throw if out of int range
-inline unsigned strtou_complete_exact(char const* s,int base=10) {
-  unsigned long l=strtoul_complete(s,base);
+inline unsigned strtou_complete_exact(char const* s, int base=10) {
+  unsigned long l=strtoul_complete(s, base);
   if (l<std::numeric_limits<unsigned>::min() || l>std::numeric_limits<unsigned>::max())
-    THROW_MSG(string_to_exception,"Out of range for unsigned int " UINTRANGE_STR ": '"<<s<<"'");
+    THROW_MSG(string_to_exception, "Out of range for unsigned int " UINTRANGE_STR ": '" << s<<"'");
   CLANG_DIAG_ON(tautological-compare)
   return l;
 }
@@ -492,7 +492,7 @@ Float parse_real(char const* p, char const* end, bool require_complete = true) {
     Float r = scan_real<Float>(str);
     if (str)
       THROW_MSG(string_to_exception,
-                "conversion to real number from '"<<putChars(p, end)<<"' leaves unused characters "<<putChars(str.p, end));
+                "conversion to real number from '" << putChars(p, end) << "' leaves unused characters " << putChars(str.p, end));
     return r;
   } else
     return scan_real<Float>(str);
@@ -514,7 +514,7 @@ Float parse_real(char const* cstr, bool require_complete = true) {
     Float r = scan_real<Float>(str);
     if (str)
       THROW_MSG(string_to_exception,
-                "conversion to real number from '"<<cstr<<"' leaves unused characters "<<str.p);
+                "conversion to real number from '" << cstr << "' leaves unused characters " << str.p);
     return r;
   } else
     return scan_real<Float>(str);

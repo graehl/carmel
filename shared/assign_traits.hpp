@@ -24,13 +24,13 @@ void init_impl(T &t)
 }
 
 template <class T>
-void assign_impl(T &t,T const& from)
+void assign_impl(T &t, T const& from)
 {
   t=from;
 }
 
 template <class T>
-void assign_any_impl(T &t,boost::any const& from)
+void assign_any_impl(T &t, boost::any const& from)
 {
   t = boost::any_cast<T>(from);
 }
@@ -47,9 +47,9 @@ struct assign_traits_exception : std::exception
 };
 
 #define NO_ASSIGN_MEMBER(Self) \
-friend inline void assign_impl(Self &s,Self const&) \
+friend inline void assign_impl(Self &s, Self const&) \
 { throw graehl::assign_traits_exception(#Self " has no assignment operator (or friend assign_impl)"); } \
-friend inline void assign_any_impl(Self &s,boost::any const&)                             \
+friend inline void assign_any_impl(Self &s, boost::any const&)                             \
 { throw graehl::assign_traits_exception(#Self " has no assignment operator (or friend assign_any_impl)"); }
 
 #define NO_INIT_MEMBER(Self) \
@@ -66,15 +66,15 @@ void call_init(T &t)
 }
 
 template <class T>
-void call_assign(T &t,T const& from)
+void call_assign(T &t, T const& from)
 {
-  assign_impl(t,from);
+  assign_impl(t, from);
 }
 
 template <class T>
-void call_assign_any(T &t,boost::any const& from)
+void call_assign_any(T &t, boost::any const& from)
 {
-  assign_any_impl(t,from);
+  assign_any_impl(t, from);
 }
 
 
@@ -86,12 +86,12 @@ struct no_assign
     throw assign_traits_exception();
   }
   template <class T>
-  static inline void assign(T &t,T const& from)
+  static inline void assign(T &t, T const& from)
   {
     throw assign_traits_exception("no assign");
   }
   template <class T>
-  static inline void assign_any(T &t,boost::any const& a)
+  static inline void assign_any(T &t, boost::any const& a)
   {
     throw assign_traits_exception("no assign");
   }
@@ -114,31 +114,31 @@ struct assignable
     throw assign_traits_exception();
   }
   template <class T>
-  static inline void assign(T &t,T const& from)
+  static inline void assign(T &t, T const& from)
   {
-    call_assign(t,from);
+    call_assign(t, from);
   }
   template <class T>
-  static inline void assign_any(T &t,boost::any const& a)
+  static inline void assign_any(T &t, boost::any const& a)
   {
-    call_assign_any(t,a);
+    call_assign_any(t, a);
   }
 };
 
-template <class T,class Enable=void>
+template <class T, class Enable=void>
 struct assign_traits : assignable
 {
   static inline void init(T &t)
   {
     call_init(t);
   }
-  static inline void assign(T &t,T const& from)
+  static inline void assign(T &t, T const& from)
   {
-    call_assign(t,from);
+    call_assign(t, from);
   }
-  static inline void assign_any(T &t,boost::any const& a)
+  static inline void assign_any(T &t, boost::any const& a)
   {
-    call_assign_any(t,a);
+    call_assign_any(t, a);
   }
 };
 

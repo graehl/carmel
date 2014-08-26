@@ -10,7 +10,7 @@
 
   X string_to<X>(string);
   string to_string(X);
-  X& string_to(string,X &); // note: returns the same ref you passed in, for convenience of use
+  X& string_to(string, X &); // note: returns the same ref you passed in, for convenience of use
 
   default implementation via boost lexical_cast if GRAEHL_USE_BOOST_LEXICAL_CAST, else stringstreams (quite slow, I'm sure)
 
@@ -104,10 +104,10 @@ inline std::string const& to_string(std::string const& str) { return str; }
 template <class Data>
 std::string to_string(Data const& out_str_to_data);
 
-template <class Data,class Str>
-Data& string_to(const Str &str,Data &out_str_to_data);
+template <class Data, class Str>
+Data& string_to(const Str &str, Data &out_str_to_data);
 
-template <class Data,class Str> inline
+template <class Data, class Str> inline
 Data string_to(const Str &str);
 
 }
@@ -115,8 +115,8 @@ Data string_to(const Str &str);
 
 namespace graehl {
 
-template <class I,class To>
-bool try_stream_into(I & i,To &to,bool complete=true)
+template <class I, class To>
+bool try_stream_into(I & i, To &to, bool complete=true)
 {
   i >> to;
   if (i.fail()) return false;
@@ -127,11 +127,11 @@ bool try_stream_into(I & i,To &to,bool complete=true)
   return true;
 }
 
-template <class Str,class To>
-bool try_string_to(Str const& str,To &to,bool complete=true)
+template <class Str, class To>
+bool try_string_to(Str const& str, To &to, bool complete=true)
 {
   std::istringstream i(str);
-  return try_stream_into(i,to,complete);
+  return try_stream_into(i, to, complete);
 }
 
 inline std::string to_string_impl(unsigned x) {
@@ -143,35 +143,35 @@ inline std::string to_string_impl(int x) {
 }
 
 #if HAVE_LONGER_LONG
-inline void string_to_impl(std::string const& s,int &x) {
+inline void string_to_impl(std::string const& s, int &x) {
   x=strtoi_complete_exact(s.c_str());
 }
-inline void string_to_impl(char const* s,int &x) {
+inline void string_to_impl(char const* s, int &x) {
   x=strtoi_complete_exact(s);
 }
 #endif
 
-inline void string_to_impl(std::string const& s,long &x) {
+inline void string_to_impl(std::string const& s, long &x) {
   x=strtol_complete(s.c_str());
 }
-inline void string_to_impl(char const* s,long &x) {
+inline void string_to_impl(char const* s, long &x) {
   x=strtol_complete(s);
 }
 
 #ifndef XMT_32 // size_t == unsigned int, avoid signature collision
-inline void string_to_impl(std::string const& s,unsigned &x) {
+inline void string_to_impl(std::string const& s, unsigned &x) {
   x=atou_fast_complete<unsigned>(s.c_str());
 }
 
-inline void string_to_impl(char const* s,unsigned &x) {
+inline void string_to_impl(char const* s, unsigned &x) {
   x=atou_fast_complete<unsigned>(s);
 }
 #endif
 
-inline void string_to_impl(std::string const& s,std::size_t &x) {
+inline void string_to_impl(std::string const& s, std::size_t &x) {
   x=atou_fast_complete<std::size_t>(s.c_str());
 }
-inline void string_to_impl(char const* s,std::size_t &x) {
+inline void string_to_impl(char const* s, std::size_t &x) {
   x=atou_fast_complete<std::size_t>(s);
 }
 
@@ -188,7 +188,7 @@ inline bool islc(char c, char lc) {
 }
 
 /**
-   \return bool if string [p,p+len) is a yaml boolean or c++ printed boolean,
+   \return bool if string [p, p+len) is a yaml boolean or c++ printed boolean,
    else throw string_to_exception
 
    although this code is a bit obnoxious, it should be significantly faster than
@@ -218,23 +218,23 @@ inline bool parse_bool(char const* p, unsigned len) {
       if (islc(*p, 'f') && islc(p[1], 'a') && islc(p[2], 'l') && islc(p[3], 's') && islc(p[4], 'e')) return false; //false
       break;
   }
-  VTHROW_A_MSG(string_to_exception,"'"<<std::string(p, p+len)<<"': not boolean - must be {1|y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE} or {0|false|False|FALSE|on|On|ON|off|Off|OFF}.");
+  VTHROW_A_MSG(string_to_exception, "'" << std::string(p, p+len) << "': not boolean - must be {1|y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE} or {0|false|False|FALSE|on|On|ON|off|Off|OFF}.");
   return false;
 }
 
 }//ns
 
 /**
-   \return bool if string [p,p+len) is a yaml boolean or c++ printed boolean,
+   \return bool if string [p, p+len) is a yaml boolean or c++ printed boolean,
    else throw string_to_exception
 */
 inline void string_to_impl(std::string const& s, bool &x) {
   x = parse_bool((char const*)s.data(), (unsigned)s.size());
 }
 
-inline void string_to_impl(std::string const& s,char &x) {
+inline void string_to_impl(std::string const& s, char &x) {
   if (s.size()!=1)
-    VTHROW_A_MSG(string_to_exception,"'"<<s<<"': converting string to character.");
+    VTHROW_A_MSG(string_to_exception, "'" << s<<"': converting string to character.");
   x=s[0];
 }
 
@@ -245,7 +245,7 @@ inline std::string to_string_impl(bool x)
 
 inline std::string to_string_impl(char x)
 {
-  return std::string(1,x);
+  return std::string(1, x);
 }
 
 inline std::string to_string_impl(char const* s)
@@ -254,10 +254,10 @@ inline std::string to_string_impl(char const* s)
 }
 
 #if HAVE_LONGER_LONG
-inline void string_to_impl(std::string const& s,unsigned long &x) {
+inline void string_to_impl(std::string const& s, unsigned long &x) {
   x=strtoul_complete(s.c_str());
 }
-inline void string_to_impl(char const* s,unsigned long &x) {
+inline void string_to_impl(char const* s, unsigned long &x) {
   x=strtoul_complete(s);
 }
 #endif
@@ -285,7 +285,7 @@ PrintfBytes bytes_double_default = 32;
 */
 inline std::string to_string_roundtrip(float x) {
   char buf[bytes_double_for_float_roundtrip];
-  return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
+  return std::string(buf, buf+std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
 }
 
 inline std::string to_string_impl(float x) {
@@ -293,13 +293,13 @@ inline std::string to_string_impl(float x) {
   return ftos(x);
 #else
   char buf[bytes_double_for_float_default];
-  return std::string(buf,buf+std::sprintf(buf, fmt_double_for_float_default, (double)x));
+  return std::string(buf, buf+std::sprintf(buf, fmt_double_for_float_default, (double)x));
 #endif
 }
 
 inline std::string to_string_roundtrip(double x) {
   char buf[bytes_double_roundtrip];
-  return std::string(buf,buf+std::sprintf(buf, fmt_double_roundtrip ,x));
+  return std::string(buf, buf+std::sprintf(buf, fmt_double_roundtrip ,x));
 }
 
 inline std::string to_string_impl(double x) {
@@ -307,32 +307,32 @@ inline std::string to_string_impl(double x) {
   return ftos(x);
 #else
   char buf[bytes_double_default];
-  return std::string(buf,buf+std::sprintf(buf, fmt_double_default, x));
+  return std::string(buf, buf+std::sprintf(buf, fmt_double_default, x));
 #endif
 }
 
-inline void string_to_impl(char const* s,double &x) {
+inline void string_to_impl(char const* s, double &x) {
   if (s[0]=='n'&&s[1]=='o'&&s[2]=='n'&&s[3]=='e'&&s[4]==0)
     x=(double)NAN;
   else
     x=std::atof(s);
 }
-inline void string_to_impl(char const* s,float &x) {
+inline void string_to_impl(char const* s, float &x) {
   if (s[0]=='n'&&s[1]=='o'&&s[2]=='n'&&s[3]=='e'&&s[4]==0)
     x=(float)NAN;
   else
     x=(float)std::atof(s);
 }
-inline void string_to_impl(std::string const& s,double &x) {
-  string_to_impl(s.c_str(),x);
+inline void string_to_impl(std::string const& s, double &x) {
+  string_to_impl(s.c_str(), x);
 }
-inline void string_to_impl(std::string const& s,float &x) {
-  string_to_impl(s.c_str(),x);
+inline void string_to_impl(std::string const& s, float &x) {
+  string_to_impl(s.c_str(), x);
 }
 
 
 template <class Str>
-bool try_string_to(Str const& str,Str &to,bool complete=true)
+bool try_string_to(Str const& str, Str &to, bool complete=true)
 {
   str=to;
   return true;
@@ -346,32 +346,32 @@ inline std::string const& to_string_impl(std::string const& d)
 // ADL participates in closest-match
 
 template <class To>
-void string_to_impl(char const* str,To &to) {
+void string_to_impl(char const* str, To &to) {
   return string_to_impl(std::string(str), to);
 }
 
 template <class To>
-void string_to_impl(char *str,To &to) {
+void string_to_impl(char *str, To &to) {
   return string_to_impl(std::string(str), to);
 }
 
 
-template <class From,class To>
-void string_to_impl(From const& from,To &to)
+template <class From, class To>
+void string_to_impl(From const& from, To &to)
 {
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
   to=boost::lexical_cast<To>(from);
 #else
-  if (!try_string_to(from,to))
+  if (!try_string_to(from, to))
     throw std::runtime_error(std::string("Couldn't convert (string_to): ")+from);
 #endif
 }
 
-template <class To,class From>
+template <class To, class From>
 To string_to_impl(From const& from)
 {
   To r;
-  string_to_impl(from,r);
+  string_to_impl(from, r);
   return r;
 }
 
@@ -382,7 +382,7 @@ std::string optional_to_string(boost::optional<Val> const& opt)
 }
 
 template <class Val>
-boost::optional<Val>& string_to_optional(std::string const& str,boost::optional<Val>& opt)
+boost::optional<Val>& string_to_optional(std::string const& str, boost::optional<Val>& opt)
 {
   if (str=="none" || str.empty())
     opt.reset();
@@ -392,7 +392,7 @@ boost::optional<Val>& string_to_optional(std::string const& str,boost::optional<
 }
 
 template <class Val>
-boost::shared_ptr<Val>& string_to_shared_ptr(std::string const& str,boost::shared_ptr<Val>& opt)
+boost::shared_ptr<Val>& string_to_shared_ptr(std::string const& str, boost::shared_ptr<Val>& opt)
 {
   if (str=="none" || str.empty())
     opt.reset();
@@ -405,14 +405,14 @@ boost::shared_ptr<Val>& string_to_shared_ptr(std::string const& str,boost::share
 template <class Val>
 std::string to_string(boost::optional<Val> const& opt)
 {
-  SHOWIF1(GRSTRINGTO,0,"(free fn) optional to STRING CALLED",opt);
+  SHOWIF1(GRSTRINGTO,0, "(free fn) optional to STRING CALLED", opt);
   return opt ?  to_string_impl(*opt) : "none";
 }
 
 template <class Val>
-boost::optional<Val>& string_to(std::string const& str,boost::optional<Val>& opt)
+boost::optional<Val>& string_to(std::string const& str, boost::optional<Val>& opt)
 {
-  string_to_optional(str,opt);
+  string_to_optional(str, opt);
   return opt;
 }
 #endif
@@ -421,37 +421,37 @@ boost::optional<Val>& string_to(std::string const& str,boost::optional<Val>& opt
 
 namespace detail {
 
-template <class To,class From>
+template <class To, class From>
 struct self_string_to_opt {
   typedef To result_type;
   static inline To string_to(From const& str)
   {
     return string_to_impl<To>(str);
   }
-  static inline void string_to(From const& from,To &to)
+  static inline void string_to(From const& from, To &to)
   {
-    string_to_impl(from,to);
+    string_to_impl(from, to);
   }
 };
 
 template <class Self>
-struct self_string_to_opt<Self,Self>
+struct self_string_to_opt<Self, Self>
 {
   typedef Self const& result_type;
   static inline Self const& string_to(Self const& x) { return x; }
-  static inline Self & string_to(Self const& x,Self &to) { return to=x; }
+  static inline Self & string_to(Self const& x, Self &to) { return to=x; }
 };
 
 }
 #endif
 
 template <class Str>
-void string_to_impl(Str const &s,Str &d)
+void string_to_impl(Str const &s, Str &d)
 {
   d=s;
 }
 
-template <class D,class Enable=void>
+template <class D, class Enable=void>
 struct to_string_select
 {
   static inline std::string to_string(D const &d)
@@ -465,9 +465,9 @@ struct to_string_select
 #endif
   }
   template <class Str>
-  static inline D& string_to(Str const &s,D &v)
+  static inline D& string_to(Str const &s, D &v)
   {
-    string_to_impl(s,v);
+    string_to_impl(s, v);
     return v;
   }
 };
@@ -487,7 +487,7 @@ to_string(From const &d)
 }
 
 #if 0
-template <class To,class From>
+template <class To, class From>
 typename detail::self_string_to_opt<
   typename boost::remove_reference<To>::type
  ,typename boost::remove_reference<From>::type
@@ -502,18 +502,18 @@ string_to(From const& from)
 #endif
 
 
-template <class To,class From>
-To & string_to(From const& from,To &to)
+template <class To, class From>
+To & string_to(From const& from, To &to)
 {
-  to_string_select<To>::string_to(from,to);
+  to_string_select<To>::string_to(from, to);
   return to;
 }
 
-template <class To,class From>
+template <class To, class From>
 To string_to(From const& from)
 {
   To to;
-  to_string_select<To>::string_to(from,to);
+  to_string_select<To>::string_to(from, to);
   return to;
 }
 
@@ -523,8 +523,8 @@ struct is_pair
   enum { value=0 };
 };
 
-template <class A,class B>
-struct is_pair<std::pair<A,B> >
+template <class A, class B>
+struct is_pair<std::pair<A, B> >
 {
   enum { value=1 };
 };
@@ -534,21 +534,21 @@ std::string string_to_sep_pair="->";
 }
 
 template <class V>
-struct to_string_select<V,typename boost::enable_if<is_pair<V> >::type> {
+struct to_string_select<V, typename boost::enable_if<is_pair<V> >::type> {
   static inline std::string to_string(V const &p)
   {
     return graehl::to_string(p.first)+string_to_sep_pair+graehl::to_string(p.second);
   }
   template <class Str>
-  static inline void string_to(Str const &s,V &v)
+  static inline void string_to(Str const &s, V &v)
   {
     using namespace std;
     string::size_type p=s.find(string_to_sep_pair);
     if (p==string::npos)
-      VTHROW_A_MSG(string_to_exception,"'"<<s<<"': pair missing "<<string_to_sep_pair<<" separator");
+      VTHROW_A_MSG(string_to_exception, "'" << s<<"': pair missing " << string_to_sep_pair << " separator");
     string::const_iterator b=s.begin();
-    graehl::string_to(std::string(b,b+p),v.first);
-    graehl::string_to(std::string(b+p+string_to_sep_pair.size(),s.end()),v.second);
+    graehl::string_to(std::string(b, b+p), v.first);
+    graehl::string_to(std::string(b+p+string_to_sep_pair.size(), s.end()), v.second);
   }
 };
 
@@ -579,28 +579,28 @@ struct is_shared_ptr<boost::shared_ptr<V> >
 
 
 template <class V>
-struct to_string_select<V,typename boost::enable_if<is_optional<V> >::type> {
+struct to_string_select<V, typename boost::enable_if<is_optional<V> >::type> {
   static inline std::string to_string(V const &opt)
   {
     return opt ? graehl::to_string(*opt) : "none";
   }
   template <class Str>
-  static inline void string_to(Str const &s,V &v)
+  static inline void string_to(Str const &s, V &v)
   {
-    string_to_optional(s,v);
+    string_to_optional(s, v);
   }
 };
 
 template <class V>
-struct to_string_select<V,typename boost::enable_if<is_shared_ptr<V> >::type> {
+struct to_string_select<V, typename boost::enable_if<is_shared_ptr<V> >::type> {
   static inline std::string to_string(V const &opt)
   {
     return opt ? graehl::to_string(*opt) : "none";
   }
   template <class Str>
-  static inline void string_to(Str const &s,V &v)
+  static inline void string_to(Str const &s, V &v)
   {
-    string_to_shared_ptr(s,v);
+    string_to_shared_ptr(s, v);
   }
 };
 
@@ -681,7 +681,7 @@ struct string_builder : string_buffer
   string_builder() { this->reserve(80); }
   string_builder(unsigned reserveChars) { this->reserve(reserveChars); }
   explicit string_builder(std::string const& str)
-      : string_buffer(str.begin(),str.end()) {}
+      : string_buffer(str.begin(), str.end()) {}
   string_builder & clear() {
     string_buffer::clear(); return *this; }
   template <class S>
@@ -690,9 +690,9 @@ struct string_builder : string_buffer
     return (*this)(s);
   }
   template <class S>
-  string_builder & append(S const& s1,S const& s2)
+  string_builder & append(S const& s1, S const& s2)
   {
-    return (*this)(s1,s2);
+    return (*this)(s1, s2);
   }
   template <class S>
   string_builder & range(S const& s, word_spacer &sp)
@@ -760,9 +760,9 @@ struct string_builder : string_buffer
     (*this)(o.begin(), o.end());
     return *this; }
   template <class CharIter>
-  string_builder & operator()(CharIter i,CharIter end)
+  string_builder & operator()(CharIter i, CharIter end)
   {
-    this->insert(string_buffer::end(),i,end);
+    this->insert(string_buffer::end(), i, end);
     return *this; }
   string_builder & operator()(std::pair<char const*, char const*> word)
   {
@@ -770,7 +770,7 @@ struct string_builder : string_buffer
     return *this; }
   string_builder & operator()(std::string const& s)
   {
-    (*this)(s.begin(),s.end());
+    (*this)(s.begin(), s.end());
     return *this; }
   string_builder & operator()(char const* s)
   {
@@ -789,7 +789,7 @@ struct string_builder : string_buffer
   string_builder & operator()(std::streambuf &ibuf)
   {
     typedef std::istreambuf_iterator<char> I;
-    std::copy(I(&ibuf),I(),std::back_inserter(*this));
+    std::copy(I(&ibuf), I(), std::back_inserter(*this));
     return *this;
   }
   string_builder & operator()(std::istream &i)
@@ -798,19 +798,19 @@ struct string_builder : string_buffer
   }
   std::string &assign(std::string &str) const
   {
-    return str.assign(this->begin(),this->end());
+    return str.assign(this->begin(), this->end());
   }
   std::string &to(std::string &str) const
   {
-    return str.assign(this->begin(),this->end());
+    return str.assign(this->begin(), this->end());
   }
   std::string str() const
   {
-    return std::string(this->begin(),this->end());
+    return std::string(this->begin(), this->end());
   }
   std::string *new_str() const
   {
-    return new std::string(this->begin(),this->end());
+    return new std::string(this->begin(), this->end());
   }
   std::string strSkipPrefix(std::size_t prefixLen) const
   {
@@ -818,15 +818,15 @@ struct string_builder : string_buffer
   }
   std::string str(std::size_t len) const
   {
-    len=std::min(len,this->size());
-    return std::string(this->begin(),this->begin()+len);
+    len=std::min(len, this->size());
+    return std::string(this->begin(), this->begin()+len);
   }
   std::string shorten(std::size_t drop_suffix_chars)
   {
     std::size_t n=this->size();
     if (drop_suffix_chars>n)
       return std::string();
-    return std::string(this->begin(),this->begin()+(n-drop_suffix_chars));
+    return std::string(this->begin(), this->begin()+(n-drop_suffix_chars));
   }
 
   /**
@@ -859,12 +859,12 @@ struct string_builder : string_buffer
     }
     return *this; }
 
-  string_builder & word(std::string const& t,std::string const& space)
+  string_builder & word(std::string const& t, std::string const& space)
   {
     if (t.empty()) return *this;
     return append_space(space)(t);
   }
-  string_builder & word(std::string const& t,char space=' ')
+  string_builder & word(std::string const& t, char space=' ')
   {
     if (t.empty()) return *this;
     return append_space(space)(t);
@@ -924,8 +924,8 @@ struct string_builder : string_buffer
   void print(Out &out) const {
     out.write(begin(), string_buffer::size());
   }
-  template <class Ch,class Tr>
-  friend std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &out, string_builder const& self)
+  template <class Ch, class Tr>
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &out, string_builder const& self)
   { self.print(out); return out; }
 
   /// can't append anything else unless you first pop_back to remove the '\0'
@@ -950,9 +950,9 @@ struct append_string_builder
     b(c); return *this;
   }
   template <class CharIter>
-  append_string_builder const& operator()(CharIter const& i,CharIter const& end) const
+  append_string_builder const& operator()(CharIter const& i, CharIter const& end) const
   {
-    b(i,end); return *this;
+    b(i, end); return *this;
   }
   template <class T>
   append_string_builder const& operator()(T const& t) const
@@ -965,13 +965,13 @@ struct append_string_builder
     return (*this)(s);
   }
   template <class S>
-  append_string_builder const& append(S const& s1,S const& s2) const
+  append_string_builder const& append(S const& s1, S const& s2) const
   {
-    return (*this)(s1,s2);
+    return (*this)(s1, s2);
   }
   std::string str() const
   {
-    return std::string(b.begin(),b.end());
+    return std::string(b.begin(), b.end());
   }
   std::string str(std::size_t len) const
   {
@@ -986,10 +986,10 @@ struct append_string_builder
 struct append_string_builder_newline : append_string_builder
 {
   std::string newline;
-  append_string_builder_newline(string_builder &b,std::string const& newline="\n")
-    : append_string_builder(b),newline(newline) {}
+  append_string_builder_newline(string_builder &b, std::string const& newline="\n")
+    : append_string_builder(b), newline(newline) {}
   append_string_builder_newline(append_string_builder_newline const& o)
-    : append_string_builder(o),newline(o.newline) {}
+    : append_string_builder(o), newline(o.newline) {}
   template <class S>
   append_string_builder_newline const& operator()(S const& s) const
   {
@@ -998,10 +998,10 @@ struct append_string_builder_newline : append_string_builder
     return *this;
   }
   template <class S>
-  append_string_builder_newline const& operator()(S const& s1,S const& s2) const
+  append_string_builder_newline const& operator()(S const& s1, S const& s2) const
   {
-    return (*this)(s1,s2);
-    append_string_builder::operator()(s1,s2);
+    return (*this)(s1, s2);
+    append_string_builder::operator()(s1, s2);
     append_string_builder::operator()(newline);
     return *this;
   }
@@ -1011,20 +1011,20 @@ struct append_string_builder_newline : append_string_builder
     return (*this)(s);
   }
   template <class S>
-  append_string_builder_newline const& append(S const& s1,S const& s2) const
+  append_string_builder_newline const& append(S const& s1, S const& s2) const
   {
-    return (*this)(s1,s2);
+    return (*this)(s1, s2);
   }
 };
 
 template <class V>
-struct to_string_select<V,typename boost::enable_if<is_nonstring_container<V> >::type> {
+struct to_string_select<V, typename boost::enable_if<is_nonstring_container<V> >::type> {
   static inline std::string to_string(V const &val)
   {
     string_builder b;
     b('[');
     bool first=true;
-    for (typename V::const_iterator i=val.begin(),e=val.end();i!=e;++i) {
+    for (typename V::const_iterator i=val.begin(), e=val.end();i!=e;++i) {
       if (first)
         first=false;
       else
@@ -1035,7 +1035,7 @@ struct to_string_select<V,typename boost::enable_if<is_nonstring_container<V> >:
     return b.str();
   }
   template <class Str>
-  static inline void string_to(Str const &s,V &v)
+  static inline void string_to(Str const &s, V &v)
   {
     throw "string_to for sequences not yet supported";
   }

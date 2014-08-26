@@ -33,7 +33,7 @@ struct insertion_iterator {
   typedef void value_type;
   typedef insertion_iterator self_type;
   template <class V>
-  void operator=(V const& v) const { o<<v;}
+  void operator=(V const& v) const { o << v;}
   insertion_iterator const& operator++(int) const { return *this; }
   insertion_iterator const& operator++() const { return *this; }
   insertion_iterator const& operator*() const { return *this; }
@@ -47,13 +47,13 @@ insertion_iterator<O> insert_to(O &o) {
 }
 
 // like std::ostream_iterator but works for more than ostream.
-template <class O,class V>
+template <class O, class V>
 struct insertion_iterator_typed {
   typedef V value_type;
   O &o;
   explicit insertion_iterator_typed(O &o) : o(o) {}
   typedef insertion_iterator_typed self_type;
-  void operator=(V const& v) const { o<<v;}
+  void operator=(V const& v) const { o << v;}
   self_type const& operator++(int) const { return *this; }
   self_type const& operator++() const { return *this; }
   self_type const& operator*() const { return *this; }
@@ -61,9 +61,9 @@ struct insertion_iterator_typed {
   bool operator==(self_type const&) const {return false;}
 };
 
-template <class V,class O>
-insertion_iterator_typed<O,V> insert_to_typed(O &o) {
-  return insertion_iterator_typed<O,V>(o);
+template <class V, class O>
+insertion_iterator_typed<O, V> insert_to_typed(O &o) {
+  return insertion_iterator_typed<O, V>(o);
 }
 
 }//ns

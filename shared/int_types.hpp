@@ -54,7 +54,7 @@ struct signed_for_int {
 };
 
 
-#define DEFINE_SIGNED_FOR_3(t,it,ut)                                                                    \
+#define DEFINE_SIGNED_FOR_3(t, it, ut)                                                                    \
   template <>                                                                                           \
   struct signed_for_int<t> {                                                                            \
     typedef ut unsigned_t;                                                                              \
@@ -63,26 +63,26 @@ struct signed_for_int {
     enum { toa_bufsize = 3 + std::numeric_limits<t>::digits10, toa_bufsize_minus_1=toa_bufsize-1 };     \
   };
 
-// toa_bufsize will hold enough chars for a c string converting to sign,digits (for both signed and unsigned types), because normally an unsigned would only need 2 extra chars. we reserve 3 explicitly for the case that itoa(buf,UINT_MAX,true) is called, with output +4......
+// toa_bufsize will hold enough chars for a c string converting to sign, digits (for both signed and unsigned types), because normally an unsigned would only need 2 extra chars. we reserve 3 explicitly for the case that itoa(buf, UINT_MAX, true) is called, with output +4......
 
-#define DEFINE_SIGNED_FOR(it) DEFINE_SIGNED_FOR_3(it,it,u ## it) DEFINE_SIGNED_FOR_3(u ## it,it,u ## it)
-#define DEFINE_SIGNED_FOR_NS(ns,it) \
+#define DEFINE_SIGNED_FOR(it) DEFINE_SIGNED_FOR_3(it, it, u ## it) DEFINE_SIGNED_FOR_3(u ## it, it, u ## it)
+#define DEFINE_SIGNED_FOR_NS(ns, it) \
   DEFINE_SIGNED_FOR_3(ns::it, ns::it, ns::u ## it) \
   DEFINE_SIGNED_FOR_3(ns::u ## it, ns::it, ns::u ## it)
-#define DEFINE_SIGNED_FOR_2(sig,unsig) DEFINE_SIGNED_FOR_3(sig,sig,unsig) DEFINE_SIGNED_FOR_3(unsig,sig,unsig)
+#define DEFINE_SIGNED_FOR_2(sig, unsig) DEFINE_SIGNED_FOR_3(sig, sig, unsig) DEFINE_SIGNED_FOR_3(unsig, sig, unsig)
 
 DEFINE_SIGNED_FOR(int8_t)
 DEFINE_SIGNED_FOR(int16_t)
 DEFINE_SIGNED_FOR(int32_t)
 DEFINE_SIGNED_FOR(int64_t)
 #if INT_DIFFERENT_FROM_INTN
-DEFINE_SIGNED_FOR_2(int,unsigned)
+DEFINE_SIGNED_FOR_2(int, unsigned)
 #if HAVE_LONGER_LONG
-DEFINE_SIGNED_FOR_2(long int,long unsigned)
+DEFINE_SIGNED_FOR_2(long int, long unsigned)
 #endif
 #endif
 #if PTRDIFF_DIFFERENT_FROM_INTN
-DEFINE_SIGNED_FOR_2(std::ptrdiff_t,std::size_t)
+DEFINE_SIGNED_FOR_2(std::ptrdiff_t, std::size_t)
 #endif
 
 #if INT_DIFFERENT_FROM_INTN

@@ -57,8 +57,8 @@ struct word_spacer {
       o << space_string[0];
   }
 
-  template <class C,class T>
-  friend inline std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T>& o,word_spacer &me)
+  template <class C, class T>
+  friend inline std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, word_spacer &me)
   {
     me.print(o);
     return o;
@@ -73,14 +73,14 @@ struct word_spacer_f
   void print(O &o) const {
     p->print(o);
   }
-  template <class C,class T>
-  friend std::basic_ostream<C,T>& operator<<(std::basic_ostream<C,T> &o, word_spacer_f const& self)
+  template <class C, class T>
+  friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T> &o, word_spacer_f const& self)
   { self.print(o); return o; }
 
 };
 
 
-inline std::string space_sep_words(const std::string &sentence,char space=' ')
+inline std::string space_sep_words(const std::string &sentence, char space=' ')
 {
   std::stringstream o;
   std::string word;
@@ -109,7 +109,7 @@ struct word_spacer_c {
     first=true;
   }
   template <class C, class T>
-  void print(std::basic_ostream<C,T>& o)
+  void print(std::basic_ostream<C, T>& o)
   {
     if (first)
       first=false;
@@ -120,8 +120,8 @@ struct word_spacer_c {
   static const char seperator=sep;
 
   template <class C, class T>
-  friend inline std::basic_ostream<C,T>&
-  operator<<(std::basic_ostream<C,T>& o,Self &me)
+  friend inline std::basic_ostream<C, T>&
+  operator<<(std::basic_ostream<C, T>& o, Self &me)
   {
     me.print(o);
     return o;
@@ -141,8 +141,8 @@ struct spacesep {
       o << sep;
   }
   template <class C, class T>
-  friend inline std::basic_ostream<C,T>&
-  operator<<(std::basic_ostream<C,T>& o,spacesep<sep> &me)
+  friend inline std::basic_ostream<C, T>&
+  operator<<(std::basic_ostream<C, T>& o, spacesep<sep> &me)
   {
     me.print(o);
     return o;
@@ -152,7 +152,7 @@ struct spacesep {
 struct sep {
   char const* s;
   bool squelch;
-  sep(char const* s=" ") : s(s),squelch(true) {  }
+  sep(char const* s=" ") : s(s), squelch(true) {  }
   operator char const* ()  {
     if (squelch) {
       squelch=false;
@@ -172,34 +172,34 @@ const multilineT multiline=multilineT();
 
 struct range_sep {
   typedef char const* S;
-  S space,pre,post;
+  S space, pre, post;
   bool always_pre_space;
-  range_sep(S space=" ",S pre="[",S post="]",bool always_pre_space=false) : space(space),pre(pre),post(post),always_pre_space(always_pre_space) {}
-  range_sep(multilineT) : space("\n "),pre("{"),post("\n}"),always_pre_space(true) {}
-  range_sep(singlelineT) : space(" "),pre("["),post("]"),always_pre_space() {}
-  template <class O,class I>
-  void print(O &o,I i,I const& end) const {
-    o<<pre;
+  range_sep(S space=" ", S pre="[", S post="]", bool always_pre_space=false) : space(space), pre(pre), post(post), always_pre_space(always_pre_space) {}
+  range_sep(multilineT) : space("\n "), pre("{"), post("\n}"), always_pre_space(true) {}
+  range_sep(singlelineT) : space(" "), pre("["), post("]"), always_pre_space() {}
+  template <class O, class I>
+  void print(O &o, I i, I const& end) const {
+    o << pre;
     if (always_pre_space)
       for (;i!=end;++i)
-        o<<space<<*i;
+        o << space<<*i;
     else {
       sep s(space);
       for (;i!=end;++i)
-        o<<s<<*i;
+        o << s<<*i;
     }
-    o<<post;
+    o << post;
   }
-  template <class O,class I>
-  void print(O &o,I const& i) const {
-    print(o,boost::begin(i),boost::end(i));
+  template <class O, class I>
+  void print(O &o, I const& i) const {
+    print(o, boost::begin(i), boost::end(i));
   }
 };
 
-// see print_read.hpp: o << print(v,r) calls this
-template <class O,class V>
-inline void print(O &o,V const& v,range_sep const& r) {
-  r.print(o,v);
+// see print_read.hpp: o << print(v, r) calls this
+template <class O, class V>
+inline void print(O &o, V const& v, range_sep const& r) {
+  r.print(o, v);
 }
 
 template <class O>
@@ -207,11 +207,11 @@ struct out_spaced {
   typedef void result_type;
   O & o;
   word_spacer s;
-  out_spaced(O & o,word_spacer const& s=word_spacer()) : o(o),s(s) {}
+  out_spaced(O & o, word_spacer const& s=word_spacer()) : o(o), s(s) {}
   template <class X>
   result_type operator()(X const& x) const {
-    o<<s;
-    o<<x;
+    o << s;
+    o << x;
   }
 };
 

@@ -88,8 +88,8 @@ static const std::size_t OPTIMAL_HEAP_ARITY = 4;
 
   indices start at 0, not 1:
   // unlike arity=2 case, you don't gain anything by having indices start at 1, with 0-based child indices
-  // root @1, A=2, children indices m= {0,1}: parent(i)=i/2, child(i,m)=2*i+m
-  // root @0: parent(i)=(i-1)/A child(i,n)=i*A+n+1 - can't improve on this except child(i,m)=i*A+m
+  // root @1, A=2, children indices m= {0,1}: parent(i)=i/2, child(i, m)=2*i+m
+  // root @0: parent(i)=(i-1)/A child(i, n)=i*A+n+1 - can't improve on this except child(i, m)=i*A+m
   (integer division, a/b=floor(a/b), so (i-1)/A = ceil(i/A)-1, or greatest int less than (i/A))
 
   actually, no need to adjust child index, since child is called only once and inline
@@ -108,7 +108,7 @@ static const std::size_t OPTIMAL_HEAP_ARITY = 4;
 
 //TODO: block-align siblings!  assume data[0] is 16 or 32-byte aligned ... then we want root @ index (blocksize-1).  see http://www.lamarca.org/anthony/pubs/heaps.pdf pg8.  for pow2(e.g. 4)-ary heap, it may be reasonable to  use root @index A-1.  however, suppose the key size is not padded to a power of 2 (e.g. 12 bytes), then we would need internal gaps at times.  would want to use compile const template based inlineable alignment math for this?  possibly use a container like vector that lets you specify padding relative to some address multiple for v[0].
 
- optimal D: see http://www.lamarca.org/anthony/pubs/heaps.pdf pg 9.  depedns on relative cost of swap,compare, but in all cases except swap=free, 2 is worse than 3-4.  for expensive swap (3x compare), 4 still as good as 5.  so just use 4.  boost benchmarking djikstra agrees; 4 is best.
+ optimal D: see http://www.lamarca.org/anthony/pubs/heaps.pdf pg 9.  depedns on relative cost of swap, compare, but in all cases except swap=free, 2 is worse than 3-4.  for expensive swap (3x compare), 4 still as good as 5.  so just use 4.  boost benchmarking djikstra agrees; 4 is best.
 
  cache-aligned 4-heap speedup over regular 2-heap is 10-80% (for huge heaps, the speedup is more)
 
@@ -363,10 +363,10 @@ procedure, making the number of steps to be at most n-k = 2^k - k - 1.
 This is definitely linear to n.
      */
     void heapify() {
-      EIFDBG(DDARY, 1, SHOWM1(DDARY,"heapify", data.size()));
+      EIFDBG(DDARY, 1, SHOWM1(DDARY, "heapify", data.size()));
       for (size_type i = parent(data.size()); i>0;) { // starting from parent of last node, ending at first child of root (i==1)
         --i;
-        EIFDBG(DDARY, 2, SHOWM1(DDARY,"heapify", i));
+        EIFDBG(DDARY, 2, SHOWM1(DDARY, "heapify", i));
         preserve_heap_property_down(i);
       }
       verify_heap();
@@ -506,7 +506,7 @@ This is definitely linear to n.
       if (D_ARY_TRACK_OUT_OF_HEAP)
         return i != (size_type)D_ARY_HEAP_NULL_INDEX;
       size_type sz = data.size();
-      EIFDBG(DDARY, 2, SHOWM2(DDARY,"d_ary_heap contains", i, data.size()));
+      EIFDBG(DDARY, 2, SHOWM2(DDARY, "d_ary_heap contains", i, data.size()));
       return i>=0 && i<sz && equal(v, data[i]); // note: size_type may be signed (don't recommend it, though) - thus i>=0 check to catch uninit. data
     }
 #include "warning_pop.h"
@@ -598,11 +598,11 @@ This is definitely linear to n.
    disabled because distance map may not be writable. would need traits to enable
 */
     /*
-    inline void preserve_heap_property_up_set_dist(Value const& currently_being_moved,distance_type dbetter) {
+    inline void preserve_heap_property_up_set_dist(Value const& currently_being_moved, distance_type dbetter) {
       using boost::get;
       using boost::put;
-      put(distance,currently_being_moved,dbetter);
-      preserve_heap_property_up(currently_being_moved,get(index_in_heap,currently_being_moved),dbetter);
+      put(distance, currently_being_moved, dbetter);
+      preserve_heap_property_up(currently_being_moved, get(index_in_heap, currently_being_moved), dbetter);
       verify_heap();
     }
     */
@@ -626,7 +626,7 @@ This is definitely linear to n.
         move_heap_element(currently_being_moved, index); // note: it's ok not to return early on index==0 at start, even if self-assignment isn't supported by Value - because currently_being_moved is a copy.
       } else {
         put(index_in_heap, currently_being_moved, index);
-        //put(distance,currently_being_moved,currently_being_moved_dist);
+        //put(distance, currently_being_moved, currently_being_moved_dist);
         preserve_heap_property_up(index);
       }
     }
@@ -683,7 +683,7 @@ This is definitely linear to n.
     // e.g. v=data.back(), i=0, sz=data.size()-1 for pop(), implicitly swapping data[i], data.back(), and doing data.pop_back(), then adjusting from 0 down w/ swaps.  updates index_in_heap for v.
     inline void preserve_heap_property_down(Value const& currently_being_moved, size_type index, size_type heap_size) {
       //// hole at index - currently_being_moved to be put here when we find the final hole spot
-      EIFDBG(DDARY, 4, SHOWM3(DDARY,"preserve_heap_property_down impl", index, currently_being_moved, heap_size));
+      EIFDBG(DDARY, 4, SHOWM3(DDARY, "preserve_heap_property_down impl", index, currently_being_moved, heap_size));
       using boost::get;
       distance_type currently_being_moved_dist = get(distance, currently_being_moved);
       Value* data_ptr = &data[0];
@@ -703,7 +703,7 @@ This is definitely linear to n.
               smallest_child_dist = i_dist; \
             } } while (0)
         if (first_child_index + Arity <= heap_size) {
-          // avoid repeated heap_size boundcheck (should test if this is really a speedup - instruction cache tradeoff - could use upperbound = min(Arity,heap_size-first_child_index) instead.  but this optimizes to a fixed number of iterations (compile time known) so probably worth it
+          // avoid repeated heap_size boundcheck (should test if this is really a speedup - instruction cache tradeoff - could use upperbound = min(Arity, heap_size-first_child_index) instead.  but this optimizes to a fixed number of iterations (compile time known) so probably worth it
           for (size_type i = 1; i < Arity; ++i) {
             D_ARY_MAYBE_IMPROVE_CHILD_I;
           }
@@ -727,7 +727,7 @@ This is definitely linear to n.
     }
 
     inline void preserve_heap_property_down(size_type i) {
-      EIFDBG(DDARY, 3, SHOWM3(DDARY,"preserve_heap_property_down", i, data[i], data.size()));
+      EIFDBG(DDARY, 3, SHOWM3(DDARY, "preserve_heap_property_down", i, data[i], data.size()));
       preserve_heap_property_down(data[i], i, data.size());
     }
 
