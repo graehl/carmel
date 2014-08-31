@@ -162,6 +162,9 @@ adb install "$@"
 jcp() {
     chost=c-jmay ccp "$@"
 }
+mcp() {
+    chost=c-mdreyer ccp "$@"
+}
 justbleu() {
     perl -ne 'print "$1-ref %BLEU: $2 (len=$3)\n" if (/BLEUr(\d+)n\S+ (\S+) .*lengthRatio: (\S+)/)' "$@"
 }
@@ -876,8 +879,11 @@ xmtlibshared=$xmtextbase/Shared/cpp/libraries
 c-cat() {
     c-s catz "$@"
 }
-k-cat() {
-    k-s catz "$@"
+j-cat() {
+    j-s catz "$@"
+}
+m-cat() {
+    m-s catz "$@"
 }
 c-sync() {
     sync2 $chost "$@"
@@ -887,7 +893,7 @@ home-c-sync() {
         sync2 $chost "$@"
     )
 }
-d-make() {
+m-make() {
     shift
     c-with "$@"
 }
@@ -941,8 +947,8 @@ j-s() {
 kr-s() {
     (k-c; b-r; c-s "$@")
 }
-d-s() {
-    (d-c; c-s "$@")
+m-s() {
+    (m-c; c-s "$@")
 }
 cs-s() {
     cs-for c-s "$@"
@@ -960,8 +966,8 @@ c-with() {
         fi
     )
 }
-d-with() {
-    (d-c; c-with "$@")
+m-with() {
+    (m-c; c-with "$@")
 }
 k-with() {
     (k-c; c-with "$@")
@@ -996,8 +1002,8 @@ kr-make() {
 jr-make() {
     (jr-c;c-make "$@")
 }
-dr-make() {
-    (dr-c;c-make "$@")
+mr-make() {
+    (mr-c;c-make "$@")
 }
 cr-c() {
     c-c
@@ -1016,11 +1022,11 @@ jr-c() {
     j-c
     b-r
 }
-dr-c() {
-    d-c
+mr-c() {
+    m-c
     b-r
 }
-cd-c() {
+cm-c() {
     c-c
     b-d
 }
@@ -1095,7 +1101,7 @@ c-c() {
 k-c() {
     chost=c-ydong
 }
-d-c() {
+m-c() {
     chost=c-mdreyer
 }
 j-c() {
@@ -1313,11 +1319,11 @@ k-test() {
 kr-test() {
     (b-r;k-c;c-test "$@")
 }
-d-test() {
-    (b-d;d-c;c-test "$@")
+m-test() {
+    (b-d;m-c;c-test "$@")
 }
-dr-test() {
-    (b-r;d-c;c-test "$@")
+mr-test() {
+    (b-r;m-c;c-test "$@")
 }
 c-test() {
     local test=$1
@@ -3970,7 +3976,7 @@ gerritxmt() {
 gerrit() {
     local gerritorigin=${1:-origin}
     echo git push $gerritorigin HEAD:refs/for/master
-    git push $gerritorigin HEAD:refs/for/master
+    [[ $dryrun ]] || git push $gerritorigin HEAD:refs/for/master
 }
 gerritfor () {
     local gerritorigin=origin

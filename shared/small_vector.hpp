@@ -112,6 +112,7 @@
 #include <boost/functional/hash.hpp>
 #include <graehl/shared/swap_pod.hpp>
 #include <graehl/shared/word_spacer.hpp>
+#include <graehl/shared/good_alloc_size.hpp>
 
 namespace graehl {
 
@@ -305,7 +306,12 @@ struct small_vector {
 #else
   ((size_type)-1)/2;
 #endif
-  static const size_type kInitHeapSize=kMaxInlineSize*2;
+  typedef good_vector_size<T> TargetSize;
+  enum { kTargetBiggerSz = kMaxInlineSize * 3 + 1 / 2 };
+  enum { kTargetBiggerUnaligned = sizeof(T) * kTargetBiggerSz };
+  enum { kTargetBiggerAligned = (kTargetBiggerUnaligned + ktarget_first_alloc_mask) & ~(size_type)ktarget_first_alloc_mask };
+  static const size_type kInitHeapSize =
+      TargetSize::ktarget_first_sz > kMaxInlineSize ? TargetSize::ktarget_first_sz : kTargetBiggerAligned / sizeof(T);
   T *begin() { return data.stack.sz_ > kMaxInlineSize ? data.heap.begin_ : data.stack.vals_; }
   T const* begin() const { return const_cast<small_vector*>(this)->begin(); }
   T *end() { return begin() + data.stack.sz_; }
@@ -648,7 +654,7 @@ struct small_vector {
 
   inline void push_back_heap(T const& v) {
     if (data.stack.sz_ == data.heap.capacity_)
-      ensure_capacity_grow(data.stack.sz_+1);
+      ensure_capacity_grow(data.stack.sz_ + 1);
     data.heap.begin_[data.stack.sz_++] = v;
   }
 
@@ -658,8 +664,8 @@ struct small_vector {
       ++data.stack.sz_;
     } else if (data.stack.sz_ == kMaxInlineSize) {
       copy_vals_to_ptr();
-      data.heap.begin_[kMaxInlineSize]=v;
-      data.stack.sz_=kMaxInlineSize+1;
+      data.heap.begin_[kMaxInlineSize] = v;
+      data.stack.sz_ = kMaxInlineSize+1;
     } else {
       push_back_heap(v);
     }
@@ -986,7 +992,7 @@ struct small_vector {
 #ifdef _MSC_VER
 # undef max
 #endif
-    size_type new_cap = std::max(static_cast<size_type>(data.heap.capacity_ * 2), min_size);
+    size_type new_cap = good_vector_size<T>::next(min_size);
     T* tmp = alloc_impl(new_cap);
     memcpy_n(tmp, data.heap.begin_, data.stack.sz_);
     free_heap();
