@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 my $membersuffix = $ENV{membersuffix} || '';
 my $dryrun = $ENV{dryrun};
-my $outdir = $ENV{outdir} || `echo ~`;
+my $outdir = $ENV{outdir} || '/';
 
 sub say {
     my $s = join(' ',@_);
@@ -18,7 +18,7 @@ my $cdir="$outdir/tmp";
 my $cfile="$cdir/collisions.txt";
 my $cfilesfile="$cdir/collision.files.txt";
 my $renamesfile="$cdir/renames.txt";
-`mkdir -p $cfile` || true;
+`mkdir -p $cdir` || true;
 system("touch $cfile");
 my $origline;
 my $orig;

@@ -37,6 +37,10 @@ fi
 #mdb_dump -n -a /tmp/foo.mdb
 )
 }
+find_cpps() {
+   find ${1:-.} -name '*.[ch]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh'
+}
+
 blamestats() {
  git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
 }
@@ -4671,7 +4675,7 @@ substrac() {
 }
 substcpp() {
     (
-        substi "$@" $(find . -name '*.?pp')
+        substi "$@" `find_cpps`
     )
 }
 substyml() {
