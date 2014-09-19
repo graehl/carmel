@@ -2180,7 +2180,7 @@ headtail1() {
     fi
 }
 preview1() {
-    tailn=${tailn:-6}
+    tailn=${tailn:-12}
     local v="-v"
     if [[ ${2:-} ]] ; then
         preview_banner $2

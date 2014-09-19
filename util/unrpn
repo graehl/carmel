@@ -14,13 +14,12 @@ if ($dryrun) {
 }
 say "membersuffix=$membersuffix dryrun=$dryrun -i=$^I";
 my $cfh;
-my $cfile="$outdir/tmp/collisions.txt";
-my $cfilesfile="$outdir/tmp/collision.files.txt";
-my $renamesfile="$outdir/tmp/renames.txt";
-chomp $cfile;
-my $cdir=`dirname $cfile`;
-chomp $cdir;
-`mkdir -p $cdir`;
+my $cdir="$outdir/tmp";
+my $cfile="$cdir/collisions.txt";
+my $cfilesfile="$cdir/collision.files.txt";
+my $renamesfile="$cdir/renames.txt";
+`mkdir -p $cfile` || true;
+system("touch $cfile");
 my $origline;
 my $orig;
 my $field;
@@ -64,6 +63,7 @@ sub renamed {
 #$_ is a variable name
 sub rename {
     local($_)=@_;
+    # say "rename $_?\n";
     $orig=$_;
     $_ .= $membersuffix if stripany('m_');
     stripcamel('b|u|str|vec|map|the|sz');

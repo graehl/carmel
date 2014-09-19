@@ -213,6 +213,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     return bufend-buf;
   }
 
+
   /**
      streambuf method - remaining bytes that can be read. default impl is correct.
   */
@@ -224,6 +225,11 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   inline std::ptrdiff_t out_avail()
   {
     return bufend - pptr();
+  }
+
+  bool read_complete() const {
+    assert((gptr() == bufend) == !const_cast<basic_array_streambuf*>(this)->in_avail());
+    return gptr() == bufend;
   }
 
   /**

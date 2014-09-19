@@ -804,6 +804,9 @@ struct string_builder : string_buffer
   {
     return str.assign(this->begin(), this->end());
   }
+  boost::shared_ptr<std::string> make_shared_str() const {
+    return boost::make_shared<std::string>(this->begin(), this->end());
+  }
   std::string str() const
   {
     return std::string(this->begin(), this->end());

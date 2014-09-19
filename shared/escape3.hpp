@@ -5,12 +5,12 @@
 #ifndef GRAEHL_SHARED__ESCAPE3
 #define GRAEHL_SHARED__ESCAPE3
 
-
+#include <cassert>
 #include <string>
 
 namespace graehl {
 
-static char const* const k_hex = "01234567890ABCDEF";
+static char const* const k_hex = "0123456789ABCDEF";
 
 inline bool plaintext_escape3(char c) {
   return c >= 32 && c < 127 && c != '\\';

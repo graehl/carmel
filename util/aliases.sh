@@ -10,11 +10,24 @@ CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
 CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
+if [[ $INSIDE_EMACS ]] ; then
+    export PAGER=cat
+elif  [[ -x `which most 2>/dev/null` ]] ; then
+    export PAGER=most
+fi
 HOST=${HOST:-`hostname`}
+optllvm() {
+    LDFLAGS=-L/usr/local/opt/llvm/lib
+    CPPFLAGS=-I/usr/local/opt/llvm/include
+}
+gitblame() {
+  git blame -w -M -CCC "$@"
+}
 bmdb() {
 (
 cd ~/c/mdb/libraries/liblmdb/
 export TERM=dumb
+XMT_SHARED_EXTERNALS_PATH=${XMT_EXTERNALS_PATH}/../Shared/cpp
 dbroot=$XMT_EXTERNALS_PATH/libraries/db-5.3.15
 make mdb_from_db CC=${CC:-gcc} OPT="-O3" XCFLAGS="-I$dbroot/include" LDFLAGS+="-L$dbroot/lib" LDLIBS="-ldb"
 #gdb --fullname --args ~/c/mdb/libraries/liblmdb/mdb_from_db -T /tmp/foo.db
@@ -24,6 +37,31 @@ fi
 #mdb_dump -n -a /tmp/foo.mdb
 )
 }
+blamestats() {
+ git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
+}
+ruleversion() {
+(
+set -e
+d=$HOME/bugs/dumpp
+db=$d/`basename $1`.db
+    (gunzip -c "$@" || cat "$@") > $db
+    (mdb_from_db -l $db; mdb_from_db -T -s Version $db; mdb_from_db -T -s Header $db || echo No Header; mdb_from_db -T -s RulesDB $db | head) | tee $d/$1.txt
+)
+}
+run4eva() {
+c-s 'cd x/Release && forever make -j4'
+}
+cat4eva() {
+(
+ latest=`c-s 'ls -rt /home/graehl/forever/make.-j4*' | head -2`
+ echo $latest
+ for f in $latest; do
+ c-s ". .e;tailn=20 preview $f; grep 'error:' $f"
+ done
+)
+}
+
 tree2() {
 (set -e
     to=$1
@@ -88,7 +126,6 @@ cd $HOME/$smdb/mdb
 #git pull --rebase
 git add *.c *.h ORIGIN.*
 
-
 xlib=$XMT_EXTERNALS_PATH/../FC12/libraries
 slib=$XMT_EXTERNALS_PATH/../Shared/cpp
 ll=$xlib/lmdb/lib
@@ -111,7 +148,7 @@ cd $ll
 git add *.so *.a
 cd $bl
 git add mdb_*
-git add $incl/*.h
+git add $incl/*.h || true
 [[ $mend ]] && mend
 )
 }
@@ -124,6 +161,9 @@ findnongit() {
     find .
 }
 gitapplyforce() {
+    gitforceapply "$@"
+}
+gitforceapply() {
 (
 set -e
     echo $1 ${2?gitapplyforce REV1 REV2}
@@ -285,7 +325,7 @@ forever() {
         sleep 5
         mv $foreverthis.$i $foreverlast
         echo $foreverlast
-        if [[ $i = 1 ]] ; then
+        if [[ $show ]] && [[ $i = 1 ]] ; then
             visual $foreverlast
         fi
     done
@@ -630,9 +670,8 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize"
+xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper"
 xmtpub=$(echo ~/pub)
-
 rmxmt1() {
     (
         set -e
@@ -684,6 +723,7 @@ bakxmt() {
         forcelink $bindir $pub/latest
         forcelink $pub/$change $pub/latest-changeid
         cp -af $xmtx/RegressionTests/launch_server.py $bindir/
+        echo xmtbins: $xmtbins
         for f in $xmtbins xmt/lib/*.so; do
             local b=`basename $f`
             ls -l $f
@@ -1427,6 +1467,12 @@ gitbin=`whichq git`
 git() {
     (
         $gitbin $gitnopager "$@"
+    )
+}
+cpadd() {
+    (set -e;
+        cp "$1" "$2"
+        git add "$2"
     )
 }
 touchadd() {
@@ -2543,6 +2589,9 @@ jjen(){
     chost=c-jmay linjen "$@"
 }
 djen() {
+    chost=c-mdreyer linjen "$@"
+}
+mjen() {
     chost=c-mdreyer linjen "$@"
 }
 rcjen() {
@@ -3865,7 +3914,7 @@ gitclean() {
     if [[ $1 ]] ; then
         dry="-f"
     fi
-    git clean -d -x $dry
+    git clean -d $dry
 }
 git_dirty() {
     if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]] ; then
@@ -7563,15 +7612,12 @@ sshvia() {
 }
 sshlog() {
     echo ssh "$@" 1>&2
-    ssh "$@"
+    time ssh "$@"
 }
 if ! [[ $MAKEPROC ]] ; then
     MAKEPROC=2
     [[ $lwarch = Apple ]] || MAKEPROC=10
 fi
-mjen() {
-    UPDATE=0 jen ${BUILD:-Debug}
-}
 if [[ -d $XMT_EXTERNALS_PATH ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
 fi
