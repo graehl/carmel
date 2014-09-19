@@ -191,7 +191,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
     istringstream line(buf);
     char symbol[DEFAULTSTRBUFSIZE];
     vector<int> symbols;
-    vector<string> strSymbols;
+    vector<string> words;
     string currSym("") ;
     int symbolInNumber, symbolOutNumber,maxSymbolNumber=0 ;
     final = 0;
@@ -200,7 +200,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
     while ( line ) {
         if ( !getString(line, symbol) ){
             if(!permuteNumbers && currSym != ""){
-                strSymbols.push_back("\"" + currSym + "\"");
+                words.push_back("\"" + currSym + "\"");
             }
             break;
         }
@@ -216,9 +216,9 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
             }
             else{
                 if(currSym != ""){
-                    strSymbols.push_back("\"" + currSym + "\"");
+                    words.push_back("\"" + currSym + "\"");
                 }
-                strSymbols.push_back(symbol);
+                words.push_back(symbol);
                 currSym="";
             }
         }
@@ -247,7 +247,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
         }
     }
     else{
-        final = pow2((int)strSymbols.size())-1 ;
+        final = pow2((int)words.size())-1 ;
         for (unsigned int k=0; k <= final; k++){
             push_back(states);
         }
@@ -260,24 +260,24 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
         for (unsigned int k=0; k < final; k++){
             if (visited[k]){
               std::map<const char*, bool, ltstr> taken ;
-                for (unsigned int i = 0 ; i < strSymbols.size() ;++i)
-                    taken[strSymbols[i].c_str()] = false ;
-                for (int l=0; l < int(strSymbols.size()); l++){
+                for (unsigned int i = 0 ; i < words.size() ;++i)
+                    taken[words[i].c_str()] = false ;
+                for (int l=0; l < int(words.size()); l++){
                     int temp = pow2(l);
-                    if (((int(k / temp) % 2) == 0) && (!taken[strSymbols[l].c_str()])){
-                        if (isNonNegInt(strSymbols[l].c_str())){
+                    if (((int(k / temp) % 2) == 0) && (!taken[words[l].c_str()])){
+                        if (isNonNegInt(words[l].c_str())){
                             unsigned int from_state,to_state ;
                             from_state = k ;
-                            for(unsigned int i =1 ; i < strSymbols[l].length()-1 ; i++){
+                            for(unsigned int i =1 ; i < words[l].length()-1 ; i++){
                                 string s("\"\"\"");
-                                s[1] = strSymbols[l][i];
+                                s[1] = words[l][i];
                                 if (NULL == in.find(const_cast<char *>(s.c_str())) || NULL == out.find(const_cast<char *>(s.c_str()))){
                                     std::cerr << "problem! didn't find "<< s << '\n';
                                 }
                                 else {
                                     while (from_state >= states.size()) // (from_state >= numStates()
                                         push_back(states);
-                                    if (i == strSymbols[l].length()-2)
+                                    if (i == words[l].length()-2)
                                         to_state = k+temp ;
                                     else
                                         to_state =  ++temp_final ;
@@ -290,16 +290,16 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
                             }
                         }
                         else{
-                            if (NULL == in.find(const_cast<char *>(strSymbols[l].c_str())) || NULL == out.find(const_cast<char *>(strSymbols[l].c_str()))){
-                                std::cerr << "Error in constructing a permutation lattice!! didn't find symbol in the alphabet "<< strSymbols[l] << '\n';
+                            if (NULL == in.find(const_cast<char *>(words[l].c_str())) || NULL == out.find(const_cast<char *>(words[l].c_str()))){
+                                std::cerr << "Error in constructing a permutation lattice!! didn't find symbol in the alphabet "<< words[l] << '\n';
                             }
                             else {
-                                //              std::cerr << "adding arc (from:" << k << ", to:"<<k+temp <<", in/out:"<<strSymbols[l].c_str() << '\n';
-                                states[k].addArc(FSTArc(in.indexOf(const_cast<char *>(strSymbols[l].c_str())),out.indexOf(const_cast<char *>(strSymbols[l].c_str())) ,k+temp, 1.0));
+                                //              std::cerr << "adding arc (from:" << k << ", to:"<<k+temp <<", in/out:"<<words[l].c_str() << '\n';
+                                states[k].addArc(FSTArc(in.indexOf(const_cast<char *>(words[l].c_str())),out.indexOf(const_cast<char *>(words[l].c_str())) ,k+temp, 1.0));
                             }
                         }
                         /*symbols[l], symbols[l], k+temp, 1.0));*/
-                        taken[strSymbols[l].c_str()] = true ;
+                        taken[words[l].c_str()] = true ;
                         visited[k+temp] = true ;
                     }
                 }

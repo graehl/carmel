@@ -9,34 +9,34 @@
 namespace graehl {
 
 struct TrioKey {
-  static unsigned int aMax;
-  static unsigned int bMax;
-  unsigned int aState;
-  unsigned int bState;
+  static unsigned int gAStates;
+  static unsigned int gBStates;
+  unsigned int qa;
+  unsigned int qb;
   char filter;
 
-  bool operator == (const TrioKey &t) const 
+  bool operator == (const TrioKey &t) const
   {
-    return (aState == t.aState) && (bState == t.bState)
+    return (qa == t.qa) && (qb == t.qb)
       && (filter == t.filter);
   }
 
   TrioKey() {}
 
-  TrioKey(int a, int b, char c) : 
-    aState(a), bState(b), filter(c) {}
+  TrioKey(int a, int b, char c) :
+    qa(a), qb(b), filter(c) {}
   size_t hash() const
   {
-    Assert ( aState < aMax && bState < bMax);
-	return uint32_hash((bMax * (filter*aMax + aState) + bState));
+    Assert ( qa < gAStates && qb < gBStates);
+  return uint32_hash((gBStates * (filter*gAStates + qa) + qb));
   }
 };
 
 
 struct HalfArcState {
-  int l_dest;			// in unshared (lhs) transducer
-  int r_source;			// in (rhs) transducer with the shared arcs
-  int l_hiddenLetter;		// the matching letter that disappears in composition (index into lhs transducer's output alphabet)
+  int l_dest;     // in unshared (lhs) transducer
+  int r_source;     // in (rhs) transducer with the shared arcs
+  int l_hiddenLetter;   // the matching letter that disappears in composition (index into lhs transducer's output alphabet)
 
   bool operator == ( const HalfArcState &s ) const
   {
@@ -51,7 +51,7 @@ struct HalfArcState {
     l_dest(a), r_source(b), l_hiddenLetter(c) {}
   size_t hash() const
   {
-    return uint32_hash(TrioKey::bMax*(l_hiddenLetter*TrioKey::aMax + l_dest) + r_source);
+    return uint32_hash(TrioKey::gBStates*(l_hiddenLetter*TrioKey::gAStates + l_dest) + r_source);
   }
 };
 

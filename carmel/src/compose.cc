@@ -8,8 +8,8 @@
 namespace graehl {
 
 int WFST::indexThreshold = 12;
-unsigned int TrioKey::aMax = 0;
-unsigned int TrioKey::bMax = 0;
+unsigned int TrioKey::gAStates = 0;
+unsigned int TrioKey::gBStates = 0;
 
 
 //FIXME: use stringstream so there are no artifical name length limits
@@ -80,13 +80,13 @@ struct TrioNamer {
             throw std::runtime_error(STATENAME_TOO_LONG_ERROR_TEXT(MAX_STATENAME_LEN));
     }
 
-    char const* make(unsigned aState,unsigned bState,char filter) {
+    char const* make(unsigned qa,unsigned qb,char filter) {
         char *p=buf;
-        append_safe(p,a.stateName(aState));
+        append_safe(p,a.stateName(qa));
         *p++ = '|';
         *p++ = filter + '0';
         *p++ = '|';
-        append_safe(p,b.stateName(bState));
+        append_safe(p,b.stateName(qb));
         *p = 0;
         return finish();
     }
@@ -119,7 +119,7 @@ struct TrioNamer {
     } else {                                                                                                            \
       add(stateMap,triDest,numStates()); trioID.num = numStates(); trioID.tri = triDest;                                \
       queue.push(trioID);    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight));    push_back(states);     \
-      if ( namedStates ) {      stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter));             \
+      if ( namedStates ) {      stateNames.add(namer.make(triDest.qa, triDest.qb, triDest.filter));             \
       }  }} while(0)
 #else
 
@@ -129,7 +129,7 @@ struct TrioNamer {
     hash_traits<HashTable<TrioKey,int> >::insert_result_type i;                                                         \
     if ( (i = stateMap.insert(HashTable<TrioKey,int>::value_type(triDest,numStates()))).second ) {                      \
       trioID.num=numStates();trioID.tri=triDest;queue.push(trioID);push_back(states);                                   \
-      if ( namedStates ) stateNames.add(namer.make(triDest.aState, triDest.bState, triDest.filter),trioID.num);         \
+      if ( namedStates ) stateNames.add(namer.make(triDest.qa, triDest.qb, triDest.filter),trioID.num);         \
     } else                                                                                                              \
       trioID.num=i.first->second;                                                                                       \
     states[sourceState].addArc(FSTArc(in, out, trioID.num, weight,g)); DUMPARC(in, out, trioID.num, weight);} while(0)
@@ -177,12 +177,12 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
     Assert(aout.verify());
     Assert(bin.verify());
     TrioNamer namer(MAX_STATENAME_LEN+1,a,b);
-    aout.mapTo(bin, map);     // find matching symbols in interfacing alphabet
-    bin.mapTo(aout, revMap);
+    aout.computeMap(bin, map);     // find matching symbols in interfacing alphabet
+    bin.computeMap(aout, revMap);
     Assert(map[0]==0);
     Assert(revMap[0]==0); // *e* always 0
-    TrioKey::aMax = a.numStates(); // used in hash function
-    TrioKey::bMax = b.numStates();
+    TrioKey::gAStates = a.numStates(); // used in hash function
+    TrioKey::gBStates = b.numStates();
 
     HashTable<TrioKey,int> stateMap(2 * (a.numStates() + b.numStates())); // assign state numbers
     // to composite states in the order they are first visited
@@ -226,28 +226,28 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
             sourceState = queue.top().num;
             triSource = queue.top().tri;
             queue.pop();
-            State *aState = &a.states[triSource.aState], *bState = &b.states[triSource.bState];
-            aState->indexBy(1);
-            bState->indexBy(0);
-            const HashTable<IntKey, List<HalfArc> > &aindex=*aState->index;
+            State *qa = &a.states[triSource.qa], *qb = &b.states[triSource.qb];
+            qa->indexBy(1);
+            qb->indexBy(0);
+            const HashTable<IntKey, List<HalfArc> > &aindex=*qa->index;
             for ( HashTable<IntKey, List<HalfArc> >::const_iterator ll=aindex.begin() ; ll != aindex.end(); ++ll ) {
                 HalfArcState mediate;
                 mediate.l_hiddenLetter = ll->first;
-                mediate.r_source = triSource.bState;
+                mediate.r_source = triSource.qb;
                 if (  ll->first == EMPTY ) {
                     if ( triSource.filter == 0 ) {
                         out = EMPTY;
                         triDest.filter = 0;
-                        triDest.bState = triSource.bState;
+                        triDest.qb = triSource.qb;
                         for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
                             HalfArc const& la=*l; // arc from a
                             weight = la->weight;
-                            triDest.aState = la->dest;
+                            triDest.qa = la->dest;
                             in = la->in;
                             COMPOSEARC_GROUP(cascade.record1(la));
                         }
                     }
-                } else if ( (matches = find_second(*bState->index,(IntKey)map[mediate.l_hiddenLetter])) ) {
+                } else if ( (matches = find_second(*qb->index,(IntKey)map[mediate.l_hiddenLetter])) ) {
                     for ( List<HalfArc>::const_iterator l =ll->second.const_begin(),end=ll->second.const_end() ; l != end ; ++l ) {
                         HalfArc const& la=*l;
                         mediate.l_dest = la->dest;
@@ -262,14 +262,14 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                             int temp = sourceState;
                             {
                                 sourceState = mediateState;
-                                triDest.aState = mediate.l_dest;
+                                triDest.qa = mediate.l_dest;
                                 in = EMPTY;
                                 triDest.filter = 0;
                                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                                     HalfArc const& ra=*r;  //arc from b
                                     Assert ( map[la->out] == ra->in );
                                     out = ra->out;
-                                    triDest.bState = ra->dest;
+                                    triDest.qb = ra->dest;
                                     weight = ra->weight;
                                     COMPOSEARC_GROUP(cascade.record2(ra));
                                 }
@@ -283,16 +283,16 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                     }
                 }
             }
-            if ( (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
+            if ( (matches = find_second(*qb->index,(IntKey)EMPTY)) ) {
                 in = EMPTY;
-                triDest.aState = triSource.aState;
+                triDest.qa = triSource.qa;
                 triDest.filter = 1;
                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                     HalfArc const& ra=*r;
                     Assert ( ra->in == EMPTY );
                     out = ra->out;
                     weight = ra->weight;
-                    triDest.bState = ra->dest; // arc from b
+                    triDest.qb = ra->dest; // arc from b
                     COMPOSEARC_GROUP(cascade.record2(ra));
                 }
             }
@@ -313,135 +313,135 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
             triSource = queue.top().tri;
             queue.pop();
             State  *smaller, *larger;
-            State *aState = &a.states[triSource.aState], *bState = &b.states[triSource.bState];
-            if ( aState->size > bState->size ) {
-                larger = aState;
-                smaller = bState;
+            State *qa = &a.states[triSource.qa], *qb = &b.states[triSource.qb];
+            if ( qa->size > qb->size ) {
+                larger = qa;
+                smaller = qb;
             } else {
-                larger = bState;
-                smaller = aState;
+                larger = qb;
+                smaller = qa;
             }
             if ( larger->size > WFST::indexThreshold ) {
-                larger->indexBy( larger == aState ); // create hash table
-                if ( larger == bState ) {       // bState (rhs transducer) is larger
-                    for ( List<FSTArc>::const_iterator l=aState->arcs.const_begin(),end=aState->arcs.const_end()
+                larger->indexBy( larger == qa ); // create hash table
+                if ( larger == qb ) {       // qb (rhs transducer) is larger
+                    for ( List<FSTArc>::const_iterator l=qa->arcs.const_begin(),end=qa->arcs.const_end()
                               ; l !=end ; ++l) {
                         in = l->in;
-                        triDest.aState = l->dest;
+                        triDest.qa = l->dest;
                         if ( l->out == EMPTY ) {
                             if ( triSource.filter != 2 ) {
                                 out = EMPTY;
                                 weight = l->weight;
                                 triDest.filter = 1;
-                                triDest.bState = triSource.bState;
+                                triDest.qb = triSource.qb;
                                 COMPOSEARC_GROUP(cascade.record1(&*l));
                             }
                             if ( triSource.filter == 0 )
-                                if ( (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
+                                if ( (matches = find_second(*qb->index,(IntKey)EMPTY)) ) {
                                     triDest.filter = 0;
                                     for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end()
                                               ; r!=end ; ++r ) {
                                         Assert((*r)->in == EMPTY);
                                         out = (*r)->out;
                                         weight = l->weight * (*r)->weight;
-                                        triDest.bState = (*r)->dest;
+                                        triDest.qb = (*r)->dest;
                                         COMPOSEARC_GROUP(cascade.record(&*l,*r));
                                     }
                                 }
                         } else {
-                            if ( (matches = find_second(*bState->index,(IntKey)map[l->out])) ) {
+                            if ( (matches = find_second(*qb->index,(IntKey)map[l->out])) ) {
                                 triDest.filter = 0;
                                 for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end()
                                           ; r!=end ; ++r ) {
                                     Assert ( map[l->out] == (*r)->in );
                                     out = (*r)->out; //FIXME: uninit
                                     weight = l->weight * (*r)->weight;
-                                    triDest.bState = (*r)->dest;
+                                    triDest.qb = (*r)->dest;
                                     COMPOSEARC_GROUP(cascade.record(&*l,*r));
                                 }
                             }
                         }
                     }
-                    if ( triSource.filter != 1 && (matches = find_second(*bState->index,(IntKey)EMPTY)) ) {
+                    if ( triSource.filter != 1 && (matches = find_second(*qb->index,(IntKey)EMPTY)) ) {
                         in = EMPTY;
-                        triDest.aState = triSource.aState;
+                        triDest.qa = triSource.qa;
                         triDest.filter = 2;
                         for ( List<HalfArc>::const_iterator r=matches->const_begin(),end = matches->const_end(); r!=end ; ++r ) {
                             Assert ( (*r)->in == EMPTY );
                             out = (*r)->out;
                             weight = (*r)->weight;
-                            triDest.bState = (*r)->dest;
+                            triDest.qb = (*r)->dest;
                             COMPOSEARC_GROUP(cascade.record2(*r));
                         }
                     }
-                } else {                        // aState (lhs transducer) is larger
+                } else {                        // qa (lhs transducer) is larger
                     //FIXME: total duplicated code from above case, except switching order of in/out.  a macro could factor this w/ no runtime cost
-                    for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r!=end  ; ++r) {
+                    for ( List<FSTArc>::const_iterator r=qb->arcs.const_begin(),end = qb->arcs.const_end() ; r!=end  ; ++r) {
                         out = r->out;
-                        triDest.bState = r->dest;
+                        triDest.qb = r->dest;
                         if ( r->in == EMPTY ) {
                             if ( triSource.filter != 1 ) {
                                 in = EMPTY;
                                 weight = r->weight;
                                 triDest.filter = 2;
-                                triDest.aState = triSource.aState;
+                                triDest.qa = triSource.qa;
                                 COMPOSEARC_GROUP(cascade.record2(&*r));
                             }
                             if ( triSource.filter == 0 )
-                                if ( (matches = find_second(*aState->index,(IntKey)EMPTY)) ) {
+                                if ( (matches = find_second(*qa->index,(IntKey)EMPTY)) ) {
                                     triDest.filter = 0;
                                     for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                                         Assert((*l)->out == EMPTY);
                                         in = (*l)->in;
                                         weight = (*l)->weight * r->weight;
-                                        triDest.aState = (*l)->dest;
+                                        triDest.qa = (*l)->dest;
                                         COMPOSEARC_GROUP(cascade.record(*l,&*r));
                                     }
                                 }
                         } else {
                             triDest.filter = 0;
-                            if ( (matches = find_second(*aState->index,(IntKey)revMap[r->in])) ) {
+                            if ( (matches = find_second(*qa->index,(IntKey)revMap[r->in])) ) {
                                 for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                                     Assert ( map[(*l)->out] == r->in );
                                     in = (*l)->in;
                                     weight = (*l)->weight * r->weight;
-                                    triDest.aState = (*l)->dest;
+                                    triDest.qa = (*l)->dest;
                                     COMPOSEARC_GROUP(cascade.record(*l,&*r));
                                 }
                             }
                         }
                     }
-                    if ( triSource.filter != 2 && (matches = find_second(*aState->index,(IntKey)EMPTY)) ) {
+                    if ( triSource.filter != 2 && (matches = find_second(*qa->index,(IntKey)EMPTY)) ) {
                         out = EMPTY;
-                        triDest.bState = triSource.bState;
+                        triDest.qb = triSource.qb;
                         triDest.filter = 1;
                         for ( List<HalfArc>::const_iterator l=matches->const_begin(),end = matches->const_end() ; l != end ; ++l ) {
                             Assert ( (*l)->out == EMPTY );
                             in = (*l)->in;
                             weight = (*l)->weight;
-                            triDest.aState = (*l)->dest;
+                            triDest.qa = (*l)->dest;
                             COMPOSEARC_GROUP(cascade.record1(*l));
                         }
                     }
                 }
             } else {                  // both states too small to bother hashing
-                for ( List<FSTArc>::const_iterator l=aState->arcs.const_begin(),end = aState->arcs.const_end() ; l !=end  ; ++l) {
+                for ( List<FSTArc>::const_iterator l=qa->arcs.const_begin(),end = qa->arcs.const_end() ; l !=end  ; ++l) {
                     in = l->in;
-                    triDest.aState = l->dest;
+                    triDest.qa = l->dest;
                     if ( l->out == EMPTY ) {
                         if ( triSource.filter != 2 ) {
                             out = EMPTY;
                             weight = l->weight;
                             triDest.filter = 1;
-                            triDest.bState = triSource.bState;
+                            triDest.qb = triSource.qb;
                             COMPOSEARC_GROUP(cascade.record1(&*l));
                         }
                         if ( triSource.filter == 0 ){
-                            for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+                            for ( List<FSTArc>::const_iterator r=qb->arcs.const_begin(),end = qb->arcs.const_end() ; r !=end ; ++r ) {
                                 if ( r->in == EMPTY ) {
                                     out = r->out;
                                     weight = l->weight * r->weight;
-                                    triDest.bState = r->dest;
+                                    triDest.qb = r->dest;
                                     triDest.filter = 0;
                                     COMPOSEARC_GROUP(cascade.record(&*l,&*r));
                                 }
@@ -449,11 +449,11 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                         }
                     } else {
                         triDest.filter = 0;
-                        for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+                        for ( List<FSTArc>::const_iterator r=qb->arcs.const_begin(),end = qb->arcs.const_end() ; r !=end ; ++r ) {
                             if ( map[l->out] == r->in ) {
                                 out = r->out;
                                 weight = l->weight * r->weight;
-                                triDest.bState = r->dest;
+                                triDest.qb = r->dest;
                                 COMPOSEARC_GROUP(cascade.record(&*l,&*r));
                             }
                         }
@@ -461,13 +461,13 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
                 }
                 if ( triSource.filter != 1 ) {
                     in = EMPTY;
-                    triDest.aState = triSource.aState;
+                    triDest.qa = triSource.qa;
                     triDest.filter = 2;
-                    for ( List<FSTArc>::const_iterator r=bState->arcs.const_begin(),end = bState->arcs.const_end() ; r !=end ; ++r ) {
+                    for ( List<FSTArc>::const_iterator r=qb->arcs.const_begin(),end = qb->arcs.const_end() ; r !=end ; ++r ) {
                         if ( r->in == EMPTY ) {
                             out = r->out;
                             weight = r->weight;
-                            triDest.bState = r->dest;
+                            triDest.qb = r->dest;
                             COMPOSEARC_GROUP(cascade.record2(&*r));
                         }
                     }
@@ -478,8 +478,8 @@ void WFST::set_compose(cascade_parameters &cascade,WFST &a, WFST &b, bool namedS
     delete[] map;
     delete[] revMap;
 
-    triDest.aState = a.final;
-    triDest.bState = b.final;
+    triDest.qa = a.final;
+    triDest.qb = b.final;
     int *pFinal[3];
     int nFinal = 0;
     int i;

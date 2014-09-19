@@ -260,9 +260,9 @@ class Alphabet {
             ht.clear();
         }
     }
-    void mapTo(const Alphabet &o, int *aMap) const
-    // aMap will give which letter in Alphabet o the letters in a
-    // correspond to, or -1 if the letter is not in Alphabet o.
+    /// sets aMap[0..size()) such that o[aMap[i]] == (*this)[i] or else aMap[i]
+    /// is -1 if o doesn't have that symbol
+    void computeMap(const Alphabet &o, int *aMap) const
     {
         unsigned const  *ip;
         for ( unsigned i = 0 ; i < size() ; ++i )

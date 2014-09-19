@@ -891,7 +891,7 @@ struct ForestVizPrinter : public GraphvizPrinter {
     dynamic_array<unsigned> backref_ids;
     Labeler labeler;
 
-    ForestVizPrinter(std::ostream &o_,const std::string &prelude="",bool indirect_nodes_=true,bool label_edges_=false,const Labeler &labeler_=Labeler(),const char *graphname="forest") : GraphvizPrinter(o_,"node [shape=ellipse];\n"+prelude,graphname), labeler(labeler_),label_edges(label_edges_),indirect_nodes(indirect_nodes_) {
+    ForestVizPrinter(std::ostream &out,const std::string &prelude="",bool indirect_nodes_=true,bool label_edges_=false,const Labeler &labeler_=Labeler(),const char *graphname="forest") : GraphvizPrinter(out,"node [shape=ellipse];\n"+prelude,graphname), labeler(labeler_),label_edges(label_edges_),indirect_nodes(indirect_nodes_) {
     }
     void coda() {
         o << "}\n";
