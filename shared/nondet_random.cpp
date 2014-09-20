@@ -73,8 +73,8 @@ public:
 
   ~impl() { if(close(fd) < 0) error("could not close"); }
 
-  unsigned int next() {
-    unsigned int result;
+  unsigned next() {
+    unsigned result;
     long sz = read(fd, reinterpret_cast<char *>(&result), sizeof(result));
     if(sz == -1)
       error("error while reading");
@@ -140,9 +140,9 @@ public:
       error("cannot close", GetLastError());
   }
 
-  unsigned int next()
+  unsigned next()
   {
-    unsigned int result;
+    unsigned result;
 
     if (!CryptGenRandom(provider, sizeof(result), reinterpret_cast<BYTE*>(&result)))
       error("error while generating", GetLastError());
@@ -179,7 +179,7 @@ double boost::random_device::entropy() const
   return 10;
 }
 
-unsigned int boost::random_device::operator()()
+unsigned boost::random_device::operator()()
 {
   return pimpl->next();
 }

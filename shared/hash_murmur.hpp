@@ -541,7 +541,7 @@ inline uint64_t MurmurHash64 ( const void * key, int len, MurmurSeed seed = GRAE
   unsigned h2 = 0;
 
 #if defined(__arm) || defined(__arm__)
-  size_t ksize = sizeof(unsigned int);
+  size_t ksize = sizeof(unsigned);
   const unsigned char * data = (const unsigned char *)key;
 #else
   const unsigned * data = (const unsigned *)key;

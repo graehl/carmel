@@ -9,10 +9,10 @@
 namespace graehl {
 
 struct TrioKey {
-  static unsigned int gAStates;
-  static unsigned int gBStates;
-  unsigned int qa;
-  unsigned int qb;
+  static unsigned gAStates;
+  static unsigned gBStates;
+  unsigned qa;
+  unsigned qb;
   char filter;
 
   bool operator == (const TrioKey &t) const

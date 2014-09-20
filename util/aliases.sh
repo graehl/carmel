@@ -17,8 +17,11 @@ elif  [[ -x `which most 2>/dev/null` ]] ; then
 fi
 HOST=${HOST:-`hostname`}
 optllvm() {
-    LDFLAGS=-L/usr/local/opt/llvm/lib
-    CPPFLAGS=-I/usr/local/opt/llvm/include
+    export LLVM_DIR=/usr/local/opt/llvm
+    export LDFLAGS=-L$LLVM_DIR/lib
+    export CPPFLAGS=-I$LLVM_DIR/include
+    export PATH=$LLVM_DIR/bin:$PATH
+    export CMAKE_PREFIX_PATH=$LLVM_DIR
 }
 gitblame() {
   git blame -w -M -CCC "$@"
@@ -38,7 +41,7 @@ fi
 )
 }
 find_cpps() {
-   find ${1:-.} -name '*.[ch]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh'
+   find ${1:-.} -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh'
 }
 
 blamestats() {
@@ -4660,8 +4663,10 @@ substi() {
         cat $tr
         echo
         echo ctrl-c to abort
-        sleep 3
-        subst.pl "$@" --inplace --tr "$tr"
+        if ! [[ $preview ]] ; then
+            sleep 3
+            subst.pl "$@" --inplace --tr "$tr"
+        fi
     )
 }
 substigrepq() {

@@ -142,7 +142,7 @@ struct lazy_forest_indent_tag {};
 
 #ifndef ERRORQ
 # include <iostream>
-# define KBESTERRORQ(x, y) do{ std::cerr << "\n" << x << ": " << y<<std::endl; }while(0)
+# define KBESTERRORQ(x, y) do{ std::cerr << "\n" << x << ": " << y<<'\n'; }while(0)
 #else
 # define KBESTERRORQ(x, y) ERRORQ(x, y)
 #endif

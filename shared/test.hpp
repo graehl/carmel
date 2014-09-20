@@ -86,7 +86,7 @@ bool test_extract_insert(S &s, C &c, bool whine=true) {
       if (o.str() != s) {
 //      DBP(o.str());
 //      DBP(o2.str());
-          std::cerr << "Output after writing and rereading: " << o.str() << std::endl << " ... didn't match original: " << s << std::endl;
+          std::cerr << "Output after writing and rereading: " << o.str() << '\n' << " ... didn't match original: " << s << '\n';
           return 0;
       }
   } catch (std::ios_base::failure &e) {

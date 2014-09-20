@@ -797,8 +797,8 @@ class WFST {
     {
         PathArc p;
         int s=0;
-        unsigned int len=0;
-        unsigned int max=*(unsigned int *)&max_len;
+        unsigned len=0;
+        unsigned max=*(unsigned *)&max_len;
         for (;;) {
             if (s == final)
                 return len;
@@ -1337,7 +1337,7 @@ class WFST {
     int generate(int *inSeq, int *outSeq, int minArcs, int maxArcs);
     BOOST_STATIC_CONSTANT(unsigned,invalid_state=(unsigned)-1);
     int valid() const { return ( final != invalid_state ); }
-    unsigned int size() const { if ( !valid() ) return 0; else return numStates(); }
+    unsigned size() const { if ( !valid() ) return 0; else return numStates(); }
     unsigned n_edges() const
     {
         return numArcs();

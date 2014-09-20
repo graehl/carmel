@@ -57,7 +57,7 @@ struct GraphArc {
 // private:
 // friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive & ar, const unsigned int version=0)
+    void serialize(Archive & ar, const unsigned version=0)
     { ar & src & dest & weight & data; }
 };
 
@@ -68,7 +68,7 @@ struct GraphState {
     arcs_type arcs;
 
     template <class Archive>
-    void serialize(Archive & ar, const unsigned int version=0)
+    void serialize(Archive & ar, const unsigned version=0)
     { ar & arcs; }
 
     void add(GraphArc const& a)

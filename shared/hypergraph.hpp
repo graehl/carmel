@@ -96,16 +96,16 @@ typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G 
   };
 */
 
-// use boost::iterator_property_map<RandomAccessIterator, OffsetMap, T, R> with OffsetMap doing the index mapping
+// use boost::iterator_property_map<RandomAccessIterator, OffsetFeatures, T, R> with OffsetFeatures doing the index mapping
 // usually: K = key *, you have array of key at key *: vec ... vec+size
 // construct OffsetArrayPmap(vec, vec+size) and get an array of size Vs (default constructed)
 
 /*Iterator Must be a model of Random Access Iterator.
-  OffsetMap Must be a model of Readable Property Map and the value type must be convertible to the difference type of the iterator.
+  OffsetFeatures Must be a model of Readable Property Map and the value type must be convertible to the difference type of the iterator.
   T The value type of the iterator.         std::iterator_traits<RandomAccessIterator>::value_type
   R The reference type of the iterator.     std::iterator_traits<RandomAccessIterator>::reference
 
-  iterator_property_map(Iterator i, OffsetMap m)*/
+  iterator_property_map(Iterator i, OffsetFeatures m)*/
 
 
 /*template <class V, class O>

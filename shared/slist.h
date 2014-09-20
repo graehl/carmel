@@ -154,7 +154,7 @@ class slist_shared :
     typedef const value_type* const_pointer;
     typedef value_type& reference;
     typedef const value_type& const_reference;
-    typedef unsigned int size_type;
+    typedef unsigned size_type;
     //  typedef int difference_type;
     //  typedef forward_iterator_tag _Iterator_category;
 

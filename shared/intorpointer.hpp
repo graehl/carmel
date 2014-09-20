@@ -4,22 +4,13 @@
 
 #include <cassert>
 
-#ifndef GRAEHL_IOP_CHECK_LSB
-# define GRAEHL_IOP_CHECK_LSB 1
-#endif
-#if GRAEHL_IOP_CHECK_LSB
-# define graehl_iop_assert(x) assert(x)
-#else
-# define graehl_iop_assert(x)
-#endif
-
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif
 
 namespace graehl {
 
-template <class Pointed=void,class Int=std::size_t>
+template <class Pointed=void, class Int=std::size_t>
 struct IntOrPointer {
   typedef Pointed pointed_type;
   typedef Int integer_type;
@@ -32,8 +23,8 @@ struct IntOrPointer {
   bool is_integer() const { return i & 1; }
   bool is_pointer() const { return !is_integer(); }
   value_type & pointer() { return p; }
-  const value_type & pointer() const { iop_assert(is_pointer()); return p; }
-  integer_type integer() const { iop_assert(is_integer()); return i >> 1; }
+  const value_type & pointer() const { return p; }
+  integer_type integer() const { return i >> 1; }
   /// if sizeof(C) is even, could subtract sizeof(C)/2 bytes from base and add directly i * sizeof(C)/2 bytes
   template <class C>
   C* offset_integer(C *base) {
@@ -72,9 +63,9 @@ struct IntOrPointer {
   }
   void print(std::ostream &out) const {
     if (is_integer())
-      o << integer();
+      out << integer();
     else {
-      o << "0x" << std::hex << (std::size_t)pointer() << std::dec;
+      out << "0x" << std::hex << (std::size_t)pointer() << std::dec;
     }
   }
 };

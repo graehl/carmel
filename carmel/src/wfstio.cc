@@ -70,7 +70,7 @@ static const int DEFAULTSTRBUFSIZE=4096;
         } } while(0)
 
 
-static inline unsigned int pow2(int exp)
+static inline unsigned pow2(int exp)
 {
     return 1 << exp;
 }
@@ -232,7 +232,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
     if (permuteNumbers){
         push_back(states);                  /* final state*/
         final = pow2((int)symbols.size())-1;
-        for (unsigned int k=0; k < final; k++){
+        for (unsigned k=0; k < final; k++){
             push_back(states);
             vector<bool> taken(maxSymbolNumber+1);
             for (int i = 0 ; i <= maxSymbolNumber ;++i)
@@ -248,27 +248,27 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
     }
     else{
         final = pow2((int)words.size())-1 ;
-        for (unsigned int k=0; k <= final; k++){
+        for (unsigned k=0; k <= final; k++){
             push_back(states);
         }
         int temp_final = final ;
         //    vector<bool> visited(final,false);
         vector<bool> visited(final);
-        for (unsigned int k=0; k < final; k++)
+        for (unsigned k=0; k < final; k++)
             visited[k] = false ;
         visited[0] = true ;
-        for (unsigned int k=0; k < final; k++){
+        for (unsigned k=0; k < final; k++){
             if (visited[k]){
               std::map<const char*, bool, ltstr> taken ;
-                for (unsigned int i = 0 ; i < words.size() ;++i)
+                for (unsigned i = 0 ; i < words.size() ;++i)
                     taken[words[i].c_str()] = false ;
                 for (int l=0; l < int(words.size()); l++){
                     int temp = pow2(l);
                     if (((int(k / temp) % 2) == 0) && (!taken[words[l].c_str()])){
                         if (isNonNegInt(words[l].c_str())){
-                            unsigned int from_state,to_state ;
+                            unsigned from_state,to_state ;
                             from_state = k ;
-                            for(unsigned int i =1 ; i < words[l].length()-1 ; i++){
+                            for(unsigned i =1 ; i < words[l].length()-1 ; i++){
                                 string s("\"\"\"");
                                 s[1] = words[l][i];
                                 if (NULL == in.find(const_cast<char *>(s.c_str())) || NULL == out.find(const_cast<char *>(s.c_str()))){
@@ -312,7 +312,7 @@ WFST::WFST(const char *buf, int &length,bool permuteNumbers)
 
 int WFST::getStateIndex(const char *buf) {
     char *scanend;
-    unsigned int st;
+    unsigned st;
     if (!named_states) {
         st=strtol(buf,&scanend,10); // base 10, potential buffer overflow?? not really, read only
         if (*buf && *scanend != '\0') {

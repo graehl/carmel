@@ -28,7 +28,7 @@ struct auto_report
     if (o) {
       *o << desc << change;
       if (nl)
-        *o << std::endl;
+        *o << '\n';
       else
         *o << std::flush;
       reported=true;

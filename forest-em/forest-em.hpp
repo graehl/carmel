@@ -36,6 +36,7 @@
 #include <graehl/shared/filelines.hpp>
 #include <graehl/shared/backtrace.hpp>
 #include <graehl/shared/input_error.hpp>
+#include <graehl/shared/indirect.hpp>
 
 #include <graehl/shared/memmap.hpp>
 #include <graehl/shared/swapbatch.hpp>
@@ -588,7 +589,7 @@ public:
 
         NormGroupIter b(wg.begin()), end(wg.end()), mid=b;
 
-        indirect_gt<NormIndex,prob_t *> gtcmp(rulebase);
+        indirect_gt<NormIndex, prob_t *> gtcmp(rulebase);
         unsigned group_size=wg.size();
         unsigned real_watch_depth=watch_depth;
         if (watch_depth > group_size) {
@@ -799,8 +800,6 @@ public:
 };
 
 }
-
-
 
 
 #endif

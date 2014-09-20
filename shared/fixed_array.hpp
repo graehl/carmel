@@ -77,7 +77,7 @@ template <typename T,typename Alloc=std::allocator<T> > class array : protected 
     typedef boost::reverse_iterator<iterator> reverse_iterator;
     typedef boost::reverse_iterator<const_iterator> const_reverse_iterator;
 protected:
-    //unsigned int space;
+    //unsigned space;
     T *vec;
     T *endspace;
 public:
@@ -96,7 +96,7 @@ public:
 
 //    BOOST_STATIC_CONSTANT(bool,DUMMY=0); // msvc++ insists on amibuity between template Writer print and bool 2nd arg ...
 
-    T & at(unsigned int index) const { // run-time bounds-checked
+    T & at(unsigned index) const { // run-time bounds-checked
         T *r=vec+index;
         if (!(r < end()) )
             throw std::out_of_range(std::string("array access out of bounds with index=").append(boost::lexical_cast<std::string>(index)));
@@ -107,11 +107,11 @@ public:
         return begin()+index < end();
     }
     //TODO: const/nonconst ref return
-    T & operator[] (unsigned int index) const {
+    T & operator[] (unsigned index) const {
         dynarray_assert(vec+index < end());
         return vec[index];
     }
-    T & operator() (unsigned int index) const {
+    T & operator() (unsigned index) const {
         dynarray_assert(vec+index < end());
         return vec[index];
     }
@@ -335,9 +335,9 @@ public:
     const T* const_end() const {
         return endspace;
     }
-    unsigned int index_of(T *t) const {
+    unsigned index_of(T *t) const {
         dynarray_assert(t>=begin() && t<end());
-        return (unsigned int)(t-vec);
+        return (unsigned)(t-vec);
     }
     ///XXX: must always properly set_capacity AFTER set_begin since this invalidates capacity
     void set_begin(T* buf) {
@@ -345,7 +345,7 @@ public:
         vec=buf;
         //set_capacity(cap);
     }
-    void set_capacity(unsigned int newCap) { endspace=vec+newCap; }
+    void set_capacity(unsigned newCap) { endspace=vec+newCap; }
     TO_OSTREAM_PRINT
     FROM_ISTREAM_READ
 };

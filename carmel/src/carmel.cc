@@ -1050,7 +1050,7 @@ main(int argc, char *argv[]){
     for ( i = 0 ; i < 256 ; ++i ) argflags[i]=flags[i] = 0;
     char *pc;
     char const**parm = NEW char const *[argc-1];
-    seed = default_random_seed();//(unsigned int )std::time(NULL);
+    seed = default_random_seed();//(unsigned )std::time(NULL);
     int nParms = 0;
     int kPaths = 0;
     int thresh = 32;

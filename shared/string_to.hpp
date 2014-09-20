@@ -158,7 +158,7 @@ inline void string_to_impl(char const* s, long &x) {
   x=strtol_complete(s);
 }
 
-#ifndef XMT_32 // size_t == unsigned int, avoid signature collision
+#ifndef XMT_32 // size_t == unsigned, avoid signature collision
 inline void string_to_impl(std::string const& s, unsigned &x) {
   x=atou_fast_complete<unsigned>(s.c_str());
 }
@@ -815,7 +815,7 @@ struct string_builder : string_buffer
   {
     return new std::string(this->begin(), this->end());
   }
-  std::string strSkipPrefix(std::size_t prefixLen) const
+  std::string skipPrefix(std::size_t prefixLen) const
   {
     return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());
   }

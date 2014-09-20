@@ -157,7 +157,7 @@ inline std::size_t cstr_hash (const char *p)
 {
     std::size_t h=0;
 #ifdef OLD_HASH
-    unsigned int g;
+    unsigned g;
     while (*p != 0) {
         h = (h << 4) + *p++;
         if ((g = h & 0xf0000000) != 0)

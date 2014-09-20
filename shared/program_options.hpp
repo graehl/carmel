@@ -441,7 +441,7 @@ struct printable_options_description
     printable_option() : in_group(false) {}
   };
   typedef std::vector<printable_option > options_type;
-  BOOST_STATIC_CONSTANT(unsigned, default_linewrap=80); // options_description::m_default_line_length
+  BOOST_STATIC_CONSTANT(unsigned, default_linewrap=80); // options_description::default_line_length_
   printable_options_description(unsigned line_length = default_linewrap) :
     options_description(line_length) { init(); }
 

@@ -8,8 +8,8 @@
 namespace graehl {
 
 int WFST::indexThreshold = 12;
-unsigned int TrioKey::gAStates = 0;
-unsigned int TrioKey::gBStates = 0;
+unsigned TrioKey::gAStates = 0;
+unsigned TrioKey::gBStates = 0;
 
 
 //FIXME: use stringstream so there are no artifical name length limits

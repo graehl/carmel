@@ -292,7 +292,7 @@ void WFST::invert()
     Assert(valid());
     int temp;
     in_alph().swap(out_alph());
-    for ( unsigned int s = 0 ; s < states.size(); ++s ) {
+    for ( unsigned s = 0 ; s < states.size(); ++s ) {
         for ( List<FSTArc>::val_iterator a=states[s].arcs.val_begin(),end = states[s].arcs.val_end(); a != end ; ++a ) {
             //XXX should use SWAP here instead?
             temp = a->in;

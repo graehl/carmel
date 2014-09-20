@@ -5,7 +5,7 @@
 #include <ctime>
 struct InitRand {
         InitRand() {
-                srand((unsigned int)time(NULL));
+                srand((unsigned)time(NULL));
         }
 };
 

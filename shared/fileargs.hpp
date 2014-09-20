@@ -115,7 +115,7 @@ inline bool special_output_filename(std::string const& s) {
 
 inline bool special_input_filename(std::string const& s) {
   std::size_t sz = s.size();
-  return sz == 1 && s[0] == '-' || sz == 2 && s[0] == '-' && s[1] == '0';
+  return (sz == 1 && s[0] == '-') || (sz == 2 && s[0] == '-' && s[1] == '0');
 }
 
 inline bool gz_filename(std::string const& s) {
@@ -243,7 +243,7 @@ public:
   {
     //TODO: assert or traits so only for ostreams
     if (!none)
-      *pointer << s<<std::endl;
+      *pointer << s<<'\n';
   }
 
   void set(Stream * newstream, std::string const& name) {

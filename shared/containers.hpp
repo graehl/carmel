@@ -195,7 +195,7 @@ struct MapS {
   };
 };
 
-inline MapS mapS() {
+inline MapS s() {
   return MapS();
 }
 

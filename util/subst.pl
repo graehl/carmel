@@ -83,11 +83,8 @@ while(<$fh>) {
         }
         ($find,$replace)=($replace,$find) if $reverse;
         &debug($find,$replace);
-        my $retext=$isregexp ? $find : qq{\\Q$find\\E};
-#        my $replacetext=$isregexp ? $replace : qq{\\Q*replace\\E};
-        $retext=qq{\\b$retext\\b} if $wholeword;
-        &debug($retext);
-        push @rewrites,[eval("qr{$retext}"),$replace,"s{$find}{$replace}"];
+        my $re = $isregexp ? eval("qr{$find}") : ($wholeword ? qr{\b$find\e} : quotemeta($find));
+        push @rewrites, [$re, $replace, "s{$find}{$replace}"];
     }
 }
 

@@ -1,6 +1,6 @@
 /** \file
 
-    Little-Endian base-128 encoding of unsigned integer types
+    Little-Endian base-128 encoding of unsignedeger types
 
     in LEB128 you have a sequence of bytes starting least significant, except
     the bytes only hold 7 bits of info. the high byte (128) is 0 if no more

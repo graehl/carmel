@@ -300,7 +300,7 @@ inline int strtoi_complete_exact(char const* s, int base=10) {
   return l;
 }
 
-//FIXME: preprocessor separation for tokens int<->unsigned int, long<->unsigned long, strtol<->strtoul ? massive code duplication
+//FIXME: preprocessor separation for tokens int<->unsigned, long<->unsigned long, strtol<->strtoul ? massive code duplication
 inline unsigned long strtoul_complete(char const* s, int base=0) {
   unsigned long r;
   if (*s) {
@@ -343,7 +343,7 @@ inline unsigned strtou_complete_bounded(char const* s, int base=10) {
 inline unsigned strtou_complete_exact(char const* s, int base=10) {
   unsigned long l=strtoul_complete(s, base);
   if (l<std::numeric_limits<unsigned>::min() || l>std::numeric_limits<unsigned>::max())
-    THROW_MSG(string_to_exception, "Out of range for unsigned int " UINTRANGE_STR ": '" << s<<"'");
+    THROW_MSG(string_to_exception, "Out of range for unsigned " UINTRANGE_STR ": '" << s<<"'");
   CLANG_DIAG_ON(tautological-compare)
   return l;
 }
@@ -397,54 +397,34 @@ inline bool digit_char(char c) {
 
 /**
    \return a Float (e.g. float or double) from a string - assumes valid regular
-   (not nan, inf, -inf, etc) real numbers like -1.23E-20
+   (not nan, inf, -inf, etc) nonnegative real numbers like 1.23E-20 (with no + sign)
 
    std::strtod has the deficiency that the string is assumed to be
    null-terminated. if we have a Field (a char * pair) rather than a std::string
    we need this
 
    the next-fastest alternative is the heavier-to-compile Boost spirit
-
 */
 template <class Float, class StrCursor>
-Float scan_real(StrCursor &c, bool skip_leading_space=false) {
-  if (!c) return (Float)0;
-
-  if (skip_leading_space)
-    while (space_or_tab(*c.p)) {
-      ++c.p; if (!c) return (Float)0;
-    }
-
-  // optional sign
-  bool negative = false;
-  if (*c.p == '-') {
-    negative = true;
-    ++c.p; if (!c) return (Float)0;
-  } else if (*c.p == '+') {
-    ++c.p; if (!c) return (Float)0;
-  }
-
+Float scan_real_no_sign(StrCursor &c) {
   // before decimal
   Float value = (Float)0;
   while(digit_char(*c.p)) {
     value = value * (Float)10 + (*c.p - '0');
-    ++c.p; if (!c) return negative ? -value : value;
+    ++c.p; if (!c) return value;
   }
 
   // optional decimal, after decimal
   if (*c.p == '.') {
     ++c.p;
-    if (!c) return negative ? -value : value;
+    if (!c) return value;
     Float value_of_digit = (Float)0.1;
     while (digit_char(*c.p)) {
       value += (*c.p - '0') * value_of_digit;
-      ++c.p; if (!c) return negative ? -value : value;
+      ++c.p; if (!c) return value;
       value_of_digit *= (Float)0.1;
     }
   }
-
-  if (negative)
-    value = -value;
 
   // optional exponent
   if (c && ((*c.p == 'e') || (*c.p == 'E'))) {
@@ -480,9 +460,49 @@ Float scan_real(StrCursor &c, bool skip_leading_space=false) {
   return value;
 }
 
+template <class StrCursor>
+bool cursor_at_inf(StrCursor &i) {
+  if (i) {
+    char const* p = i.p;
+    if (*i.p == 'i' || *i.p == 'I')
+      if (++i.p) {
+        if (*i.p == 'n' || *i.p == 'N')
+          if (++i.p)
+            if (*i.p == 'f' || *i.p == 'F') {
+              ++i.p;
+              return true;
+            }
+        i.p = p;
+      }
+  }
+  return false;
+}
+
+/**
+   as scan_real_no_sign but handling - or + sign, optionally leading space, and
+   optionally allowing INF or inf (but not NaN) input
+*/
 template <class Float, class StrCursor>
-Float cursor_to_real(StrCursor str) {
-  return scan_real(str);
+Float scan_real(StrCursor &c, bool skip_leading_space = false, bool parse_inf = true) {
+  if (!c) return (Float)0;
+  if (skip_leading_space)
+    while (space_or_tab(*c.p)) {
+      ++c.p; if (!c) return (Float)0;
+    }
+  // optional sign
+  bool negative = false;
+  if (*c.p == '-') {
+    ++c.p; if (!c) return (Float)0;
+    negative = true;
+  } else if (*c.p == '+') {
+    ++c.p; if (!c) return (Float)0;
+  }
+  if (parse_inf && cursor_at_inf(c))
+    return negative ? -std::numeric_limits<Float>::infinity() : std::numeric_limits<Float>::infinity();
+  else {
+    Float const value = scan_real_no_sign<Float>(c);
+    return negative ? -value : value;
+  }
 }
 
 template <class Float>

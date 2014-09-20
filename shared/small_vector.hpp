@@ -158,7 +158,7 @@ struct small_vector {
 
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   template <class Archive>
-  void save(Archive & ar, const unsigned int) const {
+  void save(Archive & ar, const unsigned) const {
     using namespace boost::serialization;
     collection_size_type const count(data.stack.sz_);
     ar << GRAEHL_BOOST_SERIALIZATION_NVP(count);
@@ -170,7 +170,7 @@ struct small_vector {
       ar << GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
   }
   template<class Archive>
-  void load(Archive & ar, const unsigned int) {
+  void load(Archive & ar, const unsigned) {
     using namespace boost::serialization;
     collection_size_type count;
     ar >> GRAEHL_BOOST_SERIALIZATION_NVP(count);

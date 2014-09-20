@@ -232,7 +232,7 @@ class Alphabet {
     void removeMarked(bool marked[], int* oldToNew,unsigned N) {
         verify();
 //            assert (N==names.size()); // just remove any excess over N
-        for ( unsigned int i = 0 ; i < names.size() ; ++i ) {
+        for ( unsigned i = 0 ; i < names.size() ; ++i ) {
             Sym const &s=names[i];
             if ( marked[i] || i >= N) {
                 Assert(find_second(ht,s));
@@ -290,7 +290,7 @@ class Alphabet {
     template<class T,class P>
     inline std::ostream & operator << (std::ostream &out, Alphabet<T,P> &alph)
     {
-        for ( unsigned int i = 0 ; i < alph.names.size() ; ++i )
+        for ( unsigned i = 0 ; i < alph.names.size() ; ++i )
             out << alph.names[i] << '\n';
         return out;
     }

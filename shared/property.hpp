@@ -35,13 +35,13 @@ K const& get(IdentityMap<K>, K const& key) {
 
 
 template <class K>  // for random access iterator or integral key K - e.g. you have vertex_descriptor = pointer to array of verts and want an external property map (ArrayPMapImp)
-struct OffsetMap {
+struct OffsetFeatures {
   K begin;
   unsigned index(K p) const {
     Assert(p>=begin);
     return (unsigned)(p-begin);
   }
-  explicit OffsetMap(K beg) : begin(beg) {
+  explicit OffsetFeatures(K beg) : begin(beg) {
   }
   typedef boost::readable_property_map_tag category;
   typedef unsigned value_type;
@@ -52,7 +52,7 @@ struct OffsetMap {
 };
 
 template <class K>
-unsigned get(OffsetMap<K> k, K p) {
+unsigned get(OffsetFeatures<K> k, K p) {
   return k[p];
 }
 

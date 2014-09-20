@@ -16,7 +16,7 @@ Starting with Linux 2.6.31, all the filesystems support splicing both in read an
   optional arg1=N: exit after N bytes (N < 2^64). 0 = no limit.
   optional arg2=k: k=0 (default) exit w/ no error on stdin EOF or N bytes. k=1 exit w/ error code 2 on eof w/ less than N bytes read.
   optional arg3=s: timeout of s seconds (0=default means no timeout) - if no data received in last s seconds, exit with error code 3
-  optional arg4=Bps: rate limit (64 bit unsigned int max) of bytes per sec. 0 = no limit
+  optional arg4=Bps: rate limit (64 bit unsigned max) of bytes per sec. 0 = no limit
   optional arg5=j: j=0 (default) try 0-copy splice; j=1 (optional) force read/write.
   optional arg6=v: v=0,1, or 2 - amount of stderr info (errors get exit code already, and always print to stderr)
   optional arg7=w: w=0xFFFFFFFF (default). write timeout of w sec (0 means no timeout, 0xFFFFFFFF means same timeout as read timeout)
@@ -35,7 +35,7 @@ int verbose=2;
 #include <fcntl.h> // splice
 
 /*       long splice(int fd_in, off_t *off_in, int fd_out,
-                   off_t *off_out, size_t len, unsigned int flags);
+                   off_t *off_out, size_t len, unsigned flags);
 */
 #if ALLOW_SPLICE
 const unsigned spliceflags=SPLICE_F_MOVE|SPLICE_F_MORE;

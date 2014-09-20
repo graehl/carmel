@@ -315,7 +315,7 @@ struct main {
   bool options_added, configure_finished;
 
   void print_version(std::ostream &o) {
-    o << opt.name << ' ' << opt.version << ' ' << opt.compiled << std::endl;
+    o << opt.name << ' ' << opt.version << ' ' << opt.compiled << '\n';
   }
 
   virtual int run_exit()
@@ -756,7 +756,7 @@ struct main {
   template <class C>
   void warn(C const& c) const
   {
-    log() << "\nWARNING: " << c << std::endl;
+    log() << "\nWARNING: " << c << '\n';
   }
 
   virtual ~main() {}

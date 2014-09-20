@@ -50,7 +50,7 @@ struct indent_level {
   // use this newline+indent only if the only way you print is with initial newline (closing document means an explicit nl must follow)
   template <class O>
   O& newline(O &o) {
-    o << std::endl;
+    o << '\n';
     print(o);
   }
   template <class O>

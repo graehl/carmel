@@ -22,7 +22,7 @@ struct warn_consumer // a string_consumer
   void operator()(std::string const& msg) const
   {
     if (o && enabled)
-      *o << prefix << msg << std::endl;
+      *o << prefix << msg << '\n';
   }
 };
 

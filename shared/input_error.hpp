@@ -109,11 +109,11 @@ std::streamoff show_error_context(std::basic_istream<Ic, It> &in, std::basic_ost
     else
       break;
 
-  out << std::endl;
+  out << '\n';
   output_n(out,' ',indent);
   for(unsigned i=0;i<ip_lastline;++i)
     out << ' ';
-  out << '^' << std::endl;
+  out << '^' << '\n';
   return before>=0?before:-1;
 }
 
@@ -123,13 +123,13 @@ void throw_input_exception(std::basic_istream<Ic, It> &in, std::string const& er
   err << "Error reading";
   if (item)
     err << ' ' << item << " # " << number;
-  err << ": " << error << std::endl;
+  err << ": " << error << '\n';
   std::streamoff where=show_error_context(in, err);
 #if INPUT_ERROR_TELLG
   if (where>=0)
     err << "(file position " << where << ")";
 #endif
-  err << std::endl;
+  err << '\n';
   throw Exception(err.str());
 }
 

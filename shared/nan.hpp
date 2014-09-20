@@ -38,7 +38,7 @@ static inline int isnan(float f)
 # include <float.h>
 //# include <xmath.h>
 namespace {
-const unsigned int graehl_nan[2] = {0xffffffff, 0x7fffffff};
+const unsigned graehl_nan[2] = {0xffffffff, 0x7fffffff};
 }
 # undef NAN
 # define NAN (*(const double *) graehl_nan)

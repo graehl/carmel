@@ -383,27 +383,27 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
   typedef basic_array_stream<cT, traits> self_type;
 
   template <class O>
-  void print(O&o) const {o << m_sbuf; }
+  void print(O&o) const {o << sbuf_; }
   template <class Ch, class Tr>
   friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, basic_array_stream const& self)
   { self.print(o); return o; }
 
-  basic_array_stream() : base(&m_sbuf)
+  basic_array_stream() : base(&sbuf_)
   {}
   explicit
   basic_array_stream(const value_type * p, size_type size)
-      : base(&m_sbuf)
+      : base(&sbuf_)
   {
     set_array(p, size);
-    base::rdbuf(&m_sbuf);
+    base::rdbuf(&sbuf_);
   }
   template <class C>
   explicit
   basic_array_stream(const C& c)
-      : base(&m_sbuf)
+      : base(&sbuf_)
   {
     set_array(c);
-    base::rdbuf(&m_sbuf);
+    base::rdbuf(&sbuf_);
   }
 
   /**
@@ -412,70 +412,70 @@ class basic_array_stream : public std::basic_iostream<cT, traits>
 
   inline void set_array(const value_type * p)
   {
-    m_sbuf.set_array(p, traits::length(p));
+    sbuf_.set_array(p, traits::length(p));
   }
   inline void set_array(const value_type * p , size_type size)
   {
-    m_sbuf.set_array(p, size);
+    sbuf_.set_array(p, size);
   }
   inline void set_array(const void * p = 0, size_type size = 0)
   {
-    m_sbuf.set_array(p, size);
+    sbuf_.set_array(p, size);
   }
   inline void set_array(const std::basic_string<value_type>& s)
   {
-    m_sbuf.set_array(s.c_str(), s.size());
+    sbuf_.set_array(s.c_str(), s.size());
   }
   size_type tellg() const
   {
-    return m_sbuf.tellg();
+    return sbuf_.tellg();
   }
   Sbuf &buf()
   {
-    return m_sbuf;
+    return sbuf_;
   }
   void reset()
   {
-    m_sbuf.reset();
+    sbuf_.reset();
     base::clear();
   }
   // allows what was written to be read.
   void reset_read()
   {
-    m_sbuf.reset_read();
+    sbuf_.reset_read();
   }
   // restart reading at the beginning, and hit eof after N read chars
   void reset_read(size_type N)
   {
-    m_sbuf.reset_read(N);
+    sbuf_.reset_read(N);
   }
 
   iterator begin() const
   {
-    return m_sbuf.begin();
+    return sbuf_.begin();
   }
   iterator end() const
   {
-    return m_sbuf.end();
+    return sbuf_.end();
   }
   size_type size() const
   {
-    return m_sbuf.size();
+    return sbuf_.size();
   }
   size_type capacity() const
   {
-    return m_sbuf.capacity();
+    return sbuf_.capacity();
   }
   bool empty() const
   {
-    return m_sbuf.empty();
+    return sbuf_.empty();
   }
   bool full() const
   {
-    return m_sbuf.full();
+    return sbuf_.full();
   }
  private:
-  Sbuf m_sbuf;
+  Sbuf sbuf_;
   /*
 
 

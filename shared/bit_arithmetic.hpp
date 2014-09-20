@@ -208,7 +208,7 @@ inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::typ
   return (mask&bits)==mask;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+
 //
 // the reason for the remove_cv stuff is that the compiler wants to turn
 // the call
@@ -218,7 +218,7 @@ inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::typ
 //    template<class size_t&, int const>
 //    size_t& bit_rotate_left(size_t&,int const);
 //
-////////////////////////////////////////////////////////////////////////////////
+
 template <class I, class J>
 inline typename boost::enable_if< typename boost::is_integral<I>
                                   , typename boost::remove_cv<I>::type

@@ -2,7 +2,7 @@
 #define GRAEHL_SHARED__PREFIX_OPTION_HPP
 
 /* for boost program options with opt="long-name,l" "prefix-" =>
- * "prefix-long-name" - short option is stripped to avoid conflict */
+"prefix-long-name" - short option is stripped to avoid conflict */
 
 #include <string>
 

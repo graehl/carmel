@@ -17,9 +17,9 @@ namespace configure {
 using graehl::null_deleter;
 
 /** Interface for configurable objects of unspecified type. The configurable
- * either is the configured Val, or has a pointer to it. In other words, this is
- * for type-erased closures over the Backend and Val template arguments to all
- * the configure actions. */
+either is the configured Val, or has a pointer to it. In other words, this is
+for type-erased closures over the Backend and Val template arguments to all
+the configure actions. */
 struct configurable
 {
   virtual configure_backend::ptr get_backend() const = 0;

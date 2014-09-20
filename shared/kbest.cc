@@ -17,7 +17,7 @@ vector<pGraphArc *> Repository ;
 
 void freeAllSidetracks()
 {
-    for (unsigned int i = 0 ; i < Repository.size() ;i++)
+    for (unsigned i = 0 ; i < Repository.size() ;i++)
         if (Repository[i])
             delete[] (pGraphArc *) Repository[i] ;
     Repository.clear();

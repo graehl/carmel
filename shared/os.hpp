@@ -172,7 +172,7 @@ void print_current_dir(O&o, const char*header="### CURRENT DIR: ")
     o << header;
   o << get_current_dir();
   if (header)
-    o << std::endl;
+    o << '\n';
 }
 
 inline Error last_error() {

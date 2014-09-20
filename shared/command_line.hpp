@@ -23,7 +23,7 @@ O & print_command_line(O &out, int argc, Argv const& argv, const char *header="#
         out_shell_quote(out, argv[i]);
     }
     if (header)
-        out << std::endl;
+        out << '\n';
     return out;
 }
 
@@ -117,7 +117,7 @@ void print_command_header(O &o, int argc, Argv const& argv)
 {
   print_command_line(o, argc, argv);
   print_current_dir(o);
-  o << std::endl;
+  o << '\n';
 }
 
 #ifdef GRAEHL_TEST

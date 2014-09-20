@@ -6,7 +6,7 @@
 
 namespace fm {
 using std::string;
-using std::endl;
+using '\n';
 using std::flush;
 using boost::format;
 using boost::io::group;
