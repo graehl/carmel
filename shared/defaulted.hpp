@@ -7,9 +7,9 @@
 
 
 namespace graehl {
-template <class V,unsigned long long default_val=0>
+template <class V, unsigned long long default_val = 0>
 struct defaulted {
-  static const V default_value=default_val;
+  static const V default_value = default_val;
   typedef V value_type;
   V v;
   typedef V* iterator;
@@ -33,14 +33,14 @@ struct defaulted {
   explicit defaulted(V const& v) : v(v) {  }
 #define GRAEHL_DEFAULTED_OP(op) template <class W> V &operator op(W const& w) {  v op w; return v; }
 #define GRAEHL_DEFAULTED_CONST_OP(op) template <class W> V operator op(W const& w) const {  return v op w; }
-  GRAEHL_DEFAULTED_OP(=)
+  GRAEHL_DEFAULTED_OP( = )
 #if 0
   template <class O>
-  friend inline operator<<(O &o,defaulted const& x) {
+  friend inline operator<<(O &o, defaulted const& x) {
     return o<<x.v;
   }
   template <class O>
-  friend inline operator>>(O &o,defaulted & x) {
+  friend inline operator>>(O &o, defaulted & x) {
     return o>>x.v;
   }
 #endif

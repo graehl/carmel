@@ -9,7 +9,7 @@
 # if defined(__i386__) || defined(__x86_64__)
 #  define BREAKPOINT asm("int $3")
 # else
-#  define BREAKPOINT   do{ volatile int *p=0;*p=0;} while(0)
+#  define BREAKPOINT do { volatile int *p = 0; *p = 0; } while (0)
 # endif
 #endif
 

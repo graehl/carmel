@@ -7,30 +7,30 @@ namespace graehl {
 
 struct sum_powx
 {
-    double x;
+  double x;
 
-    // most common is L2-norm (Euclid. distance)
-    sum_powx(double x=2) : x(x) {}
-    
-    template <class W>
-    W operator()(W total,W component) 
-    {
-        return total+pow(component,x);
-    }
+  // most common is L2-norm (Euclid. distance)
+  sum_powx(double x = 2) : x(x) {}
 
-    //boost::result_of
-    template <class W> struct result {};
-    template <class W> struct result<Lx_norm(W,W> { typedef W type; };
-};
+  template <class W>
+  W operator()(W total, W component)
+  {
+    return total+pow(component, x);
+  }
 
-template <class R>
-typename range_value<R>::type
-lx_norm(R const& range,double x=2) 
-{
-    return pow(reduce(range,sum_powx(x),0),1./x);
-}
+  //boost::result_of
+  template <class W> struct result {};
+  template <class W> struct result<Lx_norm(W, W> { typedef W type; };
+                                           };
 
-    
+  template <class R>
+  typename range_value<R>::type
+  lx_norm(R const& range, double x = 2)
+  {
+    return pow(reduce(range, sum_powx(x), 0), 1./x);
+  }
+
+
 
 }
 

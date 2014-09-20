@@ -62,22 +62,22 @@
 
 #include <iostream>
 namespace Config {
-  inline std::ostream &out() { return std::cout; }
-  inline std::ostream &err() {
-    return std::cerr;
-  }
-  inline std::ostream &message() {
-    return std::cerr;
-  }
-  inline std::ostream &log() {
-    return std::cerr;
-  }
-  inline std::ostream &debug() {
-    return std::cerr;
-  }
-  inline std::ostream &warn() {
-    return std::cerr;
-  }
+inline std::ostream &out() { return std::cout; }
+inline std::ostream &err() {
+  return std::cerr;
+}
+inline std::ostream &message() {
+  return std::cerr;
+}
+inline std::ostream &log() {
+  return std::cerr;
+}
+inline std::ostream &debug() {
+  return std::cerr;
+}
+inline std::ostream &warn() {
+  return std::cerr;
+}
 }
 
 #ifndef FLOAT_TYPE
@@ -116,9 +116,6 @@ namespace graehl {typedef short unsigned var_type; // 0 = no var, 1,2,3,... = va
 // reference counts of alphabet symbols/state names - might save a little memory and could hurt or help performance
 
 
-
-
-
 // use old, slower string hash
 //#define OLD_HASH
 
@@ -137,7 +134,6 @@ namespace graehl {typedef short unsigned var_type; // 0 = no var, 1,2,3,... = va
 #define WEIGHT_CORRECT_ZERO
 // however, carmel checks for zero weight before multiplying in a bad way.  if you get #INDETERMINATE results, define this
 // definitely needs to be defined for Microsoft (debug or release) now
-
 
 
 #endif //guard

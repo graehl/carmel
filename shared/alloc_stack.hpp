@@ -23,7 +23,7 @@
 /**
    equivalent to variable sized (C99/gcc): char anon_buf[sizeExpr]; void *voidPtrVarName=anon_buf;
 */
-#define ALLOC_STACK(voidPtrVarName,sizeExpr,maxsizeConst) ALLOC_STACK_LINE( __LINE__ ,voidPtrVarName,sizeExpr,maxsizeConst)
+#define ALLOC_STACK(voidPtrVarName, sizeExpr, maxsizeConst) ALLOC_STACK_LINE( __LINE__ , voidPtrVarName, sizeExpr, maxsizeConst)
 
 #ifndef GRAEHL_USE_ALLOCA
 // if false, waste a fixed (maximum) sized stack block always, whether actual size is smaller or larger (heap)
@@ -56,23 +56,23 @@
    to var__LINE__ and not var1298).
 */
 #define GRAEHL_JOIN( X, Y ) GRAEHL_IMPL_JOIN( X, Y )
-#define GRAEHL_IMPL_JOIN( X, Y ) GRAEHL_IMPL_JOIN2(X,Y)
+#define GRAEHL_IMPL_JOIN( X, Y ) GRAEHL_IMPL_JOIN2(X, Y)
 #define GRAEHL_IMPL_JOIN2( X, Y ) X##Y
 
 #if GRAEHL_USE_ALLOCA
-#define ALLOC_STACK_LINE(line,name,sizeExpr,maxsizeConst)         \
-  const std::size_t GRAEHL_JOIN(stackAllocSz,line)=(sizeExpr);           \
-  graehl::alloc_large GRAEHL_JOIN(stackAllocBig,line);                   \
-  void *name=(GRAEHL_JOIN(stackAllocSz,line) > maxsizeConst) ?           \
-      GRAEHL_JOIN(stackAllocBig,line).alloc(GRAEHL_JOIN(stackAllocSz,line)) \
-      : GRAEHL_ALLOCA(GRAEHL_JOIN(stackAllocSz,line))
+#define ALLOC_STACK_LINE(line, name, sizeExpr, maxsizeConst)               \
+  const std::size_t GRAEHL_JOIN(stackAllocSz, line) = (sizeExpr);          \
+  graehl::alloc_large GRAEHL_JOIN(stackAllocBig, line);                  \
+  void *name = (GRAEHL_JOIN(stackAllocSz, line) > maxsizeConst) ?          \
+      GRAEHL_JOIN(stackAllocBig, line).alloc(GRAEHL_JOIN(stackAllocSz, line)) \
+      : GRAEHL_ALLOCA(GRAEHL_JOIN(stackAllocSz, line))
 #else
-#define ALLOC_STACK_LINE(line,name,sizeExpr,maxsizeConst)         \
-  char stackAllocBuf ## line [maxsizeConst];                          \
-  const std::size_t GRAEHL_JOIN(stackAllocSz,line)=(sizeExpr);           \
-  graehl::alloc_large GRAEHL_JOIN(stackAllocBig,line);             \
-  void *name=(GRAEHL_JOIN(stackAllocSz,line) > maxsizeConst) ?           \
-      GRAEHL_JOIN(stackAllocBig,line).alloc(GRAEHL_JOIN(stackAllocSz,line)) \
+#define ALLOC_STACK_LINE(line, name, sizeExpr, maxsizeConst)               \
+  char stackAllocBuf ## line [maxsizeConst];                            \
+  const std::size_t GRAEHL_JOIN(stackAllocSz, line) = (sizeExpr);          \
+  graehl::alloc_large GRAEHL_JOIN(stackAllocBig, line);                  \
+  void *name = (GRAEHL_JOIN(stackAllocSz, line) > maxsizeConst) ?          \
+      GRAEHL_JOIN(stackAllocBig, line).alloc(GRAEHL_JOIN(stackAllocSz, line)) \
       : stackAllocBuf
 #endif
 
@@ -112,14 +112,14 @@ struct alloc_large {
      set this->p to a malloc of size z.
   */
   void *alloc(std::size_t sz) {
-    return (p=malloc(sz));
+    return (p = malloc(sz));
   }
   /**
      free this->p if it was alloc since last clear (can call repeatedly).
   */
   void clear() {
     free(p);
-    p=0;
+    p = 0;
   }
   /**
      clear; alloc(sz);
@@ -142,21 +142,21 @@ struct alloc_large {
 namespace graehltest {
 
 BOOST_AUTO_TEST_CASE( test_graehl_alloc_stack ) {
-  const unsigned sz1=10;
-  const unsigned sz2=1000000;
-  ALLOC_STACK(buf1,sz1*sizeof(unsigned),256);
-  ALLOC_STACK(buf2,sz2*sizeof(unsigned),256);
-  unsigned *c1=(unsigned *)buf1;
-  unsigned *c2=(unsigned *)buf2;
-  for (unsigned i=0;i<sz2;++i) {
-    unsigned i1=i%sz1;
-    c1[i1]=sz2-i1;
-    c2[i]=i1;
+  const unsigned sz1 = 10;
+  const unsigned sz2 = 1000000;
+  ALLOC_STACK(buf1, sz1*sizeof(unsigned), 256);
+  ALLOC_STACK(buf2, sz2*sizeof(unsigned), 256);
+  unsigned *c1 = (unsigned *)buf1;
+  unsigned *c2 = (unsigned *)buf2;
+  for (unsigned i = 0; i<sz2; ++i) {
+    unsigned i1 = i%sz1;
+    c1[i1] = sz2-i1;
+    c2[i] = i1;
   }
-  for (unsigned i=0;i<sz2;++i) {
-    unsigned i1=i%sz1;
-    BOOST_REQUIRE_EQUAL(c1[i1],sz2-i1);
-    BOOST_REQUIRE_EQUAL(c2[i],i1);
+  for (unsigned i = 0; i<sz2; ++i) {
+    unsigned i1 = i%sz1;
+    BOOST_REQUIRE_EQUAL(c1[i1], sz2-i1);
+    BOOST_REQUIRE_EQUAL(c2[i], i1);
   }
 }
 

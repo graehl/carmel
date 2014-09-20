@@ -12,41 +12,41 @@
 namespace graehl {
 
 struct reserved_memory {
-    std::size_t safety_size;
-    void *safety;
-    reserved_memory(std::size_t safety_size=GRAEHL__DEFAULT_SAFETY_SIZE) : safety_size(safety_size)
-    {
-        init_safety();
-    }
-    ~reserved_memory()
-    {
-        use();
-    }
-    bool use() {
-        if (safety) {
-            ::operator delete(safety); // ok if NULL
-            safety=0;
-            return true;
-        } else
-            return false;
-    }
-    void restore(bool allow_exception=true) {
-        if (safety)
-            return;        
-        if (allow_exception)
-            init_safety();
-        else
-            try {
-                safety=::operator new(safety_size);
-            } catch(...) {
-                safety=0;
-            }
-    }
- private:
-    void init_safety() 
-    {
+  std::size_t safety_size;
+  void *safety;
+  reserved_memory(std::size_t safety_size = GRAEHL__DEFAULT_SAFETY_SIZE) : safety_size(safety_size)
+  {
+    init_safety();
+  }
+  ~reserved_memory()
+  {
+    use();
+  }
+  bool use() {
+    if (safety) {
+      ::operator delete(safety); // ok if NULL
+      safety = 0;
+      return true;
+    } else
+      return false;
+  }
+  void restore(bool allow_exception = true) {
+    if (safety)
+      return;
+    if (allow_exception)
+      init_safety();
+    else
+      try {
         safety=::operator new(safety_size);
-    }
+      } catch(...) {
+        safety = 0;
+      }
+  }
+ private:
+  void init_safety()
+  {
+    safety=::operator new(safety_size);
+  }
 };
 
 }//graehl

@@ -7,11 +7,11 @@
 namespace graehl {
 
 template <class I>
-inline void must_eof(I &in,char const* msg="Expected end of input, but got: ")
+inline void must_eof(I &in, char const* msg="Expected end of input, but got: ")
 {
-    char c;
-    if (in >> c)
-        throw std::runtime_error(msg+std::string(1,c));
+  char c;
+  if (in >> c)
+    throw std::runtime_error(msg+std::string(1, c));
 }
 
 }

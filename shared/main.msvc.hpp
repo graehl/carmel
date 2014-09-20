@@ -15,7 +15,7 @@ namespace graehl {
 
 inline void default_locale()
 {
-    std::locale::global(std::locale(""));
+  std::locale::global(std::locale(""));
 }
 
 #ifdef SYNC_STDIO
@@ -39,19 +39,19 @@ struct MainGuard {
   unsigned i;
   MainGuard() : i(0) {
 #ifdef _MSC_VER
-        INITLEAK_DO;
-#endif 
-        unsync_cout();
-//        default_locale();
-    }
+    INITLEAK_DO;
+#endif
+    unsync_cout();
+    //        default_locale();
+  }
   void checkpoint_memleak() {
-#ifdef _MSC_VER      
+#ifdef _MSC_VER
     CHECKLEAK(i);
-#endif 
+#endif
     ++i;
   }
-    ~MainGuard() {
-    }
+  ~MainGuard() {
+  }
 };
 
 #define MAIN_BEGIN MAIN_DECL { graehl::MainGuard _mg;   UNSYNC_STDIO;

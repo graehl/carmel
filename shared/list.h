@@ -21,86 +21,86 @@
 namespace graehl {
 
 
-template <class T,class A=std::allocator<T> >
-class List : public STL_LIST<T,A> {
+template <class T, class A = std::allocator<T> >
+class List : public STL_LIST<T, A> {
   //
-    typedef STL_LIST<T,A> S;
-public:
-    bool has2() const
-    {
-        const_iterator b=begin(),e=end();
-        return b!=e&&++b!=e;
-    }
+  typedef STL_LIST<T, A> S;
+ public:
+  bool has2() const
+  {
+    const_iterator b = begin(), e = end();
+    return b!=e&&++b!=e;
+  }
 
-    typedef List<T,A> self_type;
-    void swap(self_type &b)
-    {
-        S::swap(b);
-    }
+  typedef List<T, A> self_type;
+  void swap(self_type &b)
+  {
+    S::swap(b);
+  }
 
-    inline void friend swap(self_type &a,self_type &b)
-    {
-        a.swap(b);
-    }
+  inline void friend swap(self_type &a, self_type &b)
+  {
+    a.swap(b);
+  }
 
-    typedef typename S::const_iterator const_iterator;
+  typedef typename S::const_iterator const_iterator;
 #ifdef USE_SLIST
-    typedef typename S::erase_iterator iterator;
-    iterator begin()
-    {
-        return S::erase_begin();
-    }
-    iterator end()
-    {
-        return S::erase_end();
-    }
-    const_iterator begin() const
-    {
-        return S::const_begin();
-    }
-    const_iterator end() const
-    {
-        return S::const_end();
-    }
-    typedef typename S::back_insert_iterator back_insert_iterator;
+  typedef typename S::erase_iterator iterator;
+  iterator begin()
+  {
+    return S::erase_begin();
+  }
+  iterator end()
+  {
+    return S::erase_end();
+  }
+  const_iterator begin() const
+  {
+    return S::const_begin();
+  }
+  const_iterator end() const
+  {
+    return S::const_end();
+  }
+  typedef typename S::back_insert_iterator back_insert_iterator;
 #else
-    template <class A>
-    void serialize(A &a)
-    {
-        serialize_container(a,(S &)*this);
-    }
+  template <class A>
+  void serialize(A &a)
+  {
+    serialize_container(a, (S &)*this);
+  }
 
-    typedef typename List::iterator erase_iterator;
-    typedef typename List::iterator val_iterator;
-    typename List::const_iterator const_begin() const { return this->begin(); } //{ return const_cast<const List *>(this)->begin(); }
-    typename List::const_iterator const_end() const { return this->end(); } //{ return const_cast<const List *>(this)->end(); }
-    typename List::iterator val_begin() { return this->begin(); }
-    typename List::iterator val_end() { return this->end(); }
-    typename List::iterator erase_begin() { return this->begin(); }
-    typename List::iterator erase_end() { return this->end(); }
-    struct back_insert_iterator : public std::insert_iterator<List>
-    {
-        explicit back_insert_iterator(List &l) : std::insert_iterator<List>(l,l.end())
-        {}
-    };
+  typedef typename List::iterator erase_iterator;
+  typedef typename List::iterator val_iterator;
+  typename List::const_iterator const_begin() const { return this->begin(); } // { return const_cast<const List *>(this)->begin(); }
+  typename List::const_iterator const_end() const { return this->end(); } // { return const_cast<const List *>(this)->end(); }
+  typename List::iterator val_begin() { return this->begin(); }
+  typename List::iterator val_end() { return this->end(); }
+  typename List::iterator erase_begin() { return this->begin(); }
+  typename List::iterator erase_end() { return this->end(); }
+  struct back_insert_iterator : public std::insert_iterator<List>
+  {
+    explicit back_insert_iterator(List &l) : std::insert_iterator<List>(l, l.end())
+    {}
+  };
 #endif
-    back_insert_iterator back_inserter()
-    {
-        return back_insert_iterator(*this);
-    }
+  back_insert_iterator back_inserter()
+  {
+    return back_insert_iterator(*this);
+  }
 
   //constructors
-  List():STL_LIST<T,A>(){};
-  List(const List &l):STL_LIST<T,A> (l){};
-  ~List(){};
+  List():STL_LIST<T, A>() {};
+  List(const List &l):STL_LIST<T, A> (l) {};
+  ~List() {};
   List(const T &it):
 #ifdef USE_SLIST
-    STL_LIST<T,A>(it)
+      STL_LIST<T, A>(it)
 #else
-    STL_LIST<T,A>(1,it)
+      STL_LIST<T, A>(1, it)
 #endif
-    {  }
-  List(size_t sz,const T &it):STL_LIST<T,A>(sz,it) {  }
+  {  }
+  List(size_t sz, const T &it):STL_LIST<T, A>(sz, it) {  }
   int notEmpty() const { return !isEmpty(); }
   int isEmpty() const { return this->empty(); }
   void push(const T &it) {
@@ -115,48 +115,48 @@ public:
   }
 #ifndef USE_SLIST
 
-    template <class T0>
-    inline void push_front(T0 const& t0)
-    {
-        S::push_front(t0);
-    }
+  template <class T0>
+  inline void push_front(T0 const& t0)
+  {
+    S::push_front(t0);
+  }
 
-    template <class T0,class T1>
-    inline void push_front(T0 const& t0,T1 const& t1)
-    {
-        push_front(T(t0,t1));
-    }
-    template <class T0,class T1,class T2>
-    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2)
-    {
-        push_front(T(t0,t1,t2));
-    }
-    template <class T0,class T1,class T2,class T3>
-    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2,T3 const& t3)
-    {
-        push_front(T(t0,t1,t2,t3));
-    }
-    template <class T0,class T1,class T2,class T3,class T4>
-    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2,T3 const& t3,T4 const& t4)
-    {
-        push_front(T(t0,t1,t2,t3,t4));
-    }
-    template <class T0,class T1,class T2,class T3,class T4,class T5>
-    inline void push_front(T0 const& t0,T1 const& t1,T2 const& t2,T3 const& t3,T4 const& t4,T5 const& t5)
-    {
-        push_front(T(t0,t1,t2,t3,t4,t5));
-    }
+  template <class T0, class T1>
+  inline void push_front(T0 const& t0, T1 const& t1)
+  {
+    push_front(T(t0, t1));
+  }
+  template <class T0, class T1, class T2>
+  inline void push_front(T0 const& t0, T1 const& t1, T2 const& t2)
+  {
+    push_front(T(t0, t1, t2));
+  }
+  template <class T0, class T1, class T2, class T3>
+  inline void push_front(T0 const& t0, T1 const& t1, T2 const& t2, T3 const& t3)
+  {
+    push_front(T(t0, t1, t2, t3));
+  }
+  template <class T0, class T1, class T2, class T3, class T4>
+  inline void push_front(T0 const& t0, T1 const& t1, T2 const& t2, T3 const& t3, T4 const& t4)
+  {
+    push_front(T(t0, t1, t2, t3, t4));
+  }
+  template <class T0, class T1, class T2, class T3, class T4, class T5>
+  inline void push_front(T0 const& t0, T1 const& t1, T2 const& t2, T3 const& t3, T4 const& t4, T5 const& t5)
+  {
+    push_front(T(t0, t1, t2, t3, t4, t5));
+  }
 
-    template <class O> void print(O&o) const
-    {
-        o << "(";
-        word_spacer sp;
-        for( const_iterator n=const_begin(),e=const_end();n!=e;++n) {
-            o << sp << *n;
-        }
-        o << ")";
+  template <class O> void print(O&o) const
+  {
+    o << "(";
+    word_spacer sp;
+    for ( const_iterator n = const_begin(), e = const_end(); n!=e; ++n) {
+      o << sp << *n;
     }
-    TO_OSTREAM_PRINT
+    o << ")";
+  }
+  TO_OSTREAM_PRINT
 #endif
 };
 
@@ -167,10 +167,10 @@ struct GListS {
 };
 
 /*template <class T,class A>
-back_insert_iterator<List<T,A> > back_inserter(List<T,A> &l)
-{
-    return back_insert_iterator<List<T,A> >(l);
-}
+  back_insert_iterator<List<T,A> > back_inserter(List<T,A> &l)
+  {
+  return back_insert_iterator<List<T,A> >(l);
+  }
 */
 
 
@@ -221,7 +221,7 @@ back_insert_iterator<List<T,A> > back_inserter(List<T,A> &l)
   slist_back_insert_iterator<L>& operator++(int) { return *this; }
   };*/
 #else
-            //#define LIST_BACK_INSERTER back_insert_iterator
+//#define LIST_BACK_INSERTER back_insert_iterator
 #endif
 
 }
@@ -229,23 +229,23 @@ back_insert_iterator<List<T,A> > back_inserter(List<T,A> &l)
 namespace std
 {
 #ifdef USE_SLIST
-template <class T,class A >
-    struct back_insert_iterator<graehl::List<T,A> > : public graehl::List<T,A>::back_insert_iterator
+template <class T, class A >
+struct back_insert_iterator<graehl::List<T, A> > : public graehl::List<T, A>::back_insert_iterator
 {
-    typedef graehl::List<T,A> list_type;
-    typedef back_insert_iterator<list_type > self_type;
-    typedef typename list_type::back_insert_iterator parent_type;
+  typedef graehl::List<T, A> list_type;
+  typedef back_insert_iterator<list_type > self_type;
+  typedef typename list_type::back_insert_iterator parent_type;
 
-    back_insert_iterator(list_type &l) : parent_type(l) {}
-/* // i think both may be autogenerated:
-  back_insert_iterator(self_type const& o) : parent_type(o) {}
-    self_type &operator=(self_type const& o)
-    {
-        parent_type::operator=(o);
-        return *this;
-    }
-*/
-    };
+  back_insert_iterator(list_type &l) : parent_type(l) {}
+  /* // i think both may be autogenerated:
+     back_insert_iterator(self_type const& o) : parent_type(o) {}
+     self_type &operator=(self_type const& o)
+     {
+     parent_type::operator=(o);
+     return *this;
+     }
+  */
+};
 #endif
 }
 

@@ -12,7 +12,7 @@ struct null_output_iterator {
   typedef void pointer;
   typedef void reference;
   template <class V>
-  void operator=(V const& v) const {}
+  void operator = (V const& v) const {}
   null_output_iterator const& operator*() const { return *this; }
   void operator++() const {}
   void operator++(int) const {}

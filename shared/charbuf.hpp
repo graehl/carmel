@@ -23,12 +23,12 @@ typedef dynamic_array<char> CharBuf;
 // FIXME: use thread-local storage instead of static ... reentrance stack?
 template <class T>
 struct default_bufsize {
-  enum make_not_anon_1 { BUFSIZE=16 };
+  enum make_not_anon_1 { BUFSIZE = 16 };
 };
 
 template <>
 struct default_bufsize<char> {
-  enum make_not_anon_2 { BUFSIZE=CHARBUF_INIT_SIZE };
+  enum make_not_anon_2 { BUFSIZE = CHARBUF_INIT_SIZE };
 };
 
 template <class T>
@@ -37,7 +37,7 @@ struct static_buf {
   static Buf buf;
   //operator Buf &() { return buf; }
   Buf & operator ()() const { return buf; }
-// FIXME: not reentrant
+  // FIXME: not reentrant
   static_buf() { buf.clear(); }
 };
 
@@ -49,15 +49,15 @@ extern CharBuf g_buf;
 
 // doesn't include newline terminator - returns true if was terminated, false otherwise (check in.status)
 template <char NL>
-inline bool getline_chomped(std::istream &in,CharBuf &buf=g_buf)
+inline bool getline_chomped(std::istream &in, CharBuf &buf = g_buf)
 {
-    char c;
-    while (in.get(c)) {
-        if (c==NL)
-            return true;
-        buf.push_back(c);
-    }
-    return false;
+  char c;
+  while (in.get(c)) {
+    if (c==NL)
+      return true;
+    buf.push_back(c);
+  }
+  return false;
 }
 
 #ifdef GRAEHL__SINGLE_MAIN
@@ -73,20 +73,20 @@ BOOST_AUTO_TEST_CASE( charbuf )
 {
   BOOST_CHECK((char_buf())().size() == 0);
   {
-  char_buf b;
-  BOOST_CHECK(b().size()==0);
-  b().push_back('a');
-  BOOST_CHECK(b()[0]=='a');
-  BOOST_CHECK((char_buf())().size() == 0);
+    char_buf b;
+    BOOST_CHECK(b().size()==0);
+    b().push_back('a');
+    BOOST_CHECK(b()[0]=='a');
+    BOOST_CHECK((char_buf())().size() == 0);
   }
 
-    BOOST_CHECK((char_buf())().size() == 0);
-  {
-  char_buf b;
-  BOOST_CHECK(b().size()==0);
-  b().push_back('a');
-  BOOST_CHECK(b()[0]=='a');
   BOOST_CHECK((char_buf())().size() == 0);
+  {
+    char_buf b;
+    BOOST_CHECK(b().size()==0);
+    b().push_back('a');
+    BOOST_CHECK(b()[0]=='a');
+    BOOST_CHECK((char_buf())().size() == 0);
   }
 
 }

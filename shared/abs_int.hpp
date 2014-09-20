@@ -10,12 +10,12 @@ namespace graehl {
 
 template <class I>
 inline typename boost::enable_if< typename boost::is_integral<I>
-                                , typename boost::remove_cv<I>::type
-                                >::type 
+                                  , typename boost::remove_cv<I>::type
+                                  >::type
 bit_rotate_right(I x)
 {
-    typedef typename boost::remove_cv<I>::type IT;
-    return x<0?-x:x;
+  typedef typename boost::remove_cv<I>::type IT;
+  return x<0?-x:x;
 }
 
 }

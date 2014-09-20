@@ -10,12 +10,12 @@
 
 namespace graehl {
 
-template <class Pointed=void, class Int=std::size_t>
+template <class Pointed = void, class Int = std::size_t>
 struct IntOrPointer {
   typedef Pointed pointed_type;
   typedef Int integer_type;
   typedef Pointed *value_type;
-  typedef IntOrPointer<Pointed,Int> self_type;
+  typedef IntOrPointer<Pointed, Int> self_type;
   union {
     value_type p; // must be even (guaranteed unless you're pointing at packed chars)
     integer_type i; // stored as 2*data+1, so only has half the range (one less bit) of a normal integer_type
@@ -33,19 +33,19 @@ struct IntOrPointer {
   template <class C>
   C* offset_pointer(C *base) {
     //return C + offset_to_index(pointer());
-    return offset_ptradd_rescale(base,pointer());
+    return offset_ptradd_rescale(base, pointer());
   }
-  void operator=(unsigned j) { i = 2*(integer_type)j+1; }
-  void operator=(int j) { i = 2*(integer_type)j+1; }
-  void set_integer(Int j) { i=2*j+1; }
+  void operator = (unsigned j) { i = 2*(integer_type)j+1; }
+  void operator = (int j) { i = 2*(integer_type)j+1; }
+  void set_integer(Int j) { i = 2*j+1; }
   template <class C>
-  void operator=(C j) { i = 2*(integer_type)j+1; }
+  void operator = (C j) { i = 2*(integer_type)j+1; }
   template <class C>
-  void operator=(C *ptr) { p = ptr; }
-  void operator=(value_type v) { p=v; }
+  void operator = (C *ptr) { p = ptr; }
+  void operator = (value_type v) { p = v; }
   IntOrPointer() {}
   IntOrPointer(const self_type &s) : p(s.p) {}
-  void operator=(const self_type &s) { p=s.p; }
+  void operator = (const self_type &s) { p = s.p; }
   template <class C>
   bool operator ==(C* v) const { return p==v; }
   template <class C>
@@ -73,13 +73,13 @@ struct IntOrPointer {
 #ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE( TEST_INTORPOINTER )
 {
-  int i=3,k;
+  int i = 3, k;
   IntOrPointer<int> p(5);
   IntOrPointer<int> v(&i);
   BOOST_CHECK(p.is_integer());
   BOOST_CHECK(!p.is_pointer());
   BOOST_CHECK(p == 5);
-  p=0;
+  p = 0;
   BOOST_CHECK(p.is_integer());
   BOOST_CHECK(p.integer() == 0);
   BOOST_CHECK(p == 0);

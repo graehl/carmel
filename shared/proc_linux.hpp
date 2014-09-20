@@ -8,7 +8,7 @@
 
 namespace graehl {
 #ifdef __linux__
-#define PROCNAME(x) static char const* x=#x
+#define PROCNAME(x) static char const* x = #x
 PROCNAME(State);
 PROCNAME(SleepAVG);
 PROCNAME(Tgid);
@@ -42,25 +42,25 @@ const std::string kB="kB";
 // doesn't wokr for stabrak/brk/stastk which are in hex
 inline double proc_bytes(std::string const& val) {
 #if 0
-  if (ends_with(val,kB))
+  if (ends_with(val, kB))
 #else
-    std::size_t s=val.size();
+    std::size_t s = val.size();
   if (s>2 && val[s-1]=='B' && val[s-2]=='k')
 #endif
-    return 1024.*string_to<double>(std::string(val.begin(),val.end()-2));
+    return 1024.*string_to<double>(std::string(val.begin(), val.end()-2));
   else
     return string_to<double>(val);
 }
 
 
-inline std::string get_proc_field(std::string const& field,std::istream &in,bool required=true) {
+inline std::string get_proc_field(std::string const& field, std::istream &in, bool required = true) {
   using namespace std;
   string s;
-  while (std::getline(in,s)) {
-    if (starts_with(s,field)) {
-      size_t fs=field.size();
+  while (std::getline(in, s)) {
+    if (starts_with(s, field)) {
+      size_t fs = field.size();
       if (s.size()>fs && s[fs]==':')
-        return trim(std::string(s.begin()+fs+1,s.end()));
+        return trim(std::string(s.begin()+fs+1, s.end()));
     }
   }
   if (required)
@@ -69,9 +69,9 @@ inline std::string get_proc_field(std::string const& field,std::istream &in,bool
     return string();
 }
 
-inline std::string get_proc_field(std::string const& field,std::string const& filename="/proc/self/status",bool required=true) {
+inline std::string get_proc_field(std::string const& field, std::string const& filename="/proc/self/status", bool required = true) {
   std::ifstream i(filename.c_str());
-  return get_proc_field(field,i,required);
+  return get_proc_field(field, i, required);
 }
 #endif
 }

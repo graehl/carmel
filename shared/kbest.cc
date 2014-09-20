@@ -17,10 +17,10 @@ vector<pGraphArc *> Repository ;
 
 void freeAllSidetracks()
 {
-    for (unsigned i = 0 ; i < Repository.size() ;i++)
-        if (Repository[i])
-            delete[] (pGraphArc *) Repository[i] ;
-    Repository.clear();
+  for (unsigned i = 0 ; i < Repository.size() ; i++)
+    if (Repository[i])
+      delete[] (pGraphArc *) Repository[i] ;
+  Repository.clear();
 }
 
 void buildSidetracksHeap(unsigned state, unsigned pred)
@@ -38,11 +38,11 @@ void buildSidetracksHeap(unsigned state, unsigned pred)
     prev = pathGraph[pred];
 
 #ifdef DEBUGKBEST
-    Config::debug() << "buildSidetracksHeap state="<<state<<" predecessor="<<pred<<"\n";
-#endif 
+  Config::debug() << "buildSidetracksHeap state="<<state<<" predecessor="<<pred<<"\n";
+#endif
 
-  List<GraphArc> &arcs=sidetracks.states[state].arcs;
-  List<GraphArc>::val_iterator s=arcs.val_begin(),end=arcs.val_end();
+  List<GraphArc> &arcs = sidetracks.states[state].arcs;
+  List<GraphArc>::val_iterator s = arcs.val_begin(), end = arcs.val_end();
   if ( s != end ) {
     int heapSize = 0;
     GraphArc *min;
@@ -61,7 +61,7 @@ void buildSidetracksHeap(unsigned state, unsigned pred)
       pGraphArc *heapI = heapStart;
       //      List<GraphArc>::iterator end = sidetracks.states[state].arcs.end()  ;
       //    for ( List<GraphArc>::iterator gArc=sidetracks.states[state].arcs.begin() ; gArc !=end ; ++gArc )
-      for ( List<GraphArc>::val_iterator gArc=arcs.val_begin(),end=arcs.val_end();gArc !=end ; ++gArc )
+      for ( List<GraphArc>::val_iterator gArc = arcs.val_begin(), end = arcs.val_end(); gArc !=end ; ++gArc )
         if ( &(*gArc) != min )
           (heapI++)->p = &(*gArc);
       Assert(heapI == heapStart + heapSize);
@@ -77,37 +77,37 @@ void buildSidetracksHeap(unsigned state, unsigned pred)
 //rG: shortest path tree -> dest
 //dist: array mapping vertex # -> cost to reach dest
 Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE *dist)
-  // This function creates new GraphState[] and because the
-  // return Graph points to this newly created Graph, it is NOT deleted. Therefore
-  //  the caller function is responsible for deleting this data.
-  //
+    // This function creates new GraphState[] and because the
+    // return Graph points to this newly created Graph, it is NOT deleted. Therefore
+    //  the caller function is responsible for deleting this data.
+    //
 
 {
-    Assert(lG.nStates == rG.nStates);
-    int nStates = lG.nStates;
-    GraphState *sub = NEW GraphState[nStates];
-    for ( int i = 0 ; i < nStates ; ++i )
-        if ( dist[i] != HUGE_VAL ){
-            const List<GraphArc> &la=lG.states[i].arcs;
-            for ( List<GraphArc>::const_iterator l=la.const_begin(),end=la.const_end() ; l != end; ++l ) {
-                Assert(i == l->src);
+  Assert(lG.nStates == rG.nStates);
+  int nStates = lG.nStates;
+  GraphState *sub = NEW GraphState[nStates];
+  for ( int i = 0 ; i < nStates ; ++i )
+    if ( dist[i] != HUGE_VAL ) {
+      const List<GraphArc> &la = lG.states[i].arcs;
+      for ( List<GraphArc>::const_iterator l = la.const_begin(), end = la.const_end() ; l != end; ++l ) {
+        Assert(i == l->src);
 
-                const List<GraphArc> &ra=rG.states[i].arcs;
-                for ( List<GraphArc>::const_iterator r=ra.const_begin(),end=ra.const_end() ; r !=end ; ++r )
-                    if ( r->data == l->data )
-                        goto short_done;              
-                if ( dist[l->dest] != HUGE_VAL ) {
-                    GraphArc w = *l;
-                    telescope_cost(w,dist);                    //w.weight = w.weight - (dist[i] - dist[w.dest]);
-                    sub[i].arcs.push(w);
-                }
-            short_done:;
-            }
+        const List<GraphArc> &ra = rG.states[i].arcs;
+        for ( List<GraphArc>::const_iterator r = ra.const_begin(), end = ra.const_end() ; r !=end ; ++r )
+          if ( r->data == l->data )
+            goto short_done;
+        if ( dist[l->dest] != HUGE_VAL ) {
+          GraphArc w = *l;
+          telescope_cost(w, dist);                    //w.weight = w.weight - (dist[i] - dist[w.dest]);
+          sub[i].arcs.push(w);
         }
-    Graph ret;
-    ret.nStates = lG.nStates;
-    ret.states = sub;
-    return ret;
+     short_done:;
+      }
+    }
+  Graph ret;
+  ret.nStates = lG.nStates;
+  ret.states = sub;
+  return ret;
 }
 
 void printTree(GraphHeap *t, int n)

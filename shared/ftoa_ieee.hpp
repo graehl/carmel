@@ -15,23 +15,23 @@
 #include <cstdio>
 #include <graehl/shared/itoa.hpp>
 
-inline void ftoa_ieee_error(float f,char const* msg="") {
-  std::printf("ftoa_ieee error: %s f=%g\n",msg,f);
+inline void ftoa_ieee_error(float f, char const* msg="") {
+  std::printf("ftoa_ieee error: %s f=%g\n", msg, f);
   assert(!"ftoa_ieee error");
 }
 
 namespace {
-  const int ftoa_ieee_small_bufsize=22;//15;
-  char ftoa_ieee_small_outbuf[ftoa_bufsize];
+const int ftoa_ieee_small_bufsize = 22;//15;
+char ftoa_ieee_small_outbuf[ftoa_bufsize];
 }
 
 typedef union {
   int32_t L;
-  float	F;
+  float F;
 } LF_t;
 
 //FIXME: this sucks.  no scientific notation style output.  also, may not work at all (fractional digits)?
-inline char *append_ftoa_ieee_small(float f,char *outbuf)
+inline char *append_ftoa_ieee_small(float f, char *outbuf)
 {
   int32_t mantissa, int_part, frac_part;
   int32_t exp2; //TODO: does this work with regular int?
@@ -62,27 +62,27 @@ inline char *append_ftoa_ieee_small(float f,char *outbuf)
   if (int_part == 0)
     *p++ = '0';
   else
-    p=append_utoa(p,int_part);
+    p = append_utoa(p, int_part);
   if (DECIMAL_FOR_WHOLE || frac_part)
     *p++ = '.';
   if (frac_part == 0)
     if (DECIMAL_FOR_WHOLE>1)
       *p++ = '0';
-  else {
-    char max = ftoa_bufsize - (p - outbuf) - 1;
-    if (max > 7)
-      max = 7;
-    for (char m = 0; m < max; m++) {
-/* frac_part *= 10;	*/
-      frac_part = (frac_part << 3) + (frac_part << 1);
-      *p++ = (frac_part >> 24) + '0';
-      frac_part &= 0xFFFFFF;
+    else {
+      char max = ftoa_bufsize - (p - outbuf) - 1;
+      if (max > 7)
+        max = 7;
+      for (char m = 0; m < max; m++) {
+        /* frac_part *= 10; */
+        frac_part = (frac_part << 3) + (frac_part << 1);
+        *p++ = (frac_part >> 24) + '0';
+        frac_part &= 0xFFFFFF;
+      }
+      /* delete ending zeros */
+      for (--p; p[0] == '0' && p[-1] != '.'; --p)
+        ;
+      ++p;
     }
-/* delete ending zeros */
-    for (--p; p[0] == '0' && p[-1] != '.'; --p)
-      ;
-    ++p;
-  }
   *p = 0;
   return p;
 }
@@ -90,13 +90,13 @@ inline char *append_ftoa_ieee_small(float f,char *outbuf)
 
 inline std::string ftos_small(float f) {
   char buf[ftoa_ieee_small_bufsize];
-  return std::string(buf,append_ftoa_ieee_small(f,buf));
+  return std::string(buf, append_ftoa_ieee_small(f, buf));
 }
 
 // not even THREADLOCAL - don't use.
 inline char *static_ftoa_small(float f)
 {
-  append_ftoa_ieee_small(f,ftoa_ieee_small_outbuf);
+  append_ftoa_ieee_small(f, ftoa_ieee_small_outbuf);
   return ftoa_ieee_small_outbuf;
 }
 

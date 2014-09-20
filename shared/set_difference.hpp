@@ -8,17 +8,17 @@ namespace graehl {
 template <class K>
 struct set_difference : public std::set<K>
 {
-    void add(K const& k) 
-    {
-        this->insert(k);
-    }
-    bool subtract(K const& k)
-    {
-        return this->erase(k);
-    }
+  void add(K const& k)
+  {
+    this->insert(k);
+  }
+  bool subtract(K const& k)
+  {
+    return this->erase(k);
+  }
 };
 
-    
+
 }
 
 #endif

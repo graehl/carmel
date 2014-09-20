@@ -2,8 +2,8 @@
    Implemented by Jonathan Graehl (jonathan@graehl.org)
    Following David Eppstein's "Finding the k Shortest Paths" March 31, 1997 draft
    (http://www.ics.uci.edu/~eppstein/
-    http://www.ics.uci.edu/~eppstein/pubs/p-kpath.ps)
-   */
+   http://www.ics.uci.edu/~eppstein/pubs/p-kpath.ps)
+*/
 
 #define GRAEHL__SINGLE_MAIN
 #include "graph.h"
@@ -22,21 +22,21 @@ int main(int argc, char *argv[])
   istringstream sstr(argv[1]);
   istringstream dstr(argv[2]);
   istringstream kstr(argv[3]);
-  
+
   if ( !((sstr >> source) && (dstr >> dest) && (kstr >> k)) ) {
     cerr << "Bad argument (should be integer) - aborting.\n";
     return -1;
   }
   Graph graph;
-                    
+
   cin >> graph;
-  int n=graph.nStates;
-  cerr << "(up to) "<<k<<" best paths from "<<source<<" to "<<dest<<" in graph (#vertices="<<n<<") with (acyclic) "<<countNoCyclePaths<double>(graph,source,dest)<<" such paths:\n";
-#define DO(f) BestPathsPrinter<f> printer(cout);bestPaths(graph, source, dest, k,printer);
+  int n = graph.nStates;
+  cerr << "(up to) "<<k<<" best paths from "<<source<<" to "<<dest<<" in graph (#vertices="<<n<<") with (acyclic) "<<countNoCyclePaths<double>(graph, source, dest)<<" such paths:\n";
+#define DO(f) BestPathsPrinter<f> printer(cout); bestPaths(graph, source, dest, k, printer);
   if (argc == 4) {
-      DO(false);
+    DO(false);
   } else {
-      DO(true);
+    DO(true);
   }
   return 0;
 }

@@ -5,13 +5,13 @@
 
 #ifdef GRAEHL__SINGLE_MAIN
 # define GRAEHL__NULL_OSTREAM_MAIN
-#endif 
+#endif
 
-# ifdef GRAEHL__NULL_OSTREAM_MAIN
+#ifdef GRAEHL__NULL_OSTREAM_MAIN
 null_ostream the_null_ostream;
-# else
+#else
 /// singleton/constant (only need one)
 extern null_ostream the_null_ostream;
-# endif
+#endif
 
 #endif

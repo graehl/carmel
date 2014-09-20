@@ -7,11 +7,11 @@ namespace graehl {
 
 struct unimplemented_exception : public std::runtime_error
 {
-    unimplemented_exception(char const* c) : std::runtime_error(c) {  }
+  unimplemented_exception(char const* c) : std::runtime_error(c) {  }
 };
 
 inline void unimplemented(char const* m="unimplemented") {
-    throw unimplemented_exception(m);
+  throw unimplemented_exception(m);
 }
 
 }

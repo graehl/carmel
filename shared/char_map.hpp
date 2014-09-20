@@ -11,21 +11,20 @@ namespace graehl {
 template <class V>
 struct char_map
 {
-  BOOST_STATIC_CONSTANT(unsigned,size=UCHAR_MAX+1);   //std::ctype<char>::table_size
+  BOOST_STATIC_CONSTANT(unsigned, size = UCHAR_MAX+1);   //std::ctype<char>::table_size
   V table[size];
   char_map() {}
   char_map(char_map const& o)
   {
-    for (unsigned i=0;i<size;++i) table[i]=o[i];
+    for (unsigned i = 0; i<size; ++i) table[i] = o[i];
   }
-  char_map& operator=(char_map const& o)
+  char_map& operator = (char_map const& o)
   {
-    for (unsigned i=0;i<size;++i) table[i]=o[i];
+    for (unsigned i = 0; i<size; ++i) table[i] = o[i];
     return *this;
   }
   typedef V * iterator;
   typedef iterator const_iterator;
-//    typedef bool const* const_iterator;
   iterator begin() const
   { return const_cast<V*>(table); }
   iterator end() const

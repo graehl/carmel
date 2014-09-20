@@ -46,7 +46,7 @@ typedef IARCHIVE_DEFAULT default_iarchive;
 #define ARCHIVE_FLAGS_DEFAULT_CUSTOM 0
 #endif
 
-static const int ARCHIVE_FLAGS_DEFAULT=ARCHIVE_FLAG_NO_HEADER | ARCHIVE_FLAG_NO_CODECVT | ARCHIVE_FLAGS_DEFAULT_CUSTOM;
+static const int ARCHIVE_FLAGS_DEFAULT = ARCHIVE_FLAG_NO_HEADER | ARCHIVE_FLAG_NO_CODECVT | ARCHIVE_FLAGS_DEFAULT_CUSTOM;
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/tracking.hpp>
@@ -64,9 +64,9 @@ namespace serial = boost::serialization;
 
 #ifdef SERIALIZE_NO_XML
 # define varnamed(var) var
-#else 
+#else
 # define varnamed(var) BOOST_SERIALIZATION_NVP(var)
-#endif 
+#endif
 
 
 #ifdef SERIALIZE_TRACK_POINTERS_ALWAYS
@@ -87,36 +87,36 @@ namespace serial = boost::serialization;
 
 namespace graehl {
 
-template <class Archive,class Data,class Ch,class Tr>
-inline void save_to_stream(std::basic_ostream<Ch,Tr> &o,const Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
+template <class Archive, class Data, class Ch, class Tr>
+inline void save_to_stream(std::basic_ostream<Ch, Tr> &o, const Data &d, unsigned flags = ARCHIVE_FLAGS_DEFAULT)
 {
-    Archive oa(o,flags);
-    oa & d;
+  Archive oa(o, flags);
+  oa & d;
 }
 
-template <class Archive,class Data,class Ch,class Tr>
-inline void load_from_stream(std::basic_istream<Ch,Tr> &i,Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
+template <class Archive, class Data, class Ch, class Tr>
+inline void load_from_stream(std::basic_istream<Ch, Tr> &i, Data &d, unsigned flags = ARCHIVE_FLAGS_DEFAULT)
 {
-    Archive ia(i,flags);
-    ia & d;
+  Archive ia(i, flags);
+  ia & d;
 }
 
-template <class Archive,class Data>
-inline void save_to_file(const std::string &fname,const Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
+template <class Archive, class Data>
+inline void save_to_file(const std::string &fname, const Data &d, unsigned flags = ARCHIVE_FLAGS_DEFAULT)
 {
-    std::ofstream o(fname.c_str());
-    if (!o)
-        throw std::runtime_error(std::string("Couldn't create output serialization file ").append(fname));
-    save_to_stream<Archive>(o,d,flags);
+  std::ofstream o(fname.c_str());
+  if (!o)
+    throw std::runtime_error(std::string("Couldn't create output serialization file ").append(fname));
+  save_to_stream<Archive>(o, d, flags);
 }
 
-template <class Archive,class Data>
-inline void load_from_file(const std::string &fname,Data &d, unsigned flags=ARCHIVE_FLAGS_DEFAULT) 
+template <class Archive, class Data>
+inline void load_from_file(const std::string &fname, Data &d, unsigned flags = ARCHIVE_FLAGS_DEFAULT)
 {
-    std::ifstream i(fname.c_str());
-    if (!i)
-        throw std::runtime_error(std::string("Couldn't read input serialization file ").append(fname));
-    load_from_stream<Archive>(i,d,flags);
+  std::ifstream i(fname.c_str());
+  if (!i)
+    throw std::runtime_error(std::string("Couldn't read input serialization file ").append(fname));
+  load_from_stream<Archive>(i, d, flags);
 }
 
 

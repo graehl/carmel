@@ -20,12 +20,12 @@ namespace graehl {
 inline void default_locale()
 {
   try {
-  // mac doesn't like empty LC_ALL
+    // mac doesn't like empty LC_ALL
 #if GRAEHL_USE_BOOST_LOCALE
-  std::string sysLocale=boost::locale::util::get_system_locale(true);
-  boost::locale::generator localeGen;
-  std::locale::global(localeGen(sysLocale));
-  ::setlocale(LC_ALL, sysLocale.c_str());
+    std::string sysLocale = boost::locale::util::get_system_locale(true);
+    boost::locale::generator localeGen;
+    std::locale::global(localeGen(sysLocale));
+    ::setlocale(LC_ALL, sysLocale.c_str());
 #else
     std::locale::global(std::locale(""));
     ::setlocale(LC_ALL, "");

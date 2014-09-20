@@ -1,20 +1,5 @@
 #include "weight.h"
 
-/* NOW HANDLED by funcs.hpp
-#include <cstdlib>
-#include <ctime>
-struct InitRand {
-        InitRand() {
-                srand((unsigned)time(NULL));
-        }
-};
-
-static InitRand _Weight_Init_Rand;
-
-*/
-
-//using namespace std;
-
 namespace graehl {
 
 template <class Real>

@@ -45,10 +45,10 @@ const char * const boost::random_device::default_token = "/dev/urandom";
 // -fhonor-std and Dietmar Kühl's standard C++ library.  Hack around that
 // problem for now.
 extern "C" {
-static const int O_RDONLY = 0;
-extern int open(const char *__file, int __oflag, ...);
-extern int read(int __fd, __ptr_t __buf, size_t __nbytes);
-extern int close(int __fd);
+  static const int O_RDONLY = 0;
+  extern int open(const char *__file, int __oflag, ...);
+  extern int read(int __fd, __ptr_t __buf, size_t __nbytes);
+  extern int close(int __fd);
 }
 #else
 #include <sys/types.h>
@@ -64,28 +64,28 @@ extern int close(int __fd);
 
 class boost::random_device::impl
 {
-public:
+ public:
   impl(const std::string & token) : path(token) {
     fd = open(token.c_str(), O_RDONLY);
-    if(fd < 0)
+    if (fd < 0)
       error("cannot open");
   }
 
-  ~impl() { if(close(fd) < 0) error("could not close"); }
+  ~impl() { if (close(fd) < 0) error("could not close"); }
 
   unsigned next() {
     unsigned result;
     long sz = read(fd, reinterpret_cast<char *>(&result), sizeof(result));
-    if(sz == -1)
+    if (sz == -1)
       error("error while reading");
-    else if(sz != sizeof(result)) {
+    else if (sz != sizeof(result)) {
       errno = 0;
       error("EOF while reading");
     }
     return result;
   }
 
-private:
+ private:
   void error(const std::string & msg) {
     throw std::invalid_argument("boost::random_device: " + msg +
                                 " random-number pseudo-device " + path +
@@ -118,7 +118,7 @@ const char* const boost::random_device::default_token = MS_DEF_PROV;
 
 class boost::random_device::impl
 {
-public:
+ public:
   impl(const std::string& token)
   {
     if (!CryptAcquireContext(&provider, 0, token.c_str(), PROV_RSA_FULL, CRYPT_SILENT)) {
@@ -127,7 +127,7 @@ public:
       if (error_code == NTE_BAD_KEYSET) {
         // try requesting a new keyset
         if (!CryptAcquireContext(&provider, 0, MS_DEF_PROV, PROV_RSA_FULL, CRYPT_NEWKEYSET | CRYPT_SILENT))
-            error("cannot open", GetLastError());
+          error("cannot open", GetLastError());
       }
       else
         error("cannot open", error_code);
@@ -150,19 +150,19 @@ public:
     return result;
   };
 
-private:
+ private:
   HCRYPTPROV provider;
 
   void error(const std::string& msg, DWORD error) {
     throw std::invalid_argument("boost::random_device: " + msg +
-        ": " + boost::lexical_cast<std::string>(errno));
+                                ": " + boost::lexical_cast<std::string>(errno));
   }
 };
 
 #endif // Windows
 
 boost::random_device::random_device(const std::string& token)
-  : pimpl(new impl(token))
+    : pimpl(new impl(token))
 {
   assert(std::numeric_limits<result_type>::max() == max_value);
 }

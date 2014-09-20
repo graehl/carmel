@@ -5,28 +5,27 @@
 
 namespace graehl {
 
-struct inexact_cast : public std::runtime_error 
+struct inexact_cast : public std::runtime_error
 {
-    inexact_cast() : std::runtime_error("inexact_cast - casting to a different type lost information") {}
+  inexact_cast() : std::runtime_error("inexact_cast - casting to a different type lost information") {}
 };
 
-template <class To,class From>
-To exact_static_assign(To &to,From const& from) 
+template <class To, class From>
+To exact_static_assign(To &to, From const& from)
 {
-    to=static_cast<To>(from);
-    if (static_cast<From>(to)!=from)
-        throw inexact_cast();
-    return to;
+  to = static_cast<To>(from);
+  if (static_cast<From>(to)!=from)
+    throw inexact_cast();
+  return to;
 }
 
-template <class To,class From>
-To exact_static_cast(From const& from) 
+template <class To, class From>
+To exact_static_cast(From const& from)
 {
-    To to;
-    exact_static_assign(to,from);
-    return to;
+  To to;
+  exact_static_assign(to, from);
+  return to;
 }
-
 
 
 }//graehl

@@ -13,7 +13,7 @@
 #define GRAEHL__SINGLE_MAIN
 // -: = cache em derivations including reverse structure (uses more memory but faster iterations)
 // -? = cache em derivations; currently limited to memory; should change to use disk
-// -= 2.0  = square weights then normalize
+// -= 2.0 = square weights then normalize
 // -o = learning rate exponent growth ratio (default 1.0)
 // -K = don't assume state names are indexes if the final state is an integer
 // -q = quiet (default logs computation progress)
@@ -51,7 +51,7 @@ using namespace graehl;
 
 #ifdef MARCU
 #include <graehl/carmel/src/models.h>
-char *MarcuArgs[]={
+char *MarcuArgs[]= {
   "marcu-carmel",
   "-IEsriqk",
   "1"
@@ -59,17 +59,17 @@ char *MarcuArgs[]={
 #endif
 
 static unsigned seed;
-static bool seed_shown=false;
+static bool seed_shown = false;
 
 static void show_seed()
 {
   if (seed_shown) return;
-  seed_shown=true;
+  seed_shown = true;
   Config::log() << "Using random seed -R "<<seed<<endl;
 }
 
-static void setOutputFormat(bool *flags,ostream *fstout) {
-  WFST::output_format(flags,fstout);
+static void setOutputFormat(bool *flags, ostream *fstout) {
+  WFST::output_format(flags, fstout);
   return;
   /*
     if (fstout) {
@@ -113,7 +113,7 @@ static void setOutputFormat(bool *flags,ostream *fstout) {
     */
 }
 
-static void printSeq(Alphabet<StringKey,StringPool> &a,int *seq,int maxSize) {
+static void printSeq(Alphabet<StringKey, StringPool> &a, int *seq, int maxSize) {
 
   for ( int i = 0 ; i < maxSize && seq[i] != 0; ++i) {
     if (i>0)
@@ -133,10 +133,10 @@ void readParam(T *t, char const*from, char sw) {
 }
 
 template <class T>
-bool readParam(bool *argflags,T *t, char const*from, unsigned char sw) {
+bool readParam(bool *argflags, T *t, char const*from, unsigned char sw) {
   if (argflags[sw]) {
-    argflags[sw]=false;
-    readParam(t,from,sw);
+    argflags[sw] = false;
+    readParam(t, from, sw);
     return true;
   }
   return false;
@@ -164,12 +164,12 @@ void outWithoutQuotes(const char *str, ostream &out) {
     out << str;
 }
 
-void out_maybe_quote(char const* str,ostream &out,bool quote)
+void out_maybe_quote(char const* str, ostream &out, bool quote)
 {
   if (quote)
     out << str;
   else
-    outWithoutQuotes(str,out);
+    outWithoutQuotes(str, out);
 }
 
 
@@ -191,14 +191,14 @@ struct wfst_paths_printer {
     SIDETRACKS_ONLY=flags[(unsigned)'%'];
     }*/
   WFST::path_print pp;
-  wfst_paths_printer(WFST &_wfst,ostream &_out,bool *_flags)
-      : SIDETRACKS_ONLY(_flags[(unsigned)'%']),wfst(_wfst),pp(_flags) {
+  wfst_paths_printer(WFST &_wfst, ostream &_out, bool *_flags)
+      : SIDETRACKS_ONLY(_flags[(unsigned)'%']), wfst(_wfst), pp(_flags) {
     pp.set_out(_out);
-    n_paths=0;
+    n_paths = 0;
   }
-  void start_path(unsigned k,Weight path_w) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
+  void start_path(unsigned k, Weight path_w) { // called with k=rank of path (1-best, 2-best, etc.) and cost=sum of arcs from start to finish
     if (k==1)
-      best_w=path_w;
+      best_w = path_w;
     ++n_paths;
     /*
       w=path_w;
@@ -228,7 +228,7 @@ struct wfst_paths_printer {
 #endif
   }
   void visit_best_arc(FSTArc &arc) {
-    pp.arc(wfst,arc);
+    pp.arc(wfst, arc);
     /*
     //        path.push_back(&arc);
     if (flags[(unsigned)'@'] ) {
@@ -258,7 +258,7 @@ struct wfst_paths_printer {
 
 };
 
-void printPath(bool *flags,const List<PathArc> *pli) {
+void printPath(bool *flags, const List<PathArc> *pli) {
   /*
     Weight w = 1.0;
     const char * outSym;
@@ -296,15 +296,15 @@ void printPath(bool *flags,const List<PathArc> *pli) {
               pp.arc(*li);
               pp.finish(w);
     */
-    pp(w,*pli);
+    pp(w, *pli);
   }
 }
 
 void usageHelp(void);
 void WFSTformatHelp(void);
 
-typedef std::map<std::string,double> long_opts_t;
-typedef std::map<std::string,std::string> text_long_opts_t;
+typedef std::map<std::string, double> long_opts_t;
+typedef std::map<std::string, std::string> text_long_opts_t;
 
 struct carmel_main
 {
@@ -315,19 +315,19 @@ struct carmel_main
 
   void force_cascade_derivs()
   {
-    flags[(unsigned)'t']=true;
-    long_opts["train-cascade"]=1;
+    flags[(unsigned)'t'] = true;
+    long_opts["train-cascade"] = 1;
   }
 
   bool parse_cache_opts()
   {
-    WFST::deriv_cache_opts &copt=topt.cache;
-    copt.cache_level=have_opt("matrix-fb") ? WFST::matrix_fb : (flags[(unsigned)':'] ? WFST::cache_forward_backward : (flags[(unsigned)'?'] ? WFST::cache_forward : WFST::cache_nothing));
+    WFST::deriv_cache_opts &copt = topt.cache;
+    copt.cache_level = have_opt("matrix-fb") ? WFST::matrix_fb : (flags[(unsigned)':'] ? WFST::cache_forward_backward : (flags[(unsigned)'?'] ? WFST::cache_forward : WFST::cache_nothing));
     copt.do_prune=!have_opt("cache-no-prune");
     if (have_opt("disk-cache-derivations")) {
-      copt.cache_level=WFST::cache_disk;
-      copt.disk_cache_filename=set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
-      get_default_opt("disk-cache-bufsize",copt.disk_cache_bufsize,"1M");
+      copt.cache_level = WFST::cache_disk;
+      copt.disk_cache_filename = set_default_text("disk-cache-derivations","/tmp/carmel.derivations.XXXXXX");
+      get_default_opt("disk-cache-bufsize", copt.disk_cache_bufsize,"1M");
       Config::log()<<"Disk cache of derivations will be created at "<<copt.disk_cache_filename<<" using read buffer of "<<copt.disk_cache_bufsize<<" bytes.\n";
     }
     return true;
@@ -341,57 +341,57 @@ struct carmel_main
     gibbs = have_opt("crp");
     if (gibbs) {
       unsigned m;
-      get_opt("crp",m);
+      get_opt("crp", m);
       if (m>1) {
         Config::log()<<"Replacing -M "<<topt.max_iter<<" with --crp="<<m<<endl;
-        topt.max_iter=m;
+        topt.max_iter = m;
       }
       if (topt.cache.cache_level==WFST::cache_nothing)
-        topt.cache.cache_level=(gopt.expectation?WFST::cache_forward_backward:WFST::cache_forward);
+        topt.cache.cache_level = (gopt.expectation?WFST::cache_forward_backward:WFST::cache_forward);
       force_cascade_derivs();
-      gopt.expectation=have_opt("expectation");
-      gopt.include_self=have_opt("include-self");
-      gopt.random_start=have_opt("random-start");
-      get_opt("crp-restarts",gopt.restarts);
-      gopt.argmax_final=have_opt("crp-argmax-final");
-      gopt.argmax_sum=have_opt("crp-argmax-sum");
-      gopt.norm_order=have_opt("norm-order");
-      gopt.exclude_prior=have_opt("crp-exclude-prior");
-      get_opt("init-em",gopt.init_em);
-      gopt.em_p0=have_opt("em-p0");
-      get_opt("burnin",gopt.burnin);
-      get_opt("width",gopt.width);
-      get_opt("print-from",gopt.print_from);
-      get_opt("print-to",gopt.print_to);
-      get_opt("print-norms-from",gopt.print_norms_from);
-      get_opt("print-norms-to",gopt.print_norms_to);
-      get_opt("print-counts-from",gopt.print_counts_from);
-      get_opt("print-counts-to",gopt.print_counts_to);
-      get_opt("print-counts-sparse",gopt.print_counts_sparse);
-      get_opt("print-counts-rich",gopt.rich_counts);
-      get_opt("print-every",gopt.print_every);
-      get_opt("high-temp",gopt.high_temp);
-      get_opt("low-temp",gopt.low_temp);
-      gopt.prior_inference_restart_fresh=have_opt("prior-inference-restart-fresh");
-      gopt.prior_inference_show=have_opt("prior-inference-show");
-      gopt.prior_inference_global=have_opt("prior-inference-global");
-      get_opt("prior-inference-stddev",gopt.prior_inference_stddev);
+      gopt.expectation = have_opt("expectation");
+      gopt.include_self = have_opt("include-self");
+      gopt.random_start = have_opt("random-start");
+      get_opt("crp-restarts", gopt.restarts);
+      gopt.argmax_final = have_opt("crp-argmax-final");
+      gopt.argmax_sum = have_opt("crp-argmax-sum");
+      gopt.norm_order = have_opt("norm-order");
+      gopt.exclude_prior = have_opt("crp-exclude-prior");
+      get_opt("init-em", gopt.init_em);
+      gopt.em_p0 = have_opt("em-p0");
+      get_opt("burnin", gopt.burnin);
+      get_opt("width", gopt.width);
+      get_opt("print-from", gopt.print_from);
+      get_opt("print-to", gopt.print_to);
+      get_opt("print-norms-from", gopt.print_norms_from);
+      get_opt("print-norms-to", gopt.print_norms_to);
+      get_opt("print-counts-from", gopt.print_counts_from);
+      get_opt("print-counts-to", gopt.print_counts_to);
+      get_opt("print-counts-sparse", gopt.print_counts_sparse);
+      get_opt("print-counts-rich", gopt.rich_counts);
+      get_opt("print-every", gopt.print_every);
+      get_opt("high-temp", gopt.high_temp);
+      get_opt("low-temp", gopt.low_temp);
+      gopt.prior_inference_restart_fresh = have_opt("prior-inference-restart-fresh");
+      gopt.prior_inference_show = have_opt("prior-inference-show");
+      gopt.prior_inference_global = have_opt("prior-inference-global");
+      get_opt("prior-inference-stddev", gopt.prior_inference_stddev);
 
       //        gopt.cache_prob=have_opt("cache-prob");
-      gopt.cheap_prob=have_opt("sample-prob");
-      if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob=have_opt("no-prob");
-      gopt.uniformp0=have_opt("uniform-p0");
-      gopt.init_from_p0=have_opt("init-from-p0");
-      gopt.dirichlet_p0=have_opt("dirichlet-p0");
-      gopt.final_counts=have_opt("final-counts");
+      gopt.cheap_prob = have_opt("sample-prob");
+      if (!(gopt.cache_prob || gopt.cheap_prob)) gopt.no_prob = have_opt("no-prob");
+      gopt.uniformp0 = have_opt("uniform-p0");
+      gopt.init_from_p0 = have_opt("init-from-p0");
+      gopt.dirichlet_p0 = have_opt("dirichlet-p0");
+      gopt.final_counts = have_opt("final-counts");
     }
   }
 
-  void log_ppx(double n_pairs,Weight prod_prob,unsigned n_0prob=0)
+  void log_ppx(double n_pairs, Weight prod_prob, unsigned n_0prob = 0)
   {
-    std::ostream &o=Config::log();
+    std::ostream &o = Config::log();
     o<<"product of probs="<<prod_prob<<", ";
-    prod_prob.print_ppx(o,n_symbols,n_pairs,"per-input-symbol-perplexity","per-line-perplexity");
+    prod_prob.print_ppx(o, n_symbols, n_pairs,"per-input-symbol-perplexity","per-line-perplexity");
     /*
       o<<"per-example perplexity(N="<<n_pairs<<")=";
       prod_prob.root(n_pairs).inverse().print_base(o,2);
@@ -406,7 +406,7 @@ struct carmel_main
   istream *open_postb()
   {
     if (have_opt("post-b")) {
-      post_b.open(text_long_opts["post-b"].c_str(),ifstream::in);
+      post_b.open(text_long_opts["post-b"].c_str(), ifstream::in);
       return &post_b;
     } else
       return NULL;
@@ -430,12 +430,12 @@ struct carmel_main
   void non0_viterbi_prob(Weight p)
   {
     ++n_prob;
-    prod_viterbi*=p;
+    prod_viterbi *= p;
   }
 
-  void report_0probs(char const* name,unsigned n,unsigned N) const
+  void report_0probs(char const* name, unsigned n, unsigned N) const
   {
-    std::ostream &o=Config::log();
+    std::ostream &o = Config::log();
     if (n)
       o << "No derivations found for "<<n<<" of ";
     else
@@ -446,36 +446,36 @@ struct carmel_main
 
   void report_batch()
   {
-    std::ostream &o=Config::log();
-    bool postb=have_opt("post-b");
-    bool sump=have_opt("sum");
-    unsigned N=n_lines();
-    unsigned Npre=n_pre_lines();
+    std::ostream &o = Config::log();
+    bool postb = have_opt("post-b");
+    bool sump = have_opt("sum");
+    unsigned N = n_lines();
+    unsigned Npre = n_pre_lines();
     if (Npre) {
-      report_0probs(postb?"inputs just before --post-b":" inputs",pre_n_0prob,Npre);
+      report_0probs(postb?"inputs just before --post-b":" inputs", pre_n_0prob, Npre);
       if (postb) o << "Just before --post-b, sum-all-paths ";
-      log_ppx(n_prob,prod_sum_pre,pre_n_0prob);
+      log_ppx(n_prob, prod_sum_pre, pre_n_0prob);
     }
     if (!N) return;
-    report_0probs("inputs",n_0prob,N);
+    report_0probs("inputs", n_0prob, N);
     o << "Viterbi (best path) ";
-    log_ppx(n_prob,prod_viterbi,n_0prob);
+    log_ppx(n_prob, prod_viterbi, n_0prob);
     if (sump) {
       o << "Sum (all paths) ";
-      log_ppx(n_prob,prod_sum,n_0prob);
+      log_ppx(n_prob, prod_sum, n_0prob);
       if (postb) {
         o << "Conditional (final divided by previous sum-all-paths) ";
-        log_ppx(n_prob,prod_sum/prod_sum_pre,n_0prob);
+        log_ppx(n_prob, prod_sum/prod_sum_pre, n_0prob);
       }
     }
   }
 
-  void print_kbest(unsigned kPaths,WFST *result)
+  void print_kbest(unsigned kPaths, WFST *result)
   {
-    unsigned kPathsLeft=kPaths;
+    unsigned kPathsLeft = kPaths;
     if ( result->valid() ) {
-      wfst_paths_printer pp(*result,cout,flags);
-      result->visit_kbest(kPaths,pp);
+      wfst_paths_printer pp(*result, cout, flags);
+      result->visit_kbest(kPaths, pp);
       kPathsLeft -= pp.n_paths;
       if (pp.best_w.isZero())
         ++n_0prob;
@@ -486,7 +486,7 @@ struct carmel_main
       n_0prob++;
     }
     for ( unsigned fill = 0 ; fill < kPathsLeft ; ++fill ) {
-      if ( !(flags[(unsigned)'W']||flags[(unsigned)'@']) )
+      if ( !(flags[(unsigned)'W'] || flags[(unsigned)'@']) )
         cout << 0;
       cout << "\n";
     }
@@ -500,8 +500,8 @@ struct carmel_main
   unsigned nInputs;
   void set_inputs(char const** fnm, unsigned N)
   {
-    filenames=fnm;
-    nInputs=N;
+    filenames = fnm;
+    nInputs = N;
   }
 
 
@@ -513,7 +513,7 @@ struct carmel_main
   struct field
   {
     typedef V arg_type;
-    static void set(V &v,V const& to) {v=to;}
+    static void set(V &v, V const& to) {v = to; }
     static V const& get(V const&v) { return v; }
   };
   /// a cell acts like a value V object but once constructed, copies of cell have ref to same object
@@ -524,13 +524,13 @@ struct carmel_main
     cell() : v(new V()) {}
     template <class C0>
     cell(C0 const& c0) : v(new V(c0)) {}
-    template <class C0,class C1>
-    cell(C0 const& c0,C1 const& c1) : v(new V(c0,c1)) {}
-    ~cell() {delete v;}
+    template <class C0, class C1>
+    cell(C0 const& c0, C1 const& c1) : v(new V(c0, c1)) {}
+    ~cell() {delete v; }
     operator V &() { return *v; }
     operator V const&() const { return *v; }
   };
-  template <class O,class Setter>
+  template <class O, class Setter>
   struct Putter
   {
     typedef typename Setter::arg_type arg_type;
@@ -539,28 +539,28 @@ struct carmel_main
     template <class Str>
     bool operator()(Str const& s)
     {
-      Setter::set(*o,string_to<arg_type>(s));
+      Setter::set(*o, string_to<arg_type>(s));
       ++o;
       return true;
     }
   };
-  template <class S,class O>
-  Putter<O,S> make_putter(O const& o)
+  template <class S, class O>
+  Putter<O, S> make_putter(O const& o)
   {
-    return Putter<O,S>(o);
+    return Putter<O, S>(o);
   }
 
-  template <class Setter,class V>
-  unsigned set_vector(std::string const& key,dynamic_array<V> &pr,char const* osep = " ^ ",char const* isep=",")
+  template <class Setter, class V>
+  unsigned set_vector(std::string const& key, dynamic_array<V> &pr, char const* osep = " ^ ", char const* isep=",")
   {
-    std::ostream &o=Config::log();
-    std::string const& opt=text_long_opts[key];
+    std::ostream &o = Config::log();
+    std::string const& opt = text_long_opts[key];
     if (!opt.empty()) {
-      unsigned n=split_noquote(opt,make_putter<Setter>(pr.begin()),isep,pr.size(),false,true);
+      unsigned n = split_noquote(opt, make_putter<Setter>(pr.begin()), isep, pr.size(), false, true);
       if (n>0) {
         o << "Using input WFST --"<<key<<":\n";
-        unsigned i=0;
-        for (i=0;i<n;++i) {
+        unsigned i = 0;
+        for (i = 0; i<n; ++i) {
           if (i>=nInputs) {
             std::cerr<<"#inputs "<<nInputs<<" "<<key<<"="<<opt<<std::endl;
             throw std::runtime_error("Too many "+key+" for #inputs");
@@ -576,12 +576,12 @@ struct carmel_main
     return 0;
   }
   template <class V>
-  void parse_vector(std::string const& key,dynamic_array<V> &pr,V const& zero=0,char const* osep = " ^ ",char const* isep=",")
+  void parse_vector(std::string const& key, dynamic_array<V> &pr, V const& zero = 0, char const* osep = " ^ ", char const* isep=",")
   {
     pr.resize(nInputs);
-    unsigned i=set_vector<field<V> >(key,pr,osep,isep);
+    unsigned i = set_vector<field<V> >(key, pr, osep, isep);
     while (i<nInputs)
-      pr[i++]=zero;
+      pr[i++] = zero;
   }
 
   bool real_cascade() {
@@ -590,17 +590,17 @@ struct carmel_main
 
   NMs & norms()
   {
-    unsigned N=real_cascade()?nInputs:1;
+    unsigned N = real_cascade()?nInputs:1;
     nms.clear();
     if (gopt.prior_inference_stddev)
       if (norm_method.add_count<=0)
-        norm_method.add_count=1;
-    nms.push_back_n(norm_method,N);
+        norm_method.add_count = 1;
+    nms.push_back_n(norm_method, N);
     if (have_opt("normby"))
-      set_vector<NM::f_group>("normby",nms," norm by ","");
-    set_vector<NM::f_scale>("digamma",nms," digamma ",",");
-    set_vector<NM::f_prior>("priors",nms," alpha ",",");
-    set_vector<NM::f_priorgroup>("prior-groupby",nms," prior-inference-stddev prior inference scaling ","");
+      set_vector<NM::f_group>("normby", nms," norm by ","");
+    set_vector<NM::f_scale>("digamma", nms," digamma ",",");
+    set_vector<NM::f_prior>("priors", nms," alpha ",",");
+    set_vector<NM::f_priorgroup>("prior-groupby", nms," prior-inference-stddev prior inference scaling ","");
     return nms;
   }
 
@@ -613,36 +613,36 @@ struct carmel_main
   }
 
   template <class V>
-  bool get_opt(std::string const&key,V &v) const
+  bool get_opt(std::string const&key, V &v) const
   {
-    long_opts_t::const_iterator i=long_opts.find(key);
+    long_opts_t::const_iterator i = long_opts.find(key);
     if (i==long_opts.end()) return false;
-    v=(V)i->second;
+    v = (V)i->second;
     return true;
   }
 
-  bool set_text(std::string const& key,std::string &to)
+  bool set_text(std::string const& key, std::string &to)
   {
-    return !(to=text_long_opts[key]).empty();
+    return !(to = text_long_opts[key]).empty();
   }
 
-  std::string const& set_default_text(std::string const& key,std::string const& default_val="")
+  std::string const& set_default_text(std::string const& key, std::string const& default_val="")
   {
-    std::string &val=text_long_opts[key];
+    std::string &val = text_long_opts[key];
     if (val.empty())
-      val=default_val;
+      val = default_val;
     return val;
   }
 
   template <class V>
-  V const& get_default_opt(std::string const& key,V &v,std::string const& default_val)
+  V const& get_default_opt(std::string const& key, V &v, std::string const& default_val)
   {
-    return string_to(set_default_text(key,default_val),v);
+    return string_to(set_default_text(key, default_val), v);
   }
 
 
-  carmel_main(bool *flags,long_opts_t &long_opts,text_long_opts_t &text_long_opts)
-    :flags(flags),long_opts(long_opts),text_long_opts(text_long_opts),fems(true,false)
+  carmel_main(bool *flags, long_opts_t &long_opts, text_long_opts_t &text_long_opts)
+      :flags(flags), long_opts(long_opts), text_long_opts(text_long_opts), fems(true, false)
   {
     set_defaults();
   }
@@ -667,7 +667,7 @@ struct carmel_main
   void maybe_constant_weight(WFST *result)
   {
     Weight c;
-    if (get_opt("constant-weight",c)) {
+    if (get_opt("constant-weight", c)) {
       Config::log() << "Setting all (non-locked) arcs in result to weight "<<c<<std::endl;
       result->set_constant_weights(c);
     }
@@ -675,32 +675,32 @@ struct carmel_main
 
   void maybe_project(WFST *result)
   {
-    bool id=long_opts["project-identity-fsa"];
+    bool id = long_opts["project-identity-fsa"];
     if (long_opts["project-left"])
-      result->project(State::input,id);
+      result->project(State::input, id);
     if (long_opts["project-right"])
-      result->project(State::output,id);
+      result->project(State::output, id);
   }
 
   bool post_compose(WFST *&result)
   {
-    bool sump=have_opt("sum");
-    Weight s=1;
+    bool sump = have_opt("sum");
+    Weight s = 1;
 
     if (sump) {
-      s=result->sum_acyclic_paths();
+      s = result->sum_acyclic_paths();
       if (s.isZero())
         ++pre_n_0prob;
       else
         ++pre_n_prob;
     }
 
-    prod_sum_pre*=s;
+    prod_sum_pre *= s;
 
     if (have_opt("post-b")) {
       post_b >> ws;
       std::string buf;
-      getline(post_b,buf);
+      getline(post_b, buf);
       if (!post_b) {
         Config::warn() << "--post-b file didn't have as many lines as -b file.\n";
         return false;
@@ -710,11 +710,11 @@ struct carmel_main
         Config::warn() << "For --post-b="<<long_opts["post-b"]<<", couldn't handle input line: " << buf << "\n";
         return false;
       }
-      WFST *p=result;
+      WFST *p = result;
       if (flags[(unsigned)'r'])
-        result=new WFST(pb,*p,flags[(unsigned)'m'],flags[(unsigned)'a']);
+        result = new WFST(pb, *p, flags[(unsigned)'m'], flags[(unsigned)'a']);
       else
-        result=new WFST(*p,pb,flags[(unsigned)'m'],flags[(unsigned)'a']);
+        result = new WFST(*p, pb, flags[(unsigned)'m'], flags[(unsigned)'a']);
       if (!result->valid()) {
         ++n_0prob;
         return false;
@@ -722,11 +722,11 @@ struct carmel_main
       result->ownAlphabet();
       delete p;
       if (sump) {
-        s=result->sum_acyclic_paths();
+        s = result->sum_acyclic_paths();
       }
     }
 
-    prod_sum*=s;
+    prod_sum *= s;
 
 
     maybe_constant_weight(result);
@@ -754,14 +754,14 @@ struct carmel_main
   }
 
 
-  void write_transducer(std::ostream &o,WFST *result)
+  void write_transducer(std::ostream &o, WFST *result)
   {
     //        if (long_opts["test-as-pairs"])  WFST::as_pairs_fsa(*result,long_opts["test-as-pairs-epsilon"]);
     maybe_project(result);
     if ( flags [(unsigned)'Y'] )
       result->writeGraphViz(o);
     else {
-      result->writeLegible(o,show0);
+      result->writeLegible(o, show0);
     }
   }
 
@@ -770,35 +770,35 @@ struct carmel_main
     if ( flags[(unsigned)'p'] )
       result->pruneArcs(prune_wt);
     if ( prunePath() )
-      result->prunePaths(max_states,keep_path_ratio);
+      result->prunePaths(max_states, keep_path_ratio);
   }
 
   void minimize(WFST *result)
   {
     if ( flags[(unsigned)'C'] )
-      result->consolidateArcs(!long_opts["consolidate-max"],!long_opts["consolidate-unclamped"]);
+      result->consolidateArcs(!long_opts["consolidate-max"], !long_opts["consolidate-unclamped"]);
     if ( !flags[(unsigned)'d'] )
       result->reduce();
   }
 
   struct shrink_monitor
   {
-    shrink_monitor(char const* name,WFST &result,bool print,bool &changed)
-      : name(name),result(result),print(print),changed(changed)
+    shrink_monitor(char const* name, WFST &result, bool print, bool &changed)
+        : name(name), result(result), print(print), changed(changed)
     {
-      st=result.size();
-      arc=result.numArcs();
+      st = result.size();
+      arc = result.numArcs();
     }
     char const* name;
     WFST &result;
     bool print;
     bool &changed;
-    unsigned st,arc;
+    unsigned st, arc;
     ~shrink_monitor()
     {
-      unsigned nst=result.size(),narc=result.numArcs();
+      unsigned nst = result.size(), narc = result.numArcs();
       if (nst!=st || narc!=arc) {
-        changed=true;
+        changed = true;
         if (print)
           Config::log() << ' '<<name<<"-> "<<nst<<'/'<<narc;
       }
@@ -807,21 +807,21 @@ struct carmel_main
   };
 
 
-  bool shrink(WFST *result,bool print=true,bool do_prune=true,bool openfst_min=false,char const* end="\n")
+  bool shrink(WFST *result, bool print = true, bool do_prune = true, bool openfst_min = false, char const* end="\n")
   {
     WFST &w=*result;
-    bool changed=false;
-    print=print&&!flags[(unsigned)'q'];
+    bool changed = false;
+    print = print&&!flags[(unsigned)'q'];
     {
-      shrink_monitor m("reduce",w,print,changed);
+      shrink_monitor m("reduce", w, print, changed);
       minimize(result);
     }
     if (do_prune) {
-      shrink_monitor m("prune",w,print,changed);
+      shrink_monitor m("prune", w, print, changed);
       prune(result);
     }
     if (openfst_min) {
-      shrink_monitor m("openfst-minimize",w,print,changed);
+      shrink_monitor m("openfst-minimize", w, print, changed);
       openfst_minimize(result);
     }
     if (print) Config::log()<<end;
@@ -834,15 +834,15 @@ struct carmel_main
 #ifdef USE_OPENFST
     if (!flags[(unsigned)'q'])
       Config::log() << " openfst " <<
-        (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
+          (long_opts["minimize-sum"]?"sum ":"tropical ")<<"minimize: "<<result->size()<<"/"<<result->numArcs();
     if (!result->minimize_openfst<OpenFST>(
-                                           long_opts["minimize-determinize"] || long_opts["minimize-determinize-only"]
-                                           , long_opts["minimize-rmepsilon"]
-                                           ,!long_opts["minimize-determinize-only"]
-                                           , !long_opts["minimize-no-connect"]
-                                           , long_opts["minimize-inverted"]
-                                           , long_opts["minimize-pairs"]
-                                           , !long_opts["minimize-pairs-no-epsilon"]
+            long_opts["minimize-determinize"] || long_opts["minimize-determinize-only"]
+            , long_opts["minimize-rmepsilon"]
+            , !long_opts["minimize-determinize-only"]
+            , !long_opts["minimize-no-connect"]
+            , long_opts["minimize-inverted"]
+            , long_opts["minimize-pairs"]
+            , !long_opts["minimize-pairs-no-epsilon"]
                                            )
         )
       Config::log() << " (FST not input-determinized, try --minimize-determinize, which may not terminate)";
@@ -872,7 +872,7 @@ struct carmel_main
   dynamic_array<std::string> fem_filenames;
 
 
-  std::string fem_norm,fem_forest,fem_inparam,fem_outparam,fem_suffix,fem_early_outparam,fem_alpha;
+  std::string fem_norm, fem_forest, fem_inparam, fem_outparam, fem_suffix, fem_early_outparam, fem_alpha;
 
   bool no_compose;
 
@@ -880,22 +880,22 @@ struct carmel_main
 
   void set_defaults()
   {
-    show0=false;
-    gibbs=false;
-    norm_method.group=WFST::CONDITIONAL;
+    show0 = false;
+    gibbs = false;
+    norm_method.group = WFST::CONDITIONAL;
     keep_path_ratio.setInfinity();
-    max_states=WFST::UNLIMITED;
-    n_0prob=0;
-    n_prob=0;
-    pre_n_0prob=0;
-    pre_n_prob=0;
-    n_symbols=0; // for per-symbol ppx - counted only for non-0prob
+    max_states = WFST::UNLIMITED;
+    n_0prob = 0;
+    n_prob = 0;
+    pre_n_0prob = 0;
+    pre_n_prob = 0;
+    n_symbols = 0; // for per-symbol ppx - counted only for non-0prob
     //        n_isymbols=0;
-    prod_viterbi=1;
-    prod_sum=1;
-    prod_sum_pre=1;
-    number_from=0;
-    no_compose=false;
+    prod_viterbi = 1;
+    prod_sum = 1;
+    prod_sum_pre = 1;
+    number_from = 0;
+    no_compose = false;
   }
 
   void parse_opts()
@@ -903,23 +903,23 @@ struct carmel_main
     parse_cache_opts();
     parse_gibbs_opts();
     parse_fem_opts();
-    no_compose=have_opt("no-compose");
+    no_compose = have_opt("no-compose");
   }
 
   void parse_fem_opts()
   {
-    set_text("load-fem-param",fem_inparam);
-    set_text("write-loaded",fem_suffix);
-    show0|=set_text("fem-param",fem_outparam);
-    show0|=set_text("fem-early-param",fem_early_outparam);
-    show0|=set_text("fem-alpha",fem_alpha);
-    show0|=set_text("fem-norm",fem_norm);
-    show0|=set_text("fem-forest",fem_forest);
+    set_text("load-fem-param", fem_inparam);
+    set_text("write-loaded", fem_suffix);
+    show0 |= set_text("fem-param", fem_outparam);
+    show0 |= set_text("fem-early-param", fem_early_outparam);
+    show0 |= set_text("fem-alpha", fem_alpha);
+    show0 |= set_text("fem-norm", fem_norm);
+    show0 |= set_text("fem-forest", fem_forest);
     if (!fem_forest.empty()) {
-      topt.cache.out_derivfile=fem_forest;
+      topt.cache.out_derivfile = fem_forest;
       force_cascade_derivs();
     }
-    show0|=get_opt("number-from",number_from);
+    show0 |= get_opt("number-from", number_from);
   }
 
   unsigned number_from;
@@ -932,7 +932,7 @@ struct carmel_main
     }
   }
 
-  void fem_add(WFST *w,char const* filename)
+  void fem_add(WFST *w, char const* filename)
   {
     fems.add(w);
     fem_filenames.push_back(filename);
@@ -979,26 +979,26 @@ struct carmel_main
     if (!fem_norm.empty()) {
       Config::log()<<"Writing forest-em normgroups to --fem-norm="<<fem_norm<<endl;
       std::ofstream o(fem_norm.c_str());
-      fems.fem_norms(o,nms);
+      fems.fem_norms(o, nms);
     }
     if (!fem_alpha.empty()) {
       Config::log()<<"Writing forest-em alpha to --fem-alpha="<<fem_alpha<<endl;
       std::ofstream o(fem_alpha.c_str());
-      fems.fem_alpha(o,nms);
+      fems.fem_alpha(o, nms);
     }
   }
 
 
   void fem_stats()
   {
-    for (unsigned i=0,N=fems.size();i<N;++i) {
+    for (unsigned i = 0, N = fems.size(); i<N; ++i) {
       Config::log()<<"\n";
-      stats(Config::log(),fems.cascade[i],fem_filenames[i]);
+      stats(Config::log(), fems.cascade[i], fem_filenames[i]);
     }
   }
 
 
-  void stats(std::ostream &out,WFST *w,std::string const& name)
+  void stats(std::ostream &out, WFST *w, std::string const& name)
   {
     out << "Number of states in "<<name<<": " << w->size() << std::endl;
     out << "Number of arcs in "<<name<<": " << w->numArcs() << std::endl;
@@ -1015,7 +1015,7 @@ struct carmel_main
 
   void write_trained(std::string const& suffix="trained")
   {
-    fems.write_trained(suffix,flags,fem_filenames.begin(),show0);
+    fems.write_trained(suffix, flags, fem_filenames.begin(), show0);
   }
 
 };
@@ -1026,7 +1026,7 @@ int
 #ifdef _MSC_VER
 __cdecl
 #endif
-main(int argc, char *argv[]){
+main(int argc, char *argv[]) {
   try {
     INITLEAK;
 #ifdef _MSC_VER
@@ -1037,8 +1037,8 @@ main(int argc, char *argv[]){
 #endif
 #endif
 #ifdef MARCU
-    argc=sizeof(MarcuArgs)/sizeof(char *);
-    argv=MarcuArgs;
+    argc = sizeof(MarcuArgs)/sizeof(char *);
+    argv = MarcuArgs;
 #endif
     if ( argc == 1 ) {
       usageHelp();
@@ -1047,7 +1047,7 @@ main(int argc, char *argv[]){
     int i;
     bool flags[256];
     bool argflags[256];
-    for ( i = 0 ; i < 256 ; ++i ) argflags[i]=flags[i] = 0;
+    for ( i = 0 ; i < 256 ; ++i ) argflags[i] = flags[i] = 0;
     char *pc;
     char const**parm = NEW char const *[argc-1];
     seed = default_random_seed();//(unsigned )std::time(NULL);
@@ -1059,8 +1059,8 @@ main(int argc, char *argv[]){
     bool converge_pp_flag = false;
     int convergeFlag = 0;
     Weight smoothFloor;
-    Weight prod_prob=1;
-    int n_pairs=0;
+    Weight prod_prob = 1;
+    int n_pairs = 0;
     int pruneFlag = 0;
     int floorFlag = 0;
     bool seedFlag = false;
@@ -1072,129 +1072,129 @@ main(int argc, char *argv[]){
     int maxGenArcs = 0;
     int labelStart = 0;
     int labelFlag = 0;
-    bool rrFlag=false;
+    bool rrFlag = false;
     bool isInChain;
     ostream *fstout = &cout;
-    bool mean_field_oneshot_flag=false;
-    bool exponent_flag=false;
-    double exponent=1;
+    bool mean_field_oneshot_flag = false;
+    bool exponent_flag = false;
+    double exponent = 1;
     long_opts_t long_opts;
     text_long_opts_t text_long_opts;
 
-    carmel_main cm(flags,long_opts,text_long_opts);
-    WFST::train_opts &train_opt=cm.topt;
+    carmel_main cm(flags, long_opts, text_long_opts);
+    WFST::train_opts &train_opt = cm.topt;
 
     std::ios_base::sync_with_stdio(false);
 
     for ( i = 1 ; i < argc ; ++i ) {
-      char *arg=argv[i];
+      char *arg = argv[i];
       if (exponent_flag) {
-        exponent_flag=false;
-        readParam(&exponent,arg,'=');
+        exponent_flag = false;
+        readParam(&exponent, arg,'=');
       } else if ( labelFlag ) {
         labelFlag = 0;
-        readParam(&labelStart,arg,'N');
+        readParam(&labelStart, arg,'N');
       } else if ( converge_pp_flag ) {
         converge_pp_flag = false;
-        readParam(&converge_pp_ratio,arg,'X');
+        readParam(&converge_pp_ratio, arg,'X');
       } else if ( learning_rate_growth_flag ) {
         learning_rate_growth_flag = false;
-        readParam(&train_opt.learning_rate_growth_factor,arg,'o');
+        readParam(&train_opt.learning_rate_growth_factor, arg,'o');
         if (train_opt.learning_rate_growth_factor < 1)
-          train_opt.learning_rate_growth_factor=1;
+          train_opt.learning_rate_growth_factor = 1;
       } else if (rrFlag) {
-        rrFlag=false;
-        readParam(&train_opt.ran_restarts,arg,'!');
+        rrFlag = false;
+        readParam(&train_opt.ran_restarts, arg,'!');
       } else if (seedFlag) {
-        seedFlag=false;
-        readParam(&seed,arg,'R');
+        seedFlag = false;
+        readParam(&seed, arg,'R');
       } else if ( wrFlag ) {
-        readParam(&cm.keep_path_ratio,arg,'w');
+        readParam(&cm.keep_path_ratio, arg,'w');
         if (cm.keep_path_ratio < 1)
           cm.keep_path_ratio = 1;
-        wrFlag=false;
+        wrFlag = false;
       } else if ( msFlag ) {
-        readParam(&cm.max_states,arg,'z');
+        readParam(&cm.max_states, arg,'z');
         if ( cm.max_states < 1 )
           cm.max_states = 1;
-        msFlag=false;
+        msFlag = false;
       } else if ( kPaths == -1 ) {
-        readParam(&kPaths,arg,'k');
+        readParam(&kPaths, arg,'k');
         if ( kPaths < 1 )
           kPaths = 1;
       } else if ( nGenerate == -1 ) {
-        readParam(&nGenerate,arg,'g');
+        readParam(&nGenerate, arg,'g');
         if ( nGenerate < 1 )
           nGenerate = 1;
-      } else if ( readParam(argflags,&train_opt.max_iter,arg,'M')) {
+      } else if ( readParam(argflags, &train_opt.max_iter, arg,'M')) {
       } else if ( maxGenArcs == -1 ) {
-        readParam(&maxGenArcs,arg,'L');
+        readParam(&maxGenArcs, arg,'L');
         if ( maxGenArcs < 0 )
           maxGenArcs = 0;
       } else if ( thresh == -1 ) {
-        readParam(&thresh,arg,'T');
+        readParam(&thresh, arg,'T');
         if ( thresh < 0 )
           thresh = 0;
       } else if ( convergeFlag ) {
         convergeFlag = 0;
-        readParam(&converge,arg,'e');
+        readParam(&converge, arg,'e');
       } else if ( floorFlag ) {
         floorFlag = 0;
-        readParam(&smoothFloor,arg,'f');
+        readParam(&smoothFloor, arg,'f');
       } else if ( pruneFlag ) {
         pruneFlag = 0;
-        readParam(&cm.prune_wt,arg,'p');
+        readParam(&cm.prune_wt, arg,'p');
       } else if ( fstout == NULL ) {
         fstout = NEW ofstream(arg);
-        setOutputFormat(flags,fstout);
+        setOutputFormat(flags, fstout);
         if ( !*fstout ) {
           Config::warn() << "Could not create file " << arg << ".\n";
           return -8;
         }
       } else if (mean_field_oneshot_flag) {
-        mean_field_oneshot_flag=0;
-        cm.norm_method.scale.linear=false;
-        readParam(&cm.norm_method.scale.alpha,arg,'+');
-      } else if ((pc=arg)[0] == '-' && pc[1] != '\0') { // && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag && !mean_field_oneshot_flag && !exponent_flag
+        mean_field_oneshot_flag = 0;
+        cm.norm_method.scale.linear = false;
+        readParam(&cm.norm_method.scale.alpha, arg,'+');
+      } else if ((pc = arg)[0] == '-' && pc[1] != '\0') { // && !learning_rate_growth_flag && !convergeFlag && !floorFlag && !pruneFlag && !labelFlag && !converge_pp_flag && !wrFlag && !msFlag && !mean_field_oneshot_flag && !exponent_flag
         if (pc[1]=='-') {
           // long option
-          char * s=pc+2;
-          char  *e=s;
-          bool have_val=false;
-          for(;*e;++e)
+          char * s = pc+2;
+          char *e = s;
+          bool have_val = false;
+          for (; *e; ++e)
             if (*e== '=' ) {
-              have_val=true;
+              have_val = true;
               break;
             }
-          std::string key(pc+2,e);
+          std::string key(pc+2, e);
           std::string val;
-          double v=1;
+          double v = 1;
           if (have_val) {
-            val=(e+1);
-            text_long_opts[key]=val;
+            val = (e+1);
+            text_long_opts[key] = val;
             istringstream is(val);
             is >> v;
             if (is.fail())
               v=-1;
           }
-          long_opts[key]=v;
+          long_opts[key] = v;
           cerr << "option " << key << " = " << val << endl;
         } else {
           while ( *(++pc) ) {
             if ( *pc == 'k' )
               kPaths = -1;
             else if ( *pc == '!' )
-              rrFlag=true;
+              rrFlag = true;
             else if ( *pc == 'o' )
-              learning_rate_growth_flag=true;
+              learning_rate_growth_flag = true;
             else if ( *pc == 'X' )
-              converge_pp_flag=true;
+              converge_pp_flag = true;
             else if ( *pc == 'w' )
-              wrFlag=true;
+              wrFlag = true;
             else if ( *pc == 'z' )
-              msFlag=true;
+              msFlag = true;
             else if ( *pc == 'R' )
-              seedFlag=true;
+              seedFlag = true;
             else if ( *pc == 'F' )
               fstout = NULL;
             else if ( *pc == 'T' )
@@ -1214,13 +1214,13 @@ main(int argc, char *argv[]){
             else if ( *pc == 'N' )
               labelFlag = 1;
             else if ( *pc == '+' )
-              mean_field_oneshot_flag=true;
+              mean_field_oneshot_flag = true;
             else if ( *pc == 'j' )
               cm.norm_method.group = WFST::JOINT;
             else if ( *pc == 'u' )
               cm.norm_method.group = WFST::NONE;
             else if ( *pc == '=' )
-              exponent_flag=true;
+              exponent_flag = true;
             flags[(unsigned)*pc] = 1;
             argflags[(unsigned)*pc] = 1;
           }
@@ -1237,16 +1237,16 @@ main(int argc, char *argv[]){
 
     srand(seed);
     set_random_seed(seed);
-    setOutputFormat(flags,0); // set default for all streams
-    setOutputFormat(flags,&cout);
-    setOutputFormat(flags,&cerr);
+    setOutputFormat(flags, 0); // set default for all streams
+    setOutputFormat(flags, &cout);
+    setOutputFormat(flags, &cerr);
     WFST::setIndexThreshold(thresh);
     if ( flags[(unsigned)'h'] ) {
       cout << endl << endl;
       usageHelp();
       return 0;
     }
-    if (flags[(unsigned)'V']){
+    if (flags[(unsigned)'V']) {
       std::cout << "Carmel Version: " << CARMEL_VERSION ;
       std::cout << ". Copyright C " << COPYRIGHT_YEAR << ", the University of Southern California.\n";
       return 0 ;
@@ -1256,15 +1256,15 @@ main(int argc, char *argv[]){
     istream **inputs, **files, **newed_inputs;
     char const**filenames;
     char const**alloced_filenames;
-    int nInputs,nChain;
+    int nInputs, nChain;
 #ifdef MARCU
     initModels();
-    int nModels=(int)Models.size();
+    int nModels = (int)Models.size();
 #endif
     if ( flags[(unsigned)'s'] ) {
-      nChain=nInputs = nParms + 1;
+      nChain = nInputs = nParms + 1;
 #ifdef MARCU
-      nChain+=(int)Models.size();
+      nChain += (int)Models.size();
 #endif
       newed_inputs = inputs = NEW istream *[nInputs];
       alloced_filenames = filenames = NEW char const*[nChain];
@@ -1282,7 +1282,7 @@ main(int argc, char *argv[]){
         files = inputs + 1;
       }
     } else {
-      nChain=nInputs = nParms;
+      nChain = nInputs = nParms;
       newed_inputs = inputs = NEW istream *[nInputs];
       files = inputs;
       filenames = parm;
@@ -1290,16 +1290,16 @@ main(int argc, char *argv[]){
     istream *pairStream = NULL;
     cm.parse_opts();
     bool gibbs = cm.gibbs;
-    bool remember_cascade=cm.real_cascade();
-    cascade_parameters cascade(remember_cascade,(unsigned)long_opts["debug-cascade"]);
+    bool remember_cascade = cm.real_cascade();
+    cascade_parameters cascade(remember_cascade, (unsigned)long_opts["debug-cascade"]);
 
-    bool trainc=long_opts["train-cascade"];
+    bool trainc = long_opts["train-cascade"];
 #if DEBUG_CASCADE
     if (remember_cascade)
       Config::debug() << "Remembering composition cascade result parameters.\n";
 #endif
     if (trainc)
-      flags[(unsigned)'t']=1;
+      flags[(unsigned)'t'] = 1;
     if ( flags[(unsigned)'t'] )
       flags[(unsigned)'S'] = 1;
     if (nChain < 1 || (flags[(unsigned)'A'] && nInputs < 2)) {
@@ -1307,7 +1307,7 @@ main(int argc, char *argv[]){
       return -12;
     }
     for ( i = 0 ; i < nParms ; ++i ) {
-      //    if(parm[i][0]=='-' && parm[i][1] == '\0')
+      //    if (parm[i][0]=='-' && parm[i][1] == '\0')
       //              files[i] = &cin;
       //      else
       files[i] = NEW ifstream(parm[i]);
@@ -1344,27 +1344,27 @@ main(int argc, char *argv[]){
     }
     cm.open_postb();
     dynamic_array<double> exponents;
-    cm.set_inputs(filenames,nInputs);
-    cm.parse_vector("exponents",exponents,1.0," ^ ",",");
+    cm.set_inputs(filenames, nInputs);
+    cm.parse_vector("exponents", exponents, 1.0," ^ ",",");
 
-    carmel_main::NMs &nms=cm.norms();
+    carmel_main::NMs &nms = cm.norms();
 
     WFST *chainMemory = (WFST*)::operator new(nChain * sizeof(WFST));
     WFST *chain = chainMemory;
 #ifdef MARCU
-    chain+=nModels;
+    chain += nModels;
 #endif
     int nTarget = -1; // chain[nTarget] is the linear acceptor built from input sequences
-    istream *line_in=NULL;
-    if ( flags[(unsigned)'i'] || flags[(unsigned)'b']||flags[(unsigned)'P']) {// flags[(unsigned)'P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
+    istream *line_in = NULL;
+    if ( flags[(unsigned)'i'] || flags[(unsigned)'b'] || flags[(unsigned)'P']) {// flags[(unsigned)'P'] similar to 'i' but instead of simple transducer, produce permutation lattice.
       nTarget = flags[(unsigned)'r'] ? nInputs-1 : 0;
-      line_in=inputs[nTarget];
+      line_in = inputs[nTarget];
     }
     for ( i = 0 ; i < nInputs ; ++i ) {
       if ( i != nTarget ) {
-        WFST *w=chain+i;
-        PLACEMENT_NEW (w) WFST(*inputs[i],!flags[(unsigned)'K']);
-        cm.fem_add(w,filenames[i]);
+        WFST *w = chain+i;
+        PLACEMENT_NEW (w) WFST(*inputs[i], !flags[(unsigned)'K']);
+        cm.fem_add(w, filenames[i]);
         if (i < exponents.size())
           w->raisePower(exponents[i]);
         if ( !flags[(unsigned)'m'] && nInputs > 1 )
@@ -1399,16 +1399,16 @@ main(int argc, char *argv[]){
       } else
         weightSource = chain + nInputs;
     }
-    int input_lineno=0;
+    int input_lineno = 0;
 
 #ifdef MARCU
     //chain,inputs,filenames,nTarget,nInputs
-    for (int i=0,j=nModels;i<nInputs;++i,++j)
-      filenames[j]=filenames[i];
-    chain-=nModels;
-    nTarget+=nModels;
-    for (int j=0;j<nModels;++j) {
-      PLACEMENT_NEW (&chain[j]) WFST(Models[j],!flags[(unsigned)'K']);
+    for (int i = 0, j = nModels; i<nInputs; ++i, ++j)
+      filenames[j] = filenames[i];
+    chain -= nModels;
+    nTarget += nModels;
+    for (int j = 0; j<nModels; ++j) {
+      PLACEMENT_NEW (&chain[j]) WFST(Models[j], !flags[(unsigned)'K']);
       filenames[j] = "Models.builtin";
     }
 #endif
@@ -1422,7 +1422,7 @@ main(int argc, char *argv[]){
       for ( ; ; ) { // input transducer from string line reading loop
         if (nTarget != -1) { // if to construct a finite state from input
           if ( !*line_in) {
-          fail_ntarget:
+         fail_ntarget:
             if (input_lineno == 0)
               Config::warn() << "No lines of input provided.\n";
             PLACEMENT_NEW (&chain[nTarget])WFST();
@@ -1430,23 +1430,23 @@ main(int argc, char *argv[]){
           }
 
           //*line_in >> ws; // changed in Carmel 6.9 - don't skip empty lines; we want to treat them as the same as a line with *e* on it (empty string)
-          if (!getline(*line_in,buf))
+          if (!getline(*line_in, buf))
             goto fail_ntarget;
           int length;
-          if (flags[(unsigned)'P']){ // need a permutation lattice instead
-            PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(),length,1);
+          if (flags[(unsigned)'P']) { // need a permutation lattice instead
+            PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str(), length, 1);
           } else { // no permutation, just need input acceptor
             PLACEMENT_NEW (&chain[nTarget]) WFST(buf.c_str());
-            length=chain[nTarget].numStates()-1; // single letter uses separate start + final surrounding it.  each addl letter adds 1 state.
+            length = chain[nTarget].numStates()-1; // single letter uses separate start + final surrounding it.  each addl letter adds 1 state.
           }
-          cm.n_symbols+=length;
+          cm.n_symbols += length;
 
           CHECKLEAK(input_lineno);
           ++input_lineno;
 
           if (!flags[(unsigned)'q'])
             Config::log() << "Input line " << input_lineno << ": " << buf.c_str();
-#ifdef  DEBUGCOMPOSE
+#ifdef DEBUGCOMPOSE
           Config::debug() << "\nprocessing input line " << input_lineno << ": " << buf.c_str() << " storing in chain[" << nTarget << "]\n";
 #endif
           if ( !(chain[nTarget].valid()) ) {
@@ -1456,12 +1456,12 @@ main(int argc, char *argv[]){
         }
 
 
-        bool r=flags[(unsigned)'r'];
+        bool r = flags[(unsigned)'r'];
         result = (r ? &chain[nChain-1] :&chain[0]);
         cm.minimize(result);
         if (nInputs < 2)
           cm.prune(result);
-#ifdef  DEBUGCOMPOSE
+#ifdef DEBUGCOMPOSE
         Config::debug() << "\nStarting composition chain: result is chain[" << (int)(result-chain) <<"]\n";
 #endif
 
@@ -1469,14 +1469,14 @@ main(int argc, char *argv[]){
           cascade.set_trivial();
         }
 
-        unsigned n_compositions=0;
-        bool first=true;
+        unsigned n_compositions = 0;
+        bool first = true;
         cascade.add(result);
-        bool anycomposed=false;
-        for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i),first=false ) {
+        bool anycomposed = false;
+        for ( i = (r ? nChain-2 : 1); (r ? i >= 0 : i < nChain) && result->valid() ; (r ? --i : ++i), first = false ) {
           // composition loop
           ++n_compositions;
-#ifdef  DEBUGCOMPOSE
+#ifdef DEBUGCOMPOSE
           Config::debug() << "----------\ncomposing result with chain[" << i<<"] into next\n";
 #endif
           // composition happens here:
@@ -1485,13 +1485,13 @@ main(int argc, char *argv[]){
             cascade.prepare_compose();
           else
             cascade.prepare_compose(r);
-          WFST &t1=(r ? chain[i] : *result);
-          WFST &t2=(r ? *result : chain[i]);
-          WFST *next = NEW WFST(cascade,t1,t2, flags[(unsigned)'m'], flags[(unsigned)'a']);
+          WFST &t1 = (r ? chain[i] : *result);
+          WFST &t2 = (r ? *result : chain[i]);
+          WFST *next = NEW WFST(cascade, t1, t2, flags[(unsigned)'m'], flags[(unsigned)'a']);
 #ifndef NODELETE
           //      if (nTarget != -1) {
           //        (r ? next->stealOutAlphabet(*result) : next->stealInAlphabet(*result));
-#ifdef  DEBUGCOMPOSE
+#ifdef DEBUGCOMPOSE
           //        Config::debug() << "result will be going away - take its alphabet\n";
 #endif
           //      }
@@ -1505,7 +1505,7 @@ main(int argc, char *argv[]){
 
           if (!flags[(unsigned)'q'])
             Config::log() << "\n\t(" << result->size() << " states / " << result->numArcs() << " arcs" << std::flush;
-#ifdef  DEBUGCOMPOSE
+#ifdef DEBUGCOMPOSE
           Config::debug() <<"stats for the resulting composition for chain[" << i << "]\n";
           Config::debug() << "Number of states in result: " << result->size() << std::endl;
           Config::debug() << "Number of arcs in result: " << result->numArcs() << std::endl;
@@ -1516,16 +1516,16 @@ main(int argc, char *argv[]){
 
           if ( !result->valid() ) {
             Config::warn() << ")\nEmpty or invalid result of composition with transducer \"" << filenames[i] << "\".\n";
-            cm.print_kbest(kPaths,result);
+            cm.print_kbest(kPaths, result);
             goto nextInput;
           }
           bool finalcompose = i == (r ? 0 : nChain-1);
-          bool om=long_opts["minimize-compositions"]>=n_compositions || long_opts["minimize-all-compositions"];
+          bool om = long_opts["minimize-compositions"]>=n_compositions || long_opts["minimize-all-compositions"];
           bool nok=!(kPaths>0 && finalcompose);
 #if DEBUG_CASCADE
           Config::debug() << " (nok="<<nok<<")";
 #endif
-          bool arcs_changed=cm.shrink(result,true,nok,nok&&om,")");
+          bool arcs_changed = cm.shrink(result, true, nok, nok&&om,")");
           /*
             bool arcs_changed=cm.minimize(result);
             if (!flags[(unsigned)'q'] && (q_states != result->size() || arcs_changed ))
@@ -1540,8 +1540,8 @@ main(int argc, char *argv[]){
             if (!flags[(unsigned)'q'])
             Config::log() << ")";
           */
-          cascade.done_composing(result,(arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
-          anycomposed=true;
+          cascade.done_composing(result, (arcs_changed && long_opts["train-cascade-compress"]) || long_opts["train-cascade-compress-always"]);
+          anycomposed = true;
         }
         if (!anycomposed)
           cascade.set_composed(result);
@@ -1549,8 +1549,8 @@ main(int argc, char *argv[]){
           Config::log() << std::endl;
 
 
-#ifdef  DEBUGCOMPOSE
-        Config::debug() << "done chain of compositions  .. now processing result\n";
+#ifdef DEBUGCOMPOSE
+        Config::debug() << "done chain of compositions .. now processing result\n";
 #endif
 
         if (long_opts["openfst-roundtrip"]) {
@@ -1570,81 +1570,81 @@ main(int argc, char *argv[]){
           else
             result->unTieGroups();
         }
-        if ( kPaths > 0  ) {
-          cm.print_kbest(kPaths,result);
+        if ( kPaths > 0 ) {
+          cm.print_kbest(kPaths, result);
         } else if ( flags[(unsigned)'x'] ) {
           result->listAlphabet(cout, 0);
         } else if ( flags[(unsigned)'y'] ) {
           result->listAlphabet(cout, 1);
         }
         if ( flags[(unsigned)'c'] ) {
-          cm.stats(cout,result,"result");
+          cm.stats(cout, result,"result");
         }
 
         if ( flags[(unsigned)'t'] )
           flags[(unsigned)'S'] = 0;
         if ( !flags[(unsigned)'b'] ) {
           if ( flags[(unsigned)'S'] ) {
-            n_pairs=0;
+            n_pairs = 0;
             if (pairStream) {
               for ( ; ; ) {
-                getline(*pairStream,buf);
+                getline(*pairStream, buf);
                 if ( !*pairStream )
                   break;
                 ++input_lineno;
-                WFST::symbol_ids ins(*result,buf.c_str(),0,input_lineno);
-                getline(*pairStream,buf);
+                WFST::symbol_ids ins(*result, buf.c_str(), 0, input_lineno);
+                getline(*pairStream, buf);
                 if ( !*pairStream )
                   break;
                 ++input_lineno;
-                WFST::symbol_ids outs(*result,buf.c_str(),1,input_lineno);
-                Weight prob=result->sumOfAllPaths(ins, outs);
+                WFST::symbol_ids outs(*result, buf.c_str(), 1, input_lineno);
+                Weight prob = result->sumOfAllPaths(ins, outs);
                 ++n_pairs;
-                prod_prob*=prob;
+                prod_prob *= prob;
                 cout << prob << std::endl;
               }
             } else {
               List<int> empty_list;
-              n_pairs=1;
-              cout << (prod_prob=result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
+              n_pairs = 1;
+              cout << (prod_prob = result->sumOfAllPaths(empty_list, empty_list)) << std::endl;
             }
           } else if ( flags[(unsigned)'t'] ) {
             show_seed();
             training_corpus corpus;
             if (pairStream) {
-              result->read_training_corpus(*pairStream,corpus);
+              result->read_training_corpus(*pairStream, corpus);
             } else {
               corpus.set_null();
             }
             if (gibbs) {
-              result->train_gibbs(cascade,corpus,nms,train_opt,cm.gopt,cm.printer);
+              result->train_gibbs(cascade, corpus, nms, train_opt, cm.gopt, cm.printer);
             } else {
-              unsigned rr=train_opt.ran_restarts;
+              unsigned rr = train_opt.ran_restarts;
               if (long_opts["final-restart"])
-                rr=(unsigned)long_opts["final-restart"];
-              WFST::random_restart_acceptor ran_accept(rr,long_opts["restart-tolerance"],long_opts["final-restart-tolerance"]);
-              train_opt.ra=ran_accept;
-              result->train(cascade,corpus,nms,flags[(unsigned)'U'],smoothFloor,converge, converge_pp_ratio, train_opt);
+                rr = (unsigned)long_opts["final-restart"];
+              WFST::random_restart_acceptor ran_accept(rr, long_opts["restart-tolerance"], long_opts["final-restart-tolerance"]);
+              train_opt.ra = ran_accept;
+              result->train(cascade, corpus, nms, flags[(unsigned)'U'], smoothFloor, converge, converge_pp_ratio, train_opt);
             }
 
             if (trainc) {
               cm.write_trained("trained");
             }
           } else if ( nGenerate > 0 ) {
-            bool minimize=long_opts["minimize"] or long_opts["minimize-sum"] or long_opts["minimize-determinize"] or long_opts["minimize-determinize-only"] or long_opts["minimize-rmepsilon"] or long_opts["minimize-pairs"] or long_opts["minimize-pairs-no-epsilon"];
-            cm.shrink(result,true,true,minimize,"\n");
+            bool minimize = long_opts["minimize"] or long_opts["minimize-sum"] or long_opts["minimize-determinize"] or long_opts["minimize-determinize-only"] or long_opts["minimize-rmepsilon"] or long_opts["minimize-pairs"] or long_opts["minimize-pairs-no-epsilon"];
+            cm.shrink(result, true, true, minimize,"\n");
             //                cm.minimize(result);
             if ( maxGenArcs == 0 )
               maxGenArcs = DEFAULT_MAX_GEN_ARCS;
             if ( flags[(unsigned)'G'] ) {
               show_seed();
-              for (int i=0; i<nGenerate; ) {
+              for (int i = 0; i<nGenerate; ) {
                 List<PathArc> l;
                 if (result->randomPath(&l) != -1) {
                   if (flags[(unsigned)'@']) {
-                    WFST::print_training_pair(cout,l);
+                    WFST::print_training_pair(cout, l);
                   } else {
-                    printPath(flags,&l);
+                    printPath(flags, &l);
                   }
                   ++i;
                 }
@@ -1655,9 +1655,9 @@ main(int argc, char *argv[]){
               int *outSeq = NEW int[maxSize];
               for ( int s = 0 ; s < nGenerate ; ++s ) {
                 while ( !result->generate(inSeq, outSeq, 0, maxGenArcs) ) ;
-                printSeq(result->in_alph(),inSeq,maxGenArcs);
+                printSeq(result->in_alph(), inSeq, maxGenArcs);
                 cout << std::endl;
-                printSeq(result->out_alph(),outSeq,maxGenArcs);
+                printSeq(result->out_alph(), outSeq, maxGenArcs);
                 cout << std::endl;
                 /*for ( i = 0 ; i < maxSize ; ) {
                   if (outSeq[i] > 0)
@@ -1676,36 +1676,36 @@ main(int argc, char *argv[]){
 
           if ( (!flags[(unsigned)'k'] && !flags[(unsigned)'x'] && !flags[(unsigned)'y'] && !flags[(unsigned)'S'] && !flags[(unsigned)'c'] && !flags[(unsigned)'g'] && !flags[(unsigned)'G'] && !trainc)
                || flags[(unsigned)'F'] ) {
-            cm.shrink(result,true,true,long_opts["minimize"]||long_opts["minimize-determinize-only"],"\n");
+            cm.shrink(result, true, true, long_opts["minimize"] || long_opts["minimize-determinize-only"],"\n");
             //                cm.prune(result);
             cm.post_train_normalize(result);
             //                cm.minimize(result);
 
             result->raisePower(exponent);
-            cm.write_transducer(*fstout,result);
+            cm.write_transducer(*fstout, result);
           }
         }
-      nextInput:
+     nextInput:
 
 #ifndef NODELETE
 
         // Now delete the compostion result to free up memory, this is important
         // when you are doing batch compostions (option -b).
-        // But make sure  first that you are not deleting one of the main
+        // But make sure first that you are not deleting one of the main
         // WFSTs. That is why we check if the result is one of them and if it is
         // we don't delete it.
         isInChain = false ;
-        for (int i = 0 ; i < nChain ; i++){
+        for (int i = 0 ; i < nChain ; i++) {
           if (result == &chain[i])
             isInChain = true ;
         }
-        if (!isInChain){
-#ifdef  DEBUGCOMPOSE
+        if (!isInChain) {
+#ifdef DEBUGCOMPOSE
           Config::debug() << "deleting result at end of processing\n";
 #endif
           delete result ;
         }
-#ifdef  DEBUGCOMPOSE
+#ifdef DEBUGCOMPOSE
         else
           Config::debug() << "can't delete result because it is part of chain .. \n";
 #endif
@@ -1723,7 +1723,7 @@ main(int argc, char *argv[]){
 
     if ( flags[(unsigned)'S'] && input_lineno > 0) {
       Config::log() << "-S corpus ";
-      cm.log_ppx(n_pairs,prod_prob);
+      cm.log_ppx(n_pairs, prod_prob);
     }
 
 #ifndef NODELETE
@@ -1735,10 +1735,10 @@ main(int argc, char *argv[]){
 #endif
     ::operator delete(chainMemory);
     delete[] parm; // alias filenames unless -s
-    if(flags[(unsigned)'s'])
+    if (flags[(unsigned)'s'])
       delete[] alloced_filenames;
-    if(nTarget != -1) {
-      if(line_in != &cin)
+    if (nTarget != -1) {
+      if (line_in != &cin)
         delete line_in; // rest were deleted after transducers were read
       //FIXME: reenable deletion later after solving: this is a double deletion under carmel.debug -ri -k 5 -IEQ word.names.50000wds.transducer word-epron.names.55000wds.transducer epron-jpron.1.transducer jpron.transducer vowel-separator.transducer jpron-asciikana.transducer angela.str
 
@@ -1798,7 +1798,7 @@ void usageHelp(void)
   cout << "f arcs so that for each state, the\n\t\tweights all of the arcs ";
   cout << "with the same input symbol add to one";
   cout << "\n-j\t\tPerform joint rather than conditional normalization";
-  cout << "\n-+ a\t\tUsing alpha a (recommended: 0), perform pseudo-Dirichlet-process normalization:\n\t\texp(digamma(alpha+w_i))/exp(digamma(alpha+sum{w_j}) instead of just w_i/sum{w_j}";
+  cout << "\n-+ a\t\tUsing alpha a (recommended: 0), perform pseudo-Dirichlet-process normalization:\n\t\texp(digamma(alpha+w_i))/exp(digamma(alpha+sum {w_j}) instead of just w_i/sum {w_j}";
   cout << "\n-t\t\tgiven pairs of input/output sequences, as in -S, adjust the\n\t\tweights of the tra";
   cout << "nsducer so as to approximate the conditional\n\t\tdistribution o";
   cout << "f the output sequences given the input sequences\n\t\toptionally";
@@ -1831,7 +1831,7 @@ void usageHelp(void)
   cout << " n input/output pairs by following\n\t\trandom paths (first choosing an input symbol with uniform\n\t\tprobability, then using the weights to choose an output symbol\n\t\tand destination) from the in";
   cout << "itial state to the final state\n\t\toutput is in the same for";
   cout << "m accepted in -t and -S.\n\t\tTraining a transducer with conditional normalization on its own -g output should be a no-op.\n-G n\t\tstochastically generate n paths by randomly picking an arc\n\t\tleaving the current state, by joint normalization\n\t\tuntil the final state is reached.\n\t\tsame output format as -k best paths\n\n"
-    "-@\t\tFor -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
+      "-@\t\tFor -G or -k, output in the same format as -g and -t.  training on this output with joint normalization should then be a noop.\n-R n\t\tUse n as the random seed for repeatable -g and -G results\n\t\tdefault seed = current time\n-L n\t\twhile generating input/output p";
   cout << "airs with -g or -G, give up if\n\t\tfinal state isn't reached after n steps (default n=1000)\n-T n\t\tduring composit";
   cout << "ion, index arcs in a hash table when the\n\t\tproduct of the num";
   cout << "ber of arcs of two states is greater than n \n\t\t(by default, n";
@@ -1846,7 +1846,7 @@ void usageHelp(void)
   cout << "h there is no\n\t\tcorresponding group in the first transducer a";
   cout << "re removed\n-m\t\tgive meaningful names to states created in com";
   cout << "position\n\t\trather than just numbers\n"
-    "-a\t\t(may SIGNIFICANTLY speed up --train-cascade) during composition";
+      "-a\t\t(may SIGNIFICANTLY speed up --train-cascade) during composition";
   cout << ", keep the identity of matching arcs from\n\t\tthe two transduce";
   cout << "rs separate, assigning the same arc group\n\t\tnumber to arcs in";
   cout << " the result as the arc in the transducer it\n\t\tcame from.  Thi";
@@ -1882,46 +1882,46 @@ void usageHelp(void)
 
 #ifdef USE_OPENFST
   cout << "\n\n--minimize-compositions=N : det/min after each of the first N compositions\n"
-    "\n"
-    "--minimize-all-compositions : the same, but for N=infinity\n"
-    "\n"
-    "--minimize : minimize the final result before printing.  UNLESS THIS (or one of the two above) IS SET, many --minimize-X options have no effect.\n"
-    "\n"
-    "--minimize-determinize-only : just determinize, no minimize\n"
-    "--minimize-sum : collapse paths by summing prob (default is to keep the best)\n"
-    "--minimize-determinize : determinize before minimize - necessary if transducer\n"
-    "isn't already deterministic.  if this fails, carmel will abort.  without this\n"
-    "option, carmel will detect nondeterminstic transducers and skip minimization\n"
-    "\n"
-    "--minimize-no-connect : skip the removal of unconnected states after\n"
-    "minimization (not recommended)\n"
-    "\n"
-    "--minimize-inverted : use this if your transducer is output deterministic, and\n"
-    "not input deterministic.  inverts, minimizes, then inverts back\n"
-    "\n"
-    "--minimize-rmepsilon : use to get rid of *e*/*e* (both input and output epsilon)\n"
-    "arcs prior to minimization.  necessary if you have any state with two outgoing\n"
-    "epsilon arcs, but makes minimization fail if you have loops (leaving final state)\n"
-    "\n"
-    "--minimize-pairs : in case of a nonfunctional transducer (input nondeterministic\n"
-    "with multiple possible output strings) perform a less ambitious FSA --minimize treating\n"
-    "the input:output as a single symbol '(input,output)'.  this provides less minimization but always works\n"
-    "\n"
-    "--minimize-pairs-no-epsilon : for --minimize-pairs, treat *e*:*e* as a real symbol and not an epsilon\n"
-    "if you don't use this, you may need to use --minimize-rmepsilon, which should give a smaller result anyway\n"
-    ;
+      "\n"
+      "--minimize-all-compositions : the same, but for N=infinity\n"
+      "\n"
+      "--minimize : minimize the final result before printing.  UNLESS THIS (or one of the two above) IS SET, many --minimize-X options have no effect.\n"
+      "\n"
+      "--minimize-determinize-only : just determinize, no minimize\n"
+      "--minimize-sum : collapse paths by summing prob (default is to keep the best)\n"
+      "--minimize-determinize : determinize before minimize - necessary if transducer\n"
+      "isn't already deterministic.  if this fails, carmel will abort.  without this\n"
+      "option, carmel will detect nondeterminstic transducers and skip minimization\n"
+      "\n"
+      "--minimize-no-connect : skip the removal of unconnected states after\n"
+      "minimization (not recommended)\n"
+      "\n"
+      "--minimize-inverted : use this if your transducer is output deterministic, and\n"
+      "not input deterministic.  inverts, minimizes, then inverts back\n"
+      "\n"
+      "--minimize-rmepsilon : use to get rid of *e*/*e* (both input and output epsilon)\n"
+      "arcs prior to minimization.  necessary if you have any state with two outgoing\n"
+      "epsilon arcs, but makes minimization fail if you have loops (leaving final state)\n"
+      "\n"
+      "--minimize-pairs : in case of a nonfunctional transducer (input nondeterministic\n"
+      "with multiple possible output strings) perform a less ambitious FSA --minimize treating\n"
+      "the input:output as a single symbol '(input,output)'.  this provides less minimization but always works\n"
+      "\n"
+      "--minimize-pairs-no-epsilon : for --minimize-pairs, treat *e*:*e* as a real symbol and not an epsilon\n"
+      "if you don't use this, you may need to use --minimize-rmepsilon, which should give a smaller result anyway\n"
+      ;
 
 #endif
   cout <<         "\n"
-    "--restart-tolerance=w : like -X w, but applied to the first iteration of each random start.\n"
-    "a random start is rejected unless its perplexity is within (log likelihood ratio) w of the best start so far.\n"
-    "w=1.1 allows a start up to 10% worse than the best, .9 demands a 10% improvement.\n"
-    "\n"
-    "--final-restart-tolerance=w : vary --restart-tolerance from its initial value to this\n"
-    "\n"
-    "--final-restart=N : the 1st...Nth random restart move from --restart-tolerance to\n"
-    "--final-restart-tolerance (exponentially) and then holds constant from restarts N,N+1,...\n"
-    ;
+      "--restart-tolerance=w : like -X w, but applied to the first iteration of each random start.\n"
+      "a random start is rejected unless its perplexity is within (log likelihood ratio) w of the best start so far.\n"
+      "w=1.1 allows a start up to 10% worse than the best, .9 demands a 10% improvement.\n"
+      "\n"
+      "--final-restart-tolerance=w : vary --restart-tolerance from its initial value to this\n"
+      "\n"
+      "--final-restart=N : the 1st...Nth random restart move from --restart-tolerance to\n"
+      "--final-restart-tolerance (exponentially) and then holds constant from restarts N,N+1,...\n"
+      ;
 
   cout << "\n\n--final-sink : if needed, add a new final state with no outgoing arcs\n";
   cout << "\n--consolidate-max : for -C, use max instead of sum for duplicate arcs\n";
@@ -1933,78 +1933,78 @@ void usageHelp(void)
   cout << "\n--train-cascade : train simultaneously a list of transducers composed together\n; for each transducer filename f, output f.trained with new weights.  as with -t, the first transducer file argument is actually a list of input/output pairs like in -S.  with -a, more states but fewer arcs just like composing with -a, but original groups in the cascade are preserved even without -a.\n";
   cout << "\n--matrix-fb : use a n*m*s matrix (n=input sentence length, m=output len, s=# states) for training, rather than a sparse derivations lattice (not recommended, but may be faster in some cases without caching i.e. -: or -?)";
   cout <<    "\n"
-    "--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes\n"
-    "\n"
-    "--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)"
-    "\n--cache-no-prune : don't prune unreachable states in derivation cache (not recommended)."
-    "\n"
-    ;
+      "--disk-cache-derivations=/tmp/derivations.template.XXXXXX : use the provided filename (optional) to cache more derivations than would fit into memory.  XXXXXX is replaced with a unique-filename-making string.  the file will be deleted after training completes\n"
+      "\n"
+      "--disk-cache-bufsize=1M : unless 0, replace the default file read buffer with one of this many bytes (k=1000, K = 1024, M=1024K, etc)"
+      "\n--cache-no-prune : don't prune unreachable states in derivation cache (not recommended)."
+      "\n"
+      ;
   cout << "\n"
-    "--exponents=2,.1 : comma separated list of exponents, applied left to right to the input WFSTs (including stdin if -s).  if more inputs than exponents, use (noop) exponent of 1.  this differs from -=, which exponentiates the weights of the resulting (output) WFST.\n"
-    ;
+      "--exponents=2,.1 : comma separated list of exponents, applied left to right to the input WFSTs (including stdin if -s).  if more inputs than exponents, use (noop) exponent of 1.  this differs from -=, which exponentiates the weights of the resulting (output) WFST.\n"
+      ;
   cout << "\n"
-    "--post-b=transducerfile : in conjunction with -b, a parallel sequence of inputs to be composed with the result (left or right composition depending on -l / -r.  compare to -S except 2 parallel files instead of alternating lines, and gives best paths like -b.  also may succeed for compositions that wouldn't fit in memory under -S\n";
+      "--post-b=transducerfile : in conjunction with -b, a parallel sequence of inputs to be composed with the result (left or right composition depending on -l / -r.  compare to -S except 2 parallel files instead of alternating lines, and gives best paths like -b.  also may succeed for compositions that wouldn't fit in memory under -S\n";
 
   cout << "\n"
-    "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n"
+      "--sum : show (before and after --post-b) product of final transducer's sum-of-paths (acyclic-correct only), as prob and per-input-ppx.\n"
 
-    ;
+      ;
 
   cout << "\n"
-    "--digamma=0,,0.5 : (train-cascade) comma separated components for each transducer in the cascade; if the component is the empty string, do the usual num/denom normalization; if given a number alpha (as opposed to the empty string), do exp(digamma(num+alpha))/exp(digamma(denom+alpha)).  the variational bayes approximation requires exp(digamma(denom+N*alpha)) where N is the size of the normgroup; this can be achieved by setting --digamma=0 and --priors=x.\n"
-    "--normby=JCCN : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional, N=none (every arc stays at original prob; in --crp for now, this means a probability of 1 is used for N normalized arcs)\n"
-    "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
-    "\n"
-    ;
+      "--digamma=0,,0.5 : (train-cascade) comma separated components for each transducer in the cascade; if the component is the empty string, do the usual num/denom normalization; if given a number alpha (as opposed to the empty string), do exp(digamma(num+alpha))/exp(digamma(denom+alpha)).  the variational bayes approximation requires exp(digamma(denom+N*alpha)) where N is the size of the normgroup; this can be achieved by setting --digamma=0 and --priors=x.\n"
+      "--normby=JCCN : (gibbs/train-cascade) normalize the nth transducer by the nth character; J=joint, C=conditional, N=none (every arc stays at original prob; in --crp for now, this means a probability of 1 is used for N normalized arcs)\n"
+      "--priors=1,e^-2 : (gibbs/train-cascade) add priors[n] to the counts of every arc in the nth transducer before normalization\n"
+      "\n"
+      ;
 
   cout << "\nforest-em export/import:\n"
-    "--load-fem-param=infile: restore params onto cascade from forest-em params file\n"
-    "--write-loaded=suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite 'inputN', not 'inputN.')\n"
-    "--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
-    "--fem-param=outfile: write forest-em params file for the input cascade\n"
-    "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
-    "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM\n"
-    "--fem-alpha=outfile : write a (parallel to --fem-param) list of per-parameter alpha (as in --crp --priors=.01,.0001).  locked arcs and --normby=N parameters get alpha -1 (which is also understood by forest-em --crp to lock)\n"
-    "--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)\n"
-    "\n";
+      "--load-fem-param=infile: restore params onto cascade from forest-em params file\n"
+      "--write-loaded=suffix: write inputN.suffix after --load-fem-param and possible normalization with --normby (empty suffix means overwrite 'inputN', not 'inputN.')\n"
+      "--number-from=N: (before write-loaded) assign consecutive group ids to each arc starting at N>0\n"
+      "--fem-param=outfile: write forest-em params file for the input cascade\n"
+      "--fem-norm=outfile : write a forest-em normgroups file for the input cascade\n"
+      "--fem-forest=outfile : write a forest-em derivation forests file (implies --train-cascade; to avoid actual training, use -M -1 to perform no EM\n"
+      "--fem-alpha=outfile : write a (parallel to --fem-param) list of per-parameter alpha (as in --crp --priors=.01,.0001).  locked arcs and --normby=N parameters get alpha -1 (which is also understood by forest-em --crp to lock)\n"
+      "--no-compose : don't compose or train; just show stats (useful with fem-param fem-norm etc. but not fem-forest)\n"
+      "\n";
 
   cout << "\ngibbs sampling / incremental em options:\n"
-    "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
-    "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights).  typical settings are --burnin=2000 -M 10000\n"
-    "--crp-restarts : number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights\n"
-    "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
-    "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
-    "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)\n"
-    "--crp-exclude-prior : when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts\n"
-    "--crp-argmax-sum : instead of multiplying the sample probs together and choosing the best, sum (average) them\n"
-    "--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, take the best (avg cache-prob post --burnin)\n"
-    "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
-    "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)\n"
-    "--print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
-    "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
-    "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
-    "--norm-order : print counts in gibbs param id order (different from fst file order for conditional); params for a normgroup will always be consecutive\n"
-    "--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)\n"
-    "--print-counts-rich : show cascade arc associated with each count\n"
-    "--width : for --print-counts, truncate numbers to this many chars wide\n"
-    "--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts\n"
-    "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
-    "--init-from-p0 : For the initial sample: normally previous blocks' cache is used for proposal prob.  With this option, each block is generated independently from the base distribution alone (resampling is unchanged).\n"
-    "--dirichlet-p0 : use the input WFST weights, UNNORMALIZED, as the dirichlet prior pseudocounts - this way different normgroups can have different effective alphas.  Note: alpha argument still further scales the initial psuedocounts, so set alpha=1.\n"
-    "--cache-prob : show the true probability according to cache model for each sample\n"
-    "--sample-prob : show the sample prob given model, previous sample\n"
-    "--no-prob : show no probability for --crp\n"
-    "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1.  the default --priors is now 1 instead of 0. proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
-    "--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...\n"
-    "--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values\n"
-    "--prior-inference-start : on iterations [start,end) do hyperparam inference; default is to do inference starting from --burnin, but this overrides that\n"
-    "--prior-inference-end : default is to continue inference until the final sample, but this overrides that (e.g. you may wish inference to conclude at burnin)\n"
-    "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.\n"
-    "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
-    "--expectation: use full forward/backward fractional counts instead of a single count=1 random sample\n"
-    "--random-start: for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course.\n"
-    "--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)\n"
-    "\n";
+      "--crp : train a chinese restaurant process (--priors are the alphas) by gibbs sampling instead of EM.  implies --train-cascade, and derivation caching (-? -: or --disk-cache-derivations). (use -M n) to do n iterations; -a may be more efficient as usual\n"
+      "--burnin=n : when summing gibbs counts, skip <burnin> iterations first (iteration 0 is a random derivation from initial weights).  typical settings are --burnin=2000 -M 10000\n"
+      "--crp-restarts : number of additional runs (0 means just 1 run), using cache-prob at the final iteration select the best for .trained and --print-to output.  --init-em affects each start.  TESTME: print-every with path weights may screw up start weights\n"
+      "--high-temp=n : (default 1) raise probs to 1/temp power before making each choice - deterministic annealing for --unsupervised\n"
+      "--low-temp=n : (default 1) temperature at final iteration (linear interpolation from high->low)\n"
+      "--final-counts : normally, counts are averaged over all the iterations after --burnin.  this option says to use only final iteration's (--burnin is ignored)\n"
+      "--crp-exclude-prior : when writing .trained weights, use only the expected counts from samples, excluding the prior (p0) counts\n"
+      "--crp-argmax-sum : instead of multiplying the sample probs together and choosing the best, sum (average) them\n"
+      "--crp-argmax-final : for --crp-restarts, choose the sample/.trained weights with best final sample cache-prob.  otherwise, take the best (avg cache-prob post --burnin)\n"
+      "--init-em=n : perform n iterations of EM to get weights for randomly choosing initial sample, but use initial weights (pre-em) for p0 base model; note that EM respects tied/locked arcs but --crp removes them\n"
+      "--em-p0 : with init-em=n, use the trained weights as the base distribution as well (note: you could have done this in a previous carmel invocation, unlike --init-em alone)\n"
+      "--print-from=m --print-to=n: for m..(n-1)th input transducer, print the final iteration's path on its own line.  default n=0.  a blank line follows each training example\n"
+      "--print-every=n: with --print-to, print the 0th,nth,2nth,,... (every n) iterations as well as the final one.  these are prefaced and suffixed with comment lines starting with #\n"
+      "--print-counts-from=m --print-counts-to=n : every --print-every, print the instantaneous and cumulative counts for parameters m...(n-1) (for debugging)\n"
+      "--norm-order : print counts in gibbs param id order (different from fst file order for conditional); params for a normgroup will always be consecutive\n"
+      "--print-counts-sparse=x : only print counts that are at least x above the prior count (also shows index if x!=0)\n"
+      "--print-counts-rich : show cascade arc associated with each count\n"
+      "--width : for --print-counts, truncate numbers to this many chars wide\n"
+      "--print-norms-from=m --print-norms-to=n : likewise, show sum of normgroups' counts\n"
+      "--uniform-p0 : use a uniform base probability model for --crp, even when the input WFST have weights\n"
+      "--init-from-p0 : For the initial sample: normally previous blocks' cache is used for proposal prob.  With this option, each block is generated independently from the base distribution alone (resampling is unchanged).\n"
+      "--dirichlet-p0 : use the input WFST weights, UNNORMALIZED, as the dirichlet prior pseudocounts - this way different normgroups can have different effective alphas.  Note: alpha argument still further scales the initial psuedocounts, so set alpha=1.\n"
+      "--cache-prob : show the true probability according to cache model for each sample\n"
+      "--sample-prob : show the sample prob given model, previous sample\n"
+      "--no-prob : show no probability for --crp\n"
+      "--prior-inference-stddev : if >0, after each post burn-in iteration, allow each normalization group's prior counts to be scaled by some random ratio with stddev=this centered around 1.  the default --priors is now 1 instead of 0. proposals that lead to lower cache prob for the sample tend to be rejected.  Goldwater&Griffiths used 0.1\n"
+      "--prior-inference-global : disregarding supplied hyper-normalization groups, scale all prior counts in the same direction.  BHMM1 in Goldwater&Griffiths, but moves priors for ALL transducers (that don't have --prior-groupby=0) in the same direction.  for the same direction per transducer, use --prior-groupby=111...\n"
+      "--prior-inference-restart-fresh : at each --crp-restart, reset the priors to their initial values\n"
+      "--prior-inference-start : on iterations [start,end) do hyperparam inference; default is to do inference starting from --burnin, but this overrides that\n"
+      "--prior-inference-end : default is to continue inference until the final sample, but this overrides that (e.g. you may wish inference to conclude at burnin)\n"
+      "--prior-groupby=0211 : (gibbs) Griffiths & Goldwater style prior-inference; nth character means, for the nth cascade transducer: 0: no inference.  1: adjust all normgroups' priors in the same direction (BHMM1), 2: adjust independently for each normalization group. 1 is the default.\n"
+      "--prior-inference-show : show for each prior group the cumulative scale applied to its prior counts\n"
+      "--expectation: use full forward/backward fractional counts instead of a single count=1 random sample\n"
+      "--random-start: for expectation, scale the initial per-example counts by random [0,1).  without this, every run would have the same outcome.  this is implicitly enabled for restarts, of course.\n"
+      "--include-self: don't remove the counts from the current block in computing the proposal probabilities (this plus --expectation = incremental EM)\n"
+      "\n";
 
 
   cout << "\n--help : more detailed help\n";

@@ -3,8 +3,8 @@
 
 namespace graehl {
 
-#define MAKE_P(f,arg,ret) struct p ## f  { typedef arg argument_type; typedef ret result_type; inline result_type operator()(argument_type const& a) const { return f(a); } };
-#define MAKE_CHARP(f) MAKE_P(f,char,bool)
+#define MAKE_P(f, arg, ret) struct p ## f { typedef arg argument_type; typedef ret result_type; inline result_type operator()(argument_type const& a) const { return f(a); } };
+#define MAKE_CHARP(f) MAKE_P(f, char, bool)
 
 inline bool isdigit(char c) {
   return c>='0' && c<='9';

@@ -17,7 +17,6 @@
 #include <graehl/shared/dummy.hpp>
 
 
-
 namespace graehl {
 
 
@@ -33,23 +32,23 @@ boost::reference_wrapper<C> dummy<boost::reference_wrapper<C> >::var() {
   return var;
 }
 /*
-template <class C>
-struct ByRef {
+  template <class C>
+  struct ByRef {
   typedef C type;
   operator C&() const { return *c; }
   explicit ByRef(C &c_) : c(&c_) {}
   ByRef(ByRef<C> &b) : c(b.c) {}
   private:
-    C *c;
-};
+  C *c;
+  };
 */
 
 //#define ByRef boost::reference_wrapper
 /*
-template <class C>
-struct ByRef : public boost::reference_wrapper<C> {
+  template <class C>
+  struct ByRef : public boost::reference_wrapper<C> {
   explicit ByRef(C &c_) : boost::reference_wrapper<C>(c_) {}
-};
+  };
 */
 
 template <class T> inline
@@ -63,36 +62,36 @@ const typename boost::unwrap_reference<T>::type &
 deref(const T& t) {
   return t;
 }
-  //return *const_cast<boost::unwrap_reference<T>::type *>&(t);
+//return *const_cast<boost::unwrap_reference<T>::type *>&(t);
 
 
 // for containers of containers where you want to visit every element
-template <class M,class F>
-void nested_enumerate(const M& m,F f) {
-    typedef typename M::value_type Inner;
-    for (typename M::const_iterator i=m.begin();i!=m.end();++i)
-        for (typename Inner::const_iterator j=i->begin();j!=i->end();++j)
-            deref(f)(*j);
+template <class M, class F>
+void nested_enumerate(const M& m, F f) {
+  typedef typename M::value_type Inner;
+  for (typename M::const_iterator i = m.begin(); i!=m.end(); ++i)
+    for (typename Inner::const_iterator j = i->begin(); j!=i->end(); ++j)
+      deref(f)(*j);
 }
 
-template <class M,class F>
-void nested_enumerate(M& m,F f) {
-    typedef typename M::value_type Inner;
-    for (typename M::iterator i=m.begin();i!=m.end();++i)
-        for (typename Inner::iterator j=i->begin();j!=i->end();++j)
-            deref(f)(*j);
+template <class M, class F>
+void nested_enumerate(M& m, F f) {
+  typedef typename M::value_type Inner;
+  for (typename M::iterator i = m.begin(); i!=m.end(); ++i)
+    for (typename Inner::iterator j = i->begin(); j!=i->end(); ++j)
+      deref(f)(*j);
 }
 
 
-template <class M,class F>
-void enumerate(const M& m,F f) {
-  for (typename M::const_iterator i=m.begin();i!=m.end();++i)
+template <class M, class F>
+void enumerate(const M& m, F f) {
+  for (typename M::const_iterator i = m.begin(); i!=m.end(); ++i)
     deref(f)(*i);
 }
 
-template <class M,class F>
-void enumerate(M& m,F f) {
-  for (typename M::iterator i=m.begin();i!=m.end();++i)
+template <class M, class F>
+void enumerate(M& m, F f) {
+  for (typename M::iterator i = m.begin(); i!=m.end(); ++i)
     deref(f)(*i);
 }
 
@@ -103,15 +102,15 @@ namespace std {
 template<class R>
 struct equal_to<boost::reference_wrapper<R> >
 {
-    typedef boost::reference_wrapper<R> arg_type;
-    typedef arg_type first_argument_type;
-    typedef arg_type second_argument_type;
-    typedef bool result_type;
+  typedef boost::reference_wrapper<R> arg_type;
+  typedef arg_type first_argument_type;
+  typedef arg_type second_argument_type;
+  typedef bool result_type;
 
-    bool operator()(arg_type const& r1,arg_type const& r2) const
-    {
-        return (R const &)r1 == (R const &)r2;
-    }
+  bool operator()(arg_type const& r1, arg_type const& r2) const
+  {
+    return (R const &)r1 == (R const &)r2;
+  }
 
 };
 
@@ -126,29 +125,29 @@ struct hash;
 template<class R>
 struct hash<boost::reference_wrapper<R> >
 {
-    typedef boost::reference_wrapper<R> arg_type;
-    typedef std::size_t result_type;
+  typedef boost::reference_wrapper<R> arg_type;
+  typedef std::size_t result_type;
 
-    result_type operator()(arg_type const& r) const
-    {
-        return hash_value((R const&)r);
-    }
+  result_type operator()(arg_type const& r) const
+  {
+    return hash_value((R const&)r);
+  }
 };
 
 }
 
 
 #ifdef GRAEHL_TEST_MAIN
-namespace byref_test{
+namespace byref_test {
 
 
 template<class C>
 void f(C c) {
-    graehl::deref(c)=1;
+  graehl::deref(c) = 1;
 }
 
 void g(int &p) {
-  p=2;
+  p = 2;
 }
 
 template<class C>
@@ -160,8 +159,8 @@ void h(C c) {
 
 BOOST_AUTO_TEST_CASE( TEST_byref )
 {
-    using namespace byref_test;
-  int t=0;
+  using namespace byref_test;
+  int t = 0;
   f(t);
   BOOST_CHECK(t==0);
   f(boost::ref(t));

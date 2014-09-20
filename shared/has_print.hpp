@@ -14,78 +14,78 @@
 
 namespace graehl {
 
-template <class C,class V=void>
+template <class C, class V = void>
 struct has_print;
 
-template <class C,class V>
+template <class C, class V>
 struct has_print {
 };
 
 template <class C>
-struct has_print<C,typename C::has_print> {
+struct has_print<C, typename C::has_print> {
   typedef void type;
 };
 
 
 
-template <class C,class V=void>
+template <class C, class V = void>
 struct has_print_writer;
 
-template <class C,class V>
+template <class C, class V>
 struct has_print_writer {
 };
 
 template <class C>
-struct has_print_writer<C,typename C::has_print_writer> {
+struct has_print_writer<C, typename C::has_print_writer> {
   typedef void type;
 };
 
 
 
 
-template <class C,class V=void>
+template <class C, class V = void>
 struct not_has_print_writer;
 
-template <class C,class V>
+template <class C, class V>
 struct not_has_print_writer {
   typedef void type;
 };
 
 template <class C>
-struct not_has_print_writer<C,typename C::has_print_writer> {
+struct not_has_print_writer<C, typename C::has_print_writer> {
 };
 
 
 
-template <class C,class V=void,class V2=void>
+template <class C, class V = void, class V2 = void>
 struct has_print_plain;
 
-template <class C,class V,class V2>
+template <class C, class V, class V2>
 struct has_print_plain {
 };
 
 template <class C>
-struct has_print_plain<C,typename not_has_print_writer<C>::type, typename has_print<C>::type> {
+struct has_print_plain<C, typename not_has_print_writer<C>::type, typename has_print<C>::type> {
   typedef void type;
 };
 
 
 
 // type is defined iff you're not a pointer type and you have no print(o) or print(o,writer)
-template <class C,class V=void>
+template <class C, class V = void>
 struct not_has_print;
 
-template <class C,class V>
+template <class C, class V>
 struct not_has_print {
   typedef void type;
 };
 
 template <class C>
-struct not_has_print<C,typename has_print<C>::type> {
+struct not_has_print<C, typename has_print<C>::type> {
 };
 
 template <class C>
-struct not_has_print<C,typename has_print_writer<C>::type> {
+struct not_has_print<C, typename has_print_writer<C>::type> {
 };
 
 template <class C>
@@ -98,55 +98,55 @@ struct isa_pointer {
 
 template <class C>
 struct isa_pointer<C *> {
-    typedef void type;
+  typedef void type;
 };
 template <class C>
 struct isa_pointer<C * const> {
-    typedef void type;
+  typedef void type;
 };
 template <class C>
 struct isa_pointer<C * volatile> {
-    typedef void type;
+  typedef void type;
 };
 template <class C>
 struct isa_pointer<C * const volatile> {
-    typedef void type;
+  typedef void type;
 };
 
 template <class C>
-struct true_value 
+struct true_value
 {
-    static const bool value=true;
+  static const bool value = true;
 };
 
 template <class C>
-struct not_has_print<C,typename isa_pointer<C>::type> {
+struct not_has_print<C, typename isa_pointer<C>::type> {
 };
 
 
-template <class C,class V=void>
-struct has_const_iterator 
+template <class C, class V = void>
+struct has_const_iterator
 {
-    static const bool value=false;
+  static const bool value = false;
 };
 
 template <class C>
-struct has_const_iterator<C,typename boost::enable_if<true_value<typename C::const_iterator> > > {
-    typedef void type;
-    static const bool value=true;
+struct has_const_iterator<C, typename boost::enable_if<true_value<typename C::const_iterator> > > {
+  typedef void type;
+  static const bool value = true;
 };
 
 
-template <class C,class V=void>
-struct not_has_const_iterator 
-{    
-    typedef void type;
-    static const bool value=true;
+template <class C, class V = void>
+struct not_has_const_iterator
+{
+  typedef void type;
+  static const bool value = true;
 };
 
 template <class C>
-struct not_has_const_iterator<C,typename boost::enable_if<true_value<typename C::const_iterator> > > {
-    static const bool value=false;
+struct not_has_const_iterator<C, typename boost::enable_if<true_value<typename C::const_iterator> > > {
+  static const bool value = false;
 };
 
 
@@ -168,7 +168,7 @@ struct has_const_iterator<boost::reference_wrapper<C> > : public has_const_itera
 template <class C>
 struct not_has_const_iterator<boost::reference_wrapper<C> > : public not_has_const_iterator<C> {};
 
-#  endif 
+#  endif
 
 }
 
