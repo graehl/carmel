@@ -66,7 +66,7 @@ insertion_iterator_typed<O, V> insert_to_typed(O &o) {
   return insertion_iterator_typed<O, V>(o);
 }
 
-}//ns
 
+}
 
 #endif

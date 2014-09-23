@@ -142,7 +142,7 @@ struct assign_traits : assignable
   }
 };
 
+
 }
 
-
-#endif // ASSIGN_TRAITS_JG201272_HPP
+#endif

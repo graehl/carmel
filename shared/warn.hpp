@@ -62,7 +62,7 @@ void warnp(Pre const& pre, Msg const& msg, string_consumer msgto=default_warn_co
   msgto("("+to_string(pre)+") "+to_string(msg));
 }
 
-}
 
+}
 
 #endif

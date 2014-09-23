@@ -320,7 +320,6 @@ IndexedPairCopier<C1, C2, C3> make_indexed_pair_copier(C1 const&a, C2 const& b, 
 }
 
 
-}//ns
-
+}
 
 #endif

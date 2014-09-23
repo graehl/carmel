@@ -44,6 +44,7 @@ struct print_maybe_container<Val, typename boost::enable_if<is_nonstring_contain
   }
 };
 
+
 }
 
-#endif // IS_CONTAINER_JG2012614_HPP
+#endif

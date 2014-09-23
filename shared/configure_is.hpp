@@ -106,4 +106,4 @@ std::string configure_usage() {
 
 }
 
-#endif // CONFIGURE_INIT_JG_2013_05_23_HPP
+#endif

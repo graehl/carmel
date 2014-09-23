@@ -16,6 +16,19 @@ elif  [[ -x `which most 2>/dev/null` ]] ; then
     export PAGER=most
 fi
 HOST=${HOST:-`hostname`}
+xcpps() {
+    (set -e;
+        cd ~/x/xmt
+        x=`which $1`
+        bakthis pre-$1
+        mend >/dev/null 2>/dev/null
+        $x `find_cpps`
+        git diff HEAD | tee ~/tmp/diff-$1
+    )
+}
+diffstat() {
+  git diff --stat "$@"
+}
 optllvm() {
     export LLVM_DIR=/usr/local/opt/llvm
     export LDFLAGS=-L$LLVM_DIR/lib

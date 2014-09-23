@@ -66,6 +66,7 @@ struct shared_nary_tree
 
 };
 
-}//ns
+
+}
 
 #endif

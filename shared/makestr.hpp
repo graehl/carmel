@@ -67,6 +67,8 @@ BOOST_AUTO_TEST_CASE( makestring )
 //     BOOST_CHECK(MAKESTRE(1 << 2)==e);
 //     BOOST_CHECK(MAKECSTRE('1' << '2')==e);
 //     BOOST_CHECK(MAKECSTRE(1 << 2)==e);
+
+
 }
 #endif
 

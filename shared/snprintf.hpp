@@ -316,6 +316,7 @@ struct Sprintf : std::string {
 
 typedef Sprintf<> SprintfStr;
 
+
 }
 
 #endif

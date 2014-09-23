@@ -12,6 +12,8 @@
 namespace lz4 {
 #include "lz4.h"
 #include "lz4.c"
+
+
 }
 
 #endif

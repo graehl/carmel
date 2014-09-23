@@ -66,7 +66,7 @@ void normalize(R &r, normalize_options<typename range_value<R>::type > n=normali
   normalize_sum(sum(r), r, n);
 }
 
-}//ns
 
+}
 
 #endif

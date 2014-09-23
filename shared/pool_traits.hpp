@@ -115,6 +115,6 @@ struct pool_destroyer<untracked_pool<T> >
 };
 
 
-}//ns
+}
 
 #endif

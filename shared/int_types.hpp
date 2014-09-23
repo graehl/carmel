@@ -117,6 +117,8 @@ DEFINE_SIGNED_FOR_2(std::ptrdiff_t, std::size_t)
 #endif
 
 #define GRAEHL_FOR_DISTINCT_FLOAT_TYPES(x) x(float) x(double) GRAEHL_FOR_DISTINCT_FLOAT_TYPES_LONG_DOUBLE(x)
+
+
 }
 
-#endif // INT_TYPES_JG2012531_HPP
+#endif

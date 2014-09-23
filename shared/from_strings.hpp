@@ -132,6 +132,7 @@ struct ptr_from_strings : store_from_strings
   }
 };
 
+
 }
 
 #endif

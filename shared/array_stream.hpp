@@ -311,7 +311,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   }
 
   /**
-    \return  number of bytes written.
+     \return  number of bytes written.
   */
   size_type size() const
   {
@@ -598,6 +598,5 @@ BOOST_AUTO_TEST_CASE( TEST_array_stream )
 }}//ns
 #endif
 // TEST
-
 
 #endif

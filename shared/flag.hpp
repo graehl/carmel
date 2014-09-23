@@ -117,6 +117,7 @@ struct default_true
   friend std::string type_string(default_true const&) { return "boolean"; } //TODO: ADL
 };
 
+
 }
 
-#endif // DEFAULT_TRUE_JG201276_HPP
+#endif

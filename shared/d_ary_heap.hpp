@@ -782,6 +782,7 @@ This is definitely linear to n.
 
   };
 
-}//ns
+
+}
 
 #endif

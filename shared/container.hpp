@@ -182,6 +182,8 @@ BOOST_AUTO_TEST_CASE( TEST_CONTAINER )
   std::cout << a << "\n" << map<small_vector<int> >(a, plus1) << "\n";
 }
 #endif
+
+
 }
 
 #endif

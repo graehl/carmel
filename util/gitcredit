@@ -19,9 +19,21 @@ def is_terminal_fname(fname):
 
 import gzip
 
+def homepath(fname):
+    if fname.startswith('~') and 'HOME' in os.environ:
+        return os.environ['HOME'] + fname[1:]
+    else:
+        return fname
+
+def file_exists(fname):
+    return os.path.isfile(homepath(fname))
+
 def open_in(fname):
     "if fname is '-', return sys.stdin, else return open(fname,'rb') (or if fname ends in .gz, gzip.open it)"
-    return sys.stdin if is_terminal_fname(fname) else (gzip.open if fname.endswith('.gz') else open)(fname,'rb')
+    if is_terminal_fname(fname):
+        return sys.stdin
+    else:
+        return (gzip.open if fname.endswith('.gz') else open)(homepath(fname),'rb')
 
 def maybe_lines_in(fname):
     if fname:
@@ -33,7 +45,7 @@ import errno
 
 def mkdir_p(path):
     try:
-        os.makedirs(path)
+        os.makedirs(homepath(path))
     except OSError as e:
         pass
         if getattr(e, 'errno') == errno.EEXIST:
@@ -50,7 +62,7 @@ def open_out(fname, append=False, mkdir=False):
         return sys.stdout
     if mkdir:
         mkdir_parent(fname)
-    return (gzip.open if fname.endswith('.gz') else open)(fname,'b'+'a' if append else 'w')
+    return (gzip.open if fname.endswith('.gz') else open)(homepath(fname),'b'+'a' if append else 'w')
 
 def log(s, out=sys.stderr):
     out.write("### %s\n" % s)
@@ -58,6 +70,9 @@ def log(s, out=sys.stderr):
 def writeln(line, out=sys.stdout):
     out.write(line)
     out.write('\n')
+
+def removeprefix(str, prefix):
+    return (str[len(prefix):], True) if str.startswith(prefix) else (str, False)
 
 import argparse
 
@@ -109,10 +124,10 @@ def options():
            '-argument passed to git blame e.g. for copy detection (which can be extremely slow) C CC or CCC')
     addarg(parser, '-o', str, 'outdir',
            'outdir (if set) used to store author revision subdirs outdir/0/ outdir/1/ ... with outdir/authors file')
-    addarg(parser, '-v', int,
-           'verbose', '> 0 means more logging')
+    addarg(parser, '-v', int, 'verbose',
+           '> 0 means more logging')
     addpositional(parser, 'filename', '(args X for `git blame X`; added to --filelist file)')
-    parser.set_defaults(authormap='~/.git.authors', outrepo='', blamearg='', filelist='', filename=[], verbose=0)
+    parser.set_defaults(authormap='~/.git.authors', blamearg='', filelist='', filename=[], outdir='', verbose=0)
     return parser
 
 global verbose
@@ -177,9 +192,23 @@ class Contributions(collections.defaultdict):
 def selectlines(lineseq, seq):
     return
 
-def gitblame(authorships, filename=None, blameargs=[], contributions=None, repodir='.'):
+def subprocess_output(args, shell=False, cwd=None, bufsize=0, logerr=True, keepnl=False):
+    proc = subprocess.Popen(args, cwd=cwd, shell=shell, stdout=subprocess.PIPE, bufsize=bufsize)
+    (output, err) = proc.communicate()
+    if logerr and err:
+        log('%s STDERR:\n%s' % err)
+    if proc.returncode != 0:
+        raise SystemExit('%s EXIT CODE: %s' % (args, proc.returncode))
+    if isinstance(output, str):
+        return output.splitlines(keepnl)
+    else:
+        return map(chomp, output)
+
+def gitblame(authorships, justfile=None, blameargs=[], contributions=None, repodir='.', gitpaths=None):
     """
     record contributions, a Contributions() map
+
+    optionally record gitpaths, a set
 
     if filename not set git blame runs on all files
 
@@ -189,38 +218,46 @@ def gitblame(authorships, filename=None, blameargs=[], contributions=None, repod
     if blameargs:
         log(blameargs)
         args.extend(blameargs)
-    if filename:
-        args.append(filename)
-    log('running: %s' % args)
+    if justfile:
+        args.append(justfile)
+    logverbose(3, 'running: %s' % args)
     proc = subprocess.Popen(args, cwd=repodir, stdout=subprocess.PIPE, bufsize=0, shell=False)
     authorpre = 'author '
     filenamepre = 'filename '
     contentpre = '\t'
     lineseq = [] # (line, autorship-sequence)
     seqauthor = {}
+    gitpath = None
+    lastgitpath = None
+    def finishfile(gitpath):
+        if gitpath is not None and authorships.outdir:
+            for seq, author in seqauthor.items():
+                logverbose(1, '%s %s %s' % (gitpath, seq, author))
+                with authorships.writeseq(author, gitpath) as out:
+                    for line, s in lineseq:
+                        out.write(line if s <= seq else '\n')
+        seqauthor.clear()
+        del lineseq[:]
     for p in iter(proc.stdout.readline, b''):
         if p.startswith(authorpre):
             author = chomp(p[len(authorpre):])
         elif p.startswith(filenamepre):
-            filename = chomp(p[len(filenamepre):])
+            gitpath = chomp(p[len(filenamepre):])
         elif p.startswith(contentpre):
             content = p[len(contentpre):]
             assert author is not None
-            assert filename is not None
-            logverbose(2, '%s\t%s\t%s' % (filename, author, chomp(content)))
+            assert gitpath is not None
+            if gitpath != lastgitpath:
+                finishfile(lastgitpath)
+                lastgitpath = gitpath
+                gitpaths.add(gitpath)
+            logverbose(2, '%s\t%s\t%s' % (gitpath, author, chomp(content)))
             author, seq = authorships.authorseq(author)
             seqauthor[seq] = author
-            logverbose(1, '%s %s %s' % (filename, seq, author))
             if contributions is not None:
                contributions[author].count(content)
             lineseq.append((content, seq))
-            if authorships.outdir:
-                for seq, author in seqauthor.items():
-                    with authorships.writeseq(author, filename) as out:
-                        for line, s in lineseq:
-                            out.write(line if s <= seq else '\n')
-            author = None
-            filename = None
+    finishfile(lastgitpath)
     (output, err) = proc.communicate()
     if proc.returncode != 0:
         log('ERROR: %s' % args)
@@ -233,7 +270,7 @@ def authormap(amapfile):
     authors = set()
     aorder = []
     if amapfile:
-        if not os.path.isfile(amapfile):
+        if not file_exists(amapfile):
             log("--authormap file %s not found" % amapfile)
         else:
             for line in chomped_lines(open_in(amapfile)):
@@ -244,6 +281,7 @@ def authormap(amapfile):
                         authors.add(repl)
                         aorder.append(repl)
                     if name not in amap:
+                        log('mapping author name "%s" => "%s"' % (name, repl))
                         amap[name] = repl
                     else:
                         log('duplicate authorsmap author: %s' % name)
@@ -273,7 +311,7 @@ class Authorships(object):
     def setseq(self, seq, author):
         self.aseq[author] = seq
         if self.outdir:
-            self.authorsfile.write('%d\t%s\n' % (seq, author))
+            self.authorsfile.write('%d %s\n' % (seq, author))
     def authorseq(self, author):
         if author in self.amap:
             author = self.amap[author]
@@ -300,10 +338,18 @@ def gitcredit(opt):
     blameargs = ['-w', '-M']
     if opt.blamearg:
         blameargs.append(ensureprefix(opt.blamearg, '-'))
-    gitrepo = opt.outrepo
+    if len(files) == 0:
+        files = chomped_lines(subprocess_output(['git', 'ls-files']))
+    gitpaths = set()
     for file in files:
         log('gitcredit %s' % file)
-        gitblame(authorships, file, blameargs, contributions=contributions)
+        gitblame(authorships, file, blameargs, contributions=contributions, gitpaths=gitpaths)
+    if opt.outdir:
+        with open_out(os.path.join(opt.outdir, 'files')) as out:
+            for path in gitpaths:
+                out.write(path + '\n')
+    for path in gitpaths:
+        log(path)
     print '\n'.join(contributions.summary(authorships.aorder))
 
 if __name__ == '__main__':

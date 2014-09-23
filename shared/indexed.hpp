@@ -267,4 +267,4 @@ struct indexed : HashEqualsTraits {
 
 }
 
-#endif // GRAEHL_SHARED__INDEXED_JG_2014_03_04_HPP
+#endif

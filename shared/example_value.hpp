@@ -48,6 +48,7 @@ std::string example_value(boost::optional<T> const&)
   return example_value(*(T const*)0);
 }
 
+
 }
 
 #endif

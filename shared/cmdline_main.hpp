@@ -778,6 +778,8 @@ graehl::main sample_m;
 int main(int argc, char **argv)
 {
   return sample_m.run_main(argc, argv);
+
+
 }
 #endif
 

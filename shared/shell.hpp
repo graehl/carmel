@@ -37,6 +37,7 @@ inline int system_shell_safe(const std::string &cmd)
   return system_safe(s.str());
 }
 
+
 }
 
-#endif // SHELL_JG2012615_HPP
+#endif

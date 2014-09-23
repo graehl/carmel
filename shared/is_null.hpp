@@ -78,6 +78,7 @@ BOOST_AUTO_TEST_CASE(TEST_is_null) {
     BOOST_CHECK_EQUAL(is_null(f), true);
     BOOST_CHECK_EQUAL(is_nan(f), true);
 
+
 }
 #endif
 

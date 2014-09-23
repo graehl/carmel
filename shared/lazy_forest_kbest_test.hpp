@@ -1,6 +1,6 @@
 /** \file
 
- .
+   .
 */
 
 #ifndef GRAEHL_SHARED__LAZY_FOREST_KBEST_TEST__HPP
@@ -318,7 +318,7 @@ int main()
 }
 #endif
 
-}
 
+}
 
 #endif

@@ -116,6 +116,7 @@ struct better_cost {
   }
 };
 
-}//ns
+
+}
 
 #endif

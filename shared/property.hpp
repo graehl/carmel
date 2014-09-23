@@ -197,7 +197,8 @@ struct property_traits<boost::reference_wrapper<Imp> > {
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;
 };
-}
 
+
+}
 
 #endif

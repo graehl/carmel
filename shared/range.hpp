@@ -29,6 +29,7 @@ using boost::range_difference;
 using boost::range_const_iterator;
 //partial_sum
 
-}//ns
+
+}
 
 #endif

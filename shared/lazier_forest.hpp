@@ -474,4 +474,4 @@ struct lazier_forest : FilterFactory::filter_type // empty base class opt. - may
 }
 CLANG_DIAG_ON(unused-variable)
 
-#endif // GRAEHL_SHARED__LAZIER_FOREST_HPP
+#endif

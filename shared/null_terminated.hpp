@@ -111,7 +111,7 @@ inline C * null_terminated_end(C * s)
     return s;
 }
 
-}
 
+}
 
 #endif

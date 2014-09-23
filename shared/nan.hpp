@@ -86,7 +86,6 @@ inline bool is_finite(T x) {
 }
 
 
-}//ns
-
+}
 
 #endif

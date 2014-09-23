@@ -26,6 +26,7 @@ inline std::string suffix_option(std::string opt, std::string const& suffix="")
   return opt+suffix;
 }
 
-}//ns
+
+}
 
 #endif

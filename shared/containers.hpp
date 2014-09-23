@@ -296,7 +296,7 @@ inline std::size_t mix_hash_fast(std::size_t a, std::size_t b)
     return a;
 }
 
-}//ns
 
+}
 
 #endif

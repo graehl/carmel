@@ -1055,7 +1055,7 @@ BOOST_AUTO_TEST_CASE(test_string_to)
 }
 #endif
 
-}
 
+}
 
 #endif

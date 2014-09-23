@@ -19,6 +19,7 @@ boost::shared_ptr<V> no_delete(V *v) {
   return boost::shared_ptr<V>(v, null_deleter());
 }
 
+
 }
 
 #endif

@@ -51,6 +51,7 @@ outputter<typename Cont::iterator> make_outputter_cont(Cont &container)
     return outputter<typename Cont::iterator>(container.begin());
 }
 
+
 }
 
 #endif

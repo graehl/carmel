@@ -74,7 +74,7 @@ struct time_change
 
 typedef auto_report<time_change> time_report;
 
-}
 
+}
 
 #endif

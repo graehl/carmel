@@ -93,4 +93,4 @@ void configure_init(Val *val) {
 
 }
 
-#endif // CONFIGURE_INIT_JG_2013_05_23_HPP
+#endif

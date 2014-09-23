@@ -1,11 +1,11 @@
 /** \file
 
- for configurable objects that with prototypes registered by name.
+   for configurable objects that with prototypes registered by name.
 
- for hierarchical configure backends, for `key: val` the key determines which
- prototype is configured with val
+   for hierarchical configure backends, for `key: val` the key determines which
+   prototype is configured with val
 
- //TODO: needs some work to allow switching backends - likely a type-erased backend / conf_expr<Backend, ..., Val>
+   //TODO: needs some work to allow switching backends - likely a type-erased backend / conf_expr<Backend, ..., Val>
 */
 
 #ifndef GRAEHL__SHARED__CONFIGURE_BY_PROTOTYPE_HPP
@@ -161,6 +161,7 @@ struct configure_dynamic {
 template <class Backend, class Base>
 typename configure_dynamic<Backend, Base>::Prototypes configure_dynamic<Backend, Base>::prototypes;
 
+
 }
 
-#endif // GRAEHL__SHARED__CONFIGURE_BY_PROTOTYPE_HPP
+#endif

@@ -151,5 +151,4 @@ BOOST_AUTO_TEST_CASE( TEST_command_line )
 
 } //graehl
 
-
 #endif

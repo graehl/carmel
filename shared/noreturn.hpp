@@ -14,4 +14,4 @@
 # define ANALYZER_NORETURN
 #endif
 
-#endif // NORETURN_JG2012613_HPP
+#endif

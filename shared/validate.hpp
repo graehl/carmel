@@ -142,7 +142,8 @@ void validate(boost::optional<T> const& i)
 {
   if (i)
     adl::adl_validate(*i);
-}
-}
 
-#endif // VALIDATE_JG2012725_HPP
+
+}}
+
+#endif

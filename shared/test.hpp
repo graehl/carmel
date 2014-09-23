@@ -142,6 +142,8 @@ bool test_extract_insert(S &s, C &c, bool whine=true) {
 //#ifndef EXPECT_EQ
 # define EXPECT_EQ(a, b) BOOST_CHECK_EQUAL(a, b)
   //#endif
+
+
 }
 
 #endif

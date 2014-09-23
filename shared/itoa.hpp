@@ -210,7 +210,7 @@ inline char* append_itoa(char *to, typename signed_for_int<Int>::signed_t n) {
   return to;
 }
 
-}//ns
 
+}
 
 #endif

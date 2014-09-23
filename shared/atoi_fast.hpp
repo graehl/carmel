@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(test_scan_real)
 }
 #endif
 
+
 }
 
-
-#endif // ATOI_FAST_JG2012615_HPP
+#endif

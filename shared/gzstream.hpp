@@ -7,5 +7,4 @@
 # include "gzstream.cpp"
 #endif
 
-
 #endif

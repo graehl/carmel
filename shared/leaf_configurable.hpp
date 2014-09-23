@@ -48,5 +48,4 @@ struct leaf_configurable;
 #define LEAF_CONFIGURABLE_EXTERNAL(t) namespace configure { \
   template<> struct leaf_configurable<t, void> { typedef bool value_type; enum {value=1}; }; }
 
-
-#endif // LEAF_CONFIGURABLE_JG2012919_HPP
+#endif

@@ -83,6 +83,7 @@ struct bigger_streambuf : boost::noncopyable
   }
 };
 
+
 }
 
 #endif

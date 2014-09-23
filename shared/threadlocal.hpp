@@ -109,6 +109,7 @@ struct ThreadLocalSingleton {
 template <class Val, class Tag>
 THREADLOCAL Val *ThreadLocalSingleton<Val, Tag>::val;
 
+
 }
 
 #endif

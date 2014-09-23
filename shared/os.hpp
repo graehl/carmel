@@ -465,5 +465,4 @@ inline pid_t popen2(int *fd, const char **const cmd) {
 
 } // graehl
 
-
 #endif

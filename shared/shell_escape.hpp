@@ -99,6 +99,7 @@ inline std::string shell_quote(const C& data, bool quote_empty=true) {
   return shell_quote_chars(append_string_builder(b), to_string(data), quote_empty).str();
 }
 
+
 }
 
 #endif

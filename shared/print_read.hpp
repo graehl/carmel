@@ -71,6 +71,8 @@ template <class Val, class State>
 printer<Val const&,State &> print(Val const& v, State & s) {
   return printer<Val const&,State &>(v, s);
 }
-}//ns
+
+
+}
 
 #endif

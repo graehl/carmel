@@ -41,7 +41,7 @@ struct auto_report
   }
 };
 
-}
 
+}
 
 #endif

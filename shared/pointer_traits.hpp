@@ -42,6 +42,8 @@ using boost::intrusive::pointer_traits;
    static pointer dynamic_cast_from(U *uptr)
    {  return dynamic_cast<pointer>(uptr);  }
 */
+
+
 }
 
-#endif // POINTER_TRAITS_JG201266_HPP
+#endif

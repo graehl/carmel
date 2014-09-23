@@ -173,7 +173,9 @@ BOOST_AUTO_TEST_CASE(TEST_type_string) {
   BOOST_CHECK_EQUAL(type_string(p), "pair of (map from integer to integer, map to integer)");
 }
 
+
 }
 
 #endif
+
 #endif

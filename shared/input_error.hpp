@@ -138,7 +138,7 @@ void throw_input_error(std::basic_istream<Ic, It> &in, std::string const& error=
   throw_input_exception<std::runtime_error>(in, error, item, number);
 }
 
-}//ns
 
+}
 
 #endif

@@ -26,7 +26,7 @@ inline void swap_pod(T &a, T &b) {
   memcpy(pb, pt, s);
 }
 
-}
 
+}
 
 #endif

@@ -173,5 +173,4 @@ BOOST_AUTO_TEST_CASE( TEST_io )
 
 }
 
-
 #endif

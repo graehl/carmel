@@ -215,6 +215,7 @@ struct out_spaced {
   }
 };
 
-}//ns
+
+}
 
 #endif

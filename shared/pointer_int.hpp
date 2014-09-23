@@ -1,6 +1,6 @@
 /** \file
 
- for aligned pointer to objects of size>1, store integers x as 2*x + 1 (with lsb set).
+   for aligned pointer to objects of size>1, store integers x as 2*x + 1 (with lsb set).
 
 */
 
@@ -60,7 +60,7 @@ struct PointerInt {
   }
 };
 
-}
 
+}
 
 #endif

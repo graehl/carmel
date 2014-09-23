@@ -44,7 +44,7 @@ prime_upper_bound_twice(unsigned n)
       return i[1];
 }
 
-}
 
+}
 
 #endif

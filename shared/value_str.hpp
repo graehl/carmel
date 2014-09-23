@@ -43,6 +43,7 @@ struct value_str
   { self.print(o); return o; }
 };
 
+
 }
 
-#endif // VALUE_STR_JG2012613_HPP
+#endif

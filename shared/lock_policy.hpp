@@ -42,7 +42,7 @@ struct spin_locking
   typedef mutex_type::scoped_lock guard_type;
 };
 
-}
 
+}
 
 #endif

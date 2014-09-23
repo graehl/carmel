@@ -1,6 +1,6 @@
 /** \file
 
- .
+   .
 */
 
 #ifndef GRAEHL_SHARED__INT_HASH_MAP_HPP
@@ -75,6 +75,7 @@ struct direct_int_map {
 };
 
 typedef direct_int_map<void *> direct_int_ptr_map;
+
 
 }
 

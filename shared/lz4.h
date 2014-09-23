@@ -117,5 +117,8 @@ LZ4_compress64kCtx() :
 
 
 #if defined (__cplusplus)
+
+
 }
+
 #endif

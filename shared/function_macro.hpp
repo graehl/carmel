@@ -44,7 +44,8 @@ PREDICATE_OBJ_X_Y(equal_typeless, x==y);
 PREDICATE_OBJ_X_Y(leq_typeless, x<=y);
 PREDICATE_OBJ_X_Y(geq_typeless, x>=y);
 PREDICATE_OBJ_X_Y(neq_typeless, x!=y);
-}
 
+
+}
 
 #endif

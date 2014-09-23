@@ -62,7 +62,7 @@ operator<<(std::basic_ostream<C, T>& os, portion<W> const& p)
     return os;
 }
 
-}
 
+}
 
 #endif

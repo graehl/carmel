@@ -11,4 +11,5 @@
 #include <cassert>
 #define assertlvl(level, assertion) do { IF_ASSERT(level) {assert(assertion);} } while(0)
 #endif
+
 #endif

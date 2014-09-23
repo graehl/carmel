@@ -96,6 +96,7 @@ DEFINE_HEX_INT(uint32_t);
 DEFINE_HEX_INT(uint64_t);
 #endif
 
-}//ns
+
+}
 
 #endif

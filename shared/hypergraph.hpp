@@ -139,6 +139,7 @@ typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G 
   }
 */
 
-}//ns
+
+}
 
 #endif

@@ -241,6 +241,7 @@ boost::shared_ptr<T> shared_from_intrusive(T * p)
   return boost::shared_ptr<T>(p, intrusive_deleter<T>());
 }
 
+
 }
 
 #endif
