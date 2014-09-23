@@ -19,7 +19,7 @@ class IntDict(collections.defaultdict):
 
 
 def log(s,out=sys.stderr):
-    out.write("### "+s+"\n")
+    out.write("### %s\n" % s)
 
 n_warn=0
 warncount=IntDict()
@@ -1692,10 +1692,9 @@ def pairlist_str(pairlist,pretty=True):
 def obj2str(obj,names=None,types=pod_types,pretty=True):
     return '[%s %s]'%(obj.__class__.__name__,attr_str(obj,names,types,pretty))
 
-def writeln(line,file=sys.stdout):
-    file.write(line)
-    file.write('\n')
-
+def writeln(line, out=sys.stdout):
+    out.write(line)
+    out.write('\n')
 
 def adjlist(pairs,na):
     "return adjacency list indexed by [a]=[x,...,z] for pairs (a,x) ... (a,z)"

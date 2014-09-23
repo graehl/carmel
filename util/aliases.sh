@@ -40,10 +40,19 @@ fi
 #mdb_dump -n -a /tmp/foo.mdb
 )
 }
+find_srcs() {
+    find_cpps
+    find . -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat'
+}
 find_cpps() {
    find ${1:-.} -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh'
 }
-
+allauthorse() {
+git log --all --format='%aN  %aN <%aE>' | sort -u
+}
+allauthors() {
+git log --all --format='%aN' | sort -u
+}
 blamestats() {
  git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
 }

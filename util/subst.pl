@@ -51,7 +51,7 @@ my @options=(
 ["inplace!"=>\$inplace,"in-place edit (note: cannot handle compressed inputs)"],
 ["eregexp!"=>\$isregexp,"treat source as regexp"],
 ["substregexp!"=>\$substre,"treat ttable lines as arbitrary s/whatever/to/g lines to be eval"],
-["wholeword!"=>\$wholeword,"match only at word boundaries (\\b)"],
+["wholeword!"=>\$wholeword,"match only starting at word boundary (\\b)"],
 ["dryrun!"=>\$dryrun,"show substituted lines on STDOUT (no inplace)"],
 ["firstonly!"=>\$firstonly,"don't process subsequent translations after the first matching per line"],
 ["verbose!"=>\$verbose,"show each applied substitution"],
@@ -83,7 +83,8 @@ while(<$fh>) {
         }
         ($find,$replace)=($replace,$find) if $reverse;
         &debug($find,$replace);
-        my $re = $isregexp ? eval("qr{$find}") : ($wholeword ? qr{\b$find\e} : quotemeta($find));
+        my $qe = quotemeta($find);
+        my $re = $isregexp ? eval("qr{$find}") : ($wholeword ? qr/\b$qe/ : quotemeta($find));
         push @rewrites, [$re, $replace, "s{$find}{$replace}"];
     }
 }

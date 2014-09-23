@@ -1,0 +1,8 @@
+#!/usr/bin/perl
+
+while(<>) {
+    chomp;
+    next unless /\t(.)(.*_)$/;
+    $l1 = lc($1);
+    print "$1$2\t$l1$2\n" if ($l1 ne $1);
+}

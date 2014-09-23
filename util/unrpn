@@ -65,7 +65,10 @@ sub rename {
     local($_)=@_;
     # say "rename $_?\n";
     $orig=$_;
-    $_ .= $membersuffix if stripany('m_');
+    if stripany('m_') {
+        $_ .= $membersuffix;
+        if
+    }
     stripcamel('b|u|str|vec|map|the|sz');
     stripcamel('the');
     s|^iter(?=[A-Z])|i|;

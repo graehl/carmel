@@ -1,0 +1,22 @@
+#!/usr/bin/perl -w -i~
+use strict;
+my $com = 0;
+my $wantspaces = 0;
+my $hang = 3;
+while(<>) {
+    if (m{^( *)/\*\*} && !m{\*/}) {
+        $com = 1;
+        $wantspaces = length($1) + $hang;
+    } elsif ($com) {
+        if (m{\*/}) {
+            $com = 0;
+        } elsif (m{\S}) {
+            s/^( *)\* /$1  /;
+            m{^( *)} || die;
+            my $needspaces = $wantspaces - length($1);
+            print ' ' x $needspaces if ($needspaces > 0);
+            s/^( *)\@/$1\\/;
+        }
+    }
+    print;
+}
