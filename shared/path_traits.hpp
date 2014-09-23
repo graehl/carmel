@@ -1,6 +1,6 @@
 /**
-@file
-Traits for (n-)best paths of graphs/hypergraphs. Note: Your cost_type may be a<b means a better than b (mostly to simplify) or you can override better_cost(). better is used to order the heap and test convergence. updates is the same for viterbi but may always return true if you want to sum all paths? unsure.
+   \file
+   Traits for (n-)best paths of graphs/hypergraphs. Note: Your cost_type may be a<b means a better than b (mostly to simplify) or you can override better_cost(). better is used to order the heap and test convergence. updates is the same for viterbi but may always return true if you want to sum all paths? unsure.
  */
 
 #ifndef GRAEHL_SHARED__PATH_TRAITS_HPP
