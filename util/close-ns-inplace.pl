@@ -9,7 +9,7 @@ while (<>) {
         $m=$i - 10;
         $m = 0 if ($m < 0);
         while($i > $m && $lines[$i] =~ /^#endif|^\s*$/) { --$i; }
-        if ($lines[$i] =~ s#^(}+)//(ns|.*namespace).*$#$1#) {
+        if ($lines[$i] =~ s#^(}+) *//(ns|.*namespace).*$#$1#) {
             if ($i >= 2) {
                 if ($lines[$i-1] =~ /\S/) {
                     $lines[$i-1] .= "\n\n";

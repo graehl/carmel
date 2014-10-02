@@ -144,6 +144,8 @@ public:
 };
 
 #endif
-} // namespace graehl
+
+
+}
 
 #endif

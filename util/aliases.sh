@@ -16,6 +16,33 @@ elif  [[ -x `which most 2>/dev/null` ]] ; then
     export PAGER=most
 fi
 HOST=${HOST:-`hostname`}
+find_srcs() {
+    find "$@" -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat' \
+        -o -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh' -o -name '.gitignore'
+}
+gitdiffl() {
+  git diff --stat mdbase | cut -d' ' -f2
+}
+gitsubset() {
+    fullrepo=`pwd`
+    subset=$fullrepo/../subset
+    mkdir $subset
+    find_srcs $fullrepo > $subset/srcs
+    gitcredit -o $subset -f $subset/srcs
+    cd $subset
+    mkdir repo
+    cd repo
+    git init
+    while read -d ' ' commit; do
+        read author
+        cp -r ../$commit/. .
+        git add -A .
+        git commit -m "$author import" --author="$author"
+    done < ../authors
+    git tag initial HEAD
+    git log
+    git archive --format=tar.gz -o ../initial.tar.gz -v HEAD
+}
 xcpps() {
     (set -e;
         cd ~/x/xmt
@@ -24,10 +51,11 @@ xcpps() {
         mend >/dev/null 2>/dev/null
         $x `find_cpps`
         git diff HEAD | tee ~/tmp/diff-$1
+        diffstat HEAD
     )
 }
 diffstat() {
-  git diff --stat "$@"
+    git diff --stat "$@"
 }
 optllvm() {
     export LLVM_DIR=/usr/local/opt/llvm
@@ -37,58 +65,58 @@ optllvm() {
     export CMAKE_PREFIX_PATH=$LLVM_DIR
 }
 gitblame() {
-  git blame -w -M -CCC "$@"
+    git blame -w -M -CCC "$@"
 }
 bmdb() {
-(
-cd ~/c/mdb/libraries/liblmdb/
-export TERM=dumb
-XMT_SHARED_EXTERNALS_PATH=${XMT_EXTERNALS_PATH}/../Shared/cpp
-dbroot=$XMT_EXTERNALS_PATH/libraries/db-5.3.15
-make mdb_from_db CC=${CC:-gcc} OPT="-O3" XCFLAGS="-I$dbroot/include" LDFLAGS+="-L$dbroot/lib" LDLIBS="-ldb"
-#gdb --fullname --args ~/c/mdb/libraries/liblmdb/mdb_from_db -T /tmp/foo.db
-if [[ "$*" ]] ; then
-/Users/graehl/c/mdb/libraries/liblmdb/mdb_from_db "$@"
-fi
-#mdb_dump -n -a /tmp/foo.mdb
-)
+    (
+        cd ~/c/mdb/libraries/liblmdb/
+        export TERM=dumb
+        XMT_SHARED_EXTERNALS_PATH=${XMT_EXTERNALS_PATH}/../Shared/cpp
+        dbroot=$XMT_EXTERNALS_PATH/libraries/db-5.3.15
+        make mdb_from_db CC=${CC:-gcc} OPT="-O3" XCFLAGS="-I$dbroot/include" LDFLAGS+="-L$dbroot/lib" LDLIBS="-ldb"
+        #gdb --fullname --args ~/c/mdb/libraries/liblmdb/mdb_from_db -T /tmp/foo.db
+        if [[ "$*" ]] ; then
+            /Users/graehl/c/mdb/libraries/liblmdb/mdb_from_db "$@"
+        fi
+        #mdb_dump -n -a /tmp/foo.mdb
+    )
 }
 find_srcs() {
     find_cpps
     find . -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat'
 }
 find_cpps() {
-   find ${1:-.} -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh'
+    find ${1:-.} -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh'
 }
 allauthorse() {
-git log --all --format='%aN  %aN <%aE>' | sort -u
+    git log --all --format='%aN  %aN <%aE>' | sort -u
 }
 allauthors() {
-git log --all --format='%aN' | sort -u
+    git log --all --format='%aN' | sort -u
 }
 blamestats() {
- git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
+    git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
 }
 ruleversion() {
-(
-set -e
-d=$HOME/bugs/dumpp
-db=$d/`basename $1`.db
-    (gunzip -c "$@" || cat "$@") > $db
-    (mdb_from_db -l $db; mdb_from_db -T -s Version $db; mdb_from_db -T -s Header $db || echo No Header; mdb_from_db -T -s RulesDB $db | head) | tee $d/$1.txt
-)
+    (
+        set -e
+        d=$HOME/bugs/dumpp
+        db=$d/`basename $1`.db
+        (gunzip -c "$@" || cat "$@") > $db
+        (mdb_from_db -l $db; mdb_from_db -T -s Version $db; mdb_from_db -T -s Header $db || echo No Header; mdb_from_db -T -s RulesDB $db | head) | tee $d/$1.txt
+    )
 }
 run4eva() {
-c-s 'cd x/Release && forever make -j4'
+    c-s 'cd x/Release && forever make -j4'
 }
 cat4eva() {
-(
- latest=`c-s 'ls -rt /home/graehl/forever/make.-j4*' | head -2`
- echo $latest
- for f in $latest; do
- c-s ". .e;tailn=20 preview $f; grep 'error:' $f"
- done
-)
+    (
+        latest=`c-s 'ls -rt /home/graehl/forever/make.-j4*' | head -2`
+        echo $latest
+        for f in $latest; do
+            c-s ". .e;tailn=20 preview $f; grep 'error:' $f"
+        done
+    )
 }
 
 tree2() {
