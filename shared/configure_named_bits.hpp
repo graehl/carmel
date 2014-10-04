@@ -117,7 +117,7 @@ struct cached_bit_names : bit_names<Int> {
 template <class NameList, class Int>
 struct parse_bit_names {
   static bit_names<Int> const& names() {
-    static cached_bit_names<Int> gNames;
+    static cached_bit_names<NameList, Int> gNames;
     return gNames;
   }
 
