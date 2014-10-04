@@ -12,6 +12,7 @@
 #include <graehl/shared/type_string.hpp>
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/have_64_bits.hpp>
+#include <graehl/shared/type_string.hpp>
 #include <iomanip>
 
 namespace graehl {
@@ -32,7 +33,7 @@ struct hex_int {
   friend inline void string_to_impl(std::string const& s, hex_int &me) {
     me.assign(s);
   }
-  friend inline std::string type_string(hex_int const& me) {
+  friend inline std::string type_string_impl(hex_int const& me) {
     return "(hexadecimal) "+type_string(me.i);
   }
 
@@ -72,7 +73,6 @@ struct hex_int {
       s>>i;
     }
   }
-
 };
 
 template <class I>

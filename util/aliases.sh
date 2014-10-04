@@ -97,6 +97,17 @@ allauthors() {
 blamestats() {
     git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
 }
+dumpdb() {
+(
+set -e
+    db=$1
+    shift
+    mdb_from_db -l $db; mdb_from_db -T "$@" $db > $db.txt
+    preview $db.txt
+mdb_from_db -l $db
+)
+}
+
 ruleversion() {
     (
         set -e

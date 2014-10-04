@@ -62,9 +62,11 @@ echo ""
 echo "Disabling system-wide resume"
 defaults write NSGlobalDomain NSQuitAlwaysKeepsWindows -bool false
 
+if false; then
 echo ""
 echo "Disabling automatic termination of inactive apps"
 defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
+fi
 
 echo ""
 echo "Saving to disk (not to iCloud) by default"
@@ -334,7 +336,7 @@ sudo chflags uchg /Private/var/vm/sleepimage
 
 if false; then
 echo ""
-echo "Disable the sudden motion sensor as itÃ¢â‚¬â„¢s not useful for SSDs"
+echo "Disable the sudden motion sensor as it's not useful for SSDs"
 sudo pmset -a sms 0
 fi
 
