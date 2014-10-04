@@ -80,7 +80,7 @@ struct bit_names {
     bool first = true;
     for(typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
       Int const mask = i->second;
-      if (val & mask == mask) {
+      if ((val & mask) == mask) { // did you know: == precedes over &, so we need parens
         b.space_except_first(first, '|');
         b(i->first);
         val &= ~mask;
