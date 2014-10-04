@@ -39,8 +39,11 @@ struct bit_names {
     next_ = val * 2;
   }
 
-  void known_only(Int &val) const {
+  /// returns unknown bits that were set
+  Int clear_unknown(Int &val) const {
+    Int unk = val & ~known_;
     val &= known_;
+    return unk;
   }
 
   void operator()(std::string const& str) {
@@ -51,9 +54,9 @@ struct bit_names {
       : next_(1)
   {}
 
-  std::string usage() const {
+  std::string usage(bool values = false) const {
     string_builder b;
-    usage(b);
+    usage(b, values);
     return b.str();
   }
 
@@ -63,11 +66,13 @@ struct bit_names {
     return std::string(b.begin(), b.end());
   }
 
-  void usage(string_builder &b) const {
+  void usage(string_builder &b, bool values = false) const {
     bool first = true;
     for(typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
       b.space_except_first(first, '|');
       b(i->first);
+      if (values)
+        b('=')(hex(i->second));
     }
   }
 
@@ -150,11 +155,20 @@ struct named_bits : hex_int<Int> {
 
   std::string type_string_impl(named_bits const&) { return Names::names().usage() + " or 0xfaceb00c hex or decimal"; }
 
-  void known_only() {
-    Names::names().known_only(base());
+  static std::string usage(bool values = false) {
+    return Names::names().usage(values);
   }
 
-  void append(string_builder &b) {
+  static Int getSingle(std::string const& name) {
+    return Names::names()[name];
+  }
+
+  /// returns unknown bits that were set
+  Int clear_unknown() {
+    return Names::names().clear_unknown(base());
+  }
+
+  void append(string_builder &b) const {
     Names::names().append(*this, b);
   }
 
@@ -167,7 +181,7 @@ struct named_bits : hex_int<Int> {
     }
   }
 
-  friend std::string to_string_impl(std::string const& s, named_bits const& n) {
+  friend std::string to_string_impl(named_bits const& n) {
     string_builder b;
     n.append(b);
     return std::string(b.begin(), b.end());
@@ -180,7 +194,7 @@ struct named_bits : hex_int<Int> {
 
   void print(std::ostream &out) const {
     string_builder b;
-    Names::names().append(*this, b);
+    append(b);
     out << b;
   }
 
