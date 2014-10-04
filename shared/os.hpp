@@ -146,9 +146,9 @@ inline char * putenv_copy(std::string const& name_equals_val) {
 inline int system_safe(const std::string &cmd)
 {
   int ret=::system(cmd.c_str());
-  if (ret!=0)
+  if (ret == -1)
     throw std::runtime_error(cmd);
-  return ret;
+  return ret >> 8;
 }
 
 

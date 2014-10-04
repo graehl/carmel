@@ -58,11 +58,6 @@ struct Escape3 : std::string {
   Escape3(std::size_t n, void const* i, std::size_t maxlen = 0) {
     append(i, n, maxlen);
   }
-  template <class Dbt>
-  Escape3(Dbt *dbt) {
-    append(dbt->get_data(), dbt->get_size());
-  }
-
   void append(void const* i, std::size_t n, std::size_t maxlen = 0) {
     if (escape3(i, n, *this, maxlen)) {
       push_back('.');

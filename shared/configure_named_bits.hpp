@@ -35,7 +35,12 @@ struct bit_names {
 
   void operator()(std::string const& str, Int val) {
     nv_.push_back(NameValue(str, val));
+    known_ |= val;
     next_ = val * 2;
+  }
+
+  void known_only(Int &val) const {
+    val &= known_;
   }
 
   void operator()(std::string const& str) {
@@ -98,59 +103,88 @@ struct bit_names {
 
  private:
   Int next_;
+  Int known_;
 };
+
+template <class NameList, class Int = unsigned>
+struct cached_bit_names : bit_names<Int> {
+  cached_bit_names() {
+    NameList::bits(*this);
+  }
+};
+
 
 template <class NameList, class Int>
 struct parse_bit_names {
   static bit_names<Int> const& names() {
-    static bit_names<Int> gNames;
-    NameList::bits(gNames);
+    static cached_bit_names<Int> gNames;
     return gNames;
   }
-  Int &val_;
+
   bool operator()(std::string const& s) const {
     *val_ |= names()[s];
     return true;
   }
+
   parse_bit_names(Int &val)
       : val_(val)
   {}
+
+  Int &val_;
 };
 
 
 template <class NameList, class Int = unsigned>
 struct named_bits : hex_int<Int> {
   typedef hex_int<Int> Base;
+  named_bits() {}
+
+  named_bits(Int i) : Base(i)
+  {}
+
+  Base &base() {
+    return static_cast<Base &>(*this);
+  }
+
   typedef parse_bit_names<NameList, Int> Names;
+
   std::string type_string_impl(named_bits const&) { return Names::names().usage() + " or 0xfaceb00c hex or decimal"; }
+
+  void known_only() {
+    Names::names().known_only(base());
+  }
+
   void append(string_builder &b) {
     Names::names().append(*this, b);
   }
+
   friend void string_to_impl(std::string const& s, named_bits &n) {
     n = 0;
     try {
       split_noquote(s, parse_bit_names<NameList, Int>(n), "|");
     } catch (string_to_exception &e) {
-      string_to_impl(s, static_cast<Base &>(n));
+      string_to_impl(s, n.base);
     }
   }
+
   friend std::string to_string_impl(std::string const& s, named_bits const& n) {
     string_builder b;
     n.append(b);
     return std::string(b.begin(), b.end());
   }
+
   friend inline std::ostream& operator<<(std::ostream &out, named_bits const& self) {
     self.print(out);
     return out;
   }
+
   void print(std::ostream &out) const {
     string_builder b;
     Names::names().append(*this, b);
     out << b;
   }
-  named_bits() {}
-  named_bits(Int i) : Base(i)
-  {}
+
+
 };
 
 

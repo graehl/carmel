@@ -21,11 +21,16 @@ inline void copy_file(const std::string &source, const std::string &dest, bool s
 
 inline void mkdir_parents(const std::string &dirname)
 {
+#if OS_WINDOWS
+  //TODO:
+  return;
+#else
   const char *mkdir="/bin/mkdir -p ";
   std::stringstream s;
   s << mkdir;
   out_shell_quote(s, dirname);
   system_safe(s.str());
+#endif
 }
 
 inline int system_shell_safe(const std::string &cmd)
