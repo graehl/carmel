@@ -3,9 +3,7 @@
 
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/os.hpp>
-#ifdef OS_WINDOWS
 #include <boost/filesystem.hpp>
-#endif
 
 namespace graehl {
 
@@ -24,16 +22,8 @@ inline void copy_file(const std::string &source, const std::string &dest, bool s
 
 inline void mkdir_parents(const std::string &dirname)
 {
-#ifdef OS_WINDOWS
   boost::filesystem::create_directories(dirname);
   return;
-#else
-  const char *mkdir="/bin/mkdir -p ";
-  std::stringstream s;
-  s << mkdir;
-  out_shell_quote(s, dirname);
-  system_safe(s.str());
-#endif
 }
 
 inline int system_shell_safe(const std::string &cmd)

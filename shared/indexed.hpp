@@ -257,6 +257,7 @@ struct indexed : HashEqualsTraits {
 
   void free_hash() {
     ::operator delete((void*)index_);
+    index_ = NULL;
   }
 
   I mask_; // capacity - 1
