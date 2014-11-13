@@ -1,14 +1,4 @@
-#ifndef GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
-#define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
-
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/detail/atomic_count.hpp>
-#include <boost/utility/enable_if.hpp>
-#include <cassert>
-#include <memory>
-
-/**
+/** \file
 
    usage:
 
@@ -27,30 +17,29 @@
 
 */
 
+#ifndef GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
+#define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
+
+#include <xmt/graehl/shared/alloc_new_delete.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/detail/atomic_count.hpp>
+#include <boost/utility/enable_if.hpp>
+#include <cassert>
+
 namespace graehl {
 
 using boost::detail::atomic_count;
 
 
-// note: the free functions need to be in boost namespace, OR namespace of involved type. it looks like the friend functions will go into T's namespace, so I put this in graehl instead of boost. for now using decls in boost should maintain backward compat (untested)
+/**
+   U is a user allocator e.g. boost::default_user_allocator_new_delete - but
+   make sure to get objects' memory using U::malloc() if you change the default
 
-// unlike the new char[bytes] using boost::default_user_allocator_new_delete, you can free pointers you got with new T() provided you didn't overload new for type T.
-struct alloc_new_delete
-{
-  static char* malloc (const std::size_t bytes)
-  {
-    return (char *)::operator new(bytes);
-  }
-  static inline void free(char * p)
-  {
-    ::operator delete((void*)p);
-  }
-};
-
-
-//or U=boost::default_user_allocator_new_delete - but make sure to construct objects in space provided by U::malloc()
-template<class T, class R=atomic_count, class U=alloc_new_delete>
-struct intrusive_refcount //: boost::noncopyable
+   for use in boost::intrusive_ptr, it's required that InitCount be UniqueCount
+   - 1, because newly created intrusive_ptr cause add_ref to happen.
+*/
+template<class T, class R=atomic_count, class U=alloc_new_delete, long UniqueCount = 1>
+struct intrusive_refcount
 {
   typedef void is_refcounted_enable; // for is_refcounted
   typedef T intrusive_type;
@@ -60,7 +49,7 @@ struct intrusive_refcount //: boost::noncopyable
   //for copy-on-write - may not give the thread-safety you expect, though (but if it's update+copy at same time, there's a race no matter what)
   bool unique() const
   {
-    return refcount<=1;
+    return refcount == UniqueCount;
   }
 
   // please don't call these directly - only let boost::intrusive_ptr<T> do it:
@@ -96,10 +85,8 @@ struct intrusive_refcount //: boost::noncopyable
     return static_cast<T const*>(this);
   }
 
-  // formerly had a trick to put boost::intrusive_ptr_release etc in the namespace of T by friend, but this proved non-portable to different compilers. had to add to namespace boost.
-
   intrusive_refcount() : refcount(0) {}
-  intrusive_refcount(intrusive_refcount const& o) : refcount(0) {} // intentionally weird semantics so default T copy ctor does the right thing
+  intrusive_refcount(intrusive_refcount const& o) : refcount(0) {}
   ~intrusive_refcount() { assert(refcount==0); }
 private:
   mutable R refcount;
@@ -230,14 +217,14 @@ struct intrusive_deleter
 {
   void operator()(T * p)
   {
-    if(p) intrusive_ptr_release(p);
+    if (p) intrusive_ptr_release(p);
   }
 };
 
 template <class T>
 boost::shared_ptr<T> shared_from_intrusive(T * p)
 {
-  if(p) intrusive_ptr_add_ref(p);
+  if (p) intrusive_ptr_add_ref(p);
   return boost::shared_ptr<T>(p, intrusive_deleter<T>());
 }
 

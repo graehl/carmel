@@ -217,7 +217,7 @@ struct main {
   }
 
   std::string const& name() const {
-    return exename.empty() ? opt.name : exename;
+    return opt.name.empty() ? exename : opt.name;
   }
 
   std::string name_version() const
@@ -552,6 +552,7 @@ struct main {
   // called once, before any config actions are run
   void finish_configure()
   {
+    before_finish_configure();
     if (configure_finished)
       return;
     configure_finished = true;
@@ -563,6 +564,8 @@ struct main {
     finish_configure_extra();
     declare_configurable();
   }
+  virtual void before_finish_configure()
+  {}
   virtual void finish_configure_extra()
   {}
   virtual void declare_configurable()
@@ -646,10 +649,15 @@ struct main {
 #endif
 
 
-  void show_help(std::ostream &o)
+  void show_usage(std::ostream &o)
   {
     o << "\n" << name_version() << "\n\n";
     o << opt.usage << "\n\n";
+  }
+
+  void show_help(std::ostream &o)
+  {
+    show_usage(o);
 #if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
     confs.standard_help(o, to_cerr); // currently repeats --help each time since it's shown through po lib
     o << "\n\n" << opt.name << " [OPTIONS]:\n";
@@ -675,8 +683,11 @@ struct main {
       finish_configure();
       confs.init(to_cerr);
       exec->set_main_argv(argc, argv);
-      if (opt.add_help && exec->maybe_po_help(std::cout))
+      if (opt.add_help && exec->maybe_po_help(std::cout)) {
+        show_usage(std::cout << '\n');
+        std::cout << '\n';
         return false;
+      }
       confs.store(to_cerr);
 #else
       parsed_options po = all_options().parse_options(argc, argv, &get_positional());

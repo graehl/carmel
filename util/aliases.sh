@@ -16,6 +16,44 @@ elif  [[ -x `which most 2>/dev/null` ]] ; then
     export PAGER=most
 fi
 HOST=${HOST:-`hostname`}
+sac() {
+    scp ~/u/aliases.sh c-graehl:u/aliases.sh
+}
+cpextlib() {
+(
+    local to=${1:-~/pub/lib}
+    mkdir -p $to
+    if [[ $lwarch = Apple ]] ; then
+        dylib=dylib
+    else
+        dylib=so
+    fi
+    for f in `ls ${XMT_EXTERNALS_PATH}/libraries/*/lib/*$dylib* | grep -v asdf`; do
+        ls -l $f
+        cp -a $f $to
+    done
+)
+}
+ruledump() {
+(set -e
+require_file $1
+set -x
+${ruledumper:-~/pub/dgood/RuleDumper.sh} -c $1 -g ${2:-grammar}
+)
+}
+hextoescape3() {
+    perl -pe 's|([0-9a-fA-F][0-9a-fA-F])|\\$1|g'
+}
+escape3cstr() {
+    perl -i -pe 's|\\([0-9a-fA-F])|\\x$1|g'
+}
+ccpto() {
+    (set -e
+        cf=${2:-`relhome "$1"`}
+        c-s "mkdir -p `dirname $cf`"
+        scp -r "$1" "$chost:$cf"
+    )
+}
 find_srcs() {
     find "$@" -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat' \
         -o -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh' -o -name '.gitignore'
@@ -42,6 +80,11 @@ gitsubset() {
     git tag initial HEAD
     git log
     git archive --format=tar.gz -o ../initial.tar.gz -v HEAD
+}
+cpcpp() {
+    dst=${1:-$HOME/b}
+    mkdir -p $dst
+    tar cf - `git ls` | (cd $dst && tar xvf -)
 }
 xcpps() {
     (set -e;
@@ -111,10 +154,14 @@ mdb_from_db -l $db
 ruleversion() {
     (
         set -e
-        d=$HOME/bugs/dumpp
-        db=$d/`basename $1`.db
+        d=${2:-`dirname $1`}
+        b=`basename $1`
+        db=$d/$b.unzip.db
         (gunzip -c "$@" || cat "$@") > $db
-        (mdb_from_db -l $db; mdb_from_db -T -s Version $db; mdb_from_db -T -s Header $db || echo No Header; mdb_from_db -T -s RulesDB $db | head) | tee $d/$1.txt
+        (mdb_from_db -l $db; echo VERSION; mdb_from_db -T -s Version $db; echo HEADER; mdb_from_db -T -s Header $db  || echo No Header; echo RULES; mdb_from_db -T -s RulesDB $db) > $d/$b.txt
+        echo
+        echo  $d/$b.txt
+        head -20 $d/$b.txt
     )
 }
 run4eva() {
@@ -154,14 +201,15 @@ gitrecordcommit() {
 }
 macmdb() {
 (
-set -x
+export TERM=dumb
+#set -x
 set -e
 mdb=c/mdb/libraries/liblmdb/
 lmdb=c/lmdb
 cd ~
 cp $mdb/*.c $lmdb/mdb
 cd ~/c/mdbbuild
-cmake -G 'Unix Makefiles' ../lmdb && make && cp *mdb* ~/bin
+cmake -G 'Unix Makefiles' ../lmdb && make -s && cp *mdb* ~/bin
 ll=$XMT_EXTERNALS_PATH/libraries/lmdb
 lib=$ll/lib
 bin=$ll/bin
@@ -173,11 +221,14 @@ cd $lib
 git add *.dylib *.a
 cd $bin
 git add mdb_*
+for f in mdb_*; do
+cp -f $ll/$f ~/bin
+done
 )
 }
 upmdb() {
 (
-set -x
+#set -x
 set -e
 macmdb
 HOME=$(echo ~)
@@ -200,11 +251,12 @@ ll=$xlib/lmdb/lib
 bl=$xlib/lmdb/bin
 mkdir -p $ll
 mkdir -p $bl
-chost=c-mdreyer
+chost=c-jmay
 cb=c/build-$libver
 rm -f $HOME/$smdb/*.o
 rm -f $HOME/$smdb/*.a
 scp -r $HOME/$smdb $chost:c/
+banner building remotely on $chost
 c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make"
 scp $chost:$cb/\*.so  $ll
 scp $chost:$cb/\*.a  $ll
@@ -217,7 +269,9 @@ git add *.so *.a
 cd $bl
 git add mdb_*
 git add $incl/*.h || true
-[[ $mend ]] && mend
+if [[ $mend ]] ; then
+    mend
+fi
 )
 }
 
@@ -347,7 +401,7 @@ y12() {
 }
 c12() {
     (
-        local o=$(echo ~/tmp/c12.`csuf`)
+        local o=${out:-$(echo ~/tmp/c12.`csuf`)}
         out12 "$o" c-s "$@"
         preview "$o"
     )
@@ -564,7 +618,13 @@ reregr() {
     c-s cat $1 > $2
     c-with yregr ${regtest:-syntax}
 }
-
+olddirs() {
+    find "${1:-.}" -maxdepth 1 -type d -mtime +${2:-1}
+}
+rmolddirs() {
+    echo rmolddirs PATH DAYS removing directories modified earlier than $2 days ago in "${1:?dirname}" ...
+    find "$1" -maxdepth 1 -type d -mtime +${2:-1} -exec rm -rf {} \;
+}
 bxmt() {
     if [[ $1 = d* ]] ; then
         BUILD=Debug bakxmt "$@"
@@ -1580,6 +1640,9 @@ setjavahome() {
 }
 setjavahome
 mendgraehl() {
+    mendauthor
+}
+mendauthor() {
     mend --reset-author
 }
 hangs() {
@@ -2194,6 +2257,9 @@ nblanklines() {
         echo `grep -c ^$ "$@"` "blank lines in $*"
     fi
 }
+ccpr() {
+    recursive=1 ccp "$@"
+}
 ccp() {
     #uses: $chost for scp
     local n=$#
@@ -2214,8 +2280,12 @@ ccp() {
                 if [[ ${cidentity:-} ]] ; then
                     cargs="-i $cidentity"
                 fi
-                echo scp $cargs $cuserpre$chost:"$f" "$dst"
-                scp $cargs $cuserpre$chost:"$f" "$dst"
+                local rargs
+                if [[ $recursive = 1 ]] ; then
+                    rargs="-r"
+                fi
+                echo scp $cargs $rargs $cuserpre$chost:"$f" "$dst"
+                scp $cargs $rargs $cuserpre$chost:"$f" "$dst"
                 #cd $xmtx
                 # dst=`realpath $dst`
                 #local p=`relpath $xmtx $dst`
@@ -3402,7 +3472,7 @@ linjen() {
         c-s forceco $branch
         log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
-        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -3870,7 +3940,7 @@ g1po() {
 }
 overt() {
     pushd $xmtx/xmt/graehl/shared
-    gsh=~/g/shared
+    gsh=$HOME/g/shared
     for f in *.?pp *.h; do
         rm -f $gsh/$f
         cp $f $gsh/$f
@@ -4402,7 +4472,7 @@ lc() {
 lnxmtlib() {
     d=${1?arg1: dest dir}
     mkdir -p $d
-    for f in `find $xmtext/libraries -name libd -prune -o -name '*.so'`; do
+    for f in `find $xmtext/libraries -name libd -maxdepth 1 -o -name '*.so'`; do
         echo $f
         force=1 lnreal $f $d/
     done
@@ -5332,7 +5402,7 @@ racb() {
     fi
 
     local allarg=
-    local allhg=
+    local allhg=1
     if [[ ${allhg:-} ]] ; then
         allarg="-DAllHgBins=1"
     fi

@@ -7,6 +7,8 @@
 
 #include <cassert>
 #include <string>
+#include <xmt/graehl/shared/string_to.hpp>
+#include <xmt/graehl/shared/atoi_fast.hpp>
 
 namespace graehl {
 
@@ -15,6 +17,7 @@ static char const* const k_hex = "0123456789ABCDEF";
 inline bool plaintext_escape3(char c) {
   return c >= 32 && c < 127 && c != '\\';
 }
+
 inline void append_escape3(char *&out, unsigned char c) {
   if (plaintext_escape3(c))
     *out++ = c;
@@ -24,6 +27,7 @@ inline void append_escape3(char *&out, unsigned char c) {
     *out++ = k_hex[c & 0xf];
   }
 }
+
 inline std::size_t reserve_escape3(std::size_t len) {
   return len * 3;
 }
@@ -51,21 +55,75 @@ inline bool escape3(void const* i, std::size_t n, String &s, std::size_t maxlen 
   return escape3((char const*)i, n, s, maxlen);
 }
 
-struct Escape3 : std::string {
-  Escape3(void const* i, std::size_t n, std::size_t maxlen = 0) {
+struct Escape3 : string_builder {
+  Escape3(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) {
     append(i, n, maxlen);
   }
-  Escape3(std::size_t n, void const* i, std::size_t maxlen = 0) {
+  Escape3(std::size_t n, void const* i, std::size_t maxlen = 0, bool nbytes = false) {
     append(i, n, maxlen);
   }
-  void append(void const* i, std::size_t n, std::size_t maxlen = 0) {
+  explicit Escape3(std::string const& str, std::size_t maxlen = 0, bool nbytes = false) {
+    append(str.data(), str.size(), maxlen);
+  }
+  void append(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) {
     if (escape3(i, n, *this, maxlen)) {
       push_back('.');
       push_back('.');
       push_back('.');
     }
+    if (nbytes) {
+      push_back(' ');
+      push_back('(');
+      operator()(n);
+      operator()(" bytes)");
+    }
   }
 };
+
+struct Escape3Exception : std::exception {
+  Escape3Exception() {}
+  ~Escape3Exception() throw() {}
+  const char* what() const throw() {
+    return "Unescape3 expected two hex digits or backslash following backslash";
+  }
+};
+
+template <class ByteIt, class String>
+void unescape3(ByteIt i, ByteIt e, String &s) {
+  for (; i != e; ++i) {
+    char c = *i;
+    if (c != '\\')
+      s.push_back(c);
+    else {
+      if (++i == e) throw Escape3Exception();
+      c = *i;
+      if (c == '\\')
+        s.push_back(c);
+      else {
+        unsigned char high = hexdigit(c);
+        if (++i == e) throw Escape3Exception();
+        unsigned char low = hexdigit(*i);
+        s.push_back(high * 16 + low);
+      }
+    }
+  }
+}
+
+template <class String>
+void unescape3(void const* i, std::size_t n, String &s) {
+  unescape3((char const*)i, (char const*)i + n, s);
+}
+
+template <class String>
+void unescape3(char const* in, String &s) {
+  unescape3(in, in + strlen(in), s);
+}
+
+
+template <class String>
+void unescape3(std::string const& in, String &s) {
+  unescape3(in.begin(), in.end(), s);
+}
 
 
 }

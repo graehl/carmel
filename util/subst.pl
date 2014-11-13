@@ -42,11 +42,13 @@ my $substre;
 my @substs;
 my $abspath=1;
 my $sizeMax;
+my $rmlines;
 
 my @options=(
 "Global or regexp search and replace from a translation file (list of tab-separated source/replacement pairs)",
 ["abspath!"=>\$abspath,"for inplace, modify pointed to file by absolute path (don't remove symlink)"],
 ["translations-file=s"=>\$ttable,"list of tab-separated source/replacement pairs"],
+["rmlines-file=s"=>\$rmlines,q{list of source res - lines matching them with ^re$ are deleted}],
 ["reverse!"=>\$reverse,"reverse: replace second column in translations-file with first column"],
 ["inplace!"=>\$inplace,"in-place edit (note: cannot handle compressed inputs)"],
 ["eregexp!"=>\$isregexp,"treat source as regexp"],
@@ -67,9 +69,17 @@ my ($usagep,@opts)=getoptions_usage(@options);
 #info($cmdline);
 show_opts(@opts);
 
-my @rewrites;
+my @rms;
 my $fh=openz($ttable);
 while(<$fh>) {
+    chomp;
+    y/\013//d;
+    push @rms, qr{^$_$};
+}
+
+my @rewrites;
+my $fh2=openz($ttable);
+while(<$fh2>) {
     chomp;
     y/\013//d;
     if ($substre) {
@@ -104,7 +114,14 @@ if ($inplace) {
                 my $source=$sd->[0];
                 if ($line =~ /$source/) {
                     $modify_files{$file}=1;
-                    &debug("translation matched $file: $source");
+                    &debug("rewrite matched $file: $source");
+                    next file;
+                }
+            }
+            for my $source (@rms) {
+                if ($line =~ $source) {
+                    $modify_files{$file}=1;
+                    &debug("remove matched $file: $source");
                     next file;
                 }
             }
@@ -151,6 +168,13 @@ sub count_subst {
 while(<>) {
     my $pre=$_;
     chomp($pre);
+    for my $source (@rms) {
+        if ($_ =~ $source) {
+            &debug("remove matched line from $ARGV: $source");
+            last if $firstonly;
+            count_subst("remove $source",$pre,1);
+        }
+    }
     for my $sdd (@rewrites) {
         my ($source,$dest,$desc)=@{$sdd};
         my $n=s/$source/$dest/g;

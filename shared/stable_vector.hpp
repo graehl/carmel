@@ -50,6 +50,18 @@ struct stable_vector {
     assert(i < size_);
     return chunks[i >> chunkshift][i & posmask];
   }
+  T & at(I i) {
+    if (i < size_)
+      return chunks[i >> chunkshift][i & posmask];
+    else
+      throw std::out_of_range("stable_vector index too large");
+  }
+  T const& at(I i) const {
+    if (i < size_)
+      return chunks[i >> chunkshift][i & posmask];
+    else
+      throw std::out_of_range("stable_vector index too large");
+  }
   T const &operator[](I i) const {
     assert(i < size_);
     return chunks[i >> chunkshift][i & posmask];

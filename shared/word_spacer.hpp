@@ -153,7 +153,7 @@ struct sep {
   char const* s;
   bool squelch;
   sep(char const* s=" ") : s(s), squelch(true) {  }
-  operator char const* ()  {
+  operator char const* () {
     if (squelch) {
       squelch=false;
       return "";

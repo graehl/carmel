@@ -98,6 +98,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   explicit
   basic_array_streambuf(const char_type * p = 0, size_type sz = 0)
+      : eof_()
   {
     set_array(p, sz);
   }
@@ -118,6 +119,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   */
   explicit
   basic_array_streambuf(const void * p, size_type sz = 0)
+      : eof_()
   {
     set_array(p, sz);
   }
@@ -127,7 +129,9 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
   }
 
   explicit
-  basic_array_streambuf(string_type const& str) {
+  basic_array_streambuf(string_type const& str)
+      : eof_()
+  {
     set_array(str);
   }
 
@@ -236,8 +240,10 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
      this buffer can't be (automatically) grown. so once you write too much, you're dead.
   */
   int_type overflow(int_type c) {
-    if (out_avail()==0 && !traits::eq_int_type(c, traits::eof()))
+    if (out_avail()==0 && !traits::eq_int_type(c, traits::eof())) {
+      eof_ = true;
       return traits::eof();  // FAIL
+    }
     return traits::not_eof(c);
   }
 
@@ -350,6 +356,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits>
     }
     return begin();
   }
+  bool eof_;
  private:
   using base::pptr;
   using base::pbump;

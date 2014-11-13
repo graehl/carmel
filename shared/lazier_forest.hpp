@@ -435,7 +435,7 @@ struct lazier_forest : FilterFactory::filter_type // empty base class opt. - may
   memo_t memo;
 
   //try worsening ith (0=left, 1=right) child and adding to queue
-  inline void generate_successor_hyperedge(options &opt, hyperedge &pending, derivation_type old_parent, lazy_kbest_index_type i)  {
+  inline void generate_successor_hyperedge(options &opt, hyperedge &pending, derivation_type old_parent, lazy_kbest_index_type i) {
     lazier_forest &child_node = opt.expand(pending.child[i]);
     lazy_kbest_index_type &child_i = pending.childbp[i];
     derivation_type old_child = child_node.memo[child_i];

@@ -92,7 +92,7 @@ struct ArrayPMapImp
   explicit ArrayPMapImp(unsigned size=0) : ind(), vals(size) {}
   ArrayPMapImp(unsigned size, offset_map o) : ind(o), vals(size) {}
   explicit ArrayPMapImp(std::pair<unsigned, offset_map> const& init) : ind(init.second), vals(init.first) {}
-  operator Vals & ()  {
+  operator Vals & () {
     return vals;
   }
   V & operator [](key_type k) const {

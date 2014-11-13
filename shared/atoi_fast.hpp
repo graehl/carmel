@@ -81,6 +81,18 @@ PutChars<CharIt> putChars(CharIt begin, CharIt end) {
 }
 
 
+inline unsigned char hexdigit(char c) {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  } else if (c >= 'a' && c <= 'f') {
+    return 10 + c - 'a';
+  } else if (c >= 'A' && c <= 'F') {
+    return 10 + c - 'A';
+  } else {
+    throw string_to_exception("expected a hexadecimal [01234567890abcdefABCDEF] digit");
+  }
+}
+
 template <class U>
 inline U hextou(char const* begin, char const* end, bool complete = true) {
   char const* p = begin;

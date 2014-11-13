@@ -864,7 +864,7 @@ class lazy_forest
   memo_t memo;
 
   //try worsening ith (0=left, 1=right) child and adding to queue
-  inline void generate_successor_hyperedge(Environment &env, hyperedge &pending, derivation_type old_parent, lazy_kbest_index_type i)  {
+  inline void generate_successor_hyperedge(Environment &env, hyperedge &pending, derivation_type old_parent, lazy_kbest_index_type i) {
     lazy_forest &child_node=*pending.child[i];
     lazy_kbest_index_type &child_i = pending.childbp[i];
     derivation_type old_child = child_node.memo[child_i];

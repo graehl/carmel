@@ -1,6 +1,6 @@
 /** \file
 
-    .
+    avoid wasting memory or wasting cpu cache by awareness of allocator and cache granularity
 */
 
 #ifndef GOOD_ALLOC_SIZE_JG_2014_08_30_HPP
@@ -69,6 +69,21 @@ inline Size good_alloc_size(Size req) {
     return round_up_pow2(req, (Size)k4M);
 }
 
+/// double for very large allocations, else 3/2
+template <class Size>
+inline Size next_alloc_target(Size req) {
+  if (req <= 128 * (Size)k1K)
+    return (req * 3 + 1) / 2;
+  else {
+    Size const twice = req * 2;
+    return twice > req ? twice : (Size)-1;
+  }
+}
+
+template <class Size>
+inline Size next_good_alloc_size(Size req) {
+  return good_alloc_size(next_alloc_target(req));
+}
 
 template <class T>
 struct good_vector_size {
@@ -76,7 +91,7 @@ struct good_vector_size {
   /// returns at least prev
   template <class Size>
   static Size want(Size req) {
-    if (req * sizeof(T) <= 128 * k1K)
+    if (req * sizeof(T) <= 128 * (Size)k1K)
       return (req * 3 + 1) / 2;
     else {
       Size const twice = req * 2;

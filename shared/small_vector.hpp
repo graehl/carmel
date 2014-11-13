@@ -478,20 +478,27 @@ struct small_vector {
   // we may as well return 0; however, docs on std::vector::capacity imply capacity>=size.
 
   /// does not initialize w/ default ctor.
-  inline void resize_up_unconstructed(size_type s) { // like reserve, but because of capacity_ undef if data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_ immediately or we lose invariant
+  void resize_up_unconstructed(size_type s) { // like reserve, but because of capacity_ undef if data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_ immediately or we lose invariant
     assert(s>=data.stack.sz_);
     if (s>kMaxInlineSize)
-      reserve_up_big(s);
+      realloc_big(s);
     data.stack.sz_ = s;
   }
   void resize_up_big_unconstructed(size_type s) {
     assert(s>kMaxInlineSize);
-    reserve_up_big(s);
+    realloc_big(s);
     data.stack.sz_ = s;
   }
+  void resize_maybe_unconstructed(size_type s) {
+    if (s < data.stack.sz_)
+      compact(s);
+    else
+      resize_up_big_unconstructed(s);
+  }
+
   void reserve(size_type s) {
     if (data.stack.sz_ > kMaxInlineSize)
-      reserve_up_big(s);
+      realloc_big(s);
   }
   static inline void construct_range(T *v, size_type begin, size_type end) {
     for (size_type i = begin; i < end; ++i)
@@ -683,24 +690,27 @@ struct small_vector {
       ptr_to_small();
   }
 
+
   /**
+     take care of:
      free unused (heap) space.
   */
   void compact() {
-    compact(data.stack.sz_);
+    if (data.stack.sz_ > kMaxInlineSize) // was heap
+      realloc_big(data.stack.sz_);
   }
 
   /**
-     shrink (newsz must be <= size()) and free unused (heap) space.
+     like resize(newsz), but newsz must be <= size()
   */
   void compact(size_type newsz) {
     assert(newsz<=data.stack.sz_);
-    if (data.stack.sz_>kMaxInlineSize) { // was heap
-      data.stack.sz_=newsz;
-      if (newsz<=kMaxInlineSize) // now small
+    if (data.stack.sz_ > kMaxInlineSize) { // was heap
+      data.stack.sz_ = newsz;
+      if (newsz <= kMaxInlineSize) // now small
         ptr_to_small();
     } else // was small already
-      data.stack.sz_=newsz;
+      data.stack.sz_ = newsz;
   }
 
   void resize(size_type s, T const& v = T()) {
@@ -711,14 +721,14 @@ struct small_vector {
         data.stack.sz_ = s;
         ptr_to_small();
         return;
-      } else if (s<=data.stack.sz_) {
+      } else if (s <= data.stack.sz_) {
       } else { // growing but still small
         for (size_type i = data.stack.sz_; i < s; ++i)
           data.stack.vals_[i] = v;
       }
     } else { // new s is heap
       if (s > data.stack.sz_) {
-        reserve_up_big(s);
+        realloc_big(s);
         for (size_type i = data.stack.sz_;i<s;++i)
           data.heap.begin_[i] = v;
       }
@@ -969,7 +979,7 @@ struct small_vector {
   }
 
 
-  void reserve_up_big(size_type s) {
+  void realloc_big(size_type s) {
     assert(s>kMaxInlineSize);
     if (data.stack.sz_>kMaxInlineSize) {
       if (s>data.heap.capacity_)
