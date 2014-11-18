@@ -13,6 +13,15 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+gitbranches()
+{
+(
+    for branch in ${1:-`git branch`}; do
+        banner $branch
+        git log -n 1 $branch
+    done
+)
+}
 brewllvm() {
 brew install --HEAD ${1:-llvm} --with-libcxx --with-clang --rtti --all-targets
 }
