@@ -26,19 +26,17 @@
 
 namespace graehl {
 
-//typedef boost::mutex locking;
-//typedef boost::detail::lightweight_mutex spin_locking; ///WARNING: does not support scoped_lock(spin_locking&,bool)
+// typedef boost::mutex locking;
+// typedef boost::detail::lightweight_mutex spin_locking; ///WARNING: does not support
+// scoped_lock(spin_locking&,bool)
 
-struct locking
-{
+struct locking {
   typedef boost::mutex mutex_type;
   typedef boost::lock_guard<mutex_type> guard_type;
 };
 
-struct spin_locking
-{
+struct spin_locking {
   typedef boost::detail::lightweight_mutex mutex_type;
-//    typedef boost::lock_guard<mutex_type> guard_type;
   typedef mutex_type::scoped_lock guard_type;
 };
 

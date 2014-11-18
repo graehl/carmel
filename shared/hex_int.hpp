@@ -1,11 +1,13 @@
 #ifndef GRAEHL__SHARED__HEX_INT_HPP
 #define GRAEHL__SHARED__HEX_INT_HPP
 /*
-  wrapped integral types that do iostream with hex format (both in and out) - 0x prefix is mandatory, else read as regular int
+  wrapped integral types that do iostream with hex format (both in and out) - 0x prefix is mandatory, else
+  read as regular int
 
   ALSO default init to 0 :)
 
-  (actual octal handling for 0123 - who uses that anyway? maybe a feature not to have it. but consistency with string_to which uses strtoul etc.)
+  (actual octal handling for 0123 - who uses that anyway? maybe a feature not to have it. but consistency with
+  string_to which uses strtoul etc.)
  */
 
 #include <graehl/shared/print_read.hpp>
@@ -24,53 +26,50 @@ struct hex_int {
   typedef void leaf_configure;
   void assign(std::string const& s, bool complete = true) {
     std::string::size_type const sz = s.size();
-    if (sz >= 2 && s[0]=='0' && s[1] == 'x')
+    if (sz >= 2 && s[0] == '0' && s[1] == 'x')
       i = (I)hextou<U>(&s[2], &s[sz]);
     else
       string_to(s, i);
   }
 
-  friend inline void string_to_impl(std::string const& s, hex_int &me) {
-    me.assign(s);
-  }
+  friend inline void string_to_impl(std::string const& s, hex_int& me) { me.assign(s); }
   friend inline std::string type_string_impl(hex_int const& me) {
-    return "(hexadecimal) "+type_string(me.i);
+    return "(hexadecimal) " + type_string(me.i);
   }
 
   hex_int() : i() {}
   explicit hex_int(I i) : i(i) {}
   explicit hex_int(std::string const& s) { assign(s); }
-  operator I const& () const { return i; }
-  operator I& () { return i; }
-  I* operator & () { return &i; }
+  operator I const&() const { return i; }
+  operator I&() { return i; }
+  I* operator&() { return &i; }
   void operator=(I to) { i = to; }
   typedef hex_int<I> self_type;
   TO_OSTREAM_PRINT
   FROM_ISTREAM_READ
   template <class S>
-  void print(S &s) const {
-    s<<'0'<<'x'<<std::hex << U(i) << std::dec;
+  void print(S& s) const {
+    s << '0' << 'x' << std::hex << U(i) << std::dec;
   }
   template <class S>
-  void read(S &s) {
+  void read(S& s) {
     char c;
     if (!s.get(c)) return;
-    if (c=='0') {
-      i=0;
+    if (c == '0') {
+      i = 0;
       if (!s.get(c)) return;
-      if (c=='x') {
+      if (c == 'x') {
         U u;
-        if (!(s>>std::hex>>u>>std::dec)) return;
-        i=u;
+        if (!(s >> std::hex >> u >> std::dec)) return;
+        i = u;
       } else {
-        s.unget(); // actual number starting with 0. //octal for consistency with string_to.
-        if (std::isdigit(c))
-          s>>std::oct>>i;
+        s.unget();  // actual number starting with 0. //octal for consistency with string_to.
+        if (std::isdigit(c)) s >> std::oct >> i;
       }
     } else {
-      //regular int, maybe signed
+      // regular int, maybe signed
       s.unget();
-      s>>i;
+      s >> i;
     }
   }
 };

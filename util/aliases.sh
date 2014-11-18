@@ -5,41 +5,217 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 set -b
 shopt -s checkwinsize
 shopt -s cdspell
+xmtx=$(echo ~/x)
+xmtextbase=$(echo ~/c/xmt-externals)
 CT=${CT:-`echo ~/c/ct/main`}
 CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
 CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
+chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+brewllvm() {
+brew install --HEAD ${1:-llvm} --with-libcxx --with-clang --rtti --all-targets
+}
+buildninja() {
+    cd /local/graehl/src
+    set -e
+    (
+        set -e
+        git clone http://llvm.org/git/llvm.git
+        cd llvm/tools
+        git clone http://llvm.org/git/clang.git
+        cd clang/tools
+        git clone http://llvm.org/git/clang-tools-extra.git extra
+        sudo cp ninja /usr/bin/
+    )
+    (
+        set -e
+        git clone git://cmake.org/stage/cmake.git
+        cd cmake
+        git checkout next
+        ./bootstrap
+        make
+        sudo make install
+    )
+}
+buildclang() {
+    cmake -DLLVM_ENABLE_PIC=ON -DLLVM_ENABLE_CXX1Y=ON -DLLVM_BUILD_STATIC=OFF /local/graehl/src/llvm
+    make  -j6 "$@"
+#LDFLAGS+='-pie' CFLAGS+='-fPIE' CXXFLAGS+='-fPIE'
+}
+cppfilenames() {
+    grep -E '\.(hpp|cpp|ipp|cc|hh|c|h|C|H)$' "$@"
+}
+gitchangedfast() {
+    git diff --cached --name-only --diff-filter=ACMRT ${1:-HEAD^1}
+}
+clangformatignore() {
+  grep -E -v '\&\#10;|_DIAG_|></repl|> </repl' "$@"
+}
+clangformatargs="-style=file"
+filenamesclangformat() {
+(
+    set -o pipefail
+    xargs -n1 clang-format $clangformatargs -output-replacements-xml | grep "<replacement " | clangformatignore  >/dev/null
+    if [ $? -ne 1 ]
+        true
+    then
+        return 1
+    fi
+)
+}
+diffnostatus() {
+    (set +e
+    diff "$@"
+    true
+    )
+}
+clangformatdiff() {
+    for f in "$@"; do
+        ff=~/tmp/clang-format.`basename $f`
+        #touch $ff
+        clang-format $clangformatargs $f > $ff
+        # wc -l $f $ff
+        diff=`diffnostatus  -U0 $ff $f | perl -ne \
+'chomp;if (!/^---|\+\+\+/ && /^[-+].*[^ }]$/ && !/(CLANG|GCC)_DIAG_(ON|OFF|IGNORE)|REGISTER_FEATURE/) {print STDERR "$_\n";print "1"; exit 1}'`
+        if [[ $diff = 1 ]]; then
+            echo $f
+            return 1
+        else
+            echo OK: $f 1>&2
+        fi
+    done
+}
+isclangformatold() {
+(
+set -o pipefail
+    clang-format $clangformatargs -output-replacements-xml "$@" | grep "<replacement " | clangformatignore > /dev/null
+    if [ $? -ne 1 ]
+        true
+    then
+        return 1
+    fi
+)
+}
+isclangformat() {
+    clangformatdiff "$@"
+}
+gitrootdir() {
+    local root=$(git rev-parse --show-cdup)
+    if [[ $root ]]  ; then
+        echo $root
+    else
+        echo .
+    fi
+}
+gitroot() {
+    local root=$(git rev-parse --show-cdup)
+    if [[ $root ]]  ; then
+        cd $root
+    fi
+}
+gitallclangformat() {
+(
+    set -o pipefail
+    gitchangedfast | cppfilenames | filenamesclangformat
+)
+}
+warnclangformats() {
+    echo "WARNING: bad C++ formatting (run clang-format on changed sources): "
+    fixed=
+    for f in "$@"; do
+        if isclangformat $f; then
+            echo -n . 1>&2
+        else
+            fixed+=" $f"
+            if [[ $fixclangformat ]] ; then
+                clang-format -i $f
+                preview $f
+                echo fixed $f
+            else
+                echo $f
+            fi
+        fi
+    done
+    echo "WARNING: bad C++ formatting (run clang-format on changed sources above)"
+    if [[ $fixclangformat ]] ; then
+        preview $fixed
+        echo fixed: $fixed
+    else
+        echo 'cd '`abspath $(gitrootdir)`'; for f in '"$fixed"'; do edit $f; done'
+    fi
+}
+gitwarnallclang() {
+(
+    gitroot
+    warnclangformats `gitchangedfast | cppfilenames`
+)
+}
+gitwarnclang() {
+    gitroot
+    (
+        set -o pipefail
+
+        if gitallclangformat ; then
+            echo "# C++ format OK"
+        else
+            gitwarnallclang
+        fi
+    )
+}
+gitfixclangformat() {
+    bakthis preformat
+    fixclangformat=1 gitwarnclangformat
+}
+
+addcremotes() {
+    (
+        set -e
+        local csub=${1:? e.g. /home/graehl/c/xmt-externals}
+        set -x
+        for chost in $chosts; do
+            git remote add $chost ssh://graehl@$chost/$csub
+        done
+    )
+}
 if [[ $INSIDE_EMACS ]] ; then
     export PAGER=cat
 elif  [[ -x `which most 2>/dev/null` ]] ; then
     export PAGER=most
 fi
 HOST=${HOST:-`hostname`}
+iops() {
+    iostat –xn | grep Filesystem
+    for (( i=1; i <= 100; i++ ))
+    do
+        iostat -xn 1 2 | grep lwfiler3-128| tail -n 1
+        #| awk '{print $9}'
+    done | tee /tmp/iops
+}
 sac() {
     scp ~/u/aliases.sh c-graehl:u/aliases.sh
 }
 cpextlib() {
-(
-    local to=${1:-~/pub/lib}
-    mkdir -p $to
-    if [[ $lwarch = Apple ]] ; then
-        dylib=dylib
-    else
-        dylib=so
-    fi
-    for f in `ls ${XMT_EXTERNALS_PATH}/libraries/*/lib/*$dylib* | grep -v asdf`; do
-        ls -l $f
-        cp -a $f $to
-    done
-)
+    (
+        local to=${1:-~/pub/lib}
+        mkdir -p $to
+        if [[ $lwarch = Apple ]] ; then
+            dylib=dylib
+        else
+            dylib=so
+        fi
+        for f in `ls ${XMT_EXTERNALS_PATH}/libraries/*/lib/*$dylib* | grep -v asdf`; do
+            ls -l $f
+            cp -a $f $to
+        done
+    )
 }
 ruledump() {
-(set -e
-require_file $1
-set -x
-${ruledumper:-~/pub/dgood/RuleDumper.sh} -c $1 -g ${2:-grammar}
-)
+    (set -e
+        require_file $1
+        set -x
+        ${ruledumper:-~/pub/dgood/RuleDumper.sh} -c $1 -g ${2:-grammar}
+    )
 }
 hextoescape3() {
     perl -pe 's|([0-9a-fA-F][0-9a-fA-F])|\\$1|g'
@@ -59,7 +235,7 @@ find_srcs() {
         -o -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh' -o -name '.gitignore'
 }
 gitdiffl() {
-  git diff --stat mdbase | cut -d' ' -f2
+    git diff --stat mdbase | cut -d' ' -f2
 }
 gitsubset() {
     fullrepo=`pwd`
@@ -141,14 +317,14 @@ blamestats() {
     git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
 }
 dumpdb() {
-(
-set -e
-    db=$1
-    shift
-    mdb_from_db -l $db; mdb_from_db -T "$@" $db > $db.txt
-    preview $db.txt
-mdb_from_db -l $db
-)
+    (
+        set -e
+        db=$1
+        shift
+        mdb_from_db -l $db; mdb_from_db -T "$@" $db > $db.txt
+        preview $db.txt
+        mdb_from_db -l $db
+    )
 }
 
 ruleversion() {
@@ -206,10 +382,18 @@ export TERM=dumb
 set -e
 mdb=c/mdb/libraries/liblmdb/
 lmdb=c/lmdb
+#cp $lmdb/CMakeLists.txt $mdb
 cd ~
-cp $mdb/*.c $lmdb/mdb
+ln -sf ~/$mdb/*.c ~/$lmdb/mdb
 cd ~/c/mdbbuild
-cmake -G 'Unix Makefiles' ../lmdb && make -s && cp *mdb* ~/bin
+set -x
+cmake -G 'Unix Makefiles' ../lmdb
+make -s -j2
+for f in ~/$mdb/*.c; do
+    rm ~/$lmdb/mdb/`basename $f`
+    cp $f ~/$lmdb/mdb/
+done
+cp *mdb* ~/bin
 ll=$XMT_EXTERNALS_PATH/libraries/lmdb
 lib=$ll/lib
 bin=$ll/bin
@@ -217,13 +401,11 @@ mkdir -p $lib
 mkdir -p $bin
 cp *.dylib *.a $lib
 cp mdb_* $bin
+cp -f mdb_* ~/bin/
 cd $lib
 git add *.dylib *.a
 cd $bin
 git add mdb_*
-for f in mdb_*; do
-cp -f $ll/$f ~/bin
-done
 )
 }
 upmdb() {
@@ -251,13 +433,13 @@ ll=$xlib/lmdb/lib
 bl=$xlib/lmdb/bin
 mkdir -p $ll
 mkdir -p $bl
-chost=c-jmay
+chost=${mdbhost:-c-mdreyer}
 cb=c/build-$libver
 rm -f $HOME/$smdb/*.o
 rm -f $HOME/$smdb/*.a
 scp -r $HOME/$smdb $chost:c/
 banner building remotely on $chost
-c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make"
+c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make -j5"
 scp $chost:$cb/\*.so  $ll
 scp $chost:$cb/\*.a  $ll
 scp $chost:$cb/mdb_\*  $bl
@@ -430,6 +612,17 @@ cr-test() {
         c-test "$@"
     )
 }
+b-c() {
+    BUILD=DebugClang
+}
+cc-test() {
+    (
+        c-c
+        b-c
+        c-test "$@"
+    )
+}
+
 forever() {
     mkdir -p $foreverdir
     foreverlast=$foreverdir/`filename_from "$@"`
@@ -520,8 +713,6 @@ for(@l) {  print "rm $_\n" if (/$re/ && $m{$1} > $2) }
 mpics() {
     mgif
 }
-xmtx=$(echo ~/x)
-xmtextbase=$(echo ~/c/xmt-externals)
 blame() {
     git blame -wM "$@"
 }
@@ -1432,10 +1623,13 @@ if [[ $INSIDE_EMACS ]] ; then
 else
     gitnopager=
 fi
+
 forceco() {
     local branch=${1:?args: branch}
+    local xmtx=${2:-$xmtx}
     (
         set -e
+        set -x
         cd $xmtx
         git reset --hard $branch
         git log -n 1
@@ -1450,6 +1644,7 @@ newbranch() {
 }
 pushc() {
     (
+        local xmtx=${2:-$xmtx}
         cd $xmtx
         lock=.git/index.lock
         if [[ -f $lock ]] ; then
@@ -1468,9 +1663,24 @@ pushc() {
         set -e
         if [[ ${force:-} ]] ; then
             # avoid non-fast fwd msg
-            git push ${chost:-c-graehl} :$b || c-s "cd x;newbranch $b;git co master"
+            git push ${chost:-c-graehl} :$b || c-s "cd $xmtx;newbranch $b;git co master"
         fi
         git push ${chost:-c-graehl} +$b
+    )
+}
+lincoxs() {
+        for xmtx in $xmtx $xmtextbase; do
+            lincox $xmtx
+        done
+}
+lincox() {
+    (set -e
+        local xmtx=${1:-$xmtx}
+        cd $xmtx
+        local branch=`git_branch`
+        pushc $branch $xmtx
+        ctitle lincox "$@"
+        c-s forceco $branch $xmtx
     )
 }
 c-tests() {
@@ -1574,8 +1784,12 @@ dmacs() {
 brewclang() {
     brew install --HEAD --with-clang "$@"
 }
+c12-clangxmt() {
+    out=/tmp/clangxmt.hpp c12 xmtcm DebugClang
+}
 clangxmt() {
-    save12 ~/tmp/clangxmt.hpp xmtcm DebugClang
+    lincox
+    c-s xmtcm DebugClang
 }
 catgit() {
     local f=$1
@@ -3370,8 +3584,8 @@ gitrecycle() {
 }
 useclang() {
     local ccache=${ccache:-$(echo ~/bin/ccache)}
-    export CC="$ccache-cc"
-    export CXX="$ccache-c++"
+    export CC="$ccache-clang"
+    export CXX="$ccache-clang++"
 }
 usescanbuild() {
     local ccache=${ccache:-$(echo ~/bin/ccache)}
@@ -3465,7 +3679,7 @@ ctitle() {
 }
 linjen() {
     cd $xmtx
-    local branch=`git_branch`
+    local branch=${branch:-`git_branch`}
     pushc $branch
     ctitle jen "$@"
     (set -e;
@@ -3994,16 +4208,19 @@ mend() {
     )
 }
 xmend() {
-    if [[ -x $xmtx/.git/rebase-apply ]] ; then
+(
+    gd=${1:-$xmtx}
+    if [[ -x $gd/.git/rebase-apply ]] ; then
         echo2 mid-rebase already
         git rebase --continue
     else
         (
-            pushd $xmtx
+            pushd $gd
             git commit -a --amend
             popd
         )
     fi
+)
 }
 
 
@@ -5230,6 +5447,7 @@ lnhgforce() {
         for t in $b egdb$b gdb$b vg$b; do
             echo $t
             ln -sf $xmtx/run.sh ~/bin/$t
+            ln -sf $xmtx/run.sh ~/bin/${t}Clang
             ln -sf $xmtx/run.sh ~/bin/${t}Release
             ln -sf $xmtx/run.sh ~/bin/${t}RelWithDebInfo
         done

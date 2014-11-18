@@ -15,12 +15,12 @@
 #include <graehl/shared/bit_arithmetic.hpp>
 
 #ifndef INDEXED_EXTRA_ASSERT
-# define INDEXED_EXTRA_ASSERT 0
+#define INDEXED_EXTRA_ASSERT 0
 #endif
 
 namespace graehl {
 
-double const kMaxIndexedHashLoad = 0.7; // will double capacity when load reaches this
+double const kMaxIndexedHashLoad = 0.7;  // will double capacity when load reaches this
 double const kOneOverMaxIndexedHashLoad = 1. / kMaxIndexedHashLoad;
 
 template <class I>
@@ -32,67 +32,49 @@ I hash_capacity_for_size(I sz) {
 template <class T>
 struct indexed_traits {
   template <class Key>
-  inline bool operator()(T const& a, Key const& b) const { return a == b; }
+  inline bool operator()(T const& a, Key const& b) const {
+    return a == b;
+  }
   inline std::size_t operator()(T const& a) const { return boost::hash<T>()(a); }
 };
 
-template <class T,
-          class IndexT = unsigned,
-          class Vector = stable_vector<T>,
-          class HashEqualsTraits = indexed_traits<T>
-          >
+template <class T, class IndexT = unsigned, class Vector = stable_vector<T>,
+          class HashEqualsTraits = indexed_traits<T> >
 struct indexed : HashEqualsTraits {
   typedef IndexT I;
-  typedef I *Indices;
+  typedef I* Indices;
   enum { kNullIndex = -1 };
   typedef T Val;
   typedef Vector Vals;
   enum { kStartHashCapacity = 1 << 16 };
 
-  indexed(indexed const& o)
-      : mask_(o.mask_)
-      , vals_(o.vals_)
-      , index_()
-      , growAt_(o.growAt_)
-  {
+  indexed(indexed const& o) : mask_(o.mask_), vals_(o.vals_), index_(), growAt_(o.growAt_) {
     if (o.index_) {
       std::size_t bytes = (mask_ + 1) * sizeof(I);
       std::memcpy((index_ = (Indices)std::malloc(bytes)), o.index_, bytes);
     }
   }
 
-  indexed(I startHashCapacity = (I)kStartHashCapacity)
-      : mask_()
-      , index_()
-  {
+  indexed(I startHashCapacity = (I)kStartHashCapacity) : mask_(), index_() {
     init_empty_hash(next_power_of_2(startHashCapacity));
   }
 
   /// if !index, can't use find/index methods (like after you call free_hash()) until rehash()
-  explicit indexed(Vals const& vals, bool index = true)
-      : mask_()
-      , index_()
-      , vals_(vals)
-  {
-    if (index)
-      rehash();
+  explicit indexed(Vals const& vals, bool index = true) : mask_(), index_(), vals_(vals) {
+    if (index) rehash();
   }
 
-  void reserve(I capacity) {
-    vals_.reserve(capacity);
-  }
+  void reserve(I capacity) { vals_.reserve(capacity); }
 
   /// you can no longer use find/index (only operator[](index)) until rehash() - in fact, you
   /// can just use the returned Vals vector directly
-  Vals &freehash() {
+  Vals& freehash() {
     ::std::free((void*)index_);
     index_ = NULL;
     return vals_;
   }
 
-  Vals &vals() {
-    return vals_;
-  }
+  Vals& vals() { return vals_; }
 
   /// overwriting old values w/ different ones will lead to an overcrowded hash
   /// table that takes longer to search (until you call rehash)
@@ -111,8 +93,9 @@ struct indexed : HashEqualsTraits {
   template <class Key>
   I find(Key const& val, I otherwise = (I)kNullIndex) const {
     check_index();
-    //TODO: use pointers into index array instead of indices into it - might be slightly faster if we cache end pointer as member
-    for (I i = find_start(val); ;) {
+    // TODO: use pointers into index array instead of indices into it - might be slightly faster if we cache
+    // end pointer as member
+    for (I i = find_start(val);;) {
       I const j = index_[i];
       if (j == (I)kNullIndex)
         return otherwise;
@@ -130,11 +113,10 @@ struct indexed : HashEqualsTraits {
   I index(Key const& val) {
     check_index();
     I sz = vals_.size();
-    if (sz >= growAt_)
-      rehash_pow2(hash_capacity_for_size(sz + 1));
+    if (sz >= growAt_) rehash_pow2(hash_capacity_for_size(sz + 1));
     assert(sz < growAt_);
-    for (I i = find_start(val); ;) {
-      I &j = index_[i];
+    for (I i = find_start(val);;) {
+      I& j = index_[i];
       if (j == (I)kNullIndex) {
         vals_.push_back(val);
         return (j = sz);
@@ -147,38 +129,25 @@ struct indexed : HashEqualsTraits {
     }
   }
 
-  T const& operator[](I i) const {
-    return vals_[i];
-  }
+  T const& operator[](I i) const { return vals_[i]; }
 
-  T const& at(I i) const {
-    return vals_.at(i);
-  }
+  T const& at(I i) const { return vals_.at(i); }
 
-  bool hashed() const {
-    return index_;
-  }
+  bool hashed() const { return index_; }
 
-  void rehash() {
-    rehash(size());
-  }
+  void rehash() { rehash(size()); }
 
-  void rehash(I forSize) {
-    rehash_pow2(hash_capacity_for_size(forSize));
-  }
+  void rehash(I forSize) { rehash_pow2(hash_capacity_for_size(forSize)); }
 
   void rehash_pow2(I capacityPowerOf2) {
     init_empty_hash(capacityPowerOf2);
     setGrowAt(capacityPowerOf2);
-    for (I vali = 0, valn = vals_.size(); vali < valn; ++vali)
-      add_index(vali, vals_[vali]);
+    for (I vali = 0, valn = vals_.size(); vali < valn; ++vali) add_index(vali, vals_[vali]);
     check_index();
   }
 
   /// for setDeferHash where you've left some gaps (default constructed elements in vals_)
-  void rehash_except(T const& except = T()) {
-    rehash_except(size(), except);
-  }
+  void rehash_except(T const& except = T()) { rehash_except(size(), except); }
 
   void rehash_except(I forSize, T const& except = T()) {
     rehash_except_pow2(hash_capacity_for_size(forSize), except);
@@ -189,15 +158,12 @@ struct indexed : HashEqualsTraits {
     init_empty_hash(capacityPowerOf2);
     for (I vali = 0, valn = vals_.size(); vali < valn; ++vali) {
       T const& val = vals_[vali];
-      if (val != except)
-        add_index(vali, val);
+      if (val != except) add_index(vali, val);
     }
     check_index();
   }
 
-  ~indexed() {
-    freehash();
-  }
+  ~indexed() { freehash(); }
 
   void shrink(I newsize) {
     assert(newsize <= size());
@@ -213,15 +179,14 @@ struct indexed : HashEqualsTraits {
     clear_hash();
   }
 
-  I size() const {
-    return vals_.size();
-  }
+  I size() const { return vals_.size(); }
 
   template <class Key>
   bool contains(Key const& val) const {
     check_index();
-    //TODO: use pointers into index array instead of indices into it - might be slightly faster if we cache end pointer as member
-    for (I i = find_start(val); ;) {
+    // TODO: use pointers into index array instead of indices into it - might be slightly faster if we cache
+    // end pointer as member
+    for (I i = find_start(val);;) {
       I const j = index_[i];
       if (j == (I)kNullIndex)
         return false;
@@ -234,9 +199,7 @@ struct indexed : HashEqualsTraits {
     }
   }
 
-  bool known(I i) const {
-    return i < vals_.size();
-  }
+  bool known(I i) const { return i < vals_.size(); }
 
   void check_index() const {
     assert(index_);
@@ -248,18 +211,13 @@ struct indexed : HashEqualsTraits {
 #endif
   }
 
-  /// \return true if everything was added with index() since last rehash and no duplicates were ever added via set()
-  bool valid_index() const {
-    return count_indexed() == size();
-  }
+  /// \return true if everything was added with index() since last rehash and no duplicates were ever added
+  /// via set()
+  bool valid_index() const { return count_indexed() == size(); }
 
-
-  bool empty() const {
-    return vals_.empty();
-  }
+  bool empty() const { return vals_.empty(); }
 
  private:
-
   void add_index(I add, T const& val) {
     assert(vals_[add] == val);
     add_index_start(add, find_start(val));
@@ -269,8 +227,8 @@ struct indexed : HashEqualsTraits {
   /// caught by debug assert only).
   void add_index_start(I add, I start) {
     assert(growAt_ < mask_);
-    for (I i = start; ;) {
-      I &j = index_[i];
+    for (I i = start;;) {
+      I& j = index_[i];
       if (j == (I)kNullIndex) {
         j = add;
         return;
@@ -292,16 +250,14 @@ struct indexed : HashEqualsTraits {
 
   I count_indexed() const {
     I n = 0;
-    for (I i = 0 ; i <= mask_; ++i)
-      if (index_[i] != (I)kNullIndex)
-        ++n;
+    for (I i = 0; i <= mask_; ++i)
+      if (index_[i] != (I)kNullIndex) ++n;
     return n;
   }
 
   /// this never shrinks our previously allocated capacity
   void init_empty_hash(I capacityPowerOf2) {
-    if (capacityPowerOf2 < 4)
-      capacityPowerOf2 = 4;
+    if (capacityPowerOf2 < 4) capacityPowerOf2 = 4;
     assert(is_power_of_2(capacityPowerOf2));
     I const newmask = capacityPowerOf2 - 1;
     if (!index_ || mask_ < newmask) {
@@ -319,12 +275,10 @@ struct indexed : HashEqualsTraits {
   }
 
   void clear_hash() {
-    if (index_)
-      std::fill(index_, index_ + mask_ + 1, (I)kNullIndex);
+    if (index_) std::fill(index_, index_ + mask_ + 1, (I)kNullIndex);
   }
 
-
-  I mask_; // capacity - 1
+  I mask_;  // capacity - 1
   Vals vals_;
   Indices index_;
   I growAt_;

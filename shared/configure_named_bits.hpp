@@ -40,19 +40,15 @@ struct bit_names {
   }
 
   /// returns unknown bits that were set
-  Int clear_unknown(Int &val) const {
+  Int clear_unknown(Int& val) const {
     Int unk = val & ~known_;
     val &= known_;
     return unk;
   }
 
-  void operator()(std::string const& str) {
-    (*this)(str, next_);
-  }
+  void operator()(std::string const& str) { (*this)(str, next_); }
 
-  bit_names()
-      : next_(1)
-  {}
+  bit_names() : next_(1) {}
 
   std::string usage(bool values = false) const {
     string_builder b;
@@ -66,21 +62,20 @@ struct bit_names {
     return std::string(b.begin(), b.end());
   }
 
-  void usage(string_builder &b, bool values = false) const {
+  void usage(string_builder& b, bool values = false) const {
     bool first = true;
-    for(typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
+    for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
       b.space_except_first(first, '|');
       b(i->first);
-      if (values)
-        b('=')(hex(i->second));
+      if (values) b('=')(hex(i->second));
     }
   }
 
-  void append(Int val, string_builder &b) const {
+  void append(Int val, string_builder& b) const {
     bool first = true;
-    for(typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
+    for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
       Int const mask = i->second;
-      if ((val & mask) == mask) { // did you know: == precedes over &, so we need parens
+      if ((val & mask) == mask) {  // did you know: == precedes over &, so we need parens
         b.space_except_first(first, '|');
         b(i->first);
         val &= ~mask;
@@ -93,16 +88,14 @@ struct bit_names {
   }
 
   std::string const& bitname(Int val, std::string const& fallback) const {
-    for(typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i)
-      if (i->second == val)
-        return i->first;
+    for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i)
+      if (i->second == val) return i->first;
     return to_string(hex_int<Int>(val));
   }
 
   Int operator[](std::string const& name) const {
-    for(typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i)
-      if (i->first == name)
-        return i->second;
+    for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i)
+      if (i->first == name) return i->second;
     return hex_int<Int>(name);
   }
 
@@ -113,11 +106,8 @@ struct bit_names {
 
 template <class NameList, class Int = unsigned>
 struct cached_bit_names : bit_names<Int> {
-  cached_bit_names() {
-    NameList::bits(*this);
-  }
+  cached_bit_names() { NameList::bits(*this); }
 };
-
 
 template <class NameList, class Int>
 struct parse_bit_names {
@@ -131,54 +121,40 @@ struct parse_bit_names {
     return true;
   }
 
-  parse_bit_names(Int &val)
-      : val_(val)
-  {}
+  parse_bit_names(Int& val) : val_(val) {}
 
-  Int &val_;
+  Int& val_;
 };
-
 
 template <class NameList, class Int = unsigned>
 struct named_bits : hex_int<Int> {
   typedef hex_int<Int> Base;
   named_bits() {}
 
-  named_bits(Int i) : Base(i)
-  {}
+  named_bits(Int i) : Base(i) {}
 
-  Base &base() {
-    return static_cast<Base &>(*this);
-  }
+  Base& base() { return static_cast<Base&>(*this); }
 
   typedef parse_bit_names<NameList, Int> Names;
 
-  std::string type_string_impl(named_bits const&) { return Names::names().usage() + " or 0xfaceb00c hex or decimal"; }
-
-  static std::string usage(bool values = false) {
-    return Names::names().usage(values);
+  std::string type_string_impl(named_bits const&) {
+    return Names::names().usage() + " or 0xfaceb00c hex or decimal";
   }
 
-  static Int getSingle(std::string const& name) {
-    return Names::names()[name];
-  }
+  static std::string usage(bool values = false) { return Names::names().usage(values); }
+
+  static Int getSingle(std::string const& name) { return Names::names()[name]; }
 
   /// returns unknown bits that were set
-  Int clear_unknown() {
-    return Names::names().clear_unknown(base());
-  }
+  Int clear_unknown() { return Names::names().clear_unknown(base()); }
 
-  void append(string_builder &b) const {
-    Names::names().append(*this, b);
-  }
+  void append(string_builder& b) const { Names::names().append(*this, b); }
 
-  friend void string_to_impl(std::string const& s, named_bits &n) {
+  friend void string_to_impl(std::string const& s, named_bits& n) {
     n = 0;
     try {
       split_noquote(s, parse_bit_names<NameList, Int>(n), "|");
-    } catch (string_to_exception &e) {
-      string_to_impl(s, n.base);
-    }
+    } catch (string_to_exception& e) { string_to_impl(s, n.base); }
   }
 
   friend std::string to_string_impl(named_bits const& n) {
@@ -187,18 +163,16 @@ struct named_bits : hex_int<Int> {
     return std::string(b.begin(), b.end());
   }
 
-  friend inline std::ostream& operator<<(std::ostream &out, named_bits const& self) {
+  friend inline std::ostream& operator<<(std::ostream& out, named_bits const& self) {
     self.print(out);
     return out;
   }
 
-  void print(std::ostream &out) const {
+  void print(std::ostream& out) const {
     string_builder b;
     append(b);
     out << b;
   }
-
-
 };
 
 

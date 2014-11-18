@@ -1,7 +1,6 @@
 #ifndef GRAEHL_SHARED___SMALL_VECTOR
 #define GRAEHL_SHARED___SMALL_VECTOR
 
-
 /** \file
 
     space and cache-efficient small vectors (like std::vector). for small size,
@@ -33,7 +32,8 @@
     ability to have size/capacity next to each other for large format.
 
     TODO: need to implement tests/handling for non-pod (guarantee ctor/dtor
-    calls in that case, incl copy ctor when changing between heap and inline). for now assume that T must be POD.
+    calls in that case, incl copy ctor when changing between heap and inline). for now assume that T must be
+   POD.
 
     REQUIRES that T is POD (specifically - it's part of a union, so must be. all
     we really require is that memmove/memcpy is allowed rather than copy
@@ -60,11 +60,11 @@
 */
 
 #ifndef GRAEHL_VALGRIND
-# if NDEBUG
-#  define GRAEHL_VALGRIND 0
-# else
-#  define GRAEHL_VALGRIND 1
-# endif
+#if NDEBUG
+#define GRAEHL_VALGRIND 0
+#else
+#define GRAEHL_VALGRIND 1
+#endif
 // define as 0 and get faster copying from small->heap vector (may copy uninitialized elements)
 #endif
 
@@ -84,7 +84,7 @@
 
    http://stackoverflow.com/questions/13655704/boostserialize-an-array-like-type-exactly-like-stdvector-without-copying
 */
-# define GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION 0
+#define GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION 0
 #endif
 #if GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION
 #include <boost/serialization/version.hpp>
@@ -93,7 +93,6 @@
 
 #define GRAEHL_BOOST_SERIALIZATION_NVP(v) BOOST_SERIALIZATION_NVP(v)
 #define GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(v) BOOST_SERIALIZATION_NVP(v)
-
 
 #include <vector>
 #include <iterator>
@@ -126,7 +125,7 @@ typedef unsigned small_vector_default_size_type;
 
 // recommend an odd number for kMaxInlineSize on 64-bit (check sizeof to see
 // that you get the extra element for free)
-template <class T, unsigned kMaxInlineSize=kDefaultMaxInlineSize, class Size=small_vector_default_size_type>
+template <class T, unsigned kMaxInlineSize = kDefaultMaxInlineSize, class Size = small_vector_default_size_type>
 struct small_vector {
   typedef small_vector Self;
   typedef Size size_type;
@@ -134,19 +133,15 @@ struct small_vector {
   /**
      may leak (if you don't free yourself)
   */
-  void clear_nodestroy() {
-    data.stack.sz_ = 0;
-  }
+  void clear_nodestroy() { data.stack.sz_ = 0; }
 
 #if __cplusplus >= 201103L || CPP11
-  small_vector(small_vector && o)
-  {
+  small_vector(small_vector&& o) {
     std::memcpy(this, &o, sizeof(small_vector));
     o.clear_nodestroy();
   }
 
-  small_vector & operator=(small_vector && o)
-  {
+  small_vector& operator=(small_vector&& o) {
     if (&o != this) {
       free();
       std::memcpy(this, &o, sizeof(small_vector));
@@ -158,70 +153,65 @@ struct small_vector {
 
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   template <class Archive>
-  void save(Archive & ar, const unsigned) const {
+  void save(Archive& ar, const unsigned) const {
     using namespace boost::serialization;
     collection_size_type const count(data.stack.sz_);
     ar << GRAEHL_BOOST_SERIALIZATION_NVP(count);
 #if GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION
     item_version_type const item_version(version<T>::value);
-    ar << GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(item_version); // for text archive only apparently? use_array_optimization only fires for binary archive?
+    ar << GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(item_version);  // for text archive only apparently?
+// use_array_optimization only fires for
+// binary archive?
 #endif
-    if (data.stack.sz_)
-      ar << GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
+    if (data.stack.sz_) ar << GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
   }
-  template<class Archive>
-  void load(Archive & ar, const unsigned) {
+  template <class Archive>
+  void load(Archive& ar, const unsigned) {
     using namespace boost::serialization;
     collection_size_type count;
     ar >> GRAEHL_BOOST_SERIALIZATION_NVP(count);
     resize((size_type)count);
-    assert(count==data.stack.sz_);
+    assert(count == data.stack.sz_);
 #if GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION
     item_version_type version;
     ar >> GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(version);
 #endif
-    if (data.stack.sz_)
-      ar >> GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
+    if (data.stack.sz_) ar >> GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
   }
 
-  small_vector() {
-    data.stack.sz_ = 0;
-  }
+  small_vector() { data.stack.sz_ = 0; }
   /**
      default constructed T() * s. since T is probably POD, this means its pod
-     members are default constructed (i.e. set to 0). If T isn't POD but can be memmoved, then you probably really wanted the constructor called.
+     members are default constructed (i.e. set to 0). If T isn't POD but can be memmoved, then you probably
+     really wanted the constructor called.
   */
   explicit small_vector(size_type s) {
-    assert(s<=kMaxSize);
+    assert(s <= kMaxSize);
     alloc(s);
     if (s <= kMaxInlineSize)
-      for (size_type i = 0; i < s; ++i) new(&data.stack.vals_[i]) T();
+      for (size_type i = 0; i < s; ++i) new (&data.stack.vals_[i]) T();
     else
-      for (size_type i = 0; i < data.stack.sz_; ++i) new(&data.heap.begin_[i]) T();
+      for (size_type i = 0; i < data.stack.sz_; ++i) new (&data.heap.begin_[i]) T();
   }
 
   small_vector(int s, T const& v) {
-    assert(s>=0);
+    assert(s >= 0);
     init((size_type)s, v);
   }
 
-#ifndef XMT_32 // avoid signature collision
-  small_vector(unsigned s, T const& v) {
-    init((size_type)s, v);
-  }
+#ifndef XMT_32  // avoid signature collision
+  small_vector(unsigned s, T const& v) { init((size_type)s, v); }
 #endif
 
-  small_vector(std::size_t s, T const& v) {
-    init((size_type)s, v);
-  }
+  small_vector(std::size_t s, T const& v) { init((size_type)s, v); }
 
   template <class Val>
   small_vector(int s, Val const& v) {
-    assert(s>=0);
+    assert(s >= 0);
     init((size_type)s, v);
   }
 
-#ifndef XMT_32 // avoid signature collision
+#ifndef XMT_32  // avoid signature collision
   template <class Val>
   small_vector(unsigned s, Val const& v) {
     init((size_type)s, v);
@@ -233,22 +223,19 @@ struct small_vector {
     init((size_type)s, v);
   }
 
-
-  small_vector(T const* i, T const* end) {
-    init_range(i, end);
-  }
+  small_vector(T const* i, T const* end) { init_range(i, end); }
 
   template <class Iter>
-  small_vector(Iter const& i, Iter const& end
-               , typename enable_type<typename Iter::value_type>::type *enable=0)
-      // couldn't SFINAE on std::iterator_traits<Iter> in gcc (for Iter=int)
+  small_vector(Iter const& i, Iter const& end,
+               typename enable_type<typename Iter::value_type>::type* enable = 0)
+  // couldn't SFINAE on std::iterator_traits<Iter> in gcc (for Iter=int)
   {
     init_range(i, end);
   }
 
  protected:
   void init(size_type s, T const& v) {
-    assert(s<=kMaxSize);
+    assert(s <= kMaxSize);
     alloc(s);
     if (s <= kMaxInlineSize) {
       for (size_type i = 0; i < s; ++i) data.stack.vals_[i] = v;
@@ -257,32 +244,32 @@ struct small_vector {
     }
   }
   void init_range(T const* i, T const* end) {
-    size_type s=(size_type)(end-i);
-    assert(s<=kMaxSize);
+    size_type s = (size_type)(end - i);
+    assert(s <= kMaxSize);
     alloc(s);
     memcpy_from(i);
   }
   template <class I>
   void init_range(I const& i, I const& end) {
-    size_type s=(size_type)std::distance(i, end);
-    assert(s<=kMaxSize);
+    size_type s = (size_type)std::distance(i, end);
+    assert(s <= kMaxSize);
     alloc(s);
     std::copy(i, end, begin());
   }
- public:
 
+ public:
   /**
      copy ctor.
   */
   small_vector(small_vector const& o) {
     if (o.data.stack.sz_ <= kMaxInlineSize) {
 #if GRAEHL_VALGRIND
-      data.stack.sz_=o.data.stack.sz_;
-      for (size_type i=0;i<data.stack.sz_;++i) data.stack.vals_[i]=o.data.stack.vals_[i];
+      data.stack.sz_ = o.data.stack.sz_;
+      for (size_type i = 0; i < data.stack.sz_; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
 #else
-      data.stack=o.data.stack;
+      data.stack = o.data.stack;
 #endif
-      //TODO: valgrind for partial init array
+      // TODO: valgrind for partial init array
     } else {
       data.heap.capacity_ = data.heap.sz_ = o.data.heap.sz_;
       alloc_heap();
@@ -298,29 +285,32 @@ struct small_vector {
   typedef T const* const_iterator;
   typedef T* iterator;
   typedef T value_type;
-  typedef T &reference;
+  typedef T& reference;
   typedef T const& const_reference;
-  static const size_type kMaxSize=
+  static const size_type kMaxSize =
 #ifdef NDEBUG
       (size_type)-1;
 #else
-  ((size_type)-1)/2;
+      ((size_type)-1) / 2;
 #endif
   typedef good_vector_size<T> TargetSize;
   enum { kTargetBiggerSz = kMaxInlineSize * 3 + 1 / 2 };
   enum { kTargetBiggerUnaligned = sizeof(T) * kTargetBiggerSz };
-  enum { kTargetBiggerAligned = (kTargetBiggerUnaligned + ktarget_first_alloc_mask) & ~(size_type)ktarget_first_alloc_mask };
-  static const size_type kInitHeapSize =
-      TargetSize::ktarget_first_sz > kMaxInlineSize ? TargetSize::ktarget_first_sz : kTargetBiggerAligned / sizeof(T);
-  T *begin() { return data.stack.sz_ > kMaxInlineSize ? data.heap.begin_ : data.stack.vals_; }
+  enum {
+    kTargetBiggerAligned = (kTargetBiggerUnaligned + ktarget_first_alloc_mask)
+                           & ~(size_type)ktarget_first_alloc_mask
+  };
+  static const size_type kInitHeapSize = TargetSize::ktarget_first_sz > kMaxInlineSize
+                                             ? TargetSize::ktarget_first_sz
+                                             : kTargetBiggerAligned / sizeof(T);
+  T* begin() { return data.stack.sz_ > kMaxInlineSize ? data.heap.begin_ : data.stack.vals_; }
   T const* begin() const { return const_cast<small_vector*>(this)->begin(); }
-  T *end() { return begin() + data.stack.sz_; }
+  T* end() { return begin() + data.stack.sz_; }
   T const* end() const { return begin() + data.stack.sz_; }
   typedef std::pair<T const*, T const*> slice_type;
   slice_type slice() const {
-    return data.stack.sz_ > kMaxInlineSize ?
-        slice_type(data.heap.begin_, data.heap.begin_ + data.stack.sz_) :
-        slice_type(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
+    return data.stack.sz_ > kMaxInlineSize ? slice_type(data.heap.begin_, data.heap.begin_ + data.stack.sz_)
+                                           : slice_type(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
   }
 
   typedef std::reverse_iterator<iterator> reverse_iterator;
@@ -330,83 +320,65 @@ struct small_vector {
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   reverse_iterator rend() { return reverse_iterator(begin()); }
 
-  //TODO: test.  this invalidates more iterators than std::vector since resize may move from ptr to vals.
-  T *erase(T *b) {
-    return erase(b, b+1);
-  }
+  // TODO: test.  this invalidates more iterators than std::vector since resize may move from ptr to vals.
+  T* erase(T* b) { return erase(b, b + 1); }
 
   void movelen(size_type to, size_type from, size_type len) {
-    T *b = begin();
+    T* b = begin();
     std::memmove(b + to, b + from, len * sizeof(T));
   }
 
   // memmove instead of memcpy for case when someone erases middle of vector and
   // so source, destination ranges overlap
-  static void movelen(T *to, T const* from, size_type len) {
-    std::memmove(to, from, len * sizeof(T));
-  }
+  static void movelen(T* to, T const* from, size_type len) { std::memmove(to, from, len * sizeof(T)); }
 
   void erase(size_type ibegin, size_type iend) {
     size_type sz = data.stack.sz_;
-    if (iend == sz) {
-      resize(ibegin);
-    } else {
+    if (iend == sz) { resize(ibegin); } else {
       size_type nafter = sz - iend;
       movelen(ibegin, iend, nafter);
       resize(ibegin + nafter);
     }
   }
 
-  T *erase(T *b, T* e) { // remove [b, e) and return pointer to element e
-    T *tb = begin(), *te = end();
-    size_type nbefore = (size_type)(b-tb);
-    if (e==te) {
-      resize(nbefore);
-    } else {
-      size_type nafter = (size_type)(te-e);
+  T* erase(T* b, T* e) {  // remove [b, e) and return pointer to element e
+    T* tb = begin(), * te = end();
+    size_type nbefore = (size_type)(b - tb);
+    if (e == te) { resize(nbefore); } else {
+      size_type nafter = (size_type)(te - e);
       movelen(b, e, nafter);
       resize(nbefore + nafter);
     }
     return begin() + nbefore;
   }
-  void memcpy_to(T *p) {
-    std::memcpy(p, begin(), data.stack.sz_*sizeof(T));
-  }
+  void memcpy_to(T* p) { std::memcpy(p, begin(), data.stack.sz_ * sizeof(T)); }
   void memcpy_heap(T const* from) {
-    assert(data.stack.sz_<=kMaxSize);
-    assert(data.heap.capacity_>=data.stack.sz_);
-    std::memcpy(data.heap.begin_, from, data.stack.sz_*sizeof(T));
+    assert(data.stack.sz_ <= kMaxSize);
+    assert(data.heap.capacity_ >= data.stack.sz_);
+    std::memcpy(data.heap.begin_, from, data.stack.sz_ * sizeof(T));
   }
   void memcpy_from(T const* from) {
-    assert(data.stack.sz_<=kMaxSize);
-    std::memcpy(this->begin(), from, data.stack.sz_*sizeof(T));
+    assert(data.stack.sz_ <= kMaxSize);
+    std::memcpy(this->begin(), from, data.stack.sz_ * sizeof(T));
   }
-  static inline void memcpy_n(T *to, T const* from, size_type n) {
-    std::memcpy(to, from, n*sizeof(T));
-  }
-  static inline void memmove_n(T *to, T const* from, size_type n) {
-    std::memmove(to, from, n*sizeof(T));
-  }
+  static inline void memcpy_n(T* to, T const* from, size_type n) { std::memcpy(to, from, n * sizeof(T)); }
+  static inline void memmove_n(T* to, T const* from, size_type n) { std::memmove(to, from, n * sizeof(T)); }
 
   /// like C++11 move but explicit
-  void steal(small_vector &o) {
+  void steal(small_vector& o) {
     if (&o == this) return;
     free();
     if (data.stack.sz_ <= kMaxInlineSize) {
       data.stack.sz_ = o.data.stack.sz_;
       // unsigned instead of size_type because kMaxInlineSize is unsigned
       for (unsigned i = 0; i < kMaxInlineSize; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
-    } else {
-      std::memcpy(this, &o, sizeof(o));
-    }
+    } else { std::memcpy(this, &o, sizeof(o)); }
     o.clear_nodestroy();
   }
 
-  friend inline void moveAssign(small_vector &to, small_vector &from) {
-    to.steal(from);
-  }
+  friend inline void moveAssign(small_vector& to, small_vector& from) { to.steal(from); }
 
-  small_vector & operator=(small_vector const& o) {
+  small_vector& operator=(small_vector const& o) {
     if (&o == this) return *this;
     if (data.stack.sz_ <= kMaxInlineSize) {
       if (o.data.stack.sz_ <= kMaxInlineSize) {
@@ -436,9 +408,7 @@ struct small_vector {
     return *this;
   }
 
-  ~small_vector() {
-    free();
-  }
+  ~small_vector() { free(); }
 
   void clear() {
     free();
@@ -446,14 +416,13 @@ struct small_vector {
   }
 
   void assign(T const* i, T const* end) {
-    size_type n=(size_type)(end-i);
+    size_type n = (size_type)(end - i);
     memcpy_n(realloc(n), i, n);
   }
   template <class I>
   void assign(I i, I end) {
-    T *o=realloc((size_type)std::distance(i, end));
-    for (;i!=end;++i)
-      *o++=*i;
+    T* o = realloc((size_type)std::distance(i, end));
+    for (; i != end; ++i) *o++ = *i;
   }
   template <class Set>
   void assign(Set const& set) {
@@ -462,30 +431,31 @@ struct small_vector {
   template <class I>
   void assign_input(I i, I end) {
     clear();
-    for(;i!=end;++i)
-      push_back(*i);
+    for (; i != end; ++i) push_back(*i);
   }
   void assign(size_type n, T const& v) {
     free();
     init(n, v);
   }
 
-
   bool empty() const { return data.stack.sz_ == 0; }
   size_type size() const { return data.stack.sz_; }
-  size_type capacity() const { return data.stack.sz_>kMaxInlineSize ? data.heap.capacity_ : data.stack.sz_; }
+  size_type capacity() const {
+    return data.stack.sz_ > kMaxInlineSize ? data.heap.capacity_ : data.stack.sz_;
+  }
   // our true capacity is never less than kMaxInlineSize, but since capacity talks about allocated space,
   // we may as well return 0; however, docs on std::vector::capacity imply capacity>=size.
 
   /// does not initialize w/ default ctor.
-  void resize_up_unconstructed(size_type s) { // like reserve, but because of capacity_ undef if data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_ immediately or we lose invariant
-    assert(s>=data.stack.sz_);
-    if (s>kMaxInlineSize)
-      realloc_big(s);
+  void resize_up_unconstructed(size_type s) {  // like reserve, but because of capacity_ undef if
+    // data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_
+    // immediately or we lose invariant
+    assert(s >= data.stack.sz_);
+    if (s > kMaxInlineSize) realloc_big(s);
     data.stack.sz_ = s;
   }
   void resize_up_big_unconstructed(size_type s) {
-    assert(s>kMaxInlineSize);
+    assert(s > kMaxInlineSize);
     realloc_big(s);
     data.stack.sz_ = s;
   }
@@ -497,17 +467,14 @@ struct small_vector {
   }
 
   void reserve(size_type s) {
-    if (data.stack.sz_ > kMaxInlineSize)
-      realloc_big(s);
+    if (data.stack.sz_ > kMaxInlineSize) realloc_big(s);
   }
-  static inline void construct_range(T *v, size_type begin, size_type end) {
-    for (size_type i = begin; i < end; ++i)
-      new(&v[i]) T();
+  static inline void construct_range(T* v, size_type begin, size_type end) {
+    for (size_type i = begin; i < end; ++i) new (&v[i]) T();
   }
 
-  static inline void construct_range(T *v, size_type begin, size_type end, T const& val) {
-    for (size_type i = begin; i < end; ++i)
-      new(&v[i]) T(val);
+  static inline void construct_range(T* v, size_type begin, size_type end, T const& val) {
+    for (size_type i = begin; i < end; ++i) new (&v[i]) T(val);
   }
 
   // aliasing warning: if append is within self, undefined result (because we invalidate iterators as we grow)
@@ -516,41 +483,39 @@ struct small_vector {
   */
   template <class InputIter>
   inline void append_input(InputIter i, InputIter end) {
-    if (data.small.sz_<=kMaxInlineSize) {
-      for (;data.small.sz_<kMaxInlineSize;++data.small.sz_) {
-        data.small.vals_[data.small.sz_]=*i;
+    if (data.small.sz_ <= kMaxInlineSize) {
+      for (; data.small.sz_ < kMaxInlineSize; ++data.small.sz_) {
+        data.small.vals_[data.small.sz_] = *i;
         ++i;
-        if (i==end) return;
+        if (i == end) return;
       }
       copy_vals_to_ptr();
-      data.large.begin_[kMaxInlineSize]=*i;
+      data.large.begin_[kMaxInlineSize] = *i;
       ++i;
-      data.small.sz_=kMaxInlineSize+1;
+      data.small.sz_ = kMaxInlineSize + 1;
     }
-    for (;i!=end;++i)
-      push_back_large(*i);
+    for (; i != end; ++i) push_back_large(*i);
   }
 
   template <class ForwardIter>
   inline void append(ForwardIter i, ForwardIter e) {
-    size_type s=data.stack.sz_;
-    size_type addsz=(size_type)(e-i);
-    resize_up_unconstructed(s+addsz);
-    for (T *b=begin()+s;i<e;++i,++b)
-      *b=*i;
+    size_type s = data.stack.sz_;
+    size_type addsz = (size_type)(e - i);
+    resize_up_unconstructed(s + addsz);
+    for (T* b = begin() + s; i < e; ++i, ++b) *b = *i;
   }
 
   inline void append(T const* i, size_type n) {
-    size_type s=data.stack.sz_;
+    size_type s = data.stack.sz_;
     append_unconstructed(n);
-    memcpy_n(begin()+s, i, n);
+    memcpy_n(begin() + s, i, n);
   }
 
   inline void append(T const* i, T const* end) {
-    size_type s=data.stack.sz_;
-    size_type n=(size_type)(end-i);
+    size_type s = data.stack.sz_;
+    size_type n = (size_type)(end - i);
     append_unconstructed(n);
-    memcpy_n(begin()+s, i, n);
+    memcpy_n(begin() + s, i, n);
   }
 
   template <class Set>
@@ -558,20 +523,14 @@ struct small_vector {
     append(set.begin(), set.end());
   }
 
-  inline void append(small_vector const& set) {
-    append(set.begin(), set.data.stack.sz_);
-  }
+  inline void append(small_vector const& set) { append(set.begin(), set.data.stack.sz_); }
 
-  inline void insert(T const& v) {
-    push_back(v);
-  }
+  inline void insert(T const& v) { push_back(v); }
 
   /**
      increase size without calling default ctor.
   */
-  inline void append_unconstructed(size_type N) {
-    resize_up_unconstructed(data.stack.sz_+N);
-  }
+  inline void append_unconstructed(size_type N) { resize_up_unconstructed(data.stack.sz_ + N); }
 
   /**
      change size without calling default ctor.
@@ -587,81 +546,71 @@ struct small_vector {
      insert hole of N elements at iterator i
   */
   inline void insert_hole(iterator where, size_type N) {
-    if (where==end())
+    if (where == end())
       append_unconstructed(N);
     else
-      insert_hole_index(where-begin(), N);
+      insert_hole_index(where - begin(), N);
   }
 
   /**
      insert hole of N elements at index i.
   */
-  inline T *insert_hole_index(size_type i, size_type N) {
-    size_type s=data.stack.sz_;
-    size_type snew=s+N;
+  inline T* insert_hole_index(size_type i, size_type N) {
+    size_type s = data.stack.sz_;
+    size_type snew = s + N;
     resize_up_unconstructed(snew);
-    //TODO: optimize for snew, s inline/not
-    T *v=begin();
-    memmove_n(v+i+N, v+i, s-i);
-    return v+i;
+    // TODO: optimize for snew, s inline/not
+    T* v = begin();
+    memmove_n(v + i + N, v + i, s - i);
+    return v + i;
   }
 
   template <class ForwardIter>
   inline void insert(iterator where, ForwardIter i, ForwardIter e) {
-    if (where==end())
+    if (where == end())
       append(i, e);
     else
-      insert_index((size_type)(where-begin()), i, e);
+      insert_index((size_type)(where - begin()), i, e);
   }
 
   inline void insert(iterator where, T const* i, T const* e) {
-    if (where==end())
+    if (where == end())
       append(i, e);
     else
-      insert_index((size_type)(where-begin()), i, e);
+      insert_index((size_type)(where - begin()), i, e);
   }
 
   template <class ForwardIter>
   inline void insert_index(size_type atIndex, ForwardIter i, ForwardIter e) {
-    size_type N=(size_type)std::distance(i, e);
-    T *o=insert_hole_index(atIndex, N);
-    for (;i!=e;++i,++o)
-      *o=*i;
+    size_type N = (size_type)std::distance(i, e);
+    T* o = insert_hole_index(atIndex, N);
+    for (; i != e; ++i, ++o) *o = *i;
   }
 
   inline void insert_index(size_type atIndex, T const* i, T const* e) {
-    size_type N=(size_type)(e-i);
+    size_type N = (size_type)(e - i);
     memcpy_n(insert_hole_index(atIndex, N), i, N);
   }
 
-  inline void insert_index(size_type where, T const& t) {
-    memcpy_n(insert_hole_index(where,1), &t,1);
-  }
+  inline void insert_index(size_type where, T const& t) { memcpy_n(insert_hole_index(where, 1), &t, 1); }
 
-  inline void insert(iterator where, T const& t) {
-    insert_index((size_type)(where-begin()), t);
-  }
+  inline void insert(iterator where, T const& t) { insert_index((size_type)(where - begin()), t); }
 
   /**
      O(n) of course.
   */
-  inline void push_front(T const& t) {
-    insert_index(0, t);
-  }
+  inline void push_front(T const& t) { insert_index(0, t); }
 
   inline void insert_index(size_type where, size_type n, T const& t) {
     insert_hole_index(where, n);
-    T *o=begin()+where;
-    while(--n) *o++=t;
+    T* o = begin() + where;
+    while (--n) *o++ = t;
   }
 
-  inline void insert_index(iterator where, size_type n, T const& t) {
-    insert_index(where-begin(), n, t);
-  }
+  inline void insert_index(iterator where, size_type n, T const& t) { insert_index(where - begin(), n, t); }
 
   inline void push_back_heap(T const& v) {
-    if (data.stack.sz_ == data.heap.capacity_)
-      ensure_capacity_grow(data.stack.sz_ + 1);
+    if (data.stack.sz_ == data.heap.capacity_) ensure_capacity_grow(data.stack.sz_ + 1);
     data.heap.begin_[data.stack.sz_++] = v;
   }
 
@@ -672,10 +621,8 @@ struct small_vector {
     } else if (data.stack.sz_ == kMaxInlineSize) {
       copy_vals_to_ptr();
       data.heap.begin_[kMaxInlineSize] = v;
-      data.stack.sz_ = kMaxInlineSize+1;
-    } else {
-      push_back_heap(v);
-    }
+      data.stack.sz_ = kMaxInlineSize + 1;
+    } else { push_back_heap(v); }
   }
 
   T& back() { return this->operator[](data.stack.sz_ - 1); }
@@ -684,19 +631,17 @@ struct small_vector {
   const T& front() const { return this->operator[](0); }
 
   void pop_back() {
-    assert(data.stack.sz_>0);
+    assert(data.stack.sz_ > 0);
     --data.stack.sz_;
-    if (data.stack.sz_==kMaxInlineSize)
-      ptr_to_small();
+    if (data.stack.sz_ == kMaxInlineSize) ptr_to_small();
   }
-
 
   /**
      take care of:
      free unused (heap) space.
   */
   void compact() {
-    if (data.stack.sz_ > kMaxInlineSize) // was heap
+    if (data.stack.sz_ > kMaxInlineSize)  // was heap
       realloc_big(data.stack.sz_);
   }
 
@@ -704,43 +649,40 @@ struct small_vector {
      like resize(newsz), but newsz must be <= size()
   */
   void compact(size_type newsz) {
-    assert(newsz<=data.stack.sz_);
-    if (data.stack.sz_ > kMaxInlineSize) { // was heap
+    assert(newsz <= data.stack.sz_);
+    if (data.stack.sz_ > kMaxInlineSize) {  // was heap
       data.stack.sz_ = newsz;
-      if (newsz <= kMaxInlineSize) // now small
+      if (newsz <= kMaxInlineSize)  // now small
         ptr_to_small();
-    } else // was small already
+    } else  // was small already
       data.stack.sz_ = newsz;
   }
 
   void resize(size_type s, T const& v = T()) {
-    assert(s<=kMaxSize);
-    assert(data.stack.sz_<=kMaxSize);
+    assert(s <= kMaxSize);
+    assert(data.stack.sz_ <= kMaxSize);
     if (s <= kMaxInlineSize) {
       if (data.stack.sz_ > kMaxInlineSize) {
         data.stack.sz_ = s;
         ptr_to_small();
         return;
       } else if (s <= data.stack.sz_) {
-      } else { // growing but still small
-        for (size_type i = data.stack.sz_; i < s; ++i)
-          data.stack.vals_[i] = v;
+      } else {  // growing but still small
+        for (size_type i = data.stack.sz_; i < s; ++i) data.stack.vals_[i] = v;
       }
-    } else { // new s is heap
+    } else {  // new s is heap
       if (s > data.stack.sz_) {
         realloc_big(s);
-        for (size_type i = data.stack.sz_;i<s;++i)
-          data.heap.begin_[i] = v;
+        for (size_type i = data.stack.sz_; i < s; ++i) data.heap.begin_[i] = v;
       }
     }
     data.stack.sz_ = s;
   }
 
-
   T& at_grow(size_type i) {
     size_type const oldsz = data.stack.sz_;
     if (i >= oldsz) {
-      size_type newsz = i+1;
+      size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
       construct_range(begin(), oldsz, newsz);
     }
@@ -750,29 +692,25 @@ struct small_vector {
   T& at_grow(size_type i, T const& zero) {
     size_type const oldsz = data.stack.sz_;
     if (i >= oldsz) {
-      size_type newsz = i+1;
+      size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
       construct_range(begin(), oldsz, newsz, zero);
     }
     return (*this)[i];
   }
 
-  friend inline T& atExpand(small_vector &v, size_type i) {
-    return v.at_grow(i);
-  }
+  friend inline T& atExpand(small_vector& v, size_type i) { return v.at_grow(i); }
 
-  friend inline T& atExpand(small_vector &v, size_type i, T const& zero) {
-    return v.at_grow(i, zero);
-  }
+  friend inline T& atExpand(small_vector& v, size_type i, T const& zero) { return v.at_grow(i, zero); }
 
   void set_grow(size_type i, T const& val) {
     size_type const oldsz = data.stack.sz_;
     if (i >= oldsz) {
-      size_type newsz = i+1;
+      size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
-      T *v = begin();
+      T* v = begin();
       construct_range(v, oldsz, i);
-      new(&v[i]) T(val);
+      new (&v[i]) T(val);
     } else
       (*this)[i] = val;
   }
@@ -780,11 +718,11 @@ struct small_vector {
   void set_grow(size_type i, T const& val, T const& zero) {
     size_type const oldsz = data.stack.sz_;
     if (i >= oldsz) {
-      size_type newsz = i+1;
+      size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
-      T *v = begin();
+      T* v = begin();
       construct_range(v, oldsz, i, zero);
-      new(&v[i]) T(val);
+      new (&v[i]) T(val);
     } else
       (*this)[i] = val;
   }
@@ -824,38 +762,27 @@ struct small_vector {
     }
   }
 
-
-  friend bool operator!=(small_vector const& a, small_vector const& b) {
-    return !(a==b);
-  }
+  friend bool operator!=(small_vector const& a, small_vector const& b) { return !(a == b); }
 
   /**
      shortest-first total ordering (not lex.)
   */
-  bool operator<(small_vector const& o) const {
-    return compare_by_less<bool, true, false, false>(o);
-  }
+  bool operator<(small_vector const& o) const { return compare_by_less<bool, true, false, false>(o); }
 
   /**
      shortest-first total ordering (not lex.)
   */
-  bool operator<=(small_vector const& o) const {
-    return compare_by_less<bool, true, true, false>(o);
-  }
+  bool operator<=(small_vector const& o) const { return compare_by_less<bool, true, true, false>(o); }
 
   /**
      shortest-first total ordering (not lex.)
   */
-  bool operator>=(small_vector const& o) const {
-    return compare_by_less<bool, false, true, true>(o);
-  }
+  bool operator>=(small_vector const& o) const { return compare_by_less<bool, false, true, true>(o); }
 
   /**
      shortest-first total ordering (not lex.)
   */
-  bool operator>(small_vector const& o) const {
-    return compare_by_less<bool, false, false, true>(o);
-  }
+  bool operator>(small_vector const& o) const { return compare_by_less<bool, false, false, true>(o); }
 
   /**
      using T::operator<, return this <=> o :
@@ -864,15 +791,13 @@ struct small_vector {
      *this < o: -1
      *this > o: 1
      */
-  int compare(small_vector const& o) const {
-    return compare_by_less<int,-1,0,1>(o);
-  }
+  int compare(small_vector const& o) const { return compare_by_less<int, -1, 0, 1>(o); }
 
   /**
      return iterator for matching element, if any, else end
   */
   template <class Target>
-  T *find(Target const& target) const {
+  T* find(Target const& target) const {
     return std::find(begin(), end(), target);
   }
 
@@ -880,24 +805,28 @@ struct small_vector {
    */
   template <class Target>
   bool contains(Target const& target) const {
-    for (const_iterator i=begin(), e=end();i!=e;++i)
-      if (*i==target) return true;
+    for (const_iterator i = begin(), e = end(); i != e; ++i)
+      if (*i == target) return true;
     return false;
   }
 
   template <class Target>
-  friend inline bool contains(small_vector const& vec, Target const& target) { return vec.contains(target); }
+  friend inline bool contains(small_vector const& vec, Target const& target) {
+    return vec.contains(target);
+  }
 
   typedef boost::iterator_range<iterator> iterator_range;
   typedef boost::iterator_range<const_iterator> const_iterator_range;
 
-  iterator_range range() { return data.stack.sz_>kMaxInlineSize ?
-        iterator_range(data.heap.begin_, data.heap.begin_+data.stack.sz_) :
-        iterator_range(data.stack.vals_, data.stack.vals_+data.stack.sz_);
+  iterator_range range() {
+    return data.stack.sz_ > kMaxInlineSize
+               ? iterator_range(data.heap.begin_, data.heap.begin_ + data.stack.sz_)
+               : iterator_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
   }
-  const_iterator_range range() const { return data.stack.sz_>kMaxInlineSize ?
-        const_iterator_range(data.heap.begin_, data.heap.begin_+data.stack.sz_) :
-        const_iterator_range(data.stack.vals_, data.stack.vals_+data.stack.sz_);
+  const_iterator_range range() const {
+    return data.stack.sz_ > kMaxInlineSize
+               ? const_iterator_range(data.heap.begin_, data.heap.begin_ + data.stack.sz_)
+               : const_iterator_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
   }
 
   void swap(small_vector& o) {
@@ -905,15 +834,13 @@ struct small_vector {
     assert(&o);
     swap_pod(*this, o);
   }
-  friend inline void swap(small_vector &a, small_vector &b) {
-    return a.swap(b);
-  }
+  friend inline void swap(small_vector& a, small_vector& b) { return a.swap(b); }
 
   inline std::size_t hash_impl() const {
     using namespace boost;
-    return (data.stack.sz_ <= kMaxInlineSize) ?
-        hash_range(data.stack.vals_, data.stack.vals_+data.stack.sz_) :
-        hash_range(data.heap.begin_, data.heap.begin_+data.stack.sz_);
+    return (data.stack.sz_ <= kMaxInlineSize)
+               ? hash_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_)
+               : hash_range(data.heap.begin_, data.heap.begin_ + data.stack.sz_);
   }
 
   /**
@@ -929,65 +856,58 @@ struct small_vector {
   friend inline std::size_t hash_value(small_vector const& x) { return x.hash_impl(); }
 
   template <class Out>
-  void print(Out &o) const {
+  void print(Out& o) const {
     range_sep().print(o, begin(), end());
   }
   template <class Ch, class Tr>
-  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr> &o, small_vector const& self)
-  { self.print(o); return o; }
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr>& o, small_vector const& self) {
+    self.print(o);
+    return o;
+  }
   void init_unconstructed(size_type s) {
     assert(data.stack.sz_ == 0);
     alloc(s);
   }
+
  private:
-  void alloc(size_type s) { // doesn't free old; for ctor. sets sz_
+  void alloc(size_type s) {  // doesn't free old; for ctor. sets sz_
     data.stack.sz_ = s;
     assert(s <= kMaxSize);
-    if (s>kMaxInlineSize) {
+    if (s > kMaxInlineSize) {
       data.heap.capacity_ = s;
       alloc_heap();
     }
   }
-  static inline T* alloc_impl(size_type sz) {
-    return (T*)std::malloc(sizeof(T)*sz);
-  }
-  static void free_impl(T *alloced) {
-    std::free(alloced);
-  }
-  //pre: capacity_ is set
+  static inline T* alloc_impl(size_type sz) { return (T*)std::malloc(sizeof(T) * sz); }
+  static void free_impl(T* alloced) { std::free(alloced); }
+  // pre: capacity_ is set
   void alloc_heap() {
     data.heap.begin_ = alloc_impl(data.heap.capacity_);  // TODO: boost user_allocator static template
   }
-  void free_heap() const {
-    free_impl(data.heap.begin_);
-  }
+  void free_heap() const { free_impl(data.heap.begin_); }
   void free() {
-    if (data.stack.sz_ > kMaxInlineSize)
-      free_heap();
+    if (data.stack.sz_ > kMaxInlineSize) free_heap();
   }
-  T *realloc(size_type s) {
-    if (s==data.stack.sz_)
-      return begin();
+  T* realloc(size_type s) {
+    if (s == data.stack.sz_) return begin();
     free();
     data.stack.sz_ = s;
-    if (s>kMaxInlineSize) {
-      data.heap.capacity_=s;
+    if (s > kMaxInlineSize) {
+      data.heap.capacity_ = s;
       alloc_heap();
       return data.heap.begin_;
     } else
       return data.stack.vals_;
   }
 
-
   void realloc_big(size_type s) {
-    assert(s>kMaxInlineSize);
-    if (data.stack.sz_>kMaxInlineSize) {
-      if (s>data.heap.capacity_)
-        ensure_capacity_grow(s);
+    assert(s > kMaxInlineSize);
+    if (data.stack.sz_ > kMaxInlineSize) {
+      if (s > data.heap.capacity_) ensure_capacity_grow(s);
     } else {
       T* tmp = alloc_impl(s);
       memcpy_n(tmp, data.stack.vals_, data.stack.sz_);
-      data.heap.capacity_ = s; // note: these must be set AFTER copying from data.stack.vals_
+      data.heap.capacity_ = s;  // note: these must be set AFTER copying from data.stack.vals_
       data.heap.begin_ = tmp;
     }
   }
@@ -1000,25 +920,26 @@ struct small_vector {
   }
   void ensure_capacity_grow(size_type min_size) {
 #ifdef _MSC_VER
-# undef max
+#undef max
 #endif
     size_type new_cap = good_vector_size<T>::next(min_size);
     T* tmp = alloc_impl(new_cap);
     memcpy_n(tmp, data.heap.begin_, data.stack.sz_);
     free_heap();
     data.heap.begin_ = tmp;  // note: these must be set AFTER copying from old vals
-    data.heap.capacity_ = new_cap; // set after free_heap (though current allocator doesn't need old capacity)
+    data.heap.capacity_
+        = new_cap;  // set after free_heap (though current allocator doesn't need old capacity)
   }
 
   void copy_vals_to_ptr() {
-    assert(data.stack.sz_<=kMaxInlineSize);
+    assert(data.stack.sz_ <= kMaxInlineSize);
 #ifndef __clang_analyzer__
-    T* const newHeapVals = alloc_impl(kInitHeapSize); //note: must use tmp to not destroy data.stack.vals_
+    T* const newHeapVals = alloc_impl(kInitHeapSize);  // note: must use tmp to not destroy data.stack.vals_
     memcpy_n(newHeapVals, data.stack.vals_,
 #if GRAEHL_VALGRIND
              data.stack.sz_
 #else
-             kMaxInlineSize // may copy more than actual size_. ok. constant should be more optimizable
+             kMaxInlineSize  // may copy more than actual size_. ok. constant should be more optimizable
 #endif
              );
     ;
@@ -1028,22 +949,25 @@ struct small_vector {
     // only call if you're going to immediately increase size_ to >kMaxInlineSize
   }
   void ptr_to_small() {
-    assert(data.stack.sz_<=kMaxInlineSize); // you decreased size_ already. normally ptr wouldn't be used if size_ were this small
-    T *fromHeap=data.heap.begin_; // should be no problem with memory access order (strict aliasing) because of safe access through union
-    for (size_type i=0;i<data.stack.sz_;++i) // no need to memcpy for small size
-      data.stack.vals_[i]=fromHeap[i]; // note: it was essential to save fromHeap first because data.stack.vals_ union-competes
+    assert(data.stack.sz_ <= kMaxInlineSize);  // you decreased size_ already. normally ptr wouldn't be used
+    // if size_ were this small
+    T* fromHeap = data.heap.begin_;  // should be no problem with memory access order (strict aliasing)
+    // because of safe access through union
+    for (size_type i = 0; i < data.stack.sz_; ++i)  // no need to memcpy for small size
+      data.stack.vals_[i] = fromHeap
+          [i];  // note: it was essential to save fromHeap first because data.stack.vals_ union-competes
     free_impl(fromHeap);
   }
 
   // o is longer. so if equal at end, then kLess.
   template <class Ret, int kLess, int kGreater>
   inline Ret compare_by_less_len_differs(small_vector const& o) {
-    const_iterator e=end();
-    std::pair<const_iterator, const_iterator> mo=std::mismatch(begin(), e, o.begin());
-    if (mo.first==e) return kLess;
-    return *mo.first<*mo.second ? kLess : kGreater;
+    const_iterator e = end();
+    std::pair<const_iterator, const_iterator> mo = std::mismatch(begin(), e, o.begin());
+    if (mo.first == e) return kLess;
+    return *mo.first < *mo.second ? kLess : kGreater;
   }
-  //e.g. <: valLess=true, others = false. 3-value compare: Ret=int, kLess=-1, kGreater=1, kEqual=0
+  // e.g. <: valLess=true, others = false. 3-value compare: Ret=int, kLess=-1, kGreater=1, kEqual=0
   //      (an arbitrary total ordering (not lex.))
   template <class Ret, int kLess, int kEqual, int kGreater>
   inline Ret compare_by_less(small_vector const& o) const {
@@ -1063,27 +987,34 @@ struct small_vector {
       }
     }
     return std::lexicographical_compare(begin(), end(), o.begin(), o.end()) ? kLess : kGreater;
-    //return (data.stack.sz_ < o.data.stack.sz_) ? kLess : kGreater; // faster but not lexicograph.
+    // return (data.stack.sz_ < o.data.stack.sz_) ? kLess : kGreater; // faster but not lexicograph.
   }
-
 
   /* guarantee from c++ standard:
 
-     one special guarantee is made in order to simplify the use of unions: If a POD-union contains several POD-structs that share a common initial sequence (9.2), and if an object of this POD-union type contains one of the POD-structs, it is permitted to inspect the common initial sequence of any of POD-struct members; see 9.2. ]
+     one special guarantee is made in order to simplify the use of unions: If a POD-union contains several
+     POD-structs that share a common initial sequence (9.2), and if an object of this POD-union type contains
+     one of the POD-structs, it is permitted to inspect the common initial sequence of any of POD-struct
+     members; see 9.2. ]
   */
-  // anything that shrinks the array may mean copying back and forth, e.g. using small_vector as a stack with repeated push/pop over and back to kMaxInlineSize
+  // anything that shrinks the array may mean copying back and forth, e.g. using small_vector as a stack with
+  // repeated push/pop over and back to kMaxInlineSize
   /**
-     this union forms the full contents of small_vector. it's probably best if kMaxInlineSize is at least 2 (unless T is *extremely* large compared to size_type). you can experiment by checking sizeof(small_vector<...>) - the idea would be not to use the smaller of two kMaxInlineSize that both result in the same size union
+     this union forms the full contents of small_vector. it's probably best if kMaxInlineSize is at least 2
+     (unless T is *extremely* large compared to size_type). you can experiment by checking
+     sizeof(small_vector<...>) - the idea would be not to use the smaller of two kMaxInlineSize that both
+     result in the same size union
   */
   union storage_union_variants {
     struct heap_storage_variant {
       size_type sz_;  // common prefix with small_storage.sz_
-      size_type capacity_;  // only initialized when size_ > kMaxInlineSize. must not initialize when copying from small.vals_ until after all are copied.
-      T* begin_; // otherwise
+      size_type capacity_;  // only initialized when size_ > kMaxInlineSize. must not initialize when copying
+      // from small.vals_ until after all are copied.
+      T* begin_;  // otherwise
     } heap;
     struct inline_storage_variant {  // only initialized when size_ <= kMaxInlineSize
       size_type sz_;
-      T vals_[kMaxInlineSize]; // iff size_<=kMaxInlineSize (note: tricky!
+      T vals_[kMaxInlineSize];  // iff size_<=kMaxInlineSize (note: tricky!
     } stack;
     // note: we have a shared initial sz_ member in each to ensure the best alignment/padding.
     // (otherwise it would be simpler to move sz_ outside the union
@@ -1091,27 +1022,27 @@ struct small_vector {
   storage_union_variants data;
 };
 
-template <class T, bool UseSmall = true, unsigned kMaxInlineSize=kDefaultMaxInlineSize, class Size=small_vector_default_size_type>
+template <class T, bool UseSmall = true, unsigned kMaxInlineSize = kDefaultMaxInlineSize,
+          class Size = small_vector_default_size_type>
 struct use_small_vector {
   typedef small_vector<T, kMaxInlineSize, Size> type;
 };
-
 
 template <class T, unsigned kMaxInlineSize, class Size>
 struct use_small_vector<T, false, kMaxInlineSize, Size> {
   typedef std::vector<T> type;
 };
 
-}//ns
+}  // ns
 
 namespace std {
 template <class V, unsigned MaxInline, class Size>
-inline void swap(graehl::small_vector<V, MaxInline, Size> &a, graehl::small_vector<V, MaxInline, Size> &b) {
+inline void swap(graehl::small_vector<V, MaxInline, Size>& a, graehl::small_vector<V, MaxInline, Size>& b) {
   a.swap(b);
 }
 
 #ifdef _MSC_VER
-# pragma warning(disable:4099)
+#pragma warning(disable : 4099)
 // msvc has class hash. should be struct. this hides warning.
 #endif
 
@@ -1125,29 +1056,25 @@ struct hash<graehl::small_vector<V, MaxInline, Size> > {
     return vec.hash_impl();
   }
 };
-
 }
 
 namespace boost {
 namespace assign {
 
 template <class V, unsigned MaxInline, class Size, class V2>
-inline list_inserter<assign_detail::call_push_back<graehl::small_vector<V, MaxInline, Size> >, V>
-operator+=(graehl::small_vector<V, MaxInline, Size> & c, V2 v)
-{
+inline list_inserter<assign_detail::call_push_back<graehl::small_vector<V, MaxInline, Size> >, V> operator+=(
+    graehl::small_vector<V, MaxInline, Size>& c, V2 v) {
   return push_back(c)(v);
 }
-
 }
 
 namespace serialization {
 
 template <class V, unsigned MaxInline, class Size>
-struct implementation_level<graehl::small_vector<V, MaxInline, Size> >
-{
+struct implementation_level<graehl::small_vector<V, MaxInline, Size> > {
   typedef mpl::int_<object_serializable> type;
   typedef mpl::integral_c_tag tag;
-  BOOST_STATIC_CONSTANT(int, value=implementation_level::type::value);
+  BOOST_STATIC_CONSTANT(int, value = implementation_level::type::value);
 };
 
 /**
@@ -1157,16 +1084,13 @@ struct implementation_level<graehl::small_vector<V, MaxInline, Size> >
    applies by default.
 */
 template <class V, unsigned MaxInline, class Size>
-struct tracking_level<graehl::small_vector<V, MaxInline, Size> >
-{
+struct tracking_level<graehl::small_vector<V, MaxInline, Size> > {
   typedef mpl::int_<track_never> type;
   typedef mpl::integral_c_tag tag;
-  BOOST_STATIC_CONSTANT(int, value=tracking_level::type::value);
+  BOOST_STATIC_CONSTANT(int, value = tracking_level::type::value);
 };
-
 }
-}//ns
-
+}  // ns
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
@@ -1177,14 +1101,16 @@ struct tracking_level<graehl::small_vector<V, MaxInline, Size> >
 #include <boost/serialization/vector.hpp>
 #include <sstream>
 
-#define EXPECT_EQ_NOPRINT(x, y) BOOST_CHECK((x)==(y))
+#define EXPECT_EQ_NOPRINT(x, y) BOOST_CHECK((x) == (y))
 
-namespace graehl { namespace unit_test {
+namespace graehl {
+namespace unit_test {
 
-std::size_t const test_archive_flags=boost::archive::no_header|boost::archive::no_codecvt|boost::archive::no_xml_tag_checking;
+std::size_t const test_archive_flags = boost::archive::no_header | boost::archive::no_codecvt
+                                       | boost::archive::no_xml_tag_checking;
 
 template <class InArchive, class Vec1, class Vec2>
-void test_same_serialization_result(std::string const& str, Vec1 const& v, Vec2 &v2) {
+void test_same_serialization_result(std::string const& str, Vec1 const& v, Vec2& v2) {
   std::stringstream ss(str);
   InArchive ia(ss, test_archive_flags);
   ia >> v2;
@@ -1200,7 +1126,7 @@ void test_same_serialization(Vec1 const& v, Vec2 const& v2) {
   Archive oa(ss, test_archive_flags), oa2(ss2, test_archive_flags);
   oa << v;
   oa2 << v2;
-  string s=ss.str(), s2=ss2.str();
+  string s = ss.str(), s2 = ss2.str();
   BOOST_REQUIRE_EQUAL(s, s2);
   test_same_serialization_result<InArchive>(s, v, vb);
   EXPECT_EQ_NOPRINT(vb, v);
@@ -1228,108 +1154,102 @@ void test_same_serializations(std::vector<int> const& v) {
 }
 
 template <class SmallVecInt>
-void test_small_vector_same_serializations()
-{
+void test_small_vector_same_serializations() {
   std::vector<int> v;
   //  test_same_serializations(v);
-  for (int i=10;i<19;++i) {
+  for (int i = 10; i < 19; ++i) {
     v.push_back(i);
     test_same_serializations<SmallVecInt>(v);
   }
 }
 
 template <class VectorInt>
-void test_small_vector_1()
-{
+void test_small_vector_1() {
   using namespace std;
   VectorInt v;
   VectorInt v2;
   v.push_back(0);
   v.push_back(1);
-  EXPECT_EQ(v[1],1);
-  EXPECT_EQ(v[0],0);
+  EXPECT_EQ(v[1], 1);
+  EXPECT_EQ(v[0], 0);
   v.push_back(2);
-  EXPECT_EQ(v.size(),3u);
-  EXPECT_EQ(v[2],2);
-  EXPECT_EQ(v[1],1);
-  EXPECT_EQ(v[0],0);
+  EXPECT_EQ(v.size(), 3u);
+  EXPECT_EQ(v[2], 2);
+  EXPECT_EQ(v[1], 1);
+  EXPECT_EQ(v[0], 0);
   v2 = v;
   VectorInt copy(v);
-  EXPECT_EQ(copy.size(),3u);
-  EXPECT_EQ(copy[0],0);
-  EXPECT_EQ(copy[1],1);
-  EXPECT_EQ(copy[2],2);
+  EXPECT_EQ(copy.size(), 3u);
+  EXPECT_EQ(copy[0], 0);
+  EXPECT_EQ(copy[1], 1);
+  EXPECT_EQ(copy[2], 2);
   EXPECT_EQ_NOPRINT(copy, v2);
   copy[1] = 99;
   EXPECT_TRUE(copy != v2);
-  EXPECT_EQ(v2.size(),3);
-  EXPECT_EQ(v2[2],2);
-  EXPECT_EQ(v2[1],1);
-  EXPECT_EQ(v2[0],0);
+  EXPECT_EQ(v2.size(), 3);
+  EXPECT_EQ(v2[2], 2);
+  EXPECT_EQ(v2[1], 1);
+  EXPECT_EQ(v2[0], 0);
   v2[0] = -2;
   v2[1] = -1;
   v2[2] = 0;
-  EXPECT_EQ(v2[2],0);
-  EXPECT_EQ(v2[1],-1);
-  EXPECT_EQ(v2[0],-2);
-  VectorInt v3(1,1);
-  EXPECT_EQ(v3[0],1);
+  EXPECT_EQ(v2[2], 0);
+  EXPECT_EQ(v2[1], -1);
+  EXPECT_EQ(v2[0], -2);
+  VectorInt v3(1, 1);
+  EXPECT_EQ(v3[0], 1);
   v2 = v3;
-  EXPECT_EQ(v2.size(),1);
-  EXPECT_EQ(v2[0],1);
+  EXPECT_EQ(v2.size(), 1);
+  EXPECT_EQ(v2[0], 1);
   VectorInt v4(10, 1);
-  EXPECT_EQ(v4.size(),10);
-  EXPECT_EQ(v4[5],1);
-  EXPECT_EQ(v4[9],1);
+  EXPECT_EQ(v4.size(), 10);
+  EXPECT_EQ(v4[5], 1);
+  EXPECT_EQ(v4[9], 1);
   v4 = v;
-  EXPECT_EQ(v4.size(),3);
-  EXPECT_EQ(v4[2],2);
-  EXPECT_EQ(v4[1],1);
-  EXPECT_EQ(v4[0],0);
+  EXPECT_EQ(v4.size(), 3);
+  EXPECT_EQ(v4[2], 2);
+  EXPECT_EQ(v4[1], 1);
+  EXPECT_EQ(v4[0], 0);
   VectorInt v5(10, 2);
-  EXPECT_EQ(v5.size(),10);
-  EXPECT_EQ(v5[7],2);
-  EXPECT_EQ(v5[0],2);
-  EXPECT_EQ(v.size(),3);
+  EXPECT_EQ(v5.size(), 10);
+  EXPECT_EQ(v5[7], 2);
+  EXPECT_EQ(v5[0], 2);
+  EXPECT_EQ(v.size(), 3);
   v = v5;
-  EXPECT_EQ(v.size(),10);
-  EXPECT_EQ(v[2],2);
-  EXPECT_EQ(v[9],2);
+  EXPECT_EQ(v.size(), 10);
+  EXPECT_EQ(v[2], 2);
+  EXPECT_EQ(v[9], 2);
   VectorInt cc;
   for (int i = 0; i < 33; ++i) {
     cc.push_back(i);
-    EXPECT_EQ(cc.size(), i+1);
+    EXPECT_EQ(cc.size(), i + 1);
     EXPECT_EQ(cc[i], i);
-    for (int j=0;j<i;++j)
-      EXPECT_EQ(cc[j], j);
+    for (int j = 0; j < i; ++j) EXPECT_EQ(cc[j], j);
   }
-  for (int i = 0; i < 33; ++i)
-    EXPECT_EQ(cc[i], i);
+  for (int i = 0; i < 33; ++i) EXPECT_EQ(cc[i], i);
   cc.resize(20);
-  EXPECT_EQ(cc.size(),20);
-  for (int i = 0; i < 20; ++i)
-    EXPECT_EQ(cc[i], i);
-  cc[0]=-1;
+  EXPECT_EQ(cc.size(), 20);
+  for (int i = 0; i < 20; ++i) EXPECT_EQ(cc[i], i);
+  cc[0] = -1;
   cc.resize(1, 999);
-  EXPECT_EQ(cc.size(),1);
-  EXPECT_EQ(cc[0],-1);
+  EXPECT_EQ(cc.size(), 1);
+  EXPECT_EQ(cc[0], -1);
   cc.resize(99, 99);
   for (int i = 1; i < 99; ++i) {
-    //cerr << i << " " << cc[i] << endl;
-    EXPECT_EQ(cc[i],99);
+    // cerr << i << " " << cc[i] << endl;
+    EXPECT_EQ(cc[i], 99);
   }
   cc.clear();
-  EXPECT_EQ(cc.size(),0);
+  EXPECT_EQ(cc.size(), 0);
 }
 
 template <class VectorInt>
-void test_small_vector_2()
-{
+void test_small_vector_2() {
   using namespace std;
   VectorInt v;
-  VectorInt v1(1,0);
-  VectorInt v2(2,10);
-  VectorInt v1a(2,0);
+  VectorInt v1(1, 0);
+  VectorInt v2(2, 10);
+  VectorInt v1a(2, 0);
   EXPECT_TRUE(v1 != v1a);
   EXPECT_EQ_NOPRINT(v1, v1);
   EXPECT_EQ(v1[0], 0);
@@ -1340,134 +1260,135 @@ void test_small_vector_2()
   EXPECT_EQ(v2[0], 9);
   EXPECT_EQ(v2[1], 11);
 
-  //test shrinking/growing near max inline size (2)
+  // test shrinking/growing near max inline size (2)
   v2.push_back(12);
   EXPECT_EQ(v2[0], 9);
   EXPECT_EQ(v2[1], 11);
-  EXPECT_EQ(v2.size(),3u);
+  EXPECT_EQ(v2.size(), 3u);
   EXPECT_EQ(v2[2], 12);
   v2.pop_back();
-  EXPECT_EQ(v2.size(),2u);
+  EXPECT_EQ(v2.size(), 2u);
   EXPECT_EQ(v2[0], 9);
   EXPECT_EQ(v2[1], 11);
   v2.pop_back();
-  EXPECT_EQ(v2.size(),1u);
+  EXPECT_EQ(v2.size(), 1u);
   EXPECT_EQ(v2[0], 9);
   v2.push_back(11);
-  EXPECT_EQ(v2.size(),2u);
+  EXPECT_EQ(v2.size(), 2u);
   EXPECT_EQ(v2[0], 9);
   EXPECT_EQ(v2[1], 11);
 
   VectorInt v3(v2);
-  EXPECT_EQ(v3[0],9);
-  EXPECT_EQ(v3[1],11);
+  EXPECT_EQ(v3[0], 9);
+  EXPECT_EQ(v3[1], 11);
   assert(!v3.empty());
-  EXPECT_EQ(v3.size(),2);
+  EXPECT_EQ(v3.size(), 2);
   v3.clear();
   assert(v3.empty());
-  EXPECT_EQ(v3.size(),0);
+  EXPECT_EQ(v3.size(), 0);
   EXPECT_TRUE(v3 != v2);
   EXPECT_TRUE(v2 != v3);
   v3 = v2;
   EXPECT_EQ_NOPRINT(v3, v2);
   EXPECT_EQ_NOPRINT(v2, v3);
-  EXPECT_EQ(v3[0],9);
-  EXPECT_EQ(v3[1],11);
+  EXPECT_EQ(v3[0], 9);
+  EXPECT_EQ(v3[1], 11);
   assert(!v3.empty());
-  EXPECT_EQ(v3.size(),2);
-  VectorInt v4=v3;
-  VectorInt v3b=v3;
-  v3.append(v4.begin()+1, v4.end());
-  EXPECT_EQ(v3.size(),3);
-  EXPECT_EQ(v3[2],11);
-  v3b.insert(v3b.end(), v4.begin()+1, v4.end());
-  EXPECT_EQ(v3b.size(),3);
-  EXPECT_EQ(v3b[2],11);
+  EXPECT_EQ(v3.size(), 2);
+  VectorInt v4 = v3;
+  VectorInt v3b = v3;
+  v3.append(v4.begin() + 1, v4.end());
+  EXPECT_EQ(v3.size(), 3);
+  EXPECT_EQ(v3[2], 11);
+  v3b.insert(v3b.end(), v4.begin() + 1, v4.end());
+  EXPECT_EQ(v3b.size(), 3);
+  EXPECT_EQ(v3b[2], 11);
 
-  v4=v3; // avoid aliasing
+  v4 = v3;  // avoid aliasing
   v3.append(v4.begin(), v4.end());
-  v4=v3;
-  EXPECT_EQ(v3.size(),6);
-  v3.append((int const *)v4.begin(), (int const *)v4.end());
-  EXPECT_EQ(v3.size(),12);
-  EXPECT_EQ(v3[11],11);
+  v4 = v3;
+  EXPECT_EQ(v3.size(), 6);
+  v3.append((int const*)v4.begin(), (int const*)v4.end());
+  EXPECT_EQ(v3.size(), 12);
+  EXPECT_EQ(v3[11], 11);
   VectorInt v5(10);
-  EXPECT_EQ(v5[1],0);
-  EXPECT_EQ(v5.size(),10);
+  EXPECT_EQ(v5[1], 0);
+  EXPECT_EQ(v5.size(), 10);
   v3.assign(v4.begin(), v4.end());
   EXPECT_EQ_NOPRINT(v3, v4);
-  int i=2;
+  int i = 2;
 
   v4.assign(&i, &i);
-  EXPECT_EQ(v4.size(),0);
+  EXPECT_EQ(v4.size(), 0);
   v4.assign(v1.begin(), v1.end());
   EXPECT_EQ_NOPRINT(v4, v1);
-  v4.assign(&i, &i+1);
-  EXPECT_EQ(v4.size(),1);
+  v4.assign(&i, &i + 1);
+  EXPECT_EQ(v4.size(), 1);
   EXPECT_EQ(v4[0], i);
 
-  v4.insert(v4.begin(),1);
-  EXPECT_EQ(v4.size(),2);
-  EXPECT_EQ(v4[0],1);
+  v4.insert(v4.begin(), 1);
+  EXPECT_EQ(v4.size(), 2);
+  EXPECT_EQ(v4[0], 1);
   EXPECT_EQ(v4[1], i);
 
-  VectorInt v4c=v4;
+  VectorInt v4c = v4;
   v4.insert(v4.begin(), v4c.begin(), v4c.end());
-  EXPECT_EQ(v4.size(),4);
-  EXPECT_EQ(v4[0],1);
-  EXPECT_EQ(v4[2],1);
+  EXPECT_EQ(v4.size(), 4);
+  EXPECT_EQ(v4[0], 1);
+  EXPECT_EQ(v4[2], 1);
   EXPECT_EQ(v4[1], i);
   EXPECT_EQ(v4[3], i);
 
   v4.push_front(4);
-  EXPECT_EQ(v4.size(),5);
-  EXPECT_EQ(v4[0],4);
-  EXPECT_EQ(v4[3],1);
+  EXPECT_EQ(v4.size(), 5);
+  EXPECT_EQ(v4[0], 4);
+  EXPECT_EQ(v4[3], 1);
   EXPECT_EQ(v4[2], i);
   EXPECT_EQ(v4[4], i);
 
-  VectorInt vg=v4;
-  EXPECT_TRUE(vg<=v4);
-  EXPECT_TRUE(vg>=v4);
-  EXPECT_TRUE(!(vg<v4));
-  EXPECT_TRUE(!(v4<vg));
+  VectorInt vg = v4;
+  EXPECT_TRUE(vg <= v4);
+  EXPECT_TRUE(vg >= v4);
+  EXPECT_TRUE(!(vg < v4));
+  EXPECT_TRUE(!(v4 < vg));
 
-  vg[2]=i+1;
-  EXPECT_TRUE(vg>=v4);
-  EXPECT_TRUE(vg>v4);
-  EXPECT_TRUE(v4<vg);
-  vg[2]=v4[2]-1;
-  vg[1]=v4[1]+1;
-  EXPECT_TRUE(vg>=v4);
-  EXPECT_TRUE(vg>v4);
-  EXPECT_TRUE(v4<vg);
-  vg[0]=v4[1]-1;
-  EXPECT_TRUE(v4>=vg);
-  EXPECT_TRUE(v4>vg);
-  EXPECT_TRUE(vg<v4);
+  vg[2] = i + 1;
+  EXPECT_TRUE(vg >= v4);
+  EXPECT_TRUE(vg > v4);
+  EXPECT_TRUE(v4 < vg);
+  vg[2] = v4[2] - 1;
+  vg[1] = v4[1] + 1;
+  EXPECT_TRUE(vg >= v4);
+  EXPECT_TRUE(vg > v4);
+  EXPECT_TRUE(v4 < vg);
+  vg[0] = v4[1] - 1;
+  EXPECT_TRUE(v4 >= vg);
+  EXPECT_TRUE(v4 > vg);
+  EXPECT_TRUE(vg < v4);
 }
 
-BOOST_AUTO_TEST_CASE( test_small_vector_larger_than_2 ) {
-  test_small_vector_1<small_vector<int,1> >();
-  test_small_vector_1<small_vector<int,3, std::size_t> >();
-  test_small_vector_1<small_vector<int,5, unsigned short> >();
+BOOST_AUTO_TEST_CASE(test_small_vector_larger_than_2) {
+  test_small_vector_1<small_vector<int, 1> >();
+  test_small_vector_1<small_vector<int, 3, std::size_t> >();
+  test_small_vector_1<small_vector<int, 5, unsigned short> >();
 }
 
-BOOST_AUTO_TEST_CASE( test_small_vector_small ) {
-  test_small_vector_2<small_vector<int,1> >();
-  test_small_vector_2<small_vector<int,3, std::size_t> >();
-  test_small_vector_2<small_vector<int,5, unsigned short> >();
+BOOST_AUTO_TEST_CASE(test_small_vector_small) {
+  test_small_vector_2<small_vector<int, 1> >();
+  test_small_vector_2<small_vector<int, 3, std::size_t> >();
+  test_small_vector_2<small_vector<int, 5, unsigned short> >();
 }
 
 BOOST_AUTO_TEST_CASE(small_vector_compatible_serialization) {
-  test_small_vector_same_serializations<small_vector<int,1> >();
-  test_small_vector_same_serializations<small_vector<int,3, std::size_t> >();
-  test_small_vector_same_serializations<small_vector<int,5, unsigned short> >();
+  test_small_vector_same_serializations<small_vector<int, 1> >();
+  test_small_vector_same_serializations<small_vector<int, 3, std::size_t> >();
+  test_small_vector_same_serializations<small_vector<int, 5, unsigned short> >();
 }
+
 
 }}
 
 #endif
-//GRAEHL_TEST
+// GRAEHL_TEST
 
 #endif

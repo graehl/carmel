@@ -94,7 +94,7 @@ while(<$fh2>) {
         ($find,$replace)=($replace,$find) if $reverse;
         &debug($find,$replace);
         my $qe = quotemeta($find);
-        my $re = $isregexp ? eval("qr{$find}") : ($wholeword ? qr/\b$qe/ : quotemeta($find));
+        my $re = $isregexp ? qr{$find} : ($wholeword ? qr/\b$qe/ : quotemeta($find));
         push @rewrites, [$re, $replace, "s{$find}{$replace}"];
     }
 }

@@ -537,14 +537,14 @@ struct main {
     if (opt.add_debug_level)
       optionsDesc.add_options()
           ("debug-level,d", defaulted_value(&debug_lvl),
-           "Debugging output level (0 = off, 0xFFFF = max)")
+           "Debugging output level (0 = off, 0xFFFF = max)");
 #endif
 
-          if (opt.add_random)
-            optionsDesc.add_options()
-                ("random-seed,R", defaulted_value(&random_seed),
-                 "Random seed")
-                ;
+    if (opt.add_random)
+      optionsDesc.add_options()
+          ("random-seed,R", defaulted_value(&random_seed),
+           "Random seed")
+          ;
 #endif
   }
 

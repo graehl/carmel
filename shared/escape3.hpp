@@ -18,7 +18,7 @@ inline bool plaintext_escape3(char c) {
   return c >= 32 && c < 127 && c != '\\';
 }
 
-inline void append_escape3(char *&out, unsigned char c) {
+inline void append_escape3(char*& out, unsigned char c) {
   if (plaintext_escape3(c))
     *out++ = c;
   else {
@@ -34,34 +34,27 @@ inline std::size_t reserve_escape3(std::size_t len) {
 
 /// return true if truncated (can print ... or something). append to empty s.
 template <class String>
-inline bool escape3(char const* i, std::size_t n, String &s, std::size_t maxlen = 0) {
+inline bool escape3(char const* i, std::size_t n, String& s, std::size_t maxlen = 0) {
   assert(s.empty());
-  if (!maxlen || maxlen > n)
-    maxlen = n;
-  if (!maxlen)
-    return false;
+  if (!maxlen || maxlen > n) maxlen = n;
+  if (!maxlen) return false;
   s.resize(reserve_escape3(maxlen));
-  char *out = &s[0];
-  char *obegin = out;
+  char* out = &s[0];
+  char* obegin = out;
   char const* end = i + maxlen;
-  for (; i < end; ++i)
-    append_escape3(out, *i);
+  for (; i < end; ++i) append_escape3(out, *i);
   s.resize(out - obegin);
   return maxlen < n;
 }
 
 template <class String>
-inline bool escape3(void const* i, std::size_t n, String &s, std::size_t maxlen = 0) {
+inline bool escape3(void const* i, std::size_t n, String& s, std::size_t maxlen = 0) {
   return escape3((char const*)i, n, s, maxlen);
 }
 
 struct Escape3 : string_builder {
-  Escape3(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) {
-    append(i, n, maxlen);
-  }
-  Escape3(std::size_t n, void const* i, std::size_t maxlen = 0, bool nbytes = false) {
-    append(i, n, maxlen);
-  }
+  Escape3(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) { append(i, n, maxlen); }
+  Escape3(std::size_t n, void const* i, std::size_t maxlen = 0, bool nbytes = false) { append(i, n, maxlen); }
   explicit Escape3(std::string const& str, std::size_t maxlen = 0, bool nbytes = false) {
     append(str.data(), str.size(), maxlen);
   }
@@ -89,7 +82,7 @@ struct Escape3Exception : std::exception {
 };
 
 template <class ByteIt, class String>
-void unescape3(ByteIt i, ByteIt e, String &s) {
+void unescape3(ByteIt i, ByteIt e, String& s) {
   for (; i != e; ++i) {
     char c = *i;
     if (c != '\\')
@@ -110,18 +103,17 @@ void unescape3(ByteIt i, ByteIt e, String &s) {
 }
 
 template <class String>
-void unescape3(void const* i, std::size_t n, String &s) {
+void unescape3(void const* i, std::size_t n, String& s) {
   unescape3((char const*)i, (char const*)i + n, s);
 }
 
 template <class String>
-void unescape3(char const* in, String &s) {
+void unescape3(char const* in, String& s) {
   unescape3(in, in + strlen(in), s);
 }
 
-
 template <class String>
-void unescape3(std::string const& in, String &s) {
+void unescape3(std::string const& in, String& s) {
   unescape3(in.begin(), in.end(), s);
 }
 

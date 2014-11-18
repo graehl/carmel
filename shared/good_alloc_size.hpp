@@ -8,7 +8,6 @@
 
 namespace graehl {
 
-
 template <unsigned divisor>
 struct divide_round_up {
   enum { div = divisor };
@@ -25,10 +24,8 @@ struct rounded_up_multiple_pow2 {
   enum { value = (request + mask) & ~mask };
 };
 
-
 template <class Size>
-inline bool is_pow2(Size x)
-{
+inline bool is_pow2(Size x) {
   return (x & (x - 1)) == 0;
 }
 
@@ -40,7 +37,6 @@ inline Size round_up_pow2(Size req, Size divisor_pow2) {
   return (req + divisor_pow2) & ~divisor_pow2;
 }
 
-
 /// must be power of 2
 enum { kcache_line = 64 };
 enum { kcache_line_mask = kcache_line - 1 };
@@ -50,7 +46,7 @@ enum { ktarget_first_alloc = kcache_line };
 enum { ktarget_first_alloc_mask = ktarget_first_alloc - 1 };
 enum { k256 = 256 };
 enum { kmax_round_to_cache_line = 512 };
-enum { k1K = 1024};
+enum { k1K = 1024 };
 enum { k4K = 4 * k1K };
 enum { k1M = k1K * k1K };
 enum { k4M = 4 * k1M };
@@ -61,9 +57,9 @@ inline Size good_alloc_size(Size req) {
     return ktarget_first_alloc;
   else if (req <= kmax_round_to_cache_line)
     return (req + kcache_line_mask) & ~kcache_line_mask;
-  else if (req <= (k4K - k256)) //
+  else if (req <= (k4K - k256))  //
     return round_up_pow2(req, (Size)k256);
-  else if (req <= 4072 * k1K) // nearly 4mb
+  else if (req <= 4072 * k1K)  // nearly 4mb
     return round_up_pow2(req, (Size)k4K);
   else
     return round_up_pow2(req, (Size)k4M);

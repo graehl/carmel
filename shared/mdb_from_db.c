@@ -22,17 +22,17 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
-static int datasize = 64*1024;
-static int batchsize = 100;
-static size_t const kMB = 1024*1024;
+static int batchsize = 1000;
+static size_t const MB = 1024 * 1024;
+static int datasize = 64 * 1024 * 1024;
 static unsigned mapMB = 2048;
 inline size_t mapBytes() {
-  return mapMB * kMB;
+  return mapMB * MB;
 }
 
-static char *subname = NULL;
+static char* subname = NULL;
 
-static char *prog;
+static char* prog;
 
 static MDB_val kbuf, dbuf;
 
@@ -44,9 +44,22 @@ static MDB_val kbuf, dbuf;
 
 
 char *usagestr =
-    "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-s subdbname] [-N] [-B] [-T] [-v] [-h homedirpath] [-b write-batchsize] [-m map_megabytes] [-f redirect_stdout.txt]\n"
+    "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-s subdbname] [-h homedirpath] [-b write-batchsize] [-m map_megabytes] [-o redirect_stdout.txt] [-B] [-T] [-v] [-d] [-a] [-1] [-C] [-x]\n\n"
+    " (-n: create single mdb file instead of dir)\n"
+    " (-f: drop the old database entirely (removing all records) before adding the ones from the input db - safer than simply rm -rf path.output.mdb first since it may fail if db is locked)\n"
     " (-T prints to stdout key/val in mdb_load format)\n"
-    " (-l: only list (to stdout) database names, -N: overwrite existing keys (use MDB_NOOVERWRITE|MDB_NODUPDATA, and don't create mdb as MDB_DUPSORT); -B nonblocking db open; -n: create single mdb file instead of dir)\n"
+    " (-l: only list (to stdout) database names)\n"
+    " (-d: allow more than one of a given <key, data> pair (do not set MDB_NODUPDATA))\n"
+    " (-B nonblocking db open)\n"
+    " (-1: only one data per key allowed - do not set MDB_DUPSORT)\n"
+    " (-x: don't add if key already exists in any case (even if MDB_DUPSORT))\n"
+    " (-d: don't add duplicate <key, data> pairs (but do allow different data w/ same key e.g. <key, otherdata>)\n"
+    " (-h dir: ('home' dir for relative db filenames default '.')\n"
+    " (-o stdout_file: write -T stdout here instead)\n"
+    " (-V: print version and exit)\n"
+    " (-b N: batch size=N - default 100)\n"
+    " (-a: append assuming bdb has same sort order as mdb (could be risky, but faster))\n"
+    " (-C: don't use cursor put (might be slower - uses random access write requests)\n"
     " (on map-full or txn-full errors, try again with larger -m map_megabytes e.g. -m 4096 is 4GB)\n"
     ;
 
@@ -55,43 +68,35 @@ char *usagestr =
    (conceptually some of these are locals, but having them global lets us call
    fail() from anywhere)
 */
-static MDB_env *env;
-static MDB_txn *txn;
+static MDB_env* env;
+static MDB_txn* txn;
 static MDB_dbi dbi;
 
-static DB *dbp;
-static DBC *dbcp;
-static DB *parent_dbp;
-static DBC *bdb_subdbcursor;
-static char *subdbname;
-static DB_TXN *dbtxn;
+static DB* dbp;
+static DBC* dbcp;
+static DB* parent_dbp;
+static DBC* bdb_subdbcursor;
+static char* subdbname;
+static DB_TXN* dbtxn;
 
 void bdb_close() {
-  if (dbcp)
-    dbcp->close(dbcp);
+  if (dbcp) dbcp->close(dbcp);
   dbcp = 0;
-  if (dbp)
-    dbp->close(dbp, 0);
+  if (dbp) dbp->close(dbp, 0);
   dbp = 0;
 }
 void shutdown() {
-  if (bdb_subdbcursor)
-    bdb_subdbcursor->close(bdb_subdbcursor);
+  if (bdb_subdbcursor) bdb_subdbcursor->close(bdb_subdbcursor);
   bdb_subdbcursor = 0;
   bdb_close();
-  if (parent_dbp)
-    parent_dbp->close(parent_dbp, 0);
+  if (parent_dbp) parent_dbp->close(parent_dbp, 0);
   parent_dbp = 0;
-  if (txn)
-    mdb_txn_abort(txn);
+  if (txn) mdb_txn_abort(txn);
   txn = 0;
-  if (dbi)
-    mdb_dbi_close(env, dbi);
-  if (env)
-    mdb_env_close(env);
+  if (dbi) mdb_dbi_close(env, dbi);
+  if (env) mdb_env_close(env);
   env = 0;
-  if (subdbname)
-    free(subdbname);
+  if (subdbname) free(subdbname);
   subdbname = 0;
 }
 
@@ -100,8 +105,7 @@ void fail() {
   exit(EXIT_FAILURE);
 }
 
-static void usage(void)
-{
+static void usage(void) {
   fprintf(stderr, "usage: %s %s", prog, usagestr);
   fail();
 }
@@ -109,16 +113,15 @@ static void usage(void)
 /**
    BDB env
 */
-static char *dbhome;
-static DB_ENV *dbenv;
-static u_int32_t dbcache = 1024*1024;
-static char *dbpasswd;
+static char* dbhome;
+static DB_ENV* dbenv;
+static u_int32_t dbcache = 1024 * 1024;
+static char* dbpasswd;
 static bool dbnonblocking;
-void strfill(char *str, char fill) {
-  while(*str)
-    *str++ = fill;
+void strfill(char* str, char fill) {
+  while (*str) *str++ = fill;
 }
-void bdb_err(char *fn, int rc) {
+void bdb_err(char* fn, int rc) {
   fprintf(stderr, "%s: ", prog);
   if (dbenv)
     dbenv->err(dbenv, rc, fn);
@@ -130,50 +133,42 @@ void bdb_err(char *fn, int rc) {
 DBT dbkey, dbdata;
 void bdb_init_dbenv() {
   int rc;
-  if ((rc = db_env_create(&dbenv, 0)) != 0)
-    bdb_err("db_env_create", rc);
+  if ((rc = db_env_create(&dbenv, 0)) != 0) bdb_err("db_env_create", rc);
   dbenv->set_errfile(dbenv, stderr);
   dbenv->set_errpfx(dbenv, prog);
   if (dbpasswd != NULL) {
     rc = dbenv->set_encrypt(dbenv, dbpasswd, DB_ENCRYPT_AES);
     strfill(dbpasswd, '\0');
-    if (rc)
-      bdb_err("dbenv::set_encrypt", rc);
+    if (rc) bdb_err("dbenv::set_encrypt", rc);
   }
   if (dbnonblocking) {
-    if ((rc = dbenv->set_flags(dbenv, DB_NOLOCKING, 1)))
-      bdb_err("DB_NOLOCKING", rc);
-    if ((rc = dbenv->set_flags(dbenv, DB_NOPANIC, 1)))
-      bdb_err("DB_NOPANIC", rc);
+    if ((rc = dbenv->set_flags(dbenv, DB_NOLOCKING, 1))) bdb_err("DB_NOLOCKING", rc);
+    if ((rc = dbenv->set_flags(dbenv, DB_NOPANIC, 1))) bdb_err("DB_NOPANIC", rc);
   }
-  if ((rc = dbenv->set_cachesize(dbenv, 0, dbcache, 1)))
-    bdb_err("dbenv::set_cachesize", rc);
-  if ((rc = dbenv->open(dbenv, dbhome,
-                        DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON, 0)))
+  if ((rc = dbenv->set_cachesize(dbenv, 0, dbcache, 1))) bdb_err("dbenv::set_cachesize", rc);
+  if ((rc = dbenv->open(dbenv, dbhome, DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON, 0)))
     bdb_err("dbenv::open", rc);
   dbdata.flags = DB_DBT_USERMEM;
-  if (!(dbdata.data = malloc(dbdata.ulen = dbcache)))
-    fail();
+  if (!(dbdata.data = malloc(dbdata.ulen = dbcache))) fail();
 }
 
 /**
    BDB db.
 */
-static char *dbfilename;
+static char* dbfilename;
 static DBT keyret, dataret;
 static bool bdb_is_recno;
 static db_recno_t bdb_recno;
 static DB_HEAP_RID bdb_heaprid;
 static int bdb_get_flags;
-static void *pointer_get;
+static void* pointer_get;
 
-void bdb_open(char *dbname) {
+void bdb_open(char* dbname) {
   int rc;
   bdb_close();
-  if ((rc = db_create(&dbp, dbenv, 0)))
-    bdb_err("db_create", rc);
-  if ((rc = dbp->open(dbp, dbtxn, dbfilename, dbname,
-                      DB_UNKNOWN, (parent_dbp ? 0 : DB_RDWRMASTER)|DB_RDONLY, 0))) {
+  if ((rc = db_create(&dbp, dbenv, 0))) bdb_err("db_create", rc);
+  if ((rc = dbp->open(dbp, dbtxn, dbfilename, dbname, DB_UNKNOWN,
+                      (parent_dbp ? 0 : DB_RDWRMASTER) | DB_RDONLY, 0))) {
     fprintf(stderr, "db open %s : %s\n", dbfilename, dbname);
     bdb_err(dbfilename, rc);
   }
@@ -191,8 +186,7 @@ void bdb_start_chunks() {
     dbkey.data = &bdb_heaprid;
     dbkey.size = dbkey.ulen = sizeof(bdb_heaprid);
   }
-  if ((rc = dbp->cursor(dbp, NULL, &dbcp, 0)))
-    bdb_err("cursor", rc);
+  if ((rc = dbp->cursor(dbp, NULL, &dbcp, 0))) bdb_err("cursor", rc);
 }
 
 unsigned align(unsigned req, unsigned granule) {
@@ -205,16 +199,13 @@ unsigned align(unsigned req, unsigned granule) {
 bool bdb_read_chunk() {
   int rc;
   if ((rc = dbcp->get(dbcp, &dbkey, &dbdata, bdb_get_flags))) {
-    if (rc == DB_NOTFOUND)
-      return false;
+    if (rc == DB_NOTFOUND) return false;
     if (rc == DB_BUFFER_SMALL) {
       dbdata.ulen = dbdata.size = align(dbdata.size, 4096);
-      if (!(dbdata.data = realloc(dbdata.data, dbdata.size)))
-        fail();
+      if (!(dbdata.data = realloc(dbdata.data, dbdata.size))) fail();
       rc = dbcp->get(dbcp, &dbkey, &dbdata, bdb_get_flags);
     }
-    if (rc)
-      bdb_err("get chunk", rc);
+    if (rc) bdb_err("get chunk", rc);
   }
   DB_MULTIPLE_INIT(pointer_get, &dbdata);
   return true;
@@ -225,12 +216,9 @@ bool bdb_read_chunk() {
 */
 bool bdb_next_record_in_chunk() {
   if (bdb_is_recno)
-    DB_MULTIPLE_RECNO_NEXT(pointer_get, &dbdata,
-                           bdb_recno, dataret.data, dataret.size);
+    DB_MULTIPLE_RECNO_NEXT(pointer_get, &dbdata, bdb_recno, dataret.data, dataret.size);
   else
-    DB_MULTIPLE_KEY_NEXT(pointer_get, &dbdata,
-                         keyret.data, keyret.size,
-                         dataret.data, dataret.size);
+    DB_MULTIPLE_KEY_NEXT(pointer_get, &dbdata, keyret.data, keyret.size, dataret.data, dataret.size);
   return dataret.data;
 }
 
@@ -241,12 +229,18 @@ char hexc(unsigned char i) {
 }
 
 void putchar_T(unsigned char c) {
-  if (c >= 32 && c < 127 && c != '\\') {
-    putchar(c);
-  } else {
+  if (c >= 32 && c < 127 && c != '\\') { putchar(c); } else {
     putchar('\\');
     putchar(hexc(c >> 4));
     putchar(hexc(c & 0xf));
+  }
+}
+
+void putchar_T_to(unsigned char c, FILE* to) {
+  if (c >= 32 && c < 127 && c != '\\') { fputc(c, to); } else {
+    fputc('\\', to);
+    fputc(hexc(c >> 4), to);
+    fputc(hexc(c & 0xf), to);
   }
 }
 
@@ -254,10 +248,14 @@ void putchar_T(unsigned char c) {
    TODO: could fwrite chunks of no-escape-needed bytes, or probably faster,
    encode in memory then write once
 */
-void print_T(char *data, unsigned len) {
+void print_T(char* data, unsigned len) {
   unsigned i = 0;
-  for (; i < len; ++i)
-    putchar_T(data[i]);
+  for (; i < len; ++i) putchar_T(data[i]);
+}
+
+void print_T_to(char* data, unsigned len, FILE* to) {
+  unsigned i = 0;
+  for (; i < len; ++i) putchar_T_to(data[i], to);
 }
 
 /**
@@ -283,16 +281,15 @@ void print_record_T() {
 }
 
 
-char *bdb_open_subdb(DBT key) {
-  if (!(subdbname = malloc(key.size + 1)))
-    fail();
+char* bdb_open_subdb(DBT key) {
+  if (!(subdbname = malloc(key.size + 1))) fail();
   memcpy(subdbname, key.data, key.size);
   subdbname[key.size] = '\0';
   bdb_open(subdbname);
   return subdbname;
 }
 
-bool isdir(char *path) {
+bool isdir(char* path) {
   struct stat s;
   if (stat(path, &s)) {
     perror("path");
@@ -301,52 +298,42 @@ bool isdir(char *path) {
   return S_ISDIR(s.st_mode);
 }
 
-void mkdir_if_needed(char *path) {
+void mkdir_if_needed(char* path) {
   if (mkdir(path, 0755))
     if (errno != EEXIST) {
       perror(path);
       fail();
     }
   if (!isdir(path)) {
-    fprintf(stderr, "%s is not a directory and can't mkdir it. try with -n for no-subdir (to store as a file)", path);
+    fprintf(stderr,
+            "%s is not a directory and can't mkdir it. try with -n for no-subdir (to store as a file)",
+            path);
     fail();
   }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   int i, rc;
-  MDB_cursor *mc;
-  int envflags = 0, putflags = 0;
+  MDB_cursor* cursor;
+  int envflags = 0, putflags = 0, openflags = MDB_CREATE;
   int textflag = false;
   bool havemultiple;
   int maxdbs = 2; /* parent db-of-dbs plus current output db */
 
   prog = argv[0];
 
-  if (argc < 2) {
-    usage();
-  }
+  if (argc < 2) { usage(); }
 
-  /* -n: use NOSUBDIR flag on env_open
-   * -S do not use NOSUBDIR
-   * -s subDB: translate just named subDB (default: all)
-   * -N: use NOOVERWRITE|NODUPDATA on puts
-   * -V: print version and exit
-   * -T: print -s database in format suitable for mdb_load -T (then output not required)
-   * -b N: batch size=N (default 100)
-   * -f stdout_file: write stdout here instead
-
-   * db_dump-like options:
-   * '-h dir: ('home' dir for relative db filenames default .)
-   * -B: nonblocking db open
-   */
+  bool dupdata = false;
   bool subdir = true;
-  bool nodup = false;
+  bool dupsort = true;
   bool listdbs = false;
-
-  while ((i = getopt(argc, argv, "P:M:m:h:s:b:lnvVTNS")) != EOF) {
-    switch(i) {
+  bool appendsorted = false;
+  bool overwrite = false;
+  bool cursorput = true; /* should be faster than individual put */
+  bool force = false;
+  while ((i = getopt(argc, argv, "o:P:M:m:h:s:b:lnvVTNS1xacCf")) != EOF) {
+    switch (i) {
       case 'm':
       case 'M':
         i = sscanf(optarg, "%du", &mapMB);
@@ -362,17 +349,17 @@ int main(int argc, char *argv[])
           usage();
         }
         break;
-      case 'f':
+      case 'o':
         if (freopen(optarg, "w", stdout) == NULL) {
-          fprintf(stderr, "%s: %s: reopen: %s\n",
-                  prog, optarg, strerror(errno));
+          fprintf(stderr, "%s: %s: reopen: %s\n", prog, optarg, strerror(errno));
           exit(EXIT_FAILURE);
         }
         break;
+      case 'v':
       case 'V':
         printf("%s\n", MDB_VERSION_STRING);
         printf("%s\n", db_version(NULL, NULL, NULL));
-        exit(0);
+        if (i == 'V') exit(0);
         break;
       case 'S':
         subdir = true;
@@ -383,9 +370,17 @@ int main(int argc, char *argv[])
       case 's':
         subname = strdup(optarg);
         break;
-      case 'N':
-        nodup = true;
-        putflags = MDB_NOOVERWRITE|MDB_NODUPDATA;
+      case 'd':
+        dupdata = true;
+        break;
+      case '1':
+        dupsort = false;
+        break;
+      case 'a':
+        appendsorted = true;
+        break;
+      case 'x':
+        overwrite = true;
         break;
       case 'B':
         dbnonblocking = true;
@@ -395,6 +390,12 @@ int main(int argc, char *argv[])
         break;
       case 'h':
         dbhome = optarg;
+        break;
+      case 'C':
+        cursorput = false;
+        break;
+      case 'c':
+        cursorput = true;
         break;
       case 'P':
         /**
@@ -406,28 +407,39 @@ int main(int argc, char *argv[])
       case 'l':
         listdbs = true;
         break;
+      case 'f':
+        force = true;
+        break;
       case '?':
       default:
         usage();
     }
   }
 
-  if (!subdir)
-    envflags |= MDB_NOSUBDIR;
+  if (overwrite) putflags |= MDB_NOOVERWRITE;
+
+  if (dupdata) putflags |= MDB_NODUPDATA;
+
+  if (!subdir) envflags |= MDB_NOSUBDIR;
+
+  if (appendsorted) putflags |= (dupsort ? MDB_APPENDDUP : MDB_APPEND);
+
+  if (dupsort) openflags |= MDB_DUPSORT;
+
   bool haveout = optind == argc - 2;
-  if (optind >= argc)
-    usage();
+  if (optind >= argc) usage();
   dbfilename = argv[optind++];
-  char *mdboutpath = haveout ? argv[optind++] : NULL;
+  char* mdboutpath = haveout ? argv[optind++] : NULL;
   if (mdboutpath) {
-    if (subdir)
-      mkdir_if_needed(mdboutpath);
+    if (subdir) mkdir_if_needed(mdboutpath);
   }
   if (listdbs) {
     if (textflag)
       fprintf(stderr, "disabling -T (print key/val lines) because -l (list dbs) was specified\n");
     textflag = false;
   }
+  fprintf(stderr, "prepared: dupsort=%d putflags=%x openflags=%x envflags=%x cursor=%d\n", (int)dupsort,
+          putflags, openflags, envflags, (int)cursorput);
 
   /**
      args parsed.
@@ -437,14 +449,14 @@ int main(int argc, char *argv[])
   bdb_init_dbenv();
   bdb_open(subname);
 
-  /**
-     init MDB:
-  */
+/**
+   init MDB:
+*/
 #undef MDB_OK
-#define MDB_OK(call)                                                    \
-  if (rc) {                                                             \
+#define MDB_OK(call)                                                        \
+  if (rc) {                                                                 \
     fprintf(stderr, #call " failed - error %d %s\n", rc, mdb_strerror(rc)); \
-    goto shutdown;                                                      \
+    goto shutdown;                                                          \
   } else {}
 
   if (mdboutpath) {
@@ -471,8 +483,7 @@ int main(int argc, char *argv[])
   if (havemultiple) {
     parent_dbp = dbp;
     dbp = 0;
-    if ((rc = parent_dbp->cursor(parent_dbp, NULL, &bdb_subdbcursor, 0)))
-      bdb_err("cursor(sub-dbs)", rc);
+    if ((rc = parent_dbp->cursor(parent_dbp, NULL, &bdb_subdbcursor, 0))) bdb_err("cursor(sub-dbs)", rc);
   }
 
   unsigned long long wnrecords, wnrecordsall = 0;
@@ -497,25 +508,30 @@ int main(int argc, char *argv[])
     nrecords = 0;
     wnrecords = 0;
     if (subname) {
-      if (listdbs)
-        printf("%s\n", subname);
-      if (reading)
-        fprintf(stderr, "reading DB %s ... ", subname);
+      if (listdbs) printf("%s\n", subname);
+      if (reading) fprintf(stderr, "reading DB %s ", subname);
     } else {
       listdbs = false;
-      fprintf(stderr, "reading unnamed DB ... ");
+      fprintf(stderr, "reading unnamed DB ");
     }
+
+    if (bdb_is_recno) openflags |= MDB_INTEGERKEY;
 
     if (mdboutpath) {
       rc = mdb_txn_begin(env, NULL, 0, &txn);
       MDB_OK(mdb_txn_begin);
-      rc = mdb_dbi_open(txn,
-                        subname,
-                        (bdb_is_recno ? MDB_INTEGERKEY : 0) | MDB_CREATE | (nodup ? 0 : MDB_DUPSORT),
+      rc = mdb_dbi_open(txn, subname,
+                        (bdb_is_recno ? MDB_INTEGERKEY : 0) | MDB_CREATE | (dupsort ? MDB_DUPSORT : 0),
                         &dbi);
       MDB_OK(mdb_open);
-      rc = mdb_cursor_open(txn, dbi, &mc);
-      MDB_OK(mdb_cursor_open);
+      if (force) {
+        rc = mdb_drop(txn, dbi, 0);
+        MDB_OK(mdb_drop);
+      }
+      if (mdboutpath && cursorput) {
+        rc = mdb_cursor_open(txn, dbi, &cursor);
+        MDB_OK(mdb_cursor_open);
+      }
     }
 
     if (reading) {
@@ -523,26 +539,36 @@ int main(int argc, char *argv[])
       while (bdb_read_chunk()) {
         while (bdb_next_record_in_chunk()) {
           ++nrecords;
-          if (textflag)
-            print_record_T();
+          if (textflag) print_record_T();
           if (mdboutpath) {
             key.mv_data = keyret.data;
             key.mv_size = keyret.size;
             data.mv_data = dataret.data;
             data.mv_size = dataret.size;
-            rc = mdb_cursor_put(mc, &key, &data, putflags);
-            if (rc == MDB_KEYEXIST && nodup)
-              continue;
+            if (cursorput)
+              rc = mdb_cursor_put(cursor, &key, &data, putflags);
+            else
+              rc = mdb_put(txn, dbi, &key, &data, putflags);
+            if (rc == MDB_KEYEXIST) {
+              fprintf(stderr, "duplicate encountered for key ");
+              print_T_to(key.mv_data, key.mv_size, stderr);
+              fprintf(stderr, "\n");
+              if (dupdata | overwrite) { continue; } else
+                fprintf(stderr, "assuming put->dupsort keeps duplicate");
+            }
             ++wnrecords;
-            MDB_OK(mdb_cursor_put);
+            MDB_OK(mdb_put);
             if (++batch == batchsize) {
+              fputc('.', stderr);
               batch = 0;
               rc = mdb_txn_commit(txn);
               MDB_OK(mdb_txn_commit);
               rc = mdb_txn_begin(env, NULL, 0, &txn);
               MDB_OK(mdb_txn_begin);
-              rc = mdb_cursor_open(txn, dbi, &mc);
-              MDB_OK(mdb_cursor_open);
+              if (cursorput) {
+                rc = mdb_cursor_open(txn, dbi, &cursor);
+                MDB_OK(mdb_cursor_open);
+              }
             }
           }
         }
@@ -556,14 +582,13 @@ int main(int argc, char *argv[])
       }
       nrecordsall += nrecords;
       wnrecordsall += wnrecords;
-      fprintf(stderr, "%llu records (stored %llu).\n", nrecords, wnrecords);
+      fprintf(stderr, " %llu records (stored %llu).\n", nrecords, wnrecords);
     }
-    if (!havemultiple)
-      break;
+    if (!havemultiple) break;
   }
-  fprintf(stderr, "Found %u Berkeley DB(s) in input file %s - read %llu records", ndbs, dbfilename, nrecordsall);
-  if (mdboutpath)
-    fprintf(stderr, " (stored %llu to MDB %s).\n", wnrecordsall, mdboutpath);
+  fprintf(stderr, "Found %u Berkeley DB(s) in input file %s - read %llu records", ndbs, dbfilename,
+          nrecordsall);
+  if (mdboutpath) fprintf(stderr, " (stored %llu to MDB %s).\n", wnrecordsall, mdboutpath);
   fprintf(stderr, "\n");
 shutdown:
   shutdown();
