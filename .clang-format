@@ -1,0 +1,67 @@
+# see http://clang.llvm.org/docs/ClangFormatStyleOptions.html
+# see http://clangformat.com/
+# see http://clang.llvm.org/doxygen/Format_8h_source.html
+---
+
+Language:        Cpp
+AccessModifierOffset: -1
+ConstructorInitializerIndentWidth: 4
+AlignEscapedNewlinesLeft: true
+AlignTrailingComments: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AlwaysBreakTemplateDeclarations: true
+AlwaysBreakBeforeMultilineStrings: true
+BreakBeforeBinaryOperators: true
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializersBeforeComma: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+IndentCaseLabels: true
+IndentWrappedFunctionNames: false
+IndentFunctionDeclarationAfterType: false
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: true
+NamespaceIndentation: None
+ObjCSpaceAfterProperty: false
+ObjCSpaceBeforeProtocolList: false
+PenaltyBreakBeforeFirstCallParameter: 1
+ColumnLimit:     110
+PenaltyExcessCharacter: 10
+PenaltyBreakComment: 300
+PenaltyBreakString: 80
+PenaltyBreakFirstLessLess: 10
+PenaltyReturnTypeOnItsOwnLine: 100
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+BinPackParameters: true
+ExperimentalAutoDetectBinPacking: false
+
+SpacesBeforeTrailingComments: 2
+Cpp11BracedListStyle: true
+Standard:        Cpp03
+IndentWidth:     2
+TabWidth:        8
+UseTab:          Never
+
+BreakBeforeBraces: Attach
+# Linux
+# Attach
+
+SpacesInParentheses: false
+SpacesInAngles:  false
+SpaceInEmptyParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: true
+SpaceBeforeAssignmentOperators: true
+ContinuationIndentWidth: 4
+CommentPragmas:  '^}}}?'
+SpaceBeforeParens: ControlStatements
+
+ForEachMacros:   [ forall, foreach, Q_FOREACH, BOOST_FOREACH ]
+
+...

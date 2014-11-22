@@ -44,12 +44,12 @@ static MDB_val kbuf, dbuf;
 
 
 char *usagestr =
-    "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-s subdbname] [-h homedirpath] [-b write-batchsize] [-m map_megabytes] [-o redirect_stdout.txt] [-B] [-T] [-v] [-d] [-a] [-1] [-C] [-x]\n\n"
-    " (-n: create single mdb file instead of dir)\n"
-    " (-f: drop the old database entirely (removing all records) before adding the ones from the input db - safer than simply rm -rf path.output.mdb first since it may fail if db is locked)\n"
+    "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-N] [-s subdbname] [-h homedirpath] [-b write-batchsize] [-m map_megabytes] [-o redirect_stdout.txt] [-B] [-T] [-v] [-d] [-a] [-1] [-C] [-x] [-F]\n\n"
+    " (-n: create single mdb file instead of dir - the default)\n"
+    " (-N: create a directory with a file for each subdb)\n"
+    " (-f: drop the old database entirely (removing all records) before adding the ones from the input db - safer than simply rm -rf path.output.mdb first since it will correctly  fail if db is i)\n"
     " (-T prints to stdout key/val in mdb_load format)\n"
     " (-l: only list (to stdout) database names)\n"
-    " (-d: allow more than one of a given <key, data> pair (do not set MDB_NODUPDATA))\n"
     " (-B nonblocking db open)\n"
     " (-1: only one data per key allowed - do not set MDB_DUPSORT)\n"
     " (-x: don't add if key already exists in any case (even if MDB_DUPSORT))\n"
@@ -60,6 +60,8 @@ char *usagestr =
     " (-b N: batch size=N - default 100)\n"
     " (-a: append assuming bdb has same sort order as mdb (could be risky, but faster))\n"
     " (-C: don't use cursor put (might be slower - uses random access write requests)\n"
+    " (-F: sort keys left->right (default is right->left, i.e. sorting on reversed strings)\n"
+    " (-R: sort keys right-left (the default)\n"
     " (on map-full or txn-full errors, try again with larger -m map_megabytes e.g. -m 4096 is 4GB)\n"
     ;
 
@@ -325,14 +327,15 @@ int main(int argc, char* argv[]) {
   if (argc < 2) { usage(); }
 
   bool dupdata = false;
-  bool subdir = true;
+  bool subdir = false;
   bool dupsort = true;
   bool listdbs = false;
   bool appendsorted = false;
   bool overwrite = false;
   bool cursorput = true; /* should be faster than individual put */
   bool force = false;
-  while ((i = getopt(argc, argv, "o:P:M:m:h:s:b:lnvVTNS1xacCf")) != EOF) {
+  bool reversekey = true;
+  while ((i = getopt(argc, argv, "o:P:M:m:h:s:b:lnvVTNS1xacCfFNRF")) != EOF) {
     switch (i) {
       case 'm':
       case 'M':
@@ -362,6 +365,9 @@ int main(int argc, char* argv[]) {
         if (i == 'V') exit(0);
         break;
       case 'S':
+        subdir = true;
+        break;
+      case 'N':
         subdir = true;
         break;
       case 'n':
@@ -410,6 +416,12 @@ int main(int argc, char* argv[]) {
       case 'f':
         force = true;
         break;
+      case 'R':
+        reversekey = true;
+        break;
+      case 'F':
+        reversekey = false;
+        break;
       case '?':
       default:
         usage();
@@ -426,6 +438,8 @@ int main(int argc, char* argv[]) {
 
   if (dupsort) openflags |= MDB_DUPSORT;
 
+  if (reversekey) openflags |= MDB_REVERSEKEY;
+
   bool haveout = optind == argc - 2;
   if (optind >= argc) usage();
   dbfilename = argv[optind++];
@@ -438,8 +452,8 @@ int main(int argc, char* argv[]) {
       fprintf(stderr, "disabling -T (print key/val lines) because -l (list dbs) was specified\n");
     textflag = false;
   }
-  fprintf(stderr, "prepared: dupsort=%d putflags=%x openflags=%x envflags=%x cursor=%d\n", (int)dupsort,
-          putflags, openflags, envflags, (int)cursorput);
+  fprintf(stderr, "prepared: dupsort=%d reversekey=%d putflags=%x openflags=%x envflags=%x cursor=%d\n",
+          (int)dupsort, (int)reversekey, putflags, openflags, envflags, (int)cursorput);
 
   /**
      args parsed.

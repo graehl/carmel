@@ -26,7 +26,7 @@ inline void reinit(T& val) {
   new (&val) T();
 }
 
-template <class T, class IndexT = unsigned, unsigned Log2ChunkSize = 6, bool UseSmallVector = false>
+template <class T, class IndexT = unsigned, unsigned Log2ChunkSize = 9, bool UseSmallVector = false>
 struct stable_vector {
   /// if true, then shrinking the vector ensures that subsequent grow() still
   /// gets default constructed T(). false would be faster if you didn't mind
@@ -227,15 +227,6 @@ struct stable_vector {
       truncate(sz, kRemoveDestroys);
   }
 
-  friend inline void clear_destroy(stable_vector& v) { v.clear(true); }
-
-  friend inline void shrink_destroy(stable_vector& v, I sz) { v.truncate(sz, true); }
-
-  /**
-     grows size so that i is < size.
-  */
-  friend inline T& grow(stable_vector& v, I i) { return v.growImpl(i); }
-
   ~stable_vector() {
     for (typename Chunks::const_iterator i = chunks.begin(), e = chunks.end(); i != e; ++i) free_chunk(*i);
   }
@@ -265,6 +256,12 @@ struct stable_vector {
     return equal_chunks(chunks[i], o.chunks[i], size_& posmask);  // last chunk
   }
 
+  // meant to be private w/ friend fn calling it but MSVC2010 couldn't find the friend fn
+  T& growImpl(I i) {
+    if (i >= size_) resizeLarger(i + 1);
+    return (*this)[i];
+  }
+
  private:
   void init(I size) {
     capacity = 0;
@@ -284,10 +281,6 @@ struct stable_vector {
     size_ = n;
   }
 
-  T& growImpl(I i) {
-    if (i >= size_) resizeLarger(i + 1);
-    return (*this)[i];
-  }
 
   /**
      for simplicitly, we immediately default construct every allocated chunk as
@@ -360,6 +353,9 @@ struct stable_vector {
 
 }  // ns
 
+/// these are in global ns to work around an MSVC2010 bug:
+/// http://msdn.microsoft.com/en-us/library/19dh8yat.aspx
+
 template <class T>
 T& grow(std::vector<T>& v, std::size_t i) {
   if (i >= v.size()) v.resize(i + 1);
@@ -379,6 +375,25 @@ void shrink_destroy(std::vector<T>& v, std::size_t sz) {
     if (!sz) clear_destroy(v);
     v.resize(sz);
   }
+}
+
+/**
+   grows size so that i is < size, \return v[i]. these ought to be friend but
+   MSVC can't find them there.
+*/
+template <class A, class B, unsigned C, bool D, class I>
+A& grow(graehl::stable_vector<A, B, C, D>& v, I i) {
+  return v.growImpl(i);
+}
+
+template <class A, class B, unsigned C, bool D, class I>
+void shrink_destroy(graehl::stable_vector<A, B, C, D>& v, I sz) {
+  v.truncate(sz, true);
+}
+
+template <class A, class B, unsigned C, bool D>
+void clear_destroy(graehl::stable_vector<A, B, C, D>& v) {
+  v.clear(true);
 }
 
 #ifndef _WIN32

@@ -2180,7 +2180,11 @@ headtail1() {
     fi
 }
 preview1() {
+    (
     tailn=${tailn:-12}
+    if [[ $headn ]] ; then
+        tailn=$headn
+    fi
     local v="-v"
     if [[ ${2:-} ]] ; then
         preview_banner $2
@@ -2194,6 +2198,7 @@ preview1() {
         fi
     fi
     tailarg=$v head1 $tailn "$@"
+    )
 }
 preview2() {
     tailn=$tailn preview "$@" 1>&2

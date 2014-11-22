@@ -13,6 +13,28 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+
+gitcat() {
+    git cat-file blob "$@"
+}
+linuxver() {
+if [ -f /etc/redhat-release ]; then
+OS_MAJOR_VERSION=`sed -rn 's/.*([0-9])\.[0-9].*/\1/p' /etc/redhat-release`
+OS_MINOR_VERSION=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/redhat-release`
+echo "RedHat/CentOS $OS_MAJOR_VERSION.$OS_MINOR_VERSION"
+elif grep -q DISTRIB_ /etc/lsb-release; then
+    . /etc/lsb-release
+    OS=$DISTRIB_ID
+    VER=$DISTRIB_RELEASE
+elif [ -f /etc/debian_version ]; then
+    OS=Debian  # XXX or Ubuntu??
+    VER=$(cat /etc/debian_version)
+else
+    OS=$(uname -s)
+    VER=$(uname -r)
+fi
+}
+
 gitbranches()
 {
 (
@@ -442,16 +464,18 @@ ll=$xlib/lmdb/lib
 bl=$xlib/lmdb/bin
 mkdir -p $ll
 mkdir -p $bl
-chost=${mdbhost:-c-mdreyer}
+chost=${mdbhost:-c-jmay}
 cb=c/build-$libver
 rm -f $HOME/$smdb/*.o
 rm -f $HOME/$smdb/*.a
 scp -r $HOME/$smdb $chost:c/
 banner building remotely on $chost
-c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make -j5"
+c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make -j5 && cp mdb_* ~/bin"
+set -x
 scp $chost:$cb/\*.so  $ll
 scp $chost:$cb/\*.a  $ll
 scp $chost:$cb/mdb_\*  $bl
+set +x
 incl=$slib/libraries/lmdb/include
 cp $HOME/$smdb/mdb/lmdb.h $incl
 cd $ll
@@ -1241,6 +1265,7 @@ fi
 py=$(echo $xmtx/python)
 export WORKSPACE=$xmtx
 xmtext=$xmtextbase/$lwarch
+xmtextsrc=$HOME/c/xmt-externals-source
 export XMT_EXTERNALS_PATH=$xmtext
 xmtlib=$xmtext/libraries
 xmtlibshared=$xmtextbase/Shared/cpp/libraries
@@ -2173,6 +2198,8 @@ fixgerrit() {
 upext() {
     (set -e
         cd $xmtext
+        remaster
+        cd $xmtextsrc
         remaster
     )
 }
@@ -4698,7 +4725,7 @@ lc() {
 lnxmtlib() {
     d=${1?arg1: dest dir}
     mkdir -p $d
-    for f in `find $xmtext/libraries -name libd -maxdepth 1 -o -name '*.so'`; do
+    for f in `find $xmtext/libraries  -maxdepth 1 -name libd -o -name '*.so'`; do
         echo $f
         force=1 lnreal $f $d/
     done
@@ -5559,9 +5586,6 @@ syncc() {
 }
 svndry() {
     svn merge --dry-run -r BASE:HEAD ${1:-.}
-}
-cregress() {
-    find $xmtx/RegressionTests -name '*.log' -exec rm {} \;
 }
 sconsd() {
     scons -Q --debug=presub "$@"
