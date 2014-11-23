@@ -75,13 +75,6 @@ inline std::size_t get(identity_offset_map, std::size_t i) {
 
 }//ns
 
-#if 0
-namespace boost {
-template <>
-struct property_traits<graehl::identity_offset_map> : graehl::identity_offset_map
-{};
-}
-#endif
 
 namespace graehl {
 
@@ -227,11 +220,6 @@ public:
 };
 
 // values are ALWAYS default constructed on first get.
-
-#if 0
-static boost::const_sink_property_map<bool> always_false_pmap(false);
-static boost::const_sink_property_map<bool> always_true_pmap(true);
-#endif
 
 template <class V>
 const_sink_property_map<V> const_sink_pmap(V const& v) {

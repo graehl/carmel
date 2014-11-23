@@ -75,8 +75,8 @@ atime() {
     echo "$proga => $stripa"
     chmod +rx $stripa
     chmod u+w $stripa
-    strip "$stripa" || true
     if [[ $upx ]] ; then
+        strip "$stripa" || true
         upx "$stripa" || true
     fi
     proga=$stripa
@@ -85,7 +85,8 @@ atime() {
       echo "$proga $* >$proga.out 2>&1"
       $proga "$@" >$proga.out 2>&1
     fi
-    timeouts+=" $proga.out"
+    outa=$proga.out
+    timeouts+=" $outa"
     echo2 $proga "$@" "> $outa"
     echo2 ::::::::: nrep=$nrep
     local nrepa=$proga.${nrep}.sh

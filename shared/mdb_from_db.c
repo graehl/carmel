@@ -22,12 +22,12 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
-static int batchsize = 1000;
+static int batchsize = 10000;
 static size_t const MB = 1024 * 1024;
 static int datasize = 64 * 1024 * 1024;
-static unsigned mapMB = 2048;
+static unsigned mapMB = 1024 * 1024; // so 1TB default limit
 inline size_t mapBytes() {
-  return mapMB * MB;
+  return (size_t)mapMB * (size_t)MB;
 }
 
 static char* subname = NULL;
@@ -45,6 +45,7 @@ static MDB_val kbuf, dbuf;
 
 char *usagestr =
     "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-N] [-s subdbname] [-h homedirpath] [-b write-batchsize] [-m map_megabytes] [-o redirect_stdout.txt] [-B] [-T] [-v] [-d] [-a] [-1] [-C] [-x] [-F]\n\n"
+    " (-m MB: limit database size to this many megabytes - use as large a value as your system supports (short of 4 billion)\n"
     " (-n: create single mdb file instead of dir - the default)\n"
     " (-N: create a directory with a file for each subdb)\n"
     " (-f: drop the old database entirely (removing all records) before adding the ones from the input db - safer than simply rm -rf path.output.mdb first since it will correctly  fail if db is i)\n"
@@ -58,7 +59,7 @@ char *usagestr =
     " (-o stdout_file: write -T stdout here instead)\n"
     " (-V: print version and exit)\n"
     " (-b N: batch size=N - default 100)\n"
-    " (-a: append assuming bdb has same sort order as mdb (could be risky, but faster))\n"
+    " (-a: append assuming bdb has same sort order as mdb (error if db not sorted same as mdb))\n"
     " (-C: don't use cursor put (might be slower - uses random access write requests)\n"
     " (-F: sort keys left->right (default is right->left, i.e. sorting on reversed strings)\n"
     " (-R: sort keys right-left (the default)\n"
@@ -341,7 +342,7 @@ int main(int argc, char* argv[]) {
       case 'M':
         i = sscanf(optarg, "%du", &mapMB);
         if (i != 1) {
-          fprintf(stderr, "ERROR: -b '%s' (batchsize) was not int\n", optarg);
+          fprintf(stderr, "ERROR: -M '%s' (batchsize) was not size_t\n", optarg);
           usage();
         }
         break;
@@ -477,7 +478,9 @@ int main(int argc, char* argv[]) {
     rc = mdb_env_create(&env);
     MDB_OK(mdb_env_create);
 
-    rc = mdb_env_set_mapsize(env, mapBytes());
+    size_t mapbytes = mapBytes();
+    rc = mdb_env_set_mapsize(env, mapbytes);
+    fprintf(stderr, "set mdb max (map) size to %u MB = %.3f GB\n", mapMB, (double)mapbytes/(1024.*1024.*1024.));
     MDB_OK(mdb_env_set_mapsize);
 
     rc = mdb_env_set_maxdbs(env, maxdbs);

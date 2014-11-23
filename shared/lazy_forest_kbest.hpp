@@ -848,26 +848,8 @@ class lazy_forest
   const hyperedge& top() const { return pq.front(); }
 };
 
-#if 0
-//friend inline defns should suffice
-template <class C, class T, class DF, class FF>
-std::basic_ostream<C, T>&
-operator<<(std::basic_ostream<C, T>& os, lazy_forest<DF, FF> const& kb)
-{
-  kb.print(os);
-  return os;
-}
+} // ns
 
-template <class C, class T, class DF, class FF>
-std::basic_ostream<C, T>&
-operator<<(std::basic_ostream<C, T>& os, typename lazy_forest<DF, FF>::hyperedge const& h)
-{
-  h.print(os);
-  return os;
-}
-#endif
-
-}  // ns
 CLANG_DIAG_ON(unused-variable)
 
 #endif

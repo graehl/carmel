@@ -146,13 +146,6 @@ struct size_mega
   }
 
   typedef void leaf_configure;
-#if 0
-  friend inline std::string to_string_impl(size_mega const& x) {
-    std::ostringstream o;
-    x.print((std::ostream&)o);
-    return o.str();
-  }
-#endif
 };
 
 template <bool Dec, class Sz>

@@ -449,11 +449,11 @@ c=$(echo ~/c)
 mdb=c/mdb/libraries/liblmdb/
 cd $HOME/$mdb
 git commit --allow-empty -a -C HEAD --amend
-git pull --rebase
+#git pull --rebase
 gitrecordcommit
 libver=lmdb
 smdb=c/xmt-externals-source/$libver
-cp ORIGIN.* *.c *.h $HOME/$smdb/mdb/
+cp ORIGIN.* sdl.diff *.c *.h $HOME/$smdb/mdb/
 cd $HOME/$smdb/mdb
 #git pull --rebase
 git add *.c *.h ORIGIN.*
@@ -998,7 +998,7 @@ removecr() {
     sed -i 's/\r//g' "$@"
 }
 githash() {
-    git rev-parse --short HEAD
+    git rev-parse HEAD
 }
 changeid() {
     local cid=`git log -1 | grep Change-Id: | cut -d':' -f2`
@@ -1334,6 +1334,12 @@ c-s() {
 k-s() {
     (k-c; c-s "$@")
 }
+g-c() {
+    chost=c-graehl
+}
+g-s() {
+    (g-c; c-s "$@")
+}
 j-s() {
     (j-c; c-s "$@")
 }
@@ -1345,6 +1351,12 @@ m-s() {
 }
 cs-s() {
     cs-for c-s "$@"
+}
+j-with() {
+chost=c-jmay c-with "$@"
+}
+g-with() {
+chost=c-graehl c-with "$@"
 }
 c-with() {
     (set -e;
@@ -2509,6 +2521,12 @@ nblanklines() {
 }
 ccpr() {
     recursive=1 ccp "$@"
+}
+jcp() {
+    chost=c-jmay ccp "$@"
+}
+gcp() {
+    chost=c-graehl ccp "$@"
 }
 ccp() {
     #uses: $chost for scp
@@ -3927,64 +3945,6 @@ save2() {
     tail $out $out.stdout
     echo2 saved output:
     echo2 $out $out.stdout
-}
-atime() {
-    local proga=$1
-    shift
-    outa=`mktemp /tmp/$(basename $proga).out.XXXXXX`
-    $proga "$@" >$outa 2>&1
-    echo2 $proga "$@" "> $outa"
-    echo2 ::::::::: nrep=$nrep
-    time (for i in `seq 1 ${nrep:-1}`; do $proga "$@" >/dev/null 2>/dev/null; done ) 2>&1
-    echo2 "$proga done (exit=$?)"
-    echo2 =========
-}
-reptime() {
-    width=$1
-    shift
-    height=${1}
-    shift
-    input=$1
-    shift
-    proga=${1:?usage: reptime [repeat-width] [repeat-height] [input-file] [program] [args] ...}
-    shift
-    repn $width $input | replinen $height | atime $proga "$@"
-}
-abtime() {
-    proga=$1
-    progb=$2
-    shift
-    shift
-    atime $proga "$@"
-    atime $progb "$@"
-}
-replinen() {
-    perl -e '
-$n=shift;
-$m=$n;
-($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
-print STDERR "$m-$n vertical repeats of each line...\n";
-while (<>) {
- for $i (1..$n) {
-  print;
- }
-}' "$@"
-}
-repn() {
-    perl -e '
-$n=shift;
-$m=$n;
-($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
-print STDERR "$m-$n horizontal repeats of each line...\n";
-while (<>) {
- chomp;
- $one=$_;
- for $i (1..$n) {
-  print "$_\n" if $i>=$m;
-  $_="$_ $one";
- }
-}
-' "$@"
 }
 expn() {
     perl -e '
