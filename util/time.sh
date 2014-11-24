@@ -1,4 +1,20 @@
 # if you don't have /usr/bin/time, 'sudo yum install time'
+driveis() {
+    local d=`df ${1:-.} | tail -1 | cut -d' ' -f1`
+    echo ${d#/dev/}
+}
+ios() {
+    local drive=${1:-`driveis .`}
+    local n=${2:-200}
+    local sleep=${3:-10}
+    iostat -m -p ALL | grep tps
+    (
+    for (( i=1; i <= $n; i++ )); do
+        iostat -m -y -p ALL $sleep 1 | grep $drive | tail -n 1
+    done
+    )
+}
+
 echo2() {
     echo "$@" 1>&2
 }
@@ -31,7 +47,8 @@ UNAME=`uname`
 linuxtime() {
     if have_linuxtime ; then
         if full_linuxtime ; then
-            /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
+#          /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
+            /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Kkb avg %Iinputs %Ooutputs' -- "$@"
         else
             /usr/bin/time -lp "$@"
         fi
@@ -53,7 +70,7 @@ save12timeram() {
     echo "time $*" 1>&2
     if full_linuxtime ; then
         local timeout=`mktemp /tmp/timeram.out.XXXXXX`
-        /usr/bin/time -o $timeout -f '%Es - %Mkb peak' -- "$@" >$save1 2>&1
+        /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Kkb avg %Iinputs %Ooutputs' -- "$@" >$save1 2>&1
         cat $timeout
     else
         TIMEFORMAT='%3lR'
@@ -71,33 +88,45 @@ atime() {
     local timedir=${timedir:-`mktemp -d /tmp/time.$(basename $proga).XXXXXX`}
     mkdir -p $timedir
     local stripa=$timedir/`basename $proga`
-    cp -f $proga $stripa
-    echo "$proga => $stripa"
-    chmod +rx $stripa
-    chmod u+w $stripa
-    if [[ $upx ]] ; then
-        strip "$stripa" || true
-        upx "$stripa" || true
+    if [[ $strip ]] ; then
+        cp -f $proga $stripa
+        echo "$proga => $stripa"
+        chmod +rx $stripa
+        chmod u+w $stripa
+        if [[ $upx ]] ; then
+            strip "$stripa" || true
+            upx "$stripa" || true
+        fi
+        proga=$stripa
     fi
-    proga=$stripa
     shift || true
     if [[ $warm ]] ; then
-      echo "$proga $* >$proga.out 2>&1"
-      $proga "$@" >$proga.out 2>&1
+        echo "$proga $* >$proga.out 2>&1"
+        $proga "$@" >$proga.out 2>&1
     fi
-    outa=$proga.out
+    outa=$stripa.out
     timeouts+=" $outa"
     echo2 $proga "$@" "> $outa"
     echo2 ::::::::: nrep=$nrep
-    local nrepa=$proga.${nrep}.sh
+    local nrepa=$stripa.${nrep}.sh
     cp /dev/null $nrepa
     chmod +x $nrepa
     for i in `seq 1 $nrep`; do
         echo $proga "$@"
     done >> $nrepa
     timecmds+=" $nrepa"
-    save12timeram $proga.$nrep.out $nrepa | tee $proga.time.$nrep
-    timerams+=" $proga.time.$nrep"
+    local iosout=$proga.ios.$nrep
+    local drive=${drive:-`driveis .`}
+    (ios $drive 100 10 | tee $iosout) &
+    local ttime=$proga.time.$nrep
+    if [[ $tee ]] ; then
+        save12timeram $proga.$nrep.out $nrepa | tee $ttime
+    else
+        save12timeram $proga.$nrep.out $nrepa > $ttime
+    fi
+    kill ${!} || true
+    timerams+=" $ttime $iosout"
+    grep 's - ' $ttime
     echo2 $proga "$@" "done (exit=$?)"
     echo2 =========
 }

@@ -50,6 +50,32 @@ DECLARE_DBG_LEVEL(GPROGOPT)
 
 namespace graehl {
 
+
+/// work around obnoxious pickiness of boost cmdline parser - if you pass from
+/// shell a='' it complains that there's no value (because there isn't any char
+/// following =). this provides a fixed arg vector suitable for the parser
+/// (supplying '' as the missing value).
+inline bool cmdline_parser_fix_empty_equals(int argc, char const*const* argv,
+                                            std::vector<std::string> &fixed,
+                                            std::string const &forMissingValue = "''") {
+  if (!argc)
+    return false;
+  bool any = false;
+  --argc;
+  ++argv;
+  fixed.resize(argc);
+  for (int i = 0; i < argc; ++i) {
+    std::string &fixarg = fixed[i];
+    fixarg = argv[i];
+    std::string::size_type len = fixarg.size();
+    if (len && fixarg[len - 1] == '=') {
+      any = true;
+      fixarg += forMissingValue;
+    }
+  }
+  return any;
+}
+
 SIMPLE_EXCEPTION_PREFIX(program_options_exception, "program options: ");
 
 struct option_options_base
