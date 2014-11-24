@@ -1,4 +1,7 @@
 # if you don't have /usr/bin/time, 'sudo yum install time'
+dropcaches() {
+  echo 3 | sudo tee /proc/sys/vm/drop_caches </dev/null && echo dropped caches using sudo || true
+}
 driveis() {
     local d=`df ${1:-.} | tail -1 | cut -d' ' -f1`
     echo ${d#/dev/}
@@ -7,10 +10,14 @@ ios() {
     local drive=${1:-`driveis .`}
     local n=${2:-200}
     local sleep=${3:-10}
+    local megsarg=
+    if [[ $megs ]] ; then
+        megsarg=-m
+    fi
     iostat -m -p ALL | grep tps
     (
     for (( i=1; i <= $n; i++ )); do
-        iostat -m -y -p ALL $sleep 1 | grep $drive | tail -n 1
+        iostat $megsarg -y -p ALL $sleep 1 | grep $drive | tail -n 1
     done
     )
 }
@@ -117,7 +124,15 @@ atime() {
     timecmds+=" $nrepa"
     local iosout=$proga.ios.$nrep
     local drive=${drive:-`driveis .`}
-    (ios $drive 100 10 | tee $iosout) &
+    if [[ ! $nodrop ]] ; then
+        if [[ -x /usr/local/bin/dropcaches ]] ; then
+            echo2 dropcaches - set nodrop=1 to prevent
+            /usr/local/bin/dropcaches
+        else
+            dropcaches
+        fi
+    fi
+    (ios $drive 100 30 | tee $iosout) &
     local ttime=$proga.time.$nrep
     if [[ $tee ]] ; then
         save12timeram $proga.$nrep.out $nrepa | tee $ttime

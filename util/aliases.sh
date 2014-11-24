@@ -13,6 +13,9 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+makedropcaches() {
+    sudo gcc ~graehl/u/dropcaches.c -o /usr/local/bin/dropcaches; sudo chmod 5755 /usr/local/bin/dropcaches
+}
 bdbreload() {
     (
         set -e
