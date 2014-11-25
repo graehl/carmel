@@ -1,5 +1,5 @@
 # if you don't have /usr/bin/time, 'sudo yum install time'
-dropcaches() {
+sudodropcaches() {
   echo 3 | sudo tee /proc/sys/vm/drop_caches </dev/null && echo dropped caches using sudo || true
 }
 driveis() {
@@ -55,7 +55,7 @@ linuxtime() {
     if have_linuxtime ; then
         if full_linuxtime ; then
 #          /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
-            /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Kkb avg %Iinputs %Ooutputs' -- "$@"
+            /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Iinputs %Ooutputs' -- "$@"
         else
             /usr/bin/time -lp "$@"
         fi
@@ -77,7 +77,7 @@ save12timeram() {
     echo "time $*" 1>&2
     if full_linuxtime ; then
         local timeout=`mktemp /tmp/timeram.out.XXXXXX`
-        /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Kkb avg %Iinputs %Ooutputs' -- "$@" >$save1 2>&1
+        /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Iinputs %Ooutputs' -- "$@" >$save1 2>&1
         cat $timeout
     else
         TIMEFORMAT='%3lR'
@@ -125,11 +125,11 @@ atime() {
     local iosout=$proga.ios.$nrep
     local drive=${drive:-`driveis .`}
     if [[ ! $nodrop ]] ; then
+        echo2 dropcaches - set nodrop=1 to prevent
         if [[ -x /usr/local/bin/dropcaches ]] ; then
-            echo2 dropcaches - set nodrop=1 to prevent
             /usr/local/bin/dropcaches
         else
-            dropcaches
+            sudodropcaches
         fi
     fi
     (ios $drive 100 30 | tee $iosout) &

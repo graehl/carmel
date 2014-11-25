@@ -368,7 +368,7 @@ struct small_vector {
   void steal(small_vector& o) {
     if (&o == this) return;
     free();
-    if (data.stack.sz_ <= kMaxInlineSize) {
+    if (o.data.stack.sz_ <= kMaxInlineSize) { // unnecessary detail unless you care about valgrind-safety
       data.stack.sz_ = o.data.stack.sz_;
       // unsigned instead of size_type because kMaxInlineSize is unsigned
       for (unsigned i = 0; i < kMaxInlineSize; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
