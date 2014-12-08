@@ -81,7 +81,7 @@ save12timeram() {
         cat $timeout
     else
         TIMEFORMAT='%3lR'
-        (time "$@" >$save1) 2>&1
+        (time "$@" >$save1 2>&1) 2>&1
     fi
 }
 

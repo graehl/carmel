@@ -13,6 +13,50 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+cwithmert() {
+    cwithdir c/ct-archive/archive/3rdParty/mert ./mert "$@"
+}
+cwithdir() {
+    (set -e;
+     local d=$1
+     shift
+     rm -f ~/$d/*.o
+     cd ~
+     local dst=$d
+     local rdir=$d
+     if [[ -d $d ]] ; then
+         dst=`dirname $d`
+     else
+         rdir=`dirname $d`
+     fi
+     scp -r $d $chost:$dst
+     c-s "cd $rdir;make && $*"
+    )
+}
+cpptox2() {
+    (set -e
+     set -x
+     toxmt=$HOME/c/x2
+     fromxmt=$HOME/x
+     rm -rf $toxmt
+     mkdir $toxmt
+     cd $fromxmt
+     cpcpp $toxmt
+    )
+}
+oddlines() {
+    perl -ne '$x=!$x;print if $x' "$@"
+}
+evenlines() {
+    perl -ne '$x=!$x;print unless $x' "$@"
+}
+longestline() {
+    perl -ne 'if (length $_ > $max) { $max = length $_; $maxline = $_; $maxno = $. } END { print "longest #$maxno = $maxline" }' "$@"
+}
+guestread() {
+    find . -type d -exec chmod 755 {} \;
+    find . -exec chmod o+r {} \;
+}
 makedropcaches() {
     sudo gcc ~graehl/u/dropcaches.c -o /usr/local/bin/dropcaches; sudo chmod 5755 /usr/local/bin/dropcaches
 }
@@ -25,43 +69,43 @@ bdbreload() {
     )
 }
 savelns() {
-(
-set -e
-    for f in "$@"; do
-        if [[ -L $f ]] ; then
-            r=`readlink $f`
-            echo "symlink $f => $r - replacing with copy"
-            rm $f
-            cp -a $r $f
-        fi
-    done
- )
+    (
+        set -e
+        for f in "$@"; do
+            if [[ -L $f ]] ; then
+                r=`readlink $f`
+                echo "symlink $f => $r - replacing with copy"
+                rm $f
+                cp -a $r $f
+            fi
+        done
+    )
 }
 cduh() {
- c-s 'd=/local/graehl/time/SE-SmallLM;du -h $d/rules.mdb{.uncompressed,}'
+    c-s 'd=/local/graehl/time/SE-SmallLM;du -h $d/rules.mdb{.uncompressed,}'
 }
 c12clang() {
-  save12 ~/tmp/c12clang cjen clang
+    save12 ~/tmp/c12clang cjen clang
 }
 gitcat() {
     git cat-file blob "$@"
 }
 linuxver() {
-if [ -f /etc/redhat-release ]; then
-OS_MAJOR_VERSION=`sed -rn 's/.*([0-9])\.[0-9].*/\1/p' /etc/redhat-release`
-OS_MINOR_VERSION=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/redhat-release`
-echo "RedHat/CentOS $OS_MAJOR_VERSION.$OS_MINOR_VERSION"
-elif grep -q DISTRIB_ /etc/lsb-release; then
-    . /etc/lsb-release
-    OS=$DISTRIB_ID
-    VER=$DISTRIB_RELEASE
-elif [ -f /etc/debian_version ]; then
-    OS=Debian  # XXX or Ubuntu??
-    VER=$(cat /etc/debian_version)
-else
-    OS=$(uname -s)
-    VER=$(uname -r)
-fi
+    if [ -f /etc/redhat-release ]; then
+        OS_MAJOR_VERSION=`sed -rn 's/.*([0-9])\.[0-9].*/\1/p' /etc/redhat-release`
+        OS_MINOR_VERSION=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/redhat-release`
+        echo "RedHat/CentOS $OS_MAJOR_VERSION.$OS_MINOR_VERSION"
+    elif grep -q DISTRIB_ /etc/lsb-release; then
+        . /etc/lsb-release
+        OS=$DISTRIB_ID
+        VER=$DISTRIB_RELEASE
+    elif [ -f /etc/debian_version ]; then
+        OS=Debian  # XXX or Ubuntu??
+        VER=$(cat /etc/debian_version)
+    else
+        OS=$(uname -s)
+        VER=$(uname -r)
+    fi
 }
 
 gitbranches()
@@ -320,7 +364,7 @@ gitsubset() {
 cpcpp() {
     dst=${1:-$HOME/b}
     mkdir -p $dst
-    tar cf - `git ls` | (cd $dst && tar xvf -)
+    git ls | xargs tar cf - | (cd $dst && tar xvf -)
 }
 xcpps() {
     (set -e;
@@ -4231,6 +4275,9 @@ mend() {
             git commit --allow-empty -a -C HEAD --amend "$@"
         fi
     )
+}
+mendthis() {
+    git commit -a --amend
 }
 xmend() {
 (

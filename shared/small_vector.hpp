@@ -419,6 +419,10 @@ struct small_vector {
     size_type n = (size_type)(end - i);
     memcpy_n(realloc(n), i, n);
   }
+  void assign(T const* array, size_type begin, size_type end) {
+    size_type n = end - begin;
+    memcpy_n(realloc(n), array + begin, array + end);
+  }
   template <class I>
   void assign(I i, I end) {
     T* o = realloc((size_type)std::distance(i, end));

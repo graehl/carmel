@@ -119,6 +119,14 @@ struct identity_codec {
     x = *(Uint*)p;
     return p + sizeof(Uint);
   }
+  static const_byteptr ignore(const_byteptr p, const_byteptr end) {
+    if (p + sizeof(Uint) > end)
+      throw leb128error();
+    return p + sizeof(Uint);
+  }
+  static const_byteptr ignore(const_byteptr p) {
+    return p + sizeof(Uint);
+  }
   static byteptr encode(byteptr p, Uint x) {
     *(Uint*)p = x;
     return p + sizeof(Uint);

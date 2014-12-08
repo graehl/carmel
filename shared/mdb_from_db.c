@@ -44,7 +44,7 @@ static MDB_val kbuf, dbuf;
 
 
 char *usagestr =
-    "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-N] [-s subdbname] [-h homedirpath] [-b write-batchsize] [-m map_megabytes] [-o redirect_stdout.txt] [-B] [-T] [-v] [-d] [-a] [-1] [-C] [-x] [-F]\n\n"
+    "path.input.berkeley.db [path.output.mdb|T-txt] [-P dbpasswd] [-V] [-l] [-n] [-N] [-s subdbname] [-H homedirpath] [-b write-batchsize] [-m map_megabytes] [-o redirect_stdout.txt] [-B] [-T] [-v] [-d] [-a] [-1] [-C] [-x] [-F]\n\n"
     " (-m MB: limit database size to this many megabytes - use as large a value as your system supports (short of 4 billion)\n"
     " (-n: create single mdb file instead of dir - the default)\n"
     " (-N: create a directory with a file for each subdb)\n"
@@ -55,7 +55,7 @@ char *usagestr =
     " (-1: only one data per key allowed - do not set MDB_DUPSORT)\n"
     " (-x: don't add if key already exists in any case (even if MDB_DUPSORT))\n"
     " (-d: don't add duplicate <key, data> pairs (but do allow different data w/ same key e.g. <key, otherdata>)\n"
-    " (-h dir: ('home' dir for relative db filenames default '.')\n"
+    " (-H dir: ('home' dir for relative db filenames default '.')\n"
     " (-o stdout_file: write -T stdout here instead)\n"
     " (-V: print version and exit)\n"
     " (-b N: batch size=N - default 100)\n"
@@ -134,26 +134,6 @@ void bdb_err(char* fn, int rc) {
 }
 
 DBT dbkey, dbdata;
-void bdb_init_dbenv() {
-  int rc;
-  if ((rc = db_env_create(&dbenv, 0)) != 0) bdb_err("db_env_create", rc);
-  dbenv->set_errfile(dbenv, stderr);
-  dbenv->set_errpfx(dbenv, prog);
-  if (dbpasswd != NULL) {
-    rc = dbenv->set_encrypt(dbenv, dbpasswd, DB_ENCRYPT_AES);
-    strfill(dbpasswd, '\0');
-    if (rc) bdb_err("dbenv::set_encrypt", rc);
-  }
-  if (dbnonblocking) {
-    if ((rc = dbenv->set_flags(dbenv, DB_NOLOCKING, 1))) bdb_err("DB_NOLOCKING", rc);
-    if ((rc = dbenv->set_flags(dbenv, DB_NOPANIC, 1))) bdb_err("DB_NOPANIC", rc);
-  }
-  if ((rc = dbenv->set_cachesize(dbenv, 0, dbcache, 1))) bdb_err("dbenv::set_cachesize", rc);
-  if ((rc = dbenv->open(dbenv, dbhome, DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON, 0)))
-    bdb_err("dbenv::open", rc);
-  dbdata.flags = DB_DBT_USERMEM;
-  if (!(dbdata.data = malloc(dbdata.ulen = dbcache))) fail();
-}
 
 /**
    BDB db.
@@ -164,12 +144,37 @@ static bool bdb_is_recno;
 static db_recno_t bdb_recno;
 static DB_HEAP_RID bdb_heaprid;
 static int bdb_get_flags;
+static int bdb_set_flags;
 static void* pointer_get;
+
+void bdb_init_dbenv() {
+  int rc;
+  if ((rc = db_env_create(&dbenv, 0)) != 0) bdb_err("db_env_create", rc);
+  dbenv->set_errfile(dbenv, stderr);
+  dbenv->set_errpfx(dbenv, prog);
+  if (dbpasswd != NULL) {
+    rc = dbenv->set_encrypt(dbenv, dbpasswd, DB_ENCRYPT_AES);
+    bdb_set_flags |= DB_ENCRYPT;
+    strfill(dbpasswd, '\0'); /* silly precaution - doesn't even hide password length */
+    if (rc) bdb_err("dbenv::set_encrypt", rc);
+  }
+  if (dbnonblocking) {
+    if ((rc = dbenv->set_flags(dbenv, DB_NOLOCKING, 1))) bdb_err("DB_NOLOCKING", rc);
+    if ((rc = dbenv->set_flags(dbenv, DB_NOPANIC, 1))) bdb_err("DB_NOPANIC", rc);
+    if ((rc = dbenv->set_flags(dbenv, DB_TXN_NOSYNC, 1))) bdb_err("DB_TXN_NOSYNC", rc);
+  }
+  if ((rc = dbenv->set_cachesize(dbenv, 0, dbcache, 1))) bdb_err("dbenv::set_cachesize", rc);
+  if ((rc = dbenv->open(dbenv, dbhome, DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON, 0)))
+    bdb_err("dbenv::open", rc);
+  dbdata.flags = DB_DBT_USERMEM;
+  if (!(dbdata.data = malloc(dbdata.ulen = dbcache))) fail();
+}
 
 void bdb_open(char* dbname) {
   int rc;
   bdb_close();
   if ((rc = db_create(&dbp, dbenv, 0))) bdb_err("db_create", rc);
+  if ((rc = dbp->set_flags(dbp, bdb_set_flags))) bdb_err("db_set", rc);
   if ((rc = dbp->open(dbp, dbtxn, dbfilename, dbname, DB_UNKNOWN,
                       (parent_dbp ? 0 : DB_RDWRMASTER) | DB_RDONLY, 0))) {
     fprintf(stderr, "db open %s : %s\n", dbfilename, dbname);
@@ -336,7 +341,7 @@ int main(int argc, char* argv[]) {
   bool cursorput = true; /* should be faster than individual put */
   bool force = false;
   bool reversekey = true;
-  while ((i = getopt(argc, argv, "o:P:M:m:h:s:b:lnvVTNS1xacCfFNRF")) != EOF) {
+  while ((i = getopt(argc, argv, "o:P:M:m:H:s:b:lnvVTNS1xacCfFNRFh?")) != EOF) {
     switch (i) {
       case 'm':
       case 'M':
@@ -395,7 +400,7 @@ int main(int argc, char* argv[]) {
       case 'T':
         textflag = true;
         break;
-      case 'h':
+      case 'H':
         dbhome = optarg;
         break;
       case 'C':
@@ -424,6 +429,7 @@ int main(int argc, char* argv[]) {
         reversekey = false;
         break;
       case '?':
+      case 'h':
       default:
         usage();
     }
