@@ -13,14 +13,48 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
-cwithmert() {
-    cwithdir c/ct-archive/archive/3rdParty/mert ./mert "$@"
+myip () {
+    curl http://ipecho.net/plain; echo
+}
+previewr() {
+    preview `find "$@" -type f` | less
+}
+dcondor() {
+    d-s md-condor
+}
+osincs() {
+    (
+        cd $xmtx
+        ls xmt/Hypergraph/src/Hg*.cpp xmt/Optimization/src/OptimizeMain.cpp xmt/CrfDemo/src/CreateSearchSpace.cpp xmt/Config/src/KeywordConfig.cpp | grep -v HgBench           | xargs $xmtx/scripts/list-xmt-includes.py --debug -I xmt               xmt/Hypergraph/CompositeWeight.hpp xmt/Hypergraph/TokenWeight.hpp               xmt/Hypergraph/src/InstantiateArcTypes.ipp               xmt/Hypergraph/src/InstantiateWeightTypes.ipp               xmt/Hypergraph/src/*-inst.cpp
+    )
+}
+cprs() {
+    cp -Rs "$@"
+}
+cmert() {
+    save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
+}
+cwithmertargs() {
+    (
+        #
+        cwithdir c/ct-archive/archive/3rdParty/mert "time mertct $* && time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
+        #        set -x
+        c-s 'cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub'
+    )
+}
+cwithmertrun() {
+    (
+        # mertct $* &&
+        cwithdir c/ct-archive/archive/3rdParty/mert "$@"
+        #        set -x
+        #        c-s 'cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub'
+    )
 }
 cwithdir() {
     (set -e;
      local d=$1
      shift
-     rm -f ~/$d/*.o
+     rm -f ~/$d/*.o mert
      cd ~
      local dst=$d
      local rdir=$d
@@ -30,12 +64,15 @@ cwithdir() {
          rdir=`dirname $d`
      fi
      scp -r $d $chost:$dst
-     c-s "cd $rdir;make && $*"
+     #     set -x
+     if [[ $scan ]] ; then
+         scanpre="scan-build -k "
+     fi
+     c-s "cd $rdir; set -x; $scanpre make $target SAN=$san && $*"
     )
 }
 cpptox2() {
     (set -e
-     set -x
      toxmt=$HOME/c/x2
      fromxmt=$HOME/x
      rm -rf $toxmt
@@ -85,7 +122,7 @@ cduh() {
     c-s 'd=/local/graehl/time/SE-SmallLM;du -h $d/rules.mdb{.uncompressed,}'
 }
 c12clang() {
-    save12 ~/tmp/c12clang cjen clang
+    VERBOSE=1 save12 ~/tmp/c12clang cjen clang
 }
 gitcat() {
     git cat-file blob "$@"
@@ -1054,6 +1091,7 @@ nostandby() {
 
 ########################
 xmtvg="valgrind --leak-check=no --track-origins=yes --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp --num-callers=16 --leak-resolution=high"
+xmtvgdb="$xmtvg --vgdb=full --db-attach=yes"
 xmtmassif="valgrind --tool=massif --depth=16 --suppressions=$xmtx/jenkins/valgrind.fc12.debug.supp"
 
 withvg() {
@@ -1420,6 +1458,9 @@ kr-s() {
     (k-c; b-r; c-s "$@")
 }
 m-s() {
+    (m-c; c-s "$@")
+}
+d-s() {
     (m-c; c-s "$@")
 }
 cs-s() {
@@ -3711,8 +3752,9 @@ gitrecycle() {
 }
 useclang() {
     local ccache=${ccache:-$(echo ~/bin/ccache)}
-    export CC="$ccache-clang"
-    export CXX="$ccache-clang++"
+    local ccachepre="$ccache-"
+    export CC="${ccachepre}clang"
+    export CXX="${ccachepre}clang++"
 }
 usescanbuild() {
     local ccache=${ccache:-$(echo ~/bin/ccache)}
@@ -3813,7 +3855,7 @@ linjen() {
         c-s forceco $branch
         log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
-        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -6521,10 +6563,10 @@ buildgraehl() {
     )
 }
 buildcar() {
-    buildgraehl carmel "$@"
+    TERM=dumb buildgraehl carmel "$@"
 }
 buildfem() {
-    buildgraehl forest-em
+    TERM=dumb buildgraehl forest-em
 }
 buildboost() {(
         set -e

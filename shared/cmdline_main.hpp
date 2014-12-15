@@ -60,7 +60,6 @@
 #include <graehl/shared/command_line.hpp>
 #include <graehl/shared/fileargs.hpp>
 #include <graehl/shared/teestream.hpp>
-#include <graehl/shared/makestr.hpp>
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/random.hpp>
 
@@ -71,7 +70,7 @@
 
 #define INT_MAIN(main_class) int main(int argc, char **argv) { main_class m; return m.run_main(argc, argv); }
 
-#define GRAEHL_MAIN_COMPILED " (compiled " MAKESTR_DATE ")"
+#define GRAEHL_MAIN_COMPILED " (compiled " __DATE__ " " __TIME__ ")"
 
 namespace graehl {
 

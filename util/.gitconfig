@@ -1,14 +1,14 @@
 [user]
-	name = graehl
-	email = graehl@gmail.com
-	logallrefupdates = true
+  name = graehl
+  email = graehl@gmail.com
+  logallrefupdates = true
 [github]
-	user = graehl
-	token = c16024811fee18c08ac842ba3d4547c5
+  user = graehl
+  token = c16024811fee18c08ac842ba3d4547c5
 [svn]
-	authorsfile = /Users/graehl/t/graehl/util/.svn.authorsfile
+  authorsfile = /Users/graehl/t/graehl/util/.svn.authorsfile
 [color]
-	ui = on
+  ui = on
 [color "branch"]
     current = yellow reverse
     local = yellow
@@ -38,29 +38,29 @@
     info = git rev-parse HEAD
     # Show files ignored by git:
     ign = ls-files -o -i --exclude-standard
-[core]
-	#autocrlf = true
 [alias]
     lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-	lcrev = log --reverse --no-merges --stat @{1}..
+  lcrev = log --reverse --no-merges --stat @{1}..
 [push]
-	default = matching
+  default = matching
 [core]
-	ignorecase = true
-	excludesfile = /Users/graehl/.gitignore_global
-	trustctime = false
+  ignorecase = false
+  excludesfile = /Users/graehl/.gitignore_global
+  trustctime = false
+	autocrlf = input
+	whitespace = cr-at-eol
 [diff]
-	algorithm = patience
-	renameLimit = 500
+  algorithm = patience
+  renameLimit = 500
 [merge]
-	conflictstyle = diff3
-	rename-threshold = 80
-	ignore-space-change = 1
+  conflictstyle = diff3
+  rename-threshold = 80
+  ignore-space-change = 1
 [help]
-	autocorrect = 10
+  autocorrect = 10
 [gc]
-	reflogexpire = 300
+  reflogexpire = 300
 [apply]
-	whitespace = nowarn
+  whitespace = nowarn
 [rerere]
-	enabled = true
+  enabled = true

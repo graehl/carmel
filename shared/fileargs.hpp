@@ -97,6 +97,7 @@ codecvt argument, too
 
 namespace graehl {
 
+
 namespace {
 std::string const stdin_filename("-");
 std::string const stdout_filename("-");
@@ -779,6 +780,13 @@ inline boost::shared_ptr<std::string> fileContents(file_arg<Istream> const& file
     return streamContents(*file);
 }
 
+inline bool is_fstream_no_rtti(std::istream &in) {
+  if (&in == &(std::istream&)std::cin || in.tellg() == (std::streampos)-1 || !in)
+    return false;
+  try { throw &in; }
+  catch(std::ifstream* f) { return true; }
+  catch(...) { return false; }
+}
 
 } //graehl
 

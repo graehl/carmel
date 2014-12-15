@@ -1,8 +1,10 @@
+/** \file factory objects for boost property_maps (which have typed values) -
+ e.g. # of states for vertex id -> X map (see property_factory.hpp)
+ */
+
 #ifndef GRAEHL_SHARED__PROPERTY_HPP
 #define GRAEHL_SHARED__PROPERTY_HPP
 
-/* factory objects for boost property_maps (which have typed values) - e.g. # of states for vertex id -> X map
- */
 
 #include <boost/version.hpp>
 #include <boost/ref.hpp>

@@ -1,6 +1,3 @@
-#ifndef GRAEHL_SHARED__SWAP_POD
-#define GRAEHL_SHARED__SWAP_POD
-
 /** \file
 
     for swapping objects of the same concrete type where just swapping their
@@ -8,19 +5,22 @@
     fast intrinsic optimized by the compiler
 */
 
+#ifndef GRAEHL_SHARED__SWAP_POD
+#define GRAEHL_SHARED__SWAP_POD
+
 namespace graehl {
 
-#include <algorithm> // not used, but people who use this will want to bring std::swap in anyway
+#include <algorithm>  // not used, but people who use this will want to bring std::swap in anyway
 #include <cstring>
 
 template <class T>
-inline void swap_pod(T &a, T &b) {
+inline void swap_pod(T& a, T& b) {
   using namespace std;
-  const unsigned s=sizeof(T);
+  unsigned const s = sizeof(T);
   char tmp[s];
-  void *pt=(void*)tmp;
-  void *pa=(void*)&a;
-  void *pb=(void*)&b;
+  void* pt = (void*)tmp;
+  void* pa = (void*)&a;
+  void* pb = (void*)&b;
   memcpy(pt, pa, s);
   memcpy(pa, pb, s);
   memcpy(pb, pt, s);

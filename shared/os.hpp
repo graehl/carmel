@@ -1,4 +1,8 @@
-// wraps misc. POSIX vs. Windows facilities
+/** \file
+
+    provide some missing posix-like stuff on windows.
+*/
+
 #ifndef GRAEHL_SHARED__OS_HPP
 #define GRAEHL_SHARED__OS_HPP
 

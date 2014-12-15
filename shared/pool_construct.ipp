@@ -1,3 +1,9 @@
+/** \file
+
+    helpers for object construction - to include in your pool class - note lack
+    of include guard.
+*/
+
 // Copyright (C) 2000 Stephen Cleary
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompany-

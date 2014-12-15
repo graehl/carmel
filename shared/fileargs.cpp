@@ -1,3 +1,8 @@
+/** \file
+
+    see fileargs.hpp
+*/
+
 #include <graehl/shared/fileargs.hpp>
 
 #if GRAEHL_USE_GZSTREAM

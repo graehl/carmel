@@ -1,3 +1,4 @@
+/// (with bugfixes from graehl)
 // ============================================================================
 // gzstream, C++ iostream classes wrapping the zlib compression library.
 // Copyright (C) 2001  Deepak Bandyopadhyay, Lutz Kettner
@@ -54,9 +55,9 @@ private:
     void handle_gzerror(); // throws exception
 public:
 #if defined(_WIN32) && !defined(CYGWIN) && !defined(EOF)
-	enum {
-		EOF = -1
-	};
+  enum {
+    EOF = -1
+  };
 #endif
 
     gzstreambuf() : opened(0) {

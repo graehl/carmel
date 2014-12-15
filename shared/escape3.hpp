@@ -1,5 +1,6 @@
 /**
-   print \0a instead of newline and other nonprintable ascii chars and \.
+   print \0a instead of newline and other nonprintable ascii chars and
+   backslash. inspired by mdb_dump format (lightning mdb)
 */
 
 #ifndef GRAEHL_SHARED__ESCAPE3

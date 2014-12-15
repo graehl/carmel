@@ -94,71 +94,75 @@
 
 // TODO: use d_ary_heap.hpp (faster than binary)
 
-#include <graehl/shared/os.hpp>
-#ifdef NDEBUG
-#define LAZYF(x)
-#else
-#define LAZYF(x) x
-#endif
-DECLARE_DBG_LEVEL(LAZYF)
-
-#ifdef SAMPLE
-#undef SAMPLE
-#define LAZY_FOREST_EXAMPLES
-#define LAZY_FOREST_SAMPLE
-#endif
-
-#include <graehl/shared/containers.hpp>
-#include <graehl/shared/indent_level.hpp>
-namespace graehl {
-struct lazy_forest_indent_tag {};
-#define LAZY_FOREST_KBEST_INDENT SCOPED_INDENT(lazy_forest_indent_tag)
-}
-
-#ifndef LAZY_FOREST_KBEST_MSG
-#define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT << msg)
-#endif
-
-#include <memory>
-#include <graehl/shared/ifdbg.hpp>
-#include <graehl/shared/show.hpp>
-#include <boost/noncopyable.hpp>
-#include <graehl/shared/percent.hpp>
-#include <graehl/shared/assertlvl.hpp>
-
-#ifdef GRAEHL_TEST
-#include <graehl/shared/test.hpp>
-#define LAZY_FOREST_EXAMPLES
-#endif
-
-#ifdef LAZY_FOREST_KBEST_MSG
-#define KBESTINFOT(x) LAZY_FOREST_KBEST_MSG(x << '\n')
-#if defined(NESTT)
-#define KBESTNESTT NESTT
-#else
-#ifdef _MSC_VER
-#define KBESTNESTT
-#else
-#define KBESTNESTT SCOPED_INDENT_NEST(lazy_forest_indent_tag)
-#endif
-#endif
-#else
-#define KBESTINFOT(x)
-#define KBESTNESTT
+#ifndef GRAEHL_DEBUG_LAZY_FOREST_KBEST
+#define GRAEHL_DEBUG_LAZY_FOREST_KBEST 0
 #endif
 
 #ifndef ERRORQ
 #include <iostream>
-#define KBESTERRORQ(x, y) \
-  do { std::cerr << "\n" << x << ": " << y << '\n'; } while (0)
+#define KBESTERRORQ(x, y)                        \
+  do {                                           \
+    std::cerr << "\n" << x << ": " << y << '\n'; \
+  } while (0)
 #else
 #define KBESTERRORQ(x, y) ERRORQ(x, y)
 #endif
+
+
+#include <graehl/shared/os.hpp>
+#include <graehl/shared/containers.hpp>
+#include <memory>
+#include <graehl/shared/ifdbg.hpp>
+
+#include <boost/noncopyable.hpp>
+#include <graehl/shared/percent.hpp>
+#include <graehl/shared/assertlvl.hpp>
 
 #include <cstddef>
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
+
+#ifdef GRAEHL_TEST
+#include <graehl/shared/test.hpp>
+# define LAZY_FOREST_EXAMPLES
+#endif
+
+#if !GRAEHL_DEBUG_LAZY_FOREST_KBEST
+# define LAZYF(x)
+#else
+# include <graehl/shared/show.hpp>
+# define LAZYF(x) x
+DECLARE_DBG_LEVEL(LAZYF)
+# ifdef LAZY_FOREST_KBEST_MSG
+#  define KBESTINFOT(x) LAZY_FOREST_KBEST_MSG(x << '\n')
+# if defined(NESTT)
+#  define KBESTNESTT NESTT
+# else
+#  ifdef _MSC_VER
+#   define KBESTNESTT
+#  else
+#   define KBESTNESTT SCOPED_INDENT_NEST(lazy_forest_indent_tag)
+#  endif
+# endif
+# else
+#  define KBESTINFOT(x)
+#  define KBESTNESTT
+# endif
+
+
+# include <graehl/shared/indent_level.hpp>
+
+namespace graehl {
+struct lazy_forest_indent_tag {};
+# define LAZY_FOREST_KBEST_INDENT SCOPED_INDENT(lazy_forest_indent_tag)
+}
+
+# ifndef LAZY_FOREST_KBEST_MSG
+#  define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT << msg)
+# endif
+#endif
+
 
 #include <graehl/shared/warning_compiler.h>
 CLANG_DIAG_OFF(unused-variable)
@@ -403,10 +407,9 @@ void adl_print(A& a, B const& b, C const& c, D const& d) {
 // i've left this copyable even though you should for efficiency's sake only copy empty things, e.g. if you
 // want to compile a vector of them that's fine
 template <class DerivationFactory, class FilterFactory = permissive_kbest_filter_factory>
-class lazy_forest
-    : public FilterFactory::
-          filter_type  // empty base class opt. - may have state e.g. hash of seen strings or trees
-      {
+class lazy_forest : public FilterFactory::filter_type  // empty base class opt. - may have state e.g. hash of
+                    // seen strings or trees
+                    {
 
  public:
   typedef DerivationFactory derivation_factory_type;
@@ -496,8 +499,8 @@ class lazy_forest
       derivation = _derivation;
     }
     // NB: std::pop_heap puts largest element at top (max-heap)
-    inline bool operator<(
-        const hyperedge& o) const {  // true if o should dominate max-heap, i.e. o is better than us
+    inline bool
+    operator<(const hyperedge& o) const {  // true if o should dominate max-heap, i.e. o is better than us
       return call_derivation_better_than(o.derivation, derivation);
     }
     // means: this<o iff o better than this. good.
@@ -691,8 +694,7 @@ class lazy_forest
 
     hyperedge pending = top();  // creating a copy saves ugly complexities in trying to make pop_heap /
     // push_heap efficient ...
-    EIFDBG(LAZYF, 1,
-           KBESTINFOT("GENERATE SUCCESSORS FOR " << this << '[' << memo.size() << "] = " << pending));
+    EIFDBG(LAZYF, 1, KBESTINFOT("GENERATE SUCCESSORS FOR " << this << '[' << memo.size() << "] = " << pending));
     pop();  // since we made a copy already into pending...
 
     derivation_type old_parent
@@ -848,7 +850,7 @@ class lazy_forest
   const hyperedge& top() const { return pq.front(); }
 };
 
-} // ns
+}  // ns
 
 CLANG_DIAG_ON(unused-variable)
 

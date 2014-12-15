@@ -1,3 +1,10 @@
+/** \file
+
+    shared_ptr helper for nondeleting references (where the refcount is
+    meaningless, but you pay for it anyway to simplify - everything can be a
+    shared_ptr)
+*/
+
 #ifndef GRAEHL__SHARED__NULL_DELETER_HPP
 #define GRAEHL__SHARED__NULL_DELETER_HPP
 

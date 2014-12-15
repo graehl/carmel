@@ -1,8 +1,14 @@
+/** \file
+
+    C++11: N2982 std::pointer_traits<PointerType>::element_type which lives in <memory>
+
+    until then: boost has us covered
+*/
+
 #ifndef POINTER_TRAITS_JG201266_HPP
 #define POINTER_TRAITS_JG201266_HPP
 
-//C++11: N2982 std::pointer_traits<PointerType>::element_type which lives in <memory>
-//until then: boost has something
+//
 
 #include <boost/intrusive/pointer_traits.hpp>
 

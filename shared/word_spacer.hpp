@@ -1,3 +1,8 @@
+/** \file
+
+    space separated sequence printing without explicitly special-casing first or last element.
+*/
+
 #ifndef GRAEHL__SHARED__WORD_SPACER_HPP
 #define GRAEHL__SHARED__WORD_SPACER_HPP
 
@@ -36,7 +41,9 @@ struct word_spacer {
     if (first) {
       first = false;
       return empty();
-    } else { return space(); }
+    } else {
+      return space();
+    }
   }
   void reset() { first = true; }
   template <class O>

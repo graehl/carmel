@@ -1,14 +1,15 @@
+/*
+  \file
+
+  wrapped (default init to 0) integral types that do iostream with hex format (both in and out) - 0x
+  prefix is mandatory, else read as regular int
+
+  difference form strtoul: (no octal handling for 0123 - who uses that anyway?)
+
+*/
+
 #ifndef GRAEHL__SHARED__HEX_INT_HPP
 #define GRAEHL__SHARED__HEX_INT_HPP
-/*
-  wrapped integral types that do iostream with hex format (both in and out) - 0x prefix is mandatory, else
-  read as regular int
-
-  ALSO default init to 0 :)
-
-  (actual octal handling for 0123 - who uses that anyway? maybe a feature not to have it. but consistency with
-  string_to which uses strtoul etc.)
- */
 
 #include <graehl/shared/print_read.hpp>
 #include <graehl/shared/type_string.hpp>

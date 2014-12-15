@@ -1,3 +1,9 @@
+/** \file
+
+    fast atoi for all integral types (atou for unsigned)
+*/
+
+
 #ifndef GRAEHL__ATOI_FAST_JG2012615_HPP
 #define GRAEHL__ATOI_FAST_JG2012615_HPP
 
@@ -77,9 +83,13 @@ PutChars<CharIt> putChars(CharIt begin, CharIt end) {
 }
 
 inline unsigned char hexdigit(char c) {
-  if (c >= '0' && c <= '9') { return c - '0'; } else if (c >= 'a' && c <= 'f') {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  } else if (c >= 'a' && c <= 'f') {
     return 10 + c - 'a';
-  } else if (c >= 'A' && c <= 'F') { return 10 + c - 'A'; } else {
+  } else if (c >= 'A' && c <= 'F') {
+    return 10 + c - 'A';
+  } else {
     throw string_to_exception("expected a hexadecimal [01234567890abcdefABCDEF] digit");
   }
 }
@@ -200,13 +210,13 @@ inline U atou_fast_complete(Str const& s) {
 
 template <class U>
 inline U atou_fast_complete(char const* s) {
-  return atou_fast_complete<U>(s, s + std::strlen(
-                                          s));  // TODO: could skip strlen call w/ a few more lines of code
+  return atou_fast_complete<U>(
+      s, s + std::strlen(s));  // TODO: could skip strlen call w/ a few more lines of code
 }
 
 template <class I>
-inline I atou_fast(
-    std::string const& s) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline I
+atou_fast(std::string const& s) {  // faster than stdlib atoi. doesn't return how much of string was used.
   return atou_fast<I>(s.begin(), s.end());
 }
 
@@ -246,8 +256,8 @@ inline I atoi_fast_complete(It begin, It end) {
 }
 
 template <class I>
-inline I atoi_fast(
-    std::string const& s) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline I
+atoi_fast(std::string const& s) {  // faster than stdlib atoi. doesn't return how much of string was used.
   return atoi_fast<I>(s.begin(), s.end());
 }
 

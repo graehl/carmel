@@ -1,4 +1,8 @@
-// preprocessor macros for building strings out of ostream << "a" << v << "b" - type expressions
+/** \file
+
+    preprocessor macros for building strings out of ostream << "a" << v << "b" - type expressions.
+*/
+
 #ifndef GRAEHL__SHARED__MAKESTR_HPP
 #define GRAEHL__SHARED__MAKESTR_HPP
 

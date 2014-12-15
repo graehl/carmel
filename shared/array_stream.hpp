@@ -312,8 +312,7 @@ class basic_array_stream : public std::basic_iostream<cT, traits> {
     o << sbuf_;
   }
   template <class Ch, class Tr>
-  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr>& o,
-                                                basic_array_stream const& self) {
+  friend std::basic_ostream<Ch, Tr>& operator<<(std::basic_ostream<Ch, Tr>& o, basic_array_stream const& self) {
     self.print(o);
     return o;
   }

@@ -1,3 +1,9 @@
+/** \file
+
+    avoid no-return-value compiler warnings for infinite loops and throw that
+    will never return from a fn
+*/
+
 #ifndef NORETURN_JG2012613_HPP
 #define NORETURN_JG2012613_HPP
 

@@ -1,3 +1,8 @@
+/** \file
+
+    detect: pointer and size_t are 64 bits
+*/
+
 #ifndef GRAEHL_SHARED__HAVE_64_BITS_HPP
 #define GRAEHL_SHARED__HAVE_64_BITS_HPP
 

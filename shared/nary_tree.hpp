@@ -1,3 +1,11 @@
+/** \file
+
+    tree template. n-ary meaning variable n as opposed to e.g. strictly
+    binary. allows sharing via intrusive reference counting (useful for
+    lazy_forest_kbest.hpp)
+*/
+
+
 #ifndef GRAEHL_SHARED__NARY_TREE_HPP
 #define GRAEHL_SHARED__NARY_TREE_HPP
 

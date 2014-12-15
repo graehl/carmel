@@ -20,7 +20,7 @@ T *align_up(T *p)
 
   Assert2((align_mask & align), ==0); // only works for power-of-2 alignments.
   char *cp = (char *)p;
-  cp += align-1;
+  cp += align_mask;
   cp -= (align_mask & (align_mask_type)cp);
   //    DBP4(sizeof(T),align,(void*)p,(void*)cp);
   return (T*)cp;

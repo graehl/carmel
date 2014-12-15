@@ -18,6 +18,13 @@
 # define CLANG_DIAG_IGNORE(x)
 #endif
 
+#define CLANG_NEWER (!defined(__apple_build_version__) || __apple_build_version__ > 6000056)
+#if CLANG_NEWER
+#define CLANG_DIAG_IGNORE_NEWER(x) CLANG_DIAG_IGNORE(x)
+#else
+#define CLANG_DIAG_IGNORE_NEWER(x)
+#endif
+
 #if !__clang__ && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 2)
 # define HAVE_GCC_DIAG_OFF 1
 # define GCC_DIAG_IGNORE(x) GCC_DIAG_PRAGMA(ignored EXPAND_PRAGMA_JOINSTR(-W, x))

@@ -1,12 +1,11 @@
-#ifndef GRAEHL__SHARED__STRING_TO_HPP
-#define GRAEHL__SHARED__STRING_TO_HPP
+/** \file
 
-/*
   string_to and to_string, which default to boost::lexical_cast, but, unlike that, may be overriden for user
   types other than supporting default/copy ctor and ostream <<, istream >>.
 
-  note: optional<T> is "none" if absent, else regular string rep for T. this is different from the default
-  optional streaming, which gives empty string for none, and " T" (space followed by T rep)
+  note: optional<T> is the string "none" if absent, else regular string rep for
+  T. this is different from the default optional streaming, which uses "" for
+  none and " some" (space-prefixed printed 'T some;')
 
   USAGE:
 
@@ -26,12 +25,10 @@
 
   ----
 
-  may not be any faster than boost::lexical_cast in later incarnations (see
-  http://accu.org/index.php/journals/1375)
-  but is slightly simpler. no wide char or locale. if you use "C" locale, boost::lexical_cast takes advantage?
-
-  see http://www.boost.org/doc/libs/1_47_0/libs/conversion/lexical_cast.htm#faq for benchmarks. so this should
-  be faster still
+  string_to and to_string for ints may not be much faster than
+  boost::lexical_cast in its latest incarnations (see
+  http://accu.org/index.php/journals/1375) especially if you set the 'C' locale,
+  but the code is at least simpler (and more to the point - more easily overriden).
 
   see also boost.spirit and qi for template-parser-generator stuff that should be about as fast!
 
@@ -41,16 +38,17 @@
 
 */
 
+#ifndef GRAEHL__SHARED__STRING_TO_HPP
+#define GRAEHL__SHARED__STRING_TO_HPP
+
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
 #include <iterator>
 #ifndef DEBUG_GRAEHL_STRING_TO
-#define DEBUG_GRAEHL_STRING_TO 1
+#define DEBUG_GRAEHL_STRING_TO 0
 #endif
-#include <utility>
-#include <graehl/shared/ifdbg.hpp>
-
 #if DEBUG_GRAEHL_STRING_TO
 #include <graehl/shared/show.hpp>
 DECLARE_DBG_LEVEL(GRSTRINGTO)
@@ -58,6 +56,9 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #else
 #define GRSTRINGTO(x)
 #endif
+#include <utility>
+#include <graehl/shared/ifdbg.hpp>
+
 
 #ifndef GRAEHL_USE_FTOA
 #define GRAEHL_USE_FTOA 0
@@ -72,7 +73,7 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 
 #include <graehl/shared/warning_compiler.h>
 #include <graehl/shared/warning_push.h>
-CLANG_DIAG_IGNORE(unused-local-typedef)
+CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared.hpp>

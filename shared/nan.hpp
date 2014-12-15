@@ -1,11 +1,14 @@
+/** \file
+
+    C99 isnan isfinite isinf. //TODO: use actual C99 versions when available
+*/
+
 #ifndef GRAEHL_SHARED__NAN_HPP
 #define GRAEHL_SHARED__NAN_HPP
 
 #ifndef GRAEHL_HAVE_STD_ISINF
 #define GRAEHL_HAVE_STD_ISINF 1
 #endif
-
-// TODO: switch to C99 isnan isfinite isinf etc. (faster)
 
 #include <cmath>
 

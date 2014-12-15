@@ -1,7 +1,6 @@
-#ifndef LEAF_CONFIGURABLE_JG2012919_HPP
-#define LEAF_CONFIGURABLE_JG2012919_HPP
-
 /** \file
+
+    traits for configure library - see configure.hpp
 
      for a leaf_configurable class that you don't own:
 
@@ -39,13 +38,22 @@
      definition errors)
 */
 
+#ifndef GRAEHL_SHARED__LEAF_CONFIGURABLE_HPP
+#define GRAEHL_SHARED__LEAF_CONFIGURABLE_HPP
+
 namespace configure {
-template <class Val, class Enable=void>
+template <class Val, class Enable = void>
 struct leaf_configurable;
 }
 
 /** Use macro at global scope with fully qualified t. */
-#define LEAF_CONFIGURABLE_EXTERNAL(t) namespace configure { \
-  template<> struct leaf_configurable<t, void> { typedef bool value_type; enum {value=1}; }; }
+#define LEAF_CONFIGURABLE_EXTERNAL(t) \
+  namespace configure {               \
+  template <>                         \
+  struct leaf_configurable<t, void> { \
+    typedef bool value_type;          \
+    enum { value = 1 };               \
+  };                                  \
+  }
 
 #endif

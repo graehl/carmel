@@ -1,3 +1,10 @@
+/** \file
+
+    boost type_traits for 'is a container' (for printing containers, for
+    e.g. show.hpp debug prints)
+*/
+
+
 #ifndef IS_CONTAINER_JG2012614_HPP
 #define IS_CONTAINER_JG2012614_HPP
 

@@ -1,7 +1,46 @@
+/** \file
+
+    macros SHOW* for (conditional / debug build only) debugging prints,
+    e.g. SHOWE(x) prints "x="<x<<" "
+
+
+    SHOWS is the stream (std::cerr or whatever - you can define)
+    SHOWP is just print.
+    SHOWC(x) prints x=x
+    SHOW.. is SHOWC.. + newline
+    SHOWNL is just newline
+
+    e.g. SHOWC(IFD, x) SHOWC(IFD, y) SHOW(IFD, nl_after)
+    or, shorter, SHOW3(IFD, x, y, nl_after)
+
+    will both print x=X y=Y nl_after=NL_AFTER\n if DEBUG.
+
+    careful: none of this is wrapped in a block.  so you can't use one of these macros as a single-line block.
+
+    e.g.
+
+    #include <graehl/shared/ifdbg.hpp>
+    DECLARE_DBG_LEVEL_IF(MODULE_IFDBG)
+      then:  IFDBG(MODULE_IFDBG,1) { SHOWM2(MODULE_IFDBG, "descr"); }  (braces are mandatory for SHOW* macros
+   to form a single statement)
+
+      or:  SHOWIF1(MODULE_IFDBG, "descr", value)
+
+    (see ifdbg.hpp for IF macro arguments e.g.
+
+
+    #ifdef NDEBUG
+    # define MODULE_IFDBG(x)
+    #else
+    # define MODULE_IFDBG(x) x
+    #endif
+
+    )
+
+*/
+
 #ifndef GRAEHL_SHARED__SHOW_HPP
 #define GRAEHL_SHARED__SHOW_HPP
-
-/// for debugging prints
 
 /// you can define SHOWS to something else first. needs to support SHOWS << x for output
 #ifndef SHOWS
@@ -12,38 +51,10 @@
 #undef SHOWALWAYS
 #define SHOWALWAYS(x) x
 
-/* usage:
-#if DEBUG
-# define IFD(x) x
-#else
-# define IFD(x)
-#endif
-
-SHOWS is the stream (std::cerr or whatever - you can define)
-SHOWP is just print.
-SHOWC(x) prints x=x
-SHOW.. is SHOWC.. + newline
-SHOWNL is just newline
-
-e.g. SHOWC(IFD, x) SHOWC(IFD, y) SHOW(IFD, nl_after)
-or, shorter, SHOW3(IFD, x, y, nl_after)
-
-will both print x=X y=Y nl_after=NL_AFTER\n if DEBUG.
-
-careful: none of this is wrapped in a block.  so you can't use one of these macros as a single-line block.
-
-e.g.
-
-#include <graehl/shared/ifdbg.hpp>
-DECLARE_DBG_LEVEL_IF(IFD)
-// then: //IFDBG(IFD,1) { SHOWM2(IFD, "descr"); } //({} not optional)
-// or: //SHOWIF1(IFD, "descr", value)
-*/
-
-#define SHOWE(x) " "#x << "=" << (x) << " "
+#define SHOWE(x) " " #x << "=" << (x) << " "
 #define SHOWP(IF, x) IF(SHOWS << x;)
 #define SHOWNL(IF) SHOWP(IF, "\n")
-#define SHOWC(IF, x, s) SHOWP(IF,#x << "=" << (x) << s)
+#define SHOWC(IF, x, s) SHOWP(IF, #x << "=" << (x) << s)
 #define SHOW(IF, x) SHOWC(IF, x, "\n")
 #define SHOW1(IF, x) SHOWC(IF, x, " ")
 #define SHOW2(IF, x, y) SHOW1(IF, x) SHOW(IF, y)

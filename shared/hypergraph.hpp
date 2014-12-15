@@ -1,8 +1,8 @@
-#ifndef GRAEHL_SHARED__HYPERGRAPH_HPP
-#define GRAEHL_SHARED__HYPERGRAPH_HPP
-// like Boost Graph Library, but for hypergraphs (one head=target, multiple tails=sources).
+/** \file
 
-/*
+    like Boost Graph Library, but for hypergraphs (one head=target, multiple tails=sources). useful especially
+  for lazy_forest_kbest.hpp
+
   ordered multi-hypergraph
 
   G A type that is a model of Graph.
@@ -16,9 +16,12 @@
 
   boost::graph_traits<G>::adjacency_iterator
 
-  An adjacency iterator for a vertex v provides access to the vertices adjacent to v. As such, the value type of an adjacency iterator is the vertex descriptor type of its graph. An adjacency iterator must meet the requirements of MultiPassInputIterator.
+  An adjacency iterator for a vertex v provides access to the vertices adjacent to v. As such, the value type
+  of an adjacency iterator is the vertex descriptor type of its graph. An adjacency iterator must meet the
+  requirements of MultiPassInputIterator.
   Valid Expressions
-  adjacent_vertices(v, g)         Returns an iterator-range providing access to the vertices adjacent to vertex v in graph g.[1]
+  adjacent_vertices(v, g)         Returns an iterator-range providing access to the vertices adjacent to
+  vertex v in graph g.[1]
   Return type: std::pair<adjacency_iterator, adjacency_iterator>
 
 
@@ -26,13 +29,16 @@
 
 */
 
+#ifndef GRAEHL_SHARED__HYPERGRAPH_HPP
+#define GRAEHL_SHARED__HYPERGRAPH_HPP
+
 
 #ifndef GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
 #define GRAEHL_EXTENDED_HYPERGRAPH_TRAITS 0
 #endif
 
 #if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
-#include <graehl/shared/graph.hpp> // graph_object
+#include <graehl/shared/graph.hpp>  // graph_object
 #endif
 
 #include <boost/graph/graph_traits.hpp>
@@ -51,8 +57,8 @@ hyperarc_tag const hyperarcT;
 
 
 template <class T>
-struct hypergraph_traits : boost::graph_traits<T>,edge_traits<T> {
-  //  typedef typename graph::hyperarc_index_map hyperarc_index_map;
+struct hypergraph_traits : boost::graph_traits<T>, edge_traits<T> {
+//  typedef typename graph::hyperarc_index_map hyperarc_index_map;
 #if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
   typedef T graph;
   typedef boost::graph_traits<graph> GT;
@@ -63,29 +69,24 @@ struct hypergraph_traits : boost::graph_traits<T>,edge_traits<T> {
   typedef typename GT::vertex_iterator vertex_iterator;
   typedef typename GT::edge_iterator edge_iterator;
 
-  typedef boost::iterator_range<
-    tail_iterator> pair_tail_it;
-  typedef boost::iterator_range<
-    hyperarc_iterator> pair_hyperarc_it;
-  typedef boost::iterator_range<
-    vertex_iterator> pair_vertex_it;
-  typedef boost::iterator_range<
-    edge_iterator> pair_edge_it;
+  typedef boost::iterator_range<tail_iterator> pair_tail_it;
+  typedef boost::iterator_range<hyperarc_iterator> pair_hyperarc_it;
+  typedef boost::iterator_range<vertex_iterator> pair_vertex_it;
+  typedef boost::iterator_range<edge_iterator> pair_edge_it;
 
 #endif
-
 };
 
 #if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
-template <class G> struct graph_object<G, hyperarc_tag> {
+template <class G>
+struct graph_object<G, hyperarc_tag> {
   typedef typename hypergraph_traits<G>::hyperarc_descriptor descriptor;
   typedef typename hypergraph_traits<G>::hyperarc_iterator iterator;
   typedef boost::iterator_range<iterator> iterator_pair;
 };
 
 template <class G>
-inline
-typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G &g) {
+inline typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G& g) {
   return hyperarcs(g);
 }
 #endif
@@ -96,12 +97,14 @@ typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G 
   };
 */
 
-// use boost::iterator_property_map<RandomAccessIterator, OffsetFeatures, T, R> with OffsetFeatures doing the index mapping
+// use boost::iterator_property_map<RandomAccessIterator, OffsetFeatures, T, R> with OffsetFeatures doing the
+// index mapping
 // usually: K = key *, you have array of key at key *: vec ... vec+size
 // construct OffsetArrayPmap(vec, vec+size) and get an array of size Vs (default constructed)
 
 /*Iterator Must be a model of Random Access Iterator.
-  OffsetFeatures Must be a model of Readable Property Map and the value type must be convertible to the difference type of the iterator.
+  OffsetFeatures Must be a model of Readable Property Map and the value type must be convertible to the
+  difference type of the iterator.
   T The value type of the iterator.         std::iterator_traits<RandomAccessIterator>::value_type
   R The reference type of the iterator.     std::iterator_traits<RandomAccessIterator>::reference
 
