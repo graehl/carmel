@@ -13,6 +13,39 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+osmake() {
+    (
+        set -e
+        cd /tmp/hypergraphs-gitrepo
+        if false ; then
+        scripts_dir=$xmtx/scripts
+        changens=$scripts_dir/release-change-namespaces.py
+        outdir=.
+        cmakel=$outdir/hyp/CMakeLists.txt
+        set -x
+        $scripts_dir/filter-cmake-for-release.py < $xmtx/xmt/CMakeLists.txt > $cmakel
+  for f in `find hyp -name CMakeLists.txt`; do
+      $scripts_dir/filter-cmake-for-release.py -i $f
+      $changens -i $f
+  done
+  $changens -i $cmakel
+  fi
+  mkdir -p /tmp/hypergraphs-build
+        cd /tmp/hypergraphs-build
+        cmake /tmp/hypergraphs-gitrepo/hyp "$@" && make -j4
+    )
+}
+osrel() {
+    cd $xmtx
+    mend
+    rm -rf /tmp/hypergraphs-gitrepo
+    test= ~/x/scripts/release.sh /tmp/hypergraphs-gitrepo
+    cd /tmp/hypergraphs-gitrepo
+}
+osrelmake() {
+    osrel
+    osmake
+}
 myip () {
     curl http://ipecho.net/plain; echo
 }
@@ -25,8 +58,11 @@ dcondor() {
 osincs() {
     (
         cd $xmtx
-        ls xmt/Hypergraph/src/Hg*.cpp xmt/Optimization/src/OptimizeMain.cpp xmt/CrfDemo/src/CreateSearchSpace.cpp xmt/Config/src/KeywordConfig.cpp | grep -v HgBench           | xargs $xmtx/scripts/list-xmt-includes.py --debug -I xmt               xmt/Hypergraph/CompositeWeight.hpp xmt/Hypergraph/TokenWeight.hpp               xmt/Hypergraph/src/InstantiateArcTypes.ipp               xmt/Hypergraph/src/InstantiateWeightTypes.ipp               xmt/Hypergraph/src/*-inst.cpp
+        ls xmt/Hypergraph/src/Hg*.cpp xmt/Optimization/src/OptimizeMain.cpp xmt/CrfDemo/src/CreateSearchSpace.cpp        xmt/Hypergraph/src/*-inst.cpp xmt/Hypergraph/CompositeWeight.hpp xmt/Hypergraph/TokenWeight.hpp               xmt/Hypergraph/src/InstantiateArcTypes.ipp               xmt/Hypergraph/src/InstantiateWeightTypes.ipp | grep -v ObjectCount-inst.cpp  | grep -v HgBench  | xargs $xmtx/scripts/list-xmt-includes.py --debug -I xmt
     )
+}
+tmposincs() {
+    osincs > ~/tmp/osincs 2> ~/tmp/osincs.stack
 }
 cprs() {
     cp -Rs "$@"
@@ -2855,6 +2891,9 @@ rebasenext() {
     rebasece `git rebase --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
     rebaseadds
 }
+agcmake() {
+    ag -G 'CMakeLists.*txt$' "$@"
+}
 agsrc() {
     ag -G '\.(h|c|hh|cc|hpp|cpp|scala|py|pl|perl)$' "$@"
 }
@@ -4270,6 +4309,7 @@ overt() {
         rm -f $gsh/$f
         cp $f $gsh/$f
     done
+    cp $xmtx/scripts/gitcredit ~/c/gitcredit/
     cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
     pushd ~/g
 }
@@ -8095,3 +8135,4 @@ cp2ken() {
     build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
 }
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=
+export HYP_EXTERNALS_PATH=$XMT_EXTERNALS_PATH

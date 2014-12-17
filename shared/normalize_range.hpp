@@ -57,7 +57,7 @@ O normalize_copy(typename boost::range_value<R>::type sum, R const& r, O o,
                  normalize_options<typename boost::range_value<R>::type> n
                  = normalize_options<typename boost::range_value<R>::type>()) {
   typedef typename boost::range_value<R>::type V;
-  return boost::transform(r, o, normalize_addk<V>(size(r), sum, n));
+  return boost::transform(r, o, normalize_addk<V>(boost::size(r), sum, n));
 }
 
 template <class R, class O>

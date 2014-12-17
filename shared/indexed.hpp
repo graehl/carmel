@@ -14,8 +14,8 @@
 #include <boost/cstdint.hpp>
 #include <graehl/shared/bit_arithmetic.hpp>
 
-#ifndef INDEXED_EXTRA_ASSERT
-#define INDEXED_EXTRA_ASSERT 0
+#ifndef GRAEHL_INDEXED_EXTRA_ASSERT
+#define GRAEHL_INDEXED_EXTRA_ASSERT 0
 #endif
 
 namespace graehl {
@@ -205,9 +205,8 @@ struct indexed : HashEqualsTraits {
     assert(index_);
     assert(growAt_ < mask_);
     assert(vals_.size() <= growAt_);
-#if INDEXED_EXTRA_ASSERT
+#if GRAEHL_INDEXED_EXTRA_ASSERT
     assert(valid_index());
-#else
 #endif
   }
 
