@@ -554,7 +554,7 @@ struct printable_options_description : boost::program_options::options_descripti
 
     using namespace boost::program_options;
     using namespace std;
-    if (show_empty_groups || n_this_level || n_nonempty_groups > 1) o << "### " << caption << endl;
+    if (show_empty_groups || n_this_level || n_nonempty_groups > 1) o << "### " << caption << '\n';
     for (typename options_type::const_iterator i = pr_options.begin(), e = pr_options.end(); i != e; ++i) {
       printable_option const& opt = *i;
       if (!show_help && opt.name() == "help") continue;
@@ -562,11 +562,11 @@ struct printable_options_description : boost::program_options::options_descripti
       variable_value const& var = vm[opt.vmkey()];
       if (var.defaulted() && !show_defaulted) continue;
       if (var.empty() && !show_empty) continue;
-      if (show_description) o << "# " << opt.description() << endl;
+      if (show_description) o << "# " << opt.description() << '\n';
       print_option(o, opt, var);
-      o << endl;
+      o << '\n';
     }
-    o << endl;
+    o << '\n';
     if (hierarchy)
       for (typename groups_type::const_iterator i = groups.begin(), e = groups.end(); i != e; ++i)
         if (show_empty_groups || (*i)->size()) (*i)->print(o, vm, show_flags);

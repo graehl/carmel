@@ -77,7 +77,7 @@ struct indent {
     if (i==0) return;
     typedef my_ns::my_indent_class Indent;
     SCOPED_INDENT_NEST(Indent);
-    cout << SCOPED_INDENT(Indent) << i<<endl;
+    cout << SCOPED_INDENT(Indent) << i<< '\n';
     recurse(i-1);
   }
 */

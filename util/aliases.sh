@@ -14,7 +14,9 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
-
+servi() {
+    tail -f ~/serviio/log/*.log
+}
 hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
 cosdir=/local/graehl/hypergraphs-gitrepo
@@ -5200,12 +5202,13 @@ substi() {
     (set -e
         local tr=$1
         shift
+        substarg=" --inplace --tr $tr"
         if [[ $literal ]] ; then
-            literalarg="--noeregexp --nosubstregexp"
-        else
-            literalarg=
+            substarg+=" --noeregexp --nosubstregexp"
         fi
-        substarg=" --inplace --tr $tr $literalarg"
+        if [[ $wholeword ]] ; then
+            substarg+=" --wholeword"
+        fi
         echo subst.pl $substarg
         if ! [[ ${nodryrun:-} ]] ; then
             subst.pl --dryrun $substarg "$@"

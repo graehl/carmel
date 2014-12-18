@@ -1,11 +1,11 @@
 /** \file
 
-   .
+   test cases for lazy_forest_kbest.
 */
 
 #ifndef GRAEHL_SHARED__LAZY_FOREST_KBEST_TEST__HPP
-#define GRAEHL_SHARED__LAZY_FOREST_KBEST_TEST_HPP
-
+#define GRAEHL_SHARED__LAZY_FOREST_KBEST_TEST__HPP
+#pragma once
 
 #if defined(LAZY_FOREST_EXAMPLES)
 # if USE_DEBUGPRINT

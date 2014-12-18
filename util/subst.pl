@@ -35,6 +35,8 @@ my $parallel;
 my $inplace;
 my $reverse;
 my $wholeword;
+my $startsword;
+my $endsword;
 my $dryrun;
 my $firstonly;
 my $verbose;
@@ -53,7 +55,9 @@ my @options=(
 ["inplace!"=>\$inplace,"in-place edit (note: cannot handle compressed inputs)"],
 ["eregexp!"=>\$isregexp,"treat source as regexp"],
 ["substregexp!"=>\$substre,"treat ttable lines as arbitrary s/whatever/to/g lines to be eval"],
-["wholeword!"=>\$wholeword,"match only starting at word boundary (\\b)"],
+["wholeword!"=>\$wholeword,"match only starting ANd ending at word boundary (\\b)"],
+["startsword!"=>\$startsword,"match only starting ANd ending at word boundary (\\b)"],
+["endsword!"=>\$endsword,"match only ending at word boundary (\\b)"],
 ["dryrun!"=>\$dryrun,"show substituted lines on STDOUT (no inplace)"],
 ["firstonly!"=>\$firstonly,"don't process subsequent translations after the first matching per line"],
 ["verbose!"=>\$verbose,"show each applied substitution"],
@@ -67,6 +71,8 @@ my $cmdline=&escaped_cmdline;
 my ($usagep,@opts)=getoptions_usage(@options);
 #info("COMMAND LINE:");
 #info($cmdline);
+$startsword = $startsword || $wholeword;
+$endsword = $endsword || $wholeword;
 show_opts(@opts);
 
 sub refor {
@@ -74,7 +80,7 @@ sub refor {
     my $q = quotemeta($find);
     debug("quotemeta: $q") if !$isregexp;
     $q = $find if $isregexp;
-    $wholeword ? qr/\b$q/ : qr/$q/;
+    $startsword ? ($endsword ? qr/\b$q\b/ : qr/\b$q/) : ($endsword ? qr/$q\b/ : qr/$q/);
 }
 
 my @rms;

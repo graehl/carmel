@@ -1242,7 +1242,7 @@ void test_small_vector_1() {
   EXPECT_EQ(cc[0], -1);
   cc.resize(99, 99);
   for (int i = 1; i < 99; ++i) {
-    // cerr << i << " " << cc[i] << endl;
+    // cerr << i << " " << cc[i] << '\n';
     EXPECT_EQ(cc[i], 99);
   }
   cc.clear();

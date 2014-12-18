@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(TEST_io) {
         if (q[1]) s.append(sep);
       }
       // split_noquote(s, make_expect_visitor(split_strs), seps);
-      // cout << sep << "\t"<< s << endl;
+      // cout << sep << "\t"<< s << '\n';
     }
   }
 }
