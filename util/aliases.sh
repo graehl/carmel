@@ -5209,6 +5209,12 @@ substi() {
         if [[ $wholeword ]] ; then
             substarg+=" --wholeword"
         fi
+        if [[ $endsword ]] ; then
+            substarg+=" --endsword"
+        fi
+        if [[ $startsword ]] ; then
+            substarg+=" --startsword"
+        fi
         echo subst.pl $substarg
         if ! [[ ${nodryrun:-} ]] ; then
             subst.pl --dryrun $substarg "$@"
