@@ -8,8 +8,8 @@
 
 #include <cassert>
 #include <string>
-#include <xmt/graehl/shared/string_to.hpp>
-#include <xmt/graehl/shared/atoi_fast.hpp>
+#include <graehl/shared/string_to.hpp>
+#include <graehl/shared/atoi_fast.hpp>
 
 namespace graehl {
 

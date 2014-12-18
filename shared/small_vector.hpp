@@ -199,7 +199,7 @@ struct small_vector {
     init((size_type)s, v);
   }
 
-#ifndef XMT_32  // avoid signature collision
+#ifndef SDL_32  // avoid signature collision
   small_vector(unsigned s, T const& v) { init((size_type)s, v); }
 #endif
 
@@ -211,7 +211,7 @@ struct small_vector {
     init((size_type)s, v);
   }
 
-#ifndef XMT_32  // avoid signature collision
+#ifndef SDL_32  // avoid signature collision
   template <class Val>
   small_vector(unsigned s, Val const& v) {
     init((size_type)s, v);

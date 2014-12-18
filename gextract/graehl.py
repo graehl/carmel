@@ -2012,3 +2012,31 @@ def writelines(path, lines, newline='\n'):
             if newline is not None and len(line) > 0 and line[-1] != newline:
                 line += newline
             outfile.write(line)
+
+
+def addarg(argparser, shortname, typeclass, dest, help=None, action=None, *L, **M):
+    """helper for argparse (part of python 2.7, or you can install it)
+
+    example usage:
+
+args = argparse.ArgumentParser(description='generate lines using random words from dict file')
+
+addarg(args, '-d', str, 'dictionary', 'input words file', metavar='FILE')
+addarg(args, '-w', str, 'word', 'supplements the word list from input with the given word', nargs='*')
+
+args.set_defaults(dictionary='-')
+
+    """
+    longarg = longoption(dest)
+    shortl = [shortname] if shortname else []
+    L = shortl + [longarg] + list(L)
+    if action is None and typeclass == int:
+        action = hexint_action
+        typeclass = str
+    argparser.add_argument(*L, dest=dest, type=typeclass, help=help, action=action, **M)
+
+def addpositional(argparser, dest, help=None, nargs='*', option_strings=[], metavar='FILE', typeclass=str, **M):
+    argparser.add_argument(option_strings=option_strings, dest=dest, nargs=nargs, metavar=metavar, help=help, type=typeclass, **M)
+
+def addflag(argparser, shortname, dest, help=None, action='store_true', **M):
+    argparser.add_argument(shortname, longoption(dest), dest=dest, action=action, help=help, **M)

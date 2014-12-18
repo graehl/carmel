@@ -6,8 +6,8 @@
 #ifndef GRAEHL_SHARED__PRIORITY_QUEUE_HPP
 #define GRAEHL_SHARED__PRIORITY_QUEUE_HPP
 
-#include <xmt/graehl/shared/d_ary_heap.hpp>
-#include <xmt/graehl/shared/property.hpp>
+#include <graehl/shared/d_ary_heap.hpp>
+#include <graehl/shared/property.hpp>
 #include <functional>
 
 namespace graehl {

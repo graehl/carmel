@@ -20,7 +20,7 @@
 #ifndef GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
 #define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
 
-#include <xmt/graehl/shared/alloc_new_delete.hpp>
+#include <graehl/shared/alloc_new_delete.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/detail/atomic_count.hpp>
 #include <boost/utility/enable_if.hpp>

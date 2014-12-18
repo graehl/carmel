@@ -165,7 +165,7 @@ inline void string_to_impl(char const* s, long& x) {
   x = strtol_complete(s);
 }
 
-#ifndef XMT_32  // size_t == unsigned, avoid signature collision
+#ifndef SDL_32  // size_t == unsigned, avoid signature collision
 inline void string_to_impl(std::string const& s, unsigned& x) {
   x = atou_fast_complete<unsigned>(s.c_str());
 }

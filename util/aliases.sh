@@ -6,6 +6,7 @@ set -b
 shopt -s checkwinsize
 shopt -s cdspell
 xmtx=$(echo ~/x)
+xmtxs=$xmtx/sdl
 xmtextbase=$(echo ~/c/xmt-externals)
 CT=${CT:-`echo ~/c/ct/main`}
 CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
@@ -13,15 +14,17 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
+cosdir=/local/graehl/hypergraphs-gitrepo
+cosdirbuild=/local/graehl/build-hypergraphs
 oscptar() {
     (set -e
      cd /tmp/hypergraphs-gitrepo
-     cdir=/local/graehl/hypergraphs-gitrepo
-     c-s "rm -rf $cdir/hyp; mkdir -p $cdir"
+     c-s "rm -rf $cosdir/$hypdir; mkdir -p $cosdir"
      set -x
-     scp $ostarball c-graehl:$cdir/ || true
-     c-s "cd $cdir && tar xzf $(basename $ostarball)"
+     scp $ostarball c-graehl:$cosdir/
+     c-s "cd $cosdir && rm -rf sdl; tar xzf $(basename $ostarball)"
     )
 }
 osmake() {
@@ -31,9 +34,9 @@ osmake() {
             scripts_dir=$xmtx/scripts
             changens=$scripts_dir/release-change-namespaces.py
             outdir=.
-            cmakel=$outdir/hyp/CMakeLists.txt
+            cmakel=$outdir/$hypdir/CMakeLists.txt
             set -x
-            $scripts_dir/filter-cmake-for-release.py < $xmtx/xmt/CMakeLists.txt > $cmakel
+            $scripts_dir/filter-cmake-for-release.py < $xmtxs/CMakeLists.txt > $cmakel
             for f in `find hyp -name CMakeLists.txt`; do
                 $scripts_dir/filter-cmake-for-release.py -i $f
                 $changens -i $f
@@ -42,7 +45,7 @@ osmake() {
         fi
         mkdir -p /local/graehl/hypergraphs-build
         cd /local/graehl/hypergraphs-build
-        cmake /local/graehl/hypergraphs-gitrepo/hyp "$@" && TERM=dumb make -j6 VERBOSE=1
+        cmake /local/graehl/hypergraphs-gitrepo/$hypdir "$@" && TERM=dumb make -j6 VERBOSE=1
     )
 }
 osrel() {
@@ -62,8 +65,27 @@ osrelmake() {
     (
         set -x
         set -e
+        export TERM=dumb
         osrel
+        oscptar
         osmake
+    )
+}
+linosmake() {
+    (
+        set -x
+        set -e
+        export TERM=dumb
+        c-s "cd $cosdirbuild; cmake $cosdir/$hypdir $* && && TERM=dumb make -j6 VERBOSE=1"
+        )
+}
+linosrelmake() {
+    (
+        set -x
+        set -e
+        export TERM=dumb
+        osrel
+        oscptar
     )
 }
 myip () {
@@ -74,15 +96,6 @@ previewr() {
 }
 dcondor() {
     d-s md-condor
-}
-osincs() {
-    (
-        cd $xmtx
-        ls xmt/Hypergraph/src/Hg*.cpp xmt/Optimization/src/OptimizeMain.cpp xmt/CrfDemo/src/CreateSearchSpace.cpp        xmt/Hypergraph/src/*-inst.cpp xmt/Hypergraph/CompositeWeight.hpp xmt/Hypergraph/TokenWeight.hpp               xmt/Hypergraph/src/InstantiateArcTypes.ipp               xmt/Hypergraph/src/InstantiateWeightTypes.ipp | grep -v ObjectCount-inst.cpp  | grep -v HgBench  | xargs $xmtx/scripts/list-xmt-includes.py --debug -I xmt
-    )
-}
-tmposincs() {
-    osincs > ~/tmp/osincs 2> ~/tmp/osincs.stack
 }
 cprs() {
     cp -Rs "$@"
@@ -461,7 +474,7 @@ cpcpp() {
 }
 xcpps() {
     (set -e;
-        cd ~/x/xmt
+        cd $xmtxs
         x=`which $1`
         bakthis pre-$1
         mend >/dev/null 2>/dev/null
@@ -879,13 +892,13 @@ diffs() {
     git diff ${1:-HEAD^1} --stat
 }
 cpnplm() {
-    cp ~/x/xmt/LanguageModel/KenLM/lm/wrappers/nplm* ~/src/kenlm/lm/wrappers/
+    cp $xmtxs/LanguageModel/KenLM/lm/wrappers/nplm* ~/src/kenlm/lm/wrappers/
 }
 comxmtken() {
     (set -e;
         cd ~/src/kenlm
-        cp -a lm util ~/x/xmt/LanguageModel/KenLM/
-        cd ~/x/xmt/LanguageModel/KenLM/
+        cp -a lm util $xmtxs/LanguageModel/KenLM/
+        cd $xmtxs/LanguageModel/KenLM/
         git add lm util
         git commit -a -m 'kenlm'
     )
@@ -1740,8 +1753,8 @@ binelse() {
     fi
 }
 extra_include=$xmtx
-cpps_code_path=$xmtx/xmt
-cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I$XMT_EXTERNALS_PATH/../Shared/cpp/libraries/tinyxmlcpp-2.5.4 -I/users/graehl/x/xmt/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
+cpps_code_path=$xmtxs
+cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I$XMT_EXTERNALS_PATH/../Shared/cpp/libraries/tinyxmlcpp-2.5.4 -I/users/graehl/x/sdl/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
 cpps_flags="-std=c++11 -DCPP11 -ftemplate-depth=255"
 cppparses() {
     (
@@ -1755,14 +1768,14 @@ cppparses() {
         if [[ $force ]] ; then
             newerarg=
         fi
-        echo "find $xmtx/xmt $newerarg -name '*.cpp'"
+        echo "find $xmtxs $newerarg -name '*.cpp'"
         ls -ul $touchnewerfile
         touch $touchnewerfile.newest
         local shuf=shuf
         if [[ $noshuf ]] ; then
             shuf=cat
         fi
-        for f in "$@" `find $xmtx/xmt $newerarg -name '*.cpp' | $shuf`; do
+        for f in "$@" `find $xmtxs $newerarg -name '*.cpp' | $shuf`; do
             if [[ -f $touchnewerfile.newest ]] ; then
                 mv -f $touchnewerfile.newest $touchnewerfile
             fi
@@ -3889,7 +3902,7 @@ dumbmake() {
 }
 substxmt() {
     (
-        cd $xmtx/xmt
+        cd $xmtxs
         substi "$@" $(ack --ignore-dir=LWUtil --ignore-dir=graehl --cpp -f)
     )
 }
@@ -3914,7 +3927,10 @@ linjen() {
     pushc $branch
     ctitle jen "$@"
     (set -e;
-        c-s forceco $branch
+     tmp2=`mktemp /tmp/forceco.XXXXXXXXX`
+     c-s forceco $branch 2>$tmp2
+     tail $tmp2
+     rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
         c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
@@ -4168,7 +4184,7 @@ unhyphenate() {
     perl -pe 's/(?<=\w\w)- (?=\w+)//' "$@"
 }
 cpshared() {
-    for f in $xmtx/xmt/graehl/shared/*; do
+    for f in $xmtxs/graehl/shared/*; do
         cp $f ~/g/shared
     done
 }
@@ -4239,7 +4255,7 @@ racer=$(echo $xmtx)
 if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
     export PATH=$XMT_EXTERNALS_PATH/tools/cmake/bin:$PATH
 fi
-GRAEHL_INCLUDE=$xmtx/xmt
+GRAEHL_INCLUDE=$xmtxs
 
 ffmpegaudio1() {
     local input=$1
@@ -4319,14 +4335,14 @@ unadd() {
 }
 g1po() {
     (
-        cd $xmtx/xmt
+        cd $xmtxs
         export GRAEHL_INCLUDE=`pwd`
-        cd $xmtx/xmt/graehl/shared
+        cd $xmtxs/graehl/shared
         ARGS='--a.xs 1 2 --b.xs 2 --death-year=2011 --a.str 2 --b.str abc' cleanup=1 g1 configure_program_options.hpp -DGRAEHL_CONFIGURE_SAMPLE_MAIN=1
     )
 }
 overt() {
-    pushd $xmtx/xmt/graehl/shared
+    pushd $xmtxs/graehl/shared
     gsh=$HOME/g/shared
     for f in *.?pp *.h; do
         rm -f $gsh/$f
@@ -4664,6 +4680,9 @@ amend() {
 xmtclone() {
     git clone ssh://graehl@git02.languageweaver.com:29418/xmt "$@"
 }
+findcmake() {
+    find . -name CMakeLists\*.txt
+}
 findc() {
     find . -name '*.hpp' -o -name '*.cpp' -o -name '*.ipp' -o -name '*.cc' -o -name '*.hh' -o -name '*.c' -o -name '*.h'
 }
@@ -4763,7 +4782,7 @@ hncomment() {
 }
 forcet() {
     for f in "$@"; do
-        cp $xmtx/xmt/graehl/shared/$f ~/t/graehl/shared
+        cp $xmtxs/graehl/shared/$f ~/t/graehl/shared
         lnshared1 $f
     done
 }
@@ -4938,7 +4957,7 @@ makedocs() {
     . make.sh
 }
 roundshared() {
-    cp $xmtx/xmt/graehl/shared/* ~/t/graehl/shared/; relnshared
+    cp $xmtxs/graehl/shared/* ~/t/graehl/shared/; relnshared
 }
 tagtracks() {
     for i in `seq -w 1 99`; do echo $i; id3tag --album='Top 100 Best Techno Vol.1' --track=$i $i-*.mp3 ; done
@@ -4972,7 +4991,7 @@ showcpp() {
             #pushd /Users/graehl/x/Debug/Hypergraph &&
             local xmtlib=$xmtextbase/FC12/libraries
 
-            /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/xmt -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/xmt/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
+            /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/sdl -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
                 -I $xmtlib/db-5.3.15 \
                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
                 -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include \
@@ -5199,7 +5218,7 @@ substigrepq() {
 }
 substrac() {
     (
-        pushd $xmtx/xmt
+        pushd $xmtxs
         substi "$@" $(ack --cpp -f)
     )
 }
@@ -5220,7 +5239,7 @@ substxml() {
 }
 substcmake() {
     (
-        substi "$@" $(ack --cmake -f)
+        substi "$@" $(findcmake)
     )
 }
 gitchange() {
@@ -5548,7 +5567,7 @@ acksed() {
     )
 }
 retok() {
-    cd $xmtx/xmt/Tokenizer
+    cd $xmtxs/Tokenizer
     ./test.sh "$@"
 }
 hgdot() {
@@ -5572,7 +5591,7 @@ lnshared() {
 lnshared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$xmtx/xmt/graehl/shared
+    local d=$xmtxs/graehl/shared
     local g=$d/$1
 
     if ! [ -r $f ] ; then
@@ -5594,7 +5613,7 @@ lnshared1() {
 racershared1() {
     local s=~/t/graehl/shared
     local f=$s/$1
-    local d=$xmtx/xmt/graehl/shared
+    local d=$xmtxs/graehl/shared
     local g=$d/$1
     if [ -f $g ] ; then
         if [ "$force" ] ; then
@@ -5605,12 +5624,12 @@ racershared1() {
     fi
 }
 usedshared() {
-    (cd $xmtx/xmt/graehl/shared/; ls *.?pp)
+    (cd $xmtxs/graehl/shared/; ls *.?pp)
 }
 diffshared1() {
     local s=~/t/graehl/shared/
     local f=$s/"$1"
-    local d=$xmtx/xmt/graehl/shared/
+    local d=$xmtxs/graehl/shared/
     diff -u -w $f $d/$1
 }
 diffshared() {
@@ -5707,7 +5726,7 @@ horsem() {
 sa2c() {
     s2c
     (cd
-        for d in x/xmt/ ; do
+        for d in x/sdl/ ; do
             sync2 $chost $d
         done
     )
@@ -5718,7 +5737,7 @@ s2c() {
         set -e
         c-sync u g script bugs .gitconfig
         c-to x/run.sh
-        c-to x/xmtpath.sh
+        c-to x/sdlpath.sh
         #chost=ceto c-sync u g script bugs .gitconfig
     )
 }
@@ -8102,8 +8121,8 @@ diffbranch() {
     head -100 $diff
     echo $diff
 }
-if [[ -x $xmtx/xmtpath.sh ]] ; then
-    . $xmtx/xmtpath.sh
+if [[ -x $xmtxspath.sh ]] ; then
+    . $xmtxspath.sh
 fi
 
 ### ssh tunnel:
@@ -8158,4 +8177,4 @@ cp2ken() {
     build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
 }
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=
-export HYP_EXTERNALS_PATH=$XMT_EXTERNALS_PATH
+export SDL_EXTERNALS_PATH=$XMT_EXTERNALS_PATH
