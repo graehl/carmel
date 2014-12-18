@@ -407,7 +407,7 @@ struct Thing {
                                                                               // know for sure that the
                                                                               // default was used. note that
                                                                               // eg merely needs to
-                                                                              // boost::lexical_cast<string>
+                                                                              // sdl::lexical_cast<string>
     c("a",
       &a);  // this means we have command line options --a.numbers --a.xys, and YAML paths a.numbers and a.xys
     c("b", &b)

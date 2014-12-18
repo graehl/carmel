@@ -1,6 +1,6 @@
 /** \file
 
-  string_to and to_string, which default to boost::lexical_cast, but, unlike that, may be overriden for user
+  string_to and to_string, which default to sdl::lexical_cast, but, unlike that, may be overriden for user
   types other than supporting default/copy ctor and ostream <<, istream >>.
 
   note: optional<T> is the string "none" if absent, else regular string rep for
@@ -26,7 +26,7 @@
   ----
 
   string_to and to_string for ints may not be much faster than
-  boost::lexical_cast in its latest incarnations (see
+  sdl::lexical_cast in its latest incarnations (see
   http://accu.org/index.php/journals/1375) especially if you set the 'C' locale,
   but the code is at least simpler (and more to the point - more easily overriden).
 
@@ -362,7 +362,7 @@ void string_to_impl(char* str, To& to) {
 template <class From, class To>
 void string_to_impl(From const& from, To& to) {
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
-  to = boost::lexical_cast<To>(from);
+  to = sdl::lexical_cast<To>(from);
 #else
   if (!try_string_to(from, to))
     throw std::runtime_error(std::string("Couldn't convert (string_to): ") + from);
@@ -452,7 +452,7 @@ template <class D, class Enable = void>
 struct to_string_select {
   static inline std::string to_string(D const& d) {
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
-    return boost::lexical_cast<std::string>(d);
+    return sdl::lexical_cast<std::string>(d);
 #else
     std::ostringstream o;
     o << d;

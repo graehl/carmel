@@ -1097,7 +1097,7 @@ struct tracking_level<graehl::small_vector<V, MaxInline, Size> > {
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
-#include <xmt/graehl/shared/warning_compiler.h>
+#include <graehl/shared/warning_compiler.h>
 CLANG_DIAG_IGNORE(tautological-undefined-compare)
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>

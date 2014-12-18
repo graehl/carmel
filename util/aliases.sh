@@ -14,13 +14,29 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+
 hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
 cosdir=/local/graehl/hypergraphs-gitrepo
 cosdirbuild=/local/graehl/build-hypergraphs
+findsmall() {
+    (
+        local maxsz=${1:-50k}
+        shift
+        #-path .git -prune -o
+        find .  -type f -size -$maxsz "$@" | fgrep -v .git
+    )
+    }
+substsmall() {
+    (
+        local tr=${1?trfile [maxsize default 50k]}
+        shift
+        findsmall "$@" | xargs subst.pl --inplace --tr $tr ``
+    )
+}
 oscptar() {
     (set -e
-     cd /tmp/hypergraphs-gitrepo
+     cd $cosdir
      c-s "rm -rf $cosdir/$hypdir; mkdir -p $cosdir"
      set -x
      scp $ostarball c-graehl:$cosdir/
@@ -30,22 +46,9 @@ oscptar() {
 osmake() {
     (
         set -e
-        if false ; then
-            scripts_dir=$xmtx/scripts
-            changens=$scripts_dir/release-change-namespaces.py
-            outdir=.
-            cmakel=$outdir/$hypdir/CMakeLists.txt
-            set -x
-            $scripts_dir/filter-cmake-for-release.py < $xmtxs/CMakeLists.txt > $cmakel
-            for f in `find hyp -name CMakeLists.txt`; do
-                $scripts_dir/filter-cmake-for-release.py -i $f
-                $changens -i $f
-            done
-            $changens -i $cmakel
-        fi
-        mkdir -p /local/graehl/hypergraphs-build
-        cd /local/graehl/hypergraphs-build
-        cmake /local/graehl/hypergraphs-gitrepo/$hypdir "$@" && TERM=dumb make -j6 VERBOSE=1
+        mkdir -p $cosdirbuild
+        cd $cosdirbuild
+        cmake $cosdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
     )
 }
 osrel() {
@@ -53,7 +56,7 @@ osrel() {
         set -e
         cd $xmtx
         mend
-        outgit=/tmp/hypergraphs-gitrepo
+        outgit=$cosdir
         rm -rf $outgit
         rm -f $ostarball
         test= tarball=$ostarball ~/x/scripts/release.sh $outgit
@@ -63,7 +66,6 @@ osrel() {
 }
 osrelmake() {
     (
-        set -x
         set -e
         export TERM=dumb
         osrel
@@ -73,19 +75,18 @@ osrelmake() {
 }
 linosmake() {
     (
-        set -x
         set -e
         export TERM=dumb
-        c-s "cd $cosdirbuild; cmake $cosdir/$hypdir $* && && TERM=dumb make -j6 VERBOSE=1"
-        )
+        oscptar
+        c-s "mkdir -p $cosdirbuild;cd $cosdirbuild; cmake $cosdir/$hypdir $* && TERM=dumb make -j6 VERBOSE=1"
+    )
 }
 linosrelmake() {
     (
-        set -x
         set -e
         export TERM=dumb
         osrel
-        oscptar
+        linosmake
     )
 }
 myip () {
@@ -3842,10 +3843,6 @@ gcc47=1
 gcc49=1
 #TestWeight release optimizer problem
 usegcc() {
-    if [[ $HOST = pwn ]] ; then
-        usegccnocache
-        #don't have right gdb for gcc 4.7 on my mac
-    else
         if [[ $gcc49 ]] && [[ -x `which gcc-4.9 2>/dev/null` ]] ; then
             GCC_SUFFIX=-4.9
         elif [[ $gcc48 ]] && [[ -x `which gcc-4.8 2>/dev/null` ]] ; then
@@ -3854,9 +3851,12 @@ usegcc() {
             GCC_SUFFIX=-4.7
         fi
         local ccache=${ccache:-$(echo ~/bin/ccache)}
-        export CC="$ccache-gcc${GCC_SUFFIX:-}"
-        export CXX="$ccache-g++${GCC_SUFFIX:-}"
-    fi
+        ccachepre=$ccache-
+        if [[ $HOST = pwn ]] ; then
+            ccachepre=
+        fi
+        export CC="${ccachepre}gcc${GCC_SUFFIX:-}"
+        export CXX="${ccachepre}g++${GCC_SUFFIX:-}"
 }
 usegccnocache() {
     export CC="gcc"
@@ -4393,7 +4393,7 @@ mend() {
             echo2 mid-rebase already
             git rebase --continue
         else
-            git commit --allow-empty -a -C HEAD --amend "$@"
+            git commit -q --allow-empty -a -C HEAD --amend "$@"
         fi
     )
 }
@@ -5737,7 +5737,7 @@ s2c() {
         set -e
         c-sync u g script bugs .gitconfig
         c-to x/run.sh
-        c-to x/sdlpath.sh
+        c-to x/xmtpath.sh
         #chost=ceto c-sync u g script bugs .gitconfig
     )
 }

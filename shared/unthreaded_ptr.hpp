@@ -21,7 +21,7 @@
 #ifndef GRAEHL__UNTHREADED_PTR
 #define GRAEHL__UNTHREADED_PTR
 
-#include <xmt/graehl/shared/alloc_new_delete.hpp>
+#include <graehl/shared/alloc_new_delete.hpp>
 #include <cassert>
 #include <cstring>
 
