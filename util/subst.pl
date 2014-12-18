@@ -71,10 +71,12 @@ show_opts(@opts);
 
 sub refor {
     my $find = $_[0];
-    my $qe = quotemeta($find);
-    warn("quotemeta: $qe") if !$isregexp;
-    $isregexp ? qr{$find} : ($wholeword ? qr/\b$qe/ : qr{\Q$find\E});
+    my $q = quotemeta($find);
+    debug("quotemeta: $q") if !$isregexp;
+    $q = $find if $isregexp;
+    $wholeword ? qr/\b$q/ : qr/$q/;
 }
+
 my @rms;
 my $fh=openz($ttable);
 while(<$fh>) {
