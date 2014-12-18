@@ -18,6 +18,7 @@ it. any_cast requires a copy constructor (returns by value)
 
 #ifndef GRAEHL_SHARED__ASSIGN_TRAITS_JG_HPP
 #define GRAEHL_SHARED__ASSIGN_TRAITS_JG_HPP
+#pragma once
 
 #include <stdexcept>
 #include <memory>

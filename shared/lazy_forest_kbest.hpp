@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
+#pragma once
 
 // you may override this with a fully namespace qualified type - but be careful to do so consistently before
 // every inclusion!

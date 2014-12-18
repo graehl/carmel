@@ -14,6 +14,7 @@
 
 #ifndef GRAEHL_SHARED__ARRAY_STREAM_HPP
 #define GRAEHL_SHARED__ARRAY_STREAM_HPP
+#pragma once
 
 #include <streambuf>
 #include <ostream>

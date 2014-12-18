@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__SHELL_ESCAPE_HPP
 #define GRAEHL_SHARED__SHELL_ESCAPE_HPP
+#pragma once
 
 #include <sstream>
 #include <algorithm>

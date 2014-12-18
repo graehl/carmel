@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__INT_HASH_MAP_HPP
 #define GRAEHL_SHARED__INT_HASH_MAP_HPP
+#pragma once
 
 //reminder: undefined macros eval to 0
 #if __cplusplus >= 201103L || CPP11 || defined(__clang__) && defined(_LIBCPP_VERSION)

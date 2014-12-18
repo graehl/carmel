@@ -7,6 +7,7 @@
 
 #ifndef IS_CONTAINER_JG2012614_HPP
 #define IS_CONTAINER_JG2012614_HPP
+#pragma once
 
 #include <boost/utility/enable_if.hpp>
 #include <boost/icl/type_traits/is_container.hpp>

@@ -6,6 +6,7 @@
 
 #ifndef NORETURN_JG2012613_HPP
 #define NORETURN_JG2012613_HPP
+#pragma once
 
 #if defined(__GNUC__) && __GNUC__>=3
 # define NORETURN __attribute__ ((noreturn))

@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__STOPWATCH_HPP
 #define GRAEHL__SHARED__STOPWATCH_HPP
+#pragma once
 
 /*
   stopwatch can track recent and total elapsed time and pagefaults.

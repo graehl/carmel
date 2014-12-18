@@ -1,5 +1,6 @@
 #ifndef GRAEHL_SHARED__CONTAINERS_HPP
 #define GRAEHL_SHARED__CONTAINERS_HPP
+#pragma once
 
 /* container selectors (all assume default allocator, but TODO - could change to template on allocator).
 

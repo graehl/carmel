@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__NAN_HPP
 #define GRAEHL_SHARED__NAN_HPP
+#pragma once
 
 #ifndef GRAEHL_HAVE_STD_ISINF
 #define GRAEHL_HAVE_STD_ISINF 1

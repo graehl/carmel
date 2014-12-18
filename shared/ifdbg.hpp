@@ -14,6 +14,7 @@
 
 #ifndef GRAEHL_SHARED__IFDBG_HPP
 #define GRAEHL_SHARED__IFDBG_HPP
+#pragma once
 
 #ifndef GRAEHL_IFDBG_ENABLE
 #ifdef NDEBUG

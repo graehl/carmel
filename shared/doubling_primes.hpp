@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__DOUBLING_PRIMES_HPP
 #define GRAEHL__SHARED__DOUBLING_PRIMES_HPP
+#pragma once
 
 #include <algorithm>
 

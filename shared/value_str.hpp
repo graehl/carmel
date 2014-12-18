@@ -5,6 +5,7 @@
 
 #ifndef VALUE_STR_JG2012613_HPP
 #define VALUE_STR_JG2012613_HPP
+#pragma once
 
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/assign_traits.hpp>

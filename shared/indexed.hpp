@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL_SHARED__INDEXED_JG_2014_03_04_HPP
 #define GRAEHL_SHARED__INDEXED_JG_2014_03_04_HPP
+#pragma once
 
 #include <graehl/shared/stable_vector.hpp>
 #include <boost/functional/hash.hpp>

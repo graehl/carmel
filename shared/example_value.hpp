@@ -9,6 +9,7 @@
 
 #ifndef EXAMPLE_VALUE_2012531_HPP
 #define EXAMPLE_VALUE_2012531_HPP
+#pragma once
 
 
 #include <graehl/shared/int_types.hpp>

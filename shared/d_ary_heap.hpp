@@ -19,6 +19,7 @@
 
 #ifndef GRAEHL_SHARED__D_ARY_HEAP_HPP
 #define GRAEHL_SHARED__D_ARY_HEAP_HPP
+#pragma once
 
 #ifndef GRAEHL_DEBUG_D_ARY_HEAP
 #define GRAEHL_DEBUG_D_ARY_HEAP 0

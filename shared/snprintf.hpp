@@ -26,6 +26,7 @@
 #include <cstdarg>
 #include <cassert>
 #include <cstdlib>
+#pragma once
 // for MS, this has some microsoft-only _snprintf etc fns that aren't fully C99 compliant - we'll provide a
 // ::snprintf that is
 #include <string>

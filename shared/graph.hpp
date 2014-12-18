@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__GRAPH_HPP
 #define GRAEHL_SHARED__GRAPH_HPP
+#pragma once
 
 // graph_object<G, (vertex|edge|hyperarc)_t>, visit(edge_tag, g) ...
 

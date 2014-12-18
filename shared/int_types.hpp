@@ -5,6 +5,7 @@
 
 #ifndef INT_TYPES_JG2012531_HPP
 #define INT_TYPES_JG2012531_HPP
+#pragma once
 
 #if defined(__APPLE__) && defined(__GNUC__)
 #define INT_DIFFERENT_FROM_INTN 0

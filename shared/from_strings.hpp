@@ -7,6 +7,7 @@
 
 #ifndef FROM_STRINGS_JG201266_HPP
 #define FROM_STRINGS_JG201266_HPP
+#pragma once
 
 #include <graehl/shared/pointer_traits.hpp>
 #include <graehl/shared/is_container.hpp>

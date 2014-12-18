@@ -10,6 +10,7 @@
 
 #ifndef GRAEHL__SHARED__CONFIGURE_BY_PROTOTYPE_HPP
 #define GRAEHL__SHARED__CONFIGURE_BY_PROTOTYPE_HPP
+#pragma once
 
 #include <graehl/shared/configurable.hpp>
 #include <map>

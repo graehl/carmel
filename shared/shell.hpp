@@ -1,5 +1,6 @@
 #ifndef SHELL_JG2012615_HPP
 #define SHELL_JG2012615_HPP
+#pragma once
 
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/os.hpp>

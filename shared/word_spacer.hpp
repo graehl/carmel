@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__WORD_SPACER_HPP
 #define GRAEHL__SHARED__WORD_SPACER_HPP
+#pragma once
 
 #include <sstream>
 #include <string>

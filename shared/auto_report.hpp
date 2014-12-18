@@ -1,5 +1,6 @@
 #ifndef GRAEHL_SHARED__AUTO_REPORT_HPP
 #define GRAEHL_SHARED__AUTO_REPORT_HPP
+#pragma once
 
 #include <iostream>
 

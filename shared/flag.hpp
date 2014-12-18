@@ -1,5 +1,6 @@
 #ifndef FLAG_JG201276_HPP
 #define FLAG_JG201276_HPP
+#pragma once
 
 #include <boost/detail/atomic_count.hpp>
 #include <graehl/shared/string_to.hpp>

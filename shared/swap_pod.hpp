@@ -7,6 +7,7 @@
 
 #ifndef GRAEHL_SHARED__SWAP_POD
 #define GRAEHL_SHARED__SWAP_POD
+#pragma once
 
 namespace graehl {
 

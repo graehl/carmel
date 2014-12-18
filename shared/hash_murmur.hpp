@@ -9,6 +9,7 @@
 
 #ifndef GRAEHL__SHARED__HASH_MURMUR_HPP
 #define GRAEHL__SHARED__HASH_MURMUR_HPP
+#pragma once
 
 #include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/bit_arithmetic.hpp>

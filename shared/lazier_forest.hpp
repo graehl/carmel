@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__LAZIER_FOREST_HPP
 #define GRAEHL_SHARED__LAZIER_FOREST_HPP
+#pragma once
 
 #include <graehl/shared/lazy_forest_kbest.hpp>
 #include <graehl/shared/pointer_int.hpp>

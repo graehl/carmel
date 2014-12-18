@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__OS_HPP
 #define GRAEHL_SHARED__OS_HPP
+#pragma once
 
 #include <graehl/shared/warning_compiler.h>
 #include <fstream>

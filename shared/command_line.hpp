@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL__SHARED__COMMAND_LINE_HPP
 #define GRAEHL__SHARED__COMMAND_LINE_HPP
+#pragma once
 
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/shell_escape.hpp>

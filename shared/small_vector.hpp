@@ -1,5 +1,6 @@
 #ifndef GRAEHL_SHARED___SMALL_VECTOR
 #define GRAEHL_SHARED___SMALL_VECTOR
+#pragma once
 
 /** \file
 

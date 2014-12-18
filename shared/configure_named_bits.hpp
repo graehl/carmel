@@ -20,6 +20,7 @@
 
 #ifndef GRAEHL_SHARED__CONFIGURE_BITS
 #define GRAEHL_SHARED__CONFIGURE_BITS
+#pragma once
 
 #include <graehl/shared/hex_int.hpp>
 #include <graehl/shared/string_to.hpp>

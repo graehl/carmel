@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__PERCENT_HPP
 #define GRAEHL__SHARED__PERCENT_HPP
+#pragma once
 
 #include <graehl/shared/print_width.hpp>
 #include <iosfwd>

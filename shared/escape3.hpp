@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__ESCAPE3
 #define GRAEHL_SHARED__ESCAPE3
+#pragma once
 
 #include <cassert>
 #include <string>

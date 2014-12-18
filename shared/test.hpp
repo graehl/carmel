@@ -1,6 +1,7 @@
 // helps me use the Boost Unit Test library
 #ifndef GRAEHL__SHARED__TEST_HPP
 #define GRAEHL__SHARED__TEST_HPP
+#pragma once
 
 #include <string>
 #include <sstream>

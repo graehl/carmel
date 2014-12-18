@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__VERBOSE_EXCEPTION_HPP
 #define GRAEHL_SHARED__VERBOSE_EXCEPTION_HPP
+#pragma once
 
 #include <stdexcept>
 #include <iostream>

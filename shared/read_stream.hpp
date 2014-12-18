@@ -5,6 +5,7 @@
 
 #ifndef READ_STREAM_JG_2014_09_05_HPP
 #define READ_STREAM_JG_2014_09_05_HPP
+#pragma once
 
 #include <sstream>
 #include <cstdlib>

@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__MAKESTR_HPP
 #define GRAEHL__SHARED__MAKESTR_HPP
+#pragma once
 
 /* most likely usage:
 string s=MAKESTRE(1 << " " << c);

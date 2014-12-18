@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__GZSTREAM_HPP
 #define GRAEHL__SHARED__GZSTREAM_HPP
+#pragma once
 
 #include <graehl/shared/gzstream.h>
 #if (!defined(GRAEHL__NO_GZSTREAM_MAIN) && defined(GRAEHL__SINGLE_MAIN)) || defined(GRAEHL__GZSTREAM_MAIN)

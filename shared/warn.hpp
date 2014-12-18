@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__WARN_HPP
 #define GRAEHL_SHARED__WARN_HPP
+#pragma once
 
 #include <iostream>
 #include <boost/function.hpp>

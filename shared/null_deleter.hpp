@@ -7,6 +7,7 @@
 
 #ifndef GRAEHL__SHARED__NULL_DELETER_HPP
 #define GRAEHL__SHARED__NULL_DELETER_HPP
+#pragma once
 
 #include <boost/shared_ptr.hpp>
 

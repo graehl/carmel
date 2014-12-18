@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__VALIDATE_HPP
 #define GRAEHL_SHARED__VALIDATE_HPP
+#pragma once
 
 #include <boost/filesystem.hpp>
 #include <graehl/shared/verbose_exception.hpp>

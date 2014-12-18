@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__FORMAT_HPP
 #define GRAEHL__SHARED__FORMAT_HPP
+#pragma once
 
 #include <boost/format.hpp>
 #include <iomanip>

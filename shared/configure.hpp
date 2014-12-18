@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL_SHARED__CONFIGURE_HPP
 #define GRAEHL_SHARED__CONFIGURE_HPP
+#pragma once
 
 // TODO: allow boost::optional<non-leaf> such that backend option presence auto-constructs the optional value,
 // which is otherwise left at none (or previous value)

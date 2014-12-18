@@ -3,6 +3,7 @@
 
 #ifndef GRAEHL_SHARED__PREFIX_OPTION_HPP
 #define GRAEHL_SHARED__PREFIX_OPTION_HPP
+#pragma once
 
 
 #include <string>

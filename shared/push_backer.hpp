@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__PUSH_BACKER_HPP
 #define GRAEHL__SHARED__PUSH_BACKER_HPP
+#pragma once
 
 namespace graehl {
 

@@ -10,6 +10,7 @@
 //
 #ifndef GRAEHL__SHARED__FILEARGS_HPP
 #define GRAEHL__SHARED__FILEARGS_HPP
+#pragma once
 
 #ifndef GRAEHL__VALIDATE_INFILE
 // if 1, program options validation for shared_ptr<Stream>

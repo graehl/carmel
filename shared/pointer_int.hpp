@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL_SHARED__POINTER_INT_JG_2013_06_10_HPP
 #define GRAEHL_SHARED__POINTER_INT_JG_2013_06_10_HPP
+#pragma once
 
 #include <cstddef> //size_t
 #include <cassert>

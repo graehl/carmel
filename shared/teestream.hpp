@@ -8,6 +8,7 @@
 #ifndef GRAEHL__SHARED__TEESTREAM_HPP
 #define GRAEHL__SHARED__TEESTREAM_HPP
 #include <iostream>
+#pragma once
 namespace graehl {
 class teebuf : public std::streambuf {
  public:

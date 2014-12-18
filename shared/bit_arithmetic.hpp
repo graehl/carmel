@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL__SHARED__BIT_ARITHMETIC_HPP
 #define GRAEHL__SHARED__BIT_ARITHMETIC_HPP
+#pragma once
 
 #include <cassert>
 #include <limits>

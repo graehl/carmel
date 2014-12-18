@@ -8,6 +8,7 @@
 
 #ifndef GRAEHL_SHARED__CONTAINER_HPP
 #define GRAEHL_SHARED__CONTAINER_HPP
+#pragma once
 
 #include <vector>
 #include <deque>

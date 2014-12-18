@@ -4,6 +4,7 @@
 
 #ifndef GRAEHL_SHARED__PROPERTY_HPP
 #define GRAEHL_SHARED__PROPERTY_HPP
+#pragma once
 
 
 #include <boost/version.hpp>

@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__SIZE_MEGA_HPP
 #define GRAEHL__SHARED__SIZE_MEGA_HPP
+#pragma once
 
 #include <iomanip>
 #include <stdexcept>

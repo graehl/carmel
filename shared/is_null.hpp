@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL__SHARED__IS_NULL_HPP
 #define GRAEHL__SHARED__IS_NULL_HPP
+#pragma once
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>

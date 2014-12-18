@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__LZ4STREAM_H
 #define GRAEHL__SHARED__LZ4STREAM_H
+#pragma once
 
 #include <iostream>
 #include <fstream>

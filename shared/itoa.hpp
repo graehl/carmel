@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__ITOA_H
 #define GRAEHL_SHARED__ITOA_H
+#pragma once
 
 #include <graehl/shared/int_types.hpp>
 #include <string>

@@ -13,6 +13,7 @@
 
 #ifndef GRAEHL_SHARED__STABLE_VECTOR
 #define GRAEHL_SHARED__STABLE_VECTOR
+#pragma once
 
 #include <vector>
 #include <memory>

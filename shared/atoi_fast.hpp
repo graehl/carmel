@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL__ATOI_FAST_JG2012615_HPP
 #define GRAEHL__ATOI_FAST_JG2012615_HPP
+#pragma once
 
 #ifndef HAVE_STRTOUL
 #ifdef _MSC_VER

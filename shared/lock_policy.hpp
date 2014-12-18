@@ -1,5 +1,6 @@
 #ifndef GRAEHL_SHARED__LOCK_POLICY_HPP
 #define GRAEHL_SHARED__LOCK_POLICY_HPP
+#pragma once
 
 #include <boost/thread/mutex.hpp>
 

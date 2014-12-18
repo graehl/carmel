@@ -12,6 +12,7 @@
 
 #ifndef GRAEHL_SHARED__THREADLOCAL_HPP
 #define GRAEHL_SHARED__THREADLOCAL_HPP
+#pragma once
 
 
 #include <boost/utility.hpp>  // for BOOST_NO_MT

@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__NORMALIZE_RANGE_HPP
 #define GRAEHL_SHARED__NORMALIZE_RANGE_HPP
+#pragma once
 
 #include <boost/range.hpp>
 #include <boost/range/numeric.hpp>

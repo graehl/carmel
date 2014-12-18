@@ -5,6 +5,7 @@
 
 #ifndef GOOD_ALLOC_SIZE_JG_2014_08_30_HPP
 #define GOOD_ALLOC_SIZE_JG_2014_08_30_HPP
+#pragma once
 
 namespace graehl {
 

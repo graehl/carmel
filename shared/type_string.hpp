@@ -11,6 +11,7 @@
 
 #ifndef TYPE_STRING_2012531_HPP
 #define TYPE_STRING_2012531_HPP
+#pragma once
 
 
 #include <vector>

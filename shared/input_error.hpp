@@ -4,6 +4,7 @@
 
 #ifndef GRAEHL__SHARED__INPUT_ERROR_HPP
 #define GRAEHL__SHARED__INPUT_ERROR_HPP
+#pragma once
 
 #ifndef INPUT_ERROR_TELLG
 #define INPUT_ERROR_TELLG 1

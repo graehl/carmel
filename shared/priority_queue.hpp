@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__PRIORITY_QUEUE_HPP
 #define GRAEHL_SHARED__PRIORITY_QUEUE_HPP
+#pragma once
 
 #include <graehl/shared/d_ary_heap.hpp>
 #include <graehl/shared/property.hpp>

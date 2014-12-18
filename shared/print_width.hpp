@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL_SHARED__MAX_WIDTH_HPP
 #define GRAEHL_SHARED__MAX_WIDTH_HPP
+#pragma once
 
 #include <cmath>
 #include <iomanip>

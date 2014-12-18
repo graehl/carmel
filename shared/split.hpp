@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL_SHARED__SPLIT_HPP
 #define GRAEHL_SHARED__SPLIT_HPP
+#pragma once
 
 #include <string>
 #include <vector>

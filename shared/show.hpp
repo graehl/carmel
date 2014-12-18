@@ -41,6 +41,7 @@
 
 #ifndef GRAEHL_SHARED__SHOW_HPP
 #define GRAEHL_SHARED__SHOW_HPP
+#pragma once
 
 /// you can define SHOWS to something else first. needs to support SHOWS << x for output
 #ifndef SHOWS

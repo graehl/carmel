@@ -8,6 +8,7 @@
 
 #ifndef GRAEHL__SHARED__NULL_OSTREAM_HPP
 #define GRAEHL__SHARED__NULL_OSTREAM_HPP
+#pragma once
 
 // FIXME: doesn't seem to work w/ boost 1.37
 

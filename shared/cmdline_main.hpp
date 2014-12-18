@@ -1,5 +1,6 @@
 #ifndef GRAEHL_SHARED__CMDLINE_MAIN_HPP
 #define GRAEHL_SHARED__CMDLINE_MAIN_HPP
+#pragma once
 
 /* yourmain inherit from graehl::main (
    overriding:

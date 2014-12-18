@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__ALLOC_NEW_DELETE_JG_2014_11_12_HPP
 #define GRAEHL__ALLOC_NEW_DELETE_JG_2014_11_12_HPP
+#pragma once
 
 #include <cstdlib>
 #include <memory>

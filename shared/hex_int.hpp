@@ -10,6 +10,7 @@
 
 #ifndef GRAEHL__SHARED__HEX_INT_HPP
 #define GRAEHL__SHARED__HEX_INT_HPP
+#pragma once
 
 #include <graehl/shared/print_read.hpp>
 #include <graehl/shared/type_string.hpp>

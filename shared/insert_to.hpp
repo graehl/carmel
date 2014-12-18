@@ -1,5 +1,6 @@
 #ifndef GRAEHL_SHARED__INSERT_TO_HPP
 #define GRAEHL_SHARED__INSERT_TO_HPP
+#pragma once
 
 #include <cassert>
 

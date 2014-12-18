@@ -7,6 +7,7 @@
 
 #ifndef GRAEHL__SHARED__CONFIGURABLE_HPP
 #define GRAEHL__SHARED__CONFIGURABLE_HPP
+#pragma once
 
 #include <graehl/shared/configure.hpp>
 #include <graehl/shared/null_deleter.hpp>

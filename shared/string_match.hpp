@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__STRING_MATCH_HPP
 #define GRAEHL__SHARED__STRING_MATCH_HPP
+#pragma once
 
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/null_terminated.hpp>

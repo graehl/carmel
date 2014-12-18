@@ -7,6 +7,7 @@
 
 #ifndef POINTER_TRAITS_JG201266_HPP
 #define POINTER_TRAITS_JG201266_HPP
+#pragma once
 
 //
 

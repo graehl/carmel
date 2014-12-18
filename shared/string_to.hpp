@@ -40,6 +40,7 @@
 
 #ifndef GRAEHL__SHARED__STRING_TO_HPP
 #define GRAEHL__SHARED__STRING_TO_HPP
+#pragma once
 
 
 #include <cstdio>

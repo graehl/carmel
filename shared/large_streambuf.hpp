@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL_SHARED__LARGE_STREAMBUF_HPP
 #define GRAEHL_SHARED__LARGE_STREAMBUF_HPP
+#pragma once
 
 #include <boost/config.hpp>
 #include <boost/noncopyable.hpp>

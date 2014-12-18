@@ -2,9 +2,12 @@
 usage='''
   pragma_once.py [-i] [files]
 
-  check for include guard (file first preprocessor directive is: #ifndef X then #define X ). if present, add #pragma once.
+  check for include guard (file first preprocessor directive is: #ifndef
+  X then #define X ). if present, add #pragma once.
 
-  assumes initial preprocessor directives aren't indented.
+  assumes initial preprocessor directives aren't indented. intentionally
+  rigid on whitespace - same spacing must be present on both #ifdef
+  guard-lines
 
 '''
 
@@ -18,6 +21,9 @@ def writeln(line, out=sys.stdout):
     out.write('\n')
 
 import argparse
+
+def longoption(dest):
+    return '--' + dest.replace('_', '-')
 
 def addpositional(argparser, dest, help=None, nargs='*', option_strings=[], metavar='FILE', typeclass=str, **M):
     argparser.add_argument(option_strings=option_strings, dest=dest, nargs=nargs, metavar=metavar, help=help, type=typeclass, **M)
@@ -39,18 +45,12 @@ def options():
 
 import fileinput
 
-def remove_namespace(opt):
-    if not len(opt.namespace):
-        raise usage
-    nsline = 'namespace %s {' % opt.namespace
-    endns = '}'
-    nslinemid = ' ' + nsline
-    pres=['::', '(', ' ']
-    nscolon = opt.namespace+'::'
+cifndef='#ifndef '
+cdefine='#define '
+
+def main(opt):
     if len(opt.filename) == 0:
         opt.filename = [[]]
-    cifndef='#ifndef '
-    cdefine='#define '
     for filename in opt.filename:
         guarded = False
         firstpre = True
@@ -78,6 +78,6 @@ def remove_namespace(opt):
 if __name__ == '__main__':
     try:
         opt = options().parse_args()
-        remove_namespace(opt)
+        main(opt)
     except KeyboardInterrupt:
         log("^C user interrupt")

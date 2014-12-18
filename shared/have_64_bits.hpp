@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL_SHARED__HAVE_64_BITS_HPP
 #define GRAEHL_SHARED__HAVE_64_BITS_HPP
+#pragma once
 
 #ifndef HAVE_64_BITS
 

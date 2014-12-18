@@ -29,6 +29,7 @@
 
 #ifndef GRAEHL__SHARED__PRINT_READ_HPP
 #define GRAEHL__SHARED__PRINT_READ_HPP
+#pragma once
 
 #include <iostream>
 

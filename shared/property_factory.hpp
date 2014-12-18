@@ -21,6 +21,7 @@
 
 #ifndef GRAEHL_SHARED__PROPERTY_FACTORY_HPP
 #define GRAEHL_SHARED__PROPERTY_FACTORY_HPP
+#pragma once
 
 
 #include <graehl/shared/graph.hpp>

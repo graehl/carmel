@@ -16,6 +16,7 @@ usage:
 
 #ifndef GRAEHL__SHARED__NULL_TERMINATED_HPP
 #define GRAEHL__SHARED__NULL_TERMINATED_HPP
+#pragma once
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <graehl/shared/is_null.hpp>

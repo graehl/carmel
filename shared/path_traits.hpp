@@ -9,6 +9,7 @@
 
 #ifndef GRAEHL_SHARED__PATH_TRAITS_HPP
 #define GRAEHL_SHARED__PATH_TRAITS_HPP
+#pragma once
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/iterator/counting_iterator.hpp>

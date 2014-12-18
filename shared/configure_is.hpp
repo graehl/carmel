@@ -6,6 +6,7 @@
 
 #ifndef CONFIGURE_IS_JG_2013_05_23_HPP
 #define CONFIGURE_IS_JG_2013_05_23_HPP
+#pragma once
 
 #include <string>
 

@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__EPSILON_HPP
 #define GRAEHL__SHARED__EPSILON_HPP
+#pragma once
 
 #include <cmath>
 #include <algorithm>

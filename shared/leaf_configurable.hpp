@@ -40,6 +40,7 @@
 
 #ifndef GRAEHL_SHARED__LEAF_CONFIGURABLE_HPP
 #define GRAEHL_SHARED__LEAF_CONFIGURABLE_HPP
+#pragma once
 
 namespace configure {
 template <class Val, class Enable = void>

@@ -8,6 +8,7 @@
 
 #ifndef INLINE_JG_2014_11_12_HPP
 #define INLINE_JG_2014_11_12_HPP
+#pragma once
 
 #ifndef ALWAYS_INLINE
 #if defined(__GNUC__) || defined(__clang__)

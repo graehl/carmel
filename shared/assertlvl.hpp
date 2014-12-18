@@ -6,6 +6,7 @@
 
 #ifndef GRAEHL__SHARED__ASSERTLVL_HPP
 #define GRAEHL__SHARED__ASSERTLVL_HPP
+#pragma once
 
 #ifndef ASSERT_LEVEL
 #define ASSERT_LEVEL 9999

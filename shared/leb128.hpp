@@ -9,6 +9,7 @@
 
 #ifndef GRAEHL_SHARED__LEB128_HPP
 #define GRAEHL_SHARED__LEB128_HPP
+#pragma once
 
 #include <stdexcept>
 #include <cstddef>

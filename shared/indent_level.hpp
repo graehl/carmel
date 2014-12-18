@@ -5,6 +5,7 @@
 
 #ifndef GRAEHL__SHARED__INDENT_LEVEL_HPP
 #define GRAEHL__SHARED__INDENT_LEVEL_HPP
+#pragma once
 
 #include <iostream>
 

@@ -19,6 +19,7 @@
 
 #ifndef GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
 #define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
+#pragma once
 
 #include <graehl/shared/alloc_new_delete.hpp>
 #include <boost/shared_ptr.hpp>

@@ -1,5 +1,6 @@
 #ifndef GRAEHL__SHARED__LZ4_H
 #define GRAEHL__SHARED__LZ4_H
+#pragma once
 
 #ifndef LZ4__INLINE
 #if defined(GRAEHL__SINGLE_MAIN)
