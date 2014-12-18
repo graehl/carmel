@@ -36,33 +36,49 @@ usage:
    typename RemainInfCostFact::reference hyperarc_remain_and_cost_map()
    returns pmap with pmap[hyperarc].remain() == 0 if the arc was usable from the final tail set
    and pmap[hyperarc].cost() being the cheapest cost to reaching all final tails
+
+   TODO: option to stop once you reach goal vertex (this is all-destinations right now)
 */
 
 #ifndef GRAEHL_SHARED__TAILS_UP_HYPERGRAPH_HPP
 #define GRAEHL_SHARED__TAILS_UP_HYPERGRAPH_HPP
 
-// TODO: option to stop once you reach goal vertex (this is all-destinations right now)
 
-#define DEBUG_TAILS_UP_HYPERGRAPH 0
-
-#if DEBUG_TAILS_UP_HYPERGRAPH
+#ifndef GRAEHL_DEBUG_TAILS_UP_HYPERGRAPH
+#define GRAEHL_DEBUG_TAILS_UP_HYPERGRAPH 0
+#endif
+#include <graehl/shared/ifdbg.hpp>
+#if GRAEHL_DEBUG_TAILS_UP_HYPERGRAPH
 #define TUHG(x) x
 #include <graehl/shared/show.hpp>
+#define TUHG_SHOWREMAIN(l, n)
+#define TUHG_SHOWP_ALL(l, n)
 #else
 #define TUHG(x)
 #define TUHG_DBG_LEVEL -100
 #endif
 
-// slows down debug mode.
+
+#define TUHG_PRINT(a, b) print(a, b)
+
+// leave 0 or you will greatly slow the *debug* build (release will run fine)
 #define TUHG_CHECK_HEAP 0
 
 #if TUHG_CHECK_HEAP
-#define DEBUG_D_ARY_HEAP 1
-#define TUHG_EXTRA_Q TUHG_EXTRA_QALL("heap")
+#define GRAEHL_DEBUG_D_ARY_HEAP 1
+#define TUHG_EXTRA_Q() TUHG_EXTRA_QALL("heap")
 #define DEFAULT_DBG_D_ARY_VERIFY_HEAP 0
 #else
-#define TUHG_EXTRA_Q
+#define TUHG_EXTRA_Q()
 #endif
+
+#define TUHG_EXTRA_Q1(n) SHOWIF1(TUHG, 1, n, TUHG_PRINT(heap, range_sep()));
+#define TUHG_EXTRA_Q2(n) SHOWIF1(TUHG, 2, n, TUHG_PRINT(heap, pair_getter(mu)));
+#define TUHG_EXTRA_QALL(n) TUHG_EXTRA_Q1(n) TUHG_EXTRA_Q2(n)
+#define TUHG_SHOWQ(l, n, v)                   \
+  SHOWIF3(TUHG, l, n, v, mu[v], heap.loc(v)); \
+  TUHG_EXTRA_Q()
+#define TUHG_SHOWP(l, n, mu) SHOWIF1(TUHG, l, n, TUHG_PRINT(vertices(g), pair_getter(mu)))
 
 #include <graehl/shared/os.hpp>
 #include <graehl/shared/containers.hpp>
@@ -84,16 +100,9 @@ namespace graehl {
 
 VERBOSE_EXCEPTION_DECLARE(BestTreeRereachException)
 
-#if DEBUG_TAILS_UP_HYPERGRAPH
+#if GRAEHL_DEBUG_TAILS_UP_HYPERGRAPH
 DECLARE_DBG_LEVEL(TUHG)
 #endif
-
-// IFDBG(TUHG,1) { SHOWM2(TUHG, "descr" }
-#define TUHG_EXTRA_Q1(n) SHOWM1(TUHG, n, print(heap, range_sep()));
-#define TUHG_EXTRA_Q2(n) SHOWM1(TUHG, n, print(heap, pair_getter(mu)));
-#define TUHG_EXTRA_QALL(n) TUHG_EXTRA_Q1(n) TUHG_EXTRA_Q2(n)
-#define TUHG_SHOWQ(l, n, v) EIFDBG(TUHG, l, SHOWM3(TUHG, n, v, mu[v], heap.loc(v)); TUHG_EXTRA_Q)
-#define TUHG_SHOWP(l, n, mu) EIFDBG(TUHG, l, SHOWM(TUHG, n, print(vertices(g), pair_getter(mu))))
 
 struct BestTreeStats {
   std::size_t n_blocked_rereach, n_relax, n_update, n_converged_inexact, n_pop, n_unpopped;
@@ -428,15 +437,14 @@ struct TailsUpHypergraph {
     }
 
     void axiom(VD axiom, Cost const& c = PT::start(), ED h = ED()) {
-      EIFDBG(TUHG, 3, SHOW3(TUHG, c, axiom, print(axiom, g)));
+      SHOWIF2(TUHG, 3, c, axiom, TUHG_PRINT(axiom, g));
       Cost& mc = mu[axiom];
       if (PT::update(c, mc)) {
         assert(PT::includes(c, mc));
         safe_queue(axiom);
         put(pi, axiom, h);
       } else {
-        EIFDBG(TUHG, 0,
-               SHOWM4(TUHG, "WARNING: axiom didn't improve mu[axiom]", c, axiom, mu[axiom], print(axiom, g)));
+        SHOWIF4(TUHG, 0, "WARNING: axiom didn't improve mu[axiom]", c, axiom, mu[axiom], TUHG_PRINT(axiom, g));
       }
     }
 
@@ -475,7 +483,6 @@ struct TailsUpHypergraph {
     void pop() {
       ++stat.n_pop;
       TUHG_SHOWQ(1, "pop", heap.top());
-      // IFDBG(TUHG,1) { SHOWM(TUHG, "pop", heap.top()); }
       heap.pop();
     }
 
@@ -483,44 +490,39 @@ struct TailsUpHypergraph {
       ++stat.n_relax;
       Cost& m = mu[head];
       Cost mu_prev = m;
-      EIFDBG(TUHG, 3, SHOWM5(TUHG, "relax?", head, print(head, g), c, mu[head], print(e, g)));
+      SHOWIF5(TUHG, 3, "relax?", head, TUHG_PRINT(head, g), c, mu[head], TUHG_PRINT(e, g));
       if (PT::update(c, m)) {
         put(pi, head, e);
         assert(PT::includes(c, m));
         if (opt.use_convergence && PT::converged(c, mu_prev, opt.convergence_epsilon)) {
-          IFDBG(TUHG, 2) {
-            SHOWM5(TUHG, "converged", head, print(head, g), mu_prev, mu[head], opt.convergence_epsilon);
-          }
+          SHOWIF5(TUHG, 2, "converged", head, TUHG_PRINT(head, g), mu_prev, mu[head], opt.convergence_epsilon);
           ++stat.n_converged_inexact;
         } else {
           ++stat.n_update;
-          IFDBG(TUHG, 2) {
-            SHOWM5(TUHG, "updating-or-adding", head, print(head, g), mu_prev, mu[head], heap.loc(head));
-          }
+          SHOWIF5(TUHG, 2, "updating-or-adding", head, TUHG_PRINT(head, g), mu_prev, mu[head], heap.loc(head));
           heap.push_or_update(head);
         }
         TUHG_SHOWQ(3, "relaxed", head);
       } else {
-        EIFDBG(TUHG, 3, SHOWM5(TUHG, "no improvement", head, print(head, g), c, mu[head], print(e, g)));
+        SHOWIF5(TUHG, 3, "no improvement", head, TUHG_PRINT(head, g), c, mu[head], TUHG_PRINT(e, g));
       }
     }
 
     // skipping unreached tails:
     cost_type recompute_cost(ED e) {
       cost_type c = get(ec, e);
-      IFDBG(TUHG, 3) { SHOWM2(TUHG, "recompute_cost:base", c, print(e, g)); }
+      SHOWIF2(TUHG, 3, "recompute_cost:base", c, TUHG_PRINT(e, g));
       Tailr tailr = tails(e, g);
       using namespace boost;
       for (Ti i = begin(tailr), ei = end(tailr); i != ei; ++i) {
         VD t = tail(*i, e, g);  // possibly multiple instances of tail t
         cost_type tc = get(mu, t);
-        EIFDBG(TUHG, 6, SHOWM3(TUHG, "recompute_cost:c'=c*tc", c, tc, t));
+        SHOWIF3(TUHG, 6, "recompute_cost:c'=c*tc", c, tc, t);
         assert(tc != PT::unreachable());  // FIXME: maybe we want to allow this (used to be "if")? if we
         // don't, then you can only reach with non-unreachable cost.
         PT::extendBy(tc, c);
-        IFDBG(TUHG, 9) { SHOWM3(TUHG, "recompute_cost:updated c=c*tc", c, tc, t); }
       }
-      IFDBG(TUHG, 3) { SHOWM2(TUHG, "recompute_cost:final", c, print(e, g)); }
+      SHOWIF2(TUHG, 3, "recompute_cost:final", c, TUHG_PRINT(e, g));
       return c;
     }
 
@@ -530,15 +532,15 @@ struct TailsUpHypergraph {
       // FOREACH(const TailMult &ad, a) { // for each hyperarc v participates in as a tail
       bool tail_already = tail_already_reached(tail);
       mark_reached(tail);
-      IFDBG(TUHG, 2) { SHOWM4(TUHG, "reach", tail, print(tail, g), mu[tail], tail_already); }
+      SHOWIF4(TUHG, 2, "reach", tail, TUHG_PRINT(tail, g), mu[tail], tail_already);
       for (typename Adj::const_iterator j = a.begin(), ej = a.end(); j != ej; ++j) {
         ED e = *j;
         VD head = target(e, g);
-        IFDBG(TUHG, 4) { SHOWM3(TUHG, "satisfying", tail, head, print(e, g)); }
+        SHOWIF3(TUHG, 4, "satisfying", tail, head, TUHG_PRINT(e, g));
         if (already_reached(head) > opt.allow_rereach) {  // we don't know reach count of head
           // don't even propagate improved costs, because we can't otherwise guarantee no infinite loop.
           ++stat.n_blocked_rereach;
-          IFDBG(TUHG, 1) { SHOWM3(TUHG, "blocked", head, already_reached(head), stat.n_blocked_rereach); }
+          SHOWIF3(TUHG, 1, "blocked", head, already_reached(head), stat.n_blocked_rereach);
           if (opt.throw_on_rereach_limit)
             VTHROW_A_3(BestTreeRereachException,
                        "Exceeded rereach limit (improving an already-would-be-best-without-negative-costs "
@@ -546,7 +548,7 @@ struct TailsUpHypergraph {
                        "a negative-cost cycle (so no best tree).",
                        already_reached(head), opt.allow_rereach);
         } else {
-          EIFDBG(TUHG, 4, SHOWM3(TUHG, "may yet reach", head, already_reached(head), print(e, g)));
+          SHOWIF3(TUHG, 4, "may yet reach", head, already_reached(head), TUHG_PRINT(e, g));
           /* for negative costs: will need to track every tails' cost last used for an edge, or just compute
            * edge cost from scratch every time. or need to remember for each vertex last cost used. */
           // const TailMult &ad=*j;
@@ -559,7 +561,7 @@ struct TailsUpHypergraph {
           if (!tail_already) {
             assert(tails_unreached > 0);
             --tails_unreached;
-            EIFDBG(TUHG, 4, SHOWM4(TUHG, "Decreased tails_unreached", tail, e, tails_unreached, print(e, g)));
+            SHOWIF4(TUHG, 4, "Decreased tails_unreached", tail, e, tails_unreached, TUHG_PRINT(e, g));
           }
           if (!tails_unreached)
             relax(head, e,
@@ -571,18 +573,15 @@ struct TailsUpHypergraph {
       }
     }
 
+#if GRAEHL_DEBUG_TAILS_UP_HYPERGRAPH
+    void dbgremain() const { visit(edgeT, g, *this); }
+    void operator()(ED e) const { SHOW3(TUHG, e, remain_pmap[e], TUHG_PRINT(e, g)); }
 #define TUHG_SHOWREMAIN(l, n)           \
   IFDBG(TUHG, l) {                      \
     SHOWP(TUHG, "\n" n " (remain):\n"); \
     dbgremain();                        \
     SHOWNL(TUHG);                       \
   }
-    // IFDBG(TUHG, l) { SHOWP(TUHG, n " (remain):\n");dbgremain();SHOWNL(TUHG); }
-
-    void dbgremain() const { visit(edgeT, g, *this); }
-    void operator()(ED e) const { SHOW3(TUHG, e, remain_pmap[e], print(e, g)); }
-
-    void finish() {
 #define TUHG_SHOWP_ALL(l, n)   \
   TUHG_SHOWP(l, n, mu);        \
   TUHG_SHOWP(l, n, pi);        \
@@ -590,23 +589,28 @@ struct TailsUpHypergraph {
     TUHG_SHOWP(l, n, rereach); \
   }                            \
   TUHG_SHOWREMAIN(l, n);
+#else
+#define TUHG_SHOWREMAIN(l, n)
+#define TUHG_SHOWP_ALL(l, n)
+#endif
+
+
+    void finish() {
       // TUHG_SHOWP(1, "pre-heapify", locp);
-      // EIFDBG(TUHG,5, TUHG_EXTRA_QALL("pre-heapify"));
       heap.heapify();
-      // EIFDBG(TUHG,4, TUHG_EXTRA_QALL("post-heapify"));
       // TUHG_SHOWP(1, "post-heapify", locp);
       TUHG_SHOWP_ALL(1, "pre-finish");
       while (!heap.empty()) {
         VD top = this->top();
         TUHG_SHOWQ(6, "at-top", top);
-        EIFDBG(TUHG, 5, SHOW3(TUHG, heap.size(), top, print(top, g)));
+        SHOWIF2(TUHG, 5, heap.size(), top, TUHG_PRINT(top, g));
         pop();
         reach(top);
         TUHG_SHOWP_ALL(9, "post-reach");
       }
       stat.n_unpopped = heap.size();
       TUHG_SHOWP_ALL(5, "post-finish");
-      EIFDBG(TUHG, 1, SHOW(TUHG, stat));
+      SHOWIF0(TUHG, 1, stat);
     }
     void go() {
       init();

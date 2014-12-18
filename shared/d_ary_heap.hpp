@@ -20,11 +20,10 @@
 #ifndef GRAEHL_SHARED__D_ARY_HEAP_HPP
 #define GRAEHL_SHARED__D_ARY_HEAP_HPP
 
-// TODO: unit test
-
 #ifndef GRAEHL_DEBUG_D_ARY_HEAP
 #define GRAEHL_DEBUG_D_ARY_HEAP 0
 #endif
+#include <graehl/shared/ifdbg.hpp>
 #if GRAEHL_DEBUG_D_ARY_HEAP
 #include <graehl/shared/show.hpp>
 #define DDARY(x) x
@@ -40,7 +39,6 @@ DECLARE_DBG_LEVEL(DDARY)
 #include <functional>
 #include <memory>
 #include <cstddef>
-#include <graehl/shared/ifdbg.hpp>
 
 #ifndef DEFAULT_DBG_D_ARY_VERIFY_HEAP
 #define DEFAULT_DBG_D_ARY_VERIFY_HEAP 0

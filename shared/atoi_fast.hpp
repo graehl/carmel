@@ -21,6 +21,7 @@
 #include <limits>
 #include <cstdlib>
 #include <cctype>
+#include <cstring>
 // for faster numeric to/from string. TODO: separate into optional header
 #if HAVE_STRTOUL
 #include <limits.h>  //strtoul

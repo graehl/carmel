@@ -97,6 +97,7 @@
 #ifndef GRAEHL_DEBUG_LAZY_FOREST_KBEST
 #define GRAEHL_DEBUG_LAZY_FOREST_KBEST 0
 #endif
+#include <graehl/shared/ifdbg.hpp>
 
 #ifndef ERRORQ
 #include <iostream>
@@ -112,7 +113,6 @@
 #include <graehl/shared/os.hpp>
 #include <graehl/shared/containers.hpp>
 #include <memory>
-#include <graehl/shared/ifdbg.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <graehl/shared/percent.hpp>

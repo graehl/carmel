@@ -25,7 +25,6 @@
 #include <graehl/shared/program_options.hpp>
 #include <sstream>
 
-
 namespace configure {
 
 struct program_options_exec : boost::noncopyable {

@@ -13,38 +13,58 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+ostarball=/tmp/hyp-latest-release-hyp.tar.gz
+oscptar() {
+    (set -e
+     cd /tmp/hypergraphs-gitrepo
+     cdir=/local/graehl/hypergraphs-gitrepo
+     c-s "rm -rf $cdir/hyp; mkdir -p $cdir"
+     set -x
+     scp $ostarball c-graehl:$cdir/ || true
+     c-s "cd $cdir && tar xzf $(basename $ostarball)"
+    )
+}
 osmake() {
     (
         set -e
-        cd /tmp/hypergraphs-gitrepo
         if false ; then
-        scripts_dir=$xmtx/scripts
-        changens=$scripts_dir/release-change-namespaces.py
-        outdir=.
-        cmakel=$outdir/hyp/CMakeLists.txt
-        set -x
-        $scripts_dir/filter-cmake-for-release.py < $xmtx/xmt/CMakeLists.txt > $cmakel
-  for f in `find hyp -name CMakeLists.txt`; do
-      $scripts_dir/filter-cmake-for-release.py -i $f
-      $changens -i $f
-  done
-  $changens -i $cmakel
-  fi
-  mkdir -p /tmp/hypergraphs-build
-        cd /tmp/hypergraphs-build
-        cmake /tmp/hypergraphs-gitrepo/hyp "$@" && make -j4
+            scripts_dir=$xmtx/scripts
+            changens=$scripts_dir/release-change-namespaces.py
+            outdir=.
+            cmakel=$outdir/hyp/CMakeLists.txt
+            set -x
+            $scripts_dir/filter-cmake-for-release.py < $xmtx/xmt/CMakeLists.txt > $cmakel
+            for f in `find hyp -name CMakeLists.txt`; do
+                $scripts_dir/filter-cmake-for-release.py -i $f
+                $changens -i $f
+            done
+            $changens -i $cmakel
+        fi
+        mkdir -p /local/graehl/hypergraphs-build
+        cd /local/graehl/hypergraphs-build
+        cmake /local/graehl/hypergraphs-gitrepo/hyp "$@" && TERM=dumb make -j6 VERBOSE=1
     )
 }
 osrel() {
-    cd $xmtx
-    mend
-    rm -rf /tmp/hypergraphs-gitrepo
-    test= ~/x/scripts/release.sh /tmp/hypergraphs-gitrepo
-    cd /tmp/hypergraphs-gitrepo
+    (
+        set -e
+        cd $xmtx
+        mend
+        outgit=/tmp/hypergraphs-gitrepo
+        rm -rf $outgit
+        rm -f $ostarball
+        test= tarball=$ostarball ~/x/scripts/release.sh $outgit
+        set -x
+        cd $outgit
+    )
 }
 osrelmake() {
-    osrel
-    osmake
+    (
+        set -x
+        set -e
+        osrel
+        osmake
+    )
 }
 myip () {
     curl http://ipecho.net/plain; echo
@@ -3806,13 +3826,16 @@ usescanbuild() {
 }
 gcc48=
 gcc47=1
+gcc49=1
 #TestWeight release optimizer problem
 usegcc() {
-    if [[ $HOST = graehl.local ]] ; then
+    if [[ $HOST = pwn ]] ; then
         usegccnocache
         #don't have right gdb for gcc 4.7 on my mac
     else
-        if [[ $gcc48 ]] && [[ -x `which gcc-4.8 2>/dev/null` ]] ; then
+        if [[ $gcc49 ]] && [[ -x `which gcc-4.9 2>/dev/null` ]] ; then
+            GCC_SUFFIX=-4.9
+        elif [[ $gcc48 ]] && [[ -x `which gcc-4.8 2>/dev/null` ]] ; then
             GCC_SUFFIX=-4.8
         elif [[ $gcc47 ]] && [[ -x `which gcc-4.7 2>/dev/null` ]] ; then
             GCC_SUFFIX=-4.7

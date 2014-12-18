@@ -46,10 +46,11 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
-#ifndef DEBUG_GRAEHL_STRING_TO
-#define DEBUG_GRAEHL_STRING_TO 0
+#ifndef GRAEHL_DEBUG_STRING_TO
+#define GRAEHL_DEBUG_STRING_TO 0
 #endif
-#if DEBUG_GRAEHL_STRING_TO
+#include <graehl/shared/ifdbg.hpp>
+#if GRAEHL_DEBUG_STRING_TO
 #include <graehl/shared/show.hpp>
 DECLARE_DBG_LEVEL(GRSTRINGTO)
 #define GRSTRINGTO(x) x
@@ -57,7 +58,6 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #define GRSTRINGTO(x)
 #endif
 #include <utility>
-#include <graehl/shared/ifdbg.hpp>
 
 
 #ifndef GRAEHL_USE_FTOA

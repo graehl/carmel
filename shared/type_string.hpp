@@ -74,41 +74,41 @@ std::string type_name(T const& t) {
   return n.empty() ? unnamed_type : n;
 }
 
-#define GRAEHL_PRIMITIVE_TYPE_STRING(T, name)  \
-  template <>                                  \
-  struct type_string_traits<T> {               \
-    static std::string get() { return #name; } \
+#define GRAEHL_PRIMITIVE_TYPE_STRING(T, name) \
+  template <>                                 \
+  struct type_string_traits<T> {              \
+    static std::string get() { return name; } \
   };
 
-GRAEHL_PRIMITIVE_TYPE_STRING(std::string, string);
+GRAEHL_PRIMITIVE_TYPE_STRING(std::string, "string");
 
-GRAEHL_PRIMITIVE_TYPE_STRING(bool, boolean);
-GRAEHL_PRIMITIVE_TYPE_STRING(char, character);
-GRAEHL_PRIMITIVE_TYPE_STRING(int8_t, signed byte);
-GRAEHL_PRIMITIVE_TYPE_STRING(uint8_t, non - negative byte);
-GRAEHL_PRIMITIVE_TYPE_STRING(int16_t, 16 - bit integer);
-GRAEHL_PRIMITIVE_TYPE_STRING(uint16_t, non - negative 16 - bit integer);
+GRAEHL_PRIMITIVE_TYPE_STRING(bool, "boolean");
+GRAEHL_PRIMITIVE_TYPE_STRING(char, "character");
+GRAEHL_PRIMITIVE_TYPE_STRING(int8_t, "signed byte");
+GRAEHL_PRIMITIVE_TYPE_STRING(uint8_t, "non-negative byte");
+GRAEHL_PRIMITIVE_TYPE_STRING(int16_t, "16-bit integer");
+GRAEHL_PRIMITIVE_TYPE_STRING(uint16_t, "non-negative 16-bit integer");
 #if HAVE_64BIT_INT64_T
-GRAEHL_PRIMITIVE_TYPE_STRING(int64_t, 64 - bit integer);
-GRAEHL_PRIMITIVE_TYPE_STRING(uint64_t, non - negative 64 - bit integer);
+GRAEHL_PRIMITIVE_TYPE_STRING(int64_t, "64-bit integer");
+GRAEHL_PRIMITIVE_TYPE_STRING(uint64_t, "non-negative 64-bit integer");
 #endif
 #if PTRDIFF_DIFFERENT_FROM_INTN
-GRAEHL_PRIMITIVE_TYPE_STRING(std::size_t, 64 - bit size);
-GRAEHL_PRIMITIVE_TYPE_STRING(std::ptrdiff_t, 64 - bit offset);
+GRAEHL_PRIMITIVE_TYPE_STRING(std::size_t, "64-bit size");
+GRAEHL_PRIMITIVE_TYPE_STRING(std::ptrdiff_t, "64-bit offset");
 #endif
-GRAEHL_PRIMITIVE_TYPE_STRING(int, integer)
-GRAEHL_PRIMITIVE_TYPE_STRING(unsigned, non - negative integer)
+GRAEHL_PRIMITIVE_TYPE_STRING(int, "integer");
+GRAEHL_PRIMITIVE_TYPE_STRING(unsigned, "non-negative integer");
 #if INT_DIFFERENT_FROM_INTN
-GRAEHL_PRIMITIVE_TYPE_STRING(int32_t, 32 - bit integer);
-GRAEHL_PRIMITIVE_TYPE_STRING(uint32_t, non - negative 32 - bit integer);
+GRAEHL_PRIMITIVE_TYPE_STRING(int32_t, "32-bit integer");
+GRAEHL_PRIMITIVE_TYPE_STRING(uint32_t, "non-negative 32-bit integer");
 #endif
 #if HAVE_LONGER_LONG
-GRAEHL_PRIMITIVE_TYPE_STRING(long, large integer)
-GRAEHL_PRIMITIVE_TYPE_STRING(unsigned long, large non - negative integer)
+GRAEHL_PRIMITIVE_TYPE_STRING(long, "large integer");
+GRAEHL_PRIMITIVE_TYPE_STRING(unsigned long, "large non-negative integer");
 #endif
-GRAEHL_PRIMITIVE_TYPE_STRING(float, real number)
-GRAEHL_PRIMITIVE_TYPE_STRING(double, double - precision real number)
-GRAEHL_PRIMITIVE_TYPE_STRING(long double, long - double - precision real number)
+GRAEHL_PRIMITIVE_TYPE_STRING(float, "real number");
+GRAEHL_PRIMITIVE_TYPE_STRING(double, "double-precision real number");
+GRAEHL_PRIMITIVE_TYPE_STRING(long double, "long-double-precision real number");
 
 
 template <class T>

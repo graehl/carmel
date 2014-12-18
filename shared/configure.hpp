@@ -18,7 +18,10 @@
 // TODO: pretty word wrap + indent
 
 #include <graehl/shared/ifdbg.hpp>
+#ifndef GRAEHL_DEBUG_CONFIGURE_EXPR
 #define GRAEHL_DEBUG_CONFIGURE_EXPR 0
+#endif
+
 #if GRAEHL_DEBUG_CONFIGURE_EXPR
 #include <graehl/shared/show.hpp>
 #define CONFEXPR(x) x
