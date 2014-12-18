@@ -1,0 +1,39 @@
+#!/usr/bin/perl -w -i~
+use strict;
+my $com = 0;
+my $wantspaces = 0;
+my $hang = 3;
+my $lastblank = 0;
+my $kwstarts = '\\';
+while(<>) {
+    chomp;
+    if (m{^( *)(/\*\*)(.*)}) {
+        my $body = $3;
+        my $open = $2;
+        my $space = $1;
+        if (!m{\*/} || m{\*/\s*$}) {
+            $wantspaces = length($space) + $hang;
+            $com = 1;
+            $lastblank = !($body =~ m{\S});
+            if ($body =~ s/^( *)[@\\]/$1$kwstarts/) {
+                $_ = "$space$open$body";
+            }
+            s/[@\\]brief ?//;
+            $com = 0 if (m{\*/});
+        }
+    } elsif ($com) {
+        if (m{\*/}) {
+            $com = 0;
+        } elsif (m{\S}) {
+            s/^( *)\* /$1 /;
+            m{^( *)} || die;
+            my $needspaces = $wantspaces - length($1);
+            $_ = (' ' x $needspaces) . $_ if ($needspaces > 0);
+            my $nl = $lastblank ? '' : "\n";
+            s/^( *)[@\\]/$nl$1$kwstarts/;
+            s/[@\\]brief ?//;
+        }
+        $lastblank = !/\S/;
+    }
+    print $_,"\n";
+}
