@@ -21,7 +21,7 @@
 #include <algorithm>  // min for boost/random
 
 
-#include "warning_push.h"
+#include <graehl/shared/warning_push.h>
 #if HAVE_GCC_DIAG_OFF
 GCC_DIAG_IGNORE(attributes)
 #endif
@@ -35,7 +35,7 @@ GCC_DIAG_IGNORE(attributes)
 #include <boost/random/random_device.hpp>
 #endif
 
-#include "warning_pop.h"
+#include <graehl/shared/warning_pop.h>
 
 #if GRAEHL_GLOBAL_RANDOM_USE_STD
 #include <cstdlib>

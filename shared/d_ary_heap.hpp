@@ -477,7 +477,7 @@ This is definitely linear to n.
   }
 
 
-#include "warning_push.h"
+#include <graehl/shared/warning_push.h>
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wtautological-compare"
@@ -490,7 +490,7 @@ This is definitely linear to n.
     return i >= 0 && i < sz && equal(v, data[i]);  // note: size_type may be signed (don't recommend it,
                                                    // though) - thus i>=0 check to catch uninit. data
   }
-#include "warning_pop.h"
+#include <graehl/shared/warning_pop.h>
 
   inline bool contains(const Value& v) const {
     using boost::get;

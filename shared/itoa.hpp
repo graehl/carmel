@@ -125,7 +125,7 @@ template <class Int>
 char* itoa(char* buf, Int i, bool positive_sign = false) {
   typename signed_for_int<Int>::unsigned_t n = i;
 #ifdef __clang__
-#include "warning_push.h"
+#include <graehl/shared/warning_push.h>
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #endif
 #ifdef _MSC_VER
@@ -158,7 +158,7 @@ char* itoa_left_pad(char* buf, char* bufend, Int i, bool positive_sign = false, 
   if (i < 0) {
     n = -n;  // see comment above for itoa
 #ifdef __clang__
-#include "warning_pop.h"
+#include <graehl/shared/warning_pop.h>
 #endif
 #ifdef _MSC_VER
 #pragma warning(pop)
