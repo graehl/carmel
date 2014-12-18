@@ -69,12 +69,21 @@ my ($usagep,@opts)=getoptions_usage(@options);
 #info($cmdline);
 show_opts(@opts);
 
+sub refor {
+    my $find = $_[0];
+    my $qe = quotemeta($find);
+    warn("quotemeta: $qe") if !$isregexp;
+    $isregexp ? qr{$find} : ($wholeword ? qr/\b$qe/ : qr{\Q$find\E});
+}
 my @rms;
 my $fh=openz($ttable);
 while(<$fh>) {
     chomp;
     y/\013//d;
-    push @rms, qr{^$_$};
+    if (/[\t]/) {
+        my $re = &refor($_);
+        push @rms, qr/^$re$/;
+    }
 }
 
 my @rewrites;
@@ -93,9 +102,7 @@ while(<$fh2>) {
         }
         ($find,$replace)=($replace,$find) if $reverse;
         &debug($find,$replace);
-        my $qe = quotemeta($find);
-        my $re = $isregexp ? qr{$find} : ($wholeword ? qr/\b$qe/ : quotemeta($find));
-        push @rewrites, [$re, $replace, "s{$find}{$replace}"];
+        push @rewrites, [&refor($find), $replace, "s{$find}{$replace}"];
     }
 }
 

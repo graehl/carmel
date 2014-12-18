@@ -5200,8 +5200,15 @@ substi() {
     (set -e
         local tr=$1
         shift
+        if [[ $literal ]] ; then
+            literalarg="--noeregexp --nosubstregexp"
+        else
+            literalarg=
+        fi
+        substarg=" --inplace --tr $tr $literalarg"
+        echo subst.pl $substarg
         if ! [[ ${nodryrun:-} ]] ; then
-            subst.pl "$@" --dryrun --inplace --tr "$tr"
+            subst.pl --dryrun $substarg "$@"
             echo
         fi
         cat $tr
@@ -5209,7 +5216,7 @@ substi() {
         echo ctrl-c to abort
         if ! [[ $preview ]] ; then
             sleep 3
-            subst.pl "$@" --inplace --tr "$tr"
+            subst.pl $substarg "$@"
         fi
     )
 }
