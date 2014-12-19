@@ -51,16 +51,16 @@ latpdf() {
 }
 experiments() {
     for f in ${*:-`pwd`}; do
-        experiment1 $f/*/my.experiment.yml
+        experiment1 $f/*/my.experiment.yml $f/my.experiment.yml
     done
 }
-experiment1() {
+experimentf() {
     for f in "$@"; do
-    if [[ -f $f ]] ; then
-        echo `dirname $f`
-        grep bleu $f | grep -v sct
-        echo
-    fi
+        if [[ -f $f ]] ; then
+            echo `dirname $f`
+            grep bleu $f | grep -v sct
+            echo
+        fi
     done
 }
 servi() {
