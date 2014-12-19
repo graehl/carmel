@@ -95,10 +95,11 @@ oscom() {
         fi
         cd $xmtx
         gitinfo $1
-        shift
-        mend
+        shift || true
+        mend || true
         stagetarball=`mktemp $ostarball.XXXXXX`
         rm -f $stagetarball
+        set -x
         test= tarball=$stagetarball $xmtx/scripts/release.sh
         cd $osgitdir
         tar xzvf $stagetarball
