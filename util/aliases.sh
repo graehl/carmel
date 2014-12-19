@@ -99,7 +99,6 @@ oscom() {
         stagetarball=`mktemp $ostarball.XXXXXX`
         rm -f $stagetarball
         test= tarball=$stagetarball $xmtx/scripts/release.sh
-        set -x
         cd $osgitdir
         tar xzvf $stagetarball
         mv $stagetarball $ostarball
@@ -108,9 +107,11 @@ oscom() {
         if ! [[ $msg ]] ; then
             msg=$gitinfo_subject
         fi
-        echo git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
+        set -x
+        git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
              --author="$gitinfo_author"
         echo $ostarball
+        pwd
     )
 }
 linoscom() {
