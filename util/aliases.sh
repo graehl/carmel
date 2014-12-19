@@ -19,6 +19,18 @@ ostarball=/tmp/hyp-latest-release-hyp.tar.gz
 osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+chost=c-graehl
+cmert() {
+    save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
+    if [[ $mertver ]] ; then
+        c-s "cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-l0=${mertver}; ls ~/pub/mert*"
+    fi
+}
+a2c() {
+    for f in aliases.sh misc.sh; do
+        scp ~/u/$f $chost:u/$f
+    done
+}
 ospushmend() {
     (set -e
      cd $osgitdir
@@ -51,15 +63,14 @@ latpdf() {
 }
 experiments() {
     for f in ${*:-`pwd`}; do
-        experiment1 $f/*/my.experiment.yml $f/my.experiment.yml
+        experimentf $f/*/my.experiment.yml $f/my.experiment.yml
     done
 }
 experimentf() {
     for f in "$@"; do
         if [[ -f $f ]] ; then
+            perl -e 'while(<>) { print "$2\t" if /([a-zA-Z_-]+)bleu: '"'?([0-9.]+)/ }" $f
             echo `dirname $f`
-            grep bleu $f | grep -v sct
-            echo
         fi
     done
 }
@@ -216,15 +227,11 @@ dcondor() {
 cprs() {
     cp -Rs "$@"
 }
-cmert() {
-    save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
-}
 cwithmertargs() {
     (
         #
-        cwithdir c/ct-archive/archive/3rdParty/mert "time mertct $* && time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
+        cwithdir c/ct-archive/archive/3rdParty/mert "time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
         #        set -x
-        c-s 'cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert'
     )
 }
 cwithmertrun() {
@@ -516,9 +523,6 @@ iops() {
         iostat -xn 1 2 | grep lwfiler3-128| tail -n 1
         #| awk '{print $9}'
     done | tee /tmp/iops
-}
-sac() {
-    scp ~/u/aliases.sh c-graehl:u/aliases.sh
 }
 cpextlib() {
     (
