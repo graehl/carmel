@@ -14,6 +14,11 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+gitrevinit() {
+    git rev-list --max-parents=0 HEAD
+    #but git rebase [-i] --root $tip" can now be used to rewrite all the history
+    #leading to "$tip" down to the root commit.
+}
 latpdf() {
     (set -e
     local f=$1
@@ -46,8 +51,31 @@ servi() {
 }
 hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
-cosdir=/local/graehl/hypergraphs-gitrepo
+cosgitdir=/local/graehl/hypergraphs-gitrepo
 cosdirbuild=/local/graehl/build-hypergraphs
+oscom() {
+    (
+        set -e
+        cd $xmtx/docs/hyp
+        latpdf hyp-tutorial && mv hyp-tutorial*pdf $xmtx/hyp-tutorial.pdf
+        cd $xmtx
+        mend
+        outgit=$cosgitdir
+        stagetarball=`mktemp $ostarball.XXXXXX.gz`
+        rm -f $stagetarball
+        test= tarball=$stagetarball $xmtx/scripts/release.sh
+        set -x
+        cd $outgit
+        tar xzvf $stagetarball
+        git status
+        if [[ "$*" ]] ; then
+            git commit -a -m "$*"
+        fi
+        mv $stagetarball $tarball
+        echo $tarball
+    )
+}
+
 findsmall() {
     (
         local maxsz=${1:-50k}
@@ -65,11 +93,11 @@ substsmall() {
 }
 oscptar() {
     (set -e
-     cd $cosdir
-     c-s "rm -rf $cosdir/$hypdir; mkdir -p $cosdir"
+     cd $cosgitdir
+     c-s "rm -rf $cosgitdir/$hypdir; mkdir -p $cosgitdir"
      set -x
-     scp $ostarball c-graehl:$cosdir/
-     c-s "cd $cosdir && rm -rf sdl; tar xzf $(basename $ostarball)"
+     scp $ostarball c-graehl:$cosgitdir/
+     c-s "cd $cosgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
     )
 }
 osmake() {
@@ -77,7 +105,7 @@ osmake() {
         set -e
         mkdir -p $cosdirbuild
         cd $cosdirbuild
-        cmake $cosdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
+        cmake $cosgitdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
     )
 }
 osrel() {
@@ -85,10 +113,10 @@ osrel() {
         set -e
         cd $xmtx
         mend
-        outgit=$cosdir
+        outgit=$cosgitdir
         rm -rf $outgit
         rm -f $ostarball
-        test= tarball=$ostarball ~/x/scripts/release.sh $outgit
+        test= tarball=$ostarball $xmtx/scripts/release.sh $outgit
         set -x
         cd $outgit
     )
@@ -107,7 +135,7 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        c-s "mkdir -p $cosdirbuild;cd $cosdirbuild; cmake $cosdir/$hypdir $* && TERM=dumb make -j6 VERBOSE=1"
+        c-s "mkdir -p $cosdirbuild;cd $cosdirbuild; cmake $cosgitdir/$hypdir $* && TERM=dumb make -j6 VERBOSE=1"
     )
 }
 linosrelmake() {

@@ -1,23 +1,19 @@
 /** \file
 
     visit and begin_end for Boost Graph Library graphs (for consistency with hypergraph.hpp).
+
+    graph_object<G, (vertex|edge|hyperarc)_t>, visit(edge_tag, g) ...
 */
 
 #ifndef GRAEHL_SHARED__GRAPH_HPP
 #define GRAEHL_SHARED__GRAPH_HPP
 #pragma once
 
-// graph_object<G, (vertex|edge|hyperarc)_t>, visit(edge_tag, g) ...
-
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
-//#include <boost/iterator/counting_iterator.hpp>
-//#include <graehl/shared/byref.hpp>
-//#include <graehl/shared/property_factory.hpp>
-
 
 namespace graehl {
 
@@ -115,47 +111,7 @@ inline void visit(T, G const& g, F& f) {
   for (typename graph_object<G, T>::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
 }
 
-}  // ns
 
-
-/*
-What you want to do is just not possible: you can only specialize the
-inner template for a fully specialized outer template. It doesn't work
-the other way round. See 14.7.3/18.
-
-template <typename E>
-struct F {
-    template<typename G> class H;
-};
-
-template <>
-template<typename E>
-class F<int>::H<E> {};
-*/
-
-/*
-template <class G>
-struct graph_types {
-  template <class T> struct object;
-  template <>
-   struct object<edge_tag> {
-    typedef typename graph_traits<G>::edge_descriptor descriptor;
-    typedef typename graph_traits<G>::edge_iterator iterator;
-    typedef boost::iterator_range<iterator> iterator_pair;
-   };
-  template <>
-   struct object<hyperarc_tag> {
-    typedef typename graph_traits<G>::hyperarc_descriptor descriptor;
-    typedef typename graph_traits<G>::hyperarc_iterator iterator;
-    typedef boost::iterator_range<iterator> iterator_pair;
-   };
-  template <>
-   struct object<vertex_tag> {
-    typedef typename graph_traits<G>::vertex_descriptor descriptor;
-    typedef typename graph_traits<G>::vertex_iterator iterator;
-    typedef boost::iterator_range<iterator> iterator_pair;
-   };
-};
-*/
+}
 
 #endif
