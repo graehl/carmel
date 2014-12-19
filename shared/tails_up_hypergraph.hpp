@@ -243,7 +243,7 @@ struct TailsUpHypergraph {
   void operator()(ED ed) {
     Tailr tailr = tails(ed, g);
     using namespace boost;
-    Ti i = begin(tailr), e = end(tailr);
+    Ti i = boost::begin(tailr), e = boost::end(tailr);
     if (i == e) {
       terminal_arcs.push_back(ed);
     } else {
@@ -410,7 +410,7 @@ struct TailsUpHypergraph {
     void init_costs(Cost cinit = PT::unreachable()) {
       Vertices verts = vertices(g);
       using namespace boost;
-      for (Vi i = begin(verts), e = end(verts); i != e; ++i) {
+      for (Vi i = boost::begin(verts), e = boost::end(verts); i != e; ++i) {
         VD v = *i;
         put(mu, *i, cinit);
         put(locp, v, 0);
@@ -515,7 +515,7 @@ struct TailsUpHypergraph {
       SHOWIF2(TUHG, 3, "recompute_cost:base", c, TUHG_PRINT(e, g));
       Tailr tailr = tails(e, g);
       using namespace boost;
-      for (Ti i = begin(tailr), ei = end(tailr); i != ei; ++i) {
+      for (Ti i = boost::begin(tailr), ei = boost::end(tailr); i != ei; ++i) {
         VD t = tail(*i, e, g);  // possibly multiple instances of tail t
         cost_type tc = get(mu, t);
         SHOWIF3(TUHG, 6, "recompute_cost:c'=c*tc", c, tc, t);

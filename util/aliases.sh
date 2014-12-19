@@ -5,6 +5,7 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 set -b
 shopt -s checkwinsize
 shopt -s cdspell
+xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
 xmtxs=$xmtx/sdl
 xmtextbase=$(echo ~/c/xmt-externals)
@@ -51,31 +52,70 @@ servi() {
 }
 hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
-cosgitdir=/local/graehl/hypergraphs-gitrepo
-cosdirbuild=/local/graehl/build-hypergraphs
+osgitdir=$(echo ~/c/hyp)
+osdirbuild=/local/graehl/build-hypergraphs
+gitshows() {
+    git --no-pager show -s "$@"
+}
+gitinfo_author_get() {
+    local rev=${1:-HEAD}
+    gitinfo_author=`git --no-pager show -s --format='%an <%ae>' $rev`
+    echo $gitinfo_author
+}
+gitinfo_sha1_get() {
+    local rev=${1:-HEAD}
+    gitinfo_sha1=`git --no-pager show -s --format='%H' $rev`
+    echo $gitinfo_sha1_get
+}
+gitinfo_changeid_get() {
+    local rev=${1:-HEAD}
+    gitinfo_changeid=`git --no-pager show -s | grep Change-Id:`
+    echo $gitinfo_changeid
+}
+gitinfo_subject_get() {
+    local rev=${1:-HEAD}
+    gitinfo_subject=`git --no-pager show -s --format='%s'`
+    echo $gitinfo_subject
+}
+gitinfo() {
+    local rev=${1:-HEAD}
+    gitinfo_author=`git --no-pager show -s --format='%an <%ae>' $rev`
+    gitinfo_sha1=`git --no-pager show -s --format='%H' $rev`
+    gitinfo_changeid=`git --no-pager show -s | grep Change-Id:`
+    gitinfo_changeid=`echo $gitinfo_changeid`
+    showvars_required gitinfo_subject gitinfo_author gitinfo_sha1
+    echo $gitinfo_author
+}
 oscom() {
     (
         set -e
-        cd $xmtx/docs/hyp
-        latpdf hyp-tutorial && mv hyp-tutorial*pdf $xmtx/hyp-tutorial.pdf
+        if [[ $redox ]] ; then
+            cd $xmtx/docs/hyp
+            latpdf hyp-tutorial && mv hyp-tutorial*pdf $xmtx/hyp-tutorial.pdf
+        fi
         cd $xmtx
+        gitinfo
         mend
-        outgit=$cosgitdir
-        stagetarball=`mktemp $ostarball.XXXXXX.gz`
+        stagetarball=`mktemp $ostarball.XXXXXX`
         rm -f $stagetarball
         test= tarball=$stagetarball $xmtx/scripts/release.sh
         set -x
-        cd $outgit
+        cd $osgitdir
         tar xzvf $stagetarball
-        git status
-        if [[ "$*" ]] ; then
-            git commit -a -m "$*"
+        mv $stagetarball $ostarball
+        TERM=dumb git status
+        msg="$*"
+        if ! [[ $msg ]] ; then
+            msg=$gitinfo_subject
         fi
-        mv $stagetarball $tarball
-        echo $tarball
+        echo git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
+             --author="$gitinfo_author"
+        echo $ostarball
     )
 }
-
+linoscom() {
+    oscom && linosmake
+}
 findsmall() {
     (
         local maxsz=${1:-50k}
@@ -93,19 +133,19 @@ substsmall() {
 }
 oscptar() {
     (set -e
-     cd $cosgitdir
-     c-s "rm -rf $cosgitdir/$hypdir; mkdir -p $cosgitdir"
+     cd $osgitdir
+     c-s "rm -rf $osgitdir/$hypdir; mkdir -p $osgitdir"
      set -x
-     scp $ostarball c-graehl:$cosgitdir/
-     c-s "cd $cosgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
+     scp $ostarball c-graehl:$osgitdir/
+     c-s "cd $osgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
     )
 }
 osmake() {
     (
         set -e
-        mkdir -p $cosdirbuild
-        cd $cosdirbuild
-        cmake $cosgitdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
+        mkdir -p $osdirbuild
+        cd $osdirbuild
+        cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
     )
 }
 osrel() {
@@ -113,7 +153,7 @@ osrel() {
         set -e
         cd $xmtx
         mend
-        outgit=$cosgitdir
+        outgit=$osgitdir
         rm -rf $outgit
         rm -f $ostarball
         test= tarball=$ostarball $xmtx/scripts/release.sh $outgit
@@ -135,7 +175,7 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        c-s "mkdir -p $cosdirbuild;cd $cosdirbuild; cmake $cosgitdir/$hypdir $* && TERM=dumb make -j6 VERBOSE=1"
+        c-s "mkdir -p $osdirbuild;cd $osdirbuild; cmake $osgitdir/$hypdir $* && TERM=dumb make -j6 VERBOSE=1"
     )
 }
 linosrelmake() {
