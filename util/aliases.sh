@@ -94,7 +94,8 @@ oscom() {
             latpdf hyp-tutorial && mv hyp-tutorial*pdf $xmtx/hyp-tutorial.pdf
         fi
         cd $xmtx
-        gitinfo
+        gitinfo $1
+        shift
         mend
         stagetarball=`mktemp $ostarball.XXXXXX`
         rm -f $stagetarball
