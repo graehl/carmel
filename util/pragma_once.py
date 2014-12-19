@@ -47,7 +47,7 @@ import fileinput
 
 cifndef='#ifndef '
 cdefine='#define '
-
+cpragma1='#pragma once'
 def main(opt):
     if len(opt.filename) == 0:
         opt.filename = [[]]
@@ -67,8 +67,8 @@ def main(opt):
                 firstpre = False
             elif line.startswith('#'):
                 firstpre = False
-            elif guarded:
-                print '#pragma once'
+            elif guarded and line != cpragma1:
+                print cpragma1
                 onced = True
                 guarded = False
             print line

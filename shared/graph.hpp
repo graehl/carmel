@@ -59,7 +59,7 @@ void visit(Tag t, G& g, F f);
 
 template <class Tag, class G, class E>
 inline typename graph_object<G, Tag>::iterator_pair begin_end(Tag t, G& g) {
-  return typename graph_object<G, Tag>::iterator_pair(begin(t, g), end(t, g));
+  return typename graph_object<G, Tag>::iterator_pair(boost::begin(t, g), boost::end(t, g));
 }
 
 template <class Tag, class G, class E>
@@ -90,14 +90,14 @@ template <class G, class T, class F>
 inline void visit(T, G& g, F const& f) {
   using namespace boost;
   typename graph_object<G, T>::iterator_pair pi = vertices(g);
-  for (typename graph_object<G, T>::iterator i = begin(pi), e = end(pi); i != e; ++i) f(*i);
+  for (typename graph_object<G, T>::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
 }
 
 template <class G, class T, class F>
 inline void visit(T, G& g, F& f) {
   using namespace boost;
   typename graph_object<G, T>::iterator_pair pi = vertices(g);
-  for (typename graph_object<G, T>::iterator i = begin(pi), e = end(pi); i != e; ++i) f(*i);
+  for (typename graph_object<G, T>::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
 }
 
 // const g
@@ -105,14 +105,14 @@ template <class G, class T, class F>
 inline void visit(T, G const& g, F const& f) {
   using namespace boost;
   typename graph_object<G, T>::iterator_pair pi = vertices(g);
-  for (typename graph_object<G, T>::iterator i = begin(pi), e = end(pi); i != e; ++i) f(*i);
+  for (typename graph_object<G, T>::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
 }
 
 template <class G, class T, class F>
 inline void visit(T, G const& g, F& f) {
   using namespace boost;
   typename graph_object<G, T>::iterator_pair pi = vertices(g);
-  for (typename graph_object<G, T>::iterator i = begin(pi), e = end(pi); i != e; ++i) f(*i);
+  for (typename graph_object<G, T>::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
 }
 
 }  // ns

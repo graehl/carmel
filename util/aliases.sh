@@ -14,6 +14,33 @@ CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I 
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+latpdf() {
+    (set -e
+    local f=$1
+    shift
+    f=${f%.}
+    f=${f%.tex}
+    pdflatex "$f"
+    bibtex "$f"
+    for i in 1 2; do
+        pdflatex "$f"
+    done
+    )
+}
+experiments() {
+    for f in ${*:-`pwd`}; do
+        experiment1 $f/*/my.experiment.yml
+    done
+}
+experiment1() {
+    for f in "$@"; do
+    if [[ -f $f ]] ; then
+        echo `dirname $f`
+        grep bleu $f | grep -v sct
+        echo
+    fi
+    done
+}
 servi() {
     tail -f ~/serviio/log/*.log
 }
@@ -111,7 +138,7 @@ cwithmertargs() {
         #
         cwithdir c/ct-archive/archive/3rdParty/mert "time mertct $* && time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
         #        set -x
-        c-s 'cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub'
+        c-s 'cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert'
     )
 }
 cwithmertrun() {
@@ -119,7 +146,6 @@ cwithmertrun() {
         # mertct $* &&
         cwithdir c/ct-archive/archive/3rdParty/mert "$@"
         #        set -x
-        #        c-s 'cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub'
     )
 }
 cwithdir() {
