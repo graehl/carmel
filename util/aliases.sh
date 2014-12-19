@@ -14,7 +14,23 @@ CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
 CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
 [[ -x $CTPERL ]] || CTPERL=perl
 export LESS='-d-e-F-X-R'
+hypdir=sdl
+ostarball=/tmp/hyp-latest-release-hyp.tar.gz
+osgitdir=$(echo ~/c/hyp)
+osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+ospushmend() {
+    (set -e
+     cd $osgitdir
+    cd $xmtx
+    mend
+    redox=1 ~/x/scripts/release.sh $osgitdir "$@"
+    if [[ $pull ]] ; then
+        git pull --rebase
+    fi
+    git push
+    )
+}
 gitrevinit() {
     git rev-list --max-parents=0 HEAD
     #but git rebase [-i] --root $tip" can now be used to rewrite all the history
@@ -50,10 +66,6 @@ experiment1() {
 servi() {
     tail -f ~/serviio/log/*.log
 }
-hypdir=sdl
-ostarball=/tmp/hyp-latest-release-hyp.tar.gz
-osgitdir=$(echo ~/c/hyp)
-osdirbuild=/local/graehl/build-hypergraphs
 gitshows() {
     git --no-pager show -s "$@"
 }
@@ -65,26 +77,28 @@ gitinfo_author_get() {
 gitinfo_sha1_get() {
     local rev=${1:-HEAD}
     gitinfo_sha1=`git --no-pager show -s --format='%H' $rev`
-    echo $gitinfo_sha1_get
+    echo $gitinfo_sha1
 }
 gitinfo_changeid_get() {
     local rev=${1:-HEAD}
-    gitinfo_changeid=`git --no-pager show -s | grep Change-Id:`
+    gitinfo_changeid=`git --no-pager show -s $rev | grep Change-Id:`
     echo $gitinfo_changeid
 }
 gitinfo_subject_get() {
     local rev=${1:-HEAD}
-    gitinfo_subject=`git --no-pager show -s --format='%s'`
+    gitinfo_subject=`git --no-pager show -s --format='%s' $rev`
     echo $gitinfo_subject
 }
 gitinfo() {
     local rev=${1:-HEAD}
-    gitinfo_author=`git --no-pager show -s --format='%an <%ae>' $rev`
-    gitinfo_sha1=`git --no-pager show -s --format='%H' $rev`
-    gitinfo_changeid=`git --no-pager show -s | grep Change-Id:`
-    gitinfo_changeid=`echo $gitinfo_changeid`
-    showvars_required gitinfo_subject gitinfo_author gitinfo_sha1
-    echo $gitinfo_author
+    gitinfo_subject_get
+    gitinfo_sha1_get
+    gitinfo_changeid_get
+    gitinfo_author_get
+    showvars_optional gitinfo_subject gitinfo_author gitinfo_sha1 gitinfo_author
+}
+gitshows() {
+    git show --name-status
 }
 oscom() {
     (
@@ -111,7 +125,8 @@ oscom() {
         fi
         set -x
         git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
-             --author="$gitinfo_author"
+            --author="$gitinfo_author"
+        git show --name-status
         echo $ostarball
         pwd
     )
