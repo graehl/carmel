@@ -1,6 +1,15 @@
 theirbaseline() {
     perl -ne 'if (/\[(.*-baseline)\]/) { print $1; exit }' "$@"
 }
+initweights() {
+    set -e
+    local s=$1/config/weights.file.final
+    local d=$2/config/weights.file.final
+    require_files $s $d
+    cp $s init.sparse.yml
+    cp $d init.dense.yml
+    wc -l init.sparse.yml init.dense.yml
+}
 baselinetune() {
     lntune "$@"
     baseline=`theirbaseline $theirs`
@@ -10,6 +19,7 @@ nocommands() {
     perl -e 'while(<>) { $sec = $1 if /^\[(.*)\]/; print ($sec eq "commands" ? "# $_" : $_) }' "$@"
 }
 mycommands() {
+    set -e
     [[ $baseline ]] || baselinetune "$@"
     if ! [[ $tunestart ]] ; then
         if [[ $lp = eng-swe ]] ; then tunestart=/c01_data/mdreyer/xmt-test/eng-swe/20141031-baseline-retune-pro1-i10/tune_slot/tune_work/iter_9/weights.yaml
@@ -18,22 +28,23 @@ mycommands() {
         fi
     fi
     cp $tunestart $mine.weights-init.yml
-    tunestart=`realpath $tunestart`
-    ln -sf $tunestart $mine.weights-init.yml.origin
-    tunestart=$mine.weights-init.yml
-    tunestart=`realpath $tunestart`
     xmt=${xmt:-/c01_data/mdreyer/software/coretraining/main/LW/CME/xmt-rpath}
     showvars_required baseline theirs mine tunestart xmt
     require_file $xmt
     xmt=`abspath $xmt`
     require_file $theirs $tunestart
-    l0s="0 1e-5 4e-5 4e-4 1e-4 4e-3 1e-3"
-    for l0 in $l0s; do
-        echo $l0 > STDERR
-        mert=$(echo ~graehl/pub/mert-l0=$l0)
-        require_file $mert
-        cat<<EOF
-[l0=$l0]
+    l0s="0 4e-6 1e-5 4e-5 4e-4 1e-4 4e-3 1e-3"
+    for sd in dense sparse; do
+        origweights=$lp/init.$sd.yml
+        require_file $origweights
+        origweights=`abspath $origweights`
+        for l0 in $l0s; do
+            echo $l0 > STDERR
+            mert=$(echo ~graehl/pub/mert-l0=$l0)
+            require_file $mert
+            name=$sd-l0_$l0
+            cat<<EOF
+[$name]
 task=xtrain
 inherit=$baseline
 mert-bin=/home/graehl/pub/mert-l0=$l0
@@ -45,27 +56,33 @@ db_slot=[$baseline]/db_slot
 lm_slot=[$baseline]/lm_slot
 tuning-max-pro-iter=0
 tuning-max-mert-iter=30
-tuning-orig-weights-file=$tunestart
+tuning-orig-weights-file=$origweights
 xmt-bin=$xmt
 decoding-memory-request-gb=28
 num-decoder-threads=2
 tuning-num-pieces=10
 
 EOF
+        done
     done
     echo
     echo [commands]
-    for l0 in $l0s; do
-        echo l0=$l0
+    for sd in dense sparse; do
+        for l0 in $l0s; do
+            name=$sd-l0_$l0
+            echo $name
+        done
     done
 }
 mytune() {
+    set -e
     [[ $baseline ]] || baselinetune "$@"
     (nocommands $theirs; mycommands) > $mine
-    tail -100 $mine
+    cat $mine
     echo $mine
 }
 lntune() {
+    set -e
     src=$1
     trg=${2:-lntune ita eng [basedir]}
     lp=$1-$2

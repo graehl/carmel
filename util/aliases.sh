@@ -2,6 +2,7 @@ UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
+. $UTIL/misc.sh
 set -b
 shopt -s checkwinsize
 shopt -s cdspell
@@ -20,6 +21,20 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+resherpmy() {
+    rm -rf sparse-* dense-*
+    sherp my.apex
+}
+inplace() {
+     local f=${1:?inplace file cmd}
+     shift
+    (set -e
+     local tmpf=`mktemp "$f.XXXXXX"`
+     "$@" < $f > $tmpf
+     echo "updated $f by $*"
+     mv $tmpf $f
+     )
+}
 cmert() {
     save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
     if [[ $mertver ]] ; then
@@ -66,11 +81,28 @@ experiments() {
         experimentf $f/*/my.experiment.yml $f/my.experiment.yml
     done
 }
+expclean() {
+    for f in ${*:-`pwd`}; do
+        expcleanf $f/*/my.experiment.yml $f/my.experiment.yml
+    done
+}
+expcleanf() {
+    for f in "$@"; do
+        if [[ -f $f ]] ; then
+            local dir=`dirname $f`
+            rm -rf $dir/tune_slot/tune_work
+        fi
+    done
+}
 experimentf() {
     for f in "$@"; do
         if [[ -f $f ]] ; then
-            perl -e 'while(<>) { print "$2\t" if /([a-zA-Z_-]+)bleu: '"'?([0-9.]+)/ }" $f
-            echo `dirname $f`
+            local dir=`dirname $f`
+            perl -e 'while(<>) { print "$2\t" if /([a-zA-Z_-]+)bleu: '"'?-?([0-9.]+)/ }" $f
+            perl -e '$n = 0; $z = 0;while(<>) { chomp;
+                      ++$n if '"/: '?-?[0-9.]/"'; ++$z if '"/: '?-?0+\.?0*'?$/"';
+                     } print "$n\t$z\t"' $dir/config/weights.file.final
+            echo $dir
         fi
     done
 }
