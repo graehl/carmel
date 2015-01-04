@@ -21,6 +21,9 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+araeng() {
+    ${pre}xmt --pipeline decode_q2 --config /build/data/AraEng_Informal_U80_v_5_4_x_2/config/XMTConfig.yml --input-type=yaml -i /home/graehl/bugs/in.yml --derivation-info=1 --detokenizer.output-type=string
+}
 resherpmy() {
     rm -rf sparse-* dense-*
     sherp my.apex
@@ -35,11 +38,22 @@ inplace() {
      mv $tmpf $f
      )
 }
+smert() {
+    save12 ~/tmp/cmert cwithmertargs -x -f 0 /home/graehl/projects/sparse/weights /home/graehl/projects/sparse/${nbest:-nbest.10k} "$@"
+}
 cmert() {
     save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
-    if [[ $mertver ]] ; then
-        c-s "cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-l0=${mertver}; ls ~/pub/mert*"
+    if [[ $l0bonus ]] ; then
+        c-s "cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-l0=${l0bonus}; ls ~/pub/mert*"
     fi
+    if [[ $CC ]] ; then
+        c-s "set -x; cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-$CC"
+    fi
+}
+cmerts() {
+    for f in 0 4e-3 4e-4 4e-5 4e-6 1e-3 1e-4 1e-5 1e-6; do
+        SAN= l0bonus=$f cmert
+    done
 }
 a2c() {
     for f in aliases.sh misc.sh; do
@@ -79,6 +93,11 @@ latpdf() {
 experiments() {
     for f in ${*:-`pwd`}; do
         experimentf $f/*/my.experiment.yml $f/my.experiment.yml
+    done
+}
+tunes() {
+    for f in ${*:-`pwd`}; do
+        ag 'Converged - final' $f
     done
 }
 expclean() {
@@ -286,12 +305,18 @@ cwithdir() {
      else
          rdir=`dirname $d`
      fi
+     if [[ $l0bonus ]] ; then
+     if [[ -f $d/mert.c ]]; then
+         perl -i -pe 's/double l0_bonus = [^;]*;/double l0_bonus = '"$l0bonus"';/' $d/mert.c
+         grep 'l0_bonus =' $d/mert.c
+     fi
+     fi
      scp -r $d $chost:$dst
      #     set -x
      if [[ $scan ]] ; then
          scanpre="scan-build -k "
      fi
-     c-s "cd $rdir; set -x; $scanpre make $target SAN=$san && $*"
+     c-s "cd $rdir; set -x; $scanpre make $target DEBUG=$DEBUG ASSERT=$ASSERT CC=$CC SAN=$SAN && $*"
     )
 }
 cpptox2() {
@@ -860,11 +885,14 @@ case $(uname) in
     *)
         lwarch=Windows ;;
 esac
-fireinstall() {
+fireadb() {
 adb stop-server
 adb start-server
-adb connect 192.168.1.113
-adb install "$@"
+adb connect 192.168.1.6
+}
+fireinstall() {
+    fireadb
+    adb install "$@"
 }
 jcp() {
     chost=c-jmay ccp "$@"
@@ -3143,6 +3171,7 @@ yreg() {
     local args=${yargs:-}
     # -t 2
     (set -e;
+     export TMPDIR=${TMPDIR:-/var/tmp}
         bdir=${bdir:-$xmtx/${BUILD:=Debug}}
         export LD_LIBRARY_PATH=$bdir:$bdir/xmt:$bdir/xmt/lib:$LD_LIBRARY_PATH
         local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`

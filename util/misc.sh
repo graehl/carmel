@@ -1,3 +1,14 @@
+benchmert() {
+for j in 6 8 10 12 14 16 18 32 64; do
+echo2 ===== j=$j
+for CC in gcc; do
+echo2
+echo2 CC=$CC j=$j
+~/pub/mert-$CC -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest -v 0 -0 1e-4 -j $j >/dev/null
+done
+done
+}
+densesparse="sparse"
 theirbaseline() {
     perl -ne 'if (/\[(.*-baseline)\]/) { print $1; exit }' "$@"
 }
@@ -33,8 +44,8 @@ mycommands() {
     require_file $xmt
     xmt=`abspath $xmt`
     require_file $theirs $tunestart
-    l0s="0 4e-6 1e-5 4e-5 4e-4 1e-4 4e-3 1e-3"
-    for sd in dense sparse; do
+    l0s="0 4e-6 1e-5 4e-5 4e-4 1e-4"
+    for sd in $densesparse; do
         origweights=$lp/init.$sd.yml
         require_file $origweights
         origweights=`abspath $origweights`
@@ -67,19 +78,12 @@ EOF
     done
     echo
     echo [commands]
-    for sd in dense sparse; do
+    for sd in $densesparse; do
         for l0 in $l0s; do
             name=$sd-l0_$l0
             echo $name
         done
     done
-}
-mytune() {
-    set -e
-    [[ $baseline ]] || baselinetune "$@"
-    (nocommands $theirs; mycommands) > $mine
-    cat $mine
-    echo $mine
 }
 lntune() {
     set -e
@@ -96,4 +100,11 @@ lntune() {
     theirs=$lp/their.apex
     cp $fromapex $theirs
     mine=$lp/my.apex
+}
+mytune() {
+    set -e
+    [[ $baseline ]] || baselinetune "$@"
+    (nocommands $theirs; mycommands) > $mine
+    cat $mine
+    echo $mine
 }
