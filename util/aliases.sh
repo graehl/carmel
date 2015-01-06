@@ -38,23 +38,6 @@ inplace() {
      mv $tmpf $f
      )
 }
-smert() {
-    save12 ~/tmp/cmert cwithmertargs -x -f 0 /home/graehl/projects/sparse/weights /home/graehl/projects/sparse/${nbest:-nbest.10k} "$@"
-}
-cmert() {
-    save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
-    if [[ $l0bonus ]] ; then
-        c-s "cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-l0=${l0bonus}; ls ~/pub/mert*"
-    fi
-    if [[ $CC ]] ; then
-        c-s "set -x; cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-$CC"
-    fi
-}
-cmerts() {
-    for f in 0 4e-3 4e-4 4e-5 4e-6 1e-3 1e-4 1e-5 1e-6; do
-        SAN= l0bonus=$f cmert
-    done
-}
 a2c() {
     for f in aliases.sh misc.sh; do
         scp ~/u/$f $chost:u/$f
@@ -89,41 +72,6 @@ latpdf() {
         pdflatex "$f"
     done
     )
-}
-experiments() {
-    for f in ${*:-`pwd`}; do
-        experimentf $f/*/my.experiment.yml $f/my.experiment.yml
-    done
-}
-tunes() {
-    for f in ${*:-`pwd`}; do
-        ag 'Converged - final' $f
-    done
-}
-expclean() {
-    for f in ${*:-`pwd`}; do
-        expcleanf $f/*/my.experiment.yml $f/my.experiment.yml
-    done
-}
-expcleanf() {
-    for f in "$@"; do
-        if [[ -f $f ]] ; then
-            local dir=`dirname $f`
-            rm -rf $dir/tune_slot/tune_work
-        fi
-    done
-}
-experimentf() {
-    for f in "$@"; do
-        if [[ -f $f ]] ; then
-            local dir=`dirname $f`
-            perl -e 'while(<>) { print "$2\t" if /([a-zA-Z_-]+)bleu: '"'?-?([0-9.]+)/ }" $f
-            perl -e '$n = 0; $z = 0;while(<>) { chomp;
-                      ++$n if '"/: '?-?[0-9.]/"'; ++$z if '"/: '?-?0+\.?0*'?$/"';
-                     } print "$n\t$z\t"' $dir/config/weights.file.final
-            echo $dir
-        fi
-    done
 }
 servi() {
     tail -f ~/serviio/log/*.log

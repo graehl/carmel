@@ -4,3 +4,5 @@ obj
 *~
 *.pyc
 lc1count
+.history
+trash.*

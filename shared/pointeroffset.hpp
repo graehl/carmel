@@ -1,3 +1,16 @@
+// Copyright 2014 Jonathan Graehl - http://graehl.org/
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 // idea: it may be faster to store (size*index) instead of just index, for repeated array addressing (where the base pointer may change).  I don't think this is worthwhile any more, especially when you might want to use 32-bit indices in a 64-bit address space.  Modern CPUs are pretty fast about base+(size*index) access (usually it's free, similar cost to as base or at least base+offset)
 #ifndef GRAEHL_SHARED__POINTEROFFSET_HPP
 #define GRAEHL_SHARED__POINTEROFFSET_HPP
