@@ -21,6 +21,9 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+reforestviz() {
+overt;cd forest-em;make bin/pwn/forestviz.debug && ~/g/forest-em/bin/pwn/forestviz.debug -n -i sample/forests.gz -o sample/forests.dot && cat sample/forests.dot
+}
 araeng() {
     ${pre}xmt --pipeline decode_q2 --config /build/data/AraEng_Informal_U80_v_5_4_x_2/config/XMTConfig.yml --input-type=yaml -i /home/graehl/bugs/in.yml --derivation-info=1 --detokenizer.output-type=string
 }

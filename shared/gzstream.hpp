@@ -15,19 +15,28 @@
 #define GRAEHL__SHARED__GZSTREAM_HPP
 #pragma once
 
+#ifndef USE_BOOST_GZSTREAM
+# define USE_BOOST_GZSTREAM 1
+#endif
 
 #if USE_BOOST_GZSTREAM || USE_BOOST_BZ2STREAM
 #include <graehl/shared/filter_file_stream.hpp>
+
+#if USE_BOOST_GZSTREAM
 #include <boost/iostreams/filter/gzip.hpp>
 // see also zlib.hpp for (.gz header)-less compression
+#endif
+
 #if USE_BOOST_BZ2STREAM
 #include <boost/iostreams/filter/bzip2.hpp>
 #endif
 
 namespace graehl {
 
+#if USE_BOOST_GZSTREAM
 typedef filter_file_stream<boost::iostreams::gzip_decompressor, boost::iostreams::input, std::ifstream> igzstream;
 typedef filter_file_stream<boost::iostreams::gzip_compressor, boost::iostreams::output, std::ofstream> ogzstream;
+#endif
 #if USE_BOOST_BZ2STREAM
 typedef filter_file_stream<boost::iostreams::bz2_decompressor, boost::iostreams::input, std::ifstream > ibz2stream;
 typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::output, std::ofstream> obz2stream;
@@ -43,5 +52,6 @@ typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::o
 // FIXME: generate named library/object instead?
 #include "gzstream.cpp"
 #endif
+
 #endif
 #endif
