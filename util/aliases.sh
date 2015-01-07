@@ -137,12 +137,19 @@ oscom() {
             msg=$gitinfo_subject
         fi
         set -x
-        git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
-            --author="$gitinfo_author"
+        if [[ $mend ]] ;then
+            mend
+        else
+            git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
+              --author="$gitinfo_author"
+        fi
         git show --name-status
         echo $ostarball
         pwd
     )
+}
+reos() {
+    mend=1 linoscom
 }
 linoscom() {
     oscom && linosmake
@@ -206,7 +213,7 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        c-s "mkdir -p $osdirbuild;cd $osdirbuild; cmake $osgitdir/$hypdir $* && TERM=dumb make -j6 VERBOSE=1"
+        c-s "mkdir -p $osdirbuild;cd $osdirbuild; cmake $osgitdir/$hypdir $* && TERM=dumb make -j9 VERBOSE=0 && Hypergraph/HypBest -h"
     )
 }
 linosrelmake() {
