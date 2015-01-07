@@ -137,6 +137,7 @@ BOOST_TEST_SRC_DIR = $(BOOST_DIR)/libs/test/src
 BOOST_OPTIONS_SRC_DIR = $(BOOST_DIR)/libs/program_options/src
 BOOST_FILESYSTEM_SRC_DIR = $(BOOST_DIR)/libs/filesystem/src
 BOOST_SYSTEM_SRC_DIR = $(BOOST_DIR)/libs/system/src
+BOOST_IOSTREAMS_SRC_DIR = $(BOOST_DIR)/libs/iostreams/src
 
 #wide char archive streams not supported on cygwin so remove *_w*.cpp
 BOOST_SERIALIZATION_SRCS:=$(notdir $(filter-out $(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*_w*),$(wildcard $(BOOST_SERIALIZATION_SRC_DIR)/*.cpp)))
@@ -156,6 +157,9 @@ BOOST_TEST_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_TEST_SRCS)))
 #BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS))) $(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_SYSTEM_SRCS)))
 BOOST_OPTIONS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_OPTIONS_SRCS) $(BOOST_SYSTEM_SRCS)))
 BOOST_FILESYSTEM_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
+
+BOOST_IOSTREAMS_SRCS=$(notdir $(wildcard $(BOOST_IOSTREAMS_SRC_DIR)/*.cpp))
+BOOST_IOSTREAMS_OBJS=$(addprefix $(OBJB)/,$(addsuffix .o,$(BOOST_FILESYSTEM_SRCS)))
 
 ifndef BOOST_SUFFIX
 ifndef BOOST_SUFFIX_BASE
@@ -191,6 +195,7 @@ BOOST_SERIALIZATION_LIB=$(OBJB)/libserialization.a
 BOOST_TEST_LIB=$(OBJB)/libtest.a
 BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
+BOOST_IOSTREAMS_LIB=$(OBJB)/libiostreams.a
 libs: $(BOOST_TIMER_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
 INC += $(BOOST_DIR)
 else
@@ -202,6 +207,7 @@ BOOST_FILESYSTEM_LIB=-lboost_filesystem$(BSUF)
 BOOST_RANDOM_LIB=-lboost_random$(BSUF)
 BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF) $(BOOST_SYSTEM_LIB)
 BOOST_TIMER_LIB=-lboost_timer$(BSUF) $(BOOST_SYSTEM_LIB)
+BOOST_IOSTREAMS_LIB=-lboost_iostreams$(BSUF)
 libs:
 endif
 

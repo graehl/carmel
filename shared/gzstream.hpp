@@ -18,15 +18,16 @@
 
 #if USE_BOOST_GZSTREAM || USE_BOOST_BZ2STREAM
 #include <graehl/shared/filter_file_stream.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+// see also zlib.hpp for (.gz header)-less compression
 #if USE_BOOST_BZ2STREAM
 #include <boost/iostreams/filter/bzip2.hpp>
 #endif
 
 namespace graehl {
 
-typedef filter_file_stream<boost::iostreams::zlib_decompressor, boost::iostreams::input, std::ifstream> igzstream;
-typedef filter_file_stream<boost::iostreams::zlib_compressor, boost::iostreams::output, std::ofstream> ogzstream;
+typedef filter_file_stream<boost::iostreams::gzip_decompressor, boost::iostreams::input, std::ifstream> igzstream;
+typedef filter_file_stream<boost::iostreams::gzip_compressor, boost::iostreams::output, std::ofstream> ogzstream;
 #if USE_BOOST_BZ2STREAM
 typedef filter_file_stream<boost::iostreams::bz2_decompressor, boost::iostreams::input, std::ifstream > ibz2stream;
 typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::output, std::ofstream> obz2stream;

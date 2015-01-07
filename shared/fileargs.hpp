@@ -382,7 +382,7 @@ public:
   void set_checked(filestream &fs, std::string const& filename="", bool destroy = no_delete_after, std::string const& fail_msg="invalid stream")
   {
     try {
-      set(static_cast<Stream &>(fs), filename, destroy, fail_msg);
+      set(dynamic_cast<Stream &>(fs), filename, destroy, fail_msg);
     } catch (std::bad_cast &) {
       throw_fail(filename, " was not of the right stream type");
     }
