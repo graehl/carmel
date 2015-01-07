@@ -119,6 +119,7 @@ std::string const stderr_filename("-2");
 std::string const null_filename("-0");
 const char gz_ext[]=".gz";
 const char lz4_ext[]=".lz4";
+const char bz2_ext[]=".bz2";
 }
 
 inline bool special_output_filename(std::string const& s) {
@@ -139,6 +140,10 @@ inline bool gz_filename(std::string const& s) {
 
 inline bool lz4_filename(std::string const& s) {
   return match_end(s.begin(), s.end(), lz4_ext, lz4_ext+sizeof(lz4_ext)-1);
+}
+
+inline bool bz2_filename(std::string const& s) {
+  return match_end(s.begin(), s.end(), bz2_ext, bz2_ext+sizeof(bz2_ext)-1);
 }
 
 namespace fs = boost::filesystem;
@@ -173,39 +178,42 @@ inline std::string general_options_desc()
 template <class Stream>
 struct stream_traits
 {
+  static bool is_default(std::string const& s) { return s == stdin_filename; }
+  BOOST_STATIC_CONSTANT(bool, file_only = false);
+  BOOST_STATIC_CONSTANT(bool, read = true);
+  template <class Filearg>
+  static void call_set_default(Filearg &x, std::string const& s) { x.set_checked(GRAEHL__DEFAULT_IN, s); }
+  template <class Filearg>
+  static void call_set_file(Filearg &x, std::string const& s, bool large_buf) { x.template set_new_buf<std::ifstream>(s, "Couldn't open input file", large_buf); }
+  static char const* type_string() { return "input filename " GRAEHL_GZ_USAGE; }
 };
 
-
 template<>
-struct stream_traits<std::ifstream>
+struct stream_traits<std::ifstream> : stream_traits<std::istream>
 {
+  static bool is_default(std::string const& s) { return false; }
   BOOST_STATIC_CONSTANT(bool, file_only = true);
-  BOOST_STATIC_CONSTANT(bool, read = true);
-  static char const* type_string() { return "input filename " GRAEHL_GZ_USAGE; }
+  static char const* type_string() { return "input filename"; }
 };
 
 template<>
 struct stream_traits<std::ofstream>
 {
+  static bool is_default(std::string const& s) { return false; }
   BOOST_STATIC_CONSTANT(bool, file_only = true);
   BOOST_STATIC_CONSTANT(bool, read = false);
+  static char const* type_string() { return "output filename"; }
+  template <class Filearg>
+  static void call_set_default(Filearg &x, std::string const& s) { x.set_checked(s == stderr_filename ? GRAEHL__DEFAULT_LOG : GRAEHL__DEFAULT_OUT, s); }
+  template <class Filearg>
+  static void call_set_file(Filearg &x, std::string const& s, bool large_buf) { x.template set_new_buf<std::ofstream>(s, "Couldn't open output file", large_buf); }
+};
+
+template<>
+struct stream_traits<std::ostream> : stream_traits<std::ofstream> {
+  static bool is_default(std::string const& s) { return s == stdin_filename || s == stderr_filename; }
+  BOOST_STATIC_CONSTANT(bool, file_only = false);
   static char const* type_string() { return "output filename " GRAEHL_GZ_USAGE; }
-};
-
-template<>
-struct stream_traits<std::ostream>
-{
-  BOOST_STATIC_CONSTANT(bool, file_only = false);
-  BOOST_STATIC_CONSTANT(bool, read = false);
-  static char const* type_string() { return "output filename or - for stdout, -0 for none, -2 for stderr " GRAEHL_GZ_USAGE; }
-};
-
-template<>
-struct stream_traits<std::istream>
-{
-  BOOST_STATIC_CONSTANT(bool, file_only = false);
-  BOOST_STATIC_CONSTANT(bool, read = true);
-  static char const* type_string() { return "input filename or - for stdin " GRAEHL_GZ_USAGE; }
 };
 
 template <class S>
@@ -374,7 +382,7 @@ public:
   void set_checked(filestream &fs, std::string const& filename="", bool destroy = no_delete_after, std::string const& fail_msg="invalid stream")
   {
     try {
-      set(dynamic_cast<Stream &>(fs), filename, destroy, fail_msg);
+      set(static_cast<Stream &>(fs), filename, destroy, fail_msg);
     } catch (std::bad_cast &) {
       throw_fail(filename, " was not of the right stream type");
     }
@@ -436,6 +444,8 @@ public:
 
   void set_gzfile(std::string const&s, bool large_buf = true);
 
+  void set_bz2(std::string const&s, bool large_buf = true);
+
   void set_lz4(std::string const&s, bool large_buf = true) { throw_fail(".lz4 support unimplimented"); }
 
   // warning: if you specify the wrong values for read and file_only, you could assign the wrong type of pointer and crash!
@@ -443,39 +453,34 @@ public:
            bool null_allowed = ALLOW_NULL, bool large_buf = true
     )
   {
-    const bool read = stream_traits<Stream>::read;
-    const bool file_only = stream_traits<Stream>::file_only;
+    typedef stream_traits<Stream> Traits;
     if (s.empty()) {
       throw_fail("<EMPTY FILENAME>","Can't open an empty filename.  Use \"-0\" if you really mean no file");
-    } if (!file_only && s == stdin_filename) {
+    } if (Traits::is_default(s)) {
       // note that we don't attempt to supply a large buffer for either cin or cout,
       // since they're likely to already be in use by others
-      if (read) {
-        set_checked(GRAEHL__DEFAULT_IN, s);
-      } else {
-        set_checked(GRAEHL__DEFAULT_OUT, s);
-      }
-    } else if (!file_only && !read && s== stderr_filename) {
-      set_checked(GRAEHL__DEFAULT_LOG, s);
+      Traits::call_set_default(*this, s);
     } else if (null_allowed && s == null_filename) {
       set_none();
       return;
     }
 #if GRAEHL_USE_GZSTREAM
-    else if (gz_filename(s)) {
+    else if (!Traits::file_only && gz_filename(s)) {
       set_gzfile(s);
     }
 #endif
+#if USE_BOOST_BZ2STREAM
+    else if (!Traits::file_only && bz2_filename(s)) {
+      set_bz2(s);
+    }
+#endif
 #if GRAEHL_USE_LZ4
-    else if (lz4_filename(s)) {
+    else if (!Traits::file_only && lz4_filename(s)) {
       set_lz4(s);
     }
 #endif
     else {
-      if (read)
-        set_new_buf<std::ifstream>(s, "Couldn't open input file", large_buf);
-      else
-        set_new_buf<std::ofstream>(s, "Couldn't create output file", large_buf);
+      Traits::call_set_file(*this, s, large_buf);
     }
     none = false;
   }

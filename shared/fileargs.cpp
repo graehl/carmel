@@ -30,25 +30,63 @@ const std::string fail_out="Couldn't create compressed output file";
 }
 
 template <class Stream>
+struct call_set_new_gz {
+  template <class Filearg>
+  static void gz(Filearg &x, std::string const& s) { throw std::runtime_error("can't open .gz as fstream"); }
+#if USE_BOOST_BZ2STREAM
+  template <class Filearg>
+  static void bz2(Filearg &x, std::string const& s) { throw std::runtime_error("can't open .bz2 as fstream"); }
+#endif
+};
+
+template <>
+struct call_set_new_gz<std::ostream> {
+  template <class Filearg>
+  static void gz(Filearg &x, std::string const& s) { x.template set_new<ogzstream>(s, fail_out); }
+#if USE_BOOST_BZ2STREAM
+  template <class Filearg>
+  static void bz2(Filearg &x, std::string const& s) { x.template set_new<obz2stream>(s, fail_out); }
+#endif
+};
+
+template <>
+struct call_set_new_gz<std::istream> {
+  template <class Filearg>
+  static void gz(Filearg &x, std::string const& s) { x.template set_new<igzstream>(s, fail_in); }
+#if USE_BOOST_BZ2STREAM
+  template <class Filearg>
+  static void bz2(Filearg &x, std::string const& s) { x.template set_new<ibz2stream>(s, fail_in); }
+#endif
+};
+
+
+template <class Stream>
 void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
-// gzstream has a static 256k buffer already. big enough.
+// gzstream has a static 256k buffer already. big enough. //TODO: what about USE_BOOST_GZSTREAM buffer?
 {
-  const bool read=stream_traits<Stream>::read;
   std::string fail_msg;
   try {
-    if (read) {
-      fail_msg=fail_in;
-      set_new<igzstream>(s, fail_msg);
-    } else {
-      fail_msg=fail_out;
-      set_new<ogzstream>(s, fail_msg);
-    }
+    call_set_new_gz<Stream>::gz(*this, s);
   } catch (std::exception &e) {
     fail_msg.append(" - exception: ").append(e.what());
     throw_fail(s, fail_msg);
   }
 }
 
+#if USE_BOOST_BZ2STREAM
+template <class Stream>
+void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
+// gzstream has a static 256k buffer already. big enough. //TODO: what about USE_BOOST_GZSTREAM buffer?
+{
+  std::string fail_msg;
+  try {
+    call_set_new_gz<Stream>::bz2(*this, s);
+  } catch (std::exception &e) {
+    fail_msg.append(" - exception: ").append(e.what());
+    throw_fail(s, fail_msg);
+  }
+}
+#endif
 #define GRAEHL_INSTANTIATE_SET_GZFILE(Stream) template void file_arg<Stream>::set_gzfile(std::string const&,bool)
 
 GRAEHL_INSTANTIATE_SET_GZFILE(std::istream);

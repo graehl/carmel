@@ -15,10 +15,32 @@
 #define GRAEHL__SHARED__GZSTREAM_HPP
 #pragma once
 
-#include <graehl/shared/gzstream.h>
-#if (!defined(GRAEHL__NO_GZSTREAM_MAIN) && defined(GRAEHL__SINGLE_MAIN)) || defined(GRAEHL__GZSTREAM_MAIN)
-//FIXME: generate named library/object instead?
-# include "gzstream.cpp"
+
+#if USE_BOOST_GZSTREAM || USE_BOOST_BZ2STREAM
+#include <graehl/shared/filter_file_stream.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#if USE_BOOST_BZ2STREAM
+#include <boost/iostreams/filter/bzip2.hpp>
 #endif
 
+namespace graehl {
+
+typedef filter_file_stream<boost::iostreams::zlib_decompressor, boost::iostreams::input, std::ifstream> igzstream;
+typedef filter_file_stream<boost::iostreams::zlib_compressor, boost::iostreams::output, std::ofstream> ogzstream;
+#if USE_BOOST_BZ2STREAM
+typedef filter_file_stream<boost::iostreams::bz2_decompressor, boost::iostreams::input, std::ifstream > ibz2stream;
+typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::output, std::ofstream> obz2stream;
+#endif
+
+}
+
+#else
+
+#include <graehl/shared/gzstream.h>
+
+#if (!defined(GRAEHL__NO_GZSTREAM_MAIN) && defined(GRAEHL__SINGLE_MAIN)) || defined(GRAEHL__GZSTREAM_MAIN)
+// FIXME: generate named library/object instead?
+#include "gzstream.cpp"
+#endif
+#endif
 #endif

@@ -7,9 +7,7 @@ addlicense() {
             echo ...
             echo
         else
-            set -x
             cat $license $f > $tmpfile && mv $tmpfile $f
-            set +x
         fi
     done
 }
