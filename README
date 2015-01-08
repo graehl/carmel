@@ -9,7 +9,17 @@ carmel: finite state transducer toolkit (and k-best graph paths).
 
 forest-em: derivation forests EM and gibbs (dirichlet prior bayesian) training
 
-shared: generic routines used by both
+shared: utility C++/Make libraries used by carmel and forest-em
+
+gextract: some python bayesian syntax MT rule inference
+
+sblm: some simple pcfg (e.g. penn treebank parses, but preferably binarized)
+
+clm: some class-based LM feature? I forget.
+
+cipher: some word-class discovery and unsupervised decoding of simple
+probabilistic substitution cipher (uses carmel, but look to the tutorial in
+carmel/ first)
 
 PREREQUISITES:
 
@@ -27,7 +37,7 @@ the headers with
 To specify where to install built binaries, do for e.g. Carmel:
 
     cd carmel
-    INSTALL_PREFIX=/usr/local ARCH_FLAGS="-m32" make -j 4 install
+    INSTALL_PREFIX=/usr/local make -j 4 install
 
 or, to build without installing (look in bin/`hostname`for binaries)
 
@@ -48,4 +58,4 @@ known good, as is Microsoft Visual C++ 7.1)
 
 If you're mystified by what's going on in the build, look at shared/graehl.mk
 
-"make depend" should run automatically.
+"make depend" will run automatically.
