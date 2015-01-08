@@ -5,7 +5,7 @@ experiments() {
 }
 tunes() {
     for f in ${*:-`pwd`}; do
-        ag -G "iter_${iter}"'.*\.err.*'$parti 'Converged' $f
+        ag -G "iter_${iter}"'.*\.err.*\.'$parti 'Converged' $f
     done
 }
 expclean() {
