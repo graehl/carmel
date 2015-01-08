@@ -20,16 +20,23 @@
 #define APPEND_JG_2015_01_07_HPP
 #pragma once
 
+#include <boost/range.hpp>
+
 namespace graehl {
 
 template <class V, class Iter>
-void append(V const& v, Iter begin, Iter end) {
+void append(V &v, Iter begin, Iter end) {
   v.insert(v.end(), begin, end);
 }
 
-template <class V, class Iter>
-void append(std::string const& v, Iter begin, Iter end) {
+template <class Iter>
+void append(std::string &v, Iter begin, Iter end) {
   v.append(begin, end);
+}
+
+template <class C, class Range>
+inline void append(C& c, Range const& range) {
+  append(c, boost::begin(range), boost::end(range));
 }
 
 

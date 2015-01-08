@@ -14,6 +14,10 @@
 /** \file
 
     fast itoa but supporting unsigned and larger integral types.
+
+    see int_types.hpp signed_for_int<Int>::toa_bufsize (includes 1 extra for trailing 0 and 1 for +- sign)
+
+    notice: some of these fns write the integer backwards (others use a temporary buffer then reverse the result)
 */
 
 #ifndef GRAEHL_SHARED__ITOA_H
@@ -21,6 +25,7 @@
 #pragma once
 
 #include <graehl/shared/int_types.hpp>
+#include <graehl/shared/append.hpp>
 #include <string>
 #include <cstring>
 #include <limits>
@@ -41,16 +46,6 @@
   rem -= 10 * n;
 
 namespace graehl {
-
-
-/*
-// The largest 32-bit integer is 4294967295, that is 10 chars
-// 1 more for sign, and 1 for 0-termination of string
-const unsigned utoa_bufsize=12;
-const unsigned utoa_bufsizem1=utoa_bufsize-1;
-const unsigned ultoa_bufsize=22;
-const unsigned ultoa_bufsizem1=utoa_bufsize-1;
-*/
 
 #ifdef GRAEHL_ITOA_DIGIT_LOOKUP_TABLE
 namespace {
@@ -200,6 +195,14 @@ inline std::string utos(Int n) {
   char* end = buf + signed_for_int<Int>::toa_bufsize;
   char* p = utoa(end, n);
   return std::string(p, end);
+}
+
+template <class String, class Int>
+inline void utos_append(String &str, Int n) {
+  char buf[signed_for_int<Int>::toa_bufsize];
+  char* end = buf + signed_for_int<Int>::toa_bufsize;
+  char* p = utoa(end, n);
+  append(str, p, end);
 }
 
 // returns position of '\0' terminating number written starting at to

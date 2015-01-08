@@ -60,6 +60,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <graehl/shared/append.hpp>
 #ifndef GRAEHL_DEBUG_STRING_TO
 #define GRAEHL_DEBUG_STRING_TO 0
 #endif
@@ -692,6 +693,25 @@ struct string_builder : string_buffer {
     this->resize(sz + written);
     return *this;
   }
+  enum { kMaxInt32Chars = 12, kMaxInt64Chars = 22 };
+
+  string_builder& operator()(unsigned char x) {
+    utos_append((string_buffer&)*this, x);
+    return *this;
+  }
+  string_builder& operator()(unsigned short x) {
+    utos_append((string_buffer&)*this, x);
+    return *this;
+  }
+  string_builder& operator()(unsigned x) {
+    utos_append((string_buffer&)*this, x);
+    return *this;
+  }
+  string_builder& operator()(std::size_t x) {
+    utos_append((string_buffer&)*this, x);
+    return *this;
+  }
+
   /**
      enough digits that you get the same value back when parsing the text.
   */

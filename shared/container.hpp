@@ -27,7 +27,7 @@
 #include <deque>
 #include <list>
 #include <map>
-#include <boost/range.hpp>
+#include <graehl/shared/append.hpp>
 #include <graehl/shared/containers.hpp>
 
 #ifdef GRAEHL_TEST
@@ -59,16 +59,6 @@ inline void add(std::list<V, A>& c, Val const& v) {
 template <class Key, class Findable>
 bool contains(Findable const& set, Key const& key) {
   return set.find(key) != set.end();
-}
-
-template <class C, class S>
-inline void append(C& c, S const& begin, S const& end) {
-  c.insert(c.end(), begin, end);
-}
-
-template <class C, class Range>
-inline void append(C& c, Range const& range) {
-  c.insert(c.end(), boost::begin(range), boost::end(range));
 }
 
 template <class R, class C, class F>

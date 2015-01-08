@@ -98,7 +98,7 @@ not_in_set<Set> make_not_in_set(Set *s)
 }
 
 template <class Container, class Predicate>
-void remove_if (Container &cont, Predicate pred)
+void remove_if(Container &cont, Predicate pred)
 {
   cont.erase(std::remove_if (cont.begin(), cont.end(), pred), cont.end());
 }
@@ -122,12 +122,6 @@ void grow(Container &cont, std::size_t size, const typename Container::value_typ
   std::size_t contsz = cont.size();
   if (size > contsz)
     cont.resize(size, default_value);
-}
-
-template <class Container, class Iter> inline
-void append(Container &cont, Iter beg, Iter end)
-{
-  cont.insert(cont.end(), beg, end);
 }
 
 // Order e.g. less_typeless
