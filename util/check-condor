@@ -1,0 +1,24 @@
+#!/bin/bash
+
+condor_q -format "%s " ClusterId -format "%s " Iwd  -format "%s\n" Out \
+  | sort -k2 \
+  | perl -MTerm::ANSIColor -ane '$dir=$F[1]; if($dir ne $prev_dir) {print ($.>1?"\n":""); print color "bold blue"; ++$cnt_dirs; print "($cnt_dirs) $dir\n"; print color "reset"; $cnt_jobs=0} ++$cnt_jobs;
+my $host="";
+my $g = $F[2];
+$g =~ s/.out(put)?$//;
+ my $hostf = "$dir/$g.err.$F[0]";
+ if ( -f $hostf ) {
+ my $fh;
+ open $fh,$hostf or die "opening $hostf";
+ my $l = <$fh>;
+chomp $l;
+ $host="$1" if $l =~ /on (.*)$/;
+$hosts{$host} = 1;
+ }
+print "$cnt_jobs $F[0] | $F[2] $host\n"; $prev_dir=$dir;
+END { foreach (keys %hosts) {
+$out=`set -x;ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=20 $_ "top -b -n 1 -u $ENV{USER} | grep '"'^ *[0-9]'"' | grep -v top | grep -v grep | grep -v ssh | grep -v bash | grep -v perl"`;
+chomp $out;
+print "$_ $out\n";
+}}
+'

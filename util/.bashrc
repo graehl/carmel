@@ -23,7 +23,7 @@ SCALAFLAGS_BASE="-target:jvm-1.5 -Ywarn-dead-code -deprecation"
 SCALAFLAGS_DBG="$SCALAFLAGS_BASE -g:notailcalls"
 SCALAFLAGS_OPT="$SCALAFLAGS_BASE -Xdisable-assertions -g:line -Yinline -optimise -Yclosure-elim -Ydead-code -Ydetach -Yno-generic-signatures"
 DEV=$HOME/dev
-export PATH=/usr/bin:$PATH
+export PATH=/usr/bin:~/torch/bin:$PATH:
 #if [ $HOST = TRUE ] ; then DEV=/cache; fi
 HOSTNAME=`hostname | /usr/bin/tr -d '\r\n'`
 #set -x

@@ -21,6 +21,18 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+btop() {
+    top -b -n 1 -u $USER | grep '^ *[0-9]' | grep -v top | grep -v grep | grep -v ssh | grep -v bash
+}
+ctop() {
+    c-s "top -b -n 1 -u $USER | grep '"'^ *[0-9]'"' | grep -v top | grep -v grep | grep -v ssh | grep -v bash"
+}
+diffmert() {
+    for MERT_SPARSE in 0 1; do
+        o=~/tmp/mert.sparse.$MERT_SPARSE.txt
+        init=init.30 DEBUG=1 MERT_SPARSE=$MERT_SPARSE CC=clang out12 $o cmert -j 1 "$@" || true
+    done
+}
 reforestviz() {
 overt;cd forest-em;make bin/pwn/forestviz.debug && ~/g/forest-em/bin/pwn/forestviz.debug -n -i sample/forests.gz -o sample/forests.dot && cat sample/forests.dot
 }
@@ -235,47 +247,6 @@ dcondor() {
 }
 cprs() {
     cp -Rs "$@"
-}
-cwithmertargs() {
-    (
-        #
-        cwithdir c/ct-archive/archive/3rdParty/mert "time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
-        #        set -x
-    )
-}
-cwithmertrun() {
-    (
-        # mertct $* &&
-        cwithdir c/ct-archive/archive/3rdParty/mert "$@"
-        #        set -x
-    )
-}
-cwithdir() {
-    (set -e;
-     local d=$1
-     shift
-     rm -f ~/$d/*.o mert
-     cd ~
-     local dst=$d
-     local rdir=$d
-     if [[ -d $d ]] ; then
-         dst=`dirname $d`
-     else
-         rdir=`dirname $d`
-     fi
-     if [[ $l0bonus ]] ; then
-     if [[ -f $d/mert.c ]]; then
-         perl -i -pe 's/double l0_bonus = [^;]*;/double l0_bonus = '"$l0bonus"';/' $d/mert.c
-         grep 'l0_bonus =' $d/mert.c
-     fi
-     fi
-     scp -r $d $chost:$dst
-     #     set -x
-     if [[ $scan ]] ; then
-         scanpre="scan-build -k "
-     fi
-     c-s "cd $rdir; set -x; $scanpre make $target DEBUG=$DEBUG ASSERT=$ASSERT CC=$CC SAN=$SAN && $*"
-    )
 }
 cpptox2() {
     (set -e
@@ -3288,7 +3259,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=${cmake:-} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -4070,7 +4041,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
-        c-s USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -4257,7 +4228,7 @@ out12() {
     ( if ! [[ ${quiet:-} ]] ; then
         echo "$@"; echo
         fi
-        "$@" 2>&1) | filterblock > $out
+        "$@" 2>&1) | filterblock > $out.new;  mv $out.new $out
     echo2 saved output:
     echo2 $out
     echo2 "$cmd"

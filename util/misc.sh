@@ -5,7 +5,7 @@ experiments() {
 }
 tunes() {
     for f in ${*:-`pwd`}; do
-        ag -G "iter_${iter}"'.*\.err.*\.'$parti 'Converged' $f
+        ag -G "iter_${iter}"'.*\.err.*\.'$parti 'Converged|score\+0' $f
     done
 }
 expclean() {
@@ -37,7 +37,8 @@ smert() {
     save12 ~/tmp/cmert cwithmertargs -x -f 0 /home/graehl/projects/sparse/weights /home/graehl/projects/sparse/${nbest:-nbest.10k} "$@"
 }
 cmert() {
-    save12 ~/tmp/cmert  cwithmertargs  -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
+    makearg="XCFLAGS=-DMERT_SPARSE=${MERT_SPARSE:-1}"
+    save12 ~/tmp/cmert cwithmertargs -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/${init:-initial.txt.19} /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
     if [[ $l0bonus ]] ; then
         c-s "cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-l0=${l0bonus}; ls ~/pub/mert*"
     fi
@@ -45,7 +46,7 @@ cmert() {
         c-s "set -x; cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-$CC"
     fi
 }
-l0s="0 1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4"
+l0s="1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4 0"
 cmerts() {
     for f in $l0s; do
         SAN= l0bonus=$f CC=gcc DEBUG= ASSERT= cmert
@@ -60,6 +61,46 @@ echo2 CC=$CC j=$j
 ~/pub/mert-$CC -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/initial.txt.19 /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest -v 0 -0 1e-4 -j $j >/dev/null
 done
 done
+}
+cwithmertargs() {
+    (
+        #
+        cwithdir c/ct-archive/archive/3rdParty/mert "time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
+        #        set -x
+    )
+}
+cwithmertrun() {
+    (
+        c-s "time ~/bin/mertct $*"
+        cwithmertargs "$@"
+    )
+}
+cwithdir() {
+    (set -e;
+     local d=$1
+     shift
+     rm -f ~/$d/*.o mert
+     cd ~
+     local dst=$d
+     local rdir=$d
+     if [[ -d $d ]] ; then
+         dst=`dirname $d`
+     else
+         rdir=`dirname $d`
+     fi
+     if [[ $l0bonus ]] ; then
+     if [[ -f $d/mert.c ]]; then
+         perl -i -pe 's/double l0_bonus = [^;]*;/double l0_bonus = '"$l0bonus"';/' $d/mert.c
+         grep 'l0_bonus =' $d/mert.c
+     fi
+     fi
+     scp -r $d $chost:$dst
+     #     set -x
+     if [[ $scan ]] ; then
+         scanpre="scan-build -k "
+     fi
+     c-s "cd $rdir; set -x; $scanpre make $target DEBUG=$DEBUG ASSERT=$ASSERT CC=${CC:-gcc} SAN=$SAN $makearg && $*"
+    )
 }
 densesparse="sparse"
 theirbaseline() {
