@@ -1,3 +1,25 @@
+rclangformathost=${rclangformathost:-c-graehl}
+rclangformatdir=${rclangformatdir:-/home/graehl/x}
+rclangformat() {
+    (set -o pipefail
+     cat "$@" | ssh $rclangformathost "/usr/local/bin/clang-format -style=file -assume-filename=$rclangformatdir/assume.cpp $rclangformatargs"
+     )
+}
+# in-place
+irclangformat() {
+    if ! [[ $"$@" ]] || [[ $* = - ]] ; then
+        rclangformat
+    else
+        for f in "$@"; do
+            local g=$f.clang-format
+            if rclangformat $f > $g; then
+                diff -u $f $g
+                mv $g $f
+                echo $f clang-format OK
+            fi
+        done
+    fi
+}
 experiments() {
     for f in ${*:-`pwd`}; do
         experimentf $f/*/my.experiment.yml $f/my.experiment.yml
@@ -5,7 +27,7 @@ experiments() {
 }
 tunes() {
     for f in ${*:-`pwd`}; do
-        ag -G "iter_${iter}"'.*\.err.*\.'$parti 'Converged|score\+0' $f
+        ag -G "iter_${iter}"'.*\.err.*\.'$parti 'Converged|score\+0|intersections, |steps from origin' $f
     done
 }
 expclean() {
@@ -37,7 +59,8 @@ smert() {
     save12 ~/tmp/cmert cwithmertargs -x -f 0 /home/graehl/projects/sparse/weights /home/graehl/projects/sparse/${nbest:-nbest.10k} "$@"
 }
 cmert() {
-    makearg="XCFLAGS=-DMERT_SPARSE=${MERT_SPARSE:-1}"
+    #    makearg="XCFLAGS=-DMERT_SPARSE=${MERT_SPARSE:-1}"
+    makearg=
     save12 ~/tmp/cmert cwithmertargs -x -f 0 /home/graehl/projects/tune/tune_work/iter_0/${init:-initial.txt.19} /home/graehl/projects/tune/tune_work/iter_0/output.nbest/corpus.nbest "$@"
     if [[ $l0bonus ]] ; then
         c-s "cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-l0=${l0bonus}; ls ~/pub/mert*"
@@ -46,7 +69,7 @@ cmert() {
         c-s "set -x; cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-$CC"
     fi
 }
-l0s="1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4 0"
+l0s="0 1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4"
 cmerts() {
     for f in $l0s; do
         SAN= l0bonus=$f CC=gcc DEBUG= ASSERT= cmert

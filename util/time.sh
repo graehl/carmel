@@ -77,7 +77,7 @@ save12timeram() {
     echo "time $*" 1>&2
     if full_linuxtime ; then
         local timeout=`mktemp /tmp/timeram.out.XXXXXX`
-        /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Iinputs %Ooutputs' -- "$@" >$save1 2>&1
+        /usr/bin/time  -f '%Es - %Mkb peak %Iinputs %Ooutputs' -o $timeout -- "$@" >$save1 2>&1
         cat $timeout
     else
         TIMEFORMAT='%3lR'
