@@ -27,7 +27,7 @@ experiments() {
 }
 tunes() {
     for f in ${*:-`pwd`}; do
-        ag -G "iter_${iter}"'.*\.err.*\.'$parti 'Converged|score\+0|intersections, |steps from origin' $f
+        ag -G "iter_${iter}"'.*\.err.*\.'$parti ' peak |Converged|elapsed|score\+0|intersections, |steps from origin' $f
     done
 }
 expclean() {
@@ -69,7 +69,7 @@ cmert() {
         c-s "set -x; cp -a /home/graehl/c/ct-archive/archive/3rdParty/mert/mert /home/graehl/pub/mert-$CC"
     fi
 }
-l0s="0 1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4"
+l0s="0 1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4 1e-6"
 cmerts() {
     for f in $l0s; do
         SAN= l0bonus=$f CC=gcc DEBUG= ASSERT= cmert
