@@ -21,6 +21,24 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+machyp() {
+    (set -e
+     cd $osgitdir
+    cd $xmtx
+    mend
+    ~/x/scripts/release.sh $osgitdir "$@"
+    osmake
+    )
+}
+oshyp() {
+    (set -e
+     cd $osgitdir
+    cd $xmtx
+    mend
+    ~/x/scripts/release.sh $osgitdir "$@"
+    linosmake
+    )
+}
 hownfc() {
     echo -n "$*: "
     EditDistance --nfc=1 --norm1=1 "$1" "$1"
@@ -110,7 +128,7 @@ ospushmend() {
      cd $osgitdir
     cd $xmtx
     mend
-    redox=1 ~/x/scripts/release.sh $osgitdir "$@"
+    redox= ~/x/scripts/release.sh $osgitdir "$@"
     if [[ $pull ]] ; then
         git pull --rebase
     fi
@@ -250,12 +268,11 @@ osrel() {
         set -e
         cd $xmtx
         mend
-        outgit=$osgitdir
-        rm -rf $outgit
+        #rm -rf $osgitdir
         rm -f $ostarball
-        test= tarball=$ostarball $xmtx/scripts/release.sh $outgit
+        test= tarball=$ostarball $xmtx/scripts/release.sh $osgitdir
         set -x
-        cd $outgit
+        cd $osgitdir
     )
 }
 osrelmake() {
