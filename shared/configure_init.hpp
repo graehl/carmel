@@ -73,6 +73,7 @@ struct init_expr
 
   /// the rest of the protocol are all no-ops
 
+  init_expr const& alias() const { return *this; }
   init_expr const& is(std::string const& is) const { return *this; }
   init_expr const& is_also(std::string const& is) const { return *this; }
   template <class V2>

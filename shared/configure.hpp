@@ -1117,6 +1117,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     return *this;
   }
   conf_expr const& alias() const {
+    opt->verbose = 99;
     opt->alias = true;
     return *this;
   }

@@ -1,6 +1,6 @@
 /* mdb_from_db.c - translate Berkeley DB to memory-mapped database(s) */
 /*
- * Copyright 2014 Jonathan Graehl, 2011-2014 Howard Chu, Symas Corp.
+ * Copyright 2014 Jonathan Graehl, 2011-2015 Howard Chu, Symas Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

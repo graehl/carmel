@@ -166,7 +166,7 @@ unset LANGVAR || true
 export LANG=en_US.UTF-8
 enutf8=en_US.UTF-8
 export LC_ALL=
-#export JAVA_HOME=""
+#export JAVA_HOME=
 
 
 function save_default_paths {

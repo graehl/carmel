@@ -68,6 +68,7 @@ struct is_expr
 
   /// the rest of the protocol are all no-ops
 
+  is_expr const& alias() const { return *this; }
   template <class V2>
   is_expr const& eg(V2 const& eg) const { return *this; }
   is_expr const& operator()(char charname) const { return *this; }

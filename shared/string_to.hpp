@@ -29,7 +29,7 @@
   default implementation via boost lexical_cast if GRAEHL_USE_BOOST_LEXICAL_CAST, else stringstreams (quite
   slow, I'm sure)
 
-  fast implementation for string, int, unsigned, float, double, and, if HAVE_LONGER_LONG=1, long
+  fast implementation for string, int, unsigned, float, double, and, if GRAEHL_HAVE_LONGER_LONG=1, long
 
   also: to_string calls itos utos etc
 
@@ -78,8 +78,8 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #ifndef GRAEHL_USE_FTOA
 #define GRAEHL_USE_FTOA 0
 #endif
-#ifndef HAVE_STRTOUL
-#define HAVE_STRTOUL 1
+#ifndef GRAEHL_HAVE_STRTOUL
+#define GRAEHL_HAVE_STRTOUL 1
 #endif
 
 #ifndef GRAEHL_USE_BOOST_LEXICAL_CAST
@@ -164,7 +164,7 @@ inline std::string to_string_impl(int x) {
   return itos(x);
 }
 
-#if HAVE_LONGER_LONG
+#if GRAEHL_HAVE_LONGER_LONG
 inline void string_to_impl(std::string const& s, int& x) {
   x = strtoi_complete_exact(s.c_str());
 }
@@ -276,7 +276,7 @@ inline std::string to_string_impl(char const* s) {
   return std::string(s);
 }
 
-#if HAVE_LONGER_LONG
+#if GRAEHL_HAVE_LONGER_LONG
 inline void string_to_impl(std::string const& s, unsigned long& x) {
   x = strtoul_complete(s.c_str());
 }

@@ -52,7 +52,7 @@ From_Db an LMDB database which does not use subdirectories.
 From_Db a specific subdatabase. If no database is specified, data is from_dbed into the main database.
 .TP
 .BR \-m \ mapMB
-Create mdb with .B mapMB megabytes maximum size (probably won't use this much physical disk). Default is 2048 (2GB)
+Create mdb with .B mapMB megabytes maximum size (probably won't use this much physical disk). Default is 1024*1024 (1TB)
 .TP
 .BR \-N
 Don't overwrite existing records when from_dbing into an already existing database; just skip them.
@@ -62,11 +62,32 @@ Commit LMDB records
 .B sz
 at a time.
 .TP
-.BR \-h \ db_homedir
+.BR \-H \ db_homedir
 Treat input db path as relative to this homedir (see the Berkeley DB docs). Default is '.'
 .TP
 .BR \-B
 Perform a nonblocking Berkeley DB open.
+.TP
+.BR \-F
+sort keys left->right (default is right->left, i.e. sorting on reversed strings
+.TP
+.BR \-R
+sort keys right-left (the default)
+.TP
+.BR \-a
+append assuming bdb has same sort order as mdb (error if db not sorted same as mdb)
+.TP
+.BR \-C
+Use individual write requests instead of cursor puts (in case sorting is different from the input db)
+.TP
+.BR \-1
+only one data per key allowed - do not set MDB_DUPSORT
+.TP
+.BR \-x
+don't add if key already exists in any case (even if MDB_DUPSORT)
+.TP
+.BR \-d
+don't add duplicate <key, data> pairs (but do allow different data w/ same key e.g. <key, otherdata>)
 .TP
 .BR \-T
 Write the key/data into a single simple text file (stderr messages
@@ -89,6 +110,14 @@ example, \\0a is a newline character in the ASCII character set.
 For this reason, any backslash or newline characters that naturally
 occur in the text input must be escaped to avoid misinterpretation by
 .BR mdb_load.
+.TP
+.BR \-o \ stdout_file
+write stdout (used by
+.BR -T
+only) to
+.BR stdout_file
+instead.
+.TP
 
 .SH DIAGNOSTICS
 Exit status is zero if no errors occur.

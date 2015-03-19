@@ -95,7 +95,7 @@ template <class Func>
 inline std::size_t split_noquote(
     const std::string& csv,
     Func f,  // this returns false if we want to stop; we return the number of fields (up to N) for which f
-             // returned true.
+    // returned true.
     const std::string& delim = ",",
     std::size_t N = (std::size_t) - 1,  // max number of calls to f (even if more fields exist)
     bool leave_tail = true,  // if N reached and there's more string left, include it in final call to f
@@ -143,25 +143,28 @@ inline std::vector<std::string> split(std::string const& str, std::string const&
 
 
 #ifdef GRAEHL_TEST
-char const* split_strs[] = {"", ", a", "", 0};
-char const* seps[] = {";", ";;", ",,", " ", "=,", ",=", 0};
-char const* split_chrs[] = {";", ", ", "a", ";"};
+char const* split_strs[] = {"", ",a", "", 0};
+char const* seps[] = {";", ";;", ",,", " ", "=,", ",=", " >||||||<", 0};
+char const* split_chrs[] = {";", ",", "a", ";"};
 
-BOOST_AUTO_TEST_CASE(TEST_io) {
+BOOST_AUTO_TEST_CASE(TEST_split_strs) {
   using namespace std;
   {
     std::string str = ";,a;";
-    split_noquote(str, make_expect_visitor(split_chrs), "");
-    split_noquote(str, make_expect_visitor(split_strs), ";");
+    BOOST_CHECK_EQUAL(split_noquote(str, make_expect_visitor(split_chrs), ""), 4);
+    BOOST_CHECK_EQUAL(split_noquote(str, make_expect_visitor(split_strs), ";"), 3);
     for (char const** p = seps; *p; ++p) {
       string s;
       char const* sep = *p;
+      bool first = true;
       for (char const** q = split_strs; *q; ++q) {
+        if (first)
+          first = false;
+        else
+          s.append(sep);
         s.append(*q);
-        if (q[1]) s.append(sep);
       }
-      // split_noquote(s, make_expect_visitor(split_strs), seps);
-      // cout << sep << "\t"<< s << '\n';
+      BOOST_CHECK_EQUAL(split_noquote(s, make_expect_visitor(split_strs), sep), 3);
     }
   }
 }

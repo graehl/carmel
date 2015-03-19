@@ -21,11 +21,11 @@
 #define GRAEHL__ATOI_FAST_JG2012615_HPP
 #pragma once
 
-#ifndef HAVE_STRTOUL
+#ifndef GRAEHL_HAVE_STRTOUL
 #ifdef _MSC_VER
-#define HAVE_STRTOUL 0
+#define GRAEHL_HAVE_STRTOUL 0
 #else
-#define HAVE_STRTOUL 1
+#define GRAEHL_HAVE_STRTOUL 1
 #endif
 #endif
 
@@ -37,7 +37,7 @@
 #include <cctype>
 #include <cstring>
 // for faster numeric to/from string. TODO: separate into optional header
-#if HAVE_STRTOUL
+#if GRAEHL_HAVE_STRTOUL
 #include <limits.h>  //strtoul
 #endif
 #undef min  // damn you, windows
@@ -335,7 +335,7 @@ inline int strtoi_complete_exact(char const* s, int base = 10) {
 inline unsigned long strtoul_complete(char const* s, int base = 0) {
   unsigned long r;
   if (*s) {
-#if HAVE_STRTOUL
+#if GRAEHL_HAVE_STRTOUL
     char* e;
     r = strtoul(s, &e, base);
     char c = *e;

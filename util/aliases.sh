@@ -21,6 +21,53 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+hownfc() {
+    echo -n "$*: "
+    EditDistance --nfc=1 --norm1=1 "$1" "$1"
+}
+hownfc() {
+    echo -n "$*: "
+    EditDistance --nfd=1 --norm1=1 "$1" "$1"
+}
+opentrace() {
+    strace -e open "$@"
+}
+hexdumps() {
+    if [[ "$*" ]] ; then
+    for f in "$@"; do
+        echo $f
+        hexdump -C $f | head
+        echo
+    done
+    else
+        hexdump -C
+    fi
+}
+lastarg() {
+    for f in "$@"; do
+        lastarg=$f
+    done
+}
+gitcp() {
+    lastarg
+    cp "$@" && git add "$lastarg"
+}
+hypcmake() {
+    mkdir -p ~/c/buildhyp
+    cd ~/c/buildhyp
+    local hsdl=../hyp/sdl/
+    ~/x/scripts/filter-cmake-for-release.py < ~/x/sdl/CMakeLists.txt > $hsdl/CMakeLists.txt
+    ag cpp11 $hsdl/CMakeLists.txt $hsdl/SdlHelperFunctions.cmake
+    rm CMake*;cmake $hsdl && make
+}
+gittracked() {
+    git ls-files "$@" --error-unmatch
+}
+cg() {
+    local prog=$1
+    shift
+    cgdb --fullname -ex "set args $*; r" $prog
+}
 btop() {
     top -b -n 1 -u $USER | grep '^ *[0-9]' | grep -v top | grep -v grep | grep -v ssh | grep -v bash
 }
@@ -298,6 +345,33 @@ savelns() {
 cduh() {
     c-s 'd=/local/graehl/time/SE-SmallLM;du -h $d/rules.mdb{.uncompressed,}'
 }
+check12() {
+    local out="$1"
+    [[ -f $out ]] && mv "$out" "$out~"
+    shift
+    if "$@" > $out.new 2>&1; then
+        mv $out.new $out
+    else
+        mv $out.new $out.err
+        echo "ERROR: see $out.err"
+        tail $out.err
+    fi
+    set +x
+}
+check10() {
+    local outdir=${outdir:-~/tmp/check}
+    mkdir -p $outdir
+    local outs=
+    for i in `seq 1 ${checkn:-10}`; do
+        echo $i
+        local f=$outdir/check.$i
+        check12 $f "$@" &
+        outs+=" $f"
+    done
+    wait
+    tail $outdir/check.*err
+    ls $outdir/check.*err
+}
 c12clang() {
     VERBOSE=1 save12 ~/tmp/c12clang cjen clang
 }
@@ -510,21 +584,6 @@ iops() {
         #| awk '{print $9}'
     done | tee /tmp/iops
 }
-cpextlib() {
-    (
-        local to=${1:-~/pub/lib}
-        mkdir -p $to
-        if [[ $lwarch = Apple ]] ; then
-            dylib=dylib
-        else
-            dylib=so
-        fi
-        for f in `ls ${XMT_EXTERNALS_PATH}/libraries/*/lib/*$dylib* | grep -v asdf`; do
-            ls -l $f
-            cp -a $f $to
-        done
-    )
-}
 ruledump() {
     (set -e
         require_file $1
@@ -588,7 +647,7 @@ xcpps() {
         diffstat HEAD
     )
 }
-diffstat() {
+gitdiffstat() {
     git diff --stat "$@"
 }
 optllvm() {
@@ -600,20 +659,6 @@ optllvm() {
 }
 gitblame() {
     git blame -w -M -CCC "$@"
-}
-bmdb() {
-    (
-        cd ~/c/mdb/libraries/liblmdb/
-        export TERM=dumb
-        XMT_SHARED_EXTERNALS_PATH=${XMT_EXTERNALS_PATH}/../Shared/cpp
-        dbroot=$XMT_EXTERNALS_PATH/libraries/db-5.3.15
-        make mdb_from_db CC=${CC:-gcc} OPT="-O3" XCFLAGS="-I$dbroot/include" LDFLAGS+="-L$dbroot/lib" LDLIBS="-ldb"
-        #gdb --fullname --args ~/c/mdb/libraries/liblmdb/mdb_from_db -T /tmp/foo.db
-        if [[ "$*" ]] ; then
-            /Users/graehl/c/mdb/libraries/liblmdb/mdb_from_db "$@"
-        fi
-        #mdb_dump -n -a /tmp/foo.mdb
-    )
 }
 find_srcs() {
     find_cpps
@@ -630,30 +675,6 @@ allauthors() {
 }
 blamestats() {
     git ls-tree --name-only -r HEAD | grep -E '\.(cc|h|hh|cpp|hpp|c)$' | xargs -n1 git blame -w -M --line-porcelain | grep "^author " | sort | uniq -c | sort -nr
-}
-dumpdb() {
-    (
-        set -e
-        db=$1
-        shift
-        mdb_from_db -l $db; mdb_from_db -T "$@" $db > $db.txt
-        preview $db.txt
-        mdb_from_db -l $db
-    )
-}
-
-ruleversion() {
-    (
-        set -e
-        d=${2:-`dirname $1`}
-        b=`basename $1`
-        db=$d/$b.unzip.db
-        (gunzip -c "$@" || cat "$@") > $db
-        (mdb_from_db -l $db; echo VERSION; mdb_from_db -T -s Version $db; echo HEADER; mdb_from_db -T -s Header $db  || echo No Header; echo RULES; mdb_from_db -T -s RulesDB $db) > $d/$b.txt
-        echo
-        echo  $d/$b.txt
-        head -20 $d/$b.txt
-    )
 }
 run4eva() {
     c-s 'cd x/Release && forever make -j4'
@@ -689,89 +710,6 @@ gitshowcommit() {
 }
 gitrecordcommit() {
     gitshowcommit > ORIGIN.git.commit
-}
-macmdb() {
-(
-export TERM=dumb
-#set -x
-set -e
-mdb=c/mdb/libraries/liblmdb/
-lmdb=c/lmdb
-#cp $lmdb/CMakeLists.txt $mdb
-cd ~
-ln -sf ~/$mdb/*.c ~/$lmdb/mdb
-cd ~/c/mdbbuild
-set -x
-cmake -G 'Unix Makefiles' ../lmdb
-make -s -j2
-for f in ~/$mdb/*.c; do
-    rm ~/$lmdb/mdb/`basename $f`
-    cp $f ~/$lmdb/mdb/
-done
-cp *mdb* ~/bin
-ll=$XMT_EXTERNALS_PATH/libraries/lmdb
-lib=$ll/lib
-bin=$ll/bin
-mkdir -p $lib
-mkdir -p $bin
-cp *.dylib *.a $lib
-cp mdb_* $bin
-cp -f mdb_* ~/bin/
-cd $lib
-git add *.dylib *.a
-cd $bin
-git add mdb_*
-)
-}
-upmdb() {
-(
-#set -x
-set -e
-macmdb
-HOME=$(echo ~)
-c=$(echo ~/c)
-mdb=c/mdb/libraries/liblmdb/
-cd $HOME/$mdb
-git commit --allow-empty -a -C HEAD --amend
-#git pull --rebase
-gitrecordcommit
-libver=lmdb
-smdb=c/xmt-externals-source/$libver
-cp ORIGIN.* sdl.diff *.c *.h $HOME/$smdb/mdb/
-cd $HOME/$smdb/mdb
-#git pull --rebase
-git add *.c *.h ORIGIN.*
-
-xlib=$XMT_EXTERNALS_PATH/../FC12/libraries
-slib=$XMT_EXTERNALS_PATH/../Shared/cpp
-ll=$xlib/lmdb/lib
-bl=$xlib/lmdb/bin
-mkdir -p $ll
-mkdir -p $bl
-chost=${mdbhost:-c-jmay}
-cb=c/build-$libver
-rm -f $HOME/$smdb/*.o
-rm -f $HOME/$smdb/*.a
-scp -r $HOME/$smdb $chost:c/
-banner building remotely on $chost
-c-s "mkdir -p $cb;cd $cb; xmtcmake -G 'Unix Makefiles' ../$libver && make -j5 && cp mdb_* ~/bin"
-set -x
-scp $chost:$cb/\*.so  $ll
-scp $chost:$cb/\*.a  $ll
-scp $chost:$cb/mdb_\*  $bl
-set +x
-incl=$slib/libraries/lmdb/include
-cp $HOME/$smdb/mdb/lmdb.h $incl
-cd $ll
-#git check-ignore -v *.so *.a || true
-git add *.so *.a
-cd $bl
-git add mdb_*
-git add $incl/*.h || true
-if [[ $mend ]] ; then
-    mend
-fi
-)
 }
 
 
@@ -821,19 +759,13 @@ adb connect 192.168.1.6
 }
 fireinstall() {
     fireadb
-    adb install "$@"
+    adb install -r "$@"
 }
 jcp() {
     chost=c-jmay ccp "$@"
 }
 mcp() {
     chost=c-mdreyer ccp "$@"
-}
-justbleu() {
-    perl -ne 'print "$1-ref %BLEU: $2 (len=$3)\n" if (/BLEUr(\d+)n\S+ (\S+) .*lengthRatio: (\S+)/)' "$@"
-}
-shortenbleu() {
-    perl -pe '$_ = "$1-ref %BLEU: $2 (len=$3)\n" if (/BLEUr(\d+)n\S+ (\S+) .*lengthRatio: (\S+)/)' "$@"
 }
 aganon() {
     ag --no-numbers --nogroup "$@" | perl -pe 's/^\S+://'
@@ -846,24 +778,6 @@ perseg() {
 }
 avgperseg() {
     perseg "$@" | summarize_num.pl --prec 5 --avgonly  2>/dev/null
-}
-showtune() {
-    local report=tunereport.`filename_from "@@"`
-(
-    local tunedir
-    for tunedir in "$@"; do
-        #$tunedir/tune_slot/tune_work/report.txt
-        echo -n "$tunedir - eval:"
-        justbleu  $tunedir/evalresults/test-results.txt
-    done
-    for tunedir in "$@"; do
-        echo -n "$tunedir - eval: "
-        avgperseg $tunedir/eval_slot/trans_work/translate_xmt/test/condor/translate*.err.*
-        echo -n '            - tune:'
-        avgperseg $tunedir/tune_slot/condor/tune/iter_0/condor_decode_job/tune*.err.*
-    done
-) | tee $tunereport
-preview $tunereport
 }
 cstrings() {
     ldd "$@"
@@ -1011,18 +925,6 @@ comxmtken() {
         git commit -a -m 'kenlm'
     )
 }
-mgif() {
-    (
-        set -x
-        set -e
-        cd ~/downloads
-        mv *.gif ~/documents/email/_g/ || true
-        rm *' (1)'.jp* || true
-        for f in png jpg jpeg; do
-            mv *.$f ~/dropbox/r/ || true
-        done
-    )
-}
 detumblr() {
     ls tumblr_* | perl -e '$re=q{^tumblr_(.*?)_(\d+)\.};
 while(<>){chomp;push @l,$_;
@@ -1031,7 +933,15 @@ for(@l) {  print "rm $_\n" if (/$re/ && $m{$1} > $2) }
 '
 }
 mpics() {
-    mgif
+        set -x
+        cd ~/downloads
+        rm "container_bg*.png"
+        mv *.gif ~/documents/email/_g/ || true
+        rm *' (1)'.jp* || true
+        for f in png jpg jpeg; do
+            mv *.$f ~/pictures/r/ || true
+        done
+        set +x
 }
 blame() {
     git blame -wM "$@"
@@ -1310,7 +1220,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper"
+xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper"
 xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
@@ -2612,7 +2522,7 @@ forcepush() {
 #modified including untracked. also includes ?? line noise output
 gitmod() {
     git status --porcelain -- "*$1"
-    #    git ls-files -mo
+    git ls-files -mo
 }
 gitmodbase() {
     local ext=${1:?.extension}
@@ -2840,7 +2750,7 @@ ccp() {
                     cargs="-i $cidentity"
                 fi
                 local rargs
-                if [[ $recursive = 1 ]] ; then
+                if [[ $recursive = 1 ]] || [[ $recur = 1 ]] ; then
                     rargs="-r"
                 fi
                 echo scp $cargs $rargs $cuserpre$chost:"$f" "$dst"
@@ -4041,7 +3951,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
-        c-s RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -4990,6 +4900,21 @@ svnchmodx() {
 lc() {
     catz "$@" | tr A-Z a-z
 }
+cpextlib() {
+    (
+        local to=${1:-~/pub/lib}
+        mkdir -p $to
+        if [[ $lwarch = Apple ]] ; then
+            dylib=dylib
+        else
+            dylib=so
+        fi
+        for f in `ls ${XMT_EXTERNALS_PATH}/libraries/*/lib/*$dylib* | egrep -v 'liblbfgs-b2a54a9-float|hadoop-0.20.2-cdh3u3|tbb-4.2.3'`; do
+            ls -l $f
+            cp -a $f $to
+        done
+    )
+}
 lnxmtlib() {
     d=${1?arg1: dest dir}
     mkdir -p $d
@@ -5250,7 +5175,7 @@ pandcrapall()
     done
 }
 texpath() {
-    export PATH=/usr/local/texlive/2012/bin/x86_64-darwin/:/usr/local/texlive/2012/bin/universal-darwin/:$PATH
+    export PATH=/usr/local/texlive/2014/bin/x86_64-darwin/:/usr/local/texlive/2014/bin/universal-darwin/:$PATH
 }
 sshut() {
     local dnsarg=

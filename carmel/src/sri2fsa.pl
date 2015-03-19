@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+# comapre to http://www.openfst.org/twiki/bin/view/GRM/NGramRead
 
 # translate input sri text language model to carmel wfsa
 
@@ -75,7 +76,6 @@ my $start_state=$start1gram ? $no_context_state : $sos_state; # could start in $
 my $final_state=$eos_state;
 
 
-
 # X = quote and spec and esc are all to be c-string-style escaped by esc X
 
 # use for all single words as tokens in FSA
@@ -113,7 +113,6 @@ sub escaped_to_state
 sub words_to_state {
     escaped_to_state(map(escape_for_seq($_),@_));
 }
-
 
 
 sub ngram_to_fsa_arc {
@@ -219,4 +218,3 @@ if ($fulln>0) {
     read_srilm(\&ngram_to_fsa_arc);
 }
 exit;
-

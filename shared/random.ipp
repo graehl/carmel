@@ -37,19 +37,34 @@ inline V1 random_half_open(const V1& v1, const V2& v2) {
   return v1 + random01() * (v2 - v1);
 }
 
-template <class Int>
-inline Int random_less_than(Int limit) {
+struct std_rand {
+  unsigned operator()() const { return std::rand(); }
+};
+
+/// \return on [0, limit) from unigned rand()
+template <class Rand>
+unsigned random_less_than(unsigned limit, Rand rand)
+{
+  unsigned min =
+  // set min = 2^32 % limit
+#if (UINT_MAX > 0xffffffffUL)
+      0x100000000UL % limit;
+#else
+  min = limit > 0x80000000 ? 1 + ~limit : ((0xffffffff - (limit * 2)) + 1) % limit;
+#endif
+  for (;;) {
+    unsigned r = rand();
+    if (r >= min)
+      return r % limit;
+  }
+}
+
+inline unsigned random_less_than(unsigned limit) {
   if (limit <= 1) return 0;
 #if USE_STD_RAND
-  assert(limit <= RAND_MAX);
-  // correct against bias (which is worse when limit is almost RAND_MAX)
-  const Int randlimit = (RAND_MAX / limit) * limit;
-  Int r;
-  while ((r = std::rand()) >= randlimit)
-    ;
-  return r % limit;
+  return random_less_than(limit, std_rand());
 #else
-  return (Int)(random01() * limit);
+  return (unsigned)(random01() * limit);
 #endif
 }
 

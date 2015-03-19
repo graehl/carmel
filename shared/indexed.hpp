@@ -104,6 +104,10 @@ struct indexed : HashEqualsTraits {
     grow(vals_, i) = val;
   }
 
+  //TODO: template find,index for compatible hash of e.g. pair<char*, char*>
+  //vs. string without first creating string - different method name since wrong
+  //hash fn selection would surprise user
+
   template <class Key>
   I find(Key const& val, I otherwise = (I)kNullIndex) const {
     check_index();

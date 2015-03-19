@@ -68,7 +68,10 @@ linuxtime() {
 
 timerss() {
     echo "time $*" 1>&2
+    local timeout=`mktemp /tmp/timeram.out.XXXXXX`
     linuxtime "$@"
+    cat $timeout
+    rm $timeout
 }
 
 save12timeram() {

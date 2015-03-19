@@ -102,7 +102,7 @@ GRAEHL_PRIMITIVE_TYPE_STRING(int8_t, "signed byte");
 GRAEHL_PRIMITIVE_TYPE_STRING(uint8_t, "non-negative byte");
 GRAEHL_PRIMITIVE_TYPE_STRING(int16_t, "16-bit integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(uint16_t, "non-negative 16-bit integer");
-#if HAVE_64BIT_INT64_T
+#if GRAEHL_HAVE_64BIT_INT64_T
 GRAEHL_PRIMITIVE_TYPE_STRING(int64_t, "64-bit integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(uint64_t, "non-negative 64-bit integer");
 #endif
@@ -116,7 +116,7 @@ GRAEHL_PRIMITIVE_TYPE_STRING(unsigned, "non-negative integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(int32_t, "32-bit integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(uint32_t, "non-negative 32-bit integer");
 #endif
-#if HAVE_LONGER_LONG
+#if GRAEHL_HAVE_LONGER_LONG
 GRAEHL_PRIMITIVE_TYPE_STRING(long, "large integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(unsigned long, "large non-negative integer");
 #endif
