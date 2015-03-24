@@ -82,7 +82,7 @@
 #endif
 #include <iostream>
 
-#define INT_MAIN(main_class) int main(int argc, char **argv) { main_class m; return m.run_main(argc, argv); }
+#define INT_MAIN(main_class) int main(int argc, char *argv[]) { main_class m; return m.run_main(argc, argv); }
 
 #define GRAEHL_MAIN_COMPILED " (compiled " __DATE__ " " __TIME__ ")"
 

@@ -54,8 +54,15 @@ UNAME=`uname`
 linuxtime() {
     if have_linuxtime ; then
         if full_linuxtime ; then
-#          /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
-            /usr/bin/time -o $timeout -f '%Es - %Mkb peak %Iinputs %Ooutputs' -- "$@"
+            #          /usr/bin/time -f '%Es - %Mkb peak' -- "$@"
+            local timeoutarg
+            if [[ $timeout ]] ; then
+                timeoutarg="-o $timeout"
+            fi
+            /usr/bin/time $timeoutarg -f '%Es - %Mkb peak %Iinputs %Ooutputs' -- "$@"
+            if [[ $timeout ]] ; then
+                cat $timeout 1>&2
+            fi
         else
             /usr/bin/time -lp "$@"
         fi

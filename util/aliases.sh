@@ -119,7 +119,7 @@ inplace() {
      )
 }
 a2c() {
-    for f in aliases.sh misc.sh; do
+    for f in aliases.sh misc.sh time.sh; do
         scp ~/u/$f $chost:u/$f
     done
 }
@@ -289,7 +289,7 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        c-s "mkdir -p $osdirbuild;cd $osdirbuild; cmake $osgitdir/$hypdir $* && TERM=dumb make -j9 VERBOSE=0 && Hypergraph/HypBest -h"
+        c-s "mkdir -p $osdirbuild;cd $osdirbuild; cmake $osgitdir/$hypdir $* && TERM=dumb make -j9 VERBOSE=0 && Hypergraph/Hyp -h"
     )
 }
 linosrelmake() {
@@ -5264,6 +5264,7 @@ substi() {
             substarg+=" --startsword"
         fi
         echo subst.pl $substarg
+        if [ "$*" ] ; then
         if ! [[ ${nodryrun:-} ]] ; then
             subst.pl --dryrun $substarg "$@"
             echo
@@ -5274,6 +5275,7 @@ substi() {
         if ! [[ $preview ]] ; then
             sleep 3
             subst.pl $substarg "$@"
+        fi
         fi
     )
 }

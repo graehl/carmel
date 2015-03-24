@@ -227,10 +227,10 @@ typedef struct _U64_S { U64 v; } U64_S;
 
 #if (defined(LZ4_BIG_ENDIAN) && !defined(BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE))
 #define LZ4_READ_LITTLEENDIAN_16(d,s,p) { U16 v = A16(p); v = lz4_bswap16(v); d = (s) - v; }
-#define LZ4_WRITE_LITTLEENDIAN_16(p,i)  { U16 v = (U16)(i); v = lz4_bswap16(v); A16(p) = v; p+=2; }
+#define LZ4_WRITE_LITTLEENDIAN_16(p,i) { U16 v = (U16)(i); v = lz4_bswap16(v); A16(p) = v; p+=2; }
 #else		// Little Endian
 #define LZ4_READ_LITTLEENDIAN_16(d,s,p) { d = (s) - A16(p); }
-#define LZ4_WRITE_LITTLEENDIAN_16(p,v)  { A16(p) = v; p+=2; }
+#define LZ4_WRITE_LITTLEENDIAN_16(p,v) { A16(p) = v; p+=2; }
 #endif
 
 
@@ -664,7 +664,7 @@ int LZ4_uncompress(const char* source,
 	{
 		// get runlength
 		token = *ip++;
-		if ((length=(token>>LZ4_ML_BITS)) == LZ4_RUN_MASK)  { for (;(len=*ip++)==255;length+=255){} length += len; }
+		if ((length=(token>>LZ4_ML_BITS)) == LZ4_RUN_MASK) { for (;(len=*ip++)==255;length+=255){} length += len; }
 
 		// copy literals
 		cpy = op+length;
@@ -810,4 +810,6 @@ int LZ4_uncompress_unknownOutputSize(
 	// write overflow error detected
 _output_error:
 	return (int) (-(((char*)ip)-source));
+
+
 }

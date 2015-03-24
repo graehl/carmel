@@ -510,3 +510,9 @@ showtune() {
 ) | tee $tunereport
 preview $tunereport
 }
+hgsrcs() {
+    perl -ne 'print "#include <sdl/Hypergraph/src/$1.cpp>\n" if /sdl_hgTransform\((\S*)\)/' $xmtx/sdl/Hypergraph/CMakeLists.txt
+}
+forhgsrcs() {
+    perl -ne 'print "  x($1) \\\n" if /sdl_hgTransform\((\S*)\)/' $xmtx/sdl/Hypergraph/CMakeLists.txt
+}
