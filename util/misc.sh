@@ -329,7 +329,7 @@ cmert() {
 l0s="0" # 1e-2 4e-2 1e-3 4e-3 4e-4 1e-5 4e-5 4e-6 1e-4 1e-6"
 cmerts() {
     for f in $l0s; do
-        out12=out12 SAN= l0bonus=$f CC=gcc DEBUG= ASSERT= cmert
+        out12=out12 SAN= l0bonus=$f CC=ccache-gcc CXX=ccache-g++ DEBUG= ASSERT= cmert
         if [[ $f = 0 ]] ; then
             c-s 'cp pub/mert-gcc pub/mert2; stripx pub/mert2'
         fi
@@ -389,7 +389,7 @@ cwithdir() {
      else
          sparsearg=
      fi
-     c-s "cd $rdir; set -x; $scanpre make $target $sparsearg DEBUG=$DEBUG ASSERT=$ASSERT CC=${CC:-gcc} SAN=$SAN $makearg && $*"
+     c-s "cd $rdir; set -x; $scanpre make $target $sparsearg DEBUG=$DEBUG ASSERT=$ASSERT CC=${CC:-ccache-gcc} CXX=${CXX:-ccache-g++} SAN=$SAN $makearg && $*"
     )
 }
 densesparse="sparse"

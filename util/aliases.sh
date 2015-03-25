@@ -119,7 +119,7 @@ inplace() {
      )
 }
 a2c() {
-    for f in aliases.sh misc.sh time.sh; do
+    for f in aliases.sh misc.sh time.sh gcc.sh ccache-wrapper.sh; do
         scp ~/u/$f $chost:u/$f
     done
 }
@@ -1534,7 +1534,7 @@ cs-to() {
 }
 c-s() {
     local chost=${chost:-c-graehl}
-    local fwdenv="gccfilter=${gccfilter:-} BUILD=${BUILD:-}"
+    local fwdenv="gccfilterargs=${gccfilterargs:-} gccfilter=${gccfilter:-} BUILD=${BUILD:-}"
     local pre=". ~/.e"
     local cdto=${cdto:-$(remotehome=/home/graehl trhomedir "$(pwd)")}
     local i=
