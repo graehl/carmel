@@ -34,7 +34,7 @@ inline bool good_base64_code(char const* base64code) {
 /// \return ceil(8*n/6) since 2^6 = 64 - 6 bits of info per char
 template <class Int>
 inline Int base64_chars_for_bytes(Int n) {
-  return (n * 4 + 3) / 3;
+  return (n * 4 + 2) / 3;
 }
 
 /// OutAscii output iterator gets var-length Little Endian (lsb first) encoding
@@ -52,7 +52,7 @@ OutAscii base64LE(OutAscii o, Int x, char const* base64code = base64url) {
 template <class OutAscii, class Int>
 OutAscii base64LE_pad(OutAscii o, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
-  unsigned i = 0, N = i + (sizeof(Int) * 4 + 3) / 3;
+  unsigned i = 0, N = (sizeof(Int) * 4 + 2) / 3;
   for (; i != N; ++i) {
     *o = base64code[x & 63];
     x >>= 6;
@@ -73,7 +73,7 @@ void base64LE_append(String &s, Int x, char const* base64code = base64url) {
 template <class String, class Int>
 void base64LE_append_pad(String &s, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
-  unsigned i = s.size(), N = i + (sizeof(Int) * 4 + 3) / 3;
+  unsigned i = s.size(), N = i + (sizeof(Int) * 4 + 2) / 3;
   s.resize(N);
   for(; i != N; ++i) {
     s[i] = base64code[x & 63];
