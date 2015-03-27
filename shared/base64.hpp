@@ -52,7 +52,8 @@ OutAscii base64LE(OutAscii o, Int x, char const* base64code = base64url) {
 template <class OutAscii, class Int>
 OutAscii base64LE_pad(OutAscii o, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
-  for (unsigned i = 0, N = base64_chars_for_bytes; i != N; ++i) {
+  unsigned i = 0, N = i + (sizeof(Int) * 4 + 3) / 3;
+  for (; i != N; ++i) {
     *o = base64code[x & 63];
     x >>= 6;
     ++o;
