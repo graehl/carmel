@@ -1162,6 +1162,10 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     return *this;
   }
 
+
+  conf_expr const& null_ok(Val const& val = Val()) const {
+      return this->implicit(true, val);
+  }
   template <class V2>
   conf_expr const& implicit(bool enable, V2 const& v2) const {
     Val val((v2));  // so we store the right type of boost::any

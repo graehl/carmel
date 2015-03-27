@@ -118,6 +118,8 @@ CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #include <cstdlib>
 #endif
 #include <graehl/shared/snprintf.hpp>
+#include <boost/functional/hash.hpp>
+#include <graehl/shared/base64.hpp>
 
 namespace graehl {
 
@@ -407,7 +409,7 @@ boost::optional<Val>& string_to_optional(std::string const& str, boost::optional
 
 template <class Val>
 boost::shared_ptr<Val>& string_to_shared_ptr(std::string const& str, boost::shared_ptr<Val>& opt) {
-  if (str == "none" || str.empty())
+  if (str == "none")
     opt.reset();
   else
     opt = boost::make_shared<Val>(string_to<Val>(str));
@@ -591,6 +593,16 @@ struct to_string_select<V, typename boost::enable_if<is_shared_ptr<V> >::type> {
 typedef std::vector<char> string_buffer;
 
 struct string_builder : string_buffer {
+  template <class Int>
+  string_builder & base64LE_pad(Int x) {
+    base64LE_append_pad(*this, x);
+    return *this;
+  }
+  template <class Int>
+  string_builder & base64LE(Int x) {
+    base64LE_append(*this, x);
+    return *this;
+  }
   bool operator==(std::string const& str) {
     std::size_t const len = str.size();
     return len == size() && !std::memcmp(begin(), &*str.begin(), len);
@@ -880,6 +892,12 @@ struct string_builder : string_buffer {
   }
 
   const_iterator data() const { return begin(); }
+  friend inline std::size_t hash_value(string_builder const& self) {
+    return self.hash();
+  }
+  std::size_t hash() const {
+    return boost::hash_range(begin(), end());
+  }
 };
 
 // function object pointing to string_builder or buffer. cheap copy

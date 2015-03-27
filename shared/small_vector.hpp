@@ -149,19 +149,61 @@ struct small_vector {
   */
   void clear_nodestroy() { data.stack.sz_ = 0; }
 
+  T* push_back_uninitialized() {
+    if (data.stack.sz_ < kMaxInlineSize) {
+      return &data.stack.vals_[data.stack.sz_++];
+    } else {
+      if (data.stack.sz_ == kMaxInlineSize) copy_vals_to_ptr();
+      else if (data.stack.sz_ == data.heap.capacity_) ensure_capacity_grow(data.stack.sz_ + 1);
+      return &data.heap.begin_[data.stack.sz_++];
+    }
+  }
+
+  void push_back() { new (push_back_uninitialized()) T; }
+
 #if __cplusplus >= 201103L || CPP11
+  /// move
   small_vector(small_vector&& o) {
     std::memcpy(this, &o, sizeof(small_vector));
     o.clear_nodestroy();
   }
 
+  /// move
   small_vector& operator=(small_vector&& o) {
-    if (&o != this) {
-      free();
-      std::memcpy(this, &o, sizeof(small_vector));
-      o.clear_nodestroy();
-    }
+    assert(&o != this); // std::vector doesn't check for self-move so why should we?
+    free();
+    std::memcpy(this, &o, sizeof(small_vector));
+    o.clear_nodestroy();
     return *this;
+  }
+
+  /// varargs forwarded to ctor
+  template<class... Args>
+  void emplace_back(Args&&... args) {
+    new (push_back_uninitialized()) T(std::forward<Args>(args)...);
+  }
+
+#else
+  void emplace_back() { new (push_back_uninitialized()) T; }
+
+  template <class T0>
+  void emplace_back(T0 const& a0) {
+    new (push_back_uninitialized()) T(a0);
+  }
+
+  template <class T0, class T1>
+  void emplace_back(T0 const& a0, T1 const& a1) {
+    new (push_back_uninitialized()) T(a0, a1);
+  }
+
+  template <class T0, class T1, class T2>
+  void emplace_back(T0 const& a0, T1 const& a1, T2 const& a2) {
+    new (push_back_uninitialized()) T(a0, a1, a2);
+  }
+
+  template <class T0, class T1, class T2, class T3>
+  void emplace_back(T0 const& a0, T1 const& a1, T2 const& a2, T3 const& a3) {
+    new (push_back_uninitialized()) T(a0, a1, a2, a3);
   }
 #endif
 
@@ -240,8 +282,7 @@ struct small_vector {
   small_vector(T const* i, T const* end) { init_range(i, end); }
 
   template <class Iter>
-  small_vector(Iter const& i, Iter const& end,
-               typename enable_type<typename Iter::value_type>::type* enable = 0)
+  small_vector(Iter const& i, Iter const& end, typename enable_type<typename Iter::value_type>::type* enable = 0)
   // couldn't SFINAE on std::iterator_traits<Iter> in gcc (for Iter=int)
   {
     init_range(i, end);
@@ -348,7 +389,9 @@ struct small_vector {
 
   void erase(size_type ibegin, size_type iend) {
     size_type sz = data.stack.sz_;
-    if (iend == sz) { resize(ibegin); } else {
+    if (iend == sz) {
+      resize(ibegin);
+    } else {
       size_type nafter = sz - iend;
       movelen(ibegin, iend, nafter);
       resize(ibegin + nafter);
@@ -356,9 +399,11 @@ struct small_vector {
   }
 
   T* erase(T* b, T* e) {  // remove [b, e) and return pointer to element e
-    T* tb = begin(), * te = end();
+    T* tb = begin(), *te = end();
     size_type nbefore = (size_type)(b - tb);
-    if (e == te) { resize(nbefore); } else {
+    if (e == te) {
+      resize(nbefore);
+    } else {
       size_type nafter = (size_type)(te - e);
       movelen(b, e, nafter);
       resize(nbefore + nafter);
@@ -382,11 +427,13 @@ struct small_vector {
   void steal(small_vector& o) {
     if (&o == this) return;
     free();
-    if (o.data.stack.sz_ <= kMaxInlineSize) { // unnecessary detail unless you care about valgrind-safety
+    if (o.data.stack.sz_ <= kMaxInlineSize) {  // unnecessary detail unless you care about valgrind-safety
       data.stack.sz_ = o.data.stack.sz_;
       // unsigned instead of size_type because kMaxInlineSize is unsigned
       for (unsigned i = 0; i < kMaxInlineSize; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
-    } else { std::memcpy(this, &o, sizeof(o)); }
+    } else {
+      std::memcpy(this, &o, sizeof(o));
+    }
     o.clear_nodestroy();
   }
 
@@ -640,7 +687,9 @@ struct small_vector {
       copy_vals_to_ptr();
       data.heap.begin_[kMaxInlineSize] = v;
       data.stack.sz_ = kMaxInlineSize + 1;
-    } else { push_back_heap(v); }
+    } else {
+      push_back_heap(v);
+    }
   }
 
   T& back() { return this->operator[](data.stack.sz_ - 1); }
@@ -848,7 +897,6 @@ struct small_vector {
   }
 
   void swap(small_vector& o) {
-    assert(&o);
     swap_pod(*this, o);
   }
   friend inline void swap(small_vector& a, small_vector& b) { return a.swap(b); }
@@ -959,7 +1007,6 @@ struct small_vector {
              kMaxInlineSize  // may copy more than actual size_. ok. constant should be more optimizable
 #endif
              );
-    ;
     data.heap.capacity_ = kInitHeapSize;
     data.heap.begin_ = newHeapVals;
 #endif
@@ -971,8 +1018,8 @@ struct small_vector {
     T* fromHeap = data.heap.begin_;  // should be no problem with memory access order (strict aliasing)
     // because of safe access through union
     for (size_type i = 0; i < data.stack.sz_; ++i)  // no need to memcpy for small size
-      data.stack.vals_[i] = fromHeap
-          [i];  // note: it was essential to save fromHeap first because data.stack.vals_ union-competes
+      data.stack.vals_[i] = fromHeap[i];  // note: it was essential to save fromHeap first because
+                                          // data.stack.vals_ union-competes
     free_impl(fromHeap);
   }
 
@@ -1079,8 +1126,8 @@ namespace boost {
 namespace assign {
 
 template <class V, unsigned MaxInline, class Size, class V2>
-inline list_inserter<assign_detail::call_push_back<graehl::small_vector<V, MaxInline, Size> >, V> operator+=(
-    graehl::small_vector<V, MaxInline, Size>& c, V2 v) {
+inline list_inserter<assign_detail::call_push_back<graehl::small_vector<V, MaxInline, Size> >, V>
+operator+=(graehl::small_vector<V, MaxInline, Size>& c, V2 v) {
   return push_back(c)(v);
 }
 }
@@ -1280,7 +1327,7 @@ void test_small_vector_2() {
   EXPECT_EQ(v2[1], 11);
 
   // test shrinking/growing near max inline size (2)
-  v2.push_back(12);
+  v2.emplace_back(12);
   EXPECT_EQ(v2[0], 9);
   EXPECT_EQ(v2[1], 11);
   EXPECT_EQ(v2.size(), 3u);
@@ -1292,7 +1339,7 @@ void test_small_vector_2() {
   v2.pop_back();
   EXPECT_EQ(v2.size(), 1u);
   EXPECT_EQ(v2[0], 9);
-  v2.push_back(11);
+  v2.emplace_back(11);
   EXPECT_EQ(v2.size(), 2u);
   EXPECT_EQ(v2[0], 9);
   EXPECT_EQ(v2[1], 11);

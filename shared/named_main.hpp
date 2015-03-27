@@ -43,7 +43,7 @@ struct register_main_class {
     MainClass m;
     return m.run_main(argc, argv);
   }
-  explicit register_main_class(std::string name) { graehl::register_named_main(name, &run_main_fn); }
+  explicit register_main_class(std::string const& name) { graehl::register_named_main(name, &run_main_fn); }
 };
 
 #define GRAEHL_REGISTER_NAMED_MAIN_FN(name, main_fn) graehl::register_main_fn register_##name(#name, main_fn);
@@ -109,12 +109,12 @@ inline int run_named_main(int argc, char* argvin[], bool tryLastWord = true,
       *usage_if_not_found << "ERROR: no commands defined by programmer\n";
     else {
       *usage_if_not_found << "last word of executable name (" << argvin[0]
-                          << ") else first argument indicate a subcommand (case insensitive) from:\n";
+                          << ") else first argument indicate a subcommand (case insensitive).\n";
+      *usage_if_not_found << "\ntry " << argvin[0] << " [subcommand] --help for subcommand usage:\n\n";
       for (original_main_names_t::const_iterator i = g_original_main_names.begin(),
                                                  e = g_original_main_names.end();
            i != e; ++i)
         *usage_if_not_found << *i << "\n";
-      *usage_if_not_found << "\ntry " << argvin[0] << " [subcommand] --help for subcommand details\n";
     }
   return exitcode_if_not_found;
 }

@@ -863,6 +863,13 @@ cr-test() {
         c-test "$@"
     )
 }
+jr-test() {
+    (
+        j-c
+        b-r
+        c-test "$@"
+    )
+}
 b-c() {
     BUILD=DebugClang
 }
@@ -983,15 +990,6 @@ gitundomaster() {
         git reset --hard ${1:-HEAD^1}
         git rebase -f master
         git push -f origin HEAD:master
-    )
-}
-kregr() {
-    k-s yregr "$@"
-}
-overk() {
-    (
-        k-c
-        overc "$@"
     )
 }
 overc() {
@@ -1237,7 +1235,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper"
+xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/Hyp"
 xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
@@ -1296,9 +1294,6 @@ bakxmt() {
             ls -l $f
             local bin=$bindir/$b
             cp -af $f $bindir/$b
-            [[ ${tbbver:-} ]] ||  guesstbbver $f
-            #:$pub/boost-${boostver:-1_55_0}
-            #:$pub/tbb-${tbbver:-4.2.3}
             (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
             chmod +x $bin.sh
             forcelink $hash/$b $pub/$b
@@ -1546,8 +1541,8 @@ c-s() {
     fi
     done
 }
-k-s() {
-    (k-c; c-s "$@")
+y-s() {
+    (y-c; c-s "$@")
 }
 g-c() {
     chost=c-graehl
@@ -1558,8 +1553,8 @@ g-s() {
 j-s() {
     (j-c; c-s "$@")
 }
-kr-s() {
-    (k-c; b-r; c-s "$@")
+yr-s() {
+    (y-c; b-r; c-s "$@")
 }
 m-s() {
     (m-c; c-s "$@")
@@ -1572,6 +1567,9 @@ cs-s() {
 }
 j-with() {
 chost=c-jmay c-with "$@"
+}
+d-with() {
+chost=c-mdreyer c-with "$@"
 }
 g-with() {
 chost=c-graehl c-with "$@"
@@ -1963,6 +1961,12 @@ kr-test() {
 }
 m-test() {
     (b-d;m-c;c-test "$@")
+}
+d-test() {
+    (b-d;d-c;c-test "$@")
+}
+dr-test() {
+    (b-r;d-c;c-test "$@")
 }
 mr-test() {
     (b-r;m-c;c-test "$@")
@@ -3210,7 +3214,7 @@ jen() {
 }
 
 
-kjen(){
+yjen(){
     chost=c-ydong linjen "$@"
 }
 jjen(){
@@ -3228,7 +3232,7 @@ rcjen() {
 cjen() {
     chost=c-graehl linjen "$@"
 }
-kmk() {
+ymk() {
     chost=c-ydong c-make "$@"
 }
 dmk() {
