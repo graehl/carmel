@@ -3152,6 +3152,12 @@ cwith() {
 jen() {
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
+    if ! [[ $XMT_BUILD_TYPE ]] ; then
+    XMT_BUILD_TYPE=Development
+    if [[ $build = Release ]] ; then
+        XMT_BUILD_TYPE=Production
+    fi
+    fi
     shift
     local pub2
     if [[ ${1:-} ]] ; then
@@ -3180,7 +3186,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} XMT_BUILD_TYPE=$XMT_BUILD_TYPE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -3962,7 +3968,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch
         mv $log ${log}2 || true
-        c-s RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s XMT_BUILD_TYPE=$XMT_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -4081,6 +4087,9 @@ forpaste() {
 }
 yregr() {
     BUILD=Release yreg "$@"
+}
+yregc() {
+    BUILD=DebugClang yreg "$@"
 }
 rexmt() {
     (set -e
