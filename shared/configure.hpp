@@ -878,18 +878,14 @@ bool contains(MapOrSet const& map, Val const& val) {
 
 typedef std::vector<std::string> opt_path;
 
-inline std::string join_opt_path(opt_path const& p, char sep = path_sep) {
-  std::ostringstream o;
-  graehl::word_spacer sp(sep);
-  for (opt_path::const_iterator i = p.begin(), e = p.end(); i != e; ++i) o << sp << *i;
-  return o.str();
+template <class Path>
+inline std::string join_opt_path(Path const& p, char sep = path_sep) {
+  return graehl::joined_seq(p, sep);
 }
 
-inline std::string join_opt_path(opt_path const& p, std::string last, char sep = path_sep) {
-  std::ostringstream o;
-  for (opt_path::const_iterator i = p.begin(), e = p.end(); i != e; ++i) o << *i << sep;
-  o << last;
-  return o.str();
+template <class Path>
+inline std::string join_opt_path(Path const& p, std::string const& last, char sep = path_sep) {
+  return graehl::string_builder().join_and(p, last, sep).str();
 }
 
 struct conf_expr_base {
@@ -941,7 +937,7 @@ struct conf_expr_base {
     path.push_back(name);
   }
 
-  std::string path_name() const { return join_opt_path(path, path_sep); }
+  std::string path_name() const { return graehl::joined_seq(path, path_sep); }
   std::string name() const { return path.empty() ? "" : path.back(); }
   template <class Val>
   std::string description(Val const& val) const {

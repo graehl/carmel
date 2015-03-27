@@ -594,12 +594,12 @@ typedef std::vector<char> string_buffer;
 
 struct string_builder : string_buffer {
   template <class Int>
-  string_builder & base64LE_pad(Int x) {
+  string_builder& base64LE_pad(Int x) {
     base64LE_append_pad(*this, x);
     return *this;
   }
   template <class Int>
-  string_builder & base64LE(Int x) {
+  string_builder& base64LE(Int x) {
     base64LE_append(*this, x);
     return *this;
   }
@@ -806,6 +806,13 @@ struct string_builder : string_buffer {
     return *this;
   }
 
+  template <class Sep>
+  string_builder& sep_except_first(bool& first, Sep const& sep) {
+    if (!first) operator()(sep);
+    first = false;
+    return *this;
+  }
+
   string_builder& append_space(std::string const& space) {
     if (!this->empty()) operator()(space);
     return *this;
@@ -892,13 +899,33 @@ struct string_builder : string_buffer {
   }
 
   const_iterator data() const { return begin(); }
-  friend inline std::size_t hash_value(string_builder const& self) {
-    return self.hash();
+  friend inline std::size_t hash_value(string_builder const& self) { return self.hash(); }
+  std::size_t hash() const { return boost::hash_range(begin(), end()); }
+
+  template <class Seq, class Sep>
+  string_builder& join(Seq const& seq, Sep const& sep) {
+    bool first = true;
+    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) sep_except_first(first, sep)(*i);
+    return *this;
   }
-  std::size_t hash() const {
-    return boost::hash_range(begin(), end());
+  template <class Seq, class Sep>
+  string_builder& join(Seq const& seq) {
+    return join(seq, ' ');
+  }
+
+  template <class Seq, class After, class Sep>
+  string_builder& join_and(Seq const& seq, After const& after, Sep const& sep) {
+    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) (*this)(*i)(sep);
+    return (*this)(after);
   }
 };
+
+template <class Seq, class Sep>
+std::string joined_seq(Seq const& seq, Sep const& sep) {
+  string_builder b;
+  b.join(seq, sep);
+  return std::string(b.begin(), b.end());
+}
 
 // function object pointing to string_builder or buffer. cheap copy
 struct append_string_builder {

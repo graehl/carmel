@@ -870,6 +870,13 @@ jr-test() {
         c-test "$@"
     )
 }
+j-test() {
+    (
+        j-c
+        b-d
+        c-test "$@"
+    )
+}
 b-c() {
     BUILD=DebugClang
 }
@@ -1485,8 +1492,8 @@ c-cat() {
 j-cat() {
     j-s catz "$@"
 }
-m-cat() {
-    m-s catz "$@"
+d-cat() {
+    d-s catz "$@"
 }
 c-sync() {
     sync2 $chost "$@"
@@ -1495,10 +1502,6 @@ home-c-sync() {
     (cd
         sync2 $chost "$@"
     )
-}
-m-make() {
-    shift
-    c-with "$@"
 }
 c-make() {
     ctitle "$@"
@@ -1556,11 +1559,8 @@ j-s() {
 yr-s() {
     (y-c; b-r; c-s "$@")
 }
-m-s() {
-    (m-c; c-s "$@")
-}
 d-s() {
-    (m-c; c-s "$@")
+    (d-c; c-s "$@")
 }
 cs-s() {
     cs-for c-s "$@"
@@ -1587,17 +1587,14 @@ c-with() {
         fi
     )
 }
-m-with() {
-    (m-c; c-with "$@")
+d-with() {
+    (d-c; c-with "$@")
 }
 k-with() {
     (k-c; c-with "$@")
 }
 y-with() {
     chost=c-ydong c-with "$@"
-}
-m-with() {
-    chost=c-mdreyer c-with "$@"
 }
 j-with() {
     (j-c; c-with "$@")
@@ -1643,13 +1640,9 @@ jr-c() {
     j-c
     b-r
 }
-mr-c() {
-    m-c
+dr-c() {
+    d-c
     b-r
-}
-cm-c() {
-    c-c
-    b-d
 }
 b-r() {
     BUILD=Release
@@ -1722,11 +1715,11 @@ c-c() {
 k-c() {
     chost=c-ydong
 }
-m-c() {
-    chost=c-mdreyer
-}
 j-c() {
     chost=c-jmay
+}
+d-c() {
+    chost=c-mdreyer
 }
 tocabs() {
     tohost $chost "$@"
@@ -1959,17 +1952,11 @@ k-test() {
 kr-test() {
     (b-r;k-c;c-test "$@")
 }
-m-test() {
-    (b-d;m-c;c-test "$@")
-}
 d-test() {
     (b-d;d-c;c-test "$@")
 }
 dr-test() {
     (b-r;d-c;c-test "$@")
-}
-mr-test() {
-    (b-r;m-c;c-test "$@")
 }
 c-test() {
     local test=$1

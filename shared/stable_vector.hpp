@@ -58,6 +58,14 @@ struct stable_vector {
   Chunks chunks;
   I size_, capacity;  // capacity is redundant but helps w/ speed
 
+  T& back() {
+    assert(size_);
+    return (*this)[size_ - 1];
+  }
+  T const& back() const {
+    assert(size_);
+    return (*this)[size_ - 1];
+  }
   T& operator[](I i) {
     assert(i < size_);
     return chunks[i >> chunkshift][i & posmask];
@@ -201,8 +209,10 @@ struct stable_vector {
   }
 
   void pop_back(bool destroy = kRemoveDestroys) {
-    if (destroy) { reinit((*this)[--size_]); } else
-      --size_;
+    assert(size_);
+    if (destroy)
+      reinit((*this)[size_ - 1]);
+    --size_;
   }
 
   void clear(bool destroy = kRemoveDestroys) {
