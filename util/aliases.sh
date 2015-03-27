@@ -21,6 +21,9 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+trackmaster() {
+    git branch --set-upstream-to=origin/master master
+}
 machyp() {
     (set -e
      cd $osgitdir
