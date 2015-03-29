@@ -2409,8 +2409,8 @@ ctestlast() {
 xmtfails() {
     d=~/tmp
     cut -d' ' -f1 $d/fails > $d/fails.all
-    cd $xmtx/RegressionTests/; grep -l xmt/xmt `cat $d/fails.all` > $d/fails.xmt
-    cd $xmtx/RegressionTests/; grep -L xmt/xmt `cat $d/fails.all` > $d/fails.nonxmt
+    cd $xmtx/RegressionTests/; grep -l sdl/xmt `cat $d/fails.all` > $d/fails.xmt
+    cd $xmtx/RegressionTests/; grep -L sdl/xmt `cat $d/fails.all` > $d/fails.nonxmt
     tailn=20 preview $d/fails.xmt $d/fails.nonxmt
 }
 uncache() {
@@ -3322,7 +3322,7 @@ xmtc() {
     racb ${1:-Debug}
     shift || true
     cd $xmtbuild
-    ccmake ../xmt $cmarg "$@"
+    ccmake ../sdl $cmarg "$@"
 }
 xmtcm() {
     xmtc ${1:-Debug}
@@ -3966,7 +3966,7 @@ linjen() {
      c-s forceco $branch 2>$tmp2
      tail $tmp2
      rm $tmp2
-        log=~/tmp/linjen.`csuf`.$branch
+        log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
         c-s XMT_BUILD_TYPE=$XMT_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
