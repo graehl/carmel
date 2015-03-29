@@ -21,6 +21,18 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+cpp11() {
+    local debugargs
+    [[ $debug ]] && debugargs="-g -O0"
+    local src=$1
+    local o=$src
+    shift
+    o=${o%.cc}
+    o=${o%.cpp}
+    o=${o%.c}
+    set -x
+    TERM=dumb ${CXX:-g++} -std=c++11 -Wno-deprecated-declarations $debugargs $src -o $o && $o "$@"
+}
 trackmaster() {
     git branch --set-upstream-to=origin/master master
 }
