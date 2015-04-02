@@ -21,6 +21,14 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+tailf() {
+    less -W +F
+# SHIFT+F will resume the 'tailing' (as mentioned above)
+# SHIFT+G will take you to the end of the file
+# g will take you to the beginning of the file
+# f will forward you one page
+# b will take you back one page
+}
 cpp11() {
     local debugargs
     [[ $debug ]] && debugargs="-g -O0"

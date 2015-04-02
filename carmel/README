@@ -330,12 +330,7 @@ gibbs sampling / incremental em options:
 --help : more detailed help
 
 
-Confused?  Think you've found a bug?  If all else fails, e-mail graehl@isi.edu or knight@isi.edu
+Confused?  Think you've found a bug?  If all else fails, e-mail graehl@gmail.com or knight@isi.edu
 
 
 See carmel/doc/FORMATS for a description of the transducer file format.
-
-Confused?  Think you've found a bug?  If all else fails, e-mail graehl (gmail.com) or knight@isi.edu
-
-
-See doc/FORMATS for a description of the transducer file format.

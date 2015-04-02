@@ -2,7 +2,7 @@
 * This software ("Carmel") is licensed for research use only, as described in  *
 * the LICENSE file in this distribution.  The software can be downloaded from  *
 * http://www.isi.edu/natural-language/licenses/carmel-license.html.  Please    *
-* contact Kevin Knight (knight@isi.edu) or Jonathan Graehl (graehl@isi.edu)    *
+* contact Kevin Knight (knight@isi.edu) or Jonathan Graehl (graehl@gmail.com)  *
 * with questions about the software or commercial licensing.  All software is  *
 * copyrighted C 2000 by the University of Southern California.                 *
 *******************************************************************************/
@@ -121,4 +121,3 @@ paths are displayed as a list of space-separated, parenthesized arcs:
 
 followed by the path weight (the product of the weights in the sequence) at
 the end of the line.
-

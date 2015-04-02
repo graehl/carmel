@@ -2015,6 +2015,6 @@ void usageHelp(void)
      cout << "\n--compose-cascade : see the result of composing as a cascade without doing tuning (note: for debugging; group numbers on output will be impenetrable even with --debug-cascade=4\n";
   */
   cout << "\n\nConfused?  Think you\'ve found a bug?  If all else fails, ";
-  cout << "e-mail graehl@isi.edu or knight@isi.edu\n\n";
+  cout << "e-mail graehl@gmail.com or knight@isi.edu\n\n";
 
 }
