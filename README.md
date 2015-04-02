@@ -1,4 +1,4 @@
-# Carmel finite-state toolkit - Jonathan Graehl
+## Carmel finite-state toolkit - J. Graehl
 
  (carmel includes EM and gibbs-sampled (pseudo-Bayesian) training)
 
@@ -6,11 +6,11 @@
 
  (see `carmel/README` and `carmel/carmel-tutorial`).
 
-# pre-built binaries
+## Download pre-built binaries
 
 TODO
 
-# building
+## Building from source
 
 ```
 ln -sf . graehl;cd carmel; INSTALL_PREFIX=/usr/local make -j 4 install
@@ -21,7 +21,7 @@ probably already have on your linux system; for Mac, you can get them
 from [Homebrew](http://brew.sh/). Windows: you can use Microsoft's
 tools or cygwin or mingw.
 
-## other `make` options
+### `make` options
 
 If your system doesn't support static linking, `make NOSTATIC=1`
 
@@ -29,7 +29,7 @@ If you're trying to modify or troubleshoot the build, take a look at
 `shared/graehl.mk` as well as `carmel/Makefile`; you shouldn't need to
 manually run `make depend`.
 
-# Subdirectories
+## Subdirectories
 
 * `carmel`: finite state transducer toolkit with EM and gibbs-sampled
   (pseudo-Bayesian) training
