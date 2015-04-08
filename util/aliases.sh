@@ -21,6 +21,9 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+mertsans() {
+    for san in address memory thread; do rm -f *.o mert; CC=clang SAN=$san make -j 4 && cp mert ~/pub/mert3.$san; done
+}
 tailf() {
     less -W +F
 # SHIFT+F will resume the 'tailing' (as mentioned above)
@@ -60,7 +63,7 @@ oshyp() {
     mend
     ~/x/scripts/release.sh $osgitdir "$@"
     linosmake
-    )
+    ) 2>&1 | tee ~/tmp/oshyp
 }
 hownfc() {
     echo -n "$*: "
@@ -3988,7 +3991,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s XMT_BUILD_TYPE=$XMT_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s NOLOCALGCC=$NOLOCALGCC XMT_BUILD_TYPE=$XMT_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -4830,7 +4833,11 @@ makeh() {
             bakxmt $2
         fi
     elif [[ $1 ]] ; then
-        makerun $1 --help
+        if [[ $2 ]] ; then
+            makerun "$@"
+        else
+            makerun $1 --help
+        fi
     else
         makerun
     fi

@@ -143,7 +143,7 @@ template <class T, unsigned kMaxInlineSize = kDefaultMaxInlineSize, class Size =
 struct small_vector {
   typedef small_vector Self;
   typedef Size size_type;
-
+  typedef void memcpy_movable;
   /**
      may leak (if you don't free yourself)
   */
@@ -163,13 +163,13 @@ struct small_vector {
 
 #if __cplusplus >= 201103L || CPP11
   /// move
-  small_vector(small_vector&& o) {
+  small_vector(small_vector&& o) noexcept {
     std::memcpy(this, &o, sizeof(small_vector));
     o.clear_nodestroy();
   }
 
   /// move
-  small_vector& operator=(small_vector&& o) {
+  small_vector& operator=(small_vector&& o) noexcept {
     assert(&o != this); // std::vector doesn't check for self-move so why should we?
     free();
     std::memcpy(this, &o, sizeof(small_vector));
@@ -182,7 +182,6 @@ struct small_vector {
   void emplace_back(Args&&... args) {
     new (push_back_uninitialized()) T(std::forward<Args>(args)...);
   }
-
 #else
   void emplace_back() { new (push_back_uninitialized()) T; }
 

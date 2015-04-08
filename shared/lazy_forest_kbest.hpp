@@ -426,6 +426,21 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
                     {
 
  public:
+
+#if __cplusplus >= 201103L || CPP11
+  /// move
+  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {
+  }
+
+  /// move
+  lazy_forest& operator=(lazy_forest&& o) noexcept {
+    assert(&o != this);
+    pq = std::move(o.pq);
+    memo = std::move(o.memo);
+    return *this;
+  }
+#endif
+
   typedef DerivationFactory derivation_factory_type;
   typedef FilterFactory filter_factory_type;
   /**

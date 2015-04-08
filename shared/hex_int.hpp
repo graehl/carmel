@@ -94,6 +94,11 @@ hex_int<I> hex(I i) {
   return hex_int<I>(i);
 }
 
+template <class I>
+hex_int<std::size_t> hex(I *i) {
+  return hex_int<std::size_t>((std::size_t)i);
+}
+
 #define DEFINE_HEX_INT(i) typedef hex_int<i> hex_##i;
 #define DEFINE_HEX_INTS(i) DEFINE_HEX_INTS(i) DEFINE_HEX_INTS(u##i)
 // these are brought into global namespace by string_to - deal, or use boost::intN_t instead
