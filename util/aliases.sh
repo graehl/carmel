@@ -1355,9 +1355,9 @@ cleantmp() {
         df -h /tmp
     ) 2>/dev/null
 }
-cs-for() {
+nh-for() {
     ( set -e
-        for i in `seq 1 6`; do
+        for i in `seq 2 6`; do
             nhost=gitbuild$i
             echo2 nhost=$nhost "$@"
             nhost=$nhost "$@"
@@ -1368,12 +1368,7 @@ cs-s() {
     cs-for c-s "$@"
 }
 ns-for() {
-    (
-        for i in `seq 1 6`; do
-            f=gitbuild$i
-            n-s $f "$@"
-        done
-    )
+    nh-for n-s "$@"
 }
 ns-s() {
     ns-for n-s "$@"
@@ -2175,11 +2170,12 @@ n-s() {
     local host=${nhost:-gitbuild1}
     local args="$host -l $nuser -i $nidentity"
     if [[ "$@" ]] ; then
-        ssh $args ". ~graehl/.e; $*"
+        ssh $args '. ~graehl/.e; export HOME=/home/nbuild;export PATH=/home/nbuild/local/bin:$PATH;export CCACHE_DIR=/local/nbuild/ccache;'" $*"
     else
         ssh $args
     fi
 }
+nhost=gitbuild2
 n6-s() {
     nhost=gitbuild6 n-s "$@"
 }
@@ -7991,54 +7987,6 @@ first_gcc() {
     #    export C_INCLUDE_PATH=$FIRST_PREFIX/include
     export CXXFLAGS="-I$FIRST_PREFIX/include"
     export LDFLAGS="-L$FIRST_PREFIX/lib -L$FIRST_PREFIX/lib64"
-}
-
-config_gcc_bare() {
-    first_gcc
-    local nomp=--disable-libgomp
-    #--disable-shared
-    local skip="--disable-libssp --disable-libmudflap --disable-nls --disable-decimal-float"
-    # --disable-bootstrap
-    # gomp: open mp. ssp: stack corruption mitigation. mudflap: buffer overflow instrumentation (optional). nls: non-english text
-    local basegcc=${basegcc:--enable-language=c,c++ --enable-__cxa_atexit --enable-clocale=gnu --enable-threads=posix --disable-multilib $skip}
-    #--with-gmp-include=`realpath gmp` --with-gmp-lib=`realpath gmp`/.libs
-    # local basegcc=${basegcc:--enable-language=c,c++ --enable-clocale=gnu --enable-shared --enable-threads=posix --disable-multilib}
-
-    src=${src:-.}
-
-    echo $src/configure --prefix=$FIRST_PREFIX $basegcc "$@" > my.config.sh
-    . my.config.sh
-    #--with-mpfr=$FIRST_PREFIX --with-mpc=$FIRST_PREFIX --with-gmp=$FIRST_PREFIX
-}
-
-config_gcc() {
-    ( set -e
-        config_gcc_bare "$@"
-    )
-}
-
-
-make_gcc() {
-    ( set -e
-        first_gcc
-        make -j 4 "$@"
-    )
-}
-
-install_gcc() {
-    (
-        first_gcc
-        make install
-    )
-}
-
-build_gcc() {
-    (
-        set -e
-        config_gcc_bare "$@"
-        make_gcc
-        install_gcc
-    )
 }
 
 dmakews() {

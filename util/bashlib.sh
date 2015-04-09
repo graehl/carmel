@@ -2540,7 +2540,7 @@ bleuparse() {
     forall bleuparse1 "$@"
 }
 
-UTIL=$(echo ~/u)
+UTIL=${UTIL:-$(echo ~graehl/u)}
 [[ -d $UTIL ]] && export PATH=$UTIL:$PATH
 
 true
