@@ -31,6 +31,10 @@
 #define CODEJAM_JG_2015_03_29_HH
 #pragma once
 
+#ifndef MAXCASES
+#define MAXCASES 100000
+#endif
+
 #include <array>
 #include <unordered_map>
 #include <unordered_set>
@@ -62,30 +66,41 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <gmpxx.h>
-typedef mpz_class Big; // swap .get_str() .set_str(str, 10)
-inline void gcd(Big &out, Big const& a, Big const& b) {
- mpz_gcd (out.get_mpz_t(), a.get_mpz_t(), b.get_mpz_t());
- // etc https://gmplib.org/manual/Number-Theoretic-Functions.html
+typedef mpz_class Big;  // swap .get_str() .set_str(str, 10)
+inline void gcd(Big& out, Big const& a, Big const& b) {
+  mpz_gcd(out.get_mpz_t(), a.get_mpz_t(), b.get_mpz_t());
+  // etc https://gmplib.org/manual/Number-Theoretic-Functions.html
 }
 
 
 using namespace std;
 
-#ifndef NDEBUG
-#define O(x) #x << '=' << x
-#define CO1(x) cerr << O(x) << '\n'
-#define CO2(m, x) cerr << m << ' ' << O(x) << '\n'
+int verbose = 1;
+#ifdef NDEBUG
+#define IFVERBOSE(x)
 #else
-#define O(x)
-#define CO1(x)
-#define CO2(m, x)
+#define IFVERBOSE(x) \
+  do {               \
+    if (verbose) x;  \
+  } while(0)
 #endif
+
+#define O(x) ' ' << #x << '=' << x
+#define CO(a) IFVERBOSE(cerr << O(a) << '\n');
+#define COO(a, b) IFVERBOSE(cerr << a << ' ' << b << '\n');
+#define CO2(m, a) IFVERBOSE(cerr << m << O(a) << '\n');
+#define CO3(m, a, b) IFVERBOSE(cerr << m << O(a) << O(b) << '\n');
+#define CO4(m, a, b, c) IFVERBOSE(cerr << m << O(a) << O(b) << O(c) << '\n');
+/// enabled always, unlike assert(a == b)
+#define MUSTEQ(a,b) musteq(a, b, #a, #b)
 
 /*******  All Required define Pre-Processors and typedef Constants *******/
 #define GETINT(type) readInt<type>()
+#define GET0 getdigit()
 #define PUTU(x) printf("%u", x);
 #define PUTu64(x) printf("%llu", x);
 #define GETU readInt<U>()
+#define GETu64 readInt<u64>()
 #define SCC(t) scanf("%c", &t)
 #define SCS(t) scanf("%s", t)
 #define SCF(t) scanf("%f", &t)
@@ -94,8 +109,9 @@ using namespace std;
 #define MEMN(a, n, b) memset(a, (b), n * sizeof(a))
 #define FOR(i, j, k, in) for (int i = j; i < k; i += in)
 #define RFOR(i, j, k, in) for (int i = j; i >= k; i -= in)
-#define REP(i, j) FOR(i, 0, j, 1)
-#define RREP(i, j) RFOR(i, j, 0, 1)
+#define REP(i, n) FOR(i, 0, n, 1)
+#define REPTO(i, n) for (int i = 0; i <= n; ++i)
+#define RREP(i, high) RFOR(i, high, 0, 1)
 #define all(cont) cont.begin(), cont.end()
 #define rall(cont) cont.end(), cont.begin()
 #define FOREACH(it, l) for (auto it = l.begin(); it != l.end(); it++)
@@ -107,7 +123,7 @@ using namespace std;
 #define PI 3.1415926535897932384626433832795
 #define MOD 1000000007
 #define MUSTMOD(x) assert(x >= 0 && x < MOD)
-double const pi = acos(-1.0);
+typedef unsigned char u8;
 typedef long int int32;
 typedef unsigned long int uint32;
 typedef long long int int64;
@@ -118,6 +134,7 @@ typedef uint64 u64;
 typedef unsigned U;
 typedef pair<int, int> PII;
 typedef vector<int> VI;
+typedef vector<U> VU;
 typedef vector<string> VS;
 typedef vector<PII> VII;
 #define umap unordered_map
@@ -165,6 +182,26 @@ inline void amax(T& x, U y) {
   if (x < y) x = y;
 }
 
+void yesno(bool x) {
+  printf(x ? "YES" : "NO");
+}
+
+
+template <class A, class B>
+void musteq(A const& a, B const& b, char const* an, char const* bn) {
+  IFVERBOSE(cerr<<"Should agree: "<<an<<":"<<a<<" ==? "<<bn<<":"<<b<<'\n');
+  if (a != b) {
+    cerr << "ERROR: did not agree: "<<an;
+    if (!verbose)
+      cerr <<":"<<a;
+    cerr <<" != "<<bn;
+    if (!verbose)
+      cerr<<":"<<b;
+    cerr<<'\n';
+    abort();
+  }
+}
+
 template <class T>
 inline void write(T x) {
   const int maxdigits = 20;
@@ -194,114 +231,206 @@ inline T readInt() {
   return n * s;
 }
 
-#ifndef CASES_DEFAULT_CORES
-#ifndef NDEBUG
-#define CASES_DEFAULT_CORES 8
-#else
-#define CASES_DEFAULT_CORES 1
-#endif
-#endif
-
 inline void casepre(U k) {
+  cerr << '.';
   printf("Case #%d: ", k + 1);
 }
 inline void casepost() {
   putchar('\n');
 }
 
+pthread_t detached_thread;
+pthread_attr_t detached_threadattr;
+U ncases;
+bool singlethread;
+
+sem_t sem_nthreads, sem_done;
+template <class Case>
+void* solve_thread(void* casep) {
+  Case* c = (Case*)casep;
+  c->solve();
+  cerr << '.';
+  sem_post(&sem_nthreads);
+  sem_post(&sem_done);
+  return 0;
+}
+void expect_newline() {
+  for (;;) {
+    int c = getchar();
+    if (c == '\n') return;
+    if (c == EOF) return;
+    if (!isspace(c)) {
+      cerr << "error in read() - got nonspaces at end of line, e.g. '" << c << "'\n";
+      abort();
+    }
+  }
+}
+
+char const* basename_end(char const* s) {
+  char const* r = 0;
+  for (; *s; ++s)
+    if (*s == '.') r = s;
+  return r ? r : s;
+}
+
 /// only allowed as a global (no memzero for perf)
-template <class Case, U MaxCases = 100000>
-struct Cases {
-  bool single;
-  Case cases[MaxCases];
-  pthread_t detached_thread;
-  pthread_attr_t detached_threadattr;
-  Cases() {
-    pthread_attr_init(&detached_threadattr);
-    pthread_attr_setdetachstate(&detached_threadattr, PTHREAD_CREATE_DETACHED);
+template <class Case>
+int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newline = true) {
+  pthread_attr_init(&detached_threadattr);
+  pthread_attr_setdetachstate(&detached_threadattr, PTHREAD_CREATE_DETACHED);
+  char const* input = "input.txt";
+  if (argc > 1 && *argv[1]) input = argv[1];
+  std::string bufoutput;
+  char const* output = 0;
+  if (argc > 2 && *argv[2]) output = argv[2];
+  if (!output) {
+    bufoutput.assign(input, basename_end(input));
+    bufoutput += ".out";
+    output = bufoutput.c_str();
+  } else if (output[0] == '-' && !output[1])
+    output = 0;
+  if (input) freopen(input, "r", stdin);
+  if (output) freopen(output, "w", stdout);
+  if (argc > 3) cores = atoi(argv[3]);
+  if (argc > 4) verbose = atoi(argv[4]);
+  ncases = GETU;
+  CO(ncases);
+  if (ncases > MAXCASES) abort();
+  singlethread = cores <= 1;
+  if (!singlethread) {
+    sem_init(&sem_nthreads, 0, cores);
+    sem_init(&sem_done, 0, 0);
   }
-  // no dtor: leak is fine
-  int main(int argc, char* argv[], U cores = 8) {
-    char const* input = "input.txt";
-    char const* output = argc == 2 ? 0 : "output.txt";
-    if (argc > 1) input = argv[1];
-    if (argc > 2) output = argv[2];
-    if (input && input[0]) freopen(input, "r", stdin);
-    if (output && output[0]) freopen(output, "w", stdout);
-    if (argc > 3) cores = atoi(argv[3]);
-    U ncases;
-    ncases = GETU;
-    CO1(ncases);
-    if (ncases > MaxCases) abort();
-    single = cores <= 1;
-    if (!single) {
-      sem_init(&nthreads, 0, cores);
-      sem_init(&done, 0, 0);
+  REP(k, ncases) {
+    cases[k].read();
+    if (!k && verbose) {
+      cerr << "Showing case #1: ";
+      cases[k].show1();
+      cerr << '\n';
     }
-    REP(k, ncases) {
-      cases[k].read();
-      if (single) {
-        cases[k].solve();
-        casepre(k);
-        cases[k].print();
-        casepost();
-      } else
-        start_thread(k);
+    expect_newline();
+    if (!singlethread) {
+      verbose = 0;
+      assert(k < MAXCASES);
+      Case& c = cases[k];
+      c.casei = k;
+      sem_wait(&sem_nthreads);
+      int ret;
+      while ((ret = pthread_create(&detached_thread, &detached_threadattr, &solve_thread<Case>, &c)))
+        if (ret == EAGAIN)
+          sleep(1);
+        else {
+          fprintf(stderr, "Error creating solve() thread\n");
+          abort();
+        }
+      cerr << "started solve thread case #" << k + 1 << '\n';
     }
-    if (!single) {
-      REP(k, ncases) sem_wait(&done);
-      REP(k, ncases) {
-        casepre(k);
-        cases[k].print();
-        casepost();
-      }
-    }
-    return 0;
   }
+  if (!singlethread) REP(k, ncases) sem_wait(&sem_done);
+  REP(k, ncases) {
+    if (singlethread) cases[k].solve();
+    casepre(k);
+    cases[k].print();
+    casepost();
+  }
+  char const* outputname = output ? output : "STDOUT";
+  cerr << "done. solved all " << ncases << " - output is in " << outputname << '\n';
+  return 0;
+}
 
-  sem_t nthreads, done;
-  static void* solve_thread(void* casep) {
-    Case* c = (Case*)casep;
-    c->solve();
-    return 0;
-  }
-  void start_thread(U casei) {
-    assert(casei < MaxCases);
-    CO2("solving", casei);
-    Case* c = &cases[casei];
-    c->casei = casei;
-    c->done1 = &done;
-    c->done2 = &nthreads;
-    sem_wait(&nthreads);
-    int ret;
-    while ((ret = pthread_create(&detached_thread, &detached_threadattr, &solve_thread, (void*)(size_t) casei)))
-      if (ret == EAGAIN)
-        sleep(1);
-      else {
-        fprintf(stderr, "Error creating line_optimize thread\n");
-        abort();
-      }
-  }
-};
-
+/// global Cases array will be 0 init so don't worry
 struct CaseBase {
+  static void init() {}
+  bool firstprint;
+  void space() {
+    if (firstprint)
+      firstprint = false;
+    else
+      putchar(' ');
+  }
   void solve() {
     CO2("must override", casei);
     abort();
   }
-  sem_t* done1, *done2;
+  std::ostream& cpre() { return cerr << "(#" << casei + 1 << "):"; }
   U casei;
-  // must call at end of your solve
-  void solved() {
-    CO2("solved", casei);
-    sem_post(done1);
-    sem_post(done2);
-  }
 };
 
-#define CASES_MAIN_MAX(Case, MAXCASES) \
-  static Cases<Case, MAXCASES> gcases; \
-  int main(int argc, char* argv[]) { return gcases.main(argc, argv); }
-#define CASES_MAIN(Case) static Cases<Case, 1<<20)
+// nonwhitespace printable
+inline char getC() {
+  for (;;) {
+    int c = getchar();
+    assert(c != EOF);
+    assert(c != 127);
+    if (c == EOF) abort();
+    if (c > ' ') return c;
+  }
+}
+
+inline U getdigit() {
+  char c = getC();
+  assert(c >= '0');
+  assert(c <= '9');
+  return c - '0';
+}
+
+template <class T>
+T* array0(vector<T>& v) {
+  return &*v.begin();
+}
+
+template <class T>
+T* arrayn(vector<T>& v) {
+  return &*v.end();
+}
+
+template <class It>
+struct Showr {
+  It a, b;
+  Showr(It a, It b) : a(a), b(b) {}
+  friend inline std::ostream& operator<<(std::ostream& out, Showr const& self) {
+    self.print(out);
+    return out;
+  }
+  void print(std::ostream& out) const {
+    char const* comma = "";
+    for (It i = a; i < b; ++i) {
+      out << comma << *i;
+      comma = ",";
+    }
+  }
+};
+template <class X>
+Showr<typename X::const_iterator> showr(X const& x) {
+  return Showr<typename X::const_iterator>(x.begin(), x.end());
+}
+template <class X>
+Showr<X> showr(X a, X b) {
+  return Showr<X>(a, b);
+}
+template <class X>
+Showr<X> shown(X a, U n) {
+  return Showr<X>(a, a + n);
+}
+
+template <class X>
+void reversec(X& x) {
+  std::reverse(x.begin(), x.end());
+}
+
+
+#ifndef CASES_DEFAULT_CORES
+#ifdef NDEBUG
+#define CASES_DEFAULT_CORES 4
+#else
+#define CASES_DEFAULT_CORES 1
+#endif
+#endif
+#define CASES_MAIN(Problem)                                             \
+  static Problem cases[MAXCASES];                                       \
+  int main(int argc, char* argv[]) {                                    \
+    Problem::init();                                                    \
+    return cases_main<Problem>(cases, argc, argv, CASES_DEFAULT_CORES); \
+  }
 
 #endif

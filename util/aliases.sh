@@ -21,6 +21,35 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+cjam() {
+    CFLAGS="--std=c++11 -Wno-deprecated"
+    if [[ $release ]]; then
+        CFLAGS+=" -O3 -ffast-math -DNDEBUG"
+        exesuf=.out
+    else
+        CFLAGS+=" -O0 -ggdb"
+        exesuf=.dbg
+    fi
+    (
+        src=$1
+        shift
+        in=$1
+        exe=${src%.cc}$exesuf
+        set -e
+        set -x
+        cd ~/jam
+        [[ -f $in ]]
+        g++ $CFLAGS $src -o $exe
+        ./$exe "$@"
+        set +x
+        out=${1%.in}.out
+        expected=$out.expected
+        if [[ -f $out ]] && [[ -f $expected ]] ; then
+            head $out $expected
+            diff $out $expected | diffstat
+        fi
+    )
+}
 mertsans() {
     for san in address memory thread; do rm -f *.o mert; CC=clang SAN=$san make -j 4 && cp mert ~/pub/mert3.$san; done
 }
@@ -2176,6 +2205,9 @@ n-s() {
     fi
 }
 nhost=gitbuild2
+ns-n() {
+    nhost=gitbuild$n n-s "$@"
+}
 n6-s() {
     nhost=gitbuild6 n-s "$@"
 }
