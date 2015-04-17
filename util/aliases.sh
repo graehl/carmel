@@ -21,6 +21,10 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+gdbjam() {
+    cd ~/jam
+    cgdb --args ./$1 $2 - 1 ${3:-1}
+}
 cjam() {
     CFLAGS="--std=c++11 -Wno-deprecated"
     if [[ $release ]]; then
@@ -30,6 +34,7 @@ cjam() {
         CFLAGS+=" -O0 -ggdb"
         exesuf=.dbg
     fi
+    CFLAGS+=" -pthread"
     (
         src=$1
         shift
@@ -49,6 +54,24 @@ cjam() {
             diff $out $expected | diffstat
         fi
     )
+}
+ccjam() {
+        src=$1
+        in=$2
+        (
+            set -e
+            cd ~
+            set -x
+        #scp ~/u/codejam.hh $chost:u/
+        followsymlink=1 sync2 $chost jam
+        [[ -f jam/$in ]]
+        ssh $chost "release=$release cjam $*"
+        out=jam/${in%.in}.out
+        scp $chost:$out $out
+        head -50 $out
+        echo ...
+        echo $out
+        )
 }
 mertsans() {
     for san in address memory thread; do rm -f *.o mert; CC=clang SAN=$san make -j 4 && cp mert ~/pub/mert3.$san; done
@@ -7809,8 +7832,9 @@ sync2() {
         local darg
         [ "${dryrun:-}" ] && darg="-n"
         echo sync2 user=$user host=$h "$@"
-
-        (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) | rsync $darg -avruz -e ssh --files-from=- ${rsyncargs:-} ${rsync_exclude:-} . $u$h:${dest:=.}
+        symarg=
+        [[ $followsymlink ]] && symarg=L
+        (for f in "$@"; do if [ -d "$f" ] ; then echo $f/; else echo $f; fi; done) | rsync $darg -avruz$symarg -e ssh --files-from=- ${rsyncargs:-} ${rsync_exclude:-} . $u$h:${dest:=.}
     )
 }
 syncto() {
@@ -8254,3 +8278,7 @@ cp2ken() {
 }
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=
 export SDL_EXTERNALS_PATH=$XMT_EXTERNALS_PATH
+uselocalgcc() {
+    export PATH=/local/gcc/bin:$PATH
+    export LD_LIBRARY_PATH=/local/gcc/lib64:$LD_LIBRARY_PATH
+}

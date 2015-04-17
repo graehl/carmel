@@ -300,6 +300,23 @@ experimentf() {
         fi
     done
 }
+cmertdir=c/ct-archive/archive/3rdParty/mert
+pubdir=/home/graehl/pub/gcc-4.9
+gmerts() {
+    (
+    nobuild=1 cwithdir $cmertdir
+   for DEBUG in 1 ''; do
+        dname=
+        [[ $DEBUG = 1 ]] && dname=.debug
+        for SAN in thread address ''; do
+            sanname=
+            [[ $SAN ]] && sanname=.$SAN
+            name=$pubdir/mert$dname$sanname
+            ssh gitbuild2 ". ~/.e;uselocalgcc;cd $cmertdir; rm -f *.o; make CC=gcc DEBUG=$DEBUG SAN=$SAN && cp mert $name && ln -sf withlib.sh $name.sh"
+    done
+    done
+    )
+}
 smert() {
     save12 ~/tmp/cmert cwithmertrun -x -f 0 /home/graehl/projects/sparse/weights /home/graehl/projects/sparse/${nbest:-named.2k} "$@"
     #nbest.2k
@@ -345,11 +362,13 @@ echo2 CC=$CC j=$j
 done
 done
 }
+stevemert() {
+    cwithmertrun -f 13 /home/graehl/bugs/mert2/initial.txt.3 /home/graehl/bugs/mert2/corpus.nbest "$@"
+}
 cwithmertrun() {
     (
-        #
-        cwithdir c/ct-archive/archive/3rdParty/mert "time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
-        #        set -x
+                set -x
+        cwithdir $cmertdir "time $pre /home/graehl/c/ct-archive/archive/3rdParty/mert/mert $*"
     )
 }
 cwithmertrunct() {
@@ -389,7 +408,7 @@ cwithdir() {
      else
          sparsearg=
      fi
-     c-s "cd $rdir; set -x; $scanpre make $target $sparsearg DEBUG=$DEBUG ASSERT=$ASSERT CC=${CC:-ccache-gcc} CXX=${CXX:-ccache-g++} SAN=$SAN $makearg && $*"
+     [[ $nobuild ]] || c-s "cd $rdir; set -x; $scanpre make $target $sparsearg DEBUG=$DEBUG ASSERT=$ASSERT CC=${CC:-ccache-gcc} SAN=$SAN $makearg && $*"
     )
 }
 densesparse="sparse"

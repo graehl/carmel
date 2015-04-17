@@ -29,6 +29,7 @@ gccbuild() {
         ../gcc-$gccver/configure \
             --prefix=$gccprefix \
             --libdir=$gccprefix/lib \
+            --enable-static \
             --enable-shared \
             --enable-threads=posix \
             --enable-__cxa_atexit \
@@ -37,10 +38,21 @@ gccbuild() {
             --with-system-zlib \
             --disable-checking \
             --enable-languages=c,c++
-        make
+        make "$@"
     )
 }
 gccinstall() {
     cd $gccbuild
     sudo make install
+}
+gccall() {
+    (set -e
+    gccget
+    gccbuild "$@"
+    gccinstall
+    )
+}
+uselocalgcc() {
+    export PATH=/local/gcc/bin:$PATH
+    export LD_LIBRARY_PATH=/local/gcc/lib64:$LD_LIBRARY_PATH
 }

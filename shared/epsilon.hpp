@@ -170,6 +170,16 @@ inline boost::uint64_t unsigned_distance(boost::uint64_t a, boost::uint64_t b) {
   return a < b ? b - a : a - b;
 }
 
+double next_representible_double(double f) {
+  ++reinterpret_cast<boost::uint64_t&>(f);
+  return f;
+}
+
+float next_representible_float(float f) {
+  ++reinterpret_cast<boost::uint32_t&>(f);
+  return f;
+}
+
 /**
    \return # of ieee floats between a and b, which must have the same sign
 

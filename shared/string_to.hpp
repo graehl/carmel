@@ -918,6 +918,12 @@ struct string_builder : string_buffer {
     for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) (*this)(*i)(sep);
     return (*this)(after);
   }
+
+  std::string str_skip_first_char() const {
+    char const* b = &*begin();
+    std::size_t n = size();
+    return std::string(n ? b + 1 : b, b + n);
+  }
 };
 
 template <class Seq, class Sep>

@@ -65,12 +65,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include <gmpxx.h>
-typedef mpz_class Big;  // swap .get_str() .set_str(str, 10)
-inline void gcd(Big& out, Big const& a, Big const& b) {
-  mpz_gcd(out.get_mpz_t(), a.get_mpz_t(), b.get_mpz_t());
-  // etc https://gmplib.org/manual/Number-Theoretic-Functions.html
-}
 
 
 using namespace std;
