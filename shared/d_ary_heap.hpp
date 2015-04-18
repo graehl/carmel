@@ -43,7 +43,9 @@
 #define DDARY(x) x
 DECLARE_DBG_LEVEL(DDARY)
 #else
+#ifndef EIFDBG
 #define EIFDBG(ch, l, e)
+#endif
 #define DDARY(x)
 #endif
 
