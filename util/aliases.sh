@@ -58,20 +58,25 @@ cjam() {
 ccjam() {
         src=$1
         in=$2
+        shift
+        shift
         (
             set -e
             cd ~
-            set -x
         #scp ~/u/codejam.hh $chost:u/
         followsymlink=1 sync2 $chost jam
+        if ! [[ -f jam/$in ]] ; then
+            in="$in.in"
+        fi
         [[ -f jam/$in ]]
-        ssh $chost "release=$release cjam $*"
+        set -x
+        ssh $chost "release=$release cjam $src $in $*"
         out=jam/${in%.in}.out
         scp $chost:$out $out
         head -50 $out
         echo ...
         echo $out
-        )
+        ) 2>&1 | tee ~/tmp/last.ccjam
 }
 mertsans() {
     for san in address memory thread; do rm -f *.o mert; CC=clang SAN=$san make -j 4 && cp mert ~/pub/mert3.$san; done
