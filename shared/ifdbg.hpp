@@ -47,10 +47,12 @@
 #endif
 
 // ch(IFDBG...) so channel need not be declared if noop #define ch(x)
+#ifndef EIFDBG
 #define EIFDBG(ch, l, e)    \
   do {                      \
     ch(IFDBG(ch, l) { e; }) \
   } while (0)
+#endif
 
 // for show.hpp
 #define SHOWIF0(ch, l, m) EIFDBG(ch, l, SHOWM0(ch, #ch ": " m))
