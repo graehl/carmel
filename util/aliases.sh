@@ -23,7 +23,9 @@ chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 gdbjam() {
     cd ~/jam
-    cgdb --args ./$1 $2 - 1 ${3:-1}
+    in=$2
+    [[ -f $in ]] || in="$in.in"
+    cgdb --args ./$1 $in - 1 ${3:-1}
 }
 cjam() {
     CFLAGS="--std=c++11 -Wno-deprecated"
@@ -44,7 +46,7 @@ cjam() {
         set -x
         cd ~/jam
         [[ -f $in ]]
-        g++ $CFLAGS $src -o $exe
+        TERM=dumb g++ $CFLAGS $src -o $exe
         ./$exe "$@"
         set +x
         out=${1%.in}.out

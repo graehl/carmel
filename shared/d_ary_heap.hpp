@@ -37,12 +37,13 @@
 #ifndef GRAEHL_DEBUG_D_ARY_HEAP
 #define GRAEHL_DEBUG_D_ARY_HEAP 0
 #endif
-#include <graehl/shared/ifdbg.hpp>
 #if GRAEHL_DEBUG_D_ARY_HEAP
+#include <graehl/shared/ifdbg.hpp>
 #include <graehl/shared/show.hpp>
 #define DDARY(x) x
 DECLARE_DBG_LEVEL(DDARY)
 #else
+#define EIFDBG(ch, l, e)
 #define DDARY(x)
 #endif
 
@@ -292,7 +293,7 @@ class d_ary_heap_indirect {
   void set_index_in_heap(std::size_t i = 0) {
     for (std::size_t e = data.size(); i < e; ++i) {
       // cppcheck-suppress unusedScopedObject
-      set(index_in_heap, data[i], i);
+      put(index_in_heap, data[i], i);
     }
   }
 
@@ -491,8 +492,6 @@ This is definitely linear to n.
   }
 
 
-#include <graehl/shared/warning_push.h>
-
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #endif
@@ -504,7 +503,6 @@ This is definitely linear to n.
     return i >= 0 && i < sz && equal(v, data[i]);  // note: size_type may be signed (don't recommend it,
                                                    // though) - thus i>=0 check to catch uninit. data
   }
-#include <graehl/shared/warning_pop.h>
 
   inline bool contains(const Value& v) const {
     using boost::get;

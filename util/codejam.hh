@@ -93,6 +93,7 @@ int verbose = 1;
 #define GET0 getdigit()
 #define PUTU(x) printf("%u", x);
 #define PUTu64(x) printf("%llu", x);
+#define GETI readInt<I>()
 #define GETU readInt<U>()
 #define GETu64 readInt<u64>()
 #define SCC(t) scanf("%c", &t)
@@ -232,6 +233,9 @@ inline void casepre(U k) {
 inline void casepost() {
   putchar('\n');
 }
+char digit0(int x) {
+  return '0' + x;
+}
 
 pthread_t detached_thread;
 pthread_attr_t detached_threadattr;
@@ -239,6 +243,7 @@ U ncases;
 bool singlethread;
 
 sem_t sem_nthreads, sem_done;
+
 template <class Case>
 void* solve_thread(void* casep) {
   Case* c = (Case*)casep;
@@ -254,7 +259,18 @@ void expect_newline() {
     if (c == '\n') return;
     if (c == EOF) return;
     if (!isspace(c)) {
-      cerr << "error in read() - got nonspaces at end of line, e.g. '" << c << "'\n";
+      cerr << "error in read() - got nonspaces at end of line: '" << (char)c << "'\n";
+      abort();
+    }
+  }
+}
+
+void expect_eof() {
+  for (;;) {
+    int c = getchar();
+    if (c == EOF) return;
+    if (!isspace(c)) {
+      cerr << "error in read() - got nonspaces at end of file: '" << (char)c << "'\n";
       abort();
     }
   }
@@ -302,7 +318,6 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
       cases[k].show1();
       cerr << '\n';
     }
-    expect_newline();
     if (!singlethread) {
       verbose = 0;
       assert(k < MAXCASES);
@@ -320,6 +335,7 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
       cerr << "started solve thread case #" << k + 1 << '\n';
     }
   }
+  expect_eof();
   if (!singlethread) REP(k, ncases) sem_wait(&sem_done);
   REP(k, ncases) {
     if (singlethread) cases[k].solve();
@@ -412,10 +428,9 @@ void reversec(X& x) {
   std::reverse(x.begin(), x.end());
 }
 
-
 #ifndef CASES_DEFAULT_CORES
 #ifdef NDEBUG
-#define CASES_DEFAULT_CORES 4
+#define CASES_DEFAULT_CORES 8
 #else
 #define CASES_DEFAULT_CORES 1
 #endif
