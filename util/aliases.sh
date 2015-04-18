@@ -47,7 +47,7 @@ cjam() {
         cd ~/jam
         [[ -f $in ]]
         TERM=dumb g++ $CFLAGS $src -o $exe
-        ./$exe "$@"
+        time ./$exe "$@"
         set +x
         out=${1%.in}.out
         expected=$out.expected
