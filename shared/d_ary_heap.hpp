@@ -256,9 +256,9 @@ class d_ary_heap_indirect {
 
  public:
 #if __cplusplus >= 201103L || CPP11
-  typedef Value &&MoveValueFromRef;
+  typedef Value &&MoveableValueRef;
 #else
-  typedef Value const& MoveValueFromRef;
+  typedef Value const& MoveableValueRef;
 #endif
   typedef Container container_type;
   typedef Size size_type;
@@ -643,7 +643,7 @@ This is definitely linear to n.
 #endif
   }
 
-  inline void move_heap_element(MoveValueFromRef v, size_type ito) {
+  inline void move_heap_element(MoveableValueRef v, size_type ito) {
     using boost::put;
     put(index_in_heap, v, ito);
     data[ito] = v;
@@ -669,7 +669,7 @@ This is definitely linear to n.
   // we have a copy of the key, so we don't need to do that stupid find # of levels to move then move.  we act
   // as though data[index]=currently_being_moved, but in fact it's an uninitialized "hole", which we fill at
   // the very end
-  inline void preserve_heap_property_up(MoveValueFromRef currently_being_moved, size_type index) {
+  inline void preserve_heap_property_up(MoveableValueRef currently_being_moved, size_type index) {
     using boost::get;
     preserve_heap_property_up(currently_being_moved, index, get(distance, currently_being_moved));
   }
@@ -678,7 +678,7 @@ This is definitely linear to n.
      disabled because distance map may not be writable. would need traits to enable
   */
   /*
-  inline void preserve_heap_property_up_set_dist(MoveValueFromRef currently_being_moved, distance_type dbetter) {
+  inline void preserve_heap_property_up_set_dist(MoveableValueRef currently_being_moved, distance_type dbetter) {
     using boost::get;
     using boost::put;
     put(distance, currently_being_moved, dbetter);
@@ -687,7 +687,7 @@ This is definitely linear to n.
   }
   */
 
-  void preserve_heap_property_up(MoveValueFromRef currently_being_moved, size_type index,
+  void preserve_heap_property_up(MoveableValueRef currently_being_moved, size_type index,
                                  distance_type currently_being_moved_dist) {
     using boost::put;
     using boost::get;
@@ -695,7 +695,7 @@ This is definitely linear to n.
       for (;;) {
         if (index == 0) break;  // Stop at root
         size_type parent_index = parent(index);
-        MoveValueFromRef parent_value = data[parent_index];
+        MoveableValueRef parent_value = data[parent_index];
         if (better(currently_being_moved_dist, get(distance, parent_value))) {
           move_heap_element(parent_value, index);
           index = parent_index;
@@ -721,7 +721,7 @@ This is definitely linear to n.
     if (index == 0) return;  // Do nothing on root
     if (GRAEHL_D_ARY_UP) {
       Value copyi = data[index];
-      preserve_heap_property_up((MoveValueFromRef)copyi, index);
+      preserve_heap_property_up((MoveableValueRef)copyi, index);
       return;
     }
     size_type orig_index = index;
@@ -766,7 +766,7 @@ This is definitely linear to n.
   // that v must be a copy of data[i] if it was already at i.
   // e.g. v=data.back(), i=0, sz=data.size()-1 for pop(), implicitly swapping data[i], data.back(), and doing
   // data.pop_back(), then adjusting from 0 down w/ swaps.  updates index_in_heap for v.
-  inline void preserve_heap_property_down(MoveValueFromRef currently_being_moved, size_type index,
+  inline void preserve_heap_property_down(MoveableValueRef currently_being_moved, size_type index,
                                           size_type heap_size) {
     //// hole at index - currently_being_moved to be put here when we find the final hole spot
     EIFDBG(DDARY, 4,
@@ -812,10 +812,10 @@ This is definitely linear to n.
 
       if (better(smallest_child_dist, currently_being_moved_dist)) {
         // instead of swapping, move.
-        move_heap_element(child_base_ptr[smallest_child_index], index);  // move up
+        move_heap_element((MoveableValueRef)child_base_ptr[smallest_child_index], index);  // move up
         index = first_child_index + smallest_child_index;  // descend - hole is now here
       } else {
-        move_heap_element(currently_being_moved, index);  // finish "swap chain" by filling hole
+        move_heap_element((MoveableValueRef)currently_being_moved, index);  // finish "swap chain" by filling hole
         break;
       }
     }
@@ -839,7 +839,7 @@ This is definitely linear to n.
     if (data.empty()) return;
     if (GRAEHL_D_ARY_DOWN) {  // this *should* be more efficient because i avoid swaps.
       Value copy0 = data[0];
-      preserve_heap_property_down((MoveValueFromRef)copy0, 0, data.size());
+      preserve_heap_property_down((MoveableValueRef)copy0, 0, data.size());
       return;
     }
     size_type index = 0;
