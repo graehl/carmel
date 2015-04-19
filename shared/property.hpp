@@ -49,6 +49,26 @@ K const& get(IdentityMap<K>, K const& key) {
   return key;
 }
 
+template <class Pair>
+struct FirstPmap {
+  typedef Pair key_type;
+  typedef typename Pair::first_type value_type;
+  typedef value_type const& reference;
+  typedef boost::readable_property_map_tag category;
+  friend inline value_type get(FirstPmap const&, key_type const& key) { return key.first; }
+  value_type const& operator[](key_type const& key) const { return key.first; }
+};
+
+template <class Pair>
+struct SecondPmap {
+  typedef Pair key_type;
+  typedef typename Pair::second_type value_type;
+  typedef value_type const& reference;
+  typedef boost::readable_property_map_tag category;
+  friend inline value_type get(SecondPmap const&, key_type const& key) { return key.second; }
+  value_type const& operator[](key_type const& key) const { return key.second; }
+};
+
 template <class K>  // for random access iterator or integral key K - e.g. you have vertex_descriptor =
 // pointer to array of verts and want an external property map (ArrayPMapImp)
 struct OffsetFeatures {
