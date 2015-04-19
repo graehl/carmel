@@ -377,18 +377,18 @@ struct TailsUpHypergraph {
 
 
     unsigned already_reached(VD v) const {
-      return opt.allow_rereach ? get(rereach, v) : get(locp, v) == (heap_loc_t)D_ARY_HEAP_NULL_INDEX;
-      // if we're not allow_rereach tracking, then this is only meaningful for heads, not the tail (which was
-      // just popped in every case)
+      return opt.allow_rereach ? get(rereach, v) : get(locp, v) == (heap_loc_t)GRAEHL_D_ARY_HEAP_NULL_INDEX;
+      // if we're not allow_rereach tracking, then this is only meaningful for
+      // heads, not the tail (which was just popped in every case)
     }
     void mark_reached(VD v) {
       if (opt.allow_rereach) ++rereach[v];
 #ifdef NDEBUG
       else  // we don't use locp for anything if allow_rereach. but this pretties up the debug output
 #endif
-        put(locp, v, (heap_loc_t)D_ARY_HEAP_NULL_INDEX);  // not possible to have this before being added
-      // first time - i cleared it to 0s in building form
-      // vert_fact (default construct)
+        put(locp, v, (heap_loc_t)GRAEHL_D_ARY_HEAP_NULL_INDEX);
+      // not possible to have this before being added first time - i cleared it
+      // to 0s in building form vert_fact (default construct)
     }
 
     BestTreeStats stat;

@@ -30,37 +30,12 @@
 #ifndef CODEJAM_JG_2015_03_29_HH
 #define CODEJAM_JG_2015_03_29_HH
 #pragma once
-
+#include <bits/stdc++.h>
 #ifndef MAXCASES
-#define MAXCASES 100000
+#define MAXCASES 1000
 #endif
 
-#include <array>
-#include <unordered_map>
-#include <unordered_set>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <sstream>
-#include <queue>
-#include <deque>
-#include <bitset>
-#include <iterator>
-#include <list>
-#include <stack>
-#include <map>
-#include <set>
-#include <functional>
-#include <numeric>
-#include <utility>
-#include <limits>
 #include <time.h>
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
 #include <pthread.h>
 #include <errno.h>
 #include <unistd.h>
@@ -430,7 +405,7 @@ void reversec(X& x) {
 
 #ifndef CASES_DEFAULT_CORES
 #ifdef NDEBUG
-#define CASES_DEFAULT_CORES 8
+#define CASES_DEFAULT_CORES 16
 #else
 #define CASES_DEFAULT_CORES 1
 #endif

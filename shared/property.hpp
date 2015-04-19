@@ -37,7 +37,6 @@ namespace graehl {
 */
 template <class K>
 struct IdentityMap {
-  //      : boost::put_get_helper<K, IdentityMap> .
   typedef K key_type;
   typedef K value_type;
   typedef K const& reference;
