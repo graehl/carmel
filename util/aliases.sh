@@ -46,13 +46,14 @@ cjam() {
         set -x
         cd ~/jam
         [[ -f $in ]]
+        which g++
         TERM=dumb g++ $MORECFLAGS $CFLAGS $src -o $exe
         time ./$exe "$@"
         set +x
         out=${1%.in}.out
         expected=$out.expected
         if [[ -f $out ]] && [[ -f $expected ]] ; then
-            head $out $expected
+            # head $out $expected
             diff $out $expected | diffstat
         fi
     )
