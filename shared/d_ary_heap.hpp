@@ -258,11 +258,14 @@ class d_ary_heap_indirect {
   BOOST_STATIC_ASSERT(Arity >= 2);
 
  public:
-#if 0 && (__cplusplus >= 201103L || CPP11)
-  //TODO
-  typedef Value &&MoveableValueRef;
+#if __cplusplus >= 201103L
+  // TODO: use perfect forwarding of universal reftype args
+  typedef Value&& MoveableValueRef;
+#define GRAEHL_D_ARY_FORWARD_REF(x) std::forward<Value>(x)
+// TODO: replace more (MoveableValueRef)x by this
 #else
   typedef Value const& MoveableValueRef;
+#define GRAEHL_D_ARY_FORWARD_REF(x) x
 #endif
   typedef Container container_type;
   typedef Size size_type;
@@ -337,7 +340,7 @@ class d_ary_heap_indirect {
     data.push_back(v);
   }
 
-#if __cplusplus >= 201103L || CPP11
+#if __cplusplus >= 201103L 
   template <class... Args>
   void emplace_unsorted(Args&&... args) {
     Size i = data.size();
@@ -490,15 +493,22 @@ This is definitely linear to n.
   /**
      you must have put v's distance in the DistanceMap before pushing
   */
-  void push(MoveableValueRef v) {
+#if __cplusplus >= 201103L
+  template <class Univ>
+  void push(Univ &&v)
+#else
+  void push(MoveableValueRef v)
+#endif
+  {
     if (GRAEHL_D_ARY_PUSH) {
       size_type i = data.size();
-#if __cplusplus >= 201103L || CPP11
+#if __cplusplus >= 201103L 
       data.emplace_back();
 #else
       data.push_back(Value());  // (hoping default construct is cheap, construct-copy inline)
 #endif
-      preserve_heap_property_up((MoveableValueRef)v, i);  // we don't have to recopy v, or init index_in_heap
+      preserve_heap_property_up(GRAEHL_D_ARY_FORWARD_REF(v),
+                                i);  // we don't have to recopy v, or init index_in_heap
     } else {
       size_type index = data.size();
       data.push_back(v);
@@ -511,7 +521,7 @@ This is definitely linear to n.
 
   Value& top() { return data[0]; }
 
-  const Value& top() const { return data[0]; }
+  Value const& top() const { return data[0]; }
 
   /**
      as with top(), take care not to invalidate heap property or item<->location map
@@ -543,7 +553,7 @@ This is definitely linear to n.
   // This function assumes the key has been improved
   // (distance has become smaller, so it may need to rise toward top().
   // i.e. decrease-key in a min-heap
-  void update(const Value& v) {
+  void update(Value const& v) {
     using boost::get;
     size_type index = get(index_in_heap, v);
     preserve_heap_property_up(v, index);
@@ -551,7 +561,7 @@ This is definitely linear to n.
   }
 
   // return true if improved.
-  bool maybe_improve(const Value& v, distance_type dbetter) {
+  bool maybe_improve(Value const& v, distance_type dbetter) {
     using boost::get;
     if (better(dbetter, get(distance, v))) {
       preserve_heap_property_up_dist(v, dbetter);
@@ -578,7 +588,7 @@ This is definitely linear to n.
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #endif
 
-  inline bool contains(const Value& v, size_type i) const {
+  inline bool contains(Value const& v, size_type i) const {
     if (GRAEHL_D_ARY_TRACK_OUT_OF_HEAP) return i != (size_type)GRAEHL_D_ARY_HEAP_NULL_INDEX;
     size_type sz = data.size();
     EIFDBG(DDARY, 2, SHOWM2(DDARY, "d_ary_heap contains", i, data.size()));
@@ -586,17 +596,24 @@ This is definitely linear to n.
     // though) - thus i>=0 check to catch uninit. data
   }
 
-  inline bool contains(const Value& v) const {
+  inline bool contains(Value const& v) const {
     using boost::get;
     return contains(v, get(index_in_heap, v));
   }
 
-  void push_or_update(MoveableValueRef v) { /* insert if not present, else update */
+  /** insert if not present, else update */
+#if __cplusplus >= 201103L
+  template <class Univ>
+  void push_or_update(Univ &&v)
+#else
+  void push_or_update(MoveableValueRef v)
+#endif
+  {
     using boost::get;
     size_type index = get(index_in_heap, v);
     if (GRAEHL_D_ARY_PUSH) {
       if (contains(v, index))
-        preserve_heap_property_up((MoveableValueRef)v, index);
+        preserve_heap_property_up(GRAEHL_D_ARY_FORWARD_REF(v), index);
       else
         push(v);
     } else {
@@ -630,8 +647,8 @@ This is definitely linear to n.
   inline void swap_heap_elements(size_type index_a, size_type index_b) {
     assert(index_a != index_b);
 #if 1
-    Value &willb = data[index_a];
-    Value &willa = data[index_b];
+    Value& willb = data[index_a];
+    Value& willa = data[index_b];
     using std::swap;
     swap(willb, willa);
     put(index_in_heap, willa, index_a);
@@ -675,14 +692,16 @@ This is definitely linear to n.
   // the very end
   inline void preserve_heap_property_up(MoveableValueRef currently_being_moved, size_type index) {
     using boost::get;
-    preserve_heap_property_up(currently_being_moved, index, get(distance, currently_being_moved));
+    preserve_heap_property_up(GRAEHL_D_ARY_FORWARD_REF(currently_being_moved), index,
+                              get(distance, currently_being_moved));
   }
 
   /**
      disabled because distance map may not be writable. would need traits to enable
   */
   /*
-  inline void preserve_heap_property_up_set_dist(MoveableValueRef currently_being_moved, distance_type dbetter) {
+  inline void preserve_heap_property_up_set_dist(MoveableValueRef currently_being_moved, distance_type
+  dbetter) {
     using boost::get;
     using boost::put;
     put(distance, currently_being_moved, dbetter);
@@ -699,16 +718,16 @@ This is definitely linear to n.
       for (;;) {
         if (index == 0) break;  // Stop at root - but still need to assign currently_being_moved to posn 0
         size_type parent_index = parent(index);
-        MoveableValueRef parent_value = data[parent_index];
+        Value const& parent_value = data[parent_index];
         if (better(currently_being_moved_dist, get(distance, parent_value))) {
-          move_heap_element(parent_value, index);
+          move_heap_element((MoveableValueRef)parent_value, index);
           index = parent_index;
         } else {
           break;  // Heap property satisfied
         }
       }
       // finish "swap chain" by filling hole w/ currently_being_moved
-      move_heap_element(currently_being_moved, index);
+      move_heap_element(GRAEHL_D_ARY_FORWARD_REF(currently_being_moved), index);
     } else {
       put(index_in_heap, currently_being_moved, index);
       // put(distance, currently_being_moved, currently_being_moved_dist);
@@ -790,7 +809,7 @@ This is definitely linear to n.
           = 0;  // don't add to base first_child_index every time we update which is smallest.
       distance_type smallest_child_dist = get(distance, child_base_ptr[smallest_child_index]);
 #undef GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I
-#define GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I                          \
+#define GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I                   \
   do {                                                       \
     distance_type i_dist = get(distance, child_base_ptr[i]); \
     if (better(i_dist, smallest_child_dist)) {               \
@@ -817,7 +836,8 @@ This is definitely linear to n.
         move_heap_element((MoveableValueRef)child_base_ptr[smallest_child_index], index);  // move up
         index = first_child_index + smallest_child_index;  // descend - hole is now here
       } else {
-        move_heap_element((MoveableValueRef)currently_being_moved, index);  // finish "swap chain" by filling hole
+        move_heap_element(GRAEHL_D_ARY_FORWARD_REF(currently_being_moved),
+                          index);  // finish "swap chain" by filling hole
         break;
       }
     }

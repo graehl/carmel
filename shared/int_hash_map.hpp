@@ -21,7 +21,7 @@
 #pragma once
 
 //reminder: undefined macros eval to 0
-#if __cplusplus >= 201103L || CPP11 || defined(__clang__) && defined(_LIBCPP_VERSION)
+#if __cplusplus >= 201103L  || defined(__clang__) && defined(_LIBCPP_VERSION)
 # include <unordered_map>
 # define GRAEHL_UNORDERED_NS std
 #elif _MSC_VER >= 1500 && _HAS_TR1 || _MSC_VER >= 1700
