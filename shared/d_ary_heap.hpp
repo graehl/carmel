@@ -17,7 +17,7 @@
   default), location in heap, etc. are stored in external property maps (usually
   separate arrays).
 
-  you can update(), maybe_improve(), or push_or_update() the priority unlike vanilla binary-heap w/
+  you can update(), or push_or_update() the priority unlike vanilla binary-heap w/
   std::pop_heap etc.
 
   by default, d=4-ary min-heap (faster than 2-ary depending on key size, due to cache locality)
@@ -340,7 +340,7 @@ class d_ary_heap_indirect {
     data.push_back(v);
   }
 
-#if __cplusplus >= 201103L 
+#if __cplusplus >= 201103L
   template <class... Args>
   void emplace_unsorted(Args&&... args) {
     Size i = data.size();
@@ -502,7 +502,7 @@ This is definitely linear to n.
   {
     if (GRAEHL_D_ARY_PUSH) {
       size_type i = data.size();
-#if __cplusplus >= 201103L 
+#if __cplusplus >= 201103L
       data.emplace_back();
 #else
       data.push_back(Value());  // (hoping default construct is cheap, construct-copy inline)
@@ -553,28 +553,23 @@ This is definitely linear to n.
   // This function assumes the key has been improved
   // (distance has become smaller, so it may need to rise toward top().
   // i.e. decrease-key in a min-heap
-  void update(Value const& v) {
+#if __cplusplus >= 201103L
+  template <class Univ>
+  void update(Univ &&v)
+#else
+  void update(MoveableValueRef v)
+#endif
+  {
     using boost::get;
     size_type index = get(index_in_heap, v);
-    preserve_heap_property_up(v, index);
+    preserve_heap_property_up(GRAEHL_D_ARY_FORWARD_REF(v), index);
     verify_heap();
-  }
-
-  // return true if improved.
-  bool maybe_improve(Value const& v, distance_type dbetter) {
-    using boost::get;
-    if (better(dbetter, get(distance, v))) {
-      preserve_heap_property_up_dist(v, dbetter);
-      return true;
-    }
-    return false;
   }
 
   distance_type best(distance_type null = 0) const { return empty() ? null : get(distance, data[0]); }
   distance_type second_best(distance_type null = 0) const {
     if (data.size() < 2) return null;
     int m = std::min(data.size(), Arity + 1);
-    //      if (m>=Arity) m=Arity+1;
     distance_type b = get(distance, data[1]);
     for (int i = 2; i < m; ++i) {
       distance_type d = get(distance, data[i]);
@@ -582,7 +577,6 @@ This is definitely linear to n.
     }
     return b;
   }
-
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wtautological-compare"
@@ -592,8 +586,9 @@ This is definitely linear to n.
     if (GRAEHL_D_ARY_TRACK_OUT_OF_HEAP) return i != (size_type)GRAEHL_D_ARY_HEAP_NULL_INDEX;
     size_type sz = data.size();
     EIFDBG(DDARY, 2, SHOWM2(DDARY, "d_ary_heap contains", i, data.size()));
-    return i >= 0 && i < sz && equal(v, data[i]);  // note: size_type may be signed (don't recommend it,
-    // though) - thus i>=0 check to catch uninit. data
+    return i >= 0 && i < sz && equal(v, data[i]);
+    // note: size_type may be signed (don't recommend it, though) - thus i>=0
+    // check to catch uninit. data
   }
 
   inline bool contains(Value const& v) const {
@@ -750,17 +745,16 @@ This is definitely linear to n.
     // The first loop just saves swaps that need to be done in order to avoid
     // aliasing issues in its search; there is a second loop that does the
     // necessary swap operations
-    Value currently_being_moved = data[index];
-    distance_type currently_being_moved_dist = get(distance, currently_being_moved);
+    distance_type currently_being_moved_dist = get(distance, data[index]);
     for (;;) {
       if (index == 0) break;  // Stop at root
       size_type parent_index = parent(index);
-      Value parent_value = data[parent_index];
-      if (better(currently_being_moved_dist, get(distance, parent_value))) {
+      if (better(currently_being_moved_dist, get(distance, data[parent_index]))) {
         ++num_levels_moved;
         index = parent_index;
         continue;
       } else {
+        if (!num_levels_moved) return;
         break;  // Heap property satisfied
       }
     }
@@ -768,15 +762,14 @@ This is definitely linear to n.
     // tree, then put currently_being_moved at the top
     index = orig_index;
     using boost::put;
+    Value currently_being_moved(data[index]); // will overwrite data[index] so need copy
     for (size_type i = 0; i < num_levels_moved; ++i) {
       size_type parent_index = parent(index);
-      Value parent_value = data[parent_index];
-      put(index_in_heap, parent_value, index);
-      data[index] = parent_value;
+      put(index_in_heap, data[index] = (MoveableValueRef)data[parent_index], index);
       index = parent_index;
     }
-    data[index] = currently_being_moved;
     put(index_in_heap, currently_being_moved, index);
+    data[index] = (MoveableValueRef)currently_being_moved;
     verify_heap();
   }
 
@@ -846,7 +839,8 @@ This is definitely linear to n.
 
   inline void preserve_heap_property_down(size_type i) {
     EIFDBG(DDARY, 3, SHOWM3(DDARY, "preserve_heap_property_down", i, data[i], data.size()));
-    preserve_heap_property_down(data[i], i, data.size());
+    Value copyi(data[i]); // TODO: we should only copy if heap property isn't already present. or give up and just use swap for this (see usage from heapify)
+    preserve_heap_property_down((MoveableValueRef)copyi, i, data.size());
   }
 
  public:
