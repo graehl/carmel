@@ -28,6 +28,9 @@
   since it's less frequently updated
 
   'min-heap' means first distance is at top() - (smallest w/ the default, std::less)
+
+  TODO: C++11, this heap move assign things you add to it (TODO: investigate
+  template / std::forward to support both move and non-?)
  */
 
 #ifndef GRAEHL_SHARED__D_ARY_HEAP_HPP
@@ -255,7 +258,8 @@ class d_ary_heap_indirect {
   BOOST_STATIC_ASSERT(Arity >= 2);
 
  public:
-#if __cplusplus >= 201103L || CPP11
+#if 0 && (__cplusplus >= 201103L || CPP11)
+  //TODO
   typedef Value &&MoveableValueRef;
 #else
   typedef Value const& MoveableValueRef;
@@ -486,7 +490,7 @@ This is definitely linear to n.
   /**
      you must have put v's distance in the DistanceMap before pushing
   */
-  void push(const Value& v) {
+  void push(MoveableValueRef v) {
     if (GRAEHL_D_ARY_PUSH) {
       size_type i = data.size();
 #if __cplusplus >= 201103L || CPP11
@@ -494,7 +498,7 @@ This is definitely linear to n.
 #else
       data.push_back(Value());  // (hoping default construct is cheap, construct-copy inline)
 #endif
-      preserve_heap_property_up(v, i);  // we don't have to recopy v, or init index_in_heap
+      preserve_heap_property_up((MoveableValueRef)v, i);  // we don't have to recopy v, or init index_in_heap
     } else {
       size_type index = data.size();
       data.push_back(v);
@@ -522,7 +526,7 @@ This is definitely linear to n.
     if (GRAEHL_D_ARY_TRACK_OUT_OF_HEAP) put(index_in_heap, data[0], (size_type)GRAEHL_D_ARY_HEAP_NULL_INDEX);
     if (data.size() != 1) {
       if (GRAEHL_D_ARY_POP) {
-        preserve_heap_property_down(data.back(), 0, data.size() - 1);
+        preserve_heap_property_down((MoveableValueRef)data.back(), 0, data.size() - 1);
         data.pop_back();
       } else {
         data[0] = data.back();
@@ -587,12 +591,12 @@ This is definitely linear to n.
     return contains(v, get(index_in_heap, v));
   }
 
-  void push_or_update(const Value& v) { /* insert if not present, else update */
+  void push_or_update(MoveableValueRef v) { /* insert if not present, else update */
     using boost::get;
     size_type index = get(index_in_heap, v);
     if (GRAEHL_D_ARY_PUSH) {
       if (contains(v, index))
-        preserve_heap_property_up(v, index);
+        preserve_heap_property_up((MoveableValueRef)v, index);
       else
         push(v);
     } else {
@@ -693,7 +697,7 @@ This is definitely linear to n.
     using boost::get;
     if (GRAEHL_D_ARY_UP) {
       for (;;) {
-        if (index == 0) break;  // Stop at root
+        if (index == 0) break;  // Stop at root - but still need to assign currently_being_moved to posn 0
         size_type parent_index = parent(index);
         MoveableValueRef parent_value = data[parent_index];
         if (better(currently_being_moved_dist, get(distance, parent_value))) {
@@ -704,9 +708,7 @@ This is definitely linear to n.
         }
       }
       // finish "swap chain" by filling hole w/ currently_being_moved
-      move_heap_element(currently_being_moved, index);  // note: it's ok not to return early on index==0 at
-      // start, even if self-assignment isn't supported by
-      // Value - because currently_being_moved is a copy.
+      move_heap_element(currently_being_moved, index);
     } else {
       put(index_in_heap, currently_being_moved, index);
       // put(distance, currently_being_moved, currently_being_moved_dist);

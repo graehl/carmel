@@ -1,4 +1,5 @@
-gccver=4.9.2
+#cd /local;sudo mv gcc{,-4.9}; sudo tar xzf /home/graehl/gcc.tar.gz
+gccver=5.1.0
 srcdir=/local/graehl/src
 gccwithv=gcc-$gccver
 gccsrc=$srcdir/$gccwithv
@@ -15,6 +16,7 @@ gccclean() {
     rm -rf $gccwithv
     bzcat $gccwithv.tar.bz2 | tar xf -
     gccprereq
+    rm -rf $gccbuild
 }
 gccprereq() {
     cd $gccsrc

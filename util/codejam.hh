@@ -44,7 +44,7 @@
 
 using namespace std;
 
-int verbose = 1;
+int verbose = 0;
 #ifdef NDEBUG
 #define IFVERBOSE(x)
 #else

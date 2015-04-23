@@ -25,10 +25,10 @@ gdbjam() {
     cd ~/jam
     in=$2
     [[ -f $in ]] || in="$in.in"
-    cgdb --args ./$1 $in - 1 ${3:-1}
+    cgdb --args ./$1 $in - 1 ${3:-${verbose:-1}}
 }
 cjam() {
-    CFLAGS="--std=c++11 -Wno-deprecated"
+    CFLAGS="--std=c++11 -Wno-deprecated -I ."
     if [[ $release ]]; then
         CFLAGS+=" -O3 -ffast-math -DNDEBUG"
         exesuf=.out
@@ -46,7 +46,7 @@ cjam() {
         set -x
         cd ~/jam
         [[ -f $in ]]
-        TERM=dumb g++ $CFLAGS $src -o $exe
+        TERM=dumb g++ $MORECFLAGS $CFLAGS $src -o $exe
         time ./$exe "$@"
         set +x
         out=${1%.in}.out
@@ -72,7 +72,7 @@ ccjam() {
         fi
         [[ -f jam/$in ]]
         set -x
-        ssh $chost "release=$release cjam $src $in $*"
+        ssh $chost "release=$release MORECFLAGS=$MORECFLAGS cjam $src $in $*"
         out=jam/${in%.in}.out
         scp $chost:$out $out
         head -50 $out
