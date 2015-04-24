@@ -1,3 +1,4 @@
+# cd /local/graehl/src/gcc-build;sudo mv /local/gcc{,-4.9}; sudo make install
 #cd /local;sudo mv gcc{,-4.9}; sudo tar xzf /home/graehl/gcc.tar.gz
 gccver=5.1.0
 srcdir=/local/graehl/src
@@ -57,4 +58,12 @@ gccall() {
 uselocalgcc() {
     export PATH=/local/gcc/bin:$PATH
     export LD_LIBRARY_PATH=/local/gcc/lib64:$LD_LIBRARY_PATH
+}
+vgall() {
+    (set -e
+     cd /local/graehl/src
+     tarxzf ~/src/valgrind-3.10.1.tar.bz2
+     cd valgrind-3.10.1/
+     ./configure --prefix=/usr/local && make -j8 && sudo make install
+    )
 }

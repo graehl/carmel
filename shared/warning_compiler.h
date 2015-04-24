@@ -91,6 +91,12 @@
 # define HAVE_GCC_4_8 0
 #endif
 
+#if !__clang__ && (__GNUC__ >= 5)
+#define HAVE_GCC_5 1
+#else
+#define HAVE_GCC_5 0
+#endif
+
 #define DIAGNOSTIC_PUSH() PRAGMA_EITHER(diagnostic push)
 
 #define DIAGNOSTIC_PRAGMA_WARNING_EITHER(x) \

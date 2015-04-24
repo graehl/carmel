@@ -1796,6 +1796,9 @@ c-c() {
 k-c() {
     chost=c-ydong
 }
+y-c() {
+    chost=c-ydong
+}
 j-c() {
     chost=c-jmay
 }
@@ -2815,6 +2818,9 @@ nblanklines() {
 }
 ccpr() {
     recursive=1 ccp "$@"
+}
+ycp() {
+    chost=c-ydong ccp "$@"
 }
 jcp() {
     chost=c-jmay ccp "$@"
@@ -6984,7 +6990,7 @@ function vg() {
         gdb --args "$@"
         return
     fi
-    [ "$debug" ] && darg="--db-attach=yes"
+    [ "$debug" ] && darg="--db-attach=yes --db-command=cgdb"
     [ "$vgdb" ] && varg="--vgdb=full"
     [ "$sup" ] && suparg="--gen-suppressions=yes"
     local lc=

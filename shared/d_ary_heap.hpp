@@ -545,6 +545,7 @@ This is definitely linear to n.
   {
     using boost::get;
     size_type index = get(index_in_heap, v);
+    assert(index <= data.size());
     preserve_heap_property_up(GRAEHL_D_ARY_FORWARD_REF(v), index, get(distance, v));
     verify_heap();
   }
@@ -705,7 +706,6 @@ This is definitely linear to n.
     return;
     verify_heap();
   }
-
 
 
   /// \return 0 if currently_being_moved is better than all children of parent_index else position of child
