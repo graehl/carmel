@@ -512,6 +512,10 @@ This is definitely linear to n.
 
   Value const& top() const { return data[0]; }
 
+  Value& front() { return data[0]; }
+
+  Value const& front() const { return data[0]; }
+
   /**
      as with top(), take care not to invalidate heap property or item<->location map
   */

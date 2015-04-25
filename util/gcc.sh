@@ -62,7 +62,7 @@ uselocalgcc() {
 vgall() {
     (set -e
      cd /local/graehl/src
-     tarxzf ~/src/valgrind-3.10.1.tar.bz2
+     tarxzf ~/src/valgrind-3.10.1.tar.bz2 2>&1 >/dev/null
      cd valgrind-3.10.1/
      ./configure --prefix=/usr/local && make -j8 && sudo make install
     )

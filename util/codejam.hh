@@ -51,7 +51,7 @@ int verbose = 1;
 #define IFVERBOSE(x) \
   do {               \
     if (verbose) x;  \
-  } while(0)
+  } while (0)
 #endif
 
 #define O(x) ' ' << #x << '=' << x
@@ -60,8 +60,9 @@ int verbose = 1;
 #define CO2(m, a) IFVERBOSE(cerr << m << O(a) << '\n');
 #define CO3(m, a, b) IFVERBOSE(cerr << m << O(a) << O(b) << '\n');
 #define CO4(m, a, b, c) IFVERBOSE(cerr << m << O(a) << O(b) << O(c) << '\n');
+#define CO5(m, a, b, c, d) IFVERBOSE(cerr << m << O(a) << O(b) << O(c) << O(d) << '\n');
 /// enabled always, unlike assert(a == b)
-#define MUSTEQ(a,b) musteq(a, b, #a, #b)
+#define MUSTEQ(a, b) musteq(a, b, #a, #b)
 
 /*******  All Required define Pre-Processors and typedef Constants *******/
 #define GETINT(type) readInt<type>()
@@ -160,12 +161,19 @@ inline T& max3(T& a, T& b, T& c) {
 
 /// assign x = min(x,y)
 template <class T, class U>
-inline void amin(T& x, U y) {
-  if (y < x) x = y;
+inline void amin(T& bound, U y) {
+  if (y < bound) {
+    CO3("new amin bound <= y", bound, y);
+    bound = y;
+  }
 }
+
 template <class T, class U>
-inline void amax(T& x, U y) {
-  if (x < y) x = y;
+inline void amax(T& bound, U y) {
+  if (bound < y) {
+    CO3("new amax bound <= y", bound, y);
+    bound = y;
+  }
 }
 
 void yesno(bool x) {
@@ -175,15 +183,13 @@ void yesno(bool x) {
 
 template <class A, class B>
 void musteq(A const& a, B const& b, char const* an, char const* bn) {
-  IFVERBOSE(cerr<<"Should agree: "<<an<<":"<<a<<" ==? "<<bn<<":"<<b<<'\n');
+  IFVERBOSE(cerr << "Should agree: " << an << ":" << a << " ==? " << bn << ":" << b << '\n');
   if (a != b) {
-    cerr << "ERROR: did not agree: "<<an;
-    if (!verbose)
-      cerr <<":"<<a;
-    cerr <<" != "<<bn;
-    if (!verbose)
-      cerr<<":"<<b;
-    cerr<<'\n';
+    cerr << "ERROR: did not agree: " << an;
+    if (!verbose) cerr << ":" << a;
+    cerr << " != " << bn;
+    if (!verbose) cerr << ":" << b;
+    cerr << '\n';
     abort();
   }
 }
@@ -228,11 +234,9 @@ char digit0(int x) {
   return '0' + x;
 }
 
+#ifndef __APPLE__
 pthread_t detached_thread;
 pthread_attr_t detached_threadattr;
-U ncases;
-bool singlethread;
-
 sem_t sem_nthreads, sem_done;
 
 template <class Case>
@@ -244,6 +248,11 @@ void* solve_thread(void* casep) {
   sem_post(&sem_done);
   return 0;
 }
+#endif
+
+U ncases;
+bool singlethread;
+
 void expect_newline() {
   for (;;) {
     int c = getchar();
@@ -277,8 +286,10 @@ char const* basename_end(char const* s) {
 /// only allowed as a global (no memzero for perf)
 template <class Case>
 int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newline = true) {
+#ifndef __APPLE__
   pthread_attr_init(&detached_threadattr);
   pthread_attr_setdetachstate(&detached_threadattr, PTHREAD_CREATE_DETACHED);
+#endif
   char const* input = "input.txt";
   if (argc > 1 && *argv[1]) input = argv[1];
   std::string bufoutput;
@@ -297,11 +308,15 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
   ncases = GETU;
   CO(ncases);
   if (ncases > MAXCASES) abort();
+#ifdef __APPLE__
+  singlethread = true;
+#else
   singlethread = cores <= 1;
   if (!singlethread) {
     sem_init(&sem_nthreads, 0, cores);
     sem_init(&sem_done, 0, 0);
   }
+#endif
   REP(k, ncases) {
     cases[k].read();
     if (!k && verbose) {
@@ -309,6 +324,7 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
       cases[k].show1();
       cerr << '\n';
     }
+#ifndef __APPLE__
     if (!singlethread) {
       verbose = 0;
       assert(k < MAXCASES);
@@ -325,9 +341,12 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
         }
       cerr << "started solve thread case #" << k + 1 << '\n';
     }
+#endif
   }
   expect_eof();
+#ifndef __APPLE__
   if (!singlethread) REP(k, ncases) sem_wait(&sem_done);
+#endif
   REP(k, ncases) {
     if (singlethread) cases[k].solve();
     casepre(k);
@@ -349,9 +368,7 @@ struct CaseBase {
     else
       putchar(' ');
   }
-  void show1() {
-    cerr << "[unimplemented:show1()]";
-  }
+  void show1() { cerr << "[unimplemented:show1()]"; }
   void solve() {
     CO2("must override", casei);
     abort();
@@ -424,7 +441,7 @@ void reversec(X& x) {
 
 #ifndef CASES_DEFAULT_CORES
 #ifdef NDEBUG
-#define CASES_DEFAULT_CORES 16
+#define CASES_DEFAULT_CORES 1
 #else
 #define CASES_DEFAULT_CORES 1
 #endif
