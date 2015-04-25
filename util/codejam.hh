@@ -44,7 +44,7 @@
 
 using namespace std;
 
-int verbose = 0;
+int verbose = 1;
 #ifdef NDEBUG
 #define IFVERBOSE(x)
 #else
@@ -140,6 +140,22 @@ Int modpow(Int x, U p) {
     p >>= 1;
   }
   return r;
+}
+
+template <class T>
+inline T& min3(T& a, T& b, T& c) {
+  if (a < b)
+    return a < c ? a : c;
+  else
+    return b < c ? b : c;
+}
+
+template <class T>
+inline T& max3(T& a, T& b, T& c) {
+  if (a > b)
+    return a > c ? a : c;
+  else
+    return b > c ? b : c;
 }
 
 /// assign x = min(x,y)
@@ -332,6 +348,9 @@ struct CaseBase {
       firstprint = false;
     else
       putchar(' ');
+  }
+  void show1() {
+    cerr << "[unimplemented:show1()]";
   }
   void solve() {
     CO2("must override", casei);
