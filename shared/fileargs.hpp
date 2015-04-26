@@ -429,10 +429,17 @@ struct file_arg {
     std::auto_ptr<filestream> fa(f);
     set_checked(*f, filename, delete_after, fail_msg);  // exception safety provided by f
     fa.release();  // now owned by smart ptr
+    buf.reset();
     if (large_buf) give_large_buf();
     typedef stream_traits<filestream> traits;
     const bool read = traits::read;
-    f->open(filename.c_str(), std::ios::binary | (read ? std::ios::in : (std::ios::out | std::ios::trunc)));
+    f->open(
+#if __cplusplus >= 201103L
+        filename,
+#else
+        filename.c_str(),
+#endif
+        std::ios::binary | (read ? std::ios::in : (std::ios::out | std::ios::trunc)));
     if (!*f) throw_fail(filename, read ? "Couldn't open for input." : "Couldn't open for output.");
   }
 
