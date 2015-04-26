@@ -121,8 +121,8 @@ oshyp() {
      cd $osgitdir
     cd $xmtx
     mend
-    ~/x/scripts/release.sh $osgitdir
-    linosmake  "$@"
+    ~/x/scripts/release.sh $osgitdir "$@"
+    linosmake
     ) 2>&1 | tee ~/tmp/oshyp
 }
 hownfc() {
@@ -375,12 +375,14 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        SDL_BUILD_TYPE=Release
+        SDL_BUILD_TYPE=Production
+        #list-xmt-includes.py:20:18:skip_ifs = ['SDL_ASSERT_THREAD_SPECIFIC', 'SDL_OBJECT_COUNT', 'SDL_ENCRYPT',
+        BUILD_TYPE=Release
         if [[ $debug ]] ; then
-            SDL_BUILD_TYPE=Debug
+            BUILD_TYPE=Debug
         fi
-        sdlbuildarg=-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
-        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; which gcc; ccache-gcc --version; cmake $osgitdir/$hypdir $sdlbuildarg && TERM=dumb make -j9 VERBOSE=0 && Hypergraph/Hyp -h"
+        sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSDL_BUILD_TYPE=$SDL_BUILD_TYPE"
+        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; which gcc; ccache-gcc --version; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn --verbose=0"
     )
 }
 linosrelmake() {
@@ -3245,11 +3247,12 @@ cwith() {
 jen() {
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
-    if ! [[ $XMT_BUILD_TYPE ]] ; then
-    XMT_BUILD_TYPE=Development
-    if [[ $build = Release ]] ; then
-        XMT_BUILD_TYPE=Production
-    fi
+    if ! [[ $SDL_BUILD_TYPE ]] ; then
+        SDL_BUILD_TYPE=Development
+        if [[ $build = Release ]] ; then
+            SDL_BUILD_TYPE=Production
+        fi
+        SDL_BUILD_TYPE=Production
     fi
     shift
     local pub2
