@@ -335,7 +335,7 @@ substsmall() {
 oscptar() {
     (set -e
      cd $osgitdir
-     c-s "rm -rf $osgitdir/$hypdir; mkdir -p $osgitdir"
+     c-s "mkdir -p $osgitdir" #rm -rf $osgitdir/$hypdir;
      set -x
      scp $ostarball c-graehl:$osgitdir/
      c-s "cd $osgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
@@ -381,8 +381,10 @@ linosmake() {
         if [[ $debug ]] ; then
             BUILD_TYPE=Debug
         fi
-        sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSDL_BUILD_TYPE=$SDL_BUILD_TYPE"
-        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; which gcc; ccache-gcc --version; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn --verbose=0"
+        #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
+        sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
+        #rm -rf $osdirbuild;
+        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 --verbose=1 /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn --verbose=0"
     )
 }
 linosrelmake() {

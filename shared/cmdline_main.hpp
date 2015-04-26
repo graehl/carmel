@@ -381,10 +381,9 @@ struct main {
 
   virtual void log_invocation()
   {
-    if (verbose>0)
+    if (verbose > 1)
       log_invocation_base();
   }
-
 
   virtual void set_defaults_base()
   {

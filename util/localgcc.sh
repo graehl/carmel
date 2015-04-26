@@ -9,3 +9,5 @@ if [[ -d $gccprefix ]] ; then
     LD_LIBRARY_PATH+=":$gccprefix/lib64"
     export LD_LIBRARY_PATH=${LD_RUN_PATH#:}
 fi
+export CXX=ccache-g++
+export CC=ccache-gcc
