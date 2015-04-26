@@ -344,8 +344,11 @@ oscptar() {
 osmake() {
     (
         set -e
+        rm -rf $osdirbuild
         mkdir -p $osdirbuild
+        uselocalgccmac
         cd $osdirbuild
+        showvars_required CC CXX
         cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
     )
 }
@@ -384,7 +387,7 @@ linosmake() {
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         #rm -rf $osdirbuild;
-        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 --verbose=1 /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn --verbose=0"
+        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 --verbose=${verbose:-1} /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn"
     )
 }
 linosrelmake() {
@@ -8302,7 +8305,14 @@ cp2ken() {
 }
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=
 export SDL_EXTERNALS_PATH=$XMT_EXTERNALS_PATH
-uselocalgcc() {
+uselocalgccmac() {
+    if [[ -d /local/gcc/bin ]] ; then
     export PATH=/local/gcc/bin:$PATH
     export LD_LIBRARY_PATH=/local/gcc/lib64:$LD_LIBRARY_PATH
+    else
+        if [[ -f /usr/local/bin/gcc-5 ]] ; then
+            export CC=ccache-gcc-5
+            export CXX=ccache-g++-5
+        fi
+    fi
 }
