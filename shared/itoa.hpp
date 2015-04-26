@@ -17,7 +17,8 @@
 
     see int_types.hpp signed_for_int<Int>::toa_bufsize (includes 1 extra for trailing 0 and 1 for +- sign)
 
-    notice: some of these fns write the integer backwards (others use a temporary buffer then reverse the result)
+    notice: some of these fns write the integer backwards (others use a temporary buffer then reverse the
+   result)
 */
 
 #ifndef GRAEHL_SHARED__ITOA_H
@@ -49,7 +50,7 @@ namespace graehl {
 
 #ifdef GRAEHL_ITOA_DIGIT_LOOKUP_TABLE
 namespace {
-char digits[] = "0123456789";
+char const digits[] = "0123456789";
 }
 #endif
 
@@ -198,7 +199,7 @@ inline std::string utos(Int n) {
 }
 
 template <class String, class Int>
-inline void utos_append(String &str, Int n) {
+inline void utos_append(String& str, Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
   char* end = buf + signed_for_int<Int>::toa_bufsize;
   char* p = utoa(end, n);

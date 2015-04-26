@@ -386,8 +386,8 @@ linosmake() {
         fi
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
-        #rm -rf $osdirbuild;
-        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 --verbose=${verbose:-1} /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn"
+        #
+        c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp best --nbest=10 --verbose=${verbose:-1} /local/graehl/xmt/RegressionTests/Hypergraph2/nbest-in.hgtxt --log-level=warn"
     )
 }
 linosrelmake() {

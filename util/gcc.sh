@@ -67,3 +67,9 @@ vgall() {
      ./configure --prefix=/usr/local && make -j8 && sudo make install
     )
 }
+gdbinstall() {
+mkdir -pv /usr/share/gdb/auto-load/usr/lib              &&
+mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib &&
+chown -v -R root:root \
+      /usr/lib/gcc/*linux-gnu/$gccver/include{,-fixed}
+}

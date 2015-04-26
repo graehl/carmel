@@ -38,7 +38,7 @@
 namespace graehl {
 
 namespace {
-std::string unnamed_type = "unnamed type";
+std::string const unnamed_type = "unnamed type";
 }
 
 

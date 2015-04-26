@@ -36,7 +36,7 @@
 #endif
 
 namespace {  // anon
-static std::string ascii_whitespace = "\n\r\t ";
+std::string const ascii_whitespace = "\n\r\t ";
 }
 
 namespace graehl {
