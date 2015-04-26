@@ -131,7 +131,7 @@ struct parse_bit_names {
   }
 
   bool operator()(std::string const& s) const {
-    *val_ |= names()[s];
+    val_ |= names()[s];
     return true;
   }
 
@@ -142,6 +142,7 @@ struct parse_bit_names {
 
 template <class NameList, class Int = unsigned>
 struct named_bits : hex_int<Int> {
+  typedef void leaf_configure;
   typedef hex_int<Int> Base;
   named_bits() {}
 
@@ -165,10 +166,18 @@ struct named_bits : hex_int<Int> {
   void append(string_builder& b) const { Names::names().append(*this, b); }
 
   friend void string_to_impl(std::string const& s, named_bits& n) {
-    n = 0;
     try {
+      n = 0;
       split_noquote(s, parse_bit_names<NameList, Int>(n), "|");
-    } catch (string_to_exception& e) { string_to_impl(s, n.base); }
+    } catch (string_to_exception& e) {
+      try {
+        n = 0;
+        split_noquote(s, parse_bit_names<NameList, Int>(n), ",");
+      } catch (string_to_exception& e) {
+        n = 0;
+        string_to_impl(s, n.base());
+      }
+    }
   }
 
   friend std::string to_string_impl(named_bits const& n) {

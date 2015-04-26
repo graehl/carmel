@@ -57,7 +57,6 @@ struct hex_int {
   explicit hex_int(std::string const& s) { assign(s); }
   operator I const&() const { return i; }
   operator I&() { return i; }
-  I* operator&() { return &i; }
   void operator=(I to) { i = to; }
   typedef hex_int<I> self_type;
   TO_OSTREAM_PRINT

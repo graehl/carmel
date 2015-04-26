@@ -121,8 +121,8 @@ oshyp() {
      cd $osgitdir
     cd $xmtx
     mend
-    ~/x/scripts/release.sh $osgitdir "$@"
-    linosmake
+    ~/x/scripts/release.sh $osgitdir
+    linosmake  "$@"
     ) 2>&1 | tee ~/tmp/oshyp
 }
 hownfc() {
@@ -375,7 +375,12 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        c-s "mkdir -p $osdirbuild;cd $osdirbuild; cmake $osgitdir/$hypdir $* && TERM=dumb make -j9 VERBOSE=0 && Hypergraph/Hyp -h"
+        SDL_BUILD_TYPE=Release
+        if [[ $debug ]] ; then
+            SDL_BUILD_TYPE=Debug
+        fi
+        sdlbuildarg=-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
+        c-s ". ~/u/localgcc.sh;mkdir -p $osdirbuild;cd $osdirbuild; set -x; which gcc; ccache-gcc --version; cmake $osgitdir/$hypdir $sdlbuildarg && TERM=dumb make -j9 VERBOSE=0 && Hypergraph/Hyp -h"
     )
 }
 linosrelmake() {
