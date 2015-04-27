@@ -390,6 +390,11 @@ linosmake() {
         c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
     )
 }
+osreg() {
+    cd $xmtx/RegressionTests
+    ./runYaml.py -b $osdirbuild Hypergraph3 -x rtmp -X -c -n -v "$@"
+}
+
 linosrelmake() {
     (
         set -e

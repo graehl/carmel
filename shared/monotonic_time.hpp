@@ -31,15 +31,19 @@ inline struct timespec monotonic_timespec() {
 #else
   clock_gettime(CLOCK_MONOTONIC, &ts);
 #endif
+  return ts;
 }
 
 inline double seconds_with_ns(double sec, double nsec) {
   return sec + nsec * 1e-9;
 }
 
-inline double monotonic_time() {
-  struct timespec ts = monotonic_timespec();
+inline double seconds_with_ns(struct timespec ts) {
   return seconds_with_ns(ts.tv_sec, ts.tv_nsec);
+}
+
+inline double monotonic_time() {
+  return(seconds_with_ns(monotonic_timespec()));
 }
 
 }
