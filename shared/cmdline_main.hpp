@@ -376,7 +376,10 @@ struct main {
       teestreamptr.reset(log_stream = new std::ostream(teebufptr.get()));
     }
     if (quiet) verbose = 0;
-    if (in_file && ins.empty()) ins.push_back(in_file);
+    if (in_file && ins.empty()) {
+      ins.push_back(istream_arg());
+      swap(ins.back(), in_file);
+    }
 
 #if GRAEHL_DEBUGPRINT && defined(DEBUG)
     DBP::set_logstream(&log());

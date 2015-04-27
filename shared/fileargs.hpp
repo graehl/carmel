@@ -78,6 +78,7 @@ arguments and returns as UTF-8, do this:
 codecvt argument, too
 
  */
+#include <utility>
 #include <algorithm>
 #include <graehl/shared/large_streambuf.hpp>
 #include <graehl/shared/null_deleter.hpp>
@@ -283,12 +284,6 @@ struct file_arg {
     this->name = name;
   }
 
-  void operator=(file_arg const& o) {
-    buf = o.buf;
-    pointer = o.pointer;
-    none = o.none;
-    name = o.name;
-  }
 
   operator pointer_type() const { return pointer; }
   void operator=(std::string const& name) { set(name); }
@@ -331,6 +326,23 @@ struct file_arg {
   explicit file_arg(Stream& s, std::string const& name) : pointer(&s, null_deleter()), name(name) {
     none = (name == null_filename);
   }
+
+  void swapWith(file_arg& o) {
+    using namespace std;
+    swap(buf, o.buf);
+    swap(pointer, o.pointer);
+    bool t = none;
+    none = o.none;
+    o.none = t;
+    swap(name, o.name);
+  }
+
+  void operator=(file_arg const& o) {
+    buf = o.buf;
+    pointer = o.pointer;
+    none = o.none;
+    name = o.name;
+  }
   file_arg(file_arg const& o) : buf(o.buf), pointer(o.pointer), none(o.none), name(o.name) {}
 #if __cplusplus >= 201103L
   file_arg(file_arg&& o)
@@ -344,9 +356,11 @@ struct file_arg {
     return *this;
   }
 #endif
+#if 0
   template <class Stream2>
   explicit file_arg(file_arg<Stream2> const& o)
-      : buf(o.buf), pointer(o.pointer), none(o.none), name(o.name) {}
+      : buf(o.buf), pointer(boost::dynamic_pointer_cast<Stream>(o.pointer)), none(o.none), name(o.name) {}
+#endif
 
   void throw_fail(std::string const& filename, std::string const& msg = "") {
     name = filename;
@@ -530,6 +544,11 @@ struct file_arg {
   TO_OSTREAM_PRINT
   FROM_ISTREAM_READ
 };
+
+template <class Stream>
+void swap(file_arg<Stream>& a, file_arg<Stream>& b) {
+  a.swapWith(b);
+}
 
 typedef file_arg<std::istream> istream_arg;
 typedef file_arg<std::ostream> ostream_arg;
