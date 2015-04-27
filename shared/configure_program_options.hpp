@@ -46,14 +46,14 @@ struct program_options_exec : boost::noncopyable {
   string_consumer warn;
   program_options_exec(string_consumer const& warn, std::string const& caption)
       : allow_unrecognized_opts(true), warn(warn), opt_desc(caption), argv0("main"), finished_store(false) {}
-  typedef graehl::printable_options_description<std::ostream> ostream_options_description;  // TODO: directly
-  // generate
-  // regular
-  // options_description,
-  // use config
-  // facility for
-  // printing
-  // instead
+
+  /**
+     TODO: directly generate regular options_description, use config facility
+     for printing instead
+  */
+  typedef graehl::printable_options_description<std::ostream> ostream_options_description;
+
+
   boost::program_options::positional_options_description positional;
   boost::program_options::variables_map vm;  // TODO!
   ostream_options_description opt_desc;

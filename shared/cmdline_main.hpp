@@ -230,7 +230,7 @@ struct main {
   }
 
   virtual void print(std::ostream& o) const {
-    o << opt.name << "-version= {{ {" << get_version() << "}}} " << opt.name << "-cmdline= {{ {"
+    o << opt.name << "-version={{{" << get_version() << "}}} " << opt.name << "-cmdline={{{"
       << cmdline_str << "}}}";
   }
 

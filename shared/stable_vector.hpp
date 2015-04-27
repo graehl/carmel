@@ -259,6 +259,7 @@ struct stable_vector {
     for (typename Chunks::const_iterator i = o.chunks.begin(), e = o.chunks.end(); i != e; ++i)
       push_back_chunk(clone_chunk(*i));
   }
+
 #if __cplusplus >= 201103L
   stable_vector(stable_vector &&o) : chunks(std::move(o.chunks)), size_(o.size_), capacity() {}
   stable_vector& operator=(stable_vector &&o) {
@@ -268,8 +269,8 @@ struct stable_vector {
     capacity = o.capacity;
     return *this;
   }
-
 #endif
+
   void operator=(stable_vector const& o) {
     if (this == &o) return;
     clear();
