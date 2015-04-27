@@ -47,13 +47,13 @@ struct program_options_exec : boost::noncopyable {
   program_options_exec(string_consumer const& warn, std::string const& caption)
       : allow_unrecognized_opts(true), warn(warn), opt_desc(caption), argv0("main"), finished_store(false) {}
   typedef graehl::printable_options_description<std::ostream> ostream_options_description;  // TODO: directly
-                                                                                            // generate
-                                                                                            // regular
-                                                                                            // options_description,
-                                                                                            // use config
-                                                                                            // facility for
-                                                                                            // printing
-                                                                                            // instead
+  // generate
+  // regular
+  // options_description,
+  // use config
+  // facility for
+  // printing
+  // instead
   boost::program_options::positional_options_description positional;
   boost::program_options::variables_map vm;  // TODO!
   ostream_options_description opt_desc;
@@ -206,12 +206,12 @@ struct configure_program_options : configure_backend_base<configure_program_opti
     if (opt.is_implicit()) po.implicit_value_str = opt.implicit->value;
     if (opt.is_init())
       po.default_value_str = opt.init->value;  // even though we don't need to rely on po lib to handle
-                                               // setting initial values or generating usage for us.
+    // setting initial values or generating usage for us.
 
     if (opt.is_required_err())
       po.required = true;  // TODO: we actually check this ourselves, but it's ok to have p opt lib check it
-                           // too (unless we want to support multiple sources. this way it knows to require
-                           // >=1 arg?
+    // too (unless we want to support multiple sources. this way it knows to require
+    // >=1 arg?
 
     if (opt.is_deprecated()) {
       po.notify0 = opt.deprecate->get_notify0(warn, pathname);
@@ -236,10 +236,8 @@ struct configure_program_options : configure_backend_base<configure_program_opti
     if (opt.is_positional()) {
       SHOWIF2(CONFEXPR, 1, "positional ", pathname, conf);
       popt->positional.add(
-          conf.path_name().c_str(),
-          opt.positional->max <= 0
-              ? -1
-              : opt.positional->max);  // ok to pass c_str() since it's stored in a string immediately
+          conf.path_name().c_str(),  // ok to pass c_str() since it's stored in a string immediately
+          opt.positional->max <= 0 ? -1 : opt.positional->max);
     }
   }
   template <class Val>
@@ -411,25 +409,25 @@ struct Thing {
     c("multiple-of-2", &even)('m').eg(4).init(2)(
         "an even number");  // if not specified, error. short cmdline name = -m
     c("verbose", &verbose).flag()("Log more status.");  // flag() is a hint to provide no-value shorthand for
-                                                        // command line options parsers: no-value --verbose or
-                                                        // --no-verbose flags. for YAML, flag() should be
-                                                        // ignored (you still have to specify a true or false
-                                                        // value)
+    // command line options parsers: no-value --verbose or
+    // --no-verbose flags. for YAML, flag() should be
+    // ignored (you still have to specify a true or false
+    // value)
     c("year", &deceasedYear).eg(1995).deprecate("in favor of --death-year");  // instead of checking if the
-                                                                              // int has its default value
-                                                                              // still, this allows you to
-                                                                              // know for sure that the
-                                                                              // default was used. note that
-                                                                              // eg merely needs to
-                                                                              // sdl::lexical_cast<string>
+    // int has its default value
+    // still, this allows you to
+    // know for sure that the
+    // default was used. note that
+    // eg merely needs to
+    // sdl::lexical_cast<string>
     c("a",
       &a);  // this means we have command line options --a.numbers --a.xys, and YAML paths a.numbers and a.xys
     c("b", &b)
         .is("SubThing 2")
         .allow_unrecognized();  // overrides default "SubThing" as "SubThing 2". gives us b-numbers and b-xys.
     c("leaf", &leaf).init_default();  // just like: int x; c("leaf", &x).is("LeafThing"); init_default() means
-                                      // init_default(LeafThing &) will be called, which at least
-                                      // default-constructs
+    // init_default(LeafThing &) will be called, which at least
+    // default-constructs
     c("ab", &ab)("an enum!").init(kB);
   }
 };
