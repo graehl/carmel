@@ -392,9 +392,9 @@ linosmake() {
 }
 osreg() {
     cd $xmtx/RegressionTests
-    ./runYaml.py -b $osdirbuild Hypergraph3 -x rtmp -X -c -n -v "$@"
+    ./runYaml.py -x rtmp -X -c -n -b $osdirbuild "$@"
+    #-v --dump-on-error
 }
-
 linosrelmake() {
     (
         set -e

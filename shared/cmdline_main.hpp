@@ -116,7 +116,7 @@ struct base_options {
     max_ins = 0;
     min_ins = 0;
     positional_in = false;
-    add_in_file = 0;
+    add_in_file = false;
   }
   void allow_ins(bool positional = true, int max_ins_ = -1) {
     max_ins = max_ins_;
@@ -158,6 +158,16 @@ struct base_options {
     min_ins = max_ins = 0;
     add_verbose = false;
     add_quiet = true;
+  }
+  void disable() {
+    no_ins();
+    add_out_file = false;
+    add_config_file = false;
+    add_help = false;
+    add_verbose = false;
+    add_random = false;
+    add_debug_level = false;
+    positional_in = positional_out = false;
   }
 };
 
