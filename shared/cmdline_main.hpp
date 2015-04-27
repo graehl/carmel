@@ -112,6 +112,12 @@ struct base_options {
 
   bool add_ins() const { return min_ins || max_ins; }
   bool has_max_ins() const { return max_ins >= 0; }
+  void no_ins() {
+    max_ins = 0;
+    min_ins = 0;
+    positional_in = false;
+    add_in_file = 0;
+  }
   void allow_ins(bool positional = true, int max_ins_ = -1) {
     max_ins = max_ins_;
     positional_in = positional;
@@ -191,6 +197,10 @@ struct main_options : base_options {
         allow_in(true);
       }
     }
+  }
+  void no_ins() {
+    base_options::no_ins();
+    input = false;
   }
 };
 
@@ -400,12 +410,13 @@ struct main {
       c("verbose",
         &verbose)('v')("e.g. verbosity level >1 means show banner of command line options. 0 means don't");
 
-    if (opt.add_ins()) {
-      int nin = opt.max_ins;
-      if (nin < 0) nin = 0;
-      c(GRAEHL_IN_FILE, &ins)('i')(opt.input_help()).eg("infileN.gz").positional(opt.positional_in, nin);
-    } else if (opt.add_in_file)
-      c(GRAEHL_IN_FILE, &in_file)('i')(opt.input_help()).eg("infile.gz").positional(opt.positional_in);
+    if (opt.input)
+      if (opt.add_ins()) {
+        int nin = opt.max_ins;
+        if (nin < 0) nin = 0;
+        c(GRAEHL_IN_FILE, &ins)('i')(opt.input_help()).eg("infileN.gz").positional(opt.positional_in, nin);
+      } else if (opt.add_in_file)
+        c(GRAEHL_IN_FILE, &in_file)('i')(opt.input_help()).eg("infile.gz").positional(opt.positional_in);
 
     if (opt.add_out_file)
       c(GRAEHL_OUT_FILE, &out_file)('o')
@@ -449,13 +460,14 @@ struct main {
       if (opt.positional_out) output_positional();
     }
 
-    if (opt.add_ins()) {
-      optionsDesc.add_options()(GRAEHL_IN_FILE ",i", optional_value(&ins)->multitoken(), opt.input_help());
-      if (opt.positional_in) input_positional(opt.max_ins);
-    } else if (opt.add_in_file) {
-      optionsDesc.add_options()(GRAEHL_IN_FILE ",i", defaulted_value(&in_file), opt.input_help());
-      if (opt.positional_in) input_positional();
-    }
+    if (opt.input)
+      if (opt.add_ins()) {
+        optionsDesc.add_options()(GRAEHL_IN_FILE ",i", optional_value(&ins)->multitoken(), opt.input_help());
+        if (opt.positional_in) input_positional(opt.max_ins);
+      } else if (opt.add_in_file) {
+        optionsDesc.add_options()(GRAEHL_IN_FILE ",i", defaulted_value(&in_file), opt.input_help());
+        if (opt.positional_in) input_positional();
+      }
 
     if (opt.add_config_file)
       optionsDesc.add_options()(GRAEHL_CONFIG_FILE, optional_value(&config_file),
@@ -568,6 +580,13 @@ struct main {
 
   /// \return false = help, true = success (else exception)
   int parse_args(int argc, char** argv) {
+    std::string const v = "-v";
+    if (opt.add_verbose)
+      for (int i = argc - 2; i; --i)
+        if (argv[i] == v) {
+          verbose = atoi_nows(argv[i + 1]);
+          break;
+        }
     set_defaults();
     using namespace std;
     using namespace boost::program_options;
