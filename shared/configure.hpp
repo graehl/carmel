@@ -1096,6 +1096,10 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     opt->usage = usage;
     return *this;
   }
+  conf_expr const& operator()(std::vector<char> const& usage) const {
+    opt->usage = std::string(usage.begin(), usage.end());
+    return *this;
+  }
   conf_expr const& deprecate(std::string const& info = "", bool deprecated = true) const {
     opt->deprecate = conf_opt::deprecate_args(deprecated, info);
     return *this;

@@ -45,7 +45,7 @@
 #include <string>
 
 #ifndef GRAEHL_MUTABLE_STRING_DATA
-#if __cplusplus >= 201103L 
+#if __cplusplus >= 201103L
 /// see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2668.htm
 /// - &str[0] required to be a writable array just like std::vector
 #define GRAEHL_MUTABLE_STRING_DATA 1
@@ -75,7 +75,7 @@
 #endif
 
 // in unix we already have a C99 compliant ::snprintf
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(CRT_NO_DEPRECATE)
 
 #ifndef snprintf
 #define snprintf C99snprintf

@@ -80,7 +80,21 @@ DECLARE_DBG_LEVEL(DDARY)
 #define GRAEHL_D_ARY_HEAP_NULL_INDEX (-1)
 // you may init location map to this for GRAEHL_D_ARY_TRACK_OUT_OF_HEAP (optional), or for push_or_update
 
+
+#ifndef GRAEHL_D_ARY_HEAP_CACHE_ALIGN_ROOT
+#define GRAEHL_D_ARY_HEAP_CACHE_ALIGN_ROOT 0
+#endif
+
+#if GRAEHL_D_ARY_HEAP_CACHE_ALIGN_ROOT
+#include <graehl/shared/aligned_allocator.hpp>
+#define GRAEHL_D_ARY_DEFAULT_CONTAINER(T, ARITY) std::vector<T, graehl::aligned_allocator<T, ARITY> >
+#else
+#define GRAEHL_D_ARY_DEFAULT_CONTAINER(T, ARITY) std::vector<T>
+#endif
+
 namespace graehl {
+
+
 template <class Key, class Index = unsigned>
 struct no_index_in_heap {};
 template <class Key, class Index>
@@ -136,7 +150,7 @@ struct property_traits<graehl::deref_distance<Key, Distance> > {
 }
 
 namespace graehl {
-static const std::size_t OPTIMAL_HEAP_ARITY = 4;
+static const std::size_t OPTIMAL_HEAP_ARITY = 2; // boost docs claimed 4 was optimal for dijkstra. TODO: validate that
 
 /* adapted from boost/graph/detail/d_ary_heap.hpp
 
@@ -241,10 +255,9 @@ do in my first uses.  plus, if keys are indices and the map is a vector, it's ba
 template <class Value, std::size_t Arity, class DistanceMap = identity_distance<Value>,
           class IndexInHeapPropertyMap = no_index_in_heap<Value, unsigned>,
           class Better = std::less<typename boost::property_traits<DistanceMap>::value_type>,
-          class Container = std::vector<Value>, class Size = unsigned, class Equal = std::equal_to<Value> >
+          class Container = GRAEHL_D_ARY_DEFAULT_CONTAINER(Value, Arity), class Size = unsigned, class Equal = std::equal_to<Value> >
 class d_ary_heap_indirect {
   BOOST_STATIC_ASSERT(Arity >= 2);
-
  public:
 #if __cplusplus >= 201103L
   // TODO: use perfect forwarding of universal reftype args

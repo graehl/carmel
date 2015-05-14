@@ -34,6 +34,7 @@
 #define CONFIGURE_INIT_JG_2013_05_23_HPP
 #pragma once
 
+#include <vector>
 #include <string>
 
 namespace configure {
@@ -81,6 +82,7 @@ struct init_expr
   init_expr const& eg(V2 const& eg) const { return *this; }
   init_expr const& operator()(char charname) const { return *this; }
   init_expr const& operator()(std::string const& usage) const { return *this; }
+  init_expr const& operator()(std::vector<char> const& usage) const { return *this; }
   init_expr const& deprecate(std::string const& info = "", bool deprecated = true) const { return *this; }
   init_expr const& init_default(bool enable = true) const { return *this; }
   init_expr const& todo(bool enable = true) const { return *this; }

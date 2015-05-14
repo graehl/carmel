@@ -772,7 +772,7 @@ inline bool is_fstream_no_rtti(std::istream& in) {
   if (&in == &(std::istream&)std::cin || in.tellg() == (std::streampos) - 1 || !in) return false;
   try {
     throw & in;
-  } catch (std::ifstream* f) {
+  } catch (std::ifstream*) {
     return true;
   } catch (...) {
     return false;

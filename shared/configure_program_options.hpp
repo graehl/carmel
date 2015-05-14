@@ -414,12 +414,10 @@ struct Thing {
     // ignored (you still have to specify a true or false
     // value)
     c("year", &deceasedYear).eg(1995).deprecate("in favor of --death-year");  // instead of checking if the
-    // int has its default value
-    // still, this allows you to
-    // know for sure that the
-    // default was used. note that
-    // eg merely needs to
-    // sdl::lexical_cast<string>
+    /*
+     int has its default value still, this allows you to know for sure that the
+     default was used. note that eg merely needs to lexical_cast<string>
+    */
     c("a",
       &a);  // this means we have command line options --a.numbers --a.xys, and YAML paths a.numbers and a.xys
     c("b", &b)

@@ -35,7 +35,7 @@
 
      inline void string_to_impl(std::string const&,T &);
 
-     // (both default to sdl::lexical_cast, except that boost::optional none can be "none" as well as ""
+     // (both default to lexical_cast, except that boost::optional none can be "none" as well as ""
 
      inline std::string type_string(T const&) // argument ignored. defaults to ""
 

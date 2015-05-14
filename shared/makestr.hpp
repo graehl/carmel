@@ -25,7 +25,7 @@ string s=MAKESTRE(1 << " " << c);
 
 equivalent of
 
-string s=sdl::lexical_cast<string>(1)+" "+sdl::lexical_cast<string>(c)
+string s=lexical_cast<string>(1)+" "+lexical_cast<string>(c)
 
 and likely faster if we use something more C-locale-formatting-constant than ostringstream
 

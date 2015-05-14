@@ -36,6 +36,10 @@ struct is_expr
   is_expr const& is(std::string const& is) const { if (pinfo) pinfo->is = is; return *this; }
   is_expr const& is_also(std::string const& is) const { if (pinfo) pinfo->also = is; return *this; }
   is_expr const& operator()(std::string const& usage) const { if (pinfo) pinfo->usage = usage; return *this; }
+  is_expr const& operator()(std::vector<char> const& usage) const {
+    if (pinfo) pinfo->usage.assign(usage.begin(), usage.end());
+    return *this;
+  }
 
   template <class Child>
   is_expr<Child> operator()(std::string const& name, Child *child) const {

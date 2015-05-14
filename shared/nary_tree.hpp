@@ -67,6 +67,7 @@ struct nary_tree
   nary_tree() {}
   nary_tree(nary_tree const& o) : children(o.children) {}
   nary_tree(child_index n) : children(n) {}
+  nary_tree(child_index n, child_type const& child) : children(n, child) {}
 };
 
 //TODO: use pool_traits?
@@ -84,6 +85,7 @@ struct shared_nary_tree
 
   shared_nary_tree() {}
   shared_nary_tree(child_index n) : TreeBase(n) {}
+  shared_nary_tree(child_index n, typename TreeBase::child_type const& child) : TreeBase(n, child) {}
   shared_nary_tree(shared_nary_tree const& o) : TreeBase(o) {} // note: refcount doesn't get copied - so T needs to deep copy its data
 
 };

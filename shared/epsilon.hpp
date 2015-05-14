@@ -180,6 +180,15 @@ inline float next_representible_float(float f) {
   return f;
 }
 
+inline double next_representible(double f) {
+  return next_representible_double(f);
+}
+
+inline float next_representible(float f) {
+  return next_representible_float(f);
+}
+
+
 /**
    \return # of ieee floats between a and b, which must have the same sign
 

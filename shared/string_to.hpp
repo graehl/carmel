@@ -13,7 +13,7 @@
 // limitations under the License.
 /** \file
 
-  string_to and to_string, which default to sdl::lexical_cast, but, unlike that, may be overriden for user
+  string_to and to_string, which default to lexical_cast, but, unlike that, may be overriden for user
   types other than supporting default/copy ctor and ostream <<, istream >>.
 
   note: optional<T> is the string "none" if absent, else regular string rep for
@@ -39,7 +39,7 @@
   ----
 
   string_to and to_string for ints may not be much faster than
-  sdl::lexical_cast in its latest incarnations (see
+  lexical_cast in its latest incarnations (see
   http://accu.org/index.php/journals/1375) especially if you set the 'C' locale,
   but the code is at least simpler (and more to the point - more easily overriden).
 
@@ -296,6 +296,7 @@ PrintfFormat fmt_double_for_float_roundtrip = "%.9g";
 PrintfFormat fmt_double_for_float_default = "%.7g";
 PrintfFormat fmt_double_roundtrip = "%.17g";
 PrintfFormat fmt_double_default = "%.15g";
+PrintfFormat fmt_double_precision2 = "%.*g"; //http://www.cplusplus.com/reference/cstdio/printf/ suggests this is std
 
 /**
    enough space to printf 0-terminated -1.238945783e+0301 or whatever the max is
@@ -379,8 +380,9 @@ void string_to_impl(char* str, To& to) {
 
 template <class From, class To>
 void string_to_impl(From const& from, To& to) {
+  using namespace boost;
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
-  to = sdl::lexical_cast<To>(from);
+  to = lexical_cast<To>(from);
 #else
   if (!try_string_to(from, to))
     throw std::runtime_error(std::string("Couldn't convert (string_to): ") + from);
@@ -469,8 +471,9 @@ void string_to_impl(Str const& s, Str& d) {
 template <class D, class Enable = void>
 struct to_string_select {
   static inline std::string to_string(D const& d) {
+    using namespace boost;
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
-    return sdl::lexical_cast<std::string>(d);
+    return lexical_cast<std::string>(d);
 #else
     std::ostringstream o;
     o << d;
@@ -629,6 +632,7 @@ struct string_builder : string_buffer {
     return std::pair<char const*, char const*>(begin(), end());
   }
 
+
   /**
      for backtracking.
   */
@@ -690,6 +694,7 @@ struct string_builder : string_buffer {
     word_spacer sp(space);
     return range(s1, s2, sp);
   }
+
   /**
      for printing simple numeric values - maxLen must be sufficient or else
      nothing is appended. also note that printf format strings need to match the
@@ -697,7 +702,7 @@ struct string_builder : string_buffer {
      obvious but compiler should know how to warn/error on mismatch
   */
   template <class Val>
-  string_builder& printf(char const* fmt, Val val, unsigned maxLen = 40) {
+  string_builder& nprintf(unsigned maxLen, char const* fmt, Val val) {
     std::size_t sz = this->size();
     this->resize(sz + maxLen);
     // For Windows, snprintf is provided by shared/sprintf.hpp (in global namespace)
@@ -706,6 +711,21 @@ struct string_builder : string_buffer {
     this->resize(sz + written);
     return *this;
   }
+  template <class Val, class Val2>
+  string_builder& nprintf(unsigned maxLen, char const* fmt, Val val, Val2 val2) {
+    std::size_t sz = this->size();
+    this->resize(sz + maxLen);
+    unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val, val2);
+    if (written >= maxLen) written = 0;
+    this->resize(sz + written);
+    return *this;
+  }
+  /// for fmt = e.g. "%*d" "%*g" "%.*g" with int field width arg.
+  template <class Val>
+  string_builder& nprintf_width(char const* fmt, Val val, unsigned width, unsigned extrabuf = 8) {
+    return nprintf(width + extrabuf, fmt, (int)width, val);
+  }
+
   enum { kMaxInt32Chars = 12, kMaxInt64Chars = 22 };
 
   string_builder& operator()(unsigned char x) {
@@ -725,20 +745,34 @@ struct string_builder : string_buffer {
     return *this;
   }
 
+  string_builder& digits(double x, unsigned w = 8) {
+    return nprintf_width(fmt_double_precision2, x, w);
+  }
+
+  /// float can distinguish between final 8 9 0 in all cases for the first 6 digits
+  string_builder& significant(float x, unsigned w = 6) {
+    return digits(x, w);
+  }
+
+  /// double can distinguish between final 8 9 0 in all cases for the first 15 digits
+  string_builder& significant(double x, unsigned w = 15) {
+    return digits(x, w);
+  }
+
   /**
-     enough digits that you get the same value back when parsing the text.
+     enough digits that you get the same bits back when parsing the decimal text
   */
   string_builder& roundtrip(float x) {
-    return printf(fmt_double_for_float_roundtrip, (double)x, 15);
-    return *this;
+    return nprintf(16, fmt_double_for_float_roundtrip, (double)x);
   }
+
   /**
-     enough digits that you get the same value back when parsing the text.
+     enough digits that you get the same bits back when parsing the decimal text
   */
   string_builder& roundtrip(double x) {
-    return printf(fmt_double_roundtrip, x, 32);
-    return *this;
+    return nprintf(32, fmt_double_roundtrip, x);
   }
+
   string_builder& operator()(char c) {
     this->push_back(c);
     return *this;
@@ -925,6 +959,16 @@ struct string_builder : string_buffer {
     std::size_t n = size();
     return std::string(n ? b + 1 : b, b + n);
   }
+  std::pair<char const*, char const*> slice_skip_first_char() const {
+    return std::pair<char const*, char const*>(begin() + !empty(), end());
+  }
+  template <class Out>
+  void print_skip_first_char(Out& out) const {
+    std::size_t sz = string_buffer::size();
+    if (sz)
+      out.write(begin() + 1, --sz);
+  }
+
 };
 
 template <class Seq, class Sep>

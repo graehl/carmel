@@ -439,6 +439,18 @@ void reversec(X& x) {
   std::reverse(x.begin(), x.end());
 }
 
+template <class V>
+V sum(V const* a, V const* b) {
+  V v = 0;
+  for (; a != b; ++a) v += *a;
+  return v;
+}
+
+template <class V>
+V sumn(V const* a, U n) {
+  return sum(a, a + n);
+}
+
 #ifndef CASES_DEFAULT_CORES
 #ifdef NDEBUG
 #define CASES_DEFAULT_CORES 1

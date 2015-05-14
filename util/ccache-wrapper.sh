@@ -17,9 +17,7 @@ else
     cc=$ccbasename
 fi
 if [[ $gccfilter ]] && [[ -x `which gccfilter 2>/dev/null` ]] ; then
-    set -x
   exec gccfilter ${gccfilterargs:- -r -w -n -i} ccache $cc "$@"
 else
-    set -x
   exec ccache $cc "$@"
 fi

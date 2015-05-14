@@ -21,6 +21,20 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
+xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BUILD_TYPE=Production"
+grepwin() {
+    cat "$@" | grep -v C4267 | grep -v C4251 | grep -v C4244 | grep -v C4018
+}
+mvstdoutexpected() {
+    local suf=${1:-stdout-expected}
+    for f in `find . -name "*.$suf"`; do
+        if [[ -f $f ]] ; then
+            echo $f
+            git mv $f ${f%.$suf}.expected
+        fi
+    done
+    perl -i~ -pe "s/\.$suf/.expected/" `find . -name 'regtest*.yml'`
+}
 gdbjam() {
     cd ~/jam
     in=$2
@@ -1715,6 +1729,9 @@ k-make() {
 kr-make() {
     (kr-c;c-make "$@")
 }
+j-make() {
+    (j-c;c-make "$@")
+}
 jr-make() {
     (jr-c;c-make "$@")
 }
@@ -3292,7 +3309,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} XMT_BUILD_TYPE=$XMT_BUILD_TYPE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -3456,7 +3473,7 @@ ccmake() {
         identifybuild
         local cxxf=${cxxflags:-}
         echo "cmake = $(which cmake)"
-        CFLAGS= CXXFLAGS=${cxxf:-} CPPFLAGS= LDFLAGS=-v cmake $d -Wno-dev "$@"
+        CFLAGS= CXXFLAGS=${cxxf:-} CPPFLAGS= LDFLAGS=-v cmake $xmt_global_cmake_args $d -Wno-dev  "$@"
     )
 }
 savecppch() {
@@ -4074,7 +4091,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s NOLOCALGCC=$NOLOCALGCC XMT_BUILD_TYPE=$XMT_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
