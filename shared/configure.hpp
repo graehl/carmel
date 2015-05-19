@@ -457,7 +457,7 @@ struct conf_opt {
 
   template <class HelpQuote>
   std::string get_eg_suffix_quote(HelpQuote const& help_quoter) const {
-    std::string egs = get_eg();
+    std::string const& egs = get_eg();
     return egs.empty() ? egs : " (e.g. " + help_quoter.help_quote(egs) + ")";
   }
 
@@ -481,8 +481,8 @@ struct conf_opt {
 
   template <class Val>
   std::string get_usage(Val const& val) const {
-    std::string pre = get_is(val);
-    return concat_optional(pre, usage&& pre.size() ? " - " : "", usage);
+    std::string const& pre = get_is(val);
+    return concat_optional(pre, usage && pre.size() ? " - " : "", usage);
   }
 
   std::string get_usage() const { return get_usage_optional().get_value_or(""); }
@@ -594,7 +594,7 @@ struct conf_opt {
       void operator()() { warn(msg); }
     };
     deprecate_callback get_notify0(string_consumer const& warn, std::string const& pathname) const {
-      std::string suffix = info.empty() ? "." : "; " + info + ".";
+      std::string const& suffix = info.empty() ? "." : "; " + info + ".";
       return deprecate_callback(pathname + " is deprecated" + suffix, warn);
     }
     template <class C, class T>
@@ -1236,7 +1236,7 @@ void configure_store_init_from_base(Backend const& backend, RootVal* pval, conf_
 }
 
 namespace {
-std::string tab = "  ";
+std::string const tab("  ");
 
 /** return number of characters indented. */
 template <class O>
@@ -1841,13 +1841,12 @@ struct configure_backend_base : configure_backend {
   template <class Val>
   void leaf_action(show_effective_config effective, Val* pval, conf_expr_base const& conf) const {
     if (too_verbose(conf)) return;
-    std::string s = sub().effective_str(*pval, conf);
-    sub().print_conf_val_line(effective, s, conf);
+    sub().print_conf_val_line(effective, sub().effective_str(*pval, conf), conf);
   }
   template <class Val>
   void leaf_action(show_example_config example, Val* pval, conf_expr_base const& conf) const {
     if (too_verbose(conf)) return;
-    std::string s = conf.opt->get_eg(*pval);
+    std::string const& s = conf.opt->get_eg(*pval);
     if (!s.empty()) sub().print_conf_val_line(example, s, conf);
   }
 };

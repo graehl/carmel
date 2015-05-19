@@ -162,7 +162,7 @@ namespace fs = boost::filesystem;
 #else
 #define GRAEHL_GZ_USAGE ""
 #endif
-inline std::string file_arg_usage(std::string prefix = "filename: ") {
+inline std::string file_arg_usage(std::string const& prefix = "filename: ") {
   return prefix+"- for STDIN/STDOUT, -2 for STDERR, -0 for none"
 #if GRAEHL_USE_GZSTREAM
 ", X.gz for gzipped"

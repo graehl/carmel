@@ -91,7 +91,6 @@ S rtrim(S const& s, std::string const& ws = ascii_whitespace) {
 
 template <class S>
 S ltrim(S const& s, std::string const& ws = ascii_whitespace) {
-  //    std::string ws="\n\t ";
   typename S::size_type b;
   b = s.find_first_not_of(ws);
   if (b == S::npos) return S();
@@ -100,7 +99,6 @@ S ltrim(S const& s, std::string const& ws = ascii_whitespace) {
 
 template <class S>
 S trim(S const& s, std::string const& ws = ascii_whitespace) {
-  //    std::string ws="\n\t ";
   typename S::size_type b, e;
   b = s.find_first_not_of(ws);
   if (b == S::npos) return S();

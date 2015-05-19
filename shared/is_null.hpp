@@ -52,7 +52,7 @@ inline bool is_null(float const& f) {
 }
 
 inline void set_null(float& f) {
-  f = FLOAT_NULL;  // 0./0.;
+  f = FLOAT_NULL;
 }
 
 inline bool is_null(double const& f) {
@@ -60,7 +60,7 @@ inline bool is_null(double const& f) {
 }
 
 inline void set_null(double& f) {
-  f = DOUBLE_NULL;  // 0./0.;
+  f = DOUBLE_NULL;
 }
 
 template <class C>

@@ -84,7 +84,7 @@ bool no_type_string(T const& t) {
 
 template <class T>
 std::string type_name(T const& t) {
-  std::string n = type_string(t);
+  std::string const& n = type_string(t);
   return n.empty() ? unnamed_type : n;
 }
 

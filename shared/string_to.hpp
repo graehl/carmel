@@ -968,7 +968,6 @@ struct string_builder : string_buffer {
     if (sz)
       out.write(begin() + 1, --sz);
   }
-
 };
 
 template <class Seq, class Sep>

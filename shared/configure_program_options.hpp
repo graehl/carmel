@@ -93,7 +93,8 @@ struct program_options_exec : boost::noncopyable {
     for (strings::const_iterator i = names.begin(), e = names.end(); i != e; ++i) {
       std::string const& name = *i;
       if (!vm.count(name) || vm[name].defaulted()) {
-        std::string complaint = "missing configuration key " + *i;
+        std::string complaint("missing configuration key ");
+        complaint += *i;
         o(complaint);
         if (!warn_only) throw config_exception(complaint);
       }
@@ -124,8 +125,8 @@ struct program_options_exec : boost::noncopyable {
     }
   }
   std::string unrecognized_complaint(std::string arg, std::string parent, std::string prefix = "") {
-    std::string complaint = prefix + arg + " is an unknown option and parent " + parent
-                            + " doesn't like those!";
+    std::string complaint(prefix);
+    (((complaint += arg) += " is an unknown option and parent ") += parent) += " doesn't like those!";
     warning(complaint);
     return complaint;
   }
@@ -145,12 +146,12 @@ struct program_options_exec : boost::noncopyable {
       string::size_type equals = arg.find('=');
       bool no_val = equals == string::npos;
       string key(start + 2, no_val ? arg.end() : start + equals);
-      std::string parent = parent_option_name(key);
+      std::string const& parent = parent_option_name(key);
       SHOWIF2(CONFEXPR, 1, "allow unk?", key, parent);
       unrecognized_map::const_iterator f = allow_unk_paths.find(parent);
       if (f == allow_unk_paths.end()) throw config_exception(unrecognized_complaint(arg, parent, "ERROR: "));
       allow_unrecognized_args const& allow = f->second;
-      std::string val = no_val ? string() : string(start + equals + 1, arg.end());
+      std::string val(no_val ? start : start + equals + 1, no_val ? start : arg.end());
       SHOWIF3(CONFEXPR, 1, "allow unk complain?", key, val, allow);
       if (allow.warn) unrecognized_complaint(arg, parent);
       unrecognized_opts* store = allow.unrecognized_storage;
@@ -226,7 +227,7 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   void leaf_action(init_config, Val* pval, conf_expr_base const& conf) const {
     this->check_leaf_impl(pval, conf);
     conf_opt const& opt = *conf.opt;
-    std::string pathname = conf.path_name();
+    std::string const& pathname = conf.path_name();
     using graehl::add;
     if (opt.is_required_warn()) add(popt->warn_missing, pathname);
     if (opt.is_required_err()) add(popt->error_missing, pathname);
