@@ -22,6 +22,9 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BUILD_TYPE=Production"
+gitdifftree() {
+    git diff-tree --no-commit-id --name-only -r "$@"
+}
 grepwin() {
     cat "$@" | grep -v C4267 | grep -v C4251 | grep -v C4244 | grep -v C4018
 }
@@ -1898,7 +1901,7 @@ binelse() {
 }
 extra_include=$xmtx
 cpps_code_path=$xmtxs
-cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I$XMT_EXTERNALS_PATH/../Shared/cpp/libraries/tinyxmlcpp-2.5.4 -I/users/graehl/x/sdl/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
+cpps_defines="-DKENLM_MAX_ORDER=5 -DMAX_LMS=2 -DYAML_CPP_0_5 -I$XMT_EXTERNALS_PATH/../Shared/cpp/libraries/tinyxmlcpp-2.5.4 -I/Users/graehl/x/sdl/LanguageModel/KenLM -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers -I$XMT_EXTERNALS_PATH/../FC12/libraries/svmtool++/include/svmtool"
 cpps_flags="-std=c++11 -DCPP11 -ftemplate-depth=255"
 cppparses() {
     (
@@ -3904,8 +3907,8 @@ clonex() {
         git clone ssh://localhost:29418/xmt x
         cd x
         machost=192.168.1.7
-        git remote add macw ssh://$machost:22/users/graehl/c/xmt
-        scp $machost:/users/graehl/c/xmt/.git/config/commit-msg .git/config/commit-msg
+        git remote add macw ssh://$machost:22/Users/graehl/c/xmt
+        scp $machost:/Users/graehl/c/xmt/.git/config/commit-msg .git/config/commit-msg
     )
 }
 tunsocks() {
@@ -5171,7 +5174,7 @@ showcpp() {
             #pushd /Users/graehl/x/Debug/Hypergraph &&
             local xmtlib=$xmtextbase/FC12/libraries
 
-            /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/sdl -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/users/graehl/t/ \
+            /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/sdl -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/Users/graehl/t/ \
                 -I $xmtlib/db-5.3.15 \
                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
                 -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include \
@@ -6857,75 +6860,11 @@ buildboost() {(
         # ./bjam --layout=system --threading=multi --runtime-link=static,shared --prefix=$FIRST_PREFIX $withouts install -j4
         )}
 
-PUZZLEBASE=~/puzzle
-#PUZZLETO='graehl@isi.edu'
 MYEMAIL='graehl@gmail.com'
-export EMAIL=$MYEMAIL
-PUZZLETO='1051962371@facebook.com'
 function testp()
 {
     pw=`pwd`
     ~/puzzle/test.pl ./`basename $pw` test.expect
-}
-
-function puzzle()
-{
-    (
-        set -e
-        require_dir $PUZZLEBASE
-        puzzle=$1
-        puzzledir=$PUZZLEBASE/$puzzle
-        pushd $puzzledir
-        if make || [ ! -f Makefile ] ; then
-            local tar=$puzzle.tar.gz
-            tar czf $tar `ls Makefile $puzzle $puzzle. {ml,py,cc,cpp,c} 2>/dev/null`
-            tar tzf $tar
-
-            [ "${dryrun:-}" ] || EMAIL=$MYEMAIL mutt -s $puzzle -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
-            set +x
-        fi
-        popd
-    )
-}
-
-#SCALA=c:/Users/graehl/.netbeans/6.7rc2/scala/scala-2.7.3.final/lib
-SCALABASE=~/puzzle/scala
-#SCALABASE=c:/Users/graehl/Documents/NetBeansProjects
-function spuzzle()
-{
-    (
-        set -e
-
-        puz=$1
-        dist=$SCALABASE/$1
-        # require_dir $dist
-        cd $dist
-        slib=scala-library.jar
-        plib=$puz.jar
-        src=$puz.scala
-        bin=$puz
-        tar=$puz.tar.gz
-        extra=
-        if [ $puz = breathalyzer ] ; then
-            extra=words
-            maybe_cp $SCALA_PROJECTS/$puz/twl06.txt $extra || true
-        fi
-        chmod +x $bin
-        all="$bin $slib $src $extra"
-        if [ "$nomanifest" ] ; then
-            all="$all `ls *.class`"
-        else
-            all="$all $plib"
-        fi
-        # [ "$SCALA_HOME" ] && scala-jar.sh $1
-        pwd
-        require_files $all
-        tar czf $tar $all
-        tar tzf $tar
-
-        [ "${dryrun:-}" ] || EMAIL=$MYEMAIL mutt -s $puz -a `realpath $tar` $PUZZLETO -b $MYEMAIL < /dev/null
-        set +x
-    )
 }
 
 rgrep()
