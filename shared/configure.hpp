@@ -1116,9 +1116,10 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     opt->verbose = verbosity;
     return *this;
   }
-  conf_expr const& alias() const {
-    opt->verbose = 99;
-    opt->alias = true;
+  conf_expr const& alias(bool enable = true) const {
+    if (enable)
+      opt->verbose = 99;
+    opt->alias = enable;
     return *this;
   }
   /// -1 means unlimited

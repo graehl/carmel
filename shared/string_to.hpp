@@ -55,7 +55,7 @@
 #define GRAEHL__SHARED__STRING_TO_HPP
 #pragma once
 
-
+#include <cmath>
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
