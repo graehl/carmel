@@ -21,7 +21,7 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
-xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BUILD_TYPE=Production"
+xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
 gitdifftree() {
     git diff-tree --no-commit-id --name-only -r "$@"
 }
@@ -3146,6 +3146,17 @@ yreg() {
     local args=${yargs:-}
     # -t 2
     (set -e;
+     nbin=/home/nbuild/local/bin
+     npython=$nbin/python2.7
+     if [[ -x $npython ]] ; then
+         python=$npython
+     else
+         python=`which python`
+     fi
+     pythonroot=$xmtx/python
+     SDL_EXTERNALS_SHARED=$SDL_EXTERNALS/Shared
+     SDL_EXTERNALS_PYTHON=$SDL_EXTERNALS_SHARED/python
+     export PYTHONPATH=$pythonroot:$SDL_EXTERNALS_PYTHON:$PYTHONPATH
      export TMPDIR=${TMPDIR:-/var/tmp}
         bdir=${bdir:-$xmtx/${BUILD:=Debug}}
         export LD_LIBRARY_PATH=$bdir:$bdir/xmt:$bdir/xmt/lib:$LD_LIBRARY_PATH
@@ -3191,7 +3202,6 @@ yreg() {
                 xmtbins+=",$xmtpubdir/$f/xmt.sh"
             done
         fi
-        local python=${python:-python}
         if [[ ${1:-} ]] ; then
             local regr=$1
             shift
@@ -3312,7 +3322,7 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} SDL_BLM_MODEL=${SDL_BLM_MODEL:-0} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -4094,7 +4104,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-0} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
