@@ -13,7 +13,8 @@
 // limitations under the License.
 /** \file
 
-    'WARNING: '-prefixed warning messages.
+    string_consumer concept - f(string); 'WARNING: '-prefixed warning messages;
+    save messages to string (one per line or just the last)
 */
 
 #ifndef GRAEHL_SHARED__WARN_HPP
@@ -30,8 +31,8 @@ namespace graehl {
 
 typedef boost::function<void(std::string const&)> string_consumer;
 
-struct warn_consumer  // a string_consumer
-    {
+// a string_consumer
+struct warn_consumer {
   std::ostream* o;
   std::string prefix;
   bool enabled;
@@ -40,6 +41,29 @@ struct warn_consumer  // a string_consumer
   warn_consumer(warn_consumer const& o) : o(o.o), prefix(o.prefix), enabled(o.enabled) {}
   void operator()(std::string const& msg) const {
     if (o && enabled) *o << prefix << msg << '\n';
+  }
+};
+
+struct assign_string_consumer {
+  std::string *o;
+  assign_string_consumer(std::string *o)
+      : o(o) {}
+  assign_string_consumer(std::string &o)
+      : o(&o) {}
+  void operator()(std::string const& msg) const {
+    o->assign(msg);
+  }
+};
+
+struct append_string_consumer {
+  std::string *o;
+  append_string_consumer(std::string *o)
+      : o(o) {}
+  append_string_consumer(std::string &o)
+      : o(&o) {}
+  void operator()(std::string const& msg) const {
+    *o += msg;
+    o->push_back('\n');
   }
 };
 
