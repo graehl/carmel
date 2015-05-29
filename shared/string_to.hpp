@@ -133,10 +133,10 @@ template <class Data>
 std::string to_string(Data const& out_str_to_data);
 
 template <class Data, class Str>
-Data& string_to(const Str& str, Data& out_str_to_data);
+Data& string_to(Str const& str, Data& out_str_to_data);
 
 template <class Data, class Str>
-inline Data string_to(const Str& str);
+inline Data string_to(Str const& str);
 }
 
 namespace graehl {
@@ -939,7 +939,7 @@ struct string_builder : string_buffer {
 
   template <class Seq, class Sep>
   string_builder& join(Seq const& seq, Sep const& sep) {
-    bool first = true;
+   bool first = true;
     for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) sep_except_first(first, sep)(*i);
     return *this;
   }
@@ -1043,7 +1043,7 @@ struct to_string_select<V, typename boost::enable_if<is_nonstring_container<V> >
   static inline std::string to_string(V const& val) {
     string_builder b;
     b('[');
-    bool first = true;
+   bool first = true;
     for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
       if (first)
         first = false;

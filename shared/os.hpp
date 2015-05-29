@@ -167,7 +167,7 @@ inline char* putenv_copy(std::string const& name_equals_val) {
   }
 }
 
-inline int system_safe(const std::string& cmd) {
+inline int system_safe(std::string const& cmd) {
   int ret = ::system(cmd.c_str());
   if (ret == -1) throw std::runtime_error(cmd);
   return ret >> 8;
@@ -218,7 +218,7 @@ inline std::string last_error_string() {
   return error_string(last_error());
 }
 
-inline bool create_file(const std::string& path, std::size_t size) {
+inline bool create_file(std::string const& path, std::size_t size) {
 #ifdef _WIN32
   HANDLE fh = ::CreateFileA(path.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE, NULL, CREATE_ALWAYS,
                             FILE_ATTRIBUTE_TEMPORARY, NULL);
@@ -231,7 +231,7 @@ inline bool create_file(const std::string& path, std::size_t size) {
 #endif
 }
 
-inline bool remove_file(const std::string& filename) {
+inline bool remove_file(std::string const& filename) {
   return 0 == remove(filename.c_str());
 }
 
@@ -279,14 +279,14 @@ struct tmp_fstream {
   }
 };
 
-inline void throw_last_error(const std::string& module = "ERROR") {
+inline void throw_last_error(std::string const& module = "ERROR") {
   throw std::runtime_error(module + ": " + last_error_string());
 }
 
 #define TMPNAM_SUFFIX "XXXXXX"
 #define TMPNAM_SUFFIX_LEN 6
 
-inline bool is_tmpnam_template(const std::string& filename_template) {
+inline bool is_tmpnam_template(std::string const& filename_template) {
   unsigned len = (unsigned)filename_template.length();
   return !(len < TMPNAM_SUFFIX_LEN
            || filename_template.substr(len - TMPNAM_SUFFIX_LEN, TMPNAM_SUFFIX_LEN) != TMPNAM_SUFFIX);
@@ -294,8 +294,8 @@ inline bool is_tmpnam_template(const std::string& filename_template) {
 
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!). returns
 // filename created. if template is missing XXXXXX, it's appended first.
-inline std::string safe_tmpnam(const std::string& filename_template = "/tmp/tmp.safe_tmpnam.XXXXXX",
-                               bool keepfile = false, bool worldReadable = false) {
+inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.safe_tmpnam.XXXXXX",
+                              bool keepfile = false, bool worldReadable = false) {
   const unsigned MY_MAX_PATH = 1024;
   char tmp[MY_MAX_PATH + 1];
   std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH - TMPNAM_SUFFIX_LEN);
@@ -324,12 +324,12 @@ inline std::string safe_tmpnam(const std::string& filename_template = "/tmp/tmp.
   return tmp;
 }
 
-inline std::string maybe_tmpnam(const std::string& filename_template = "/tmp/safe_tmpnam.XXXXXX",
-                                bool keepfile = true) {
+inline std::string maybe_tmpnam(std::string const& filename_template = "/tmp/safe_tmpnam.XXXXXX",
+                               bool keepfile = true) {
   return is_tmpnam_template(filename_template) ? safe_tmpnam(filename_template, keepfile) : filename_template;
 }
 
-inline bool safe_unlink(const std::string& file, bool must_succeed = true) {
+inline bool safe_unlink(std::string const& file, bool must_succeed = true) {
   if (
 #ifdef OS_WINDOWS
       std::remove
@@ -343,7 +343,7 @@ inline bool safe_unlink(const std::string& file, bool must_succeed = true) {
 }
 
 //!< returns dir/name unless dir is empty (just name, then). if name begins with / then just returns name.
-inline std::string joined_dir_file(const std::string& basedir, const std::string& name = "",
+inline std::string joined_dir_file(std::string const& basedir, std::string const& name = "",
                                    char pathsep = '/') {
   if (!name.empty() && name[0] == pathsep)  // absolute name
     return name;
@@ -355,7 +355,7 @@ inline std::string joined_dir_file(const std::string& basedir, const std::string
 }
 
 // FIXME: test
-inline void split_dir_file(const std::string& fullpath, std::string& dir, std::string& file,
+inline void split_dir_file(std::string const& fullpath, std::string& dir, std::string& file,
                            char pathsep = '/') {
   using namespace std;
   string::size_type p = fullpath.rfind(pathsep);

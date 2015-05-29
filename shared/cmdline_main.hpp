@@ -230,8 +230,8 @@ struct main {
   }
 
   virtual void print(std::ostream& o) const {
-    o << opt.name << "-version={{{" << get_version() << "}}} " << opt.name << "-cmdline={{{"
-      << cmdline_str << "}}}";
+    o << opt.name << "-version={{{" << get_version() << "}}} " << opt.name << "-cmdline={{{" << cmdline_str
+      << "}}}";
   }
 
   std::string const& name() const { return opt.name.empty() ? exename : opt.name; }
@@ -363,11 +363,11 @@ struct main {
 
   virtual void set_defaults_extra() {}
 
-  inline std::ostream& log() const { return *log_stream; }
+  std::ostream& log() const { return *log_stream; }
 
-  inline std::istream& in() const { return *in_file; }
+  std::istream& in() const { return *in_file; }
 
-  inline std::ostream& out() const { return *out_file; }
+  std::ostream& out() const { return *out_file; }
 
   std::string outName() const { return out_file.name; }
 

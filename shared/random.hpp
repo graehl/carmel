@@ -159,9 +159,7 @@ struct random {
   result_type operator()() { return random01(); }
   random(random_seed_type seed = default_random_seed())
       : random01(random_generator(seed), uniform_01_dist()) {}
-  inline void set_random_seed(random_seed_type value = default_random_seed()) {
-    random01.engine().seed(value);
-  }
+  void set_random_seed(random_seed_type value = default_random_seed()) { random01.engine().seed(value); }
 #include <graehl/shared/random.ipp>
 };
 

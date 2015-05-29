@@ -142,7 +142,7 @@ struct stable_vector {
 
   /// position within chunk
   I chunk(I i) { return i >> chunkshift; }
-  inline I pos(I i) { return i & posmask; }
+  I pos(I i) { return i & posmask; }
 
   template <class Val>
   struct iterator_impl {
@@ -210,8 +210,7 @@ struct stable_vector {
 
   void pop_back(bool destroy = kRemoveDestroys) {
     assert(size_);
-    if (destroy)
-      reinit((*this)[size_ - 1]);
+    if (destroy) reinit((*this)[size_ - 1]);
     --size_;
   }
 
@@ -261,8 +260,8 @@ struct stable_vector {
   }
 
 #if __cplusplus >= 201103L
-  stable_vector(stable_vector &&o) : chunks(std::move(o.chunks)), size_(o.size_), capacity() {}
-  stable_vector& operator=(stable_vector &&o) {
+  stable_vector(stable_vector&& o) : chunks(std::move(o.chunks)), size_(o.size_), capacity() {}
+  stable_vector& operator=(stable_vector&& o) {
     assert(this != &o);
     chunks = std::move(o.chunks);
     size_ = o.size_;
@@ -288,7 +287,7 @@ struct stable_vector {
     I i = 0, n = nchunks - 1;
     for (; i < n; ++i)
       if (!equal_chunks(chunks[i], o.chunks[i])) return false;
-    return equal_chunks(chunks[i], o.chunks[i], size_& posmask);  // last chunk
+    return equal_chunks(chunks[i], o.chunks[i], size_ & posmask);  // last chunk
   }
 
   // meant to be private w/ friend fn calling it but MSVC2010 couldn't find the friend fn
@@ -306,7 +305,7 @@ struct stable_vector {
   void init(I size, T const& initial) {
     capacity = 0;
     for (I i = 0, n = size >> chunkshift; i < n; ++i) push_back_chunk(initial);
-    push_back_chunk(initial, size& posmask);
+    push_back_chunk(initial, size & posmask);
     size_ = size;
   }
 

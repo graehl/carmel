@@ -20,7 +20,7 @@ struct name \
 { \
     typedef result result_type; \
     template <class T1> \
-    result_type operator()(const T1 &x) const \
+    result_type operator()(T1 const& x) const \
     { \
         return expr; \
     } \
@@ -31,7 +31,7 @@ struct funcname ## _f \
 { \
     typedef result result_type; \
     template <class T1> \
-    result_type operator()(const T1 &x) const \
+    result_type operator()(T1 const& x) const \
     { \
         return funcname(x);                     \
     } \
@@ -43,7 +43,7 @@ struct name \
 { \
     typedef result result_type; \
     template <class T1, class T2> \
-    result_type operator()(const T1 &x, const T2 &y) const \
+    result_type operator()(T1 const& x, T2 const& y) const \
     { \
         return expr; \
     } \

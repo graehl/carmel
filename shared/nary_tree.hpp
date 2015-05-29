@@ -23,7 +23,9 @@
 #define GRAEHL_SHARED__NARY_TREE_HPP
 #pragma once
 
-// you may override this with a fully namespace qualified type - but be careful to do so consistently before every inclusion!
+// you may override this with a fully namespace qualified type - but be careful
+// to do so consistently before every inclusion!
+
 #ifndef CHILD_INDEX_TYPE
 # define CHILD_INDEX_TYPE unsigned
 #endif

@@ -73,7 +73,7 @@ class stopwatch
     {
         reset(start_running);
     }
-    void start()
+   void start()
     {
         running = true;
 #ifndef _WIN32
@@ -83,7 +83,7 @@ class stopwatch
     }
 
     /// pauses
-    void stop()
+   void stop()
     {
         if (running)
             EACH_TIMER_TYPE(i)
@@ -92,7 +92,7 @@ class stopwatch
     }
 
     //clears
-    void reset(bool start_running=true)
+   void reset(bool start_running=true)
     {
         EACH_TIMER_TYPE(i)
             totals[i]=0;
@@ -106,12 +106,12 @@ class stopwatch
         return type >= WALL_TIME && type < TYPE_MAX;
     }
     template <class Time>
-    static double sec(const Time &t)
+    static double sec(Time const& t)
     {
         return t.tv_sec+t.tv_usec/(1000000.);
     }
     template <class Time>
-    static double elapsed_sec(const Time &now, const Time &then)
+    static double elapsed_sec(Time const& now, Time const& then)
     {
         return sec(now)-sec(then);
     }
@@ -203,7 +203,7 @@ class stopwatch
     }
 
     template <class Ostream>
-    void print(Ostream &os) const
+   void print(Ostream &os) const
     {
         os << '[' << total_time(WALL_TIME) << " wall sec, " << total_time(USER_TIME) << " user sec, " << total_time(SYSTEM_TIME) << " system sec, " << total_time(PAGEFAULTS) << " major page faults]";
     }
@@ -233,7 +233,7 @@ class stopwatch
 }
 #endif
 
-    bool running;
+   bool running;
 
 #ifndef _WIN32
     rusage then_usage;

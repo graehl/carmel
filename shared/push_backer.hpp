@@ -31,7 +31,7 @@ struct push_backer {
   push_backer(self_type const& o) : cont(o.cont) {}
   push_backer(Cont& container) : cont(&container) {}
   template <class V>
-  void operator()(const V& v) const {
+  void operator()(V const& v) const {
     cont->push_back(v);
   }
   void operator()() const { cont->push_back(argument_type()); }
@@ -51,7 +51,7 @@ struct outputter {
   outputter(self_type const& o) : o(o.o) {}
   outputter(Output_It const& o) : o(o) {}
   template <class V>
-  void operator()(const V& v) const {
+  void operator()(V const& v) const {
     *o++ = v;
   }
 };

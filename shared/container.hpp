@@ -80,7 +80,7 @@ void enumerate(M& m, F& f, Tag t) {
 }
 
 template <class V, class K>
-inline typename std::map<K, V>::mapped_type* find_second(const std::map<K, V>& ht, const K& first) {
+inline typename std::map<K, V>::mapped_type* find_second(const std::map<K, V>& ht, K const& first) {
   typedef std::map<K, V> M;
   typedef typename M::mapped_type ret;
   typename M::const_iterator i = ht.find(first);
@@ -91,7 +91,7 @@ inline typename std::map<K, V>::mapped_type* find_second(const std::map<K, V>& h
 }
 
 template <class T>
-inline bool container_equal(const T& v1, const T& v2, typename T::const_iterator* SFINAE = 0) {
+inline bool container_equal(T const& v1, T const& v2, typename T::const_iterator* SFINAE = 0) {
   if (v1.size() != v2.size()) return false;
   for (typename T::const_iterator i1 = v1.begin(), i2 = v2.begin(), e1 = v1.end(); i1 != e1; ++i1, ++i2)
     if (!(*i1 == *i2)) return false;
@@ -132,7 +132,7 @@ void containertest() {
   BOOST_CHECK(c.size() == 2);
   {
 
-    bool nine = false, ten = false;
+   bool nine = false, ten = false;
     for (typename cont::const_iterator i = c.begin(), e = c.end(); i != e; ++i) {
       if (*i == 9)
         nine = true;
@@ -146,7 +146,7 @@ void containertest() {
   }
   {
 
-    bool nine = false, ten = false;
+   bool nine = false, ten = false;
     for (typename cont::iterator i = c.begin(), e = c.end(); i != e; ++i) {
       if (*i == 9)
         nine = true;

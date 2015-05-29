@@ -21,8 +21,8 @@
 
 namespace graehl {
 
-inline void copy_file(const std::string& source, const std::string& dest,
-                      bool skip_same_size_and_time = false) {
+inline void copy_file(std::string const& source, std::string const& dest,
+                     bool skip_same_size_and_time = false) {
   const char* rsync = "rsync -qt";
   const char* cp = "/bin/cp -p";
   std::stringstream s;
@@ -34,12 +34,12 @@ inline void copy_file(const std::string& source, const std::string& dest,
   system_safe(s.str());
 }
 
-inline void mkdir_parents(const std::string& dirname) {
+inline void mkdir_parents(std::string const& dirname) {
   boost::filesystem::create_directories(dirname);
   return;
 }
 
-inline int system_shell_safe(const std::string& cmd) {
+inline int system_shell_safe(std::string const& cmd) {
   const char* shell = "/bin/sh -c ";
   std::stringstream s;
   s << shell;

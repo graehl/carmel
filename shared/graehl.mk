@@ -58,13 +58,7 @@ CPPFLAGS += -DBOOST_POSIX -DCYGWIN
 endif
 
 ifndef ARCH_FLAGS
-ifeq ($(ARCH),linux64)
-ARCH_FLAGS = -march=athlon64
-else
- ifeq ($(ARCH),linux)
-#  ARCH_FLAGS = -m32 -march=pentium4
- endif
-endif
+ARCH_FLAGS = -march=native
 endif
 
 ifndef INSTALL_PREFIX

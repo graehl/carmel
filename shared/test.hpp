@@ -61,15 +61,15 @@ struct test_counter {
   test_counter() { n = 0; }
   void operator()() { ++n; }
   template <class A1>
-  void operator()(const A1& a) {
+  void operator()(A1 const& a) {
     ++n;
   }
   template <class A1, class A2>
-  void operator()(const A1& a, const A2& a2) {
+  void operator()(A1 const& a, A2 const& a2) {
     ++n;
   }
   template <class A1, class A2, class A3>
-  void operator()(const A1& a, const A2& a2, const A3& a3) {
+  void operator()(A1 const& a, A2 const& a2, A3 const& a3) {
     ++n;
   }
 };
@@ -123,9 +123,9 @@ struct expect_visitor {
   const C* array_expected;
   unsigned next;
   expect_visitor(const C* e) : array_expected(e), next(0) {}
-  expect_visitor(const expect_visitor& o) : array_expected(o.array_expected), next(o.next) {}
+  expect_visitor(expect_visitor const& o) : array_expected(o.array_expected), next(o.next) {}
   template <class D>
-  bool operator()(const D& d) {
+  bool operator()(D const& d) {
     C const& x = array_expected[next++];
     if (x == d)
       return true;

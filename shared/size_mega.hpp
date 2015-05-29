@@ -178,7 +178,7 @@ typedef size_mega<true, double> size_metric;
 
 namespace boost {
 namespace program_options {
-inline void validate(boost::any& v, const std::vector<std::string>& values, size_t* target_type, int) {
+inline void validate(boost::any& v, std::vector<std::string> const& values, size_t* target_type, int) {
   typedef size_t value_type;
   using namespace graehl;
 

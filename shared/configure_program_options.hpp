@@ -144,7 +144,7 @@ struct program_options_exec : boost::noncopyable {
             "value then use --key=val rather than --key val.");
       string::const_iterator start = arg.begin();
       string::size_type equals = arg.find('=');
-      bool no_val = equals == string::npos;
+     bool no_val = equals == string::npos;
       string key(start + 2, no_val ? arg.end() : start + equals);
       std::string const& parent = parent_option_name(key);
       SHOWIF2(CONFEXPR, 1, "allow unk?", key, parent);
@@ -358,7 +358,7 @@ struct Thing {
     std::vector<int> xs;
     string str;
     template <class Config>
-    void configure(Config& c) {
+   void configure(Config& c) {
       c.is("SubThing");  // used to describe this type in usage.
       c("str", &str).positional(1).desire();  // desire = like require but just warn on abscence, don't throw
       c("xs", &xs)('X')

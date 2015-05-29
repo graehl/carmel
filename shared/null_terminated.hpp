@@ -57,7 +57,7 @@ class null_terminated_iterator
     if (is_null(*++p)) p = 0;
   }
   /* //note: you can't decrement from end==default constructed because it's 0, not address of null
-       void decrement()
+      void decrement()
       {
         --p;
       }

@@ -224,7 +224,7 @@ inline UmapS umapS() {
 }
 
 template <class M, class K>
-typename M::mapped_type *find_second(const M& ht, const K& first)
+typename M::mapped_type *find_second(M const& ht, K const& first)
 {
   typedef typename M::mapped_type ret;
   typename M::const_iterator i=ht.find(first);
@@ -248,7 +248,7 @@ struct map_traits<std::map<K, V> > {
 
 template <class K, class V>
 inline
-typename map_traits<std::map<K, V> >::insert_result_type insert(std::map<K, V>& ht, const K& first, const V &v=V())
+typename map_traits<std::map<K, V> >::insert_result_type insert(std::map<K, V>& ht, K const& first, V const& v=V())
 {
   return ht.insert(std::pair<K, V>(first, v));
 }
@@ -262,14 +262,14 @@ struct map_traits<UNORDERED_NS::unordered_map<K, V, H, E> > {
 
 template <class K, class V, class H, class E>
 inline
-typename map_traits<UNORDERED_NS::unordered_map<K, V, H, E> >::insert_result_type insert(UNORDERED_NS::unordered_map<K, V, H, E>& ht, const K& first, const V &v=V())
+typename map_traits<UNORDERED_NS::unordered_map<K, V, H, E> >::insert_result_type insert(UNORDERED_NS::unordered_map<K, V, H, E>& ht, K const& first, V const& v=V())
 {
   return ht.insert(std::pair<K, V>(first, v));
 }
 
 template <class type, class find_result_type>
 inline
-bool found(const type &ht, find_result_type f) {
+bool found(type const& ht, find_result_type f) {
   return f==ht.end();
 }
 

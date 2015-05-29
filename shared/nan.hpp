@@ -31,20 +31,27 @@
 #define GRAEHL_ISNAN(x) (_isnan(x) != 0)
 #else
 #if defined __FAST_MATH__
-// gcc -ffast-math breaks std::isnan
-#undef isnan
 #define GRAEHL_ISNAN isnan
-#define isnan isnan
-// above is to prevent anyone else's (e.g. stdint.h) #ifndef isnan from changing it on us
+#if __cplusplus < 201103L
+// gcc 4.x -ffast-math breaks std::isnan
 #include <stdint.h>
-static inline int isnan(float f) {
+#undef isnan
+inline bool isnan(float f) {
   union {
     float f;
     uint32_t x;
   } u = {f};
   return (u.x << 1) > 0xff000000u;
 }
-// TODO: fix for double also
+inline bool isnan (double f)
+{
+  typedef unsigned long long u64;
+  typedef long long i64;
+  u64 j = *(i64*)&f & ~0x8000000000000000uLL;
+  return j > 0x7ff0000000000000uLL;
+}
+// TODO: fix for long double also?
+#endif
 #else
 #if defined(_STLPORT_VERSION) || defined(ANDROID)
 #include <math.h>

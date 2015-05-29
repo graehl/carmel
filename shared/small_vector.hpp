@@ -153,15 +153,17 @@ struct small_vector {
     if (data.stack.sz_ < kMaxInlineSize) {
       return &data.stack.vals_[data.stack.sz_++];
     } else {
-      if (data.stack.sz_ == kMaxInlineSize) copy_vals_to_ptr();
-      else if (data.stack.sz_ == data.heap.capacity_) ensure_capacity_grow(data.stack.sz_ + 1);
+      if (data.stack.sz_ == kMaxInlineSize)
+        copy_vals_to_ptr();
+      else if (data.stack.sz_ == data.heap.capacity_)
+        ensure_capacity_grow(data.stack.sz_ + 1);
       return &data.heap.begin_[data.stack.sz_++];
     }
   }
 
   void push_back() { new (push_back_uninitialized()) T; }
 
-#if __cplusplus >= 201103L 
+#if __cplusplus >= 201103L
   /// move
   small_vector(small_vector&& o) noexcept {
     std::memcpy(this, &o, sizeof(small_vector));
@@ -170,7 +172,7 @@ struct small_vector {
 
   /// move
   small_vector& operator=(small_vector&& o) noexcept {
-    assert(&o != this); // std::vector doesn't check for self-move so why should we?
+    assert(&o != this);  // std::vector doesn't check for self-move so why should we?
     free();
     std::memcpy(this, &o, sizeof(small_vector));
     o.clear_nodestroy();
@@ -178,7 +180,7 @@ struct small_vector {
   }
 
   /// varargs forwarded to ctor
-  template<class... Args>
+  template <class... Args>
   void emplace_back(Args&&... args) {
     new (push_back_uninitialized()) T(std::forward<Args>(args)...);
   }
@@ -398,7 +400,7 @@ struct small_vector {
   }
 
   T* erase(T* b, T* e) {  // remove [b, e) and return pointer to element e
-    T* tb = begin(), *te = end();
+    T *tb = begin(), *te = end();
     size_type nbefore = (size_type)(b - tb);
     if (e == te) {
       resize(nbefore);
@@ -546,7 +548,7 @@ struct small_vector {
      append the range [i, end) without being able to forecast the size in advance:
   */
   template <class InputIter>
-  inline void append_input(InputIter i, InputIter end) {
+  void append_input(InputIter i, InputIter end) {
     if (data.small.sz_ <= kMaxInlineSize) {
       for (; data.small.sz_ < kMaxInlineSize; ++data.small.sz_) {
         data.small.vals_[data.small.sz_] = *i;
@@ -562,20 +564,20 @@ struct small_vector {
   }
 
   template <class ForwardIter>
-  inline void append(ForwardIter i, ForwardIter e) {
+  void append(ForwardIter i, ForwardIter e) {
     size_type s = data.stack.sz_;
     size_type addsz = (size_type)(e - i);
     resize_up_unconstructed(s + addsz);
     for (T* b = begin() + s; i < e; ++i, ++b) *b = *i;
   }
 
-  inline void append(T const* i, size_type n) {
+  void append(T const* i, size_type n) {
     size_type s = data.stack.sz_;
     append_unconstructed(n);
     memcpy_n(begin() + s, i, n);
   }
 
-  inline void append(T const* i, T const* end) {
+  void append(T const* i, T const* end) {
     size_type s = data.stack.sz_;
     size_type n = (size_type)(end - i);
     append_unconstructed(n);
@@ -583,23 +585,23 @@ struct small_vector {
   }
 
   template <class Set>
-  inline void append(Set const& set) {
+  void append(Set const& set) {
     append(set.begin(), set.end());
   }
 
-  inline void append(small_vector const& set) { append(set.begin(), set.data.stack.sz_); }
+  void append(small_vector const& set) { append(set.begin(), set.data.stack.sz_); }
 
-  inline void insert(T const& v) { push_back(v); }
+  void insert(T const& v) { push_back(v); }
 
   /**
      increase size without calling default ctor.
   */
-  inline void append_unconstructed(size_type N) { resize_up_unconstructed(data.stack.sz_ + N); }
+  void append_unconstructed(size_type N) { resize_up_unconstructed(data.stack.sz_ + N); }
 
   /**
      change size without calling default ctor.
   */
-  inline void resize_unconstructed(size_type N) {
+  void resize_unconstructed(size_type N) {
     if (data.stack.sz_ > N)
       resize(N);
     else if (data.stack.sz_ < N)
@@ -609,7 +611,7 @@ struct small_vector {
   /**
      insert hole of N elements at iterator i
   */
-  inline void insert_hole(iterator where, size_type N) {
+  void insert_hole(iterator where, size_type N) {
     if (where == end())
       append_unconstructed(N);
     else
@@ -619,7 +621,7 @@ struct small_vector {
   /**
      insert hole of N elements at index i.
   */
-  inline T* insert_hole_index(size_type i, size_type N) {
+  T* insert_hole_index(size_type i, size_type N) {
     size_type s = data.stack.sz_;
     size_type snew = s + N;
     resize_up_unconstructed(snew);
@@ -630,14 +632,14 @@ struct small_vector {
   }
 
   template <class ForwardIter>
-  inline void insert(iterator where, ForwardIter i, ForwardIter e) {
+  void insert(iterator where, ForwardIter i, ForwardIter e) {
     if (where == end())
       append(i, e);
     else
       insert_index((size_type)(where - begin()), i, e);
   }
 
-  inline void insert(iterator where, T const* i, T const* e) {
+  void insert(iterator where, T const* i, T const* e) {
     if (where == end())
       append(i, e);
     else
@@ -645,40 +647,40 @@ struct small_vector {
   }
 
   template <class ForwardIter>
-  inline void insert_index(size_type atIndex, ForwardIter i, ForwardIter e) {
+  void insert_index(size_type atIndex, ForwardIter i, ForwardIter e) {
     size_type N = (size_type)std::distance(i, e);
     T* o = insert_hole_index(atIndex, N);
     for (; i != e; ++i, ++o) *o = *i;
   }
 
-  inline void insert_index(size_type atIndex, T const* i, T const* e) {
+  void insert_index(size_type atIndex, T const* i, T const* e) {
     size_type N = (size_type)(e - i);
     memcpy_n(insert_hole_index(atIndex, N), i, N);
   }
 
-  inline void insert_index(size_type where, T const& t) { memcpy_n(insert_hole_index(where, 1), &t, 1); }
+  void insert_index(size_type where, T const& t) { memcpy_n(insert_hole_index(where, 1), &t, 1); }
 
-  inline void insert(iterator where, T const& t) { insert_index((size_type)(where - begin()), t); }
+  void insert(iterator where, T const& t) { insert_index((size_type)(where - begin()), t); }
 
   /**
      O(n) of course.
   */
-  inline void push_front(T const& t) { insert_index(0, t); }
+  void push_front(T const& t) { insert_index(0, t); }
 
-  inline void insert_index(size_type where, size_type n, T const& t) {
+  void insert_index(size_type where, size_type n, T const& t) {
     insert_hole_index(where, n);
     T* o = begin() + where;
     while (--n) *o++ = t;
   }
 
-  inline void insert_index(iterator where, size_type n, T const& t) { insert_index(where - begin(), n, t); }
+  void insert_index(iterator where, size_type n, T const& t) { insert_index(where - begin(), n, t); }
 
-  inline void push_back_heap(T const& v) {
+  void push_back_heap(T const& v) {
     if (data.stack.sz_ == data.heap.capacity_) ensure_capacity_grow(data.stack.sz_ + 1);
     data.heap.begin_[data.stack.sz_++] = v;
   }
 
-  inline void push_back(T const& v) {
+  void push_back(T const& v) {
     if (data.stack.sz_ < kMaxInlineSize) {
       data.stack.vals_[data.stack.sz_] = v;
       ++data.stack.sz_;
@@ -692,9 +694,9 @@ struct small_vector {
   }
 
   T& back() { return this->operator[](data.stack.sz_ - 1); }
-  const T& back() const { return this->operator[](data.stack.sz_ - 1); }
+  T const& back() const { return this->operator[](data.stack.sz_ - 1); }
   T& front() { return this->operator[](0); }
-  const T& front() const { return this->operator[](0); }
+  T const& front() const { return this->operator[](0); }
 
   void pop_back() {
     assert(data.stack.sz_ > 0);
@@ -895,12 +897,10 @@ struct small_vector {
                : const_iterator_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
   }
 
-  void swap(small_vector& o) {
-    swap_pod(*this, o);
-  }
+  void swap(small_vector& o) { swap_pod(*this, o); }
   friend inline void swap(small_vector& a, small_vector& b) { return a.swap(b); }
 
-  inline std::size_t hash_impl() const {
+  std::size_t hash_impl() const {
     using namespace boost;
     return (data.stack.sz_ <= kMaxInlineSize)
                ? hash_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_)
@@ -1018,13 +1018,13 @@ struct small_vector {
     // because of safe access through union
     for (size_type i = 0; i < data.stack.sz_; ++i)  // no need to memcpy for small size
       data.stack.vals_[i] = fromHeap[i];  // note: it was essential to save fromHeap first because
-                                          // data.stack.vals_ union-competes
+    // data.stack.vals_ union-competes
     free_impl(fromHeap);
   }
 
   // o is longer. so if equal at end, then kLess.
   template <class Ret, int kLess, int kGreater>
-  inline Ret compare_by_less_len_differs(small_vector const& o) {
+  Ret compare_by_less_len_differs(small_vector const& o) {
     const_iterator e = end();
     std::pair<const_iterator, const_iterator> mo = std::mismatch(begin(), e, o.begin());
     if (mo.first == e) return kLess;
@@ -1033,7 +1033,7 @@ struct small_vector {
   // e.g. <: valLess=true, others = false. 3-value compare: Ret=int, kLess=-1, kGreater=1, kEqual=0
   //      (an arbitrary total ordering (not lex.))
   template <class Ret, int kLess, int kEqual, int kGreater>
-  inline Ret compare_by_less(small_vector const& o) const {
+  Ret compare_by_less(small_vector const& o) const {
     if (data.stack.sz_ == o.data.stack.sz_) {
       if (data.stack.sz_ <= kMaxInlineSize) {
         for (size_type i = 0; i < data.stack.sz_; ++i) {

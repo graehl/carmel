@@ -31,15 +31,15 @@
      for your leaf_configurable type T, you may wish to provide ADL-locatable
      overrides for:
 
-     inline std::string to_string_impl(T const&);
+     std::string to_string_impl(T const&);
 
-     inline void string_to_impl(std::string const&,T &);
+     void string_to_impl(std::string const&,T &);
 
      // (both default to lexical_cast, except that boost::optional none can be "none" as well as ""
 
-     inline std::string type_string(T const&) // argument ignored. defaults to ""
+     std::string type_string(T const&) // argument ignored. defaults to ""
 
-     inline std::string example_value(T const&) // argument ignored. for example configs
+     std::string example_value(T const&) // argument ignored. for example configs
 
      void init_impl(T &t) // default destroys and reconstructs
 

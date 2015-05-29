@@ -42,9 +42,9 @@ inline std::string example_value(std::string const&) {
 }
 
 #define GRAEHL_EXAMPLE_VALUE_FLOAT(Type) \
-  inline std::string example_value(Type const&) { return to_string(Type(0.5)); }
+   inline std::string example_value(Type const&) { return to_string(Type(0.5)); }
 #define GRAEHL_EXAMPLE_VALUE_INT(Type) \
-  inline std::string example_value(Type const&) { return to_string(Type(65)); }
+   inline std::string example_value(Type const&) { return to_string(Type(65)); }
 
 GRAEHL_FOR_DISTINCT_INT_TYPES(GRAEHL_EXAMPLE_VALUE_INT)
 GRAEHL_FOR_DISTINCT_FLOAT_TYPES(GRAEHL_EXAMPLE_VALUE_FLOAT)

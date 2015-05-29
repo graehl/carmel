@@ -15,9 +15,10 @@
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #pragma once
 
-// you may override this with a fully namespace qualified type - but be careful to do so consistently before
-// every inclusion!
-// in practice unsigned would be great. who visits > 4billion best?
+// you may override this with a fully namespace qualified type - but be careful
+// to do so consistently before every inclusion!  in practice unsigned would be
+// great. who visits > 4billion best?
+
 #ifndef LAZY_FOREST_KBEST_SIZE
 #define LAZY_FOREST_KBEST_SIZE unsigned
 #endif
@@ -97,7 +98,7 @@
   namespace graehl {
   template<>
   struct lazy_kbest_derivation_traits<Deriv> {
-  static inline bool better_than(const Deriv &candidate, const Deriv &than)
+  static inline bool better_than(Deriv const& candidate, Deriv const& than)
   {
   return candidate<than;
   }
@@ -139,42 +140,42 @@
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
-# define LAZY_FOREST_EXAMPLES
+#define LAZY_FOREST_EXAMPLES
 #endif
 
 #if !GRAEHL_DEBUG_LAZY_FOREST_KBEST
-# define LAZYF(x)
+#define LAZYF(x)
 #else
-# include <graehl/shared/show.hpp>
-# define LAZYF(x) x
+#include <graehl/shared/show.hpp>
+#define LAZYF(x) x
 DECLARE_DBG_LEVEL(LAZYF)
-# ifdef LAZY_FOREST_KBEST_MSG
-#  define KBESTINFOT(x) LAZY_FOREST_KBEST_MSG(x << '\n')
-# if defined(NESTT)
-#  define KBESTNESTT NESTT
-# else
-#  ifdef _MSC_VER
-#   define KBESTNESTT
-#  else
-#   define KBESTNESTT SCOPED_INDENT_NEST(lazy_forest_indent_tag)
-#  endif
-# endif
-# else
-#  define KBESTINFOT(x)
-#  define KBESTNESTT
-# endif
+#ifdef LAZY_FOREST_KBEST_MSG
+#define KBESTINFOT(x) LAZY_FOREST_KBEST_MSG(x << '\n')
+#if defined(NESTT)
+#define KBESTNESTT NESTT
+#else
+#ifdef _MSC_VER
+#define KBESTNESTT
+#else
+#define KBESTNESTT SCOPED_INDENT_NEST(lazy_forest_indent_tag)
+#endif
+#endif
+#else
+#define KBESTINFOT(x)
+#define KBESTNESTT
+#endif
 
 
-# include <graehl/shared/indent_level.hpp>
+#include <graehl/shared/indent_level.hpp>
 
 namespace graehl {
 struct lazy_forest_indent_tag {};
-# define LAZY_FOREST_KBEST_INDENT SCOPED_INDENT(lazy_forest_indent_tag)
+#define LAZY_FOREST_KBEST_INDENT SCOPED_INDENT(lazy_forest_indent_tag)
 }
 
-# ifndef LAZY_FOREST_KBEST_MSG
-#  define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT << msg)
-# endif
+#ifndef LAZY_FOREST_KBEST_MSG
+#define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT << msg)
+#endif
 #endif
 
 
@@ -190,7 +191,7 @@ inline std::ostream& operator<<(std::ostream& o, lazy_kbest_index_type bp[2]) {
 
 /*
   template <class Deriv> inline
-  bool derivation_better_than(const Deriv &me, const Deriv &than)
+  bool derivation_better_than(Deriv const& me, Deriv const& than)
   {
   return me > than;
   }
@@ -201,18 +202,18 @@ inline std::ostream& operator<<(std::ostream& o, lazy_kbest_index_type bp[2]) {
 template <class Deriv>
 struct lazy_kbest_derivation_traits {
   // Deriv(a) < Deriv(b) iff b is better than a.
-  static inline bool better_than(const Deriv& candidate, const Deriv& than) { return candidate < than; }
+  static inline bool better_than(Deriv const& candidate, Deriv const& than) { return candidate < than; }
 };
 
 /// but if you overload this, then you don't need to specialize above. this is what we actually call
 template <class Deriv>
-inline bool derivation_better_than(const Deriv& candidate, const Deriv& than) {
+inline bool derivation_better_than(Deriv const& candidate, Deriv const& than) {
   return lazy_kbest_derivation_traits<Deriv>::better_than(candidate, than);
 }
 
 /// but if you overload this, then you don't need to specialize above. this is what we actually call
 template <class Deriv>
-inline bool call_derivation_better_than(const Deriv& candidate, const Deriv& than) {
+inline bool call_derivation_better_than(Deriv const& candidate, Deriv const& than) {
   return derivation_better_than(candidate, than);  // ADL here
 }
 
@@ -360,7 +361,7 @@ struct projected_duplicate_filter : Projection {
     Projection::print_projection(o, d);
   }
   /*  template <class O>
-      void print(O &o, derivation_type const& d, projected_type const& proj)
+     void print(O &o, derivation_type const& d, projected_type const& proj)
       {
       o << "projection for "<<&d << ": "<<&proj;
       }*/
@@ -426,11 +427,9 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
                     {
 
  public:
-
-#if __cplusplus >= 201103L 
+#if __cplusplus >= 201103L
   /// move
-  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {
-  }
+  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {}
 
   /// move
   lazy_forest& operator=(lazy_forest&& o) noexcept {
@@ -528,8 +527,8 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
       derivation = _derivation;
     }
     // NB: std::pop_heap puts largest element at top (max-heap)
-    inline bool
-    operator<(const hyperedge& o) const {  // true if o should dominate max-heap, i.e. o is better than us
+    bool
+    operator<(hyperedge const& o) const {  // true if o should dominate max-heap, i.e. o is better than us
       return call_derivation_better_than(o.derivation, derivation);
     }
     // means: this<o iff o better than this. good.
@@ -835,8 +834,8 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
   memo_t memo;
 
   // try worsening ith (0=left, 1=right) child and adding to queue
-  inline void generate_successor_hyperedge(Environment& env, hyperedge& pending, derivation_type old_parent,
-                                           lazy_kbest_index_type i) {
+  void generate_successor_hyperedge(Environment& env, hyperedge& pending, derivation_type old_parent,
+                                    lazy_kbest_index_type i) {
     lazy_forest& child_node = *pending.child[i];
     lazy_kbest_index_type& child_i = pending.childbp[i];
     derivation_type old_child = child_node.memo[child_i];
@@ -861,7 +860,7 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
     // "]");
   }
 
-  void push(const hyperedge& e) {
+  void push(hyperedge const& e) {
     pq.push_back(e);
     std::push_heap(pq.begin(), pq.end());
     // This algorithm puts the element at position end()-1 into what must be a pre-existing heap consisting of
@@ -876,7 +875,7 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
     // will nevertheless still be in the vector v, unless it is explicitly removed.
     pq.pop_back();
   }
-  const hyperedge& top() const { return pq.front(); }
+  hyperedge const& top() const { return pq.front(); }
 };
 
 }  // ns

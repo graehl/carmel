@@ -443,7 +443,7 @@ Float scan_real_no_sign(StrCursor& c) {
     if (!c) return value;
 
     // optional exponent sign
-    bool const negative_exponent = (*c.p == '-');
+   bool const negative_exponent = (*c.p == '-');
     if (negative_exponent) {
       ++c.p;
       if (!c) return value;

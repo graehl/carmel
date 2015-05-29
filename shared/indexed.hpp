@@ -46,10 +46,10 @@ I hash_capacity_for_size(I sz) {
 template <class T>
 struct indexed_traits {
   template <class Key>
-  inline bool operator()(T const& a, Key const& b) const {
+  bool operator()(T const& a, Key const& b) const {
     return a == b;
   }
-  inline std::size_t operator()(T const& a) const { return boost::hash<T>()(a); }
+  std::size_t operator()(T const& a) const { return boost::hash<T>()(a); }
 };
 
 template <class T, class IndexT = unsigned, class Vector = stable_vector<T>,
@@ -104,9 +104,9 @@ struct indexed : HashEqualsTraits {
     grow(vals_, i) = val;
   }
 
-  //TODO: template find,index for compatible hash of e.g. pair<char*, char*>
-  //vs. string without first creating string - different method name since wrong
-  //hash fn selection would surprise user
+  // TODO: template find,index for compatible hash of e.g. pair<char*, char*>
+  // vs. string without first creating string - different method name since wrong
+  // hash fn selection would surprise user
 
   template <class Key>
   I find(Key const& val, I otherwise = (I)kNullIndex) const {

@@ -121,24 +121,24 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
     this->setp(buf, bufend);
   }
   /**
-     void * versions of above for convenience.
+    void * versions of above for convenience.
   */
   explicit basic_array_streambuf(const void* p, size_type sz = 0) : eof_() { set_array(p, sz); }
-  inline void set_array(const void* p = 0, size_type sz = 0) { set_array((char const*)p, sz); }
+  void set_array(const void* p = 0, size_type sz = 0) { set_array((char const*)p, sz); }
 
   explicit basic_array_streambuf(string_type const& str) : eof_() { set_array(str); }
 
   /**
      seek to beginning, resetting maximum readable size to sz.
   */
-  inline void reset_read(size_type sz) { setg(buf, buf, buf + sz); }
+  void reset_read(size_type sz) { setg(buf, buf, buf + sz); }
 
   /**
      seek read to beginning, set maximum readable to the length of what was written.
 
      so you can write some stuff, reset_read, then read it.
   */
-  inline void reset_read() { base::setg(buf, buf, end()); }
+  void reset_read() { base::setg(buf, buf, end()); }
 
   /**
      set no readable area but leave buffer alone
@@ -170,18 +170,18 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
      without seeking, change readable extent. if you put sz less than current
      read position, that's your bad (nothing is done to prevent/detect)
   */
-  inline void set_read_size(size_type sz) { base::setg(buf, gptr(), buf + sz); }
-  inline void set_write_size(size_type sz) { set_ppos(sz); }
+  void set_read_size(size_type sz) { base::setg(buf, gptr(), buf + sz); }
+  void set_write_size(size_type sz) { set_ppos(sz); }
 
   /**
      resize for both read and write
   */
-  inline void set_size(size_type sz) {
+  void set_size(size_type sz) {
     set_read_size(sz);
     set_write_size(sz);
   }
 
-  inline std::ptrdiff_t capacity() const { return bufend - buf; }
+  std::ptrdiff_t capacity() const { return bufend - buf; }
 
   /**
      streambuf method - remaining bytes that can be read. default impl is correct.
@@ -191,7 +191,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   /**
      streambuf method - remaining bytes that can be written. we use the default streambuf in_avail()
   */
-  inline std::ptrdiff_t out_avail() { return bufend - pptr(); }
+  std::ptrdiff_t out_avail() { return bufend - pptr(); }
 
   bool read_complete() const {
     assert((gptr() == bufend) == !const_cast<basic_array_streambuf*>(this)->in_avail());
@@ -296,15 +296,15 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   using base::gptr;
   using base::egptr;
   using base::gbump;
-  basic_array_streambuf(const basic_array_streambuf&);
-  basic_array_streambuf& operator=(const basic_array_streambuf&);
+  basic_array_streambuf(basic_array_streambuf const&);
+  basic_array_streambuf& operator=(basic_array_streambuf const&);
 
  protected:
   virtual self_type* setbuf(char_type* p, size_type n) {
     set_array(p, n);
     return this;
   }
-  char_type* buf, *bufend;
+  char_type *buf, *bufend;
 };
 
 typedef basic_array_streambuf<char> array_streambuf;
@@ -337,7 +337,7 @@ class basic_array_stream : public std::basic_iostream<cT, traits> {
     base::rdbuf(&sbuf_);
   }
   template <class C>
-  explicit basic_array_stream(const C& c)
+  explicit basic_array_stream(C const& c)
       : base(&sbuf_) {
     set_array(c);
     base::rdbuf(&sbuf_);
@@ -347,10 +347,10 @@ class basic_array_stream : public std::basic_iostream<cT, traits> {
      all of the below are forwards of the extended array_streambuf interface (not part of regular iostream)
   */
 
-  inline void set_array(const value_type* p) { sbuf_.set_array(p, traits::length(p)); }
-  inline void set_array(const value_type* p, size_type size) { sbuf_.set_array(p, size); }
-  inline void set_array(const void* p = 0, size_type size = 0) { sbuf_.set_array(p, size); }
-  inline void set_array(const std::basic_string<value_type>& s) { sbuf_.set_array(s.c_str(), s.size()); }
+  void set_array(const value_type* p) { sbuf_.set_array(p, traits::length(p)); }
+  void set_array(const value_type* p, size_type size) { sbuf_.set_array(p, size); }
+  void set_array(const void* p = 0, size_type size = 0) { sbuf_.set_array(p, size); }
+  void set_array(std::basic_string<value_type> const& s) { sbuf_.set_array(s.c_str(), s.size()); }
   size_type tellg() const { return sbuf_.tellg(); }
   Sbuf& buf() { return sbuf_; }
   void reset() {

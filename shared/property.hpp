@@ -41,7 +41,7 @@ struct IdentityMap {
   typedef K value_type;
   typedef K const& reference;
   typedef boost::readable_property_map_tag category;
-  inline K const& operator[](K const& key) const { return key; }
+  K const& operator[](K const& key) const { return key; }
 };
 
 template <class K>
@@ -191,7 +191,7 @@ void put(NullPropertyMap<V> const& pmap, Key const&, Val2 const&) {
 template <class offset_map = boost::identity_property_map>
 struct ArrayPMapFactory : public std::pair<unsigned, offset_map> {
   ArrayPMapFactory(unsigned s, offset_map o = offset_map()) : std::pair<unsigned, offset_map>(s, o) {}
-  ArrayPMapFactory(const ArrayPMapFactory& o) : std::pair<unsigned, offset_map>(o) {}
+  ArrayPMapFactory(ArrayPMapFactory const& o) : std::pair<unsigned, offset_map>(o) {}
   template <class R>
   struct rebind {
     typedef ArrayPMapImp<R, offset_map> implementation;

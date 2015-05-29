@@ -93,13 +93,13 @@ struct split_string_push_back {
 /// returns number of fields visited by f such that return of f(field) was true
 template <class Func>
 inline std::size_t split_noquote(
-    const std::string& csv,
+    std::string const& csv,
     Func f,  // this returns false if we want to stop; we return the number of fields (up to N) for which f
     // returned true.
-    const std::string& delim = ",",
+    std::string const& delim = ",",
     std::size_t N = (std::size_t) - 1,  // max number of calls to f (even if more fields exist)
-    bool leave_tail = true,  // if N reached and there's more string left, include it in final call to f
-    bool must_complete = false  // throw if whole string isn't consumed (meaningless unless leave_tail==false)
+   bool leave_tail = true,  // if N reached and there's more string left, include it in final call to f
+   bool must_complete = false  // throw if whole string isn't consumed (meaningless unless leave_tail==false)
     ) {
   using namespace std;
   string::size_type delim_len = delim.length();
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(TEST_split_strs) {
     for (char const** p = seps; *p; ++p) {
       string s;
       char const* sep = *p;
-      bool first = true;
+     bool first = true;
       for (char const** q = split_strs; *q; ++q) {
         if (first)
           first = false;

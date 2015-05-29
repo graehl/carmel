@@ -854,16 +854,16 @@ class finish_refcount {
   finish_refcount() : refcount(new R(1)) {}
   finish_refcount(finish_refcount const& o) : refcount(o.refcount) { add_ref(); }
   ~finish_refcount() { release(); }
-  inline void add_ref() const { ++*refcount; }
-  inline void release(FinishableCRTP const* tc) const {
+  void add_ref() const { ++*refcount; }
+  void release(FinishableCRTP const* tc) const {
     FinishableCRTP* t = const_cast<FinishableCRTP*>(tc);
     if (!--*refcount) {
       delete refcount;
       t->finish();
     }
   }
-  inline void release() const { release(derivedPtr()); }
-  inline FinishableCRTP const* derivedPtr() const { return static_cast<FinishableCRTP const*>(this); }
+  void release() const { release(derivedPtr()); }
+  FinishableCRTP const* derivedPtr() const { return static_cast<FinishableCRTP const*>(this); }
 
  private:
   void operator=(finish_refcount const&) {}
@@ -910,7 +910,7 @@ struct conf_expr_base {
   template <class Val>
   bool custom_validate(Val* pval) const {
     if (!validator) return false;
-    boost::any_cast<boost::function<void(Val&)> >(*validator)(*pval);
+    boost::any_cast<boost::function<void(Val&)> > (*validator)(*pval);
     return true;
   }
   template <class Val>
@@ -1117,8 +1117,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     return *this;
   }
   conf_expr const& alias(bool enable = true) const {
-    if (enable)
-      opt->verbose = 99;
+    if (enable) opt->verbose = 99;
     opt->alias = enable;
     return *this;
   }
@@ -1164,9 +1163,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   }
 
 
-  conf_expr const& null_ok(Val const& val = Val()) const {
-      return this->implicit(true, val);
-  }
+  conf_expr const& null_ok(Val const& val = Val()) const { return this->implicit(true, val); }
   template <class V2>
   conf_expr const& implicit(bool enable, V2 const& v2) const {
     Val val((v2));  // so we store the right type of boost::any
@@ -1395,7 +1392,7 @@ conf_expr_base get_default_conf(Val* pval, conf_expr_base const& conf = conf_exp
     struct YOUR_BACKEND : configure_backend_base<YOUR_BACKEND> {
     FORWARD_BASE_CONFIGURE_ACTIONS(configure_backend_base<YOUR_BACKEND>)
     template <class Val>
-    void leaf_action(configure::store_action, Val *val, configure::conf_expr_base const& conf) const {
+   void leaf_action(configure::store_action, Val *val, configure::conf_expr_base const& conf) const {
     }
     };
 

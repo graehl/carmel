@@ -33,7 +33,7 @@ inline double random_pos_fraction()  // returns uniform random number on (0..1]
 }
 
 template <class V1, class V2>
-inline V1 random_half_open(const V1& v1, const V2& v2) {
+inline V1 random_half_open(V1 const& v1, V2 const& v2) {
   return v1 + random01() * (v2 - v1);
 }
 
@@ -43,19 +43,17 @@ struct std_rand {
 
 /// \return on [0, limit) from unigned rand()
 template <class Rand>
-unsigned random_less_than(unsigned limit, Rand rand)
-{
+unsigned random_less_than(unsigned limit, Rand rand) {
   unsigned min =
-  // set min = 2^32 % limit
+// set min = 2^32 % limit
 #if (UINT_MAX > 0xffffffffUL)
       0x100000000UL % limit;
 #else
-  min = limit > 0x80000000 ? 1 + ~limit : ((0xffffffff - (limit * 2)) + 1) % limit;
+      min = limit > 0x80000000 ? 1 + ~limit : ((0xffffffff - (limit * 2)) + 1) % limit;
 #endif
   for (;;) {
     unsigned r = rand();
-    if (r >= min)
-      return r % limit;
+    if (r >= min) return r % limit;
   }
 }
 

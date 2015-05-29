@@ -112,20 +112,20 @@ inline CharAcceptor const& shell_quote_chars_iter(CharAcceptor const& chars, Cha
 
 template <class CharAcceptor, class Str>
 inline CharAcceptor const& shell_quote_chars(CharAcceptor const& chars, Str const& str,
-                                             bool quote_empty = true) {
+                                            bool quote_empty = true) {
   return shell_quote_chars_iter(chars, str.begin(), str.end(), quote_empty);
 }
 
 template <class C, class Ch, class Tr>
-inline std::basic_ostream<Ch, Tr>& out_shell_quote(std::basic_ostream<Ch, Tr>& out, const C& data,
-                                                   bool quote_empty = true) {
+inline std::basic_ostream<Ch, Tr>& out_shell_quote(std::basic_ostream<Ch, Tr>& out, C const& data,
+                                                  bool quote_empty = true) {
   out_stream<Ch, Tr> chars(out);
   shell_quote_chars(chars, to_string(data), quote_empty);
   return out;
 }
 
 template <class C>
-inline std::string shell_quote(const C& data, bool quote_empty = true) {
+inline std::string shell_quote(C const& data, bool quote_empty = true) {
   string_builder b;
   return shell_quote_chars(append_string_builder(b), to_string(data), quote_empty).str();
 }

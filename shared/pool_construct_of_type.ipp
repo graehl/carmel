@@ -39,7 +39,7 @@ element_type * construct(T0 & a0)
   return ret;
 }
 template <typename element_type, typename T0>
-element_type * construct(const T0 & a0)
+element_type * construct(T0 const& a0)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -79,7 +79,7 @@ element_type * construct(T0 & a0, T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(const T0 & a0, T1 & a1)
+element_type * construct(T0 const& a0, T1 & a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -109,7 +109,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(T0 & a0, const T1 & a1)
+element_type * construct(T0 & a0, T1 const& a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -119,7 +119,7 @@ element_type * construct(T0 & a0, const T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(const T0 & a0, const T1 & a1)
+element_type * construct(T0 const& a0, T1 const& a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -129,7 +129,7 @@ element_type * construct(const T0 & a0, const T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(volatile T0 & a0, const T1 & a1)
+element_type * construct(volatile T0 & a0, T1 const& a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -139,7 +139,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(const volatile T0 & a0, const T1 & a1)
+element_type * construct(const volatile T0 & a0, T1 const& a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -159,7 +159,7 @@ element_type * construct(T0 & a0, volatile T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(const T0 & a0, volatile T1 & a1)
+element_type * construct(T0 const& a0, volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -199,7 +199,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1)
   return ret;
 }
 template <typename element_type, typename T0, typename T1>
-element_type * construct(const T0 & a0, const volatile T1 & a1)
+element_type * construct(T0 const& a0, const volatile T1 & a1)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -239,7 +239,7 @@ element_type * construct(T0 & a0, T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, T1 & a1, T2 & a2)
+element_type * construct(T0 const& a0, T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -269,7 +269,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, const T1 & a1, T2 & a2)
+element_type * construct(T0 & a0, T1 const& a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -279,7 +279,7 @@ element_type * construct(T0 & a0, const T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const T1 & a1, T2 & a2)
+element_type * construct(T0 const& a0, T1 const& a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -289,7 +289,7 @@ element_type * construct(const T0 & a0, const T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, const T1 & a1, T2 & a2)
+element_type * construct(volatile T0 & a0, T1 const& a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -299,7 +299,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, const T1 & a1, T2 & a2)
+element_type * construct(const volatile T0 & a0, T1 const& a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -319,7 +319,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, volatile T1 & a1, T2 & a2)
+element_type * construct(T0 const& a0, volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -359,7 +359,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const volatile T1 & a1, T2 & a2)
+element_type * construct(T0 const& a0, const volatile T1 & a1, T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -389,7 +389,7 @@ element_type * construct(const volatile T0 & a0, const volatile T1 & a1, T2 & a2
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, T1 & a1, const T2 & a2)
+element_type * construct(T0 & a0, T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -399,7 +399,7 @@ element_type * construct(T0 & a0, T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, T1 & a1, const T2 & a2)
+element_type * construct(T0 const& a0, T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -409,7 +409,7 @@ element_type * construct(const T0 & a0, T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, T1 & a1, const T2 & a2)
+element_type * construct(volatile T0 & a0, T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -419,7 +419,7 @@ element_type * construct(volatile T0 & a0, T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, T1 & a1, const T2 & a2)
+element_type * construct(const volatile T0 & a0, T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -429,7 +429,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, const T1 & a1, const T2 & a2)
+element_type * construct(T0 & a0, T1 const& a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -439,7 +439,7 @@ element_type * construct(T0 & a0, const T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const T1 & a1, const T2 & a2)
+element_type * construct(T0 const& a0, T1 const& a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -449,7 +449,7 @@ element_type * construct(const T0 & a0, const T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, const T1 & a1, const T2 & a2)
+element_type * construct(volatile T0 & a0, T1 const& a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -459,7 +459,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, const T1 & a1, const T2 & a2)
+element_type * construct(const volatile T0 & a0, T1 const& a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -469,7 +469,7 @@ element_type * construct(const volatile T0 & a0, const T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, volatile T1 & a1, const T2 & a2)
+element_type * construct(T0 & a0, volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -479,7 +479,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, volatile T1 & a1, const T2 & a2)
+element_type * construct(T0 const& a0, volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -489,7 +489,7 @@ element_type * construct(const T0 & a0, volatile T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, volatile T1 & a1, const T2 & a2)
+element_type * construct(volatile T0 & a0, volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -499,7 +499,7 @@ element_type * construct(volatile T0 & a0, volatile T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, volatile T1 & a1, const T2 & a2)
+element_type * construct(const volatile T0 & a0, volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -509,7 +509,7 @@ element_type * construct(const volatile T0 & a0, volatile T1 & a1, const T2 & a2
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, const volatile T1 & a1, const T2 & a2)
+element_type * construct(T0 & a0, const volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -519,7 +519,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const volatile T1 & a1, const T2 & a2)
+element_type * construct(T0 const& a0, const volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -529,7 +529,7 @@ element_type * construct(const T0 & a0, const volatile T1 & a1, const T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, const volatile T1 & a1, const T2 & a2)
+element_type * construct(volatile T0 & a0, const volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -539,7 +539,7 @@ element_type * construct(volatile T0 & a0, const volatile T1 & a1, const T2 & a2
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, const volatile T1 & a1, const T2 & a2)
+element_type * construct(const volatile T0 & a0, const volatile T1 & a1, T2 const& a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -559,7 +559,7 @@ element_type * construct(T0 & a0, T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, T1 & a1, volatile T2 & a2)
+element_type * construct(T0 const& a0, T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -589,7 +589,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, const T1 & a1, volatile T2 & a2)
+element_type * construct(T0 & a0, T1 const& a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -599,7 +599,7 @@ element_type * construct(T0 & a0, const T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const T1 & a1, volatile T2 & a2)
+element_type * construct(T0 const& a0, T1 const& a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -609,7 +609,7 @@ element_type * construct(const T0 & a0, const T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, const T1 & a1, volatile T2 & a2)
+element_type * construct(volatile T0 & a0, T1 const& a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -619,7 +619,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, const T1 & a1, volatile T2 & a2)
+element_type * construct(const volatile T0 & a0, T1 const& a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -639,7 +639,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, volatile T1 & a1, volatile T2 & a2)
+element_type * construct(T0 const& a0, volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -679,7 +679,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const volatile T1 & a1, volatile T2 & a2)
+element_type * construct(T0 const& a0, const volatile T1 & a1, volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -719,7 +719,7 @@ element_type * construct(T0 & a0, T1 & a1, const volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, T1 & a1, const volatile T2 & a2)
+element_type * construct(T0 const& a0, T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -749,7 +749,7 @@ element_type * construct(const volatile T0 & a0, T1 & a1, const volatile T2 & a2
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(T0 & a0, const T1 & a1, const volatile T2 & a2)
+element_type * construct(T0 & a0, T1 const& a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -759,7 +759,7 @@ element_type * construct(T0 & a0, const T1 & a1, const volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const T1 & a1, const volatile T2 & a2)
+element_type * construct(T0 const& a0, T1 const& a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -769,7 +769,7 @@ element_type * construct(const T0 & a0, const T1 & a1, const volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(volatile T0 & a0, const T1 & a1, const volatile T2 & a2)
+element_type * construct(volatile T0 & a0, T1 const& a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -779,7 +779,7 @@ element_type * construct(volatile T0 & a0, const T1 & a1, const volatile T2 & a2
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const volatile T0 & a0, const T1 & a1, const volatile T2 & a2)
+element_type * construct(const volatile T0 & a0, T1 const& a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -799,7 +799,7 @@ element_type * construct(T0 & a0, volatile T1 & a1, const volatile T2 & a2)
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, volatile T1 & a1, const volatile T2 & a2)
+element_type * construct(T0 const& a0, volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)
@@ -839,7 +839,7 @@ element_type * construct(T0 & a0, const volatile T1 & a1, const volatile T2 & a2
   return ret;
 }
 template <typename element_type, typename T0, typename T1, typename T2>
-element_type * construct(const T0 & a0, const volatile T1 & a1, const volatile T2 & a2)
+element_type * construct(T0 const& a0, const volatile T1 & a1, const volatile T2 & a2)
 {
   element_type * const ret = (malloc)();
   if (ret == 0)

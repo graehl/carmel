@@ -43,16 +43,16 @@ namespace graehl {
 
 template <typename charT>
 struct ascii_case_insensitive_equal {
-  ascii_case_insensitive_equal(const std::locale& loc) : loc_(loc) {}
+  ascii_case_insensitive_equal(std::locale const& loc) : loc_(loc) {}
   bool operator()(charT ch1, charT ch2) { return std::toupper(ch1, loc_) == std::toupper(ch2, loc_); }
 
  private:
-  const std::locale& loc_;
+  std::locale const& loc_;
 };
 
 // find substring start index or -1 if not found (case insensitive)
 template <typename T>
-typename T::size_type ci_find_substr(const T& str, const T& substr, const std::locale& loc = std::locale()) {
+typename T::size_type ci_find_substr(T const& str, T const& substr, std::locale const& loc = std::locale()) {
   typename T::const_iterator it = std::search(str.begin(), str.end(), substr.begin(), substr.end(),
                                               ascii_case_insensitive_equal<typename T::value_type>(loc));
   return it == str.end() ? -1 : it - str.begin();
@@ -160,7 +160,7 @@ bool contains_substring(Str const& str, Sub const& sub, typename Str::size_type 
 
 // returns true and writes pos, n for substring between left-right brackets.  or false if brackets not found.
 template <class Str>
-inline bool substring_inside_pos_n(const Str& s, const Str& leftbracket, const Str& rightbracket,
+inline bool substring_inside_pos_n(Str const& s, Str const& leftbracket, Str const& rightbracket,
                                    typename Str::size_type& pos, typename Str::size_type& n,
                                    typename Str::size_type start_from = 0) {
   typename Str::size_type rightpos;
@@ -174,7 +174,7 @@ inline bool substring_inside_pos_n(const Str& s, const Str& leftbracket, const S
 // first is first substring (left->right) between leftbracket and rightbracket in s.
 // second is true if found, false if none found
 template <class Str>
-inline std::pair<Str, bool> substring_inside(const Str& s, const Str& leftbracket, const Str& rightbracket,
+inline std::pair<Str, bool> substring_inside(Str const& s, Str const& leftbracket, Str const& rightbracket,
                                              typename Str::size_type start_from = 0) {
   typedef std::pair<Str, bool> Ret;
   typename Str::size_type pos, n;
@@ -192,8 +192,8 @@ inline bool equal_streams_as_seq(Istream& i1, Istream& i2) {
   */
   ParseAs v1, v2;
   for (;;) {
-    bool got1 = (bool)(i1 >> v1);
-    bool got2 = (bool)(i2 >> v2);
+   bool got1 = (bool)(i1 >> v1);
+   bool got2 = (bool)(i2 >> v2);
     if (got1) {
       if (!got2) return false;  // 2 ended first
     } else {
@@ -304,7 +304,7 @@ bool expect_consuming(std::basic_istream<Ch, Tr> &i, CharIt begin, CharIt end)
 
 template <class Ch, class Tr, class CharIt>
 inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, CharIt begin, CharIt end,
-                             bool skip_first_ws = true) {
+                            bool skip_first_ws = true) {
   if (begin == end) return true;
   Ch c;
   if (skip_first_ws)
@@ -325,24 +325,24 @@ inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, CharIt begin, CharIt
 }
 
 template <class Ch, class Tr, class Str>
-inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, const Str& str, bool skip_first_ws = true) {
+inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, Str const& str, bool skip_first_ws = true) {
   return expect_consuming(i, str.begin(), str.end(), skip_first_ws);
 }
 
 
 template <class Str>
-inline bool starts_with(const Str& str, const Str& prefix) {
+inline bool starts_with(Str const& str, Str const& prefix) {
   return starts_with(str.begin(), str.end(), prefix.begin(), prefix.end());
 }
 
 template <class Str>
-inline bool ends_with(const Str& str, const Str& suffix) {
+inline bool ends_with(Str const& str, Str const& suffix) {
   //        return starts_with(str.rbegin(), str.rend(), suffix.rbegin(), suffix.rend());
   return match_end(str.begin(), str.end(), suffix.begin(), suffix.end());
 }
 
 template <class Str, class StrSuffix>
-inline bool strip_suffix(Str& str, const StrSuffix& suffix) {
+inline bool strip_suffix(Str& str, StrSuffix const& suffix) {
   if (match_end(str.begin(), str.end(), suffix.begin(), suffix.end())) {
     str.erase(str.end() - suffix.size(), str.end());
     return true;
@@ -351,7 +351,7 @@ inline bool strip_suffix(Str& str, const StrSuffix& suffix) {
 }
 
 template <class Str>
-inline bool starts_with(const Str& str, char const* prefix) {
+inline bool starts_with(Str const& str, char const* prefix) {
   return starts_with(str.begin(), str.end(), cstr_const_iterator(prefix), cstr_const_iterator());
   //    return starts_with(str, std::string(prefix));
 }
@@ -362,7 +362,7 @@ inline bool starts_with(Istr bstr, Istr estr, Prefix prefix) {
 }
 
 template <class Str>
-inline bool ends_with(const Str& str, char const* suffix) {
+inline bool ends_with(Str const& str, char const* suffix) {
   //  return match_end(str.begin(), str.end(), null_terminated_rbegin(suffix), null_terminated_rend(suffix));
   return ends_with(str, std::string(suffix));
 }
@@ -372,9 +372,9 @@ inline bool ends_with(Istr bstr, Istr estr, Suffix suffix) {
   return match_end(bstr, estr, suffix.begin(), suffix.end());
 }
 
-// func(const Func::argument_type &val) - assumes val can be parsed from string tokenization (no whitespace)
+// func(Func::argument_type const& val) - assumes val can be parsed from string tokenization (no whitespace)
 template <class In, class Func>
-inline void parse_until(const std::string& term, In& in, Func func) {
+inline void parse_until(std::string const& term, In& in, Func func) {
   std::string s;
   bool last = false;
   while (!last && (in >> s)) {
@@ -390,12 +390,12 @@ inline void parse_until(const std::string& term, In& in, Func func) {
 }
 
 template <class In, class Cont>
-inline void push_back_until(const std::string& term, In& in, Cont& cont) {
+inline void push_back_until(std::string const& term, In& in, Cont& cont) {
   parse_until(term, in, make_push_backer(cont));
 }
 
 template <class F>
-inline void tokenize_key_val_pairs(const std::string& s, F& f, char pair_sep = ',', char key_val_sep = ':') {
+inline void tokenize_key_val_pairs(std::string const& s, F& f, char pair_sep = ',', char key_val_sep = ':') {
   typedef typename F::key_type Key;
   typedef typename F::data_type Data;
   using namespace std;

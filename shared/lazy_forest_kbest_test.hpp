@@ -61,7 +61,7 @@ struct Result {
   string rule;
   string history;
   float cost;
-  Result(const string & rule_, float cost_, Result *left=NULL, Result *right=NULL) : rule(rule_), history(rule_,0,1), cost(cost_) {
+  Result(string const& rule_, float cost_, Result *left=NULL, Result *right=NULL) : rule(rule_), history(rule_,0,1), cost(cost_) {
     child[0]=left;child[1]=right;
     if (child[0]) {
       cost+=child[0]->cost;
@@ -69,7 +69,7 @@ struct Result {
         cost+=child[1]->cost;
     }
   }
-  friend ostream & operator <<(ostream &o, const Result &v)
+  friend ostream & operator <<(ostream &o, Result const& v)
   {
     o << "cost=" << v.cost << " tree={{{";
     v.print_tree(o, false);
@@ -94,7 +94,7 @@ struct Result {
     //<< '(' << new_child->history << ')';
     history = newhistory.str();
   }
-  bool operator < (const Result &other) const {
+  bool operator < (Result const& other) const {
     return cost > other.cost;
   } // worse < better!
   void print_tree(ostream &o, bool deriv=true) const

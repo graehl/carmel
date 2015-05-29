@@ -71,7 +71,7 @@ struct argc_argv : private std::stringbuf {
   }
 
   // note: str is from stringbuf.
-  void parse(const std::string& cmdline, char const* progname = "ARGV") {
+  void parse(std::string const& cmdline, char const* progname = "ARGV") {
     argvptrs.clear();
     argvptrs.push_back(progname);
     str(cmdline + " ");  // we'll need space for terminating final arg.
@@ -115,7 +115,7 @@ struct argc_argv : private std::stringbuf {
     *o++ = 0;
   }
   argc_argv() : argvptrs() {}
-  explicit argc_argv(const std::string& cmdline, char const* progname = "ARGV") { parse(cmdline, progname); }
+  explicit argc_argv(std::string const& cmdline, char const* progname = "ARGV") { parse(cmdline, progname); }
 };
 
 template <class O, class Argv>

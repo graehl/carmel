@@ -224,7 +224,7 @@ class const_sink_property_map
   explicit const_sink_property_map(V v = V()) : v(v) {}
 
   template <typename T>
-  inline reference operator[](T) const {
+  reference operator[](T) const {
     return v;
   }
 

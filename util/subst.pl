@@ -12,6 +12,9 @@ my $scriptdir; # location of script
 my $scriptname; # filename of script
 my $BLOBS;
 
+sub dumpValue {
+    print STDERR join(' ',@_),'\n';
+}
 BEGIN {
    $scriptdir = &File::Basename::dirname($0);
    ($scriptname) = &File::Basename::fileparse($0);
@@ -100,6 +103,7 @@ while(<$fh2>) {
     chomp;
     y/\013//d;
     if ($substre) {
+        &debug("substre:",$_);
         push @substs,[eval "sub { $_ }",$_];
     } else {
         my ($find,$replace)=split /$sep/;
@@ -143,13 +147,12 @@ if ($inplace) {
             for my $sdesc (@substs) {
                 my ($s,$desc)=@{$sdesc};
                 $_=$line;
+                &debug("$_?");
                 if ($s->()) {
                     $modify_files{$file}=1;
                     &debug("substition matched $file: $desc");
                     next file;
                 }
-                $_=$line;
-                eval $s;
             }
         }
         close LOOKFOR;

@@ -124,7 +124,7 @@ struct identity_distance {
   typedef K value_type;
   typedef K const& reference;
   typedef boost::readable_property_map_tag category;
-  inline K const& operator[](K const& key) const { return key; }
+  K const& operator[](K const& key) const { return key; }
 };
 template <class K>
 K const& get(identity_distance<K>, K const& key) {
@@ -150,7 +150,8 @@ struct property_traits<graehl::deref_distance<Key, Distance> > {
 }
 
 namespace graehl {
-static const std::size_t OPTIMAL_HEAP_ARITY = 2; // boost docs claimed 4 was optimal for dijkstra. TODO: validate that
+static const std::size_t OPTIMAL_HEAP_ARITY
+    = 2;  // boost docs claimed 4 was optimal for dijkstra. TODO: validate that
 
 /* adapted from boost/graph/detail/d_ary_heap.hpp
 
@@ -255,9 +256,11 @@ do in my first uses.  plus, if keys are indices and the map is a vector, it's ba
 template <class Value, std::size_t Arity, class DistanceMap = identity_distance<Value>,
           class IndexInHeapPropertyMap = no_index_in_heap<Value, unsigned>,
           class Better = std::less<typename boost::property_traits<DistanceMap>::value_type>,
-          class Container = GRAEHL_D_ARY_DEFAULT_CONTAINER(Value, Arity), class Size = unsigned, class Equal = std::equal_to<Value> >
+          class Container = GRAEHL_D_ARY_DEFAULT_CONTAINER(Value, Arity), class Size = unsigned,
+          class Equal = std::equal_to<Value> >
 class d_ary_heap_indirect {
   BOOST_STATIC_ASSERT(Arity >= 2);
+
  public:
 #if __cplusplus >= 201103L
   // TODO: use perfect forwarding of universal reftype args
@@ -278,7 +281,7 @@ class d_ary_heap_indirect {
   typedef typename boost::property_traits<DistanceMap>::value_type distance_type;
   d_ary_heap_indirect(DistanceMap const& distance = DistanceMap(),
                       IndexInHeapPropertyMap const& index_in_heap = IndexInHeapPropertyMap(),
-                      const Better& better = Better(), size_type container_reserve = 1024,
+                      Better const& better = Better(), size_type container_reserve = 1024,
                       Equal const& equal = Equal())
       : better(better), data(), distance(distance), index_in_heap(index_in_heap), equal(equal) {
     if (container_reserve) data.reserve(container_reserve);
@@ -361,7 +364,7 @@ class d_ary_heap_indirect {
   void finish_adding() { heapify(); }
 
   // for debugging, please
-  inline size_type loc(Value const& v) const { return get(index_in_heap, v); }
+  size_type loc(Value const& v) const { return get(index_in_heap, v); }
 
   // call heapify yourself after.
   // could allow mutation of data directly, e.g. push_back 1 at a time - but then they could forget to
@@ -583,7 +586,7 @@ This is definitely linear to n.
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #endif
 
-  inline bool contains(Value const& v, size_type i) const {
+  bool contains(Value const& v, size_type i) const {
     if (GRAEHL_D_ARY_TRACK_OUT_OF_HEAP) return i != (size_type)GRAEHL_D_ARY_HEAP_NULL_INDEX;
     size_type sz = data.size();
     EIFDBG(DDARY, 2, SHOWM2(DDARY, "d_ary_heap contains", i, data.size()));
@@ -592,7 +595,7 @@ This is definitely linear to n.
     // check to catch uninit. data
   }
 
-  inline bool contains(Value const& v) const {
+  bool contains(Value const& v) const {
     using boost::get;
     return contains(v, get(index_in_heap, v));
   }
@@ -630,7 +633,7 @@ This is definitely linear to n.
   }
 
   // Swap two elements in the heap by index, updating index_in_heap
-  inline void swap_heap_elements(size_type index_a, size_type index_b) {
+  void swap_heap_elements(size_type index_a, size_type index_b) {
     assert(index_a != index_b);
     Value& willb = data[index_a];
     Value& willa = data[index_b];
@@ -640,7 +643,7 @@ This is definitely linear to n.
     put(index_in_heap, willb, index_b);
   }
 
-  inline void move_heap_element(MoveableValueRef v, size_type ito) {
+  void move_heap_element(MoveableValueRef v, size_type ito) {
     using boost::put;
     put(index_in_heap, data[ito] = (MoveableValueRef)v, ito);
   }
@@ -665,7 +668,7 @@ This is definitely linear to n.
   // we have a copy of the key, so we don't need to do that stupid find # of levels to move then move.  we act
   // as though data[index]=currently_being_moved, but in fact it's an uninitialized "hole", which we fill at
   // the very end
-  inline void preserve_heap_property_up(MoveableValueRef currently_being_moved, size_type index) {
+  void preserve_heap_property_up(MoveableValueRef currently_being_moved, size_type index) {
     using boost::get;
     preserve_heap_property_up(GRAEHL_D_ARY_FORWARD_REF(currently_being_moved), index,
                               get(distance, currently_being_moved));
@@ -675,7 +678,7 @@ This is definitely linear to n.
      disabled because distance map may not be writable. would need traits to enable
   */
   /*
-  inline void preserve_heap_property_up_set_dist(MoveableValueRef currently_being_moved, distance_type
+  void preserve_heap_property_up_set_dist(MoveableValueRef currently_being_moved, distance_type
   dbetter) {
     using boost::get;
     using boost::put;
@@ -727,8 +730,8 @@ This is definitely linear to n.
 
   /// \return 0 if currently_being_moved is better than all children of parent_index else position of child
   /// that should move to parent_index (best child). heap_size should == data.size() (caching)
-  inline size_type which_child_down(size_type parent_index, distance_type parent_dist, Value* heap_ptr,
-                                    size_type heap_size) {
+  size_type which_child_down(size_type parent_index, distance_type parent_dist, Value* heap_ptr,
+                             size_type heap_size) {
     size_type first_child_index = child(parent_index, 0);
     size_type smallest_child_index = 0;
     distance_type d;
@@ -750,16 +753,16 @@ This is definitely linear to n.
       smallest_child_dist = i_dist;                          \
     }                                                        \
   } while (0)
-  /** From the root, swap elements (each one with its smallest child) if there
-     are any parent-child pairs that violate the heap property.  v is placed at
-     data[i], but then pushed down (note: data[i] won't be read explicitly; it
-     will instead be overwritten by percolation).  this also means that v must
-     be a copy of data[i] if it was already at i.  e.g. v=data.back(), i=0,
-     sz=data.size()-1 for pop(), implicitly swapping data[i], data.back(), and
-     doing data.pop_back(), then adjusting from 0 down w/ swaps.  updates
-     index_in_heap for v. on first call currently_being_moved must have been at
-     index.  .
-  */
+/** From the root, swap elements (each one with its smallest child) if there
+   are any parent-child pairs that violate the heap property.  v is placed at
+   data[i], but then pushed down (note: data[i] won't be read explicitly; it
+   will instead be overwritten by percolation).  this also means that v must
+   be a copy of data[i] if it was already at i.  e.g. v=data.back(), i=0,
+   sz=data.size()-1 for pop(), implicitly swapping data[i], data.back(), and
+   doing data.pop_back(), then adjusting from 0 down w/ swaps.  updates
+   index_in_heap for v. on first call currently_being_moved must have been at
+   index.  .
+*/
 #if __cplusplus >= 201103L
   template <class Univ>
 #endif
@@ -821,7 +824,7 @@ This is definitely linear to n.
     verify_heap();
   }
 
-  inline void preserve_heap_property_down(size_type i) {
+  void preserve_heap_property_down(size_type i) {
     EIFDBG(DDARY, 3, SHOWM3(DDARY, "preserve_heap_property_down", i, data[i], data.size()));
     Value copyi(data[i]);  // TODO: we should only copy if heap property isn't already present. or give up and
     // just use swap for this (see usage from heapify)

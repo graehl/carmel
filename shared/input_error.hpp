@@ -62,7 +62,7 @@ inline C scrunch_char(C c, char with = '/') {
 }
 
 template <class O, class C>
-inline void output_n(O& o, const C& c, unsigned n) {
+inline void output_n(O& o, C const& c, unsigned n) {
   for (unsigned i = 0; i < n; ++i) o << c;
 }
 

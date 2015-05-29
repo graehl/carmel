@@ -51,7 +51,7 @@ struct print_maybe_container<Val, typename boost::enable_if<is_nonstring_contain
   template <class O>
   void print(O &o, Val const& val, bool bracket=false)
   {
-    bool first=true;
+   bool first=true;
     if (bracket)
       o<<'[';
     for (typename Val::const_iterator i=val.begin(), e=val.end();i!=e;++i) {

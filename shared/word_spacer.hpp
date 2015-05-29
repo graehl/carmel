@@ -89,7 +89,7 @@ struct word_spacer_f {
   }
 };
 
-inline std::string space_sep_words(const std::string& sentence, char space = ' ') {
+inline std::string space_sep_words(std::string const& sentence, char space = ' ') {
   std::stringstream o;
   std::string word;
   std::istringstream i(sentence);
@@ -101,7 +101,7 @@ inline std::string space_sep_words(const std::string& sentence, char space = ' '
   return o.str();
 }
 
-inline int compare_space_normalized(const std::string& a, const std::string& b) {
+inline int compare_space_normalized(std::string const& a, std::string const& b) {
   return space_sep_words(a).compare(space_sep_words(b));
 }
 

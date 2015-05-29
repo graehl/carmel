@@ -116,7 +116,7 @@ struct updates_cost {
   typedef path_traits<G> PT;
   typedef typename PT::cost_type cost_type;
   typedef bool result_type;
-  inline bool operator()(cost_type const& a, cost_type const& b) const { return PT::updates(a, b); }
+  bool operator()(cost_type const& a, cost_type const& b) const { return PT::updates(a, b); }
 };
 
 template <class G>
@@ -124,7 +124,7 @@ struct better_cost {
   typedef path_traits<G> PT;
   typedef typename PT::cost_type cost_type;
   typedef bool result_type;
-  inline bool operator()(cost_type const& a, cost_type const& b) const { return PT::better(a, b); }
+  bool operator()(cost_type const& a, cost_type const& b) const { return PT::better(a, b); }
 };
 
 

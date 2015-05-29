@@ -63,15 +63,15 @@ struct intrusive_refcount {
   bool unique() const { return refcount == UniqueCount; }
 
   // please don't call these directly - only let boost::intrusive_ptr<T> do it:
-  inline void add_ref() const { ++refcount; }
-  inline void release(T const* tc) const {
+  void add_ref() const { ++refcount; }
+  void release(T const* tc) const {
     T* t = const_cast<T*>(tc);
     if (!--refcount) {
       t->~T();
       U::free((char*)t);
     }
   }
-  inline void release() const { release(derivedPtr()); }
+  void release() const { release(derivedPtr()); }
 
   typedef T self_type;
 
@@ -81,7 +81,7 @@ struct intrusive_refcount {
     return new (&r) T(a0);
   }
 
-  inline T const* derivedPtr() const { return static_cast<T const*>(this); }
+  T const* derivedPtr() const { return static_cast<T const*>(this); }
 
   intrusive_refcount() : refcount(0) {}
   intrusive_refcount(intrusive_refcount const& o) : refcount(0) {}

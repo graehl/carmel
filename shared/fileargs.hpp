@@ -331,7 +331,7 @@ struct file_arg {
     using namespace std;
     swap(buf, o.buf);
     swap(pointer, o.pointer);
-    bool t = none;
+   bool t = none;
     none = o.none;
     o.none = t;
     swap(name, o.name);
@@ -438,7 +438,7 @@ struct file_arg {
 
   template <class filestream>
   void set_new_buf(std::string const& filename, std::string const& fail_msg = "Couldn't open file",
-                   bool large_buf = kDefaultLargeBuf) {
+                  bool large_buf = kDefaultLargeBuf) {
     filestream* f = new filestream();
     std::auto_ptr<filestream> fa(f);
     set_checked(*f, filename, delete_after, fail_msg);  // exception safety provided by f
@@ -592,23 +592,23 @@ static Outfile default_out_none;
 static InDiskfile default_in_disk_none;
 static OutDiskfile default_out_disk_none;
 
-inline bool is_default_in(const Infile& i) {
+inline bool is_default_in(Infile const& i) {
   return i.get() == &GRAEHL__DEFAULT_IN;
 }
 
-inline bool is_default_out(const Outfile& o) {
+inline bool is_default_out(Outfile const& o) {
   return o.get() == &GRAEHL__DEFAULT_OUT;
 }
 
-inline bool is_default_log(const Outfile& o) {
+inline bool is_default_log(Outfile const& o) {
   return o.get() == &GRAEHL__DEFAULT_LOG;
 }
 
-inline bool is_none(const Infile& i) {
+inline bool is_none(Infile const& i) {
   return i.get() == NULL;
 }
 
-inline bool is_none(const Outfile& o) {
+inline bool is_none(Outfile const& o) {
   return o.get() == NULL;
 }
 
@@ -656,24 +656,24 @@ inline void throw_unless_valid_optional(C const& pfile, std::string const& name 
   if (pfile && !valid(pfile)) throw std::runtime_error(name + " not valid");
 }
 
-inline Infile infile(const std::string& s) {
+inline Infile infile(std::string const& s) {
   return istream_arg(s);
 }
 
-inline InDiskfile indiskfile(const std::string& s) {
+inline InDiskfile indiskfile(std::string const& s) {
   return ifstream_arg(s);
 }
 
-inline fs::path full_path(const std::string& relative) {
+inline fs::path full_path(std::string const& relative) {
   return fs::system_complete(fs::path(relative));  // fs::path( relative, fs::native ) //V2
 }
 
-inline bool directory_exists(const fs::path& possible_dir) {
+inline bool directory_exists(fs::path const& possible_dir) {
   return fs::exists(possible_dir) && fs::is_directory(possible_dir);
 }
 
 // works on .gz files!
-inline size_t count_newlines(const std::string& filename) {
+inline size_t count_newlines(std::string const& filename) {
   Infile i = infile(filename);
   char c;
   size_t n_newlines = 0;
@@ -689,7 +689,7 @@ inline void native_filename_check() {
 
 
 // like V2 normalize
-inline fs::path resolve(const fs::path& p) {
+inline fs::path resolve(fs::path const& p) {
   fs::path result;
   for (fs::path::iterator i = p.begin(); i != p.end(); ++i) {
     if (*i == "..") {
@@ -712,8 +712,8 @@ inline fs::path resolve(const fs::path& p) {
 
 // return the absolute filename that would result from "cp source dest" (and write to *dest_exists whether
 // dest exists) - throws error if source is the same as dest
-inline std::string output_name_like_cp(const std::string& source, const std::string& dest,
-                                       bool* dest_exists = NULL) {
+inline std::string output_name_like_cp(std::string const& source, std::string const& dest,
+                                      bool* dest_exists = NULL) {
   fs::path full_dest = full_path(dest);
   fs::path full_source = full_path(source);
 
@@ -740,11 +740,11 @@ inline std::string output_name_like_cp(const std::string& source, const std::str
   // opens on win32 expect UTF-16 wstrings.
 }
 
-inline Outfile outfile(const std::string& s) {
+inline Outfile outfile(std::string const& s) {
   return ostream_arg(s);
 }
 
-inline OutDiskfile outdiskfile(const std::string& s) {
+inline OutDiskfile outdiskfile(std::string const& s) {
   return ofstream_arg(s);
 }
 
@@ -792,22 +792,22 @@ namespace program_options {
 /* Overload the 'validate' function for boost::shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      boost::shared_ptr<std::istream>* target_type, int) {
   v = boost::any(graehl::infile(graehl::get_single_arg(v, values)));
 }
 
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      boost::shared_ptr<std::ostream>* target_type, int) {
   v = boost::any(graehl::outfile(graehl::get_single_arg(v, values)));
 }
 
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      boost::shared_ptr<std::ofstream>* target_type, int) {
   v = boost::any(graehl::outdiskfile(graehl::get_single_arg(v, values)));
 }
 
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      boost::shared_ptr<std::ifstream>* target_type, int) {
   v = boost::any(graehl::indiskfile(graehl::get_single_arg(v, values)));
 }
@@ -815,30 +815,30 @@ inline void validate(boost::any& v, const std::vector<std::string>& values,
 #else
 
 #ifdef _MSC_VER
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      graehl::file_arg<std::istream>* target_type, int) {
   v = boost::any(graehl::file_arg<std::istream>(graehl::get_single_arg(v, values)));
 }
 
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      graehl::file_arg<std::ostream>* target_type, int) {
   v = boost::any(graehl::file_arg<std::ostream>(graehl::get_single_arg(v, values)));
 }
 
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      graehl::file_arg<std::ifstream>* target_type, int) {
   v = boost::any(graehl::file_arg<std::ifstream>(graehl::get_single_arg(v, values)));
 }
 
 
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      graehl::file_arg<std::ofstream>* target_type, int) {
   v = boost::any(graehl::file_arg<std::ofstream>(graehl::get_single_arg(v, values)));
 }
 
 #else
 template <class Stream>
-inline void validate(boost::any& v, const std::vector<std::string>& values,
+inline void validate(boost::any& v, std::vector<std::string> const& values,
                      graehl::file_arg<Stream>* target_type, int) {
   v = boost::any(graehl::file_arg<Stream>(graehl::get_single_arg(v, values)));
 }
