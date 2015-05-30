@@ -22,6 +22,14 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+diffhyp() {
+    (
+        cd ~/c/hyp
+        for f in `findc sdl`; do
+            [[ -f $xmtx/$f ]] || echo $f
+        done
+    )
+}
 findxcov() {
     find ${1:-.} -name 'cov.*.html' | perl -pe 's{^.*/cov\.}{};s{\.html$}{};s{_}{/}g' | sort
 }
