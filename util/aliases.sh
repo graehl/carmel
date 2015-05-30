@@ -22,6 +22,26 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+findxcov() {
+    find ${1:-.} -name 'cov.*.html' | perl -pe 's{^.*/cov\.}{};s{\.html$}{};s{_}{/}g' | sort
+}
+diffxcov() {
+    (
+    covdir=${1:-$HOME/xcov}
+    td=$HOME/tmp
+    mkdir -p $td
+    findxc=$td/findxc
+    findxcov=$td/findxcov
+    (cd $xmtx/sdl;findc|sort) > $findxc
+    findxcov $covdir > $findxcov
+    diff $findxc $findxcov
+    edit $findxc $findxcov
+    )
+}
+xcov() {
+    gcovr -u -v -r $xmtx/sdl $xmtx/Debug -o $HOME/xcov/cov.html --html --html-details -e '.*xmt-externals.*'  -s
+    #--exclude-unreachable-branches
+}
 gccshownative() {
     gcc -march=native -c -o /dev/null -x c - &
      ps af | grep cc1
@@ -582,7 +602,7 @@ buildninja() {
 }
 buildclang() {
     cmake -DLLVM_ENABLE_PIC=ON -DLLVM_ENABLE_CXX1Y=ON -DLLVM_BUILD_STATIC=OFF /local/graehl/src/llvm
-    make  -j6 "$@"
+    make  -j9 "$@"
 #LDFLAGS+='-pie' CFLAGS+='-fPIE' CXXFLAGS+='-fPIE'
 }
 cppfilenames() {
@@ -3470,7 +3490,7 @@ xmtc() {
     racb ${1:-Debug}
     shift || true
     cd $xmtbuild
-    ccmake ../sdl $cmarg "$@"
+    xcmake ../sdl $cmarg "$@"
 }
 xmtcm() {
     xmtc ${1:-Debug}
@@ -3490,7 +3510,7 @@ identifybuild() {
         usescanbuild
     fi
 }
-ccmake() {
+xcmake() {
     local d=${1:-..}
     shift
     (
@@ -4867,10 +4887,10 @@ xmtclone() {
     git clone ssh://graehl@git02.languageweaver.com:29418/xmt "$@"
 }
 findcmake() {
-    find . -name CMakeLists\*.txt
+    find ${1:-.} -name CMakeLists\*.txt
 }
 findc() {
-    find . -name '*.hpp' -o -name '*.cpp' -o -name '*.ipp' -o -name '*.cc' -o -name '*.hh' -o -name '*.c' -o -name '*.h'
+    find ${1:-.} -name '*.hpp' -o -name '*.cpp' -o -name '*.ipp' -o -name '*.cc' -o -name '*.hh' -o -name '*.c' -o -name '*.h' | sed 's/^\.\///'
 }
 
 tea() {
