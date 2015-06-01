@@ -40,7 +40,6 @@
 GCC_DIAG_IGNORE(attributes)
 #endif
 
-//#include <boost/random.hpp>
 #include <boost/random/uniform_01.hpp>
 #include <boost/random/lagged_fibonacci.hpp>
 #include <boost/random/variate_generator.hpp>

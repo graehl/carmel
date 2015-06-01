@@ -10,6 +10,8 @@ xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
 xmtxs=$xmtx/sdl
 xmtextbase=$(echo ~/c/xmt-externals)
+SDL_SHARED_EXTERNALS_PATH=/Users/graehl/c/xmt-externals/Shared
+SDL_BOOST_MINOR=58
 CT=${CT:-`echo ~/c/ct/main`}
 CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
 CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
@@ -22,6 +24,46 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+brewdeps() {
+    brew list | while read cask; do echo -ne '\x1b[1;34m'"$cask"' ->\x1b[0m'; brew deps $cask | awk '{printf(" %s ", $0)}'; echo ""; done
+}
+brewdependent() {
+    brew uses --installed "$@"
+}
+checklibc() {
+    otool -L "$@"
+}
+applehyp() {
+    gcc5= gcc49= gcc47= NOLOCALGCC=1 UPDATE=0 CC=gcc CXX=g++ GCC_SUFFIX= machyp
+}
+retrans() {
+    btrans=~/bugs/trans
+    mkdir $btrans
+    mv ~/Library/Preferences/org.m0k.transmission.LSSharedFileList.plist $btrans
+    mv ~/Library/Preferences/org.m0k.transmission.plist $btrans
+    mv ~/Library/Caches/org.m0k.transmission    $btrans
+}
+brewboost() {
+  brew install boost --c++11 --with-gcc=gcc-5
+}
+macboost() {
+    local bv=boost_1_58_0
+    cd ~/src/$bv
+    uselocalgccmac
+    (set -e
+     set -x
+    [[ -f b2 ]] || ./bootstrap.sh --prefix=/Users/graehl/c/xmt-externals/Apple/libraries/$bc --with-toolset=darwin --with-icu=/usr/local/Cellar/icu4c/55.1
+    ./b2 clean
+    local forceargs=
+    if [[ $force ]] ; then
+        forceargs=" -a" #--reconfigure
+    fi
+    ./b2 $forceargs -q -d+2  --threading=multi --runtime-link=shared --runtime-debugging=off --layout=tagged -j3
+    )
+}
+maccpu() {
+    sysctl -n machdep.cpu.brand_string
+}
 diffhyp() {
     (
         cd ~/c/hyp
@@ -32,6 +74,18 @@ diffhyp() {
 }
 findxcov() {
     find ${1:-.} -name 'cov.*.html' | perl -pe 's{^.*/cov\.}{};s{\.html$}{};s{_}{/}g' | sort
+}
+diffxcovt() {
+    (
+    covdir=${1:-$HOME/xcov}
+    td=$HOME/tmp
+    mkdir -p $td
+    findxc=$td/findxc
+    findxcov=$td/y
+    (cd $xmtx/sdl;findc|sort) > $findxc
+    diff $findxc $findxcov
+    edit $findxc $findxcov
+    )
 }
 diffxcov() {
     (
@@ -51,7 +105,7 @@ xcov() {
     #--exclude-unreachable-branches
 }
 gccshownative() {
-    gcc -march=native -c -o /dev/null -x c - &
+    gcc -march=${1:-native} -c -o /dev/null -x c - &
      ps af | grep cc1
 }
 gccshowopt() {
@@ -179,6 +233,7 @@ oshyp() {
      cd $osgitdir
     cd $xmtx
     mend
+    usegcc
     ~/x/scripts/release.sh $osgitdir "$@"
     linosmake
     ) 2>&1 | tee ~/tmp/oshyp
@@ -404,10 +459,18 @@ osmake() {
         set -e
         rm -rf $osdirbuild
         mkdir -p $osdirbuild
-        uselocalgccmac
+        #uselocalgccmac
         cd $osdirbuild
         showvars_required CC CXX
+        $CXX -v
         cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
+    )
+}
+osmakec() {
+    (
+        set -e
+        cd $osdirbuild
+        TERM=dumb make -j3 VERBOSE=1
     )
 }
 osrel() {
@@ -3343,7 +3406,7 @@ jen() {
     fi
     local log=$HOME/tmp/jen.log.${HOST:=`hostname`}.`timestamp`
     . xmtpath.sh
-#    usegcc
+    usegcc
     if [[ $HOST = $chost ]] ; then
         export USE_BOOST_1_50=1
     fi
@@ -3363,6 +3426,9 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
+    if [[ $HOST = pwn ]] ; then
+        UPDATE=0
+    fi
     cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
@@ -3761,19 +3827,6 @@ resherp() {
 clonect() {
     git clone http://git02.languageweaver.com:29418/coretraining ct
 }
-macboost() {
-    BOOST_VERSION=1_50_0
-    BOOST_SUFFIX=
-    if true ; then
-        BOOST_SUFFIX=-xgcc42-mt-d-1_49
-        BOOST_VERSION=1_49_0
-    fi
-    if [[ -d $XMT_EXTERNALS_PATH ]] ; then
-        BOOST_INCLUDE=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/include
-        BOOST_LIB=$XMT_EXTERNALS_PATH/libraries/boost_$BOOST_VERSION/lib
-        add_ldpath $BOOST_LIB
-    fi
-}
 tokeng() {
     ${xmt:-$xmtx/Release/xmt/xmt} -c $xmtx/RegressionTests/RegexTokenizer/xmt.eng.yml -p eng-tokenize --log-config $xmtx/scripts/no.log.xml "$@"
 }
@@ -4052,22 +4105,27 @@ usescanbuild() {
 gcc48=
 gcc47=1
 gcc49=1
+gcc5=1
 #TestWeight release optimizer problem
 usegcc() {
-        if [[ $gcc49 ]] && [[ -x `which gcc-4.9 2>/dev/null` ]] ; then
-            GCC_SUFFIX=-4.9
-        elif [[ $gcc48 ]] && [[ -x `which gcc-4.8 2>/dev/null` ]] ; then
-            GCC_SUFFIX=-4.8
-        elif [[ $gcc47 ]] && [[ -x `which gcc-4.7 2>/dev/null` ]] ; then
-            GCC_SUFFIX=-4.7
-        fi
-        local ccache=${ccache:-$(echo ~/bin/ccache)}
-        ccachepre=$ccache-
-        if [[ $HOST = pwn ]] ; then
-            ccachepre=
-        fi
-        export CC="${ccachepre}gcc${GCC_SUFFIX:-}"
-        export CXX="${ccachepre}g++${GCC_SUFFIX:-}"
+    GCC_SUFFIX=
+    if [[ $gcc5 ]] && [[ -x `which gcc-4.9 2>/dev/null` ]] ; then
+        GCC_SUFFIX=-5
+    elif [[ $gcc49 ]] && [[ -x `which gcc-4.9 2>/dev/null` ]] ; then
+        GCC_SUFFIX=-4.9
+    elif [[ $gcc48 ]] && [[ -x `which gcc-4.8 2>/dev/null` ]] ; then
+        GCC_SUFFIX=-4.8
+    elif [[ $gcc47 ]] && [[ -x `which gcc-4.7 2>/dev/null` ]] ; then
+        GCC_SUFFIX=-4.7
+    fi
+    local ccache=${ccache:-$(echo ~/bin/ccache)}
+    ccachepre=$ccache-
+    if [[ $HOST = pwn ]] ; then
+        ccachepre=
+    fi
+    echo2 GCC_SUFFIX $GCC_SUFFIX
+    export CC="${ccachepre}gcc${GCC_SUFFIX:-}"
+    export CXX="${ccachepre}g++${GCC_SUFFIX:-}"
 }
 usegccnocache() {
     export CC="gcc"
@@ -4920,7 +4978,7 @@ if [[ $HOST = graehl.local ]] ; then
 fi
 gcc48() {
     if [[ $HOST = graehl.local ]] ; then
-        GCC_SUFFIX=-4.8
+        GCC_SUFFIX=
         export CC=ccache-gcc$GCC_SUFFIX
         export CXX=ccache-g++$GCC_SUFFIX
         prepend_path $GCC_PREFIX
@@ -7421,7 +7479,6 @@ g1() {
         ccmd="g++"
         linkcmd="g++"
         archarg="-arch x86_64"
-        macboost
     fi
     local program_options_lib="-lboost_program_options$BOOST_SUFFIX -lboost_system$BOOST_SUFFIX"
     local source=$1
@@ -8330,3 +8387,4 @@ uselocalgccmac() {
         fi
     fi
 }
+alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/
