@@ -24,6 +24,32 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+hymac() {
+    l /local/graehl/build-hypergraphs/Hypergraph/Hyp
+    cp /local/graehl/build-hypergraphs/Hypergraph/Hyp ~/pub/hy/hy
+    hy -h
+}
+reosmac() {
+    (
+        f=sdl/CMakeLists.*txt
+        cp $xmtx/$f ~/c/hyp/$f
+        cd ~/c/hyp
+        scripts_dir=$xmtx/scripts
+        translatesrc=$scripts_dir/release-translate-source.py
+        $scripts_dir/filter-cmake-for-release.py -i $f
+        $translatesrc -i $f
+        mend
+        uselocalgccmac
+        osmake
+        hymac
+    )
+}
+democompose() {
+    (
+        set -x
+        hy compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn
+    )
+}
 brewdeps() {
     brew list | while read cask; do echo -ne '\x1b[1;34m'"$cask"' ->\x1b[0m'; brew deps $cask | awk '{printf(" %s ", $0)}'; echo ""; done
 }
@@ -44,7 +70,7 @@ retrans() {
     mv ~/Library/Caches/org.m0k.transmission    $btrans
 }
 brewboost() {
-  brew install boost --c++11 --with-gcc=gcc-5
+    brew install boost --c++11 --with-gcc=gcc-5
 }
 macboost() {
     local bv=boost_1_58_0
@@ -52,13 +78,13 @@ macboost() {
     uselocalgccmac
     (set -e
      set -x
-    [[ -f b2 ]] || ./bootstrap.sh --prefix=/Users/graehl/c/xmt-externals/Apple/libraries/$bc --with-toolset=darwin --with-icu=/usr/local/Cellar/icu4c/55.1
-    ./b2 clean
-    local forceargs=
-    if [[ $force ]] ; then
-        forceargs=" -a" #--reconfigure
-    fi
-    ./b2 $forceargs -q -d+2  --threading=multi --runtime-link=shared --runtime-debugging=off --layout=tagged -j3
+     [[ -f b2 ]] || ./bootstrap.sh --prefix=/Users/graehl/c/xmt-externals/Apple/libraries/$bc --with-toolset=darwin --with-icu=/usr/local/Cellar/icu4c/55.1
+     ./b2 clean
+     local forceargs=
+     if [[ $force ]] ; then
+         forceargs=" -a" #--reconfigure
+     fi
+     ./b2 $forceargs -q -d+2  --threading=multi --runtime-link=shared --runtime-debugging=off --layout=tagged -j3
     )
 }
 maccpu() {
@@ -77,27 +103,27 @@ findxcov() {
 }
 diffxcovt() {
     (
-    covdir=${1:-$HOME/xcov}
-    td=$HOME/tmp
-    mkdir -p $td
-    findxc=$td/findxc
-    findxcov=$td/y
-    (cd $xmtx/sdl;findc|sort) > $findxc
-    diff $findxc $findxcov
-    edit $findxc $findxcov
+        covdir=${1:-$HOME/xcov}
+        td=$HOME/tmp
+        mkdir -p $td
+        findxc=$td/findxc
+        findxcov=$td/y
+        (cd $xmtx/sdl;findc|sort) > $findxc
+        diff $findxc $findxcov
+        edit $findxc $findxcov
     )
 }
 diffxcov() {
     (
-    covdir=${1:-$HOME/xcov}
-    td=$HOME/tmp
-    mkdir -p $td
-    findxc=$td/findxc
-    findxcov=$td/findxcov
-    (cd $xmtx/sdl;findc|sort) > $findxc
-    findxcov $covdir > $findxcov
-    diff $findxc $findxcov
-    edit $findxc $findxcov
+        covdir=${1:-$HOME/xcov}
+        td=$HOME/tmp
+        mkdir -p $td
+        findxc=$td/findxc
+        findxcov=$td/findxcov
+        (cd $xmtx/sdl;findc|sort) > $findxc
+        findxcov $covdir > $findxcov
+        diff $findxc $findxcov
+        edit $findxc $findxcov
     )
 }
 xcov() {
@@ -106,7 +132,7 @@ xcov() {
 }
 gccshownative() {
     gcc -march=${1:-native} -c -o /dev/null -x c - &
-     ps af | grep cc1
+    ps af | grep cc1
 }
 gccshowopt() {
     g++ -c -Q --help=optimizers "$@"
@@ -171,13 +197,13 @@ cjam() {
     )
 }
 ccjam() {
-        src=$1
-        in=$2
-        shift
-        shift
-        (
-            set -e
-            cd ~
+    src=$1
+    in=$2
+    shift
+    shift
+    (
+        set -e
+        cd ~
         #scp ~/u/codejam.hh $chost:u/
         followsymlink=1 sync2 $chost jam
         if ! [[ -f jam/$in ]] ; then
@@ -191,18 +217,18 @@ ccjam() {
         head -50 $out
         echo ...
         echo $out
-        ) 2>&1 | tee ~/tmp/last.ccjam
+    ) 2>&1 | tee ~/tmp/last.ccjam
 }
 mertsans() {
     for san in address memory thread; do rm -f *.o mert; CC=clang SAN=$san make -j 4 && cp mert ~/pub/mert3.$san; done
 }
 tailf() {
     less -W +F
-# SHIFT+F will resume the 'tailing' (as mentioned above)
-# SHIFT+G will take you to the end of the file
-# g will take you to the beginning of the file
-# f will forward you one page
-# b will take you back one page
+    # SHIFT+F will resume the 'tailing' (as mentioned above)
+    # SHIFT+G will take you to the end of the file
+    # g will take you to the beginning of the file
+    # f will forward you one page
+    # b will take you back one page
 }
 cpp11() {
     local debugargs
@@ -222,20 +248,20 @@ trackmaster() {
 machyp() {
     (set -e
      cd $osgitdir
-    cd $xmtx
-    mend
-    ~/x/scripts/release.sh $osgitdir "$@"
-    osmake
+     cd $xmtx
+     mend
+     ~/x/scripts/release.sh $osgitdir "$@"
+     osmake
     )
 }
 oshyp() {
     (set -e
      cd $osgitdir
-    cd $xmtx
-    mend
-    usegcc
-    ~/x/scripts/release.sh $osgitdir "$@"
-    linosmake
+     cd $xmtx
+     mend
+     usegcc
+     ~/x/scripts/release.sh $osgitdir "$@"
+     linosmake
     ) 2>&1 | tee ~/tmp/oshyp
 }
 hownfc() {
@@ -251,11 +277,11 @@ opentrace() {
 }
 hexdumps() {
     if [[ "$*" ]] ; then
-    for f in "$@"; do
-        echo $f
-        hexdump -C $f | head
-        echo
-    done
+        for f in "$@"; do
+            echo $f
+            hexdump -C $f | head
+            echo
+        done
     else
         hexdump -C
     fi
@@ -298,7 +324,7 @@ diffmert() {
     done
 }
 reforestviz() {
-overt;cd forest-em;make bin/pwn/forestviz.debug && ~/g/forest-em/bin/pwn/forestviz.debug -n -i sample/forests.gz -o sample/forests.dot && cat sample/forests.dot
+    overt;cd forest-em;make bin/pwn/forestviz.debug && ~/g/forest-em/bin/pwn/forestviz.debug -n -i sample/forests.gz -o sample/forests.dot && cat sample/forests.dot
 }
 araeng() {
     ${pre}xmt --pipeline decode_q2 --config /build/data/AraEng_Informal_U80_v_5_4_x_2/config/XMTConfig.yml --input-type=yaml -i /home/graehl/bugs/in.yml --derivation-info=1 --detokenizer.output-type=string
@@ -308,14 +334,14 @@ resherpmy() {
     sherp my.apex
 }
 inplace() {
-     local f=${1:?inplace file cmd}
-     shift
+    local f=${1:?inplace file cmd}
+    shift
     (set -e
      local tmpf=`mktemp "$f.XXXXXX"`
      "$@" < $f > $tmpf
      echo "updated $f by $*"
      mv $tmpf $f
-     )
+    )
 }
 a2c() {
     for f in aliases.sh misc.sh time.sh gcc.sh ccache-wrapper.sh; do
@@ -325,13 +351,13 @@ a2c() {
 ospushmend() {
     (set -e
      cd $osgitdir
-    cd $xmtx
-    mend
-    redox= ~/x/scripts/release.sh $osgitdir "$@"
-    if [[ $pull ]] ; then
-        git pull --rebase
-    fi
-    git push
+     cd $xmtx
+     mend
+     redox= ~/x/scripts/release.sh $osgitdir "$@"
+     if [[ $pull ]] ; then
+         git pull --rebase
+     fi
+     git push
     )
 }
 gitrevinit() {
@@ -341,15 +367,15 @@ gitrevinit() {
 }
 latpdf() {
     (set -e
-    local f=$1
-    shift
-    f=${f%.}
-    f=${f%.tex}
-    pdflatex "$f"
-    bibtex "$f"
-    for i in 1 2; do
-        pdflatex "$f"
-    done
+     local f=$1
+     shift
+     f=${f%.}
+     f=${f%.tex}
+     pdflatex "$f"
+     bibtex "$f"
+     for i in 1 2; do
+         pdflatex "$f"
+     done
     )
 }
 servi() {
@@ -417,7 +443,7 @@ oscom() {
             mend
         else
             git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
-              --author="$gitinfo_author"
+                --author="$gitinfo_author"
         fi
         git show --name-status
         echo $ostarball
@@ -437,7 +463,7 @@ findsmall() {
         #-path .git -prune -o
         find .  -type f -size -$maxsz "$@" | fgrep -v .git
     )
-    }
+}
 substsmall() {
     (
         local tr=${1?trfile [maxsize default 50k]}
