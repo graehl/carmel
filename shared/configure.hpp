@@ -1392,7 +1392,7 @@ conf_expr_base get_default_conf(Val* pval, conf_expr_base const& conf = conf_exp
     struct YOUR_BACKEND : configure_backend_base<YOUR_BACKEND> {
     FORWARD_BASE_CONFIGURE_ACTIONS(configure_backend_base<YOUR_BACKEND>)
     template <class Val>
-   void leaf_action(configure::store_action, Val *val, configure::conf_expr_base const& conf) const {
+    void leaf_action(configure::store_action, Val *val, configure::conf_expr_base const& conf) const {
     }
     };
 

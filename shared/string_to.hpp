@@ -296,7 +296,8 @@ PrintfFormat fmt_double_for_float_roundtrip = "%.9g";
 PrintfFormat fmt_double_for_float_default = "%.7g";
 PrintfFormat fmt_double_roundtrip = "%.17g";
 PrintfFormat fmt_double_default = "%.15g";
-PrintfFormat fmt_double_precision2 = "%.*g"; //http://www.cplusplus.com/reference/cstdio/printf/ suggests this is std
+PrintfFormat fmt_double_precision2
+    = "%.*g";  // http://www.cplusplus.com/reference/cstdio/printf/ suggests this is std
 
 /**
    enough space to printf 0-terminated -1.238945783e+0301 or whatever the max is
@@ -745,33 +746,23 @@ struct string_builder : string_buffer {
     return *this;
   }
 
-  string_builder& digits(double x, unsigned w = 8) {
-    return nprintf_width(fmt_double_precision2, x, w);
-  }
+  string_builder& digits(double x, unsigned w = 8) { return nprintf_width(fmt_double_precision2, x, w); }
 
   /// float can distinguish between final 8 9 0 in all cases for the first 6 digits
-  string_builder& significant(float x, unsigned w = 6) {
-    return digits(x, w);
-  }
+  string_builder& significant(float x, unsigned w = 6) { return digits(x, w); }
 
   /// double can distinguish between final 8 9 0 in all cases for the first 15 digits
-  string_builder& significant(double x, unsigned w = 15) {
-    return digits(x, w);
-  }
+  string_builder& significant(double x, unsigned w = 15) { return digits(x, w); }
 
   /**
      enough digits that you get the same bits back when parsing the decimal text
   */
-  string_builder& roundtrip(float x) {
-    return nprintf(16, fmt_double_for_float_roundtrip, (double)x);
-  }
+  string_builder& roundtrip(float x) { return nprintf(16, fmt_double_for_float_roundtrip, (double)x); }
 
   /**
      enough digits that you get the same bits back when parsing the decimal text
   */
-  string_builder& roundtrip(double x) {
-    return nprintf(32, fmt_double_roundtrip, x);
-  }
+  string_builder& roundtrip(double x) { return nprintf(32, fmt_double_roundtrip, x); }
 
   string_builder& operator()(char c) {
     this->push_back(c);
@@ -939,8 +930,9 @@ struct string_builder : string_buffer {
 
   template <class Seq, class Sep>
   string_builder& join(Seq const& seq, Sep const& sep) {
-   bool first = true;
-    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) sep_except_first(first, sep)(*i);
+    bool first = true;
+    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i)
+      sep_except_first(first, sep)(*i);
     return *this;
   }
   template <class Seq, class Sep>
@@ -950,7 +942,7 @@ struct string_builder : string_buffer {
 
   template <class Seq, class After, class Sep>
   string_builder& join_and(Seq const& seq, After const& after, Sep const& sep) {
-    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) (*this)(*i)(sep);
+    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) (*this) (*i)(sep);
     return (*this)(after);
   }
 
@@ -965,8 +957,7 @@ struct string_builder : string_buffer {
   template <class Out>
   void print_skip_first_char(Out& out) const {
     std::size_t sz = string_buffer::size();
-    if (sz)
-      out.write(begin() + 1, --sz);
+    if (sz) out.write(begin() + 1, --sz);
   }
 };
 
@@ -1043,7 +1034,7 @@ struct to_string_select<V, typename boost::enable_if<is_nonstring_container<V> >
   static inline std::string to_string(V const& val) {
     string_builder b;
     b('[');
-   bool first = true;
+    bool first = true;
     for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
       if (first)
         first = false;

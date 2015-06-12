@@ -331,7 +331,7 @@ struct file_arg {
     using namespace std;
     swap(buf, o.buf);
     swap(pointer, o.pointer);
-   bool t = none;
+    bool t = none;
     none = o.none;
     o.none = t;
     swap(name, o.name);
@@ -438,7 +438,7 @@ struct file_arg {
 
   template <class filestream>
   void set_new_buf(std::string const& filename, std::string const& fail_msg = "Couldn't open file",
-                  bool large_buf = kDefaultLargeBuf) {
+                   bool large_buf = kDefaultLargeBuf) {
     filestream* f = new filestream();
     std::auto_ptr<filestream> fa(f);
     set_checked(*f, filename, delete_after, fail_msg);  // exception safety provided by f
@@ -713,7 +713,7 @@ inline fs::path resolve(fs::path const& p) {
 // return the absolute filename that would result from "cp source dest" (and write to *dest_exists whether
 // dest exists) - throws error if source is the same as dest
 inline std::string output_name_like_cp(std::string const& source, std::string const& dest,
-                                      bool* dest_exists = NULL) {
+                                       bool* dest_exists = NULL) {
   fs::path full_dest = full_path(dest);
   fs::path full_source = full_path(source);
 

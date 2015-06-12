@@ -361,7 +361,7 @@ struct projected_duplicate_filter : Projection {
     Projection::print_projection(o, d);
   }
   /*  template <class O>
-     void print(O &o, derivation_type const& d, projected_type const& proj)
+      void print(O &o, derivation_type const& d, projected_type const& proj)
       {
       o << "projection for "<<&d << ": "<<&proj;
       }*/

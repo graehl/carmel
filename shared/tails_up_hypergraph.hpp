@@ -168,7 +168,8 @@ struct BestTreeOptions {
         "if a node is popped more than rereach+1 times, throw a BestTreeRereachException immediately)");
     c("convergence", &convergence_epsilon_str)(
         "if empty or 0, only stop on maximum # of rereaches or 0 change anywhere. else stop if change is "
-        "below this amount").is("epsilon - a small nonnegative real");
+        "below this amount")
+        .is("epsilon - a small nonnegative real");
   }
 };
 
@@ -291,17 +292,17 @@ struct TailsUpHypergraph {
   typedef typename PT::cost_type cost_type;
 
   struct BestTreeOptionsParsed : BestTreeOptions {
-   bool use_convergence;
+    bool use_convergence;
     cost_type convergence_epsilon;
     // bool update_predecessor_on_blocked_rereach; // right now this is hardcoded true.
     BestTreeOptionsParsed() { defaults(); }
     BestTreeOptionsParsed(BestTreeOptions const& opt) : BestTreeOptions(opt) { parse(); }
-   void defaults() {
+    void defaults() {
       BestTreeOptions::defaults();
       parse();
     }
     // call this after updating base.
-   void parse() {
+    void parse() {
       use_convergence = !convergence_epsilon_str.empty();
       if (use_convergence) {
         string_to(convergence_epsilon_str, convergence_epsilon);
@@ -353,7 +354,7 @@ struct TailsUpHypergraph {
       Ntails& remain() { return this->first; }
       Cost& cost() { return this->second; }
       template <class O>
-     void print(O& o) const {
+      void print(O& o) const {
         o << "(" << remain() << "," << cost() << ")";
       }
       typedef RemainInf self_type;
@@ -381,7 +382,7 @@ struct TailsUpHypergraph {
       // if we're not allow_rereach tracking, then this is only meaningful for
       // heads, not the tail (which was just popped in every case)
     }
-   void mark_reached(VD v) {
+    void mark_reached(VD v) {
       if (opt.allow_rereach) ++rereach[v];
 #ifdef NDEBUG
       else  // we don't use locp for anything if allow_rereach. but this pretties up the debug output
@@ -416,11 +417,13 @@ struct TailsUpHypergraph {
       init_costs();
     }
 
-   void init_pi(ED null = ED()) { graehl::init_pmap(vertexT, g, pi, null); }
+    void init_pi(ED null = ED()) {
+      if (pi) graehl::init_pmap(vertexT, g, pi, null);
+    }
 
     typedef typename GT::vertex_iterator Vi;
     typedef boost::iterator_range<Vi> Vertices;
-   void init_costs(Cost cinit = PT::unreachable()) {
+    void init_costs(Cost cinit = PT::unreachable()) {
       Vertices verts = vertices(g);
       using namespace boost;
       for (Vi i = boost::begin(verts), e = boost::end(verts); i != e; ++i) {
@@ -429,12 +432,10 @@ struct TailsUpHypergraph {
         put(locp, v, 0);
         // this should not be necessary for shared_array_property_map (new int[]
         // default-inits), but it turns out that it actually is necessary. anyway we should support all pmaps
-
         assert(get(locp, v) == 0);
-        assert(get(pi, v) == 0);
       }
     }
-   void init() {  // fill from hg terminal arcs
+    void init() {  // fill from hg terminal arcs
       for (typename TerminalArcs::iterator i = tu.terminal_arcs.begin(), end = tu.terminal_arcs.end();
            i != end; ++i) {
         ED h = *i;
@@ -445,26 +446,26 @@ struct TailsUpHypergraph {
       }
     }
 
-   void safe_queue(VD v) {
+    void safe_queue(VD v) {
       TUHG_SHOWQ(2, "safe_queue", v);
       if (!is_queued(v)) add_unsorted(v);
     }
 
-   void axiom(VD axiom, Cost const& c = PT::start(), ED h = ED()) {
+    void axiom(VD axiom, Cost const& c = PT::start(), ED h = ED()) {
       SHOWIF2(TUHG, 3, c, axiom, TUHG_PRINT(axiom, g));
       Cost& mc = mu[axiom];
       if (PT::update(c, mc)) {
         assert(PT::includes(c, mc));
         safe_queue(axiom);
-        put(pi, axiom, h);
+        if (pi) put(pi, axiom, h);
       } else {
         SHOWIF4(TUHG, 0, "WARNING: axiom didn't improve mu[axiom]", c, axiom, mu[axiom], TUHG_PRINT(axiom, g));
       }
     }
 
-   void operator()(VD v, Cost const& c) { axiom(v, c); }
+    void operator()(VD v, Cost const& c) { axiom(v, c); }
 
-   void add_unsorted(VD v) {  // call finish() after
+    void add_unsorted(VD v) {  // call finish() after
       heap.add_unsorted(v);
       TUHG_SHOWQ(1, "added_unsorted", v);
     }
@@ -472,12 +473,12 @@ struct TailsUpHypergraph {
     struct add_axioms {
       BestTree& b;
       explicit add_axioms(BestTree& b) : b(b) {}
-     void operator()(VD v) const { b.axiom(v); }
+      void operator()(VD v) const { b.axiom(v); }
     };
 
     add_axioms axiom_adder() { return add_axioms(*this); }
 
-   void
+    void
     operator()(VD v) {  // can be called blindly for all verts. only those with reachable path cost are queued
       // put(locp, v,0); // not necessary: property factory (even new int[N] will always default init
       if (!is_queued(v) && get(mu, v) != PT::unreachable()) {
@@ -486,27 +487,27 @@ struct TailsUpHypergraph {
     }
 
     // must have no duplicates, and have already set mu
-   void queue_all() { visit(vertexT, g, *this); }
+    void queue_all() { visit(vertexT, g, *this); }
 
-   bool is_queued(VD v) const {
+    bool is_queued(VD v) const {
       // return get(loc, v) || (!heap.empty() && heap.top()==v); // 0 init relied upon, but 0 is a valid
       // location. could set locs to -1 beforehand instead
       return heap.contains(v);
     }
     VD top() const { return heap.top(); }
-   void pop() {
+    void pop() {
       ++stat.n_pop;
       TUHG_SHOWQ(1, "pop", heap.top());
       heap.pop();
     }
 
-   void relax(VD head, ED e, Cost const& c) {
+    void relax(VD head, ED e, Cost const& c) {
       ++stat.n_relax;
       Cost& m = mu[head];
       Cost mu_prev = m;
       SHOWIF5(TUHG, 3, "relax?", head, TUHG_PRINT(head, g), c, mu[head], TUHG_PRINT(e, g));
       if (PT::update(c, m)) {
-        put(pi, head, e);
+        if (pi) put(pi, head, e);
         assert(PT::includes(c, m));
         if (opt.use_convergence && PT::converged(c, mu_prev, opt.convergence_epsilon)) {
           SHOWIF5(TUHG, 2, "converged", head, TUHG_PRINT(head, g), mu_prev, mu[head], opt.convergence_epsilon);
@@ -540,11 +541,11 @@ struct TailsUpHypergraph {
       return c;
     }
 
-   void reach(VD tail) {
+    void reach(VD tail) {
       TUHG_SHOWQ(2, "reach", tail);
       Adj const& a = tu[tail];
       // FOREACH(TailMult const& ad, a) { // for each hyperarc v participates in as a tail
-     bool tail_already = tail_already_reached(tail);
+      bool tail_already = tail_already_reached(tail);
       mark_reached(tail);
       SHOWIF4(TUHG, 2, "reach", tail, TUHG_PRINT(tail, g), mu[tail], tail_already);
       for (typename Adj::const_iterator j = a.begin(), ej = a.end(); j != ej; ++j) {
@@ -588,8 +589,8 @@ struct TailsUpHypergraph {
     }
 
 #if GRAEHL_DEBUG_TAILS_UP_HYPERGRAPH
-   void dbgremain() const { visit(edgeT, g, *this); }
-   void operator()(ED e) const { SHOW3(TUHG, e, remain_pmap[e], TUHG_PRINT(e, g)); }
+    void dbgremain() const { visit(edgeT, g, *this); }
+    void operator()(ED e) const { SHOW3(TUHG, e, remain_pmap[e], TUHG_PRINT(e, g)); }
 #define TUHG_SHOWREMAIN(l, n)           \
   IFDBG(TUHG, l) {                      \
     SHOWP(TUHG, "\n" n " (remain):\n"); \
@@ -609,7 +610,7 @@ struct TailsUpHypergraph {
 #endif
 
 
-   void finish() {
+    void finish() {
       // TUHG_SHOWP(1, "pre-heapify", locp);
       heap.heapify();
       // TUHG_SHOWP(1, "post-heapify", locp);
@@ -626,89 +627,14 @@ struct TailsUpHypergraph {
       TUHG_SHOWP_ALL(5, "post-finish");
       SHOWIF0(TUHG, 1, stat);
     }
-   void go() {
+    void go() {
       init();
       finish();
     }
   };
-
-
-#if 0
-  //TODO:
-  // reachmap must be initialized to false by user
-  template <
-    class VertexReachMap=typename VertMapFactory::template rebind<bool>::reference
-  >
-  struct Reach {
-    typedef typename VertMapFactory::template rebind<bool>::impl DefaultReach;
-    Self &tu;
-    VertexReachMap vr;
-    EdgeLeftImpl tr;
-    unsigned n;
-    Reach(Self &r, VertexReachMap v) : tu(r), vr(v), tr(r.unique_tails), n(0) {
-      //copy_hyperarc_pmap(g, tu.unique_tails_pmap(), tr);
-      //instead relying on impl same type (copy ctor)
-    }
-
-   void init_unreach() {
-      typename GT::vertex_iterator i, end;
-      boost::tie(i, end)==vertices(g);
-      for (;i!=end;++i) {
-        put(vr,*i.first, false);
-      }
-    }
-   void init() {
-      init_unreach();
-      for (typename TerminalArcs::iterator i=tu.terminal_arcs.begin(), end=tu.terminal_arcs.end();i!=end;++i) {
-        ED h=*i;
-        VD v=source(h, g);
-        (*this)(v);
-      }
-    }
-   void finish() {
-    }
-   void go()
-    {
-      init();
-      finish();
-    }
-   void operator()(VD v) {
-      if (get(vr, v))
-        return;
-      ++n;
-      put(vr, v, true); // mark reached
-      Adj &a=tu[v];
-      for(typename Adj::iterator i=a.begin(), end=a.end(); i!=end; ++i) {
-        ED ed=i->ed;
-        VD head=source(ed, g);
-        if (!get(vr, head)) { // not reached yet
-          if (--tr[ed]==0)
-            (*this)(head); // reach head
-        }
-      }
-
-    }
-    EdgeLeftMap tails_remain_pmap() {
-      return EdgeLeftMap(tr);
-    }
-
-  };
-
-  template <class P>
-  unsigned reach(VD start, P p) {
-    Reach<P> alg(*this, p);
-    alg(start);
-    return alg.n;
-  }
-  template <class B, class E, class VertexReachMap>
-  unsigned reach(B begin, E end, VertexReachMap p) {
-    Reach<VertexReachMap> alg(*this, p);
-    std::for_each(begin, end, boost::ref(alg));
-    return alg.n;
-  }
-#endif
 };
 
-}  // graehl
+
+}
 
 #endif

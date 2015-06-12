@@ -79,7 +79,7 @@ struct bit_names {
   }
 
   void usage(string_builder& b, bool values = false) const {
-   bool first = true;
+    bool first = true;
     for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
       b.space_except_first(first, '|');
       b(i->first);
@@ -88,7 +88,7 @@ struct bit_names {
   }
 
   void append(Int val, string_builder& b) const {
-   bool first = true;
+    bool first = true;
     for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i) {
       Int const mask = i->second;
       if ((val & mask) == mask) {  // did you know: == precedes over &, so we need parens

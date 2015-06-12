@@ -309,7 +309,7 @@ boost::program_options::typed_value<T>* optional_value(T* v) {
 template <class T>
 typename multiple_for_container<T>::typed_value* via_strings_value(std::string const& name, T* v,
                                                                    option_options<T> opt = option_options<T>(),
-                                                                  bool defaulted = false) {
+                                                                   bool defaulted = false) {
   opt.log_prefix = "--" + name + " ";
   option_options<typename select_from_strings<T>::string_or_strings> po(opt);
   typename multiple_for_container<T>::typed_value* tv
@@ -354,7 +354,7 @@ struct any_printer : public boost::function<void(Ostream&, boost::any const&)> {
 
   template <class T>
   struct typed_print {
-   void operator()(Ostream& o, boost::any const& t) const {
+    void operator()(Ostream& o, boost::any const& t) const {
       o << select_from_strings<T>::to_string(*boost::any_cast<T const>(&t));
     }
   };
@@ -405,7 +405,7 @@ struct printable_options_description : boost::program_options::options_descripti
 
     any_printer<Ostream> print;
     OD od;
-   bool in_group;
+    bool in_group;
     boost::optional<value_str> implicit;
 
     std::string const& name() const { return od->long_name(); }
@@ -442,7 +442,7 @@ struct printable_options_description : boost::program_options::options_descripti
 
   template <class V>
   self_type& option(option_name name, V* val, std::string const& description, bool hidden = false,
-                   bool defaulted = false, option_options<V> const& opt = option_options<V>()) {
+                    bool defaulted = false, option_options<V> const& opt = option_options<V>()) {
     return (*this)(name, via_strings_value(name, val, opt, defaulted), description);
   }
 
@@ -460,13 +460,13 @@ struct printable_options_description : boost::program_options::options_descripti
 
   template <class V>
   self_type& required(option_name name, V* val, std::string const& description, bool hidden = false,
-                     bool defaulted = false) {
+                      bool defaulted = false) {
     return required_flag(true, name, val, description, hidden, defaulted);
   }
 
   template <class V>
   self_type& required_flag(bool required, option_name name, V* val, std::string const& description,
-                          bool hidden = false, bool defaulted = false) {
+                           bool hidden = false, bool defaulted = false) {
     option_options<V> opt;
     opt.required = required;
     return option(name, val, description, hidden, defaulted, opt);
@@ -590,7 +590,7 @@ struct printable_options_description : boost::program_options::options_descripti
   boost::program_options::parsed_options parse_options(
       std::vector<std::string> const& args, boost::program_options::positional_options_description* po = NULL,
       unparsed_args* unparsed_out = NULL, bool allow_unrecognized_positional = false,
-     bool allow_unrecognized_opts = false, std::string const& argv0 = "command-line-options") {
+      bool allow_unrecognized_opts = false, std::string const& argv0 = "command-line-options") {
     using namespace std;
     int n = (int)args.size();
     int argc = n + 1;
@@ -607,7 +607,7 @@ struct printable_options_description : boost::program_options::options_descripti
   boost::program_options::parsed_options
   parse_options(int argc, char* argv[], boost::program_options::positional_options_description* po = NULL,
                 unparsed_args* unparsed_out = NULL, bool allow_unrecognized_opts = false,
-               bool allow_unrecognized_positional = false, unparsed_args* all_positional_out = NULL) {
+                bool allow_unrecognized_positional = false, unparsed_args* all_positional_out = NULL) {
     using namespace boost::program_options;
     command_line_parser cl(argc, const_cast<char**>(argv));
     cl.options(*this);
@@ -642,7 +642,7 @@ struct printable_options_description : boost::program_options::options_descripti
   std::vector<std::string>
   parse_options_and_notify(int argc, char* argv[], boost::program_options::variables_map& vm,
                            boost::program_options::positional_options_description* po = NULL,
-                          bool allow_unrecognized_positional = false, bool allow_unrecognized_opts = false) {
+                           bool allow_unrecognized_positional = false, bool allow_unrecognized_opts = false) {
     unparsed_args r;
     boost::program_options::store(
         parse_options(argc, argv, po, &r, allow_unrecognized_positional, allow_unrecognized_opts), vm);

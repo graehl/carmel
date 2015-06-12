@@ -192,8 +192,8 @@ inline bool equal_streams_as_seq(Istream& i1, Istream& i2) {
   */
   ParseAs v1, v2;
   for (;;) {
-   bool got1 = (bool)(i1 >> v1);
-   bool got2 = (bool)(i2 >> v2);
+    bool got1 = (bool)(i1 >> v1);
+    bool got2 = (bool)(i2 >> v2);
     if (got1) {
       if (!got2) return false;  // 2 ended first
     } else {
@@ -304,7 +304,7 @@ bool expect_consuming(std::basic_istream<Ch, Tr> &i, CharIt begin, CharIt end)
 
 template <class Ch, class Tr, class CharIt>
 inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, CharIt begin, CharIt end,
-                            bool skip_first_ws = true) {
+                             bool skip_first_ws = true) {
   if (begin == end) return true;
   Ch c;
   if (skip_first_ws)

@@ -20,22 +20,22 @@
     struct T {
     typedef T self_type;
     template <class charT, class Traits>
-   void read(std::basic_istream<charT, Traits>& in)
+    void read(std::basic_istream<charT, Traits>& in)
     {
     }
     template <class charT, class Traits>
-   void print(std::basic_ostream<charT, Traits>& o) const
+    void print(std::basic_ostream<charT, Traits>& o) const
     {
     }
 
    /// or, even shorter:
 
     template <class I>
-   void read(I& in)
+    void read(I& in)
     {}
 
     template <class O>
-   void print(O& o) const
+    void print(O& o) const
     {}
 };
 */

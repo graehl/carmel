@@ -19,7 +19,7 @@
     this allows calling configure_init(this) for objects with
 
     template <class Config>
-   void configure(Config &c) {
+    void configure(Config &c) {
     c("val", &val).init(1);
     }
 

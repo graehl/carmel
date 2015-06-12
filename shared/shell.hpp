@@ -21,8 +21,7 @@
 
 namespace graehl {
 
-inline void copy_file(std::string const& source, std::string const& dest,
-                     bool skip_same_size_and_time = false) {
+inline void copy_file(std::string const& source, std::string const& dest, bool skip_same_size_and_time = false) {
   const char* rsync = "rsync -qt";
   const char* cp = "/bin/cp -p";
   std::stringstream s;

@@ -295,7 +295,7 @@ inline bool is_tmpnam_template(std::string const& filename_template) {
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!). returns
 // filename created. if template is missing XXXXXX, it's appended first.
 inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.safe_tmpnam.XXXXXX",
-                              bool keepfile = false, bool worldReadable = false) {
+                               bool keepfile = false, bool worldReadable = false) {
   const unsigned MY_MAX_PATH = 1024;
   char tmp[MY_MAX_PATH + 1];
   std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH - TMPNAM_SUFFIX_LEN);
@@ -303,9 +303,9 @@ inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.
   if (!is_tmpnam_template(filename_template)) std::strcpy(tmp + filename_template.length(), TMPNAM_SUFFIX);
 
 #ifdef OS_WINDOWS
-  int err = ::_mktemp_s(tmp,
-                        ::strlen(tmp)
-                        + 1);  // this does not create the file, sadly. alternative (with many retries:
+  int err = ::_mktemp_s(
+      tmp,
+      ::strlen(tmp) + 1);  // this does not create the file, sadly. alternative (with many retries:
   // http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32/6036308#6036308
   // )
   if (err) throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
@@ -325,7 +325,7 @@ inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.
 }
 
 inline std::string maybe_tmpnam(std::string const& filename_template = "/tmp/safe_tmpnam.XXXXXX",
-                               bool keepfile = true) {
+                                bool keepfile = true) {
   return is_tmpnam_template(filename_template) ? safe_tmpnam(filename_template, keepfile) : filename_template;
 }
 
@@ -339,7 +339,9 @@ inline bool safe_unlink(std::string const& file, bool must_succeed = true) {
       (file.c_str()) == -1) {
     if (must_succeed) throw_last_error(std::string("couldn't remove ").append(file));
     return false;
-  } else { return true; }
+  } else {
+    return true;
+  }
 }
 
 //!< returns dir/name unless dir is empty (just name, then). if name begins with / then just returns name.

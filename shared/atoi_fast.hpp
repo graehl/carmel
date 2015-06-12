@@ -184,15 +184,15 @@ inline U atou_fast_advance_nooverflow(I& i, I end) {
     if (c < '0' || c > '9') return x;
     if (x > maxTenth)
       THROW_MSG(string_to_exception, "ascii to unsigned overflow on char "
-                                     << c << " in '" << putChars(begin, end) << "': " << x << "*10 > "
-                                     << boost::integer_traits<U>::const_max);
+                                         << c << " in '" << putChars(begin, end) << "': " << x << "*10 > "
+                                         << boost::integer_traits<U>::const_max);
     x *= 10;
     U prev = x;
     x += c - '0';
     if (x < prev)
       THROW_MSG(string_to_exception, "ascii to unsigned overflow on char "
-                                     << c << " in '" << putChars(begin, end) << "': " << prev << " * 10 + "
-                                     << c << " => (overflow) " << x);
+                                         << c << " in '" << putChars(begin, end) << "': " << prev
+                                         << " * 10 + " << c << " => (overflow) " << x);
   }
   return x;
 }
@@ -208,8 +208,8 @@ inline U atou_fast_complete(It begin, It end) {
   U r = atou_fast_advance<U>(i, end);
   if (i != end)
     THROW_MSG(string_to_exception, "ascii to unsigned incomplete - only used first "
-                                   << i - begin << " characters of '" << putChars(begin, end) << "' => " << r
-                                   << " - trim whitespace too");
+                                       << i - begin << " characters of '" << putChars(begin, end) << "' => "
+                                       << r << " - trim whitespace too");
   return r;
 }
 
@@ -265,8 +265,8 @@ inline I atoi_fast_complete(It begin, It end) {
   I r = atoi_fast_advance<I>(i, end);
   if (i != end)
     THROW_MSG(string_to_exception, "ascii to int incomplete - only used first "
-                                   << i - begin << " characters of '" << putChars(begin, end) << "' => " << r
-                                   << " - trim whitespace too");
+                                       << i - begin << " characters of '" << putChars(begin, end) << "' => "
+                                       << r << " - trim whitespace too");
   return r;
 }
 
@@ -443,7 +443,7 @@ Float scan_real_no_sign(StrCursor& c) {
     if (!c) return value;
 
     // optional exponent sign
-   bool const negative_exponent = (*c.p == '-');
+    bool const negative_exponent = (*c.p == '-');
     if (negative_exponent) {
       ++c.p;
       if (!c) return value;
@@ -564,7 +564,7 @@ Float parse_real(char const* cstr, bool require_complete = true) {
     Float r = scan_real<Float>(str);
     if (str)
       THROW_MSG(string_to_exception, "conversion to real number from '"
-                                     << cstr << "' leaves unused characters " << str.p);
+                                         << cstr << "' leaves unused characters " << str.p);
     return r;
   } else
     return scan_real<Float>(str);

@@ -131,8 +131,7 @@ void containertest() {
   c.push_back(9);
   BOOST_CHECK(c.size() == 2);
   {
-
-   bool nine = false, ten = false;
+    bool nine = false, ten = false;
     for (typename cont::const_iterator i = c.begin(), e = c.end(); i != e; ++i) {
       if (*i == 9)
         nine = true;
@@ -145,8 +144,7 @@ void containertest() {
     BOOST_CHECK(nine && ten);
   }
   {
-
-   bool nine = false, ten = false;
+    bool nine = false, ten = false;
     for (typename cont::iterator i = c.begin(), e = c.end(); i != e; ++i) {
       if (*i == 9)
         nine = true;

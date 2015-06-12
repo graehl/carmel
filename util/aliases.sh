@@ -24,6 +24,10 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+difflines() {
+    diff -C 0 "$@" | grep '^[-+] '
+    echo2 "$@"
+}
 hymac() {
     l /local/graehl/build-hypergraphs/Hypergraph/Hyp
     cp /local/graehl/build-hypergraphs/Hypergraph/Hyp ~/pub/hy/hy
@@ -8414,3 +8418,6 @@ uselocalgccmac() {
     fi
 }
 alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/
+finduniq() {
+    find . -exec basename {} \; | sort | uniq -c
+}
