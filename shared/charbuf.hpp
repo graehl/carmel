@@ -16,7 +16,7 @@
 #define CHARBUF_HPP
 
 // no separate implementation for now, just #define MAIN in one source file that includes this
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #ifndef CHARBUF_INIT_SIZE
 #define CHARBUF_INIT_SIZE 4096
 #endif

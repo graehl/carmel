@@ -15,14 +15,14 @@
 #ifndef STRING_HPP
 #define STRING_HPP
 
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 
 #include <graehl/tt/ttconfig.hpp>
 #include <iostream>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/genio.h>
 //#include <vector>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <algorithm>
 #include <functional>
 

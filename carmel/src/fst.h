@@ -479,7 +479,6 @@ class WFST {
     return os;
   }
 
-
   void read_training_corpus(std::istream& in, training_corpus& c);
 
   static inline double randomFloat()  // in range [0, 1)
@@ -1001,10 +1000,10 @@ class WFST {
     o << endl;
   }
 
-
+  /// takes space-separated symbols and returns a list of symbol numbers in the
+  /// input or output alphabet
   void symbolList(List<int>* ret, const char* buf, int output = 0, int line = -1);
-  // takes space-separated symbols and returns a list of symbol numbers in the
-  // input or output alphabet
+
   char const* letter_or_eps(unsigned i, int dir, char const* eps = "&#949", bool use_eps = true) {
     return (use_eps && i == epsilon_index) ? eps : letter(i, dir);
   }

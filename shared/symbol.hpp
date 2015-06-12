@@ -222,7 +222,7 @@ bool operator ==(const char *c, const Symbol s) {
   return s.operator==(c);
 }
 
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 template <unsigned upto = 32>
 struct SmallIntSymbols {
   auto_array<Symbol> cache;

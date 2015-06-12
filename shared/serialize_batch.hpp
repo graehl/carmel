@@ -17,7 +17,7 @@
 
 #include <graehl/shared/large_streambuf.hpp>
 #include <graehl/shared/simple_serialize.hpp>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 //#include <graehl/shared/stream_util.hpp>
 #include <boost/config.hpp>
 

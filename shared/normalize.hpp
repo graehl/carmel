@@ -15,7 +15,7 @@
 #ifndef GRAEHL_SHARED__NORMALIZE_HPP
 #define GRAEHL_SHARED__NORMALIZE_HPP
 
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
 #endif

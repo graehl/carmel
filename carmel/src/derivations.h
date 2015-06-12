@@ -29,7 +29,7 @@
 #include <graehl/shared/simple_serialize.hpp>
 #include <graehl/carmel/src/fst.h>
 #include <graehl/carmel/src/train.h>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <boost/cstdint.hpp>
 //#include <graehl/shared/stream_util.hpp>
 //#include <graehl/shared/size_mega.hpp>

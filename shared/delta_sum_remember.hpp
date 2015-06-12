@@ -15,7 +15,7 @@
 #define GRAEHL_SHARED__DELTA_SUM_REMEMBER_HPP
 
 #include <graehl/shared/delta_sum.hpp>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 
 namespace graehl {
 

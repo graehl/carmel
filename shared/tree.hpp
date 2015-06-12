@@ -31,7 +31,7 @@ typedef short rank_type; // (rank=#children) -1 = any rank, -2 = any tree ... (c
 #include <graehl/shared/genio.h>
 #include <graehl/shared/word_spacer.hpp>
 //#include <vector>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <algorithm>
 #ifdef USE_LAMBDA
 #include <boost/lambda/lambda.hpp>

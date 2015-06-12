@@ -2,7 +2,7 @@
 #define GRAEHL_CARMEL__STATE_H
 
 #include <graehl/shared/config.h>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/2hash.h>
 #include <graehl/shared/weight.h>

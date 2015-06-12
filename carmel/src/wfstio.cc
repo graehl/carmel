@@ -94,20 +94,20 @@ static char* getString(std::istream& in, char* buf, unsigned STRBUFSIZE = DEFAUL
     if (buf >= bufend) goto bufoverflow; \
   } while (0)
 
-  int l;
+  bool l;
   char *s, *bufend = buf + STRBUFSIZE - 2;
   if (!(in >> *buf)) return 0;
   switch (*buf) {
     case '"':
-      l = 0;  // 1 if backslash was last character
+      l = false;  // 1 if backslash was last character
       for (s = buf + 1; s < bufend; ++s) {
         if (!in.get(*s)) return 0;
         if (*s == '"')
           if (!l) break;
         if (*s == '\\')
-          l = l ^ 1;  // toggle escape state
+          l = !l;  // toggle escape state
         else
-          l = 0;
+          l = false;
       }
       *++s = '\0';
       CHECKBUFOVERFLOW;
@@ -171,8 +171,7 @@ WFST::WFST(const char* buf) {
   push_back(states);  // final state
 }
 
-struct ltstr  // Yaser 8-3-200
-    {
+struct ltstr {
   bool operator()(const char* s1, const char* s2) const { return strcmp(s1, s2) < 0; }
 };
 
@@ -251,7 +250,6 @@ WFST::WFST(const char* buf, int& length, bool permuteNumbers)
       push_back(states);
     }
     int temp_final = final;
-    //    vector<bool> visited(final,false);
     vector<bool> visited(final);
     for (unsigned k = 0; k < final; k++) visited[k] = false;
     visited[0] = true;
@@ -505,34 +503,6 @@ INVALID:
   invalidate();
   return 0;
 }
-/*
-  buf[0]='*';buf[1]='e';buf[2]='*';buf[3]='\0';
-  GETC;  // skip whitespace
-  istr.unget();
-  if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-  REQUIRE(getString(istr, buf));
-  GETC;  // skip whitespace
-  istr.unget();
-  if (!(isdigit(c) || c == '.' || c == '-' || c == ')'))
-  REQUIRE(getString(istr, buf));
-  outL = out.indexOf(buf);
-  GETC; // skip ws
-  istr.unget();
-  weight.setZero();
-  if (isdigit(c) || c == '.' || c == '-' ) {
-  REQUIRE(istr >> weight);
-  if ( istr.fail() ) {
-  cout << "Invalid weight: " << weight <<"\n";
-  return 0;
-  }
-  } else
-  weight = 1.0;
-  //        if ( weight > 0.0 ) {
-  */
-//} else if ( weight != 0.0 ) {
-//          cout << "Invalid weight (must be nonnegative): " << weight <<"\n";
-//          return 0;
-//}
 
 
 int WFST::readLegible(const string& str, bool alwaysNamed) {
@@ -628,8 +598,6 @@ void WFST::writeLegible(ostream& os, bool include_zero) {
   const char *inLet, *outLet, *destState;
 
   if (!valid()) return;
-  //    alphabet_type &in=alphabet(0),&out=alphabet(1);
-  //    Assert( *in.find(EPSILON_SYMBOL)==0 && *out.find(EPSILON_SYMBOL)==0 );
   os << stateName(final);
   for (i = 0; i < numStates(); i++) {
     if (!onearc) os << "\n(" << stateName(i);
@@ -646,8 +614,6 @@ void WFST::writeLegible(ostream& os, bool include_zero) {
           os << " " << inLet;
           if (!brief || strcmp(inLet, outLet)) os << " " << outLet;
         }
-        //      int *pGroup;
-        //      if ( (pGroup = tieGroup.find_second(IntKey(int(&(*a))))) ) {
         OUTARCWEIGHT(os, a);
         os << ")";
         if (onearc) os << ")";
@@ -660,14 +626,6 @@ void WFST::writeLegible(ostream& os, bool include_zero) {
 
 void WFST::listAlphabet(ostream& ostr, int dir) {
   ostr << alphabet(dir);
-  /*
-    Alphabet<StringKey,StringPool> *alph;
-    if ( output )
-    alph = out;
-    else
-    alph = in;
-    ostr << *alph;
-  */
 }
 
 void WFST::symbolList(List<int>* ret, const char* buf, int output, int lineno) {
@@ -685,22 +643,16 @@ void WFST::symbolList(List<int>* ret, const char* buf, int output, int lineno) {
 #if WFSTIO_ERROR_SEQUENCE_NOT_IN_ALPHABET
     unsigned const* pI = alph.find(symbol);
     if (!pI) {
-      //      delete ret;
-      //      return NULL;
-
       std::ostringstream o;
       o << "Input sequence has symbol not in alphabet: " << symbol;
       if (lineno >= 0) o << " on line " << lineno;
       throw std::runtime_error(o.str());
     } else
-      //      ins.insert(*pI);
-      //      ret->insert(ret->begin(),*pI);
       *cursor++ = *pI;
 #else
     *cursor++ = alph.index_of(symbol);
 #endif
   }
-  //  return ret;
 }
 }
 

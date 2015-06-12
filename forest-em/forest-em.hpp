@@ -28,7 +28,7 @@
 #include <graehl/forest-em/forest-em-params.hpp>
 
 #include <graehl/shared/em.hpp>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <graehl/shared/normalize.hpp>
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/funcs.hpp>

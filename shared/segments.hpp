@@ -17,7 +17,7 @@
 /* segments: sorted list of N+1 endpoints b[i] defining segment id=i as [b[i],b[i+1)], for i in [1,N] */
 
 #include <algorithm>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 
 namespace graehl {
 

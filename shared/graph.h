@@ -20,7 +20,7 @@
 #include <vector>
 #include <iterator>
 
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <graehl/shared/config.h>
 #include <graehl/shared/weight.h>
 #include <graehl/shared/2heap.h>

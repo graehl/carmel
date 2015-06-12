@@ -14,7 +14,7 @@
 #ifndef GRAEHL_SHARED__ARRAY_HPP
 #define GRAEHL_SHARED__ARRAY_HPP
 
-// note: tests in dynarray.hpp
+// note: tests in dynamic_array.hpp
 
 #include <boost/config.hpp> // STATIC_CONSTANT
 #include <algorithm> //swap

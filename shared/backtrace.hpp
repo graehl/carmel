@@ -23,7 +23,7 @@
 #endif
 
 #include <graehl/shared/stream_util.hpp>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <exception>
 #include <iostream>
 

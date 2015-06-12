@@ -17,7 +17,7 @@
 #include <iostream>
 
 #include <graehl/shared/myassert.h>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <graehl/shared/2hash.h>
 # include <graehl/shared/array.hpp>
 # include <graehl/shared/random.hpp>

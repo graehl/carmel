@@ -33,7 +33,7 @@
 #include <graehl/shared/checkpoint_istream.hpp>
 #include <graehl/shared/memmap.hpp>
 #include <string>
-#include <graehl/shared/dynarray.h>
+#include <graehl/shared/dynamic_array.hpp>
 #include <boost/lexical_cast.hpp>
 #include <graehl/shared/backtrace.hpp>
 #include <graehl/shared/stackalloc.hpp>
