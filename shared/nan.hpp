@@ -47,7 +47,7 @@ inline bool isnan (double f)
 {
   typedef unsigned long long u64;
   typedef long long i64;
-  u64 j = *(i64*)&f & ~0x8000000000000000uLL;
+  u64 j = *(u64*)&f & ~0x8000000000000000uLL;
   return j > 0x7ff0000000000000uLL;
 }
 // TODO: fix for long double also?

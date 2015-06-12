@@ -90,6 +90,7 @@ namespace graehl {
 
 namespace digamma_impl {
 
+#if 0
 static double A[] = {
   8.33333333333333333333E-2,
   -2.10927960927960927961E-2,
@@ -99,36 +100,34 @@ static double A[] = {
   -8.33333333333333333333E-3,
   8.33333333333333333333E-2
 };
+#endif
 
-inline double polevl( double x, double coef[], int N )
-{
+inline double polevl(double x, double coef[], int N) {
   double ans;
   int i;
-  double *p;
+  double* p;
 
   p = coef;
   ans = *p++;
   i = N;
 
   do
-    ans = ans * x  +  *p++;
-  while( --i );
+    ans = ans * x + *p++;
+  while (--i);
 
-  return( ans );
+  return (ans);
+}
 }
 
-}
 
-
-inline double digamma(double x)
-{
+inline double digamma(double x) {
 #ifdef USE_BOOST_DIGAMMA
-  return boost::math::digamma(x,digamma_impl::digamma_policy());
+  return boost::math::digamma(x, digamma_impl::digamma_policy());
 #else
   using namespace std;
-  const double EUL=0.57721566490153286061;
-  const double PI     =  3.14159265358979323846;
-  const double MAXNUM =  1.79769313486231570815E308;    /* 2**1024*(1-MACHEP) */
+  const double EUL = 0.57721566490153286061;
+  const double PI = 3.14159265358979323846;
+  const double MAXNUM = 1.79769313486231570815E308; /* 2**1024*(1-MACHEP) */
 
   double p, q, nz, s, w, y, z;
   int i, n, negative;
@@ -136,46 +135,38 @@ inline double digamma(double x)
   negative = 0;
   nz = 0.0;
 
-  if( x <= 0.0 )
-  {
+  if (x <= 0.0) {
     negative = 1;
     q = x;
     p = floor(q);
-    if( p == q )
-    {
+    if (p == q) {
       throw std::runtime_error("digamma (psi) singularity");
       //            mtherr( "psi", SING );
-      return( MAXNUM );
+      return (MAXNUM);
     }
     /* Remove the zeros of tan(PI x)
      * by subtracting the nearest integer from x
      */
     nz = q - p;
-    if( nz != 0.5 )
-    {
-      if( nz > 0.5 )
-      {
+    if (nz != 0.5) {
+      if (nz > 0.5) {
         p += 1.0;
         nz = q - p;
       }
-      nz = PI/tan(PI*nz);
-    }
-    else
-    {
+      nz = PI / tan(PI * nz);
+    } else {
       nz = 0.0;
     }
     x = 1.0 - x;
   }
 
   /* check for positive integer up to 10 */
-  if( (x <= 10.0) && (x == floor(x)) )
-  {
+  if ((x <= 10.0) && (x == floor(x))) {
     y = 0.0;
     n = (int)x;
-    for( i=1; i<n; i++ )
-    {
+    for (i = 1; i < n; i++) {
       w = i;
-      y += 1.0/w;
+      y += 1.0 / w;
     }
     y -= EUL;
     goto done;
@@ -183,40 +174,34 @@ inline double digamma(double x)
 
   s = x;
   w = 0.0;
-  while( s < 10.0 )
-  {
-    w += 1.0/s;
+  while (s < 10.0) {
+    w += 1.0 / s;
     s += 1.0;
   }
 
-  if( s < 1.0e17 )
-  {
-    z = 1.0/(s * s);
-    y = z * digamma_impl::polevl( z, digamma_impl::A, 6 );
-  }
-  else
+  if (s < 1.0e17) {
+    z = 1.0 / (s * s);
+    y = z * digamma_impl::polevl(z, digamma_impl::A, 6);
+  } else
     y = 0.0;
 
-  y = std::log(s)  -  (0.5/s)  -  y  -  w;
+  y = std::log(s) - (0.5 / s) - y - w;
 
 done:
 
-  if( negative )
-  {
+  if (negative) {
     y -= nz;
   }
 
-  return(y);
+  return (y);
 #endif
 }
-
 }
 
 #ifdef SAMPLE
-# include <fstream>
-# include <iostream>
-int main()
-{
+#include <fstream>
+#include <iostream>
+int main() {
   using namespace std;
 
   //    cout << "set title \"carmel digamma implementation\"\n";
@@ -230,15 +215,15 @@ int main()
 
   cout << "plot 'digamma.dat' using 1:2 title 'digamma'\n";
 
-  unsigned nsteps=200;
-  double step=0.0002;
+  unsigned nsteps = 200;
+  double step = 0.0002;
 
-  for (double x=step;x<=step*nsteps;x+=step) {
-    double d=graehl::digamma(x);
-    double ed=exp(d);
-    double ed_est=x-.5;
-    cerr << "exp(digamma("<<x << "))="<<ed<<" diff(x-.5)="<<ed_est-ed<<endl;
-    f << x << "\t"<<ed<<"\n";
+  for (double x = step; x <= step * nsteps; x += step) {
+    double d = graehl::digamma(x);
+    double ed = exp(d);
+    double ed_est = x - .5;
+    cerr << "exp(digamma(" << x << "))=" << ed << " diff(x-.5)=" << ed_est - ed << endl;
+    f << x << "\t" << ed << "\n";
   }
   return 0;
 }
