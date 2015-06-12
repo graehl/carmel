@@ -489,7 +489,7 @@ osmake() {
         set -e
         rm -rf $osdirbuild
         mkdir -p $osdirbuild
-        #uselocalgccmac
+        uselocalgccmac
         cd $osdirbuild
         showvars_required CC CXX
         $CXX -v
