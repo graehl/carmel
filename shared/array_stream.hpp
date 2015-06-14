@@ -155,15 +155,15 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   void reset_write() { set_ppos(0); }
 
   /**
-     seek read position, leaving end of readable area as is
+     seek read position, leaving end of readable area as is. TODO: test
   */
   void set_gpos(pos_type pos) { base::setg(buf, buf + pos, egptr()); }
   /**
-     end() is normally what's been written so far; this modifies end()
+     end() is normally what's been written so far; this modifies end(). TODO: test
   */
   void set_end(iterator end_) { base::setp(end_, bufend); }
   /**
-     write seek.
+     write seek. TODO: test
   */
   void set_ppos(pos_type pos) { base::setp(buf + pos, bufend); }
   /**
@@ -189,7 +189,8 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   using base::in_avail;
 
   /**
-     streambuf method - remaining bytes that can be written. we use the default streambuf in_avail()
+     streambuf method - remaining bytes that can be written. we use the default streambuf in_avail(). TODO:
+     test
   */
   std::ptrdiff_t out_avail() { return bufend - pptr(); }
 
@@ -199,7 +200,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   }
 
   /**
-     this buffer can't be (automatically) grown. so once you write too much, you're dead.
+     this buffer can't be (automatically) grown. so once you write too much, you're dead. TODO: test
   */
   int_type overflow(int_type c) {
     if (out_avail() == 0 && !traits::eq_int_type(c, traits::eof())) {
@@ -231,7 +232,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   */
 
   /**
-     supports stream seekp seekg operations. (and streambuf::pubseekoff)
+     supports stream seekp seekg operations. (and streambuf::pubseekoff). TODO: test
   */
   virtual pos_type seekoff(off_type offset, std::ios_base::seekdir dir,
                            std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) {

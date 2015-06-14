@@ -24,6 +24,9 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+gitundosoft() {
+    git reset --soft HEAD~1
+}
 difflines() {
     diff -C 0 "$@" | grep '^[-+] '
     echo2 "$@"
@@ -422,10 +425,6 @@ gitshows() {
 oscom() {
     (
         set -e
-        if [[ $redox ]] ; then
-            cd $xmtx/docs/hyp
-            latpdf hyp-tutorial && mv hyp-tutorial*pdf $xmtx/hyp-tutorial.pdf
-        fi
         cd $xmtx
         gitinfo $1
         shift || true
@@ -4982,6 +4981,9 @@ amend() {
 xmtclone() {
     git clone ssh://graehl@git02.languageweaver.com:29418/xmt "$@"
 }
+findyaml() {
+    $(ag -g '\.ya?ml$')
+}
 findcmake() {
     find ${1:-.} -name CMakeLists\*.txt
 }
@@ -5569,7 +5571,7 @@ substcpp() {
 }
 substyml() {
     (
-        substi "$@" $(ag -g '\.ya?ml$')
+        substi "$@" $(findyaml)
     )
 }
 substxml() {

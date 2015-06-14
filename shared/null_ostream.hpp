@@ -36,6 +36,7 @@ template <class C>
 struct null_device {
   typedef boost::iostreams::sink_tag category;
   typedef C char_type;
+  //TODO: test
   std::streamsize write(const C*, std::streamsize sz) { return sz; }
 };
 

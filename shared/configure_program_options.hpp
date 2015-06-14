@@ -93,6 +93,7 @@ struct program_options_exec : boost::noncopyable {
     for (strings::const_iterator i = names.begin(), e = names.end(); i != e; ++i) {
       std::string const& name = *i;
       if (!vm.count(name) || vm[name].defaulted()) {
+        // TODO: test
         std::string complaint("missing configuration key ");
         complaint += *i;
         o(complaint);
@@ -115,6 +116,7 @@ struct program_options_exec : boost::noncopyable {
   }
 
   void allow_unrecognized(std::string const& pathname, allow_unrecognized_args const& args) {
+    // TODO: test
     SHOWIF2(CONFEXPR, 1, "allow_unrecognized", pathname, args);
     if (args.enable) {
       if (pathname.empty()) {
@@ -137,6 +139,7 @@ struct program_options_exec : boost::noncopyable {
   void check_unrecognized() {
     using namespace std;
     for (size_t i = 0, n = unrecognized_options.size(); i != n; ++i) {
+      // TODO: test
       string const& arg = unrecognized_options[i];
       if (arg.size() < 2 || arg[0] != '-' || arg[1] != '-')
         throw config_exception(

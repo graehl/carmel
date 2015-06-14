@@ -59,8 +59,8 @@ struct large_streambuf {
    either this object must last longer than the stream, or call
    resets(Stream *s) so you'll be able to continue using the stream later
 */
-
 struct bigger_streambuf : boost::noncopyable {
+  // TODO: test
   std::size_t size;
   void* buf;
   std::streambuf* resetbuf;

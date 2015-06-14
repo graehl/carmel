@@ -145,10 +145,12 @@ inline bool sign_ieee(float f) {
 }
 
 inline bool sign_ieee(boost::uint64_t f) {
+  //TODO: test
   return f >> 63;
 }
 
 inline bool sign_ieee(double f) {
+  //TODO: test
   return sign_ieee(reinterpret_cast<boost::uint64_t const&>(f));
 }
 
@@ -176,6 +178,7 @@ inline double next_representible_double(double f) {
 }
 
 inline float next_representible_float(float f) {
+  //TODO: test
   ++reinterpret_cast<boost::uint32_t&>(f);
   return f;
 }
@@ -185,6 +188,7 @@ inline double next_representible(double f) {
 }
 
 inline float next_representible(float f) {
+  //TODO: test
   return next_representible_float(f);
 }
 
@@ -253,6 +257,7 @@ inline bool few_ieee_floats_apart(float a, float b,
 
 inline bool few_ieee_doubles_apart(double a, double b,
                                    boost::int64_t max_doubles_apart = GRAEHL_DEFAULT_IEEE_APART) {
+  //TODO: test
   return sign_ieee(a) == sign_ieee(b) ? ieee_doubles_apart(a, b) <= max_doubles_apart : a == b;
 }
 

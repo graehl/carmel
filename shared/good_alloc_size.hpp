@@ -76,12 +76,14 @@ inline Size good_alloc_size(Size req) {
   else if (req <= 4072 * k1K)  // nearly 4mb
     return round_up_pow2(req, (Size)k4K);
   else
+    // TODO: test
     return round_up_pow2(req, (Size)k4M);
 }
 
 /// double for very large allocations, else 3/2
 template <class Size>
 inline Size next_alloc_target(Size req) {
+  // TODO: test
   if (req <= 128 * (Size)k1K)
     return (req * 3 + 1) / 2;
   else {
@@ -92,6 +94,7 @@ inline Size next_alloc_target(Size req) {
 
 template <class Size>
 inline Size next_good_alloc_size(Size req) {
+  // TODO: test
   return good_alloc_size(next_alloc_target(req));
 }
 
@@ -104,8 +107,14 @@ struct good_vector_size {
     if (req * sizeof(T) <= 128 * (Size)k1K)
       return (req * 3 + 1) / 2;
     else {
-      Size const twice = req * 2;
-      return twice > req ? twice : (Size)-1;
+      // TODO: test
+      if (sizeof(Size) > 4)
+        return req * 2;
+      else {
+        // (prevents overflowing 2G -> 0 for 4 byte Size
+        Size const twice = req * 2;
+        return twice > req ? twice : (Size)-1;
+      }
     }
   }
   template <class Size>

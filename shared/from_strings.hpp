@@ -82,6 +82,7 @@ struct select_from_strings<Container, typename boost::enable_if<is_nonstring_con
       add(container, string_to<value_type>(*i));
   }
   static inline std::vector<std::string> to_strings(Container const& container) {
+    //TODO: test
     strings_type r;
     for (typename Container::const_iterator i = container.begin(), e = container.end(); i != e; ++i)
       add(r, graehl::to_string(*i));
