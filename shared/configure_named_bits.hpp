@@ -48,9 +48,16 @@ struct bit_names {
   typedef std::pair<std::string, Int> NameValue;
   typedef std::vector<NameValue> NameValues;
   NameValues nv_;
+  bool overlapping_;
+
+  void overlapping() {
+    overlapping_ = true;
+  }
 
   void operator()(std::string const& str, Int val) {
     nv_.push_back(NameValue(str, val));
+    if (!overlapping_ && (known_ & val))
+      throw std::runtime_error("bit_names overlapping bits "+to_string_impl(known_&val)+" without first calling overlapping())");
     known_ |= val;
     next_ = val * 2;
   }
@@ -64,7 +71,7 @@ struct bit_names {
 
   void operator()(std::string const& str) { (*this)(str, next_); }
 
-  bit_names() : next_(1) {}
+  bit_names() : next_(1), overlapping_() {}
 
   std::string usage(bool values = false) const {
     string_builder b;
@@ -115,9 +122,9 @@ struct bit_names {
     return hex_int<Int>(name);
   }
 
+  Int known_;
  private:
   Int next_;
-  Int known_;
 };
 
 template <class NameList, class Int = unsigned>
@@ -197,8 +204,12 @@ struct named_bits : hex_int<Int> {
     append(b);
     out << b;
   }
+
+  static named_bits allbits;
 };
 
+template <class NameList, class Int>
+named_bits<NameList, Int> named_bits<NameList, Int>::allbits(parse_bit_names<NameList, Int>::names().known_);
 
 }
 

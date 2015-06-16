@@ -615,7 +615,7 @@ struct main {
       }
       confs.store(to_cerr);
       confs.validate(to_cerr);
-      if (verbose) confs.effective(std::cerr, to_cerr);
+      if (verbose > 1) confs.effective(std::cerr, to_cerr);
 #else
       parsed_options po = all_options().parse_options(argc, argv, &get_positional());
       variables_map& vm = get_vm();

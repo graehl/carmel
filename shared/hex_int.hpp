@@ -31,6 +31,7 @@
 #include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/type_string.hpp>
 #include <iomanip>
+#include <sdl/graehl/shared/bit_arithmetic.hpp>
 
 namespace graehl {
 
@@ -38,6 +39,9 @@ template <class I>
 struct hex_int {
   typedef typename signed_for_int<I>::unsigned_t U;
   I i;
+  U count_set_bits() const {
+    return graehl::count_set_bits(i);
+  }
   typedef void leaf_configure;
   void assign(std::string const& s, bool complete = true) {
     std::string::size_type const sz = s.size();

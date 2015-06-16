@@ -32,8 +32,8 @@ difflines() {
     echo2 "$@"
 }
 hymac() {
-    l /local/graehl/build-hypergraphs/Hypergraph/Hyp
-    cp /local/graehl/build-hypergraphs/Hypergraph/Hyp ~/pub/hy/hy
+    l /local/graehl/build-hypergraphs/Hypergraph/hyp
+    cp /local/graehl/build-hypergraphs/Hypergraph/hyp ~/pub/hy/hy
     hy -h
 }
 reosmac() {
@@ -537,7 +537,7 @@ linosmake() {
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         #
-        c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/Hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
+        c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
     )
 }
 osreg() {
