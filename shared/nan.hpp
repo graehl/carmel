@@ -21,7 +21,11 @@
 #pragma once
 
 #ifndef GRAEHL_HAVE_STD_ISINF
+#if defined(_MSC_VER)
+#define GRAEHL_HAVE_STD_ISINF 0
+#else
 #define GRAEHL_HAVE_STD_ISINF 1
+#endif
 #endif
 
 #include <cmath>
