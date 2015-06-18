@@ -4,8 +4,7 @@
 
     https://en.wikipedia.org/wiki/FMA_instruction_set
 
-    we want FMA3 (3 arg) not FMA4 (4 arg)
-    gcc -mfma -mno-fma4
+    want compiler to enable FMA3 (3 arg) not FMA4 (4 arg)
 */
 
 #ifndef LERP_JG_2015_06_17_HPP
