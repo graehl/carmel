@@ -48,9 +48,6 @@
 #ifndef GRAEHL_IN_FILE
 #define GRAEHL_IN_FILE "in"
 #endif
-#ifndef GRAEHL_OUT_FILE
-#define GRAEHL_OUT_FILE "out"
-#endif
 #ifndef GRAEHL_LOG_FILE
 #define GRAEHL_LOG_FILE "log"
 #endif
@@ -428,10 +425,12 @@ struct main {
       } else if (opt.add_in_file)
         c(GRAEHL_IN_FILE, &in_file)('i')(opt.input_help()).eg("infile.gz").positional(opt.positional_in);
 
-    if (opt.add_out_file)
-      c(GRAEHL_OUT_FILE, &out_file)('o')
+    if (opt.add_out_file) {
+      c("out", &out_file)('o')
           .positional(opt.positional_out)("Output here (instead of STDOUT)")
           .eg("outfile.gz");
+      c("output", &out_file).alias();
+    }
 
     if (opt.add_config_file)
       c(GRAEHL_CONFIG_FILE, &config_file)('c')("load boost program options config from file")
@@ -465,8 +464,7 @@ struct main {
           "e.g. verbosity level >1 means show banner of command line options. 0 means don't");
 
     if (opt.add_out_file) {
-      optionsDesc.add_options()(GRAEHL_OUT_FILE ",o", defaulted_value(&out_file),
-                                "Output here (instead of STDOUT)");
+      optionsDesc.add_options()("out,o", defaulted_value(&out_file), "Output here (instead of STDOUT)");
       if (opt.positional_out) output_positional();
     }
 
@@ -703,6 +701,7 @@ struct main {
 
 template <>
 struct assign_traits<main, void> : no_assign {};
+
 }
 
 #if GRAEHL_CMDLINE_SAMPLE_MAIN

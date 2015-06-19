@@ -83,7 +83,7 @@ struct fstream_for_mode<boost::iostreams::output_seekable> {
    typename Access = public_ >
    class filtering_stream;
  */
-template <class Filter, class Mode = boost::iostreams::input, class Stream = typename fstream_for_mode<Mode>::stream_type>
+template <class Filter, class Mode = boost::iostreams::input_seekable, class Stream = typename fstream_for_mode<Mode>::stream_type>
 struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
   typedef boost::iostreams::filtering_streambuf<Mode> Base;
   Stream file_;
@@ -119,7 +119,7 @@ struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
   }
 };
 
-template <class Filter, class Mode = boost::iostreams::input, class Stream = typename fstream_for_mode<Mode>::stream_type>
+template <class Filter, class Mode = boost::iostreams::input_seekable, class Stream = typename fstream_for_mode<Mode>::stream_type>
 struct filter_file_stream : boost::iostreams::filtering_stream<Mode> {
   typedef boost::iostreams::filtering_stream<Mode> Base;
   Stream file_;

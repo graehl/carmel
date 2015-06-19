@@ -22,6 +22,9 @@
 
     i've only added the vector-interface parts i need right now (random access w/
     growing and push_back), but the full set of them would be efficient/easy
+
+    TODO: perhaps use Boost Container stable_vector
+    http://www.boost.org/doc/libs/1_58_0/doc/html/container.html
 */
 
 #ifndef GRAEHL_SHARED__STABLE_VECTOR
