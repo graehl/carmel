@@ -57,8 +57,13 @@ struct ForestEmParams {
   ostream_arg outviterbi_file, out_score_per_forest, out_per_forest_counts_file, outparam_file, log_file, byid_output_file, outcounts_file;
   std::ostream *log_stream;
   std::string cmdline_str;
+#if __cplusplus < 201103L
   std::auto_ptr<teebuf> teebufptr;
   std::auto_ptr<std::ostream> teestreamptr;
+#else
+  std::unique_ptr<teebuf> teebufptr;
+  std::unique_ptr<std::ostream> teestreamptr;
+#endif
 
   bool gibbs() {return gopt.iter>0; }
   gibbs_opts gopt;

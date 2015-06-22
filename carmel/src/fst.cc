@@ -21,11 +21,11 @@ void WFST::pruneArcs(Weight thresh) {
   for (unsigned s = 0, n = numStates(); s < n; ++s) states[s].prune(thresh);
 }
 
-int WFST::generate(int* inSeq, int* outSeq, int minArcs, int bufLen) {
-  int i, o, nArcs;
+unsigned WFST::generate(unsigned* inSeq, unsigned* outSeq, unsigned minArcs, unsigned bufLen) {
+  unsigned i, o, nArcs;
   unsigned s;
   indexInput();
-  int maxArcs = bufLen - 1;
+  unsigned maxArcs = bufLen - 1;
   i = o = s = nArcs = 0;
   for (;;) {
     if (s == final && (states[s].arcs.isEmpty() || nArcs >= minArcs)) {
@@ -33,9 +33,9 @@ int WFST::generate(int* inSeq, int* outSeq, int minArcs, int bufLen) {
       indexFlush();
       return 1;
     }
-    int whichInput = (int)(states[s].index->size() * randomFloat());
-    const HashTable<IntKey, List<HalfArc> >& hat = *states[s].index;
-    for (HashTable<IntKey, List<HalfArc> >::const_iterator ha = hat.begin(); ha != hat.end(); ++ha)
+    unsigned whichInput = (unsigned)(states[s].index->size() * randomFloat());
+    const HashTable<UnsignedKey, List<HalfArc> >& hat = *states[s].index;
+    for (HashTable<UnsignedKey, List<HalfArc> >::const_iterator ha = hat.begin(); ha != hat.end(); ++ha)
       if (!whichInput--) {
         Weight which = randomFloat();
         Weight cum;
@@ -105,13 +105,16 @@ void WFST::normalize(NormalizeMethod const& method, bool uniform_zero_normgroups
   // step 4: give normal arcs their share of what's left, if anything
 
   Weight addc = method.add_count;
-  int pGroup;
-  HashTable<IntKey, Weight> groupArcTotal;
-  HashTable<IntKey, Weight> groupStateTotal;
-  HashTable<IntKey, Weight> groupMaxLockedSum;
-  // global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in
-  // a tie group, its weight and its normalization group's weight.
+  unsigned pGroup;
+  HashTable<UnsignedKey, Weight> groupArcTotal;
+  HashTable<UnsignedKey, Weight> groupStateTotal;
+  HashTable<UnsignedKey, Weight> groupMaxLockedSum;
+// global pass 1: compute the sum of unnormalized weights for each normalization group.  sum for each arc in
+// a tie group, its weight and its normalization group's weight.
+#include <graehl/shared/warning_push.h>
+  GCC_DIAG_IGNORE(maybe-uninitialized)
   for (NormGroupIter g(group, *this); g.moreGroups(); g.nextGroup()) {
+#include <graehl/shared/warning_pop.h>
 #ifdef DEBUGNORMALIZE
     Config::debug() << "Normgroup=" << g;
 #endif
@@ -150,8 +153,11 @@ void WFST::normalize(NormalizeMethod const& method, bool uniform_zero_normgroups
   }
 
 
-  // global pass 2: assign weights
+// global pass 2: assign weights
+#include <graehl/shared/warning_push.h>
+  GCC_DIAG_IGNORE(maybe-uninitialized)
   for (NormGroupIter g(group, *this); g.moreGroups(); g.nextGroup()) {
+#include <graehl/shared/warning_pop.h>
     Weight normal_sum;  //=0
     Weight reserved;  // =0
     Assert(reserved.isZero() && normal_sum.isZero());
@@ -165,8 +171,8 @@ void WFST::normalize(NormalizeMethod const& method, bool uniform_zero_normgroups
       if (isTied(pGroup = a.groupId)) {  // tied:
         Weight groupNorm
             = *find_second(groupStateTotal,
-                           (IntKey)pGroup);  // can be 0 if no counts at all for any states of group
-        Weight gmax = *find_second(groupMaxLockedSum, (IntKey)pGroup);
+                           (UnsignedKey)pGroup);  // can be 0 if no counts at all for any states of group
+        Weight gmax = *find_second(groupMaxLockedSum, (UnsignedKey)pGroup);
         NANCHECK(gmax);
         Weight one(1.);
         if (gmax > one) {
@@ -177,7 +183,7 @@ void WFST::normalize(NormalizeMethod const& method, bool uniform_zero_normgroups
           // worst case competing locked arcs sum in any norm-group
           NANCHECK(groupNorm);
 
-          Weight groupTotal = *find_second(groupArcTotal, (IntKey)pGroup);
+          Weight groupTotal = *find_second(groupArcTotal, (UnsignedKey)pGroup);
           NANCHECK(groupTotal);
           if (!groupTotal.isZero()) {  // then groupNorm non0 also
             a.weight = scale(groupTotal) / scale(groupNorm);
@@ -238,9 +244,9 @@ void WFST::normalize(NormalizeMethod const& method, bool uniform_zero_normgroups
 }
 
 void WFST::assignWeights(const WFST& source) {
-  HashTable<IntKey, Weight> groupWeight;
+  HashTable<UnsignedKey, Weight> groupWeight;
   unsigned s;
-  int pGroup;
+  unsigned pGroup;
   for (s = 0; s < source.numStates(); ++s) {
     const List<FSTArc>& arcs = source.states[s].arcs;
     for (List<FSTArc>::const_iterator a = arcs.const_begin(), end = arcs.const_end(); a != end; ++a)
@@ -252,7 +258,7 @@ void WFST::assignWeights(const WFST& source) {
     List<FSTArc>& arcs = states[s].arcs;
     for (List<FSTArc>::erase_iterator a = arcs.erase_begin(), end = arcs.erase_end(); a != end;) {
       if (isTied(pGroup = a->groupId)) {
-        if ((pWeight = find_second(groupWeight, (IntKey)pGroup))) {
+        if ((pWeight = find_second(groupWeight, (UnsignedKey)pGroup))) {
           a->weight = *pWeight;
           ++a;
         } else {
@@ -294,7 +300,7 @@ unsigned WFST::numberArcsFrom(unsigned label) {
 
 void WFST::invert() {
   Assert(valid());
-  int temp;
+  unsigned temp;
   in_alph().swap(out_alph());
   for (unsigned s = 0; s < states.size(); ++s) {
     for (List<FSTArc>::val_iterator a = states[s].arcs.val_begin(), end = states[s].arcs.val_end(); a != end;
@@ -317,7 +323,7 @@ Graph WFST::makeGraph()
   Assert(valid());
   GraphState* g = NEW GraphState[numStates()];
   GraphArc gArc;
-  for (unsigned i = 0; i < numStates(); ++i) {
+  for (unsigned i = 0, N = numStates(); i < N; ++i) {
     for (List<FSTArc>::val_iterator l = states[i].arcs.val_begin(), end = states[i].arcs.val_end(); l != end;
          ++l) {
       gArc.src = i;
@@ -365,7 +371,7 @@ Graph WFST::makeEGraph()
 #include <algorithm>
 // for std::sort
 
-typedef pair<FLOAT_TYPE, int> PFI;
+typedef pair<FLOAT_TYPE, unsigned> PFI;
 
 // isn't there some projectfirst template?
 inline bool lesscost(const PFI& l, const PFI& r) {
@@ -373,16 +379,16 @@ inline bool lesscost(const PFI& l, const PFI& r) {
 }
 
 
-void WFST::prunePaths(int max_states, Weight keep_paths_within_ratio) {
+void WFST::prunePaths(unsigned max_states, Weight keep_paths_within_ratio) {
   Assert(valid());
 #ifdef DEBUGPRUNE
   Config::debug() << "Prune - keep up to " << max_states << " states, and paths within "
                   << keep_paths_within_ratio << std::endl;
 #endif
-  int i;
+  unsigned i;
   bool all_paths = keep_paths_within_ratio.isInfinity();
   if (max_states == UNLIMITED && all_paths) return;
-  int n_states = numStates();
+  unsigned n_states = numStates();
 
   Graph for_graph = makeGraph();
   Graph rev_graph = reverseGraph(for_graph);
@@ -416,11 +422,11 @@ void WFST::prunePaths(int max_states, Weight keep_paths_within_ratio) {
     }*/
 #endif
 
-  int allowed = max_states;
+  unsigned allowed = max_states;
   if (max_states == UNLIMITED || max_states > n_states) allowed = n_states;
 
   for (i = 0; i < allowed; ++i) {
-    int st = best_path_cost[i].second;
+    unsigned st = best_path_cost[i].second;
     if (all_paths)
       remove[st] = false;
     else {
@@ -444,7 +450,7 @@ void WFST::prunePaths(int max_states, Weight keep_paths_within_ratio) {
     }
   }
   for (; i < n_states; ++i) {  // over allotted state limit
-    int st = best_path_cost[i].second;
+    unsigned st = best_path_cost[i].second;
     remove[st] = true;
   }
   delete[] best_path_cost;
@@ -523,7 +529,7 @@ void WFST::consolidateArcs(bool sum, bool clamp) {
 
 void WFST::removeMarkedStates(bool marked[]) {
   Assert(valid());
-  int* oldToNew = NEW int[numStates()];
+  unsigned* oldToNew = NEW unsigned[numStates()];
   unsigned n_pre = numStates();
 
   if (n_pre != graehl::indices_after_remove_marked(oldToNew, marked, n_pre)) {  // something removed
@@ -532,14 +538,10 @@ void WFST::removeMarkedStates(bool marked[]) {
     for (unsigned i = 0; i < states.size(); ++i) {
       states[i].renumberDestinations(oldToNew);
     }
-    final = oldToNew[final] == -1 ? invalid_state : oldToNew[final];
+    final = oldToNew[final] == (unsigned)~0 ? invalid_state : oldToNew[final];
   }
 
   delete[] oldToNew;
-}
-
-int WFST::abort() {
-  return 0;
 }
 
 ostream& operator<<(ostream& o, const PathArc& p) {
@@ -561,18 +563,17 @@ ostream& operator<<(ostream& o, WFST& w) {
 }
 
 
-List<List<PathArc> >* WFST::randomPaths(int k, int max_len) {
+List<List<PathArc> >* WFST::randomPaths(unsigned k, unsigned max_len) {
   Assert(valid());
   List<List<PathArc> >* paths = NEW List<List<PathArc> >;
   if (!valid()) {
     // List<List<PathArc> >::iterator insertHere=paths->begin();
-    for (int i = 0; i < k;) {
+    for (unsigned i = 0; i < k;) {
       paths->push_front(List<PathArc>());
-      if (randomPath(paths->front().back_inserter(), max_len) == -1) {
-        paths->pop_front();
-      } else {
+      if (~randomPath(paths->front().back_inserter(), max_len))
         ++i;
-      }
+      else
+        paths->pop_front();
     }
   }
   return paths;

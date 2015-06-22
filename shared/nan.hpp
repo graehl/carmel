@@ -34,35 +34,33 @@
 #define WIN32_NAN
 #define GRAEHL_ISNAN(x) (_isnan(x) != 0)
 #else
-#if defined __FAST_MATH__
-#define GRAEHL_ISNAN isnan
-#if __cplusplus < 201103L
-// gcc 4.x -ffast-math breaks std::isnan
+#if defined(__FAST_MATH__) || __cplusplus < 201103L || defined(ANDROID)
+// gcc 4.x -ffast-math breaks std::isnan - revisit for 5.1?
 #include <stdint.h>
+#include <math.h>
+#define GRAEHL_ISNAN(x) ::isnan(x)  // in stlport, only c99 version of isnan is available
 #undef isnan
 inline bool isnan(float f) {
+  typedef unsigned u32;
   union {
     float f;
-    uint32_t x;
+    u32 x;
   } u = {f};
   return (u.x << 1) > 0xff000000u;
 }
 inline bool isnan (double f)
 {
   typedef unsigned long long u64;
-  u64 j = *(u64*)&f & ~0x8000000000000000uLL;
-  return j > 0x7ff0000000000000uLL;
+  union {
+    double f;
+    u64 x;
+  } u = {f};
+  return (u.x & ~0x8000000000000000uLL) > 0x7ff0000000000000uLL;
 }
 // TODO: fix for long double also?
-#endif
-#else
-#if defined(_STLPORT_VERSION) || defined(ANDROID)
-#include <math.h>
-#define GRAEHL_ISNAN(x) isnan(x)  // in stlport, only c99 version of isnan is available
 #else
 #include <cmath>
 #define GRAEHL_ISNAN(x) std::isnan(x)  // gcc native stdlib includes isnan as an exported template function
-#endif
 #endif
 #endif
 

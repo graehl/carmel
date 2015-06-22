@@ -36,12 +36,9 @@ class WFST;
 
 // TODO: this is an abomination e.g. missing groupId; use pair<FSTArc,WFST *> instead?
 struct PathArc {
-  // const char *in;
-  // const char *out;
-  // const char *destState;
-  int in, out, destState;
-  int& symbol(int dir) { return dir ? out : in; }
-  int symbol(int dir) const { return dir ? out : in; }
+  unsigned in, out, destState;
+  unsigned& symbol(LabelType dir) { return dir == kInput ? in : out; }
+  unsigned symbol(LabelType dir) const { return dir == kInput ? in : out; }
   const WFST* wfst;
   Weight weight;
 };
@@ -63,7 +60,7 @@ class WFST {
   struct path_print {
     // options
     bool O, I, Q, AT, W, E;
-    typedef dynamic_array<int> Output;
+    typedef dynamic_array<unsigned> Output;
     // bound here for fun:
     std::ostream* pout;
     // state used/saved per arc:
@@ -135,12 +132,12 @@ class WFST {
       std::ostream& out = *pout;
       w *= arc.weight;
       if (AT) {
-        int inid = arc.in, outid = arc.out;
+        unsigned inid = arc.in, outid = arc.out;
         if (outid != WFST::epsilon_index) output.push_back(outid);
         if (inid != WFST::epsilon_index) out << sp << wfst.inLetter(inid);
       } else {
         if (O || I) {
-          int id = O ? arc.out : arc.in;
+          unsigned id = O ? arc.out : arc.in;
           if (!(E && id == WFST::epsilon_index)) {
             out << sp;
             out_maybe_quote(O ? wfst.outLetter(id) : wfst.inLetter(id), out, !Q);
@@ -169,14 +166,14 @@ class WFST {
   static const int arc_format_index;  // handle for OutThresh
 
 
-  void initAlphabet(int dir) {
+  void initAlphabet(LabelType dir) {
     owner_alph[dir] = 1;
     alph[dir] = NEW alphabet_type(EPSILON_SYMBOL, WILDCARD_SYMBOL);
   }
 
   void initAlphabet() {
-    initAlphabet(0);
-    initAlphabet(1);
+    initAlphabet(kInput);
+    initAlphabet(kOutput);
   }
 
   void init() {
@@ -186,31 +183,24 @@ class WFST {
 
   void train_prune();  // delete states with zero counts
 
-  void deleteAlphabet(int dir) {
+  void deleteAlphabet(LabelType dir) {
     if (owner_alph[dir]) delete alph[dir];
     owner_alph[dir] = 0;
     alph[dir] = 0;
   }
   void deleteAlphabet() {
-    deleteAlphabet(0);
-    deleteAlphabet(1);
+    deleteAlphabet(kInput);
+    deleteAlphabet(kOutput);
   }
-  /*
-    BOOST_STATIC_CONSTANT(int,input=State::input);
-    BOOST_STATIC_CONSTANT(int,output=State::output);
-  */
-  enum { input = 0, output = 1 };
 
-  inline static int opposite(int dir) { return dir ? 0 : 1; }
-
-
-  void identity_alphabet_from(int dir) {
-    int to = opposite(dir);
+  void identity_alphabet_from(LabelType dir) {
+    LabelType to = opposite(dir);
     deleteAlphabet(to);
     alph[to] = alph[dir];
   }
 
-  int getStateIndex(const char* buf);  // creates the state according to named_states, returns -1 on failure
+  unsigned
+  getStateIndex(const char* buf);  // creates the state according to named_states, returns ~0 (-1) on failure
  public:
   // openfst MutableFst<LogArc> or <StdArc>, eg StdVectorFst
   template <class Fst>
@@ -239,7 +229,6 @@ class WFST {
   struct as_pairs_fsa {
     WFST& wfst;
     bool keep_epsilon;  // *e*:*e* -> *e* if true, non-epsilon pair-symbol if false
-    //        typedef std::pair<int,int> newsym;
     typedef IOPair newsym;
     typedef std::vector<newsym> newsyms;
     newsyms syms;
@@ -489,8 +478,8 @@ class WFST {
   bool owner_alph[2];
   alphabet_type* alph[2];
   bool named_states;
-  alphabet_type& in_alph() const { return *alph[input]; }
-  alphabet_type& out_alph() const { return *alph[output]; }
+  alphabet_type& in_alph() const { return *alph[kInput]; }
+  alphabet_type& out_alph() const { return *alph[kOutput]; }
 
   alphabet_type stateNames;
   state_id final;  // final state number - initial state always number 0
@@ -501,13 +490,13 @@ class WFST {
 
   StateVector states;
 
-  //  HashTable<IntKey, int> tieGroup; // IntKey is FSTArc *; value in group number (0 means fixed weight)
+  //  HashTable<UnsignedKey, int> tieGroup; // UnsignedKey is FSTArc *; value in group number (0 means fixed
+  //  weight)
   //  WFST(WFST &) {}   // disallow copy constructor - Yaser commented this ow to allow copy constructors
   //  WFST & operator = (WFST &) {return *this;} Yaser
   // WFST & operator = (WFST &) {std::cerr <<"Unauthorized use of assignemnt operator\n";;return *this;}
-  int abort();  // called on a bad read
-  int readLegible(istream&, bool alwaysNamed = false);  // returns 0 on failure (bad input)
-  int readLegible(const string& str, bool alwaysNamed = false);
+  bool readLegible(istream&, bool alwaysNamed = false);  // returns false on failure (bad input)
+  bool readLegible(const string& str, bool alwaysNamed = false);
   void writeArc(ostream& os, const FSTArc& a, bool GREEK_EPSILON = false);  // for graphviz
   void writeLegible(ostream&, bool include_zero = false);
   void writeLegibleFilename(std::string const& name, bool include_zero = false);
@@ -526,7 +515,7 @@ class WFST {
     setPathArc(&p, a);
     return o << p;
   }
-  std::ostream& printArc(const FSTArc& a, int source, std::ostream& o, bool weight = true) const {
+  std::ostream& printArc(const FSTArc& a, unsigned source, std::ostream& o, bool weight = true) const {
     o << '(' << stateName(source) << " -> " << stateName(a.dest) << ' ' << inLetter(a.in) << " : "
       << outLetter(a.out);
     if (weight) o << " / " << a.weight;
@@ -534,8 +523,6 @@ class WFST {
     return o;
   }
 
-  /*void insertPathArc(GraphArc *gArc, List<PathArc>*);
-    void insertShortPath(int source, int dest, List<PathArc> *);*/
   template <class T>
   void insertPathArc(GraphArc* gArc, T& l) {
     PathArc pArc;
@@ -543,23 +530,15 @@ class WFST {
     *(l++) = pArc;
   }
   template <class T>
-  void insertShortPath(GraphState* shortPathTree, int source, int dest, T& l) {
+  void insertShortPath(GraphState* shortPathTree, unsigned source, unsigned dest, T& l) {
     GraphArc* taken;
-    for (int iState = source; iState != dest; iState = taken->dest) {
+    for (unsigned iState = source; iState != dest; iState = taken->dest) {
       taken = &shortPathTree[iState].arcs.top();
       insertPathArc(taken, l);
     }
   }
-  /*template <>
-    void insertPathArc(GraphArc *gArc, List<PathArc>*l) {
-    insertPathArc(gArc,insert_iterator<List<PathArc> >(*l,l->erase_begin()));
-    }
-    template <>
-    void insertShortPath(GraphState *shortPathTree,int source, int dest, List<PathArc> *l) {
-    insertShortPath(shortPathTree,source,dest,insert_iterator<List<PathArc> >(*l,l->erase_begin()));
-    }*/
 
-  static int indexThreshold;
+  static unsigned indexThreshold;
   enum norm_group_by {
     CONDITIONAL,  // all arcs from a state with the same input will add to one
     JOINT,  // all arcs from a state will add to one (thus sum of all paths from start to finish = 1 assuming
@@ -640,9 +619,9 @@ class WFST {
   WFST(const WFST& a) { throw std::runtime_error("No copying of WFSTs allowed!"); }
 
  public:
-  int indexed_by;
+  LabelType indexed_by;
 
-  void index(int dir) {
+  void index(LabelType dir) {
     if (indexed_by != dir) {
       indexed_by = dir;
       for (unsigned s = 0; s < numStates(); ++s) {
@@ -651,15 +630,15 @@ class WFST {
       }
     }
   }
-  void indexInput() { index(State::input); }
-  void indexOutput() { index(State::output); }
+  void indexInput() { index(kInput); }
+  void indexOutput() { index(kOutput); }
 
-  void project(int dir = State::input, bool identity_fsa = false) {
+  void project(LabelType dir = kInput, bool identity_fsa = false) {
     if (identity_fsa) identity_alphabet_from(dir);
     for (unsigned s = 0; s < numStates(); ++s) states[s].project(dir, identity_fsa);
   }
 
-  void init_index() { indexed_by = State::none; }
+  void init_index() { indexed_by = kNone; }
 
   void indexFlush() {  // index on input symbol or output symbol depending on composition direction
     init_index();
@@ -688,7 +667,7 @@ class WFST {
   }
 
   WFST(const char* buf);  // make a simple transducer representing an input sequence
-  WFST(const char* buf, int& length,
+  WFST(const char* buf, unsigned& length,
        bool permuteNumbers);  // make a simple transducer representing an input sequence lattice - Yaser
   WFST(WFST& a, WFST& b, bool namedStates = false, bool preserveGroups = false);  // a composed with b
   WFST(cascade_parameters& cascade, WFST& a, WFST& b, bool namedStates = false,
@@ -714,24 +693,27 @@ class WFST {
 
   */
 
-  alphabet_type& alphabet(int dir) { return *alph[dir]; }
+  alphabet_type& alphabet(LabelType dir) { return *alph[dir]; }
 
-  alphabet_type const& alphabet(int dir) const { return *alph[dir]; }
+  alphabet_type const& alphabet(LabelType dir) const { return *alph[dir]; }
 
-  void listAlphabet(ostream& out, int dir = input);
+  void listAlphabet(ostream& out, LabelType dir = kInput);
   friend ostream& operator<<(ostream&, WFST&);  // Yaser 7-20-2000
   // I=PathArc output iterator; returns length of path or -1 on error
-  int randomPath(List<PathArc>* l, int max_len = -1) { return randomPath(l->back_inserter(), max_len); }
-  // makes locally random choices; doesn't pick a path relative to sum-of-all-paths
+  unsigned randomPath(List<PathArc>* l, unsigned max_len = ~0) {
+    return randomPath(l->back_inserter(), max_len);
+  }
+  /// \return -1 if no path found or max_len exceeded; makes locally random
+  /// choices; doesn't pick a path relative to sum-of-all-paths
   template <class I>
-  int randomPath(I i, int max_len = -1) {
+  bool randomPath(I i, unsigned max_len = -1) {
     PathArc p;
     unsigned s = 0;
     unsigned len = 0;
     unsigned max = *(unsigned*)&max_len;
     for (;;) {
       if (s == final) return len;
-      if (len > max || states[s].arcs.isEmpty()) return -1;
+      if (len > max || states[s].arcs.isEmpty()) return ~0;
       // choose random arc:
       Weight arcsum;
       typedef List<FSTArc> LA;
@@ -769,7 +751,7 @@ class WFST {
     }
   }
 
-  List<List<PathArc> >* randomPaths(int k, int max_len = -1);  // gives a list of (up to) k paths
+  List<List<PathArc> >* randomPaths(unsigned k, unsigned max_len = -1);  // gives a list of (up to) k paths
   // random paths to final
   // labels are pointers to names in WFST so do not
   // use the path after the WFST is deleted
@@ -812,59 +794,17 @@ class WFST {
     visit_kbest(k, v, throw_on_cycle);
   }
 
-  typedef dynamic_array<int> string_type;
+  typedef dynamic_array<unsigned> string_type;
   typedef dynamic_array<FSTArc*> path_type;
 
 
-  static inline void path_yield_into(string_type& s, path_type const& path, int dir = WFST::input,
+  static inline void path_yield_into(string_type& s, path_type const& path, LabelType dir = kInput,
                                      bool skip_epsilon = true) {
     for (path_type::const_iterator i = path.begin(), e = path.end(); i != e; ++i) {
       FSTArc const& a = **i;
       if (!(skip_epsilon && a.is_epsilon(dir))) s.push_back(a.symbol(dir));
     }
   }
-
-  /*
-    struct yield_from_path : public string_type
-    {
-    yield_from_path(path_type const& path,int dir=WFST::input,bool skip_epsilon=true)
-    {
-    WFST::path_yield_into(*this,path,dir,skip_epsilon);
-    }
-    };
-
-    // path_yield_visitor<MyVisitor> yield(MyVisitor(),WFST::input,true); wfst.visit_kbest(10,yield);
-    template <class V>
-    struct path_yield_visitor : public string_type
-    {
-    enum { SIDETRACKS_ONLY=0 };
-    int dir; // input or output
-    bool skip_epsilon;
-    V &v;
-    path_yield_visitor(V &v,int dir=WFST::input,bool skip_epsilon=true) : v(v),dir(dir),
-    skip_epsilon(skip_epsilon) {}
-
-    void start_path(unsigned k,Weight w) { this->clear(); }
-    void end_path() {
-    v(*this);
-    }
-    void visit_best_arc(const FSTArc &a) { visit_arc(a); }
-    void visit_sidetrack_arc(const FSTArc &a) { visit_arc(a); }
-    void visit_arc(const FSTArc &a)
-    {
-    if (!(skip_epsilon && a.is_epsilon(dir)))
-    this->push_back(a.symbol(dir));
-    }
-    };
-  */
-  /* the following is for dir=input.  reverse if dir=output.
-     given
-     taking all the input strings in transducer E=edit_distance_to
-     produce a subset of all edits
-     WFST(std::vector<int> const& string,WFST &edit_distance_to,Weight ins,Weight del,Weight subst,bool
-     epsilon_outer=false,int dir=input)
-  */
-
 
   struct annotated_path {
     path_type p;
@@ -952,7 +892,7 @@ class WFST {
 
 
   template <class V>
-  void edit_distance_mbr(unsigned search_k, unsigned visit_k, V& v, double alpha = 1., int dir = WFST::input) {
+  void edit_distance_mbr(unsigned search_k, unsigned visit_k, V& v, double alpha = 1., LabelType dir = kInput) {
     annotated_paths paths(*this, search_k, true);
     raisePower(alpha);
 
@@ -974,57 +914,56 @@ class WFST {
   // use the path after the WFST is deleted
   // list is dynamically allocated - delete it
   // yourself when you are done with it
-  struct symbol_ids : public List<int> {
-    symbol_ids(WFST& wfst, char const* buf, int output = 0, int line = -1) {
+  struct symbol_ids : public List<unsigned> {
+    symbol_ids(WFST& wfst, char const* buf, LabelType output = kInput, unsigned line = ~0) {
       wfst.symbolList(this, buf, output, line);
     }
   };
 
-  static inline bool is_special(int letter) { return letter >= start_normal_index; }
+  static inline bool is_special(unsigned letter) { return letter >= start_normal_index; }
 
-  static void print_yield(ostream& o, List<PathArc> const& path, bool output = false,
+  static void print_yield(ostream& o, List<PathArc> const& path, LabelType output = kInput,
                           bool show_special = false) {
     if (path.empty()) return;
     graehl::word_spacer sp(' ');
     for (List<PathArc>::const_iterator li = path.const_begin(), end = path.const_end(); li != end; ++li) {
       WFST const& w = *li->wfst;
-      int id = li->symbol(output);
+      unsigned id = li->symbol(output);
       if (show_special || !is_special(id)) o << sp << w.letter(id, output);
     }
   }
 
   static void print_training_pair(ostream& o, List<PathArc> const& path, bool show_special = false) {
-    print_yield(cout, path, false, show_special);
+    print_yield(cout, path, kInput, show_special);
     o << endl;
-    print_yield(cout, path, true, show_special);
+    print_yield(cout, path, kOutput, show_special);
     o << endl;
   }
 
   /// takes space-separated symbols and returns a list of symbol numbers in the
   /// input or output alphabet
-  void symbolList(List<int>* ret, const char* buf, int output = 0, int line = -1);
+  void symbolList(List<unsigned>* ret, const char* buf, LabelType output = kInput, unsigned line = ~0);
 
-  char const* letter_or_eps(unsigned i, int dir, char const* eps = "&#949", bool use_eps = true) {
+  char const* letter_or_eps(unsigned i, LabelType dir, char const* eps = "&#949", bool use_eps = true) {
     return (use_eps && i == epsilon_index) ? eps : letter(i, dir);
   }
 
-  const char* inLetter(unsigned i) const { return letter(i, 0); }
-  const char* outLetter(unsigned i) const { return letter(i, 1); }
-  char const* letter(unsigned i, int dir) const {
+  const char* inLetter(unsigned i) const { return letter(i, kInput); }
+  const char* outLetter(unsigned i) const { return letter(i, kOutput); }
+  char const* letter(unsigned i, LabelType dir) const {
     Assert(i < alphabet(dir).size());
     return alphabet(dir)[i].c_str();
   }
 
   // NB: uses static (must use or copy before next call) return string buffer if !named_states
-  const char* stateName(int i) const {
-    Assert(i >= 0);
+  const char* stateName(unsigned i) const {
     Assert(i < numStates());
     if (named_states)
       return stateNames[i].c_str();
     else
       return static_utoa(i);
   }
-  Weight sumOfAllPaths(List<int>& inSeq, List<int>& outSeq);
+  Weight sumOfAllPaths(List<unsigned>& inSeq, List<unsigned>& outSeq);
   // gives sum of weights of all paths from initial->final with the input/output sequence (empties are elided)
   void randomScale() {  // randomly scale weights (of unlocked arcs) before training by (0..1]
     changeEachParameter(scaleRandom());
@@ -1135,7 +1074,7 @@ class WFST {
   // TODO: move more of the train params into here
   struct train_opts {
     deriv_cache_opts cache;
-    int max_iter;
+    unsigned max_iter;
     double learning_rate_growth_factor;
     int ran_restarts;
     random_restart_acceptor ra;
@@ -1178,8 +1117,8 @@ class WFST {
   // sum, or just max if sum=false.  sum clamped to
   // max of 1 if clamp=true
   void pruneArcs(Weight thresh);  // remove all arcs with weight < thresh
-  enum { UNLIMITED = -1 };
-  void prunePaths(int max_states = UNLIMITED, Weight keep_paths_within_ratio = Weight::INF());
+  enum { UNLIMITED = (unsigned)~0 };
+  void prunePaths(unsigned max_states = UNLIMITED, Weight keep_paths_within_ratio = Weight::INF());
   // throw out rank states by the weight of the best path through them, keeping only max_states of them (or
   // all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less
   // than (best_path/keep_paths_within_ratio)
@@ -1193,13 +1132,15 @@ class WFST {
   // group) starting at labelStart - labelStart must be >=
   // 1.  returns next available label
   void lockArcs();  // put all arcs in group 0 (weights are locked)
-  //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<IntKey, int>; }
+  //  void unTieGroups() { tieGroup.~HashTable(); PLACEMENT_NEW (&tieGroup) HashTable<UnsignedKey, int>; }
   void unTieGroups();
 
 
-  int generate(int* inSeq, int* outSeq, int minArcs, int maxArcs);
+  /// \return # of arcs generated (i.e. length of inseq, outseq which may have epsilons)
+  unsigned generate(unsigned* inSeq, unsigned* outSeq, unsigned minArcs, unsigned maxArcs);
+
   BOOST_STATIC_CONSTANT(unsigned, invalid_state = (unsigned)-1);
-  int valid() const { return (final != invalid_state); }
+  bool valid() const { return (final != invalid_state); }
   unsigned size() const {
     if (!valid())
       return 0;
@@ -1244,12 +1185,7 @@ class WFST {
     return w[final];
   }
 
-  static void setIndexThreshold(int t) {
-    if (t < 0)
-      WFST::indexThreshold = 0;
-    else
-      WFST::indexThreshold = t;
-  }
+  static void setIndexThreshold(unsigned t) { WFST::indexThreshold = t; }
 
   // FIXME: these aren't technically const because they leave a mutable pointer to orig. arc, but can we make
   // a const version for truly const uses?
@@ -1260,12 +1196,12 @@ class WFST {
 
   // untested
   void ownAlphabet() {
-    ownAlphabet(0);
-    ownAlphabet(1);
+    ownAlphabet(kInput);
+    ownAlphabet(kOutput);
   }
 
   // untested
-  void stealAlphabet(WFST& from, int dir) {
+  void stealAlphabet(WFST& from, LabelType dir) {
     if (from.owner_alph[dir] && alph[dir] == from.alph[dir]) {  // && !owner_alph[dir] // unnecessary
       from.owner_alph[dir] = 0;
       owner_alph[dir] = 1;
@@ -1274,7 +1210,7 @@ class WFST {
   }
 
   // untested
-  void ownAlphabet(int dir) {
+  void ownAlphabet(LabelType dir) {
     if (!owner_alph[dir] && alph[dir]) {
       alph[dir] = NEW alphabet_type(*alph[dir]);
       owner_alph[dir] = 1;
@@ -1378,16 +1314,16 @@ class WFST {
 
   void removeMarkedStates(bool marked[]);  // remove states and all arcs to
   // states marked true
-  BOOST_STATIC_CONSTANT(int, no_group = FSTArc::no_group);
-  BOOST_STATIC_CONSTANT(int, locked_group = FSTArc::locked_group);
-  static inline bool isNormal(int groupId) { return FSTArc::normal(groupId); }
-  static inline bool isLocked(int groupId) { return FSTArc::locked(groupId); }
-  static inline bool isTied(int groupId) { return FSTArc::tied(groupId); }
+  BOOST_STATIC_CONSTANT(unsigned, no_group = FSTArc::no_group);
+  BOOST_STATIC_CONSTANT(unsigned, locked_group = FSTArc::locked_group);
+  typedef FSTArc::group_t GroupId;
+  static inline bool isNormal(FSTArc::group_t groupId) { return FSTArc::normal(groupId); }
+  static inline bool isLocked(FSTArc::group_t groupId) { return FSTArc::locked(groupId); }
+  static inline bool isTied(FSTArc::group_t groupId) { return FSTArc::tied(groupId); }
 
   // v(unsigned source_state,FSTArc &arc)
   template <class V>
   V& visit_arcs(V& v) {
-    //        unsigned arcno=0;
     for (unsigned s = 0, e = numStates(); s < e; ++s) states[s].visit_arcs(s, v);
     return v;
   }
@@ -1396,7 +1332,6 @@ class WFST {
     FSTArc::clear_group_f f;
     visit_arcs(f);
   }
-
 
  private:
   //  lastChange = train_maximize(method);
@@ -1416,12 +1351,15 @@ class WFST {
   }
 };
 
+#include <graehl/shared/warning_push.h>
+GCC_DIAG_IGNORE(maybe-uninitialized)
+
 class NormGroupIter {
   WFST& wfst;
   State* begin;
   State* state;
   State* end;
-  typedef HashTable<IntKey, List<HalfArc> >::iterator Cit;
+  typedef HashTable<UnsignedKey, List<HalfArc> >::iterator Cit;
   typedef List<HalfArc>::const_iterator Cit2;
   typedef List<FSTArc>::val_iterator Jit;
   Cit Ci;
@@ -1501,6 +1439,8 @@ class NormGroupIter {
     }
   }
 };
+
+#include <graehl/shared/warning_pop.h>
 
 void warn_no_derivations(WFST const& x, IOSymSeq const& s, unsigned n);
 

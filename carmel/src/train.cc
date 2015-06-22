@@ -135,7 +135,7 @@ struct prep_new_weights {
   prep_new_weights(Weight scale_prior) : scale_prior(scale_prior) {}
   void operator()(arc_counts& a) const {
     if (!WFST::isLocked((a.arc)->groupId)) {  // if the group is tied, then the group number is zero, then the
-                                              // old weight does not change. Otherwise update as follows
+      // old weight does not change. Otherwise update as follows
       // note: it's not possible for a cascade composed arc to have a locked groupid, so don't bother not
       // testing
       a.scratch
@@ -233,10 +233,10 @@ struct forward_backward : public cached_derivs<arc_counts> {
   bool use_matrix;
   bool remove_bad_training;
   matrix_io_index mio;
-  Weight ***f, ***b;
-  List<int> e_forward_topo, e_backward_topo;  // epsilon edges that don't make cycles are handled by
-                                              // propogating forward/backward in these orders (state = int
-                                              // because of graph.h)
+  Weight*** f, ***b;
+  List<unsigned> e_forward_topo, e_backward_topo;  // epsilon edges that don't make cycles are handled by
+  // propogating forward/backward in these orders (state = int
+  // because of graph.h)
   bool exists_some_derivation() const {
     if (trn->examples.empty()) {
       Config::warn() << "No training example had a derivation - check your models, quotes, manually compose "
@@ -259,8 +259,8 @@ struct forward_backward : public cached_derivs<arc_counts> {
       matrix_compute(s.i.n, s.i.let, s.o.n, s.o.let, 0, f, mio.forward, e_forward_topo);
   }
 
-  void matrix_compute(int nIn, int* inLet, int nOut, int* outLet, int start, Weight*** w,
-                      matrix_io_index::states_t& io, List<int> const& eTopo);
+  void matrix_compute(unsigned nIn, int* inLet, unsigned nOut, int* outLet, unsigned start, Weight*** w,
+                      matrix_io_index::states_t& io, List<unsigned> const& eTopo);
 
   inline void matrix_forward_prop(Weight*** m, matrix_io_index::for_io const* fio, unsigned s, unsigned i,
                                   unsigned o, unsigned d_i, unsigned d_o) {
@@ -412,10 +412,10 @@ struct forward_backward : public cached_derivs<arc_counts> {
   void matrix_dump(unsigned m_i, unsigned m_o) {
     assert(use_matrix && f && b);
     Config::debug() << "\nForwardProb/BackwardProb:\n";
-    for (int i = 0; i <= m_i; ++i) {
-      for (int o = 0; o <= m_o; ++o) {
+    for (unsigned i = 0; i <= m_i; ++i) {
+      for (unsigned o = 0; o <= m_o; ++o) {
         Config::debug() << i << ':' << o << " (";
-        for (int s = 0; s < n_st; ++s) {
+        for (unsigned s = 0; s < n_st; ++s) {
           Config::debug() << f[i][o][s] << '/' << b[i][o][s];
           if (s < n_st - 1) Config::debug() << ' ';
         }
@@ -448,7 +448,7 @@ struct forward_backward : public cached_derivs<arc_counts> {
   void save_best() {
     if (!cascade.trivial)
       arcs.visit(for_arcs::save_best_counts());  // from em_weight, which is just weight() pre-estimate.
-                                                 // pre-normalization?
+    // pre-normalization?
     else
       arcs.visit(for_arcs::save_best());  // post-norm weights otherwise
   }
@@ -512,9 +512,7 @@ Weight WFST::train(cascade_parameters& cascade, training_corpus& corpus, Normali
   forward_backward fb(*this, cascade, weight_is_prior_count, smoothFloor, true, opts, corpus);
   Weight corpus_p;
 
-  if (opts.max_iter < 0) {
-    return fb.estimate(corpus_p).ppxper(corpus.totalEmpiricalWeight);
-  }
+  if (~~opts.max_iter) return fb.estimate(corpus_p).ppxper(corpus.totalEmpiricalWeight);
 
   // when you just want frac counts or a single iteration:
   if (opts.max_iter == 0 || (opts.max_iter == 1 && opts.ran_restarts == 0)) {
@@ -574,14 +572,14 @@ Weight WFST::train(cascade_parameters& cascade, training_corpus& corpus, Normali
       if (cascade_counts)
         fb.arcs.visit(for_arcs::save_counts());  // so you can later save_best_counts if you like the ppx
       cascade.update();
-      if (train_iter > opts.max_iter && have_good_weights) {
+      if (~opts.max_iter && train_iter > opts.max_iter && have_good_weights) {
         log << "Maximum number of iterations (" << opts.max_iter
             << ") reached before convergence criteria was met - greatest arc weight change was " << lastChange
             << "\n";
         break;
       }
       Weight p = fb.estimate(corpus_p);  // lastPerplexity.isInfinity() // only delete no-path training the
-                                         // first time, in case we screw up with our learning rate
+      // first time, in case we screw up with our learning rate
       Weight newPerplexity = p.ppxper(corpus.totalEmpiricalWeight);
       DWSTAT("\nAfter estimate");
       log << "i=" << train_iter << " (rate=" << learning_rate << "): ";
@@ -591,8 +589,8 @@ Weight WFST::train(cascade_parameters& cascade, training_corpus& corpus, Normali
                                 corpus.n_pairs);  // FIXME: newPerplexity is training-example-weighted
       if (newPerplexity < bestPerplexity
           && (!using_cascade || cascade_counts)) {  // because of how I'm saving only composed counts, we
-                                                    // can't actually get back to our initial starting point
-                                                    // (iter 1)
+        // can't actually get back to our initial starting point
+        // (iter 1)
         log << " (new best)";
         bestPerplexity = newPerplexity;
         have_good_weights = true;
@@ -695,10 +693,10 @@ agenda by reverse dfs finishing times (dfs on the whole e graph though)
 // w matrix and clear each non-0 entry after it is no longer in play.  ouch - that means all the lists (of
 // nonzero values) need to be kept around until after people are done playing with the w
 
-void forward_backward::matrix_compute(int nIn, int* inLet, int nOut, int* outLet, int start, Weight*** w,
-                                      matrix_io_index::states_t& io, List<int> const& eTopo) {
+void forward_backward::matrix_compute(unsigned nIn, int* inLet, unsigned nOut, int* outLet, unsigned start,
+                                      Weight*** w, matrix_io_index::states_t& io, List<unsigned> const& eTopo) {
 
-  int i, o, s;
+  unsigned i, o, s;
   for (i = 0; i <= nIn; ++i)
     for (o = 0; o <= nOut; ++o)
       for (s = 0; s < n_st; ++s) w[i][o][s].setZero();
@@ -714,7 +712,8 @@ void forward_backward::matrix_compute(int nIn, int* inLet, int nOut, int* outLet
 #endif
       IO.in = 0;
       IO.out = 0;
-      for (List<int>::const_iterator topI = eTopo.const_begin(), end = eTopo.const_end(); topI != end; ++topI) {
+      for (List<unsigned>::const_iterator topI = eTopo.const_begin(), end = eTopo.const_end(); topI != end;
+           ++topI) {
         s = *topI;
         matrix_io_index::for_state const& fs = io[s];
         matrix_forward_prop(w, find_second(fs, IO), s, i, o, 0, 0);
@@ -774,11 +773,11 @@ Weight forward_backward::estimate(Weight& unweighted_corpus_prob) {
 
 Weight forward_backward::estimate_matrix(Weight& unweighted_corpus_prob) {
   assert(use_matrix && b);
-  int i, o, s, nIn, nOut, *letIn, *letOut;
+  unsigned i, o, s, nIn, nOut;
+  int* letIn, *letOut;
 
   // for perplexity
   Weight ret = 1;
-
 
   IOPair io;
 
@@ -807,9 +806,9 @@ Weight forward_backward::estimate_matrix(Weight& unweighted_corpus_prob) {
 #endif
 
     ret *= fin.pow(seq->weight);  // since perplexity = 2^(- avg log likelihood)=2^((-1/n)*sum(log2 prob)) =
-                                  // (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead;
-                                  // prod(prob) = ret, of course.  raising ^N does the multiplication N times
-                                  // for an example that is weighted N
+    // (2^sum(log2 prob))^(-1/n) , we can take prod(prob)^(1/n) instead;
+    // prod(prob) = ret, of course.  raising ^N does the multiplication N times
+    // for an example that is weighted N
     unweighted_corpus_prob *= fin;
 
 
@@ -903,8 +902,8 @@ Weight forward_backward::maximize(WFST::NormalizeMethods const& methods, FLOAT_T
   //    DUMPDW("Weights before normalization");
   //    DWSTAT("Before normalize");
   cascade.use_counts(methods);  // doesn't actually put weights back into x for nontrivial cascade, which is
-                                // why the following is skipped for cascades.  update prior to estimate puts
-                                // the weights in place.
+  // why the following is skipped for cascades.  update prior to estimate puts
+  // the weights in place.
   cascade.load_none(methods);
   if (cascade.trivial) {
     DUMPDW("Weights after normalization");
@@ -921,7 +920,7 @@ Weight forward_backward::maximize(WFST::NormalizeMethods const& methods, FLOAT_T
     return 10;
 }
 
-Weight WFST::sumOfAllPaths(List<int>& inSeq, List<int>& outSeq) {
+Weight WFST::sumOfAllPaths(List<unsigned>& inSeq, List<unsigned>& outSeq) {
   Assert(valid());
   training_corpus corpus;
   corpus.add(inSeq, outSeq);
@@ -992,7 +991,7 @@ void WFST::read_training_corpus(std::istream& in, training_corpus& corpus) {
     char s = buf[0];
     if (isdigit(s) || s == '-' || s == '.'
         || s == 'e') {  // FIXME: this is dumb since we allow symbols without quotes; require option to
-                        // specify weight always present, or parallel weight file
+      // specify weight always present, or parallel weight file
       istringstream w(buf);
       if (!try_stream_into(w, weight)) {
         Config::warn() << "Bad training example weight: " << buf << std::endl;
@@ -1002,7 +1001,7 @@ void WFST::read_training_corpus(std::istream& in, training_corpus& corpus) {
       ++input_lineno;
       if (!in) goto warn;
     }
-    WFST::symbol_ids ins(*this, buf.c_str(), 0, input_lineno);
+    WFST::symbol_ids ins(*this, buf.c_str(), kInput, input_lineno);
     getline(in, buf);
     ++input_lineno;
     if (!in) {
@@ -1012,7 +1011,7 @@ void WFST::read_training_corpus(std::istream& in, training_corpus& corpus) {
         break;
     }
 
-    WFST::symbol_ids outs(*this, buf.c_str(), 1, input_lineno);
+    WFST::symbol_ids outs(*this, buf.c_str(), kOutput, input_lineno);
     corpus.add(ins, outs, weight);
   }
   goto done;

@@ -14,60 +14,51 @@ struct TrioKey {
   unsigned qb;
   char filter;
 
-  bool operator == (const TrioKey &t) const
-  {
-    return (qa == t.qa) && (qb == t.qb)
-        && (filter == t.filter);
-  }
+  bool operator==(const TrioKey& t) const { return (qa == t.qa) && (qb == t.qb) && (filter == t.filter); }
 
   TrioKey() {}
 
-  TrioKey(int a, int b, char c) :
-      qa(a), qb(b), filter(c) {}
-  size_t hash() const
-  {
-    Assert ( qa < gAStates && qb < gBStates);
-    return uint32_hash((gBStates * (filter*gAStates + qa) + qb));
+  TrioKey(unsigned a, unsigned b, char c) : qa(a), qb(b), filter(c) {}
+  size_t hash() const {
+    Assert(qa < gAStates && qb < gBStates);
+    return uint32_hash((gBStates * (filter * gAStates + qa) + qb));
   }
 };
 
 
 struct HalfArcState {
-  int l_dest;     // in unshared (lhs) transducer
-  int r_source;     // in (rhs) transducer with the shared arcs
-  int l_hiddenLetter;   // the matching letter that disappears in composition (index into lhs transducer's output alphabet)
+  unsigned l_dest;  // in unshared (lhs) transducer
+  unsigned r_source;  // in (rhs) transducer with the shared arcs
+  unsigned l_hiddenLetter;  // the matching letter that disappears in composition (index unsignedo lhs
+                            // transducer's output alphabet)
 
-  bool operator == ( const HalfArcState &s ) const
-  {
-    return ( l_dest == s.l_dest )
-        && ( r_source == s.r_source )
-        && ( l_hiddenLetter == s.l_hiddenLetter );
+  bool operator==(const HalfArcState& s) const {
+    return (l_dest == s.l_dest) && (r_source == s.r_source) && (l_hiddenLetter == s.l_hiddenLetter);
   }
 
   HalfArcState() {}
 
-  HalfArcState(int a, int b, int c) :
-      l_dest(a), r_source(b), l_hiddenLetter(c) {}
-  size_t hash() const
-  {
-    return uint32_hash(TrioKey::gBStates*(l_hiddenLetter*TrioKey::gAStates + l_dest) + r_source);
+  HalfArcState(unsigned a, unsigned b, unsigned c) : l_dest(a), r_source(b), l_hiddenLetter(c) {}
+  size_t hash() const {
+    return uint32_hash(TrioKey::gBStates * (l_hiddenLetter * TrioKey::gAStates + l_dest) + r_source);
   }
 };
 
 struct TrioID {
-  int num;
+  unsigned num;
   TrioKey tri;
 };
-
 }
 
 BEGIN_HASH(graehl::TrioKey) {
   return x.hash();
-} END_HASH
+}
+END_HASH
 
 BEGIN_HASH(graehl::HalfArcState) {
   return x.hash();
-} END_HASH
+}
+END_HASH
 
 
 #endif

@@ -54,7 +54,7 @@ void WFST::output_format(bool* flags, std::ostream* fstout) {
   //    will this help?
 }
 
-static const int DEFAULTSTRBUFSIZE = 4096;
+static const unsigned DEFAULTSTRBUFSIZE = 4096;
 
 #define REQUIRE(x)  \
   do {              \
@@ -71,18 +71,18 @@ static const int DEFAULTSTRBUFSIZE = 4096;
     REQUIRE(istr >> c); \
     istr.unget();       \
   } while (0)
-#define OUTARCWEIGHT(os, a)                                                    \
-  do {                                                                         \
-    int pGroup = (a)->groupId;                                                 \
-    if (!brief || pGroup >= 0 || (a)->weight != 1.0) os << " " << (a)->weight; \
-    if (pGroup >= 0) {                                                         \
-      os << '!';                                                               \
-      if (pGroup > 0) os << pGroup;                                            \
-    }                                                                          \
+#define OUTARCWEIGHT(os, a)                                                \
+  do {                                                                     \
+    unsigned pGroup = (a)->groupId;                                        \
+    if (!brief || ~pGroup || (a)->weight != 1.0) os << " " << (a)->weight; \
+    if (~pGroup) {                                                         \
+      os << '!';                                                           \
+      if (pGroup > 0) os << pGroup;                                        \
+    }                                                                      \
   } while (0)
 
 
-static inline unsigned pow2(int exp) {
+static inline unsigned pow2(unsigned exp) {
   return 1 << exp;
 }
 
@@ -95,7 +95,7 @@ static char* getString(std::istream& in, char* buf, unsigned STRBUFSIZE = DEFAUL
   } while (0)
 
   bool l;
-  char *s, *bufend = buf + STRBUFSIZE - 2;
+  char* s, * bufend = buf + STRBUFSIZE - 2;
   if (!(in >> *buf)) return 0;
   switch (*buf) {
     case '"':
@@ -153,7 +153,7 @@ WFST::WFST(const char* buf) {
   init();
   istringstream line(buf);
   char symbol[DEFAULTSTRBUFSIZE];
-  int symbolInNumber, symbolOutNumber;
+  unsigned symbolInNumber, symbolOutNumber;
   final = 0;
   while (line) {
     if (!getString(line, symbol)) break;
@@ -161,8 +161,8 @@ WFST::WFST(const char* buf) {
       invalidate();
       return;
     }
-    symbolInNumber = alphabet(0).indexOf(symbol);
-    symbolOutNumber = alphabet(1).indexOf(symbol);
+    symbolInNumber = alphabet(kInput).indexOf(symbol);
+    symbolOutNumber = alphabet(kOutput).indexOf(symbol);
     Assert(symbolInNumber == symbolOutNumber);
     push_back(states);
     states[final].addArc(FSTArc(symbolInNumber, symbolOutNumber, final + 1, 1.0));
@@ -185,7 +185,7 @@ bool isNonNegInt(const char* p) {
 }
 
 
-WFST::WFST(const char* buf, int& length, bool permuteNumbers)
+WFST::WFST(const char* buf, unsigned& length, bool permuteNumbers)
 // Generate a permutation lattice for a given string
 {
   named_states = 0;
@@ -193,12 +193,12 @@ WFST::WFST(const char* buf, int& length, bool permuteNumbers)
   length = 0;
   istringstream line(buf);
   char symbol[DEFAULTSTRBUFSIZE];
-  vector<int> symbols;
+  vector<unsigned> symbols;
   vector<string> words;
   string currSym("");
-  int symbolInNumber, maxSymbolNumber = 0;
+  unsigned symbolInNumber, maxSymbolNumber = 0;
   final = 0;
-  alphabet_type &in = alphabet(0), &out = alphabet(1);
+  alphabet_type& in = alphabet(kInput), & out = alphabet(kOutput);
 
   while (line) {
     if (!getString(line, symbol)) {
@@ -231,35 +231,36 @@ WFST::WFST(const char* buf, int& length, bool permuteNumbers)
   }
   if (permuteNumbers) {
     push_back(states); /* final state*/
-    final = pow2((int)symbols.size()) - 1;
+    final = pow2((unsigned)symbols.size()) - 1;
     for (unsigned k = 0; k < final; k++) {
       push_back(states);
       vector<bool> taken(maxSymbolNumber + 1);
-      for (int i = 0; i <= maxSymbolNumber; ++i) taken[i] = false;
-      for (int l = 0; l < int(symbols.size()); l++) {
-        int temp = pow2(l);
-        if (((int(k / temp) % 2) == 0) && (!taken[unsigned(symbols[l])])) {
+      for (unsigned i = 0; i <= maxSymbolNumber; ++i) taken[i] = false;
+      for (unsigned l = 0, N = symbols.size(); l < N; l++) {
+        unsigned temp = pow2(l);
+        if (!((k / temp) % 2) && !taken[symbols[l]]) {
           states[k].addArc(FSTArc(symbols[l], symbols[l], k + temp, 1.0));
           taken[symbols[l]] = true;
         }
       }
     }
   } else {
-    final = pow2((int)words.size()) - 1;
+    final = pow2(words.size()) - 1;
     for (unsigned k = 0; k <= final; k++) {
       push_back(states);
     }
-    int temp_final = final;
+    unsigned temp_final = final;
     vector<bool> visited(final);
     for (unsigned k = 0; k < final; k++) visited[k] = false;
     visited[0] = true;
     for (unsigned k = 0; k < final; k++) {
       if (visited[k]) {
         std::map<const char*, bool, ltstr> taken;
-        for (unsigned i = 0; i < words.size(); ++i) taken[words[i].c_str()] = false;
-        for (int l = 0; l < int(words.size()); l++) {
-          int temp = pow2(l);
-          if (((int(k / temp) % 2) == 0) && (!taken[words[l].c_str()])) {
+        unsigned const N = words.size();
+        for (unsigned i = 0; i < N; ++i) taken[words[i].c_str()] = false;
+        for (unsigned l = 0; l < N; l++) {
+          unsigned temp = pow2(l);
+          if (!((k / temp) % 2) && !taken[words[l].c_str()]) {
             if (isNonNegInt(words[l].c_str())) {
               unsigned from_state, to_state;
               from_state = k;
@@ -309,7 +310,7 @@ WFST::WFST(const char* buf, int& length, bool permuteNumbers)
 }
 
 
-int WFST::getStateIndex(const char* buf) {
+unsigned WFST::getStateIndex(const char* buf) {
   char* scanend;
   unsigned st;
   if (!named_states) {
@@ -336,13 +337,13 @@ int WFST::getStateIndex(const char* buf) {
 static const char COMMENT_CHAR = '%';
 
 // FIXME: need to destroy old data or switch this to a constructor
-int WFST::readLegible(istream& istr, bool alwaysNamed) {
-  alphabet_type &in = alphabet(0), &out = alphabet(1);
+bool WFST::readLegible(istream& istr, bool alwaysNamed) {
+  alphabet_type& in = alphabet(kInput), & out = alphabet(kOutput);
   State::arc_adder arc_add(states);
   StringKey finalName;
   try {
     named_states = 1;
-    int stateNumber, destState, inL, outL;
+    unsigned stateNumber, destState, inL, outL;
     Weight weight;
     char c;
     char buf[DEFAULTSTRBUFSIZE], buf2[DEFAULTSTRBUFSIZE];
@@ -373,7 +374,7 @@ int WFST::readLegible(istream& istr, bool alwaysNamed) {
       REQUIRE(getString(istr, buf));
 
       stateNumber = getStateIndex(buf);
-      if (stateNumber == -1) goto INVALID;
+      if (!~stateNumber) goto INVALID;
 
       // PRE: read: '(' source
       // expecting: {[destparen(] dest ... [destparen)]}* ')'
@@ -386,7 +387,7 @@ int WFST::readLegible(istream& istr, bool alwaysNamed) {
         // dest state:
         REQUIRE(getString(istr, buf));
         destState = getStateIndex(buf);
-        if (destState == -1) goto INVALID;
+        if (!~destState) goto INVALID;
 
         // (iow!g)*
         for (;;) {
@@ -452,9 +453,8 @@ int WFST::readLegible(istream& istr, bool alwaysNamed) {
           if (c == '!') {  // lock weight
             PEEKC;
             if (isdigit(c)) {
-              int group;
+              unsigned group;
               REQUIRE(istr >> group);
-              //      tieGroup.insert(IntKey(int(lastAdded)), group);
               to_add.setGroup(group);
             } else {
               to_add.setLocked();
@@ -504,8 +504,7 @@ INVALID:
   return 0;
 }
 
-
-int WFST::readLegible(const string& str, bool alwaysNamed) {
+bool WFST::readLegible(const string& str, bool alwaysNamed) {
   istringstream istr(str);
   return (readLegible(istr, alwaysNamed));
 }
@@ -580,8 +579,8 @@ void WFST::writeGraphViz(ostream& os) {
 void WFST::writeArc(ostream& os, const FSTArc& a, bool GREEK_EPSILON) {
   static const char* const epsilon = "&#949;";
   bool brief = get_arc_format(os) == BRIEF;
-  os << letter_or_eps(a.in, input, epsilon, GREEK_EPSILON);
-  if (!(brief && a.in == a.out)) os << " : " << letter_or_eps(a.out, output, epsilon, GREEK_EPSILON);
+  os << letter_or_eps(a.in, kInput, epsilon, GREEK_EPSILON);
+  if (!(brief && a.in == a.out)) os << " : " << letter_or_eps(a.out, kOutput, epsilon, GREEK_EPSILON);
   OUTARCWEIGHT(os, &a);
 }
 
@@ -595,7 +594,7 @@ void WFST::writeLegible(ostream& os, bool include_zero) {
   bool brief = get_arc_format(os) == BRIEF;
   bool onearc = get_per_line(os) == ARC;
   unsigned i;
-  const char *inLet, *outLet, *destState;
+  const char* inLet, *outLet, *destState;
 
   if (!valid()) return;
   os << stateName(final);
@@ -624,17 +623,12 @@ void WFST::writeLegible(ostream& os, bool include_zero) {
   os << "\n";
 }
 
-void WFST::listAlphabet(ostream& ostr, int dir) {
+void WFST::listAlphabet(ostream& ostr, LabelType dir) {
   ostr << alphabet(dir);
 }
 
-void WFST::symbolList(List<int>* ret, const char* buf, int output, int lineno) {
-  //  List<int> *ret = NEW List<int>;
-
-  // LIST_BACK_INSERTER<List<int> > cursor(*ret);
-  //  insert_iterator<List<int> > cursor(*ret,ret->erase_begin());
-  List<int>::back_insert_iterator cursor(*ret);
-  //  ListIter<int> ins(*ret);
+void WFST::symbolList(List<unsigned>* ret, const char* buf, LabelType output, unsigned lineno) {
+  List<unsigned>::back_insert_iterator cursor(*ret);
   istringstream line(buf);
   char symbol[DEFAULTSTRBUFSIZE];
   alphabet_type& alph = alphabet(output);
@@ -645,7 +639,7 @@ void WFST::symbolList(List<int>* ret, const char* buf, int output, int lineno) {
     if (!pI) {
       std::ostringstream o;
       o << "Input sequence has symbol not in alphabet: " << symbol;
-      if (lineno >= 0) o << " on line " << lineno;
+      if (~lineno) o << " on line " << lineno;
       throw std::runtime_error(o.str());
     } else
       *cursor++ = *pI;

@@ -9,6 +9,7 @@
 
 default: mydefault
 
+
 DIR=.
 SRC=$(DIR)/src
 CP_PROGS=$(wildcard $(SRC)/*.pl)
@@ -27,16 +28,13 @@ LIB =
 CPP_EXT=cc
 
 LDFLAGS += -lpthread -ldl -pthread
+#-std=c++11
 BASECXXFLAGS= -ffast-math
 CPPFLAGS += -Wno-deprecated -Wall
-ifeq ($(HOST),cage)
-CXXFLAGS= $(BASECXXFLAGS) -O
-LDFLAGS += -lstdc++
-# -pg
-else
+
 CXXFLAGS= $(BASECXXFLAGS) -O3
-endif
-#FIXME: crashes with -O3 on kbest output
+#FIXME: crashes with -O3 on kbest (>2?) output
+
 CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST
 

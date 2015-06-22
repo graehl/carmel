@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname $0`
-B=${1:-../bin/$HOST/carmel}
+B=${1:-../bin/$HOST/carmel.debug}
 which $B
 set -x
 mkdir -p logs

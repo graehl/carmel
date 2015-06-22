@@ -13,20 +13,20 @@
 
 namespace graehl {
 
-struct IntKey {
-  int i;
+struct UnsignedKey {
+  unsigned i;
   size_t hash() const { return uint32_hash(i); }
-  IntKey() {}
-  IntKey(int a) : i(a) {}
-  operator int() const { return i; }
+  UnsignedKey() {}
+  UnsignedKey(unsigned a) : i(a) {}
+  operator unsigned() const { return i; }
 };
 
 struct IOPair {
-  int in;
-  int out;
+  unsigned in;
+  unsigned out;
   size_t hash() const { return uint32_hash(1543 * out + in); }
   IOPair() {}
-  IOPair(int in, int out) : in(in), out(out) {}
+  IOPair(unsigned in, unsigned out) : in(in), out(out) {}
 };
 
 std::ostream& operator<<(std::ostream& o, IOPair p);
@@ -37,7 +37,7 @@ inline bool operator==(const IOPair l, const IOPair r) {
 
 }  // ns
 
-BEGIN_HASH_VAL(graehl::IntKey) {
+BEGIN_HASH_VAL(graehl::UnsignedKey) {
   return x.hash();
 }
 END_HASH
@@ -49,11 +49,6 @@ END_HASH
 namespace graehl {
 
 struct State {
-  /*
-    BOOST_STATIC_CONSTANT(int,input=0);
-    BOOST_STATIC_CONSTANT(int,output=1);
-  */
-  enum { input = 0, output = 1, none = 2 };
 
   typedef List<FSTArc> Arcs;
 
@@ -107,11 +102,11 @@ struct State {
   };
 
   Arcs arcs;
-  int size;
+  unsigned size;
 #ifdef BIDIRECTIONAL
   int hitcount;  // how many times index is used, negative for index on input, positive for index on output
 #endif
-  typedef HashTable<IntKey, List<HalfArc> > Index;
+  typedef HashTable<UnsignedKey, List<HalfArc> > Index;
 
   template <class IOMap>
   void index_io(IOMap& m) const {
@@ -151,17 +146,17 @@ struct State {
 
   // input => left projection, output => right.  epsilon->string or string->epsilon (identity_fsa=true), or
   // string->string (identity_fsa=false)
-  void project(int dir = input, bool identity_fsa = false) {
+  void project(LabelType dir = kInput, bool identity_fsa = false) {
     flush();
     for (Arcs::val_iterator l = arcs.val_begin(), end = arcs.val_end(); l != end; ++l)
-      if (dir == output)
-        l->in = identity_fsa ? l->out : 0;
-      else
+      if (dir == kInput)
         l->out = identity_fsa ? l->in : 0;
+      else
+        l->in = identity_fsa ? l->out : 0;
   }
   // fixme: push back
-  void indexBy(int dir = 0) {
-    if (dir) {
+  void indexBy(LabelType dir = kInput) {
+    if (dir != kInput) {
 #ifdef BIDIRECTIONAL
       if (hitcount++ > 0) return;
       hitcount = 1;
@@ -173,8 +168,8 @@ struct State {
       for (Arcs::val_iterator l = arcs.val_begin(), end = arcs.val_end(); l != end; ++l) {
 // if you distrust ht[key], I guess: //#define QUEERINDEX
 #ifdef QUEERINDEX
-        if (!(list = find_second(*index, (IntKey)l->out)))
-          add(*index, (IntKey)l->out, List<HalfArc>(&(*l)));
+        if (!(list = find_second(*index, (UnsignedKey)l->out)))
+          add(*index, (UnsignedKey)l->out, List<HalfArc>(&(*l)));
         else
           list->push_front(&(*l));
 #else
@@ -193,8 +188,8 @@ struct State {
     index = NEW Index(size);
     for (Arcs::val_iterator l = arcs.val_begin(), end = arcs.val_end(); l != end; ++l) {
 #ifdef QUEERINDEX
-      if (!(list = find_second(*index, (IntKey)l->in)))
-        add(*index, (IntKey)l->in, List<HalfArc>(&(*l)));
+      if (!(list = find_second(*index, (UnsignedKey)l->in)))
+        add(*index, (UnsignedKey)l->in, List<HalfArc>(&(*l)));
       else
         list->push_front(&(*l));
 #else
@@ -281,7 +276,8 @@ struct State {
       }
     }
   }
-  void remove_epsilons_to(int dest)  // *e*/*e* transition to same state has no structural/bestpath value.  we
+  void
+  remove_epsilons_to(unsigned dest)  // *e*/*e* transition to same state has no structural/bestpath value.  we
   // do this always when reducing (not "-d")
   {
     flush();
@@ -305,19 +301,17 @@ struct State {
     --size;
     return arcs.erase(t);
   }
-  void renumberDestinations(int* oldToNew) {  // negative means remove transition
+  void renumberDestinations(unsigned* oldToNew) {  // negative means remove transition
     flush();
     for (Arcs::erase_iterator l = arcs.erase_begin(), end = arcs.erase_end(); l != end;) {
-      int& dest = (int&)l->dest;
-      if (oldToNew[dest] < 0) {
-        l = remove(l);
-      } else {
+      unsigned& dest = (unsigned&)l->dest;
+      if (~oldToNew[dest]) {
         dest = oldToNew[dest];
         ++l;
-      }
+      } else
+        l = remove(l);
     }
   }
-
 
   void swap(State& b) {
     using std::swap;
@@ -338,7 +332,7 @@ inline void swap(State& a, State& b) {
 
 std::ostream& operator<<(std::ostream& out, State& s);  // Yaser 7-20-2000
 
-}  // ns
 
+}
 
 #endif

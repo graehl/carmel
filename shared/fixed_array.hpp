@@ -407,7 +407,7 @@ class fixed_array : public auto_array<T, Alloc> {
   /// move
   fixed_array& operator=(fixed_array&& o) noexcept {
     assert(&o != this);  // std::vector doesn't check for self-move so why should we?
-    destroy();
+    this->destroy();
     this->dealloc();
     std::memcpy(this, &o, sizeof(fixed_array));
     o.release_impl();

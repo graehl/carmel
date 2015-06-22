@@ -29,7 +29,7 @@ struct pGraphArc {
   operator GraphArc*() const { return p; }
 };
 
-inline int operator<(const pGraphArc l, const pGraphArc r) {
+inline bool operator<(const pGraphArc l, const pGraphArc r) {
   return l->weight > r->weight;
 }
 
@@ -39,19 +39,19 @@ inline int operator<(const pGraphArc l, const pGraphArc r) {
    subheaps.
 */
 struct GraphHeap {
-  GraphHeap *left, *right;  // for balanced heap
-  int nDescend;
+  GraphHeap* left, *right;  // for balanced heap
+  unsigned nDescend;
   // cross edge is implicitly determined by arc
   GraphArc* arc;  // data at each vertex
   pGraphArc* arcHeap;  // binary heap of sidetracks originating from a state
-  int arcHeapSize;
+  unsigned arcHeapSize;
 
   static GraphHeap* freeList;
-  static const int newBlocksize;
+  static const unsigned newBlocksize;
   static List<GraphHeap*> usedBlocks;
   // custom new is mandatory, because of how freeAll works (and we do rely on freeAll)!
   void* operator new(size_t) {
-    GraphHeap *ret, *max;
+    GraphHeap* ret, *max;
     if (freeList) {
       ret = freeList;
       freeList = freeList->left;
@@ -78,25 +78,25 @@ struct GraphHeap {
   }
 };
 
-inline int operator<(const GraphHeap& l, const GraphHeap& r) {
+inline bool operator<(const GraphHeap& l, const GraphHeap& r) {
   return l.arc->weight > r.arc->weight;
 }
 
 struct EdgePath {
   GraphHeap* node;
-  int heapPos;  // <0 if arc is node->arc - otherwise arc is node->arcHeap[heapPos]
+  unsigned heapPos;  // ~0 if arc is node->arc - otherwise arc is node->arcHeap[heapPos]
   GraphArc* get_cut_arc() const {
-    if (heapPos < 0)
-      return node->arc;
-    else
+    if (~heapPos)
       return node->arcHeap[heapPos];
+    else
+      return node->arc;
   }
 
   EdgePath* last;
   FLOAT_TYPE weight;
 };
 
-inline int operator<(const EdgePath& l, const EdgePath& r) {
+inline bool operator<(const EdgePath& l, const EdgePath& r) {
   return l.weight > r.weight;
 }
 
@@ -105,7 +105,7 @@ Graph sidetrackGraph(Graph lG, Graph rG, FLOAT_TYPE* dist);
 void buildSidetracksHeap(unsigned state,
                          unsigned pred);  // call depthfirstsearch with this; see usage in kbest.cc
 void freeAllSidetracks();  // must be called after you buildSidetracksHeap
-void printTree(GraphHeap* t, int n);
+void printTree(GraphHeap* t, unsigned n);
 void shortPrintTree(GraphHeap* t);
 
 // you can inherit from this or just provide the same interface
@@ -167,11 +167,11 @@ struct best_path_has_cycle : public std::runtime_error {
 };
 
 template <class Visitor>
-void insertShortPath(int src, int dest, Visitor& v, taken_arc_type* cycle_detect = NULL) {
+void insertShortPath(unsigned src, unsigned dest, Visitor& v, taken_arc_type* cycle_detect = NULL) {
   if (!v.SIDETRACKS_ONLY) {
     if (cycle_detect) cycle_detect->clear();
     GraphArc* taken;
-    for (int iState = src; iState != dest; iState = taken->dest) {
+    for (unsigned iState = src; iState != dest; iState = taken->dest) {
       taken = &shortPathTree[iState].arcs.top();
       if (cycle_detect && !was_inserted(insert(*cycle_detect, taken, true))) throw best_path_has_cycle();
       v.visit_best_arc(*taken);
@@ -243,7 +243,7 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
         EdgePath* endRetired = retired;
         EdgePath newPath;
         newPath.weight = pathGraph[src]->arc->weight;
-        newPath.heapPos = -1;
+        newPath.heapPos = ~0;
         newPath.node = pathGraph[src];
         newPath.last = NULL;
         heap_add(pathQueue, ++endQueue, newPath);
@@ -263,9 +263,9 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
 #endif
           EdgePath* last;
           while ((last = top->last)) {
-            if (!((last->heapPos == -1
-                   && (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right))
-                  || (last->heapPos >= 0 && top->heapPos != -1))) {  // got to p on a cross edge
+            if (~last->heapPos ? ~top->heapPos : (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right))
+            {
+              // got to p on a cross edge
               cutArc = last->get_cut_arc();
               shortPath.push(cutArc);
               path_cost += cutArc->weight;
@@ -279,7 +279,7 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
           Config::debug() << "\n\n";
 #endif
 
-          int srcState = src;  // pretend beginning state is end of last sidetrack
+          unsigned srcState = src;  // pretend beginning state is end of last sidetrack
 
           v.start_path(path_no, path_cost);
           for (Sidetracks::const_iterator cut = shortPath.const_begin(), end = shortPath.const_end();
@@ -300,13 +300,13 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
           *endRetired = pathQueue[0];
           newPath.last = endRetired++;
           heapPop(pathQueue, endQueue--);
-          int lastHeapPos = newPath.last->heapPos;
+          unsigned lastHeapPos = newPath.last->heapPos;
           GraphArc* spawnVertex;
           GraphHeap* from = newPath.last->node;
           FLOAT_TYPE lastWeight = newPath.last->weight;
-          if (lastHeapPos == -1) {
+          if (!~lastHeapPos) {
             spawnVertex = from->arc;
-            newPath.heapPos = -1;
+            newPath.heapPos = ~0;
             if (from->left) {
               newPath.node = from->left;
               newPath.weight = lastWeight + (newPath.node->arc->weight - spawnVertex->weight);
@@ -326,7 +326,7 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
           } else {
             spawnVertex = from->arcHeap[lastHeapPos];
             newPath.node = from;
-            int iChild = 2 * lastHeapPos + 1;
+            unsigned iChild = 2 * lastHeapPos + 1;
             if (from->arcHeapSize > iChild) {
               newPath.heapPos = iChild;
               newPath.weight = lastWeight + (newPath.node->arcHeap[iChild]->weight - spawnVertex->weight);
@@ -339,9 +339,9 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
             }
           }
           if (pathGraph[spawnVertex->dest]) {
-            newPath.heapPos = -1;
+            newPath.heapPos = ~0;
             newPath.node = pathGraph[spawnVertex->dest];
-            newPath.heapPos = -1;
+            newPath.heapPos = ~0;
             newPath.weight = lastWeight + newPath.node->arc->weight;
             heap_add(pathQueue, ++endQueue, newPath);
           }

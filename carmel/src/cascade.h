@@ -101,7 +101,10 @@ struct cascade_parameters {
     WFST::norm_group_by group = nm.group;
     if (group == WFST::NONE) return;
     if (group == WFST::CONDITIONAL) w.indexInput();
+#include <graehl/shared/warning_push.h>
+    GCC_DIAG_IGNORE(maybe-uninitialized)
     for (NormGroupIter g(group, w); g.moreGroups(); g.nextGroup()) {
+#include <graehl/shared/warning_pop.h>
       o << '(';
       for (g.beginArcs(); g.moreArcs(); g.nextArc()) {
         o << ' ' << aid[*g];
@@ -252,9 +255,9 @@ struct cascade_parameters {
   };
 
   typedef HashTable<param, chain_id> epsilon_map_t;  // any pair of arcs from a*b will only occur once in
-                                                     // composition, but a single epsilon a or b may reoccur
-                                                     // many times. we want to use a single chain_id for all
-                                                     // those, so we have to hash
+  // composition, but a single epsilon a or b may reoccur
+  // many times. we want to use a single chain_id for all
+  // those, so we have to hash
 
   epsilon_map_t epsilon_chains;
 
@@ -378,7 +381,7 @@ struct cascade_parameters {
 
     nil_chain = chains.size();
     chains.push_back((chain_t)0);  // canonical nil index for compositions where every parameter was locked
-                                   // with weight of 1.
+    // with weight of 1.
     // note composition will create locked -> final state arcs for epsilon filter finals.  but locked_group is
     // 0, so you get nil_chain anyway
     assert(nil_chain == FSTArc::locked_group);
@@ -481,7 +484,7 @@ struct cascade_parameters {
   }
 
   bool is_chain[2];  // is_chain[second] tells if arcs given to record are already chained, i.e. should you
-                     // cons then append or just append
+  // cons then append or just append
 
   void prepare_compose() { prepare_compose(false, false); }
 
@@ -568,13 +571,12 @@ struct cascade_parameters {
   // if the entire (e) or (a,b) is all is_locked_1(), then undo push_back to vector and reference a canonical
   // 'nil' chain_t index
   chain_id record_eps(param e, bool chain = false) {
-    if (trivial)
-      return e->groupId;  // for -a composition, but also means epsilons with tie groups in regular
-                          // composition maintain group
+    if (trivial) return e->groupId;  // for -a composition, but also means epsilons with tie groups in regular
+    // composition maintain group
     if (chain) return original_id(e);
     epsilon_map_t::insert_result_type ins
         = epsilon_chains.insert(e, chains.size());  // can't cache chains.size() for return since we only want
-                                                    // to return that if we newly inserted
+    // to return that if we newly inserted
     if (ins.second) {
       chain_t v = cons(e);
       if (!v) return (ins.first->second = nil_chain);

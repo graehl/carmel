@@ -118,7 +118,6 @@ codecvt argument, too
 
 namespace graehl {
 
-
 namespace {
 std::string const stdin_filename("-");
 std::string const stdout_filename("-");
@@ -407,8 +406,13 @@ struct file_arg {
   // warning: if you call with incompatible filestream type ... crash!
   template <class filestream>
   void set_new(std::string const& filename, std::string const& fail_msg = "Couldn't open file") {
-    std::auto_ptr<filestream> f(
-        new filestream(filename.c_str(), std::ios::binary));  // will delete if we have an exception
+#if __cplusplus < 201103L
+    std::auto_ptr
+#else
+    std::unique_ptr
+#endif
+        <filestream> f(
+            new filestream(filename.c_str(), std::ios::binary));  // will delete if we have an exception
     set_checked(*f, filename, delete_after, fail_msg);
     f.release();  // w/o delete
   }
@@ -440,7 +444,12 @@ struct file_arg {
   void set_new_buf(std::string const& filename, std::string const& fail_msg = "Couldn't open file",
                    bool large_buf = kDefaultLargeBuf) {
     filestream* f = new filestream();
-    std::auto_ptr<filestream> fa(f);
+#if __cplusplus < 201103L
+    std::auto_ptr
+#else
+    std::unique_ptr
+#endif
+        <filestream> fa(f);
     set_checked(*f, filename, delete_after, fail_msg);  // exception safety provided by f
     fa.release();  // now owned by smart ptr
     buf.reset();

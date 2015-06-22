@@ -93,7 +93,7 @@ struct FileLines {
     return std::string(buf.begin(), len);
   }
   std::string operator[](unsigned i) { return getline(i); }
-  bool exists() const { return file; }
+  bool exists() const { return (bool)file; }
   unsigned size() const {
     Assert(exists() && line_begins.size() > 0);
     return line_begins.size() - 1;

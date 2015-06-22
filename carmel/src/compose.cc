@@ -7,14 +7,14 @@
 
 namespace graehl {
 
-int WFST::indexThreshold = 12;
+unsigned WFST::indexThreshold = 12;
 unsigned TrioKey::gAStates = 0;
 unsigned TrioKey::gBStates = 0;
 
 
 // FIXME: use stringstream so there are no artifical name length limits
 struct TrioNamer {
-  char *buf, *buf_escape;
+  char* buf, *buf_escape;
   const WFST& a;
   const WFST& b;
   char* limit;
@@ -83,7 +83,7 @@ struct TrioNamer {
     *p = 0;
     return finish();
   }
-  char const* make_mediate(unsigned astate, unsigned bstate, int middle_letter) {
+  char const* make_mediate(unsigned astate, unsigned bstate, unsigned middle_letter) {
     char* p = buf;
     append_safe(p, b.stateName(bstate));
     *p++ = ',';
@@ -124,19 +124,19 @@ struct TrioNamer {
 
 // uses: stateMap[triDest] states, queue, in, out, weight, [namedStates,stateNames,namer,buf]
 
-#define COMPOSEARC_GROUP(g)                                                                            \
-  do {                                                                                                 \
-    hash_traits<HashTable<TrioKey, int> >::insert_result_type i;                                       \
-    if ((i = stateMap.insert(HashTable<TrioKey, int>::value_type(triDest, numStates()))).second) {     \
-      trioID.num = numStates();                                                                        \
-      trioID.tri = triDest;                                                                            \
-      queue.push(trioID);                                                                              \
-      push_back(states);                                                                               \
-      if (namedStates) stateNames.add(namer.make(triDest.qa, triDest.qb, triDest.filter), trioID.num); \
-    } else                                                                                             \
-      trioID.num = i.first->second;                                                                    \
-    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight, g));                                \
-    DUMPARC(in, out, trioID.num, weight);                                                              \
+#define COMPOSEARC_GROUP(g)                                                                             \
+  do {                                                                                                  \
+    hash_traits<HashTable<TrioKey, unsigned> >::insert_result_type i;                                   \
+    if ((i = stateMap.insert(HashTable<TrioKey, unsigned>::value_type(triDest, numStates()))).second) { \
+      trioID.num = numStates();                                                                         \
+      trioID.tri = triDest;                                                                             \
+      queue.push(trioID);                                                                               \
+      push_back(states);                                                                                \
+      if (namedStates) stateNames.add(namer.make(triDest.qa, triDest.qb, triDest.filter), trioID.num);  \
+    } else                                                                                              \
+      trioID.num = i.first->second;                                                                     \
+    states[sourceState].addArc(FSTArc(in, out, trioID.num, weight, g));                                 \
+    DUMPARC(in, out, trioID.num, weight);                                                               \
   } while (0)
 
 #define COMPOSEARC COMPOSEARC_GROUP(FSTArc::no_group)
@@ -164,18 +164,18 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
   owner_alph[0] = owner_alph[1] = 0;
   alph[0] = a.alph[0];
   alph[1] = b.alph[1];
-  alphabet_type &aout = a.alphabet(1), &bin = b.alphabet(0);
+  alphabet_type& aout = a.alphabet(kOutput), & bin = b.alphabet(kInput);
 
   states.reserve(a.numStates() + b.numStates());
 
-  const int EMPTY = epsilon_index;
+  const unsigned EMPTY = epsilon_index;
   if (!(a.valid() && b.valid())) {
     invalidate();
     return;
   }
 
-  int* map = NEW int[aout.size()];
-  int* revMap = NEW int[bin.size()];
+  unsigned* map = NEW unsigned[aout.size()];
+  unsigned* revMap = NEW unsigned[bin.size()];
   Assert(aout.verify());
   Assert(bin.verify());
   TrioNamer namer(MAX_STATENAME_LEN + 1, a, b);
@@ -186,15 +186,15 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
   TrioKey::gAStates = a.numStates();  // used in hash function
   TrioKey::gBStates = b.numStates();
 
-  HashTable<TrioKey, int> stateMap(2 * (a.numStates() + b.numStates()));  // assign state numbers
+  HashTable<TrioKey, unsigned> stateMap(2 * (a.numStates() + b.numStates()));  // assign state numbers
   // to composite states in the order they are first visited
 
   List<TrioID> queue;
-  int sourceState = -1;
+  unsigned sourceState = ~0;
 #ifdef OLDCOMPOSEARC
-  int* pDest;
+  unsigned* pDest;
 #endif
-  int in, out;
+  unsigned in, out;
   Weight weight;
   TrioKey triSource, triDest;
   TrioID trioID;
@@ -222,21 +222,23 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
        0->1 or 1->1 : *e*:c from *e*:c (in r)
     */
     // FIXME: -a ... kbest paths look nothing like non -a.  find the bug!
-    HashTable<HalfArcState, int> arcStateMap(2 * (a.numStates() + b.numStates()));  // of course you may need
-                                                                                    // 2*a*b+k states; this is
-                                                                                    // just to get a larger
-                                                                                    // initial table
+    HashTable<HalfArcState, unsigned> arcStateMap(
+        2 * (a.numStates() + b.numStates()));  // of course you may need
+    // 2*a*b+k states; this is
+    // just to get a larger
+    // initial table
     // a mediate state has a name like: bstate,"m"->astate, where "m" is a letter in the interface (output of
     // a, input of b)
     while (queue.notEmpty()) {
       sourceState = queue.top().num;
       triSource = queue.top().tri;
       queue.pop();
-      State *qa = &a.states[triSource.qa], *qb = &b.states[triSource.qb];
-      qa->indexBy(1);
-      qb->indexBy(0);
-      const HashTable<IntKey, List<HalfArc> >& aindex = *qa->index;
-      for (HashTable<IntKey, List<HalfArc> >::const_iterator ll = aindex.begin(); ll != aindex.end(); ++ll) {
+      State* qa = &a.states[triSource.qa], * qb = &b.states[triSource.qb];
+      qa->indexBy(kOutput);
+      qb->indexBy(kInput);
+      const HashTable<UnsignedKey, List<HalfArc> >& aindex = *qa->index;
+      for (HashTable<UnsignedKey, List<HalfArc> >::const_iterator ll = aindex.begin(); ll != aindex.end();
+           ++ll) {
         HalfArcState mediate;
         mediate.l_hiddenLetter = ll->first;
         mediate.r_source = triSource.qb;
@@ -254,13 +256,13 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
               COMPOSEARC_GROUP(cascade.record1(la));
             }
           }
-        } else if ((matches = find_second(*qb->index, (IntKey)map[mediate.l_hiddenLetter]))) {
+        } else if ((matches = find_second(*qb->index, (UnsignedKey)map[mediate.l_hiddenLetter]))) {
           for (List<HalfArc>::const_iterator l = ll->second.const_begin(), end = ll->second.const_end();
                l != end; ++l) {
             HalfArc const& la = *l;
             mediate.l_dest = la->dest;
-            int mediateState = numStates();
-            typedef HashTable<HalfArcState, int> HAT;
+            unsigned mediateState = numStates();
+            typedef HashTable<HalfArcState, unsigned> HAT;
             hash_traits<HAT>::insert_result_type ins;
             if ((ins = arcStateMap.insert(HAT::value_type(mediate, mediateState))).second) {
               // populate new mediateState
@@ -268,7 +270,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
               if (namedStates)
                 stateNames.add(namer.make_mediate(mediate.l_dest, mediate.r_source, mediate.l_hiddenLetter),
                                mediateState);
-              int temp = sourceState;
+              unsigned temp = sourceState;
               {
                 sourceState = mediateState;
                 triDest.qa = mediate.l_dest;
@@ -293,7 +295,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
           }
         }
       }
-      if ((matches = find_second(*qb->index, (IntKey)EMPTY))) {
+      if ((matches = find_second(*qb->index, (UnsignedKey)EMPTY))) {
         in = EMPTY;
         triDest.qa = triSource.qa;
         triDest.filter = 1;
@@ -324,14 +326,14 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
       triSource = queue.top().tri;
       queue.pop();
       State* larger;
-      State *qa = &a.states[triSource.qa], *qb = &b.states[triSource.qb];
+      State* qa = &a.states[triSource.qa], * qb = &b.states[triSource.qb];
       if (qa->size > qb->size) {
         larger = qa;
       } else {
         larger = qb;
       }
       if (larger->size > WFST::indexThreshold) {
-        larger->indexBy(larger == qa);  // create hash table
+        larger->indexBy(larger == qa ? kOutput : kInput);  // create hash table
         if (larger == qb) {  // qb (rhs transducer) is larger
           for (List<FSTArc>::const_iterator l = qa->arcs.const_begin(), end = qa->arcs.const_end(); l != end;
                ++l) {
@@ -346,7 +348,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
                 COMPOSEARC_GROUP(cascade.record1(&*l));
               }
               if (triSource.filter == 0)
-                if ((matches = find_second(*qb->index, (IntKey)EMPTY))) {
+                if ((matches = find_second(*qb->index, (UnsignedKey)EMPTY))) {
                   triDest.filter = 0;
                   for (List<HalfArc>::const_iterator r = matches->const_begin(), end = matches->const_end();
                        r != end; ++r) {
@@ -358,7 +360,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
                   }
                 }
             } else {
-              if ((matches = find_second(*qb->index, (IntKey)map[l->out]))) {
+              if ((matches = find_second(*qb->index, (UnsignedKey)map[l->out]))) {
                 triDest.filter = 0;
                 for (List<HalfArc>::const_iterator r = matches->const_begin(), end = matches->const_end();
                      r != end; ++r) {
@@ -371,7 +373,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
               }
             }
           }
-          if (triSource.filter != 1 && (matches = find_second(*qb->index, (IntKey)EMPTY))) {
+          if (triSource.filter != 1 && (matches = find_second(*qb->index, (UnsignedKey)EMPTY))) {
             in = EMPTY;
             triDest.qa = triSource.qa;
             triDest.filter = 2;
@@ -400,7 +402,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
                 COMPOSEARC_GROUP(cascade.record2(&*r));
               }
               if (triSource.filter == 0)
-                if ((matches = find_second(*qa->index, (IntKey)EMPTY))) {
+                if ((matches = find_second(*qa->index, (UnsignedKey)EMPTY))) {
                   triDest.filter = 0;
                   for (List<HalfArc>::const_iterator l = matches->const_begin(), end = matches->const_end();
                        l != end; ++l) {
@@ -413,7 +415,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
                 }
             } else {
               triDest.filter = 0;
-              if ((matches = find_second(*qa->index, (IntKey)revMap[r->in]))) {
+              if ((matches = find_second(*qa->index, (UnsignedKey)revMap[r->in]))) {
                 for (List<HalfArc>::const_iterator l = matches->const_begin(), end = matches->const_end();
                      l != end; ++l) {
                   Assert(map[(*l)->out] == r->in);
@@ -425,7 +427,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
               }
             }
           }
-          if (triSource.filter != 2 && (matches = find_second(*qa->index, (IntKey)EMPTY))) {
+          if (triSource.filter != 2 && (matches = find_second(*qa->index, (UnsignedKey)EMPTY))) {
             out = EMPTY;
             triDest.qb = triSource.qb;
             triDest.filter = 1;
@@ -499,9 +501,9 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
 
   triDest.qa = a.final;
   triDest.qb = b.final;
-  int* pFinal[3];
-  int nFinal = 0;
-  int i;
+  unsigned* pFinal[3];
+  unsigned nFinal = 0;
+  unsigned i;
   for (i = 0; i < 3; ++i) {
     triDest.filter = i;
     if ((pFinal[i] = find_second(stateMap, triDest))) {

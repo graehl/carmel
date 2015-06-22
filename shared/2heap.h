@@ -140,7 +140,6 @@ void heapSort(T heapStart, T heapEnd) {
   }
 }
 
-
 template <typename T>
 void treeHeapAdd(T*& heapRoot, T* node) {
   T* oldRoot = heapRoot;

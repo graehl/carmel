@@ -57,8 +57,10 @@ CPPFLAGS += -DBOOST_POSIX -DCYGWIN
 # somehow that is getting automatically set by boost now (for Boost CVS)
 endif
 
+ifneq ($(ARCH),macosx)
 ifndef ARCH_FLAGS
 ARCH_FLAGS = -march=native
+endif
 endif
 
 ifndef INSTALL_PREFIX
@@ -191,7 +193,6 @@ BOOST_OPTIONS_LIB=$(OBJB)/libprogram_options.a
 BOOST_FILESYSTEM_LIB=$(OBJB)/libfilesystem.a
 BOOST_IOSTREAMS_LIB=$(OBJB)/libiostreams.a
 libs: $(BOOST_TIMER_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_TEST_LIB) $(BOOST_OPTIONS_LIB) $(BOOST_FILESYSTEM_LIB)
-INC += $(BOOST_DIR)
 else
 BOOST_SERIALIZATION_LIB=-lboost_serialization$(BSUF)
 BOOST_TEST_LIB=-lboost_unit_test_framework$(BSUF)
@@ -204,6 +205,7 @@ BOOST_TIMER_LIB=-lboost_timer$(BSUF) $(BOOST_SYSTEM_LIB)
 BOOST_IOSTREAMS_LIB=-lboost_iostreams$(BSUF)
 libs:
 endif
+INC += $(BOOST_DIR)
 
 
 list_src: $(BOOST_SERIALIZATION_SRCS)

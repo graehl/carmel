@@ -252,8 +252,13 @@ struct main {
 
   std::string cmdname, cmdline_str;
   std::ostream* log_stream;
+#if __cplusplus < 201103L
   std::auto_ptr<teebuf> teebufptr;
   std::auto_ptr<std::ostream> teestreamptr;
+#else
+  std::unique_ptr<teebuf> teebufptr;
+  std::unique_ptr<std::ostream> teestreamptr;
+#endif
 
   boost::uint32_t random_seed;
 

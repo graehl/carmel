@@ -14,6 +14,13 @@
 // power-of-two hash table.  alternatively (defined USE_STD_HASH_MAP) uses the vendor's.  also gives a more
 // convenient Value *find_second(key)
 // original rationale: lack of STL support in gcc - and hash_map still isn't officially in STL.
+/**
+   This 'HashTable' template was created before there were any open source hash
+   table impls. Probably bested in performance by google dense_hash_map and even
+   boost/std unordered_map. TODO: replace this with one of those. since table
+   size is a power of 2, weak hash fns are somewhat exposed (in a way that
+   'bucket is modulo some prime' wouldn't be).
+*/
 #ifndef GRAEHL_SHARED__2HASH_H
 #define GRAEHL_SHARED__2HASH_H
 
@@ -175,6 +182,8 @@ class HashEntry {
   };
 */
 
+#include <graehl/shared/warning_push.h>
+GCC_DIAG_IGNORE(maybe-uninitialized)
 template <typename K, typename V>
 class HashIter {  // Yaser added this - 7-27-2000
   // const HashTable<K,V> *ht;
@@ -235,6 +244,9 @@ class HashIter {  // Yaser added this - 7-27-2000
   //  const K & first() const { return entry->first; }
   //  const V & second() const { return entry->second; }
 };
+
+#include <graehl/shared/warning_pop.h>
+
 //
 //= hash<K>
 template <class K, class V, class H = hash<K>, class P = std::equal_to<K>,

@@ -10,8 +10,13 @@ xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
 xmtxs=$xmtx/sdl
 xmtextbase=$(echo ~/c/xmt-externals)
-SDL_SHARED_EXTERNALS_PATH=/Users/graehl/c/xmt-externals/Shared
+SDL_SHARED_EXTERNALS_PATH=$xmtextbase/Shared
+xmtext=$xmtextbase/$lwarch
+xmtextsrc=$HOME/c/xmt-externals-source
+export SDL_EXTERNALS_PATH=$xmtext
 SDL_BOOST_MINOR=58
+BOOST_INCLUDE=$SDL_SHARED_EXTERNALS_PATH/cpp/boost_1_${SDL_BOOST_MINOR}_0/include
+BOOST_LIBDIR=$SDL_EXTERNALS_PATH/libraries/boost_1_${SDL_BOOST_MINOR}_0/lib
 CT=${CT:-`echo ~/c/ct/main`}
 CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
 CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
@@ -486,7 +491,7 @@ oscptar() {
 osmake() {
     (
         set -e
-        rm -rf $osdirbuild
+        #rm -rf $osdirbuild
         mkdir -p $osdirbuild
         uselocalgccmac
         cd $osdirbuild
@@ -1729,9 +1734,6 @@ if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
 fi
 py=$(echo $xmtx/python)
 export WORKSPACE=$xmtx
-xmtext=$xmtextbase/$lwarch
-xmtextsrc=$HOME/c/xmt-externals-source
-export XMT_EXTERNALS_PATH=$xmtext
 xmtlib=$xmtext/libraries
 xmtlibshared=$xmtextbase/Shared/cpp/libraries
 c-cat() {
@@ -2736,7 +2738,7 @@ reveal() {
 compush() {
     (set -e
         git commit -a -m "$*"
-        git pull --rebase
+        # git pull --rebase
         git push
     )
 }
@@ -6962,19 +6964,20 @@ buildgraehl() {
     local d=$1
     local v=$2
     (set -e
+     uselocalgccmac
         pushd $GRAEHLSRC/$1
         #export GRAEHL=$GRAEHLSRC
         #export TRUNK=$GRAEHLSRC
         #export SHARED=$TRUNK/shared
         export BOOST=$BOOST_INCLUDE
         [ "$clean" ] && make clean
-        [ "$noclean" ] || make clean
+        # [ "$noclean" ] || make clean
 
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         set -x
         pwd
-        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt -j$MAKEPROC
+        make BOOST_DIR=$BOOST_INCLUDE LIBDIR=$BOOST_LIBDIR CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt -j$MAKEPROC
         make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt install
         set +x
         popd
