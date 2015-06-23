@@ -40,6 +40,7 @@
 #include <math.h>
 #define GRAEHL_ISNAN(x) ::isnan(x)  // in stlport, only c99 version of isnan is available
 #undef isnan
+#if !defined(__linux__)
 inline bool isnan(float f) {
   typedef unsigned u32;
   union {
@@ -57,6 +58,7 @@ inline bool isnan (double f)
   } u = {f};
   return (u.x & ~0x8000000000000000uLL) > 0x7ff0000000000000uLL;
 }
+#endif
 // TODO: fix for long double also?
 #else
 #include <cmath>

@@ -2153,6 +2153,11 @@ newbranch() {
         branchthis "$1"
     fi
 }
+pushg() {
+    (
+        pushc master g
+    )
+}
 pushc() {
     (
         local xmtx=${2:-$xmtx}
