@@ -1,3 +1,4 @@
+#include <graehl/shared/glibc_memcpy.hpp>
 #include <graehl/carmel/src/cached_derivs.h>
 #include <graehl/carmel/src/cascade.h>
 #include <graehl/carmel/src/train.h>

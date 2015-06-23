@@ -1,4 +1,6 @@
-/* to decide:
+#include <graehl/shared/glibc_memcpy.hpp>
+
+/* TODO (maybe):
 
    show0: make printing never drop 0 prob arcs, provide option to remove them explicitly (so that --fem-param
    etc. are always lined up) - for now just forcing print of 0 arcs

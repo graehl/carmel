@@ -1,3 +1,4 @@
+#include <graehl/shared/glibc_memcpy.hpp>
 #include <boost/utility.hpp>
 #include <graehl/carmel/src/train.h>
 #include <graehl/carmel/src/fst.h>

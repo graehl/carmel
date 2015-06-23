@@ -16,10 +16,8 @@
 #include <boost/program_options.hpp>
 #include <graehl/shared/command_line.hpp>
 #include <graehl/shared/backtrace.hpp>
-#include <graehl/shared/makestr.hpp>
 #include <graehl/shared/gibbs.hpp>
 #include "forest-em.README.hpp" // note: dependency/makefile won't make #include <graehl/tt...
-#define FOREST_EM_COMPILED " (compiled " MAKESTR_DATE ")"
 
 //TODO: pass ref to this to Forests (even though it increases coupling - pretty
 //much copies of all of these are used anyway) to simplify
@@ -237,7 +235,6 @@ struct ForestEmParams {
     const char *progname = argv[0];
     try {
       cmdline_str = graehl::get_command_line(argc, argv, NULL);
-      //MAKESTRS(...,print_command_line(os,argc,argv,NULL));
       variables_map vm;
       all.parse_options_and_notify(argc, argv, vm);
 
@@ -308,7 +305,7 @@ struct ForestEmParams {
     return log_stream ? *log_stream : std::cerr;
   }
   inline static std::string get_version() {
-    return FOREST_EM_VERSION FOREST_EM_COMPILED;
+    return FOREST_EM_VERSION;
   }
   inline const char *float_typename() const {
     return double_precision ? "double" : "float";

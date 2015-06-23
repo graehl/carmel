@@ -19,6 +19,7 @@ SHARED=$(GRAEHL)/shared
 PROGS=carmel
 carmel_SRC=carmel.cc fst.cc train.cc gibbs.cc
 carmel_NOTEST=1
+carmel_NOSTATIC=1 # TODO: disable glibc memcpy workaround for static link (or include source to build our own)
 carmel_LIB=$(BOOST_RANDOM_LIB) $(BOOST_TIMER_LIB)
 vpath %.cc $(SRC):$(SHARED)
 VPATH=$(SRC):$(SHARED)

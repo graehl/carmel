@@ -99,27 +99,54 @@ retrans() {
 brewboost() {
     brew install boost --c++11 --with-gcc=gcc-5
 }
-macboost() {
-    # uselocalgcc
-    #    uselocalgccmac
-    local bv=boost_1_58_0
-    cd ~/src/$bv
-    (set -e
-     set -x
-     withicu=--with-icu=$xmtext/libraries/icu-5.4
-     toolset=gcc
-     if [[ $lwarch = Apple ]] ; then
-         withicu=--with-icu=/usr/local/Cellar/icu4c/55.1
-         toolset=gcc5
-     fi
-     [[ -f b2 ]] || ./bootstrap.sh --prefix=$SDL_EXTERNALS_PATH/libraries/$bv --with-toolset=$toolset $withicu
-     ./b2 clean
-     local forceargs=
-     if [[ $force ]] ; then
-         forceargs=" -a" #--reconfigure
-     fi
-     ./b2 $forceargs -q -d+2  --threading=multi --runtime-link=shared --runtime-debugging=off --layout=tagged -j3
+
+makeboost() {
+    (
+        gccprefix=${gccprefix:-/local/gcc}
+        if [[ $NOLOCALGCC = 1 ]] ; then
+            gccprefix=
+        fi
+        if [[ -d $gccprefix ]] ; then
+            #CMAKE_AR=$gccprefix/gcc-ar
+            #CMAKE_RANLIB=$gccprefix/gcc-ranlib
+            #CMAKE_NM=$gccprefix/gcc-nm
+            export PATH=$gccprefix/bin:/usr/local/bin:$PATH
+            LD_RUN_PATH+=":$gccprefix/lib64"
+            export LD_RUN_PATH=${LD_RUN_PATH#:}
+            LD_LIBRARY_PATH+=":$gccprefix/lib64"
+            export LD_LIBRARY_PATH=${LD_RUN_PATH#:}
+        fi
+       set -e
+        set -x
+        cd $1
+        xmtext=$2
+        icusubdir=${3:-icu-55.1}
+        [[ -d $xmtext ]] || return 1
+        icu=$xmtext/libraries/$icusubdir
+        withicu=--with-icu=$icu
+        toolset=gcc
+        if [[ $lwarch = Apple ]] ; then
+            withicu=--with-icu=/usr/local/Cellar/icu4c/55.1
+            toolset=gcc5
+        fi
+        if [[ $clean ]] ; then
+            if [[ -x ./b2 ]] ; then ./b2 clean; fi
+            rm ./b2
+            rm -rf bin.v2
+            rm -rf stage
+        fi
+        [[ -f b2 ]] || ./bootstrap.sh  --with-toolset=$toolset $withicu
+        local forceargs=
+        if [[ $force ]] ; then
+            forceargs=" -a"
+        fi
+        ./b2 $forceargs -q -d+2 -sICU_PATH=$icu boost.locale.iconv=off boost.locale.icu=on --threading=multi --runtime-link=shared --runtime-debugging=off --layout=tagged -j8
     )
+}
+
+macboost() {
+    local bv=boost_1_58_0
+    makeboost ~/src/$bv $xmtext
 }
 maccpu() {
     sysctl -n machdep.cpu.brand_string
@@ -4686,6 +4713,15 @@ overt() {
     cp $xmtx/scripts/gitcredit ~/c/gitcredit/
     cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
     pushd ~/g
+}
+diffg() {
+    (
+    cd $xmtxs/graehl/shared
+    gsh=$HOME/g/shared
+    for f in *.?pp *.h; do
+        diff $f $gsh/$f
+    done
+    )
 }
 commt()
 {

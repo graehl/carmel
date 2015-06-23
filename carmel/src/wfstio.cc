@@ -1,3 +1,4 @@
+#include <graehl/shared/glibc_memcpy.hpp>
 #include <graehl/shared/config.h>
 #include <string>
 #include <map>

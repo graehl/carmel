@@ -75,6 +75,7 @@
 #ifndef GRAEHL_SHARED__GIBBS_HPP
 #define GRAEHL_SHARED__GIBBS_HPP
 
+#include <graehl/shared/glibc_memcpy.hpp>
 #include <graehl/shared/gibbs_opts.hpp>
 #include <iomanip>
 #include <graehl/shared/stream_util.hpp>

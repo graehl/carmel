@@ -50,7 +50,9 @@ using namespace __gnu_cxx;
 #define IF_INFO(level) if (COND_INFO(level, >=))
 #define UNLESS_INFO(level) if (COND_INFO(level, <))
 
-#include <graehl/shared/makestr.hpp>
+#define GRAEHL_INFO_DEBUG__STRINGIZE(str) #str
+#define GRAEHL_INFO_DEBUG__EXPAND_STRINGIZE(expr) GRAEHL_INFO_DEBUG__STRINGIZE(expr)
+#define GRAEHL_INFO_DEBUG__FILE_LINE "(" __FILE__  ":" GRAEHL_INFO_DEBUG__EXPAND_STRINGIZE(__LINE__)  ")"
 
 /* GUIDE TO NAMES:
    NL: newline
@@ -71,7 +73,7 @@ using namespace __gnu_cxx;
     if (INFO_LEVEL >= lvl && (Dbg).runtime_info_level >= lvl) {         \
       std::ostringstream o;                                             \
       oexp;                                                             \
-      if (!o) throw std::runtime_error(MAKESTR_FILE_LINE ": failed to write " #module " : " #oexp); \
+      if (!o) throw std::runtime_error(GRAEHL_INFO_DEBUG__FILE_LINE ": failed to write " #module " : " #oexp); \
       (Dbg).op(module, o.str(), file, line, newline);                   \
     } } while (0)
 #endif

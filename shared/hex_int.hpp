@@ -31,7 +31,7 @@
 #include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/type_string.hpp>
 #include <iomanip>
-#include <sdl/graehl/shared/bit_arithmetic.hpp>
+#include <graehl/shared/bit_arithmetic.hpp>
 
 namespace graehl {
 

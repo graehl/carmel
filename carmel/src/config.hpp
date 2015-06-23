@@ -1,8 +1,10 @@
 #ifndef CARMEL__CONFIG_HPP
 #define CARMEL__CONFIG_HPP
 
+#include <graehl/shared/glibc_memcpy.hpp>
+
 //#define USE_OPENFST
-// we usually enable this from Makefile
+// we usually enable this from Makefile -DUSE_OPENFST
 
 #ifdef USE_OPENFST
 // set this only if you add -I$(OPENFST)/src and have installed headers or also -I$(OPENFST)/src/include

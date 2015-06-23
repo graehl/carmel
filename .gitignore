@@ -6,3 +6,6 @@ obj
 lc1count
 .history
 trash.*
+carmel/test/logs
+carmel/span.spell.trained2
+openfst

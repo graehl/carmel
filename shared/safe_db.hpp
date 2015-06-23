@@ -24,7 +24,6 @@
 #include <graehl/shared/key_to_blob.hpp>
 #include <graehl/shared/memory_archive.hpp>
 #include <boost/config.hpp>
-#include <graehl/shared/makestr.hpp>
 
 #ifdef GRAEHL_TEST
 # include <graehl/shared/test.hpp>
@@ -470,9 +469,7 @@ class safe_db
   {
     if (expect == got)
       return;
-    std::string s;
-    MAKESTR(s, description << ": expected " << expect << " bytes, but got " << got);
-    throw DbException(s.c_str());
+    throw DbException(description);
   }
 
   // returns false if key wasn't found
@@ -548,11 +545,6 @@ class safe_db
     default_oarchive a(astr, ARCHIVE_FLAGS_DEFAULT);
     a & d;
 #ifdef DEBUG_SAFEDB
-    /*        ostringstream os;
-              default_oarchive dbg_archive(os,ARCHIVE_FLAGS_DEFAULT);
-              dbg_archive & d;
-              DBP2(os.str(),astr);
-    */
     DBPC2("writing", astr);
 #endif
   }

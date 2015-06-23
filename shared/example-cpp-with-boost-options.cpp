@@ -13,7 +13,6 @@
 // limitations under the License.
 #define GRAEHL__SINGLE_MAIN
 #include "main.hpp"
-#include "makestr.hpp"
 
 #define VERSION "0.1"
 
@@ -31,7 +30,7 @@ using namespace std;
 using namespace boost::program_options;
 
 inline ostream & write_my_header(ostream &o) {
-  return write_header(o) << " add-giza-models version= {{ {" VERSION " " MAKESTR_DATE "}}} ";
+  return write_header(o) << " add-giza-models version= {{ {" VERSION "}}} ";
 }
 
 MAIN_BEGIN

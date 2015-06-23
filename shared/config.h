@@ -14,6 +14,8 @@
 #ifndef CARMEL_CONFIG_H
 #define CARMEL_CONFIG_H
 
+#include <graehl/shared/glibc_memcpy.hpp>
+
 #include <sys/types.h>
 
 // required now!  because values are never moved in memory from the singly linked nodes they live on.  so no assign/copy needed - can have hash_map of containers efficiently
