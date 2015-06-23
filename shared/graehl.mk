@@ -202,7 +202,8 @@ BOOST_SYSTEM_LIB=-lboost_system$(BSUF)
 BOOST_FILESYSTEM_LIB=-lboost_filesystem$(BSUF)
 BOOST_RANDOM_LIB=-lboost_random$(BSUF)
 BOOST_OPTIONS_LIB=-lboost_program_options$(BSUF) $(BOOST_SYSTEM_LIB)
-BOOST_TIMER_LIB=-lboost_timer$(BSUF) $(BOOST_SYSTEM_LIB)
+BOOST_CHRONO_LIB=-lboost_chrono$(BSUF)
+BOOST_TIMER_LIB=-lboost_timer$(BSUF) $(BOOST_CHRONO_LIB) $(BOOST_SYSTEM_LIB)
 BOOST_IOSTREAMS_LIB=-lboost_iostreams$(BSUF)
 libs:
 endif

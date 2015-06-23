@@ -27,9 +27,8 @@ INC=$(SRC) $(SHARED)
 LIB =
 CPP_EXT=cc
 
-LDFLAGS += -lpthread -ldl -pthread
-#-std=c++11
-BASECXXFLAGS= -ffast-math
+LDFLAGS += -lpthread -ldl -pthread -std=c++11
+BASECXXFLAGS = -ffast-math  -std=c++11
 CPPFLAGS += -Wno-deprecated -Wall
 
 CXXFLAGS= $(BASECXXFLAGS) -O3

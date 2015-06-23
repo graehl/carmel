@@ -2179,7 +2179,7 @@ lincar() {
      set -x
      pushg
      c-s 'forceco master g'
-     c-s '. ~/.e;cd g; BOOST_SUFFIX=gcc44-mt-1_57 buildcar'
+     c-s '. ~/.e;cd g; BOOST_SUFFIX=mt buildcar'
     )
 }
 pushc() {
