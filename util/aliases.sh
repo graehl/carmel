@@ -100,13 +100,19 @@ brewboost() {
     brew install boost --c++11 --with-gcc=gcc-5
 }
 macboost() {
-    uselocalgcc
+    # uselocalgcc
     #    uselocalgccmac
     local bv=boost_1_58_0
     cd ~/src/$bv
     (set -e
      set -x
-     [[ -f b2 ]] || ./bootstrap.sh --prefix=$SDL_EXTERNALS_PATH/libraries/$bv --with-toolset=gcc5 --with-icu=/usr/local/Cellar/icu4c/55.1
+     withicu=--with-icu=$xmtext/libraries/icu-5.4
+     toolset=gcc
+     if [[ $lwarch = Apple ]] ; then
+         withicu=--with-icu=/usr/local/Cellar/icu4c/55.1
+         toolset=gcc5
+     fi
+     [[ -f b2 ]] || ./bootstrap.sh --prefix=$SDL_EXTERNALS_PATH/libraries/$bv --with-toolset=$toolset $withicu
      ./b2 clean
      local forceargs=
      if [[ $force ]] ; then
