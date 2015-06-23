@@ -19,17 +19,17 @@
 #endif
 
 #ifdef __linux__
-# include <graehl/shared/string_to.hpp>
-# include <graehl/shared/proc_linux.hpp>
+#include <graehl/shared/string_to.hpp>
+#include <graehl/shared/proc_linux.hpp>
 #endif
 #include <cstdlib>
 #if defined(__unix__)
-# include <unistd.h>
+#include <unistd.h>
 #endif
 #if defined(_MACOSX)
-# include <malloc/malloc.h>
+#include <malloc/malloc.h>
 #else
-# include <malloc.h>
+#include <malloc.h>
 #endif
 #include <graehl/shared/io.hpp>
 #include <graehl/shared/size_mega.hpp>
@@ -49,27 +49,15 @@ struct memory_stats {
   malloc_info info;
 #endif
 #ifdef __linux__
-  double vmused; //bytes
+  double vmused;  // bytes
 #endif
 #if defined(__unix__)
-  long pagesize() const
-  {
-    return sysconf(_SC_PAGESIZE);
-  }
+  long pagesize() const { return sysconf(_SC_PAGESIZE); }
 
   std::ptrdiff_t process_data_end;
-  char *sbrk_begin() const
-  {
-    return reinterpret_cast<char *>((void *)0);
-  }
-  char *sbrk_end() const
-  {
-    return (char *)sbrk(0);
-  }
-  std::ptrdiff_t sbrk_size() const
-  {
-    return sbrk_end()-sbrk_begin();
-  }
+  char* sbrk_begin() const { return reinterpret_cast<char*>((void*)0); }
+  char* sbrk_end() const { return (char*)sbrk(0); }
+  std::ptrdiff_t sbrk_size() const { return sbrk_end() - sbrk_begin(); }
 
 #endif
   //   struct mallinfo {
@@ -85,9 +73,7 @@ struct memory_stats {
   //   int keepcost; /* top-most, releasable (via malloc_trim) space */
   // };
   //
-  memory_stats()  {
-    refresh();
-  }
+  memory_stats() { refresh(); }
   void refresh() {
 #if defined(__unix__)
     info = mallinfo();
@@ -96,13 +82,11 @@ struct memory_stats {
     info = mstats();
 #endif
 #ifdef __linux__
-    vmused = graehl::proc_bytes(graehl::get_proc_field(graehl::VmSize));
+    vmused = graehl::proc_bytes(graehl::get_proc_field(graehl::kVmSize));
 #endif
   }
 #if defined(__unix__) || defined(_MACOSX)
-  operator const malloc_info & () const {
-    return info;
-  }
+  operator const malloc_info&() const { return info; }
 #endif
 #if defined(_MACOSX)
   typedef size_bytes_integral size_type;
@@ -111,18 +95,11 @@ struct memory_stats {
 #endif
 
   // includes memory mapped
-  size_type total_allocated() const
-  {
-    return program_allocated()+memory_mapped();
-  }
+  size_type total_allocated() const { return program_allocated() + memory_mapped(); }
 
-  size_type high_water() const
-  {
-    return system_allocated()+memory_mapped();
-  }
+  size_type high_water() const { return system_allocated() + memory_mapped(); }
 
-  size_type program_allocated() const
-  {
+  size_type program_allocated() const {
 #if defined(__unix__)
     return size_type((unsigned)info.uordblks);
 #elif _MACOSX
@@ -133,14 +110,13 @@ struct memory_stats {
   }
 
   // may only grown monotonically (may not reflect free())
-  size_type system_allocated() const
-  {
+  size_type system_allocated() const {
 #ifdef __linux__
     return size_type(vmused);
 #else
 #if defined(__unix__)
     return process_data_end;
-    //        return size_type((unsigned)info.arena);
+//        return size_type((unsigned)info.arena);
 #elif defined(_MACOSX)
     return size_type(info.bytes_total);
 #else
@@ -149,8 +125,7 @@ struct memory_stats {
 #endif
   }
 
-  size_type memory_mapped() const
-  {
+  size_type memory_mapped() const {
 #if defined(__unix__)
     return size_type((unsigned)info.hblkhd);
 #else
@@ -159,22 +134,21 @@ struct memory_stats {
   }
 };
 
-#define GRAEHL__MEMSTAT_DIFF(field) ret.info.field = after.info.field-before.info.field
+#define GRAEHL__MEMSTAT_DIFF(field) ret.info.field = after.info.field - before.info.field
 #if defined(__unix__)
-inline memory_stats operator - (memory_stats after, memory_stats before)
-{
+inline memory_stats operator-(memory_stats after, memory_stats before) {
   memory_stats ret;
-  ret.process_data_end = after.process_data_end-before.process_data_end;
-# ifdef __linux__
-  ret.vmused = after.vmused-before.vmused;
-# endif
-  GRAEHL__MEMSTAT_DIFF(arena);    /* total space allocated from system */
-  GRAEHL__MEMSTAT_DIFF(ordblks);  /* number of non-inuse chunks */
-  GRAEHL__MEMSTAT_DIFF(smblks);   /* unused -- always zero */
-  GRAEHL__MEMSTAT_DIFF(hblks);    /* number of mmapped regions */
-  GRAEHL__MEMSTAT_DIFF(hblkhd);   /* total space in mmapped regions */
-  GRAEHL__MEMSTAT_DIFF(usmblks);  /* unused -- always zero */
-  GRAEHL__MEMSTAT_DIFF(fsmblks);  /* unused -- always zero */
+  ret.process_data_end = after.process_data_end - before.process_data_end;
+#ifdef __linux__
+  ret.vmused = after.vmused - before.vmused;
+#endif
+  GRAEHL__MEMSTAT_DIFF(arena); /* total space allocated from system */
+  GRAEHL__MEMSTAT_DIFF(ordblks); /* number of non-inuse chunks */
+  GRAEHL__MEMSTAT_DIFF(smblks); /* unused -- always zero */
+  GRAEHL__MEMSTAT_DIFF(hblks); /* number of mmapped regions */
+  GRAEHL__MEMSTAT_DIFF(hblkhd); /* total space in mmapped regions */
+  GRAEHL__MEMSTAT_DIFF(usmblks); /* unused -- always zero */
+  GRAEHL__MEMSTAT_DIFF(fsmblks); /* unused -- always zero */
   GRAEHL__MEMSTAT_DIFF(uordblks); /* total allocated space */
   GRAEHL__MEMSTAT_DIFF(fordblks); /* total non-inuse space */
   GRAEHL__MEMSTAT_DIFF(keepcost); /* top-most, releasable (via malloc_trim) space */
@@ -184,8 +158,7 @@ inline memory_stats operator - (memory_stats after, memory_stats before)
   //    return transform2_array_coerce<unsigned>(after,before,difference_f<int>());
 }
 #elif defined(_MACOSX)
-inline memory_stats operator - (memory_stats after, memory_stats before)
-{
+inline memory_stats operator-(memory_stats after, memory_stats before) {
   memory_stats ret;
   GRAEHL__MEMSTAT_DIFF(bytes_total);
   GRAEHL__MEMSTAT_DIFF(chunks_used);
@@ -196,35 +169,31 @@ inline memory_stats operator - (memory_stats after, memory_stats before)
 }
 #endif
 
-template <class C, class T> inline std::basic_ostream<C, T> &
-operator << (std::basic_ostream<C, T> &o, const memory_stats &s) {
-  return o << "["<<s.program_allocated()<<" allocated, " << s.system_allocated() << " from system, "<<s.memory_mapped()<<" memory mapped]";
+template <class C, class T>
+inline std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, const memory_stats& s) {
+  return o << "[" << s.program_allocated() << " allocated, " << s.system_allocated() << " from system, "
+           << s.memory_mapped() << " memory mapped]";
 }
 
-struct memory_change
-{
+struct memory_change {
   memory_stats before;
-  static char const* default_desc()
-  { return "\nmemory used: "; }
+  static char const* default_desc() { return "\nmemory used: "; }
   typedef memory_stats::size_type S;
   template <class O>
-  void print(O &o) const
-  {
+  void print(O& o) const {
     memory_stats after;
     print_change(o, before.total_allocated(), after.total_allocated());
     o << "; from OS: ";
     print_change(o, before.high_water(), after.high_water());
-
   }
   template <class O>
-  void print_change(O &o, S pre, S post) const
-  {
+  void print_change(O& o, S pre, S post) const {
     if (post == pre)
       o << '0';
     else if (post > pre)
-      o << "+" << S(post-pre);
+      o << "+" << S(post - pre);
     else
-      o << "-" << S(pre-post);
+      o << "-" << S(pre - post);
     o << " (" << pre << " -> " << post << ")";
   }
 
@@ -234,6 +203,6 @@ struct memory_change
 
 typedef auto_report<memory_change> memory_report;
 
-}//graehl
+}  // graehl
 
 #endif

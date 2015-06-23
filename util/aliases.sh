@@ -11,12 +11,27 @@ xmtx=$(echo ~/x)
 xmtxs=$xmtx/sdl
 xmtextbase=$(echo ~/c/xmt-externals)
 SDL_SHARED_EXTERNALS_PATH=$xmtextbase/Shared
+case $(uname) in
+    Darwin)
+        lwarch=Apple
+        ;;
+    Linux)
+        lwarch=FC12
+        shopt -s globstar || true
+        ;;
+    *)
+        lwarch=Windows ;;
+esac
 xmtext=$xmtextbase/$lwarch
 xmtextsrc=$HOME/c/xmt-externals-source
 export SDL_EXTERNALS_PATH=$xmtext
-SDL_BOOST_MINOR=58
-BOOST_INCLUDE=$SDL_SHARED_EXTERNALS_PATH/cpp/boost_1_${SDL_BOOST_MINOR}_0/include
+for SDL_BOOST_MINOR in 58 57; do
+BOOST_INCLUDEDIR=$SDL_SHARED_EXTERNALS_PATH/cpp/boost_1_${SDL_BOOST_MINOR}_0/include
 BOOST_LIBDIR=$SDL_EXTERNALS_PATH/libraries/boost_1_${SDL_BOOST_MINOR}_0/lib
+if [[ -d $BOOST_LIBDIR ]] ; then
+    break
+fi
+done
 CT=${CT:-`echo ~/c/ct/main`}
 CTPERL=$CT/Shared/Test/bin/CronTest/www/perl
 CTPERLLIB="-I $CT/main/Shared/PerlLib/TroyPerlLib -I $CT/main/Shared/PerlLib -I $CT/main/Shared/PerlLib/TroyPerlLib/5.10.0 -I $CT/main/3rdParty/perl_libs"
@@ -85,12 +100,13 @@ brewboost() {
     brew install boost --c++11 --with-gcc=gcc-5
 }
 macboost() {
+    uselocalgcc
+    #    uselocalgccmac
     local bv=boost_1_58_0
     cd ~/src/$bv
-    uselocalgccmac
     (set -e
      set -x
-     [[ -f b2 ]] || ./bootstrap.sh --prefix=/Users/graehl/c/xmt-externals/Apple/libraries/$bc --with-toolset=darwin --with-icu=/usr/local/Cellar/icu4c/55.1
+     [[ -f b2 ]] || ./bootstrap.sh --prefix=$SDL_EXTERNALS_PATH/libraries/$bv --with-toolset=gcc5 --with-icu=/usr/local/Cellar/icu4c/55.1
      ./b2 clean
      local forceargs=
      if [[ $force ]] ; then
@@ -1016,17 +1032,6 @@ set -e
 cerr() {
   tailn=30 save12 ~/tmp/cerr preview `find . -name '*.err*'`
 }
-case $(uname) in
-    Darwin)
-        lwarch=Apple
-        ;;
-    Linux)
-        lwarch=FC12
-        shopt -s globstar || true
-        ;;
-    *)
-        lwarch=Windows ;;
-esac
 fireadb() {
 adb stop-server
 adb start-server
@@ -2155,7 +2160,20 @@ newbranch() {
 }
 pushg() {
     (
+        cd ~/g
+        mend
+        cd ~
         pushc master g
+    )
+}
+lincar() {
+    (set -e
+     cd ~
+     chost=c-graehl
+     set -x
+     pushg
+     c-s 'forceco master g'
+     c-s '. ~/.e;cd g; BOOST_SUFFIX=gcc44-mt-1_57 buildcar'
     )
 }
 pushc() {
@@ -2175,11 +2193,10 @@ pushc() {
             mend
         fi
         local b=${1:-`git_branch`}
-
         set -e
         if [[ ${force:-} ]] ; then
             # avoid non-fast fwd msg
-            git push ${chost:-c-graehl} :$b || c-s "cd $xmtx;newbranch $b;git co master"
+            git push ${chost:-c-graehl} :$b || c-s "cd $xmtx;git reset --hard HEAD;git co origin/master other;newbranch $b; co other"
         fi
         git push ${chost:-c-graehl} +$b
     )
@@ -4229,7 +4246,7 @@ ctitle() {
 linjen() {
     cd $xmtx
     local branch=${branch:-`git_branch`}
-    pushc $branch
+    pushc $branch $xmtx
     ctitle jen "$@"
     (set -e;
      tmp2=`mktemp /tmp/forceco.XXXXXXXXX`
@@ -6084,7 +6101,7 @@ s2c() {
     #elisp x/3rdParty
     (cd ~
         set -e
-        c-sync u g script bugs .gitconfig
+        c-sync u script bugs .gitconfig
         c-to x/run.sh
         c-to x/xmtpath.sh
         #chost=ceto c-sync u g script bugs .gitconfig
@@ -6151,7 +6168,7 @@ racb() {
         build=Debug
     fi
     xmtbuild=$xmtx/$build
-    export XMT_EXTERNALS_PATH=$xmtext
+    export SDL_EXTERNALS_PATH=$xmtext
     mkdir -p $xmtbuild
     cd $xmtbuild
     local buildtyped=$build
@@ -6974,7 +6991,7 @@ buildgraehl() {
         #export GRAEHL=$GRAEHLSRC
         #export TRUNK=$GRAEHLSRC
         #export SHARED=$TRUNK/shared
-        export BOOST=$BOOST_INCLUDE
+        #export BOOST=$BOOST_INCLUDE
         [ "$clean" ] && make clean
         # [ "$noclean" ] || make clean
 
@@ -6982,8 +6999,9 @@ buildgraehl() {
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         set -x
         pwd
-        make BOOST_DIR=$BOOST_INCLUDE LIBDIR=$BOOST_LIBDIR CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt -j$MAKEPROC
-        make CMDCXXFLAGS+="-I$FIRST_PREFIX/include" BOOST_SUFFIX=mt install
+        args="BOOST_INCLUDEDIR=$BOOST_INCLUDEDIR LIBDIR+=$BOOST_LIBDIR CMDCXXFLAGS+=-I$BOOST_INCLUDEDIR BOOST_SUFFIX=$BOOST_SUFFIX"
+        make $args -j$MAKEPROC
+        make $args install
         set +x
         popd
         if [ "$v" ] ; then
@@ -6998,7 +7016,7 @@ buildcar() {
     TERM=dumb buildgraehl carmel "$@"
 }
 buildfem() {
-    TERM=dumb buildgraehl forest-em
+    TERM=dumb buildgraehl forest-em "$@"
 }
 buildboost() {(
         set -e
@@ -7529,7 +7547,7 @@ g1() {
     local out=${OUT:-$source.`filename_from $HOST "$*"`}
     (
         set -e
-        local flags="$CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDE -DGRAEHL_G1_MAIN"
+        local flags="$CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDEDIR -DGRAEHL_G1_MAIN"
         showvars_optional ARGS MOREFLAGS flags
         if ! [ "$OPT" ] ; then
             flags="$flags -O0"
@@ -7544,12 +7562,6 @@ g1() {
         fi
         set +e
     )
-}
-euler() {
-    source=${source:-euler$1.cpp}
-    local flags="$CXXFLAGS $MOREFLAGS -I$BOOST_INCLUDE -DGRAEHL__SINGLE_MAIN"
-    local out=${source%.cpp}
-    g++ -O euler$1.cpp $flags -o $out && echo running $out ... && ./$out
 }
 gtest() {
     MOREFLAGS="$GCPPFLAGS" OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DGRAEHL_TEST -DGRAEHL_INCLUDED_TEST -ffast-math -lboost_unit_test_framework${BOOST_SUFFIX:-mt} -lboost_random${BOOST_SUFFIX:-mt}
@@ -8407,15 +8419,14 @@ if ! [[ $MAKEPROC ]] ; then
     MAKEPROC=2
     [[ $lwarch = Apple ]] || MAKEPROC=10
 fi
-if [[ -d $XMT_EXTERNALS_PATH ]] ; then
-    export PATH=$XMT_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
+if [[ -d $SDL_EXTERNALS_PATH ]] ; then
+    export PATH=$SDL_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
 fi
 
 cp2ken() {
     build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
 }
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=
-export SDL_EXTERNALS_PATH=$XMT_EXTERNALS_PATH
 uselocalgccmac() {
     if [[ -d /local/gcc/bin ]] ; then
     export PATH=/local/gcc/bin:$PATH

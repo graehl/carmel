@@ -124,7 +124,10 @@ struct carmel_gibbs : public gibbs_base {
       double alpha = ac.getReal();
       typedef dynamic_array<FSTArc*> U;
       U unlocked;  // we need to reverse arcs if conditional
+#include <graehl/shared/warning_push.h>
+  GCC_DIAG_IGNORE(maybe-uninitialized)
       for (NormGroupIter g(nm.group, w); g.moreGroups(); g.nextGroup()) {
+#include <graehl/shared/warning_pop.h>
         if (pgroup == WFST::FIXED)
           prior_scale.add_fixed(id);
         else
@@ -186,7 +189,10 @@ struct carmel_gibbs : public gibbs_base {
   template <class V>
   void visit_wfst_params(V& v, WFST& w, WFST::NormalizeMethod const& nm) const {
     if (nm.group == WFST::NONE) return;
+#include <graehl/shared/warning_push.h>
+  GCC_DIAG_IGNORE(maybe-uninitialized)
     for (NormGroupIter g(nm.group, w); g.moreGroups(); g.nextGroup()) {
+#include <graehl/shared/warning_pop.h>
       unsigned src = g.source();
       for (g.beginArcs(); g.moreArcs(); g.nextArc()) {
         FSTArc& a = **g;
