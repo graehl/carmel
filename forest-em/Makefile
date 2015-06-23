@@ -1,5 +1,8 @@
 PROGS= forest-em forestviz
 
+#TODO: comment this out - having problems with boost program_options link
+CXX98:=1
+
 forest-em_SRC=forest-em.cpp
 forest-em_LIB=$(BOOST_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_TIMER_LIB) $(BOOST_RANDOM_LIB)
 forest-em_NOTEST=1
@@ -18,8 +21,8 @@ INC= . $(TRUNK)
 LIB=
 #CXX:=g++
 
-CXXFLAGS_COMMON= -ggdb -ffast-math
-#-std=c++11
+CXXFLAGS_COMMON= -ffast-math
+#-ggdb
 CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM -DUSE_BOOST_GZSTREAM
 # CXXFLAGS += -O
 #-DSINGLE_PRECISION

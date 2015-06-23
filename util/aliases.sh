@@ -2170,16 +2170,20 @@ pushg() {
         mend
         cd ~
         pushc master g
+        c-s 'forceco master g'
     )
 }
 lincar() {
     (set -e
      cd ~
-     chost=c-graehl
-     set -x
      pushg
-     c-s 'forceco master g'
      c-s '. ~/.e;cd g; BOOST_SUFFIX=mt buildcar'
+    )
+}
+linfem() {
+    (set -e
+     pushg
+     c-s 'BOOST_SUFFIX=mt buildfem'
     )
 }
 pushc() {

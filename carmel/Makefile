@@ -27,12 +27,11 @@ INC=$(SRC) $(SHARED)
 LIB =
 CPP_EXT=cc
 
-LDFLAGS += -lpthread -ldl -pthread -std=c++11
-BASECXXFLAGS = -ffast-math  -std=c++11
+LDFLAGS += -lpthread -ldl -pthread
+BASECXXFLAGS = -ffast-math
 CPPFLAGS += -Wno-deprecated -Wall
 
 CXXFLAGS= $(BASECXXFLAGS) -O3
-#FIXME: crashes with -O3 on kbest (>2?) output
 
 CXXFLAGS_DEBUG= $(BASECXXFLAGS) -DDEBUG -ggdb
 CXXFLAGS_TEST=$(BASECXXFLAGS) -DTEST

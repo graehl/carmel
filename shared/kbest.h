@@ -263,8 +263,10 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
 #endif
           EdgePath* last;
           while ((last = top->last)) {
-            if (~last->heapPos ? ~top->heapPos : (top->heapPos == 0 || top->node == last->node->left || top->node == last->node->right))
-            {
+            if (~last->heapPos ? ~top->heapPos : (top->heapPos == 0 || top->node == last->node->left
+                                                  || top->node == last->node->right)) {
+              // non-cross edge
+            } else {
               // got to p on a cross edge
               cutArc = last->get_cut_arc();
               shortPath.push(cutArc);
@@ -278,15 +280,14 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
 #ifdef DEBUGKBEST
           Config::debug() << "\n\n";
 #endif
-
           unsigned srcState = src;  // pretend beginning state is end of last sidetrack
 
           v.start_path(path_no, path_cost);
           for (Sidetracks::const_iterator cut = shortPath.const_begin(), end = shortPath.const_end();
                cut != end; ++cut) {
             GraphArc* cutarc = *cut;
-            insertShortPath(srcState, cutarc->src, v,
-                            p_cycle_hash);  // stitch end of last sidetrack to beginning of this one
+            // stitch end of last sidetrack to beginning of this one:
+            insertShortPath(srcState, cutarc->src, v, p_cycle_hash);
             srcState = cutarc->dest;
             if (!v.SIDETRACKS_ONLY) untelescope_cost(*cutarc, dist);
             v.visit_sidetrack_arc(*cutarc);
@@ -305,6 +306,7 @@ void bestPaths(Graph graph, unsigned src, unsigned dest, unsigned k, Visitor& v,
           GraphHeap* from = newPath.last->node;
           FLOAT_TYPE lastWeight = newPath.last->weight;
           if (!~lastHeapPos) {
+            assert(lastHeapPos == (unsigned)-1);
             spawnVertex = from->arc;
             newPath.heapPos = ~0;
             if (from->left) {
