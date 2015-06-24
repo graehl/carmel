@@ -44,6 +44,31 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+xclean() {
+    rm -rf ~/x/Debug ~/x/Release
+    mkdir -p ~/x/Debug ~/x/Release
+    ccache -C
+}
+linnplm() {
+    scpx ~/src/nplm/src c-graehl:xs/ken-nplm/; j-s 'cd ~/xs/ken-nplm;./make.sh'
+}
+linken() {
+    scpx ~/src/KenLM c-graehl:xs/; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
+}
+scpx() {
+    if [[ -d $1 ]] ; then
+        (
+            set -e
+            local from=$1
+            #cd $from
+            shift
+            local to=$1
+            shift
+            set -x
+            rsync --modify-window=1 --cvs-exclude --exclude=.git -a $from $to "$@"
+        )
+    fi
+}
 gitundosoft() {
     git reset --soft HEAD~1
 }
@@ -1240,17 +1265,12 @@ vg12() {
 diffs() {
     git diff ${1:-HEAD^1} --stat
 }
-cpnplm() {
-    cp $xmtxs/LanguageModel/KenLM/lm/wrappers/nplm* ~/src/kenlm/lm/wrappers/
-}
-comxmtken() {
-    (set -e;
-        cd ~/src/kenlm
-        cp -a lm util $xmtxs/LanguageModel/KenLM/
-        cd $xmtxs/LanguageModel/KenLM/
-        git add lm util
-        git commit -a -m 'kenlm'
-    )
+upkenlm() {
+    (set -e
+     cd ~/src/kenlm/
+     git fetch upstream
+     git rebase upstream/master
+     )
 }
 detumblr() {
     ls tumblr_* | perl -e '$re=q{^tumblr_(.*?)_(\d+)\.};
@@ -4932,6 +4952,9 @@ gitlogp() {
 }
 gitlog() {
     git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${1:-30}
+}
+gitlog1() {
+    gitlog 1
 }
 gitreview() {
     git review "$@"
