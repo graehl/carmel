@@ -8488,3 +8488,4 @@ alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/
 finduniq() {
     find . -exec basename {} \; | sort | uniq -c
 }
+add_ldpath $BOOST_LIBDIR
