@@ -50,7 +50,7 @@ xclean() {
     ccache -C
 }
 linnplm() {
-    scpx ~/src/nplm/src c-graehl:xs/ken-nplm/; j-s 'cd ~/xs/ken-nplm;./make.sh'
+    scpx ~/src/nplm/src c-graehl:xs/ken-nplm/; j-s "cd ~/xs/ken-nplm;clean=$clean ./make.sh"
 }
 linken() {
     scpx ~/src/KenLM c-graehl:xs/; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
