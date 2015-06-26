@@ -3390,8 +3390,10 @@ yreg() {
      fi
      pythonroot=$xmtx/python
      SDL_EXTERNALS_SHARED=$SDL_EXTERNALS/Shared
-     SDL_EXTERNALS_PYTHON=$SDL_EXTERNALS_SHARED/python
-     export PYTHONPATH=$pythonroot:$SDL_EXTERNALS_PYTHON:$PYTHONPATH
+     SDL_SHARED_PYTHON=$SDL_EXTERNALS_SHARED/python
+     export PYTHONHOME=$SDL_EXTERNALS/libraries/python-2.7.9
+     PYTHONPATH=$PYTHONHOME/lib:$PYTHONHOME/lib/python2.7
+     export PYTHONPATH=$pythonroot:$SDL_SHARED_PYTHON:$PYTHONPATH
      export TMPDIR=${TMPDIR:-/var/tmp}
         bdir=${bdir:-$xmtx/${BUILD:=Debug}}
         export LD_LIBRARY_PATH=$bdir/xmt/lib:$LD_LIBRARY_PATH
