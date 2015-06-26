@@ -44,16 +44,38 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+tosdlext() {
+    sdlextbase=$(echo ~/c/sdl-externals)
+    xmtextbase=$(echo ~/c/xmt-externals)
+    require_dirs $sdlextbase $xmtextbase
+    local src=$xmtextbase/$1
+    local dst=$sdlextbase/$1
+    cp -a $src $dst && (cd $sdlextbase && git add $1)
+}
+cygsshd() {
+    ssh-host-config -y
+    #prompt CYGWIN=: tty ntsec
+    cygrunsrv -S sshd
+}
 xclean() {
     rm -rf ~/x/Debug ~/x/Release
     mkdir -p ~/x/Debug ~/x/Release
     ccache -C
 }
+linnplm01() {
+    scpx ~/src/kpu/nplm/src c-graehl:xs/nplm01/; j-s "cd ~/xs/nplm01;clean=$clean ./make.sh"
+}
+syncnplm() {
+    scpx ~/src/nplm/src c-graehl:xs/nplm/
+}
 linnplm() {
-    scpx ~/src/nplm/src c-graehl:xs/ken-nplm/; j-s "cd ~/xs/ken-nplm;clean=$clean ./make.sh"
+    syncnplm; j-s "cd ~/xs/nplm;clean=$clean ./make.sh"
+}
+syncken() {
+    scpx ~/src/KenLM c-graehl:xs/
 }
 linken() {
-    scpx ~/src/KenLM c-graehl:xs/; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
+    syncken; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
 }
 scpx() {
     if [[ -d $1 ]] ; then
@@ -124,7 +146,6 @@ retrans() {
 brewboost() {
     brew install boost --c++11 --with-gcc=gcc-5
 }
-
 makeboost() {
     (
         gccprefix=${gccprefix:-/local/gcc}
@@ -138,8 +159,8 @@ makeboost() {
             export PATH=$gccprefix/bin:/usr/local/bin:$PATH
             LD_RUN_PATH+=":$gccprefix/lib64"
             export LD_RUN_PATH=${LD_RUN_PATH#:}
-            LD_LIBRARY_PATH+=":$gccprefix/lib64"
-            export LD_LIBRARY_PATH=${LD_RUN_PATH#:}
+            LD_LIBRARY_PATH="$gccprefix/lib64:$LD_LIBRARY_PATH"
+            export LD_LIBRARY_PATH=${LD_LIBRARY_PATH#:}
         fi
        set -e
         set -x
@@ -616,7 +637,7 @@ linosmake() {
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         #
-        c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
+        c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
     )
 }
 osreg() {
@@ -1558,7 +1579,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/Hyp"
+xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/hyp"
 xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
@@ -3373,7 +3394,7 @@ yreg() {
      export PYTHONPATH=$pythonroot:$SDL_EXTERNALS_PYTHON:$PYTHONPATH
      export TMPDIR=${TMPDIR:-/var/tmp}
         bdir=${bdir:-$xmtx/${BUILD:=Debug}}
-        export LD_LIBRARY_PATH=$bdir:$bdir/xmt:$bdir/xmt/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$bdir/xmt/lib:$LD_LIBRARY_PATH
         local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
         cd $xmtx/RegressionTests
         THREADS=${MAKEPROC:-`ncpus`}
@@ -4789,7 +4810,7 @@ mend() {
     )
 }
 mendthis() {
-    git commit -a --amend
+    git commit -a --amend "$@"
 }
 xmend() {
 (
@@ -6170,7 +6191,7 @@ s2c() {
     #elisp x/3rdParty
     (cd ~
         set -e
-        c-sync u script bugs .gitconfig
+        c-sync u .gitconfig
         c-to x/run.sh
         c-to x/xmtpath.sh
         #chost=ceto c-sync u g script bugs .gitconfig
@@ -6185,18 +6206,30 @@ svndry() {
 sconsd() {
     scons -Q --debug=presub "$@"
 }
+prependld() {
+    if [[ -d $1 ]] ; then
+    if [[ $lwarch = Apple ]] ; then
+            DYLD_FALLBACK_LIBRARY_PATH=$1:$DYLD_FALLBACK_LIBRARY_PATH
+            export DYLD_FALLBACK_LIBRARY_PATH=${DYLD_FALLBACK_LIBRARY_PATH#:}
+    else
+            LD_LIBRARY_PATH=$1:$LD_LIBRARY_PATH
+            export LD_LIBRARY_PATH=${LD_LIBRARY_PATH#:}
+    fi
+    fi
+}
 #sudo gem install git_remote_branch --include-dependencies - gives the nice 'grb' git remote branch cmd
 #see aliases in .gitconfig #git what st ci co br df dc lg lol lola ls info ign
 addld() {
     if [[ $lwarch = Apple ]] ; then
         if ! fgrep -q "$1" <<< "$DYLD_FALLBACK_LIBRARY_PATH" ; then
-            export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$1
+            prependld "$@"
+            export DYLD_FALLBACK_LIBRARY_PATH=$1:$DYLD_FALLBACK_LIBRARY_PATH
         else
             true || echo2 "$1 already in DYLD_FALLBACK_LIBRARY_PATH"
         fi
     else
         if ! fgrep -q "$1" <<< "$LD_LIBRARY_PATH" ; then
-            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$1
+            prependld "$@"
         else
             true || echo2 "$1 already in LD_LIBRARY_PATH"
         fi

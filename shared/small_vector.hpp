@@ -163,6 +163,11 @@ struct small_vector {
 
   void push_back() { new (push_back_uninitialized()) T; }
 
+  void moveAssign(small_vector &o) {
+    std::memcpy(this, &o, sizeof(small_vector));
+    o.clear_nodestroy();
+  }
+
 #if __cplusplus >= 201103L
   /// move
   small_vector(small_vector&& o) noexcept {

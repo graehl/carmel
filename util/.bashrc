@@ -15,18 +15,11 @@ if false && [ "$TERM" = dumb ] ; then
     exit
 fi
 export SHELL=/bin/bash
-export LOCAL_WORKDIR=/lfs/bauhaus/graehl/workflow
-export WORKDIR=/home/nlg-03/graehl/workflow
 
 JVMFLAGS="-Xss10m -Xms192m -Xmn128m -Xmx3560m -server -Xbatch -XX:MaxPermSize=256m -XX:+UseConcMarkSweepGC -XX:+AggressiveOpts "
-SCALAFLAGS_BASE="-target:jvm-1.5 -Ywarn-dead-code -deprecation"
-SCALAFLAGS_DBG="$SCALAFLAGS_BASE -g:notailcalls"
-SCALAFLAGS_OPT="$SCALAFLAGS_BASE -Xdisable-assertions -g:line -Yinline -optimise -Yclosure-elim -Ydead-code -Ydetach -Yno-generic-signatures"
 DEV=$HOME/dev
-export PATH=/usr/bin:~/torch/bin:$PATH:
-#if [ $HOST = TRUE ] ; then DEV=/cache; fi
+export PATH=/usr/bin:$PATH:
 HOSTNAME=`hostname | /usr/bin/tr -d '\r\n'`
-#set -x
 
 umask 22
 
@@ -186,8 +179,9 @@ function default_paths {
     local cygp
     [ "$ONCYGWIN" ] && cygp=/usr/lib:
     PATH=${cygp:-}/usr/local/bin:/usr/bin:$DEFAULT_PATH
-    mkdir -p ~/script
-    PATH=$isd/bin:~/bin:~/script:$PATH
+    PATH=~/bin:$PATH
+    #~/script:$isd/bin:
+    #mkdir -p ~/script
     if [[ $OS != Darwin ]] ; then
         PATH=$PATH:/local/bin
     fi
@@ -213,6 +207,7 @@ S64=""
 [ "$ON64" ] && S64="64"
 
 FIRST_PREFIX=""
+#export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
 function add_path
 {
     local prefix=$1
@@ -237,14 +232,6 @@ function set_paths {
 }
 ARCHBASE=$isd/$ARCH
 HOSTBASE=$isd/$HOST
-case $HOST in
-    a??)
-        HOSTBASE=$isd/a
-        ;;
-    x??)
-        HOSTBASE=$isd/x
-        ;;
-esac
 
 if [ "$ON64" ] ; then
     ARCH64BASE=${ARCHBASE}64
@@ -255,6 +242,7 @@ else
     HOST32BASE=""
     PREFIXES="$ARCHBASE $ARCH64BASE $HOST32BASE $HOSTBASE"
 fi
+PREFIXES=
 
 if [[ -d /usr/x11/bin ]] ; then
   PREFIXES+=" /usr/x11/bin"
@@ -274,12 +262,8 @@ function exportflags {
     export CFLAGS="$CFLAGS $*"
     export CXXFLAGS="$CFLAGS $*"
     export LDFLAGS
-    export BOOST_SUFFIX=
-    [ "$HOST" = "strontium" ] && export BOOST_SUFFIX=gcc41-mt
-    [ "$HOST" = "grieg" ] && export BOOST_SUFFIX=gcc41-mt
-    [ "$HOST" = "cage" ] && export BOOST_SUFFIX=
-    [ "$HOST" = "maybe" ] && export BOOST_SUFFIX=gcc34-mt
-    export BOOST_SRCDIR=~/isd/boost
+    export BOOST_SUFFIX=-mt
+    export BOOST_SRCDIR=~/src/boost
     export HOSTBASE ARCH64BASE ARCHBASE HOST32BASE
 }
 
@@ -327,17 +311,6 @@ fi
 
 export PYTHONSTARTUP=$UTIL/inpy
 
-export SCALA_HOME=${SCALA_HOME:-~/isd/linux}
-
-export GOROOT=$HOME/go
-export GOARCH=amd64
-export GOOS=linux
-
-export MONO_USE_LLVM=1
-
-export LD_LIBRARY_PATH=$FIRST_PREFIX/lib:$FIRST_PREFIX/lib64
-
-
 set_eterm_dir() {
     echo -e "\033AnSiTu" "$LOGNAME" # $LOGNAME is more portable than using whoami.
     echo -e "\033AnSiTc" "$(pwd)"
@@ -354,9 +327,6 @@ set_eterm_dir() {
 if false && [ "$TERM" = "eterm-color" ]; then
     PROMPT_COMMAND="$PROMPT_COMMAND ; set-eterm-dir"
 fi
-
-export CLOJURE_EXT=~/.clojure
-export HYPERGRAPH_DBG=1
 
 . $UTIL/aliases.sh
 . $GRAEHL/local.sh
