@@ -675,7 +675,7 @@ linosmake() {
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         #
-        c-s ". ~/u/localgcc.sh;rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
+        c-s ". ~/u/localgcc.sh;[[ $noclean ]] || rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
     )
 }
 osreg() {
@@ -2283,13 +2283,13 @@ lincar() {
     (set -e
      cd ~
      pushg
-     c-s '. ~/.e;cd g; BOOST_SUFFIX=mt buildcar'
+     c-s '. ~/.e;cd g; BOOST_SUFFIX=-mt buildcar'
     )
 }
 linfem() {
     (set -e
      pushg
-     c-s 'BOOST_SUFFIX=mt buildfem'
+     c-s 'BOOST_SUFFIX=-mt buildfem'
     )
 }
 pushc() {
