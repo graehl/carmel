@@ -74,4 +74,16 @@ typename UnorderedMap::iterator find_string(UnorderedMap& map, Slice const& key)
   return map.find(key, slice_or_string_hash(), slice_or_string_eq());
 }
 
+
+template <class UnorderedMap, class Slice>
+typename UnorderedMap::const_iterator find_string(UnorderedMap const& map, char const* key) {
+  return map.find(std::pair<char const*, char const*>(key, key+std::strlen(key)), slice_or_string_hash(), slice_or_string_eq());
+}
+
+/// \return map.find(std:string(key.first, key.second)) but faster
+template <class UnorderedMap, class Slice>
+typename UnorderedMap::iterator find_string(UnorderedMap& map, char const* key) {
+  return map.find(std::pair<char const*, char const*>(key, key+std::strlen(key)), slice_or_string_hash(), slice_or_string_eq());
+}
+
 #endif

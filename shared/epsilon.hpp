@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <boost/cstdint.hpp>
+#include <graehl/shared/nan.hpp>
 
 #ifndef GRAEHL_EPSILON
 /**
@@ -315,6 +316,12 @@ inline bool within_epsilon_or_ieee_apart(float a, float b, float epsilon = (floa
 inline bool within_epsilon_or_ieee_apart(double a, double b, double epsilon = (double)GRAEHL_EPSILON) {
   return within_epsilon_or_doubles_apart(a, b, epsilon, GRAEHL_DEFAULT_IEEE_APART);
 }
+
+template <class T>
+inline bool few_ieee_apart_equate_inf_nan(T a, T b, boost::int32_t max_apart) {
+  return few_ieee_apart(a, b, max_apart) || nonfinite_same_sign(a,b);
+}
+
 }
 
 #ifdef GRAEHL_TEST

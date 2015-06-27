@@ -44,6 +44,44 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+gitdeletedrev() {
+    git log --all -- "$@"
+}
+gitshowrev() {
+    local rev=$1
+    shift
+    git show $rev -- "$@"
+}
+gitdeleted() {
+    git log --diff-filter=D --summary | grep delete
+}
+gitroot() {
+    cd "$(git rev-parse --show-toplevel)"
+}
+gittheirs() {
+(set -e
+    gitroot
+    git co --theirs "$@"
+    git add "$@"
+    git rebase --continue
+)
+}
+testn() {
+    (set -e;
+     logdir=${logdir:-~/tmp/}
+     mkdir -p $logdir
+     n=$1
+     shift
+     for i in `seq 1 $n`; do
+         if "$@" 2>$logdir/testn.$i.err >$logdir/testn.$i.out; then
+             echo2 $i ok
+         else
+             echo2 "$* - failure on try #$i of $n"
+             exit 1
+         fi
+     done
+    )
+}
 tosdlext() {
     sdlextbase=$(echo ~/c/sdl-externals)
     xmtextbase=$(echo ~/c/xmt-externals)
@@ -3391,12 +3429,13 @@ yreg() {
      pythonroot=$xmtx/python
      SDL_EXTERNALS_SHARED=$SDL_EXTERNALS/Shared
      SDL_SHARED_PYTHON=$SDL_EXTERNALS_SHARED/python
-     export PYTHONHOME=$SDL_EXTERNALS/libraries/python-2.7.9
-     PYTHONPATH=$PYTHONHOME/lib:$PYTHONHOME/lib/python2.7
-     export PYTHONPATH=$pythonroot:$SDL_SHARED_PYTHON:$PYTHONPATH
+  #   export PYTHONHOME=$SDL_EXTERNALS_PATH/libraries/python-2.7.9
+  #   PYTHONPATH=$PYTHONHOME/lib:$PYTHONHOME/lib/python2.7:$PYTHONHOME
+     PYTHONPATH=$pythonroot:$SDL_SHARED_PYTHON:$PYTHONPATH
+     export PYTHONPATH=${PYTHONPATH%:}
      export TMPDIR=${TMPDIR:-/var/tmp}
         bdir=${bdir:-$xmtx/${BUILD:=Debug}}
-        export LD_LIBRARY_PATH=$bdir/xmt/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$bdir/xmt/lib:/local/gcc/lib64:$HOME/pub/lib:$LD_LIBRARY_PATH
         local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
         cd $xmtx/RegressionTests
         THREADS=${MAKEPROC:-`ncpus`}
@@ -3562,7 +3601,7 @@ jen() {
     if [[ $HOST = pwn ]] ; then
         UPDATE=0
     fi
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -4335,7 +4374,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;

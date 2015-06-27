@@ -300,6 +300,11 @@ struct file_arg {
 
   std::string const& str() const { return name; }
 
+  void flush() {
+    if (!none)
+      pointer->flush();
+  }
+
   void close() { set_none(); }
 
   typedef file_arg<Stream> self_type;

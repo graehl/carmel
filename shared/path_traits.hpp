@@ -27,6 +27,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <graehl/shared/epsilon.hpp>
+#include <sdl/graehl/shared/nan.hpp>
 
 namespace graehl {
 
@@ -71,7 +72,8 @@ struct cost_path_traits {
      \return a and b
   */
   static inline bool close_enough(cost_type a, cost_type b) {
-    return few_ieee_apart(a, b, 200);  // 200 floats distance ~ 1 part in 50,000
+    return few_ieee_apart_equate_inf_nan(a, b, 200);
+    // 200 floats distance ~ 1 part in 50,000
   }
   // may be different from includes in the same way that better is different from update:
   static inline bool converged(cost_type improver, cost_type incumbent, cost_type epsilon) {

@@ -25,6 +25,8 @@
 #endif
 #ifdef GRAEHL_TEST_MAIN
 #define BOOST_TEST_MAIN
+#else
+#define BOOST_NO_TEST_MAIN
 #endif
 
 #ifdef _MSC_VER

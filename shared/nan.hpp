@@ -49,8 +49,7 @@ inline bool isnan(float f) {
   } u = {f};
   return (u.x << 1) > 0xff000000u;
 }
-inline bool isnan (double f)
-{
+inline bool isnan(double f) {
   typedef unsigned long long u64;
   union {
     double f;
@@ -122,6 +121,17 @@ inline bool is_finite(T x) {
 #else
   return !is_nan(x) && !is_inf(x);
 #endif
+}
+
+template <typename T>
+inline bool neither_finite(T x, T y) {
+  return !is_finite(x) && !is_finite(y);
+}
+
+template <typename T>
+inline bool nonfinite_same_sign(T x, T y) {
+  if (is_finite(x)) return false;
+  return is_nan(x) ? !is_finite(y) : (is_nan(y) || (is_pos_inf(x) ? is_pos_inf(y) : is_neg_inf(y)));
 }
 
 
