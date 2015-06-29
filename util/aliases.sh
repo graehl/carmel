@@ -44,6 +44,13 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+capturecore() {
+    ulimit -c unlimited
+    "$@" || gdb "$1" *core*
+}
+gdbrepeat() {
+    gdb -ex "b exit" -ex "commands" -ex "run" -ex "end" -ex "run" --args "$@"
+}
 gitdeletedrev() {
     git log --all -- "$@"
 }
@@ -674,8 +681,9 @@ linosmake() {
         fi
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
-        #
-        c-s ". ~/u/localgcc.sh;[[ $noclean ]] || rm -rf $osdirbuild;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
+        local cleanpre
+        [[ $noclean ]] || cleanpre="rm -rf $osdirbuild"
+        c-s ". ~/u/localgcc.sh;$cleanpre;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
     )
 }
 osreg() {
