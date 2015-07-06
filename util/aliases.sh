@@ -44,15 +44,42 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+gitxz() {
+     gitroot
+     name=$(basename `pwd`)
+    (set -e;
+     set -x
+     #branch=${branch:-`gitbranch`}
+     git archive --format=tar --prefix=$name/ HEAD "$@" | xz -c >$name.tar.xz
+     )
+    ls -l `realpath $name.tar.xz`
+}
+targit() {
+     gitroot
+     name=$(basename `pwd`)
+    (set -e;
+     cd ..
+     tar c --exclude=.git --exclude=.gitignore $name | xz -c >$name.tar.xz
+     set -x
+     mv $name.tar.xz $name/$name.tar.xz
+    )
+    ls -l `realpath $name.tar.xz`
+}
 capturecore() {
     ulimit -c unlimited
     "$@" || gdb "$1" *core*
+}
+gitshowmsg() {
+    git log "$@" -n 1
 }
 gdbrepeat() {
     gdb -ex "b exit" -ex "commands" -ex "run" -ex "end" -ex "run" --args "$@"
 }
 gitdeletedrev() {
     git log --all -- "$@"
+}
+gitbranch() {
+    git rev-parse --abbrev-ref HEAD
 }
 gitshowrev() {
     local rev=$1
@@ -117,10 +144,17 @@ linnplm() {
     syncnplm; j-s "cd ~/xs/nplm;clean=$clean ./make.sh"
 }
 syncken() {
-    scpx ~/src/KenLM c-graehl:xs/
+    reascpx ~/src/KenLM c-graehl:xs/
 }
 linken() {
     syncken; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
+}
+
+scpg() {
+    (set -x
+     cd
+     scpx "$1" "c-graehl:`dirname $1`"
+     )
 }
 scpx() {
     if [[ -d $1 ]] ; then
@@ -162,6 +196,9 @@ reosmac() {
         osmake
         hymac
     )
+}
+macgcc() {
+    uselocalgccmac
 }
 democompose() {
     (
@@ -621,11 +658,16 @@ substsmall() {
 }
 oscptar() {
     (set -e
+     if false ; then
      cd $osgitdir
      c-s "mkdir -p $osgitdir" #rm -rf $osgitdir/$hypdir;
      set -x
-     scp $ostarball c-graehl:$osgitdir/
+     scp $ostarball c-graehl:$osgitdir
      c-s "cd $osgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
+     else
+         set -x
+         scpx $osgitdir c-graehl:$osgitdir/..
+     fi
     )
 }
 osmake() {
@@ -3146,6 +3188,18 @@ jcp() {
 gcp() {
     chost=c-graehl ccp "$@"
 }
+wcp() {
+    (
+        set -x
+        cd $xmtx/RegressionTests
+        f=${2#C:/JENKINS/workspace/XMT-Release-Windows/RegressionTests/}
+        f=${f%.expected}
+        f=${f%.windows}
+        f=$f.windows
+        scp Administrator@${wgitbuild:-wgitbuild1}:"$1" "$f"
+        git add $f
+    )
+}
 ccp() {
     #uses: $chost for scp
     local n=$#
@@ -3533,6 +3587,11 @@ bashcmdprompt() {
     export PS1="\e]0;[$DISPLAYHOST] \w\007[$DISPLAYHOST] \w\$ "
     #set -T
     trap 'printf "\\e]0;[$DISPLAYHOST] %b\\007" $BASH_COMMAND' DEBUG
+}
+cmdprompt() {
+    bashcmdprompt
+    export PS1="[$DISPLAYHOST] \w\$ "
+    trap 'echo -n "cd `pwd` && ";printf "%q " $BASH_COMMAND;echo' DEBUG
 }
 to5star() {
     mv "$@" ~/music/local/[5star]/
