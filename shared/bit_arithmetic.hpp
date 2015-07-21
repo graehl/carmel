@@ -32,24 +32,42 @@
 #define CHAR_BIT 8
 #endif
 
+#ifdef _MSC_VER
+//TODO:
+#undef HAVE_BUILTIN_CLZ
+#define HAVE_BUILTIN_CLZ 0
+#endif
+
+#ifndef HAVE_BUILTIN_CLZ
+#define HAVE_BUILTIN_CLZ 1
+#endif
+
+#ifndef HAVE_BUILTIN_POPCNT
+#define HAVE_BUILTIN_POPCNT 1
+#endif
+
+#if HAVE_BUILTIN_POPCNT
+#if defined(_MSC_VER)
+#include <intrin.h>
+#define __builtin_popcount __popcnt
+#define __builtin_popcountl __popcnt64
+#define __builtin_popcountll __popcnt64
+#endif
+#endif
+
 #if defined(_MSC_VER)
 
 #define GRAEHL_FORCE_INLINE __forceinline
-
 #include <stdlib.h>
-
 #define GRAEHL_ROTL32(x, y) _rotl(x, y)
 #define GRAEHL_ROTL64(x, y) _rotl64(x, y)
-
 #define GRAEHL_BIG_CONSTANT(x) (x)
 
 #else
 
 #define GRAEHL_FORCE_INLINE inline __attribute__((always_inline))
-
 #define GRAEHL_ROTL32(x, y) graehl::bit_rotate_left(x, y)
 #define GRAEHL_ROTL64(x, y) graehl::bit_rotate_left(x, y)
-
 #define GRAEHL_BIG_CONSTANT(x) (x##LLU)
 
 #endif
@@ -76,6 +94,11 @@ inline bool is_power_of_2(Int i) {
 
 /// return power of 2 >= x
 inline uint32_t next_power_of_2(uint32_t x) {
+  if (!x) return 1;
+#ifndef HAVE_BUILTIN_CLZ
+  assert(sizeof(x) == sizeof(unsigned));
+  return 1u << (32 - __builtin_clz(x - 1));
+#else
   assert(x <= (1 << 30));
   --x;
   x |= x >> 1;
@@ -86,10 +109,16 @@ inline uint32_t next_power_of_2(uint32_t x) {
   ++x;
   assert(is_power_of_2(x));
   return x;
+#endif
 }
 
 /// return power of 2 >= x
 inline uint64_t next_power_of_2(uint64_t x) {
+  if (!x) return 1;
+#if HAVE_BUILTIN_CLZ
+  assert(sizeof(x) == sizeof(unsigned long));
+  return 1u << (64 - __builtin_clzl(x - 1));
+#else
   assert(x <= (1ULL << 60));
   --x;
   x |= x >> 1;
@@ -101,20 +130,30 @@ inline uint64_t next_power_of_2(uint64_t x) {
   ++x;
   assert(is_power_of_2(x));
   return x;
+#endif
 }
 
-inline unsigned count_set_bits(uint32_t i) {
-  i = i - ((i >> 1) & 0x55555555);
-  i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-  return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+inline unsigned count_set_bits(uint32_t x) {
+#if HAVE_BUILTIN_POPCNT
+  return __builtin_popcount(x);
+#else
+  x = x - ((x >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+#endif
 }
 
-inline unsigned count_set_bits(int32_t i) {
-  return count_set_bits((uint32_t)i);
+/// to avoid gcc 5 ambig from int -> uintX
+inline unsigned count_set_bits(int32_t x) {
+  return count_set_bits((uint32_t)x);
 }
 
 inline unsigned count_set_bits(uint64_t x) {
+#if HAVE_BUILTIN_POPCNT
+  return __builtin_popcountl(x);
+#else
   return count_set_bits((uint32_t)x) + count_set_bits((uint32_t)(x >> 32));
+#endif
 }
 
 /// while this is covered by the complicated generic thing below, I want to be sure the hash fn. uses the

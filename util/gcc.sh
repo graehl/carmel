@@ -1,11 +1,15 @@
 # cd /local/graehl/src/gcc-build;sudo mv /local/gcc{,-4.9}; sudo make install
 #cd /local;sudo mv gcc{,-4.9}; sudo tar xzf /home/graehl/gcc.tar.gz
-gccver=5.1.0
+#ftp://gcc.gnu.org/pub/gcc/snapshots/5.2.0-RC-20150707
+gccver=5.2.0
 srcdir=/local/graehl/src
 gccwithv=gcc-$gccver
 gccsrc=$srcdir/$gccwithv
 gccbuild=$srcdir/gcc-build
 gccprefix=/local/gcc
+gccyum() {
+    sudo yum install gcc-c++ zlib-devel
+}
 gccget() {
     mkdir -p $srcdir
     cd $srcdir

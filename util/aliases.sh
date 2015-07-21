@@ -41,22 +41,139 @@ hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
 osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
-chosts="c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2"
+chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+emacsdbg() {
+    open -a /Applications/Emacs.app --args --debug-init
+}
+update_terminal_cwd() {
+    # Identify the directory using a "file:" scheme URL,
+    # including the host name to disambiguate local vs.
+    # remote connections. Percent-escape spaces.
+    local SEARCH=' '
+    local REPLACE='%20'
+    local PWD_URL="file://$HOSTNAME${PWD//$SEARCH/$REPLACE}"
+    if [[ -z $INSIDE_EMACS ]] ; then
+        printf '\e]7;%s\a' "$PWD_URL"
+    fi
+}
+
+pandocslides() {
+    (
+        set -e
+        set -x
+        local f=$1
+        base=${f%.md}
+        [[ -f $f ]] || f=$base.md
+        local out=${2:-$base.html}
+        rm $out
+        ln -sf ~/c/reveal.js `dirname $out`/
+        pandoc -s -t revealjs --slide-level=2 $f -o $out -V ${2:-black} && perl -i -pe 's{theme/simple}{theme/black}' $out &&
+            browse $out
+        )
+}
+dfpercent() {
+    df -h "$@" | perl -ne '$p=$1 if /(\S+)%\s+\S*$/;END{print 100-$p}'
+}
+dfrequire() {
+    local require=${2:-5}
+    local df=`dfpercent "$1"`
+    if [[ $df -lt $require ]] ; then
+        echo "$1 had only $df% free and we require $require%" 1>&2
+        return 1
+    fi
+}
+speedboth() {
+    (set -e
+    local a=$1
+    local b=$2
+    shift
+    shift
+    local A=$a
+    local B=$b
+    local fa=$a/speed/report.txt
+    local fb=$b/speed/report.txt
+    [[ -f $fa ]] || fa=$a/report.txt
+    [[ -f $fb ]] || fb=$b/report.txt
+    [[ -f $fa ]] || fa=$a
+    [[ -f $fb ]] || fb=$b
+    cat<<EOF>"$a-$b.cmd"
+set terminal png size 1280,960 enhanced
+set output "$a-$b.png"
+set title "$A vs. $B speed/quality"
+set xlabel "BLEU4"
+set ylabel "Speed (wpm)"
+set pointsize 1.5
+plot "$fa" u 3:2 title "$A", "$fb" u 3:2 title "$B"
+EOF
+    rm -f "$a-$b.png"
+    gnuplot -c "$a-$b.cmd"
+    open "$a-$b.png"
+    )
+}
+
+cpumodel() {
+    ssh $1 'grep -m1 -A3 "vendor_id" /proc/cpuinfo'
+}
+cspeed() {
+    for g in "$@"; do
+        (
+            cd ~/p/qf
+            [[ "$rerun" ]]  && chost=git02 c-s "cd ~/p/qf; perl ~/c/coretraining/main/quality_finder/App/yas_speed_test.pl --param-file=$g/$g.params"
+            set -e
+            mkdir -p $g
+            set -x
+            cd $g
+            for f in plot.gif report.txt speed_bleu.xml; do
+                scp $chost:p/qf/$g/speed/$f . || true
+            done
+        )
+    done
+}
+cspeedboth() {
+    (set -e
+     cd ~/p/qf
+     set -x
+     d=$3$1-$2
+     mkdir -p $d
+     cd $d
+     na=$1
+     nb=$2
+     a=$3$1
+     b=$3$2
+     ln -sf ../$a $a
+     ln -sf ../$b $b
+     cspeed $a
+     cspeed $b
+     shift
+     shift
+     speedboth $a $b "$@"
+    )
+}
+
+emacspixel() {
+    GDK_USE_XFT=0 emacs "$@"
+}
+cpas() {
+    cp -as `abspath "$@"` .
+}
+cpRs() {
+    cp -Rs `abspath "$@"` .
+}
 gitxz() {
-     gitroot
-     name=$(basename `pwd`)
+    gitroot
+    name=$(basename `pwd`)
     (set -e;
      set -x
      #branch=${branch:-`gitbranch`}
      git archive --format=tar --prefix=$name/ HEAD "$@" | xz -c >$name.tar.xz
-     )
+    )
     ls -l `realpath $name.tar.xz`
 }
 targit() {
-     gitroot
-     name=$(basename `pwd`)
+    gitroot
+    name=$(basename `pwd`)
     (set -e;
      cd ..
      tar c --exclude=.git --exclude=.gitignore $name | xz -c >$name.tar.xz
@@ -93,12 +210,12 @@ gitroot() {
     cd "$(git rev-parse --show-toplevel)"
 }
 gittheirs() {
-(set -e
-    gitroot
-    git co --theirs "$@"
-    git add "$@"
-    git rebase --continue
-)
+    (set -e
+     gitroot
+     git co --theirs "$@"
+     git add "$@"
+     git rebase --continue
+    )
 }
 testn() {
     (set -e;
@@ -149,12 +266,24 @@ syncken() {
 linken() {
     syncken; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
 }
-
 scpg() {
     (set -x
      cd
+     o=`dirname $1`
+     c-s `mkdir -p $o`
+     for f in `ls "$1"`; do
+         if [[ -f $f ]] ; then
+             echo "$f => :$o"
+             scp "$f" c-graehl:"$o/"
+         fi
+     done
+    )
+}
+scpgr() {
+    (set -x
+     cd
      scpx "$1" "c-graehl:`dirname $1`"
-     )
+    )
 }
 scpx() {
     if [[ -d $1 ]] ; then
@@ -244,7 +373,7 @@ makeboost() {
             LD_LIBRARY_PATH="$gccprefix/lib64:$LD_LIBRARY_PATH"
             export LD_LIBRARY_PATH=${LD_LIBRARY_PATH#:}
         fi
-       set -e
+        set -e
         set -x
         cd $1
         xmtext=$2
@@ -747,11 +876,11 @@ myip () {
 previewr() {
     preview `find "$@" -type f` | less
 }
+agerr() {
+    ag "$@" -G '.*\.err.*'
+}
 dcondor() {
     d-s md-condor
-}
-cprs() {
-    cp -Rs "$@"
 }
 cpptox2() {
     (set -e
@@ -1209,7 +1338,7 @@ fireinstall() {
     adb install -r "$@"
 }
 jcp() {
-    chost=c-jmay ccp "$@"
+    chost=git02 ccp "$@"
 }
 mcp() {
     chost=c-mdreyer ccp "$@"
@@ -1257,7 +1386,7 @@ m12() {
     chost=c-mdreyer c12 "$@"
 }
 j12() {
-    chost=c-jmay c12 "$@"
+    chost=git02 c12 "$@"
 }
 y12() {
     chost=c-ydong c12 "$@"
@@ -1278,7 +1407,7 @@ makesvm() {
 }
 foreverdir=$HOME/forever
 forc() {
-    for chost in c-graehl c-jmay c-ydong; do
+    for chost in c-graehl git02 c-ydong; do
         chost=$chost c-s "$@"
     done
 }
@@ -1701,21 +1830,26 @@ guesstbbver() {
         tbbver=42oss
     fi
 }
+xmtgithash() {
+    ${1:-xmt} -v -D | perl -ne 'print $1 if /^Git SHA1: (\S+)/'
+}
 bakxmt() {
     ( set -e;
         echo ${BUILD:=Release}
         cd $xmtx/$BUILD
         local change=`changeid`
-        local hash=`githash`
+        local hash
         local pub=${pub:-$xmtpub}
+        hash=`xmtgithash xmt/xmt`
+        if ! [[ $hash ]] ; then
+            hash=`githash`
+        fi
         echo $pub/$1
         local bindir=$pub/$BUILD/$HOST/$hash
         echo $bindir
         mkdir -p $bindir
-        rm -rf $pub/$hash
         git log -n 1 > $bindir/README
         mkdir -p $pub/$change
-        forcelink $pub/$hash $pub/$change/$hash
         rm -f $pub/latest $pub/$change/latest
         forcelink $bindir $pub/latest
         forcelink $pub/$change $pub/latest-changeid
@@ -1726,11 +1860,9 @@ bakxmt() {
             ls -l $f
             local bin=$bindir/$b
             cp -af $f $bindir/$b
+            chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
             (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
             chmod +x $bin.sh
-            forcelink $hash/$b $pub/$b
-            forcelink ../$hash $pub/$change/latest
-            forcelink ../$hash/$b $pub/$change/$b
         done
         grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
         rmrpath $bindir || true
@@ -1983,7 +2115,7 @@ cs-s() {
     cs-for c-s "$@"
 }
 j-with() {
-chost=c-jmay c-with "$@"
+chost=git02 c-with "$@"
 }
 d-with() {
 chost=c-mdreyer c-with "$@"
@@ -2139,7 +2271,7 @@ y-c() {
     chost=c-ydong
 }
 j-c() {
-    chost=c-jmay
+    chost=git02
 }
 d-c() {
     chost=c-mdreyer
@@ -2526,7 +2658,7 @@ err() {
     echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $@" >&2
 }
 pkills() {
-    for f in c-ydong c-graehl c-mdreyer gitbuild1 gitbuild2; do
+    for f in c-ydong c-graehl c-mdreyer gitbuild1 git02; do
         ssh $f ". ~/u/aliases.sh;pkill '$*'"
     done
 }
@@ -2571,7 +2703,7 @@ upmaster() {
         git stash pop
     )
 }
-grunt() {
+localpig() {
     pig -x local "$@" -
 }
 testpys() {
@@ -2598,7 +2730,7 @@ n-s() {
         ssh $args
     fi
 }
-nhost=gitbuild2
+nhost=git02
 ns-n() {
     nhost=gitbuild$n n-s "$@"
 }
@@ -2615,7 +2747,7 @@ n3-s() {
     nhost=gitbuild3 n-s "$@"
 }
 n2-s() {
-    nhost=gitbuild2 n-s "$@"
+    nhost=git02 n-s "$@"
 }
 n1-s() {
     nhost=gitbuild1 n-s "$@"
@@ -3183,7 +3315,7 @@ ycp() {
     chost=c-ydong ccp "$@"
 }
 jcp() {
-    chost=c-jmay ccp "$@"
+    chost=git02 ccp "$@"
 }
 gcp() {
     chost=c-graehl ccp "$@"
@@ -3603,7 +3735,7 @@ stt() {
     StatisticalTokenizerTrain "$@"
 }
 sj() {
-    chost=c-jmay sc
+    chost=git02 sc
 }
 sk() {
     chost=c-ydong sc
@@ -3695,7 +3827,7 @@ yjen(){
     chost=c-ydong linjen "$@"
 }
 jjen(){
-    chost=c-jmay linjen "$@"
+    chost=git02 linjen "$@"
 }
 djen() {
     chost=c-mdreyer linjen "$@"
@@ -4056,7 +4188,8 @@ sherp() {
     (
         shift
         set -x
-        PATH=`dirname $CTPERL`:$PATH $CTPERL $CTPERLLIB $CT/sherpa/App/sherpa --apex=$apex "$@"
+        # PATH=`dirname $CTPERL`:$PATH $CTPERL $CTPERLLIB
+        perl $CT/sherpa/App/sherpa --force --apex=$apex "$@"
         sleep 3
     )
 }
@@ -6472,7 +6605,7 @@ gl() {
     chost=c-graehl c-l "$@"
 }
 jl() {
-    chost=c-jmay c-l "$@"
+    chost=git02 c-l "$@"
 }
 kl() {
     chost=c-skohli c-l "$@"

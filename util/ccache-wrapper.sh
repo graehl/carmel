@@ -21,6 +21,11 @@ if [[ -x $cc ]] ; then
 else
     cc=$ccbasename
 fi
+CCACHE_DIR=${CCACHE_DIR:-/local/graehl/ccache}
+mkdir -p $CCACHE_DIR || CCACHE_DIR=
+if [[ -d $CCACHE_DIR ]] ; then
+    export CCACHE_DIR=$CCACHE_DIR
+fi
 if [[ $gccfilter ]] && [[ -x `which gccfilter 2>/dev/null` ]] ; then
   exec gccfilter ${gccfilterargs:- -r -w -n -i} ccache $cc "$@"
 else
