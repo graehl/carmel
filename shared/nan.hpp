@@ -95,6 +95,15 @@ inline bool is_nan(T x) {
 }
 
 template <typename T>
+inline bool is_posinf(T x) {
+#if GRAEHL_HAVE_STD_ISINF
+  return std::isinf(x);
+#else
+  return x == std::numeric_limits<T>::infinity();
+#endif
+}
+
+template <typename T>
 inline bool is_inf(T x) {
 #if GRAEHL_HAVE_STD_ISINF
   return std::isinf(x);

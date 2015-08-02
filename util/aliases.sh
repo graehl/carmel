@@ -44,6 +44,13 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+ctpush() {
+    scpgr c/coretraining/main/kraken/xtune/App --exclude=bin --exclude=legacybin
+    c-s 'cd ~/c/coretraining && mend'
+}
+gitff() {
+    git pull --ff-only
+}
 emacsdbg() {
     open -a /Applications/Emacs.app --args --debug-init
 }
@@ -58,7 +65,11 @@ update_terminal_cwd() {
         printf '\e]7;%s\a' "$PWD_URL"
     fi
 }
-
+sortspeed() {
+    local f=$1
+    shift
+    perl -ne 'print if /^[0-9_]+(\S+[0-9.]+)+/' "$f" | tr _ ' ' | sort -g "$@"
+}
 pandocslides() {
     (
         set -e
@@ -98,14 +109,21 @@ speedboth() {
     [[ -f $fb ]] || fb=$b/report.txt
     [[ -f $fa ]] || fa=$a
     [[ -f $fb ]] || fb=$b
+    local using=${using:-3:2:1}
+    if [[ $sync ]] ; then
+        using=0:3
+    fi
+    local labels="with labels point pt 5 offset 2"
+    labels=
     cat<<EOF>"$a-$b.cmd"
 set terminal png size 1280,960 enhanced
 set output "$a-$b.png"
 set title "$A vs. $B speed/quality"
 set xlabel "BLEU4"
 set ylabel "Speed (wpm)"
-set pointsize 1.5
-plot "$fa" u 3:2 title "$A", "$fb" u 3:2 title "$B"
+set pointsize 1
+set offset 1,1,1,1
+plot "$fa" u $using $labels title "$A", "$fb" u $using $labels title "$B"
 EOF
     rm -f "$a-$b.png"
     gnuplot -c "$a-$b.cmd"
@@ -282,7 +300,9 @@ scpg() {
 scpgr() {
     (set -x
      cd
-     scpx "$1" "c-graehl:`dirname $1`"
+     local d=$1
+     shift
+     scpx "$d" "c-graehl:`dirname $d`" "$@"
     )
 }
 scpx() {
@@ -295,7 +315,7 @@ scpx() {
             local to=$1
             shift
             set -x
-            rsync --modify-window=1 --cvs-exclude --exclude=.git -a $from $to "$@"
+            rsync --modify-window=1 --cvs-exclude --exclude=.git -K -a "$@" $from $to
         )
     fi
 }
@@ -2591,9 +2611,17 @@ tunssh() {
     (
         local sshdir=`echo ~/.ssh`
         cd ~/.ssh
-        set -x
         set -e
         cp -af $sshdir/config.tun $sshdir/config
+        ssh -f -N tun
+    )
+}
+homessh() {
+    (
+        local sshdir=`echo ~/.ssh`
+        cd ~/.ssh
+        set -e
+        cp -af $sshdir/config.home $sshdir/config
         ssh -f -N tun
     )
 }
@@ -3325,10 +3353,11 @@ wcp() {
         set -x
         cd $xmtx/RegressionTests
         f=${2#C:/JENKINS/workspace/XMT-Release-Windows/RegressionTests/}
+        f=${f#C:/jenkins/workspace/XMT-Release-Windows/RegressionTests/}
         f=${f%.expected}
         f=${f%.windows}
         f=$f.windows
-        scp Administrator@${wgitbuild:-wgitbuild1}:"$1" "$f"
+        scp Administrator@${wgitbuild:-wgitbuild2}:"$1" "$f"
         git add $f
     )
 }
