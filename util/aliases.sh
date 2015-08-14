@@ -44,6 +44,12 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+gitundosoft() {
+    git reset --soft HEAD@{1}
+}
+du1() {
+    du -hsc "$@"
+}
 ctpush() {
     scpgr c/coretraining/main/kraken/xtune/App --exclude=bin --exclude=legacybin
     c-s 'cd ~/c/coretraining && mend'
@@ -1542,6 +1548,7 @@ mpics() {
         cd ~/downloads
         rm "container_bg*.png"
         mv *.gif ~/documents/email/_g/ || true
+        mv *.webm ~/documents/email/_p/ || true
         rm *' (1)'.jp* || true
         for f in png jpg jpeg; do
             mv *.$f ~/pictures/r/ || true
