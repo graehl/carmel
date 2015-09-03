@@ -44,6 +44,11 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+ccachec() {
+    for nhost in gitbuild3 gitbuild5 gitbuild6 git02; do
+        nhost=$nhost n-s ccache -C
+    done
+}
 gitundosoft() {
     git reset --soft HEAD@{1}
 }
@@ -818,6 +823,7 @@ oscptar() {
      c-s "mkdir -p $osgitdir" #rm -rf $osgitdir/$hypdir;
      set -x
      scp $ostarball c-graehl:$osgitdir
+     # ~/c/hyp
      c-s "cd $osgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
      else
          set -x
@@ -1549,6 +1555,7 @@ mpics() {
         rm "container_bg*.png"
         mv *.gif ~/documents/email/_g/ || true
         mv *.webm ~/documents/email/_p/ || true
+        mv *.mp4 ~/documents/email/_p/ || true
         rm *' (1)'.jp* || true
         for f in png jpg jpeg; do
             mv *.$f ~/pictures/r/ || true
@@ -2046,7 +2053,7 @@ gerritlog() {
     chost=git02 c-s tail -${1:-80} /local/gerrit/logs/error_log
 }
 xmtscanf() {
-    blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf $xmtx/DebugScan \; scanbuildnull=${scanbuildnull:-} scanbuildh=${scanbuildh:-} xmtcm DebugScan
+   blockclang=1 save12 ~/tmp/xmtscan.cpp c-with rm -rf $xmtx/DebugScan \; scanbuildnull=${scanbuildnull:-} scanbuildh=${scanbuildh:-} xmtcm DebugScan
 }
 xmtscan() {
     blockclang=1 save12 ~/tmp/xmtscan.cpp c-with scanbuildnull=${scanbuildnull:-} scanbuildh=${scanbuildh:-} xmtcm DebugScan
@@ -4612,7 +4619,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | filter-gcc-errors
+        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-filter-gcc-errors}
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -4785,7 +4792,7 @@ save12() {
     ( if ! [[ ${quiet:-} ]] ; then
         echo "$@"; echo
         fi
-        "$@" 2>&1) | filterblock | tee $out | ${page:-cat}
+        "$@" 2>&1) | filterblock | tee $out | filter-gcc-errors | ${page:-cat}
     echo2 saved output:
     echo2 $out
     echo2 "$cmd"

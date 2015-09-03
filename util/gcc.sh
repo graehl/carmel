@@ -3,6 +3,7 @@
 #ftp://gcc.gnu.org/pub/gcc/snapshots/5.2.0-RC-20150707
 gccver=5.2.0
 srcdir=/local/graehl/src
+mkdir -p $srcdir
 gccwithv=gcc-$gccver
 gccsrc=$srcdir/$gccwithv
 gccbuild=$srcdir/gcc-build
@@ -40,17 +41,26 @@ gccbuild() {
             --enable-shared \
             --enable-threads=posix \
             --enable-__cxa_atexit \
-            --enable-clocale=gnu \
             --disable-multilib \
             --with-system-zlib \
             --disable-checking \
-            --enable-languages=c,c++
+            --enable-languages=c,c++,fortran
+        #            --enable-clocale=gnu \
+
         make "$@"
     )
 }
 gccinstall() {
     cd $gccbuild
     sudo make install
+}
+gccgetbuild() {
+    (set -e
+     gccget
+     gccbuild "$@"
+     cd $gccbuild
+     make install
+    )
 }
 gccall() {
     (set -e
