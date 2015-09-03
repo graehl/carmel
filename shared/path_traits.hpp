@@ -27,7 +27,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <graehl/shared/epsilon.hpp>
-#include <sdl/graehl/shared/nan.hpp>
+#include <graehl/shared/nan.hpp>
 
 namespace graehl {
 

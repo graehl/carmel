@@ -137,10 +137,68 @@ struct enable_type {
 enum { kDefaultMaxInlineSize = 3 };
 typedef unsigned small_vector_default_size_type;
 
+template <class T, class Size = small_vector_default_size_type>
+struct pod_array_ref {
+  typedef Size size_type;
+  typedef T const* const_iterator;
+  typedef T* iterator;
+  typedef T value_type;
+  typedef T& reference;
+  typedef T const& const_reference;
+  Size sz;
+  T* data;
+  pod_array_ref() : sz() {}
+  pod_array_ref(T* data, Size sz) : sz(sz), data(data) {}
+  pod_array_ref(T* begin, T* end) : sz(end - begin), data(begin) {}
+  template <class Vec>
+  explicit pod_array_ref(Vec const& vec)
+      : sz((Size)vec.size()), data(&vec[0]) {
+    assert(vec.size() == sz);
+  }
+  Size size() const { return sz; }
+  bool empty() const { return !sz; }
+  T &front() {
+    assert(sz);
+    return data[0];
+  }
+  T &front() const {
+    assert(sz);
+    return data[0];
+  }
+  T &back() {
+    assert(sz);
+    return data[sz - 1];
+  }
+  T &back() const{
+    assert(sz);
+    return data[sz - 1];
+  }
+
+  T& operator[](Size i) { assert(i < sz); return data[i]; }
+  T const& operator[](Size i) const { assert(i < sz); return data[i]; }
+  T* begin() { return data; }
+  T const* begin() const { return data; }
+  T* end() { return data + sz; }
+  T const* end() const { return data + sz; }
+  operator T*() { return data; }
+  operator T const*() const { return data; }
+  template <class Vec>
+  bool operator==(Vec const& vec) const {
+    return sz == vec.size() && !std::memcmp(data, &vec[0], sz * sizeof(T));
+  }
+  template <class Vec>
+  void operator=(Vec const& vec) {
+    sz = vec.size();
+    data == &vec[0];
+  }
+};
+
 // recommend an odd number for kMaxInlineSize on 64-bit (check sizeof to see
 // that you get the extra element for free)
 template <class T, unsigned kMaxInlineSize = kDefaultMaxInlineSize, class Size = small_vector_default_size_type>
 struct small_vector {
+  bool operator==(pod_array_ref<T> const& o) const { return o == *this; }
+
   typedef small_vector Self;
   typedef Size size_type;
   typedef void memcpy_movable;
@@ -163,7 +221,7 @@ struct small_vector {
 
   void push_back() { new (push_back_uninitialized()) T; }
 
-  void moveAssign(small_vector &o) {
+  void moveAssign(small_vector& o) {
     std::memcpy(this, &o, sizeof(small_vector));
     o.clear_nodestroy();
   }
@@ -405,7 +463,7 @@ struct small_vector {
   }
 
   T* erase(T* b, T* e) {  // remove [b, e) and return pointer to element e
-    T *tb = begin(), *te = end();
+    T* tb = begin(), * te = end();
     size_type nbefore = (size_type)(b - tb);
     if (e == te) {
       resize(nbefore);
@@ -482,7 +540,9 @@ struct small_vector {
     data.stack.sz_ = 0;
   }
 
-  void assign(T const* i, T const* end) {
+  void assign(T const* array, size_type n) { memcpy_n(realloc(n), array, array + n); }
+
+  void assign(T const* i, T const* end, size_type sz) {
     size_type n = (size_type)(end - i);
     memcpy_n(realloc(n), i, n);
   }
@@ -507,6 +567,10 @@ struct small_vector {
   void assign(size_type n, T const& v) {
     free();
     init(n, v);
+  }
+  template <class Vec>
+  void assignTo(size_type to, Vec const& vec) {
+    assignTo(to, vec.begin(), vec.size());
   }
 
   bool empty() const { return data.stack.sz_ == 0; }

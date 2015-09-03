@@ -1,4 +1,4 @@
-UTIL=${UTIL:-$(echo ~graehl/u)}
+inkenUTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
@@ -285,7 +285,7 @@ linnplm() {
     syncnplm; j-s "cd ~/xs/nplm;clean=$clean ./make.sh"
 }
 syncken() {
-    reascpx ~/src/KenLM c-graehl:xs/
+    scpx ~/src/KenLM c-graehl:xs/
 }
 linken() {
     syncken; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
@@ -1882,14 +1882,16 @@ bakxmt() {
         forcelink $pub/$change $pub/latest-changeid
         cp -af $xmtx/RegressionTests/launch_server.py $bindir/
         echo xmtbins: $xmtbins
-        for f in $xmtbins xmt/lib/*.so; do
+        for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libTrainableCapitalizer-shared.so CrfDemo/libCrfDemo-shared.so; do
             local b=`basename $f`
             ls -l $f
             local bin=$bindir/$b
             cp -af $f $bindir/$b
             chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
-            (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
-            chmod +x $bin.sh
+            if [[ ${f%.so} = $f ]] ; then
+                (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+                chmod +x $bin.sh
+            fi
         done
         grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
         rmrpath $bindir || true
