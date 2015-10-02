@@ -25,7 +25,7 @@ esac
 xmtext=$xmtextbase/$lwarch
 xmtextsrc=$HOME/c/xmt-externals-source
 export SDL_EXTERNALS_PATH=$xmtext
-for SDL_BOOST_MINOR in 58 57; do
+for SDL_BOOST_MINOR in 59 58 57; do
 BOOST_INCLUDEDIR=$SDL_SHARED_EXTERNALS_PATH/cpp/boost_1_${SDL_BOOST_MINOR}_0/include
 BOOST_LIBDIR=$SDL_EXTERNALS_PATH/libraries/boost_1_${SDL_BOOST_MINOR}_0/lib
 if [[ -d $BOOST_LIBDIR ]] ; then
@@ -44,6 +44,76 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+findtex() {
+    tlmgr search --global --file "$@"
+}
+installclang() {
+    cd /local/graehl/src
+    git clone https://github.com/rsmmr/install-clang
+    cd install-clang
+    ./install-clang -b Release -m -j 14 /local/clang
+}
+filtermsvc() {
+    egrep -v 'C4251|C4267|MSB8028|C4018|C4244|C4305|: note: |C4005' "$@"
+}
+boostcflags() {
+    local bm=59
+    local bd=boost_1_${bm}_0
+    CXXFLAGS="-I $SDL_SHARED_EXTERNALS_PATH/cpp/$bd/include"
+    CFLAGS=$CXXFLAGS
+    LDFLAGS="-L $xmtext/libraries/boost/$bd/lib"
+    export CXXFLAGS
+    export CFLAGS
+    export LDFLAGS
+}
+outsidegitadd() {
+        (cd `dirname $1`
+         git add `basename $1`)
+}
+tosdlextabs() {
+    (
+        from=${1%/}
+        to=`perl -e '$_=shift; s#/xmt-externals/#/sdl-externals/# || die; print $_' $from`
+        set -x
+        cp -a $from `dirname $to`/
+        outsidegitadd $to
+    )
+}
+tosdlext() {
+    ls -l $1/
+    tosdlextabs `realpath $1`
+}
+reken() {
+    (set -e
+     set -x
+    clean=1 linnplm
+    clean=1 linnplm01
+    linken
+    )
+}
+lnboost() {
+ suf=gcc-mt-1_59.so.59.0; for f in *$suf; do  ln -sf $f ${f%-$suf}.so; done
+}
+mvcue() {
+        (set -e
+    for f in split-track*.flac; do
+ARTIST=`metaflac "$f" --show-tag=ARTIST | sed s/.*=//g`
+TITLE=`metaflac "$f" --show-tag=TITLE | sed s/.*=//g`
+TRACKNUMBER=`metaflac "$f" --show-tag=TRACKNUMBER | sed s/.*=//g`
+mv "$f" "$ARTIST - `printf %02g $TRACKNUMBER` - $TITLE.flac"
+    done
+    )
+}
+flaccue() {
+    ( set -e;
+    flac=$1
+    test -f $flac
+    cue=${2:-$flac.cue}
+    cuebreakpoints $cue | shnsplit -o flac $flac
+    cuetag $cue split-track*.flac
+    mvcue
+    )
+}
 ccachec() {
     for nhost in gitbuild3 gitbuild5 gitbuild6 git02; do
         nhost=$nhost n-s ccache -C
@@ -88,8 +158,8 @@ pandocslides() {
         local f=$1
         base=${f%.md}
         [[ -f $f ]] || f=$base.md
-        local out=${2:-$base.html}
-        rm $out
+        local out=${2:-$base-slides.html}
+        rm -f $out
         ln -sf ~/c/reveal.js `dirname $out`/
         pandoc -s -t revealjs --slide-level=2 $f -o $out -V ${2:-black} && perl -i -pe 's{theme/simple}{theme/black}' $out &&
             browse $out
@@ -262,7 +332,7 @@ testn() {
      done
     )
 }
-tosdlext() {
+tosdlext2() {
     sdlextbase=$(echo ~/c/sdl-externals)
     xmtextbase=$(echo ~/c/xmt-externals)
     require_dirs $sdlextbase $xmtextbase
@@ -423,17 +493,18 @@ makeboost() {
             rm -rf bin.v2
             rm -rf stage
         fi
-        [[ -f b2 ]] || ./bootstrap.sh  --with-toolset=$toolset $withicu
+        withpython="--with-python=$SDL_EXTERNALS_PATH/libraries/python-2.7.10/bin/python --with-python-root=$SDL_EXTERNALS_PATH/libraries/python-2.7.10"
+        [[ -f b2 ]] || ./bootstrap.sh  --with-toolset=$toolset $withicu $withpython
         local forceargs=
         if [[ $force ]] ; then
             forceargs=" -a"
         fi
-        ./b2 $forceargs -q -d+2 -sICU_PATH=$icu boost.locale.iconv=off boost.locale.icu=on --threading=multi --runtime-link=shared --runtime-debugging=off --layout=tagged -j8
+        ./b2 $forceargs -q -d+2 -sICU_PATH=$icu boost.locale.iconv=off boost.locale.icu=on --threading=multi --runtime-link=shared --runtime-debugging=off --layout=versioned -j8
     )
 }
 
 macboost() {
-    local bv=boost_1_58_0
+    local bv=boost_1_59_0
     makeboost ~/src/$bv $xmtext
 }
 maccpu() {
@@ -1033,10 +1104,17 @@ buildninja() {
     (
         set -e
         git clone http://llvm.org/git/llvm.git
-        cd llvm/tools
-        git clone http://llvm.org/git/clang.git
+        (cd llvm/tools
+         git clone http://llvm.org/git/clang.git)
+        (
         cd clang/tools
         git clone http://llvm.org/git/clang-tools-extra.git extra
+        )
+        (
+        cd llvm/projects
+        git clone http://llvm.org/git/compiler-rt.git
+        )
+        # --with-gcc-toolchain
         sudo cp ninja /usr/bin/
     )
     (
@@ -1050,7 +1128,7 @@ buildninja() {
     )
 }
 buildclang() {
-    cmake -DLLVM_ENABLE_PIC=ON -DLLVM_ENABLE_CXX1Y=ON -DLLVM_BUILD_STATIC=OFF /local/graehl/src/llvm
+usegcc;cmake -DLLVM_ENABLE_PIC=ON -DLLVM_ENABLE_CXX1Y=ON -DLLVM_BUILD_STATIC=OFF /local/graehl/src/llvm
     make  -j9 "$@"
 #LDFLAGS+='-pie' CFLAGS+='-fPIE' CXXFLAGS+='-fPIE'
 }
@@ -1910,7 +1988,7 @@ bakxmt() {
                 forcelink $pub/$1 $pub2/$1
             fi
         fi
-        $bindir/xmt.sh --help
+        $bindir/xmt.sh --help 2>&1 | head -3
     )
 }
 
@@ -3696,10 +3774,13 @@ yreg() {
         fi
         local REGTESTPARAMS="${REGTESTPARAMS:-} ${memcheckparam:-} -b $bdir -t $THREADS -x regtest_tmp_${USER}_${BUILD} ${GLOBAL_REGTEST_YAML_ARGS:-} ${STDERR_REGTEST:-}"
         if [[ ${exitfail:-} != 0 ]] ; then
-            REGTESTPARAMS_=" -X"
+            REGTESTPARAMS+=" -X"
         fi
         if [[ ${regverbose:-} != 0 ]] ; then
-            REGTESTPARAMS_=" -v"
+            REGTESTPARAMS+=" -v"
+        fi
+        if [[ ${regvalgrind} ]] ; then
+            REGTESTPARAMS+=" --valgrind"
         fi
         if [[ ${monitor:-} ]] ; then
             REGTESTPARAMS+=" --monitor-stderr"
@@ -3845,7 +3926,7 @@ jen() {
     if [[ $HOST = pwn ]] ; then
         UPDATE=0
     fi
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -3940,6 +4021,7 @@ xmtm() {
         local premake
         identifybuild
         if [[ ${scanbuild:-} ]] ; then
+            usescanbuild
             premake="scan-build -k"
             if [[ ${scanbuildh:-} ]] ; then
                 premake+=" -analyzer-headers" # -v
@@ -4277,6 +4359,9 @@ panpdf() {
         fi
     )
 }
+panwebtex() {
+    pandoc --webtex --latex-engine=xelatex --self-contained -t html5 -o $1.html -c ~/u/pandoc.css $1.md
+}
 rmd() {
     RMDFILE=${1?missing RMDFILE.rmd}
     RMDFILE=${RMDFILE%.rmd}
@@ -4507,15 +4592,16 @@ gitrecycle() {
 useclang() {
     local ccache=${ccache:-$(echo ~/bin/ccache)}
     local ccachepre="$ccache-"
+    ccacheppre=
     export CC="${ccachepre}clang"
     export CXX="${ccachepre}clang++"
+    export PATH=/local/clang/bin:$PATH
+    export LD_LIBRARY_PATH=/local/clang/lib:$LD_LIBRARY_PATH
 }
 usescanbuild() {
-    local ccache=${ccache:-$(echo ~/bin/ccache)}
-    scanbuild=1
+    useclang
     export CCC_CC=clang
     export CCC_CXX=clang++
-    export PATH=/usr/libexec/clang-analyzer/scan-build/:$PATH
     export CC="ccc-analyzer"
     export CXX="c++-analyzer"
 }
@@ -8826,7 +8912,7 @@ uselocalgccmac() {
         fi
     fi
 }
-alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/
+#alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/
 finduniq() {
     find . -exec basename {} \; | sort | uniq -c
 }

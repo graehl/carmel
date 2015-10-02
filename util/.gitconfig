@@ -44,9 +44,9 @@
 [push]
   default = matching
 [core]
-  ignorecase = false
+    ignorecase = false
 	excludesfile = /Users/graehl/.gitignore
-  trustctime = false
+    trustctime = false
 	autocrlf = input
 	whitespace = cr-at-eol
 [diff]

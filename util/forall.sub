@@ -1,0 +1,6 @@
+#!/usr/bin/perl -i~
+
+while(<>) {
+    s{(?:BOOST_FOREACH|foreach) \(([^,)]+), (.+)+\)( |$)}{for ($1 : $2)$3};
+    print;
+}

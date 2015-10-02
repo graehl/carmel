@@ -345,3 +345,7 @@ if [[ -f $UTIL/localhistory.sh ]] ; then
     . $UTIL/localhistory.sh
     addPromptCommand localHistory
 fi
+if [[ -d /local/clang/bin ]] ; then
+    export PATH=/local/clang/bin:$PATH
+    export LD_LIBRARY_PATH=/local/clang/lib:$LD_LIBRARY_PATH
+fi

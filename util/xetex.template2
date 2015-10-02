@@ -93,38 +93,6 @@ $if(biblio-files)$
 $endif$
 $endif$
 
-\usepackage{listings}
-\definecolor{lightgray}{rgb}{.95,.95,.95}
-\definecolor{darkgray}{rgb}{.4,.4,.4}
-\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
-\definecolor{YellowOrange}{rgb}{.7,.6,0}
-
-\lstdefinelanguage{xmtLang}{
-  keywords={},
-  keywordstyle=\color{blue}\bfseries,
-  ndkeywords={basis, overlay, replace, category, module, resource, pipeline},
-  ndkeywordstyle=\color{purple},
-  identifierstyle=\color{black},
-  sensitive=false,
-  comment=[l]{//},
-  morecomment=[s]{/*}{*/},
-  commentstyle=\color{darkgray}\ttfamily,
-  stringstyle=\color{red}\ttfamily,
-  morestring=[b]',
-  morestring=[b]"
-}
-
-\lstset{
-   language=xmtLang,
-   backgroundcolor=\color{lightgray},
-   extendedchars=true,
-   basicstyle=\normalsize\ttfamily,
-   showstringspaces=false,
-   showspaces=false,
-   tabsize=2,
-   breaklines=true,
-   showtabs=false
-}
 
 \setcounter{secnumdepth}{-1}
 
