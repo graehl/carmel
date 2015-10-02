@@ -1,10 +1,11 @@
 PROGS= forest-em forestviz
 
-#TODO: comment this out - having problems with boost program_options link
-CXX98:=1
+#CXX98:=1
+#CXX11:=1
 
 forest-em_SRC=forest-em.cpp
 forest-em_LIB=$(BOOST_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_TIMER_LIB) $(BOOST_RANDOM_LIB)
+forest-em_NOSTATIC=1
 forest-em_NOTEST=1
 
 text-to-cc_SRC=text-to-cc.cpp
@@ -14,6 +15,7 @@ text-to-cc_NODEBUG=1
 
 forestviz_SRC=forestviz.cpp
 forestviz_LIB=$(BOOST_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_RANDOM_LIB)
+forestviz_NOSTATIC=1
 forestviz_NOTEST=1
 #forestviz_NOSTATIC=1
 
