@@ -21,9 +21,9 @@ INC= . $(TRUNK)
 LIB=
 #CXX:=g++
 
-CXXFLAGS_COMMON= -ffast-math -std=c++11
+CXXFLAGS_COMMON= -ffast-math
 #-ggdb
-CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM -DUSE_BOOST_GZSTREAM -D_GLIBCXX_USE_CXX11_ABI=0
+CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM -DUSE_BOOST_GZSTREAM
 # CXXFLAGS += -O
 #-DSINGLE_PRECISION
 ## would have to link with boost random nondet source
@@ -37,6 +37,7 @@ ALL_CLEAN += forest-em.README.hpp *.restart.* *.swap.* *.stackdump *.d *.out *.l
 
 default: all
 include ../shared/graehl.mk
+ABI_CFLAGS =
 vpath %.cpp .:$(SHARED)
 
 forest-em.README.hpp: forest-em.README $(BIN)/text-to-cc

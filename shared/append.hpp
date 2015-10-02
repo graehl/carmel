@@ -34,6 +34,10 @@ void append(std::string &v, Iter begin, Iter end) {
   v.append(begin, end);
 }
 
+inline void append(std::string &s, std::string const& x) {
+  s.append(x);
+}
+
 template <class C, class Range>
 inline void append(C& c, Range const& range) {
   append(c, boost::begin(range), boost::end(range));

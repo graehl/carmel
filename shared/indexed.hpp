@@ -234,6 +234,12 @@ struct indexed : HashEqualsTraits {
 
   bool empty() const { return vals_.empty(); }
 
+  template <class VisitNameId>
+  void visit(VisitNameId const& v) {
+    for (I i = 0, e = size(); i < e; ++i)
+      v(vals_[i], i);
+  }
+
  private:
   void add_index(I add, T const& val) {
     assert(vals_[add] == val);
