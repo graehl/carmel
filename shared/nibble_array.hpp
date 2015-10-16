@@ -67,6 +67,25 @@ struct nibble_array {
     assert(!(r & ~(Block)mask_nibble_));
     return r;
   }
+  /// return x[i] setting new x[i] to vfalse if !x[i]
+  value_type test_set_if_false(size_type i, value_type vfalse) {
+    assert(i < sz_);
+    assert(!(vfalse & ~(Block)mask_nibble_));
+    Block& blockref = blocks_[block(i)];
+    Block block = blockref;
+    unsigned const shift = blockremainder(i) << lognibblesz_;
+    Block const mask = (Block)mask_nibble_ << shift;
+    Block const r = (block & mask) >> shift;
+    if (!r) {
+      block &= ~mask;
+      block |= (vfalse << shift);
+      blockref = block;
+      return r;
+    } else {
+      assert(!(r & ~(Block)mask_nibble_));
+      return r;
+    }
+  }
   void set(size_type i, value_type v) {
     assert(i < sz_);
     assert(!(v & ~(Block)mask_nibble_));
@@ -84,11 +103,11 @@ struct nibble_array {
   static inline char repeated_byte(value_type v) {
     return nibblesz_ == 2 ? (v | (v << 2) | (v << 4) | (v << 6)) : (v | (v << 4));
   }
-  static inline size_type block(size_type i) { return i / perblock_; } // should optimize to bitshift
-  static inline size_type blockremainder(size_type i) { return i % perblock_; } // should optimize to and mask
+  static inline size_type block(size_type i) { return i / perblock_; }  // should optimize to bitshift
+  static inline size_type blockremainder(size_type i) {
+    return i % perblock_;
+  }  // should optimize to and mask
 };
-
-
 }
 
 #ifdef GRAEHL_TEST

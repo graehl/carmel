@@ -429,7 +429,9 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
  public:
 #if __cplusplus >= 201103L
   /// move
-  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {}
+  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {
+    assert(&o != this);
+  }
 
   /// move
   lazy_forest& operator=(lazy_forest&& o) noexcept {

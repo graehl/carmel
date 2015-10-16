@@ -76,13 +76,13 @@ struct configure_by_prototype : configure_by<Backend> {
 
   typedef configure_by<Backend> ConfigureBy;
 
-  ConfigureBy *clone() const OVERRIDE {
+  ConfigureBy *clone() const override {
     return clone_self();
   }
 
 #define CONFIGURE__CONFIGURE_DYNMIC_FOR_CONF_EXPR_TYPE(init)  \
-  void configure(init &config) OVERRIDE { proto->configure(config); } \
-  void configure(init##_std &config) OVERRIDE { proto->configure(config); }
+  void configure(init &config) override { proto->configure(config); } \
+  void configure(init##_std &config) override { proto->configure(config); }
 
 
   CONFIGURE__FOR_ACTIONS(CONFIGURE__CONFIGURE_DYNMIC_FOR_CONF_EXPR_TYPE)

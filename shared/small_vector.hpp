@@ -221,10 +221,6 @@ struct small_vector {
 
   void push_back() { new (push_back_uninitialized()) T; }
 
-  void moveAssign(small_vector& o) {
-    std::memcpy(this, &o, sizeof(small_vector));
-    o.clear_nodestroy();
-  }
 
 #if __cplusplus >= 201103L
   /// move
@@ -235,7 +231,7 @@ struct small_vector {
 
   /// move
   small_vector& operator=(small_vector&& o) noexcept {
-    assert(&o != this);  // std::vector doesn't check for self-move so why should we?
+    assert(&o != this);
     free();
     std::memcpy(this, &o, sizeof(small_vector));
     o.clear_nodestroy();
@@ -247,7 +243,18 @@ struct small_vector {
   void emplace_back(Args&&... args) {
     new (push_back_uninitialized()) T(std::forward<Args>(args)...);
   }
+  void moveAssign(small_vector& o) {
+    assert(&o != this);
+    *this = std::move(o);
+  }
 #else
+  void moveAssign(small_vector& o) {
+    assert(&o != this);
+    free();
+    std::memcpy(this, &o, sizeof(small_vector));
+    o.clear_nodestroy();
+  }
+
   void emplace_back() { new (push_back_uninitialized()) T; }
 
   template <class T0>
@@ -486,22 +493,6 @@ struct small_vector {
   }
   static inline void memcpy_n(T* to, T const* from, size_type n) { std::memcpy(to, from, n * sizeof(T)); }
   static inline void memmove_n(T* to, T const* from, size_type n) { std::memmove(to, from, n * sizeof(T)); }
-
-  /// like C++11 move but explicit
-  void steal(small_vector& o) {
-    if (&o == this) return;
-    free();
-    if (o.data.stack.sz_ <= kMaxInlineSize) {  // unnecessary detail unless you care about valgrind-safety
-      data.stack.sz_ = o.data.stack.sz_;
-      // unsigned instead of size_type because kMaxInlineSize is unsigned
-      for (unsigned i = 0; i < kMaxInlineSize; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
-    } else {
-      std::memcpy(this, &o, sizeof(o));
-    }
-    o.clear_nodestroy();
-  }
-
-  friend inline void moveAssign(small_vector& to, small_vector& from) { to.steal(from); }
 
   small_vector& operator=(small_vector const& o) {
     if (&o == this) return *this;

@@ -24,8 +24,11 @@
 
 namespace graehl {
 
-#include <algorithm>  // not used, but people who use this will want to bring std::swap in anyway
 #include <cstring>
+#include <utility>
+#if __cplusplus < 201103L
+#include <algorithm> //swap
+#endif
 
 template <class T>
 inline void swap_pod(T& a, T& b) {
@@ -38,6 +41,17 @@ inline void swap_pod(T& a, T& b) {
   memcpy(pt, pa, s);
   memcpy(pa, pb, s);
   memcpy(pb, pt, s);
+}
+
+template <class T>
+void move_swap(T& a, T& b) {
+#if __cplusplus >= 201103L
+  T tmp(std::move(b));
+  b = std::move(a);
+  a = std::move(tmp);
+#else
+  std::swap(a, b);
+#endif
 }
 
 
