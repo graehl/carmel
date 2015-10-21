@@ -29,8 +29,9 @@
 #endif
 
 // find is_null, set_null by ADL (Koenig lookup).
-
+#include <cstddef>
 #include <graehl/shared/nan.hpp>
+#include <graehl/shared/int_types.hpp>
 
 //#define FLOAT_NULL HUGE_VALF
 //#define DOUBLE_NULL HUGE_VAL
@@ -63,6 +64,11 @@ inline void set_null(double& f) {
   f = DOUBLE_NULL;
 }
 
+#define GRAEHL_IS_SET_NULL_INT_MINUS1(T) inline bool is_null(T x) { return x == (T)-1; } \
+  inline void set_null(T &x) { x = (T)-1; }
+
+GRAEHL_FOR_DISTINCT_INT_TYPES(GRAEHL_IS_SET_NULL_INT_MINUS1)
+
 template <class C>
 inline bool non_null(C const& c) {
   return !is_null(c);
@@ -71,13 +77,16 @@ inline bool non_null(C const& c) {
 struct as_null {};
 // tag for constructors
 
-#define MEMBER_IS_SET_NULL MEMBER_SET_NULL MEMBER_IS_NULL
-
-#define MEMBER_SET_NULL \
-  friend bool is_null(self_type const& me) { return me.is_null(); }
-#define MEMBER_IS_NULL \
-  friend void is_null(self_type& me) { return me.set_null(); }
-
+namespace adl {
+template <class T>
+inline void call_set_null(T &x) {
+  set_null(x);
+}
+template <class T>
+inline bool call_is_null(T const& x) {
+  return is_null(x);
+}
+}
 
 #ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE(TEST_is_null) {

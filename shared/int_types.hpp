@@ -51,10 +51,22 @@
 #endif
 
 #include <boost/cstdint.hpp>
+#include <cstdint>
 #include <limits>
 
 namespace graehl {
 
+#if __cplusplus >= 201103L
+typedef std::uint64_t uint64_t;
+typedef std::uint32_t uint32_t;
+typedef std::uint16_t uint16_t;
+typedef std::uint8_t uint8_t;
+
+typedef std::int64_t int64_t;
+typedef std::int32_t int32_t;
+typedef std::int16_t int16_t;
+typedef std::int8_t int8_t;
+#else
 using boost::int8_t;
 using boost::uint8_t;
 using boost::int16_t;
@@ -63,6 +75,7 @@ using boost::int32_t;
 using boost::uint32_t;
 using boost::int64_t;
 using boost::uint64_t;
+#endif
 
 template <class T>
 struct signed_for_int {
@@ -128,9 +141,10 @@ GRAEHL_DEFINE_SIGNED_FOR_2(std::ptrdiff_t, std::size_t)
 #define GRAEHL_FOR_LONGER_LONG_TYPES(x)
 #endif
 
-#define GRAEHL_FOR_DISTINCT_INT_TYPES(x)                                                 \
-  x(int8_t) x(int16_t) x(int32_t) x(int64_t) GRAEHL_FOR_INT_DIFFERENT_FROM_INTN_TYPES(x) \
-      GRAEHL_FOR_LONGER_LONG_TYPES(x) GRAEHL_FOR_PTRDIFF_DIFFERENT_FROM_INTN_TYPES(x)
+#define GRAEHL_FOR_DISTINCT_INT_TYPES(x)                                                    \
+  x(uint8_t) x(uint16_t) x(uint32_t) x(uint64_t) x(int8_t) x(int16_t) x(int32_t) x(int64_t) \
+      GRAEHL_FOR_INT_DIFFERENT_FROM_INTN_TYPES(x) GRAEHL_FOR_LONGER_LONG_TYPES(x)           \
+          GRAEHL_FOR_PTRDIFF_DIFFERENT_FROM_INTN_TYPES(x)
 
 
 #if GRAEHL_HAVE_LONG_DOUBLE

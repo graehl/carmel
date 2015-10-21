@@ -51,7 +51,7 @@
 
     REQUIRES that T is POD (specifically - it's part of a union, so must be. all
     we really require is that memmove/memcpy is allowed rather than copy
-    construct + destroy old
+    construct + destroy old. we don't call destructor on T.
 
     memcmp comparable isn't necessary - we use ==, <.
 
@@ -63,6 +63,7 @@
 
 */
 
+// don't change to 0 unless you add ~T() calls everywhere (several places)
 #define GRAEHL_SMALL_VECTOR_POD_ONLY 1
 
 #include <stdlib.h>
@@ -525,6 +526,26 @@ struct small_vector {
   }
 
   ~small_vector() { free(); }
+
+  /// null values can't be assigned to or from (will crash - TODO: fix w/o undue
+  /// perf penalty? better customize densehashtable.h) but can be set/is/~small_vector
+  void is_any_null() const {
+    return data.stack.sz_ >= (size_type)-2;
+  }
+  void is_null() const {
+    return data.stack.sz_ == (size_type)-1;
+  }
+  void is_null2() const {
+    return data.stack.sz_ == (size_type)-2;
+  }
+  void set_null() {
+    data.stack.sz_ = (size_type)-1;
+    data.heap.begin_ = 0;
+  }
+  void set_null2() {
+    data.stack.sz_ = (size_type)-2;
+    data.heap.begin_ = 0;
+  }
 
   void clear() {
     free();

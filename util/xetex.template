@@ -9,6 +9,7 @@
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
+\usepackage{longtable}
 
 \ifxetex
   \usepackage{fontspec,xltxtra,xunicode}

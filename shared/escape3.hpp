@@ -67,6 +67,7 @@ inline bool escape3(void const* i, std::size_t n, String& s, std::size_t maxlen 
   return escape3((char const*)i, n, s, maxlen);
 }
 
+/// this is ostream-printable e.g. cout << Escape3(str)
 struct Escape3 : string_builder {
   Escape3(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) { append(i, n, maxlen); }
   Escape3(std::size_t n, void const* i, std::size_t maxlen = 0, bool nbytes = false) { append(i, n, maxlen); }
